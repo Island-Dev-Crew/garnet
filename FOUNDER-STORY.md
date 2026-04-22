@@ -6,15 +6,21 @@
 
 ## Saturday Morning
 
-I was laying in bed. Showered, still drying off, naked. On my way to my mother's for Sabbath lunch.
+Showered, dried off, and laying in bed — butt ass naked — thinking about whether I wanted to take a nap or head to my mother's house for Sabbath lunch.
 
-And I was listening to someone talk about Ruby — the language, not the gemstone. Describing why Ruby is beautiful. How it reads. How the code flows like something written by a person who cares about the person reading it. And I thought: *that reminds me of God.*
+I had a podcast running. I don't normally do podcasts, but there was this guy having a conversation talking about how beautiful Ruby code is. Describing why Ruby is beautiful. How it reads. How the code flows like something written by a person who cares about the person reading it.
+
+And I thought: *that reminds me of God.*
 
 Not in a weird way. In the sense that God is organized, orderly, and beautiful. Nothing He creates is chaotic. The universe has patterns — laws — and they are elegant when you can see them.
 
-Then: *everybody's talking about Rust right now.*
+I later learned the guy was DHH on *The Pragmatic Engineer* podcast.
 
-So I asked the question out loud — to myself, to the room: **what's the difference between Rust and Ruby? And can we reconcile them?**
+But then: *everybody's talking about Rust right now. In AI, I thought.*
+
+So I asked the question —
+
+**what's the difference between Rust and Ruby? And can we reconcile them?**
 
 Not "can we pick the better one." Can we put them together?
 
