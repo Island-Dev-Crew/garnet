@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Paper III — GARNET: The Reconciliation</title>
+<meta name="theme-color" content="#9C2B2E">
+<meta name="robots" content="noindex">
+<style>
+/* ═══ Garnet Design Tokens ═══ */
+:root{--bg:#0A0A0F;--bg-soft:#121218;--bg-code:#18181B;--garnet:#9C2B2E;--garnet-2:#B0303A;--gold:#E5C07B;--rust:#B7410E;--ruby:#CC0000;--ink:#E8E8E8;--ink-soft:#C8C8D0;--ink-muted:#6272A4;--rule:#3A3A45;--code-fg:#F8F8F2;--code-key:#FF79C6;--code-str:#50FA7B;--code-com:#6272A4;--code-num:#BD93F9;--serif:'Georgia','Source Serif Pro',serif;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--mono:'SF Mono','Menlo','Consolas','JetBrains Mono',monospace;--maxw:900px;--nav-h:52px}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;-webkit-font-smoothing:antialiased}
+a{color:var(--gold);text-decoration:none}a:hover{color:var(--garnet-2);transition:color .2s}
+::selection{background:var(--garnet);color:var(--ink)}
+
+/* ═══ Fixed Nav Banner ═══ */
+#nav{position:fixed;top:0;left:0;right:0;z-index:100;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(10,10,15,0.92);border-bottom:1px solid var(--rule);height:var(--nav-h)}
+#nav .inner{max-width:1100px;margin:0 auto;padding:0 20px;display:flex;align-items:center;height:100%;gap:4px}
+#nav .brand{font-family:var(--serif);font-weight:bold;letter-spacing:0.18em;color:var(--ink);font-size:15px;margin-right:24px;white-space:nowrap}
+#nav .brand .a{color:var(--garnet)}
+#nav .tabs{display:flex;gap:0;overflow-x:auto;-webkit-overflow-scrolling:touch;flex:1}
+#nav .tab{padding:14px 16px;color:var(--ink-muted);font-size:13px;white-space:nowrap;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;user-select:none;text-decoration:none;font-family:var(--sans)}
+#nav .tab:hover{color:var(--ink)}
+#nav .tab.active{color:var(--garnet);border-bottom-color:var(--garnet);font-weight:600}
+#nav .back{color:var(--ink-muted);font-size:13px;margin-left:12px;white-space:nowrap;transition:color .2s;display:flex;align-items:center;gap:4px}
+#nav .back:hover{color:var(--gold)}
+
+/* ═══ Content Area ═══ */
+#cv{max-width:var(--maxw);margin:0 auto;padding:calc(var(--nav-h) + 40px) 24px 80px;opacity:0;transform:translateY(16px);transition:opacity .6s ease, transform .6s ease}
+#cv.show{opacity:1;transform:translateY(0)}
+#cv.hidden{opacity:0;transform:translateY(-8px);position:absolute;pointer-events:none}
+
+/* ═══ Doc Typography ═══ */
+#cv h1{font-family:var(--serif);font-size:clamp(28px,4vw,40px);color:var(--ink);margin:0 0 8px;letter-spacing:0.02em;font-weight:bold}
+#cv h2{font-family:var(--serif);font-size:clamp(22px,3vw,30px);color:var(--ink);margin:48px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--rule)}
+#cv h3{font-size:20px;color:var(--gold);margin:32px 0 12px;letter-spacing:0.04em}
+#cv h4{font-size:17px;color:var(--ink);margin:24px 0 8px}
+#cv p{color:var(--ink-soft);margin:12px 0;line-height:1.7}
+#cv ul,#cv ol{color:var(--ink-soft);margin:12px 0;padding-left:24px}
+#cv li{margin:4px 0;line-height:1.6}
+#cv strong{color:var(--ink)}
+#cv em{color:var(--ink-soft);font-style:italic}
+#cv blockquote{border-left:3px solid var(--garnet);margin:20px 0;padding:14px 20px;background:rgba(156,43,46,0.05);border-radius:0 8px 8px 0;color:var(--ink-soft)}
+#cv blockquote p{color:inherit}
+#cv code{background:var(--bg-code);color:var(--code-fg);padding:2px 7px;border-radius:4px;font-family:var(--mono);font-size:0.88em}
+#cv pre{background:var(--bg-code);border:1px solid var(--rule);border-radius:10px;padding:18px 22px;margin:18px 0;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.65;color:var(--code-fg)}
+#cv pre code{background:none;padding:0;color:inherit}
+#cv table{border-collapse:collapse;width:100%;margin:20px 0;font-size:14px}
+#cv th,#cv td{border:1px solid var(--rule);padding:10px 14px;text-align:left}
+#cv th{background:rgba(229,192,123,0.06);color:var(--gold);font-weight:600}
+#cv td{background:var(--bg-soft);color:var(--ink-soft)}
+#cv hr{border:none;border-top:1px solid var(--rule);margin:32px 0}
+
+/* ═══ Responsive ═══ */
+@media(max-width:700px){
+  #nav .brand{font-size:13px;margin-right:12px}
+  #nav .tab{padding:14px 10px;font-size:12px}
+  #nav .back span{display:none}
+  #cv{padding:calc(var(--nav-h) + 24px) 14px 60px}
+  #cv pre{padding:14px 16px;font-size:12px}
+}
+</style>
+</head>
+<body>
+
+<div id="nav">
+  <div class="inner">
+    <div class="brand">G<span class="a">A</span>RNET</div>
+    <div class="tabs">
+      <a class="tab" data-id="minispec">Mini-Spec</a>
+      <a class="tab active" data-id="synthesis">Synthesis</a>
+      <a class="tab" data-id="novel">Novel Frontiers</a>
+      <a class="tab" data-id="ladder">Implementation</a>
+    </div>
+    <a class="back" href="/">&larr; <span>Back to garnet-lang.org</span></a>
+  </div>
+</div>
+
+<div id="cv"><h1 id="garnet">GARNET</h1>
+<h2 id="the-reconciliation-of-rust-and-ruby">The Reconciliation of Rust
+and Ruby</h2>
+<h3
+id="paper-iii-v2.1-redline---gap-analysis-language-synthesis-proposal-and-market-viability-assessment">Paper
+III (v2.1 redline) - Gap Analysis, Language Synthesis Proposal, and
+Market Viability Assessment</h3>
+<p><strong>Prepared for:</strong> Jon - Island Development Crew<br />
+<strong>Date:</strong> April 2026<br />
+<strong>Series:</strong> Garnet Language Research Series<br />
+<strong>Revision note:</strong> This v2.1 pass incorporates the Grok
+consensus review, promotes Swift to the central comparator set, and
+tightens the boundary between language-core claims and runtime-platform
+claims.</p>
+<h2 id="executive-summary">Executive summary</h2>
+<p>This redline revision preserves the original comparative insight -
+that Rust and Ruby sit at opposite poles of programming language design
+- while strengthening the synthesis where the previous corpus remained
+under-specified. The v2.1 result is a more precise thesis: Garnet is
+strongest as a <strong>proposed dual-mode, agent-native language
+platform</strong> rather than merely as a merged language. Rust remains
+the reference for safe-mode rigor, ownership, and systems trust. Ruby
+remains the reference for humane syntax, DSL design, and orchestrative
+velocity. Swift becomes the missing production comparator for the
+managed side, clarifying how ARC, actors, and a coherent package/tooling
+story can coexist in a mainstream language. The update also introduces a
+formal scope boundary: TurboQuant motivates runtime design, but it is
+not treated as a hard semantic feature of the language core.</p>
+<h2 id="abstract">Abstract</h2>
+<p>The original Garnet synthesis argued that Rust and Ruby’s weaknesses
+mirror one another’s strengths so closely that a genuine reconciliation
+is plausible. That thesis still holds. This v2.1 revision refines the
+proposal in three ways. First, it adds Swift as the most important
+production comparator for Garnet’s managed mode, because Swift
+demonstrates that automatic reference counting, actor-based concurrency,
+and mainstream ergonomics can cohere in a serious language with durable
+tooling. Second, it redefines Garnet as a language-platform proposal for
+<strong>safe, expressive, memory-aware agentic software</strong>,
+bringing memory cores, memory managers, and domain-specific harnesses
+into the architecture. Third, it introduces a credibility boundary
+around model-side memory innovations such as TurboQuant, treating them
+as runtime and implementation influences rather than as direct language
+guarantees. The result is a more defensible synthesis, a sharper product
+wedge, and a clearer implementation roadmap.</p>
+<h2 id="the-revised-synthesis-question">1. The revised synthesis
+question</h2>
+<p>The original question was whether Rust and Ruby could be reconciled
+without collapsing into compromise. The v2.1 question is narrower and
+more practical:</p>
+<blockquote>
+<p><strong>Can a dual-mode language platform combine Ruby-like surface
+fluency, Rust-like safety, Swift-like managed ergonomics, and
+first-class memory abstractions for long-horizon agent
+systems?</strong></p>
+</blockquote>
+<p>This revision changes the evaluation criteria. Garnet is no longer
+judged only by how elegant its syntax sounds on paper. It is judged by
+whether the proposal can support reliable work across three layers at
+once:</p>
+<ul>
+<li>the <strong>language core</strong>,</li>
+<li>the <strong>runtime and memory system</strong>, and</li>
+<li>the <strong>harness/product layer</strong> built above it.</li>
+</ul>
+<h2 id="updated-comparison-matrix">2. Updated comparison matrix</h2>
+<p>The original 34-dimension matrix remains useful, but the v2.1
+revision highlights the dimensions most affected by the new comparator
+set and the memory-engineering addendum.</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Rust</th>
+<th>Ruby</th>
+<th>Swift</th>
+<th>Garnet v2.1</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Default memory model</td>
+<td>Ownership + borrowing</td>
+<td>Garbage collection</td>
+<td>ARC for reference types</td>
+<td>ARC default in managed mode; ownership in safe mode</td>
+</tr>
+<tr>
+<td>Performance ceiling</td>
+<td>Near C/C++</td>
+<td>Modest, improving with JIT</td>
+<td>High, with managed defaults</td>
+<td>Managed mode near Go/Swift class; safe mode near Rust target</td>
+</tr>
+<tr>
+<td>Concurrency posture</td>
+<td>Compile-time race freedom</td>
+<td>GVL + experimental actors</td>
+<td>Actors + Sendable</td>
+<td>Typed actors + structured async + safe hot paths</td>
+</tr>
+<tr>
+<td>Syntax posture</td>
+<td>Explicit and rigorous</td>
+<td>Humane and expressive</td>
+<td>Moderate, mainstream ergonomic</td>
+<td>Ruby-leaning managed surface with explicit safe boundary</td>
+</tr>
+<tr>
+<td>Toolchain coherence</td>
+<td>Cargo</td>
+<td>RubyGems + Bundler + external tools</td>
+<td>SwiftPM + Xcode</td>
+<td>Unified CLI should be part of the product</td>
+</tr>
+<tr>
+<td>Metaprogramming</td>
+<td>Compile-time macros</td>
+<td>Runtime reflection and DSLs</td>
+<td>Limited compared with Ruby</td>
+<td>Compile-time macros plus explicit <code>@dynamic</code> escape
+hatch</td>
+</tr>
+<tr>
+<td>Agent-memory fit</td>
+<td>Great for hot paths</td>
+<td>Great for orchestration fluency</td>
+<td>Strong precedent for managed isolation</td>
+<td>Designed around memory units, traces, and shared memory core</td>
+</tr>
+</tbody>
+</table>
+<figure>
+<img src="assets/garnet_positioning_matrix_v2_1.png" style="width:72.0%"
+alt="Positioning across key comparators" />
+<figcaption aria-hidden="true">Positioning across key
+comparators</figcaption>
+</figure>
+<h2 id="swift-as-the-missing-production-comparator">3. Swift as the
+missing production comparator</h2>
+<p>Swift matters because it validates the part of the Garnet proposal
+that neither Rust nor Ruby can validate alone.</p>
+<h3 id="what-swift-proves">3.1 What Swift proves</h3>
+<p>Swift shows that:</p>
+<ul>
+<li><strong>automatic reference counting can be predictable and
+serious</strong> rather than a toy abstraction;</li>
+<li><strong>actors and <code>Sendable</code> can move concurrency
+discipline into the mainstream</strong>;</li>
+<li><strong>package tooling and language ergonomics can reinforce one
+another</strong> rather than competing for attention.</li>
+</ul>
+<p><strong>v1.0 spec materialization (added 2026-04-16, Phase
+1B).</strong> Each of the three Swift contributions now has a concrete
+companion section in the Mini-Spec:</p>
+<table>
+<colgroup>
+<col style="width: 31%" />
+<col style="width: 38%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Swift contribution</th>
+<th>Mini-Spec v1.0 section</th>
+<th>Garnet refinement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ARC predictable + serious</td>
+<td>§4.5 (cycle-detection algorithm)</td>
+<td>Bacon–Rajan with kind-aware root partitioning — closes the
+cycle-leak gap that Swift’s mainline ARC leaves to programmer-inserted
+<code>weak</code>/<code>unowned</code></td>
+</tr>
+<tr>
+<td>Actors + <code>Sendable</code> mainstream</td>
+<td>§9.4 (Sendable-equivalent)</td>
+<td>Declaration-site enforcement (one diagnostic per protocol
+vs. Swift’s one-per-send-site) — same soundness, better diagnostic
+locality</td>
+</tr>
+<tr>
+<td>Tooling + language coherence</td>
+<td>§16 (single-CLI summary) + Paper VII (full spec)</td>
+<td>One <code>garnet</code> binary with consistent UX across
+new/init/build/run/test/check/fmt/repl/doc/audit/verify/convert</td>
+</tr>
+</tbody>
+</table>
+<p>This makes the Swift inheritance claim falsifiable at the spec layer:
+the §4.5 ARC theorem (Mini-Spec §4.5.5), the Actor Isolation Theorem
+(Mini-Spec §9.4.8 / Paper V Addendum §D.2), and the single-CLI principle
+(Mini-Spec §16.1) are now load-bearing normative claims a reviewer can
+scrutinize point-by-point.</p>
+<h3 id="what-swift-does-not-solve-for-garnet">3.2 What Swift does not
+solve for Garnet</h3>
+<p>Swift does not replace Rust or Ruby in the argument.</p>
+<ul>
+<li>It does not match Rust’s ownership semantics as the core safe-mode
+substrate.</li>
+<li>It does not match Ruby’s metaprogramming range, DSL density, or REPL
+and orchestration culture.</li>
+<li>It does not by itself answer the agent-memory and harness-design
+question.</li>
+</ul>
+<h3 id="why-the-comparator-changes-the-proposal">3.3 Why the comparator
+changes the proposal</h3>
+<p>The addition of Swift removes a blind spot in the original corpus.
+Without Swift, the managed side risked sounding like a hand-wavy
+compromise between GC languages and systems languages. With Swift in the
+frame, Garnet can argue from a real precedent: a language can have
+approachable syntax, automatic memory management, serious concurrency
+isolation, and mainstream tooling discipline without giving up
+ambition.</p>
+<h2 id="from-llm-native-to-agent-native">4. From LLM-native to
+agent-native</h2>
+<p>The v2.0 corpus argued that Garnet should be readable and generable
+by modern coding models. The v2.1 revision accepts that point, but makes
+a larger move: <strong>LLM-native is no longer enough.</strong> The
+stronger claim is that Garnet should be
+<strong>agent-native</strong>.</p>
+<p>That means the proposal must represent more than code syntax. It must
+also account for:</p>
+<ul>
+<li>what the system remembers,</li>
+<li>how memory is stored and retrieved,</li>
+<li>how workflow traces become reusable,</li>
+<li>how tools and policies are described,</li>
+<li>and how the harness around the model keeps the work reliable.</li>
+</ul>
+<h3 id="memory-primitives">4.1 Memory primitives</h3>
+<p>The memory-engineering transcripts supplied for this revision make a
+four-part distinction that fits Garnet well:</p>
+<ul>
+<li><strong>working memory</strong> for short-lived execution context
+and semantic caches,</li>
+<li><strong>episodic memory</strong> for interaction history and session
+summaries,</li>
+<li><strong>semantic memory</strong> for facts, entities, and knowledge
+stores,</li>
+<li><strong>procedural memory</strong> for workflow traces, skills, and
+tool schemas.</li>
+</ul>
+<p>The language therefore benefits from first-class memory
+declarations:</p>
+<pre class="garnet"><code>memory episodic SessionLog   : EpisodeStore&lt;Interaction&gt;
+memory semantic Knowledge    : VectorIndex&lt;Fact&gt;
+memory procedural Workflows  : WorkflowStore&lt;Trace&gt;
+
+agent BuildAgent uses SessionLog, Knowledge, Workflows
+  tool deploy(input: BuildSpec) -&gt; DeployResult
+  workflow ReleaseFlow persists Trace</code></pre>
+<h3 id="dual-mode-architecture-updated">4.2 Dual-mode architecture,
+updated</h3>
+<p>In managed mode, Garnet uses ARC with cycle-awareness and keeps
+syntax close to Ruby-like fluency. In safe mode (<code>@safe</code>),
+ownership and borrowing apply directly to memory units, buffers, and
+typed messages. The compiler/runtime boundary provides the bridges,
+diagnostics, and metadata hooks needed to move between those two worlds
+without pretending they are identical.</p>
+<h2 id="what-belongs-in-the-language-core-vs.-the-runtime">5. What
+belongs in the language core vs. the runtime</h2>
+<p>A stronger proposal needs a sharper boundary. The v2.1 corpus
+therefore divides claims into the following categories.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Garnet should standardize</th>
+<th>Garnet should leave flexible</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Language core</td>
+<td>Managed vs. safe mode boundary; typed actors; memory primitive
+syntax; explicit dynamic escape hatches</td>
+<td>Exact storage engines; exact compression algorithms; vendor-specific
+APIs</td>
+</tr>
+<tr>
+<td>Compiler/runtime</td>
+<td>Diagnostics; bridging; scheduling hooks; runtime metadata
+interfaces</td>
+<td>Concrete serving stack; model-specific policies; backend-specific
+optimizers</td>
+</tr>
+<tr>
+<td>Memory system</td>
+<td>Interface expectations for memory units and traces</td>
+<td>Whether storage is relational, vector, graph, or hybrid in a given
+implementation</td>
+</tr>
+<tr>
+<td>Harness/product layer</td>
+<td>Reference architecture and design guidance</td>
+<td>UX, approvals flow, deployment surface, enterprise packaging</td>
+</tr>
+</tbody>
+</table>
+<h3 id="turboquant-boundary">5.1 TurboQuant boundary</h3>
+<p>Google Research’s TurboQuant work is relevant because it shows how
+severe model-side memory pressure is becoming. It motivates Garnet’s
+runtime direction. It should <strong>not</strong> be treated as a hard
+semantic guarantee of the language itself. The proposal is stronger when
+it says:</p>
+<ul>
+<li>the language may expose <strong>annotations or runtime
+hooks</strong> compatible with compression-aware implementations,</li>
+<li>the runtime may exploit serving innovations as they mature,</li>
+<li>but the semantics of Garnet do not depend on one specific
+compression method.</li>
+</ul>
+<h2 id="what-garnet-is-what-garnet-is-not">6. What Garnet is / what
+Garnet is not</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Garnet is</th>
+<th>Garnet is not</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A dual-mode language-platform proposal</td>
+<td>Merely a chat frontend or CLI wrapper</td>
+</tr>
+<tr>
+<td>A platform for safe, expressive, memory-aware software</td>
+<td>A claim that every aspect of agent infrastructure belongs in
+syntax</td>
+</tr>
+<tr>
+<td>A migration-aware design with Rust, C, and Ruby interop</td>
+<td>A guarantee that one runtime strategy will fit all model stacks</td>
+</tr>
+<tr>
+<td>A substrate for harnesses and long-horizon execution</td>
+<td>A claim that it should replace every existing language at once</td>
+</tr>
+<tr>
+<td>A research program with clear implementation phases</td>
+<td>A finished compiler product today</td>
+</tr>
+</tbody>
+</table>
+<h2 id="updated-product-wedge-and-market-framing">7. Updated product
+wedge and market framing</h2>
+<p>The strongest commercial reading of Garnet remains cautious but
+promising. Mordor Intelligence’s January 2026 update places the software
+development tools market at <strong>USD 7.44B in 2026</strong> and
+<strong>USD 15.72B by 2031</strong>. That scale is meaningful, but new
+languages do not win by market size alone. They win when they pair
+technical identity with either a killer application or a backer strong
+enough to manufacture ecosystem gravity.</p>
+<p>Garnet’s sharper wedge is therefore <strong>agent infrastructure with
+a shared memory core and migration-friendly hot paths</strong>.</p>
+<figure>
+<img src="assets/dev_tools_market_growth_v2_1.png" style="width:66.0%"
+alt="Software development tools market" />
+<figcaption aria-hidden="true">Software development tools
+market</figcaption>
+</figure>
+<h3 id="scenario-framing">7.1 Scenario framing</h3>
+<p>The v2.1 redline keeps the original market estimates but treats
+stretch cases as scenarios rather than settled forecasts.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Description</th>
+<th>Five-year implication</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Base research case</td>
+<td>Strong thesis, prototypes, early community traction</td>
+<td>No reliable revenue claim yet</td>
+</tr>
+<tr>
+<td>Focused wedge case</td>
+<td>Harness runtime + memory-core SDK gain enterprise traction in a
+niche</td>
+<td>Plausible low-to-mid tens of millions if adoption is real</td>
+</tr>
+<tr>
+<td>Mature ecosystem case</td>
+<td>Garnet becomes a top-15 ecosystem with real tooling, training, and
+hosting layers</td>
+<td>Large upside, but only with exceptional execution or backing</td>
+</tr>
+</tbody>
+</table>
+<h2 id="a-more-credible-implementation-roadmap">8. A more credible
+implementation roadmap</h2>
+<p>The prior corpus ended close to the compiler question. The v2.1 pass
+makes the intermediate work explicit.</p>
+<h3 id="phase-1---formalize-the-model">Phase 1 - formalize the
+model</h3>
+<ul>
+<li>specify memory units, message protocols, and mode boundaries;</li>
+<li>define what is syntax, what is runtime metadata, and what is
+implementation-specific.</li>
+</ul>
+<h3 id="phase-2---prototype-the-language-core">Phase 2 - prototype the
+language core</h3>
+<ul>
+<li>parser + AST for a narrow subset;</li>
+<li>managed-mode interpreter and REPL;</li>
+<li>safe-mode lowering path to Rust or a Rust-like IR.</li>
+</ul>
+<h3 id="phase-3---build-the-platform-wedge">Phase 3 - build the platform
+wedge</h3>
+<ul>
+<li>reference memory core;</li>
+<li>memory-manager SDK;</li>
+<li>harness runtime with approvals, traces, and policies;</li>
+<li>Rust/C interop from the beginning.</li>
+</ul>
+<h3 id="phase-4---validate-the-killer-application">Phase 4 - validate
+the killer application</h3>
+<ul>
+<li>choose a domain where the shared memory core matters enough to
+create pull;</li>
+<li>test whether Garnet is more compelling there than TypeScript plus
+tooling, Elixir plus BEAM, or Rust plus a custom harness.</li>
+</ul>
+<h2 id="conclusion">Conclusion</h2>
+<p>The v2.1 redline does not overturn the Garnet thesis. It strengthens
+it. Swift clarifies the managed side. The memory transcripts clarify the
+runtime side. TurboQuant sharpens the systems argument without being
+overclaimed. The result is a narrower, more credible, and more
+product-ready proposal:</p>
+<blockquote>
+<p><strong>Garnet is strongest as a proposed dual-mode, agent-native
+language platform with Ruby-like expressive surfaces, Rust-like safe hot
+paths, Swift-like managed precedent, and a shared memory-core
+architecture that can support long-horizon agent systems.</strong></p>
+</blockquote>
+<h2 id="selected-references">Selected references</h2>
+<ol type="1">
+<li>Swift.org. <em>Documentation</em>.
+https://www.swift.org/documentation/<br />
+</li>
+<li>Apple Developer Documentation. <em>Sendable</em>.
+https://developer.apple.com/documentation/swift/sendable<br />
+</li>
+<li>Google Research. <em>TurboQuant: Redefining AI efficiency with
+extreme compression</em>. March 24, 2026.
+https://research.google/blog/turboquant-redefining-ai-efficiency-with-extreme-compression/<br />
+</li>
+<li>Ruby. <em>Official Ruby FAQ</em>.
+https://www.ruby-lang.org/en/documentation/faq/1/<br />
+</li>
+<li>Create T3 App. <em>Introduction</em>.
+https://create.t3.gg/en/introduction<br />
+</li>
+<li>TypeScript Team. <em>A 10x Faster TypeScript</em>. March 11, 2025.
+https://devblogs.microsoft.com/typescript/typescript-native-port/<br />
+</li>
+<li>TypeScript Team. <em>Progress on TypeScript 7 - December 2025</em>.
+December 2, 2025.
+https://devblogs.microsoft.com/typescript/progress-on-typescript-7-december-2025/<br />
+</li>
+<li>Mordor Intelligence. <em>Software Development Tools Market Size and
+Share Analysis 2031</em>. Updated January 2026.
+https://www.mordorintelligence.com/industry-reports/software-development-tools-market<br />
+</li>
+<li>User-supplied April 2026 transcripts on memory engineering, memory
+units, long-context retrieval, and harness design.</li>
+</ol>
+</div>
+
+<script>
+// ================================================================
+// DOC VIEWER — Fixed Nav + Fade-In Content
+// ================================================================
+(function(){
+  var cv = document.getElementById('cv');
+  var tabs = document.querySelectorAll('#nav .tab');
+  var content = {};
+  var active = null;
+
+  // Preload all paper content
+  var papers = ['minispec','synthesis','novel','ladder'];
+  papers.forEach(function(id){
+    content[id] = '';
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', id + '.html', true);
+    xhr.onload = function(){
+      content[id] = xhr.responseText;
+      if(papers.indexOf(active) >= 0) show(active);
+    };
+    xhr.send();
+  });
+
+  // Show a paper with fade animation
+  function show(id){
+    active = id;
+    cv.classList.remove('show');
+    cv.classList.add('hidden');
+    setTimeout(function(){
+      cv.innerHTML = content[id] || '<p style="color:var(--ink-muted)">Loading...</p>';
+      // Style any code blocks
+      var pres = cv.querySelectorAll('pre code[class]');
+      for(var i=0;i<pres.length;i++){pres[i].removeAttribute('class');}
+      // Fix links
+      var links = cv.querySelectorAll('a');
+      for(var i=0;i<links.length;i++){links[i].setAttribute('target','_blank');}
+      cv.classList.remove('hidden');
+      cv.classList.add('show');
+      window.scrollTo(0,0);
+    }, active?'250':0);
+    // Update tab state
+    tabs.forEach(function(t){t.classList.toggle('active',t.getAttribute('data-id')===id);});
+  }
+
+  // Handle tab clicks
+  tabs.forEach(function(tab){
+    tab.addEventListener('click',function(e){
+      e.preventDefault();
+      var id = tab.getAttribute('data-id');
+      if(content[id]) show(id);
+    });
+  });
+
+  // Auto-detect from URL hash
+  var hash = window.location.hash.replace('#','');
+  if(papers.indexOf(hash)>=0 && content[hash]) show(hash);
+  else show('minispec');
+
+  // Handle browser back/forward
+  window.addEventListener('hashchange',function(){
+    var h = window.location.hash.replace('#','');
+    if(papers.indexOf(h)>=0 && content[h]) show(h);
+  });
+})();
+</script>
+</body>
+</html>

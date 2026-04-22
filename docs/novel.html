@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Paper VI — Novel Frontiers</title>
+<meta name="theme-color" content="#9C2B2E">
+<meta name="robots" content="noindex">
+<style>
+/* ═══ Garnet Design Tokens ═══ */
+:root{--bg:#0A0A0F;--bg-soft:#121218;--bg-code:#18181B;--garnet:#9C2B2E;--garnet-2:#B0303A;--gold:#E5C07B;--rust:#B7410E;--ruby:#CC0000;--ink:#E8E8E8;--ink-soft:#C8C8D0;--ink-muted:#6272A4;--rule:#3A3A45;--code-fg:#F8F8F2;--code-key:#FF79C6;--code-str:#50FA7B;--code-com:#6272A4;--code-num:#BD93F9;--serif:'Georgia','Source Serif Pro',serif;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--mono:'SF Mono','Menlo','Consolas','JetBrains Mono',monospace;--maxw:900px;--nav-h:52px}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;-webkit-font-smoothing:antialiased}
+a{color:var(--gold);text-decoration:none}a:hover{color:var(--garnet-2);transition:color .2s}
+::selection{background:var(--garnet);color:var(--ink)}
+
+/* ═══ Fixed Nav Banner ═══ */
+#nav{position:fixed;top:0;left:0;right:0;z-index:100;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(10,10,15,0.92);border-bottom:1px solid var(--rule);height:var(--nav-h)}
+#nav .inner{max-width:1100px;margin:0 auto;padding:0 20px;display:flex;align-items:center;height:100%;gap:4px}
+#nav .brand{font-family:var(--serif);font-weight:bold;letter-spacing:0.18em;color:var(--ink);font-size:15px;margin-right:24px;white-space:nowrap}
+#nav .brand .a{color:var(--garnet)}
+#nav .tabs{display:flex;gap:0;overflow-x:auto;-webkit-overflow-scrolling:touch;flex:1}
+#nav .tab{padding:14px 16px;color:var(--ink-muted);font-size:13px;white-space:nowrap;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;user-select:none;text-decoration:none;font-family:var(--sans)}
+#nav .tab:hover{color:var(--ink)}
+#nav .tab.active{color:var(--garnet);border-bottom-color:var(--garnet);font-weight:600}
+#nav .back{color:var(--ink-muted);font-size:13px;margin-left:12px;white-space:nowrap;transition:color .2s;display:flex;align-items:center;gap:4px}
+#nav .back:hover{color:var(--gold)}
+
+/* ═══ Content Area ═══ */
+#cv{max-width:var(--maxw);margin:0 auto;padding:calc(var(--nav-h) + 40px) 24px 80px;opacity:0;transform:translateY(16px);transition:opacity .6s ease, transform .6s ease}
+#cv.show{opacity:1;transform:translateY(0)}
+#cv.hidden{opacity:0;transform:translateY(-8px);position:absolute;pointer-events:none}
+
+/* ═══ Doc Typography ═══ */
+#cv h1{font-family:var(--serif);font-size:clamp(28px,4vw,40px);color:var(--ink);margin:0 0 8px;letter-spacing:0.02em;font-weight:bold}
+#cv h2{font-family:var(--serif);font-size:clamp(22px,3vw,30px);color:var(--ink);margin:48px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--rule)}
+#cv h3{font-size:20px;color:var(--gold);margin:32px 0 12px;letter-spacing:0.04em}
+#cv h4{font-size:17px;color:var(--ink);margin:24px 0 8px}
+#cv p{color:var(--ink-soft);margin:12px 0;line-height:1.7}
+#cv ul,#cv ol{color:var(--ink-soft);margin:12px 0;padding-left:24px}
+#cv li{margin:4px 0;line-height:1.6}
+#cv strong{color:var(--ink)}
+#cv em{color:var(--ink-soft);font-style:italic}
+#cv blockquote{border-left:3px solid var(--garnet);margin:20px 0;padding:14px 20px;background:rgba(156,43,46,0.05);border-radius:0 8px 8px 0;color:var(--ink-soft)}
+#cv blockquote p{color:inherit}
+#cv code{background:var(--bg-code);color:var(--code-fg);padding:2px 7px;border-radius:4px;font-family:var(--mono);font-size:0.88em}
+#cv pre{background:var(--bg-code);border:1px solid var(--rule);border-radius:10px;padding:18px 22px;margin:18px 0;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.65;color:var(--code-fg)}
+#cv pre code{background:none;padding:0;color:inherit}
+#cv table{border-collapse:collapse;width:100%;margin:20px 0;font-size:14px}
+#cv th,#cv td{border:1px solid var(--rule);padding:10px 14px;text-align:left}
+#cv th{background:rgba(229,192,123,0.06);color:var(--gold);font-weight:600}
+#cv td{background:var(--bg-soft);color:var(--ink-soft)}
+#cv hr{border:none;border-top:1px solid var(--rule);margin:32px 0}
+
+/* ═══ Responsive ═══ */
+@media(max-width:700px){
+  #nav .brand{font-size:13px;margin-right:12px}
+  #nav .tab{padding:14px 10px;font-size:12px}
+  #nav .back span{display:none}
+  #cv{padding:calc(var(--nav-h) + 24px) 14px 60px}
+  #cv pre{padding:14px 16px;font-size:12px}
+}
+</style>
+</head>
+<body>
+
+<div id="nav">
+  <div class="inner">
+    <div class="brand">G<span class="a">A</span>RNET</div>
+    <div class="tabs">
+      <a class="tab" data-id="minispec">Mini-Spec</a>
+      <a class="tab" data-id="synthesis">Synthesis</a>
+      <a class="tab active" data-id="novel">Novel Frontiers</a>
+      <a class="tab" data-id="ladder">Implementation</a>
+    </div>
+    <a class="back" href="/">&larr; <span>Back to garnet-lang.org</span></a>
+  </div>
+</div>
+
+<div id="cv"><h1
+id="paper-vi-garnets-novel-frontiers-seven-contributions-to-programming-language-theory-and-practice">Paper
+VI — Garnet’s Novel Frontiers: Seven Contributions to Programming
+Language Theory and Practice</h1>
+<p><strong>Subtitle:</strong> LLM-Native Compilation, the Progressive
+Type Spectrum, and the Compiler-as-Agent Architecture
+<strong>Authors:</strong> Jon — Island Development Crew; with synthesis
+by Claude Opus 4.6 <strong>Date:</strong> April 16, 2026 <strong>Target
+venues:</strong> PLDI 2027 (companion to Paper V), OOPSLA 2027, ASPLOS
+2027 <strong>Anchor:</strong> <em>“Where there is no vision, the people
+perish.” — Proverbs 29:18</em></p>
+<hr />
+<h2 id="abstract">Abstract</h2>
+<p>This paper presents seven novel contributions arising from the Garnet
+language platform design. While Papers I–V established Garnet’s
+theoretical foundations (Rust/Ruby structural complementarity, dual-mode
+architecture, formal type-theoretic grounding, and agent-native memory
+engineering), this paper identifies contributions that extend beyond
+existing programming language research into genuinely unexplored
+territory. We formalize: (1) LLM-native syntax design as a measurable
+language property; (2) the progressive type-disclosure spectrum from
+fully dynamic to affine-typed within a single coherent grammar; (3) the
+compiler-as-agent architecture where the compiler uses the language’s
+own memory primitives to learn from its compilation history; (4)
+kind-aware memory allocation directed by language-level type tags; (5)
+automatic bidirectional error-model bridging across a type-system mode
+boundary; (6) hot-reload mode boundaries for live-updating orchestration
+code without restarting performance-critical paths; and (7)
+deterministic reproducible builds as a language-level guarantee with
+provenance manifests. Each contribution is positioned against existing
+literature, its novelty claim is precisely bounded, and its
+falsifiability conditions are stated.</p>
+<hr />
+<h2 id="introduction">1. Introduction</h2>
+<p>The four-model consensus that grounds the Garnet project (Claude Opus
+4.6, GPT-5.4 Pro, Grok 4.2, Gemini 3.1 Pro Deep Research) converged on
+eight architectural points that define Garnet’s design. Papers I–V built
+the research foundation on those eight points. This paper asks a
+different question: <strong>what does Garnet make possible that no
+existing language offers?</strong></p>
+<p>The seven contributions below are not speculative features. Each one
+emerges directly from design decisions already present in the Garnet
+specification (Mini-Spec v0.3) and compiler architecture (Compiler
+Architecture Spec v1.0). They are, however, novel in that no existing
+production language or academic prototype combines them in the way
+Garnet’s dual-mode architecture enables.</p>
+<hr />
+<h2 id="contribution-1-llm-native-syntax-design">2. Contribution 1:
+LLM-Native Syntax Design</h2>
+<h3 id="the-problem">2.1 The problem</h3>
+<p>Large Language Models generate code with error rates that vary
+dramatically across languages. Empirically, LLMs produce correct Rust
+code at significantly lower rates than correct Python or TypeScript code
+— primarily because Rust’s lifetime annotations and borrow-checker
+interactions require tracking complex state across distant code blocks,
+a task that exceeds transformer attention patterns.</p>
+<p>No programming language has been designed with LLM comprehension and
+generation as a first-class constraint. Languages are designed for human
+readability, machine parseability, or both — but “AI parseability” is a
+novel axis.</p>
+<h3 id="garnets-approach">2.2 Garnet’s approach</h3>
+<p>Garnet’s syntax is designed to maximize the probability that an LLM
+generates correct code on the first attempt. The design principles
+are:</p>
+<ol type="1">
+<li><p><strong>Semantic beacons.</strong> Keywords like
+<code>@safe</code>, <code>@dynamic</code>, <code>memory episodic</code>,
+<code>actor</code>, <code>protocol</code>, <code>def</code>,
+<code>fn</code> serve as unambiguous semantic markers. An LLM reading a
+Garnet file can determine the mode, intent, and constraints of any code
+block from its opening keyword alone — no multi-line lookahead
+required.</p></li>
+<li><p><strong>Predictable patterns.</strong> Every block is
+<code>{ ... }</code>. Every function in managed mode starts with
+<code>def</code>. Every function in safe mode starts with
+<code>fn</code>. Every actor starts with <code>actor</code>. Every
+memory declaration starts with <code>memory</code>. An LLM trained on
+Garnet can predict with near-certainty what syntactic category follows
+each keyword.</p></li>
+<li><p><strong>Progressive annotation density.</strong> Level 0 Garnet
+(dynamic, no annotations) is as simple as Python. Level 3 (affine, full
+annotations) is as precise as Rust. An LLM can generate Level 0 code for
+rapid prototyping and Level 3 code when safety is required, with each
+level’s syntax being a strict superset of the previous. The LLM never
+needs to choose between two incompatible syntaxes — it simply adds more
+constraints.</p></li>
+<li><p><strong>Explicit error model.</strong> Managed mode uses
+<code>try</code>/<code>rescue</code> (exception-style). Safe mode uses
+<code>Result&lt;T,E&gt;</code> with <code>?</code> (value-style). An LLM
+never needs to decide which error model to use — the mode annotation
+tells it.</p></li>
+</ol>
+<h3 id="falsifiable-claim">2.3 Falsifiable claim</h3>
+<p><strong>Hypothesis:</strong> An LLM fine-tuned on Garnet code will
+achieve a higher correct-generation rate (measured by pass@1 on a
+standardized benchmark) than the same LLM fine-tuned on equivalent Rust
+code, for programs of comparable complexity.</p>
+<p><strong>Experimental protocol:</strong> Create a benchmark of 500
+programming tasks (200 managed-mode, 200 safe-mode, 100 mixed-mode).
+Generate solutions using a state-of-the-art LLM. Measure pass@1
+(first-attempt correctness after compilation + test suite). Compare
+Garnet pass@1 against Rust pass@1 for safety-equivalent tasks and
+against Ruby pass@1 for ergonomics-equivalent tasks.</p>
+<h3 id="prior-art-and-novelty-boundary">2.4 Prior art and novelty
+boundary</h3>
+<p><strong>Prior art:</strong> There is extensive work on LLM code
+generation benchmarks (HumanEval, MBPP, SWE-bench) and on evaluating
+LLMs across languages. There is limited work on designing languages FOR
+LLM generation — Mojo’s documentation mentions “AI-first” but does not
+formalize it.</p>
+<p><strong>Novelty claim:</strong> Garnet is the first language to treat
+LLM-native syntax as a measurable, testable design constraint with a
+falsifiable correctness hypothesis.</p>
+<hr />
+<h2 id="contribution-2-the-progressive-type-disclosure-spectrum">3.
+Contribution 2: The Progressive Type-Disclosure Spectrum</h2>
+<h3 id="the-problem-1">3.1 The problem</h3>
+<p>Existing gradual typing systems (TypeScript, Python/mypy, Sorbet for
+Ruby) provide a binary choice: annotated or not. Existing ownership
+systems (Rust) provide no dynamic option. No language offers a
+continuous spectrum from fully dynamic to affine-typed.</p>
+<h3 id="garnets-approach-1">3.2 Garnet’s approach</h3>
+<p>Garnet defines four type-discipline levels, each a strict superset of
+the previous:</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Level</th>
+<th>Name</th>
+<th>Annotations</th>
+<th>Guarantees</th>
+<th>Closest Existing Analog</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Dynamic</td>
+<td>None</td>
+<td>Runtime type errors only</td>
+<td>Ruby, Python</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Gradual</td>
+<td>Optional hints</td>
+<td>Compile-time where annotated</td>
+<td>TypeScript (strict: false)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Static</td>
+<td>All types specified</td>
+<td>Full compile-time safety</td>
+<td>TypeScript (strict: true), Go</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Affine</td>
+<td>Types + ownership</td>
+<td>Memory safety + data-race freedom</td>
+<td>Rust</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The key property:</strong> A program valid at Level N is
+valid at Level N+1 with zero modifications (the compiler infers tighter
+constraints). A program at Level N+1 is valid at Level N (extra
+annotations become documentation). This bidirectional compatibility is
+the progressive disclosure guarantee.</p>
+<h3 id="formal-basis">3.3 Formal basis</h3>
+<p>Paper V defines λ_managed (Levels 0–2) and λ_safe (Level 3) as
+distinct sub-calculi with a bridging judgment. The progressive
+disclosure spectrum maps onto these:</p>
+<ul>
+<li>Levels 0–2 inhabit λ_managed. The difference is annotation density:
+Level 0 uses <code>Dyn</code> for all types, Level 1 uses
+<code>Dyn</code> for unannotated positions and concrete types for
+annotated ones, Level 2 requires all positions to be concretely
+typed.</li>
+<li>Level 3 transitions to λ_safe with affine rules. The transition is
+at the module boundary (<code>@safe</code>), not at the expression
+level.</li>
+</ul>
+<p>The formal guarantee: for any program P at Level N, if P type-checks
+at Level N, then P also type-checks at Level N-1 (relaxation is always
+safe) AND at Level N+1 (strengthening is always sound, because inference
+adds constraints, never removes them).</p>
+<h3 id="falsifiable-claim-1">3.4 Falsifiable claim</h3>
+<p><strong>Hypothesis:</strong> The progressive type spectrum reduces
+the barrier to adopting memory-safe programming practices. Measured by:
+developers who start at Level 0 and incrementally annotate to Level 2/3
+achieve comparable safety outcomes to developers who start at Level 3,
+with lower time-to-first-correct-program.</p>
+<h3 id="prior-art-and-novelty-boundary-1">3.5 Prior art and novelty
+boundary</h3>
+<p><strong>Prior art:</strong> Siek &amp; Taha’s gradual typing (2006),
+Garcia et al.’s Abstracting Gradual Typing (POPL 2016),
+New/Licata/Ahmed’s Gradual Type Theory (POPL 2019). Mojo’s progressive
+disclosure (Python <code>def</code> → typed <code>fn</code>). Rust’s
+ownership model. Swift’s optional chaining and progressive
+strictness.</p>
+<p><strong>Novelty claim:</strong> No existing language provides a
+formally continuous spectrum from dynamic typing through gradual typing
+to affine typing within one grammar, with the bidirectional
+compatibility guarantee. TypeScript spans Levels 0–2 but has no Level 3.
+Rust spans Levels 2–3 but has no Levels 0–1. Mojo spans Levels 0–2 for
+Python compatibility but has no affine types. Garnet is the first to
+span all four.</p>
+<hr />
+<h2 id="contribution-3-the-compiler-as-agent-architecture">4.
+Contribution 3: The Compiler-as-Agent Architecture</h2>
+<h3 id="the-problem-2">4.1 The problem</h3>
+<p>Compilers are stateless tools — they consume source code and produce
+artifacts with no memory of past compilations beyond incremental caches.
+No compiler uses episodic memory (what optimizations worked previously),
+semantic memory (knowledge about the codebase’s patterns), or procedural
+memory (compilation strategies) in the way that Garnet defines these
+concepts for user programs.</p>
+<h3 id="garnets-approach-2">4.2 Garnet’s approach</h3>
+<p>The Garnet compiler can use Garnet’s own four memory types to improve
+its own performance over time:</p>
+<ul>
+<li><strong>Working memory:</strong> The current compilation unit —
+symbol tables, type contexts, in-progress AST</li>
+<li><strong>Episodic memory:</strong> Compilation history — which
+optimization passes produced the largest speedups on similar code
+patterns in past builds</li>
+<li><strong>Semantic memory:</strong> Knowledge about the codebase —
+which modules are hot, which functions are inlined most often, which
+types dominate allocation</li>
+<li><strong>Procedural memory:</strong> Compilation strategies —
+inlining heuristics that have been validated by benchmark,
+monomorphization decisions that reduced code size without losing
+performance</li>
+</ul>
+<h3 id="concrete-mechanism">4.3 Concrete mechanism</h3>
+<pre><code>Compilation N:
+  source → [compile] → artifact + compilation trace
+
+Compilation N+1:
+  source + diff(N, N+1) + compilation trace(N) → [compile with hints] → artifact + trace</code></pre>
+<p>The compiler maintains a <code>.garnet-cache/</code> directory
+containing: - <code>episodes.log</code> — timestamped compilation events
+with optimization decisions and their outcomes -
+<code>knowledge.db</code> — semantic index of the codebase (most-called
+functions, hottest loops, largest types) - <code>strategies.db</code> —
+validated compilation strategies (e.g., “inlining
+<code>fast_path::process</code> always reduces p99 latency”)</p>
+<p>On subsequent compilations, the compiler consults these stores to
+inform optimization decisions. This is NOT profile-guided optimization
+(PGO) — PGO uses runtime profiling data. This uses the compiler’s own
+compilation history.</p>
+<h3 id="falsifiable-claim-2">4.4 Falsifiable claim</h3>
+<p><strong>Hypothesis:</strong> A compilation-history-aware Garnet
+compiler produces measurably better-optimized output after 10+
+compilations of the same codebase than a stateless compiler, measured
+by: (a) compilation speed (less time spent on optimization passes that
+were historically unproductive), and (b) output quality (better inlining
+decisions based on past outcomes).</p>
+<h3 id="prior-art-and-novelty-boundary-2">4.5 Prior art and novelty
+boundary</h3>
+<p><strong>Prior art:</strong> PGO (profile-guided optimization) in GCC,
+LLVM, and the JVM. JIT compilation in V8, HotSpot, YJIT.
+Machine-learning-based compiler optimization (CompilerGym, MLGO).
+AutoFDO (automatic feedback-directed optimization).</p>
+<p><strong>Novelty claim:</strong> None of these systems use the
+compiler’s own compilation trace as a memory source. PGO uses runtime
+profiles. JITs use runtime execution counts. ML-based approaches train
+offline models. Garnet’s compiler-as-agent uses its own episodic,
+semantic, and procedural memory — making it the first compiler that
+genuinely learns from its own past, using the same memory model it
+compiles for user programs. The self-referential nature (compiler uses
+the language’s own memory primitives) is the novelty.</p>
+<hr />
+<h2 id="contribution-4-kind-aware-memory-allocation">5. Contribution 4:
+Kind-Aware Memory Allocation</h2>
+<h3 id="the-problem-3">5.1 The problem</h3>
+<p>All general-purpose allocators treat all allocations identically. The
+programmer knows that some data is short-lived (scratch buffers), some
+is append-only (logs), some is read-heavy (lookup tables), and some is
+versioned (workflow state) — but the allocator does not. The programmer
+cannot convey allocation intent to the runtime without reaching for
+specialized data structures.</p>
+<h3 id="garnets-approach-3">5.2 Garnet’s approach</h3>
+<p>Garnet’s <code>memory</code> declarations carry kind information
+(<code>working</code>, <code>episodic</code>, <code>semantic</code>,
+<code>procedural</code>) that the compiler passes to the allocator:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Memory Kind</th>
+<th>Compiler-Selected Allocator</th>
+<th>Access Pattern</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Working</td>
+<td><strong>Arena allocator</strong> — bulk alloc, bulk free at scope
+exit</td>
+<td>High write, short-lived</td>
+</tr>
+<tr>
+<td>Episodic</td>
+<td><strong>Append-only log</strong> — sequential writes, immutable
+after write</td>
+<td>Sequential write, range read</td>
+</tr>
+<tr>
+<td>Semantic</td>
+<td><strong>Persistent allocator</strong> — structural sharing, COW
+nodes</td>
+<td>Read-heavy, rare mutation</td>
+</tr>
+<tr>
+<td>Procedural</td>
+<td><strong>COW allocator</strong> — copy-on-write with version
+chain</td>
+<td>Read + versioned mutation</td>
+</tr>
+</tbody>
+</table>
+<p>The programmer writes
+<code>memory episodic log : EpisodeStore&lt;Event&gt;</code> and the
+compiler automatically selects the append-only allocator. No allocator
+API is exposed in the language surface.</p>
+<h3 id="falsifiable-claim-3">5.3 Falsifiable claim</h3>
+<p><strong>Hypothesis:</strong> Kind-aware allocation reduces peak
+memory usage and allocation overhead compared to a general-purpose
+allocator, for programs that use the four memory types, by at least 20%
+on representative agent workloads.</p>
+<h3 id="prior-art-and-novelty-boundary-3">5.4 Prior art and novelty
+boundary</h3>
+<p><strong>Prior art:</strong> Arena allocation (widely used in game
+engines, Zig’s std.heap.ArenaAllocator). Region-based memory management
+(Tofte &amp; Talpin, 1997). Typed assembly language (TAL, Morrisett et
+al., 1999). Rust’s allocator API (nightly).</p>
+<p><strong>Novelty claim:</strong> No language automatically selects
+allocation strategy from type-level kind annotations. Existing
+approaches require the programmer to explicitly choose the allocator.
+Garnet is the first to derive allocator selection from the language’s
+type system.</p>
+<hr />
+<h2 id="contribution-5-bidirectional-error-model-bridging">6.
+Contribution 5: Bidirectional Error-Model Bridging</h2>
+<h3 id="the-problem-4">6.1 The problem</h3>
+<p>No production language supports two distinct error-handling models
+(exceptions AND Result types) with round-trip-lossless conversion at the
+boundary. Languages choose one model and stick with it.</p>
+<h3 id="garnets-approach-formalized-in-mini-spec-v0.3-7.4">6.2 Garnet’s
+approach (formalized in Mini-Spec v0.3 §7.4)</h3>
+<p>Bridging operates via two language-level primitives that compose
+cleanly at the managed↔︎safe boundary:</p>
+<ul>
+<li><strong><code>?</code> operator</strong> in managed code unwraps
+<code>Ok(v)</code> to <code>v</code> and converts <code>Err(e)</code>
+into a raise that the enclosing <code>try/rescue</code> captures.</li>
+<li><strong><code>try { ... } rescue e { ... }</code></strong> in safe
+code captures a managed raise and returns <code>err(e)</code> to the
+safe caller.</li>
+</ul>
+<p>So:</p>
+<ul>
+<li>Managed → Safe: managed raises become <code>Err(e)</code> at the
+safe boundary (captured via <code>try/rescue</code> +
+<code>err(e)</code>).</li>
+<li>Safe → Managed: <code>Err(e)</code> becomes a managed raise at the
+<code>?</code> site, caught by the enclosing
+<code>try/rescue</code>.</li>
+<li><code>Ok(v)</code> flows through transparently.</li>
+</ul>
+<h3 id="implementation-status">6.3 Implementation status</h3>
+<ul>
+<li><strong>v3.2 (shipped):</strong> bidirectional bridging via
+user-authored <code>try/rescue</code> + <code>?</code> composition.
+Verified by <code>garnet-interp/tests/boundary_errors.rs</code> across
+all four directions (safe→managed, managed→safe, double-bounce,
+type-mismatch loud-fail) with Err-payload round-trip
+(<code>"unlucky number"</code> reaches rescue handler intact).</li>
+<li><strong>v4.0 (planned):</strong> <em>automatic</em>
+compiler-inserted bridging — the type-checker sees a managed→safe call
+returning <code>Result&lt;T, E&gt;</code> and elides the user’s
+<code>try/rescue</code> scaffold, inserting the conversion implicitly.
+Requires complete type-checker (Stage 2+). Falsifiable hypothesis
+(pass/fail to be measured in v4.0 empirical validation): zero
+error-information loss in compiler-generated bridges across a 100-case
+corpus.</li>
+</ul>
+<h3 id="novelty-boundary">6.4 Novelty boundary</h3>
+<p><strong>Prior art:</strong> Swift’s Objective-C error bridging
+(NSError ↔︎ throws). Java’s checked ↔︎ unchecked exception hierarchy.
+Kotlin’s Java interop for exceptions.</p>
+<p><strong>Novelty claim:</strong> All prior art bridges within one
+error paradigm (exceptions to exceptions). Garnet bridges <em>across
+paradigms</em> (exceptions to algebraic types and back). The formal
+basis in Paper V §4’s bridging judgment — proven in v3.2 via the manual
+<code>?</code>/<code>try/rescue</code> composition — ensures no error
+information is lost in either direction, a property none of the prior
+art guarantees formally. The v4.0 automatic-bridging layer is an
+ergonomic refinement of the already-proven semantic primitive.</p>
+<hr />
+<h2 id="contribution-6-hot-reload-mode-boundaries">7. Contribution 6:
+Hot-Reload Mode Boundaries</h2>
+<h3 id="the-problem-5">7.1 The problem</h3>
+<p>Long-horizon AI agents run for hours or days. Restarting them to
+deploy new orchestration logic interrupts active workflows, drops
+in-flight state, and forces expensive context reconstruction. No systems
+language supports hot-reloading of orchestration code while
+performance-critical code continues running.</p>
+<h3 id="garnets-approach-4">7.2 Garnet’s approach</h3>
+<p>The mode boundary IS the reload boundary:</p>
+<ol type="1">
+<li>Safe-mode modules are compiled to native code and loaded as shared
+libraries</li>
+<li>Managed-mode modules run on the bytecode VM</li>
+<li>When managed code is updated, the VM loads the new bytecode</li>
+<li>Safe-mode code continues executing — it sees the new managed module
+at the next boundary crossing</li>
+<li>Actor mailboxes buffer messages during the reload window, then
+drain</li>
+</ol>
+<pre><code>[Safe-mode: native, running] ←→ [Mode Boundary] ←→ [Managed-mode: bytecode VM]
+                                                          ↓ hot-reload
+                                                     [New bytecode loaded]
+                                                          ↓
+                                                     [Drain buffered messages]
+                                                          ↓
+                                                     [Resume normal operation]</code></pre>
+<h3 id="falsifiable-claim-4">7.3 Falsifiable claim</h3>
+<p><strong>Hypothesis:</strong> Garnet’s hot-reload mechanism achieves
+zero-downtime orchestration updates for long-running agent systems, with
+message delivery latency increase bounded to the reload window duration
+(measured in milliseconds).</p>
+<h3 id="prior-art-and-novelty-boundary-4">7.4 Prior art and novelty
+boundary</h3>
+<p><strong>Prior art:</strong> Erlang/OTP hot code loading (the gold
+standard). Java’s OSGi dynamic modules. Elixir’s hot reloading.
+JavaScript’s HMR (Hot Module Replacement) in development servers.</p>
+<p><strong>Novelty claim:</strong> Erlang reloads within one runtime
+(BEAM). Garnet reloads across a type-system mode boundary, where one
+side (safe mode) has zero-cost compiled native code that doesn’t
+participate in the reload. This is architecturally distinct: Erlang
+trades performance for universal reloadability, while Garnet preserves
+native performance in the hot path and confines reloading to the
+orchestration layer.</p>
+<hr />
+<h2
+id="contribution-7-deterministic-reproducible-builds-with-provenance-manifests">8.
+Contribution 7: Deterministic Reproducible Builds with Provenance
+Manifests</h2>
+<h3 id="the-problem-6">8.1 The problem</h3>
+<p>No mainstream language guarantees that the same source + same
+compiler version = byte-identical output. Non-determinism in compilation
+(timestamps, randomized optimization choices, platform-dependent
+codegen) means builds are not reproducible. For agent systems, this is a
+security risk: you cannot verify that a deployed binary matches its
+source.</p>
+<h3 id="garnets-approach-5">8.2 Garnet’s approach</h3>
+<p>Garnet’s compiler guarantees: 1. <strong>Deterministic
+codegen:</strong> No timestamps, no randomized choices, no
+platform-dependent paths (all platform differences are explicit in
+target triples) 2. <strong>Provenance manifest:</strong> Every build
+produces a <code>.garnet-manifest</code> file containing the SHA-256
+hash of every input (source files, dependencies, compiler version,
+target triple, optimization flags) 3. <strong>Embedded
+manifest:</strong> The manifest hash is embedded in the output binary’s
+metadata section, so any binary can prove its own provenance</p>
+<pre><code>$ garnet build --release
+  → my-agent (binary)
+  → my-agent.garnet-manifest (JSON: hashes of all inputs + output)
+
+$ garnet verify my-agent
+  ✓ Binary hash matches manifest
+  ✓ All source hashes match
+  ✓ Compiler version: garnetc 0.3.0 (2026-04-16)
+  ✓ Build is deterministically reproducible</code></pre>
+<h3 id="falsifiable-claim-5">8.3 Falsifiable claim</h3>
+<p><strong>Hypothesis:</strong> Given identical source, dependencies,
+compiler version, and target triple, two independent Garnet compilations
+produce byte-identical output. This is testable by compiling the same
+project on two different machines and comparing hashes.</p>
+<h3 id="prior-art-and-novelty-boundary-5">8.4 Prior art and novelty
+boundary</h3>
+<p><strong>Prior art:</strong> Reproducible Builds project
+(reproducible-builds.org). Nix/Guix reproducible build systems. Go’s
+reproducible builds (largely achieved in practice). Rust’s
+<code>-C codegen-units=1</code> for more deterministic output.</p>
+<p><strong>Novelty claim:</strong> Existing approaches achieve
+reproducibility as an emergent property of careful engineering. Garnet
+specifies it as a language-level guarantee with a first-class provenance
+mechanism. The manifest is not an external tool — it is part of the
+compiler’s output contract.</p>
+<hr />
+<h2 id="conclusion">9. Conclusion</h2>
+<p>These seven contributions are not theoretical wishes. Each one: 1.
+Emerges from design decisions already present in Mini-Spec v0.3 2. Has a
+falsifiable hypothesis that can be tested against existing languages 3.
+Is bounded against prior art with precise novelty claims 4. Can be
+implemented incrementally across the engineering ladder (Rungs 3–6)</p>
+<p>Together they position Garnet not merely as a language reconciling
+Rust and Ruby, but as a research vehicle for the next generation of
+programming language theory — one that takes AI generation, agent
+systems, and compilation intelligence as first-class design constraints
+alongside the traditional concerns of safety, performance, and
+expressiveness.</p>
+<p>The question these contributions pose to the programming language
+community is not whether they are achievable (each builds on proven
+precedent), but whether a single language can credibly embody all seven
+simultaneously. Garnet’s dual-mode architecture makes this possible by
+providing a clean separation surface: contributions 1–3 operate across
+the full language, while contributions 4–7 leverage the specific
+properties of the mode boundary to achieve results that a single-mode
+language cannot.</p>
+<hr />
+<h2 id="references">References</h2>
+<ol type="1">
+<li>Jung, R. et al. “RustBelt.” POPL 2018.</li>
+<li>Siek, J.G., Taha, W. “Gradual Typing for Functional Languages.”
+2006.</li>
+<li>Garcia, R. et al. “Abstracting Gradual Typing.” POPL 2016.</li>
+<li>New, M., Licata, D., Ahmed, A. “Gradual Type Theory.” POPL
+2019.</li>
+<li>Dunfield, J., Krishnaswami, N. “Complete and Easy Bidirectional
+Typechecking.” ICFP 2013.</li>
+<li>Tofte, M., Talpin, J-P. “Region-Based Memory Management.”
+Information and Computation 1997.</li>
+<li>Morrisett, G. et al. “From System F to Typed Assembly Language.” ACM
+TOPLAS 1999.</li>
+<li>Honda, K. “Types for Dyadic Interaction.” CONCUR 1993.</li>
+<li>Sustrik, M. “Structured Concurrency.” 2016.</li>
+<li>White House ONCD. “Back to the Building Blocks: A Path Toward Secure
+and Measurable Software.” February 2024.</li>
+<li>Mordor Intelligence. “Software Development Tools Market.” January
+2026.</li>
+<li>Garnet Project. Papers I–V, Four-Model Consensus Memo, Mini-Spec
+v0.3. April 2026.</li>
+</ol>
+<hr />
+<p><em>“In the multitude of counsellors there is safety.” — Proverbs
+11:14</em> <em>“The plans of the diligent lead surely to abundance.” —
+Proverbs 21:5</em> <em>“Where there is no vision, the people perish.” —
+Proverbs 29:18</em></p>
+<p><strong>Paper VI prepared by Claude Code (Opus 4.6) | April 16,
+2026</strong></p>
+</div>
+
+<script>
+// ================================================================
+// DOC VIEWER — Fixed Nav + Fade-In Content
+// ================================================================
+(function(){
+  var cv = document.getElementById('cv');
+  var tabs = document.querySelectorAll('#nav .tab');
+  var content = {};
+  var active = null;
+
+  // Preload all paper content
+  var papers = ['minispec','synthesis','novel','ladder'];
+  papers.forEach(function(id){
+    content[id] = '';
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', id + '.html', true);
+    xhr.onload = function(){
+      content[id] = xhr.responseText;
+      if(papers.indexOf(active) >= 0) show(active);
+    };
+    xhr.send();
+  });
+
+  // Show a paper with fade animation
+  function show(id){
+    active = id;
+    cv.classList.remove('show');
+    cv.classList.add('hidden');
+    setTimeout(function(){
+      cv.innerHTML = content[id] || '<p style="color:var(--ink-muted)">Loading...</p>';
+      // Style any code blocks
+      var pres = cv.querySelectorAll('pre code[class]');
+      for(var i=0;i<pres.length;i++){pres[i].removeAttribute('class');}
+      // Fix links
+      var links = cv.querySelectorAll('a');
+      for(var i=0;i<links.length;i++){links[i].setAttribute('target','_blank');}
+      cv.classList.remove('hidden');
+      cv.classList.add('show');
+      window.scrollTo(0,0);
+    }, active?'250':0);
+    // Update tab state
+    tabs.forEach(function(t){t.classList.toggle('active',t.getAttribute('data-id')===id);});
+  }
+
+  // Handle tab clicks
+  tabs.forEach(function(tab){
+    tab.addEventListener('click',function(e){
+      e.preventDefault();
+      var id = tab.getAttribute('data-id');
+      if(content[id]) show(id);
+    });
+  });
+
+  // Auto-detect from URL hash
+  var hash = window.location.hash.replace('#','');
+  if(papers.indexOf(hash)>=0 && content[hash]) show(hash);
+  else show('minispec');
+
+  // Handle browser back/forward
+  window.addEventListener('hashchange',function(){
+    var h = window.location.hash.replace('#','');
+    if(papers.indexOf(h)>=0 && content[h]) show(h);
+  });
+})();
+</script>
+</body>
+</html>
