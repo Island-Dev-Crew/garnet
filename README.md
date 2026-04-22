@@ -131,7 +131,7 @@ Verification status as of v4.2 release:
 - ✅ Windows binary (MSVC) — verified end-to-end, all 6 Phase 6D gates pass
 - ✅ 1244 cumulative tests across workspace; 136 security-specific tests across 4 hardening layers
 - ✅ 22 stdlib primitives bridged through the interpreter
-- ⏳ macOS `.pkg` — signing happens on the maintainer's MacBook ahead of each release
+- ✅ macOS `.pkg` (universal x86_64 + arm64) — Apple Developer ID signed & notarized via `productbuild`
 
 ## Research
 
