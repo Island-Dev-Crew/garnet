@@ -20,7 +20,7 @@
   <a href="#install"><strong>Install</strong></a>  ·
   <a href="#quickstart"><strong>Quickstart</strong></a>  ·
   <a href="FAQ.md"><strong>FAQ</strong></a>  ·
-  <a href="../D_Executive_and_Presentation/garnet-website.html"><strong>Website</strong></a>  ·
+  <a href="https://garnet-lang.org"><strong>Website</strong></a>  ·
   <a href="../A_Research_Papers/"><strong>Research Papers</strong></a>  ·
   <a href="../C_Language_Specification/GARNET_v1_0_Mini_Spec.md"><strong>Mini-Spec v1.0</strong></a>
 </p>
