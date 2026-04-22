@@ -1,0 +1,35 @@
+# hello.garnet — a minimal demo program that exercises most of the
+# interpreter: def, let, control flow, match, closures, string interpolation.
+
+def fib(n) {
+  if n < 2 {
+    n
+  } else {
+    fib(n - 1) + fib(n - 2)
+  }
+}
+
+def describe(n) {
+  match n {
+    0 => "zero",
+    1 => "one",
+    _ => "many",
+  }
+}
+
+def main() {
+  let name = "world"
+  println("Hello, #{name}!")
+
+  let results = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(|n| fib(n))
+  println("fibonacci:", results)
+
+  let total = results.reduce(0, |acc, x| acc + x)
+  println("sum:", total)
+
+  println(describe(0))
+  println(describe(1))
+  println(describe(42))
+
+  total
+}

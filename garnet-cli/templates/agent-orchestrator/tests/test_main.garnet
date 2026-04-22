@@ -1,0 +1,30 @@
+# Starter tests for {{name}}.
+#
+# Note: actor instantiation (`spawn Researcher::new()` and the
+# `Reviewer::new()` form) is wired through the actor runtime crate
+# (`garnet-actor-runtime`) which the v0.3 tree-walk interpreter does
+# NOT bridge end-to-end yet — that's the Rung 6 work in Paper VII §3.
+# As a result, starter tests here exercise pure helpers + the
+# bridged stdlib primitives. Once `garnet run` invokes the actor
+# runtime (post-v4.2), additional integration tests can spawn the
+# three actors and round-trip messages.
+
+def test_string_assembly_for_facts() {
+  # The orchestrator stores facts as "key: value" strings; this is the
+  # serialization shape `Reviewer.decide` will commit. Verifying the
+  # shape here keeps the contract explicit even when the actor runtime
+  # is mocked out.
+  let q = "what is the acceleration due to gravity?"
+  let a = "9.8 m/s^2"
+  let combined = "#{q} -> #{a}"
+  assert(contains(combined, "gravity"))
+  assert(contains(combined, "9.8"))
+}
+
+def test_blake3_fact_fingerprint() {
+  # Crypto primitive is bridged (v3.4.1 Day 1). Useful for the
+  # ManifestSig-style fingerprinting agents do on episodic-store
+  # entries before persistence.
+  let h = blake3("episode payload")
+  assert_eq(len(h), 64)  # 32 bytes hex-encoded
+}

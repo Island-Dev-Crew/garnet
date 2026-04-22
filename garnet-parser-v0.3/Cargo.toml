@@ -1,0 +1,19 @@
+[package]
+name = "garnet-parser"
+version = "0.3.0"
+edition = "2021"
+description = "Lexer and recursive-descent parser for Garnet v0.3 — all 90 EBNF productions. Rung 2.1 of the Garnet engineering ladder."
+license = "MIT OR Apache-2.0"
+authors = ["Island Development Crew"]
+
+[dependencies]
+miette = { version = "7.6", features = ["fancy"] }
+thiserror = "2.0"
+
+[dev-dependencies]
+proptest = "1"
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "parse"
+harness = false

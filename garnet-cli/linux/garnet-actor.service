@@ -1,0 +1,59 @@
+# Garnet actor-runtime systemd unit (v4.2 Phase 6A).
+#
+# DISABLED BY DEFAULT. Installed by the .deb / .rpm packages but not
+# enabled; operators opt in with `systemctl enable garnet-actor`.
+#
+# The unit assumes the user has dropped an actor-runtime bundle at
+# /etc/garnet/actor.toml and a signed binary at /usr/bin/garnet. The
+# ExecStart line runs `garnet run <entry>` where <entry> is the
+# top-level .garnet file referenced in the bundle config.
+#
+# Security defaults follow the v3.4 NetDefaults + v3.4.1 ManifestSig
+# discipline: the service starts only if the binary's signed manifest
+# verifies against the distribution's expected pubkey.
+
+[Unit]
+Description=Garnet actor runtime
+After=network-online.target
+Wants=network-online.target
+Documentation=https://garnet-lang.org/docs/actor-runtime
+
+[Service]
+Type=simple
+User=garnet
+Group=garnet
+
+# Verify the binary's signed manifest before starting. The expected
+# pubkey is baked into /etc/garnet/expected_signer.txt; operators
+# rotate it by replacing that file.
+ExecStartPre=/usr/bin/garnet verify /usr/bin/garnet /etc/garnet/garnet.manifest.json --signature
+
+ExecStart=/usr/bin/garnet run /etc/garnet/entry.garnet
+Restart=on-failure
+RestartSec=5s
+
+# Hardening.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+# Match Garnet's CapCaps inventory at the OS-syscall level. Adjust
+# when the service needs fs/net outside its default strict sandbox.
+SystemCallFilter=@system-service
+SystemCallFilter=~@mount @cpu-emulation @debug @module @obsolete @privileged @raw-io @reboot @swap
+
+# Resource limits.
+LimitNOFILE=65536
+TasksMax=4096
+
+[Install]
+WantedBy=multi-user.target

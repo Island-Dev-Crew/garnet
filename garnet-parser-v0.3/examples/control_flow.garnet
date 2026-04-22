@@ -1,0 +1,49 @@
+# control_flow.garnet
+# Demonstrates if-as-expression, match with multiple pattern kinds,
+# while/for/loop, and the pipeline operator.
+# See Mini-Spec v0.3 §6.
+
+def classify(score) {
+  if score > 90 {
+    :excellent
+  } elsif score > 70 {
+    :good
+  } elsif score > 50 {
+    :passing
+  } else {
+    :needs_work
+  }
+}
+
+def describe(result) {
+  match result {
+    Ok(value) => "success: #{value}",
+    Err(:not_found) => "missing",
+    Err(e) if e.retryable? => "retry: #{e.message}",
+    Err(e) => "failed: #{e.message}",
+    _ => "unknown",
+  }
+}
+
+def count_up(limit) {
+  let mut i = 0
+  while i < limit {
+    i += 1
+  }
+  i
+}
+
+def sum_squares(nums) {
+  let mut total = 0
+  for n in nums {
+    total += n * n
+  }
+  total
+}
+
+def transform(items) {
+  items
+    |> filter(|x| x > 0)
+    |> map(|x| x * 2)
+    |> reduce(0, |acc, x| acc + x)
+}

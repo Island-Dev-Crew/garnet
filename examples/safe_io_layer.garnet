@@ -1,0 +1,245 @@
+# safe_io_layer.garnet — a Garnet program that exercises both modes
+# of the language: a `@safe` API surface that returns Result<T, E>, and
+# a managed orchestration layer that consumes those results via try/?/rescue.
+#
+# Demonstrates the Paper VI Contribution 5 contract: safe-mode functions
+# return errors as values; managed-mode callers bridge them transparently
+# into the exception model.
+#
+# Run: garnet run examples/safe_io_layer.garnet
+
+# ════════════════════════════════════════════════════════════════════
+# DOMAIN
+# ════════════════════════════════════════════════════════════════════
+
+enum IoError {
+  NotFound,
+  PermissionDenied,
+  Timeout,
+  Corrupted,
+  Unknown,
+}
+
+enum FsKind { File, Dir, Symlink, Missing }
+
+struct FileMeta {
+  path: String,
+  size: Int,
+  kind: FsKind,
+}
+
+struct FileContents {
+  path: String,
+  body: String,
+  bytes_read: Int,
+}
+
+struct OperationLog {
+  op: String,
+  path: String,
+  ok: Bool,
+  detail: String,
+}
+
+# ════════════════════════════════════════════════════════════════════
+# SAFE LAYER — All functions are @safe and return Result<T, E>.
+# ════════════════════════════════════════════════════════════════════
+
+@safe
+def stat(path) {
+  if path.starts_with?("missing/") {
+    err(IoError::NotFound)
+  } elsif path.starts_with?("locked/") {
+    err(IoError::PermissionDenied)
+  } elsif path.starts_with?("flaky/") {
+    err(IoError::Timeout)
+  } elsif path.starts_with?("dir/") {
+    ok(FileMeta(path, 0, FsKind::Dir))
+  } else {
+    ok(FileMeta(path, simulated_size(path), FsKind::File))
+  }
+}
+
+@safe
+def read_file(path) {
+  let meta = stat(path)?
+  let kind = meta.kind
+  match kind {
+    FsKind::Dir => err(IoError::PermissionDenied),
+    FsKind::Missing => err(IoError::NotFound),
+    _ => {
+      let body = simulated_body(path)
+      if body == "CORRUPTED" {
+        err(IoError::Corrupted)
+      } else {
+        ok(FileContents(path, body, body.len()))
+      }
+    },
+  }
+}
+
+@safe
+def write_file(path, body) {
+  let meta = stat(path)
+  match meta {
+    Err(_) => ok(0),
+    _ => {
+      if path.starts_with?("readonly/") {
+        err(IoError::PermissionDenied)
+      } else {
+        ok(body.len())
+      }
+    },
+  }
+}
+
+@safe
+def delete_path(path) {
+  let meta = stat(path)?
+  match meta.kind {
+    FsKind::Symlink => ok(true),
+    FsKind::File => ok(true),
+    FsKind::Dir => err(IoError::PermissionDenied),
+    FsKind::Missing => err(IoError::NotFound),
+  }
+}
+
+def simulated_size(path) {
+  if path.starts_with?("big/") {
+    1048576
+  } elsif path.starts_with?("medium/") {
+    65536
+  } else {
+    1024
+  }
+}
+
+def simulated_body(path) {
+  if path.starts_with?("corrupt/") {
+    "CORRUPTED"
+  } elsif path.starts_with?("empty/") {
+    ""
+  } else {
+    "the quick brown fox jumps over the lazy dog"
+  }
+}
+
+# ════════════════════════════════════════════════════════════════════
+# MANAGED ORCHESTRATION — try/rescue + ?-propagation across boundary.
+# ════════════════════════════════════════════════════════════════════
+
+def safe_read(path) {
+  try {
+    let contents = read_file(path)?
+    contents.body
+  } rescue e {
+    "(error: " + describe_error(e) + ")"
+  }
+}
+
+def safe_size(path) {
+  try {
+    let meta = stat(path)?
+    meta.size
+  } rescue e {
+    -1
+  }
+}
+
+def describe_error(e) {
+  match e {
+    IoError::NotFound => "not found",
+    IoError::PermissionDenied => "permission denied",
+    IoError::Timeout => "timeout",
+    IoError::Corrupted => "corrupted",
+    IoError::Unknown => "unknown",
+  }
+}
+
+def batch_read(paths) {
+  let mut results = []
+  for p in paths {
+    let body = safe_read(p)
+    results.push(OperationLog("read", p, not body.starts_with?("(error"), body))
+  }
+  results
+}
+
+def batch_size(paths) {
+  let mut total = 0
+  for p in paths {
+    let s = safe_size(p)
+    if s > 0 { total += s }
+  }
+  total
+}
+
+def with_retry(path, max_attempts) {
+  let mut attempt = 0
+  let mut last_outcome = "(no attempt)"
+  loop {
+    if attempt >= max_attempts {
+      break
+    }
+    attempt += 1
+    let outcome = safe_read(path)
+    last_outcome = outcome
+    if not outcome.starts_with?("(error") {
+      break
+    }
+  }
+  last_outcome
+}
+
+# ════════════════════════════════════════════════════════════════════
+# DRIVER
+# ════════════════════════════════════════════════════════════════════
+
+def golden_paths() {
+  [
+    "src/main.garnet",
+    "src/lib.garnet",
+    "config/build.garnet",
+    "docs/README.md",
+  ]
+}
+
+def adversarial_paths() {
+  [
+    "missing/oops.garnet",
+    "locked/secret.garnet",
+    "flaky/network.garnet",
+    "corrupt/data.garnet",
+    "dir/somefolder",
+    "readonly/cant_write.garnet",
+    "big/blob.garnet",
+  ]
+}
+
+def main() {
+  let golden = batch_read(golden_paths())
+  let adv    = batch_read(adversarial_paths())
+
+  let golden_ok = count_ok(golden)
+  let adv_ok    = count_ok(adv)
+
+  println("golden ok / total: ", golden_ok, " / ", golden.len())
+  println("adversarial ok / total: ", adv_ok, " / ", adv.len())
+
+  let total_size = batch_size(golden_paths())
+  println("total golden size:", total_size)
+
+  let retried = with_retry("flaky/network.garnet", 3)
+  println("retry result:", retried)
+
+  # Stable single-integer result for the test harness.
+  golden_ok * 100 + adv_ok
+}
+
+def count_ok(logs) {
+  let mut c = 0
+  for log in logs {
+    if log.ok { c += 1 }
+  }
+  c
+}

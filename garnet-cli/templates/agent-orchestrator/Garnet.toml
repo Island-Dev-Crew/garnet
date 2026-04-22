@@ -1,0 +1,19 @@
+[package]
+name = "{{name}}"
+version = "0.1.0"
+edition = "garnet-0.3"
+description = "A Garnet multi-actor agent orchestrator (Researcher / Synthesizer / Reviewer)"
+
+[build]
+mode = "managed"
+
+[caps]
+# Agent services typically need:
+#   time — reasoning-trace timestamps
+#   fs   — reading prompts, writing episode logs
+# Add net for services that talk to external LLMs or vector DBs.
+allowed = ["time", "fs"]
+
+[[bin]]
+name = "{{name}}"
+path = "src/main.garnet"

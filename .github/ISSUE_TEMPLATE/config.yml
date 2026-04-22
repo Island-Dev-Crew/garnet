@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Garnet FAQ
+    url: https://github.com/IslandDevCrew/garnet/blob/main/FAQ.md
+    about: Frequently asked questions about Garnet's design, usage, and roadmap
+  - name: Discussions
+    url: https://github.com/IslandDevCrew/garnet/discussions
+    about: Design discussions, open-ended questions, showing off projects built with Garnet
+  - name: Security vulnerabilities
+    url: https://github.com/IslandDevCrew/garnet/security/advisories/new
+    about: Report a security issue PRIVATELY via a GitHub Security Advisory (not a public issue)
+  - name: Research papers + Mini-Spec
+    url: https://github.com/IslandDevCrew/garnet/tree/main/Garnet_Final
+    about: The canonical research corpus + language specification (v1.0)

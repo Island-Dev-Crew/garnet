@@ -1,0 +1,79 @@
+name: Feature request
+description: Propose a new feature, language construct, or tooling improvement
+title: "[feature] "
+labels: ["enhancement", "needs-discussion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing a feature request, please read:
+
+        - [Garnet_Final/C_Language_Specification/GARNET_v1_0_Mini_Spec.md](../../Garnet_Final/C_Language_Specification/GARNET_v1_0_Mini_Spec.md) — the canonical language spec
+        - [GARNET_v4_2_HANDOFF.md §v4.2 → POST-MIT ROADMAP](../../Garnet_Final/F_Project_Management/GARNET_v4_2_HANDOFF.md) — what's already planned
+
+        Many features people want are on the existing roadmap; if yours is, upvote those issues instead of filing a duplicate.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the current friction in the developer's experience. Concrete scenarios are better than abstract arguments.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: >
+        What's the shape of the fix? Code sketches welcome. If this affects the language grammar or
+        semantics, note which Mini-Spec section(s) would change.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: >
+        What else did you consider? Why is your proposal better? (If you haven't considered alternatives, that's a sign the proposal might not be ready.)
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Which subsystem does this touch?
+      multiple: true
+      options:
+        - Parser (garnet-parser-v0.3)
+        - Interpreter (garnet-interp-v0.3)
+        - Safe-mode checker / CapCaps (garnet-check-v0.3)
+        - Memory framework (garnet-memory-v0.3)
+        - Actor runtime (garnet-actor-runtime)
+        - CLI / scaffolding (garnet-cli, new_cmd, convert_cmd)
+        - Stdlib primitives (garnet-stdlib)
+        - Converter (garnet-convert)
+        - Manifest / ManifestSig
+        - Documentation / Mini-Spec / research papers
+        - Installer / packaging (wix/, macos/, linux/, sh.garnet-lang.org)
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: rigor
+    attributes:
+      label: Testing / verification plan
+      description: >
+        If this lands, how do we know it works? Name the tests you'd add + the invariant they'd guard.
+        For anything affecting Paper VI's seven contributions, note the pre-registered threshold your change
+        would measure against.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: I have verified
+      options:
+        - label: "I searched existing issues + the v4.2 roadmap — this isn't already planned"
+          required: true
+        - label: "I've thought about rigor (tests + invariants), not just ergonomics"
+          required: true

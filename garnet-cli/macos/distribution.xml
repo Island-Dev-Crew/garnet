@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!--
+  macOS productbuild distribution description — v4.2 Phase 6A.
+
+  Controls the Installer.app UI: welcome screen, license accept,
+  background image, target-volume behavior. The component .pkg
+  referenced by pkg-ref is built upstream by pkgbuild; productbuild
+  stitches it into this distribution + applies branding.
+-->
+<installer-gui-script minSpecVersion="2">
+    <title>Garnet</title>
+    <organization>org.garnet-lang</organization>
+
+    <!-- Branding. Files referenced by path relative to --resources. -->
+    <background     file="background.png"        alignment="bottomleft" scaling="proportional" mime-type="image/png" />
+    <background-darkAqua file="background.png"   alignment="bottomleft" scaling="proportional" mime-type="image/png" />
+    <welcome        file="welcome.html"          mime-type="text/html" />
+    <conclusion     file="conclusion.html"       mime-type="text/html" />
+    <license        file="LICENSE.txt"           mime-type="text/plain" />
+
+    <options customize="never" require-scripts="false" rootVolumeOnly="true" />
+
+    <!-- Reference the component .pkg built by build-pkg.sh. -->
+    <pkg-ref id="org.garnet-lang.garnet"
+             version="0.4.2"
+             auth="root"
+             installKBytes="25000">garnet-component.pkg</pkg-ref>
+
+    <choices-outline>
+        <line choice="garnet"/>
+    </choices-outline>
+
+    <choice id="garnet"
+            title="Garnet"
+            description="Installs the Garnet CLI + man page to /usr/local/">
+        <pkg-ref id="org.garnet-lang.garnet"/>
+    </choice>
+</installer-gui-script>

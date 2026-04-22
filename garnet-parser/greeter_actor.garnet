@@ -1,0 +1,13 @@
+# examples/greeter_actor.garnet
+# Mini-Spec v0.2 §4.1 — actor with a typed protocol and a matching handler.
+# Demonstrates the brace-style actor syntax and the handler-block interior
+# (which is provisional v0.2 — see README "v0.2 underspec note").
+
+actor Greeter {
+  protocol hello(name: String) -> String
+
+  on hello(name) {
+    let greeting = "hello, #{name}"
+    greeting
+  }
+}

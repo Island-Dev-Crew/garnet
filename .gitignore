@@ -1,0 +1,52 @@
+# Build artifacts
+target/
+*.o
+*.a
+*.so
+*.dll
+*.exe
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# gRPC / generated
+*.proto.*
+
+# Debug
+*.dSYM/
+
+# GHA CI artifacts
+dist/*.tar.gz
+
+# MIT Submission Package (not needed in code repo)
+../MIT-Submission-Package/
+../A_Research_Papers/
+../B_Four_Model_Consensus/
+../C_Language_Specification/
+../D_Executive_and_Presentation/
+../F_Project_Management/
+../MIT-Submission-Package/
+../GARNET_*.md
+../_*.md
+
+# Redundant files
+../WORKSPACE_README.md
+
+# Installer build outputs
+../installer/*.tar.gz
+
+# Local agent knowledge (not part of the language)
+.garnet-cache/
+garnet-cli/.garnet-cache/
+
+# Old dist artifacts (we ship via releases, not repo)
+dist/
+
+# target from builds
+target/

@@ -1,0 +1,19 @@
+[package]
+name = "{{name}}"
+version = "0.1.0"
+edition = "garnet-0.3"
+description = "A Garnet HTTP/1.1 API service"
+
+[build]
+mode = "managed"
+
+[caps]
+# `net` is required to bind the listener + accept connections.
+# `time` is used for request deadlines.
+# Broad `fs` is NOT granted — if this service needs to read config
+# files, add "fs" here and annotate the specific reader function.
+allowed = ["net", "time"]
+
+[[bin]]
+name = "{{name}}"
+path = "src/main.garnet"

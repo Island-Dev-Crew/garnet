@@ -1,0 +1,12 @@
+# greeter_actor.garnet
+# A minimal actor with a typed protocol and a handler that uses string interpolation.
+# See Mini-Spec v0.3 §9.
+
+actor Greeter {
+  protocol hello(name: String) -> String
+
+  on hello(name) {
+    let greeting = "Hello, #{name}!"
+    greeting
+  }
+}

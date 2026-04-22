@@ -1,0 +1,13 @@
+[package]
+name = "garnet-parser"
+version = "0.1.0"
+edition = "2021"
+description = "Lexer and recursive-descent parser for Garnet Mini-Spec v0.2 §2.1 (memory units) and §4.1 (actors). Rung 2 of the Garnet engineering ladder."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/garnet-lang/garnet"
+keywords = ["garnet", "parser", "language", "agent", "memory"]
+categories = ["parser-implementations", "compilers"]
+
+[dependencies]
+miette = { version = "7.6.0", features = ["fancy"] }
+thiserror = "2.0.18"

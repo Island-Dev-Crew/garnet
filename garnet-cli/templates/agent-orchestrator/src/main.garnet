@@ -1,0 +1,83 @@
+# {{name}} — a Researcher / Synthesizer / Reviewer orchestrator.
+#
+# Shape follows MVP 6 (multi-agent) from the v3.4 example set. Three
+# actors each own a first-class memory kind — Paper VI Contribution 4:
+#
+#   Researcher  → memory episodic   (append-only reasoning trace)
+#   Synthesizer → memory semantic   (vector-indexed facts)
+#   Reviewer    → memory procedural (versioned decision workflow)
+#
+# All three are bounded-mailbox actors; send-side back-pressure is
+# enforced at 1024 in-flight messages by default (v3.4 BoundedMail).
+
+actor Researcher {
+  memory episodic trace : EpisodeStore<String>
+
+  @mailbox(1024)
+  protocol observe(fact: String) -> Bool
+  protocol recall_all() -> Array<String>
+
+  on observe(fact) {
+    trace.append(fact)
+    true
+  }
+  on recall_all() {
+    trace.range_all()
+  }
+}
+
+actor Synthesizer {
+  memory semantic facts : VectorIndex<String>
+
+  @mailbox(1024)
+  protocol learn(key: String, fact: String) -> Bool
+  protocol query(q: String) -> Array<String>
+
+  on learn(key, fact) {
+    facts.insert(key, fact)
+    true
+  }
+  on query(q) {
+    facts.search(q, 5)
+  }
+}
+
+actor Reviewer {
+  memory procedural decisions : WorkflowStore<String>
+
+  @mailbox(1024)
+  protocol decide(question: String, answer: String) -> Int
+  protocol timeline() -> Array<String>
+
+  on decide(question, answer) {
+    let version = decisions.commit(question, answer)
+    version
+  }
+  on timeline() {
+    decisions.history()
+  }
+}
+
+@caps(time)
+def main() {
+  println("starting {{name}}: Researcher / Synthesizer / Reviewer")
+
+  let researcher = spawn Researcher::new()
+  let synthesizer = spawn Synthesizer::new()
+  let reviewer = spawn Reviewer::new()
+
+  # One round-trip through the trio — replace with your own
+  # orchestration logic. Note: spawn + tell dispatches go through the
+  # actor runtime's bounded mailboxes.
+  researcher.observe("gravity accelerates objects at 9.8 m/s^2")
+  synthesizer.learn("gravity", "9.8 m/s^2 near Earth's surface")
+
+  let q = "what is the acceleration due to gravity?"
+  let hits = synthesizer.query(q)
+  println("synthesizer returned #{len(hits)} fact(s) for: #{q}")
+
+  let version = reviewer.decide(q, "9.8 m/s^2")
+  println("reviewer committed decision at version #{version}")
+
+  0
+}

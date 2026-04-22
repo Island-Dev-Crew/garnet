@@ -1,0 +1,18 @@
+{
+  "ast_hash": "b8ed3107fc96b47fe07b1129abd41c8e5511bfe5579e4951a743ea7ecb233560"
+,
+  "deterministic_flags": ["lto=on", "codegen-units=1", "strip=symbols"]
+,
+  "interp_version": "0.3.0"
+,
+  "parser_version": "0.3.0"
+,
+  "prelude_hash": "f30fdc7a2aa79c2122c317b825733633d8fd2e502b708c5beba3dff9bb2433f1"
+,
+  "schema": "garnet-manifest-v1"
+,
+  "source_hash": "4fa8d845de01bc2eba93b6d5e600e0c3df7e2cf751d7caa9409a3abde5cacde1"
+,
+  "target_triple": "unknown-target"
+
+}

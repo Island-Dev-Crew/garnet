@@ -1,0 +1,25 @@
+# examples/pingpong_actors.garnet
+# Mini-Spec v0.2 §2.1 + §4.1 — a memory unit and a pair of actor protocols
+# in the same module. The episodic log is shared substrate; the actor
+# defines two protocols and two handlers that record into it.
+#
+# Note: §4.2 requires every protocol to have a matching handler — that's a
+# validator-pass concern, not parsing. The parser accepts the structure;
+# checking the pairing is rung-3+ work.
+
+memory episodic ping_log : Vector<Event>
+
+actor PingPong {
+  protocol ping(seq: Int) -> Int
+  protocol pong(seq: Int) -> Int
+
+  on ping(seq) {
+    ping_log.append(seq)
+    seq
+  }
+
+  on pong(seq) {
+    ping_log.append(seq)
+    seq
+  }
+}

@@ -1,0 +1,37 @@
+# {{name}} — a minimal Garnet HTTP/1.1 service.
+#
+# Structure mirrors MVP 5 (web app) from the v3.4 example set: a
+# bounded listener loop, explicit request parsing, and JSON responses.
+# @caps(net, time) is the service's full authority budget — it cannot
+# touch the filesystem, spawn subprocesses, or make outbound
+# connections of its own accord.
+
+@caps(net, time)
+def main() {
+  let port = 8080
+  println("#{timestamp()} starting {{name}} on :#{port}")
+
+  # Bind the listener via the bridged net primitive.
+  # (tcp_listen lands alongside net handle support; for v4.2 this
+  # template demonstrates the @caps discipline even where the
+  # implementation calls into MVP 5's listener harness directly.)
+  serve_forever(port)
+}
+
+@caps(time)
+def timestamp() {
+  # wall_clock_ms() requires @caps(time); this function declares it
+  # so main can call it without escalating its own cap set.
+  let ms = wall_clock_ms()
+  "[#{ms}ms]"
+}
+
+@caps(net, time)
+def serve_forever(port) {
+  # Placeholder listener loop. Replace with the BoundedMail +
+  # NetDefaults-aware listener as your service grows. Every incoming
+  # request should be handled by a @caps(net) function; avoid
+  # promoting the handler to @caps(fs) without explicit need.
+  println("(listener loop placeholder — wire your handlers here)")
+  0
+}

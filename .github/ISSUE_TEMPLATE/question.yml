@@ -1,0 +1,43 @@
+name: Question
+description: Ask a question about Garnet's design, usage, or a specific behavior
+title: "[question] "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **First check:** the [FAQ](../../FAQ.md) covers the most common questions.
+
+        For design-discussion questions, prefer [Discussions](https://github.com/IslandDevCrew/garnet/discussions)
+        over issues — it's a better format for back-and-forth.
+
+        Use this issue form when:
+        - You've read the FAQ and your question isn't there
+        - You want the answer recorded in a persistent, searchable format
+        - You suspect the answer might reveal a documentation gap worth fixing
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      description: Be specific. "How do I X?" is better than "Garnet doesn't do X".
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: What you've already tried
+      description: >
+        Which docs did you read? What did you test? What were you expecting to find that wasn't there?
+        This helps us identify documentation gaps.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: I have checked
+      options:
+        - label: "The FAQ at FAQ.md"
+          required: true
+        - label: "Existing issues + discussions"
+          required: true

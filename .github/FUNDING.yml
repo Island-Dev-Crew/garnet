@@ -1,0 +1,9 @@
+# Garnet — funding targets for the project. Enable whichever the maintainer chooses to activate.
+# Disabled-by-default entries are commented out; uncomment to activate.
+
+github: [IslandDevCrew]
+
+# patreon: IslandDevCrew
+# open_collective: garnet-lang
+# ko_fi: islanddevcrew
+# custom: ["https://garnet-lang.org/sponsor"]

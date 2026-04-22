@@ -1,0 +1,17 @@
+# {{name}} — a Garnet CLI program.
+#
+# The @caps(...) annotation on main declares the OS authority this
+# program is permitted to exercise. An empty @caps() means "pure
+# computation". Add fs / time / net / proc as needed; each primitive
+# call-site is checked at compile time against this declaration.
+#
+# See Paper III §6 and Mini-Spec v1.0 §16 for the capability model.
+
+@caps()
+def main() {
+  println("Hello from {{name}}!")
+  println("")
+  println("Edit src/main.garnet to change this message.")
+  println("Run `garnet run src/main.garnet` to execute.")
+  0
+}

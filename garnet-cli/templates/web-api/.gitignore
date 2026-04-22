@@ -1,0 +1,10 @@
+.garnet-cache/
+target/
+build/
+*.key
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+Thumbs.db

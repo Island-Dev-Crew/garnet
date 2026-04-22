@@ -1,0 +1,148 @@
+<?xml version='1.0' encoding='windows-1252'?>
+<!--
+  Garnet - Windows MSI installer (v4.2 Phase 6A).
+
+  Built with cargo-wix (https://github.com/volks73/cargo-wix). Invoke
+  via the cargo wix subcommand with the nocapture flag from the
+  garnet-cli directory after cargo build release.
+
+  This .wxs file is the WiX XML source. It declares:
+    * Product + UpgradeCode (stable across versions - enables in-place upgrade)
+    * PATH entry for the 'garnet' executable
+    * Per-machine install to C:\Program Files\Garnet\
+    * Start Menu shortcut + Add/Remove Programs entry
+    * License + EULA link
+    * Garnet branding (welcome/exit dialog text)
+
+  Code-signing: after the MSI is produced, sign it via signtool.exe
+  using the user's code-signing cert. Example:
+    signtool sign /f C:\path\to\codesign.pfx /p pass /fd SHA256
+      /tr http://timestamp.digicert.com /td SHA256 garnet.msi
+  The signtool step is NOT embedded here - it runs against the
+  MSI output, not the WiX source.
+-->
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'
+     xmlns:util='http://schemas.microsoft.com/wix/UtilExtension'>
+
+  <Product
+    Name='Garnet'
+    Manufacturer='Island Development Crew'
+    Id='*'
+    UpgradeCode='6E6A3D5F-3B0E-4D8F-9A3F-4F1D8C8A9A10'
+    Language='1033'
+    Codepage='1252'
+    Version='0.4.2'>
+
+    <Package
+      Id='*'
+      Keywords='Installer'
+      Description='Garnet — dual-mode language platform (Rust rigor. Ruby velocity.)'
+      Manufacturer='Island Development Crew'
+      InstallerVersion='500'
+      Languages='1033'
+      Compressed='yes'
+      SummaryCodepage='1252'
+      Platform='x64'
+      InstallScope='perMachine' />
+
+    <MajorUpgrade
+      Schedule='afterInstallInitialize'
+      DowngradeErrorMessage='A newer version of Garnet is already installed.' />
+
+    <Media Id='1' Cabinet='media1.cab' EmbedCab='yes' DiskPrompt='CD-ROM #1' />
+    <Property Id='DiskPrompt' Value='Garnet Installation' />
+    <Property Id='ARPPRODUCTICON' Value='GarnetIcon.ico' />
+    <Property Id='ARPURLINFOABOUT' Value='https://garnet-lang.org' />
+
+    <!-- Install layout -->
+    <Directory Id='TARGETDIR' Name='SourceDir'>
+      <Directory Id='ProgramFiles64Folder' Name='PFiles'>
+        <Directory Id='APPLICATIONFOLDER' Name='Garnet'>
+          <Directory Id='Bin' Name='bin'>
+            <Component Id='GarnetExe' Guid='AEFB1A62-6C5B-4F9E-8D3F-49F5E2C9F701' Win64='yes'>
+              <File Id='GarnetExeFile'
+                    Name='garnet.exe'
+                    DiskId='1'
+                    Source='C:\garnet-build\target\x86_64-pc-windows-msvc\release\garnet.exe'
+                    KeyPath='yes' />
+              <!-- Append Bin to system PATH (HKLM) so `garnet` resolves in any shell. -->
+              <Environment
+                Id='PathEnv'
+                Name='PATH'
+                Value='[Bin]'
+                Permanent='no'
+                Part='last'
+                Action='set'
+                System='yes' />
+            </Component>
+          </Directory>
+
+          <!-- LICENSE text dropped in the install root so the uninstaller can reference it. -->
+          <Component Id='License' Guid='79B13F4B-4B28-4C0E-9D17-8FA62A2B8D53' Win64='yes'>
+            <File Id='LicenseFile'
+                  Name='LICENSE.txt'
+                  DiskId='1'
+                  Source='LICENSE.txt'
+                  KeyPath='yes' />
+          </Component>
+        </Directory>
+      </Directory>
+
+      <Directory Id='ProgramMenuFolder' Name='Programs'>
+        <Directory Id='ApplicationProgramsFolder' Name='Garnet'>
+          <Component Id='ApplicationShortcut' Guid='B27A3E3A-3FA1-4B48-8920-5B82B2A8F841'>
+            <Shortcut Id='ApplicationStartMenuShortcut'
+                      Name='Garnet Shell'
+                      Description='Launch a shell with Garnet on PATH'
+                      Target='[%ComSpec]'
+                      Arguments='/K echo Welcome to Garnet v0.4.2 ^&amp; garnet --version'
+                      WorkingDirectory='APPLICATIONFOLDER' />
+            <RemoveFolder Id='ApplicationProgramsFolder' On='uninstall' />
+            <RegistryValue Root='HKCU'
+                           Key='Software\Garnet\Garnet'
+                           Name='installed'
+                           Type='integer'
+                           Value='1'
+                           KeyPath='yes' />
+          </Component>
+        </Directory>
+      </Directory>
+    </Directory>
+
+    <Feature Id='Complete'
+             Title='Garnet'
+             Description='The Garnet dual-mode language platform.'
+             Level='1'
+             ConfigurableDirectory='APPLICATIONFOLDER'>
+      <ComponentRef Id='GarnetExe' />
+      <ComponentRef Id='License' />
+      <ComponentRef Id='ApplicationShortcut' />
+    </Feature>
+
+    <!-- UI: WixUI_InstallDir — one-click install with license acceptance. -->
+    <UIRef Id='WixUI_InstallDir' />
+    <Property Id='WIXUI_INSTALLDIR' Value='APPLICATIONFOLDER' />
+    <WixVariable Id='WixUILicenseRtf' Value='wix\License.rtf' />
+    <WixVariable Id='WixUIBannerBmp'  Value='wix\Banner.bmp' />
+    <WixVariable Id='WixUIDialogBmp'  Value='wix\Dialog.bmp' />
+
+    <!--
+      After install, run the garnet version subcommand once so the
+      command-window test confirms PATH was updated correctly. Side
+      effect: surfaces any early startup issue before the user's first
+      real invocation.
+    -->
+    <CustomAction Id='PostInstallVersionCheck'
+                  FileKey='GarnetExeFile'
+                  ExeCommand='--version'
+                  Execute='deferred'
+                  Impersonate='yes'
+                  Return='ignore' />
+    <InstallExecuteSequence>
+      <Custom Action='PostInstallVersionCheck' Before='InstallFinalize'>NOT Installed</Custom>
+    </InstallExecuteSequence>
+
+    <Icon Id='GarnetIcon.ico' SourceFile='wix\Garnet.ico' />
+
+  </Product>
+</Wix>

@@ -1,0 +1,93 @@
+# realistic_program.garnet
+# A medium-sized Garnet program — enough features in one place that any
+# regression in interpretation breaks something visible. Used as the v3.1
+# E2E smoke test "if this works, the language works."
+
+# Memory primitives in active use.
+memory episodic  build_events : EpisodeStore<BuildEvent>
+memory semantic  spec_index   : VectorIndex<SpecChunk>
+memory procedural plan_store  : WorkflowStore<BuildPlan>
+
+# A small business model.
+enum Severity { Info, Warn, Error }
+struct LogEntry { msg: String, sev: Severity }
+
+def make_log(msg, sev) {
+  LogEntry(msg, sev)
+}
+
+# Pipeline-style data manipulation.
+def summary(entries) {
+  let count = entries.len()
+  let errors = entries.filter(|e| match e.sev {
+    Severity::Error => true,
+    _ => false,
+  }).len()
+  let warnings = entries.filter(|e| match e.sev {
+    Severity::Warn => true,
+    _ => false,
+  }).len()
+  { "total" => count, "errors" => errors, "warnings" => warnings }
+}
+
+# Recursive function with annotations.
+@max_depth(16)
+def total_nesting(arr) {
+  if arr.len() == 0 {
+    0
+  } else {
+    let head = arr.first()
+    let rest = arr.recent(arr.len() - 1)
+    let nested = match head {
+      _ => 1,
+    }
+    nested + total_nesting(rest)
+  }
+}
+
+# Try/rescue with ? for short-circuit.
+def parse_pipeline(steps) {
+  try {
+    let mut accum = ok(0)
+    for step in steps {
+      let prev = accum?
+      accum = ok(prev + step)
+    }
+    accum
+  } rescue e {
+    err("pipeline failed")
+  }
+}
+
+# String interpolation + closures + reduce.
+def render_summary(s) {
+  let parts = s.keys().map(|k| "#{k}=#{s.get(k)}")
+  parts.reduce("", |a, b| if a == "" { b } else { a + ", " + b })
+}
+
+# Drive everything.
+def main() {
+  let entries = [
+    make_log("ok", Severity::Info),
+    make_log("danger", Severity::Error),
+    make_log("careful", Severity::Warn),
+    make_log("ok", Severity::Info),
+    make_log("crash", Severity::Error),
+  ]
+
+  let s = summary(entries)
+  println("summary:", render_summary(s))
+
+  let nesting = total_nesting([:a, :b, :c, :d])
+  println("nesting depth:", nesting)
+
+  let pipe = parse_pipeline([1, 2, 3, 4, 5])
+  println("pipeline result:", pipe)
+
+  # Final sanity number used by tests.
+  let entry_count = entries.len()
+  let n = nesting
+  let total = entry_count * 100 + n
+  println("total:", total)
+  total
+}

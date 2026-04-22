@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Welcome to Garnet</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    color: #E8E8E8;
+    background: #0A0A0F;
+    padding: 32px 40px;
+    margin: 0;
+    line-height: 1.5;
+  }
+  h1 {
+    font-family: Georgia, serif;
+    color: #9C2B2E;
+    letter-spacing: 0.06em;
+    margin: 0 0 4px 0;
+    font-size: 28px;
+  }
+  .tagline {
+    font-style: italic;
+    color: #C8C8D0;
+    font-size: 15px;
+    margin-bottom: 24px;
+  }
+  p { color: #E8E8E8; font-size: 14px; }
+  .accent { color: #E5C07B; }
+  ul { padding-left: 20px; color: #E8E8E8; }
+  li { margin-bottom: 6px; font-size: 14px; }
+  code {
+    font-family: "SF Mono", "Menlo", Consolas, monospace;
+    background: #18181B;
+    color: #F8F8F2;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+  <h1>GARNET</h1>
+  <div class="tagline">Rust Rigor. Ruby Velocity. One Coherent Language.</div>
+
+  <p>Garnet is a dual-mode, agent-native language platform. Managed mode (<code>def</code> + ARC + exceptions) feels Ruby-like. Safe mode (<code>@safe</code> + <code>fn</code> + ownership + <code>Result</code>) feels Rust-like. The mode boundary auto-bridges errors and ownership.</p>
+
+  <p>This installer places the <span class="accent">garnet</span> CLI at <code>/usr/local/garnet/bin/garnet</code> with a symlink in <code>/usr/local/bin/</code>, so <code>garnet --version</code> resolves from any shell immediately after install.</p>
+
+  <p>After install, try:</p>
+  <ul>
+    <li><code>garnet --version</code> — confirm the toolchain is on PATH</li>
+    <li><code>garnet new --template cli my_app</code> — scaffold a starter project</li>
+    <li><code>garnet run my_app/src/main.garnet</code> — execute it</li>
+  </ul>
+</body>
+</html>

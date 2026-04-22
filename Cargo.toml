@@ -1,0 +1,31 @@
+[workspace]
+resolver = "2"
+members = [
+    "garnet-parser-v0.3",
+    "garnet-interp-v0.3",
+    "garnet-check-v0.3",
+    "garnet-memory-v0.3",
+    "garnet-cli",
+    "garnet-actor-runtime",
+    "garnet-stdlib",
+    "garnet-convert",
+    "xtask",
+]
+# Exclude the historical v0.2 parser (flat-file layout, kept for audit trail only).
+exclude = ["garnet-parser"]
+
+[workspace.package]
+version = "0.3.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+authors = ["Island Development Crew"]
+repository = "https://github.com/islanddevcrew/garnet"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = "symbols"
+
+[profile.dev]
+opt-level = 0
+debug = true

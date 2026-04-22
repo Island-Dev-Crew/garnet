@@ -1,0 +1,31 @@
+# safe_module.garnet
+# A @safe module demonstrating ownership annotations, Result-based error handling,
+# the ? operator for error propagation, and safe-mode function signatures.
+# See Mini-Spec v0.3 §5.2, §7.3, §8.
+
+@safe
+
+enum StorageError {
+  NotFound(String),
+  Corruption(String),
+}
+
+struct Block {
+  pub header: Header,
+  pub data: Bytes,
+}
+
+fn read_block(own handle: FileHandle, offset: u64) -> Result<Block, StorageError> {
+  let header = handle.read_at(offset)?
+  if header.magic != BLOCK_MAGIC {
+    return Err(StorageError::Corruption("bad magic"))
+  }
+  let data = handle.read_at(offset + HEADER_SIZE)?
+  Ok(Block::new(header, data))
+}
+
+fn process(own data: Bytes, borrow config: Config) -> Bytes {
+  let mut state = State::new(config)
+  state.update(data)
+  state.finalize()
+}

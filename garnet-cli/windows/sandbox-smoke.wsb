@@ -1,0 +1,41 @@
+<Configuration>
+  <!--
+    Garnet MSI smoke-test config for Windows Sandbox.
+
+    Windows Sandbox is a free, ephemeral, clean Windows VM built into
+    Windows 11 Pro / Enterprise. Enable it one-time via Control Panel
+    > Programs > Turn Windows features on or off > tick "Windows Sandbox".
+
+    To use this config:
+      1. Ensure dist/windows/garnet-0.4.2-x86_64.msi is signed (signtool)
+         and the Garnet_Final tree is at the path below. Adjust HostFolder
+         if your clone lives elsewhere.
+      2. Double-click this .wsb file.
+      3. The Sandbox launches, mounts the project read-only at
+         C:\Users\WDAGUtilityAccount\Desktop\garnet-shared, and runs
+         the smoke script below automatically.
+      4. Observe the cmd window results. Close the Sandbox window to
+         throw the whole ephemeral VM away — no residue on the host.
+
+    Expected output: wordmark + version banner + 'test result: ok'
+    + 'signature valid'. Exit code 0 on every step.
+  -->
+  <MappedFolders>
+    <MappedFolder>
+      <HostFolder>D:\Projects\New folder\Garnet (1)\GARNET\Garnet\Opus-Gpt-Xai-Opus-Gemini-Opus\Garnet_Final\E_Engineering_Artifacts</HostFolder>
+      <SandboxFolder>C:\Users\WDAGUtilityAccount\Desktop\garnet-shared</SandboxFolder>
+      <ReadOnly>true</ReadOnly>
+    </MappedFolder>
+  </MappedFolders>
+
+  <MemoryInMB>4096</MemoryInMB>
+  <Networking>Default</Networking>
+  <AudioInput>Disable</AudioInput>
+  <VideoInput>Disable</VideoInput>
+  <PrinterRedirection>Disable</PrinterRedirection>
+  <ClipboardRedirection>true</ClipboardRedirection>
+
+  <LogonCommand>
+    <Command>cmd.exe /c "cd %USERPROFILE%\Desktop\garnet-shared\garnet-cli\windows && smoke-test.cmd"</Command>
+  </LogonCommand>
+</Configuration>

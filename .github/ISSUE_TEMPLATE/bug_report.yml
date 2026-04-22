@@ -1,0 +1,83 @@
+name: Bug report
+description: Something is broken — crash, wrong output, unexpected behavior
+title: "[bug] "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please fill in the fields below.
+
+        **Before filing:** run `garnet --version` and search existing issues for your symptom.
+
+  - type: input
+    id: version
+    attributes:
+      label: garnet --version output
+      description: Full wordmark + version table. Paste verbatim.
+      placeholder: "garnet 0.4.2 (...) / parser garnet-parser 0.3.0 ..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Linux (Ubuntu/Debian .deb)
+        - Linux (Fedora/RHEL .rpm)
+        - Linux (other — built from source)
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Windows 11 (MSI install)
+        - Windows 11 (built from source via MSVC)
+        - Windows 10
+        - Other (describe below)
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproducer
+    attributes:
+      label: Minimal reproducer
+      description: >
+        The smallest `.garnet` source file + CLI invocation that triggers the bug.
+        Paste code blocks inline; no external links to gists please.
+      placeholder: |
+        ```garnet
+        @caps()
+        def main() {
+          # minimal reproducer
+        }
+        ```
+        Then: `garnet run main.garnet`
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What DID happen? Include full error messages, stack traces, or screenshots.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: I have checked that
+      options:
+        - label: "I searched existing issues and this isn't already filed"
+          required: true
+        - label: "This is reproducible on the latest release (not a dev branch)"
+          required: true
+        - label: "This is not a security vulnerability (if it is, see SECURITY.md — use a private advisory, not this form)"
+          required: true

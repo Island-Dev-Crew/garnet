@@ -1,0 +1,315 @@
+# agentic_log_analyzer.garnet — an agent-native Garnet program that
+# ingests a log stream, classifies each line, indexes notable events into
+# semantic memory for later retrieval, and reports incident clusters.
+#
+# Demonstrates: pattern-matching with guards, structs/enums with payloads,
+# semantic + episodic memory primitives, the pipeline operator |> for
+# functional data flow, recursion with @max_depth guardrails, and the
+# closure-based `map`/`filter`/`reduce` idioms.
+#
+# Run: garnet run examples/agentic_log_analyzer.garnet
+
+memory semantic spec_index   : VectorIndex<LogPattern>
+memory episodic incidents    : EpisodeStore<Incident>
+memory procedural playbooks  : WorkflowStore<Playbook>
+
+# ════════════════════════════════════════════════════════════════════
+# DOMAIN
+# ════════════════════════════════════════════════════════════════════
+
+enum Severity { Trace, Debug, Info, Warn, Error, Fatal }
+enum Source   { Web, Worker, Db, Cache, Auth, Unknown }
+
+struct LogLine {
+  ts: Int,
+  src: Source,
+  sev: Severity,
+  msg: String,
+  trace_id: String,
+}
+
+struct LogPattern {
+  signature: String,
+  count: Int,
+  first_seen_ts: Int,
+  last_seen_ts: Int,
+}
+
+struct Incident {
+  id: Int,
+  trace_id: String,
+  pattern_id: String,
+  sev: Severity,
+  ts: Int,
+  message: String,
+}
+
+struct Playbook {
+  trigger_pattern: String,
+  steps: Array,
+}
+
+struct AnalysisReport {
+  total_lines: Int,
+  errors: Int,
+  warnings: Int,
+  patterns_detected: Int,
+  unique_traces: Int,
+  top_pattern: String,
+}
+
+# ════════════════════════════════════════════════════════════════════
+# CLASSIFICATION
+# ════════════════════════════════════════════════════════════════════
+
+def classify(line) {
+  match line.sev {
+    Severity::Fatal => :critical,
+    Severity::Error if has_keyword(line.msg, "timeout") => :network_error,
+    Severity::Error if has_keyword(line.msg, "denied") => :auth_error,
+    Severity::Error => :runtime_error,
+    Severity::Warn if has_keyword(line.msg, "retry") => :retry_warning,
+    Severity::Warn => :general_warning,
+    _ => :informational,
+  }
+}
+
+def has_keyword(text, keyword) {
+  text.starts_with?(keyword) or text.starts_with?("[" + keyword)
+}
+
+def severity_to_int(sev) {
+  match sev {
+    Severity::Trace => 0,
+    Severity::Debug => 1,
+    Severity::Info => 2,
+    Severity::Warn => 3,
+    Severity::Error => 4,
+    Severity::Fatal => 5,
+  }
+}
+
+def severity_to_string(sev) {
+  match sev {
+    Severity::Trace => "TRACE",
+    Severity::Debug => "DEBUG",
+    Severity::Info => "INFO",
+    Severity::Warn => "WARN",
+    Severity::Error => "ERROR",
+    Severity::Fatal => "FATAL",
+  }
+}
+
+def source_to_string(src) {
+  match src {
+    Source::Web => "web",
+    Source::Worker => "worker",
+    Source::Db => "db",
+    Source::Cache => "cache",
+    Source::Auth => "auth",
+    Source::Unknown => "?",
+  }
+}
+
+# ════════════════════════════════════════════════════════════════════
+# PATTERN EXTRACTION
+# ════════════════════════════════════════════════════════════════════
+
+def extract_pattern(line) {
+  # Build a canonical "signature" by combining source + severity + the
+  # first significant word of the message. Real implementations would use
+  # a proper templater (e.g. Drain3); this version keeps the demo small.
+  let prefix = source_to_string(line.src) + ":" + severity_to_string(line.sev)
+  prefix + ":" + first_word(line.msg)
+}
+
+def first_word(text) {
+  if text.starts_with?("[") {
+    "bracket"
+  } elsif text.starts_with?("connection") {
+    "connection"
+  } elsif text.starts_with?("timeout") {
+    "timeout"
+  } elsif text.starts_with?("auth") {
+    "auth"
+  } elsif text.starts_with?("retry") {
+    "retry"
+  } elsif text.starts_with?("ok") {
+    "ok"
+  } else {
+    "other"
+  }
+}
+
+# ════════════════════════════════════════════════════════════════════
+# INGESTION (records into episodic + semantic memory)
+# ════════════════════════════════════════════════════════════════════
+
+@max_depth(8)
+@fan_out(64)
+def ingest(lines) {
+  let mut next_id = 0
+  for line in lines {
+    let pattern = extract_pattern(line)
+    if is_notable(line) {
+      let incident = Incident(
+        next_id,
+        line.trace_id,
+        pattern,
+        line.sev,
+        line.ts,
+        line.msg,
+      )
+      incidents.append(incident)
+      next_id += 1
+    }
+    spec_index.insert(
+      pattern_to_vector(pattern),
+      LogPattern(pattern, 1, line.ts, line.ts),
+    )
+  }
+  next_id
+}
+
+def is_notable(line) {
+  match line.sev {
+    Severity::Fatal => true,
+    Severity::Error => true,
+    Severity::Warn => has_keyword(line.msg, "retry") or has_keyword(line.msg, "denied"),
+    _ => false,
+  }
+}
+
+def pattern_to_vector(pattern) {
+  # 4-dim feature vector: pattern length, vowel count, digit count, "!" count.
+  [
+    to_f(pattern.len()),
+    to_f(count_vowels(pattern)),
+    to_f(count_digits(pattern)),
+    to_f(count_bangs(pattern)),
+  ]
+}
+
+def to_f(n) {
+  to_f(n)
+}
+
+def count_vowels(text) {
+  let mut count = 0
+  for c in text {
+    if c == "a" or c == "e" or c == "i" or c == "o" or c == "u" {
+      count += 1
+    }
+  }
+  count
+}
+
+def count_digits(text) {
+  let mut count = 0
+  for c in text {
+    if c == "0" or c == "1" or c == "2" or c == "3" or c == "4" or c == "5" or c == "6" or c == "7" or c == "8" or c == "9" {
+      count += 1
+    }
+  }
+  count
+}
+
+def count_bangs(text) {
+  let mut count = 0
+  for c in text {
+    if c == "!" { count += 1 }
+  }
+  count
+}
+
+# ════════════════════════════════════════════════════════════════════
+# AGGREGATION
+# ════════════════════════════════════════════════════════════════════
+
+def aggregate(lines) {
+  let total = lines.len()
+  let errors = lines |> count_severe
+  let warnings = lines |> count_warning
+  let unique_traces = lines |> distinct_trace_count
+  AnalysisReport(
+    total,
+    errors,
+    warnings,
+    spec_index.len(),
+    unique_traces,
+    "see incidents log",
+  )
+}
+
+def count_severe(lines) {
+  lines.filter(|l| match l.sev {
+    Severity::Error => true,
+    Severity::Fatal => true,
+    _ => false,
+  }).len()
+}
+
+def count_warning(lines) {
+  lines.filter(|l| match l.sev { Severity::Warn => true, _ => false }).len()
+}
+
+def distinct_trace_count(lines) {
+  let mut seen = []
+  for l in lines {
+    if not seen_contains(seen, l.trace_id) {
+      seen.push(l.trace_id)
+    }
+  }
+  seen.len()
+}
+
+def seen_contains(seen, trace_id) {
+  let mut found = false
+  for s in seen {
+    if s == trace_id {
+      found = true
+    }
+  }
+  found
+}
+
+# ════════════════════════════════════════════════════════════════════
+# DRIVER
+# ════════════════════════════════════════════════════════════════════
+
+def make_line(ts, src, sev, msg, trace_id) {
+  LogLine(ts, src, sev, msg, trace_id)
+}
+
+def synthetic_log() {
+  [
+    make_line(100, Source::Web,    Severity::Info,  "ok request",                 "tr-01"),
+    make_line(101, Source::Web,    Severity::Warn,  "retry attempt 2/3",          "tr-01"),
+    make_line(102, Source::Db,     Severity::Error, "timeout after 5000ms",       "tr-01"),
+    make_line(105, Source::Auth,   Severity::Error, "denied access for user 42",  "tr-02"),
+    make_line(110, Source::Worker, Severity::Info,  "ok job completed",           "tr-03"),
+    make_line(120, Source::Cache,  Severity::Warn,  "retry on miss",              "tr-04"),
+    make_line(130, Source::Db,     Severity::Fatal, "connection pool exhausted",  "tr-05"),
+    make_line(140, Source::Web,    Severity::Info,  "ok 200",                     "tr-06"),
+    make_line(141, Source::Web,    Severity::Info,  "ok 200",                     "tr-07"),
+    make_line(150, Source::Auth,   Severity::Warn,  "retry token refresh",        "tr-08"),
+    make_line(160, Source::Worker, Severity::Error, "timeout on enqueue",         "tr-09"),
+    make_line(170, Source::Db,     Severity::Info,  "ok query 7ms",               "tr-09"),
+  ]
+}
+
+def main() {
+  let log = synthetic_log()
+  let recorded = ingest(log)
+  println("ingested incidents:", recorded)
+
+  let report = aggregate(log)
+  println("total lines:    ", report.total_lines)
+  println("errors:         ", report.errors)
+  println("warnings:       ", report.warnings)
+  println("unique traces:  ", report.unique_traces)
+  println("patterns:       ", report.patterns_detected)
+
+  # Final stable result so tests can assert on a single integer.
+  report.errors * 10 + report.warnings
+}

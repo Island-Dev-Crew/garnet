@@ -1,0 +1,23 @@
+# Garnet build + cache artifacts.
+#
+# The HMAC'd cache (v3.3 CacheHMAC) under .garnet-cache/ is machine-
+# specific; never commit it. The target/ and build/ trees follow the
+# same pattern as Cargo.
+.garnet-cache/
+target/
+build/
+
+# Signed-manifest keyfiles. Anything ending in .key is treated as
+# secret by convention. If you commit a .key by accident, rotate it
+# via `garnet keygen <newfile>` and stop trusting the old pubkey.
+*.key
+
+# IDE + editor scratch.
+.idea/
+.vscode/
+*.swp
+*~
+
+# Platform artifacts.
+.DS_Store
+Thumbs.db

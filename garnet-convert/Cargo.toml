@@ -1,0 +1,10 @@
+[package]
+name = "garnet-convert"
+version = "0.4.0"
+edition = "2021"
+authors = ["Island Development Crew"]
+license = "MIT OR Apache-2.0"
+description = "Garnet v4.1 code converter — Rust/Ruby/Python/Go source → Garnet source via a language-independent Common IR. Every output ships in @sandbox mode (v4.0 SandboxMode default) pending human audit."
+
+[dependencies]
+blake3 = "1.5"

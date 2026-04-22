@@ -1,0 +1,14 @@
+# Starter tests for {{name}}.
+#
+# Test functions declaring @caps(net) get a sandboxed loopback socket
+# the compiler seeds at test-start. For this scaffold we exercise the
+# pure helpers first; add socket-level tests as your service grows.
+
+def test_timestamp_shape() {
+  # timestamp() returns a "[<ms>ms]" string — fragile-format but
+  # sufficient for a starter test. Real services should return a
+  # structured Value rather than a rendered string.
+  let s = timestamp()
+  assert(starts_with(s, "["))
+  assert(contains(s, "ms"))
+}

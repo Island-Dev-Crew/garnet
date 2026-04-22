@@ -1,0 +1,25 @@
+[package]
+name = "{{name}}"
+version = "0.1.0"
+edition = "garnet-0.3"
+description = "A Garnet CLI application"
+
+[build]
+mode = "managed"
+# Safe-mode modules opt in per-file with @safe; the default for new
+# projects is managed mode to match Ruby-like velocity.
+
+[dependencies]
+# Add Garnet dependencies here. The v3.4.1 stdlib ships bridged
+# primitives for strings, time, crypto, array, fs, and net — no extra
+# dep line needed for those.
+
+[caps]
+# Declare the capability budget this project is permitted to use.
+# The compiler rejects any @caps(...) annotation outside this set.
+# See Paper III §6 for the full capability inventory.
+allowed = ["fs", "time"]
+
+[[bin]]
+name = "{{name}}"
+path = "src/main.garnet"

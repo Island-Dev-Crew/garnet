@@ -1,0 +1,141 @@
+# paper_vi_walkthrough.garnet
+# A single program that touches every Paper VI contribution + every Open
+# Question's executable surface. Used as the smoke-test E2E for v3.0 → v3.1.
+#
+# Run: garnet run examples/paper_vi_walkthrough.garnet
+# Expected output (exit 0, prints intermediate steps).
+
+# ════════════════════════════════════════════════════════════════════
+# Contribution 2: Memory units as first-class declarations (Mini-Spec §4)
+# ════════════════════════════════════════════════════════════════════
+
+memory working   scratch     : Buffer
+memory episodic  events      : EpisodeStore<Event>
+memory semantic  knowledge   : VectorIndex<Fact>
+memory procedural workflows  : WorkflowStore<Recipe>
+
+# ════════════════════════════════════════════════════════════════════
+# Contribution 7: Pattern matching with guards
+# ════════════════════════════════════════════════════════════════════
+
+def categorize(n) {
+  match n {
+    x if x < 0 => :negative,
+    0 => :zero,
+    x if x < 10 => :small,
+    x if x < 100 => :medium,
+    _ => :large,
+  }
+}
+
+# ════════════════════════════════════════════════════════════════════
+# Contribution 3: Result-style error handling with try/rescue + ?
+# ════════════════════════════════════════════════════════════════════
+
+def parse_amount(s) {
+  let n = to_i(s)
+  if n < 0 {
+    err("amount must be non-negative")
+  } else {
+    ok(n)
+  }
+}
+
+def total_with_validation(items) {
+  try {
+    let mut total = 0
+    for item in items {
+      let n = parse_amount(item)?
+      total += n
+    }
+    ok(total)
+  } rescue e {
+    err("validation failed")
+  }
+}
+
+# ════════════════════════════════════════════════════════════════════
+# Contribution 6: Annotation system for guardrails
+# ════════════════════════════════════════════════════════════════════
+
+@max_depth(8)
+def fib(n) {
+  if n < 2 { n } else { fib(n - 1) + fib(n - 2) }
+}
+
+@fan_out(4)
+def parallel_classify(values) {
+  values.map(|v| categorize(v))
+}
+
+# ════════════════════════════════════════════════════════════════════
+# Contribution 1 + 4: Dual-mode + kind-aware allocation
+# ════════════════════════════════════════════════════════════════════
+
+# Managed-mode struct using ARC sharing (interp default).
+struct Counter { n: Int }
+
+def bump(c) {
+  c.n = c.n + 1
+  c
+}
+
+# Safe-mode signature for the safe-mode checker.
+fn checksum(borrow data: Array, init: Int) -> Int {
+  init
+}
+
+# ════════════════════════════════════════════════════════════════════
+# Contribution 5: Actor protocol model
+# ════════════════════════════════════════════════════════════════════
+
+actor Greeter {
+  protocol greet(name: String) -> String
+  on greet(name) {
+    "hello, #{name}"
+  }
+}
+
+# ════════════════════════════════════════════════════════════════════
+# Main: drive every contribution end-to-end
+# ════════════════════════════════════════════════════════════════════
+
+def main() {
+  println("--- categorize ---")
+  println(categorize(-3))
+  println(categorize(0))
+  println(categorize(5))
+  println(categorize(50))
+  println(categorize(500))
+
+  println("--- fib(10) ---")
+  println(fib(10))
+
+  println("--- parallel_classify ---")
+  let labels = parallel_classify([0, 1, 50, 200])
+  println(labels)
+
+  println("--- counter mutation (ARC sharing) ---")
+  let c = Counter(0)
+  let same = c
+  bump(c)
+  bump(c)
+  bump(c)
+  println("c.n =", c.n, "same.n =", same.n)
+
+  println("--- try / rescue / ? ---")
+  let r1 = total_with_validation(["1", "2", "3"])
+  let r2 = total_with_validation(["10", "abc", "5"])
+  println(r1)
+  println(r2)
+
+  println("--- pipeline + reduce ---")
+  let sum = [1, 2, 3, 4, 5] |> reduce_sum
+  println("sum =", sum)
+
+  42
+}
+
+def reduce_sum(arr) {
+  arr.reduce(0, |a, b| a + b)
+}

@@ -1,0 +1,218 @@
+# Garnet — Linux packaging + verification CI (v4.2 Phase 6D).
+#
+# Reproduces the Docker-based verification run manually on 2026-04-17
+# (see Garnet_Final/F_Project_Management/GARNET_v4_2_Phase_6D_Linux_VERIFIED.md)
+# as a CI job so every push automatically confirms .deb + .rpm still
+# install cleanly and still pass the 6-gate smoke.
+#
+# On tagged releases (`v*`) the job additionally:
+#   - Computes SHA-256 of each artifact
+#   - Appends them to a SHA256SUMS file
+#   - Uploads both packages + SHA256SUMS as a release asset
+# These are the files `installer/sh.garnet-lang.org/install.sh` fetches
+# when end users run `curl sh.garnet-lang.org | sh`.
+
+name: Linux packages
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+env:
+  # Garnet is dual-licensed MIT OR Apache-2.0; both notices ship in LICENSE.
+  CARGO_TERM_COLOR: always
+  # The workspace root for the Rust side — cargo-deb / cargo-generate-rpm
+  # run from here.
+  WORKSPACE: ${{ github.workspace }}
+
+jobs:
+  # ───────────────────────────────────────────────────────────────────
+  # 1. Build .deb + .rpm in a single rust:1-bookworm container. Produces
+  #    the two package artifacts + the stripped release binary.
+  # ───────────────────────────────────────────────────────────────────
+  build-packages:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain (stable)
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry + target
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Install cargo-deb + cargo-generate-rpm
+        run: |
+          cargo install cargo-deb --locked
+          cargo install cargo-generate-rpm --locked
+
+      - name: Build release binary
+        run: cargo build --release -p garnet-cli
+
+      - name: Build .deb
+        run: |
+          cd garnet-cli
+          cargo deb --no-build
+          ls -la ../target/debian/
+
+      - name: Build .rpm
+        run: |
+          cargo generate-rpm -p garnet-cli
+          ls -la target/generate-rpm/
+
+      - name: Compute SHA-256
+        run: |
+          mkdir -p dist
+          cp target/debian/*.deb               dist/
+          cp target/generate-rpm/*.rpm          dist/
+          cd dist
+          sha256sum *.deb *.rpm > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: garnet-linux-packages
+          path: |
+            dist/*.deb
+            dist/*.rpm
+            dist/SHA256SUMS
+          retention-days: 30
+
+  # ───────────────────────────────────────────────────────────────────
+  # 2. .deb smoke test in clean ubuntu:24.04 — 6 gates per Phase 6D.
+  # ───────────────────────────────────────────────────────────────────
+  smoke-deb:
+    needs: build-packages
+    runs-on: ubuntu-latest
+    container: ubuntu:24.04
+    steps:
+      - name: Fetch artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: garnet-linux-packages
+          path: dist/
+
+      - name: Install .deb
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq ./dist/*.deb
+
+      - name: Gate 1 — version banner
+        run: garnet --version | grep -q "Rust Rigor. Ruby Velocity."
+
+      - name: Gate 2 — help lists new/keygen/convert
+        run: |
+          garnet --help | grep -q "new"
+          garnet --help | grep -q "keygen"
+          garnet --help | grep -q "convert"
+
+      - name: Gate 3 — scaffold cli template
+        run: |
+          garnet new --template cli /tmp/app
+          test -f /tmp/app/Garnet.toml
+          test -f /tmp/app/src/main.garnet
+
+      - name: Gate 4 — parser runs
+        run: garnet parse /tmp/app/src/main.garnet | grep -q "parsed"
+
+      - name: Gate 5 — signed-manifest round-trip
+        run: |
+          garnet keygen /tmp/k
+          garnet build --deterministic --sign /tmp/k /tmp/app/src/main.garnet
+          garnet verify /tmp/app/src/main.garnet \
+            /tmp/app/src/main.garnet.manifest.json --signature \
+            | grep -q "signature valid"
+
+      - name: Gate 6 — CapCaps propagator flags coverage gap
+        run: |
+          cat > /tmp/bad.garnet <<'EOF'
+          @caps()
+          def main() { read_file("config.toml") }
+          EOF
+          garnet check /tmp/bad.garnet 2>&1 | grep -q "does not declare .fs."
+
+  # ───────────────────────────────────────────────────────────────────
+  # 3. .rpm smoke test in clean fedora:40 — same 6 gates.
+  # ───────────────────────────────────────────────────────────────────
+  smoke-rpm:
+    needs: build-packages
+    runs-on: ubuntu-latest
+    container: fedora:40
+    steps:
+      - name: Fetch artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: garnet-linux-packages
+          path: dist/
+
+      - name: Install .rpm
+        run: dnf install -y -q ./dist/*.rpm
+
+      - name: Six gates
+        run: |
+          garnet --version | grep -q "Rust Rigor. Ruby Velocity."
+          garnet --help | grep -q "convert"
+          garnet new --template agent-orchestrator /tmp/agents
+          grep -q "actor Researcher"  /tmp/agents/src/main.garnet
+          grep -q "actor Synthesizer" /tmp/agents/src/main.garnet
+          grep -q "actor Reviewer"    /tmp/agents/src/main.garnet
+          garnet keygen /tmp/k
+          garnet build --deterministic --sign /tmp/k /tmp/agents/src/main.garnet
+          garnet verify /tmp/agents/src/main.garnet \
+            /tmp/agents/src/main.garnet.manifest.json --signature \
+            | grep -q "signature valid"
+          test -f /usr/share/man/man1/garnet.1
+
+  # ───────────────────────────────────────────────────────────────────
+  # 4. shellcheck the universal installer.
+  # ───────────────────────────────────────────────────────────────────
+  shellcheck-installer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        run: |
+          docker run --rm -v "$PWD:/work" \
+            koalaman/shellcheck:stable \
+            --shell=sh --severity=warning \
+            /work/installer/sh.garnet-lang.org/install.sh
+
+  # ───────────────────────────────────────────────────────────────────
+  # 5. On tagged release only: publish packages + SHA256SUMS as a
+  #    GitHub Release. End-users fetch via sh.garnet-lang.org.
+  # ───────────────────────────────────────────────────────────────────
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [smoke-deb, smoke-rpm, shellcheck-installer]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Fetch artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: garnet-linux-packages
+          path: dist/
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.deb
+            dist/*.rpm
+            dist/SHA256SUMS
+          fail_on_unmatched_files: true
+          generate_release_notes: true

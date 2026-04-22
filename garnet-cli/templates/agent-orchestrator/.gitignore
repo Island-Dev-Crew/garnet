@@ -1,0 +1,14 @@
+.garnet-cache/
+target/
+build/
+*.key
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# Agent services often persist episode logs and fact indices locally.
+# By convention these live under data/ and are never committed.
+data/

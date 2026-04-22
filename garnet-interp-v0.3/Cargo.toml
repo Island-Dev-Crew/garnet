@@ -1,0 +1,21 @@
+[package]
+name = "garnet-interp"
+version = "0.3.0"
+edition = "2021"
+description = "Managed-mode tree-walk interpreter for Garnet v0.3 (Rung 3)."
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+garnet-parser = { path = "../garnet-parser-v0.3" }
+garnet-memory = { path = "../garnet-memory-v0.3" }
+garnet-stdlib = { path = "../garnet-stdlib" }
+miette = { version = "7.6", features = ["fancy"] }
+thiserror = "2.0"
+
+[dev-dependencies]
+proptest = "1"
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "eval"
+harness = false
