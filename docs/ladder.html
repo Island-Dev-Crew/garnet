@@ -3,80 +3,58 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Paper VII — Implementation Ladder</title>
+<title>Garnet — Paper VII — Implementation Ladder</title>
 <meta name="theme-color" content="#9C2B2E">
-<meta name="robots" content="noindex">
 <style>
-/* ═══ Garnet Design Tokens ═══ */
-:root{--bg:#0A0A0F;--bg-soft:#121218;--bg-code:#18181B;--garnet:#9C2B2E;--garnet-2:#B0303A;--gold:#E5C07B;--rust:#B7410E;--ruby:#CC0000;--ink:#E8E8E8;--ink-soft:#C8C8D0;--ink-muted:#6272A4;--rule:#3A3A45;--code-fg:#F8F8F2;--code-key:#FF79C6;--code-str:#50FA7B;--code-com:#6272A4;--code-num:#BD93F9;--serif:'Georgia','Source Serif Pro',serif;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--mono:'SF Mono','Menlo','Consolas','JetBrains Mono',monospace;--maxw:900px;--nav-h:52px}
-html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;-webkit-font-smoothing:antialiased}
-a{color:var(--gold);text-decoration:none}a:hover{color:var(--garnet-2);transition:color .2s}
-::selection{background:var(--garnet);color:var(--ink)}
 
-/* ═══ Fixed Nav Banner ═══ */
-#nav{position:fixed;top:0;left:0;right:0;z-index:100;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(10,10,15,0.92);border-bottom:1px solid var(--rule);height:var(--nav-h)}
-#nav .inner{max-width:1100px;margin:0 auto;padding:0 20px;display:flex;align-items:center;height:100%;gap:4px}
-#nav .brand{font-family:var(--serif);font-weight:bold;letter-spacing:0.18em;color:var(--ink);font-size:15px;margin-right:24px;white-space:nowrap}
-#nav .brand .a{color:var(--garnet)}
-#nav .tabs{display:flex;gap:0;overflow-x:auto;-webkit-overflow-scrolling:touch;flex:1}
-#nav .tab{padding:14px 16px;color:var(--ink-muted);font-size:13px;white-space:nowrap;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;user-select:none;text-decoration:none;font-family:var(--sans)}
-#nav .tab:hover{color:var(--ink)}
-#nav .tab.active{color:var(--garnet);border-bottom-color:var(--garnet);font-weight:600}
-#nav .back{color:var(--ink-muted);font-size:13px;margin-left:12px;white-space:nowrap;transition:color .2s;display:flex;align-items:center;gap:4px}
-#nav .back:hover{color:var(--gold)}
+:root{--bg:#0A0A0F;--bg-soft:#121218;--bg-code:#18181B;--garnet:#9C2B2E;--garnet-2:#B0303A;--gold:#E5C07B;--ink:#E8E8E8;--ink-soft:#C8C8D0;--ink-muted:#6272A4;--rule:#3A3A45;--code-fg:#F8F8F2;--mono:'SF Mono',Menlo,Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,system-ui,sans-serif;--serif:Georgia,'Source Serif Pro',serif;--maxw:920px;--nav-h:52px}
+*,*::before,*::after{box-sizing:border-box}html{scroll-behavior:smooth}html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;-webkit-font-smoothing:antialiased;opacity:0;animation:fadeIn .5s ease-out .05s forwards}
+@keyframes fadeIn{0%{opacity:0}100%{opacity:1}}
+a{color:var(--gold);text-decoration:none}a:hover{color:var(--garnet-2);transition:color .2s}::selection{background:var(--garnet);color:var(--ink)}
+.doc-nav{position:fixed;top:0;left:0;right:0;z-index:100;height:var(--nav-h);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(10,10,15,.92);border-bottom:1px solid var(--rule)}
+.doc-nav .inner{max-width:1080px;margin:0 auto;padding:0 18px;height:100%;display:flex;align-items:center;gap:6px}
+.doc-nav .brand{font-family:var(--serif);font-weight:bold;letter-spacing:.18em;font-size:15px;margin-right:20px;white-space:nowrap}.doc-nav .brand .a{color:var(--garnet)}
+.doc-nav .tabs{display:flex;gap:0;overflow-x:auto;-webkit-overflow-scrolling:touch;flex:1}
+.doc-nav .tab{padding:14px 14px;color:var(--ink-muted);font-size:13px;white-space:nowrap;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;text-decoration:none}
+.doc-nav .tab:hover{color:var(--ink)}.doc-nav .tab.active{color:var(--garnet);border-bottom-color:var(--garnet);font-weight:600}
+.doc-nav .back{margin-left:auto;font-size:13px;color:var(--ink-muted);text-decoration:none;transition:color .2s;white-space:nowrap;display:flex;align-items:center;gap:4px}
+.doc-nav .back:hover{color:var(--gold)}
+.doc-wrap{max-width:var(--maxw);margin:0 auto;padding:calc(var(--nav-h) + 44px) 24px 100px}
+.doc-wrap h1{font-family:var(--serif);font-size:clamp(28px,4.2vw,42px);font-weight:bold;color:var(--ink);margin:0 0 10px;letter-spacing:.02em}
+.doc-wrap h2{font-family:var(--serif);font-size:clamp(22px,3vw,30px);color:var(--ink);margin:52px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--rule)}
+.doc-wrap h3{font-size:20px;color:var(--gold);margin:36px 0 12px;letter-spacing:.03em}
+.doc-wrap h4{font-size:17px;color:var(--ink);margin:24px 0 8px}.doc-wrap h5{font-size:15px;color:var(--ink-soft);margin:20px 0 8px;text-transform:uppercase;letter-spacing:.08em}
+.doc-wrap p{color:var(--ink-soft);margin:13px 0;line-height:1.72}.doc-wrap strong{color:var(--ink)}.doc-wrap em{color:var(--ink-soft);font-style:italic}
+.doc-wrap ul,.doc-wrap ol{color:var(--ink-soft);margin:13px 0;padding-left:24px}.doc-wrap li{margin:5px 0;line-height:1.65}
+.doc-wrap hr{border:none;border-top:1px solid var(--rule);margin:36px 0}
+.doc-wrap code{background:var(--bg-code);color:var(--code-fg);padding:2px 7px;border-radius:4px;font-family:var(--mono);font-size:.88em}
+.doc-wrap pre{background:var(--bg-code);border:1px solid var(--rule);border-radius:10px;padding:20px 24px;margin:18px 0;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.68;color:var(--code-fg)}
+.doc-wrap pre code{background:none;padding:0;color:inherit;font-size:inherit}
+.doc-wrap table{border-collapse:collapse;width:100%;margin:22px 0;font-size:14px;display:block;overflow-x:auto}
+.doc-wrap thead th{background:rgba(229,192,123,.06);color:var(--gold);font-weight:600}
+.doc-wrap th,.doc-wrap td{border:1px solid var(--rule);padding:10px 14px;text-align:left}.doc-wrap td{background:var(--bg-soft)}
+.doc-wrap blockquote{border-left:3px solid var(--garnet);margin:22px 0;padding:14px 22px;background:rgba(156,43,46,.04);border-radius:0 10px 10px 0;color:var(--ink-soft)}
+.doc-wrap blockquote p:first-child{margin-top:0}.doc-wrap blockquote p:last-child{margin-bottom:0}
+@media(max-width:768px){.doc-nav .inner{gap:4px;padding:0 12px}.doc-nav .brand{font-size:13px;margin-right:10px}.doc-nav .tab{padding:14px 8px;font-size:12px}.doc-nav .back{font-size:12px}.doc-wrap{padding:calc(var(--nav-h) + 28px) 14px 72px}.doc-wrap pre{padding:14px 16px;font-size:12px}}
 
-/* ═══ Content Area ═══ */
-#cv{max-width:var(--maxw);margin:0 auto;padding:calc(var(--nav-h) + 40px) 24px 80px;opacity:0;transform:translateY(16px);transition:opacity .6s ease, transform .6s ease}
-#cv.show{opacity:1;transform:translateY(0)}
-#cv.hidden{opacity:0;transform:translateY(-8px);position:absolute;pointer-events:none}
-
-/* ═══ Doc Typography ═══ */
-#cv h1{font-family:var(--serif);font-size:clamp(28px,4vw,40px);color:var(--ink);margin:0 0 8px;letter-spacing:0.02em;font-weight:bold}
-#cv h2{font-family:var(--serif);font-size:clamp(22px,3vw,30px);color:var(--ink);margin:48px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--rule)}
-#cv h3{font-size:20px;color:var(--gold);margin:32px 0 12px;letter-spacing:0.04em}
-#cv h4{font-size:17px;color:var(--ink);margin:24px 0 8px}
-#cv p{color:var(--ink-soft);margin:12px 0;line-height:1.7}
-#cv ul,#cv ol{color:var(--ink-soft);margin:12px 0;padding-left:24px}
-#cv li{margin:4px 0;line-height:1.6}
-#cv strong{color:var(--ink)}
-#cv em{color:var(--ink-soft);font-style:italic}
-#cv blockquote{border-left:3px solid var(--garnet);margin:20px 0;padding:14px 20px;background:rgba(156,43,46,0.05);border-radius:0 8px 8px 0;color:var(--ink-soft)}
-#cv blockquote p{color:inherit}
-#cv code{background:var(--bg-code);color:var(--code-fg);padding:2px 7px;border-radius:4px;font-family:var(--mono);font-size:0.88em}
-#cv pre{background:var(--bg-code);border:1px solid var(--rule);border-radius:10px;padding:18px 22px;margin:18px 0;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.65;color:var(--code-fg)}
-#cv pre code{background:none;padding:0;color:inherit}
-#cv table{border-collapse:collapse;width:100%;margin:20px 0;font-size:14px}
-#cv th,#cv td{border:1px solid var(--rule);padding:10px 14px;text-align:left}
-#cv th{background:rgba(229,192,123,0.06);color:var(--gold);font-weight:600}
-#cv td{background:var(--bg-soft);color:var(--ink-soft)}
-#cv hr{border:none;border-top:1px solid var(--rule);margin:32px 0}
-
-/* ═══ Responsive ═══ */
-@media(max-width:700px){
-  #nav .brand{font-size:13px;margin-right:12px}
-  #nav .tab{padding:14px 10px;font-size:12px}
-  #nav .back span{display:none}
-  #cv{padding:calc(var(--nav-h) + 24px) 14px 60px}
-  #cv pre{padding:14px 16px;font-size:12px}
-}
 </style>
 </head>
 <body>
-
-<div id="nav">
+<nav class="doc-nav">
   <div class="inner">
-    <div class="brand">G<span class="a">A</span>RNET</div>
+    <span class="brand">G<span class="a">A</span>RNET</span>
     <div class="tabs">
-      <a class="tab" data-id="minispec">Mini-Spec</a>
-      <a class="tab" data-id="synthesis">Synthesis</a>
-      <a class="tab" data-id="novel">Novel Frontiers</a>
-      <a class="tab active" data-id="ladder">Implementation</a>
+      <a class="tab" href="minispec.html">Mini-Spec</a>
+      <a class="tab" href="synthesis.html">Synthesis</a>
+      <a class="tab" href="novel.html">Novel Frontiers</a>
+      <a class="tab active" href="ladder.html">Implementation</a>
     </div>
-    <a class="back" href="/">&larr; <span>Back to garnet-lang.org</span></a>
+    <a class="back" href="index.html">&larr; Back to Site</a>
   </div>
-</div>
-
-<div id="cv"><h1 id="paper-vii-implementation-ladder-tooling-ergonomics">Paper VII —
+</nav>
+<div class="doc-wrap">
+<h1 id="paper-vii-implementation-ladder-tooling-ergonomics">Paper VII —
 Implementation Ladder &amp; Tooling Ergonomics</h1>
 <h2 id="phase-1b-stub-v0.1">Phase 1B Stub (v0.1)</h2>
 <p><strong>Series:</strong> Garnet Language Research Series
@@ -531,71 +509,5 @@ the spec hook; this paper is the research justification.</em></p>
 <p><em>“Where there is no vision, the people perish: but he that keepeth
 the law, happy is he.” — Proverbs 29:18</em></p>
 </div>
-
-<script>
-// ================================================================
-// DOC VIEWER — Fixed Nav + Fade-In Content
-// ================================================================
-(function(){
-  var cv = document.getElementById('cv');
-  var tabs = document.querySelectorAll('#nav .tab');
-  var content = {};
-  var active = null;
-
-  // Preload all paper content
-  var papers = ['minispec','synthesis','novel','ladder'];
-  papers.forEach(function(id){
-    content[id] = '';
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', id + '.html', true);
-    xhr.onload = function(){
-      content[id] = xhr.responseText;
-      if(papers.indexOf(active) >= 0) show(active);
-    };
-    xhr.send();
-  });
-
-  // Show a paper with fade animation
-  function show(id){
-    active = id;
-    cv.classList.remove('show');
-    cv.classList.add('hidden');
-    setTimeout(function(){
-      cv.innerHTML = content[id] || '<p style="color:var(--ink-muted)">Loading...</p>';
-      // Style any code blocks
-      var pres = cv.querySelectorAll('pre code[class]');
-      for(var i=0;i<pres.length;i++){pres[i].removeAttribute('class');}
-      // Fix links
-      var links = cv.querySelectorAll('a');
-      for(var i=0;i<links.length;i++){links[i].setAttribute('target','_blank');}
-      cv.classList.remove('hidden');
-      cv.classList.add('show');
-      window.scrollTo(0,0);
-    }, active?'250':0);
-    // Update tab state
-    tabs.forEach(function(t){t.classList.toggle('active',t.getAttribute('data-id')===id);});
-  }
-
-  // Handle tab clicks
-  tabs.forEach(function(tab){
-    tab.addEventListener('click',function(e){
-      e.preventDefault();
-      var id = tab.getAttribute('data-id');
-      if(content[id]) show(id);
-    });
-  });
-
-  // Auto-detect from URL hash
-  var hash = window.location.hash.replace('#','');
-  if(papers.indexOf(hash)>=0 && content[hash]) show(hash);
-  else show('minispec');
-
-  // Handle browser back/forward
-  window.addEventListener('hashchange',function(){
-    var h = window.location.hash.replace('#','');
-    if(papers.indexOf(h)>=0 && content[h]) show(h);
-  });
-})();
-</script>
 </body>
 </html>
