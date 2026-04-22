@@ -649,6 +649,73 @@
     .numbers { grid-template-columns: 1fr 1fr; }
     .hero { padding: 60px 0 40px; }
   }
+
+/* ═══ DOC VIEWER ═══ */
+.doc-viewer-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: var(--bg);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.45s ease;
+  overflow-y: auto;
+}
+.doc-viewer-overlay.active {
+  opacity: 1; pointer-events: auto;
+}
+.doc-viewer-inner {
+  max-width: 900px; margin: 0 auto;
+  padding: 72px 28px 100px;
+  opacity: 0; transform: translateY(12px);
+  transition: opacity 0.5s ease 0.15s, transform 0.5s ease 0.15s;
+}
+.doc-viewer-overlay.active .doc-viewer-inner {
+  opacity: 1; transform: translateY(0);
+}
+.doc-viewer-inner h1 {
+  font-family: var(--serif);
+  font-size: clamp(28px, 4.5vw, 42px);
+  color: var(--ink); margin: 0 0 10px; letter-spacing: 0.02em; font-weight: bold;
+}
+.doc-viewer-inner h2 {
+  font-family: var(--serif);
+  font-size: clamp(22px, 3vw, 30px);
+  color: var(--ink); margin: 52px 0 16px;
+  padding-bottom: 8px; border-bottom: 1px solid var(--rule);
+}
+.doc-viewer-inner h3 {
+  font-size: 20px; color: var(--gold); margin: 36px 0 12px; letter-spacing: 0.03em;
+}
+.doc-viewer-inner h4 { font-size: 17px; color: var(--ink); margin: 24px 0 8px; }
+.doc-viewer-inner h5 { font-size: 15px; color: var(--ink-soft); margin: 20px 0 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+.doc-viewer-inner p { color: var(--ink-soft); margin: 13px 0; line-height: 1.72; }
+.doc-viewer-inner strong { color: var(--ink); }
+.doc-viewer-inner em { color: var(--ink-soft); font-style: italic; }
+.doc-viewer-inner ul,.doc-viewer-inner ol { color: var(--ink-soft); margin: 13px 0; padding-left: 24px; }
+.doc-viewer-inner li { margin: 5px 0; line-height: 1.65; }
+.doc-viewer-inner hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+.doc-viewer-inner code {
+  background: var(--bg-code); color: var(--code-fg);
+  padding: 2px 7px; border-radius: 4px; font-family: var(--mono); font-size: 0.88em;
+}
+.doc-viewer-inner pre {
+  background: var(--bg-code); border: 1px solid var(--rule); border-radius: 10px;
+  padding: 20px 24px; margin: 18px 0; overflow-x: auto;
+  font-family: var(--mono); font-size: 13px; line-height: 1.68; color: var(--code-fg);
+}
+.doc-viewer-inner pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+.doc-viewer-inner table {
+  border-collapse: collapse; width: 100%; margin: 22px 0; font-size: 14px;
+  display: block; overflow-x: auto;
+}
+.doc-viewer-inner thead th { background: rgba(229,192,123,0.06); color: var(--gold); font-weight: 600; }
+.doc-viewer-inner th, .doc-viewer-inner td { border: 1px solid var(--rule); padding: 10px 14px; text-align: left; }
+.doc-viewer-inner td { background: var(--bg-soft); }
+.doc-viewer-inner blockquote {
+  border-left: 3px solid var(--garnet); margin: 22px 0; padding: 14px 22px;
+  background: rgba(156,43,46,0.04); border-radius: 0 10px 10px 0;
+  color: var(--ink-soft);
+}
+.doc-viewer-inner blockquote p:first-child { margin-top: 0; }
+
 </style>
 </head>
 <body>
@@ -680,7 +747,7 @@
     <p class="tagline">Rust Rigor. Ruby Velocity. One Coherent Language.</p>
     <div class="ctas">
       <a href="#install" class="btn btn-primary">Install in 60 seconds →</a>
-      <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/C_Language_Specification/GARNET_v1_0_Mini_Spec.md" target="_blank" rel="noopener noreferrer" class="btn btn-ghost">Read the Mini-Spec</a>
+      <a href="javascript:void(0)" class="btn btn-ghost">Read the Mini-Spec</a>
     </div>
   </div>
 </section>
@@ -1117,22 +1184,22 @@ garnet run src/main.garnet</pre>
     <p class="lead">Garnet ships seven research papers plus four addenda. Every claim is traceable to a reproducer; every empirical experiment was pre-registered before measurement; partial outcomes were honestly downgraded in the v4.0 revisions.</p>
 
     <div class="doc-cards">
-      <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/C_Language_Specification/GARNET_v1_0_Mini_Spec.md" target="_blank" rel="noopener noreferrer" class="doc-card">
+      <a href="javascript:void(0)" class="doc-card">
         <div class="label">Specification</div>
         <h4>Mini-Spec v1.0</h4>
         <p>The canonical language specification. Grammar, type system, mode boundary, capability inventory, deterministic build manifest.</p>
       </a>
-      <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/B_Four_Model_Consensus/GARNET_v2_1_Gemini_Synthesis.md" target="_blank" rel="noopener noreferrer" class="doc-card">
+      <a href="javascript:void(0)" class="doc-card">
         <div class="label">The Reconciliation</div>
         <h4>Paper III — Synthesis</h4>
         <p>Rust + Ruby → Garnet. The dual-mode design rationale, the mode boundary as a first-class construct, the capability model.</p>
       </a>
-      <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/A_Research_Papers/Paper_VI_Garnet_Novel_Frontiers.md" target="_blank" rel="noopener noreferrer" class="doc-card">
+      <a href="javascript:void(0)" class="doc-card">
         <div class="label">Empirical</div>
         <h4>Paper VI — Novel Frontiers</h4>
         <p>Seven novel contributions, pre-registered Phase 1C, executed Phase 4A. Honest scorecard: 4 supported, 2 partial, 0 refuted, 1 pending-infra.</p>
       </a>
-      <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/D_Executive_and_Presentation/GARNET_v4_2_DX_Comparative_Paper.docx" target="_blank" rel="noopener noreferrer" class="doc-card">
+      <a href="javascript:void(0)" class="doc-card">
         <div class="label">DX Study</div>
         <h4>Comparative DX Paper</h4>
         <p>Side-by-side Rust / Ruby / Garnet across 10 patterns. The §20 chapter explicitly separates measured claims from argued claims.</p>
@@ -1225,5 +1292,4212 @@ garnet run src/main.garnet</pre>
     });
   });
 </script>
+
+<!-- DOC VIEWER OVERLAY -->
+<div class="doc-viewer-overlay" id="docOverlay">
+  <!-- Fixed nav banner -->
+  <nav class="doc-nav">
+    <div class="inner">
+      <span class="brand">GAR<span class="accent">N</span>ET</span>
+      <div class="links" id="docTabs">
+        <a class="doc-tab" data-doc="minispec" href="javascript:void(0)">Mini-Spec</a>
+        <a class="doc-tab" data-doc="synthesis" href="javascript:void(0)">Synthesis</a>
+        <a class="doc-tab" data-doc="novel" href="javascript:void(0)">Novel Frontiers</a>
+        <a class="doc-tab" data-doc="ladder" href="javascript:void(0)">Implementation</a>
+      </div>
+      <a class="back-btn" href="javascript:void(0)" id="docBack">&larr; Back to Site</a>
+    </div>
+  </nav>
+  <div class="doc-viewer-inner">
+      <div id="doc-minispec" class="doc-paper" style="display:none;">
+<h1 id="garnet-v1.0-mini-spec">Garnet v1.0 Mini-Spec</h1>
+<p><strong>Supersedes:</strong> v0.3 Mini-Spec (April 16, 2026)
+<strong>Status:</strong> Normative draft — canonical specification for
+Rungs 2–4 of the engineering ladder <strong>Date:</strong> April 16,
+2026 (Phase 1B promotion) <strong>Author:</strong> Claude Code (Opus
+4.7) at the direction of Jon — Island Development Crew
+<strong>Anchor:</strong> <em>“Where there is no vision, the people
+perish.” — Proverbs 29:18</em></p>
+<blockquote>
+<p>v1.0 promotion. This revision preserves all v0.3 normative content
+unchanged and fills the eleven Phase 1B blend-verification gaps
+identified in
+<code>~/.claude/plans/i-ll-follow-plan-mode-proud-lollipop.md</code>:</p>
+<table>
+<colgroup>
+<col style="width: 6%" />
+<col style="width: 11%" />
+<col style="width: 28%" />
+<col style="width: 53%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Gap</th>
+<th>Inheritance</th>
+<th>Section added/extended</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>ARC cycle detection algorithm</td>
+<td>Swift</td>
+<td>§4.5 (new)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Actors + Sendable-equivalent</td>
+<td>Swift</td>
+<td>§9.4 (new)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Package/tooling ergonomics summary</td>
+<td>Swift</td>
+<td>§16 (new), full treatment in Paper VII</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Lifetime inference algorithm</td>
+<td>Rust</td>
+<td>§8.5 (new)</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Trait coherence algorithm (orphan rule)</td>
+<td>Rust</td>
+<td>§11.5 (extended)</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Borrow-checker rules</td>
+<td>Rust</td>
+<td>§8.6 (new)</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Zero-cost abstractions / monomorphization</td>
+<td>Rust</td>
+<td>§11.6 (new)</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Blocks + <code>yield</code> binding/return rules</td>
+<td>Ruby</td>
+<td>§5.4 (new)</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>@dynamic</code> method dispatch table</td>
+<td>Ruby</td>
+<td>§11.7 (new)</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Duck-typing rules at protocol level</td>
+<td>Ruby</td>
+<td>§11.8 (new)</td>
+</tr>
+<tr>
+<td>11</td>
+<td>REPL design</td>
+<td>Ruby</td>
+<td>§15 (new)</td>
+</tr>
+</tbody>
+</table>
+<p>Where v1.0 refines or extends v0.3 wording, a <code>[v1.0]</code>
+marker appears. Where v0.3 deferred a question to v0.4 that v1.0 now
+answers, the open question is updated in §17.</p>
+</blockquote>
+<hr />
+<h2 id="scope">1. Scope</h2>
+<p>Garnet v1.0 specifies the complete surface syntax and normative
+semantics for:</p>
+<ol type="1">
+<li>Module declarations and imports</li>
+<li>Memory unit declarations <em>(carried from v0.2 §2)</em></li>
+<li>Function definitions in both managed and safe modes</li>
+<li>Expression and statement grammar including control flow</li>
+<li>Error handling model (dual-mode)</li>
+<li><code>@safe</code> mode boundaries, crossing rules, <strong>borrow
+checker, and lifetime inference</strong> <em>(extended from v0.3
+§8)</em></li>
+<li>Typed message protocols, actor declarations, and
+<strong>Sendable-equivalent</strong> <em>(extended from v0.3
+§9)</em></li>
+<li>Recursive execution guardrails with concrete annotation syntax
+<em>(extended from v0.2 §5)</em></li>
+<li>Type system foundations including <strong>monomorphization,
+<code>@dynamic</code> dispatch, and structural protocols</strong>
+<em>(extended from v0.3 §11)</em></li>
+<li>Pattern matching</li>
+<li><strong>REPL semantics</strong> [v1.0 §15]</li>
+<li><strong>Tooling ergonomics summary</strong> [v1.0 §16, full spec in
+Paper VII]</li>
+</ol>
+<p><strong>Out of v1.0 scope:</strong> codegen IR (LLVM/Cranelift)
+layout, optimization passes, standard library contents, package manager
+protocol details, interop ABI layout. These belong to the Compiler
+Architecture Specification, Standard Library Outline, and Paper VII
+Implementation Ladder — not the language spec.</p>
+<hr />
+<h2 id="lexical-grammar">2. Lexical Grammar</h2>
+<h3 id="character-set-and-encoding">2.1 Character set and encoding</h3>
+<p>Garnet source files MUST be valid UTF-8. The compiler MUST reject
+files containing invalid UTF-8 sequences before lexing begins. Line
+endings MUST be normalized to <code>\n</code> (LF); <code>\r\n</code>
+(CRLF) is accepted and silently converted.</p>
+<h3 id="keywords">2.2 Keywords</h3>
+<p>The following identifiers are reserved and MUST NOT be used as
+user-defined names:</p>
+<p><strong>Mode and structure:</strong> <code>module</code>
+<code>use</code> <code>@safe</code> <code>@dynamic</code>
+<code>pub</code> <code>end</code></p>
+<p><strong>Declarations:</strong> <code>def</code> <code>fn</code>
+<code>let</code> <code>var</code> <code>const</code> <code>type</code>
+<code>trait</code> <code>impl</code> <code>struct</code>
+<code>enum</code> <code>protocol</code></p>
+<p><strong>Memory and actors:</strong> <code>memory</code>
+<code>working</code> <code>episodic</code> <code>semantic</code>
+<code>procedural</code> <code>actor</code> <code>on</code>
+<code>spawn</code> <code>send</code></p>
+<p><strong>Control flow:</strong> <code>if</code> <code>elsif</code>
+<code>else</code> <code>while</code> <code>for</code> <code>in</code>
+<code>loop</code> <code>break</code> <code>continue</code>
+<code>return</code> <code>match</code> <code>when</code>
+<code>yield</code> <code>next</code></p>
+<p><strong>Error handling:</strong> <code>try</code> <code>rescue</code>
+<code>ensure</code> <code>raise</code> <code>Result</code>
+<code>Ok</code> <code>Err</code></p>
+<p><strong>Ownership (safe mode):</strong> <code>own</code>
+<code>borrow</code> <code>mut</code> <code>ref</code>
+<code>move</code></p>
+<p><strong>Recursion guardrails:</strong> <code>@max_depth</code>
+<code>@fan_out</code> <code>@require_metadata</code></p>
+<p><strong>Sendable + dynamic dispatch [v1.0]:</strong>
+<code>@nonsendable</code> <code>Sendable</code> <code>dyn</code></p>
+<p><strong>Literals and values:</strong> <code>true</code>
+<code>false</code> <code>nil</code> <code>self</code>
+<code>super</code></p>
+<blockquote>
+<p><strong>Why <code>protocol</code> is now a top-level keyword
+[v1.0]:</strong> v0.3 introduced <code>protocol</code> only inside
+<code>actor</code> blocks (§9.1 actor-item). v1.0 §11.8 generalizes
+<code>protocol</code> to a structural-type declaration. The two uses are
+syntactically disambiguated by context: inside an
+<code>actor { ... }</code>, <code>protocol foo(...)</code> declares a
+typed message; outside, <code>protocol Foo { ... }</code> declares a
+duck-typed structural protocol. The keyword is shared because both
+meanings share the kernel idea of “a contract a participant must
+satisfy.”</p>
+</blockquote>
+<h3 id="operators-and-precedence">2.3 Operators and precedence</h3>
+<p>From lowest to highest binding:</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Precedence</th>
+<th>Operators</th>
+<th>Associativity</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>=</code> <code>+=</code> <code>-=</code> <code>*=</code>
+<code>/=</code> <code>%=</code></td>
+<td>Right</td>
+<td>Assignment</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>or</code></td>
+<td>Left</td>
+<td>Logical OR</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>and</code></td>
+<td>Left</td>
+<td>Logical AND</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>not</code></td>
+<td>Prefix</td>
+<td>Logical NOT</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>==</code> <code>!=</code> <code>&lt;</code> <code>&gt;</code>
+<code>&lt;=</code> <code>&gt;=</code></td>
+<td>Left</td>
+<td>Comparison</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>..</code> <code>...</code></td>
+<td>Left</td>
+<td>Range (inclusive / exclusive)</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>\|&gt;</code></td>
+<td>Left</td>
+<td>Pipeline</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>+</code> <code>-</code></td>
+<td>Left</td>
+<td>Addition / subtraction</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>*</code> <code>/</code> <code>%</code></td>
+<td>Left</td>
+<td>Multiplication / division / modulo</td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>-</code> <code>not</code> <code>!</code></td>
+<td>Prefix</td>
+<td>Unary negation, logical not, bitwise not</td>
+</tr>
+<tr>
+<td>11</td>
+<td><code>.</code> <code>::</code> <code>()</code> <code>[]</code></td>
+<td>Left</td>
+<td>Member access, path, call, index</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Design rationale (MIT-defensible):</strong> The pipeline
+operator <code>|&gt;</code> (borrowed from Elixir/F#/OCaml) is included
+because Garnet targets agent orchestration where data flows through
+transformation chains. It desugars to function application:
+<code>x |&gt; f</code> becomes <code>f(x)</code>,
+<code>x |&gt; f(y)</code> becomes <code>f(x, y)</code>. This provides
+fluent left-to-right reading of chains that would otherwise nest
+deeply.</p>
+<h3 id="literals">2.4 Literals</h3>
+<pre><code>integer    := [0-9]+ (&quot;_&quot; [0-9]+)*                    # 1_000_000
+float      := integer &quot;.&quot; integer ([eE] [+-]? integer)?
+string     := &#39;&quot;&#39; (char | &quot;#{&quot; expr &quot;}&quot;)* &#39;&quot;&#39;          # interpolated
+raw_string := &#39;r&quot;&#39; char* &#39;&quot;&#39;                           # no interpolation
+symbol     := &quot;:&quot; ident                                # :ok, :error
+boolean    := &quot;true&quot; | &quot;false&quot;
+nil_lit    := &quot;nil&quot;
+array      := &quot;[&quot; (expr (&quot;,&quot; expr)*)? &quot;]&quot;
+map        := &quot;{&quot; (expr &quot;=&gt;&quot; expr (&quot;,&quot; expr &quot;=&gt;&quot; expr)*)? &quot;}&quot;</code></pre>
+<p><strong>String interpolation:</strong> <code>#{}</code> inside
+double-quoted strings evaluates the enclosed expression, calls
+<code>.to_s</code> on the result, and splices the string representation
+in place. The parser MUST re-enter expression parsing for the
+interpolated segment. This is consistent with Ruby’s interpolation and
+already implemented in the v0.2 parser’s <code>expr.rs</code>.</p>
+<hr />
+<h2 id="module-system">3. Module System</h2>
+<h3 id="file-based-modules">3.1 File-based modules</h3>
+<p>Each <code>.garnet</code> file constitutes a module. The module name
+is derived from the filename by stripping the extension and converting
+to PascalCase. Directories create nested module paths:</p>
+<pre><code>src/
+  main.garnet          # module Main (entry point)
+  memory/
+    core.garnet        # module Memory::Core
+    manager.garnet     # module Memory::Manager
+  agents/
+    build_agent.garnet # module Agents::BuildAgent</code></pre>
+<h3 id="inline-modules">3.2 Inline modules</h3>
+<pre><code>module-decl := (&quot;@safe&quot;)? (&quot;pub&quot;)? &quot;module&quot; ident &quot;{&quot; item* &quot;}&quot;</code></pre>
+<p>A module MAY be declared inline within another module. Inline modules
+share the same file but create a distinct namespace. The
+<code>@safe</code> annotation, if present, MUST precede
+<code>module</code> and applies to all items within.</p>
+<h3 id="imports">3.3 Imports</h3>
+<pre><code>use-decl := &quot;use&quot; path (&quot;::&quot; &quot;{&quot; ident (&quot;,&quot; ident)* &quot;}&quot;)? 
+          | &quot;use&quot; path &quot;::&quot; &quot;*&quot;</code></pre>
+<p>Examples:</p>
+<pre class="garnet"><code>use Memory::Core                    # import module, access via Core::method
+use Memory::Core::{Store, Index}    # import specific items
+use Memory::Core::*                 # glob import (discouraged in safe mode)</code></pre>
+<h3 id="visibility">3.4 Visibility</h3>
+<p>Items are private to their module by default. The <code>pub</code>
+keyword makes an item visible to importing modules. The
+<code>pub(module)</code> form restricts visibility to the parent module
+only.</p>
+<p><strong>Design rationale:</strong> Rust’s visibility model is proven
+and well-understood. Privacy-by-default is essential for safe mode’s
+ownership guarantees (external code cannot alias internal state). The
+four-model consensus point 2 (dual-mode as correct shape) requires that
+safe-mode visibility rules be strict while managed mode can be more
+permissive, but defaulting to private in both modes prevents accidental
+exposure.</p>
+<hr />
+<h2
+id="memory-units-carried-from-v0.2-2-unchanged-through-4.4-4.5-added-in-v1.0">4.
+Memory Units <em>(carried from v0.2 §2, unchanged through §4.4; §4.5
+added in v1.0)</em></h2>
+<h3 id="declaration-form">4.1 Declaration form</h3>
+<pre><code>memory-decl  := &quot;memory&quot; memory-kind ident &quot;:&quot; store-type
+memory-kind  := &quot;working&quot; | &quot;episodic&quot; | &quot;semantic&quot; | &quot;procedural&quot;
+store-type   := ident (&quot;&lt;&quot; type-args &quot;&gt;&quot;)?
+type-args    := type (&quot;,&quot; type)*
+type         := ident (&quot;&lt;&quot; type-args &quot;&gt;&quot;)? | fn-type | tuple-type
+fn-type      := &quot;(&quot; type-args? &quot;)&quot; &quot;-&gt;&quot; type
+tuple-type   := &quot;(&quot; type &quot;,&quot; type (&quot;,&quot; type)* &quot;)&quot;</code></pre>
+<h3 id="semantics-unchanged-from-v0.2-2.2">4.2 Semantics <em>(unchanged
+from v0.2 §2.2)</em></h3>
+<p>A memory unit declaration MUST introduce a top-level binding whose
+static type is <code>store-type</code> and whose runtime identity is
+unique within the enclosing module. Two memory units of the same kind
+and ident in the same module MUST be a compile-time error. The four
+memory kinds are type-level tags, not independent types.</p>
+<h3 id="out-of-scope-unchanged-from-v0.2-2.3">4.3 Out of scope
+<em>(unchanged from v0.2 §2.3)</em></h3>
+<p>Retention policies, TTL semantics, ranking functions, privacy scopes,
+persistence guarantees, wire formats — all belong to the Memory Manager
+and Memory Core, not the language core. See
+<code>GARNET_Memory_Manager_Architecture.md</code> for the runtime-layer
+specification that addresses OQ-7 (R+R+I decay formula) and OQ-8
+(multi-agent consistency).</p>
+<h3
+id="generics-over-memory-kinds-unchanged-from-v0.3-4.4-explicit-deferral">4.4
+Generics over memory kinds <em>(unchanged from v0.3 §4.4 — explicit
+deferral)</em></h3>
+<p>Garnet v1.0 does NOT support parameterizing a function or type over a
+memory kind. A declaration such as
+<code>def foo&lt;M: MemoryKind&gt;(x: M) { ... }</code> is rejected by
+the parser. The deferral rationale from v0.3 §4.4 is preserved.</p>
+<h3 id="arc-cycle-detection-v1.0-addresses-phase-1b-swift-gap-1">4.5 ARC
+cycle detection [v1.0 — addresses Phase 1B Swift gap #1]</h3>
+<p>Managed mode (§8.2) provides automatic reference counting (ARC) for
+all reference types. Naïve reference counting cannot reclaim cyclic
+structures (e.g., a parent owning a child that holds a back-reference to
+the parent). v1.0 specifies the cycle-detection algorithm normatively so
+that implementations agree on observable behavior, including drop
+ordering and <code>__finalize</code> timing.</p>
+<h4
+id="algorithm-synchronous-trial-deletion-baconrajan-2001-with-kind-aware-roots">4.5.1
+Algorithm: synchronous trial-deletion (Bacon–Rajan 2001) with kind-aware
+roots</h4>
+<p>The compiler MUST emit, and the runtime MUST execute, the following
+trial-deletion algorithm whenever ARC decrement triggers cycle scanning.
+The algorithm is taken verbatim from Bacon &amp; Rajan’s <em>Concurrent
+Cycle Collection in Reference Counted Systems</em> (ECOOP 2001), with
+one Garnet-specific extension noted below.</p>
+<p>Each ARC-managed object carries three runtime tags:</p>
+<ul>
+<li><strong>color</strong>: one of <code>Black</code> (in-use),
+<code>Gray</code> (probable cycle member), <code>White</code>
+(provisionally garbage), <code>Purple</code> (root candidate)</li>
+<li><strong>rc</strong>: the unsigned reference count</li>
+<li><strong>buffered</strong>: a boolean — has this object been added to
+the candidate roots buffer this cycle?</li>
+</ul>
+<p>On every reference-count decrement that does NOT reach zero, the
+runtime MUST:</p>
+<pre><code>release(s):
+    s.rc -= 1
+    if s.rc == 0:
+        free(s)                              # not a cycle candidate
+    elif s.color != Purple:
+        s.color = Purple                     # mark as candidate root
+        if not s.buffered:
+            s.buffered = true
+            roots.push(s)                    # buffer for later scan
+        if roots.len() &gt;= scan_threshold:
+            collect_cycles()</code></pre>
+<p>The <code>scan_threshold</code> is implementation-defined but MUST
+default to 256 buffered roots. An implementation MAY tune the threshold
+dynamically based on allocation pressure.</p>
+<p><code>collect_cycles</code> then runs three passes over the roots
+buffer:</p>
+<pre><code>collect_cycles():
+    for each s in roots: mark_gray(s)
+    for each s in roots: scan(s)
+    for each s in roots: collect_white(s)
+    roots.clear()
+
+mark_gray(s):
+    if s.color != Gray:
+        s.color = Gray
+        for each t in children(s):
+            t.rc -= 1                        # speculative decrement
+            mark_gray(t)
+
+scan(s):
+    if s.color == Gray:
+        if s.rc &gt; 0:
+            scan_black(s)                    # not garbage — re-establish
+        else:
+            s.color = White
+            for each t in children(s): scan(t)
+
+scan_black(s):
+    s.color = Black
+    for each t in children(s):
+        t.rc += 1                            # undo speculative decrement
+        if t.color != Black: scan_black(t)
+
+collect_white(s):
+    if s.color == White and not s.buffered:
+        s.color = Black
+        for each t in children(s): collect_white(t)
+        free(s)</code></pre>
+<h4 id="garnet-extension-kind-aware-root-partitioning">4.5.2 Garnet
+extension: kind-aware root partitioning</h4>
+<p><code>children(s)</code> returns the ARC-managed children of
+<code>s</code> reachable through any field. v0.3 §4 introduced four
+memory kinds — <code>working</code>, <code>episodic</code>,
+<code>semantic</code>, <code>procedural</code>. v1.0 makes one
+Garnet-specific refinement to Bacon–Rajan: <strong>roots are partitioned
+by memory kind</strong>, and <code>collect_cycles</code> MAY scan one
+kind’s root set without scanning the others.</p>
+<p>This matters because the four kinds have different lifetime
+profiles:</p>
+<table>
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 32%" />
+<col style="width: 57%" />
+</colgroup>
+<thead>
+<tr>
+<th>Kind</th>
+<th>Typical lifetime</th>
+<th>Cycle-scan frequency (default)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>working</td>
+<td>request-scoped</td>
+<td>every 64 buffered roots</td>
+</tr>
+<tr>
+<td>episodic</td>
+<td>session-scoped</td>
+<td>every 256 buffered roots</td>
+</tr>
+<tr>
+<td>semantic</td>
+<td>process-lifetime</td>
+<td>every 1024 buffered roots</td>
+</tr>
+<tr>
+<td>procedural</td>
+<td>persistent (rarely reclaimed)</td>
+<td>scan only on explicit <code>gc.run()</code></td>
+</tr>
+</tbody>
+</table>
+<p>Cross-kind cycles (e.g., a working-memory object pointing to an
+episodic-memory object pointing back) are detected when ANY of the
+involved kinds triggers a scan. The Bacon–Rajan algorithm’s correctness
+is preserved because <code>mark_gray</code> and <code>scan</code>
+traverse <code>children(s)</code> without filtering by kind — the
+partitioning is purely a scheduling optimization.</p>
+<h4 id="finalization">4.5.3 Finalization</h4>
+<p>When <code>free(s)</code> runs, if <code>s</code> defines a
+<code>def __finalize(self) { ... }</code> method, the runtime MUST
+invoke it before reclaiming memory. Finalizers MUST NOT resurrect their
+object (assign <code>self</code> to a new strong reference); attempting
+to do so produces undefined behavior in v1.0 and will be promoted to a
+runtime error in v1.1.</p>
+<h4 id="safe-mode-interaction">4.5.4 Safe mode interaction</h4>
+<p>Safe-mode (<code>@safe</code>) modules MUST NOT use ARC-managed types
+except through the boundary rules of §8.4. Cycle detection consequently
+does NOT operate on safe-mode allocations; affine ownership (§8.3)
+precludes cyclic ownership at compile time, so no runtime check is
+required.</p>
+<h4 id="observable-invariants-mit-defensible">4.5.5 Observable
+invariants (MIT-defensible)</h4>
+<blockquote>
+<p><strong>ARC + Cycle Detection Soundness Theorem [v1.0]</strong></p>
+<p>For any managed-mode program P that terminates normally (no
+<code>panic</code>, no infinite loop):</p>
+<ol type="1">
+<li><strong>No leaks of cyclic garbage.</strong> Every object
+unreachable from any root is reclaimed within
+<code>O(scan_threshold)</code> allocations.</li>
+<li><strong>No premature reclamation.</strong> No object reachable from
+any root is reclaimed.</li>
+<li><strong>Finalizer determinism.</strong> For any two objects
+<code>a</code>, <code>b</code> whose live-references graph forms an
+acyclic structure with <code>a → b</code>, <code>a.__finalize</code> is
+invoked strictly before <code>b.__finalize</code>.</li>
+</ol>
+<p><strong>Proof sketch.</strong> Properties 1 and 2 follow directly
+from Bacon &amp; Rajan (2001) §3.5–3.7, whose proof rests on the
+invariant that <code>mark_gray</code> + <code>scan_black</code>
+round-trip preserves the true reference count. Garnet’s kind-aware
+extension (§4.5.2) does not affect correctness because partitioning only
+schedules when scans run, not what <code>mark_gray</code> traverses.
+Property 3 follows from the topological invariant of trial-deletion:
+<code>collect_white</code> recurses into children before freeing the
+parent.</p>
+</blockquote>
+<p><strong>Why Bacon–Rajan over Swift’s mainline ARC:</strong> Swift
+relies on programmer-inserted <code>weak</code>/<code>unowned</code>
+annotations to break cycles; cycles without those annotations leak
+silently. This was acceptable for Swift’s UIKit-centric origins but is
+the wrong default for agent systems where data graphs are dynamic and
+refactor-heavy. Bacon–Rajan adds bounded overhead (~5–8% in measured
+Cocoa retrofits per the original paper) for guaranteed-no-leak
+semantics. Paper III §3.1 cited “ARC can be predictable and serious” as
+Swift’s contribution — v1.0 takes that contribution one step further by
+removing the cycle footgun while preserving the predictable-cost
+property.</p>
+<hr />
+<h2 id="function-definitions">5. Function Definitions</h2>
+<h3 id="managed-mode-functions-v0.3">5.1 Managed-mode functions
+[v0.3]</h3>
+<pre><code>managed-fn := (&quot;pub&quot;)? &quot;def&quot; ident &quot;(&quot; param-list? &quot;)&quot; (&quot;-&gt;&quot; type)? block
+param-list := param (&quot;,&quot; param)*
+param      := ident (&quot;:&quot; type)?
+block      := &quot;{&quot; stmt* expr? &quot;}&quot;</code></pre>
+<p>In managed mode, parameter types are OPTIONAL. When omitted, the
+compiler infers types from usage (gradual typing). The return type is
+OPTIONAL; when omitted, it is inferred from the body’s final
+expression.</p>
+<p>The last expression in a block is its implicit return value (Ruby
+convention). An explicit <code>return</code> MAY be used for early
+exits.</p>
+<pre class="garnet"><code># Managed mode — types optional, Ruby-like feel
+def greet(name) {
+  &quot;Hello, #{name}!&quot;
+}
+
+# With optional type annotations
+def add(x: Int, y: Int) -&gt; Int {
+  x + y
+}</code></pre>
+<p><strong>Design rationale (MIT-defensible):</strong> The block syntax
+uses <code>{ }</code> (braces) rather than <code>end</code> keywords.
+This decision was forced by the v0.2 parser, which already uses braces
+for actor bodies, handler blocks, and the provisional expression
+grammar. Consistency across all block-delimited constructs prevents the
+confusing dual-delimiters problem that plagued Lua and early Kotlin. The
+<code>def</code> keyword signals “managed-mode function” and serves as a
+semantic beacon for both humans and LLMs — aligning with Frontier 1
+(LLM-Native Compilation) from the gap analysis. The implicit
+last-expression return preserves Ruby’s expressive philosophy (consensus
+point 2: dual-mode is correct).</p>
+<h3 id="safe-mode-functions-v0.3">5.2 Safe-mode functions [v0.3]</h3>
+<pre><code>safe-fn    := (&quot;pub&quot;)? &quot;fn&quot; ident &quot;(&quot; typed-params? &quot;)&quot; &quot;-&gt;&quot; type block
+typed-params := typed-param (&quot;,&quot; typed-param)*
+typed-param  := (ownership)? ident &quot;:&quot; type
+ownership    := &quot;own&quot; | &quot;borrow&quot; | &quot;ref&quot; | &quot;mut&quot;</code></pre>
+<p>In safe mode, ALL parameter types and the return type are REQUIRED.
+Ownership annotations are available on parameters: <code>own</code>
+transfers ownership into the function, <code>borrow</code> takes a
+shared reference, <code>mut</code> takes a mutable reference,
+<code>ref</code> is a read-only reference (alias for
+<code>borrow</code>).</p>
+<pre class="garnet"><code>@safe
+module FastPath {
+  # Safe mode — types required, ownership explicit
+  fn process(own data: Buffer, borrow config: Config) -&gt; Buffer {
+    let ref header = data.slice(0, 4)
+    let mut body = data.slice(4, -1)
+    body.transform()
+    data
+  }
+}</code></pre>
+<p><strong>Design rationale:</strong> The <code>fn</code> keyword
+signals “safe-mode function” — a distinct keyword from <code>def</code>
+that immediately tells both the developer and the compiler which mode’s
+rules apply. Ownership annotations on parameters make the borrow
+checker’s expectations visible at the call site, addressing Rust’s
+most-cited usability complaint (hidden ownership transfer). The
+four-model consensus point 2 mandates that safe mode provides Rust-level
+guarantees; explicit ownership annotations are the mechanism.</p>
+<h3 id="closures-both-modes-v0.3">5.3 Closures (both modes) [v0.3]</h3>
+<pre><code>closure := &quot;|&quot; param-list? &quot;|&quot; (&quot;-&gt;&quot; type)? block
+         | &quot;|&quot; param-list? &quot;|&quot; expr</code></pre>
+<pre class="garnet"><code># Short form — single expression
+let double = |x| x * 2
+
+# Block form
+let transform = |data: Buffer| -&gt; Buffer {
+  let processed = data.compress()
+  processed.validate()
+  processed
+}
+
+# In pipelines
+items |&gt; map(|x| x.name) |&gt; filter(|n| n.starts_with(&quot;G&quot;))</code></pre>
+<p>In managed mode, closures capture variables by reference (ARC
+increment). In safe mode, closures follow Rust-style capture rules: by
+reference when borrowing, by value when moving. The <code>move</code>
+keyword forces value capture: <code>move |x| { ... }</code>.</p>
+<h3 id="blocks-and-yield-v1.0-addresses-phase-1b-ruby-gap-8">5.4 Blocks
+and <code>yield</code> [v1.0 — addresses Phase 1B Ruby gap #8]</h3>
+<p>In addition to the explicit closure form (§5.3), managed-mode
+functions MAY accept an <em>implicit block parameter</em> — a closure
+attached at the call site without appearing in the parameter list. This
+preserves Ruby’s idiomatic block-passing style for iterators, DSLs, and
+resource-acquisition patterns.</p>
+<h4 id="grammar">5.4.1 Grammar</h4>
+<pre><code>block-arg     := do-block | brace-block
+do-block      := &quot;do&quot; (&quot;|&quot; param-list? &quot;|&quot;)? stmt* expr? &quot;end&quot;
+brace-block   := &quot;{&quot; (&quot;|&quot; param-list? &quot;|&quot;)? stmt* expr? &quot;}&quot;
+yield-expr    := &quot;yield&quot; (&quot;(&quot; arg-list? &quot;)&quot;)?
+next-expr     := &quot;next&quot; expr?</code></pre>
+<p>A function call MAY be followed by a <code>do…end</code> or
+<code>{…}</code> block. The block becomes the call’s implicit block
+argument:</p>
+<pre class="garnet"><code>def each_line(text) {
+  for line in text.split(&quot;\n&quot;) {
+    yield(line)             # invokes the block
+  }
+}
+
+each_line(file.read()) do |line|
+  log(&quot;got: #{line}&quot;)
+end
+
+# Brace form preferred for one-liners
+each_line(file.read()) { |line| log(line) }</code></pre>
+<p><code>yield</code> is normatively defined as “invoke the implicit
+block parameter of the lexically enclosing <code>def</code>.”</p>
+<h4 id="block-binding-rules-formal">5.4.2 Block binding rules
+(formal)</h4>
+<p>Let <em>B</em> be a block syntactically attached to a call to
+function <em>f</em>, defined in lexical scope <em>S</em>. Let
+<em>f</em>’s body contain <code>yield(args)</code>. Then:</p>
+<ul>
+<li><em>B</em> captures all bindings from <em>S</em> by reference
+(managed-mode semantics, §5.3).</li>
+<li><code>yield(args)</code> evaluates <em>args</em> in <em>f</em>’s
+scope, then invokes <em>B</em> with those arguments bound to
+<em>B</em>’s parameters. <em>B</em> executes with read/write access to
+its captured bindings in <em>S</em>.</li>
+<li>The value of <code>yield(args)</code> is the value of <em>B</em>’s
+last expression (or the value passed to <code>next</code> — see
+§5.4.3).</li>
+<li>If <em>f</em> has no implicit block at the call site and
+<code>yield</code> is reached, the runtime MUST raise
+<code>LocalJumpError</code>.</li>
+</ul>
+<h4 id="block-return-rules-formal-the-most-subtle-point">5.4.3 Block
+return rules (formal — the most subtle point)</h4>
+<p>The Mini-Spec specifies block control-flow with the same semantics as
+Ruby, because programmers familiar with blocks expect this and the
+alternative semantics (closure-style) make <code>each</code> patterns
+surprising.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 66%" />
+</colgroup>
+<thead>
+<tr>
+<th>Statement</th>
+<th>Effect inside a block</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>next expr</code></td>
+<td>Returns <code>expr</code> from the block to the enclosing
+<code>yield</code>. Equivalent to a closure’s return-from-call.</td>
+</tr>
+<tr>
+<td><code>break expr</code></td>
+<td>Returns <code>expr</code> from the call to <em>f</em> itself, as if
+<em>f</em> had executed <code>return expr</code>.</td>
+</tr>
+<tr>
+<td><code>return expr</code></td>
+<td>Returns <code>expr</code> from the <em>def lexically enclosing the
+block-bearing call</em>, NOT from the block and NOT from
+<em>f</em>.</td>
+</tr>
+</tbody>
+</table>
+<p>Example demonstrating all three:</p>
+<pre class="garnet"><code>def find_first_match(items) {
+  items.each do |item|
+    if item.matches?(query) {
+      return item            # returns from find_first_match, not from .each
+    }
+    if item.skip? {
+      next nil               # returns nil to the .each iterator; loop continues
+    }
+    if item.fatal? {
+      break nil              # returns nil from .each itself; iteration ends
+    }
+  end
+  nil
+}</code></pre>
+<p>This matches Ruby’s documented semantics (Pickaxe §4.4 “Blocks,
+Closures, and Procs”). The rationale for <code>return</code> escaping
+the <em>enclosing def</em> is that blocks are conceptually “syntactic
+continuations of the caller” rather than independent functions.</p>
+<h4 id="procs-and-lambdas-deferred-to-v1.1">5.4.4 Procs and lambdas
+(deferred to v1.1)</h4>
+<p>Ruby distinguishes blocks (the implicit argument),
+<code>Proc.new { … }</code> (block-like return semantics), and
+<code>-&gt;(x) { … }</code> (lambda — <code>return</code> returns from
+the lambda itself). v1.0 specifies only blocks and the explicit closure
+form (§5.3). The <code>Proc.new</code> constructor and
+<code>-&gt;</code> arrow lambda are explicitly DEFERRED to v1.1;
+programmers who need closure-return semantics should use the §5.3
+<code>|x| { … }</code> form, which behaves like a Ruby lambda.</p>
+<h4 id="safe-mode-prohibition">5.4.5 Safe-mode prohibition</h4>
+<p>Implicit blocks are MANAGED-MODE ONLY. A <code>@safe</code> module
+MUST reject <code>do…end</code>, <code>{…}</code> block-arguments, and
+<code>yield</code> expressions; safe code must use the explicit closure
+form (§5.3) so that ownership transfer is visible at the call site.</p>
+<p><strong>Design rationale (MIT-defensible):</strong> The Ruby block /
+yield pattern is the single most-cited reason developers pick Ruby for
+DSLs, iterators, and resource acquisition
+(<code>File.open(path) do |f| … end</code>). Garnet’s managed mode would
+feel foreign to Ruby developers without it. Adopting Ruby’s exact
+return-semantics (rather than reinterpreting them) means thirty years of
+accumulated Ruby idioms transfer directly. The cost is the well-known
+surprise that <code>return</code> inside a block escapes the enclosing
+method — but this is documented prominently and consistent with what
+Ruby developers already expect.</p>
+<hr />
+<h2 id="statements-and-control-flow-v0.3">6. Statements and Control Flow
+[v0.3]</h2>
+<h3 id="variable-declarations">6.1 Variable declarations</h3>
+<pre><code>let-decl   := &quot;let&quot; (&quot;mut&quot;)? ident (&quot;:&quot; type)? &quot;=&quot; expr
+var-decl   := &quot;var&quot; ident (&quot;:&quot; type)? &quot;=&quot; expr        # managed mode only
+const-decl := &quot;const&quot; ident (&quot;:&quot; type)? &quot;=&quot; expr</code></pre>
+<p><code>let</code> declares an immutable binding (both modes).
+<code>let mut</code> declares a mutable binding (both modes).
+<code>var</code> is managed-mode sugar for <code>let mut</code> —
+provided because scripting-oriented developers expect mutable-by-default
+variables to have a short keyword. A <code>@safe</code> module MUST
+reject <code>var</code> declarations; use <code>let mut</code> instead.
+<code>const</code> declares a compile-time constant.</p>
+<h3 id="control-flow">6.2 Control flow</h3>
+<pre><code>if-expr     := &quot;if&quot; expr block (&quot;elsif&quot; expr block)* (&quot;else&quot; block)?
+while-stmt  := &quot;while&quot; expr block
+for-stmt    := &quot;for&quot; ident &quot;in&quot; expr block
+loop-stmt   := &quot;loop&quot; block                    # infinite loop, break to exit
+break-stmt  := &quot;break&quot; expr?
+continue-stmt := &quot;continue&quot;
+return-stmt := &quot;return&quot; expr?</code></pre>
+<p><code>if</code> is an EXPRESSION, not a statement — it returns a
+value:</p>
+<pre class="garnet"><code>let status = if score &gt; 90 { :excellent } elsif score &gt; 70 { :good } else { :needs_work }</code></pre>
+<p><strong>Design rationale:</strong> <code>if</code>-as-expression
+eliminates the ternary operator and aligns with Rust and Kotlin.
+<code>elsif</code> (not <code>else if</code>) is a single keyword —
+consistent with Ruby, easier to lex, and unambiguous in the grammar.
+<code>loop</code> with explicit <code>break</code> replaces
+<code>while true</code> patterns and makes infinite loops intentional
+(same rationale as Rust). No <code>unless</code> — it adds cognitive
+load without expressive power (Crystal dropped it from its Ruby
+inheritance for the same reason).</p>
+<h3 id="pattern-matching-v0.3">6.3 Pattern matching [v0.3]</h3>
+<pre><code>match-expr := &quot;match&quot; expr &quot;{&quot; match-arm (&quot;,&quot; match-arm)* &quot;}&quot;
+match-arm  := pattern (&quot;if&quot; expr)? &quot;=&gt;&quot; (expr | block)
+pattern    := literal-pattern | ident-pattern | tuple-pattern
+            | enum-pattern | wildcard | rest-pattern
+literal-pattern := integer | float | string | symbol | &quot;true&quot; | &quot;false&quot; | &quot;nil&quot;
+ident-pattern   := ident
+tuple-pattern   := &quot;(&quot; pattern (&quot;,&quot; pattern)* &quot;)&quot;
+enum-pattern    := path &quot;(&quot; pattern (&quot;,&quot; pattern)* &quot;)&quot;
+wildcard        := &quot;_&quot;
+rest-pattern    := &quot;..&quot;</code></pre>
+<pre class="garnet"><code>match result {
+  Ok(value) =&gt; process(value),
+  Err(:not_found) =&gt; default_value(),
+  Err(e) if e.retryable? =&gt; retry(operation),
+  Err(e) =&gt; raise e,
+}</code></pre>
+<p>In safe mode, pattern matching MUST be exhaustive — the compiler MUST
+reject a <code>match</code> expression that does not cover all variants.
+In managed mode, non-exhaustive matches are permitted but emit a
+compiler warning; an unmatched value at runtime raises
+<code>MatchError</code>.</p>
+<p><strong>Design rationale (MIT-defensible):</strong> Pattern matching
+is now established as essential in modern language design (Rust, Swift,
+Kotlin, Python 3.10+, Java 21). Garnet’s match combines Rust’s
+algebraic-type exhaustiveness guarantees with Ruby’s guard-clause
+expressiveness (<code>if</code> guards on arms). The <code>=&gt;</code>
+arrow syntax follows Rust/Scala convention, which is the most widely
+recognized among systems-and-web developers. Symbols
+(<code>:not_found</code>) provide lightweight domain-specific tags
+without requiring full enum declarations — critical for the scripting
+use case (consensus point 2: managed mode must feel Ruby-like).</p>
+<hr />
+<h2 id="error-handling-dual-mode-v0.3">7. Error Handling (Dual-Mode)
+[v0.3]</h2>
+<h3 id="design-principle">7.1 Design principle</h3>
+<p>Error handling is the most architecturally significant consequence of
+the dual-mode design. Managed mode uses exception-style error handling
+for developer ergonomics. Safe mode uses <code>Result&lt;T,E&gt;</code>
+for compile-time error exhaustiveness. The mode boundary performs
+automatic bridging.</p>
+<p><strong>This is a novel contribution.</strong> No existing production
+language provides automatic bidirectional error-model bridging across a
+type-system mode boundary. TypeScript has no mode boundary. Rust has no
+exceptions. Swift has exceptions but no mode boundary. Garnet is the
+first to formalize this.</p>
+<blockquote>
+<p><strong>Implementation note [v1.0].</strong> The “automatic” bridging
+described in this section is the v4.0 target. v3.2/v3.3 implements the
+bridging contract via user-authored try/rescue + ? at boundaries — see
+Paper VI §C5 for the honest distinction between v3.2’s shipped behavior
+and v4.0’s automatic compiler-inserted wrappers. The grammar and
+semantics here describe the v4.0 surface; conforming v0.x
+implementations MAY require explicit bridging wrappers as long as the
+diagnostics direct programmers to write the correct manual form.</p>
+</blockquote>
+<h3 id="managed-mode-error-handling">7.2 Managed-mode error
+handling</h3>
+<pre><code>try-expr := &quot;try&quot; block rescue-clause+ ensure-clause?
+rescue-clause := &quot;rescue&quot; (ident (&quot;:&quot; type)?)? block
+ensure-clause := &quot;ensure&quot; block
+raise-stmt := &quot;raise&quot; expr</code></pre>
+<pre class="garnet"><code># Managed mode — exceptions for ergonomic error handling
+def fetch_data(url) {
+  try {
+    let response = Http.get(url)
+    response.parse_json()
+  } rescue e: NetworkError {
+    log(&quot;Network failed: #{e.message}&quot;)
+    cached_data(url)
+  } rescue e {
+    raise e  # re-raise unknown errors
+  } ensure {
+    connection.close()
+  }
+}</code></pre>
+<p>Managed-mode code MAY raise any value as an exception.
+<code>try</code>/<code>rescue</code> catches exceptions by type.
+<code>ensure</code> always executes (equivalent to Java’s
+<code>finally</code>, Ruby’s <code>ensure</code>). Uncaught exceptions
+propagate up the call stack.</p>
+<h3 id="safe-mode-error-handling">7.3 Safe-mode error handling</h3>
+<pre class="garnet"><code>@safe
+module Storage {
+  enum StorageError {
+    NotFound(String),
+    Corruption(String),
+    Io(IoError),
+  }
+
+  fn read_block(own handle: FileHandle, offset: u64) -&gt; Result&lt;Block, StorageError&gt; {
+    let header = handle.read_at(offset)?    # ? propagates Err
+    if header.magic != BLOCK_MAGIC {
+      return Err(StorageError::Corruption(&quot;bad magic&quot;))
+    }
+    let data = handle.read_at(offset + HEADER_SIZE)?
+    Ok(Block::new(header, data))
+  }
+}</code></pre>
+<p>Safe-mode functions MUST use <code>Result&lt;T, E&gt;</code> for
+fallible operations. The <code>?</code> operator propagates
+<code>Err</code> values to the caller. Safe-mode code MUST NOT use
+<code>raise</code> or <code>try</code>/<code>rescue</code>; the compiler
+MUST reject these constructs in <code>@safe</code> modules.</p>
+<h3 id="boundary-bridging-v0.3">7.4 Boundary bridging [v0.3]</h3>
+<p>When managed code calls a safe function returning
+<code>Result&lt;T,E&gt;</code>: - <code>Ok(value)</code> is unwrapped
+and returned as the bare value - <code>Err(error)</code> is
+automatically raised as an exception of type
+<code>SafeModeError(error)</code></p>
+<p>When safe code calls a managed function: - The call is implicitly
+wrapped in a <code>try</code>/<code>rescue</code> - Normal returns
+become <code>Ok(value)</code> - Exceptions become
+<code>Err(ManagedError(exception))</code></p>
+<pre class="garnet"><code># Managed code calling safe code — bridging is automatic (v4.0; manual via try/rescue in v3.x)
+def process_file(path) {
+  # Storage.read_block returns Result&lt;Block, StorageError&gt;
+  # In managed mode, Err becomes an exception automatically
+  let block = Storage.read_block(open(path), 0)  # may raise SafeModeError
+  block.data
+}</code></pre>
+<p><strong>Design rationale (MIT-defensible):</strong> The
+error-bridging mechanism is formally justified by the mode-boundary
+calculus in Paper V §4. The managed-to-safe direction (unwrap + raise)
+preserves the managed-mode invariant that errors are exceptions. The
+safe-to-managed direction (wrap in try) preserves the safe-mode
+invariant that errors are values. Neither direction loses information —
+the original error is preserved inside the wrapper type. This is
+analogous to how Swift’s Objective-C interop bridges NSError to Swift
+errors, but generalized to a formal dual-mode boundary. The four-model
+consensus point 2 (dual-mode is correct) implies that each mode’s error
+model should be native to that mode, not a compromise — and the bridging
+mechanism makes this possible.</p>
+<hr />
+<h2
+id="mode-boundaries-extended-from-v0.3-8-8.5-and-8.6-added-in-v1.0">8.
+Mode Boundaries <em>(extended from v0.3 §8; §§8.5 and 8.6 added in
+v1.0)</em></h2>
+<h3 id="formal-grounding-unchanged-from-v0.3-8.1">8.1 Formal grounding
+<em>(unchanged from v0.3 §8.1)</em></h3>
+<p>Garnet’s <code>@safe</code> mode is grounded in <strong>affine type
+theory</strong> (resources used at most once), formally verified by
+<strong>RustBelt (Jung et al., POPL 2018, MPI-SWS)</strong> using the
+<strong>Iris framework</strong> in Coq. See Paper V §2-§6 for the full
+formal treatment.</p>
+<p><strong>Security Theorem (safe-mode soundness) [v0.3]:</strong></p>
+<blockquote>
+<p>For any <code>@safe</code> module M that type-checks under the Garnet
+v1.0 rules, the following properties hold:</p>
+<ol type="1">
+<li><strong>No use-after-free.</strong> Dropped values are not
+subsequently accessible.</li>
+<li><strong>No double-free.</strong> Each owned value is dropped exactly
+once along every execution path.</li>
+<li><strong>No data races.</strong> Concurrent access to shared memory
+follows aliasing-XOR-mutation strictly.</li>
+<li><strong>No memory unsafety</strong> within the well-typed fragment
+(excluding explicit <code>extern "C"</code> boundaries, which are
+programmer-asserted unsafe by definition).</li>
+</ol>
+<p><strong>Proof sketch.</strong> The λ_safe calculus (Paper V §3)
+inherits progress and preservation from RustBelt (Jung et al., POPL
+2018). Garnet’s module-granularity (rather than crate-granularity)
+refinement does not invalidate the core argument: the Iris
+separation-logic model of λ_safe is a sub-model of RustBelt’s crate
+model, so any property proven for RustBelt lifts. Formal mechanization
+in Coq is planned for a future Paper V revision (18–30 person-months per
+the v2.4 handoff estimate).</p>
+</blockquote>
+<p>This theorem statement elevates the earlier prose to a load-bearing
+normative claim that MIT or PLDI reviewers can scrutinize precisely.</p>
+<h3
+id="managed-mode-unchanged-from-v0.3-8.2-cycle-collection-algorithm-specified-in-4.5-v1.0">8.2
+Managed mode <em>(unchanged from v0.3 §8.2; cycle-collection algorithm
+specified in §4.5 v1.0)</em></h3>
+<p>Managed mode MUST provide automatic reference counting with cycle
+detection. Values MAY be mutated without ownership discipline. Managed
+mode is the default. The cycle-detection algorithm is specified
+normatively in §4.5.</p>
+<h3 id="safe-mode-v0.3-concrete-syntax-added">8.3 Safe mode [v0.3 —
+concrete syntax added]</h3>
+<p>A module MAY be annotated <code>@safe</code> by placing the
+annotation before the <code>module</code> keyword (inline modules) or as
+the first non-comment token in a <code>.garnet</code> file (file-based
+modules).</p>
+<pre class="garnet"><code># File: src/crypto/hasher.garnet
+@safe  # This entire file is a safe-mode module
+
+fn hash(own data: Bytes) -&gt; Hash {
+  let mut state = State::new()
+  state.update(borrow data)
+  state.finalize()
+}</code></pre>
+<pre class="garnet"><code># Inline safe module within a managed file
+module App {
+  @safe module Crypto {
+    fn hash(own data: Bytes) -&gt; Hash { ... }
+  }
+
+  def process(input) {
+    Crypto.hash(input)  # managed calling safe — boundary bridging applies
+  }
+}</code></pre>
+<p>A <code>@safe</code> module MUST enforce (unchanged from v0.2 §3.3):
+1. Single-owner (affine) semantics for all values 2.
+Aliasing-XOR-mutation for all references (formalized in §8.6) 3. Lexical
+or non-lexical lifetime inference (algorithm in §8.5) 4. No implicit
+allocation on hot paths</p>
+<h3
+id="boundary-rules-unchanged-from-v0.2-3.4-plus-error-bridging-from-7.4">8.4
+Boundary rules <em>(unchanged from v0.2 §3.4, plus error bridging from
+§7.4)</em></h3>
+<ol type="1">
+<li>Managed callers invoking <code>@safe</code> functions MUST satisfy
+ownership preconditions at call sites</li>
+<li><code>@safe</code> returns to managed mode MUST return either an
+owned value (adopted into ARC) or a borrowed reference with a statically
+proven lifetime</li>
+<li>Managed memory units MAY be read from safe mode under shared borrow,
+but MUST NOT be mutated except through a formal bridging API
+<em>(reserved for v0.4)</em></li>
+<li>[v0.3] Error bridging follows §7.4 rules automatically at every
+mode-crossing call site</li>
+<li>[v1.0] At the boundary, a managed-mode value passed to a safe-mode
+<code>borrow</code> parameter MUST have a lifetime ≥ the call’s static
+frame; the compiler MAY insert a “freeze” check that pins the ARC count
+for the call’s duration</li>
+</ol>
+<h3
+id="lifetime-inference-algorithm-v1.0-addresses-phase-1b-rust-gap-4">8.5
+Lifetime inference algorithm [v1.0 — addresses Phase 1B Rust gap
+#4]</h3>
+<p>Safe-mode references carry lifetimes — symbolic regions denoting the
+program-point span during which the reference is valid. v0.3 §8.3
+required “lexical or non-lexical lifetime inference” without specifying
+the algorithm. v1.0 specifies the algorithm normatively, modeled on
+<strong>Non-Lexical Lifetimes (NLL)</strong> as defined by Rust RFC 2094
+(Matsakis 2018).</p>
+<h4 id="algorithm-overview">8.5.1 Algorithm overview</h4>
+<p>The compiler MUST translate each <code>@safe</code> function body to
+a Mid-level IR (MIR) — a control-flow graph (CFG) of basic blocks
+containing typed three-address operations. Lifetime inference proceeds
+in five stages:</p>
+<ol type="1">
+<li><strong>Build CFG.</strong> Nodes are basic blocks; edges are
+control-flow successors.</li>
+<li><strong>Compute liveness.</strong> A reference is <em>live</em> at a
+program point P if its referent is read or written along some path from
+P. Liveness is computed by standard backward dataflow analysis.</li>
+<li><strong>Generate region constraints.</strong> For each reference
+assignment <code>r = &amp;x</code> (or <code>&amp;mut x</code>),
+introduce a region variable <code>'r</code>. For every program point P
+where <code>r</code> is live, add the constraint <code>'r ⊇ {P}</code>.
+For every reborrow <code>r2 = r</code> where <code>r2: &amp;'b T</code>
+and <code>r: &amp;'a T</code>, add <code>'a ⊇ 'b</code>.</li>
+<li><strong>Solve constraints.</strong> Compute the smallest
+<code>'r</code> satisfying all constraints (least fixed point). Existing
+solver: standard worklist algorithm, O(n·d) where n = nodes, d = max
+dataflow depth.</li>
+<li><strong>Validate.</strong> For each <code>&amp;mut x</code> borrow
+at point P, check no other <code>&amp;x</code> or
+<code>&amp;mut x</code> is live at P. If violated, emit a borrow-checker
+error (§8.6).</li>
+</ol>
+<h4 id="lifetime-elision-rules">8.5.2 Lifetime elision rules</h4>
+<p>In safe-mode function signatures, lifetimes MAY be elided when they
+follow these <em>elision rules</em> (matching Rust’s elision rules for
+backward compatibility):</p>
+<ol type="1">
+<li><strong>Each elided input lifetime becomes its own distinct lifetime
+parameter.</strong> <code>fn f(x: borrow A, y: borrow B)</code> →
+<code>fn f&lt;'a, 'b&gt;(x: &amp;'a A, y: &amp;'b B)</code>.</li>
+<li><strong>If there is exactly one elided input lifetime, it is
+assigned to all elided output lifetimes.</strong>
+<code>fn f(x: borrow A) -&gt; borrow B</code> →
+<code>fn f&lt;'a&gt;(x: &amp;'a A) -&gt; &amp;'a B</code>.</li>
+<li><strong>If there is a <code>borrow self</code> or
+<code>mut self</code> parameter, the lifetime of <code>self</code> is
+assigned to all elided output lifetimes.</strong>
+<code>fn method(borrow self, x: borrow A) -&gt; borrow B</code> →
+<code>fn method&lt;'a, 'b&gt;(self: &amp;'a Self, x: &amp;'b A) -&gt; &amp;'a B</code>.</li>
+<li><strong>If none of the above apply, lifetimes MUST be written
+explicitly.</strong> The compiler MUST emit
+<code>error E0106: missing lifetime specifier</code> with a
+suggestion.</li>
+</ol>
+<h4 id="variance">8.5.3 Variance</h4>
+<p>Lifetimes interact with type parameters through variance. v1.0 adopts
+Rust’s variance rules:</p>
+<table>
+<thead>
+<tr>
+<th>Position</th>
+<th>Variance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>&amp;'a T</code> (shared reference)</td>
+<td>covariant in <code>'a</code></td>
+</tr>
+<tr>
+<td><code>&amp;'a mut T</code> (mutable reference)</td>
+<td>invariant in <code>'a</code> AND in <code>T</code></td>
+</tr>
+<tr>
+<td><code>fn(&amp;'a T) -&gt; ()</code></td>
+<td>contravariant in <code>'a</code></td>
+</tr>
+<tr>
+<td><code>fn() -&gt; &amp;'a T</code></td>
+<td>covariant in <code>'a</code></td>
+</tr>
+<tr>
+<td><code>Cell&lt;T&gt;</code>, <code>RefCell&lt;T&gt;</code></td>
+<td>invariant in <code>T</code> (interior mutability)</td>
+</tr>
+<tr>
+<td><code>T</code> in <code>struct S&lt;T&gt;</code></td>
+<td>inferred from how <code>T</code> is used in fields</td>
+</tr>
+</tbody>
+</table>
+<p>Rationale for invariance of <code>&amp;'a mut T</code>: a mutable
+reference allows both reading and writing through it. Reading is
+covariant; writing is contravariant; the only way to satisfy both is
+invariance.</p>
+<h4 id="closures-and-lifetime-inference">8.5.4 Closures and lifetime
+inference</h4>
+<p>Closures in safe mode (per §5.3) capture by-reference by default. The
+compiler MUST infer the lifetime of each capture as the smallest region
+containing all uses of the closure. If a closure outlives any capture,
+the compiler MUST reject with
+<code>error E0373: closure may outlive captured variable</code>. The fix
+is either to extend the captured value’s lifetime or to use
+<code>move |…| { … }</code> to transfer ownership into the closure.</p>
+<h4 id="higher-rank-trait-bounds-deferred">8.5.5 Higher-rank trait
+bounds (deferred)</h4>
+<p><code>for&lt;'a&gt; Fn(&amp;'a T)</code> higher-rank bounds (HRTB)
+are common in Rust for callback signatures. v1.0 explicitly DEFERS HRTB
+to v1.1; v1.0 type-checker may treat them as parse errors with a
+suggestion to use a concrete lifetime. Real impact on user code is minor
+because most callback signatures fall under elision rules 1–3.</p>
+<h4 id="interaction-with-managed-mode">8.5.6 Interaction with managed
+mode</h4>
+<p>Managed-mode functions (called from safe mode via §8.4) erase
+lifetimes — the ARC system manages object lifetime independently. The
+boundary rule of §8.4 #5 (the “freeze” check) ensures that an ARC object
+passed by <code>borrow</code> lives at least as long as the safe-mode
+frame consuming it.</p>
+<h4 id="implementation-status">8.5.7 Implementation status</h4>
+<p>v0.3 implementation: lifetimes parsed but NOT enforced. Safe-mode
+functions accept and parse lifetime annotations but the tree-walk
+interpreter does not run NLL inference; safe mode is currently checked
+at lower fidelity (single-owner enforced; aliasing-XOR-mutation
+enforced; lifetime correctness NOT proven). Full NLL inference is a Rung
+4 deliverable (per §13). <strong>Soundness during the gap
+window</strong> is preserved by §8.4 #5 (ARC freeze) at boundaries and
+by §10 recursive guardrails: until NLL ships, programs with
+potentially-unsound lifetime patterns will leak instead of UB.</p>
+<hr />
+<h3 id="borrow-checker-rules-v1.0-addresses-phase-1b-rust-gap-6">8.6
+Borrow checker rules [v1.0 — addresses Phase 1B Rust gap #6]</h3>
+<p>Safe-mode borrow checking enforces aliasing-XOR-mutation across the
+program. v0.3 stated the rule informally; v1.0 specifies it as a
+checking algorithm operating on the MIR + region results from §8.5.</p>
+<h4 id="foundational-rules">8.6.1 Foundational rules</h4>
+<p>For every program point P and every memory location L:</p>
+<ul>
+<li><strong>Rule B1 (uniqueness of mutation).</strong> At most ONE of
+the following sets may be non-empty at P:
+<ul>
+<li>the set of live shared borrows of L (<code>&amp;L</code>)</li>
+<li>the set of live mutable borrows of L (<code>&amp;mut L</code>)</li>
+</ul></li>
+<li><strong>Rule B2 (mut implies unique).</strong> A live
+<code>&amp;mut L</code> at P forbids ANY other live borrow of L (or a
+sub-place of L) at P, including additional mutable borrows.</li>
+<li><strong>Rule B3 (lifetime containment).</strong> If
+<code>r: &amp;'a L</code> is live at P, then <code>'a ⊇ {P}</code> (the
+lifetime must cover the program point).</li>
+<li><strong>Rule B4 (no use after move).</strong> If L is moved at point
+M, no read or write of L is permitted at any point reachable from M
+without an intervening reassignment.</li>
+<li><strong>Rule B5 (drop discipline).</strong> When an owned value goes
+out of scope, its destructor (if any) runs. After drop, the location is
+uninitialized; B4 applies.</li>
+</ul>
+<h4 id="two-phase-borrows-per-rust-rfc-2025">8.6.2 Two-phase borrows
+(per Rust RFC 2025)</h4>
+<p>Self-referential method calls of the form
+<code>vec.push(vec.len())</code> would naively conflict (the call needs
+<code>&amp;mut vec</code>, the argument needs <code>&amp;vec</code>).
+v1.0 adopts Rust RFC 2025’s <em>two-phase borrow</em> refinement:</p>
+<p>A borrow created at <code>&amp;mut e</code> MAY be split into a
+<em>reservation phase</em> (acts as <code>&amp;e</code>, allows other
+shared borrows) and an <em>activation phase</em> (acts as
+<code>&amp;mut e</code>, exclusive). Activation occurs at the first use
+of the mutable reference. Between reservation and activation, additional
+shared borrows of <code>e</code> are permitted IF none of them outlive
+the activation point.</p>
+<p>This permits the natural <code>vec.push(vec.len())</code> pattern
+while preserving B1–B5 globally.</p>
+<h4 id="place-algebra-sub-place-tracking">8.6.3 Place algebra (sub-place
+tracking)</h4>
+<p>A place is a location expression like <code>x</code>,
+<code>x.f</code>, <code>x[i]</code>, <code>*x</code>. The borrow checker
+tracks borrows at <em>place granularity</em>: borrowing <code>x.f</code>
+does not preclude borrowing <code>x.g</code>, but DOES preclude
+borrowing <code>x</code> (because <code>x</code> is a super-place of
+<code>x.f</code>).</p>
+<p>Place compatibility is computed by <em>prefix relation</em>:
+<code>p</code> and <code>q</code> conflict iff one is a prefix of the
+other. <code>x.f</code> is a prefix of <code>x.f.g</code>;
+<code>x[i]</code> and <code>x[j]</code> are conservatively treated as
+conflicting because <code>i = j</code> is undecidable in general.</p>
+<h4 id="diagnostic-guarantees">8.6.4 Diagnostic guarantees</h4>
+<p>When borrow check fails, the compiler MUST produce a diagnostic
+that:</p>
+<ol type="1">
+<li>Names the conflicting borrows (location, span, kind:
+<code>&amp;</code>/<code>&amp;mut</code>/<code>move</code>).</li>
+<li>Identifies the program point of conflict.</li>
+<li>Suggests a fix: scope reduction (move one borrow earlier/later), use
+of <code>clone()</code> to break the borrow, or refactoring with
+<code>RefCell&lt;T&gt;</code> (managed-mode escape hatch).</li>
+</ol>
+<p>Match Rust’s diagnostic quality for the same error class —
+diagnostics are first-class deliverables, not afterthoughts.</p>
+<h4 id="worked-example">8.6.5 Worked example</h4>
+<pre class="garnet"><code>@safe
+fn rotate(mut buf: Buffer) -&gt; Buffer {
+  let ref a = buf.left()       # borrow check: &amp;buf — OK
+  let ref b = buf.right()      # borrow check: &amp;buf — OK (B1: shared+shared compatible)
+  buf.swap_halves(a, b)        # borrow check: &amp;mut buf required, but a, b still live → ERROR
+                                # (B2 violated: cannot &amp;mut while shared borrows live)
+  buf
+}</code></pre>
+<p>The diagnostic should explain: “cannot borrow <code>buf</code> as
+mutable because it is also borrowed as immutable here (let ref a = …)
+and here (let ref b = …).” Suggested fix: read a and b into owned values
+first, then perform the mutable operation.</p>
+<h4 id="soundness">8.6.6 Soundness</h4>
+<p>Together with §8.5 lifetime inference, §8.6 implements the safe-mode
+soundness theorem (§8.1). The proof connection: B1–B3 enforce the affine
++ aliasing-XOR-mutation discipline that RustBelt’s Iris model proves
+sound. B4 + B5 enforce the use-once / drop-once discipline that prevents
+use-after-free and double-free.</p>
+<hr />
+<h2
+id="typed-message-protocols-extended-from-v0.3-9-9.4-added-in-v1.0">9.
+Typed Message Protocols <em>(extended from v0.3 §9; §9.4 added in
+v1.0)</em></h2>
+<h3 id="grammar-v0.3-block-now-formally-defined">9.1 Grammar [v0.3 —
+block now formally defined]</h3>
+<pre><code>actor-decl    := (&quot;pub&quot;)? &quot;actor&quot; ident &quot;{&quot; actor-item* &quot;}&quot;
+actor-item    := actor-protocol-decl | handler-decl | memory-decl | let-decl
+actor-protocol-decl := &quot;protocol&quot; ident &quot;(&quot; typed-params &quot;)&quot; (&quot;-&gt;&quot; type)?
+handler-decl  := &quot;on&quot; ident &quot;(&quot; param-list &quot;)&quot; block</code></pre>
+<blockquote>
+<p><strong>Naming clarification [v1.0].</strong> Inside an
+<code>actor { … }</code> block, <code>protocol</code> declares a
+<em>typed message contract</em> (a single message name + its parameter
+types). Outside an actor block (top-level), <code>protocol</code>
+declares a <em>structural protocol</em> (§11.8 — a duck-typed contract).
+The parser disambiguates by syntactic position. The same keyword
+captures the underlying conceptual unity: both meanings are “a contract
+a participant must satisfy,” but at different layers.</p>
+</blockquote>
+<p>The <code>block</code> production is now the same as §5.1’s block:
+<code>"{" stmt* expr? "}"</code>. This retires the provisional block
+grammar from the v0.2 parser’s <code>expr.rs</code>.</p>
+<h3
+id="semantics-unchanged-from-v0.2-4.2-sendable-equivalent-added-in-9.4">9.2
+Semantics <em>(unchanged from v0.2 §4.2; Sendable-equivalent added in
+§9.4)</em></h3>
+<p>Actors MUST NOT share mutable state. All inter-actor communication
+MUST go through declared protocols. Undeclared protocol sends MUST be
+compile-time errors. Every declared protocol MUST have a handler. Type
+erasure and gradual typing are prohibited across actor boundaries even
+in managed mode.</p>
+<p><strong>Protocol versioning (OQ-5, explicit deferral to
+v0.4).</strong> v1.0 does not specify how protocol definitions evolve
+across a running distributed system. A v0.4 proposal will introduce a
+<code>@protocol_version</code> annotation with additive-evolution
+semantics analogous to Protobuf field tagging.</p>
+<h3 id="actor-state-and-memory-v0.3">9.3 Actor state and memory
+[v0.3]</h3>
+<p>Actors MAY declare internal memory units and <code>let</code>
+bindings within their body. These are private to the actor instance and
+MUST NOT be accessible from outside. Memory units declared inside an
+actor are scoped to that actor’s lifetime — they are created when the
+actor spawns and dropped when the actor terminates.</p>
+<pre class="garnet"><code>actor BuildAgent {
+  memory episodic   log     : EpisodeStore&lt;BuildEvent&gt;
+  memory procedural recipes : WorkflowStore&lt;BuildRecipe&gt;
+  let mut build_count = 0
+
+  protocol build(spec: BuildSpec) -&gt; BuildResult
+  protocol status() -&gt; AgentStatus
+
+  on build(spec) {
+    build_count += 1
+    let recipe = recipes.find(spec.target)
+    let result = recipe.execute(spec)
+    log.append(BuildEvent::new(spec, result))
+    result
+  }
+
+  on status() {
+    AgentStatus::new(build_count, log.recent(10))
+  }
+}</code></pre>
+<h3
+id="sendable-equivalent-cross-actor-type-discipline-v1.0-addresses-phase-1b-swift-gap-2">9.4
+Sendable-equivalent: cross-actor type discipline [v1.0 — addresses Phase
+1B Swift gap #2]</h3>
+<p>To preserve actor isolation under typed message passing (§9.2), every
+value crossing an actor boundary MUST satisfy a static <em>Sendable</em>
+discipline. v1.0 introduces the <code>Sendable</code> marker trait — a
+Garnet adaptation of Swift’s <code>Sendable</code> protocol (Swift
+Evolution SE-0302) calibrated to Garnet’s dual-mode design.</p>
+<h4 id="the-sendable-marker-trait">9.4.1 The <code>Sendable</code>
+marker trait</h4>
+<pre class="garnet"><code>trait Sendable { }                  # marker trait — no methods</code></pre>
+<p>A type implements <code>Sendable</code> if values of that type can be
+safely transmitted from one actor to another without introducing data
+races. Implementation is <em>automatic</em> for many types but MAY be
+opted out via <code>@nonsendable</code>.</p>
+<h4 id="auto-derive-rules">9.4.2 Auto-derive rules</h4>
+<p>The compiler MUST auto-derive <code>impl Sendable for T</code> if T
+satisfies all of:</p>
+<ol type="1">
+<li><strong>All fields are Sendable.</strong> A struct/enum with
+all-Sendable fields auto-derives Sendable.</li>
+<li><strong>No interior mutability.</strong> T does not contain
+<code>Cell&lt;U&gt;</code>, <code>RefCell&lt;U&gt;</code>,
+<code>Mutex&lt;U&gt;</code>, or any type marked
+<code>@nonsendable</code>.</li>
+<li><strong>In managed mode:</strong> T is <em>frozen</em> — its fields
+are declared with <code>let</code> (immutable) and not <code>var</code>
+/ <code>let mut</code>.</li>
+<li><strong>In safe mode:</strong> T is either owned
+(<code>own</code>-receivable) or behind an immutable shared reference
+(<code>&amp;T</code>).</li>
+</ol>
+<p>Built-in Sendable types: all primitive numerics (<code>Int</code>,
+<code>Float</code>, <code>i8…u128</code>, <code>f32</code>,
+<code>f64</code>), <code>String</code>, <code>Bytes</code>,
+<code>Bool</code>, <code>Symbol</code>, <code>Nil</code>, immutable
+<code>Array&lt;T: Sendable&gt;</code>, immutable
+<code>Map&lt;K: Sendable, V: Sendable&gt;</code>, immutable
+<code>Set&lt;T: Sendable&gt;</code>,
+<code>Option&lt;T: Sendable&gt;</code>,
+<code>Result&lt;T: Sendable, E: Sendable&gt;</code>.</p>
+<p>Built-in non-Sendable types: <code>Cell&lt;T&gt;</code>,
+<code>RefCell&lt;T&gt;</code>, raw managed-mode references with mutable
+interiors, file handles, sockets (caller must open per-actor).</p>
+<h4 id="manual-opt-out">9.4.3 Manual opt-out</h4>
+<p>A type MAY mark itself <code>@nonsendable</code> to prevent
+auto-derive:</p>
+<pre class="garnet"><code>@nonsendable
+struct ConnectionPool {
+  conns: Array&lt;Connection&gt;,
+  in_flight: Cell&lt;Int&gt;,           # interior mutability → would fail auto-derive anyway
+}</code></pre>
+<p>The compiler MUST reject attempts to send a <code>@nonsendable</code>
+value across an actor boundary with
+<code>error E0277: ConnectionPool does not implement Sendable</code>.</p>
+<h4 id="manual-opt-in-with-safety-obligation">9.4.4 Manual opt-in (with
+safety obligation)</h4>
+<p>In rare cases a programmer may need to mark a type Sendable that does
+not auto-derive (e.g., a thread-safe lock-free queue implemented with
+internal <code>unsafe</code>). The form is:</p>
+<pre class="garnet"><code>unsafe impl Sendable for LockFreeQueue&lt;T: Sendable&gt; { }</code></pre>
+<p>The <code>unsafe impl</code> keyword (REQUIRED) signals that the
+programmer asserts Sendable correctness manually; the compiler does not
+check it. This matches Rust’s <code>unsafe impl Send</code>
+discipline.</p>
+<h4 id="enforcement-at-protocol-declaration">9.4.5 Enforcement at
+protocol declaration</h4>
+<p>At every actor <code>protocol</code> declaration (per §9.1), the
+compiler MUST verify:</p>
+<ul>
+<li>Every parameter type implements Sendable.</li>
+<li>The return type (if any) implements Sendable.</li>
+</ul>
+<p>Failure produces
+<code>error E0902: protocol parameter type T does not implement Sendable; cannot cross actor boundary</code>.
+This is a <em>declaration-site</em> check, not a use-site check. By
+rejecting at declaration, Garnet guarantees that any actor whose
+protocol type-checks can be safely instantiated and messaged.</p>
+<h4 id="cross-mode-interaction">9.4.6 Cross-mode interaction</h4>
+<p>Managed-mode types implement Sendable when they satisfy §9.4.2 #3
+(frozen). Safe-mode types implement Sendable per §9.4.2 #4. A
+<code>protocol</code> declared in a managed-mode actor MAY accept
+managed-mode Sendable types; a <code>protocol</code> declared in a
+safe-mode actor MAY accept safe-mode Sendable types. Cross-mode
+protocols (a safe actor receiving a managed-mode value) require explicit
+boundary bridging — typically the managed value is frozen and adopted as
+a shared reference.</p>
+<h4 id="difference-from-swift">9.4.7 Difference from Swift</h4>
+<p>Swift’s <code>Sendable</code> evolved over multiple releases; v1.0
+takes the SE-0302 mature form and makes one Garnet-specific refinement:
+<strong>Sendable is checked at protocol declaration, not at every send
+site</strong>. Swift checks at each <code>send</code> call, which
+produces O(n) duplicate diagnostics for the same type used in many
+sends. Garnet’s declaration-site check yields O(1) diagnostics per
+protocol while preserving the same soundness guarantee.</p>
+<h4 id="soundness-1">9.4.8 Soundness</h4>
+<blockquote>
+<p><strong>Actor Isolation Theorem [v1.0]</strong></p>
+<p>If actor <code>A</code> sends value <code>v: T</code> to actor
+<code>B</code>, and <code>T: Sendable</code> per the rules of
+§9.4.2–§9.4.4, then <code>B</code> cannot observe a write performed by
+<code>A</code> to <code>v</code> after the send, and <code>A</code>
+cannot observe a write performed by <code>B</code> to <code>v</code>
+after receipt.</p>
+<p><strong>Proof sketch.</strong> For frozen managed values,
+immutability after send is a structural invariant — there are no
+<code>var</code> fields to mutate. For safe-mode owned values, the move
+discipline (B4 of §8.6) ensures <code>A</code> cannot access
+<code>v</code> after sending it. For safe-mode shared references, no
+reference is mutable, so concurrent mutation cannot occur. The only
+escape hatch is <code>unsafe impl Sendable</code>, which is by
+definition an asserted obligation, not a checked one.</p>
+</blockquote>
+<hr />
+<h2 id="recursive-execution-guardrails-unchanged-from-v0.3-10">10.
+Recursive Execution Guardrails <em>(unchanged from v0.3 §10)</em></h2>
+<h3 id="recursion-depth-limits-v0.3-concrete-annotation-syntax">10.1
+Recursion depth limits [v0.3 — concrete annotation syntax]</h3>
+<pre><code>depth-annotation := &quot;@max_depth&quot; &quot;(&quot; integer &quot;)&quot;</code></pre>
+<p><code>@max_depth(N)</code> MUST appear on any function definition
+that directly or transitively performs recursive agent spawning. The
+compiler MUST reject programs where a spawn chain could exceed the
+annotated depth.</p>
+<pre class="garnet"><code>@max_depth(3)
+def analyze_document(doc) {
+  let chunks = doc.split_sections()
+  let results = chunks |&gt; map(|chunk| {
+    spawn AnalysisAgent.analyze(chunk)   # depth 1
+  })
+  merge_results(results)
+}</code></pre>
+<p>Default depth if unannotated is 1 (single layer of delegation). The
+compiler MUST emit a warning for functions that spawn agents without an
+explicit <code>@max_depth</code> annotation.</p>
+<h3 id="asynchronous-fan-out-caps-v0.3">10.2 Asynchronous fan-out caps
+[v0.3]</h3>
+<pre><code>fanout-annotation := &quot;@fan_out&quot; &quot;(&quot; integer &quot;)&quot;</code></pre>
+<p><code>@fan_out(K)</code> MUST appear on any parallel spawn site. The
+runtime MUST reject attempts to exceed <code>K</code> simultaneous
+sub-agents.</p>
+<pre class="garnet"><code>@max_depth(2)
+@fan_out(10)
+def parallel_search(queries) {
+  queries |&gt; map(|q| spawn SearchAgent.search(q))
+           |&gt; await_all()
+}</code></pre>
+<h3 id="metadata-validation-v0.3">10.3 Metadata validation [v0.3]</h3>
+<pre><code>metadata-annotation := &quot;@require_metadata&quot;</code></pre>
+<p><code>@require_metadata</code> on a parameter position requires that
+the argument carries Memory Manager metadata. The Memory Manager MAY
+refuse the call if flat retrieval would suffice.</p>
+<pre class="garnet"><code>def recursive_retrieve(@require_metadata context: Memory::Semantic) {
+  context.deep_search(query)
+}</code></pre>
+<h3 id="scope-unchanged-from-v0.2-5.4">10.4 Scope <em>(unchanged from
+v0.2 §5.4)</em></h3>
+<p>§10 constrains program structure, not program semantics. A compliant
+Garnet implementation MAY choose any enforcement strategy (static
+analysis, runtime checks, or both) that rejects non-compliant programs
+with clear diagnostics.</p>
+<hr />
+<h2
+id="type-system-foundations-extended-from-v0.3-11-11.511.8-addedextended-in-v1.0">11.
+Type System Foundations <em>(extended from v0.3 §11; §§11.5–11.8
+added/extended in v1.0)</em></h2>
+<h3 id="progressive-disclosure-spectrum">11.1 Progressive disclosure
+spectrum</h3>
+<p>Garnet’s type system is the formal embodiment of the dual-mode
+philosophy. It provides four levels of type discipline, each a strict
+superset of the previous:</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Level</th>
+<th>Name</th>
+<th>Where</th>
+<th>Annotations</th>
+<th>Guarantees</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Dynamic</td>
+<td>Managed mode, no annotations</td>
+<td>None required</td>
+<td>Runtime type errors only</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Gradual</td>
+<td>Managed mode with annotations</td>
+<td>Optional type hints</td>
+<td>Compile-time checks where annotated; runtime checks at
+boundaries</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Static</td>
+<td>Managed mode, fully annotated</td>
+<td>All types specified</td>
+<td>Full compile-time type safety; no runtime type errors</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Affine</td>
+<td><code>@safe</code> mode</td>
+<td>Types + ownership</td>
+<td>Compile-time type safety + memory safety + data-race freedom</td>
+</tr>
+</tbody>
+</table>
+<p>A program at Level 0 is valid at Level 3 — the compiler infers the
+tightest constraints. A program at Level 3 works at Level 0 — ownership
+annotations become documentation, ARC handles memory.</p>
+<p><strong>This is a novel contribution (MIT-defensible).</strong> No
+existing production language provides a formally continuous
+type-discipline spectrum from fully dynamic to affine-typed within one
+coherent syntax. TypeScript offers Levels 0–2 but no ownership. Rust
+offers Levels 2–3 but no dynamic mode. Swift offers Levels 1–2 with
+partial ownership (move-only types, experimental). Garnet spans all
+four.</p>
+<p><strong>Formal basis:</strong> Paper V §3 defines the core calculus
+as λ_managed (Levels 0–2) + λ_safe (Level 3) with a bridging judgment at
+the boundary. The progressive disclosure spectrum maps to these
+sub-calculi: Levels 0–2 inhabit λ_managed with increasing constraint
+density, and Level 3 transitions to λ_safe with affine rules.</p>
+<p><strong>Theorem (Progressive Disclosure Monotonicity)
+[v0.3]:</strong></p>
+<blockquote>
+<p>Let ⊢_N denote “type-checks at level N” for N ∈ {0, 1, 2, 3}. Then
+for any well-formed Garnet program P:</p>
+<p><strong>(Strengthening is sound.)</strong> If P ⊢<em>N, then P
+⊢</em>{N+1} is either true or produces a precise type error that
+identifies exactly where additional annotation is required.</p>
+<p><strong>(Relaxation is always safe.)</strong> If P ⊢_{N+1}, then P
+⊢_N.</p>
+<p><strong>Proof sketch.</strong> <em>Relaxation</em> follows because
+the annotation sets at each level form a strict inclusion chain.
+<em>Strengthening</em> follows from the bidirectional type-checker’s
+soundness.</p>
+</blockquote>
+<h3 id="built-in-types">11.2 Built-in types</h3>
+<pre><code># Numeric types
+Int          # arbitrary-precision integer (managed); i64 (safe)
+Float        # 64-bit IEEE 754
+i8, i16, i32, i64, i128     # safe mode sized integers
+u8, u16, u32, u64, u128     # safe mode unsigned integers
+f32, f64                     # safe mode sized floats
+
+# Text
+String       # UTF-8, immutable by default, COW semantics in managed mode
+Bytes        # raw byte buffer
+
+# Boolean
+Bool         # true | false
+
+# Collections (managed mode, ARC-backed)
+Array&lt;T&gt;     # dynamic array
+Map&lt;K, V&gt;    # ordered hash map
+Set&lt;T&gt;       # hash set
+
+# Option and Result
+Option&lt;T&gt;    # Some(T) | None
+Result&lt;T, E&gt; # Ok(T) | Err(E)
+
+# Special
+Nil          # the type of nil (managed mode only; safe mode uses Option)
+Symbol       # interned string (:ok, :error, etc.)</code></pre>
+<h3 id="user-defined-types">11.3 User-defined types</h3>
+<pre><code>struct-decl := (&quot;pub&quot;)? &quot;struct&quot; ident (&quot;&lt;&quot; type-params &quot;&gt;&quot;)? &quot;{&quot; field-decl* &quot;}&quot;
+field-decl  := (&quot;pub&quot;)? ident &quot;:&quot; type (&quot;=&quot; expr)?
+
+enum-decl   := (&quot;pub&quot;)? &quot;enum&quot; ident (&quot;&lt;&quot; type-params &quot;&gt;&quot;)? &quot;{&quot; variant* &quot;}&quot;
+variant     := ident (&quot;(&quot; type (&quot;,&quot; type)* &quot;)&quot;)?
+
+trait-decl  := (&quot;pub&quot;)? &quot;trait&quot; ident (&quot;&lt;&quot; type-params &quot;&gt;&quot;)? &quot;{&quot; trait-item* &quot;}&quot;
+trait-item  := fn-sig | def-sig | const-decl
+fn-sig      := &quot;fn&quot; ident &quot;(&quot; typed-params &quot;)&quot; &quot;-&gt;&quot; type
+def-sig     := &quot;def&quot; ident &quot;(&quot; param-list &quot;)&quot;
+
+impl-block  := &quot;impl&quot; (&quot;&lt;&quot; type-params &quot;&gt;&quot;)? type (&quot;for&quot; trait)? &quot;{&quot; (managed-fn | safe-fn)* &quot;}&quot;</code></pre>
+<pre class="garnet"><code>struct Config {
+  pub host: String,
+  pub port: Int = 8080,
+  timeout: Float = 30.0,
+}
+
+enum BuildResult {
+  Success(Artifact),
+  Failure(String),
+  Timeout,
+}
+
+trait Serializable {
+  fn serialize(borrow self) -&gt; Bytes
+  fn deserialize(data: Bytes) -&gt; Result&lt;Self, SerializeError&gt;
+}</code></pre>
+<p><strong>Design rationale:</strong> Structs, enums, and traits follow
+Rust’s algebraic type system — proven to be the strongest foundation for
+both type safety and pattern matching. The <code>impl</code> block
+separates data (struct) from behavior (methods), which is essential for
+safe mode’s ownership discipline. In managed mode, these types are
+ARC-managed; in safe mode, they follow ownership rules.</p>
+<h3 id="generics-v0.3-monomorphization-spec-moved-to-11.6">11.4 Generics
+[v0.3, monomorphization spec moved to §11.6]</h3>
+<pre class="garnet"><code>def identity&lt;T&gt;(x: T) -&gt; T { x }
+
+fn swap&lt;T&gt;(own a: T, own b: T) -&gt; (T, T) { (b, a) }
+
+struct Stack&lt;T&gt; {
+  items: Array&lt;T&gt;,
+}</code></pre>
+<p>The compilation strategy for generics depends on mode and is
+specified normatively in §11.6.</p>
+<h3
+id="trait-coherence-v1.0-addresses-phase-1b-rust-gap-5-extended-from-v0.3-11.5">11.5
+Trait coherence [v1.0 — addresses Phase 1B Rust gap #5; extended from
+v0.3 §11.5]</h3>
+<p>Trait coherence governs when two different <code>impl</code> blocks
+may exist for overlapping types. Garnet adopts Rust’s proven coherence
+model. v0.3 §11.5 stated the orphan rule informally; v1.0 specifies it
+as a checking algorithm.</p>
+<h4 id="the-orphan-rule-per-rust-rfc-1023">11.5.1 The Orphan Rule (per
+Rust RFC 1023)</h4>
+<p>An
+<code>impl &lt;T*&gt; Trait&lt;TParams&gt; for Type&lt;TArgs&gt;</code>
+is allowed only if at least one of the following holds:</p>
+<ol type="1">
+<li><code>Trait</code> is defined in the current module, OR</li>
+<li><code>Type</code> is defined in the current module, OR</li>
+<li>There exists a <em>covered local type parameter</em> — a type
+parameter <code>P ∈ T*</code> that appears as a component of
+<code>TParams</code> or <code>TArgs</code> such that no uncovered
+foreign type appears before it.</li>
+</ol>
+<h4 id="coverage-algorithm-formal">11.5.2 Coverage algorithm
+(formal)</h4>
+<p>For a type <code>T&lt;U₁, U₂, …, Uₙ&gt;</code>, a type parameter
+<code>P</code> is <em>covered</em> by <code>T</code> if <code>P</code>
+appears as one of the <code>Uᵢ</code>. A foreign type <code>F</code> is
+<em>uncovered</em> if it appears before any covered local type parameter
+in left-to-right order.</p>
+<pre><code>is_orphan_legal(impl, current_module):
+    trait = impl.trait
+    trait_args = impl.trait_args      # [Type] including the receiver
+    if trait.module == current_module: return true
+    for arg in trait_args:
+        if arg.module == current_module: return true
+    for arg in trait_args:
+        if arg is a type-param P and is_covered(P, trait_args, current_module):
+            return true
+    return false
+
+is_covered(param, args, current_module):
+    for arg in args:
+        if arg is a generic type T and arg.module == current_module:
+            for sub in arg.type_args:
+                if sub == param: return true
+        elif arg.module != current_module:
+            return false   # uncovered foreign type appears first → fail rule 3
+    return false</code></pre>
+<h4 id="overlap-check">11.5.3 Overlap check</h4>
+<p>After orphan check passes, the compiler MUST verify no two impls
+overlap. Two impls <code>impl A for X</code> and
+<code>impl A for Y</code> overlap iff there exists a type <code>Z</code>
+such that <code>Z</code> matches both <code>X</code> and <code>Y</code>
+(via type inference + variance + lifetime erasure).</p>
+<p>The algorithm is exponential in worst case but polynomial in
+practice. Implementations MAY use Rust’s <code>chalk</code> solver
+design, OR may implement a simpler unification-based check that errs on
+the side of over-rejecting (rejected programs can be refactored).</p>
+<h4 id="diagnostic-guarantee">11.5.4 Diagnostic guarantee</h4>
+<p>When orphan-rule violation OR overlap is detected, the compiler MUST
+produce a diagnostic that:</p>
+<ol type="1">
+<li>Names the offending <code>impl</code>.</li>
+<li>For orphan violation: cites which of the three conditions failed AND
+suggests either moving the impl to the trait-defining module or the
+type-defining module.</li>
+<li>For overlap: shows both impls AND a witness type matching both, AND
+suggests using the orphan rule to disambiguate.</li>
+</ol>
+<h4 id="deferred-subtleties-v0.4">11.5.5 Deferred subtleties (v0.4)</h4>
+<p>Specialization, negative bounds (<code>where T: !Copy</code>), and
+conditional blanket impls are NOT part of v1.0. A v0.4 RFC will address
+specialization following Rust’s specialization-lite proposal. Until
+then, the simple orphan rule provides predictable behavior at the cost
+of some expressiveness — a defensible trade-off.</p>
+<h3
+id="monomorphization-zero-cost-abstractions-v1.0-addresses-phase-1b-rust-gap-7">11.6
+Monomorphization &amp; zero-cost abstractions [v1.0 — addresses Phase 1B
+Rust gap #7]</h3>
+<p>Garnet’s mode-aware compilation strategy for generics is normatively
+specified.</p>
+<h4 id="compilation-strategy">11.6.1 Compilation strategy</h4>
+<table>
+<colgroup>
+<col style="width: 12%" />
+<col style="width: 20%" />
+<col style="width: 30%" />
+<col style="width: 36%" />
+</colgroup>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Strategy</th>
+<th>Generic bound</th>
+<th>Code-size impact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Safe (<code>@safe</code>)</td>
+<td>Monomorphization</td>
+<td>Per concrete type instantiation</td>
+<td>Higher (one copy per instantiation)</td>
+</tr>
+<tr>
+<td>Managed</td>
+<td>Type erasure with vtable</td>
+<td>One copy with dynamic dispatch</td>
+<td>Lower (one copy total)</td>
+</tr>
+</tbody>
+</table>
+<p>Selection is determined by the enclosing module’s mode. A generic
+function defined in a <code>@safe</code> module is monomorphized at
+every call site. A generic function defined in a managed-mode module is
+type-erased to a single <code>impl</code> operating on a uniform value
+representation.</p>
+<h4 id="monomorphization-rules-safe-mode">11.6.2 Monomorphization rules
+(safe mode)</h4>
+<p>For each concrete instantiation
+<code>f&lt;T = U₁, …, Tₙ = Uₙ&gt;</code> reachable from program entry,
+the compiler MUST emit a specialized copy of <code>f</code> with all
+type parameters substituted by their concrete types. The compiler MUST
+inline calls to small monomorphized functions (size threshold
+implementation-defined; default ≤ 50 instructions).</p>
+<p><strong>Polymorphic recursion is forbidden in safe mode.</strong> A
+function <code>f&lt;T&gt;</code> MUST NOT contain a call to
+<code>f&lt;U&gt;</code> where <code>U ≠ T</code> along any reachable
+code path. Polymorphic recursion would require unbounded code
+generation. Detection is by static call-graph analysis. Diagnostic:
+<code>error E0275: overflow evaluating the requirement</code> with
+suggestion to convert to <code>dyn Trait</code> (managed mode escape
+hatch).</p>
+<h4 id="trait-objects-dyn-trait-in-safe-mode">11.6.3 Trait objects
+(<code>dyn Trait</code>) in safe mode</h4>
+<p>Safe mode supports trait objects via <code>dyn Trait</code> syntax
+for cases where monomorphization is undesired (e.g., heterogeneous
+collections):</p>
+<pre class="garnet"><code>@safe
+fn process_all(items: Array&lt;Box&lt;dyn Drawable&gt;&gt;) {
+  for item in items {
+    item.draw()    # vtable dispatch
+  }
+}</code></pre>
+<p><code>dyn Trait</code> representation: a fat pointer (data pointer +
+vtable pointer). The vtable is computed at compile time per
+<code>(Trait, ConcreteType)</code> pair. Method dispatch is one
+indirection. This is identical to Rust’s <code>dyn Trait</code> ABI.</p>
+<p>Object safety: a trait MAY be used as <code>dyn Trait</code> only if
+it satisfies the <em>object safety</em> rules: - All methods take
+<code>&amp;self</code>, <code>&amp;mut self</code>, or
+<code>Box&lt;Self&gt;</code>. - No method is generic over additional
+type parameters. - No method returns <code>Self</code>.</p>
+<p>These rules are checked at the use site. Violations produce
+<code>error E0038: the trait T cannot be made into an object</code>.</p>
+<h4 id="type-erasure-managed-mode">11.6.4 Type erasure (managed
+mode)</h4>
+<p>Managed-mode generics compile to a single function operating on a
+uniform value representation (typically a tagged 128-bit value or a
+boxed pointer). Type parameters are erased at runtime; bounds are
+checked dynamically at the entry of the function.</p>
+<p>Cost: one indirection per generic operation (vs. zero in safe mode),
+plus tag-checking overhead (~2–5%).</p>
+<h4 id="zero-cost-abstraction-guarantee">11.6.5 Zero-cost abstraction
+guarantee</h4>
+<blockquote>
+<p><strong>Zero-Cost Abstraction Theorem [v1.0]</strong></p>
+<p>For any <code>@safe</code> generic function <code>f&lt;T&gt;</code>
+that is monomorphized to <code>f&lt;U&gt;</code>, the compiled machine
+code for <code>f&lt;U&gt;</code> is equivalent (up to compiler
+optimization) to a hand-written non-generic <code>f_for_U</code> with U
+substituted for T at the source level.</p>
+<p><strong>Proof sketch.</strong> Monomorphization performs textual
+substitution at the IR level; the resulting IR is structurally identical
+to what a programmer would write by hand. Standard compiler
+optimizations (inlining, constant folding, dead-code elimination) apply
+identically. There is no runtime dispatch, no boxing, no allocation that
+the hand-written form would not also produce.</p>
+</blockquote>
+<p>This theorem grounds Paper III’s “near-Rust performance for safe
+mode” claim: at the IR level, safe-mode generics ARE Rust generics
+modulo surface syntax.</p>
+<h4 id="boundary-behavior">11.6.6 Boundary behavior</h4>
+<p>A safe-mode <code>fn f&lt;T&gt;(x: T)</code> called from managed-mode
+code is monomorphized for the managed-mode argument’s concrete type. If
+the managed-mode value’s type is not statically known (Level 0 —
+Dynamic), the call site requires a runtime type test followed by
+dispatch to the appropriate monomorphization. The compiler MAY hoist
+this check or fall back to type erasure for managed-mode-only call
+paths; this choice is implementation-defined.</p>
+<h3
+id="dynamic-method-dispatch-table-v1.0-addresses-phase-1b-ruby-gap-9">11.7
+<code>@dynamic</code> method dispatch table [v1.0 — addresses Phase 1B
+Ruby gap #9]</h3>
+<p>Ruby’s metaprogramming culture leans on per-instance method addition
+(<code>define_method</code>, <code>singleton_class</code>,
+<code>method_missing</code>). v1.0 specifies a Garnet equivalent gated
+behind the <code>@dynamic</code> annotation, scoped strictly to managed
+mode.</p>
+<h4 id="grammar-1">11.7.1 Grammar</h4>
+<pre><code>dynamic-decl := &quot;@dynamic&quot; struct-decl
+              | &quot;@dynamic&quot; impl-block</code></pre>
+<p>A struct annotated <code>@dynamic</code> enables runtime method
+addition to its instances. An impl block annotated <code>@dynamic</code>
+enables runtime method addition to that specific (type, trait) pair.</p>
+<pre class="garnet"><code>@dynamic
+struct Service {
+  name: String,
+}
+
+let s = Service::new(&quot;auth&quot;)
+s.def_method(:health_check) do
+  http_get(&quot;https://#{name}/health&quot;).status == 200
+end
+
+s.health_check()        # invokes the runtime-added method</code></pre>
+<h4 id="per-instance-method-table">11.7.2 Per-instance method table</h4>
+<p>Every <code>@dynamic</code> instance carries a private method
+table:</p>
+<pre><code>DynamicMethodTable := Map&lt;Symbol, Closure&gt;</code></pre>
+<p>The table is lazily allocated on first <code>def_method</code> call
+(zero overhead until used). Each entry maps a method name (Symbol) to a
+Closure capturing <code>self</code> plus any explicit captures.</p>
+<h4 id="dispatch-order">11.7.3 Dispatch order</h4>
+<p>When a method is called on a <code>@dynamic</code> value, the runtime
+MUST consult dispatch in this order:</p>
+<ol type="1">
+<li><strong>Per-instance dynamic table.</strong> If the method is in the
+instance’s <code>DynamicMethodTable</code>, invoke it.</li>
+<li><strong>Static <code>impl</code> blocks.</strong> Standard static
+method resolution (per §11.3).</li>
+<li><strong><code>method_missing</code> fallback.</strong> If neither
+resolves and the type defines
+<code>def method_missing(name: Symbol, args: Array&lt;Any&gt;)</code>,
+invoke it with the resolved name and arguments.</li>
+<li><strong><code>NoMethodError</code>.</strong> Raise an
+exception.</li>
+</ol>
+<p>This matches Ruby’s documented dispatch order (Pickaxe §28 “Runtime
+Callbacks”) with one Garnet-specific clarification: per-instance methods
+<em>override</em> class-level methods, not vice versa. Ruby is more
+nuanced; Garnet’s choice is the predictable one.</p>
+<h4 id="runtime-api">11.7.4 Runtime API</h4>
+<pre class="garnet"><code>@dynamic
+struct Foo { … }
+
+impl Foo {
+  fn def_method(self, name: Symbol, body: Closure)         # add a method
+  fn undef_method(self, name: Symbol)                       # remove a method
+  fn responds_to?(self, name: Symbol) -&gt; Bool              # introspect
+  fn method_names(self) -&gt; Array&lt;Symbol&gt;                    # all dynamic + static method names
+}</code></pre>
+<p><code>def_method</code> MUST overwrite any existing entry for
+<code>name</code>. <code>undef_method</code> MUST remove only the
+dynamic-table entry; static methods cannot be removed.</p>
+<h4 id="performance-contract">11.7.5 Performance contract</h4>
+<ul>
+<li><code>@dynamic</code> values pay a constant-overhead Map lookup per
+method call (~3–10 ns on commodity hardware in 2026).</li>
+<li>Non-<code>@dynamic</code> values pay nothing.</li>
+<li>The runtime MAY cache the resolved method per call site (inline
+cache) to amortize the lookup cost.</li>
+</ul>
+<p>Static method calls on <code>@dynamic</code> types MUST NOT pay the
+lookup overhead if the call site is monomorphizable — i.e., if the
+compiler can prove that no <code>def_method</code> for the called name
+has been called on this instance.</p>
+<h4 id="safe-mode-prohibition-1">11.7.6 Safe-mode prohibition</h4>
+<p><code>@dynamic</code> is REJECTED in <code>@safe</code> modules.
+Diagnostic:
+<code>error E0901: @dynamic is not permitted in @safe modules; use a trait + Box&lt;dyn Trait&gt; instead</code>.
+Rationale: dynamic method addition undermines the static-dispatch
+guarantee that justifies safe mode’s performance claims (§11.6.5).</p>
+<h4 id="interaction-with-sendable">11.7.7 Interaction with
+<code>Sendable</code></h4>
+<p><code>@dynamic</code> values are NOT auto-Sendable. Sending a
+<code>@dynamic</code> value across an actor boundary risks racing on the
+per-instance method table. Programmers needing cross-actor dynamic
+dispatch should use protocols (§9.1) — the actor-protocol design exists
+precisely for this case.</p>
+<h3
+id="structural-protocols-duck-typing-v1.0-addresses-phase-1b-ruby-gap-10">11.8
+Structural protocols (duck typing) [v1.0 — addresses Phase 1B Ruby gap
+#10]</h3>
+<p>Garnet’s typing should permit Ruby-style “if it walks like a duck and
+quacks like a duck” expression at the type-system layer. v1.0 introduces
+top-level <code>protocol</code> declarations as <em>structural
+types</em>.</p>
+<h4 id="grammar-2">11.8.1 Grammar</h4>
+<pre><code>struct-protocol-decl := (&quot;pub&quot;)? &quot;protocol&quot; ident (&quot;&lt;&quot; type-params &quot;&gt;&quot;)? &quot;{&quot; proto-item* &quot;}&quot;
+proto-item           := fn-sig | def-sig</code></pre>
+<p>(Disambiguated from actor-internal <code>protocol</code> per §9.1’s
+note.)</p>
+<pre class="garnet"><code>protocol Drawable {
+  def draw()
+  def bounding_box() -&gt; Rect
+}</code></pre>
+<p>A type satisfies <code>Drawable</code> if it has methods
+<code>draw()</code> and <code>bounding_box() -&gt; Rect</code> with
+compatible signatures. <strong>No <code>impl Drawable for T</code> block
+is required.</strong></p>
+<h4 id="static-structural-typing-managed-mode">11.8.2 Static structural
+typing (managed mode)</h4>
+<p>In managed mode, a function may accept a structural protocol as a
+parameter type:</p>
+<pre class="garnet"><code>def render_all(items: Array&lt;Drawable&gt;) {
+  for item in items {
+    item.draw()
+  }
+}
+
+struct Circle { radius: Float }
+impl Circle {
+  def draw() { /* … */ }
+  def bounding_box() -&gt; Rect { /* … */ }
+}
+
+render_all([Circle::new(1.0), Circle::new(2.0)])    # compiles — Circle satisfies Drawable structurally</code></pre>
+<p>The compiler performs a <em>structural compatibility check</em> at
+the call site:</p>
+<pre><code>satisfies(T, P):
+    for fn-sig (name, params, ret) in P.items:
+        if T does not have a method `name` with compatible (params, ret): return false
+    return true</code></pre>
+<p>Compatibility is method-signature equality up to parameter-name
+renaming. Generic methods on T match generic items on P only if the type
+parameters unify.</p>
+<h4 id="runtime-cast">11.8.3 Runtime cast</h4>
+<p>For cases where the protocol cannot be statically proven (Level 0 /
+Level 1):</p>
+<pre class="garnet"><code>let unknown: Any = receive_from_network()
+match unknown {
+  d as Drawable =&gt; d.draw(),
+  _ =&gt; log(&quot;not drawable&quot;)
+}</code></pre>
+<p><code>as Protocol</code> performs a runtime cast: succeeds if the
+value’s class has the required methods, raises
+<code>ProtocolError</code> if not.</p>
+<h4 id="differences-from-go-interfaces-and-rust-traits">11.8.4
+Differences from Go interfaces and Rust traits</h4>
+<table>
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 23%" />
+<col style="width: 20%" />
+<col style="width: 40%" />
+</colgroup>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Go interface</th>
+<th>Rust trait</th>
+<th>Garnet protocol [v1.0]</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Implementation declaration</td>
+<td>None — implicit</td>
+<td><code>impl Trait for T</code> required</td>
+<td>Implicit; <code>impl P for T</code> permitted as documentation</td>
+</tr>
+<tr>
+<td>Coherence rule</td>
+<td>None (any package satisfies)</td>
+<td>Orphan rule</td>
+<td>Orphan rule applies only to <code>impl P for T</code>
+declarations</td>
+</tr>
+<tr>
+<td>Static dispatch</td>
+<td>Limited (interface always boxed)</td>
+<td>Yes (<code>impl Trait</code> syntax)</td>
+<td>Yes (Level 2+ in managed mode)</td>
+</tr>
+<tr>
+<td>Method addition at runtime</td>
+<td>No</td>
+<td>No</td>
+<td>Yes via §11.7 <code>@dynamic</code> (orthogonal)</td>
+</tr>
+</tbody>
+</table>
+<p>The Garnet design splits the difference: implicit conformance like Go
+(low ceremony), but optional <code>impl</code> declarations for
+documentation, traceability in IDEs, and orphan-rule discipline.</p>
+<h4 id="safe-mode-behavior">11.8.5 Safe-mode behavior</h4>
+<p>Safe-mode protocols MUST resolve at compile time. A safe-mode
+function accepting a protocol parameter is implicitly generic over the
+concrete satisfying type:</p>
+<pre class="garnet"><code>@safe
+fn render(item: Drawable) -&gt; ()    # equivalent to fn render&lt;T: Drawable&gt;(item: T)</code></pre>
+<p>This monomorphizes per call site (per §11.6). Runtime
+<code>as Protocol</code> cast is REJECTED in safe mode; use
+<code>match item { … }</code> over an enum if heterogeneity is
+needed.</p>
+<h4 id="difference-between-top-level-protocol-and-trait">11.8.6
+Difference between top-level <code>protocol</code> and
+<code>trait</code></h4>
+<p>Both top-level <code>protocol</code> and <code>trait</code> declare a
+method contract. The semantic difference:</p>
+<ul>
+<li><code>trait</code>: nominal — a type satisfies it ONLY via explicit
+<code>impl Trait for T</code>.</li>
+<li><code>protocol</code>: structural — a type satisfies it via
+signature compatibility, regardless of <code>impl</code>
+declaration.</li>
+</ul>
+<p>When in doubt, prefer <code>trait</code> for stable APIs (gives the
+trait author control) and <code>protocol</code> for orchestration glue
+(gives the consumer flexibility).</p>
+<hr />
+<h2
+id="open-questions-updated-from-v0.3-12-v1.0-closes-oq-11-and-adds-oq-12-through-oq-15">12.
+Open Questions <em>(updated from v0.3 §12; v1.0 closes OQ-11 and adds
+OQ-12 through OQ-15)</em></h2>
+<ul>
+<li><strong>OQ-1.</strong> How are memory-unit retention policies
+expressed in source? <em>(runtime concern — resolved by
+<code>GARNET_Memory_Manager_Architecture.md §3.3</code> per-kind
+defaults; no source syntax planned)</em></li>
+<li><strong>OQ-2.</strong> What is the bridging API for managed→safe
+mutation of a managed memory unit? <em>(targeted for v0.4 — boundary
+rules in §8.4 define the read path; mutation path awaits v0.4)</em></li>
+<li><strong>OQ-3.</strong> What is the story for generics over memory
+kinds? <em>(resolved as explicit deferral — see §4.4 for the v0.3
+position and rationale)</em></li>
+<li><strong>OQ-4.</strong> What is the soundness proof obligation for
+§8.4 boundary rules? <em>(formal sketch in Paper V §5; security theorem
+stated in §8.1; full Coq mechanization deferred)</em></li>
+<li><strong>OQ-5.</strong> How are actor protocols versioned across a
+running system? <em>(resolved as explicit deferral — see §9.2 for
+rationale; v0.4 will introduce <code>@protocol_version</code>)</em></li>
+<li><strong>OQ-6.</strong> What does the language surface expose about
+KV-cache compression hints? <em>(resolved: nothing — confirmed by
+consensus point 8)</em></li>
+<li><strong>OQ-7.</strong> How is the Memory Manager’s controlled-decay
+formula expressed? <em>(resolved by Memory Manager Architecture
+§3.2)</em></li>
+<li><strong>OQ-8.</strong> Multi-agent access to shared Memory Core
+consistency. <em>(resolved by Memory Manager Architecture §4)</em></li>
+<li><strong>OQ-9.</strong> [v0.3] What is the async model? <em>(resolved
+by Tier-2 Ecosystem Specifications §D — green threads, no colored
+functions, structured concurrency)</em></li>
+<li><strong>OQ-10.</strong> [v0.3] What is the trait coherence model?
+<em>(resolved as Rust RFC 1023 orphan rule with formal algorithm — see
+§11.5 v1.0)</em></li>
+<li><strong>OQ-11.</strong> [<del>v0.3 deferred</del> → <strong>v1.0
+RESOLVED</strong>] What is the lifetime elision story for safe mode?
+<em>(resolved with the four elision rules of §8.5.2 plus the NLL
+inference algorithm of §8.5.1)</em></li>
+<li><strong>OQ-12.</strong> [v1.0] How do procs and lambdas differ from
+blocks? <em>(deferred to v1.1 — see §5.4.4. v1.0 specifies blocks;
+closure-return semantics available via the explicit §5.3 closure form
+which behaves like a Ruby lambda.)</em></li>
+<li><strong>OQ-13.</strong> [v1.0] How are higher-rank trait bounds
+(HRTB) handled in safe mode? <em>(deferred to v1.1 — see §8.5.5. Most
+practical signatures fall under elision rules 1–3.)</em></li>
+<li><strong>OQ-14.</strong> [v1.0] What is the inline-cache strategy for
+<code>@dynamic</code> dispatch? <em>(implementation-defined — see
+§11.7.5. Compiler MAY use polymorphic inline caches; runtime correctness
+is invariant.)</em></li>
+<li><strong>OQ-15.</strong> [v1.0] How do protocols and traits compose
+under structural+nominal mixing? <em>(targeted for v0.4 — initial
+guidance in §11.8.6; full algebra requires deeper work on the protocol
+satisfaction relation.)</em></li>
+</ul>
+<hr />
+<h2 id="what-a-v1.0-implementation-owes-v1.0-extended-from-v0.3-13">13.
+What a v1.0 Implementation Owes [v1.0 — extended from v0.3 §13]</h2>
+<p>Rungs 2–4 of the engineering ladder MUST be implementable against
+this spec:</p>
+<ul>
+<li><p><strong>Rung 2 (parser):</strong> MUST parse all grammar
+productions in §§2–11. The existing v0.2/v0.3 parser covers most
+sections; v1.0 adds: (a) <code>do…end</code> and brace-block arguments
+(§5.4.1); (b) <code>yield</code>/<code>next</code> keywords (§5.4); (c)
+<code>@dynamic</code> annotation on struct/impl (§11.7); (d) top-level
+<code>protocol</code> declarations (§11.8); (e) <code>Sendable</code>
+and <code>@nonsendable</code> markers (§9.4); (f) <code>dyn Trait</code>
+syntax (§11.6.3).</p></li>
+<li><p><strong>Rung 3 (managed interpreter + REPL):</strong> MUST
+evaluate managed-mode programs including everything from v0.3 plus: (a)
+ARC cycle detection per §4.5; (b) block / yield / next /
+break-from-block per §5.4.3; (c) <code>@dynamic</code> dispatch order
+per §11.7.3; (d) structural protocol compatibility checks per §11.8.2;
+(e) Sendable enforcement at protocol declarations per §9.4.5.
+<strong>REPL behavior</strong> specified in §15.</p></li>
+<li><p><strong>Rung 4 (safe lowering):</strong> MUST enforce affine
+ownership rules per §8.3, the borrow-checker rules of §8.6, and the
+lifetime inference algorithm of §8.5. MUST monomorphize generics per
+§11.6 with the polymorphic-recursion rejection rule (§11.6.2). MUST
+insert ARC retain/release at mode boundaries per §8.4 and the freeze
+check of §8.4 #5. MUST perform error bridging per §7.4.</p></li>
+<li><p><strong>Rung 5 (Sendable enforcement at protocol
+declaration):</strong> MUST run the auto-derive algorithm of §9.4.2 and
+reject protocols with non-Sendable parameter types.</p></li>
+<li><p><strong>Rung 6 (cycle collection):</strong> MUST implement the
+Bacon–Rajan algorithm of §4.5.1 with the kind-aware partitioning
+extension of §4.5.2.</p></li>
+</ul>
+<hr />
+<h2
+id="four-model-consensus-alignment-verification-extended-from-v0.3-14">14.
+Four-Model Consensus Alignment Verification <em>(extended from v0.3
+§14)</em></h2>
+<p>Every normative rule in this spec has been verified against the eight
+consensus points:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Consensus Point</th>
+<th>Spec Sections Implementing It</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. Rust/Ruby structurally complementary</td>
+<td>§5 (def vs fn), §7 (exceptions vs Result), §11.1 (spectrum),
+<strong>§5.4 (Ruby blocks), §8.5–8.6 (Rust borrow-check +
+lifetimes)</strong></td>
+</tr>
+<tr>
+<td>2. Dual-mode is correct shape</td>
+<td>§5.1/5.2, §7.2/7.3, §8, §11.1, <strong>§11.6 (mode-aware generic
+compilation), §11.7 (managed-only <span class="citation"
+data-cites="dynamic">@dynamic</span>), §11.8 (structural
+protocols)</strong></td>
+</tr>
+<tr>
+<td>3. Swift as managed-mode precedent</td>
+<td>§8.2 (ARC), §9 (actors), §5.3 (closures), <strong>§4.5 (cycle
+detection algorithm), §9.4 (Sendable equivalent)</strong></td>
+</tr>
+<tr>
+<td>4. Agent-native language platform</td>
+<td>§4 (memory units), §9 (actors), §10 (guardrails), <strong>§4.5.2
+(kind-aware GC roots), §15 (REPL), §16 (tooling)</strong></td>
+</tr>
+<tr>
+<td>5. One Memory Core, Many Harnesses</td>
+<td>§4.3 (out of scope = harness layer), §9.3 (actor memory),
+<strong>§4.5.4 (safe-mode cycle interaction)</strong></td>
+</tr>
+<tr>
+<td>6. Memory primitives first-class</td>
+<td>§4.1 (declaration grammar), §9.3 (actor-scoped memory)</td>
+</tr>
+<tr>
+<td>7. Typed actors with compiler-enforced protocols</td>
+<td>§9.1/9.2 (grammar + semantics), <strong>§9.4 (Sendable
+contract)</strong></td>
+</tr>
+<tr>
+<td>8. TurboQuant = runtime, not language-core</td>
+<td>§4.3 (out of scope), OQ-6 (position: nothing)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="repl-specification-v1.0-addresses-phase-1b-ruby-gap-11">15. REPL
+Specification [v1.0 — addresses Phase 1B Ruby gap #11]</h2>
+<p>A REPL (“read-eval-print loop”) is a first-class Garnet experience.
+v1.0 specifies the REPL’s surface contract; implementation details (line
+editing, terminal escape codes, history file format) belong to the
+Compiler Architecture Specification.</p>
+<h3 id="invocation-and-entry">15.1 Invocation and entry</h3>
+<pre><code>$ garnet repl
+Garnet 1.0.0 (managed mode, no project)
+Type :help for commands, :quit to exit.
+
+&gt;&gt;&gt;</code></pre>
+<p><code>garnet repl</code> MAY be invoked outside any project
+(free-standing scratch session) or inside a project (loads
+<code>Garnet.toml</code> and exposes the project’s modules).</p>
+<h3 id="input-model">15.2 Input model</h3>
+<p>Each input is one of:</p>
+<ol type="1">
+<li><strong>An expression.</strong> Evaluated; the value is printed with
+type information.</li>
+<li><strong>A statement.</strong> Evaluated; nothing is printed unless
+the statement raises.</li>
+<li><strong>A REPL command</strong> (starts with <code>:</code>). See
+§15.6.</li>
+</ol>
+<p>Multiline input is detected when the parser cannot terminate on a
+complete expression at the end of a line — open braces, open parens,
+unfinished <code>try…ensure</code>, etc. The prompt switches from
+<code>&gt;&gt;&gt;</code> to <code>...</code> to indicate
+continuation.</p>
+<pre><code>&gt;&gt;&gt; def square(x) {
+...   x * x
+... }
+=&gt; def square(x: Any) -&gt; Any         # signature inferred
+
+&gt;&gt;&gt; square(7)
+=&gt; 49 : Int</code></pre>
+<h3 id="binding-persistence">15.3 Binding persistence</h3>
+<p>Top-level bindings MUST persist across inputs. The REPL maintains a
+single managed-mode <code>Module</code> whose name is <code>Repl</code>.
+All
+<code>let</code>/<code>var</code>/<code>def</code>/<code>struct</code>/<code>enum</code>/<code>impl</code>/<code>use</code>
+declarations modify this module.</p>
+<p>A redefinition (e.g., <code>def square(x) { x + 1 }</code> after the
+previous example) MUST silently replace the prior binding. The new
+definition takes effect immediately for new calls; any ongoing actor
+handlers retain the old binding until the actor reloads (per §9
+hot-reload semantics).</p>
+<h3 id="mode">15.4 Mode</h3>
+<p>The REPL operates in managed mode by default. To experiment with
+safe-mode code, the user enters a multi-line <code>@safe module</code>
+block. The REPL MUST NOT permit a single safe-mode top-level statement;
+safe code requires a module envelope.</p>
+<pre><code>&gt;&gt;&gt; @safe module Local {
+...   fn double(own x: Int) -&gt; Int {
+...     x * 2
+...   }
+... }
+=&gt; module Local
+
+&gt;&gt;&gt; Local.double(21)
+=&gt; 42 : Int</code></pre>
+<h3 id="type-display-rules">15.5 Type display rules</h3>
+<p>After every expression, the REPL MUST print the value followed by
+<code>:</code> and the inferred type. For values implementing a custom
+<code>to_s</code> method, the printed value uses that method; otherwise
+a debug representation (Rust-like <code>{:?}</code>) is used.</p>
+<p>For long values (&gt; 80 chars rendered, &gt; 5 nested levels), the
+REPL MAY truncate with <code>…</code> and provide a <code>:expand</code>
+command to view in full.</p>
+<h3 id="repl-commands">15.6 REPL commands</h3>
+<p>The following commands MUST be supported. Commands begin with
+<code>:</code> to disambiguate from expressions.</p>
+<table>
+<colgroup>
+<col style="width: 52%" />
+<col style="width: 47%" />
+</colgroup>
+<thead>
+<tr>
+<th>Command</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>:help</code></td>
+<td>Show this command table</td>
+</tr>
+<tr>
+<td><code>:quit</code> / <code>:q</code></td>
+<td>Exit the REPL</td>
+</tr>
+<tr>
+<td><code>:type &lt;expr&gt;</code> / <code>:t &lt;expr&gt;</code></td>
+<td>Print the inferred type of <code>&lt;expr&gt;</code> without
+evaluating</td>
+</tr>
+<tr>
+<td><code>:imports</code></td>
+<td>List currently loaded modules</td>
+</tr>
+<tr>
+<td><code>:use &lt;path&gt;</code></td>
+<td>Equivalent to <code>use &lt;path&gt;</code> — load a module</td>
+</tr>
+<tr>
+<td><code>:reload</code></td>
+<td>Re-read all loaded modules from disk</td>
+</tr>
+<tr>
+<td><code>:reset</code></td>
+<td>Clear all REPL bindings; equivalent to restarting</td>
+</tr>
+<tr>
+<td><code>:history</code></td>
+<td>Print recent inputs</td>
+</tr>
+<tr>
+<td><code>:edit</code></td>
+<td>Open the most recent multi-line input in <code>$EDITOR</code>, then
+re-evaluate</td>
+</tr>
+<tr>
+<td><code>:time &lt;expr&gt;</code></td>
+<td>Evaluate <code>&lt;expr&gt;</code> and print elapsed time</td>
+</tr>
+<tr>
+<td><code>:bench &lt;expr&gt;</code></td>
+<td>Run <code>&lt;expr&gt;</code> 1000× and report stats</td>
+</tr>
+<tr>
+<td><code>:expand &lt;name&gt;</code></td>
+<td>Show the un-truncated value of the named binding</td>
+</tr>
+</tbody>
+</table>
+<h3 id="history-persistence">15.7 History persistence</h3>
+<p>The REPL MUST persist input history to
+<code>~/.garnet/repl_history</code> (path overridable via
+<code>GARNET_HISTORY_PATH</code> env var). Lines are appended after each
+input. History is loaded on startup. Maximum history size is
+implementation-defined; default 5000 lines.</p>
+<h3 id="safe-mode-repl-execution">15.8 Safe-mode REPL execution</h3>
+<p>When evaluating safe-mode code (per §15.4), the REPL MUST run the
+full borrow checker and lifetime inference (§8.5–8.6). Diagnostics MUST
+be displayed inline with the same quality as
+<code>garnet check</code>.</p>
+<h3 id="performance-contract-1">15.9 Performance contract</h3>
+<p>REPL evaluation latency for trivial expressions (e.g.,
+<code>1 + 1</code>) MUST be ≤ 10 ms on commodity 2026 hardware. This
+precludes JIT compilation per input (which would amortize poorly); the
+REPL implementation SHOULD use a tree-walk interpreter with on-demand
+AST caching.</p>
+<h3 id="differences-from-rubys-irb-and-rusts-evcxr">15.10 Differences
+from Ruby’s <code>irb</code> and Rust’s evcxr</h3>
+<ul>
+<li><strong>Ruby <code>irb</code>:</strong> Garnet REPL adds explicit
+type display and safe-mode support; otherwise behaves analogously.</li>
+<li><strong>Rust <code>evcxr</code>:</strong> Garnet REPL avoids
+requiring <code>let</code> rebinding for redefinition; in Garnet,
+<code>def square(x) { … }</code> followed by a redefinition silently
+replaces the binding, mirroring Ruby’s interactive flow.</li>
+</ul>
+<p>The blended model is, by design, “what a Ruby developer expects, with
+type information added.”</p>
+<hr />
+<h2
+id="tooling-ergonomics-summary-v1.0-addresses-phase-1b-swift-gap-3-full-treatment-in-paper-vii">16.
+Tooling Ergonomics Summary [v1.0 — addresses Phase 1B Swift gap #3; full
+treatment in Paper VII]</h2>
+<p>Garnet’s tooling story is a research deliverable (Paper VII —
+Implementation Ladder) but its high-level shape is normative: the
+language MUST be usable through a single CLI (<code>garnet</code>) with
+consistent UX across local development, package management, and
+continuous integration.</p>
+<h3 id="the-single-cli-principle">16.1 The single-CLI principle</h3>
+<p>A Garnet developer interacts with the toolchain through one binary,
+<code>garnet</code>, with sub-commands for every workflow:</p>
+<table>
+<colgroup>
+<col style="width: 59%" />
+<col style="width: 40%" />
+</colgroup>
+<thead>
+<tr>
+<th>Sub-command</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>garnet new &lt;name&gt;</code></td>
+<td>Create a new project with template scaffolding</td>
+</tr>
+<tr>
+<td><code>garnet init</code></td>
+<td>Initialize a Garnet project in the current directory</td>
+</tr>
+<tr>
+<td><code>garnet build</code></td>
+<td>Compile the project (produces release binary by default)</td>
+</tr>
+<tr>
+<td><code>garnet build --deterministic</code></td>
+<td>Produce a manifest-pinned reproducible build (per Paper VI C7)</td>
+</tr>
+<tr>
+<td><code>garnet build --deterministic --sign</code></td>
+<td>Add manifest signature (v3.4 ManifestSig)</td>
+</tr>
+<tr>
+<td><code>garnet run</code></td>
+<td>Build and execute the project’s entry module</td>
+</tr>
+<tr>
+<td><code>garnet test</code></td>
+<td>Run the project’s test suite</td>
+</tr>
+<tr>
+<td><code>garnet check</code></td>
+<td>Type-check + borrow-check without producing a binary</td>
+</tr>
+<tr>
+<td><code>garnet fmt</code></td>
+<td>Auto-format source (single canonical style; no options)</td>
+</tr>
+<tr>
+<td><code>garnet repl</code></td>
+<td>Launch the REPL (per §15)</td>
+</tr>
+<tr>
+<td><code>garnet doc</code></td>
+<td>Generate API documentation from doc comments</td>
+</tr>
+<tr>
+<td><code>garnet audit</code></td>
+<td>Run <code>cargo-geiger</code>-equivalent dependency safety scan
+(v3.5 FFIGeiger)</td>
+</tr>
+<tr>
+<td><code>garnet verify &lt;manifest&gt;</code></td>
+<td>Verify a deterministic-build manifest (v3.4 ManifestSig)</td>
+</tr>
+<tr>
+<td><code>garnet convert &lt;lang&gt; &lt;file&gt;</code></td>
+<td>Convert source from another language to Garnet (v4.1)</td>
+</tr>
+</tbody>
+</table>
+<p>Inspired by Cargo (Rust) and SwiftPM (Swift), with the deliberate
+choice to keep the CLI flat (no <code>garnet pkg add</code>-style
+nesting beyond two levels).</p>
+<h3 id="project-layout">16.2 Project layout</h3>
+<pre><code>my_project/
+├── Garnet.toml          # project manifest (name, version, dependencies, @caps declarations)
+├── src/
+│   └── main.garnet      # entry module
+├── tests/
+│   └── test_main.garnet # tests
+├── examples/            # example programs
+├── .garnet-cache/       # compiler-as-agent cache (HMAC-protected, gitignored)
+└── .gitignore           # generated by `garnet new`, excludes .garnet-cache/</code></pre>
+<h3 id="manifest-garnet.toml-shape">16.3 Manifest
+(<code>Garnet.toml</code>) shape</h3>
+<pre class="toml"><code>[project]
+name = &quot;my_project&quot;
+version = &quot;0.1.0&quot;
+edition = &quot;v1.0&quot;
+
+[dependencies]
+http = &quot;0.5&quot;
+
+[caps]                   # v3.4 CapCaps — top-level capability declarations
+required = [&quot;fs&quot;, &quot;net&quot;]
+
+[build]
+deterministic = true     # default-on for v3.4+
+sign = true              # v3.4 ManifestSig</code></pre>
+<h3 id="documentation-comment-syntax">16.4 Documentation comment
+syntax</h3>
+<pre class="garnet"><code>## A short summary of the function.
+##
+## # Examples
+##
+## ```garnet
+## let result = fibonacci(10)
+## assert_eq(55, result)
+## ```
+def fibonacci(n) { ... }</code></pre>
+<p><code>##</code> introduces a doc comment. Doc comments support
+markdown. <code>garnet doc</code> extracts them into a static HTML
+site.</p>
+<h3 id="cross-platform-installer-v4.2-see-paper-vii">16.5 Cross-platform
+installer (v4.2 — see Paper VII)</h3>
+<p>Per the v4.2 plan, Garnet ships as MSI (Windows), <code>.pkg</code>
+(macOS), <code>.deb</code>/<code>.rpm</code> (Linux), and a
+<code>rustup</code>-style universal shell installer. UX target: “install
++ create + run” in under two minutes on a clean machine.</p>
+<h3 id="why-the-single-cli-principle-matters">16.6 Why the single-CLI
+principle matters</h3>
+<p>Paper III §3.1 cites Swift’s “package tooling and language ergonomics
+can reinforce one another” as the third Swift contribution. Ruby’s
+tooling fragmentation (separate gem/bundle/rake/rubocop/rspec binaries
+with overlapping configs) is the canonical anti-pattern. Garnet adopts
+Swift/Cargo’s single-binary discipline as a structural commitment that
+prevents the Ruby-style fragmentation from creeping in over time.</p>
+<p>Full architecture, command-by-command behavior, and rollout
+sequencing is the subject of Paper VII (Implementation Ladder).</p>
+<hr />
+<h2 id="references">17. References</h2>
+<ol type="1">
+<li>Jung, R., Jourdan, J-H., Krebbers, R., Dreyer, D. “RustBelt:
+Securing the Foundations of the Rust Programming Language.” POPL 2018,
+MPI-SWS.</li>
+<li>Bacon, D.F., Rajan, V.T. “Concurrent Cycle Collection in Reference
+Counted Systems.” ECOOP 2001.</li>
+<li>Matsakis, N. “RFC 2094: Non-Lexical Lifetimes.” Rust RFCs,
+2018.</li>
+<li>Matsakis, N. “RFC 2025: Two-Phase Borrows.” Rust RFCs, 2017.</li>
+<li>Turon, A. “RFC 1023: Rebalancing Coherence.” Rust RFCs, 2015.</li>
+<li>Apple Inc. “Swift Evolution SE-0302: Sendable and <span
+class="citation" data-cites="Sendable">@Sendable</span> closures.” Swift
+Evolution, 2021.</li>
+<li>Siek, J.G., Taha, W. “Gradual Typing for Functional Languages.”
+Scheme Workshop 2006.</li>
+<li>Garcia, R., Clark, A., Tanter, E. “Abstracting Gradual Typing.” POPL
+2016.</li>
+<li>Walker, D. “Substructural Type Systems.” Advanced Topics in Types
+and Programming Languages, MIT Press 2005.</li>
+<li>Honda, K. “Types for Dyadic Interaction.” CONCUR 1993.</li>
+<li>Garnet Project. “Paper V — The Formal Grounding of Garnet.” April
+2026 (.docx) + <code>Paper_V_Addendum_v1_0.md</code> (Phase 1B markdown
+extensions).</li>
+<li>Garnet Project. “Paper VII — Implementation Ladder &amp; Tooling.”
+April 2026 (stub created in Phase 1B).</li>
+<li>Garnet Project. “GARNET_v2_1_Four_Model_Consensus_Memo.” April
+2026.</li>
+<li>Garnet Project. “GARNET_v2_1_Gemini_Synthesis.” April 2026.</li>
+<li>Thomas, D. <em>Programming Ruby</em> (“Pickaxe”), 4th ed. Pragmatic
+Bookshelf, 2013. Ch. 4 (blocks), Ch. 28 (runtime callbacks).</li>
+<li>Matsumoto, Y. “Ruby Programming Language.” 1993/1995.</li>
+<li>Hoare, G. “Rust Programming Language.” Mozilla 2006/2015.</li>
+<li>Apple Inc. “Swift Programming Language.” 2014.</li>
+<li>Zhang, Z., Kraska, T., Khattab, O. “Recursive Language Models.” MIT
+CSAIL 2025–2026.</li>
+<li>Alake, R. “Memory Engineering for AI Agents.” 2026.</li>
+</ol>
+<hr />
+<p><strong>Status:</strong> v1.0 normative draft. This spec is the
+canonical source of truth for all Garnet implementation work from Rung 2
+through Rung 6. Promotion from v0.3 closes the eleven Phase 1B
+blend-verification gaps; Stage 2 implementation work may commence
+against this spec.</p>
+<p><em>“In the multitude of counsellors there is safety.” — Proverbs
+11:14</em> <em>“The plans of the diligent lead surely to abundance.” —
+Proverbs 21:5</em> <em>“Where there is no vision, the people perish.” —
+Proverbs 29:18</em></p>
+<p><strong>Garnet v1.0 Mini-Spec prepared by Claude Code (Opus 4.7) |
+April 16, 2026 | Phase 1B promotion</strong></p>
+
+      </div>
+      <div id="doc-synthesis" class="doc-paper" style="display:none;">
+<h1 id="garnet">GARNET</h1>
+<h2 id="the-reconciliation-of-rust-and-ruby">The Reconciliation of Rust
+and Ruby</h2>
+<h3
+id="paper-iii-v2.1-redline---gap-analysis-language-synthesis-proposal-and-market-viability-assessment">Paper
+III (v2.1 redline) - Gap Analysis, Language Synthesis Proposal, and
+Market Viability Assessment</h3>
+<p><strong>Prepared for:</strong> Jon - Island Development Crew<br />
+<strong>Date:</strong> April 2026<br />
+<strong>Series:</strong> Garnet Language Research Series<br />
+<strong>Revision note:</strong> This v2.1 pass incorporates the Grok
+consensus review, promotes Swift to the central comparator set, and
+tightens the boundary between language-core claims and runtime-platform
+claims.</p>
+<h2 id="executive-summary">Executive summary</h2>
+<p>This redline revision preserves the original comparative insight -
+that Rust and Ruby sit at opposite poles of programming language design
+- while strengthening the synthesis where the previous corpus remained
+under-specified. The v2.1 result is a more precise thesis: Garnet is
+strongest as a <strong>proposed dual-mode, agent-native language
+platform</strong> rather than merely as a merged language. Rust remains
+the reference for safe-mode rigor, ownership, and systems trust. Ruby
+remains the reference for humane syntax, DSL design, and orchestrative
+velocity. Swift becomes the missing production comparator for the
+managed side, clarifying how ARC, actors, and a coherent package/tooling
+story can coexist in a mainstream language. The update also introduces a
+formal scope boundary: TurboQuant motivates runtime design, but it is
+not treated as a hard semantic feature of the language core.</p>
+<h2 id="abstract">Abstract</h2>
+<p>The original Garnet synthesis argued that Rust and Ruby’s weaknesses
+mirror one another’s strengths so closely that a genuine reconciliation
+is plausible. That thesis still holds. This v2.1 revision refines the
+proposal in three ways. First, it adds Swift as the most important
+production comparator for Garnet’s managed mode, because Swift
+demonstrates that automatic reference counting, actor-based concurrency,
+and mainstream ergonomics can cohere in a serious language with durable
+tooling. Second, it redefines Garnet as a language-platform proposal for
+<strong>safe, expressive, memory-aware agentic software</strong>,
+bringing memory cores, memory managers, and domain-specific harnesses
+into the architecture. Third, it introduces a credibility boundary
+around model-side memory innovations such as TurboQuant, treating them
+as runtime and implementation influences rather than as direct language
+guarantees. The result is a more defensible synthesis, a sharper product
+wedge, and a clearer implementation roadmap.</p>
+<h2 id="the-revised-synthesis-question">1. The revised synthesis
+question</h2>
+<p>The original question was whether Rust and Ruby could be reconciled
+without collapsing into compromise. The v2.1 question is narrower and
+more practical:</p>
+<blockquote>
+<p><strong>Can a dual-mode language platform combine Ruby-like surface
+fluency, Rust-like safety, Swift-like managed ergonomics, and
+first-class memory abstractions for long-horizon agent
+systems?</strong></p>
+</blockquote>
+<p>This revision changes the evaluation criteria. Garnet is no longer
+judged only by how elegant its syntax sounds on paper. It is judged by
+whether the proposal can support reliable work across three layers at
+once:</p>
+<ul>
+<li>the <strong>language core</strong>,</li>
+<li>the <strong>runtime and memory system</strong>, and</li>
+<li>the <strong>harness/product layer</strong> built above it.</li>
+</ul>
+<h2 id="updated-comparison-matrix">2. Updated comparison matrix</h2>
+<p>The original 34-dimension matrix remains useful, but the v2.1
+revision highlights the dimensions most affected by the new comparator
+set and the memory-engineering addendum.</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Rust</th>
+<th>Ruby</th>
+<th>Swift</th>
+<th>Garnet v2.1</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Default memory model</td>
+<td>Ownership + borrowing</td>
+<td>Garbage collection</td>
+<td>ARC for reference types</td>
+<td>ARC default in managed mode; ownership in safe mode</td>
+</tr>
+<tr>
+<td>Performance ceiling</td>
+<td>Near C/C++</td>
+<td>Modest, improving with JIT</td>
+<td>High, with managed defaults</td>
+<td>Managed mode near Go/Swift class; safe mode near Rust target</td>
+</tr>
+<tr>
+<td>Concurrency posture</td>
+<td>Compile-time race freedom</td>
+<td>GVL + experimental actors</td>
+<td>Actors + Sendable</td>
+<td>Typed actors + structured async + safe hot paths</td>
+</tr>
+<tr>
+<td>Syntax posture</td>
+<td>Explicit and rigorous</td>
+<td>Humane and expressive</td>
+<td>Moderate, mainstream ergonomic</td>
+<td>Ruby-leaning managed surface with explicit safe boundary</td>
+</tr>
+<tr>
+<td>Toolchain coherence</td>
+<td>Cargo</td>
+<td>RubyGems + Bundler + external tools</td>
+<td>SwiftPM + Xcode</td>
+<td>Unified CLI should be part of the product</td>
+</tr>
+<tr>
+<td>Metaprogramming</td>
+<td>Compile-time macros</td>
+<td>Runtime reflection and DSLs</td>
+<td>Limited compared with Ruby</td>
+<td>Compile-time macros plus explicit <code>@dynamic</code> escape
+hatch</td>
+</tr>
+<tr>
+<td>Agent-memory fit</td>
+<td>Great for hot paths</td>
+<td>Great for orchestration fluency</td>
+<td>Strong precedent for managed isolation</td>
+<td>Designed around memory units, traces, and shared memory core</td>
+</tr>
+</tbody>
+</table>
+<figure>
+<img src="assets/garnet_positioning_matrix_v2_1.png" style="width:72.0%"
+alt="Positioning across key comparators" />
+<figcaption aria-hidden="true">Positioning across key
+comparators</figcaption>
+</figure>
+<h2 id="swift-as-the-missing-production-comparator">3. Swift as the
+missing production comparator</h2>
+<p>Swift matters because it validates the part of the Garnet proposal
+that neither Rust nor Ruby can validate alone.</p>
+<h3 id="what-swift-proves">3.1 What Swift proves</h3>
+<p>Swift shows that:</p>
+<ul>
+<li><strong>automatic reference counting can be predictable and
+serious</strong> rather than a toy abstraction;</li>
+<li><strong>actors and <code>Sendable</code> can move concurrency
+discipline into the mainstream</strong>;</li>
+<li><strong>package tooling and language ergonomics can reinforce one
+another</strong> rather than competing for attention.</li>
+</ul>
+<p><strong>v1.0 spec materialization (added 2026-04-16, Phase
+1B).</strong> Each of the three Swift contributions now has a concrete
+companion section in the Mini-Spec:</p>
+<table>
+<colgroup>
+<col style="width: 31%" />
+<col style="width: 38%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Swift contribution</th>
+<th>Mini-Spec v1.0 section</th>
+<th>Garnet refinement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ARC predictable + serious</td>
+<td>§4.5 (cycle-detection algorithm)</td>
+<td>Bacon–Rajan with kind-aware root partitioning — closes the
+cycle-leak gap that Swift’s mainline ARC leaves to programmer-inserted
+<code>weak</code>/<code>unowned</code></td>
+</tr>
+<tr>
+<td>Actors + <code>Sendable</code> mainstream</td>
+<td>§9.4 (Sendable-equivalent)</td>
+<td>Declaration-site enforcement (one diagnostic per protocol
+vs. Swift’s one-per-send-site) — same soundness, better diagnostic
+locality</td>
+</tr>
+<tr>
+<td>Tooling + language coherence</td>
+<td>§16 (single-CLI summary) + Paper VII (full spec)</td>
+<td>One <code>garnet</code> binary with consistent UX across
+new/init/build/run/test/check/fmt/repl/doc/audit/verify/convert</td>
+</tr>
+</tbody>
+</table>
+<p>This makes the Swift inheritance claim falsifiable at the spec layer:
+the §4.5 ARC theorem (Mini-Spec §4.5.5), the Actor Isolation Theorem
+(Mini-Spec §9.4.8 / Paper V Addendum §D.2), and the single-CLI principle
+(Mini-Spec §16.1) are now load-bearing normative claims a reviewer can
+scrutinize point-by-point.</p>
+<h3 id="what-swift-does-not-solve-for-garnet">3.2 What Swift does not
+solve for Garnet</h3>
+<p>Swift does not replace Rust or Ruby in the argument.</p>
+<ul>
+<li>It does not match Rust’s ownership semantics as the core safe-mode
+substrate.</li>
+<li>It does not match Ruby’s metaprogramming range, DSL density, or REPL
+and orchestration culture.</li>
+<li>It does not by itself answer the agent-memory and harness-design
+question.</li>
+</ul>
+<h3 id="why-the-comparator-changes-the-proposal">3.3 Why the comparator
+changes the proposal</h3>
+<p>The addition of Swift removes a blind spot in the original corpus.
+Without Swift, the managed side risked sounding like a hand-wavy
+compromise between GC languages and systems languages. With Swift in the
+frame, Garnet can argue from a real precedent: a language can have
+approachable syntax, automatic memory management, serious concurrency
+isolation, and mainstream tooling discipline without giving up
+ambition.</p>
+<h2 id="from-llm-native-to-agent-native">4. From LLM-native to
+agent-native</h2>
+<p>The v2.0 corpus argued that Garnet should be readable and generable
+by modern coding models. The v2.1 revision accepts that point, but makes
+a larger move: <strong>LLM-native is no longer enough.</strong> The
+stronger claim is that Garnet should be
+<strong>agent-native</strong>.</p>
+<p>That means the proposal must represent more than code syntax. It must
+also account for:</p>
+<ul>
+<li>what the system remembers,</li>
+<li>how memory is stored and retrieved,</li>
+<li>how workflow traces become reusable,</li>
+<li>how tools and policies are described,</li>
+<li>and how the harness around the model keeps the work reliable.</li>
+</ul>
+<h3 id="memory-primitives">4.1 Memory primitives</h3>
+<p>The memory-engineering transcripts supplied for this revision make a
+four-part distinction that fits Garnet well:</p>
+<ul>
+<li><strong>working memory</strong> for short-lived execution context
+and semantic caches,</li>
+<li><strong>episodic memory</strong> for interaction history and session
+summaries,</li>
+<li><strong>semantic memory</strong> for facts, entities, and knowledge
+stores,</li>
+<li><strong>procedural memory</strong> for workflow traces, skills, and
+tool schemas.</li>
+</ul>
+<p>The language therefore benefits from first-class memory
+declarations:</p>
+<pre class="garnet"><code>memory episodic SessionLog   : EpisodeStore&lt;Interaction&gt;
+memory semantic Knowledge    : VectorIndex&lt;Fact&gt;
+memory procedural Workflows  : WorkflowStore&lt;Trace&gt;
+
+agent BuildAgent uses SessionLog, Knowledge, Workflows
+  tool deploy(input: BuildSpec) -&gt; DeployResult
+  workflow ReleaseFlow persists Trace</code></pre>
+<h3 id="dual-mode-architecture-updated">4.2 Dual-mode architecture,
+updated</h3>
+<p>In managed mode, Garnet uses ARC with cycle-awareness and keeps
+syntax close to Ruby-like fluency. In safe mode (<code>@safe</code>),
+ownership and borrowing apply directly to memory units, buffers, and
+typed messages. The compiler/runtime boundary provides the bridges,
+diagnostics, and metadata hooks needed to move between those two worlds
+without pretending they are identical.</p>
+<h2 id="what-belongs-in-the-language-core-vs.-the-runtime">5. What
+belongs in the language core vs. the runtime</h2>
+<p>A stronger proposal needs a sharper boundary. The v2.1 corpus
+therefore divides claims into the following categories.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Garnet should standardize</th>
+<th>Garnet should leave flexible</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Language core</td>
+<td>Managed vs. safe mode boundary; typed actors; memory primitive
+syntax; explicit dynamic escape hatches</td>
+<td>Exact storage engines; exact compression algorithms; vendor-specific
+APIs</td>
+</tr>
+<tr>
+<td>Compiler/runtime</td>
+<td>Diagnostics; bridging; scheduling hooks; runtime metadata
+interfaces</td>
+<td>Concrete serving stack; model-specific policies; backend-specific
+optimizers</td>
+</tr>
+<tr>
+<td>Memory system</td>
+<td>Interface expectations for memory units and traces</td>
+<td>Whether storage is relational, vector, graph, or hybrid in a given
+implementation</td>
+</tr>
+<tr>
+<td>Harness/product layer</td>
+<td>Reference architecture and design guidance</td>
+<td>UX, approvals flow, deployment surface, enterprise packaging</td>
+</tr>
+</tbody>
+</table>
+<h3 id="turboquant-boundary">5.1 TurboQuant boundary</h3>
+<p>Google Research’s TurboQuant work is relevant because it shows how
+severe model-side memory pressure is becoming. It motivates Garnet’s
+runtime direction. It should <strong>not</strong> be treated as a hard
+semantic guarantee of the language itself. The proposal is stronger when
+it says:</p>
+<ul>
+<li>the language may expose <strong>annotations or runtime
+hooks</strong> compatible with compression-aware implementations,</li>
+<li>the runtime may exploit serving innovations as they mature,</li>
+<li>but the semantics of Garnet do not depend on one specific
+compression method.</li>
+</ul>
+<h2 id="what-garnet-is-what-garnet-is-not">6. What Garnet is / what
+Garnet is not</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Garnet is</th>
+<th>Garnet is not</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A dual-mode language-platform proposal</td>
+<td>Merely a chat frontend or CLI wrapper</td>
+</tr>
+<tr>
+<td>A platform for safe, expressive, memory-aware software</td>
+<td>A claim that every aspect of agent infrastructure belongs in
+syntax</td>
+</tr>
+<tr>
+<td>A migration-aware design with Rust, C, and Ruby interop</td>
+<td>A guarantee that one runtime strategy will fit all model stacks</td>
+</tr>
+<tr>
+<td>A substrate for harnesses and long-horizon execution</td>
+<td>A claim that it should replace every existing language at once</td>
+</tr>
+<tr>
+<td>A research program with clear implementation phases</td>
+<td>A finished compiler product today</td>
+</tr>
+</tbody>
+</table>
+<h2 id="updated-product-wedge-and-market-framing">7. Updated product
+wedge and market framing</h2>
+<p>The strongest commercial reading of Garnet remains cautious but
+promising. Mordor Intelligence’s January 2026 update places the software
+development tools market at <strong>USD 7.44B in 2026</strong> and
+<strong>USD 15.72B by 2031</strong>. That scale is meaningful, but new
+languages do not win by market size alone. They win when they pair
+technical identity with either a killer application or a backer strong
+enough to manufacture ecosystem gravity.</p>
+<p>Garnet’s sharper wedge is therefore <strong>agent infrastructure with
+a shared memory core and migration-friendly hot paths</strong>.</p>
+<figure>
+<img src="assets/dev_tools_market_growth_v2_1.png" style="width:66.0%"
+alt="Software development tools market" />
+<figcaption aria-hidden="true">Software development tools
+market</figcaption>
+</figure>
+<h3 id="scenario-framing">7.1 Scenario framing</h3>
+<p>The v2.1 redline keeps the original market estimates but treats
+stretch cases as scenarios rather than settled forecasts.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Description</th>
+<th>Five-year implication</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Base research case</td>
+<td>Strong thesis, prototypes, early community traction</td>
+<td>No reliable revenue claim yet</td>
+</tr>
+<tr>
+<td>Focused wedge case</td>
+<td>Harness runtime + memory-core SDK gain enterprise traction in a
+niche</td>
+<td>Plausible low-to-mid tens of millions if adoption is real</td>
+</tr>
+<tr>
+<td>Mature ecosystem case</td>
+<td>Garnet becomes a top-15 ecosystem with real tooling, training, and
+hosting layers</td>
+<td>Large upside, but only with exceptional execution or backing</td>
+</tr>
+</tbody>
+</table>
+<h2 id="a-more-credible-implementation-roadmap">8. A more credible
+implementation roadmap</h2>
+<p>The prior corpus ended close to the compiler question. The v2.1 pass
+makes the intermediate work explicit.</p>
+<h3 id="phase-1---formalize-the-model">Phase 1 - formalize the
+model</h3>
+<ul>
+<li>specify memory units, message protocols, and mode boundaries;</li>
+<li>define what is syntax, what is runtime metadata, and what is
+implementation-specific.</li>
+</ul>
+<h3 id="phase-2---prototype-the-language-core">Phase 2 - prototype the
+language core</h3>
+<ul>
+<li>parser + AST for a narrow subset;</li>
+<li>managed-mode interpreter and REPL;</li>
+<li>safe-mode lowering path to Rust or a Rust-like IR.</li>
+</ul>
+<h3 id="phase-3---build-the-platform-wedge">Phase 3 - build the platform
+wedge</h3>
+<ul>
+<li>reference memory core;</li>
+<li>memory-manager SDK;</li>
+<li>harness runtime with approvals, traces, and policies;</li>
+<li>Rust/C interop from the beginning.</li>
+</ul>
+<h3 id="phase-4---validate-the-killer-application">Phase 4 - validate
+the killer application</h3>
+<ul>
+<li>choose a domain where the shared memory core matters enough to
+create pull;</li>
+<li>test whether Garnet is more compelling there than TypeScript plus
+tooling, Elixir plus BEAM, or Rust plus a custom harness.</li>
+</ul>
+<h2 id="conclusion">Conclusion</h2>
+<p>The v2.1 redline does not overturn the Garnet thesis. It strengthens
+it. Swift clarifies the managed side. The memory transcripts clarify the
+runtime side. TurboQuant sharpens the systems argument without being
+overclaimed. The result is a narrower, more credible, and more
+product-ready proposal:</p>
+<blockquote>
+<p><strong>Garnet is strongest as a proposed dual-mode, agent-native
+language platform with Ruby-like expressive surfaces, Rust-like safe hot
+paths, Swift-like managed precedent, and a shared memory-core
+architecture that can support long-horizon agent systems.</strong></p>
+</blockquote>
+<h2 id="selected-references">Selected references</h2>
+<ol type="1">
+<li>Swift.org. <em>Documentation</em>.
+https://www.swift.org/documentation/<br />
+</li>
+<li>Apple Developer Documentation. <em>Sendable</em>.
+https://developer.apple.com/documentation/swift/sendable<br />
+</li>
+<li>Google Research. <em>TurboQuant: Redefining AI efficiency with
+extreme compression</em>. March 24, 2026.
+https://research.google/blog/turboquant-redefining-ai-efficiency-with-extreme-compression/<br />
+</li>
+<li>Ruby. <em>Official Ruby FAQ</em>.
+https://www.ruby-lang.org/en/documentation/faq/1/<br />
+</li>
+<li>Create T3 App. <em>Introduction</em>.
+https://create.t3.gg/en/introduction<br />
+</li>
+<li>TypeScript Team. <em>A 10x Faster TypeScript</em>. March 11, 2025.
+https://devblogs.microsoft.com/typescript/typescript-native-port/<br />
+</li>
+<li>TypeScript Team. <em>Progress on TypeScript 7 - December 2025</em>.
+December 2, 2025.
+https://devblogs.microsoft.com/typescript/progress-on-typescript-7-december-2025/<br />
+</li>
+<li>Mordor Intelligence. <em>Software Development Tools Market Size and
+Share Analysis 2031</em>. Updated January 2026.
+https://www.mordorintelligence.com/industry-reports/software-development-tools-market<br />
+</li>
+<li>User-supplied April 2026 transcripts on memory engineering, memory
+units, long-context retrieval, and harness design.</li>
+</ol>
+
+      </div>
+      <div id="doc-novel" class="doc-paper" style="display:none;">
+<h1
+id="paper-vi-garnets-novel-frontiers-seven-contributions-to-programming-language-theory-and-practice">Paper
+VI — Garnet’s Novel Frontiers: Seven Contributions to Programming
+Language Theory and Practice</h1>
+<p><strong>Subtitle:</strong> LLM-Native Compilation, the Progressive
+Type Spectrum, and the Compiler-as-Agent Architecture
+<strong>Authors:</strong> Jon — Island Development Crew; with synthesis
+by Claude Opus 4.6 <strong>Date:</strong> April 16, 2026 <strong>Target
+venues:</strong> PLDI 2027 (companion to Paper V), OOPSLA 2027, ASPLOS
+2027 <strong>Anchor:</strong> <em>“Where there is no vision, the people
+perish.” — Proverbs 29:18</em></p>
+<hr />
+<h2 id="abstract">Abstract</h2>
+<p>This paper presents seven novel contributions arising from the Garnet
+language platform design. While Papers I–V established Garnet’s
+theoretical foundations (Rust/Ruby structural complementarity, dual-mode
+architecture, formal type-theoretic grounding, and agent-native memory
+engineering), this paper identifies contributions that extend beyond
+existing programming language research into genuinely unexplored
+territory. We formalize: (1) LLM-native syntax design as a measurable
+language property; (2) the progressive type-disclosure spectrum from
+fully dynamic to affine-typed within a single coherent grammar; (3) the
+compiler-as-agent architecture where the compiler uses the language’s
+own memory primitives to learn from its compilation history; (4)
+kind-aware memory allocation directed by language-level type tags; (5)
+automatic bidirectional error-model bridging across a type-system mode
+boundary; (6) hot-reload mode boundaries for live-updating orchestration
+code without restarting performance-critical paths; and (7)
+deterministic reproducible builds as a language-level guarantee with
+provenance manifests. Each contribution is positioned against existing
+literature, its novelty claim is precisely bounded, and its
+falsifiability conditions are stated.</p>
+<hr />
+<h2 id="introduction">1. Introduction</h2>
+<p>The four-model consensus that grounds the Garnet project (Claude Opus
+4.6, GPT-5.4 Pro, Grok 4.2, Gemini 3.1 Pro Deep Research) converged on
+eight architectural points that define Garnet’s design. Papers I–V built
+the research foundation on those eight points. This paper asks a
+different question: <strong>what does Garnet make possible that no
+existing language offers?</strong></p>
+<p>The seven contributions below are not speculative features. Each one
+emerges directly from design decisions already present in the Garnet
+specification (Mini-Spec v0.3) and compiler architecture (Compiler
+Architecture Spec v1.0). They are, however, novel in that no existing
+production language or academic prototype combines them in the way
+Garnet’s dual-mode architecture enables.</p>
+<hr />
+<h2 id="contribution-1-llm-native-syntax-design">2. Contribution 1:
+LLM-Native Syntax Design</h2>
+<h3 id="the-problem">2.1 The problem</h3>
+<p>Large Language Models generate code with error rates that vary
+dramatically across languages. Empirically, LLMs produce correct Rust
+code at significantly lower rates than correct Python or TypeScript code
+— primarily because Rust’s lifetime annotations and borrow-checker
+interactions require tracking complex state across distant code blocks,
+a task that exceeds transformer attention patterns.</p>
+<p>No programming language has been designed with LLM comprehension and
+generation as a first-class constraint. Languages are designed for human
+readability, machine parseability, or both — but “AI parseability” is a
+novel axis.</p>
+<h3 id="garnets-approach">2.2 Garnet’s approach</h3>
+<p>Garnet’s syntax is designed to maximize the probability that an LLM
+generates correct code on the first attempt. The design principles
+are:</p>
+<ol type="1">
+<li><p><strong>Semantic beacons.</strong> Keywords like
+<code>@safe</code>, <code>@dynamic</code>, <code>memory episodic</code>,
+<code>actor</code>, <code>protocol</code>, <code>def</code>,
+<code>fn</code> serve as unambiguous semantic markers. An LLM reading a
+Garnet file can determine the mode, intent, and constraints of any code
+block from its opening keyword alone — no multi-line lookahead
+required.</p></li>
+<li><p><strong>Predictable patterns.</strong> Every block is
+<code>{ ... }</code>. Every function in managed mode starts with
+<code>def</code>. Every function in safe mode starts with
+<code>fn</code>. Every actor starts with <code>actor</code>. Every
+memory declaration starts with <code>memory</code>. An LLM trained on
+Garnet can predict with near-certainty what syntactic category follows
+each keyword.</p></li>
+<li><p><strong>Progressive annotation density.</strong> Level 0 Garnet
+(dynamic, no annotations) is as simple as Python. Level 3 (affine, full
+annotations) is as precise as Rust. An LLM can generate Level 0 code for
+rapid prototyping and Level 3 code when safety is required, with each
+level’s syntax being a strict superset of the previous. The LLM never
+needs to choose between two incompatible syntaxes — it simply adds more
+constraints.</p></li>
+<li><p><strong>Explicit error model.</strong> Managed mode uses
+<code>try</code>/<code>rescue</code> (exception-style). Safe mode uses
+<code>Result&lt;T,E&gt;</code> with <code>?</code> (value-style). An LLM
+never needs to decide which error model to use — the mode annotation
+tells it.</p></li>
+</ol>
+<h3 id="falsifiable-claim">2.3 Falsifiable claim</h3>
+<p><strong>Hypothesis:</strong> An LLM fine-tuned on Garnet code will
+achieve a higher correct-generation rate (measured by pass@1 on a
+standardized benchmark) than the same LLM fine-tuned on equivalent Rust
+code, for programs of comparable complexity.</p>
+<p><strong>Experimental protocol:</strong> Create a benchmark of 500
+programming tasks (200 managed-mode, 200 safe-mode, 100 mixed-mode).
+Generate solutions using a state-of-the-art LLM. Measure pass@1
+(first-attempt correctness after compilation + test suite). Compare
+Garnet pass@1 against Rust pass@1 for safety-equivalent tasks and
+against Ruby pass@1 for ergonomics-equivalent tasks.</p>
+<h3 id="prior-art-and-novelty-boundary">2.4 Prior art and novelty
+boundary</h3>
+<p><strong>Prior art:</strong> There is extensive work on LLM code
+generation benchmarks (HumanEval, MBPP, SWE-bench) and on evaluating
+LLMs across languages. There is limited work on designing languages FOR
+LLM generation — Mojo’s documentation mentions “AI-first” but does not
+formalize it.</p>
+<p><strong>Novelty claim:</strong> Garnet is the first language to treat
+LLM-native syntax as a measurable, testable design constraint with a
+falsifiable correctness hypothesis.</p>
+<hr />
+<h2 id="contribution-2-the-progressive-type-disclosure-spectrum">3.
+Contribution 2: The Progressive Type-Disclosure Spectrum</h2>
+<h3 id="the-problem-1">3.1 The problem</h3>
+<p>Existing gradual typing systems (TypeScript, Python/mypy, Sorbet for
+Ruby) provide a binary choice: annotated or not. Existing ownership
+systems (Rust) provide no dynamic option. No language offers a
+continuous spectrum from fully dynamic to affine-typed.</p>
+<h3 id="garnets-approach-1">3.2 Garnet’s approach</h3>
+<p>Garnet defines four type-discipline levels, each a strict superset of
+the previous:</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Level</th>
+<th>Name</th>
+<th>Annotations</th>
+<th>Guarantees</th>
+<th>Closest Existing Analog</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Dynamic</td>
+<td>None</td>
+<td>Runtime type errors only</td>
+<td>Ruby, Python</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Gradual</td>
+<td>Optional hints</td>
+<td>Compile-time where annotated</td>
+<td>TypeScript (strict: false)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Static</td>
+<td>All types specified</td>
+<td>Full compile-time safety</td>
+<td>TypeScript (strict: true), Go</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Affine</td>
+<td>Types + ownership</td>
+<td>Memory safety + data-race freedom</td>
+<td>Rust</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The key property:</strong> A program valid at Level N is
+valid at Level N+1 with zero modifications (the compiler infers tighter
+constraints). A program at Level N+1 is valid at Level N (extra
+annotations become documentation). This bidirectional compatibility is
+the progressive disclosure guarantee.</p>
+<h3 id="formal-basis">3.3 Formal basis</h3>
+<p>Paper V defines λ_managed (Levels 0–2) and λ_safe (Level 3) as
+distinct sub-calculi with a bridging judgment. The progressive
+disclosure spectrum maps onto these:</p>
+<ul>
+<li>Levels 0–2 inhabit λ_managed. The difference is annotation density:
+Level 0 uses <code>Dyn</code> for all types, Level 1 uses
+<code>Dyn</code> for unannotated positions and concrete types for
+annotated ones, Level 2 requires all positions to be concretely
+typed.</li>
+<li>Level 3 transitions to λ_safe with affine rules. The transition is
+at the module boundary (<code>@safe</code>), not at the expression
+level.</li>
+</ul>
+<p>The formal guarantee: for any program P at Level N, if P type-checks
+at Level N, then P also type-checks at Level N-1 (relaxation is always
+safe) AND at Level N+1 (strengthening is always sound, because inference
+adds constraints, never removes them).</p>
+<h3 id="falsifiable-claim-1">3.4 Falsifiable claim</h3>
+<p><strong>Hypothesis:</strong> The progressive type spectrum reduces
+the barrier to adopting memory-safe programming practices. Measured by:
+developers who start at Level 0 and incrementally annotate to Level 2/3
+achieve comparable safety outcomes to developers who start at Level 3,
+with lower time-to-first-correct-program.</p>
+<h3 id="prior-art-and-novelty-boundary-1">3.5 Prior art and novelty
+boundary</h3>
+<p><strong>Prior art:</strong> Siek &amp; Taha’s gradual typing (2006),
+Garcia et al.’s Abstracting Gradual Typing (POPL 2016),
+New/Licata/Ahmed’s Gradual Type Theory (POPL 2019). Mojo’s progressive
+disclosure (Python <code>def</code> → typed <code>fn</code>). Rust’s
+ownership model. Swift’s optional chaining and progressive
+strictness.</p>
+<p><strong>Novelty claim:</strong> No existing language provides a
+formally continuous spectrum from dynamic typing through gradual typing
+to affine typing within one grammar, with the bidirectional
+compatibility guarantee. TypeScript spans Levels 0–2 but has no Level 3.
+Rust spans Levels 2–3 but has no Levels 0–1. Mojo spans Levels 0–2 for
+Python compatibility but has no affine types. Garnet is the first to
+span all four.</p>
+<hr />
+<h2 id="contribution-3-the-compiler-as-agent-architecture">4.
+Contribution 3: The Compiler-as-Agent Architecture</h2>
+<h3 id="the-problem-2">4.1 The problem</h3>
+<p>Compilers are stateless tools — they consume source code and produce
+artifacts with no memory of past compilations beyond incremental caches.
+No compiler uses episodic memory (what optimizations worked previously),
+semantic memory (knowledge about the codebase’s patterns), or procedural
+memory (compilation strategies) in the way that Garnet defines these
+concepts for user programs.</p>
+<h3 id="garnets-approach-2">4.2 Garnet’s approach</h3>
+<p>The Garnet compiler can use Garnet’s own four memory types to improve
+its own performance over time:</p>
+<ul>
+<li><strong>Working memory:</strong> The current compilation unit —
+symbol tables, type contexts, in-progress AST</li>
+<li><strong>Episodic memory:</strong> Compilation history — which
+optimization passes produced the largest speedups on similar code
+patterns in past builds</li>
+<li><strong>Semantic memory:</strong> Knowledge about the codebase —
+which modules are hot, which functions are inlined most often, which
+types dominate allocation</li>
+<li><strong>Procedural memory:</strong> Compilation strategies —
+inlining heuristics that have been validated by benchmark,
+monomorphization decisions that reduced code size without losing
+performance</li>
+</ul>
+<h3 id="concrete-mechanism">4.3 Concrete mechanism</h3>
+<pre><code>Compilation N:
+  source → [compile] → artifact + compilation trace
+
+Compilation N+1:
+  source + diff(N, N+1) + compilation trace(N) → [compile with hints] → artifact + trace</code></pre>
+<p>The compiler maintains a <code>.garnet-cache/</code> directory
+containing: - <code>episodes.log</code> — timestamped compilation events
+with optimization decisions and their outcomes -
+<code>knowledge.db</code> — semantic index of the codebase (most-called
+functions, hottest loops, largest types) - <code>strategies.db</code> —
+validated compilation strategies (e.g., “inlining
+<code>fast_path::process</code> always reduces p99 latency”)</p>
+<p>On subsequent compilations, the compiler consults these stores to
+inform optimization decisions. This is NOT profile-guided optimization
+(PGO) — PGO uses runtime profiling data. This uses the compiler’s own
+compilation history.</p>
+<h3 id="falsifiable-claim-2">4.4 Falsifiable claim</h3>
+<p><strong>Hypothesis:</strong> A compilation-history-aware Garnet
+compiler produces measurably better-optimized output after 10+
+compilations of the same codebase than a stateless compiler, measured
+by: (a) compilation speed (less time spent on optimization passes that
+were historically unproductive), and (b) output quality (better inlining
+decisions based on past outcomes).</p>
+<h3 id="prior-art-and-novelty-boundary-2">4.5 Prior art and novelty
+boundary</h3>
+<p><strong>Prior art:</strong> PGO (profile-guided optimization) in GCC,
+LLVM, and the JVM. JIT compilation in V8, HotSpot, YJIT.
+Machine-learning-based compiler optimization (CompilerGym, MLGO).
+AutoFDO (automatic feedback-directed optimization).</p>
+<p><strong>Novelty claim:</strong> None of these systems use the
+compiler’s own compilation trace as a memory source. PGO uses runtime
+profiles. JITs use runtime execution counts. ML-based approaches train
+offline models. Garnet’s compiler-as-agent uses its own episodic,
+semantic, and procedural memory — making it the first compiler that
+genuinely learns from its own past, using the same memory model it
+compiles for user programs. The self-referential nature (compiler uses
+the language’s own memory primitives) is the novelty.</p>
+<hr />
+<h2 id="contribution-4-kind-aware-memory-allocation">5. Contribution 4:
+Kind-Aware Memory Allocation</h2>
+<h3 id="the-problem-3">5.1 The problem</h3>
+<p>All general-purpose allocators treat all allocations identically. The
+programmer knows that some data is short-lived (scratch buffers), some
+is append-only (logs), some is read-heavy (lookup tables), and some is
+versioned (workflow state) — but the allocator does not. The programmer
+cannot convey allocation intent to the runtime without reaching for
+specialized data structures.</p>
+<h3 id="garnets-approach-3">5.2 Garnet’s approach</h3>
+<p>Garnet’s <code>memory</code> declarations carry kind information
+(<code>working</code>, <code>episodic</code>, <code>semantic</code>,
+<code>procedural</code>) that the compiler passes to the allocator:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Memory Kind</th>
+<th>Compiler-Selected Allocator</th>
+<th>Access Pattern</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Working</td>
+<td><strong>Arena allocator</strong> — bulk alloc, bulk free at scope
+exit</td>
+<td>High write, short-lived</td>
+</tr>
+<tr>
+<td>Episodic</td>
+<td><strong>Append-only log</strong> — sequential writes, immutable
+after write</td>
+<td>Sequential write, range read</td>
+</tr>
+<tr>
+<td>Semantic</td>
+<td><strong>Persistent allocator</strong> — structural sharing, COW
+nodes</td>
+<td>Read-heavy, rare mutation</td>
+</tr>
+<tr>
+<td>Procedural</td>
+<td><strong>COW allocator</strong> — copy-on-write with version
+chain</td>
+<td>Read + versioned mutation</td>
+</tr>
+</tbody>
+</table>
+<p>The programmer writes
+<code>memory episodic log : EpisodeStore&lt;Event&gt;</code> and the
+compiler automatically selects the append-only allocator. No allocator
+API is exposed in the language surface.</p>
+<h3 id="falsifiable-claim-3">5.3 Falsifiable claim</h3>
+<p><strong>Hypothesis:</strong> Kind-aware allocation reduces peak
+memory usage and allocation overhead compared to a general-purpose
+allocator, for programs that use the four memory types, by at least 20%
+on representative agent workloads.</p>
+<h3 id="prior-art-and-novelty-boundary-3">5.4 Prior art and novelty
+boundary</h3>
+<p><strong>Prior art:</strong> Arena allocation (widely used in game
+engines, Zig’s std.heap.ArenaAllocator). Region-based memory management
+(Tofte &amp; Talpin, 1997). Typed assembly language (TAL, Morrisett et
+al., 1999). Rust’s allocator API (nightly).</p>
+<p><strong>Novelty claim:</strong> No language automatically selects
+allocation strategy from type-level kind annotations. Existing
+approaches require the programmer to explicitly choose the allocator.
+Garnet is the first to derive allocator selection from the language’s
+type system.</p>
+<hr />
+<h2 id="contribution-5-bidirectional-error-model-bridging">6.
+Contribution 5: Bidirectional Error-Model Bridging</h2>
+<h3 id="the-problem-4">6.1 The problem</h3>
+<p>No production language supports two distinct error-handling models
+(exceptions AND Result types) with round-trip-lossless conversion at the
+boundary. Languages choose one model and stick with it.</p>
+<h3 id="garnets-approach-formalized-in-mini-spec-v0.3-7.4">6.2 Garnet’s
+approach (formalized in Mini-Spec v0.3 §7.4)</h3>
+<p>Bridging operates via two language-level primitives that compose
+cleanly at the managed↔︎safe boundary:</p>
+<ul>
+<li><strong><code>?</code> operator</strong> in managed code unwraps
+<code>Ok(v)</code> to <code>v</code> and converts <code>Err(e)</code>
+into a raise that the enclosing <code>try/rescue</code> captures.</li>
+<li><strong><code>try { ... } rescue e { ... }</code></strong> in safe
+code captures a managed raise and returns <code>err(e)</code> to the
+safe caller.</li>
+</ul>
+<p>So:</p>
+<ul>
+<li>Managed → Safe: managed raises become <code>Err(e)</code> at the
+safe boundary (captured via <code>try/rescue</code> +
+<code>err(e)</code>).</li>
+<li>Safe → Managed: <code>Err(e)</code> becomes a managed raise at the
+<code>?</code> site, caught by the enclosing
+<code>try/rescue</code>.</li>
+<li><code>Ok(v)</code> flows through transparently.</li>
+</ul>
+<h3 id="implementation-status">6.3 Implementation status</h3>
+<ul>
+<li><strong>v3.2 (shipped):</strong> bidirectional bridging via
+user-authored <code>try/rescue</code> + <code>?</code> composition.
+Verified by <code>garnet-interp/tests/boundary_errors.rs</code> across
+all four directions (safe→managed, managed→safe, double-bounce,
+type-mismatch loud-fail) with Err-payload round-trip
+(<code>"unlucky number"</code> reaches rescue handler intact).</li>
+<li><strong>v4.0 (planned):</strong> <em>automatic</em>
+compiler-inserted bridging — the type-checker sees a managed→safe call
+returning <code>Result&lt;T, E&gt;</code> and elides the user’s
+<code>try/rescue</code> scaffold, inserting the conversion implicitly.
+Requires complete type-checker (Stage 2+). Falsifiable hypothesis
+(pass/fail to be measured in v4.0 empirical validation): zero
+error-information loss in compiler-generated bridges across a 100-case
+corpus.</li>
+</ul>
+<h3 id="novelty-boundary">6.4 Novelty boundary</h3>
+<p><strong>Prior art:</strong> Swift’s Objective-C error bridging
+(NSError ↔︎ throws). Java’s checked ↔︎ unchecked exception hierarchy.
+Kotlin’s Java interop for exceptions.</p>
+<p><strong>Novelty claim:</strong> All prior art bridges within one
+error paradigm (exceptions to exceptions). Garnet bridges <em>across
+paradigms</em> (exceptions to algebraic types and back). The formal
+basis in Paper V §4’s bridging judgment — proven in v3.2 via the manual
+<code>?</code>/<code>try/rescue</code> composition — ensures no error
+information is lost in either direction, a property none of the prior
+art guarantees formally. The v4.0 automatic-bridging layer is an
+ergonomic refinement of the already-proven semantic primitive.</p>
+<hr />
+<h2 id="contribution-6-hot-reload-mode-boundaries">7. Contribution 6:
+Hot-Reload Mode Boundaries</h2>
+<h3 id="the-problem-5">7.1 The problem</h3>
+<p>Long-horizon AI agents run for hours or days. Restarting them to
+deploy new orchestration logic interrupts active workflows, drops
+in-flight state, and forces expensive context reconstruction. No systems
+language supports hot-reloading of orchestration code while
+performance-critical code continues running.</p>
+<h3 id="garnets-approach-4">7.2 Garnet’s approach</h3>
+<p>The mode boundary IS the reload boundary:</p>
+<ol type="1">
+<li>Safe-mode modules are compiled to native code and loaded as shared
+libraries</li>
+<li>Managed-mode modules run on the bytecode VM</li>
+<li>When managed code is updated, the VM loads the new bytecode</li>
+<li>Safe-mode code continues executing — it sees the new managed module
+at the next boundary crossing</li>
+<li>Actor mailboxes buffer messages during the reload window, then
+drain</li>
+</ol>
+<pre><code>[Safe-mode: native, running] ←→ [Mode Boundary] ←→ [Managed-mode: bytecode VM]
+                                                          ↓ hot-reload
+                                                     [New bytecode loaded]
+                                                          ↓
+                                                     [Drain buffered messages]
+                                                          ↓
+                                                     [Resume normal operation]</code></pre>
+<h3 id="falsifiable-claim-4">7.3 Falsifiable claim</h3>
+<p><strong>Hypothesis:</strong> Garnet’s hot-reload mechanism achieves
+zero-downtime orchestration updates for long-running agent systems, with
+message delivery latency increase bounded to the reload window duration
+(measured in milliseconds).</p>
+<h3 id="prior-art-and-novelty-boundary-4">7.4 Prior art and novelty
+boundary</h3>
+<p><strong>Prior art:</strong> Erlang/OTP hot code loading (the gold
+standard). Java’s OSGi dynamic modules. Elixir’s hot reloading.
+JavaScript’s HMR (Hot Module Replacement) in development servers.</p>
+<p><strong>Novelty claim:</strong> Erlang reloads within one runtime
+(BEAM). Garnet reloads across a type-system mode boundary, where one
+side (safe mode) has zero-cost compiled native code that doesn’t
+participate in the reload. This is architecturally distinct: Erlang
+trades performance for universal reloadability, while Garnet preserves
+native performance in the hot path and confines reloading to the
+orchestration layer.</p>
+<hr />
+<h2
+id="contribution-7-deterministic-reproducible-builds-with-provenance-manifests">8.
+Contribution 7: Deterministic Reproducible Builds with Provenance
+Manifests</h2>
+<h3 id="the-problem-6">8.1 The problem</h3>
+<p>No mainstream language guarantees that the same source + same
+compiler version = byte-identical output. Non-determinism in compilation
+(timestamps, randomized optimization choices, platform-dependent
+codegen) means builds are not reproducible. For agent systems, this is a
+security risk: you cannot verify that a deployed binary matches its
+source.</p>
+<h3 id="garnets-approach-5">8.2 Garnet’s approach</h3>
+<p>Garnet’s compiler guarantees: 1. <strong>Deterministic
+codegen:</strong> No timestamps, no randomized choices, no
+platform-dependent paths (all platform differences are explicit in
+target triples) 2. <strong>Provenance manifest:</strong> Every build
+produces a <code>.garnet-manifest</code> file containing the SHA-256
+hash of every input (source files, dependencies, compiler version,
+target triple, optimization flags) 3. <strong>Embedded
+manifest:</strong> The manifest hash is embedded in the output binary’s
+metadata section, so any binary can prove its own provenance</p>
+<pre><code>$ garnet build --release
+  → my-agent (binary)
+  → my-agent.garnet-manifest (JSON: hashes of all inputs + output)
+
+$ garnet verify my-agent
+  ✓ Binary hash matches manifest
+  ✓ All source hashes match
+  ✓ Compiler version: garnetc 0.3.0 (2026-04-16)
+  ✓ Build is deterministically reproducible</code></pre>
+<h3 id="falsifiable-claim-5">8.3 Falsifiable claim</h3>
+<p><strong>Hypothesis:</strong> Given identical source, dependencies,
+compiler version, and target triple, two independent Garnet compilations
+produce byte-identical output. This is testable by compiling the same
+project on two different machines and comparing hashes.</p>
+<h3 id="prior-art-and-novelty-boundary-5">8.4 Prior art and novelty
+boundary</h3>
+<p><strong>Prior art:</strong> Reproducible Builds project
+(reproducible-builds.org). Nix/Guix reproducible build systems. Go’s
+reproducible builds (largely achieved in practice). Rust’s
+<code>-C codegen-units=1</code> for more deterministic output.</p>
+<p><strong>Novelty claim:</strong> Existing approaches achieve
+reproducibility as an emergent property of careful engineering. Garnet
+specifies it as a language-level guarantee with a first-class provenance
+mechanism. The manifest is not an external tool — it is part of the
+compiler’s output contract.</p>
+<hr />
+<h2 id="conclusion">9. Conclusion</h2>
+<p>These seven contributions are not theoretical wishes. Each one: 1.
+Emerges from design decisions already present in Mini-Spec v0.3 2. Has a
+falsifiable hypothesis that can be tested against existing languages 3.
+Is bounded against prior art with precise novelty claims 4. Can be
+implemented incrementally across the engineering ladder (Rungs 3–6)</p>
+<p>Together they position Garnet not merely as a language reconciling
+Rust and Ruby, but as a research vehicle for the next generation of
+programming language theory — one that takes AI generation, agent
+systems, and compilation intelligence as first-class design constraints
+alongside the traditional concerns of safety, performance, and
+expressiveness.</p>
+<p>The question these contributions pose to the programming language
+community is not whether they are achievable (each builds on proven
+precedent), but whether a single language can credibly embody all seven
+simultaneously. Garnet’s dual-mode architecture makes this possible by
+providing a clean separation surface: contributions 1–3 operate across
+the full language, while contributions 4–7 leverage the specific
+properties of the mode boundary to achieve results that a single-mode
+language cannot.</p>
+<hr />
+<h2 id="references">References</h2>
+<ol type="1">
+<li>Jung, R. et al. “RustBelt.” POPL 2018.</li>
+<li>Siek, J.G., Taha, W. “Gradual Typing for Functional Languages.”
+2006.</li>
+<li>Garcia, R. et al. “Abstracting Gradual Typing.” POPL 2016.</li>
+<li>New, M., Licata, D., Ahmed, A. “Gradual Type Theory.” POPL
+2019.</li>
+<li>Dunfield, J., Krishnaswami, N. “Complete and Easy Bidirectional
+Typechecking.” ICFP 2013.</li>
+<li>Tofte, M., Talpin, J-P. “Region-Based Memory Management.”
+Information and Computation 1997.</li>
+<li>Morrisett, G. et al. “From System F to Typed Assembly Language.” ACM
+TOPLAS 1999.</li>
+<li>Honda, K. “Types for Dyadic Interaction.” CONCUR 1993.</li>
+<li>Sustrik, M. “Structured Concurrency.” 2016.</li>
+<li>White House ONCD. “Back to the Building Blocks: A Path Toward Secure
+and Measurable Software.” February 2024.</li>
+<li>Mordor Intelligence. “Software Development Tools Market.” January
+2026.</li>
+<li>Garnet Project. Papers I–V, Four-Model Consensus Memo, Mini-Spec
+v0.3. April 2026.</li>
+</ol>
+<hr />
+<p><em>“In the multitude of counsellors there is safety.” — Proverbs
+11:14</em> <em>“The plans of the diligent lead surely to abundance.” —
+Proverbs 21:5</em> <em>“Where there is no vision, the people perish.” —
+Proverbs 29:18</em></p>
+<p><strong>Paper VI prepared by Claude Code (Opus 4.6) | April 16,
+2026</strong></p>
+
+      </div>
+      <div id="doc-ladder" class="doc-paper" style="display:none;">
+<h1 id="paper-vii-implementation-ladder-tooling-ergonomics">Paper VII —
+Implementation Ladder &amp; Tooling Ergonomics</h1>
+<h2 id="phase-1b-stub-v0.1">Phase 1B Stub (v0.1)</h2>
+<p><strong>Series:</strong> Garnet Language Research Series
+<strong>Date:</strong> April 16, 2026 <strong>Author:</strong> Claude
+Code (Opus 4.7) at the direction of Jon — Island Development Crew
+<strong>Status:</strong> Stub created in Phase 1B; full v1.0 deliverable
+is a v4.0 commitment per the master plan <strong>Anchor:</strong>
+<em>“Whatsoever thy hand findeth to do, do it with thy might.” —
+Ecclesiastes 9:10</em></p>
+<hr />
+<h2 id="foreword-stub-status">Foreword (stub status)</h2>
+<p>This paper is a v3.3 Phase 1B <strong>stub</strong>. Per the master
+plan
+(<code>~/.claude/plans/i-ll-follow-plan-mode-proud-lollipop.md</code>):</p>
+<ul>
+<li>Phase 1B (v3.3) commits to a stub that documents the garnet CLI
+design + REPL + tooling ergonomics as a Swift-inheritance
+close-out.</li>
+<li>Phase 4C (v4.0) commits to the full v1.0 paper: the
+engineering-ladder narrative from v3.2 → v4.0, the empirical findings
+from the 7 Paper VI experiments, and the cross-platform installer story
+(v4.2).</li>
+</ul>
+<p>This stub provides enough content to anchor Mini-Spec v1.0 §16’s
+normative single-CLI principle. The full v1.0 will expand each section
+with measured outcomes from Stages 2–4.</p>
+<hr />
+<h2 id="abstract-stub">Abstract (stub)</h2>
+<p>Garnet’s research contribution is partly the language and partly the
+<em>engineering process</em> by which the language was built. This paper
+documents the implementation ladder — the seven rungs from a parsed
+grammar to a deterministically-built signed binary — and the tooling
+that makes the ladder accessible to working developers. The thesis is
+that <strong>language design and toolchain design are co-equal
+first-order concerns</strong>: a beautifully designed language with
+fragmented tooling (Ruby’s eternal critique) loses ground to a
+less-elegant language with one coherent CLI (Cargo + rustup as the
+modern proof). Garnet inherits Cargo and SwiftPM’s single-binary
+discipline as a structural commitment that prevents fragmentation from
+re-emerging.</p>
+<hr />
+<h2 id="why-a-separate-paper-on-implementation-tooling">1. Why a
+separate Paper on Implementation &amp; Tooling</h2>
+<p>The Garnet research corpus is split across:</p>
+<ul>
+<li>Paper I: Rust deep dive</li>
+<li>Paper II: Ruby deep dive</li>
+<li>Paper III: Synthesis (Garnet’s positioning + market wedge)</li>
+<li>Paper IV: Agentic systems (memory cores, harnesses)</li>
+<li>Paper V: Formal grounding (λ_managed + λ_safe + RustBelt grounding)
++ Paper V Addendum v1.0</li>
+<li>Paper VI: Novel frontiers (the seven contributions)</li>
+</ul>
+<p>What’s missing — and what Phase 1B identifies as a Swift-inheritance
+gap — is a paper that treats <em>the implementation journey itself</em>
+as a research artifact. Paper III §3.1 identifies “package tooling and
+language ergonomics can reinforce one another” as one of three Swift
+contributions, but offers no extended argument for what that means in
+Garnet’s case.</p>
+<p>This paper makes the case explicit: <strong>the choices made on the
+engineering ladder (rungs 2–7) are research-class decisions</strong>
+because they determine whether the language can be adopted, audited, and
+trusted at scale. We document them with the same discipline as the
+formal sections of Paper V.</p>
+<hr />
+<h2 id="the-engineering-ladder-seven-rungs">2. The Engineering Ladder
+(seven rungs)</h2>
+<p>The Garnet implementation is structured as seven <em>rungs</em>. Each
+rung is a self-contained capability that can be evaluated independently
+and that the next rung depends on. This is the same shape as Rust’s own
+ladder (lex → parse → typeck → MIR → codegen) but extended to capture
+the agentic and dual-mode aspects.</p>
+<table>
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 21%" />
+<col style="width: 29%" />
+<col style="width: 38%" />
+</colgroup>
+<thead>
+<tr>
+<th>Rung</th>
+<th>Capability</th>
+<th>Spec reference</th>
+<th>Status (April 2026)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Lexical grammar</td>
+<td>Mini-Spec §2</td>
+<td>✅ Implemented (<code>garnet-parser-v0.3</code>)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Surface syntax parser</td>
+<td>Mini-Spec §§3–11</td>
+<td>✅ Implemented (<code>garnet-parser-v0.3</code>)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Managed-mode interpreter + REPL</td>
+<td>Mini-Spec §§5–7, §15</td>
+<td>⏳ Interpreter ✅; REPL stub</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Safe-mode lowering (NLL + borrow check)</td>
+<td>Mini-Spec §§8.5–8.6</td>
+<td>⏳ Type-check ✅; NLL pending Rung 6</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Sendable + actor isolation</td>
+<td>Mini-Spec §9.4</td>
+<td>⏳ Marker trait spec’d; runtime check pending</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Cycle collection + IR lowering</td>
+<td>Mini-Spec §4.5; Compiler Architecture Spec</td>
+<td>⏳ Spec’d; not yet in interpreter</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Cross-platform installer + signing</td>
+<td>Mini-Spec §16; ManifestSig (v3.4)</td>
+<td>⏳ Planned for v3.4–v4.2</td>
+</tr>
+</tbody>
+</table>
+<p>(The status column is a snapshot of v3.3 end-of-Phase-1B. Progress
+through the rungs is the subject of Stages 2–6 of the master plan.)</p>
+<h3 id="why-seven-rungs-and-not-five">2.1 Why seven rungs and not
+five</h3>
+<p>The base PL ladder is roughly: grammar → parser → type-checker → IR →
+codegen. Garnet inserts two additional rungs:</p>
+<ul>
+<li><strong>Rung 5 (Sendable + actor isolation)</strong> is a separate
+rung because actors are a first-class language feature in Garnet (per
+Paper III’s Swift inheritance), not a library. Sendable enforcement at
+protocol declarations (Mini-Spec §9.4) is an additional check beyond the
+standard type-check / borrow-check pair.</li>
+<li><strong>Rung 7 (installer + signing)</strong> is a separate rung
+because the installer is part of the <em>security model</em> (manifest
+signing per v3.4 ManifestSig) and the <em>adoption model</em>
+(one-command install per Mini-Spec §16). Treating it as “deployment” or
+“post-language” would understate its load.</li>
+</ul>
+<h3 id="rung-dependencies">2.2 Rung dependencies</h3>
+<p>Rungs strictly depend on lower-numbered rungs. Rung 4 cannot ship
+before Rung 3 because the type checker depends on the parsed AST. But
+within a rung, components MAY ship independently. For example, Rung 3
+ships the interpreter (used now) before the REPL (a v3.3-end-of-Phase-1B
+pending item).</p>
+<hr />
+<h2 id="the-single-cli-principle-garnet">3. The Single-CLI Principle
+(<code>garnet</code>)</h2>
+<h3 id="the-principle">3.1 The principle</h3>
+<p>A Garnet developer interacts with the toolchain through one binary,
+<code>garnet</code>, with sub-commands for every workflow. The principle
+is borrowed from Cargo (Rust) and SwiftPM (Swift). The deliberate
+anti-pattern is Ruby’s tooling fragmentation: separate <code>gem</code>
+/ <code>bundle</code> / <code>rake</code> / <code>rspec</code> /
+<code>rubocop</code> binaries with overlapping configs, each with its
+own version-pinning behavior, each with its own lockfile.</p>
+<p>The single-CLI principle is normative (Mini-Spec §16.1). Any
+conformant Garnet implementation MUST expose all standard workflows
+through the <code>garnet</code> binary.</p>
+<h3 id="sub-command-catalog">3.2 Sub-command catalog</h3>
+<p>The complete v1.0 sub-command catalog is documented in Mini-Spec
+§16.1. Highlights:</p>
+<ul>
+<li><code>garnet new</code> / <code>garnet init</code> — project
+creation</li>
+<li><code>garnet build</code> /
+<code>garnet build --deterministic</code> — compilation</li>
+<li><code>garnet run</code> / <code>garnet test</code> — execution</li>
+<li><code>garnet check</code> / <code>garnet fmt</code> — static
+analysis + formatting</li>
+<li><code>garnet repl</code> — interactive evaluation (Mini-Spec
+§15)</li>
+<li><code>garnet doc</code> — API doc generation</li>
+<li><code>garnet audit</code> — <code>cargo-geiger</code>-equivalent dep
+scan (v3.5 FFIGeiger)</li>
+<li><code>garnet verify</code> — manifest signature verification (v3.4
+ManifestSig)</li>
+<li><code>garnet convert</code> — code converter from Rust/Ruby/Python
+(v4.1)</li>
+</ul>
+<h3 id="sub-command-extensibility">3.3 Sub-command extensibility</h3>
+<p>User-installed sub-commands follow the Cargo convention: an
+executable named <code>garnet-foo</code> on PATH MAY be invoked as
+<code>garnet foo</code>. This permits ecosystem extension without
+overcrowding the core CLI.</p>
+<h3 id="output-discipline">3.4 Output discipline</h3>
+<p>All <code>garnet</code> sub-commands MUST produce machine-parseable
+JSON output when given <code>--format=json</code>. Default output is
+human-readable. This dual output is essential for IDE integration (LSP
+server in v4.x) and CI integration.</p>
+<h3 id="what-we-deliberately-do-not-include">3.5 What we deliberately do
+NOT include</h3>
+<p>The flat-CLI design means we do NOT have <code>garnet pkg add</code>,
+<code>garnet pkg remove</code>, <code>garnet pkg list</code> — package
+operations live as <code>garnet add</code>, <code>garnet remove</code>,
+<code>garnet list</code> directly. The maximum nesting depth is two
+(<code>garnet build --deterministic</code> is one sub-command with
+flags, not nested sub-commands).</p>
+<hr />
+<h2 id="the-repl-as-a-first-class-surface">4. The REPL as a First-Class
+Surface</h2>
+<p>The REPL is specified normatively in Mini-Spec §15. This section
+provides the <em>research argument</em> for treating REPL design as a
+research artifact rather than an afterthought.</p>
+<h3 id="why-the-repl-matters">4.1 Why the REPL matters</h3>
+<p>Three claims:</p>
+<ol type="1">
+<li><strong>Adoption velocity.</strong> Languages with strong REPLs
+(Python, Ruby, Clojure, Julia) consistently see faster adoption among
+individual developers than languages without (Go, early Rust). The REPL
+is the first thing most newcomers try.</li>
+<li><strong>Empirical truth-finding.</strong> A REPL is the cheapest way
+to falsify or confirm a hypothesis about behavior. For an agent-native
+language (Paper III §4), this matters more than for a batch-compiled
+language: agents iterate.</li>
+<li><strong>Documentation grounding.</strong> Doc examples that ship as
+REPL transcripts are auto-tested via <code>garnet test --doctests</code>
+(planned v3.4). Documentation that doesn’t pass is rejected by CI.</li>
+</ol>
+<h3 id="what-garnets-repl-inherits-and-what-it-changes">4.2 What
+Garnet’s REPL inherits and what it changes</h3>
+<p>Inherits from Ruby’s <code>irb</code>: - Per-input expression
+evaluation - Multiline detection on incomplete expressions - Persistent
+bindings across inputs - Last-expression-printed convention</p>
+<p>Inherits from Rust’s <code>evcxr</code>: - Type display alongside
+value - Module-level redefinition without ceremony</p>
+<p>Garnet-specific changes: - Safe-mode requires module envelope
+(Mini-Spec §15.4) — preserves the safe mode’s compile-time guarantees in
+an interactive context - <code>:type</code> / <code>:t</code> command
+for type inquiry without evaluation - <code>:bench</code> command for
+ad-hoc performance measurement - Hot-reload semantics: redefining a
+function takes effect immediately for new calls; running actors retain
+old behavior until reload command (Mini-Spec §15.3)</p>
+<h3 id="performance-contract">4.3 Performance contract</h3>
+<p>REPL evaluation latency for trivial expressions MUST be ≤ 10 ms
+(Mini-Spec §15.9). This is a hard constraint that shapes the
+implementation: a JIT-compiled REPL would amortize poorly per input.
+Garnet’s REPL uses tree-walk interpretation with on-demand AST
+caching.</p>
+<p>This trades peak throughput for latency, which is the right trade for
+an interactive surface.</p>
+<hr />
+<h2 id="toolchain-layered-around-the-compiler">5. Toolchain Layered
+Around the Compiler</h2>
+<h3 id="build-cache-.garnet-cache">5.1 Build cache
+(<code>.garnet-cache/</code>)</h3>
+<p>The Garnet build cache lives at
+<code>&lt;project&gt;/.garnet-cache/</code>. It contains:</p>
+<ul>
+<li><code>episodes.log</code> — NDJSON record of every compilation event
+(per Paper VI Contribution 3, Compiler-as-Agent)</li>
+<li><code>strategies.db</code> — SQLite database of synthesized
+compilation strategies (per Paper VI C3)</li>
+<li><code>knowledge.db</code> — content-addressed knowledge store (per
+Paper VI C3)</li>
+<li><code>manifest.json</code> — deterministic-build manifest (per Paper
+VI C7)</li>
+</ul>
+<p>Per v3.3 CacheHMAC + ProvenanceStrategy (Security Layer 1), every
+record is HMAC-signed with a per-machine key at
+<code>~/.garnet/machine.key</code>. Foreign records (committed cache
+from another developer) are silently skipped, not honored.</p>
+<h3 id="per-machine-key-.garnetmachine.key">5.2 Per-machine key
+(<code>~/.garnet/machine.key</code>)</h3>
+<p>Generated on first invocation of any <code>garnet</code> command that
+writes to <code>.garnet-cache/</code>. 32 random bytes from
+<code>getrandom</code>, file mode <code>0600</code> on Unix. Path
+overridable via <code>GARNET_MACHINE_KEY_PATH</code>.</p>
+<h3 id="lsp-server-planned-v4.x">5.3 LSP server (planned, v4.x)</h3>
+<p>A language server protocol implementation is planned for v4.1 or
+v4.2. The REPL’s tree-walk interpreter shares the type-inference engine,
+so LSP <code>hover</code> and <code>goto-definition</code> reuse the
+existing infrastructure. Full design deferred to that release.</p>
+<h3 id="formatter-garnet-fmt">5.4 Formatter
+(<code>garnet fmt</code>)</h3>
+<p><code>garnet fmt</code> enforces a single canonical style — no
+options, no configurable preferences. This is <code>gofmt</code>’s
+discipline: arguments about style are over once and for all by giving
+everyone the same answer.</p>
+<p>The canonical style is documented in
+<code>C_Language_Specification/GARNET_Style_Guide.md</code> (planned for
+v3.5).</p>
+<hr />
+<h2 id="cross-platform-distribution-v4.2">6. Cross-Platform Distribution
+(v4.2)</h2>
+<h3 id="installer-targets">6.1 Installer targets</h3>
+<p>Per Stage 6 of the master plan:</p>
+<ul>
+<li><strong>Windows:</strong> MSI installer via <code>cargo-wix</code>,
+signed with code-signing certificate, installs to
+<code>C:\Program Files\Garnet\</code></li>
+<li><strong>macOS:</strong> <code>.pkg</code> installer via
+<code>productbuild</code>, universal binary (x86_64 + arm64), notarized
+with Apple Developer ID</li>
+<li><strong>Linux:</strong> <code>.deb</code> + <code>.rpm</code> via
+<code>cargo-deb</code> + <code>cargo-rpm</code>, plus
+<code>rustup</code>-style universal shell installer at
+<code>https://sh.garnet-lang.org</code></li>
+</ul>
+<h3 id="first-run-ux-target">6.2 First-run UX target</h3>
+<p>Time from “begin install” to “running my first Garnet program”:</p>
+<ul>
+<li>Windows / macOS / Linux: under 2 minutes on a clean machine with
+internet</li>
+<li>Includes: install, <code>garnet new my_project</code>,
+<code>cd my_project</code>, <code>garnet build</code>,
+<code>garnet run</code></li>
+</ul>
+<p>This metric is testable; v4.2 verification includes timed installs on
+clean VMs of all three OSes.</p>
+<h3 id="logo-brand-integration">6.3 Logo + brand integration</h3>
+<p>User has a Garnet logo ready. v4.2 integrates it into:</p>
+<ul>
+<li>Installer welcome screen (Windows MSI, macOS pkg)</li>
+<li>CLI <code>garnet --version</code> ASCII art (small)</li>
+<li><code>garnet new &lt;name&gt;</code> output header</li>
+<li>REPL prompt banner</li>
+<li>README hero image</li>
+<li>Docs site favicon</li>
+</ul>
+<h3 id="deferred-items">6.4 Deferred items</h3>
+<ul>
+<li>Public package registry (analogous to crates.io / RubyGems / npm) —
+design only in v4.x; implementation is post-MIT</li>
+<li>IDE integration beyond LSP — VS Code extension is post-MIT</li>
+<li>Hosted execution / sandbox — out of scope for the language
+paper</li>
+</ul>
+<hr />
+<h2 id="migration-story-v4.1-code-converter">7. Migration Story (v4.1
+Code Converter)</h2>
+<h3 id="strategic-claim">7.1 Strategic claim</h3>
+<p>A new language faces the chicken-and-egg problem: ecosystems require
+adopters; adopters require ecosystems. The Garnet response is a
+<strong>bidirectional code converter</strong> for the three closest
+source languages (Rust, Ruby, Python) shipping in v4.1.</p>
+<p>The converter is documented in the v4.1 stage of the master plan;
+details deferred to that release. The relevant Paper VII commitment:
+<strong>converter outputs ship in <code>@sandbox</code> mode by
+default</strong> (per Mini-Spec §11 + v4.0 SandboxMode security item).
+Human audit is required before promoting converted code to non-sandbox
+status.</p>
+<h3 id="why-this-matters-for-the-language-paper">7.2 Why this matters
+for the language Paper</h3>
+<p>A converter is a language artifact — its existence (or absence)
+shapes the value proposition. Including the converter design in Paper
+VII rather than treating it as out-of-scope is the explicit
+acknowledgment that adoption-friction is part of the research
+deliverable.</p>
+<hr />
+<h2 id="engineering-discipline-as-a-first-order-concern">8. Engineering
+Discipline as a First-Order Concern</h2>
+<p>Three engineering disciplines have been documented in the v3.2 → v3.3
+implementation work, and Paper VII formalizes them as research-class
+commitments:</p>
+<h3 id="adversarial-audit-before-trust">8.1
+Adversarial-audit-before-trust</h3>
+<p>Every velocity push is followed by an adversarial re-read of the diff
+with a different question than the test author asked. v3.3 Phase 1A
+demonstrated this on the v3.2 implementation; details in
+<code>GARNET_v3_3_SLOP_REVERIFICATION.md</code>. The discipline:</p>
+<ul>
+<li>Tests verifying that features exist is not the same as tests that
+distinguish working from broken implementations.</li>
+<li>Every shipped feature is adversarially audited within one release of
+shipping.</li>
+<li>Findings are documented honestly with file:line and severity.</li>
+</ul>
+<h3 id="threat-model-before-hardening">8.2
+Threat-model-before-hardening</h3>
+<p>Every new attack surface (memory primitive, network primitive,
+hot-reload channel) is paired with its hardening before it ships. v3.3
+Security Layer 1 demonstrated this for the v3.2 → v3.3 cleanup; v3.4
+Security Layer 2 will demonstrate it for the new networking stdlib.</p>
+<p>The discipline: - No feature ships before its paired defense. -
+Threat models are written explicitly with named attack vectors, not just
+“we considered security.” - Novel-threat-class identification is part of
+the threat model — Garnet’s <em>strategy-miner adversarial training</em>
+and <em>Box<dyn Any> hot-reload type confusion</em> are documented in
+<code>GARNET_v3_3_SECURITY_THREAT_MODEL.md</code> as Garnet-specific
+novel threats with no prior art.</p>
+<h3 id="sequencing-discipline">8.3 Sequencing discipline</h3>
+<p>Ordering matters. Plans don’t say “we’ll add X later.” Plans gate
+releases on paired deliverables. v3.3 validated five sequencing rules;
+the master plan documents 11 more across v3.4 → v4.0. The
+discipline:</p>
+<ul>
+<li>Plans are explicit about ordering constraints.</li>
+<li>Slippage cascades — if a defense slips, its paired feature slips
+too.</li>
+<li>Plans are revisable (the plan is a living document) but ordering
+rules are not.</li>
+</ul>
+<p>These three disciplines together constitute Garnet’s “engineering
+process as research” claim. They are why this paper exists.</p>
+<hr />
+<h2 id="references-stub">9. References (stub)</h2>
+<ul>
+<li>Mini-Spec v1.0
+(<code>C_Language_Specification/GARNET_v1_0_Mini_Spec.md</code>)</li>
+<li>Paper III
+(<code>A_Research_Papers/Paper_III_Garnet_Synthesis_v2_1.md</code>) —
+§3.1 Swift inheritance</li>
+<li>Paper V Addendum v1.0
+(<code>A_Research_Papers/Paper_V_Addendum_v1_0.md</code>) — formal
+companions to Mini-Spec §§4.5, 8.5–8.6, 9.4, 11.6</li>
+<li>Paper VI
+(<code>A_Research_Papers/Paper_VI_Garnet_Novel_Frontiers.md</code>) —
+the seven novel contributions</li>
+<li>Compiler Architecture Spec
+(<code>C_Language_Specification/GARNET_Compiler_Architecture_Spec.md</code>)
+— implementation details for the seven rungs</li>
+<li>v3.3 handoff and security artifacts
+(<code>F_Project_Management/GARNET_v3_3_*.md</code>)</li>
+<li>Master plan:
+<code>~/.claude/plans/i-ll-follow-plan-mode-proud-lollipop.md</code></li>
+</ul>
+<hr />
+<h2 id="what-v1.0-full-paper-vii-will-add">10. What v1.0 (full Paper
+VII) Will Add</h2>
+<p>This stub will be expanded into Paper VII v1.0 in Phase 4C of the
+master plan (v4.0 stage). Additions:</p>
+<ul>
+<li>Empirical findings from the 7 Paper VI experiments — these will land
+throughout each rung’s “evaluation” subsection</li>
+<li>The full v3.2 → v4.0 engineering journey narrative with timeline +
+retrospective</li>
+<li>LSP server design (assuming v4.1 or v4.2 ships it)</li>
+<li>Cross-platform installer measurements from Stage 6 verification</li>
+<li>Code converter outcomes from v4.1 — pass rates, idiom-translation
+findings</li>
+<li>The “GitHub conversion stress test” data from Phases 2F + 3G</li>
+</ul>
+<p>The stub is structured so that the full v1.0 grows in place — each
+section already has its scaffold; the v4.0 paper fills in the measured
+outcomes.</p>
+<hr />
+<p><em>Stub prepared 2026-04-16 by Claude Code (Opus 4.7) — Phase 1B
+Swift-inheritance close-out. The Mini-Spec §16 “single-CLI principle” is
+the spec hook; this paper is the research justification.</em></p>
+<p><em>“Where there is no vision, the people perish: but he that keepeth
+the law, happy is he.” — Proverbs 29:18</em></p>
+
+      </div>
+
+  </div>
+</div>
+
+<style>
+/* DOC NAV */
+.doc-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+  backdrop-filter: blur(14px); background: rgba(10,10,15,0.88);
+  border-bottom: 1px solid var(--rule); padding: 14px 0;
+}
+.doc-nav .inner {
+  max-width: 1100px; margin: 0 auto; padding: 0 20px;
+  display: flex; align-items: center; gap: 24px;
+}
+.doc-nav .brand {
+  font-family: var(--serif); font-weight: bold;
+  letter-spacing: 0.18em; color: var(--ink); font-size: 15px;
+}
+.doc-nav .brand .accent { color: var(--garnet); }
+.doc-nav #docTabs {
+  display: flex; gap: 18px; margin-left: 8px;
+}
+.doc-nav .doc-tab {
+  color: var(--ink-muted); font-size: 13px;
+  border-bottom: 2px solid transparent; padding-bottom: 2px;
+  transition: all 0.2s; cursor: pointer;
+}
+.doc-nav .doc-tab:hover { color: var(--ink); }
+.doc-nav .doc-tab.active {
+  color: var(--garnet); border-bottom-color: var(--garnet); font-weight: 600;
+}
+.doc-nav .back-btn {
+  margin-left: auto; color: var(--ink-muted); font-size: 13px;
+  cursor: pointer; transition: color 0.2s;
+}
+.doc-nav .back-btn:hover { color: var(--gold); }
+@media(max-width:768px){
+  .doc-nav .inner{gap:12px;padding:0 14px}
+  .doc-nav #docTabs{gap:10px;margin-left:4px}
+  .doc-nav .doc-tab{font-size:12px}
+}
+</style>
+
+<script>
+(function(){
+  var overlay = document.getElementById('docOverlay');
+  var tabLinks = overlay.querySelectorAll('.doc-tab');
+  var papers = overlay.querySelectorAll('.doc-paper');
+  var activeDoc = null;
+  var transitioning = false;
+  var fadeTimeout;
+
+  function showDoc(id, animate){
+    if(transitioning) return;
+    if(animate === undefined) animate = true;
+
+    tabLinks.forEach(function(t){
+      t.classList.toggle('active', t.getAttribute('data-doc') === id);
+    });
+
+    if(animate && activeDoc){
+      transitioning = true;
+      // Fade out inner, swap, fade in
+      var inner = overlay.querySelector('.doc-viewer-inner');
+      inner.style.opacity = '0';
+      inner.style.transform = 'translateY(8px)';
+
+      setTimeout(function(){
+        papers.forEach(function(p){ p.style.display = 'none'; });
+        var target = document.getElementById('doc-' + id);
+        if(target){ target.style.display = 'block'; activeDoc = id; }
+        inner.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+        inner.style.opacity = '1';
+        inner.style.transform = 'translateY(0)';
+        transitioning = false;
+        window.scrollTo(0, 0);
+      }, 350);
+    } else {
+      papers.forEach(function(p){ p.style.display = 'none'; });
+      var target = document.getElementById('doc-' + id);
+      if(target){ target.style.display = 'block'; activeDoc = id; }
+    }
+  }
+
+  // Card clicks
+  document.querySelectorAll('.doc-card').forEach(function(card, i){
+    var ids = ['minispec', 'synthesis', 'novel', 'ladder'];
+    card.addEventListener('click', function(e){
+      e.preventDefault();
+      overlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+      showDoc(ids[i]);
+    });
+  });
+
+  // Tab clicks
+  tabLinks.forEach(function(tab){
+    tab.addEventListener('click', function(){
+      showDoc(tab.getAttribute('data-doc'));
+    });
+  });
+
+  // Back to site
+  document.getElementById('docBack').addEventListener('click', function(){
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+  });
+
+  // Close on Escape
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && overlay.classList.contains('active')){
+      overlay.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
