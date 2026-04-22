@@ -1,9 +1,12 @@
-# Garnet — funding targets for the project. Enable whichever the maintainer chooses to activate.
-# Disabled-by-default entries are commented out; uncomment to activate.
+# Garnet — Support the project
+# Built by Island Development Crew (Jon Isaac) — Huntsville, Alabama
 
-github: [IslandDevCrew]
+github: [Island-Dev-Crew]
+open_collective: garnet-lang
+ko_fi: islanddevcrew
+patreon: islanddevcrew
 
-# patreon: IslandDevCrew
-# open_collective: garnet-lang
-# ko_fi: islanddevcrew
-# custom: ["https://garnet-lang.org/sponsor"]
+# Direct links for the sponsor page:
+# Open Collective → opencollective.com/create (create project "garnet-lang")
+# Ko-fi → ko-fi.com/tips (create username "islanddevcrew")
+# GitHub Sponsors → github.com/organizations/Island-Dev-Crew/settings/billing ← pending approval
