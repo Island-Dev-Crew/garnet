@@ -43,10 +43,12 @@ Single `garnet` CLI. Deterministic signed manifests. Dependency-graph audit buil
 
 ```sh
 # Universal (auto-detects .deb / .rpm / .pkg / tar):
-curl --proto '=https' --tlsv1.2 -sSf https://sh.garnet-lang.org | sh
+git clone https://github.com/Island-Dev-Crew/garnet
+cd garnet/garnet-cli
+cargo install --path .
 ```
 
-Or grab a signed native installer from [GitHub Releases](https://github.com/Island-Dev-Crew/garnet/releases/latest):
+For now, install from source (release assets and the universal installer are not live yet):
 
 | Platform      | Installer                                   | Signing                           |
 |---------------|---------------------------------------------|-----------------------------------|
