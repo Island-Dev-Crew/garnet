@@ -9,9 +9,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/IslandDevCrew/garnet/actions/workflows/linux-packages.yml"><img src="https://img.shields.io/github/actions/workflow/status/IslandDevCrew/garnet/linux-packages.yml?branch=main&label=CI&logo=github" alt="CI status"></a>
-  <a href="https://github.com/IslandDevCrew/garnet/releases/latest"><img src="https://img.shields.io/github/v/release/IslandDevCrew/garnet?color=%239C2B2E&label=release" alt="Latest release"></a>
-  <a href="https://github.com/IslandDevCrew/garnet/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-E5C07B" alt="License"></a>
+  <a href="https://github.com/Island-Dev-Crew/garnet/actions"><img src="https://img.shields.io/github/actions/workflow/status/Island-Dev-Crew/garnet/linux-packages.yml?branch=main&label=CI&logo=github" alt="CI status"></a>
+  <a href="https://github.com/Island-Dev-Crew/garnet/releases/latest"><img src="https://img.shields.io/github/v/release/Island-Dev-Crew/garnet?color=%239C2B2E&label=release" alt="Latest release"></a>
+  <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-E5C07B" alt="License"></a>
   <a href="https://garnet-lang.org"><img src="https://img.shields.io/badge/site-garnet--lang.org-9C2B2E" alt="Website"></a>
   <a href="FAQ.md"><img src="https://img.shields.io/badge/docs-FAQ-blue" alt="FAQ"></a>
 </p>
@@ -21,8 +21,8 @@
   <a href="#quickstart"><strong>Quickstart</strong></a>  ·
   <a href="FAQ.md"><strong>FAQ</strong></a>  ·
   <a href="https://garnet-lang.org"><strong>Website</strong></a>  ·
-  <a href="../A_Research_Papers/"><strong>Research Papers</strong></a>  ·
-  <a href="../C_Language_Specification/GARNET_v1_0_Mini_Spec.md"><strong>Mini-Spec v1.0</strong></a>
+  <a href="A_Research_Papers/"><strong>Research Papers</strong></a>  ·
+  <a href="C_Language_Specification/GARNET_v1_0_Mini_Spec.md"><strong>Mini-Spec v1.0</strong></a>
 </p>
 
 ---
@@ -46,7 +46,7 @@ Single `garnet` CLI. Deterministic signed manifests. Dependency-graph audit buil
 curl --proto '=https' --tlsv1.2 -sSf https://sh.garnet-lang.org | sh
 ```
 
-Or grab a signed native installer from [GitHub Releases](https://github.com/IslandDevCrew/garnet/releases/latest):
+Or grab a signed native installer from [GitHub Releases](https://github.com/Island-Dev-Crew/garnet/releases/latest):
 
 | Platform      | Installer                                   | Signing                           |
 |---------------|---------------------------------------------|-----------------------------------|
@@ -101,10 +101,10 @@ garnet verify src/main.garnet src/main.garnet.manifest.json --signature
 
 Full research corpus + language specification lives in this repository at:
 
-- `Garnet_Final/A_Research_Papers/` — seven research papers + four addenda
-- `Garnet_Final/C_Language_Specification/` — Mini-Spec v1.0 + canonical grammar
-- `Garnet_Final/D_Executive_and_Presentation/` — comparative developer-experience study
-- `Garnet_Final/F_Project_Management/` — stage handoffs + verification logs
+- `A_Research_Papers/` — seven research papers + four addenda
+- `C_Language_Specification/` — Mini-Spec v1.0 + canonical grammar
+- `D_Executive_and_Presentation/` — comparative developer-experience study
+- `F_Project_Management/` — stage handoffs + verification logs
 
 ## Capability model
 
@@ -116,8 +116,8 @@ inherit it via a caller that does. Known capabilities: `fs`, `net`,
 
 ## Community
 
-- **Questions** → [FAQ.md](FAQ.md) first; [Discussions](https://github.com/IslandDevCrew/garnet/discussions) for open-ended back-and-forth
-- **Bugs / feature requests** → [Issues](https://github.com/IslandDevCrew/garnet/issues/new/choose) (use the templates)
+- **Questions** → [FAQ.md](FAQ.md) first; [Discussions](https://github.com/Island-Dev-Crew/garnet/discussions) for open-ended back-and-forth
+- **Bugs / feature requests** → [Issues](https://github.com/Island-Dev-Crew/garnet/issues/new/choose) (use the templates)
 - **Security disclosures** → [SECURITY.md](SECURITY.md) — use a private GitHub Security Advisory, not a public issue
 - **Want to contribute?** → [CONTRIBUTING.md](CONTRIBUTING.md) + [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 
@@ -135,7 +135,7 @@ Verification status as of v4.2 release:
 
 ## Research
 
-Garnet is a doctoral research project. Seven research papers + four addenda ship in [`Garnet_Final/A_Research_Papers/`](../A_Research_Papers/). The canonical language specification (Mini-Spec v1.0) is at [`Garnet_Final/C_Language_Specification/GARNET_v1_0_Mini_Spec.md`](../C_Language_Specification/GARNET_v1_0_Mini_Spec.md). Paper VI's seven novel contributions were pre-registered in Phase 1C (April 2026) and measured in Phase 4A — honest scorecard: **4 supported, 2 partial (downgraded honestly), 0 refuted, 1 pending-infra** (Paper VI Exp 1 awaits LLM API credits).
+Garnet is a doctoral research project. Seven research papers + four addenda ship in [`A_Research_Papers/`](A_Research_Papers/). The canonical language specification (Mini-Spec v1.0) is at [`C_Language_Specification/GARNET_v1_0_Mini_Spec.md`](C_Language_Specification/GARNET_v1_0_Mini_Spec.md). Paper VI's seven novel contributions were pre-registered in Phase 1C (April 2026) and measured in Phase 4A — honest scorecard: **4 supported, 2 partial (downgraded honestly), 0 refuted, 1 pending-infra** (Paper VI Exp 1 awaits LLM API credits).
 
 ## License
 
