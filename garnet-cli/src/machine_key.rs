@@ -183,7 +183,12 @@ mod tests {
 
     #[test]
     fn hex_roundtrip_is_identity() {
-        let mac = [0x12, 0xab, 0xcd, 0xef].iter().cycle().take(32).copied().collect::<Vec<_>>();
+        let mac = [0x12, 0xab, 0xcd, 0xef]
+            .iter()
+            .cycle()
+            .take(32)
+            .copied()
+            .collect::<Vec<_>>();
         let mut arr = [0u8; 32];
         arr.copy_from_slice(&mac);
         let hex = mac_to_hex(&arr);

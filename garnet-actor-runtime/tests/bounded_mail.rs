@@ -8,9 +8,7 @@
 //! `Runtime::spawn_with_capacity`. `tell` blocks on full; `try_tell`
 //! returns `SendError::Full` non-blocking.
 
-use garnet_actor_runtime::{
-    Actor, Runtime, SendError, DEFAULT_MAILBOX_CAPACITY,
-};
+use garnet_actor_runtime::{Actor, Runtime, SendError, DEFAULT_MAILBOX_CAPACITY};
 use std::sync::atomic::{AtomicI64, Ordering};
 use std::sync::Arc;
 use std::thread;
@@ -154,6 +152,7 @@ struct PanickyActor;
 enum PMsg {
     Crash,
 }
+#[allow(dead_code)]
 enum PReply {
     Never,
 }
@@ -187,7 +186,7 @@ fn try_tell_returns_closed_after_actor_panics() {
                 break;
             }
             Err(SendError::Full) => continue, // mailbox still has buffered msgs
-            Ok(()) => continue,                // not yet panicked — try again
+            Ok(()) => continue,               // not yet panicked — try again
         }
     }
     assert!(closed, "expected SendError::Closed within 2s after panic");
@@ -346,6 +345,13 @@ fn actor_mailbox_capacity_method_is_honored_by_default_spawn() {
     assert!(
         hit_full,
         "cap=1 should saturate with try_tell almost immediately"
+    );
+    let TReply::N(observed) = addr.ask(TMsg::Read) else {
+        panic!("read should return the actor count");
+    };
+    assert!(
+        observed >= accepted,
+        "read should observe at least the accepted bumps"
     );
     assert!(
         (1..=2).contains(&accepted),

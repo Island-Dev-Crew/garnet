@@ -113,14 +113,16 @@ fn strategy_with_deleted_justification_is_quarantined() {
 
     let conn = strategies::open(&dir).unwrap();
     record_strategy_with_key(&conn, &strat, 1001, &key).unwrap();
-    let consulted = strategies::consult_with_audit(&conn, &strat.trigger_fingerprint, 1, &key)
-        .unwrap();
+    let consulted =
+        strategies::consult_with_audit(&conn, &strat.trigger_fingerprint, 1, &key).unwrap();
     let (_, persisted) = &consulted.strategies[0];
     let reason = verify_strategy(persisted, &dir, &key).expect_err("must quarantine");
     assert!(
         matches!(
             reason,
-            QuarantineReason::MissingOrTamperedJustification { missing_id: 999_999 }
+            QuarantineReason::MissingOrTamperedJustification {
+                missing_id: 999_999
+            }
         ),
         "expected MissingOrTamperedJustification for id=999_999, got {reason:?}"
     );
@@ -159,8 +161,8 @@ fn strategy_with_tampered_justification_is_quarantined() {
     }
     fs::write(&log_path, new_contents.join("\n") + "\n").unwrap();
 
-    let consulted = strategies::consult_with_audit(&conn, &strat.trigger_fingerprint, 1, &key)
-        .unwrap();
+    let consulted =
+        strategies::consult_with_audit(&conn, &strat.trigger_fingerprint, 1, &key).unwrap();
     let (_, persisted) = &consulted.strategies[0];
     let reason = verify_strategy(persisted, &dir, &key).expect_err("must quarantine");
     // The tampered episode will fail HMAC verification, making it
@@ -190,8 +192,8 @@ fn strategy_with_empty_justification_is_quarantined() {
     };
     let conn = strategies::open(&dir).unwrap();
     record_strategy_with_key(&conn, &strat, 1003, &key).unwrap();
-    let consulted = strategies::consult_with_audit(&conn, &strat.trigger_fingerprint, 1, &key)
-        .unwrap();
+    let consulted =
+        strategies::consult_with_audit(&conn, &strat.trigger_fingerprint, 1, &key).unwrap();
     let (_, persisted) = &consulted.strategies[0];
     let reason = verify_strategy(persisted, &dir, &key).expect_err("must quarantine");
     assert!(
@@ -237,8 +239,8 @@ fn strategy_citing_mismatched_source_hashes_is_quarantined() {
     };
     let conn = strategies::open(&dir).unwrap();
     record_strategy_with_key(&conn, &strat, 1004, &key).unwrap();
-    let consulted = strategies::consult_with_audit(&conn, &strat.trigger_fingerprint, 1, &key)
-        .unwrap();
+    let consulted =
+        strategies::consult_with_audit(&conn, &strat.trigger_fingerprint, 1, &key).unwrap();
     let (_, persisted) = &consulted.strategies[0];
     let reason = verify_strategy(persisted, &dir, &key).expect_err("must quarantine");
     match reason {
@@ -275,14 +277,17 @@ fn strategy_with_foreign_hmac_is_quarantined() {
 
     // Try to consult using OUR key. The strategy's HMAC fails before
     // it even reaches consult_with_audit's output.
-    let consulted = strategies::consult_with_audit(&conn, &strat.trigger_fingerprint, 10, &our_key)
-        .unwrap();
+    let consulted =
+        strategies::consult_with_audit(&conn, &strat.trigger_fingerprint, 10, &our_key).unwrap();
     assert_eq!(
         consulted.strategies.len(),
         0,
         "foreign-key strategy must be skipped by consult"
     );
-    assert_eq!(consulted.skipped, 1, "skipped count must include the foreign row");
+    assert_eq!(
+        consulted.skipped, 1,
+        "skipped count must include the foreign row"
+    );
 }
 
 // ── Synthesiser output carries justifications ───────────────────────

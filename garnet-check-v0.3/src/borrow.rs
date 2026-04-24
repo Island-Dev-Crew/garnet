@@ -132,7 +132,9 @@ fn check_stmt(
                 env.rebind(name);
             }
         }
-        Stmt::While { condition, body, .. } => {
+        Stmt::While {
+            condition, body, ..
+        } => {
             check_expr(condition, env, sigs, fn_name, diags);
             for s in &body.stmts {
                 check_stmt(s, env, sigs, fn_name, diags);
@@ -141,7 +143,9 @@ fn check_stmt(
                 check_expr(tail, env, sigs, fn_name, diags);
             }
         }
-        Stmt::For { iter, body, var, .. } => {
+        Stmt::For {
+            iter, body, var, ..
+        } => {
             check_expr(iter, env, sigs, fn_name, diags);
             env.rebind(var);
             for s in &body.stmts {
@@ -216,7 +220,9 @@ fn check_expr(
         Expr::Field { receiver, .. } => {
             check_expr(receiver, env, sigs, fn_name, diags);
         }
-        Expr::Index { receiver, index, .. } => {
+        Expr::Index {
+            receiver, index, ..
+        } => {
             check_expr(receiver, env, sigs, fn_name, diags);
             check_expr(index, env, sigs, fn_name, diags);
         }
@@ -244,7 +250,9 @@ fn check_expr(
                 check_expr(tail, env, sigs, fn_name, diags);
             }
             for (cond, block) in elsif_clauses {
-                let mut alt_env = Env { moved: snapshot.clone() };
+                let mut alt_env = Env {
+                    moved: snapshot.clone(),
+                };
                 check_expr(cond, &mut alt_env, sigs, fn_name, diags);
                 for s in &block.stmts {
                     check_stmt(s, &mut alt_env, sigs, fn_name, diags);
@@ -269,7 +277,9 @@ fn check_expr(
             check_expr(subject, env, sigs, fn_name, diags);
             let snapshot = env.moved.clone();
             for arm in arms {
-                let mut arm_env = Env { moved: snapshot.clone() };
+                let mut arm_env = Env {
+                    moved: snapshot.clone(),
+                };
                 bind_pattern(&arm.pattern, &mut arm_env);
                 if let Some(g) = &arm.guard {
                     check_expr(g, &mut arm_env, sigs, fn_name, diags);
@@ -278,7 +288,12 @@ fn check_expr(
                 env.moved.extend(arm_env.moved);
             }
         }
-        Expr::Try { body, rescues, ensure, .. } => {
+        Expr::Try {
+            body,
+            rescues,
+            ensure,
+            ..
+        } => {
             for s in &body.stmts {
                 check_stmt(s, env, sigs, fn_name, diags);
             }

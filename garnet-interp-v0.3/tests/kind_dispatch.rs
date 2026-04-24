@@ -163,7 +163,10 @@ fn working_store_rejects_recent_method() {
         )
         .unwrap();
     let r = interp.call("main", vec![]);
-    assert!(r.is_err(), "WorkingStore should not have .recent() — that's an EpisodeStore-only API");
+    assert!(
+        r.is_err(),
+        "WorkingStore should not have .recent() — that's an EpisodeStore-only API"
+    );
 }
 
 #[test]

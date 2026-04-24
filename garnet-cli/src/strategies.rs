@@ -111,7 +111,7 @@ pub struct NewStrategy {
 pub fn synthesize_from_episodes_with_ids(
     episodes: &[Episode],
     fingerprint_of: impl Fn(&str) -> Option<[u8; 32]>,
-    id_of: impl Fn(&Episode) -> Option<i64>,
+    mut id_of: impl FnMut(&Episode) -> Option<i64>,
 ) -> Vec<NewStrategy> {
     let mut by_hash_ok: HashMap<&str, Vec<i64>> = HashMap::new();
     let mut by_hash_err: HashMap<(&str, &str), Vec<i64>> = HashMap::new();
@@ -125,7 +125,10 @@ pub fn synthesize_from_episodes_with_ids(
             }
         } else if let Some(ek) = ep.error_kind.as_deref() {
             if let Some(i) = id {
-                by_hash_err.entry((&ep.source_hash, ek)).or_default().push(i);
+                by_hash_err
+                    .entry((&ep.source_hash, ek))
+                    .or_default()
+                    .push(i);
             }
         }
     }
@@ -156,15 +159,19 @@ pub fn synthesize_from_episodes_with_ids(
     out
 }
 
-/// Back-compat shim: v3.2 callers that don't track episode ids. The
-/// strategies returned here will be quarantined on the next load
-/// because they have no justification — by design. New code should
-/// use `synthesize_from_episodes_with_ids`.
+/// Back-compat shim: v3.2 callers that don't track episode ids. Uses the
+/// in-memory slice index as best-effort provenance so old call sites still
+/// synthesize. Disk-backed callers should use `synthesize_from_episodes_with_ids`
+/// with original episodes.log line indices.
 pub fn synthesize_from_episodes(
     episodes: &[Episode],
     fingerprint_of: impl Fn(&str) -> Option<[u8; 32]>,
 ) -> Vec<NewStrategy> {
-    synthesize_from_episodes_with_ids(episodes, fingerprint_of, |_| None)
+    let mut next_id = -1_i64;
+    synthesize_from_episodes_with_ids(episodes, fingerprint_of, |_| {
+        next_id += 1;
+        Some(next_id)
+    })
 }
 
 /// Canonical byte serialization of a strategy for HMAC coverage.

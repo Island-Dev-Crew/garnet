@@ -78,28 +78,61 @@ impl<'a> Lexer<'a> {
                     if self.peek_at(1) == Some(':') {
                         let start = self.pos;
                         self.pos += 2;
-                        tokens.push(Token { kind: TokenKind::ColonCol, span: Span::new(start, 2) });
-                    } else if self.peek_at(1).is_some_and(|c| c.is_ascii_alphabetic() || c == '_') {
+                        tokens.push(Token {
+                            kind: TokenKind::ColonCol,
+                            span: Span::new(start, 2),
+                        });
+                    } else if self
+                        .peek_at(1)
+                        .is_some_and(|c| c.is_ascii_alphabetic() || c == '_')
+                    {
                         tokens.push(self.lex_symbol()?);
                     } else {
                         let start = self.pos;
                         self.pos += 1;
-                        tokens.push(Token { kind: TokenKind::Colon, span: Span::new(start, 1) });
+                        tokens.push(Token {
+                            kind: TokenKind::Colon,
+                            span: Span::new(start, 1),
+                        });
                     }
                 }
                 '0'..='9' => tokens.push(self.lex_number()?),
-                c if c.is_ascii_alphabetic() || c == '_' => tokens.push(self.lex_ident_or_keyword()?),
-                '(' => { tokens.push(self.single(TokenKind::LParen)); }
-                ')' => { tokens.push(self.single(TokenKind::RParen)); }
-                '{' => { tokens.push(self.single(TokenKind::LBrace)); }
-                '}' => { tokens.push(self.single(TokenKind::RBrace)); }
-                '[' => { tokens.push(self.single(TokenKind::LBracket)); }
-                ']' => { tokens.push(self.single(TokenKind::RBracket)); }
-                ',' => { tokens.push(self.single(TokenKind::Comma)); }
-                ';' => { tokens.push(self.single(TokenKind::Semi)); }
-                '@' => { tokens.push(self.single(TokenKind::At)); }
-                '&' => { tokens.push(self.single(TokenKind::Amp)); }
-                '?' => { tokens.push(self.single(TokenKind::Question)); }
+                c if c.is_ascii_alphabetic() || c == '_' => {
+                    tokens.push(self.lex_ident_or_keyword()?)
+                }
+                '(' => {
+                    tokens.push(self.single(TokenKind::LParen));
+                }
+                ')' => {
+                    tokens.push(self.single(TokenKind::RParen));
+                }
+                '{' => {
+                    tokens.push(self.single(TokenKind::LBrace));
+                }
+                '}' => {
+                    tokens.push(self.single(TokenKind::RBrace));
+                }
+                '[' => {
+                    tokens.push(self.single(TokenKind::LBracket));
+                }
+                ']' => {
+                    tokens.push(self.single(TokenKind::RBracket));
+                }
+                ',' => {
+                    tokens.push(self.single(TokenKind::Comma));
+                }
+                ';' => {
+                    tokens.push(self.single(TokenKind::Semi));
+                }
+                '@' => {
+                    tokens.push(self.single(TokenKind::At));
+                }
+                '&' => {
+                    tokens.push(self.single(TokenKind::Amp));
+                }
+                '?' => {
+                    tokens.push(self.single(TokenKind::Question));
+                }
                 '.' => {
                     let start = self.pos;
                     self.pos += 1;
@@ -107,12 +140,21 @@ impl<'a> Lexer<'a> {
                         self.pos += 1;
                         if self.peek_ch() == Some('.') {
                             self.pos += 1;
-                            tokens.push(Token { kind: TokenKind::DotDotDot, span: Span::new(start, 3) });
+                            tokens.push(Token {
+                                kind: TokenKind::DotDotDot,
+                                span: Span::new(start, 3),
+                            });
                         } else {
-                            tokens.push(Token { kind: TokenKind::DotDot, span: Span::new(start, 2) });
+                            tokens.push(Token {
+                                kind: TokenKind::DotDot,
+                                span: Span::new(start, 2),
+                            });
                         }
                     } else {
-                        tokens.push(Token { kind: TokenKind::Dot, span: Span::new(start, 1) });
+                        tokens.push(Token {
+                            kind: TokenKind::Dot,
+                            span: Span::new(start, 1),
+                        });
                     }
                 }
                 '+' => {
@@ -120,9 +162,15 @@ impl<'a> Lexer<'a> {
                     self.pos += 1;
                     if self.peek_ch() == Some('=') {
                         self.pos += 1;
-                        tokens.push(Token { kind: TokenKind::PlusEq, span: Span::new(start, 2) });
+                        tokens.push(Token {
+                            kind: TokenKind::PlusEq,
+                            span: Span::new(start, 2),
+                        });
                     } else {
-                        tokens.push(Token { kind: TokenKind::Plus, span: Span::new(start, 1) });
+                        tokens.push(Token {
+                            kind: TokenKind::Plus,
+                            span: Span::new(start, 1),
+                        });
                     }
                 }
                 '-' => {
@@ -130,12 +178,21 @@ impl<'a> Lexer<'a> {
                     self.pos += 1;
                     if self.peek_ch() == Some('>') {
                         self.pos += 1;
-                        tokens.push(Token { kind: TokenKind::Arrow, span: Span::new(start, 2) });
+                        tokens.push(Token {
+                            kind: TokenKind::Arrow,
+                            span: Span::new(start, 2),
+                        });
                     } else if self.peek_ch() == Some('=') {
                         self.pos += 1;
-                        tokens.push(Token { kind: TokenKind::MinusEq, span: Span::new(start, 2) });
+                        tokens.push(Token {
+                            kind: TokenKind::MinusEq,
+                            span: Span::new(start, 2),
+                        });
                     } else {
-                        tokens.push(Token { kind: TokenKind::Minus, span: Span::new(start, 1) });
+                        tokens.push(Token {
+                            kind: TokenKind::Minus,
+                            span: Span::new(start, 1),
+                        });
                     }
                 }
                 '*' => {
@@ -143,9 +200,15 @@ impl<'a> Lexer<'a> {
                     self.pos += 1;
                     if self.peek_ch() == Some('=') {
                         self.pos += 1;
-                        tokens.push(Token { kind: TokenKind::StarEq, span: Span::new(start, 2) });
+                        tokens.push(Token {
+                            kind: TokenKind::StarEq,
+                            span: Span::new(start, 2),
+                        });
                     } else {
-                        tokens.push(Token { kind: TokenKind::Star, span: Span::new(start, 1) });
+                        tokens.push(Token {
+                            kind: TokenKind::Star,
+                            span: Span::new(start, 1),
+                        });
                     }
                 }
                 '/' => {
@@ -153,9 +216,15 @@ impl<'a> Lexer<'a> {
                     self.pos += 1;
                     if self.peek_ch() == Some('=') {
                         self.pos += 1;
-                        tokens.push(Token { kind: TokenKind::SlashEq, span: Span::new(start, 2) });
+                        tokens.push(Token {
+                            kind: TokenKind::SlashEq,
+                            span: Span::new(start, 2),
+                        });
                     } else {
-                        tokens.push(Token { kind: TokenKind::Slash, span: Span::new(start, 1) });
+                        tokens.push(Token {
+                            kind: TokenKind::Slash,
+                            span: Span::new(start, 1),
+                        });
                     }
                 }
                 '%' => {
@@ -163,9 +232,15 @@ impl<'a> Lexer<'a> {
                     self.pos += 1;
                     if self.peek_ch() == Some('=') {
                         self.pos += 1;
-                        tokens.push(Token { kind: TokenKind::PercentEq, span: Span::new(start, 2) });
+                        tokens.push(Token {
+                            kind: TokenKind::PercentEq,
+                            span: Span::new(start, 2),
+                        });
                     } else {
-                        tokens.push(Token { kind: TokenKind::Percent, span: Span::new(start, 1) });
+                        tokens.push(Token {
+                            kind: TokenKind::Percent,
+                            span: Span::new(start, 1),
+                        });
                     }
                 }
                 '=' => {
@@ -173,12 +248,21 @@ impl<'a> Lexer<'a> {
                     self.pos += 1;
                     if self.peek_ch() == Some('=') {
                         self.pos += 1;
-                        tokens.push(Token { kind: TokenKind::EqEq, span: Span::new(start, 2) });
+                        tokens.push(Token {
+                            kind: TokenKind::EqEq,
+                            span: Span::new(start, 2),
+                        });
                     } else if self.peek_ch() == Some('>') {
                         self.pos += 1;
-                        tokens.push(Token { kind: TokenKind::FatArrow, span: Span::new(start, 2) });
+                        tokens.push(Token {
+                            kind: TokenKind::FatArrow,
+                            span: Span::new(start, 2),
+                        });
                     } else {
-                        tokens.push(Token { kind: TokenKind::Eq, span: Span::new(start, 1) });
+                        tokens.push(Token {
+                            kind: TokenKind::Eq,
+                            span: Span::new(start, 1),
+                        });
                     }
                 }
                 '!' => {
@@ -186,9 +270,15 @@ impl<'a> Lexer<'a> {
                     self.pos += 1;
                     if self.peek_ch() == Some('=') {
                         self.pos += 1;
-                        tokens.push(Token { kind: TokenKind::BangEq, span: Span::new(start, 2) });
+                        tokens.push(Token {
+                            kind: TokenKind::BangEq,
+                            span: Span::new(start, 2),
+                        });
                     } else {
-                        tokens.push(Token { kind: TokenKind::Bang, span: Span::new(start, 1) });
+                        tokens.push(Token {
+                            kind: TokenKind::Bang,
+                            span: Span::new(start, 1),
+                        });
                     }
                 }
                 '<' => {
@@ -196,9 +286,15 @@ impl<'a> Lexer<'a> {
                     self.pos += 1;
                     if self.peek_ch() == Some('=') {
                         self.pos += 1;
-                        tokens.push(Token { kind: TokenKind::LtEq, span: Span::new(start, 2) });
+                        tokens.push(Token {
+                            kind: TokenKind::LtEq,
+                            span: Span::new(start, 2),
+                        });
                     } else {
-                        tokens.push(Token { kind: TokenKind::Lt, span: Span::new(start, 1) });
+                        tokens.push(Token {
+                            kind: TokenKind::Lt,
+                            span: Span::new(start, 1),
+                        });
                     }
                 }
                 '>' => {
@@ -206,9 +302,15 @@ impl<'a> Lexer<'a> {
                     self.pos += 1;
                     if self.peek_ch() == Some('=') {
                         self.pos += 1;
-                        tokens.push(Token { kind: TokenKind::GtEq, span: Span::new(start, 2) });
+                        tokens.push(Token {
+                            kind: TokenKind::GtEq,
+                            span: Span::new(start, 2),
+                        });
                     } else {
-                        tokens.push(Token { kind: TokenKind::Gt, span: Span::new(start, 1) });
+                        tokens.push(Token {
+                            kind: TokenKind::Gt,
+                            span: Span::new(start, 1),
+                        });
                     }
                 }
                 '|' => {
@@ -216,9 +318,15 @@ impl<'a> Lexer<'a> {
                     self.pos += 1;
                     if self.peek_ch() == Some('>') {
                         self.pos += 1;
-                        tokens.push(Token { kind: TokenKind::PipeGt, span: Span::new(start, 2) });
+                        tokens.push(Token {
+                            kind: TokenKind::PipeGt,
+                            span: Span::new(start, 2),
+                        });
                     } else {
-                        tokens.push(Token { kind: TokenKind::Pipe, span: Span::new(start, 1) });
+                        tokens.push(Token {
+                            kind: TokenKind::Pipe,
+                            span: Span::new(start, 1),
+                        });
                     }
                 }
                 _ => {
@@ -254,7 +362,10 @@ impl<'a> Lexer<'a> {
     fn single(&mut self, kind: TokenKind) -> Token {
         let start = self.pos;
         self.pos += 1;
-        Token { kind, span: Span::new(start, 1) }
+        Token {
+            kind,
+            span: Span::new(start, 1),
+        }
     }
 
     fn lex_ident_or_keyword(&mut self) -> Result<Token, ParseError> {
@@ -284,7 +395,10 @@ impl<'a> Lexer<'a> {
         if let Some(kw) = keyword_lookup(&owned) {
             Ok(Token { kind: kw, span })
         } else {
-            Ok(Token { kind: TokenKind::Ident(owned), span })
+            Ok(Token {
+                kind: TokenKind::Ident(owned),
+                span,
+            })
         }
     }
 
@@ -297,8 +411,8 @@ impl<'a> Lexer<'a> {
             self.pos += 1;
         }
         // Check for float: . followed by digit (NOT .. which is range)
-        let is_float = self.peek_ch() == Some('.')
-            && self.peek_at(1).is_some_and(|c| c.is_ascii_digit());
+        let is_float =
+            self.peek_ch() == Some('.') && self.peek_at(1).is_some_and(|c| c.is_ascii_digit());
 
         if is_float {
             self.pos += 1; // consume .
@@ -319,19 +433,23 @@ impl<'a> Lexer<'a> {
             }
             // SAFETY: ASCII-bounded loop, but use lossy conversion to keep the
             // lexer panic-free under any input corruption.
-            let text = String::from_utf8_lossy(&self.src[start..self.pos])
-                .replace('_', "");
+            let text = String::from_utf8_lossy(&self.src[start..self.pos]).replace('_', "");
             let span = Span::new(start, self.pos - start);
             match text.parse::<f64>() {
-                Ok(v) => Ok(Token { kind: TokenKind::Float(v), span }),
+                Ok(v) => Ok(Token {
+                    kind: TokenKind::Float(v),
+                    span,
+                }),
                 Err(_) => Err(ParseError::InvalidFloat { span }),
             }
         } else {
-            let text = String::from_utf8_lossy(&self.src[start..self.pos])
-                .replace('_', "");
+            let text = String::from_utf8_lossy(&self.src[start..self.pos]).replace('_', "");
             let span = Span::new(start, self.pos - start);
             match text.parse::<i64>() {
-                Ok(v) => Ok(Token { kind: TokenKind::Int(v), span }),
+                Ok(v) => Ok(Token {
+                    kind: TokenKind::Int(v),
+                    span,
+                }),
                 Err(_) => Err(ParseError::InvalidInt { span }),
             }
         }
@@ -427,7 +545,10 @@ impl<'a> Lexer<'a> {
             parts.push(StrPart::Lit(buf));
         }
         let span = Span::new(start, self.pos - start);
-        Ok(Token { kind: TokenKind::Str(parts), span })
+        Ok(Token {
+            kind: TokenKind::Str(parts),
+            span,
+        })
     }
 
     fn lex_raw_string(&mut self) -> Result<Token, ParseError> {
@@ -462,7 +583,10 @@ impl<'a> Lexer<'a> {
             self.pos += 1;
         }
         let span = Span::new(start, self.pos - start);
-        Ok(Token { kind: TokenKind::RawStr(buf), span })
+        Ok(Token {
+            kind: TokenKind::RawStr(buf),
+            span,
+        })
     }
 
     fn lex_symbol(&mut self) -> Result<Token, ParseError> {

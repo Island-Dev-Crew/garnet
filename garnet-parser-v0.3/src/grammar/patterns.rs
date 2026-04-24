@@ -56,7 +56,9 @@ pub fn parse_pattern(p: &mut Parser) -> Result<Pattern, ParseError> {
                             .into_iter()
                             .map(|sp| match sp {
                                 crate::token::StrPart::Lit(s) => crate::token::StrPart::Lit(s),
-                                crate::token::StrPart::Interp(s) => crate::token::StrPart::Interp(s),
+                                crate::token::StrPart::Interp(s) => {
+                                    crate::token::StrPart::Interp(s)
+                                }
                             })
                             .collect(),
                     },

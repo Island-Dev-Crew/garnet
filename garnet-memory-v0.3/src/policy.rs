@@ -50,12 +50,7 @@ impl MemoryPolicy {
     }
 
     /// Core R+R+I scoring function. Callers supply the three components.
-    pub fn score(
-        &self,
-        relevance: f64,
-        age_seconds: f64,
-        importance: f64,
-    ) -> f64 {
+    pub fn score(&self, relevance: f64, age_seconds: f64, importance: f64) -> f64 {
         let recency = (-self.decay_lambda_per_sec * age_seconds).exp();
         (relevance.clamp(0.0, 1.0)) * recency * (importance.clamp(0.0, 1.0))
     }

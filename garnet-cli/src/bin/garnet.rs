@@ -9,11 +9,11 @@ use garnet_cli::knowledge;
 use garnet_cli::manifest::Manifest;
 use garnet_cli::strategies;
 use garnet_cli::{print_help, print_version, read_file};
-use std::time::{SystemTime, UNIX_EPOCH};
 use garnet_interp::Interpreter;
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::Instant;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Helper used by every subcommand at start: surface a one-line note for any
 /// prior failures of the same source hash, and consult any strategies
@@ -62,15 +62,25 @@ fn persist_knowledge(source: &str, source_hash: &str, outcome: &str) {
     // Synthesize strategies from the cumulative episode log.
     if let Ok(strat_conn) = strategies::open(&cwd) {
         let cache_dir = cache::cache_dir_for(&cwd);
-        let episodes = cache::read_all_in(&cache_dir);
-        let proposed = strategies::synthesize_from_episodes(&episodes, |hash| {
-            // Only recover the fingerprint if we just observed this hash.
-            if hash == source_hash {
-                Some(fp)
-            } else {
-                None
-            }
-        });
+        let indexed = cache::read_all_indexed_in(&cache_dir);
+        let episodes: Vec<_> = indexed.iter().map(|(_, ep)| ep.clone()).collect();
+        let id_lookup: std::collections::HashMap<*const Episode, i64> = episodes
+            .iter()
+            .zip(indexed.iter().map(|(idx, _)| *idx))
+            .map(|(ep, idx)| (ep as *const Episode, idx))
+            .collect();
+        let proposed = strategies::synthesize_from_episodes_with_ids(
+            &episodes,
+            |hash| {
+                // Only recover the fingerprint if we just observed this hash.
+                if hash == source_hash {
+                    Some(fp)
+                } else {
+                    None
+                }
+            },
+            |ep| id_lookup.get(&(ep as *const Episode)).copied(),
+        );
         for s in proposed {
             let _ = strategies::record_strategy(&strat_conn, &s, ts);
         }
@@ -212,7 +222,11 @@ fn main() -> ExitCode {
                 return ExitCode::from(2);
             }
             let require_sig = args.iter().any(|a| a == "--signature");
-            cmd_verify(PathBuf::from(&args[1]), PathBuf::from(&args[2]), require_sig)
+            cmd_verify(
+                PathBuf::from(&args[1]),
+                PathBuf::from(&args[2]),
+                require_sig,
+            )
         }
         "convert" => cmd_convert(&args[1..]),
         "test" => cmd_test(&args[1..]),
@@ -236,17 +250,38 @@ fn cmd_parse(path: PathBuf) -> ExitCode {
     surface_prior(&src);
     match garnet_parser::parse_source(&src) {
         Ok(module) => {
-            println!("parsed {} ({} items, safe={})", path.display(), module.items.len(), module.safe);
+            println!(
+                "parsed {} ({} items, safe={})",
+                path.display(),
+                module.items.len(),
+                module.safe
+            );
             for item in &module.items {
                 println!("  - {}", describe_item(item));
             }
-            record("parse", &path.display().to_string(), &src, "ok", None, started, 0);
+            record(
+                "parse",
+                &path.display().to_string(),
+                &src,
+                "ok",
+                None,
+                started,
+                0,
+            );
             ExitCode::SUCCESS
         }
         Err(e) => {
             let report = miette::Report::new(e).with_source_code(src.clone());
             eprintln!("{report:?}");
-            record("parse", &path.display().to_string(), &src, "parse_err", Some("UnexpectedToken".to_string()), started, 1);
+            record(
+                "parse",
+                &path.display().to_string(),
+                &src,
+                "parse_err",
+                Some("UnexpectedToken".to_string()),
+                started,
+                1,
+            );
             ExitCode::from(1)
         }
     }
@@ -267,7 +302,15 @@ fn cmd_check(path: PathBuf) -> ExitCode {
         Err(e) => {
             let report = miette::Report::new(e).with_source_code(src.clone());
             eprintln!("{report:?}");
-            record("check", &path.display().to_string(), &src, "parse_err", Some("UnexpectedToken".to_string()), started, 1);
+            record(
+                "check",
+                &path.display().to_string(),
+                &src,
+                "parse_err",
+                Some("UnexpectedToken".to_string()),
+                started,
+                1,
+            );
             return ExitCode::from(1);
         }
     };
@@ -282,10 +325,26 @@ fn cmd_check(path: PathBuf) -> ExitCode {
         report.errors.len()
     );
     if report.ok() {
-        record("check", &path.display().to_string(), &src, "ok", None, started, 0);
+        record(
+            "check",
+            &path.display().to_string(),
+            &src,
+            "ok",
+            None,
+            started,
+            0,
+        );
         ExitCode::SUCCESS
     } else {
-        record("check", &path.display().to_string(), &src, "check_err", Some("safe_violation".to_string()), started, 1);
+        record(
+            "check",
+            &path.display().to_string(),
+            &src,
+            "check_err",
+            Some("safe_violation".to_string()),
+            started,
+            1,
+        );
         ExitCode::from(1)
     }
 }
@@ -303,7 +362,15 @@ fn cmd_run(path: PathBuf) -> ExitCode {
     let mut interp = Interpreter::new();
     if let Err(e) = interp.load_source(&src) {
         eprintln!("load error: {e}");
-        record("run", &path.display().to_string(), &src, "parse_err", Some(format!("{e}")), started, 1);
+        record(
+            "run",
+            &path.display().to_string(),
+            &src,
+            "parse_err",
+            Some(format!("{e}")),
+            started,
+            1,
+        );
         return ExitCode::from(1);
     }
     // If a `main` function exists, call it; otherwise just exit success.
@@ -311,17 +378,41 @@ fn cmd_run(path: PathBuf) -> ExitCode {
         match interp.call("main", vec![]) {
             Ok(v) => {
                 println!("=> {}", v.display());
-                record("run", &path.display().to_string(), &src, "ok", None, started, 0);
+                record(
+                    "run",
+                    &path.display().to_string(),
+                    &src,
+                    "ok",
+                    None,
+                    started,
+                    0,
+                );
                 ExitCode::SUCCESS
             }
             Err(e) => {
                 eprintln!("runtime error: {e}");
-                record("run", &path.display().to_string(), &src, "runtime_err", Some(format!("{e}")), started, 1);
+                record(
+                    "run",
+                    &path.display().to_string(),
+                    &src,
+                    "runtime_err",
+                    Some(format!("{e}")),
+                    started,
+                    1,
+                );
                 ExitCode::from(1)
             }
         }
     } else {
-        record("run", &path.display().to_string(), &src, "ok", None, started, 0);
+        record(
+            "run",
+            &path.display().to_string(),
+            &src,
+            "ok",
+            None,
+            started,
+            0,
+        );
         ExitCode::SUCCESS
     }
 }
@@ -337,7 +428,15 @@ fn cmd_eval(src: &str) -> ExitCode {
         }
         Err(e) => {
             eprintln!("{e}");
-            record("eval", "<inline>", src, "runtime_err", Some(format!("{e}")), started, 1);
+            record(
+                "eval",
+                "<inline>",
+                src,
+                "runtime_err",
+                Some(format!("{e}")),
+                started,
+                1,
+            );
             ExitCode::from(1)
         }
     }
@@ -456,7 +555,10 @@ fn cmd_keygen(keyfile: PathBuf) -> ExitCode {
         }
     }
     println!("generated Ed25519 signing keypair");
-    println!("  keyfile = {} (keep private; chmod 0600)", keyfile.display());
+    println!(
+        "  keyfile = {} (keep private; chmod 0600)",
+        keyfile.display()
+    );
     println!("  pubkey  = {pubkey_hex}");
     ExitCode::SUCCESS
 }
@@ -485,7 +587,10 @@ fn cmd_test(args: &[String]) -> ExitCode {
                 filter = Some(args[i + 1].clone());
                 i += 2;
             }
-            "--no-main" => { include_main = false; i += 1; }
+            "--no-main" => {
+                include_main = false;
+                i += 1;
+            }
             "--help" | "-h" => {
                 println!("usage: garnet test [<project-dir>] [--filter <substr>] [--no-main]");
                 println!("  Discovers test_* functions in <dir>/tests/*.garnet (and");
@@ -534,8 +639,11 @@ fn cmd_test(args: &[String]) -> ExitCode {
     }
 
     if files.is_empty() {
-        println!("garnet test: no .garnet files found under {}/tests/ or {}/src/main.garnet",
-                 project_root.display(), project_root.display());
+        println!(
+            "garnet test: no .garnet files found under {}/tests/ or {}/src/main.garnet",
+            project_root.display(),
+            project_root.display()
+        );
         println!("  hint: scaffold a project with `garnet new --template cli <name>`");
         return ExitCode::SUCCESS;
     }
@@ -588,8 +696,10 @@ fn cmd_test(args: &[String]) -> ExitCode {
         if let Some(helper_src) = main_src.as_ref() {
             if !is_main_file {
                 if let Err(e) = interp.load_source(helper_src) {
-                    eprintln!("garnet test: failed to preload src/main.garnet for {}: {e}",
-                              file.display());
+                    eprintln!(
+                        "garnet test: failed to preload src/main.garnet for {}: {e}",
+                        file.display()
+                    );
                 }
             }
         }
@@ -626,7 +736,10 @@ fn cmd_test(args: &[String]) -> ExitCode {
     println!();
     let passed = total_run - total_failed;
     if total_failed == 0 {
-        println!("test result: ok. {passed} passed; 0 failed; in {} file(s)", files.len());
+        println!(
+            "test result: ok. {passed} passed; 0 failed; in {} file(s)",
+            files.len()
+        );
         ExitCode::SUCCESS
     } else {
         println!("test result: FAILED. {passed} passed; {total_failed} failed");
@@ -670,10 +783,22 @@ fn cmd_convert(args: &[String]) -> ExitCode {
                 out_dir = Some(args[i + 1].clone());
                 i += 2;
             }
-            "--strict"                  => { strict = true; i += 1; }
-            "--fail-on-todo"            => { fail_on_todo = true; i += 1; }
-            "--fail-on-untranslatable"  => { fail_on_untranslatable = true; i += 1; }
-            "--quiet"                   => { quiet = true; i += 1; }
+            "--strict" => {
+                strict = true;
+                i += 1;
+            }
+            "--fail-on-todo" => {
+                fail_on_todo = true;
+                i += 1;
+            }
+            "--fail-on-untranslatable" => {
+                fail_on_untranslatable = true;
+                i += 1;
+            }
+            "--quiet" => {
+                quiet = true;
+                i += 1;
+            }
             "--help" | "-h" => {
                 println!("usage: garnet convert [--lang <lang>] [--out <dir>] [--strict] [--fail-on-todo] [--fail-on-untranslatable] [--quiet] <lang> <file>");
                 println!("  langs: rust, ruby, python, go (also inferred from file extension)");

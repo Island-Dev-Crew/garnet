@@ -30,11 +30,7 @@ pub fn eval_if(
     Ok(Value::Nil)
 }
 
-pub fn eval_match(
-    subject: &Expr,
-    arms: &[MatchArm],
-    env: &Rc<Env>,
-) -> Result<Value, RuntimeError> {
+pub fn eval_match(subject: &Expr, arms: &[MatchArm], env: &Rc<Env>) -> Result<Value, RuntimeError> {
     let subj = eval_expr(subject, env)?;
     for arm in arms {
         let match_env = Env::new_child(env);
@@ -70,19 +66,17 @@ pub fn eval_try(
             // Message-style errors can also be caught via untyped rescue.
             try_rescue(Value::str(msg), rescues, env)
         }
-        Err(RuntimeError::Type { expected, got }) => {
-            try_rescue(
-                Value::str(format!("type error: expected {expected}, got {got}")),
-                rescues,
-                env,
-            )
-        }
-        Err(RuntimeError::DivByZero) => {
-            try_rescue(Value::str("division by zero"), rescues, env)
-        }
-        Err(RuntimeError::IndexOOB { idx }) => {
-            try_rescue(Value::str(format!("index out of bounds: {idx}")), rescues, env)
-        }
+        Err(RuntimeError::Type { expected, got }) => try_rescue(
+            Value::str(format!("type error: expected {expected}, got {got}")),
+            rescues,
+            env,
+        ),
+        Err(RuntimeError::DivByZero) => try_rescue(Value::str("division by zero"), rescues, env),
+        Err(RuntimeError::IndexOOB { idx }) => try_rescue(
+            Value::str(format!("index out of bounds: {idx}")),
+            rescues,
+            env,
+        ),
         Err(other) => Err(other),
     };
     // Ensure always runs.
@@ -122,7 +116,9 @@ fn type_matches_exception(ty: &garnet_parser::ast::TypeExpr, ex: &Value) -> bool
         TypeExpr::Named { path, .. } => {
             let target = path.last().cloned().unwrap_or_default();
             match ex {
-                Value::Variant { variant, path: p, .. } => {
+                Value::Variant {
+                    variant, path: p, ..
+                } => {
                     let ex_name = p.last().cloned().unwrap_or_default();
                     target == **variant || target == ex_name
                 }

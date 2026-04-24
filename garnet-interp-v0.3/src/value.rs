@@ -122,10 +122,18 @@ impl MemoryBackend {
     /// by the interpreter's `register_item` for `Item::Memory`.
     pub fn for_kind(kind: MemoryKind) -> Self {
         match kind {
-            MemoryKind::Working => MemoryBackend::Working(Rc::new(garnet_memory::WorkingStore::new())),
-            MemoryKind::Episodic => MemoryBackend::Episodic(Rc::new(garnet_memory::EpisodeStore::new())),
-            MemoryKind::Semantic => MemoryBackend::Semantic(Rc::new(garnet_memory::VectorIndex::new())),
-            MemoryKind::Procedural => MemoryBackend::Procedural(Rc::new(garnet_memory::WorkflowStore::new())),
+            MemoryKind::Working => {
+                MemoryBackend::Working(Rc::new(garnet_memory::WorkingStore::new()))
+            }
+            MemoryKind::Episodic => {
+                MemoryBackend::Episodic(Rc::new(garnet_memory::EpisodeStore::new()))
+            }
+            MemoryKind::Semantic => {
+                MemoryBackend::Semantic(Rc::new(garnet_memory::VectorIndex::new()))
+            }
+            MemoryKind::Procedural => {
+                MemoryBackend::Procedural(Rc::new(garnet_memory::WorkflowStore::new()))
+            }
         }
     }
 
@@ -225,7 +233,11 @@ impl Value {
                     .join(", ");
                 format!("{{{inner}}}")
             }
-            Value::Range { start, end, inclusive } => {
+            Value::Range {
+                start,
+                end,
+                inclusive,
+            } => {
                 if *inclusive {
                     format!("{start}...{end}")
                 } else {
@@ -247,7 +259,11 @@ impl Value {
                     .join(", ");
                 format!("{} {{ {} }}", name, inner)
             }
-            Value::Variant { path, variant, fields } => {
+            Value::Variant {
+                path,
+                variant,
+                fields,
+            } => {
                 let prefix = path.join("::");
                 if fields.is_empty() {
                     format!("{prefix}::{variant}")
@@ -323,22 +339,40 @@ impl Value {
                 let a = a.borrow();
                 let b = b.borrow();
                 a.len() == b.len()
-                    && a.iter().all(|(k, v)| b.get(k).is_some_and(|w| v.eq_deep(w)))
+                    && a.iter()
+                        .all(|(k, v)| b.get(k).is_some_and(|w| v.eq_deep(w)))
             }
             (
-                Range { start: s1, end: e1, inclusive: i1 },
-                Range { start: s2, end: e2, inclusive: i2 },
+                Range {
+                    start: s1,
+                    end: e1,
+                    inclusive: i1,
+                },
+                Range {
+                    start: s2,
+                    end: e2,
+                    inclusive: i2,
+                },
             ) => s1 == s2 && e1 == e2 && i1 == i2,
             (Tuple(a), Tuple(b)) => {
                 a.len() == b.len() && a.iter().zip(b.iter()).all(|(x, y)| x.eq_deep(y))
             }
             (
-                Variant { path: p1, variant: v1, fields: f1 },
-                Variant { path: p2, variant: v2, fields: f2 },
-            ) => p1 == p2 && v1 == v2 && {
-                f1.len() == f2.len()
-                    && f1.iter().zip(f2.iter()).all(|(x, y)| x.eq_deep(y))
-            },
+                Variant {
+                    path: p1,
+                    variant: v1,
+                    fields: f1,
+                },
+                Variant {
+                    path: p2,
+                    variant: v2,
+                    fields: f2,
+                },
+            ) => {
+                p1 == p2 && v1 == v2 && {
+                    f1.len() == f2.len() && f1.iter().zip(f2.iter()).all(|(x, y)| x.eq_deep(y))
+                }
+            }
             _ => false,
         }
     }
@@ -399,11 +433,7 @@ impl std::fmt::Display for Value {
 }
 
 /// Helper to read a parameter list into named slots for function call binding.
-pub fn bind_params(
-    params: &[Param],
-    args: Vec<Value>,
-    env: &Env,
-) -> Result<(), RuntimeError> {
+pub fn bind_params(params: &[Param], args: Vec<Value>, env: &Env) -> Result<(), RuntimeError> {
     if params.len() != args.len() {
         return Err(RuntimeError::Message(format!(
             "arity mismatch: expected {}, got {}",

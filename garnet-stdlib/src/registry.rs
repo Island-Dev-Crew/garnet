@@ -31,7 +31,7 @@ impl RequiredCaps {
         Self(vec!["proc"])
     }
     pub fn contains(&self, cap: &str) -> bool {
-        self.0.iter().any(|c| *c == cap)
+        self.0.contains(&cap)
     }
 }
 

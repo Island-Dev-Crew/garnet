@@ -33,11 +33,17 @@ const CLI_TEMPLATE: TemplateSpec = TemplateSpec {
     key: "cli",
     description: "a minimal CLI application",
     files: &[
-        ("Garnet.toml",              include_str!("../templates/cli/Garnet.toml")),
-        ("src/main.garnet",          include_str!("../templates/cli/src/main.garnet")),
-        ("tests/test_main.garnet",   include_str!("../templates/cli/tests/test_main.garnet")),
-        (".gitignore",               include_str!("../templates/cli/.gitignore")),
-        ("README.md",                include_str!("../templates/cli/README.md")),
+        ("Garnet.toml", include_str!("../templates/cli/Garnet.toml")),
+        (
+            "src/main.garnet",
+            include_str!("../templates/cli/src/main.garnet"),
+        ),
+        (
+            "tests/test_main.garnet",
+            include_str!("../templates/cli/tests/test_main.garnet"),
+        ),
+        (".gitignore", include_str!("../templates/cli/.gitignore")),
+        ("README.md", include_str!("../templates/cli/README.md")),
     ],
 };
 
@@ -45,11 +51,23 @@ const WEB_API_TEMPLATE: TemplateSpec = TemplateSpec {
     key: "web-api",
     description: "an HTTP/1.1 API service",
     files: &[
-        ("Garnet.toml",              include_str!("../templates/web-api/Garnet.toml")),
-        ("src/main.garnet",          include_str!("../templates/web-api/src/main.garnet")),
-        ("tests/test_main.garnet",   include_str!("../templates/web-api/tests/test_main.garnet")),
-        (".gitignore",               include_str!("../templates/web-api/.gitignore")),
-        ("README.md",                include_str!("../templates/web-api/README.md")),
+        (
+            "Garnet.toml",
+            include_str!("../templates/web-api/Garnet.toml"),
+        ),
+        (
+            "src/main.garnet",
+            include_str!("../templates/web-api/src/main.garnet"),
+        ),
+        (
+            "tests/test_main.garnet",
+            include_str!("../templates/web-api/tests/test_main.garnet"),
+        ),
+        (
+            ".gitignore",
+            include_str!("../templates/web-api/.gitignore"),
+        ),
+        ("README.md", include_str!("../templates/web-api/README.md")),
     ],
 };
 
@@ -57,11 +75,26 @@ const AGENT_TEMPLATE: TemplateSpec = TemplateSpec {
     key: "agent-orchestrator",
     description: "a Researcher / Synthesizer / Reviewer orchestrator",
     files: &[
-        ("Garnet.toml",              include_str!("../templates/agent-orchestrator/Garnet.toml")),
-        ("src/main.garnet",          include_str!("../templates/agent-orchestrator/src/main.garnet")),
-        ("tests/test_main.garnet",   include_str!("../templates/agent-orchestrator/tests/test_main.garnet")),
-        (".gitignore",               include_str!("../templates/agent-orchestrator/.gitignore")),
-        ("README.md",                include_str!("../templates/agent-orchestrator/README.md")),
+        (
+            "Garnet.toml",
+            include_str!("../templates/agent-orchestrator/Garnet.toml"),
+        ),
+        (
+            "src/main.garnet",
+            include_str!("../templates/agent-orchestrator/src/main.garnet"),
+        ),
+        (
+            "tests/test_main.garnet",
+            include_str!("../templates/agent-orchestrator/tests/test_main.garnet"),
+        ),
+        (
+            ".gitignore",
+            include_str!("../templates/agent-orchestrator/.gitignore"),
+        ),
+        (
+            "README.md",
+            include_str!("../templates/agent-orchestrator/README.md"),
+        ),
     ],
 };
 
@@ -83,10 +116,22 @@ pub struct NewProjectReport {
 /// the CLI can format them without dragging `thiserror` into the API.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum NewProjectError {
-    UnknownTemplate { got: String, available: Vec<String> },
-    TargetExists { path: PathBuf },
-    InvalidProjectName { name: String, reason: String },
-    Io { step: String, path: PathBuf, msg: String },
+    UnknownTemplate {
+        got: String,
+        available: Vec<String>,
+    },
+    TargetExists {
+        path: PathBuf,
+    },
+    InvalidProjectName {
+        name: String,
+        reason: String,
+    },
+    Io {
+        step: String,
+        path: PathBuf,
+        msg: String,
+    },
 }
 
 impl std::fmt::Display for NewProjectError {
@@ -137,7 +182,10 @@ pub fn create_project(
         .find(|t| t.key == template_key)
         .ok_or_else(|| NewProjectError::UnknownTemplate {
             got: template_key.to_string(),
-            available: available_templates().into_iter().map(String::from).collect(),
+            available: available_templates()
+                .into_iter()
+                .map(String::from)
+                .collect(),
         })?;
 
     if target_dir.exists() {
@@ -233,9 +281,7 @@ fn validate_project_name(name: &str) -> Result<(), NewProjectError> {
 /// Returns the rendered string so it can be tested deterministically.
 pub fn next_steps_hint(report: &NewProjectReport) -> String {
     let dir = report.root.display();
-    format!(
-        "\nNext steps:\n  cd {dir}\n  garnet run src/main.garnet\n  garnet test\n"
-    )
+    format!("\nNext steps:\n  cd {dir}\n  garnet run src/main.garnet\n  garnet test\n")
 }
 
 #[cfg(test)]
@@ -256,7 +302,10 @@ mod tests {
         assert_eq!(descriptions.len(), 3);
         for (key, desc) in descriptions {
             assert!(!key.is_empty(), "template key must be non-empty");
-            assert!(!desc.is_empty(), "template `{key}` description must be non-empty");
+            assert!(
+                !desc.is_empty(),
+                "template `{key}` description must be non-empty"
+            );
         }
     }
 

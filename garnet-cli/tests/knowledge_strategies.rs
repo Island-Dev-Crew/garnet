@@ -76,24 +76,24 @@ fn synthesize_proposes_skip_check_after_three_ok() {
     let mut episodes = Vec::new();
     for _ in 0..3 {
         episodes.push(Episode::now(
-            "parse",
-            "x.garnet",
-            "h_abc",
-            "ok",
-            None,
-            10,
-            0,
+            "parse", "x.garnet", "h_abc", "ok", None, 10, 0,
         ));
     }
     let fp = [7u8; 32];
-    let proposed = strategies::synthesize_from_episodes(&episodes, |h| {
-        if h == "h_abc" {
-            Some(fp)
-        } else {
-            None
-        }
-    });
-    assert!(proposed.iter().any(|s| s.heuristic.starts_with("skip_check")));
+    let proposed =
+        strategies::synthesize_from_episodes(
+            &episodes,
+            |h| {
+                if h == "h_abc" {
+                    Some(fp)
+                } else {
+                    None
+                }
+            },
+        );
+    assert!(proposed
+        .iter()
+        .any(|s| s.heuristic.starts_with("skip_check")));
 }
 
 #[test]
@@ -119,13 +119,17 @@ fn synthesize_proposes_warn_after_two_same_failures() {
         ),
     ];
     let fp = [11u8; 32];
-    let proposed = strategies::synthesize_from_episodes(&episodes, |h| {
-        if h == "h_xyz" {
-            Some(fp)
-        } else {
-            None
-        }
-    });
+    let proposed =
+        strategies::synthesize_from_episodes(
+            &episodes,
+            |h| {
+                if h == "h_xyz" {
+                    Some(fp)
+                } else {
+                    None
+                }
+            },
+        );
     assert!(proposed
         .iter()
         .any(|s| s.heuristic == "warn_repeated_UnexpectedToken"));

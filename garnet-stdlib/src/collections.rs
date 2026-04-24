@@ -27,7 +27,7 @@ pub fn array_remove<T: Clone>(arr: &mut Vec<T>, idx: usize) -> Result<T, StdErro
     Ok(arr.remove(idx))
 }
 
-pub fn array_sort<T: Ord>(arr: &mut Vec<T>) {
+pub fn array_sort<T: Ord>(arr: &mut [T]) {
     arr.sort();
 }
 

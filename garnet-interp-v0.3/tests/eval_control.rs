@@ -38,7 +38,12 @@ fn for_loop_over_array() {
     "#;
     let mut interp = Interpreter::new();
     interp.load_source(src).unwrap();
-    let arr = Value::array(vec![Value::Int(1), Value::Int(2), Value::Int(3), Value::Int(4)]);
+    let arr = Value::array(vec![
+        Value::Int(1),
+        Value::Int(2),
+        Value::Int(3),
+        Value::Int(4),
+    ]);
     let r = interp.call("sum", vec![arr]).unwrap();
     assert!(matches!(r, Value::Int(10)));
 }
@@ -76,7 +81,12 @@ fn break_with_value() {
     "#;
     let mut interp = Interpreter::new();
     interp.load_source(src).unwrap();
-    let arr = Value::array(vec![Value::Int(-2), Value::Int(-1), Value::Int(3), Value::Int(7)]);
+    let arr = Value::array(vec![
+        Value::Int(-2),
+        Value::Int(-1),
+        Value::Int(3),
+        Value::Int(7),
+    ]);
     let r = interp.call("find_positive", vec![arr]).unwrap();
     assert!(matches!(r, Value::Int(3)));
 }
@@ -97,9 +107,7 @@ fn continue_skips_iteration() {
     "#;
     let mut interp = Interpreter::new();
     interp.load_source(src).unwrap();
-    let arr = Value::array(
-        (1..=6).map(Value::Int).collect::<Vec<_>>(),
-    );
+    let arr = Value::array((1..=6).map(Value::Int).collect::<Vec<_>>());
     let r = interp.call("sum_evens", vec![arr]).unwrap();
     assert!(matches!(r, Value::Int(12))); // 2+4+6
 }
@@ -119,7 +127,9 @@ fn loop_with_break_returns() {
     "#;
     let mut interp = Interpreter::new();
     interp.load_source(src).unwrap();
-    let r = interp.call("find_first_square_over", vec![Value::Int(100)]).unwrap();
+    let r = interp
+        .call("find_first_square_over", vec![Value::Int(100)])
+        .unwrap();
     assert!(matches!(r, Value::Int(11))); // 11^2 = 121
 }
 
@@ -196,9 +206,13 @@ fn try_rescue_catches_message() {
     "#;
     let mut interp = Interpreter::new();
     interp.load_source(src).unwrap();
-    let ok = interp.call("safe_div", vec![Value::Int(10), Value::Int(2)]).unwrap();
+    let ok = interp
+        .call("safe_div", vec![Value::Int(10), Value::Int(2)])
+        .unwrap();
     assert!(matches!(ok, Value::Int(5)));
-    let err = interp.call("safe_div", vec![Value::Int(10), Value::Int(0)]).unwrap();
+    let err = interp
+        .call("safe_div", vec![Value::Int(10), Value::Int(0)])
+        .unwrap();
     assert!(matches!(err, Value::Int(-1)));
 }
 

@@ -80,7 +80,10 @@ const IDENT_BIND: &str = r#"def m(x) { match x { y => y } }"#;
 
 #[test]
 fn ident_binds_int() {
-    assert!(matches!(run(IDENT_BIND, "m", vec![Value::Int(7)]), Value::Int(7)));
+    assert!(matches!(
+        run(IDENT_BIND, "m", vec![Value::Int(7)]),
+        Value::Int(7)
+    ));
 }
 
 #[test]
@@ -92,7 +95,11 @@ fn ident_binds_string() {
 
 #[test]
 fn ident_binds_array() {
-    if let Value::Array(a) = run(IDENT_BIND, "m", vec![Value::array(vec![Value::Int(1), Value::Int(2)])]) {
+    if let Value::Array(a) = run(
+        IDENT_BIND,
+        "m",
+        vec![Value::array(vec![Value::Int(1), Value::Int(2)])],
+    ) {
         assert_eq!(a.borrow().len(), 2);
     }
 }
@@ -106,7 +113,8 @@ fn ident_binds_nil() {
 // Literal int patterns
 // ════════════════════════════════════════════════════════════════════
 
-const INT_LIT: &str = r#"def m(x) { match x { 0 => :zero, 1 => :one, 42 => :fortytwo, _ => :other } }"#;
+const INT_LIT: &str =
+    r#"def m(x) { match x { 0 => :zero, 1 => :one, 42 => :fortytwo, _ => :other } }"#;
 
 #[test]
 fn int_lit_matches_zero() {
@@ -151,22 +159,34 @@ const STR_LIT: &str = r#"def m(x) { match x { "a" => 1, "b" => 2, _ => 0 } }"#;
 
 #[test]
 fn str_lit_matches_a() {
-    assert!(matches!(run(STR_LIT, "m", vec![Value::str("a")]), Value::Int(1)));
+    assert!(matches!(
+        run(STR_LIT, "m", vec![Value::str("a")]),
+        Value::Int(1)
+    ));
 }
 
 #[test]
 fn str_lit_matches_b() {
-    assert!(matches!(run(STR_LIT, "m", vec![Value::str("b")]), Value::Int(2)));
+    assert!(matches!(
+        run(STR_LIT, "m", vec![Value::str("b")]),
+        Value::Int(2)
+    ));
 }
 
 #[test]
 fn str_lit_falls_through() {
-    assert!(matches!(run(STR_LIT, "m", vec![Value::str("c")]), Value::Int(0)));
+    assert!(matches!(
+        run(STR_LIT, "m", vec![Value::str("c")]),
+        Value::Int(0)
+    ));
 }
 
 #[test]
 fn str_lit_empty_falls_through() {
-    assert!(matches!(run(STR_LIT, "m", vec![Value::str("")]), Value::Int(0)));
+    assert!(matches!(
+        run(STR_LIT, "m", vec![Value::str("")]),
+        Value::Int(0)
+    ));
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -177,22 +197,34 @@ const SYM_LIT: &str = r#"def m(x) { match x { :red => 1, :green => 2, :blue => 3
 
 #[test]
 fn sym_lit_red() {
-    assert!(matches!(run(SYM_LIT, "m", vec![Value::sym("red")]), Value::Int(1)));
+    assert!(matches!(
+        run(SYM_LIT, "m", vec![Value::sym("red")]),
+        Value::Int(1)
+    ));
 }
 
 #[test]
 fn sym_lit_green() {
-    assert!(matches!(run(SYM_LIT, "m", vec![Value::sym("green")]), Value::Int(2)));
+    assert!(matches!(
+        run(SYM_LIT, "m", vec![Value::sym("green")]),
+        Value::Int(2)
+    ));
 }
 
 #[test]
 fn sym_lit_blue() {
-    assert!(matches!(run(SYM_LIT, "m", vec![Value::sym("blue")]), Value::Int(3)));
+    assert!(matches!(
+        run(SYM_LIT, "m", vec![Value::sym("blue")]),
+        Value::Int(3)
+    ));
 }
 
 #[test]
 fn sym_lit_unknown_falls_through() {
-    assert!(matches!(run(SYM_LIT, "m", vec![Value::sym("yellow")]), Value::Int(0)));
+    assert!(matches!(
+        run(SYM_LIT, "m", vec![Value::sym("yellow")]),
+        Value::Int(0)
+    ));
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -203,12 +235,18 @@ const BOOL_LIT: &str = r#"def m(x) { match x { true => 1, false => 0, _ => -1 } 
 
 #[test]
 fn bool_lit_true() {
-    assert!(matches!(run(BOOL_LIT, "m", vec![Value::Bool(true)]), Value::Int(1)));
+    assert!(matches!(
+        run(BOOL_LIT, "m", vec![Value::Bool(true)]),
+        Value::Int(1)
+    ));
 }
 
 #[test]
 fn bool_lit_false() {
-    assert!(matches!(run(BOOL_LIT, "m", vec![Value::Bool(false)]), Value::Int(0)));
+    assert!(matches!(
+        run(BOOL_LIT, "m", vec![Value::Bool(false)]),
+        Value::Int(0)
+    ));
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -224,12 +262,18 @@ fn nil_lit_matches_nil() {
 
 #[test]
 fn nil_lit_does_not_match_zero() {
-    assert!(matches!(run(NIL_LIT, "m", vec![Value::Int(0)]), Value::Int(0)));
+    assert!(matches!(
+        run(NIL_LIT, "m", vec![Value::Int(0)]),
+        Value::Int(0)
+    ));
 }
 
 #[test]
 fn nil_lit_does_not_match_false() {
-    assert!(matches!(run(NIL_LIT, "m", vec![Value::Bool(false)]), Value::Int(0)));
+    assert!(matches!(
+        run(NIL_LIT, "m", vec![Value::Bool(false)]),
+        Value::Int(0)
+    ));
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -272,11 +316,17 @@ fn nested_enum_pattern_binds_inner() {
 
     let inner = interp.call("some", vec![Value::Int(7)]).unwrap();
     let wrapped = interp.call("ok", vec![inner]).unwrap();
-    assert!(matches!(interp.call("m", vec![wrapped]).unwrap(), Value::Int(7)));
+    assert!(matches!(
+        interp.call("m", vec![wrapped]).unwrap(),
+        Value::Int(7)
+    ));
 
     let none = interp.call("none", vec![]).unwrap();
     let wrapped = interp.call("ok", vec![none]).unwrap();
-    assert!(matches!(interp.call("m", vec![wrapped]).unwrap(), Value::Int(-1)));
+    assert!(matches!(
+        interp.call("m", vec![wrapped]).unwrap(),
+        Value::Int(-1)
+    ));
 }
 
 // ════════════════════════════════════════════════════════════════════

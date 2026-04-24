@@ -27,7 +27,7 @@
 
 use std::collections::BTreeMap;
 use std::fmt;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 /// One crate's safety profile in the dep graph.
 #[derive(Debug, Clone, Default)]
@@ -98,7 +98,7 @@ impl AuditReport {
     /// Crates sorted by descending risk_score for the human-readable report.
     pub fn risk_sorted(&self) -> Vec<&CrateProfile> {
         let mut v: Vec<&CrateProfile> = self.profiles.values().collect();
-        v.sort_by(|a, b| b.risk_score().cmp(&a.risk_score()));
+        v.sort_by_key(|p| std::cmp::Reverse(p.risk_score()));
         v
     }
 
@@ -287,7 +287,9 @@ mod tests {
     #[test]
     fn aggregate_counts() {
         let mut report = AuditReport::default();
-        report.profiles.insert("a".into(), profile("a", 3, 10, false));
+        report
+            .profiles
+            .insert("a".into(), profile("a", 3, 10, false));
         report.profiles.insert("b".into(), profile("b", 5, 2, true));
         assert_eq!(report.total_unsafe(), 8);
         assert_eq!(report.total_extern_c(), 12);
@@ -297,7 +299,9 @@ mod tests {
     #[test]
     fn fail_on_unsafe_thresholds() {
         let mut report = AuditReport::default();
-        report.profiles.insert("a".into(), profile("a", 3, 0, false));
+        report
+            .profiles
+            .insert("a".into(), profile("a", 3, 0, false));
         assert_eq!(report.fail_on_unsafe(10, 10, true), 0); // under threshold
         assert_eq!(report.fail_on_unsafe(2, 10, true), 2); // unsafe over
     }
@@ -305,7 +309,9 @@ mod tests {
     #[test]
     fn fail_on_extern_c_threshold() {
         let mut report = AuditReport::default();
-        report.profiles.insert("a".into(), profile("a", 0, 100, false));
+        report
+            .profiles
+            .insert("a".into(), profile("a", 0, 100, false));
         assert_eq!(report.fail_on_unsafe(10, 10, true), 3); // extern_c over
     }
 
@@ -354,9 +360,15 @@ mod tests {
     #[test]
     fn risk_sorted_descending() {
         let mut report = AuditReport::default();
-        report.profiles.insert("clean".into(), profile("clean", 0, 0, false));
-        report.profiles.insert("heavy".into(), profile("heavy", 10, 50, true));
-        report.profiles.insert("medium".into(), profile("medium", 3, 5, false));
+        report
+            .profiles
+            .insert("clean".into(), profile("clean", 0, 0, false));
+        report
+            .profiles
+            .insert("heavy".into(), profile("heavy", 10, 50, true));
+        report
+            .profiles
+            .insert("medium".into(), profile("medium", 3, 5, false));
         let sorted = report.risk_sorted();
         assert_eq!(sorted[0].name, "heavy");
         assert_eq!(sorted[2].name, "clean");

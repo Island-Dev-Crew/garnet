@@ -52,12 +52,18 @@ fn mixed_int_float_promotes() {
 fn boolean_and_short_circuit() {
     assert!(matches!(eval("true and true"), Value::Bool(true)));
     assert!(matches!(eval("true and false"), Value::Bool(false)));
-    assert!(matches!(eval("false and any_undefined_name"), Value::Bool(false)));
+    assert!(matches!(
+        eval("false and any_undefined_name"),
+        Value::Bool(false)
+    ));
 }
 
 #[test]
 fn boolean_or_short_circuit() {
-    assert!(matches!(eval("true or any_undefined_name"), Value::Bool(true)));
+    assert!(matches!(
+        eval("true or any_undefined_name"),
+        Value::Bool(true)
+    ));
     assert!(matches!(eval("false or true"), Value::Bool(true)));
 }
 
@@ -99,7 +105,9 @@ fn if_elsif_else() {
 #[test]
 fn string_interpolation() {
     let mut interp = Interpreter::new();
-    interp.load_source("def main() { let name = \"Jon\"\n\"hello, #{name}\" }").unwrap();
+    interp
+        .load_source("def main() { let name = \"Jon\"\n\"hello, #{name}\" }")
+        .unwrap();
     match interp.call("main", vec![]).unwrap() {
         Value::Str(s) => assert_eq!(s.as_str(), "hello, Jon"),
         other => panic!("expected string, got {other:?}"),
@@ -109,7 +117,11 @@ fn string_interpolation() {
 #[test]
 fn range_materializes_to_int_list() {
     match eval("0..3") {
-        Value::Range { start, end, inclusive } => {
+        Value::Range {
+            start,
+            end,
+            inclusive,
+        } => {
             assert_eq!(start, 0);
             assert_eq!(end, 3);
             assert!(!inclusive);

@@ -25,7 +25,13 @@ pub fn parse_struct(p: &mut Parser, public: bool) -> Result<StructDef, ParseErro
 
     p.expect(&TokenKind::RBrace, "struct body")?;
     let span = start.join(p.prev_span());
-    Ok(StructDef { public, name, type_params, fields, span })
+    Ok(StructDef {
+        public,
+        name,
+        type_params,
+        fields,
+        span,
+    })
 }
 
 fn parse_field_def(p: &mut Parser) -> Result<FieldDef, ParseError> {
@@ -66,7 +72,13 @@ pub fn parse_enum_decl(p: &mut Parser, public: bool) -> Result<EnumDef, ParseErr
 
     p.expect(&TokenKind::RBrace, "enum body")?;
     let span = start.join(p.prev_span());
-    Ok(EnumDef { public, name, type_params, variants, span })
+    Ok(EnumDef {
+        public,
+        name,
+        type_params,
+        variants,
+        span,
+    })
 }
 
 fn parse_variant(p: &mut Parser) -> Result<Variant, ParseError> {
@@ -106,7 +118,13 @@ pub fn parse_trait(p: &mut Parser, public: bool) -> Result<TraitDef, ParseError>
 
     p.expect(&TokenKind::RBrace, "trait body")?;
     let span = start.join(p.prev_span());
-    Ok(TraitDef { public, name, type_params, items, span })
+    Ok(TraitDef {
+        public,
+        name,
+        type_params,
+        items,
+        span,
+    })
 }
 
 fn parse_trait_item(p: &mut Parser) -> Result<TraitItem, ParseError> {
@@ -120,7 +138,13 @@ fn parse_trait_item(p: &mut Parser) -> Result<TraitItem, ParseError> {
             p.expect(&TokenKind::Arrow, "trait function return type")?;
             let return_ty = Some(types::parse_type(p)?);
             let span = start.join(p.prev_span());
-            Ok(TraitItem::FnSig(FnSig { mode: FnMode::Safe, name, params, return_ty, span }))
+            Ok(TraitItem::FnSig(FnSig {
+                mode: FnMode::Safe,
+                name,
+                params,
+                return_ty,
+                span,
+            }))
         }
         TokenKind::KwDef => {
             let start = p.bump().span;
@@ -134,7 +158,13 @@ fn parse_trait_item(p: &mut Parser) -> Result<TraitItem, ParseError> {
                 None
             };
             let span = start.join(p.prev_span());
-            Ok(TraitItem::FnSig(FnSig { mode: FnMode::Managed, name, params, return_ty, span }))
+            Ok(TraitItem::FnSig(FnSig {
+                mode: FnMode::Managed,
+                name,
+                params,
+                return_ty,
+                span,
+            }))
         }
         TokenKind::KwConst => {
             let decl = stmts::parse_const_decl(p, false)?;
@@ -186,5 +216,11 @@ pub fn parse_impl(p: &mut Parser) -> Result<ImplBlock, ParseError> {
 
     p.expect(&TokenKind::RBrace, "impl body")?;
     let span = start.join(p.prev_span());
-    Ok(ImplBlock { type_params, target, trait_ty, methods, span })
+    Ok(ImplBlock {
+        type_params,
+        target,
+        trait_ty,
+        methods,
+        span,
+    })
 }

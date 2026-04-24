@@ -26,7 +26,7 @@ pub use budget::ParseBudget;
 use error::ParseError;
 use lexer::Lexer;
 use parser::Parser;
-use token::{Span, Token};
+use token::{Span, Token, TokenKind};
 
 /// Lex and parse a Garnet source string into a Module AST using the
 /// default `ParseBudget`. For bespoke budgets (e.g., in fuzz harnesses),
@@ -39,10 +39,28 @@ pub fn parse_source(src: &str) -> Result<Module, ParseError> {
 pub fn parse_source_with_budget(src: &str, budget: ParseBudget) -> Result<Module, ParseError> {
     budget.check_source_bytes(src.len())?;
     let tokens = lex_source_with_budget(src, budget)?;
+    check_token_nesting(&tokens, budget)?;
     let mut p = Parser::with_budget(tokens, budget);
     let (safe, items) = grammar::parse_items(&mut p)?;
     let span = Span::new(0, src.len());
     Ok(Module { safe, items, span })
+}
+
+fn check_token_nesting(tokens: &[Token], budget: ParseBudget) -> Result<(), ParseError> {
+    let mut depth = 0usize;
+    for tok in tokens {
+        match tok.kind {
+            TokenKind::LParen | TokenKind::LBracket | TokenKind::LBrace => {
+                depth = depth.saturating_add(1);
+                budget.check_depth(depth, tok.span)?;
+            }
+            TokenKind::RParen | TokenKind::RBracket | TokenKind::RBrace => {
+                depth = depth.saturating_sub(1);
+            }
+            _ => {}
+        }
+    }
+    Ok(())
 }
 
 /// Lex a Garnet source string into a token stream using the default budget.

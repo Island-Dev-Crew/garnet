@@ -55,7 +55,10 @@ fn build_twice_produces_identical_manifest() {
         .unwrap();
     let m2 = std::fs::read_to_string(&manifest_path).unwrap();
 
-    assert_eq!(m1, m2, "two builds of the same source must be byte-identical");
+    assert_eq!(
+        m1, m2,
+        "two builds of the same source must be byte-identical"
+    );
 }
 
 #[test]
@@ -127,10 +130,8 @@ fn build_identical_across_different_cwds_and_intervals() {
     //   - with a wall-clock gap between them (>= 1 second)
     // and asserting the manifests are byte-identical.
     let src = "def main() { 1 + 2 }";
-    let dir_a = std::env::temp_dir()
-        .join(format!("garnet_repro_a_{}", std::process::id()));
-    let dir_b = std::env::temp_dir()
-        .join(format!("garnet_repro_b_{}", std::process::id()));
+    let dir_a = std::env::temp_dir().join(format!("garnet_repro_a_{}", std::process::id()));
+    let dir_b = std::env::temp_dir().join(format!("garnet_repro_b_{}", std::process::id()));
     std::fs::create_dir_all(&dir_a).unwrap();
     std::fs::create_dir_all(&dir_b).unwrap();
     let path_a = dir_a.join("x.garnet");
@@ -184,7 +185,10 @@ fn whitespace_change_breaks_source_hash_keeps_ast_hash() {
         ])
         .output()
         .unwrap();
-    assert!(!out.status.success(), "verify must fail on source byte change");
+    assert!(
+        !out.status.success(),
+        "verify must fail on source byte change"
+    );
     // The error message must call out source_hash, not ast_hash.
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(

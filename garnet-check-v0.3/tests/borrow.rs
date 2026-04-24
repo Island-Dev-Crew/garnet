@@ -27,7 +27,8 @@ fn use_after_move_into_own_param_flagged() {
     "#;
     let d = diagnose(src);
     assert!(
-        d.iter().any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
         "expected use-after-move, got {d:?}"
     );
 }
@@ -89,7 +90,8 @@ fn mut_with_other_arg_to_same_binding_flagged() {
     "#;
     let d = diagnose(src);
     assert!(
-        d.iter().any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("aliasing"))),
+        d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("aliasing"))),
         "expected aliasing violation, got {d:?}"
     );
 }
@@ -104,7 +106,8 @@ fn distinct_bindings_into_mut_and_borrow_ok() {
     "#;
     let d = diagnose(src);
     assert!(
-        !d.iter().any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("aliasing"))),
+        !d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("aliasing"))),
         "no aliasing for distinct bindings: {d:?}"
     );
 }
@@ -123,7 +126,8 @@ fn managed_def_double_use_not_flagged_by_borrow_pass() {
     "#;
     let d = diagnose(src);
     assert!(
-        !d.iter().any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        !d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
         "managed def is ARC, not affine: {d:?}"
     );
 }
@@ -145,7 +149,8 @@ fn move_in_one_branch_propagates_after_if() {
     "#;
     let d = diagnose(src);
     assert!(
-        d.iter().any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
         "moves from branches must merge, got {d:?}"
     );
 }
@@ -163,7 +168,8 @@ fn method_call_does_not_yet_track_moves() {
     "#;
     let d = diagnose(src);
     assert!(
-        !d.iter().any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        !d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
         "method calls deferred to v0.4: {d:?}"
     );
 }

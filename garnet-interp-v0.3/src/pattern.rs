@@ -53,7 +53,9 @@ pub fn match_pattern(
         Pattern::Enum(path, sub_patterns, _) => {
             let pat_variant = path.last().cloned().unwrap_or_default();
             match value {
-                Value::Variant { variant, fields, .. } => {
+                Value::Variant {
+                    variant, fields, ..
+                } => {
                     if pat_variant != **variant {
                         return Ok(BindResult::NoMatch);
                     }

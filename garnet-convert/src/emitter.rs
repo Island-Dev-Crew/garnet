@@ -1,34 +1,20 @@
 //! Garnet source emitter — CIR → Garnet source with sandbox tagging,
 //! lineage map, and migrate-todo checklist.
 
-use crate::cir::{Cir, CirLit, CirTy, FuncMode, Ownership, Param};
+use crate::cir::{Cir, CirLit, CirTy, FuncMode, Ownership};
 use crate::error::ConvertError;
 use crate::lineage::{LineageMap, WitnessEntry};
 use crate::metrics::ConvertMetrics;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct EmitOpts {
     pub source_lang: String,
     pub source_file: String,
     pub target_file: String,
     pub source_loc: usize,
-    pub strict: bool,      // reject if MigrateTodo or Untranslatable reach emit
+    pub strict: bool, // reject if MigrateTodo or Untranslatable reach emit
     pub fail_on_todo: bool,
     pub fail_on_untranslatable: bool,
-}
-
-impl Default for EmitOpts {
-    fn default() -> Self {
-        Self {
-            source_lang: String::new(),
-            source_file: String::new(),
-            target_file: String::new(),
-            source_loc: 0,
-            strict: false,
-            fail_on_todo: false,
-            fail_on_untranslatable: false,
-        }
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -40,10 +26,7 @@ pub struct EmittedSource {
 
 /// Emit Garnet source + lineage + migrate-todo checklist from a
 /// CIR root. The root is expected to be a Module.
-pub fn emit(
-    cir: Cir,
-    opts: EmitOpts,
-) -> Result<(EmittedSource, ConvertMetrics), ConvertError> {
+pub fn emit(cir: Cir, opts: EmitOpts) -> Result<(EmittedSource, ConvertMetrics), ConvertError> {
     // Strict-mode checks first
     if (opts.strict || opts.fail_on_todo) && cir.has_migrate_todo() {
         return Err(ConvertError::TodoInStrictMode {
@@ -127,11 +110,6 @@ impl EmitState {
         }
     }
 
-    fn push_raw(&mut self, s: &str) {
-        // Does NOT insert indent; appends raw to current line
-        self.out.push_str(s);
-    }
-
     fn push_line(&mut self, s: &str) {
         self.push(s);
     }
@@ -161,7 +139,15 @@ fn emit_cir(s: &mut EmitState, cir: &Cir) {
             s.indent -= 2;
             s.push_line("}");
         }
-        Cir::Func { name, params, return_ty, body, mode, caps, .. } => {
+        Cir::Func {
+            name,
+            params,
+            return_ty,
+            body,
+            mode,
+            caps,
+            ..
+        } => {
             s.witness(cir, "Func");
             let keyword = match mode {
                 FuncMode::Safe => "fn",
@@ -179,7 +165,9 @@ fn emit_cir(s: &mut EmitState, cir: &Cir) {
                 CirTy::Inferred => String::new(),
                 other => format!(" -> {}", render_type(other)),
             };
-            s.push_line(&format!("{keyword} {name}({params_rendered}){return_part} {{"));
+            s.push_line(&format!(
+                "{keyword} {name}({params_rendered}){return_part} {{"
+            ));
             s.indent += 2;
             for stmt in body {
                 emit_cir(s, stmt);
@@ -187,7 +175,12 @@ fn emit_cir(s: &mut EmitState, cir: &Cir) {
             s.indent -= 2;
             s.push_line("}");
         }
-        Cir::If { cond, then_b, else_b, .. } => {
+        Cir::If {
+            cond,
+            then_b,
+            else_b,
+            ..
+        } => {
             s.witness(cir, "If");
             // Render cond inline
             let cond_str = render_expr(cond);
@@ -217,7 +210,9 @@ fn emit_cir(s: &mut EmitState, cir: &Cir) {
             s.indent -= 2;
             s.push_line("}");
         }
-        Cir::For { var, iter, body, .. } => {
+        Cir::For {
+            var, iter, body, ..
+        } => {
             s.witness(cir, "For");
             s.push_line(&format!("for {} in {} {{", var, render_expr(iter)));
             s.indent += 2;
@@ -227,7 +222,9 @@ fn emit_cir(s: &mut EmitState, cir: &Cir) {
             s.indent -= 2;
             s.push_line("}");
         }
-        Cir::Match { scrutinee, arms, .. } => {
+        Cir::Match {
+            scrutinee, arms, ..
+        } => {
             s.witness(cir, "Match");
             s.push_line(&format!("match {} {{", render_expr(scrutinee)));
             s.indent += 2;
@@ -255,7 +252,12 @@ fn emit_cir(s: &mut EmitState, cir: &Cir) {
                 None => s.push_line("return"),
             }
         }
-        Cir::Try { body, catches, finally, .. } => {
+        Cir::Try {
+            body,
+            catches,
+            finally,
+            ..
+        } => {
             s.witness(cir, "Try");
             s.push_line("try {");
             s.indent += 2;
@@ -288,7 +290,13 @@ fn emit_cir(s: &mut EmitState, cir: &Cir) {
                 s.push_line("}");
             }
         }
-        Cir::Let { name, ty, mutable, value, .. } => {
+        Cir::Let {
+            name,
+            ty,
+            mutable,
+            value,
+            ..
+        } => {
             s.witness(cir, "Let");
             let keyword = if *mutable { "let mut" } else { "let" };
             let ty_part = match ty {
@@ -307,11 +315,7 @@ fn emit_cir(s: &mut EmitState, cir: &Cir) {
             s.indent += 2;
             for f in fields {
                 let pub_prefix = if f.public { "pub " } else { "" };
-                s.push_line(&format!(
-                    "{pub_prefix}{}: {},",
-                    f.name,
-                    render_type(&f.ty)
-                ));
+                s.push_line(&format!("{pub_prefix}{}: {},", f.name, render_type(&f.ty)));
             }
             s.indent -= 2;
             s.push_line("}");
@@ -324,14 +328,21 @@ fn emit_cir(s: &mut EmitState, cir: &Cir) {
                 if v.payload.is_empty() {
                     s.push_line(&format!("{},", v.name));
                 } else {
-                    let payload = v.payload.iter().map(render_type).collect::<Vec<_>>().join(", ");
+                    let payload = v
+                        .payload
+                        .iter()
+                        .map(render_type)
+                        .collect::<Vec<_>>()
+                        .join(", ");
                     s.push_line(&format!("{}({payload}),", v.name));
                 }
             }
             s.indent -= 2;
             s.push_line("}");
         }
-        Cir::Impl { target, methods, .. } => {
+        Cir::Impl {
+            target, methods, ..
+        } => {
             s.witness(cir, "Impl");
             s.push_line(&format!("impl {target} {{"));
             s.indent += 2;
@@ -341,7 +352,11 @@ fn emit_cir(s: &mut EmitState, cir: &Cir) {
             s.indent -= 2;
             s.push_line("}");
         }
-        Cir::MigrateTodo { placeholder, note, lineage } => {
+        Cir::MigrateTodo {
+            placeholder,
+            note,
+            lineage,
+        } => {
             s.witness(cir, "MigrateTodo");
             s.push_line(&format!("# @migrate_todo: {}", note));
             s.todos.push(TodoEntry {
@@ -354,10 +369,7 @@ fn emit_cir(s: &mut EmitState, cir: &Cir) {
         }
         Cir::Untranslatable { reason, .. } => {
             s.witness(cir, "Untranslatable");
-            s.push_line(&format!(
-                "# @untranslatable: {}",
-                reason
-            ));
+            s.push_line(&format!("# @untranslatable: {}", reason));
             s.push_line("# (the original construct has no Garnet equivalent; refactor required)");
         }
         // Expressions rendered on their own line as statements
@@ -393,7 +405,9 @@ fn render_expr(cir: &Cir) -> String {
             let args = args.iter().map(render_expr).collect::<Vec<_>>().join(", ");
             format!("{}({})", render_expr(func), args)
         }
-        Cir::MethodCall { recv, name, args, .. } => {
+        Cir::MethodCall {
+            recv, name, args, ..
+        } => {
             let args = args.iter().map(render_expr).collect::<Vec<_>>().join(", ");
             format!("{}.{}({})", render_expr(recv), name, args)
         }
@@ -416,11 +430,7 @@ fn render_expr(cir: &Cir) -> String {
             if body.len() == 1 {
                 format!("|{}| {}", ps, render_expr(&body[0]))
             } else {
-                format!(
-                    "|{}| {{ /* body: {} stmts */ }}",
-                    ps,
-                    body.len()
-                )
+                format!("|{}| {{ /* body: {} stmts */ }}", ps, body.len())
             }
         }
         Cir::ArrayLit(items, _) => {
@@ -451,7 +461,11 @@ fn render_expr(cir: &Cir) -> String {
             if payload.is_empty() {
                 path
             } else {
-                let inner = payload.iter().map(render_expr).collect::<Vec<_>>().join(", ");
+                let inner = payload
+                    .iter()
+                    .map(render_expr)
+                    .collect::<Vec<_>>()
+                    .join(", ");
                 format!("{path}({inner})")
             }
         }
@@ -474,7 +488,9 @@ fn render_lit(lit: &CirLit) -> String {
 }
 
 fn escape_str(s: &str) -> String {
-    s.replace('\\', "\\\\").replace('"', "\\\"").replace('\n', "\\n")
+    s.replace('\\', "\\\\")
+        .replace('"', "\\\"")
+        .replace('\n', "\\n")
 }
 
 fn render_type(ty: &CirTy) -> String {
@@ -537,6 +553,7 @@ fn render_migrate_todo_md(opts: &EmitOpts, todos: &[TodoEntry]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::cir::Param;
     use crate::cir::{CirLit, FieldDecl, FuncMode};
     use crate::lineage::Lineage;
 
@@ -690,8 +707,16 @@ mod tests {
             items: vec![Cir::Struct {
                 name: "User".into(),
                 fields: vec![
-                    FieldDecl { name: "id".into(), ty: CirTy::Concrete("Int".into()), public: true },
-                    FieldDecl { name: "name".into(), ty: CirTy::Concrete("String".into()), public: false },
+                    FieldDecl {
+                        name: "id".into(),
+                        ty: CirTy::Concrete("Int".into()),
+                        public: true,
+                    },
+                    FieldDecl {
+                        name: "name".into(),
+                        ty: CirTy::Concrete("String".into()),
+                        public: false,
+                    },
                 ],
                 lineage: lin(),
             }],

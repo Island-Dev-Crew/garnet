@@ -27,7 +27,7 @@ fn full_pipeline_parse_check_build_verify_run() {
     let file = dir.join("e2e.garnet");
     std::fs::write(
         &file,
-        "def main() {\n  let xs = [1, 2, 3, 4, 5]\n  xs.reduce(0, |a, b| a + b)\n}",
+        "@caps()\ndef main() {\n  let xs = [1, 2, 3, 4, 5]\n  xs.reduce(0, |a, b| a + b)\n}",
     )
     .unwrap();
 
@@ -37,7 +37,11 @@ fn full_pipeline_parse_check_build_verify_run() {
         .args(["parse", file.to_str().unwrap()])
         .output()
         .unwrap();
-    assert!(out.status.success(), "parse failed: {}", String::from_utf8_lossy(&out.stderr));
+    assert!(
+        out.status.success(),
+        "parse failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
 
     // 2. check
     let out = Command::new(garnet_bin())
@@ -45,7 +49,11 @@ fn full_pipeline_parse_check_build_verify_run() {
         .args(["check", file.to_str().unwrap()])
         .output()
         .unwrap();
-    assert!(out.status.success(), "check failed: {}", String::from_utf8_lossy(&out.stderr));
+    assert!(
+        out.status.success(),
+        "check failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
 
     // 3. build --deterministic
     let out = Command::new(garnet_bin())
@@ -53,7 +61,11 @@ fn full_pipeline_parse_check_build_verify_run() {
         .args(["build", "--deterministic", file.to_str().unwrap()])
         .output()
         .unwrap();
-    assert!(out.status.success(), "build failed: {}", String::from_utf8_lossy(&out.stderr));
+    assert!(
+        out.status.success(),
+        "build failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
     let manifest = file.with_file_name("e2e.garnet.manifest.json");
     assert!(manifest.exists());
 
@@ -63,7 +75,11 @@ fn full_pipeline_parse_check_build_verify_run() {
         .args(["verify", file.to_str().unwrap(), manifest.to_str().unwrap()])
         .output()
         .unwrap();
-    assert!(out.status.success(), "verify failed: {}", String::from_utf8_lossy(&out.stderr));
+    assert!(
+        out.status.success(),
+        "verify failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
 
     // 5. run
     let out = Command::new(garnet_bin())
@@ -71,9 +87,16 @@ fn full_pipeline_parse_check_build_verify_run() {
         .args(["run", file.to_str().unwrap()])
         .output()
         .unwrap();
-    assert!(out.status.success(), "run failed: {}", String::from_utf8_lossy(&out.stderr));
+    assert!(
+        out.status.success(),
+        "run failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
     let stdout = String::from_utf8_lossy(&out.stdout);
-    assert!(stdout.contains("=> 15"), "expected sum 15 in output, got: {stdout}");
+    assert!(
+        stdout.contains("=> 15"),
+        "expected sum 15 in output, got: {stdout}"
+    );
 }
 
 #[test]
@@ -99,11 +122,7 @@ fn run_records_episode_then_recall_surfaces_it() {
 fn check_fails_loud_on_safe_violation() {
     let dir = fresh_dir("check_violation");
     let f = dir.join("bad.garnet");
-    std::fs::write(
-        &f,
-        "@safe\ndef bad() { var x = 1\n raise \"oops\"\n x }",
-    )
-    .unwrap();
+    std::fs::write(&f, "@safe\ndef bad() { var x = 1\n raise \"oops\"\n x }").unwrap();
 
     let out = Command::new(garnet_bin())
         .current_dir(&dir)

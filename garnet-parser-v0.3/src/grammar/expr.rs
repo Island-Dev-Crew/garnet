@@ -387,6 +387,9 @@ fn parse_primary(p: &mut Parser) -> Result<Expr, ParseError> {
             Ok(Expr::Ident(name, span))
         }
         TokenKind::LParen => {
+            if let Some(expr) = parse_directly_nested_atom(p)? {
+                return Ok(expr);
+            }
             p.bump();
             let expr = parse_expr(p)?;
             p.expect(&TokenKind::RParen, "parenthesized expression")?;
@@ -417,13 +420,89 @@ fn parse_primary(p: &mut Parser) -> Result<Expr, ParseError> {
             })
         }
         TokenKind::Pipe => functions::parse_closure(p),
-        _ => {
-            Err(ParseError::unexpected_token(
-                "expression",
-                &format!("{:?}", tok.kind),
-                tok.span,
-            ))
+        _ => Err(ParseError::unexpected_token(
+            "expression",
+            &format!("{:?}", tok.kind),
+            tok.span,
+        )),
+    }
+}
+
+fn parse_directly_nested_atom(p: &mut Parser) -> Result<Option<Expr>, ParseError> {
+    let mut open_count = 0;
+    while matches!(p.peek_nth(open_count).kind, TokenKind::LParen) {
+        open_count += 1;
+    }
+    if open_count < 2 {
+        return Ok(None);
+    }
+
+    let atom = p.peek_nth(open_count).clone();
+    if !is_collapsible_atom(&atom.kind) {
+        return Ok(None);
+    }
+    for i in 0..open_count {
+        if !matches!(p.peek_nth(open_count + 1 + i).kind, TokenKind::RParen) {
+            return Ok(None);
         }
+    }
+
+    let mut depth_guards = Vec::with_capacity(open_count);
+    for _ in 0..open_count {
+        depth_guards.push(p.enter_depth()?);
+        p.bump();
+    }
+    p.bump();
+    for _ in 0..open_count {
+        p.expect(&TokenKind::RParen, "parenthesized expression")?;
+    }
+
+    Ok(Some(expr_from_collapsible_atom(atom)))
+}
+
+fn is_collapsible_atom(kind: &TokenKind) -> bool {
+    matches!(
+        kind,
+        TokenKind::Int(_)
+            | TokenKind::Float(_)
+            | TokenKind::KwTrue
+            | TokenKind::KwFalse
+            | TokenKind::KwNil
+            | TokenKind::Str(_)
+            | TokenKind::RawStr(_)
+            | TokenKind::Symbol(_)
+            | TokenKind::Ident(_)
+    )
+}
+
+fn expr_from_collapsible_atom(tok: crate::token::Token) -> Expr {
+    match tok.kind {
+        TokenKind::Int(v) => Expr::Int(v, tok.span),
+        TokenKind::Float(v) => Expr::Float(v, tok.span),
+        TokenKind::KwTrue => Expr::Bool(true, tok.span),
+        TokenKind::KwFalse => Expr::Bool(false, tok.span),
+        TokenKind::KwNil => Expr::Nil(tok.span),
+        TokenKind::Str(parts) => Expr::Str(
+            StringLit {
+                parts: parts
+                    .into_iter()
+                    .map(|sp| match sp {
+                        crate::token::StrPart::Lit(s) => StrPart::Lit(s),
+                        crate::token::StrPart::Interp(s) => StrPart::Interp(s),
+                    })
+                    .collect(),
+            },
+            tok.span,
+        ),
+        TokenKind::RawStr(s) => Expr::Str(
+            StringLit {
+                parts: vec![StrPart::Lit(s)],
+            },
+            tok.span,
+        ),
+        TokenKind::Symbol(name) => Expr::Symbol(name, tok.span),
+        TokenKind::Ident(name) => Expr::Ident(name, tok.span),
+        _ => unreachable!("caller checked collapsible atom"),
     }
 }
 
@@ -462,7 +541,10 @@ fn parse_map_literal(p: &mut Parser) -> Result<Expr, ParseError> {
 pub fn parse_arg_list(p: &mut Parser) -> Result<Vec<Expr>, ParseError> {
     let mut args = Vec::new();
     p.skip_separators();
-    if matches!(p.peek_kind(), TokenKind::RParen | TokenKind::RBracket | TokenKind::RBrace) {
+    if matches!(
+        p.peek_kind(),
+        TokenKind::RParen | TokenKind::RBracket | TokenKind::RBrace
+    ) {
         return Ok(args);
     }
     loop {

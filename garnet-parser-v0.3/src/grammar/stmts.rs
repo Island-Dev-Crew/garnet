@@ -37,7 +37,11 @@ pub fn parse_block(p: &mut Parser) -> Result<Block, ParseError> {
 
     p.expect(&TokenKind::RBrace, "block")?;
     let span = start.join(p.prev_span());
-    Ok(Block { stmts, tail_expr, span })
+    Ok(Block {
+        stmts,
+        tail_expr,
+        span,
+    })
 }
 
 enum StmtOrExpr {
@@ -64,7 +68,11 @@ fn parse_stmt_or_expr(p: &mut Parser) -> Result<StmtOrExpr, ParseError> {
             let condition = expr::parse_expr(p)?;
             let body = parse_block(p)?;
             let span = start.join(body.span);
-            Ok(StmtOrExpr::Stmt(Stmt::While { condition, body, span }))
+            Ok(StmtOrExpr::Stmt(Stmt::While {
+                condition,
+                body,
+                span,
+            }))
         }
         TokenKind::KwFor => {
             let start = p.bump().span;
@@ -73,7 +81,12 @@ fn parse_stmt_or_expr(p: &mut Parser) -> Result<StmtOrExpr, ParseError> {
             let iter = expr::parse_expr(p)?;
             let body = parse_block(p)?;
             let span = start.join(body.span);
-            Ok(StmtOrExpr::Stmt(Stmt::For { var, iter, body, span }))
+            Ok(StmtOrExpr::Stmt(Stmt::For {
+                var,
+                iter,
+                body,
+                span,
+            }))
         }
         TokenKind::KwLoop => {
             let start = p.bump().span;
@@ -167,7 +180,13 @@ pub fn parse_let_decl(p: &mut Parser) -> Result<LetDecl, ParseError> {
     p.expect(&TokenKind::Eq, "let declaration")?;
     let value = expr::parse_expr(p)?;
     let span = start.join(value.span());
-    Ok(LetDecl { mutable, name, ty, value, span })
+    Ok(LetDecl {
+        mutable,
+        name,
+        ty,
+        value,
+        span,
+    })
 }
 
 /// Parse: `var name [: type] = expr`
@@ -182,7 +201,12 @@ fn parse_var_decl(p: &mut Parser) -> Result<VarDecl, ParseError> {
     p.expect(&TokenKind::Eq, "var declaration")?;
     let value = expr::parse_expr(p)?;
     let span = start.join(value.span());
-    Ok(VarDecl { name, ty, value, span })
+    Ok(VarDecl {
+        name,
+        ty,
+        value,
+        span,
+    })
 }
 
 /// Parse: `[pub] const name [: type] = expr`
@@ -197,5 +221,11 @@ pub fn parse_const_decl(p: &mut Parser, public: bool) -> Result<ConstDecl, Parse
     p.expect(&TokenKind::Eq, "const declaration")?;
     let value = expr::parse_expr(p)?;
     let span = start.join(value.span());
-    Ok(ConstDecl { public, name, ty, value, span })
+    Ok(ConstDecl {
+        public,
+        name,
+        ty,
+        value,
+        span,
+    })
 }

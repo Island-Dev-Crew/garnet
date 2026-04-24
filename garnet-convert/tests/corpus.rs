@@ -24,7 +24,8 @@ fn opts(source_lang: &str, source_file: &str) -> EmitOpts {
 #[test]
 fn rust_simple_fn_roundtrips() {
     let src = "fn hash(data: &[u8]) -> u64 { return 0; }";
-    let (out, metrics) = convert(src, SourceLang::Rust, "hash.rs", opts("rust", "hash.rs")).unwrap();
+    let (out, metrics) =
+        convert(src, SourceLang::Rust, "hash.rs", opts("rust", "hash.rs")).unwrap();
     assert!(out.garnet.contains("@sandbox"));
     assert!(out.garnet.contains("@caps()"));
     assert!(out.garnet.contains("fn hash("));
@@ -173,8 +174,16 @@ fn every_converted_file_starts_with_sandbox() {
     for (src, lang, fname) in [
         ("fn f() { return 0; }", SourceLang::Rust, "a.rs"),
         ("def g\n  return 1\nend", SourceLang::Ruby, "a.rb"),
-        ("def h() -> int:\n    return 2\n", SourceLang::Python, "a.py"),
-        ("package main\nfunc I() int { return 3 }\n", SourceLang::Go, "a.go"),
+        (
+            "def h() -> int:\n    return 2\n",
+            SourceLang::Python,
+            "a.py",
+        ),
+        (
+            "package main\nfunc I() int { return 3 }\n",
+            SourceLang::Go,
+            "a.go",
+        ),
     ] {
         let (out, _) = convert(src, lang, fname, opts(lang.as_str(), fname)).unwrap();
         assert!(
@@ -233,7 +242,7 @@ fn source_lang_detection() {
     assert_eq!(SourceLang::from_extension("py"), Some(SourceLang::Python));
     assert_eq!(SourceLang::from_extension("go"), Some(SourceLang::Go));
     assert_eq!(SourceLang::from_extension("js"), None);
-    assert_eq!(SourceLang::from_str("rust"), Some(SourceLang::Rust));
+    assert_eq!("rust".parse::<SourceLang>().ok(), Some(SourceLang::Rust));
 }
 
 #[test]

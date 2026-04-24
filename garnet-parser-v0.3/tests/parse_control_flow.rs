@@ -21,7 +21,10 @@ fn expr_of(src: &str) -> Expr {
 #[test]
 fn parses_simple_if_expr() {
     match expr_of("if x { 1 } else { 2 }") {
-        Expr::If { else_block: Some(_), .. } => {}
+        Expr::If {
+            else_block: Some(_),
+            ..
+        } => {}
         _ => panic!("expected if-else"),
     }
 }
@@ -29,7 +32,9 @@ fn parses_simple_if_expr() {
 #[test]
 fn parses_if_without_else() {
     match expr_of("if x { 1 }") {
-        Expr::If { else_block: None, .. } => {}
+        Expr::If {
+            else_block: None, ..
+        } => {}
         _ => panic!("expected if without else"),
     }
 }

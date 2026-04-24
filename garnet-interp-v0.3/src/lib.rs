@@ -52,8 +52,8 @@ impl Interpreter {
     /// into the global environment. Raises a `RuntimeError` on parse failure or
     /// evaluation failure at the top level (e.g. evaluating a `let` rhs).
     pub fn load_source(&mut self, src: &str) -> Result<(), RuntimeError> {
-        let module = garnet_parser::parse_source(src)
-            .map_err(|e| RuntimeError::Parse(format!("{e:?}")))?;
+        let module =
+            garnet_parser::parse_source(src).map_err(|e| RuntimeError::Parse(format!("{e:?}")))?;
         self.load_module(module)
     }
 

@@ -21,7 +21,10 @@ impl Span {
     pub fn join(self, other: Span) -> Span {
         let start = self.start.min(other.start);
         let end = self.end().max(other.end());
-        Span { start, len: end - start }
+        Span {
+            start,
+            len: end - start,
+        }
     }
 }
 
@@ -53,7 +56,7 @@ pub enum TokenKind {
     Float(f64),
     Str(Vec<StrPart>),
     RawStr(String),
-    Symbol(String),  // :name
+    Symbol(String), // :name
     Ident(String),
 
     // ── Mode & structure keywords ──
@@ -126,46 +129,46 @@ pub enum TokenKind {
     KwSuper,
 
     // ── Operators ──
-    Plus,       // +
-    Minus,      // -
-    Star,       // *
-    Slash,      // /
-    Percent,    // %
-    Eq,         // =
-    EqEq,       // ==
-    BangEq,     // !=
-    Lt,         // <
-    Gt,         // >
-    LtEq,       // <=
-    GtEq,       // >=
-    Bang,       // !
-    Question,   // ?
-    PipeGt,     // |>
-    Pipe,       // |
-    DotDot,     // ..
-    DotDotDot,  // ...
-    FatArrow,   // =>
-    Arrow,      // ->
-    PlusEq,     // +=
-    MinusEq,    // -=
-    StarEq,     // *=
-    SlashEq,    // /=
-    PercentEq,  // %=
-    Amp,        // &
-    At,         // @
+    Plus,      // +
+    Minus,     // -
+    Star,      // *
+    Slash,     // /
+    Percent,   // %
+    Eq,        // =
+    EqEq,      // ==
+    BangEq,    // !=
+    Lt,        // <
+    Gt,        // >
+    LtEq,      // <=
+    GtEq,      // >=
+    Bang,      // !
+    Question,  // ?
+    PipeGt,    // |>
+    Pipe,      // |
+    DotDot,    // ..
+    DotDotDot, // ...
+    FatArrow,  // =>
+    Arrow,     // ->
+    PlusEq,    // +=
+    MinusEq,   // -=
+    StarEq,    // *=
+    SlashEq,   // /=
+    PercentEq, // %=
+    Amp,       // &
+    At,        // @
 
     // ── Punctuation ──
-    Dot,        // .
-    Comma,      // ,
-    Colon,      // :
-    ColonCol,   // ::
-    Semi,       // ;
-    LParen,     // (
-    RParen,     // )
-    LBrace,     // {
-    RBrace,     // }
-    LBracket,   // [
-    RBracket,   // ]
+    Dot,      // .
+    Comma,    // ,
+    Colon,    // :
+    ColonCol, // ::
+    Semi,     // ;
+    LParen,   // (
+    RParen,   // )
+    LBrace,   // {
+    RBrace,   // }
+    LBracket, // [
+    RBracket, // ]
 
     // ── Structural ──
     Newline,

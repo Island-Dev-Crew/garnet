@@ -42,7 +42,11 @@ impl<'a> PythonParser<'a> {
     }
 
     fn lineage(&self, start_line: usize) -> Lineage {
-        let start = self.global_byte_offset.get(start_line).copied().unwrap_or(0);
+        let start = self
+            .global_byte_offset
+            .get(start_line)
+            .copied()
+            .unwrap_or(0);
         let end = self
             .global_byte_offset
             .get(self.line_idx)
@@ -90,7 +94,10 @@ impl<'a> PythonParser<'a> {
             }
             return Ok(Some(Cir::MigrateTodo {
                 placeholder: Box::new(Cir::Literal(CirLit::Nil, self.lineage(start))),
-                note: format!("Python decorator: {} — convert to explicit closure-wrap", trimmed),
+                note: format!(
+                    "Python decorator: {} — convert to explicit closure-wrap",
+                    trimmed
+                ),
                 lineage: self.lineage(start),
             }));
         }
@@ -166,13 +173,17 @@ impl<'a> PythonParser<'a> {
         })
     }
 
-    fn parse_class(&mut self, start_line: usize, parent_indent: usize) -> Result<Cir, ConvertError> {
+    fn parse_class(
+        &mut self,
+        start_line: usize,
+        parent_indent: usize,
+    ) -> Result<Cir, ConvertError> {
         let raw = self.current_line().to_string();
         self.line_idx += 1;
         let trimmed = raw.trim_start();
         let rest = &trimmed[6..]; // after "class "
         let name = rest
-            .split(|c: char| c == '(' || c == ':')
+            .split(['(', ':'])
             .next()
             .unwrap_or("Anon")
             .trim()
@@ -183,7 +194,12 @@ impl<'a> PythonParser<'a> {
         let mut methods = Vec::new();
         let mut fields = Vec::new();
         for b in &body {
-            if let Cir::Func { name: fname, body: fb, .. } = b {
+            if let Cir::Func {
+                name: fname,
+                body: fb,
+                ..
+            } = b
+            {
                 if fname == "__init__" {
                     // Try to extract self.x = y assignments as fields
                     for s in fb {
@@ -244,8 +260,8 @@ impl<'a> PythonParser<'a> {
                 }
             }
             // Simplified: each physical line is one statement.
-            if trimmed.starts_with("return") {
-                let expr_src = trimmed[6..].trim();
+            if let Some(stripped) = trimmed.strip_prefix("return") {
+                let expr_src = stripped.trim();
                 body.push(Cir::Return {
                     value: if expr_src.is_empty() {
                         None
@@ -337,10 +353,7 @@ fn parse_ty(s: &str) -> CirTy {
         let inner = &s[5..s.len() - 1];
         let parts: Vec<&str> = inner.splitn(2, ',').collect();
         if parts.len() == 2 {
-            return CirTy::Map(
-                Box::new(parse_ty(parts[0])),
-                Box::new(parse_ty(parts[1])),
-            );
+            return CirTy::Map(Box::new(parse_ty(parts[0])), Box::new(parse_ty(parts[1])));
         }
     }
     match s {
@@ -388,7 +401,14 @@ mod tests {
         let src = "def greet(name: str) -> str:\n    return name\n";
         let cir = parse_and_lift(src, "g.py").unwrap();
         if let Cir::Module { items, .. } = cir {
-            if let Cir::Func { name, params, return_ty, mode, .. } = &items[0] {
+            if let Cir::Func {
+                name,
+                params,
+                return_ty,
+                mode,
+                ..
+            } = &items[0]
+            {
                 assert_eq!(name, "greet");
                 assert_eq!(params.len(), 1);
                 assert_eq!(params[0].name, "name");

@@ -157,8 +157,14 @@ fn dispatch_rejects_mismatched_kind_and_backend_with_clear_error() {
         "expected 'kind mismatch' error, got: {err_text}"
     );
     // Both the declared and actual names should appear in the diagnostic.
-    assert!(err_text.contains("WorkingStore"), "diagnostic must name declared kind");
-    assert!(err_text.contains("VectorIndex"), "diagnostic must name actual backend");
+    assert!(
+        err_text.contains("WorkingStore"),
+        "diagnostic must name declared kind"
+    );
+    assert!(
+        err_text.contains("VectorIndex"),
+        "diagnostic must name actual backend"
+    );
 }
 
 #[test]
@@ -177,7 +183,9 @@ fn dispatch_rejects_episodic_declared_as_procedural() {
     interp
         .load_source(r#"def touch() { imposter.register("w", "s") }"#)
         .unwrap();
-    let err = interp.call("touch", vec![]).expect_err("must reject mismatch");
+    let err = interp
+        .call("touch", vec![])
+        .expect_err("must reject mismatch");
     let err_text = format!("{err:?}");
     assert!(err_text.contains("kind mismatch"));
 }

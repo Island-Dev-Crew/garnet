@@ -168,7 +168,9 @@ fn discriminant_name(cir: &Cir) -> &'static str {
 }
 
 fn escape(s: &str) -> String {
-    s.replace('\\', "\\\\").replace('"', "\\\"").replace('\n', "\\n")
+    s.replace('\\', "\\\\")
+        .replace('"', "\\\"")
+        .replace('\n', "\\n")
 }
 
 #[cfg(test)]
@@ -184,7 +186,14 @@ mod tests {
     #[test]
     fn expressiveness_ratio_basic() {
         let cir = Cir::Literal(CirLit::Int(1), lin());
-        let m = ConvertMetrics::from_cir("rust", "src/foo.rs", "src/foo.garnet", 100, &"a\nb\nc\n".repeat(30), &cir);
+        let m = ConvertMetrics::from_cir(
+            "rust",
+            "src/foo.rs",
+            "src/foo.garnet",
+            100,
+            &"a\nb\nc\n".repeat(30),
+            &cir,
+        );
         // 30 × 3 lines = 90 target, 100 source
         assert!(m.expressiveness_ratio() < 1.0);
     }

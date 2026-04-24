@@ -33,7 +33,7 @@ pub const GARNET_WORDMARK: &str = concat!(
 /// output is piped, redirected, or captured by CI — so `garnet --version >
 /// file` never embeds escape sequences in the file.
 const ANSI_GARNET: &str = "\x1b[38;2;156;43;46m";
-const ANSI_RESET:  &str = "\x1b[0m";
+const ANSI_RESET: &str = "\x1b[0m";
 
 /// Return the wordmark, wrapped in the Garnet accent color if `is_tty` is
 /// true (typically `io::stdout().is_terminal()` at the call site). Falls
@@ -84,13 +84,21 @@ pub fn print_help() {
     println!("SUBCOMMANDS:");
     println!("    new    --template <T> <dir>      Scaffold a new project (T=cli|web-api|agent-orchestrator)");
     println!("    parse  <file.garnet>             Parse a file and print a structural summary");
-    println!("    check  <file.garnet>             Run the safe-mode checker (incl. CapCaps propagator)");
+    println!(
+        "    check  <file.garnet>             Run the safe-mode checker (incl. CapCaps propagator)"
+    );
     println!("    run    <file.garnet>             Parse, load, and invoke `main` if it exists");
-    println!("    test   [<dir>]                   Discover + run test_* functions in tests/*.garnet");
+    println!(
+        "    test   [<dir>]                   Discover + run test_* functions in tests/*.garnet"
+    );
     println!("    eval   \"<expr>\"                  Evaluate a single expression");
-    println!("    repl   [file.garnet]             Interactive REPL (optionally preloading a file)");
+    println!(
+        "    repl   [file.garnet]             Interactive REPL (optionally preloading a file)"
+    );
     println!("    build  [--deterministic] [--sign <key>] <file>");
-    println!("                                     Emit a (deterministic, optionally signed) manifest");
+    println!(
+        "                                     Emit a (deterministic, optionally signed) manifest"
+    );
     println!("    verify <file> <manifest.json>    Verify the manifest matches the source");
     println!("           [--signature]             Require a valid Ed25519 signature");
     println!("    keygen <keyfile>                 Generate an Ed25519 signing keypair");

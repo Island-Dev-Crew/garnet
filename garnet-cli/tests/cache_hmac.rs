@@ -34,7 +34,10 @@ fn signed_episode_verifies_with_same_key() {
     let key = [0xAAu8; 32];
     let mut ep = Episode::now("parse", "foo.garnet", "abc", "ok", None, 10, 0);
     ep.sign_with_key(&key);
-    assert!(ep.verify_with_key(&key), "fresh sign+verify round-trip must pass");
+    assert!(
+        ep.verify_with_key(&key),
+        "fresh sign+verify round-trip must pass"
+    );
 }
 
 #[test]
@@ -43,7 +46,10 @@ fn signed_episode_does_not_verify_with_different_key() {
     let k2 = [0x55u8; 32];
     let mut ep = Episode::now("parse", "foo.garnet", "abc", "ok", None, 10, 0);
     ep.sign_with_key(&k1);
-    assert!(!ep.verify_with_key(&k2), "cross-machine key must NOT verify");
+    assert!(
+        !ep.verify_with_key(&k2),
+        "cross-machine key must NOT verify"
+    );
 }
 
 #[test]
@@ -80,7 +86,10 @@ fn tampered_outcome_fails_verification() {
     assert!(ep.verify_with_key(&key));
     ep.outcome = "ok".to_string(); // promote a failure to a success
     ep.exit_code = 0;
-    assert!(!ep.verify_with_key(&key), "outcome flip must break verification");
+    assert!(
+        !ep.verify_with_key(&key),
+        "outcome flip must break verification"
+    );
 }
 
 // ── Round-trip through NDJSON ───────────────────────────────────────
@@ -142,7 +151,10 @@ fn read_all_in_with_key_skips_foreign_machine_records() {
         2,
         "only our-key records must survive the read filter"
     );
-    assert_eq!(result.skipped, 2, "exactly 2 foreign records must be counted as skipped");
+    assert_eq!(
+        result.skipped, 2,
+        "exactly 2 foreign records must be counted as skipped"
+    );
 }
 
 #[test]

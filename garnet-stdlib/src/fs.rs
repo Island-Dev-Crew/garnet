@@ -12,48 +12,28 @@ use std::fs;
 use std::path::Path;
 
 pub fn read_file<P: AsRef<Path>>(path: P) -> Result<String, StdError> {
-    fs::read_to_string(path.as_ref()).map_err(|e| {
-        StdError::Io(format!(
-            "read_file({}): {e}",
-            path.as_ref().display()
-        ))
-    })
+    fs::read_to_string(path.as_ref())
+        .map_err(|e| StdError::Io(format!("read_file({}): {e}", path.as_ref().display())))
 }
 
 pub fn write_file<P: AsRef<Path>>(path: P, contents: &str) -> Result<(), StdError> {
-    fs::write(path.as_ref(), contents).map_err(|e| {
-        StdError::Io(format!(
-            "write_file({}): {e}",
-            path.as_ref().display()
-        ))
-    })
+    fs::write(path.as_ref(), contents)
+        .map_err(|e| StdError::Io(format!("write_file({}): {e}", path.as_ref().display())))
 }
 
 pub fn read_bytes<P: AsRef<Path>>(path: P) -> Result<Vec<u8>, StdError> {
-    fs::read(path.as_ref()).map_err(|e| {
-        StdError::Io(format!(
-            "read_bytes({}): {e}",
-            path.as_ref().display()
-        ))
-    })
+    fs::read(path.as_ref())
+        .map_err(|e| StdError::Io(format!("read_bytes({}): {e}", path.as_ref().display())))
 }
 
 pub fn write_bytes<P: AsRef<Path>>(path: P, data: &[u8]) -> Result<(), StdError> {
-    fs::write(path.as_ref(), data).map_err(|e| {
-        StdError::Io(format!(
-            "write_bytes({}): {e}",
-            path.as_ref().display()
-        ))
-    })
+    fs::write(path.as_ref(), data)
+        .map_err(|e| StdError::Io(format!("write_bytes({}): {e}", path.as_ref().display())))
 }
 
 pub fn list_dir<P: AsRef<Path>>(path: P) -> Result<Vec<String>, StdError> {
-    let entries = fs::read_dir(path.as_ref()).map_err(|e| {
-        StdError::Io(format!(
-            "list_dir({}): {e}",
-            path.as_ref().display()
-        ))
-    })?;
+    let entries = fs::read_dir(path.as_ref())
+        .map_err(|e| StdError::Io(format!("list_dir({}): {e}", path.as_ref().display())))?;
     let mut names = Vec::new();
     for ent in entries {
         let ent = ent.map_err(StdError::from)?;
@@ -68,21 +48,13 @@ pub fn exists<P: AsRef<Path>>(path: P) -> bool {
 }
 
 pub fn remove_file<P: AsRef<Path>>(path: P) -> Result<(), StdError> {
-    fs::remove_file(path.as_ref()).map_err(|e| {
-        StdError::Io(format!(
-            "remove_file({}): {e}",
-            path.as_ref().display()
-        ))
-    })
+    fs::remove_file(path.as_ref())
+        .map_err(|e| StdError::Io(format!("remove_file({}): {e}", path.as_ref().display())))
 }
 
 pub fn create_dir_all<P: AsRef<Path>>(path: P) -> Result<(), StdError> {
-    fs::create_dir_all(path.as_ref()).map_err(|e| {
-        StdError::Io(format!(
-            "create_dir_all({}): {e}",
-            path.as_ref().display()
-        ))
-    })
+    fs::create_dir_all(path.as_ref())
+        .map_err(|e| StdError::Io(format!("create_dir_all({}): {e}", path.as_ref().display())))
 }
 
 #[cfg(test)]

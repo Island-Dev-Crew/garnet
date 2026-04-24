@@ -44,16 +44,28 @@ fn main() {
     let k2 = [0x55u8; 32];
     let mut ep = Episode::now("parse", "f.garnet", "h", "ok", None, 1, 0);
     ep.sign_with_key(&k1);
-    check(ep.verify_with_key(&k1), "signed episode verifies with same key");
-    check(!ep.verify_with_key(&k2), "signed episode fails with foreign key");
+    check(
+        ep.verify_with_key(&k1),
+        "signed episode verifies with same key",
+    );
+    check(
+        !ep.verify_with_key(&k2),
+        "signed episode fails with foreign key",
+    );
 
     // Tamper detection.
     ep.source_hash = "attacker".to_string();
-    check(!ep.verify_with_key(&k1), "tampered source_hash fails verification");
+    check(
+        !ep.verify_with_key(&k1),
+        "tampered source_hash fails verification",
+    );
 
     // Unsigned always fails.
     let unsigned = Episode::now("parse", "f.garnet", "h", "ok", None, 1, 0);
-    check(!unsigned.verify_with_key(&k1), "unsigned episode fails verification");
+    check(
+        !unsigned.verify_with_key(&k1),
+        "unsigned episode fails verification",
+    );
 
     // On-disk skip of foreign records.
     let dir = fresh_dir("foreign");
@@ -177,7 +189,10 @@ fn main() {
         consulted4.strategies.is_empty(),
         "foreign-key strategy filtered out",
     );
-    check(consulted4.skipped >= 1, "foreign-key strategy counted as skipped");
+    check(
+        consulted4.skipped >= 1,
+        "foreign-key strategy counted as skipped",
+    );
 
     println!();
     println!("== ALL SMOKE TESTS PASSED ==");

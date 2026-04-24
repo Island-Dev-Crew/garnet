@@ -33,7 +33,11 @@ fn parses_integer_addition() {
 fn parses_precedence_mul_over_add() {
     // 1 + 2 * 3 should parse as 1 + (2 * 3)
     match expr_of("1 + 2 * 3") {
-        Expr::Binary { op: BinOp::Add, rhs, .. } => match rhs.as_ref() {
+        Expr::Binary {
+            op: BinOp::Add,
+            rhs,
+            ..
+        } => match rhs.as_ref() {
             Expr::Binary { op: BinOp::Mul, .. } => {}
             _ => panic!("expected nested multiplication"),
         },
@@ -45,7 +49,11 @@ fn parses_precedence_mul_over_add() {
 fn parses_parentheses_override_precedence() {
     // (1 + 2) * 3 should parse as (1 + 2) * 3
     match expr_of("(1 + 2) * 3") {
-        Expr::Binary { op: BinOp::Mul, lhs, .. } => match lhs.as_ref() {
+        Expr::Binary {
+            op: BinOp::Mul,
+            lhs,
+            ..
+        } => match lhs.as_ref() {
             Expr::Binary { op: BinOp::Add, .. } => {}
             _ => panic!("expected nested addition"),
         },
@@ -57,7 +65,11 @@ fn parses_parentheses_override_precedence() {
 fn parses_pipeline_at_lowest_precedence() {
     // x + 1 |> f should parse as (x + 1) |> f
     match expr_of("x + 1 |> f") {
-        Expr::Binary { op: BinOp::Pipeline, lhs, .. } => match lhs.as_ref() {
+        Expr::Binary {
+            op: BinOp::Pipeline,
+            lhs,
+            ..
+        } => match lhs.as_ref() {
             Expr::Binary { op: BinOp::Add, .. } => {}
             _ => panic!("expected addition as LHS of pipeline"),
         },
@@ -84,7 +96,9 @@ fn parses_comparison() {
 #[test]
 fn parses_range_exclusive() {
     match expr_of("0..10") {
-        Expr::Binary { op: BinOp::Range, .. } => {}
+        Expr::Binary {
+            op: BinOp::Range, ..
+        } => {}
         _ => panic!("expected range"),
     }
 }
@@ -92,7 +106,10 @@ fn parses_range_exclusive() {
 #[test]
 fn parses_range_inclusive() {
     match expr_of("0...10") {
-        Expr::Binary { op: BinOp::RangeInclusive, .. } => {}
+        Expr::Binary {
+            op: BinOp::RangeInclusive,
+            ..
+        } => {}
         _ => panic!("expected inclusive range"),
     }
 }
@@ -109,7 +126,9 @@ fn parses_unary_neg() {
 fn parses_postfix_question() {
     // `expr?` is the error-propagation operator
     match expr_of("foo()?") {
-        Expr::Unary { op: UnOp::Question, .. } => {}
+        Expr::Unary {
+            op: UnOp::Question, ..
+        } => {}
         _ => panic!("expected ? postfix"),
     }
 }

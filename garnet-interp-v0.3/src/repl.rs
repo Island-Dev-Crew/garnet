@@ -33,9 +33,7 @@ impl Repl {
 
     /// Load source code (e.g. a file) into the REPL before taking user input.
     pub fn preload(&mut self, src: &str) -> Result<(), String> {
-        self.interp
-            .load_source(src)
-            .map_err(|e| format!("{e}"))
+        self.interp.load_source(src).map_err(|e| format!("{e}"))
     }
 
     /// Run the interactive loop on stdin/stdout.
@@ -53,7 +51,10 @@ impl Repl {
         writeln!(out, "  Rust Rigor. Ruby Velocity. One Coherent Language.")?;
         writeln!(out)?;
         writeln!(out, "Garnet REPL — Rung 3. Type :quit to exit.")?;
-        writeln!(out, r#"  (a plain expression prints its value; "def name(...) {{ ... }}" registers a function)"#)?;
+        writeln!(
+            out,
+            r#"  (a plain expression prints its value; "def name(...) {{ ... }}" registers a function)"#
+        )?;
         loop {
             write!(out, "garnet> ")?;
             out.flush()?;
@@ -104,10 +105,7 @@ impl Default for Repl {
 }
 
 fn looks_like_item(s: &str) -> bool {
-    let lead = s
-        .split_whitespace()
-        .next()
-        .unwrap_or("");
+    let lead = s.split_whitespace().next().unwrap_or("");
     matches!(
         lead,
         "def"

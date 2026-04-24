@@ -21,17 +21,26 @@ fn array_literal() {
 
 #[test]
 fn array_index() {
-    assert!(matches!(run("def main() { [10, 20, 30][1] }", "main"), Value::Int(20)));
+    assert!(matches!(
+        run("def main() { [10, 20, 30][1] }", "main"),
+        Value::Int(20)
+    ));
 }
 
 #[test]
 fn array_negative_index() {
-    assert!(matches!(run("def main() { [10, 20, 30][-1] }", "main"), Value::Int(30)));
+    assert!(matches!(
+        run("def main() { [10, 20, 30][-1] }", "main"),
+        Value::Int(30)
+    ));
 }
 
 #[test]
 fn array_len_method() {
-    assert!(matches!(run("def main() { [1, 2, 3, 4].len() }", "main"), Value::Int(4)));
+    assert!(matches!(
+        run("def main() { [1, 2, 3, 4].len() }", "main"),
+        Value::Int(4)
+    ));
 }
 
 #[test]

@@ -65,13 +65,10 @@ pub enum SandboxStatus {
 }
 
 /// Decision for a capability request under the given sandbox profile.
-pub fn check_cap_permitted(
-    profile: &SandboxProfile,
-    requested_cap: &str,
-) -> Result<(), StdError> {
+pub fn check_cap_permitted(profile: &SandboxProfile, requested_cap: &str) -> Result<(), StdError> {
     if profile.deny_all_caps {
         return Err(StdError::CapsMissing {
-            prim: format!("(sandboxed code)"),
+            prim: "(sandboxed code)".to_string(),
             required: requested_cap.to_string(),
         });
     }
@@ -109,9 +106,7 @@ pub fn reject_unsafe_constructs(
         );
     }
     if profile.reject_extern_c && construct_kind == "extern_c" {
-        return Err(
-            "sandboxed code cannot declare `extern \"C\"`; audit first".into(),
-        );
+        return Err("sandboxed code cannot declare `extern \"C\"`; audit first".into());
     }
     Ok(())
 }

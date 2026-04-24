@@ -8,7 +8,7 @@
 //! Rewritten-node lineage uses the source_lang suffix `-idiom` so the
 //! witness pass recognises the intentional synthesis and permits it.
 
-use crate::cir::{Cir, CirLit, FuncMode};
+use crate::cir::Cir;
 use crate::lineage::Lineage;
 
 /// Apply every registered idiom to the CIR tree.
@@ -16,8 +16,7 @@ pub fn lower_all(cir: Cir) -> Cir {
     let cir = apply_bottom_up(cir, &ruby_blocks_to_closures);
     let cir = apply_bottom_up(cir, &rust_if_let_to_match);
     let cir = apply_bottom_up(cir, &go_range_to_for);
-    let cir = apply_bottom_up(cir, &python_f_string_to_interp);
-    cir
+    apply_bottom_up(cir, &python_f_string_to_interp)
 }
 
 /// Depth-first bottom-up traversal that applies `f` at each node.
@@ -29,13 +28,26 @@ fn apply_bottom_up(cir: Cir, f: &impl Fn(Cir) -> Cir) -> Cir {
 /// Map `f` over the immediate children of a node, preserving structure.
 fn map_children(cir: Cir, f: &impl Fn(Cir) -> Cir) -> Cir {
     match cir {
-        Cir::Module { name, items, sandbox, lineage } => Cir::Module {
+        Cir::Module {
+            name,
+            items,
+            sandbox,
+            lineage,
+        } => Cir::Module {
             name,
             items: items.into_iter().map(f).collect(),
             sandbox,
             lineage,
         },
-        Cir::Func { name, params, return_ty, body, mode, caps, lineage } => Cir::Func {
+        Cir::Func {
+            name,
+            params,
+            return_ty,
+            body,
+            mode,
+            caps,
+            lineage,
+        } => Cir::Func {
             name,
             params,
             return_ty,
@@ -44,24 +56,42 @@ fn map_children(cir: Cir, f: &impl Fn(Cir) -> Cir) -> Cir {
             caps,
             lineage,
         },
-        Cir::If { cond, then_b, else_b, lineage } => Cir::If {
+        Cir::If {
+            cond,
+            then_b,
+            else_b,
+            lineage,
+        } => Cir::If {
             cond: Box::new(f(*cond)),
             then_b: then_b.into_iter().map(f).collect(),
             else_b: else_b.map(|b| b.into_iter().map(f).collect()),
             lineage,
         },
-        Cir::While { cond, body, lineage } => Cir::While {
+        Cir::While {
+            cond,
+            body,
+            lineage,
+        } => Cir::While {
             cond: Box::new(f(*cond)),
             body: body.into_iter().map(f).collect(),
             lineage,
         },
-        Cir::For { var, iter, body, lineage } => Cir::For {
+        Cir::For {
+            var,
+            iter,
+            body,
+            lineage,
+        } => Cir::For {
             var,
             iter: Box::new(f(*iter)),
             body: body.into_iter().map(f).collect(),
             lineage,
         },
-        Cir::Match { scrutinee, arms, lineage } => Cir::Match {
+        Cir::Match {
+            scrutinee,
+            arms,
+            lineage,
+        } => Cir::Match {
             scrutinee: Box::new(f(*scrutinee)),
             arms: arms
                 .into_iter()
@@ -77,7 +107,12 @@ fn map_children(cir: Cir, f: &impl Fn(Cir) -> Cir) -> Cir {
             value: value.map(|v| Box::new(f(*v))),
             lineage,
         },
-        Cir::Try { body, catches, finally, lineage } => Cir::Try {
+        Cir::Try {
+            body,
+            catches,
+            finally,
+            lineage,
+        } => Cir::Try {
             body: body.into_iter().map(f).collect(),
             catches: catches
                 .into_iter()
@@ -90,36 +125,64 @@ fn map_children(cir: Cir, f: &impl Fn(Cir) -> Cir) -> Cir {
             finally: finally.map(|fin| fin.into_iter().map(f).collect()),
             lineage,
         },
-        Cir::Let { name, ty, mutable, value, lineage } => Cir::Let {
+        Cir::Let {
+            name,
+            ty,
+            mutable,
+            value,
+            lineage,
+        } => Cir::Let {
             name,
             ty,
             mutable,
             value: value.map(|v| Box::new(f(*v))),
             lineage,
         },
-        Cir::Call { func, args, lineage } => Cir::Call {
+        Cir::Call {
+            func,
+            args,
+            lineage,
+        } => Cir::Call {
             func: Box::new(f(*func)),
             args: args.into_iter().map(f).collect(),
             lineage,
         },
-        Cir::MethodCall { recv, name, args, lineage } => Cir::MethodCall {
+        Cir::MethodCall {
+            recv,
+            name,
+            args,
+            lineage,
+        } => Cir::MethodCall {
             recv: Box::new(f(*recv)),
             name,
             args: args.into_iter().map(f).collect(),
             lineage,
         },
-        Cir::FieldAccess { recv, name, lineage } => Cir::FieldAccess {
+        Cir::FieldAccess {
+            recv,
+            name,
+            lineage,
+        } => Cir::FieldAccess {
             recv: Box::new(f(*recv)),
             name,
             lineage,
         },
-        Cir::BinOp { op, lhs, rhs, lineage } => Cir::BinOp {
+        Cir::BinOp {
+            op,
+            lhs,
+            rhs,
+            lineage,
+        } => Cir::BinOp {
             op,
             lhs: Box::new(f(*lhs)),
             rhs: Box::new(f(*rhs)),
             lineage,
         },
-        Cir::UnOp { op, operand, lineage } => Cir::UnOp {
+        Cir::UnOp {
+            op,
+            operand,
+            lineage,
+        } => Cir::UnOp {
             op,
             operand: Box::new(f(*operand)),
             lineage,
@@ -129,22 +192,26 @@ fn map_children(cir: Cir, f: &impl Fn(Cir) -> Cir) -> Cir {
             rhs: Box::new(f(*rhs)),
             lineage,
         },
-        Cir::Lambda { params, body, lineage } => Cir::Lambda {
+        Cir::Lambda {
+            params,
+            body,
+            lineage,
+        } => Cir::Lambda {
             params,
             body: body.into_iter().map(f).collect(),
             lineage,
         },
-        Cir::Impl { target, methods, lineage } => Cir::Impl {
+        Cir::Impl {
+            target,
+            methods,
+            lineage,
+        } => Cir::Impl {
             target,
             methods: methods.into_iter().map(f).collect(),
             lineage,
         },
-        Cir::ArrayLit(items, lineage) => {
-            Cir::ArrayLit(items.into_iter().map(f).collect(), lineage)
-        }
-        Cir::TupleLit(items, lineage) => {
-            Cir::TupleLit(items.into_iter().map(f).collect(), lineage)
-        }
+        Cir::ArrayLit(items, lineage) => Cir::ArrayLit(items.into_iter().map(f).collect(), lineage),
+        Cir::TupleLit(items, lineage) => Cir::TupleLit(items.into_iter().map(f).collect(), lineage),
         Cir::MapLit(pairs, lineage) => Cir::MapLit(
             pairs.into_iter().map(|(k, v)| (f(k), f(v))).collect(),
             lineage,
@@ -154,7 +221,11 @@ fn map_children(cir: Cir, f: &impl Fn(Cir) -> Cir) -> Cir {
             key: Box::new(f(*key)),
             lineage,
         },
-        Cir::MigrateTodo { placeholder, note, lineage } => Cir::MigrateTodo {
+        Cir::MigrateTodo {
+            placeholder,
+            note,
+            lineage,
+        } => Cir::MigrateTodo {
             placeholder: Box::new(f(*placeholder)),
             note,
             lineage,
@@ -213,6 +284,7 @@ pub fn to_idiom_lineage(lineage: Lineage, suffix: &str) -> Lineage {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::cir::{CirLit, FuncMode};
     use crate::lineage::Lineage;
 
     fn lin() -> Lineage {

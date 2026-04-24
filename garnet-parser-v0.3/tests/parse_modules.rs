@@ -70,8 +70,8 @@ fn parses_public_module() {
 
 #[test]
 fn parses_safe_module_annotation() {
-    let m = parse_source("@safe module Crypto { fn hash(own d: Bytes) -> Hash { d.hash() } }")
-        .unwrap();
+    let m =
+        parse_source("@safe module Crypto { fn hash(own d: Bytes) -> Hash { d.hash() } }").unwrap();
     match &m.items[0] {
         Item::Module(md) => {
             assert!(md.safe);

@@ -44,8 +44,7 @@ fn parses_episodic_memory_unit() {
 
 #[test]
 fn parses_semantic_with_nested_generics() {
-    let m =
-        parse_source("memory semantic embeddings : Map<String, Vector<Embedding>>").unwrap();
+    let m = parse_source("memory semantic embeddings : Map<String, Vector<Embedding>>").unwrap();
     match &m.items[0] {
         Item::Memory(md) => {
             assert_eq!(md.kind, MemoryKind::Semantic);

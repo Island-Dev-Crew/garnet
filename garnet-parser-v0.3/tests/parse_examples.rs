@@ -4,15 +4,17 @@ use garnet_parser::parse_source;
 
 fn read_example(name: &str) -> String {
     let path = format!("examples/{}", name);
-    std::fs::read_to_string(&path)
-        .unwrap_or_else(|e| panic!("failed to read {}: {}", path, e))
+    std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("failed to read {}: {}", path, e))
 }
 
 #[test]
 fn parses_memory_units_example() {
     let src = read_example("memory_units.garnet");
     let m = parse_source(&src).unwrap();
-    assert!(m.items.len() >= 4, "expected at least 4 memory declarations");
+    assert!(
+        m.items.len() >= 4,
+        "expected at least 4 memory declarations"
+    );
 }
 
 #[test]

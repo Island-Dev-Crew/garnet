@@ -98,7 +98,9 @@ pub fn similar_contexts(
 }
 
 pub fn count_contexts(conn: &Connection) -> rusqlite::Result<i64> {
-    conn.query_row("SELECT COUNT(*) FROM compilation_contexts", [], |r| r.get(0))
+    conn.query_row("SELECT COUNT(*) FROM compilation_contexts", [], |r| {
+        r.get(0)
+    })
 }
 
 // ── AST fingerprint extraction ──────────────────────────────────────
@@ -154,8 +156,12 @@ fn count_item(item: &Item, c: &mut std::collections::BTreeMap<&'static str, u64>
         Item::Impl(_) => *c.entry("Item::Impl").or_default() += 1,
         Item::Fn(f) => {
             *c.entry("Item::Fn").or_default() += 1;
-            *c.entry(if matches!(f.mode, FnMode::Safe) { "Fn.safe" } else { "Fn.managed" })
-                .or_default() += 1;
+            *c.entry(if matches!(f.mode, FnMode::Safe) {
+                "Fn.safe"
+            } else {
+                "Fn.managed"
+            })
+            .or_default() += 1;
             *c.entry("Fn.params").or_default() += f.params.len() as u64;
             count_block(&f.body, c);
         }

@@ -186,7 +186,10 @@ mod tests {
     use super::*;
 
     fn span(a: usize, b: usize) -> Span {
-        Span { start: a, len: b.saturating_sub(a) }
+        Span {
+            start: a,
+            len: b.saturating_sub(a),
+        }
     }
 
     fn call(caller: &str, cm: FnMode, callee: &str, dm: FnMode) -> BoundaryCall {

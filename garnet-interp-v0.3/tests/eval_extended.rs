@@ -194,7 +194,10 @@ fn and_chains_long() {
 
 #[test]
 fn or_chains_short_circuit() {
-    assert!(matches!(eval("nil or false or 7 or panic_undef"), Value::Int(7)));
+    assert!(matches!(
+        eval("nil or false or 7 or panic_undef"),
+        Value::Int(7)
+    ));
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -223,7 +226,10 @@ fn eq_string_deep() {
 
 #[test]
 fn eq_array_deep() {
-    assert!(matches!(eval("[1, [2, 3]] == [1, [2, 3]]"), Value::Bool(true)));
+    assert!(matches!(
+        eval("[1, [2, 3]] == [1, [2, 3]]"),
+        Value::Bool(true)
+    ));
 }
 
 #[test]
@@ -315,12 +321,18 @@ fn string_chars_returns_array() {
 
 #[test]
 fn string_starts_with_true() {
-    assert!(matches!(eval(r#""hello world".starts_with("hello")"#), Value::Bool(true)));
+    assert!(matches!(
+        eval(r#""hello world".starts_with("hello")"#),
+        Value::Bool(true)
+    ));
 }
 
 #[test]
 fn string_starts_with_false() {
-    assert!(matches!(eval(r#""hello world".starts_with("world")"#), Value::Bool(false)));
+    assert!(matches!(
+        eval(r#""hello world".starts_with("world")"#),
+        Value::Bool(false)
+    ));
 }
 
 #[test]
@@ -411,7 +423,10 @@ fn array_filter_keeps_matching() {
 
 #[test]
 fn array_reduce_sums() {
-    assert!(matches!(eval("[1, 2, 3, 4, 5].reduce(0, |a, b| a + b)"), Value::Int(15)));
+    assert!(matches!(
+        eval("[1, 2, 3, 4, 5].reduce(0, |a, b| a + b)"),
+        Value::Int(15)
+    ));
 }
 
 #[test]
@@ -532,7 +547,10 @@ fn range_iteration_in_for_loop() {
             total
         }
     "#;
-    assert!(matches!(run_with_args(src, "sum_range", vec![Value::Int(5)]), Value::Int(10)));
+    assert!(matches!(
+        run_with_args(src, "sum_range", vec![Value::Int(5)]),
+        Value::Int(10)
+    ));
 }
 
 #[test]
@@ -546,7 +564,10 @@ fn inclusive_range_includes_end() {
             total
         }
     "#;
-    assert!(matches!(run_with_args(src, "sum_inclusive", vec![Value::Int(5)]), Value::Int(15)));
+    assert!(matches!(
+        run_with_args(src, "sum_inclusive", vec![Value::Int(5)]),
+        Value::Int(15)
+    ));
 }
 
 #[test]
@@ -656,7 +677,10 @@ fn recursion_factorial_5() {
             if n <= 1 { 1 } else { n * fact(n - 1) }
         }
     "#;
-    assert!(matches!(run_with_args(src, "fact", vec![Value::Int(5)]), Value::Int(120)));
+    assert!(matches!(
+        run_with_args(src, "fact", vec![Value::Int(5)]),
+        Value::Int(120)
+    ));
 }
 
 #[test]
@@ -666,7 +690,10 @@ fn recursion_fibonacci_15() {
             if n < 2 { n } else { fib(n - 1) + fib(n - 2) }
         }
     "#;
-    assert!(matches!(run_with_args(src, "fib", vec![Value::Int(15)]), Value::Int(610)));
+    assert!(matches!(
+        run_with_args(src, "fib", vec![Value::Int(15)]),
+        Value::Int(610)
+    ));
 }
 
 #[test]
@@ -679,8 +706,14 @@ fn mutual_recursion_even_odd() {
             if n == 0 { false } else { is_even(n - 1) }
         }
     "#;
-    assert!(matches!(run_with_args(src, "is_even", vec![Value::Int(8)]), Value::Bool(true)));
-    assert!(matches!(run_with_args(src, "is_odd", vec![Value::Int(7)]), Value::Bool(true)));
+    assert!(matches!(
+        run_with_args(src, "is_even", vec![Value::Int(8)]),
+        Value::Bool(true)
+    ));
+    assert!(matches!(
+        run_with_args(src, "is_odd", vec![Value::Int(7)]),
+        Value::Bool(true)
+    ));
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -732,7 +765,10 @@ fn match_with_ident_binding_passes_value() {
             }
         }
     "#;
-    assert!(matches!(run_with_args(src, "double_or_neg", vec![Value::Int(5)]), Value::Int(10)));
+    assert!(matches!(
+        run_with_args(src, "double_or_neg", vec![Value::Int(5)]),
+        Value::Int(10)
+    ));
 }
 
 #[test]
@@ -801,7 +837,10 @@ fn try_catches_div_by_zero() {
             try { a / b } rescue e { -1 }
         }
     "#;
-    assert!(matches!(run_with_args(src, "f", vec![Value::Int(10), Value::Int(0)]), Value::Int(-1)));
+    assert!(matches!(
+        run_with_args(src, "f", vec![Value::Int(10), Value::Int(0)]),
+        Value::Int(-1)
+    ));
 }
 
 #[test]
@@ -1001,7 +1040,10 @@ fn loop_break_with_value() {
             }
         }
     "#;
-    assert!(matches!(run_with_args(src, "find_first_over", vec![Value::Int(50)]), Value::Int(51)));
+    assert!(matches!(
+        run_with_args(src, "find_first_over", vec![Value::Int(50)]),
+        Value::Int(51)
+    ));
 }
 
 #[test]
@@ -1049,7 +1091,10 @@ fn for_iterates_over_string() {
             n
         }
     "#;
-    assert!(matches!(run_with_args(src, "count_chars", vec![Value::str("hello")]), Value::Int(5)));
+    assert!(matches!(
+        run_with_args(src, "count_chars", vec![Value::str("hello")]),
+        Value::Int(5)
+    ));
 }
 
 // ════════════════════════════════════════════════════════════════════

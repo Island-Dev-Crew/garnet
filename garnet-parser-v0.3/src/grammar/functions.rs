@@ -106,7 +106,11 @@ pub fn parse_annotations(p: &mut Parser) -> Result<Vec<Annotation>, ParseError> 
 }
 
 /// Parse a managed-mode function: `def name[<T>](params) [-> type] { body }`
-pub fn parse_managed_fn(p: &mut Parser, annotations: Vec<Annotation>, public: bool) -> Result<FnDef, ParseError> {
+pub fn parse_managed_fn(
+    p: &mut Parser,
+    annotations: Vec<Annotation>,
+    public: bool,
+) -> Result<FnDef, ParseError> {
     let start = p.expect(&TokenKind::KwDef, "function definition")?.span;
     let (name, _) = p.expect_ident("function name")?;
     let type_params = types::parse_type_params(p)?;
@@ -134,7 +138,11 @@ pub fn parse_managed_fn(p: &mut Parser, annotations: Vec<Annotation>, public: bo
 }
 
 /// Parse a safe-mode function: `fn name[<T>](typed_params) -> type { body }`
-pub fn parse_safe_fn(p: &mut Parser, annotations: Vec<Annotation>, public: bool) -> Result<FnDef, ParseError> {
+pub fn parse_safe_fn(
+    p: &mut Parser,
+    annotations: Vec<Annotation>,
+    public: bool,
+) -> Result<FnDef, ParseError> {
     let start = p.expect(&TokenKind::KwFn, "function definition")?.span;
     let (name, _) = p.expect_ident("function name")?;
     let type_params = types::parse_type_params(p)?;
@@ -178,10 +186,22 @@ fn parse_param(p: &mut Parser, _require_types: bool) -> Result<Param, ParseError
     let start_span = p.peek().span;
     // Check for ownership annotation
     let ownership = match p.peek_kind() {
-        TokenKind::KwOwn => { p.bump(); Some(Ownership::Own) }
-        TokenKind::KwBorrow => { p.bump(); Some(Ownership::Borrow) }
-        TokenKind::KwRef => { p.bump(); Some(Ownership::Ref) }
-        TokenKind::KwMut => { p.bump(); Some(Ownership::Mut) }
+        TokenKind::KwOwn => {
+            p.bump();
+            Some(Ownership::Own)
+        }
+        TokenKind::KwBorrow => {
+            p.bump();
+            Some(Ownership::Borrow)
+        }
+        TokenKind::KwRef => {
+            p.bump();
+            Some(Ownership::Ref)
+        }
+        TokenKind::KwMut => {
+            p.bump();
+            Some(Ownership::Mut)
+        }
         _ => None,
     };
     // Allow `self` as a parameter name (only meaningful in trait/impl methods).
@@ -197,7 +217,12 @@ fn parse_param(p: &mut Parser, _require_types: bool) -> Result<Param, ParseError
         None
     };
     let span = start_span.join(ty.as_ref().map(|t| t.span()).unwrap_or(name_span));
-    Ok(Param { ownership, name, ty, span })
+    Ok(Param {
+        ownership,
+        name,
+        ty,
+        span,
+    })
 }
 
 /// Parse a closure: `|params| [-> type] (block | expr)`
@@ -227,5 +252,10 @@ pub fn parse_closure(p: &mut Parser) -> Result<Expr, ParseError> {
         ClosureBody::Expr(e) => e.span(),
     };
     let span = start.join(end_span);
-    Ok(Expr::Closure { params, return_ty, body, span })
+    Ok(Expr::Closure {
+        params,
+        return_ty,
+        body,
+        span,
+    })
 }

@@ -45,11 +45,7 @@ fn is_unconditionally_denied(ip: &IpAddr) -> bool {
                 || v4.is_documentation()     // 192.0.2/24, 198.51.100/24, 203.0.113/24
                 || is_v4_reserved(v4)
         }
-        IpAddr::V6(v6) => {
-            v6.is_unspecified()
-                || v6.is_multicast()
-                || is_v6_documentation(v6)
-        }
+        IpAddr::V6(v6) => v6.is_unspecified() || v6.is_multicast() || is_v6_documentation(v6),
     }
 }
 
@@ -65,12 +61,12 @@ fn is_internal_or_unconditional(ip: &IpAddr) -> bool {
                 || v4.is_private()
                 || v4.is_link_local()        // 169.254/16 (covers AWS metadata)
                 || is_v4_cgnat(v4)           // 100.64/10
-                || is_v4_benchmarking(v4)    // 198.18/15
+                || is_v4_benchmarking(v4) // 198.18/15
         }
         IpAddr::V6(v6) => {
             v6.is_loopback()
                 || is_v6_unique_local(v6)    // fc00::/7
-                || is_v6_link_local(v6)      // fe80::/10
+                || is_v6_link_local(v6) // fe80::/10
         }
     }
 }
@@ -140,13 +136,14 @@ pub fn tcp_connect(host: &str, port: u16, policy: NetPolicy) -> Result<TcpStream
             )));
             continue;
         }
-        let stream = match TcpStream::connect_timeout(&addr, Duration::from_millis(DEFAULT_TIMEOUT_MS)) {
-            Ok(s) => s,
-            Err(e) => {
-                last_err = Some(StdError::Io(format!("connect {addr}: {e}")));
-                continue;
-            }
-        };
+        let stream =
+            match TcpStream::connect_timeout(&addr, Duration::from_millis(DEFAULT_TIMEOUT_MS)) {
+                Ok(s) => s,
+                Err(e) => {
+                    last_err = Some(StdError::Io(format!("connect {addr}: {e}")));
+                    continue;
+                }
+            };
         // Defense in depth: re-check the actual peer after connect.
         let peer = stream
             .peer_addr()
@@ -163,7 +160,8 @@ pub fn tcp_connect(host: &str, port: u16, policy: NetPolicy) -> Result<TcpStream
         let _ = stream.set_write_timeout(Some(Duration::from_millis(DEFAULT_TIMEOUT_MS)));
         return Ok(stream);
     }
-    Err(last_err.unwrap_or_else(|| StdError::Io(format!("no addresses resolved for {host}:{port}"))))
+    Err(last_err
+        .unwrap_or_else(|| StdError::Io(format!("no addresses resolved for {host}:{port}"))))
 }
 
 /// Send a UDP response, enforcing the amplification cap (Security V2 §2.4).
@@ -240,31 +238,42 @@ mod tests {
     }
     #[test]
     fn strict_policy_permits_public_v6() {
-        assert!(is_allowed(&ip("2606:4700:4700::1111"), NetPolicy::default()));
+        assert!(is_allowed(
+            &ip("2606:4700:4700::1111"),
+            NetPolicy::default()
+        ));
     }
 
     // ─── net_internal lifts ONLY the internal denials ───────────────────
     #[test]
     fn permit_internal_allows_loopback() {
-        let p = NetPolicy { permit_internal: true };
+        let p = NetPolicy {
+            permit_internal: true,
+        };
         assert!(is_allowed(&ip("127.0.0.1"), p));
         assert!(is_allowed(&ip("10.0.0.1"), p));
         assert!(is_allowed(&ip("192.168.1.1"), p));
     }
     #[test]
     fn permit_internal_still_denies_unspecified() {
-        let p = NetPolicy { permit_internal: true };
+        let p = NetPolicy {
+            permit_internal: true,
+        };
         assert!(!is_allowed(&ip("0.0.0.0"), p));
         assert!(!is_allowed(&ip("255.255.255.255"), p));
     }
     #[test]
     fn permit_internal_still_denies_multicast() {
-        let p = NetPolicy { permit_internal: true };
+        let p = NetPolicy {
+            permit_internal: true,
+        };
         assert!(!is_allowed(&ip("224.0.0.1"), p));
     }
     #[test]
     fn permit_internal_still_denies_v4_documentation() {
-        let p = NetPolicy { permit_internal: true };
+        let p = NetPolicy {
+            permit_internal: true,
+        };
         assert!(!is_allowed(&ip("192.0.2.1"), p));
         assert!(!is_allowed(&ip("198.51.100.1"), p));
         assert!(!is_allowed(&ip("203.0.113.1"), p));

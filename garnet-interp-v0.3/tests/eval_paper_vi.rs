@@ -276,8 +276,14 @@ fn c7_enum_pattern_with_field_binding_works() {
     interp.load_source(src).unwrap();
     let ok = interp.call("ok", vec![Value::Int(123)]).unwrap();
     let err = interp.call("err", vec![Value::str("oops")]).unwrap();
-    assert!(matches!(interp.call("unwrap_or_zero", vec![ok]).unwrap(), Value::Int(123)));
-    assert!(matches!(interp.call("unwrap_or_zero", vec![err]).unwrap(), Value::Int(0)));
+    assert!(matches!(
+        interp.call("unwrap_or_zero", vec![ok]).unwrap(),
+        Value::Int(123)
+    ));
+    assert!(matches!(
+        interp.call("unwrap_or_zero", vec![err]).unwrap(),
+        Value::Int(0)
+    ));
 }
 
 #[test]

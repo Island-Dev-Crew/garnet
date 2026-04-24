@@ -282,7 +282,12 @@ impl Cir {
         1 + match self {
             Cir::Module { items, .. } => items.iter().map(Cir::node_count).sum(),
             Cir::Func { body, .. } => body.iter().map(Cir::node_count).sum(),
-            Cir::If { cond, then_b, else_b, .. } => {
+            Cir::If {
+                cond,
+                then_b,
+                else_b,
+                ..
+            } => {
                 cond.node_count()
                     + then_b.iter().map(Cir::node_count).sum::<usize>()
                     + else_b
@@ -296,7 +301,9 @@ impl Cir {
             Cir::For { iter, body, .. } => {
                 iter.node_count() + body.iter().map(Cir::node_count).sum::<usize>()
             }
-            Cir::Match { scrutinee, arms, .. } => {
+            Cir::Match {
+                scrutinee, arms, ..
+            } => {
                 scrutinee.node_count()
                     + arms
                         .iter()
@@ -308,7 +315,12 @@ impl Cir {
                         .sum::<usize>()
             }
             Cir::Return { value, .. } => value.as_ref().map(|v| v.node_count()).unwrap_or(0),
-            Cir::Try { body, catches, finally, .. } => {
+            Cir::Try {
+                body,
+                catches,
+                finally,
+                ..
+            } => {
                 body.iter().map(Cir::node_count).sum::<usize>()
                     + catches
                         .iter()
@@ -349,8 +361,7 @@ impl Cir {
 
     /// True if this node (or any descendant) is a MigrateTodo.
     pub fn has_migrate_todo(&self) -> bool {
-        matches!(self, Cir::MigrateTodo { .. })
-            || self.children().any(|c| c.has_migrate_todo())
+        matches!(self, Cir::MigrateTodo { .. }) || self.children().any(|c| c.has_migrate_todo())
     }
 
     /// True if this node (or any descendant) is Untranslatable.
@@ -361,14 +372,28 @@ impl Cir {
 
     /// Count MigrateTodo descendants.
     pub fn migrate_todo_count(&self) -> usize {
-        let here = if matches!(self, Cir::MigrateTodo { .. }) { 1 } else { 0 };
-        here + self.children().map(|c| c.migrate_todo_count()).sum::<usize>()
+        let here = if matches!(self, Cir::MigrateTodo { .. }) {
+            1
+        } else {
+            0
+        };
+        here + self
+            .children()
+            .map(|c| c.migrate_todo_count())
+            .sum::<usize>()
     }
 
     /// Count Untranslatable descendants.
     pub fn untranslatable_count(&self) -> usize {
-        let here = if matches!(self, Cir::Untranslatable { .. }) { 1 } else { 0 };
-        here + self.children().map(|c| c.untranslatable_count()).sum::<usize>()
+        let here = if matches!(self, Cir::Untranslatable { .. }) {
+            1
+        } else {
+            0
+        };
+        here + self
+            .children()
+            .map(|c| c.untranslatable_count())
+            .sum::<usize>()
     }
 
     /// Walk immediate children for traversal. (Box values borrowed.)
@@ -376,7 +401,12 @@ impl Cir {
         match self {
             Cir::Module { items, .. } => Box::new(items.iter()),
             Cir::Func { body, .. } => Box::new(body.iter()),
-            Cir::If { cond, then_b, else_b, .. } => Box::new(
+            Cir::If {
+                cond,
+                then_b,
+                else_b,
+                ..
+            } => Box::new(
                 std::iter::once(cond.as_ref())
                     .chain(then_b.iter())
                     .chain(else_b.iter().flat_map(|b| b.iter())),
@@ -387,14 +417,21 @@ impl Cir {
             Cir::For { iter, body, .. } => {
                 Box::new(std::iter::once(iter.as_ref()).chain(body.iter()))
             }
-            Cir::Match { scrutinee, arms, .. } => Box::new(
-                std::iter::once(scrutinee.as_ref())
-                    .chain(arms.iter().flat_map(|a| {
-                        std::iter::once(&a.pattern).chain(a.body.iter())
-                    })),
+            Cir::Match {
+                scrutinee, arms, ..
+            } => Box::new(
+                std::iter::once(scrutinee.as_ref()).chain(
+                    arms.iter()
+                        .flat_map(|a| std::iter::once(&a.pattern).chain(a.body.iter())),
+                ),
             ),
             Cir::Return { value, .. } => Box::new(value.as_deref().into_iter()),
-            Cir::Try { body, catches, finally, .. } => Box::new(
+            Cir::Try {
+                body,
+                catches,
+                finally,
+                ..
+            } => Box::new(
                 body.iter()
                     .chain(catches.iter().flat_map(|c| c.body.iter()))
                     .chain(finally.iter().flat_map(|f| f.iter())),
@@ -417,12 +454,12 @@ impl Cir {
             Cir::ArrayLit(items, _) | Cir::TupleLit(items, _) | Cir::PatTuple(items, _) => {
                 Box::new(items.iter())
             }
-            Cir::MapLit(pairs, _) => {
-                Box::new(pairs.iter().flat_map(|(k, v)| std::iter::once(k).chain(std::iter::once(v))))
-            }
-            Cir::Index { recv, key, .. } => {
-                Box::new(vec![recv.as_ref(), key.as_ref()].into_iter())
-            }
+            Cir::MapLit(pairs, _) => Box::new(
+                pairs
+                    .iter()
+                    .flat_map(|(k, v)| std::iter::once(k).chain(std::iter::once(v))),
+            ),
+            Cir::Index { recv, key, .. } => Box::new(vec![recv.as_ref(), key.as_ref()].into_iter()),
             Cir::PatEnumVariant { payload, .. } => Box::new(payload.iter()),
             Cir::MigrateTodo { placeholder, .. } => Box::new(std::iter::once(placeholder.as_ref())),
             _ => Box::new(std::iter::empty()),

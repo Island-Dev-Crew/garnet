@@ -273,7 +273,9 @@ impl CapsGraph {
             Stmt::Return { value: None, .. } => {}
             Stmt::Break { value: Some(e), .. } => self.walk_expr_for_callees(e, out),
             Stmt::Break { value: None, .. } | Stmt::Continue { .. } => {}
-            Stmt::While { condition, body, .. } => {
+            Stmt::While {
+                condition, body, ..
+            } => {
                 self.walk_expr_for_callees(condition, out);
                 self.walk_block(body, out);
             }
@@ -316,7 +318,9 @@ impl CapsGraph {
             }
             Expr::Unary { expr, .. } => self.walk_expr_for_callees(expr, out),
             Expr::Field { receiver, .. } => self.walk_expr_for_callees(receiver, out),
-            Expr::Index { receiver, index, .. } => {
+            Expr::Index {
+                receiver, index, ..
+            } => {
                 self.walk_expr_for_callees(receiver, out);
                 self.walk_expr_for_callees(index, out);
             }
@@ -343,7 +347,12 @@ impl CapsGraph {
                     self.walk_expr_for_callees(&arm.body, out);
                 }
             }
-            Expr::Try { body, rescues, ensure, .. } => {
+            Expr::Try {
+                body,
+                rescues,
+                ensure,
+                ..
+            } => {
                 self.walk_block(body, out);
                 for r in rescues {
                     self.walk_block(&r.body, out);
@@ -439,11 +448,7 @@ impl CapsGraph {
         let mut caps: CapsSet = BTreeSet::new();
         // Clone the callee list so we don't hold a borrow on self while
         // recursing into transitive_caps(callee).
-        let callees = self
-            .callees
-            .get(fn_name)
-            .cloned()
-            .unwrap_or_default();
+        let callees = self.callees.get(fn_name).cloned().unwrap_or_default();
         for callee in callees {
             match callee {
                 CalleeRef::Primitive(key) => {
@@ -488,11 +493,7 @@ impl CapsGraph {
             if !self.has_caps_annotation(&fn_name) {
                 continue;
             }
-            let declared = self
-                .declared
-                .get(&fn_name)
-                .cloned()
-                .unwrap_or_default();
+            let declared = self.declared.get(&fn_name).cloned().unwrap_or_default();
             for missing in required.difference(&declared) {
                 // Find one representative callee requiring this cap for the
                 // diagnostic "via" field. Deterministic: first callee in
@@ -536,11 +537,7 @@ impl CapsGraph {
 
     /// Find a representative callee whose transitive caps include `missing`.
     fn find_cap_source(&mut self, fn_name: &str, missing: &str) -> String {
-        let callees = self
-            .callees
-            .get(fn_name)
-            .cloned()
-            .unwrap_or_default();
+        let callees = self.callees.get(fn_name).cloned().unwrap_or_default();
         for callee in callees {
             match callee {
                 CalleeRef::Primitive(ref key) => {

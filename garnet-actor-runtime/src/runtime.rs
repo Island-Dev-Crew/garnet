@@ -254,9 +254,7 @@ fn run_actor_loop<M, R>(
                 let from = actor.dyn_schema_version();
                 let to = cmd.target_version;
                 if to < from && !cmd.allow_downgrade {
-                    let _ = cmd
-                        .reply
-                        .send(ReloadOutcome::DowngradeRefused { from, to });
+                    let _ = cmd.reply.send(ReloadOutcome::DowngradeRefused { from, to });
                     continue;
                 }
                 // Drain anything already pending in the mailbox so the

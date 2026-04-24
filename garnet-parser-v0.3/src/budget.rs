@@ -163,6 +163,8 @@ mod tests {
         assert!(b.check_source_bytes(usize::MAX - 1).is_ok());
         assert!(b.check_tokens(usize::MAX - 1, Span::new(0, 0)).is_ok());
         assert!(b.check_depth(usize::MAX - 1, Span::new(0, 0)).is_ok());
-        assert!(b.check_literal_bytes(usize::MAX - 1, Span::new(0, 0)).is_ok());
+        assert!(b
+            .check_literal_bytes(usize::MAX - 1, Span::new(0, 0))
+            .is_ok());
     }
 }

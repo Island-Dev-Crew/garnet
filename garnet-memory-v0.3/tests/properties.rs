@@ -371,8 +371,7 @@ fn memory_handle_works_with_vector_index() {
 
 #[test]
 fn memory_handle_works_with_workflow_store() {
-    let h: MemoryHandle<WorkflowStore<i32>> =
-        MemoryHandle::new("wf", MemoryKind::Procedural);
+    let h: MemoryHandle<WorkflowStore<i32>> = MemoryHandle::new("wf", MemoryKind::Procedural);
     h.store.register("counter", 0);
     h.store.update("counter", |n| n + 1);
     let w = h.store.find("counter").unwrap();

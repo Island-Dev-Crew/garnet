@@ -21,7 +21,7 @@
 //! - `Public` — 100 queries/min per caller, top-k with ε=1.0 noise
 
 use std::collections::HashMap;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 /// Policy attached to a VectorIndex. The Memory Manager (runtime layer)
 /// consults this at every `search()` call.
@@ -104,7 +104,9 @@ impl RateLimiter {
     pub fn try_query(&mut self, caller: &str, policy: IndexPolicy) -> Result<(), RateLimitError> {
         match policy {
             IndexPolicy::Internal => Ok(()),
-            IndexPolicy::Public { queries_per_minute, .. } => {
+            IndexPolicy::Public {
+                queries_per_minute, ..
+            } => {
                 let bucket = self
                     .buckets
                     .entry(caller.to_string())
@@ -133,16 +135,16 @@ impl RateLimiter {
 
 #[derive(Debug, Clone)]
 pub enum RateLimitError {
-    Exceeded {
-        caller: String,
-        retry_after_ms: u64,
-    },
+    Exceeded { caller: String, retry_after_ms: u64 },
 }
 
 impl std::fmt::Display for RateLimitError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            RateLimitError::Exceeded { caller, retry_after_ms } => {
+            RateLimitError::Exceeded {
+                caller,
+                retry_after_ms,
+            } => {
                 write!(
                     f,
                     "rate-limit exceeded for '{caller}'; retry after {retry_after_ms}ms"
@@ -208,7 +210,11 @@ pub fn gate_search(
     test_seed: Option<u64>,
 ) -> Result<(), RateLimitError> {
     limiter.try_query(caller, policy)?;
-    if let IndexPolicy::Public { noise_epsilon_times_100, .. } = policy {
+    if let IndexPolicy::Public {
+        noise_epsilon_times_100,
+        ..
+    } = policy
+    {
         let eps = noise_epsilon_times_100 as f64 / 100.0;
         apply_dp_noise(scores, eps, test_seed);
     }
@@ -219,12 +225,15 @@ pub fn gate_search(
 mod tests {
     use super::*;
     use std::thread;
+    use std::time::Duration;
 
     #[test]
     fn internal_policy_never_limits() {
         let mut limiter = RateLimiter::new();
         for _ in 0..10_000 {
-            assert!(limiter.try_query("internal-caller", IndexPolicy::Internal).is_ok());
+            assert!(limiter
+                .try_query("internal-caller", IndexPolicy::Internal)
+                .is_ok());
         }
     }
 
@@ -256,7 +265,7 @@ mod tests {
         assert!(limiter.try_query("alice", policy).is_ok());
         assert!(limiter.try_query("alice", policy).is_ok());
         assert!(limiter.try_query("alice", policy).is_err()); // exhausted
-        // Bob is fresh
+                                                              // Bob is fresh
         assert!(limiter.try_query("bob", policy).is_ok());
         assert!(limiter.try_query("bob", policy).is_ok());
     }
@@ -353,7 +362,14 @@ mod tests {
         let mut limiter = RateLimiter::new();
         let mut scores = vec![0.5f32, 0.7, 0.3];
         let original = scores.clone();
-        gate_search("trusted", IndexPolicy::Internal, &mut limiter, &mut scores, Some(1)).unwrap();
+        gate_search(
+            "trusted",
+            IndexPolicy::Internal,
+            &mut limiter,
+            &mut scores,
+            Some(1),
+        )
+        .unwrap();
         // Internal policy does NOT apply noise
         assert_eq!(scores, original);
     }

@@ -6,7 +6,10 @@ use std::fmt;
 pub enum ConvertError {
     /// Source-language parser failed. The inner string is the frontend's
     /// best-effort diagnostic.
-    ParseError { source_lang: String, message: String },
+    ParseError {
+        source_lang: String,
+        message: String,
+    },
     /// Witness verification found a CIR node with no lineage — potential
     /// hallucination or frontend bug.
     MissingLineage { node_kind: String, at: usize },
@@ -23,11 +26,17 @@ pub enum ConvertError {
 impl fmt::Display for ConvertError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ConvertError::ParseError { source_lang, message } => {
+            ConvertError::ParseError {
+                source_lang,
+                message,
+            } => {
                 write!(f, "parse error ({source_lang}): {message}")
             }
             ConvertError::MissingLineage { node_kind, at } => {
-                write!(f, "witness failure: CIR node {node_kind} at index {at} has no lineage")
+                write!(
+                    f,
+                    "witness failure: CIR node {node_kind} at index {at} has no lineage"
+                )
             }
             ConvertError::EmitFailure { reason } => write!(f, "emit failure: {reason}"),
             ConvertError::Config(msg) => write!(f, "config error: {msg}"),

@@ -26,7 +26,9 @@ fn bench_lex(c: &mut Criterion) {
 fn bench_parse(c: &mut Criterion) {
     c.bench_function("parse_hello", |b| b.iter(|| parse_source(black_box(HELLO))));
     let big = synthetic_program(200);
-    c.bench_function("parse_200_defs", |b| b.iter(|| parse_source(black_box(&big))));
+    c.bench_function("parse_200_defs", |b| {
+        b.iter(|| parse_source(black_box(&big)))
+    });
 }
 
 criterion_group!(benches, bench_lex, bench_parse);

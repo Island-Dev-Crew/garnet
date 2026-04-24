@@ -28,7 +28,11 @@ struct RustParser<'a> {
 
 impl<'a> RustParser<'a> {
     fn new(source: &'a str, filename: &str) -> Self {
-        Self { source, filename: filename.to_string(), pos: 0 }
+        Self {
+            source,
+            filename: filename.to_string(),
+            pos: 0,
+        }
     }
 
     fn lineage(&self, start: usize) -> Lineage {
@@ -203,7 +207,11 @@ impl<'a> RustParser<'a> {
             params,
             return_ty,
             body,
-            mode: if safe_mode { FuncMode::Safe } else { FuncMode::Managed },
+            mode: if safe_mode {
+                FuncMode::Safe
+            } else {
+                FuncMode::Managed
+            },
             caps: vec![],
             lineage: self.lineage(start),
         })
@@ -259,7 +267,11 @@ impl<'a> RustParser<'a> {
             if self.pos == loop_start {
                 self.pos += 1;
             }
-            params.push(Param { name, ty, ownership: own });
+            params.push(Param {
+                name,
+                ty,
+                ownership: own,
+            });
             if !self.eat(",") {
                 break;
             }
@@ -714,7 +726,9 @@ mod tests {
             Cir::Module { items, .. } => {
                 assert_eq!(items.len(), 1);
                 match &items[0] {
-                    Cir::Func { name, mode, params, .. } => {
+                    Cir::Func {
+                        name, mode, params, ..
+                    } => {
                         assert_eq!(name, "add");
                         assert_eq!(*mode, FuncMode::Safe);
                         assert_eq!(params.len(), 2);

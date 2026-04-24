@@ -35,21 +35,28 @@ pub fn eval_expr(expr: &Expr, env: &Rc<Env>) -> Result<Value, RuntimeError> {
         // ── Calls & access ──
         Expr::Call { callee, args, .. } => {
             let callee_val = eval_expr(callee, env)?;
-            let arg_vals: Result<Vec<_>, _> =
-                args.iter().map(|a| eval_expr(a, env)).collect();
+            let arg_vals: Result<Vec<_>, _> = args.iter().map(|a| eval_expr(a, env)).collect();
             call_value(&callee_val, arg_vals?)
         }
-        Expr::Method { receiver, method, args, .. } => {
+        Expr::Method {
+            receiver,
+            method,
+            args,
+            ..
+        } => {
             let recv = eval_expr(receiver, env)?;
-            let arg_vals: Result<Vec<_>, _> =
-                args.iter().map(|a| eval_expr(a, env)).collect();
+            let arg_vals: Result<Vec<_>, _> = args.iter().map(|a| eval_expr(a, env)).collect();
             call_method(&recv, method, arg_vals?, env)
         }
-        Expr::Field { receiver, field, .. } => {
+        Expr::Field {
+            receiver, field, ..
+        } => {
             let recv = eval_expr(receiver, env)?;
             access_field(&recv, field)
         }
-        Expr::Index { receiver, index, .. } => {
+        Expr::Index {
+            receiver, index, ..
+        } => {
             let recv = eval_expr(receiver, env)?;
             let idx = eval_expr(index, env)?;
             access_index(&recv, &idx)
@@ -62,11 +69,20 @@ pub fn eval_expr(expr: &Expr, env: &Rc<Env>) -> Result<Value, RuntimeError> {
             elsif_clauses,
             else_block,
             ..
-        } => eval_if(condition, then_block, elsif_clauses, else_block.as_ref(), env),
+        } => eval_if(
+            condition,
+            then_block,
+            elsif_clauses,
+            else_block.as_ref(),
+            env,
+        ),
         Expr::Match { subject, arms, .. } => eval_match(subject, arms, env),
-        Expr::Try { body, rescues, ensure, .. } => {
-            eval_try(body, rescues, ensure.as_ref(), env)
-        }
+        Expr::Try {
+            body,
+            rescues,
+            ensure,
+            ..
+        } => eval_try(body, rescues, ensure.as_ref(), env),
 
         // ── First-class values ──
         Expr::Closure { params, body, .. } => {
@@ -100,8 +116,7 @@ pub fn eval_expr(expr: &Expr, env: &Rc<Env>) -> Result<Value, RuntimeError> {
             eval_expr(expr, env)
         }
         Expr::Array { elements, .. } => {
-            let items: Result<Vec<_>, _> =
-                elements.iter().map(|e| eval_expr(e, env)).collect();
+            let items: Result<Vec<_>, _> = elements.iter().map(|e| eval_expr(e, env)).collect();
             Ok(Value::array(items?))
         }
         Expr::Map { entries, .. } => {
@@ -180,20 +195,23 @@ fn eval_path(segs: &[String], env: &Env) -> Result<Value, RuntimeError> {
         .ok_or_else(|| RuntimeError::Message(format!("unresolved path: {}", segs.join("::"))))
 }
 
-fn eval_binary(
-    op: BinOp,
-    lhs: &Expr,
-    rhs: &Expr,
-    env: &Rc<Env>,
-) -> Result<Value, RuntimeError> {
+fn eval_binary(op: BinOp, lhs: &Expr, rhs: &Expr, env: &Rc<Env>) -> Result<Value, RuntimeError> {
     // Short-circuit for logical ops.
     if op == BinOp::And {
         let l = eval_expr(lhs, env)?;
-        return if !l.truthy() { Ok(l) } else { eval_expr(rhs, env) };
+        return if !l.truthy() {
+            Ok(l)
+        } else {
+            eval_expr(rhs, env)
+        };
     }
     if op == BinOp::Or {
         let l = eval_expr(lhs, env)?;
-        return if l.truthy() { Ok(l) } else { eval_expr(rhs, env) };
+        return if l.truthy() {
+            Ok(l)
+        } else {
+            eval_expr(rhs, env)
+        };
     }
     // Pipeline: desugar `x |> f` into a call `f(x)`. If the RHS is already a
     // call, prepend x as the first argument.
@@ -300,7 +318,12 @@ fn apply_pipeline(arg: Value, rhs: &Expr, env: &Rc<Env>) -> Result<Value, Runtim
             }
             call_value(&callee_val, arg_vals)
         }
-        Expr::Method { receiver, method, args, .. } => {
+        Expr::Method {
+            receiver,
+            method,
+            args,
+            ..
+        } => {
             // `x |> y.method(args)` → `y.method(x, args...)`
             let recv = eval_expr(receiver, env)?;
             let mut arg_vals = vec![arg];
@@ -331,10 +354,12 @@ fn eval_unary(op: UnOp, inner: &Expr, env: &Rc<Env>) -> Result<Value, RuntimeErr
             // caller with an Err(e) by raising it. Our interp models Ok/Err
             // as `Variant { path: [Result|Option], variant, fields }`.
             match &v {
-                Value::Variant { variant, fields, .. } if variant.as_str() == "Ok" => {
-                    Ok(fields.first().cloned().unwrap_or(Value::Nil))
-                }
-                Value::Variant { variant, fields, .. } if variant.as_str() == "Some" => {
+                Value::Variant {
+                    variant, fields, ..
+                } if variant.as_str() == "Ok" => Ok(fields.first().cloned().unwrap_or(Value::Nil)),
+                Value::Variant {
+                    variant, fields, ..
+                } if variant.as_str() == "Some" => {
                     Ok(fields.first().cloned().unwrap_or(Value::Nil))
                 }
                 Value::Variant { variant, .. }
@@ -447,18 +472,20 @@ fn call_method(
                 Ok(Value::array(items))
             }
             "starts_with" | "starts_with?" => {
-                let arg = args.first().ok_or_else(|| RuntimeError::msg("starts_with: missing arg"))?;
+                let arg = args
+                    .first()
+                    .ok_or_else(|| RuntimeError::msg("starts_with: missing arg"))?;
                 match arg {
                     Value::Str(t) => Ok(Value::Bool(s.starts_with(t.as_str()))),
                     _ => Err(RuntimeError::type_err("String", arg)),
                 }
             }
-            _ => Err(RuntimeError::msg(format!("String has no method '{method}'"))),
+            _ => Err(RuntimeError::msg(format!(
+                "String has no method '{method}'"
+            ))),
         },
         Value::Array(arr) => match method {
-            "len" | "length" | "size" | "count" => {
-                Ok(Value::Int(arr.borrow().len() as i64))
-            }
+            "len" | "length" | "size" | "count" => Ok(Value::Int(arr.borrow().len() as i64)),
             "push" | "append" => {
                 for a in args {
                     arr.borrow_mut().push(a);
@@ -468,7 +495,10 @@ fn call_method(
             "first" => Ok(arr.borrow().first().cloned().unwrap_or(Value::Nil)),
             "last" => Ok(arr.borrow().last().cloned().unwrap_or(Value::Nil)),
             "map" => {
-                let f = args.first().ok_or_else(|| RuntimeError::msg("map: missing closure"))?.clone();
+                let f = args
+                    .first()
+                    .ok_or_else(|| RuntimeError::msg("map: missing closure"))?
+                    .clone();
                 let mut out = Vec::new();
                 for item in arr.borrow().iter() {
                     out.push(call_value(&f, vec![item.clone()])?);
@@ -476,7 +506,10 @@ fn call_method(
                 Ok(Value::array(out))
             }
             "filter" | "select" => {
-                let f = args.first().ok_or_else(|| RuntimeError::msg("filter: missing closure"))?.clone();
+                let f = args
+                    .first()
+                    .ok_or_else(|| RuntimeError::msg("filter: missing closure"))?
+                    .clone();
                 let mut out = Vec::new();
                 for item in arr.borrow().iter() {
                     if call_value(&f, vec![item.clone()])?.truthy() {
@@ -486,8 +519,14 @@ fn call_method(
                 Ok(Value::array(out))
             }
             "reduce" => {
-                let init = args.first().ok_or_else(|| RuntimeError::msg("reduce: missing initial"))?.clone();
-                let f = args.get(1).ok_or_else(|| RuntimeError::msg("reduce: missing closure"))?.clone();
+                let init = args
+                    .first()
+                    .ok_or_else(|| RuntimeError::msg("reduce: missing initial"))?
+                    .clone();
+                let f = args
+                    .get(1)
+                    .ok_or_else(|| RuntimeError::msg("reduce: missing closure"))?
+                    .clone();
                 let mut acc = init;
                 for item in arr.borrow().iter() {
                     acc = call_value(&f, vec![acc, item.clone()])?;
@@ -495,10 +534,13 @@ fn call_method(
                 Ok(acc)
             }
             "recent" => {
-                let n = args.first().and_then(|v| match v {
-                    Value::Int(i) => Some(*i as usize),
-                    _ => None,
-                }).unwrap_or(0);
+                let n = args
+                    .first()
+                    .and_then(|v| match v {
+                        Value::Int(i) => Some(*i as usize),
+                        _ => None,
+                    })
+                    .unwrap_or(0);
                 let borrowed = arr.borrow();
                 let len = borrowed.len();
                 let start = len.saturating_sub(n);
@@ -510,7 +552,9 @@ fn call_method(
         Value::Map(m) => match method {
             "len" | "size" => Ok(Value::Int(m.borrow().len() as i64)),
             "get" => {
-                let key = args.first().ok_or_else(|| RuntimeError::msg("get: missing key"))?;
+                let key = args
+                    .first()
+                    .ok_or_else(|| RuntimeError::msg("get: missing key"))?;
                 let key_str = match key {
                     Value::Str(s) => s.to_string(),
                     Value::Symbol(s) => format!(":{s}"),
@@ -519,8 +563,13 @@ fn call_method(
                 Ok(m.borrow().get(&key_str).cloned().unwrap_or(Value::Nil))
             }
             "put" | "insert" => {
-                let key = args.first().ok_or_else(|| RuntimeError::msg("put: missing key"))?;
-                let val = args.get(1).ok_or_else(|| RuntimeError::msg("put: missing value"))?.clone();
+                let key = args
+                    .first()
+                    .ok_or_else(|| RuntimeError::msg("put: missing key"))?;
+                let val = args
+                    .get(1)
+                    .ok_or_else(|| RuntimeError::msg("put: missing value"))?
+                    .clone();
                 let key_str = match key {
                     Value::Str(s) => s.to_string(),
                     Value::Symbol(s) => format!(":{s}"),
@@ -530,8 +579,7 @@ fn call_method(
                 Ok(recv.clone())
             }
             "keys" => {
-                let ks: Vec<Value> =
-                    m.borrow().keys().map(|k| Value::str(k.clone())).collect();
+                let ks: Vec<Value> = m.borrow().keys().map(|k| Value::str(k.clone())).collect();
                 Ok(Value::array(ks))
             }
             "values" => {
@@ -557,7 +605,9 @@ fn call_method(
                 Value::Float(f) => Ok(Value::Float(f.abs())),
                 _ => unreachable!(),
             },
-            _ => Err(RuntimeError::msg(format!("Number has no method '{method}'"))),
+            _ => Err(RuntimeError::msg(format!(
+                "Number has no method '{method}'"
+            ))),
         },
         Value::Struct { fields, .. } => {
             // User-written methods aren't wired up until Rung 4 resolves `impl`
@@ -639,10 +689,13 @@ fn dispatch_memory_method(
         }
         (Episodic(s), "len") | (Episodic(s), "size") => Ok(Value::Int(s.len() as i64)),
         (Episodic(s), "recent") => {
-            let n = args.first().and_then(|v| match v {
-                Value::Int(i) => Some(*i as usize),
-                _ => None,
-            }).unwrap_or(0);
+            let n = args
+                .first()
+                .and_then(|v| match v {
+                    Value::Int(i) => Some(*i as usize),
+                    _ => None,
+                })
+                .unwrap_or(0);
             let events = s.recent(n);
             Ok(Value::array(events.into_iter().map(|e| e.value).collect()))
         }
@@ -665,17 +718,17 @@ fn dispatch_memory_method(
             let query_val = args
                 .first()
                 .ok_or_else(|| RuntimeError::msg("search: missing query"))?;
-            let k = args.get(1).and_then(|v| match v {
-                Value::Int(i) => Some(*i as usize),
-                _ => None,
-            }).unwrap_or(1);
+            let k = args
+                .get(1)
+                .and_then(|v| match v {
+                    Value::Int(i) => Some(*i as usize),
+                    _ => None,
+                })
+                .unwrap_or(1);
             let query = value_to_f32_vec(query_val)?;
             let results = s.search(&query, k);
             Ok(Value::array(
-                results
-                    .into_iter()
-                    .map(|(_score, v)| v)
-                    .collect(),
+                results.into_iter().map(|(_score, v)| v).collect(),
             ))
         }
         (Semantic(s), "len") | (Semantic(s), "size") => Ok(Value::Int(s.len() as i64)),
@@ -707,10 +760,13 @@ fn dispatch_memory_method(
                 Some(Value::Str(n)) => n.to_string(),
                 _ => return Err(RuntimeError::msg("replay: name must be String")),
             };
-            let version = args.get(1).and_then(|v| match v {
-                Value::Int(i) => Some(*i as usize),
-                _ => None,
-            }).unwrap_or(0);
+            let version = args
+                .get(1)
+                .and_then(|v| match v {
+                    Value::Int(i) => Some(*i as usize),
+                    _ => None,
+                })
+                .unwrap_or(0);
             Ok(s.replay(&name, version).unwrap_or(Value::Nil))
         }
 
@@ -765,7 +821,9 @@ fn access_index(recv: &Value, idx: &Value) -> Result<Value, RuntimeError> {
             }
             Ok(borrowed[real as usize].clone())
         }
-        (Value::Map(m), Value::Str(s)) => Ok(m.borrow().get(s.as_str()).cloned().unwrap_or(Value::Nil)),
+        (Value::Map(m), Value::Str(s)) => {
+            Ok(m.borrow().get(s.as_str()).cloned().unwrap_or(Value::Nil))
+        }
         (Value::Map(m), Value::Symbol(s)) => {
             let k = format!(":{s}");
             Ok(m.borrow().get(&k).cloned().unwrap_or(Value::Nil))

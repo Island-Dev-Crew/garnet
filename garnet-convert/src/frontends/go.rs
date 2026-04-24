@@ -28,7 +28,11 @@ struct GoParser<'a> {
 
 impl<'a> GoParser<'a> {
     fn new(source: &'a str, filename: &str) -> Self {
-        Self { source, filename: filename.to_string(), pos: 0 }
+        Self {
+            source,
+            filename: filename.to_string(),
+            pos: 0,
+        }
     }
 
     fn lineage(&self, start: usize) -> Lineage {
@@ -237,7 +241,11 @@ impl<'a> GoParser<'a> {
                 fields.push(crate::cir::FieldDecl {
                     name: fname.clone(),
                     ty: parse_ty_string(ty_src.trim()),
-                    public: fname.chars().next().map(|c| c.is_uppercase()).unwrap_or(false),
+                    public: fname
+                        .chars()
+                        .next()
+                        .map(|c| c.is_uppercase())
+                        .unwrap_or(false),
                 });
             }
             self.eat("}");
@@ -283,8 +291,8 @@ impl<'a> GoParser<'a> {
             if t.is_empty() {
                 continue;
             }
-            if t.starts_with("return") {
-                let expr_src = t[6..].trim();
+            if let Some(stripped) = t.strip_prefix("return") {
+                let expr_src = stripped.trim();
                 stmts.push(Cir::Return {
                     value: if expr_src.is_empty() {
                         None
@@ -299,7 +307,10 @@ impl<'a> GoParser<'a> {
             } else if t.starts_with("go ") {
                 stmts.push(Cir::MigrateTodo {
                     placeholder: Box::new(Cir::Literal(CirLit::Nil, self.lineage(start))),
-                    note: format!("Go goroutine '{}' — translate to `spawn Actor {{ ... }}`", t),
+                    note: format!(
+                        "Go goroutine '{}' — translate to `spawn Actor {{ ... }}`",
+                        t
+                    ),
                     lineage: self.lineage(start),
                 });
             } else if t.contains("<-") {
@@ -352,11 +363,11 @@ fn parse_ty_string(s: &str) -> CirTy {
     if s.is_empty() {
         return CirTy::Inferred;
     }
-    if s.starts_with("chan ") {
-        return CirTy::Concrete(format!("ActorProtocol<{}>", s[5..].trim()));
+    if let Some(stripped) = s.strip_prefix("chan ") {
+        return CirTy::Concrete(format!("ActorProtocol<{}>", stripped.trim()));
     }
-    if s.starts_with('*') {
-        return CirTy::Concrete(format!("Box<{}>", s[1..].trim()));
+    if let Some(stripped) = s.strip_prefix('*') {
+        return CirTy::Concrete(format!("Box<{}>", stripped.trim()));
     }
     if s.starts_with('[') {
         if let Some(end) = s.find(']') {
@@ -368,10 +379,7 @@ fn parse_ty_string(s: &str) -> CirTy {
         if let Some(end) = s.find(']') {
             let k = &s[4..end];
             let v = &s[end + 1..];
-            return CirTy::Map(
-                Box::new(parse_ty_string(k)),
-                Box::new(parse_ty_string(v)),
-            );
+            return CirTy::Map(Box::new(parse_ty_string(k)), Box::new(parse_ty_string(v)));
         }
     }
     match s {

@@ -27,7 +27,9 @@ pub fn exec_stmt(stmt: &Stmt, env: &Rc<Env>) -> Result<(), RuntimeError> {
             env.define(&decl.name, v);
             Ok(())
         }
-        Stmt::Assign { target, op, value, .. } => {
+        Stmt::Assign {
+            target, op, value, ..
+        } => {
             let new_val = eval_expr(value, env)?;
             let final_val = if *op == AssignOp::Eq {
                 new_val
@@ -38,7 +40,9 @@ pub fn exec_stmt(stmt: &Stmt, env: &Rc<Env>) -> Result<(), RuntimeError> {
             };
             assign_target(target, final_val, env)
         }
-        Stmt::While { condition, body, .. } => {
+        Stmt::While {
+            condition, body, ..
+        } => {
             while eval_expr(condition, env)?.truthy() {
                 match exec_block(body, env) {
                     Ok(()) => {}
@@ -49,7 +53,9 @@ pub fn exec_stmt(stmt: &Stmt, env: &Rc<Env>) -> Result<(), RuntimeError> {
             }
             Ok(())
         }
-        Stmt::For { var, iter, body, .. } => {
+        Stmt::For {
+            var, iter, body, ..
+        } => {
             let iterable = eval_expr(iter, env)?;
             let items = materialize_iter(&iterable)?;
             for item in items {
@@ -151,7 +157,9 @@ fn compound_apply(op: AssignOp, old: Value, new: Value) -> Result<Value, Runtime
         (Float(a), Float(b), B::Mul) => Ok(Float(a * b)),
         (Float(a), Float(b), B::Div) => Ok(Float(a / b)),
         (Str(a), Str(b), B::Add) => Ok(Value::str(format!("{a}{b}"))),
-        _ => Err(RuntimeError::msg("compound assignment on unsupported types")),
+        _ => Err(RuntimeError::msg(
+            "compound assignment on unsupported types",
+        )),
     }
 }
 
@@ -164,7 +172,9 @@ fn assign_target(target: &Expr, value: Value, env: &Rc<Env>) -> Result<(), Runti
                 Err(RuntimeError::msg(format!("undefined variable: {name}")))
             }
         }
-        Expr::Index { receiver, index, .. } => {
+        Expr::Index {
+            receiver, index, ..
+        } => {
             let recv = eval_expr(receiver, env)?;
             let idx = eval_expr(index, env)?;
             match (&recv, &idx) {
@@ -189,7 +199,9 @@ fn assign_target(target: &Expr, value: Value, env: &Rc<Env>) -> Result<(), Runti
                 _ => Err(RuntimeError::msg("unsupported index-assignment target")),
             }
         }
-        Expr::Field { receiver, field, .. } => {
+        Expr::Field {
+            receiver, field, ..
+        } => {
             let recv = eval_expr(receiver, env)?;
             match recv {
                 Value::Struct { fields, .. } => {
@@ -200,7 +212,9 @@ fn assign_target(target: &Expr, value: Value, env: &Rc<Env>) -> Result<(), Runti
                     m.borrow_mut().insert(field.clone(), value);
                     Ok(())
                 }
-                _ => Err(RuntimeError::msg("field assignment on non-struct/map value")),
+                _ => Err(RuntimeError::msg(
+                    "field assignment on non-struct/map value",
+                )),
             }
         }
         _ => Err(RuntimeError::msg("invalid assignment target")),
@@ -210,7 +224,11 @@ fn assign_target(target: &Expr, value: Value, env: &Rc<Env>) -> Result<(), Runti
 fn materialize_iter(v: &Value) -> Result<Vec<Value>, RuntimeError> {
     match v {
         Value::Array(arr) => Ok(arr.borrow().clone()),
-        Value::Range { start, end, inclusive } => {
+        Value::Range {
+            start,
+            end,
+            inclusive,
+        } => {
             let stop = if *inclusive { *end + 1 } else { *end };
             Ok((*start..stop).map(Value::Int).collect())
         }

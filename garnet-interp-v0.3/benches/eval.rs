@@ -15,7 +15,10 @@ fn fib_program(target: i64) -> String {
 }
 
 fn array_program(size: usize) -> String {
-    let body: String = (0..size).map(|i| i.to_string()).collect::<Vec<_>>().join(", ");
+    let body: String = (0..size)
+        .map(|i| i.to_string())
+        .collect::<Vec<_>>()
+        .join(", ");
     format!("def main() {{ [{body}].map(|x| x * 2).reduce(0, |a, b| a + b) }}")
 }
 
@@ -47,7 +50,9 @@ fn bench_eval_expr(c: &mut Criterion) {
     let interp = Interpreter::new();
     c.bench_function("eval_expr_arithmetic", |b| {
         b.iter(|| {
-            let r: Value = interp.eval_expr_src(black_box("1 + 2 * 3 - 4 / 2 % 3")).unwrap();
+            let r: Value = interp
+                .eval_expr_src(black_box("1 + 2 * 3 - 4 / 2 % 3"))
+                .unwrap();
             black_box(r)
         })
     });

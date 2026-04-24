@@ -73,7 +73,10 @@ mod tests {
 
     #[test]
     fn replace_basic() {
-        assert_eq!(replace("hello world", "world", "there").unwrap(), "hello there");
+        assert_eq!(
+            replace("hello world", "world", "there").unwrap(),
+            "hello there"
+        );
         assert_eq!(replace("aaaa", "a", "b").unwrap(), "bbbb");
     }
 

@@ -32,7 +32,10 @@ fn main_without_caps_is_rejected() {
     "#;
     let errs = check(src);
     assert!(
-        has_annotation_error(&errs, "`main` function must declare its required capabilities"),
+        has_annotation_error(
+            &errs,
+            "`main` function must declare its required capabilities"
+        ),
         "expected missing-caps error on main, got: {errs:?}"
     );
 }

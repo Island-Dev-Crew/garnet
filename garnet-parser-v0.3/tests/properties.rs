@@ -2,8 +2,8 @@
 //! every input proptest generates, or the property is wrong. Cases default
 //! to 256 per property — adjustable via `PROPTEST_CASES`.
 
-use garnet_parser::{lex_source, parse_source};
 use garnet_parser::token::TokenKind;
+use garnet_parser::{lex_source, parse_source};
 use proptest::prelude::*;
 
 // ── Lexer: arbitrary printable ASCII never panics ───────────────────

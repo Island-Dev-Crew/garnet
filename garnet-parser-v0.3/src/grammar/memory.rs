@@ -15,16 +15,33 @@ pub fn parse_memory_decl(p: &mut Parser) -> Result<MemoryDecl, ParseError> {
     p.expect(&TokenKind::Colon, "memory declaration")?;
     let store = types::parse_type(p)?;
     let span = start.join(store.span());
-    Ok(MemoryDecl { kind, name, store, span })
+    Ok(MemoryDecl {
+        kind,
+        name,
+        store,
+        span,
+    })
 }
 
 fn parse_memory_kind(p: &mut Parser) -> Result<MemoryKind, ParseError> {
     let tok = p.peek().clone();
     match &tok.kind {
-        TokenKind::KwWorking => { p.bump(); Ok(MemoryKind::Working) }
-        TokenKind::KwEpisodic => { p.bump(); Ok(MemoryKind::Episodic) }
-        TokenKind::KwSemantic => { p.bump(); Ok(MemoryKind::Semantic) }
-        TokenKind::KwProcedural => { p.bump(); Ok(MemoryKind::Procedural) }
+        TokenKind::KwWorking => {
+            p.bump();
+            Ok(MemoryKind::Working)
+        }
+        TokenKind::KwEpisodic => {
+            p.bump();
+            Ok(MemoryKind::Episodic)
+        }
+        TokenKind::KwSemantic => {
+            p.bump();
+            Ok(MemoryKind::Semantic)
+        }
+        TokenKind::KwProcedural => {
+            p.bump();
+            Ok(MemoryKind::Procedural)
+        }
         _ => Err(ParseError::unexpected_token(
             "memory kind (working, episodic, semantic, procedural)",
             &format!("{:?}", tok.kind),

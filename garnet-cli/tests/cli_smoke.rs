@@ -35,7 +35,7 @@ fn version_prints_version_line() {
     let out = Command::new(garnet_bin()).arg("version").output().unwrap();
     assert!(out.status.success());
     let s = String::from_utf8_lossy(&out.stdout);
-    assert!(s.contains("garnet 0.3"));
+    assert!(s.contains(&format!("garnet {}", env!("CARGO_PKG_VERSION"))));
     assert!(s.contains("parser"));
     assert!(s.contains("interp"));
     assert!(s.contains("check"));
@@ -44,7 +44,10 @@ fn version_prints_version_line() {
 
 #[test]
 fn unknown_subcommand_exits_nonzero() {
-    let out = Command::new(garnet_bin()).arg("frobnicate").output().unwrap();
+    let out = Command::new(garnet_bin())
+        .arg("frobnicate")
+        .output()
+        .unwrap();
     assert!(!out.status.success());
 }
 

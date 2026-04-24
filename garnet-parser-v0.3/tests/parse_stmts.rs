@@ -123,11 +123,13 @@ fn parses_return_with_value() {
 
 #[test]
 fn parses_continue() {
-    let stmts =
-        stmts_of("let mut i = 0\nwhile i < 10 { i += 1\ncontinue }\ni");
+    let stmts = stmts_of("let mut i = 0\nwhile i < 10 { i += 1\ncontinue }\ni");
     match &stmts[1] {
         Stmt::While { body, .. } => {
-            assert!(body.stmts.iter().any(|s| matches!(s, Stmt::Continue { .. })));
+            assert!(body
+                .stmts
+                .iter()
+                .any(|s| matches!(s, Stmt::Continue { .. })));
         }
         _ => panic!("expected while containing continue"),
     }

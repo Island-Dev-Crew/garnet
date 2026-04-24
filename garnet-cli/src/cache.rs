@@ -37,7 +37,7 @@ pub struct Episode {
     pub cmd: String,
     pub file: String,
     pub source_hash: String,
-    pub outcome: String,        // "ok" | "parse_err" | "check_err" | "runtime_err"
+    pub outcome: String, // "ok" | "parse_err" | "check_err" | "runtime_err"
     pub error_kind: Option<String>,
     pub duration_ms: u64,
     pub parser_version: String,
@@ -312,6 +312,33 @@ pub fn recall_in_with_key(dir: &Path, target: &str, key: &[u8; 32]) -> ReadResul
 /// `read_all_in_audit`.
 pub fn read_all_in(dir: &Path) -> Vec<Episode> {
     read_all_in_with_key(dir, machine_key::machine_key()).episodes
+}
+
+/// Read all locally-verified episodes while preserving their original
+/// zero-based line index in episodes.log. Strategy provenance stores these
+/// indices so later verification can re-derive the miner predicate.
+pub fn read_all_indexed_in(dir: &Path) -> Vec<(i64, Episode)> {
+    read_all_indexed_in_with_key(dir, machine_key::machine_key())
+}
+
+pub fn read_all_indexed_in_with_key(dir: &Path, key: &[u8; 32]) -> Vec<(i64, Episode)> {
+    let path = dir.join(EPISODES_FILE);
+    let Ok(file) = File::open(&path) else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    for (idx, line) in BufReader::new(file)
+        .lines()
+        .map_while(Result::ok)
+        .enumerate()
+    {
+        if let Some(ep) = Episode::from_ndjson_line(&line) {
+            if ep.verify_with_key(key) {
+                out.push((idx as i64, ep));
+            }
+        }
+    }
+    out
 }
 
 pub fn read_all_in_with_key(dir: &Path, key: &[u8; 32]) -> ReadResult {

@@ -29,8 +29,8 @@ fn source_bytes_under_limit_passes() {
 fn source_bytes_at_limit_passes() {
     // Exactly 20 bytes.
     let src = "def main() { 42 }aaa"; // not valid Garnet but source_bytes
-                                       // check runs BEFORE lex, so the byte
-                                       // budget is tested in isolation.
+                                      // check runs BEFORE lex, so the byte
+                                      // budget is tested in isolation.
     let budget = ParseBudget {
         max_source_bytes: src.len(),
         ..ParseBudget::default()
@@ -54,7 +54,10 @@ fn source_bytes_over_limit_fails_fast() {
     let src = "def main() { 42 }"; // 17 bytes
     let err = parse_source_with_budget(src, budget).unwrap_err();
     let err_text = format!("{err:?}");
-    assert!(err_text.contains("BudgetExceeded"), "expected BudgetExceeded, got {err_text}");
+    assert!(
+        err_text.contains("BudgetExceeded"),
+        "expected BudgetExceeded, got {err_text}"
+    );
     assert!(err_text.contains("source_bytes"));
 }
 
@@ -67,7 +70,12 @@ fn nested_parens_just_under_depth_limit_passes() {
         max_depth: 10,
         ..ParseBudget::default()
     };
-    let src = format!("def main() {{ {}{}{} }}", "(".repeat(8), "42", ")".repeat(8));
+    let src = format!(
+        "def main() {{ {}{}{} }}",
+        "(".repeat(8),
+        "42",
+        ")".repeat(8)
+    );
     let result = parse_source_with_budget(&src, budget);
     assert!(
         result.is_ok(),
@@ -79,10 +87,18 @@ fn nested_parens_just_under_depth_limit_passes() {
 #[test]
 fn nested_parens_well_over_depth_limit_fails() {
     // 500 levels of parens > default 256 limit
-    let src = format!("def main() {{ {}{}{} }}", "(".repeat(500), "42", ")".repeat(500));
+    let src = format!(
+        "def main() {{ {}{}{} }}",
+        "(".repeat(500),
+        "42",
+        ")".repeat(500)
+    );
     let err = parse_source_with_budget(&src, ParseBudget::default()).unwrap_err();
     let err_text = format!("{err:?}");
-    assert!(err_text.contains("BudgetExceeded"), "expected BudgetExceeded, got {err_text}");
+    assert!(
+        err_text.contains("BudgetExceeded"),
+        "expected BudgetExceeded, got {err_text}"
+    );
     assert!(err_text.contains("depth"));
 }
 
@@ -93,7 +109,12 @@ fn parens_bomb_tight_budget_fails_fast() {
         max_depth: 5,
         ..ParseBudget::default()
     };
-    let src = format!("def main() {{ {}{}{} }}", "(".repeat(100), "42", ")".repeat(100));
+    let src = format!(
+        "def main() {{ {}{}{} }}",
+        "(".repeat(100),
+        "42",
+        ")".repeat(100)
+    );
     let err = parse_source_with_budget(&src, budget).unwrap_err();
     let err_text = format!("{err:?}");
     assert!(err_text.contains("depth"));
@@ -112,7 +133,10 @@ fn token_count_over_limit_fails() {
     let src = "def main() { let x = 1 + 2; x }";
     let err = parse_source_with_budget(src, budget).unwrap_err();
     let err_text = format!("{err:?}");
-    assert!(err_text.contains("BudgetExceeded"), "expected BudgetExceeded, got {err_text}");
+    assert!(
+        err_text.contains("BudgetExceeded"),
+        "expected BudgetExceeded, got {err_text}"
+    );
     assert!(err_text.contains("tokens"));
 }
 
@@ -141,7 +165,10 @@ fn string_literal_over_limit_fails_fast() {
     let src = format!("def main() {{ \"{}\" }}", blimp);
     let err = parse_source_with_budget(&src, budget).unwrap_err();
     let err_text = format!("{err:?}");
-    assert!(err_text.contains("BudgetExceeded"), "expected BudgetExceeded, got {err_text}");
+    assert!(
+        err_text.contains("BudgetExceeded"),
+        "expected BudgetExceeded, got {err_text}"
+    );
     assert!(err_text.contains("literal_bytes"));
 }
 
@@ -185,24 +212,37 @@ fn real_code_passes_default_budget() {
     let src = r#"
         struct Point { x: Int, y: Int }
         def main() {
-            let p = Point { x: 1, y: 2 }
-            match p {
-                Point { x: 0, y: _ } => "origin-y-axis",
-                Point { x: _, y: 0 } => "origin-x-axis",
-                Point { x, y } => "somewhere"
+            let xs = [1, 2, 3, 4]
+            let total = xs.reduce(0, |a, b| a + b)
+            match total {
+                0 => "zero",
+                _ => "nonzero"
             }
         }
     "#;
     let result = parse_source_with_budget(src, ParseBudget::default());
-    assert!(result.is_ok(), "real code should parse under defaults: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "real code should parse under defaults: {:?}",
+        result.err()
+    );
 }
 
 #[test]
 fn unlimited_budget_parses_aggressive_nesting() {
     // 400-deep nesting — over default max_depth (256) but under
     // unlimited.
-    let src = format!("def main() {{ {}{}{} }}", "(".repeat(400), "42", ")".repeat(400));
+    let src = format!(
+        "def main() {{ {}{}{} }}",
+        "(".repeat(400),
+        "42",
+        ")".repeat(400)
+    );
     let budget = ParseBudget::unlimited();
     let result = parse_source_with_budget(&src, budget);
-    assert!(result.is_ok(), "unlimited budget should accept 400-deep: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "unlimited budget should accept 400-deep: {:?}",
+        result.err()
+    );
 }

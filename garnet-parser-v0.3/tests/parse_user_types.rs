@@ -18,9 +18,8 @@ fn parses_simple_struct() {
 
 #[test]
 fn parses_struct_with_pub_fields() {
-    let m =
-        parse_source("pub struct Server { pub host: String, pub port: Int, timeout: Float }")
-            .unwrap();
+    let m = parse_source("pub struct Server { pub host: String, pub port: Int, timeout: Float }")
+        .unwrap();
     match &m.items[0] {
         Item::Struct(s) => {
             assert!(s.public);

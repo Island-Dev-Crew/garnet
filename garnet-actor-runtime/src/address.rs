@@ -68,7 +68,9 @@ pub struct ActorAddress<M, R> {
 
 impl<M, R> Clone for ActorAddress<M, R> {
     fn clone(&self) -> Self {
-        Self { tx: self.tx.clone() }
+        Self {
+            tx: self.tx.clone(),
+        }
     }
 }
 
@@ -158,9 +160,7 @@ impl<M: Send + 'static, R: Send + 'static> ActorAddress<M, R> {
         migrator: F,
     ) -> Result<ReloadOutcome, AskError>
     where
-        F: FnOnce(Box<dyn ActorBehaviour<M, R>>) -> Box<dyn ActorBehaviour<M, R>>
-            + Send
-            + 'static,
+        F: FnOnce(Box<dyn ActorBehaviour<M, R>>) -> Box<dyn ActorBehaviour<M, R>> + Send + 'static,
     {
         let (tx_reply, rx_reply) = mpsc::channel();
         let cmd = ReloadCommand {

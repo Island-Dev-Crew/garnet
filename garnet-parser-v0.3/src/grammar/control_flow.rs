@@ -87,7 +87,12 @@ fn parse_match_arm(p: &mut Parser) -> Result<MatchArm, ParseError> {
         expr::parse_expr(p)?
     };
     let span = pattern.span().join(body.span());
-    Ok(MatchArm { pattern, guard, body, span })
+    Ok(MatchArm {
+        pattern,
+        guard,
+        body,
+        span,
+    })
 }
 
 /// Parse: `try block { rescue [name [: type]] block } [ensure block]`
@@ -111,7 +116,12 @@ pub fn parse_try_expr(p: &mut Parser) -> Result<Expr, ParseError> {
         };
         let rescue_body = stmts::parse_block(p)?;
         let span = rescue_start.join(rescue_body.span);
-        rescues.push(RescueClause { name, ty, body: rescue_body, span });
+        rescues.push(RescueClause {
+            name,
+            ty,
+            body: rescue_body,
+            span,
+        });
     }
 
     let ensure = if p.eat(&TokenKind::KwEnsure) {
@@ -127,5 +137,10 @@ pub fn parse_try_expr(p: &mut Parser) -> Result<Expr, ParseError> {
         .unwrap_or(body.span);
     let span = start.join(end_span);
 
-    Ok(Expr::Try { body, rescues, ensure, span })
+    Ok(Expr::Try {
+        body,
+        rescues,
+        ensure,
+        span,
+    })
 }

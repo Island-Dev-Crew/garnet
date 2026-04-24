@@ -23,8 +23,7 @@ pub fn sha256_hash(data: &[u8]) -> [u8; 32] {
 pub fn hmac_sha256(key: &[u8], msg: &[u8]) -> [u8; 32] {
     use hmac::{Hmac, Mac};
     type HmacSha256 = Hmac<sha2::Sha256>;
-    let mut mac = HmacSha256::new_from_slice(key)
-        .expect("HMAC-SHA-256 accepts any key length");
+    let mut mac = HmacSha256::new_from_slice(key).expect("HMAC-SHA-256 accepts any key length");
     mac.update(msg);
     let out = mac.finalize().into_bytes();
     let mut arr = [0u8; 32];

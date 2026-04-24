@@ -25,9 +25,9 @@ pub mod metrics;
 pub mod witness;
 
 pub use cir::{
-    Cir, CirLit, CirTy, CatchArm, FieldDecl, FuncMode, MatchArm, Ownership, Param, VariantDecl,
+    CatchArm, Cir, CirLit, CirTy, FieldDecl, FuncMode, MatchArm, Ownership, Param, VariantDecl,
 };
-pub use emitter::{emit, EmittedSource, EmitOpts};
+pub use emitter::{emit, EmitOpts, EmittedSource};
 pub use error::ConvertError;
 pub use lineage::{Lineage, LineageMap};
 pub use metrics::ConvertMetrics;
@@ -62,16 +62,6 @@ pub enum SourceLang {
 }
 
 impl SourceLang {
-    pub fn from_str(s: &str) -> Option<SourceLang> {
-        match s.to_lowercase().as_str() {
-            "rust" | "rs" => Some(SourceLang::Rust),
-            "ruby" | "rb" => Some(SourceLang::Ruby),
-            "python" | "py" => Some(SourceLang::Python),
-            "go" => Some(SourceLang::Go),
-            _ => None,
-        }
-    }
-
     pub fn as_str(&self) -> &'static str {
         match self {
             SourceLang::Rust => "rust",
@@ -88,6 +78,20 @@ impl SourceLang {
             "py" => Some(SourceLang::Python),
             "go" => Some(SourceLang::Go),
             _ => None,
+        }
+    }
+}
+
+impl std::str::FromStr for SourceLang {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "rust" | "rs" => Ok(SourceLang::Rust),
+            "ruby" | "rb" => Ok(SourceLang::Ruby),
+            "python" | "py" => Ok(SourceLang::Python),
+            "go" => Ok(SourceLang::Go),
+            _ => Err(()),
         }
     }
 }

@@ -4,7 +4,9 @@ use garnet_interp::{Interpreter, Value};
 use proptest::prelude::*;
 
 fn eval(src: &str) -> Result<Value, String> {
-    Interpreter::new().eval_expr_src(src).map_err(|e| e.to_string())
+    Interpreter::new()
+        .eval_expr_src(src)
+        .map_err(|e| e.to_string())
 }
 
 // ── Pure integer arithmetic ─────────────────────────────────────────

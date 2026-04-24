@@ -46,8 +46,14 @@ fn safe_to_managed_err_propagates_via_question_mark() {
             }
         }
     "#;
-    assert!(matches!(run_args(src, "safe_call", vec![Value::Int(5)]), Value::Int(105)));
-    assert!(matches!(run_args(src, "safe_call", vec![Value::Int(-1)]), Value::Int(-1)));
+    assert!(matches!(
+        run_args(src, "safe_call", vec![Value::Int(5)]),
+        Value::Int(105)
+    ));
+    assert!(matches!(
+        run_args(src, "safe_call", vec![Value::Int(-1)]),
+        Value::Int(-1)
+    ));
 }
 
 #[test]
@@ -64,8 +70,14 @@ fn safe_to_managed_err_can_be_pattern_matched_directly() {
             }
         }
     "#;
-    assert!(matches!(run_args(src, "caller", vec![Value::Int(7)]), Value::Int(7)));
-    assert!(matches!(run_args(src, "caller", vec![Value::Int(-3)]), Value::Int(-99)));
+    assert!(matches!(
+        run_args(src, "caller", vec![Value::Int(7)]),
+        Value::Int(7)
+    ));
+    assert!(matches!(
+        run_args(src, "caller", vec![Value::Int(-3)]),
+        Value::Int(-99)
+    ));
 }
 
 // ── Direction 2: managed→safe raise capture ─────────────────────────
@@ -99,8 +111,14 @@ fn managed_raise_captured_in_safe_caller_as_err() {
             }
         }
     "#;
-    assert!(matches!(run_args(src, "driver", vec![Value::Int(5)]), Value::Int(10)));
-    assert!(matches!(run_args(src, "driver", vec![Value::Int(-1)]), Value::Int(-1)));
+    assert!(matches!(
+        run_args(src, "driver", vec![Value::Int(5)]),
+        Value::Int(10)
+    ));
+    assert!(matches!(
+        run_args(src, "driver", vec![Value::Int(-1)]),
+        Value::Int(-1)
+    ));
 }
 
 // ── Direction 3: double bounce ──────────────────────────────────────
@@ -134,10 +152,16 @@ fn double_bounce_managed_safe_managed_propagates_err() {
         }
     "#;
     // Happy path: outer returns (n+1)*100
-    assert!(matches!(run_args(src, "outer", vec![Value::Int(2)]), Value::Int(300)));
+    assert!(matches!(
+        run_args(src, "outer", vec![Value::Int(2)]),
+        Value::Int(300)
+    ));
     // Failure path: inner raises, middle wraps as Err, outer's ? raises
     // again, outer's rescue catches and returns -42.
-    assert!(matches!(run_args(src, "outer", vec![Value::Int(-5)]), Value::Int(-42)));
+    assert!(matches!(
+        run_args(src, "outer", vec![Value::Int(-5)]),
+        Value::Int(-42)
+    ));
 }
 
 // ── Direction 4: type mismatch fails loud ───────────────────────────
@@ -165,7 +189,10 @@ fn type_mismatch_at_boundary_returns_err_loudly() {
     "#;
     // The ? operator on a non-Result/Option value raises a type error,
     // which the rescue catches as -1.
-    assert!(matches!(run_args(src, "caller", vec![Value::Int(5)]), Value::Int(-1)));
+    assert!(matches!(
+        run_args(src, "caller", vec![Value::Int(5)]),
+        Value::Int(-1)
+    ));
 }
 
 #[test]
@@ -188,7 +215,9 @@ fn rescue_typed_filter_sees_err_payload() {
     "#;
     let r = run_args(src, "caller", vec![Value::Int(13)]);
     match r {
-        Value::Variant { variant, fields, .. } if variant.as_str() == "Err" => {
+        Value::Variant {
+            variant, fields, ..
+        } if variant.as_str() == "Err" => {
             assert_eq!(fields.len(), 1);
             if let Value::Str(s) = &fields[0] {
                 assert_eq!(s.as_str(), "unlucky number");

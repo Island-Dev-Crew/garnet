@@ -105,23 +105,27 @@ fn ordering_invariant_v1_replies_before_v2_replies() {
     // don't exercise this path can't distinguish working migration from
     // broken migration (v3.2 gap).
     let outcome = addr
-        .reload(2, false, move |old: Box<dyn ActorBehaviour<String, String>>| {
-            let tagged = old
-                .dyn_extract_state()
-                .expect("CounterV1 must expose extract_state for reload");
-            // StateCert: fingerprint-verified downcast. If CounterV1's
-            // state type ever drifts from i64, this returns
-            // FingerprintMismatch rather than silently invoking the
-            // wrong constructor on the new actor.
-            let old_n = *tagged
-                .downcast::<i64>()
-                .expect("CounterV1 state fingerprint must match i64");
-            drop(old);
-            Box::new(CounterV2 {
-                n: old_n,
-                label: "migrated".to_string(),
-            })
-        })
+        .reload(
+            2,
+            false,
+            move |old: Box<dyn ActorBehaviour<String, String>>| {
+                let tagged = old
+                    .dyn_extract_state()
+                    .expect("CounterV1 must expose extract_state for reload");
+                // StateCert: fingerprint-verified downcast. If CounterV1's
+                // state type ever drifts from i64, this returns
+                // FingerprintMismatch rather than silently invoking the
+                // wrong constructor on the new actor.
+                let old_n = *tagged
+                    .downcast::<i64>()
+                    .expect("CounterV1 state fingerprint must match i64");
+                drop(old);
+                Box::new(CounterV2 {
+                    n: old_n,
+                    label: "migrated".to_string(),
+                })
+            },
+        )
         .expect("reload should succeed");
     assert!(matches!(outcome, ReloadOutcome::Ok { .. }));
 
@@ -139,10 +143,7 @@ fn ordering_invariant_v1_replies_before_v2_replies() {
     // this assertion would fail — distinguishing working migration from
     // broken migration.
     let pre_count = early.len() as i64; // we did 5 incrs
-    let first_post: i64 = late[0]
-        .trim_start_matches("v2[migrated]:")
-        .parse()
-        .unwrap();
+    let first_post: i64 = late[0].trim_start_matches("v2[migrated]:").parse().unwrap();
     assert_eq!(
         first_post,
         pre_count + 1,
@@ -165,9 +166,7 @@ fn forward_migration_v1_to_v2_transfers_state() {
         let tagged = old
             .dyn_extract_state()
             .expect("CounterV1 exposes extract_state");
-        let n = *tagged
-            .downcast::<i64>()
-            .expect("CounterV1 state is i64");
+        let n = *tagged.downcast::<i64>().expect("CounterV1 state is i64");
         Box::new(CounterV2 {
             n,
             label: "carried".to_string(),

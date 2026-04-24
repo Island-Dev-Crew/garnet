@@ -109,7 +109,10 @@ fn some_constructor_yields_variant() {
 
 #[test]
 fn none_constructor_yields_zero_field_variant() {
-    if let Value::Variant { variant, fields, .. } = eval("none()") {
+    if let Value::Variant {
+        variant, fields, ..
+    } = eval("none()")
+    {
         assert_eq!(variant.as_str(), "None");
         assert!(fields.is_empty());
     }
@@ -138,7 +141,10 @@ fn some_constant_is_callable() {
 
 #[test]
 fn none_constant_is_value() {
-    if let Value::Variant { variant, fields, .. } = eval("None") {
+    if let Value::Variant {
+        variant, fields, ..
+    } = eval("None")
+    {
         assert_eq!(variant.as_str(), "None");
         assert!(fields.is_empty());
     }
@@ -202,7 +208,10 @@ fn type_of_range() {
 
 #[test]
 fn len_array_ten() {
-    assert!(matches!(eval("len([1,2,3,4,5,6,7,8,9,10])"), Value::Int(10)));
+    assert!(matches!(
+        eval("len([1,2,3,4,5,6,7,8,9,10])"),
+        Value::Int(10)
+    ));
 }
 
 #[test]
@@ -212,7 +221,10 @@ fn len_string_zero() {
 
 #[test]
 fn len_map_three() {
-    assert!(matches!(eval(r#"len({ "a" => 1, "b" => 2, "c" => 3 })"#), Value::Int(3)));
+    assert!(matches!(
+        eval(r#"len({ "a" => 1, "b" => 2, "c" => 3 })"#),
+        Value::Int(3)
+    ));
 }
 
 #[test]
@@ -324,17 +336,26 @@ fn filter_none_pass() {
 
 #[test]
 fn reduce_sum_basic() {
-    assert!(matches!(eval("reduce([1, 2, 3], 0, |a, x| a + x)"), Value::Int(6)));
+    assert!(matches!(
+        eval("reduce([1, 2, 3], 0, |a, x| a + x)"),
+        Value::Int(6)
+    ));
 }
 
 #[test]
 fn reduce_with_zero_init() {
-    assert!(matches!(eval("reduce([], 99, |a, x| a + x)"), Value::Int(99)));
+    assert!(matches!(
+        eval("reduce([], 99, |a, x| a + x)"),
+        Value::Int(99)
+    ));
 }
 
 #[test]
 fn reduce_product() {
-    assert!(matches!(eval("reduce([2, 3, 4], 1, |a, x| a * x)"), Value::Int(24)));
+    assert!(matches!(
+        eval("reduce([2, 3, 4], 1, |a, x| a * x)"),
+        Value::Int(24)
+    ));
 }
 
 // ── assert / assert_eq ──
@@ -368,5 +389,8 @@ fn assert_eq_works_for_strings() {
 
 #[test]
 fn assert_eq_works_for_arrays_deep() {
-    assert!(matches!(eval("assert_eq([1, 2, 3], [1, 2, 3])"), Value::Nil));
+    assert!(matches!(
+        eval("assert_eq([1, 2, 3], [1, 2, 3])"),
+        Value::Nil
+    ));
 }

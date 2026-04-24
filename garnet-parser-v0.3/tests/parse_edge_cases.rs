@@ -73,10 +73,7 @@ fn parses_multiple_defs() {
 
 #[test]
 fn parses_def_then_struct_then_enum() {
-    let m = parse_source(
-        "def a() { 1 }\nstruct S { x: Int }\nenum E { A, B, C }",
-    )
-    .unwrap();
+    let m = parse_source("def a() { 1 }\nstruct S { x: Int }\nenum E { A, B, C }").unwrap();
     assert_eq!(m.items.len(), 3);
 }
 
@@ -358,7 +355,8 @@ fn parses_nested_map() {
 
 #[test]
 fn parses_multiline_map() {
-    parse_ok(r#"
+    parse_ok(
+        r#"
         def f() {
             {
                 "a" => 1,
@@ -366,7 +364,8 @@ fn parses_multiline_map() {
                 "c" => 3
             }
         }
-    "#);
+    "#,
+    );
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -404,7 +403,8 @@ fn parses_match_with_only_wildcard() {
 
 #[test]
 fn parses_match_with_many_arms() {
-    parse_ok(r#"
+    parse_ok(
+        r#"
         def f() {
             match x {
                 1 => :one,
@@ -415,12 +415,14 @@ fn parses_match_with_many_arms() {
                 _ => :other,
             }
         }
-    "#);
+    "#,
+    );
 }
 
 #[test]
 fn parses_nested_enum_pattern() {
-    parse_ok(r#"
+    parse_ok(
+        r#"
         def f() {
             match r {
                 Ok(Some(v)) => v,
@@ -428,19 +430,22 @@ fn parses_nested_enum_pattern() {
                 Err(_) => -1,
             }
         }
-    "#);
+    "#,
+    );
 }
 
 #[test]
 fn parses_tuple_pattern() {
-    parse_ok(r#"
+    parse_ok(
+        r#"
         def f() {
             match p {
                 (a, b) => a + b,
                 _ => 0,
             }
         }
-    "#);
+    "#,
+    );
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -449,7 +454,8 @@ fn parses_tuple_pattern() {
 
 #[test]
 fn parses_try_with_only_ensure() {
-    parse_ok(r#"
+    parse_ok(
+        r#"
         def f() {
             try {
                 42
@@ -457,12 +463,14 @@ fn parses_try_with_only_ensure() {
                 cleanup()
             }
         }
-    "#);
+    "#,
+    );
 }
 
 #[test]
 fn parses_try_with_many_rescues() {
-    parse_ok(r#"
+    parse_ok(
+        r#"
         def f() {
             try {
                 risky()
@@ -476,7 +484,8 @@ fn parses_try_with_many_rescues() {
                 0
             }
         }
-    "#);
+    "#,
+    );
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -509,7 +518,8 @@ fn parses_struct_with_no_fields() {
 
 #[test]
 fn parses_struct_with_many_fields() {
-    parse_ok(r#"
+    parse_ok(
+        r#"
         struct Big {
             a: Int,
             b: Float,
@@ -518,7 +528,8 @@ fn parses_struct_with_many_fields() {
             e: Array<Int>,
             f: Map<String, Int>,
         }
-    "#);
+    "#,
+    );
 }
 
 #[test]
@@ -528,7 +539,8 @@ fn parses_enum_with_no_variants() {
 
 #[test]
 fn parses_enum_with_many_variants() {
-    parse_ok(r#"
+    parse_ok(
+        r#"
         enum Status {
             Pending,
             Running,
@@ -537,17 +549,20 @@ fn parses_enum_with_many_variants() {
             Cancelled,
             Timeout,
         }
-    "#);
+    "#,
+    );
 }
 
 #[test]
 fn parses_generic_struct_with_multiple_params() {
-    parse_ok(r#"
+    parse_ok(
+        r#"
         struct Pair<A, B> {
             first: A,
             second: B,
         }
-    "#);
+    "#,
+    );
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -605,12 +620,14 @@ fn parses_dynamic_annotation() {
 
 #[test]
 fn parses_combined_annotations() {
-    parse_ok(r#"
+    parse_ok(
+        r#"
         @max_depth(5)
         @fan_out(10)
         @require_metadata
         def f() { 1 }
-    "#);
+    "#,
+    );
 }
 
 // ════════════════════════════════════════════════════════════════════

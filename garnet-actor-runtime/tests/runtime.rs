@@ -150,9 +150,15 @@ impl Actor for Tally {
 fn three_tally_actors_share_atomic_state() {
     let rt = Runtime::new();
     let sum = Arc::new(AtomicI64::new(0));
-    let a = rt.spawn(Tally { sum: Arc::clone(&sum) });
-    let b = rt.spawn(Tally { sum: Arc::clone(&sum) });
-    let c = rt.spawn(Tally { sum: Arc::clone(&sum) });
+    let a = rt.spawn(Tally {
+        sum: Arc::clone(&sum),
+    });
+    let b = rt.spawn(Tally {
+        sum: Arc::clone(&sum),
+    });
+    let c = rt.spawn(Tally {
+        sum: Arc::clone(&sum),
+    });
     let TReply::Total(_) = a.ask(TMsg::Add(5));
     let TReply::Total(_) = b.ask(TMsg::Add(10));
     let TReply::Total(t) = c.ask(TMsg::Add(15));

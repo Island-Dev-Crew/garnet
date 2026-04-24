@@ -26,7 +26,11 @@ struct RubyParser<'a> {
 
 impl<'a> RubyParser<'a> {
     fn new(source: &'a str, filename: &str) -> Self {
-        Self { source, filename: filename.to_string(), pos: 0 }
+        Self {
+            source,
+            filename: filename.to_string(),
+            pos: 0,
+        }
     }
 
     fn lineage(&self, start: usize) -> Lineage {
@@ -159,7 +163,8 @@ impl<'a> RubyParser<'a> {
         if self.peek_keyword("eval") || self.peek_keyword("instance_eval") {
             self.read_until_newline();
             return Ok(Some(Cir::Untranslatable {
-                reason: "Ruby eval / instance_eval — Garnet has no runtime source evaluation".into(),
+                reason: "Ruby eval / instance_eval — Garnet has no runtime source evaluation"
+                    .into(),
                 lineage: self.lineage(start),
             }));
         }
@@ -258,8 +263,7 @@ impl<'a> RubyParser<'a> {
             }
             // Recognize a handful of common forms; everything else is
             // a bare ident expression (fall back to Ident CIR).
-            if line.starts_with("return ") {
-                let expr_src = &line[7..];
+            if let Some(expr_src) = line.strip_prefix("return ") {
                 stmts.push(Cir::Return {
                     value: Some(Box::new(Cir::Ident(
                         expr_src.trim().to_string(),
@@ -275,10 +279,7 @@ impl<'a> RubyParser<'a> {
                 });
             } else if line.starts_with("puts ") || line.starts_with("print ") {
                 stmts.push(Cir::Call {
-                    func: Box::new(Cir::Ident(
-                        "println".to_string(),
-                        self.lineage(start),
-                    )),
+                    func: Box::new(Cir::Ident("println".to_string(), self.lineage(start))),
                     args: vec![Cir::Literal(
                         CirLit::Str(
                             line.trim_start_matches("puts ")

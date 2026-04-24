@@ -51,9 +51,9 @@ pub struct UseDecl {
 
 #[derive(Debug, Clone)]
 pub enum UseImports {
-    Module,                  // use Foo::Bar
-    Named(Vec<String>),      // use Foo::Bar::{A, B}
-    Glob,                    // use Foo::Bar::*
+    Module,             // use Foo::Bar
+    Named(Vec<String>), // use Foo::Bar::{A, B}
+    Glob,               // use Foo::Bar::*
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -95,10 +95,7 @@ pub enum TypeExpr {
         span: Span,
     },
     /// Tuple type: `(Int, String)`
-    Tuple {
-        elements: Vec<TypeExpr>,
-        span: Span,
-    },
+    Tuple { elements: Vec<TypeExpr>, span: Span },
     /// Reference type: `&T` or `&mut T`
     Ref {
         mutable: bool,
@@ -525,15 +522,26 @@ pub enum ClosureBody {
 impl Expr {
     pub fn span(&self) -> Span {
         match self {
-            Expr::Int(_, s) | Expr::Float(_, s) | Expr::Bool(_, s)
-            | Expr::Nil(s) | Expr::Str(_, s) | Expr::Symbol(_, s)
-            | Expr::Ident(_, s) | Expr::Path(_, s) => *s,
-            Expr::Binary { span, .. } | Expr::Unary { span, .. }
-            | Expr::Call { span, .. } | Expr::Method { span, .. }
-            | Expr::Field { span, .. } | Expr::Index { span, .. }
-            | Expr::If { span, .. } | Expr::Match { span, .. }
-            | Expr::Try { span, .. } | Expr::Closure { span, .. }
-            | Expr::Spawn { span, .. } | Expr::Array { span, .. }
+            Expr::Int(_, s)
+            | Expr::Float(_, s)
+            | Expr::Bool(_, s)
+            | Expr::Nil(s)
+            | Expr::Str(_, s)
+            | Expr::Symbol(_, s)
+            | Expr::Ident(_, s)
+            | Expr::Path(_, s) => *s,
+            Expr::Binary { span, .. }
+            | Expr::Unary { span, .. }
+            | Expr::Call { span, .. }
+            | Expr::Method { span, .. }
+            | Expr::Field { span, .. }
+            | Expr::Index { span, .. }
+            | Expr::If { span, .. }
+            | Expr::Match { span, .. }
+            | Expr::Try { span, .. }
+            | Expr::Closure { span, .. }
+            | Expr::Spawn { span, .. }
+            | Expr::Array { span, .. }
             | Expr::Map { span, .. } => *span,
         }
     }
@@ -585,20 +593,23 @@ pub struct MatchArm {
 
 #[derive(Debug, Clone)]
 pub enum Pattern {
-    Literal(Expr, Span),          // 42, "hello", :ok, true, nil
-    Ident(String, Span),          // x (binds the value)
-    Tuple(Vec<Pattern>, Span),    // (a, b, c)
-    Enum(Vec<String>, Vec<Pattern>, Span),  // Ok(value), Err(e)
-    Wildcard(Span),               // _
-    Rest(Span),                   // ..
+    Literal(Expr, Span),                   // 42, "hello", :ok, true, nil
+    Ident(String, Span),                   // x (binds the value)
+    Tuple(Vec<Pattern>, Span),             // (a, b, c)
+    Enum(Vec<String>, Vec<Pattern>, Span), // Ok(value), Err(e)
+    Wildcard(Span),                        // _
+    Rest(Span),                            // ..
 }
 
 impl Pattern {
     pub fn span(&self) -> Span {
         match self {
-            Pattern::Literal(_, s) | Pattern::Ident(_, s)
-            | Pattern::Tuple(_, s) | Pattern::Enum(_, _, s)
-            | Pattern::Wildcard(s) | Pattern::Rest(s) => *s,
+            Pattern::Literal(_, s)
+            | Pattern::Ident(_, s)
+            | Pattern::Tuple(_, s)
+            | Pattern::Enum(_, _, s)
+            | Pattern::Wildcard(s)
+            | Pattern::Rest(s) => *s,
         }
     }
 }

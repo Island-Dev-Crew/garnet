@@ -29,7 +29,10 @@ pub struct ConvertOutcome {
 }
 
 pub fn run(args: ConvertArgs) -> Result<ConvertOutcome, String> {
-    let lang = SourceLang::from_str(&args.source_lang)
+    let lang = args
+        .source_lang
+        .parse::<SourceLang>()
+        .ok()
         .or_else(|| {
             args.source_path
                 .extension()
@@ -47,10 +50,12 @@ pub fn run(args: ConvertArgs) -> Result<ConvertOutcome, String> {
         .map_err(|e| format!("read {}: {e}", args.source_path.display()))?;
 
     let source_loc = source.lines().count();
-    let out_dir = args
-        .out_dir
-        .clone()
-        .unwrap_or_else(|| args.source_path.parent().unwrap_or(Path::new(".")).to_path_buf());
+    let out_dir = args.out_dir.clone().unwrap_or_else(|| {
+        args.source_path
+            .parent()
+            .unwrap_or(Path::new("."))
+            .to_path_buf()
+    });
     let basename = args
         .source_path
         .file_stem()

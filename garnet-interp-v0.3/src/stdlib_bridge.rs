@@ -437,11 +437,8 @@ mod tests {
     fn str_split_bridge_produces_array() {
         let env = make_env();
         let split = env.get("split").expect("split should be bound");
-        let res = crate::eval::call_value(
-            &split,
-            vec![Value::str("a,b,c"), Value::str(",")],
-        )
-        .unwrap();
+        let res =
+            crate::eval::call_value(&split, vec![Value::str("a,b,c"), Value::str(",")]).unwrap();
         match res {
             Value::Array(items) => {
                 let items = items.borrow();
@@ -465,7 +462,9 @@ mod tests {
         let read = env.get("read_file").expect("read_file should be bound");
         let res = crate::eval::call_value(
             &read,
-            vec![Value::str("/nonexistent/path/should_not_exist_garnet_bridge_test.txt")],
+            vec![Value::str(
+                "/nonexistent/path/should_not_exist_garnet_bridge_test.txt",
+            )],
         );
         match res {
             Err(RuntimeError::Raised(v)) => {
@@ -486,8 +485,7 @@ mod tests {
             Value::Str(s) => {
                 // BLAKE3("") = af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262
                 assert_eq!(
-                    &*s,
-                    "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+                    &*s, "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
                     "known-vector regression"
                 );
             }
@@ -518,7 +516,11 @@ mod tests {
         let replace = env.get("replace").expect("replace should be bound");
         let res = crate::eval::call_value(
             &replace,
-            vec![Value::str("hello world"), Value::str("world"), Value::str("garnet")],
+            vec![
+                Value::str("hello world"),
+                Value::str("world"),
+                Value::str("garnet"),
+            ],
         )
         .unwrap();
         match res {
@@ -547,11 +549,13 @@ mod tests {
         let starts = env.get("starts_with").expect("starts_with bound");
         let contains = env.get("contains").expect("contains bound");
         assert!(matches!(
-            crate::eval::call_value(&starts, vec![Value::str("garnet"), Value::str("gar")]).unwrap(),
+            crate::eval::call_value(&starts, vec![Value::str("garnet"), Value::str("gar")])
+                .unwrap(),
             Value::Bool(true)
         ));
         assert!(matches!(
-            crate::eval::call_value(&contains, vec![Value::str("garnet"), Value::str("xyz")]).unwrap(),
+            crate::eval::call_value(&contains, vec![Value::str("garnet"), Value::str("xyz")])
+                .unwrap(),
             Value::Bool(false)
         ));
     }
@@ -561,11 +565,8 @@ mod tests {
         let env = make_env();
         let insert = env.get("insert").expect("insert bound");
         let original = Value::array(vec![Value::Int(1), Value::Int(3)]);
-        let res = crate::eval::call_value(
-            &insert,
-            vec![original, Value::Int(1), Value::Int(2)],
-        )
-        .unwrap();
+        let res =
+            crate::eval::call_value(&insert, vec![original, Value::Int(1), Value::Int(2)]).unwrap();
         match res {
             Value::Array(a) => {
                 let a = a.borrow();
@@ -604,7 +605,13 @@ mod tests {
                 let a = a.borrow();
                 let sorted: Vec<i64> = a
                     .iter()
-                    .filter_map(|v| if let Value::Int(i) = v { Some(*i) } else { None })
+                    .filter_map(|v| {
+                        if let Value::Int(i) = v {
+                            Some(*i)
+                        } else {
+                            None
+                        }
+                    })
                     .collect();
                 assert_eq!(sorted, vec![1, 1, 3, 4, 5]);
             }
@@ -645,11 +652,8 @@ mod tests {
             Value::Int(0x52),
             Value::Int(0x4e),
         ]);
-        crate::eval::call_value(
-            &write_bytes,
-            vec![Value::str(tmp_str.clone()), payload],
-        )
-        .expect("write_bytes");
+        crate::eval::call_value(&write_bytes, vec![Value::str(tmp_str.clone()), payload])
+            .expect("write_bytes");
 
         // Read back and confirm.
         let read_bytes = env.get("read_bytes").expect("read_bytes bound");
@@ -660,7 +664,13 @@ mod tests {
                 assert_eq!(a.len(), 4);
                 let values: Vec<i64> = a
                     .iter()
-                    .filter_map(|v| if let Value::Int(i) = v { Some(*i) } else { None })
+                    .filter_map(|v| {
+                        if let Value::Int(i) = v {
+                            Some(*i)
+                        } else {
+                            None
+                        }
+                    })
                     .collect();
                 assert_eq!(values, vec![0x47, 0x41, 0x52, 0x4e]);
             }
@@ -678,11 +688,27 @@ mod tests {
         // registry surface as new primitives get added.
         let env = make_env();
         let names = [
-            "split", "replace", "trim", "to_lower", "to_upper", "starts_with", "contains",
-            "now_ms", "wall_clock_ms", "sleep",
-            "blake3", "sha256", "hmac_sha256",
-            "insert", "remove", "sort",
-            "read_file", "write_file", "read_bytes", "write_bytes", "list_dir",
+            "split",
+            "replace",
+            "trim",
+            "to_lower",
+            "to_upper",
+            "starts_with",
+            "contains",
+            "now_ms",
+            "wall_clock_ms",
+            "sleep",
+            "blake3",
+            "sha256",
+            "hmac_sha256",
+            "insert",
+            "remove",
+            "sort",
+            "read_file",
+            "write_file",
+            "read_bytes",
+            "write_bytes",
+            "list_dir",
             "tcp_connect",
         ];
         assert!(names.len() >= 22, "bridge coverage regressed below 22");

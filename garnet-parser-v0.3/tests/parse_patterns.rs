@@ -7,7 +7,13 @@ fn patterns_of(src: &str) -> Vec<Pattern> {
     let wrapped = format!("def main() {{ {} }}", src);
     let m = parse_source(&wrapped).unwrap();
     let tail = match &m.items[0] {
-        Item::Fn(f) => f.body.tail_expr.as_ref().expect("expected tail").as_ref().clone(),
+        Item::Fn(f) => f
+            .body
+            .tail_expr
+            .as_ref()
+            .expect("expected tail")
+            .as_ref()
+            .clone(),
         _ => panic!("expected fn"),
     };
     match tail {

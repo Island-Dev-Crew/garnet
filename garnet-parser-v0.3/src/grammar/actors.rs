@@ -23,7 +23,12 @@ pub fn parse_actor(p: &mut Parser, public: bool) -> Result<ActorDef, ParseError>
 
     p.expect(&TokenKind::RBrace, "actor body")?;
     let span = start.join(p.prev_span());
-    Ok(ActorDef { public, name, items, span })
+    Ok(ActorDef {
+        public,
+        name,
+        items,
+        span,
+    })
 }
 
 fn parse_actor_item(p: &mut Parser) -> Result<ActorItem, ParseError> {
@@ -59,7 +64,9 @@ fn parse_actor_item(p: &mut Parser) -> Result<ActorItem, ParseError> {
 }
 
 fn parse_protocol_decl(p: &mut Parser) -> Result<ProtocolDecl, ParseError> {
-    let start = p.expect(&TokenKind::KwProtocol, "protocol declaration")?.span;
+    let start = p
+        .expect(&TokenKind::KwProtocol, "protocol declaration")?
+        .span;
     let (name, _) = p.expect_ident("protocol name")?;
     p.expect(&TokenKind::LParen, "protocol parameters")?;
     let params = functions::parse_param_list(p, true)?;
@@ -70,7 +77,12 @@ fn parse_protocol_decl(p: &mut Parser) -> Result<ProtocolDecl, ParseError> {
         None
     };
     let span = start.join(p.prev_span());
-    Ok(ProtocolDecl { name, params, return_ty, span })
+    Ok(ProtocolDecl {
+        name,
+        params,
+        return_ty,
+        span,
+    })
 }
 
 fn parse_handler_decl(p: &mut Parser) -> Result<HandlerDecl, ParseError> {
@@ -81,5 +93,10 @@ fn parse_handler_decl(p: &mut Parser) -> Result<HandlerDecl, ParseError> {
     p.expect(&TokenKind::RParen, "handler parameters")?;
     let body = stmts::parse_block(p)?;
     let span = start.join(body.span);
-    Ok(HandlerDecl { name, params, body, span })
+    Ok(HandlerDecl {
+        name,
+        params,
+        body,
+        span,
+    })
 }

@@ -91,10 +91,8 @@ pub fn verify_strategy(
     // preserve their original line numbers, we need a co-indexed read.
     // Use a dedicated helper that preserves line indices.
     let indexed = read_all_indexed_with_key(episode_dir, key);
-    let index: std::collections::BTreeMap<i64, &Episode> = indexed
-        .iter()
-        .map(|(id, ep)| (*id, ep))
-        .collect();
+    let index: std::collections::BTreeMap<i64, &Episode> =
+        indexed.iter().map(|(id, ep)| (*id, ep)).collect();
 
     // 4. Every justifying id must exist in the verified-episode index.
     let mut resolved: Vec<&Episode> = Vec::new();
@@ -102,9 +100,7 @@ pub fn verify_strategy(
         match index.get(id) {
             Some(ep) => resolved.push(*ep),
             None => {
-                return Err(QuarantineReason::MissingOrTamperedJustification {
-                    missing_id: *id,
-                });
+                return Err(QuarantineReason::MissingOrTamperedJustification { missing_id: *id });
             }
         }
     }
@@ -137,7 +133,11 @@ fn read_all_indexed_with_key(dir: &Path, key: &[u8; 32]) -> Vec<(i64, Episode)> 
         return Vec::new();
     };
     let mut out = Vec::new();
-    for (idx, line) in BufReader::new(file).lines().map_while(Result::ok).enumerate() {
+    for (idx, line) in BufReader::new(file)
+        .lines()
+        .map_while(Result::ok)
+        .enumerate()
+    {
         if let Some(ep) = Episode::from_ndjson_line(&line) {
             if ep.verify_with_key(key) {
                 out.push((idx as i64, ep));

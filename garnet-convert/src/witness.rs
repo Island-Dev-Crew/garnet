@@ -35,7 +35,12 @@ fn verify_recursive(cir: &Cir, index: &mut usize) -> Result<(), ConvertError> {
                 verify_recursive(stmt, index)?;
             }
         }
-        Cir::If { cond, then_b, else_b, .. } => {
+        Cir::If {
+            cond,
+            then_b,
+            else_b,
+            ..
+        } => {
             verify_recursive(cond, index)?;
             for s in then_b {
                 verify_recursive(s, index)?;
@@ -58,7 +63,9 @@ fn verify_recursive(cir: &Cir, index: &mut usize) -> Result<(), ConvertError> {
                 verify_recursive(s, index)?;
             }
         }
-        Cir::Match { scrutinee, arms, .. } => {
+        Cir::Match {
+            scrutinee, arms, ..
+        } => {
             verify_recursive(scrutinee, index)?;
             for arm in arms {
                 verify_recursive(&arm.pattern, index)?;
@@ -70,12 +77,14 @@ fn verify_recursive(cir: &Cir, index: &mut usize) -> Result<(), ConvertError> {
                 }
             }
         }
-        Cir::Return { value, .. } => {
-            if let Some(v) = value {
-                verify_recursive(v, index)?;
-            }
-        }
-        Cir::Try { body, catches, finally, .. } => {
+        Cir::Return { value: Some(v), .. } => verify_recursive(v, index)?,
+        Cir::Return { value: None, .. } => {}
+        Cir::Try {
+            body,
+            catches,
+            finally,
+            ..
+        } => {
             for s in body {
                 verify_recursive(s, index)?;
             }
@@ -90,11 +99,8 @@ fn verify_recursive(cir: &Cir, index: &mut usize) -> Result<(), ConvertError> {
                 }
             }
         }
-        Cir::Let { value, .. } => {
-            if let Some(v) = value {
-                verify_recursive(v, index)?;
-            }
-        }
+        Cir::Let { value: Some(v), .. } => verify_recursive(v, index)?,
+        Cir::Let { value: None, .. } => {}
         Cir::Call { func, args, .. } => {
             verify_recursive(func, index)?;
             for a in args {

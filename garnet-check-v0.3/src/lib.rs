@@ -192,11 +192,12 @@ fn check_fn(f: &FnDef, module_safe: bool, report: &mut CheckReport) {
     // `main` MUST declare @caps(...) per Mini-Spec v1.0 §16 + Security V2 §1.4
     // (an empty list is acceptable; absence is not).
     if f.name == "main" && !caps_seen {
-        report.errors.push(CheckError::AnnotationError(format!(
+        report.errors.push(CheckError::AnnotationError(
             "`main` function must declare its required capabilities; \
              use @caps() for purely-computational programs, \
              or @caps(fs, net, ...) listing the OS authority required"
-        )));
+                .to_string(),
+        ));
     }
     // Stash the function's caps onto the report so a future call-graph
     // pass (v3.4.x) can do transitive propagation. For v3.4.0 we only
@@ -253,9 +254,7 @@ fn walk_stmts_for_safe_violations(
                     fn_name
                 )));
             }
-            Stmt::While { body, .. }
-            | Stmt::For { body, .. }
-            | Stmt::Loop { body, .. } => {
+            Stmt::While { body, .. } | Stmt::For { body, .. } | Stmt::Loop { body, .. } => {
                 walk_stmts_for_safe_violations(&body.stmts, fn_name, report, effective_safe);
                 if let Some(tail) = &body.tail_expr {
                     walk_expr_for_safe_violations(tail, fn_name, report, effective_safe);
@@ -313,7 +312,12 @@ fn walk_expr_for_safe_violations(
             walk_expr_for_safe_violations(lhs, fn_name, report, effective_safe);
             walk_expr_for_safe_violations(rhs, fn_name, report, effective_safe);
         }
-        Call { callee, args, .. } | Method { receiver: callee, args, .. } => {
+        Call { callee, args, .. }
+        | Method {
+            receiver: callee,
+            args,
+            ..
+        } => {
             walk_expr_for_safe_violations(callee, fn_name, report, effective_safe);
             for a in args {
                 walk_expr_for_safe_violations(a, fn_name, report, effective_safe);
@@ -344,16 +348,20 @@ mod tests {
         // Parser rejects safe fn without return type, so we build via a safe
         // module with a def (which at module-level is treated as effective
         // safe) that uses `var`.
-        let m = parse(r#"
+        let m = parse(
+            r#"
             @safe
             def bad() {
                 var x = 42
                 x
             }
-        "#);
+        "#,
+        );
         let r = check_module(&m);
         assert!(
-            r.errors.iter().any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("var"))),
+            r.errors
+                .iter()
+                .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("var"))),
             "expected var violation, got {:?}",
             r.errors
         );
@@ -361,13 +369,15 @@ mod tests {
 
     #[test]
     fn safe_fn_with_raise_flagged() {
-        let m = parse(r#"
+        let m = parse(
+            r#"
             @safe
             def oops() {
                 raise "nope"
                 0
             }
-        "#);
+        "#,
+        );
         let r = check_module(&m);
         assert!(
             r.errors
@@ -379,12 +389,14 @@ mod tests {
 
     #[test]
     fn annotation_bounds_enforced() {
-        let m = parse(r#"
+        let m = parse(
+            r#"
             @max_depth(200)
             def recursive() {
                 recursive()
             }
-        "#);
+        "#,
+        );
         let r = check_module(&m);
         assert!(
             r.errors
@@ -396,12 +408,14 @@ mod tests {
 
     #[test]
     fn boundary_call_sites_counted() {
-        let m = parse(r#"
+        let m = parse(
+            r#"
             def outer(x) {
                 inner(x) + 1
             }
             def inner(x) { x * 2 }
-        "#);
+        "#,
+        );
         let r = check_module(&m);
         assert!(r.boundary_call_sites > 0);
     }

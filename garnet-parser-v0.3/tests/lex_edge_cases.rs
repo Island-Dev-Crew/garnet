@@ -6,7 +6,11 @@ use garnet_parser::lex_source;
 use garnet_parser::token::{StrPart, TokenKind};
 
 fn kinds(src: &str) -> Vec<TokenKind> {
-    lex_source(src).unwrap().into_iter().map(|t| t.kind).collect()
+    lex_source(src)
+        .unwrap()
+        .into_iter()
+        .map(|t| t.kind)
+        .collect()
 }
 
 fn first_kind(src: &str) -> TokenKind {
@@ -191,7 +195,9 @@ fn ident_with_digits() {
 #[test]
 fn empty_string_literal() {
     let toks = kinds(r#""""#);
-    assert!(matches!(toks[0], TokenKind::Str(ref parts) if parts.is_empty() || matches!(&parts[0], StrPart::Lit(s) if s.is_empty())));
+    assert!(
+        matches!(toks[0], TokenKind::Str(ref parts) if parts.is_empty() || matches!(&parts[0], StrPart::Lit(s) if s.is_empty()))
+    );
 }
 
 #[test]
@@ -255,7 +261,10 @@ fn tabs_treated_as_spaces() {
 #[test]
 fn crlf_newline_is_one_token() {
     let toks = kinds("a\r\nb");
-    let nl_count = toks.iter().filter(|k| matches!(k, TokenKind::Newline)).count();
+    let nl_count = toks
+        .iter()
+        .filter(|k| matches!(k, TokenKind::Newline))
+        .count();
     assert_eq!(nl_count, 1);
 }
 

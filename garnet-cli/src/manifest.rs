@@ -117,10 +117,10 @@ impl Manifest {
         if !self.is_signed() {
             return Err("manifest is not signed".to_string());
         }
-        let pubkey_bytes: [u8; 32] = hex_decode_32(&self.signer_pubkey)
-            .map_err(|e| format!("bad signer_pubkey: {e}"))?;
-        let sig_bytes: [u8; 64] = hex_decode_64(&self.signature)
-            .map_err(|e| format!("bad signature: {e}"))?;
+        let pubkey_bytes: [u8; 32] =
+            hex_decode_32(&self.signer_pubkey).map_err(|e| format!("bad signer_pubkey: {e}"))?;
+        let sig_bytes: [u8; 64] =
+            hex_decode_64(&self.signature).map_err(|e| format!("bad signature: {e}"))?;
         let verifying_key = ed25519_dalek::VerifyingKey::from_bytes(&pubkey_bytes)
             .map_err(|e| format!("invalid Ed25519 pubkey: {e}"))?;
         let signature = ed25519_dalek::Signature::from_bytes(&sig_bytes);
@@ -318,7 +318,10 @@ fn hex_decode_32(hex: &str) -> Result<[u8; 32], String> {
 fn hex_decode_64(hex: &str) -> Result<[u8; 64], String> {
     let v = hex_decode(hex)?;
     if v.len() != 64 {
-        return Err(format!("expected 64 bytes (128 hex chars), got {}", v.len()));
+        return Err(format!(
+            "expected 64 bytes (128 hex chars), got {}",
+            v.len()
+        ));
     }
     let mut arr = [0u8; 64];
     arr.copy_from_slice(&v);
@@ -326,7 +329,7 @@ fn hex_decode_64(hex: &str) -> Result<[u8; 64], String> {
 }
 
 fn hex_decode(hex: &str) -> Result<Vec<u8>, String> {
-    if hex.len() % 2 != 0 {
+    if !hex.len().is_multiple_of(2) {
         return Err(format!("hex length must be even, got {}", hex.len()));
     }
     let mut out = Vec::with_capacity(hex.len() / 2);
@@ -386,7 +389,9 @@ fn target_triple() -> String {
     // Compile-time target triple, baked in via the `RUSTC_TARGET` env we
     // set up during build. Falls back to a portable identifier if not
     // available so the manifest is still deterministic.
-    option_env!("TARGET").unwrap_or("unknown-target").to_string()
+    option_env!("TARGET")
+        .unwrap_or("unknown-target")
+        .to_string()
 }
 
 // ── Stable AST → string projection ──────────────────────────────────
@@ -573,17 +578,26 @@ fn write_expr(out: &mut String, expr: &Expr) {
             write_expr(out, callee);
             let _ = write!(out, ", argc={})", args.len());
         }
-        Expr::Method { receiver, method, args, .. } => {
+        Expr::Method {
+            receiver,
+            method,
+            args,
+            ..
+        } => {
             out.push_str("Method(");
             write_expr(out, receiver);
             let _ = write!(out, ", .{}, argc={})", method, args.len());
         }
-        Expr::Field { receiver, field, .. } => {
+        Expr::Field {
+            receiver, field, ..
+        } => {
             out.push_str("Field(");
             write_expr(out, receiver);
             let _ = write!(out, ", .{})", field);
         }
-        Expr::Index { receiver, index, .. } => {
+        Expr::Index {
+            receiver, index, ..
+        } => {
             out.push_str("Index(");
             write_expr(out, receiver);
             out.push_str(", ");
@@ -653,8 +667,14 @@ mod tests {
         let m2 = parse_source(src2).unwrap();
         let mfa = Manifest::build(src1, &m1);
         let mfb = Manifest::build(src2, &m2);
-        assert_ne!(mfa.source_hash, mfb.source_hash, "source hashes must differ");
-        assert_eq!(mfa.ast_hash, mfb.ast_hash, "AST hashes must match — same shape");
+        assert_ne!(
+            mfa.source_hash, mfb.source_hash,
+            "source hashes must differ"
+        );
+        assert_eq!(
+            mfa.ast_hash, mfb.ast_hash,
+            "AST hashes must match — same shape"
+        );
     }
 
     #[test]
@@ -838,7 +858,10 @@ mod tests {
     fn signing_key_from_hex_rejects_non_hex() {
         let bad = "g".repeat(64); // 'g' is not a hex digit
         match signing_key_from_hex(&bad) {
-            Err(msg) => assert!(msg.contains("non-hex") || msg.contains("expected"), "got {msg}"),
+            Err(msg) => assert!(
+                msg.contains("non-hex") || msg.contains("expected"),
+                "got {msg}"
+            ),
             Ok(_) => panic!("non-hex must be rejected"),
         }
     }

@@ -108,10 +108,8 @@ fn parses_fan_out_annotation() {
 
 #[test]
 fn parses_multiple_annotations() {
-    let m = parse_source(
-        "@max_depth(2)\n@fan_out(5)\ndef parallel_search(queries) { queries }",
-    )
-    .unwrap();
+    let m = parse_source("@max_depth(2)\n@fan_out(5)\ndef parallel_search(queries) { queries }")
+        .unwrap();
     match &m.items[0] {
         Item::Fn(f) => assert_eq!(f.annotations.len(), 2),
         _ => panic!("expected fn"),
@@ -135,10 +133,8 @@ fn parses_closure_single_expr() {
 
 #[test]
 fn parses_closure_block_body() {
-    let m = parse_source(
-        "def main() { let f = |data: Buffer| { let x = data.compress()\nx }\nf }",
-    )
-    .unwrap();
+    let m = parse_source("def main() { let f = |data: Buffer| { let x = data.compress()\nx }\nf }")
+        .unwrap();
     match &m.items[0] {
         Item::Fn(f) => match &f.body.stmts[0] {
             garnet_parser::ast::Stmt::Let(_) => {}

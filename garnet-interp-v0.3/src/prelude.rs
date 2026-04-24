@@ -242,11 +242,7 @@ fn prim_identity_stub(args: Vec<Value>) -> Result<Value, RuntimeError> {
     Ok(args.into_iter().next().unwrap_or(Value::Nil))
 }
 
-fn make_variant_constructor(
-    enum_name: &str,
-    variant: &str,
-    arity: usize,
-) -> Value {
+fn make_variant_constructor(enum_name: &str, variant: &str, arity: usize) -> Value {
     let enum_name = enum_name.to_string();
     let variant = variant.to_string();
     Value::NativeFn(Rc::new(NativeFnValue {

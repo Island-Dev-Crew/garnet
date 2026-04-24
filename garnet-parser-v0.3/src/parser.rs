@@ -91,7 +91,6 @@ impl Drop for DepthGuard {
 }
 
 impl Parser {
-
     /// Look at the current token without consuming it. If the parser is
     /// positioned past the end of an empty token stream, returns a static
     /// EOF token instead of panicking. The lexer always emits a trailing
@@ -118,11 +117,9 @@ impl Parser {
 
     /// Consume the current token and return it.
     pub fn bump(&mut self) -> Token {
-        let tok = self.tokens.get(self.pos).cloned().unwrap_or_else(|| {
-            Token {
-                kind: TokenKind::Eof,
-                span: self.eof_span(),
-            }
+        let tok = self.tokens.get(self.pos).cloned().unwrap_or_else(|| Token {
+            kind: TokenKind::Eof,
+            span: self.eof_span(),
         });
         if self.pos < self.tokens.len() {
             self.pos += 1;

@@ -69,7 +69,10 @@ fn fifty_level_array_nesting() {
 
 #[test]
 fn long_arithmetic_chain() {
-    let chain: String = (0..1000).map(|i| format!("{i}")).collect::<Vec<_>>().join(" + ");
+    let chain: String = (0..1000)
+        .map(|i| format!("{i}"))
+        .collect::<Vec<_>>()
+        .join(" + ");
     let src = format!("def main() {{ {chain} }}");
     parse_source(&src).expect("1000-term sum must parse");
 }
