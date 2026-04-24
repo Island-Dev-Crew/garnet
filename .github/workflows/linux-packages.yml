@@ -1,7 +1,7 @@
 # Garnet — Linux packaging + verification CI (v4.2 Phase 6D).
 #
 # Reproduces the Docker-based verification run manually on 2026-04-17
-# (see Garnet_Final/F_Project_Management/GARNET_v4_2_Phase_6D_Linux_VERIFIED.md)
+# (see F_Project_Management/GARNET_v4_2_Phase_6D_Linux_VERIFIED.md)
 # as a CI job so every push automatically confirms .deb + .rpm still
 # install cleanly and still pass the 6-gate smoke.
 #
@@ -9,8 +9,8 @@
 #   - Computes SHA-256 of each artifact
 #   - Appends them to a SHA256SUMS file
 #   - Uploads both packages + SHA256SUMS as a release asset
-# These are the files `installer/sh.garnet-lang.org/install.sh` fetches
-# when end users run `curl sh.garnet-lang.org | sh`.
+# These are the files `docs/install.sh` fetches after GitHub Pages serves it at
+# `https://garnet-lang.org/install.sh`.
 
 name: Linux packages
 
@@ -177,22 +177,26 @@ jobs:
           test -f /usr/share/man/man1/garnet.1
 
   # ───────────────────────────────────────────────────────────────────
-  # 4. shellcheck the universal installer.
+  # 4. Verify the universal installer copies stay in sync and shellcheck clean.
   # ───────────────────────────────────────────────────────────────────
   shellcheck-installer:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Installer copies stay identical
+        run: cmp -s installer/sh.garnet-lang.org/install.sh docs/install.sh
+
       - name: shellcheck
         run: |
           docker run --rm -v "$PWD:/work" \
             koalaman/shellcheck:stable \
             --shell=sh --severity=warning \
-            /work/installer/sh.garnet-lang.org/install.sh
+            /work/installer/sh.garnet-lang.org/install.sh \
+            /work/docs/install.sh
 
   # ───────────────────────────────────────────────────────────────────
   # 5. On tagged release only: publish packages + SHA256SUMS as a
-  #    GitHub Release. End-users fetch via sh.garnet-lang.org.
+  #    GitHub Release. End-users fetch via garnet-lang.org/install.sh.
   # ───────────────────────────────────────────────────────────────────
   release:
     if: startsWith(github.ref, 'refs/tags/v')

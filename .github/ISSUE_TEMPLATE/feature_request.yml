@@ -8,8 +8,8 @@ body:
       value: |
         Before filing a feature request, please read:
 
-        - [Garnet_Final/C_Language_Specification/GARNET_v1_0_Mini_Spec.md](../../Garnet_Final/C_Language_Specification/GARNET_v1_0_Mini_Spec.md) — the canonical language spec
-        - [GARNET_v4_2_HANDOFF.md §v4.2 → POST-MIT ROADMAP](../../Garnet_Final/F_Project_Management/GARNET_v4_2_HANDOFF.md) — what's already planned
+        - [C_Language_Specification/GARNET_v1_0_Mini_Spec.md](../../C_Language_Specification/GARNET_v1_0_Mini_Spec.md) — the canonical language spec
+        - [GARNET_v4_2_HANDOFF.md §v4.2 → POST-MIT ROADMAP](../../F_Project_Management/GARNET_v4_2_HANDOFF.md) — what's already planned
 
         Many features people want are on the existing roadmap; if yours is, upvote those issues instead of filing a duplicate.
 

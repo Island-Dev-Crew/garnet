@@ -10,7 +10,7 @@ A dual-mode, agent-native language platform. **Managed mode** (`def` + ARC + exc
 
 ## Why dual-mode? Why not just pick one?
 
-Every team that builds ambitious software eventually makes the same bargain: Rust for the hot path, Ruby (or Python, Node) for the orchestration, painful FFI between. Garnet's claim is that bargain isn't necessary — the two registers of thought (the mathematical and the conversational) can live in one coherent grammar if the boundary between them is made visible. See [Paper III §1 "The Reconciliation"](Garnet_Final/A_Research_Papers/) for the full argument.
+Every team that builds ambitious software eventually makes the same bargain: Rust for the hot path, Ruby (or Python, Node) for the orchestration, painful FFI between. Garnet's claim is that bargain isn't necessary — the two registers of thought (the mathematical and the conversational) can live in one coherent grammar if the boundary between them is made visible. See [Paper III §1 "The Reconciliation"](A_Research_Papers/Paper_III_Garnet_Synthesis_v2_1.md) for the full argument.
 
 ## How does the mode boundary actually work?
 
@@ -46,7 +46,7 @@ Swift and Kotlin do interop between two paradigms in one language; Garnet's pitc
 
 ## What's the performance story?
 
-For pure-computational workloads the tree-walk interpreter (Rung 3) is in the same order of magnitude as Ruby — appropriate for the v0.3 research release. The next rung (Rung 8 / v5.0) is a bytecode VM behind the same surface; that closes the gap to Rust on the hot path. See [Paper VII — Implementation Ladder and Tooling](Garnet_Final/A_Research_Papers/Paper_VII_Implementation_Ladder_and_Tooling.md) for the staged roadmap.
+For pure-computational workloads the tree-walk interpreter (Rung 3) is in the same order of magnitude as Ruby — appropriate for the v0.3 research release. The next rung (Rung 8 / v5.0) is a bytecode VM behind the same surface; that closes the gap to Rust on the hot path. See [Paper VII — Implementation Ladder and Tooling](A_Research_Papers/Paper_VII_Implementation_Ladder_and_Tooling.md) for the staged roadmap.
 
 Memory: Paper VI Experiment 4 measured 21% peak RSS reduction on the multi-agent MVP workload by using kind-aware allocation (`memory working|episodic|semantic|procedural` keywords) compared to a force-malloc control.
 
@@ -64,7 +64,7 @@ For prototype agents and scripting — green. For production-bearing infrastruct
 
 `garnet convert <lang> <file>` reads source in any of the four languages and emits Garnet. Every output file starts `@sandbox` + `@caps()` (v4.0 SandboxMode default — the converter never grants caps automatically; a human audits each file before lifting the sandbox via `@sandbox(unquarantine)` and adding the explicit `@caps(...)` based on what the code actually does).
 
-The converter ships a lineage JSON for each output mapping every emitted Garnet AST node back to its source span. Cargo-style migration: convert one file at a time, FFI-call the rest, repeat until done. See `Garnet_Final/C_Language_Specification/v4_1_Converter_Architecture.md` for the full pipeline.
+The converter ships a lineage JSON for each output mapping every emitted Garnet AST node back to its source span. Cargo-style migration: convert one file at a time, FFI-call the rest, repeat until done. See [v4_1_Converter_Architecture.md](C_Language_Specification/v4_1_Converter_Architecture.md) for the full pipeline.
 
 ## What's `@sandbox` for?
 
@@ -72,7 +72,7 @@ A `@sandbox` annotation is the converter's "I produced this from another languag
 
 ## Where do I report bugs / request features?
 
-[github.com/IslandDevCrew/garnet/issues](https://github.com/IslandDevCrew/garnet/issues). Use the bug report template for crashes / wrong outputs, the feature request template for proposals. For security disclosures, see [SECURITY.md](SECURITY.md) — please don't open public issues for vulnerabilities.
+[github.com/Island-Dev-Crew/garnet/issues](https://github.com/Island-Dev-Crew/garnet/issues). Use the bug report template for crashes / wrong outputs, the feature request template for proposals. For security disclosures, see [SECURITY.md](SECURITY.md) — please don't open public issues for vulnerabilities.
 
 ## Why the name "Garnet"?
 
@@ -88,7 +88,7 @@ Yes — the dual MIT / Apache-2.0 license explicitly permits commercial use, mod
 
 ## Do I need the Rust toolchain to use Garnet?
 
-No. To **use** Garnet, install via `curl --proto '=https' --tlsv1.2 -sSf https://sh.garnet-lang.org | sh` (or download the native `.deb` / `.rpm` / `.pkg` / `.msi` from [Releases](https://github.com/IslandDevCrew/garnet/releases)). The installed `garnet` binary is self-contained.
+Not after release assets are published. The intended user install is `curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh` (or a native `.deb` / `.rpm` / `.pkg` / `.msi` from [Releases](https://github.com/Island-Dev-Crew/garnet/releases)). Until the first `v0.4.2` GitHub Release is cut, use the source install from the README, which does require Rust.
 
 To **build** Garnet from source you need Rust 1.95+ (managed via `rustup`). On Windows, MSVC toolchain is required (MinGW triggers a known miette ABI issue — see Boot doc Known Issue 1).
 
@@ -124,7 +124,7 @@ Signing is opt-in. Without `--sign`, the build still produces a deterministic ma
 
 ## What does the project ship as its own deliverable for MIT?
 
-The full corpus at `Garnet_Final/` — 7 research papers + 4 addenda, the canonical Mini-Spec v1.0, the engineering workspace (9 Rust crates, 10 MVP programs, 1244 tests), the DX Comparative Paper + Deck, and 11 stage handoff documents (v3.3 → v4.2). The complete history is reproducible commit-by-commit. See [GARNET_v4_2_HANDOFF.md](Garnet_Final/F_Project_Management/GARNET_v4_2_HANDOFF.md) §"Reviewer's 15-Minute Quickstart" for the suggested reading order.
+The full corpus in this repository — 7 research papers + 4 addenda, the canonical Mini-Spec v1.0, the engineering workspace (9 Rust crates, 10 MVP programs, 1244 tests), the DX Comparative Paper + Deck, and 11 stage handoff documents (v3.3 → v4.2). The complete history is reproducible commit-by-commit. See [GARNET_v4_2_HANDOFF.md](F_Project_Management/GARNET_v4_2_HANDOFF.md) §"Reviewer's 15-Minute Quickstart" for the suggested reading order.
 
 ## What's coming in v4.3?
 
@@ -133,7 +133,7 @@ The full corpus at `Garnet_Final/` — 7 research papers + 4 addenda, the canoni
 - Package-repository signing so `apt install garnet` / `dnf install garnet` works from `pkg.garnet-lang.org`
 - Documentation site at `docs.garnet-lang.org` (mdBook scaffold)
 
-See `GARNET_v4_2_HANDOFF.md` §"v4.2 → POST-MIT ROADMAP" for the longer view.
+See [GARNET_v4_2_HANDOFF.md](F_Project_Management/GARNET_v4_2_HANDOFF.md) §"v4.2 → POST-MIT ROADMAP" for the longer view.
 
 ## Who built this?
 
@@ -141,7 +141,7 @@ See `GARNET_v4_2_HANDOFF.md` §"v4.2 → POST-MIT ROADMAP" for the longer view.
 
 ## I have a question that isn't answered here.
 
-Open a Q&A discussion at [github.com/IslandDevCrew/garnet/discussions](https://github.com/IslandDevCrew/garnet/discussions), or use the question template at [github.com/IslandDevCrew/garnet/issues/new/choose](https://github.com/IslandDevCrew/garnet/issues/new/choose).
+Open a Q&A discussion at [github.com/Island-Dev-Crew/garnet/discussions](https://github.com/Island-Dev-Crew/garnet/discussions), or use the question template at [github.com/Island-Dev-Crew/garnet/issues/new/choose](https://github.com/Island-Dev-Crew/garnet/issues/new/choose).
 
 ---
 

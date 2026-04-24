@@ -42,13 +42,21 @@ Single `garnet` CLI. Deterministic signed manifests. Dependency-graph audit buil
 ## Install
 
 ```sh
-# Universal (auto-detects .deb / .rpm / .pkg / tar):
+# Source install, available today:
 git clone https://github.com/Island-Dev-Crew/garnet
 cd garnet/garnet-cli
 cargo install --path .
 ```
 
-For now, install from source (release assets and the universal installer are not live yet):
+The release-backed installer target is:
+
+```sh
+curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
+```
+
+That one-liner becomes the recommended install path after the `v0.4.2`
+GitHub Release contains the assets below. Until then, source install is the
+truthful path.
 
 | Platform      | Installer                                   | Signing                           |
 |---------------|---------------------------------------------|-----------------------------------|
@@ -57,7 +65,13 @@ For now, install from source (release assets and the universal installer are not
 | macOS (.pkg)  | `garnet-0.4.2-universal.pkg`                | Apple Developer ID + notarized    |
 | Windows (.msi) | `garnet-0.4.2-x86_64.msi`                   | Authenticode + timestamped        |
 
-All release assets are SHA-256 pinned in `SHA256SUMS` and fetched by the universal installer before the native-package install runs. See [SECURITY.md](SECURITY.md) for the supply-chain story.
+The installer fetches assets from
+[`github.com/Island-Dev-Crew/garnet/releases`](https://github.com/Island-Dev-Crew/garnet/releases),
+verifies the selected file against `SHA256SUMS`, and fails clearly if the
+release, checksum manifest, or package is missing. See [SECURITY.md](SECURITY.md)
+for the supply-chain story and
+[`GARNET_v0_4_2_Installer_Release_Contract.md`](C_Language_Specification/GARNET_v0_4_2_Installer_Release_Contract.md)
+for the exact hosting, artifact, integrity, and release-pipeline contract.
 
 ## Quickstart
 

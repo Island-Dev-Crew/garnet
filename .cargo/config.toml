@@ -1,9 +1,14 @@
-# Workspace cargo config — pins the build to a path WITHOUT spaces so that
-# MinGW dlltool can invoke its sub-tools (gas) successfully on Windows.
-# The workspace itself sits under "D:/Projects/New folder/Garnet (1)/...",
-# whose spaces and parentheses break GNU binutils argument parsing.
+# Workspace cargo config.
 #
-# Override with: cargo build --target-dir <other> ...
+# Do not commit machine-specific absolute paths here. A previous Windows-local
+# target dir (`C:/garnet-build/target`) breaks macOS because the `C:` segment is
+# treated as a path separator when Cargo builds dynamic-library search paths.
+#
+# If a Windows MinGW setup needs a no-spaces target directory, pass it locally:
+#
+#   cargo build --target-dir C:/garnet-build/target
+#
+# MSVC and Unix-like builds should use the repo-local target directory below.
 
 [build]
-target-dir = "C:/garnet-build/target"
+target-dir = "target"

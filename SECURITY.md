@@ -17,7 +17,7 @@ Garnet follows a forward-compatible security support window: the current release
 
 Instead, use one of:
 
-1. **GitHub Security Advisory** (preferred): open a private advisory at [github.com/IslandDevCrew/garnet/security/advisories/new](https://github.com/IslandDevCrew/garnet/security/advisories/new). GitHub notifies the maintainer privately; the disclosure stays invisible to the public until published.
+1. **GitHub Security Advisory** (preferred): open a private advisory at [github.com/Island-Dev-Crew/garnet/security/advisories/new](https://github.com/Island-Dev-Crew/garnet/security/advisories/new). GitHub notifies the maintainer privately; the disclosure stays invisible to the public until published.
 2. **Email**: `security@garnet-lang.org` (once the domain is registered) or `jon@island-dev-crew.example`. PGP-encrypt if you have a key reference from a prior handoff; otherwise plaintext is fine — the maintainer will respond with a secure channel.
 
 ### What to include
@@ -73,9 +73,9 @@ PoCs that don't actually execute — e.g., "I think this is exploitable because.
 
 ## Published advisories
 
-Past security advisories are published at [github.com/IslandDevCrew/garnet/security/advisories](https://github.com/IslandDevCrew/garnet/security/advisories).
+Past security advisories are published at [github.com/Island-Dev-Crew/garnet/security/advisories](https://github.com/Island-Dev-Crew/garnet/security/advisories).
 
-v4.2 ships with 136 security-specific tests across 4 hardening layers (v3.3 Layer 1 through v4.0 Layer 4). The threat model is documented in `Garnet_Final/F_Project_Management/GARNET_v3_3_SECURITY_THREAT_MODEL.md` — 15 hardening patterns, two of which are novel Garnet-specific classes (strategy-miner adversarial training, `Box<dyn Any>` hot-reload type confusion) with no prior art elsewhere.
+v4.2 ships with 136 security-specific tests across 4 hardening layers (v3.3 Layer 1 through v4.0 Layer 4). The threat model is documented in [GARNET_v3_3_SECURITY_THREAT_MODEL.md](F_Project_Management/GARNET_v3_3_SECURITY_THREAT_MODEL.md) — 15 hardening patterns, two of which are novel Garnet-specific classes (strategy-miner adversarial training, `Box<dyn Any>` hot-reload type confusion) with no prior art elsewhere.
 
 ## Cryptographic primitives
 
@@ -87,9 +87,9 @@ No in-house cryptography. All primitives are battle-tested libraries with establ
 
 ## Release signing
 
-Every `v*` tag pushed to the GitHub repo triggers `.github/workflows/linux-packages.yml`, which builds `.deb` + `.rpm` + `SHA256SUMS` and publishes them as a GitHub Release asset. The `sh.garnet-lang.org/install.sh` installer fetches `SHA256SUMS` from `releases.garnet-lang.org` and verifies every downloaded asset before running the native installer.
+Every `v*` tag pushed to the GitHub repo triggers `.github/workflows/linux-packages.yml`, which builds `.deb` + `.rpm` + `SHA256SUMS` and publishes them as GitHub Release assets. The `https://garnet-lang.org/install.sh` installer fetches `SHA256SUMS` from the same GitHub Release and verifies every downloaded asset before running the native installer.
 
-Binaries themselves are Ed25519-signed by the project's release key (pubkey pinned in the install script). Signature verification is mandatory when installing via the universal installer.
+Current universal-installer integrity is SHA-256 based. Platform signing remains platform-specific: macOS packages should be Developer ID signed and notarized, and Windows MSI packages should be Authenticode signed and timestamped before publication. Do not claim release-signature verification in the installer until a public release key is pinned in the script and the verification path is implemented.
 
 ---
 

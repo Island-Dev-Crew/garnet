@@ -12,6 +12,14 @@ Garnet must be as easy to install and adopt as Python or C++. A developer on any
 
 The design mirrors Rust's `rustup` — proven across 10M+ users and considered best-in-class for language toolchain management — while adding Garnet-specific concerns (dual-backend selection, `.garnet-manifest` provenance, kind-aware allocator libraries).
 
+> **Current v0.4.2 implementation note.** Garnet does not yet ship the future
+> `garnetup` toolchain manager described in Section 3. The current installer is
+> a native-package bootstrapper served from `https://garnet-lang.org/install.sh`.
+> It downloads release assets from GitHub Releases, verifies `SHA256SUMS`, runs
+> the platform installer, and then runs `garnet --version`. Treat the `garnetup`
+> sections below as the post-v0.4.2 roadmap. The concrete v0.4.2 contract lives
+> in `GARNET_v0_4_2_Installer_Release_Contract.md`.
+
 ---
 
 ## 2. Installation Entry Points
@@ -22,9 +30,9 @@ The design mirrors Rust's `rustup` — proven across 10M+ users and considered b
 curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 ```
 
-- `install.sh` auto-detects platform (`uname -s -m`), downloads the correct `garnetup` binary, places it in `~/.garnet/bin/garnetup`, and appends `~/.garnet/bin` to the user's `PATH` via `.bashrc` / `.zshrc` / `.profile`.
+- `install.sh` auto-detects platform (`uname -s -m`), downloads the correct native package from the `v<version>` GitHub Release, verifies it against `SHA256SUMS`, installs it, and runs `garnet --version`.
 - Exit code 0 on success; non-zero on any failure with a human-readable message (miette-style diagnostic, mirroring the compiler's error style).
-- No `sudo` required for default user-level install; `GARNET_INSTALL_PREFIX=/usr/local curl ... | sudo sh` for system-wide install.
+- Native package installs may require `sudo`; tarball fallback installs to `~/.local/bin` by default and can be redirected with `GARNET_PREFIX`.
 
 ### 2.2 Windows
 
@@ -32,9 +40,9 @@ curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 Invoke-WebRequest -Uri https://garnet-lang.org/install.ps1 -UseBasicParsing | Invoke-Expression
 ```
 
-- `install.ps1` downloads `garnetup.exe` to `%USERPROFILE%\.garnet\bin\` and updates the user PATH environment variable.
-- No administrator privileges required for default user-level install.
-- MSI installer available at `https://garnet-lang.org/garnet-windows-x64.msi` for managed deployments.
+- The v0.4.2 Windows path is the MSI artifact attached to the GitHub Release:
+  `garnet-0.4.2-x86_64.msi`.
+- A future `install.ps1` can provide a no-admin, user-level `garnetup` path.
 
 ### 2.3 Offline / airgapped installation
 
