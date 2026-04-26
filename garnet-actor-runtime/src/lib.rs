@@ -1,4 +1,4 @@
-//! # Garnet Actor Runtime (v0.3.1)
+//! # Garnet Actor Runtime (v0.4.0)
 //!
 //! Rung 6 concurrent execution surface. Each actor runs on a dedicated OS
 //! thread, receives messages over an `mpsc::Sender`, and returns replies on
@@ -37,7 +37,7 @@
 //! let addr = rt.spawn(Counter { n: Arc::clone(&n) });
 //! addr.tell(Msg::Incr);
 //! addr.tell(Msg::Incr);
-//! let r = addr.ask(Msg::Get);
+//! let r = addr.try_ask(Msg::Get).expect("counter responded");
 //! assert!(matches!(r, Reply::Value(2)));
 //! ```
 

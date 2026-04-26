@@ -35,7 +35,7 @@ fn two_hundred_actors_x_one_thousand_messages() {
     }
     // Ask the last actor for its accumulated view to flush all messages.
     for addr in &addrs {
-        let _ = addr.ask(0);
+        let _ = addr.try_ask(0).expect("ask");
     }
     assert_eq!(counter.load(Ordering::SeqCst), 200_000);
 }

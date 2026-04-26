@@ -83,7 +83,7 @@ fn try_tell_succeeds_when_mailbox_has_room() {
 
     // Drain by issuing an ask — when this returns, all prior fire-and-
     // forgets have been processed.
-    let r = addr.ask(Msg::Get);
+    let r = addr.try_ask(Msg::Get).expect("ask");
     match r {
         Reply::Count(n) => assert_eq!(n, 10),
         _ => panic!("unexpected reply"),
@@ -346,7 +346,7 @@ fn actor_mailbox_capacity_method_is_honored_by_default_spawn() {
         hit_full,
         "cap=1 should saturate with try_tell almost immediately"
     );
-    let TReply::N(observed) = addr.ask(TMsg::Read) else {
+    let TReply::N(observed) = addr.try_ask(TMsg::Read).expect("ask") else {
         panic!("read should return the actor count");
     };
     assert!(
@@ -389,7 +389,7 @@ fn many_senders_sharing_one_actor_eventually_all_succeed() {
     }
 
     // Final ask drains; all sends should be accounted for.
-    match addr.ask(Msg::Get) {
+    match addr.try_ask(Msg::Get).expect("ask") {
         Reply::Count(n) => assert_eq!(n, (n_senders * target_per_sender) as i64),
         _ => panic!(),
     }
@@ -413,7 +413,7 @@ fn one_thousand_tells_succeed_under_default_cap() {
     for _ in 0..1000 {
         assert!(addr.tell(Msg::Tick));
     }
-    match addr.ask(Msg::Get) {
+    match addr.try_ask(Msg::Get).expect("ask") {
         Reply::Count(n) => assert_eq!(n, 1000),
         _ => panic!(),
     }

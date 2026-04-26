@@ -47,7 +47,7 @@ fn counter_actor_handles_incr_and_get() {
     addr.tell(CMsg::Incr);
     addr.tell(CMsg::Incr);
     addr.tell(CMsg::Incr);
-    let r = addr.ask(CMsg::Get);
+    let r = addr.try_ask(CMsg::Get).expect("ask");
     assert!(matches!(r, CReply::Value(3)));
 }
 
@@ -58,7 +58,7 @@ fn counter_actor_add_message() {
     addr.tell(CMsg::Add(10));
     addr.tell(CMsg::Add(20));
     addr.tell(CMsg::Add(-5));
-    let r = addr.ask(CMsg::Get);
+    let r = addr.try_ask(CMsg::Get).expect("ask");
     assert!(matches!(r, CReply::Value(25)));
 }
 
@@ -66,7 +66,7 @@ fn counter_actor_add_message() {
 fn ask_blocks_until_reply() {
     let rt = Runtime::new();
     let addr = rt.spawn(Counter { n: 100 });
-    let r = addr.ask(CMsg::Get);
+    let r = addr.try_ask(CMsg::Get).expect("ask");
     assert!(matches!(r, CReply::Value(100)));
 }
 
@@ -113,9 +113,9 @@ fn forwarder_sends_to_counter() {
         target: counter.clone(),
     });
     for _ in 0..5 {
-        forwarder.ask(FMsg::Bump);
+        forwarder.try_ask(FMsg::Bump).expect("ask");
     }
-    let r = counter.ask(CMsg::Get);
+    let r = counter.try_ask(CMsg::Get).expect("ask");
     assert!(matches!(r, CReply::Value(5)));
 }
 
@@ -159,9 +159,9 @@ fn three_tally_actors_share_atomic_state() {
     let c = rt.spawn(Tally {
         sum: Arc::clone(&sum),
     });
-    let TReply::Total(_) = a.ask(TMsg::Add(5));
-    let TReply::Total(_) = b.ask(TMsg::Add(10));
-    let TReply::Total(t) = c.ask(TMsg::Add(15));
+    let TReply::Total(_) = a.try_ask(TMsg::Add(5)).expect("ask");
+    let TReply::Total(_) = b.try_ask(TMsg::Add(10)).expect("ask");
+    let TReply::Total(t) = c.try_ask(TMsg::Add(15)).expect("ask");
     // Last reply observes the cumulative atomic value.
     assert_eq!(t, 30);
     assert_eq!(sum.load(Ordering::SeqCst), 30);
@@ -206,7 +206,7 @@ fn cloned_address_targets_same_actor() {
     let b = a.clone();
     a.tell(CMsg::Incr);
     b.tell(CMsg::Incr);
-    let r = a.ask(CMsg::Get);
+    let r = a.try_ask(CMsg::Get).expect("ask");
     assert!(matches!(r, CReply::Value(2)));
 }
 
@@ -219,7 +219,7 @@ fn one_thousand_messages_processed_in_order_per_actor() {
     for _ in 0..1000 {
         addr.tell(CMsg::Incr);
     }
-    let r = addr.ask(CMsg::Get);
+    let r = addr.try_ask(CMsg::Get).expect("ask");
     assert!(matches!(r, CReply::Value(1000)));
 }
 
@@ -261,7 +261,7 @@ fn on_start_runs_when_actor_spawns() {
         started: Arc::clone(&started),
         stopped: Arc::clone(&stopped),
     });
-    let _ = addr.ask(LMsg::Ping); // ensure actor processed at least one message
+    let _ = addr.try_ask(LMsg::Ping).expect("ask"); // ensure actor processed at least one message
     assert_eq!(started.load(Ordering::SeqCst), 1);
 }
 

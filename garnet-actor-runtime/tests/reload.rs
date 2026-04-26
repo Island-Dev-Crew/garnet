@@ -92,7 +92,7 @@ fn ordering_invariant_v1_replies_before_v2_replies() {
     // Enqueue 5 incrs synchronously so they all hit v1 before reload.
     let mut early = Vec::new();
     for _ in 0..5 {
-        early.push(addr.ask("incr".to_string()));
+        early.push(addr.try_ask("incr".to_string()).expect("ask"));
     }
     for r in &early {
         assert!(r.starts_with("v1:"), "pre-reload reply must be v1: {r}");
@@ -132,7 +132,7 @@ fn ordering_invariant_v1_replies_before_v2_replies() {
     // Post-reload: every reply must be v2-tagged.
     let mut late = Vec::new();
     for _ in 0..5 {
-        late.push(addr.ask("incr".to_string()));
+        late.push(addr.try_ask("incr".to_string()).expect("ask"));
     }
     for r in &late {
         assert!(r.starts_with("v2["), "post-reload reply must be v2: {r}");
@@ -158,7 +158,7 @@ fn forward_migration_v1_to_v2_transfers_state() {
     let rt = Runtime::new();
     let addr = rt.spawn(CounterV1 { n: 99 });
     // Confirm v1 is live.
-    assert_eq!(addr.ask("ping".to_string()), "v1:99");
+    assert_eq!(addr.try_ask("ping".to_string()).expect("ask"), "v1:99");
 
     // Migrator extracts state from `old` via fingerprint-verified
     // downcast — refuses silently-wrong type on mismatch.
@@ -174,7 +174,7 @@ fn forward_migration_v1_to_v2_transfers_state() {
     })
     .unwrap();
 
-    let r = addr.ask("ping".to_string());
+    let r = addr.try_ask("ping".to_string()).expect("ask");
     assert_eq!(r, "v2[carried]:99");
 }
 
@@ -191,7 +191,10 @@ fn compound_state_migration_v2_carries_tuple() {
         n: 7,
         label: "before".to_string(),
     });
-    assert_eq!(addr.ask("ping".to_string()), "v2[before]:7");
+    assert_eq!(
+        addr.try_ask("ping".to_string()).expect("ask"),
+        "v2[before]:7"
+    );
 
     // Migrate within v2 to a fresh v2 behaviour that inherits state.
     // Fingerprint-verified downcast to (i64, String) tuple.
@@ -210,7 +213,10 @@ fn compound_state_migration_v2_carries_tuple() {
     })
     .unwrap();
 
-    assert_eq!(addr.ask("ping".to_string()), "v2[before-carried]:7");
+    assert_eq!(
+        addr.try_ask("ping".to_string()).expect("ask"),
+        "v2[before-carried]:7"
+    );
 }
 
 // ── Test 3: Backward refusal ────────────────────────────────────────
@@ -223,7 +229,7 @@ fn backward_migration_refused_without_allow_downgrade() {
         label: "live".to_string(),
     });
     // Confirm v2 is live.
-    assert_eq!(addr.ask("ping".to_string()), "v2[live]:5");
+    assert_eq!(addr.try_ask("ping".to_string()).expect("ask"), "v2[live]:5");
 
     // Attempt to downgrade to v1 without permission.
     let outcome = addr
@@ -239,7 +245,7 @@ fn backward_migration_refused_without_allow_downgrade() {
 
     // The actor must still be on v2 — the refused reload should not have
     // mutated state.
-    assert_eq!(addr.ask("ping".to_string()), "v2[live]:5");
+    assert_eq!(addr.try_ask("ping".to_string()).expect("ask"), "v2[live]:5");
 }
 
 #[test]
@@ -255,7 +261,7 @@ fn backward_migration_allowed_when_allow_downgrade_is_set() {
         .unwrap();
     assert!(matches!(outcome, ReloadOutcome::Ok { .. }));
 
-    assert_eq!(addr.ask("ping".to_string()), "v1:7");
+    assert_eq!(addr.try_ask("ping".to_string()).expect("ask"), "v1:7");
 }
 
 // ── Test 4: In-flight handler safety ────────────────────────────────
@@ -346,7 +352,7 @@ fn statecert_rejects_wrong_downcast_type_without_panic() {
 
     let rt = Runtime::new();
     let addr = rt.spawn(CounterV1 { n: 42 });
-    assert_eq!(addr.ask("ping".to_string()), "v1:42");
+    assert_eq!(addr.try_ask("ping".to_string()).expect("ask"), "v1:42");
 
     // Capture the mismatch outcome from inside the migrator via a
     // channel so the test can assert on it.
@@ -404,7 +410,10 @@ fn statecert_rejects_wrong_downcast_type_without_panic() {
     // The actor recovered and is on v2 with the migrated-after-error
     // value; if the downcast had panicked instead, this assertion would
     // fail because the runtime thread would have died.
-    assert_eq!(addr.ask("ping".to_string()), "v2[mismatch-recovered]:42");
+    assert_eq!(
+        addr.try_ask("ping".to_string()).expect("ask"),
+        "v2[mismatch-recovered]:42"
+    );
 }
 
 #[test]

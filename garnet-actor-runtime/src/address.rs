@@ -111,18 +111,40 @@ impl<M: Send + 'static, R: Send + 'static> ActorAddress<M, R> {
         }
     }
 
-    /// Send the message and block until the actor replies. Errors if the
-    /// mailbox is closed or the reply channel is dropped before producing a
-    /// value.
-    pub fn ask(&self, message: M) -> R {
+    /// Send the message and block until the actor replies, returning a
+    /// `Result` so closed mailboxes / dropped reply channels surface as
+    /// recoverable errors instead of panics. This is the release-grade
+    /// API. Use `ask_timeout` if you need a bounded wait, or accept the
+    /// `AskError` and call `.expect(...)` if you genuinely want to abort
+    /// on failure.
+    pub fn try_ask(&self, message: M) -> Result<R, AskError> {
         let (tx_reply, rx_reply) = mpsc::channel();
         self.tx
             .send(Control::User(Envelope {
                 message,
                 reply_to: Some(tx_reply),
             }))
-            .expect("actor mailbox closed");
-        rx_reply.recv().expect("actor never replied")
+            .map_err(|_| AskError::MailboxClosed)?;
+        rx_reply.recv().map_err(|_| AskError::ReplyDropped)
+    }
+
+    /// Send the message and block until the actor replies. Panics if the
+    /// mailbox is closed or the reply channel is dropped before producing
+    /// a value.
+    ///
+    /// Deprecated since 0.4.0: panicking on cross-actor failure is rarely
+    /// what production code wants — use [`try_ask`](Self::try_ask) for a
+    /// `Result`-returning equivalent, or [`ask_timeout`](Self::ask_timeout)
+    /// for a bounded wait. To preserve the old panic-on-failure
+    /// semantics, write `addr.try_ask(msg).expect("…")` at the call
+    /// site so the failure mode is visible there.
+    #[deprecated(
+        since = "0.4.0",
+        note = "ask() panics on closed mailbox / dropped reply; use try_ask() for Result, ask_timeout() for bounded wait, or try_ask().expect(...) to keep the panic explicit"
+    )]
+    pub fn ask(&self, message: M) -> R {
+        self.try_ask(message)
+            .expect("actor ask() failed (mailbox closed or reply dropped)")
     }
 
     /// Like `ask`, but with a timeout. Returns an `AskError` for any

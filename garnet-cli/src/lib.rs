@@ -71,7 +71,9 @@ pub fn print_version() {
     println!("  interp    garnet-interp 0.3.0 (tree-walk, Rung 3)");
     println!("  check     garnet-check  0.3.0 (safe-mode + borrow + CapCaps v3.4.1, Rung 4)");
     println!("  memory    garnet-memory 0.3.0 (reference stores, Rung 5)");
-    println!("  actor-rt  garnet-actor-runtime 0.3.1 (hot-reloadable + signed reload, Rung 6)");
+    println!(
+        "  actor-rt  garnet-actor-runtime 0.4.0 (Result-returning ask, hot-reloadable + signed reload, Rung 6)"
+    );
     println!("  stdlib    garnet-stdlib 0.4.0 (22 bridged primitives)");
     println!(
         "  convert   garnet-convert 0.4.0 (migration assistant: Rust / Ruby / Python / Go → Garnet)"
