@@ -3,6 +3,7 @@
 
 pub mod audit_deps;
 pub mod cache;
+pub mod cmd;
 pub mod convert_cmd;
 pub mod knowledge;
 pub mod machine_key;
