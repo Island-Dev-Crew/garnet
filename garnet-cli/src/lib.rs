@@ -115,6 +115,8 @@ pub fn print_help() {
     println!(
         "                                     into Garnet (sandbox-on; emits MigrateTodo checklist)"
     );
+    println!("    fmt    [--check|--stdout] <file> Whitespace-normalize a Garnet source file");
+    println!("    doc    [--stdout|--out P] <file> Extract /// doc comments to a markdown summary");
     println!("    version                          Print toolchain versions + wordmark");
     println!("    help                             This message");
 }

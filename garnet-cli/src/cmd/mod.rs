@@ -12,7 +12,9 @@
 pub mod build;
 pub mod check;
 pub mod convert;
+pub mod doc;
 pub mod eval;
+pub mod fmt;
 pub mod keygen;
 pub mod new;
 pub mod parse;
