@@ -119,6 +119,7 @@ Full research corpus + language specification lives in this repository at:
 
 - `A_Research_Papers/` — seven research papers + four addenda
 - `C_Language_Specification/` — Mini-Spec v1.0 + canonical grammar
+  - **[Conformance matrix (v0.4.2)](C_Language_Specification/GARNET_v0_4_2_Conformance_Matrix.md)** — what's actually implemented vs. specified, per Mini-Spec section
 - `D_Executive_and_Presentation/` — comparative developer-experience study
 - `F_Project_Management/` — stage handoffs + verification logs
 
