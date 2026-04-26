@@ -8,8 +8,11 @@
 //! - The same-hash second invocation surfaces a "prior failures" note when
 //!   the prior outcome was an error.
 
-use garnet_cli::cache::{self, Episode};
-use std::path::PathBuf;
+use garnet_cli::{
+    cache::{self, Episode},
+    machine_key,
+};
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -31,6 +34,26 @@ fn fresh_temp_dir(name: &str) -> PathBuf {
     dir
 }
 
+fn key_path(dir: &Path) -> PathBuf {
+    dir.join("machine.key")
+}
+
+fn garnet_cmd(dir: &Path) -> Command {
+    let mut cmd = Command::new(garnet_bin());
+    cmd.current_dir(dir)
+        .env("GARNET_MACHINE_KEY_PATH", key_path(dir));
+    cmd
+}
+
+fn cache_key(dir: &Path) -> [u8; 32] {
+    machine_key::load_or_generate_key(&key_path(dir)).unwrap()
+}
+
+fn read_episodes(dir: &Path) -> Vec<Episode> {
+    let cache_dir = dir.join(".garnet-cache");
+    cache::read_all_in_with_key(&cache_dir, &cache_key(dir)).episodes
+}
+
 fn rand_suffix() -> String {
     use std::time::{SystemTime, UNIX_EPOCH};
     let nanos = SystemTime::now()
@@ -48,16 +71,14 @@ fn three_parse_invocations_append_three_episodes() {
     std::fs::write(&file, "def main() { 42 }").unwrap();
 
     for _ in 0..3 {
-        let out = Command::new(garnet_bin())
-            .current_dir(&dir)
+        let out = garnet_cmd(&dir)
             .args(["parse", file.to_str().unwrap()])
             .output()
             .unwrap();
         assert!(out.status.success(), "parse should succeed");
     }
 
-    let cache_dir = dir.join(".garnet-cache");
-    let episodes = cache::read_all_in(&cache_dir);
+    let episodes = read_episodes(&dir);
     assert_eq!(
         episodes.len(),
         3,
@@ -78,15 +99,13 @@ fn parse_failure_records_parse_err_outcome() {
     let file = dir.join("bad.garnet");
     std::fs::write(&file, "def @!@ syntax error here").unwrap();
 
-    let out = Command::new(garnet_bin())
-        .current_dir(&dir)
+    let out = garnet_cmd(&dir)
         .args(["parse", file.to_str().unwrap()])
         .output()
         .unwrap();
     assert!(!out.status.success(), "should fail");
 
-    let cache_dir = dir.join(".garnet-cache");
-    let episodes = cache::read_all_in(&cache_dir);
+    let episodes = read_episodes(&dir);
     assert_eq!(episodes.len(), 1);
     assert_eq!(episodes[0].outcome, "parse_err");
     assert_eq!(episodes[0].exit_code, 1);
@@ -102,18 +121,18 @@ fn recall_filters_by_source_hash() {
     std::fs::write(&file_b, "def main() { 2 }").unwrap();
 
     for f in [&file_a, &file_b, &file_a] {
-        let _ = Command::new(garnet_bin())
-            .current_dir(&dir)
+        let _ = garnet_cmd(&dir)
             .args(["parse", f.to_str().unwrap()])
             .output()
             .unwrap();
     }
 
     let cache_dir = dir.join(".garnet-cache");
+    let key = cache_key(&dir);
     let hash_a = cache::source_hash("def main() { 1 }");
     let hash_b = cache::source_hash("def main() { 2 }");
-    let recalled_a = cache::recall_in(&cache_dir, &hash_a);
-    let recalled_b = cache::recall_in(&cache_dir, &hash_b);
+    let recalled_a = cache::recall_in_with_key(&cache_dir, &hash_a, &key).episodes;
+    let recalled_b = cache::recall_in_with_key(&cache_dir, &hash_b, &key).episodes;
     assert_eq!(recalled_a.len(), 2);
     assert_eq!(recalled_b.len(), 1);
 }
@@ -125,14 +144,12 @@ fn second_run_after_failure_surfaces_prior_failure_note() {
     std::fs::write(&file, "def main() { 99/0 }").unwrap();
 
     // First run: errors via runtime div-by-zero.
-    let _ = Command::new(garnet_bin())
-        .current_dir(&dir)
+    let _ = garnet_cmd(&dir)
         .args(["run", file.to_str().unwrap()])
         .output()
         .unwrap();
     // Second run: stderr should contain the prior-failures hint.
-    let out2 = Command::new(garnet_bin())
-        .current_dir(&dir)
+    let out2 = garnet_cmd(&dir)
         .args(["run", file.to_str().unwrap()])
         .output()
         .unwrap();
@@ -148,8 +165,7 @@ fn episode_ndjson_is_valid_json_per_line() {
     let dir = fresh_temp_dir("ndjson");
     let file = dir.join("clean.garnet");
     std::fs::write(&file, "def main() { 1 + 1 }").unwrap();
-    let _ = Command::new(garnet_bin())
-        .current_dir(&dir)
+    let _ = garnet_cmd(&dir)
         .args(["parse", file.to_str().unwrap()])
         .output()
         .unwrap();
