@@ -8,7 +8,7 @@
 //! of the 80% of patterns documented in Phase 2F + 3G — not full
 //! language coverage.
 //!
-//! Production wraps tree-sitter-<lang> for each; that integration is
+//! Production wraps `tree-sitter-<lang>` for each; that integration is
 //! a v4.1.x stage with a well-defined plug-in boundary (each frontend
 //! exports `parse_and_lift(source, filename) -> Result<Cir, ConvertError>`).
 

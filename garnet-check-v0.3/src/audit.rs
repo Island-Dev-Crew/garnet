@@ -9,7 +9,9 @@
 //!
 //! The log entries are:
 //!
-//!   <source-span> <caller-mode> -> <callee-mode> <callee-name>
+//! ```text
+//! <source-span> <caller-mode> -> <callee-mode> <callee-name>
+//! ```
 //!
 //! Example:
 //!

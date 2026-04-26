@@ -111,7 +111,7 @@ garnet verify src/main.garnet src/main.garnet.manifest.json --signature
 | `garnet-actor-runtime` | Bounded-mailbox actors + Ed25519 signed hot-reload |
 | `garnet-stdlib` | OS-I/O primitives with capability metadata |
 | `garnet-cli`    | Top-level `garnet` binary |
-| `garnet-convert` | Rust / Ruby / Python / Go → Garnet migration tool |
+| `garnet-convert` | Rust / Ruby / Python / Go → Garnet **migration assistant** (stylized parsers, sandbox-on output, emits a `migrate_todo.md` checklist — not a full transpiler) |
 
 ## Documentation
 

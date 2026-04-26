@@ -4,7 +4,7 @@ version = "0.4.0"
 edition = "2021"
 authors = ["Island Development Crew"]
 license = "MIT OR Apache-2.0"
-description = "Garnet v4.1 code converter — Rust/Ruby/Python/Go source → Garnet source via a language-independent Common IR. Every output ships in @sandbox mode (v4.0 SandboxMode default) pending human audit."
+description = "Garnet migration assistant — lifts a stylized subset of Rust / Ruby / Python / Go source into Garnet source via a language-independent Common IR, emitting `MigrateTodo` and `Untranslatable` placeholders for constructs that cannot be mechanically lowered. Output always ships in @sandbox mode (v4.0 SandboxMode default) pending human audit. Not a full transpiler — designed to scaffold a port, not finish one."
 
 [dependencies]
 blake3 = "1.5"

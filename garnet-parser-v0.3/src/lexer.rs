@@ -1,5 +1,5 @@
 //! Garnet v0.3 hand-rolled single-pass lexer.
-//! Produces a flat Vec<Token> with spans for all v0.3 keywords, operators, and literals.
+//! Produces a flat `Vec<Token>` with spans for all v0.3 keywords, operators, and literals.
 //!
 //! **v3.3 hardening:** every allocation path is gated by `ParseBudget` —
 //! token count, literal size, comment length. Adversarial inputs fail

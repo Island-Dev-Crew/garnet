@@ -1,5 +1,5 @@
 //! Garnet v0.3 type expression parsing.
-//! Covers: Named<T>, (A, B) -> C, (A, B), &mut T
+//! Covers: `Named<T>`, `(A, B) -> C`, `(A, B)`, `&mut T`
 
 use crate::ast::TypeExpr;
 use crate::error::ParseError;

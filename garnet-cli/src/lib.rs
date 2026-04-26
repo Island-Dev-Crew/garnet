@@ -72,7 +72,9 @@ pub fn print_version() {
     println!("  memory    garnet-memory 0.3.0 (reference stores, Rung 5)");
     println!("  actor-rt  garnet-actor-runtime 0.3.1 (hot-reloadable + signed reload, Rung 6)");
     println!("  stdlib    garnet-stdlib 0.4.0 (22 bridged primitives)");
-    println!("  convert   garnet-convert 0.4.0 (Rust / Ruby / Python / Go → Garnet)");
+    println!(
+        "  convert   garnet-convert 0.4.0 (migration assistant: Rust / Ruby / Python / Go → Garnet)"
+    );
 }
 
 pub fn print_help() {
@@ -102,7 +104,12 @@ pub fn print_help() {
     println!("    verify <file> <manifest.json>    Verify the manifest matches the source");
     println!("           [--signature]             Require a valid Ed25519 signature");
     println!("    keygen <keyfile>                 Generate an Ed25519 signing keypair");
-    println!("    convert <lang> <file>            Convert Rust/Ruby/Python/Go source to Garnet");
+    println!(
+        "    convert <lang> <file>            Migration assistant — lift Rust/Ruby/Python/Go source"
+    );
+    println!(
+        "                                     into Garnet (sandbox-on; emits MigrateTodo checklist)"
+    );
     println!("    version                          Print toolchain versions + wordmark");
     println!("    help                             This message");
 }

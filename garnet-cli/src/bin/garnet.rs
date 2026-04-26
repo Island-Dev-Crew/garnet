@@ -750,9 +750,12 @@ fn cmd_test(args: &[String]) -> ExitCode {
     }
 }
 
-/// `garnet convert <lang> <file>` — run the v4.1 converter. Writes
+/// `garnet convert <lang> <file>` — run the migration assistant. Writes
 /// `<file>.garnet` + `.lineage.json` + `.migrate_todo.md` + `.metrics.json`
-/// beside the source, or under `--out <dir>` if supplied.
+/// beside the source, or under `--out <dir>` if supplied. Output is a
+/// scaffolded port (sandbox-on, with `MigrateTodo`/`Untranslatable`
+/// placeholders) — see `garnet-convert` crate docs for honest-scope
+/// caveats.
 fn cmd_convert(args: &[String]) -> ExitCode {
     use garnet_cli::convert_cmd::{self, ConvertArgs};
 

@@ -1,7 +1,32 @@
-//! # Garnet v4.1 Code Converter
+//! # Garnet Migration Assistant (v0.4.x)
 //!
-//! Converts Rust / Ruby / Python / Go source into Garnet source via
-//! a language-independent Common IR.
+//! Lifts a **stylized subset** of Rust / Ruby / Python / Go source into
+//! Garnet source via a language-independent Common IR. This crate is
+//! deliberately **not** a full transpiler: it is a scaffolding tool that
+//! gets you most of the way through a port and explicitly hands the rest
+//! to a human via two first-class CIR outputs.
+//!
+//! ## Honest scope
+//!
+//! - **Stylized parsers.** Each frontend parses a recognizable, common
+//!   slice of its source language (e.g. `def name(args):` for Python,
+//!   `func name(params) ReturnType {…}` for Go). It is not a complete
+//!   `rustc` / `mri` / `cpython` / `gc` parser and never will be in this
+//!   crate. Inputs outside the recognized slice produce `Untranslatable`.
+//! - **`MigrateTodo` is a feature, not a failure.** When the frontend
+//!   recognizes a construct that needs human attention (Python decorators,
+//!   Ruby `method_missing`, Go variadic generics), it emits a
+//!   `MigrateTodo` CIR node with a pointer to the relevant Mini-Spec v1.0
+//!   section (e.g. §11.7 `@dynamic` for `method_missing`). The emitter
+//!   collects these into a `migrate_todo.md` checklist beside the output.
+//! - **`Untranslatable` halts mechanical lowering.** Constructs with no
+//!   safe mapping (`eval` / `exec` / arbitrary metaclass shenanigans) are
+//!   wrapped in an `Untranslatable` node. Strict mode
+//!   (`fail_on_untranslatable`) turns these into hard errors; default
+//!   mode emits them as commented stubs the human must replace.
+//! - **Sandbox-on-by-default.** Every emitted file starts with `@sandbox`
+//!   (v4.0 SandboxMode default). The converter cannot emit
+//!   `@sandbox(unquarantine)` — that escape hatch requires human audit.
 //!
 //! ## Pipeline
 //!
@@ -9,11 +34,15 @@
 //! 2. Frontend lifts AST → [`Cir`] (Common IR) with lineage tags
 //! 3. [`idioms`] applies language-specific CIR-to-CIR rewrites
 //! 4. [`witness`] verifies every CIR node has a source lineage
-//! 5. [`emitter`] produces Garnet source + lineage.json + migrate_todo.md
+//! 5. [`emitter`] produces Garnet source + `lineage.json` + `migrate_todo.md`
 //!
-//! Every emitted file starts with `@sandbox` (v4.0 SandboxMode default).
-//! The converter cannot emit `@sandbox(unquarantine)` — that requires
-//! human audit.
+//! ## When to use this crate
+//!
+//! Use it when you want a Garnet-shaped first draft of an existing
+//! codebase, ready for a human reviewer to finish. Do **not** use it
+//! expecting compilable, behaviorally-equivalent output: that is a
+//! research-grade transpiler problem this crate intentionally does not
+//! solve.
 
 pub mod cir;
 pub mod emitter;
