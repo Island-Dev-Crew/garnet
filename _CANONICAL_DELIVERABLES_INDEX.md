@@ -4,6 +4,30 @@
 
 ---
 
+> ## ⚠️ Status note (2026-04-26): historical snapshot
+>
+> This index describes the Garnet **research corpus** as it existed inside the
+> `Garnet_Final/` bundle at v3.3 (April 16, 2026). It is preserved verbatim
+> for citation, audit trail, and academic-submission reproducibility.
+>
+> **It is not a description of the live repository layout.** Since v3.3 the
+> project has been promoted to the public repo at
+> [`github.com/Island-Dev-Crew/garnet`](https://github.com/Island-Dev-Crew/garnet),
+> the engineering artifacts have moved from `Garnet_Final/E_Engineering_Artifacts/`
+> to top-level workspace crates (`garnet-parser-v0.3/`, `garnet-interp-v0.3/`,
+> `garnet-cli/`, etc.), and the public release version is **v0.4.2** (see
+> `Cargo.toml`, `README.md`, and `C_Language_Specification/GARNET_v0_4_2_Installer_Release_Contract.md`).
+>
+> Folder paths referenced below (e.g. `Garnet_Final/...`,
+> `E_Engineering_Artifacts/...`, "Folder G") describe the original bundle
+> layout, not paths that resolve in this repository.
+>
+> For the current source-of-truth on **what ships today**, start at
+> [`README.md`](README.md). For the current source-of-truth on **what the
+> language is**, start at [`C_Language_Specification/GARNET_v1_0_Mini_Spec.md`](C_Language_Specification/GARNET_v1_0_Mini_Spec.md).
+
+---
+
 ## OVERVIEW
 
 After v3.3 Stage 1 (Phases 1A–1F), the Garnet project's canonical corpus comprises **40+ deliverables** organized in 6 categories inside `Garnet_Final/`. v3.3 added: Mini-Spec v1.0 (closes 11 Phase 1B blend-verification gaps), Paper V Addendum v1.0 (formal companions for ARC + NLL + borrow-check + Sendable + monomorphization), Paper VI Empirical Validation Protocol (7 pre-registered experiments), Paper VII stub (Implementation Ladder + tooling ergonomics), Paper IV Addendum v1.0 (Recursive Language Models + PolarQuant bridge), Compression Techniques Reference v0.4 (deepening + SRHT + α calibration), v3.3 Slop Reverification audit, v3.3 Security Threat Model, v3.3 Security Layer 1 (5 hardening items: ParseBudget + KindGuard + StateCert + CacheHMAC + ProvenanceStrategy), v3.3 MIT Demonstration narrative.

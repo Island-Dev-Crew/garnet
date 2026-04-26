@@ -11,11 +11,17 @@ members = [
     "garnet-convert",
     "xtask",
 ]
-# Exclude the historical v0.2 parser (flat-file layout, kept for audit trail only).
-exclude = ["garnet-parser"]
+# Exclude the archived v0.2 parser (flat-file layout, retained at
+# `archive/garnet-parser-v0.2/` for audit trail only — superseded by
+# `garnet-parser-v0.3/`).
+exclude = ["archive/garnet-parser-v0.2"]
 
+# The user-facing Garnet release version. The `garnet` CLI binary (in
+# `garnet-cli/`) is the canonical public version surface and stays in lockstep
+# with the value below; individual library crates carry their own `[package]
+# version` to allow independent semver as their public APIs stabilize.
 [workspace.package]
-version = "0.3.0"
+version = "0.4.2"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 authors = ["Island Development Crew"]

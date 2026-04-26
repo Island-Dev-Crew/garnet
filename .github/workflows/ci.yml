@@ -1,0 +1,106 @@
+# Garnet — core continuous integration.
+#
+# Runs the three release-blocking gates (format, lint, test) on every push
+# and pull request. The Linux packaging workflow (linux-packages.yml) covers
+# the .deb / .rpm build path; this one covers the Rust workspace itself
+# across the three supported tier-1 host platforms.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings"
+
+jobs:
+  # ───────────────────────────────────────────────────────────────────
+  # Format check — fast, runs once on Linux. A failure here is the
+  # cheapest possible signal to fix before paying for a build matrix.
+  # ───────────────────────────────────────────────────────────────────
+  fmt:
+    name: rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all -- --check
+
+  # ───────────────────────────────────────────────────────────────────
+  # Strict clippy across the workspace, all targets. -D warnings is set
+  # via RUSTFLAGS above so promoted lints do not slip through.
+  # ───────────────────────────────────────────────────────────────────
+  clippy:
+    name: clippy (-D warnings)
+    runs-on: ubuntu-latest
+    needs: fmt
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-clippy-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-clippy-
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+
+  # ───────────────────────────────────────────────────────────────────
+  # Full workspace test matrix on the three supported platforms. Tests
+  # gate on the cheaper fmt job so a broken format does not waste three
+  # OS slots.
+  # ───────────────────────────────────────────────────────────────────
+  test:
+    name: cargo test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: fmt
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-test-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-test-
+      - run: cargo test --workspace --no-fail-fast
+
+  # ───────────────────────────────────────────────────────────────────
+  # Documentation build — catches broken intra-doc links and missing
+  # docs without publishing anywhere. Runs once on Linux.
+  # ───────────────────────────────────────────────────────────────────
+  docs:
+    name: cargo doc
+    runs-on: ubuntu-latest
+    needs: fmt
+    env:
+      RUSTDOCFLAGS: "-D warnings"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-doc-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-doc-
+      - run: cargo doc --workspace --no-deps
