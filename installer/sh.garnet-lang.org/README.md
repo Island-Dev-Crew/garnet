@@ -14,12 +14,17 @@ curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 2. Detect OS (Linux / Darwin) + arch (x86_64 / aarch64).
 3. Pick a package format (`deb` if dpkg present, `rpm` if rpm present,
    `pkg` on macOS, tarball fallback).
-4. Download the corresponding asset from the GitHub Release at
+4. Prefer the corresponding asset from the GitHub Release at
    `https://github.com/Island-Dev-Crew/garnet/releases/download/v<version>/`.
 5. Fetch `SHA256SUMS`, verify the download.
 6. Run the native installer (`dpkg -i`, `dnf install -y`,
    `installer -pkg`, or tarball extract).
-7. Print `garnet --version` on success.
+7. If release assets are unavailable in auto mode, fall back to cloning the
+   repository and running `cargo install --path garnet-cli --locked`.
+8. Print `garnet --version` on success.
+
+Set `GARNET_INSTALL_MODE=release` to require release assets, or
+`GARNET_INSTALL_MODE=source` to skip package lookup and build from source.
 
 ## Why not trust TLS alone?
 

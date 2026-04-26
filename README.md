@@ -42,21 +42,23 @@ Single `garnet` CLI. Deterministic signed manifests. Dependency-graph audit buil
 ## Install
 
 ```sh
-# Source install, available today:
-git clone https://github.com/Island-Dev-Crew/garnet
-cd garnet/garnet-cli
-cargo install --path .
-```
-
-The release-backed installer target is:
-
-```sh
 curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 ```
 
-That one-liner becomes the recommended install path after the `v0.4.2`
-GitHub Release contains the assets below. Until then, source install is the
-truthful path.
+The universal installer is release-first and source-fallback:
+
+- If `v0.4.2` release assets exist, it downloads the native package and
+  verifies it against `SHA256SUMS`.
+- If release assets are not published yet, it falls back to:
+
+```sh
+git clone https://github.com/Island-Dev-Crew/garnet
+cd garnet/garnet-cli
+cargo install --path . --locked
+```
+
+Use `GARNET_INSTALL_MODE=release` to require a native release package, or
+`GARNET_INSTALL_MODE=source` to force source install.
 
 | Platform      | Installer                                   | Integrity / release requirement   |
 |---------------|---------------------------------------------|-----------------------------------|
@@ -67,8 +69,8 @@ truthful path.
 
 The installer fetches assets from
 [`github.com/Island-Dev-Crew/garnet/releases`](https://github.com/Island-Dev-Crew/garnet/releases),
-verifies the selected file against `SHA256SUMS`, and fails clearly if the
-release, checksum manifest, or package is missing. See [SECURITY.md](SECURITY.md)
+verifies the selected file against `SHA256SUMS`, and falls back to source in
+auto mode when the release, checksum manifest, or package is missing. See [SECURITY.md](SECURITY.md)
 for the supply-chain story and
 [`GARNET_v0_4_2_Installer_Release_Contract.md`](C_Language_Specification/GARNET_v0_4_2_Installer_Release_Contract.md)
 for the exact hosting, artifact, integrity, and release-pipeline contract.
@@ -149,7 +151,7 @@ Verification status at current `main`:
 - ✅ Windows binary (MSVC) — verified end-to-end, all 6 Phase 6D gates pass
 - ✅ 1193 workspace tests pass on current `main`; 136 security-specific tests across 4 hardening layers
 - ✅ 22 stdlib primitives bridged through the interpreter
-- ⏳ `v0.4.2` release assets are not published yet; the curl installer is wired and fails clearly until `SHA256SUMS` and packages exist
+- ✅ The universal curl installer works before release publication by falling back to source install; native packages remain release-gated by `SHA256SUMS`
 - ⏳ macOS `.pkg` and Windows `.msi` release signing/notarization remain credential-gated release steps
 
 ## Research

@@ -1018,8 +1018,8 @@
 <section id="install">
   <div class="container reveal">
     <h3>Get Garnet</h3>
-    <h2>Install from source today; release installer next.</h2>
-    <p class="lead">The universal installer is wired for GitHub Releases and verifies <code>SHA256SUMS</code>. Until the first <code>v0.4.2</code> release assets are published, source install is the reliable path.</p>
+    <h2>Install with one curl command.</h2>
+    <p class="lead">The universal installer prefers signed-off GitHub Release packages verified by <code>SHA256SUMS</code>. Before release assets exist, it falls back to source install through <code>cargo install --locked</code>.</p>
 
     <div class="tabs install-tabs-bar" role="tablist">
       <button class="tab active" data-install="universal">Universal</button>
@@ -1032,13 +1032,14 @@
       <div class="install-pane active" data-pane="universal">
         <div class="install-wrap">
           <button class="copy" data-copy="curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh">Copy</button>
-<pre># Release installer target:
+<pre># Universal installer:
 curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 
-# Source install available today:
-git clone https://github.com/Island-Dev-Crew/garnet
-cd garnet/garnet-cli
-cargo install --path .</pre>
+# Force native release package only:
+curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | GARNET_INSTALL_MODE=release sh
+
+# Force source install:
+curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | GARNET_INSTALL_MODE=source sh</pre>
         </div>
       </div>
       <div class="install-pane" data-pane="macos">

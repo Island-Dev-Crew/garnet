@@ -4,10 +4,10 @@
 # Public bootstrap URL:
 #   curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 #
-# The script detects the host OS and architecture, downloads the matching
-# native package from GitHub Releases, verifies it against SHA256SUMS, installs
-# it, and runs `garnet --version`. If the release, checksum manifest, or asset
-# is missing, it exits with a clear error.
+# The script detects the host OS and architecture, prefers the matching native
+# package from GitHub Releases, verifies it against SHA256SUMS, installs it, and
+# runs `garnet --version`. Before release assets exist, auto mode falls back to
+# a source install through `cargo install --path ... --locked`.
 
 set -eu
 
@@ -18,6 +18,10 @@ GARNET_TAG="${GARNET_TAG:-v${GARNET_VERSION}}"
 GARNET_BASE_URL="${GARNET_BASE_URL:-https://github.com/${GARNET_REPO}/releases/download/${GARNET_TAG}}"
 GARNET_PREFIX="${GARNET_PREFIX:-}"
 GARNET_FORMAT="${GARNET_FORMAT:-}"
+GARNET_INSTALL_MODE="${GARNET_INSTALL_MODE:-auto}"
+GARNET_SOURCE_FALLBACK="${GARNET_SOURCE_FALLBACK:-1}"
+GARNET_SOURCE_REF="${GARNET_SOURCE_REF:-main}"
+GARNET_SOURCE_REPO_URL="${GARNET_SOURCE_REPO_URL:-https://github.com/${GARNET_REPO}.git}"
 GARNET_INSTALLED_BIN=""
 
 say_banner() {
@@ -137,28 +141,33 @@ asset_name() {
     esac
 }
 
-download() {
+try_download() {
     _url="$1"
     _out="$2"
 
     case "$_url" in
         file://*)
             _path="${_url#file://}"
-            [ -f "$_path" ] || err "missing local release file: $_path"
-            cp "$_path" "$_out" || err "failed to copy $_path"
+            [ -f "$_path" ] || return 1
+            cp "$_path" "$_out" || return 1
             return
             ;;
     esac
 
     if command -v curl >/dev/null 2>&1; then
-        curl --proto '=https' --tlsv1.2 -fL "$_url" -o "$_out" ||
-            err "failed to download $_url"
+        curl --proto '=https' --tlsv1.2 -fL "$_url" -o "$_out" || return 1
     elif command -v wget >/dev/null 2>&1; then
-        wget --https-only -q "$_url" -O "$_out" ||
-            err "failed to download $_url"
+        wget --https-only -q "$_url" -O "$_out" || return 1
     else
-        err "need curl or wget to download $_url"
+        return 1
     fi
+}
+
+download() {
+    _url="$1"
+    _out="$2"
+
+    try_download "$_url" "$_out" || err "failed to download $_url"
 }
 
 verify_sha256() {
@@ -188,7 +197,10 @@ lookup_expected_sha256() {
     _sums_url="${GARNET_CHECKSUM_URL:-${GARNET_BASE_URL}/SHA256SUMS}"
     _tmp="$(mktemp_file sums)"
 
-    download "$_sums_url" "$_tmp"
+    try_download "$_sums_url" "$_tmp" || {
+        rm -f "$_tmp"
+        return 1
+    }
     _sha="$(awk -v f="$_asset" '
         {
             name = $2
@@ -203,7 +215,7 @@ lookup_expected_sha256() {
     ' "$_tmp")"
     rm -f "$_tmp"
 
-    [ -n "$_sha" ] || err "asset '$_asset' is not listed in $_sums_url"
+    [ -n "$_sha" ] || return 1
     printf '%s' "$_sha"
 }
 
@@ -277,12 +289,31 @@ run_version_check() {
     fi
 }
 
-main() {
-    say_banner
-    say "channel  = ${GARNET_CHANNEL}"
-    say "version  = ${GARNET_VERSION}"
-    say "release  = ${GARNET_BASE_URL}"
+source_install() {
+    need_cmd git
+    need_cmd cargo
 
+    _prefix="${GARNET_PREFIX:-$HOME/.local}"
+    _scratch="$(mktemp -d 2>/dev/null || printf '/tmp/garnet-source-%s' "$$")"
+    _src="$_scratch/garnet"
+
+    say "source   = ${GARNET_SOURCE_REPO_URL} (${GARNET_SOURCE_REF})"
+    say "install  = source via cargo install --locked"
+
+    git clone --depth 1 --branch "$GARNET_SOURCE_REF" "$GARNET_SOURCE_REPO_URL" "$_src" ||
+        err "failed to clone ${GARNET_SOURCE_REPO_URL} at ${GARNET_SOURCE_REF}"
+    cargo install --path "$_src/garnet-cli" --root "$_prefix" --locked ||
+        err "failed to install Garnet from source"
+
+    rm -rf "$_scratch"
+    GARNET_INSTALLED_BIN="$_prefix/bin/garnet"
+    case ":$PATH:" in
+        *":$_prefix/bin:"*) ;;
+        *) warn "$_prefix/bin is not on PATH; add it to your shell startup file" ;;
+    esac
+}
+
+release_install() {
     _triple="$(detect_triple)"
     _format="$(detect_format)"
     _asset="$(asset_name "$_triple" "$_format")"
@@ -294,10 +325,10 @@ main() {
     say "detected = ${_triple} / ${_format}"
     say "asset    = ${_asset}"
     say "fetching SHA256SUMS"
-    _expected_sha="$(lookup_expected_sha256 "$_asset")"
+    _expected_sha="$(lookup_expected_sha256 "$_asset")" || return 1
 
     say "downloading ${_url}"
-    download "$_url" "$_dest"
+    try_download "$_url" "$_dest" || return 1
     verify_sha256 "$_dest" "$_expected_sha"
 
     case "$_format" in
@@ -308,6 +339,37 @@ main() {
         *) err "unknown package format: $_format" ;;
     esac
 
+    run_version_check
+}
+
+main() {
+    say_banner
+    say "channel  = ${GARNET_CHANNEL}"
+    say "version  = ${GARNET_VERSION}"
+    say "mode     = ${GARNET_INSTALL_MODE}"
+    say "release  = ${GARNET_BASE_URL}"
+
+    case "$GARNET_INSTALL_MODE" in
+        auto|release|source) ;;
+        *) err "unsupported GARNET_INSTALL_MODE: $GARNET_INSTALL_MODE" ;;
+    esac
+
+    if [ "$GARNET_INSTALL_MODE" = "source" ]; then
+        source_install
+        run_version_check
+        return
+    fi
+
+    if release_install; then
+        return
+    fi
+
+    if [ "$GARNET_INSTALL_MODE" = "release" ] || [ "$GARNET_SOURCE_FALLBACK" = "0" ]; then
+        err "release install failed; set GARNET_INSTALL_MODE=source to build from source"
+    fi
+
+    warn "release assets are unavailable; falling back to source install"
+    source_install
     run_version_check
 }
 
