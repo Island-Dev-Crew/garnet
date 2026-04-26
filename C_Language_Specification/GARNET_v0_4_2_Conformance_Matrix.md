@@ -69,20 +69,26 @@ ordering visible per Mini-Spec section so that:
 | §3.3 Imports (`use`) | ✅ | `UseDecl` / `UseImports` in `ast.rs` | |
 | §3.4 Visibility (`pub`) | ✅ | `KwPub` token, parser respects on items | Cross-module `pub` enforcement is checker-side and minimal — full visibility regime tracked for v0.5. |
 
-## Section 4 — Memory Units
+## Section 4 — Memory Units (Memory Core / Mnemos)
+
+The implementation crate `garnet-memory-v0.3/` ships under the codename
+**Mnemos** as the v0.4.x reference implementation of Garnet's
+**Memory Core**. Production-path work for §4.4 / §4.5 and the
+allocator integration is sequenced in
+[`MEMORY_CORE_ROADMAP.md`](MEMORY_CORE_ROADMAP.md).
 
 | Mini-Spec | Status | Evidence | Notes |
 |---|---|---|---|
 | §4.1 Declaration form | ✅ | `grammar/memory.rs`, `MemoryDecl` AST node | |
-| §4.2 Semantics | ✅ | `garnet-memory-v0.3/src/{working,episodic,semantic,procedural}.rs` | Reference stores, not production allocators. |
+| §4.2 Semantics | ✅ | Mnemos: `garnet-memory-v0.3/src/{working,episodic,semantic,procedural}.rs` | Reference stores meeting the behavioural contract; not production allocators. Roadmap Tier 1 + Tier 2 productizes the backends. |
 | §4.3 Out-of-scope items | ✅ (by design) | n/a | These remain explicit non-goals. |
-| §4.4 Generics over memory kinds | 🟠 | n/a | Explicitly deferred per Mini-Spec; tracked. |
-| §4.5 ARC + Bacon–Rajan cycle detection | 🟠 | spec only — no implementation file | New in v1.0; explicit v0.5+ work. |
-| §4.5.1 Trial-deletion algorithm | 🟠 | — | |
-| §4.5.2 Kind-aware root partitioning | 🟠 | — | |
-| §4.5.3 Finalization | 🟠 | — | |
-| §4.5.4 Safe-mode interaction | 🟠 | — | |
-| §4.5.5 Observable invariants | 🟠 | — | |
+| §4.4 Generics over memory kinds | 🟠 | n/a | Explicitly deferred; tracked as Roadmap T1.3 (gates on §11.6 monomorphization). |
+| §4.5 ARC + Bacon–Rajan cycle detection | 🟠 | spec only — no implementation file | New in v1.0; tracked as Roadmap T3.1. The single largest open Memory Core item. |
+| §4.5.1 Trial-deletion algorithm | 🟠 | — | Roadmap T3.1 |
+| §4.5.2 Kind-aware root partitioning | 🟠 | — | Roadmap T3.1 |
+| §4.5.3 Finalization | 🟠 | — | Roadmap T3.1 |
+| §4.5.4 Safe-mode interaction | 🟠 | — | Roadmap T3.1 / T3.2 |
+| §4.5.5 Observable invariants | 🟠 | — | Roadmap T3.1 |
 
 ## Section 5 — Function Definitions
 

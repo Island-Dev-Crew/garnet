@@ -2,7 +2,7 @@
 name = "garnet-memory"
 version = "0.3.0"
 edition = "2021"
-description = "Reference Memory Core + Manager SDK for Garnet v0.3 (Rung 5 stub)."
+description = "Mnemos — the v0.4.x reference implementation of Garnet's Memory Core. Provides the four cognitively-inspired memory kinds (working / episodic / semantic / procedural) as behavioural-contract reference stores. Production-grade allocator path is documented in C_Language_Specification/MEMORY_CORE_ROADMAP.md; Rung 5 of the engineering ladder."
 license = "MIT OR Apache-2.0"
 
 [dependencies]

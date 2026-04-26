@@ -107,7 +107,7 @@ garnet verify src/main.garnet src/main.garnet.manifest.json --signature
 | `garnet-parser` | Lex + parse (Mini-Spec v1.0) |
 | `garnet-interp` | Managed-mode tree-walk interpreter |
 | `garnet-check`  | Safe-mode validator + CapCaps call-graph propagator |
-| `garnet-memory` | Four-kind allocator framework |
+| `garnet-memory` | **Mnemos** — reference implementation of Garnet's **Memory Core** (four cognitively-inspired kinds: working / episodic / semantic / procedural). Production allocator path tracked in [`MEMORY_CORE_ROADMAP.md`](C_Language_Specification/MEMORY_CORE_ROADMAP.md) |
 | `garnet-actor-runtime` | Bounded-mailbox actors + Ed25519 signed hot-reload |
 | `garnet-stdlib` | OS-I/O primitives with capability metadata |
 | `garnet-cli`    | Top-level `garnet` binary |
@@ -120,6 +120,7 @@ Full research corpus + language specification lives in this repository at:
 - `A_Research_Papers/` — seven research papers + four addenda
 - `C_Language_Specification/` — Mini-Spec v1.0 + canonical grammar
   - **[Conformance matrix (v0.4.2)](C_Language_Specification/GARNET_v0_4_2_Conformance_Matrix.md)** — what's actually implemented vs. specified, per Mini-Spec section
+  - **[Memory Core roadmap](C_Language_Specification/MEMORY_CORE_ROADMAP.md)** — production-path tiers for Mnemos (the v0.4.x reference implementation) → v0.5+ allocator
 - `D_Executive_and_Presentation/` — comparative developer-experience study
 - `F_Project_Management/` — stage handoffs + verification logs
 

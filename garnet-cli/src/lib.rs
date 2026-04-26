@@ -70,7 +70,9 @@ pub fn print_version() {
     println!("  parser    garnet-parser 0.3.0 (Mini-Spec v1.0)");
     println!("  interp    garnet-interp 0.3.0 (tree-walk, Rung 3)");
     println!("  check     garnet-check  0.3.0 (safe-mode + borrow + CapCaps v3.4.1, Rung 4)");
-    println!("  memory    garnet-memory 0.3.0 (reference stores, Rung 5)");
+    println!(
+        "  memory    garnet-memory 0.3.0 (Mnemos — Memory Core reference impl; production roadmap in MEMORY_CORE_ROADMAP.md, Rung 5)"
+    );
     println!(
         "  actor-rt  garnet-actor-runtime 0.4.0 (Result-returning ask, hot-reloadable + signed reload, Rung 6)"
     );
