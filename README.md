@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="https://github.com/Island-Dev-Crew/garnet/actions"><img src="https://img.shields.io/github/actions/workflow/status/Island-Dev-Crew/garnet/linux-packages.yml?branch=main&label=CI&logo=github" alt="CI status"></a>
-  <a href="https://github.com/Island-Dev-Crew/garnet/releases/latest"><img src="https://img.shields.io/github/v/release/Island-Dev-Crew/garnet?color=%239C2B2E&label=release" alt="Latest release"></a>
+  <a href="https://github.com/Island-Dev-Crew/garnet/releases"><img src="https://img.shields.io/github/v/release/Island-Dev-Crew/garnet?color=%239C2B2E&label=release" alt="Release status"></a>
   <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-E5C07B" alt="License"></a>
   <a href="https://garnet-lang.org"><img src="https://img.shields.io/badge/site-garnet--lang.org-9C2B2E" alt="Website"></a>
   <a href="FAQ.md"><img src="https://img.shields.io/badge/docs-FAQ-blue" alt="FAQ"></a>
@@ -58,7 +58,7 @@ That one-liner becomes the recommended install path after the `v0.4.2`
 GitHub Release contains the assets below. Until then, source install is the
 truthful path.
 
-| Platform      | Installer                                   | Signing                           |
+| Platform      | Installer                                   | Integrity / release requirement   |
 |---------------|---------------------------------------------|-----------------------------------|
 | Linux (.deb)  | `garnet_0.4.2-1_amd64.deb`                  | SHA-256 checksummed               |
 | Linux (.rpm)  | `garnet-0.4.2-1.x86_64.rpm`                 | SHA-256 checksummed               |
@@ -143,13 +143,14 @@ inherit it via a caller that does. Known capabilities: `fs`, `net`,
 
 **v4.2 is research-grade.** Ready for prototype agents and scripting. Production-bearing workloads should wait for v5.0 (bytecode VM). See [FAQ.md §"Is Garnet production-ready?"](FAQ.md#is-garnet-production-ready) for the honest scorecard.
 
-Verification status as of v4.2 release:
+Verification status at current `main`:
 
 - ✅ Linux `.deb` (Ubuntu 24.04) + `.rpm` (Fedora 40) — verified end-to-end in Docker, all 6 Phase 6D gates pass
 - ✅ Windows binary (MSVC) — verified end-to-end, all 6 Phase 6D gates pass
-- ✅ 1244 cumulative tests across workspace; 136 security-specific tests across 4 hardening layers
+- ✅ 1193 workspace tests pass on current `main`; 136 security-specific tests across 4 hardening layers
 - ✅ 22 stdlib primitives bridged through the interpreter
-- ✅ macOS `.pkg` (universal x86_64 + arm64) — Apple Developer ID signed & notarized via `productbuild`
+- ⏳ `v0.4.2` release assets are not published yet; the curl installer is wired and fails clearly until `SHA256SUMS` and packages exist
+- ⏳ macOS `.pkg` and Windows `.msi` release signing/notarization remain credential-gated release steps
 
 ## Research
 

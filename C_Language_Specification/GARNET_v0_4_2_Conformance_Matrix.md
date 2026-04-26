@@ -166,8 +166,8 @@ allocator integration is sequenced in
 | §16.1 Single-CLI principle | ✅ | `garnet-cli/src/bin/garnet.rs` (single `garnet` binary) | parse / check / run / test / build / verify / convert / new / keygen / version / help. |
 | §16.2 Project layout | ✅ | `garnet-cli/templates/{cli,web-api,agent-orchestrator}` | |
 | §16.3 Manifest (`Garnet.toml`) | ✅ | `garnet-cli/src/manifest.rs` (signed manifest support) | |
-| §16.4 Doc-comment syntax | 🟡 | parser tolerates `///` | No `garnet doc` subcommand yet (tracked in v0.4.2 release-readiness Refactor #7). |
-| §16.5 Cross-platform installer | ✅ | `installer/sh.garnet-lang.org/install.sh`, `docs/install.sh` | Linux package paths verified Phase 6D; macOS/Windows installer paths covered. |
+| §16.4 Doc-comment syntax | ✅ | `garnet-cli/src/cmd/doc.rs`; parser tolerates `///` | `garnet doc` ships as a Markdown extractor. Full HTML/cross-reference rendering remains a v0.5.x CST/LSP follow-up. |
+| §16.5 Cross-platform installer | ✅ | `installer/sh.garnet-lang.org/install.sh`, `docs/install.sh` | Linux package paths verified Phase 6D; release-backed curl install requires published `v0.4.2` assets. |
 | §16.6 Why single-CLI matters | n/a (rationale) | Paper VII | |
 
 ---
@@ -187,8 +187,8 @@ allocator integration is sequenced in
 | §10 Boundaries | 1 | — | — | — | Audit log complete. |
 | §11 User types | 2 | 3 | — | 3 | Generics parse but don't monomorphize; `@dynamic` and protocols fully deferred. |
 | §15 REPL | — | — | 1 | — | Basic working; commands/history pending. |
-| §16 Tooling | 4 | — | 1 | — | `garnet doc` is the v0.4.2 Refactor #7 line item. |
-| **Totals** | **31** | **3** | **6** | **16** | 56 tracked items. |
+| §16 Tooling | 5 | — | — | — | `garnet doc` landed in v0.4.2 Refactor #7. |
+| **Totals** | **32** | **3** | **5** | **16** | 56 tracked items. |
 
 ## What this matrix is not
 
