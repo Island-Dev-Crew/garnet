@@ -46,7 +46,7 @@ jobs:
           key: ${{ runner.os }}-audit-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-audit-
       - name: Install cargo-audit
-        run: cargo install cargo-audit --locked
+        run: cargo install cargo-audit --locked --force
       - name: Run cargo audit
         run: cargo audit
 
@@ -84,7 +84,7 @@ jobs:
           key: ${{ runner.os }}-sbom-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-sbom-
       - name: Install cargo-cyclonedx
-        run: cargo install cargo-cyclonedx --locked
+        run: cargo install cargo-cyclonedx --locked --force
       - name: Generate SBOM (workspace)
         run: cargo cyclonedx --all --format json
       - name: Collect SBOMs

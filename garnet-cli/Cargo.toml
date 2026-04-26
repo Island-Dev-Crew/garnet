@@ -10,11 +10,11 @@ name = "garnet"
 path = "src/bin/garnet.rs"
 
 [dependencies]
-garnet-parser = { path = "../garnet-parser-v0.3" }
-garnet-interp = { path = "../garnet-interp-v0.3" }
-garnet-check = { path = "../garnet-check-v0.3" }
-garnet-memory = { path = "../garnet-memory-v0.3" }
-garnet-convert = { path = "../garnet-convert" }
+garnet-parser = { version = "0.3.0", path = "../garnet-parser-v0.3" }
+garnet-interp = { version = "0.3.0", path = "../garnet-interp-v0.3" }
+garnet-check = { version = "0.3.0", path = "../garnet-check-v0.3" }
+garnet-memory = { version = "0.3.0", path = "../garnet-memory-v0.3" }
+garnet-convert = { version = "0.4.0", path = "../garnet-convert" }
 miette = { version = "7.6", features = ["fancy"] }
 blake3 = "1.5"
 rusqlite = { version = "0.32", features = ["bundled"] }

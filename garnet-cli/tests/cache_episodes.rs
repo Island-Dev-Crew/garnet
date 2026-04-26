@@ -11,6 +11,9 @@
 use garnet_cli::cache::{self, Episode};
 use std::path::PathBuf;
 use std::process::Command;
+use std::sync::atomic::{AtomicU64, Ordering};
+
+static TEMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 fn garnet_bin() -> PathBuf {
     PathBuf::from(env!("CARGO_BIN_EXE_garnet"))
@@ -30,11 +33,12 @@ fn fresh_temp_dir(name: &str) -> PathBuf {
 
 fn rand_suffix() -> String {
     use std::time::{SystemTime, UNIX_EPOCH};
-    SystemTime::now()
+    let nanos = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
-        .as_nanos()
-        .to_string()
+        .as_nanos();
+    let seq = TEMP_COUNTER.fetch_add(1, Ordering::Relaxed);
+    format!("{nanos}_{seq}")
 }
 
 #[test]

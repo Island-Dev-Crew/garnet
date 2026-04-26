@@ -2,6 +2,7 @@
 name = "xtask"
 version = "0.3.2"
 edition = "2021"
+license = "MIT OR Apache-2.0"
 description = "Workspace task runner — 7\u00d7 consistency harness, etc. Not part of the published crates."
 publish = false
 
