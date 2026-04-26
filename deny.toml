@@ -1,0 +1,73 @@
+# cargo-deny configuration — release-grade supply chain gate.
+#
+# Enforced in CI by `.github/workflows/security.yml`. To run locally:
+#
+#   cargo install cargo-deny --locked
+#   cargo deny check
+#
+# Schema version 2 (cargo-deny >= 0.14). See:
+# https://embarkstudios.github.io/cargo-deny/checks/index.html
+
+[graph]
+all-features = true
+
+# ─────────────────────────────────────────────────────────────────────
+# Advisories — RUSTSEC vulnerability + yanked-crate enforcement.
+# ─────────────────────────────────────────────────────────────────────
+[advisories]
+version = 2
+db-urls = ["https://github.com/rustsec/advisory-db"]
+yanked = "deny"
+ignore = []
+
+# ─────────────────────────────────────────────────────────────────────
+# Licenses — allowlist, derived from a one-time audit of the current
+# dependency graph (workspace + all transitive deps, all features).
+# Anything outside this list will fail CI; the right response is to
+# audit the new license and either add it explicitly or replace the
+# dep, never to silently broaden the list.
+# ─────────────────────────────────────────────────────────────────────
+[licenses]
+version = 2
+confidence-threshold = 0.93
+allow = [
+    "MIT",
+    "MIT-0",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-3.0",
+    "Unlicense",
+    "Zlib",
+    "0BSD",
+    "CC0-1.0",
+]
+exceptions = []
+
+# ─────────────────────────────────────────────────────────────────────
+# Bans — duplicate detection + crate denylist.
+# multiple-versions starts at "warn" so we get visibility without
+# breaking the build the first time a transitive dep pins something
+# old; promote to "deny" once the tree is clean.
+# ─────────────────────────────────────────────────────────────────────
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+highlight = "all"
+allow = []
+deny = []
+skip = []
+skip-tree = []
+
+# ─────────────────────────────────────────────────────────────────────
+# Sources — only allow crates.io. No git deps today; if we add one,
+# pin its source URL here explicitly so a typo-squat or hijacked fork
+# cannot land silently.
+# ─────────────────────────────────────────────────────────────────────
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

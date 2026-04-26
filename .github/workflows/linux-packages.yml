@@ -73,6 +73,14 @@ jobs:
           ls -la target/generate-rpm/
 
       - name: Compute SHA-256
+        # TODO(release-security): SHA256SUMS is computed but not signed.
+        # To enable signed releases, add a GPG signing key + passphrase
+        # as repo secrets (`GPG_SIGNING_KEY`, `GPG_PASSPHRASE`), import
+        # them in this step, and follow with:
+        #   gpg --batch --yes --detach-sign --armor SHA256SUMS
+        # which produces SHA256SUMS.asc. Then add it to the upload
+        # artifact list and the release-asset publish step below.
+        # Tracked in the v0.4.2 release-security refactor.
         run: |
           mkdir -p dist
           cp target/debian/*.deb               dist/

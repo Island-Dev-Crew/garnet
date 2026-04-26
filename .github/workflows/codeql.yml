@@ -1,0 +1,47 @@
+# Garnet — GitHub CodeQL static analysis.
+#
+# Findings show up in the Security tab. Schedule mirrors `security.yml`
+# so a known-bad pattern surfaces even on quiet weeks. Rust support in
+# CodeQL is generally available (https://codeql.github.com/docs/codeql-overview/supported-languages-and-frameworks/);
+# if `init` ever fails for `languages: rust`, drop the workflow rather
+# than ignoring the failure.
+
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 8 * * 1"  # Monday 08:00 UTC, an hour after security.yml
+  workflow_dispatch: {}
+
+jobs:
+  analyze:
+    name: Analyze (rust)
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: rust
+          # query packs: default (covers correctness + security) plus
+          # the `security-extended` pack for higher-recall security
+          # findings worth eyeballing on a research-grade compiler.
+          queries: security-extended
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:rust"

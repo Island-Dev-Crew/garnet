@@ -1,0 +1,78 @@
+# Garnet — supply-chain security gate.
+#
+# Runs `cargo-deny` (advisories + licenses + bans + sources) and emits
+# a CycloneDX SBOM as a workflow artifact on every push and PR. The
+# weekly cron makes sure new RUSTSEC advisories surface even when no
+# code is moving — a quiet repo with a known-vulnerable dep is the
+# exact failure mode this catches.
+#
+# This is additive to `ci.yml` (build/test) and `linux-packages.yml`
+# (.deb/.rpm release path); the three workflows are independent.
+
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # 07:00 UTC every Monday — early enough that any new RUSTSEC entry
+    # from the prior week's Friday/weekend disclosures fires before
+    # business hours.
+    - cron: "0 7 * * 1"
+  workflow_dispatch: {}
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # ───────────────────────────────────────────────────────────────────
+  # cargo-deny: enforces deny.toml across the whole graph.
+  # ───────────────────────────────────────────────────────────────────
+  cargo-deny:
+    name: cargo-deny check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check
+          arguments: --all-features
+
+  # ───────────────────────────────────────────────────────────────────
+  # CycloneDX SBOM — uploaded as a workflow artifact for every run.
+  # On tagged releases the linux-packages workflow can pick this up
+  # (or regenerate) for inclusion in the release assets.
+  # ───────────────────────────────────────────────────────────────────
+  sbom:
+    name: CycloneDX SBOM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin
+            target
+          key: ${{ runner.os }}-sbom-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-sbom-
+      - name: Install cargo-cyclonedx
+        run: cargo install cargo-cyclonedx --locked
+      - name: Generate SBOM (workspace)
+        run: cargo cyclonedx --all --format json
+      - name: Collect SBOMs
+        run: |
+          mkdir -p sbom
+          find . -name '*.cdx.json' -not -path './sbom/*' -exec cp {} sbom/ \;
+          ls -la sbom/
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: garnet-sbom-${{ github.sha }}
+          path: sbom/
+          if-no-files-found: error
+          retention-days: 90
