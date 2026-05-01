@@ -20,12 +20,27 @@ env:
 
 jobs:
   # ───────────────────────────────────────────────────────────────────
+  # Agent documentation contracts — validates the AGENTS.md hierarchy
+  # that agents use as repo-local procedural memory.
+  # ───────────────────────────────────────────────────────────────────
+  agent-contracts:
+    name: agent documentation contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - run: python3 scripts/check-agent-contracts.py
+
+  # ───────────────────────────────────────────────────────────────────
   # Format check — fast, runs once on Linux. A failure here is the
   # cheapest possible signal to fix before paying for a build matrix.
   # ───────────────────────────────────────────────────────────────────
   fmt:
     name: rustfmt
     runs-on: ubuntu-latest
+    needs: agent-contracts
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
