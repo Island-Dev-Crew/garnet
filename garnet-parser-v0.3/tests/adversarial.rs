@@ -58,13 +58,20 @@ fn deep_paren_nesting_runs_in_dedicated_thread() {
 
 #[test]
 fn fifty_level_array_nesting() {
-    let depth = 50;
-    let src = format!(
-        "def main() {{ {open}1{close} }}",
-        open = "[".repeat(depth),
-        close = "]".repeat(depth)
-    );
-    parse_source(&src).expect("50-level array nesting must parse");
+    let result = std::thread::Builder::new()
+        .stack_size(16 * 1024 * 1024)
+        .spawn(|| {
+            let depth = 50;
+            let src = format!(
+                "def main() {{ {open}1{close} }}",
+                open = "[".repeat(depth),
+                close = "]".repeat(depth)
+            );
+            parse_source(&src).expect("50-level array nesting must parse")
+        })
+        .unwrap()
+        .join();
+    assert!(result.is_ok(), "thread panicked: {result:?}");
 }
 
 #[test]

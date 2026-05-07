@@ -20,6 +20,7 @@ language-completeness work can move from prose to executable evidence.
 | §16 deterministic manifest tooling | v0.4.2 baseline | Release Gate | `implemented_reproducible_manifest_smoke_builds` | active pass |
 | §11.6/§11.8 parser parity | v0.5 Phase 1 | Parser-Parity Gate | `parser_parity_top_level_protocol_and_dyn_trait_parse` | active pass |
 | §5.4/§11.7 parser parity | v0.5 Phase 1 | Parser-Parity Gate | `parser_parity_yield_next_dynamic_and_nonsendable_parse` | active pass |
+| §5.4.1 parser parity | v0.5 Phase 1 | Parser-Parity Gate | `parses_do_end_block_argument` | active pass |
 
 ## Deferred or Partial Test Handles
 

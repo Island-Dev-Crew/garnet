@@ -63,6 +63,7 @@ pub enum TokenKind {
     KwModule,
     KwUse,
     KwPub,
+    KwDo,
     KwEnd,
 
     // ── Declaration keywords ──
@@ -192,6 +193,7 @@ pub fn keyword_lookup(s: &str) -> Option<TokenKind> {
         "module" => Some(TokenKind::KwModule),
         "use" => Some(TokenKind::KwUse),
         "pub" => Some(TokenKind::KwPub),
+        "do" => Some(TokenKind::KwDo),
         "end" => Some(TokenKind::KwEnd),
         "def" => Some(TokenKind::KwDef),
         "fn" => Some(TokenKind::KwFn),
@@ -261,6 +263,7 @@ pub fn describe_kind(kind: &TokenKind) -> &'static str {
         TokenKind::KwModule => "'module'",
         TokenKind::KwUse => "'use'",
         TokenKind::KwPub => "'pub'",
+        TokenKind::KwDo => "'do'",
         TokenKind::KwEnd => "'end'",
         TokenKind::KwDef => "'def'",
         TokenKind::KwFn => "'fn'",

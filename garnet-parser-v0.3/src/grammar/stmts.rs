@@ -44,6 +44,40 @@ pub fn parse_block(p: &mut Parser) -> Result<Block, ParseError> {
     })
 }
 
+/// Parse the body of a Ruby-style trailing block after `do` has been consumed:
+/// `do [|params|] stmt* [tail_expr] end`.
+pub fn parse_do_block_body(p: &mut Parser, start: crate::token::Span) -> Result<Block, ParseError> {
+    p.skip_separators();
+
+    let mut stmts = Vec::new();
+    let mut tail_expr = None;
+
+    while !matches!(p.peek_kind(), TokenKind::KwEnd | TokenKind::Eof) {
+        let item = parse_stmt_or_expr(p)?;
+        p.skip_separators();
+        let at_end = matches!(p.peek_kind(), TokenKind::KwEnd);
+        if at_end {
+            match item {
+                StmtOrExpr::Stmt(s) => stmts.push(s),
+                StmtOrExpr::Expr(e) => tail_expr = Some(Box::new(e)),
+            }
+        } else {
+            match item {
+                StmtOrExpr::Stmt(s) => stmts.push(s),
+                StmtOrExpr::Expr(e) => stmts.push(Stmt::Expr(e)),
+            }
+        }
+    }
+
+    p.expect(&TokenKind::KwEnd, "do/end block")?;
+    let span = start.join(p.prev_span());
+    Ok(Block {
+        stmts,
+        tail_expr,
+        span,
+    })
+}
+
 enum StmtOrExpr {
     Stmt(Stmt),
     Expr(Expr),

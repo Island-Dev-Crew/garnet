@@ -1,7 +1,7 @@
 //! Parser-parity tests for Mini-Spec v1.0 surfaces that are staged before
 //! full checker/runtime semantics.
 
-use garnet_parser::ast::{Annotation, Item, Stmt, TypeExpr};
+use garnet_parser::ast::{Annotation, ClosureBody, Expr, Item, Stmt, TypeExpr};
 use garnet_parser::parse_source;
 
 #[test]
@@ -76,6 +76,42 @@ fn parses_yield_and_next_statements_as_staged_surface() {
 
     assert!(matches!(function.body.stmts[0], Stmt::Yield { .. }));
     assert!(matches!(function.body.stmts[1], Stmt::Next { .. }));
+}
+
+#[test]
+fn parses_do_end_block_argument() {
+    let src = r#"
+        @caps()
+        def main() {
+            each([1, 2, 3]) do |x|
+                yield x + 1
+            end
+        }
+    "#;
+
+    let module = parse_source(src).unwrap();
+    let function = match &module.items[0] {
+        Item::Fn(f) => f,
+        other => panic!("expected function, got {other:?}"),
+    };
+    let Some(Expr::Call { args, .. }) = function.body.tail_expr.as_deref() else {
+        panic!("expected call tail expression");
+    };
+    assert_eq!(
+        args.len(),
+        2,
+        "do/end block should be a trailing closure arg"
+    );
+
+    let Expr::Closure { params, body, .. } = &args[1] else {
+        panic!("expected trailing do/end block to parse as a closure arg");
+    };
+    assert_eq!(params.len(), 1);
+    assert_eq!(params[0].name, "x");
+    let ClosureBody::Block(block) = body.as_ref() else {
+        panic!("expected block-bodied closure");
+    };
+    assert!(matches!(block.stmts[0], Stmt::Yield { .. }));
 }
 
 #[test]

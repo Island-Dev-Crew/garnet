@@ -91,7 +91,7 @@ proptest! {
             "def","fn","let","var","const","if","elsif","else","while","for","in","loop",
             "break","continue","return","match","when","try","rescue","ensure","raise",
             "own","borrow","ref","mut","move","and","or","not","true","false","nil","self",
-            "super","module","use","pub","end","type","trait","impl","struct","enum",
+            "super","module","use","pub","do","end","type","trait","impl","struct","enum",
             "memory","working","episodic","semantic","procedural","actor","protocol",
             "on","spawn","send",
         ];

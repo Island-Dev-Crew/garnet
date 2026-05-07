@@ -6,7 +6,7 @@ use crate::error::ParseError;
 use crate::parser::Parser;
 use crate::token::{StrPart, TokenKind};
 
-use super::{control_flow, functions};
+use super::{control_flow, functions, stmts};
 
 /// Parse an expression (entry point).
 ///
@@ -247,9 +247,13 @@ fn parse_postfix(p: &mut Parser) -> Result<Expr, ParseError> {
                 p.bump();
                 let (name, name_span) = p.expect_ident("field or method name")?;
                 if p.eat(&TokenKind::LParen) {
-                    let args = parse_arg_list(p)?;
+                    let mut args = parse_arg_list(p)?;
                     p.expect(&TokenKind::RParen, "method call")?;
-                    let span = expr.span().join(p.prev_span());
+                    let mut span = expr.span().join(p.prev_span());
+                    if let Some(block) = parse_trailing_do_block(p)? {
+                        span = span.join(block.span());
+                        args.push(block);
+                    }
                     expr = Expr::Method {
                         receiver: Box::new(expr),
                         method: name,
@@ -267,9 +271,13 @@ fn parse_postfix(p: &mut Parser) -> Result<Expr, ParseError> {
             }
             TokenKind::LParen => {
                 p.bump();
-                let args = parse_arg_list(p)?;
+                let mut args = parse_arg_list(p)?;
                 p.expect(&TokenKind::RParen, "function call")?;
-                let span = expr.span().join(p.prev_span());
+                let mut span = expr.span().join(p.prev_span());
+                if let Some(block) = parse_trailing_do_block(p)? {
+                    span = span.join(block.span());
+                    args.push(block);
+                }
                 expr = Expr::Call {
                     callee: Box::new(expr),
                     args,
@@ -323,6 +331,32 @@ fn parse_postfix(p: &mut Parser) -> Result<Expr, ParseError> {
         }
     }
     Ok(expr)
+}
+
+fn parse_trailing_do_block(p: &mut Parser) -> Result<Option<Expr>, ParseError> {
+    if !matches!(p.peek_kind(), TokenKind::KwDo) {
+        return Ok(None);
+    }
+    let start = p.bump().span;
+    let params = if p.eat(&TokenKind::Pipe) {
+        if p.eat(&TokenKind::Pipe) {
+            Vec::new()
+        } else {
+            let params = functions::parse_param_list(p, false)?;
+            p.expect(&TokenKind::Pipe, "do/end block parameters")?;
+            params
+        }
+    } else {
+        Vec::new()
+    };
+    let body = stmts::parse_do_block_body(p, start)?;
+    let span = start.join(body.span);
+    Ok(Some(Expr::Closure {
+        params,
+        return_ty: None,
+        body: Box::new(ClosureBody::Block(body)),
+        span,
+    }))
 }
 
 // ── Level 11: Primary ──
