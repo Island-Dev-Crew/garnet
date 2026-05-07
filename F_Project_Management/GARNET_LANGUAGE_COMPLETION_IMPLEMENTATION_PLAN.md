@@ -20,8 +20,8 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | Current-state/reviewer guide | Complete first pass | `CURRENT_STATE.md`; `F_Project_Management/GARNET_CURRENT_VS_HISTORICAL_LEDGER.md` | Review before each public/MIT packaging pass |
 | Repo IA truth separation | Complete first pass | `CURRENT_STATE.md`; `archive/history/`; roadmap index | Finish link-rewrite cleanup before a public main-page launch |
 | v0.4.2 release assets | Fork release published; org release path requires browser/desktop-authorized publication | `Navigata1/garnet` release assets; CLI reports org `push: false`; browser session can open org release form | Publish org `v0.4.2` release from an org-authorized session and rerun installer smoke |
-| Parser parity for old ambition | Partial, Phase 1 started | `protocol`, `dyn Trait`, `yield`, `next`, `@dynamic`, `@nonsendable` parser tests | Add `do ... end` block arguments and keep runtime gaps explicit |
-| Blocks, `yield`, `next` runtime semantics | Not done | `Stmt::Yield`/`Stmt::Next` parse; interpreter emits staged-surface error | Activate `deferred_blocks_and_yield` |
+| Parser parity for old ambition | Partial, Phase 1 active | `protocol`, `dyn Trait`, `yield`, `next`, `@dynamic`, `@nonsendable`, and `do ... end` parser tests | Keep runtime gaps explicit and activate Phase 2 only with executable semantics |
+| Blocks, `yield`, `next` runtime semantics | Not done | `do ... end` parses as a trailing closure argument; `Stmt::Yield`/`Stmt::Next` parse; interpreter emits staged-surface error | Activate `deferred_blocks_and_yield` |
 | Dynamic method dispatch tables | Not done | `@dynamic` metadata preserved; no method table dispatch | Activate `deferred_dynamic_dispatch` |
 | Structural protocol satisfaction and runtime casts | Not done | `Item::Protocol` parses; no structural checker/runtime cast | Activate `deferred_structural_protocols` |
 | Actor protocol enforcement and `Sendable` | Partial | actor runtime crate exists; CLI template does not use actor syntax frictionlessly | Agent-orchestrator actor-mode smoke passes |
@@ -58,7 +58,9 @@ Do not advance public status for any row unless all applicable evidence lands in
 - Modify: `garnet-parser-v0.3/src/grammar/user_types.rs`
 - Modify: `garnet-parser-v0.3/src/grammar/types.rs`
 - Modify: `garnet-parser-v0.3/src/grammar/stmts.rs`
+- Modify: `garnet-parser-v0.3/src/grammar/expr.rs`
 - Test: `garnet-parser-v0.3/tests/parse_v1_parser_parity.rs`
+- Test: `garnet-parser-v0.3/tests/properties.rs`
 - Test: `garnet-cli/tests/conformance_skeleton.rs`
 - Docs: `C_Language_Specification/GARNET_v0_4_2_Conformance_Matrix.md`
 
@@ -73,7 +75,7 @@ cargo test -p garnet-cli --test conformance_skeleton
 
 Expected: parser-parity tests pass; deferred runtime/type-system handles remain ignored.
 
-- [ ] **Step 2: Add failing parser test for `do ... end` block arguments**
+- [x] **Step 2: Add failing parser test for `do ... end` block arguments**
 
 Add this test to `garnet-parser-v0.3/tests/parse_v1_parser_parity.rs`:
 
@@ -97,11 +99,14 @@ Run:
 cargo test -p garnet-parser --test parse_v1_parser_parity parses_do_end_block_argument
 ```
 
-Expected before implementation: fail because `do` block arguments are not parsed.
+Observed before implementation: failed with `UnexpectedToken` at the newline
+after the `do |x|` header because block arguments were not parsed.
 
-- [ ] **Step 3: Implement `do ... end` parser support**
+- [x] **Step 3: Implement `do ... end` parser support**
 
-Add block-argument AST support and parse it in the function-call grammar. Keep the runtime staged if Phase 2 is not landing in the same PR.
+Parse `do ... end` as an existing `Expr::Closure` appended to the call or
+method-call argument list. This keeps the AST contract stable and leaves runtime
+block/yield semantics staged for Phase 2.
 
 Run:
 

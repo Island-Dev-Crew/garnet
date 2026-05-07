@@ -8,7 +8,7 @@ that each report should consume.
 
 | Phase | Dogfood gate | Current result | Evidence |
 |---|---|---|---|
-| 1 Parser parity | New Mini-Spec syntax parses without breaking MVPs | in progress | `parse_v1_parser_parity`, `conformance_skeleton`, MVP run probe |
+| 1 Parser parity | New Mini-Spec syntax parses without breaking MVPs | parser-stage `do...end` support landed; Phase 2 runtime semantics still deferred | `cargo test -p garnet-parser --test parse_v1_parser_parity`; `cargo test -p garnet-parser`; `cargo test -p garnet-cli --test conformance_skeleton`; `cargo test -p garnet-cli --test dogfood_readiness_examples`; `cargo test -p garnet-cli --test examples` |
 | 2 Managed runtime | Parser-stage features run in managed mode | not started | deferred conformance handles |
 | 3 Actors + Sendable | `agent-orchestrator` uses actor syntax frictionlessly | not started | current template uses pure role functions |
 | 4 Safe mode | unsafe ownership examples are rejected, valid examples pass | not started | `borrow.rs` skeleton |
