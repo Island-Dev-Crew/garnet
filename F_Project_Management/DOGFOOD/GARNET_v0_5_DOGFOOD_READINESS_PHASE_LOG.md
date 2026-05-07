@@ -15,6 +15,7 @@ that each report should consume.
 | 5 Traits/generics | trait/generic examples check and run honestly | not started | parser-only today |
 | 6 Memory Core | cycle and kind-aware memory fixtures pass | not started | Mnemos reference stores only |
 | 7 Proof/release/empirics | release/proof/benchmark claims are separated and falsifiable | scaffold only | runbooks and research handoffs |
+| Security/trust boundary | FS/net/db/converter/release authority surfaces are inventoried and probed | in progress | `GARNET_SECURITY_DOGFOOD_RUBRIC.md`; `cargo audit`; `cargo deny --all-features check`; source trust-boundary scan |
 
 ## Current Phase 1 Acceptance
 
@@ -24,4 +25,6 @@ that each report should consume.
 - `cargo test -p garnet-cli --test dogfood_readiness_examples`
 - `cargo test -p garnet-cli --test examples`
 - canonical MVP parse/check/run loop
-
+- `cargo audit`
+- `cargo deny --all-features check`
+- source trust-boundary scan for command execution, DB queries, filesystem/network authority, unsafe/eval/exec, secrets, and release-integrity surfaces

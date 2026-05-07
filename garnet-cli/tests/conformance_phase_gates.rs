@@ -96,3 +96,34 @@ fn completion_plan_preserves_current_vs_deferred_truth() {
         assert!(plan.contains(needle), "completion plan missing {needle}");
     }
 }
+
+#[test]
+fn security_dogfood_rubric_is_indexed_and_actionable() {
+    let index = fs::read_to_string(repo_root().join("F_Project_Management/v0_5_ROADMAP_INDEX.md"))
+        .expect("roadmap index");
+    assert!(
+        index.contains("GARNET_SECURITY_DOGFOOD_RUBRIC.md"),
+        "roadmap index must include the security dogfood rubric"
+    );
+
+    let rubric = fs::read_to_string(
+        repo_root().join("F_Project_Management/DOGFOOD/GARNET_SECURITY_DOGFOOD_RUBRIC.md"),
+    )
+    .expect("security dogfood rubric");
+    for needle in [
+        "Frontend/XSS",
+        "Backend/API",
+        "Database",
+        "Command execution",
+        "Filesystem authority",
+        "Network authority",
+        "Supply chain",
+        "Release integrity",
+        "cargo audit",
+        "cargo deny --all-features check",
+        "security_coverage_gaps",
+        "unreviewed_high_risk_trust_boundaries",
+    ] {
+        assert!(rubric.contains(needle), "security rubric missing {needle}");
+    }
+}

@@ -15,6 +15,8 @@ research-grade prototype toward the original language/toolchain ambition.
 | `F_Project_Management/ROADMAPS/GARNET_v0_5_PHASE_OWNERSHIP_REGISTER.md` | Phase ownership, risk, verification, and handoff ledger. |
 | `F_Project_Management/ROADMAPS/GARNET_v0_5_CI_VERIFICATION_MATRIX.md` | Exact CI and local commands required by each phase. |
 | `F_Project_Management/DOGFOOD/GARNET_v0_5_DOGFOOD_READINESS_PHASE_LOG.md` | Dogfood readiness gates and current phase status. |
+| `F_Project_Management/DOGFOOD/GARNET_SECURITY_DOGFOOD_RUBRIC.md` | Security/trust-boundary dogfood scoring rubric for applications, toolchains, and Garnet-specific authority surfaces. |
+| `F_Project_Management/DOGFOOD/GARNET_LANGUAGE_READINESS_BLITZ_2026_05_07.md` | Dated execution blitz for PR #1, PR #2, and full-language readiness escalation. |
 | `C_Language_Specification/GARNET_v0_4_2_Conformance_Suite.md` | Current executable conformance handles. |
 | `C_Language_Specification/GARNET_v0_4_2_Conformance_Matrix.md` | Descriptive implementation-vs-spec truth table. |
 
@@ -27,3 +29,5 @@ A Mini-Spec row may advance only when the same commit or PR includes:
 3. updated matrix status,
 4. an example/template or dogfood probe when the feature is user-facing,
 5. local verification output and, before merge, CI verification.
+6. security/trust-boundary coverage for any new filesystem, network, command,
+   database, sandbox, dependency, or release-integrity surface.

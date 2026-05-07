@@ -14,5 +14,5 @@ Date: 2026-05-07
 | Lints | `cargo clippy --workspace --all-targets -- -D warnings` | merge |
 | Docs | `RUSTDOCFLAGS='-D warnings' cargo doc --workspace --no-deps` | release |
 | Security | `cargo deny --all-features check` and `cargo audit` | release |
+| Security trust-boundary inventory | focused source scan for command execution, DB queries, filesystem/network authority, unsafe/eval/exec, secrets, sandbox/capability checks, and release integrity | every dogfood-readiness score |
 | Release install | file-backed and network-backed installer smoke | tag/release |
-
