@@ -9,6 +9,7 @@ use crate::token::TokenKind;
 /// Parse a type expression.
 pub fn parse_type(p: &mut Parser) -> Result<TypeExpr, ParseError> {
     match p.peek_kind() {
+        TokenKind::KwDyn => parse_dyn_type(p),
         TokenKind::Amp => parse_ref_type(p),
         TokenKind::LParen => parse_fn_or_tuple_type(p),
         _ => parse_named_type(p),
@@ -63,6 +64,17 @@ fn parse_named_type(p: &mut Parser) -> Result<TypeExpr, ParseError> {
     let span = start_span.join(p.prev_span());
 
     Ok(TypeExpr::Named { path, args, span })
+}
+
+/// `dyn Trait`
+fn parse_dyn_type(p: &mut Parser) -> Result<TypeExpr, ParseError> {
+    let start = p.expect(&TokenKind::KwDyn, "dyn trait object")?.span;
+    let trait_ty = parse_named_type(p)?;
+    let span = start.join(trait_ty.span());
+    Ok(TypeExpr::Dyn {
+        trait_ty: Box::new(trait_ty),
+        span,
+    })
 }
 
 /// `&T` or `&mut T`

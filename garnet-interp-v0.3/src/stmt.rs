@@ -93,6 +93,12 @@ pub fn exec_stmt(stmt: &Stmt, env: &Rc<Env>) -> Result<(), RuntimeError> {
             };
             Err(RuntimeError::Return(v))
         }
+        Stmt::Yield { .. } => Err(RuntimeError::msg(
+            "`yield` parses in v0.5 parser-parity mode but runtime block semantics are not implemented yet",
+        )),
+        Stmt::Next { .. } => Err(RuntimeError::msg(
+            "`next` parses in v0.5 parser-parity mode but runtime block semantics are not implemented yet",
+        )),
         Stmt::Raise { value, .. } => {
             let v = eval_expr(value, env)?;
             Err(RuntimeError::Raised(v))

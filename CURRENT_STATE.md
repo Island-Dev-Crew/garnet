@@ -75,6 +75,17 @@ done
 | `archive/` | superseded historical material | audit trail only |
 | `.omx/`, `.garnet-cache/`, `target/`, `dist/` | local workflow/build output | scratch/generated, not source truth |
 
+## Tracked Surfaces For v0.5 Roadmap
+
+| Surface | Governs | Verification |
+|---|---|---|
+| `F_Project_Management/v0_5_ROADMAP_INDEX.md` | roadmap table of contents | review before new language-completion work |
+| `F_Project_Management/ROADMAPS/GARNET_v0_5_LANGUAGE_COMPLETION_ROADMAP.md` | seven-phase implementation plan | `cargo test -p garnet-cli --test conformance_phase_gates` |
+| `F_Project_Management/DOGFOOD/GARNET_v0_5_DOGFOOD_READINESS_PHASE_LOG.md` | dogfood readiness phase ledger | dogfood-readiness Part 1 after each phase |
+| `garnet-cli/tests/conformance_skeleton.rs` | executable conformance handles | `cargo test -p garnet-cli --test conformance_skeleton` |
+| `garnet-cli/tests/dogfood_readiness_examples.rs` | semantic MVP output stability | `cargo test -p garnet-cli --test dogfood_readiness_examples` |
+| `.github/workflows/ci.yml` `canonical-examples` job | public app proof surface | GitHub Actions on PR |
+
 ## Language-Completeness Path
 
 Garnet becomes a complete language/toolchain by turning each partial/deferred
@@ -93,10 +104,16 @@ highest-leverage next milestones are:
 5. **Formal/empirical proof:** keep Paper V theorem sketches and Paper VI
    experiments separate from implemented guarantees until tests or proofs land.
 
+The v0.5 seven-phase roadmap is now tracked in
+`F_Project_Management/ROADMAPS/GARNET_v0_5_LANGUAGE_COMPLETION_ROADMAP.md`.
+Phase 1 has begun with parser-parity surfaces for top-level structural
+protocols, `dyn Trait`, staged `yield`/`next`, and preserved
+`@dynamic`/`@nonsendable` annotations. These are parser/conformance advances,
+not runtime-completeness claims.
+
 ## Historical Material
 
 Older milestone files are preserved because they explain how the project got
 here. They are not automatically true of current `main`. Use
 `F_Project_Management/GARNET_CURRENT_VS_HISTORICAL_LEDGER.md` to decide whether
 a claim is current implementation truth, historical proof, roadmap, or archive.
-

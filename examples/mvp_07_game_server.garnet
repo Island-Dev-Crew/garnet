@@ -5,11 +5,11 @@
 # executable.
 
 def apply_tick(hp, damage) {
-  let next = hp - damage
-  if next < 0 {
+  let next_hp = hp - damage
+  if next_hp < 0 {
     0
   } else {
-    next
+    next_hp
   }
 }
 

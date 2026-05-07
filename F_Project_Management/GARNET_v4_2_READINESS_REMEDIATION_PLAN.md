@@ -4,6 +4,10 @@ Date: 2026-05-06
 Mode: dogfood-readiness Part 2
 Branch: codex/garnet-readiness-remediation
 
+Status update 2026-05-07: the v4.2 remediation items are now followed by the
+v0.5 language-completion control surface in
+`F_Project_Management/v0_5_ROADMAP_INDEX.md`.
+
 ## Purpose
 
 This plan turns the full-project dogfood audit findings into a bounded
@@ -70,10 +74,11 @@ complete language implementation.
 
 - `cargo test -p garnet-cli --test examples`
 - `cargo test -p garnet-cli new_cmd`
-- `cargo test -p garnet-interp --test conformance_skeleton`
+- `cargo test -p garnet-cli --test conformance_skeleton`
+- `cargo test -p garnet-cli --test conformance_phase_gates`
+- `cargo test -p garnet-cli --test dogfood_readiness_examples`
 - `cargo fmt --all -- --check`
 - `cargo test --workspace --no-fail-fast`
 - `cargo clippy --workspace --all-targets -- -D warnings`
 - focused `garnet parse/check/run` probes across `examples/mvp_*.garnet`
 - `garnet new/test/run` probes across all templates
-

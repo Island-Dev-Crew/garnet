@@ -449,6 +449,9 @@ fn write_item(out: &mut String, item: &Item, depth: usize) {
         Item::Trait(t) => {
             let _ = writeln!(out, "Trait({}, items={})", t.name, t.items.len());
         }
+        Item::Protocol(p) => {
+            let _ = writeln!(out, "Protocol({}, items={})", p.name, p.items.len());
+        }
         Item::Impl(i) => {
             let _ = writeln!(out, "Impl(methods={})", i.methods.len());
         }
@@ -526,6 +529,20 @@ fn write_stmt(out: &mut String, stmt: &Stmt) {
         Stmt::Break { .. } => out.push_str("Break"),
         Stmt::Continue { .. } => out.push_str("Continue"),
         Stmt::Return { .. } => out.push_str("Return"),
+        Stmt::Yield { value, .. } => {
+            out.push_str("Yield(");
+            if let Some(v) = value {
+                write_expr(out, v);
+            }
+            out.push(')');
+        }
+        Stmt::Next { value, .. } => {
+            out.push_str("Next(");
+            if let Some(v) = value {
+                write_expr(out, v);
+            }
+            out.push(')');
+        }
         Stmt::Raise { value, .. } => {
             out.push_str("Raise(");
             write_expr(out, value);

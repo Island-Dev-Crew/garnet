@@ -163,7 +163,10 @@ fn check_stmt(
                 check_expr(tail, env, sigs, fn_name, diags);
             }
         }
-        Stmt::Break { value, .. } | Stmt::Return { value, .. } => {
+        Stmt::Break { value, .. }
+        | Stmt::Return { value, .. }
+        | Stmt::Yield { value, .. }
+        | Stmt::Next { value, .. } => {
             if let Some(e) = value {
                 check_expr(e, env, sigs, fn_name, diags);
             }

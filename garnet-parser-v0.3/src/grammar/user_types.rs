@@ -8,8 +8,12 @@ use crate::token::TokenKind;
 
 use super::{expr, functions, stmts, types};
 
-/// Parse: `[pub] struct Name[<T>] { fields }`
-pub fn parse_struct(p: &mut Parser, public: bool) -> Result<StructDef, ParseError> {
+/// Parse: `[@dynamic|@nonsendable] [pub] struct Name[<T>] { fields }`
+pub fn parse_struct(
+    p: &mut Parser,
+    annotations: Vec<Annotation>,
+    public: bool,
+) -> Result<StructDef, ParseError> {
     let start = p.expect(&TokenKind::KwStruct, "struct definition")?.span;
     let (name, _) = p.expect_ident("struct name")?;
     let type_params = types::parse_type_params(p)?;
@@ -26,6 +30,7 @@ pub fn parse_struct(p: &mut Parser, public: bool) -> Result<StructDef, ParseErro
     p.expect(&TokenKind::RBrace, "struct body")?;
     let span = start.join(p.prev_span());
     Ok(StructDef {
+        annotations,
         public,
         name,
         type_params,
@@ -181,8 +186,35 @@ fn parse_trait_item(p: &mut Parser) -> Result<TraitItem, ParseError> {
     }
 }
 
+/// Parse: `[pub] protocol Name[<T>] { fn/def signatures }`
+pub fn parse_protocol(p: &mut Parser, public: bool) -> Result<ProtocolDef, ParseError> {
+    let start = p
+        .expect(&TokenKind::KwProtocol, "protocol definition")?
+        .span;
+    let (name, _) = p.expect_ident("protocol name")?;
+    let type_params = types::parse_type_params(p)?;
+    p.expect(&TokenKind::LBrace, "protocol body")?;
+    p.skip_separators();
+
+    let mut items = Vec::new();
+    while !matches!(p.peek_kind(), TokenKind::RBrace | TokenKind::Eof) {
+        items.push(parse_trait_item(p)?);
+        p.skip_separators();
+    }
+
+    p.expect(&TokenKind::RBrace, "protocol body")?;
+    let span = start.join(p.prev_span());
+    Ok(ProtocolDef {
+        public,
+        name,
+        type_params,
+        items,
+        span,
+    })
+}
+
 /// Parse: `impl [<T>] Type [for Trait] { methods }`
-pub fn parse_impl(p: &mut Parser) -> Result<ImplBlock, ParseError> {
+pub fn parse_impl(p: &mut Parser, annotations: Vec<Annotation>) -> Result<ImplBlock, ParseError> {
     let start = p.expect(&TokenKind::KwImpl, "impl block")?.span;
     let type_params = types::parse_type_params(p)?;
     let target = types::parse_type(p)?;
@@ -217,6 +249,7 @@ pub fn parse_impl(p: &mut Parser) -> Result<ImplBlock, ParseError> {
     p.expect(&TokenKind::RBrace, "impl body")?;
     let span = start.join(p.prev_span());
     Ok(ImplBlock {
+        annotations,
         type_params,
         target,
         trait_ty,

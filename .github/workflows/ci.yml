@@ -114,6 +114,11 @@ jobs:
             target/debug/garnet run "$file"
             echo "::endgroup::"
           done
+      - name: Run dogfood and conformance phase gates
+        run: |
+          cargo test -p garnet-cli --test conformance_skeleton
+          cargo test -p garnet-cli --test conformance_phase_gates
+          cargo test -p garnet-cli --test dogfood_readiness_examples
 
   # ───────────────────────────────────────────────────────────────────
   # Documentation build — catches broken intra-doc links and missing

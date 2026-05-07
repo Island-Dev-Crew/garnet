@@ -23,6 +23,7 @@ pub enum Item {
     Struct(StructDef),
     Enum(EnumDef),
     Trait(TraitDef),
+    Protocol(ProtocolDef),
     Impl(ImplBlock),
     Fn(FnDef),
     Const(ConstDecl),
@@ -102,6 +103,8 @@ pub enum TypeExpr {
         inner: Box<TypeExpr>,
         span: Span,
     },
+    /// Trait object type: `dyn Trait`
+    Dyn { trait_ty: Box<TypeExpr>, span: Span },
 }
 
 impl TypeExpr {
@@ -110,7 +113,8 @@ impl TypeExpr {
             TypeExpr::Named { span, .. }
             | TypeExpr::Fn { span, .. }
             | TypeExpr::Tuple { span, .. }
-            | TypeExpr::Ref { span, .. } => *span,
+            | TypeExpr::Ref { span, .. }
+            | TypeExpr::Dyn { span, .. } => *span,
         }
     }
 }
@@ -270,6 +274,7 @@ pub struct HandlerDecl {
 
 #[derive(Debug, Clone)]
 pub struct StructDef {
+    pub annotations: Vec<Annotation>,
     pub public: bool,
     pub name: String,
     pub type_params: Vec<String>,
@@ -312,6 +317,15 @@ pub struct TraitDef {
 }
 
 #[derive(Debug, Clone)]
+pub struct ProtocolDef {
+    pub public: bool,
+    pub name: String,
+    pub type_params: Vec<String>,
+    pub items: Vec<TraitItem>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone)]
 pub enum TraitItem {
     FnSig(FnSig),
     Const(ConstDecl),
@@ -328,6 +342,7 @@ pub struct FnSig {
 
 #[derive(Debug, Clone)]
 pub struct ImplBlock {
+    pub annotations: Vec<Annotation>,
     pub type_params: Vec<String>,
     pub target: TypeExpr,
     pub trait_ty: Option<TypeExpr>,
@@ -380,6 +395,14 @@ pub enum Stmt {
         span: Span,
     },
     Return {
+        value: Option<Expr>,
+        span: Span,
+    },
+    Yield {
+        value: Option<Expr>,
+        span: Span,
+    },
+    Next {
         value: Option<Expr>,
         span: Span,
     },

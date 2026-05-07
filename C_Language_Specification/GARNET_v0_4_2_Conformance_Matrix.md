@@ -99,8 +99,8 @@ allocator integration is sequenced in
 | §5.1 Managed-mode (`def`) | ✅ | `grammar/functions.rs`, `interp::eval` | |
 | §5.2 Safe-mode (`fn`) | ✅ | `grammar/functions.rs`, `garnet-check-v0.3` | |
 | §5.3 Closures (both modes) | ✅ | `ClosureBody` in `ast.rs`, `FnValue` in interp | |
-| §5.4 Blocks + `yield` | 🟠 | no `KwYield`, no AST node, no eval | Phase 1B Ruby gap #8. Major v0.5 work — needs token, parser path, eval semantics, and test fixtures. |
-| §5.4.1–5.4.5 sub-rules | 🟠 | — | Blocked on §5.4 above. |
+| §5.4 Blocks + `yield` | 🟡 | `KwYield`/`KwNext`, `Stmt::Yield`/`Stmt::Next`, `parser_parity_yield_next_dynamic_and_nonsendable_parse` | v0.5 Phase 1 parser-stage support landed for `yield`/`next`; block arguments and runtime semantics remain Phase 2. |
+| §5.4.1–5.4.5 sub-rules | 🟠 | partial parser-stage only | `do...end`, block argument binding, and runtime control-flow semantics remain Phase 2 work. |
 
 ## Section 6 — Statements & Control Flow
 
@@ -151,9 +151,9 @@ allocator integration is sequenced in
 | §11.3 `trait` | 🔵 | `TraitDef`, `TraitItem`, `FnSig` AST present | Parsed; runtime dispatch is interp-side basic; no method resolution table. |
 | §11.4 `impl` blocks | 🔵 | `ImplBlock` AST | Same status as §11.3. |
 | §11.5 Trait coherence (formal orphan-rule algorithm) | 🟠 | spec only | New in v1.0; no enforcement in checker today. |
-| §11.6 Monomorphization + Zero-Cost Abstraction Theorem | 🔵 | `type_params: Vec<String>` parsed throughout AST (`fn`/`struct`/`enum`/`trait`/`impl`) | Generics PARSED. No monomorphization — interpreter uses dynamic dispatch only. Theorem applies to a hypothetical future native compiler. |
-| §11.7 `@dynamic` method dispatch | 🟠 | no `@dynamic` annotation, no per-instance method table | Phase 1B Ruby gap #9. Needs annotation support, runtime dispatch table, and §11.7.6 safe-mode prohibition check. |
-| §11.8 Structural protocols (duck typing) | 🟠 | no `protocol` top-level keyword, no structural cast | Phase 1B Ruby gap #10. Needs grammar, type-side static-structural typing, and runtime cast. |
+| §11.6 Monomorphization + Zero-Cost Abstraction Theorem | 🔵 | `type_params: Vec<String>` parsed throughout AST; `dyn Trait` parses as `TypeExpr::Dyn` | Generics and trait-object syntax parse. No monomorphization — interpreter uses dynamic dispatch only. Theorem applies to a hypothetical future native compiler. |
+| §11.7 `@dynamic` method dispatch | 🔵 | `Annotation::Dynamic` preserved on `struct` and `impl`; safe modules reject `@dynamic` struct/impl metadata | Parser/checker metadata support only. No per-instance method table or dispatch order yet. |
+| §11.8 Structural protocols (duck typing) | 🔵 | `Item::Protocol`, `ProtocolDef`, `parser_parity_top_level_protocol_and_dyn_trait_parse` | Top-level protocol declarations parse. Type-side structural satisfaction and runtime casts remain Phase 2. |
 
 ## Section 15 — REPL
 
@@ -181,16 +181,16 @@ allocator integration is sequenced in
 | §2 Lexical | 4 | — | — | — | Complete. |
 | §3 Modules | 4 | — | — | — | Cross-module visibility audit pending. |
 | §4 Memory | 3 | — | — | 7 | ARC cycle detection (§4.5) is the largest single open Mini-Spec deliverable. |
-| §5 Functions | 3 | — | — | 6 | `yield`/blocks (§5.4) is the next-largest. |
+| §5 Functions | 3 | — | 1 | 5 | `yield`/`next` parser-stage support exists; block arguments/runtime semantics remain next-largest. |
 | §6 Control flow | 3 | — | — | — | Complete. |
 | §7 Errors | 3 | — | — | — | Complete. |
 | §8 Safe-mode | 1 | — | 3 | — | Skeleton checker; formal theorem stays paper-side. |
 | §9 Actors | 3 | — | 1 | — | `Sendable` runtime guard is partial. |
 | §10 Boundaries | 1 | — | — | — | Audit log complete. |
-| §11 User types | 2 | 3 | — | 3 | Generics parse but don't monomorphize; `@dynamic` and protocols fully deferred. |
+| §11 User types | 2 | 6 | — | — | Generics, `dyn Trait`, `@dynamic` metadata, and protocols parse; semantic/runtime support remains incomplete. |
 | §15 REPL | — | — | 1 | — | Basic working; commands/history pending. |
 | §16 Tooling | 5 | — | — | — | `garnet doc` landed in v0.4.2 Refactor #7. |
-| **Totals** | **32** | **3** | **5** | **16** | 56 tracked items. |
+| **Totals** | **32** | **6** | **6** | **10** | 54 tracked items after v0.5 Phase 1 parser-stage split. |
 
 ## What this matrix is not
 

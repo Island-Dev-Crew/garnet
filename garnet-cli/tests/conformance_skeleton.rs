@@ -128,6 +128,49 @@ def main() {
 }
 
 #[test]
+fn parser_parity_top_level_protocol_and_dyn_trait_parse() {
+    let src = r#"
+protocol Renderable {
+  def render() -> String
+}
+
+@caps()
+def inspect(item: dyn Renderable) {
+  1
+}
+"#;
+    let path = temp_source("protocol_dyn_trait", src);
+    assert_ok(&["parse"], &path);
+}
+
+#[test]
+fn parser_parity_yield_next_dynamic_and_nonsendable_parse() {
+    let src = r#"
+@dynamic
+@nonsendable
+struct DynamicObject {
+  id: Int
+}
+
+@dynamic
+impl DynamicObject {
+  def label(self) {
+    "dynamic"
+  }
+}
+
+@caps()
+def staged_block_surface() {
+  yield 1
+  next 2
+  3
+}
+"#;
+    let path = temp_source("parser_parity_surface", src);
+    assert_ok(&["parse"], &path);
+}
+
+#[test]
 #[ignore = "Mini-Spec §4.5 ARC cycle detection is deferred in v0.4.2"]
 fn deferred_arc_cycle_detection() {
     pending("ARC + Bacon-Rajan cycle detection");

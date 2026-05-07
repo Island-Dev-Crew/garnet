@@ -147,6 +147,7 @@ fn item_span(item: &garnet_parser::ast::Item) -> garnet_parser::token::Span {
         Item::Struct(s) => s.span,
         Item::Enum(e) => e.span,
         Item::Trait(t) => t.span,
+        Item::Protocol(p) => p.span,
         Item::Impl(i) => i.span,
         Item::Actor(a) => a.span,
         Item::Memory(m) => m.span,

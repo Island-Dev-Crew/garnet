@@ -132,6 +132,40 @@ fn parse_stmt_or_expr(p: &mut Parser) -> Result<StmtOrExpr, ParseError> {
             };
             Ok(StmtOrExpr::Stmt(Stmt::Return { value, span }))
         }
+        TokenKind::KwYield => {
+            let start = p.bump().span;
+            let value = if !matches!(
+                p.peek_kind(),
+                TokenKind::Newline | TokenKind::Semi | TokenKind::RBrace | TokenKind::Eof
+            ) {
+                Some(expr::parse_expr(p)?)
+            } else {
+                None
+            };
+            let span = if let Some(ref v) = value {
+                start.join(v.span())
+            } else {
+                start
+            };
+            Ok(StmtOrExpr::Stmt(Stmt::Yield { value, span }))
+        }
+        TokenKind::KwNext => {
+            let start = p.bump().span;
+            let value = if !matches!(
+                p.peek_kind(),
+                TokenKind::Newline | TokenKind::Semi | TokenKind::RBrace | TokenKind::Eof
+            ) {
+                Some(expr::parse_expr(p)?)
+            } else {
+                None
+            };
+            let span = if let Some(ref v) = value {
+                start.join(v.span())
+            } else {
+                start
+            };
+            Ok(StmtOrExpr::Stmt(Stmt::Next { value, span }))
+        }
         TokenKind::KwRaise => {
             let start = p.bump().span;
             let value = expr::parse_expr(p)?;
