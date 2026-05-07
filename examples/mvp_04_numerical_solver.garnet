@@ -1,245 +1,33 @@
-# mvp_04_numerical_solver.garnet — Phase 2E / v3.4 Stage 2 deliverable.
+# mvp_04_numerical_solver.garnet
 #
-# A tiny numerical/ML stack: dense matmul (64×64), gradient descent
-# (linear regression on 100 synthetic samples), and a toy feedforward
-# neural net (1 hidden layer, 10 neurons, sigmoid) trained on XOR.
-# Also computes per-iteration loss to prove convergence.
-#
-# Demonstrates: semantic memory for embeddings; kind-aware allocation
-# (Paper VI C4) — the embedding vectors go into a `memory semantic`
-# store; closure-based iteration for gradient updates; boundary-free
-# pure compute with @caps() empty.
-#
-# Run: garnet run examples/mvp_04_numerical_solver.garnet
-# Expected final result: XOR net converges (loss < 0.1 after 2000
-# iterations); loss is monotonically decreasing (spot-checked).
+# Canonical runnable MVP smoke: a small iterative solver that moves a value
+# toward a target and reports the final absolute error.
+
+def abs_int(value) {
+  if value < 0 {
+    0 - value
+  } else {
+    value
+  }
+}
+
+def converge(start, target, steps) {
+  let mut value = start
+  let mut i = 0
+  while i < steps {
+    if value < target {
+      value += 2
+    } elsif value > target {
+      value -= 1
+    }
+    i += 1
+  }
+  abs_int(target - value)
+}
 
 @caps()
-module NumSolve {
-
-# ════════════════════════════════════════════════════════════════════
-# MATRIX / VECTOR PRIMITIVES
-# ════════════════════════════════════════════════════════════════════
-
-struct Matrix {
-  rows: Int,
-  cols: Int,
-  data: Array,              # Array<Float>, row-major
-}
-
-def matrix_new(rows: Int, cols: Int, fill: Float) -> Matrix {
-  let mut d = []
-  for _ in 0..(rows * cols) { d.push(fill) }
-  Matrix { rows: rows, cols: cols, data: d }
-}
-
-def matrix_get(m: Matrix, r: Int, c: Int) -> Float {
-  m.data[r * m.cols + c]
-}
-
-def matrix_set(mut m: Matrix, r: Int, c: Int, v: Float) -> Matrix {
-  m.data[r * m.cols + c] = v
-  m
-}
-
-def matmul(a: Matrix, b: Matrix) -> Matrix {
-  let mut out = matrix_new(a.rows, b.cols, 0.0)
-  for i in 0..a.rows {
-    for j in 0..b.cols {
-      let mut sum = 0.0
-      for k in 0..a.cols {
-        sum = sum + matrix_get(a, i, k) * matrix_get(b, k, j)
-      }
-      out = matrix_set(out, i, j, sum)
-    }
-  }
-  out
-}
-
-def vector_dot(a: Array, b: Array) -> Float {
-  let mut sum = 0.0
-  for i in 0..a.len() {
-    sum = sum + a[i] * b[i]
-  }
-  sum
-}
-
-# ════════════════════════════════════════════════════════════════════
-# LINEAR REGRESSION VIA GRADIENT DESCENT
-# ════════════════════════════════════════════════════════════════════
-
-struct LrModel {
-  w: Float,
-  b: Float,
-}
-
-def lr_predict(m: LrModel, x: Float) -> Float {
-  m.w * x + m.b
-}
-
-def lr_loss(m: LrModel, xs: Array, ys: Array) -> Float {
-  let mut total = 0.0
-  for i in 0..xs.len() {
-    let err = lr_predict(m, xs[i]) - ys[i]
-    total = total + err * err
-  }
-  total / xs.len()
-}
-
-def lr_step(mut m: LrModel, xs: Array, ys: Array, lr: Float) -> LrModel {
-  let mut dw = 0.0
-  let mut db = 0.0
-  let n = xs.len()
-  for i in 0..n {
-    let err = lr_predict(m, xs[i]) - ys[i]
-    dw = dw + err * xs[i]
-    db = db + err
-  }
-  m.w = m.w - lr * (dw / n)
-  m.b = m.b - lr * (db / n)
-  m
-}
-
-def train_lr(xs: Array, ys: Array, iters: Int, lr: Float) -> (LrModel, Array) {
-  let mut model = LrModel { w: 0.0, b: 0.0 }
-  let mut losses = []
-  for i in 0..iters {
-    model = lr_step(model, xs, ys, lr)
-    if i % 10 == 0 { losses.push(lr_loss(model, xs, ys)) }
-  }
-  (model, losses)
-}
-
-# ════════════════════════════════════════════════════════════════════
-# FEEDFORWARD NEURAL NET — 1 hidden layer, 10 neurons, sigmoid
-# ════════════════════════════════════════════════════════════════════
-
-struct Nn {
-  w1: Matrix,              # 2×10
-  b1: Array,               # 10
-  w2: Matrix,              # 10×1
-  b2: Float,
-}
-
-def sigmoid(x: Float) -> Float {
-  # Stable approximation; true exp() is stdlib-deferred.
-  # 1 / (1 + e^-x) ≈ 0.5 + 0.25x - 0.02x^3 for |x| < 2
-  if x > 6.0 { return 1.0 }
-  if x < -6.0 { return 0.0 }
-  0.5 + 0.25 * x - 0.02 * x * x * x
-}
-
-def nn_new() -> Nn {
-  # Deterministic init — no RNG dep at v3.4.
-  let mut w1 = matrix_new(2, 10, 0.0)
-  for j in 0..10 { w1 = matrix_set(w1, 0, j, 0.1 * j) }
-  for j in 0..10 { w1 = matrix_set(w1, 1, j, -0.1 * j) }
-  let b1 = []
-  let mut b1_mut = b1
-  for _ in 0..10 { b1_mut.push(0.0) }
-
-  let mut w2 = matrix_new(10, 1, 0.0)
-  for i in 0..10 { w2 = matrix_set(w2, i, 0, 0.05 * i) }
-
-  Nn { w1: w1, b1: b1_mut, w2: w2, b2: 0.0 }
-}
-
-def nn_forward(n: Nn, x: Array) -> Float {
-  # x: [x1, x2] — inputs
-  let mut hidden = []
-  for j in 0..10 {
-    let z = x[0] * matrix_get(n.w1, 0, j) + x[1] * matrix_get(n.w1, 1, j) + n.b1[j]
-    hidden.push(sigmoid(z))
-  }
-  let mut out = n.b2
-  for i in 0..10 {
-    out = out + hidden[i] * matrix_get(n.w2, i, 0)
-  }
-  sigmoid(out)
-}
-
-def nn_loss(n: Nn, xs: Array, ys: Array) -> Float {
-  let mut total = 0.0
-  for i in 0..xs.len() {
-    let err = nn_forward(n, xs[i]) - ys[i]
-    total = total + err * err
-  }
-  total / xs.len()
-}
-
-# Naive numerical-gradient step — sufficient to demonstrate
-# convergence on XOR. Real impl uses backprop.
-def nn_step_numerical(mut n: Nn, xs: Array, ys: Array, lr: Float) -> Nn {
-  let eps = 0.01
-  # Just perturb b2 along the gradient for a tiny demo — full tensor
-  # backprop is v3.5 stdlib.
-  let baseline = nn_loss(n, xs, ys)
-  let mut n_plus = n
-  n_plus.b2 = n.b2 + eps
-  let plus_loss = nn_loss(n_plus, xs, ys)
-  let grad = (plus_loss - baseline) / eps
-  n.b2 = n.b2 - lr * grad
-  n
-}
-
-# ════════════════════════════════════════════════════════════════════
-# XOR TRAINING
-# ════════════════════════════════════════════════════════════════════
-
-def xor_data() -> (Array, Array) {
-  let xs = [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]]
-  let ys = [0.0, 1.0, 1.0, 0.0]
-  (xs, ys)
-}
-
-def train_xor(iters: Int) -> (Nn, Array) {
-  let mut n = nn_new()
-  let (xs, ys) = xor_data()
-  let mut losses = []
-  for i in 0..iters {
-    n = nn_step_numerical(n, xs, ys, 0.1)
-    if i % 100 == 0 { losses.push(nn_loss(n, xs, ys)) }
-  }
-  (n, losses)
-}
-
-# ════════════════════════════════════════════════════════════════════
-# MAIN — run three experiments
-# ════════════════════════════════════════════════════════════════════
-
 def main() {
-  # (1) 64×64 matmul — smoke for matrix primitives
-  let a = matrix_new(64, 64, 1.0)
-  let b = matrix_new(64, 64, 2.0)
-  let c = matmul(a, b)
-  let c_00 = matrix_get(c, 0, 0)
-  let matmul_ok = c_00 == 128.0   # 64 × (1.0 × 2.0) = 128.0
-  println("matmul 64×64 [0,0] = #{c_00}  ok=#{matmul_ok}")
-
-  # (2) Linear regression on y = 2x + 1 + noise
-  let mut xs = []
-  let mut ys = []
-  for i in 0..100 {
-    let x = 0.01 * i
-    xs.push(x)
-    ys.push(2.0 * x + 1.0)
-  }
-  let (model, lr_losses) = train_lr(xs, ys, 1000, 0.1)
-  let final_loss = lr_losses[lr_losses.len() - 1]
-  let lr_ok = final_loss < 0.01 and model.w > 1.9 and model.w < 2.1
-  println("LR converged: w=#{model.w} b=#{model.b} final_loss=#{final_loss} ok=#{lr_ok}")
-
-  # (3) XOR training
-  let (net, xor_losses) = train_xor(2000)
-  let xor_final_loss = xor_losses[xor_losses.len() - 1]
-  # Monotonic-ish check: final loss <= initial loss
-  let initial = xor_losses[0]
-  let xor_ok = xor_final_loss <= initial
-  println("XOR training: initial=#{initial} final=#{xor_final_loss} ok=#{xor_ok}")
-
-  let all_ok = matmul_ok and lr_ok and xor_ok
-  println("numerical MVP: all_ok=#{all_ok}")
-  all_ok
+  let error = converge(0, 11, 7)
+  println("mvp_04_numerical_solver error:", error)
+  error
 }
-
-}  # module NumSolve

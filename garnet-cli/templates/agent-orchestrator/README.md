@@ -1,11 +1,12 @@
 # {{name}}
 
-A Researcher / Synthesizer / Reviewer multi-actor orchestrator, generated
+A Researcher / Synthesizer / Reviewer orchestrator, generated
 with `garnet new --template agent-orchestrator`.
 
 ## Shape
 
-Three actors, each owning a first-class memory kind:
+Three roles, each mapped to a first-class memory kind in the full agent
+architecture:
 
 | Actor        | Memory kind  | Access pattern                       |
 |--------------|--------------|---------------------------------------|
@@ -17,10 +18,15 @@ The `memory episodic` / `memory semantic` / `memory procedural` keywords
 are Paper VI Contribution 4 — "kind-aware allocation as a language-level
 declaration." The runtime picks the allocator; the author declares intent.
 
+The generated `src/main.garnet` uses pure functions instead of `spawn
+Researcher::new()` so `garnet run src/main.garnet` works immediately on the
+current v0.3 interpreter. Treat actor spawning as the next implementation step,
+not as first-run scaffolding.
+
 ## BoundedMail
 
-Every actor declares `@mailbox(1024)` — incoming `tell` from anywhere in
-the system back-pressures at 1024 in-flight messages with
+The target actor implementation uses `@mailbox(1024)` so incoming `tell` from
+anywhere in the system back-pressures at 1024 in-flight messages with
 `SendError::Full` rather than unbounded growth. This is Security V2 §3.
 
 ## Capability model
@@ -30,11 +36,11 @@ the system back-pressures at 1024 in-flight messages with
 allowed = ["time", "fs"]
 ```
 
-The orchestrator declares `@caps(time)` on `main` for timestamp use. If
-you extend it to read/write persistent fact files, annotate the I/O
-function with `@caps(fs)` — the CapCaps propagator (v3.4.1) will then
-propagate the requirement up to `main` at compile time, forcing the
-`Garnet.toml` `[caps]` budget to stay honest.
+The generated `main` declares `@caps()` because the starter program is pure. If
+you extend it to read/write persistent fact files, annotate the I/O function
+with `@caps(fs)` — the CapCaps propagator (v3.4.1) will then propagate the
+requirement up to `main` at compile time, forcing the `Garnet.toml` `[caps]`
+budget to stay honest.
 
 ## Run
 

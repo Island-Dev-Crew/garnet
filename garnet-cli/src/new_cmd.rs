@@ -344,17 +344,17 @@ mod tests {
     }
 
     #[test]
-    fn agent_orchestrator_template_emits_three_actors() {
+    fn agent_orchestrator_template_emits_runnable_three_role_pipeline() {
         let dir = tempdir().unwrap();
         let target = dir.path().join("my_agents");
         let _ = create_project("agent-orchestrator", &target).unwrap();
         let main = std::fs::read_to_string(target.join("src/main.garnet")).unwrap();
-        assert!(main.contains("actor Researcher"));
-        assert!(main.contains("actor Synthesizer"));
-        assert!(main.contains("actor Reviewer"));
-        assert!(main.contains("memory episodic"));
-        assert!(main.contains("memory semantic"));
-        assert!(main.contains("memory procedural"));
+        assert!(main.contains("def researcher"));
+        assert!(main.contains("def synthesizer"));
+        assert!(main.contains("def reviewer"));
+        assert!(main.contains("def orchestrate"));
+        assert!(main.contains("@caps()"));
+        assert!(!main.contains("spawn Researcher::new"));
     }
 
     #[test]

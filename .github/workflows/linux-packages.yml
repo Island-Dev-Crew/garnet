@@ -174,9 +174,11 @@ jobs:
           garnet --version | grep -q "Rust Rigor. Ruby Velocity."
           garnet --help | grep -q "convert"
           garnet new --template agent-orchestrator /tmp/agents
-          grep -q "actor Researcher"  /tmp/agents/src/main.garnet
-          grep -q "actor Synthesizer" /tmp/agents/src/main.garnet
-          grep -q "actor Reviewer"    /tmp/agents/src/main.garnet
+          grep -q "def researcher"  /tmp/agents/src/main.garnet
+          grep -q "def synthesizer" /tmp/agents/src/main.garnet
+          grep -q "def reviewer"    /tmp/agents/src/main.garnet
+          garnet test /tmp/agents
+          garnet run /tmp/agents/src/main.garnet | grep -q "accepted decision score"
           garnet keygen /tmp/k
           garnet build --deterministic --sign /tmp/k /tmp/agents/src/main.garnet
           garnet verify /tmp/agents/src/main.garnet \
