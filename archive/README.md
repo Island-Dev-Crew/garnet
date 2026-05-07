@@ -9,6 +9,18 @@ would erase the lineage that the spec and papers reference.
 
 ## Contents
 
+### `history/`
+
+Root-level milestone and bundle-index files from earlier Garnet phases. These
+files are preserved for audit trail and academic provenance, but they are not
+current repository navigation. Start at [`../CURRENT_STATE.md`](../CURRENT_STATE.md)
+for live truth.
+
+### `examples/`
+
+Historical example drafts retained for domain ambition and audit trail. Active
+runtime proof lives in [`../examples/`](../examples), not in this archive.
+
 ### `garnet-parser-v0.2/`
 
 The original Mini-Spec v0.2 parser (Rung 2). Flat-file layout, covers

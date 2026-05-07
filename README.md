@@ -19,6 +19,7 @@
 <p align="center">
   <a href="#install"><strong>Install</strong></a>  ·
   <a href="#quickstart"><strong>Quickstart</strong></a>  ·
+  <a href="CURRENT_STATE.md"><strong>Current State</strong></a>  ·
   <a href="FAQ.md"><strong>FAQ</strong></a>  ·
   <a href="https://garnet-lang.org"><strong>Website</strong></a>  ·
   <a href="A_Research_Papers/"><strong>Research Papers</strong></a>  ·
@@ -73,7 +74,9 @@ verifies the selected file against `SHA256SUMS`, and falls back to source in
 auto mode when the release, checksum manifest, or package is missing. See [SECURITY.md](SECURITY.md)
 for the supply-chain story and
 [`GARNET_v0_4_2_Installer_Release_Contract.md`](C_Language_Specification/GARNET_v0_4_2_Installer_Release_Contract.md)
-for the exact hosting, artifact, integrity, and release-pipeline contract.
+for the exact hosting, artifact, integrity, and release-pipeline contract. See
+[`GARNET_v0_4_2_RELEASE_PUBLICATION_RUNBOOK.md`](F_Project_Management/GARNET_v0_4_2_RELEASE_PUBLICATION_RUNBOOK.md)
+for the maintainer release-publication steps and credential gates.
 
 ## Quickstart
 
@@ -92,7 +95,7 @@ Three canonical templates ship with the CLI:
 |------------------------|-----------------------------------------------------------|
 | `cli`                  | Minimal CLI with `@caps()` entry point                    |
 | `web-api`              | HTTP/1.1 service with `@caps(net, time)`                  |
-| `agent-orchestrator`   | Researcher / Synthesizer / Reviewer actors with 3 memory kinds |
+| `agent-orchestrator`   | Runnable Researcher / Synthesizer / Reviewer role pipeline |
 
 Produce a reproducible, signed release:
 
@@ -117,6 +120,9 @@ garnet verify src/main.garnet src/main.garnet.manifest.json --signature
 
 ## Documentation
 
+Start with [`CURRENT_STATE.md`](CURRENT_STATE.md) for the live source map,
+verification ladder, and current-vs-historical reading rule.
+
 Full research corpus + language specification lives in this repository at:
 
 - `A_Research_Papers/` — seven research papers + four addenda
@@ -124,7 +130,9 @@ Full research corpus + language specification lives in this repository at:
   - **[Conformance matrix (v0.4.2)](C_Language_Specification/GARNET_v0_4_2_Conformance_Matrix.md)** — what's actually implemented vs. specified, per Mini-Spec section
   - **[Memory Core roadmap](C_Language_Specification/MEMORY_CORE_ROADMAP.md)** — production-path tiers for Mnemos (the v0.4.x reference implementation) → v0.5+ allocator
 - `D_Executive_and_Presentation/` — comparative developer-experience study
-- `F_Project_Management/` — stage handoffs + verification logs
+- `F_Project_Management/` — stage handoffs, verification logs, and the
+  [current-vs-historical ledger](F_Project_Management/GARNET_CURRENT_VS_HISTORICAL_LEDGER.md)
+- `archive/` — superseded historical files retained for audit trail only
 
 ## Capability model
 
@@ -149,7 +157,9 @@ Verification status at current `main`:
 
 - ✅ Linux `.deb` (Ubuntu 24.04) + `.rpm` (Fedora 40) — verified end-to-end in Docker, all 6 Phase 6D gates pass
 - ✅ Windows binary (MSVC) — verified end-to-end, all 6 Phase 6D gates pass
-- ✅ 1193 workspace tests pass on current `main`; 136 security-specific tests across 4 hardening layers
+- ✅ Workspace test/lint/doc/security gates are CI-enforced; use live CI and
+  `CURRENT_STATE.md` rather than historical handoff test totals
+- ✅ 10 canonical MVP examples parse, check, and run under the current CLI
 - ✅ 22 stdlib primitives bridged through the interpreter
 - ✅ The universal curl installer works before release publication by falling back to source install; native packages remain release-gated by `SHA256SUMS`
 - ⏳ macOS `.pkg` and Windows `.msi` release signing/notarization remain credential-gated release steps

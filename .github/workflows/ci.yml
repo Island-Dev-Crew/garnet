@@ -83,6 +83,39 @@ jobs:
       - run: cargo test --workspace --no-fail-fast
 
   # ───────────────────────────────────────────────────────────────────
+  # Canonical app dogfood — the 10 MVP examples are the public
+  # application-level proof surface. They must parse, check, and run, not
+  # merely exist as design drafts.
+  # ───────────────────────────────────────────────────────────────────
+  canonical-examples:
+    name: canonical MVP examples
+    runs-on: ubuntu-latest
+    needs: fmt
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-examples-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-examples-
+      - run: cargo build -p garnet-cli
+      - name: Parse, check, and run canonical MVP examples
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in examples/mvp_*.garnet; do
+            echo "::group::$file"
+            target/debug/garnet parse "$file"
+            target/debug/garnet check "$file"
+            target/debug/garnet run "$file"
+            echo "::endgroup::"
+          done
+
+  # ───────────────────────────────────────────────────────────────────
   # Documentation build — catches broken intra-doc links and missing
   # docs without publishing anywhere. Runs once on Linux.
   # ───────────────────────────────────────────────────────────────────
