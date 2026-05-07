@@ -10,6 +10,7 @@ research-grade prototype toward the original language/toolchain ambition.
 
 | File | Purpose |
 |---|---|
+| `F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md` | Canonical current-vs-deferred implementation plan for making the original Garnet ambition executable. |
 | `F_Project_Management/ROADMAPS/GARNET_v0_5_LANGUAGE_COMPLETION_ROADMAP.md` | Implementation plan for the seven real-plan milestones. |
 | `F_Project_Management/ROADMAPS/GARNET_v0_5_PHASE_OWNERSHIP_REGISTER.md` | Phase ownership, risk, verification, and handoff ledger. |
 | `F_Project_Management/ROADMAPS/GARNET_v0_5_CI_VERIFICATION_MATRIX.md` | Exact CI and local commands required by each phase. |
@@ -26,4 +27,3 @@ A Mini-Spec row may advance only when the same commit or PR includes:
 3. updated matrix status,
 4. an example/template or dogfood probe when the feature is user-facing,
 5. local verification output and, before merge, CI verification.
-

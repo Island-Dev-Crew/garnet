@@ -72,3 +72,27 @@ fn roadmap_links_conformance_and_dogfood_gates() {
         assert!(roadmap.contains(needle), "roadmap missing {needle}");
     }
 }
+
+#[test]
+fn completion_plan_preserves_current_vs_deferred_truth() {
+    let plan = fs::read_to_string(
+        repo_root().join("F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md"),
+    )
+    .expect("language completion implementation plan");
+    for needle in [
+        "10 MVP app corpus",
+        "Blocks, `yield`, `next` runtime semantics",
+        "Dynamic method dispatch tables",
+        "Structural protocol satisfaction and runtime casts",
+        "Actor protocol enforcement and `Sendable`",
+        "Rust-grade NLL and borrow rules",
+        "Trait coherence",
+        "Monomorphization",
+        "Formal RustBelt/Iris/Coq proof",
+        "Native compiler",
+        "Empirical PLDI-grade validation",
+        "Done Means Executable",
+    ] {
+        assert!(plan.contains(needle), "completion plan missing {needle}");
+    }
+}
