@@ -121,12 +121,7 @@ fn check_item(item: &Item, module_safe: bool, report: &mut CheckReport) {
             }
         }
         Item::Impl(impl_block) => {
-            if module_safe
-                && impl_block
-                    .annotations
-                    .iter()
-                    .any(|ann| matches!(ann, Annotation::Dynamic(_)))
-            {
+            if module_safe && has_dynamic_annotation(&impl_block.annotations) {
                 report.errors.push(CheckError::AnnotationError(
                     "@dynamic impl blocks are not permitted in @safe modules; use static trait dispatch"
                         .to_string(),
@@ -136,21 +131,22 @@ fn check_item(item: &Item, module_safe: bool, report: &mut CheckReport) {
                 check_fn(method, module_safe, report);
             }
         }
-        Item::Struct(struct_def) => {
-            if module_safe
-                && struct_def
-                    .annotations
-                    .iter()
-                    .any(|ann| matches!(ann, Annotation::Dynamic(_)))
-            {
-                report.errors.push(CheckError::AnnotationError(format!(
-                    "@dynamic struct '{}' is not permitted in @safe modules; use trait + dyn Trait",
-                    struct_def.name
-                )));
-            }
+        Item::Struct(struct_def)
+            if module_safe && has_dynamic_annotation(&struct_def.annotations) =>
+        {
+            report.errors.push(CheckError::AnnotationError(format!(
+                "@dynamic struct '{}' is not permitted in @safe modules; use trait + dyn Trait",
+                struct_def.name
+            )));
         }
         _ => {}
     }
+}
+
+fn has_dynamic_annotation(annotations: &[Annotation]) -> bool {
+    annotations
+        .iter()
+        .any(|ann| matches!(ann, Annotation::Dynamic(_)))
 }
 
 fn check_fn(f: &FnDef, module_safe: bool, report: &mut CheckReport) {
