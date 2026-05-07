@@ -96,7 +96,7 @@ fn parse_item(p: &mut Parser) -> Result<Item, ParseError> {
             Ok(Item::Actor(decl))
         }
         TokenKind::KwStruct => {
-            let decl = user_types::parse_struct(p, public)?;
+            let decl = user_types::parse_struct(p, annotations, public)?;
             Ok(Item::Struct(decl))
         }
         TokenKind::KwEnum => {
@@ -107,8 +107,12 @@ fn parse_item(p: &mut Parser) -> Result<Item, ParseError> {
             let decl = user_types::parse_trait(p, public)?;
             Ok(Item::Trait(decl))
         }
+        TokenKind::KwProtocol => {
+            let decl = user_types::parse_protocol(p, public)?;
+            Ok(Item::Protocol(decl))
+        }
         TokenKind::KwImpl => {
-            let decl = user_types::parse_impl(p)?;
+            let decl = user_types::parse_impl(p, annotations)?;
             Ok(Item::Impl(decl))
         }
         TokenKind::KwDef => {
@@ -130,7 +134,7 @@ fn parse_item(p: &mut Parser) -> Result<Item, ParseError> {
         _ => {
             let tok = p.peek();
             Err(ParseError::unexpected_token(
-                "a top-level item (def, fn, struct, enum, trait, impl, actor, memory, module, use, let, const)",
+                "a top-level item (def, fn, struct, enum, trait, protocol, impl, actor, memory, module, use, let, const)",
                 &format!("{:?}", tok.kind),
                 tok.span,
             ))

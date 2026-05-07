@@ -135,6 +135,7 @@ pub(crate) fn describe_item(item: &garnet_parser::ast::Item) -> String {
         Item::Struct(s) => format!("struct {}", s.name),
         Item::Enum(e) => format!("enum {}", e.name),
         Item::Trait(t) => format!("trait {}", t.name),
+        Item::Protocol(p) => format!("protocol {}", p.name),
         Item::Impl(_) => "impl block".to_string(),
         Item::Actor(a) => format!("actor {} ({} items)", a.name, a.items.len()),
         Item::Memory(m) => format!("memory {:?} {}", m.kind, m.name),

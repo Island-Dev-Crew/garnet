@@ -1,13 +1,8 @@
 # Starter tests for {{name}}.
 #
-# Note: actor instantiation (`spawn Researcher::new()` and the
-# `Reviewer::new()` form) is wired through the actor runtime crate
-# (`garnet-actor-runtime`) which the v0.3 tree-walk interpreter does
-# NOT bridge end-to-end yet — that's the Rung 6 work in Paper VII §3.
-# As a result, starter tests here exercise pure helpers + the
-# bridged stdlib primitives. Once `garnet run` invokes the actor
-# runtime (post-v4.2), additional integration tests can spawn the
-# three actors and round-trip messages.
+# Note: actor instantiation is a roadmap item for the CLI/interpreter bridge.
+# The starter project is intentionally runnable today, so tests exercise the
+# pure orchestration helpers and bridged stdlib primitives.
 
 def test_string_assembly_for_facts() {
   # The orchestrator stores facts as "key: value" strings; this is the

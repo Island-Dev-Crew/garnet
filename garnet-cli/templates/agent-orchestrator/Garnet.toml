@@ -8,11 +8,9 @@ description = "A Garnet multi-actor agent orchestrator (Researcher / Synthesizer
 mode = "managed"
 
 [caps]
-# Agent services typically need:
-#   time — reasoning-trace timestamps
-#   fs   — reading prompts, writing episode logs
-# Add net for services that talk to external LLMs or vector DBs.
-allowed = ["time", "fs"]
+# Starter project is pure so first run is frictionless.
+# Add time/fs/net as the project grows into persisted traces or services.
+allowed = []
 
 [[bin]]
 name = "{{name}}"

@@ -1,0 +1,387 @@
+# Garnet Language Completion Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Turn Garnet's original dual-mode, agent-native language ambition into a sequence of executable milestones that can be reviewed, falsified, and eventually presented as a stable MIT-grade language/toolchain.
+
+**Architecture:** Complete Garnet by vertical language slices. A feature is not current truth until parser/AST support, checker or type semantics, interpreter/runtime behavior, conformance tests, dogfood examples, documentation status, and CI gates line up.
+
+**Tech Stack:** Rust workspace, `garnet-parser-v0.3`, `garnet-check-v0.3`, `garnet-interp-v0.3`, `garnet-actor-runtime`, `garnet-memory-v0.3`, `garnet-cli`, Cargo integration tests, GitHub Actions, Markdown evidence ledgers, dogfood-readiness reports.
+
+---
+
+## Completion Ledger
+
+This table is the current truth as of the v0.5 readiness-remediation branch. It separates what is already executable from work that is parsed-only, partial, or still future research.
+
+| Ambition | Current status | Evidence | Next executable gate |
+|---|---|---|---|
+| 10 MVP app corpus | Complete for current v0.4.2 examples | `garnet-cli/tests/dogfood_readiness_examples.rs`; CI `canonical MVP examples` job | Keep `cargo test -p garnet-cli --test dogfood_readiness_examples` green |
+| Current-state/reviewer guide | Complete first pass | `CURRENT_STATE.md`; `F_Project_Management/GARNET_CURRENT_VS_HISTORICAL_LEDGER.md` | Review before each public/MIT packaging pass |
+| Repo IA truth separation | Complete first pass | `CURRENT_STATE.md`; `archive/history/`; roadmap index | Finish link-rewrite cleanup before a public main-page launch |
+| v0.4.2 release assets | Fork release published; org release path requires browser/desktop-authorized publication | `Navigata1/garnet` release assets; CLI reports org `push: false`; browser session can open org release form | Publish org `v0.4.2` release from an org-authorized session and rerun installer smoke |
+| Parser parity for old ambition | Partial, Phase 1 started | `protocol`, `dyn Trait`, `yield`, `next`, `@dynamic`, `@nonsendable` parser tests | Add `do ... end` block arguments and keep runtime gaps explicit |
+| Blocks, `yield`, `next` runtime semantics | Not done | `Stmt::Yield`/`Stmt::Next` parse; interpreter emits staged-surface error | Activate `deferred_blocks_and_yield` |
+| Dynamic method dispatch tables | Not done | `@dynamic` metadata preserved; no method table dispatch | Activate `deferred_dynamic_dispatch` |
+| Structural protocol satisfaction and runtime casts | Not done | `Item::Protocol` parses; no structural checker/runtime cast | Activate `deferred_structural_protocols` |
+| Actor protocol enforcement and `Sendable` | Partial | actor runtime crate exists; CLI template does not use actor syntax frictionlessly | Agent-orchestrator actor-mode smoke passes |
+| Rust-grade NLL and borrow rules | Partial skeleton | `garnet-check-v0.3/src/borrow.rs`; ignored conformance handles | Activate `partial_borrow_rule_suite` and `deferred_nll_lifetime_inference` |
+| Trait coherence | Not done | spec row exists; no checker algorithm | Activate `deferred_trait_coherence` |
+| Monomorphization | Parsed-only | generics and `dyn Trait` parse; no lowering/backend | Activate `parsed_only_monomorphization` only for interpreter-level evidence; native zero-cost remains future |
+| Memory Core ARC/cycles | Not done | Mnemos reference stores exist; no Bacon-Rajan cycle collector | Activate `deferred_arc_cycle_detection` |
+| Native compiler | Long-horizon scaffold only | no backend crate | Create backend design PR before claiming compiled language status |
+| Formal RustBelt/Iris/Coq proof | Long-horizon scaffold only | Paper V theorem sketches | Open proof repo or `proofs/` workspace with checked theorem stubs |
+| Signed cross-platform installers | Partial | Linux packages and checksums exist; macOS/Windows signing remains separate authority work | Signed/notarized macOS and Authenticode Windows install smokes |
+| Empirical PLDI-grade validation | Long-horizon scaffold only | benchmarking and empirical protocols exist | Run pre-registered studies with archived datasets/scripts |
+
+## Done Means Executable
+
+Do not advance public status for any row unless all applicable evidence lands in the same PR:
+
+1. A failing conformance or dogfood test that names the missing behavior.
+2. Parser/AST support when syntax is involved.
+3. Checker/type-system support when the spec promises safety or conformance.
+4. Runtime/interpreter support when the feature is user-visible.
+5. A canonical example, template, or MVP app smoke when users or agents touch it.
+6. Updated conformance matrix and current-state docs.
+7. Local verification plus GitHub Actions verification before merge.
+
+## Milestone 1: Parser Parity Baseline
+
+**Purpose:** Accept the old design syntax in a controlled parser-stage form without claiming runtime semantics.
+
+**Files:**
+
+- Modify: `garnet-parser-v0.3/src/token.rs`
+- Modify: `garnet-parser-v0.3/src/ast.rs`
+- Modify: `garnet-parser-v0.3/src/grammar/mod.rs`
+- Modify: `garnet-parser-v0.3/src/grammar/user_types.rs`
+- Modify: `garnet-parser-v0.3/src/grammar/types.rs`
+- Modify: `garnet-parser-v0.3/src/grammar/stmts.rs`
+- Test: `garnet-parser-v0.3/tests/parse_v1_parser_parity.rs`
+- Test: `garnet-cli/tests/conformance_skeleton.rs`
+- Docs: `C_Language_Specification/GARNET_v0_4_2_Conformance_Matrix.md`
+
+- [x] **Step 1: Land parser-stage support for `protocol`, `dyn Trait`, `yield`, `next`, `@dynamic`, and `@nonsendable`**
+
+Run:
+
+```sh
+cargo test -p garnet-parser --test parse_v1_parser_parity
+cargo test -p garnet-cli --test conformance_skeleton
+```
+
+Expected: parser-parity tests pass; deferred runtime/type-system handles remain ignored.
+
+- [ ] **Step 2: Add failing parser test for `do ... end` block arguments**
+
+Add this test to `garnet-parser-v0.3/tests/parse_v1_parser_parity.rs`:
+
+```rust
+#[test]
+fn parses_do_end_block_argument() {
+    let src = r#"
+def main() {
+  each([1, 2, 3]) do |x|
+    yield x + 1
+  end
+}
+"#;
+    parse_ok(src);
+}
+```
+
+Run:
+
+```sh
+cargo test -p garnet-parser --test parse_v1_parser_parity parses_do_end_block_argument
+```
+
+Expected before implementation: fail because `do` block arguments are not parsed.
+
+- [ ] **Step 3: Implement `do ... end` parser support**
+
+Add block-argument AST support and parse it in the function-call grammar. Keep the runtime staged if Phase 2 is not landing in the same PR.
+
+Run:
+
+```sh
+cargo test -p garnet-parser --test parse_v1_parser_parity
+cargo test -p garnet-cli --test conformance_phase_gates
+```
+
+Expected after implementation: parser test passes; phase gates still prove runtime rows are not silently marked complete.
+
+## Milestone 2: Managed Runtime Semantics
+
+**Purpose:** Make parser-stage surfaces run in managed mode with explicit behavior.
+
+**Files:**
+
+- Modify: `garnet-interp-v0.3/src/value.rs`
+- Modify: `garnet-interp-v0.3/src/env.rs`
+- Modify: `garnet-interp-v0.3/src/eval.rs`
+- Modify: `garnet-interp-v0.3/src/stmt.rs`
+- Modify: `garnet-interp-v0.3/src/control.rs`
+- Test: `garnet-cli/tests/conformance_skeleton.rs`
+- Example: `examples/mvp_06_multi_agent.garnet`
+
+- [ ] **Step 1: Replace the ignored block/yield placeholder with a failing executable test**
+
+Change `deferred_blocks_and_yield` so it runs a Garnet program that passes a block and yields a value through it.
+
+Run:
+
+```sh
+cargo test -p garnet-cli --test conformance_skeleton deferred_blocks_and_yield -- --ignored
+```
+
+Expected before implementation: fail with the current staged-surface runtime error.
+
+- [ ] **Step 2: Add runtime value support for callable block objects**
+
+Add a block value variant in `garnet-interp-v0.3/src/value.rs`, bind block parameters in `env.rs`, and route `yield`/`next` through `stmt.rs`.
+
+Run:
+
+```sh
+cargo test -p garnet-cli --test conformance_skeleton deferred_blocks_and_yield -- --ignored
+```
+
+Expected after implementation: pass, then remove `#[ignore]`.
+
+- [ ] **Step 3: Add managed-mode dynamic dispatch tables**
+
+Change `deferred_dynamic_dispatch` into an active test that constructs a dynamic receiver and dispatches through the method table.
+
+Run:
+
+```sh
+cargo test -p garnet-cli --test conformance_skeleton deferred_dynamic_dispatch -- --ignored
+```
+
+Expected before implementation: fail because no table dispatch exists.
+
+- [ ] **Step 4: Add structural protocol satisfaction and casts**
+
+Change `deferred_structural_protocols` into a test that proves a struct satisfies a protocol by method shape and rejects a missing method.
+
+Run:
+
+```sh
+cargo test -p garnet-cli --test conformance_skeleton deferred_structural_protocols -- --ignored
+```
+
+Expected before implementation: fail because protocol satisfaction is parser-only.
+
+## Milestone 3: Actor Runtime Bridge And Sendable
+
+**Purpose:** Make the agent-native story executable from Garnet source instead of Rust-only actor-runtime tests.
+
+**Files:**
+
+- Modify: `garnet-parser-v0.3/src/grammar/actors.rs`
+- Modify: `garnet-check-v0.3/src/lib.rs`
+- Modify: `garnet-check-v0.3/src/borrow.rs`
+- Modify: `garnet-actor-runtime/src/runtime.rs`
+- Modify: `garnet-interp-v0.3/src/eval.rs`
+- Modify: `garnet-cli/templates/agent-orchestrator/src/main.garnet`
+- Test: `garnet-cli/tests/new_cmd.rs`
+- Test: `garnet-cli/tests/conformance_skeleton.rs`
+
+- [ ] **Step 1: Add a failing agent-orchestrator actor-template smoke**
+
+Extend `garnet-cli/tests/new_cmd.rs` so the `agent-orchestrator` template uses actor/protocol syntax and still passes `garnet test` plus `garnet run`.
+
+Run:
+
+```sh
+cargo test -p garnet-cli new_cmd
+```
+
+Expected before implementation: fail when the template uses actor syntax that the CLI path cannot execute.
+
+- [ ] **Step 2: Enforce `Sendable` at actor message boundaries**
+
+Reject `@nonsendable` message payloads before runtime dispatch.
+
+Run:
+
+```sh
+cargo test -p garnet-cli --test conformance_skeleton
+```
+
+Expected after implementation: the actor/sendable test is active and rejects the bad case.
+
+## Milestone 4: Safe-Mode Ownership Hardening
+
+**Purpose:** Move safe mode from a useful skeleton toward conservative language law.
+
+**Files:**
+
+- Modify: `garnet-check-v0.3/src/borrow.rs`
+- Modify: `garnet-check-v0.3/src/lib.rs`
+- Test: `garnet-check-v0.3/tests/borrow.rs`
+- Test: `garnet-cli/tests/conformance_skeleton.rs`
+
+- [ ] **Step 1: Activate the B1-B5 borrow-rule suite**
+
+Replace `partial_borrow_rule_suite` with concrete cases for move-after-use, mutable aliasing, immutable alias overlap, branch merge, and method-call ownership.
+
+Run:
+
+```sh
+cargo test -p garnet-cli --test conformance_skeleton partial_borrow_rule_suite -- --ignored
+```
+
+Expected before implementation: fail on at least method-call ownership and branch-sensitive cases.
+
+- [ ] **Step 2: Implement a conservative NLL subset**
+
+Implement region end-points for local lexical scopes and branches. Over-reject ambiguous cases; do not under-reject unsafe cases.
+
+Run:
+
+```sh
+cargo test -p garnet-cli --test conformance_skeleton deferred_nll_lifetime_inference -- --ignored
+```
+
+Expected after implementation: pass, then remove `#[ignore]`.
+
+## Milestone 5: Traits, Coherence, And Generic Instantiation
+
+**Purpose:** Make the Rust-rigor side credible without claiming native zero-cost compilation.
+
+**Files:**
+
+- Modify: `garnet-check-v0.3/src/lib.rs`
+- Create: `garnet-check-v0.3/src/coherence.rs`
+- Create: `garnet-check-v0.3/src/generics.rs`
+- Test: `garnet-cli/tests/conformance_skeleton.rs`
+
+- [ ] **Step 1: Add a conservative orphan-rule coherence checker**
+
+Reject conflicting trait impls and impls where neither the trait nor the type is local.
+
+Run:
+
+```sh
+cargo test -p garnet-cli --test conformance_skeleton deferred_trait_coherence -- --ignored
+```
+
+Expected before implementation: fail because duplicate/conflicting impls are not detected.
+
+- [ ] **Step 2: Add interpreter-level generic instantiation evidence**
+
+Treat generic instantiation as runtime/interpreter evidence only. Do not claim monomorphized zero-cost behavior until a compiler backend exists.
+
+Run:
+
+```sh
+cargo test -p garnet-cli --test conformance_skeleton parsed_only_monomorphization -- --ignored
+```
+
+Expected after implementation: generic examples pass as interpreter semantics; matrix remains honest about native monomorphization.
+
+## Milestone 6: Memory Core Productization
+
+**Purpose:** Move Mnemos from reference stores toward the Memory Core and ARC/cycle ambitions in the Mini-Spec.
+
+**Files:**
+
+- Modify: `garnet-memory-v0.3/src/lib.rs`
+- Create: `garnet-memory-v0.3/src/cycle.rs`
+- Modify: `C_Language_Specification/MEMORY_CORE_ROADMAP.md`
+- Test: `garnet-cli/tests/conformance_skeleton.rs`
+
+- [ ] **Step 1: Add observable cycle fixtures**
+
+Create a memory fixture with two retained nodes and one collectable cycle.
+
+Run:
+
+```sh
+cargo test -p garnet-cli --test conformance_skeleton deferred_arc_cycle_detection -- --ignored
+```
+
+Expected before implementation: fail because no Bacon-Rajan cycle path exists.
+
+- [ ] **Step 2: Implement bounded Bacon-Rajan trial deletion**
+
+Start with deterministic reference tests before optimizing.
+
+Run:
+
+```sh
+cargo test -p garnet-memory
+cargo test -p garnet-cli --test conformance_skeleton deferred_arc_cycle_detection -- --ignored
+```
+
+Expected after implementation: cycle fixture passes and the conformance handle can become active.
+
+## Milestone 7: Release, Proof, Native Backend, And Empirical Evidence
+
+**Purpose:** Give the too-large ambitions their own rigorous tracks so they stop being confused with current runtime truth.
+
+**Files:**
+
+- Modify: `F_Project_Management/GARNET_v0_4_2_RELEASE_PUBLICATION_RUNBOOK.md`
+- Modify: `C_Language_Specification/GARNET_v0_4_2_Installer_Release_Contract.md`
+- Create: `F_Project_Management/ROADMAPS/GARNET_NATIVE_BACKEND_PLAN.md`
+- Create: `F_Project_Management/ROADMAPS/GARNET_FORMAL_PROOF_PLAN.md`
+- Create: `F_Project_Management/ROADMAPS/GARNET_EMPIRICAL_VALIDATION_PLAN.md`
+- Test: release workflow, installer smoke, and dogfood-readiness Part 1
+
+- [ ] **Step 1: Publish the org release using an org-authorized browser or desktop session**
+
+Use the already-built v0.4.2 assets. The CLI token for `Navigata1` has `push: false` on `Island-Dev-Crew/garnet`, but the current browser session can open the org release form and shows `Publish release`.
+
+Run after publication:
+
+```sh
+gh release view v0.4.2 --repo Island-Dev-Crew/garnet --json tagName,url,assets
+```
+
+Expected: org release exists and lists tarball/package/checksum assets.
+
+- [ ] **Step 2: Rerun a network-backed installer smoke against the org release**
+
+Run:
+
+```sh
+GARNET_VERSION=v0.4.2 sh installer/sh.garnet-lang.org/install.sh
+garnet --version
+```
+
+Expected: installer uses release assets when available and reports `garnet 0.4.2`.
+
+- [ ] **Step 3: Create native backend, proof, and empirical plans**
+
+Each plan must define a falsifiable first milestone:
+
+- native backend: parse/check/run one integer arithmetic program through backend output,
+- formal proof: one checked mechanized lemma for a tiny safe-mode core,
+- empirical validation: one archived pilot dataset with script-reproducible metrics.
+
+Run:
+
+```sh
+cargo test --workspace --no-fail-fast
+python3 -m json.tool /tmp/dogfood-readiness-*/dogfood-readiness-data.json
+```
+
+Expected: implementation tests stay green and readiness artifacts remain parseable.
+
+## MIT Release Gate
+
+Garnet is ready to be spoken about as an MIT-grade prototype when these are true:
+
+1. The current-state guide is the first reviewer path.
+2. Historical claims are separated from current executable truth.
+3. The 10 MVP apps parse, check, run, and are wired into CI.
+4. Starter templates scaffold, test, and run frictionlessly.
+5. The conformance matrix marks parser-only and deferred rows honestly.
+6. The org release has assets and checksums, not just a fork release.
+7. A dogfood-readiness report/deck/data bundle exists for the current commit.
+
+Garnet is ready to be called a complete language/toolchain only when, in addition to the prototype gate, the runtime, checker, actor, memory, trait/generic, release, and empirical/proof tracks above have executable evidence.

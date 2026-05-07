@@ -153,6 +153,10 @@ fn count_item(item: &Item, c: &mut std::collections::BTreeMap<&'static str, u64>
             *c.entry("Enum.variants").or_default() += e.variants.len() as u64;
         }
         Item::Trait(_) => *c.entry("Item::Trait").or_default() += 1,
+        Item::Protocol(p) => {
+            *c.entry("Item::Protocol").or_default() += 1;
+            *c.entry("Protocol.items").or_default() += p.items.len() as u64;
+        }
         Item::Impl(_) => *c.entry("Item::Impl").or_default() += 1,
         Item::Fn(f) => {
             *c.entry("Item::Fn").or_default() += 1;
@@ -194,6 +198,8 @@ fn count_stmt(s: &Stmt, c: &mut std::collections::BTreeMap<&'static str, u64>) {
         Stmt::Break { .. } => *c.entry("Stmt::Break").or_default() += 1,
         Stmt::Continue { .. } => *c.entry("Stmt::Continue").or_default() += 1,
         Stmt::Return { .. } => *c.entry("Stmt::Return").or_default() += 1,
+        Stmt::Yield { .. } => *c.entry("Stmt::Yield").or_default() += 1,
+        Stmt::Next { .. } => *c.entry("Stmt::Next").or_default() += 1,
         Stmt::Raise { .. } => *c.entry("Stmt::Raise").or_default() += 1,
         Stmt::Expr(e) => count_expr(e, c),
     }

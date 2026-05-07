@@ -267,10 +267,15 @@ impl CapsGraph {
                 self.walk_expr_for_callees(target, out);
                 self.walk_expr_for_callees(value, out);
             }
-            Stmt::Return { value: Some(e), .. } | Stmt::Raise { value: e, .. } => {
+            Stmt::Return { value: Some(e), .. }
+            | Stmt::Yield { value: Some(e), .. }
+            | Stmt::Next { value: Some(e), .. }
+            | Stmt::Raise { value: e, .. } => {
                 self.walk_expr_for_callees(e, out);
             }
-            Stmt::Return { value: None, .. } => {}
+            Stmt::Return { value: None, .. }
+            | Stmt::Yield { value: None, .. }
+            | Stmt::Next { value: None, .. } => {}
             Stmt::Break { value: Some(e), .. } => self.walk_expr_for_callees(e, out),
             Stmt::Break { value: None, .. } | Stmt::Continue { .. } => {}
             Stmt::While {

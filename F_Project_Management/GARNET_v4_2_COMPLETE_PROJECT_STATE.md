@@ -1,5 +1,12 @@
 # GARNET v4.2 — Complete Project State (Single-File Handoff)
 
+> **Current-status note (2026-05-06):** This remains valuable historical
+> project context, but it is not the first-click source of truth for current
+> `main`. Start at [`../CURRENT_STATE.md`](../CURRENT_STATE.md) and
+> [`GARNET_CURRENT_VS_HISTORICAL_LEDGER.md`](GARNET_CURRENT_VS_HISTORICAL_LEDGER.md)
+> before relying on any path, test-count, release, or example-readiness claim
+> below.
+
 **Purpose:** Self-contained context-resume document. A fresh Claude Code session (or a fresh human reviewer) reading ONLY this file gets enough context to continue work on Garnet without crawling the rest of `F_Project_Management/`. Cites primary sources throughout; makes no claims not anchored in an existing handoff or source file.
 **Date:** 2026-04-21
 **Author:** Claude Opus 4.7 (1M) — handoff consolidation

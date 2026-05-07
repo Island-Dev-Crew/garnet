@@ -16,15 +16,17 @@
 > the engineering artifacts have moved from `Garnet_Final/E_Engineering_Artifacts/`
 > to top-level workspace crates (`garnet-parser-v0.3/`, `garnet-interp-v0.3/`,
 > `garnet-cli/`, etc.), and the public release version is **v0.4.2** (see
-> `Cargo.toml`, `README.md`, and `C_Language_Specification/GARNET_v0_4_2_Installer_Release_Contract.md`).
+> `../../Cargo.toml`, `../../README.md`, and
+> `../../C_Language_Specification/GARNET_v0_4_2_Installer_Release_Contract.md`).
 >
 > Folder paths referenced below (e.g. `Garnet_Final/...`,
 > `E_Engineering_Artifacts/...`, "Folder G") describe the original bundle
 > layout, not paths that resolve in this repository.
 >
 > For the current source-of-truth on **what ships today**, start at
-> [`README.md`](README.md). For the current source-of-truth on **what the
-> language is**, start at [`C_Language_Specification/GARNET_v1_0_Mini_Spec.md`](C_Language_Specification/GARNET_v1_0_Mini_Spec.md).
+> [`../../CURRENT_STATE.md`](../../CURRENT_STATE.md). For the current
+> source-of-truth on **what the language is**, start at
+> [`../../C_Language_Specification/GARNET_v1_0_Mini_Spec.md`](../../C_Language_Specification/GARNET_v1_0_Mini_Spec.md).
 
 ---
 

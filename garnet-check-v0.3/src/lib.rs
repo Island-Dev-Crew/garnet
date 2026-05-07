@@ -88,23 +88,7 @@ pub fn check_module(module: &Module) -> CheckReport {
     let module_safe = module.safe;
 
     for item in &module.items {
-        match item {
-            Item::Fn(f) => check_fn(f, module_safe, &mut report),
-            Item::Module(m) => {
-                let merged = module_safe || m.safe;
-                for inner in &m.items {
-                    if let Item::Fn(f) = inner {
-                        check_fn(f, merged, &mut report);
-                    }
-                }
-            }
-            Item::Impl(impl_block) => {
-                for method in &impl_block.methods {
-                    check_fn(method, module_safe, &mut report);
-                }
-            }
-            _ => {}
-        }
+        check_item(item, module_safe, &mut report);
     }
 
     // Borrow-checker pass: layered on top of the syntactic checks. Only
@@ -125,6 +109,44 @@ pub fn check_module(module: &Module) -> CheckReport {
     }
 
     report
+}
+
+fn check_item(item: &Item, module_safe: bool, report: &mut CheckReport) {
+    match item {
+        Item::Fn(f) => check_fn(f, module_safe, report),
+        Item::Module(m) => {
+            let merged = module_safe || m.safe;
+            for inner in &m.items {
+                check_item(inner, merged, report);
+            }
+        }
+        Item::Impl(impl_block) => {
+            if module_safe && has_dynamic_annotation(&impl_block.annotations) {
+                report.errors.push(CheckError::AnnotationError(
+                    "@dynamic impl blocks are not permitted in @safe modules; use static trait dispatch"
+                        .to_string(),
+                ));
+            }
+            for method in &impl_block.methods {
+                check_fn(method, module_safe, report);
+            }
+        }
+        Item::Struct(struct_def)
+            if module_safe && has_dynamic_annotation(&struct_def.annotations) =>
+        {
+            report.errors.push(CheckError::AnnotationError(format!(
+                "@dynamic struct '{}' is not permitted in @safe modules; use trait + dyn Trait",
+                struct_def.name
+            )));
+        }
+        _ => {}
+    }
+}
+
+fn has_dynamic_annotation(annotations: &[Annotation]) -> bool {
+    annotations
+        .iter()
+        .any(|ann| matches!(ann, Annotation::Dynamic(_)))
 }
 
 fn check_fn(f: &FnDef, module_safe: bool, report: &mut CheckReport) {
@@ -253,6 +275,11 @@ fn walk_stmts_for_safe_violations(
                     "safe function '{}' uses `raise`; return Result::Err(...) instead",
                     fn_name
                 )));
+            }
+            Stmt::Yield { value, .. } | Stmt::Next { value, .. } => {
+                if let Some(value) = value {
+                    walk_expr_for_safe_violations(value, fn_name, report, effective_safe);
+                }
             }
             Stmt::While { body, .. } | Stmt::For { body, .. } | Stmt::Loop { body, .. } => {
                 walk_stmts_for_safe_violations(&body.stmts, fn_name, report, effective_safe);
