@@ -7,45 +7,206 @@ import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-REQUIRED = [
-    "AGENTS.md",
-    "C_Language_Specification/AGENTS.md",
-    "F_Project_Management/AGENTS.md",
-    "garnet-parser-v0.3/AGENTS.md",
-    "garnet-interp-v0.3/AGENTS.md",
-    "garnet-check-v0.3/AGENTS.md",
-    "garnet-memory-v0.3/AGENTS.md",
-    "garnet-actor-runtime/AGENTS.md",
-    "garnet-stdlib/AGENTS.md",
-    "garnet-cli/AGENTS.md",
-    "garnet-cli/templates/AGENTS.md",
-    "garnet-convert/AGENTS.md",
-    "examples/AGENTS.md",
-    "xtask/AGENTS.md",
+
+CONTRACT_RULES = {
+    "AGENTS.md": {
+        "sections": [
+            "## Documentation First",
+            "## Memory-Kind Mapping",
+            "## Required Contract Index",
+            "## Change Rules",
+            "## Verification Ladder",
+        ],
+        "phrases": [
+            "runtime documentation contract",
+            "procedural memory",
+            "Required Contract Index",
+        ],
+    },
+    "C_Language_Specification/AGENTS.md": {
+        "sections": [
+            "## Scope",
+            "## Stable Contracts",
+            "## Documentation Updates",
+        ],
+        "phrases": [
+            "normative language",
+            "Mini-Spec",
+            "Agent Documentation Runtime Contracts",
+        ],
+    },
+    "F_Project_Management/AGENTS.md": {
+        "sections": [
+            "## Scope",
+            "## Stable Contracts",
+            "## Update Rules",
+        ],
+        "phrases": [
+            "episodic memory",
+            "verification evidence",
+            "handoff",
+        ],
+    },
+    "garnet-parser-v0.3/AGENTS.md": {
+        "phrases": ["Mini-Spec", "lexing", "parsing", "diagnostic span"],
+    },
+    "garnet-interp-v0.3/AGENTS.md": {
+        "phrases": ["tree-walk", "stdlib", "capability metadata", "garnet run"],
+    },
+    "garnet-check-v0.3/AGENTS.md": {
+        "phrases": ["safe-mode", "CapCaps", "borrow", "fail closed"],
+    },
+    "garnet-memory-v0.3/AGENTS.md": {
+        "phrases": [
+            "working",
+            "episodic",
+            "semantic",
+            "procedural",
+            "machine-local key",
+        ],
+    },
+    "garnet-actor-runtime/AGENTS.md": {
+        "phrases": ["bounded mailboxes", "signed hot reload", "state migration"],
+    },
+    "garnet-stdlib/AGENTS.md": {
+        "phrases": ["capability metadata", "file, network, process, or time"],
+    },
+    "garnet-cli/AGENTS.md": {
+        "phrases": ["binary", "template embedding", "deterministic manifests"],
+    },
+    "garnet-cli/templates/AGENTS.md": {
+        "phrases": ["Starter projects", "agent-orchestrator", "--agent-docs"],
+    },
+    "garnet-convert/AGENTS.md": {
+        "phrases": ["Rust, Ruby, Python, and Go", "sandboxing", "provenance"],
+    },
+    "examples/AGENTS.md": {
+        "phrases": ["MVP demonstration", "production readiness", "parser/interpreter/checker"],
+    },
+    "xtask/AGENTS.md": {
+        "phrases": ["repository automation", "CI-friendly", "garnet-cli"],
+    },
+}
+
+REQUIRED = list(CONTRACT_RULES)
+DEFAULT_CHILD_SECTIONS = ["## Scope", "## Stable Contracts"]
+PLACEHOLDER_PATTERNS = [
+    r"\bTODO\b",
+    r"\bTBD\b",
+    r"\blorem ipsum\b",
+    r"\bplaceholder\b",
+    r"\bcoming soon\b",
+    r"\bfill (?:me|this) in\b",
 ]
+CARGO_PACKAGE_RE = re.compile(r"cargo\s+(?:test|run|check|clippy)\s+-p\s+([A-Za-z0-9_.-]+)")
+MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
+
+
+class ContractError(Exception):
+    """Raised when the documentation contract hierarchy is invalid."""
 
 
 def fail(msg: str) -> None:
-    print(f"agent-contracts: {msg}", file=sys.stderr)
-    raise SystemExit(1)
+    raise ContractError(msg)
 
 
-def main() -> int:
-    root_doc = ROOT / "AGENTS.md"
+def read(path: Path) -> str:
+    return path.read_text(encoding="utf-8")
+
+
+def package_names(root: Path) -> set[str]:
+    names = set()
+    for manifest in root.rglob("Cargo.toml"):
+        if skip_path(manifest):
+            continue
+        text = read(manifest)
+        match = re.search(r'(?m)^name\s*=\s*"([^"]+)"', text)
+        if match:
+            names.add(match.group(1))
+    return names
+
+
+def skip_path(path: Path) -> bool:
+    return any(part in {".git", "target", "archive"} for part in path.parts)
+
+
+def check_required_content(rel: str, text: str) -> None:
+    if not text.strip().startswith("# AGENTS.md"):
+        fail(f"{rel} must start with an AGENTS.md H1")
+
+    rules = CONTRACT_RULES[rel]
+    sections = rules.get("sections")
+    if sections is None and rel != "AGENTS.md":
+        sections = DEFAULT_CHILD_SECTIONS + ["## Required Checks"]
+    for section in sections or []:
+        if section not in text:
+            fail(f"{rel} must include {section}")
+
+    lowered = text.casefold()
+    for pattern in PLACEHOLDER_PATTERNS:
+        if re.search(pattern, text, flags=re.IGNORECASE):
+            fail(f"{rel} contains placeholder text matching {pattern}")
+
+    for phrase in rules.get("phrases", []):
+        if phrase.casefold() not in lowered:
+            fail(f"{rel} is missing required local contract phrase: {phrase}")
+
+
+def check_internal_links(root: Path, rel: str, text: str) -> None:
+    base = (root / rel).parent
+    for target in MARKDOWN_LINK_RE.findall(text):
+        target = target.strip()
+        if (
+            "://" in target
+            or target.startswith("#")
+            or target.startswith("mailto:")
+            or target.startswith("app://")
+        ):
+            continue
+        path_part = target.split("#", 1)[0]
+        if not path_part:
+            continue
+        target_path = (base / path_part).resolve()
+        try:
+            target_path.relative_to(root.resolve())
+        except ValueError:
+            fail(f"{rel} links outside repo: {target}")
+        if not target_path.exists():
+            fail(f"{rel} has broken internal link: {target}")
+
+
+def check_cargo_commands(root: Path, rel: str, text: str, packages: set[str]) -> None:
+    for package in CARGO_PACKAGE_RE.findall(text):
+        if package not in packages:
+            fail(f"{rel} references unknown cargo package: {package}")
+
+
+def check_crate_contract_coverage(root: Path) -> None:
+    for manifest in root.rglob("Cargo.toml"):
+        if manifest.parent == root or skip_path(manifest):
+            continue
+        contract = manifest.parent / "AGENTS.md"
+        if not contract.exists():
+            rel = manifest.parent.relative_to(root)
+            fail(f"crate-like directory lacks AGENTS.md contract: {rel}")
+
+
+def validate(root: Path = ROOT) -> int:
+    root_doc = root / "AGENTS.md"
     if not root_doc.exists():
         fail("missing root AGENTS.md")
-    root_text = root_doc.read_text(encoding="utf-8")
+    root_text = read(root_doc)
+    packages = package_names(root)
 
     seen = set()
     for rel in REQUIRED:
-        path = ROOT / rel
+        path = root / rel
         if not path.exists():
             fail(f"missing required contract {rel}")
-        text = path.read_text(encoding="utf-8")
-        if not text.strip().startswith("# AGENTS.md"):
-            fail(f"{rel} must start with an AGENTS.md H1")
-        if "## Scope" not in text and rel != "AGENTS.md":
-            fail(f"{rel} must include a Scope section")
+        text = read(path)
+        check_required_content(rel, text)
+        check_internal_links(root, rel, text)
+        check_cargo_commands(root, rel, text, packages)
         indexed = f"/{rel}" if rel != "AGENTS.md" else "/AGENTS.md"
         if indexed not in root_text:
             fail(f"root AGENTS.md index omits {indexed}")
@@ -54,9 +215,9 @@ def main() -> int:
         seen.add(rel)
 
     actual = sorted(
-        str(path.relative_to(ROOT))
-        for path in ROOT.rglob("AGENTS.md")
-        if ".git" not in path.parts and "target" not in path.parts
+        str(path.relative_to(root))
+        for path in root.rglob("AGENTS.md")
+        if not skip_path(path)
     )
     extra = [p for p in actual if p not in REQUIRED]
     if extra:
@@ -73,8 +234,17 @@ def main() -> int:
     if missing_from_required:
         fail("root index contains paths not in REQUIRED: " + ", ".join(missing_from_required))
 
+    check_crate_contract_coverage(root)
     print(f"agent-contracts: ok ({len(REQUIRED)} contracts)")
     return 0
+
+
+def main() -> int:
+    try:
+        return validate(ROOT)
+    except ContractError as exc:
+        print(f"agent-contracts: {exc}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

@@ -60,8 +60,9 @@ Do not add hidden compatibility seams, generated artifacts, or ad hoc scratch di
 For documentation-contract changes, run:
 
 1. `python3 scripts/check-agent-contracts.py`
-2. `cargo fmt --all -- --check`
-3. `cargo test -p garnet-cli new_cmd`
-4. `cargo test --workspace --no-fail-fast` when Rust behavior changed.
+2. `python3 scripts/test_check_agent_contracts.py`
+3. `cargo fmt --all -- --check`
+4. `cargo test -p garnet-cli new_cmd`
+5. `cargo test --workspace --no-fail-fast` when Rust behavior changed.
 
 For release-impacting work, follow the latest verification ladder in `F_Project_Management/`.
