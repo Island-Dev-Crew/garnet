@@ -6,6 +6,10 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
+type MethodTable = HashMap<String, Value>;
+type ImplMethodTable = HashMap<String, MethodTable>;
+type DynamicImplMethodTable = HashMap<String, ImplMethodTable>;
+
 /// A lexical scope. Each `Env` has a parent pointer (None for the global
 /// scope). Variable lookup walks the chain; `define` and `set` target the
 /// innermost scope that holds the binding.
@@ -13,7 +17,8 @@ use std::rc::Rc;
 pub struct Env {
     vars: RefCell<HashMap<String, Value>>,
     protocols: RefCell<HashMap<String, ProtocolDef>>,
-    impl_methods: RefCell<HashMap<String, HashMap<String, Value>>>,
+    impl_methods: RefCell<ImplMethodTable>,
+    dynamic_impl_methods: RefCell<DynamicImplMethodTable>,
     active_block: RefCell<Option<Value>>,
     parent: Option<Rc<Env>>,
 }
@@ -24,6 +29,7 @@ impl Env {
             vars: RefCell::new(HashMap::new()),
             protocols: RefCell::new(HashMap::new()),
             impl_methods: RefCell::new(HashMap::new()),
+            dynamic_impl_methods: RefCell::new(HashMap::new()),
             active_block: RefCell::new(None),
             parent: None,
         }
@@ -35,6 +41,7 @@ impl Env {
             vars: RefCell::new(HashMap::new()),
             protocols: RefCell::new(HashMap::new()),
             impl_methods: RefCell::new(HashMap::new()),
+            dynamic_impl_methods: RefCell::new(HashMap::new()),
             active_block: RefCell::new(None),
             parent: Some(Rc::clone(parent)),
         })
@@ -88,6 +95,22 @@ impl Env {
             .insert(method_name.to_string(), method);
     }
 
+    pub fn define_dynamic_impl_method(
+        &self,
+        type_name: &str,
+        trait_name: &str,
+        method_name: &str,
+        method: Value,
+    ) {
+        self.dynamic_impl_methods
+            .borrow_mut()
+            .entry(type_name.to_string())
+            .or_default()
+            .entry(trait_name.to_string())
+            .or_default()
+            .insert(method_name.to_string(), method);
+    }
+
     pub fn get_impl_method(&self, type_name: &str, method_name: &str) -> Option<Value> {
         if let Some(method) = self
             .impl_methods
@@ -102,8 +125,34 @@ impl Env {
             .and_then(|p| p.get_impl_method(type_name, method_name))
     }
 
+    pub fn get_dynamic_impl_method(&self, type_name: &str, method_name: &str) -> Option<Value> {
+        if let Some(by_trait) = self.dynamic_impl_methods.borrow().get(type_name) {
+            let mut matches = by_trait
+                .iter()
+                .filter_map(|(trait_name, methods)| {
+                    methods
+                        .get(method_name)
+                        .cloned()
+                        .map(|method| (trait_name.clone(), method))
+                })
+                .collect::<Vec<_>>();
+            matches.sort_by(|(left, _), (right, _)| left.cmp(right));
+            if let Some((_, method)) = matches.into_iter().next() {
+                return Some(method);
+            }
+        }
+        self.parent
+            .as_ref()
+            .and_then(|p| p.get_dynamic_impl_method(type_name, method_name))
+    }
+
     pub fn has_impl_method(&self, type_name: &str, method_name: &str) -> bool {
         self.get_impl_method(type_name, method_name).is_some()
+    }
+
+    pub fn has_dynamic_impl_method(&self, type_name: &str, method_name: &str) -> bool {
+        self.get_dynamic_impl_method(type_name, method_name)
+            .is_some()
     }
 
     pub fn impl_method_names(&self, type_name: &str) -> Vec<String> {
@@ -115,6 +164,24 @@ impl Env {
             .unwrap_or_default();
         if let Some(parent) = self.parent.as_ref() {
             names.extend(parent.impl_method_names(type_name));
+        }
+        names
+    }
+
+    pub fn dynamic_impl_method_names(&self, type_name: &str) -> Vec<String> {
+        let mut names = self
+            .dynamic_impl_methods
+            .borrow()
+            .get(type_name)
+            .map(|by_trait| {
+                by_trait
+                    .values()
+                    .flat_map(|methods| methods.keys().cloned())
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        if let Some(parent) = self.parent.as_ref() {
+            names.extend(parent.dynamic_impl_method_names(type_name));
         }
         names
     }

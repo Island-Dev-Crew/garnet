@@ -22,8 +22,8 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | v0.4.2 release assets | Fork release published; org release path requires browser/desktop-authorized publication | `Navigata1/garnet` release assets; CLI reports org `push: false`; browser session can open org release form | Publish org `v0.4.2` release from an org-authorized session and rerun installer smoke |
 | Parser parity for old ambition | Partial, Phase 1 active | `protocol`, `dyn Trait`, `yield`, `next`, `@dynamic`, `@nonsendable`, and `do ... end` parser tests | Keep runtime gaps explicit and activate Phase 2 only with executable semantics |
 | Blocks, `yield`, `next` runtime semantics | Phase 2A active | `do ... end` parses as a trailing closure argument; `deferred_blocks_and_yield` runs a managed-mode block/yield/next program | Keep `cargo test -p garnet-cli --test conformance_skeleton deferred_blocks_and_yield` green; add richer block edge cases later |
-| Dynamic method dispatch tables | Partial Phase 2D | `deferred_dynamic_dispatch` covers per-instance method tables; `static_impl_dispatch_and_method_missing` covers static inherent impl fallback and `method_missing` | Add `@dynamic impl` tables and richer dispatch precedence probes |
-| Structural protocol satisfaction and runtime casts | Partial Phase 2G | `Item::Protocol` and `Expr::Cast` parse; `deferred_structural_protocols` checks protocol-typed managed parameters, runtime `as Protocol` casts, static/dynamic methods, mode/arity/parameter/return annotation mismatches, generic protocol substitution, and core built-in typed method signatures | Add broader trait/generic coherence and `@dynamic impl` dispatch tables |
+| Dynamic method dispatch tables | Partial Phase 2H | `deferred_dynamic_dispatch` covers per-instance method tables; `static_impl_dispatch_and_method_missing` covers static inherent impl fallback and `method_missing`; `dynamic_impl_dispatch_tables` covers `@dynamic impl Type for Protocol` registration and dispatch | Add richer dispatch precedence and ambiguity probes |
+| Structural protocol satisfaction and runtime casts | Partial Phase 2H | `Item::Protocol` and `Expr::Cast` parse; `deferred_structural_protocols` checks protocol-typed managed parameters, runtime `as Protocol` casts, static/dynamic methods, mode/arity/parameter/return annotation mismatches, generic protocol substitution, core built-in typed method signatures, and `@dynamic impl` methods | Add broader trait/generic coherence |
 | Actor protocol enforcement and `Sendable` | Partial | actor runtime crate exists; CLI template does not use actor syntax frictionlessly | Agent-orchestrator actor-mode smoke passes |
 | Rust-grade NLL and borrow rules | Partial skeleton | `garnet-check-v0.3/src/borrow.rs`; ignored conformance handles | Activate `partial_borrow_rule_suite` and `deferred_nll_lifetime_inference` |
 | Trait coherence | Not done | spec row exists; no checker algorithm | Activate `deferred_trait_coherence` |
@@ -242,6 +242,20 @@ cargo test -p garnet-cli --test conformance_skeleton deferred_structural_protoco
 Observed before implementation: `BoxLike<String>` rejected a `TextBox.value() -> String` method with `does not satisfy protocol BoxLike` because the required return type remained unresolved as `T`.
 
 Expected after implementation: generic protocol type arguments substitute into required method signatures, incompatible concrete methods still fail, and core built-in methods such as `String#len`, `String#upcase`, and `String#starts_with` satisfy compatible typed protocol signatures while rejecting incompatible return types.
+
+- [x] **Step 4H: Register `@dynamic impl` dispatch tables**
+
+Add a positive dispatch and protocol-satisfaction probe plus a negative probe proving ordinary trait impls remain deferred.
+
+Run:
+
+```sh
+cargo test -p garnet-cli --test conformance_skeleton dynamic_impl_dispatch_tables
+```
+
+Observed before implementation: `@dynamic impl TraitWidget for Renderable` was parsed but did not satisfy a `Renderable` parameter, failing with `Struct does not satisfy protocol Renderable: missing method render`.
+
+Expected after implementation: `@dynamic impl` methods satisfy protocol-typed managed parameters and dispatch after per-instance dynamic methods but before static inherent impl fallback. Ordinary non-dynamic trait impl coherence remains deferred.
 
 ## Milestone 3: Actor Runtime Bridge And Sendable
 

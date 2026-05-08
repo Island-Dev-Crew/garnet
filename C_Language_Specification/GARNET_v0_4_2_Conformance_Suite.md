@@ -25,7 +25,8 @@ language-completeness work can move from prose to executable evidence.
 | §5.4 block-vs-closure boundary | v0.5 Phase 2A | Runtime Gate | `explicit_closure_argument_does_not_become_implicit_block` | active pass |
 | §11.7 dynamic dispatch runtime semantics | v0.5 Phase 2B | Runtime Gate | `deferred_dynamic_dispatch` | active pass |
 | §11.7 static impl fallback + method_missing | v0.5 Phase 2D | Runtime Gate | `static_impl_dispatch_and_method_missing` | active pass |
-| §11.8 structural protocol semantics | v0.5 Phase 2C/2E/2F/2G | Runtime/Checker Gate | `deferred_structural_protocols`; `parses_protocol_cast_expression` | active pass, including arity, parameter-type, return-type, mode, `as Protocol` cast, generic protocol substitution, and typed built-in method signature negatives |
+| §11.7 `@dynamic impl` dispatch tables | v0.5 Phase 2H | Runtime Gate | `dynamic_impl_dispatch_tables` | active pass |
+| §11.8 structural protocol semantics | v0.5 Phase 2C/2E/2F/2G/2H | Runtime/Checker Gate | `deferred_structural_protocols`; `parses_protocol_cast_expression`; `dynamic_impl_dispatch_tables` | active pass, including arity, parameter-type, return-type, mode, `as Protocol` cast, generic protocol substitution, typed built-in method signature negatives, and `@dynamic impl` protocol satisfaction |
 
 ## Deferred or Partial Test Handles
 

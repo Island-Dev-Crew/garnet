@@ -524,6 +524,12 @@ fn value_has_compatible_method(value: &Value, sig: &FnSig, env: &Env) -> bool {
             {
                 return true;
             }
+            if env
+                .get_dynamic_impl_method(name.as_ref(), &sig.name)
+                .is_some_and(|method| callable_matches_signature(&method, sig, 1))
+            {
+                return true;
+            }
             env.get_impl_method(name.as_ref(), &sig.name)
                 .is_some_and(|method| callable_matches_signature(&method, sig, 1))
         }

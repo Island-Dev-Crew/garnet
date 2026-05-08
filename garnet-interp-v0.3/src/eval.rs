@@ -688,15 +688,19 @@ fn call_method(
                     "responds_to" | "respond_to" => {
                         let queried = method_name_arg(method, args.first())?;
                         let has_dynamic = methods.borrow().contains_key(&queried);
+                        let has_dynamic_impl = env.has_dynamic_impl_method(name.as_ref(), &queried);
                         let has_static = env.has_impl_method(name.as_ref(), &queried);
                         let has_field = fields.borrow().contains_key(&queried);
-                        return Ok(Value::Bool(has_dynamic || has_static || has_field));
+                        return Ok(Value::Bool(
+                            has_dynamic || has_dynamic_impl || has_static || has_field,
+                        ));
                     }
                     "method_names" => {
                         let mut names = methods
                             .borrow()
                             .keys()
                             .cloned()
+                            .chain(env.dynamic_impl_method_names(name.as_ref()))
                             .chain(env.impl_method_names(name.as_ref()))
                             .collect::<Vec<_>>();
                         names.sort();
@@ -713,6 +717,13 @@ fn call_method(
                         }
                     }
                 }
+            }
+
+            if let Some(dynamic_impl_method) = env.get_dynamic_impl_method(name.as_ref(), method) {
+                let mut dynamic_impl_args = Vec::with_capacity(args.len() + 1);
+                dynamic_impl_args.push(recv.clone());
+                dynamic_impl_args.extend(args);
+                return call_value(&dynamic_impl_method, dynamic_impl_args);
             }
 
             if let Some(static_method) = env.get_impl_method(name.as_ref(), method) {

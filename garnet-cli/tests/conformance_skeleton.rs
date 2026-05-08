@@ -303,6 +303,101 @@ def main() {
 }
 
 #[test]
+fn dynamic_impl_dispatch_tables() {
+    let src = r#"
+protocol Renderable {
+  def render() -> String
+}
+
+@dynamic
+struct TraitWidget {
+  name: String
+}
+
+@dynamic
+impl TraitWidget for Renderable {
+  def render(receiver) -> String {
+    receiver.name + "|trait"
+  }
+}
+
+@caps()
+def accept_renderable(item: Renderable) -> String {
+  item.render()
+}
+
+@caps()
+def main() {
+  let widget = TraitWidget("panel")
+  let knows = if widget.responds_to(:render) { "yes" } else { "no" }
+  let before = accept_renderable(widget)
+  widget.def_method(:render) do |receiver|
+    receiver.name + "|instance"
+  end
+  let after = widget.render()
+  knows + "|" + before + "|" + after
+}
+"#;
+    let path = temp_source("dynamic_impl_dispatch_tables", src);
+    assert_ok(&["parse"], &path);
+    assert_ok(&["check"], &path);
+    let out = run(&["run"], &path);
+    assert!(
+        out.status.success(),
+        "dynamic impl table should participate in protocol satisfaction and dispatch\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("=> yes|panel|trait|panel|instance"),
+        "expected dynamic impl dispatch before per-instance override, got:\n{stdout}"
+    );
+
+    let non_dynamic_trait_impl_src = r#"
+protocol Renderable {
+  def render() -> String
+}
+
+struct StaticTraitWidget {
+  name: String
+}
+
+impl StaticTraitWidget for Renderable {
+  def render(receiver) -> String {
+    receiver.name
+  }
+}
+
+@caps()
+def accept_renderable(item: Renderable) -> String {
+  item.render()
+}
+
+@caps()
+def main() {
+  accept_renderable(StaticTraitWidget("plain"))
+}
+"#;
+    let non_dynamic_trait_impl_path = temp_source(
+        "non_dynamic_trait_impl_stays_deferred",
+        non_dynamic_trait_impl_src,
+    );
+    assert_ok(&["parse"], &non_dynamic_trait_impl_path);
+    assert_ok(&["check"], &non_dynamic_trait_impl_path);
+    let non_dynamic_trait_impl_out = run(&["run"], &non_dynamic_trait_impl_path);
+    assert!(
+        !non_dynamic_trait_impl_out.status.success(),
+        "plain trait impl coherence remains deferred; only @dynamic impl is active in Phase 2H"
+    );
+    let stderr = String::from_utf8_lossy(&non_dynamic_trait_impl_out.stderr);
+    assert!(
+        stderr.contains("does not satisfy protocol Renderable"),
+        "expected non-dynamic trait impl to remain deferred, got:\n{stderr}"
+    );
+}
+
+#[test]
 fn static_impl_dispatch_and_method_missing() {
     let src = r#"
 struct Service {

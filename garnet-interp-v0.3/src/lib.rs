@@ -109,10 +109,28 @@ impl Interpreter {
                 self.global.define_protocol(protocol);
             }
             Item::Impl(impl_block) => {
-                if impl_block.trait_ty.is_some() {
+                let type_name = named_type_name(&impl_block.target).map(str::to_string);
+                let trait_name = impl_block.trait_ty.as_ref().and_then(named_type_name);
+                if let (Some(type_name), Some(trait_name)) = (type_name.as_ref(), trait_name) {
+                    if value::has_dynamic_annotation(&impl_block.annotations) {
+                        for method in impl_block.methods {
+                            let method_name = method.name.clone();
+                            let closure = Value::Fn(Rc::new(value::FnValue {
+                                def: method,
+                                captured: Rc::clone(&self.global),
+                                is_block: false,
+                            }));
+                            self.global.define_dynamic_impl_method(
+                                type_name,
+                                trait_name,
+                                &method_name,
+                                closure,
+                            );
+                        }
+                    }
                     return Ok(());
                 }
-                if let Some(type_name) = named_type_name(&impl_block.target).map(str::to_string) {
+                if let Some(type_name) = type_name {
                     for method in impl_block.methods {
                         let method_name = method.name.clone();
                         let closure = Value::Fn(Rc::new(value::FnValue {

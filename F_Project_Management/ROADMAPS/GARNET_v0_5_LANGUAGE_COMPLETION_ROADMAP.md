@@ -159,6 +159,18 @@ Observed before implementation: `BoxLike<String>` still compared required method
 
 Expected after implementation: `Protocol<T>` annotations and casts instantiate required signatures before structural checks; incompatible concrete substitutions still fail; core built-in String/Array/Map/number method signatures can satisfy typed protocols without accepting incompatible return types.
 
+- [x] **Step 3H: Register `@dynamic impl` dispatch tables**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-cli --test conformance_skeleton dynamic_impl_dispatch_tables
+```
+
+Observed before implementation: `@dynamic impl TraitWidget for Renderable` was preserved in the AST but did not participate in protocol satisfaction or method dispatch.
+
+Expected after implementation: `@dynamic impl Type for Protocol` methods are registered in managed mode, satisfy protocol-typed parameters, appear in dynamic receiver introspection, and dispatch before static inherent impl fallback while per-instance dynamic methods still override them.
+
 ## Phase 3: Actor Runtime Bridge And Sendable
 
 **Intent:** Make agent-native claims executable from Garnet code, not only Rust actor-runtime tests.
