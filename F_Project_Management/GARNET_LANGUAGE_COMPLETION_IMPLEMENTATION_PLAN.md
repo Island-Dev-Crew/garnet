@@ -23,7 +23,7 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | Parser parity for old ambition | Partial, Phase 1 active | `protocol`, `dyn Trait`, `yield`, `next`, `@dynamic`, `@nonsendable`, and `do ... end` parser tests | Keep runtime gaps explicit and activate Phase 2 only with executable semantics |
 | Blocks, `yield`, `next` runtime semantics | Phase 2A active | `do ... end` parses as a trailing closure argument; `deferred_blocks_and_yield` runs a managed-mode block/yield/next program | Keep `cargo test -p garnet-cli --test conformance_skeleton deferred_blocks_and_yield` green; add richer block edge cases later |
 | Dynamic method dispatch tables | Partial Phase 2D | `deferred_dynamic_dispatch` covers per-instance method tables; `static_impl_dispatch_and_method_missing` covers static inherent impl fallback and `method_missing` | Add `@dynamic impl` tables and richer dispatch precedence probes |
-| Structural protocol satisfaction and runtime casts | Partial Phase 2F | `Item::Protocol` and `Expr::Cast` parse; `deferred_structural_protocols` checks protocol-typed managed parameters, runtime `as Protocol` casts, static/dynamic methods, and mode/arity/parameter/return annotation mismatches | Add deeper generic method unification and built-in typed signature checks |
+| Structural protocol satisfaction and runtime casts | Partial Phase 2G | `Item::Protocol` and `Expr::Cast` parse; `deferred_structural_protocols` checks protocol-typed managed parameters, runtime `as Protocol` casts, static/dynamic methods, mode/arity/parameter/return annotation mismatches, generic protocol substitution, and core built-in typed method signatures | Add broader trait/generic coherence and `@dynamic impl` dispatch tables |
 | Actor protocol enforcement and `Sendable` | Partial | actor runtime crate exists; CLI template does not use actor syntax frictionlessly | Agent-orchestrator actor-mode smoke passes |
 | Rust-grade NLL and borrow rules | Partial skeleton | `garnet-check-v0.3/src/borrow.rs`; ignored conformance handles | Activate `partial_borrow_rule_suite` and `deferred_nll_lifetime_inference` |
 | Trait coherence | Not done | spec row exists; no checker algorithm | Activate `deferred_trait_coherence` |
@@ -212,7 +212,7 @@ cargo test -p garnet-cli --test conformance_skeleton deferred_structural_protoco
 
 Observed before implementation: a method with the required name but incompatible arity was accepted.
 
-Expected after implementation: protocol satisfaction checks method mode, receiver-adjusted arity, annotated parameter types, and required return types. Runtime `as Protocol` casts, generic method unification, and built-in typed signatures remain follow-up work.
+Expected after implementation: protocol satisfaction checks method mode, receiver-adjusted arity, annotated parameter types, and required return types. Runtime `as Protocol` casts, generic protocol substitution, and built-in typed signatures remain follow-up work.
 
 - [x] **Step 4F: Execute runtime `as Protocol` casts**
 
@@ -227,7 +227,21 @@ cargo test -p garnet-cli --test conformance_skeleton deferred_structural_protoco
 
 Observed before implementation: the compatible cast path failed at runtime with `undefined variable: as`.
 
-Expected after implementation: `Expr::Cast` parses, structurally compatible values pass through unchanged, and incompatible values fail with `does not satisfy protocol ...`. Generic method unification and built-in typed signatures remain follow-up work.
+Expected after implementation: `Expr::Cast` parses, structurally compatible values pass through unchanged, and incompatible values fail with `does not satisfy protocol ...`. Generic protocol substitution and built-in typed signatures remain follow-up work.
+
+- [x] **Step 4G: Substitute protocol type parameters and type core built-in signatures**
+
+Add positive and negative probes to `deferred_structural_protocols` proving `Protocol<T>` signatures are instantiated before method compatibility checks and that core built-in methods can satisfy typed protocol signatures.
+
+Run:
+
+```sh
+cargo test -p garnet-cli --test conformance_skeleton deferred_structural_protocols
+```
+
+Observed before implementation: `BoxLike<String>` rejected a `TextBox.value() -> String` method with `does not satisfy protocol BoxLike` because the required return type remained unresolved as `T`.
+
+Expected after implementation: generic protocol type arguments substitute into required method signatures, incompatible concrete methods still fail, and core built-in methods such as `String#len`, `String#upcase`, and `String#starts_with` satisfy compatible typed protocol signatures while rejecting incompatible return types.
 
 ## Milestone 3: Actor Runtime Bridge And Sendable
 

@@ -10,6 +10,7 @@ use garnet_parser::ast::{
     Annotation, EnumDef, FnDef, FnSig, MemoryKind, Param, ProtocolDef, StructDef, TraitItem,
     TypeExpr,
 };
+use garnet_parser::token::Span;
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::rc::Rc;
@@ -462,11 +463,21 @@ pub fn bind_params(params: &[Param], args: Vec<Value>, env: &Env) -> Result<(), 
 }
 
 pub fn protocol_for_type(ty: &TypeExpr, env: &Env) -> Option<ProtocolDef> {
-    let TypeExpr::Named { path, .. } = ty else {
+    let TypeExpr::Named { path, args, .. } = ty else {
         return None;
     };
     let name = path.last()?;
-    env.get_protocol(name)
+    let mut protocol = env.get_protocol(name)?;
+    if protocol.type_params.len() == args.len() {
+        let bindings = protocol
+            .type_params
+            .iter()
+            .cloned()
+            .zip(args.iter().cloned())
+            .collect::<BTreeMap<_, _>>();
+        instantiate_protocol(&mut protocol, &bindings);
+    }
+    Some(protocol)
 }
 
 pub fn ensure_protocol_satisfied(
@@ -516,35 +527,63 @@ fn value_has_compatible_method(value: &Value, sig: &FnSig, env: &Env) -> bool {
             env.get_impl_method(name.as_ref(), &sig.name)
                 .is_some_and(|method| callable_matches_signature(&method, sig, 1))
         }
-        Value::Str(_) if signature_has_no_shape_requirements(sig) => matches!(
-            sig.name.as_str(),
-            "len" | "length" | "size" | "upcase" | "to_upper" | "downcase" | "to_lower" | "to_s"
-        ),
-        Value::Array(_) if signature_has_no_shape_requirements(sig) => matches!(
-            sig.name.as_str(),
-            "len"
-                | "length"
-                | "size"
-                | "count"
-                | "push"
-                | "append"
-                | "first"
-                | "last"
-                | "map"
-                | "filter"
-                | "select"
-                | "reduce"
-                | "recent"
-                | "to_s"
-        ),
-        Value::Map(_) if signature_has_no_shape_requirements(sig) => matches!(
-            sig.name.as_str(),
-            "len" | "size" | "get" | "put" | "insert" | "keys" | "values"
-        ),
-        Value::Int(_) | Value::Float(_) if signature_has_no_shape_requirements(sig) => {
-            matches!(sig.name.as_str(), "to_s" | "to_i" | "to_f" | "abs")
-        }
+        Value::Str(_) => builtin_method_matches_signature(sig, STRING_METHODS),
+        Value::Array(_) => builtin_method_matches_signature(sig, ARRAY_METHODS),
+        Value::Map(_) => builtin_method_matches_signature(sig, MAP_METHODS),
+        Value::Int(_) => builtin_method_matches_signature(sig, INT_METHODS),
+        Value::Float(_) => builtin_method_matches_signature(sig, FLOAT_METHODS),
         _ => false,
+    }
+}
+
+fn instantiate_protocol(protocol: &mut ProtocolDef, bindings: &BTreeMap<String, TypeExpr>) {
+    if bindings.is_empty() {
+        return;
+    }
+    for item in &mut protocol.items {
+        if let TraitItem::FnSig(sig) = item {
+            for param in &mut sig.params {
+                if let Some(ty) = param.ty.as_mut() {
+                    substitute_type_expr(ty, bindings);
+                }
+            }
+            if let Some(ty) = sig.return_ty.as_mut() {
+                substitute_type_expr(ty, bindings);
+            }
+        }
+    }
+}
+
+fn substitute_type_expr(ty: &mut TypeExpr, bindings: &BTreeMap<String, TypeExpr>) {
+    match ty {
+        TypeExpr::Named { path, args, .. } => {
+            if path.len() == 1 && args.is_empty() {
+                if let Some(bound) = bindings.get(&path[0]) {
+                    *ty = bound.clone();
+                    return;
+                }
+            }
+            for arg in args {
+                substitute_type_expr(arg, bindings);
+            }
+        }
+        TypeExpr::Fn { params, ret, .. } => {
+            for param in params {
+                substitute_type_expr(param, bindings);
+            }
+            substitute_type_expr(ret, bindings);
+        }
+        TypeExpr::Tuple { elements, .. } => {
+            for element in elements {
+                substitute_type_expr(element, bindings);
+            }
+        }
+        TypeExpr::Ref { inner, .. }
+        | TypeExpr::Dyn {
+            trait_ty: inner, ..
+        } => {
+            substitute_type_expr(inner, bindings);
+        }
     }
 }
 
@@ -592,6 +631,265 @@ fn return_type_compatible(protocol: Option<&TypeExpr>, method: Option<&TypeExpr>
 
 fn signature_has_no_shape_requirements(sig: &FnSig) -> bool {
     sig.params.is_empty() && sig.return_ty.is_none()
+}
+
+struct BuiltinMethodSpec {
+    name: &'static str,
+    params: Option<&'static [&'static str]>,
+    ret: Option<&'static str>,
+}
+
+const STRING_METHODS: &[BuiltinMethodSpec] = &[
+    BuiltinMethodSpec {
+        name: "len",
+        params: Some(&[]),
+        ret: Some("Int"),
+    },
+    BuiltinMethodSpec {
+        name: "length",
+        params: Some(&[]),
+        ret: Some("Int"),
+    },
+    BuiltinMethodSpec {
+        name: "size",
+        params: Some(&[]),
+        ret: Some("Int"),
+    },
+    BuiltinMethodSpec {
+        name: "upcase",
+        params: Some(&[]),
+        ret: Some("String"),
+    },
+    BuiltinMethodSpec {
+        name: "to_upper",
+        params: Some(&[]),
+        ret: Some("String"),
+    },
+    BuiltinMethodSpec {
+        name: "downcase",
+        params: Some(&[]),
+        ret: Some("String"),
+    },
+    BuiltinMethodSpec {
+        name: "to_lower",
+        params: Some(&[]),
+        ret: Some("String"),
+    },
+    BuiltinMethodSpec {
+        name: "to_s",
+        params: Some(&[]),
+        ret: Some("String"),
+    },
+    BuiltinMethodSpec {
+        name: "chars",
+        params: Some(&[]),
+        ret: Some("Array"),
+    },
+    BuiltinMethodSpec {
+        name: "starts_with",
+        params: Some(&["String"]),
+        ret: Some("Bool"),
+    },
+    BuiltinMethodSpec {
+        name: "starts_with?",
+        params: Some(&["String"]),
+        ret: Some("Bool"),
+    },
+];
+
+const ARRAY_METHODS: &[BuiltinMethodSpec] = &[
+    BuiltinMethodSpec {
+        name: "len",
+        params: Some(&[]),
+        ret: Some("Int"),
+    },
+    BuiltinMethodSpec {
+        name: "length",
+        params: Some(&[]),
+        ret: Some("Int"),
+    },
+    BuiltinMethodSpec {
+        name: "size",
+        params: Some(&[]),
+        ret: Some("Int"),
+    },
+    BuiltinMethodSpec {
+        name: "count",
+        params: Some(&[]),
+        ret: Some("Int"),
+    },
+    BuiltinMethodSpec {
+        name: "push",
+        params: None,
+        ret: None,
+    },
+    BuiltinMethodSpec {
+        name: "append",
+        params: None,
+        ret: None,
+    },
+    BuiltinMethodSpec {
+        name: "first",
+        params: Some(&[]),
+        ret: None,
+    },
+    BuiltinMethodSpec {
+        name: "last",
+        params: Some(&[]),
+        ret: None,
+    },
+    BuiltinMethodSpec {
+        name: "map",
+        params: None,
+        ret: None,
+    },
+    BuiltinMethodSpec {
+        name: "filter",
+        params: None,
+        ret: None,
+    },
+    BuiltinMethodSpec {
+        name: "select",
+        params: None,
+        ret: None,
+    },
+    BuiltinMethodSpec {
+        name: "reduce",
+        params: None,
+        ret: None,
+    },
+    BuiltinMethodSpec {
+        name: "recent",
+        params: Some(&["Int"]),
+        ret: Some("Array"),
+    },
+    BuiltinMethodSpec {
+        name: "to_s",
+        params: Some(&[]),
+        ret: Some("String"),
+    },
+];
+
+const MAP_METHODS: &[BuiltinMethodSpec] = &[
+    BuiltinMethodSpec {
+        name: "len",
+        params: Some(&[]),
+        ret: Some("Int"),
+    },
+    BuiltinMethodSpec {
+        name: "size",
+        params: Some(&[]),
+        ret: Some("Int"),
+    },
+    BuiltinMethodSpec {
+        name: "get",
+        params: None,
+        ret: None,
+    },
+    BuiltinMethodSpec {
+        name: "put",
+        params: None,
+        ret: None,
+    },
+    BuiltinMethodSpec {
+        name: "insert",
+        params: None,
+        ret: None,
+    },
+    BuiltinMethodSpec {
+        name: "keys",
+        params: Some(&[]),
+        ret: Some("Array"),
+    },
+    BuiltinMethodSpec {
+        name: "values",
+        params: Some(&[]),
+        ret: Some("Array"),
+    },
+];
+
+const INT_METHODS: &[BuiltinMethodSpec] = &[
+    BuiltinMethodSpec {
+        name: "to_s",
+        params: Some(&[]),
+        ret: Some("String"),
+    },
+    BuiltinMethodSpec {
+        name: "to_i",
+        params: Some(&[]),
+        ret: Some("Int"),
+    },
+    BuiltinMethodSpec {
+        name: "to_f",
+        params: Some(&[]),
+        ret: Some("Float"),
+    },
+    BuiltinMethodSpec {
+        name: "abs",
+        params: Some(&[]),
+        ret: Some("Int"),
+    },
+];
+
+const FLOAT_METHODS: &[BuiltinMethodSpec] = &[
+    BuiltinMethodSpec {
+        name: "to_s",
+        params: Some(&[]),
+        ret: Some("String"),
+    },
+    BuiltinMethodSpec {
+        name: "to_i",
+        params: Some(&[]),
+        ret: Some("Int"),
+    },
+    BuiltinMethodSpec {
+        name: "to_f",
+        params: Some(&[]),
+        ret: Some("Float"),
+    },
+    BuiltinMethodSpec {
+        name: "abs",
+        params: Some(&[]),
+        ret: Some("Float"),
+    },
+];
+
+fn builtin_method_matches_signature(sig: &FnSig, specs: &[BuiltinMethodSpec]) -> bool {
+    specs
+        .iter()
+        .filter(|spec| spec.name == sig.name)
+        .any(|spec| builtin_spec_matches_signature(spec, sig))
+}
+
+fn builtin_spec_matches_signature(spec: &BuiltinMethodSpec, sig: &FnSig) -> bool {
+    if signature_has_no_shape_requirements(sig) {
+        return true;
+    }
+    let Some(params) = spec.params else {
+        return false;
+    };
+    if params.len() != sig.params.len() {
+        return false;
+    }
+    let params_match = sig.params.iter().zip(params).all(|(expected, actual)| {
+        expected
+            .ty
+            .as_ref()
+            .is_none_or(|expected_ty| type_expr_compatible(expected_ty, &named_type(actual)))
+    });
+    if !params_match {
+        return false;
+    }
+    let actual_ret = spec.ret.map(named_type);
+    return_type_compatible(sig.return_ty.as_ref(), actual_ret.as_ref())
+}
+
+fn named_type(name: &str) -> TypeExpr {
+    TypeExpr::Named {
+        path: vec![name.to_string()],
+        args: Vec::new(),
+        span: Span::new(0, 0),
+    }
 }
 
 fn type_expr_compatible(expected: &TypeExpr, actual: &TypeExpr) -> bool {

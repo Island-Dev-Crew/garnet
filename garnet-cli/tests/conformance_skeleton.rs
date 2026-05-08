@@ -708,4 +708,156 @@ def main() {
         stderr.contains("cast target Int is not a protocol"),
         "expected non-protocol cast diagnostic, got:\n{stderr}"
     );
+
+    let generic_protocol_ok_src = r#"
+protocol BoxLike<T> {
+  def value() -> T
+}
+
+struct TextBox {
+  text: String
+}
+
+impl TextBox {
+  def value(receiver) -> String {
+    receiver.text
+  }
+}
+
+@caps()
+def unwrap_text(box: BoxLike<String>) -> String {
+  box.value()
+}
+
+@caps()
+def main() {
+  let box = TextBox("generic-panel")
+  let box_like = box as BoxLike<String>
+  unwrap_text(box_like)
+}
+"#;
+    let generic_protocol_ok_path =
+        temp_source("structural_protocol_generic_ok", generic_protocol_ok_src);
+    assert_ok(&["parse"], &generic_protocol_ok_path);
+    assert_ok(&["check"], &generic_protocol_ok_path);
+    let generic_protocol_ok_out = run(&["run"], &generic_protocol_ok_path);
+    assert!(
+        generic_protocol_ok_out.status.success(),
+        "generic protocol type arguments should substitute into required method signatures\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&generic_protocol_ok_out.stdout),
+        String::from_utf8_lossy(&generic_protocol_ok_out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&generic_protocol_ok_out.stdout);
+    assert!(
+        stdout.contains("=> generic-panel"),
+        "expected generic protocol cast and parameter binding to preserve TextBox value, got:\n{stdout}"
+    );
+
+    let generic_protocol_bad_src = r#"
+protocol BoxLike<T> {
+  def value() -> T
+}
+
+struct IntBox {
+  value: Int
+}
+
+impl IntBox {
+  def value(receiver) -> Int {
+    receiver.value
+  }
+}
+
+@caps()
+def unwrap_text(box: BoxLike<String>) -> String {
+  box.value()
+}
+
+@caps()
+def main() {
+  unwrap_text(IntBox(7))
+}
+"#;
+    let generic_protocol_bad_path =
+        temp_source("structural_protocol_generic_bad", generic_protocol_bad_src);
+    assert_ok(&["parse"], &generic_protocol_bad_path);
+    assert_ok(&["check"], &generic_protocol_bad_path);
+    let generic_protocol_bad_out = run(&["run"], &generic_protocol_bad_path);
+    assert!(
+        !generic_protocol_bad_out.status.success(),
+        "generic protocol substitution must reject an incompatible concrete method return type"
+    );
+    let stderr = String::from_utf8_lossy(&generic_protocol_bad_out.stderr);
+    assert!(
+        stderr.contains("does not satisfy protocol BoxLike"),
+        "expected generic protocol mismatch diagnostic, got:\n{stderr}"
+    );
+
+    let typed_builtin_protocol_ok_src = r#"
+protocol TypedTextShape {
+  def len() -> Int
+  def upcase() -> String
+  def starts_with(prefix: String) -> Bool
+}
+
+@caps()
+def accept_text(value: TypedTextShape) -> Int {
+  value.len()
+}
+
+@caps()
+def main() {
+  accept_text("garnet")
+}
+"#;
+    let typed_builtin_protocol_ok_path = temp_source(
+        "structural_protocol_typed_builtin_ok",
+        typed_builtin_protocol_ok_src,
+    );
+    assert_ok(&["parse"], &typed_builtin_protocol_ok_path);
+    assert_ok(&["check"], &typed_builtin_protocol_ok_path);
+    let typed_builtin_protocol_ok_out = run(&["run"], &typed_builtin_protocol_ok_path);
+    assert!(
+        typed_builtin_protocol_ok_out.status.success(),
+        "typed built-in String method signatures should satisfy compatible protocols\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&typed_builtin_protocol_ok_out.stdout),
+        String::from_utf8_lossy(&typed_builtin_protocol_ok_out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&typed_builtin_protocol_ok_out.stdout);
+    assert!(
+        stdout.contains("=> 6"),
+        "expected typed built-in protocol call to return String length, got:\n{stdout}"
+    );
+
+    let typed_builtin_protocol_bad_src = r#"
+protocol BadTextShape {
+  def len() -> String
+}
+
+@caps()
+def accept_bad(value: BadTextShape) -> String {
+  value.len()
+}
+
+@caps()
+def main() {
+  accept_bad("garnet")
+}
+"#;
+    let typed_builtin_protocol_bad_path = temp_source(
+        "structural_protocol_typed_builtin_bad",
+        typed_builtin_protocol_bad_src,
+    );
+    assert_ok(&["parse"], &typed_builtin_protocol_bad_path);
+    assert_ok(&["check"], &typed_builtin_protocol_bad_path);
+    let typed_builtin_protocol_bad_out = run(&["run"], &typed_builtin_protocol_bad_path);
+    assert!(
+        !typed_builtin_protocol_bad_out.status.success(),
+        "typed built-in protocol signatures must reject incompatible return types"
+    );
+    let stderr = String::from_utf8_lossy(&typed_builtin_protocol_bad_out.stderr);
+    assert!(
+        stderr.contains("does not satisfy protocol BadTextShape"),
+        "expected typed built-in signature diagnostic, got:\n{stderr}"
+    );
 }

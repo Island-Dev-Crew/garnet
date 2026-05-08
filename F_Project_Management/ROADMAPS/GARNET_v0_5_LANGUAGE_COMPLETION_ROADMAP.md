@@ -145,7 +145,19 @@ cargo test -p garnet-parser --test parse_v1_parser_parity parses_protocol_cast_e
 cargo test -p garnet-cli --test conformance_skeleton deferred_structural_protocols
 ```
 
-Expected after implementation: `value as Protocol` parses as `Expr::Cast`, structurally compatible values pass through unchanged, and incompatible values fail at runtime with the structural protocol diagnostic. Generic method unification and built-in typed signatures remain follow-up work.
+Expected after implementation: `value as Protocol` parses as `Expr::Cast`, structurally compatible values pass through unchanged, and incompatible values fail at runtime with the structural protocol diagnostic. Generic protocol substitution and built-in typed signatures remain follow-up work.
+
+- [x] **Step 3G: Substitute generic protocol types and add typed built-in signatures**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-cli --test conformance_skeleton deferred_structural_protocols
+```
+
+Observed before implementation: `BoxLike<String>` still compared required method returns against the unresolved type parameter `T`, so a `TextBox.value() -> String` method was rejected. Built-in `String` methods also satisfied protocols only when signatures had no parameter or return-type requirements.
+
+Expected after implementation: `Protocol<T>` annotations and casts instantiate required signatures before structural checks; incompatible concrete substitutions still fail; core built-in String/Array/Map/number method signatures can satisfy typed protocols without accepting incompatible return types.
 
 ## Phase 3: Actor Runtime Bridge And Sendable
 
