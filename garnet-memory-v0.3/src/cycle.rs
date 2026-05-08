@@ -4,7 +4,9 @@
 //! It gives Mnemos a deterministic graph model for Mini-Spec §4.5
 //! fixtures: rooted nodes stay live, unrooted acyclic nodes remain available
 //! for normal eviction, and unrooted cycles are collected by a bounded
-//! trial-deletion pass with kind-aware scan scheduling.
+//! trial-deletion pass with kind-aware scan scheduling. Safe-mode allocations
+//! can be modeled as affine nodes that are retained but excluded from ARC
+//! cycle detection.
 
 use crate::MemoryKind;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
@@ -29,12 +31,22 @@ pub enum CycleScan {
     Kind(MemoryKind),
 }
 
+/// Allocation discipline for a node in the observable cycle fixture.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CycleAllocationMode {
+    /// Managed-mode ARC allocation participating in cycle collection.
+    ManagedArc,
+    /// Safe-mode affine allocation; not ARC-managed and not scanned.
+    SafeAffine,
+}
+
 /// Result of a cycle-collection pass.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CycleCollectReport {
     pub scan: CycleScan,
     pub trial_candidates: Vec<CycleNodeId>,
     pub trial_retained: Vec<CycleNodeId>,
+    pub finalization_order: Vec<CycleNodeId>,
     pub retained_roots: Vec<CycleNodeId>,
     pub retained: Vec<CycleNodeId>,
     pub collected: Vec<CycleNodeId>,
@@ -44,6 +56,7 @@ pub struct CycleCollectReport {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CycleGraphError {
     MissingNode(CycleNodeId),
+    NonArcNode(CycleNodeId),
     RootUnderflow(CycleNodeId),
 }
 
@@ -51,6 +64,7 @@ impl fmt::Display for CycleGraphError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::MissingNode(id) => write!(f, "missing cycle graph node {}", id.index()),
+            Self::NonArcNode(id) => write!(f, "cycle graph node {} is not ARC-managed", id.index()),
             Self::RootUnderflow(id) => {
                 write!(f, "cycle graph node {} has no root to release", id.index())
             }
@@ -63,6 +77,7 @@ impl std::error::Error for CycleGraphError {}
 #[derive(Debug, Clone)]
 struct CycleNode {
     kind: MemoryKind,
+    mode: CycleAllocationMode,
     label: String,
     roots: usize,
     edges: BTreeSet<CycleNodeId>,
@@ -81,9 +96,23 @@ impl CycleGraph {
     }
 
     pub fn add_node(&mut self, kind: MemoryKind, label: impl Into<String>) -> CycleNodeId {
+        self.add_node_with_mode(kind, CycleAllocationMode::ManagedArc, label)
+    }
+
+    pub fn add_safe_node(&mut self, kind: MemoryKind, label: impl Into<String>) -> CycleNodeId {
+        self.add_node_with_mode(kind, CycleAllocationMode::SafeAffine, label)
+    }
+
+    fn add_node_with_mode(
+        &mut self,
+        kind: MemoryKind,
+        mode: CycleAllocationMode,
+        label: impl Into<String>,
+    ) -> CycleNodeId {
         let id = CycleNodeId(self.nodes.len());
         self.nodes.push(CycleNode {
             kind,
+            mode,
             label: label.into(),
             roots: 0,
             edges: BTreeSet::new(),
@@ -107,13 +136,19 @@ impl CycleGraph {
         self.nodes.get(id.index()).map(|node| node.kind)
     }
 
+    pub fn allocation_mode(&self, id: CycleNodeId) -> Option<CycleAllocationMode> {
+        self.nodes.get(id.index()).map(|node| node.mode)
+    }
+
     pub fn add_root(&mut self, id: CycleNodeId) -> Result<(), CycleGraphError> {
+        self.ensure_arc_tracked(id)?;
         let node = self.node_mut(id)?;
         node.roots += 1;
         Ok(())
     }
 
     pub fn release_root(&mut self, id: CycleNodeId) -> Result<(), CycleGraphError> {
+        self.ensure_arc_tracked(id)?;
         let node = self.node_mut(id)?;
         if node.roots == 0 {
             return Err(CycleGraphError::RootUnderflow(id));
@@ -164,6 +199,7 @@ impl CycleGraph {
             scan,
             trial_candidates,
             trial_retained: trial.retained,
+            finalization_order: trial.finalization_order,
             retained_roots: self.root_ids(),
             retained: self.active_ids(),
             collected: collected_set.into_iter().collect(),
@@ -183,6 +219,22 @@ impl CycleGraph {
         }
     }
 
+    fn ensure_arc_tracked(&self, id: CycleNodeId) -> Result<(), CycleGraphError> {
+        self.ensure_active(id)?;
+        if self.is_arc_tracked(id) {
+            Ok(())
+        } else {
+            Err(CycleGraphError::NonArcNode(id))
+        }
+    }
+
+    fn is_arc_tracked(&self, id: CycleNodeId) -> bool {
+        self.nodes
+            .get(id.index())
+            .map(|node| node.mode == CycleAllocationMode::ManagedArc)
+            .unwrap_or(false)
+    }
+
     fn active_ids(&self) -> Vec<CycleNodeId> {
         self.nodes
             .iter()
@@ -191,12 +243,20 @@ impl CycleGraph {
             .collect()
     }
 
+    fn active_arc_ids(&self) -> Vec<CycleNodeId> {
+        self.active_ids()
+            .into_iter()
+            .filter(|id| self.is_arc_tracked(*id))
+            .collect()
+    }
+
     fn root_ids(&self) -> Vec<CycleNodeId> {
         self.nodes
             .iter()
             .enumerate()
             .filter_map(|(idx, node)| {
-                (!node.collected && node.roots > 0).then_some(CycleNodeId(idx))
+                (!node.collected && node.mode == CycleAllocationMode::ManagedArc && node.roots > 0)
+                    .then_some(CycleNodeId(idx))
             })
             .collect()
     }
@@ -214,6 +274,13 @@ impl CycleGraph {
             .unwrap_or_default()
     }
 
+    fn outgoing_arc(&self, id: CycleNodeId) -> Vec<CycleNodeId> {
+        self.outgoing_active(id)
+            .into_iter()
+            .filter(|child| self.is_arc_tracked(*child))
+            .collect()
+    }
+
     fn live_from_roots(&self) -> BTreeSet<CycleNodeId> {
         let mut live = BTreeSet::new();
         let mut queue: VecDeque<_> = self.root_ids().into_iter().collect();
@@ -222,7 +289,7 @@ impl CycleGraph {
             if !live.insert(id) {
                 continue;
             }
-            for child in self.outgoing_active(id) {
+            for child in self.outgoing_arc(id) {
                 queue.push_back(child);
             }
         }
@@ -239,12 +306,12 @@ impl CycleGraph {
 
     fn reference_counts(&self) -> BTreeMap<CycleNodeId, usize> {
         let mut counts = BTreeMap::new();
-        for id in self.active_ids() {
+        for id in self.active_arc_ids() {
             counts.insert(id, self.nodes[id.index()].roots);
         }
 
-        for id in self.active_ids() {
-            for child in self.outgoing_active(id) {
+        for id in self.active_arc_ids() {
+            for child in self.outgoing_arc(id) {
                 *counts.entry(child).or_insert(0) += 1;
             }
         }
@@ -268,7 +335,7 @@ impl CycleGraph {
     ) -> TrialOutcome {
         let mut counts = self.reference_counts();
         let mut colors: BTreeMap<_, _> = self
-            .active_ids()
+            .active_arc_ids()
             .into_iter()
             .map(|id| (id, TrialColor::Black))
             .collect();
@@ -281,8 +348,14 @@ impl CycleGraph {
         }
 
         let mut collected = BTreeSet::new();
+        let mut finalization_order = Vec::new();
         for candidate in candidates {
-            self.collect_white(*candidate, &mut colors, &mut collected);
+            self.collect_white(
+                *candidate,
+                &mut colors,
+                &mut collected,
+                &mut finalization_order,
+            );
         }
 
         let retained = candidates
@@ -294,6 +367,7 @@ impl CycleGraph {
         TrialOutcome {
             retained,
             collected,
+            finalization_order,
         }
     }
 
@@ -308,7 +382,7 @@ impl CycleGraph {
         }
         colors.insert(id, TrialColor::Gray);
 
-        for child in self.outgoing_active(id) {
+        for child in self.outgoing_arc(id) {
             if let Some(count) = counts.get_mut(&child) {
                 *count = count.saturating_sub(1);
             }
@@ -333,7 +407,7 @@ impl CycleGraph {
         }
 
         colors.insert(id, TrialColor::White);
-        for child in self.outgoing_active(id) {
+        for child in self.outgoing_arc(id) {
             self.scan_candidate(child, live, colors, counts);
         }
     }
@@ -349,7 +423,7 @@ impl CycleGraph {
         }
 
         colors.insert(id, TrialColor::Black);
-        for child in self.outgoing_active(id) {
+        for child in self.outgoing_arc(id) {
             *counts.entry(child).or_insert(0) += 1;
             self.scan_black(child, colors, counts);
         }
@@ -360,16 +434,18 @@ impl CycleGraph {
         id: CycleNodeId,
         colors: &mut BTreeMap<CycleNodeId, TrialColor>,
         collected: &mut BTreeSet<CycleNodeId>,
+        finalization_order: &mut Vec<CycleNodeId>,
     ) {
         if colors.get(&id) != Some(&TrialColor::White) {
             return;
         }
 
         colors.insert(id, TrialColor::Black);
-        collected.insert(id);
-        for child in self.outgoing_active(id) {
-            self.collect_white(child, colors, collected);
+        for child in self.outgoing_arc(id) {
+            self.collect_white(child, colors, collected, finalization_order);
         }
+        collected.insert(id);
+        finalization_order.push(id);
     }
 }
 
@@ -383,4 +459,5 @@ enum TrialColor {
 struct TrialOutcome {
     retained: Vec<CycleNodeId>,
     collected: BTreeSet<CycleNodeId>,
+    finalization_order: Vec<CycleNodeId>,
 }

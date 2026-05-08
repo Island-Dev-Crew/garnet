@@ -106,7 +106,7 @@ two-day LSP.
 
 ## Item B — Memory Core Tier 1 (Mnemos production allocator integration)
 
-### Current Phase 6B status
+### Current Phase 6C status
 
 Phase 6A added a bounded cycle-reference path before the allocator work:
 `garnet-memory-v0.3/src/cycle.rs`, `garnet-memory-v0.3/tests/cycle.rs`, and
@@ -114,9 +114,10 @@ the active `deferred_arc_cycle_detection` conformance handle prove retained
 roots, unrooted cycle collection, unrooted acyclic retention, and
 kind-scheduled cross-kind collection. Phase 6B tightens that path with
 trial-candidate and scan-black retained-candidate evidence plus a bounded
-mark-gray / scan / collect-white pass. This is not yet production ARC; the next
-session should promote those fixtures into allocator-integrated Bacon-Rajan
-trial deletion, finalization ordering, and safe-mode interaction.
+mark-gray / scan / collect-white pass. Phase 6C adds deterministic
+finalization-order reporting and safe-mode affine allocation exclusion. This is
+not yet production ARC; the next session should promote those fixtures into
+allocator-integrated Bacon-Rajan trial deletion.
 
 ### Why deferred
 

@@ -375,9 +375,15 @@ Phase 6B exposes trial candidates and scan-black retained candidates, then runs
 a bounded mark-gray / scan / collect-white pass over the deterministic cycle
 graph. This is still not production allocator-integrated ARC.
 
-- [ ] **Step 2B: Promote trial deletion to production ARC allocator roots**
+- [x] **Step 3: Add finalization-order and safe-mode interaction reference tests**
 
-- [ ] **Step 3: Add kind-aware root partitioning and safe-mode interaction tests**
+Phase 6C exposes deterministic collect-white finalization order and models
+safe-mode affine nodes as retained non-ARC allocations excluded from trial
+candidates.
+
+- [ ] **Step 4: Promote trial deletion to production ARC allocator roots**
+
+- [ ] **Step 5: Promote finalizer/safe-mode interaction into production allocator tests**
 
 ## Phase 7: Release, Research, And Repeated Falsification
 

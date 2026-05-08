@@ -32,8 +32,8 @@
 //! - No eviction beyond what `MemoryPolicy` exposes as scoring API.
 //! - No allocator-integrated ARC + Bacon–Rajan collector yet.
 //! - A bounded [`CycleGraph`] trial-deletion reference path exposes §4.5
-//!   cycle fixtures while production allocator work remains on the Memory
-//!   Core roadmap.
+//!   cycle, finalization-order, and safe-mode exclusion fixtures while
+//!   production allocator work remains on the Memory Core roadmap.
 //!
 //! ## What's planned
 //!
@@ -60,7 +60,9 @@ pub mod procedural;
 pub mod semantic;
 pub mod working;
 
-pub use cycle::{CycleCollectReport, CycleGraph, CycleGraphError, CycleNodeId, CycleScan};
+pub use cycle::{
+    CycleAllocationMode, CycleCollectReport, CycleGraph, CycleGraphError, CycleNodeId, CycleScan,
+};
 pub use episodic::EpisodeStore;
 pub use policy::{MemoryKind, MemoryPolicy};
 pub use procedural::WorkflowStore;

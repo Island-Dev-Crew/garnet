@@ -213,19 +213,23 @@ fn deferred_arc_cycle_detection() {
     let reachable = graph.add_node(MemoryKind::Episodic, "reachable");
     let cycle_a = graph.add_node(MemoryKind::Working, "cycle_a");
     let cycle_b = graph.add_node(MemoryKind::Semantic, "cycle_b");
+    let safe_affine = graph.add_safe_node(MemoryKind::Working, "safe_affine");
 
     graph.add_root(rooted).unwrap();
     graph.add_edge(rooted, reachable).unwrap();
     graph.add_edge(cycle_a, cycle_b).unwrap();
     graph.add_edge(cycle_b, cycle_a).unwrap();
+    graph.add_edge(safe_affine, safe_affine).unwrap();
 
     let report = graph.collect_cycles(CycleScan::Kind(MemoryKind::Working));
 
     assert_eq!(report.trial_candidates, vec![cycle_a]);
     assert!(report.trial_retained.is_empty());
+    assert_eq!(report.finalization_order, vec![cycle_b, cycle_a]);
     assert_eq!(report.collected, vec![cycle_a, cycle_b]);
     assert!(graph.contains(rooted));
     assert!(graph.contains(reachable));
+    assert!(graph.contains(safe_affine));
     assert!(!graph.contains(cycle_a));
     assert!(!graph.contains(cycle_b));
 }

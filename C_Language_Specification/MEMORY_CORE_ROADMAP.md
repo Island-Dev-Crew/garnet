@@ -2,7 +2,7 @@
 
 **Subject:** Garnet's Memory Core (the architectural subsystem) and **Mnemos** (its v0.4.x reference implementation crate, `garnet-memory-v0.3/`).
 **Status of this document:** Forward-looking. Work items are not committed to a delivery date here; that belongs in per-version handoffs in `F_Project_Management/`.
-**As of:** 2026-05-08 (v0.5 readiness Phase 6B in progress).
+**As of:** 2026-05-08 (v0.5 readiness Phase 6C in progress).
 
 ---
 
@@ -32,7 +32,7 @@ Implemented, tested, behaviourally correct against the Mini-Spec §4 contract. N
 | Semantic | `RefCell<Vec<(Vec<f32>, T)>>` flat-cosine index | `src/semantic.rs` | ditto + `benches/vector.rs` |
 | Procedural | `RefCell<BTreeMap<Version, T>>` COW store | `src/procedural.rs` | ditto |
 | Policy | `MemoryPolicy { score, should_retain }` | `src/policy.rs` | ditto |
-| Cycle fixtures | deterministic rooted graph + bounded trial-deletion model | `src/cycle.rs` | `tests/cycle.rs`, `deferred_arc_cycle_detection` |
+| Cycle fixtures | deterministic rooted graph + bounded trial-deletion, finalization-order, and safe-mode exclusion model | `src/cycle.rs` | `tests/cycle.rs`, `deferred_arc_cycle_detection` |
 
 These will not be removed or replaced wholesale. Each tier below either upgrades the *backend* of one store or adds a *new* allocator surface that the existing public types can switch to.
 
@@ -109,8 +109,10 @@ acyclic nodes are left for ordinary retention/eviction policy, unrooted cycles
 are collected, and kind-partitioned scans collect a cross-kind component as a
 whole when a matching kind triggers the scan. Phase 6B tightens that model into
 a bounded trial-deletion pass with explicit trial candidates, mark-gray,
-scan/scan-black, and collect-white behavior. This is executable evidence for
-the observable invariants, not the production collector.
+scan/scan-black, and collect-white behavior. Phase 6C adds deterministic
+finalization-order reporting and safe-mode affine node exclusion so §4.5.3 and
+§4.5.4 are executable at the reference-model layer. This is evidence for the
+observable invariants, not the production collector.
 
 The remaining production item is the synchronous Bacon-Rajan trial-deletion
 algorithm integrated with ARC-managed allocator roots. That final path keeps
@@ -123,7 +125,7 @@ hardware-allocator-only languages cannot exploit.
   (cycle detector needs to walk the allocator's roots, not only the fixture
   graph).
 - **Risk:** high — this is research-grade work and the spec acknowledges it as
-  such. Plan: keep the Phase 6A/6B reference fixtures green, build the
+  such. Plan: keep the Phase 6A/6B/6C reference fixtures green, build the
   synchronous ARC-integrated variant, validate against Bacon-Rajan's published
   test cases, then measure kind-aware partitioning as an optimization.
 

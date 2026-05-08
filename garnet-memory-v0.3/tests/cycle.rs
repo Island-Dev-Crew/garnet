@@ -11,6 +11,12 @@ fn labels(graph: &CycleGraph, ids: &[CycleNodeId]) -> Vec<String> {
     labels
 }
 
+fn labels_in_order(graph: &CycleGraph, ids: &[CycleNodeId]) -> Vec<String> {
+    ids.iter()
+        .map(|id| graph.label(*id).expect("node label").to_string())
+        .collect()
+}
+
 #[test]
 fn trial_deletion_collects_unrooted_cycle_and_retains_roots() {
     let mut graph = CycleGraph::new();
@@ -133,6 +139,42 @@ fn releasing_the_last_root_makes_cycle_collectable() {
     let collected = graph.collect_cycles(CycleScan::All);
 
     assert_eq!(labels(&graph, &collected.collected), vec!["child", "root"]);
+    assert_eq!(
+        labels_in_order(&graph, &collected.finalization_order),
+        vec!["child", "root"]
+    );
     assert!(!graph.contains(root));
     assert!(!graph.contains(child));
+}
+
+#[test]
+fn finalization_order_follows_collect_white_postorder() {
+    let mut graph = CycleGraph::new();
+    let parent = graph.add_node(MemoryKind::Working, "parent");
+    let child = graph.add_node(MemoryKind::Working, "child");
+
+    graph.add_edge(parent, child).unwrap();
+    graph.add_edge(child, parent).unwrap();
+
+    let report = graph.collect_cycles(CycleScan::All);
+
+    assert_eq!(
+        labels_in_order(&graph, &report.finalization_order),
+        vec!["child", "parent"]
+    );
+}
+
+#[test]
+fn safe_mode_allocations_are_not_cycle_collection_candidates() {
+    let mut graph = CycleGraph::new();
+    let safe = graph.add_safe_node(MemoryKind::Working, "safe_affine");
+
+    graph.add_edge(safe, safe).unwrap();
+
+    let report = graph.collect_cycles(CycleScan::All);
+
+    assert!(report.trial_candidates.is_empty());
+    assert!(report.collected.is_empty());
+    assert!(report.finalization_order.is_empty());
+    assert!(graph.contains(safe));
 }

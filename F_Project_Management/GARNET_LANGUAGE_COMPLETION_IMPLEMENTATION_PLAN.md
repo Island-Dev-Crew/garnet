@@ -28,7 +28,7 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | Rust-grade NLL and borrow rules | Partial Phase 4F | `garnet-check-v0.3/src/borrow.rs`; `garnet-check-v0.3/src/lib.rs`; `garnet-check-v0.3/tests/borrow.rs`; `garnet-check-v0.3/tests/extended.rs`; `partial_borrow_rule_suite` rejects direct use-after-move, direct mut-aliasing, `own self` method receiver moves, method receiver aliasing, simple typed receiver disambiguation, simple field-place aliasing/field use-after-move, and conservative index-place aliasing/index use-after-move while checking nested index operands; `deferred_nll_lifetime_inference` now covers conservative reference-return lifetime elision | Activate full CFG NLL, dynamic place tracking, generic/trait impl dispatch, and drop discipline |
 | Trait coherence | Partial Phase 5A | `garnet-check-v0.3/src/coherence.rs`; `garnet-check-v0.3/tests/coherence.rs`; `deferred_trait_coherence` rejects exact duplicate trait impls and orphan-rule violations while allowing local-trait or local-type impls | Activate generic overlap solving and package-aware coherence |
 | Generic instantiation / monomorphization | Partial Phase 5B | `generic_instantiation_runs_without_monomorphization_claims` runs generic struct construction, a generic impl method, and a generic function through the managed interpreter | Keep native zero-cost monomorphization deferred until a compiler backend exists |
-| Memory Core ARC/cycles | Partial Phase 6B | `garnet-memory-v0.3/src/cycle.rs`; `garnet-memory-v0.3/tests/cycle.rs`; active `deferred_arc_cycle_detection` | Promote the bounded trial-deletion model into allocator-integrated ARC and finalizer/safe-mode tests |
+| Memory Core ARC/cycles | Partial Phase 6C | `garnet-memory-v0.3/src/cycle.rs`; `garnet-memory-v0.3/tests/cycle.rs`; active `deferred_arc_cycle_detection` | Promote the bounded trial-deletion model into allocator-integrated ARC |
 | Native compiler | Long-horizon scaffold only | no backend crate | Create backend design PR before claiming compiled language status |
 | Formal RustBelt/Iris/Coq proof | Long-horizon scaffold only | Paper V theorem sketches | Open proof repo or `proofs/` workspace with checked theorem stubs |
 | Signed cross-platform installers | Partial | Linux packages and checksums exist; macOS/Windows signing remains separate authority work | Signed/notarized macOS and Authenticode Windows install smokes |
@@ -529,8 +529,7 @@ Observed before implementation: failed because `CycleGraph`, `CycleNodeId`, and
 
 Evidence: Phase 6B exposes trial candidates and scan-black retained candidates,
 then runs a bounded mark-gray / scan / collect-white pass over the deterministic
-cycle graph. This still does not claim the production allocator root buffer,
-finalization ordering, or safe-mode interaction.
+cycle graph. This still does not claim the production allocator root buffer.
 
 Run:
 
@@ -545,7 +544,25 @@ allocator-integrated ARC cycle
 collection has separate positive and negative tests for the Bacon-Rajan
 root-buffer algorithm.
 
-- [ ] **Step 2B: Promote trial deletion to production ARC allocator roots**
+- [x] **Step 3: Add finalization-order and safe-mode interaction reference fixtures**
+
+Evidence: Phase 6C exposes `finalization_order` from the bounded collect-white
+pass and adds `CycleAllocationMode::SafeAffine` nodes that are retained while
+excluded from ARC trial candidates.
+
+Run:
+
+```sh
+cargo test -p garnet-memory --test cycle
+cargo test -p garnet-cli --test conformance_skeleton deferred_arc_cycle_detection
+```
+
+Expected after Phase 6C: cycle fixtures pass for deterministic finalization
+order and safe-mode non-ARC exclusion. Expected after full implementation:
+allocator-integrated finalizer invocation and safe-mode boundary checks prove
+the same invariants inside the runtime allocator path.
+
+- [ ] **Step 4: Promote trial deletion to production ARC allocator roots**
 
 Wire the trial-deletion pass to allocator-owned ARC roots and decrement events
 instead of only the deterministic fixture graph.
