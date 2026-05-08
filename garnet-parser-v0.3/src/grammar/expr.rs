@@ -6,7 +6,7 @@ use crate::error::ParseError;
 use crate::parser::Parser;
 use crate::token::{StrPart, TokenKind};
 
-use super::{control_flow, functions, stmts};
+use super::{control_flow, functions, stmts, types};
 
 /// Parse an expression (entry point).
 ///
@@ -324,6 +324,16 @@ fn parse_postfix(p: &mut Parser) -> Result<Expr, ParseError> {
                 expr = Expr::Unary {
                     op: UnOp::Question,
                     expr: Box::new(expr),
+                    span,
+                };
+            }
+            TokenKind::KwAs => {
+                p.bump();
+                let ty = types::parse_type(p)?;
+                let span = expr.span().join(ty.span());
+                expr = Expr::Cast {
+                    expr: Box::new(expr),
+                    ty,
                     span,
                 };
             }

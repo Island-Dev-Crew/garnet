@@ -618,4 +618,94 @@ def main() {
         stderr.contains("does not satisfy protocol SafeHasher"),
         "expected structural protocol mode diagnostic, got:\n{stderr}"
     );
+
+    let cast_ok_src = r#"
+protocol CastRenderable {
+  def render() -> String
+}
+
+struct CastWidget {
+  name: String
+}
+
+impl CastWidget {
+  def render(receiver) -> String {
+    receiver.name
+  }
+}
+
+@caps()
+def main() {
+  let widget = CastWidget("cast-panel")
+  let renderable = widget as CastRenderable
+  renderable.render()
+}
+"#;
+    let cast_ok_path = temp_source("structural_protocol_cast_ok", cast_ok_src);
+    assert_ok(&["parse"], &cast_ok_path);
+    assert_ok(&["check"], &cast_ok_path);
+    let cast_ok_out = run(&["run"], &cast_ok_path);
+    assert!(
+        cast_ok_out.status.success(),
+        "protocol cast should accept a structurally compatible value\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&cast_ok_out.stdout),
+        String::from_utf8_lossy(&cast_ok_out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&cast_ok_out.stdout);
+    assert!(
+        stdout.contains("=> cast-panel"),
+        "expected successful protocol cast to preserve the receiver, got:\n{stdout}"
+    );
+
+    let cast_missing_src = r#"
+protocol CastRenderable {
+  def render() -> String
+}
+
+struct CastPlain {
+  name: String
+}
+
+@caps()
+def main() {
+  let plain = CastPlain("box")
+  plain as CastRenderable
+}
+"#;
+    let cast_missing_path = temp_source("structural_protocol_cast_missing", cast_missing_src);
+    assert_ok(&["parse"], &cast_missing_path);
+    assert_ok(&["check"], &cast_missing_path);
+    let cast_missing_out = run(&["run"], &cast_missing_path);
+    assert!(
+        !cast_missing_out.status.success(),
+        "protocol cast must reject a structurally incompatible value"
+    );
+    let stderr = String::from_utf8_lossy(&cast_missing_out.stderr);
+    assert!(
+        stderr.contains("does not satisfy protocol CastRenderable"),
+        "expected structural protocol cast diagnostic, got:\n{stderr}"
+    );
+
+    let cast_non_protocol_src = r#"
+@caps()
+def main() {
+  1 as Int
+}
+"#;
+    let cast_non_protocol_path = temp_source(
+        "structural_protocol_cast_non_protocol",
+        cast_non_protocol_src,
+    );
+    assert_ok(&["parse"], &cast_non_protocol_path);
+    assert_ok(&["check"], &cast_non_protocol_path);
+    let cast_non_protocol_out = run(&["run"], &cast_non_protocol_path);
+    assert!(
+        !cast_non_protocol_out.status.success(),
+        "protocol cast must reject a non-protocol target"
+    );
+    let stderr = String::from_utf8_lossy(&cast_non_protocol_out.stderr);
+    assert!(
+        stderr.contains("cast target Int is not a protocol"),
+        "expected non-protocol cast diagnostic, got:\n{stderr}"
+    );
 }

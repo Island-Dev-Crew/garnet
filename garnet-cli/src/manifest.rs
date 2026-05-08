@@ -621,6 +621,11 @@ fn write_expr(out: &mut String, expr: &Expr) {
             write_expr(out, index);
             out.push(')');
         }
+        Expr::Cast { expr, ty, .. } => {
+            out.push_str("Cast(");
+            write_expr(out, expr);
+            let _ = write!(out, ", as={})", type_expr_label(ty));
+        }
         Expr::If { .. } => out.push_str("If(...)"),
         Expr::Match { arms, .. } => {
             let _ = write!(out, "Match(arms={})", arms.len());
@@ -635,6 +640,19 @@ fn write_expr(out: &mut String, expr: &Expr) {
         }
         Expr::Map { entries, .. } => {
             let _ = write!(out, "Map(len={})", entries.len());
+        }
+    }
+}
+
+fn type_expr_label(ty: &TypeExpr) -> String {
+    match ty {
+        TypeExpr::Named { path, .. } => path.join("::"),
+        TypeExpr::Dyn { trait_ty, .. } => format!("dyn {}", type_expr_label(trait_ty)),
+        TypeExpr::Fn { .. } => "fn".to_string(),
+        TypeExpr::Tuple { elements, .. } => format!("tuple{}", elements.len()),
+        TypeExpr::Ref { mutable, inner, .. } => {
+            let prefix = if *mutable { "&mut" } else { "&" };
+            format!("{prefix} {}", type_expr_label(inner))
         }
     }
 }

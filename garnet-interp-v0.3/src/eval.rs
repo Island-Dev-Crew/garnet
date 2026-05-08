@@ -4,8 +4,11 @@ use crate::control::{eval_if, eval_match, eval_try};
 use crate::env::Env;
 use crate::error::RuntimeError;
 use crate::stmt;
-use crate::value::{bind_params, has_dynamic_annotation, FnValue, MemoryBackend, TypeValue, Value};
-use garnet_parser::ast::{BinOp, ClosureBody, Expr, StringLit, UnOp};
+use crate::value::{
+    bind_params, ensure_protocol_satisfied, has_dynamic_annotation, protocol_for_type, FnValue,
+    MemoryBackend, TypeValue, Value,
+};
+use garnet_parser::ast::{BinOp, ClosureBody, Expr, StringLit, TypeExpr, UnOp};
 use garnet_parser::token::StrPart;
 use std::cell::RefCell;
 use std::collections::BTreeMap;
@@ -60,6 +63,14 @@ pub fn eval_expr(expr: &Expr, env: &Rc<Env>) -> Result<Value, RuntimeError> {
             let recv = eval_expr(receiver, env)?;
             let idx = eval_expr(index, env)?;
             access_index(&recv, &idx)
+        }
+        Expr::Cast { expr, ty, .. } => {
+            let value = eval_expr(expr, env)?;
+            let protocol = protocol_for_type(ty, env).ok_or_else(|| {
+                RuntimeError::msg(format!("cast target {} is not a protocol", type_name(ty)))
+            })?;
+            ensure_protocol_satisfied(&value, &protocol, env)?;
+            Ok(value)
         }
 
         // ── Control-flow expressions ──
@@ -139,6 +150,16 @@ pub fn eval_expr(expr: &Expr, env: &Rc<Env>) -> Result<Value, RuntimeError> {
             }
             Ok(Value::Map(Rc::new(RefCell::new(m))))
         }
+    }
+}
+
+fn type_name(ty: &TypeExpr) -> String {
+    match ty {
+        TypeExpr::Named { path, .. } => path.join("::"),
+        TypeExpr::Dyn { trait_ty, .. } => format!("dyn {}", type_name(trait_ty)),
+        TypeExpr::Fn { .. } => "fn type".to_string(),
+        TypeExpr::Tuple { .. } => "tuple type".to_string(),
+        TypeExpr::Ref { inner, .. } => format!("ref {}", type_name(inner)),
     }
 }
 

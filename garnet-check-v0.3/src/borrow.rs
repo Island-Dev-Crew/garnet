@@ -229,6 +229,7 @@ fn check_expr(
             check_expr(receiver, env, sigs, fn_name, diags);
             check_expr(index, env, sigs, fn_name, diags);
         }
+        Expr::Cast { expr, .. } => check_expr(expr, env, sigs, fn_name, diags),
         Expr::Binary { lhs, rhs, .. } => {
             check_expr(lhs, env, sigs, fn_name, diags);
             check_expr(rhs, env, sigs, fn_name, diags);

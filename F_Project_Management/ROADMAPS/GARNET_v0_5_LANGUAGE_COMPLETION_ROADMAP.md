@@ -134,7 +134,18 @@ Acceptance:
 cargo test -p garnet-cli --test conformance_skeleton deferred_structural_protocols
 ```
 
-Expected after implementation: `deferred_structural_protocols` rejects arity and required return-type mismatches in addition to missing methods. Runtime `as Protocol` casts, generic method unification, and built-in typed signatures remain follow-up work.
+Expected after implementation: `deferred_structural_protocols` rejects arity and required return-type mismatches in addition to missing methods.
+
+- [x] **Step 3F: Implement runtime `as Protocol` casts**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-parser --test parse_v1_parser_parity parses_protocol_cast_expression
+cargo test -p garnet-cli --test conformance_skeleton deferred_structural_protocols
+```
+
+Expected after implementation: `value as Protocol` parses as `Expr::Cast`, structurally compatible values pass through unchanged, and incompatible values fail at runtime with the structural protocol diagnostic. Generic method unification and built-in typed signatures remain follow-up work.
 
 ## Phase 3: Actor Runtime Bridge And Sendable
 

@@ -453,28 +453,37 @@ pub fn bind_params(params: &[Param], args: Vec<Value>, env: &Env) -> Result<(), 
         )));
     }
     for (p, a) in params.iter().zip(args) {
-        if let Some(protocol) = protocol_for_param(p, env) {
-            let missing = missing_protocol_methods(&a, &protocol, env);
-            if !missing.is_empty() {
-                return Err(RuntimeError::msg(format!(
-                    "{} does not satisfy protocol {}: missing method `{}`",
-                    a.type_name(),
-                    protocol.name,
-                    missing.join("`, `")
-                )));
-            }
+        if let Some(protocol) = p.ty.as_ref().and_then(|ty| protocol_for_type(ty, env)) {
+            ensure_protocol_satisfied(&a, &protocol, env)?;
         }
         env.define(&p.name, a);
     }
     Ok(())
 }
 
-fn protocol_for_param(param: &Param, env: &Env) -> Option<ProtocolDef> {
-    let Some(TypeExpr::Named { path, .. }) = &param.ty else {
+pub fn protocol_for_type(ty: &TypeExpr, env: &Env) -> Option<ProtocolDef> {
+    let TypeExpr::Named { path, .. } = ty else {
         return None;
     };
     let name = path.last()?;
     env.get_protocol(name)
+}
+
+pub fn ensure_protocol_satisfied(
+    value: &Value,
+    protocol: &ProtocolDef,
+    env: &Env,
+) -> Result<(), RuntimeError> {
+    let missing = missing_protocol_methods(value, protocol, env);
+    if missing.is_empty() {
+        return Ok(());
+    }
+    Err(RuntimeError::msg(format!(
+        "{} does not satisfy protocol {}: missing method `{}`",
+        value.type_name(),
+        protocol.name,
+        missing.join("`, `")
+    )))
 }
 
 fn missing_protocol_methods(value: &Value, protocol: &ProtocolDef, env: &Env) -> Vec<String> {

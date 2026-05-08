@@ -329,6 +329,7 @@ impl CapsGraph {
                 self.walk_expr_for_callees(receiver, out);
                 self.walk_expr_for_callees(index, out);
             }
+            Expr::Cast { expr, .. } => self.walk_expr_for_callees(expr, out),
             Expr::If {
                 condition,
                 then_block,

@@ -45,7 +45,7 @@ itself make deferred language semantics real.
 | 1 | Merge PR #2 after draft exit | establishes current-vs-deferred truth, MVP corpus, and phase gates | CI green plus local format/test/security gates |
 | 2 | Harden and merge PR #1 | turns procedural memory from prose into a semantic CI gate | Python checker regressions, contract check, CI agent-contract job |
 | 3 | Phase 1 finish parser parity | closes `do ... end` syntax gap without overstating runtime semantics | active parser test plus conformance matrix update |
-| 4 | Phase 2 managed runtime | converts `yield`, `next`, dynamic dispatch, and structural protocols from ignored handles into running behavior | Phase 2A block/yield/next active; Phase 2B per-instance `@dynamic` method table active; Phase 2C protocol-typed managed parameter checks active; Phase 2D static inherent impl fallback and method_missing active; Phase 2E protocol method signature checks active |
+| 4 | Phase 2 managed runtime | converts `yield`, `next`, dynamic dispatch, and structural protocols from ignored handles into running behavior | Phase 2A block/yield/next active; Phase 2B per-instance `@dynamic` method table active; Phase 2C protocol-typed managed parameter checks active; Phase 2D static inherent impl fallback and method_missing active; Phase 2E protocol method signature checks active; Phase 2F runtime `as Protocol` casts active |
 | 5 | Phase 3 actors + Sendable | makes agent-native examples executable instead of Rust-runtime-only | actor syntax template smoke plus nonsendable rejection |
 | 6 | Phase 4 safe mode | moves borrow/capability enforcement toward language law | active borrow-rule suite, NLL/lifetime negative probes, CapCaps bypass probes |
 | 7 | Phase 5 traits/generics | prevents dynamic/trait claims from being parser-only | coherence, generic, dyn-trait check/run fixtures |
@@ -57,7 +57,7 @@ itself make deferred language semantics real.
 | Feature | Current dogfood status | 85+ condition |
 |---|---|---|
 | Parser parity | partial positive; current parser tests pass | `do ... end` and parser-vs-spec matrix complete |
-| Managed runtime | Phase 2A active for syntactic block invocation, `yield`, and `next`; Phase 2B active for per-instance `@dynamic` method tables; Phase 2C active for protocol-typed managed parameter checks; Phase 2D active for static inherent impl fallback and `method_missing`; Phase 2E active for protocol method mode, arity, annotated parameter type, and required return type checks; runtime protocol casts, generic method unification, built-in typed signatures, and `@dynamic impl` tables remain deferred | full §11.7/§11.8 tests active and green |
+| Managed runtime | Phase 2A active for syntactic block invocation, `yield`, and `next`; Phase 2B active for per-instance `@dynamic` method tables; Phase 2C active for protocol-typed managed parameter checks; Phase 2D active for static inherent impl fallback and `method_missing`; Phase 2E active for protocol method mode, arity, annotated parameter type, and required return type checks; Phase 2F active for runtime `as Protocol` casts; generic method unification, built-in typed signatures, and `@dynamic impl` tables remain deferred | full §11.7/§11.8 tests active and green |
 | Converter | useful scaffold; sandbox posture exists | unsafe/eval/exec corpus gate across Rust/Ruby/Python/Go and migration TODO quality checks |
 | Memory Core | reference implementation only | ARC/cycle semantics, persistence/privacy, and machine-key isolation gates active |
 | Safe mode | useful skeleton | formal B1-B5/NLL probes plus CapCaps bypass negatives active |
@@ -85,5 +85,6 @@ itself make deferred language semantics real.
 | Done | Convert `deferred_structural_protocols` into active protocol-typed parameter check | `codex/phase2-structural-protocols` |
 | Done | Add static inherent impl fallback and `method_missing` runtime dispatch after per-instance dynamic methods | `codex/phase2-static-impl-dispatch` |
 | Done | Tighten structural protocol compatibility beyond name-only method presence | `codex/phase2-protocol-signatures` |
+| Done | Parse and execute runtime `as Protocol` casts through the structural protocol gate | `codex/phase2-protocol-casts` |
 | P1 | FS/net source-level CapCaps negative tests | follow-up from PR #2 |
 | P2 | Memory Core ARC/cycle fixtures and machine-key stress tests | follow-up milestone branch |

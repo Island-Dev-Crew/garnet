@@ -234,6 +234,10 @@ fn count_expr(e: &Expr, c: &mut std::collections::BTreeMap<&'static str, u64>) {
         }
         Expr::Field { .. } => *c.entry("Expr::Field").or_default() += 1,
         Expr::Index { .. } => *c.entry("Expr::Index").or_default() += 1,
+        Expr::Cast { expr, .. } => {
+            *c.entry("Expr::Cast").or_default() += 1;
+            count_expr(expr, c);
+        }
         Expr::If { .. } => *c.entry("Expr::If").or_default() += 1,
         Expr::Match { arms, .. } => {
             *c.entry("Expr::Match").or_default() += 1;
