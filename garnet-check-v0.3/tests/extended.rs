@@ -36,6 +36,48 @@ fn multiple_functions_each_tagged() {
     assert_eq!(r.mode_map.len(), 3);
 }
 
+// ── Lifetime elision subset ──
+
+#[test]
+fn return_ref_without_borrowed_input_rejected() {
+    let r = check("fn leak() -> &Buffer { 0 }");
+    assert!(
+        r.errors.iter().any(|e| matches!(
+            e,
+            CheckError::SafeModeViolation(m) if m.contains("missing lifetime specifier")
+        )),
+        "reference return without a borrowed input must be rejected, got {:?}",
+        r.errors
+    );
+}
+
+#[test]
+fn return_ref_with_multiple_borrowed_inputs_rejected() {
+    let r = check("fn choose(borrow a: Buffer, borrow b: Buffer) -> &Buffer { a }");
+    assert!(
+        r.errors.iter().any(|e| matches!(
+            e,
+            CheckError::SafeModeViolation(m)
+                if m.contains("missing lifetime specifier") && m.contains("multiple borrowed inputs")
+        )),
+        "ambiguous reference return lifetime must be rejected, got {:?}",
+        r.errors
+    );
+}
+
+#[test]
+fn return_ref_with_single_borrowed_input_uses_elision() {
+    let r = check("fn view(borrow a: Buffer) -> &Buffer { a }");
+    assert!(
+        !r.errors.iter().any(|e| matches!(
+            e,
+            CheckError::SafeModeViolation(m) if m.contains("missing lifetime specifier")
+        )),
+        "single borrowed input should satisfy the conservative elision subset, got {:?}",
+        r.errors
+    );
+}
+
 // ── Annotation bound checks ──
 
 #[test]

@@ -23,7 +23,9 @@
 //! Deferred to a later pass (full Rung 4):
 //! - Ownership inference (single-owner per affine value)
 //! - Borrow checking (aliasing XOR mutation)
-//! - Non-lexical lifetime inference (NLL per Rust RFC 2094)
+//! - Full non-lexical lifetime inference (NLL per Rust RFC 2094). The
+//!   checker currently enforces the conservative reference-return elision
+//!   subset from Mini-Spec §8.5.2.
 //! - Trait coherence verification (Mini-Spec §11.5)
 //! - Automatic error-model bridging code generation (§7.4)
 
@@ -35,7 +37,7 @@ pub use audit::{AuditLog, BoundaryCall, BoundaryDirection};
 pub use caps_graph::{CapsReport, CapsViolation};
 
 use garnet_parser::ast::{
-    ActorDef, ActorItem, Annotation, FnDef, FnMode, Item, Module, Param, Stmt, TypeExpr,
+    ActorDef, ActorItem, Annotation, FnDef, FnMode, Item, Module, Ownership, Param, Stmt, TypeExpr,
 };
 use std::collections::BTreeSet;
 
@@ -163,6 +165,33 @@ fn has_nonsendable_annotation(annotations: &[Annotation]) -> bool {
     annotations
         .iter()
         .any(|ann| matches!(ann, Annotation::NonSendable(_)))
+}
+
+fn contains_ref_type(ty: &TypeExpr) -> bool {
+    match ty {
+        TypeExpr::Ref { .. } => true,
+        TypeExpr::Named { args, .. } => args.iter().any(contains_ref_type),
+        TypeExpr::Fn { params, ret, .. } => {
+            params.iter().any(contains_ref_type) || contains_ref_type(ret)
+        }
+        TypeExpr::Tuple { elements, .. } => elements.iter().any(contains_ref_type),
+        TypeExpr::Dyn { trait_ty, .. } => contains_ref_type(trait_ty),
+    }
+}
+
+fn contributes_input_lifetime(param: &Param) -> bool {
+    matches!(
+        param.ownership,
+        Some(Ownership::Borrow | Ownership::Mut | Ownership::Ref)
+    ) || param.ty.as_ref().is_some_and(contains_ref_type)
+}
+
+fn is_borrowed_self(param: &Param) -> bool {
+    param.name == "self"
+        && matches!(
+            param.ownership,
+            Some(Ownership::Borrow | Ownership::Mut | Ownership::Ref)
+        )
 }
 
 fn collect_nonsendable_types(module: &Module) -> BTreeSet<String> {
@@ -371,6 +400,7 @@ fn check_fn(f: &FnDef, module_safe: bool, report: &mut CheckReport) {
                 f.name
             )));
         }
+        check_lifetime_elision(f, report);
     }
 
     // Always walk the body to count call sites; only emit safe-mode
@@ -380,6 +410,36 @@ fn check_fn(f: &FnDef, module_safe: bool, report: &mut CheckReport) {
     walk_stmts_for_safe_violations(&f.body.stmts, &f.name, report, effective_safe);
     if let Some(tail) = &f.body.tail_expr {
         walk_expr_for_safe_violations(tail, &f.name, report, effective_safe);
+    }
+}
+
+fn check_lifetime_elision(f: &FnDef, report: &mut CheckReport) {
+    let Some(return_ty) = &f.return_ty else {
+        return;
+    };
+    if !contains_ref_type(return_ty) {
+        return;
+    }
+
+    let borrowed_inputs = f
+        .params
+        .iter()
+        .filter(|p| contributes_input_lifetime(p))
+        .count();
+    if borrowed_inputs == 0 {
+        report.errors.push(CheckError::SafeModeViolation(format!(
+            "missing lifetime specifier: safe function '{}' returns a reference but has no borrowed input lifetime to tie it to",
+            f.name
+        )));
+        return;
+    }
+
+    let has_borrowed_self = f.params.iter().any(is_borrowed_self);
+    if borrowed_inputs > 1 && !has_borrowed_self {
+        report.errors.push(CheckError::SafeModeViolation(format!(
+            "missing lifetime specifier: safe function '{}' returns a reference with multiple borrowed inputs; write an explicit lifetime once lifetime syntax is enabled",
+            f.name
+        )));
     }
 }
 

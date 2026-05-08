@@ -108,7 +108,7 @@ highest-leverage next milestones are:
 The v0.5 seven-phase roadmap is now tracked in
 `F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md` and
 `F_Project_Management/ROADMAPS/GARNET_v0_5_LANGUAGE_COMPLETION_ROADMAP.md`.
-Phase 4E is the current readiness slice. Phases 1-3D added parser parity,
+Phase 4F is the current readiness slice. Phases 1-3D added parser parity,
 managed block/dynamic/protocol runtime slices, managed actor addresses, bounded
 source mailboxes, and a generated actor-orchestrator template. Phase 4A
 activates partial safe-mode borrow conformance for direct use-after-move
@@ -121,8 +121,11 @@ aliasing are rejected, moved fields cannot be reused, and distinct sibling
 fields remain usable. Phase 4E adds conservative wildcard index-place tracking
 so indexes of the same receiver conflict, nested index operand expressions stay
 checked, and indexes under distinct sibling fields remain distinct.
-Generic/trait impl dispatch, dynamic places, drop discipline, two-phase
-borrows, and NLL/lifetime inference remain deferred.
+Phase 4F activates a conservative lifetime-elision subset so reference returns
+must tie to exactly one borrowed input lifetime, or to borrowed `self`, while
+ambiguous multi-input and no-input reference returns are rejected. Full NLL
+region solving, generic/trait impl dispatch, dynamic places, drop discipline,
+and two-phase borrows remain deferred.
 
 ## Historical Material
 

@@ -124,8 +124,8 @@ allocator integration is sequenced in
 |---|---|---|---|
 | §8.1 Security Theorem (capability boundary) | 🟡 | `garnet-check-v0.3/src/caps_graph.rs` (783 lines) | CapCaps propagator implemented; *theorem* is paper-only. |
 | §8.2 Mode boundary semantics | ✅ | `garnet-check-v0.3/src/audit.rs` (268 lines) | ModeAuditLog catches every fn↔def crossing. |
-| §8.5 NLL / lifetime inference | 🟠 | spec only | Hand-coded for the simplest cases in `borrow.rs`; full NLL deferred. |
-| §8.6 Borrow-check rules B1–B5 | 🟡 | `garnet-check-v0.3/src/borrow.rs`; `partial_borrow_rule_suite`; `garnet-check-v0.3/tests/borrow.rs` | Phase 4E activates conformance for direct safe-mode B1/B2 mut-alias rejection, method receiver aliasing, simple field-place aliasing and field use-after-move, conservative index-place aliasing and index use-after-move with nested index operand checks, B4 use-after-move through `own` parameters, unambiguous `own self` method receiver moves, and simple typed receiver disambiguation for same-named impl methods. Dynamic places, full B3 lifetime containment, B5 drop discipline, generic/trait impl dispatch, and two-phase borrows remain partial/deferred. |
+| §8.5 NLL / lifetime inference | 🟡 | `check_lifetime_elision`; `deferred_nll_lifetime_inference`; `garnet-check-v0.3/tests/extended.rs` | Phase 4F activates conservative lifetime elision for reference returns: no-input and multiple-borrowed-input reference returns reject, while one borrowed input is accepted. Full CFG region solving, closure capture lifetimes, variance, and HRTB remain deferred. |
+| §8.6 Borrow-check rules B1–B5 | 🟡 | `garnet-check-v0.3/src/borrow.rs`; `partial_borrow_rule_suite`; `garnet-check-v0.3/tests/borrow.rs` | Phase 4E activates conformance for direct safe-mode B1/B2 mut-alias rejection, method receiver aliasing, simple field-place aliasing and field use-after-move, conservative index-place aliasing and index use-after-move with nested index operand checks, B4 use-after-move through `own` parameters, unambiguous `own self` method receiver moves, and simple typed receiver disambiguation for same-named impl methods. Dynamic places, full B3 lifetime containment beyond elision, B5 drop discipline, generic/trait impl dispatch, and two-phase borrows remain partial/deferred. |
 
 ## Section 9 — Sendable + Actors
 
@@ -184,7 +184,7 @@ allocator integration is sequenced in
 | §5 Functions | 3 | — | 2 | 4 | `yield`/`next` and `do...end` now have managed-mode block invocation evidence; richer block edge cases still need later conformance. |
 | §6 Control flow | 3 | — | — | — | Complete. |
 | §7 Errors | 3 | — | — | — | Complete. |
-| §8 Safe-mode | 1 | 1 | 2 | — | Phase 4E activates partial borrow-rule conformance for direct function and method receiver use-after-move, mut-aliasing, simple field-place aliasing/field moves, conservative index-place checks, and simple typed receiver disambiguation; full NLL/lifetime inference and formal theorem stay paper-side. |
+| §8 Safe-mode | 1 | 1 | 2 | — | Phase 4F activates partial borrow-rule conformance plus a conservative lifetime-elision subset for reference returns; full CFG NLL/lifetime inference and formal theorem stay paper-side. |
 | §9 Actors | 3 | — | 1 | — | Phase 3A adds source-level `@nonsendable` actor boundary rejection; Phase 3B adds synchronous managed actor handler dispatch; Phase 3C adds managed actor addresses and bounded mailbox calls; Phase 3D proves generated agent projects use that surface. Full async runtime bridge remains partial. |
 | §10 Boundaries | 1 | — | — | — | Audit log complete. |
 | §11 User types | 2 | 2 | 3 | 1 | Generics and `dyn Trait` parse; `impl`, `@dynamic`, and structural protocol semantics now have managed-mode slices, but ordinary trait coherence and native monomorphization remain incomplete. |

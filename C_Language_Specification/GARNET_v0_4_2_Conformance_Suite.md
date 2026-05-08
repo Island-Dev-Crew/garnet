@@ -41,7 +41,7 @@ when the corresponding Mini-Spec row becomes implemented.
 | Matrix row | Phase | Readiness gate | Test handle |
 |---|---|---|---|
 | §4.5 ARC + Bacon-Rajan cycle detection | v0.5 Phase 6 | Memory Core Gate | `deferred_arc_cycle_detection` |
-| §8.5 NLL/lifetime inference | v0.5 Phase 4 | Safe-Mode Gate | `deferred_nll_lifetime_inference` |
+| §8.5 NLL/lifetime inference | v0.5 Phase 4F | Safe-Mode Gate | `deferred_nll_lifetime_inference` | active pass for conservative lifetime elision on reference returns; full region solving remains deferred |
 | §8.6 full place-granular borrow rules B1-B5 | v0.5 Phase 4 | Safe-Mode Gate | `deferred_full_borrow_rule_suite` |
 | §11.5 trait coherence | v0.5 Phase 5 | Type-System Gate | `deferred_trait_coherence` |
 | §11.6 monomorphization | v0.5 Phase 5 | Type-System Gate | `parsed_only_monomorphization` |

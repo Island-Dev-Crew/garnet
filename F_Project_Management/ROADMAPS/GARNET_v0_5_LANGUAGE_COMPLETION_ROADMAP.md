@@ -303,13 +303,20 @@ Remaining: dynamic places, generic receiver types, trait impl dispatch,
 inferred local types, drop discipline, two-phase borrows, and NLL are still
 pending.
 
-- [ ] **Step 2: Implement a conservative NLL subset**
+- [x] **Step 2: Implement a conservative NLL subset**
 
 Acceptance:
 
 ```sh
-cargo test -p garnet-cli --test conformance_skeleton deferred_nll_lifetime_inference -- --ignored
+cargo test -p garnet-check --test extended return_ref
+cargo test -p garnet-cli --test conformance_skeleton deferred_nll_lifetime_inference
 ```
+
+Evidence: Phase 4F activates a conservative Mini-Spec §8.5.2
+lifetime-elision subset for reference returns. No-input and
+multiple-borrowed-input reference returns reject; one borrowed input is
+accepted. Full CFG NLL, closure capture lifetimes, variance, dynamic places,
+drop discipline, and two-phase borrows remain pending.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 

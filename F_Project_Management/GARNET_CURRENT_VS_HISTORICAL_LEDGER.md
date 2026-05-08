@@ -53,9 +53,11 @@ When documents conflict, use this order:
   same-field/parent-child aliasing plus field use-after-move. It also tracks
   indexed places conservatively as wildcard sub-places, so indexes under the
   same receiver conflict while indexes under distinct sibling fields remain
-  distinct, and nested index operand expressions stay checked. Full Rust-grade
-  NLL, dynamic places, B5 drop discipline, and generic/trait impl dispatch
-  remain roadmap work, not current truth.
+  distinct, and nested index operand expressions stay checked. It now also
+  enforces a conservative lifetime-elision subset for reference returns: no
+  borrowed input and multiple borrowed inputs reject, while one borrowed input
+  is accepted. Full Rust-grade CFG NLL, dynamic places, B5 drop discipline, and
+  generic/trait impl dispatch remain roadmap work, not current truth.
 - CI has an explicit canonical MVP example job in addition to the Rust test
   suite.
 

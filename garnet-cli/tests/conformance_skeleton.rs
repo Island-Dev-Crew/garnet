@@ -279,9 +279,51 @@ def main() {
 }
 
 #[test]
-#[ignore = "Mini-Spec §8.5 full NLL/lifetime inference is deferred in v0.4.2"]
 fn deferred_nll_lifetime_inference() {
-    pending("full non-lexical lifetime inference");
+    let missing_input_src = r#"
+fn leak() -> &Buffer {
+  0
+}
+"#;
+    let missing_input_path = temp_source("lifetime_missing_input", missing_input_src);
+    assert_ok(&["parse"], &missing_input_path);
+    let out = run(&["check"], &missing_input_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode lifetime elision must reject reference returns without borrowed inputs"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("missing lifetime specifier"),
+        "expected missing lifetime diagnostic, got:\n{stdout}"
+    );
+
+    let ambiguous_src = r#"
+fn choose(borrow a: Buffer, borrow b: Buffer) -> &Buffer {
+  a
+}
+"#;
+    let ambiguous_path = temp_source("lifetime_ambiguous_inputs", ambiguous_src);
+    assert_ok(&["parse"], &ambiguous_path);
+    let out = run(&["check"], &ambiguous_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode lifetime elision must reject ambiguous reference returns with multiple borrowed inputs"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("multiple borrowed inputs"),
+        "expected ambiguous lifetime diagnostic, got:\n{stdout}"
+    );
+
+    let single_input_src = r#"
+fn view(borrow item: Buffer) -> &Buffer {
+  item
+}
+"#;
+    let single_input_path = temp_source("lifetime_single_input", single_input_src);
+    assert_ok(&["parse"], &single_input_path);
+    assert_ok(&["check"], &single_input_path);
 }
 
 #[test]
