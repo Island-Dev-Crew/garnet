@@ -13,6 +13,7 @@ use std::rc::Rc;
 pub struct Env {
     vars: RefCell<HashMap<String, Value>>,
     protocols: RefCell<HashMap<String, ProtocolDef>>,
+    impl_methods: RefCell<HashMap<String, HashMap<String, Value>>>,
     active_block: RefCell<Option<Value>>,
     parent: Option<Rc<Env>>,
 }
@@ -22,6 +23,7 @@ impl Env {
         Self {
             vars: RefCell::new(HashMap::new()),
             protocols: RefCell::new(HashMap::new()),
+            impl_methods: RefCell::new(HashMap::new()),
             active_block: RefCell::new(None),
             parent: None,
         }
@@ -32,6 +34,7 @@ impl Env {
         Rc::new(Self {
             vars: RefCell::new(HashMap::new()),
             protocols: RefCell::new(HashMap::new()),
+            impl_methods: RefCell::new(HashMap::new()),
             active_block: RefCell::new(None),
             parent: Some(Rc::clone(parent)),
         })
@@ -75,6 +78,45 @@ impl Env {
             return Some(protocol.clone());
         }
         self.parent.as_ref().and_then(|p| p.get_protocol(name))
+    }
+
+    pub fn define_impl_method(&self, type_name: &str, method_name: &str, method: Value) {
+        self.impl_methods
+            .borrow_mut()
+            .entry(type_name.to_string())
+            .or_default()
+            .insert(method_name.to_string(), method);
+    }
+
+    pub fn get_impl_method(&self, type_name: &str, method_name: &str) -> Option<Value> {
+        if let Some(method) = self
+            .impl_methods
+            .borrow()
+            .get(type_name)
+            .and_then(|methods| methods.get(method_name))
+        {
+            return Some(method.clone());
+        }
+        self.parent
+            .as_ref()
+            .and_then(|p| p.get_impl_method(type_name, method_name))
+    }
+
+    pub fn has_impl_method(&self, type_name: &str, method_name: &str) -> bool {
+        self.get_impl_method(type_name, method_name).is_some()
+    }
+
+    pub fn impl_method_names(&self, type_name: &str) -> Vec<String> {
+        let mut names = self
+            .impl_methods
+            .borrow()
+            .get(type_name)
+            .map(|methods| methods.keys().cloned().collect::<Vec<_>>())
+            .unwrap_or_default();
+        if let Some(parent) = self.parent.as_ref() {
+            names.extend(parent.impl_method_names(type_name));
+        }
+        names
     }
 
     /// Update an existing binding. Returns `false` if the name is unbound.

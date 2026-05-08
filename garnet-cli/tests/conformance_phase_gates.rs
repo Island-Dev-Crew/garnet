@@ -23,6 +23,7 @@ fn implemented_conformance_tests_are_active() {
         "parser_parity_yield_next_dynamic_and_nonsendable_parse",
         "deferred_blocks_and_yield",
         "deferred_dynamic_dispatch",
+        "static_impl_dispatch_and_method_missing",
         "deferred_structural_protocols",
     ] {
         let idx = source.find(name).expect("active conformance test exists");

@@ -30,7 +30,7 @@ pub use error::RuntimeError;
 pub use prelude::{PRELUDE_SOURCE, PRELUDE_VERSION};
 pub use value::Value;
 
-use garnet_parser::ast::{FnDef, Item, Module};
+use garnet_parser::ast::{FnDef, Item, Module, TypeExpr};
 use std::rc::Rc;
 
 /// The top-level interpreter. Owns the global environment and the set of
@@ -108,9 +108,26 @@ impl Interpreter {
             Item::Protocol(protocol) => {
                 self.global.define_protocol(protocol);
             }
-            Item::Trait(_) | Item::Impl(_) | Item::Module(_) | Item::Use(_) | Item::Actor(_) => {
+            Item::Impl(impl_block) => {
+                if impl_block.trait_ty.is_some() {
+                    return Ok(());
+                }
+                if let Some(type_name) = named_type_name(&impl_block.target).map(str::to_string) {
+                    for method in impl_block.methods {
+                        let method_name = method.name.clone();
+                        let closure = Value::Fn(Rc::new(value::FnValue {
+                            def: method,
+                            captured: Rc::clone(&self.global),
+                            is_block: false,
+                        }));
+                        self.global
+                            .define_impl_method(&type_name, &method_name, closure);
+                    }
+                }
+            }
+            Item::Trait(_) | Item::Module(_) | Item::Use(_) | Item::Actor(_) => {
                 // Parsed and accepted, but deferred to later rungs for full
-                // evaluation. Traits/Protocols/Impls wait on type-check;
+                // evaluation. Traits wait on type-check;
                 // Modules/Use need module-system plumbing; Actors need the
                 // interpreter bridge to the runtime crate.
             }
@@ -147,6 +164,13 @@ impl Interpreter {
             .get(name)
             .ok_or_else(|| RuntimeError::Message(format!("unknown function '{name}'")))?;
         eval::call_value(&callee, args)
+    }
+}
+
+fn named_type_name(ty: &TypeExpr) -> Option<&str> {
+    match ty {
+        TypeExpr::Named { path, .. } => path.last().map(String::as_str),
+        _ => None,
     }
 }
 

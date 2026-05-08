@@ -453,7 +453,7 @@ pub fn bind_params(params: &[Param], args: Vec<Value>, env: &Env) -> Result<(), 
     }
     for (p, a) in params.iter().zip(args) {
         if let Some(protocol) = protocol_for_param(p, env) {
-            let missing = missing_protocol_methods(&a, &protocol);
+            let missing = missing_protocol_methods(&a, &protocol, env);
             if !missing.is_empty() {
                 return Err(RuntimeError::msg(format!(
                     "{} does not satisfy protocol {}: missing method `{}`",
@@ -476,30 +476,37 @@ fn protocol_for_param(param: &Param, env: &Env) -> Option<ProtocolDef> {
     env.get_protocol(name)
 }
 
-fn missing_protocol_methods(value: &Value, protocol: &ProtocolDef) -> Vec<String> {
+fn missing_protocol_methods(value: &Value, protocol: &ProtocolDef, env: &Env) -> Vec<String> {
     protocol
         .items
         .iter()
         .filter_map(|item| match item {
-            TraitItem::FnSig(sig) if !value_has_method(value, &sig.name) => Some(sig.name.clone()),
+            TraitItem::FnSig(sig) if !value_has_method(value, &sig.name, env) => {
+                Some(sig.name.clone())
+            }
             _ => None,
         })
         .collect()
 }
 
-fn value_has_method(value: &Value, name: &str) -> bool {
+fn value_has_method(value: &Value, method: &str, env: &Env) -> bool {
     match value {
         Value::Struct {
-            dynamic_methods, ..
-        } => dynamic_methods
-            .as_ref()
-            .is_some_and(|methods| methods.borrow().contains_key(name)),
-        Value::Str(_) => matches!(
             name,
+            dynamic_methods,
+            ..
+        } => {
+            dynamic_methods
+                .as_ref()
+                .is_some_and(|methods| methods.borrow().contains_key(method))
+                || env.has_impl_method(name.as_ref(), method)
+        }
+        Value::Str(_) => matches!(
+            method,
             "len" | "length" | "size" | "upcase" | "to_upper" | "downcase" | "to_lower" | "to_s"
         ),
         Value::Array(_) => matches!(
-            name,
+            method,
             "len"
                 | "length"
                 | "size"
@@ -516,10 +523,10 @@ fn value_has_method(value: &Value, name: &str) -> bool {
                 | "to_s"
         ),
         Value::Map(_) => matches!(
-            name,
+            method,
             "len" | "size" | "get" | "put" | "insert" | "keys" | "values"
         ),
-        Value::Int(_) | Value::Float(_) => matches!(name, "to_s" | "to_i" | "to_f" | "abs"),
+        Value::Int(_) | Value::Float(_) => matches!(method, "to_s" | "to_i" | "to_f" | "abs"),
         _ => false,
     }
 }

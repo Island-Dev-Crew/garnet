@@ -106,6 +106,16 @@ cargo test -p garnet-cli --test conformance_skeleton deferred_dynamic_dispatch
 
 Expected after implementation: pass without `#[ignore]` for per-instance `@dynamic` method tables. Static `impl` fallback and `method_missing` remain follow-up work.
 
+- [x] **Step 2D: Implement static impl fallback and method_missing**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-cli --test conformance_skeleton static_impl_dispatch_and_method_missing
+```
+
+Expected after implementation: pass with static inherent impl methods resolving after per-instance dynamic methods and `method_missing` resolving unresolved calls.
+
 - [x] **Step 3: Implement structural protocol compatibility checks**
 
 Acceptance:
@@ -114,7 +124,7 @@ Acceptance:
 cargo test -p garnet-cli --test conformance_skeleton deferred_structural_protocols
 ```
 
-Expected after implementation: pass without `#[ignore]` for protocol-typed managed parameter checks. Runtime `as Protocol` casts and full method-signature compatibility remain follow-up work.
+Expected after implementation: pass without `#[ignore]` for protocol-typed managed parameter checks, including static inherent impl-backed method presence. Runtime `as Protocol` casts and full method-signature compatibility remain follow-up work.
 
 ## Phase 3: Actor Runtime Bridge And Sendable
 

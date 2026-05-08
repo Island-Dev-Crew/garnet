@@ -172,6 +172,20 @@ Observed before implementation: failed at runtime with `struct method dispatch f
 
 Expected after implementation: pass without `#[ignore]` for the per-instance dynamic method-table slice. Static `impl` fallback and `method_missing` remain deferred.
 
+- [x] **Step 3D: Add static impl fallback and method_missing**
+
+Add an active dispatch-order test proving static inherent impl methods resolve after per-instance dynamic methods and `method_missing` handles unresolved calls.
+
+Run:
+
+```sh
+cargo test -p garnet-cli --test conformance_skeleton static_impl_dispatch_and_method_missing
+```
+
+Observed before implementation: failed at runtime with `struct method dispatch for 'label' requires Rung 4 impl resolution`.
+
+Expected after implementation: pass with static inherent impl method registration and `method_missing` fallback in managed mode. `@dynamic impl` tables remain follow-up work.
+
 - [x] **Step 4: Add structural protocol satisfaction and casts**
 
 Change `deferred_structural_protocols` into a test that proves a struct satisfies a protocol by method shape and rejects a missing method.
@@ -184,7 +198,7 @@ cargo test -p garnet-cli --test conformance_skeleton deferred_structural_protoco
 
 Observed before implementation: failed because protocol-typed parameters were accepted without checking required methods.
 
-Expected after implementation: pass without `#[ignore]` for protocol-typed managed parameter checks. Runtime `as Protocol` casts, full signature compatibility, and static impl-backed satisfaction remain follow-up work.
+Expected after implementation: pass without `#[ignore]` for protocol-typed managed parameter checks, including static inherent impl-backed satisfaction. Runtime `as Protocol` casts and full signature compatibility remain follow-up work.
 
 ## Milestone 3: Actor Runtime Bridge And Sendable
 

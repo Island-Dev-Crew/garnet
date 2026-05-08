@@ -487,7 +487,7 @@ fn call_method(
     recv: &Value,
     method: &str,
     args: Vec<Value>,
-    _env: &Rc<Env>,
+    env: &Rc<Env>,
 ) -> Result<Value, RuntimeError> {
     // Intrinsic methods on built-in values. Extending this to user-defined
     // struct methods requires linking impl blocks to structs, which is a
@@ -641,9 +641,9 @@ fn call_method(
             ))),
         },
         Value::Struct {
+            name,
             fields,
             dynamic_methods,
-            ..
         } => {
             if let Some(methods) = dynamic_methods {
                 match method {
@@ -665,18 +665,22 @@ fn call_method(
                         return Ok(recv.clone());
                     }
                     "responds_to" | "respond_to" => {
-                        let name = method_name_arg(method, args.first())?;
-                        let has_dynamic = methods.borrow().contains_key(&name);
-                        let has_field = fields.borrow().contains_key(&name);
-                        return Ok(Value::Bool(has_dynamic || has_field));
+                        let queried = method_name_arg(method, args.first())?;
+                        let has_dynamic = methods.borrow().contains_key(&queried);
+                        let has_static = env.has_impl_method(name.as_ref(), &queried);
+                        let has_field = fields.borrow().contains_key(&queried);
+                        return Ok(Value::Bool(has_dynamic || has_static || has_field));
                     }
                     "method_names" => {
-                        let names = methods
+                        let mut names = methods
                             .borrow()
                             .keys()
                             .cloned()
-                            .map(Value::sym)
+                            .chain(env.impl_method_names(name.as_ref()))
                             .collect::<Vec<_>>();
+                        names.sort();
+                        names.dedup();
+                        let names = names.into_iter().map(Value::sym).collect::<Vec<_>>();
                         return Ok(Value::array(names));
                     }
                     _ => {
@@ -690,15 +694,32 @@ fn call_method(
                 }
             }
 
-            // Static impl methods are still deferred; fall back to field
-            // access by name if possible.
+            if let Some(static_method) = env.get_impl_method(name.as_ref(), method) {
+                let mut static_args = Vec::with_capacity(args.len() + 1);
+                static_args.push(recv.clone());
+                static_args.extend(args);
+                return call_value(&static_method, static_args);
+            }
+
+            // Field access by method name remains a cheap managed-mode
+            // convenience and preserves the previous struct dispatch behavior.
             if args.is_empty() {
                 if let Some(v) = fields.borrow().get(method) {
                     return Ok(v.clone());
                 }
             }
+
+            if method != "method_missing" {
+                if let Some(method_missing) = env.get_impl_method(name.as_ref(), "method_missing") {
+                    return call_value(
+                        &method_missing,
+                        vec![recv.clone(), Value::sym(method), Value::array(args)],
+                    );
+                }
+            }
+
             Err(RuntimeError::msg(format!(
-                "struct method dispatch for '{method}' requires Rung 4 impl resolution"
+                "Struct has no method '{method}'"
             )))
         }
         Value::MemoryStore { kind, backend, .. } => {

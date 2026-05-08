@@ -303,6 +303,46 @@ def main() {
 }
 
 #[test]
+fn static_impl_dispatch_and_method_missing() {
+    let src = r#"
+struct Service {
+  name: String
+}
+
+impl Service {
+  def label(receiver) {
+    receiver.name
+  }
+
+  def method_missing(receiver, name, args) {
+    "fallback"
+  }
+}
+
+@caps()
+def main() {
+  let svc = Service("auth")
+  svc.label() + "|" + svc.status()
+}
+"#;
+    let path = temp_source("static_impl_dispatch_and_method_missing", src);
+    assert_ok(&["parse"], &path);
+    assert_ok(&["check"], &path);
+    let out = run(&["run"], &path);
+    assert!(
+        out.status.success(),
+        "static impl dispatch and method_missing should run\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("=> auth|fallback"),
+        "expected static impl dispatch before method_missing fallback, got:\n{stdout}"
+    );
+}
+
+#[test]
 fn deferred_structural_protocols() {
     let ok_src = r#"
 protocol Renderable {
@@ -342,6 +382,48 @@ def main() {
     assert!(
         stdout.contains("=> card"),
         "expected protocol-accepted dynamic method to return field value, got:\n{stdout}"
+    );
+
+    let static_src = r#"
+protocol Renderable {
+  def render()
+}
+
+struct StaticWidget {
+  name: String
+}
+
+impl StaticWidget {
+  def render(receiver) {
+    receiver.name
+  }
+}
+
+@caps()
+def accept_renderable(item: Renderable) {
+  item.render()
+}
+
+@caps()
+def main() {
+  let widget = StaticWidget("panel")
+  accept_renderable(widget)
+}
+"#;
+    let static_path = temp_source("structural_protocol_static_impl_ok", static_src);
+    assert_ok(&["parse"], &static_path);
+    assert_ok(&["check"], &static_path);
+    let static_out = run(&["run"], &static_path);
+    assert!(
+        static_out.status.success(),
+        "static impl method satisfying protocol should run\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&static_out.stdout),
+        String::from_utf8_lossy(&static_out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&static_out.stdout);
+    assert!(
+        stdout.contains("=> panel"),
+        "expected protocol-accepted static impl method to return field value, got:\n{stdout}"
     );
 
     let src = r#"
