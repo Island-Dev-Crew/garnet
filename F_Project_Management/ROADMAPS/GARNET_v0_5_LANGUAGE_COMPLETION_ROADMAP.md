@@ -234,6 +234,23 @@ remains ARC-governed rather than affine.
 Remaining: full place-granular B1-B5, method-call ownership, B3 lifetime
 containment, B5 drop discipline, two-phase borrows, and NLL are still pending.
 
+- [x] **Step 1B: Track unambiguous method receiver ownership**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test borrow
+cargo test -p garnet-cli --test conformance_skeleton partial_borrow_rule_suite
+```
+
+Evidence: unambiguous same-module `own self` method receivers now move the
+receiver binding, receiver `mut` plus borrowed arguments trigger aliasing, and
+conflicting same-named method signatures are skipped until type resolution can
+disambiguate them.
+
+Remaining: type-resolved impl dispatch and full receiver/field/place-granular
+borrows are still pending.
+
 - [ ] **Step 2: Implement a conservative NLL subset**
 
 Acceptance:

@@ -108,13 +108,15 @@ highest-leverage next milestones are:
 The v0.5 seven-phase roadmap is now tracked in
 `F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md` and
 `F_Project_Management/ROADMAPS/GARNET_v0_5_LANGUAGE_COMPLETION_ROADMAP.md`.
-Phase 4A is the current readiness slice. Phases 1-3D added parser parity,
+Phase 4B is the current readiness slice. Phases 1-3D added parser parity,
 managed block/dynamic/protocol runtime slices, managed actor addresses, bounded
 source mailboxes, and a generated actor-orchestrator template. Phase 4A
 activates partial safe-mode borrow conformance for direct use-after-move
 through `own` parameters and direct `mut`+`borrow` aliasing while preserving
-managed ARC behavior. Full place-granular B1-B5, method-call ownership, drop
-discipline, two-phase borrows, and NLL/lifetime inference remain deferred.
+managed ARC behavior. Phase 4B adds unambiguous same-module `own self` method
+receiver move tracking and method receiver aliasing. Full place-granular
+B1-B5, type-resolved method dispatch, drop discipline, two-phase borrows, and
+NLL/lifetime inference remain deferred.
 
 ## Historical Material
 

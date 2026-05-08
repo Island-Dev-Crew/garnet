@@ -3,26 +3,28 @@
 //! Tracks linear-resource discipline for safe-mode functions:
 //!
 //! 1. **Move tracking.** When a binding is passed to a callee parameter
-//!    annotated `own`, the binding is recorded as moved. Any subsequent use
-//!    of that binding within the same scope produces a `use-after-move`
-//!    diagnostic.
+//!    annotated `own`, or a receiver is passed to an unambiguous method whose
+//!    `self` parameter is `own`, the binding is recorded as moved. Any
+//!    subsequent use of that binding within the same scope produces a
+//!    `use-after-move` diagnostic.
 //! 2. **Aliasing-XOR-mutation.** Within a single expression, the same
 //!    binding cannot appear as both a `mut` (exclusive) argument and any
 //!    other argument.
 //! 3. **Re-assign rebinds.** A `let mut name = expr` re-introduces `name`
 //!    as a fresh, owned binding (overwriting any prior moved state).
 //!
-//! Limitations of this first cut (the v0.4 production checker will lift
+//! Limitations of this first cut (a later production checker will lift
 //! them):
-//! - Only direct calls to top-level `fn` items in the same module are
-//!   tracked. Closures, method calls, and impl-block dispatch are skipped.
+//! - Direct calls to top-level `fn` items and unambiguous same-module method
+//!   names are tracked. Closures and type-resolved impl-block dispatch remain
+//!   deferred.
 //! - Only simple identifier arguments are tracked. Field projections and
 //!   index expressions are conservatively treated as non-moves.
-//! - No flow analysis across `if`/`match` branches; each branch is checked
-//!   independently against the entry environment.
+//! - Branch joins are conservative and coarse-grained. Full NLL, precise
+//!   place-granular borrows, and lifetime containment remain deferred.
 
 use garnet_parser::ast::{Expr, FnDef, FnMode, Item, Module, Ownership, Pattern, Stmt};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::CheckError;
 
@@ -33,8 +35,22 @@ pub struct MoveRecord {
     pub callee: String,
 }
 
-/// Map from function name → ordered ownership kinds for its parameters.
-type SignatureTable = HashMap<String, Vec<Option<Ownership>>>;
+/// Map from function name -> ordered ownership kinds for its parameters.
+type FunctionSignatureTable = HashMap<String, Vec<Option<Ownership>>>;
+
+/// Receiver + argument ownership contract for a method call.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct MethodSignature {
+    receiver: Option<Ownership>,
+    args: Vec<Option<Ownership>>,
+}
+
+#[derive(Default)]
+struct SignatureTables {
+    functions: FunctionSignatureTable,
+    methods: HashMap<String, MethodSignature>,
+    ambiguous_methods: HashSet<String>,
+}
 
 /// Run the borrow checker on a parsed module. Returns any move/aliasing
 /// diagnostics found in safe-mode (`fn`) bodies.
@@ -55,15 +71,54 @@ fn effective_safe(module_safe: bool, f: &FnDef) -> bool {
     module_safe || f.mode == FnMode::Safe
 }
 
-fn collect_signatures(module: &Module) -> SignatureTable {
-    let mut table = SignatureTable::new();
+fn collect_signatures(module: &Module) -> SignatureTables {
+    let mut tables = SignatureTables::default();
     for item in &module.items {
-        if let Item::Fn(f) = item {
-            let kinds: Vec<Option<Ownership>> = f.params.iter().map(|p| p.ownership).collect();
-            table.insert(f.name.clone(), kinds);
+        match item {
+            Item::Fn(f) => {
+                let kinds: Vec<Option<Ownership>> = f.params.iter().map(|p| p.ownership).collect();
+                tables.functions.insert(f.name.clone(), kinds);
+            }
+            Item::Impl(impl_block) => {
+                for method in &impl_block.methods {
+                    register_method_signature(&mut tables, method);
+                }
+            }
+            _ => {}
         }
     }
-    table
+    tables
+}
+
+fn register_method_signature(tables: &mut SignatureTables, method: &FnDef) {
+    if tables.ambiguous_methods.contains(&method.name) {
+        return;
+    }
+
+    let signature = method_signature(method);
+    match tables.methods.get(&method.name) {
+        Some(existing) if existing == &signature => {}
+        Some(_) => {
+            tables.methods.remove(&method.name);
+            tables.ambiguous_methods.insert(method.name.clone());
+        }
+        None => {
+            tables.methods.insert(method.name.clone(), signature);
+        }
+    }
+}
+
+fn method_signature(method: &FnDef) -> MethodSignature {
+    match method.params.first() {
+        Some(first) if first.name == "self" => MethodSignature {
+            receiver: first.ownership,
+            args: method.params.iter().skip(1).map(|p| p.ownership).collect(),
+        },
+        _ => MethodSignature {
+            receiver: None,
+            args: method.params.iter().map(|p| p.ownership).collect(),
+        },
+    }
 }
 
 #[derive(Default)]
@@ -92,7 +147,7 @@ impl Env {
     }
 }
 
-fn check_fn_body(f: &FnDef, sigs: &SignatureTable, diags: &mut Vec<CheckError>) {
+fn check_fn_body(f: &FnDef, sigs: &SignatureTables, diags: &mut Vec<CheckError>) {
     let mut env = Env::default();
     // Pre-bind the function's parameters as live (not moved).
     for p in &f.params {
@@ -109,7 +164,7 @@ fn check_fn_body(f: &FnDef, sigs: &SignatureTable, diags: &mut Vec<CheckError>) 
 fn check_stmt(
     stmt: &Stmt,
     env: &mut Env,
-    sigs: &SignatureTable,
+    sigs: &SignatureTables,
     fn_name: &str,
     diags: &mut Vec<CheckError>,
 ) {
@@ -180,7 +235,7 @@ fn check_stmt(
 fn check_expr(
     expr: &Expr,
     env: &mut Env,
-    sigs: &SignatureTable,
+    sigs: &SignatureTables,
     fn_name: &str,
     diags: &mut Vec<CheckError>,
 ) {
@@ -200,24 +255,29 @@ fn check_expr(
             }
             // Then resolve the callee and apply ownership to identifier args.
             if let Expr::Ident(callee_name, _) = callee.as_ref() {
-                if let Some(kinds) = sigs.get(callee_name) {
-                    detect_aliasing_violations(callee_name, args, kinds, fn_name, diags);
-                    for (arg, kind) in args.iter().zip(kinds.iter()) {
-                        if matches!(kind, Some(Ownership::Own)) {
-                            if let Expr::Ident(name, _) = arg {
-                                env.record_move(name, callee_name);
-                            }
-                        }
-                    }
+                if let Some(kinds) = sigs.functions.get(callee_name) {
+                    let pairs: Vec<_> = args.iter().zip(kinds.iter().copied()).collect();
+                    apply_ownership(callee_name, &pairs, env, fn_name, diags);
                 }
             } else {
                 check_expr(callee, env, sigs, fn_name, diags);
             }
         }
-        Expr::Method { receiver, args, .. } => {
+        Expr::Method {
+            receiver,
+            method,
+            args,
+            ..
+        } => {
             check_expr(receiver, env, sigs, fn_name, diags);
             for a in args {
                 check_expr(a, env, sigs, fn_name, diags);
+            }
+            if let Some(signature) = sigs.methods.get(method) {
+                let mut pairs = Vec::with_capacity(args.len() + 1);
+                pairs.push((receiver.as_ref(), signature.receiver));
+                pairs.extend(args.iter().zip(signature.args.iter().copied()));
+                apply_ownership(method, &pairs, env, fn_name, diags);
             }
         }
         Expr::Field { receiver, .. } => {
@@ -366,10 +426,26 @@ fn bind_pattern(pattern: &Pattern, env: &mut Env) {
     }
 }
 
+fn apply_ownership(
+    callee: &str,
+    pairs: &[(&Expr, Option<Ownership>)],
+    env: &mut Env,
+    fn_name: &str,
+    diags: &mut Vec<CheckError>,
+) {
+    detect_aliasing_violations(callee, pairs, fn_name, diags);
+    for (arg, kind) in pairs {
+        if matches!(kind, Some(Ownership::Own)) {
+            if let Expr::Ident(name, _) = arg {
+                env.record_move(name, callee);
+            }
+        }
+    }
+}
+
 fn detect_aliasing_violations(
     callee: &str,
-    args: &[Expr],
-    kinds: &[Option<Ownership>],
+    pairs: &[(&Expr, Option<Ownership>)],
     fn_name: &str,
     diags: &mut Vec<CheckError>,
 ) {
@@ -379,7 +455,7 @@ fn detect_aliasing_violations(
     // any other reference to the same binding.
     let mut mut_names: Vec<&str> = Vec::new();
     let mut other_names: Vec<&str> = Vec::new();
-    for (arg, kind) in args.iter().zip(kinds.iter()) {
+    for (arg, kind) in pairs {
         if let Expr::Ident(name, _) = arg {
             if matches!(kind, Some(Ownership::Mut)) {
                 mut_names.push(name.as_str());

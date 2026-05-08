@@ -47,8 +47,9 @@ When documents conflict, use this order:
   mailbox calls, and actor-local memory while still succeeding on the current
   interpreter.
 - Safe-mode borrow checking now has an active CLI conformance slice for direct
-  `own` use-after-move and direct `mut`+`borrow` aliasing; full Rust-grade
-  NLL/place-granular B1-B5 remains roadmap work, not current truth.
+  `own` use-after-move, direct `mut`+`borrow` aliasing, and unambiguous
+  `own self` method receiver moves; full Rust-grade NLL/place-granular B1-B5
+  and type-resolved impl dispatch remain roadmap work, not current truth.
 - CI has an explicit canonical MVP example job in addition to the Rust test
   suite.
 

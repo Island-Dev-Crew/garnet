@@ -1,9 +1,10 @@
 //! Tests for the simple borrow-checker pass added in v3.1.
 //!
 //! The pass intentionally has limited scope: it tracks moves through `own`
-//! parameters of top-level safe `fn` calls and flags use-after-move +
-//! basic aliasing-XOR-mutation. The more powerful flow-sensitive checker
-//! is v0.4 work; these tests pin the v3.1 contract.
+//! parameters of top-level safe `fn` calls, plus unambiguous same-module
+//! `self` method receivers, and flags use-after-move + basic
+//! aliasing-XOR-mutation. The more powerful type-resolved checker is later
+//! work; these tests pin the current contract.
 
 use garnet_check::{borrow::check_borrows, CheckError};
 use garnet_parser::parse_source;
@@ -155,11 +156,15 @@ fn move_in_one_branch_propagates_after_if() {
     );
 }
 
-// ── Closures and methods are deferred ──
+// ── Method receivers ──
 
 #[test]
-fn method_call_does_not_yet_track_moves() {
+fn method_call_own_self_tracks_moves() {
     let src = r#"
+        impl Buffer {
+            fn consume(own self) -> Int { 0 }
+        }
+
         fn caller(own b: Buffer) -> Int {
             b.consume()
             b.consume()
@@ -168,8 +173,55 @@ fn method_call_does_not_yet_track_moves() {
     "#;
     let d = diagnose(src);
     assert!(
+        d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "expected method receiver use-after-move, got {d:?}"
+    );
+}
+
+#[test]
+fn method_call_mut_self_alias_flagged() {
+    let src = r#"
+        impl Buffer {
+            fn splice(mut self, borrow other: Buffer) -> Int { 0 }
+        }
+
+        fn caller(mut b: Buffer) -> Int {
+            b.splice(b)
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("aliasing"))),
+        "expected method receiver aliasing violation, got {d:?}"
+    );
+}
+
+#[test]
+fn ambiguous_method_receiver_signatures_are_skipped() {
+    let src = r#"
+        struct Buffer {}
+        struct Socket {}
+
+        impl Buffer {
+            fn close(own self) -> Int { 0 }
+        }
+
+        impl Socket {
+            fn close(borrow self) -> Int { 0 }
+        }
+
+        fn caller(own b: Buffer) -> Int {
+            b.close()
+            b.close()
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
         !d.iter()
             .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
-        "method calls deferred to v0.4: {d:?}"
+        "without type resolution, ambiguous method names should not over-reject: {d:?}"
     );
 }

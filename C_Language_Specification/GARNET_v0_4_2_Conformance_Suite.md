@@ -31,7 +31,7 @@ language-completeness work can move from prose to executable evidence.
 | §11.7 static impl fallback + method_missing | v0.5 Phase 2D | Runtime Gate | `static_impl_dispatch_and_method_missing` | active pass |
 | §11.7 `@dynamic impl` dispatch tables | v0.5 Phase 2H | Runtime Gate | `dynamic_impl_dispatch_tables` | active pass |
 | §11.8 structural protocol semantics | v0.5 Phase 2C/2E/2F/2G/2H | Runtime/Checker Gate | `deferred_structural_protocols`; `parses_protocol_cast_expression`; `dynamic_impl_dispatch_tables` | active pass, including arity, parameter-type, return-type, mode, `as Protocol` cast, generic protocol substitution, typed built-in method signature negatives, and `@dynamic impl` protocol satisfaction |
-| §8.6 partial borrow rules | v0.5 Phase 4A | Safe-Mode Gate | `partial_borrow_rule_suite` | active pass for B1/B2 direct mut-alias rejection and B4 direct use-after-move |
+| §8.6 partial borrow rules | v0.5 Phase 4B | Safe-Mode Gate | `partial_borrow_rule_suite` | active pass for B1/B2 direct mut-alias rejection, method receiver aliasing, B4 direct function use-after-move, and unambiguous `own self` method receiver use-after-move |
 
 ## Deferred or Partial Test Handles
 

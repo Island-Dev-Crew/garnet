@@ -125,7 +125,7 @@ allocator integration is sequenced in
 | §8.1 Security Theorem (capability boundary) | 🟡 | `garnet-check-v0.3/src/caps_graph.rs` (783 lines) | CapCaps propagator implemented; *theorem* is paper-only. |
 | §8.2 Mode boundary semantics | ✅ | `garnet-check-v0.3/src/audit.rs` (268 lines) | ModeAuditLog catches every fn↔def crossing. |
 | §8.5 NLL / lifetime inference | 🟠 | spec only | Hand-coded for the simplest cases in `borrow.rs`; full NLL deferred. |
-| §8.6 Borrow-check rules B1–B5 | 🟡 | `garnet-check-v0.3/src/borrow.rs` (395 lines); `partial_borrow_rule_suite`; `garnet-check-v0.3/tests/borrow.rs` | Phase 4A activates conformance for direct safe-mode B1/B2 mut-alias rejection and B4 use-after-move through `own` parameters. Full place-granular B1-B5, B3 lifetime containment, B5 drop discipline, method-call ownership, and two-phase borrows remain partial/deferred. |
+| §8.6 Borrow-check rules B1–B5 | 🟡 | `garnet-check-v0.3/src/borrow.rs`; `partial_borrow_rule_suite`; `garnet-check-v0.3/tests/borrow.rs` | Phase 4B activates conformance for direct safe-mode B1/B2 mut-alias rejection, method receiver aliasing, B4 use-after-move through `own` parameters, and unambiguous same-module `own self` method receiver moves. Full place-granular B1-B5, B3 lifetime containment, B5 drop discipline, type-resolved method dispatch, and two-phase borrows remain partial/deferred. |
 
 ## Section 9 — Sendable + Actors
 
@@ -184,7 +184,7 @@ allocator integration is sequenced in
 | §5 Functions | 3 | — | 2 | 4 | `yield`/`next` and `do...end` now have managed-mode block invocation evidence; richer block edge cases still need later conformance. |
 | §6 Control flow | 3 | — | — | — | Complete. |
 | §7 Errors | 3 | — | — | — | Complete. |
-| §8 Safe-mode | 1 | 1 | 2 | — | Phase 4A activates partial borrow-rule conformance for direct use-after-move and mut-aliasing; full NLL/lifetime inference and formal theorem stay paper-side. |
+| §8 Safe-mode | 1 | 1 | 2 | — | Phase 4B activates partial borrow-rule conformance for direct function and method receiver use-after-move plus mut-aliasing; full NLL/lifetime inference and formal theorem stay paper-side. |
 | §9 Actors | 3 | — | 1 | — | Phase 3A adds source-level `@nonsendable` actor boundary rejection; Phase 3B adds synchronous managed actor handler dispatch; Phase 3C adds managed actor addresses and bounded mailbox calls; Phase 3D proves generated agent projects use that surface. Full async runtime bridge remains partial. |
 | §10 Boundaries | 1 | — | — | — | Audit log complete. |
 | §11 User types | 2 | 2 | 3 | 1 | Generics and `dyn Trait` parse; `impl`, `@dynamic`, and structural protocol semantics now have managed-mode slices, but ordinary trait coherence and native monomorphization remain incomplete. |

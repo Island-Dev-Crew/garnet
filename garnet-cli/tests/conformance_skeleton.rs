@@ -332,6 +332,32 @@ fn caller(mut x: Buffer) -> Int {
         "expected aliasing diagnostic, got:\n{stdout}"
     );
 
+    let method_move_src = r#"
+impl Buffer {
+  fn consume(own self) -> Int {
+    0
+  }
+}
+
+fn caller(own b: Buffer) -> Int {
+  b.consume()
+  b.consume()
+  0
+}
+"#;
+    let method_move_path = temp_source("borrow_method_use_after_move", method_move_src);
+    assert_ok(&["parse"], &method_move_path);
+    let out = run(&["check"], &method_move_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode B4 must reject use-after-move through own method receivers"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("use-after-move"),
+        "expected method receiver use-after-move diagnostic, got:\n{stdout}"
+    );
+
     let managed_arc_src = r#"
 fn consume(own x: Buffer) -> Int {
   0
