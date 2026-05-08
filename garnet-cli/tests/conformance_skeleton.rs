@@ -589,9 +589,44 @@ impl LocalWidget for ExternalRenderable {
 }
 
 #[test]
-#[ignore = "Mini-Spec §11.6 monomorphization is parsed-only in v0.4.2"]
-fn parsed_only_monomorphization() {
-    pending("generic monomorphization and zero-cost theorem evidence");
+fn generic_instantiation_runs_without_monomorphization_claims() {
+    let src = r#"
+struct Box<T> {
+  value: T,
+}
+
+impl<T> Box<T> {
+  def get(receiver) {
+    receiver.value
+  }
+}
+
+def identity<T>(value: T) {
+  value
+}
+
+@caps()
+def main() {
+  let n: Box<Int> = Box(40)
+  let s: Box<String> = Box("gem")
+  identity(n.get()) + s.get().len()
+}
+"#;
+    let path = temp_source("generic_instantiation_runs", src);
+    assert_ok(&["parse"], &path);
+    assert_ok(&["check"], &path);
+    let out = run(&["run"], &path);
+    assert!(
+        out.status.success(),
+        "generic struct/function/impl instantiation should run as interpreter evidence\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("=> 43"),
+        "expected generic runtime evidence to return 43, got:\n{stdout}"
+    );
 }
 
 #[test]

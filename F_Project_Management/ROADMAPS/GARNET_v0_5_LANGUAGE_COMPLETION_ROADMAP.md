@@ -342,9 +342,14 @@ Evidence: Phase 5A rejects exact duplicate trait impls and orphan impls where
 neither the trait nor the type is local, while preserving local-trait and
 local-type positive cases. Full generic overlap solving remains pending.
 
-- [ ] **Step 2: Add interpreter-level generic instantiation evidence**
+- [x] **Step 2: Add interpreter-level generic instantiation evidence**
 
-- [ ] **Step 3: Defer native zero-cost claims until a compiler backend exists**
+Evidence: Phase 5B activates
+`generic_instantiation_runs_without_monomorphization_claims`, proving a generic
+struct, generic impl method, and generic function through the managed
+interpreter while keeping native zero-cost claims out of scope.
+
+- [x] **Step 3: Defer native zero-cost claims until a compiler backend exists**
 
 ## Phase 6: Memory Core Productization
 

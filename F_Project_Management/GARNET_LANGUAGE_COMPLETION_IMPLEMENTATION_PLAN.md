@@ -27,7 +27,7 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | Actor protocol enforcement and `Sendable` | Partial Phase 3D | actor runtime crate exists; `actor_sendable_rejects_nonsendable_protocol_payloads` rejects `@nonsendable` actor protocol payloads before runtime; managed interpreter now registers actors, dispatches `spawn Actor.handler(args)` synchronously, creates `spawn Actor` addresses with persistent actor-local state, enforces bounded source mailboxes through `Actor.spawn(capacity)`, and ships a generated `agent-orchestrator` actor template that runs/tests through managed actor addresses; full async OS-thread bridge remains partial | Bridge generated actor projects to the full async `garnet-actor-runtime` OS-thread address/mailbox runtime |
 | Rust-grade NLL and borrow rules | Partial Phase 4F | `garnet-check-v0.3/src/borrow.rs`; `garnet-check-v0.3/src/lib.rs`; `garnet-check-v0.3/tests/borrow.rs`; `garnet-check-v0.3/tests/extended.rs`; `partial_borrow_rule_suite` rejects direct use-after-move, direct mut-aliasing, `own self` method receiver moves, method receiver aliasing, simple typed receiver disambiguation, simple field-place aliasing/field use-after-move, and conservative index-place aliasing/index use-after-move while checking nested index operands; `deferred_nll_lifetime_inference` now covers conservative reference-return lifetime elision | Activate full CFG NLL, dynamic place tracking, generic/trait impl dispatch, and drop discipline |
 | Trait coherence | Partial Phase 5A | `garnet-check-v0.3/src/coherence.rs`; `garnet-check-v0.3/tests/coherence.rs`; `deferred_trait_coherence` rejects exact duplicate trait impls and orphan-rule violations while allowing local-trait or local-type impls | Activate generic overlap solving and package-aware coherence |
-| Monomorphization | Parsed-only | generics and `dyn Trait` parse; no lowering/backend | Activate `parsed_only_monomorphization` only for interpreter-level evidence; native zero-cost remains future |
+| Generic instantiation / monomorphization | Partial Phase 5B | `generic_instantiation_runs_without_monomorphization_claims` runs generic struct construction, a generic impl method, and a generic function through the managed interpreter | Keep native zero-cost monomorphization deferred until a compiler backend exists |
 | Memory Core ARC/cycles | Not done | Mnemos reference stores exist; no Bacon-Rajan cycle collector | Activate `deferred_arc_cycle_detection` |
 | Native compiler | Long-horizon scaffold only | no backend crate | Create backend design PR before claiming compiled language status |
 | Formal RustBelt/Iris/Coq proof | Long-horizon scaffold only | Paper V theorem sketches | Open proof repo or `proofs/` workspace with checked theorem stubs |
@@ -479,17 +479,24 @@ positive cases where either the trait or the type is defined locally.
 Remaining: generic overlap solving, specialization, imported-package
 coherence, and native monomorphization remain deferred.
 
-- [ ] **Step 2: Add interpreter-level generic instantiation evidence**
+- [x] **Step 2: Add interpreter-level generic instantiation evidence**
 
 Treat generic instantiation as runtime/interpreter evidence only. Do not claim monomorphized zero-cost behavior until a compiler backend exists.
 
 Run:
 
 ```sh
-cargo test -p garnet-cli --test conformance_skeleton parsed_only_monomorphization -- --ignored
+cargo test -p garnet-cli --test conformance_skeleton generic_instantiation_runs_without_monomorphization_claims
 ```
 
-Expected after implementation: generic examples pass as interpreter semantics; matrix remains honest about native monomorphization.
+Evidence: Phase 5B runs a generic `Box<T>` struct, a generic `impl<T>
+Box<T>` method, and a generic `identity<T>` function through `garnet parse`,
+`garnet check`, and `garnet run`, returning `=> 43`.
+
+- [x] **Step 3: Defer native zero-cost claims until a compiler backend exists**
+
+Native Monomorphization and the zero-cost theorem remain future work. Phase 5B
+claims only interpreter-level generic instantiation evidence.
 
 ## Milestone 6: Memory Core Productization
 

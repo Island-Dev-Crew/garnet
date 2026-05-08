@@ -167,8 +167,8 @@ inserts converges to ≤ N entries within finite reads.
 
 #### T1.3 — Generics over memory kinds (Mini-Spec §4.4)
 
-This is the gnarliest of the three. Today the Mini-Spec explicitly
-defers it because §11.6 monomorphization is parsed-only. The
+This is the gnarliest of the three. Phase 5B gives §11.6 interpreter-level
+generic instantiation evidence, but native monomorphization is still deferred. The
 realistic v0.5.0 path:
 
 1. Add `<Kind: MemoryKindTrait>` parameter to `MemoryHandle` and the

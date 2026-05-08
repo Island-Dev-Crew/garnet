@@ -63,6 +63,9 @@ When documents conflict, use this order:
   while local-trait and local-type impls remain accepted. Generic overlap
   solving, specialization, imported-package coherence, and native
   monomorphization remain roadmap work.
+- Generic instantiation now has interpreter-level evidence for generic struct
+  construction, generic impl method dispatch, and generic function calls. This
+  is not native monomorphization or a zero-cost backend guarantee.
 - CI has an explicit canonical MVP example job in addition to the Rust test
   suite.
 
