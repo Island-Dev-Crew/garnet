@@ -187,9 +187,13 @@ Expected after implementation: `@dynamic impl Type for Protocol` methods are reg
 
 Acceptance: protocol and handler parameters using `@nonsendable` payload types are rejected before run.
 
-- [ ] **Step 2: Bridge Garnet `actor` declarations to `garnet-actor-runtime`**
+- [x] **Step 2: Bridge Garnet `actor` declarations to managed runtime dispatch**
 
-Acceptance: `agent-orchestrator` can use actor syntax, not only pure role functions.
+Acceptance: source actor syntax can run through `spawn Actor.handler(args)` in managed mode, not only parse as a deferred declaration.
+
+Evidence: `multi_agent_builder_runs_with_managed_actor_bridge`; `c5_actor_handler_dispatches_via_spawn_bridge`.
+
+Remaining: the full `garnet-actor-runtime` async address/mailbox bridge is still pending.
 
 ## Phase 4: Safe-Mode Ownership Hardening
 

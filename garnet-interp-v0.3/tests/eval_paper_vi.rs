@@ -185,6 +185,24 @@ fn c5_actor_with_annotations_on_handlers() {
     assert!(matches!(run(src, "main"), Value::Int(1)));
 }
 
+#[test]
+fn c5_actor_handler_dispatches_via_spawn_bridge() {
+    let src = r#"
+        actor Counter {
+            let mut n = 0
+            protocol incr(delta: Int) -> Int
+            on incr(delta) {
+                n += delta
+                n
+            }
+        }
+        def main() {
+            spawn Counter.incr(5)
+        }
+    "#;
+    assert!(matches!(run(src, "main"), Value::Int(5)));
+}
+
 // ════════════════════════════════════════════════════════════════════
 // Contribution 6: Annotation system (recursion + fan-out guardrails)
 // ════════════════════════════════════════════════════════════════════

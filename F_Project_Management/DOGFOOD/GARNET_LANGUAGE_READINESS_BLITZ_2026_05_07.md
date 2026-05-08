@@ -61,7 +61,7 @@ itself make deferred language semantics real.
 | Converter | useful scaffold; sandbox posture exists | unsafe/eval/exec corpus gate across Rust/Ruby/Python/Go and migration TODO quality checks |
 | Memory Core | reference implementation only | ARC/cycle semantics, persistence/privacy, and machine-key isolation gates active |
 | Safe mode | useful skeleton | formal B1-B5/NLL probes plus CapCaps bypass negatives active |
-| Actors/Sendable | Rust runtime exists; Phase 3A rejects `@nonsendable` actor protocol/handler payloads before runtime; source bridge incomplete | agent-orchestrator source template uses actor/protocol syntax and passes |
+| Actors/Sendable | Rust runtime exists; Phase 3A rejects `@nonsendable` actor protocol/handler payloads before runtime; Phase 3B runs a source actor handler through managed `spawn Actor.handler(args)` dispatch | full async actor-runtime address/mailbox bridge plus agent-orchestrator actor template smoke pass |
 | Security posture | supply-chain gates green; trust-boundary rubric now explicit | FS/net/db/converter/release trust-boundary probes active in CI |
 | Release path | fork release available; org release path evidenced | org release published by authorized session plus live installer smoke |
 

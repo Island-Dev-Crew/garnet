@@ -8,7 +8,9 @@ use crate::value::{
     bind_params, ensure_protocol_satisfied, has_dynamic_annotation, protocol_for_type, FnValue,
     MemoryBackend, TypeValue, Value,
 };
-use garnet_parser::ast::{BinOp, ClosureBody, Expr, StringLit, TypeExpr, UnOp};
+use garnet_parser::ast::{
+    ActorDef, ActorItem, BinOp, ClosureBody, Expr, StringLit, TypeExpr, UnOp,
+};
 use garnet_parser::token::StrPart;
 use std::cell::RefCell;
 use std::collections::BTreeMap;
@@ -754,6 +756,7 @@ fn call_method(
                 "Struct has no method '{method}'"
             )))
         }
+        Value::ActorType(actor) => call_actor_method(actor, method, args, env),
         Value::MemoryStore { kind, backend, .. } => {
             // v3.3 KindGuard: validate the declared kind against the
             // backend's runtime tag before dispatch. Catches
@@ -780,6 +783,53 @@ fn call_method(
             "value of type {} has no method '{method}'",
             recv.type_name()
         ))),
+    }
+}
+
+fn call_actor_method(
+    actor: &ActorDef,
+    method: &str,
+    args: Vec<Value>,
+    env: &Rc<Env>,
+) -> Result<Value, RuntimeError> {
+    let handler = actor
+        .items
+        .iter()
+        .find_map(|item| match item {
+            ActorItem::Handler(handler) if handler.name == method => Some(handler),
+            _ => None,
+        })
+        .ok_or_else(|| {
+            RuntimeError::msg(format!("actor {} has no handler '{method}'", actor.name))
+        })?;
+
+    let actor_env = Env::new_child(env);
+    for item in &actor.items {
+        match item {
+            ActorItem::Let(decl) => {
+                let value = eval_expr(&decl.value, &actor_env)?;
+                actor_env.define(&decl.name, value);
+            }
+            ActorItem::Memory(decl) => {
+                actor_env.define(
+                    &decl.name,
+                    Value::MemoryStore {
+                        kind: decl.kind,
+                        name: decl.name.clone(),
+                        backend: MemoryBackend::for_kind(decl.kind),
+                    },
+                );
+            }
+            ActorItem::Protocol(_) | ActorItem::Handler(_) => {}
+        }
+    }
+
+    let call_env = Env::new_child(&actor_env);
+    bind_params(&handler.params, args, &call_env)?;
+    match stmt::exec_block_value(&handler.body, &call_env) {
+        Ok(value) => Ok(value),
+        Err(RuntimeError::Return(value)) => Ok(value),
+        Err(err) => Err(err),
     }
 }
 

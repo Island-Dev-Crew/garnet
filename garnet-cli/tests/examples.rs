@@ -76,6 +76,24 @@ fn multi_agent_builder_parses() {
 }
 
 #[test]
+fn multi_agent_builder_runs_with_managed_actor_bridge() {
+    let f = example("multi_agent_builder.garnet");
+    assert!(f.exists(), "example file missing: {f:?}");
+    let out = run_garnet(&["run"], &f);
+    assert!(
+        out.status.success(),
+        "run multi_agent_builder failed\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("=> 46"),
+        "multi_agent_builder did not emit the expected actor-bridge total\nstdout:\n{stdout}"
+    );
+}
+
+#[test]
 fn agentic_log_analyzer_parses() {
     let f = example("agentic_log_analyzer.garnet");
     assert!(f.exists(), "example file missing: {f:?}");

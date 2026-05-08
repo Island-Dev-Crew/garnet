@@ -24,7 +24,7 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | Blocks, `yield`, `next` runtime semantics | Phase 2A active | `do ... end` parses as a trailing closure argument; `deferred_blocks_and_yield` runs a managed-mode block/yield/next program | Keep `cargo test -p garnet-cli --test conformance_skeleton deferred_blocks_and_yield` green; add richer block edge cases later |
 | Dynamic method dispatch tables | Partial Phase 2H | `deferred_dynamic_dispatch` covers per-instance method tables; `static_impl_dispatch_and_method_missing` covers static inherent impl fallback and `method_missing`; `dynamic_impl_dispatch_tables` covers `@dynamic impl Type for Protocol` registration and dispatch | Add richer dispatch precedence and ambiguity probes |
 | Structural protocol satisfaction and runtime casts | Partial Phase 2H | `Item::Protocol` and `Expr::Cast` parse; `deferred_structural_protocols` checks protocol-typed managed parameters, runtime `as Protocol` casts, static/dynamic methods, mode/arity/parameter/return annotation mismatches, generic protocol substitution, core built-in typed method signatures, and `@dynamic impl` methods | Add broader trait/generic coherence |
-| Actor protocol enforcement and `Sendable` | Partial Phase 3A | actor runtime crate exists; `actor_sendable_rejects_nonsendable_protocol_payloads` rejects `@nonsendable` actor protocol payloads before runtime; CLI template does not use actor syntax frictionlessly | Agent-orchestrator actor-mode smoke passes |
+| Actor protocol enforcement and `Sendable` | Partial Phase 3B | actor runtime crate exists; `actor_sendable_rejects_nonsendable_protocol_payloads` rejects `@nonsendable` actor protocol payloads before runtime; managed interpreter now registers actors and dispatches `spawn Actor.handler(args)` synchronously; full async address/mailbox bridge remains partial | Agent-orchestrator actor-mode smoke passes through async runtime bridge |
 | Rust-grade NLL and borrow rules | Partial skeleton | `garnet-check-v0.3/src/borrow.rs`; ignored conformance handles | Activate `partial_borrow_rule_suite` and `deferred_nll_lifetime_inference` |
 | Trait coherence | Not done | spec row exists; no checker algorithm | Activate `deferred_trait_coherence` |
 | Monomorphization | Parsed-only | generics and `dyn Trait` parse; no lowering/backend | Activate `parsed_only_monomorphization` only for interpreter-level evidence; native zero-cost remains future |
@@ -272,17 +272,20 @@ Expected after implementation: `@dynamic impl` methods satisfy protocol-typed ma
 - Test: `garnet-cli/tests/new_cmd.rs`
 - Test: `garnet-cli/tests/conformance_skeleton.rs`
 
-- [ ] **Step 1: Add a failing agent-orchestrator actor-template smoke**
+- [x] **Step 1: Add a failing managed actor bridge smoke**
 
-Extend `garnet-cli/tests/new_cmd.rs` so the `agent-orchestrator` template uses actor/protocol syntax and still passes `garnet test` plus `garnet run`.
+Extend executable example coverage so source actor/protocol syntax must survive `garnet run`, not only parsing.
 
 Run:
 
 ```sh
-cargo test -p garnet-cli new_cmd
+cargo test -p garnet-cli --test examples multi_agent_builder_runs_with_managed_actor_bridge
+cargo test -p garnet-interp c5_actor_handler_dispatches_via_spawn_bridge
 ```
 
-Expected before implementation: fail when the template uses actor syntax that the CLI path cannot execute.
+Observed before implementation: `garnet run examples/multi_agent_builder.garnet` failed with `runtime error: undefined variable: Planner`.
+
+Expected after implementation: actor declarations register as managed runtime actor values and `spawn Actor.handler(args)` dispatches the matching handler synchronously. Full `garnet-actor-runtime` address/mailbox bridging remains a follow-up.
 
 - [x] **Step 2: Enforce `Sendable` at actor message boundaries**
 
@@ -298,7 +301,7 @@ Expected after implementation: the actor/sendable test is active and rejects the
 
 Observed before implementation: `garnet-check` returned no errors for an actor protocol carrying an `@nonsendable` payload type.
 
-Expected after implementation: actor protocol and handler parameters reject `@nonsendable` named or nested payload types before runtime while ordinary sendable payload structs remain accepted. Full actor source-to-runtime bridging remains the next step.
+Expected after implementation: actor protocol and handler parameters reject `@nonsendable` named or nested payload types before runtime while ordinary sendable payload structs remain accepted. Phase 3B adds the first managed source-to-runtime actor handler dispatch; async runtime bridging remains the next step.
 
 ## Milestone 4: Safe-Mode Ownership Hardening
 

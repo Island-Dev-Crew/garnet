@@ -108,6 +108,10 @@ impl Interpreter {
             Item::Protocol(protocol) => {
                 self.global.define_protocol(protocol);
             }
+            Item::Actor(actor) => {
+                let name = actor.name.clone();
+                self.global.define(&name, Value::ActorType(Rc::new(actor)));
+            }
             Item::Impl(impl_block) => {
                 let type_name = named_type_name(&impl_block.target).map(str::to_string);
                 let trait_name = impl_block.trait_ty.as_ref().and_then(named_type_name);
@@ -143,11 +147,10 @@ impl Interpreter {
                     }
                 }
             }
-            Item::Trait(_) | Item::Module(_) | Item::Use(_) | Item::Actor(_) => {
+            Item::Trait(_) | Item::Module(_) | Item::Use(_) => {
                 // Parsed and accepted, but deferred to later rungs for full
                 // evaluation. Traits wait on type-check;
-                // Modules/Use need module-system plumbing; Actors need the
-                // interpreter bridge to the runtime crate.
+                // Modules/Use need module-system plumbing.
             }
         }
         Ok(())

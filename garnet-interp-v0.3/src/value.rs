@@ -7,8 +7,8 @@
 use crate::env::Env;
 use crate::error::RuntimeError;
 use garnet_parser::ast::{
-    Annotation, EnumDef, FnDef, FnSig, MemoryKind, Param, ProtocolDef, StructDef, TraitItem,
-    TypeExpr,
+    ActorDef, Annotation, EnumDef, FnDef, FnSig, MemoryKind, Param, ProtocolDef, StructDef,
+    TraitItem, TypeExpr,
 };
 use garnet_parser::token::Span;
 use std::cell::RefCell;
@@ -39,6 +39,9 @@ pub enum Value {
 
     /// A struct or enum *type* (used at construction sites and in patterns).
     Type(Rc<TypeValue>),
+    /// A source-level actor type. The managed interpreter can synchronously
+    /// dispatch handlers while the full async runtime bridge continues to grow.
+    ActorType(Rc<ActorDef>),
     /// A struct instance: (path-or-type-name, field values).
     Struct {
         name: Rc<String>,
@@ -256,6 +259,7 @@ impl Value {
                 TypeValue::Struct(s) => format!("<struct {}>", s.name),
                 TypeValue::Enum(e) => format!("<enum {}>", e.name),
             },
+            Value::ActorType(actor) => format!("<actor {}>", actor.name),
             Value::Struct { name, fields, .. } => {
                 let inner = fields
                     .borrow()
@@ -318,6 +322,7 @@ impl Value {
             Value::Range { .. } => "Range",
             Value::Fn(_) | Value::NativeFn(_) => "Fn",
             Value::Type(_) => "Type",
+            Value::ActorType(_) => "Actor",
             Value::Struct { .. } => "Struct",
             Value::Variant { .. } => "Variant",
             Value::MemoryStore { .. } => "MemoryStore",

@@ -131,10 +131,10 @@ allocator integration is sequenced in
 
 | Mini-Spec | Status | Evidence | Notes |
 |---|---|---|---|
-| §9.1 Actor declaration | ✅ | `grammar/actors.rs`, `ActorDef`/`ProtocolDecl`/`HandlerDecl` AST | |
+| §9.1 Actor declaration | ✅ | `grammar/actors.rs`, `ActorDef`/`ProtocolDecl`/`HandlerDecl` AST; `multi_agent_builder_runs_with_managed_actor_bridge`; `c5_actor_handler_dispatches_via_spawn_bridge` | v0.5 Phase 3B registers actor declarations into the managed interpreter and dispatches `spawn Actor.handler(args)` synchronously as the first source-to-runtime bridge. |
 | §9.2 Bounded mailboxes | ✅ | `garnet-actor-runtime/src/runtime.rs` (mpsc-channel mailboxes) | |
 | §9.3 Hot-reload | ✅ | `garnet-actor-runtime/src/{statecert,reloadkey}.rs` | Ed25519-signed, schema-fingerprinted (StateCert). |
-| §9.4 `Sendable` marker trait + Actor Isolation Theorem | 🟡 | `actor_sendable_rejects_nonsendable_protocol_payloads`; `actor_protocol_rejects_nonsendable_payload_type`; actor-runtime tests | v0.5 Phase 3A rejects `@nonsendable` payload types at actor protocol/handler boundaries before runtime. Full theorem, transitive generic Sendable derivation, and source-to-runtime actor bridge remain partial. |
+| §9.4 `Sendable` marker trait + Actor Isolation Theorem | 🟡 | `actor_sendable_rejects_nonsendable_protocol_payloads`; `actor_protocol_rejects_nonsendable_payload_type`; `multi_agent_builder_runs_with_managed_actor_bridge`; actor-runtime tests | v0.5 Phase 3A rejects `@nonsendable` payload types at actor protocol/handler boundaries before runtime. Phase 3B adds synchronous managed actor handler dispatch. Full async runtime bridge, actor addresses/mailbox calls from Garnet source, transitive generic Sendable derivation, and the formal theorem remain partial. |
 
 ## Section 10 — Mode Boundaries
 
@@ -185,7 +185,7 @@ allocator integration is sequenced in
 | §6 Control flow | 3 | — | — | — | Complete. |
 | §7 Errors | 3 | — | — | — | Complete. |
 | §8 Safe-mode | 1 | — | 3 | — | Skeleton checker; formal theorem stays paper-side. |
-| §9 Actors | 3 | — | 1 | — | Phase 3A adds source-level `@nonsendable` actor boundary rejection; actor runtime bridge remains partial. |
+| §9 Actors | 4 | — | 1 | — | Phase 3A adds source-level `@nonsendable` actor boundary rejection; Phase 3B adds synchronous managed actor handler dispatch. Full async runtime bridge remains partial. |
 | §10 Boundaries | 1 | — | — | — | Audit log complete. |
 | §11 User types | 2 | 2 | 3 | 1 | Generics and `dyn Trait` parse; `impl`, `@dynamic`, and structural protocol semantics now have managed-mode slices, but ordinary trait coherence and native monomorphization remain incomplete. |
 | §15 REPL | — | — | 1 | — | Basic working; commands/history pending. |
