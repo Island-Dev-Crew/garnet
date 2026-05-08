@@ -1,19 +1,18 @@
 # Starter tests for {{name}}.
-#
-# Note: actor instantiation is a roadmap item for the CLI/interpreter bridge.
-# The starter project is intentionally runnable today, so tests exercise the
-# pure orchestration helpers and bridged stdlib primitives.
 
-def test_string_assembly_for_facts() {
-  # The orchestrator stores facts as "key: value" strings; this is the
-  # serialization shape `Reviewer.decide` will commit. Verifying the
-  # shape here keeps the contract explicit even when the actor runtime
-  # is mocked out.
-  let q = "what is the acceleration due to gravity?"
-  let a = "9.8 m/s^2"
-  let combined = "#{q} -> #{a}"
-  assert(contains(combined, "gravity"))
-  assert(contains(combined, "9.8"))
+def test_actor_orchestration_pipeline_runs() {
+  assert_eq(orchestrate(3), 25)
+}
+
+def test_bounded_mailbox_backpressure() {
+  let reviewer = Reviewer.spawn(1)
+  let first = reviewer.try_tell(:review, 12)
+  let second = reviewer.try_tell(:review, 13)
+  assert(first)
+  assert(not second)
+  assert_eq(reviewer.mailbox_size(), 1)
+  assert_eq(reviewer.drain(), 1)
+  assert_eq(reviewer.ask(:accepted_count), 1)
 }
 
 def test_blake3_fact_fingerprint() {

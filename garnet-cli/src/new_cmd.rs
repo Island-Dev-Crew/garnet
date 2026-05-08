@@ -349,12 +349,22 @@ mod tests {
         let target = dir.path().join("my_agents");
         let _ = create_project("agent-orchestrator", &target).unwrap();
         let main = std::fs::read_to_string(target.join("src/main.garnet")).unwrap();
-        assert!(main.contains("def researcher"));
-        assert!(main.contains("def synthesizer"));
-        assert!(main.contains("def reviewer"));
+        assert!(main.contains("actor Researcher"));
+        assert!(main.contains("actor Synthesizer"));
+        assert!(main.contains("actor Reviewer"));
         assert!(main.contains("def orchestrate"));
+        assert!(main.contains("spawn Researcher"));
+        assert!(main.contains("spawn Synthesizer"));
+        assert!(main.contains("Reviewer.spawn(2)"));
+        assert!(main.contains(".ask(:find"));
+        assert!(main.contains(".try_tell(:review"));
+        assert!(main.contains(".drain()"));
         assert!(main.contains("@caps()"));
-        assert!(!main.contains("spawn Researcher::new"));
+        assert!(!main.contains("actor spawning is deliberately left"));
+
+        let readme = std::fs::read_to_string(target.join("README.md")).unwrap();
+        assert!(readme.contains("managed actor addresses"));
+        assert!(!readme.contains("uses pure functions instead of"));
     }
 
     #[test]

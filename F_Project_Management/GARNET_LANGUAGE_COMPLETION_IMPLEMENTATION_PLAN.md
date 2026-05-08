@@ -24,7 +24,7 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | Blocks, `yield`, `next` runtime semantics | Phase 2A active | `do ... end` parses as a trailing closure argument; `deferred_blocks_and_yield` runs a managed-mode block/yield/next program | Keep `cargo test -p garnet-cli --test conformance_skeleton deferred_blocks_and_yield` green; add richer block edge cases later |
 | Dynamic method dispatch tables | Partial Phase 2H | `deferred_dynamic_dispatch` covers per-instance method tables; `static_impl_dispatch_and_method_missing` covers static inherent impl fallback and `method_missing`; `dynamic_impl_dispatch_tables` covers `@dynamic impl Type for Protocol` registration and dispatch | Add richer dispatch precedence and ambiguity probes |
 | Structural protocol satisfaction and runtime casts | Partial Phase 2H | `Item::Protocol` and `Expr::Cast` parse; `deferred_structural_protocols` checks protocol-typed managed parameters, runtime `as Protocol` casts, static/dynamic methods, mode/arity/parameter/return annotation mismatches, generic protocol substitution, core built-in typed method signatures, and `@dynamic impl` methods | Add broader trait/generic coherence |
-| Actor protocol enforcement and `Sendable` | Partial Phase 3C | actor runtime crate exists; `actor_sendable_rejects_nonsendable_protocol_payloads` rejects `@nonsendable` actor protocol payloads before runtime; managed interpreter now registers actors, dispatches `spawn Actor.handler(args)` synchronously, creates `spawn Actor` addresses with persistent actor-local state, and enforces bounded source mailboxes through `Actor.spawn(capacity)`; full async OS-thread bridge remains partial | Agent-orchestrator actor-mode smoke passes through async runtime bridge |
+| Actor protocol enforcement and `Sendable` | Partial Phase 3D | actor runtime crate exists; `actor_sendable_rejects_nonsendable_protocol_payloads` rejects `@nonsendable` actor protocol payloads before runtime; managed interpreter now registers actors, dispatches `spawn Actor.handler(args)` synchronously, creates `spawn Actor` addresses with persistent actor-local state, enforces bounded source mailboxes through `Actor.spawn(capacity)`, and ships a generated `agent-orchestrator` actor template that runs/tests through managed actor addresses; full async OS-thread bridge remains partial | Bridge generated actor projects to the full async `garnet-actor-runtime` OS-thread address/mailbox runtime |
 | Rust-grade NLL and borrow rules | Partial skeleton | `garnet-check-v0.3/src/borrow.rs`; ignored conformance handles | Activate `partial_borrow_rule_suite` and `deferred_nll_lifetime_inference` |
 | Trait coherence | Not done | spec row exists; no checker algorithm | Activate `deferred_trait_coherence` |
 | Monomorphization | Parsed-only | generics and `dyn Trait` parse; no lowering/backend | Activate `parsed_only_monomorphization` only for interpreter-level evidence; native zero-cost remains future |
@@ -320,6 +320,16 @@ cargo test -p garnet-interp c5_actor_spawn_rejects_extra_capacity_args
 Observed before implementation: `spawn Counter` evaluated to an actor type bridge only, so `counter.tell(:incr, 1)` failed with `actor Counter has no handler 'tell'`; `Counter.spawn(1)` also failed to parse because `spawn` was reserved after `.`.
 
 Expected after implementation: managed actor addresses preserve actor-local `let` and `memory` state, `ask` dispatches immediately, `tell` enqueues or reports a full mailbox, `try_tell` returns false on backpressure, `drain()` processes queued messages and returns the drained count, and `Actor.spawn(capacity)` enforces bounded mailbox capacity. Full `garnet-actor-runtime` OS-thread execution remains the next actor milestone because managed `Value` is still `Rc`/`RefCell`-backed rather than `Send + 'static`.
+
+- [x] **Step 4: Make the generated agent-orchestrator template use actor syntax**
+
+Acceptance: `garnet new --template agent-orchestrator` emits a project whose
+`src/main.garnet` declares Researcher / Synthesizer / Reviewer actors, uses
+`spawn Actor`, `Actor.spawn(capacity)`, `ask`, `try_tell`, `mailbox_size`, and
+`drain`, and whose generated tests pass through actor-local
+episodic/semantic/procedural memory.
+
+Evidence: `cargo test -p garnet-cli --test cli_smoke new_agent_orchestrator_template_runs_and_tests`; fresh `garnet new --template agent-orchestrator` smoke with `garnet run` returning `=> 25` and `garnet test` reporting 3 passed.
 
 ## Milestone 4: Safe-Mode Ownership Hardening
 

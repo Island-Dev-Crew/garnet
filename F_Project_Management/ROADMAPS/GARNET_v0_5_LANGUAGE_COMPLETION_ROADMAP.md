@@ -201,6 +201,14 @@ Evidence: `parses_spawn_keyword_as_member_method_name`; `c5_spawn_actor_returns_
 
 Remaining: the full `garnet-actor-runtime` OS-thread async address/mailbox bridge is still pending.
 
+- [x] **Step 4: Move `agent-orchestrator` from roadmap prose to actor-mode starter**
+
+Acceptance: a fresh `garnet new --template agent-orchestrator` project runs
+Researcher / Synthesizer / Reviewer actor declarations through managed actor
+addresses, bounded `try_tell` backpressure, and actor-local memory stores.
+
+Evidence: `cargo test -p garnet-cli --test cli_smoke new_agent_orchestrator_template_runs_and_tests`; generated-project smoke with `garnet run` returning `=> 25` and `garnet test` reporting 3 passed.
+
 ## Phase 4: Safe-Mode Ownership Hardening
 
 **Intent:** Convert the safe-mode checker from useful skeleton into conservative language law.

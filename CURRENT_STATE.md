@@ -61,12 +61,12 @@ done
 | `garnet-interp-v0.3/` | active tree-walk interpreter | current implementation |
 | `garnet-check-v0.3/` | safe-mode and CapCaps validator | current implementation |
 | `garnet-memory-v0.3/` | Mnemos reference memory stores | current implementation |
-| `garnet-actor-runtime/` | actor runtime crate | current implementation; CLI bridge still staged |
+| `garnet-actor-runtime/` | actor runtime crate | current implementation; managed source bridge active, full OS-thread CLI bridge still staged |
 | `garnet-stdlib/` | capability-tagged primitives | current implementation |
 | `garnet-cli/` | user-facing CLI and templates | current implementation |
 | `garnet-convert/` | migration assistant | current implementation |
 | `examples/mvp_*.garnet` | canonical app-level smokes | must parse/check/run |
-| `examples/{multi_agent_builder,agentic_log_analyzer,safe_io_layer}.garnet` | design-scale examples | parser-scale references, not runtime proof |
+| `examples/{multi_agent_builder,agentic_log_analyzer,safe_io_layer}.garnet` | design-scale examples | `multi_agent_builder` is runtime proof; `agentic_log_analyzer`/`safe_io_layer` remain parser/check references |
 | `A_Research_Papers/` | academic research corpus | normative/research context |
 | `B_Four_Model_Consensus/` | consensus/adjudication docs | research context |
 | `C_Language_Specification/` | specs, matrices, roadmaps | normative + descriptive status |

@@ -236,7 +236,7 @@ Per the Phase 6D Linux VERIFIED + Windows VERIFIED handoffs, every v4.2 feature 
 | `garnet new --template cli` | 5 files scaffolded: `Garnet.toml`, `src/main.garnet`, `tests/test_main.garnet`, `.gitignore`, `README.md` | Linux + Windows |
 | `garnet new --template web-api` | 5 files — HTTP/1.1 + `@caps(net, time)` + BoundedMail guidance | Linux |
 | `garnet new --template agent-orchestrator` | 5 files — Researcher / Synthesizer / Reviewer + 3 memory kinds | Linux |
-| `garnet test` on templates | cli (2 pass) + web-api (1 pass, cross-file helper resolution) + agent-orchestrator (2 pass); 5 total green | Linux + Windows |
+| `garnet test` on templates | v4.2 historical: cli (2 pass) + web-api (1 pass) + agent-orchestrator (2 pass). v0.5 Phase 3D supersedes the agent template with 3 pass and managed actor address coverage. | Linux + Windows |
 | `garnet convert ruby foo.rb` | 4 artifacts: `.garnet`, `.lineage.json`, `.migrate_todo.md`, `.metrics.json`. Output starts `@sandbox @caps()` per v4.1 SandboxMode default. 100.0% clean-translate, 3 CIR nodes, 0 migrate-todos. | Linux |
 | Wordmark on TTY (Garnet-red ANSI) + pipe (plain ASCII) | `std::io::IsTerminal` gating; CI-safe | Linux + Windows |
 | Universal `install.sh` wordmark + format dispatch | Shellchecked CLEAN; dispatch paths exercised | Linux |

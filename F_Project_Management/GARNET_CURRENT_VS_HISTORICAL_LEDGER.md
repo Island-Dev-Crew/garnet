@@ -43,8 +43,9 @@ When documents conflict, use this order:
 - The 10 canonical MVP examples are now compact executable smokes, not the old
   large design drafts.
 - The three larger real-world examples remain parser-scale design drafts.
-- The `agent-orchestrator` template now uses pure role functions so first run
-  succeeds on the current interpreter.
+- The `agent-orchestrator` template now uses managed actor addresses, bounded
+  mailbox calls, and actor-local memory while still succeeding on the current
+  interpreter.
 - CI has an explicit canonical MVP example job in addition to the Rust test
   suite.
 
