@@ -251,6 +251,22 @@ disambiguate them.
 Remaining: type-resolved impl dispatch and full receiver/field/place-granular
 borrows are still pending.
 
+- [x] **Step 1C: Disambiguate simple typed method receivers**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test borrow
+cargo test -p garnet-cli --test conformance_skeleton partial_borrow_rule_suite
+```
+
+Evidence: simple declared receiver types now select the matching impl method
+for same-named methods across different receiver types, and typed receivers do
+not fall back to another type's method when no matching impl exists.
+
+Remaining: generic receiver types, trait impl dispatch, inferred local types,
+and full receiver/field/place-granular borrows are still pending.
+
 - [ ] **Step 2: Implement a conservative NLL subset**
 
 Acceptance:

@@ -15,15 +15,16 @@
 //!
 //! Limitations of this first cut (a later production checker will lift
 //! them):
-//! - Direct calls to top-level `fn` items and unambiguous same-module method
-//!   names are tracked. Closures and type-resolved impl-block dispatch remain
-//!   deferred.
+//! - Direct calls to top-level `fn` items are tracked. Method calls are tracked
+//!   when the receiver has a simple declared type, with an unambiguous
+//!   same-module method-name fallback for still-untyped receivers. Full
+//!   impl-block dispatch remains deferred.
 //! - Only simple identifier arguments are tracked. Field projections and
 //!   index expressions are conservatively treated as non-moves.
 //! - Branch joins are conservative and coarse-grained. Full NLL, precise
 //!   place-granular borrows, and lifetime containment remain deferred.
 
-use garnet_parser::ast::{Expr, FnDef, FnMode, Item, Module, Ownership, Pattern, Stmt};
+use garnet_parser::ast::{Expr, FnDef, FnMode, Item, Module, Ownership, Pattern, Stmt, TypeExpr};
 use std::collections::{HashMap, HashSet};
 
 use crate::CheckError;
@@ -48,6 +49,8 @@ struct MethodSignature {
 #[derive(Default)]
 struct SignatureTables {
     functions: FunctionSignatureTable,
+    typed_methods: HashMap<(String, String), MethodSignature>,
+    ambiguous_typed_methods: HashSet<(String, String)>,
     methods: HashMap<String, MethodSignature>,
     ambiguous_methods: HashSet<String>,
 }
@@ -81,7 +84,8 @@ fn collect_signatures(module: &Module) -> SignatureTables {
             }
             Item::Impl(impl_block) => {
                 for method in &impl_block.methods {
-                    register_method_signature(&mut tables, method);
+                    let target_type = simple_type_name(&impl_block.target);
+                    register_method_signature(&mut tables, target_type.as_deref(), method);
                 }
             }
             _ => {}
@@ -90,12 +94,33 @@ fn collect_signatures(module: &Module) -> SignatureTables {
     tables
 }
 
-fn register_method_signature(tables: &mut SignatureTables, method: &FnDef) {
+fn register_method_signature(
+    tables: &mut SignatureTables,
+    target_type: Option<&str>,
+    method: &FnDef,
+) {
+    let signature = method_signature(method);
+
+    if let Some(target_type) = target_type {
+        let key = (target_type.to_string(), method.name.clone());
+        if !tables.ambiguous_typed_methods.contains(&key) {
+            match tables.typed_methods.get(&key) {
+                Some(existing) if existing == &signature => {}
+                Some(_) => {
+                    tables.typed_methods.remove(&key);
+                    tables.ambiguous_typed_methods.insert(key);
+                }
+                None => {
+                    tables.typed_methods.insert(key, signature.clone());
+                }
+            }
+        }
+    }
+
     if tables.ambiguous_methods.contains(&method.name) {
         return;
     }
 
-    let signature = method_signature(method);
     match tables.methods.get(&method.name) {
         Some(existing) if existing == &signature => {}
         Some(_) => {
@@ -105,6 +130,13 @@ fn register_method_signature(tables: &mut SignatureTables, method: &FnDef) {
         None => {
             tables.methods.insert(method.name.clone(), signature);
         }
+    }
+}
+
+fn simple_type_name(ty: &TypeExpr) -> Option<String> {
+    match ty {
+        TypeExpr::Named { path, args, .. } if args.is_empty() => Some(path.join("::")),
+        _ => None,
     }
 }
 
@@ -121,10 +153,12 @@ fn method_signature(method: &FnDef) -> MethodSignature {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 struct Env {
     /// Set of bindings that have been moved out of and may not be used.
     moved: HashMap<String, MoveRecord>,
+    /// Simple declared type names for bindings when the parser gives us one.
+    types: HashMap<String, String>,
 }
 
 impl Env {
@@ -142,8 +176,28 @@ impl Env {
         self.moved.remove(binding);
     }
 
+    fn rebind_with_type(&mut self, binding: &str, ty: Option<&TypeExpr>) {
+        self.rebind(binding);
+        match ty.and_then(simple_type_name) {
+            Some(name) => {
+                self.types.insert(binding.to_string(), name);
+            }
+            None => {
+                self.types.remove(binding);
+            }
+        }
+    }
+
+    fn forget_type(&mut self, binding: &str) {
+        self.types.remove(binding);
+    }
+
     fn is_moved(&self, binding: &str) -> Option<&MoveRecord> {
         self.moved.get(binding)
+    }
+
+    fn type_of(&self, binding: &str) -> Option<&str> {
+        self.types.get(binding).map(String::as_str)
     }
 }
 
@@ -151,7 +205,7 @@ fn check_fn_body(f: &FnDef, sigs: &SignatureTables, diags: &mut Vec<CheckError>)
     let mut env = Env::default();
     // Pre-bind the function's parameters as live (not moved).
     for p in &f.params {
-        env.rebind(&p.name);
+        env.rebind_with_type(&p.name, p.ty.as_ref());
     }
     for stmt in &f.body.stmts {
         check_stmt(stmt, &mut env, sigs, &f.name, diags);
@@ -171,15 +225,15 @@ fn check_stmt(
     match stmt {
         Stmt::Let(decl) => {
             check_expr(&decl.value, env, sigs, fn_name, diags);
-            env.rebind(&decl.name);
+            env.rebind_with_type(&decl.name, decl.ty.as_ref());
         }
         Stmt::Var(decl) => {
             check_expr(&decl.value, env, sigs, fn_name, diags);
-            env.rebind(&decl.name);
+            env.rebind_with_type(&decl.name, decl.ty.as_ref());
         }
         Stmt::Const(decl) => {
             check_expr(&decl.value, env, sigs, fn_name, diags);
-            env.rebind(&decl.name);
+            env.rebind_with_type(&decl.name, decl.ty.as_ref());
         }
         Stmt::Assign { target, value, .. } => {
             check_expr(value, env, sigs, fn_name, diags);
@@ -203,6 +257,7 @@ fn check_stmt(
         } => {
             check_expr(iter, env, sigs, fn_name, diags);
             env.rebind(var);
+            env.forget_type(var);
             for s in &body.stmts {
                 check_stmt(s, env, sigs, fn_name, diags);
             }
@@ -273,7 +328,7 @@ fn check_expr(
             for a in args {
                 check_expr(a, env, sigs, fn_name, diags);
             }
-            if let Some(signature) = sigs.methods.get(method) {
+            if let Some(signature) = method_signature_for_receiver(receiver, method, env, sigs) {
                 let mut pairs = Vec::with_capacity(args.len() + 1);
                 pairs.push((receiver.as_ref(), signature.receiver));
                 pairs.extend(args.iter().zip(signature.args.iter().copied()));
@@ -306,7 +361,7 @@ fn check_expr(
             // Each branch is checked independently against a snapshot of
             // env. Conservative: if any branch moves a binding, the binding
             // is considered moved after the if.
-            let snapshot = env.moved.clone();
+            let snapshot = env.clone();
             for s in &then_block.stmts {
                 check_stmt(s, env, sigs, fn_name, diags);
             }
@@ -314,9 +369,7 @@ fn check_expr(
                 check_expr(tail, env, sigs, fn_name, diags);
             }
             for (cond, block) in elsif_clauses {
-                let mut alt_env = Env {
-                    moved: snapshot.clone(),
-                };
+                let mut alt_env = snapshot.clone();
                 check_expr(cond, &mut alt_env, sigs, fn_name, diags);
                 for s in &block.stmts {
                     check_stmt(s, &mut alt_env, sigs, fn_name, diags);
@@ -327,7 +380,7 @@ fn check_expr(
                 env.moved.extend(alt_env.moved);
             }
             if let Some(b) = else_block {
-                let mut alt_env = Env { moved: snapshot };
+                let mut alt_env = snapshot;
                 for s in &b.stmts {
                     check_stmt(s, &mut alt_env, sigs, fn_name, diags);
                 }
@@ -339,11 +392,9 @@ fn check_expr(
         }
         Expr::Match { subject, arms, .. } => {
             check_expr(subject, env, sigs, fn_name, diags);
-            let snapshot = env.moved.clone();
+            let snapshot = env.clone();
             for arm in arms {
-                let mut arm_env = Env {
-                    moved: snapshot.clone(),
-                };
+                let mut arm_env = snapshot.clone();
                 bind_pattern(&arm.pattern, &mut arm_env);
                 if let Some(g) = &arm.guard {
                     check_expr(g, &mut arm_env, sigs, fn_name, diags);
@@ -411,7 +462,10 @@ fn check_expr(
 
 fn bind_pattern(pattern: &Pattern, env: &mut Env) {
     match pattern {
-        Pattern::Ident(name, _) => env.rebind(name),
+        Pattern::Ident(name, _) => {
+            env.rebind(name);
+            env.forget_type(name);
+        }
         Pattern::Tuple(items, _) => {
             for p in items {
                 bind_pattern(p, env);
@@ -424,6 +478,21 @@ fn bind_pattern(pattern: &Pattern, env: &mut Env) {
         }
         Pattern::Literal(_, _) | Pattern::Wildcard(_) | Pattern::Rest(_) => {}
     }
+}
+
+fn method_signature_for_receiver<'a>(
+    receiver: &Expr,
+    method: &str,
+    env: &Env,
+    sigs: &'a SignatureTables,
+) -> Option<&'a MethodSignature> {
+    if let Expr::Ident(name, _) = receiver {
+        if let Some(receiver_type) = env.type_of(name) {
+            let key = (receiver_type.to_string(), method.to_string());
+            return sigs.typed_methods.get(&key);
+        }
+    }
+    sigs.methods.get(method)
 }
 
 fn apply_ownership(

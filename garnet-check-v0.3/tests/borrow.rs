@@ -199,7 +199,7 @@ fn method_call_mut_self_alias_flagged() {
 }
 
 #[test]
-fn ambiguous_method_receiver_signatures_are_skipped() {
+fn typed_receiver_resolves_same_named_method_signatures() {
     let src = r#"
         struct Buffer {}
         struct Socket {}
@@ -220,8 +220,32 @@ fn ambiguous_method_receiver_signatures_are_skipped() {
     "#;
     let d = diagnose(src);
     assert!(
+        d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "typed receivers should resolve same-named methods, got {d:?}"
+    );
+}
+
+#[test]
+fn typed_receiver_does_not_fallback_to_other_type_method() {
+    let src = r#"
+        struct Buffer {}
+        struct Socket {}
+
+        impl Buffer {
+            fn close(own self) -> Int { 0 }
+        }
+
+        fn caller(own s: Socket) -> Int {
+            s.close()
+            s.close()
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
         !d.iter()
             .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
-        "without type resolution, ambiguous method names should not over-reject: {d:?}"
+        "typed receiver with no matching impl should not borrow-check another type's method: {d:?}"
     );
 }

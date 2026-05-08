@@ -339,6 +339,12 @@ impl Buffer {
   }
 }
 
+impl Socket {
+  fn consume(borrow self) -> Int {
+    0
+  }
+}
+
 fn caller(own b: Buffer) -> Int {
   b.consume()
   b.consume()
