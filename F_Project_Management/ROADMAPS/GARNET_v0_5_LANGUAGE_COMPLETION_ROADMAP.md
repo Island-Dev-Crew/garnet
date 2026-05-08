@@ -124,7 +124,17 @@ Acceptance:
 cargo test -p garnet-cli --test conformance_skeleton deferred_structural_protocols
 ```
 
-Expected after implementation: pass without `#[ignore]` for protocol-typed managed parameter checks, including static inherent impl-backed method presence. Runtime `as Protocol` casts and full method-signature compatibility remain follow-up work.
+Expected after implementation: pass without `#[ignore]` for protocol-typed managed parameter checks, including static inherent impl-backed method presence.
+
+- [x] **Step 3E: Tighten structural protocol signature checks**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-cli --test conformance_skeleton deferred_structural_protocols
+```
+
+Expected after implementation: `deferred_structural_protocols` rejects arity and required return-type mismatches in addition to missing methods. Runtime `as Protocol` casts, generic method unification, and built-in typed signatures remain follow-up work.
 
 ## Phase 3: Actor Runtime Bridge And Sendable
 

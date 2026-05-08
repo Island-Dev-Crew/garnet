@@ -22,8 +22,8 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | v0.4.2 release assets | Fork release published; org release path requires browser/desktop-authorized publication | `Navigata1/garnet` release assets; CLI reports org `push: false`; browser session can open org release form | Publish org `v0.4.2` release from an org-authorized session and rerun installer smoke |
 | Parser parity for old ambition | Partial, Phase 1 active | `protocol`, `dyn Trait`, `yield`, `next`, `@dynamic`, `@nonsendable`, and `do ... end` parser tests | Keep runtime gaps explicit and activate Phase 2 only with executable semantics |
 | Blocks, `yield`, `next` runtime semantics | Phase 2A active | `do ... end` parses as a trailing closure argument; `deferred_blocks_and_yield` runs a managed-mode block/yield/next program | Keep `cargo test -p garnet-cli --test conformance_skeleton deferred_blocks_and_yield` green; add richer block edge cases later |
-| Dynamic method dispatch tables | Not done | `@dynamic` metadata preserved; no method table dispatch | Activate `deferred_dynamic_dispatch` |
-| Structural protocol satisfaction and runtime casts | Not done | `Item::Protocol` parses; no structural checker/runtime cast | Activate `deferred_structural_protocols` |
+| Dynamic method dispatch tables | Partial Phase 2D | `deferred_dynamic_dispatch` covers per-instance method tables; `static_impl_dispatch_and_method_missing` covers static inherent impl fallback and `method_missing` | Add `@dynamic impl` tables and richer dispatch precedence probes |
+| Structural protocol satisfaction and runtime casts | Partial Phase 2E | `Item::Protocol` parses; `deferred_structural_protocols` checks protocol-typed managed parameters, static/dynamic methods, and arity/return annotation mismatches | Add runtime `as Protocol` casts and deeper generic/built-in signature checks |
 | Actor protocol enforcement and `Sendable` | Partial | actor runtime crate exists; CLI template does not use actor syntax frictionlessly | Agent-orchestrator actor-mode smoke passes |
 | Rust-grade NLL and borrow rules | Partial skeleton | `garnet-check-v0.3/src/borrow.rs`; ignored conformance handles | Activate `partial_borrow_rule_suite` and `deferred_nll_lifetime_inference` |
 | Trait coherence | Not done | spec row exists; no checker algorithm | Activate `deferred_trait_coherence` |
@@ -198,7 +198,21 @@ cargo test -p garnet-cli --test conformance_skeleton deferred_structural_protoco
 
 Observed before implementation: failed because protocol-typed parameters were accepted without checking required methods.
 
-Expected after implementation: pass without `#[ignore]` for protocol-typed managed parameter checks, including static inherent impl-backed satisfaction. Runtime `as Protocol` casts and full signature compatibility remain follow-up work.
+Expected after implementation: pass without `#[ignore]` for protocol-typed managed parameter checks, including static inherent impl-backed satisfaction.
+
+- [x] **Step 4E: Tighten protocol method signature compatibility**
+
+Add negative probes to `deferred_structural_protocols` that prove name-only method presence is insufficient.
+
+Run:
+
+```sh
+cargo test -p garnet-cli --test conformance_skeleton deferred_structural_protocols
+```
+
+Observed before implementation: a method with the required name but incompatible arity was accepted.
+
+Expected after implementation: protocol satisfaction checks method mode, receiver-adjusted arity, annotated parameter types, and required return types. Runtime `as Protocol` casts, generic method unification, and built-in typed signatures remain follow-up work.
 
 ## Milestone 3: Actor Runtime Bridge And Sendable
 

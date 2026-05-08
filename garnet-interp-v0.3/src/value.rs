@@ -7,7 +7,8 @@
 use crate::env::Env;
 use crate::error::RuntimeError;
 use garnet_parser::ast::{
-    Annotation, EnumDef, FnDef, MemoryKind, Param, ProtocolDef, StructDef, TraitItem, TypeExpr,
+    Annotation, EnumDef, FnDef, FnSig, MemoryKind, Param, ProtocolDef, StructDef, TraitItem,
+    TypeExpr,
 };
 use std::cell::RefCell;
 use std::collections::BTreeMap;
@@ -481,7 +482,7 @@ fn missing_protocol_methods(value: &Value, protocol: &ProtocolDef, env: &Env) ->
         .items
         .iter()
         .filter_map(|item| match item {
-            TraitItem::FnSig(sig) if !value_has_method(value, &sig.name, env) => {
+            TraitItem::FnSig(sig) if !value_has_compatible_method(value, sig, env) => {
                 Some(sig.name.clone())
             }
             _ => None,
@@ -489,24 +490,29 @@ fn missing_protocol_methods(value: &Value, protocol: &ProtocolDef, env: &Env) ->
         .collect()
 }
 
-fn value_has_method(value: &Value, method: &str, env: &Env) -> bool {
+fn value_has_compatible_method(value: &Value, sig: &FnSig, env: &Env) -> bool {
     match value {
         Value::Struct {
             name,
             dynamic_methods,
             ..
         } => {
-            dynamic_methods
+            if dynamic_methods
                 .as_ref()
-                .is_some_and(|methods| methods.borrow().contains_key(method))
-                || env.has_impl_method(name.as_ref(), method)
+                .and_then(|methods| methods.borrow().get(&sig.name).cloned())
+                .is_some_and(|method| callable_matches_signature(&method, sig, 1))
+            {
+                return true;
+            }
+            env.get_impl_method(name.as_ref(), &sig.name)
+                .is_some_and(|method| callable_matches_signature(&method, sig, 1))
         }
-        Value::Str(_) => matches!(
-            method,
+        Value::Str(_) if signature_has_no_shape_requirements(sig) => matches!(
+            sig.name.as_str(),
             "len" | "length" | "size" | "upcase" | "to_upper" | "downcase" | "to_lower" | "to_s"
         ),
-        Value::Array(_) => matches!(
-            method,
+        Value::Array(_) if signature_has_no_shape_requirements(sig) => matches!(
+            sig.name.as_str(),
             "len"
                 | "length"
                 | "size"
@@ -522,11 +528,143 @@ fn value_has_method(value: &Value, method: &str, env: &Env) -> bool {
                 | "recent"
                 | "to_s"
         ),
-        Value::Map(_) => matches!(
-            method,
+        Value::Map(_) if signature_has_no_shape_requirements(sig) => matches!(
+            sig.name.as_str(),
             "len" | "size" | "get" | "put" | "insert" | "keys" | "values"
         ),
-        Value::Int(_) | Value::Float(_) => matches!(method, "to_s" | "to_i" | "to_f" | "abs"),
+        Value::Int(_) | Value::Float(_) if signature_has_no_shape_requirements(sig) => {
+            matches!(sig.name.as_str(), "to_s" | "to_i" | "to_f" | "abs")
+        }
+        _ => false,
+    }
+}
+
+fn callable_matches_signature(
+    method: &Value,
+    protocol_sig: &FnSig,
+    receiver_params: usize,
+) -> bool {
+    let Value::Fn(function) = method else {
+        return false;
+    };
+    if function.def.mode != protocol_sig.mode {
+        return false;
+    }
+    if function.def.params.len() < receiver_params {
+        return false;
+    }
+    let method_params = &function.def.params[receiver_params..];
+    params_compatible(&protocol_sig.params, method_params)
+        && return_type_compatible(
+            protocol_sig.return_ty.as_ref(),
+            function.def.return_ty.as_ref(),
+        )
+}
+
+fn params_compatible(protocol_params: &[Param], method_params: &[Param]) -> bool {
+    protocol_params.len() == method_params.len()
+        && protocol_params
+            .iter()
+            .zip(method_params)
+            .all(|(expected, actual)| match (&expected.ty, &actual.ty) {
+                (Some(expected), Some(actual)) => type_expr_compatible(expected, actual),
+                (Some(_), None) => false,
+                (None, _) => true,
+            })
+}
+
+fn return_type_compatible(protocol: Option<&TypeExpr>, method: Option<&TypeExpr>) -> bool {
+    match (protocol, method) {
+        (None, _) => true,
+        (Some(expected), Some(actual)) => type_expr_compatible(expected, actual),
+        (Some(_), None) => false,
+    }
+}
+
+fn signature_has_no_shape_requirements(sig: &FnSig) -> bool {
+    sig.params.is_empty() && sig.return_ty.is_none()
+}
+
+fn type_expr_compatible(expected: &TypeExpr, actual: &TypeExpr) -> bool {
+    match (expected, actual) {
+        (
+            TypeExpr::Named {
+                path: expected_path,
+                args: expected_args,
+                ..
+            },
+            TypeExpr::Named {
+                path: actual_path,
+                args: actual_args,
+                ..
+            },
+        ) => {
+            expected_path == actual_path
+                && expected_args.len() == actual_args.len()
+                && expected_args
+                    .iter()
+                    .zip(actual_args)
+                    .all(|(expected, actual)| type_expr_compatible(expected, actual))
+        }
+        (
+            TypeExpr::Fn {
+                params: expected_params,
+                ret: expected_ret,
+                ..
+            },
+            TypeExpr::Fn {
+                params: actual_params,
+                ret: actual_ret,
+                ..
+            },
+        ) => {
+            expected_params.len() == actual_params.len()
+                && expected_params
+                    .iter()
+                    .zip(actual_params)
+                    .all(|(expected, actual)| type_expr_compatible(expected, actual))
+                && type_expr_compatible(expected_ret, actual_ret)
+        }
+        (
+            TypeExpr::Tuple {
+                elements: expected_elements,
+                ..
+            },
+            TypeExpr::Tuple {
+                elements: actual_elements,
+                ..
+            },
+        ) => {
+            expected_elements.len() == actual_elements.len()
+                && expected_elements
+                    .iter()
+                    .zip(actual_elements)
+                    .all(|(expected, actual)| type_expr_compatible(expected, actual))
+        }
+        (
+            TypeExpr::Ref {
+                mutable: expected_mutable,
+                inner: expected_inner,
+                ..
+            },
+            TypeExpr::Ref {
+                mutable: actual_mutable,
+                inner: actual_inner,
+                ..
+            },
+        ) => {
+            expected_mutable == actual_mutable && type_expr_compatible(expected_inner, actual_inner)
+        }
+        (
+            TypeExpr::Dyn {
+                trait_ty: expected_trait,
+                ..
+            },
+            TypeExpr::Dyn {
+                trait_ty: actual_trait,
+                ..
+            },
+        ) => type_expr_compatible(expected_trait, actual_trait),
         _ => false,
     }
 }

@@ -459,4 +459,163 @@ def main() {
         stderr.contains("does not satisfy protocol Renderable"),
         "expected structural protocol diagnostic, got:\n{stderr}"
     );
+
+    let arity_src = r#"
+protocol Combiner {
+  def combine(left, right)
+}
+
+struct OneArgCombiner {
+  name: String
+}
+
+impl OneArgCombiner {
+  def combine(receiver, left) {
+    left
+  }
+}
+
+@caps()
+def accept_combiner(item: Combiner) {
+  1
+}
+
+@caps()
+def main() {
+  accept_combiner(OneArgCombiner("bad"))
+}
+"#;
+    let arity_path = temp_source("structural_protocol_arity_mismatch", arity_src);
+    assert_ok(&["parse"], &arity_path);
+    assert_ok(&["check"], &arity_path);
+    let arity_out = run(&["run"], &arity_path);
+    assert!(
+        !arity_out.status.success(),
+        "protocol parameter must reject a method with incompatible arity"
+    );
+    let stderr = String::from_utf8_lossy(&arity_out.stderr);
+    assert!(
+        stderr.contains("does not satisfy protocol Combiner"),
+        "expected structural protocol arity diagnostic, got:\n{stderr}"
+    );
+
+    let param_type_src = r#"
+protocol NumericCombiner {
+  def combine(left: Int, right: Int) -> Int
+}
+
+struct StringCombiner {
+  name: String
+}
+
+impl StringCombiner {
+  def combine(receiver, left: String, right: String) -> String {
+    left
+  }
+}
+
+@caps()
+def accept_numeric(item: NumericCombiner) {
+  1
+}
+
+@caps()
+def main() {
+  accept_numeric(StringCombiner("bad"))
+}
+"#;
+    let param_type_path = temp_source(
+        "structural_protocol_parameter_type_mismatch",
+        param_type_src,
+    );
+    assert_ok(&["parse"], &param_type_path);
+    assert_ok(&["check"], &param_type_path);
+    let param_type_out = run(&["run"], &param_type_path);
+    assert!(
+        !param_type_out.status.success(),
+        "protocol parameter must reject a method with incompatible parameter types"
+    );
+    let stderr = String::from_utf8_lossy(&param_type_out.stderr);
+    assert!(
+        stderr.contains("does not satisfy protocol NumericCombiner"),
+        "expected structural protocol parameter-type diagnostic, got:\n{stderr}"
+    );
+
+    let return_src = r#"
+protocol RenderText {
+  def render() -> String
+}
+
+struct NumericRenderer {
+  value: Int
+}
+
+impl NumericRenderer {
+  def render(receiver) -> Int {
+    receiver.value
+  }
+}
+
+@caps()
+def accept_renderer(item: RenderText) {
+  1
+}
+
+@caps()
+def main() {
+  accept_renderer(NumericRenderer(7))
+}
+"#;
+    let return_path = temp_source("structural_protocol_return_mismatch", return_src);
+    assert_ok(&["parse"], &return_path);
+    assert_ok(&["check"], &return_path);
+    let return_out = run(&["run"], &return_path);
+    assert!(
+        !return_out.status.success(),
+        "protocol parameter must reject a method with incompatible return type"
+    );
+    let stderr = String::from_utf8_lossy(&return_out.stderr);
+    assert!(
+        stderr.contains("does not satisfy protocol RenderText"),
+        "expected structural protocol return diagnostic, got:\n{stderr}"
+    );
+
+    let mode_src = r#"
+protocol SafeHasher {
+  fn hash(input: Int) -> Int
+}
+
+struct ManagedHasher {
+  seed: Int
+}
+
+impl ManagedHasher {
+  def hash(receiver, input: Int) -> Int {
+    input
+  }
+}
+
+@caps()
+def accept_hasher(item: SafeHasher) {
+  1
+}
+
+@caps()
+def main() {
+  accept_hasher(ManagedHasher(0))
+}
+"#;
+    let mode_path = temp_source("structural_protocol_mode_mismatch", mode_src);
+    assert_ok(&["parse"], &mode_path);
+    assert_ok(&["check"], &mode_path);
+    let mode_out = run(&["run"], &mode_path);
+    assert!(
+        !mode_out.status.success(),
+        "protocol parameter must reject a method with incompatible mode"
+    );
+    let stderr = String::from_utf8_lossy(&mode_out.stderr);
+    assert!(
+        stderr.contains("does not satisfy protocol SafeHasher"),
+        "expected structural protocol mode diagnostic, got:\n{stderr}"
+    );
 }
