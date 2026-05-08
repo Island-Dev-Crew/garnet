@@ -130,11 +130,12 @@ duplicate trait impls and orphan-rule violations while preserving impls where
 either the trait or the type is local. Phase 5B activates interpreter-level
 generic instantiation evidence for generic structs, generic impl methods, and
 generic functions. Full generic overlap solving, package-aware coherence,
-native monomorphization, and zero-cost guarantees remain deferred. Phase 6A
-adds bounded Memory Core cycle fixtures with rooted retention, unrooted cycle
-collection, unrooted acyclic retention, and kind-scheduled cross-kind
-collection. Production allocator-integrated ARC, finalization ordering, and
-safe-mode cycle interaction remain deferred.
+native monomorphization, and zero-cost guarantees remain deferred. Phase 6B
+adds bounded Memory Core trial-deletion fixtures with trial candidates,
+scan-black retained candidates, rooted retention, unrooted cycle collection,
+unrooted acyclic retention, and kind-scheduled cross-kind collection.
+Production allocator-integrated ARC, finalization ordering, and safe-mode cycle
+interaction remain deferred.
 
 ## Historical Material
 

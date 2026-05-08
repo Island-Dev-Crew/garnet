@@ -47,6 +47,8 @@ fn trial_deletion_leaves_unrooted_acyclic_nodes_for_later_eviction() {
     let report = graph.collect_cycles(CycleScan::All);
 
     assert!(report.collected.is_empty());
+    assert_eq!(labels(&graph, &report.trial_candidates), vec!["leaf"]);
+    assert_eq!(labels(&graph, &report.trial_retained), vec!["leaf"]);
     assert!(graph.contains(start));
     assert!(graph.contains(leaf));
 }
@@ -81,9 +83,19 @@ fn kind_partition_scan_collects_cross_kind_cycle_when_seed_kind_matches() {
         labels(&graph, &report.collected),
         vec!["episodic_half", "working_half"]
     );
+    assert_eq!(
+        labels(&graph, &report.trial_candidates),
+        vec!["working_half"]
+    );
     assert!(!graph.contains(working));
     assert!(!graph.contains(episodic));
     assert!(graph.contains(semantic));
+
+    let second_report = graph.collect_cycles(CycleScan::Kind(MemoryKind::Semantic));
+    assert_eq!(
+        labels(&graph, &second_report.collected),
+        vec!["semantic_cycle"]
+    );
 }
 
 #[test]
@@ -101,4 +113,26 @@ fn rooted_cross_kind_cycle_is_retained() {
     assert!(report.collected.is_empty());
     assert!(graph.contains(working));
     assert!(graph.contains(semantic));
+}
+
+#[test]
+fn releasing_the_last_root_makes_cycle_collectable() {
+    let mut graph = CycleGraph::new();
+    let root = graph.add_node(MemoryKind::Working, "root");
+    let child = graph.add_node(MemoryKind::Working, "child");
+
+    graph.add_root(root).unwrap();
+    graph.add_edge(root, child).unwrap();
+    graph.add_edge(child, root).unwrap();
+
+    let retained = graph.collect_cycles(CycleScan::All);
+    assert!(retained.collected.is_empty());
+    assert_eq!(labels(&graph, &retained.retained_roots), vec!["root"]);
+
+    graph.release_root(root).unwrap();
+    let collected = graph.collect_cycles(CycleScan::All);
+
+    assert_eq!(labels(&graph, &collected.collected), vec!["child", "root"]);
+    assert!(!graph.contains(root));
+    assert!(!graph.contains(child));
 }

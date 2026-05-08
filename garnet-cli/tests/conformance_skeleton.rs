@@ -221,6 +221,8 @@ fn deferred_arc_cycle_detection() {
 
     let report = graph.collect_cycles(CycleScan::Kind(MemoryKind::Working));
 
+    assert_eq!(report.trial_candidates, vec![cycle_a]);
+    assert!(report.trial_retained.is_empty());
     assert_eq!(report.collected, vec![cycle_a, cycle_b]);
     assert!(graph.contains(rooted));
     assert!(graph.contains(reachable));

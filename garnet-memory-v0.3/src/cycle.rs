@@ -3,8 +3,8 @@
 //! This module is not the production allocator-integrated ARC collector.
 //! It gives Mnemos a deterministic graph model for Mini-Spec §4.5
 //! fixtures: rooted nodes stay live, unrooted acyclic nodes remain available
-//! for normal eviction, and unrooted cycles are collected with kind-aware
-//! scan scheduling.
+//! for normal eviction, and unrooted cycles are collected by a bounded
+//! trial-deletion pass with kind-aware scan scheduling.
 
 use crate::MemoryKind;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
@@ -33,6 +33,8 @@ pub enum CycleScan {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CycleCollectReport {
     pub scan: CycleScan,
+    pub trial_candidates: Vec<CycleNodeId>,
+    pub trial_retained: Vec<CycleNodeId>,
     pub retained_roots: Vec<CycleNodeId>,
     pub retained: Vec<CycleNodeId>,
     pub collected: Vec<CycleNodeId>,
@@ -135,22 +137,17 @@ impl CycleGraph {
         Ok(())
     }
 
-    /// Collect unrooted cyclic components that match the requested scan.
+    /// Collect unrooted cycles that match the requested scan.
     ///
     /// The collector deliberately leaves unrooted acyclic components alone:
     /// those belong to ordinary retention/eviction policy, not the cycle
     /// detector. Cross-kind components are collected as a whole when any node
-    /// in the component matches the requested scan kind.
+    /// in the component is reached from a matching trial-deletion candidate.
     pub fn collect_cycles(&mut self, scan: CycleScan) -> CycleCollectReport {
         let live = self.live_from_roots();
-        let mut collected_set = BTreeSet::new();
-
-        for component in self.unrooted_components(&live) {
-            if !self.is_cyclic_component(&component) || !self.component_matches(scan, &component) {
-                continue;
-            }
-            collected_set.extend(component);
-        }
+        let trial_candidates = self.trial_candidates(scan, &live);
+        let trial = self.run_trial_deletion(&trial_candidates, &live);
+        let collected_set = trial.collected;
 
         for node in &mut self.nodes {
             node.edges.retain(|child| !collected_set.contains(child));
@@ -165,6 +162,8 @@ impl CycleGraph {
 
         CycleCollectReport {
             scan,
+            trial_candidates,
+            trial_retained: trial.retained,
             retained_roots: self.root_ids(),
             retained: self.active_ids(),
             collected: collected_set.into_iter().collect(),
@@ -231,94 +230,157 @@ impl CycleGraph {
         live
     }
 
-    fn unrooted_components(&self, live: &BTreeSet<CycleNodeId>) -> Vec<Vec<CycleNodeId>> {
-        let mut tarjan = Tarjan::new(self, live);
-        for id in self.active_ids() {
-            if !live.contains(&id) && !tarjan.indices.contains_key(&id) {
-                tarjan.connect(id);
-            }
-        }
-        tarjan.components
-    }
-
-    fn is_cyclic_component(&self, component: &[CycleNodeId]) -> bool {
-        if component.len() > 1 {
-            return true;
-        }
-
-        component
-            .first()
-            .and_then(|id| self.nodes.get(id.index()).map(|node| (*id, node)))
-            .map(|(id, node)| node.edges.contains(&id))
-            .unwrap_or(false)
-    }
-
-    fn component_matches(&self, scan: CycleScan, component: &[CycleNodeId]) -> bool {
+    fn scan_matches_node(&self, scan: CycleScan, id: CycleNodeId) -> bool {
         match scan {
             CycleScan::All => true,
-            CycleScan::Kind(kind) => component.iter().any(|id| self.kind(*id) == Some(kind)),
+            CycleScan::Kind(kind) => self.kind(id) == Some(kind),
+        }
+    }
+
+    fn reference_counts(&self) -> BTreeMap<CycleNodeId, usize> {
+        let mut counts = BTreeMap::new();
+        for id in self.active_ids() {
+            counts.insert(id, self.nodes[id.index()].roots);
+        }
+
+        for id in self.active_ids() {
+            for child in self.outgoing_active(id) {
+                *counts.entry(child).or_insert(0) += 1;
+            }
+        }
+        counts
+    }
+
+    fn trial_candidates(&self, scan: CycleScan, live: &BTreeSet<CycleNodeId>) -> Vec<CycleNodeId> {
+        let counts = self.reference_counts();
+        self.active_ids()
+            .into_iter()
+            .filter(|id| !live.contains(id))
+            .filter(|id| counts.get(id).copied().unwrap_or(0) > 0)
+            .filter(|id| self.scan_matches_node(scan, *id))
+            .collect()
+    }
+
+    fn run_trial_deletion(
+        &self,
+        candidates: &[CycleNodeId],
+        live: &BTreeSet<CycleNodeId>,
+    ) -> TrialOutcome {
+        let mut counts = self.reference_counts();
+        let mut colors: BTreeMap<_, _> = self
+            .active_ids()
+            .into_iter()
+            .map(|id| (id, TrialColor::Black))
+            .collect();
+
+        for candidate in candidates {
+            self.mark_gray(*candidate, &mut colors, &mut counts);
+        }
+        for candidate in candidates {
+            self.scan_candidate(*candidate, live, &mut colors, &mut counts);
+        }
+
+        let mut collected = BTreeSet::new();
+        for candidate in candidates {
+            self.collect_white(*candidate, &mut colors, &mut collected);
+        }
+
+        let retained = candidates
+            .iter()
+            .copied()
+            .filter(|id| !collected.contains(id))
+            .collect();
+
+        TrialOutcome {
+            retained,
+            collected,
+        }
+    }
+
+    fn mark_gray(
+        &self,
+        id: CycleNodeId,
+        colors: &mut BTreeMap<CycleNodeId, TrialColor>,
+        counts: &mut BTreeMap<CycleNodeId, usize>,
+    ) {
+        if colors.get(&id) == Some(&TrialColor::Gray) {
+            return;
+        }
+        colors.insert(id, TrialColor::Gray);
+
+        for child in self.outgoing_active(id) {
+            if let Some(count) = counts.get_mut(&child) {
+                *count = count.saturating_sub(1);
+            }
+            self.mark_gray(child, colors, counts);
+        }
+    }
+
+    fn scan_candidate(
+        &self,
+        id: CycleNodeId,
+        live: &BTreeSet<CycleNodeId>,
+        colors: &mut BTreeMap<CycleNodeId, TrialColor>,
+        counts: &mut BTreeMap<CycleNodeId, usize>,
+    ) {
+        if colors.get(&id) != Some(&TrialColor::Gray) {
+            return;
+        }
+
+        if live.contains(&id) || counts.get(&id).copied().unwrap_or(0) > 0 {
+            self.scan_black(id, colors, counts);
+            return;
+        }
+
+        colors.insert(id, TrialColor::White);
+        for child in self.outgoing_active(id) {
+            self.scan_candidate(child, live, colors, counts);
+        }
+    }
+
+    fn scan_black(
+        &self,
+        id: CycleNodeId,
+        colors: &mut BTreeMap<CycleNodeId, TrialColor>,
+        counts: &mut BTreeMap<CycleNodeId, usize>,
+    ) {
+        if colors.get(&id) == Some(&TrialColor::Black) {
+            return;
+        }
+
+        colors.insert(id, TrialColor::Black);
+        for child in self.outgoing_active(id) {
+            *counts.entry(child).or_insert(0) += 1;
+            self.scan_black(child, colors, counts);
+        }
+    }
+
+    fn collect_white(
+        &self,
+        id: CycleNodeId,
+        colors: &mut BTreeMap<CycleNodeId, TrialColor>,
+        collected: &mut BTreeSet<CycleNodeId>,
+    ) {
+        if colors.get(&id) != Some(&TrialColor::White) {
+            return;
+        }
+
+        colors.insert(id, TrialColor::Black);
+        collected.insert(id);
+        for child in self.outgoing_active(id) {
+            self.collect_white(child, colors, collected);
         }
     }
 }
 
-struct Tarjan<'a> {
-    graph: &'a CycleGraph,
-    live: &'a BTreeSet<CycleNodeId>,
-    index: usize,
-    indices: BTreeMap<CycleNodeId, usize>,
-    lowlinks: BTreeMap<CycleNodeId, usize>,
-    stack: Vec<CycleNodeId>,
-    on_stack: BTreeSet<CycleNodeId>,
-    components: Vec<Vec<CycleNodeId>>,
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum TrialColor {
+    Black,
+    Gray,
+    White,
 }
 
-impl<'a> Tarjan<'a> {
-    fn new(graph: &'a CycleGraph, live: &'a BTreeSet<CycleNodeId>) -> Self {
-        Self {
-            graph,
-            live,
-            index: 0,
-            indices: BTreeMap::new(),
-            lowlinks: BTreeMap::new(),
-            stack: Vec::new(),
-            on_stack: BTreeSet::new(),
-            components: Vec::new(),
-        }
-    }
-
-    fn connect(&mut self, id: CycleNodeId) {
-        let current = self.index;
-        self.indices.insert(id, current);
-        self.lowlinks.insert(id, current);
-        self.index += 1;
-        self.stack.push(id);
-        self.on_stack.insert(id);
-
-        for child in self.graph.outgoing_active(id) {
-            if self.live.contains(&child) {
-                continue;
-            }
-            if !self.indices.contains_key(&child) {
-                self.connect(child);
-                let low = self.lowlinks[&id].min(self.lowlinks[&child]);
-                self.lowlinks.insert(id, low);
-            } else if self.on_stack.contains(&child) {
-                let low = self.lowlinks[&id].min(self.indices[&child]);
-                self.lowlinks.insert(id, low);
-            }
-        }
-
-        if self.lowlinks[&id] == self.indices[&id] {
-            let mut component = Vec::new();
-            while let Some(member) = self.stack.pop() {
-                self.on_stack.remove(&member);
-                component.push(member);
-                if member == id {
-                    break;
-                }
-            }
-            component.sort();
-            self.components.push(component);
-        }
-    }
+struct TrialOutcome {
+    retained: Vec<CycleNodeId>,
+    collected: BTreeSet<CycleNodeId>,
 }

@@ -22,7 +22,7 @@ language-completeness work can move from prose to executable evidence.
 | §9.1 actor source-to-runtime bridge | v0.5 Phase 3B | Runtime Gate | `multi_agent_builder_runs_with_managed_actor_bridge`; `c5_actor_handler_dispatches_via_spawn_bridge` | active pass |
 | §9.1/§9.2 managed actor address + bounded mailbox | v0.5 Phase 3C | Runtime Gate | `parses_spawn_keyword_as_member_method_name`; `c5_spawn_actor_returns_address_with_persistent_state`; `c5_actor_address_enforces_bounded_mailbox`; `c5_actor_address_tell_reports_full_mailbox`; `c5_actor_spawn_rejects_extra_capacity_args` | active pass |
 | §16.2 generated actor project | v0.5 Phase 3D | Tooling/Runtime Gate | `new_agent_orchestrator_template_runs_and_tests` | active pass |
-| §4.5 observable cycle fixtures | v0.5 Phase 6A | Memory Core Gate | `deferred_arc_cycle_detection`; `garnet-memory-v0.3/tests/cycle.rs` | active pass for rooted retention, unrooted cycle collection, unrooted acyclic retention, and kind-scheduled cross-kind collection |
+| §4.5 trial-deletion cycle fixtures | v0.5 Phase 6B | Memory Core Gate | `deferred_arc_cycle_detection`; `garnet-memory-v0.3/tests/cycle.rs` | active pass for rooted retention, trial candidates, scan-black retained candidates, unrooted cycle collection, unrooted acyclic retention, and kind-scheduled cross-kind collection |
 | §11.6/§11.8 parser parity | v0.5 Phase 1 | Parser-Parity Gate | `parser_parity_top_level_protocol_and_dyn_trait_parse` | active pass |
 | §5.4/§11.7 parser parity | v0.5 Phase 1 | Parser-Parity Gate | `parser_parity_yield_next_dynamic_and_nonsendable_parse` | active pass |
 | §5.4.1 parser parity | v0.5 Phase 1 | Parser-Parity Gate | `parses_do_end_block_argument` | active pass |
@@ -42,7 +42,7 @@ called complete.
 
 | Matrix row | Phase | Readiness gate | Test handle |
 |---|---|---|---|
-| §4.5 production ARC + Bacon-Rajan allocator integration | v0.5 Phase 6 | Memory Core Gate | active Phase 6A fixtures plus future allocator-integrated collector tests |
+| §4.5 production ARC + Bacon-Rajan allocator integration | v0.5 Phase 6 | Memory Core Gate | active Phase 6A/6B fixtures plus future allocator-integrated collector tests |
 | §8.5 NLL/lifetime inference | v0.5 Phase 4F | Safe-Mode Gate | `deferred_nll_lifetime_inference` | active pass for conservative lifetime elision on reference returns; full region solving remains deferred |
 | §8.6 full place-granular borrow rules B1-B5 | v0.5 Phase 4 | Safe-Mode Gate | `deferred_full_borrow_rule_suite` |
 | §11.5 trait coherence | v0.5 Phase 5A | Type-System Gate | `deferred_trait_coherence` | active pass for exact duplicate trait impl rejection and conservative orphan-rule enforcement; full generic overlap solving remains deferred |

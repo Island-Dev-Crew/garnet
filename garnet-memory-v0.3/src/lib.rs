@@ -31,8 +31,9 @@
 //!   HNSW / IVF / PolarQuant).
 //! - No eviction beyond what `MemoryPolicy` exposes as scoring API.
 //! - No allocator-integrated ARC + Bacon–Rajan collector yet.
-//! - A bounded [`CycleGraph`] reference path exposes §4.5 cycle fixtures
-//!   while production allocator work remains on the Memory Core roadmap.
+//! - A bounded [`CycleGraph`] trial-deletion reference path exposes §4.5
+//!   cycle fixtures while production allocator work remains on the Memory
+//!   Core roadmap.
 //!
 //! ## What's planned
 //!
