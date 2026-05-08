@@ -20,7 +20,7 @@
 //!   same-module method-name fallback for still-untyped receivers. Full
 //!   impl-block dispatch remains deferred.
 //! - Simple field projections are tracked as places for move and alias checks.
-//!   Index expressions remain conservatively treated as non-moves.
+//!   Index expressions are tracked conservatively as wildcard sub-places.
 //! - Branch joins are conservative and coarse-grained. Full NLL, precise
 //!   nested place borrows beyond simple fields, and lifetime containment remain
 //!   deferred.
@@ -29,6 +29,8 @@ use garnet_parser::ast::{Expr, FnDef, FnMode, Item, Module, Ownership, Pattern, 
 use std::collections::{HashMap, HashSet};
 
 use crate::CheckError;
+
+const INDEX_PLACE_SEGMENT: &str = "[*]";
 
 /// One recorded move site, used by the diagnostic that names both halves.
 #[derive(Debug, Clone)]
@@ -231,7 +233,31 @@ fn place_path(expr: &Expr) -> Option<Vec<String>> {
             path.push(field.clone());
             Some(path)
         }
+        Expr::Index { receiver, .. } => {
+            let mut path = place_path(receiver)?;
+            path.push(INDEX_PLACE_SEGMENT.to_string());
+            Some(path)
+        }
         _ => None,
+    }
+}
+
+fn check_place_operands(
+    expr: &Expr,
+    env: &mut Env,
+    sigs: &SignatureTables,
+    fn_name: &str,
+    diags: &mut Vec<CheckError>,
+) {
+    match expr {
+        Expr::Field { receiver, .. } => check_place_operands(receiver, env, sigs, fn_name, diags),
+        Expr::Index {
+            receiver, index, ..
+        } => {
+            check_place_operands(receiver, env, sigs, fn_name, diags);
+            check_expr(index, env, sigs, fn_name, diags);
+        }
+        _ => {}
     }
 }
 
@@ -284,6 +310,7 @@ fn check_stmt(
         Stmt::Assign { target, value, .. } => {
             check_expr(value, env, sigs, fn_name, diags);
             if let Some(place) = place_path(target) {
+                check_place_operands(target, env, sigs, fn_name, diags);
                 env.rebind_place(&place);
             }
         }
@@ -383,6 +410,7 @@ fn check_expr(
         }
         Expr::Field { receiver, .. } => {
             if let Some(place) = place_path(expr) {
+                check_place_operands(receiver, env, sigs, fn_name, diags);
                 if let Some(rec) = env.moved_record_for_place(&place) {
                     diags.push(CheckError::SafeModeViolation(format!(
                         "use-after-move: in `{fn_name}`, `{}` was moved into `{}` and cannot be used again",
@@ -396,8 +424,18 @@ fn check_expr(
         Expr::Index {
             receiver, index, ..
         } => {
-            check_expr(receiver, env, sigs, fn_name, diags);
             check_expr(index, env, sigs, fn_name, diags);
+            if let Some(place) = place_path(expr) {
+                check_place_operands(receiver, env, sigs, fn_name, diags);
+                if let Some(rec) = env.moved_record_for_place(&place) {
+                    diags.push(CheckError::SafeModeViolation(format!(
+                        "use-after-move: in `{fn_name}`, `{}` was moved into `{}` and cannot be used again",
+                        rec.binding, rec.callee
+                    )));
+                }
+            } else {
+                check_expr(receiver, env, sigs, fn_name, diags);
+            }
         }
         Expr::Cast { expr, .. } => check_expr(expr, env, sigs, fn_name, diags),
         Expr::Binary { lhs, rhs, .. } => {

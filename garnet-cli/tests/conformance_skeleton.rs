@@ -429,6 +429,28 @@ fn caller(mut p: Pair) -> Int {
     let sibling_ok_path = temp_source("borrow_moved_field_sibling_ok", sibling_ok_src);
     assert_ok(&["parse"], &sibling_ok_path);
     assert_ok(&["check"], &sibling_ok_path);
+
+    let index_aliasing_src = r#"
+fn frob(mut a: Buffer, borrow b: Buffer) -> Int {
+  0
+}
+
+fn caller(mut items: Buffers) -> Int {
+  frob(items[0], items[1])
+}
+"#;
+    let index_aliasing_path = temp_source("borrow_index_aliasing", index_aliasing_src);
+    assert_ok(&["parse"], &index_aliasing_path);
+    let out = run(&["check"], &index_aliasing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode B1/B2 must conservatively reject mut+borrow aliasing across indexes of the same receiver"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("aliasing violation"),
+        "expected index-place aliasing diagnostic, got:\n{stdout}"
+    );
 }
 
 #[test]

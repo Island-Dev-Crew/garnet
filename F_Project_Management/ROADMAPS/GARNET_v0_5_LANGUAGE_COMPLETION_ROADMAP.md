@@ -285,6 +285,24 @@ Remaining: index/dynamic places, generic receiver types, trait impl dispatch,
 inferred local types, drop discipline, two-phase borrows, and NLL are still
 pending.
 
+- [x] **Step 1E: Track indexed places conservatively**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test borrow
+cargo test -p garnet-cli --test conformance_skeleton partial_borrow_rule_suite
+```
+
+Evidence: `root[index]` projections now participate in B1/B2 aliasing and B4
+move tracking as wildcard index sub-places. Indexes under the same receiver
+conflict conservatively; nested index receiver operands are still checked; and
+indexes under distinct sibling fields remain usable.
+
+Remaining: dynamic places, generic receiver types, trait impl dispatch,
+inferred local types, drop discipline, two-phase borrows, and NLL are still
+pending.
+
 - [ ] **Step 2: Implement a conservative NLL subset**
 
 Acceptance:

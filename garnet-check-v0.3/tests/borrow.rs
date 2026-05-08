@@ -343,3 +343,82 @@ fn moving_field_rejects_same_field_but_allows_sibling() {
         "moved field must reject later same-field use while sibling stays available, got {d:?}"
     );
 }
+
+#[test]
+fn indexed_places_conflict_conservatively() {
+    let src = r#"
+        fn frob(mut a: Buffer, borrow b: Buffer) -> Int { 0 }
+
+        fn caller(mut items: Buffers) -> Int {
+            frob(items[0], items[1])
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("aliasing"))),
+        "index projections on the same receiver should conservatively alias, got {d:?}"
+    );
+}
+
+#[test]
+fn indexed_places_under_distinct_fields_do_not_alias() {
+    let src = r#"
+        struct Pair {
+            left: Buffers,
+            right: Buffers,
+        }
+
+        fn frob(mut a: Buffer, borrow b: Buffer) -> Int { 0 }
+
+        fn caller(mut p: Pair) -> Int {
+            frob(p.left[0], p.right[0])
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        !d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("aliasing"))),
+        "indexes under distinct sibling fields should not alias: {d:?}"
+    );
+}
+
+#[test]
+fn moving_indexed_place_rejects_same_index_family() {
+    let src = r#"
+        fn consume(own x: Buffer) -> Int { 0 }
+        fn read(borrow x: Buffer) -> Int { 0 }
+
+        fn caller(mut items: Buffers) -> Int {
+            consume(items[0])
+            read(items[1])
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "indexed moves on the same receiver should conservatively poison the index family, got {d:?}"
+    );
+}
+
+#[test]
+fn nested_index_checks_inner_index_expression() {
+    let src = r#"
+        fn consume(own x: Int) -> Int { 0 }
+        fn read(borrow x: Buffer) -> Int { 0 }
+
+        fn caller(mut items: Matrix, own i: Int) -> Int {
+            consume(i)
+            read(items[i][0])
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "nested index receiver must still check its inner index expression, got {d:?}"
+    );
+}
