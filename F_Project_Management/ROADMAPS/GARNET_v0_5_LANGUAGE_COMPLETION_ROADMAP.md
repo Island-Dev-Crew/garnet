@@ -361,9 +361,15 @@ interpreter while keeping native zero-cost claims out of scope.
 - Modify: `C_Language_Specification/MEMORY_CORE_ROADMAP.md`
 - Test: `garnet-cli/tests/conformance_skeleton.rs`
 
-- [ ] **Step 1: Implement observable ARC cycle fixtures**
+- [x] **Step 1: Implement observable ARC cycle fixtures**
 
-- [ ] **Step 2: Implement Bacon-Rajan trial deletion in a bounded reference path**
+Phase 6A adds `garnet-memory-v0.3/src/cycle.rs` and
+`garnet-memory-v0.3/tests/cycle.rs`, then activates
+`deferred_arc_cycle_detection` as a bounded reference-model gate for retained
+roots, collectable unrooted cycles, unrooted acyclic retention, and
+kind-scheduled cross-kind collection.
+
+- [ ] **Step 2: Implement production Bacon-Rajan trial deletion over ARC allocator roots**
 
 - [ ] **Step 3: Add kind-aware root partitioning and safe-mode interaction tests**
 

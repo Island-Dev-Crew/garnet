@@ -28,7 +28,7 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | Rust-grade NLL and borrow rules | Partial Phase 4F | `garnet-check-v0.3/src/borrow.rs`; `garnet-check-v0.3/src/lib.rs`; `garnet-check-v0.3/tests/borrow.rs`; `garnet-check-v0.3/tests/extended.rs`; `partial_borrow_rule_suite` rejects direct use-after-move, direct mut-aliasing, `own self` method receiver moves, method receiver aliasing, simple typed receiver disambiguation, simple field-place aliasing/field use-after-move, and conservative index-place aliasing/index use-after-move while checking nested index operands; `deferred_nll_lifetime_inference` now covers conservative reference-return lifetime elision | Activate full CFG NLL, dynamic place tracking, generic/trait impl dispatch, and drop discipline |
 | Trait coherence | Partial Phase 5A | `garnet-check-v0.3/src/coherence.rs`; `garnet-check-v0.3/tests/coherence.rs`; `deferred_trait_coherence` rejects exact duplicate trait impls and orphan-rule violations while allowing local-trait or local-type impls | Activate generic overlap solving and package-aware coherence |
 | Generic instantiation / monomorphization | Partial Phase 5B | `generic_instantiation_runs_without_monomorphization_claims` runs generic struct construction, a generic impl method, and a generic function through the managed interpreter | Keep native zero-cost monomorphization deferred until a compiler backend exists |
-| Memory Core ARC/cycles | Not done | Mnemos reference stores exist; no Bacon-Rajan cycle collector | Activate `deferred_arc_cycle_detection` |
+| Memory Core ARC/cycles | Partial Phase 6A | `garnet-memory-v0.3/src/cycle.rs`; `garnet-memory-v0.3/tests/cycle.rs`; active `deferred_arc_cycle_detection` | Promote the bounded reference model into allocator-integrated ARC and finalizer/safe-mode tests |
 | Native compiler | Long-horizon scaffold only | no backend crate | Create backend design PR before claiming compiled language status |
 | Formal RustBelt/Iris/Coq proof | Long-horizon scaffold only | Paper V theorem sketches | Open proof repo or `proofs/` workspace with checked theorem stubs |
 | Signed cross-platform installers | Partial | Linux packages and checksums exist; macOS/Windows signing remains separate authority work | Signed/notarized macOS and Authenticode Windows install smokes |
@@ -509,30 +509,39 @@ claims only interpreter-level generic instantiation evidence.
 - Modify: `C_Language_Specification/MEMORY_CORE_ROADMAP.md`
 - Test: `garnet-cli/tests/conformance_skeleton.rs`
 
-- [ ] **Step 1: Add observable cycle fixtures**
+- [x] **Step 1: Add observable cycle fixtures**
 
-Create a memory fixture with two retained nodes and one collectable cycle.
+Evidence: Phase 6A adds a memory fixture with retained roots, an unrooted
+collectable cycle, an unrooted acyclic component that remains available for
+ordinary eviction, a self-cycle, and a kind-scheduled cross-kind cycle.
 
 Run:
 
 ```sh
-cargo test -p garnet-cli --test conformance_skeleton deferred_arc_cycle_detection -- --ignored
+cargo test -p garnet-memory --test cycle
+cargo test -p garnet-cli --test conformance_skeleton deferred_arc_cycle_detection
 ```
 
-Expected before implementation: fail because no Bacon-Rajan cycle path exists.
+Observed before implementation: failed because `CycleGraph`, `CycleNodeId`, and
+`CycleScan` did not exist. Expected after implementation: active pass.
 
-- [ ] **Step 2: Implement bounded Bacon-Rajan trial deletion**
+- [ ] **Step 2: Implement production Bacon-Rajan trial deletion over ARC allocator roots**
 
-Start with deterministic reference tests before optimizing.
+Phase 6A starts with deterministic reference tests before optimizing. It does
+not yet claim the production root buffer, color/count trial-deletion passes,
+finalization ordering, or safe-mode interaction.
 
 Run:
 
 ```sh
 cargo test -p garnet-memory
-cargo test -p garnet-cli --test conformance_skeleton deferred_arc_cycle_detection -- --ignored
+cargo test -p garnet-cli --test conformance_skeleton deferred_arc_cycle_detection
 ```
 
-Expected after implementation: cycle fixture passes and the conformance handle can become active.
+Expected after Phase 6A: cycle fixtures pass and the conformance handle is
+active. Expected after full implementation: allocator-integrated ARC cycle
+collection has separate positive and negative tests for the Bacon-Rajan
+root-buffer algorithm.
 
 ## Milestone 7: Release, Proof, Native Backend, And Empirical Evidence
 

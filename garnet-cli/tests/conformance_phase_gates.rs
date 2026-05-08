@@ -29,6 +29,7 @@ fn implemented_conformance_tests_are_active() {
         "partial_borrow_rule_suite",
         "deferred_trait_coherence",
         "generic_instantiation_runs_without_monomorphization_claims",
+        "deferred_arc_cycle_detection",
     ] {
         let idx = source.find(name).expect("active conformance test exists");
         let prefix = &source[..idx];
@@ -41,10 +42,10 @@ fn implemented_conformance_tests_are_active() {
 }
 
 #[test]
-fn deferred_semantic_handles_remain_explicit() {
+fn remaining_deferred_handles_remain_explicit() {
     let source = fs::read_to_string(repo_root().join("garnet-cli/tests/conformance_skeleton.rs"))
         .expect("conformance skeleton");
-    let name = "deferred_arc_cycle_detection";
+    let name = "deferred_full_borrow_rule_suite";
     let idx = source.find(name).expect("deferred handle exists");
     let prefix = &source[..idx];
     let nearby = &prefix[prefix.len().saturating_sub(220)..];

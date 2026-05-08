@@ -85,12 +85,12 @@ allocator integration is sequenced in
 | §4.2 Semantics | ✅ | Mnemos: `garnet-memory-v0.3/src/{working,episodic,semantic,procedural}.rs` | Reference stores meeting the behavioural contract; not production allocators. Roadmap Tier 1 + Tier 2 productizes the backends. |
 | §4.3 Out-of-scope items | ✅ (by design) | n/a | These remain explicit non-goals. |
 | §4.4 Generics over memory kinds | 🟠 | n/a | Explicitly deferred; tracked as Roadmap T1.3 (gates on §11.6 monomorphization). |
-| §4.5 ARC + Bacon–Rajan cycle detection | 🟠 | spec only — no implementation file | New in v1.0; tracked as Roadmap T3.1. The single largest open Memory Core item. |
-| §4.5.1 Trial-deletion algorithm | 🟠 | — | Roadmap T3.1 |
-| §4.5.2 Kind-aware root partitioning | 🟠 | — | Roadmap T3.1 |
+| §4.5 ARC + Bacon–Rajan cycle detection | 🟡 | `garnet-memory-v0.3/src/cycle.rs`; `garnet-memory-v0.3/tests/cycle.rs`; `deferred_arc_cycle_detection` | Phase 6A adds a bounded observable cycle model. Production allocator-integrated ARC and full Bacon-Rajan color/count machinery remain Roadmap T3.1 work. |
+| §4.5.1 Trial-deletion algorithm | 🟡 | `CycleGraph::collect_cycles`; `trial_deletion_collects_unrooted_cycle_and_retains_roots` | Deterministic reference path collects unrooted cyclic components and leaves acyclic unrooted nodes for ordinary eviction. Full ARC decrement/root-buffer integration remains pending. |
+| §4.5.2 Kind-aware root partitioning | 🟡 | `CycleScan::Kind`; `kind_partition_scan_collects_cross_kind_cycle_when_seed_kind_matches` | Phase 6A proves kind-scheduled scans collect cross-kind components as a whole when the seed kind matches. Allocator root partitions remain future work. |
 | §4.5.3 Finalization | 🟠 | — | Roadmap T3.1 |
 | §4.5.4 Safe-mode interaction | 🟠 | — | Roadmap T3.1 / T3.2 |
-| §4.5.5 Observable invariants | 🟠 | — | Roadmap T3.1 |
+| §4.5.5 Observable invariants | 🟡 | `rooted_cross_kind_cycle_is_retained`; `trial_deletion_leaves_unrooted_acyclic_nodes_for_later_eviction` | Retained roots, cross-kind reachability, unrooted acyclic retention, and collected-cycle tombstones are executable. Drop/finalizer ordering remains deferred. |
 
 ## Section 5 — Function Definitions
 
@@ -180,7 +180,7 @@ allocator integration is sequenced in
 |---|---|---|---|---|---|
 | §2 Lexical | 4 | — | — | — | Complete. |
 | §3 Modules | 4 | — | — | — | Cross-module visibility audit pending. |
-| §4 Memory | 3 | — | — | 7 | ARC cycle detection (§4.5) is the largest single open Mini-Spec deliverable. |
+| §4 Memory | 3 | — | 4 | 3 | Phase 6A adds bounded observable cycle fixtures; production ARC allocator integration and finalizer/safe-mode semantics remain the largest Memory Core gaps. |
 | §5 Functions | 3 | — | 2 | 4 | `yield`/`next` and `do...end` now have managed-mode block invocation evidence; richer block edge cases still need later conformance. |
 | §6 Control flow | 3 | — | — | — | Complete. |
 | §7 Errors | 3 | — | — | — | Complete. |

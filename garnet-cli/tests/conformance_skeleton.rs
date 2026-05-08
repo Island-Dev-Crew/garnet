@@ -4,6 +4,7 @@
 //! implemented today. Ignored tests name partial/deferred rows so language
 //! completeness work has stable test handles before the implementation lands.
 
+use garnet_memory::{CycleGraph, CycleScan, MemoryKind};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -206,9 +207,25 @@ def staged_block_surface() {
 }
 
 #[test]
-#[ignore = "Mini-Spec §4.5 ARC cycle detection is deferred in v0.4.2"]
 fn deferred_arc_cycle_detection() {
-    pending("ARC + Bacon-Rajan cycle detection");
+    let mut graph = CycleGraph::new();
+    let rooted = graph.add_node(MemoryKind::Working, "rooted");
+    let reachable = graph.add_node(MemoryKind::Episodic, "reachable");
+    let cycle_a = graph.add_node(MemoryKind::Working, "cycle_a");
+    let cycle_b = graph.add_node(MemoryKind::Semantic, "cycle_b");
+
+    graph.add_root(rooted).unwrap();
+    graph.add_edge(rooted, reachable).unwrap();
+    graph.add_edge(cycle_a, cycle_b).unwrap();
+    graph.add_edge(cycle_b, cycle_a).unwrap();
+
+    let report = graph.collect_cycles(CycleScan::Kind(MemoryKind::Working));
+
+    assert_eq!(report.collected, vec![cycle_a, cycle_b]);
+    assert!(graph.contains(rooted));
+    assert!(graph.contains(reachable));
+    assert!(!graph.contains(cycle_a));
+    assert!(!graph.contains(cycle_b));
 }
 
 #[test]

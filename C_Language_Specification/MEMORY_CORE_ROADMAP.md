@@ -2,7 +2,7 @@
 
 **Subject:** Garnet's Memory Core (the architectural subsystem) and **Mnemos** (its v0.4.x reference implementation crate, `garnet-memory-v0.3/`).
 **Status of this document:** Forward-looking. Work items are not committed to a delivery date here; that belongs in per-version handoffs in `F_Project_Management/`.
-**As of:** 2026-04-26 (Garnet release v0.4.2).
+**As of:** 2026-05-08 (v0.5 readiness Phase 6A in progress).
 
 ---
 
@@ -32,6 +32,7 @@ Implemented, tested, behaviourally correct against the Mini-Spec §4 contract. N
 | Semantic | `RefCell<Vec<(Vec<f32>, T)>>` flat-cosine index | `src/semantic.rs` | ditto + `benches/vector.rs` |
 | Procedural | `RefCell<BTreeMap<Version, T>>` COW store | `src/procedural.rs` | ditto |
 | Policy | `MemoryPolicy { score, should_retain }` | `src/policy.rs` | ditto |
+| Cycle fixtures | deterministic rooted graph + unrooted cycle collection model | `src/cycle.rs` | `tests/cycle.rs`, `deferred_arc_cycle_detection` |
 
 These will not be removed or replaced wholesale. Each tier below either upgrades the *backend* of one store or adds a *new* allocator surface that the existing public types can switch to.
 
@@ -102,11 +103,27 @@ The hardest single Memory-Core item, and the most important for the language's s
 
 ### T3.1 — ARC + Bacon–Rajan cycle detection (Mini-Spec §4.5)
 
-The biggest open spec item (🟠 in the conformance matrix). Implements the synchronous trial-deletion algorithm with **kind-aware roots** — the working/episodic/semantic/procedural taxonomy gives the cycle collector partition information that hardware-allocator-only languages cannot exploit.
+The biggest open spec item. Phase 6A adds a bounded, deterministic reference
+model in `garnet-memory-v0.3/src/cycle.rs`: rooted nodes stay live, unrooted
+acyclic nodes are left for ordinary retention/eviction policy, unrooted cycles
+are collected, and kind-partitioned scans collect a cross-kind component as a
+whole when a matching kind triggers the scan. This is executable evidence for
+the observable invariants, not the production collector.
+
+The remaining production item is the synchronous Bacon-Rajan trial-deletion
+algorithm integrated with ARC-managed allocator roots. That final path keeps
+the **kind-aware roots** design — the working/episodic/semantic/procedural
+taxonomy gives the cycle collector partition information that
+hardware-allocator-only languages cannot exploit.
 
 - **References:** Mini-Spec §4.5 (with sub-rules .5.1 through .5.5); Paper V Addendum Theorem A (ARC + kind-partitioned cycle collection).
-- **Pre-requisite:** Tier 1 allocator integration (cycle detector needs to walk the allocator's roots, not the user's).
-- **Risk:** high — this is research-grade work and the spec acknowledges it as such. Plan: build the synchronous variant first, validate against Bacon–Rajan's published test cases, then add kind-aware partitioning as a measurable optimization.
+- **Pre-requisite for production collector:** Tier 1 allocator integration
+  (cycle detector needs to walk the allocator's roots, not only the fixture
+  graph).
+- **Risk:** high — this is research-grade work and the spec acknowledges it as
+  such. Plan: keep the Phase 6A reference fixtures green, build the
+  synchronous ARC-integrated variant, validate against Bacon-Rajan's published
+  test cases, then measure kind-aware partitioning as an optimization.
 
 ### T3.2 — Safe-mode `Sendable` interaction
 

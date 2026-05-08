@@ -30,7 +30,9 @@
 //! - No production-grade vector index (cosine over a flat `Vec`, not
 //!   HNSW / IVF / PolarQuant).
 //! - No eviction beyond what `MemoryPolicy` exposes as scoring API.
-//! - No ARC + Bacon–Rajan cycle detection (Mini-Spec §4.5 is deferred).
+//! - No allocator-integrated ARC + Bacon–Rajan collector yet.
+//! - A bounded [`CycleGraph`] reference path exposes §4.5 cycle fixtures
+//!   while production allocator work remains on the Memory Core roadmap.
 //!
 //! ## What's planned
 //!
@@ -50,12 +52,14 @@
 //! - Mini-Spec section reference → §4 (declaration, semantics, kinds)
 //!   and the deferred §4.4 (generics over kinds) / §4.5 (ARC).
 
+pub mod cycle;
 pub mod episodic;
 pub mod policy;
 pub mod procedural;
 pub mod semantic;
 pub mod working;
 
+pub use cycle::{CycleCollectReport, CycleGraph, CycleGraphError, CycleNodeId, CycleScan};
 pub use episodic::EpisodeStore;
 pub use policy::{MemoryKind, MemoryPolicy};
 pub use procedural::WorkflowStore;
