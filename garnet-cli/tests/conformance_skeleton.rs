@@ -378,6 +378,57 @@ def caller(b) {
     let managed_arc_path = temp_source("managed_arc_not_affine", managed_arc_src);
     assert_ok(&["parse"], &managed_arc_path);
     assert_ok(&["check"], &managed_arc_path);
+
+    let place_aliasing_src = r#"
+struct Pair {
+  left: Buffer,
+  right: Buffer,
+}
+
+fn frob(mut a: Buffer, borrow b: Buffer) -> Int {
+  0
+}
+
+fn caller(mut p: Pair) -> Int {
+  frob(p.left, p.left)
+}
+"#;
+    let place_aliasing_path = temp_source("borrow_place_aliasing", place_aliasing_src);
+    assert_ok(&["parse"], &place_aliasing_path);
+    let out = run(&["check"], &place_aliasing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode B1/B2 must reject mut+borrow aliasing of the same field projection"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("aliasing violation"),
+        "expected field-place aliasing diagnostic, got:\n{stdout}"
+    );
+
+    let sibling_ok_src = r#"
+struct Pair {
+  left: Buffer,
+  right: Buffer,
+}
+
+fn consume(own x: Buffer) -> Int {
+  0
+}
+
+fn read(borrow x: Buffer) -> Int {
+  0
+}
+
+fn caller(mut p: Pair) -> Int {
+  consume(p.left)
+  read(p.right)
+  0
+}
+"#;
+    let sibling_ok_path = temp_source("borrow_moved_field_sibling_ok", sibling_ok_src);
+    assert_ok(&["parse"], &sibling_ok_path);
+    assert_ok(&["check"], &sibling_ok_path);
 }
 
 #[test]

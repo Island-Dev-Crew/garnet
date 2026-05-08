@@ -249,3 +249,97 @@ fn typed_receiver_does_not_fallback_to_other_type_method() {
         "typed receiver with no matching impl should not borrow-check another type's method: {d:?}"
     );
 }
+
+// ── Place-granular field projections ──
+
+#[test]
+fn same_field_mut_and_borrow_alias_flagged() {
+    let src = r#"
+        struct Pair {
+            left: Buffer,
+            right: Buffer,
+        }
+
+        fn frob(mut a: Buffer, borrow b: Buffer) -> Int { 0 }
+
+        fn caller(mut p: Pair) -> Int {
+            frob(p.left, p.left)
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("aliasing"))),
+        "same field projection must be alias-checked, got {d:?}"
+    );
+}
+
+#[test]
+fn distinct_field_mut_and_borrow_are_not_aliases() {
+    let src = r#"
+        struct Pair {
+            left: Buffer,
+            right: Buffer,
+        }
+
+        fn frob(mut a: Buffer, borrow b: Buffer) -> Int { 0 }
+
+        fn caller(mut p: Pair) -> Int {
+            frob(p.left, p.right)
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        !d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("aliasing"))),
+        "distinct fields should not be treated as the same place: {d:?}"
+    );
+}
+
+#[test]
+fn parent_and_child_places_alias() {
+    let src = r#"
+        struct Pair {
+            left: Buffer,
+            right: Buffer,
+        }
+
+        fn frob(mut p: Pair, borrow b: Buffer) -> Int { 0 }
+
+        fn caller(mut p: Pair) -> Int {
+            frob(p, p.left)
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("aliasing"))),
+        "parent and child places overlap and must alias, got {d:?}"
+    );
+}
+
+#[test]
+fn moving_field_rejects_same_field_but_allows_sibling() {
+    let src = r#"
+        struct Pair {
+            left: Buffer,
+            right: Buffer,
+        }
+
+        fn consume(own x: Buffer) -> Int { 0 }
+        fn read(borrow x: Buffer) -> Int { 0 }
+
+        fn caller(mut p: Pair) -> Int {
+            consume(p.left)
+            read(p.right)
+            read(p.left)
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "moved field must reject later same-field use while sibling stays available, got {d:?}"
+    );
+}

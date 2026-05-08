@@ -19,10 +19,11 @@
 //!   when the receiver has a simple declared type, with an unambiguous
 //!   same-module method-name fallback for still-untyped receivers. Full
 //!   impl-block dispatch remains deferred.
-//! - Only simple identifier arguments are tracked. Field projections and
-//!   index expressions are conservatively treated as non-moves.
+//! - Simple field projections are tracked as places for move and alias checks.
+//!   Index expressions remain conservatively treated as non-moves.
 //! - Branch joins are conservative and coarse-grained. Full NLL, precise
-//!   place-granular borrows, and lifetime containment remain deferred.
+//!   nested place borrows beyond simple fields, and lifetime containment remain
+//!   deferred.
 
 use garnet_parser::ast::{Expr, FnDef, FnMode, Item, Module, Ownership, Pattern, Stmt, TypeExpr};
 use std::collections::{HashMap, HashSet};
@@ -172,8 +173,20 @@ impl Env {
         );
     }
 
+    fn record_move_place(&mut self, place: &[String], callee: &str) {
+        let binding = format_place(place);
+        self.record_move(&binding, callee);
+    }
+
     fn rebind(&mut self, binding: &str) {
-        self.moved.remove(binding);
+        self.rebind_place(&[binding.to_string()]);
+    }
+
+    fn rebind_place(&mut self, place: &[String]) {
+        let binding = format_place(place);
+        let prefix = format!("{binding}.");
+        self.moved
+            .retain(|moved, _| moved != &binding && !moved.starts_with(&prefix));
     }
 
     fn rebind_with_type(&mut self, binding: &str, ty: Option<&TypeExpr>) {
@@ -193,12 +206,45 @@ impl Env {
     }
 
     fn is_moved(&self, binding: &str) -> Option<&MoveRecord> {
-        self.moved.get(binding)
+        self.moved_record_for_place(&[binding.to_string()])
+    }
+
+    fn moved_record_for_place(&self, place: &[String]) -> Option<&MoveRecord> {
+        self.moved.iter().find_map(|(moved, record)| {
+            let moved_place = split_place(moved);
+            places_overlap(&moved_place, place).then_some(record)
+        })
     }
 
     fn type_of(&self, binding: &str) -> Option<&str> {
         self.types.get(binding).map(String::as_str)
     }
+}
+
+fn place_path(expr: &Expr) -> Option<Vec<String>> {
+    match expr {
+        Expr::Ident(name, _) => Some(vec![name.clone()]),
+        Expr::Field {
+            receiver, field, ..
+        } => {
+            let mut path = place_path(receiver)?;
+            path.push(field.clone());
+            Some(path)
+        }
+        _ => None,
+    }
+}
+
+fn format_place(place: &[String]) -> String {
+    place.join(".")
+}
+
+fn split_place(place: &str) -> Vec<String> {
+    place.split('.').map(ToOwned::to_owned).collect()
+}
+
+fn places_overlap(left: &[String], right: &[String]) -> bool {
+    left == right || left.starts_with(right) || right.starts_with(left)
 }
 
 fn check_fn_body(f: &FnDef, sigs: &SignatureTables, diags: &mut Vec<CheckError>) {
@@ -237,8 +283,8 @@ fn check_stmt(
         }
         Stmt::Assign { target, value, .. } => {
             check_expr(value, env, sigs, fn_name, diags);
-            if let Expr::Ident(name, _) = target {
-                env.rebind(name);
+            if let Some(place) = place_path(target) {
+                env.rebind_place(&place);
             }
         }
         Stmt::While {
@@ -336,7 +382,16 @@ fn check_expr(
             }
         }
         Expr::Field { receiver, .. } => {
-            check_expr(receiver, env, sigs, fn_name, diags);
+            if let Some(place) = place_path(expr) {
+                if let Some(rec) = env.moved_record_for_place(&place) {
+                    diags.push(CheckError::SafeModeViolation(format!(
+                        "use-after-move: in `{fn_name}`, `{}` was moved into `{}` and cannot be used again",
+                        rec.binding, rec.callee
+                    )));
+                }
+            } else {
+                check_expr(receiver, env, sigs, fn_name, diags);
+            }
         }
         Expr::Index {
             receiver, index, ..
@@ -505,8 +560,8 @@ fn apply_ownership(
     detect_aliasing_violations(callee, pairs, fn_name, diags);
     for (arg, kind) in pairs {
         if matches!(kind, Some(Ownership::Own)) {
-            if let Expr::Ident(name, _) = arg {
-                env.record_move(name, callee);
+            if let Some(place) = place_path(arg) {
+                env.record_move_place(&place, callee);
             }
         }
     }
@@ -522,22 +577,29 @@ fn detect_aliasing_violations(
     // somewhere else in the same call. That's the basic
     // aliasing-XOR-mutation rule: an exclusive borrow may not coexist with
     // any other reference to the same binding.
-    let mut mut_names: Vec<&str> = Vec::new();
-    let mut other_names: Vec<&str> = Vec::new();
+    let mut mut_places: Vec<Vec<String>> = Vec::new();
+    let mut other_places: Vec<Vec<String>> = Vec::new();
     for (arg, kind) in pairs {
-        if let Expr::Ident(name, _) = arg {
+        if let Some(place) = place_path(arg) {
             if matches!(kind, Some(Ownership::Mut)) {
-                mut_names.push(name.as_str());
+                mut_places.push(place);
             } else {
-                other_names.push(name.as_str());
+                other_places.push(place);
             }
         }
     }
-    for m in &mut_names {
-        if other_names.contains(m) || mut_names.iter().filter(|n| n == &m).count() > 1 {
+    for (idx, mut_place) in mut_places.iter().enumerate() {
+        let overlaps_other_mut = mut_places
+            .iter()
+            .enumerate()
+            .any(|(other_idx, other)| other_idx != idx && places_overlap(mut_place, other));
+        let overlaps_other = other_places
+            .iter()
+            .any(|other| places_overlap(mut_place, other));
+        if overlaps_other_mut || overlaps_other {
             diags.push(CheckError::SafeModeViolation(format!(
                 "aliasing violation: in `{fn_name}`, `{}` is passed as `mut` to `{callee}` while another reference to the same binding is in flight",
-                m
+                format_place(mut_place)
             )));
         }
     }

@@ -267,6 +267,24 @@ not fall back to another type's method when no matching impl exists.
 Remaining: generic receiver types, trait impl dispatch, inferred local types,
 and full receiver/field/place-granular borrows are still pending.
 
+- [x] **Step 1D: Track simple field places for aliasing and moves**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test borrow
+cargo test -p garnet-cli --test conformance_skeleton partial_borrow_rule_suite
+```
+
+Evidence: simple field projections now participate in B1/B2 aliasing and B4
+move tracking. The checker rejects same-field `mut`+`borrow` aliasing,
+parent/child aliasing, and same-field use-after-move while allowing distinct
+sibling fields to remain usable.
+
+Remaining: index/dynamic places, generic receiver types, trait impl dispatch,
+inferred local types, drop discipline, two-phase borrows, and NLL are still
+pending.
+
 - [ ] **Step 2: Implement a conservative NLL subset**
 
 Acceptance:

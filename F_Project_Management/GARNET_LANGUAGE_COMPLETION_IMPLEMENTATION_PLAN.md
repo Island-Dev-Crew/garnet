@@ -25,7 +25,7 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | Dynamic method dispatch tables | Partial Phase 2H | `deferred_dynamic_dispatch` covers per-instance method tables; `static_impl_dispatch_and_method_missing` covers static inherent impl fallback and `method_missing`; `dynamic_impl_dispatch_tables` covers `@dynamic impl Type for Protocol` registration and dispatch | Add richer dispatch precedence and ambiguity probes |
 | Structural protocol satisfaction and runtime casts | Partial Phase 2H | `Item::Protocol` and `Expr::Cast` parse; `deferred_structural_protocols` checks protocol-typed managed parameters, runtime `as Protocol` casts, static/dynamic methods, mode/arity/parameter/return annotation mismatches, generic protocol substitution, core built-in typed method signatures, and `@dynamic impl` methods | Add broader trait/generic coherence |
 | Actor protocol enforcement and `Sendable` | Partial Phase 3D | actor runtime crate exists; `actor_sendable_rejects_nonsendable_protocol_payloads` rejects `@nonsendable` actor protocol payloads before runtime; managed interpreter now registers actors, dispatches `spawn Actor.handler(args)` synchronously, creates `spawn Actor` addresses with persistent actor-local state, enforces bounded source mailboxes through `Actor.spawn(capacity)`, and ships a generated `agent-orchestrator` actor template that runs/tests through managed actor addresses; full async OS-thread bridge remains partial | Bridge generated actor projects to the full async `garnet-actor-runtime` OS-thread address/mailbox runtime |
-| Rust-grade NLL and borrow rules | Partial Phase 4C | `garnet-check-v0.3/src/borrow.rs`; `garnet-check-v0.3/tests/borrow.rs`; `partial_borrow_rule_suite` now rejects direct use-after-move, direct mut-aliasing, `own self` method receiver moves, method receiver aliasing, and simple typed receiver disambiguation through the CLI checker | Activate full place-granular B1-B5, generic/trait impl dispatch, drop discipline, and `deferred_nll_lifetime_inference` |
+| Rust-grade NLL and borrow rules | Partial Phase 4D | `garnet-check-v0.3/src/borrow.rs`; `garnet-check-v0.3/tests/borrow.rs`; `partial_borrow_rule_suite` now rejects direct use-after-move, direct mut-aliasing, `own self` method receiver moves, method receiver aliasing, simple typed receiver disambiguation, and simple field-place aliasing/field use-after-move through the CLI checker | Activate full index/dynamic place tracking, generic/trait impl dispatch, drop discipline, and `deferred_nll_lifetime_inference` |
 | Trait coherence | Not done | spec row exists; no checker algorithm | Activate `deferred_trait_coherence` |
 | Monomorphization | Parsed-only | generics and `dyn Trait` parse; no lowering/backend | Activate `parsed_only_monomorphization` only for interpreter-level evidence; native zero-cost remains future |
 | Memory Core ARC/cycles | Not done | Mnemos reference stores exist; no Bacon-Rajan cycle collector | Activate `deferred_arc_cycle_detection` |
@@ -389,6 +389,24 @@ cargo test -p garnet-cli --test conformance_skeleton partial_borrow_rule_suite
 
 Remaining: generic receiver types, trait impl dispatch, inference for untyped
 locals, and full place-granular receiver/field borrows are still deferred.
+
+- [x] **Step 1D: Track simple field places for aliasing and moves**
+
+Teach the borrow checker to treat `root.field` chains as places for direct
+ownership and alias checks. The slice rejects same-field `mut`+`borrow`
+aliasing, parent/child aliasing, and same-field use-after-move while preserving
+valid sibling-field use.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test borrow
+cargo test -p garnet-cli --test conformance_skeleton partial_borrow_rule_suite
+```
+
+Remaining: index/dynamic places, generic receiver types, trait impl dispatch,
+inference for untyped locals, drop discipline, two-phase borrows, and NLL are
+still deferred.
 
 - [ ] **Step 2: Implement a conservative NLL subset**
 

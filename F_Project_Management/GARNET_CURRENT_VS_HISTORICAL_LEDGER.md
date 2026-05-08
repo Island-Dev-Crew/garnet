@@ -49,8 +49,10 @@ When documents conflict, use this order:
 - Safe-mode borrow checking now has an active CLI conformance slice for direct
   `own` use-after-move, direct `mut`+`borrow` aliasing, and unambiguous
   `own self` method receiver moves. It now uses simple declared receiver types
-  to distinguish same-named impl methods; full Rust-grade NLL/place-granular
-  B1-B5 and generic/trait impl dispatch remain roadmap work, not current truth.
+  to distinguish same-named impl methods, and it tracks simple field places for
+  same-field/parent-child aliasing plus field use-after-move. Full Rust-grade
+  NLL, index/dynamic places, B5 drop discipline, and generic/trait impl
+  dispatch remain roadmap work, not current truth.
 - CI has an explicit canonical MVP example job in addition to the Rust test
   suite.
 
