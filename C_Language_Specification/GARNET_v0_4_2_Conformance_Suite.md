@@ -31,6 +31,7 @@ language-completeness work can move from prose to executable evidence.
 | §11.7 static impl fallback + method_missing | v0.5 Phase 2D | Runtime Gate | `static_impl_dispatch_and_method_missing` | active pass |
 | §11.7 `@dynamic impl` dispatch tables | v0.5 Phase 2H | Runtime Gate | `dynamic_impl_dispatch_tables` | active pass |
 | §11.8 structural protocol semantics | v0.5 Phase 2C/2E/2F/2G/2H | Runtime/Checker Gate | `deferred_structural_protocols`; `parses_protocol_cast_expression`; `dynamic_impl_dispatch_tables` | active pass, including arity, parameter-type, return-type, mode, `as Protocol` cast, generic protocol substitution, typed built-in method signature negatives, and `@dynamic impl` protocol satisfaction |
+| §8.6 partial borrow rules | v0.5 Phase 4A | Safe-Mode Gate | `partial_borrow_rule_suite` | active pass for B1/B2 direct mut-alias rejection and B4 direct use-after-move |
 
 ## Deferred or Partial Test Handles
 
@@ -41,7 +42,7 @@ when the corresponding Mini-Spec row becomes implemented.
 |---|---|---|---|
 | §4.5 ARC + Bacon-Rajan cycle detection | v0.5 Phase 6 | Memory Core Gate | `deferred_arc_cycle_detection` |
 | §8.5 NLL/lifetime inference | v0.5 Phase 4 | Safe-Mode Gate | `deferred_nll_lifetime_inference` |
-| §8.6 borrow rules B1-B5 | v0.5 Phase 4 | Safe-Mode Gate | `partial_borrow_rule_suite` |
+| §8.6 full place-granular borrow rules B1-B5 | v0.5 Phase 4 | Safe-Mode Gate | `deferred_full_borrow_rule_suite` |
 | §11.5 trait coherence | v0.5 Phase 5 | Type-System Gate | `deferred_trait_coherence` |
 | §11.6 monomorphization | v0.5 Phase 5 | Type-System Gate | `parsed_only_monomorphization` |
 

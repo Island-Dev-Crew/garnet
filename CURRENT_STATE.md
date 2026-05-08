@@ -1,6 +1,6 @@
 # Garnet Current State and Reviewer Guide
 
-Date: 2026-05-06
+Date: 2026-05-08
 Status: research-grade language/toolchain prototype
 
 This is the first file a fresh MIT reviewer, contributor, or agent should read
@@ -108,10 +108,13 @@ highest-leverage next milestones are:
 The v0.5 seven-phase roadmap is now tracked in
 `F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md` and
 `F_Project_Management/ROADMAPS/GARNET_v0_5_LANGUAGE_COMPLETION_ROADMAP.md`.
-Phase 1 has begun with parser-parity surfaces for top-level structural
-protocols, `dyn Trait`, staged `yield`/`next`, and preserved
-`@dynamic`/`@nonsendable` annotations. These are parser/conformance advances,
-not runtime-completeness claims.
+Phase 4A is the current readiness slice. Phases 1-3D added parser parity,
+managed block/dynamic/protocol runtime slices, managed actor addresses, bounded
+source mailboxes, and a generated actor-orchestrator template. Phase 4A
+activates partial safe-mode borrow conformance for direct use-after-move
+through `own` parameters and direct `mut`+`borrow` aliasing while preserving
+managed ARC behavior. Full place-granular B1-B5, method-call ownership, drop
+discipline, two-phase borrows, and NLL/lifetime inference remain deferred.
 
 ## Historical Material
 

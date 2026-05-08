@@ -285,9 +285,73 @@ fn deferred_nll_lifetime_inference() {
 }
 
 #[test]
-#[ignore = "Mini-Spec §8.6 formal borrow rules are partial in v0.4.2"]
 fn partial_borrow_rule_suite() {
-    pending("complete borrow-check B1-B5 conformance suite");
+    let use_after_move_src = r#"
+fn consume(own x: Buffer) -> Int {
+  0
+}
+
+fn caller(own b: Buffer) -> Int {
+  consume(b)
+  consume(b)
+  0
+}
+"#;
+    let use_after_move_path = temp_source("borrow_use_after_move", use_after_move_src);
+    assert_ok(&["parse"], &use_after_move_path);
+    let out = run(&["check"], &use_after_move_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode B4 must reject use-after-move through own parameters"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("use-after-move"),
+        "expected use-after-move diagnostic, got:\n{stdout}"
+    );
+
+    let aliasing_src = r#"
+fn frob(mut a: Buffer, borrow b: Buffer) -> Int {
+  0
+}
+
+fn caller(mut x: Buffer) -> Int {
+  frob(x, x)
+}
+"#;
+    let aliasing_path = temp_source("borrow_aliasing_xor_mut", aliasing_src);
+    assert_ok(&["parse"], &aliasing_path);
+    let out = run(&["check"], &aliasing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode B1/B2 must reject mut+borrow aliasing in one call"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("aliasing violation"),
+        "expected aliasing diagnostic, got:\n{stdout}"
+    );
+
+    let managed_arc_src = r#"
+fn consume(own x: Buffer) -> Int {
+  0
+}
+
+def caller(b) {
+  consume(b)
+  consume(b)
+  0
+}
+"#;
+    let managed_arc_path = temp_source("managed_arc_not_affine", managed_arc_src);
+    assert_ok(&["parse"], &managed_arc_path);
+    assert_ok(&["check"], &managed_arc_path);
+}
+
+#[test]
+#[ignore = "Mini-Spec §8.6 full place-granular B1-B5 borrow rules are partial in v0.4.2"]
+fn deferred_full_borrow_rule_suite() {
+    pending("full place-granular borrow-check B1-B5 conformance suite");
 }
 
 #[test]

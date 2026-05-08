@@ -219,13 +219,20 @@ Evidence: `cargo test -p garnet-cli --test cli_smoke new_agent_orchestrator_temp
 - Modify: `garnet-check-v0.3/src/lib.rs`
 - Test: `garnet-cli/tests/conformance_skeleton.rs`
 
-- [ ] **Step 1: Complete borrow rules B1-B5 with over-rejecting diagnostics**
+- [x] **Step 1: Activate partial B1/B2/B4 borrow-rule conformance**
 
 Acceptance:
 
 ```sh
-cargo test -p garnet-cli --test conformance_skeleton partial_borrow_rule_suite -- --ignored
+cargo test -p garnet-cli --test conformance_skeleton partial_borrow_rule_suite
 ```
+
+Evidence: direct use-after-move through `own` parameters and direct
+`mut`+`borrow` aliasing are rejected by `garnet check`; managed `def` code
+remains ARC-governed rather than affine.
+
+Remaining: full place-granular B1-B5, method-call ownership, B3 lifetime
+containment, B5 drop discipline, two-phase borrows, and NLL are still pending.
 
 - [ ] **Step 2: Implement a conservative NLL subset**
 

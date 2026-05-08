@@ -25,7 +25,7 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | Dynamic method dispatch tables | Partial Phase 2H | `deferred_dynamic_dispatch` covers per-instance method tables; `static_impl_dispatch_and_method_missing` covers static inherent impl fallback and `method_missing`; `dynamic_impl_dispatch_tables` covers `@dynamic impl Type for Protocol` registration and dispatch | Add richer dispatch precedence and ambiguity probes |
 | Structural protocol satisfaction and runtime casts | Partial Phase 2H | `Item::Protocol` and `Expr::Cast` parse; `deferred_structural_protocols` checks protocol-typed managed parameters, runtime `as Protocol` casts, static/dynamic methods, mode/arity/parameter/return annotation mismatches, generic protocol substitution, core built-in typed method signatures, and `@dynamic impl` methods | Add broader trait/generic coherence |
 | Actor protocol enforcement and `Sendable` | Partial Phase 3D | actor runtime crate exists; `actor_sendable_rejects_nonsendable_protocol_payloads` rejects `@nonsendable` actor protocol payloads before runtime; managed interpreter now registers actors, dispatches `spawn Actor.handler(args)` synchronously, creates `spawn Actor` addresses with persistent actor-local state, enforces bounded source mailboxes through `Actor.spawn(capacity)`, and ships a generated `agent-orchestrator` actor template that runs/tests through managed actor addresses; full async OS-thread bridge remains partial | Bridge generated actor projects to the full async `garnet-actor-runtime` OS-thread address/mailbox runtime |
-| Rust-grade NLL and borrow rules | Partial skeleton | `garnet-check-v0.3/src/borrow.rs`; ignored conformance handles | Activate `partial_borrow_rule_suite` and `deferred_nll_lifetime_inference` |
+| Rust-grade NLL and borrow rules | Partial Phase 4A | `garnet-check-v0.3/src/borrow.rs`; `garnet-check-v0.3/tests/borrow.rs`; `partial_borrow_rule_suite` now rejects direct use-after-move and direct mut-aliasing through the CLI checker | Activate full place-granular B1-B5, method-call ownership, drop discipline, and `deferred_nll_lifetime_inference` |
 | Trait coherence | Not done | spec row exists; no checker algorithm | Activate `deferred_trait_coherence` |
 | Monomorphization | Parsed-only | generics and `dyn Trait` parse; no lowering/backend | Activate `parsed_only_monomorphization` only for interpreter-level evidence; native zero-cost remains future |
 | Memory Core ARC/cycles | Not done | Mnemos reference stores exist; no Bacon-Rajan cycle collector | Activate `deferred_arc_cycle_detection` |
@@ -342,17 +342,20 @@ Evidence: `cargo test -p garnet-cli --test cli_smoke new_agent_orchestrator_temp
 - Test: `garnet-check-v0.3/tests/borrow.rs`
 - Test: `garnet-cli/tests/conformance_skeleton.rs`
 
-- [ ] **Step 1: Activate the B1-B5 borrow-rule suite**
+- [x] **Step 1: Activate the partial B1/B2/B4 borrow-rule suite**
 
-Replace `partial_borrow_rule_suite` with concrete cases for move-after-use, mutable aliasing, immutable alias overlap, branch merge, and method-call ownership.
+Replace `partial_borrow_rule_suite` with concrete CLI-level cases for direct
+use-after-move through `own` parameters, direct mutable aliasing, and managed
+ARC behavior that must remain outside affine checking.
 
 Run:
 
 ```sh
-cargo test -p garnet-cli --test conformance_skeleton partial_borrow_rule_suite -- --ignored
+cargo test -p garnet-cli --test conformance_skeleton partial_borrow_rule_suite
 ```
 
-Expected before implementation: fail on at least method-call ownership and branch-sensitive cases.
+Remaining: full place-granular B1-B5, method-call ownership, B3 lifetime
+containment, B5 drop discipline, and two-phase borrows are still deferred.
 
 - [ ] **Step 2: Implement a conservative NLL subset**
 
