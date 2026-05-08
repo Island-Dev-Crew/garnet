@@ -58,6 +58,11 @@ When documents conflict, use this order:
   borrowed input and multiple borrowed inputs reject, while one borrowed input
   is accepted. Full Rust-grade CFG NLL, dynamic places, B5 drop discipline, and
   generic/trait impl dispatch remain roadmap work, not current truth.
+- Trait coherence now has an active conservative checker slice: exact duplicate
+  trait impls and orphan impls where neither trait nor type is local reject,
+  while local-trait and local-type impls remain accepted. Generic overlap
+  solving, specialization, imported-package coherence, and native
+  monomorphization remain roadmap work.
 - CI has an explicit canonical MVP example job in addition to the Rust test
   suite.
 

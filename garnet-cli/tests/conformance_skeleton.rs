@@ -502,9 +502,90 @@ fn deferred_full_borrow_rule_suite() {
 }
 
 #[test]
-#[ignore = "Mini-Spec §11.5 trait coherence is spec-only in v0.4.2"]
 fn deferred_trait_coherence() {
-    pending("formal trait coherence/orphan-rule enforcement");
+    let duplicate_impl_src = r#"
+trait Renderable {
+  def render() -> String
+}
+
+struct Widget {
+  name: String,
+}
+
+impl Widget for Renderable {
+  def render() -> String {
+    "one"
+  }
+}
+
+impl Widget for Renderable {
+  def render() -> String {
+    "two"
+  }
+}
+"#;
+    let duplicate_impl_path = temp_source("trait_duplicate_impl", duplicate_impl_src);
+    assert_ok(&["parse"], &duplicate_impl_path);
+    let out = run(&["check"], &duplicate_impl_path);
+    assert!(
+        !out.status.success(),
+        "trait coherence must reject duplicate impls for the same trait/type pair"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("duplicate impl"),
+        "expected duplicate impl diagnostic, got:\n{stdout}"
+    );
+
+    let orphan_impl_src = r#"
+impl ExternalWidget for ExternalRenderable {
+  def render() -> String {
+    "external"
+  }
+}
+"#;
+    let orphan_impl_path = temp_source("trait_orphan_impl", orphan_impl_src);
+    assert_ok(&["parse"], &orphan_impl_path);
+    let out = run(&["check"], &orphan_impl_path);
+    assert!(
+        !out.status.success(),
+        "trait coherence must reject impls where neither trait nor type is local"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("orphan rule"),
+        "expected orphan-rule diagnostic, got:\n{stdout}"
+    );
+
+    let local_trait_src = r#"
+trait LocalRenderable {
+  def render() -> String
+}
+
+impl ExternalWidget for LocalRenderable {
+  def render() -> String {
+    "external"
+  }
+}
+"#;
+    let local_trait_path = temp_source("trait_local_trait_external_type", local_trait_src);
+    assert_ok(&["parse"], &local_trait_path);
+    assert_ok(&["check"], &local_trait_path);
+
+    let local_type_src = r#"
+struct LocalWidget {
+  name: String,
+}
+
+impl LocalWidget for ExternalRenderable {
+  def render() -> String {
+    "local"
+  }
+}
+"#;
+    let local_type_path = temp_source("trait_external_trait_local_type", local_type_src);
+    assert_ok(&["parse"], &local_type_path);
+    assert_ok(&["check"], &local_type_path);
 }
 
 #[test]

@@ -329,7 +329,18 @@ drop discipline, and two-phase borrows remain pending.
 - Create: `garnet-check-v0.3/src/monomorph.rs`
 - Test: `garnet-cli/tests/conformance_skeleton.rs`
 
-- [ ] **Step 1: Enforce trait coherence with a conservative orphan-rule checker**
+- [x] **Step 1: Enforce trait coherence with a conservative orphan-rule checker**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test coherence
+cargo test -p garnet-cli --test conformance_skeleton deferred_trait_coherence
+```
+
+Evidence: Phase 5A rejects exact duplicate trait impls and orphan impls where
+neither the trait nor the type is local, while preserving local-trait and
+local-type positive cases. Full generic overlap solving remains pending.
 
 - [ ] **Step 2: Add interpreter-level generic instantiation evidence**
 

@@ -27,6 +27,7 @@ fn implemented_conformance_tests_are_active() {
         "deferred_structural_protocols",
         "deferred_nll_lifetime_inference",
         "partial_borrow_rule_suite",
+        "deferred_trait_coherence",
     ] {
         let idx = source.find(name).expect("active conformance test exists");
         let prefix = &source[..idx];
@@ -44,7 +45,6 @@ fn deferred_semantic_handles_remain_explicit() {
         .expect("conformance skeleton");
     for name in [
         "deferred_arc_cycle_detection",
-        "deferred_trait_coherence",
         "parsed_only_monomorphization",
     ] {
         let idx = source.find(name).expect("deferred handle exists");

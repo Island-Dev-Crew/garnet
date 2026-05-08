@@ -32,6 +32,7 @@
 pub mod audit;
 pub mod borrow;
 pub mod caps_graph;
+pub mod coherence;
 
 pub use audit::{AuditLog, BoundaryCall, BoundaryDirection};
 pub use caps_graph::{CapsReport, CapsViolation};
@@ -101,6 +102,12 @@ pub fn check_module(module: &Module) -> CheckReport {
     // produces diagnostics for safe-mode functions; managed-mode `def`
     // functions are skipped because ARC sharing is the contract there.
     report.errors.extend(borrow::check_borrows(module));
+
+    // Conservative trait coherence: exact duplicate impls and orphan-rule
+    // violations are rejected before richer generic overlap solving exists.
+    report
+        .errors
+        .extend(coherence::check_trait_coherence(module));
 
     // v3.4.1 Day 2 — CapCaps call-graph propagator. Reads primitive caps
     // from `garnet_stdlib::registry` at check time and verifies every
