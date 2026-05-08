@@ -177,9 +177,70 @@ fn deferred_arc_cycle_detection() {
 }
 
 #[test]
-#[ignore = "Mini-Spec §5.4 blocks/yield are deferred in v0.4.2"]
 fn deferred_blocks_and_yield() {
-    pending("blocks/yield/next/break return semantics");
+    let src = r#"
+@caps()
+def emit_each() {
+  yield 1
+  yield 2
+}
+
+@caps()
+def main() {
+  let mut total = 0
+  emit_each() do |x|
+    total += x
+    next x
+    total += 100
+  end
+  total
+}
+"#;
+    let path = temp_source("blocks_yield_next", src);
+    assert_ok(&["parse"], &path);
+    assert_ok(&["check"], &path);
+    let out = run(&["run"], &path);
+    assert!(
+        out.status.success(),
+        "garnet run {} failed\nstdout:\n{}\nstderr:\n{}",
+        path.display(),
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("=> 3"),
+        "expected yielded block to accumulate 3 without post-next statements, got:\n{stdout}"
+    );
+}
+
+#[test]
+fn explicit_closure_argument_does_not_become_implicit_block() {
+    let src = r#"
+@caps()
+def no_args() {
+  7
+}
+
+@caps()
+def main() {
+  let f = |x| x
+  no_args(f)
+}
+"#;
+    let path = temp_source("explicit_closure_is_not_block", src);
+    assert_ok(&["parse"], &path);
+    assert_ok(&["check"], &path);
+    let out = run(&["run"], &path);
+    assert!(
+        !out.status.success(),
+        "ordinary closure argument must not be silently consumed as a do/end block"
+    );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("arity mismatch"),
+        "expected arity mismatch for ordinary closure arg, got:\n{stderr}"
+    );
 }
 
 #[test]

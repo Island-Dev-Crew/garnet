@@ -45,7 +45,7 @@ itself make deferred language semantics real.
 | 1 | Merge PR #2 after draft exit | establishes current-vs-deferred truth, MVP corpus, and phase gates | CI green plus local format/test/security gates |
 | 2 | Harden and merge PR #1 | turns procedural memory from prose into a semantic CI gate | Python checker regressions, contract check, CI agent-contract job |
 | 3 | Phase 1 finish parser parity | closes `do ... end` syntax gap without overstating runtime semantics | active parser test plus conformance matrix update |
-| 4 | Phase 2 managed runtime | converts `yield`, `next`, dynamic dispatch, and structural protocols from ignored handles into running behavior | ignored tests activated and passing through `garnet run` |
+| 4 | Phase 2 managed runtime | converts `yield`, `next`, dynamic dispatch, and structural protocols from ignored handles into running behavior | Phase 2A block/yield/next active with a block-vs-closure boundary regression; remaining dynamic/protocol tests must pass through `garnet run` |
 | 5 | Phase 3 actors + Sendable | makes agent-native examples executable instead of Rust-runtime-only | actor syntax template smoke plus nonsendable rejection |
 | 6 | Phase 4 safe mode | moves borrow/capability enforcement toward language law | active borrow-rule suite, NLL/lifetime negative probes, CapCaps bypass probes |
 | 7 | Phase 5 traits/generics | prevents dynamic/trait claims from being parser-only | coherence, generic, dyn-trait check/run fixtures |
@@ -57,7 +57,7 @@ itself make deferred language semantics real.
 | Feature | Current dogfood status | 85+ condition |
 |---|---|---|
 | Parser parity | partial positive; current parser tests pass | `do ... end` and parser-vs-spec matrix complete |
-| Managed runtime | not ready; eight semantic handles remain ignored | blocks/yield/dynamic/protocol tests active and green |
+| Managed runtime | Phase 2A active for syntactic block invocation, `yield`, and `next`; ordinary closure arguments still obey arity; dynamic dispatch and structural protocols remain deferred | dynamic/protocol tests active and green |
 | Converter | useful scaffold; sandbox posture exists | unsafe/eval/exec corpus gate across Rust/Ruby/Python/Go and migration TODO quality checks |
 | Memory Core | reference implementation only | ARC/cycle semantics, persistence/privacy, and machine-key isolation gates active |
 | Safe mode | useful skeleton | formal B1-B5/NLL probes plus CapCaps bypass negatives active |
@@ -79,7 +79,7 @@ itself make deferred language semantics real.
 |---|---|---|
 | P0 | PR #1 semantic contract checker regressions and CI step | `feat/agent-documentation-contracts` |
 | P0 | Security dogfood rubric and phase gate | `codex/garnet-readiness-remediation` |
-| P1 | `do ... end` parser failing test, then implementation | follow-up from PR #2 |
-| P1 | Convert `deferred_blocks_and_yield` into active failing runtime test | follow-up from PR #2 |
+| Done | `do ... end` parser failing test, then implementation | PR #3 |
+| Done | Convert `deferred_blocks_and_yield` into active block/yield/next runtime test plus block-vs-closure boundary regression | `codex/phase2-block-yield-runtime` |
 | P1 | FS/net source-level CapCaps negative tests | follow-up from PR #2 |
 | P2 | Memory Core ARC/cycle fixtures and machine-key stress tests | follow-up milestone branch |

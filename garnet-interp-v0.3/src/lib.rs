@@ -72,6 +72,7 @@ impl Interpreter {
                 let closure = Value::Fn(Rc::new(value::FnValue {
                     def: fn_def,
                     captured: Rc::clone(&self.global),
+                    is_block: false,
                 }));
                 self.global.define(&name, closure);
             }

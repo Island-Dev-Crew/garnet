@@ -42,6 +42,8 @@ pub enum RuntimeError {
     Continue,
     #[error("control flow: return")]
     Return(Value),
+    #[error("control flow: next")]
+    Next(Value),
 }
 
 impl RuntimeError {

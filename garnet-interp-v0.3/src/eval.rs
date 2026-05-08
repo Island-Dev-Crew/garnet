@@ -85,7 +85,12 @@ pub fn eval_expr(expr: &Expr, env: &Rc<Env>) -> Result<Value, RuntimeError> {
         } => eval_try(body, rescues, ensure.as_ref(), env),
 
         // ── First-class values ──
-        Expr::Closure { params, body, .. } => {
+        Expr::Closure {
+            params,
+            body,
+            is_do_block,
+            ..
+        } => {
             // Build a synthetic FnDef so `call_value` can reuse the same code path.
             let fn_def = garnet_parser::ast::FnDef {
                 annotations: vec![],
@@ -108,6 +113,7 @@ pub fn eval_expr(expr: &Expr, env: &Rc<Env>) -> Result<Value, RuntimeError> {
             Ok(Value::Fn(Rc::new(FnValue {
                 def: fn_def,
                 captured: Rc::clone(env),
+                is_block: *is_do_block,
             })))
         }
         Expr::Spawn { expr, .. } => {
@@ -430,14 +436,35 @@ pub fn call_value(callee: &Value, args: Vec<Value>) -> Result<Value, RuntimeErro
     }
 }
 
-fn call_fn(f: &FnValue, args: Vec<Value>) -> Result<Value, RuntimeError> {
+fn call_fn(f: &FnValue, mut args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let active_block = if args.len() == f.def.params.len() + 1 {
+        match args.last() {
+            Some(Value::Fn(block)) if block.is_block => {
+                match args.pop().expect("trailing block arg exists") {
+                    Value::Fn(block) => Some(block),
+                    _ => unreachable!(),
+                }
+            }
+            _ => None,
+        }
+    } else {
+        None
+    };
     let call_env = Env::new_child(&f.captured);
     bind_params(&f.def.params, args, &call_env)?;
+    if let Some(block) = active_block {
+        call_env.set_active_block(Value::Fn(block));
+    }
+    let is_block_closure = f.is_block;
     // Execute body.
     for s in &f.def.body.stmts {
         match stmt::exec_stmt(s, &call_env) {
             Ok(()) => {}
             Err(RuntimeError::Return(v)) => return Ok(v),
+            Err(RuntimeError::Next(v)) if is_block_closure => return Ok(v),
+            Err(RuntimeError::Next(_)) => {
+                return Err(RuntimeError::msg("`next` used outside block"))
+            }
             Err(e) => return Err(e),
         }
     }
@@ -445,6 +472,8 @@ fn call_fn(f: &FnValue, args: Vec<Value>) -> Result<Value, RuntimeError> {
         match eval_expr(tail, &call_env) {
             Ok(v) => Ok(v),
             Err(RuntimeError::Return(v)) => Ok(v),
+            Err(RuntimeError::Next(v)) if is_block_closure => Ok(v),
+            Err(RuntimeError::Next(_)) => Err(RuntimeError::msg("`next` used outside block")),
             Err(e) => Err(e),
         }
     } else {

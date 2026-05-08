@@ -11,6 +11,7 @@ use std::rc::Rc;
 #[derive(Debug)]
 pub struct Env {
     vars: RefCell<HashMap<String, Value>>,
+    active_block: RefCell<Option<Value>>,
     parent: Option<Rc<Env>>,
 }
 
@@ -18,6 +19,7 @@ impl Env {
     pub fn new_root() -> Self {
         Self {
             vars: RefCell::new(HashMap::new()),
+            active_block: RefCell::new(None),
             parent: None,
         }
     }
@@ -26,8 +28,23 @@ impl Env {
     pub fn new_child(parent: &Rc<Env>) -> Rc<Env> {
         Rc::new(Self {
             vars: RefCell::new(HashMap::new()),
+            active_block: RefCell::new(None),
             parent: Some(Rc::clone(parent)),
         })
+    }
+
+    /// Bind the implicit block for this call frame.
+    pub fn set_active_block(&self, block: Value) {
+        *self.active_block.borrow_mut() = Some(block);
+    }
+
+    /// Look up the implicit block for `yield`, walking outward through nested
+    /// lexical scopes created inside the same call frame.
+    pub fn active_block(&self) -> Option<Value> {
+        self.active_block
+            .borrow()
+            .clone()
+            .or_else(|| self.parent.as_ref().and_then(|p| p.active_block()))
     }
 
     /// Define a new binding in the current scope (shadows any outer binding).

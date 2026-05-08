@@ -185,6 +185,7 @@ pub struct KindMismatch {
 pub struct FnValue {
     pub def: FnDef,
     pub captured: Rc<Env>,
+    pub is_block: bool,
 }
 
 pub type NativeFn = fn(args: Vec<Value>) -> Result<Value, RuntimeError>;

@@ -14,7 +14,7 @@
 
 **Intent:** Make Mini-Spec v1.0 syntax visible in the AST before pretending the runtime can execute it.
 
-**Status:** started.
+**Status:** complete for parser parity; Phase 2A now builds on it.
 
 **Implemented in current branch:**
 
@@ -48,7 +48,7 @@ cargo test -p garnet-cli --test conformance_skeleton
 
 Expected: parser-parity tests pass; deferred runtime/type-system handles remain ignored.
 
-- [ ] **Step 2: Add parse support for `do ... end` block arguments**
+- [x] **Step 2: Add parse support for `do ... end` block arguments**
 
 Add parser tests before implementation:
 
@@ -61,11 +61,12 @@ fn parses_do_end_block_argument() {
 
 Expected first run before implementation: parser rejects `do`.
 
-- [ ] **Step 3: Update matrix rows**
+- [x] **Step 3: Update matrix rows**
 
-Rows that may move after Phase 1:
+Rows moved after Phase 1:
 
-- `§5.4 Blocks + yield`: from deferred to partial/parser-stage only.
+- `§5.4 Blocks + yield`: from deferred to partial/parser-stage, then Phase 2A
+  managed-runtime evidence for block invocation, `yield`, and `next`.
 - `§11.6 dyn Trait syntax`: parsed-only.
 - `§11.7 @dynamic method dispatch`: parsed-only metadata.
 - `§11.8 Structural protocols`: parsed-only top-level declarations.
@@ -83,15 +84,17 @@ Rows that may move after Phase 1:
 - Test: `garnet-cli/tests/conformance_skeleton.rs`
 - Test: `examples/mvp_06_multi_agent.garnet`
 
-- [ ] **Step 1: Implement block/yield/next runtime semantics**
+- [x] **Step 1: Implement block/yield/next runtime semantics**
 
 Acceptance:
 
 ```sh
-cargo test -p garnet-cli --test conformance_skeleton deferred_blocks_and_yield -- --ignored
+cargo test -p garnet-cli --test conformance_skeleton deferred_blocks_and_yield
 ```
 
-Expected after implementation: pass without `#[ignore]`.
+Expected after implementation: pass without `#[ignore]`, with the
+`explicit_closure_argument_does_not_become_implicit_block` regression proving
+ordinary closure arguments are not silently consumed as implicit blocks.
 
 - [ ] **Step 2: Implement dynamic method table for managed mode**
 
@@ -210,4 +213,3 @@ cargo test -p garnet-cli --test conformance_skeleton deferred_nll_lifetime_infer
 - each item has a falsifiable success criterion,
 - dogfood readiness is rerun after every phase,
 - `canonical_mvp_examples_emit_stable_results` remains green.
-

@@ -2,7 +2,7 @@
 
 use crate::env::Env;
 use crate::error::RuntimeError;
-use crate::eval::eval_expr;
+use crate::eval::{call_value, eval_expr};
 use crate::value::Value;
 use garnet_parser::ast::{AssignOp, Block, Expr, Stmt};
 use std::rc::Rc;
@@ -93,12 +93,24 @@ pub fn exec_stmt(stmt: &Stmt, env: &Rc<Env>) -> Result<(), RuntimeError> {
             };
             Err(RuntimeError::Return(v))
         }
-        Stmt::Yield { .. } => Err(RuntimeError::msg(
-            "`yield` parses in v0.5 parser-parity mode but runtime block semantics are not implemented yet",
-        )),
-        Stmt::Next { .. } => Err(RuntimeError::msg(
-            "`next` parses in v0.5 parser-parity mode but runtime block semantics are not implemented yet",
-        )),
+        Stmt::Yield { value, .. } => {
+            let block = env
+                .active_block()
+                .ok_or_else(|| RuntimeError::msg("`yield` used without an active block"))?;
+            let args = match value {
+                Some(e) => vec![eval_expr(e, env)?],
+                None => Vec::new(),
+            };
+            call_value(&block, args)?;
+            Ok(())
+        }
+        Stmt::Next { value, .. } => {
+            let v = match value {
+                Some(e) => eval_expr(e, env)?,
+                None => Value::Nil,
+            };
+            Err(RuntimeError::Next(v))
+        }
         Stmt::Raise { value, .. } => {
             let v = eval_expr(value, env)?;
             Err(RuntimeError::Raised(v))

@@ -355,6 +355,7 @@ fn parse_trailing_do_block(p: &mut Parser) -> Result<Option<Expr>, ParseError> {
         params,
         return_ty: None,
         body: Box::new(ClosureBody::Block(body)),
+        is_do_block: true,
         span,
     }))
 }

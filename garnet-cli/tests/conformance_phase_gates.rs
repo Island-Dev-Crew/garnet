@@ -15,14 +15,15 @@ fn repo_root() -> PathBuf {
 }
 
 #[test]
-fn parser_parity_conformance_tests_are_active() {
+fn implemented_conformance_tests_are_active() {
     let source = fs::read_to_string(repo_root().join("garnet-cli/tests/conformance_skeleton.rs"))
         .expect("conformance skeleton");
     for name in [
         "parser_parity_top_level_protocol_and_dyn_trait_parse",
         "parser_parity_yield_next_dynamic_and_nonsendable_parse",
+        "deferred_blocks_and_yield",
     ] {
-        let idx = source.find(name).expect("parser parity test exists");
+        let idx = source.find(name).expect("active conformance test exists");
         let prefix = &source[..idx];
         let nearby = &prefix[prefix.len().saturating_sub(160)..];
         assert!(
@@ -38,7 +39,6 @@ fn deferred_semantic_handles_remain_explicit() {
         .expect("conformance skeleton");
     for name in [
         "deferred_arc_cycle_detection",
-        "deferred_blocks_and_yield",
         "deferred_nll_lifetime_inference",
         "partial_borrow_rule_suite",
         "deferred_trait_coherence",

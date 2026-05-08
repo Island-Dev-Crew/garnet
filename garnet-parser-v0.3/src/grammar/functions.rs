@@ -256,6 +256,7 @@ pub fn parse_closure(p: &mut Parser) -> Result<Expr, ParseError> {
         params,
         return_ty,
         body,
+        is_do_block: false,
         span,
     })
 }

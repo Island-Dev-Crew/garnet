@@ -21,7 +21,7 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | Repo IA truth separation | Complete first pass | `CURRENT_STATE.md`; `archive/history/`; roadmap index | Finish link-rewrite cleanup before a public main-page launch |
 | v0.4.2 release assets | Fork release published; org release path requires browser/desktop-authorized publication | `Navigata1/garnet` release assets; CLI reports org `push: false`; browser session can open org release form | Publish org `v0.4.2` release from an org-authorized session and rerun installer smoke |
 | Parser parity for old ambition | Partial, Phase 1 active | `protocol`, `dyn Trait`, `yield`, `next`, `@dynamic`, `@nonsendable`, and `do ... end` parser tests | Keep runtime gaps explicit and activate Phase 2 only with executable semantics |
-| Blocks, `yield`, `next` runtime semantics | Not done | `do ... end` parses as a trailing closure argument; `Stmt::Yield`/`Stmt::Next` parse; interpreter emits staged-surface error | Activate `deferred_blocks_and_yield` |
+| Blocks, `yield`, `next` runtime semantics | Phase 2A active | `do ... end` parses as a trailing closure argument; `deferred_blocks_and_yield` runs a managed-mode block/yield/next program | Keep `cargo test -p garnet-cli --test conformance_skeleton deferred_blocks_and_yield` green; add richer block edge cases later |
 | Dynamic method dispatch tables | Not done | `@dynamic` metadata preserved; no method table dispatch | Activate `deferred_dynamic_dispatch` |
 | Structural protocol satisfaction and runtime casts | Not done | `Item::Protocol` parses; no structural checker/runtime cast | Activate `deferred_structural_protocols` |
 | Actor protocol enforcement and `Sendable` | Partial | actor runtime crate exists; CLI template does not use actor syntax frictionlessly | Agent-orchestrator actor-mode smoke passes |
@@ -104,9 +104,10 @@ after the `do |x|` header because block arguments were not parsed.
 
 - [x] **Step 3: Implement `do ... end` parser support**
 
-Parse `do ... end` as an existing `Expr::Closure` appended to the call or
-method-call argument list. This keeps the AST contract stable and leaves runtime
-block/yield semantics staged for Phase 2.
+Parse `do ... end` as an `Expr::Closure` appended to the call or method-call
+argument list. Phase 2A now tags syntactic `do...end` closures so runtime
+block dispatch can distinguish them from ordinary first-class closure
+arguments.
 
 Run:
 
@@ -131,29 +132,31 @@ Expected after implementation: parser test passes; phase gates still prove runti
 - Test: `garnet-cli/tests/conformance_skeleton.rs`
 - Example: `examples/mvp_06_multi_agent.garnet`
 
-- [ ] **Step 1: Replace the ignored block/yield placeholder with a failing executable test**
+- [x] **Step 1: Replace the ignored block/yield placeholder with a failing executable test**
 
 Change `deferred_blocks_and_yield` so it runs a Garnet program that passes a block and yields a value through it.
 
 Run:
 
 ```sh
-cargo test -p garnet-cli --test conformance_skeleton deferred_blocks_and_yield -- --ignored
+cargo test -p garnet-cli --test conformance_skeleton deferred_blocks_and_yield
 ```
 
-Expected before implementation: fail with the current staged-surface runtime error.
+Observed before implementation: failed with `arity mismatch: expected 0, got 1` because the trailing block was still treated as a normal argument.
 
-- [ ] **Step 2: Add runtime value support for callable block objects**
+- [x] **Step 2: Add runtime support for callable block objects**
 
-Add a block value variant in `garnet-interp-v0.3/src/value.rs`, bind block parameters in `env.rs`, and route `yield`/`next` through `stmt.rs`.
+Use the existing closure-backed `Value::Fn` representation as the block object, bind a trailing closure into the call frame, and route `yield`/`next` through `stmt.rs`.
+Only syntactic `do...end` closures may become implicit blocks; ordinary closure
+arguments continue to go through normal arity checks.
 
 Run:
 
 ```sh
-cargo test -p garnet-cli --test conformance_skeleton deferred_blocks_and_yield -- --ignored
+cargo test -p garnet-cli --test conformance_skeleton deferred_blocks_and_yield
 ```
 
-Expected after implementation: pass, then remove `#[ignore]`.
+Expected after implementation: pass without `#[ignore]`.
 
 - [ ] **Step 3: Add managed-mode dynamic dispatch tables**
 

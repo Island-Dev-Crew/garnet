@@ -99,8 +99,8 @@ allocator integration is sequenced in
 | §5.1 Managed-mode (`def`) | ✅ | `grammar/functions.rs`, `interp::eval` | |
 | §5.2 Safe-mode (`fn`) | ✅ | `grammar/functions.rs`, `garnet-check-v0.3` | |
 | §5.3 Closures (both modes) | ✅ | `ClosureBody` in `ast.rs`, `FnValue` in interp | |
-| §5.4 Blocks + `yield` | 🟡 | `KwDo`/`KwYield`/`KwNext`, `Stmt::Yield`/`Stmt::Next`, `Expr::Closure`, `parser_parity_yield_next_dynamic_and_nonsendable_parse`, `parses_do_end_block_argument` | v0.5 Phase 1 parser-stage support landed for `yield`/`next` and `do...end` block arguments; runtime semantics remain Phase 2. |
-| §5.4.1–5.4.5 sub-rules | 🟡 | `parse_do_block_body`, trailing closure argument parsing, `parses_do_end_block_argument` | `do...end` syntax and parameter parsing are parser-stage only; runtime block binding and control-flow semantics remain Phase 2 work. |
+| §5.4 Blocks + `yield` | 🟡 | `KwDo`/`KwYield`/`KwNext`, `Stmt::Yield`/`Stmt::Next`, `Expr::Closure`, `parser_parity_yield_next_dynamic_and_nonsendable_parse`, `parses_do_end_block_argument`, `deferred_blocks_and_yield`, `explicit_closure_argument_does_not_become_implicit_block` | v0.5 Phase 2A supports trailing `do...end` block invocation, block parameter binding, `yield` dispatch, and `next` as block-local return in managed mode. |
+| §5.4.1–5.4.5 sub-rules | 🟡 | `parse_do_block_body`, syntactic `do...end` block tagging, active block binding in `call_fn`, `Stmt::Yield`/`Stmt::Next` runtime paths | Core block invocation is executable; ordinary closure arguments do not bypass arity checks. Richer Ruby-compatible block return/break edge cases and yield-as-expression remain future conformance work. |
 
 ## Section 6 — Statements & Control Flow
 
@@ -181,7 +181,7 @@ allocator integration is sequenced in
 | §2 Lexical | 4 | — | — | — | Complete. |
 | §3 Modules | 4 | — | — | — | Cross-module visibility audit pending. |
 | §4 Memory | 3 | — | — | 7 | ARC cycle detection (§4.5) is the largest single open Mini-Spec deliverable. |
-| §5 Functions | 3 | — | 2 | 4 | `yield`/`next` and `do...end` parser-stage support exists; block runtime semantics remain next-largest. |
+| §5 Functions | 3 | — | 2 | 4 | `yield`/`next` and `do...end` now have managed-mode block invocation evidence; richer block edge cases still need later conformance. |
 | §6 Control flow | 3 | — | — | — | Complete. |
 | §7 Errors | 3 | — | — | — | Complete. |
 | §8 Safe-mode | 1 | — | 3 | — | Skeleton checker; formal theorem stays paper-side. |

@@ -520,6 +520,7 @@ pub enum Expr {
         params: Vec<Param>,
         return_ty: Option<Box<TypeExpr>>,
         body: Box<ClosureBody>,
+        is_do_block: bool,
         span: Span,
     },
     Spawn {
