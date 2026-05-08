@@ -34,7 +34,10 @@ pub mod caps_graph;
 pub use audit::{AuditLog, BoundaryCall, BoundaryDirection};
 pub use caps_graph::{CapsReport, CapsViolation};
 
-use garnet_parser::ast::{Annotation, FnDef, FnMode, Item, Module, Stmt};
+use garnet_parser::ast::{
+    ActorDef, ActorItem, Annotation, FnDef, FnMode, Item, Module, Param, Stmt, TypeExpr,
+};
+use std::collections::BTreeSet;
 
 /// A diagnostic from the checker, with a user-readable message and severity.
 #[derive(Debug, Clone, thiserror::Error)]
@@ -86,9 +89,10 @@ impl CheckReport {
 pub fn check_module(module: &Module) -> CheckReport {
     let mut report = CheckReport::default();
     let module_safe = module.safe;
+    let nonsendable_types = collect_nonsendable_types(module);
 
     for item in &module.items {
-        check_item(item, module_safe, &mut report);
+        check_item(item, module_safe, &nonsendable_types, &mut report);
     }
 
     // Borrow-checker pass: layered on top of the syntactic checks. Only
@@ -111,13 +115,18 @@ pub fn check_module(module: &Module) -> CheckReport {
     report
 }
 
-fn check_item(item: &Item, module_safe: bool, report: &mut CheckReport) {
+fn check_item(
+    item: &Item,
+    module_safe: bool,
+    nonsendable_types: &BTreeSet<String>,
+    report: &mut CheckReport,
+) {
     match item {
         Item::Fn(f) => check_fn(f, module_safe, report),
         Item::Module(m) => {
             let merged = module_safe || m.safe;
             for inner in &m.items {
-                check_item(inner, merged, report);
+                check_item(inner, merged, nonsendable_types, report);
             }
         }
         Item::Impl(impl_block) => {
@@ -139,6 +148,7 @@ fn check_item(item: &Item, module_safe: bool, report: &mut CheckReport) {
                 struct_def.name
             )));
         }
+        Item::Actor(actor) => check_actor_sendable(actor, nonsendable_types, report),
         _ => {}
     }
 }
@@ -147,6 +157,123 @@ fn has_dynamic_annotation(annotations: &[Annotation]) -> bool {
     annotations
         .iter()
         .any(|ann| matches!(ann, Annotation::Dynamic(_)))
+}
+
+fn has_nonsendable_annotation(annotations: &[Annotation]) -> bool {
+    annotations
+        .iter()
+        .any(|ann| matches!(ann, Annotation::NonSendable(_)))
+}
+
+fn collect_nonsendable_types(module: &Module) -> BTreeSet<String> {
+    let mut names = BTreeSet::new();
+    collect_nonsendable_types_from_items(&module.items, &mut names);
+    names
+}
+
+fn collect_nonsendable_types_from_items(items: &[Item], names: &mut BTreeSet<String>) {
+    for item in items {
+        match item {
+            Item::Struct(struct_def) if has_nonsendable_annotation(&struct_def.annotations) => {
+                names.insert(struct_def.name.clone());
+            }
+            Item::Module(module) => collect_nonsendable_types_from_items(&module.items, names),
+            _ => {}
+        }
+    }
+}
+
+fn check_actor_sendable(
+    actor: &ActorDef,
+    nonsendable_types: &BTreeSet<String>,
+    report: &mut CheckReport,
+) {
+    if nonsendable_types.is_empty() {
+        return;
+    }
+    for item in &actor.items {
+        match item {
+            ActorItem::Protocol(protocol) => check_actor_params_sendable(
+                &actor.name,
+                "protocol",
+                &protocol.name,
+                &protocol.params,
+                nonsendable_types,
+                report,
+            ),
+            ActorItem::Handler(handler) => check_actor_params_sendable(
+                &actor.name,
+                "handler",
+                &handler.name,
+                &handler.params,
+                nonsendable_types,
+                report,
+            ),
+            _ => {}
+        }
+    }
+}
+
+fn check_actor_params_sendable(
+    actor_name: &str,
+    boundary_kind: &str,
+    boundary_name: &str,
+    params: &[Param],
+    nonsendable_types: &BTreeSet<String>,
+    report: &mut CheckReport,
+) {
+    for param in params {
+        if let Some(ty) = &param.ty {
+            for name in nonsendable_type_names(ty, nonsendable_types) {
+                report.errors.push(CheckError::AnnotationError(format!(
+                    "@nonsendable type `{name}` cannot cross actor `{actor_name}` {boundary_kind} `{boundary_name}` via parameter `{}`",
+                    param.name
+                )));
+            }
+        }
+    }
+}
+
+fn nonsendable_type_names(ty: &TypeExpr, nonsendable_types: &BTreeSet<String>) -> BTreeSet<String> {
+    let mut names = BTreeSet::new();
+    collect_nonsendable_type_names(ty, nonsendable_types, &mut names);
+    names
+}
+
+fn collect_nonsendable_type_names(
+    ty: &TypeExpr,
+    nonsendable_types: &BTreeSet<String>,
+    names: &mut BTreeSet<String>,
+) {
+    match ty {
+        TypeExpr::Named { path, args, .. } => {
+            if let Some(name) = path.last() {
+                if nonsendable_types.contains(name) {
+                    names.insert(name.clone());
+                }
+            }
+            for arg in args {
+                collect_nonsendable_type_names(arg, nonsendable_types, names);
+            }
+        }
+        TypeExpr::Fn { params, ret, .. } => {
+            for param in params {
+                collect_nonsendable_type_names(param, nonsendable_types, names);
+            }
+            collect_nonsendable_type_names(ret, nonsendable_types, names);
+        }
+        TypeExpr::Tuple { elements, .. } => {
+            for element in elements {
+                collect_nonsendable_type_names(element, nonsendable_types, names);
+            }
+        }
+        TypeExpr::Ref { inner, .. }
+        | TypeExpr::Dyn {
+            trait_ty: inner, ..
+        } => {
+            collect_nonsendable_type_names(inner, nonsendable_types, names);
+        }
+    }
 }
 
 fn check_fn(f: &FnDef, module_safe: bool, report: &mut CheckReport) {

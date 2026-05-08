@@ -128,6 +128,41 @@ def main() {
 }
 
 #[test]
+fn actor_sendable_rejects_nonsendable_protocol_payloads() {
+    let src = r#"
+@nonsendable
+struct LocalSocket {
+  fd: Int
+}
+
+actor Worker {
+  protocol submit(socket: LocalSocket) -> Int
+  on submit(socket) {
+    1
+  }
+}
+
+@caps()
+def main() {
+  1
+}
+"#;
+    let path = temp_source("actor_sendable_nonsendable_payload", src);
+    assert_ok(&["parse"], &path);
+    let out = run(&["check"], &path);
+    assert!(
+        !out.status.success(),
+        "actor protocol payloads must reject @nonsendable types"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("@nonsendable type `LocalSocket`")
+            && stdout.contains("actor `Worker` protocol `submit`"),
+        "expected actor Sendable boundary diagnostic, got:\n{stdout}"
+    );
+}
+
+#[test]
 fn parser_parity_top_level_protocol_and_dyn_trait_parse() {
     let src = r#"
 protocol Renderable {

@@ -210,3 +210,124 @@ fn report_ok_false_for_annotation_error() {
     let r = check("@max_depth(0) def f() { 1 }");
     assert!(!r.ok());
 }
+
+#[test]
+fn actor_protocol_rejects_nonsendable_payload_type() {
+    let r = check(
+        r#"
+        @nonsendable
+        struct LocalSocket {
+            fd: Int
+        }
+
+        actor Worker {
+            protocol submit(socket: LocalSocket) -> Int
+            on submit(socket) {
+                1
+            }
+        }
+    "#,
+    );
+    assert!(
+        r.errors.iter().any(|e| {
+            matches!(
+                e,
+                CheckError::AnnotationError(m)
+                    if m.contains("@nonsendable type `LocalSocket`")
+                        && m.contains("actor `Worker` protocol `submit`")
+            )
+        }),
+        "expected actor protocol Sendable boundary rejection, got: {:?}",
+        r.errors
+    );
+}
+
+#[test]
+fn actor_handler_rejects_nonsendable_payload_type() {
+    let r = check(
+        r#"
+        @nonsendable
+        struct ThreadHandle {
+            id: Int
+        }
+
+        actor Worker {
+            on capture(handle: ThreadHandle) {
+                1
+            }
+        }
+    "#,
+    );
+    assert!(
+        r.errors.iter().any(|e| {
+            matches!(
+                e,
+                CheckError::AnnotationError(m)
+                    if m.contains("@nonsendable type `ThreadHandle`")
+                        && m.contains("actor `Worker` handler `capture`")
+            )
+        }),
+        "expected actor handler Sendable boundary rejection, got: {:?}",
+        r.errors
+    );
+}
+
+#[test]
+fn actor_protocol_rejects_nested_nonsendable_payload_type() {
+    let r = check(
+        r#"
+        @nonsendable
+        struct LocalSocket {
+            fd: Int
+        }
+
+        actor Worker {
+            protocol submit_many(sockets: Array<LocalSocket>) -> Int
+            on submit_many(sockets) {
+                1
+            }
+        }
+    "#,
+    );
+    assert!(
+        r.errors.iter().any(|e| {
+            matches!(
+                e,
+                CheckError::AnnotationError(m)
+                    if m.contains("@nonsendable type `LocalSocket`")
+                        && m.contains("actor `Worker` protocol `submit_many`")
+            )
+        }),
+        "expected nested actor Sendable boundary rejection, got: {:?}",
+        r.errors
+    );
+}
+
+#[test]
+fn actor_protocol_accepts_sendable_payload_type() {
+    let r = check(
+        r#"
+        struct BuildJob {
+            id: Int
+        }
+
+        actor Worker {
+            protocol submit(job: BuildJob) -> Int
+            on submit(job) {
+                job.id
+            }
+        }
+    "#,
+    );
+    assert!(
+        !r.errors.iter().any(|e| {
+            matches!(
+                e,
+                CheckError::AnnotationError(m)
+                    if m.contains("actor `Worker`") && m.contains("nonsendable")
+            )
+        }),
+        "unexpected actor Sendable boundary rejection, got: {:?}",
+        r.errors
+    );
+}

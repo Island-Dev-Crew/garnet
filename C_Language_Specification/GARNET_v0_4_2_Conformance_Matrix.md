@@ -134,7 +134,7 @@ allocator integration is sequenced in
 | §9.1 Actor declaration | ✅ | `grammar/actors.rs`, `ActorDef`/`ProtocolDecl`/`HandlerDecl` AST | |
 | §9.2 Bounded mailboxes | ✅ | `garnet-actor-runtime/src/runtime.rs` (mpsc-channel mailboxes) | |
 | §9.3 Hot-reload | ✅ | `garnet-actor-runtime/src/{statecert,reloadkey}.rs` | Ed25519-signed, schema-fingerprinted (StateCert). |
-| §9.4 `Sendable` marker trait + Actor Isolation Theorem | 🟡 | 2 hits in actor-runtime; basic enforcement | Full theorem is paper-only; runtime guard is partial. |
+| §9.4 `Sendable` marker trait + Actor Isolation Theorem | 🟡 | `actor_sendable_rejects_nonsendable_protocol_payloads`; `actor_protocol_rejects_nonsendable_payload_type`; actor-runtime tests | v0.5 Phase 3A rejects `@nonsendable` payload types at actor protocol/handler boundaries before runtime. Full theorem, transitive generic Sendable derivation, and source-to-runtime actor bridge remain partial. |
 
 ## Section 10 — Mode Boundaries
 
@@ -185,7 +185,7 @@ allocator integration is sequenced in
 | §6 Control flow | 3 | — | — | — | Complete. |
 | §7 Errors | 3 | — | — | — | Complete. |
 | §8 Safe-mode | 1 | — | 3 | — | Skeleton checker; formal theorem stays paper-side. |
-| §9 Actors | 3 | — | 1 | — | `Sendable` runtime guard is partial. |
+| §9 Actors | 3 | — | 1 | — | Phase 3A adds source-level `@nonsendable` actor boundary rejection; actor runtime bridge remains partial. |
 | §10 Boundaries | 1 | — | — | — | Audit log complete. |
 | §11 User types | 2 | 2 | 3 | 1 | Generics and `dyn Trait` parse; `impl`, `@dynamic`, and structural protocol semantics now have managed-mode slices, but ordinary trait coherence and native monomorphization remain incomplete. |
 | §15 REPL | — | — | 1 | — | Basic working; commands/history pending. |

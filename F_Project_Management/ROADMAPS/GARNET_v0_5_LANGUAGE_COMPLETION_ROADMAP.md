@@ -183,9 +183,9 @@ Expected after implementation: `@dynamic impl Type for Protocol` methods are reg
 - Modify: `garnet-interp-v0.3/src/eval.rs`
 - Modify: `garnet-cli/templates/agent-orchestrator/src/main.garnet`
 
-- [ ] **Step 1: Add declaration-site Sendable checks for actor protocols**
+- [x] **Step 1: Add declaration-site Sendable checks for actor protocols**
 
-Acceptance: protocol parameters marked `@nonsendable` are rejected before run.
+Acceptance: protocol and handler parameters using `@nonsendable` payload types are rejected before run.
 
 - [ ] **Step 2: Bridge Garnet `actor` declarations to `garnet-actor-runtime`**
 
