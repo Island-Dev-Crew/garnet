@@ -1,6 +1,7 @@
 //! Lexically scoped environment with interior mutability for ARC semantics.
 
 use crate::value::Value;
+use garnet_parser::ast::ProtocolDef;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -11,6 +12,7 @@ use std::rc::Rc;
 #[derive(Debug)]
 pub struct Env {
     vars: RefCell<HashMap<String, Value>>,
+    protocols: RefCell<HashMap<String, ProtocolDef>>,
     active_block: RefCell<Option<Value>>,
     parent: Option<Rc<Env>>,
 }
@@ -19,6 +21,7 @@ impl Env {
     pub fn new_root() -> Self {
         Self {
             vars: RefCell::new(HashMap::new()),
+            protocols: RefCell::new(HashMap::new()),
             active_block: RefCell::new(None),
             parent: None,
         }
@@ -28,6 +31,7 @@ impl Env {
     pub fn new_child(parent: &Rc<Env>) -> Rc<Env> {
         Rc::new(Self {
             vars: RefCell::new(HashMap::new()),
+            protocols: RefCell::new(HashMap::new()),
             active_block: RefCell::new(None),
             parent: Some(Rc::clone(parent)),
         })
@@ -52,12 +56,25 @@ impl Env {
         self.vars.borrow_mut().insert(name.to_string(), value);
     }
 
+    pub fn define_protocol(&self, protocol: ProtocolDef) {
+        self.protocols
+            .borrow_mut()
+            .insert(protocol.name.clone(), protocol);
+    }
+
     /// Look up a binding starting in the current scope and walking outward.
     pub fn get(&self, name: &str) -> Option<Value> {
         if let Some(v) = self.vars.borrow().get(name) {
             return Some(v.clone());
         }
         self.parent.as_ref().and_then(|p| p.get(name))
+    }
+
+    pub fn get_protocol(&self, name: &str) -> Option<ProtocolDef> {
+        if let Some(protocol) = self.protocols.borrow().get(name) {
+            return Some(protocol.clone());
+        }
+        self.parent.as_ref().and_then(|p| p.get_protocol(name))
     }
 
     /// Update an existing binding. Returns `false` if the name is unbound.

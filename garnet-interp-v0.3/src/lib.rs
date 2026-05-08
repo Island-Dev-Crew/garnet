@@ -105,12 +105,10 @@ impl Interpreter {
                 self.global
                     .define(&name, Value::Type(Rc::new(value::TypeValue::Enum(e))));
             }
-            Item::Trait(_)
-            | Item::Protocol(_)
-            | Item::Impl(_)
-            | Item::Module(_)
-            | Item::Use(_)
-            | Item::Actor(_) => {
+            Item::Protocol(protocol) => {
+                self.global.define_protocol(protocol);
+            }
+            Item::Trait(_) | Item::Impl(_) | Item::Module(_) | Item::Use(_) | Item::Actor(_) => {
                 // Parsed and accepted, but deferred to later rungs for full
                 // evaluation. Traits/Protocols/Impls wait on type-check;
                 // Modules/Use need module-system plumbing; Actors need the

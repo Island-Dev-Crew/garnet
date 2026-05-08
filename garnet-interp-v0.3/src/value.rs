@@ -6,7 +6,9 @@
 
 use crate::env::Env;
 use crate::error::RuntimeError;
-use garnet_parser::ast::{Annotation, EnumDef, FnDef, MemoryKind, Param, StructDef};
+use garnet_parser::ast::{
+    Annotation, EnumDef, FnDef, MemoryKind, Param, ProtocolDef, StructDef, TraitItem, TypeExpr,
+};
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::rc::Rc;
@@ -450,7 +452,74 @@ pub fn bind_params(params: &[Param], args: Vec<Value>, env: &Env) -> Result<(), 
         )));
     }
     for (p, a) in params.iter().zip(args) {
+        if let Some(protocol) = protocol_for_param(p, env) {
+            let missing = missing_protocol_methods(&a, &protocol);
+            if !missing.is_empty() {
+                return Err(RuntimeError::msg(format!(
+                    "{} does not satisfy protocol {}: missing method `{}`",
+                    a.type_name(),
+                    protocol.name,
+                    missing.join("`, `")
+                )));
+            }
+        }
         env.define(&p.name, a);
     }
     Ok(())
+}
+
+fn protocol_for_param(param: &Param, env: &Env) -> Option<ProtocolDef> {
+    let Some(TypeExpr::Named { path, .. }) = &param.ty else {
+        return None;
+    };
+    let name = path.last()?;
+    env.get_protocol(name)
+}
+
+fn missing_protocol_methods(value: &Value, protocol: &ProtocolDef) -> Vec<String> {
+    protocol
+        .items
+        .iter()
+        .filter_map(|item| match item {
+            TraitItem::FnSig(sig) if !value_has_method(value, &sig.name) => Some(sig.name.clone()),
+            _ => None,
+        })
+        .collect()
+}
+
+fn value_has_method(value: &Value, name: &str) -> bool {
+    match value {
+        Value::Struct {
+            dynamic_methods, ..
+        } => dynamic_methods
+            .as_ref()
+            .is_some_and(|methods| methods.borrow().contains_key(name)),
+        Value::Str(_) => matches!(
+            name,
+            "len" | "length" | "size" | "upcase" | "to_upper" | "downcase" | "to_lower" | "to_s"
+        ),
+        Value::Array(_) => matches!(
+            name,
+            "len"
+                | "length"
+                | "size"
+                | "count"
+                | "push"
+                | "append"
+                | "first"
+                | "last"
+                | "map"
+                | "filter"
+                | "select"
+                | "reduce"
+                | "recent"
+                | "to_s"
+        ),
+        Value::Map(_) => matches!(
+            name,
+            "len" | "size" | "get" | "put" | "insert" | "keys" | "values"
+        ),
+        Value::Int(_) | Value::Float(_) => matches!(name, "to_s" | "to_i" | "to_f" | "abs"),
+        _ => false,
+    }
 }

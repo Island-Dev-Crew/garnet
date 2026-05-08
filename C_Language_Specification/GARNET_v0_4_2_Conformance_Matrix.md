@@ -153,7 +153,7 @@ allocator integration is sequenced in
 | §11.5 Trait coherence (formal orphan-rule algorithm) | 🟠 | spec only | New in v1.0; no enforcement in checker today. |
 | §11.6 Monomorphization + Zero-Cost Abstraction Theorem | 🔵 | `type_params: Vec<String>` parsed throughout AST; `dyn Trait` parses as `TypeExpr::Dyn` | Generics and trait-object syntax parse. No monomorphization — interpreter uses dynamic dispatch only. Theorem applies to a hypothetical future native compiler. |
 | §11.7 `@dynamic` method dispatch | 🟡 | `Annotation::Dynamic` preserved on `struct` and `impl`; safe modules reject `@dynamic` struct/impl metadata; `deferred_dynamic_dispatch` | v0.5 Phase 2B supports per-instance dynamic method tables for `@dynamic` struct values via `def_method`, dynamic table lookup, and `responds_to`/`method_names` helpers. Static `impl` fallback and `method_missing` remain deferred. |
-| §11.8 Structural protocols (duck typing) | 🔵 | `Item::Protocol`, `ProtocolDef`, `parser_parity_top_level_protocol_and_dyn_trait_parse` | Top-level protocol declarations parse. Type-side structural satisfaction and runtime casts remain Phase 2. |
+| §11.8 Structural protocols (duck typing) | 🟡 | `Item::Protocol`, `ProtocolDef`, `parser_parity_top_level_protocol_and_dyn_trait_parse`, `deferred_structural_protocols` | v0.5 Phase 2C registers top-level protocol declarations and checks protocol-typed managed function parameters at call binding against available runtime methods. Runtime `as Protocol` casts, signature compatibility beyond method presence, and static impl-backed satisfaction remain deferred. |
 
 ## Section 15 — REPL
 

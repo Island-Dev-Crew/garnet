@@ -303,7 +303,78 @@ def main() {
 }
 
 #[test]
-#[ignore = "Mini-Spec §11.8 structural protocols are deferred in v0.4.2"]
 fn deferred_structural_protocols() {
-    pending("structural protocol checking and runtime casts");
+    let ok_src = r#"
+protocol Renderable {
+  def render()
+}
+
+@dynamic
+struct Widget {
+  name: String
+}
+
+@caps()
+def accept_renderable(item: Renderable) {
+  item.render()
+}
+
+@caps()
+def main() {
+  let widget = Widget("card")
+  widget.def_method(:render) do |receiver|
+    receiver.name
+  end
+  accept_renderable(widget)
+}
+"#;
+    let ok_path = temp_source("structural_protocol_dynamic_ok", ok_src);
+    assert_ok(&["parse"], &ok_path);
+    assert_ok(&["check"], &ok_path);
+    let ok = run(&["run"], &ok_path);
+    assert!(
+        ok.status.success(),
+        "dynamic value satisfying protocol should run\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&ok.stdout),
+        String::from_utf8_lossy(&ok.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&ok.stdout);
+    assert!(
+        stdout.contains("=> card"),
+        "expected protocol-accepted dynamic method to return field value, got:\n{stdout}"
+    );
+
+    let src = r#"
+protocol Renderable {
+  def render()
+}
+
+struct Plain {
+  name: String
+}
+
+@caps()
+def accept_renderable(item: Renderable) {
+  1
+}
+
+@caps()
+def main() {
+  let plain = Plain("box")
+  accept_renderable(plain)
+}
+"#;
+    let path = temp_source("structural_protocol_missing_method", src);
+    assert_ok(&["parse"], &path);
+    assert_ok(&["check"], &path);
+    let out = run(&["run"], &path);
+    assert!(
+        !out.status.success(),
+        "protocol parameter must reject a value missing the required method"
+    );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("does not satisfy protocol Renderable"),
+        "expected structural protocol diagnostic, got:\n{stderr}"
+    );
 }

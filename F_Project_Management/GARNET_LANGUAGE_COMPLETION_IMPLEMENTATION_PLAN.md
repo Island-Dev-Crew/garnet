@@ -172,17 +172,19 @@ Observed before implementation: failed at runtime with `struct method dispatch f
 
 Expected after implementation: pass without `#[ignore]` for the per-instance dynamic method-table slice. Static `impl` fallback and `method_missing` remain deferred.
 
-- [ ] **Step 4: Add structural protocol satisfaction and casts**
+- [x] **Step 4: Add structural protocol satisfaction and casts**
 
 Change `deferred_structural_protocols` into a test that proves a struct satisfies a protocol by method shape and rejects a missing method.
 
 Run:
 
 ```sh
-cargo test -p garnet-cli --test conformance_skeleton deferred_structural_protocols -- --ignored
+cargo test -p garnet-cli --test conformance_skeleton deferred_structural_protocols
 ```
 
-Expected before implementation: fail because protocol satisfaction is parser-only.
+Observed before implementation: failed because protocol-typed parameters were accepted without checking required methods.
+
+Expected after implementation: pass without `#[ignore]` for protocol-typed managed parameter checks. Runtime `as Protocol` casts, full signature compatibility, and static impl-backed satisfaction remain follow-up work.
 
 ## Milestone 3: Actor Runtime Bridge And Sendable
 
