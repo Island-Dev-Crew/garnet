@@ -244,6 +244,8 @@ ensure-clause  = "ensure" , block ;
 ```ebnf
 spawn-expr     = "spawn" , expr ;                          (* spawn an actor or async task *)
 send-expr      = expr , "." , IDENT , "(" , [ arg-list ] , ")" ;  (* send protocol message *)
+actor-spawn-constructor
+               = expr , "." , "spawn" , "(" , [ INTEGER ] , ")" ; (* v0.5 managed actor address with optional mailbox capacity *)
 ```
 
 ## 13. Lexical Rules

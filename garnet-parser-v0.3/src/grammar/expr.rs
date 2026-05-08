@@ -5,6 +5,7 @@ use crate::ast::*;
 use crate::error::ParseError;
 use crate::parser::Parser;
 use crate::token::{StrPart, TokenKind};
+use crate::Span;
 
 use super::{control_flow, functions, stmts, types};
 
@@ -245,7 +246,7 @@ fn parse_postfix(p: &mut Parser) -> Result<Expr, ParseError> {
         match p.peek_kind() {
             TokenKind::Dot => {
                 p.bump();
-                let (name, name_span) = p.expect_ident("field or method name")?;
+                let (name, name_span) = expect_member_name(p)?;
                 if p.eat(&TokenKind::LParen) {
                     let mut args = parse_arg_list(p)?;
                     p.expect(&TokenKind::RParen, "method call")?;
@@ -341,6 +342,17 @@ fn parse_postfix(p: &mut Parser) -> Result<Expr, ParseError> {
         }
     }
     Ok(expr)
+}
+
+fn expect_member_name(p: &mut Parser) -> Result<(String, Span), ParseError> {
+    let tok = p.peek().clone();
+    match tok.kind {
+        TokenKind::KwSpawn => {
+            p.bump();
+            Ok(("spawn".to_string(), tok.span))
+        }
+        _ => p.expect_ident("field or method name"),
+    }
 }
 
 fn parse_trailing_do_block(p: &mut Parser) -> Result<Option<Expr>, ParseError> {

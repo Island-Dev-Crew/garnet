@@ -193,7 +193,13 @@ Acceptance: source actor syntax can run through `spawn Actor.handler(args)` in m
 
 Evidence: `multi_agent_builder_runs_with_managed_actor_bridge`; `c5_actor_handler_dispatches_via_spawn_bridge`.
 
-Remaining: the full `garnet-actor-runtime` async address/mailbox bridge is still pending.
+- [x] **Step 3: Add managed actor addresses and bounded source mailboxes**
+
+Acceptance: `spawn Actor` returns an address with persistent actor-local state, `Actor.spawn(capacity)` constructs a bounded mailbox, and managed code can `ask`, `tell`/`try_tell`, inspect `mailbox_size`, and `drain` queued protocol messages. Full mailboxes surface explicit failure through `tell` and non-throwing backpressure through `try_tell`.
+
+Evidence: `parses_spawn_keyword_as_member_method_name`; `c5_spawn_actor_returns_address_with_persistent_state`; `c5_actor_address_enforces_bounded_mailbox`; `c5_actor_address_tell_reports_full_mailbox`; `c5_actor_spawn_rejects_extra_capacity_args`.
+
+Remaining: the full `garnet-actor-runtime` OS-thread async address/mailbox bridge is still pending.
 
 ## Phase 4: Safe-Mode Ownership Hardening
 

@@ -20,6 +20,7 @@ language-completeness work can move from prose to executable evidence.
 | §16 deterministic manifest tooling | v0.4.2 baseline | Release Gate | `implemented_reproducible_manifest_smoke_builds` | active pass |
 | §9.4 actor Sendable boundary | v0.5 Phase 3A | Security Gate | `actor_sendable_rejects_nonsendable_protocol_payloads` | active pass |
 | §9.1 actor source-to-runtime bridge | v0.5 Phase 3B | Runtime Gate | `multi_agent_builder_runs_with_managed_actor_bridge`; `c5_actor_handler_dispatches_via_spawn_bridge` | active pass |
+| §9.1/§9.2 managed actor address + bounded mailbox | v0.5 Phase 3C | Runtime Gate | `parses_spawn_keyword_as_member_method_name`; `c5_spawn_actor_returns_address_with_persistent_state`; `c5_actor_address_enforces_bounded_mailbox`; `c5_actor_address_tell_reports_full_mailbox`; `c5_actor_spawn_rejects_extra_capacity_args` | active pass |
 | §11.6/§11.8 parser parity | v0.5 Phase 1 | Parser-Parity Gate | `parser_parity_top_level_protocol_and_dyn_trait_parse` | active pass |
 | §5.4/§11.7 parser parity | v0.5 Phase 1 | Parser-Parity Gate | `parser_parity_yield_next_dynamic_and_nonsendable_parse` | active pass |
 | §5.4.1 parser parity | v0.5 Phase 1 | Parser-Parity Gate | `parses_do_end_block_argument` | active pass |

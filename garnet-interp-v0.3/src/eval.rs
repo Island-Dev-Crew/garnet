@@ -5,8 +5,8 @@ use crate::env::Env;
 use crate::error::RuntimeError;
 use crate::stmt;
 use crate::value::{
-    bind_params, ensure_protocol_satisfied, has_dynamic_annotation, protocol_for_type, FnValue,
-    MemoryBackend, TypeValue, Value,
+    bind_params, ensure_protocol_satisfied, has_dynamic_annotation, protocol_for_type, ActorHandle,
+    ActorMessage, FnValue, MemoryBackend, TypeValue, Value,
 };
 use garnet_parser::ast::{
     ActorDef, ActorItem, BinOp, ClosureBody, Expr, StringLit, TypeExpr, UnOp,
@@ -15,6 +15,9 @@ use garnet_parser::token::StrPart;
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::rc::Rc;
+
+const DEFAULT_MANAGED_ACTOR_MAILBOX_CAPACITY: usize = 1024;
+const MAX_MANAGED_ACTOR_MAILBOX_CAPACITY: usize = 1_048_576;
 
 /// Evaluate an expression in the given environment.
 pub fn eval_expr(expr: &Expr, env: &Rc<Env>) -> Result<Value, RuntimeError> {
@@ -132,7 +135,10 @@ pub fn eval_expr(expr: &Expr, env: &Rc<Env>) -> Result<Value, RuntimeError> {
         Expr::Spawn { expr, .. } => {
             // Rung-3 interpreter runs `spawn` synchronously. The actor
             // runtime (Rung 6) supplies the real parallelism later.
-            eval_expr(expr, env)
+            match eval_expr(expr, env)? {
+                Value::ActorType(actor) => spawn_actor_address(actor, env, None),
+                other => Ok(other),
+            }
         }
         Expr::Array { elements, .. } => {
             let items: Result<Vec<_>, _> = elements.iter().map(|e| eval_expr(e, env)).collect();
@@ -756,7 +762,8 @@ fn call_method(
                 "Struct has no method '{method}'"
             )))
         }
-        Value::ActorType(actor) => call_actor_method(actor, method, args, env),
+        Value::ActorType(actor) => call_actor_type_method(actor, method, args, env),
+        Value::ActorAddress(handle) => call_actor_address_method(handle, method, args),
         Value::MemoryStore { kind, backend, .. } => {
             // v3.3 KindGuard: validate the declared kind against the
             // backend's runtime tag before dispatch. Catches
@@ -786,23 +793,43 @@ fn call_method(
     }
 }
 
-fn call_actor_method(
-    actor: &ActorDef,
+fn call_actor_type_method(
+    actor: &Rc<ActorDef>,
     method: &str,
     args: Vec<Value>,
     env: &Rc<Env>,
 ) -> Result<Value, RuntimeError> {
-    let handler = actor
-        .items
-        .iter()
-        .find_map(|item| match item {
-            ActorItem::Handler(handler) if handler.name == method => Some(handler),
-            _ => None,
-        })
-        .ok_or_else(|| {
-            RuntimeError::msg(format!("actor {} has no handler '{method}'", actor.name))
-        })?;
+    if method == "spawn" {
+        if args.len() > 1 {
+            return Err(RuntimeError::msg("spawn: expected at most one argument"));
+        }
+        let capacity = match args.first() {
+            Some(Value::Int(n)) => Some(valid_mailbox_capacity(*n)?),
+            Some(other) => return Err(RuntimeError::type_err("Int", other)),
+            None => None,
+        };
+        return spawn_actor_address(Rc::clone(actor), env, capacity);
+    }
 
+    let actor_env = init_actor_env(actor, env)?;
+    call_actor_handler(actor, &actor_env, method, args)
+}
+
+fn spawn_actor_address(
+    actor: Rc<ActorDef>,
+    env: &Rc<Env>,
+    capacity: Option<usize>,
+) -> Result<Value, RuntimeError> {
+    let actor_env = init_actor_env(actor.as_ref(), env)?;
+    Ok(Value::ActorAddress(Rc::new(ActorHandle {
+        actor,
+        env: actor_env,
+        mailbox: RefCell::new(Default::default()),
+        capacity: capacity.unwrap_or(DEFAULT_MANAGED_ACTOR_MAILBOX_CAPACITY),
+    })))
+}
+
+fn init_actor_env(actor: &ActorDef, env: &Rc<Env>) -> Result<Rc<Env>, RuntimeError> {
     let actor_env = Env::new_child(env);
     for item in &actor.items {
         match item {
@@ -823,14 +850,112 @@ fn call_actor_method(
             ActorItem::Protocol(_) | ActorItem::Handler(_) => {}
         }
     }
+    Ok(actor_env)
+}
 
-    let call_env = Env::new_child(&actor_env);
+fn call_actor_handler(
+    actor: &ActorDef,
+    actor_env: &Rc<Env>,
+    method: &str,
+    args: Vec<Value>,
+) -> Result<Value, RuntimeError> {
+    let handler = actor
+        .items
+        .iter()
+        .find_map(|item| match item {
+            ActorItem::Handler(handler) if handler.name == method => Some(handler),
+            _ => None,
+        })
+        .ok_or_else(|| {
+            RuntimeError::msg(format!("actor {} has no handler '{method}'", actor.name))
+        })?;
+
+    let call_env = Env::new_child(actor_env);
     bind_params(&handler.params, args, &call_env)?;
     match stmt::exec_block_value(&handler.body, &call_env) {
         Ok(value) => Ok(value),
         Err(RuntimeError::Return(value)) => Ok(value),
         Err(err) => Err(err),
     }
+}
+
+fn call_actor_address_method(
+    handle: &ActorHandle,
+    method: &str,
+    args: Vec<Value>,
+) -> Result<Value, RuntimeError> {
+    match method {
+        "ask" => {
+            let message = actor_message_arg("ask", args)?;
+            call_actor_handler(&handle.actor, &handle.env, &message.method, message.args)
+        }
+        "tell" => {
+            let message = actor_message_arg(method, args)?;
+            if queue_actor_message(handle, message) {
+                Ok(Value::Bool(true))
+            } else {
+                Err(RuntimeError::msg("tell: actor mailbox is full"))
+            }
+        }
+        "try_tell" => {
+            let message = actor_message_arg(method, args)?;
+            Ok(Value::Bool(queue_actor_message(handle, message)))
+        }
+        "drain" => {
+            if !args.is_empty() {
+                return Err(RuntimeError::msg("drain: expected no arguments"));
+            }
+            let mut drained = 0;
+            while let Some(message) = handle.mailbox.borrow_mut().pop_front() {
+                call_actor_handler(&handle.actor, &handle.env, &message.method, message.args)?;
+                drained += 1;
+            }
+            Ok(Value::Int(drained))
+        }
+        "mailbox_size" | "mailbox_len" => {
+            if !args.is_empty() {
+                return Err(RuntimeError::msg(format!(
+                    "{method}: expected no arguments"
+                )));
+            }
+            Ok(Value::Int(handle.mailbox.borrow().len() as i64))
+        }
+        "mailbox_capacity" | "capacity" => {
+            if !args.is_empty() {
+                return Err(RuntimeError::msg(format!(
+                    "{method}: expected no arguments"
+                )));
+            }
+            Ok(Value::Int(handle.capacity as i64))
+        }
+        _ => call_actor_handler(&handle.actor, &handle.env, method, args),
+    }
+}
+
+fn queue_actor_message(handle: &ActorHandle, message: ActorMessage) -> bool {
+    let mut mailbox = handle.mailbox.borrow_mut();
+    if mailbox.len() >= handle.capacity {
+        return false;
+    }
+    mailbox.push_back(message);
+    true
+}
+
+fn actor_message_arg(api: &str, args: Vec<Value>) -> Result<ActorMessage, RuntimeError> {
+    let method = method_name_arg(api, args.first())?;
+    Ok(ActorMessage {
+        method,
+        args: args.into_iter().skip(1).collect(),
+    })
+}
+
+fn valid_mailbox_capacity(n: i64) -> Result<usize, RuntimeError> {
+    if n <= 0 || n as usize > MAX_MANAGED_ACTOR_MAILBOX_CAPACITY {
+        return Err(RuntimeError::msg(format!(
+            "actor mailbox capacity must be in 1..={MAX_MANAGED_ACTOR_MAILBOX_CAPACITY}, got {n}"
+        )));
+    }
+    Ok(n as usize)
 }
 
 fn method_name_arg(api: &str, arg: Option<&Value>) -> Result<String, RuntimeError> {

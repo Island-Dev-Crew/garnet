@@ -12,7 +12,7 @@ use garnet_parser::ast::{
 };
 use garnet_parser::token::Span;
 use std::cell::RefCell;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, VecDeque};
 use std::rc::Rc;
 
 /// A runtime value. All managed-mode values are represented here.
@@ -42,6 +42,9 @@ pub enum Value {
     /// A source-level actor type. The managed interpreter can synchronously
     /// dispatch handlers while the full async runtime bridge continues to grow.
     ActorType(Rc<ActorDef>),
+    /// A managed actor address. This models source-level mailbox semantics
+    /// without claiming OS-thread execution for non-`Send` managed values.
+    ActorAddress(Rc<ActorHandle>),
     /// A struct instance: (path-or-type-name, field values).
     Struct {
         name: Rc<String>,
@@ -260,6 +263,7 @@ impl Value {
                 TypeValue::Enum(e) => format!("<enum {}>", e.name),
             },
             Value::ActorType(actor) => format!("<actor {}>", actor.name),
+            Value::ActorAddress(handle) => format!("<actor address {}>", handle.actor.name),
             Value::Struct { name, fields, .. } => {
                 let inner = fields
                     .borrow()
@@ -323,6 +327,7 @@ impl Value {
             Value::Fn(_) | Value::NativeFn(_) => "Fn",
             Value::Type(_) => "Type",
             Value::ActorType(_) => "Actor",
+            Value::ActorAddress(_) => "ActorAddress",
             Value::Struct { .. } => "Struct",
             Value::Variant { .. } => "Variant",
             Value::MemoryStore { .. } => "MemoryStore",
@@ -429,6 +434,19 @@ impl Value {
     pub fn tuple(items: Vec<Value>) -> Value {
         Value::Tuple(Rc::new(items))
     }
+}
+
+#[derive(Clone)]
+pub struct ActorMessage {
+    pub method: String,
+    pub args: Vec<Value>,
+}
+
+pub struct ActorHandle {
+    pub actor: Rc<ActorDef>,
+    pub env: Rc<Env>,
+    pub mailbox: RefCell<VecDeque<ActorMessage>>,
+    pub capacity: usize,
 }
 
 pub fn has_dynamic_annotation(annotations: &[Annotation]) -> bool {

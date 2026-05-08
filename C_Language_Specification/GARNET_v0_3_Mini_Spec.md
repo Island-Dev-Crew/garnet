@@ -498,6 +498,8 @@ The rationale for deferral: protocol versioning intersects distribution, hot-rel
 
 Actors MAY declare internal memory units and `let` bindings within their body. These are private to the actor instance and MUST NOT be accessible from outside. Memory units declared inside an actor are scoped to that actor's lifetime — they are created when the actor spawns and dropped when the actor terminates.
 
+**Managed actor addresses (v0.5 implementation note).** The managed interpreter supports `spawn ActorName` as a source-level actor address constructor and `ActorName.spawn(capacity)` as the bounded-mailbox form. The resulting address exposes `ask(:protocol, ...)`, `tell(:protocol, ...)`, `try_tell(:protocol, ...)`, `drain()`, `mailbox_size()`, and `mailbox_capacity()` in managed mode. `tell` reports a full mailbox as an error; `try_tell` returns `false` for non-throwing backpressure. This is a single-threaded reference semantic for actor state and bounded mailboxes; the full async `garnet-actor-runtime` bridge remains a runtime milestone.
+
 ```garnet
 actor BuildAgent {
   memory episodic   log     : EpisodeStore<BuildEvent>
