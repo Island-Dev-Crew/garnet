@@ -158,17 +158,19 @@ cargo test -p garnet-cli --test conformance_skeleton deferred_blocks_and_yield
 
 Expected after implementation: pass without `#[ignore]`.
 
-- [ ] **Step 3: Add managed-mode dynamic dispatch tables**
+- [x] **Step 3: Add managed-mode dynamic dispatch tables**
 
 Change `deferred_dynamic_dispatch` into an active test that constructs a dynamic receiver and dispatches through the method table.
 
 Run:
 
 ```sh
-cargo test -p garnet-cli --test conformance_skeleton deferred_dynamic_dispatch -- --ignored
+cargo test -p garnet-cli --test conformance_skeleton deferred_dynamic_dispatch
 ```
 
-Expected before implementation: fail because no table dispatch exists.
+Observed before implementation: failed at runtime with `struct method dispatch for 'def_method' requires Rung 4 impl resolution`.
+
+Expected after implementation: pass without `#[ignore]` for the per-instance dynamic method-table slice. Static `impl` fallback and `method_missing` remain deferred.
 
 - [ ] **Step 4: Add structural protocol satisfaction and casts**
 

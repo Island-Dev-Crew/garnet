@@ -96,15 +96,15 @@ Expected after implementation: pass without `#[ignore]`, with the
 `explicit_closure_argument_does_not_become_implicit_block` regression proving
 ordinary closure arguments are not silently consumed as implicit blocks.
 
-- [ ] **Step 2: Implement dynamic method table for managed mode**
+- [x] **Step 2: Implement dynamic method table for managed mode**
 
 Acceptance:
 
 ```sh
-cargo test -p garnet-cli --test conformance_skeleton deferred_dynamic_dispatch -- --ignored
+cargo test -p garnet-cli --test conformance_skeleton deferred_dynamic_dispatch
 ```
 
-Expected after implementation: pass without `#[ignore]`.
+Expected after implementation: pass without `#[ignore]` for per-instance `@dynamic` method tables. Static `impl` fallback and `method_missing` remain follow-up work.
 
 - [ ] **Step 3: Implement structural protocol compatibility checks**
 

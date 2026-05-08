@@ -9,7 +9,7 @@ that each report should consume.
 | Phase | Dogfood gate | Current result | Evidence |
 |---|---|---|---|
 | 1 Parser parity | New Mini-Spec syntax parses without breaking MVPs | parser-stage `do...end` support landed and remains covered while Phase 2A builds runtime semantics on top | `cargo test -p garnet-parser --test parse_v1_parser_parity`; `cargo test -p garnet-parser`; `cargo test -p garnet-cli --test conformance_skeleton`; `cargo test -p garnet-cli --test dogfood_readiness_examples`; `cargo test -p garnet-cli --test examples` |
-| 2 Managed runtime | Parser-stage features run in managed mode | Phase 2A in progress: syntactic `do...end` block invocation, `yield`, and `next` are active; ordinary closure arguments still obey arity; dynamic dispatch and structural protocols remain deferred | `cargo test -p garnet-cli --test conformance_skeleton`; `cargo test -p garnet-cli --test conformance_phase_gates` |
+| 2 Managed runtime | Parser-stage features run in managed mode | Phase 2B in progress: syntactic `do...end` block invocation, `yield`, `next`, and per-instance `@dynamic` method tables are active; static impl fallback, method_missing, and structural protocols remain deferred | `cargo test -p garnet-cli --test conformance_skeleton`; `cargo test -p garnet-cli --test conformance_phase_gates` |
 | 3 Actors + Sendable | `agent-orchestrator` uses actor syntax frictionlessly | not started | current template uses pure role functions |
 | 4 Safe mode | unsafe ownership examples are rejected, valid examples pass | not started | `borrow.rs` skeleton |
 | 5 Traits/generics | trait/generic examples check and run honestly | not started | parser-only today |

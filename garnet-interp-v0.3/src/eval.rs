@@ -4,7 +4,7 @@ use crate::control::{eval_if, eval_match, eval_try};
 use crate::env::Env;
 use crate::error::RuntimeError;
 use crate::stmt;
-use crate::value::{bind_params, FnValue, MemoryBackend, TypeValue, Value};
+use crate::value::{bind_params, has_dynamic_annotation, FnValue, MemoryBackend, TypeValue, Value};
 use garnet_parser::ast::{BinOp, ClosureBody, Expr, StringLit, UnOp};
 use garnet_parser::token::StrPart;
 use std::cell::RefCell;
@@ -415,6 +415,8 @@ pub fn call_value(callee: &Value, args: Vec<Value>) -> Result<Value, RuntimeErro
                     Ok(Value::Struct {
                         name: Rc::new(s.name.clone()),
                         fields: Rc::new(RefCell::new(m)),
+                        dynamic_methods: has_dynamic_annotation(&s.annotations)
+                            .then(|| Rc::new(RefCell::new(BTreeMap::new()))),
                     })
                 }
                 TypeValue::Enum(_) => Err(RuntimeError::Message(
@@ -638,9 +640,58 @@ fn call_method(
                 "Number has no method '{method}'"
             ))),
         },
-        Value::Struct { fields, .. } => {
-            // User-written methods aren't wired up until Rung 4 resolves `impl`
-            // blocks. Fall back to field access by name if possible.
+        Value::Struct {
+            fields,
+            dynamic_methods,
+            ..
+        } => {
+            if let Some(methods) = dynamic_methods {
+                match method {
+                    "def_method" => {
+                        let name = method_name_arg("def_method", args.first())?;
+                        let body = args
+                            .get(1)
+                            .ok_or_else(|| RuntimeError::msg("def_method: missing body"))?
+                            .clone();
+                        if !matches!(body, Value::Fn(_)) {
+                            return Err(RuntimeError::type_err("Fn", &body));
+                        }
+                        methods.borrow_mut().insert(name, body);
+                        return Ok(recv.clone());
+                    }
+                    "undef_method" => {
+                        let name = method_name_arg("undef_method", args.first())?;
+                        methods.borrow_mut().remove(&name);
+                        return Ok(recv.clone());
+                    }
+                    "responds_to" | "respond_to" => {
+                        let name = method_name_arg(method, args.first())?;
+                        let has_dynamic = methods.borrow().contains_key(&name);
+                        let has_field = fields.borrow().contains_key(&name);
+                        return Ok(Value::Bool(has_dynamic || has_field));
+                    }
+                    "method_names" => {
+                        let names = methods
+                            .borrow()
+                            .keys()
+                            .cloned()
+                            .map(Value::sym)
+                            .collect::<Vec<_>>();
+                        return Ok(Value::array(names));
+                    }
+                    _ => {
+                        if let Some(dynamic) = methods.borrow().get(method).cloned() {
+                            let mut dynamic_args = Vec::with_capacity(args.len() + 1);
+                            dynamic_args.push(recv.clone());
+                            dynamic_args.extend(args);
+                            return call_value(&dynamic, dynamic_args);
+                        }
+                    }
+                }
+            }
+
+            // Static impl methods are still deferred; fall back to field
+            // access by name if possible.
             if args.is_empty() {
                 if let Some(v) = fields.borrow().get(method) {
                     return Ok(v.clone());
@@ -676,6 +727,13 @@ fn call_method(
             "value of type {} has no method '{method}'",
             recv.type_name()
         ))),
+    }
+}
+
+fn method_name_arg(api: &str, arg: Option<&Value>) -> Result<String, RuntimeError> {
+    match arg.ok_or_else(|| RuntimeError::msg(format!("{api}: missing method name")))? {
+        Value::Symbol(s) | Value::Str(s) => Ok(s.to_string()),
+        other => Err(RuntimeError::type_err("Symbol", other)),
     }
 }
 

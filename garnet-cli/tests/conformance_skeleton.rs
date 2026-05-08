@@ -268,9 +268,38 @@ fn parsed_only_monomorphization() {
 }
 
 #[test]
-#[ignore = "Mini-Spec §11.7 dynamic dispatch is deferred in v0.4.2"]
 fn deferred_dynamic_dispatch() {
-    pending("@dynamic method dispatch table");
+    let src = r#"
+@dynamic
+struct Service {
+  name: String
+}
+
+@caps()
+def main() {
+  let svc = Service("auth")
+  svc.def_method(:label) do |receiver|
+    receiver.name
+  end
+  svc.label()
+}
+"#;
+    let path = temp_source("dynamic_dispatch", src);
+    assert_ok(&["parse"], &path);
+    assert_ok(&["check"], &path);
+    let out = run(&["run"], &path);
+    assert!(
+        out.status.success(),
+        "garnet run {} failed\nstdout:\n{}\nstderr:\n{}",
+        path.display(),
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("=> auth"),
+        "expected dynamic method dispatch to return field value, got:\n{stdout}"
+    );
 }
 
 #[test]

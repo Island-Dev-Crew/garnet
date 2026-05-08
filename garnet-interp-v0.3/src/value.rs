@@ -6,7 +6,7 @@
 
 use crate::env::Env;
 use crate::error::RuntimeError;
-use garnet_parser::ast::{EnumDef, FnDef, MemoryKind, Param, StructDef};
+use garnet_parser::ast::{Annotation, EnumDef, FnDef, MemoryKind, Param, StructDef};
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::rc::Rc;
@@ -39,6 +39,7 @@ pub enum Value {
     Struct {
         name: Rc<String>,
         fields: Rc<RefCell<BTreeMap<String, Value>>>,
+        dynamic_methods: Option<Rc<RefCell<BTreeMap<String, Value>>>>,
     },
     /// An enum-variant instance: (enum path, variant name, arguments).
     Variant {
@@ -251,7 +252,7 @@ impl Value {
                 TypeValue::Struct(s) => format!("<struct {}>", s.name),
                 TypeValue::Enum(e) => format!("<enum {}>", e.name),
             },
-            Value::Struct { name, fields } => {
+            Value::Struct { name, fields, .. } => {
                 let inner = fields
                     .borrow()
                     .iter()
@@ -419,6 +420,12 @@ impl Value {
     pub fn tuple(items: Vec<Value>) -> Value {
         Value::Tuple(Rc::new(items))
     }
+}
+
+pub fn has_dynamic_annotation(annotations: &[Annotation]) -> bool {
+    annotations
+        .iter()
+        .any(|ann| matches!(ann, Annotation::Dynamic(_)))
 }
 
 impl std::fmt::Debug for Value {
