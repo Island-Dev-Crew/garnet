@@ -157,8 +157,11 @@ stats, and policy-configured episodic/semantic stores perform lazy retention
 eviction at read/search time. Phase 6K adds a cycle-aware allocator adapter and
 has working, episodic, semantic, and procedural stores retain and release
 observable roots on write, clear, policy eviction, replacement, and store drop.
-Production ARC integration, runtime finalizer invocation, persistence, and
-extended release-duration soak remain follow-up work.
+Phase 6L adds a fenced episodic text snapshot path with delimiter-safe payload
+encoding, malformed-file non-mutation, and cycle-aware root rehydration on
+load. Production ARC integration, runtime finalizer invocation, broad
+production persistence backends, and extended release-duration soak remain
+follow-up work.
 
 ## Historical Material
 

@@ -78,8 +78,11 @@ When documents conflict, use this order:
   episodic/semantic stores perform lazy eviction on read/search. Phase 6K adds
   `CycleAwareKindAllocator` and verifies observable store-root retain/release
   lifecycles on write, clear, policy eviction, workflow replacement, and store
-  drop. This is not the production allocator-integrated Bacon-Rajan collector
-  or runtime finalizer path.
+  drop. Phase 6L adds fenced `EpisodeStore` text snapshot save/load with
+  delimiter-safe payload encoding, malformed-file non-mutation, and
+  cycle-aware root rehydration. This is not the production
+  allocator-integrated Bacon-Rajan collector, runtime finalizer path, or
+  pluggable persistence backend.
 - Compiler-as-agent cache privacy now has Phase 6F executable evidence:
   absolute paths inside the active project are persisted as stable relative
   labels, while external absolute paths are redacted to `<external>/<file>`.

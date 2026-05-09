@@ -106,7 +106,7 @@ two-day LSP.
 
 ## Item B — Memory Core Tier 1 (Mnemos production allocator integration)
 
-### Current Phase 6K status
+### Current Phase 6L status
 
 Phase 6A added a bounded cycle-reference path before the allocator work:
 `garnet-memory-v0.3/src/cycle.rs`, `garnet-memory-v0.3/tests/cycle.rs`, and
@@ -128,7 +128,12 @@ Phase 6K adds `CycleAwareKindAllocator`, `AllocRootStats`, and object-safe root
 hooks so the four stores retain observable roots on write and release them on
 clear, policy eviction, workflow replacement, and drop. The next production
 step is still allocator-integrated Bacon-Rajan trial deletion and runtime
-finalizer invocation.
+finalizer invocation. Phase 6L adds a fenced `EpisodeStore::save_text` /
+`load_text` persistence slice: snapshots are versioned text records with
+hex-encoded payloads, writes use a sibling temp file before rename, malformed
+files fail before mutating the live store, and recovered episodes retain fresh
+cycle-aware roots. This is recovery evidence for the reference episodic store,
+not the append-only `.garnet-cache/episodic/` production backend.
 
 ### Current Phase 6F-6I cache-security status
 
@@ -159,7 +164,9 @@ Tier 0 (the original reference stores) ships. Phase 6J begins Tier 1:
 a kind-aware allocator trait that the four stores delegate to, plus
 policy-configured eviction enforcement for episodic and semantic stores. Phase
 6K continues Tier 1 by proving observable store-root lifecycles through the
-cycle-aware allocator adapter. Generics over memory kinds and
+cycle-aware allocator adapter. Phase 6L starts the persistence track with a
+bounded episodic text snapshot API so save/load recovery can be tested without
+claiming full production persistence. Generics over memory kinds and
 allocator-integrated ARC remain pending.
 
 ### Tier 1 scope (per the Roadmap)
@@ -201,6 +208,20 @@ clear releases roots, episodic and semantic policy eviction release roots,
 procedural replacement releases the previous root, and dropping each store
 releases any remaining roots.
 
+#### T2.3 first slice — Episodic text snapshot persistence
+
+Phase 6L lands a deliberately small persistence boundary on `EpisodeStore`.
+`save_text` writes `garnet-episodic-v1` snapshots with
+`timestamp<TAB>hex(value.to_string())` records; `load_text` parses the whole
+file before replacing in-memory events, so malformed files are loud and
+non-mutating. Loading rehydrates allocator roots, which keeps Phase 6K lifecycle
+evidence intact across recovery. The larger Tier 2 target is still a pluggable
+append-only backend.
+
+Covered tests: delimiter-control payload round-trip, cycle-aware root release
+on drop plus rehydration on load, and malformed-file rejection without store
+mutation.
+
 #### T1.4 — Generics over memory kinds (Mini-Spec §4.4)
 
 This is the gnarliest of the three. Phase 5B gives §11.6 interpreter-level
@@ -224,6 +245,8 @@ realistic v0.5.0 path:
   docs.
 - `garnet-memory-v0.3/src/{working,episodic,semantic,procedural}.rs`
   — accept the allocator, route allocations and observable roots through it.
+- `garnet-memory-v0.3/tests/persistence.rs` — episodic text snapshot
+  round-trip, malformed-file rejection, and root rehydration tests.
 - `garnet-memory-v0.3/src/policy.rs` — already has `score` /
   `should_retain`; no changes needed there.
 - `garnet-memory-v0.3/tests/properties.rs` — allocator stats, eviction
@@ -237,7 +260,8 @@ realistic v0.5.0 path:
 
 ### Remaining pre-requisites
 
-- T1.1, T1.2, and T1.3 are now self-contained Mnemos evidence slices.
+- T1.1, T1.2, T1.3, and the first T2.3 episodic snapshot slice are now
+  self-contained Mnemos evidence slices.
 - T1.4 wants Mini-Spec §11.6 monomorphization to actually
   monomorphize. Today it is parsed-only (see Conformance Matrix
   §11.6 row). If you can punt the language-level syntax, the
@@ -246,7 +270,8 @@ realistic v0.5.0 path:
 ### Remaining estimate
 
 T1.4 in a separate session, probably alongside parser work. Production ARC
-finalizers and persistence stay separate from the Tier 1 adapter evidence.
+finalizers and broad pluggable persistence stay separate from the Tier 1
+adapter and Phase 6L reference-snapshot evidence.
 
 ---
 
