@@ -1104,6 +1104,28 @@ Interpolated strings, function-call evaluation, recursion, cross-file/package
 imports, broader non-numeric comparison, broader float edge-case reasoning, and
 broader const expression evaluation remain deferred.
 
+- [x] **Step 2ZT: Fold immutable local guard expression aliases**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage local_boolean_const_expression
+cargo test -p garnet-check --test match_coverage local_integer_const_expression
+cargo test -p garnet-check --test match_coverage mutable_local_expression_source
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AY carries the existing narrow `ConstFact` evaluator through
+immutable local guard aliases. `let always = raw == true` and `let always =
+limit + 1 == 3` now count as coverage, `let never = limit + 1 < 3` is
+statically false/non-covering, and `let mut limit = 2` remains unknown when a
+later guard alias depends on it. Path-qualified local alias expressions,
+function-call evaluation, recursion, cross-file/package imports, broader
+non-numeric comparison, broader float edge-case reasoning, and broader const
+expression evaluation remain deferred.
+
 ## Phase 5: Traits, Coherence, And Monomorphization
 
 **Intent:** Make the Rust-rigor side credible without overclaiming zero-cost guarantees.

@@ -21,8 +21,9 @@
 //! boolean match guards use the same conservative folding. Narrow integer
 //! arithmetic plus equality/inequality and relational guard comparisons, along
 //! with finite-float equality/inequality, relational, and arithmetic guard
-//! comparisons, fold over the same fact domain using checked or runtime-aligned
-//! numeric rules. It does not attempt
+//! comparisons, and immutable local boolean/integer expression aliases fold
+//! over the same fact domain using checked or runtime-aligned numeric rules. It
+//! does not attempt
 //! full type inference, loop fixed-point inference, broader
 //! mutable/escaped/general higher-order closure call-effect analysis,
 //! recursive/open payload coverage, or broader non-literal guard reasoning.
@@ -1933,6 +1934,92 @@ fn local_guard_fact_from_expr(expr: &Expr, guard_facts: &GuardFacts) -> Option<C
         Expr::Symbol(value, _) => Some(ConstFact::Symbol(value.clone())),
         Expr::Str(value, _) => plain_string_literal(value).map(ConstFact::Str),
         Expr::Ident(name, _) => guard_facts.get(name).cloned(),
+        Expr::Unary {
+            op: UnOp::Not,
+            expr,
+            ..
+        } => local_guard_fact_from_expr(expr, guard_facts)
+            .and_then(ConstFact::into_bool)
+            .map(|value| ConstFact::Bool(!value)),
+        Expr::Unary {
+            op: UnOp::Neg,
+            expr,
+            ..
+        } => match local_guard_fact_from_expr(expr, guard_facts)? {
+            ConstFact::Int(value) => value.checked_neg().map(ConstFact::Int),
+            ConstFact::Float(value) => finite_float_fact(-value),
+            _ => None,
+        },
+        Expr::Unary { .. } => None,
+        Expr::Binary {
+            op: BinOp::And,
+            lhs,
+            rhs,
+            ..
+        } => {
+            let lhs = local_guard_fact_from_expr(lhs, guard_facts)?.into_bool()?;
+            if !lhs {
+                Some(ConstFact::Bool(false))
+            } else {
+                let rhs = local_guard_fact_from_expr(rhs, guard_facts)?.into_bool()?;
+                Some(ConstFact::Bool(rhs))
+            }
+        }
+        Expr::Binary {
+            op: BinOp::Or,
+            lhs,
+            rhs,
+            ..
+        } => {
+            let lhs = local_guard_fact_from_expr(lhs, guard_facts)?.into_bool()?;
+            if lhs {
+                Some(ConstFact::Bool(true))
+            } else {
+                let rhs = local_guard_fact_from_expr(rhs, guard_facts)?.into_bool()?;
+                Some(ConstFact::Bool(rhs))
+            }
+        }
+        Expr::Binary {
+            op: BinOp::Eq,
+            lhs,
+            rhs,
+            ..
+        } => {
+            let lhs = local_guard_fact_from_expr(lhs, guard_facts)?;
+            let rhs = local_guard_fact_from_expr(rhs, guard_facts)?;
+            Some(ConstFact::Bool(lhs.literal_eq(rhs)))
+        }
+        Expr::Binary {
+            op: BinOp::NotEq,
+            lhs,
+            rhs,
+            ..
+        } => {
+            let lhs = local_guard_fact_from_expr(lhs, guard_facts)?;
+            let rhs = local_guard_fact_from_expr(rhs, guard_facts)?;
+            Some(ConstFact::Bool(!lhs.literal_eq(rhs)))
+        }
+        Expr::Binary {
+            op: op @ (BinOp::Lt | BinOp::Gt | BinOp::LtEq | BinOp::GtEq),
+            lhs,
+            rhs,
+            ..
+        } => {
+            let lhs = local_guard_fact_from_expr(lhs, guard_facts)?;
+            let rhs = local_guard_fact_from_expr(rhs, guard_facts)?;
+            lhs.numeric_cmp(rhs, *op).map(ConstFact::Bool)
+        }
+        Expr::Binary {
+            op: op @ (BinOp::Add | BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod),
+            lhs,
+            rhs,
+            ..
+        } => {
+            let lhs = local_guard_fact_from_expr(lhs, guard_facts)?;
+            let rhs = local_guard_fact_from_expr(rhs, guard_facts)?;
+            lhs.numeric_arith(rhs, *op)
+        }
+        Expr::Binary { .. } => None,
         _ => None,
     }
 }

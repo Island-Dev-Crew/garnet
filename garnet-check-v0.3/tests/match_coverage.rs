@@ -1123,6 +1123,104 @@ fn false_local_bool_guard_is_unreachable_and_not_coverage() {
 }
 
 #[test]
+fn local_boolean_const_expression_guard_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            let raw = true
+            let always = raw == true
+            match status {
+                Status::Ready if always => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "local boolean const expressions should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn local_integer_const_expression_guard_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            let limit = 2
+            let always = limit + 1 == 3
+            match status {
+                Status::Ready if always => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "local integer const expressions should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_local_integer_const_expression_guard_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            let limit = 2
+            let never = limit + 1 < 3
+            match status {
+                Status::Ready if never => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false local integer const expressions should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn mutable_local_expression_source_stays_unknown_and_non_covering() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            let mut limit = 2
+            let always = limit + 1 == 3
+            match status {
+                Status::Ready if always => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready")
+            && !has_safe_violation(&errs, "statically false guard"),
+        "mutable local expression sources must stay unknown, got {errs:?}"
+    );
+}
+
+#[test]
 fn true_const_bool_guard_counts_as_safe_match_coverage() {
     let errs = check(
         r#"

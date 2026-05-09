@@ -142,11 +142,14 @@ When documents conflict, use this order:
   const guard facts. Phase 4AV adds finite float equality/inequality facts and
   runtime-aligned int-float equality. Phase 4AW adds finite float/int-float
   relational facts. Phase 4AX adds finite float/int-float arithmetic facts while
-  keeping non-finite floats and overflow-to-infinity facts unknown. Full
+  keeping non-finite floats and overflow-to-infinity facts unknown. Phase 4AY
+  carries narrow boolean and integer const-expression facts through immutable
+  local guard aliases while keeping mutable local expression sources unknown.
+  Full
   Rust-grade CFG NLL, nested/non-local terminators, general loop fixed-point
   analysis, loop fixed-point domain inference, broader mutable/escaped/general higher-order closure invocation/call-effect analysis, cross-file/package
   imports, non-finite floats, interpolated strings, broader non-numeric comparison,
-  function-call, and broader const expression evaluation, recursive/open payload reasoning, broader expression/type
+  function-call, and broader const expression evaluation beyond immutable local aliases, recursive/open payload reasoning, broader expression/type
   inference, open-domain exhaustiveness/range reasoning, broader non-literal guard
   reasoning, dynamic places, broader drop elaboration, and generic/trait impl
   dispatch remain roadmap work, not current truth.
