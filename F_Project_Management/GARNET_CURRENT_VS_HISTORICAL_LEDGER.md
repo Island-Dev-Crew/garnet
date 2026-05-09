@@ -66,13 +66,14 @@ When documents conflict, use this order:
 - Generic instantiation now has interpreter-level evidence for generic struct
   construction, generic impl method dispatch, and generic function calls. This
   is not native monomorphization or a zero-cost backend guarantee.
-- Memory Core ARC/cycle work now has Phase 6C executable reference evidence:
-  `CycleGraph` fixtures expose trial candidates, retain scan-black candidates,
-  report deterministic collect-white finalization order, exclude safe-mode
-  affine nodes from ARC trial candidates, retain rooted nodes, collect unrooted
-  cycles, leave unrooted acyclic nodes for ordinary retention/eviction, and scan
-  cross-kind cycles by kind partition. This is not the production
-  allocator-integrated Bacon-Rajan collector.
+- Memory Core ARC/cycle work now has Phase 6D executable reference evidence:
+  `CycleGraph` and `CycleRootBuffer` fixtures expose decrement-triggered
+  buffered roots, threshold-driven collection, trial candidates, scan-black
+  retained candidates, deterministic collect-white finalization order,
+  safe-mode affine exclusion from ARC trial candidates, rooted retention,
+  unrooted cycle collection, unrooted acyclic retention for ordinary
+  retention/eviction, and kind-partitioned cross-kind scans. This is not the
+  production allocator-integrated Bacon-Rajan collector.
 - CI has an explicit canonical MVP example job in addition to the Rust test
   suite.
 

@@ -4,7 +4,7 @@
 //! implemented today. Ignored tests name partial/deferred rows so language
 //! completeness work has stable test handles before the implementation lands.
 
-use garnet_memory::{CycleGraph, CycleScan, MemoryKind};
+use garnet_memory::{CycleGraph, CycleRootBuffer, CycleScan, MemoryKind};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -232,6 +232,27 @@ fn deferred_arc_cycle_detection() {
     assert!(graph.contains(safe_affine));
     assert!(!graph.contains(cycle_a));
     assert!(!graph.contains(cycle_b));
+
+    let mut buffered = CycleGraph::new();
+    let buffered_root = buffered.add_node(MemoryKind::Working, "buffered_root");
+    let buffered_child = buffered.add_node(MemoryKind::Working, "buffered_child");
+    let mut roots = CycleRootBuffer::with_threshold(CycleScan::Kind(MemoryKind::Working), 1);
+
+    buffered.add_root(buffered_root).unwrap();
+    buffered.add_edge(buffered_root, buffered_child).unwrap();
+    buffered.add_edge(buffered_child, buffered_root).unwrap();
+
+    let buffered_report = buffered
+        .release_root_to_buffer(buffered_root, &mut roots)
+        .unwrap()
+        .expect("threshold should collect immediately");
+
+    assert!(roots.is_empty());
+    assert_eq!(buffered_report.trial_candidates, vec![buffered_root]);
+    assert_eq!(
+        buffered_report.collected,
+        vec![buffered_root, buffered_child]
+    );
 }
 
 #[test]

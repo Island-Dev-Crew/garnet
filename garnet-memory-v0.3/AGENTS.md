@@ -9,8 +9,8 @@ Owns the reference implementation for Garnet's working, episodic, semantic, and 
 - Preserve the four memory-kind boundary: working, episodic, semantic, procedural.
 - Keep the cycle-collection reference path honest: `cycle.rs` is a bounded
   trial-deletion fixture/model for Mini-Spec §4.5 behavior, including
-  finalization-order and safe-mode exclusion signals, not the production
-  allocator-integrated ARC collector.
+  root-buffer scheduling, finalization-order, and safe-mode exclusion signals,
+  not the production allocator-integrated ARC collector.
 - Treat `AGENTS.md` and workflow contracts as procedural-memory analogs when designing future tooling.
 - Never hide sink, persistence, or machine-key failures; memory failures must be observable.
 - Keep tests isolated from machine-local key races and cache state.

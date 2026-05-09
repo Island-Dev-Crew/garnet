@@ -31,9 +31,10 @@
 //!   HNSW / IVF / PolarQuant).
 //! - No eviction beyond what `MemoryPolicy` exposes as scoring API.
 //! - No allocator-integrated ARC + Bacon–Rajan collector yet.
-//! - A bounded [`CycleGraph`] trial-deletion reference path exposes §4.5
-//!   cycle, finalization-order, and safe-mode exclusion fixtures while
-//!   production allocator work remains on the Memory Core roadmap.
+//! - A bounded [`CycleGraph`] / [`CycleRootBuffer`] trial-deletion reference
+//!   path exposes §4.5 cycle, finalization-order, safe-mode exclusion, and
+//!   root-buffer scheduling fixtures while production allocator work remains on
+//!   the Memory Core roadmap.
 //!
 //! ## What's planned
 //!
@@ -61,7 +62,8 @@ pub mod semantic;
 pub mod working;
 
 pub use cycle::{
-    CycleAllocationMode, CycleCollectReport, CycleGraph, CycleGraphError, CycleNodeId, CycleScan,
+    CycleAllocationMode, CycleCollectReport, CycleGraph, CycleGraphError, CycleNodeId,
+    CycleRootBuffer, CycleScan,
 };
 pub use episodic::EpisodeStore;
 pub use policy::{MemoryKind, MemoryPolicy};

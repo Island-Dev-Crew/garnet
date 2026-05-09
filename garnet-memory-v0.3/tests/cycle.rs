@@ -1,6 +1,6 @@
 //! Observable cycle-collection fixtures for the Memory Core reference path.
 
-use garnet_memory::{CycleGraph, CycleNodeId, CycleScan, MemoryKind};
+use garnet_memory::{CycleGraph, CycleNodeId, CycleRootBuffer, CycleScan, MemoryKind};
 
 fn labels(graph: &CycleGraph, ids: &[CycleNodeId]) -> Vec<String> {
     let mut labels: Vec<_> = ids
@@ -177,4 +177,54 @@ fn safe_mode_allocations_are_not_cycle_collection_candidates() {
     assert!(report.collected.is_empty());
     assert!(report.finalization_order.is_empty());
     assert!(graph.contains(safe));
+}
+
+#[test]
+fn root_buffer_release_collects_cycle_when_threshold_is_reached() {
+    let mut graph = CycleGraph::new();
+    let root = graph.add_node(MemoryKind::Working, "root");
+    let child = graph.add_node(MemoryKind::Working, "child");
+    let mut buffer = CycleRootBuffer::with_threshold(CycleScan::All, 1);
+
+    graph.add_root(root).unwrap();
+    graph.add_edge(root, child).unwrap();
+    graph.add_edge(child, root).unwrap();
+
+    let report = graph
+        .release_root_to_buffer(root, &mut buffer)
+        .unwrap()
+        .expect("threshold should collect immediately");
+
+    assert!(buffer.is_empty());
+    assert_eq!(labels(&graph, &report.trial_candidates), vec!["root"]);
+    assert_eq!(labels(&graph, &report.collected), vec!["child", "root"]);
+    assert_eq!(
+        labels_in_order(&graph, &report.finalization_order),
+        vec!["child", "root"]
+    );
+}
+
+#[test]
+fn buffered_collection_scans_only_buffered_roots() {
+    let mut graph = CycleGraph::new();
+    let root = graph.add_node(MemoryKind::Working, "root");
+    let child = graph.add_node(MemoryKind::Working, "child");
+    let unrelated = graph.add_node(MemoryKind::Semantic, "unrelated");
+    let mut buffer = CycleRootBuffer::with_threshold(CycleScan::All, 4);
+
+    graph.add_root(root).unwrap();
+    graph.add_edge(root, child).unwrap();
+    graph.add_edge(child, root).unwrap();
+    graph.add_edge(unrelated, unrelated).unwrap();
+
+    let early = graph.release_root_to_buffer(root, &mut buffer).unwrap();
+    assert!(early.is_none());
+    assert_eq!(buffer.len(), 1);
+
+    let report = graph.collect_buffered_cycles(&mut buffer);
+
+    assert!(buffer.is_empty());
+    assert_eq!(labels(&graph, &report.trial_candidates), vec!["root"]);
+    assert_eq!(labels(&graph, &report.collected), vec!["child", "root"]);
+    assert!(graph.contains(unrelated));
 }

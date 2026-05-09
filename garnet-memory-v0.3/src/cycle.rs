@@ -40,6 +40,63 @@ pub enum CycleAllocationMode {
     SafeAffine,
 }
 
+/// Bounded root-candidate buffer for trial-deletion fixtures.
+///
+/// Production ARC will own this buffer inside the allocator. This reference
+/// type only models the observable scheduling rule: a decrement can enqueue a
+/// still-referenced object, and collection scans the buffered roots instead of
+/// every unrooted object in the graph.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CycleRootBuffer {
+    scan: CycleScan,
+    threshold: usize,
+    roots: BTreeSet<CycleNodeId>,
+}
+
+impl CycleRootBuffer {
+    pub const DEFAULT_THRESHOLD: usize = 256;
+
+    pub fn new(scan: CycleScan) -> Self {
+        Self::with_threshold(scan, Self::DEFAULT_THRESHOLD)
+    }
+
+    pub fn with_threshold(scan: CycleScan, threshold: usize) -> Self {
+        Self {
+            scan,
+            threshold: threshold.max(1),
+            roots: BTreeSet::new(),
+        }
+    }
+
+    pub fn scan(&self) -> CycleScan {
+        self.scan
+    }
+
+    pub fn threshold(&self) -> usize {
+        self.threshold
+    }
+
+    pub fn len(&self) -> usize {
+        self.roots.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.roots.is_empty()
+    }
+
+    pub fn buffered_roots(&self) -> Vec<CycleNodeId> {
+        self.roots.iter().copied().collect()
+    }
+
+    fn insert(&mut self, id: CycleNodeId) {
+        self.roots.insert(id);
+    }
+
+    fn clear(&mut self) {
+        self.roots.clear();
+    }
+}
+
 /// Result of a cycle-collection pass.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CycleCollectReport {
@@ -181,6 +238,53 @@ impl CycleGraph {
     pub fn collect_cycles(&mut self, scan: CycleScan) -> CycleCollectReport {
         let live = self.live_from_roots();
         let trial_candidates = self.trial_candidates(scan, &live);
+        self.collect_candidate_cycles(scan, trial_candidates, live)
+    }
+
+    /// Release one ARC root and enqueue it for buffered trial deletion when it
+    /// remains referenced only by other ARC nodes.
+    pub fn release_root_to_buffer(
+        &mut self,
+        id: CycleNodeId,
+        buffer: &mut CycleRootBuffer,
+    ) -> Result<Option<CycleCollectReport>, CycleGraphError> {
+        self.release_root(id)?;
+
+        if self.should_buffer_after_release(id, buffer.scan()) {
+            buffer.insert(id);
+        }
+
+        if buffer.len() >= buffer.threshold() {
+            Ok(Some(self.collect_buffered_cycles(buffer)))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Collect cycles reachable from the buffered roots and clear the buffer.
+    pub fn collect_buffered_cycles(&mut self, buffer: &mut CycleRootBuffer) -> CycleCollectReport {
+        let scan = buffer.scan();
+        let live = self.live_from_roots();
+        let counts = self.reference_counts();
+        let trial_candidates = buffer
+            .buffered_roots()
+            .into_iter()
+            .filter(|id| self.contains(*id))
+            .filter(|id| !live.contains(id))
+            .filter(|id| counts.get(id).copied().unwrap_or(0) > 0)
+            .filter(|id| self.scan_matches_node(scan, *id))
+            .collect();
+
+        buffer.clear();
+        self.collect_candidate_cycles(scan, trial_candidates, live)
+    }
+
+    fn collect_candidate_cycles(
+        &mut self,
+        scan: CycleScan,
+        trial_candidates: Vec<CycleNodeId>,
+        live: BTreeSet<CycleNodeId>,
+    ) -> CycleCollectReport {
         let trial = self.run_trial_deletion(&trial_candidates, &live);
         let collected_set = trial.collected;
 
@@ -302,6 +406,16 @@ impl CycleGraph {
             CycleScan::All => true,
             CycleScan::Kind(kind) => self.kind(id) == Some(kind),
         }
+    }
+
+    fn should_buffer_after_release(&self, id: CycleNodeId, scan: CycleScan) -> bool {
+        if !self.contains(id) || !self.is_arc_tracked(id) || !self.scan_matches_node(scan, id) {
+            return false;
+        }
+
+        let live = self.live_from_roots();
+        let counts = self.reference_counts();
+        !live.contains(&id) && counts.get(&id).copied().unwrap_or(0) > 0
     }
 
     fn reference_counts(&self) -> BTreeMap<CycleNodeId, usize> {

@@ -381,9 +381,13 @@ Phase 6C exposes deterministic collect-white finalization order and models
 safe-mode affine nodes as retained non-ARC allocations excluded from trial
 candidates.
 
-- [ ] **Step 4: Promote trial deletion to production ARC allocator roots**
+- [x] **Step 4: Add bounded root-buffer/decrement-event reference path**
 
-- [ ] **Step 5: Promote finalizer/safe-mode interaction into production allocator tests**
+Phase 6D adds `CycleRootBuffer`, threshold-triggered collection, and buffered
+candidate scans so the reference model no longer relies only on whole-graph
+unrooted candidate discovery.
+
+- [ ] **Step 5: Promote root-buffer/finalizer/safe-mode interaction into production allocator tests**
 
 ## Phase 7: Release, Research, And Repeated Falsification
 
