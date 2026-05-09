@@ -106,7 +106,7 @@ two-day LSP.
 
 ## Item B — Memory Core Tier 1 (Mnemos production allocator integration)
 
-### Current Phase 6O status
+### Current Phase 6P status
 
 Phase 6A added a bounded cycle-reference path before the allocator work:
 `garnet-memory-v0.3/src/cycle.rs`, `garnet-memory-v0.3/tests/cycle.rs`, and
@@ -150,12 +150,16 @@ directory handle, keep Unix cache dirs/files private from creation time, and
 preserve corrupt/type-invalid non-mutation plus
 cycle-aware root rehydration. This remains distinct from the CLI signed NDJSON
 advisory cache and must not be treated as trusted compiler input without a
-future MAC/source-tree binding layer. Phase 6O adds the first directory-sync
-durability guardrail for that text-commit family: after an accepted temp-file
-rewrite and rename, generic Unix text commits sync the parent directory and the
-typed cache backend syncs the already-validated episodic directory handle.
-Non-Unix platforms retain file-data sync until a platform-specific
-directory-sync contract is added.
+future MAC layer. Phase 6O adds the first directory-sync durability guardrail
+for that text-commit family: after an accepted temp-file rewrite and rename,
+generic Unix text commits sync the parent directory and the typed cache backend
+syncs the already-validated episodic directory handle. Non-Unix platforms
+retain file-data sync until a platform-specific directory-sync contract is
+added. Phase 6P adds a dependency-free source-tree binding line to the typed
+cache format; appends validate existing bindings before rewrite, and loads
+reject copied `episodes.mnemos` files from another canonical project root
+before replacing live episodic memory. This is replay-hardening evidence, not a
+cryptographic MAC.
 
 ### Current Phase 6F-6I cache-security status
 

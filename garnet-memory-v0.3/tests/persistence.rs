@@ -35,6 +35,19 @@ fn temp_dir(name: &str) -> PathBuf {
     dir
 }
 
+fn cache_header_for_project(project: &PathBuf) -> String {
+    let store: EpisodeStore<String> = EpisodeStore::new();
+    store
+        .append_cache_text(project, 1, "bootstrap".to_string())
+        .expect("bootstrap cache header");
+    let path = episodic_cache_log_path_for(project).expect("construct backend path");
+    let raw = std::fs::read_to_string(&path).expect("read bootstrap cache");
+    let mut lines = raw.lines();
+    let header = lines.next().expect("cache format header");
+    let source_tree = lines.next().expect("cache source-tree binding");
+    format!("{header}\n{source_tree}\n")
+}
+
 #[test]
 fn episodic_text_persistence_round_trips_and_rehydrates_cycle_roots() {
     let path = temp_file("episodes.mnemos");
@@ -291,6 +304,13 @@ fn episodic_cache_append_and_load_round_trips_under_default_cache_dir() {
         .expect("append second backend episode");
 
     assert!(path.exists());
+    let raw = std::fs::read_to_string(&path).expect("read backend log");
+    assert!(
+        raw.lines()
+            .nth(1)
+            .is_some_and(|line| line.starts_with("source-tree\t")),
+        "typed backend log must carry a source-tree binding"
+    );
     let recovered: EpisodeStore<String> = EpisodeStore::new();
     recovered
         .load_cache_text(&project)
@@ -336,8 +356,8 @@ fn episodic_cache_rejects_corrupt_backend_without_mutating_store() {
     let path = episodic_cache_log_path_for(&project).expect("construct backend path");
     std::fs::create_dir_all(path.parent().expect("cache log has parent"))
         .expect("create backend dir");
-    let original_log = "garnet-episodic-v1\nbroken-line\n";
-    std::fs::write(&path, original_log).expect("write corrupt backend log");
+    let original_log = format!("{}broken-line\n", cache_header_for_project(&project));
+    std::fs::write(&path, &original_log).expect("write corrupt backend log");
 
     let store: EpisodeStore<String> = EpisodeStore::new();
     store.append_at(9, "keep".to_string());
@@ -361,8 +381,8 @@ fn episodic_cache_rejects_type_invalid_existing_backend() {
     let path = episodic_cache_log_path_for(&project).expect("construct backend path");
     std::fs::create_dir_all(path.parent().expect("cache log has parent"))
         .expect("create backend dir");
-    let original_log = "garnet-episodic-v1\n1\t616263\n";
-    std::fs::write(&path, original_log).expect("write typed-invalid backend log");
+    let original_log = format!("{}1\t616263\n", cache_header_for_project(&project));
+    std::fs::write(&path, &original_log).expect("write typed-invalid backend log");
 
     let store: EpisodeStore<u64> = EpisodeStore::new();
     store.append_at(9, 7);
@@ -372,7 +392,7 @@ fn episodic_cache_rejects_type_invalid_existing_backend() {
     assert!(matches!(
         result,
         Err(EpisodePersistenceError::InvalidValue {
-            line: 2,
+            line: 3,
             value,
             ..
         }) if value == "abc"

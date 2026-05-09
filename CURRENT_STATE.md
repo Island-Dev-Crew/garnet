@@ -174,12 +174,16 @@ operations to the validated episodic directory handle, keep Unix cache
 dirs/files private from creation time, and preserve corrupt/type-invalid
 non-mutation behavior. This backend is distinct from the
 CLI's signed NDJSON advisory cache and is not trusted compiler input without a
-future MAC/source-tree binding layer. Phase 6O adds a durability guardrail for
-the same text-commit family: after an accepted temp-file rewrite and rename,
-Unix generic text commits sync the parent directory and the typed cache backend
-syncs the already-validated episodic directory handle. Non-Unix platforms keep
-the existing file-sync behavior until a platform-specific directory-sync
-contract is added.
+future MAC layer. Phase 6O adds a durability guardrail for the same text-commit
+family: after an accepted temp-file rewrite and rename, Unix generic text
+commits sync the parent directory and the typed cache backend syncs the
+already-validated episodic directory handle. Non-Unix platforms keep the
+existing file-sync behavior until a platform-specific directory-sync contract
+is added. Phase 6P adds a dependency-free typed-cache source-tree binding:
+`episodes.mnemos` records now include a non-path binding for the canonical
+project root, and copied typed cache files from another root are rejected
+before the live store is mutated. This is replay-hardening evidence, not a
+cryptographic MAC.
 Production ARC integration, runtime finalizer invocation, broad pluggable
 persistence backends, and extended release-duration soak remain follow-up work.
 

@@ -459,6 +459,16 @@ handle rather than reopening the mutable path. Non-Unix platforms keep the
 existing file-data sync behavior until a platform-specific directory-sync
 contract is added.
 
+- [x] **Step 8e: Bind typed episodic cache files to the source tree**
+
+Phase 6P adds a dependency-free `source-tree` binding line to the default typed
+cache backend format. `EpisodeStore::append_cache_text` validates that binding
+before extending an existing `.garnet-cache/episodic/episodes.mnemos`, and
+`load_cache_text` rejects copied typed cache files from another canonical
+project root before replacing the live store. This is same-machine replay
+hardening for the typed Mnemos backend; a cryptographic MAC and trusted
+compiler-advice contract remain future work.
+
 - [ ] **Step 9: Promote root-buffer/finalizer/safe-mode interaction into production allocator tests**
 
 ## Phase 7: Release, Research, And Repeated Falsification

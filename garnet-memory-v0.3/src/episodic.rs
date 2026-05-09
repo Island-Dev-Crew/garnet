@@ -37,6 +37,8 @@ pub const EPISODIC_CACHE_EPISODIC_DIR: &str = "episodic";
 pub const EPISODIC_CACHE_LOG_FILE: &str = "episodes.mnemos";
 
 const EPISODIC_CACHE_LOCK_FILE: &str = "episodes.mnemos.lock";
+const EPISODIC_CACHE_SOURCE_TREE_PREFIX: &str = "source-tree\t";
+const EPISODIC_CACHE_SOURCE_TREE_DOMAIN: &[u8] = b"garnet-memory-episodic-source-tree-v1";
 #[cfg(windows)]
 const EPISODIC_CACHE_LOCK_ATTEMPTS: usize = 1_000;
 #[cfg(windows)]
@@ -185,6 +187,11 @@ pub enum EpisodePersistenceError {
         path: String,
         reason: String,
     },
+    SourceTreeMismatch {
+        path: String,
+        expected: String,
+        actual: String,
+    },
 }
 
 impl fmt::Display for EpisodePersistenceError {
@@ -238,6 +245,14 @@ impl fmt::Display for EpisodePersistenceError {
             Self::UnsafePath { path, reason } => {
                 write!(f, "unsafe episodic persistence path {path}: {reason}")
             }
+            Self::SourceTreeMismatch {
+                path,
+                expected,
+                actual,
+            } => write!(
+                f,
+                "episodic cache source-tree binding mismatch for {path}: expected {expected}, found {actual}"
+            ),
         }
     }
 }
@@ -517,8 +532,11 @@ where
     /// `<project>/.garnet-cache/episodic/episodes.mnemos`. The path components
     /// are fixed, directories are private on Unix, symlink/non-regular targets
     /// are rejected, and a sibling lockfile serializes rewrite-based commits.
+    /// Cache records carry a dependency-free source-tree binding so a typed
+    /// cache copied from another project root is rejected before live mutation.
     /// It is distinct from the CLI's signed NDJSON `.garnet-cache/episodes.log`
-    /// trust model and does not make these typed records trusted compiler input.
+    /// trust model and does not add a cryptographic MAC or make these typed
+    /// records trusted compiler input.
     pub fn append_cache_text<P: AsRef<Path>>(
         &self,
         project_root: P,
@@ -545,7 +563,12 @@ where
         #[cfg(not(unix))]
         {
             validate_regular_target_if_exists(&backend.log_path)?;
-            self.append_text(&backend.log_path, timestamp, value)?;
+            self.append_cache_text_by_path(
+                &backend.log_path,
+                &backend.source_tree,
+                timestamp,
+                value,
+            )?;
             set_path_private_file(&backend.log_path)?;
             Ok(())
         }
@@ -600,7 +623,8 @@ where
                 self.replace_events(Vec::new());
                 return Ok(());
             };
-            let episodes = parse_persisted_episodes(&raw)?;
+            let episodes =
+                parse_cache_persisted_episodes(&raw, &backend.source_tree, &backend.log_path)?;
             self.replace_events(episodes);
             Ok(())
         }
@@ -611,7 +635,7 @@ where
                 self.replace_events(Vec::new());
                 return Ok(());
             }
-            self.load_text(&backend.log_path)
+            self.load_cache_text_from_path(&backend.log_path, &backend.source_tree)
         }
     }
 }
@@ -628,14 +652,18 @@ where
         timestamp: u64,
         value: T,
     ) -> Result<(), EpisodePersistenceError> {
-        let existing = prepare_append_log_in_dir::<T>(
+        let existing = prepare_append_cache_log_in_dir::<T>(
             &backend.episodic_dir,
             EPISODIC_CACHE_LOG_FILE,
             &backend.log_path,
+            &backend.source_tree,
         )?;
         let mut record = String::new();
         if existing.is_empty() {
             record.push_str("garnet-episodic-v1\n");
+            record.push_str(EPISODIC_CACHE_SOURCE_TREE_PREFIX);
+            record.push_str(&backend.source_tree);
+            record.push('\n');
         }
         record.push_str(&timestamp.to_string());
         record.push('\t');
@@ -663,6 +691,80 @@ where
     }
 }
 
+#[cfg(not(unix))]
+impl<T> EpisodeStore<T>
+where
+    T: ToString + FromStr,
+    T::Err: fmt::Display,
+{
+    fn append_cache_text_by_path(
+        &self,
+        path: &Path,
+        source_tree: &str,
+        timestamp: u64,
+        value: T,
+    ) -> Result<(), EpisodePersistenceError> {
+        ensure_parent_dir(path)?;
+        let existing = prepare_append_cache_log::<T>(path, source_tree)?;
+        let mut record = String::new();
+        if existing.is_empty() {
+            record.push_str("garnet-episodic-v1\n");
+            record.push_str(EPISODIC_CACHE_SOURCE_TREE_PREFIX);
+            record.push_str(source_tree);
+            record.push('\n');
+        }
+        record.push_str(&timestamp.to_string());
+        record.push('\t');
+        record.push_str(&hex_encode(value.to_string().as_bytes()));
+        record.push('\n');
+
+        let projected_bytes = existing.len().saturating_add(record.len()) as u64;
+        if projected_bytes > EPISODIC_TEXT_LOG_MAX_BYTES {
+            return Err(EpisodePersistenceError::LogTooLarge {
+                path: path.display().to_string(),
+                bytes: projected_bytes,
+                limit: EPISODIC_TEXT_LOG_MAX_BYTES,
+            });
+        }
+
+        let tmp = temp_path_for(path);
+        let mut file = create_private_new_file(&tmp)?;
+        file.write_all(existing.as_bytes())
+            .map_err(|error| persistence_io("write", &tmp, error))?;
+        file.write_all(record.as_bytes())
+            .map_err(|error| persistence_io("write", &tmp, error))?;
+        file.sync_data()
+            .map_err(|error| persistence_io("sync", &tmp, error))?;
+        drop(file);
+        fs::rename(&tmp, path).map_err(|error| {
+            let _ = fs::remove_file(&tmp);
+            persistence_io("rename", path, error)
+        })?;
+        sync_parent_dir_after_commit(path)?;
+        set_path_private_file(path)?;
+        self.append_at(timestamp, value);
+        Ok(())
+    }
+}
+
+#[cfg(not(unix))]
+impl<T> EpisodeStore<T>
+where
+    T: FromStr,
+    T::Err: fmt::Display,
+{
+    fn load_cache_text_from_path(
+        &self,
+        path: &Path,
+        source_tree: &str,
+    ) -> Result<(), EpisodePersistenceError> {
+        let raw = read_persistence_text(path)?;
+        let episodes = parse_cache_persisted_episodes(&raw, source_tree, path)?;
+        self.replace_events(episodes);
+        Ok(())
+    }
+}
+
 /// Return the canonical fixed per-project episodic text backend path.
 ///
 /// This helper resolves the project root before appending the fixed backend
@@ -683,6 +785,7 @@ struct EpisodicCacheBackend {
     episodic_dir_path: PathBuf,
     log_path: PathBuf,
     lock_path: PathBuf,
+    source_tree: String,
     #[cfg(unix)]
     episodic_dir: File,
 }
@@ -704,6 +807,7 @@ impl EpisodicCacheBackend {
 
         let log_path = episodic_cache_log_path_for(&root)?;
         let lock_path = episodic_dir.join(EPISODIC_CACHE_LOCK_FILE);
+        let source_tree = episodic_cache_source_tree_for_root(&root);
         #[cfg(unix)]
         let episodic_dir_file = open_validated_private_dir(&episodic_dir)?;
         #[cfg(unix)]
@@ -730,6 +834,7 @@ impl EpisodicCacheBackend {
             episodic_dir_path: episodic_dir,
             log_path,
             lock_path,
+            source_tree,
             #[cfg(unix)]
             episodic_dir: episodic_dir_file,
         })
@@ -1062,10 +1167,11 @@ fn validate_regular_target_in_dir_if_exists(
 }
 
 #[cfg(unix)]
-fn prepare_append_log_in_dir<T>(
+fn prepare_append_cache_log_in_dir<T>(
     dir: &File,
     name: &str,
     path: &Path,
+    source_tree: &str,
 ) -> Result<String, EpisodePersistenceError>
 where
     T: FromStr,
@@ -1074,7 +1180,7 @@ where
     let Some(raw) = read_persistence_text_in_dir_optional(dir, name, path)? else {
         return Ok(String::new());
     };
-    parse_persisted_episodes::<T>(&raw)?;
+    parse_cache_persisted_episodes::<T>(&raw, source_tree, path)?;
     if !raw.ends_with('\n') {
         return Err(EpisodePersistenceError::MalformedLine {
             line: raw.lines().count(),
@@ -1359,6 +1465,47 @@ where
     }
 }
 
+#[cfg(not(unix))]
+fn prepare_append_cache_log<T>(
+    path: &Path,
+    source_tree: &str,
+) -> Result<String, EpisodePersistenceError>
+where
+    T: FromStr,
+    T::Err: fmt::Display,
+{
+    match fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.file_type().is_symlink() => {
+            return Err(unsafe_path(path, "target must not be a symlink"));
+        }
+        Ok(metadata) if !metadata.is_file() => {
+            return Err(unsafe_path(path, "target must be a regular file"));
+        }
+        Ok(metadata) if metadata.len() > EPISODIC_TEXT_LOG_MAX_BYTES => {
+            return Err(EpisodePersistenceError::LogTooLarge {
+                path: path.display().to_string(),
+                bytes: metadata.len(),
+                limit: EPISODIC_TEXT_LOG_MAX_BYTES,
+            });
+        }
+        Ok(_) => {}
+        Err(error) if error.kind() == ErrorKind::NotFound => {
+            return Ok(String::new());
+        }
+        Err(error) => return Err(persistence_io("metadata", path, error)),
+    }
+
+    let raw = read_persistence_text(path)?;
+    parse_cache_persisted_episodes::<T>(&raw, source_tree, path)?;
+    if !raw.ends_with('\n') {
+        return Err(EpisodePersistenceError::MalformedLine {
+            line: raw.lines().count(),
+            reason: "append log must end at a complete record boundary".to_string(),
+        });
+    }
+    Ok(raw)
+}
+
 fn read_persistence_text(path: &Path) -> Result<String, EpisodePersistenceError> {
     match fs::symlink_metadata(path) {
         Ok(metadata) if metadata.file_type().is_symlink() => {
@@ -1525,10 +1672,62 @@ where
             header.to_string(),
         ));
     }
+    parse_episode_record_lines(lines, 2)
+}
 
+fn parse_cache_persisted_episodes<T>(
+    raw: &str,
+    expected_source_tree: &str,
+    path: &Path,
+) -> Result<Vec<Episode<T>>, EpisodePersistenceError>
+where
+    T: FromStr,
+    T::Err: fmt::Display,
+{
+    let mut lines = raw.lines();
+    let header = lines.next().ok_or(EpisodePersistenceError::MissingHeader)?;
+    if header != "garnet-episodic-v1" {
+        return Err(EpisodePersistenceError::UnsupportedHeader(
+            header.to_string(),
+        ));
+    }
+    let Some(source_tree_line) = lines.next() else {
+        return Err(source_tree_mismatch(path, expected_source_tree, "missing"));
+    };
+    let Some(actual_source_tree) = source_tree_line.strip_prefix(EPISODIC_CACHE_SOURCE_TREE_PREFIX)
+    else {
+        return Err(source_tree_mismatch(path, expected_source_tree, "missing"));
+    };
+    if actual_source_tree != expected_source_tree {
+        return Err(source_tree_mismatch(
+            path,
+            expected_source_tree,
+            actual_source_tree,
+        ));
+    }
+    parse_episode_record_lines(lines, 3)
+}
+
+fn source_tree_mismatch(path: &Path, expected: &str, actual: &str) -> EpisodePersistenceError {
+    EpisodePersistenceError::SourceTreeMismatch {
+        path: path.display().to_string(),
+        expected: expected.to_string(),
+        actual: actual.to_string(),
+    }
+}
+
+fn parse_episode_record_lines<'a, T, I>(
+    lines: I,
+    first_line_number: usize,
+) -> Result<Vec<Episode<T>>, EpisodePersistenceError>
+where
+    T: FromStr,
+    T::Err: fmt::Display,
+    I: Iterator<Item = &'a str>,
+{
     let mut episodes = Vec::new();
     for (idx, line) in lines.enumerate() {
-        let line_no = idx + 2;
+        let line_no = idx + first_line_number;
         let Some((timestamp_text, payload_hex)) = line.split_once('\t') else {
             return Err(EpisodePersistenceError::MalformedLine {
                 line: line_no,
@@ -1567,6 +1766,27 @@ where
         });
     }
     Ok(episodes)
+}
+
+fn episodic_cache_source_tree_for_root(root: &Path) -> String {
+    // Dependency-free identity only: this avoids path disclosure and catches
+    // accidental copied-cache replay, but it is not a cryptographic MAC.
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(EPISODIC_CACHE_SOURCE_TREE_DOMAIN);
+    bytes.push(0);
+    bytes.extend_from_slice(root.to_string_lossy().as_bytes());
+    let first = fnv1a64(0xcbf2_9ce4_8422_2325, &bytes);
+    let second = fnv1a64(0x9e37_79b1_85eb_ca87, &bytes);
+    format!("{first:016x}{second:016x}")
+}
+
+fn fnv1a64(seed: u64, bytes: &[u8]) -> u64 {
+    let mut hash = seed;
+    for byte in bytes {
+        hash ^= u64::from(*byte);
+        hash = hash.wrapping_mul(0x0000_0100_0000_01b3);
+    }
+    hash
 }
 
 fn hex_encode(bytes: &[u8]) -> String {
@@ -1684,6 +1904,59 @@ mod tests {
             events,
             vec![episodic_dir],
             "prepared cache commits must fsync the validated episodic directory after rename"
+        );
+    }
+}
+
+#[cfg(test)]
+mod cache_binding_tests {
+    use super::*;
+
+    fn temp_project(name: &str) -> PathBuf {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system time after epoch")
+            .as_nanos();
+        let dir = std::env::temp_dir().join(format!(
+            "garnet-memory-{name}-{}-{nonce}",
+            std::process::id()
+        ));
+        fs::create_dir_all(&dir).expect("create temp project");
+        dir
+    }
+
+    #[test]
+    fn copied_cache_backend_from_other_project_is_rejected_before_mutation() {
+        let attacker = temp_project("typed-cache-attacker");
+        let victim = temp_project("typed-cache-victim");
+        let attacker_store: EpisodeStore<String> = EpisodeStore::new();
+        attacker_store
+            .append_cache_text(&attacker, 11, "poison".to_string())
+            .expect("write attacker cache");
+
+        let attacker_log = episodic_cache_log_path_for(&attacker).expect("attacker log path");
+        let victim_log = episodic_cache_log_path_for(&victim).expect("victim log path");
+        fs::create_dir_all(victim_log.parent().expect("victim log parent"))
+            .expect("create victim cache dir");
+        fs::copy(&attacker_log, &victim_log).expect("copy attacker cache into victim project");
+
+        let victim_store: EpisodeStore<String> = EpisodeStore::new();
+        victim_store.append_at(7, "trusted".to_string());
+        let result = victim_store.load_cache_text(&victim);
+
+        assert!(matches!(
+            result,
+            Err(EpisodePersistenceError::SourceTreeMismatch { .. })
+        ));
+        let values: Vec<_> = victim_store
+            .snapshot()
+            .into_iter()
+            .map(|episode| episode.value)
+            .collect();
+        assert_eq!(
+            values,
+            vec!["trusted"],
+            "rejected copied cache must not replace the live store"
         );
     }
 }
