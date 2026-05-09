@@ -149,11 +149,13 @@ When documents conflict, use this order:
   immutable local guard aliases while keeping calls and mutable sources
   conservative. Phase 4BA folds static interpolated string const facts whose
   interpolation bodies already resolve through the same narrow fact domain while
-  keeping call-backed/dynamic interpolations unknown.
+  keeping call-backed/dynamic interpolations unknown. Phase 4BB folds
+  runtime-aligned static string relational guard facts while keeping mixed-kind
+  relational facts unknown.
   Full
   Rust-grade CFG NLL, nested/non-local terminators, general loop fixed-point
   analysis, loop fixed-point domain inference, broader mutable/escaped/general higher-order closure invocation/call-effect analysis, cross-file/package
-  imports, non-finite floats, call-backed/dynamic interpolated strings, broader non-numeric comparison,
+  imports, non-finite floats, call-backed/dynamic interpolated strings, broader non-string non-numeric comparison,
   function-call, and broader const expression evaluation beyond immutable local aliases and path-qualified const references, recursive/open payload reasoning, broader expression/type
   inference, open-domain exhaustiveness/range reasoning, broader non-literal guard
   reasoning, dynamic places, broader drop elaboration, and generic/trait impl

@@ -1164,6 +1164,25 @@ interpolation, recursion, cross-file/package imports, broader non-numeric
 comparison, broader float edge-case reasoning, and broader const expression
 evaluation remain deferred.
 
+- [x] **Step 2ZW: Fold static string relational const facts**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage string_const_relational
+cargo test -p garnet-check --test match_coverage mixed_string_symbol_relational
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4BB folds runtime-aligned static string relational facts.
+`Core::LABEL < "rust"` now counts as coverage, and `Core::LABEL > "ready"` is
+statically false/non-covering. Mixed string/symbol relational facts,
+function-call interpolation, recursion, cross-file/package imports, broader
+non-string non-numeric comparison, broader float edge-case reasoning, and
+broader const expression evaluation remain deferred.
+
 ## Phase 5: Traits, Coherence, And Monomorphization
 
 **Intent:** Make the Rust-rigor side credible without overclaiming zero-cost guarantees.

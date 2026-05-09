@@ -23,9 +23,10 @@
 //! boolean match guards use the same conservative folding. Narrow integer
 //! arithmetic plus equality/inequality and relational guard comparisons, along
 //! with finite-float equality/inequality, relational, and arithmetic guard
-//! comparisons, and immutable local boolean/integer expression aliases,
-//! including path-qualified constant references, fold over the same fact domain
-//! using checked or runtime-aligned numeric rules. It does not attempt
+//! comparisons, static string relational guard comparisons, and immutable local
+//! boolean/integer expression aliases, including path-qualified constant
+//! references, fold over the same fact domain using checked or runtime-aligned
+//! numeric/string rules. It does not attempt
 //! full type inference, loop fixed-point inference, broader
 //! mutable/escaped/general higher-order closure call-effect analysis,
 //! recursive/open payload coverage, or broader non-literal guard reasoning.
@@ -99,12 +100,13 @@ impl ConstFact {
         }
     }
 
-    fn numeric_cmp(self, other: Self, op: BinOp) -> Option<bool> {
+    fn ordered_cmp(self, other: Self, op: BinOp) -> Option<bool> {
         let ordering = match (self, other) {
             (ConstFact::Int(lhs), ConstFact::Int(rhs)) => Some(lhs.cmp(&rhs)),
             (ConstFact::Float(lhs), ConstFact::Float(rhs)) => lhs.partial_cmp(&rhs),
             (ConstFact::Int(lhs), ConstFact::Float(rhs)) => (lhs as f64).partial_cmp(&rhs),
             (ConstFact::Float(lhs), ConstFact::Int(rhs)) => lhs.partial_cmp(&(rhs as f64)),
+            (ConstFact::Str(lhs), ConstFact::Str(rhs)) => Some(lhs.cmp(&rhs)),
             _ => None,
         }?;
 
@@ -320,7 +322,7 @@ impl Checker {
             } => {
                 let lhs = self.const_fact_from_expr(lhs, module_path)?;
                 let rhs = self.const_fact_from_expr(rhs, module_path)?;
-                lhs.numeric_cmp(rhs, *op).map(ConstFact::Bool)
+                lhs.ordered_cmp(rhs, *op).map(ConstFact::Bool)
             }
             Expr::Binary {
                 op: op @ (BinOp::Add | BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod),
@@ -1439,7 +1441,7 @@ impl Checker {
             } => {
                 let lhs = self.guard_value_from_match_guard(lhs, guard_facts, scope)?;
                 let rhs = self.guard_value_from_match_guard(rhs, guard_facts, scope)?;
-                lhs.numeric_cmp(rhs, *op).map(ConstFact::Bool)
+                lhs.ordered_cmp(rhs, *op).map(ConstFact::Bool)
             }
             Expr::Binary {
                 op: op @ (BinOp::Add | BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod),
@@ -2045,7 +2047,7 @@ where
         } => {
             let lhs = local_guard_fact_from_expr(lhs, guard_facts, resolve_path)?;
             let rhs = local_guard_fact_from_expr(rhs, guard_facts, resolve_path)?;
-            lhs.numeric_cmp(rhs, *op).map(ConstFact::Bool)
+            lhs.ordered_cmp(rhs, *op).map(ConstFact::Bool)
         }
         Expr::Binary {
             op: op @ (BinOp::Add | BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod),

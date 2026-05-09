@@ -108,7 +108,7 @@ highest-leverage next milestones are:
 The v0.5 seven-phase roadmap is now tracked in
 `F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md` and
 `F_Project_Management/ROADMAPS/GARNET_v0_5_LANGUAGE_COMPLETION_ROADMAP.md`.
-Phase 4BA / 5C / 6P are the current readiness slices. Phases 1-3D added parser parity,
+Phase 4BB / 5C / 6P are the current readiness slices. Phases 1-3D added parser parity,
 managed block/dynamic/protocol runtime slices, managed actor addresses, bounded
 source mailboxes, and a generated actor-orchestrator template. Phase 4A
 activates partial safe-mode borrow conformance for direct use-after-move
@@ -247,11 +247,15 @@ Phase 4BA folds static interpolated string const facts whose interpolation
 bodies already resolve through the same narrow `ConstFact` evaluator, so
 `"re#{"ad"}y"` can compare as `"ready"` while call-backed/dynamic
 interpolations stay unknown.
+Phase 4BB folds runtime-aligned static string relational guard facts, so
+`Core::LABEL < "rust"` can count as coverage while false string comparisons are
+statically false/non-covering and mixed string/symbol relational comparisons
+stay unknown.
 Escaped and general higher-order closure call effects plus
 broader mutable closure flow remain deferred. Full CFG NLL region solving, loop
 fixed-point domain inference, broader mutable/escaped/general higher-order closure invocation/call-effect analysis,
 nested/non-local terminators, cross-file/package imports, recursive/open payload
-reasoning, non-finite floats, call-backed/dynamic interpolated strings, broader non-numeric comparison, broader float edge-case reasoning, function-call, broader
+reasoning, non-finite floats, call-backed/dynamic interpolated strings, broader non-string non-numeric comparison, broader float edge-case reasoning, function-call, broader
 const expression evaluation beyond immutable local aliases and path-qualified const references, broader inference, and broader non-literal guard
 reasoning remain deferred.
 Phase 5A activates
