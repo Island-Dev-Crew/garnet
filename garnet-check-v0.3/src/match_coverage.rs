@@ -238,6 +238,8 @@ impl Checker {
             Stmt::Assign {
                 target, op, value, ..
             } => {
+                // Compound assignments are operator/type dependent, so they
+                // clear finite-domain evidence instead of preserving it.
                 let assigned_domain = matches!(op, AssignOp::Eq)
                     .then(|| self.domain_from_expr(value, env, scope))
                     .flatten();

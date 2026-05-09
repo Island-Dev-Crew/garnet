@@ -218,6 +218,26 @@ fn safe_match_invalidates_mutable_domain_after_non_finite_assignment() {
 }
 
 #[test]
+fn safe_match_invalidates_mutable_domain_after_compound_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code() -> Int {
+            let mut flag = true
+            flag += 1
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "compound assignment should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
 fn safe_match_joins_bool_domain_after_if_else_assignments() {
     let errs = check(
         r#"
@@ -262,6 +282,30 @@ fn safe_match_invalidates_domain_after_mixed_if_else_assignments() {
     assert!(
         !has_safe_violation(&errs, "non-exhaustive match"),
         "mixed finite/non-finite branch assignments should clear inferred domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_domain_after_if_else_compound_assignments() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = true
+            if cond {
+                flag += 1
+            } else {
+                flag += 1
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "compound assignments in all branches should clear inferred domain, got {errs:?}"
     );
 }
 

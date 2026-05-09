@@ -95,7 +95,9 @@ When documents conflict, use this order:
   environment, preserving a finite domain only when every possible branch
   agrees and clearing stale domains for mixed finite/non-finite branches. Phase
   4U extends that proof through nested `if` expressions inside branch bodies
-  only when every nested path definitely assigns the outer subject. Full
+  only when every nested path definitely assigns the outer subject. Phase 4V
+  makes compound assignments an explicit invalidation boundary so
+  operator/type-dependent updates cannot preserve stale finite domains. Full
   Rust-grade CFG NLL, nested/non-local terminators, general loop fixed-point
   analysis, loop/try/closure-merged assignment flow, cross-file/package
   imports, recursive/open payload reasoning, broader expression/type

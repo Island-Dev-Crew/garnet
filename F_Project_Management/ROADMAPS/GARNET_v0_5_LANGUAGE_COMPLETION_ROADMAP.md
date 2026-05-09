@@ -551,7 +551,8 @@ non-finite assignments invalidate inferred finite-domain state before later
 matches.
 
 Remaining: direct `if`/`elsif`/`else` branch-merged assignment flow is covered
-in Step 2O below; compound-assignment domain inference, cross-file/package
+in Step 2O below; compound-assignment invalidation is covered in Step 2Q
+below; cross-file/package
 imports, recursive/open payload reasoning, richer type inference, open-domain
 exhaustiveness/range reasoning, and non-literal guard reasoning remain
 pending.
@@ -573,7 +574,8 @@ finite/non-finite branches clear stale finite-domain state before later
 matches.
 
 Remaining: nested all-path `if` branch assignment flow is covered in Step 2P
-below; compound-assignment domain inference, loop/try/closure-merged assignment
+below; compound-assignment invalidation is covered in Step 2Q below;
+loop/try/closure-merged assignment
 flow, cross-file/package imports, recursive/open payload reasoning, richer type
 inference, open-domain exhaustiveness/range reasoning, and non-literal guard
 reasoning remain pending.
@@ -592,6 +594,20 @@ Evidence: Phase 4U carries match-domain evidence through nested `if` /
 definitely assigns the outer subject. Missing nested `else` paths remain
 open-domain, and branch-local bindings remain ineligible for post-branch
 finite-domain evidence.
+
+- [x] **Step 2Q: Make compound assignments an explicit invalidation boundary**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage compound_assignment
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4V proves direct compound assignments and all-branch
+compound assignments clear finite `Bool`/enum match-domain evidence before a
+later match, so operator/type-dependent updates cannot reuse stale finite
+domains.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 

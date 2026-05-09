@@ -108,7 +108,7 @@ highest-leverage next milestones are:
 The v0.5 seven-phase roadmap is now tracked in
 `F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md` and
 `F_Project_Management/ROADMAPS/GARNET_v0_5_LANGUAGE_COMPLETION_ROADMAP.md`.
-Phase 4U / 5C / 6P are the current readiness slices. Phases 1-3D added parser parity,
+Phase 4V / 5C / 6P are the current readiness slices. Phases 1-3D added parser parity,
 managed block/dynamic/protocol runtime slices, managed actor addresses, bounded
 source mailboxes, and a generated actor-orchestrator template. Phase 4A
 activates partial safe-mode borrow conformance for direct use-after-move
@@ -169,8 +169,11 @@ domain environment: only domains preserved by every possible branch survive,
 and mixed finite/non-finite branch assignments clear stale finite-domain state.
 Phase 4U carries that proof through nested `if`/`elsif`/`else` expressions
 inside branch bodies only when every nested path definitely assigns the outer
-match subject; missing nested `else` paths remain open-domain. Full CFG NLL
-region solving, loop/try/closure-merged assignment flow, nested/non-local
+match subject; missing nested `else` paths remain open-domain. Phase 4V makes
+compound assignments an explicit invalidation boundary for finite match-domain
+evidence, including direct statements and all-branch compound assignment joins,
+so operator/type-dependent updates cannot preserve stale `Bool`/enum domains.
+Full CFG NLL region solving, loop/try/closure-merged assignment flow, nested/non-local
 terminators, cross-file/package imports, recursive/open payload reasoning,
 broader inference, and non-literal guard reasoning remain deferred. Phase 5A activates
 conservative trait coherence by rejecting exact duplicate trait impls and

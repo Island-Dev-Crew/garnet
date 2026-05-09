@@ -984,6 +984,42 @@ fn bool_code(first: Bool, second: Bool) -> Int {
     assert_ok(&["parse"], &nested_if_missing_else_path);
     assert_ok(&["check"], &nested_if_missing_else_path);
 
+    let compound_invalidation_src = r#"
+fn bool_code() -> Int {
+  let mut flag = true
+  flag += 1
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let compound_invalidation_path = temp_source(
+        "match_compound_assignment_invalidation_open",
+        compound_invalidation_src,
+    );
+    assert_ok(&["parse"], &compound_invalidation_path);
+    assert_ok(&["check"], &compound_invalidation_path);
+
+    let if_else_compound_invalidation_src = r#"
+fn bool_code(cond: Bool) -> Int {
+  let mut flag = true
+  if cond {
+    flag += 1
+  } else {
+    flag += 1
+  }
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let if_else_compound_invalidation_path = temp_source(
+        "match_if_else_compound_assignment_invalidation_open",
+        if_else_compound_invalidation_src,
+    );
+    assert_ok(&["parse"], &if_else_compound_invalidation_path);
+    assert_ok(&["check"], &if_else_compound_invalidation_path);
+
     let enum_complete_src = r#"
 enum Status { Ready, Done }
 
