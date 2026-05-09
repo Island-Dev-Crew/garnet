@@ -29,6 +29,7 @@ fn run(args: &[&str], path: &Path) -> std::process::Output {
     Command::new(garnet_bin())
         .args(args)
         .arg(path)
+        .current_dir(path.parent().unwrap_or_else(|| Path::new(".")))
         .output()
         .unwrap()
 }
@@ -43,10 +44,6 @@ fn assert_ok(args: &[&str], path: &Path) {
         String::from_utf8_lossy(&out.stdout),
         String::from_utf8_lossy(&out.stderr)
     );
-}
-
-fn pending(feature: &str) {
-    eprintln!("conformance placeholder pending implementation: {feature}");
 }
 
 #[test]
@@ -540,9 +537,2900 @@ fn caller(mut items: Buffers) -> Int {
 }
 
 #[test]
-#[ignore = "Mini-Spec §8.6 full place-granular B1-B5 borrow rules are partial in v0.4.2"]
 fn deferred_full_borrow_rule_suite() {
-    pending("full place-granular borrow-check B1-B5 conformance suite");
+    let double_own_src = r#"
+fn consume_pair(own left: Buffer, own right: Buffer) -> Int {
+  0
+}
+
+fn caller(own b: Buffer) -> Int {
+  consume_pair(b, b)
+}
+"#;
+    let double_own_path = temp_source("borrow_drop_double_own", double_own_src);
+    assert_ok(&["parse"], &double_own_path);
+    let out = run(&["check"], &double_own_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode B5 must reject double-own of the same binding in one call"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("drop discipline"),
+        "expected drop-discipline diagnostic, got:\n{stdout}"
+    );
+
+    let returning_branch_src = r#"
+fn consume(own x: Buffer) -> Int {
+  0
+}
+
+fn read(borrow x: Buffer) -> Int {
+  0
+}
+
+fn caller(own b: Buffer, c: Bool) -> Int {
+  if c {
+    consume(b)
+    return 0
+  } else {
+    0
+  }
+  read(b)
+  0
+}
+"#;
+    let returning_branch_path =
+        temp_source("borrow_returning_branch_liveness", returning_branch_src);
+    assert_ok(&["parse"], &returning_branch_path);
+    assert_ok(&["check"], &returning_branch_path);
+
+    let returning_loop_src = r#"
+fn consume(own x: Buffer) -> Int {
+  0
+}
+
+fn read(borrow x: Buffer) -> Int {
+  0
+}
+
+fn caller(own b: Buffer, c: Bool) -> Int {
+  while c {
+    consume(b)
+    return 0
+  }
+  read(b)
+  0
+}
+"#;
+    let returning_loop_path = temp_source("borrow_returning_loop_liveness", returning_loop_src);
+    assert_ok(&["parse"], &returning_loop_path);
+    assert_ok(&["check"], &returning_loop_path);
+
+    let returning_for_src = r#"
+fn consume(own x: Buffer) -> Int {
+  0
+}
+
+fn read(borrow x: Buffer) -> Int {
+  0
+}
+
+fn caller(own b: Buffer, xs: Array<Int>) -> Int {
+  for x in xs {
+    consume(b)
+    return 0
+  }
+  read(b)
+  0
+}
+"#;
+    let returning_for_path = temp_source("borrow_returning_for_liveness", returning_for_src);
+    assert_ok(&["parse"], &returning_for_path);
+    assert_ok(&["check"], &returning_for_path);
+
+    let for_shadow_src = r#"
+fn consume(own x: Buffer) -> Int {
+  0
+}
+
+fn read(borrow x: Buffer) -> Int {
+  0
+}
+
+fn caller(own item: Buffer, xs: Array<Int>) -> Int {
+  consume(item)
+  for item in xs {
+    0
+  }
+  read(item)
+  0
+}
+"#;
+    let for_shadow_path = temp_source(
+        "borrow_for_loop_shadow_preserves_outer_move",
+        for_shadow_src,
+    );
+    assert_ok(&["parse"], &for_shadow_path);
+    let out = run(&["check"], &for_shadow_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode for-loop variables must not rebind a moved outer binding"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("use-after-move"),
+        "expected use-after-move diagnostic, got:\n{stdout}"
+    );
+
+    let match_shadow_src = r#"
+fn consume(own x: Buffer) -> Int {
+  0
+}
+
+fn read(borrow x: Buffer) -> Int {
+  0
+}
+
+fn caller(borrow item: Buffer, own subject: Buffer) -> Int {
+  match subject {
+    item => consume(item)
+  }
+  read(item)
+  0
+}
+"#;
+    let match_shadow_path = temp_source(
+        "borrow_match_pattern_shadow_does_not_poison_outer",
+        match_shadow_src,
+    );
+    assert_ok(&["parse"], &match_shadow_path);
+    assert_ok(&["check"], &match_shadow_path);
+
+    let match_outer_move_src = r#"
+fn consume(own x: Buffer) -> Int {
+  0
+}
+
+fn read(borrow x: Buffer) -> Int {
+  0
+}
+
+fn caller(own item: Buffer, n: Int) -> Int {
+  match n {
+    _ => consume(item)
+  }
+  read(item)
+  0
+}
+"#;
+    let match_outer_move_path = temp_source(
+        "borrow_match_arm_outer_move_propagates",
+        match_outer_move_src,
+    );
+    assert_ok(&["parse"], &match_outer_move_path);
+    let out = run(&["check"], &match_outer_move_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode match arms must still propagate real outer moves"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("use-after-move"),
+        "expected use-after-move diagnostic, got:\n{stdout}"
+    );
+
+    let match_block_move_src = r#"
+fn consume(own x: Buffer) -> Int {
+  0
+}
+
+fn read(borrow x: Buffer) -> Int {
+  0
+}
+
+fn caller(own item: Buffer, n: Int) -> Int {
+  match n {
+    _ => {
+      consume(item)
+      0
+    }
+  }
+  read(item)
+  0
+}
+"#;
+    let match_block_move_path = temp_source(
+        "borrow_match_arm_block_statement_move_propagates",
+        match_block_move_src,
+    );
+    assert_ok(&["parse"], &match_block_move_path);
+    let out = run(&["check"], &match_block_move_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode match-arm block statements must be preserved for later move diagnostics"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("use-after-move"),
+        "expected use-after-move diagnostic, got:\n{stdout}"
+    );
+
+    let match_guard_move_src = r#"
+fn consumes_false(own x: Buffer) -> Bool {
+  false
+}
+
+fn read(borrow x: Buffer) -> Int {
+  0
+}
+
+fn caller(own item: Buffer, n: Int) -> Int {
+  match n {
+    _ if consumes_false(item) => {
+      return 0
+    },
+    _ => 0
+  }
+  read(item)
+  0
+}
+"#;
+    let match_guard_move_path = temp_source(
+        "borrow_match_guard_move_propagates_after_false_guard",
+        match_guard_move_src,
+    );
+    assert_ok(&["parse"], &match_guard_move_path);
+    let out = run(&["check"], &match_guard_move_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode match guards must merge moves that can continue when the guard is false"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("use-after-move"),
+        "expected use-after-move diagnostic, got:\n{stdout}"
+    );
+}
+
+#[test]
+fn deferred_match_exhaustiveness_and_reachability() {
+    let bool_non_exhaustive_src = r#"
+fn bool_code(flag: Bool) -> Int {
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let bool_non_exhaustive_path =
+        temp_source("match_bool_non_exhaustive", bool_non_exhaustive_src);
+    assert_ok(&["parse"], &bool_non_exhaustive_path);
+    let out = run(&["check"], &bool_non_exhaustive_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode Bool matches must reject missing finite-domain cases"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("non-exhaustive match") && stdout.contains("`false`"),
+        "expected missing Bool pattern diagnostic, got:\n{stdout}"
+    );
+
+    let bool_initializer_src = r#"
+fn bool_code() -> Int {
+  let flag = true
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let bool_initializer_path = temp_source(
+        "match_bool_initializer_non_exhaustive",
+        bool_initializer_src,
+    );
+    assert_ok(&["parse"], &bool_initializer_path);
+    let out = run(&["check"], &bool_initializer_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode Bool initializer matches must reject missing finite-domain cases"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("non-exhaustive match") && stdout.contains("`false`"),
+        "expected initializer-driven Bool missing pattern diagnostic, got:\n{stdout}"
+    );
+
+    let mutable_bool_assignment_src = r#"
+fn bool_code() -> Int {
+  let mut flag = 1
+  flag = true
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let mutable_bool_assignment_path = temp_source(
+        "match_mutable_bool_assignment_non_exhaustive",
+        mutable_bool_assignment_src,
+    );
+    assert_ok(&["parse"], &mutable_bool_assignment_path);
+    let out = run(&["check"], &mutable_bool_assignment_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode mutable Bool finite assignments must reject missing finite-domain cases"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("non-exhaustive match") && stdout.contains("`false`"),
+        "expected mutable assignment-driven Bool missing pattern diagnostic, got:\n{stdout}"
+    );
+
+    let mutable_invalidation_src = r#"
+fn bool_code() -> Int {
+  let mut flag = true
+  flag = 1
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let mutable_invalidation_path = temp_source(
+        "match_mutable_assignment_invalidation_open",
+        mutable_invalidation_src,
+    );
+    assert_ok(&["parse"], &mutable_invalidation_path);
+    assert_ok(&["check"], &mutable_invalidation_path);
+
+    let if_else_mutable_bool_src = r#"
+fn bool_code(cond: Bool) -> Int {
+  let mut flag = 1
+  if cond {
+    flag = true
+  } else {
+    flag = false
+  }
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let if_else_mutable_bool_path = temp_source(
+        "match_if_else_mutable_bool_assignment_non_exhaustive",
+        if_else_mutable_bool_src,
+    );
+    assert_ok(&["parse"], &if_else_mutable_bool_path);
+    let out = run(&["check"], &if_else_mutable_bool_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode if/else mutable Bool assignments must reject missing finite-domain cases"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("non-exhaustive match") && stdout.contains("`false`"),
+        "expected if/else mutable Bool assignment diagnostic, got:\n{stdout}"
+    );
+
+    let if_else_mixed_invalidation_src = r#"
+fn bool_code(cond: Bool) -> Int {
+  let mut flag = true
+  if cond {
+    flag = false
+  } else {
+    flag = 1
+  }
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let if_else_mixed_invalidation_path = temp_source(
+        "match_if_else_mixed_assignment_invalidation_open",
+        if_else_mixed_invalidation_src,
+    );
+    assert_ok(&["parse"], &if_else_mixed_invalidation_path);
+    assert_ok(&["check"], &if_else_mixed_invalidation_path);
+
+    let nested_if_assignment_src = r#"
+fn bool_code(first: Bool, second: Bool) -> Int {
+  let mut flag = 1
+  if first {
+    if second {
+      flag = true
+    } else {
+      flag = false
+    }
+  } else {
+    flag = true
+  }
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let nested_if_assignment_path = temp_source(
+        "match_nested_if_assignment_non_exhaustive",
+        nested_if_assignment_src,
+    );
+    assert_ok(&["parse"], &nested_if_assignment_path);
+    let out = run(&["check"], &nested_if_assignment_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode nested if assignments must reject missing finite-domain cases when every nested branch assigns"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("non-exhaustive match") && stdout.contains("`false`"),
+        "expected nested if assignment diagnostic, got:\n{stdout}"
+    );
+
+    let nested_if_missing_else_src = r#"
+fn bool_code(first: Bool, second: Bool) -> Int {
+  let mut flag = 1
+  if first {
+    if second {
+      flag = true
+    }
+  } else {
+    flag = false
+  }
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let nested_if_missing_else_path = temp_source(
+        "match_nested_if_missing_else_invalidation_open",
+        nested_if_missing_else_src,
+    );
+    assert_ok(&["parse"], &nested_if_missing_else_path);
+    assert_ok(&["check"], &nested_if_missing_else_path);
+
+    let compound_invalidation_src = r#"
+fn bool_code() -> Int {
+  let mut flag = true
+  flag += 1
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let compound_invalidation_path = temp_source(
+        "match_compound_assignment_invalidation_open",
+        compound_invalidation_src,
+    );
+    assert_ok(&["parse"], &compound_invalidation_path);
+    assert_ok(&["check"], &compound_invalidation_path);
+
+    let if_else_compound_invalidation_src = r#"
+fn bool_code(cond: Bool) -> Int {
+  let mut flag = true
+  if cond {
+    flag += 1
+  } else {
+    flag += 1
+  }
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let if_else_compound_invalidation_path = temp_source(
+        "match_if_else_compound_assignment_invalidation_open",
+        if_else_compound_invalidation_src,
+    );
+    assert_ok(&["parse"], &if_else_compound_invalidation_path);
+    assert_ok(&["check"], &if_else_compound_invalidation_path);
+
+    let while_assignment_invalidation_src = r#"
+fn bool_code(cond: Bool) -> Int {
+  let mut flag = true
+  while cond {
+    flag = 1
+  }
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let while_assignment_invalidation_path = temp_source(
+        "match_while_assignment_invalidation_open",
+        while_assignment_invalidation_src,
+    );
+    assert_ok(&["parse"], &while_assignment_invalidation_path);
+    assert_ok(&["check"], &while_assignment_invalidation_path);
+
+    let for_assignment_invalidation_src = r#"
+fn bool_code() -> Int {
+  let mut flag = true
+  for item in [1] {
+    flag = item
+  }
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let for_assignment_invalidation_path = temp_source(
+        "match_for_assignment_invalidation_open",
+        for_assignment_invalidation_src,
+    );
+    assert_ok(&["parse"], &for_assignment_invalidation_path);
+    assert_ok(&["check"], &for_assignment_invalidation_path);
+
+    let try_body_assignment_invalidation_src = r#"
+fn bool_code() -> Int {
+  let mut flag = true
+  try {
+    flag = 1
+  } rescue e {
+    0
+  }
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let try_body_assignment_invalidation_path = temp_source(
+        "match_try_body_assignment_invalidation_no_stale_match_diag",
+        try_body_assignment_invalidation_src,
+    );
+    assert_ok(&["parse"], &try_body_assignment_invalidation_path);
+    let out = run(&["check"], &try_body_assignment_invalidation_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode try/rescue should remain rejected"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("uses `try`/`rescue`"),
+        "expected safe-mode try/rescue diagnostic, got:\n{stdout}"
+    );
+    assert!(
+        !stdout.contains("non-exhaustive match"),
+        "try assignment invalidation must not leave a stale match coverage diagnostic, got:\n{stdout}"
+    );
+
+    let closure_assignment_boundary_src = r#"
+fn bool_code(cond: Bool) -> Int {
+  let mut flag = 1
+  let updater = |value| if cond {
+    flag = true
+  } else {
+    flag = false
+  }
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let closure_assignment_boundary_path = temp_source(
+        "match_uninvoked_closure_assignment_boundary_open",
+        closure_assignment_boundary_src,
+    );
+    assert_ok(&["parse"], &closure_assignment_boundary_path);
+    assert_ok(&["check"], &closure_assignment_boundary_path);
+
+    let immediate_closure_assignment_invalidation_src = r#"
+fn bool_code() -> Int {
+  let mut flag = true
+  (|value| {
+    flag = value
+  })(1)
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let immediate_closure_assignment_invalidation_path = temp_source(
+        "match_immediate_closure_assignment_invalidation_open",
+        immediate_closure_assignment_invalidation_src,
+    );
+    assert_ok(&["parse"], &immediate_closure_assignment_invalidation_path);
+    assert_ok(&["check"], &immediate_closure_assignment_invalidation_path);
+
+    let local_closure_assignment_invalidation_src = r#"
+fn bool_code() -> Int {
+  let mut flag = true
+  let updater = |value| {
+    flag = value
+  }
+  updater(1)
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let local_closure_assignment_invalidation_path = temp_source(
+        "match_local_closure_assignment_invalidation_open",
+        local_closure_assignment_invalidation_src,
+    );
+    assert_ok(&["parse"], &local_closure_assignment_invalidation_path);
+    assert_ok(&["check"], &local_closure_assignment_invalidation_path);
+
+    let branch_joined_closure_assignment_invalidation_src = r#"
+fn bool_code(cond: Bool) -> Int {
+  let mut flag = true
+  let updater = if cond {
+    |value| {
+      flag = value
+    }
+  } else {
+    |value| {
+      flag = false
+    }
+  }
+  updater(1)
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let branch_joined_closure_assignment_invalidation_path = temp_source(
+        "match_branch_joined_closure_assignment_invalidation_open",
+        branch_joined_closure_assignment_invalidation_src,
+    );
+    assert_ok(
+        &["parse"],
+        &branch_joined_closure_assignment_invalidation_path,
+    );
+    assert_ok(
+        &["check"],
+        &branch_joined_closure_assignment_invalidation_path,
+    );
+
+    let branch_rebound_closure_assignment_invalidation_src = r#"
+fn bool_code(cond: Bool) -> Int {
+  let mut flag = true
+  let mut updater = |value| {
+    value
+  }
+  if cond {
+    updater = |value| {
+      flag = value
+    }
+  } else {
+    updater = |value| {
+      flag = false
+    }
+  }
+  updater(1)
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let branch_rebound_closure_assignment_invalidation_path = temp_source(
+        "match_branch_rebound_closure_assignment_invalidation_open",
+        branch_rebound_closure_assignment_invalidation_src,
+    );
+    assert_ok(
+        &["parse"],
+        &branch_rebound_closure_assignment_invalidation_path,
+    );
+    assert_ok(
+        &["check"],
+        &branch_rebound_closure_assignment_invalidation_path,
+    );
+
+    let local_closure_alias_assignment_invalidation_src = r#"
+fn bool_code() -> Int {
+  let mut flag = true
+  let updater = |value| {
+    flag = value
+  }
+  let alias = updater
+  alias(1)
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let local_closure_alias_assignment_invalidation_path = temp_source(
+        "match_local_closure_alias_assignment_invalidation_open",
+        local_closure_alias_assignment_invalidation_src,
+    );
+    assert_ok(
+        &["parse"],
+        &local_closure_alias_assignment_invalidation_path,
+    );
+    assert_ok(
+        &["check"],
+        &local_closure_alias_assignment_invalidation_path,
+    );
+
+    let branch_joined_closure_alias_assignment_invalidation_src = r#"
+fn bool_code(cond: Bool) -> Int {
+  let mut flag = true
+  let update_from_arg = |value| {
+    flag = value
+  }
+  let update_to_false = |value| {
+    flag = false
+  }
+  let alias = if cond {
+    update_from_arg
+  } else {
+    update_to_false
+  }
+  alias(1)
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let branch_joined_closure_alias_assignment_invalidation_path = temp_source(
+        "match_branch_joined_closure_alias_assignment_invalidation_open",
+        branch_joined_closure_alias_assignment_invalidation_src,
+    );
+    assert_ok(
+        &["parse"],
+        &branch_joined_closure_alias_assignment_invalidation_path,
+    );
+    assert_ok(
+        &["check"],
+        &branch_joined_closure_alias_assignment_invalidation_path,
+    );
+
+    let direct_branch_selected_closure_call_invalidation_src = r#"
+fn bool_code(cond: Bool) -> Int {
+  let mut flag = true
+  let update_from_arg = |value| {
+    flag = value
+  }
+  let update_to_false = |value| {
+    flag = false
+  }
+  (if cond {
+    update_from_arg
+  } else {
+    update_to_false
+  })(1)
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let direct_branch_selected_closure_call_invalidation_path = temp_source(
+        "match_direct_branch_selected_closure_call_invalidation_open",
+        direct_branch_selected_closure_call_invalidation_src,
+    );
+    assert_ok(
+        &["parse"],
+        &direct_branch_selected_closure_call_invalidation_path,
+    );
+    assert_ok(
+        &["check"],
+        &direct_branch_selected_closure_call_invalidation_path,
+    );
+
+    let enum_complete_src = r#"
+enum Status { Ready, Done }
+
+fn status_code(status: Status) -> Int {
+  match status {
+    Status::Ready => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let enum_complete_path = temp_source("match_enum_complete", enum_complete_src);
+    assert_ok(&["parse"], &enum_complete_path);
+    assert_ok(&["check"], &enum_complete_path);
+
+    let enum_unreachable_src = r#"
+enum Status { Ready, Done }
+
+fn status_code(status: Status) -> Int {
+  match status {
+    Status::Ready => 1
+    Status::Ready => 2
+    Status::Done => 3
+  }
+}
+"#;
+    let enum_unreachable_path =
+        temp_source("match_enum_duplicate_unreachable", enum_unreachable_src);
+    assert_ok(&["parse"], &enum_unreachable_path);
+    let out = run(&["check"], &enum_unreachable_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode enum matches must reject arms already covered by prior unguarded arms"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("unreachable match arm") && stdout.contains("Status::Ready"),
+        "expected unreachable duplicate variant diagnostic, got:\n{stdout}"
+    );
+
+    let enum_initializer_missing_src = r#"
+enum Status { Ready, Done }
+
+fn status_code() -> Int {
+  let status = Status::Ready()
+  match status {
+    Status::Ready => 1
+  }
+}
+"#;
+    let enum_initializer_missing_path = temp_source(
+        "match_enum_initializer_missing",
+        enum_initializer_missing_src,
+    );
+    assert_ok(&["parse"], &enum_initializer_missing_path);
+    let out = run(&["check"], &enum_initializer_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode enum initializer matches must reject missing finite-domain cases"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("non-exhaustive match") && stdout.contains("Status::Done"),
+        "expected initializer-driven enum missing variant diagnostic, got:\n{stdout}"
+    );
+
+    let mutable_enum_initializer_missing_src = r#"
+enum Status { Ready, Done }
+
+fn status_code() -> Int {
+  let mut status = Status::Ready()
+  match status {
+    Status::Ready => 1
+  }
+}
+"#;
+    let mutable_enum_initializer_missing_path = temp_source(
+        "match_mutable_enum_initializer_missing",
+        mutable_enum_initializer_missing_src,
+    );
+    assert_ok(&["parse"], &mutable_enum_initializer_missing_path);
+    let out = run(&["check"], &mutable_enum_initializer_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode mutable enum initializers must reject missing finite-domain cases"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("non-exhaustive match") && stdout.contains("Status::Done"),
+        "expected mutable enum initializer missing variant diagnostic, got:\n{stdout}"
+    );
+
+    let if_else_enum_assignment_src = r#"
+enum Status { Ready, Done }
+
+fn status_code(cond: Bool) -> Int {
+  let mut status = 1
+  if cond {
+    status = Status::Ready()
+  } else {
+    status = Status::Done()
+  }
+  match status {
+    Status::Ready => 1
+  }
+}
+"#;
+    let if_else_enum_assignment_path = temp_source(
+        "match_if_else_enum_assignment_missing",
+        if_else_enum_assignment_src,
+    );
+    assert_ok(&["parse"], &if_else_enum_assignment_path);
+    let out = run(&["check"], &if_else_enum_assignment_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode if/else mutable enum assignments must reject missing finite-domain cases"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("non-exhaustive match") && stdout.contains("Status::Done"),
+        "expected if/else mutable enum assignment missing variant diagnostic, got:\n{stdout}"
+    );
+
+    let nested_missing_src = r#"
+enum Inner { Left, Right }
+enum Outer { Wrap(Inner), Empty }
+
+fn nested_code(outer: Outer) -> Int {
+  match outer {
+    Outer::Wrap(Inner::Left) => 1
+    Outer::Empty => 0
+  }
+}
+"#;
+    let nested_missing_path = temp_source("match_nested_enum_payload_missing", nested_missing_src);
+    assert_ok(&["parse"], &nested_missing_path);
+    let out = run(&["check"], &nested_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode nested enum payload matches must reject missing finite payload cases"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("non-exhaustive match") && stdout.contains("Outer::Wrap(Inner::Right)"),
+        "expected missing nested payload diagnostic, got:\n{stdout}"
+    );
+
+    let nested_complete_src = r#"
+enum Inner { Left, Right }
+enum Outer { Wrap(Inner), Empty }
+
+fn nested_code(outer: Outer) -> Int {
+  match outer {
+    Outer::Wrap(Inner::Left) => 1
+    Outer::Wrap(Inner::Right) => 2
+    Outer::Empty => 0
+  }
+}
+"#;
+    let nested_complete_path =
+        temp_source("match_nested_enum_payload_complete", nested_complete_src);
+    assert_ok(&["parse"], &nested_complete_path);
+    assert_ok(&["check"], &nested_complete_path);
+
+    let imported_complete_src = r#"
+module Types {
+  enum Status { Ready, Done }
+}
+
+use Types::{Status}
+
+fn imported_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let imported_complete_path =
+        temp_source("match_imported_enum_named_complete", imported_complete_src);
+    assert_ok(&["parse"], &imported_complete_path);
+    assert_ok(&["check"], &imported_complete_path);
+
+    let imported_missing_src = r#"
+module Types {
+  enum Status { Ready, Done }
+}
+
+use Types::{Status}
+
+fn imported_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready => 1
+  }
+}
+"#;
+    let imported_missing_path =
+        temp_source("match_imported_enum_named_missing", imported_missing_src);
+    assert_ok(&["parse"], &imported_missing_path);
+    let out = run(&["check"], &imported_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode imported enum matches must reject missing imported cases"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("non-exhaustive match") && stdout.contains("Types::Status::Done"),
+        "expected missing imported enum diagnostic, got:\n{stdout}"
+    );
+
+    let true_guard_complete_src = r#"
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if true => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let true_guard_complete_path =
+        temp_source("match_true_guard_enum_complete", true_guard_complete_src);
+    assert_ok(&["parse"], &true_guard_complete_path);
+    assert_ok(&["check"], &true_guard_complete_path);
+
+    let local_true_guard_complete_src = r#"
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  let always = true
+  match status {
+    Status::Ready if always => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let local_true_guard_complete_path = temp_source(
+        "match_local_true_guard_enum_complete",
+        local_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &local_true_guard_complete_path);
+    assert_ok(&["check"], &local_true_guard_complete_path);
+
+    let const_true_guard_complete_src = r#"
+const ALWAYS = true
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let const_true_guard_complete_path = temp_source(
+        "match_const_true_guard_enum_complete",
+        const_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &const_true_guard_complete_path);
+    assert_ok(&["check"], &const_true_guard_complete_path);
+
+    let imported_const_true_guard_complete_src = r#"
+module Flags {
+  const ALWAYS = true
+}
+use Flags::{ALWAYS}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let imported_const_true_guard_complete_path = temp_source(
+        "match_imported_const_true_guard_enum_complete",
+        imported_const_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &imported_const_true_guard_complete_path);
+    assert_ok(&["check"], &imported_const_true_guard_complete_path);
+
+    let module_relative_imported_const_true_guard_complete_src = r#"
+module Outer {
+  module Flags {
+    const ALWAYS = true
+  }
+  use Flags::{ALWAYS}
+
+  enum Status { Ready, Done }
+
+  fn guarded_status_code(status: Status) -> Int {
+    match status {
+      Status::Ready if ALWAYS => 1
+      Status::Done => 2
+    }
+  }
+}
+"#;
+    let module_relative_imported_const_true_guard_complete_path = temp_source(
+        "match_module_relative_imported_const_true_guard_enum_complete",
+        module_relative_imported_const_true_guard_complete_src,
+    );
+    assert_ok(
+        &["parse"],
+        &module_relative_imported_const_true_guard_complete_path,
+    );
+    assert_ok(
+        &["check"],
+        &module_relative_imported_const_true_guard_complete_path,
+    );
+
+    let mutable_guard_missing_src = r#"
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  let mut always = true
+  match status {
+    Status::Ready if always => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let mutable_guard_missing_path = temp_source(
+        "match_mutable_guard_enum_missing",
+        mutable_guard_missing_src,
+    );
+    assert_ok(&["parse"], &mutable_guard_missing_path);
+    let out = run(&["check"], &mutable_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode mutable boolean guards must remain unknown"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("non-exhaustive match") && stdout.contains("Status::Ready"),
+        "expected mutable guard to stay non-covering, got:\n{stdout}"
+    );
+
+    let shadowed_const_guard_missing_src = r#"
+const ALWAYS = true
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status, ALWAYS: Bool) -> Int {
+  match status {
+    Status::Ready if ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let shadowed_const_guard_missing_path = temp_source(
+        "match_const_guard_shadowed_by_param_missing",
+        shadowed_const_guard_missing_src,
+    );
+    assert_ok(&["parse"], &shadowed_const_guard_missing_path);
+    let out = run(&["check"], &shadowed_const_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode parameter shadowing must keep same-name const boolean guards unknown"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("non-exhaustive match") && stdout.contains("Status::Ready"),
+        "expected parameter-shadowed const guard to stay non-covering, got:\n{stdout}"
+    );
+
+    let shadowed_imported_const_guard_missing_src = r#"
+module Flags {
+  const ALWAYS = true
+}
+use Flags::{ALWAYS}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status, ALWAYS: Bool) -> Int {
+  match status {
+    Status::Ready if ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let shadowed_imported_const_guard_missing_path = temp_source(
+        "match_imported_const_guard_shadowed_by_param_missing",
+        shadowed_imported_const_guard_missing_src,
+    );
+    assert_ok(&["parse"], &shadowed_imported_const_guard_missing_path);
+    let out = run(&["check"], &shadowed_imported_const_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode parameter shadowing must keep same-name imported const boolean guards unknown"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("non-exhaustive match") && stdout.contains("Status::Ready"),
+        "expected parameter-shadowed imported const guard to stay non-covering, got:\n{stdout}"
+    );
+
+    let false_guard_missing_src = r#"
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if false => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let false_guard_missing_path =
+        temp_source("match_false_guard_enum_missing", false_guard_missing_src);
+    assert_ok(&["parse"], &false_guard_missing_path);
+    let out = run(&["check"], &false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode false literal guards must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let local_false_guard_missing_src = r#"
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  let never = false
+  match status {
+    Status::Ready if never => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let local_false_guard_missing_path = temp_source(
+        "match_local_false_guard_enum_missing",
+        local_false_guard_missing_src,
+    );
+    assert_ok(&["parse"], &local_false_guard_missing_path);
+    let out = run(&["check"], &local_false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode local false guards must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected local false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let local_boolean_const_expr_true_guard_complete_src = r#"
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  let raw = true
+  let always = raw == true
+  match status {
+    Status::Ready if always => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let local_boolean_const_expr_true_guard_complete_path = temp_source(
+        "match_local_boolean_const_expr_true_guard_enum_complete",
+        local_boolean_const_expr_true_guard_complete_src,
+    );
+    assert_ok(
+        &["parse"],
+        &local_boolean_const_expr_true_guard_complete_path,
+    );
+    assert_ok(
+        &["check"],
+        &local_boolean_const_expr_true_guard_complete_path,
+    );
+
+    let local_integer_const_expr_true_guard_complete_src = r#"
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  let limit = 2
+  let always = limit + 1 == 3
+  match status {
+    Status::Ready if always => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let local_integer_const_expr_true_guard_complete_path = temp_source(
+        "match_local_integer_const_expr_true_guard_enum_complete",
+        local_integer_const_expr_true_guard_complete_src,
+    );
+    assert_ok(
+        &["parse"],
+        &local_integer_const_expr_true_guard_complete_path,
+    );
+    assert_ok(
+        &["check"],
+        &local_integer_const_expr_true_guard_complete_path,
+    );
+
+    let local_integer_const_expr_false_guard_missing_src = r#"
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  let limit = 2
+  let never = limit + 1 < 3
+  match status {
+    Status::Ready if never => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let local_integer_const_expr_false_guard_missing_path = temp_source(
+        "match_local_integer_const_expr_false_guard_enum_missing",
+        local_integer_const_expr_false_guard_missing_src,
+    );
+    assert_ok(
+        &["parse"],
+        &local_integer_const_expr_false_guard_missing_path,
+    );
+    let out = run(
+        &["check"],
+        &local_integer_const_expr_false_guard_missing_path,
+    );
+    assert!(
+        !out.status.success(),
+        "safe-mode false local integer const expressions must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected local integer const expression false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let local_path_integer_const_expr_true_guard_complete_src = r#"
+module Core {
+  const LIMIT = 2
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  let always = Core::LIMIT + 1 == 3
+  match status {
+    Status::Ready if always => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let local_path_integer_const_expr_true_guard_complete_path = temp_source(
+        "match_local_path_integer_const_expr_true_guard_enum_complete",
+        local_path_integer_const_expr_true_guard_complete_src,
+    );
+    assert_ok(
+        &["parse"],
+        &local_path_integer_const_expr_true_guard_complete_path,
+    );
+    assert_ok(
+        &["check"],
+        &local_path_integer_const_expr_true_guard_complete_path,
+    );
+
+    let local_path_integer_const_expr_false_guard_missing_src = r#"
+module Core {
+  const LIMIT = 2
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  let never = Core::LIMIT + 1 < 3
+  match status {
+    Status::Ready if never => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let local_path_integer_const_expr_false_guard_missing_path = temp_source(
+        "match_local_path_integer_const_expr_false_guard_enum_missing",
+        local_path_integer_const_expr_false_guard_missing_src,
+    );
+    assert_ok(
+        &["parse"],
+        &local_path_integer_const_expr_false_guard_missing_path,
+    );
+    let out = run(
+        &["check"],
+        &local_path_integer_const_expr_false_guard_missing_path,
+    );
+    assert!(
+        !out.status.success(),
+        "safe-mode false path-qualified local integer const expressions must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected path-qualified local integer const expression false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let const_false_guard_missing_src = r#"
+const NEVER = false
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let const_false_guard_missing_path = temp_source(
+        "match_const_false_guard_enum_missing",
+        const_false_guard_missing_src,
+    );
+    assert_ok(&["parse"], &const_false_guard_missing_path);
+    let out = run(&["check"], &const_false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode const false guards must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected const false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let imported_const_false_guard_missing_src = r#"
+module Flags {
+  const NEVER = false
+}
+use Flags::*
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let imported_const_false_guard_missing_path = temp_source(
+        "match_imported_const_false_guard_enum_missing",
+        imported_const_false_guard_missing_src,
+    );
+    assert_ok(&["parse"], &imported_const_false_guard_missing_path);
+    let out = run(&["check"], &imported_const_false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode imported const false guards must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected imported const false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let path_const_true_guard_complete_src = r#"
+module Flags {
+  const ALWAYS = true
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let path_const_true_guard_complete_path = temp_source(
+        "match_path_const_true_guard_enum_complete",
+        path_const_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &path_const_true_guard_complete_path);
+    assert_ok(&["check"], &path_const_true_guard_complete_path);
+
+    let path_const_false_guard_missing_src = r#"
+module Flags {
+  const NEVER = false
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let path_const_false_guard_missing_path = temp_source(
+        "match_path_const_false_guard_enum_missing",
+        path_const_false_guard_missing_src,
+    );
+    assert_ok(&["parse"], &path_const_false_guard_missing_path);
+    let out = run(&["check"], &path_const_false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode path-qualified const false guards must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected path const false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let path_const_alias_true_guard_complete_src = r#"
+module Core {
+  const RAW = true
+}
+
+module Flags {
+  const ALWAYS = Core::RAW
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let path_const_alias_true_guard_complete_path = temp_source(
+        "match_path_const_alias_true_guard_enum_complete",
+        path_const_alias_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &path_const_alias_true_guard_complete_path);
+    assert_ok(&["check"], &path_const_alias_true_guard_complete_path);
+
+    let path_const_alias_false_guard_missing_src = r#"
+module Core {
+  const RAW = false
+}
+
+module Flags {
+  const NEVER = Core::RAW
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let path_const_alias_false_guard_missing_path = temp_source(
+        "match_path_const_alias_false_guard_enum_missing",
+        path_const_alias_false_guard_missing_src,
+    );
+    assert_ok(&["parse"], &path_const_alias_false_guard_missing_path);
+    let out = run(&["check"], &path_const_alias_false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode path-qualified const false aliases must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected path const false-alias and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let boolean_const_expr_true_guard_complete_src = r#"
+module Core {
+  const RAW = true
+}
+
+module Flags {
+  const ALWAYS = Core::RAW and not false
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let boolean_const_expr_true_guard_complete_path = temp_source(
+        "match_boolean_const_expr_true_guard_enum_complete",
+        boolean_const_expr_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &boolean_const_expr_true_guard_complete_path);
+    assert_ok(&["check"], &boolean_const_expr_true_guard_complete_path);
+
+    let boolean_const_expr_false_guard_missing_src = r#"
+module Core {
+  const RAW = true
+}
+
+module Flags {
+  const NEVER = not Core::RAW or false
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let boolean_const_expr_false_guard_missing_path = temp_source(
+        "match_boolean_const_expr_false_guard_enum_missing",
+        boolean_const_expr_false_guard_missing_src,
+    );
+    assert_ok(&["parse"], &boolean_const_expr_false_guard_missing_path);
+    let out = run(&["check"], &boolean_const_expr_false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode false boolean const expressions must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected boolean const expression false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let short_circuit_or_true_guard_complete_src = r#"
+module Flags {
+  const ALWAYS = true or Missing::VALUE
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let short_circuit_or_true_guard_complete_path = temp_source(
+        "match_short_circuit_or_true_guard_enum_complete",
+        short_circuit_or_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &short_circuit_or_true_guard_complete_path);
+    assert_ok(&["check"], &short_circuit_or_true_guard_complete_path);
+
+    let short_circuit_and_false_guard_missing_src = r#"
+module Flags {
+  const NEVER = false and Missing::VALUE
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let short_circuit_and_false_guard_missing_path = temp_source(
+        "match_short_circuit_and_false_guard_enum_missing",
+        short_circuit_and_false_guard_missing_src,
+    );
+    assert_ok(&["parse"], &short_circuit_and_false_guard_missing_path);
+    let out = run(&["check"], &short_circuit_and_false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode short-circuit false boolean const expressions must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected short-circuit boolean const expression false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let bool_equality_true_guard_complete_src = r#"
+module Core {
+  const RAW = true
+}
+
+module Flags {
+  const ALWAYS = Core::RAW == true
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let bool_equality_true_guard_complete_path = temp_source(
+        "match_boolean_const_equality_true_guard_enum_complete",
+        bool_equality_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &bool_equality_true_guard_complete_path);
+    assert_ok(&["check"], &bool_equality_true_guard_complete_path);
+
+    let bool_inequality_false_guard_missing_src = r#"
+module Core {
+  const RAW = true
+}
+
+module Flags {
+  const NEVER = Core::RAW != true
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let bool_inequality_false_guard_missing_path = temp_source(
+        "match_boolean_const_inequality_false_guard_enum_missing",
+        bool_inequality_false_guard_missing_src,
+    );
+    assert_ok(&["parse"], &bool_inequality_false_guard_missing_path);
+    let out = run(&["check"], &bool_inequality_false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode false boolean const inequalities must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected boolean const inequality false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let direct_bool_equality_true_guard_complete_src = r#"
+module Core {
+  const RAW = true
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Core::RAW == true => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let direct_bool_equality_true_guard_complete_path = temp_source(
+        "match_direct_boolean_const_equality_true_guard_enum_complete",
+        direct_bool_equality_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &direct_bool_equality_true_guard_complete_path);
+    assert_ok(&["check"], &direct_bool_equality_true_guard_complete_path);
+
+    let direct_bool_inequality_false_guard_missing_src = r#"
+module Core {
+  const RAW = true
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Core::RAW != true => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let direct_bool_inequality_false_guard_missing_path = temp_source(
+        "match_direct_boolean_const_inequality_false_guard_enum_missing",
+        direct_bool_inequality_false_guard_missing_src,
+    );
+    assert_ok(&["parse"], &direct_bool_inequality_false_guard_missing_path);
+    let out = run(&["check"], &direct_bool_inequality_false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode direct false boolean const inequalities must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected direct boolean const inequality false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let bool_relational_true_guard_complete_src = r#"
+module Core {
+  const RAW = false
+}
+
+module Flags {
+  const ALWAYS = Core::RAW < true
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let bool_relational_true_guard_complete_path = temp_source(
+        "match_boolean_const_relational_true_guard_enum_complete",
+        bool_relational_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &bool_relational_true_guard_complete_path);
+    assert_ok(&["check"], &bool_relational_true_guard_complete_path);
+
+    let bool_relational_false_guard_missing_src = r#"
+module Core {
+  const RAW = true
+}
+
+module Flags {
+  const NEVER = Core::RAW < false
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let bool_relational_false_guard_missing_path = temp_source(
+        "match_boolean_const_relational_false_guard_enum_missing",
+        bool_relational_false_guard_missing_src,
+    );
+    assert_ok(&["parse"], &bool_relational_false_guard_missing_path);
+    let out = run(&["check"], &bool_relational_false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode false boolean const relational guards must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected boolean const relational false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let int_equality_true_guard_complete_src = r#"
+module Core {
+  const LIMIT = 2
+}
+
+module Flags {
+  const ALWAYS = Core::LIMIT == 2
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let int_equality_true_guard_complete_path = temp_source(
+        "match_integer_const_equality_true_guard_enum_complete",
+        int_equality_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &int_equality_true_guard_complete_path);
+    assert_ok(&["check"], &int_equality_true_guard_complete_path);
+
+    let int_inequality_false_guard_missing_src = r#"
+module Core {
+  const LIMIT = 2
+}
+
+module Flags {
+  const NEVER = Core::LIMIT != 2
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let int_inequality_false_guard_missing_path = temp_source(
+        "match_integer_const_inequality_false_guard_enum_missing",
+        int_inequality_false_guard_missing_src,
+    );
+    assert_ok(&["parse"], &int_inequality_false_guard_missing_path);
+    let out = run(&["check"], &int_inequality_false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode false integer const inequalities must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected integer const inequality false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let direct_int_equality_true_guard_complete_src = r#"
+module Core {
+  const LIMIT = 2
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Core::LIMIT == 2 => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let direct_int_equality_true_guard_complete_path = temp_source(
+        "match_direct_integer_const_equality_true_guard_enum_complete",
+        direct_int_equality_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &direct_int_equality_true_guard_complete_path);
+    assert_ok(&["check"], &direct_int_equality_true_guard_complete_path);
+
+    let int_relational_true_guard_complete_src = r#"
+module Core {
+  const LIMIT = 2
+}
+
+module Flags {
+  const ALWAYS = Core::LIMIT < 3
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let int_relational_true_guard_complete_path = temp_source(
+        "match_integer_const_less_than_true_guard_enum_complete",
+        int_relational_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &int_relational_true_guard_complete_path);
+    assert_ok(&["check"], &int_relational_true_guard_complete_path);
+
+    let int_relational_false_guard_missing_src = r#"
+module Core {
+  const LIMIT = 2
+}
+
+module Flags {
+  const NEVER = Core::LIMIT > 3
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let int_relational_false_guard_missing_path = temp_source(
+        "match_integer_const_greater_than_false_guard_enum_missing",
+        int_relational_false_guard_missing_src,
+    );
+    assert_ok(&["parse"], &int_relational_false_guard_missing_path);
+    let out = run(&["check"], &int_relational_false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode false integer relational guards must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected integer relational false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let direct_int_relational_true_guard_complete_src = r#"
+module Core {
+  const LIMIT = 2
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Core::LIMIT >= 2 => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let direct_int_relational_true_guard_complete_path = temp_source(
+        "match_direct_integer_const_greater_equal_true_guard_enum_complete",
+        direct_int_relational_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &direct_int_relational_true_guard_complete_path);
+    assert_ok(&["check"], &direct_int_relational_true_guard_complete_path);
+
+    let int_arithmetic_true_guard_complete_src = r#"
+module Core {
+  const LIMIT = 2
+  const OFFSET = 1
+}
+
+module Flags {
+  const ALWAYS = Core::LIMIT + Core::OFFSET == 3
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let int_arithmetic_true_guard_complete_path = temp_source(
+        "match_integer_const_arithmetic_equality_true_guard_enum_complete",
+        int_arithmetic_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &int_arithmetic_true_guard_complete_path);
+    assert_ok(&["check"], &int_arithmetic_true_guard_complete_path);
+
+    let int_arithmetic_false_guard_missing_src = r#"
+module Core {
+  const LIMIT = 2
+}
+
+module Flags {
+  const NEVER = Core::LIMIT * 2 < 4
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let int_arithmetic_false_guard_missing_path = temp_source(
+        "match_integer_const_arithmetic_relational_false_guard_enum_missing",
+        int_arithmetic_false_guard_missing_src,
+    );
+    assert_ok(&["parse"], &int_arithmetic_false_guard_missing_path);
+    let out = run(&["check"], &int_arithmetic_false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode false integer arithmetic guards must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected integer arithmetic false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let direct_int_arithmetic_true_guard_complete_src = r#"
+module Core {
+  const LIMIT = 2
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Core::LIMIT + 1 >= 3 => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let direct_int_arithmetic_true_guard_complete_path = temp_source(
+        "match_direct_integer_const_arithmetic_relational_true_guard_enum_complete",
+        direct_int_arithmetic_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &direct_int_arithmetic_true_guard_complete_path);
+    assert_ok(&["check"], &direct_int_arithmetic_true_guard_complete_path);
+
+    let same_module_int_identifier_guard_complete_src = r#"
+const LIMIT = 2
+const OFFSET = 1
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if LIMIT + OFFSET == 3 => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let same_module_int_identifier_guard_complete_path = temp_source(
+        "match_same_module_integer_const_identifier_guard_enum_complete",
+        same_module_int_identifier_guard_complete_src,
+    );
+    assert_ok(&["parse"], &same_module_int_identifier_guard_complete_path);
+    assert_ok(&["check"], &same_module_int_identifier_guard_complete_path);
+
+    let imported_named_int_identifier_guard_complete_src = r#"
+module Core {
+  const LIMIT = 2
+  const OFFSET = 1
+}
+use Core::{LIMIT, OFFSET}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if LIMIT + OFFSET == 3 => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let imported_named_int_identifier_guard_complete_path = temp_source(
+        "match_imported_named_integer_const_identifier_guard_enum_complete",
+        imported_named_int_identifier_guard_complete_src,
+    );
+    assert_ok(
+        &["parse"],
+        &imported_named_int_identifier_guard_complete_path,
+    );
+    assert_ok(
+        &["check"],
+        &imported_named_int_identifier_guard_complete_path,
+    );
+
+    let imported_glob_int_identifier_false_guard_missing_src = r#"
+module Core {
+  const LIMIT = 2
+}
+use Core::*
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if LIMIT * 2 < 4 => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let imported_glob_int_identifier_false_guard_missing_path = temp_source(
+        "match_imported_glob_integer_const_identifier_false_guard_enum_missing",
+        imported_glob_int_identifier_false_guard_missing_src,
+    );
+    assert_ok(
+        &["parse"],
+        &imported_glob_int_identifier_false_guard_missing_path,
+    );
+    let out = run(
+        &["check"],
+        &imported_glob_int_identifier_false_guard_missing_path,
+    );
+    assert!(
+        !out.status.success(),
+        "safe-mode false imported integer identifier guards must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected imported integer identifier false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let imported_int_identifier_shadowed_missing_src = r#"
+module Core {
+  const LIMIT = 2
+  const OFFSET = 1
+}
+use Core::{LIMIT, OFFSET}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status, LIMIT: Int) -> Int {
+  match status {
+    Status::Ready if LIMIT + OFFSET == 3 => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let imported_int_identifier_shadowed_missing_path = temp_source(
+        "match_imported_integer_const_identifier_shadowed_by_param_missing",
+        imported_int_identifier_shadowed_missing_src,
+    );
+    assert_ok(&["parse"], &imported_int_identifier_shadowed_missing_path);
+    let out = run(&["check"], &imported_int_identifier_shadowed_missing_path);
+    assert!(
+        !out.status.success(),
+        "parameter-shadowed imported integer identifiers must remain unknown/non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        !stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected parameter-shadowed imported integer identifier to stay unknown, got:\n{stdout}"
+    );
+
+    let symbol_const_equality_true_guard_complete_src = r#"
+module Core {
+  const MODE = :ready
+}
+
+module Flags {
+  const ALWAYS = Core::MODE == :ready
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let symbol_const_equality_true_guard_complete_path = temp_source(
+        "match_symbol_const_equality_true_guard_enum_complete",
+        symbol_const_equality_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &symbol_const_equality_true_guard_complete_path);
+    assert_ok(&["check"], &symbol_const_equality_true_guard_complete_path);
+
+    let string_const_inequality_false_guard_missing_src = r#"
+module Core {
+  const LABEL = "ready"
+}
+
+module Flags {
+  const NEVER = Core::LABEL != "ready"
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let string_const_inequality_false_guard_missing_path = temp_source(
+        "match_string_const_inequality_false_guard_enum_missing",
+        string_const_inequality_false_guard_missing_src,
+    );
+    assert_ok(
+        &["parse"],
+        &string_const_inequality_false_guard_missing_path,
+    );
+    let out = run(
+        &["check"],
+        &string_const_inequality_false_guard_missing_path,
+    );
+    assert!(
+        !out.status.success(),
+        "safe-mode false string const inequality guards must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected string const inequality false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let string_const_relational_true_guard_complete_src = r#"
+module Core {
+  const LABEL = "ready"
+}
+
+module Flags {
+  const ALWAYS = Core::LABEL < "rust"
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let string_const_relational_true_guard_complete_path = temp_source(
+        "match_string_const_relational_true_guard_enum_complete",
+        string_const_relational_true_guard_complete_src,
+    );
+    assert_ok(
+        &["parse"],
+        &string_const_relational_true_guard_complete_path,
+    );
+    assert_ok(
+        &["check"],
+        &string_const_relational_true_guard_complete_path,
+    );
+
+    let string_const_relational_false_guard_missing_src = r#"
+module Core {
+  const LABEL = "ready"
+}
+
+module Flags {
+  const NEVER = Core::LABEL > "ready"
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let string_const_relational_false_guard_missing_path = temp_source(
+        "match_string_const_relational_false_guard_enum_missing",
+        string_const_relational_false_guard_missing_src,
+    );
+    assert_ok(
+        &["parse"],
+        &string_const_relational_false_guard_missing_path,
+    );
+    let out = run(
+        &["check"],
+        &string_const_relational_false_guard_missing_path,
+    );
+    assert!(
+        !out.status.success(),
+        "safe-mode false string const relational guards must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected string const relational false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let interpolated_string_const_equality_true_guard_complete_src = r#"
+module Core {
+  const LABEL = "re#{"ad"}y"
+}
+
+module Flags {
+  const ALWAYS = Core::LABEL == "ready"
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let interpolated_string_const_equality_true_guard_complete_path = temp_source(
+        "match_interpolated_string_const_equality_true_guard_enum_complete",
+        interpolated_string_const_equality_true_guard_complete_src,
+    );
+    assert_ok(
+        &["parse"],
+        &interpolated_string_const_equality_true_guard_complete_path,
+    );
+    assert_ok(
+        &["check"],
+        &interpolated_string_const_equality_true_guard_complete_path,
+    );
+
+    let interpolated_string_const_inequality_false_guard_missing_src = r#"
+module Core {
+  const LABEL = "re#{"ad"}y"
+}
+
+module Flags {
+  const NEVER = Core::LABEL != "ready"
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let interpolated_string_const_inequality_false_guard_missing_path = temp_source(
+        "match_interpolated_string_const_inequality_false_guard_enum_missing",
+        interpolated_string_const_inequality_false_guard_missing_src,
+    );
+    assert_ok(
+        &["parse"],
+        &interpolated_string_const_inequality_false_guard_missing_path,
+    );
+    let out = run(
+        &["check"],
+        &interpolated_string_const_inequality_false_guard_missing_path,
+    );
+    assert!(
+        !out.status.success(),
+        "safe-mode false interpolated string const inequalities must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected interpolated string const inequality false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let nil_const_equality_true_guard_complete_src = r#"
+module Core {
+  const EMPTY = nil
+}
+
+module Flags {
+  const ALWAYS = Core::EMPTY == nil
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let nil_const_equality_true_guard_complete_path = temp_source(
+        "match_nil_const_equality_true_guard_enum_complete",
+        nil_const_equality_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &nil_const_equality_true_guard_complete_path);
+    assert_ok(&["check"], &nil_const_equality_true_guard_complete_path);
+
+    let nil_const_inequality_false_guard_missing_src = r#"
+module Core {
+  const EMPTY = nil
+}
+
+module Flags {
+  const NEVER = Core::EMPTY != nil
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let nil_const_inequality_false_guard_missing_path = temp_source(
+        "match_nil_const_inequality_false_guard_enum_missing",
+        nil_const_inequality_false_guard_missing_src,
+    );
+    assert_ok(&["parse"], &nil_const_inequality_false_guard_missing_path);
+    let out = run(&["check"], &nil_const_inequality_false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode false nil const inequality guards must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected nil const inequality false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let mixed_literal_const_inequality_true_guard_complete_src = r#"
+module Core {
+  const EMPTY = nil
+}
+
+module Flags {
+  const ALWAYS = Core::EMPTY != false
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let mixed_literal_const_inequality_true_guard_complete_path = temp_source(
+        "match_mixed_literal_const_inequality_true_guard_enum_complete",
+        mixed_literal_const_inequality_true_guard_complete_src,
+    );
+    assert_ok(
+        &["parse"],
+        &mixed_literal_const_inequality_true_guard_complete_path,
+    );
+    assert_ok(
+        &["check"],
+        &mixed_literal_const_inequality_true_guard_complete_path,
+    );
+
+    let mixed_literal_const_equality_false_guard_missing_src = r#"
+module Core {
+  const EMPTY = nil
+}
+
+module Flags {
+  const NEVER = Core::EMPTY == false
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let mixed_literal_const_equality_false_guard_missing_path = temp_source(
+        "match_mixed_literal_const_equality_false_guard_enum_missing",
+        mixed_literal_const_equality_false_guard_missing_src,
+    );
+    assert_ok(
+        &["parse"],
+        &mixed_literal_const_equality_false_guard_missing_path,
+    );
+    let out = run(
+        &["check"],
+        &mixed_literal_const_equality_false_guard_missing_path,
+    );
+    assert!(
+        !out.status.success(),
+        "safe-mode false mixed-literal const equality guards must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected mixed-literal const equality false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let finite_float_const_equality_true_guard_complete_src = r#"
+module Core {
+  const RATIO = 1.5
+}
+
+module Flags {
+  const ALWAYS = Core::RATIO == 1.5
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let finite_float_const_equality_true_guard_complete_path = temp_source(
+        "match_finite_float_const_equality_true_guard_enum_complete",
+        finite_float_const_equality_true_guard_complete_src,
+    );
+    assert_ok(
+        &["parse"],
+        &finite_float_const_equality_true_guard_complete_path,
+    );
+    assert_ok(
+        &["check"],
+        &finite_float_const_equality_true_guard_complete_path,
+    );
+
+    let int_float_const_equality_true_guard_complete_src = r#"
+module Core {
+  const COUNT = 1
+}
+
+module Flags {
+  const ALWAYS = Core::COUNT == 1.0
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let int_float_const_equality_true_guard_complete_path = temp_source(
+        "match_int_float_const_equality_true_guard_enum_complete",
+        int_float_const_equality_true_guard_complete_src,
+    );
+    assert_ok(
+        &["parse"],
+        &int_float_const_equality_true_guard_complete_path,
+    );
+    assert_ok(
+        &["check"],
+        &int_float_const_equality_true_guard_complete_path,
+    );
+
+    let float_const_inequality_false_guard_missing_src = r#"
+module Core {
+  const RATIO = 1.5
+}
+
+module Flags {
+  const NEVER = Core::RATIO != 1.5
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let float_const_inequality_false_guard_missing_path = temp_source(
+        "match_float_const_inequality_false_guard_enum_missing",
+        float_const_inequality_false_guard_missing_src,
+    );
+    assert_ok(&["parse"], &float_const_inequality_false_guard_missing_path);
+    let out = run(&["check"], &float_const_inequality_false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode false float const inequality guards must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected float const inequality false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let finite_float_const_relational_true_guard_complete_src = r#"
+module Core {
+  const RATIO = 1.5
+}
+
+module Flags {
+  const ALWAYS = Core::RATIO < 2.0
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let finite_float_const_relational_true_guard_complete_path = temp_source(
+        "match_finite_float_const_relational_true_guard_enum_complete",
+        finite_float_const_relational_true_guard_complete_src,
+    );
+    assert_ok(
+        &["parse"],
+        &finite_float_const_relational_true_guard_complete_path,
+    );
+    assert_ok(
+        &["check"],
+        &finite_float_const_relational_true_guard_complete_path,
+    );
+
+    let int_float_const_relational_true_guard_complete_src = r#"
+module Core {
+  const COUNT = 2
+}
+
+module Flags {
+  const ALWAYS = Core::COUNT <= 2.0
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let int_float_const_relational_true_guard_complete_path = temp_source(
+        "match_int_float_const_relational_true_guard_enum_complete",
+        int_float_const_relational_true_guard_complete_src,
+    );
+    assert_ok(
+        &["parse"],
+        &int_float_const_relational_true_guard_complete_path,
+    );
+    assert_ok(
+        &["check"],
+        &int_float_const_relational_true_guard_complete_path,
+    );
+
+    let float_const_relational_false_guard_missing_src = r#"
+module Core {
+  const RATIO = 1.5
+}
+
+module Flags {
+  const NEVER = Core::RATIO > 2.0
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let float_const_relational_false_guard_missing_path = temp_source(
+        "match_float_const_relational_false_guard_enum_missing",
+        float_const_relational_false_guard_missing_src,
+    );
+    assert_ok(&["parse"], &float_const_relational_false_guard_missing_path);
+    let out = run(&["check"], &float_const_relational_false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode false float const relational guards must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected float const relational false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let finite_float_const_arithmetic_true_guard_complete_src = r#"
+module Core {
+  const RATIO = 1.5
+}
+
+module Flags {
+  const ALWAYS = Core::RATIO + 0.5 == 2.0
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let finite_float_const_arithmetic_true_guard_complete_path = temp_source(
+        "match_finite_float_const_arithmetic_true_guard_enum_complete",
+        finite_float_const_arithmetic_true_guard_complete_src,
+    );
+    assert_ok(
+        &["parse"],
+        &finite_float_const_arithmetic_true_guard_complete_path,
+    );
+    assert_ok(
+        &["check"],
+        &finite_float_const_arithmetic_true_guard_complete_path,
+    );
+
+    let int_float_const_arithmetic_true_guard_complete_src = r#"
+module Core {
+  const COUNT = 2
+}
+
+module Flags {
+  const ALWAYS = Core::COUNT * 1.5 >= 3.0
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let int_float_const_arithmetic_true_guard_complete_path = temp_source(
+        "match_int_float_const_arithmetic_true_guard_enum_complete",
+        int_float_const_arithmetic_true_guard_complete_src,
+    );
+    assert_ok(
+        &["parse"],
+        &int_float_const_arithmetic_true_guard_complete_path,
+    );
+    assert_ok(
+        &["check"],
+        &int_float_const_arithmetic_true_guard_complete_path,
+    );
+
+    let float_const_arithmetic_false_guard_missing_src = r#"
+module Core {
+  const RATIO = 1.5
+}
+
+module Flags {
+  const NEVER = Core::RATIO * 2.0 < 3.0
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let float_const_arithmetic_false_guard_missing_path = temp_source(
+        "match_float_const_arithmetic_false_guard_enum_missing",
+        float_const_arithmetic_false_guard_missing_src,
+    );
+    assert_ok(&["parse"], &float_const_arithmetic_false_guard_missing_path);
+    let out = run(&["check"], &float_const_arithmetic_false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode false float const arithmetic guards must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected float const arithmetic false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let open_literal_duplicate_src = r#"
+fn classify(value: Int) -> Int {
+  match value {
+    1 => 10
+    1 => 11
+    _ => 0
+  }
+}
+"#;
+    let open_literal_duplicate_path = temp_source(
+        "match_open_literal_duplicate_unreachable",
+        open_literal_duplicate_src,
+    );
+    assert_ok(&["parse"], &open_literal_duplicate_path);
+    let out = run(&["check"], &open_literal_duplicate_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode open-domain matches must reject duplicate literal arms"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("unreachable match arm") && stdout.contains("`1`"),
+        "expected duplicate open literal diagnostic, got:\n{stdout}"
+    );
+
+    let open_catch_all_src = r#"
+fn classify(value: Int) -> Int {
+  match value {
+    _ => 0
+    1 => 10
+  }
+}
+"#;
+    let open_catch_all_path = temp_source(
+        "match_open_arm_after_catch_all_unreachable",
+        open_catch_all_src,
+    );
+    assert_ok(&["parse"], &open_catch_all_path);
+    let out = run(&["check"], &open_catch_all_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode open-domain matches must reject arms after catch-all arms"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("unreachable match arm") && stdout.contains("covered by prior catch-all"),
+        "expected open-domain catch-all reachability diagnostic, got:\n{stdout}"
+    );
 }
 
 #[test]
@@ -630,6 +3518,67 @@ impl LocalWidget for ExternalRenderable {
     let local_type_path = temp_source("trait_external_trait_local_type", local_type_src);
     assert_ok(&["parse"], &local_type_path);
     assert_ok(&["check"], &local_type_path);
+
+    let generic_overlap_src = r#"
+trait Renderable {
+  def render() -> String
+}
+
+struct Box<T> {
+  value: T,
+}
+
+impl<T> Box<T> for Renderable {
+  def render() -> String {
+    "generic"
+  }
+}
+
+impl Box<String> for Renderable {
+  def render() -> String {
+    "string"
+  }
+}
+"#;
+    let generic_overlap_path = temp_source("trait_generic_overlap", generic_overlap_src);
+    assert_ok(&["parse"], &generic_overlap_path);
+    let out = run(&["check"], &generic_overlap_path);
+    assert!(
+        !out.status.success(),
+        "trait coherence must reject generic blanket impls that overlap concrete impls"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("overlapping impl"),
+        "expected overlapping impl diagnostic, got:\n{stdout}"
+    );
+
+    let qualified_external_src = r#"
+struct Widget {
+  name: String,
+}
+
+impl Remote::Widget for ExternalRenderable {
+  def render() -> String {
+    "remote"
+  }
+}
+"#;
+    let qualified_external_path = temp_source(
+        "trait_qualified_external_short_name",
+        qualified_external_src,
+    );
+    assert_ok(&["parse"], &qualified_external_path);
+    let out = run(&["check"], &qualified_external_path);
+    assert!(
+        !out.status.success(),
+        "trait coherence must not treat qualified external types as local by short-name collision"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("orphan rule"),
+        "expected orphan-rule diagnostic for qualified external type, got:\n{stdout}"
+    );
 }
 
 #[test]

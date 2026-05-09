@@ -21,11 +21,14 @@
 //!   impl-block dispatch remains deferred.
 //! - Simple field projections are tracked as places for move and alias checks.
 //!   Index expressions are tracked conservatively as wildcard sub-places.
-//! - Branch joins are conservative and coarse-grained. Full NLL, precise
-//!   nested place borrows beyond simple fields, and lifetime containment remain
-//!   deferred.
+//! - Branch joins are conservative and coarse-grained, with first
+//!   direct-returning branch/loop-body liveness slices and scoped pattern
+//!   bindings for match-arm merge. Full NLL, precise nested place borrows
+//!   beyond simple fields, and lifetime containment remain deferred.
 
-use garnet_parser::ast::{Expr, FnDef, FnMode, Item, Module, Ownership, Pattern, Stmt, TypeExpr};
+use garnet_parser::ast::{
+    Block, Expr, FnDef, FnMode, Item, Module, Ownership, Pattern, Stmt, TypeExpr,
+};
 use std::collections::{HashMap, HashSet};
 
 use crate::CheckError;
@@ -164,6 +167,11 @@ struct Env {
     types: HashMap<String, String>,
 }
 
+struct BranchOutcome {
+    env: Env,
+    continues: bool,
+}
+
 impl Env {
     fn record_move(&mut self, binding: &str, callee: &str) {
         self.moved.insert(
@@ -205,6 +213,25 @@ impl Env {
 
     fn forget_type(&mut self, binding: &str) {
         self.types.remove(binding);
+    }
+
+    fn restore_binding_from(&mut self, binding: &str, snapshot: &Env) {
+        let prefix = format!("{binding}.");
+        self.moved
+            .retain(|moved, _| moved != binding && !moved.starts_with(&prefix));
+        for (moved, record) in &snapshot.moved {
+            if moved == binding || moved.starts_with(&prefix) {
+                self.moved.insert(moved.clone(), record.clone());
+            }
+        }
+        match snapshot.types.get(binding) {
+            Some(ty) => {
+                self.types.insert(binding.to_string(), ty.clone());
+            }
+            None => {
+                self.types.remove(binding);
+            }
+        }
     }
 
     fn is_moved(&self, binding: &str) -> Option<&MoveRecord> {
@@ -279,11 +306,32 @@ fn check_fn_body(f: &FnDef, sigs: &SignatureTables, diags: &mut Vec<CheckError>)
     for p in &f.params {
         env.rebind_with_type(&p.name, p.ty.as_ref());
     }
-    for stmt in &f.body.stmts {
-        check_stmt(stmt, &mut env, sigs, &f.name, diags);
+    let _ = check_branch_block(&f.body, &env, sigs, &f.name, diags);
+}
+
+fn check_branch_block(
+    block: &Block,
+    base: &Env,
+    sigs: &SignatureTables,
+    fn_name: &str,
+    diags: &mut Vec<CheckError>,
+) -> BranchOutcome {
+    let mut branch_env = base.clone();
+    for stmt in &block.stmts {
+        check_stmt(stmt, &mut branch_env, sigs, fn_name, diags);
+        if matches!(stmt, Stmt::Return { .. }) {
+            return BranchOutcome {
+                env: branch_env,
+                continues: false,
+            };
+        }
     }
-    if let Some(tail) = &f.body.tail_expr {
-        check_expr(tail, &mut env, sigs, &f.name, diags);
+    if let Some(tail) = &block.tail_expr {
+        check_expr(tail, &mut branch_env, sigs, fn_name, diags);
+    }
+    BranchOutcome {
+        env: branch_env,
+        continues: true,
     }
 }
 
@@ -318,32 +366,37 @@ fn check_stmt(
             condition, body, ..
         } => {
             check_expr(condition, env, sigs, fn_name, diags);
-            for s in &body.stmts {
-                check_stmt(s, env, sigs, fn_name, diags);
-            }
-            if let Some(tail) = &body.tail_expr {
-                check_expr(tail, env, sigs, fn_name, diags);
+            let snapshot = env.clone();
+            let outcome = check_branch_block(body, &snapshot, sigs, fn_name, diags);
+            if outcome.continues {
+                *env = outcome.env;
+            } else {
+                *env = snapshot;
             }
         }
         Stmt::For {
             iter, body, var, ..
         } => {
             check_expr(iter, env, sigs, fn_name, diags);
-            env.rebind(var);
-            env.forget_type(var);
-            for s in &body.stmts {
-                check_stmt(s, env, sigs, fn_name, diags);
-            }
-            if let Some(tail) = &body.tail_expr {
-                check_expr(tail, env, sigs, fn_name, diags);
+            let snapshot = env.clone();
+            let mut body_base = snapshot.clone();
+            body_base.rebind(var);
+            body_base.forget_type(var);
+            let outcome = check_branch_block(body, &body_base, sigs, fn_name, diags);
+            if outcome.continues {
+                *env = outcome.env;
+                env.restore_binding_from(var, &snapshot);
+            } else {
+                *env = snapshot;
             }
         }
         Stmt::Loop { body, .. } => {
-            for s in &body.stmts {
-                check_stmt(s, env, sigs, fn_name, diags);
-            }
-            if let Some(tail) = &body.tail_expr {
-                check_expr(tail, env, sigs, fn_name, diags);
+            let snapshot = env.clone();
+            let outcome = check_branch_block(body, &snapshot, sigs, fn_name, diags);
+            if outcome.continues {
+                *env = outcome.env;
+            } else {
+                *env = snapshot;
             }
         }
         Stmt::Break { value, .. }
@@ -451,50 +504,65 @@ fn check_expr(
             ..
         } => {
             check_expr(condition, env, sigs, fn_name, diags);
-            // Each branch is checked independently against a snapshot of
-            // env. Conservative: if any branch moves a binding, the binding
-            // is considered moved after the if.
             let snapshot = env.clone();
-            for s in &then_block.stmts {
-                check_stmt(s, env, sigs, fn_name, diags);
+            let mut merged_moved = snapshot.moved.clone();
+
+            // Each branch is checked independently against a snapshot of
+            // env. Conservative: moves from branches that may continue are
+            // merged after the if. A branch that returns from the function
+            // cannot poison later code on paths that still continue.
+            let then_outcome = check_branch_block(then_block, &snapshot, sigs, fn_name, diags);
+            if then_outcome.continues {
+                merged_moved.extend(then_outcome.env.moved);
             }
-            if let Some(tail) = &then_block.tail_expr {
-                check_expr(tail, env, sigs, fn_name, diags);
-            }
+
             for (cond, block) in elsif_clauses {
                 let mut alt_env = snapshot.clone();
                 check_expr(cond, &mut alt_env, sigs, fn_name, diags);
-                for s in &block.stmts {
-                    check_stmt(s, &mut alt_env, sigs, fn_name, diags);
+                let after_cond = alt_env.clone();
+                let branch_outcome = check_branch_block(block, &after_cond, sigs, fn_name, diags);
+                if branch_outcome.continues {
+                    merged_moved.extend(branch_outcome.env.moved);
+                } else {
+                    merged_moved.extend(after_cond.moved);
                 }
-                if let Some(tail) = &block.tail_expr {
-                    check_expr(tail, &mut alt_env, sigs, fn_name, diags);
-                }
-                env.moved.extend(alt_env.moved);
             }
+
             if let Some(b) = else_block {
-                let mut alt_env = snapshot;
-                for s in &b.stmts {
-                    check_stmt(s, &mut alt_env, sigs, fn_name, diags);
+                let branch_outcome = check_branch_block(b, &snapshot, sigs, fn_name, diags);
+                if branch_outcome.continues {
+                    merged_moved.extend(branch_outcome.env.moved);
                 }
-                if let Some(tail) = &b.tail_expr {
-                    check_expr(tail, &mut alt_env, sigs, fn_name, diags);
-                }
-                env.moved.extend(alt_env.moved);
             }
+
+            env.moved = merged_moved;
         }
         Expr::Match { subject, arms, .. } => {
             check_expr(subject, env, sigs, fn_name, diags);
             let snapshot = env.clone();
+            let mut merged_moved = snapshot.moved.clone();
             for arm in arms {
                 let mut arm_env = snapshot.clone();
-                bind_pattern(&arm.pattern, &mut arm_env);
+                let mut pattern_bindings = HashSet::new();
+                bind_pattern(&arm.pattern, &mut arm_env, &mut pattern_bindings);
                 if let Some(g) = &arm.guard {
                     check_expr(g, &mut arm_env, sigs, fn_name, diags);
                 }
-                check_expr(&arm.body, &mut arm_env, sigs, fn_name, diags);
-                env.moved.extend(arm_env.moved);
+                let mut guard_env = arm_env.clone();
+                let arm_outcome = check_branch_block(&arm.body, &arm_env, sigs, fn_name, diags);
+                let arm_continues = arm_outcome.continues;
+                arm_env = arm_outcome.env;
+                for binding in &pattern_bindings {
+                    guard_env.restore_binding_from(binding, &snapshot);
+                    arm_env.restore_binding_from(binding, &snapshot);
+                }
+                if arm_continues {
+                    merged_moved.extend(arm_env.moved);
+                } else if arm.guard.is_some() {
+                    merged_moved.extend(guard_env.moved);
+                }
             }
+            env.moved = merged_moved;
         }
         Expr::Try {
             body,
@@ -553,20 +621,21 @@ fn check_expr(
     }
 }
 
-fn bind_pattern(pattern: &Pattern, env: &mut Env) {
+fn bind_pattern(pattern: &Pattern, env: &mut Env, bindings: &mut HashSet<String>) {
     match pattern {
         Pattern::Ident(name, _) => {
+            bindings.insert(name.clone());
             env.rebind(name);
             env.forget_type(name);
         }
         Pattern::Tuple(items, _) => {
             for p in items {
-                bind_pattern(p, env);
+                bind_pattern(p, env, bindings);
             }
         }
         Pattern::Enum(_, items, _) => {
             for p in items {
-                bind_pattern(p, env);
+                bind_pattern(p, env, bindings);
             }
         }
         Pattern::Literal(_, _) | Pattern::Wildcard(_) | Pattern::Rest(_) => {}
@@ -595,6 +664,7 @@ fn apply_ownership(
     fn_name: &str,
     diags: &mut Vec<CheckError>,
 ) {
+    detect_drop_discipline_violations(callee, pairs, fn_name, diags);
     detect_aliasing_violations(callee, pairs, fn_name, diags);
     for (arg, kind) in pairs {
         if matches!(kind, Some(Ownership::Own)) {
@@ -602,6 +672,35 @@ fn apply_ownership(
                 env.record_move_place(&place, callee);
             }
         }
+    }
+}
+
+fn detect_drop_discipline_violations(
+    callee: &str,
+    pairs: &[(&Expr, Option<Ownership>)],
+    fn_name: &str,
+    diags: &mut Vec<CheckError>,
+) {
+    let mut owned_places: Vec<Vec<String>> = Vec::new();
+    for (arg, kind) in pairs {
+        if !matches!(kind, Some(Ownership::Own)) {
+            continue;
+        }
+        let Some(place) = place_path(arg) else {
+            continue;
+        };
+        if let Some(existing) = owned_places
+            .iter()
+            .find(|existing| places_overlap(existing, &place))
+        {
+            diags.push(CheckError::SafeModeViolation(format!(
+                "drop discipline violation: in `{fn_name}`, `{}` and `{}` are both passed as `own` to `{callee}`, which would drop the same place twice",
+                format_place(existing),
+                format_place(&place)
+            )));
+            return;
+        }
+        owned_places.push(place);
     }
 }
 

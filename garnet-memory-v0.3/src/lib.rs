@@ -13,7 +13,7 @@
 //! | Kind          | Purpose                                  | Reference store                     |
 //! |---------------|------------------------------------------|-------------------------------------|
 //! | [`WorkingStore`]   | Bulk-allocated scratch tied to a scope   | Arena `RefCell<Vec<T>>`             |
-//! | [`EpisodeStore`]   | Append-style timestamped event log       | `RefCell<Vec<Episode<T>>>` + text snapshots/log commits |
+//! | [`EpisodeStore`]   | Append-style timestamped event log       | `RefCell<Vec<Episode<T>>>` + text snapshots/log commits + typed cache backend |
 //! | [`VectorIndex`]    | Cosine-similarity semantic recall        | `RefCell<Vec<(Vec<f32>, T)>>`       |
 //! | [`WorkflowStore`]  | Copy-on-write versioned procedure store  | `RefCell<BTreeMap<Version, T>>`     |
 //!
@@ -29,9 +29,11 @@
 //!   while their backing storage still uses `Vec` / `BTreeMap`.
 //! - Cycle-aware allocator fixtures can observe store-root retention and
 //!   release on write, clear, policy eviction, replacement, and drop.
-//! - `EpisodeStore` exposes fenced, versioned text snapshot persistence
-//!   and guarded append-style text log commits; the other stores and broad
-//!   production backends remain in-process only.
+//! - `EpisodeStore` exposes fenced, versioned text snapshot persistence,
+//!   guarded append-style text log commits, and a fixed
+//!   `.garnet-cache/episodic/episodes.mnemos` typed backend boundary with
+//!   path/size/permission/serialization guardrails; the other stores and broad
+//!   pluggable production backends remain in-process only.
 //! - No production-grade vector index (cosine over a flat `Vec`, not
 //!   HNSW / IVF / PolarQuant).
 //! - Lazy eviction is wired for policy-configured episodic and semantic
@@ -79,7 +81,10 @@ pub use cycle::{
     CycleAllocationMode, CycleAllocatorFixture, CycleCollectReport, CycleGraph, CycleGraphError,
     CycleNodeId, CycleRootBuffer, CycleScan,
 };
-pub use episodic::{EpisodePersistenceError, EpisodeStore, EPISODIC_TEXT_LOG_MAX_BYTES};
+pub use episodic::{
+    episodic_cache_log_path_for, EpisodePersistenceError, EpisodeStore, EPISODIC_CACHE_DIR,
+    EPISODIC_CACHE_EPISODIC_DIR, EPISODIC_CACHE_LOG_FILE, EPISODIC_TEXT_LOG_MAX_BYTES,
+};
 pub use policy::{MemoryKind, MemoryPolicy};
 pub use procedural::WorkflowStore;
 pub use semantic::VectorIndex;

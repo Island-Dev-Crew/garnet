@@ -1,0 +1,3338 @@
+use garnet_check::{check_module, CheckError};
+use garnet_parser::parse_source;
+
+fn check(src: &str) -> Vec<CheckError> {
+    let module = parse_source(src).expect("parse ok");
+    check_module(&module).errors
+}
+
+fn has_safe_violation(errs: &[CheckError], needle: &str) -> bool {
+    errs.iter().any(|err| match err {
+        CheckError::SafeModeViolation(message) => message.contains(needle),
+        _ => false,
+    })
+}
+
+#[test]
+fn safe_bool_match_requires_true_and_false_without_catch_all() {
+    let errs = check(
+        r#"
+        fn bool_code(flag: Bool) -> Int {
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match") && has_safe_violation(&errs, "false"),
+        "expected missing false diagnostic, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_enum_match_requires_all_variants_without_catch_all() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Done"),
+        "expected missing enum variant diagnostic, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_enum_match_accepts_all_variants() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "complete enum match should not be rejected, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_uses_local_type_annotations_for_finite_domains() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code() -> Int {
+            let status: Status = Status::Ready()
+            match status {
+                Status::Ready => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Done"),
+        "expected local annotation to drive enum coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_uses_local_bool_initializer_for_finite_domain() {
+    let errs = check(
+        r#"
+        fn bool_code() -> Int {
+            let flag = true
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match") && has_safe_violation(&errs, "false"),
+        "expected bool initializer to drive missing false diagnostic, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_uses_local_enum_initializer_for_finite_domain() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code() -> Int {
+            let status = Status::Ready()
+            match status {
+                Status::Ready => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Done"),
+        "expected enum initializer to drive missing variant diagnostic, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_uses_unassigned_mutable_bool_initializer_for_finite_domain() {
+    let errs = check(
+        r#"
+        fn bool_code() -> Int {
+            let mut flag = true
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match") && has_safe_violation(&errs, "false"),
+        "expected unassigned mutable bool initializer to drive missing false diagnostic, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_uses_unassigned_mutable_enum_initializer_for_finite_domain() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code() -> Int {
+            let mut status = Status::Ready()
+            match status {
+                Status::Ready => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Done"),
+        "expected unassigned mutable enum initializer to drive missing variant diagnostic, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_updates_mutable_domain_after_finite_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code() -> Int {
+            let mut flag = 1
+            flag = true
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match") && has_safe_violation(&errs, "false"),
+        "expected finite reassignment to drive missing false diagnostic, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_mutable_domain_after_non_finite_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code() -> Int {
+            let mut flag = true
+            flag = 1
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "non-finite mutable reassignment should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_mutable_domain_after_compound_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code() -> Int {
+            let mut flag = true
+            flag += 1
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "compound assignment should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_joins_bool_domain_after_if_else_assignments() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = 1
+            if cond {
+                flag = true
+            } else {
+                flag = false
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match") && has_safe_violation(&errs, "false"),
+        "expected if/else Bool assignments to join into a finite-domain diagnostic, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_domain_after_mixed_if_else_assignments() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = true
+            if cond {
+                flag = false
+            } else {
+                flag = 1
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "mixed finite/non-finite branch assignments should clear inferred domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_domain_after_if_else_compound_assignments() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = true
+            if cond {
+                flag += 1
+            } else {
+                flag += 1
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "compound assignments in all branches should clear inferred domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_domain_after_while_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = true
+            while cond {
+                flag = 1
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "assignment in a possible while iteration should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_domain_after_for_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code() -> Int {
+            let mut flag = true
+            for item in [1] {
+                flag = item
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "assignment in a possible for iteration should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_domain_after_conditional_loop_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code(first: Bool, second: Bool) -> Int {
+            let mut flag = true
+            while first {
+                if second {
+                    flag = 1
+                }
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "conditional assignment in a loop body should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_loop_assignment_before_shadowing_binding() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = true
+            while cond {
+                flag = 1
+                let flag = true
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "assignment before a loop-local shadow should still clear the outer finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_does_not_invalidate_outer_domain_for_loop_local_binding() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = true
+            while cond {
+                let flag = 1
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match") && has_safe_violation(&errs, "false"),
+        "loop-local bindings should not clear the outer finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_domain_after_try_body_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code() -> Int {
+            let mut flag = true
+            try {
+                flag = 1
+            } rescue e {
+                0
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "assignment in a possible try body should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_domain_after_try_rescue_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code() -> Int {
+            let mut flag = true
+            try {
+                0
+            } rescue e {
+                flag = 1
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "assignment in a possible rescue body should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_domain_after_try_ensure_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code() -> Int {
+            let mut flag = true
+            try {
+                0
+            } ensure {
+                flag = 1
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "assignment in an ensure body should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_does_not_merge_uninvoked_closure_assignment_domains() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = 1
+            let updater = |value| if cond {
+                flag = true
+            } else {
+                flag = false
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "uncalled closure body assignments should not merge into the surrounding finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_domain_after_immediate_closure_block_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code() -> Int {
+            let mut flag = true
+            (|value| {
+                flag = value
+            })(1)
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "immediately invoked closure block assignment should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_domain_after_immediate_closure_expr_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = true
+            (|value| if cond {
+                flag = value
+            } else {
+                flag = false
+            })(1)
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "immediately invoked closure expression assignments should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_domain_after_local_closure_call_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code() -> Int {
+            let mut flag = true
+            let updater = |value| {
+                flag = value
+            }
+            updater(1)
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "local closure call assignment should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_domain_after_branch_joined_local_closure_call_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = true
+            let updater = if cond {
+                |value| {
+                    flag = value
+                }
+            } else {
+                |value| {
+                    flag = false
+                }
+            }
+            updater(1)
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "branch-joined local closure call assignment should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_domain_after_branch_rebound_local_closure_call_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = true
+            let mut updater = |value| {
+                value
+            }
+            if cond {
+                updater = |value| {
+                    flag = value
+                }
+            } else {
+                updater = |value| {
+                    flag = false
+                }
+            }
+            updater(1)
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "branch-rebound local closure call assignment should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_domain_after_local_closure_alias_call_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code() -> Int {
+            let mut flag = true
+            let updater = |value| {
+                flag = value
+            }
+            let alias = updater
+            alias(1)
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "local closure alias call assignment should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_domain_after_branch_joined_local_closure_alias_call_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = true
+            let update_from_arg = |value| {
+                flag = value
+            }
+            let update_to_false = |value| {
+                flag = false
+            }
+            let alias = if cond {
+                update_from_arg
+            } else {
+                update_to_false
+            }
+            alias(1)
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "branch-joined local closure alias call assignment should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_domain_after_direct_branch_selected_closure_call_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = true
+            let update_from_arg = |value| {
+                flag = value
+            }
+            let update_to_false = |value| {
+                flag = false
+            }
+            (if cond {
+                update_from_arg
+            } else {
+                update_to_false
+            })(1)
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "direct branch-selected closure call assignment should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_keeps_domain_when_branch_alias_tail_shadows_known_closure() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = true
+            let updater = |value| {
+                flag = value
+            }
+            let alias = if cond {
+                let updater = 1
+                updater
+            } else {
+                updater
+            }
+            alias(1)
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match"),
+        "shadowed branch alias tail should stay unknown and preserve finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_keeps_domain_when_direct_branch_call_tail_shadows_known_closure() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = true
+            let updater = |value| {
+                flag = value
+            }
+            (if cond {
+                let updater = 1
+                updater
+            } else {
+                updater
+            })(1)
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match"),
+        "shadowed direct branch call tail should stay unknown and preserve finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_joins_branch_assignment_before_shadowing_binding() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = true
+            if cond {
+                flag = false
+                let flag = true
+            } else {
+                flag = false
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match") && has_safe_violation(&errs, "false"),
+        "assignment before a branch-local shadow should still join the outer finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_does_not_infer_branch_assignment_without_else_path() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = 1
+            if cond {
+                flag = true
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "finite assignment on only one possible branch should not infer a closed domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_joins_bool_domain_after_elsif_assignments() {
+    let errs = check(
+        r#"
+        fn bool_code(first: Bool, second: Bool) -> Int {
+            let mut flag = 1
+            if first {
+                flag = true
+            } elsif second {
+                flag = false
+            } else {
+                flag = true
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match") && has_safe_violation(&errs, "false"),
+        "expected if/elsif/else Bool assignments to join into a finite-domain diagnostic, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_does_not_join_branch_local_bindings_after_if_else() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            if cond {
+                let flag = true
+            } else {
+                let flag = false
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "branch-local bindings should not seed a post-if finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_joins_nested_if_assignment_domains() {
+    let errs = check(
+        r#"
+        fn bool_code(first: Bool, second: Bool) -> Int {
+            let mut flag = 1
+            if first {
+                if second {
+                    flag = true
+                } else {
+                    flag = false
+                }
+            } else {
+                flag = true
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match") && has_safe_violation(&errs, "false"),
+        "expected nested if/else assignments to join into a finite-domain diagnostic, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_does_not_join_nested_if_assignment_without_else() {
+    let errs = check(
+        r#"
+        fn bool_code(first: Bool, second: Bool) -> Int {
+            let mut flag = 1
+            if first {
+                if second {
+                    flag = true
+                }
+            } else {
+                flag = false
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "nested if assignment with a missing else path should not infer a closed domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_joins_enum_domain_after_if_else_assignments() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code(cond: Bool) -> Int {
+            let mut status = 1
+            if cond {
+                status = Status::Ready()
+            } else {
+                status = Status::Done()
+            }
+            match status {
+                Status::Ready => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Done"),
+        "expected if/else enum assignments to join into a finite-domain diagnostic, got {errs:?}"
+    );
+}
+
+#[test]
+fn managed_match_non_exhaustiveness_is_not_rejected_by_safe_pass() {
+    let errs = check(
+        r#"
+        def bool_code(flag) {
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "managed matches should stay outside the safe-mode hard-error gate, got {errs:?}"
+    );
+}
+
+#[test]
+fn guarded_enum_arm_does_not_make_safe_match_exhaustive() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status, ok: Bool) -> Int {
+            match status {
+                Status::Ready if ok => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "guarded arms must not count as exhaustive coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn true_guarded_enum_arm_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if true => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "literal true guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn true_local_bool_guard_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            let always = true
+            match status {
+                Status::Ready if always => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "local true guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn mutable_bool_guard_does_not_count_as_static_match_coverage() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            let mut always = true
+            match status {
+                Status::Ready if always => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "mutable guard facts must stay unknown, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_guarded_enum_arm_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if false => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "literal false guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_local_bool_guard_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            let never = false
+            match status {
+                Status::Ready if never => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "local false guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn local_boolean_const_expression_guard_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            let raw = true
+            let always = raw == true
+            match status {
+                Status::Ready if always => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "local boolean const expressions should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn local_integer_const_expression_guard_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            let limit = 2
+            let always = limit + 1 == 3
+            match status {
+                Status::Ready if always => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "local integer const expressions should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_local_integer_const_expression_guard_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            let limit = 2
+            let never = limit + 1 < 3
+            match status {
+                Status::Ready if never => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false local integer const expressions should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn local_path_integer_const_expression_guard_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            let always = Core::LIMIT + 1 == 3
+            match status {
+                Status::Ready if always => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "path-qualified local integer const expressions should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_local_path_integer_const_expression_guard_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            let never = Core::LIMIT + 1 < 3
+            match status {
+                Status::Ready if never => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false path-qualified local integer const expressions should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn mutable_local_expression_source_stays_unknown_and_non_covering() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            let mut limit = 2
+            let always = limit + 1 == 3
+            match status {
+                Status::Ready if always => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready")
+            && !has_safe_violation(&errs, "statically false guard"),
+        "mutable local expression sources must stay unknown, got {errs:?}"
+    );
+}
+
+#[test]
+fn true_const_bool_guard_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        const ALWAYS = true
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "top-level true const guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_const_bool_guard_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        const NEVER = false
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "top-level false const guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn function_parameter_shadows_const_bool_guard_fact() {
+    let errs = check(
+        r#"
+        const READY = true
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status, READY: Bool) -> Int {
+            match status {
+                Status::Ready if READY => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "parameter shadowing should keep same-name const guard facts out of coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn imported_named_true_const_bool_guard_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Flags {
+            const ALWAYS = true
+        }
+        use Flags::{ALWAYS}
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "imported named true const guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn imported_glob_false_const_bool_guard_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Flags {
+            const NEVER = false
+        }
+        use Flags::*
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "imported glob false const guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn function_parameter_shadows_imported_const_bool_guard_fact() {
+    let errs = check(
+        r#"
+        module Flags {
+            const ALWAYS = true
+        }
+        use Flags::{ALWAYS}
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status, ALWAYS: Bool) -> Int {
+            match status {
+                Status::Ready if ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "parameter shadowing should keep imported const guard facts out of coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn module_relative_imported_const_bool_guard_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Outer {
+            module Flags {
+                const ALWAYS = true
+            }
+            use Flags::{ALWAYS}
+
+            enum Status { Ready, Done }
+
+            fn status_code(status: Status) -> Int {
+                match status {
+                    Status::Ready if ALWAYS => 1
+                    Status::Done => 2
+                }
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "module-relative imported true const guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn path_qualified_true_const_bool_guard_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Flags {
+            const ALWAYS = true
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "path-qualified true const guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn path_qualified_false_const_bool_guard_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Flags {
+            const NEVER = false
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "path-qualified false const guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn path_qualified_const_bool_alias_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const RAW = true
+        }
+
+        module Flags {
+            const ALWAYS = Core::RAW
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "path-qualified const aliases should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn path_qualified_false_const_bool_alias_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const RAW = false
+        }
+
+        module Flags {
+            const NEVER = Core::RAW
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "path-qualified false const aliases should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn boolean_const_expression_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const RAW = true
+        }
+
+        module Flags {
+            const ALWAYS = Core::RAW and not false
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "boolean const expressions should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_boolean_const_expression_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const RAW = true
+        }
+
+        module Flags {
+            const NEVER = not Core::RAW or false
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false boolean const expressions should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn true_short_circuit_const_bool_or_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Flags {
+            const ALWAYS = true or Missing::VALUE
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true short-circuit OR const guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_short_circuit_const_bool_and_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Flags {
+            const NEVER = false and Missing::VALUE
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false short-circuit AND const guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn true_boolean_const_equality_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const RAW = true
+        }
+
+        module Flags {
+            const ALWAYS = Core::RAW == true
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true boolean const equality guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_boolean_const_inequality_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const RAW = true
+        }
+
+        module Flags {
+            const NEVER = Core::RAW != true
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false boolean const inequality guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn direct_true_boolean_const_equality_guard_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const RAW = true
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Core::RAW == true => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "direct true boolean const equality guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn direct_false_boolean_const_inequality_guard_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const RAW = true
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Core::RAW != true => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "direct false boolean const inequality guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn boolean_const_relational_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const RAW = false
+        }
+
+        module Flags {
+            const ALWAYS = Core::RAW < true
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true boolean const relational guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_boolean_const_relational_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const RAW = true
+        }
+
+        module Flags {
+            const NEVER = Core::RAW < false
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false boolean const relational guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn mixed_boolean_nil_relational_guard_stays_unknown_and_non_covering() {
+    let errs = check(
+        r#"
+        module Core {
+            const RAW = true
+        }
+
+        module Flags {
+            const ALWAYS = Core::RAW > nil
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready")
+            && !has_safe_violation(&errs, "statically false guard"),
+        "mixed boolean/nil relational guards should stay unknown and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn integer_const_equality_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+        }
+
+        module Flags {
+            const ALWAYS = Core::LIMIT == 2
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true integer const equality guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_integer_const_inequality_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+        }
+
+        module Flags {
+            const NEVER = Core::LIMIT != 2
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false integer const inequality guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn direct_integer_const_equality_guard_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Core::LIMIT == 2 => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "direct true integer const equality guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn integer_const_less_than_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+        }
+
+        module Flags {
+            const ALWAYS = Core::LIMIT < 3
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true integer const relational guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_integer_const_greater_than_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+        }
+
+        module Flags {
+            const NEVER = Core::LIMIT > 3
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false integer const relational guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn direct_integer_const_greater_equal_guard_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Core::LIMIT >= 2 => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "direct true integer const relational guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn integer_const_arithmetic_equality_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+            const OFFSET = 1
+        }
+
+        module Flags {
+            const ALWAYS = Core::LIMIT + Core::OFFSET == 3
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true integer const arithmetic guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_integer_const_arithmetic_relational_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+        }
+
+        module Flags {
+            const NEVER = Core::LIMIT * 2 < 4
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false integer const arithmetic guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn direct_integer_const_arithmetic_relational_guard_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Core::LIMIT + 1 >= 3 => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "direct true integer const arithmetic relational guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn integer_const_divide_by_zero_guard_stays_unknown_and_non_covering() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+        }
+
+        module Flags {
+            const UNKNOWN = Core::LIMIT / 0 == 2
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::UNKNOWN => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "division by zero in integer const guards should remain unknown and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn same_module_integer_const_identifiers_count_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        const LIMIT = 2
+        const OFFSET = 1
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if LIMIT + OFFSET == 3 => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "same-module integer const identifiers should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn imported_named_integer_const_identifiers_count_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+            const OFFSET = 1
+        }
+        use Core::{LIMIT, OFFSET}
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if LIMIT + OFFSET == 3 => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "named-imported integer const identifiers should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn imported_glob_integer_const_identifier_false_guard_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+        }
+        use Core::*
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if LIMIT * 2 < 4 => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "glob-imported integer const false guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn function_parameter_shadows_imported_integer_const_guard_fact() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+            const OFFSET = 1
+        }
+        use Core::{LIMIT, OFFSET}
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status, LIMIT: Int) -> Int {
+            match status {
+                Status::Ready if LIMIT + OFFSET == 3 => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "parameter shadowing should keep imported integer const facts out of coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn symbol_const_equality_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const MODE = :ready
+        }
+
+        module Flags {
+            const ALWAYS = Core::MODE == :ready
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true symbol const equality guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_string_const_inequality_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LABEL = "ready"
+        }
+
+        module Flags {
+            const NEVER = Core::LABEL != "ready"
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false string const inequality guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn string_const_relational_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LABEL = "ready"
+        }
+
+        module Flags {
+            const ALWAYS = Core::LABEL < "rust"
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true string const relational guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_string_const_relational_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LABEL = "ready"
+        }
+
+        module Flags {
+            const NEVER = Core::LABEL > "ready"
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false string const relational guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn mixed_string_symbol_relational_guard_stays_unknown_and_non_covering() {
+    let errs = check(
+        r#"
+        module Core {
+            const LABEL = "ready"
+            const MODE = :ready
+        }
+
+        module Flags {
+            const ALWAYS = Core::LABEL > Core::MODE
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready")
+            && !has_safe_violation(&errs, "statically false guard"),
+        "mixed string/symbol relational guards should stay unknown and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn interpolated_string_const_equality_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LABEL = "re#{"ad"}y"
+        }
+
+        module Flags {
+            const ALWAYS = Core::LABEL == "ready"
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true interpolated string const equality guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_interpolated_string_const_inequality_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LABEL = "re#{"ad"}y"
+        }
+
+        module Flags {
+            const NEVER = Core::LABEL != "ready"
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false interpolated string const inequality guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn interpolated_string_call_const_guard_stays_unknown_and_non_covering() {
+    let errs = check(
+        r#"
+        module Core {
+            const LABEL = "re#{suffix()}y"
+        }
+
+        def suffix() { "ad" }
+
+        module Flags {
+            const ALWAYS = Core::LABEL == "ready"
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready")
+            && !has_safe_violation(&errs, "statically false guard"),
+        "function-call interpolation should stay unknown and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn nil_const_equality_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const EMPTY = nil
+        }
+
+        module Flags {
+            const ALWAYS = Core::EMPTY == nil
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true nil const equality guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_nil_const_inequality_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const EMPTY = nil
+        }
+
+        module Flags {
+            const NEVER = Core::EMPTY != nil
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false nil const inequality guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn mixed_literal_const_inequality_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const EMPTY = nil
+        }
+
+        module Flags {
+            const ALWAYS = Core::EMPTY != false
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true mixed-literal const inequality guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_mixed_literal_const_equality_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const EMPTY = nil
+        }
+
+        module Flags {
+            const NEVER = Core::EMPTY == false
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false mixed-literal const equality guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn finite_float_const_equality_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const RATIO = 1.5
+        }
+
+        module Flags {
+            const ALWAYS = Core::RATIO == 1.5
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true finite float const equality guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn int_float_const_equality_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const COUNT = 1
+        }
+
+        module Flags {
+            const ALWAYS = Core::COUNT == 1.0
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true int-float const equality guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_float_const_inequality_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const RATIO = 1.5
+        }
+
+        module Flags {
+            const NEVER = Core::RATIO != 1.5
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false finite float const inequality guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn finite_float_const_relational_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const RATIO = 1.5
+        }
+
+        module Flags {
+            const ALWAYS = Core::RATIO < 2.0
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true finite float const relational guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn int_float_const_relational_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const COUNT = 2
+        }
+
+        module Flags {
+            const ALWAYS = Core::COUNT <= 2.0
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true int-float const relational guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_float_const_relational_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const RATIO = 1.5
+        }
+
+        module Flags {
+            const NEVER = Core::RATIO > 2.0
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false finite float const relational guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn non_finite_float_relational_guard_stays_unknown_and_non_covering() {
+    let errs = check(
+        r#"
+        module Core {
+            const RATIO = 1.0e309
+        }
+
+        module Flags {
+            const ALWAYS = Core::RATIO > 1.0
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready")
+            && !has_safe_violation(&errs, "statically false guard"),
+        "non-finite float relational guards should stay unknown and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn finite_float_const_arithmetic_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const RATIO = 1.5
+        }
+
+        module Flags {
+            const ALWAYS = Core::RATIO + 0.5 == 2.0
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true finite float const arithmetic guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn int_float_const_arithmetic_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const COUNT = 2
+        }
+
+        module Flags {
+            const ALWAYS = Core::COUNT * 1.5 >= 3.0
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true int-float const arithmetic guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_float_const_arithmetic_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const RATIO = 1.5
+        }
+
+        module Flags {
+            const NEVER = Core::RATIO * 2.0 < 3.0
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false finite float const arithmetic guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn non_finite_float_arithmetic_guard_stays_unknown_and_non_covering() {
+    let errs = check(
+        r#"
+        module Core {
+            const BIG = 1.0e308
+        }
+
+        module Flags {
+            const ALWAYS = Core::BIG * 1.0e308 == Core::BIG
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready")
+            && !has_safe_violation(&errs, "statically false guard"),
+        "overflowing float arithmetic guards should stay unknown and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn non_finite_float_const_guard_stays_unknown_and_non_covering() {
+    let errs = check(
+        r#"
+        module Core {
+            const RATIO = 1.0e309
+        }
+
+        module Flags {
+            const ALWAYS = Core::RATIO == Core::RATIO
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready")
+            && !has_safe_violation(&errs, "statically false guard"),
+        "non-finite float const guards should stay unknown and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_open_literal_match_rejects_duplicate_literal_arm() {
+    let errs = check(
+        r#"
+        fn classify(value: Int) -> Int {
+            match value {
+                1 => 10
+                1 => 11
+                _ => 0
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "unreachable match arm") && has_safe_violation(&errs, "`1`"),
+        "expected duplicate open-domain literal arm to be unreachable, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_open_match_rejects_arm_after_catch_all() {
+    let errs = check(
+        r#"
+        fn classify(value: Int) -> Int {
+            match value {
+                _ => 0
+                1 => 10
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "unreachable match arm")
+            && has_safe_violation(&errs, "covered by prior catch-all"),
+        "expected open-domain arm after catch-all to be unreachable, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_open_literal_match_keeps_unknown_guard_non_covering() {
+    let errs = check(
+        r#"
+        fn classify(value: Int, ok: Bool) -> Int {
+            match value {
+                1 if ok => 10
+                1 => 11
+                _ => 0
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "unreachable match arm"),
+        "unknown guards should not cover open-domain literals, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_rejects_duplicate_covered_arm() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready => 1
+                Status::Ready => 2
+                Status::Done => 3
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "unreachable match arm")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "expected duplicate variant to be unreachable, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_rejects_arm_after_unguarded_catch_all() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                _ => 0
+                Status::Ready => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "unreachable match arm")
+            && has_safe_violation(&errs, "covered by prior catch-all"),
+        "expected arm after wildcard to be unreachable, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_nested_enum_match_requires_all_finite_payload_cases() {
+    let errs = check(
+        r#"
+        enum Inner { Left, Right }
+        enum Outer { Wrap(Inner), Empty }
+
+        fn nested_code(outer: Outer) -> Int {
+            match outer {
+                Outer::Wrap(Inner::Left) => 1
+                Outer::Empty => 0
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Outer::Wrap(Inner::Right)"),
+        "expected missing nested enum payload diagnostic, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_nested_enum_match_accepts_all_finite_payload_cases() {
+    let errs = check(
+        r#"
+        enum Inner { Left, Right }
+        enum Outer { Wrap(Inner), Empty }
+
+        fn nested_code(outer: Outer) -> Int {
+            match outer {
+                Outer::Wrap(Inner::Left) => 1
+                Outer::Wrap(Inner::Right) => 2
+                Outer::Empty => 0
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "complete nested enum match should not be rejected, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_nested_enum_match_allows_payload_wildcard_coverage() {
+    let errs = check(
+        r#"
+        enum Inner { Left, Right }
+        enum Outer { Wrap(Inner), Empty }
+
+        fn nested_code(outer: Outer) -> Int {
+            match outer {
+                Outer::Wrap(_) => 1
+                Outer::Empty => 0
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "wildcard payload should cover the nested finite payload domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_imported_named_enum_match_accepts_alias_qualified_arms() {
+    let errs = check(
+        r#"
+        module Types {
+            enum Status { Ready, Done }
+        }
+
+        use Types::{Status}
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "complete imported enum match should not be rejected, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_imported_named_enum_match_rejects_missing_alias_case() {
+    let errs = check(
+        r#"
+        module Types {
+            enum Status { Ready, Done }
+        }
+
+        use Types::{Status}
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Types::Status::Done")
+            && !has_safe_violation(&errs, "Types::Status::Ready"),
+        "expected imported missing case only, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_imported_glob_enum_match_accepts_alias_qualified_arms() {
+    let errs = check(
+        r#"
+        module Types {
+            enum Status { Ready, Done }
+        }
+
+        use Types::*
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "complete glob-imported enum match should not be rejected, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_imported_module_alias_enum_match_accepts_module_qualified_arms() {
+    let errs = check(
+        r#"
+        module Library {
+            module Types {
+                enum Status { Ready, Done }
+            }
+        }
+
+        use Library::Types
+
+        fn status_code(status: Types::Status) -> Int {
+            match status {
+                Types::Status::Ready => 1
+                Types::Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "complete module-alias enum match should not be rejected, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_imported_nested_module_relative_enum_match_accepts_alias_qualified_arms() {
+    let errs = check(
+        r#"
+        module App {
+            module Types {
+                enum Status { Ready, Done }
+            }
+
+            use Types::{Status}
+
+            fn status_code(status: Status) -> Int {
+                match status {
+                    Status::Ready => 1
+                    Status::Done => 2
+                }
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "complete nested relative imported enum match should not be rejected, got {errs:?}"
+    );
+}

@@ -106,7 +106,7 @@ two-day LSP.
 
 ## Item B — Memory Core Tier 1 (Mnemos production allocator integration)
 
-### Current Phase 6M status
+### Current Phase 6P status
 
 Phase 6A added a bounded cycle-reference path before the allocator work:
 `garnet-memory-v0.3/src/cycle.rs`, `garnet-memory-v0.3/tests/cycle.rs`, and
@@ -133,13 +133,33 @@ finalizer invocation. Phase 6L adds a fenced `EpisodeStore::save_text` /
 hex-encoded payloads, writes use a sibling temp file before rename, malformed
 files fail before mutating the live store, and recovered episodes retain fresh
 cycle-aware roots. This is recovery evidence for the reference episodic store,
-not the append-only `.garnet-cache/episodic/` production backend. Phase 6M adds
+not yet a default backend by itself. Phase 6M adds
 `EpisodeStore::append_text`: individual records commit to the same versioned
 text format, existing logs are size-bounded and parsed as the store value type
 before extension, corrupt, empty, type-invalid, or oversized logs are not
 carried forward, projected oversize commits are rejected before file creation,
 accepted record data is synced through a temp-file rewrite and rename, and the
-live store mutates only after the on-disk commit succeeds.
+live store mutates only after the on-disk commit succeeds. Phase 6N adds the
+default typed episodic cache backend boundary:
+`EpisodeStore::append_cache_text` / `load_cache_text` use fixed
+`.garnet-cache/episodic/episodes.mnemos` storage under a canonical project
+root, reject symlinked or non-regular targets, reject oversized loads before
+allocation, serialize rewrite-based access with an OS-backed lockfile on
+Unix/Windows, anchor Unix backend file operations to the validated episodic
+directory handle, keep Unix cache dirs/files private from creation time, and
+preserve corrupt/type-invalid non-mutation plus
+cycle-aware root rehydration. This remains distinct from the CLI signed NDJSON
+advisory cache and must not be treated as trusted compiler input without a
+future MAC layer. Phase 6O adds the first directory-sync durability guardrail
+for that text-commit family: after an accepted temp-file rewrite and rename,
+generic Unix text commits sync the parent directory and the typed cache backend
+syncs the already-validated episodic directory handle. Non-Unix platforms
+retain file-data sync until a platform-specific directory-sync contract is
+added. Phase 6P adds a dependency-free source-tree binding line to the typed
+cache format; appends validate existing bindings before rewrite, and loads
+reject copied `episodes.mnemos` files from another canonical project root
+before replacing live episodic memory. This is replay-hardening evidence, not a
+cryptographic MAC.
 
 ### Current Phase 6F-6I cache-security status
 
@@ -244,11 +264,30 @@ corrupt/empty/type-invalid log rejection without file extension or live-store
 mutation, and oversized-log/projected-oversize rejection before live-store
 mutation.
 
+#### T2.3 backend boundary — Default typed episodic cache file
+
+Phase 6N binds the Phase 6M text format to fixed per-project
+`.garnet-cache/episodic/episodes.mnemos` storage through
+`episodic_cache_log_path_for`, `EpisodeStore::append_cache_text`, and
+`EpisodeStore::load_cache_text`. The backend canonicalizes the project root,
+creates private cache directories, rejects symlinked/non-regular backend
+targets, checks load size before reading into memory, serializes rewrite-based
+loads/appends with an OS-backed `episodes.mnemos.lock` on Unix/Windows, and keeps
+backend files private on Unix. Missing backend logs load as empty; malformed, corrupt, oversized, and
+wrong-type logs fail before live-store mutation.
+
+Covered tests: fixed backend path, backend append/load round trip with
+delimiter-control payloads, cycle-aware root rehydration, corrupt backend
+rejection, wrong-type backend rejection, concurrent appends preserving all
+records, Unix `0700`/`0600` permissions, symlinked cache-directory rejection,
+and oversized `load_text` rejection before live-store mutation.
+
 #### T1.4 — Generics over memory kinds (Mini-Spec §4.4)
 
-This is the gnarliest of the three. Phase 5B gives §11.6 interpreter-level
-generic instantiation evidence, but native monomorphization is still deferred. The
-realistic v0.5.0 path:
+This is the gnarliest of the three. Phase 5C gives §11.5/§11.6 executable
+evidence for simple generic-overlap coherence, package-qualified orphan
+discrimination, and interpreter-level generic instantiation, but native
+monomorphization is still deferred. The realistic v0.5.0 path:
 
 1. Add `<Kind: MemoryKindTrait>` parameter to `MemoryHandle` and the
    four stores.
@@ -283,8 +322,9 @@ realistic v0.5.0 path:
 
 ### Remaining pre-requisites
 
-- T1.1, T1.2, T1.3, the first T2.3 episodic snapshot slice, and the Phase 6M
-  append-style text log guardrail are now self-contained Mnemos evidence slices.
+- T1.1, T1.2, T1.3, the first T2.3 episodic snapshot slice, the Phase 6M
+  append-style text log guardrail, and the Phase 6N default typed cache
+  backend boundary are now self-contained Mnemos evidence slices.
 - T1.4 wants Mini-Spec §11.6 monomorphization to actually
   monomorphize. Today it is parsed-only (see Conformance Matrix
   §11.6 row). If you can punt the language-level syntax, the
@@ -294,7 +334,8 @@ realistic v0.5.0 path:
 
 T1.4 in a separate session, probably alongside parser work. Production ARC
 finalizers and broad pluggable persistence stay separate from the Tier 1
-adapter, Phase 6L reference-snapshot evidence, and Phase 6M append guardrail.
+adapter, Phase 6L reference-snapshot evidence, Phase 6M append guardrail, and
+Phase 6N typed cache backend boundary.
 
 ---
 

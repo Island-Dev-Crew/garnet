@@ -350,7 +350,7 @@ impl CapsGraph {
             Expr::Match { subject, arms, .. } => {
                 self.walk_expr_for_callees(subject, out);
                 for arm in arms {
-                    self.walk_expr_for_callees(&arm.body, out);
+                    self.walk_block(&arm.body, out);
                 }
             }
             Expr::Try {

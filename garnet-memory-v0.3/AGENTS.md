@@ -18,6 +18,15 @@ Owns the reference implementation for Garnet's working, episodic, semantic, and 
 - Treat `AGENTS.md` and workflow contracts as procedural-memory analogs when designing future tooling.
 - Never hide sink, persistence, or machine-key failures; memory failures must be observable.
 - Keep tests isolated from machine-local key races and cache state.
+- Keep the typed episodic cache backend narrow and honest:
+  `EpisodeStore::{append_cache_text,load_cache_text}` owns only
+  `.garnet-cache/episodic/episodes.mnemos` under a caller-provided project
+  root. It must keep symlink/non-regular path rejection, pre-read size bounds,
+  OS-backed rewrite serialization on Unix/Windows, and private Unix
+  permissions intact. Unsupported platforms should fail loudly instead of
+  falling back to ad hoc sentinel locks. It is not the CLI signed NDJSON
+  advisory cache and must not be treated as trusted compiler input without an
+  explicit MAC/source-tree binding layer.
 
 ## Required Checks
 

@@ -25,8 +25,9 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | Dynamic method dispatch tables | Partial Phase 2H | `deferred_dynamic_dispatch` covers per-instance method tables; `static_impl_dispatch_and_method_missing` covers static inherent impl fallback and `method_missing`; `dynamic_impl_dispatch_tables` covers `@dynamic impl Type for Protocol` registration and dispatch | Add richer dispatch precedence and ambiguity probes |
 | Structural protocol satisfaction and runtime casts | Partial Phase 2H | `Item::Protocol` and `Expr::Cast` parse; `deferred_structural_protocols` checks protocol-typed managed parameters, runtime `as Protocol` casts, static/dynamic methods, mode/arity/parameter/return annotation mismatches, generic protocol substitution, core built-in typed method signatures, and `@dynamic impl` methods | Add broader trait/generic coherence |
 | Actor protocol enforcement and `Sendable` | Partial Phase 3D | actor runtime crate exists; `actor_sendable_rejects_nonsendable_protocol_payloads` rejects `@nonsendable` actor protocol payloads before runtime; managed interpreter now registers actors, dispatches `spawn Actor.handler(args)` synchronously, creates `spawn Actor` addresses with persistent actor-local state, enforces bounded source mailboxes through `Actor.spawn(capacity)`, and ships a generated `agent-orchestrator` actor template that runs/tests through managed actor addresses; full async OS-thread bridge remains partial | Bridge generated actor projects to the full async `garnet-actor-runtime` OS-thread address/mailbox runtime |
-| Rust-grade NLL and borrow rules | Partial Phase 4F | `garnet-check-v0.3/src/borrow.rs`; `garnet-check-v0.3/src/lib.rs`; `garnet-check-v0.3/tests/borrow.rs`; `garnet-check-v0.3/tests/extended.rs`; `partial_borrow_rule_suite` rejects direct use-after-move, direct mut-aliasing, `own self` method receiver moves, method receiver aliasing, simple typed receiver disambiguation, simple field-place aliasing/field use-after-move, and conservative index-place aliasing/index use-after-move while checking nested index operands; `deferred_nll_lifetime_inference` now covers conservative reference-return lifetime elision | Activate full CFG NLL, dynamic place tracking, generic/trait impl dispatch, and drop discipline |
-| Trait coherence | Partial Phase 5A | `garnet-check-v0.3/src/coherence.rs`; `garnet-check-v0.3/tests/coherence.rs`; `deferred_trait_coherence` rejects exact duplicate trait impls and orphan-rule violations while allowing local-trait or local-type impls | Activate generic overlap solving and package-aware coherence |
+| Rust-grade NLL and borrow rules | Partial Phase 4L | `garnet-check-v0.3/src/borrow.rs`; `garnet-check-v0.3/src/lib.rs`; `garnet-check-v0.3/tests/borrow.rs`; `garnet-check-v0.3/tests/extended.rs`; `partial_borrow_rule_suite` rejects direct use-after-move, direct mut-aliasing, `own self` method receiver moves, method receiver aliasing, simple typed receiver disambiguation, simple field-place aliasing/field use-after-move, and conservative index-place aliasing/index use-after-move while checking nested index operands; `deferred_full_borrow_rule_suite` now covers B5 same-call overlapping `own` drop discipline, direct-returning branch liveness, direct `return` block termination, direct-returning loop-body liveness, scoped `for` loop-variable liveness, scoped `match` pattern binding liveness, match guard move merging, and match-arm block statement preservation; `deferred_nll_lifetime_inference` covers conservative reference-return lifetime elision | Activate full CFG NLL, dynamic place tracking, generic/trait impl dispatch, broader drop elaboration, general loop fixed-point analysis, and two-phase borrows |
+| Pattern match exhaustiveness/reachability | Partial Phase 4BC | `garnet-check-v0.3/src/match_coverage.rs`; `garnet-check-v0.3/tests/match_coverage.rs`; `deferred_match_exhaustiveness_and_reachability` rejects non-exhaustive safe-mode `Bool`, same-module enum, finite nested-constructor, and scoped named/glob/module-qualified imported enum alias matches, treats unknown guarded arms as non-covering, counts literal `if true` arms as coverage, rejects literal `if false` arms as statically unreachable, rejects duplicate finite covered arms, rejects open-domain duplicate literal arms plus arms after unguarded catch-all patterns, infers finite match domains from immutable local boolean/enum variant initializers, tracks direct mutable-local finite assignments plus non-finite assignment invalidation, joins finite match-domain evidence across conservative `if`/`elsif`/`else` assignment branches, carries nested `if` all-path assignment joins inside branch bodies, explicitly invalidates finite evidence after compound assignments, conservatively invalidates after possible loop-body assignments with ordered shadowing checks, invalidates after possible `try`/`rescue`/`ensure` writes, prevents uninvoked closure literal bodies from merging assignment domains into enclosing flow, invalidates after direct closure-literal invocations, invalidates after directly called local closure-literal bindings, invalidates after branch-joined local closure-literal binding calls, invalidates after all-path branch rebindings of local closure-literal bindings, invalidates after direct aliases of known local closure-literal bindings, invalidates after all-path branch-selected direct aliases of known local closure bindings, invalidates after direct calls to all-path branch-selected closure expressions, recognizes immutable local boolean guard constants while keeping mutable guard locals unknown, and recognizes same-module, scoped named/glob imported, and path-qualified top-level boolean `const` guard constants, narrow boolean const aliases, and basic boolean const expressions, including left-decisive short-circuit `and`/`or` plus boolean equality/inequality comparisons, the same conservative boolean folding directly in match guard expressions, checked integer arithmetic plus equality/inequality and relational comparisons, same-module bare-name plus scoped named/glob imported integer const identifier forms, static boolean relational const guards, static nil/symbol/string equality/inequality const guards including static interpolated strings, static string relational const guards, mixed known-literal equality/inequality facts, finite float equality/inequality, int-float equality, finite float/int-float relational facts, finite float/int-float arithmetic facts, and immutable local boolean/integer const-expression guard aliases, including aliases that reference path-qualified top-level constants, while preserving parameter shadowing and mutable-local expression invalidation | Add cross-file/package imports, recursive/open payload reasoning, non-finite floats, call-backed/dynamic interpolated strings, broader non-boolean non-string non-numeric comparison, broader float edge-case reasoning, function-call, and broader const expression evaluation beyond immutable local aliases and path-qualified const references, loop fixed-point domain inference, broader mutable/escaped/general higher-order closure invocation/call-effect analysis, broader expression/type inference, open-domain exhaustiveness/range reasoning, and richer non-literal guard-aware diagnostics |
+| Trait coherence | Partial Phase 5C | `garnet-check-v0.3/src/coherence.rs`; `garnet-check-v0.3/tests/coherence.rs`; `deferred_trait_coherence` rejects exact duplicate trait impls, orphan-rule violations, simple generic blanket-vs-concrete overlaps, renamed generic blanket overlaps, and qualified external type short-name collisions while allowing local-trait, local-type, and qualified local-module impls | Activate specialization and imported-package coherence solving |
 | Generic instantiation / monomorphization | Partial Phase 5B | `generic_instantiation_runs_without_monomorphization_claims` runs generic struct construction, a generic impl method, and a generic function through the managed interpreter | Keep native zero-cost monomorphization deferred until a compiler backend exists |
 | Memory Core ARC/cycles and allocator integration | Partial Phase 6L | `garnet-memory-v0.3/src/{alloc,cycle,working,episodic,semantic,procedural}.rs`; `garnet-memory-v0.3/tests/{cycle,properties,persistence}.rs`; active `deferred_arc_cycle_detection`; `CycleAllocatorFixture` owns graph + root buffer for root/edge decrement scheduling; all four stores expose kind-aware allocator stats; policy-configured episodic/semantic stores evict lazily on read/search; `CycleAwareKindAllocator` observes store-root retain/release lifecycles on write, clear, eviction, replacement, and drop; `EpisodeStore::save_text` / `load_text` now prove versioned episodic text snapshot recovery, delimiter-safe payload encoding, malformed-file non-mutation, and cycle-aware root rehydration | Promote the bounded allocator-owned fixture model into production allocator-integrated ARC and broaden persistence/backend hardening beyond the reference episodic snapshot slice |
 | Compiler-as-agent cache privacy/replay | Partial Phase 6I | `garnet-cli/src/{cache,cmd,provenance}.rs`; `garnet-cli/tests/cache_episodes.rs`; cache episode logs redact external absolute paths, collapse project-local absolute paths to stable relative labels, warn while ignoring same-cache foreign-key plus copied-cache replay episodes, bind verified episodes to a keyed source-tree identifier, quarantine copied/stale strategy rows whose provenance does not re-verify in the current source tree, and preserve bounded concurrent plus 16-writer soak appends; CacheHMAC and ProvenanceStrategy tests remain active | Add extended release-duration/cross-platform cache soak and keep production Memory Core ARC integration separate |
@@ -451,6 +452,1111 @@ Remaining: full CFG region solving, closure capture lifetimes, variance,
 dynamic places, generic receiver types, trait impl dispatch, drop discipline,
 and two-phase borrows are still deferred.
 
+- [x] **Step 2B: Reject same-call double-own drop hazards**
+
+Implement the first B5 drop-discipline gate by rejecting calls where overlapping
+places are passed to more than one `own` parameter in the same expression. This
+prevents the checker from accepting an expression that would drop the same
+binding, parent/child place, or conservative index family twice.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test borrow double_own
+cargo test -p garnet-cli --test conformance_skeleton deferred_full_borrow_rule_suite
+```
+
+Evidence: Phase 4G rejects `consume_pair(b, b)` and `consume_pair(p, p.left)`
+while allowing distinct sibling fields such as `consume_pair(p.left, p.right)`.
+
+Remaining: full CFG region solving, closure capture lifetimes, variance,
+dynamic places, generic receiver types, trait impl dispatch, broader drop
+elaboration at scope/branch boundaries, and two-phase borrows are still
+deferred.
+
+- [x] **Step 2C: Add direct-returning branch liveness**
+
+Implement the first CFG-liveness gate by checking each `if`/`elsif`/`else`
+branch against the same pre-branch snapshot and only merging moves from branch
+bodies that can continue past the `if`. Preserve moves that happen while
+evaluating conditions.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test borrow returning
+cargo test -p garnet-cli --test conformance_skeleton deferred_full_borrow_rule_suite
+```
+
+Evidence: Phase 4H allows a value moved inside a direct-returning branch to be
+borrowed on later paths that still continue, while continuing branches still
+merge moved state conservatively.
+
+Remaining: full CFG region solving, nested/non-local terminators, loops,
+closure capture lifetimes, variance, dynamic places, generic receiver types,
+trait impl dispatch, broader drop elaboration, and two-phase borrows are still
+deferred.
+
+- [x] **Step 2D: Stop borrow scans at direct returns and returning loop bodies**
+
+Extend the first CFG-liveness gate so direct `return` terminates scanning of
+the current block and loop bodies that move then immediately return do not
+poison later paths that only exist when the loop body does not execute.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test borrow return
+cargo test -p garnet-cli --test conformance_skeleton deferred_full_borrow_rule_suite
+```
+
+Evidence: Phase 4I routes function bodies and `while`/`loop` bodies through the
+same branch-outcome helper used by Phase 4H. Unreachable statements after a
+direct `return` are not borrow-checked, and values moved in a direct-returning
+loop body can still be borrowed after the loop on paths where the body never
+runs.
+
+Remaining: full CFG region solving, nested/non-local terminators, general loop
+fixed-point analysis, for-loop fixed-point liveness, closure capture lifetimes,
+variance, dynamic places, generic receiver types, trait impl dispatch, broader
+drop elaboration, and two-phase borrows are still deferred.
+
+- [x] **Step 2E: Scope `for` loop variables and returning for bodies**
+
+Extend the direct-return loop-body liveness gate to `for` loops and prevent a
+loop variable from rebinding an outer safe-mode binding after the loop body has
+been checked.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test borrow for_
+cargo test -p garnet-cli --test conformance_skeleton deferred_full_borrow_rule_suite
+```
+
+Evidence: Phase 4J checks `for` bodies against a loop-local environment where
+the loop variable is rebound only for the body. Direct-returning `for` bodies
+do not poison later non-executed paths, and a loop variable with the same name
+as a moved outer binding no longer erases that outer moved state.
+
+Remaining: full CFG region solving, nested/non-local terminators, general loop
+fixed-point analysis, closure capture lifetimes, variance, dynamic places,
+generic receiver types, trait impl dispatch, broader drop elaboration, and
+two-phase borrows are still deferred.
+
+- [x] **Step 2F: Scope `match` pattern bindings before arm move merging**
+
+Prevent moves of match-arm pattern-local bindings from poisoning same-named
+outer bindings after the `match`, while preserving diagnostics for real moves
+of outer bindings performed inside arms.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test borrow match_
+cargo test -p garnet-cli --test conformance_skeleton deferred_full_borrow_rule_suite
+```
+
+Evidence: Phase 4K records identifiers introduced by each match arm pattern,
+checks the guard/body in an arm-local environment, and restores those names
+from the pre-match snapshot before merging arm moves back into the outer
+environment. A moved pattern-local `item` no longer causes a later `read(item)`
+of an outer binding to fail, while `_ => consume(item)` still reports
+use-after-move for a real outer move.
+
+Remaining: full CFG region solving, nested/non-local terminators, general loop
+fixed-point analysis, closure capture lifetimes, variance, dynamic places,
+generic receiver types, trait impl dispatch, broader drop elaboration, and
+two-phase borrows are still deferred.
+
+- [x] **Step 2G: Preserve `match` arm block statements before arm tail values**
+
+Keep every `match` arm body as a full block in the parser and downstream
+walkers instead of reducing `{ stmt* tail }` arms to only the tail expression.
+This makes managed execution, capability inventory, and safe-mode borrow
+checking observe statements before the arm tail.
+
+Run:
+
+```sh
+cargo test -p garnet-parser --test parse_control_flow parses_match_arm_block_with_statements_and_tail
+cargo test -p garnet-interp --test eval_control match_arm_block_preserves_statements_before_tail
+cargo test -p garnet-check --test borrow match_arm_block_statement_move_still_propagates_after_match
+cargo test -p garnet-cli --test conformance_skeleton deferred_full_borrow_rule_suite
+```
+
+Evidence: Phase 4L changes `MatchArm.body` to `Block`, wraps expression arms
+as one-tail blocks, evaluates matched arm blocks with normal block semantics,
+walks match-arm blocks for capability/safe-mode inventory, and routes
+safe-mode arm bodies through branch-block checking. A `let` before the tail now
+affects a matched arm result, a move statement inside a match-arm block now
+propagates to later use-after-move diagnostics, and moves in guards are still
+merged when a guard can fail before a returning arm body runs.
+
+Remaining: full CFG region solving, nested/non-local terminators, general loop
+fixed-point analysis, closure capture lifetimes, variance, dynamic places,
+generic receiver types, trait impl dispatch, broader drop elaboration, and
+two-phase borrows are still deferred.
+
+- [x] **Step 2H: Add finite-domain match exhaustiveness and reachability**
+
+Reject safe-mode `match` expressions over finite domains when they omit a
+`Bool` case or same-module enum variant. Treat guarded arms as non-exhaustive
+coverage, and reject duplicate covered arms plus arms after an unguarded
+catch-all.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4M adds a dedicated `match_coverage` checker pass that uses
+function parameter and local type annotations to identify `Bool` and
+same-module enum subjects. It rejects a missing `false` arm, a missing enum
+variant, a guarded enum arm that would otherwise hide missing coverage,
+duplicate unguarded variant arms, and arms made unreachable by an unguarded
+catch-all, while preserving complete enum matches.
+
+- [x] **Step 2I: Add finite nested-constructor match coverage**
+
+Reject safe-mode `match` expressions over finite nested constructor payloads
+when they omit a nested finite case, while allowing wildcard payload patterns
+to cover that nested finite domain.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage safe_nested_enum_match
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4N enumerates finite nested constructor payload products in the
+same scoped `match_coverage` pass. `Outer::Wrap(Inner::Left)` and
+`Outer::Wrap(Inner::Right)` are tracked as distinct coverage cases; missing
+nested payload cases are reported; and `Outer::Wrap(_)` covers the nested
+finite payload domain without claiming imported enum, recursive/open payload,
+or guard-proof completeness.
+
+- [x] **Step 2J: Add imported enum alias match coverage**
+
+Resolve named, glob, module-qualified, and module-relative enum imports for the
+same scoped safe-mode match coverage pass.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage safe_imported_
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4O adds a per-module import scope for `match_coverage`. Named
+imports such as `use Types::{Status}` and glob imports such as `use Types::*`
+resolve `Status` to `Types::Status`, including when `Types` is relative to the
+current module, and pattern coverage accepts the source alias prefix
+(`Status::Ready`) as coverage for the canonical `Types::Status::Ready` finite
+case. This avoids the previous global short-name fallback and keeps ambiguous
+or cross-file imports outside the hard-error gate.
+
+- [x] **Step 2K: Add literal guard match coverage reasoning**
+
+Treat literal `if true` and `if false` match guards as decidable in the
+safe-mode match coverage pass while keeping non-literal guards conservative.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage guard
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4P counts `Status::Ready if true` as coverage for the
+`Status::Ready` finite-domain case, rejects `Status::Ready if false` as an
+unreachable match arm with a statically false guard, and still reports the
+false-guarded variant as missing coverage. Dynamic/non-literal guards remain
+non-covering because the checker does not yet prove arbitrary guard predicates.
+
+Remaining: cross-file/package imports, recursive/open payload reasoning,
+open-domain exhaustiveness/range reasoning, and non-literal guard reasoning are still
+deferred.
+
+- [x] **Step 2L: Add open-domain literal match reachability**
+
+Treat duplicate literal arms and arms after catch-all patterns as unreachable
+in safe-mode matches even when the subject type is not a finite `Bool` or enum
+domain. Keep unknown guarded literal arms non-covering so later unguarded
+literal arms remain reachable.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage safe_open_
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4Q rejects repeated open-domain literals such as two `1`
+arms, rejects literal arms after `_`, and preserves conservative behavior for
+`1 if ok` because a non-literal guard can fail.
+
+Remaining: cross-file/package imports, recursive/open payload reasoning,
+open-domain exhaustiveness/range reasoning, and non-literal guard reasoning are
+still deferred.
+
+- [x] **Step 2M: Infer immutable local finite match domains from initializers**
+
+Use immutable local boolean literal initializers and enum variant
+constructor/path initializers to seed the safe-mode match coverage environment
+when a local binding does not carry an explicit type annotation.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage safe_match_uses_local_
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4R rejects non-exhaustive matches over `let flag = true` and
+`let status = Status::Ready()` locals, while preserving the existing explicit
+type-annotation evidence.
+
+Remaining: direct mutable-local assignment tracking is covered in Step 2N
+below; cross-file/package imports, recursive/open payload reasoning, broader
+expression/type inference, open-domain exhaustiveness/range reasoning, and
+non-literal guard reasoning are still deferred.
+
+- [x] **Step 2N: Track direct mutable-local match-domain assignments**
+
+Use direct `let mut` assignment flow to seed or clear the safe-mode match
+coverage environment. Finite boolean/enum assignments seed the subject domain;
+non-finite assignments clear inferred finite-domain state so open-domain
+matches do not receive false exhaustiveness errors.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage mutable_
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4S rejects non-exhaustive matches after finite mutable
+assignment (`flag = true`), keeps mutable enum initializers finite, and stops
+reporting finite-domain missing cases after `flag = 1` invalidates the inferred
+domain.
+
+Remaining: direct `if`/`elsif`/`else` branch-merged assignment flow is covered
+in Step 2O below; compound-assignment invalidation is covered in Step 2Q
+below; cross-file/package
+imports, recursive/open payload reasoning, broader expression/type inference,
+open-domain exhaustiveness/range reasoning, and non-literal guard reasoning are
+still deferred.
+
+- [x] **Step 2O: Join branch-local match-domain assignments**
+
+Use conservative `if`/`elsif`/`else` branch joins to carry direct mutable-local
+match-domain evidence forward only when every possible branch preserves the
+same finite domain. Mixed finite/non-finite branches and missing-else paths
+clear inferred domains rather than reporting false finite-domain
+exhaustiveness errors.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage if_else_assignments
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4T rejects non-exhaustive matches after both branches assign a
+finite Bool or enum domain, and it accepts an open-domain match after one
+branch assigns a non-finite value.
+
+Remaining: nested all-path `if` branch assignment flow is covered in Step 2P
+below; compound-assignment invalidation is covered in Step 2Q below;
+loop-body invalidation is covered in Step 2R below; `try`/`ensure`
+invalidation and uninvoked closure-definition boundaries are covered in Step
+2S below; direct closure-literal invocation invalidation is covered in Step
+2T below; direct local closure-literal binding call invalidation is covered in
+Step 2U below; branch-joined local closure-literal binding call invalidation
+is covered in Step 2V below; branch-rebound local closure-literal binding call
+invalidation is covered in Step 2W below; direct local closure-alias binding
+call invalidation is covered in Step 2X below; branch-joined local closure-alias
+call invalidation is covered in Step 2Y below; direct branch-selected closure
+expression call invalidation is covered in Step 2Z below; loop fixed-point and broader
+mutable/escaped/general higher-order closure invocation/call-effect
+flow, cross-file/package imports, recursive/open payload reasoning, broader
+expression/type inference, open-domain exhaustiveness/range reasoning, and
+non-literal guard reasoning are still deferred.
+
+- [x] **Step 2P: Join nested if assignment domains inside branch bodies**
+
+Extend the branch-join eligibility proof from only direct branch-body
+assignments to nested `if` / `elsif` / `else` expressions when every nested
+path definitely assigns the same outer match subject. Missing nested `else`
+paths remain open-domain and branch-local bindings remain ineligible.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage nested_if_assignment
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4U rejects a non-exhaustive match after a nested `if/else`
+inside one outer branch assigns `true`/`false` on every nested path, while it
+accepts the missing-nested-else variant as open-domain.
+
+- [x] **Step 2Q: Make compound assignments an explicit invalidation boundary**
+
+Document and test that `+=`, `-=`, `*=`, `/=`, and `%=`-style assignments do
+not preserve finite match-domain evidence. Direct and all-branch compound
+assignments clear stale `Bool`/enum domains before later matches because their
+result depends on operator and type semantics outside the finite-domain proof.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage compound_assignment
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4V accepts matches after direct compound assignment and after
+compound assignments in every `if`/`else` branch without reporting stale
+finite-domain non-exhaustiveness diagnostics.
+
+- [x] **Step 2R: Invalidate domains after possible loop-body assignments**
+
+Loops may execute and assign through only some iterations or nested branches.
+Conservatively clear finite match-domain evidence for outer bindings assigned
+inside `while`, `for`, or `loop` bodies instead of preserving stale pre-loop
+domains. Loop-local bindings remain excluded so shadowing does not erase the
+outer domain, while assignments before a later loop-local shadow still clear
+the outer finite-domain evidence.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage loop_assignment
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4W accepts matches after possible `while`/`for` body
+assignments and after conditional assignments inside loop bodies without
+reporting stale finite-domain diagnostics, while ordered shadowing tests prove
+that loop-local declarations neither erase the outer domain nor hide earlier
+outer assignments in the same loop body.
+
+- [x] **Step 2S: Invalidate try-flow domains and isolate closure definitions**
+
+`try` bodies, `rescue` handlers, and `ensure` blocks can write through paths
+that safe-mode rejects separately from match coverage. Conservatively clear
+outer finite match-domain evidence for possible writes in those blocks so the
+checker does not report stale non-exhaustiveness after an invalidated value.
+Uninvoked closure literals are also a boundary: defining a closure must not
+merge its body assignments into the enclosing statement flow before any call
+effect analysis exists.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage try_
+cargo test -p garnet-check --test match_coverage uninvoked_closure
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4X removes stale finite-domain diagnostics after
+`try`/`rescue`/`ensure` writes while preserving the existing safe-mode
+`try`/`rescue` rejection, and accepts matches after an uninvoked closure
+definition whose body would otherwise assign a finite `Bool` domain.
+
+- [x] **Step 2T: Invalidate direct closure-literal invocation domains**
+
+Direct invocation of a closure literal runs the closure body immediately, but
+the checker still does not attempt a general stored-closure call-effect model.
+Conservatively clear finite match-domain evidence for outer bindings assigned
+inside directly invoked closure literals, including block-body and expression
+body closures, while keeping uninvoked closure definitions isolated.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage immediate_closure
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4Y accepts matches after direct closure-literal calls whose
+bodies assign the match subject without reporting stale finite-domain
+non-exhaustiveness diagnostics. Broader stored closure invocation/call-effect
+analysis remains deferred.
+
+- [x] **Step 2U: Invalidate direct local closure-literal binding calls**
+
+Local closure literals bound in the current block and called directly run their
+closure body at the call site. Track the conservative set of outer bindings
+that such a local closure may assign, and clear finite match-domain evidence
+when the local binding is invoked. Keep branch-joined and branch-rebound closure handling covered by later steps;
+escaped closure, general higher-order call-effect analysis, and broader mutable closure
+flow remain deferred.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage local_closure_call_assignment
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4Z accepts matches after directly calling a local closure
+literal binding whose body assigns the match subject without reporting stale
+finite-domain non-exhaustiveness diagnostics.
+
+- [x] **Step 2V: Invalidate branch-joined local closure binding calls**
+
+When an `if` / `elsif` / `else` expression assigned to a local binding returns
+closure literals from every branch, conservatively join the possible outer
+writes from those closure bodies. A direct call to that local binding clears
+finite match-domain evidence for the joined write set. Branch rebinding is covered by the next step; escaped closures, higher-order
+calls, and broader mutable closure flow remain deferred.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage branch_joined_local_closure_call_assignment
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4AA accepts matches after directly calling a local closure
+binding produced by an all-branch `if` expression whose closure bodies can
+assign the match subject, without reporting stale finite-domain diagnostics.
+
+- [x] **Step 2W: Invalidate branch-rebound local closure binding calls**
+
+When every branch of an `if` / `elsif` / `else` flow leaves a local closure
+binding with a known closure-literal effect, conservatively join those possible
+outer writes. A later direct call to that rebound local binding clears finite
+match-domain evidence for the joined write set. Escaped closures, higher-order
+calls, and broader mutable closure flow remain deferred.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage branch_rebound_local_closure_call_assignment
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4AB accepts matches after all branches rebind a local closure
+binding to closure literals that can assign the match subject, without
+reporting stale finite-domain diagnostics after the direct local call.
+
+- [x] **Step 2X: Invalidate direct local closure-alias calls**
+
+When a local binding aliases another local binding with a known closure-literal
+effect, copy that conservative outer-write set to the alias. A later direct
+call to the alias clears finite match-domain evidence for the copied write set.
+Escaped closures, general higher-order calls, and broader mutable closure flow
+remain deferred.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage local_closure_alias_call_assignment
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4AC accepts matches after directly calling a local alias of a
+known local closure-literal binding whose body can assign the match subject,
+without reporting stale finite-domain diagnostics after the alias call.
+
+- [x] **Step 2Y: Invalidate branch-joined local closure-alias calls**
+
+When a local binding is assigned from an all-path branch expression whose tails
+are direct aliases of known local closure bindings, copy the union of those
+conservative outer-write sets to the alias. A later direct call to the alias
+clears finite match-domain evidence for the copied write set. Branch-local
+shadowing before the tail keeps the alias unknown.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage branch_joined_local_closure_alias_call_assignment
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4AD accepts matches after directly calling a branch-selected
+local alias of known local closure-literal bindings whose bodies can assign the
+match subject, without reporting stale finite-domain diagnostics after the
+alias call, while preserving diagnostics for shadowed unknown branch tails.
+
+- [x] **Step 2Z: Invalidate direct branch-selected closure expression calls**
+
+When a call callee is itself an all-path branch expression whose tails resolve
+to known local closure bindings, reuse the same conservative closure-effect
+extraction as local aliases. A direct call to that branch-selected expression
+clears finite match-domain evidence for the joined write set, while
+branch-local shadowing before a tail keeps the callee unknown.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage direct_branch
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4AE accepts matches after directly calling an all-path
+branch-selected closure expression whose closure bodies can assign the match
+subject, without reporting stale finite-domain diagnostics, while preserving
+diagnostics for shadowed unknown branch tails.
+
+- [x] **Step 2ZA: Recognize immutable local boolean guard constants**
+
+Track immutable local boolean constants in a separate guard-fact map. This lets
+safe-mode match coverage treat `let always = true` guards as coverage and
+`let never = false` guards as statically false/non-covering without broadening
+into general expression evaluation. Mutable guard locals stay unknown.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage bool_guard
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4AF accepts matches covered by immutable local true guards,
+rejects immutable local false guards as statically unreachable/non-covering,
+and keeps mutable boolean guards conservative.
+
+- [x] **Step 2ZB: Recognize same-module top-level boolean guard constants**
+
+Seed match-guard facts from same-module top-level boolean `const` items. This
+lets safe-mode match coverage treat `const ALWAYS = true` guards as coverage
+and `const NEVER = false` guards as statically false/non-covering without
+const aliases, arithmetic, comparison, function-call, broader const expression
+evaluation, or general expression evaluation. Function parameters with the same
+name shadow the module const fact.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage const_bool_guard
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AG accepts matches covered by same-module true const guards,
+rejects same-module false const guards as statically unreachable/non-covering,
+and keeps parameter-shadowed const guard names conservative.
+
+- [x] **Step 2ZC: Recognize imported top-level boolean guard constants**
+
+Resolve scoped named and glob imports of top-level boolean `const` facts into the
+match-guard fact map. This lets safe-mode match coverage treat `use
+Flags::{ALWAYS}` and `use Flags::*` boolean guards the same way as local
+top-level constants while preserving parameter/local/pattern shadowing.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage imported
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AH accepts matches covered by named-imported and
+module-relative imported true const guards, rejects glob-imported false const
+guards as statically unreachable/non-covering, and keeps parameter-shadowed
+imported const guard names conservative.
+
+- [x] **Step 2ZD: Recognize path-qualified boolean guard constants**
+
+Resolve path-qualified top-level boolean `const` facts in match guards through
+the same scoped const-fact index. This lets safe-mode match coverage treat
+`Flags::ALWAYS` guards as coverage and `Flags::NEVER` guards as statically
+false/non-covering, while keeping ambiguous paths and broad const expression
+evaluation conservative.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage path_qualified
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AI accepts matches covered by path-qualified true const
+guards, rejects path-qualified false const guards as statically
+unreachable/non-covering, and keeps arithmetic, comparison, function-call, and
+broader const expression evaluation deferred.
+
+- [x] **Step 2ZE: Resolve narrow boolean const guard aliases**
+
+Resolve direct boolean const aliases through the scoped const-fact index without
+general const expression evaluation. This lets safe-mode match coverage treat
+path-valued aliases such as `Flags::ALWAYS = Core::RAW` as coverage when they
+resolve to `true` and statically false/non-covering when they resolve to
+`false`.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage const_bool_alias
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AJ accepts matches covered by path-qualified true const
+aliases, rejects path-qualified false const aliases as statically
+unreachable/non-covering, and leaves arithmetic, comparison, function-call, and
+broader const expression evaluation deferred.
+
+- [x] **Step 2ZF: Fold basic boolean const guard expressions**
+
+Fold basic boolean `not`, `and`, and `or` const expressions over
+already-resolved boolean facts. This lets safe-mode match coverage treat
+`Core::RAW and not false` as coverage when it resolves to `true`, and
+`not Core::RAW or false` as statically false/non-covering when it resolves to
+`false`, without general const evaluation.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage boolean_const_expression
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AK accepts matches covered by true boolean const
+expressions, rejects false boolean const expressions as statically
+unreachable/non-covering, and leaves arithmetic, comparison, function-call,
+recursive, and broader const expression evaluation deferred.
+
+- [x] **Step 2ZG: Honor short-circuit boolean const guard expressions**
+
+Honor decisive left operands for boolean `or` and `and` const expressions
+without requiring the right operand to resolve. This lets safe-mode match
+coverage treat `true or Missing::VALUE` as coverage and `false and
+Missing::VALUE` as statically false/non-covering while still deferring general
+const evaluation.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage short_circuit
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AL accepts matches covered by true short-circuit boolean
+const expressions, rejects false short-circuit boolean const expressions as
+statically unreachable/non-covering, and leaves arithmetic, comparison,
+function-call, recursive, cross-file/package, and broader const expression
+evaluation deferred.
+
+- [x] **Step 2ZH: Fold boolean const equality/inequality guard expressions**
+
+Fold boolean `==` and `!=` const expressions over already-resolved boolean
+facts. This lets safe-mode match coverage treat `Core::RAW == true` as
+coverage and `Core::RAW != true` as statically false/non-covering while still
+deferring arithmetic, relational comparison, function-call, recursive, and
+cross-file/package const evaluation.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage boolean_const_equality
+cargo test -p garnet-check --test match_coverage boolean_const_inequality
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AM accepts matches covered by true boolean equality const
+expressions, rejects false boolean inequality const expressions as statically
+unreachable/non-covering, and leaves arithmetic, relational comparison,
+function-call, recursive, cross-file/package, and broader const expression
+evaluation deferred.
+
+- [x] **Step 2ZI: Fold direct boolean match guard expressions**
+
+Apply the same conservative boolean fact folding directly to match guard
+expressions. This lets safe-mode match coverage treat
+`Status::Ready if Core::RAW == true` as coverage and
+`Status::Ready if Core::RAW != true` as statically false/non-covering without
+requiring an intermediate alias const.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage direct_true_boolean_const_equality
+cargo test -p garnet-check --test match_coverage direct_false_boolean_const_inequality
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AN accepts direct match guards covered by true boolean const
+equality expressions, rejects direct false boolean const inequality guards as
+statically unreachable/non-covering, and leaves arithmetic, relational
+comparison, function-call, recursive, cross-file/package, and broader const
+expression evaluation deferred.
+
+- [x] **Step 2ZJ: Fold integer const equality/inequality guard facts**
+
+Extend the narrow guard fact domain from booleans to integer literals for
+`==`/`!=` comparisons. This lets safe-mode match coverage treat
+`Core::LIMIT == 2` as coverage and `Core::LIMIT != 2` as statically
+false/non-covering while still deferring arithmetic, relational comparison,
+function-call, recursive, and cross-file/package const evaluation.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage integer_const_equality
+cargo test -p garnet-check --test match_coverage false_integer_const_inequality
+cargo test -p garnet-check --test match_coverage direct_integer_const_equality
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AO accepts alias and direct match guards covered by true
+integer const equality expressions, rejects false integer const inequality
+guards as statically unreachable/non-covering, and leaves arithmetic,
+relational comparison, function-call, recursive, cross-file/package, and
+broader const expression evaluation deferred.
+
+- [x] **Step 2ZK: Fold integer const relational guard facts**
+
+Extend the same narrow integer guard fact domain from equality/inequality to
+literal integer `<`, `<=`, `>`, and `>=` comparisons. This lets safe-mode
+match coverage treat `Core::LIMIT < 3` and `Core::LIMIT >= 2` as coverage and
+`Core::LIMIT > 3` as statically false/non-covering while still deferring
+arithmetic, broader non-numeric comparison, broader float edge-case reasoning, function-call, recursive, and
+cross-file/package const evaluation.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage integer_const_less_than
+cargo test -p garnet-check --test match_coverage false_integer_const_greater_than
+cargo test -p garnet-check --test match_coverage direct_integer_const_greater_equal
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AP accepts alias and direct match guards covered by true
+integer const relational expressions, rejects false integer const relational
+guards as statically unreachable/non-covering, and leaves arithmetic,
+broader non-numeric comparison, broader float edge-case reasoning, function-call, recursive, cross-file/package,
+and broader const expression evaluation deferred.
+
+- [x] **Step 2ZL: Fold checked integer arithmetic guard facts**
+
+Extend the same narrow integer guard fact domain from comparisons to checked
+literal integer arithmetic (`+`, `-`, `*`, `/`, `%`, unary `-`) inside const
+guard expressions. This lets safe-mode match coverage treat
+`Core::LIMIT + Core::OFFSET == 3` and `Core::LIMIT + 1 >= 3` as coverage and
+`Core::LIMIT * 2 < 4` as statically false/non-covering while still deferring
+broader non-numeric comparison, broader float edge-case reasoning, function-call, recursive, cross-file/package,
+and broader const expression evaluation.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage integer_const_arithmetic
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AQ accepts alias and direct match guards covered by checked
+integer arithmetic plus comparison/equality expressions, rejects false checked
+integer arithmetic guards as statically unreachable/non-covering, and leaves
+broader non-numeric comparison, broader float edge-case reasoning, function-call, recursive, cross-file/package,
+and broader const expression evaluation deferred.
+
+- [x] **Step 2ZM: Carry integer const facts through scoped guard identifiers**
+
+Extend the scoped guard-fact environment from boolean-only facts to the existing
+`ConstFact` domain so same-module bare integer `const` names and scoped
+named/glob imported integer `const` names can feed the checked arithmetic and
+comparison logic already used by path-qualified guards. This lets safe-mode
+match coverage treat `LIMIT + OFFSET == 3` and imported `use Core::{LIMIT,
+OFFSET}` guard expressions as coverage while preserving function-parameter
+shadowing and keeping cross-file/package imports, non-integer comparison,
+function-call evaluation, recursion, and broader const expression evaluation
+deferred.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage integer_const_identifiers
+cargo test -p garnet-check --test match_coverage imported_glob_integer_const
+cargo test -p garnet-check --test match_coverage function_parameter_shadows_imported_integer_const
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AR accepts same-module and named-imported integer const
+identifier guards covered by checked arithmetic, rejects glob-imported false
+integer identifier guards as statically unreachable/non-covering, and keeps
+parameter-shadowed imported integer identifiers unknown/non-covering.
+
+- [x] **Step 2ZN: Fold literal symbol and string const equality facts**
+
+Extend the narrow `ConstFact` domain to static symbols and plain
+non-interpolated strings for equality and inequality guard checks. This lets
+safe-mode match coverage treat `Core::MODE == :ready` as coverage and
+`Core::LABEL != "ready"` as statically false/non-covering while keeping
+interpolated strings, ordering comparisons, function calls, cross-file/package
+imports, recursion, and broader const expression evaluation deferred.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage symbol_const_equality
+cargo test -p garnet-check --test match_coverage false_string_const_inequality
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AS accepts symbol const equality guards, rejects false plain
+string const inequality guards as statically unreachable/non-covering, and
+keeps interpolated string facts conservative.
+
+- [x] **Step 2ZO: Fold nil const equality facts**
+
+Extend the narrow `ConstFact` equality/inequality domain to `nil`. This lets
+safe-mode match coverage treat `Core::EMPTY == nil` as coverage and
+`Core::EMPTY != nil` as statically false/non-covering while keeping broader
+const expression evaluation deferred.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage nil_const_equality
+cargo test -p garnet-check --test match_coverage false_nil_const_inequality
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AT accepts true nil const equality guards and rejects false
+nil const inequality guards as statically unreachable/non-covering.
+
+- [x] **Step 2ZP: Fold mixed literal const equality facts**
+
+Apply Garnet's existing runtime equality rule for distinct known literal kinds
+inside the narrow `ConstFact` domain. This lets safe-mode match coverage treat
+`Core::EMPTY != false` as coverage and `Core::EMPTY == false` as statically
+false/non-covering while keeping float arithmetic, non-finite floats, call-backed/dynamic interpolated strings, ordering
+comparisons, function calls, cross-file/package imports, recursion, and broader
+const expression evaluation deferred.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage mixed_literal_const_inequality
+cargo test -p garnet-check --test match_coverage false_mixed_literal_const_equality
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AU accepts true mixed-literal const inequality guards and
+rejects false mixed-literal const equality guards as statically
+unreachable/non-covering.
+
+- [x] **Step 2ZQ: Fold finite float const equality facts**
+
+Extend the narrow `ConstFact` domain to finite `Float` literals and align
+literal equality with Garnet runtime equality for `Float == Float` and
+`Int == Float`. This lets safe-mode match coverage treat `Core::RATIO == 1.5`
+and `Core::COUNT == 1.0` as coverage, while false float inequalities become
+statically false/non-covering. Non-finite float facts, float arithmetic,
+ordering comparisons, interpolated strings, function calls, cross-file/package
+imports, recursion, and broader const expression evaluation remain deferred.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage float_const
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AV accepts true finite-float and int-float const equality
+guards, rejects false finite-float inequality guards as statically
+unreachable/non-covering, and keeps non-finite float facts unknown/non-covering.
+
+- [x] **Step 2ZR: Fold finite float const relational facts**
+
+Align the narrow `ConstFact` relational comparison rule with Garnet runtime
+numeric comparison for finite `Float`/`Float`, `Int`/`Float`, and `Float`/`Int`
+pairs. This lets safe-mode match coverage treat `Core::RATIO < 2.0` and
+`Core::COUNT <= 2.0` as coverage while `Core::RATIO > 2.0` becomes statically
+false/non-covering. Non-finite float facts, float arithmetic, interpolated
+strings, function calls, cross-file/package imports, recursion, broader
+non-numeric comparison, and broader const expression evaluation remain
+deferred.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage float_const_relational
+cargo test -p garnet-check --test match_coverage non_finite_float_relational
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AW accepts true finite-float and int-float const relational
+guards, rejects false finite-float relational guards as statically
+unreachable/non-covering, and keeps non-finite float facts unknown/non-covering.
+
+- [x] **Step 2ZS: Fold finite float const arithmetic facts**
+
+Align the narrow `ConstFact` arithmetic rule with checked integer arithmetic
+plus Garnet runtime numeric arithmetic for finite `Float`/`Float`,
+`Int`/`Float`, and `Float`/`Int` pairs. This lets safe-mode match coverage
+treat `Core::RATIO + 0.5 == 2.0` and `Core::COUNT * 1.5 >= 3.0` as coverage
+while `Core::RATIO * 2.0 < 3.0` becomes statically false/non-covering.
+Overflow-to-infinity, non-finite float facts, interpolated strings, function
+calls, cross-file/package imports, recursion, broader non-numeric comparison,
+broader float edge-case reasoning, and broader const expression evaluation
+remain deferred.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage float_const_arithmetic
+cargo test -p garnet-check --test match_coverage non_finite_float_arithmetic
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AX accepts true finite-float and int-float const arithmetic
+guards, rejects false finite-float arithmetic guards as statically
+unreachable/non-covering, and keeps overflow-to-infinity facts unknown.
+
+- [x] **Step 2ZT: Fold immutable local guard expression aliases**
+
+Carry the existing narrow `ConstFact` evaluator through immutable local guard
+bindings so a local alias can be more than a literal or direct identifier.
+This lets `let always = limit + 1 == 3` count as match coverage when `limit`
+is an immutable local integer fact, while `let never = limit + 1 < 3` is
+statically false/non-covering. Mutable local expression sources, path-qualified
+local alias expressions, function calls, cross-file/package imports, recursion,
+broader non-numeric comparison, and broader const expression evaluation remain
+deferred.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage local_boolean_const_expression
+cargo test -p garnet-check --test match_coverage local_integer_const_expression
+cargo test -p garnet-check --test match_coverage mutable_local_expression_source
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AY accepts immutable local boolean and integer expression
+aliases as safe-mode guard facts, rejects false local integer expression guards
+as statically unreachable/non-covering, and keeps mutable local expression
+sources unknown/non-covering.
+
+- [x] **Step 2ZU: Resolve path-qualified consts in local guard expression aliases**
+
+Carry scoped path-qualified constant resolution into immutable local guard
+expression aliases. This lets `let always = Core::LIMIT + 1 == 3` count as
+coverage and `let never = Core::LIMIT + 1 < 3` become statically
+false/non-covering while preserving the Phase 4AY mutable-local invalidation
+boundary. Function calls, cross-file/package imports, recursion, broader
+non-numeric comparison, and broader const expression evaluation remain
+deferred.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage local_path_integer_const_expression
+cargo test -p garnet-check --test match_coverage local_
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AZ accepts true path-qualified local integer expression
+aliases as safe-mode guard facts and rejects false path-qualified local integer
+expression guards as statically unreachable/non-covering.
+
+- [x] **Step 2ZV: Fold static interpolated string const facts**
+
+Extend the narrow `ConstFact` string domain to interpolated strings when every
+interpolation body resolves through the same conservative fact evaluator. This
+lets `"re#{"ad"}y" == "ready"` count as safe-mode match coverage and
+`"re#{"ad"}y" != "ready"` become statically false/non-covering while preserving
+the boundary for function-call backed interpolation, recursion,
+cross-file/package imports, broader non-numeric comparison, and broader const
+expression evaluation.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage interpolated_string
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4BA accepts true static interpolated string equality guards,
+rejects false static interpolated string inequality guards as statically
+unreachable/non-covering, and keeps call-backed interpolated string facts
+unknown/non-covering.
+
+- [x] **Step 2ZW: Fold static string relational const facts**
+
+Extend the runtime-aligned ordered fact domain to static string-to-string
+relational comparisons. This lets `Core::LABEL < "rust"` count as safe-mode
+match coverage and `Core::LABEL > "ready"` become statically false/non-covering
+while preserving the boundary for mixed string/symbol relational comparisons,
+function calls, cross-file/package imports, recursion, broader non-string
+non-numeric comparison, and broader const expression evaluation.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage string_const_relational
+cargo test -p garnet-check --test match_coverage mixed_string_symbol_relational
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4BB accepts true static string relational guards, rejects false
+static string relational guards as statically unreachable/non-covering, and
+keeps mixed string/symbol relational facts unknown/non-covering.
+
+- [x] **Step 2ZX: Fold static boolean relational const facts**
+
+Extend the runtime-aligned ordered fact domain to static boolean-to-boolean
+relational comparisons. This lets `Core::RAW < true` follow the managed
+runtime's `false < true` ordering and count as safe-mode match coverage while
+`Core::RAW < false` becomes statically false/non-covering. Mixed boolean/nil,
+symbol, and other non-runtime-comparable relational facts stay unknown.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage boolean_const_relational
+cargo test -p garnet-check --test match_coverage mixed_boolean_nil_relational
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4BC accepts true static boolean relational guards, rejects false
+static boolean relational guards as statically unreachable/non-covering, and
+keeps mixed boolean/nil relational facts unknown/non-covering.
+
 ## Milestone 5: Traits, Coherence, And Generic Instantiation
 
 **Purpose:** Make the Rust-rigor side credible without claiming native zero-cost compilation.
@@ -473,12 +1579,15 @@ cargo test -p garnet-check --test coherence
 cargo test -p garnet-cli --test conformance_skeleton deferred_trait_coherence
 ```
 
-Evidence: Phase 5A rejects exact duplicate trait impls and orphan impls where
-neither the trait nor the type is local. It preserves the Rust-compatible
-positive cases where either the trait or the type is defined locally.
+Evidence: Phase 5C rejects exact duplicate trait impls, orphan impls where
+neither the trait nor the type is local, simple generic blanket-vs-concrete
+overlaps, renamed generic blanket overlaps, and qualified external type
+short-name collisions. It preserves the Rust-compatible positive cases where
+either the trait or the type is defined locally, plus qualified local-module
+type impls.
 
-Remaining: generic overlap solving, specialization, imported-package
-coherence, and native monomorphization remain deferred.
+Remaining: specialization, imported-package coherence, and native
+monomorphization remain deferred.
 
 - [x] **Step 2: Add interpreter-level generic instantiation evidence**
 

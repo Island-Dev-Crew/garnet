@@ -27,6 +27,8 @@ fn implemented_conformance_tests_are_active() {
         "deferred_structural_protocols",
         "deferred_nll_lifetime_inference",
         "partial_borrow_rule_suite",
+        "deferred_full_borrow_rule_suite",
+        "deferred_match_exhaustiveness_and_reachability",
         "deferred_trait_coherence",
         "generic_instantiation_runs_without_monomorphization_claims",
         "deferred_arc_cycle_detection",
@@ -42,17 +44,171 @@ fn implemented_conformance_tests_are_active() {
 }
 
 #[test]
-fn remaining_deferred_handles_remain_explicit() {
+fn full_borrow_handle_documents_active_partial_scope() {
     let source = fs::read_to_string(repo_root().join("garnet-cli/tests/conformance_skeleton.rs"))
         .expect("conformance skeleton");
     let name = "deferred_full_borrow_rule_suite";
-    let idx = source.find(name).expect("deferred handle exists");
+    let idx = source.find(name).expect("full borrow handle exists");
     let prefix = &source[..idx];
     let nearby = &prefix[prefix.len().saturating_sub(220)..];
     assert!(
-        nearby.contains("#[ignore = \"Mini-Spec"),
-        "{name} must carry an explicit Mini-Spec ignore reason"
+        !nearby.contains("#[ignore"),
+        "{name} must remain an active partial conformance test"
     );
+    let body = &source[idx..source.len().min(idx + 8_000)];
+    assert!(
+        body.contains("safe-mode B5") && body.contains("drop discipline"),
+        "{name} must document the active B5 drop-discipline subset"
+    );
+    assert!(
+        body.contains("returning_branch_liveness"),
+        "{name} must document the active branch-return liveness subset"
+    );
+    assert!(
+        body.contains("returning_loop_liveness"),
+        "{name} must document the active direct-return loop-body liveness subset"
+    );
+    assert!(
+        body.contains("returning_for_liveness"),
+        "{name} must document the active direct-return for-body liveness subset"
+    );
+    assert!(
+        body.contains("for_loop_shadow_preserves_outer_move"),
+        "{name} must document the active for-loop variable scoping subset"
+    );
+    assert!(
+        body.contains("match_pattern_shadow_does_not_poison_outer"),
+        "{name} must document the active match-arm pattern scoping subset"
+    );
+    assert!(
+        body.contains("match_arm_block_statement_move"),
+        "{name} must document the active match-arm block statement preservation subset"
+    );
+    assert!(
+        body.contains("match_guard_move_propagates"),
+        "{name} must document the active match guard move-merge subset"
+    );
+}
+
+#[test]
+fn match_exhaustiveness_handle_documents_active_partial_scope() {
+    let source = fs::read_to_string(repo_root().join("garnet-cli/tests/conformance_skeleton.rs"))
+        .expect("conformance skeleton");
+    let name = "deferred_match_exhaustiveness_and_reachability";
+    let idx = source.find(name).expect("match coverage handle exists");
+    let prefix = &source[..idx];
+    let nearby = &prefix[prefix.len().saturating_sub(220)..];
+    assert!(
+        !nearby.contains("#[ignore"),
+        "{name} must remain an active partial conformance test"
+    );
+    let body = &source[idx..];
+    for needle in [
+        "match_bool_non_exhaustive",
+        "match_bool_initializer_non_exhaustive",
+        "match_mutable_bool_assignment_non_exhaustive",
+        "match_mutable_assignment_invalidation_open",
+        "match_if_else_mutable_bool_assignment_non_exhaustive",
+        "match_if_else_mixed_assignment_invalidation_open",
+        "match_nested_if_assignment_non_exhaustive",
+        "match_nested_if_missing_else_invalidation_open",
+        "match_compound_assignment_invalidation_open",
+        "match_if_else_compound_assignment_invalidation_open",
+        "match_while_assignment_invalidation_open",
+        "match_for_assignment_invalidation_open",
+        "match_try_body_assignment_invalidation_no_stale_match_diag",
+        "match_uninvoked_closure_assignment_boundary_open",
+        "match_immediate_closure_assignment_invalidation_open",
+        "match_local_closure_assignment_invalidation_open",
+        "match_branch_joined_closure_assignment_invalidation_open",
+        "match_branch_rebound_closure_assignment_invalidation_open",
+        "match_local_closure_alias_assignment_invalidation_open",
+        "match_branch_joined_closure_alias_assignment_invalidation_open",
+        "match_direct_branch_selected_closure_call_invalidation_open",
+        "match_enum_complete",
+        "match_enum_duplicate_unreachable",
+        "match_enum_initializer_missing",
+        "match_mutable_enum_initializer_missing",
+        "match_if_else_enum_assignment_missing",
+        "match_nested_enum_payload_missing",
+        "match_nested_enum_payload_complete",
+        "match_imported_enum_named_complete",
+        "match_imported_enum_named_missing",
+        "match_true_guard_enum_complete",
+        "match_local_true_guard_enum_complete",
+        "match_const_true_guard_enum_complete",
+        "match_imported_const_true_guard_enum_complete",
+        "match_module_relative_imported_const_true_guard_enum_complete",
+        "match_mutable_guard_enum_missing",
+        "match_const_guard_shadowed_by_param_missing",
+        "match_imported_const_guard_shadowed_by_param_missing",
+        "match_false_guard_enum_missing",
+        "match_local_false_guard_enum_missing",
+        "match_local_boolean_const_expr_true_guard_enum_complete",
+        "match_local_integer_const_expr_true_guard_enum_complete",
+        "match_local_integer_const_expr_false_guard_enum_missing",
+        "match_local_path_integer_const_expr_true_guard_enum_complete",
+        "match_local_path_integer_const_expr_false_guard_enum_missing",
+        "match_const_false_guard_enum_missing",
+        "match_imported_const_false_guard_enum_missing",
+        "match_path_const_true_guard_enum_complete",
+        "match_path_const_false_guard_enum_missing",
+        "match_path_const_alias_true_guard_enum_complete",
+        "match_path_const_alias_false_guard_enum_missing",
+        "match_boolean_const_expr_true_guard_enum_complete",
+        "match_boolean_const_expr_false_guard_enum_missing",
+        "match_short_circuit_or_true_guard_enum_complete",
+        "match_short_circuit_and_false_guard_enum_missing",
+        "match_boolean_const_equality_true_guard_enum_complete",
+        "match_boolean_const_inequality_false_guard_enum_missing",
+        "match_direct_boolean_const_equality_true_guard_enum_complete",
+        "match_direct_boolean_const_inequality_false_guard_enum_missing",
+        "match_boolean_const_relational_true_guard_enum_complete",
+        "match_boolean_const_relational_false_guard_enum_missing",
+        "match_integer_const_equality_true_guard_enum_complete",
+        "match_integer_const_inequality_false_guard_enum_missing",
+        "match_direct_integer_const_equality_true_guard_enum_complete",
+        "match_integer_const_less_than_true_guard_enum_complete",
+        "match_integer_const_greater_than_false_guard_enum_missing",
+        "match_direct_integer_const_greater_equal_true_guard_enum_complete",
+        "match_integer_const_arithmetic_equality_true_guard_enum_complete",
+        "match_integer_const_arithmetic_relational_false_guard_enum_missing",
+        "match_direct_integer_const_arithmetic_relational_true_guard_enum_complete",
+        "match_same_module_integer_const_identifier_guard_enum_complete",
+        "match_imported_named_integer_const_identifier_guard_enum_complete",
+        "match_imported_glob_integer_const_identifier_false_guard_enum_missing",
+        "match_imported_integer_const_identifier_shadowed_by_param_missing",
+        "match_symbol_const_equality_true_guard_enum_complete",
+        "match_string_const_inequality_false_guard_enum_missing",
+        "match_string_const_relational_true_guard_enum_complete",
+        "match_string_const_relational_false_guard_enum_missing",
+        "match_interpolated_string_const_equality_true_guard_enum_complete",
+        "match_interpolated_string_const_inequality_false_guard_enum_missing",
+        "match_nil_const_equality_true_guard_enum_complete",
+        "match_nil_const_inequality_false_guard_enum_missing",
+        "match_mixed_literal_const_inequality_true_guard_enum_complete",
+        "match_mixed_literal_const_equality_false_guard_enum_missing",
+        "match_finite_float_const_equality_true_guard_enum_complete",
+        "match_int_float_const_equality_true_guard_enum_complete",
+        "match_float_const_inequality_false_guard_enum_missing",
+        "match_finite_float_const_relational_true_guard_enum_complete",
+        "match_int_float_const_relational_true_guard_enum_complete",
+        "match_float_const_relational_false_guard_enum_missing",
+        "match_finite_float_const_arithmetic_true_guard_enum_complete",
+        "match_int_float_const_arithmetic_true_guard_enum_complete",
+        "match_float_const_arithmetic_false_guard_enum_missing",
+        "match_open_literal_duplicate_unreachable",
+        "match_open_arm_after_catch_all_unreachable",
+        "non-exhaustive match",
+        "unreachable match arm",
+        "statically false guard",
+        "covered by prior catch-all",
+    ] {
+        assert!(
+            body.contains(needle),
+            "{name} must document active match coverage subset {needle}"
+        );
+    }
 }
 
 #[test]

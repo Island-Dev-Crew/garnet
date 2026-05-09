@@ -156,6 +156,230 @@ fn move_in_one_branch_propagates_after_if() {
     );
 }
 
+#[test]
+fn move_in_returning_then_branch_does_not_propagate_after_if() {
+    let src = r#"
+        fn consume(own x: Buffer) -> Int { 0 }
+        fn read(borrow x: Buffer) -> Int { 0 }
+        fn caller(own b: Buffer, c: Bool) -> Int {
+            if c {
+                consume(b)
+                return 0
+            } else {
+                0
+            }
+            read(b)
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        !d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "a move in a returning branch should not poison continuing paths, got {d:?}"
+    );
+}
+
+#[test]
+fn move_in_returning_else_branch_does_not_propagate_after_if() {
+    let src = r#"
+        fn consume(own x: Buffer) -> Int { 0 }
+        fn read(borrow x: Buffer) -> Int { 0 }
+        fn caller(own b: Buffer, c: Bool) -> Int {
+            if c {
+                0
+            } else {
+                consume(b)
+                return 0
+            }
+            read(b)
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        !d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "a move in a returning else branch should not poison continuing paths, got {d:?}"
+    );
+}
+
+#[test]
+fn statements_after_return_are_not_borrow_checked() {
+    let src = r#"
+        fn consume(own x: Buffer) -> Int { 0 }
+        fn read(borrow x: Buffer) -> Int { 0 }
+        fn caller(own b: Buffer) -> Int {
+            consume(b)
+            return 0
+            read(b)
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        !d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "unreachable statements after return should not poison safe-mode liveness, got {d:?}"
+    );
+}
+
+#[test]
+fn move_in_returning_while_body_does_not_poison_after_loop() {
+    let src = r#"
+        fn consume(own x: Buffer) -> Int { 0 }
+        fn read(borrow x: Buffer) -> Int { 0 }
+        fn caller(own b: Buffer, c: Bool) -> Int {
+            while c {
+                consume(b)
+                return 0
+            }
+            read(b)
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        !d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "a move in a while body that returns should not poison paths where the loop body never runs, got {d:?}"
+    );
+}
+
+#[test]
+fn move_in_returning_for_body_does_not_poison_after_loop() {
+    let src = r#"
+        fn consume(own x: Buffer) -> Int { 0 }
+        fn read(borrow x: Buffer) -> Int { 0 }
+        fn caller(own b: Buffer, xs: Array<Int>) -> Int {
+            for x in xs {
+                consume(b)
+                return 0
+            }
+            read(b)
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        !d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "a move in a for body that returns should not poison paths where the loop body never runs, got {d:?}"
+    );
+}
+
+#[test]
+fn for_loop_variable_shadowing_does_not_rebind_outer_move() {
+    let src = r#"
+        fn consume(own x: Buffer) -> Int { 0 }
+        fn read(borrow x: Buffer) -> Int { 0 }
+        fn caller(own item: Buffer, xs: Array<Int>) -> Int {
+            consume(item)
+            for item in xs {
+                0
+            }
+            read(item)
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "a for-loop variable must not erase the moved state of an outer binding with the same name, got {d:?}"
+    );
+}
+
+#[test]
+fn match_pattern_shadow_move_does_not_poison_outer_binding() {
+    let src = r#"
+        fn consume(own x: Buffer) -> Int { 0 }
+        fn read(borrow x: Buffer) -> Int { 0 }
+        fn caller(borrow item: Buffer, own subject: Buffer) -> Int {
+            match subject {
+                item => consume(item)
+            }
+            read(item)
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        !d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "a move of a match-arm pattern binding should not poison an outer binding with the same name, got {d:?}"
+    );
+}
+
+#[test]
+fn match_arm_outer_move_still_propagates_after_match() {
+    let src = r#"
+        fn consume(own x: Buffer) -> Int { 0 }
+        fn read(borrow x: Buffer) -> Int { 0 }
+        fn caller(own item: Buffer, n: Int) -> Int {
+            match n {
+                _ => consume(item)
+            }
+            read(item)
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "a move of an outer binding inside a match arm must still poison later uses, got {d:?}"
+    );
+}
+
+#[test]
+fn match_arm_block_statement_move_still_propagates_after_match() {
+    let src = r#"
+        fn consume(own x: Buffer) -> Int { 0 }
+        fn read(borrow x: Buffer) -> Int { 0 }
+        fn caller(own item: Buffer, n: Int) -> Int {
+            match n {
+                _ => {
+                    consume(item)
+                    0
+                }
+            }
+            read(item)
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "a move inside a match-arm block statement must be preserved for later uses, got {d:?}"
+    );
+}
+
+#[test]
+fn match_guard_move_propagates_even_when_arm_body_returns() {
+    let src = r#"
+        fn consumes_false(own x: Buffer) -> Bool { false }
+        fn read(borrow x: Buffer) -> Int { 0 }
+        fn caller(own item: Buffer, n: Int) -> Int {
+            match n {
+                _ if consumes_false(item) => {
+                    return 0
+                },
+                _ => 0
+            }
+            read(item)
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "a move in a match guard can continue when the guard is false, got {d:?}"
+    );
+}
+
 // ── Method receivers ──
 
 #[test]
@@ -420,5 +644,72 @@ fn nested_index_checks_inner_index_expression() {
         d.iter()
             .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
         "nested index receiver must still check its inner index expression, got {d:?}"
+    );
+}
+
+// ── Drop discipline ──
+
+#[test]
+fn double_own_of_same_binding_in_one_call_is_rejected() {
+    let src = r#"
+        fn consume_pair(own left: Buffer, own right: Buffer) -> Int { 0 }
+
+        fn caller(own b: Buffer) -> Int {
+            consume_pair(b, b)
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        d.iter().any(
+            |e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("drop discipline"))
+        ),
+        "double-own in one call would drop the same binding twice, got {d:?}"
+    );
+}
+
+#[test]
+fn double_own_of_parent_and_child_place_is_rejected() {
+    let src = r#"
+        struct Pair {
+            left: Buffer,
+            right: Buffer,
+        }
+
+        fn consume_pair(own whole: Pair, own left: Buffer) -> Int { 0 }
+
+        fn caller(own p: Pair) -> Int {
+            consume_pair(p, p.left)
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        d.iter().any(
+            |e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("drop discipline"))
+        ),
+        "owning a parent and child place in one call would double-drop, got {d:?}"
+    );
+}
+
+#[test]
+fn double_own_of_distinct_fields_is_allowed() {
+    let src = r#"
+        struct Pair {
+            left: Buffer,
+            right: Buffer,
+        }
+
+        fn consume_pair(own left: Buffer, own right: Buffer) -> Int { 0 }
+
+        fn caller(own p: Pair) -> Int {
+            consume_pair(p.left, p.right)
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        !d.iter().any(
+            |e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("drop discipline"))
+        ),
+        "distinct sibling fields should not violate drop discipline: {d:?}"
     );
 }

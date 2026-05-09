@@ -5,15 +5,137 @@ use crate::{
     MemoryKind, MemoryPolicy,
 };
 use std::cell::RefCell;
+#[cfg(unix)]
+use std::ffi::CString;
 use std::fmt;
-use std::fs::{self, OpenOptions};
+use std::fs::{self, File, OpenOptions};
+#[cfg(any(unix, windows))]
+use std::io;
+#[cfg(unix)]
+use std::io::Read;
 use std::io::{ErrorKind, Write};
+#[cfg(unix)]
+use std::os::fd::{AsRawFd, FromRawFd};
+#[cfg(unix)]
+use std::os::raw::{c_char, c_int};
+#[cfg(unix)]
+use std::os::unix::fs::{DirBuilderExt, MetadataExt, OpenOptionsExt};
+#[cfg(windows)]
+use std::os::windows::fs::OpenOptionsExt;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::Arc;
+#[cfg(windows)]
+use std::thread;
+#[cfg(windows)]
+use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub const EPISODIC_TEXT_LOG_MAX_BYTES: u64 = 8 * 1024 * 1024;
+pub const EPISODIC_CACHE_DIR: &str = ".garnet-cache";
+pub const EPISODIC_CACHE_EPISODIC_DIR: &str = "episodic";
+pub const EPISODIC_CACHE_LOG_FILE: &str = "episodes.mnemos";
+
+const EPISODIC_CACHE_LOCK_FILE: &str = "episodes.mnemos.lock";
+const EPISODIC_CACHE_SOURCE_TREE_PREFIX: &str = "source-tree\t";
+const EPISODIC_CACHE_SOURCE_TREE_DOMAIN: &[u8] = b"garnet-memory-episodic-source-tree-v1";
+#[cfg(windows)]
+const EPISODIC_CACHE_LOCK_ATTEMPTS: usize = 1_000;
+#[cfg(windows)]
+const EPISODIC_CACHE_LOCK_SLEEP: Duration = Duration::from_millis(5);
+#[cfg(unix)]
+const LOCK_EX: i32 = 2;
+#[cfg(unix)]
+const LOCK_UN: i32 = 8;
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+const EPISODIC_CACHE_OPENAT_SUPPORTED: bool = true;
+#[cfg(target_vendor = "apple")]
+const EPISODIC_CACHE_OPENAT_SUPPORTED: bool = true;
+#[cfg(all(
+    unix,
+    not(any(target_os = "linux", target_os = "android", target_vendor = "apple"))
+))]
+const EPISODIC_CACHE_OPENAT_SUPPORTED: bool = false;
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+const O_RDONLY: c_int = 0;
+#[cfg(any(target_os = "linux", target_os = "android"))]
+const O_WRONLY: c_int = 1;
+#[cfg(any(target_os = "linux", target_os = "android"))]
+const O_CREAT: c_int = 0o100;
+#[cfg(any(target_os = "linux", target_os = "android"))]
+const O_EXCL: c_int = 0o200;
+#[cfg(any(target_os = "linux", target_os = "android"))]
+const O_TRUNC: c_int = 0o1000;
+#[cfg(any(target_os = "linux", target_os = "android"))]
+const O_NOFOLLOW: c_int = 0o400000;
+#[cfg(any(target_os = "linux", target_os = "android"))]
+const O_DIRECTORY: c_int = 0o200000;
+
+#[cfg(target_vendor = "apple")]
+const O_RDONLY: c_int = 0;
+#[cfg(target_vendor = "apple")]
+const O_WRONLY: c_int = 1;
+#[cfg(target_vendor = "apple")]
+const O_CREAT: c_int = 0x0000_0200;
+#[cfg(target_vendor = "apple")]
+const O_EXCL: c_int = 0x0000_0800;
+#[cfg(target_vendor = "apple")]
+const O_TRUNC: c_int = 0x0000_0400;
+#[cfg(target_vendor = "apple")]
+const O_NOFOLLOW: c_int = 0x0000_0100;
+#[cfg(target_vendor = "apple")]
+const O_DIRECTORY: c_int = 0x0010_0000;
+
+#[cfg(all(
+    unix,
+    not(any(target_os = "linux", target_os = "android", target_vendor = "apple"))
+))]
+const O_RDONLY: c_int = 0;
+#[cfg(all(
+    unix,
+    not(any(target_os = "linux", target_os = "android", target_vendor = "apple"))
+))]
+const O_WRONLY: c_int = 0;
+#[cfg(all(
+    unix,
+    not(any(target_os = "linux", target_os = "android", target_vendor = "apple"))
+))]
+const O_CREAT: c_int = 0;
+#[cfg(all(
+    unix,
+    not(any(target_os = "linux", target_os = "android", target_vendor = "apple"))
+))]
+const O_EXCL: c_int = 0;
+#[cfg(all(
+    unix,
+    not(any(target_os = "linux", target_os = "android", target_vendor = "apple"))
+))]
+const O_TRUNC: c_int = 0;
+#[cfg(all(
+    unix,
+    not(any(target_os = "linux", target_os = "android", target_vendor = "apple"))
+))]
+const O_NOFOLLOW: c_int = 0;
+#[cfg(all(
+    unix,
+    not(any(target_os = "linux", target_os = "android", target_vendor = "apple"))
+))]
+const O_DIRECTORY: c_int = 0;
+
+#[cfg(unix)]
+unsafe extern "C" {
+    fn flock(fd: i32, operation: i32) -> i32;
+    fn openat(dirfd: c_int, pathname: *const c_char, flags: c_int, ...) -> c_int;
+    fn renameat(
+        olddirfd: c_int,
+        oldpath: *const c_char,
+        newdirfd: c_int,
+        newpath: *const c_char,
+    ) -> c_int;
+    fn unlinkat(dirfd: c_int, pathname: *const c_char, flags: c_int) -> c_int;
+}
 
 #[derive(Debug, Clone)]
 pub struct Episode<T> {
@@ -60,6 +182,15 @@ pub enum EpisodePersistenceError {
         path: String,
         bytes: u64,
         limit: u64,
+    },
+    UnsafePath {
+        path: String,
+        reason: String,
+    },
+    SourceTreeMismatch {
+        path: String,
+        expected: String,
+        actual: String,
     },
 }
 
@@ -111,6 +242,17 @@ impl fmt::Display for EpisodePersistenceError {
                     "episodic persistence file {path} is too large: {bytes} bytes exceeds {limit} byte limit"
                 )
             }
+            Self::UnsafePath { path, reason } => {
+                write!(f, "unsafe episodic persistence path {path}: {reason}")
+            }
+            Self::SourceTreeMismatch {
+                path,
+                expected,
+                actual,
+            } => write!(
+                f,
+                "episodic cache source-tree binding mismatch for {path}: expected {expected}, found {actual}"
+            ),
         }
     }
 }
@@ -298,6 +440,7 @@ impl<T: ToString> EpisodeStore<T> {
     pub fn save_text<P: AsRef<Path>>(&self, path: P) -> Result<(), EpisodePersistenceError> {
         self.evict_at(unix_now());
         let path = path.as_ref();
+        validate_regular_target_if_exists(path)?;
         let mut out = String::from("garnet-episodic-v1\n");
         for stored in self.events.borrow().iter() {
             out.push_str(&stored.event.timestamp_unix.to_string());
@@ -309,11 +452,18 @@ impl<T: ToString> EpisodeStore<T> {
         ensure_parent_dir(path)?;
 
         let tmp = temp_path_for(path);
-        fs::write(&tmp, out.as_bytes()).map_err(|error| persistence_io("write", &tmp, error))?;
+        let mut file = create_private_new_file(&tmp)?;
+        file.write_all(out.as_bytes())
+            .map_err(|error| persistence_io("write", &tmp, error))?;
+        file.sync_data()
+            .map_err(|error| persistence_io("sync", &tmp, error))?;
+        drop(file);
         fs::rename(&tmp, path).map_err(|error| {
             let _ = fs::remove_file(&tmp);
             persistence_io("rename", path, error)
         })?;
+        sync_parent_dir_after_commit(path)?;
+        set_path_private_file(path)?;
         Ok(())
     }
 }
@@ -358,11 +508,7 @@ where
         }
 
         let tmp = temp_path_for(path);
-        let mut file = OpenOptions::new()
-            .create_new(true)
-            .write(true)
-            .open(&tmp)
-            .map_err(|error| persistence_io("create", &tmp, error))?;
+        let mut file = create_private_new_file(&tmp)?;
         file.write_all(existing.as_bytes())
             .map_err(|error| persistence_io("write", &tmp, error))?;
         file.write_all(record.as_bytes())
@@ -374,8 +520,58 @@ where
             let _ = fs::remove_file(&tmp);
             persistence_io("rename", path, error)
         })?;
+        sync_parent_dir_after_commit(path)?;
+        set_path_private_file(path)?;
         self.append_at(timestamp, value);
         Ok(())
+    }
+
+    /// Commit one episode into the default per-project episodic cache backend.
+    ///
+    /// This is the narrow Phase 6N backend boundary for Mnemos' text format:
+    /// `<project>/.garnet-cache/episodic/episodes.mnemos`. The path components
+    /// are fixed, directories are private on Unix, symlink/non-regular targets
+    /// are rejected, and a sibling lockfile serializes rewrite-based commits.
+    /// Cache records carry a dependency-free source-tree binding so a typed
+    /// cache copied from another project root is rejected before live mutation.
+    /// It is distinct from the CLI's signed NDJSON `.garnet-cache/episodes.log`
+    /// trust model and does not add a cryptographic MAC or make these typed
+    /// records trusted compiler input.
+    pub fn append_cache_text<P: AsRef<Path>>(
+        &self,
+        project_root: P,
+        timestamp: u64,
+        value: T,
+    ) -> Result<(), EpisodePersistenceError> {
+        let backend = EpisodicCacheBackend::prepare(project_root.as_ref())?;
+        self.append_prepared_cache_text(&backend, timestamp, value)
+    }
+
+    fn append_prepared_cache_text(
+        &self,
+        backend: &EpisodicCacheBackend,
+        timestamp: u64,
+        value: T,
+    ) -> Result<(), EpisodePersistenceError> {
+        backend.validate_dir_identity()?;
+        let _lock = backend.acquire_lock()?;
+        backend.validate_dir_identity()?;
+        #[cfg(unix)]
+        {
+            self.append_text_in_prepared_cache(backend, timestamp, value)
+        }
+        #[cfg(not(unix))]
+        {
+            validate_regular_target_if_exists(&backend.log_path)?;
+            self.append_cache_text_by_path(
+                &backend.log_path,
+                &backend.source_tree,
+                timestamp,
+                value,
+            )?;
+            set_path_private_file(&backend.log_path)?;
+            Ok(())
+        }
     }
 }
 
@@ -390,11 +586,814 @@ where
     /// error before existing in-memory episodes or roots are touched.
     pub fn load_text<P: AsRef<Path>>(&self, path: P) -> Result<(), EpisodePersistenceError> {
         let path = path.as_ref();
-        let raw = fs::read_to_string(path).map_err(|error| persistence_io("read", path, error))?;
+        let raw = read_persistence_text(path)?;
         let episodes = parse_persisted_episodes(&raw)?;
         self.replace_events(episodes);
         Ok(())
     }
+
+    /// Replace this store with the default per-project episodic cache backend.
+    ///
+    /// A missing backend log is treated as an empty backend. Existing corrupt,
+    /// oversized, symlinked, or wrong-type logs fail before the live store is
+    /// mutated.
+    pub fn load_cache_text<P: AsRef<Path>>(
+        &self,
+        project_root: P,
+    ) -> Result<(), EpisodePersistenceError> {
+        let backend = EpisodicCacheBackend::prepare(project_root.as_ref())?;
+        self.load_prepared_cache_text(&backend)
+    }
+
+    fn load_prepared_cache_text(
+        &self,
+        backend: &EpisodicCacheBackend,
+    ) -> Result<(), EpisodePersistenceError> {
+        backend.validate_dir_identity()?;
+        let _lock = backend.acquire_lock()?;
+        backend.validate_dir_identity()?;
+        #[cfg(unix)]
+        {
+            let Some(raw) = read_persistence_text_in_dir_optional(
+                &backend.episodic_dir,
+                EPISODIC_CACHE_LOG_FILE,
+                &backend.log_path,
+            )?
+            else {
+                self.replace_events(Vec::new());
+                return Ok(());
+            };
+            let episodes =
+                parse_cache_persisted_episodes(&raw, &backend.source_tree, &backend.log_path)?;
+            self.replace_events(episodes);
+            Ok(())
+        }
+        #[cfg(not(unix))]
+        {
+            validate_regular_target_if_exists(&backend.log_path)?;
+            if !backend.log_path.exists() {
+                self.replace_events(Vec::new());
+                return Ok(());
+            }
+            self.load_cache_text_from_path(&backend.log_path, &backend.source_tree)
+        }
+    }
+}
+
+#[cfg(unix)]
+impl<T> EpisodeStore<T>
+where
+    T: ToString + FromStr,
+    T::Err: fmt::Display,
+{
+    fn append_text_in_prepared_cache(
+        &self,
+        backend: &EpisodicCacheBackend,
+        timestamp: u64,
+        value: T,
+    ) -> Result<(), EpisodePersistenceError> {
+        let existing = prepare_append_cache_log_in_dir::<T>(
+            &backend.episodic_dir,
+            EPISODIC_CACHE_LOG_FILE,
+            &backend.log_path,
+            &backend.source_tree,
+        )?;
+        let mut record = String::new();
+        if existing.is_empty() {
+            record.push_str("garnet-episodic-v1\n");
+            record.push_str(EPISODIC_CACHE_SOURCE_TREE_PREFIX);
+            record.push_str(&backend.source_tree);
+            record.push('\n');
+        }
+        record.push_str(&timestamp.to_string());
+        record.push('\t');
+        record.push_str(&hex_encode(value.to_string().as_bytes()));
+        record.push('\n');
+
+        let projected_bytes = existing.len().saturating_add(record.len()) as u64;
+        if projected_bytes > EPISODIC_TEXT_LOG_MAX_BYTES {
+            return Err(EpisodePersistenceError::LogTooLarge {
+                path: backend.log_path.display().to_string(),
+                bytes: projected_bytes,
+                limit: EPISODIC_TEXT_LOG_MAX_BYTES,
+            });
+        }
+
+        write_persistence_text_in_dir(
+            &backend.episodic_dir,
+            EPISODIC_CACHE_LOG_FILE,
+            &backend.log_path,
+            &[existing.as_bytes(), record.as_bytes()],
+        )?;
+        backend.validate_dir_identity()?;
+        self.append_at(timestamp, value);
+        Ok(())
+    }
+}
+
+#[cfg(not(unix))]
+impl<T> EpisodeStore<T>
+where
+    T: ToString + FromStr,
+    T::Err: fmt::Display,
+{
+    fn append_cache_text_by_path(
+        &self,
+        path: &Path,
+        source_tree: &str,
+        timestamp: u64,
+        value: T,
+    ) -> Result<(), EpisodePersistenceError> {
+        ensure_parent_dir(path)?;
+        let existing = prepare_append_cache_log::<T>(path, source_tree)?;
+        let mut record = String::new();
+        if existing.is_empty() {
+            record.push_str("garnet-episodic-v1\n");
+            record.push_str(EPISODIC_CACHE_SOURCE_TREE_PREFIX);
+            record.push_str(source_tree);
+            record.push('\n');
+        }
+        record.push_str(&timestamp.to_string());
+        record.push('\t');
+        record.push_str(&hex_encode(value.to_string().as_bytes()));
+        record.push('\n');
+
+        let projected_bytes = existing.len().saturating_add(record.len()) as u64;
+        if projected_bytes > EPISODIC_TEXT_LOG_MAX_BYTES {
+            return Err(EpisodePersistenceError::LogTooLarge {
+                path: path.display().to_string(),
+                bytes: projected_bytes,
+                limit: EPISODIC_TEXT_LOG_MAX_BYTES,
+            });
+        }
+
+        let tmp = temp_path_for(path);
+        let mut file = create_private_new_file(&tmp)?;
+        file.write_all(existing.as_bytes())
+            .map_err(|error| persistence_io("write", &tmp, error))?;
+        file.write_all(record.as_bytes())
+            .map_err(|error| persistence_io("write", &tmp, error))?;
+        file.sync_data()
+            .map_err(|error| persistence_io("sync", &tmp, error))?;
+        drop(file);
+        fs::rename(&tmp, path).map_err(|error| {
+            let _ = fs::remove_file(&tmp);
+            persistence_io("rename", path, error)
+        })?;
+        sync_parent_dir_after_commit(path)?;
+        set_path_private_file(path)?;
+        self.append_at(timestamp, value);
+        Ok(())
+    }
+}
+
+#[cfg(not(unix))]
+impl<T> EpisodeStore<T>
+where
+    T: FromStr,
+    T::Err: fmt::Display,
+{
+    fn load_cache_text_from_path(
+        &self,
+        path: &Path,
+        source_tree: &str,
+    ) -> Result<(), EpisodePersistenceError> {
+        let raw = read_persistence_text(path)?;
+        let episodes = parse_cache_persisted_episodes(&raw, source_tree, path)?;
+        self.replace_events(episodes);
+        Ok(())
+    }
+}
+
+/// Return the canonical fixed per-project episodic text backend path.
+///
+/// This helper resolves the project root before appending the fixed backend
+/// components. Use `append_cache_text` and `load_cache_text` for the guarded
+/// backend operations.
+pub fn episodic_cache_log_path_for<P: AsRef<Path>>(
+    project_root: P,
+) -> Result<PathBuf, EpisodePersistenceError> {
+    Ok(fs::canonicalize(project_root.as_ref())
+        .map_err(|error| persistence_io("canonicalize", project_root.as_ref(), error))?
+        .join(EPISODIC_CACHE_DIR)
+        .join(EPISODIC_CACHE_EPISODIC_DIR)
+        .join(EPISODIC_CACHE_LOG_FILE))
+}
+
+struct EpisodicCacheBackend {
+    #[cfg(unix)]
+    episodic_dir_path: PathBuf,
+    log_path: PathBuf,
+    lock_path: PathBuf,
+    source_tree: String,
+    #[cfg(unix)]
+    episodic_dir: File,
+}
+
+impl EpisodicCacheBackend {
+    fn prepare(project_root: &Path) -> Result<Self, EpisodePersistenceError> {
+        let root = fs::canonicalize(project_root)
+            .map_err(|error| persistence_io("canonicalize", project_root, error))?;
+        let metadata =
+            fs::metadata(&root).map_err(|error| persistence_io("metadata", &root, error))?;
+        if !metadata.is_dir() {
+            return Err(unsafe_path(&root, "project root must be a directory"));
+        }
+
+        let cache_dir = root.join(EPISODIC_CACHE_DIR);
+        ensure_private_dir(&cache_dir)?;
+        let episodic_dir = cache_dir.join(EPISODIC_CACHE_EPISODIC_DIR);
+        ensure_private_dir(&episodic_dir)?;
+
+        let log_path = episodic_cache_log_path_for(&root)?;
+        let lock_path = episodic_dir.join(EPISODIC_CACHE_LOCK_FILE);
+        let source_tree = episodic_cache_source_tree_for_root(&root);
+        #[cfg(unix)]
+        let episodic_dir_file = open_validated_private_dir(&episodic_dir)?;
+        #[cfg(unix)]
+        {
+            validate_regular_target_in_dir_if_exists(
+                &episodic_dir_file,
+                EPISODIC_CACHE_LOG_FILE,
+                &log_path,
+            )?;
+            validate_regular_target_in_dir_if_exists(
+                &episodic_dir_file,
+                EPISODIC_CACHE_LOCK_FILE,
+                &lock_path,
+            )?;
+        }
+        #[cfg(not(unix))]
+        {
+            validate_regular_target_if_exists(&log_path)?;
+            validate_regular_target_if_exists(&lock_path)?;
+        }
+
+        Ok(Self {
+            #[cfg(unix)]
+            episodic_dir_path: episodic_dir,
+            log_path,
+            lock_path,
+            source_tree,
+            #[cfg(unix)]
+            episodic_dir: episodic_dir_file,
+        })
+    }
+
+    #[cfg(unix)]
+    fn validate_dir_identity(&self) -> Result<(), EpisodePersistenceError> {
+        let path_metadata = fs::symlink_metadata(&self.episodic_dir_path)
+            .map_err(|error| persistence_io("metadata", &self.episodic_dir_path, error))?;
+        if path_metadata.file_type().is_symlink() {
+            return Err(unsafe_path(
+                &self.episodic_dir_path,
+                "directory must not be a symlink",
+            ));
+        }
+        if !path_metadata.is_dir() {
+            return Err(unsafe_path(
+                &self.episodic_dir_path,
+                "path must be a directory",
+            ));
+        }
+        let fd_metadata = self
+            .episodic_dir
+            .metadata()
+            .map_err(|error| persistence_io("metadata", &self.episodic_dir_path, error))?;
+        if fd_metadata.dev() != path_metadata.dev() || fd_metadata.ino() != path_metadata.ino() {
+            return Err(unsafe_path(
+                &self.episodic_dir_path,
+                "directory changed after episodic cache backend preparation",
+            ));
+        }
+        Ok(())
+    }
+
+    #[cfg(not(unix))]
+    fn validate_dir_identity(&self) -> Result<(), EpisodePersistenceError> {
+        Ok(())
+    }
+
+    fn acquire_lock(&self) -> Result<CacheLock, EpisodePersistenceError> {
+        #[cfg(unix)]
+        {
+            acquire_cache_lock_at(
+                &self.episodic_dir,
+                EPISODIC_CACHE_LOCK_FILE,
+                &self.lock_path,
+            )
+        }
+        #[cfg(windows)]
+        {
+            acquire_cache_lock(&self.lock_path)
+        }
+        #[cfg(not(any(unix, windows)))]
+        {
+            acquire_cache_lock(&self.lock_path)
+        }
+    }
+}
+
+#[cfg(unix)]
+struct CacheLock {
+    path: PathBuf,
+    file: File,
+}
+
+#[cfg(not(unix))]
+struct CacheLock {
+    #[cfg(windows)]
+    _path: PathBuf,
+    #[cfg(windows)]
+    _file: File,
+}
+
+#[cfg(unix)]
+impl Drop for CacheLock {
+    fn drop(&mut self) {
+        let _ = unlock_cache_file(&self.file, &self.path);
+    }
+}
+
+#[cfg(unix)]
+fn acquire_cache_lock_at(
+    dir: &File,
+    name: &str,
+    path: &Path,
+) -> Result<CacheLock, EpisodePersistenceError> {
+    let mut file = open_dir_entry(
+        dir,
+        name,
+        O_WRONLY | O_CREAT | O_NOFOLLOW,
+        0o600,
+        path,
+        "open",
+    )?;
+    lock_cache_file(&file, path)?;
+    write_cache_lock_header(&mut file, path, &new_lock_marker())?;
+    Ok(CacheLock {
+        path: path.to_path_buf(),
+        file,
+    })
+}
+
+#[cfg(windows)]
+fn acquire_cache_lock(path: &Path) -> Result<CacheLock, EpisodePersistenceError> {
+    validate_regular_target_if_exists(path)?;
+    for _ in 0..EPISODIC_CACHE_LOCK_ATTEMPTS {
+        match OpenOptions::new()
+            .create(true)
+            .truncate(false)
+            .read(true)
+            .write(true)
+            .share_mode(0)
+            .open(path)
+        {
+            Ok(mut file) => {
+                write_cache_lock_header(&mut file, path, &new_lock_marker())?;
+                return Ok(CacheLock {
+                    _path: path.to_path_buf(),
+                    _file: file,
+                });
+            }
+            Err(error) if is_windows_lock_contention(&error) => {
+                thread::sleep(EPISODIC_CACHE_LOCK_SLEEP);
+            }
+            Err(error) => return Err(persistence_io("lock", path, error)),
+        }
+    }
+
+    Err(EpisodePersistenceError::Io {
+        action: "lock",
+        path: path.display().to_string(),
+        error: "timed out waiting for episodic cache lock".to_string(),
+    })
+}
+
+#[cfg(not(any(unix, windows)))]
+fn acquire_cache_lock(path: &Path) -> Result<CacheLock, EpisodePersistenceError> {
+    Err(EpisodePersistenceError::Io {
+        action: "lock",
+        path: path.display().to_string(),
+        error: "episodic cache backend requires an OS-backed file lock on this platform"
+            .to_string(),
+    })
+}
+
+fn write_cache_lock_header(
+    file: &mut File,
+    path: &Path,
+    marker: &str,
+) -> Result<(), EpisodePersistenceError> {
+    set_file_private(file, path)?;
+    file.set_len(0)
+        .map_err(|error| persistence_io("truncate", path, error))?;
+    writeln!(file, "pid={}", std::process::id())
+        .map_err(|error| persistence_io("write", path, error))?;
+    writeln!(file, "marker={marker}").map_err(|error| persistence_io("write", path, error))?;
+    writeln!(file, "created_unix={}", unix_now())
+        .map_err(|error| persistence_io("write", path, error))?;
+    file.sync_data()
+        .map_err(|error| persistence_io("sync", path, error))
+}
+
+fn new_lock_marker() -> String {
+    let stamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_nanos().to_string())
+        .unwrap_or_else(|error| format!("clock-error-{error:?}"));
+    format!("{}-{stamp}", std::process::id())
+}
+
+#[cfg(windows)]
+fn is_windows_lock_contention(error: &io::Error) -> bool {
+    matches!(error.raw_os_error(), Some(32) | Some(33))
+        || error.kind() == ErrorKind::PermissionDenied
+}
+
+#[cfg(unix)]
+fn sync_parent_dir_after_commit(path: &Path) -> Result<(), EpisodePersistenceError> {
+    let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    else {
+        return Ok(());
+    };
+    let dir = File::open(parent).map_err(|error| persistence_io("open", parent, error))?;
+    sync_directory_handle(&dir, parent)
+}
+
+#[cfg(not(unix))]
+fn sync_parent_dir_after_commit(_path: &Path) -> Result<(), EpisodePersistenceError> {
+    Ok(())
+}
+
+#[cfg(unix)]
+fn sync_directory_handle_after_commit(
+    dir: &File,
+    committed_file_path: &Path,
+) -> Result<(), EpisodePersistenceError> {
+    let dir_path = committed_file_path.parent().unwrap_or(committed_file_path);
+    sync_directory_handle(dir, dir_path)
+}
+
+#[cfg(unix)]
+fn sync_directory_handle(dir: &File, dir_path: &Path) -> Result<(), EpisodePersistenceError> {
+    dir.sync_all()
+        .map_err(|error| persistence_io("sync_dir", dir_path, error))?;
+    #[cfg(all(test, unix))]
+    record_directory_sync_for_test(dir_path);
+    Ok(())
+}
+
+#[cfg(all(test, unix))]
+thread_local! {
+    static DIRECTORY_SYNC_EVENTS_FOR_TEST: RefCell<Vec<PathBuf>> = const { RefCell::new(Vec::new()) };
+}
+
+#[cfg(all(test, unix))]
+fn reset_directory_sync_events_for_test() {
+    DIRECTORY_SYNC_EVENTS_FOR_TEST.with(|events| events.borrow_mut().clear());
+}
+
+#[cfg(all(test, unix))]
+fn take_directory_sync_events_for_test() -> Vec<PathBuf> {
+    DIRECTORY_SYNC_EVENTS_FOR_TEST.with(|events| events.borrow_mut().drain(..).collect())
+}
+
+#[cfg(all(test, unix))]
+fn record_directory_sync_for_test(path: &Path) {
+    DIRECTORY_SYNC_EVENTS_FOR_TEST.with(|events| events.borrow_mut().push(path.to_path_buf()));
+}
+
+#[cfg(unix)]
+fn lock_cache_file(file: &File, path: &Path) -> Result<(), EpisodePersistenceError> {
+    flock_cache_file(file, path, LOCK_EX, "lock")
+}
+
+#[cfg(unix)]
+fn unlock_cache_file(file: &File, path: &Path) -> Result<(), EpisodePersistenceError> {
+    flock_cache_file(file, path, LOCK_UN, "unlock")
+}
+
+#[cfg(unix)]
+fn flock_cache_file(
+    file: &File,
+    path: &Path,
+    operation: i32,
+    action: &'static str,
+) -> Result<(), EpisodePersistenceError> {
+    loop {
+        let rc = unsafe { flock(file.as_raw_fd(), operation) };
+        if rc == 0 {
+            return Ok(());
+        }
+        let error = io::Error::last_os_error();
+        if error.kind() == ErrorKind::Interrupted {
+            continue;
+        }
+        return Err(persistence_io(action, path, error));
+    }
+}
+
+#[cfg(unix)]
+fn open_validated_private_dir(path: &Path) -> Result<File, EpisodePersistenceError> {
+    if !EPISODIC_CACHE_OPENAT_SUPPORTED {
+        return Err(EpisodePersistenceError::Io {
+            action: "open",
+            path: path.display().to_string(),
+            error: "episodic cache backend requires an fd-anchored openat implementation on this Unix target"
+                .to_string(),
+        });
+    }
+
+    let before =
+        fs::symlink_metadata(path).map_err(|error| persistence_io("metadata", path, error))?;
+    if before.file_type().is_symlink() {
+        return Err(unsafe_path(path, "directory must not be a symlink"));
+    }
+    if !before.is_dir() {
+        return Err(unsafe_path(path, "path must be a directory"));
+    }
+
+    let file = match OpenOptions::new()
+        .read(true)
+        .custom_flags(O_DIRECTORY | O_NOFOLLOW)
+        .open(path)
+    {
+        Ok(file) => file,
+        Err(error) if is_symlink_loop_error(&error) => {
+            return Err(unsafe_path(path, "directory must not be a symlink"));
+        }
+        Err(error) => return Err(persistence_io("open", path, error)),
+    };
+
+    let after =
+        fs::symlink_metadata(path).map_err(|error| persistence_io("metadata", path, error))?;
+    if after.file_type().is_symlink() {
+        return Err(unsafe_path(path, "directory must not be a symlink"));
+    }
+    let fd_metadata = file
+        .metadata()
+        .map_err(|error| persistence_io("metadata", path, error))?;
+    if !fd_metadata.is_dir() {
+        return Err(unsafe_path(path, "path must be a directory"));
+    }
+    if fd_metadata.dev() != before.dev()
+        || fd_metadata.ino() != before.ino()
+        || fd_metadata.dev() != after.dev()
+        || fd_metadata.ino() != after.ino()
+    {
+        return Err(unsafe_path(
+            path,
+            "directory changed while opening episodic cache backend",
+        ));
+    }
+
+    Ok(file)
+}
+
+#[cfg(unix)]
+fn validate_regular_target_in_dir_if_exists(
+    dir: &File,
+    name: &str,
+    path: &Path,
+) -> Result<(), EpisodePersistenceError> {
+    let Some(file) = open_dir_entry_if_exists(dir, name, O_RDONLY | O_NOFOLLOW, 0, path, "open")?
+    else {
+        return Ok(());
+    };
+    validate_open_regular_file(&file, path).map(|_| ())
+}
+
+#[cfg(unix)]
+fn prepare_append_cache_log_in_dir<T>(
+    dir: &File,
+    name: &str,
+    path: &Path,
+    source_tree: &str,
+) -> Result<String, EpisodePersistenceError>
+where
+    T: FromStr,
+    T::Err: fmt::Display,
+{
+    let Some(raw) = read_persistence_text_in_dir_optional(dir, name, path)? else {
+        return Ok(String::new());
+    };
+    parse_cache_persisted_episodes::<T>(&raw, source_tree, path)?;
+    if !raw.ends_with('\n') {
+        return Err(EpisodePersistenceError::MalformedLine {
+            line: raw.lines().count(),
+            reason: "append log must end at a complete record boundary".to_string(),
+        });
+    }
+    Ok(raw)
+}
+
+#[cfg(unix)]
+fn read_persistence_text_in_dir_optional(
+    dir: &File,
+    name: &str,
+    path: &Path,
+) -> Result<Option<String>, EpisodePersistenceError> {
+    let Some(mut file) =
+        open_dir_entry_if_exists(dir, name, O_RDONLY | O_NOFOLLOW, 0, path, "open")?
+    else {
+        return Ok(None);
+    };
+    validate_open_regular_file(&file, path)?;
+    let mut raw = String::new();
+    file.read_to_string(&mut raw)
+        .map_err(|error| persistence_io("read", path, error))?;
+    Ok(Some(raw))
+}
+
+#[cfg(unix)]
+fn validate_open_regular_file(file: &File, path: &Path) -> Result<u64, EpisodePersistenceError> {
+    let metadata = file
+        .metadata()
+        .map_err(|error| persistence_io("metadata", path, error))?;
+    if !metadata.is_file() {
+        return Err(unsafe_path(path, "target must be a regular file"));
+    }
+    if metadata.len() > EPISODIC_TEXT_LOG_MAX_BYTES {
+        return Err(EpisodePersistenceError::LogTooLarge {
+            path: path.display().to_string(),
+            bytes: metadata.len(),
+            limit: EPISODIC_TEXT_LOG_MAX_BYTES,
+        });
+    }
+    Ok(metadata.len())
+}
+
+#[cfg(unix)]
+fn write_persistence_text_in_dir(
+    dir: &File,
+    name: &str,
+    path: &Path,
+    chunks: &[&[u8]],
+) -> Result<(), EpisodePersistenceError> {
+    let temp_name = temp_entry_name_for(name);
+    let temp_path = path.with_file_name(&temp_name);
+    let mut file = open_dir_entry(
+        dir,
+        &temp_name,
+        O_WRONLY | O_CREAT | O_EXCL | O_TRUNC | O_NOFOLLOW,
+        0o600,
+        &temp_path,
+        "create",
+    )?;
+
+    let write_result = (|| {
+        for chunk in chunks {
+            file.write_all(chunk)
+                .map_err(|error| persistence_io("write", &temp_path, error))?;
+        }
+        file.sync_data()
+            .map_err(|error| persistence_io("sync", &temp_path, error))?;
+        Ok(())
+    })();
+
+    if let Err(error) = write_result {
+        let _ = unlink_dir_entry(dir, &temp_name);
+        return Err(error);
+    }
+    drop(file);
+
+    if let Err(error) = rename_dir_entry(dir, &temp_name, name, path) {
+        let _ = unlink_dir_entry(dir, &temp_name);
+        return Err(error);
+    }
+    sync_directory_handle_after_commit(dir, path)?;
+    Ok(())
+}
+
+#[cfg(unix)]
+fn open_dir_entry_if_exists(
+    dir: &File,
+    name: &str,
+    flags: c_int,
+    mode: c_int,
+    path: &Path,
+    action: &'static str,
+) -> Result<Option<File>, EpisodePersistenceError> {
+    let c_name = cstring_entry_name(name, path)?;
+    loop {
+        let fd = unsafe { openat(dir.as_raw_fd(), c_name.as_ptr(), flags, mode) };
+        if fd >= 0 {
+            return Ok(Some(unsafe { File::from_raw_fd(fd) }));
+        }
+        let error = io::Error::last_os_error();
+        if error.kind() == ErrorKind::Interrupted {
+            continue;
+        }
+        if error.kind() == ErrorKind::NotFound {
+            return Ok(None);
+        }
+        if is_symlink_loop_error(&error) {
+            return Err(unsafe_path(path, "target must not be a symlink"));
+        }
+        return Err(persistence_io(action, path, error));
+    }
+}
+
+#[cfg(unix)]
+fn open_dir_entry(
+    dir: &File,
+    name: &str,
+    flags: c_int,
+    mode: c_int,
+    path: &Path,
+    action: &'static str,
+) -> Result<File, EpisodePersistenceError> {
+    let c_name = cstring_entry_name(name, path)?;
+    let mut not_found_retries = 0;
+    loop {
+        let fd = unsafe { openat(dir.as_raw_fd(), c_name.as_ptr(), flags, mode) };
+        if fd >= 0 {
+            return Ok(unsafe { File::from_raw_fd(fd) });
+        }
+        let error = io::Error::last_os_error();
+        if error.kind() == ErrorKind::Interrupted {
+            continue;
+        }
+        if error.kind() == ErrorKind::NotFound && flags & O_CREAT != 0 && not_found_retries < 32 {
+            not_found_retries += 1;
+            std::thread::yield_now();
+            continue;
+        }
+        if error.kind() == ErrorKind::NotFound {
+            return Err(persistence_io(action, path, error));
+        }
+        if is_symlink_loop_error(&error) {
+            return Err(unsafe_path(path, "target must not be a symlink"));
+        }
+        return Err(persistence_io(action, path, error));
+    }
+}
+
+#[cfg(unix)]
+fn rename_dir_entry(
+    dir: &File,
+    old_name: &str,
+    new_name: &str,
+    path: &Path,
+) -> Result<(), EpisodePersistenceError> {
+    let old_c_name = cstring_entry_name(old_name, path)?;
+    let new_c_name = cstring_entry_name(new_name, path)?;
+    loop {
+        let rc = unsafe {
+            renameat(
+                dir.as_raw_fd(),
+                old_c_name.as_ptr(),
+                dir.as_raw_fd(),
+                new_c_name.as_ptr(),
+            )
+        };
+        if rc == 0 {
+            return Ok(());
+        }
+        let error = io::Error::last_os_error();
+        if error.kind() == ErrorKind::Interrupted {
+            continue;
+        }
+        return Err(persistence_io("rename", path, error));
+    }
+}
+
+#[cfg(unix)]
+fn unlink_dir_entry(dir: &File, name: &str) -> Result<(), EpisodePersistenceError> {
+    let c_name = cstring_entry_name(name, Path::new(name))?;
+    loop {
+        let rc = unsafe { unlinkat(dir.as_raw_fd(), c_name.as_ptr(), 0) };
+        if rc == 0 {
+            return Ok(());
+        }
+        let error = io::Error::last_os_error();
+        if error.kind() == ErrorKind::Interrupted {
+            continue;
+        }
+        return Err(persistence_io("remove", Path::new(name), error));
+    }
+}
+
+#[cfg(unix)]
+fn cstring_entry_name(name: &str, path: &Path) -> Result<CString, EpisodePersistenceError> {
+    CString::new(name).map_err(|_| unsafe_path(path, "path component must not contain NUL"))
+}
+
+#[cfg(unix)]
+fn temp_entry_name_for(name: &str) -> String {
+    let nonce = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_nanos())
+        .unwrap_or(0);
+    format!(".{name}.tmp-{}-{nonce}", std::process::id())
+}
+
+#[cfg(unix)]
+fn is_symlink_loop_error(error: &io::Error) -> bool {
+    matches!(error.raw_os_error(), Some(40) | Some(62))
 }
 
 fn unix_now() -> u64 {
@@ -430,7 +1429,13 @@ where
     T: FromStr,
     T::Err: fmt::Display,
 {
-    match fs::metadata(path) {
+    match fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.file_type().is_symlink() => {
+            return Err(unsafe_path(path, "target must not be a symlink"));
+        }
+        Ok(metadata) if !metadata.is_file() => {
+            return Err(unsafe_path(path, "target must be a regular file"));
+        }
         Ok(metadata) if metadata.len() > EPISODIC_TEXT_LOG_MAX_BYTES => {
             return Err(EpisodePersistenceError::LogTooLarge {
                 path: path.display().to_string(),
@@ -445,7 +1450,7 @@ where
         Err(error) => return Err(persistence_io("metadata", path, error)),
     }
 
-    match fs::read_to_string(path) {
+    match read_persistence_text(path) {
         Ok(raw) => {
             parse_persisted_episodes::<T>(&raw)?;
             if !raw.ends_with('\n') {
@@ -456,8 +1461,191 @@ where
             }
             Ok(raw)
         }
-        Err(error) => Err(persistence_io("read", path, error)),
+        Err(error) => Err(error),
     }
+}
+
+#[cfg(not(unix))]
+fn prepare_append_cache_log<T>(
+    path: &Path,
+    source_tree: &str,
+) -> Result<String, EpisodePersistenceError>
+where
+    T: FromStr,
+    T::Err: fmt::Display,
+{
+    match fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.file_type().is_symlink() => {
+            return Err(unsafe_path(path, "target must not be a symlink"));
+        }
+        Ok(metadata) if !metadata.is_file() => {
+            return Err(unsafe_path(path, "target must be a regular file"));
+        }
+        Ok(metadata) if metadata.len() > EPISODIC_TEXT_LOG_MAX_BYTES => {
+            return Err(EpisodePersistenceError::LogTooLarge {
+                path: path.display().to_string(),
+                bytes: metadata.len(),
+                limit: EPISODIC_TEXT_LOG_MAX_BYTES,
+            });
+        }
+        Ok(_) => {}
+        Err(error) if error.kind() == ErrorKind::NotFound => {
+            return Ok(String::new());
+        }
+        Err(error) => return Err(persistence_io("metadata", path, error)),
+    }
+
+    let raw = read_persistence_text(path)?;
+    parse_cache_persisted_episodes::<T>(&raw, source_tree, path)?;
+    if !raw.ends_with('\n') {
+        return Err(EpisodePersistenceError::MalformedLine {
+            line: raw.lines().count(),
+            reason: "append log must end at a complete record boundary".to_string(),
+        });
+    }
+    Ok(raw)
+}
+
+fn read_persistence_text(path: &Path) -> Result<String, EpisodePersistenceError> {
+    match fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.file_type().is_symlink() => {
+            return Err(unsafe_path(path, "target must not be a symlink"));
+        }
+        Ok(metadata) if !metadata.is_file() => {
+            return Err(unsafe_path(path, "target must be a regular file"));
+        }
+        Ok(metadata) if metadata.len() > EPISODIC_TEXT_LOG_MAX_BYTES => {
+            return Err(EpisodePersistenceError::LogTooLarge {
+                path: path.display().to_string(),
+                bytes: metadata.len(),
+                limit: EPISODIC_TEXT_LOG_MAX_BYTES,
+            });
+        }
+        Ok(_) => {}
+        Err(error) => return Err(persistence_io("metadata", path, error)),
+    }
+
+    fs::read_to_string(path).map_err(|error| persistence_io("read", path, error))
+}
+
+fn create_private_new_file(path: &Path) -> Result<File, EpisodePersistenceError> {
+    let mut options = OpenOptions::new();
+    options.create_new(true).write(true);
+    #[cfg(unix)]
+    options.mode(0o600);
+    let file = options
+        .open(path)
+        .map_err(|error| persistence_io("create", path, error))?;
+    set_file_private(&file, path)?;
+    Ok(file)
+}
+
+fn ensure_private_dir(path: &Path) -> Result<(), EpisodePersistenceError> {
+    match fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.file_type().is_symlink() => {
+            return Err(unsafe_path(path, "directory must not be a symlink"));
+        }
+        Ok(metadata) if !metadata.is_dir() => {
+            return Err(unsafe_path(path, "path must be a directory"));
+        }
+        Ok(_) => {}
+        Err(error) if error.kind() == ErrorKind::NotFound => match create_private_dir(path) {
+            Ok(()) => {}
+            Err(error) if error.kind() == ErrorKind::AlreadyExists => {
+                validate_private_dir_after_race(path)?;
+            }
+            Err(error) => return Err(persistence_io("create", path, error)),
+        },
+        Err(error) => return Err(persistence_io("metadata", path, error)),
+    }
+    set_path_private_dir(path)?;
+    Ok(())
+}
+
+fn create_private_dir(path: &Path) -> std::io::Result<()> {
+    #[cfg(unix)]
+    {
+        let mut builder = fs::DirBuilder::new();
+        builder.mode(0o700);
+        builder.create(path)
+    }
+
+    #[cfg(not(unix))]
+    {
+        fs::DirBuilder::new().create(path)
+    }
+}
+
+fn validate_private_dir_after_race(path: &Path) -> Result<(), EpisodePersistenceError> {
+    let metadata =
+        fs::symlink_metadata(path).map_err(|error| persistence_io("metadata", path, error))?;
+    if metadata.file_type().is_symlink() {
+        return Err(unsafe_path(path, "directory must not be a symlink"));
+    }
+    if !metadata.is_dir() {
+        return Err(unsafe_path(path, "path must be a directory"));
+    }
+    Ok(())
+}
+
+fn validate_regular_target_if_exists(path: &Path) -> Result<(), EpisodePersistenceError> {
+    match fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.file_type().is_symlink() => {
+            Err(unsafe_path(path, "target must not be a symlink"))
+        }
+        Ok(metadata) if !metadata.is_file() => {
+            Err(unsafe_path(path, "target must be a regular file"))
+        }
+        Ok(_) => Ok(()),
+        Err(error) if error.kind() == ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(persistence_io("metadata", path, error)),
+    }
+}
+
+fn unsafe_path(path: &Path, reason: impl Into<String>) -> EpisodePersistenceError {
+    EpisodePersistenceError::UnsafePath {
+        path: path.display().to_string(),
+        reason: reason.into(),
+    }
+}
+
+#[cfg(unix)]
+fn set_path_private_dir(path: &Path) -> Result<(), EpisodePersistenceError> {
+    use std::os::unix::fs::PermissionsExt;
+
+    fs::set_permissions(path, fs::Permissions::from_mode(0o700))
+        .map_err(|error| persistence_io("chmod", path, error))
+}
+
+#[cfg(not(unix))]
+fn set_path_private_dir(_path: &Path) -> Result<(), EpisodePersistenceError> {
+    Ok(())
+}
+
+#[cfg(unix)]
+fn set_file_private(file: &File, path: &Path) -> Result<(), EpisodePersistenceError> {
+    use std::os::unix::fs::PermissionsExt;
+
+    file.set_permissions(fs::Permissions::from_mode(0o600))
+        .map_err(|error| persistence_io("chmod", path, error))
+}
+
+#[cfg(not(unix))]
+fn set_file_private(_file: &File, _path: &Path) -> Result<(), EpisodePersistenceError> {
+    Ok(())
+}
+
+#[cfg(unix)]
+fn set_path_private_file(path: &Path) -> Result<(), EpisodePersistenceError> {
+    use std::os::unix::fs::PermissionsExt;
+
+    fs::set_permissions(path, fs::Permissions::from_mode(0o600))
+        .map_err(|error| persistence_io("chmod", path, error))
+}
+
+#[cfg(not(unix))]
+fn set_path_private_file(_path: &Path) -> Result<(), EpisodePersistenceError> {
+    Ok(())
 }
 
 fn persistence_io(
@@ -484,10 +1672,62 @@ where
             header.to_string(),
         ));
     }
+    parse_episode_record_lines(lines, 2)
+}
 
+fn parse_cache_persisted_episodes<T>(
+    raw: &str,
+    expected_source_tree: &str,
+    path: &Path,
+) -> Result<Vec<Episode<T>>, EpisodePersistenceError>
+where
+    T: FromStr,
+    T::Err: fmt::Display,
+{
+    let mut lines = raw.lines();
+    let header = lines.next().ok_or(EpisodePersistenceError::MissingHeader)?;
+    if header != "garnet-episodic-v1" {
+        return Err(EpisodePersistenceError::UnsupportedHeader(
+            header.to_string(),
+        ));
+    }
+    let Some(source_tree_line) = lines.next() else {
+        return Err(source_tree_mismatch(path, expected_source_tree, "missing"));
+    };
+    let Some(actual_source_tree) = source_tree_line.strip_prefix(EPISODIC_CACHE_SOURCE_TREE_PREFIX)
+    else {
+        return Err(source_tree_mismatch(path, expected_source_tree, "missing"));
+    };
+    if actual_source_tree != expected_source_tree {
+        return Err(source_tree_mismatch(
+            path,
+            expected_source_tree,
+            actual_source_tree,
+        ));
+    }
+    parse_episode_record_lines(lines, 3)
+}
+
+fn source_tree_mismatch(path: &Path, expected: &str, actual: &str) -> EpisodePersistenceError {
+    EpisodePersistenceError::SourceTreeMismatch {
+        path: path.display().to_string(),
+        expected: expected.to_string(),
+        actual: actual.to_string(),
+    }
+}
+
+fn parse_episode_record_lines<'a, T, I>(
+    lines: I,
+    first_line_number: usize,
+) -> Result<Vec<Episode<T>>, EpisodePersistenceError>
+where
+    T: FromStr,
+    T::Err: fmt::Display,
+    I: Iterator<Item = &'a str>,
+{
     let mut episodes = Vec::new();
     for (idx, line) in lines.enumerate() {
-        let line_no = idx + 2;
+        let line_no = idx + first_line_number;
         let Some((timestamp_text, payload_hex)) = line.split_once('\t') else {
             return Err(EpisodePersistenceError::MalformedLine {
                 line: line_no,
@@ -526,6 +1766,27 @@ where
         });
     }
     Ok(episodes)
+}
+
+fn episodic_cache_source_tree_for_root(root: &Path) -> String {
+    // Dependency-free identity only: this avoids path disclosure and catches
+    // accidental copied-cache replay, but it is not a cryptographic MAC.
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(EPISODIC_CACHE_SOURCE_TREE_DOMAIN);
+    bytes.push(0);
+    bytes.extend_from_slice(root.to_string_lossy().as_bytes());
+    let first = fnv1a64(0xcbf2_9ce4_8422_2325, &bytes);
+    let second = fnv1a64(0x9e37_79b1_85eb_ca87, &bytes);
+    format!("{first:016x}{second:016x}")
+}
+
+fn fnv1a64(seed: u64, bytes: &[u8]) -> u64 {
+    let mut hash = seed;
+    for byte in bytes {
+        hash ^= u64::from(*byte);
+        hash = hash.wrapping_mul(0x0000_0100_0000_01b3);
+    }
+    hash
 }
 
 fn hex_encode(bytes: &[u8]) -> String {
@@ -576,5 +1837,149 @@ impl<T> Drop for EpisodeStore<T> {
                 self.alloc.release_root(root);
             }
         }
+    }
+}
+
+#[cfg(all(test, unix))]
+mod tests {
+    use super::*;
+    use std::os::unix::fs::symlink;
+
+    fn temp_project(name: &str) -> PathBuf {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system time after epoch")
+            .as_nanos();
+        let dir = std::env::temp_dir().join(format!(
+            "garnet-memory-{name}-{}-{nonce}",
+            std::process::id()
+        ));
+        fs::create_dir_all(&dir).expect("create temp project");
+        dir
+    }
+
+    #[test]
+    fn prepared_cache_backend_rejects_directory_swap_before_write() {
+        let project = temp_project("prepared-cache-swap");
+        let backend = EpisodicCacheBackend::prepare(&project).expect("prepare backend");
+        let episodic_dir = project
+            .join(EPISODIC_CACHE_DIR)
+            .join(EPISODIC_CACHE_EPISODIC_DIR);
+        let moved_dir = project.join("moved-episodic");
+        let outside = temp_project("prepared-cache-outside");
+        fs::rename(&episodic_dir, &moved_dir).expect("move validated episodic dir");
+        symlink(&outside, &episodic_dir).expect("replace episodic dir with symlink");
+
+        let store: EpisodeStore<String> = EpisodeStore::new();
+        let result = store.append_prepared_cache_text(&backend, 10, "new".to_string());
+
+        assert!(matches!(
+            result,
+            Err(EpisodePersistenceError::UnsafePath { .. })
+        ));
+        assert!(
+            !outside.join(EPISODIC_CACHE_LOG_FILE).exists(),
+            "prepared backend must not follow a swapped episodic-dir symlink"
+        );
+        assert!(store.is_empty());
+    }
+
+    #[test]
+    fn prepared_cache_commit_syncs_validated_directory_after_rename() {
+        let project = temp_project("prepared-cache-directory-sync");
+        let backend = EpisodicCacheBackend::prepare(&project).expect("prepare backend");
+        let store: EpisodeStore<String> = EpisodeStore::new();
+
+        reset_directory_sync_events_for_test();
+        store
+            .append_prepared_cache_text(&backend, 42, "durable".to_string())
+            .expect("append through prepared backend");
+
+        let episodic_dir = fs::canonicalize(&project)
+            .expect("canonical project")
+            .join(EPISODIC_CACHE_DIR)
+            .join(EPISODIC_CACHE_EPISODIC_DIR);
+        let events = take_directory_sync_events_for_test();
+        assert_eq!(
+            events,
+            vec![episodic_dir],
+            "prepared cache commits must fsync the validated episodic directory after rename"
+        );
+    }
+}
+
+#[cfg(test)]
+mod cache_binding_tests {
+    use super::*;
+
+    fn temp_project(name: &str) -> PathBuf {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system time after epoch")
+            .as_nanos();
+        let dir = std::env::temp_dir().join(format!(
+            "garnet-memory-{name}-{}-{nonce}",
+            std::process::id()
+        ));
+        fs::create_dir_all(&dir).expect("create temp project");
+        dir
+    }
+
+    #[test]
+    fn copied_cache_backend_from_other_project_is_rejected_before_mutation() {
+        let attacker = temp_project("typed-cache-attacker");
+        let victim = temp_project("typed-cache-victim");
+        let attacker_store: EpisodeStore<String> = EpisodeStore::new();
+        attacker_store
+            .append_cache_text(&attacker, 11, "poison".to_string())
+            .expect("write attacker cache");
+
+        let attacker_log = episodic_cache_log_path_for(&attacker).expect("attacker log path");
+        let victim_log = episodic_cache_log_path_for(&victim).expect("victim log path");
+        fs::create_dir_all(victim_log.parent().expect("victim log parent"))
+            .expect("create victim cache dir");
+        fs::copy(&attacker_log, &victim_log).expect("copy attacker cache into victim project");
+
+        let victim_store: EpisodeStore<String> = EpisodeStore::new();
+        victim_store.append_at(7, "trusted".to_string());
+        let result = victim_store.load_cache_text(&victim);
+
+        assert!(matches!(
+            result,
+            Err(EpisodePersistenceError::SourceTreeMismatch { .. })
+        ));
+        let values: Vec<_> = victim_store
+            .snapshot()
+            .into_iter()
+            .map(|episode| episode.value)
+            .collect();
+        assert_eq!(
+            values,
+            vec!["trusted"],
+            "rejected copied cache must not replace the live store"
+        );
+    }
+}
+
+#[cfg(all(test, windows))]
+mod windows_tests {
+    use super::*;
+
+    #[test]
+    fn windows_lock_contention_retries_sharing_and_lock_violations() {
+        assert!(is_windows_lock_contention(&io::Error::from_raw_os_error(
+            32
+        )));
+        assert!(is_windows_lock_contention(&io::Error::from_raw_os_error(
+            33
+        )));
+        assert!(is_windows_lock_contention(&io::Error::new(
+            ErrorKind::PermissionDenied,
+            "exclusive lock busy",
+        )));
+        assert!(!is_windows_lock_contention(&io::Error::new(
+            ErrorKind::NotFound,
+            "missing lock parent",
+        )));
     }
 }

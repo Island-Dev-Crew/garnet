@@ -242,6 +242,9 @@ fn count_expr(e: &Expr, c: &mut std::collections::BTreeMap<&'static str, u64>) {
         Expr::Match { arms, .. } => {
             *c.entry("Expr::Match").or_default() += 1;
             *c.entry("Match.arms").or_default() += arms.len() as u64;
+            for arm in arms {
+                count_block(&arm.body, c);
+            }
         }
         Expr::Try { .. } => *c.entry("Expr::Try").or_default() += 1,
         Expr::Closure { .. } => *c.entry("Expr::Closure").or_default() += 1,

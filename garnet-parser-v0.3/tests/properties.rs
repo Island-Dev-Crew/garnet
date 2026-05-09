@@ -2,7 +2,7 @@
 //! every input proptest generates, or the property is wrong. Cases default
 //! to 256 per property — adjustable via `PROPTEST_CASES`.
 
-use garnet_parser::token::TokenKind;
+use garnet_parser::token::{keyword_lookup, TokenKind};
 use garnet_parser::{lex_source, parse_source};
 use proptest::prelude::*;
 
@@ -86,16 +86,8 @@ proptest! {
 proptest! {
     #[test]
     fn random_identifier_parses_as_def_name(name in "[a-z][a-z0-9_]{0,16}") {
-        // Reject reserved words; we only want identifiers.
-        let reserved = [
-            "def","fn","let","var","const","if","elsif","else","while","for","in","loop",
-            "break","continue","return","match","when","try","rescue","ensure","raise",
-            "own","borrow","ref","mut","move","and","or","not","true","false","nil","self",
-            "super","module","use","pub","do","end","type","trait","impl","struct","enum",
-            "memory","working","episodic","semantic","procedural","actor","protocol",
-            "on","spawn","send",
-        ];
-        if reserved.contains(&name.as_str()) {
+        // Reject every lexer keyword; this property only wants identifiers.
+        if keyword_lookup(&name).is_some() {
             return Ok(());
         }
         let src = format!("def {name}() {{ 0 }}");
