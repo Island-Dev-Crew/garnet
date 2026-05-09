@@ -45,7 +45,7 @@ called complete.
 | §4.5 production ARC + Bacon-Rajan allocator integration | v0.5 Phase 6 | Memory Core Gate | active Phase 6A/6B/6C/6D fixtures plus future allocator-integrated collector tests |
 | §8.5 NLL/lifetime inference | v0.5 Phase 4F | Safe-Mode Gate | `deferred_nll_lifetime_inference` | active pass for conservative lifetime elision on reference returns; full region solving remains deferred |
 | §8.6 full place-granular borrow rules B1-B5 | v0.5 Phase 4 | Safe-Mode Gate | `deferred_full_borrow_rule_suite` |
-| §11.5 trait coherence | v0.5 Phase 5A | Type-System Gate | `deferred_trait_coherence` | active pass for exact duplicate trait impl rejection and conservative orphan-rule enforcement; full generic overlap solving remains deferred |
+| §11.5 trait coherence | v0.5 Phase 5C | Type-System Gate | `deferred_trait_coherence` | active pass for exact duplicate trait impl rejection, conservative orphan-rule enforcement, simple generic overlap rejection, and qualified-path local/external discrimination; specialization and imported-package coherence remain deferred |
 | §11.6 generic instantiation / monomorphization | v0.5 Phase 5B | Type-System Gate | `generic_instantiation_runs_without_monomorphization_claims` | active pass for interpreter-level generic struct/function/impl evidence; native monomorphization remains deferred |
 
 ## Activation Rule

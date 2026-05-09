@@ -129,8 +129,12 @@ deferred. Phase 5A activates conservative trait coherence by rejecting exact
 duplicate trait impls and orphan-rule violations while preserving impls where
 either the trait or the type is local. Phase 5B activates interpreter-level
 generic instantiation evidence for generic structs, generic impl methods, and
-generic functions. Full generic overlap solving, package-aware coherence,
-native monomorphization, and zero-cost guarantees remain deferred. Phase 6E
+generic functions. Phase 5C adds a conservative generic-overlap coherence
+gate for blanket-vs-concrete and renamed blanket impls, and makes qualified
+paths package-aware enough that `Remote::Widget` no longer counts as local
+only because a local `Widget` exists. Specialization, imported-package
+coherence solving, native monomorphization, and zero-cost guarantees remain
+deferred. Phase 6E
 adds bounded Memory Core trial-deletion fixtures with trial candidates,
 scan-black retained candidates, deterministic finalization-order reporting,
 safe-mode affine allocation exclusion, root-buffer/decrement-event scheduling,

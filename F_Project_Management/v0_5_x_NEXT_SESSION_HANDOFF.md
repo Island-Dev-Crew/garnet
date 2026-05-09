@@ -284,9 +284,10 @@ and oversized `load_text` rejection before live-store mutation.
 
 #### T1.4 — Generics over memory kinds (Mini-Spec §4.4)
 
-This is the gnarliest of the three. Phase 5B gives §11.6 interpreter-level
-generic instantiation evidence, but native monomorphization is still deferred. The
-realistic v0.5.0 path:
+This is the gnarliest of the three. Phase 5C gives §11.5/§11.6 executable
+evidence for simple generic-overlap coherence, package-qualified orphan
+discrimination, and interpreter-level generic instantiation, but native
+monomorphization is still deferred. The realistic v0.5.0 path:
 
 1. Add `<Kind: MemoryKindTrait>` parameter to `MemoryHandle` and the
    four stores.

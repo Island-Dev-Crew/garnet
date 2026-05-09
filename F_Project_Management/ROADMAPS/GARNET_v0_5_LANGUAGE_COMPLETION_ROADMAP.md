@@ -338,9 +338,21 @@ cargo test -p garnet-check --test coherence
 cargo test -p garnet-cli --test conformance_skeleton deferred_trait_coherence
 ```
 
-Evidence: Phase 5A rejects exact duplicate trait impls and orphan impls where
-neither the trait nor the type is local, while preserving local-trait and
-local-type positive cases. Full generic overlap solving remains pending.
+Evidence: Phase 5C rejects exact duplicate trait impls, orphan impls where
+neither the trait nor the type is local, simple generic blanket-vs-concrete
+overlaps, renamed generic blanket overlaps, and qualified external type
+short-name collisions, while preserving local-trait, local-type, and qualified
+local-module positive cases. Full specialization and imported-package
+coherence solving remain pending.
+
+- [x] **Step 1B: Add conservative generic-overlap and qualified-path coherence**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test coherence
+cargo test -p garnet-cli --test conformance_skeleton deferred_trait_coherence
+```
 
 - [x] **Step 2: Add interpreter-level generic instantiation evidence**
 

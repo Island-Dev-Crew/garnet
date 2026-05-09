@@ -60,8 +60,10 @@ When documents conflict, use this order:
   generic/trait impl dispatch remain roadmap work, not current truth.
 - Trait coherence now has an active conservative checker slice: exact duplicate
   trait impls and orphan impls where neither trait nor type is local reject,
-  while local-trait and local-type impls remain accepted. Generic overlap
-  solving, specialization, imported-package coherence, and native
+  simple generic blanket-vs-concrete and renamed blanket impl overlaps reject,
+  and qualified external type paths no longer pass by short-name collision,
+  while local-trait, local-type, and qualified local-module impls remain
+  accepted. Specialization, imported-package coherence, and native
   monomorphization remain roadmap work.
 - Generic instantiation now has interpreter-level evidence for generic struct
   construction, generic impl method dispatch, and generic function calls. This

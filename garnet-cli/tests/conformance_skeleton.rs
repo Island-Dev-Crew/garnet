@@ -630,6 +630,67 @@ impl LocalWidget for ExternalRenderable {
     let local_type_path = temp_source("trait_external_trait_local_type", local_type_src);
     assert_ok(&["parse"], &local_type_path);
     assert_ok(&["check"], &local_type_path);
+
+    let generic_overlap_src = r#"
+trait Renderable {
+  def render() -> String
+}
+
+struct Box<T> {
+  value: T,
+}
+
+impl<T> Box<T> for Renderable {
+  def render() -> String {
+    "generic"
+  }
+}
+
+impl Box<String> for Renderable {
+  def render() -> String {
+    "string"
+  }
+}
+"#;
+    let generic_overlap_path = temp_source("trait_generic_overlap", generic_overlap_src);
+    assert_ok(&["parse"], &generic_overlap_path);
+    let out = run(&["check"], &generic_overlap_path);
+    assert!(
+        !out.status.success(),
+        "trait coherence must reject generic blanket impls that overlap concrete impls"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("overlapping impl"),
+        "expected overlapping impl diagnostic, got:\n{stdout}"
+    );
+
+    let qualified_external_src = r#"
+struct Widget {
+  name: String,
+}
+
+impl Remote::Widget for ExternalRenderable {
+  def render() -> String {
+    "remote"
+  }
+}
+"#;
+    let qualified_external_path = temp_source(
+        "trait_qualified_external_short_name",
+        qualified_external_src,
+    );
+    assert_ok(&["parse"], &qualified_external_path);
+    let out = run(&["check"], &qualified_external_path);
+    assert!(
+        !out.status.success(),
+        "trait coherence must not treat qualified external types as local by short-name collision"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("orphan rule"),
+        "expected orphan-rule diagnostic for qualified external type, got:\n{stdout}"
+    );
 }
 
 #[test]
