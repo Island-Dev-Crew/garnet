@@ -82,7 +82,7 @@ allocator integration is sequenced in
 | Mini-Spec | Status | Evidence | Notes |
 |---|---|---|---|
 | §4.1 Declaration form | ✅ | `grammar/memory.rs`, `MemoryDecl` AST node | |
-| §4.2 Semantics | ✅ | Mnemos: `garnet-memory-v0.3/src/{alloc,working,episodic,semantic,procedural}.rs`; `garnet-memory-v0.3/tests/properties.rs` | Reference stores meet the behavioural contract and now expose Phase 6K cycle-aware store-root lifecycles in addition to Phase 6J kind-aware allocator stats and policy-configured lazy episodic/semantic eviction. Full production backends remain Roadmap Tier 2/Tier 3. |
+| §4.2 Semantics | ✅ | Mnemos: `garnet-memory-v0.3/src/{alloc,working,episodic,semantic,procedural}.rs`; `garnet-memory-v0.3/tests/{properties,persistence}.rs` | Reference stores meet the behavioural contract and now expose Phase 6K cycle-aware store-root lifecycles, Phase 6J kind-aware allocator stats/policy eviction, and Phase 6L episodic text snapshot save/load with malformed-file non-mutation. Full production backends remain Roadmap Tier 2/Tier 3. |
 | §4.3 Out-of-scope items | ✅ (by design) | n/a | These remain explicit non-goals. |
 | §4.4 Generics over memory kinds | 🟠 | n/a | Explicitly deferred; tracked as Roadmap T1.4 (gates on §11.6 monomorphization). |
 | §4.5 ARC + Bacon–Rajan cycle detection | 🟡 | `garnet-memory-v0.3/src/cycle.rs`; `garnet-memory-v0.3/tests/cycle.rs`; `deferred_arc_cycle_detection`; cycle-aware store-root property tests | Phase 6K adds observable store-root retain/release lifecycles on top of the bounded trial-deletion cycle model with root-buffer/decrement-event scheduling, finalization-order, and safe-mode exclusion signals. Production allocator-integrated ARC remains Roadmap T3.1 work. |
@@ -180,7 +180,7 @@ allocator integration is sequenced in
 |---|---|---|---|---|---|
 | §2 Lexical | 4 | — | — | — | Complete. |
 | §3 Modules | 4 | — | — | — | Cross-module visibility audit pending. |
-| §4 Memory | 3 | — | 6 | 1 | Phase 6K adds cycle-aware store-root lifecycles on top of Phase 6J kind-aware allocator stats and policy-configured lazy episodic/semantic eviction; production ARC allocator integration remains the largest Memory Core gap. |
+| §4 Memory | 3 | — | 6 | 1 | Phase 6L adds episodic text snapshot persistence/recovery on top of Phase 6K cycle-aware store-root lifecycles and Phase 6J kind-aware allocator stats/policy eviction; production ARC allocator integration and broad production backends remain the largest Memory Core gaps. |
 | §5 Functions | 3 | — | 2 | 4 | `yield`/`next` and `do...end` now have managed-mode block invocation evidence; richer block edge cases still need later conformance. |
 | §6 Control flow | 3 | — | — | — | Complete. |
 | §7 Errors | 3 | — | — | — | Complete. |

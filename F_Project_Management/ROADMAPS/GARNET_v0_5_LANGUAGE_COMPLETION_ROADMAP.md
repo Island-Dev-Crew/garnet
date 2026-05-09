@@ -415,7 +415,15 @@ roots on write and release them on clear, policy eviction, workflow replacement,
 and drop. This proves store-root lifecycle wiring through the bounded cycle
 fixture, not the final production ARC backend.
 
-- [ ] **Step 8: Promote root-buffer/finalizer/safe-mode interaction into production allocator tests**
+- [x] **Step 8: Add fenced episodic text snapshot persistence**
+
+Phase 6L adds `EpisodeStore::save_text` / `load_text` for versioned episodic
+text snapshots. Payloads are hex-encoded, writes go through a sibling temp file
+before rename, malformed files fail before mutating the live store, and loaded
+episodes retain fresh cycle-aware roots. This is reference-store recovery
+evidence, not a pluggable production persistence backend.
+
+- [ ] **Step 9: Promote root-buffer/finalizer/safe-mode interaction into production allocator tests**
 
 ## Phase 7: Release, Research, And Repeated Falsification
 
