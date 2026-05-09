@@ -894,6 +894,52 @@ fn nested_code(outer: Outer) -> Int {
         temp_source("match_nested_enum_payload_complete", nested_complete_src);
     assert_ok(&["parse"], &nested_complete_path);
     assert_ok(&["check"], &nested_complete_path);
+
+    let imported_complete_src = r#"
+module Types {
+  enum Status { Ready, Done }
+}
+
+use Types::{Status}
+
+fn imported_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let imported_complete_path =
+        temp_source("match_imported_enum_named_complete", imported_complete_src);
+    assert_ok(&["parse"], &imported_complete_path);
+    assert_ok(&["check"], &imported_complete_path);
+
+    let imported_missing_src = r#"
+module Types {
+  enum Status { Ready, Done }
+}
+
+use Types::{Status}
+
+fn imported_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready => 1
+  }
+}
+"#;
+    let imported_missing_path =
+        temp_source("match_imported_enum_named_missing", imported_missing_src);
+    assert_ok(&["parse"], &imported_missing_path);
+    let out = run(&["check"], &imported_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode imported enum matches must reject missing imported cases"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("non-exhaustive match") && stdout.contains("Types::Status::Done"),
+        "expected missing imported enum diagnostic, got:\n{stdout}"
+    );
 }
 
 #[test]

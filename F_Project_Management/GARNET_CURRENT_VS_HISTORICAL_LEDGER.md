@@ -78,11 +78,15 @@ When documents conflict, use this order:
   non-exhaustive matches, duplicate covered arms, and arms after unguarded
   catch-all arms. Phase 4N extends that pass to finite nested-constructor
   payloads so distinct nested enum payload cases are tracked separately and
-  payload wildcards cover the nested finite domain. Full Rust-grade CFG NLL,
-  nested/non-local terminators, general loop fixed-point analysis, imported
-  enum resolution, recursive/open payload reasoning, dynamic places, broader
-  drop elaboration, and generic/trait impl dispatch remain roadmap work, not
-  current truth.
+  payload wildcards cover the nested finite domain. Phase 4O resolves named,
+  glob, module-qualified, and module-relative enum imports for the coverage
+  pass, letting alias prefixes such as `Status::Ready` cover the canonical
+  `Types::Status::Ready` case without falling back to a global short-name
+  search. Full Rust-grade CFG
+  NLL, nested/non-local terminators, general loop fixed-point analysis,
+  cross-file/package imports, recursive/open payload reasoning, dynamic places,
+  broader drop elaboration, and generic/trait impl dispatch remain roadmap
+  work, not current truth.
 - Trait coherence now has an active conservative checker slice: exact duplicate
   trait impls and orphan impls where neither trait nor type is local reject,
   simple generic blanket-vs-concrete and renamed blanket impl overlaps reject,

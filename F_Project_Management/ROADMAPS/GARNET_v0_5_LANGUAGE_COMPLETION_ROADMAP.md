@@ -467,7 +467,23 @@ payloads are enumerated. `Outer::Wrap(Inner::Left)` and
 cases are rejected, and `Outer::Wrap(_)` covers the nested finite payload
 domain without claiming open-domain literal or recursive payload reasoning.
 
-Remaining: imported enum resolution, recursive/open payload reasoning, richer
+- [x] **Step 2J: Add imported enum alias match coverage**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage safe_imported_
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4O adds scoped import resolution for the safe-mode
+`match_coverage` pass. Named imports (`use Types::{Status}`), glob imports
+(`use Types::*`), module-qualified aliases, and module-relative imports are
+resolved to the finite enum domain, while pattern coverage accepts the source
+alias prefix such as `Status::Ready` in addition to the canonical
+`Types::Status::Ready`.
+
+Remaining: cross-file/package imports, recursive/open payload reasoning, richer
 type inference, open-domain literal reasoning, and general guard reasoning
 remain pending.
 

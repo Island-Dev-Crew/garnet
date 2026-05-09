@@ -248,3 +248,137 @@ fn safe_nested_enum_match_allows_payload_wildcard_coverage() {
         "wildcard payload should cover the nested finite payload domain, got {errs:?}"
     );
 }
+
+#[test]
+fn safe_imported_named_enum_match_accepts_alias_qualified_arms() {
+    let errs = check(
+        r#"
+        module Types {
+            enum Status { Ready, Done }
+        }
+
+        use Types::{Status}
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "complete imported enum match should not be rejected, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_imported_named_enum_match_rejects_missing_alias_case() {
+    let errs = check(
+        r#"
+        module Types {
+            enum Status { Ready, Done }
+        }
+
+        use Types::{Status}
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Types::Status::Done")
+            && !has_safe_violation(&errs, "Types::Status::Ready"),
+        "expected imported missing case only, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_imported_glob_enum_match_accepts_alias_qualified_arms() {
+    let errs = check(
+        r#"
+        module Types {
+            enum Status { Ready, Done }
+        }
+
+        use Types::*
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "complete glob-imported enum match should not be rejected, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_imported_module_alias_enum_match_accepts_module_qualified_arms() {
+    let errs = check(
+        r#"
+        module Library {
+            module Types {
+                enum Status { Ready, Done }
+            }
+        }
+
+        use Library::Types
+
+        fn status_code(status: Types::Status) -> Int {
+            match status {
+                Types::Status::Ready => 1
+                Types::Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "complete module-alias enum match should not be rejected, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_imported_nested_module_relative_enum_match_accepts_alias_qualified_arms() {
+    let errs = check(
+        r#"
+        module App {
+            module Types {
+                enum Status { Ready, Done }
+            }
+
+            use Types::{Status}
+
+            fn status_code(status: Status) -> Int {
+                match status {
+                    Status::Ready => 1
+                    Status::Done => 2
+                }
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "complete nested relative imported enum match should not be rejected, got {errs:?}"
+    );
+}

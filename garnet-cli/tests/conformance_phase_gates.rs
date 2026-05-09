@@ -109,6 +109,8 @@ fn match_exhaustiveness_handle_documents_active_partial_scope() {
         "match_enum_duplicate_unreachable",
         "match_nested_enum_payload_missing",
         "match_nested_enum_payload_complete",
+        "match_imported_enum_named_complete",
+        "match_imported_enum_named_missing",
         "non-exhaustive match",
         "unreachable match arm",
     ] {

@@ -108,7 +108,7 @@ allocator integration is sequenced in
 |---|---|---|---|
 | §6.1 `let` / `var` / `const` | ✅ | `LetDecl`, `VarDecl`, `ConstDecl` AST + interp | |
 | §6.2 `if` / `while` / `for` / `loop` / `break` / `continue` / `return` | ✅ | `grammar/control_flow.rs`, `interp::control` | |
-| §6.3 Pattern matching | 🟡 | `grammar/patterns.rs`, `interp::pattern.rs`, `garnet-check-v0.3/src/match_coverage.rs`, `deferred_match_exhaustiveness_and_reachability` | Literal / wildcard / struct / enum / nested syntax and runtime matching are active. Phase 4N adds scoped safe-mode finite-domain coverage for `Bool`, same-module enum subjects, and finite nested-constructor payloads, including non-exhaustive match rejection plus duplicate/catch-all reachability diagnostics. Imported enum resolution, recursive/open payload reasoning, and general guard reasoning remain partial. |
+| §6.3 Pattern matching | 🟡 | `grammar/patterns.rs`, `interp::pattern.rs`, `garnet-check-v0.3/src/match_coverage.rs`, `deferred_match_exhaustiveness_and_reachability` | Literal / wildcard / struct / enum / nested syntax and runtime matching are active. Phase 4O adds scoped safe-mode finite-domain coverage for `Bool`, same-module enum subjects, finite nested-constructor payloads, and scoped named/glob/module-qualified imported enum aliases, including non-exhaustive match rejection plus duplicate/catch-all reachability diagnostics. Cross-file/package imports, recursive/open payload reasoning, and general guard reasoning remain partial. |
 
 ## Section 7 — Error Handling (Dual-Mode)
 
@@ -182,15 +182,15 @@ allocator integration is sequenced in
 | §3 Modules | 4 | — | — | — | Cross-module visibility audit pending. |
 | §4 Memory | 3 | — | 6 | 1 | Phase 6N adds a fixed typed episodic cache backend boundary with path, size, permission, lockfile, corruption, type, concurrency, and root-rehydration tests on top of Phase 6M append commits, Phase 6L snapshot persistence/recovery, Phase 6K cycle-aware store-root lifecycles, and Phase 6J kind-aware allocator stats/policy eviction; production ARC allocator integration and broad pluggable backends remain the largest Memory Core gaps. |
 | §5 Functions | 3 | — | 2 | 4 | `yield`/`next` and `do...end` now have managed-mode block invocation evidence; richer block edge cases still need later conformance. |
-| §6 Control flow | 2 | — | 1 | — | Phase 4N adds scoped safe-mode finite-domain match coverage for `Bool`, same-module enum subjects, and finite nested-constructor payloads. Imported enum resolution, recursive/open payload reasoning, and general guard reasoning remain partial. |
+| §6 Control flow | 2 | — | 1 | — | Phase 4O adds scoped safe-mode finite-domain match coverage for `Bool`, same-module enum subjects, finite nested-constructor payloads, and scoped named/glob/module-qualified imported enum aliases. Cross-file/package imports, recursive/open payload reasoning, and general guard reasoning remain partial. |
 | §7 Errors | 3 | — | — | — | Complete. |
-| §8 Safe-mode | 1 | 1 | 2 | — | Phase 4N preserves the Phase 4L borrow/liveness slices and adds finite-domain safe-mode match coverage including finite nested constructor payloads; full CFG NLL/lifetime inference and formal theorem stay paper-side. |
+| §8 Safe-mode | 1 | 1 | 2 | — | Phase 4O preserves the Phase 4L borrow/liveness slices and adds finite-domain safe-mode match coverage including finite nested constructor payloads and imported aliases; full CFG NLL/lifetime inference and formal theorem stay paper-side. |
 | §9 Actors | 3 | — | 1 | — | Phase 3A adds source-level `@nonsendable` actor boundary rejection; Phase 3B adds synchronous managed actor handler dispatch; Phase 3C adds managed actor addresses and bounded mailbox calls; Phase 3D proves generated agent projects use that surface. Full async runtime bridge remains partial. |
 | §10 Boundaries | 1 | — | — | — | Audit log complete. |
 | §11 User types | 2 | 3 | 3 | — | Generics and `dyn Trait` parse; `impl`, `@dynamic`, structural protocol semantics, conservative trait coherence with simple generic-overlap checks, and interpreter-level generic instantiation now have executable slices, but specialization, imported-package coherence, and native monomorphization remain incomplete. |
 | §15 REPL | — | — | 1 | — | Basic working; commands/history pending. |
 | §16 Tooling | 5 | — | — | — | `garnet doc` landed in v0.4.2 Refactor #7. |
-| **Totals** | **31** | **3** | **9** | **11** | 54 tracked items after v0.5 Phase 4N match-coverage and Phase 5C trait/generic slices. |
+| **Totals** | **31** | **3** | **9** | **11** | 54 tracked items after v0.5 Phase 4O match-coverage and Phase 5C trait/generic slices. |
 
 ## What this matrix is not
 
