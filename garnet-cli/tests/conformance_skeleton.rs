@@ -929,6 +929,61 @@ fn bool_code(cond: Bool) -> Int {
     assert_ok(&["parse"], &if_else_mixed_invalidation_path);
     assert_ok(&["check"], &if_else_mixed_invalidation_path);
 
+    let nested_if_assignment_src = r#"
+fn bool_code(first: Bool, second: Bool) -> Int {
+  let mut flag = 1
+  if first {
+    if second {
+      flag = true
+    } else {
+      flag = false
+    }
+  } else {
+    flag = true
+  }
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let nested_if_assignment_path = temp_source(
+        "match_nested_if_assignment_non_exhaustive",
+        nested_if_assignment_src,
+    );
+    assert_ok(&["parse"], &nested_if_assignment_path);
+    let out = run(&["check"], &nested_if_assignment_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode nested if assignments must reject missing finite-domain cases when every nested branch assigns"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("non-exhaustive match") && stdout.contains("`false`"),
+        "expected nested if assignment diagnostic, got:\n{stdout}"
+    );
+
+    let nested_if_missing_else_src = r#"
+fn bool_code(first: Bool, second: Bool) -> Int {
+  let mut flag = 1
+  if first {
+    if second {
+      flag = true
+    }
+  } else {
+    flag = false
+  }
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let nested_if_missing_else_path = temp_source(
+        "match_nested_if_missing_else_invalidation_open",
+        nested_if_missing_else_src,
+    );
+    assert_ok(&["parse"], &nested_if_missing_else_path);
+    assert_ok(&["check"], &nested_if_missing_else_path);
+
     let enum_complete_src = r#"
 enum Status { Ready, Done }
 

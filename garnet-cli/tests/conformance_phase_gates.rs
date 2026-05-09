@@ -102,7 +102,7 @@ fn match_exhaustiveness_handle_documents_active_partial_scope() {
         !nearby.contains("#[ignore"),
         "{name} must remain an active partial conformance test"
     );
-    let body = &source[idx..source.len().min(idx + 13_500)];
+    let body = &source[idx..source.len().min(idx + 15_000)];
     for needle in [
         "match_bool_non_exhaustive",
         "match_bool_initializer_non_exhaustive",
@@ -110,6 +110,8 @@ fn match_exhaustiveness_handle_documents_active_partial_scope() {
         "match_mutable_assignment_invalidation_open",
         "match_if_else_mutable_bool_assignment_non_exhaustive",
         "match_if_else_mixed_assignment_invalidation_open",
+        "match_nested_if_assignment_non_exhaustive",
+        "match_nested_if_missing_else_invalidation_open",
         "match_enum_complete",
         "match_enum_duplicate_unreachable",
         "match_enum_initializer_missing",

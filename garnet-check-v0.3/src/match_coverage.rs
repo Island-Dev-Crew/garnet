@@ -5,9 +5,10 @@
 //! aliases, finite nested constructor payloads, and literal `true`/`false`
 //! guards whose type is visible from parameter metadata, local annotations,
 //! local boolean/enum variant initializers, or direct mutable-local
-//! assignments, including conservative `if`/`elsif`/`else` branch joins. It
-//! also rejects duplicate literal arms and arms after catch-all arms in
-//! otherwise open-domain matches. It does not attempt full type inference,
+//! assignments, including conservative `if`/`elsif`/`else` branch joins and
+//! nested all-path `if` assignment joins inside branch bodies. It also rejects
+//! duplicate literal arms and arms after catch-all arms in otherwise
+//! open-domain matches. It does not attempt full type inference,
 //! loop/exception/closure-merged assignment flow, recursive/open payload
 //! coverage, or non-literal guard reasoning.
 
@@ -875,27 +876,116 @@ fn join_branch_envs(
 }
 
 fn assigned_outer_targets_in_block(block: &Block) -> BTreeSet<String> {
-    let local_bindings = block
-        .stmts
-        .iter()
-        .filter_map(|stmt| match stmt {
-            Stmt::Let(decl) => Some(decl.name.clone()),
-            Stmt::Var(decl) => Some(decl.name.clone()),
-            Stmt::Const(decl) => Some(decl.name.clone()),
-            _ => None,
-        })
-        .collect::<BTreeSet<_>>();
+    assigned_outer_targets_in_block_excluding(block, &BTreeSet::new())
+}
 
-    block
-        .stmts
+fn assigned_outer_targets_in_block_excluding(
+    block: &Block,
+    outer_local_bindings: &BTreeSet<String>,
+) -> BTreeSet<String> {
+    let mut local_bindings = outer_local_bindings.clone();
+    for stmt in &block.stmts {
+        match stmt {
+            Stmt::Let(decl) => {
+                local_bindings.insert(decl.name.clone());
+            }
+            Stmt::Var(decl) => {
+                local_bindings.insert(decl.name.clone());
+            }
+            Stmt::Const(decl) => {
+                local_bindings.insert(decl.name.clone());
+            }
+            _ => {}
+        }
+    }
+
+    let mut assigned = BTreeSet::new();
+    for stmt in &block.stmts {
+        assigned.extend(assigned_outer_targets_in_stmt(stmt, &local_bindings));
+    }
+    if let Some(tail) = &block.tail_expr {
+        assigned.extend(assigned_outer_targets_in_expr(tail, &local_bindings));
+    }
+    assigned
+}
+
+fn assigned_outer_targets_in_stmt(
+    stmt: &Stmt,
+    local_bindings: &BTreeSet<String>,
+) -> BTreeSet<String> {
+    match stmt {
+        Stmt::Assign {
+            target: Expr::Ident(name, _),
+            ..
+        } if !local_bindings.contains(name) => BTreeSet::from([name.clone()]),
+        Stmt::Let(decl) => assigned_outer_targets_in_expr(&decl.value, local_bindings),
+        Stmt::Var(decl) => assigned_outer_targets_in_expr(&decl.value, local_bindings),
+        Stmt::Const(decl) => assigned_outer_targets_in_expr(&decl.value, local_bindings),
+        Stmt::Return { value, .. }
+        | Stmt::Yield { value, .. }
+        | Stmt::Next { value, .. }
+        | Stmt::Break { value, .. } => value
+            .as_ref()
+            .map(|value| assigned_outer_targets_in_expr(value, local_bindings))
+            .unwrap_or_default(),
+        Stmt::Raise { value, .. } | Stmt::Expr(value) => {
+            assigned_outer_targets_in_expr(value, local_bindings)
+        }
+        _ => BTreeSet::new(),
+    }
+}
+
+fn assigned_outer_targets_in_expr(
+    expr: &Expr,
+    local_bindings: &BTreeSet<String>,
+) -> BTreeSet<String> {
+    match expr {
+        Expr::If {
+            then_block,
+            elsif_clauses,
+            else_block,
+            ..
+        } => {
+            let Some(else_block) = else_block else {
+                return BTreeSet::new();
+            };
+
+            let mut branch_sets = Vec::with_capacity(elsif_clauses.len() + 2);
+            branch_sets.push(assigned_outer_targets_in_block_excluding(
+                then_block,
+                local_bindings,
+            ));
+            for (_, block) in elsif_clauses {
+                branch_sets.push(assigned_outer_targets_in_block_excluding(
+                    block,
+                    local_bindings,
+                ));
+            }
+            branch_sets.push(assigned_outer_targets_in_block_excluding(
+                else_block,
+                local_bindings,
+            ));
+
+            intersect_assigned_targets(&branch_sets)
+        }
+        _ => BTreeSet::new(),
+    }
+}
+
+fn intersect_assigned_targets(branch_sets: &[BTreeSet<String>]) -> BTreeSet<String> {
+    let Some(first) = branch_sets.first() else {
+        return BTreeSet::new();
+    };
+
+    first
         .iter()
-        .filter_map(|stmt| match stmt {
-            Stmt::Assign {
-                target: Expr::Ident(name, _),
-                ..
-            } if !local_bindings.contains(name) => Some(name.clone()),
-            _ => None,
+        .filter(|target| {
+            branch_sets
+                .iter()
+                .skip(1)
+                .all(|targets| targets.contains(*target))
         })
+        .cloned()
         .collect()
 }
 

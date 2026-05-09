@@ -337,6 +337,60 @@ fn safe_match_does_not_join_branch_local_bindings_after_if_else() {
 }
 
 #[test]
+fn safe_match_joins_nested_if_assignment_domains() {
+    let errs = check(
+        r#"
+        fn bool_code(first: Bool, second: Bool) -> Int {
+            let mut flag = 1
+            if first {
+                if second {
+                    flag = true
+                } else {
+                    flag = false
+                }
+            } else {
+                flag = true
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match") && has_safe_violation(&errs, "false"),
+        "expected nested if/else assignments to join into a finite-domain diagnostic, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_does_not_join_nested_if_assignment_without_else() {
+    let errs = check(
+        r#"
+        fn bool_code(first: Bool, second: Bool) -> Int {
+            let mut flag = 1
+            if first {
+                if second {
+                    flag = true
+                }
+            } else {
+                flag = false
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "nested if assignment with a missing else path should not infer a closed domain, got {errs:?}"
+    );
+}
+
+#[test]
 fn safe_match_joins_enum_domain_after_if_else_assignments() {
     let errs = check(
         r#"

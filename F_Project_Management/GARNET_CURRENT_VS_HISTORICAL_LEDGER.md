@@ -93,7 +93,9 @@ When documents conflict, use this order:
   domain and non-finite assignments clear inferred finite-domain state. Phase
   4T adds conservative `if`/`elsif`/`else` assignment joins for that match
   environment, preserving a finite domain only when every possible branch
-  agrees and clearing stale domains for mixed finite/non-finite branches. Full
+  agrees and clearing stale domains for mixed finite/non-finite branches. Phase
+  4U extends that proof through nested `if` expressions inside branch bodies
+  only when every nested path definitely assigns the outer subject. Full
   Rust-grade CFG NLL, nested/non-local terminators, general loop fixed-point
   analysis, loop/try/closure-merged assignment flow, cross-file/package
   imports, recursive/open payload reasoning, broader expression/type
