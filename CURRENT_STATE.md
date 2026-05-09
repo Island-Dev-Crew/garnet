@@ -1,6 +1,6 @@
 # Garnet Current State and Reviewer Guide
 
-Date: 2026-05-08
+Date: 2026-05-09
 Status: research-grade language/toolchain prototype
 
 This is the first file a fresh MIT reviewer, contributor, or agent should read
@@ -108,7 +108,7 @@ highest-leverage next milestones are:
 The v0.5 seven-phase roadmap is now tracked in
 `F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md` and
 `F_Project_Management/ROADMAPS/GARNET_v0_5_LANGUAGE_COMPLETION_ROADMAP.md`.
-Phase 5B is the current readiness slice. Phases 1-3D added parser parity,
+Phase 4G / 5C / 6P are the current readiness slices. Phases 1-3D added parser parity,
 managed block/dynamic/protocol runtime slices, managed actor addresses, bounded
 source mailboxes, and a generated actor-orchestrator template. Phase 4A
 activates partial safe-mode borrow conformance for direct use-after-move
@@ -124,9 +124,12 @@ checked, and indexes under distinct sibling fields remain distinct.
 Phase 4F activates a conservative lifetime-elision subset so reference returns
 must tie to exactly one borrowed input lifetime, or to borrowed `self`, while
 ambiguous multi-input and no-input reference returns are rejected. Full NLL
-region solving, dynamic places, drop discipline, and two-phase borrows remain
-deferred. Phase 5A activates conservative trait coherence by rejecting exact
-duplicate trait impls and orphan-rule violations while preserving impls where
+region solving, dynamic places, broader drop elaboration, and two-phase borrows
+remain deferred. Phase 4G adds a B5 drop-discipline slice that rejects
+overlapping places passed to multiple `own` parameters in the same call, while
+distinct sibling fields remain usable. Phase 5A activates conservative trait
+coherence by rejecting exact duplicate trait impls and orphan-rule violations
+while preserving impls where
 either the trait or the type is local. Phase 5B activates interpreter-level
 generic instantiation evidence for generic structs, generic impl methods, and
 generic functions. Phase 5C adds a conservative generic-overlap coherence

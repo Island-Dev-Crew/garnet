@@ -422,3 +422,70 @@ fn nested_index_checks_inner_index_expression() {
         "nested index receiver must still check its inner index expression, got {d:?}"
     );
 }
+
+// ── Drop discipline ──
+
+#[test]
+fn double_own_of_same_binding_in_one_call_is_rejected() {
+    let src = r#"
+        fn consume_pair(own left: Buffer, own right: Buffer) -> Int { 0 }
+
+        fn caller(own b: Buffer) -> Int {
+            consume_pair(b, b)
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        d.iter().any(
+            |e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("drop discipline"))
+        ),
+        "double-own in one call would drop the same binding twice, got {d:?}"
+    );
+}
+
+#[test]
+fn double_own_of_parent_and_child_place_is_rejected() {
+    let src = r#"
+        struct Pair {
+            left: Buffer,
+            right: Buffer,
+        }
+
+        fn consume_pair(own whole: Pair, own left: Buffer) -> Int { 0 }
+
+        fn caller(own p: Pair) -> Int {
+            consume_pair(p, p.left)
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        d.iter().any(
+            |e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("drop discipline"))
+        ),
+        "owning a parent and child place in one call would double-drop, got {d:?}"
+    );
+}
+
+#[test]
+fn double_own_of_distinct_fields_is_allowed() {
+    let src = r#"
+        struct Pair {
+            left: Buffer,
+            right: Buffer,
+        }
+
+        fn consume_pair(own left: Buffer, own right: Buffer) -> Int { 0 }
+
+        fn caller(own p: Pair) -> Int {
+            consume_pair(p.left, p.right)
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        !d.iter().any(
+            |e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("drop discipline"))
+        ),
+        "distinct sibling fields should not violate drop discipline: {d:?}"
+    );
+}

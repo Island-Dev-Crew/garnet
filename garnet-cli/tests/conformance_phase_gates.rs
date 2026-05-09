@@ -27,6 +27,7 @@ fn implemented_conformance_tests_are_active() {
         "deferred_structural_protocols",
         "deferred_nll_lifetime_inference",
         "partial_borrow_rule_suite",
+        "deferred_full_borrow_rule_suite",
         "deferred_trait_coherence",
         "generic_instantiation_runs_without_monomorphization_claims",
         "deferred_arc_cycle_detection",
@@ -42,16 +43,21 @@ fn implemented_conformance_tests_are_active() {
 }
 
 #[test]
-fn remaining_deferred_handles_remain_explicit() {
+fn full_borrow_handle_documents_active_partial_scope() {
     let source = fs::read_to_string(repo_root().join("garnet-cli/tests/conformance_skeleton.rs"))
         .expect("conformance skeleton");
     let name = "deferred_full_borrow_rule_suite";
-    let idx = source.find(name).expect("deferred handle exists");
+    let idx = source.find(name).expect("full borrow handle exists");
     let prefix = &source[..idx];
     let nearby = &prefix[prefix.len().saturating_sub(220)..];
     assert!(
-        nearby.contains("#[ignore = \"Mini-Spec"),
-        "{name} must carry an explicit Mini-Spec ignore reason"
+        !nearby.contains("#[ignore"),
+        "{name} must remain an active partial conformance test"
+    );
+    let body = &source[idx..source.len().min(idx + 1_500)];
+    assert!(
+        body.contains("safe-mode B5") && body.contains("drop discipline"),
+        "{name} must document the active B5 drop-discipline subset"
     );
 }
 

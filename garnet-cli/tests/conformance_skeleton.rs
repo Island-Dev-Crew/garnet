@@ -45,10 +45,6 @@ fn assert_ok(args: &[&str], path: &Path) {
     );
 }
 
-fn pending(feature: &str) {
-    eprintln!("conformance placeholder pending implementation: {feature}");
-}
-
 #[test]
 fn implemented_control_flow_and_interpreter_smoke_runs() {
     let src = r#"
@@ -540,9 +536,28 @@ fn caller(mut items: Buffers) -> Int {
 }
 
 #[test]
-#[ignore = "Mini-Spec §8.6 full place-granular B1-B5 borrow rules are partial in v0.4.2"]
 fn deferred_full_borrow_rule_suite() {
-    pending("full place-granular borrow-check B1-B5 conformance suite");
+    let double_own_src = r#"
+fn consume_pair(own left: Buffer, own right: Buffer) -> Int {
+  0
+}
+
+fn caller(own b: Buffer) -> Int {
+  consume_pair(b, b)
+}
+"#;
+    let double_own_path = temp_source("borrow_drop_double_own", double_own_src);
+    assert_ok(&["parse"], &double_own_path);
+    let out = run(&["check"], &double_own_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode B5 must reject double-own of the same binding in one call"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("drop discipline"),
+        "expected drop-discipline diagnostic, got:\n{stdout}"
+    );
 }
 
 #[test]

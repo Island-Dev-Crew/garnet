@@ -231,8 +231,9 @@ Evidence: direct use-after-move through `own` parameters and direct
 `mut`+`borrow` aliasing are rejected by `garnet check`; managed `def` code
 remains ARC-governed rather than affine.
 
-Remaining: full place-granular B1-B5, method-call ownership, B3 lifetime
-containment, B5 drop discipline, two-phase borrows, and NLL are still pending.
+Remaining: full place-granular B1-B5 beyond same-call overlap, method-call
+ownership, B3 lifetime containment, broader drop discipline, two-phase borrows,
+and NLL are still pending.
 
 - [x] **Step 1B: Track unambiguous method receiver ownership**
 
@@ -316,7 +317,25 @@ Evidence: Phase 4F activates a conservative Mini-Spec §8.5.2
 lifetime-elision subset for reference returns. No-input and
 multiple-borrowed-input reference returns reject; one borrowed input is
 accepted. Full CFG NLL, closure capture lifetimes, variance, dynamic places,
-drop discipline, and two-phase borrows remain pending.
+drop discipline beyond same-call overlap, and two-phase borrows remain pending.
+
+- [x] **Step 2B: Reject same-call double-own drop hazards**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test borrow double_own
+cargo test -p garnet-cli --test conformance_skeleton deferred_full_borrow_rule_suite
+```
+
+Evidence: Phase 4G activates a conservative B5 drop-discipline slice. Calls
+with overlapping places passed to multiple `own` parameters now reject, covering
+same-binding and parent/child double drops while allowing distinct sibling
+fields.
+
+Remaining: full CFG NLL, closure capture lifetimes, variance, dynamic places,
+generic receiver types, trait impl dispatch, broader scope/branch drop
+elaboration, and two-phase borrows remain pending.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 

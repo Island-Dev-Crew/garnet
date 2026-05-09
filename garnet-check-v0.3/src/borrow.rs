@@ -595,6 +595,7 @@ fn apply_ownership(
     fn_name: &str,
     diags: &mut Vec<CheckError>,
 ) {
+    detect_drop_discipline_violations(callee, pairs, fn_name, diags);
     detect_aliasing_violations(callee, pairs, fn_name, diags);
     for (arg, kind) in pairs {
         if matches!(kind, Some(Ownership::Own)) {
@@ -602,6 +603,35 @@ fn apply_ownership(
                 env.record_move_place(&place, callee);
             }
         }
+    }
+}
+
+fn detect_drop_discipline_violations(
+    callee: &str,
+    pairs: &[(&Expr, Option<Ownership>)],
+    fn_name: &str,
+    diags: &mut Vec<CheckError>,
+) {
+    let mut owned_places: Vec<Vec<String>> = Vec::new();
+    for (arg, kind) in pairs {
+        if !matches!(kind, Some(Ownership::Own)) {
+            continue;
+        }
+        let Some(place) = place_path(arg) else {
+            continue;
+        };
+        if let Some(existing) = owned_places
+            .iter()
+            .find(|existing| places_overlap(existing, &place))
+        {
+            diags.push(CheckError::SafeModeViolation(format!(
+                "drop discipline violation: in `{fn_name}`, `{}` and `{}` are both passed as `own` to `{callee}`, which would drop the same place twice",
+                format_place(existing),
+                format_place(&place)
+            )));
+            return;
+        }
+        owned_places.push(place);
     }
 }
 

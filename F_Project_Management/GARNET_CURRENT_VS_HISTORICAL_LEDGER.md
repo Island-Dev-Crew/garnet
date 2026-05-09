@@ -56,8 +56,11 @@ When documents conflict, use this order:
   distinct, and nested index operand expressions stay checked. It now also
   enforces a conservative lifetime-elision subset for reference returns: no
   borrowed input and multiple borrowed inputs reject, while one borrowed input
-  is accepted. Full Rust-grade CFG NLL, dynamic places, B5 drop discipline, and
-  generic/trait impl dispatch remain roadmap work, not current truth.
+  is accepted. Phase 4G adds a B5 drop-discipline slice that rejects overlapping
+  places passed to multiple `own` parameters in one call, preventing same-call
+  double-drop hazards for the same binding or parent/child place. Full
+  Rust-grade CFG NLL, dynamic places, broader drop elaboration, and generic/trait
+  impl dispatch remain roadmap work, not current truth.
 - Trait coherence now has an active conservative checker slice: exact duplicate
   trait impls and orphan impls where neither trait nor type is local reject,
   simple generic blanket-vs-concrete and renamed blanket impl overlaps reject,
