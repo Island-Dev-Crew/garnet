@@ -39,9 +39,13 @@ fn key_path(dir: &Path) -> PathBuf {
 }
 
 fn garnet_cmd(dir: &Path) -> Command {
+    garnet_cmd_with_key(dir, &key_path(dir))
+}
+
+fn garnet_cmd_with_key(dir: &Path, key_path: &Path) -> Command {
     let mut cmd = Command::new(garnet_bin());
     cmd.current_dir(dir)
-        .env("GARNET_MACHINE_KEY_PATH", key_path(dir));
+        .env("GARNET_MACHINE_KEY_PATH", key_path);
     cmd
 }
 
@@ -49,9 +53,18 @@ fn cache_key(dir: &Path) -> [u8; 32] {
     machine_key::load_or_generate_key(&key_path(dir)).unwrap()
 }
 
+fn cache_key_at(path: &Path) -> [u8; 32] {
+    machine_key::load_or_generate_key(path).unwrap()
+}
+
 fn read_episodes(dir: &Path) -> Vec<Episode> {
     let cache_dir = dir.join(".garnet-cache");
     cache::read_all_in_with_key(&cache_dir, &cache_key(dir)).episodes
+}
+
+fn read_episodes_with_key(dir: &Path, key_path: &Path) -> cache::ReadResult {
+    let cache_dir = dir.join(".garnet-cache");
+    cache::read_all_in_with_key(&cache_dir, &cache_key_at(key_path))
 }
 
 fn rand_suffix() -> String {
@@ -228,4 +241,81 @@ fn external_absolute_paths_are_redacted_in_cache_labels() {
         "cache episode leaked external absolute path: {}",
         episodes[0].file
     );
+}
+
+#[test]
+fn foreign_machine_episode_in_same_cache_is_ignored_and_warned() {
+    let dir = fresh_temp_dir("foreign_same_cache");
+    let file = dir.join("buggy.garnet");
+    std::fs::write(&file, "def main() { 99/0 }").unwrap();
+    let key_a = dir.join("machine-a.key");
+    let key_b = dir.join("machine-b.key");
+
+    let out1 = garnet_cmd_with_key(&dir, &key_a)
+        .args(["run", file.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(!out1.status.success(), "first run should fail");
+
+    let out2 = garnet_cmd_with_key(&dir, &key_b)
+        .args(["run", file.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(!out2.status.success(), "second run should fail");
+    let stderr = String::from_utf8_lossy(&out2.stderr);
+    assert!(
+        stderr.contains("ignored 1 untrusted cache record"),
+        "expected untrusted-cache warning, got stderr: {stderr}"
+    );
+    assert!(
+        !stderr.contains("prior failure"),
+        "foreign prior failure must not influence diagnostics: {stderr}"
+    );
+
+    let result = read_episodes_with_key(&dir, &key_b);
+    assert_eq!(result.episodes.len(), 1);
+    assert_eq!(result.skipped, 1);
+}
+
+#[test]
+fn copied_foreign_cache_replay_is_ignored_and_warned() {
+    let attacker = fresh_temp_dir("attacker_cache");
+    let victim = fresh_temp_dir("victim_cache");
+    let source = "def main() { 99/0 }";
+    let attacker_file = attacker.join("buggy.garnet");
+    let victim_file = victim.join("buggy.garnet");
+    std::fs::write(&attacker_file, source).unwrap();
+    std::fs::write(&victim_file, source).unwrap();
+
+    let attacker_run = garnet_cmd(&attacker)
+        .args(["run", attacker_file.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(!attacker_run.status.success(), "attacker run should fail");
+
+    let victim_cache = victim.join(".garnet-cache");
+    std::fs::create_dir_all(&victim_cache).unwrap();
+    std::fs::copy(
+        attacker.join(".garnet-cache").join("episodes.log"),
+        victim_cache.join("episodes.log"),
+    )
+    .unwrap();
+
+    let victim_run = garnet_cmd(&victim)
+        .args(["run", victim_file.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(!victim_run.status.success(), "victim run should fail");
+    let stderr = String::from_utf8_lossy(&victim_run.stderr);
+    assert!(
+        stderr.contains("ignored 1 untrusted cache record"),
+        "expected untrusted-cache warning, got stderr: {stderr}"
+    );
+    assert!(
+        !stderr.contains("prior failure"),
+        "copied foreign failure must not influence diagnostics: {stderr}"
+    );
+
+    let result = read_episodes(&victim);
+    assert_eq!(result.len(), 1);
 }

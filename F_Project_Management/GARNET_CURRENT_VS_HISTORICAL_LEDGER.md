@@ -77,8 +77,12 @@ When documents conflict, use this order:
 - Compiler-as-agent cache privacy now has Phase 6F executable evidence:
   absolute paths inside the active project are persisted as stable relative
   labels, while external absolute paths are redacted to `<external>/<file>`.
-  CacheHMAC and ProvenanceStrategy still protect tamper/foreign-cache abuse;
-  broader multi-process machine-key stress remains follow-up work.
+  Phase 6G extends this to CLI-level replay stress: same-cache foreign
+  machine-key episodes and copied `.garnet-cache` episodes are ignored,
+  counted, and warned as untrusted instead of surfacing stale prior-failure
+  advice. CacheHMAC and ProvenanceStrategy still protect tamper/foreign-cache
+  abuse; broader strategy replay and long-running concurrent writes remain
+  follow-up work.
 - CI has an explicit canonical MVP example job in addition to the Rust test
   suite.
 

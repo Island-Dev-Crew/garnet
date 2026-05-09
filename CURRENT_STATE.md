@@ -140,8 +140,11 @@ runtime finalizer invocation remain deferred. Phase 6F adds a cache privacy
 gate for compiler-as-agent episode logs: project-local absolute file paths are
 recorded as stable relative labels, and external absolute paths are redacted to
 `<external>/<file>` so accidental `.garnet-cache/` copies do not leak user,
-temp, or CI workspace roots. Broader cache tamper/provenance HMAC gates remain
-covered by the existing cache/security test suite.
+temp, or CI workspace roots. Phase 6G adds CLI-level cache replay stress:
+foreign machine-key episodes in the same cache and copied `.garnet-cache`
+episodes are ignored and signaled as untrusted before they can surface stale
+failure advice. Broader strategy replay and long-running concurrent writes
+remain follow-up work.
 
 ## Historical Material
 

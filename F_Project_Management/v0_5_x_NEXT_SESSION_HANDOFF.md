@@ -121,15 +121,17 @@ decrement-triggered buffered roots can drive collection before the production
 allocator is available; the next session should promote those fixtures into
 allocator-integrated Bacon-Rajan trial deletion.
 
-### Current Phase 6F cache-security status
+### Current Phase 6F/6G cache-security status
 
 Phase 6F adds a narrower security/readiness gate around the compiler-as-agent
 cache. `parse`, `check`, and `run` now persist privacy-preserving episode file
 labels: absolute paths under the project root become stable relative labels,
 and absolute paths outside the project root become `<external>/<file>`.
-Existing CacheHMAC and ProvenanceStrategy tests remain green. The next cache
-security slice should stress multi-process machine-key behavior and committed
-foreign-cache abuse cases end to end.
+Phase 6G adds CLI-level replay stress: a foreign machine-key episode in the
+same cache and a copied `.garnet-cache` replay are ignored, counted, and
+surfaced as untrusted before stale prior-failure advice can appear. Existing
+CacheHMAC and ProvenanceStrategy tests remain green. The next cache security
+slice should stress strategy replay and long-running concurrent writes.
 
 ### Why deferred
 

@@ -33,8 +33,14 @@ use std::time::{Instant, SystemTime, UNIX_EPOCH};
 /// matched by AST fingerprint similarity. Silent if nothing relevant.
 pub(crate) fn surface_prior(source: &str) {
     let hash = cache::source_hash(source);
-    let prior = cache::recall(&hash);
-    let failures = prior.iter().filter(|e| e.outcome != "ok").count();
+    let prior = cache::recall_audit(&hash);
+    if prior.skipped > 0 {
+        eprintln!(
+            "note: ignored {} untrusted cache record(s) in .garnet-cache/episodes.log",
+            prior.skipped
+        );
+    }
+    let failures = prior.episodes.iter().filter(|e| e.outcome != "ok").count();
     if failures > 0 {
         eprintln!(
             "note: this source has {failures} prior failure(s) recorded in .garnet-cache/episodes.log"

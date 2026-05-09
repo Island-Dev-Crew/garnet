@@ -264,6 +264,10 @@ pub fn recall(target: &str) -> Vec<Episode> {
     recall_in(&cache_dir(), target)
 }
 
+pub fn recall_audit(target: &str) -> ReadResult {
+    recall_in_with_key(&cache_dir(), target, machine_key::machine_key())
+}
+
 pub fn recall_in(dir: &Path, target: &str) -> Vec<Episode> {
     recall_in_with_key(dir, target, machine_key::machine_key()).episodes
 }
