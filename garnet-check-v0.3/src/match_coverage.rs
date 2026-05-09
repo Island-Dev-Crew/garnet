@@ -257,14 +257,29 @@ impl Checker {
                 condition, body, ..
             } => {
                 self.walk_expr(condition, fn_name, env, scope);
+                let assigned = maybe_assigned_outer_targets_in_block(body);
                 self.walk_block(body, fn_name, env.clone(), scope);
+                for target in assigned {
+                    env.remove(&target);
+                }
             }
-            Stmt::For { iter, body, .. } => {
+            Stmt::For {
+                var, iter, body, ..
+            } => {
                 self.walk_expr(iter, fn_name, env, scope);
+                let loop_locals = BTreeSet::from([var.clone()]);
+                let assigned = maybe_assigned_outer_targets_in_block_excluding(body, &loop_locals);
                 self.walk_block(body, fn_name, env.clone(), scope);
+                for target in assigned {
+                    env.remove(&target);
+                }
             }
             Stmt::Loop { body, .. } => {
+                let assigned = maybe_assigned_outer_targets_in_block(body);
                 self.walk_block(body, fn_name, env.clone(), scope);
+                for target in assigned {
+                    env.remove(&target);
+                }
             }
             Stmt::Return { value, .. }
             | Stmt::Yield { value, .. }
@@ -886,7 +901,9 @@ fn assigned_outer_targets_in_block_excluding(
     outer_local_bindings: &BTreeSet<String>,
 ) -> BTreeSet<String> {
     let mut local_bindings = outer_local_bindings.clone();
+    let mut assigned = BTreeSet::new();
     for stmt in &block.stmts {
+        assigned.extend(assigned_outer_targets_in_stmt(stmt, &local_bindings));
         match stmt {
             Stmt::Let(decl) => {
                 local_bindings.insert(decl.name.clone());
@@ -901,10 +918,6 @@ fn assigned_outer_targets_in_block_excluding(
         }
     }
 
-    let mut assigned = BTreeSet::new();
-    for stmt in &block.stmts {
-        assigned.extend(assigned_outer_targets_in_stmt(stmt, &local_bindings));
-    }
     if let Some(tail) = &block.tail_expr {
         assigned.extend(assigned_outer_targets_in_expr(tail, &local_bindings));
     }
@@ -969,6 +982,103 @@ fn assigned_outer_targets_in_expr(
             ));
 
             intersect_assigned_targets(&branch_sets)
+        }
+        _ => BTreeSet::new(),
+    }
+}
+
+fn maybe_assigned_outer_targets_in_block(block: &Block) -> BTreeSet<String> {
+    maybe_assigned_outer_targets_in_block_excluding(block, &BTreeSet::new())
+}
+
+fn maybe_assigned_outer_targets_in_block_excluding(
+    block: &Block,
+    outer_local_bindings: &BTreeSet<String>,
+) -> BTreeSet<String> {
+    let mut local_bindings = outer_local_bindings.clone();
+    let mut assigned = BTreeSet::new();
+    for stmt in &block.stmts {
+        assigned.extend(maybe_assigned_outer_targets_in_stmt(stmt, &local_bindings));
+        match stmt {
+            Stmt::Let(decl) => {
+                local_bindings.insert(decl.name.clone());
+            }
+            Stmt::Var(decl) => {
+                local_bindings.insert(decl.name.clone());
+            }
+            Stmt::Const(decl) => {
+                local_bindings.insert(decl.name.clone());
+            }
+            _ => {}
+        }
+    }
+
+    if let Some(tail) = &block.tail_expr {
+        assigned.extend(maybe_assigned_outer_targets_in_expr(tail, &local_bindings));
+    }
+    assigned
+}
+
+fn maybe_assigned_outer_targets_in_stmt(
+    stmt: &Stmt,
+    local_bindings: &BTreeSet<String>,
+) -> BTreeSet<String> {
+    match stmt {
+        Stmt::Assign {
+            target: Expr::Ident(name, _),
+            ..
+        } if !local_bindings.contains(name) => BTreeSet::from([name.clone()]),
+        Stmt::Let(decl) => maybe_assigned_outer_targets_in_expr(&decl.value, local_bindings),
+        Stmt::Var(decl) => maybe_assigned_outer_targets_in_expr(&decl.value, local_bindings),
+        Stmt::Const(decl) => maybe_assigned_outer_targets_in_expr(&decl.value, local_bindings),
+        Stmt::While { body, .. } | Stmt::Loop { body, .. } => {
+            maybe_assigned_outer_targets_in_block_excluding(body, local_bindings)
+        }
+        Stmt::For { var, body, .. } => {
+            let mut nested_locals = local_bindings.clone();
+            nested_locals.insert(var.clone());
+            maybe_assigned_outer_targets_in_block_excluding(body, &nested_locals)
+        }
+        Stmt::Return { value, .. }
+        | Stmt::Yield { value, .. }
+        | Stmt::Next { value, .. }
+        | Stmt::Break { value, .. } => value
+            .as_ref()
+            .map(|value| maybe_assigned_outer_targets_in_expr(value, local_bindings))
+            .unwrap_or_default(),
+        Stmt::Raise { value, .. } | Stmt::Expr(value) => {
+            maybe_assigned_outer_targets_in_expr(value, local_bindings)
+        }
+        _ => BTreeSet::new(),
+    }
+}
+
+fn maybe_assigned_outer_targets_in_expr(
+    expr: &Expr,
+    local_bindings: &BTreeSet<String>,
+) -> BTreeSet<String> {
+    match expr {
+        Expr::If {
+            then_block,
+            elsif_clauses,
+            else_block,
+            ..
+        } => {
+            let mut assigned =
+                maybe_assigned_outer_targets_in_block_excluding(then_block, local_bindings);
+            for (_, block) in elsif_clauses {
+                assigned.extend(maybe_assigned_outer_targets_in_block_excluding(
+                    block,
+                    local_bindings,
+                ));
+            }
+            if let Some(else_block) = else_block {
+                assigned.extend(maybe_assigned_outer_targets_in_block_excluding(
+                    else_block,
+                    local_bindings,
+                ));
+            }
+            assigned
         }
         _ => BTreeSet::new(),
     }

@@ -114,6 +114,8 @@ fn match_exhaustiveness_handle_documents_active_partial_scope() {
         "match_nested_if_missing_else_invalidation_open",
         "match_compound_assignment_invalidation_open",
         "match_if_else_compound_assignment_invalidation_open",
+        "match_while_assignment_invalidation_open",
+        "match_for_assignment_invalidation_open",
         "match_enum_complete",
         "match_enum_duplicate_unreachable",
         "match_enum_initializer_missing",

@@ -97,9 +97,11 @@ When documents conflict, use this order:
   4U extends that proof through nested `if` expressions inside branch bodies
   only when every nested path definitely assigns the outer subject. Phase 4V
   makes compound assignments an explicit invalidation boundary so
-  operator/type-dependent updates cannot preserve stale finite domains. Full
+  operator/type-dependent updates cannot preserve stale finite domains. Phase
+  4W conservatively invalidates finite domains after possible loop-body
+  assignments while preserving ordered loop-local shadowing. Full
   Rust-grade CFG NLL, nested/non-local terminators, general loop fixed-point
-  analysis, loop/try/closure-merged assignment flow, cross-file/package
+  analysis, loop fixed-point domain inference, try/closure-merged assignment flow, cross-file/package
   imports, recursive/open payload reasoning, broader expression/type
   inference, open-domain exhaustiveness/range reasoning, non-literal guard
   reasoning, dynamic places, broader drop elaboration, and generic/trait impl

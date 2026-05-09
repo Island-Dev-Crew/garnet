@@ -1020,6 +1020,42 @@ fn bool_code(cond: Bool) -> Int {
     assert_ok(&["parse"], &if_else_compound_invalidation_path);
     assert_ok(&["check"], &if_else_compound_invalidation_path);
 
+    let while_assignment_invalidation_src = r#"
+fn bool_code(cond: Bool) -> Int {
+  let mut flag = true
+  while cond {
+    flag = 1
+  }
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let while_assignment_invalidation_path = temp_source(
+        "match_while_assignment_invalidation_open",
+        while_assignment_invalidation_src,
+    );
+    assert_ok(&["parse"], &while_assignment_invalidation_path);
+    assert_ok(&["check"], &while_assignment_invalidation_path);
+
+    let for_assignment_invalidation_src = r#"
+fn bool_code() -> Int {
+  let mut flag = true
+  for item in [1] {
+    flag = item
+  }
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let for_assignment_invalidation_path = temp_source(
+        "match_for_assignment_invalidation_open",
+        for_assignment_invalidation_src,
+    );
+    assert_ok(&["parse"], &for_assignment_invalidation_path);
+    assert_ok(&["check"], &for_assignment_invalidation_path);
+
     let enum_complete_src = r#"
 enum Status { Ready, Done }
 

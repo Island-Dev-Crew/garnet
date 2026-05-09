@@ -310,6 +310,144 @@ fn safe_match_invalidates_domain_after_if_else_compound_assignments() {
 }
 
 #[test]
+fn safe_match_invalidates_domain_after_while_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = true
+            while cond {
+                flag = 1
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "assignment in a possible while iteration should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_domain_after_for_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code() -> Int {
+            let mut flag = true
+            for item in [1] {
+                flag = item
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "assignment in a possible for iteration should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_domain_after_conditional_loop_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code(first: Bool, second: Bool) -> Int {
+            let mut flag = true
+            while first {
+                if second {
+                    flag = 1
+                }
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "conditional assignment in a loop body should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_loop_assignment_before_shadowing_binding() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = true
+            while cond {
+                flag = 1
+                let flag = true
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "assignment before a loop-local shadow should still clear the outer finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_does_not_invalidate_outer_domain_for_loop_local_binding() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = true
+            while cond {
+                let flag = 1
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match") && has_safe_violation(&errs, "false"),
+        "loop-local bindings should not clear the outer finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_joins_branch_assignment_before_shadowing_binding() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = true
+            if cond {
+                flag = false
+                let flag = true
+            } else {
+                flag = false
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match") && has_safe_violation(&errs, "false"),
+        "assignment before a branch-local shadow should still join the outer finite domain, got {errs:?}"
+    );
+}
+
+#[test]
 fn safe_match_does_not_infer_branch_assignment_without_else_path() {
     let errs = check(
         r#"

@@ -26,7 +26,7 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | Structural protocol satisfaction and runtime casts | Partial Phase 2H | `Item::Protocol` and `Expr::Cast` parse; `deferred_structural_protocols` checks protocol-typed managed parameters, runtime `as Protocol` casts, static/dynamic methods, mode/arity/parameter/return annotation mismatches, generic protocol substitution, core built-in typed method signatures, and `@dynamic impl` methods | Add broader trait/generic coherence |
 | Actor protocol enforcement and `Sendable` | Partial Phase 3D | actor runtime crate exists; `actor_sendable_rejects_nonsendable_protocol_payloads` rejects `@nonsendable` actor protocol payloads before runtime; managed interpreter now registers actors, dispatches `spawn Actor.handler(args)` synchronously, creates `spawn Actor` addresses with persistent actor-local state, enforces bounded source mailboxes through `Actor.spawn(capacity)`, and ships a generated `agent-orchestrator` actor template that runs/tests through managed actor addresses; full async OS-thread bridge remains partial | Bridge generated actor projects to the full async `garnet-actor-runtime` OS-thread address/mailbox runtime |
 | Rust-grade NLL and borrow rules | Partial Phase 4L | `garnet-check-v0.3/src/borrow.rs`; `garnet-check-v0.3/src/lib.rs`; `garnet-check-v0.3/tests/borrow.rs`; `garnet-check-v0.3/tests/extended.rs`; `partial_borrow_rule_suite` rejects direct use-after-move, direct mut-aliasing, `own self` method receiver moves, method receiver aliasing, simple typed receiver disambiguation, simple field-place aliasing/field use-after-move, and conservative index-place aliasing/index use-after-move while checking nested index operands; `deferred_full_borrow_rule_suite` now covers B5 same-call overlapping `own` drop discipline, direct-returning branch liveness, direct `return` block termination, direct-returning loop-body liveness, scoped `for` loop-variable liveness, scoped `match` pattern binding liveness, match guard move merging, and match-arm block statement preservation; `deferred_nll_lifetime_inference` covers conservative reference-return lifetime elision | Activate full CFG NLL, dynamic place tracking, generic/trait impl dispatch, broader drop elaboration, general loop fixed-point analysis, and two-phase borrows |
-| Pattern match exhaustiveness/reachability | Partial Phase 4V | `garnet-check-v0.3/src/match_coverage.rs`; `garnet-check-v0.3/tests/match_coverage.rs`; `deferred_match_exhaustiveness_and_reachability` rejects non-exhaustive safe-mode `Bool`, same-module enum, finite nested-constructor, and scoped named/glob/module-qualified imported enum alias matches, treats unknown guarded arms as non-covering, counts literal `if true` arms as coverage, rejects literal `if false` arms as statically unreachable, rejects duplicate finite covered arms, rejects open-domain duplicate literal arms plus arms after unguarded catch-all patterns, infers finite match domains from immutable local boolean/enum variant initializers, tracks direct mutable-local finite assignments plus non-finite assignment invalidation, joins finite match-domain evidence across conservative `if`/`elsif`/`else` assignment branches, carries nested `if` all-path assignment joins inside branch bodies, and explicitly invalidates finite evidence after compound assignments | Add cross-file/package imports, recursive/open payload reasoning, loop/try/closure-merged assignment flow, broader expression/type inference, open-domain exhaustiveness/range reasoning, and richer non-literal guard-aware diagnostics |
+| Pattern match exhaustiveness/reachability | Partial Phase 4W | `garnet-check-v0.3/src/match_coverage.rs`; `garnet-check-v0.3/tests/match_coverage.rs`; `deferred_match_exhaustiveness_and_reachability` rejects non-exhaustive safe-mode `Bool`, same-module enum, finite nested-constructor, and scoped named/glob/module-qualified imported enum alias matches, treats unknown guarded arms as non-covering, counts literal `if true` arms as coverage, rejects literal `if false` arms as statically unreachable, rejects duplicate finite covered arms, rejects open-domain duplicate literal arms plus arms after unguarded catch-all patterns, infers finite match domains from immutable local boolean/enum variant initializers, tracks direct mutable-local finite assignments plus non-finite assignment invalidation, joins finite match-domain evidence across conservative `if`/`elsif`/`else` assignment branches, carries nested `if` all-path assignment joins inside branch bodies, explicitly invalidates finite evidence after compound assignments, and conservatively invalidates after possible loop-body assignments with ordered shadowing checks | Add cross-file/package imports, recursive/open payload reasoning, loop fixed-point domain inference, try/closure-merged assignment flow, broader expression/type inference, open-domain exhaustiveness/range reasoning, and richer non-literal guard-aware diagnostics |
 | Trait coherence | Partial Phase 5C | `garnet-check-v0.3/src/coherence.rs`; `garnet-check-v0.3/tests/coherence.rs`; `deferred_trait_coherence` rejects exact duplicate trait impls, orphan-rule violations, simple generic blanket-vs-concrete overlaps, renamed generic blanket overlaps, and qualified external type short-name collisions while allowing local-trait, local-type, and qualified local-module impls | Activate specialization and imported-package coherence solving |
 | Generic instantiation / monomorphization | Partial Phase 5B | `generic_instantiation_runs_without_monomorphization_claims` runs generic struct construction, a generic impl method, and a generic function through the managed interpreter | Keep native zero-cost monomorphization deferred until a compiler backend exists |
 | Memory Core ARC/cycles and allocator integration | Partial Phase 6L | `garnet-memory-v0.3/src/{alloc,cycle,working,episodic,semantic,procedural}.rs`; `garnet-memory-v0.3/tests/{cycle,properties,persistence}.rs`; active `deferred_arc_cycle_detection`; `CycleAllocatorFixture` owns graph + root buffer for root/edge decrement scheduling; all four stores expose kind-aware allocator stats; policy-configured episodic/semantic stores evict lazily on read/search; `CycleAwareKindAllocator` observes store-root retain/release lifecycles on write, clear, eviction, replacement, and drop; `EpisodeStore::save_text` / `load_text` now prove versioned episodic text snapshot recovery, delimiter-safe payload encoding, malformed-file non-mutation, and cycle-aware root rehydration | Promote the bounded allocator-owned fixture model into production allocator-integrated ARC and broaden persistence/backend hardening beyond the reference episodic snapshot slice |
@@ -772,7 +772,8 @@ branch assigns a non-finite value.
 
 Remaining: nested all-path `if` branch assignment flow is covered in Step 2P
 below; compound-assignment invalidation is covered in Step 2Q below;
-loop/try/closure-merged assignment
+loop-body invalidation is covered in Step 2R below; loop fixed-point,
+try/closure-merged assignment
 flow, cross-file/package imports, recursive/open payload reasoning, broader
 expression/type inference, open-domain exhaustiveness/range reasoning, and
 non-literal guard reasoning are still deferred.
@@ -812,6 +813,28 @@ cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustivene
 Evidence: Phase 4V accepts matches after direct compound assignment and after
 compound assignments in every `if`/`else` branch without reporting stale
 finite-domain non-exhaustiveness diagnostics.
+
+- [x] **Step 2R: Invalidate domains after possible loop-body assignments**
+
+Loops may execute and assign through only some iterations or nested branches.
+Conservatively clear finite match-domain evidence for outer bindings assigned
+inside `while`, `for`, or `loop` bodies instead of preserving stale pre-loop
+domains. Loop-local bindings remain excluded so shadowing does not erase the
+outer domain, while assignments before a later loop-local shadow still clear
+the outer finite-domain evidence.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage loop_assignment
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4W accepts matches after possible `while`/`for` body
+assignments and after conditional assignments inside loop bodies without
+reporting stale finite-domain diagnostics, while ordered shadowing tests prove
+that loop-local declarations neither erase the outer domain nor hide earlier
+outer assignments in the same loop body.
 
 ## Milestone 5: Traits, Coherence, And Generic Instantiation
 

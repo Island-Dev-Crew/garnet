@@ -575,7 +575,8 @@ matches.
 
 Remaining: nested all-path `if` branch assignment flow is covered in Step 2P
 below; compound-assignment invalidation is covered in Step 2Q below;
-loop/try/closure-merged assignment
+loop-body invalidation is covered in Step 2R below; loop fixed-point,
+try/closure-merged assignment
 flow, cross-file/package imports, recursive/open payload reasoning, richer type
 inference, open-domain exhaustiveness/range reasoning, and non-literal guard
 reasoning remain pending.
@@ -608,6 +609,21 @@ Evidence: Phase 4V proves direct compound assignments and all-branch
 compound assignments clear finite `Bool`/enum match-domain evidence before a
 later match, so operator/type-dependent updates cannot reuse stale finite
 domains.
+
+- [x] **Step 2R: Invalidate domains after possible loop-body assignments**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage loop_assignment
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4W clears finite match-domain evidence when an outer binding
+may be assigned in a `while`, `for`, or `loop` body, including conditional
+assignments inside a loop body, while ordered shadowing tests preserve outer
+domains when a loop-local binding merely shadows the same name and still clear
+outer evidence when an assignment appears before the local shadow.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 
