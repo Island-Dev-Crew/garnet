@@ -1039,9 +1039,28 @@ cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_han
 Evidence: Phase 4AU applies the runtime equality rule for distinct known
 literal kinds inside the narrow const guard fact domain. `Core::EMPTY != false`
 counts as coverage, and `Core::EMPTY == false` is statically
-false/non-covering. Floats, interpolated strings, ordering comparisons,
+false/non-covering. Float arithmetic, non-finite floats, interpolated strings, ordering comparisons,
 function-call evaluation, recursion, cross-file/package imports, and broader
 const expression evaluation remain deferred.
+
+- [x] **Step 2ZQ: Fold finite float const equality facts**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage float_const
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AV extends the narrow const guard fact domain to finite
+floats and runtime-aligned int-float equality. `Core::RATIO == 1.5` and
+`Core::COUNT == 1.0` count as coverage, `Core::RATIO != 1.5` is statically
+false/non-covering, and non-finite float facts remain unknown. Float
+arithmetic, ordering comparisons, interpolated strings, function-call
+evaluation, recursion, cross-file/package imports, and broader const expression
+evaluation remain deferred.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 

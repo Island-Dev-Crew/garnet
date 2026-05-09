@@ -10,14 +10,14 @@
 //! proven direct closure call-effect invalidation for local branch-selected
 //! closures. It also recognizes immutable local, same-module top-level, and
 //! named/glob imported top-level boolean constants, same-module and
-//! named/glob imported top-level integer constants, static nil/symbol/plain-string
-//! equality and inequality facts, mixed known-literal equality/inequality facts,
-//! narrow boolean const aliases, and basic boolean const expressions in match
-//! guards, and rejects duplicate literal arms and arms after catch-all arms in
-//! otherwise open-domain matches. Boolean const `and`/`or` folding honors
-//! decisive left operands without requiring the right operand to resolve, and
-//! boolean const equality / inequality comparisons fold over already-resolved
-//! boolean facts. Direct
+//! named/glob imported top-level integer constants, static finite-float,
+//! nil/symbol/plain-string equality and inequality facts, mixed known-literal
+//! equality/inequality facts, narrow boolean const aliases, and basic boolean
+//! const expressions in match guards, and rejects duplicate literal arms and
+//! arms after catch-all arms in otherwise open-domain matches. Boolean const
+//! `and`/`or` folding honors decisive left operands without requiring the right
+//! operand to resolve, and boolean const equality / inequality comparisons fold
+//! over already-resolved boolean facts. Direct
 //! boolean match guards use the same conservative folding, and narrow integer
 //! arithmetic plus equality/inequality and relational guard comparisons fold
 //! over the same fact domain using checked arithmetic. It does not attempt
@@ -58,10 +58,11 @@ enum GuardCoverage {
     Unknown,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 enum ConstFact {
     Bool(bool),
     Int(i64),
+    Float(f64),
     Nil,
     Symbol(String),
     Str(String),
@@ -71,7 +72,11 @@ impl ConstFact {
     fn into_bool(self) -> Option<bool> {
         match self {
             ConstFact::Bool(value) => Some(value),
-            ConstFact::Int(_) | ConstFact::Nil | ConstFact::Symbol(_) | ConstFact::Str(_) => None,
+            ConstFact::Int(_)
+            | ConstFact::Float(_)
+            | ConstFact::Nil
+            | ConstFact::Symbol(_)
+            | ConstFact::Str(_) => None,
         }
     }
 
@@ -79,6 +84,9 @@ impl ConstFact {
         match (self, other) {
             (ConstFact::Bool(lhs), ConstFact::Bool(rhs)) => lhs == rhs,
             (ConstFact::Int(lhs), ConstFact::Int(rhs)) => lhs == rhs,
+            (ConstFact::Float(lhs), ConstFact::Float(rhs)) => lhs == rhs,
+            (ConstFact::Int(lhs), ConstFact::Float(rhs))
+            | (ConstFact::Float(rhs), ConstFact::Int(lhs)) => (lhs as f64) == rhs,
             (ConstFact::Nil, ConstFact::Nil) => true,
             (ConstFact::Symbol(lhs), ConstFact::Symbol(rhs)) => lhs == rhs,
             (ConstFact::Str(lhs), ConstFact::Str(rhs)) => lhs == rhs,
@@ -213,6 +221,7 @@ impl Checker {
         match expr {
             Expr::Bool(value, _) => Some(ConstFact::Bool(*value)),
             Expr::Int(value, _) => Some(ConstFact::Int(*value)),
+            Expr::Float(value, _) => finite_float_fact(*value),
             Expr::Nil(_) => Some(ConstFact::Nil),
             Expr::Symbol(value, _) => Some(ConstFact::Symbol(value.clone())),
             Expr::Str(value, _) => plain_string_literal(value).map(ConstFact::Str),
@@ -234,12 +243,11 @@ impl Checker {
                 op: UnOp::Neg,
                 expr,
                 ..
-            } => {
-                let ConstFact::Int(value) = self.const_fact_from_expr(expr, module_path)? else {
-                    return None;
-                };
-                value.checked_neg().map(ConstFact::Int)
-            }
+            } => match self.const_fact_from_expr(expr, module_path)? {
+                ConstFact::Int(value) => value.checked_neg().map(ConstFact::Int),
+                ConstFact::Float(value) => finite_float_fact(-value),
+                _ => None,
+            },
             Expr::Unary { .. } => None,
             Expr::Binary {
                 op: BinOp::And,
@@ -1319,6 +1327,7 @@ impl Checker {
         match expr {
             Expr::Bool(value, _) => Some(ConstFact::Bool(*value)),
             Expr::Int(value, _) => Some(ConstFact::Int(*value)),
+            Expr::Float(value, _) => finite_float_fact(*value),
             Expr::Nil(_) => Some(ConstFact::Nil),
             Expr::Symbol(value, _) => Some(ConstFact::Symbol(value.clone())),
             Expr::Str(value, _) => plain_string_literal(value).map(ConstFact::Str),
@@ -1336,14 +1345,11 @@ impl Checker {
                 op: UnOp::Neg,
                 expr,
                 ..
-            } => {
-                let ConstFact::Int(value) =
-                    self.guard_value_from_match_guard(expr, guard_facts, scope)?
-                else {
-                    return None;
-                };
-                value.checked_neg().map(ConstFact::Int)
-            }
+            } => match self.guard_value_from_match_guard(expr, guard_facts, scope)? {
+                ConstFact::Int(value) => value.checked_neg().map(ConstFact::Int),
+                ConstFact::Float(value) => finite_float_fact(-value),
+                _ => None,
+            },
             Expr::Unary { .. } => None,
             Expr::Binary {
                 op: BinOp::And,
@@ -1913,6 +1919,7 @@ fn local_guard_fact_from_expr(expr: &Expr, guard_facts: &GuardFacts) -> Option<C
     match expr {
         Expr::Bool(value, _) => Some(ConstFact::Bool(*value)),
         Expr::Int(value, _) => Some(ConstFact::Int(*value)),
+        Expr::Float(value, _) => finite_float_fact(*value),
         Expr::Nil(_) => Some(ConstFact::Nil),
         Expr::Symbol(value, _) => Some(ConstFact::Symbol(value.clone())),
         Expr::Str(value, _) => plain_string_literal(value).map(ConstFact::Str),
@@ -2074,6 +2081,10 @@ fn plain_string_literal(value: &StringLit) -> Option<String> {
         }
     }
     Some(text)
+}
+
+fn finite_float_fact(value: f64) -> Option<ConstFact> {
+    value.is_finite().then_some(ConstFact::Float(value))
 }
 
 fn remove_pattern_bindings(pattern: &Pattern, env: &mut Env) {
