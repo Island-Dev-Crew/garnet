@@ -558,6 +558,31 @@ fn caller(own b: Buffer) -> Int {
         stdout.contains("drop discipline"),
         "expected drop-discipline diagnostic, got:\n{stdout}"
     );
+
+    let returning_branch_src = r#"
+fn consume(own x: Buffer) -> Int {
+  0
+}
+
+fn read(borrow x: Buffer) -> Int {
+  0
+}
+
+fn caller(own b: Buffer, c: Bool) -> Int {
+  if c {
+    consume(b)
+    return 0
+  } else {
+    0
+  }
+  read(b)
+  0
+}
+"#;
+    let returning_branch_path =
+        temp_source("borrow_returning_branch_liveness", returning_branch_src);
+    assert_ok(&["parse"], &returning_branch_path);
+    assert_ok(&["check"], &returning_branch_path);
 }
 
 #[test]

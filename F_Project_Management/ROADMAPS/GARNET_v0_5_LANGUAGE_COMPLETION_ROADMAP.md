@@ -337,6 +337,25 @@ Remaining: full CFG NLL, closure capture lifetimes, variance, dynamic places,
 generic receiver types, trait impl dispatch, broader scope/branch drop
 elaboration, and two-phase borrows remain pending.
 
+- [x] **Step 2C: Add direct-returning branch liveness**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test borrow returning
+cargo test -p garnet-cli --test conformance_skeleton deferred_full_borrow_rule_suite
+```
+
+Evidence: Phase 4H checks `if`/`elsif`/`else` branches independently and only
+merges moves from branch bodies that can continue. Values moved inside a
+direct-returning branch can be borrowed on later continuing paths, while moves
+inside continuing branches and condition expressions remain conservative.
+
+Remaining: full CFG NLL, nested/non-local terminators, loops, closure capture
+lifetimes, variance, dynamic places, generic receiver types, trait impl
+dispatch, broader scope/branch drop elaboration, and two-phase borrows remain
+pending.
+
 ## Phase 5: Traits, Coherence, And Monomorphization
 
 **Intent:** Make the Rust-rigor side credible without overclaiming zero-cost guarantees.

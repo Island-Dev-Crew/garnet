@@ -32,7 +32,7 @@ language-completeness work can move from prose to executable evidence.
 | §11.7 static impl fallback + method_missing | v0.5 Phase 2D | Runtime Gate | `static_impl_dispatch_and_method_missing` | active pass |
 | §11.7 `@dynamic impl` dispatch tables | v0.5 Phase 2H | Runtime Gate | `dynamic_impl_dispatch_tables` | active pass |
 | §11.8 structural protocol semantics | v0.5 Phase 2C/2E/2F/2G/2H | Runtime/Checker Gate | `deferred_structural_protocols`; `parses_protocol_cast_expression`; `dynamic_impl_dispatch_tables` | active pass, including arity, parameter-type, return-type, mode, `as Protocol` cast, generic protocol substitution, typed built-in method signature negatives, and `@dynamic impl` protocol satisfaction |
-| §8.6 partial borrow rules | v0.5 Phase 4G | Safe-Mode Gate | `partial_borrow_rule_suite`; `deferred_full_borrow_rule_suite` | active pass for B1/B2 direct mut-alias rejection, method receiver aliasing, simple field-place aliasing/field moves, conservative index-place aliasing/index moves with nested index operand checks, B4 direct function use-after-move, unambiguous `own self` method receiver use-after-move, simple typed receiver disambiguation for same-named impl methods, and B5 same-call overlapping `own` drop-discipline rejection |
+| §8.6 partial borrow rules | v0.5 Phase 4H | Safe-Mode Gate | `partial_borrow_rule_suite`; `deferred_full_borrow_rule_suite` | active pass for B1/B2 direct mut-alias rejection, method receiver aliasing, simple field-place aliasing/field moves, conservative index-place aliasing/index moves with nested index operand checks, B4 direct function use-after-move, unambiguous `own self` method receiver use-after-move, simple typed receiver disambiguation for same-named impl methods, B5 same-call overlapping `own` drop-discipline rejection, and branch-return liveness for direct-returning `if`/`else` branches |
 
 ## Deferred or Partial Test Handles
 
@@ -44,7 +44,7 @@ called complete.
 |---|---|---|---|
 | §4.5 production ARC + Bacon-Rajan allocator integration | v0.5 Phase 6 | Memory Core Gate | active Phase 6A/6B/6C/6D fixtures plus future allocator-integrated collector tests |
 | §8.5 NLL/lifetime inference | v0.5 Phase 4F | Safe-Mode Gate | `deferred_nll_lifetime_inference` | active pass for conservative lifetime elision on reference returns; full region solving remains deferred |
-| §8.6 full place-granular borrow rules B1-B5 | v0.5 Phase 4G | Safe-Mode Gate | `deferred_full_borrow_rule_suite` | active partial pass for B5 same-call overlapping `own` drop-discipline rejection; full CFG/drop elaboration remains deferred |
+| §8.6 full place-granular borrow rules B1-B5 | v0.5 Phase 4H | Safe-Mode Gate | `deferred_full_borrow_rule_suite` | active partial pass for B5 same-call overlapping `own` drop-discipline rejection plus direct-returning branch liveness; full CFG/drop elaboration remains deferred |
 | §11.5 trait coherence | v0.5 Phase 5C | Type-System Gate | `deferred_trait_coherence` | active pass for exact duplicate trait impl rejection, conservative orphan-rule enforcement, simple generic overlap rejection, and qualified-path local/external discrimination; specialization and imported-package coherence remain deferred |
 | §11.6 generic instantiation / monomorphization | v0.5 Phase 5B | Type-System Gate | `generic_instantiation_runs_without_monomorphization_claims` | active pass for interpreter-level generic struct/function/impl evidence; native monomorphization remains deferred |
 

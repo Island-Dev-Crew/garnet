@@ -21,11 +21,13 @@
 //!   impl-block dispatch remains deferred.
 //! - Simple field projections are tracked as places for move and alias checks.
 //!   Index expressions are tracked conservatively as wildcard sub-places.
-//! - Branch joins are conservative and coarse-grained. Full NLL, precise
-//!   nested place borrows beyond simple fields, and lifetime containment remain
-//!   deferred.
+//! - Branch joins are conservative and coarse-grained, with a first
+//!   direct-returning branch liveness slice. Full NLL, precise nested place
+//!   borrows beyond simple fields, and lifetime containment remain deferred.
 
-use garnet_parser::ast::{Expr, FnDef, FnMode, Item, Module, Ownership, Pattern, Stmt, TypeExpr};
+use garnet_parser::ast::{
+    Block, Expr, FnDef, FnMode, Item, Module, Ownership, Pattern, Stmt, TypeExpr,
+};
 use std::collections::{HashMap, HashSet};
 
 use crate::CheckError;
@@ -164,6 +166,11 @@ struct Env {
     types: HashMap<String, String>,
 }
 
+struct BranchOutcome {
+    env: Env,
+    continues: bool,
+}
+
 impl Env {
     fn record_move(&mut self, binding: &str, callee: &str) {
         self.moved.insert(
@@ -284,6 +291,32 @@ fn check_fn_body(f: &FnDef, sigs: &SignatureTables, diags: &mut Vec<CheckError>)
     }
     if let Some(tail) = &f.body.tail_expr {
         check_expr(tail, &mut env, sigs, &f.name, diags);
+    }
+}
+
+fn check_branch_block(
+    block: &Block,
+    base: &Env,
+    sigs: &SignatureTables,
+    fn_name: &str,
+    diags: &mut Vec<CheckError>,
+) -> BranchOutcome {
+    let mut branch_env = base.clone();
+    for stmt in &block.stmts {
+        check_stmt(stmt, &mut branch_env, sigs, fn_name, diags);
+        if matches!(stmt, Stmt::Return { .. }) {
+            return BranchOutcome {
+                env: branch_env,
+                continues: false,
+            };
+        }
+    }
+    if let Some(tail) = &block.tail_expr {
+        check_expr(tail, &mut branch_env, sigs, fn_name, diags);
+    }
+    BranchOutcome {
+        env: branch_env,
+        continues: true,
     }
 }
 
@@ -451,37 +484,38 @@ fn check_expr(
             ..
         } => {
             check_expr(condition, env, sigs, fn_name, diags);
-            // Each branch is checked independently against a snapshot of
-            // env. Conservative: if any branch moves a binding, the binding
-            // is considered moved after the if.
             let snapshot = env.clone();
-            for s in &then_block.stmts {
-                check_stmt(s, env, sigs, fn_name, diags);
+            let mut merged_moved = snapshot.moved.clone();
+
+            // Each branch is checked independently against a snapshot of
+            // env. Conservative: moves from branches that may continue are
+            // merged after the if. A branch that returns from the function
+            // cannot poison later code on paths that still continue.
+            let then_outcome = check_branch_block(then_block, &snapshot, sigs, fn_name, diags);
+            if then_outcome.continues {
+                merged_moved.extend(then_outcome.env.moved);
             }
-            if let Some(tail) = &then_block.tail_expr {
-                check_expr(tail, env, sigs, fn_name, diags);
-            }
+
             for (cond, block) in elsif_clauses {
                 let mut alt_env = snapshot.clone();
                 check_expr(cond, &mut alt_env, sigs, fn_name, diags);
-                for s in &block.stmts {
-                    check_stmt(s, &mut alt_env, sigs, fn_name, diags);
+                let after_cond = alt_env.clone();
+                let branch_outcome = check_branch_block(block, &after_cond, sigs, fn_name, diags);
+                if branch_outcome.continues {
+                    merged_moved.extend(branch_outcome.env.moved);
+                } else {
+                    merged_moved.extend(after_cond.moved);
                 }
-                if let Some(tail) = &block.tail_expr {
-                    check_expr(tail, &mut alt_env, sigs, fn_name, diags);
-                }
-                env.moved.extend(alt_env.moved);
             }
+
             if let Some(b) = else_block {
-                let mut alt_env = snapshot;
-                for s in &b.stmts {
-                    check_stmt(s, &mut alt_env, sigs, fn_name, diags);
+                let branch_outcome = check_branch_block(b, &snapshot, sigs, fn_name, diags);
+                if branch_outcome.continues {
+                    merged_moved.extend(branch_outcome.env.moved);
                 }
-                if let Some(tail) = &b.tail_expr {
-                    check_expr(tail, &mut alt_env, sigs, fn_name, diags);
-                }
-                env.moved.extend(alt_env.moved);
             }
+
+            env.moved = merged_moved;
         }
         Expr::Match { subject, arms, .. } => {
             check_expr(subject, env, sigs, fn_name, diags);

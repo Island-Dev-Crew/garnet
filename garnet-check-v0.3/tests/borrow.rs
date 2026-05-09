@@ -156,6 +156,54 @@ fn move_in_one_branch_propagates_after_if() {
     );
 }
 
+#[test]
+fn move_in_returning_then_branch_does_not_propagate_after_if() {
+    let src = r#"
+        fn consume(own x: Buffer) -> Int { 0 }
+        fn read(borrow x: Buffer) -> Int { 0 }
+        fn caller(own b: Buffer, c: Bool) -> Int {
+            if c {
+                consume(b)
+                return 0
+            } else {
+                0
+            }
+            read(b)
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        !d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "a move in a returning branch should not poison continuing paths, got {d:?}"
+    );
+}
+
+#[test]
+fn move_in_returning_else_branch_does_not_propagate_after_if() {
+    let src = r#"
+        fn consume(own x: Buffer) -> Int { 0 }
+        fn read(borrow x: Buffer) -> Int { 0 }
+        fn caller(own b: Buffer, c: Bool) -> Int {
+            if c {
+                0
+            } else {
+                consume(b)
+                return 0
+            }
+            read(b)
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        !d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "a move in a returning else branch should not poison continuing paths, got {d:?}"
+    );
+}
+
 // ── Method receivers ──
 
 #[test]
