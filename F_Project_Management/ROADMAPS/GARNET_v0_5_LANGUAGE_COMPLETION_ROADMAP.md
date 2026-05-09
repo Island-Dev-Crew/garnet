@@ -531,9 +531,29 @@ literal initializers and enum variant constructor/path initializers, so `let
 flag = true` and `let status = Status::Ready()` can trigger finite-domain
 non-exhaustiveness diagnostics without explicit local type annotations.
 
-Remaining: cross-file/package imports, recursive/open payload reasoning, richer
-type inference, assignment-sensitive mutable-var domain tracking, open-domain
-exhaustiveness/range reasoning, and non-literal guard reasoning remain pending.
+Remaining: direct mutable-local assignment tracking is covered in Step 2N
+below; cross-file/package imports, recursive/open payload reasoning, richer type
+inference, open-domain exhaustiveness/range reasoning, and non-literal guard
+reasoning remain pending.
+
+- [x] **Step 2N: Track direct mutable-local match-domain assignments**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage mutable_
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4S adds assignment-sensitive direct `let mut` match-domain
+tracking: finite boolean/enum assignments seed safe-mode match coverage, and
+non-finite assignments invalidate inferred finite-domain state before later
+matches.
+
+Remaining: branch-merged assignment flow, compound-assignment domain inference,
+cross-file/package imports, recursive/open payload reasoning, richer type
+inference, open-domain exhaustiveness/range reasoning, and non-literal guard
+reasoning remain pending.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 

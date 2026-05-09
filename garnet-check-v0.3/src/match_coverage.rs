@@ -3,16 +3,17 @@
 //! This is intentionally a narrow semantic slice: it proves exhaustiveness and
 //! simple reachability for `Bool`, same-module enum subjects, imported enum
 //! aliases, finite nested constructor payloads, and literal `true`/`false`
-//! guards whose type is visible from parameter metadata, local annotations, or
-//! immutable local boolean/enum variant initializers. It also rejects duplicate
-//! literal arms and arms after catch-all arms in otherwise open-domain matches.
-//! It does not attempt full type inference, recursive/open payload coverage, or
+//! guards whose type is visible from parameter metadata, local annotations,
+//! local boolean/enum variant initializers, or direct mutable-local
+//! assignments. It also rejects duplicate literal arms and arms after catch-all
+//! arms in otherwise open-domain matches. It does not attempt full type
+//! inference, branch-merged assignment flow, recursive/open payload coverage, or
 //! non-literal guard reasoning.
 
 use crate::CheckError;
 use garnet_parser::ast::{
-    Block, ClosureBody, Expr, FnDef, FnMode, Item, Module, Pattern, Stmt, StringLit, TypeExpr,
-    UseImports,
+    AssignOp, Block, ClosureBody, Expr, FnDef, FnMode, Item, Module, Pattern, Stmt, StringLit,
+    TypeExpr, UseImports,
 };
 use garnet_parser::token::StrPart;
 use std::collections::{BTreeMap, BTreeSet};
@@ -232,9 +233,21 @@ impl Checker {
             Stmt::Const(decl) => {
                 self.walk_expr(&decl.value, fn_name, env, scope);
             }
-            Stmt::Assign { target, value, .. } => {
+            Stmt::Assign {
+                target, op, value, ..
+            } => {
+                let assigned_domain = matches!(op, AssignOp::Eq)
+                    .then(|| self.domain_from_expr(value, env, scope))
+                    .flatten();
                 self.walk_expr(target, fn_name, env, scope);
                 self.walk_expr(value, fn_name, env, scope);
+                if let Expr::Ident(name, _) = target {
+                    if let Some(domain) = assigned_domain {
+                        env.insert(name.clone(), domain);
+                    } else {
+                        env.remove(name);
+                    }
+                }
             }
             Stmt::While {
                 condition, body, ..

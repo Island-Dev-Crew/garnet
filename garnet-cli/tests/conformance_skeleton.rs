@@ -839,6 +839,47 @@ fn bool_code() -> Int {
         "expected initializer-driven Bool missing pattern diagnostic, got:\n{stdout}"
     );
 
+    let mutable_bool_assignment_src = r#"
+fn bool_code() -> Int {
+  let mut flag = 1
+  flag = true
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let mutable_bool_assignment_path = temp_source(
+        "match_mutable_bool_assignment_non_exhaustive",
+        mutable_bool_assignment_src,
+    );
+    assert_ok(&["parse"], &mutable_bool_assignment_path);
+    let out = run(&["check"], &mutable_bool_assignment_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode mutable Bool finite assignments must reject missing finite-domain cases"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("non-exhaustive match") && stdout.contains("`false`"),
+        "expected mutable assignment-driven Bool missing pattern diagnostic, got:\n{stdout}"
+    );
+
+    let mutable_invalidation_src = r#"
+fn bool_code() -> Int {
+  let mut flag = true
+  flag = 1
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let mutable_invalidation_path = temp_source(
+        "match_mutable_assignment_invalidation_open",
+        mutable_invalidation_src,
+    );
+    assert_ok(&["parse"], &mutable_invalidation_path);
+    assert_ok(&["check"], &mutable_invalidation_path);
+
     let enum_complete_src = r#"
 enum Status { Ready, Done }
 
@@ -902,6 +943,32 @@ fn status_code() -> Int {
     assert!(
         stdout.contains("non-exhaustive match") && stdout.contains("Status::Done"),
         "expected initializer-driven enum missing variant diagnostic, got:\n{stdout}"
+    );
+
+    let mutable_enum_initializer_missing_src = r#"
+enum Status { Ready, Done }
+
+fn status_code() -> Int {
+  let mut status = Status::Ready()
+  match status {
+    Status::Ready => 1
+  }
+}
+"#;
+    let mutable_enum_initializer_missing_path = temp_source(
+        "match_mutable_enum_initializer_missing",
+        mutable_enum_initializer_missing_src,
+    );
+    assert_ok(&["parse"], &mutable_enum_initializer_missing_path);
+    let out = run(&["check"], &mutable_enum_initializer_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode mutable enum initializers must reject missing finite-domain cases"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("non-exhaustive match") && stdout.contains("Status::Done"),
+        "expected mutable enum initializer missing variant diagnostic, got:\n{stdout}"
     );
 
     let nested_missing_src = r#"
