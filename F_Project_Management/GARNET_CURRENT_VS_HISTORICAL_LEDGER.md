@@ -105,9 +105,10 @@ When documents conflict, use this order:
   invalidates finite domains after direct closure-literal invocations. Phase 4Z
   extends that proof to directly called local closure-literal bindings. Phase
   4AA carries local closure effects through all-branch `if` expression closure
-  returns. Full
+  returns. Phase 4AB joins local closure-effect maps after all-path branch
+  rebinding of closure literals to an existing binding. Full
   Rust-grade CFG NLL, nested/non-local terminators, general loop fixed-point
-  analysis, loop fixed-point domain inference, mutable/escaped/higher-order closure invocation/call-effect analysis, cross-file/package
+  analysis, loop fixed-point domain inference, broader mutable/escaped/higher-order closure invocation/call-effect analysis, cross-file/package
   imports, recursive/open payload reasoning, broader expression/type
   inference, open-domain exhaustiveness/range reasoning, non-literal guard
   reasoning, dynamic places, broader drop elaboration, and generic/trait impl

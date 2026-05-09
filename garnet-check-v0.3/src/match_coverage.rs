@@ -9,7 +9,7 @@
 //! nested all-path `if` assignment joins inside branch bodies. It also rejects
 //! duplicate literal arms and arms after catch-all arms in otherwise
 //! open-domain matches. It does not attempt full type inference,
-//! loop fixed-point or mutable/escaped/higher-order closure call-effect
+//! loop fixed-point or broader mutable/escaped/higher-order closure call-effect
 //! analysis, recursive/open payload coverage, or non-literal guard reasoning.
 
 use crate::CheckError;
@@ -387,41 +387,49 @@ impl Checker {
                 let branch_base = env.clone();
                 let branch_effects = closure_effects.clone();
                 let mut then_effects = branch_effects.clone();
-                let mut branch_envs = vec![self.walk_block(
+                let then_env = self.walk_block(
                     then_block,
                     fn_name,
                     branch_base.clone(),
                     &mut then_effects,
                     scope,
-                )];
+                );
+                let mut branch_envs = vec![then_env];
+                let mut branch_closure_effects = vec![then_effects];
                 let mut branch_targets = vec![assigned_outer_targets_in_block(then_block)];
                 for (condition, block) in elsif_clauses {
                     self.walk_expr(condition, fn_name, env, closure_effects, scope);
                     let mut elsif_effects = branch_effects.clone();
-                    branch_envs.push(self.walk_block(
+                    let elsif_env = self.walk_block(
                         block,
                         fn_name,
                         branch_base.clone(),
                         &mut elsif_effects,
                         scope,
-                    ));
+                    );
+                    branch_envs.push(elsif_env);
+                    branch_closure_effects.push(elsif_effects);
                     branch_targets.push(assigned_outer_targets_in_block(block));
                 }
                 if let Some(block) = else_block {
                     let mut else_effects = branch_effects.clone();
-                    branch_envs.push(self.walk_block(
+                    let else_env = self.walk_block(
                         block,
                         fn_name,
                         branch_base.clone(),
                         &mut else_effects,
                         scope,
-                    ));
+                    );
+                    branch_envs.push(else_env);
+                    branch_closure_effects.push(else_effects);
                     branch_targets.push(assigned_outer_targets_in_block(block));
                 } else {
                     branch_envs.push(branch_base);
+                    branch_closure_effects.push(branch_effects);
                     branch_targets.push(BTreeSet::new());
                 }
                 *env = join_branch_envs(env, &branch_envs, &branch_targets);
+                *closure_effects = join_branch_closure_effects(&branch_closure_effects);
             }
             Expr::Match { subject, arms, .. } => {
                 self.walk_expr(subject, fn_name, env, closure_effects, scope);
@@ -981,6 +989,25 @@ fn join_branch_envs(
             }
         }
         joined.insert(name.clone(), domain.clone());
+    }
+    joined
+}
+
+fn join_branch_closure_effects(branch_effects: &[ClosureEffects]) -> ClosureEffects {
+    let Some(first) = branch_effects.first() else {
+        return ClosureEffects::new();
+    };
+
+    let mut joined = ClosureEffects::new();
+    'bindings: for (name, targets) in first {
+        let mut merged = targets.clone();
+        for branch in &branch_effects[1..] {
+            let Some(other) = branch.get(name) else {
+                continue 'bindings;
+            };
+            merged.extend(other.iter().cloned());
+        }
+        joined.insert(name.clone(), merged);
     }
     joined
 }

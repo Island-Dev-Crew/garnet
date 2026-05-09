@@ -1178,6 +1178,40 @@ fn bool_code(cond: Bool) -> Int {
         &branch_joined_closure_assignment_invalidation_path,
     );
 
+    let branch_rebound_closure_assignment_invalidation_src = r#"
+fn bool_code(cond: Bool) -> Int {
+  let mut flag = true
+  let mut updater = |value| {
+    value
+  }
+  if cond {
+    updater = |value| {
+      flag = value
+    }
+  } else {
+    updater = |value| {
+      flag = false
+    }
+  }
+  updater(1)
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let branch_rebound_closure_assignment_invalidation_path = temp_source(
+        "match_branch_rebound_closure_assignment_invalidation_open",
+        branch_rebound_closure_assignment_invalidation_src,
+    );
+    assert_ok(
+        &["parse"],
+        &branch_rebound_closure_assignment_invalidation_path,
+    );
+    assert_ok(
+        &["check"],
+        &branch_rebound_closure_assignment_invalidation_path,
+    );
+
     let enum_complete_src = r#"
 enum Status { Ready, Done }
 

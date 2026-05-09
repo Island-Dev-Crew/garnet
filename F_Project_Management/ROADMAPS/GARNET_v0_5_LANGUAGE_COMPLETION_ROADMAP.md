@@ -577,7 +577,12 @@ Remaining: nested all-path `if` branch assignment flow is covered in Step 2P
 below; compound-assignment invalidation is covered in Step 2Q below;
 loop-body invalidation is covered in Step 2R below; `try`/`ensure`
 invalidation and uninvoked closure-definition boundaries are covered in Step
-2S below; direct closure-literal invocation invalidation is covered in Step 2T below; direct local closure-literal binding call invalidation is covered in Step 2U below; branch-joined local closure-literal binding call invalidation is covered in Step 2V below; loop fixed-point and mutable/escaped/higher-order closure invocation/call-effect
+2S below; direct closure-literal invocation invalidation is covered in Step
+2T below; direct local closure-literal binding call invalidation is covered in
+Step 2U below; branch-joined local closure-literal binding call invalidation
+is covered in Step 2V below; branch-rebound local closure-literal binding call
+invalidation is covered in Step 2W below; loop fixed-point and broader
+mutable/escaped/higher-order closure invocation/call-effect
 flow, cross-file/package imports, recursive/open payload reasoning, richer type
 inference, open-domain exhaustiveness/range reasoning, and non-literal guard
 reasoning remain pending.
@@ -665,8 +670,8 @@ cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustivene
 
 Evidence: Phase 4Z tracks the conservative outer-write effect of local closure
 literals bound in the current block and clears finite match-domain evidence
-when that local binding is called directly. Mutable, escaped, and higher-order
-closure call-effect analysis remains deferred.
+when that local binding is called directly. Escaped closures, higher-order calls, and broader mutable closure flow remain
+deferred.
 
 - [x] **Step 2V: Invalidate branch-joined local closure binding calls**
 
@@ -680,8 +685,22 @@ cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustivene
 Evidence: Phase 4AA joins the conservative outer-write effects from every
 closure literal returned by an `if` / `elsif` / `else` expression assigned to a
 local binding, then clears finite match-domain evidence when that binding is
-called directly. Mutable, escaped, and higher-order closure call effects remain
+called directly. Escaped closures, higher-order calls, and broader mutable closure flow remain
 deferred.
+
+- [x] **Step 2W: Invalidate branch-rebound local closure binding calls**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage branch_rebound_local_closure_call_assignment
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4AB joins local closure-effect maps after all-path branch
+rebinding of a local closure binding to known closure literals, then clears
+finite match-domain evidence when that binding is called directly. Escaped
+closures, higher-order calls, and broader mutable closure flow remain deferred.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 

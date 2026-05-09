@@ -108,7 +108,7 @@ highest-leverage next milestones are:
 The v0.5 seven-phase roadmap is now tracked in
 `F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md` and
 `F_Project_Management/ROADMAPS/GARNET_v0_5_LANGUAGE_COMPLETION_ROADMAP.md`.
-Phase 4AA / 5C / 6P are the current readiness slices. Phases 1-3D added parser parity,
+Phase 4AB / 5C / 6P are the current readiness slices. Phases 1-3D added parser parity,
 managed block/dynamic/protocol runtime slices, managed actor addresses, bounded
 source mailboxes, and a generated actor-orchestrator template. Phase 4A
 activates partial safe-mode borrow conformance for direct use-after-move
@@ -182,9 +182,11 @@ bodies from merging assignment domains into the surrounding flow; safe-mode
 invalidates finite domains after direct invocation of closure literals. Phase 4Z
 extends that proof to directly called local closure-literal bindings. Phase
 4AA carries the local closure effect through `if`/`elsif`/`else` expressions
-when every branch returns a closure literal, while leaving mutable, escaped,
-and higher-order closure call effects deferred. Full CFG NLL region solving, loop
-fixed-point domain inference, mutable/escaped/higher-order closure invocation/call-effect analysis,
+when every branch returns a closure literal. Phase 4AB joins local
+closure-effect maps after all-path branch rebinding of closure literals to an
+existing binding, while leaving escaped and higher-order closure call effects
+plus broader mutable closure flow deferred. Full CFG NLL region solving, loop
+fixed-point domain inference, broader mutable/escaped/higher-order closure invocation/call-effect analysis,
 nested/non-local terminators, cross-file/package imports, recursive/open payload
 reasoning, broader inference, and non-literal guard reasoning remain deferred.
 Phase 5A activates
