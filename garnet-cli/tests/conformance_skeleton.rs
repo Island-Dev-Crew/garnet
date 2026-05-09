@@ -1841,6 +1841,73 @@ fn guarded_status_code(status: Status) -> Int {
         "expected local integer const expression false-guard and missing-case diagnostics, got:\n{stdout}"
     );
 
+    let local_path_integer_const_expr_true_guard_complete_src = r#"
+module Core {
+  const LIMIT = 2
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  let always = Core::LIMIT + 1 == 3
+  match status {
+    Status::Ready if always => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let local_path_integer_const_expr_true_guard_complete_path = temp_source(
+        "match_local_path_integer_const_expr_true_guard_enum_complete",
+        local_path_integer_const_expr_true_guard_complete_src,
+    );
+    assert_ok(
+        &["parse"],
+        &local_path_integer_const_expr_true_guard_complete_path,
+    );
+    assert_ok(
+        &["check"],
+        &local_path_integer_const_expr_true_guard_complete_path,
+    );
+
+    let local_path_integer_const_expr_false_guard_missing_src = r#"
+module Core {
+  const LIMIT = 2
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  let never = Core::LIMIT + 1 < 3
+  match status {
+    Status::Ready if never => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let local_path_integer_const_expr_false_guard_missing_path = temp_source(
+        "match_local_path_integer_const_expr_false_guard_enum_missing",
+        local_path_integer_const_expr_false_guard_missing_src,
+    );
+    assert_ok(
+        &["parse"],
+        &local_path_integer_const_expr_false_guard_missing_path,
+    );
+    let out = run(
+        &["check"],
+        &local_path_integer_const_expr_false_guard_missing_path,
+    );
+    assert!(
+        !out.status.success(),
+        "safe-mode false path-qualified local integer const expressions must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected path-qualified local integer const expression false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
     let const_false_guard_missing_src = r#"
 const NEVER = false
 enum Status { Ready, Done }

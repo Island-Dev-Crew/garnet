@@ -147,6 +147,8 @@ fn match_exhaustiveness_handle_documents_active_partial_scope() {
         "match_local_boolean_const_expr_true_guard_enum_complete",
         "match_local_integer_const_expr_true_guard_enum_complete",
         "match_local_integer_const_expr_false_guard_enum_missing",
+        "match_local_path_integer_const_expr_true_guard_enum_complete",
+        "match_local_path_integer_const_expr_false_guard_enum_missing",
         "match_const_false_guard_enum_missing",
         "match_imported_const_false_guard_enum_missing",
         "match_path_const_true_guard_enum_complete",

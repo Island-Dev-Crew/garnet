@@ -1196,6 +1196,61 @@ fn false_local_integer_const_expression_guard_is_unreachable_and_not_coverage() 
 }
 
 #[test]
+fn local_path_integer_const_expression_guard_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            let always = Core::LIMIT + 1 == 3
+            match status {
+                Status::Ready if always => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "path-qualified local integer const expressions should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_local_path_integer_const_expression_guard_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            let never = Core::LIMIT + 1 < 3
+            match status {
+                Status::Ready if never => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false path-qualified local integer const expressions should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
 fn mutable_local_expression_source_stays_unknown_and_non_covering() {
     let errs = check(
         r#"

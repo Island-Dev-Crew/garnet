@@ -21,9 +21,9 @@
 //! boolean match guards use the same conservative folding. Narrow integer
 //! arithmetic plus equality/inequality and relational guard comparisons, along
 //! with finite-float equality/inequality, relational, and arithmetic guard
-//! comparisons, and immutable local boolean/integer expression aliases fold
-//! over the same fact domain using checked or runtime-aligned numeric rules. It
-//! does not attempt
+//! comparisons, and immutable local boolean/integer expression aliases,
+//! including path-qualified constant references, fold over the same fact domain
+//! using checked or runtime-aligned numeric rules. It does not attempt
 //! full type inference, loop fixed-point inference, broader
 //! mutable/escaped/general higher-order closure call-effect analysis,
 //! recursive/open payload coverage, or broader non-literal guard reasoning.
@@ -514,7 +514,9 @@ impl Checker {
                     env.insert(decl.name.clone(), domain);
                 }
                 update_closure_effect(decl.name.clone(), &decl.value, closure_effects);
-                update_guard_fact_for_let(decl, guard_facts);
+                update_guard_fact_for_let(decl, guard_facts, &|path| {
+                    self.resolve_const_fact_path(path, scope)
+                });
             }
             Stmt::Var(decl) => {
                 self.walk_expr(
@@ -545,7 +547,9 @@ impl Checker {
                     scope,
                 );
                 update_closure_effect(decl.name.clone(), &decl.value, closure_effects);
-                update_guard_fact(decl.name.clone(), &decl.value, guard_facts);
+                update_guard_fact(decl.name.clone(), &decl.value, guard_facts, &|path| {
+                    self.resolve_const_fact_path(path, scope)
+                });
             }
             Stmt::Assign {
                 target, op, value, ..
@@ -1887,16 +1891,25 @@ fn update_closure_effect(name: String, value: &Expr, closure_effects: &mut Closu
     }
 }
 
-fn update_guard_fact_for_let(decl: &garnet_parser::ast::LetDecl, guard_facts: &mut GuardFacts) {
+fn update_guard_fact_for_let<F>(
+    decl: &garnet_parser::ast::LetDecl,
+    guard_facts: &mut GuardFacts,
+    resolve_path: &F,
+) where
+    F: Fn(&[String]) -> Option<ConstFact>,
+{
     if decl.mutable {
         guard_facts.remove(&decl.name);
         return;
     }
-    update_guard_fact(decl.name.clone(), &decl.value, guard_facts);
+    update_guard_fact(decl.name.clone(), &decl.value, guard_facts, resolve_path);
 }
 
-fn update_guard_fact(name: String, value: &Expr, guard_facts: &mut GuardFacts) {
-    if let Some(value) = local_guard_fact_from_expr(value, guard_facts) {
+fn update_guard_fact<F>(name: String, value: &Expr, guard_facts: &mut GuardFacts, resolve_path: &F)
+where
+    F: Fn(&[String]) -> Option<ConstFact>,
+{
+    if let Some(value) = local_guard_fact_from_expr(value, guard_facts, resolve_path) {
         guard_facts.insert(name, value);
     } else {
         guard_facts.remove(&name);
@@ -1925,7 +1938,14 @@ fn collect_const_guard_decls<'a>(
     }
 }
 
-fn local_guard_fact_from_expr(expr: &Expr, guard_facts: &GuardFacts) -> Option<ConstFact> {
+fn local_guard_fact_from_expr<F>(
+    expr: &Expr,
+    guard_facts: &GuardFacts,
+    resolve_path: &F,
+) -> Option<ConstFact>
+where
+    F: Fn(&[String]) -> Option<ConstFact>,
+{
     match expr {
         Expr::Bool(value, _) => Some(ConstFact::Bool(*value)),
         Expr::Int(value, _) => Some(ConstFact::Int(*value)),
@@ -1934,18 +1954,19 @@ fn local_guard_fact_from_expr(expr: &Expr, guard_facts: &GuardFacts) -> Option<C
         Expr::Symbol(value, _) => Some(ConstFact::Symbol(value.clone())),
         Expr::Str(value, _) => plain_string_literal(value).map(ConstFact::Str),
         Expr::Ident(name, _) => guard_facts.get(name).cloned(),
+        Expr::Path(path, _) => resolve_path(path),
         Expr::Unary {
             op: UnOp::Not,
             expr,
             ..
-        } => local_guard_fact_from_expr(expr, guard_facts)
+        } => local_guard_fact_from_expr(expr, guard_facts, resolve_path)
             .and_then(ConstFact::into_bool)
             .map(|value| ConstFact::Bool(!value)),
         Expr::Unary {
             op: UnOp::Neg,
             expr,
             ..
-        } => match local_guard_fact_from_expr(expr, guard_facts)? {
+        } => match local_guard_fact_from_expr(expr, guard_facts, resolve_path)? {
             ConstFact::Int(value) => value.checked_neg().map(ConstFact::Int),
             ConstFact::Float(value) => finite_float_fact(-value),
             _ => None,
@@ -1957,11 +1978,12 @@ fn local_guard_fact_from_expr(expr: &Expr, guard_facts: &GuardFacts) -> Option<C
             rhs,
             ..
         } => {
-            let lhs = local_guard_fact_from_expr(lhs, guard_facts)?.into_bool()?;
+            let lhs = local_guard_fact_from_expr(lhs, guard_facts, resolve_path)?.into_bool()?;
             if !lhs {
                 Some(ConstFact::Bool(false))
             } else {
-                let rhs = local_guard_fact_from_expr(rhs, guard_facts)?.into_bool()?;
+                let rhs =
+                    local_guard_fact_from_expr(rhs, guard_facts, resolve_path)?.into_bool()?;
                 Some(ConstFact::Bool(rhs))
             }
         }
@@ -1971,11 +1993,12 @@ fn local_guard_fact_from_expr(expr: &Expr, guard_facts: &GuardFacts) -> Option<C
             rhs,
             ..
         } => {
-            let lhs = local_guard_fact_from_expr(lhs, guard_facts)?.into_bool()?;
+            let lhs = local_guard_fact_from_expr(lhs, guard_facts, resolve_path)?.into_bool()?;
             if lhs {
                 Some(ConstFact::Bool(true))
             } else {
-                let rhs = local_guard_fact_from_expr(rhs, guard_facts)?.into_bool()?;
+                let rhs =
+                    local_guard_fact_from_expr(rhs, guard_facts, resolve_path)?.into_bool()?;
                 Some(ConstFact::Bool(rhs))
             }
         }
@@ -1985,8 +2008,8 @@ fn local_guard_fact_from_expr(expr: &Expr, guard_facts: &GuardFacts) -> Option<C
             rhs,
             ..
         } => {
-            let lhs = local_guard_fact_from_expr(lhs, guard_facts)?;
-            let rhs = local_guard_fact_from_expr(rhs, guard_facts)?;
+            let lhs = local_guard_fact_from_expr(lhs, guard_facts, resolve_path)?;
+            let rhs = local_guard_fact_from_expr(rhs, guard_facts, resolve_path)?;
             Some(ConstFact::Bool(lhs.literal_eq(rhs)))
         }
         Expr::Binary {
@@ -1995,8 +2018,8 @@ fn local_guard_fact_from_expr(expr: &Expr, guard_facts: &GuardFacts) -> Option<C
             rhs,
             ..
         } => {
-            let lhs = local_guard_fact_from_expr(lhs, guard_facts)?;
-            let rhs = local_guard_fact_from_expr(rhs, guard_facts)?;
+            let lhs = local_guard_fact_from_expr(lhs, guard_facts, resolve_path)?;
+            let rhs = local_guard_fact_from_expr(rhs, guard_facts, resolve_path)?;
             Some(ConstFact::Bool(!lhs.literal_eq(rhs)))
         }
         Expr::Binary {
@@ -2005,8 +2028,8 @@ fn local_guard_fact_from_expr(expr: &Expr, guard_facts: &GuardFacts) -> Option<C
             rhs,
             ..
         } => {
-            let lhs = local_guard_fact_from_expr(lhs, guard_facts)?;
-            let rhs = local_guard_fact_from_expr(rhs, guard_facts)?;
+            let lhs = local_guard_fact_from_expr(lhs, guard_facts, resolve_path)?;
+            let rhs = local_guard_fact_from_expr(rhs, guard_facts, resolve_path)?;
             lhs.numeric_cmp(rhs, *op).map(ConstFact::Bool)
         }
         Expr::Binary {
@@ -2015,8 +2038,8 @@ fn local_guard_fact_from_expr(expr: &Expr, guard_facts: &GuardFacts) -> Option<C
             rhs,
             ..
         } => {
-            let lhs = local_guard_fact_from_expr(lhs, guard_facts)?;
-            let rhs = local_guard_fact_from_expr(rhs, guard_facts)?;
+            let lhs = local_guard_fact_from_expr(lhs, guard_facts, resolve_path)?;
+            let rhs = local_guard_fact_from_expr(rhs, guard_facts, resolve_path)?;
             lhs.numeric_arith(rhs, *op)
         }
         Expr::Binary { .. } => None,

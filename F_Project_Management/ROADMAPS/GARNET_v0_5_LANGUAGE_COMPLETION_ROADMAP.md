@@ -1126,6 +1126,25 @@ function-call evaluation, recursion, cross-file/package imports, broader
 non-numeric comparison, broader float edge-case reasoning, and broader const
 expression evaluation remain deferred.
 
+- [x] **Step 2ZU: Resolve path-qualified consts in local guard expression aliases**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage local_path_integer_const_expression
+cargo test -p garnet-check --test match_coverage local_
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AZ resolves path-qualified top-level constants inside
+immutable local guard expression aliases. `let always = Core::LIMIT + 1 == 3`
+now counts as coverage, and `let never = Core::LIMIT + 1 < 3` is statically
+false/non-covering. Function-call evaluation, recursion, cross-file/package
+imports, broader non-numeric comparison, broader float edge-case reasoning, and
+broader const expression evaluation remain deferred.
+
 ## Phase 5: Traits, Coherence, And Monomorphization
 
 **Intent:** Make the Rust-rigor side credible without overclaiming zero-cost guarantees.

@@ -145,11 +145,14 @@ When documents conflict, use this order:
   keeping non-finite floats and overflow-to-infinity facts unknown. Phase 4AY
   carries narrow boolean and integer const-expression facts through immutable
   local guard aliases while keeping mutable local expression sources unknown.
+  Phase 4AZ resolves path-qualified top-level const references inside those
+  immutable local guard aliases while keeping calls and mutable sources
+  conservative.
   Full
   Rust-grade CFG NLL, nested/non-local terminators, general loop fixed-point
   analysis, loop fixed-point domain inference, broader mutable/escaped/general higher-order closure invocation/call-effect analysis, cross-file/package
   imports, non-finite floats, interpolated strings, broader non-numeric comparison,
-  function-call, and broader const expression evaluation beyond immutable local aliases, recursive/open payload reasoning, broader expression/type
+  function-call, and broader const expression evaluation beyond immutable local aliases and path-qualified const references, recursive/open payload reasoning, broader expression/type
   inference, open-domain exhaustiveness/range reasoning, broader non-literal guard
   reasoning, dynamic places, broader drop elaboration, and generic/trait impl
   dispatch remain roadmap work, not current truth.
