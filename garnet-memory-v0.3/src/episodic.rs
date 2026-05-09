@@ -1137,6 +1137,7 @@ fn open_dir_entry(
     action: &'static str,
 ) -> Result<File, EpisodePersistenceError> {
     let c_name = cstring_entry_name(name, path)?;
+    let mut not_found_retries = 0;
     loop {
         let fd = unsafe { openat(dir.as_raw_fd(), c_name.as_ptr(), flags, mode) };
         if fd >= 0 {
@@ -1144,6 +1145,11 @@ fn open_dir_entry(
         }
         let error = io::Error::last_os_error();
         if error.kind() == ErrorKind::Interrupted {
+            continue;
+        }
+        if error.kind() == ErrorKind::NotFound && flags & O_CREAT != 0 && not_found_retries < 32 {
+            not_found_retries += 1;
+            std::thread::yield_now();
             continue;
         }
         if error.kind() == ErrorKind::NotFound {
@@ -1346,10 +1352,17 @@ fn ensure_private_dir(path: &Path) -> Result<(), EpisodePersistenceError> {
 }
 
 fn create_private_dir(path: &Path) -> std::io::Result<()> {
-    let mut builder = fs::DirBuilder::new();
     #[cfg(unix)]
-    builder.mode(0o700);
-    builder.create(path)
+    {
+        let mut builder = fs::DirBuilder::new();
+        builder.mode(0o700);
+        builder.create(path)
+    }
+
+    #[cfg(not(unix))]
+    {
+        fs::DirBuilder::new().create(path)
+    }
 }
 
 fn validate_private_dir_after_race(path: &Path) -> Result<(), EpisodePersistenceError> {
