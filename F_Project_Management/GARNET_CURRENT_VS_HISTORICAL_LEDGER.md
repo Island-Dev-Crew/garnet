@@ -76,10 +76,13 @@ When documents conflict, use this order:
   a returning arm body runs. Phase 4M adds a scoped finite-domain match coverage
   pass for safe-mode `Bool` and same-module enum subjects, rejecting
   non-exhaustive matches, duplicate covered arms, and arms after unguarded
-  catch-all arms. Full Rust-grade CFG NLL, nested/non-local terminators,
-  general loop fixed-point analysis, nested constructor exhaustiveness,
-  imported enum resolution, dynamic places, broader drop elaboration, and
-  generic/trait impl dispatch remain roadmap work, not current truth.
+  catch-all arms. Phase 4N extends that pass to finite nested-constructor
+  payloads so distinct nested enum payload cases are tracked separately and
+  payload wildcards cover the nested finite domain. Full Rust-grade CFG NLL,
+  nested/non-local terminators, general loop fixed-point analysis, imported
+  enum resolution, recursive/open payload reasoning, dynamic places, broader
+  drop elaboration, and generic/trait impl dispatch remain roadmap work, not
+  current truth.
 - Trait coherence now has an active conservative checker slice: exact duplicate
   trait impls and orphan impls where neither trait nor type is local reject,
   simple generic blanket-vs-concrete and renamed blanket impl overlaps reject,

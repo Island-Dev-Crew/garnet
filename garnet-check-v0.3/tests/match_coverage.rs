@@ -179,3 +179,72 @@ fn safe_match_rejects_arm_after_unguarded_catch_all() {
         "expected arm after wildcard to be unreachable, got {errs:?}"
     );
 }
+
+#[test]
+fn safe_nested_enum_match_requires_all_finite_payload_cases() {
+    let errs = check(
+        r#"
+        enum Inner { Left, Right }
+        enum Outer { Wrap(Inner), Empty }
+
+        fn nested_code(outer: Outer) -> Int {
+            match outer {
+                Outer::Wrap(Inner::Left) => 1
+                Outer::Empty => 0
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Outer::Wrap(Inner::Right)"),
+        "expected missing nested enum payload diagnostic, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_nested_enum_match_accepts_all_finite_payload_cases() {
+    let errs = check(
+        r#"
+        enum Inner { Left, Right }
+        enum Outer { Wrap(Inner), Empty }
+
+        fn nested_code(outer: Outer) -> Int {
+            match outer {
+                Outer::Wrap(Inner::Left) => 1
+                Outer::Wrap(Inner::Right) => 2
+                Outer::Empty => 0
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "complete nested enum match should not be rejected, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_nested_enum_match_allows_payload_wildcard_coverage() {
+    let errs = check(
+        r#"
+        enum Inner { Left, Right }
+        enum Outer { Wrap(Inner), Empty }
+
+        fn nested_code(outer: Outer) -> Int {
+            match outer {
+                Outer::Wrap(_) => 1
+                Outer::Empty => 0
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "wildcard payload should cover the nested finite payload domain, got {errs:?}"
+    );
+}

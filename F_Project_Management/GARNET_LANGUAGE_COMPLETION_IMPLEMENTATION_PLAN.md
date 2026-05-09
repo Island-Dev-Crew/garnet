@@ -26,7 +26,7 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | Structural protocol satisfaction and runtime casts | Partial Phase 2H | `Item::Protocol` and `Expr::Cast` parse; `deferred_structural_protocols` checks protocol-typed managed parameters, runtime `as Protocol` casts, static/dynamic methods, mode/arity/parameter/return annotation mismatches, generic protocol substitution, core built-in typed method signatures, and `@dynamic impl` methods | Add broader trait/generic coherence |
 | Actor protocol enforcement and `Sendable` | Partial Phase 3D | actor runtime crate exists; `actor_sendable_rejects_nonsendable_protocol_payloads` rejects `@nonsendable` actor protocol payloads before runtime; managed interpreter now registers actors, dispatches `spawn Actor.handler(args)` synchronously, creates `spawn Actor` addresses with persistent actor-local state, enforces bounded source mailboxes through `Actor.spawn(capacity)`, and ships a generated `agent-orchestrator` actor template that runs/tests through managed actor addresses; full async OS-thread bridge remains partial | Bridge generated actor projects to the full async `garnet-actor-runtime` OS-thread address/mailbox runtime |
 | Rust-grade NLL and borrow rules | Partial Phase 4L | `garnet-check-v0.3/src/borrow.rs`; `garnet-check-v0.3/src/lib.rs`; `garnet-check-v0.3/tests/borrow.rs`; `garnet-check-v0.3/tests/extended.rs`; `partial_borrow_rule_suite` rejects direct use-after-move, direct mut-aliasing, `own self` method receiver moves, method receiver aliasing, simple typed receiver disambiguation, simple field-place aliasing/field use-after-move, and conservative index-place aliasing/index use-after-move while checking nested index operands; `deferred_full_borrow_rule_suite` now covers B5 same-call overlapping `own` drop discipline, direct-returning branch liveness, direct `return` block termination, direct-returning loop-body liveness, scoped `for` loop-variable liveness, scoped `match` pattern binding liveness, match guard move merging, and match-arm block statement preservation; `deferred_nll_lifetime_inference` covers conservative reference-return lifetime elision | Activate full CFG NLL, dynamic place tracking, generic/trait impl dispatch, broader drop elaboration, general loop fixed-point analysis, and two-phase borrows |
-| Pattern match exhaustiveness/reachability | Partial Phase 4M | `garnet-check-v0.3/src/match_coverage.rs`; `garnet-check-v0.3/tests/match_coverage.rs`; `deferred_match_exhaustiveness_and_reachability` rejects non-exhaustive safe-mode `Bool` and same-module enum matches, treats guarded arms as non-covering, rejects duplicate covered arms, and rejects arms after an unguarded catch-all | Add nested constructor exhaustiveness, imported enum resolution, open-domain literal reasoning, and richer guard-aware diagnostics |
+| Pattern match exhaustiveness/reachability | Partial Phase 4N | `garnet-check-v0.3/src/match_coverage.rs`; `garnet-check-v0.3/tests/match_coverage.rs`; `deferred_match_exhaustiveness_and_reachability` rejects non-exhaustive safe-mode `Bool`, same-module enum, and finite nested-constructor matches, treats guarded arms as non-covering, rejects duplicate covered arms, and rejects arms after an unguarded catch-all | Add imported enum resolution, recursive/open payload reasoning, open-domain literal reasoning, and richer guard-aware diagnostics |
 | Trait coherence | Partial Phase 5C | `garnet-check-v0.3/src/coherence.rs`; `garnet-check-v0.3/tests/coherence.rs`; `deferred_trait_coherence` rejects exact duplicate trait impls, orphan-rule violations, simple generic blanket-vs-concrete overlaps, renamed generic blanket overlaps, and qualified external type short-name collisions while allowing local-trait, local-type, and qualified local-module impls | Activate specialization and imported-package coherence solving |
 | Generic instantiation / monomorphization | Partial Phase 5B | `generic_instantiation_runs_without_monomorphization_claims` runs generic struct construction, a generic impl method, and a generic function through the managed interpreter | Keep native zero-cost monomorphization deferred until a compiler backend exists |
 | Memory Core ARC/cycles and allocator integration | Partial Phase 6L | `garnet-memory-v0.3/src/{alloc,cycle,working,episodic,semantic,procedural}.rs`; `garnet-memory-v0.3/tests/{cycle,properties,persistence}.rs`; active `deferred_arc_cycle_detection`; `CycleAllocatorFixture` owns graph + root buffer for root/edge decrement scheduling; all four stores expose kind-aware allocator stats; policy-configured episodic/semantic stores evict lazily on read/search; `CycleAwareKindAllocator` observes store-root retain/release lifecycles on write, clear, eviction, replacement, and drop; `EpisodeStore::save_text` / `load_text` now prove versioned episodic text snapshot recovery, delimiter-safe payload encoding, malformed-file non-mutation, and cycle-aware root rehydration | Promote the bounded allocator-owned fixture model into production allocator-integrated ARC and broaden persistence/backend hardening beyond the reference episodic snapshot slice |
@@ -619,7 +619,27 @@ variant, a guarded enum arm that would otherwise hide missing coverage,
 duplicate unguarded variant arms, and arms made unreachable by an unguarded
 catch-all, while preserving complete enum matches.
 
-Remaining: nested constructor exhaustiveness, imported enum resolution,
+- [x] **Step 2I: Add finite nested-constructor match coverage**
+
+Reject safe-mode `match` expressions over finite nested constructor payloads
+when they omit a nested finite case, while allowing wildcard payload patterns
+to cover that nested finite domain.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage safe_nested_enum_match
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4N enumerates finite nested constructor payload products in the
+same scoped `match_coverage` pass. `Outer::Wrap(Inner::Left)` and
+`Outer::Wrap(Inner::Right)` are tracked as distinct coverage cases; missing
+nested payload cases are reported; and `Outer::Wrap(_)` covers the nested
+finite payload domain without claiming imported enum, recursive/open payload,
+or guard-proof completeness.
+
+Remaining: imported enum resolution, recursive/open payload reasoning,
 open-domain literal reasoning, and general guard reasoning are still deferred.
 
 ## Milestone 5: Traits, Coherence, And Generic Instantiation

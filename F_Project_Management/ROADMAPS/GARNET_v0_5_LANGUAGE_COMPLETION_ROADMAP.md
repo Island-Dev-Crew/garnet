@@ -452,9 +452,24 @@ must cover each variant unless an unguarded catch-all appears; guarded arms do
 not count as exhaustive coverage; duplicate covered arms and arms after an
 unguarded catch-all are rejected as unreachable.
 
-Remaining: nested constructor exhaustiveness, imported enum resolution,
-open-domain literal reasoning, richer type inference, and general guard
-reasoning remain pending.
+- [x] **Step 2I: Add finite nested-constructor match coverage**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage safe_nested_enum_match
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4N extends `match_coverage` so finite nested constructor
+payloads are enumerated. `Outer::Wrap(Inner::Left)` and
+`Outer::Wrap(Inner::Right)` are distinct coverage cases, missing nested payload
+cases are rejected, and `Outer::Wrap(_)` covers the nested finite payload
+domain without claiming open-domain literal or recursive payload reasoning.
+
+Remaining: imported enum resolution, recursive/open payload reasoning, richer
+type inference, open-domain literal reasoning, and general guard reasoning
+remain pending.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 

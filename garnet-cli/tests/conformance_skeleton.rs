@@ -853,6 +853,47 @@ fn status_code(status: Status) -> Int {
         stdout.contains("unreachable match arm") && stdout.contains("Status::Ready"),
         "expected unreachable duplicate variant diagnostic, got:\n{stdout}"
     );
+
+    let nested_missing_src = r#"
+enum Inner { Left, Right }
+enum Outer { Wrap(Inner), Empty }
+
+fn nested_code(outer: Outer) -> Int {
+  match outer {
+    Outer::Wrap(Inner::Left) => 1
+    Outer::Empty => 0
+  }
+}
+"#;
+    let nested_missing_path = temp_source("match_nested_enum_payload_missing", nested_missing_src);
+    assert_ok(&["parse"], &nested_missing_path);
+    let out = run(&["check"], &nested_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode nested enum payload matches must reject missing finite payload cases"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("non-exhaustive match") && stdout.contains("Outer::Wrap(Inner::Right)"),
+        "expected missing nested payload diagnostic, got:\n{stdout}"
+    );
+
+    let nested_complete_src = r#"
+enum Inner { Left, Right }
+enum Outer { Wrap(Inner), Empty }
+
+fn nested_code(outer: Outer) -> Int {
+  match outer {
+    Outer::Wrap(Inner::Left) => 1
+    Outer::Wrap(Inner::Right) => 2
+    Outer::Empty => 0
+  }
+}
+"#;
+    let nested_complete_path =
+        temp_source("match_nested_enum_payload_complete", nested_complete_src);
+    assert_ok(&["parse"], &nested_complete_path);
+    assert_ok(&["check"], &nested_complete_path);
 }
 
 #[test]

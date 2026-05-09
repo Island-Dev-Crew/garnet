@@ -15,7 +15,12 @@ use std::collections::{BTreeMap, BTreeSet};
 #[derive(Debug, Clone)]
 struct EnumInfo {
     path: Vec<String>,
-    variants: BTreeSet<String>,
+    variants: BTreeMap<String, VariantInfo>,
+}
+
+#[derive(Debug, Clone)]
+struct VariantInfo {
+    fields: Vec<TypeExpr>,
 }
 
 #[derive(Debug, Clone)]
@@ -49,7 +54,14 @@ impl Checker {
                     let variants = enum_def
                         .variants
                         .iter()
-                        .map(|variant| variant.name.clone())
+                        .map(|variant| {
+                            (
+                                variant.name.clone(),
+                                VariantInfo {
+                                    fields: variant.fields.clone(),
+                                },
+                            )
+                        })
                         .collect();
                     self.enums.insert(path.clone(), EnumInfo { path, variants });
                 }
@@ -289,19 +301,18 @@ impl Checker {
                 continue;
             }
 
-            if domain.is_fully_covered(&covered) {
+            if self.domain_is_fully_covered(domain, &covered) {
                 self.errors.push(CheckError::SafeModeViolation(format!(
                     "unreachable match arm in safe function '{fn_name}': finite domain is already fully covered before pattern {pattern}"
                 )));
                 continue;
             }
 
-            if let Some(key) = coverage_key(domain, &arm.pattern) {
-                if covered.contains(&key) {
-                    self.errors.push(CheckError::SafeModeViolation(format!(
-                        "unreachable match arm in safe function '{fn_name}': pattern {pattern} is already covered by prior arm"
-                    )));
-                }
+            let keys = self.coverage_keys(domain, &arm.pattern);
+            if !keys.is_empty() && keys.iter().all(|key| covered.contains(key)) {
+                self.errors.push(CheckError::SafeModeViolation(format!(
+                    "unreachable match arm in safe function '{fn_name}': pattern {pattern} is already covered by prior arm"
+                )));
             }
 
             if arm.guard.is_some() {
@@ -310,14 +321,14 @@ impl Checker {
 
             if is_catch_all(&arm.pattern) {
                 catch_all_seen = true;
-            } else if let Some(key) = coverage_key(domain, &arm.pattern) {
-                covered.insert(key);
+            } else {
+                covered.extend(keys);
             }
         }
 
-        if !catch_all_seen && !domain.is_fully_covered(&covered) {
-            let missing = domain
-                .missing_patterns(&covered)
+        if !catch_all_seen && !self.domain_is_fully_covered(domain, &covered) {
+            let missing = self
+                .missing_patterns(domain, &covered)
                 .into_iter()
                 .collect::<Vec<_>>()
                 .join(", ");
@@ -325,6 +336,149 @@ impl Checker {
                 "non-exhaustive match in safe function '{fn_name}': missing {missing}"
             )));
         }
+    }
+
+    fn domain_is_fully_covered(&self, domain: &FiniteDomain, covered: &BTreeSet<String>) -> bool {
+        self.expected_keys(domain)
+            .iter()
+            .all(|key| covered.contains(key))
+    }
+
+    fn missing_patterns(&self, domain: &FiniteDomain, covered: &BTreeSet<String>) -> Vec<String> {
+        self.expected_keys(domain)
+            .into_iter()
+            .filter(|key| !covered.contains(key))
+            .map(|key| format!("`{key}`"))
+            .collect()
+    }
+
+    fn expected_keys(&self, domain: &FiniteDomain) -> BTreeSet<String> {
+        self.expected_keys_with_seen(domain, &mut BTreeSet::new())
+    }
+
+    fn expected_keys_with_seen(
+        &self,
+        domain: &FiniteDomain,
+        seen: &mut BTreeSet<Vec<String>>,
+    ) -> BTreeSet<String> {
+        match domain {
+            FiniteDomain::Bool => ["true".to_string(), "false".to_string()]
+                .into_iter()
+                .collect(),
+            FiniteDomain::Enum(info) => {
+                if !seen.insert(info.path.clone()) {
+                    return BTreeSet::new();
+                }
+                let mut keys = BTreeSet::new();
+                for (variant, details) in &info.variants {
+                    keys.extend(self.expected_variant_keys(info, variant, details, seen));
+                }
+                seen.remove(&info.path);
+                keys
+            }
+        }
+    }
+
+    fn expected_variant_keys(
+        &self,
+        info: &EnumInfo,
+        variant: &str,
+        details: &VariantInfo,
+        seen: &mut BTreeSet<Vec<String>>,
+    ) -> BTreeSet<String> {
+        if details.fields.is_empty() {
+            return [variant_label(info, variant)].into_iter().collect();
+        }
+
+        let Some(field_domains) = self.enumerable_field_domains(&details.fields, seen) else {
+            return [variant_label(info, variant)].into_iter().collect();
+        };
+
+        let mut field_keys = Vec::new();
+        for domain in field_domains {
+            let keys = self.expected_keys_with_seen(&domain, seen);
+            if keys.is_empty() {
+                return [variant_label(info, variant)].into_iter().collect();
+            }
+            field_keys.push(keys.into_iter().collect::<Vec<_>>());
+        }
+
+        nested_variant_keys(info, variant, &field_keys)
+            .into_iter()
+            .collect()
+    }
+
+    fn coverage_keys(&self, domain: &FiniteDomain, pattern: &Pattern) -> BTreeSet<String> {
+        match (domain, pattern) {
+            (FiniteDomain::Bool, Pattern::Literal(Expr::Bool(value, _), _)) => {
+                [value.to_string()].into_iter().collect()
+            }
+            (FiniteDomain::Enum(info), Pattern::Enum(path, sub_patterns, _)) => self
+                .enum_pattern_coverage_keys(info, path, sub_patterns)
+                .into_iter()
+                .collect(),
+            _ if is_catch_all(pattern) => self.expected_keys(domain),
+            _ => BTreeSet::new(),
+        }
+    }
+
+    fn enum_pattern_coverage_keys(
+        &self,
+        info: &EnumInfo,
+        path: &[String],
+        sub_patterns: &[Pattern],
+    ) -> Vec<String> {
+        let Some((variant, details)) = matching_variant(info, path) else {
+            return Vec::new();
+        };
+
+        if details.fields.is_empty() {
+            if sub_patterns.is_empty() {
+                return vec![variant_label(info, variant)];
+            }
+            return Vec::new();
+        }
+
+        if sub_patterns.len() != details.fields.len() {
+            return Vec::new();
+        }
+
+        let mut seen = BTreeSet::from([info.path.clone()]);
+        let Some(field_domains) = self.enumerable_field_domains(&details.fields, &mut seen) else {
+            if sub_patterns.iter().all(is_catch_all) {
+                return vec![variant_label(info, variant)];
+            }
+            return Vec::new();
+        };
+
+        let mut field_keys = Vec::new();
+        for (domain, pattern) in field_domains.iter().zip(sub_patterns) {
+            let keys = self.coverage_keys(domain, pattern);
+            if keys.is_empty() {
+                return Vec::new();
+            }
+            field_keys.push(keys.into_iter().collect::<Vec<_>>());
+        }
+
+        nested_variant_keys(info, variant, &field_keys)
+    }
+
+    fn enumerable_field_domains(
+        &self,
+        fields: &[TypeExpr],
+        seen: &mut BTreeSet<Vec<String>>,
+    ) -> Option<Vec<FiniteDomain>> {
+        let mut domains = Vec::new();
+        for field in fields {
+            let domain = self.domain_from_type(field)?;
+            if let FiniteDomain::Enum(info) = &domain {
+                if seen.contains(&info.path) {
+                    return None;
+                }
+            }
+            domains.push(domain);
+        }
+        Some(domains)
     }
 
     fn domain_from_expr(&self, expr: &Expr, env: &Env) -> Option<FiniteDomain> {
@@ -365,51 +519,39 @@ impl Checker {
     }
 }
 
-impl FiniteDomain {
-    fn is_fully_covered(&self, covered: &BTreeSet<String>) -> bool {
-        match self {
-            FiniteDomain::Bool => covered.contains("true") && covered.contains("false"),
-            FiniteDomain::Enum(info) => info
-                .variants
-                .iter()
-                .all(|variant| covered.contains(variant)),
-        }
-    }
-
-    fn missing_patterns(&self, covered: &BTreeSet<String>) -> Vec<String> {
-        match self {
-            FiniteDomain::Bool => ["true", "false"]
-                .into_iter()
-                .filter(|value| !covered.contains(*value))
-                .map(|value| format!("`{value}`"))
-                .collect(),
-            FiniteDomain::Enum(info) => info
-                .variants
-                .iter()
-                .filter(|variant| !covered.contains(*variant))
-                .map(|variant| format!("`{}::{variant}`", info.path.join("::")))
-                .collect(),
-        }
+fn matching_variant<'a>(info: &'a EnumInfo, path: &[String]) -> Option<(&'a str, &'a VariantInfo)> {
+    let variant = path.last()?;
+    let (variant, details) = info.variants.get_key_value(variant)?;
+    let enum_prefix = &path[..path.len().saturating_sub(1)];
+    if enum_prefix.is_empty() || enum_prefix == info.path.as_slice() {
+        Some((variant.as_str(), details))
+    } else {
+        None
     }
 }
 
-fn coverage_key(domain: &FiniteDomain, pattern: &Pattern) -> Option<String> {
-    match (domain, pattern) {
-        (FiniteDomain::Bool, Pattern::Literal(Expr::Bool(value, _), _)) => Some(value.to_string()),
-        (FiniteDomain::Enum(info), Pattern::Enum(path, _, _)) => {
-            let variant = path.last()?;
-            if !info.variants.contains(variant) {
-                return None;
-            }
-            let enum_prefix = &path[..path.len().saturating_sub(1)];
-            if enum_prefix.is_empty() || enum_prefix == info.path.as_slice() {
-                Some(variant.clone())
-            } else {
-                None
+fn variant_label(info: &EnumInfo, variant: &str) -> String {
+    format!("{}::{variant}", info.path.join("::"))
+}
+
+fn nested_variant_keys(info: &EnumInfo, variant: &str, field_keys: &[Vec<String>]) -> Vec<String> {
+    let mut combinations = vec![Vec::<String>::new()];
+    for keys in field_keys {
+        let mut next = Vec::new();
+        for existing in &combinations {
+            for key in keys {
+                let mut joined = existing.clone();
+                joined.push(key.clone());
+                next.push(joined);
             }
         }
-        _ => None,
+        combinations = next;
     }
+
+    combinations
+        .into_iter()
+        .map(|parts| format!("{}({})", variant_label(info, variant), parts.join(", ")))
+        .collect()
 }
 
 fn is_catch_all(pattern: &Pattern) -> bool {
