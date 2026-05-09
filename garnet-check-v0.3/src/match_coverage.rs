@@ -13,10 +13,11 @@
 //! aliases, and basic boolean const expressions in match guards, and rejects
 //! duplicate literal arms and arms after catch-all arms in otherwise open-domain
 //! matches. Boolean const `and`/`or` folding honors decisive left operands
-//! without requiring the right operand to resolve. It does not attempt full type
-//! inference, loop fixed-point inference, broader mutable/escaped/general
-//! higher-order closure call-effect analysis, recursive/open payload coverage,
-//! or broader non-literal guard reasoning.
+//! without requiring the right operand to resolve, and boolean const equality /
+//! inequality comparisons fold over already-resolved boolean facts. It does not
+//! attempt full type inference, loop fixed-point inference, broader
+//! mutable/escaped/general higher-order closure call-effect analysis,
+//! recursive/open payload coverage, or broader non-literal guard reasoning.
 
 use crate::CheckError;
 use garnet_parser::ast::{
@@ -186,6 +187,26 @@ impl Checker {
                     let rhs = self.const_guard_fact_from_expr(rhs, module_path)?;
                     Some(rhs)
                 }
+            }
+            Expr::Binary {
+                op: BinOp::Eq,
+                lhs,
+                rhs,
+                ..
+            } => {
+                let lhs = self.const_guard_fact_from_expr(lhs, module_path)?;
+                let rhs = self.const_guard_fact_from_expr(rhs, module_path)?;
+                Some(lhs == rhs)
+            }
+            Expr::Binary {
+                op: BinOp::NotEq,
+                lhs,
+                rhs,
+                ..
+            } => {
+                let lhs = self.const_guard_fact_from_expr(lhs, module_path)?;
+                let rhs = self.const_guard_fact_from_expr(rhs, module_path)?;
+                Some(lhs != rhs)
             }
             Expr::Binary { .. } => None,
             _ => None,

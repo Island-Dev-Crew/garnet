@@ -592,10 +592,11 @@ path-qualified top-level boolean guard constants are covered in Step 2ZD below;
 narrow boolean const aliases are covered in Step 2ZE below;
 basic boolean const expressions are covered in Step 2ZF below;
 short-circuit boolean const expressions are covered in Step 2ZG below;
+boolean const equality/inequality expressions are covered in Step 2ZH below;
 loop fixed-point and broader mutable/escaped/general higher-order closure
 invocation/call-effect flow, cross-file/package imports, recursive/open payload
-reasoning, richer type inference, arithmetic, comparison, function-call, and
-broader const expression evaluation, open-domain exhaustiveness/range
+reasoning, richer type inference, arithmetic, broader comparison,
+function-call, and broader const expression evaluation, open-domain exhaustiveness/range
 reasoning, and broader non-literal guard reasoning remain pending.
 
 - [x] **Step 2P: Join nested if assignment domains inside branch bodies**
@@ -870,6 +871,23 @@ resolving the right operand, and `false and Missing::VALUE` is statically
 false/non-covering without resolving the right operand. Arithmetic, comparison,
 function-call, recursive, cross-file/package, and broader const expression
 evaluation remain deferred.
+
+- [x] **Step 2ZH: Fold boolean const equality/inequality guard expressions**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage boolean_const_equality
+cargo test -p garnet-check --test match_coverage boolean_const_inequality
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AM folds boolean `==` and `!=` const expressions over
+already-resolved boolean facts. `Core::RAW == true` counts as coverage, and
+`Core::RAW != true` is statically false/non-covering. Arithmetic, relational
+comparison, function-call, recursive, cross-file/package, and broader const
+expression evaluation remain deferred.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 

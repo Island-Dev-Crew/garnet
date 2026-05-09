@@ -1532,6 +1532,67 @@ fn false_short_circuit_const_bool_and_is_unreachable_and_not_coverage() {
 }
 
 #[test]
+fn true_boolean_const_equality_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const RAW = true
+        }
+
+        module Flags {
+            const ALWAYS = Core::RAW == true
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true boolean const equality guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_boolean_const_inequality_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const RAW = true
+        }
+
+        module Flags {
+            const NEVER = Core::RAW != true
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false boolean const inequality guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
 fn safe_open_literal_match_rejects_duplicate_literal_arm() {
     let errs = check(
         r#"
