@@ -22,9 +22,9 @@
 //! - Simple field projections are tracked as places for move and alias checks.
 //!   Index expressions are tracked conservatively as wildcard sub-places.
 //! - Branch joins are conservative and coarse-grained, with first
-//!   direct-returning branch and loop-body liveness slices. Full NLL, precise
-//!   nested place borrows beyond simple fields, and lifetime containment remain
-//!   deferred.
+//!   direct-returning branch/loop-body liveness slices and scoped pattern
+//!   bindings for match-arm merge. Full NLL, precise nested place borrows
+//!   beyond simple fields, and lifetime containment remain deferred.
 
 use garnet_parser::ast::{
     Block, Expr, FnDef, FnMode, Item, Module, Ownership, Pattern, Stmt, TypeExpr,
@@ -540,15 +540,21 @@ fn check_expr(
         Expr::Match { subject, arms, .. } => {
             check_expr(subject, env, sigs, fn_name, diags);
             let snapshot = env.clone();
+            let mut merged_moved = snapshot.moved.clone();
             for arm in arms {
                 let mut arm_env = snapshot.clone();
-                bind_pattern(&arm.pattern, &mut arm_env);
+                let mut pattern_bindings = HashSet::new();
+                bind_pattern(&arm.pattern, &mut arm_env, &mut pattern_bindings);
                 if let Some(g) = &arm.guard {
                     check_expr(g, &mut arm_env, sigs, fn_name, diags);
                 }
                 check_expr(&arm.body, &mut arm_env, sigs, fn_name, diags);
-                env.moved.extend(arm_env.moved);
+                for binding in &pattern_bindings {
+                    arm_env.restore_binding_from(binding, &snapshot);
+                }
+                merged_moved.extend(arm_env.moved);
             }
+            env.moved = merged_moved;
         }
         Expr::Try {
             body,
@@ -607,20 +613,21 @@ fn check_expr(
     }
 }
 
-fn bind_pattern(pattern: &Pattern, env: &mut Env) {
+fn bind_pattern(pattern: &Pattern, env: &mut Env, bindings: &mut HashSet<String>) {
     match pattern {
         Pattern::Ident(name, _) => {
+            bindings.insert(name.clone());
             env.rebind(name);
             env.forget_type(name);
         }
         Pattern::Tuple(items, _) => {
             for p in items {
-                bind_pattern(p, env);
+                bind_pattern(p, env, bindings);
             }
         }
         Pattern::Enum(_, items, _) => {
             for p in items {
-                bind_pattern(p, env);
+                bind_pattern(p, env, bindings);
             }
         }
         Pattern::Literal(_, _) | Pattern::Wildcard(_) | Pattern::Rest(_) => {}

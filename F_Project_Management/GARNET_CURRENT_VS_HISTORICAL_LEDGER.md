@@ -1,6 +1,6 @@
 # Garnet Current vs Historical Ledger
 
-Date: 2026-05-08
+Date: 2026-05-09
 
 This ledger prevents historical handoffs from being misread as current
 implementation truth.
@@ -66,10 +66,13 @@ When documents conflict, use this order:
   `while`/`loop` bodies no longer poison paths after the loop that only exist
   when the body does not run. Phase 4J adds the same direct-return liveness for
   `for` bodies and scopes the loop variable to the body so it cannot clear the
-  moved state of an outer binding with the same name. Full Rust-grade CFG NLL,
-  nested/non-local terminators, general loop fixed-point analysis, dynamic
-  places, broader drop elaboration, and generic/trait impl dispatch remain
-  roadmap work, not current truth.
+  moved state of an outer binding with the same name. Phase 4K scopes
+  `match` arm pattern bindings before merging arm moves, so consuming a
+  pattern-local binding no longer poisons a same-named outer binding while real
+  outer moves in match arms still propagate. Full Rust-grade CFG NLL,
+  match-arm block statement preservation, nested/non-local terminators, general
+  loop fixed-point analysis, dynamic places, broader drop elaboration, and
+  generic/trait impl dispatch remain roadmap work, not current truth.
 - Trait coherence now has an active conservative checker slice: exact duplicate
   trait impls and orphan impls where neither trait nor type is local reject,
   simple generic blanket-vs-concrete and renamed blanket impl overlaps reject,

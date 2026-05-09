@@ -661,6 +661,63 @@ fn caller(own item: Buffer, xs: Array<Int>) -> Int {
         stdout.contains("use-after-move"),
         "expected use-after-move diagnostic, got:\n{stdout}"
     );
+
+    let match_shadow_src = r#"
+fn consume(own x: Buffer) -> Int {
+  0
+}
+
+fn read(borrow x: Buffer) -> Int {
+  0
+}
+
+fn caller(borrow item: Buffer, own subject: Buffer) -> Int {
+  match subject {
+    item => consume(item)
+  }
+  read(item)
+  0
+}
+"#;
+    let match_shadow_path = temp_source(
+        "borrow_match_pattern_shadow_does_not_poison_outer",
+        match_shadow_src,
+    );
+    assert_ok(&["parse"], &match_shadow_path);
+    assert_ok(&["check"], &match_shadow_path);
+
+    let match_outer_move_src = r#"
+fn consume(own x: Buffer) -> Int {
+  0
+}
+
+fn read(borrow x: Buffer) -> Int {
+  0
+}
+
+fn caller(own item: Buffer, n: Int) -> Int {
+  match n {
+    _ => consume(item)
+  }
+  read(item)
+  0
+}
+"#;
+    let match_outer_move_path = temp_source(
+        "borrow_match_arm_outer_move_propagates",
+        match_outer_move_src,
+    );
+    assert_ok(&["parse"], &match_outer_move_path);
+    let out = run(&["check"], &match_outer_move_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode match arms must still propagate real outer moves"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("use-after-move"),
+        "expected use-after-move diagnostic, got:\n{stdout}"
+    );
 }
 
 #[test]

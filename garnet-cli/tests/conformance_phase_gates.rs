@@ -75,6 +75,10 @@ fn full_borrow_handle_documents_active_partial_scope() {
         body.contains("for_loop_shadow_preserves_outer_move"),
         "{name} must document the active for-loop variable scoping subset"
     );
+    assert!(
+        body.contains("match_pattern_shadow_does_not_poison_outer"),
+        "{name} must document the active match-arm pattern scoping subset"
+    );
 }
 
 #[test]

@@ -394,6 +394,27 @@ analysis, closure capture lifetimes, variance, dynamic places, generic receiver
 types, trait impl dispatch, broader scope/branch drop elaboration, and
 two-phase borrows remain pending.
 
+- [x] **Step 2F: Scope `match` pattern bindings before arm move merging**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test borrow match_
+cargo test -p garnet-cli --test conformance_skeleton deferred_full_borrow_rule_suite
+```
+
+Evidence: Phase 4K records match-arm pattern bindings, checks each arm against
+an arm-local environment, and restores those pattern names from the pre-match
+snapshot before merging arm move state. A pattern-local move no longer poisons
+a same-named outer binding, while a real outer move inside a match arm still
+propagates after the match.
+
+Remaining: full CFG NLL, match-arm block statement preservation,
+nested/non-local terminators, general loop fixed-point analysis, closure
+capture lifetimes, variance, dynamic places, generic receiver types, trait impl
+dispatch, broader scope/branch drop elaboration, and two-phase borrows remain
+pending.
+
 ## Phase 5: Traits, Coherence, And Monomorphization
 
 **Intent:** Make the Rust-rigor side credible without overclaiming zero-cost guarantees.

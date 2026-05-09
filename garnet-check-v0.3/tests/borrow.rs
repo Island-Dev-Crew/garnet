@@ -290,6 +290,48 @@ fn for_loop_variable_shadowing_does_not_rebind_outer_move() {
     );
 }
 
+#[test]
+fn match_pattern_shadow_move_does_not_poison_outer_binding() {
+    let src = r#"
+        fn consume(own x: Buffer) -> Int { 0 }
+        fn read(borrow x: Buffer) -> Int { 0 }
+        fn caller(borrow item: Buffer, own subject: Buffer) -> Int {
+            match subject {
+                item => consume(item)
+            }
+            read(item)
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        !d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "a move of a match-arm pattern binding should not poison an outer binding with the same name, got {d:?}"
+    );
+}
+
+#[test]
+fn match_arm_outer_move_still_propagates_after_match() {
+    let src = r#"
+        fn consume(own x: Buffer) -> Int { 0 }
+        fn read(borrow x: Buffer) -> Int { 0 }
+        fn caller(own item: Buffer, n: Int) -> Int {
+            match n {
+                _ => consume(item)
+            }
+            read(item)
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "a move of an outer binding inside a match arm must still poison later uses, got {d:?}"
+    );
+}
+
 // ── Method receivers ──
 
 #[test]
