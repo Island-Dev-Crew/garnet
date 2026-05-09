@@ -407,7 +407,15 @@ rows whose replayed justifications do not verify in the current source tree,
 and preserves valid NDJSON/all verified records under a 16-writer bounded
 append soak.
 
-- [ ] **Step 7: Promote root-buffer/finalizer/safe-mode interaction into production allocator tests**
+- [x] **Step 7: Connect store root lifecycles to the cycle-aware allocator adapter**
+
+Phase 6K adds `CycleAwareKindAllocator`, `AllocRootStats`, and object-safe root
+hooks on `KindAllocator`. The four Memory Core stores now retain observable
+roots on write and release them on clear, policy eviction, workflow replacement,
+and drop. This proves store-root lifecycle wiring through the bounded cycle
+fixture, not the final production ARC backend.
+
+- [ ] **Step 8: Promote root-buffer/finalizer/safe-mode interaction into production allocator tests**
 
 ## Phase 7: Release, Research, And Repeated Falsification
 

@@ -154,7 +154,10 @@ append stress into a 16-writer bounded soak that preserves valid NDJSON and all
 verified records. Phase 6J starts Mnemos Tier 1 allocator integration: the four
 Memory Core stores now expose a kind-aware allocator surface with allocation
 stats, and policy-configured episodic/semantic stores perform lazy retention
-eviction at read/search time. Production ARC integration, persistence, and
+eviction at read/search time. Phase 6K adds a cycle-aware allocator adapter and
+has working, episodic, semantic, and procedural stores retain and release
+observable roots on write, clear, policy eviction, replacement, and store drop.
+Production ARC integration, runtime finalizer invocation, persistence, and
 extended release-duration soak remain follow-up work.
 
 ## Historical Material

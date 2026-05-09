@@ -105,6 +105,143 @@ fn all_reference_stores_route_allocations_to_their_kind_allocator() {
     assert_eq!(procedural.allocator_stats().allocated_items, 1);
 }
 
+#[test]
+fn cycle_aware_allocators_record_store_roots_for_each_memory_kind() {
+    let working_alloc = CycleAwareKindAllocator::shared(MemoryKind::Working, 8);
+    let episodic_alloc = CycleAwareKindAllocator::shared(MemoryKind::Episodic, 8);
+    let semantic_alloc = CycleAwareKindAllocator::shared(MemoryKind::Semantic, 8);
+    let procedural_alloc = CycleAwareKindAllocator::shared(MemoryKind::Procedural, 8);
+    let working: WorkingStore<i32> = WorkingStore::with_allocator(working_alloc);
+    let episodic: EpisodeStore<i32> = EpisodeStore::with_allocator(episodic_alloc);
+    let semantic: VectorIndex<i32> = VectorIndex::with_allocator(semantic_alloc);
+    let procedural: WorkflowStore<i32> = WorkflowStore::with_allocator(procedural_alloc);
+
+    working.push(1);
+    episodic.append(2);
+    semantic.insert(vec![1.0, 0.0], 3);
+    procedural.register("wf", 4);
+
+    assert_eq!(working.allocator_root_stats().roots_created, 1);
+    assert_eq!(episodic.allocator_root_stats().roots_created, 1);
+    assert_eq!(semantic.allocator_root_stats().roots_created, 1);
+    assert_eq!(procedural.allocator_root_stats().roots_created, 1);
+    assert_eq!(working.allocator_root_stats().active_roots, 1);
+    assert_eq!(episodic.allocator_root_stats().active_roots, 1);
+    assert_eq!(semantic.allocator_root_stats().active_roots, 1);
+    assert_eq!(procedural.allocator_root_stats().active_roots, 1);
+}
+
+#[test]
+fn working_store_clear_releases_cycle_aware_roots() {
+    let alloc = CycleAwareKindAllocator::shared(MemoryKind::Working, 8);
+    let s = WorkingStore::with_allocator(alloc);
+
+    s.push(10);
+    s.push(20);
+    assert_eq!(s.allocator_root_stats().active_roots, 2);
+
+    s.clear();
+    let stats = s.allocator_root_stats();
+
+    assert_eq!(stats.active_roots, 0);
+    assert_eq!(stats.roots_released, 2);
+    assert_eq!(stats.buffered_roots, 0);
+}
+
+#[test]
+fn episodic_policy_eviction_releases_cycle_aware_roots() {
+    let mut policy = MemoryPolicy::default_for(MemoryKind::Episodic);
+    policy.compaction_high_water = 2;
+    policy.retention_threshold = 0.0;
+    let alloc = CycleAwareKindAllocator::shared(MemoryKind::Episodic, 8);
+    let s = EpisodeStore::with_policy_and_allocator(policy, alloc);
+
+    for i in 0..5 {
+        s.append_at(i, i as i32);
+    }
+    assert_eq!(s.allocator_root_stats().active_roots, 5);
+
+    let values: Vec<_> = s
+        .recent(10)
+        .into_iter()
+        .map(|episode| episode.value)
+        .collect();
+    let stats = s.allocator_root_stats();
+
+    assert_eq!(values, vec![3, 4]);
+    assert_eq!(stats.active_roots, 2);
+    assert_eq!(stats.roots_released, 3);
+}
+
+#[test]
+fn semantic_policy_eviction_releases_cycle_aware_roots() {
+    let mut policy = MemoryPolicy::default_for(MemoryKind::Semantic);
+    policy.compaction_high_water = 1;
+    policy.retention_threshold = 0.0;
+    let alloc = CycleAwareKindAllocator::shared(MemoryKind::Semantic, 8);
+    let idx: VectorIndex<&str> = VectorIndex::with_policy_and_allocator(policy, alloc);
+
+    idx.insert(vec![1.0, 0.0], "x");
+    idx.insert(vec![0.0, 1.0], "y");
+    idx.insert(vec![0.5, 0.5], "mid");
+    assert_eq!(idx.allocator_root_stats().active_roots, 3);
+
+    let values: Vec<_> = idx
+        .search(&[1.0, 0.0], 3)
+        .into_iter()
+        .map(|(_score, value)| value)
+        .collect();
+    let stats = idx.allocator_root_stats();
+
+    assert_eq!(values, vec!["x"]);
+    assert_eq!(stats.active_roots, 1);
+    assert_eq!(stats.roots_released, 2);
+}
+
+#[test]
+fn procedural_register_replacement_releases_previous_cycle_aware_root() {
+    let alloc = CycleAwareKindAllocator::shared(MemoryKind::Procedural, 8);
+    let ws = WorkflowStore::with_allocator(alloc);
+
+    ws.register("build", 1);
+    ws.register("build", 2);
+    let stats = ws.allocator_root_stats();
+
+    assert_eq!(stats.roots_created, 2);
+    assert_eq!(stats.active_roots, 1);
+    assert_eq!(stats.roots_released, 1);
+}
+
+#[test]
+fn dropping_stores_releases_cycle_aware_roots() {
+    let working_alloc = CycleAwareKindAllocator::shared(MemoryKind::Working, 8);
+    let episodic_alloc = CycleAwareKindAllocator::shared(MemoryKind::Episodic, 8);
+    let semantic_alloc = CycleAwareKindAllocator::shared(MemoryKind::Semantic, 8);
+    let procedural_alloc = CycleAwareKindAllocator::shared(MemoryKind::Procedural, 8);
+
+    {
+        let working: WorkingStore<i32> = WorkingStore::with_allocator(working_alloc.clone());
+        let episodic: EpisodeStore<i32> = EpisodeStore::with_allocator(episodic_alloc.clone());
+        let semantic: VectorIndex<i32> = VectorIndex::with_allocator(semantic_alloc.clone());
+        let procedural: WorkflowStore<i32> =
+            WorkflowStore::with_allocator(procedural_alloc.clone());
+
+        working.push(1);
+        episodic.append(2);
+        semantic.insert(vec![1.0, 0.0], 3);
+        procedural.register("wf", 4);
+    }
+
+    assert_eq!(working_alloc.root_stats().active_roots, 0);
+    assert_eq!(episodic_alloc.root_stats().active_roots, 0);
+    assert_eq!(semantic_alloc.root_stats().active_roots, 0);
+    assert_eq!(procedural_alloc.root_stats().active_roots, 0);
+    assert_eq!(working_alloc.root_stats().roots_released, 1);
+    assert_eq!(episodic_alloc.root_stats().roots_released, 1);
+    assert_eq!(semantic_alloc.root_stats().roots_released, 1);
+    assert_eq!(procedural_alloc.root_stats().roots_released, 1);
+}
+
 // ════════════════════════════════════════════════════════════════════
 // EpisodeStore — append-only log
 // ════════════════════════════════════════════════════════════════════

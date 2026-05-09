@@ -6,6 +6,7 @@
 //! object-safe so stores can carry `Arc<dyn KindAllocator>` without forcing a
 //! generic allocator parameter through every interpreter-facing type.
 
+use crate::cycle::{CycleAllocatorFixture, CycleCollectReport, CycleNodeId, CycleScan};
 use crate::policy::MemoryKind;
 use std::sync::{Arc, Mutex};
 
@@ -51,11 +52,46 @@ impl AllocStats {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AllocRootStats {
+    pub kind: MemoryKind,
+    pub roots_created: usize,
+    pub active_roots: usize,
+    pub roots_released: usize,
+    pub buffered_roots: usize,
+    pub collected_roots: usize,
+}
+
+impl AllocRootStats {
+    pub fn new(kind: MemoryKind) -> Self {
+        Self {
+            kind,
+            roots_created: 0,
+            active_roots: 0,
+            roots_released: 0,
+            buffered_roots: 0,
+            collected_roots: 0,
+        }
+    }
+}
+
 pub trait KindAllocator: Send + Sync {
     fn kind(&self) -> MemoryKind;
     fn reserve(&self, request: AllocRequest);
     fn reset(&self);
     fn stats(&self) -> AllocStats;
+
+    fn retain_root(&self, _label: &str) -> Option<CycleNodeId> {
+        None
+    }
+
+    fn release_root(&self, _root: CycleNodeId) -> Option<CycleCollectReport> {
+        None
+    }
+
+    fn root_stats(&self) -> AllocRootStats {
+        AllocRootStats::new(self.kind())
+    }
 }
 
 #[derive(Debug)]
@@ -96,5 +132,99 @@ impl KindAllocator for HeapKindAllocator {
 
     fn stats(&self) -> AllocStats {
         *self.stats.lock().expect("allocator stats poisoned")
+    }
+}
+
+#[derive(Debug)]
+pub struct CycleAwareKindAllocator {
+    kind: MemoryKind,
+    stats: Mutex<AllocStats>,
+    root_stats: Mutex<AllocRootStats>,
+    cycle_fixture: Mutex<CycleAllocatorFixture>,
+}
+
+impl CycleAwareKindAllocator {
+    pub fn new(kind: MemoryKind, threshold: usize) -> Self {
+        Self {
+            kind,
+            stats: Mutex::new(AllocStats::new(kind)),
+            root_stats: Mutex::new(AllocRootStats::new(kind)),
+            cycle_fixture: Mutex::new(CycleAllocatorFixture::with_threshold(
+                CycleScan::Kind(kind),
+                threshold,
+            )),
+        }
+    }
+
+    pub fn shared(kind: MemoryKind, threshold: usize) -> Arc<dyn KindAllocator> {
+        Arc::new(Self::new(kind, threshold))
+    }
+}
+
+impl KindAllocator for CycleAwareKindAllocator {
+    fn kind(&self) -> MemoryKind {
+        self.kind
+    }
+
+    fn reserve(&self, request: AllocRequest) {
+        let mut stats = self.stats.lock().expect("allocator stats poisoned");
+        stats.allocations += 1;
+        stats.allocated_items += request.items;
+        stats.bytes_reserved += request.reserved_bytes();
+    }
+
+    fn reset(&self) {
+        let mut stats = self.stats.lock().expect("allocator stats poisoned");
+        stats.resets += 1;
+    }
+
+    fn stats(&self) -> AllocStats {
+        *self.stats.lock().expect("allocator stats poisoned")
+    }
+
+    fn retain_root(&self, label: &str) -> Option<CycleNodeId> {
+        let mut fixture = self.cycle_fixture.lock().expect("cycle fixture poisoned");
+        let id = fixture.allocate_arc(self.kind, label);
+        fixture.add_root(id).expect("newly allocated root exists");
+        let buffered_roots = fixture.buffer_len();
+        drop(fixture);
+
+        let mut stats = self
+            .root_stats
+            .lock()
+            .expect("allocator root stats poisoned");
+        stats.roots_created += 1;
+        stats.active_roots += 1;
+        stats.buffered_roots = buffered_roots;
+        Some(id)
+    }
+
+    fn release_root(&self, root: CycleNodeId) -> Option<CycleCollectReport> {
+        let mut fixture = self.cycle_fixture.lock().expect("cycle fixture poisoned");
+        let report = match fixture.release_root(root) {
+            Ok(report) => report,
+            Err(_) => return None,
+        };
+        let buffered_roots = fixture.buffer_len();
+        drop(fixture);
+
+        let mut stats = self
+            .root_stats
+            .lock()
+            .expect("allocator root stats poisoned");
+        stats.roots_released += 1;
+        stats.active_roots = stats.active_roots.saturating_sub(1);
+        stats.buffered_roots = buffered_roots;
+        if let Some(report) = &report {
+            stats.collected_roots += report.collected.len();
+        }
+        report
+    }
+
+    fn root_stats(&self) -> AllocRootStats {
+        *self
+            .root_stats
+            .lock()
+            .expect("allocator root stats poisoned")
     }
 }

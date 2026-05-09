@@ -1,6 +1,9 @@
 //! Procedural memory: copy-on-write workflow store with version history.
 
-use crate::{AllocRequest, AllocStats, HeapKindAllocator, KindAllocator, MemoryKind};
+use crate::{
+    AllocRequest, AllocRootStats, AllocStats, CycleNodeId, HeapKindAllocator, KindAllocator,
+    MemoryKind,
+};
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::sync::Arc;
@@ -36,6 +39,7 @@ impl<T: Clone> Workflow<T> {
 pub struct WorkflowStore<T> {
     workflows: RefCell<BTreeMap<String, Workflow<T>>>,
     alloc: Arc<dyn KindAllocator>,
+    roots: RefCell<BTreeMap<String, CycleNodeId>>,
 }
 
 impl<T> Default for WorkflowStore<T> {
@@ -54,11 +58,16 @@ impl<T> WorkflowStore<T> {
         Self {
             workflows: RefCell::new(BTreeMap::new()),
             alloc,
+            roots: RefCell::new(BTreeMap::new()),
         }
     }
 
     pub fn allocator_stats(&self) -> AllocStats {
         self.alloc.stats()
+    }
+
+    pub fn allocator_root_stats(&self) -> AllocRootStats {
+        self.alloc.root_stats()
     }
 }
 
@@ -67,13 +76,20 @@ impl<T: Clone> WorkflowStore<T> {
         let name = name.into();
         self.alloc
             .reserve(AllocRequest::for_items::<Workflow<T>>(1));
+        if let Some(root) = self.roots.borrow_mut().remove(&name) {
+            self.alloc.release_root(root);
+        }
+        let root = self.alloc.retain_root("procedural:workflow");
         self.workflows.borrow_mut().insert(
             name.clone(),
             Workflow {
-                name,
+                name: name.clone(),
                 versions: vec![initial],
             },
         );
+        if let Some(root) = root {
+            self.roots.borrow_mut().insert(name, root);
+        }
     }
 
     pub fn find(&self, name: &str) -> Option<Workflow<T>> {
@@ -94,6 +110,15 @@ impl<T: Clone> WorkflowStore<T> {
         if let Some(w) = self.workflows.borrow_mut().get_mut(name) {
             self.alloc.reserve(AllocRequest::for_items::<T>(1));
             w.update(f);
+        }
+    }
+}
+
+impl<T> Drop for WorkflowStore<T> {
+    fn drop(&mut self) {
+        let roots = std::mem::take(self.roots.get_mut());
+        for root in roots.into_values() {
+            self.alloc.release_root(root);
         }
     }
 }

@@ -27,6 +27,8 @@
 //!
 //! - The four stores expose a production-facing kind-aware allocator surface,
 //!   while their backing storage still uses `Vec` / `BTreeMap`.
+//! - Cycle-aware allocator fixtures can observe store-root retention and
+//!   release on write, clear, policy eviction, replacement, and drop.
 //! - No persistence (state is in-process only).
 //! - No production-grade vector index (cosine over a flat `Vec`, not
 //!   HNSW / IVF / PolarQuant).
@@ -37,8 +39,9 @@
 //! - A bounded [`CycleGraph`] / [`CycleRootBuffer`] /
 //!   [`CycleAllocatorFixture`] trial-deletion reference path exposes §4.5
 //!   cycle, finalization-order, safe-mode exclusion, root-buffer scheduling,
-//!   and allocator-owned root/edge decrement fixtures while production
-//!   allocator work remains on the Memory Core roadmap.
+//!   allocator-owned root/edge decrement fixtures, and store-root lifecycle
+//!   evidence while production allocator work remains on the Memory Core
+//!   roadmap.
 //!
 //! ## What's planned
 //!
@@ -66,7 +69,10 @@ pub mod procedural;
 pub mod semantic;
 pub mod working;
 
-pub use alloc::{AllocRequest, AllocStats, HeapKindAllocator, KindAllocator};
+pub use alloc::{
+    AllocRequest, AllocRootStats, AllocStats, CycleAwareKindAllocator, HeapKindAllocator,
+    KindAllocator,
+};
 pub use cycle::{
     CycleAllocationMode, CycleAllocatorFixture, CycleCollectReport, CycleGraph, CycleGraphError,
     CycleNodeId, CycleRootBuffer, CycleScan,

@@ -2,7 +2,7 @@
 
 **Subject:** Garnet's Memory Core (the architectural subsystem) and **Mnemos** (its v0.4.x reference implementation crate, `garnet-memory-v0.3/`).
 **Status of this document:** Forward-looking. Work items are not committed to a delivery date here; that belongs in per-version handoffs in `F_Project_Management/`.
-**As of:** 2026-05-08 (v0.5 readiness Phase 6D in progress).
+**As of:** 2026-05-08 (v0.5 readiness Phase 6K in progress).
 
 ---
 
@@ -27,11 +27,11 @@ Implemented, tested, behaviourally correct against the Mini-Spec §4 contract. N
 
 | Kind | Reference store | File | Tests |
 |---|---|---|---|
-| Working | `RefCell<Vec<T>>` arena with Phase 6J allocator stats | `garnet-memory-v0.3/src/working.rs` | `tests/basic.rs`, `tests/properties.rs` |
-| Episodic | `RefCell<Vec<Episode<T>>>` append log with Phase 6J policy-configured lazy eviction | `src/episodic.rs` | ditto |
-| Semantic | `RefCell<Vec<(Vec<f32>, T)>>` flat-cosine index with Phase 6J policy-configured lazy eviction | `src/semantic.rs` | ditto + `benches/vector.rs` |
-| Procedural | `RefCell<BTreeMap<Version, T>>` COW store with Phase 6J allocator stats | `src/procedural.rs` | ditto |
-| Allocator surface | object-safe `KindAllocator`, `HeapKindAllocator`, and `AllocStats` | `src/alloc.rs` | `tests/properties.rs` |
+| Working | `RefCell<Vec<T>>` arena with Phase 6K cycle-aware roots on push, clear, and drop | `garnet-memory-v0.3/src/working.rs` | `tests/basic.rs`, `tests/properties.rs` |
+| Episodic | `RefCell<Vec<Episode<T>>>` append log with Phase 6K root release on policy eviction and drop | `src/episodic.rs` | ditto |
+| Semantic | `RefCell<Vec<(Vec<f32>, T)>>` flat-cosine index with Phase 6K root release on policy eviction and drop | `src/semantic.rs` | ditto + `benches/vector.rs` |
+| Procedural | `RefCell<BTreeMap<Version, T>>` COW store with Phase 6K root release on workflow replacement and drop | `src/procedural.rs` | ditto |
+| Allocator surface | object-safe `KindAllocator`, `HeapKindAllocator`, `CycleAwareKindAllocator`, `AllocStats`, and `AllocRootStats` | `src/alloc.rs` | `tests/properties.rs` |
 | Policy | `MemoryPolicy { score, should_retain }` | `src/policy.rs` | ditto |
 | Cycle fixtures | deterministic rooted graph + bounded root-buffer trial-deletion, finalization-order, and safe-mode exclusion model | `src/cycle.rs` | `tests/cycle.rs`, `deferred_arc_cycle_detection` |
 
@@ -41,7 +41,7 @@ These will not be removed or replaced wholesale. Each tier below either upgrades
 
 ## Tier 1 — Allocator integration (Mnemos v0.5.0)
 
-The biggest single jump in maturity. Phase 6J starts this tier: stores still use standard Rust collections (`Vec`, `BTreeMap`) for backing storage, but they now delegate allocation intent to a kind-aware allocator surface and policy-configured episodic/semantic stores enforce retention lazily on read/search. Full custom backends and ARC allocator roots remain later Tier 2/Tier 3 work.
+The biggest single jump in maturity. Phase 6J starts this tier: stores still use standard Rust collections (`Vec`, `BTreeMap`) for backing storage, but they now delegate allocation intent to a kind-aware allocator surface and policy-configured episodic/semantic stores enforce retention lazily on read/search. Phase 6K connects that allocator surface to observable store-root lifecycles through a cycle-aware adapter: writes retain roots, clear/policy eviction/replacement/drop release them, and `AllocRootStats` makes the behavior testable. Full custom backends, production ARC finalizers, and persistence remain later Tier 2/Tier 3 work.
 
 ### T1.1 — Kind-aware allocator trait
 
@@ -57,7 +57,21 @@ Phase 6J wires `MemoryPolicy::score()` and `should_retain()` into policy-configu
 - **References:** `MemoryPolicy::score(relevance, age, importance)` per `policy.rs:53`; the R+R+I decay model.
 - **Decision in Phase 6J:** lazy at read/search for v0.5. Revisit background sweeps when production workloads and persistence exist.
 
-### T1.3 — Generics over memory kinds (Mini-Spec §4.4)
+### T1.3 — Cycle-aware store-root lifecycle
+
+Phase 6K adds `CycleAwareKindAllocator`, `AllocRootStats`, and object-safe root
+hooks on `KindAllocator`. Working, episodic, semantic, and procedural stores
+retain roots when values enter the store and release those roots when the store
+clears, policy eviction compacts, a workflow is replaced, or the store drops.
+This makes the Tier 1 allocator boundary observable without claiming that the
+bounded cycle fixture is the final production ARC collector.
+
+- **References:** Mini-Spec §4.5; Paper V Addendum Theorem A.
+- **Decision in Phase 6K:** keep the adapter fixture-backed and object-safe so
+  stores can prove lifecycle behavior while the production allocator backend is
+  still designed separately.
+
+### T1.4 — Generics over memory kinds (Mini-Spec §4.4)
 
 Currently explicitly deferred. Tier 1 introduces this — without it, library code that wants to be generic over "the user picks the kind at instantiation" has to monomorphize manually, which Paper VII flags as a tooling-ergonomics gap.
 
@@ -116,6 +130,10 @@ finalization-order reporting and safe-mode affine node exclusion so §4.5.3 and
 observable invariants, not the production collector. Phase 6D adds
 `CycleRootBuffer` and `release_root_to_buffer` so decrement-triggered buffered
 roots can drive collection instead of scanning every unrooted candidate.
+Phase 6E wraps that behavior in `CycleAllocatorFixture`, and Phase 6K adds
+`CycleAwareKindAllocator` so the four reference stores can retain and release
+observable roots through the allocator surface on write, clear, eviction,
+replacement, and drop.
 
 The remaining production item is the synchronous Bacon-Rajan trial-deletion
 algorithm integrated with ARC-managed allocator roots. That final path keeps

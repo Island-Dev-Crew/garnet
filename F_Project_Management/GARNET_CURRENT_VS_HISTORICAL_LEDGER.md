@@ -75,8 +75,11 @@ When documents conflict, use this order:
   unrooted cycle collection, unrooted acyclic retention for ordinary
   retention/eviction, and kind-partitioned cross-kind scans. Phase 6J adds a
   kind-aware allocator surface to all four stores and makes policy-configured
-  episodic/semantic stores perform lazy eviction on read/search. This is not
-  the production allocator-integrated Bacon-Rajan collector.
+  episodic/semantic stores perform lazy eviction on read/search. Phase 6K adds
+  `CycleAwareKindAllocator` and verifies observable store-root retain/release
+  lifecycles on write, clear, policy eviction, workflow replacement, and store
+  drop. This is not the production allocator-integrated Bacon-Rajan collector
+  or runtime finalizer path.
 - Compiler-as-agent cache privacy now has Phase 6F executable evidence:
   absolute paths inside the active project are persisted as stable relative
   labels, while external absolute paths are redacted to `<external>/<file>`.

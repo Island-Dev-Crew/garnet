@@ -106,7 +106,7 @@ two-day LSP.
 
 ## Item B — Memory Core Tier 1 (Mnemos production allocator integration)
 
-### Current Phase 6J status
+### Current Phase 6K status
 
 Phase 6A added a bounded cycle-reference path before the allocator work:
 `garnet-memory-v0.3/src/cycle.rs`, `garnet-memory-v0.3/tests/cycle.rs`, and
@@ -124,8 +124,11 @@ the buffered trial-deletion path. Phase 6J starts the Tier 1 promotion by
 adding an object-safe kind-aware allocator surface (`KindAllocator`,
 `HeapKindAllocator`, `AllocStats`) across the four Memory Core stores and by
 wiring policy-configured lazy eviction into `EpisodeStore` and `VectorIndex`.
-The next production step is still allocator-integrated Bacon-Rajan trial
-deletion and runtime finalizer invocation.
+Phase 6K adds `CycleAwareKindAllocator`, `AllocRootStats`, and object-safe root
+hooks so the four stores retain observable roots on write and release them on
+clear, policy eviction, workflow replacement, and drop. The next production
+step is still allocator-integrated Bacon-Rajan trial deletion and runtime
+finalizer invocation.
 
 ### Current Phase 6F-6I cache-security status
 
@@ -154,8 +157,10 @@ v0.4.2 locked in the **naming** (Memory Core / Mnemos) and the
 **roadmap** (`C_Language_Specification/MEMORY_CORE_ROADMAP.md`).
 Tier 0 (the original reference stores) ships. Phase 6J begins Tier 1:
 a kind-aware allocator trait that the four stores delegate to, plus
-policy-configured eviction enforcement for episodic and semantic stores.
-Generics over memory kinds and allocator-integrated ARC remain pending.
+policy-configured eviction enforcement for episodic and semantic stores. Phase
+6K continues Tier 1 by proving observable store-root lifecycles through the
+cycle-aware allocator adapter. Generics over memory kinds and
+allocator-integrated ARC remain pending.
 
 ### Tier 1 scope (per the Roadmap)
 
@@ -183,7 +188,20 @@ within a finite read, semantic search keeps top policy matches under high-water
 pressure, and low-relevance semantic facts are dropped when policy thresholds
 require it.
 
-#### T1.3 — Generics over memory kinds (Mini-Spec §4.4)
+#### T1.3 — Cycle-aware store-root lifecycle
+
+Phase 6K adds `CycleAwareKindAllocator` and `AllocRootStats`. Stores retain
+cycle-aware roots when values enter working, episodic, semantic, and procedural
+memory and release those roots on `WorkingStore::clear`, episodic/semantic
+policy eviction, procedural workflow replacement, and store drop. This is the
+observable root-lifecycle proof, not the production ARC finalizer path.
+
+Covered property tests: all four stores record created/active roots, working
+clear releases roots, episodic and semantic policy eviction release roots,
+procedural replacement releases the previous root, and dropping each store
+releases any remaining roots.
+
+#### T1.4 — Generics over memory kinds (Mini-Spec §4.4)
 
 This is the gnarliest of the three. Phase 5B gives §11.6 interpreter-level
 generic instantiation evidence, but native monomorphization is still deferred. The
@@ -200,14 +218,16 @@ realistic v0.5.0 path:
 
 ### Files to touch
 
-- `garnet-memory-v0.3/src/lib.rs` — `KindAllocator` trait, default
-  impl.
+- `garnet-memory-v0.3/src/alloc.rs` — `KindAllocator`, `HeapKindAllocator`,
+  `CycleAwareKindAllocator`, `AllocStats`, and `AllocRootStats`.
+- `garnet-memory-v0.3/src/lib.rs` — public Memory Core exports and module
+  docs.
 - `garnet-memory-v0.3/src/{working,episodic,semantic,procedural}.rs`
-  — accept the allocator, route allocations through it.
+  — accept the allocator, route allocations and observable roots through it.
 - `garnet-memory-v0.3/src/policy.rs` — already has `score` /
   `should_retain`; no changes needed there.
-- `garnet-memory-v0.3/tests/properties.rs` — add eviction-convergence
-  property test.
+- `garnet-memory-v0.3/tests/properties.rs` — allocator stats, eviction
+  convergence, cycle-aware root lifecycle, and drop-release property tests.
 - `C_Language_Specification/GARNET_v0_4_2_Conformance_Matrix.md` —
   rename to `GARNET_v0_5_0_Conformance_Matrix.md` (or update in
   place); flip §4.4 / §4.5 rows as items land.
@@ -215,18 +235,18 @@ realistic v0.5.0 path:
   rows as items land. **Do this in the same commit** that lands the
   work, per the policy at the bottom of the Roadmap.
 
-### Pre-requisites (do these first)
+### Remaining pre-requisites
 
-- None for T1.1 / T1.2 — they are self-contained inside Mnemos.
-- T1.3 wants Mini-Spec §11.6 monomorphization to actually
+- T1.1, T1.2, and T1.3 are now self-contained Mnemos evidence slices.
+- T1.4 wants Mini-Spec §11.6 monomorphization to actually
   monomorphize. Today it is parsed-only (see Conformance Matrix
   §11.6 row). If you can punt the language-level syntax, the
   library-side trait can land first; the syntax follows.
 
-### Estimate
+### Remaining estimate
 
-T1.1 + T1.2 in a focused session. T1.3 in a separate session
-(probably alongside parser work).
+T1.4 in a separate session, probably alongside parser work. Production ARC
+finalizers and persistence stay separate from the Tier 1 adapter evidence.
 
 ---
 

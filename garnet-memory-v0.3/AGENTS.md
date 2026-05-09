@@ -11,6 +11,10 @@ Owns the reference implementation for Garnet's working, episodic, semantic, and 
   trial-deletion fixture/model for Mini-Spec §4.5 behavior, including
   root-buffer scheduling, finalization-order, and safe-mode exclusion signals,
   not the production allocator-integrated ARC collector.
+- Keep `CycleAwareKindAllocator` honest: it is observable root-lifecycle
+  evidence that store writes, clear, policy eviction, replacement, and drop can
+  drive the bounded cycle fixture. It is not a production ARC finalizer or
+  persistence backend.
 - Treat `AGENTS.md` and workflow contracts as procedural-memory analogs when designing future tooling.
 - Never hide sink, persistence, or machine-key failures; memory failures must be observable.
 - Keep tests isolated from machine-local key races and cache state.
