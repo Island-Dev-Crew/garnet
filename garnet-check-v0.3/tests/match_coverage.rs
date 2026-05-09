@@ -1030,6 +1030,52 @@ fn true_guarded_enum_arm_counts_as_safe_match_coverage() {
 }
 
 #[test]
+fn true_local_bool_guard_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            let always = true
+            match status {
+                Status::Ready if always => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "local true guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn mutable_bool_guard_does_not_count_as_static_match_coverage() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            let mut always = true
+            match status {
+                Status::Ready if always => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "mutable guard facts must stay unknown, got {errs:?}"
+    );
+}
+
+#[test]
 fn false_guarded_enum_arm_is_unreachable_and_not_coverage() {
     let errs = check(
         r#"
@@ -1049,6 +1095,30 @@ fn false_guarded_enum_arm_is_unreachable_and_not_coverage() {
             && has_safe_violation(&errs, "non-exhaustive match")
             && has_safe_violation(&errs, "Status::Ready"),
         "literal false guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_local_bool_guard_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            let never = false
+            match status {
+                Status::Ready if never => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "local false guards should be unreachable and non-covering, got {errs:?}"
     );
 }
 

@@ -8,11 +8,12 @@
 //! assignments, including conservative `if`/`elsif`/`else` branch joins,
 //! nested all-path `if` assignment joins inside branch bodies, and narrowly
 //! proven direct closure call-effect invalidation for local branch-selected
-//! closures. It also rejects duplicate literal arms and arms after catch-all
-//! arms in otherwise open-domain matches. It does not attempt full type
+//! closures. It also recognizes immutable local boolean constants in match
+//! guards, and rejects duplicate literal arms and arms after catch-all arms in
+//! otherwise open-domain matches. It does not attempt full type
 //! inference, loop fixed-point or broader mutable/escaped/general higher-order
 //! closure call-effect analysis, recursive/open payload coverage, or
-//! non-literal guard reasoning.
+//! broader non-literal guard reasoning.
 
 use crate::CheckError;
 use garnet_parser::ast::{
@@ -70,6 +71,7 @@ struct Checker {
 
 type Env = BTreeMap<String, FiniteDomain>;
 type ClosureEffects = BTreeMap<String, BTreeSet<String>>;
+type GuardFacts = BTreeMap<String, bool>;
 
 pub fn check_match_coverage(module: &Module) -> Vec<CheckError> {
     let mut checker = Checker::default();
@@ -200,7 +202,15 @@ impl Checker {
         }
 
         let mut closure_effects = ClosureEffects::new();
-        self.walk_block(&f.body, &f.name, env, &mut closure_effects, scope);
+        let mut guard_facts = GuardFacts::new();
+        self.walk_block(
+            &f.body,
+            &f.name,
+            env,
+            &mut closure_effects,
+            &mut guard_facts,
+            scope,
+        );
     }
 
     fn walk_block(
@@ -209,13 +219,14 @@ impl Checker {
         fn_name: &str,
         mut env: Env,
         closure_effects: &mut ClosureEffects,
+        guard_facts: &mut GuardFacts,
         scope: &Scope,
     ) -> Env {
         for stmt in &block.stmts {
-            self.walk_stmt(stmt, fn_name, &mut env, closure_effects, scope);
+            self.walk_stmt(stmt, fn_name, &mut env, closure_effects, guard_facts, scope);
         }
         if let Some(tail) = &block.tail_expr {
-            self.walk_expr(tail, fn_name, &mut env, closure_effects, scope);
+            self.walk_expr(tail, fn_name, &mut env, closure_effects, guard_facts, scope);
         }
         env
     }
@@ -226,11 +237,19 @@ impl Checker {
         fn_name: &str,
         env: &mut Env,
         closure_effects: &mut ClosureEffects,
+        guard_facts: &mut GuardFacts,
         scope: &Scope,
     ) {
         match stmt {
             Stmt::Let(decl) => {
-                self.walk_expr(&decl.value, fn_name, env, closure_effects, scope);
+                self.walk_expr(
+                    &decl.value,
+                    fn_name,
+                    env,
+                    closure_effects,
+                    guard_facts,
+                    scope,
+                );
                 let domain = decl
                     .ty
                     .as_ref()
@@ -240,9 +259,17 @@ impl Checker {
                     env.insert(decl.name.clone(), domain);
                 }
                 update_closure_effect(decl.name.clone(), &decl.value, closure_effects);
+                update_guard_fact_for_let(decl, guard_facts);
             }
             Stmt::Var(decl) => {
-                self.walk_expr(&decl.value, fn_name, env, closure_effects, scope);
+                self.walk_expr(
+                    &decl.value,
+                    fn_name,
+                    env,
+                    closure_effects,
+                    guard_facts,
+                    scope,
+                );
                 if let Some(domain) = decl
                     .ty
                     .as_ref()
@@ -251,10 +278,19 @@ impl Checker {
                     env.insert(decl.name.clone(), domain);
                 }
                 update_closure_effect(decl.name.clone(), &decl.value, closure_effects);
+                guard_facts.remove(&decl.name);
             }
             Stmt::Const(decl) => {
-                self.walk_expr(&decl.value, fn_name, env, closure_effects, scope);
+                self.walk_expr(
+                    &decl.value,
+                    fn_name,
+                    env,
+                    closure_effects,
+                    guard_facts,
+                    scope,
+                );
                 update_closure_effect(decl.name.clone(), &decl.value, closure_effects);
+                update_guard_fact(decl.name.clone(), &decl.value, guard_facts);
             }
             Stmt::Assign {
                 target, op, value, ..
@@ -264,8 +300,8 @@ impl Checker {
                 let assigned_domain = matches!(op, AssignOp::Eq)
                     .then(|| self.domain_from_expr(value, env, scope))
                     .flatten();
-                self.walk_expr(target, fn_name, env, closure_effects, scope);
-                self.walk_expr(value, fn_name, env, closure_effects, scope);
+                self.walk_expr(target, fn_name, env, closure_effects, guard_facts, scope);
+                self.walk_expr(value, fn_name, env, closure_effects, guard_facts, scope);
                 if let Expr::Ident(name, _) = target {
                     if let Some(domain) = assigned_domain {
                         env.insert(name.clone(), domain);
@@ -277,37 +313,65 @@ impl Checker {
                     } else {
                         closure_effects.remove(name);
                     }
+                    guard_facts.remove(name);
                 }
             }
             Stmt::While {
                 condition, body, ..
             } => {
-                self.walk_expr(condition, fn_name, env, closure_effects, scope);
+                self.walk_expr(condition, fn_name, env, closure_effects, guard_facts, scope);
                 let assigned = maybe_assigned_outer_targets_in_block(body);
                 let mut body_effects = closure_effects.clone();
-                self.walk_block(body, fn_name, env.clone(), &mut body_effects, scope);
+                let mut body_facts = guard_facts.clone();
+                self.walk_block(
+                    body,
+                    fn_name,
+                    env.clone(),
+                    &mut body_effects,
+                    &mut body_facts,
+                    scope,
+                );
                 for target in assigned {
                     env.remove(&target);
+                    guard_facts.remove(&target);
                 }
             }
             Stmt::For {
                 var, iter, body, ..
             } => {
-                self.walk_expr(iter, fn_name, env, closure_effects, scope);
+                self.walk_expr(iter, fn_name, env, closure_effects, guard_facts, scope);
                 let loop_locals = BTreeSet::from([var.clone()]);
                 let assigned = maybe_assigned_outer_targets_in_block_excluding(body, &loop_locals);
                 let mut body_effects = closure_effects.clone();
-                self.walk_block(body, fn_name, env.clone(), &mut body_effects, scope);
+                let mut body_facts = guard_facts.clone();
+                self.walk_block(
+                    body,
+                    fn_name,
+                    env.clone(),
+                    &mut body_effects,
+                    &mut body_facts,
+                    scope,
+                );
                 for target in assigned {
                     env.remove(&target);
+                    guard_facts.remove(&target);
                 }
             }
             Stmt::Loop { body, .. } => {
                 let assigned = maybe_assigned_outer_targets_in_block(body);
                 let mut body_effects = closure_effects.clone();
-                self.walk_block(body, fn_name, env.clone(), &mut body_effects, scope);
+                let mut body_facts = guard_facts.clone();
+                self.walk_block(
+                    body,
+                    fn_name,
+                    env.clone(),
+                    &mut body_effects,
+                    &mut body_facts,
+                    scope,
+                );
                 for target in assigned {
                     env.remove(&target);
+                    guard_facts.remove(&target);
                 }
             }
             Stmt::Return { value, .. }
@@ -315,11 +379,11 @@ impl Checker {
             | Stmt::Next { value, .. }
             | Stmt::Break { value, .. } => {
                 if let Some(value) = value {
-                    self.walk_expr(value, fn_name, env, closure_effects, scope);
+                    self.walk_expr(value, fn_name, env, closure_effects, guard_facts, scope);
                 }
             }
             Stmt::Raise { value, .. } | Stmt::Expr(value) => {
-                self.walk_expr(value, fn_name, env, closure_effects, scope);
+                self.walk_expr(value, fn_name, env, closure_effects, guard_facts, scope);
             }
             Stmt::Continue { .. } => {}
         }
@@ -331,25 +395,27 @@ impl Checker {
         fn_name: &str,
         env: &mut Env,
         closure_effects: &mut ClosureEffects,
+        guard_facts: &mut GuardFacts,
         scope: &Scope,
     ) {
         match expr {
             Expr::Binary { lhs, rhs, .. } => {
-                self.walk_expr(lhs, fn_name, env, closure_effects, scope);
-                self.walk_expr(rhs, fn_name, env, closure_effects, scope);
+                self.walk_expr(lhs, fn_name, env, closure_effects, guard_facts, scope);
+                self.walk_expr(rhs, fn_name, env, closure_effects, guard_facts, scope);
             }
             Expr::Unary { expr, .. } | Expr::Cast { expr, .. } | Expr::Spawn { expr, .. } => {
-                self.walk_expr(expr, fn_name, env, closure_effects, scope);
+                self.walk_expr(expr, fn_name, env, closure_effects, guard_facts, scope);
             }
             Expr::Call { callee, args, .. } => {
-                self.walk_expr(callee, fn_name, env, closure_effects, scope);
+                self.walk_expr(callee, fn_name, env, closure_effects, guard_facts, scope);
                 for arg in args {
-                    self.walk_expr(arg, fn_name, env, closure_effects, scope);
+                    self.walk_expr(arg, fn_name, env, closure_effects, guard_facts, scope);
                 }
                 let assigned =
                     closure_effect_from_value(callee, closure_effects).unwrap_or_default();
                 for target in assigned {
                     env.remove(&target);
+                    guard_facts.remove(&target);
                 }
             }
             Expr::Method {
@@ -357,19 +423,19 @@ impl Checker {
                 args,
                 ..
             } => {
-                self.walk_expr(callee, fn_name, env, closure_effects, scope);
+                self.walk_expr(callee, fn_name, env, closure_effects, guard_facts, scope);
                 for arg in args {
-                    self.walk_expr(arg, fn_name, env, closure_effects, scope);
+                    self.walk_expr(arg, fn_name, env, closure_effects, guard_facts, scope);
                 }
             }
             Expr::Field { receiver, .. } => {
-                self.walk_expr(receiver, fn_name, env, closure_effects, scope);
+                self.walk_expr(receiver, fn_name, env, closure_effects, guard_facts, scope);
             }
             Expr::Index {
                 receiver, index, ..
             } => {
-                self.walk_expr(receiver, fn_name, env, closure_effects, scope);
-                self.walk_expr(index, fn_name, env, closure_effects, scope);
+                self.walk_expr(receiver, fn_name, env, closure_effects, guard_facts, scope);
+                self.walk_expr(index, fn_name, env, closure_effects, guard_facts, scope);
             }
             Expr::If {
                 condition,
@@ -378,69 +444,97 @@ impl Checker {
                 else_block,
                 ..
             } => {
-                self.walk_expr(condition, fn_name, env, closure_effects, scope);
+                self.walk_expr(condition, fn_name, env, closure_effects, guard_facts, scope);
                 let branch_base = env.clone();
                 let branch_effects = closure_effects.clone();
+                let branch_facts = guard_facts.clone();
                 let mut then_effects = branch_effects.clone();
+                let mut then_facts = branch_facts.clone();
                 let then_env = self.walk_block(
                     then_block,
                     fn_name,
                     branch_base.clone(),
                     &mut then_effects,
+                    &mut then_facts,
                     scope,
                 );
                 let mut branch_envs = vec![then_env];
                 let mut branch_closure_effects = vec![then_effects];
+                let mut branch_guard_facts = vec![then_facts];
                 let mut branch_targets = vec![assigned_outer_targets_in_block(then_block)];
                 for (condition, block) in elsif_clauses {
-                    self.walk_expr(condition, fn_name, env, closure_effects, scope);
+                    self.walk_expr(condition, fn_name, env, closure_effects, guard_facts, scope);
                     let mut elsif_effects = branch_effects.clone();
+                    let mut elsif_facts = branch_facts.clone();
                     let elsif_env = self.walk_block(
                         block,
                         fn_name,
                         branch_base.clone(),
                         &mut elsif_effects,
+                        &mut elsif_facts,
                         scope,
                     );
                     branch_envs.push(elsif_env);
                     branch_closure_effects.push(elsif_effects);
+                    branch_guard_facts.push(elsif_facts);
                     branch_targets.push(assigned_outer_targets_in_block(block));
                 }
                 if let Some(block) = else_block {
                     let mut else_effects = branch_effects.clone();
+                    let mut else_facts = branch_facts.clone();
                     let else_env = self.walk_block(
                         block,
                         fn_name,
                         branch_base.clone(),
                         &mut else_effects,
+                        &mut else_facts,
                         scope,
                     );
                     branch_envs.push(else_env);
                     branch_closure_effects.push(else_effects);
+                    branch_guard_facts.push(else_facts);
                     branch_targets.push(assigned_outer_targets_in_block(block));
                 } else {
                     branch_envs.push(branch_base);
                     branch_closure_effects.push(branch_effects);
+                    branch_guard_facts.push(branch_facts.clone());
                     branch_targets.push(BTreeSet::new());
                 }
                 *env = join_branch_envs(env, &branch_envs, &branch_targets);
                 *closure_effects = join_branch_closure_effects(&branch_closure_effects);
+                *guard_facts = join_branch_guard_facts(&branch_facts, &branch_guard_facts);
             }
             Expr::Match { subject, arms, .. } => {
-                self.walk_expr(subject, fn_name, env, closure_effects, scope);
+                self.walk_expr(subject, fn_name, env, closure_effects, guard_facts, scope);
                 if let Some(domain) = self.domain_from_expr(subject, env, scope) {
-                    self.check_match_arms(fn_name, &domain, arms);
+                    self.check_match_arms(fn_name, &domain, arms, guard_facts);
                 } else {
-                    self.check_open_match_reachability(fn_name, arms);
+                    self.check_open_match_reachability(fn_name, arms, guard_facts);
                 }
                 for arm in arms {
+                    let mut arm_guard_facts = guard_facts.clone();
+                    remove_pattern_guard_facts(&arm.pattern, &mut arm_guard_facts);
                     if let Some(guard) = &arm.guard {
-                        self.walk_expr(guard, fn_name, env, closure_effects, scope);
+                        self.walk_expr(
+                            guard,
+                            fn_name,
+                            env,
+                            closure_effects,
+                            &mut arm_guard_facts,
+                            scope,
+                        );
                     }
                     let mut arm_env = env.clone();
                     let mut arm_effects = closure_effects.clone();
                     remove_pattern_bindings(&arm.pattern, &mut arm_env);
-                    self.walk_block(&arm.body, fn_name, arm_env, &mut arm_effects, scope);
+                    self.walk_block(
+                        &arm.body,
+                        fn_name,
+                        arm_env,
+                        &mut arm_effects,
+                        &mut arm_guard_facts,
+                        scope,
+                    );
                 }
             }
             Expr::Try {
@@ -451,47 +545,82 @@ impl Checker {
             } => {
                 let mut assigned = maybe_assigned_outer_targets_in_block(body);
                 let mut body_effects = closure_effects.clone();
-                self.walk_block(body, fn_name, env.clone(), &mut body_effects, scope);
+                let mut body_facts = guard_facts.clone();
+                self.walk_block(
+                    body,
+                    fn_name,
+                    env.clone(),
+                    &mut body_effects,
+                    &mut body_facts,
+                    scope,
+                );
                 for rescue in rescues {
                     assigned.extend(maybe_assigned_outer_targets_in_block(&rescue.body));
                     let mut rescue_effects = closure_effects.clone();
+                    let mut rescue_facts = guard_facts.clone();
                     self.walk_block(
                         &rescue.body,
                         fn_name,
                         env.clone(),
                         &mut rescue_effects,
+                        &mut rescue_facts,
                         scope,
                     );
                 }
                 if let Some(block) = ensure {
                     assigned.extend(maybe_assigned_outer_targets_in_block(block));
                     let mut ensure_effects = closure_effects.clone();
-                    self.walk_block(block, fn_name, env.clone(), &mut ensure_effects, scope);
+                    let mut ensure_facts = guard_facts.clone();
+                    self.walk_block(
+                        block,
+                        fn_name,
+                        env.clone(),
+                        &mut ensure_effects,
+                        &mut ensure_facts,
+                        scope,
+                    );
                 }
                 for target in assigned {
                     env.remove(&target);
+                    guard_facts.remove(&target);
                 }
             }
             Expr::Closure { body, .. } => match body.as_ref() {
                 ClosureBody::Block(block) => {
                     let mut closure_effects = closure_effects.clone();
-                    self.walk_block(block, fn_name, env.clone(), &mut closure_effects, scope);
+                    let mut closure_facts = guard_facts.clone();
+                    self.walk_block(
+                        block,
+                        fn_name,
+                        env.clone(),
+                        &mut closure_effects,
+                        &mut closure_facts,
+                        scope,
+                    );
                 }
                 ClosureBody::Expr(expr) => {
                     let mut closure_env = env.clone();
                     let mut closure_effects = closure_effects.clone();
-                    self.walk_expr(expr, fn_name, &mut closure_env, &mut closure_effects, scope);
+                    let mut closure_facts = guard_facts.clone();
+                    self.walk_expr(
+                        expr,
+                        fn_name,
+                        &mut closure_env,
+                        &mut closure_effects,
+                        &mut closure_facts,
+                        scope,
+                    );
                 }
             },
             Expr::Array { elements, .. } => {
                 for element in elements {
-                    self.walk_expr(element, fn_name, env, closure_effects, scope);
+                    self.walk_expr(element, fn_name, env, closure_effects, guard_facts, scope);
                 }
             }
             Expr::Map { entries, .. } => {
                 for (key, value) in entries {
-                    self.walk_expr(key, fn_name, env, closure_effects, scope);
-                    self.walk_expr(value, fn_name, env, closure_effects, scope);
+                    self.walk_expr(key, fn_name, env, closure_effects, guard_facts, scope);
+                    self.walk_expr(value, fn_name, env, closure_effects, guard_facts, scope);
                 }
             }
             Expr::Int(_, _)
@@ -510,6 +639,7 @@ impl Checker {
         fn_name: &str,
         domain: &FiniteDomain,
         arms: &[garnet_parser::ast::MatchArm],
+        guard_facts: &GuardFacts,
     ) {
         let mut covered = BTreeSet::new();
         let mut catch_all_seen = false;
@@ -537,7 +667,9 @@ impl Checker {
                 )));
             }
 
-            match guard_coverage(&arm.guard) {
+            let mut arm_guard_facts = guard_facts.clone();
+            remove_pattern_guard_facts(&arm.pattern, &mut arm_guard_facts);
+            match guard_coverage(&arm.guard, &arm_guard_facts) {
                 GuardCoverage::AlwaysFalse => {
                     self.errors.push(CheckError::SafeModeViolation(format!(
                         "unreachable match arm in safe function '{fn_name}': pattern {pattern} has a statically false guard"
@@ -571,6 +703,7 @@ impl Checker {
         &mut self,
         fn_name: &str,
         arms: &[garnet_parser::ast::MatchArm],
+        guard_facts: &GuardFacts,
     ) {
         let mut covered_literals = BTreeSet::new();
         let mut catch_all_seen = false;
@@ -594,7 +727,9 @@ impl Checker {
                 )));
             }
 
-            match guard_coverage(&arm.guard) {
+            let mut arm_guard_facts = guard_facts.clone();
+            remove_pattern_guard_facts(&arm.pattern, &mut arm_guard_facts);
+            match guard_coverage(&arm.guard, &arm_guard_facts) {
                 GuardCoverage::AlwaysFalse => {
                     self.errors.push(CheckError::SafeModeViolation(format!(
                         "unreachable match arm in safe function '{fn_name}': pattern {pattern} has a statically false guard"
@@ -1007,6 +1142,29 @@ fn join_branch_closure_effects(branch_effects: &[ClosureEffects]) -> ClosureEffe
     joined
 }
 
+fn join_branch_guard_facts(branch_base: &GuardFacts, branch_facts: &[GuardFacts]) -> GuardFacts {
+    let Some(first) = branch_facts.first() else {
+        return GuardFacts::new();
+    };
+
+    let mut joined = GuardFacts::new();
+    'bindings: for (name, value) in first {
+        if !branch_base.contains_key(name) {
+            continue;
+        }
+        for branch in &branch_facts[1..] {
+            let Some(other) = branch.get(name) else {
+                continue 'bindings;
+            };
+            if other != value {
+                continue 'bindings;
+            }
+        }
+        joined.insert(name.clone(), *value);
+    }
+    joined
+}
+
 fn assigned_outer_targets_in_block(block: &Block) -> BTreeSet<String> {
     assigned_outer_targets_in_block_excluding(block, &BTreeSet::new())
 }
@@ -1270,6 +1428,30 @@ fn update_closure_effect(name: String, value: &Expr, closure_effects: &mut Closu
     }
 }
 
+fn update_guard_fact_for_let(decl: &garnet_parser::ast::LetDecl, guard_facts: &mut GuardFacts) {
+    if decl.mutable {
+        guard_facts.remove(&decl.name);
+        return;
+    }
+    update_guard_fact(decl.name.clone(), &decl.value, guard_facts);
+}
+
+fn update_guard_fact(name: String, value: &Expr, guard_facts: &mut GuardFacts) {
+    if let Some(value) = guard_fact_from_expr(value, guard_facts) {
+        guard_facts.insert(name, value);
+    } else {
+        guard_facts.remove(&name);
+    }
+}
+
+fn guard_fact_from_expr(expr: &Expr, guard_facts: &GuardFacts) -> Option<bool> {
+    match expr {
+        Expr::Bool(value, _) => Some(*value),
+        Expr::Ident(name, _) => guard_facts.get(name).copied(),
+        _ => None,
+    }
+}
+
 fn closure_effect_from_value(
     expr: &Expr,
     closure_effects: &ClosureEffects,
@@ -1368,11 +1550,16 @@ fn is_catch_all(pattern: &Pattern) -> bool {
     )
 }
 
-fn guard_coverage(guard: &Option<Expr>) -> GuardCoverage {
+fn guard_coverage(guard: &Option<Expr>, guard_facts: &GuardFacts) -> GuardCoverage {
     match guard {
         None => GuardCoverage::Unguarded,
         Some(Expr::Bool(true, _)) => GuardCoverage::AlwaysTrue,
         Some(Expr::Bool(false, _)) => GuardCoverage::AlwaysFalse,
+        Some(Expr::Ident(name, _)) => match guard_facts.get(name) {
+            Some(true) => GuardCoverage::AlwaysTrue,
+            Some(false) => GuardCoverage::AlwaysFalse,
+            None => GuardCoverage::Unknown,
+        },
         Some(_) => GuardCoverage::Unknown,
     }
 }
@@ -1431,6 +1618,20 @@ fn remove_pattern_bindings(pattern: &Pattern, env: &mut Env) {
         Pattern::Tuple(items, _) | Pattern::Enum(_, items, _) => {
             for item in items {
                 remove_pattern_bindings(item, env);
+            }
+        }
+        Pattern::Literal(_, _) | Pattern::Wildcard(_) | Pattern::Rest(_) => {}
+    }
+}
+
+fn remove_pattern_guard_facts(pattern: &Pattern, guard_facts: &mut GuardFacts) {
+    match pattern {
+        Pattern::Ident(name, _) => {
+            guard_facts.remove(name);
+        }
+        Pattern::Tuple(items, _) | Pattern::Enum(_, items, _) => {
+            for item in items {
+                remove_pattern_guard_facts(item, guard_facts);
             }
         }
         Pattern::Literal(_, _) | Pattern::Wildcard(_) | Pattern::Rest(_) => {}

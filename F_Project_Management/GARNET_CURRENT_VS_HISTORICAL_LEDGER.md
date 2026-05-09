@@ -110,11 +110,14 @@ When documents conflict, use this order:
   local closure effects through direct local aliases. Phase 4AD carries known
   local closure effects through all-path branch-selected direct aliases while
   respecting branch-local shadowing. Phase 4AE reuses that proof for direct
-  calls whose callee is an all-path branch-selected closure expression. Full
+  calls whose callee is an all-path branch-selected closure expression. Phase
+  4AF recognizes immutable local boolean guard constants, so `let always =
+  true` guards count as coverage and `let never = false` guards are statically
+  false/non-covering, while mutable guard locals remain unknown. Full
   Rust-grade CFG NLL, nested/non-local terminators, general loop fixed-point
   analysis, loop fixed-point domain inference, broader mutable/escaped/general higher-order closure invocation/call-effect analysis, cross-file/package
   imports, recursive/open payload reasoning, broader expression/type
-  inference, open-domain exhaustiveness/range reasoning, non-literal guard
+  inference, open-domain exhaustiveness/range reasoning, broader non-literal guard
   reasoning, dynamic places, broader drop elaboration, and generic/trait impl
   dispatch remain roadmap work, not current truth.
 - Trait coherence now has an active conservative checker slice: exact duplicate

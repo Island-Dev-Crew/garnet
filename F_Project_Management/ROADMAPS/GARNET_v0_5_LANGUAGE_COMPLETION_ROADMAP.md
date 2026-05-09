@@ -584,11 +584,12 @@ is covered in Step 2V below; branch-rebound local closure-literal binding call
 invalidation is covered in Step 2W below; direct local closure-alias binding
 call invalidation is covered in Step 2X below; branch-joined local closure-alias
 call invalidation is covered in Step 2Y below; direct branch-selected closure
-expression call invalidation is covered in Step 2Z below; loop fixed-point and broader
-mutable/escaped/general higher-order closure invocation/call-effect
+expression call invalidation is covered in Step 2Z below; immutable local
+boolean guard constants are covered in Step 2ZA below; loop fixed-point and
+broader mutable/escaped/general higher-order closure invocation/call-effect
 flow, cross-file/package imports, recursive/open payload reasoning, richer type
-inference, open-domain exhaustiveness/range reasoning, and non-literal guard
-reasoning remain pending.
+inference, open-domain exhaustiveness/range reasoning, and broader non-literal
+guard reasoning remain pending.
 
 - [x] **Step 2P: Join nested if assignment domains inside branch bodies**
 
@@ -747,6 +748,21 @@ Evidence: Phase 4AE reuses the known local closure-effect extractor for direct
 calls whose callee is an all-path branch expression. It clears finite
 match-domain evidence for branch-selected closure writes while preserving
 unknown behavior when a branch-local shadowed tail is not a known closure.
+
+- [x] **Step 2ZA: Recognize immutable local boolean guard constants**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage bool_guard
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4AF tracks immutable local boolean guard constants separately
+from finite-domain subject inference. `let always = true` guards count as
+coverage, `let never = false` guards are statically false and non-covering,
+and `let mut always = true` remains unknown so mutable guard locals cannot
+produce stale coverage.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 

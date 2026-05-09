@@ -1527,6 +1527,51 @@ fn guarded_status_code(status: Status) -> Int {
     assert_ok(&["parse"], &true_guard_complete_path);
     assert_ok(&["check"], &true_guard_complete_path);
 
+    let local_true_guard_complete_src = r#"
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  let always = true
+  match status {
+    Status::Ready if always => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let local_true_guard_complete_path = temp_source(
+        "match_local_true_guard_enum_complete",
+        local_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &local_true_guard_complete_path);
+    assert_ok(&["check"], &local_true_guard_complete_path);
+
+    let mutable_guard_missing_src = r#"
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  let mut always = true
+  match status {
+    Status::Ready if always => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let mutable_guard_missing_path = temp_source(
+        "match_mutable_guard_enum_missing",
+        mutable_guard_missing_src,
+    );
+    assert_ok(&["parse"], &mutable_guard_missing_path);
+    let out = run(&["check"], &mutable_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode mutable boolean guards must remain unknown"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("non-exhaustive match") && stdout.contains("Status::Ready"),
+        "expected mutable guard to stay non-covering, got:\n{stdout}"
+    );
+
     let false_guard_missing_src = r#"
 enum Status { Ready, Done }
 
@@ -1551,6 +1596,35 @@ fn guarded_status_code(status: Status) -> Int {
             && stdout.contains("non-exhaustive match")
             && stdout.contains("Status::Ready"),
         "expected false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let local_false_guard_missing_src = r#"
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  let never = false
+  match status {
+    Status::Ready if never => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let local_false_guard_missing_path = temp_source(
+        "match_local_false_guard_enum_missing",
+        local_false_guard_missing_src,
+    );
+    assert_ok(&["parse"], &local_false_guard_missing_path);
+    let out = run(&["check"], &local_false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode local false guards must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected local false-guard and missing-case diagnostics, got:\n{stdout}"
     );
 
     let open_literal_duplicate_src = r#"
