@@ -9,8 +9,9 @@
 //! nested all-path `if` assignment joins inside branch bodies. It also rejects
 //! duplicate literal arms and arms after catch-all arms in otherwise
 //! open-domain matches. It does not attempt full type inference,
-//! loop fixed-point or broader mutable/escaped/higher-order closure call-effect
-//! analysis, recursive/open payload coverage, or non-literal guard reasoning.
+//! loop fixed-point or broader mutable/escaped/general higher-order closure
+//! call-effect analysis, recursive/open payload coverage, or non-literal guard
+//! reasoning.
 
 use crate::CheckError;
 use garnet_parser::ast::{
@@ -1266,7 +1267,12 @@ fn maybe_assigned_outer_targets_in_closure(
 }
 
 fn update_closure_effect(name: String, value: &Expr, closure_effects: &mut ClosureEffects) {
-    if let Some(targets) = closure_effect_from_expr(value) {
+    let effect = closure_effect_from_expr(value).or_else(|| match value {
+        Expr::Ident(source, _) => closure_effects.get(source).cloned(),
+        _ => None,
+    });
+
+    if let Some(targets) = effect {
         closure_effects.insert(name, targets);
     } else {
         closure_effects.remove(&name);

@@ -1212,6 +1212,32 @@ fn bool_code(cond: Bool) -> Int {
         &branch_rebound_closure_assignment_invalidation_path,
     );
 
+    let local_closure_alias_assignment_invalidation_src = r#"
+fn bool_code() -> Int {
+  let mut flag = true
+  let updater = |value| {
+    flag = value
+  }
+  let alias = updater
+  alias(1)
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let local_closure_alias_assignment_invalidation_path = temp_source(
+        "match_local_closure_alias_assignment_invalidation_open",
+        local_closure_alias_assignment_invalidation_src,
+    );
+    assert_ok(
+        &["parse"],
+        &local_closure_alias_assignment_invalidation_path,
+    );
+    assert_ok(
+        &["check"],
+        &local_closure_alias_assignment_invalidation_path,
+    );
+
     let enum_complete_src = r#"
 enum Status { Ready, Done }
 
