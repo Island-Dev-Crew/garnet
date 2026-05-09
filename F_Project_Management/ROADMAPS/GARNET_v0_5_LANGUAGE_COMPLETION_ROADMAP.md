@@ -596,9 +596,10 @@ boolean const equality/inequality expressions are covered in Step 2ZH below;
 direct boolean match guard expressions are covered in Step 2ZI below;
 integer const equality/inequality expressions are covered in Step 2ZJ below;
 integer const relational expressions are covered in Step 2ZK below;
+integer const arithmetic expressions are covered in Step 2ZL below;
 loop fixed-point and broader mutable/escaped/general higher-order closure
 invocation/call-effect flow, cross-file/package imports, recursive/open payload
-reasoning, richer type inference, arithmetic, non-integer/broader comparison,
+reasoning, richer type inference, non-integer/broader comparison,
 function-call, and broader const expression evaluation, open-domain exhaustiveness/range
 reasoning, and broader non-literal guard reasoning remain pending.
 
@@ -946,6 +947,24 @@ comparisons over the existing guard fact domain. `Core::LIMIT < 3` and
 false/non-covering. Arithmetic, non-integer/broader comparison, function-call,
 recursive, cross-file/package, and broader const expression evaluation remain
 deferred.
+
+- [x] **Step 2ZL: Fold checked integer arithmetic guard facts**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage integer_const_arithmetic
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AQ folds checked integer `+`, `-`, `*`, `/`, `%`, and unary
+`-` arithmetic inside the existing guard fact domain. `Core::LIMIT +
+Core::OFFSET == 3` and `Core::LIMIT + 1 >= 3` count as coverage, while
+`Core::LIMIT * 2 < 4` is statically false/non-covering. Non-integer/broader
+comparison, function-call, recursive, cross-file/package, and broader const
+expression evaluation remain deferred.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 

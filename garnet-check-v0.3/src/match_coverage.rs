@@ -16,9 +16,9 @@
 //! without requiring the right operand to resolve, and boolean const equality /
 //! inequality comparisons fold over already-resolved boolean facts. Direct
 //! boolean match guards use the same conservative folding, and narrow integer
-//! equality/inequality plus relational guard comparisons fold over the same
-//! fact domain. It does not attempt full type inference, loop fixed-point
-//! inference, broader
+//! arithmetic plus equality/inequality and relational guard comparisons fold
+//! over the same fact domain using checked arithmetic. It does not attempt
+//! full type inference, loop fixed-point inference, broader
 //! mutable/escaped/general higher-order closure call-effect analysis,
 //! recursive/open payload coverage, or broader non-literal guard reasoning.
 
@@ -89,6 +89,23 @@ impl ConstFact {
             BinOp::GtEq => Some(lhs >= rhs),
             _ => None,
         }
+    }
+
+    fn int_arith(self, other: Self, op: BinOp) -> Option<Self> {
+        let (ConstFact::Int(lhs), ConstFact::Int(rhs)) = (self, other) else {
+            return None;
+        };
+
+        let value = match op {
+            BinOp::Add => lhs.checked_add(rhs)?,
+            BinOp::Sub => lhs.checked_sub(rhs)?,
+            BinOp::Mul => lhs.checked_mul(rhs)?,
+            BinOp::Div => lhs.checked_div(rhs)?,
+            BinOp::Mod => lhs.checked_rem(rhs)?,
+            _ => return None,
+        };
+
+        Some(ConstFact::Int(value))
     }
 }
 
@@ -201,6 +218,16 @@ impl Checker {
                 .const_fact_from_expr(expr, module_path)
                 .and_then(ConstFact::as_bool)
                 .map(|value| ConstFact::Bool(!value)),
+            Expr::Unary {
+                op: UnOp::Neg,
+                expr,
+                ..
+            } => {
+                let ConstFact::Int(value) = self.const_fact_from_expr(expr, module_path)? else {
+                    return None;
+                };
+                value.checked_neg().map(ConstFact::Int)
+            }
             Expr::Unary { .. } => None,
             Expr::Binary {
                 op: BinOp::And,
@@ -259,6 +286,16 @@ impl Checker {
                 let lhs = self.const_fact_from_expr(lhs, module_path)?;
                 let rhs = self.const_fact_from_expr(rhs, module_path)?;
                 lhs.int_cmp(rhs, *op).map(ConstFact::Bool)
+            }
+            Expr::Binary {
+                op: op @ (BinOp::Add | BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod),
+                lhs,
+                rhs,
+                ..
+            } => {
+                let lhs = self.const_fact_from_expr(lhs, module_path)?;
+                let rhs = self.const_fact_from_expr(rhs, module_path)?;
+                lhs.int_arith(rhs, *op)
             }
             Expr::Binary { .. } => None,
             _ => None,
@@ -1288,6 +1325,18 @@ impl Checker {
                 .guard_value_from_match_guard(expr, guard_facts, scope)
                 .and_then(ConstFact::as_bool)
                 .map(|value| ConstFact::Bool(!value)),
+            Expr::Unary {
+                op: UnOp::Neg,
+                expr,
+                ..
+            } => {
+                let ConstFact::Int(value) =
+                    self.guard_value_from_match_guard(expr, guard_facts, scope)?
+                else {
+                    return None;
+                };
+                value.checked_neg().map(ConstFact::Int)
+            }
             Expr::Unary { .. } => None,
             Expr::Binary {
                 op: BinOp::And,
@@ -1354,6 +1403,16 @@ impl Checker {
                 let lhs = self.guard_value_from_match_guard(lhs, guard_facts, scope)?;
                 let rhs = self.guard_value_from_match_guard(rhs, guard_facts, scope)?;
                 lhs.int_cmp(rhs, *op).map(ConstFact::Bool)
+            }
+            Expr::Binary {
+                op: op @ (BinOp::Add | BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod),
+                lhs,
+                rhs,
+                ..
+            } => {
+                let lhs = self.guard_value_from_match_guard(lhs, guard_facts, scope)?;
+                let rhs = self.guard_value_from_match_guard(rhs, guard_facts, scope)?;
+                lhs.int_arith(rhs, *op)
             }
             Expr::Binary { .. } => None,
             _ => None,

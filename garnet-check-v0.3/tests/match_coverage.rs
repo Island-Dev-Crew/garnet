@@ -1820,6 +1820,125 @@ fn direct_integer_const_greater_equal_guard_counts_as_safe_match_coverage() {
 }
 
 #[test]
+fn integer_const_arithmetic_equality_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+            const OFFSET = 1
+        }
+
+        module Flags {
+            const ALWAYS = Core::LIMIT + Core::OFFSET == 3
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true integer const arithmetic guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_integer_const_arithmetic_relational_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+        }
+
+        module Flags {
+            const NEVER = Core::LIMIT * 2 < 4
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false integer const arithmetic guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn direct_integer_const_arithmetic_relational_guard_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Core::LIMIT + 1 >= 3 => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "direct true integer const arithmetic relational guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn integer_const_divide_by_zero_guard_stays_unknown_and_non_covering() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+        }
+
+        module Flags {
+            const UNKNOWN = Core::LIMIT / 0 == 2
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::UNKNOWN => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "division by zero in integer const guards should remain unknown and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
 fn safe_open_literal_match_rejects_duplicate_literal_arm() {
     let errs = check(
         r#"
