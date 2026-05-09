@@ -106,7 +106,7 @@ two-day LSP.
 
 ## Item B — Memory Core Tier 1 (Mnemos production allocator integration)
 
-### Current Phase 6L status
+### Current Phase 6M status
 
 Phase 6A added a bounded cycle-reference path before the allocator work:
 `garnet-memory-v0.3/src/cycle.rs`, `garnet-memory-v0.3/tests/cycle.rs`, and
@@ -133,7 +133,13 @@ finalizer invocation. Phase 6L adds a fenced `EpisodeStore::save_text` /
 hex-encoded payloads, writes use a sibling temp file before rename, malformed
 files fail before mutating the live store, and recovered episodes retain fresh
 cycle-aware roots. This is recovery evidence for the reference episodic store,
-not the append-only `.garnet-cache/episodic/` production backend.
+not the append-only `.garnet-cache/episodic/` production backend. Phase 6M adds
+`EpisodeStore::append_text`: individual records commit to the same versioned
+text format, existing logs are size-bounded and parsed as the store value type
+before extension, corrupt, empty, type-invalid, or oversized logs are not
+carried forward, projected oversize commits are rejected before file creation,
+accepted record data is synced through a temp-file rewrite and rename, and the
+live store mutates only after the on-disk commit succeeds.
 
 ### Current Phase 6F-6I cache-security status
 
@@ -166,7 +172,8 @@ policy-configured eviction enforcement for episodic and semantic stores. Phase
 6K continues Tier 1 by proving observable store-root lifecycles through the
 cycle-aware allocator adapter. Phase 6L starts the persistence track with a
 bounded episodic text snapshot API so save/load recovery can be tested without
-claiming full production persistence. Generics over memory kinds and
+claiming full production persistence. Phase 6M adds guarded append-style text
+log commits as the next recovery guardrail. Generics over memory kinds and
 allocator-integrated ARC remain pending.
 
 ### Tier 1 scope (per the Roadmap)
@@ -222,6 +229,21 @@ Covered tests: delimiter-control payload round-trip, cycle-aware root release
 on drop plus rehydration on load, and malformed-file rejection without store
 mutation.
 
+#### T2.3 guardrail — Append-style episodic text log commits
+
+Phase 6M adds `EpisodeStore::append_text` as a narrow incremental write path on
+the Phase 6L text format. It size-bounds and parses any existing log as the
+store value type before extension, refuses corrupt, empty, type-invalid, or
+oversized logs without carrying the file forward or mutating the live store,
+rejects projected oversize commits before file creation, syncs accepted record
+data through a temp-file rewrite and rename, and then routes the value through
+`append_at` so allocator stats and root retention stay observable.
+
+Covered tests: append-style log recovery with delimiter-control payloads,
+corrupt/empty/type-invalid log rejection without file extension or live-store
+mutation, and oversized-log/projected-oversize rejection before live-store
+mutation.
+
 #### T1.4 — Generics over memory kinds (Mini-Spec §4.4)
 
 This is the gnarliest of the three. Phase 5B gives §11.6 interpreter-level
@@ -246,7 +268,8 @@ realistic v0.5.0 path:
 - `garnet-memory-v0.3/src/{working,episodic,semantic,procedural}.rs`
   — accept the allocator, route allocations and observable roots through it.
 - `garnet-memory-v0.3/tests/persistence.rs` — episodic text snapshot
-  round-trip, malformed-file rejection, and root rehydration tests.
+  round-trip, malformed-file rejection, root rehydration, and append-style
+  text log guardrail tests.
 - `garnet-memory-v0.3/src/policy.rs` — already has `score` /
   `should_retain`; no changes needed there.
 - `garnet-memory-v0.3/tests/properties.rs` — allocator stats, eviction
@@ -260,8 +283,8 @@ realistic v0.5.0 path:
 
 ### Remaining pre-requisites
 
-- T1.1, T1.2, T1.3, and the first T2.3 episodic snapshot slice are now
-  self-contained Mnemos evidence slices.
+- T1.1, T1.2, T1.3, the first T2.3 episodic snapshot slice, and the Phase 6M
+  append-style text log guardrail are now self-contained Mnemos evidence slices.
 - T1.4 wants Mini-Spec §11.6 monomorphization to actually
   monomorphize. Today it is parsed-only (see Conformance Matrix
   §11.6 row). If you can punt the language-level syntax, the
@@ -271,7 +294,7 @@ realistic v0.5.0 path:
 
 T1.4 in a separate session, probably alongside parser work. Production ARC
 finalizers and broad pluggable persistence stay separate from the Tier 1
-adapter and Phase 6L reference-snapshot evidence.
+adapter, Phase 6L reference-snapshot evidence, and Phase 6M append guardrail.
 
 ---
 

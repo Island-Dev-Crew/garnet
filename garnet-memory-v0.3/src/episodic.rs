@@ -6,11 +6,14 @@ use crate::{
 };
 use std::cell::RefCell;
 use std::fmt;
-use std::fs;
+use std::fs::{self, OpenOptions};
+use std::io::{ErrorKind, Write};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
+
+pub const EPISODIC_TEXT_LOG_MAX_BYTES: u64 = 8 * 1024 * 1024;
 
 #[derive(Debug, Clone)]
 pub struct Episode<T> {
@@ -52,6 +55,11 @@ pub enum EpisodePersistenceError {
         line: usize,
         value: String,
         error: String,
+    },
+    LogTooLarge {
+        path: String,
+        bytes: u64,
+        limit: u64,
     },
 }
 
@@ -95,6 +103,12 @@ impl fmt::Display for EpisodePersistenceError {
                 write!(
                     f,
                     "invalid episodic persistence value on line {line}: {value:?}: {error}"
+                )
+            }
+            Self::LogTooLarge { path, bytes, limit } => {
+                write!(
+                    f,
+                    "episodic persistence file {path} is too large: {bytes} bytes exceeds {limit} byte limit"
                 )
             }
         }
@@ -292,12 +306,7 @@ impl<T: ToString> EpisodeStore<T> {
             out.push('\n');
         }
 
-        if let Some(parent) = path.parent() {
-            if !parent.as_os_str().is_empty() {
-                fs::create_dir_all(parent)
-                    .map_err(|error| persistence_io("create", parent, error))?;
-            }
-        }
+        ensure_parent_dir(path)?;
 
         let tmp = temp_path_for(path);
         fs::write(&tmp, out.as_bytes()).map_err(|error| persistence_io("write", &tmp, error))?;
@@ -305,6 +314,67 @@ impl<T: ToString> EpisodeStore<T> {
             let _ = fs::remove_file(&tmp);
             persistence_io("rename", path, error)
         })?;
+        Ok(())
+    }
+}
+
+impl<T> EpisodeStore<T>
+where
+    T: ToString + FromStr,
+    T::Err: fmt::Display,
+{
+    /// Commit one additional episode to a versioned text log, then add it to this store.
+    ///
+    /// Existing logs and the projected post-commit log are size-bounded before
+    /// extension so malformed or oversized files cannot be silently carried
+    /// into live memory. Existing records must parse as this store's `T`. The
+    /// canonical file is updated through a temp-file rewrite and rename rather
+    /// than an in-place append.
+    pub fn append_text<P: AsRef<Path>>(
+        &self,
+        path: P,
+        timestamp: u64,
+        value: T,
+    ) -> Result<(), EpisodePersistenceError> {
+        let path = path.as_ref();
+        ensure_parent_dir(path)?;
+        let existing = prepare_append_log::<T>(path)?;
+        let mut record = String::new();
+        if existing.is_empty() {
+            record.push_str("garnet-episodic-v1\n");
+        }
+        record.push_str(&timestamp.to_string());
+        record.push('\t');
+        record.push_str(&hex_encode(value.to_string().as_bytes()));
+        record.push('\n');
+
+        let projected_bytes = existing.len().saturating_add(record.len()) as u64;
+        if projected_bytes > EPISODIC_TEXT_LOG_MAX_BYTES {
+            return Err(EpisodePersistenceError::LogTooLarge {
+                path: path.display().to_string(),
+                bytes: projected_bytes,
+                limit: EPISODIC_TEXT_LOG_MAX_BYTES,
+            });
+        }
+
+        let tmp = temp_path_for(path);
+        let mut file = OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(&tmp)
+            .map_err(|error| persistence_io("create", &tmp, error))?;
+        file.write_all(existing.as_bytes())
+            .map_err(|error| persistence_io("write", &tmp, error))?;
+        file.write_all(record.as_bytes())
+            .map_err(|error| persistence_io("write", &tmp, error))?;
+        file.sync_data()
+            .map_err(|error| persistence_io("sync", &tmp, error))?;
+        drop(file);
+        fs::rename(&tmp, path).map_err(|error| {
+            let _ = fs::remove_file(&tmp);
+            persistence_io("rename", path, error)
+        })?;
+        self.append_at(timestamp, value);
         Ok(())
     }
 }
@@ -344,6 +414,50 @@ fn temp_path_for(path: &Path) -> PathBuf {
         .map(|duration| duration.as_nanos())
         .unwrap_or(0);
     path.with_file_name(format!(".{file_name}.tmp-{}-{nonce}", std::process::id()))
+}
+
+fn ensure_parent_dir(path: &Path) -> Result<(), EpisodePersistenceError> {
+    if let Some(parent) = path.parent() {
+        if !parent.as_os_str().is_empty() {
+            fs::create_dir_all(parent).map_err(|error| persistence_io("create", parent, error))?;
+        }
+    }
+    Ok(())
+}
+
+fn prepare_append_log<T>(path: &Path) -> Result<String, EpisodePersistenceError>
+where
+    T: FromStr,
+    T::Err: fmt::Display,
+{
+    match fs::metadata(path) {
+        Ok(metadata) if metadata.len() > EPISODIC_TEXT_LOG_MAX_BYTES => {
+            return Err(EpisodePersistenceError::LogTooLarge {
+                path: path.display().to_string(),
+                bytes: metadata.len(),
+                limit: EPISODIC_TEXT_LOG_MAX_BYTES,
+            });
+        }
+        Ok(_) => {}
+        Err(error) if error.kind() == ErrorKind::NotFound => {
+            return Ok(String::new());
+        }
+        Err(error) => return Err(persistence_io("metadata", path, error)),
+    }
+
+    match fs::read_to_string(path) {
+        Ok(raw) => {
+            parse_persisted_episodes::<T>(&raw)?;
+            if !raw.ends_with('\n') {
+                return Err(EpisodePersistenceError::MalformedLine {
+                    line: raw.lines().count(),
+                    reason: "append log must end at a complete record boundary".to_string(),
+                });
+            }
+            Ok(raw)
+        }
+        Err(error) => Err(persistence_io("read", path, error)),
+    }
 }
 
 fn persistence_io(
