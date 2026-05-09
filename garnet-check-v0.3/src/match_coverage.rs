@@ -373,19 +373,28 @@ impl Checker {
                 ensure,
                 ..
             } => {
+                let mut assigned = maybe_assigned_outer_targets_in_block(body);
                 self.walk_block(body, fn_name, env.clone(), scope);
                 for rescue in rescues {
+                    assigned.extend(maybe_assigned_outer_targets_in_block(&rescue.body));
                     self.walk_block(&rescue.body, fn_name, env.clone(), scope);
                 }
                 if let Some(block) = ensure {
+                    assigned.extend(maybe_assigned_outer_targets_in_block(block));
                     self.walk_block(block, fn_name, env.clone(), scope);
+                }
+                for target in assigned {
+                    env.remove(&target);
                 }
             }
             Expr::Closure { body, .. } => match body.as_ref() {
                 ClosureBody::Block(block) => {
                     self.walk_block(block, fn_name, env.clone(), scope);
                 }
-                ClosureBody::Expr(expr) => self.walk_expr(expr, fn_name, env, scope),
+                ClosureBody::Expr(expr) => {
+                    let mut closure_env = env.clone();
+                    self.walk_expr(expr, fn_name, &mut closure_env, scope);
+                }
             },
             Expr::Array { elements, .. } => {
                 for element in elements {
@@ -1080,6 +1089,29 @@ fn maybe_assigned_outer_targets_in_expr(
             }
             assigned
         }
+        Expr::Try {
+            body,
+            rescues,
+            ensure,
+            ..
+        } => {
+            let mut assigned =
+                maybe_assigned_outer_targets_in_block_excluding(body, local_bindings);
+            for rescue in rescues {
+                assigned.extend(maybe_assigned_outer_targets_in_block_excluding(
+                    &rescue.body,
+                    local_bindings,
+                ));
+            }
+            if let Some(ensure) = ensure {
+                assigned.extend(maybe_assigned_outer_targets_in_block_excluding(
+                    ensure,
+                    local_bindings,
+                ));
+            }
+            assigned
+        }
+        Expr::Closure { .. } => BTreeSet::new(),
         _ => BTreeSet::new(),
     }
 }

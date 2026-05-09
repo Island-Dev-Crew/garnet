@@ -108,7 +108,7 @@ highest-leverage next milestones are:
 The v0.5 seven-phase roadmap is now tracked in
 `F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md` and
 `F_Project_Management/ROADMAPS/GARNET_v0_5_LANGUAGE_COMPLETION_ROADMAP.md`.
-Phase 4W / 5C / 6P are the current readiness slices. Phases 1-3D added parser parity,
+Phase 4X / 5C / 6P are the current readiness slices. Phases 1-3D added parser parity,
 managed block/dynamic/protocol runtime slices, managed actor addresses, bounded
 source mailboxes, and a generated actor-orchestrator template. Phase 4A
 activates partial safe-mode borrow conformance for direct use-after-move
@@ -175,10 +175,14 @@ evidence, including direct statements and all-branch compound assignment joins,
 so operator/type-dependent updates cannot preserve stale `Bool`/enum domains.
 Phase 4W conservatively invalidates finite match-domain evidence after possible
 `while`/`for`/`loop` body assignments, including conditional body assignments,
-while preserving ordered loop-local shadowing. Full CFG NLL region solving,
-loop fixed-point domain inference, try/closure-merged assignment flow, nested/non-local
-terminators, cross-file/package imports, recursive/open payload reasoning,
-broader inference, and non-literal guard reasoning remain deferred. Phase 5A activates
+while preserving ordered loop-local shadowing. Phase 4X extends that conservative
+boundary to `try`/`rescue`/`ensure` writes and prevents uninvoked closure literal
+bodies from merging assignment domains into the surrounding flow; safe-mode
+`try` rejection remains a separate diagnostic. Full CFG NLL region solving,
+loop fixed-point domain inference, closure invocation/call-effect analysis,
+nested/non-local terminators, cross-file/package imports, recursive/open payload
+reasoning, broader inference, and non-literal guard reasoning remain deferred.
+Phase 5A activates
 conservative trait coherence by rejecting exact duplicate trait impls and
 orphan-rule violations while preserving impls where
 either the trait or the type is local. Phase 5B activates interpreter-level

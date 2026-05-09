@@ -29,6 +29,7 @@ fn run(args: &[&str], path: &Path) -> std::process::Output {
     Command::new(garnet_bin())
         .args(args)
         .arg(path)
+        .current_dir(path.parent().unwrap_or_else(|| Path::new(".")))
         .output()
         .unwrap()
 }
@@ -1055,6 +1056,59 @@ fn bool_code() -> Int {
     );
     assert_ok(&["parse"], &for_assignment_invalidation_path);
     assert_ok(&["check"], &for_assignment_invalidation_path);
+
+    let try_body_assignment_invalidation_src = r#"
+fn bool_code() -> Int {
+  let mut flag = true
+  try {
+    flag = 1
+  } rescue e {
+    0
+  }
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let try_body_assignment_invalidation_path = temp_source(
+        "match_try_body_assignment_invalidation_no_stale_match_diag",
+        try_body_assignment_invalidation_src,
+    );
+    assert_ok(&["parse"], &try_body_assignment_invalidation_path);
+    let out = run(&["check"], &try_body_assignment_invalidation_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode try/rescue should remain rejected"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("uses `try`/`rescue`"),
+        "expected safe-mode try/rescue diagnostic, got:\n{stdout}"
+    );
+    assert!(
+        !stdout.contains("non-exhaustive match"),
+        "try assignment invalidation must not leave a stale match coverage diagnostic, got:\n{stdout}"
+    );
+
+    let closure_assignment_boundary_src = r#"
+fn bool_code(cond: Bool) -> Int {
+  let mut flag = 1
+  let updater = |value| if cond {
+    flag = true
+  } else {
+    flag = false
+  }
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let closure_assignment_boundary_path = temp_source(
+        "match_uninvoked_closure_assignment_boundary_open",
+        closure_assignment_boundary_src,
+    );
+    assert_ok(&["parse"], &closure_assignment_boundary_path);
+    assert_ok(&["check"], &closure_assignment_boundary_path);
 
     let enum_complete_src = r#"
 enum Status { Ready, Done }

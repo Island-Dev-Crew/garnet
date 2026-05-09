@@ -423,6 +423,102 @@ fn safe_match_does_not_invalidate_outer_domain_for_loop_local_binding() {
 }
 
 #[test]
+fn safe_match_invalidates_domain_after_try_body_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code() -> Int {
+            let mut flag = true
+            try {
+                flag = 1
+            } rescue e {
+                0
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "assignment in a possible try body should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_domain_after_try_rescue_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code() -> Int {
+            let mut flag = true
+            try {
+                0
+            } rescue e {
+                flag = 1
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "assignment in a possible rescue body should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_domain_after_try_ensure_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code() -> Int {
+            let mut flag = true
+            try {
+                0
+            } ensure {
+                flag = 1
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "assignment in an ensure body should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_does_not_merge_uninvoked_closure_assignment_domains() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = 1
+            let updater = |value| if cond {
+                flag = true
+            } else {
+                flag = false
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "uncalled closure body assignments should not merge into the surrounding finite domain, got {errs:?}"
+    );
+}
+
+#[test]
 fn safe_match_joins_branch_assignment_before_shadowing_binding() {
     let errs = check(
         r#"
