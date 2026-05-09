@@ -447,6 +447,7 @@ impl<T: ToString> EpisodeStore<T> {
             let _ = fs::remove_file(&tmp);
             persistence_io("rename", path, error)
         })?;
+        sync_parent_dir_after_commit(path)?;
         set_path_private_file(path)?;
         Ok(())
     }
@@ -504,6 +505,7 @@ where
             let _ = fs::remove_file(&tmp);
             persistence_io("rename", path, error)
         })?;
+        sync_parent_dir_after_commit(path)?;
         set_path_private_file(path)?;
         self.append_at(timestamp, value);
         Ok(())
@@ -905,6 +907,61 @@ fn is_windows_lock_contention(error: &io::Error) -> bool {
 }
 
 #[cfg(unix)]
+fn sync_parent_dir_after_commit(path: &Path) -> Result<(), EpisodePersistenceError> {
+    let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    else {
+        return Ok(());
+    };
+    let dir = File::open(parent).map_err(|error| persistence_io("open", parent, error))?;
+    sync_directory_handle(&dir, parent)
+}
+
+#[cfg(not(unix))]
+fn sync_parent_dir_after_commit(_path: &Path) -> Result<(), EpisodePersistenceError> {
+    Ok(())
+}
+
+#[cfg(unix)]
+fn sync_directory_handle_after_commit(
+    dir: &File,
+    committed_file_path: &Path,
+) -> Result<(), EpisodePersistenceError> {
+    let dir_path = committed_file_path.parent().unwrap_or(committed_file_path);
+    sync_directory_handle(dir, dir_path)
+}
+
+#[cfg(unix)]
+fn sync_directory_handle(dir: &File, dir_path: &Path) -> Result<(), EpisodePersistenceError> {
+    dir.sync_all()
+        .map_err(|error| persistence_io("sync_dir", dir_path, error))?;
+    #[cfg(all(test, unix))]
+    record_directory_sync_for_test(dir_path);
+    Ok(())
+}
+
+#[cfg(all(test, unix))]
+thread_local! {
+    static DIRECTORY_SYNC_EVENTS_FOR_TEST: RefCell<Vec<PathBuf>> = const { RefCell::new(Vec::new()) };
+}
+
+#[cfg(all(test, unix))]
+fn reset_directory_sync_events_for_test() {
+    DIRECTORY_SYNC_EVENTS_FOR_TEST.with(|events| events.borrow_mut().clear());
+}
+
+#[cfg(all(test, unix))]
+fn take_directory_sync_events_for_test() -> Vec<PathBuf> {
+    DIRECTORY_SYNC_EVENTS_FOR_TEST.with(|events| events.borrow_mut().drain(..).collect())
+}
+
+#[cfg(all(test, unix))]
+fn record_directory_sync_for_test(path: &Path) {
+    DIRECTORY_SYNC_EVENTS_FOR_TEST.with(|events| events.borrow_mut().push(path.to_path_buf()));
+}
+
+#[cfg(unix)]
 fn lock_cache_file(file: &File, path: &Path) -> Result<(), EpisodePersistenceError> {
     flock_cache_file(file, path, LOCK_EX, "lock")
 }
@@ -1101,6 +1158,7 @@ fn write_persistence_text_in_dir(
         let _ = unlink_dir_entry(dir, &temp_name);
         return Err(error);
     }
+    sync_directory_handle_after_commit(dir, path)?;
     Ok(())
 }
 
@@ -1604,6 +1662,29 @@ mod tests {
             "prepared backend must not follow a swapped episodic-dir symlink"
         );
         assert!(store.is_empty());
+    }
+
+    #[test]
+    fn prepared_cache_commit_syncs_validated_directory_after_rename() {
+        let project = temp_project("prepared-cache-directory-sync");
+        let backend = EpisodicCacheBackend::prepare(&project).expect("prepare backend");
+        let store: EpisodeStore<String> = EpisodeStore::new();
+
+        reset_directory_sync_events_for_test();
+        store
+            .append_prepared_cache_text(&backend, 42, "durable".to_string())
+            .expect("append through prepared backend");
+
+        let episodic_dir = fs::canonicalize(&project)
+            .expect("canonical project")
+            .join(EPISODIC_CACHE_DIR)
+            .join(EPISODIC_CACHE_EPISODIC_DIR);
+        let events = take_directory_sync_events_for_test();
+        assert_eq!(
+            events,
+            vec![episodic_dir],
+            "prepared cache commits must fsync the validated episodic directory after rename"
+        );
     }
 }
 

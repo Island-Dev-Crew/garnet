@@ -449,6 +449,16 @@ This is the typed Mnemos backend boundary, not the CLI signed NDJSON
 advisory-cache trust model, not trusted compiler input, and not a broad
 pluggable persistence layer.
 
+- [x] **Step 8d: Sync accepted text commit directories on Unix**
+
+Phase 6O closes the first durability gap after atomic text commit renames.
+Accepted `save_text`, `append_text`, and prepared typed cache commits sync the
+containing directory after the temp file is renamed into place. The default
+typed cache backend performs this through the validated episodic directory
+handle rather than reopening the mutable path. Non-Unix platforms keep the
+existing file-data sync behavior until a platform-specific directory-sync
+contract is added.
+
 - [ ] **Step 9: Promote root-buffer/finalizer/safe-mode interaction into production allocator tests**
 
 ## Phase 7: Release, Research, And Repeated Falsification
