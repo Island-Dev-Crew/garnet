@@ -15,8 +15,10 @@
 //! matches. Boolean const `and`/`or` folding honors decisive left operands
 //! without requiring the right operand to resolve, and boolean const equality /
 //! inequality comparisons fold over already-resolved boolean facts. Direct
-//! boolean match guards use the same conservative folding. It does not attempt
-//! full type inference, loop fixed-point inference, broader
+//! boolean match guards use the same conservative folding, and narrow integer
+//! equality/inequality plus relational guard comparisons fold over the same
+//! fact domain. It does not attempt full type inference, loop fixed-point
+//! inference, broader
 //! mutable/escaped/general higher-order closure call-effect analysis,
 //! recursive/open payload coverage, or broader non-literal guard reasoning.
 
@@ -71,6 +73,20 @@ impl ConstFact {
         match (self, other) {
             (ConstFact::Bool(lhs), ConstFact::Bool(rhs)) => Some(lhs == rhs),
             (ConstFact::Int(lhs), ConstFact::Int(rhs)) => Some(lhs == rhs),
+            _ => None,
+        }
+    }
+
+    fn int_cmp(self, other: Self, op: BinOp) -> Option<bool> {
+        let (ConstFact::Int(lhs), ConstFact::Int(rhs)) = (self, other) else {
+            return None;
+        };
+
+        match op {
+            BinOp::Lt => Some(lhs < rhs),
+            BinOp::Gt => Some(lhs > rhs),
+            BinOp::LtEq => Some(lhs <= rhs),
+            BinOp::GtEq => Some(lhs >= rhs),
             _ => None,
         }
     }
@@ -233,6 +249,16 @@ impl Checker {
                 let lhs = self.const_fact_from_expr(lhs, module_path)?;
                 let rhs = self.const_fact_from_expr(rhs, module_path)?;
                 lhs.same_kind_eq(rhs).map(|value| ConstFact::Bool(!value))
+            }
+            Expr::Binary {
+                op: op @ (BinOp::Lt | BinOp::Gt | BinOp::LtEq | BinOp::GtEq),
+                lhs,
+                rhs,
+                ..
+            } => {
+                let lhs = self.const_fact_from_expr(lhs, module_path)?;
+                let rhs = self.const_fact_from_expr(rhs, module_path)?;
+                lhs.int_cmp(rhs, *op).map(ConstFact::Bool)
             }
             Expr::Binary { .. } => None,
             _ => None,
@@ -1318,6 +1344,16 @@ impl Checker {
                 let lhs = self.guard_value_from_match_guard(lhs, guard_facts, scope)?;
                 let rhs = self.guard_value_from_match_guard(rhs, guard_facts, scope)?;
                 lhs.same_kind_eq(rhs).map(|value| ConstFact::Bool(!value))
+            }
+            Expr::Binary {
+                op: op @ (BinOp::Lt | BinOp::Gt | BinOp::LtEq | BinOp::GtEq),
+                lhs,
+                rhs,
+                ..
+            } => {
+                let lhs = self.guard_value_from_match_guard(lhs, guard_facts, scope)?;
+                let rhs = self.guard_value_from_match_guard(rhs, guard_facts, scope)?;
+                lhs.int_cmp(rhs, *op).map(ConstFact::Bool)
             }
             Expr::Binary { .. } => None,
             _ => None,

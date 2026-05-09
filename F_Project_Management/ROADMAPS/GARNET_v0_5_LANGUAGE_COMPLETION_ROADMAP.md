@@ -595,9 +595,10 @@ short-circuit boolean const expressions are covered in Step 2ZG below;
 boolean const equality/inequality expressions are covered in Step 2ZH below;
 direct boolean match guard expressions are covered in Step 2ZI below;
 integer const equality/inequality expressions are covered in Step 2ZJ below;
+integer const relational expressions are covered in Step 2ZK below;
 loop fixed-point and broader mutable/escaped/general higher-order closure
 invocation/call-effect flow, cross-file/package imports, recursive/open payload
-reasoning, richer type inference, arithmetic, relational/broader comparison,
+reasoning, richer type inference, arithmetic, non-integer/broader comparison,
 function-call, and broader const expression evaluation, open-domain exhaustiveness/range
 reasoning, and broader non-literal guard reasoning remain pending.
 
@@ -926,6 +927,25 @@ for equality/inequality only. `Core::LIMIT == 2` counts as coverage, and
 `Core::LIMIT != 2` is statically false/non-covering. Arithmetic, relational
 comparison, function-call, recursive, cross-file/package, and broader const
 expression evaluation remain deferred.
+
+- [x] **Step 2ZK: Fold integer const relational guard facts**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage integer_const_less_than
+cargo test -p garnet-check --test match_coverage false_integer_const_greater_than
+cargo test -p garnet-check --test match_coverage direct_integer_const_greater_equal
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AP folds narrow integer `<`, `<=`, `>`, and `>=` const
+comparisons over the existing guard fact domain. `Core::LIMIT < 3` and
+`Core::LIMIT >= 2` count as coverage, while `Core::LIMIT > 3` is statically
+false/non-covering. Arithmetic, non-integer/broader comparison, function-call,
+recursive, cross-file/package, and broader const expression evaluation remain
+deferred.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 

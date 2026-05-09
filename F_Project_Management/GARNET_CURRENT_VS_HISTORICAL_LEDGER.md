@@ -128,11 +128,12 @@ When documents conflict, use this order:
   facts. Phase 4AN applies the same conservative boolean folding directly to
   match guard expressions without requiring an alias const. Phase 4AO folds
   narrow integer const equality/inequality comparisons in alias and direct
-  match guard forms while leaving relational and arithmetic const evaluation
-  deferred. Full
+  match guard forms. Phase 4AP folds narrow integer const relational
+  comparisons in alias and direct match guard forms while leaving arithmetic
+  and non-integer/broader const comparison deferred. Full
   Rust-grade CFG NLL, nested/non-local terminators, general loop fixed-point
   analysis, loop fixed-point domain inference, broader mutable/escaped/general higher-order closure invocation/call-effect analysis, cross-file/package
-  imports, arithmetic, relational/broader comparison, function-call, and broader const expression evaluation, recursive/open payload reasoning, broader expression/type
+  imports, arithmetic, non-integer/broader comparison, function-call, and broader const expression evaluation, recursive/open payload reasoning, broader expression/type
   inference, open-domain exhaustiveness/range reasoning, broader non-literal guard
   reasoning, dynamic places, broader drop elaboration, and generic/trait impl
   dispatch remain roadmap work, not current truth.
