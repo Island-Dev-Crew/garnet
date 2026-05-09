@@ -108,7 +108,7 @@ highest-leverage next milestones are:
 The v0.5 seven-phase roadmap is now tracked in
 `F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md` and
 `F_Project_Management/ROADMAPS/GARNET_v0_5_LANGUAGE_COMPLETION_ROADMAP.md`.
-Phase 4AS / 5C / 6P are the current readiness slices. Phases 1-3D added parser parity,
+Phase 4AT / 5C / 6P are the current readiness slices. Phases 1-3D added parser parity,
 managed block/dynamic/protocol runtime slices, managed actor addresses, bounded
 source mailboxes, and a generated actor-orchestrator template. Phase 4A
 activates partial safe-mode borrow conformance for direct use-after-move
@@ -219,7 +219,9 @@ broader const comparison deferred. Phase 4AS extends the narrow equality and
 inequality fact domain to static symbols and plain non-interpolated strings, so
 `:ready` and `"ready"` const guards can be proven true or false while
 interpolated strings, function-call evaluation, and broader comparison remain
-deferred.
+deferred. Phase 4AT extends the same equality/inequality fact domain to `nil`,
+so `Core::EMPTY == nil` can count as coverage and `Core::EMPTY != nil` is
+statically false/non-covering.
 Escaped and general higher-order closure call effects plus
 broader mutable closure flow remain deferred. Full CFG NLL region solving, loop
 fixed-point domain inference, broader mutable/escaped/general higher-order closure invocation/call-effect analysis,

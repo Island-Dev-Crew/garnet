@@ -10,7 +10,7 @@
 //! proven direct closure call-effect invalidation for local branch-selected
 //! closures. It also recognizes immutable local, same-module top-level, and
 //! named/glob imported top-level boolean constants, same-module and
-//! named/glob imported top-level integer constants, static symbol/plain-string
+//! named/glob imported top-level integer constants, static nil/symbol/plain-string
 //! equality and inequality facts, narrow boolean const aliases, and basic
 //! boolean const expressions in match guards, and rejects
 //! duplicate literal arms and arms after catch-all arms in otherwise open-domain
@@ -61,6 +61,7 @@ enum GuardCoverage {
 enum ConstFact {
     Bool(bool),
     Int(i64),
+    Nil,
     Symbol(String),
     Str(String),
 }
@@ -69,7 +70,7 @@ impl ConstFact {
     fn into_bool(self) -> Option<bool> {
         match self {
             ConstFact::Bool(value) => Some(value),
-            ConstFact::Int(_) | ConstFact::Symbol(_) | ConstFact::Str(_) => None,
+            ConstFact::Int(_) | ConstFact::Nil | ConstFact::Symbol(_) | ConstFact::Str(_) => None,
         }
     }
 
@@ -77,6 +78,7 @@ impl ConstFact {
         match (self, other) {
             (ConstFact::Bool(lhs), ConstFact::Bool(rhs)) => Some(lhs == rhs),
             (ConstFact::Int(lhs), ConstFact::Int(rhs)) => Some(lhs == rhs),
+            (ConstFact::Nil, ConstFact::Nil) => Some(true),
             (ConstFact::Symbol(lhs), ConstFact::Symbol(rhs)) => Some(lhs == rhs),
             (ConstFact::Str(lhs), ConstFact::Str(rhs)) => Some(lhs == rhs),
             _ => None,
@@ -210,6 +212,7 @@ impl Checker {
         match expr {
             Expr::Bool(value, _) => Some(ConstFact::Bool(*value)),
             Expr::Int(value, _) => Some(ConstFact::Int(*value)),
+            Expr::Nil(_) => Some(ConstFact::Nil),
             Expr::Symbol(value, _) => Some(ConstFact::Symbol(value.clone())),
             Expr::Str(value, _) => plain_string_literal(value).map(ConstFact::Str),
             Expr::Ident(name, _) => {
@@ -1315,6 +1318,7 @@ impl Checker {
         match expr {
             Expr::Bool(value, _) => Some(ConstFact::Bool(*value)),
             Expr::Int(value, _) => Some(ConstFact::Int(*value)),
+            Expr::Nil(_) => Some(ConstFact::Nil),
             Expr::Symbol(value, _) => Some(ConstFact::Symbol(value.clone())),
             Expr::Str(value, _) => plain_string_literal(value).map(ConstFact::Str),
             Expr::Ident(name, _) => guard_facts.get(name).cloned(),
@@ -1908,6 +1912,7 @@ fn local_guard_fact_from_expr(expr: &Expr, guard_facts: &GuardFacts) -> Option<C
     match expr {
         Expr::Bool(value, _) => Some(ConstFact::Bool(*value)),
         Expr::Int(value, _) => Some(ConstFact::Int(*value)),
+        Expr::Nil(_) => Some(ConstFact::Nil),
         Expr::Symbol(value, _) => Some(ConstFact::Symbol(value.clone())),
         Expr::Str(value, _) => plain_string_literal(value).map(ConstFact::Str),
         Expr::Ident(name, _) => guard_facts.get(name).cloned(),

@@ -2595,6 +2595,67 @@ fn guarded_status_code(status: Status) -> Int {
         "expected string const inequality false-guard and missing-case diagnostics, got:\n{stdout}"
     );
 
+    let nil_const_equality_true_guard_complete_src = r#"
+module Core {
+  const EMPTY = nil
+}
+
+module Flags {
+  const ALWAYS = Core::EMPTY == nil
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let nil_const_equality_true_guard_complete_path = temp_source(
+        "match_nil_const_equality_true_guard_enum_complete",
+        nil_const_equality_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &nil_const_equality_true_guard_complete_path);
+    assert_ok(&["check"], &nil_const_equality_true_guard_complete_path);
+
+    let nil_const_inequality_false_guard_missing_src = r#"
+module Core {
+  const EMPTY = nil
+}
+
+module Flags {
+  const NEVER = Core::EMPTY != nil
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let nil_const_inequality_false_guard_missing_path = temp_source(
+        "match_nil_const_inequality_false_guard_enum_missing",
+        nil_const_inequality_false_guard_missing_src,
+    );
+    assert_ok(&["parse"], &nil_const_inequality_false_guard_missing_path);
+    let out = run(&["check"], &nil_const_inequality_false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode false nil const inequality guards must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected nil const inequality false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
     let open_literal_duplicate_src = r#"
 fn classify(value: Int) -> Int {
   match value {
