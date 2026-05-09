@@ -605,6 +605,62 @@ fn caller(own b: Buffer, c: Bool) -> Int {
     let returning_loop_path = temp_source("borrow_returning_loop_liveness", returning_loop_src);
     assert_ok(&["parse"], &returning_loop_path);
     assert_ok(&["check"], &returning_loop_path);
+
+    let returning_for_src = r#"
+fn consume(own x: Buffer) -> Int {
+  0
+}
+
+fn read(borrow x: Buffer) -> Int {
+  0
+}
+
+fn caller(own b: Buffer, xs: Array<Int>) -> Int {
+  for x in xs {
+    consume(b)
+    return 0
+  }
+  read(b)
+  0
+}
+"#;
+    let returning_for_path = temp_source("borrow_returning_for_liveness", returning_for_src);
+    assert_ok(&["parse"], &returning_for_path);
+    assert_ok(&["check"], &returning_for_path);
+
+    let for_shadow_src = r#"
+fn consume(own x: Buffer) -> Int {
+  0
+}
+
+fn read(borrow x: Buffer) -> Int {
+  0
+}
+
+fn caller(own item: Buffer, xs: Array<Int>) -> Int {
+  consume(item)
+  for item in xs {
+    0
+  }
+  read(item)
+  0
+}
+"#;
+    let for_shadow_path = temp_source(
+        "borrow_for_loop_shadow_preserves_outer_move",
+        for_shadow_src,
+    );
+    assert_ok(&["parse"], &for_shadow_path);
+    let out = run(&["check"], &for_shadow_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode for-loop variables must not rebind a moved outer binding"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("use-after-move"),
+        "expected use-after-move diagnostic, got:\n{stdout}"
+    );
 }
 
 #[test]

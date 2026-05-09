@@ -54,7 +54,7 @@ fn full_borrow_handle_documents_active_partial_scope() {
         !nearby.contains("#[ignore"),
         "{name} must remain an active partial conformance test"
     );
-    let body = &source[idx..source.len().min(idx + 3_200)];
+    let body = &source[idx..source.len().min(idx + 4_800)];
     assert!(
         body.contains("safe-mode B5") && body.contains("drop discipline"),
         "{name} must document the active B5 drop-discipline subset"
@@ -66,6 +66,14 @@ fn full_borrow_handle_documents_active_partial_scope() {
     assert!(
         body.contains("returning_loop_liveness"),
         "{name} must document the active direct-return loop-body liveness subset"
+    );
+    assert!(
+        body.contains("returning_for_liveness"),
+        "{name} must document the active direct-return for-body liveness subset"
+    );
+    assert!(
+        body.contains("for_loop_shadow_preserves_outer_move"),
+        "{name} must document the active for-loop variable scoping subset"
     );
 }
 

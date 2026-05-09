@@ -21,9 +21,10 @@
 //!   impl-block dispatch remains deferred.
 //! - Simple field projections are tracked as places for move and alias checks.
 //!   Index expressions are tracked conservatively as wildcard sub-places.
-//! - Branch joins are conservative and coarse-grained, with a first
-//!   direct-returning branch liveness slice. Full NLL, precise nested place
-//!   borrows beyond simple fields, and lifetime containment remain deferred.
+//! - Branch joins are conservative and coarse-grained, with first
+//!   direct-returning branch and loop-body liveness slices. Full NLL, precise
+//!   nested place borrows beyond simple fields, and lifetime containment remain
+//!   deferred.
 
 use garnet_parser::ast::{
     Block, Expr, FnDef, FnMode, Item, Module, Ownership, Pattern, Stmt, TypeExpr,
@@ -214,6 +215,25 @@ impl Env {
         self.types.remove(binding);
     }
 
+    fn restore_binding_from(&mut self, binding: &str, snapshot: &Env) {
+        let prefix = format!("{binding}.");
+        self.moved
+            .retain(|moved, _| moved != binding && !moved.starts_with(&prefix));
+        for (moved, record) in &snapshot.moved {
+            if moved == binding || moved.starts_with(&prefix) {
+                self.moved.insert(moved.clone(), record.clone());
+            }
+        }
+        match snapshot.types.get(binding) {
+            Some(ty) => {
+                self.types.insert(binding.to_string(), ty.clone());
+            }
+            None => {
+                self.types.remove(binding);
+            }
+        }
+    }
+
     fn is_moved(&self, binding: &str) -> Option<&MoveRecord> {
         self.moved_record_for_place(&[binding.to_string()])
     }
@@ -358,13 +378,16 @@ fn check_stmt(
             iter, body, var, ..
         } => {
             check_expr(iter, env, sigs, fn_name, diags);
-            env.rebind(var);
-            env.forget_type(var);
-            for s in &body.stmts {
-                check_stmt(s, env, sigs, fn_name, diags);
-            }
-            if let Some(tail) = &body.tail_expr {
-                check_expr(tail, env, sigs, fn_name, diags);
+            let snapshot = env.clone();
+            let mut body_base = snapshot.clone();
+            body_base.rebind(var);
+            body_base.forget_type(var);
+            let outcome = check_branch_block(body, &body_base, sigs, fn_name, diags);
+            if outcome.continues {
+                *env = outcome.env;
+                env.restore_binding_from(var, &snapshot);
+            } else {
+                *env = snapshot;
             }
         }
         Stmt::Loop { body, .. } => {

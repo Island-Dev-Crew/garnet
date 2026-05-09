@@ -371,9 +371,28 @@ moved in direct-returning `while`/`loop` bodies can be borrowed after the loop
 on paths where the loop body does not execute.
 
 Remaining: full CFG NLL, nested/non-local terminators, general loop fixed-point
-analysis, for-loop liveness, closure capture lifetimes, variance, dynamic
-places, generic receiver types, trait impl dispatch, broader scope/branch drop
-elaboration, and two-phase borrows remain pending.
+analysis, for-loop fixed-point liveness, closure capture lifetimes, variance,
+dynamic places, generic receiver types, trait impl dispatch, broader
+scope/branch drop elaboration, and two-phase borrows remain pending.
+
+- [x] **Step 2E: Scope `for` loop variables and returning for bodies**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test borrow for_
+cargo test -p garnet-cli --test conformance_skeleton deferred_full_borrow_rule_suite
+```
+
+Evidence: Phase 4J extends direct-return loop-body liveness to `for` bodies
+and checks loop variables in a body-local environment. A direct-returning `for`
+body no longer poisons after-loop paths, and a loop variable shadowing a moved
+outer binding no longer clears that outer moved state.
+
+Remaining: full CFG NLL, nested/non-local terminators, general loop fixed-point
+analysis, closure capture lifetimes, variance, dynamic places, generic receiver
+types, trait impl dispatch, broader scope/branch drop elaboration, and
+two-phase borrows remain pending.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 

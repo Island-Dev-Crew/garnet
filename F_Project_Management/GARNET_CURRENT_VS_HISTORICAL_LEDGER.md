@@ -64,8 +64,10 @@ When documents conflict, use this order:
   4I adds direct-return block and loop-body liveness: statements after a direct
   `return` are not borrow-checked, and moves inside direct-returning
   `while`/`loop` bodies no longer poison paths after the loop that only exist
-  when the body does not run. Full Rust-grade CFG NLL, nested/non-local
-  terminators, general loop fixed-point analysis, for-loop liveness, dynamic
+  when the body does not run. Phase 4J adds the same direct-return liveness for
+  `for` bodies and scopes the loop variable to the body so it cannot clear the
+  moved state of an outer binding with the same name. Full Rust-grade CFG NLL,
+  nested/non-local terminators, general loop fixed-point analysis, dynamic
   places, broader drop elaboration, and generic/trait impl dispatch remain
   roadmap work, not current truth.
 - Trait coherence now has an active conservative checker slice: exact duplicate

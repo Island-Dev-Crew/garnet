@@ -246,6 +246,50 @@ fn move_in_returning_while_body_does_not_poison_after_loop() {
     );
 }
 
+#[test]
+fn move_in_returning_for_body_does_not_poison_after_loop() {
+    let src = r#"
+        fn consume(own x: Buffer) -> Int { 0 }
+        fn read(borrow x: Buffer) -> Int { 0 }
+        fn caller(own b: Buffer, xs: Array<Int>) -> Int {
+            for x in xs {
+                consume(b)
+                return 0
+            }
+            read(b)
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        !d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "a move in a for body that returns should not poison paths where the loop body never runs, got {d:?}"
+    );
+}
+
+#[test]
+fn for_loop_variable_shadowing_does_not_rebind_outer_move() {
+    let src = r#"
+        fn consume(own x: Buffer) -> Int { 0 }
+        fn read(borrow x: Buffer) -> Int { 0 }
+        fn caller(own item: Buffer, xs: Array<Int>) -> Int {
+            consume(item)
+            for item in xs {
+                0
+            }
+            read(item)
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "a for-loop variable must not erase the moved state of an outer binding with the same name, got {d:?}"
+    );
+}
+
 // ── Method receivers ──
 
 #[test]
