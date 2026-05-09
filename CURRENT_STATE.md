@@ -108,7 +108,7 @@ highest-leverage next milestones are:
 The v0.5 seven-phase roadmap is now tracked in
 `F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md` and
 `F_Project_Management/ROADMAPS/GARNET_v0_5_LANGUAGE_COMPLETION_ROADMAP.md`.
-Phase 4Y / 5C / 6P are the current readiness slices. Phases 1-3D added parser parity,
+Phase 4Z / 5C / 6P are the current readiness slices. Phases 1-3D added parser parity,
 managed block/dynamic/protocol runtime slices, managed actor addresses, bounded
 source mailboxes, and a generated actor-orchestrator template. Phase 4A
 activates partial safe-mode borrow conformance for direct use-after-move
@@ -179,9 +179,11 @@ while preserving ordered loop-local shadowing. Phase 4X extends that conservativ
 boundary to `try`/`rescue`/`ensure` writes and prevents uninvoked closure literal
 bodies from merging assignment domains into the surrounding flow; safe-mode
 `try` rejection remains a separate diagnostic. Phase 4Y conservatively
-invalidates finite domains after direct invocation of closure literals while
-leaving stored closure call effects deferred. Full CFG NLL region solving, loop
-fixed-point domain inference, stored closure invocation/call-effect analysis,
+invalidates finite domains after direct invocation of closure literals. Phase 4Z
+extends that proof to directly called local closure-literal bindings while
+leaving branch-joined, mutable, escaped, and higher-order closure call effects
+deferred. Full CFG NLL region solving, loop
+fixed-point domain inference, broader closure invocation/call-effect analysis,
 nested/non-local terminators, cross-file/package imports, recursive/open payload
 reasoning, broader inference, and non-literal guard reasoning remain deferred.
 Phase 5A activates

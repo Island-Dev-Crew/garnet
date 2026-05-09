@@ -102,9 +102,10 @@ When documents conflict, use this order:
   assignments while preserving ordered loop-local shadowing. Phase 4X adds
   `try`/`rescue`/`ensure` assignment invalidation and keeps uninvoked closure
   literal assignment bodies from leaking into the surrounding flow. Phase 4Y
-  invalidates finite domains after direct closure-literal invocations. Full
+  invalidates finite domains after direct closure-literal invocations. Phase 4Z
+  extends that proof to directly called local closure-literal bindings. Full
   Rust-grade CFG NLL, nested/non-local terminators, general loop fixed-point
-  analysis, loop fixed-point domain inference, stored closure invocation/call-effect analysis, cross-file/package
+  analysis, loop fixed-point domain inference, branch-joined/mutable/escaped/higher-order closure invocation/call-effect analysis, cross-file/package
   imports, recursive/open payload reasoning, broader expression/type
   inference, open-domain exhaustiveness/range reasoning, non-literal guard
   reasoning, dynamic places, broader drop elaboration, and generic/trait impl

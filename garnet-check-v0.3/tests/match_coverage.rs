@@ -565,6 +565,29 @@ fn safe_match_invalidates_domain_after_immediate_closure_expr_assignment() {
 }
 
 #[test]
+fn safe_match_invalidates_domain_after_local_closure_call_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code() -> Int {
+            let mut flag = true
+            let updater = |value| {
+                flag = value
+            }
+            updater(1)
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "local closure call assignment should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
 fn safe_match_joins_branch_assignment_before_shadowing_binding() {
     let errs = check(
         r#"
