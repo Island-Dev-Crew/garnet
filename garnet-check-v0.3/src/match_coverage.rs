@@ -11,10 +11,12 @@
 //! closures. It also recognizes immutable local, same-module top-level, and
 //! named/glob imported top-level boolean constants, same-module and
 //! named/glob imported top-level integer constants, static finite-float,
-//! nil/symbol/plain-string equality and inequality facts, mixed known-literal
-//! equality/inequality facts, narrow boolean const aliases, and basic boolean
-//! const expressions in match guards, and rejects duplicate literal arms and
-//! arms after catch-all arms in otherwise open-domain matches. Boolean const
+//! nil/symbol/string equality and inequality facts, including static
+//! interpolated strings whose interpolation bodies resolve through this same
+//! fact domain, mixed known-literal equality/inequality facts, narrow boolean
+//! const aliases, and basic boolean const expressions in match guards, and
+//! rejects duplicate literal arms and arms after catch-all arms in otherwise
+//! open-domain matches. Boolean const
 //! `and`/`or` folding honors decisive left operands without requiring the right
 //! operand to resolve, and boolean const equality / inequality comparisons fold
 //! over already-resolved boolean facts. Direct
@@ -234,7 +236,10 @@ impl Checker {
             Expr::Float(value, _) => finite_float_fact(*value),
             Expr::Nil(_) => Some(ConstFact::Nil),
             Expr::Symbol(value, _) => Some(ConstFact::Symbol(value.clone())),
-            Expr::Str(value, _) => plain_string_literal(value).map(ConstFact::Str),
+            Expr::Str(value, _) => const_string_literal(value, |src| {
+                interpolation_const_fact(src, |expr| self.const_fact_from_expr(expr, module_path))
+            })
+            .map(ConstFact::Str),
             Expr::Ident(name, _) => {
                 let mut path = module_path.to_vec();
                 path.push(name.clone());
@@ -1344,7 +1349,12 @@ impl Checker {
             Expr::Float(value, _) => finite_float_fact(*value),
             Expr::Nil(_) => Some(ConstFact::Nil),
             Expr::Symbol(value, _) => Some(ConstFact::Symbol(value.clone())),
-            Expr::Str(value, _) => plain_string_literal(value).map(ConstFact::Str),
+            Expr::Str(value, _) => const_string_literal(value, |src| {
+                interpolation_const_fact(src, |expr| {
+                    self.guard_value_from_match_guard(expr, guard_facts, scope)
+                })
+            })
+            .map(ConstFact::Str),
             Expr::Ident(name, _) => guard_facts.get(name).cloned(),
             Expr::Path(path, _) => self.resolve_const_fact_path(path, scope),
             Expr::Unary {
@@ -1952,7 +1962,12 @@ where
         Expr::Float(value, _) => finite_float_fact(*value),
         Expr::Nil(_) => Some(ConstFact::Nil),
         Expr::Symbol(value, _) => Some(ConstFact::Symbol(value.clone())),
-        Expr::Str(value, _) => plain_string_literal(value).map(ConstFact::Str),
+        Expr::Str(value, _) => const_string_literal(value, |src| {
+            interpolation_const_fact(src, |expr| {
+                local_guard_fact_from_expr(expr, guard_facts, resolve_path)
+            })
+        })
+        .map(ConstFact::Str),
         Expr::Ident(name, _) => guard_facts.get(name).cloned(),
         Expr::Path(path, _) => resolve_path(path),
         Expr::Unary {
@@ -2191,15 +2206,47 @@ fn describe_string_literal(value: &StringLit) -> String {
         .collect()
 }
 
-fn plain_string_literal(value: &StringLit) -> Option<String> {
+fn const_string_literal<F>(value: &StringLit, mut interpolation_fact: F) -> Option<String>
+where
+    F: FnMut(&str) -> Option<ConstFact>,
+{
     let mut text = String::new();
     for part in &value.parts {
         match part {
             StrPart::Lit(part) => text.push_str(part),
-            StrPart::Interp(_) => return None,
+            StrPart::Interp(src) => {
+                text.push_str(&const_fact_interpolation_text(interpolation_fact(src)?))
+            }
         }
     }
     Some(text)
+}
+
+fn interpolation_const_fact<F>(src: &str, mut expr_fact: F) -> Option<ConstFact>
+where
+    F: FnMut(&Expr) -> Option<ConstFact>,
+{
+    let wrapped = format!("def __garnet_const_interp__() {{ {src} }}");
+    let module = garnet_parser::parse_source(&wrapped).ok()?;
+    for item in &module.items {
+        if let Item::Fn(fn_def) = item {
+            if let Some(tail) = &fn_def.body.tail_expr {
+                return expr_fact(tail);
+            }
+        }
+    }
+    None
+}
+
+fn const_fact_interpolation_text(value: ConstFact) -> String {
+    match value {
+        ConstFact::Bool(value) => value.to_string(),
+        ConstFact::Int(value) => value.to_string(),
+        ConstFact::Float(value) => format!("{value}"),
+        ConstFact::Nil => "nil".to_string(),
+        ConstFact::Symbol(value) => format!(":{value}"),
+        ConstFact::Str(value) => value,
+    }
 }
 
 fn finite_float_fact(value: f64) -> Option<ConstFact> {

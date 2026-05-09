@@ -1145,6 +1145,25 @@ false/non-covering. Function-call evaluation, recursion, cross-file/package
 imports, broader non-numeric comparison, broader float edge-case reasoning, and
 broader const expression evaluation remain deferred.
 
+- [x] **Step 2ZV: Fold static interpolated string const facts**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage interpolated_string
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4BA folds static interpolated string const facts whose
+interpolation bodies already resolve through the same narrow `ConstFact`
+evaluator. `"re#{"ad"}y" == "ready"` now counts as coverage, and
+`"re#{"ad"}y" != "ready"` is statically false/non-covering. Function-call
+interpolation, recursion, cross-file/package imports, broader non-numeric
+comparison, broader float edge-case reasoning, and broader const expression
+evaluation remain deferred.
+
 ## Phase 5: Traits, Coherence, And Monomorphization
 
 **Intent:** Make the Rust-rigor side credible without overclaiming zero-cost guarantees.

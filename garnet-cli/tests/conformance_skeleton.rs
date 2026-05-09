@@ -2748,6 +2748,79 @@ fn guarded_status_code(status: Status) -> Int {
         "expected string const inequality false-guard and missing-case diagnostics, got:\n{stdout}"
     );
 
+    let interpolated_string_const_equality_true_guard_complete_src = r#"
+module Core {
+  const LABEL = "re#{"ad"}y"
+}
+
+module Flags {
+  const ALWAYS = Core::LABEL == "ready"
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let interpolated_string_const_equality_true_guard_complete_path = temp_source(
+        "match_interpolated_string_const_equality_true_guard_enum_complete",
+        interpolated_string_const_equality_true_guard_complete_src,
+    );
+    assert_ok(
+        &["parse"],
+        &interpolated_string_const_equality_true_guard_complete_path,
+    );
+    assert_ok(
+        &["check"],
+        &interpolated_string_const_equality_true_guard_complete_path,
+    );
+
+    let interpolated_string_const_inequality_false_guard_missing_src = r#"
+module Core {
+  const LABEL = "re#{"ad"}y"
+}
+
+module Flags {
+  const NEVER = Core::LABEL != "ready"
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let interpolated_string_const_inequality_false_guard_missing_path = temp_source(
+        "match_interpolated_string_const_inequality_false_guard_enum_missing",
+        interpolated_string_const_inequality_false_guard_missing_src,
+    );
+    assert_ok(
+        &["parse"],
+        &interpolated_string_const_inequality_false_guard_missing_path,
+    );
+    let out = run(
+        &["check"],
+        &interpolated_string_const_inequality_false_guard_missing_path,
+    );
+    assert!(
+        !out.status.success(),
+        "safe-mode false interpolated string const inequalities must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected interpolated string const inequality false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
     let nil_const_equality_true_guard_complete_src = r#"
 module Core {
   const EMPTY = nil

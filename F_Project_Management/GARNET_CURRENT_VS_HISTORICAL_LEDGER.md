@@ -135,8 +135,8 @@ When documents conflict, use this order:
   integer const facts through same-module bare identifiers and scoped named/glob
   imports of top-level integer `const` items while preserving parameter
   shadowing. Phase 4AS extends equality/inequality const guard facts to static
-  symbols and plain non-interpolated strings while keeping interpolated strings
-  and broader non-numeric comparison conservative. Phase 4AT extends the same narrow
+  symbols and plain non-interpolated strings while keeping call-backed/dynamic
+  string interpolation and broader non-numeric comparison conservative. Phase 4AT extends the same narrow
   equality/inequality fact domain to `nil`. Phase 4AU applies runtime-aligned
   equality semantics across mixed known literal kinds for equality/inequality
   const guard facts. Phase 4AV adds finite float equality/inequality facts and
@@ -147,11 +147,13 @@ When documents conflict, use this order:
   local guard aliases while keeping mutable local expression sources unknown.
   Phase 4AZ resolves path-qualified top-level const references inside those
   immutable local guard aliases while keeping calls and mutable sources
-  conservative.
+  conservative. Phase 4BA folds static interpolated string const facts whose
+  interpolation bodies already resolve through the same narrow fact domain while
+  keeping call-backed/dynamic interpolations unknown.
   Full
   Rust-grade CFG NLL, nested/non-local terminators, general loop fixed-point
   analysis, loop fixed-point domain inference, broader mutable/escaped/general higher-order closure invocation/call-effect analysis, cross-file/package
-  imports, non-finite floats, interpolated strings, broader non-numeric comparison,
+  imports, non-finite floats, call-backed/dynamic interpolated strings, broader non-numeric comparison,
   function-call, and broader const expression evaluation beyond immutable local aliases and path-qualified const references, recursive/open payload reasoning, broader expression/type
   inference, open-domain exhaustiveness/range reasoning, broader non-literal guard
   reasoning, dynamic places, broader drop elaboration, and generic/trait impl
