@@ -2312,6 +2312,67 @@ fn guarded_status_code(status: Status) -> Int {
         "expected direct boolean const inequality false-guard and missing-case diagnostics, got:\n{stdout}"
     );
 
+    let bool_relational_true_guard_complete_src = r#"
+module Core {
+  const RAW = false
+}
+
+module Flags {
+  const ALWAYS = Core::RAW < true
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let bool_relational_true_guard_complete_path = temp_source(
+        "match_boolean_const_relational_true_guard_enum_complete",
+        bool_relational_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &bool_relational_true_guard_complete_path);
+    assert_ok(&["check"], &bool_relational_true_guard_complete_path);
+
+    let bool_relational_false_guard_missing_src = r#"
+module Core {
+  const RAW = true
+}
+
+module Flags {
+  const NEVER = Core::RAW < false
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let bool_relational_false_guard_missing_path = temp_source(
+        "match_boolean_const_relational_false_guard_enum_missing",
+        bool_relational_false_guard_missing_src,
+    );
+    assert_ok(&["parse"], &bool_relational_false_guard_missing_path);
+    let out = run(&["check"], &bool_relational_false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode false boolean const relational guards must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected boolean const relational false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
     let int_equality_true_guard_complete_src = r#"
 module Core {
   const LIMIT = 2

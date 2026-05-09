@@ -1183,6 +1183,25 @@ function-call interpolation, recursion, cross-file/package imports, broader
 non-string non-numeric comparison, broader float edge-case reasoning, and
 broader const expression evaluation remain deferred.
 
+- [x] **Step 2ZX: Fold static boolean relational const facts**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage boolean_const_relational
+cargo test -p garnet-check --test match_coverage mixed_boolean_nil_relational
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4BC folds runtime-aligned static boolean relational facts.
+`Core::RAW < true` now counts as coverage under the runtime's `false < true`
+ordering, and `Core::RAW < false` is statically false/non-covering. Mixed
+boolean/nil relational facts, function calls, recursion, cross-file/package
+imports, broader non-boolean non-string non-numeric comparison, broader float
+edge-case reasoning, and broader const expression evaluation remain deferred.
+
 ## Phase 5: Traits, Coherence, And Monomorphization
 
 **Intent:** Make the Rust-rigor side credible without overclaiming zero-cost guarantees.

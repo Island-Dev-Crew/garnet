@@ -23,10 +23,10 @@
 //! boolean match guards use the same conservative folding. Narrow integer
 //! arithmetic plus equality/inequality and relational guard comparisons, along
 //! with finite-float equality/inequality, relational, and arithmetic guard
-//! comparisons, static string relational guard comparisons, and immutable local
-//! boolean/integer expression aliases, including path-qualified constant
-//! references, fold over the same fact domain using checked or runtime-aligned
-//! numeric/string rules. It does not attempt
+//! comparisons, static boolean/string relational guard comparisons, and
+//! immutable local boolean/integer expression aliases, including path-qualified
+//! constant references, fold over the same fact domain using checked or
+//! runtime-aligned numeric/boolean/string rules. It does not attempt
 //! full type inference, loop fixed-point inference, broader
 //! mutable/escaped/general higher-order closure call-effect analysis,
 //! recursive/open payload coverage, or broader non-literal guard reasoning.
@@ -102,6 +102,7 @@ impl ConstFact {
 
     fn ordered_cmp(self, other: Self, op: BinOp) -> Option<bool> {
         let ordering = match (self, other) {
+            (ConstFact::Bool(lhs), ConstFact::Bool(rhs)) => Some(lhs.cmp(&rhs)),
             (ConstFact::Int(lhs), ConstFact::Int(rhs)) => Some(lhs.cmp(&rhs)),
             (ConstFact::Float(lhs), ConstFact::Float(rhs)) => lhs.partial_cmp(&rhs),
             (ConstFact::Int(lhs), ConstFact::Float(rhs)) => (lhs as f64).partial_cmp(&rhs),

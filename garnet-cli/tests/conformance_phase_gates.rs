@@ -163,6 +163,8 @@ fn match_exhaustiveness_handle_documents_active_partial_scope() {
         "match_boolean_const_inequality_false_guard_enum_missing",
         "match_direct_boolean_const_equality_true_guard_enum_complete",
         "match_direct_boolean_const_inequality_false_guard_enum_missing",
+        "match_boolean_const_relational_true_guard_enum_complete",
+        "match_boolean_const_relational_false_guard_enum_missing",
         "match_integer_const_equality_true_guard_enum_complete",
         "match_integer_const_inequality_false_guard_enum_missing",
         "match_direct_integer_const_equality_true_guard_enum_complete",
