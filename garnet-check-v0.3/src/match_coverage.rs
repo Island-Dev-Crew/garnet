@@ -18,9 +18,11 @@
 //! `and`/`or` folding honors decisive left operands without requiring the right
 //! operand to resolve, and boolean const equality / inequality comparisons fold
 //! over already-resolved boolean facts. Direct
-//! boolean match guards use the same conservative folding, and narrow integer
-//! arithmetic plus equality/inequality and relational guard comparisons fold
-//! over the same fact domain using checked arithmetic. It does not attempt
+//! boolean match guards use the same conservative folding. Narrow integer
+//! arithmetic plus equality/inequality and relational guard comparisons, along
+//! with finite-float equality/inequality and relational guard comparisons, fold
+//! over the same fact domain using checked or runtime-aligned numeric rules. It
+//! does not attempt
 //! full type inference, loop fixed-point inference, broader
 //! mutable/escaped/general higher-order closure call-effect analysis,
 //! recursive/open payload coverage, or broader non-literal guard reasoning.
@@ -94,16 +96,20 @@ impl ConstFact {
         }
     }
 
-    fn int_cmp(self, other: Self, op: BinOp) -> Option<bool> {
-        let (ConstFact::Int(lhs), ConstFact::Int(rhs)) = (self, other) else {
-            return None;
-        };
+    fn numeric_cmp(self, other: Self, op: BinOp) -> Option<bool> {
+        let ordering = match (self, other) {
+            (ConstFact::Int(lhs), ConstFact::Int(rhs)) => Some(lhs.cmp(&rhs)),
+            (ConstFact::Float(lhs), ConstFact::Float(rhs)) => lhs.partial_cmp(&rhs),
+            (ConstFact::Int(lhs), ConstFact::Float(rhs)) => (lhs as f64).partial_cmp(&rhs),
+            (ConstFact::Float(lhs), ConstFact::Int(rhs)) => lhs.partial_cmp(&(rhs as f64)),
+            _ => None,
+        }?;
 
         match op {
-            BinOp::Lt => Some(lhs < rhs),
-            BinOp::Gt => Some(lhs > rhs),
-            BinOp::LtEq => Some(lhs <= rhs),
-            BinOp::GtEq => Some(lhs >= rhs),
+            BinOp::Lt => Some(ordering.is_lt()),
+            BinOp::Gt => Some(ordering.is_gt()),
+            BinOp::LtEq => Some(ordering.is_le()),
+            BinOp::GtEq => Some(ordering.is_ge()),
             _ => None,
         }
     }
@@ -305,7 +311,7 @@ impl Checker {
             } => {
                 let lhs = self.const_fact_from_expr(lhs, module_path)?;
                 let rhs = self.const_fact_from_expr(rhs, module_path)?;
-                lhs.int_cmp(rhs, *op).map(ConstFact::Bool)
+                lhs.numeric_cmp(rhs, *op).map(ConstFact::Bool)
             }
             Expr::Binary {
                 op: op @ (BinOp::Add | BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod),
@@ -1415,7 +1421,7 @@ impl Checker {
             } => {
                 let lhs = self.guard_value_from_match_guard(lhs, guard_facts, scope)?;
                 let rhs = self.guard_value_from_match_guard(rhs, guard_facts, scope)?;
-                lhs.int_cmp(rhs, *op).map(ConstFact::Bool)
+                lhs.numeric_cmp(rhs, *op).map(ConstFact::Bool)
             }
             Expr::Binary {
                 op: op @ (BinOp::Add | BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod),

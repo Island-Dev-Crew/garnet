@@ -1062,6 +1062,27 @@ arithmetic, ordering comparisons, interpolated strings, function-call
 evaluation, recursion, cross-file/package imports, and broader const expression
 evaluation remain deferred.
 
+- [x] **Step 2ZR: Fold finite float const relational facts**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage float_const_relational
+cargo test -p garnet-check --test match_coverage non_finite_float_relational
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AW aligns relational `ConstFact` folding with the runtime
+numeric comparison rule for finite `Float`/`Float`, `Int`/`Float`, and
+`Float`/`Int` pairs. `Core::RATIO < 2.0` and `Core::COUNT <= 2.0` count as
+coverage, `Core::RATIO > 2.0` is statically false/non-covering, and non-finite
+float relational facts remain unknown. Float arithmetic, interpolated strings,
+function-call evaluation, recursion, cross-file/package imports, broader
+non-numeric comparison, and broader const expression evaluation remain
+deferred.
+
 ## Phase 5: Traits, Coherence, And Monomorphization
 
 **Intent:** Make the Rust-rigor side credible without overclaiming zero-cost guarantees.

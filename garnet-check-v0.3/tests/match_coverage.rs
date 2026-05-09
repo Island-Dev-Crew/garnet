@@ -2323,6 +2323,128 @@ fn false_float_const_inequality_is_unreachable_and_not_coverage() {
 }
 
 #[test]
+fn finite_float_const_relational_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const RATIO = 1.5
+        }
+
+        module Flags {
+            const ALWAYS = Core::RATIO < 2.0
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true finite float const relational guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn int_float_const_relational_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const COUNT = 2
+        }
+
+        module Flags {
+            const ALWAYS = Core::COUNT <= 2.0
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true int-float const relational guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_float_const_relational_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const RATIO = 1.5
+        }
+
+        module Flags {
+            const NEVER = Core::RATIO > 2.0
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false finite float const relational guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn non_finite_float_relational_guard_stays_unknown_and_non_covering() {
+    let errs = check(
+        r#"
+        module Core {
+            const RATIO = 1.0e309
+        }
+
+        module Flags {
+            const ALWAYS = Core::RATIO > 1.0
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready")
+            && !has_safe_violation(&errs, "statically false guard"),
+        "non-finite float relational guards should stay unknown and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
 fn non_finite_float_const_guard_stays_unknown_and_non_covering() {
     let errs = check(
         r#"
