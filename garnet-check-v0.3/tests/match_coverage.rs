@@ -673,6 +673,66 @@ fn safe_match_invalidates_domain_after_local_closure_alias_call_assignment() {
 }
 
 #[test]
+fn safe_match_invalidates_domain_after_branch_joined_local_closure_alias_call_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = true
+            let update_from_arg = |value| {
+                flag = value
+            }
+            let update_to_false = |value| {
+                flag = false
+            }
+            let alias = if cond {
+                update_from_arg
+            } else {
+                update_to_false
+            }
+            alias(1)
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "branch-joined local closure alias call assignment should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_keeps_domain_when_branch_alias_tail_shadows_known_closure() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = true
+            let updater = |value| {
+                flag = value
+            }
+            let alias = if cond {
+                let updater = 1
+                updater
+            } else {
+                updater
+            }
+            alias(1)
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match"),
+        "shadowed branch alias tail should stay unknown and preserve finite domain, got {errs:?}"
+    );
+}
+
+#[test]
 fn safe_match_joins_branch_assignment_before_shadowing_binding() {
     let errs = check(
         r#"

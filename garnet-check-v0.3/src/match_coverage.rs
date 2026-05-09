@@ -1267,10 +1267,7 @@ fn maybe_assigned_outer_targets_in_closure(
 }
 
 fn update_closure_effect(name: String, value: &Expr, closure_effects: &mut ClosureEffects) {
-    let effect = closure_effect_from_expr(value).or_else(|| match value {
-        Expr::Ident(source, _) => closure_effects.get(source).cloned(),
-        _ => None,
-    });
+    let effect = closure_effect_from_value(value, closure_effects);
 
     if let Some(targets) = effect {
         closure_effects.insert(name, targets);
@@ -1279,32 +1276,68 @@ fn update_closure_effect(name: String, value: &Expr, closure_effects: &mut Closu
     }
 }
 
-fn closure_effect_from_expr(expr: &Expr) -> Option<BTreeSet<String>> {
+fn closure_effect_from_value(
+    expr: &Expr,
+    closure_effects: &ClosureEffects,
+) -> Option<BTreeSet<String>> {
     match expr {
         Expr::Closure { params, body, .. } => Some(maybe_assigned_outer_targets_in_closure(
             params,
             body.as_ref(),
             &BTreeSet::new(),
         )),
+        Expr::Ident(source, _) => closure_effects.get(source).cloned(),
         Expr::If {
             then_block,
             elsif_clauses,
             else_block: Some(else_block),
             ..
         } => {
-            let mut targets = closure_effect_from_block_tail(then_block)?;
+            let mut targets = closure_effect_from_block_tail(then_block, closure_effects)?;
             for (_, block) in elsif_clauses {
-                targets.extend(closure_effect_from_block_tail(block)?);
+                targets.extend(closure_effect_from_block_tail(block, closure_effects)?);
             }
-            targets.extend(closure_effect_from_block_tail(else_block)?);
+            targets.extend(closure_effect_from_block_tail(else_block, closure_effects)?);
             Some(targets)
         }
         _ => None,
     }
 }
 
-fn closure_effect_from_block_tail(block: &Block) -> Option<BTreeSet<String>> {
-    closure_effect_from_expr(block.tail_expr.as_deref()?)
+fn closure_effect_from_block_tail(
+    block: &Block,
+    closure_effects: &ClosureEffects,
+) -> Option<BTreeSet<String>> {
+    let mut branch_effects = closure_effects.clone();
+    for stmt in &block.stmts {
+        match stmt {
+            Stmt::Let(decl) => {
+                update_closure_effect(decl.name.clone(), &decl.value, &mut branch_effects);
+            }
+            Stmt::Var(decl) => {
+                update_closure_effect(decl.name.clone(), &decl.value, &mut branch_effects);
+            }
+            Stmt::Const(decl) => {
+                update_closure_effect(decl.name.clone(), &decl.value, &mut branch_effects);
+            }
+            Stmt::Assign {
+                target: Expr::Ident(name, _),
+                op: AssignOp::Eq,
+                value,
+                ..
+            } => {
+                update_closure_effect(name.clone(), value, &mut branch_effects);
+            }
+            Stmt::Assign {
+                target: Expr::Ident(name, _),
+                ..
+            } => {
+                branch_effects.remove(name);
+            }
+            _ => {}
+        }
+    }
+    closure_effect_from_value(block.tail_expr.as_deref()?, &branch_effects)
 }
 
 fn intersect_assigned_targets(branch_sets: &[BTreeSet<String>]) -> BTreeSet<String> {
