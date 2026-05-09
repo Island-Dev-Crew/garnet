@@ -815,6 +815,30 @@ fn bool_code(flag: Bool) -> Int {
         "expected missing Bool pattern diagnostic, got:\n{stdout}"
     );
 
+    let bool_initializer_src = r#"
+fn bool_code() -> Int {
+  let flag = true
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let bool_initializer_path = temp_source(
+        "match_bool_initializer_non_exhaustive",
+        bool_initializer_src,
+    );
+    assert_ok(&["parse"], &bool_initializer_path);
+    let out = run(&["check"], &bool_initializer_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode Bool initializer matches must reject missing finite-domain cases"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("non-exhaustive match") && stdout.contains("`false`"),
+        "expected initializer-driven Bool missing pattern diagnostic, got:\n{stdout}"
+    );
+
     let enum_complete_src = r#"
 enum Status { Ready, Done }
 
@@ -852,6 +876,32 @@ fn status_code(status: Status) -> Int {
     assert!(
         stdout.contains("unreachable match arm") && stdout.contains("Status::Ready"),
         "expected unreachable duplicate variant diagnostic, got:\n{stdout}"
+    );
+
+    let enum_initializer_missing_src = r#"
+enum Status { Ready, Done }
+
+fn status_code() -> Int {
+  let status = Status::Ready()
+  match status {
+    Status::Ready => 1
+  }
+}
+"#;
+    let enum_initializer_missing_path = temp_source(
+        "match_enum_initializer_missing",
+        enum_initializer_missing_src,
+    );
+    assert_ok(&["parse"], &enum_initializer_missing_path);
+    let out = run(&["check"], &enum_initializer_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode enum initializer matches must reject missing finite-domain cases"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("non-exhaustive match") && stdout.contains("Status::Done"),
+        "expected initializer-driven enum missing variant diagnostic, got:\n{stdout}"
     );
 
     let nested_missing_src = r#"

@@ -108,7 +108,7 @@ highest-leverage next milestones are:
 The v0.5 seven-phase roadmap is now tracked in
 `F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md` and
 `F_Project_Management/ROADMAPS/GARNET_v0_5_LANGUAGE_COMPLETION_ROADMAP.md`.
-Phase 4Q / 5C / 6P are the current readiness slices. Phases 1-3D added parser parity,
+Phase 4R / 5C / 6P are the current readiness slices. Phases 1-3D added parser parity,
 managed block/dynamic/protocol runtime slices, managed actor addresses, bounded
 source mailboxes, and a generated actor-orchestrator template. Phase 4A
 activates partial safe-mode borrow conformance for direct use-after-move
@@ -159,9 +159,12 @@ arms count as coverage and `if false` arms are rejected as statically
 unreachable while staying non-covering. Phase 4Q adds open-domain literal
 reachability for matches whose subject type is not finite: duplicate literal
 arms and arms after `_`/catch-all patterns are rejected without claiming
-open-domain exhaustiveness. Full CFG NLL region solving, nested/non-local
-terminators, cross-file/package imports, recursive/open payload reasoning,
-and non-literal guard reasoning remain deferred. Phase 5A activates
+open-domain exhaustiveness. Phase 4R lets immutable local boolean literals and
+enum variant initializers drive the same finite-domain `match` coverage without
+requiring an explicit local type annotation. Full CFG NLL region solving,
+nested/non-local terminators, cross-file/package imports, recursive/open
+payload reasoning, broader inference, and non-literal guard reasoning remain
+deferred. Phase 5A activates
 conservative trait coherence by rejecting exact duplicate trait impls and
 orphan-rule violations while preserving impls where
 either the trait or the type is local. Phase 5B activates interpreter-level

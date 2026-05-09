@@ -3,10 +3,11 @@
 //! This is intentionally a narrow semantic slice: it proves exhaustiveness and
 //! simple reachability for `Bool`, same-module enum subjects, imported enum
 //! aliases, finite nested constructor payloads, and literal `true`/`false`
-//! guards whose type is visible from parameter or local annotation metadata.
-//! It also rejects duplicate literal arms and arms after catch-all arms in
-//! otherwise open-domain matches. It does not attempt full type inference,
-//! recursive/open payload coverage, or non-literal guard reasoning.
+//! guards whose type is visible from parameter metadata, local annotations, or
+//! immutable local boolean/enum variant initializers. It also rejects duplicate
+//! literal arms and arms after catch-all arms in otherwise open-domain matches.
+//! It does not attempt full type inference, recursive/open payload coverage, or
+//! non-literal guard reasoning.
 
 use crate::CheckError;
 use garnet_parser::ast::{
@@ -209,18 +210,23 @@ impl Checker {
         match stmt {
             Stmt::Let(decl) => {
                 self.walk_expr(&decl.value, fn_name, env, scope);
-                if let Some(ty) = &decl.ty {
-                    if let Some(domain) = self.domain_from_type(ty, scope) {
-                        env.insert(decl.name.clone(), domain);
-                    }
+                let domain = decl
+                    .ty
+                    .as_ref()
+                    .and_then(|ty| self.domain_from_type(ty, scope))
+                    .or_else(|| self.domain_from_expr(&decl.value, env, scope));
+                if let Some(domain) = domain {
+                    env.insert(decl.name.clone(), domain);
                 }
             }
             Stmt::Var(decl) => {
                 self.walk_expr(&decl.value, fn_name, env, scope);
-                if let Some(ty) = &decl.ty {
-                    if let Some(domain) = self.domain_from_type(ty, scope) {
-                        env.insert(decl.name.clone(), domain);
-                    }
+                if let Some(domain) = decl
+                    .ty
+                    .as_ref()
+                    .and_then(|ty| self.domain_from_type(ty, scope))
+                {
+                    env.insert(decl.name.clone(), domain);
                 }
             }
             Stmt::Const(decl) => {
@@ -625,9 +631,31 @@ impl Checker {
         match expr {
             Expr::Bool(_, _) => Some(FiniteDomain::Bool),
             Expr::Ident(name, _) => env.get(name).cloned(),
+            Expr::Path(path, _) => self.domain_from_enum_variant_path(path, scope),
+            Expr::Call { callee, .. } => match callee.as_ref() {
+                Expr::Path(path, _) => self.domain_from_enum_variant_path(path, scope),
+                _ => None,
+            },
             Expr::Cast { ty, .. } => self.domain_from_type(ty, scope),
             _ => None,
         }
+    }
+
+    fn domain_from_enum_variant_path(
+        &self,
+        path: &[String],
+        scope: &Scope,
+    ) -> Option<FiniteDomain> {
+        let (variant, enum_path) = path.split_last()?;
+        if enum_path.is_empty() {
+            return None;
+        }
+        let domain = self.resolve_enum(enum_path, scope)?;
+        domain
+            .info
+            .variants
+            .contains_key(variant)
+            .then_some(FiniteDomain::Enum(domain))
     }
 
     fn domain_from_type(&self, ty: &TypeExpr, scope: &Scope) -> Option<FiniteDomain> {

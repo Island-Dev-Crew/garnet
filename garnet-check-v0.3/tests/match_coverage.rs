@@ -96,6 +96,66 @@ fn safe_match_uses_local_type_annotations_for_finite_domains() {
 }
 
 #[test]
+fn safe_match_uses_local_bool_initializer_for_finite_domain() {
+    let errs = check(
+        r#"
+        fn bool_code() -> Int {
+            let flag = true
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match") && has_safe_violation(&errs, "false"),
+        "expected bool initializer to drive missing false diagnostic, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_uses_local_enum_initializer_for_finite_domain() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code() -> Int {
+            let status = Status::Ready()
+            match status {
+                Status::Ready => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Done"),
+        "expected enum initializer to drive missing variant diagnostic, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_does_not_infer_unannotated_mutable_var_domain() {
+    let errs = check(
+        r#"
+        fn bool_code() -> Int {
+            var flag = true
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "unannotated mutable locals need assignment-sensitive tracking before seeding a finite domain, got {errs:?}"
+    );
+}
+
+#[test]
 fn managed_match_non_exhaustiveness_is_not_rejected_by_safe_pass() {
     let errs = check(
         r#"

@@ -517,6 +517,24 @@ Remaining: cross-file/package imports, recursive/open payload reasoning, richer
 type inference, open-domain exhaustiveness/range reasoning, and non-literal
 guard reasoning remain pending.
 
+- [x] **Step 2M: Infer immutable local finite match domains from initializers**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage safe_match_uses_local_
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4R seeds safe-mode match coverage from immutable local boolean
+literal initializers and enum variant constructor/path initializers, so `let
+flag = true` and `let status = Status::Ready()` can trigger finite-domain
+non-exhaustiveness diagnostics without explicit local type annotations.
+
+Remaining: cross-file/package imports, recursive/open payload reasoning, richer
+type inference, assignment-sensitive mutable-var domain tracking, open-domain
+exhaustiveness/range reasoning, and non-literal guard reasoning remain pending.
+
 ## Phase 5: Traits, Coherence, And Monomorphization
 
 **Intent:** Make the Rust-rigor side credible without overclaiming zero-cost guarantees.
