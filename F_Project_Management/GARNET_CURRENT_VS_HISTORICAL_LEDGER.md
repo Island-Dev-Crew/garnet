@@ -125,7 +125,8 @@ When documents conflict, use this order:
   decisive left operands for short-circuit boolean `or`/`and` const
   expressions without requiring the right operand to resolve. Phase 4AM folds
   boolean const equality/inequality comparisons over already-resolved boolean
-  facts. Full
+  facts. Phase 4AN applies the same conservative boolean folding directly to
+  match guard expressions without requiring an alias const. Full
   Rust-grade CFG NLL, nested/non-local terminators, general loop fixed-point
   analysis, loop fixed-point domain inference, broader mutable/escaped/general higher-order closure invocation/call-effect analysis, cross-file/package
   imports, arithmetic, broader comparison, function-call, and broader const expression evaluation, recursive/open payload reasoning, broader expression/type

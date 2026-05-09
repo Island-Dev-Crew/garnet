@@ -14,8 +14,9 @@
 //! duplicate literal arms and arms after catch-all arms in otherwise open-domain
 //! matches. Boolean const `and`/`or` folding honors decisive left operands
 //! without requiring the right operand to resolve, and boolean const equality /
-//! inequality comparisons fold over already-resolved boolean facts. It does not
-//! attempt full type inference, loop fixed-point inference, broader
+//! inequality comparisons fold over already-resolved boolean facts. Direct
+//! boolean match guards use the same conservative folding. It does not attempt
+//! full type inference, loop fixed-point inference, broader
 //! mutable/escaped/general higher-order closure call-effect analysis,
 //! recursive/open payload coverage, or broader non-literal guard reasoning.
 
@@ -1191,19 +1192,82 @@ impl Checker {
     ) -> GuardCoverage {
         match guard {
             None => GuardCoverage::Unguarded,
-            Some(Expr::Bool(true, _)) => GuardCoverage::AlwaysTrue,
-            Some(Expr::Bool(false, _)) => GuardCoverage::AlwaysFalse,
-            Some(Expr::Ident(name, _)) => match guard_facts.get(name) {
+            Some(expr) => match self.guard_fact_from_match_guard(expr, guard_facts, scope) {
                 Some(true) => GuardCoverage::AlwaysTrue,
                 Some(false) => GuardCoverage::AlwaysFalse,
                 None => GuardCoverage::Unknown,
             },
-            Some(Expr::Path(path, _)) => match self.resolve_const_guard_path(path, scope) {
-                Some(true) => GuardCoverage::AlwaysTrue,
-                Some(false) => GuardCoverage::AlwaysFalse,
-                None => GuardCoverage::Unknown,
-            },
-            Some(_) => GuardCoverage::Unknown,
+        }
+    }
+
+    fn guard_fact_from_match_guard(
+        &self,
+        expr: &Expr,
+        guard_facts: &GuardFacts,
+        scope: &Scope,
+    ) -> Option<bool> {
+        match expr {
+            Expr::Bool(value, _) => Some(*value),
+            Expr::Ident(name, _) => guard_facts.get(name).copied(),
+            Expr::Path(path, _) => self.resolve_const_guard_path(path, scope),
+            Expr::Unary {
+                op: UnOp::Not,
+                expr,
+                ..
+            } => self
+                .guard_fact_from_match_guard(expr, guard_facts, scope)
+                .map(|value| !value),
+            Expr::Unary { .. } => None,
+            Expr::Binary {
+                op: BinOp::And,
+                lhs,
+                rhs,
+                ..
+            } => {
+                let lhs = self.guard_fact_from_match_guard(lhs, guard_facts, scope)?;
+                if !lhs {
+                    Some(false)
+                } else {
+                    let rhs = self.guard_fact_from_match_guard(rhs, guard_facts, scope)?;
+                    Some(rhs)
+                }
+            }
+            Expr::Binary {
+                op: BinOp::Or,
+                lhs,
+                rhs,
+                ..
+            } => {
+                let lhs = self.guard_fact_from_match_guard(lhs, guard_facts, scope)?;
+                if lhs {
+                    Some(true)
+                } else {
+                    let rhs = self.guard_fact_from_match_guard(rhs, guard_facts, scope)?;
+                    Some(rhs)
+                }
+            }
+            Expr::Binary {
+                op: BinOp::Eq,
+                lhs,
+                rhs,
+                ..
+            } => {
+                let lhs = self.guard_fact_from_match_guard(lhs, guard_facts, scope)?;
+                let rhs = self.guard_fact_from_match_guard(rhs, guard_facts, scope)?;
+                Some(lhs == rhs)
+            }
+            Expr::Binary {
+                op: BinOp::NotEq,
+                lhs,
+                rhs,
+                ..
+            } => {
+                let lhs = self.guard_fact_from_match_guard(lhs, guard_facts, scope)?;
+                let rhs = self.guard_fact_from_match_guard(rhs, guard_facts, scope)?;
+                Some(lhs != rhs)
+            }
+            Expr::Binary { .. } => None,
+            _ => None,
         }
     }
 

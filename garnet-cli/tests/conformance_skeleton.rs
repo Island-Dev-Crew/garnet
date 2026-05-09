@@ -2106,6 +2106,59 @@ fn guarded_status_code(status: Status) -> Int {
         "expected boolean const inequality false-guard and missing-case diagnostics, got:\n{stdout}"
     );
 
+    let direct_bool_equality_true_guard_complete_src = r#"
+module Core {
+  const RAW = true
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Core::RAW == true => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let direct_bool_equality_true_guard_complete_path = temp_source(
+        "match_direct_boolean_const_equality_true_guard_enum_complete",
+        direct_bool_equality_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &direct_bool_equality_true_guard_complete_path);
+    assert_ok(&["check"], &direct_bool_equality_true_guard_complete_path);
+
+    let direct_bool_inequality_false_guard_missing_src = r#"
+module Core {
+  const RAW = true
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Core::RAW != true => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let direct_bool_inequality_false_guard_missing_path = temp_source(
+        "match_direct_boolean_const_inequality_false_guard_enum_missing",
+        direct_bool_inequality_false_guard_missing_src,
+    );
+    assert_ok(&["parse"], &direct_bool_inequality_false_guard_missing_path);
+    let out = run(&["check"], &direct_bool_inequality_false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode direct false boolean const inequalities must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected direct boolean const inequality false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
     let open_literal_duplicate_src = r#"
 fn classify(value: Int) -> Int {
   match value {

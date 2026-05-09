@@ -593,6 +593,7 @@ narrow boolean const aliases are covered in Step 2ZE below;
 basic boolean const expressions are covered in Step 2ZF below;
 short-circuit boolean const expressions are covered in Step 2ZG below;
 boolean const equality/inequality expressions are covered in Step 2ZH below;
+direct boolean match guard expressions are covered in Step 2ZI below;
 loop fixed-point and broader mutable/escaped/general higher-order closure
 invocation/call-effect flow, cross-file/package imports, recursive/open payload
 reasoning, richer type inference, arithmetic, broader comparison,
@@ -888,6 +889,24 @@ already-resolved boolean facts. `Core::RAW == true` counts as coverage, and
 `Core::RAW != true` is statically false/non-covering. Arithmetic, relational
 comparison, function-call, recursive, cross-file/package, and broader const
 expression evaluation remain deferred.
+
+- [x] **Step 2ZI: Fold direct boolean match guard expressions**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage direct_true_boolean_const_equality
+cargo test -p garnet-check --test match_coverage direct_false_boolean_const_inequality
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AN applies conservative boolean fact folding directly to
+match guard expressions. `Status::Ready if Core::RAW == true` counts as
+coverage, and `Status::Ready if Core::RAW != true` is statically
+false/non-covering without requiring an intermediate alias const. Arithmetic,
+relational comparison, function-call, recursive, cross-file/package, and
+broader const expression evaluation remain deferred.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 
