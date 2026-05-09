@@ -136,7 +136,12 @@ scan-black retained candidates, deterministic finalization-order reporting,
 safe-mode affine allocation exclusion, root-buffer/decrement-event scheduling,
 rooted retention, unrooted cycle collection, unrooted acyclic retention, and
 kind-scheduled cross-kind collection. Production allocator-integrated ARC and
-runtime finalizer invocation remain deferred.
+runtime finalizer invocation remain deferred. Phase 6F adds a cache privacy
+gate for compiler-as-agent episode logs: project-local absolute file paths are
+recorded as stable relative labels, and external absolute paths are redacted to
+`<external>/<file>` so accidental `.garnet-cache/` copies do not leak user,
+temp, or CI workspace roots. Broader cache tamper/provenance HMAC gates remain
+covered by the existing cache/security test suite.
 
 ## Historical Material
 

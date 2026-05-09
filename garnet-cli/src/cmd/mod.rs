@@ -25,6 +25,7 @@ pub mod verify;
 
 use crate::cache::{self, Episode};
 use crate::{knowledge, strategies};
+use std::path::Path;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 /// Helper used by every subcommand at start: surface a one-line note for any
@@ -123,6 +124,51 @@ pub(crate) fn record(
     );
     let _ = cache::record_episode(&ep);
     persist_knowledge(source, &hash, outcome);
+}
+
+/// Privacy-preserving label for cache episode records.
+///
+/// Episode logs can be copied accidentally even though generated projects
+/// ignore `.garnet-cache/`. Keep useful project-local context without writing
+/// absolute user, temp, or CI workspace paths into the cache.
+pub(crate) fn cache_file_label(path: &Path) -> String {
+    if !path.is_absolute() {
+        return stable_path_label(path);
+    }
+
+    if let Ok(cwd) = std::env::current_dir() {
+        if let Ok(rel) = path.strip_prefix(&cwd) {
+            if !rel.as_os_str().is_empty() {
+                return stable_path_label(rel);
+            }
+        }
+        if let (Ok(cwd), Ok(path)) = (cwd.canonicalize(), path.canonicalize()) {
+            if let Ok(rel) = path.strip_prefix(&cwd) {
+                if !rel.as_os_str().is_empty() {
+                    return stable_path_label(rel);
+                }
+            }
+        }
+    }
+
+    match path.file_name().and_then(|name| name.to_str()) {
+        Some(name) if !name.is_empty() => format!("<external>/{name}"),
+        _ => "<external>".to_string(),
+    }
+}
+
+fn stable_path_label(path: &Path) -> String {
+    let parts: Vec<String> = path
+        .components()
+        .map(|component| component.as_os_str().to_string_lossy().into_owned())
+        .filter(|part| !part.is_empty())
+        .collect();
+
+    if parts.is_empty() {
+        ".".to_string()
+    } else {
+        parts.join("/")
+    }
 }
 
 /// One-line description of an AST `Item` — used by `garnet parse` for

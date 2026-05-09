@@ -180,3 +180,52 @@ fn episode_ndjson_is_valid_json_per_line() {
         assert!(!ep.cmd.is_empty());
     }
 }
+
+#[test]
+fn absolute_project_paths_are_logged_as_relative_cache_labels() {
+    let dir = fresh_temp_dir("relative_label");
+    let nested = dir.join("nested");
+    std::fs::create_dir_all(&nested).unwrap();
+    let file = nested.join("hello.garnet");
+    std::fs::write(&file, "def main() { 42 }").unwrap();
+
+    let out = garnet_cmd(&dir)
+        .args(["parse", file.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(out.status.success(), "parse should succeed");
+
+    let episodes = read_episodes(&dir);
+    assert_eq!(episodes.len(), 1);
+    assert_eq!(episodes[0].file, "nested/hello.garnet");
+    assert!(
+        !episodes[0].file.contains(dir.to_string_lossy().as_ref()),
+        "cache episode leaked absolute project path: {}",
+        episodes[0].file
+    );
+}
+
+#[test]
+fn external_absolute_paths_are_redacted_in_cache_labels() {
+    let project = fresh_temp_dir("external_project");
+    let external = fresh_temp_dir("external_source");
+    let file = external.join("secret_agent.garnet");
+    std::fs::write(&file, "def main() { 7 }").unwrap();
+
+    let out = garnet_cmd(&project)
+        .args(["parse", file.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(out.status.success(), "parse should succeed");
+
+    let episodes = read_episodes(&project);
+    assert_eq!(episodes.len(), 1);
+    assert_eq!(episodes[0].file, "<external>/secret_agent.garnet");
+    assert!(
+        !episodes[0]
+            .file
+            .contains(external.to_string_lossy().as_ref()),
+        "cache episode leaked external absolute path: {}",
+        episodes[0].file
+    );
+}

@@ -74,6 +74,11 @@ When documents conflict, use this order:
   unrooted cycle collection, unrooted acyclic retention for ordinary
   retention/eviction, and kind-partitioned cross-kind scans. This is not the
   production allocator-integrated Bacon-Rajan collector.
+- Compiler-as-agent cache privacy now has Phase 6F executable evidence:
+  absolute paths inside the active project are persisted as stable relative
+  labels, while external absolute paths are redacted to `<external>/<file>`.
+  CacheHMAC and ProvenanceStrategy still protect tamper/foreign-cache abuse;
+  broader multi-process machine-key stress remains follow-up work.
 - CI has an explicit canonical MVP example job in addition to the Rust test
   suite.
 

@@ -121,6 +121,16 @@ decrement-triggered buffered roots can drive collection before the production
 allocator is available; the next session should promote those fixtures into
 allocator-integrated Bacon-Rajan trial deletion.
 
+### Current Phase 6F cache-security status
+
+Phase 6F adds a narrower security/readiness gate around the compiler-as-agent
+cache. `parse`, `check`, and `run` now persist privacy-preserving episode file
+labels: absolute paths under the project root become stable relative labels,
+and absolute paths outside the project root become `<external>/<file>`.
+Existing CacheHMAC and ProvenanceStrategy tests remain green. The next cache
+security slice should stress multi-process machine-key behavior and committed
+foreign-cache abuse cases end to end.
+
 ### Why deferred
 
 v0.4.2 locked in the **naming** (Memory Core / Mnemos) and the

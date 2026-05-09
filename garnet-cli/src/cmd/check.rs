@@ -1,6 +1,6 @@
 //! `garnet check <file>` — run the safe-mode checker (CapCaps + borrow + audit).
 
-use super::{record, surface_prior};
+use super::{cache_file_label, record, surface_prior};
 use crate::read_file;
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -15,6 +15,7 @@ pub fn run(path: PathBuf) -> ExitCode {
             return ExitCode::from(1);
         }
     };
+    let file_label = cache_file_label(&path);
     surface_prior(&src);
     let module = match garnet_parser::parse_source(&src) {
         Ok(m) => m,
@@ -23,7 +24,7 @@ pub fn run(path: PathBuf) -> ExitCode {
             eprintln!("{report:?}");
             record(
                 "check",
-                &path.display().to_string(),
+                &file_label,
                 &src,
                 "parse_err",
                 Some("UnexpectedToken".to_string()),
@@ -44,20 +45,12 @@ pub fn run(path: PathBuf) -> ExitCode {
         report.errors.len()
     );
     if report.ok() {
-        record(
-            "check",
-            &path.display().to_string(),
-            &src,
-            "ok",
-            None,
-            started,
-            0,
-        );
+        record("check", &file_label, &src, "ok", None, started, 0);
         ExitCode::SUCCESS
     } else {
         record(
             "check",
-            &path.display().to_string(),
+            &file_label,
             &src,
             "check_err",
             Some("safe_violation".to_string()),

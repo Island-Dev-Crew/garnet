@@ -1,6 +1,6 @@
 //! `garnet run <file>` — parse, load, and invoke `main` if it exists.
 
-use super::{record, surface_prior};
+use super::{cache_file_label, record, surface_prior};
 use crate::read_file;
 use garnet_interp::Interpreter;
 use std::path::PathBuf;
@@ -16,13 +16,14 @@ pub fn run(path: PathBuf) -> ExitCode {
             return ExitCode::from(1);
         }
     };
+    let file_label = cache_file_label(&path);
     surface_prior(&src);
     let mut interp = Interpreter::new();
     if let Err(e) = interp.load_source(&src) {
         eprintln!("load error: {e}");
         record(
             "run",
-            &path.display().to_string(),
+            &file_label,
             &src,
             "parse_err",
             Some(format!("{e}")),
@@ -36,22 +37,14 @@ pub fn run(path: PathBuf) -> ExitCode {
         match interp.call("main", vec![]) {
             Ok(v) => {
                 println!("=> {}", v.display());
-                record(
-                    "run",
-                    &path.display().to_string(),
-                    &src,
-                    "ok",
-                    None,
-                    started,
-                    0,
-                );
+                record("run", &file_label, &src, "ok", None, started, 0);
                 ExitCode::SUCCESS
             }
             Err(e) => {
                 eprintln!("runtime error: {e}");
                 record(
                     "run",
-                    &path.display().to_string(),
+                    &file_label,
                     &src,
                     "runtime_err",
                     Some(format!("{e}")),
@@ -62,15 +55,7 @@ pub fn run(path: PathBuf) -> ExitCode {
             }
         }
     } else {
-        record(
-            "run",
-            &path.display().to_string(),
-            &src,
-            "ok",
-            None,
-            started,
-            0,
-        );
+        record("run", &file_label, &src, "ok", None, started, 0);
         ExitCode::SUCCESS
     }
 }
