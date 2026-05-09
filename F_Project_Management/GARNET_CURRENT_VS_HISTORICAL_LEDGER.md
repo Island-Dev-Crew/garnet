@@ -103,9 +103,11 @@ When documents conflict, use this order:
   `try`/`rescue`/`ensure` assignment invalidation and keeps uninvoked closure
   literal assignment bodies from leaking into the surrounding flow. Phase 4Y
   invalidates finite domains after direct closure-literal invocations. Phase 4Z
-  extends that proof to directly called local closure-literal bindings. Full
+  extends that proof to directly called local closure-literal bindings. Phase
+  4AA carries local closure effects through all-branch `if` expression closure
+  returns. Full
   Rust-grade CFG NLL, nested/non-local terminators, general loop fixed-point
-  analysis, loop fixed-point domain inference, branch-joined/mutable/escaped/higher-order closure invocation/call-effect analysis, cross-file/package
+  analysis, loop fixed-point domain inference, mutable/escaped/higher-order closure invocation/call-effect analysis, cross-file/package
   imports, recursive/open payload reasoning, broader expression/type
   inference, open-domain exhaustiveness/range reasoning, non-literal guard
   reasoning, dynamic places, broader drop elaboration, and generic/trait impl

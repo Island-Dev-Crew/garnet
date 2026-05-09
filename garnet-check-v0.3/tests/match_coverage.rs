@@ -588,6 +588,35 @@ fn safe_match_invalidates_domain_after_local_closure_call_assignment() {
 }
 
 #[test]
+fn safe_match_invalidates_domain_after_branch_joined_local_closure_call_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = true
+            let updater = if cond {
+                |value| {
+                    flag = value
+                }
+            } else {
+                |value| {
+                    flag = false
+                }
+            }
+            updater(1)
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "branch-joined local closure call assignment should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
 fn safe_match_joins_branch_assignment_before_shadowing_binding() {
     let errs = check(
         r#"

@@ -9,9 +9,8 @@
 //! nested all-path `if` assignment joins inside branch bodies. It also rejects
 //! duplicate literal arms and arms after catch-all arms in otherwise
 //! open-domain matches. It does not attempt full type inference,
-//! loop fixed-point or broader branch-joined/mutable/escaped/higher-order
-//! closure call-effect analysis, recursive/open payload coverage, or
-//! non-literal guard reasoning.
+//! loop fixed-point or mutable/escaped/higher-order closure call-effect
+//! analysis, recursive/open payload coverage, or non-literal guard reasoning.
 
 use crate::CheckError;
 use garnet_parser::ast::{
@@ -1240,14 +1239,39 @@ fn maybe_assigned_outer_targets_in_closure(
 }
 
 fn update_closure_effect(name: String, value: &Expr, closure_effects: &mut ClosureEffects) {
-    if let Expr::Closure { params, body, .. } = value {
-        closure_effects.insert(
-            name,
-            maybe_assigned_outer_targets_in_closure(params, body.as_ref(), &BTreeSet::new()),
-        );
+    if let Some(targets) = closure_effect_from_expr(value) {
+        closure_effects.insert(name, targets);
     } else {
         closure_effects.remove(&name);
     }
+}
+
+fn closure_effect_from_expr(expr: &Expr) -> Option<BTreeSet<String>> {
+    match expr {
+        Expr::Closure { params, body, .. } => Some(maybe_assigned_outer_targets_in_closure(
+            params,
+            body.as_ref(),
+            &BTreeSet::new(),
+        )),
+        Expr::If {
+            then_block,
+            elsif_clauses,
+            else_block: Some(else_block),
+            ..
+        } => {
+            let mut targets = closure_effect_from_block_tail(then_block)?;
+            for (_, block) in elsif_clauses {
+                targets.extend(closure_effect_from_block_tail(block)?);
+            }
+            targets.extend(closure_effect_from_block_tail(else_block)?);
+            Some(targets)
+        }
+        _ => None,
+    }
+}
+
+fn closure_effect_from_block_tail(block: &Block) -> Option<BTreeSet<String>> {
+    closure_effect_from_expr(block.tail_expr.as_deref()?)
 }
 
 fn intersect_assigned_targets(branch_sets: &[BTreeSet<String>]) -> BTreeSet<String> {
