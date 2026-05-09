@@ -519,6 +519,52 @@ fn safe_match_does_not_merge_uninvoked_closure_assignment_domains() {
 }
 
 #[test]
+fn safe_match_invalidates_domain_after_immediate_closure_block_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code() -> Int {
+            let mut flag = true
+            (|value| {
+                flag = value
+            })(1)
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "immediately invoked closure block assignment should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_domain_after_immediate_closure_expr_assignment() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = true
+            (|value| if cond {
+                flag = value
+            } else {
+                flag = false
+            })(1)
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "immediately invoked closure expression assignments should clear inferred finite domain, got {errs:?}"
+    );
+}
+
+#[test]
 fn safe_match_joins_branch_assignment_before_shadowing_binding() {
     let errs = check(
         r#"

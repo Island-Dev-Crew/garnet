@@ -1110,6 +1110,24 @@ fn bool_code(cond: Bool) -> Int {
     assert_ok(&["parse"], &closure_assignment_boundary_path);
     assert_ok(&["check"], &closure_assignment_boundary_path);
 
+    let immediate_closure_assignment_invalidation_src = r#"
+fn bool_code() -> Int {
+  let mut flag = true
+  (|value| {
+    flag = value
+  })(1)
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let immediate_closure_assignment_invalidation_path = temp_source(
+        "match_immediate_closure_assignment_invalidation_open",
+        immediate_closure_assignment_invalidation_src,
+    );
+    assert_ok(&["parse"], &immediate_closure_assignment_invalidation_path);
+    assert_ok(&["check"], &immediate_closure_assignment_invalidation_path);
+
     let enum_complete_src = r#"
 enum Status { Ready, Done }
 

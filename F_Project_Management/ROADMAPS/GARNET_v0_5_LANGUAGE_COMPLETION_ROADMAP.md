@@ -577,7 +577,7 @@ Remaining: nested all-path `if` branch assignment flow is covered in Step 2P
 below; compound-assignment invalidation is covered in Step 2Q below;
 loop-body invalidation is covered in Step 2R below; `try`/`ensure`
 invalidation and uninvoked closure-definition boundaries are covered in Step
-2S below; loop fixed-point and closure invocation/call-effect
+2S below; direct closure-literal invocation invalidation is covered in Step 2T below; loop fixed-point and stored closure invocation/call-effect
 flow, cross-file/package imports, recursive/open payload reasoning, richer type
 inference, open-domain exhaustiveness/range reasoning, and non-literal guard
 reasoning remain pending.
@@ -640,6 +640,19 @@ Evidence: Phase 4X clears stale finite match-domain evidence after
 `try`/`rescue`/`ensure` writes while preserving the existing safe-mode
 `try`/`rescue` rejection, and treats uninvoked closure literals as definition
 boundaries so their body assignments do not merge into enclosing flow.
+
+- [x] **Step 2T: Invalidate direct closure-literal invocation domains**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage immediate_closure
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4Y clears finite match-domain evidence after directly invoked
+closure literals whose block or expression bodies assign the match subject,
+without claiming stored closure invocation/call-effect analysis.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 

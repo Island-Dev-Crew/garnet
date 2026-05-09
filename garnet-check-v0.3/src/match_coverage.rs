@@ -9,13 +9,13 @@
 //! nested all-path `if` assignment joins inside branch bodies. It also rejects
 //! duplicate literal arms and arms after catch-all arms in otherwise
 //! open-domain matches. It does not attempt full type inference,
-//! loop/exception/closure-merged assignment flow, recursive/open payload
-//! coverage, or non-literal guard reasoning.
+//! loop fixed-point or stored closure call-effect analysis, recursive/open
+//! payload coverage, or non-literal guard reasoning.
 
 use crate::CheckError;
 use garnet_parser::ast::{
-    AssignOp, Block, ClosureBody, Expr, FnDef, FnMode, Item, Module, Pattern, Stmt, StringLit,
-    TypeExpr, UseImports,
+    AssignOp, Block, ClosureBody, Expr, FnDef, FnMode, Item, Module, Param, Pattern, Stmt,
+    StringLit, TypeExpr, UseImports,
 };
 use garnet_parser::token::StrPart;
 use std::collections::{BTreeMap, BTreeSet};
@@ -305,8 +305,22 @@ impl Checker {
             Expr::Unary { expr, .. } | Expr::Cast { expr, .. } | Expr::Spawn { expr, .. } => {
                 self.walk_expr(expr, fn_name, env, scope);
             }
-            Expr::Call { callee, args, .. }
-            | Expr::Method {
+            Expr::Call { callee, args, .. } => {
+                self.walk_expr(callee, fn_name, env, scope);
+                for arg in args {
+                    self.walk_expr(arg, fn_name, env, scope);
+                }
+                if let Expr::Closure { params, body, .. } = callee.as_ref() {
+                    for target in maybe_assigned_outer_targets_in_closure(
+                        params,
+                        body.as_ref(),
+                        &BTreeSet::new(),
+                    ) {
+                        env.remove(&target);
+                    }
+                }
+            }
+            Expr::Method {
                 receiver: callee,
                 args,
                 ..
@@ -1111,8 +1125,46 @@ fn maybe_assigned_outer_targets_in_expr(
             }
             assigned
         }
+        Expr::Call { callee, args, .. } => {
+            let mut assigned = maybe_assigned_outer_targets_in_expr(callee, local_bindings);
+            for arg in args {
+                assigned.extend(maybe_assigned_outer_targets_in_expr(arg, local_bindings));
+            }
+            if let Expr::Closure { params, body, .. } = callee.as_ref() {
+                assigned.extend(maybe_assigned_outer_targets_in_closure(
+                    params,
+                    body.as_ref(),
+                    local_bindings,
+                ));
+            }
+            assigned
+        }
+        Expr::Method { receiver, args, .. } => {
+            let mut assigned = maybe_assigned_outer_targets_in_expr(receiver, local_bindings);
+            for arg in args {
+                assigned.extend(maybe_assigned_outer_targets_in_expr(arg, local_bindings));
+            }
+            assigned
+        }
         Expr::Closure { .. } => BTreeSet::new(),
         _ => BTreeSet::new(),
+    }
+}
+
+fn maybe_assigned_outer_targets_in_closure(
+    params: &[Param],
+    body: &ClosureBody,
+    local_bindings: &BTreeSet<String>,
+) -> BTreeSet<String> {
+    let mut closure_locals = local_bindings.clone();
+    for param in params {
+        closure_locals.insert(param.name.clone());
+    }
+    match body {
+        ClosureBody::Block(block) => {
+            maybe_assigned_outer_targets_in_block_excluding(block, &closure_locals)
+        }
+        ClosureBody::Expr(expr) => maybe_assigned_outer_targets_in_expr(expr, &closure_locals),
     }
 }
 
