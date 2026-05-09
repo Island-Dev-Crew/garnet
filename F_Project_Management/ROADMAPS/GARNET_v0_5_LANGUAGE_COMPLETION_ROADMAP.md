@@ -431,8 +431,23 @@ type before extension, corrupt, empty, type-invalid, or oversized logs are not
 carried forward, projected oversize commits are rejected before file creation,
 accepted record data is synced through a temp-file rewrite and rename, and the
 live store changes only after the on-disk commit succeeds. This is still a
-guardrail on the reference text format, not the default
-`.garnet-cache/episodic/` production backend.
+guardrail on the reference text format, not a broad pluggable persistence
+backend.
+
+- [x] **Step 8c: Bind episodic text commits to the default typed cache backend**
+
+Phase 6N adds `episodic_cache_log_path_for` plus
+`EpisodeStore::append_cache_text` / `load_cache_text` for fixed per-project
+`.garnet-cache/episodic/episodes.mnemos` storage. The backend canonicalizes the
+project root, creates private cache directories, rejects symlinked or
+non-regular targets, refuses oversized loads before allocation, serializes
+rewrite-based access with an OS-backed lockfile on Unix/Windows, anchors Unix
+backend file operations to the validated episodic directory handle, keeps Unix
+backend files private from creation time, and preserves corrupt/type-invalid
+non-mutation and cycle-aware root rehydration.
+This is the typed Mnemos backend boundary, not the CLI signed NDJSON
+advisory-cache trust model, not trusted compiler input, and not a broad
+pluggable persistence layer.
 
 - [ ] **Step 9: Promote root-buffer/finalizer/safe-mode interaction into production allocator tests**
 

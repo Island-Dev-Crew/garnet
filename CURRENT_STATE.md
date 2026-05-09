@@ -164,7 +164,17 @@ logs are size-bounded and parsed as the store value type before extension,
 corrupt, empty, type-invalid, or oversized logs are not carried forward,
 projected oversize commits are rejected before file creation, accepted record
 data is synced through a temp-file rewrite and rename, and the live store
-mutates only after the on-disk commit is accepted.
+mutates only after the on-disk commit is accepted. Phase 6N adds the default
+typed episodic cache backend boundary at
+`.garnet-cache/episodic/episodes.mnemos`: backend appends and loads use fixed
+path components under a canonical project root, reject symlink/non-regular
+targets, reject oversized loads before allocation, serialize rewrite-based
+commits with an OS-backed lockfile on Unix/Windows, anchor Unix backend file
+operations to the validated episodic directory handle, keep Unix cache
+dirs/files private from creation time, and preserve corrupt/type-invalid
+non-mutation behavior. This backend is distinct from the
+CLI's signed NDJSON advisory cache and is not trusted compiler input without a
+future MAC/source-tree binding layer.
 Production ARC integration, runtime finalizer invocation, broad pluggable
 persistence backends, and extended release-duration soak remain follow-up work.
 

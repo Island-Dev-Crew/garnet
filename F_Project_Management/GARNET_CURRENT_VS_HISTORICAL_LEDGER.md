@@ -83,9 +83,14 @@ When documents conflict, use this order:
   cycle-aware root rehydration. Phase 6M adds guarded append-style text log
   commits that size-bound and validate existing logs as the store value type
   before extension and avoid live-store mutation on corrupt, empty,
-  type-invalid, or oversized persistence files. This is not the production
-  allocator-integrated Bacon-Rajan collector, runtime finalizer path, or
-  pluggable persistence backend.
+  type-invalid, or oversized persistence files. Phase 6N adds a fixed typed
+  episodic cache backend at `.garnet-cache/episodic/episodes.mnemos` with
+  canonical project-root pathing, symlink/non-regular rejection, pre-read size
+  bounds, OS-backed lockfile serialization on Unix/Windows, private Unix permissions,
+  concurrent append preservation, and cycle-aware root rehydration. This is not the production
+  allocator-integrated Bacon-Rajan collector, runtime finalizer path, broad
+  pluggable persistence backend, or CLI signed NDJSON advisory-cache trust
+  layer.
 - Compiler-as-agent cache privacy now has Phase 6F executable evidence:
   absolute paths inside the active project are persisted as stable relative
   labels, while external absolute paths are redacted to `<external>/<file>`.
