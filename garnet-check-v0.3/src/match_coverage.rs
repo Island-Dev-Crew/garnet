@@ -10,8 +10,9 @@
 //! proven direct closure call-effect invalidation for local branch-selected
 //! closures. It also recognizes immutable local, same-module top-level, and
 //! named/glob imported top-level boolean constants, same-module and
-//! named/glob imported top-level integer constants, narrow boolean const
-//! aliases, and basic boolean const expressions in match guards, and rejects
+//! named/glob imported top-level integer constants, static symbol/plain-string
+//! equality and inequality facts, narrow boolean const aliases, and basic
+//! boolean const expressions in match guards, and rejects
 //! duplicate literal arms and arms after catch-all arms in otherwise open-domain
 //! matches. Boolean const `and`/`or` folding honors decisive left operands
 //! without requiring the right operand to resolve, and boolean const equality /
@@ -56,17 +57,19 @@ enum GuardCoverage {
     Unknown,
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 enum ConstFact {
     Bool(bool),
     Int(i64),
+    Symbol(String),
+    Str(String),
 }
 
 impl ConstFact {
-    fn as_bool(self) -> Option<bool> {
+    fn into_bool(self) -> Option<bool> {
         match self {
             ConstFact::Bool(value) => Some(value),
-            ConstFact::Int(_) => None,
+            ConstFact::Int(_) | ConstFact::Symbol(_) | ConstFact::Str(_) => None,
         }
     }
 
@@ -74,6 +77,8 @@ impl ConstFact {
         match (self, other) {
             (ConstFact::Bool(lhs), ConstFact::Bool(rhs)) => Some(lhs == rhs),
             (ConstFact::Int(lhs), ConstFact::Int(rhs)) => Some(lhs == rhs),
+            (ConstFact::Symbol(lhs), ConstFact::Symbol(rhs)) => Some(lhs == rhs),
+            (ConstFact::Str(lhs), ConstFact::Str(rhs)) => Some(lhs == rhs),
             _ => None,
         }
     }
@@ -205,10 +210,12 @@ impl Checker {
         match expr {
             Expr::Bool(value, _) => Some(ConstFact::Bool(*value)),
             Expr::Int(value, _) => Some(ConstFact::Int(*value)),
+            Expr::Symbol(value, _) => Some(ConstFact::Symbol(value.clone())),
+            Expr::Str(value, _) => plain_string_literal(value).map(ConstFact::Str),
             Expr::Ident(name, _) => {
                 let mut path = module_path.to_vec();
                 path.push(name.clone());
-                self.const_guard_facts.get(&path).copied()
+                self.const_guard_facts.get(&path).cloned()
             }
             Expr::Path(path, _) => self.resolve_const_fact_path_from_module(path, module_path),
             Expr::Unary {
@@ -217,7 +224,7 @@ impl Checker {
                 ..
             } => self
                 .const_fact_from_expr(expr, module_path)
-                .and_then(ConstFact::as_bool)
+                .and_then(ConstFact::into_bool)
                 .map(|value| ConstFact::Bool(!value)),
             Expr::Unary {
                 op: UnOp::Neg,
@@ -236,11 +243,11 @@ impl Checker {
                 rhs,
                 ..
             } => {
-                let lhs = self.const_fact_from_expr(lhs, module_path)?.as_bool()?;
+                let lhs = self.const_fact_from_expr(lhs, module_path)?.into_bool()?;
                 if !lhs {
                     Some(ConstFact::Bool(false))
                 } else {
-                    let rhs = self.const_fact_from_expr(rhs, module_path)?.as_bool()?;
+                    let rhs = self.const_fact_from_expr(rhs, module_path)?.into_bool()?;
                     Some(ConstFact::Bool(rhs))
                 }
             }
@@ -250,11 +257,11 @@ impl Checker {
                 rhs,
                 ..
             } => {
-                let lhs = self.const_fact_from_expr(lhs, module_path)?.as_bool()?;
+                let lhs = self.const_fact_from_expr(lhs, module_path)?.into_bool()?;
                 if lhs {
                     Some(ConstFact::Bool(true))
                 } else {
-                    let rhs = self.const_fact_from_expr(rhs, module_path)?.as_bool()?;
+                    let rhs = self.const_fact_from_expr(rhs, module_path)?.into_bool()?;
                     Some(ConstFact::Bool(rhs))
                 }
             }
@@ -360,7 +367,7 @@ impl Checker {
                             scope.enum_imports.insert(name.clone(), base_path.clone());
                         }
                         if let Some(value) = self.const_guard_facts.get(&base_path) {
-                            scope.guard_facts.insert(name.clone(), *value);
+                            scope.guard_facts.insert(name.clone(), value.clone());
                         }
                     }
                 }
@@ -372,7 +379,7 @@ impl Checker {
                             scope.enum_imports.insert(name.clone(), path.clone());
                         }
                         if let Some(value) = self.const_guard_facts.get(&path) {
-                            scope.guard_facts.insert(name.clone(), *value);
+                            scope.guard_facts.insert(name.clone(), value.clone());
                         }
                     }
                 }
@@ -1296,7 +1303,7 @@ impl Checker {
         scope: &Scope,
     ) -> Option<bool> {
         self.guard_value_from_match_guard(expr, guard_facts, scope)?
-            .as_bool()
+            .into_bool()
     }
 
     fn guard_value_from_match_guard(
@@ -1308,7 +1315,9 @@ impl Checker {
         match expr {
             Expr::Bool(value, _) => Some(ConstFact::Bool(*value)),
             Expr::Int(value, _) => Some(ConstFact::Int(*value)),
-            Expr::Ident(name, _) => guard_facts.get(name).copied(),
+            Expr::Symbol(value, _) => Some(ConstFact::Symbol(value.clone())),
+            Expr::Str(value, _) => plain_string_literal(value).map(ConstFact::Str),
+            Expr::Ident(name, _) => guard_facts.get(name).cloned(),
             Expr::Path(path, _) => self.resolve_const_fact_path(path, scope),
             Expr::Unary {
                 op: UnOp::Not,
@@ -1316,7 +1325,7 @@ impl Checker {
                 ..
             } => self
                 .guard_value_from_match_guard(expr, guard_facts, scope)
-                .and_then(ConstFact::as_bool)
+                .and_then(ConstFact::into_bool)
                 .map(|value| ConstFact::Bool(!value)),
             Expr::Unary {
                 op: UnOp::Neg,
@@ -1339,13 +1348,13 @@ impl Checker {
             } => {
                 let lhs = self
                     .guard_value_from_match_guard(lhs, guard_facts, scope)?
-                    .as_bool()?;
+                    .into_bool()?;
                 if !lhs {
                     Some(ConstFact::Bool(false))
                 } else {
                     let rhs = self
                         .guard_value_from_match_guard(rhs, guard_facts, scope)?
-                        .as_bool()?;
+                        .into_bool()?;
                     Some(ConstFact::Bool(rhs))
                 }
             }
@@ -1357,13 +1366,13 @@ impl Checker {
             } => {
                 let lhs = self
                     .guard_value_from_match_guard(lhs, guard_facts, scope)?
-                    .as_bool()?;
+                    .into_bool()?;
                 if lhs {
                     Some(ConstFact::Bool(true))
                 } else {
                     let rhs = self
                         .guard_value_from_match_guard(rhs, guard_facts, scope)?
-                        .as_bool()?;
+                        .into_bool()?;
                     Some(ConstFact::Bool(rhs))
                 }
             }
@@ -1442,7 +1451,7 @@ impl Checker {
         path: &[String],
     ) {
         if let Some(value) = self.const_guard_facts.get(path) {
-            candidates.insert(path.to_vec(), *value);
+            candidates.insert(path.to_vec(), value.clone());
         }
     }
 
@@ -1459,7 +1468,7 @@ impl Checker {
             .filter_map(|(path, value)| {
                 path.split_last()
                     .filter(|(_, parent)| parent == &module_path)
-                    .map(|_| (path.clone(), *value))
+                    .map(|_| (path.clone(), value.clone()))
             })
             .collect()
     }
@@ -1589,7 +1598,7 @@ fn join_branch_guard_facts(branch_base: &GuardFacts, branch_facts: &[GuardFacts]
                 continue 'bindings;
             }
         }
-        joined.insert(name.clone(), *value);
+        joined.insert(name.clone(), value.clone());
     }
     joined
 }
@@ -1899,7 +1908,9 @@ fn local_guard_fact_from_expr(expr: &Expr, guard_facts: &GuardFacts) -> Option<C
     match expr {
         Expr::Bool(value, _) => Some(ConstFact::Bool(*value)),
         Expr::Int(value, _) => Some(ConstFact::Int(*value)),
-        Expr::Ident(name, _) => guard_facts.get(name).copied(),
+        Expr::Symbol(value, _) => Some(ConstFact::Symbol(value.clone())),
+        Expr::Str(value, _) => plain_string_literal(value).map(ConstFact::Str),
+        Expr::Ident(name, _) => guard_facts.get(name).cloned(),
         _ => None,
     }
 }
@@ -2046,6 +2057,17 @@ fn describe_string_literal(value: &StringLit) -> String {
             StrPart::Interp(_) => "#{...}",
         })
         .collect()
+}
+
+fn plain_string_literal(value: &StringLit) -> Option<String> {
+    let mut text = String::new();
+    for part in &value.parts {
+        match part {
+            StrPart::Lit(part) => text.push_str(part),
+            StrPart::Interp(_) => return None,
+        }
+    }
+    Some(text)
 }
 
 fn remove_pattern_bindings(pattern: &Pattern, env: &mut Env) {

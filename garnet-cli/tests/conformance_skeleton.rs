@@ -2528,6 +2528,73 @@ fn guarded_status_code(status: Status, LIMIT: Int) -> Int {
         "expected parameter-shadowed imported integer identifier to stay unknown, got:\n{stdout}"
     );
 
+    let symbol_const_equality_true_guard_complete_src = r#"
+module Core {
+  const MODE = :ready
+}
+
+module Flags {
+  const ALWAYS = Core::MODE == :ready
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let symbol_const_equality_true_guard_complete_path = temp_source(
+        "match_symbol_const_equality_true_guard_enum_complete",
+        symbol_const_equality_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &symbol_const_equality_true_guard_complete_path);
+    assert_ok(&["check"], &symbol_const_equality_true_guard_complete_path);
+
+    let string_const_inequality_false_guard_missing_src = r#"
+module Core {
+  const LABEL = "ready"
+}
+
+module Flags {
+  const NEVER = Core::LABEL != "ready"
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let string_const_inequality_false_guard_missing_path = temp_source(
+        "match_string_const_inequality_false_guard_enum_missing",
+        string_const_inequality_false_guard_missing_src,
+    );
+    assert_ok(
+        &["parse"],
+        &string_const_inequality_false_guard_missing_path,
+    );
+    let out = run(
+        &["check"],
+        &string_const_inequality_false_guard_missing_path,
+    );
+    assert!(
+        !out.status.success(),
+        "safe-mode false string const inequality guards must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected string const inequality false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
     let open_literal_duplicate_src = r#"
 fn classify(value: Int) -> Int {
   match value {

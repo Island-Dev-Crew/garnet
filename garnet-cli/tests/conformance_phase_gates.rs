@@ -171,6 +171,8 @@ fn match_exhaustiveness_handle_documents_active_partial_scope() {
         "match_imported_named_integer_const_identifier_guard_enum_complete",
         "match_imported_glob_integer_const_identifier_false_guard_enum_missing",
         "match_imported_integer_const_identifier_shadowed_by_param_missing",
+        "match_symbol_const_equality_true_guard_enum_complete",
+        "match_string_const_inequality_false_guard_enum_missing",
         "match_open_literal_duplicate_unreachable",
         "match_open_arm_after_catch_all_unreachable",
         "non-exhaustive match",

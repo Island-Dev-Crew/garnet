@@ -2049,6 +2049,67 @@ fn function_parameter_shadows_imported_integer_const_guard_fact() {
 }
 
 #[test]
+fn symbol_const_equality_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const MODE = :ready
+        }
+
+        module Flags {
+            const ALWAYS = Core::MODE == :ready
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true symbol const equality guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_string_const_inequality_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LABEL = "ready"
+        }
+
+        module Flags {
+            const NEVER = Core::LABEL != "ready"
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false string const inequality guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
 fn safe_open_literal_match_rejects_duplicate_literal_arm() {
     let errs = check(
         r#"

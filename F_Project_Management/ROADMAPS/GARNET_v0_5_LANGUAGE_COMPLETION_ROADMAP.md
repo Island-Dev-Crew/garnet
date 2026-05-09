@@ -988,6 +988,25 @@ imported integer identifiers remain unknown/non-covering. Cross-file/package
 imports, non-integer comparison, function-call evaluation, recursion, and
 broader const expression evaluation remain deferred.
 
+- [x] **Step 2ZN: Fold literal symbol and string const equality facts**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage symbol_const_equality
+cargo test -p garnet-check --test match_coverage false_string_const_inequality
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AS extends the narrow const guard fact domain to static
+symbols and plain non-interpolated strings for equality/inequality checks.
+`Core::MODE == :ready` counts as coverage, and `Core::LABEL != "ready"` is
+statically false/non-covering. Interpolated strings, ordering comparisons,
+function-call evaluation, recursion, cross-file/package imports, and broader
+const expression evaluation remain deferred.
+
 ## Phase 5: Traits, Coherence, And Monomorphization
 
 **Intent:** Make the Rust-rigor side credible without overclaiming zero-cost guarantees.
