@@ -583,6 +583,28 @@ fn caller(own b: Buffer, c: Bool) -> Int {
         temp_source("borrow_returning_branch_liveness", returning_branch_src);
     assert_ok(&["parse"], &returning_branch_path);
     assert_ok(&["check"], &returning_branch_path);
+
+    let returning_loop_src = r#"
+fn consume(own x: Buffer) -> Int {
+  0
+}
+
+fn read(borrow x: Buffer) -> Int {
+  0
+}
+
+fn caller(own b: Buffer, c: Bool) -> Int {
+  while c {
+    consume(b)
+    return 0
+  }
+  read(b)
+  0
+}
+"#;
+    let returning_loop_path = temp_source("borrow_returning_loop_liveness", returning_loop_src);
+    assert_ok(&["parse"], &returning_loop_path);
+    assert_ok(&["check"], &returning_loop_path);
 }
 
 #[test]

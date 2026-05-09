@@ -356,6 +356,25 @@ lifetimes, variance, dynamic places, generic receiver types, trait impl
 dispatch, broader scope/branch drop elaboration, and two-phase borrows remain
 pending.
 
+- [x] **Step 2D: Stop borrow scans at direct returns and returning loop bodies**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test borrow return
+cargo test -p garnet-cli --test conformance_skeleton deferred_full_borrow_rule_suite
+```
+
+Evidence: Phase 4I reuses the branch-outcome liveness helper for function
+bodies and loop bodies. Direct `return` terminates block scanning, and values
+moved in direct-returning `while`/`loop` bodies can be borrowed after the loop
+on paths where the loop body does not execute.
+
+Remaining: full CFG NLL, nested/non-local terminators, general loop fixed-point
+analysis, for-loop liveness, closure capture lifetimes, variance, dynamic
+places, generic receiver types, trait impl dispatch, broader scope/branch drop
+elaboration, and two-phase borrows remain pending.
+
 ## Phase 5: Traits, Coherence, And Monomorphization
 
 **Intent:** Make the Rust-rigor side credible without overclaiming zero-cost guarantees.

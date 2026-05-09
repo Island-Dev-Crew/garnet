@@ -286,12 +286,7 @@ fn check_fn_body(f: &FnDef, sigs: &SignatureTables, diags: &mut Vec<CheckError>)
     for p in &f.params {
         env.rebind_with_type(&p.name, p.ty.as_ref());
     }
-    for stmt in &f.body.stmts {
-        check_stmt(stmt, &mut env, sigs, &f.name, diags);
-    }
-    if let Some(tail) = &f.body.tail_expr {
-        check_expr(tail, &mut env, sigs, &f.name, diags);
-    }
+    let _ = check_branch_block(&f.body, &env, sigs, &f.name, diags);
 }
 
 fn check_branch_block(
@@ -351,11 +346,12 @@ fn check_stmt(
             condition, body, ..
         } => {
             check_expr(condition, env, sigs, fn_name, diags);
-            for s in &body.stmts {
-                check_stmt(s, env, sigs, fn_name, diags);
-            }
-            if let Some(tail) = &body.tail_expr {
-                check_expr(tail, env, sigs, fn_name, diags);
+            let snapshot = env.clone();
+            let outcome = check_branch_block(body, &snapshot, sigs, fn_name, diags);
+            if outcome.continues {
+                *env = outcome.env;
+            } else {
+                *env = snapshot;
             }
         }
         Stmt::For {
@@ -372,11 +368,12 @@ fn check_stmt(
             }
         }
         Stmt::Loop { body, .. } => {
-            for s in &body.stmts {
-                check_stmt(s, env, sigs, fn_name, diags);
-            }
-            if let Some(tail) = &body.tail_expr {
-                check_expr(tail, env, sigs, fn_name, diags);
+            let snapshot = env.clone();
+            let outcome = check_branch_block(body, &snapshot, sigs, fn_name, diags);
+            if outcome.continues {
+                *env = outcome.env;
+            } else {
+                *env = snapshot;
             }
         }
         Stmt::Break { value, .. }

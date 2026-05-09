@@ -60,10 +60,14 @@ When documents conflict, use this order:
   places passed to multiple `own` parameters in one call, preventing same-call
   double-drop hazards for the same binding or parent/child place. Phase 4H adds
   direct-returning branch liveness: moves in branch bodies that return from the
-  function no longer poison later code on paths that can still continue. Full
-  Rust-grade CFG NLL, nested/non-local terminators, loops, dynamic places,
-  broader drop elaboration, and generic/trait impl dispatch remain roadmap work,
-  not current truth.
+  function no longer poison later code on paths that can still continue. Phase
+  4I adds direct-return block and loop-body liveness: statements after a direct
+  `return` are not borrow-checked, and moves inside direct-returning
+  `while`/`loop` bodies no longer poison paths after the loop that only exist
+  when the body does not run. Full Rust-grade CFG NLL, nested/non-local
+  terminators, general loop fixed-point analysis, for-loop liveness, dynamic
+  places, broader drop elaboration, and generic/trait impl dispatch remain
+  roadmap work, not current truth.
 - Trait coherence now has an active conservative checker slice: exact duplicate
   trait impls and orphan impls where neither trait nor type is local reject,
   simple generic blanket-vs-concrete and renamed blanket impl overlaps reject,

@@ -204,6 +204,48 @@ fn move_in_returning_else_branch_does_not_propagate_after_if() {
     );
 }
 
+#[test]
+fn statements_after_return_are_not_borrow_checked() {
+    let src = r#"
+        fn consume(own x: Buffer) -> Int { 0 }
+        fn read(borrow x: Buffer) -> Int { 0 }
+        fn caller(own b: Buffer) -> Int {
+            consume(b)
+            return 0
+            read(b)
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        !d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "unreachable statements after return should not poison safe-mode liveness, got {d:?}"
+    );
+}
+
+#[test]
+fn move_in_returning_while_body_does_not_poison_after_loop() {
+    let src = r#"
+        fn consume(own x: Buffer) -> Int { 0 }
+        fn read(borrow x: Buffer) -> Int { 0 }
+        fn caller(own b: Buffer, c: Bool) -> Int {
+            while c {
+                consume(b)
+                return 0
+            }
+            read(b)
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        !d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "a move in a while body that returns should not poison paths where the loop body never runs, got {d:?}"
+    );
+}
+
 // ── Method receivers ──
 
 #[test]
