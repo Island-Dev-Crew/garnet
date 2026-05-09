@@ -582,7 +582,9 @@ invalidation and uninvoked closure-definition boundaries are covered in Step
 Step 2U below; branch-joined local closure-literal binding call invalidation
 is covered in Step 2V below; branch-rebound local closure-literal binding call
 invalidation is covered in Step 2W below; direct local closure-alias binding
-call invalidation is covered in Step 2X below; branch-joined local closure-alias call invalidation is covered in Step 2Y below; loop fixed-point and broader
+call invalidation is covered in Step 2X below; branch-joined local closure-alias
+call invalidation is covered in Step 2Y below; direct branch-selected closure
+expression call invalidation is covered in Step 2Z below; loop fixed-point and broader
 mutable/escaped/general higher-order closure invocation/call-effect
 flow, cross-file/package imports, recursive/open payload reasoning, richer type
 inference, open-domain exhaustiveness/range reasoning, and non-literal guard
@@ -731,6 +733,20 @@ branch-selected direct aliases and clears finite match-domain evidence when that
 alias is called directly, while preserving unknown behavior when a branch-local
 shadowed tail is not a known closure. Escaped closures, general higher-order
 calls, and broader mutable closure flow remain deferred.
+
+- [x] **Step 2Z: Invalidate direct branch-selected closure expression calls**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage direct_branch
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4AE reuses the known local closure-effect extractor for direct
+calls whose callee is an all-path branch expression. It clears finite
+match-domain evidence for branch-selected closure writes while preserving
+unknown behavior when a branch-local shadowed tail is not a known closure.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 

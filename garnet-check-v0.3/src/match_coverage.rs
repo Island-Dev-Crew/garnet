@@ -5,13 +5,14 @@
 //! aliases, finite nested constructor payloads, and literal `true`/`false`
 //! guards whose type is visible from parameter metadata, local annotations,
 //! local boolean/enum variant initializers, or direct mutable-local
-//! assignments, including conservative `if`/`elsif`/`else` branch joins and
-//! nested all-path `if` assignment joins inside branch bodies. It also rejects
-//! duplicate literal arms and arms after catch-all arms in otherwise
-//! open-domain matches. It does not attempt full type inference,
-//! loop fixed-point or broader mutable/escaped/general higher-order closure
-//! call-effect analysis, recursive/open payload coverage, or non-literal guard
-//! reasoning.
+//! assignments, including conservative `if`/`elsif`/`else` branch joins,
+//! nested all-path `if` assignment joins inside branch bodies, and narrowly
+//! proven direct closure call-effect invalidation for local branch-selected
+//! closures. It also rejects duplicate literal arms and arms after catch-all
+//! arms in otherwise open-domain matches. It does not attempt full type
+//! inference, loop fixed-point or broader mutable/escaped/general higher-order
+//! closure call-effect analysis, recursive/open payload coverage, or
+//! non-literal guard reasoning.
 
 use crate::CheckError;
 use garnet_parser::ast::{
@@ -345,15 +346,8 @@ impl Checker {
                 for arg in args {
                     self.walk_expr(arg, fn_name, env, closure_effects, scope);
                 }
-                let assigned = match callee.as_ref() {
-                    Expr::Closure { params, body, .. } => maybe_assigned_outer_targets_in_closure(
-                        params,
-                        body.as_ref(),
-                        &BTreeSet::new(),
-                    ),
-                    Expr::Ident(name, _) => closure_effects.get(name).cloned().unwrap_or_default(),
-                    _ => BTreeSet::new(),
-                };
+                let assigned =
+                    closure_effect_from_value(callee, closure_effects).unwrap_or_default();
                 for target in assigned {
                     env.remove(&target);
                 }

@@ -107,7 +107,10 @@ When documents conflict, use this order:
   4AA carries local closure effects through all-branch `if` expression closure
   returns. Phase 4AB joins local closure-effect maps after all-path branch
   rebinding of closure literals to an existing binding. Phase 4AC copies known
-  local closure effects through direct local aliases. Phase 4AD carries known local closure effects through all-path branch-selected direct aliases while respecting branch-local shadowing. Full
+  local closure effects through direct local aliases. Phase 4AD carries known
+  local closure effects through all-path branch-selected direct aliases while
+  respecting branch-local shadowing. Phase 4AE reuses that proof for direct
+  calls whose callee is an all-path branch-selected closure expression. Full
   Rust-grade CFG NLL, nested/non-local terminators, general loop fixed-point
   analysis, loop fixed-point domain inference, broader mutable/escaped/general higher-order closure invocation/call-effect analysis, cross-file/package
   imports, recursive/open payload reasoning, broader expression/type
