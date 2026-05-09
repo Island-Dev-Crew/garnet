@@ -2925,6 +2925,104 @@ fn guarded_status_code(status: Status) -> Int {
         "expected float const relational false-guard and missing-case diagnostics, got:\n{stdout}"
     );
 
+    let finite_float_const_arithmetic_true_guard_complete_src = r#"
+module Core {
+  const RATIO = 1.5
+}
+
+module Flags {
+  const ALWAYS = Core::RATIO + 0.5 == 2.0
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let finite_float_const_arithmetic_true_guard_complete_path = temp_source(
+        "match_finite_float_const_arithmetic_true_guard_enum_complete",
+        finite_float_const_arithmetic_true_guard_complete_src,
+    );
+    assert_ok(
+        &["parse"],
+        &finite_float_const_arithmetic_true_guard_complete_path,
+    );
+    assert_ok(
+        &["check"],
+        &finite_float_const_arithmetic_true_guard_complete_path,
+    );
+
+    let int_float_const_arithmetic_true_guard_complete_src = r#"
+module Core {
+  const COUNT = 2
+}
+
+module Flags {
+  const ALWAYS = Core::COUNT * 1.5 >= 3.0
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let int_float_const_arithmetic_true_guard_complete_path = temp_source(
+        "match_int_float_const_arithmetic_true_guard_enum_complete",
+        int_float_const_arithmetic_true_guard_complete_src,
+    );
+    assert_ok(
+        &["parse"],
+        &int_float_const_arithmetic_true_guard_complete_path,
+    );
+    assert_ok(
+        &["check"],
+        &int_float_const_arithmetic_true_guard_complete_path,
+    );
+
+    let float_const_arithmetic_false_guard_missing_src = r#"
+module Core {
+  const RATIO = 1.5
+}
+
+module Flags {
+  const NEVER = Core::RATIO * 2.0 < 3.0
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let float_const_arithmetic_false_guard_missing_path = temp_source(
+        "match_float_const_arithmetic_false_guard_enum_missing",
+        float_const_arithmetic_false_guard_missing_src,
+    );
+    assert_ok(&["parse"], &float_const_arithmetic_false_guard_missing_path);
+    let out = run(&["check"], &float_const_arithmetic_false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode false float const arithmetic guards must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected float const arithmetic false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
     let open_literal_duplicate_src = r#"
 fn classify(value: Int) -> Int {
   match value {

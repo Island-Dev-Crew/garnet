@@ -26,7 +26,7 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | Structural protocol satisfaction and runtime casts | Partial Phase 2H | `Item::Protocol` and `Expr::Cast` parse; `deferred_structural_protocols` checks protocol-typed managed parameters, runtime `as Protocol` casts, static/dynamic methods, mode/arity/parameter/return annotation mismatches, generic protocol substitution, core built-in typed method signatures, and `@dynamic impl` methods | Add broader trait/generic coherence |
 | Actor protocol enforcement and `Sendable` | Partial Phase 3D | actor runtime crate exists; `actor_sendable_rejects_nonsendable_protocol_payloads` rejects `@nonsendable` actor protocol payloads before runtime; managed interpreter now registers actors, dispatches `spawn Actor.handler(args)` synchronously, creates `spawn Actor` addresses with persistent actor-local state, enforces bounded source mailboxes through `Actor.spawn(capacity)`, and ships a generated `agent-orchestrator` actor template that runs/tests through managed actor addresses; full async OS-thread bridge remains partial | Bridge generated actor projects to the full async `garnet-actor-runtime` OS-thread address/mailbox runtime |
 | Rust-grade NLL and borrow rules | Partial Phase 4L | `garnet-check-v0.3/src/borrow.rs`; `garnet-check-v0.3/src/lib.rs`; `garnet-check-v0.3/tests/borrow.rs`; `garnet-check-v0.3/tests/extended.rs`; `partial_borrow_rule_suite` rejects direct use-after-move, direct mut-aliasing, `own self` method receiver moves, method receiver aliasing, simple typed receiver disambiguation, simple field-place aliasing/field use-after-move, and conservative index-place aliasing/index use-after-move while checking nested index operands; `deferred_full_borrow_rule_suite` now covers B5 same-call overlapping `own` drop discipline, direct-returning branch liveness, direct `return` block termination, direct-returning loop-body liveness, scoped `for` loop-variable liveness, scoped `match` pattern binding liveness, match guard move merging, and match-arm block statement preservation; `deferred_nll_lifetime_inference` covers conservative reference-return lifetime elision | Activate full CFG NLL, dynamic place tracking, generic/trait impl dispatch, broader drop elaboration, general loop fixed-point analysis, and two-phase borrows |
-| Pattern match exhaustiveness/reachability | Partial Phase 4AW | `garnet-check-v0.3/src/match_coverage.rs`; `garnet-check-v0.3/tests/match_coverage.rs`; `deferred_match_exhaustiveness_and_reachability` rejects non-exhaustive safe-mode `Bool`, same-module enum, finite nested-constructor, and scoped named/glob/module-qualified imported enum alias matches, treats unknown guarded arms as non-covering, counts literal `if true` arms as coverage, rejects literal `if false` arms as statically unreachable, rejects duplicate finite covered arms, rejects open-domain duplicate literal arms plus arms after unguarded catch-all patterns, infers finite match domains from immutable local boolean/enum variant initializers, tracks direct mutable-local finite assignments plus non-finite assignment invalidation, joins finite match-domain evidence across conservative `if`/`elsif`/`else` assignment branches, carries nested `if` all-path assignment joins inside branch bodies, explicitly invalidates finite evidence after compound assignments, conservatively invalidates after possible loop-body assignments with ordered shadowing checks, invalidates after possible `try`/`rescue`/`ensure` writes, prevents uninvoked closure literal bodies from merging assignment domains into enclosing flow, invalidates after direct closure-literal invocations, invalidates after directly called local closure-literal bindings, invalidates after branch-joined local closure-literal binding calls, invalidates after all-path branch rebindings of local closure-literal bindings, invalidates after direct aliases of known local closure-literal bindings, invalidates after all-path branch-selected direct aliases of known local closure bindings, invalidates after direct calls to all-path branch-selected closure expressions, recognizes immutable local boolean guard constants while keeping mutable guard locals unknown, and recognizes same-module, scoped named/glob imported, and path-qualified top-level boolean `const` guard constants, narrow boolean const aliases, and basic boolean const expressions, including left-decisive short-circuit `and`/`or` plus boolean equality/inequality comparisons, the same conservative boolean folding directly in match guard expressions, and checked integer arithmetic plus equality/inequality and relational comparisons, same-module bare-name plus scoped named/glob imported integer const identifier forms, and static nil/symbol/plain-string equality/inequality const guards, mixed known-literal equality/inequality facts, plus finite float equality/inequality, int-float equality, and finite float/int-float relational facts, while preserving parameter shadowing | Add cross-file/package imports, recursive/open payload reasoning, non-finite floats, interpolated strings, broader non-numeric comparison, function-call, and broader const expression evaluation, loop fixed-point domain inference, broader mutable/escaped/general higher-order closure invocation/call-effect analysis, broader expression/type inference, open-domain exhaustiveness/range reasoning, and richer non-literal guard-aware diagnostics |
+| Pattern match exhaustiveness/reachability | Partial Phase 4AX | `garnet-check-v0.3/src/match_coverage.rs`; `garnet-check-v0.3/tests/match_coverage.rs`; `deferred_match_exhaustiveness_and_reachability` rejects non-exhaustive safe-mode `Bool`, same-module enum, finite nested-constructor, and scoped named/glob/module-qualified imported enum alias matches, treats unknown guarded arms as non-covering, counts literal `if true` arms as coverage, rejects literal `if false` arms as statically unreachable, rejects duplicate finite covered arms, rejects open-domain duplicate literal arms plus arms after unguarded catch-all patterns, infers finite match domains from immutable local boolean/enum variant initializers, tracks direct mutable-local finite assignments plus non-finite assignment invalidation, joins finite match-domain evidence across conservative `if`/`elsif`/`else` assignment branches, carries nested `if` all-path assignment joins inside branch bodies, explicitly invalidates finite evidence after compound assignments, conservatively invalidates after possible loop-body assignments with ordered shadowing checks, invalidates after possible `try`/`rescue`/`ensure` writes, prevents uninvoked closure literal bodies from merging assignment domains into enclosing flow, invalidates after direct closure-literal invocations, invalidates after directly called local closure-literal bindings, invalidates after branch-joined local closure-literal binding calls, invalidates after all-path branch rebindings of local closure-literal bindings, invalidates after direct aliases of known local closure-literal bindings, invalidates after all-path branch-selected direct aliases of known local closure bindings, invalidates after direct calls to all-path branch-selected closure expressions, recognizes immutable local boolean guard constants while keeping mutable guard locals unknown, and recognizes same-module, scoped named/glob imported, and path-qualified top-level boolean `const` guard constants, narrow boolean const aliases, and basic boolean const expressions, including left-decisive short-circuit `and`/`or` plus boolean equality/inequality comparisons, the same conservative boolean folding directly in match guard expressions, and checked integer arithmetic plus equality/inequality and relational comparisons, same-module bare-name plus scoped named/glob imported integer const identifier forms, and static nil/symbol/plain-string equality/inequality const guards, mixed known-literal equality/inequality facts, plus finite float equality/inequality, int-float equality, finite float/int-float relational facts, and finite float/int-float arithmetic facts, while preserving parameter shadowing | Add cross-file/package imports, recursive/open payload reasoning, non-finite floats, interpolated strings, broader non-numeric comparison, broader float edge-case reasoning, function-call, and broader const expression evaluation, loop fixed-point domain inference, broader mutable/escaped/general higher-order closure invocation/call-effect analysis, broader expression/type inference, open-domain exhaustiveness/range reasoning, and richer non-literal guard-aware diagnostics |
 | Trait coherence | Partial Phase 5C | `garnet-check-v0.3/src/coherence.rs`; `garnet-check-v0.3/tests/coherence.rs`; `deferred_trait_coherence` rejects exact duplicate trait impls, orphan-rule violations, simple generic blanket-vs-concrete overlaps, renamed generic blanket overlaps, and qualified external type short-name collisions while allowing local-trait, local-type, and qualified local-module impls | Activate specialization and imported-package coherence solving |
 | Generic instantiation / monomorphization | Partial Phase 5B | `generic_instantiation_runs_without_monomorphization_claims` runs generic struct construction, a generic impl method, and a generic function through the managed interpreter | Keep native zero-cost monomorphization deferred until a compiler backend exists |
 | Memory Core ARC/cycles and allocator integration | Partial Phase 6L | `garnet-memory-v0.3/src/{alloc,cycle,working,episodic,semantic,procedural}.rs`; `garnet-memory-v0.3/tests/{cycle,properties,persistence}.rs`; active `deferred_arc_cycle_detection`; `CycleAllocatorFixture` owns graph + root buffer for root/edge decrement scheduling; all four stores expose kind-aware allocator stats; policy-configured episodic/semantic stores evict lazily on read/search; `CycleAwareKindAllocator` observes store-root retain/release lifecycles on write, clear, eviction, replacement, and drop; `EpisodeStore::save_text` / `load_text` now prove versioned episodic text snapshot recovery, delimiter-safe payload encoding, malformed-file non-mutation, and cycle-aware root rehydration | Promote the bounded allocator-owned fixture model into production allocator-integrated ARC and broaden persistence/backend hardening beyond the reference episodic snapshot slice |
@@ -1225,7 +1225,7 @@ Extend the same narrow integer guard fact domain from equality/inequality to
 literal integer `<`, `<=`, `>`, and `>=` comparisons. This lets safe-mode
 match coverage treat `Core::LIMIT < 3` and `Core::LIMIT >= 2` as coverage and
 `Core::LIMIT > 3` as statically false/non-covering while still deferring
-arithmetic, non-integer/broader non-numeric comparison, function-call, recursive, and
+arithmetic, broader non-numeric comparison, broader float edge-case reasoning, function-call, recursive, and
 cross-file/package const evaluation.
 
 Run:
@@ -1241,7 +1241,7 @@ cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_han
 Evidence: Phase 4AP accepts alias and direct match guards covered by true
 integer const relational expressions, rejects false integer const relational
 guards as statically unreachable/non-covering, and leaves arithmetic,
-non-integer/broader non-numeric comparison, function-call, recursive, cross-file/package,
+broader non-numeric comparison, broader float edge-case reasoning, function-call, recursive, cross-file/package,
 and broader const expression evaluation deferred.
 
 - [x] **Step 2ZL: Fold checked integer arithmetic guard facts**
@@ -1251,7 +1251,7 @@ literal integer arithmetic (`+`, `-`, `*`, `/`, `%`, unary `-`) inside const
 guard expressions. This lets safe-mode match coverage treat
 `Core::LIMIT + Core::OFFSET == 3` and `Core::LIMIT + 1 >= 3` as coverage and
 `Core::LIMIT * 2 < 4` as statically false/non-covering while still deferring
-non-integer/broader non-numeric comparison, function-call, recursive, cross-file/package,
+broader non-numeric comparison, broader float edge-case reasoning, function-call, recursive, cross-file/package,
 and broader const expression evaluation.
 
 Run:
@@ -1266,7 +1266,7 @@ cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_han
 Evidence: Phase 4AQ accepts alias and direct match guards covered by checked
 integer arithmetic plus comparison/equality expressions, rejects false checked
 integer arithmetic guards as statically unreachable/non-covering, and leaves
-non-integer/broader non-numeric comparison, function-call, recursive, cross-file/package,
+broader non-numeric comparison, broader float edge-case reasoning, function-call, recursive, cross-file/package,
 and broader const expression evaluation deferred.
 
 - [x] **Step 2ZM: Carry integer const facts through scoped guard identifiers**
@@ -1410,6 +1410,32 @@ cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_han
 Evidence: Phase 4AW accepts true finite-float and int-float const relational
 guards, rejects false finite-float relational guards as statically
 unreachable/non-covering, and keeps non-finite float facts unknown/non-covering.
+
+- [x] **Step 2ZS: Fold finite float const arithmetic facts**
+
+Align the narrow `ConstFact` arithmetic rule with checked integer arithmetic
+plus Garnet runtime numeric arithmetic for finite `Float`/`Float`,
+`Int`/`Float`, and `Float`/`Int` pairs. This lets safe-mode match coverage
+treat `Core::RATIO + 0.5 == 2.0` and `Core::COUNT * 1.5 >= 3.0` as coverage
+while `Core::RATIO * 2.0 < 3.0` becomes statically false/non-covering.
+Overflow-to-infinity, non-finite float facts, interpolated strings, function
+calls, cross-file/package imports, recursion, broader non-numeric comparison,
+broader float edge-case reasoning, and broader const expression evaluation
+remain deferred.
+
+Run:
+
+```sh
+cargo test -p garnet-check --test match_coverage float_const_arithmetic
+cargo test -p garnet-check --test match_coverage non_finite_float_arithmetic
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AX accepts true finite-float and int-float const arithmetic
+guards, rejects false finite-float arithmetic guards as statically
+unreachable/non-covering, and keeps overflow-to-infinity facts unknown.
 
 ## Milestone 5: Traits, Coherence, And Generic Instantiation
 

@@ -2445,6 +2445,128 @@ fn non_finite_float_relational_guard_stays_unknown_and_non_covering() {
 }
 
 #[test]
+fn finite_float_const_arithmetic_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const RATIO = 1.5
+        }
+
+        module Flags {
+            const ALWAYS = Core::RATIO + 0.5 == 2.0
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true finite float const arithmetic guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn int_float_const_arithmetic_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const COUNT = 2
+        }
+
+        module Flags {
+            const ALWAYS = Core::COUNT * 1.5 >= 3.0
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true int-float const arithmetic guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_float_const_arithmetic_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const RATIO = 1.5
+        }
+
+        module Flags {
+            const NEVER = Core::RATIO * 2.0 < 3.0
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false finite float const arithmetic guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn non_finite_float_arithmetic_guard_stays_unknown_and_non_covering() {
+    let errs = check(
+        r#"
+        module Core {
+            const BIG = 1.0e308
+        }
+
+        module Flags {
+            const ALWAYS = Core::BIG * 1.0e308 == Core::BIG
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready")
+            && !has_safe_violation(&errs, "statically false guard"),
+        "overflowing float arithmetic guards should stay unknown and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
 fn non_finite_float_const_guard_stays_unknown_and_non_covering() {
     let errs = check(
         r#"

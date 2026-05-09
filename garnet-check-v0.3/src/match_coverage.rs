@@ -20,9 +20,9 @@
 //! over already-resolved boolean facts. Direct
 //! boolean match guards use the same conservative folding. Narrow integer
 //! arithmetic plus equality/inequality and relational guard comparisons, along
-//! with finite-float equality/inequality and relational guard comparisons, fold
-//! over the same fact domain using checked or runtime-aligned numeric rules. It
-//! does not attempt
+//! with finite-float equality/inequality, relational, and arithmetic guard
+//! comparisons, fold over the same fact domain using checked or runtime-aligned
+//! numeric rules. It does not attempt
 //! full type inference, loop fixed-point inference, broader
 //! mutable/escaped/general higher-order closure call-effect analysis,
 //! recursive/open payload coverage, or broader non-literal guard reasoning.
@@ -114,21 +114,24 @@ impl ConstFact {
         }
     }
 
-    fn int_arith(self, other: Self, op: BinOp) -> Option<Self> {
-        let (ConstFact::Int(lhs), ConstFact::Int(rhs)) = (self, other) else {
-            return None;
-        };
-
-        let value = match op {
-            BinOp::Add => lhs.checked_add(rhs)?,
-            BinOp::Sub => lhs.checked_sub(rhs)?,
-            BinOp::Mul => lhs.checked_mul(rhs)?,
-            BinOp::Div => lhs.checked_div(rhs)?,
-            BinOp::Mod => lhs.checked_rem(rhs)?,
-            _ => return None,
-        };
-
-        Some(ConstFact::Int(value))
+    fn numeric_arith(self, other: Self, op: BinOp) -> Option<Self> {
+        match (self, other) {
+            (ConstFact::Int(lhs), ConstFact::Int(rhs)) => {
+                let value = match op {
+                    BinOp::Add => lhs.checked_add(rhs)?,
+                    BinOp::Sub => lhs.checked_sub(rhs)?,
+                    BinOp::Mul => lhs.checked_mul(rhs)?,
+                    BinOp::Div => lhs.checked_div(rhs)?,
+                    BinOp::Mod => lhs.checked_rem(rhs)?,
+                    _ => return None,
+                };
+                Some(ConstFact::Int(value))
+            }
+            (ConstFact::Float(lhs), ConstFact::Float(rhs)) => float_arith(lhs, rhs, op, true),
+            (ConstFact::Int(lhs), ConstFact::Float(rhs)) => float_arith(lhs as f64, rhs, op, false),
+            (ConstFact::Float(lhs), ConstFact::Int(rhs)) => float_arith(lhs, rhs as f64, op, false),
+            _ => None,
+        }
     }
 }
 
@@ -321,7 +324,7 @@ impl Checker {
             } => {
                 let lhs = self.const_fact_from_expr(lhs, module_path)?;
                 let rhs = self.const_fact_from_expr(rhs, module_path)?;
-                lhs.int_arith(rhs, *op)
+                lhs.numeric_arith(rhs, *op)
             }
             Expr::Binary { .. } => None,
             _ => None,
@@ -1431,7 +1434,7 @@ impl Checker {
             } => {
                 let lhs = self.guard_value_from_match_guard(lhs, guard_facts, scope)?;
                 let rhs = self.guard_value_from_match_guard(rhs, guard_facts, scope)?;
-                lhs.int_arith(rhs, *op)
+                lhs.numeric_arith(rhs, *op)
             }
             Expr::Binary { .. } => None,
             _ => None,
@@ -2091,6 +2094,19 @@ fn plain_string_literal(value: &StringLit) -> Option<String> {
 
 fn finite_float_fact(value: f64) -> Option<ConstFact> {
     value.is_finite().then_some(ConstFact::Float(value))
+}
+
+fn float_arith(lhs: f64, rhs: f64, op: BinOp, allow_mod: bool) -> Option<ConstFact> {
+    let value = match op {
+        BinOp::Add => lhs + rhs,
+        BinOp::Sub => lhs - rhs,
+        BinOp::Mul => lhs * rhs,
+        BinOp::Div if rhs != 0.0 => lhs / rhs,
+        BinOp::Mod if allow_mod => lhs % rhs,
+        _ => return None,
+    };
+
+    finite_float_fact(value)
 }
 
 fn remove_pattern_bindings(pattern: &Pattern, env: &mut Env) {

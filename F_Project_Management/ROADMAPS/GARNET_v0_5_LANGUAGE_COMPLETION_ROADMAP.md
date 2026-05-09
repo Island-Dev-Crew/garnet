@@ -1083,6 +1083,27 @@ function-call evaluation, recursion, cross-file/package imports, broader
 non-numeric comparison, and broader const expression evaluation remain
 deferred.
 
+- [x] **Step 2ZS: Fold finite float const arithmetic facts**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage float_const_arithmetic
+cargo test -p garnet-check --test match_coverage non_finite_float_arithmetic
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AX aligns arithmetic `ConstFact` folding with checked integer
+arithmetic plus runtime numeric arithmetic for finite `Float`/`Float`,
+`Int`/`Float`, and `Float`/`Int` pairs. `Core::RATIO + 0.5 == 2.0` and
+`Core::COUNT * 1.5 >= 3.0` count as coverage, `Core::RATIO * 2.0 < 3.0` is
+statically false/non-covering, and overflow-to-infinity remains unknown.
+Interpolated strings, function-call evaluation, recursion, cross-file/package
+imports, broader non-numeric comparison, broader float edge-case reasoning, and
+broader const expression evaluation remain deferred.
+
 ## Phase 5: Traits, Coherence, And Monomorphization
 
 **Intent:** Make the Rust-rigor side credible without overclaiming zero-cost guarantees.

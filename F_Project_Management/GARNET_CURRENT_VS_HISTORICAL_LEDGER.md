@@ -141,7 +141,8 @@ When documents conflict, use this order:
   equality semantics across mixed known literal kinds for equality/inequality
   const guard facts. Phase 4AV adds finite float equality/inequality facts and
   runtime-aligned int-float equality. Phase 4AW adds finite float/int-float
-  relational facts while keeping non-finite floats unknown. Full
+  relational facts. Phase 4AX adds finite float/int-float arithmetic facts while
+  keeping non-finite floats and overflow-to-infinity facts unknown. Full
   Rust-grade CFG NLL, nested/non-local terminators, general loop fixed-point
   analysis, loop fixed-point domain inference, broader mutable/escaped/general higher-order closure invocation/call-effect analysis, cross-file/package
   imports, non-finite floats, interpolated strings, broader non-numeric comparison,
