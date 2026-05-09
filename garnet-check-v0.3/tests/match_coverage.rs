@@ -136,6 +136,51 @@ fn guarded_enum_arm_does_not_make_safe_match_exhaustive() {
 }
 
 #[test]
+fn true_guarded_enum_arm_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if true => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "literal true guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_guarded_enum_arm_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if false => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "literal false guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
 fn safe_match_rejects_duplicate_covered_arm() {
     let errs = check(
         r#"

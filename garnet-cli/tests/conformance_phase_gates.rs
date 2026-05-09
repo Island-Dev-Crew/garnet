@@ -111,8 +111,11 @@ fn match_exhaustiveness_handle_documents_active_partial_scope() {
         "match_nested_enum_payload_complete",
         "match_imported_enum_named_complete",
         "match_imported_enum_named_missing",
+        "match_true_guard_enum_complete",
+        "match_false_guard_enum_missing",
         "non-exhaustive match",
         "unreachable match arm",
+        "statically false guard",
     ] {
         assert!(
             body.contains(needle),

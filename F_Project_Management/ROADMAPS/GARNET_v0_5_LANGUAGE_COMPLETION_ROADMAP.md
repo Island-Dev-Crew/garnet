@@ -483,8 +483,21 @@ resolved to the finite enum domain, while pattern coverage accepts the source
 alias prefix such as `Status::Ready` in addition to the canonical
 `Types::Status::Ready`.
 
+- [x] **Step 2K: Add literal guard match coverage reasoning**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage guard
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4P treats literal `if true` match guards as safe coverage and
+literal `if false` guards as statically unreachable/non-covering. Non-literal
+guards still remain non-covering until a later predicate-proof pass exists.
+
 Remaining: cross-file/package imports, recursive/open payload reasoning, richer
-type inference, open-domain literal reasoning, and general guard reasoning
+type inference, open-domain literal reasoning, and non-literal guard reasoning
 remain pending.
 
 ## Phase 5: Traits, Coherence, And Monomorphization

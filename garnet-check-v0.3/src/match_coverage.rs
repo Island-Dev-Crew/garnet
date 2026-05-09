@@ -2,9 +2,10 @@
 //!
 //! This is intentionally a narrow semantic slice: it proves exhaustiveness and
 //! simple reachability for `Bool`, same-module enum subjects, imported enum
-//! aliases, and finite nested constructor payloads whose type is visible from
-//! parameter or local annotation metadata. It does not attempt full type
-//! inference, recursive/open payload coverage, or guard reasoning.
+//! aliases, finite nested constructor payloads, and literal `true`/`false`
+//! guards whose type is visible from parameter or local annotation metadata. It
+//! does not attempt full type inference, recursive/open payload coverage, or
+//! non-literal guard reasoning.
 
 use crate::CheckError;
 use garnet_parser::ast::{
@@ -29,6 +30,14 @@ struct VariantInfo {
 enum FiniteDomain {
     Bool,
     Enum(EnumDomain),
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+enum GuardCoverage {
+    Unguarded,
+    AlwaysTrue,
+    AlwaysFalse,
+    Unknown,
 }
 
 #[derive(Debug, Clone)]
@@ -382,8 +391,15 @@ impl Checker {
                 )));
             }
 
-            if arm.guard.is_some() {
-                continue;
+            match guard_coverage(&arm.guard) {
+                GuardCoverage::AlwaysFalse => {
+                    self.errors.push(CheckError::SafeModeViolation(format!(
+                        "unreachable match arm in safe function '{fn_name}': pattern {pattern} has a statically false guard"
+                    )));
+                    continue;
+                }
+                GuardCoverage::Unknown => continue,
+                GuardCoverage::Unguarded | GuardCoverage::AlwaysTrue => {}
             }
 
             if is_catch_all(&arm.pattern) {
@@ -723,6 +739,15 @@ fn is_catch_all(pattern: &Pattern) -> bool {
         pattern,
         Pattern::Ident(_, _) | Pattern::Wildcard(_) | Pattern::Rest(_)
     )
+}
+
+fn guard_coverage(guard: &Option<Expr>) -> GuardCoverage {
+    match guard {
+        None => GuardCoverage::Unguarded,
+        Some(Expr::Bool(true, _)) => GuardCoverage::AlwaysTrue,
+        Some(Expr::Bool(false, _)) => GuardCoverage::AlwaysFalse,
+        Some(_) => GuardCoverage::Unknown,
+    }
 }
 
 fn describe_pattern(pattern: &Pattern) -> String {

@@ -82,11 +82,13 @@ When documents conflict, use this order:
   glob, module-qualified, and module-relative enum imports for the coverage
   pass, letting alias prefixes such as `Status::Ready` cover the canonical
   `Types::Status::Ready` case without falling back to a global short-name
-  search. Full Rust-grade CFG
+  search. Phase 4P adds literal guard reasoning so `if true` arms count as
+  coverage and `if false` arms are rejected as statically unreachable while
+  staying non-covering. Full Rust-grade CFG
   NLL, nested/non-local terminators, general loop fixed-point analysis,
-  cross-file/package imports, recursive/open payload reasoning, dynamic places,
-  broader drop elaboration, and generic/trait impl dispatch remain roadmap
-  work, not current truth.
+  cross-file/package imports, recursive/open payload reasoning, non-literal
+  guard reasoning, dynamic places, broader drop elaboration, and generic/trait
+  impl dispatch remain roadmap work, not current truth.
 - Trait coherence now has an active conservative checker slice: exact duplicate
   trait impls and orphan impls where neither trait nor type is local reject,
   simple generic blanket-vs-concrete and renamed blanket impl overlaps reject,

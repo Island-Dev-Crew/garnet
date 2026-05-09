@@ -940,6 +940,47 @@ fn imported_status_code(status: Status) -> Int {
         stdout.contains("non-exhaustive match") && stdout.contains("Types::Status::Done"),
         "expected missing imported enum diagnostic, got:\n{stdout}"
     );
+
+    let true_guard_complete_src = r#"
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if true => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let true_guard_complete_path =
+        temp_source("match_true_guard_enum_complete", true_guard_complete_src);
+    assert_ok(&["parse"], &true_guard_complete_path);
+    assert_ok(&["check"], &true_guard_complete_path);
+
+    let false_guard_missing_src = r#"
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if false => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let false_guard_missing_path =
+        temp_source("match_false_guard_enum_missing", false_guard_missing_src);
+    assert_ok(&["parse"], &false_guard_missing_path);
+    let out = run(&["check"], &false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode false literal guards must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
 }
 
 #[test]
