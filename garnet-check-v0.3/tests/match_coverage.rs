@@ -1193,6 +1193,117 @@ fn function_parameter_shadows_const_bool_guard_fact() {
 }
 
 #[test]
+fn imported_named_true_const_bool_guard_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Flags {
+            const ALWAYS = true
+        }
+        use Flags::{ALWAYS}
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "imported named true const guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn imported_glob_false_const_bool_guard_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Flags {
+            const NEVER = false
+        }
+        use Flags::*
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "imported glob false const guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn function_parameter_shadows_imported_const_bool_guard_fact() {
+    let errs = check(
+        r#"
+        module Flags {
+            const ALWAYS = true
+        }
+        use Flags::{ALWAYS}
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status, ALWAYS: Bool) -> Int {
+            match status {
+                Status::Ready if ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "parameter shadowing should keep imported const guard facts out of coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn module_relative_imported_const_bool_guard_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Outer {
+            module Flags {
+                const ALWAYS = true
+            }
+            use Flags::{ALWAYS}
+
+            enum Status { Ready, Done }
+
+            fn status_code(status: Status) -> Int {
+                match status {
+                    Status::Ready if ALWAYS => 1
+                    Status::Done => 2
+                }
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "module-relative imported true const guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
 fn safe_open_literal_match_rejects_duplicate_literal_arm() {
     let errs = check(
         r#"

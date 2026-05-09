@@ -8,12 +8,13 @@
 //! assignments, including conservative `if`/`elsif`/`else` branch joins,
 //! nested all-path `if` assignment joins inside branch bodies, and narrowly
 //! proven direct closure call-effect invalidation for local branch-selected
-//! closures. It also recognizes immutable local and same-module top-level
-//! boolean constants in match guards, and rejects duplicate literal arms and
-//! arms after catch-all arms in otherwise open-domain matches. It does not
-//! attempt full type inference, loop fixed-point inference, broader
-//! mutable/escaped/general higher-order closure call-effect analysis,
-//! recursive/open payload coverage, or broader non-literal guard reasoning.
+//! closures. It also recognizes immutable local, same-module top-level, and
+//! named/glob imported top-level boolean constants in match guards, and rejects
+//! duplicate literal arms and arms after catch-all arms in otherwise open-domain
+//! matches. It does not attempt full type inference, loop fixed-point
+//! inference, broader mutable/escaped/general higher-order closure call-effect
+//! analysis, recursive/open payload coverage, or broader non-literal guard
+//! reasoning.
 
 use crate::CheckError;
 use garnet_parser::ast::{
@@ -66,6 +67,7 @@ struct Scope {
 #[derive(Debug, Default)]
 struct Checker {
     enums: BTreeMap<Vec<String>, EnumInfo>,
+    const_guard_facts: BTreeMap<Vec<String>, bool>,
     scopes: BTreeMap<Vec<String>, Scope>,
     errors: Vec<CheckError>,
 }
@@ -77,6 +79,7 @@ type GuardFacts = BTreeMap<String, bool>;
 pub fn check_match_coverage(module: &Module) -> Vec<CheckError> {
     let mut checker = Checker::default();
     checker.collect_enums(&module.items, &[]);
+    checker.collect_const_guard_facts(&module.items, &[]);
     checker.collect_scopes(&module.items, &[]);
     checker.check_items(&module.items, module.safe, &[]);
     checker.errors
@@ -113,6 +116,22 @@ impl Checker {
         }
     }
 
+    fn collect_const_guard_facts(&mut self, items: &[Item], prefix: &[String]) {
+        for (name, value) in collect_top_level_guard_facts(items) {
+            let mut path = prefix.to_vec();
+            path.push(name);
+            self.const_guard_facts.insert(path, value);
+        }
+
+        for item in items {
+            if let Item::Module(module) = item {
+                let mut nested = prefix.to_vec();
+                nested.push(module.name.clone());
+                self.collect_const_guard_facts(&module.items, &nested);
+            }
+        }
+    }
+
     fn collect_scopes(&mut self, items: &[Item], module_path: &[String]) {
         let scope = self.build_scope(items, module_path);
         self.scopes.insert(module_path.to_vec(), scope);
@@ -131,7 +150,7 @@ impl Checker {
             module_path: module_path.to_vec(),
             ..Scope::default()
         };
-        scope.guard_facts = collect_top_level_guard_facts(items);
+        scope.guard_facts = self.same_module_const_guard_facts(module_path);
 
         for item in items {
             let Item::Use(use_decl) = item else {
@@ -149,6 +168,9 @@ impl Checker {
                         if self.enums.contains_key(&base_path) {
                             scope.enum_imports.insert(name.clone(), base_path.clone());
                         }
+                        if let Some(value) = self.const_guard_facts.get(&base_path) {
+                            scope.guard_facts.insert(name.clone(), *value);
+                        }
                     }
                 }
                 UseImports::Named(names) => {
@@ -156,11 +178,19 @@ impl Checker {
                         let mut path = base_path.clone();
                         path.push(name.clone());
                         if self.enums.contains_key(&path) {
-                            scope.enum_imports.insert(name.clone(), path);
+                            scope.enum_imports.insert(name.clone(), path.clone());
+                        }
+                        if let Some(value) = self.const_guard_facts.get(&path) {
+                            scope.guard_facts.insert(name.clone(), *value);
                         }
                     }
                 }
                 UseImports::Glob => {
+                    for (path, value) in self.const_guard_facts_in_module(&base_path) {
+                        if let Some(name) = path.last() {
+                            scope.guard_facts.insert(name.clone(), value);
+                        }
+                    }
                     scope.glob_imports.push(base_path);
                 }
             }
@@ -1016,13 +1046,13 @@ impl Checker {
 
     fn canonical_use_path(&self, path: &[String], module_path: &[String]) -> Option<Vec<String>> {
         let mut candidates = BTreeSet::new();
-        if self.enum_path_or_prefix_exists(path) {
+        if self.use_path_or_prefix_exists(path) {
             candidates.insert(path.to_vec());
         }
         if !module_path.is_empty() {
             let mut relative = module_path.to_vec();
             relative.extend_from_slice(path);
-            if self.enum_path_or_prefix_exists(&relative) {
+            if self.use_path_or_prefix_exists(&relative) {
                 candidates.insert(relative);
             }
         }
@@ -1034,10 +1064,38 @@ impl Checker {
         }
     }
 
+    fn use_path_or_prefix_exists(&self, path: &[String]) -> bool {
+        self.enum_path_or_prefix_exists(path) || self.const_path_or_prefix_exists(path)
+    }
+
     fn enum_path_or_prefix_exists(&self, path: &[String]) -> bool {
         self.enums
             .keys()
             .any(|enum_path| enum_path.as_slice().starts_with(path))
+    }
+
+    fn const_path_or_prefix_exists(&self, path: &[String]) -> bool {
+        self.const_guard_facts
+            .keys()
+            .any(|const_path| const_path.as_slice().starts_with(path))
+    }
+
+    fn same_module_const_guard_facts(&self, module_path: &[String]) -> GuardFacts {
+        self.const_guard_facts_in_module(module_path)
+            .into_iter()
+            .filter_map(|(path, value)| path.last().map(|name| (name.clone(), value)))
+            .collect()
+    }
+
+    fn const_guard_facts_in_module(&self, module_path: &[String]) -> Vec<(Vec<String>, bool)> {
+        self.const_guard_facts
+            .iter()
+            .filter_map(|(path, value)| {
+                path.split_last()
+                    .filter(|(_, parent)| parent == &module_path)
+                    .map(|_| (path.clone(), *value))
+            })
+            .collect()
     }
 }
 

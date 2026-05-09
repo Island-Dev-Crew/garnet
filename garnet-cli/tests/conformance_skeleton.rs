@@ -1563,6 +1563,58 @@ fn guarded_status_code(status: Status) -> Int {
     assert_ok(&["parse"], &const_true_guard_complete_path);
     assert_ok(&["check"], &const_true_guard_complete_path);
 
+    let imported_const_true_guard_complete_src = r#"
+module Flags {
+  const ALWAYS = true
+}
+use Flags::{ALWAYS}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let imported_const_true_guard_complete_path = temp_source(
+        "match_imported_const_true_guard_enum_complete",
+        imported_const_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &imported_const_true_guard_complete_path);
+    assert_ok(&["check"], &imported_const_true_guard_complete_path);
+
+    let module_relative_imported_const_true_guard_complete_src = r#"
+module Outer {
+  module Flags {
+    const ALWAYS = true
+  }
+  use Flags::{ALWAYS}
+
+  enum Status { Ready, Done }
+
+  fn guarded_status_code(status: Status) -> Int {
+    match status {
+      Status::Ready if ALWAYS => 1
+      Status::Done => 2
+    }
+  }
+}
+"#;
+    let module_relative_imported_const_true_guard_complete_path = temp_source(
+        "match_module_relative_imported_const_true_guard_enum_complete",
+        module_relative_imported_const_true_guard_complete_src,
+    );
+    assert_ok(
+        &["parse"],
+        &module_relative_imported_const_true_guard_complete_path,
+    );
+    assert_ok(
+        &["check"],
+        &module_relative_imported_const_true_guard_complete_path,
+    );
+
     let mutable_guard_missing_src = r#"
 enum Status { Ready, Done }
 
@@ -1615,6 +1667,37 @@ fn guarded_status_code(status: Status, ALWAYS: Bool) -> Int {
     assert!(
         stdout.contains("non-exhaustive match") && stdout.contains("Status::Ready"),
         "expected parameter-shadowed const guard to stay non-covering, got:\n{stdout}"
+    );
+
+    let shadowed_imported_const_guard_missing_src = r#"
+module Flags {
+  const ALWAYS = true
+}
+use Flags::{ALWAYS}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status, ALWAYS: Bool) -> Int {
+  match status {
+    Status::Ready if ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let shadowed_imported_const_guard_missing_path = temp_source(
+        "match_imported_const_guard_shadowed_by_param_missing",
+        shadowed_imported_const_guard_missing_src,
+    );
+    assert_ok(&["parse"], &shadowed_imported_const_guard_missing_path);
+    let out = run(&["check"], &shadowed_imported_const_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode parameter shadowing must keep same-name imported const boolean guards unknown"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("non-exhaustive match") && stdout.contains("Status::Ready"),
+        "expected parameter-shadowed imported const guard to stay non-covering, got:\n{stdout}"
     );
 
     let false_guard_missing_src = r#"
@@ -1699,6 +1782,39 @@ fn guarded_status_code(status: Status) -> Int {
             && stdout.contains("non-exhaustive match")
             && stdout.contains("Status::Ready"),
         "expected const false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let imported_const_false_guard_missing_src = r#"
+module Flags {
+  const NEVER = false
+}
+use Flags::*
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let imported_const_false_guard_missing_path = temp_source(
+        "match_imported_const_false_guard_enum_missing",
+        imported_const_false_guard_missing_src,
+    );
+    assert_ok(&["parse"], &imported_const_false_guard_missing_path);
+    let out = run(&["check"], &imported_const_false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode imported const false guards must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected imported const false-guard and missing-case diagnostics, got:\n{stdout}"
     );
 
     let open_literal_duplicate_src = r#"

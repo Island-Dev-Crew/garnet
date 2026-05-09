@@ -586,11 +586,13 @@ call invalidation is covered in Step 2X below; branch-joined local closure-alias
 call invalidation is covered in Step 2Y below; direct branch-selected closure
 expression call invalidation is covered in Step 2Z below; immutable local
 boolean guard constants are covered in Step 2ZA below; same-module top-level
-boolean guard constants are covered in Step 2ZB below; loop fixed-point and
+boolean guard constants are covered in Step 2ZB below; scoped named/glob
+imported top-level boolean guard constants are covered in Step 2ZC below; loop fixed-point and
 broader mutable/escaped/general higher-order closure invocation/call-effect
 flow, cross-file/package imports, recursive/open payload reasoning, richer type
-inference, open-domain exhaustiveness/range reasoning, and broader non-literal
-guard reasoning remain pending.
+inference, module-qualified/path const guard expressions, open-domain
+exhaustiveness/range reasoning, and broader non-literal guard reasoning remain
+pending.
 
 - [x] **Step 2P: Join nested if assignment domains inside branch bodies**
 
@@ -780,6 +782,24 @@ Evidence: Phase 4AG seeds guard facts from same-module top-level boolean
 `const NEVER = false` guards are statically false and non-covering, and
 function parameters with the same name shadow the const fact so parameterized
 guards remain conservative.
+
+- [x] **Step 2ZC: Recognize imported top-level boolean guard constants**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage imported
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AH resolves scoped named and glob imports of top-level boolean
+`const` guard facts. Named-imported and module-relative imported true const
+guards count as coverage, glob-imported false const guards are statically false
+and non-covering, and function parameters with the same name shadow the
+imported const fact so parameterized guards remain conservative.
+Module-qualified/path const guard expressions and broad const evaluation remain
+deferred.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 
