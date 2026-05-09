@@ -409,11 +409,33 @@ snapshot before merging arm move state. A pattern-local move no longer poisons
 a same-named outer binding, while a real outer move inside a match arm still
 propagates after the match.
 
-Remaining: full CFG NLL, match-arm block statement preservation,
-nested/non-local terminators, general loop fixed-point analysis, closure
-capture lifetimes, variance, dynamic places, generic receiver types, trait impl
-dispatch, broader scope/branch drop elaboration, and two-phase borrows remain
-pending.
+Remaining: full CFG NLL, nested/non-local terminators, general loop fixed-point
+analysis, closure capture lifetimes, variance, dynamic places, generic receiver
+types, trait impl dispatch, broader scope/branch drop elaboration, and
+two-phase borrows remain pending.
+
+- [x] **Step 2G: Preserve `match` arm block statements before arm tail values**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-parser --test parse_control_flow parses_match_arm_block_with_statements_and_tail
+cargo test -p garnet-interp --test eval_control match_arm_block_preserves_statements_before_tail
+cargo test -p garnet-check --test borrow match_arm_block_statement_move_still_propagates_after_match
+cargo test -p garnet-cli --test conformance_skeleton deferred_full_borrow_rule_suite
+```
+
+Evidence: Phase 4L stores each match-arm body as a full `Block`, wraps
+expression arms as tail-only blocks, evaluates matched arm blocks with normal
+block semantics, walks arm blocks for capability/safe-mode inventory, and
+checks arm block statements for moves before merging arm state. Statements
+before a match-arm tail now execute and produce borrow diagnostics, and guard
+moves still merge when the guard can fail before a returning arm body runs.
+
+Remaining: full CFG NLL, nested/non-local terminators, general loop fixed-point
+analysis, closure capture lifetimes, variance, dynamic places, generic receiver
+types, trait impl dispatch, broader scope/branch drop elaboration, and
+two-phase borrows remain pending.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 

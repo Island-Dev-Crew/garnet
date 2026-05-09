@@ -25,7 +25,7 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | Dynamic method dispatch tables | Partial Phase 2H | `deferred_dynamic_dispatch` covers per-instance method tables; `static_impl_dispatch_and_method_missing` covers static inherent impl fallback and `method_missing`; `dynamic_impl_dispatch_tables` covers `@dynamic impl Type for Protocol` registration and dispatch | Add richer dispatch precedence and ambiguity probes |
 | Structural protocol satisfaction and runtime casts | Partial Phase 2H | `Item::Protocol` and `Expr::Cast` parse; `deferred_structural_protocols` checks protocol-typed managed parameters, runtime `as Protocol` casts, static/dynamic methods, mode/arity/parameter/return annotation mismatches, generic protocol substitution, core built-in typed method signatures, and `@dynamic impl` methods | Add broader trait/generic coherence |
 | Actor protocol enforcement and `Sendable` | Partial Phase 3D | actor runtime crate exists; `actor_sendable_rejects_nonsendable_protocol_payloads` rejects `@nonsendable` actor protocol payloads before runtime; managed interpreter now registers actors, dispatches `spawn Actor.handler(args)` synchronously, creates `spawn Actor` addresses with persistent actor-local state, enforces bounded source mailboxes through `Actor.spawn(capacity)`, and ships a generated `agent-orchestrator` actor template that runs/tests through managed actor addresses; full async OS-thread bridge remains partial | Bridge generated actor projects to the full async `garnet-actor-runtime` OS-thread address/mailbox runtime |
-| Rust-grade NLL and borrow rules | Partial Phase 4K | `garnet-check-v0.3/src/borrow.rs`; `garnet-check-v0.3/src/lib.rs`; `garnet-check-v0.3/tests/borrow.rs`; `garnet-check-v0.3/tests/extended.rs`; `partial_borrow_rule_suite` rejects direct use-after-move, direct mut-aliasing, `own self` method receiver moves, method receiver aliasing, simple typed receiver disambiguation, simple field-place aliasing/field use-after-move, and conservative index-place aliasing/index use-after-move while checking nested index operands; `deferred_full_borrow_rule_suite` now covers B5 same-call overlapping `own` drop discipline, direct-returning branch liveness, direct `return` block termination, direct-returning loop-body liveness, scoped `for` loop-variable liveness, and scoped `match` pattern binding liveness; `deferred_nll_lifetime_inference` covers conservative reference-return lifetime elision | Activate full CFG NLL, dynamic place tracking, match-arm block statement preservation, generic/trait impl dispatch, broader drop elaboration, general loop fixed-point analysis, and two-phase borrows |
+| Rust-grade NLL and borrow rules | Partial Phase 4L | `garnet-check-v0.3/src/borrow.rs`; `garnet-check-v0.3/src/lib.rs`; `garnet-check-v0.3/tests/borrow.rs`; `garnet-check-v0.3/tests/extended.rs`; `partial_borrow_rule_suite` rejects direct use-after-move, direct mut-aliasing, `own self` method receiver moves, method receiver aliasing, simple typed receiver disambiguation, simple field-place aliasing/field use-after-move, and conservative index-place aliasing/index use-after-move while checking nested index operands; `deferred_full_borrow_rule_suite` now covers B5 same-call overlapping `own` drop discipline, direct-returning branch liveness, direct `return` block termination, direct-returning loop-body liveness, scoped `for` loop-variable liveness, scoped `match` pattern binding liveness, match guard move merging, and match-arm block statement preservation; `deferred_nll_lifetime_inference` covers conservative reference-return lifetime elision | Activate full CFG NLL, dynamic place tracking, generic/trait impl dispatch, broader drop elaboration, general loop fixed-point analysis, and two-phase borrows |
 | Trait coherence | Partial Phase 5C | `garnet-check-v0.3/src/coherence.rs`; `garnet-check-v0.3/tests/coherence.rs`; `deferred_trait_coherence` rejects exact duplicate trait impls, orphan-rule violations, simple generic blanket-vs-concrete overlaps, renamed generic blanket overlaps, and qualified external type short-name collisions while allowing local-trait, local-type, and qualified local-module impls | Activate specialization and imported-package coherence solving |
 | Generic instantiation / monomorphization | Partial Phase 5B | `generic_instantiation_runs_without_monomorphization_claims` runs generic struct construction, a generic impl method, and a generic function through the managed interpreter | Keep native zero-cost monomorphization deferred until a compiler backend exists |
 | Memory Core ARC/cycles and allocator integration | Partial Phase 6L | `garnet-memory-v0.3/src/{alloc,cycle,working,episodic,semantic,procedural}.rs`; `garnet-memory-v0.3/tests/{cycle,properties,persistence}.rs`; active `deferred_arc_cycle_detection`; `CycleAllocatorFixture` owns graph + root buffer for root/edge decrement scheduling; all four stores expose kind-aware allocator stats; policy-configured episodic/semantic stores evict lazily on read/search; `CycleAwareKindAllocator` observes store-root retain/release lifecycles on write, clear, eviction, replacement, and drop; `EpisodeStore::save_text` / `load_text` now prove versioned episodic text snapshot recovery, delimiter-safe payload encoding, malformed-file non-mutation, and cycle-aware root rehydration | Promote the bounded allocator-owned fixture model into production allocator-integrated ARC and broaden persistence/backend hardening beyond the reference episodic snapshot slice |
@@ -563,10 +563,39 @@ environment. A moved pattern-local `item` no longer causes a later `read(item)`
 of an outer binding to fail, while `_ => consume(item)` still reports
 use-after-move for a real outer move.
 
-Remaining: full CFG region solving, match-arm block statement preservation,
-nested/non-local terminators, general loop fixed-point analysis, closure
-capture lifetimes, variance, dynamic places, generic receiver types, trait impl
-dispatch, broader drop elaboration, and two-phase borrows are still deferred.
+Remaining: full CFG region solving, nested/non-local terminators, general loop
+fixed-point analysis, closure capture lifetimes, variance, dynamic places,
+generic receiver types, trait impl dispatch, broader drop elaboration, and
+two-phase borrows are still deferred.
+
+- [x] **Step 2G: Preserve `match` arm block statements before arm tail values**
+
+Keep every `match` arm body as a full block in the parser and downstream
+walkers instead of reducing `{ stmt* tail }` arms to only the tail expression.
+This makes managed execution, capability inventory, and safe-mode borrow
+checking observe statements before the arm tail.
+
+Run:
+
+```sh
+cargo test -p garnet-parser --test parse_control_flow parses_match_arm_block_with_statements_and_tail
+cargo test -p garnet-interp --test eval_control match_arm_block_preserves_statements_before_tail
+cargo test -p garnet-check --test borrow match_arm_block_statement_move_still_propagates_after_match
+cargo test -p garnet-cli --test conformance_skeleton deferred_full_borrow_rule_suite
+```
+
+Evidence: Phase 4L changes `MatchArm.body` to `Block`, wraps expression arms
+as one-tail blocks, evaluates matched arm blocks with normal block semantics,
+walks match-arm blocks for capability/safe-mode inventory, and routes
+safe-mode arm bodies through branch-block checking. A `let` before the tail now
+affects a matched arm result, a move statement inside a match-arm block now
+propagates to later use-after-move diagnostics, and moves in guards are still
+merged when a guard can fail before a returning arm body runs.
+
+Remaining: full CFG region solving, nested/non-local terminators, general loop
+fixed-point analysis, closure capture lifetimes, variance, dynamic places,
+generic receiver types, trait impl dispatch, broader drop elaboration, and
+two-phase borrows are still deferred.
 
 ## Milestone 5: Traits, Coherence, And Generic Instantiation
 

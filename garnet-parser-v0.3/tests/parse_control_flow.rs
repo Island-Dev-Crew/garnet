@@ -1,6 +1,6 @@
 //! Control flow parser tests — if/elsif/else, match, try/rescue/ensure.
 
-use garnet_parser::ast::{Expr, Item};
+use garnet_parser::ast::{Expr, Item, Stmt};
 use garnet_parser::parse_source;
 
 fn expr_of(src: &str) -> Expr {
@@ -106,6 +106,22 @@ fn parses_match_with_symbol_pattern() {
 fn parses_match_with_wildcard() {
     match expr_of("match v { _ => 0, }") {
         Expr::Match { arms, .. } => assert_eq!(arms.len(), 1),
+        _ => panic!("expected match"),
+    }
+}
+
+#[test]
+fn parses_match_arm_block_with_statements_and_tail() {
+    match expr_of("match v { _ => { let shifted = 41; shifted }, }") {
+        Expr::Match { arms, .. } => {
+            assert_eq!(arms.len(), 1);
+            assert_eq!(arms[0].body.stmts.len(), 1);
+            assert!(matches!(arms[0].body.stmts[0], Stmt::Let(_)));
+            assert!(matches!(
+                arms[0].body.tail_expr.as_deref(),
+                Some(Expr::Ident(_, _))
+            ));
+        }
         _ => panic!("expected match"),
     }
 }

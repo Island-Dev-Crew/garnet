@@ -548,11 +548,19 @@ fn check_expr(
                 if let Some(g) = &arm.guard {
                     check_expr(g, &mut arm_env, sigs, fn_name, diags);
                 }
-                check_expr(&arm.body, &mut arm_env, sigs, fn_name, diags);
+                let mut guard_env = arm_env.clone();
+                let arm_outcome = check_branch_block(&arm.body, &arm_env, sigs, fn_name, diags);
+                let arm_continues = arm_outcome.continues;
+                arm_env = arm_outcome.env;
                 for binding in &pattern_bindings {
+                    guard_env.restore_binding_from(binding, &snapshot);
                     arm_env.restore_binding_from(binding, &snapshot);
                 }
-                merged_moved.extend(arm_env.moved);
+                if arm_continues {
+                    merged_moved.extend(arm_env.moved);
+                } else if arm.guard.is_some() {
+                    merged_moved.extend(guard_env.moved);
+                }
             }
             env.moved = merged_moved;
         }

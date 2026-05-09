@@ -194,6 +194,24 @@ fn match_with_guard() {
 }
 
 #[test]
+fn match_arm_block_preserves_statements_before_tail() {
+    let src = r#"
+        def bump(n) {
+            match n {
+                x => {
+                    let shifted = x + 1
+                    shifted
+                }
+            }
+        }
+    "#;
+    let mut interp = Interpreter::new();
+    interp.load_source(src).unwrap();
+    let r = interp.call("bump", vec![Value::Int(41)]).unwrap();
+    assert!(matches!(r, Value::Int(42)));
+}
+
+#[test]
 fn try_rescue_catches_message() {
     let src = r#"
         def safe_div(a, b) {

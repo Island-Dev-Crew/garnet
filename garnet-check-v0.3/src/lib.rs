@@ -38,7 +38,8 @@ pub use audit::{AuditLog, BoundaryCall, BoundaryDirection};
 pub use caps_graph::{CapsReport, CapsViolation};
 
 use garnet_parser::ast::{
-    ActorDef, ActorItem, Annotation, FnDef, FnMode, Item, Module, Ownership, Param, Stmt, TypeExpr,
+    ActorDef, ActorItem, Annotation, Block, FnDef, FnMode, Item, Module, Ownership, Param, Stmt,
+    TypeExpr,
 };
 use std::collections::BTreeSet;
 
@@ -414,10 +415,7 @@ fn check_fn(f: &FnDef, module_safe: bool, report: &mut CheckReport) {
     // violations when the function is in effective-safe scope. Boundary call
     // sites are interesting in either direction so the safe/managed bridge
     // generator (Compiler Arch §5) knows where to insert adapters.
-    walk_stmts_for_safe_violations(&f.body.stmts, &f.name, report, effective_safe);
-    if let Some(tail) = &f.body.tail_expr {
-        walk_expr_for_safe_violations(tail, &f.name, report, effective_safe);
-    }
+    walk_block_for_safe_violations(&f.body, &f.name, report, effective_safe);
 }
 
 fn check_lifetime_elision(f: &FnDef, report: &mut CheckReport) {
@@ -476,14 +474,23 @@ fn walk_stmts_for_safe_violations(
                 }
             }
             Stmt::While { body, .. } | Stmt::For { body, .. } | Stmt::Loop { body, .. } => {
-                walk_stmts_for_safe_violations(&body.stmts, fn_name, report, effective_safe);
-                if let Some(tail) = &body.tail_expr {
-                    walk_expr_for_safe_violations(tail, fn_name, report, effective_safe);
-                }
+                walk_block_for_safe_violations(body, fn_name, report, effective_safe);
             }
             Stmt::Expr(e) => walk_expr_for_safe_violations(e, fn_name, report, effective_safe),
             _ => {}
         }
+    }
+}
+
+fn walk_block_for_safe_violations(
+    block: &Block,
+    fn_name: &str,
+    report: &mut CheckReport,
+    effective_safe: bool,
+) {
+    walk_stmts_for_safe_violations(&block.stmts, fn_name, report, effective_safe);
+    if let Some(tail) = &block.tail_expr {
+        walk_expr_for_safe_violations(tail, fn_name, report, effective_safe);
     }
 }
 
@@ -507,26 +514,17 @@ fn walk_expr_for_safe_violations(
             else_block,
             ..
         } => {
-            walk_stmts_for_safe_violations(&then_block.stmts, fn_name, report, effective_safe);
-            if let Some(tail) = &then_block.tail_expr {
-                walk_expr_for_safe_violations(tail, fn_name, report, effective_safe);
-            }
+            walk_block_for_safe_violations(then_block, fn_name, report, effective_safe);
             for (_, b) in elsif_clauses {
-                walk_stmts_for_safe_violations(&b.stmts, fn_name, report, effective_safe);
-                if let Some(tail) = &b.tail_expr {
-                    walk_expr_for_safe_violations(tail, fn_name, report, effective_safe);
-                }
+                walk_block_for_safe_violations(b, fn_name, report, effective_safe);
             }
             if let Some(b) = else_block {
-                walk_stmts_for_safe_violations(&b.stmts, fn_name, report, effective_safe);
-                if let Some(tail) = &b.tail_expr {
-                    walk_expr_for_safe_violations(tail, fn_name, report, effective_safe);
-                }
+                walk_block_for_safe_violations(b, fn_name, report, effective_safe);
             }
         }
         Match { arms, .. } => {
             for arm in arms {
-                walk_expr_for_safe_violations(&arm.body, fn_name, report, effective_safe);
+                walk_block_for_safe_violations(&arm.body, fn_name, report, effective_safe);
             }
         }
         Binary { lhs, rhs, .. } => {

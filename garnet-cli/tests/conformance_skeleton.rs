@@ -718,6 +718,78 @@ fn caller(own item: Buffer, n: Int) -> Int {
         stdout.contains("use-after-move"),
         "expected use-after-move diagnostic, got:\n{stdout}"
     );
+
+    let match_block_move_src = r#"
+fn consume(own x: Buffer) -> Int {
+  0
+}
+
+fn read(borrow x: Buffer) -> Int {
+  0
+}
+
+fn caller(own item: Buffer, n: Int) -> Int {
+  match n {
+    _ => {
+      consume(item)
+      0
+    }
+  }
+  read(item)
+  0
+}
+"#;
+    let match_block_move_path = temp_source(
+        "borrow_match_arm_block_statement_move_propagates",
+        match_block_move_src,
+    );
+    assert_ok(&["parse"], &match_block_move_path);
+    let out = run(&["check"], &match_block_move_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode match-arm block statements must be preserved for later move diagnostics"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("use-after-move"),
+        "expected use-after-move diagnostic, got:\n{stdout}"
+    );
+
+    let match_guard_move_src = r#"
+fn consumes_false(own x: Buffer) -> Bool {
+  false
+}
+
+fn read(borrow x: Buffer) -> Int {
+  0
+}
+
+fn caller(own item: Buffer, n: Int) -> Int {
+  match n {
+    _ if consumes_false(item) => {
+      return 0
+    },
+    _ => 0
+  }
+  read(item)
+  0
+}
+"#;
+    let match_guard_move_path = temp_source(
+        "borrow_match_guard_move_propagates_after_false_guard",
+        match_guard_move_src,
+    );
+    assert_ok(&["parse"], &match_guard_move_path);
+    let out = run(&["check"], &match_guard_move_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode match guards must merge moves that can continue when the guard is false"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("use-after-move"),
+        "expected use-after-move diagnostic, got:\n{stdout}"
+    );
 }
 
 #[test]

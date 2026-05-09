@@ -42,7 +42,7 @@ pub fn eval_match(subject: &Expr, arms: &[MatchArm], env: &Rc<Env>) -> Result<Va
                         continue;
                     }
                 }
-                return eval_expr(&arm.body, &match_env);
+                return exec_block_value(&arm.body, &match_env);
             }
             BindResult::NoMatch => continue,
         }

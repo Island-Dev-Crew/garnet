@@ -54,7 +54,7 @@ fn full_borrow_handle_documents_active_partial_scope() {
         !nearby.contains("#[ignore"),
         "{name} must remain an active partial conformance test"
     );
-    let body = &source[idx..source.len().min(idx + 4_800)];
+    let body = &source[idx..source.len().min(idx + 8_000)];
     assert!(
         body.contains("safe-mode B5") && body.contains("drop discipline"),
         "{name} must document the active B5 drop-discipline subset"
@@ -78,6 +78,14 @@ fn full_borrow_handle_documents_active_partial_scope() {
     assert!(
         body.contains("match_pattern_shadow_does_not_poison_outer"),
         "{name} must document the active match-arm pattern scoping subset"
+    );
+    assert!(
+        body.contains("match_arm_block_statement_move"),
+        "{name} must document the active match-arm block statement preservation subset"
+    );
+    assert!(
+        body.contains("match_guard_move_propagates"),
+        "{name} must document the active match guard move-merge subset"
     );
 }
 

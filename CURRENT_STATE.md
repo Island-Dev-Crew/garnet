@@ -108,7 +108,7 @@ highest-leverage next milestones are:
 The v0.5 seven-phase roadmap is now tracked in
 `F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md` and
 `F_Project_Management/ROADMAPS/GARNET_v0_5_LANGUAGE_COMPLETION_ROADMAP.md`.
-Phase 4K / 5C / 6P are the current readiness slices. Phases 1-3D added parser parity,
+Phase 4L / 5C / 6P are the current readiness slices. Phases 1-3D added parser parity,
 managed block/dynamic/protocol runtime slices, managed actor addresses, bounded
 source mailboxes, and a generated actor-orchestrator template. Phase 4A
 activates partial safe-mode borrow conformance for direct use-after-move
@@ -141,9 +141,13 @@ binding shadowed by the loop variable after checking the loop body, so a loop
 variable cannot erase a prior outer move. Phase 4K applies the same scoped
 liveness discipline to `match` arm pattern bindings, so moving a pattern-local
 binding does not poison an outer binding with the same name while real outer
-moves in match arms still propagate. Full match-arm block statement
-preservation, full CFG NLL region solving, nested/non-local terminators, and
-general loop fixed-point analysis remain deferred. Phase 5A activates
+moves in match arms still propagate. Phase 4L preserves full `match` arm
+blocks in the parser, interpreter, capability walker, knowledge inventory, and
+safe-mode borrow checker, so statements before an arm tail expression execute
+and participate in move diagnostics instead of being discarded; guarded arms
+also merge guard moves that can continue when a guard evaluates false. Full CFG
+NLL region solving, nested/non-local terminators, and general loop fixed-point
+analysis remain deferred. Phase 5A activates
 conservative trait coherence by rejecting exact duplicate trait impls and
 orphan-rule violations while preserving impls where
 either the trait or the type is local. Phase 5B activates interpreter-level

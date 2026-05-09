@@ -76,17 +76,17 @@ fn parse_match_arm(p: &mut Parser) -> Result<MatchArm, ParseError> {
     };
     p.expect(&TokenKind::FatArrow, "match arm")?;
     let body = if matches!(p.peek_kind(), TokenKind::LBrace) {
-        let block = stmts::parse_block(p)?;
-        // Wrap block in an expression — use the tail_expr if present, otherwise Nil
-        if let Some(tail) = block.tail_expr {
-            *tail
-        } else {
-            Expr::Nil(block.span)
-        }
+        stmts::parse_block(p)?
     } else {
-        expr::parse_expr(p)?
+        let expr = expr::parse_expr(p)?;
+        let span = expr.span();
+        Block {
+            stmts: Vec::new(),
+            tail_expr: Some(Box::new(expr)),
+            span,
+        }
     };
-    let span = pattern.span().join(body.span());
+    let span = pattern.span().join(body.span);
     Ok(MatchArm {
         pattern,
         guard,

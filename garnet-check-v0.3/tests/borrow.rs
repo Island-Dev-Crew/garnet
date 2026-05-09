@@ -332,6 +332,54 @@ fn match_arm_outer_move_still_propagates_after_match() {
     );
 }
 
+#[test]
+fn match_arm_block_statement_move_still_propagates_after_match() {
+    let src = r#"
+        fn consume(own x: Buffer) -> Int { 0 }
+        fn read(borrow x: Buffer) -> Int { 0 }
+        fn caller(own item: Buffer, n: Int) -> Int {
+            match n {
+                _ => {
+                    consume(item)
+                    0
+                }
+            }
+            read(item)
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "a move inside a match-arm block statement must be preserved for later uses, got {d:?}"
+    );
+}
+
+#[test]
+fn match_guard_move_propagates_even_when_arm_body_returns() {
+    let src = r#"
+        fn consumes_false(own x: Buffer) -> Bool { false }
+        fn read(borrow x: Buffer) -> Int { 0 }
+        fn caller(own item: Buffer, n: Int) -> Int {
+            match n {
+                _ if consumes_false(item) => {
+                    return 0
+                },
+                _ => 0
+            }
+            read(item)
+            0
+        }
+    "#;
+    let d = diagnose(src);
+    assert!(
+        d.iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "a move in a match guard can continue when the guard is false, got {d:?}"
+    );
+}
+
 // ── Method receivers ──
 
 #[test]
