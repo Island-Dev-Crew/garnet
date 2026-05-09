@@ -323,6 +323,51 @@ fn copied_foreign_cache_replay_is_ignored_and_warned() {
 }
 
 #[test]
+fn copied_same_machine_cache_from_other_source_tree_is_ignored_and_warned() {
+    let attacker = fresh_temp_dir("attacker_same_machine_cache");
+    let victim = fresh_temp_dir("victim_same_machine_cache");
+    let shared_key_path = victim.join("shared-machine.key");
+    let source = "def main() { 99/0 }";
+    let attacker_file = attacker.join("buggy.garnet");
+    let victim_file = victim.join("buggy.garnet");
+    std::fs::write(&attacker_file, source).unwrap();
+    std::fs::write(&victim_file, source).unwrap();
+
+    let attacker_run = garnet_cmd_with_key(&attacker, &shared_key_path)
+        .args(["run", attacker_file.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(!attacker_run.status.success(), "attacker run should fail");
+
+    let victim_cache = victim.join(".garnet-cache");
+    std::fs::create_dir_all(&victim_cache).unwrap();
+    std::fs::copy(
+        attacker.join(".garnet-cache").join("episodes.log"),
+        victim_cache.join("episodes.log"),
+    )
+    .unwrap();
+
+    let victim_run = garnet_cmd_with_key(&victim, &shared_key_path)
+        .args(["run", victim_file.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(!victim_run.status.success(), "victim run should fail");
+    let stderr = String::from_utf8_lossy(&victim_run.stderr);
+    assert!(
+        stderr.contains("ignored 1 untrusted cache record"),
+        "expected copied source-tree warning, got stderr: {stderr}"
+    );
+    assert!(
+        !stderr.contains("prior failure"),
+        "copied same-machine failure must not influence diagnostics: {stderr}"
+    );
+
+    let result = read_episodes_with_key(&victim, &shared_key_path);
+    assert_eq!(result.episodes.len(), 1);
+    assert_eq!(result.skipped, 1);
+}
+
+#[test]
 fn copied_strategy_db_without_local_justifications_is_quarantined_and_warned() {
     let attacker = fresh_temp_dir("attacker_strategy");
     let victim = fresh_temp_dir("victim_strategy");
@@ -368,6 +413,55 @@ fn copied_strategy_db_without_local_justifications_is_quarantined_and_warned() {
 }
 
 #[test]
+fn copied_same_machine_strategy_with_replayed_episodes_is_quarantined() {
+    let attacker = fresh_temp_dir("attacker_same_machine_strategy");
+    let victim = fresh_temp_dir("victim_same_machine_strategy");
+    let shared_key_path = victim.join("shared-machine.key");
+    let source = "def main() { 42 }";
+    let attacker_file = attacker.join("safe.garnet");
+    let victim_file = victim.join("safe.garnet");
+    std::fs::write(&attacker_file, source).unwrap();
+    std::fs::write(&victim_file, source).unwrap();
+
+    for _ in 0..3 {
+        let out = garnet_cmd_with_key(&attacker, &shared_key_path)
+            .args(["parse", attacker_file.to_str().unwrap()])
+            .output()
+            .unwrap();
+        assert!(out.status.success(), "attacker parse should succeed");
+    }
+
+    let victim_cache = victim.join(".garnet-cache");
+    std::fs::create_dir_all(&victim_cache).unwrap();
+    for name in ["episodes.log", "strategies.db"] {
+        std::fs::copy(
+            attacker.join(".garnet-cache").join(name),
+            victim_cache.join(name),
+        )
+        .unwrap();
+    }
+
+    let out = garnet_cmd_with_key(&victim, &shared_key_path)
+        .args(["parse", victim_file.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(out.status.success(), "victim parse should still succeed");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("ignored 3 untrusted cache record"),
+        "expected copied source-tree cache warning, got stderr: {stderr}"
+    );
+    assert!(
+        stderr.contains("quarantined 1 untrusted strategy record"),
+        "expected copied source-tree strategy quarantine, got stderr: {stderr}"
+    );
+    assert!(
+        !stderr.contains("strategy 'skip_check_if_unchanged_since_last_ok' applies"),
+        "copied same-machine strategy must not influence diagnostics: {stderr}"
+    );
+}
+
+#[test]
 fn concurrent_episode_appends_preserve_all_verified_records() {
     let dir = fresh_temp_dir("concurrent_appends");
     let cache_dir = Arc::new(dir.join(".garnet-cache"));
@@ -397,6 +491,54 @@ fn concurrent_episode_appends_preserve_all_verified_records() {
 
     for handle in handles {
         handle.join().unwrap();
+    }
+
+    let result = cache::read_all_in_with_key(&cache_dir, &key);
+    assert_eq!(result.skipped, 0);
+    assert_eq!(result.episodes.len(), writers * records_per_writer);
+}
+
+#[test]
+fn episode_append_soak_preserves_ndjson_and_all_bound_records() {
+    let dir = fresh_temp_dir("append_soak");
+    let cache_dir = Arc::new(dir.join(".garnet-cache"));
+    let key = Arc::new(cache_key(&dir));
+    let writers = 16;
+    let records_per_writer = 120;
+    let mut handles = Vec::new();
+
+    for writer in 0..writers {
+        let cache_dir = Arc::clone(&cache_dir);
+        let key = Arc::clone(&key);
+        handles.push(std::thread::spawn(move || {
+            for seq in 0..records_per_writer {
+                let ep = Episode::now(
+                    "check",
+                    format!("soak_{writer}.garnet"),
+                    format!("hash_{writer}_{seq}"),
+                    "ok",
+                    None,
+                    seq as u64,
+                    0,
+                );
+                assert!(cache::record_episode_in_with_key(&cache_dir, &ep, &key));
+            }
+        }));
+    }
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+
+    let log_path = cache_dir.join("episodes.log");
+    let raw = std::fs::read_to_string(&log_path).unwrap();
+    assert_eq!(raw.lines().count(), writers * records_per_writer);
+    for line in raw.lines() {
+        Episode::from_ndjson_line(line).unwrap_or_else(|| panic!("malformed NDJSON line: {line}"));
+        assert!(
+            line.contains("\"source_tree\""),
+            "soak-written episodes must carry a source-tree binding"
+        );
     }
 
     let result = cache::read_all_in_with_key(&cache_dir, &key);

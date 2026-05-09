@@ -84,8 +84,12 @@ When documents conflict, use this order:
   advice. Phase 6H wires CLI strategy notes through ProvenanceStrategy, so
   copied same-machine `strategies.db` rows with missing local justifying
   episodes are quarantined before they can influence diagnostics, and bounded
-  concurrent episode append stress preserves all verified records. Long-running
-  write soak remains follow-up work.
+  concurrent episode append stress preserves all verified records. Phase 6I
+  adds keyed source-tree binding, so same-machine cache copies from another
+  project root are skipped before prior-failure or strategy advice can apply,
+  and a 16-writer/1920-record bounded append soak preserves parseable NDJSON
+  plus all verified records. Extended release-duration soak remains follow-up
+  work.
 - CI has an explicit canonical MVP example job in addition to the Rust test
   suite.
 

@@ -124,7 +124,7 @@ the buffered trial-deletion path. The next session should promote those
 fixtures into production Memory Core stores with allocator-integrated
 Bacon-Rajan trial deletion and runtime finalizer invocation.
 
-### Current Phase 6F-6H cache-security status
+### Current Phase 6F-6I cache-security status
 
 Phase 6F adds a narrower security/readiness gate around the compiler-as-agent
 cache. `parse`, `check`, and `run` now persist privacy-preserving episode file
@@ -137,9 +137,13 @@ CacheHMAC and ProvenanceStrategy tests remain green. Phase 6H wires CLI
 strategy notes through provenance verification: copied same-machine
 `strategies.db` rows with missing local justifying episodes are quarantined
 instead of printed as applicable strategies, and bounded concurrent episode
-append stress preserves all verified records. The next cache security slice
-should add long-running write soak and any source-tree binding policy the team
-wants before release.
+append stress preserves all verified records. Phase 6I binds episodes to a
+keyed, non-reversible source-tree identifier, skips copied same-machine cache
+records from a different project root, quarantines copied same-machine strategy
+rows whose replayed justifications no longer verify in the current source tree,
+and adds a 16-writer/1920-record bounded append soak. The next cache security
+slice should add extended release-duration/cross-platform soak if needed before
+release.
 
 ### Why deferred
 

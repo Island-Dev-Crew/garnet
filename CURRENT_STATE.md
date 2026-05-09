@@ -147,7 +147,11 @@ episodes are ignored and signaled as untrusted before they can surface stale
 failure advice. Phase 6H wires strategy notes through provenance verification,
 so copied same-machine `strategies.db` rows without local justifying episodes
 are quarantined instead of applied, and adds a bounded concurrent episode-append
-stress test. Long-running cache write soak remains follow-up work.
+stress test. Phase 6I binds each episode to a keyed, non-reversible source-tree
+identifier so same-machine `.garnet-cache` copies from another project root are
+ignored before prior-failure or strategy advice can apply, and extends the
+append stress into a 16-writer bounded soak that preserves valid NDJSON and all
+verified records. Extended release-duration soak remains follow-up work.
 
 ## Historical Material
 

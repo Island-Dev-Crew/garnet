@@ -393,6 +393,12 @@ Phase 6E adds `CycleAllocatorFixture`, proving that the allocator-facing
 surface can own the graph plus root buffer and route root releases and ARC edge
 removals through buffered trial-deletion scheduling.
 
+Cache-security sidecar: Phase 6I adds keyed source-tree binding for
+compiler-as-agent episode records, quarantines copied same-machine strategy
+rows whose replayed justifications do not verify in the current source tree,
+and preserves valid NDJSON/all verified records under a 16-writer bounded
+append soak.
+
 - [ ] **Step 6: Promote root-buffer/finalizer/safe-mode interaction into production allocator tests**
 
 ## Phase 7: Release, Research, And Repeated Falsification
