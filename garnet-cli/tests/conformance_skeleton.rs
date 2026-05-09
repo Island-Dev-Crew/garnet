@@ -793,6 +793,69 @@ fn caller(own item: Buffer, n: Int) -> Int {
 }
 
 #[test]
+fn deferred_match_exhaustiveness_and_reachability() {
+    let bool_non_exhaustive_src = r#"
+fn bool_code(flag: Bool) -> Int {
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let bool_non_exhaustive_path =
+        temp_source("match_bool_non_exhaustive", bool_non_exhaustive_src);
+    assert_ok(&["parse"], &bool_non_exhaustive_path);
+    let out = run(&["check"], &bool_non_exhaustive_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode Bool matches must reject missing finite-domain cases"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("non-exhaustive match") && stdout.contains("`false`"),
+        "expected missing Bool pattern diagnostic, got:\n{stdout}"
+    );
+
+    let enum_complete_src = r#"
+enum Status { Ready, Done }
+
+fn status_code(status: Status) -> Int {
+  match status {
+    Status::Ready => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let enum_complete_path = temp_source("match_enum_complete", enum_complete_src);
+    assert_ok(&["parse"], &enum_complete_path);
+    assert_ok(&["check"], &enum_complete_path);
+
+    let enum_unreachable_src = r#"
+enum Status { Ready, Done }
+
+fn status_code(status: Status) -> Int {
+  match status {
+    Status::Ready => 1
+    Status::Ready => 2
+    Status::Done => 3
+  }
+}
+"#;
+    let enum_unreachable_path =
+        temp_source("match_enum_duplicate_unreachable", enum_unreachable_src);
+    assert_ok(&["parse"], &enum_unreachable_path);
+    let out = run(&["check"], &enum_unreachable_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode enum matches must reject arms already covered by prior unguarded arms"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("unreachable match arm") && stdout.contains("Status::Ready"),
+        "expected unreachable duplicate variant diagnostic, got:\n{stdout}"
+    );
+}
+
+#[test]
 fn deferred_trait_coherence() {
     let duplicate_impl_src = r#"
 trait Renderable {

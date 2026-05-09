@@ -33,6 +33,7 @@ pub mod audit;
 pub mod borrow;
 pub mod caps_graph;
 pub mod coherence;
+pub mod match_coverage;
 
 pub use audit::{AuditLog, BoundaryCall, BoundaryDirection};
 pub use caps_graph::{CapsReport, CapsViolation};
@@ -109,6 +110,13 @@ pub fn check_module(module: &Module) -> CheckReport {
     report
         .errors
         .extend(coherence::check_trait_coherence(module));
+
+    // Safe-mode finite-domain `match` coverage: a scoped, conservative slice
+    // of Mini-Spec §6.3. This handles Bool and same-module enum subjects
+    // without claiming full type inference or general exhaustiveness.
+    report
+        .errors
+        .extend(match_coverage::check_match_coverage(module));
 
     // v3.4.1 Day 2 — CapCaps call-graph propagator. Reads primitive caps
     // from `garnet_stdlib::registry` at check time and verifies every

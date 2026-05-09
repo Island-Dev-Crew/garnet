@@ -73,10 +73,13 @@ When documents conflict, use this order:
   arm blocks across the parser, interpreter, capability walker, knowledge
   inventory, and borrow checker, so statements before an arm tail expression
   execute and are checked; guard moves still merge when a guard can fail before
-  a returning arm body runs. Full Rust-grade CFG NLL, nested/non-local
-  terminators, general loop fixed-point analysis, dynamic places, broader drop
-  elaboration, and generic/trait impl dispatch remain roadmap work, not current
-  truth.
+  a returning arm body runs. Phase 4M adds a scoped finite-domain match coverage
+  pass for safe-mode `Bool` and same-module enum subjects, rejecting
+  non-exhaustive matches, duplicate covered arms, and arms after unguarded
+  catch-all arms. Full Rust-grade CFG NLL, nested/non-local terminators,
+  general loop fixed-point analysis, nested constructor exhaustiveness,
+  imported enum resolution, dynamic places, broader drop elaboration, and
+  generic/trait impl dispatch remain roadmap work, not current truth.
 - Trait coherence now has an active conservative checker slice: exact duplicate
   trait impls and orphan impls where neither trait nor type is local reject,
   simple generic blanket-vs-concrete and renamed blanket impl overlaps reject,

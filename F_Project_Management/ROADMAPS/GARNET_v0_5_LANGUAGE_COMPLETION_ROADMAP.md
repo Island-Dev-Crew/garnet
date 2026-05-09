@@ -437,6 +437,25 @@ analysis, closure capture lifetimes, variance, dynamic places, generic receiver
 types, trait impl dispatch, broader scope/branch drop elaboration, and
 two-phase borrows remain pending.
 
+- [x] **Step 2H: Add finite-domain match exhaustiveness and reachability**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4M adds a scoped safe-mode `match_coverage` pass for finite
+domains. `Bool` matches must cover `true` and `false`; same-module enum matches
+must cover each variant unless an unguarded catch-all appears; guarded arms do
+not count as exhaustive coverage; duplicate covered arms and arms after an
+unguarded catch-all are rejected as unreachable.
+
+Remaining: nested constructor exhaustiveness, imported enum resolution,
+open-domain literal reasoning, richer type inference, and general guard
+reasoning remain pending.
+
 ## Phase 5: Traits, Coherence, And Monomorphization
 
 **Intent:** Make the Rust-rigor side credible without overclaiming zero-cost guarantees.

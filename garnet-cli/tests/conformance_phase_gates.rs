@@ -28,6 +28,7 @@ fn implemented_conformance_tests_are_active() {
         "deferred_nll_lifetime_inference",
         "partial_borrow_rule_suite",
         "deferred_full_borrow_rule_suite",
+        "deferred_match_exhaustiveness_and_reachability",
         "deferred_trait_coherence",
         "generic_instantiation_runs_without_monomorphization_claims",
         "deferred_arc_cycle_detection",
@@ -87,6 +88,33 @@ fn full_borrow_handle_documents_active_partial_scope() {
         body.contains("match_guard_move_propagates"),
         "{name} must document the active match guard move-merge subset"
     );
+}
+
+#[test]
+fn match_exhaustiveness_handle_documents_active_partial_scope() {
+    let source = fs::read_to_string(repo_root().join("garnet-cli/tests/conformance_skeleton.rs"))
+        .expect("conformance skeleton");
+    let name = "deferred_match_exhaustiveness_and_reachability";
+    let idx = source.find(name).expect("match coverage handle exists");
+    let prefix = &source[..idx];
+    let nearby = &prefix[prefix.len().saturating_sub(220)..];
+    assert!(
+        !nearby.contains("#[ignore"),
+        "{name} must remain an active partial conformance test"
+    );
+    let body = &source[idx..source.len().min(idx + 3_000)];
+    for needle in [
+        "match_bool_non_exhaustive",
+        "match_enum_complete",
+        "match_enum_duplicate_unreachable",
+        "non-exhaustive match",
+        "unreachable match arm",
+    ] {
+        assert!(
+            body.contains(needle),
+            "{name} must document active match coverage subset {needle}"
+        );
+    }
 }
 
 #[test]
