@@ -9,9 +9,10 @@
 //! nested all-path `if` assignment joins inside branch bodies, and narrowly
 //! proven direct closure call-effect invalidation for local branch-selected
 //! closures. It also recognizes immutable local, same-module top-level, and
-//! named/glob imported top-level boolean constants in match guards, and rejects
-//! duplicate literal arms and arms after catch-all arms in otherwise open-domain
-//! matches. It does not attempt full type inference, loop fixed-point
+//! named/glob imported top-level boolean constants and narrow boolean const
+//! aliases in match guards, and rejects duplicate literal arms and arms after
+//! catch-all arms in otherwise open-domain matches. It does not attempt full
+//! type inference, loop fixed-point
 //! inference, broader mutable/escaped/general higher-order closure call-effect
 //! analysis, recursive/open payload coverage, or broader non-literal guard
 //! reasoning.
@@ -117,19 +118,60 @@ impl Checker {
     }
 
     fn collect_const_guard_facts(&mut self, items: &[Item], prefix: &[String]) {
-        for (name, value) in collect_top_level_guard_facts(items) {
-            let mut path = prefix.to_vec();
-            path.push(name);
-            self.const_guard_facts.insert(path, value);
-        }
+        let mut consts = Vec::new();
+        collect_const_guard_decls(items, prefix, &mut consts);
 
-        for item in items {
-            if let Item::Module(module) = item {
-                let mut nested = prefix.to_vec();
-                nested.push(module.name.clone());
-                self.collect_const_guard_facts(&module.items, &nested);
+        for _ in 0..consts.len() {
+            let mut changed = false;
+            for (path, value) in &consts {
+                if self.const_guard_facts.contains_key(path) {
+                    continue;
+                }
+
+                let module_path = &path[..path.len().saturating_sub(1)];
+                if let Some(value) = self.const_guard_fact_from_expr(value, module_path) {
+                    self.const_guard_facts.insert(path.clone(), value);
+                    changed = true;
+                }
+            }
+
+            if !changed {
+                break;
             }
         }
+    }
+
+    fn const_guard_fact_from_expr(&self, expr: &Expr, module_path: &[String]) -> Option<bool> {
+        match expr {
+            Expr::Bool(value, _) => Some(*value),
+            Expr::Ident(name, _) => {
+                let mut path = module_path.to_vec();
+                path.push(name.clone());
+                self.const_guard_facts.get(&path).copied()
+            }
+            Expr::Path(path, _) => self.resolve_const_guard_path_from_module(path, module_path),
+            _ => None,
+        }
+    }
+
+    fn resolve_const_guard_path_from_module(
+        &self,
+        path: &[String],
+        module_path: &[String],
+    ) -> Option<bool> {
+        let mut candidates = BTreeMap::new();
+        self.add_const_guard_candidate(&mut candidates, path);
+
+        if !module_path.is_empty() {
+            let mut relative = module_path.to_vec();
+            relative.extend_from_slice(path);
+            self.add_const_guard_candidate(&mut candidates, &relative);
+        }
+
+        if candidates.len() != 1 {
+            return None;
+        }
+        candidates.into_values().next()
     }
 
     fn collect_scopes(&mut self, items: &[Item], module_path: &[String]) {
@@ -1567,21 +1609,26 @@ fn update_guard_fact(name: String, value: &Expr, guard_facts: &mut GuardFacts) {
     }
 }
 
-fn collect_top_level_guard_facts(items: &[Item]) -> GuardFacts {
-    let mut guard_facts = GuardFacts::new();
-    let consts = items.iter().filter_map(|item| {
-        if let Item::Const(decl) = item {
-            Some((&decl.name, &decl.value))
-        } else {
-            None
+fn collect_const_guard_decls<'a>(
+    items: &'a [Item],
+    prefix: &[String],
+    out: &mut Vec<(Vec<String>, &'a Expr)>,
+) {
+    for item in items {
+        match item {
+            Item::Const(decl) => {
+                let mut path = prefix.to_vec();
+                path.push(decl.name.clone());
+                out.push((path, &decl.value));
+            }
+            Item::Module(module) => {
+                let mut nested = prefix.to_vec();
+                nested.push(module.name.clone());
+                collect_const_guard_decls(&module.items, &nested, out);
+            }
+            _ => {}
         }
-    });
-
-    for (name, value) in consts {
-        update_guard_fact(name.clone(), value, &mut guard_facts);
     }
-
-    guard_facts
 }
 
 fn guard_fact_from_expr(expr: &Expr, guard_facts: &GuardFacts) -> Option<bool> {

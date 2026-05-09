@@ -1870,6 +1870,67 @@ fn guarded_status_code(status: Status) -> Int {
         "expected path const false-guard and missing-case diagnostics, got:\n{stdout}"
     );
 
+    let path_const_alias_true_guard_complete_src = r#"
+module Core {
+  const RAW = true
+}
+
+module Flags {
+  const ALWAYS = Core::RAW
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let path_const_alias_true_guard_complete_path = temp_source(
+        "match_path_const_alias_true_guard_enum_complete",
+        path_const_alias_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &path_const_alias_true_guard_complete_path);
+    assert_ok(&["check"], &path_const_alias_true_guard_complete_path);
+
+    let path_const_alias_false_guard_missing_src = r#"
+module Core {
+  const RAW = false
+}
+
+module Flags {
+  const NEVER = Core::RAW
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let path_const_alias_false_guard_missing_path = temp_source(
+        "match_path_const_alias_false_guard_enum_missing",
+        path_const_alias_false_guard_missing_src,
+    );
+    assert_ok(&["parse"], &path_const_alias_false_guard_missing_path);
+    let out = run(&["check"], &path_const_alias_false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode path-qualified const false aliases must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected path const false-alias and missing-case diagnostics, got:\n{stdout}"
+    );
+
     let open_literal_duplicate_src = r#"
 fn classify(value: Int) -> Int {
   match value {

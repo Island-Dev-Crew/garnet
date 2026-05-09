@@ -589,10 +589,11 @@ boolean guard constants are covered in Step 2ZA below; same-module top-level
 boolean guard constants are covered in Step 2ZB below; scoped named/glob
 imported top-level boolean guard constants are covered in Step 2ZC below;
 path-qualified top-level boolean guard constants are covered in Step 2ZD below;
+narrow boolean const aliases are covered in Step 2ZE below;
 loop fixed-point and broader mutable/escaped/general higher-order closure
 invocation/call-effect flow, cross-file/package imports, recursive/open payload
-reasoning, richer type inference, const aliases and broad const expression
-evaluation, open-domain exhaustiveness/range reasoning, and broader non-literal
+reasoning, richer type inference, broad const expression evaluation, open-domain
+exhaustiveness/range reasoning, and broader non-literal
 guard reasoning remain pending.
 
 - [x] **Step 2P: Join nested if assignment domains inside branch bodies**
@@ -813,8 +814,24 @@ cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_han
 Evidence: Phase 4AI resolves path-qualified top-level boolean `const` guard
 expressions through the same scoped const-fact index. `Flags::ALWAYS` guards
 count as coverage, `Flags::NEVER` guards are statically false and
-non-covering, and ambiguous or non-constant paths remain conservative. Const
-aliases and broad const expression evaluation remain deferred.
+non-covering, and ambiguous or non-constant paths remain conservative. Broad
+const expression evaluation remains deferred.
+
+- [x] **Step 2ZE: Resolve narrow boolean const guard aliases**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage const_bool_alias
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AJ resolves direct boolean const aliases through the scoped
+const-fact index without evaluating arbitrary expressions. Path-valued aliases
+such as `Flags::ALWAYS = Core::RAW` count as coverage when they resolve to
+`true`, resolve to statically false/non-covering guards when they resolve to
+`false`, and leave broad const expression evaluation deferred.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 
