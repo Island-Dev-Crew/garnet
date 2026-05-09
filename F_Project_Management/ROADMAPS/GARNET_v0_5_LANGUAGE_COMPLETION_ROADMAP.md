@@ -587,12 +587,13 @@ call invalidation is covered in Step 2Y below; direct branch-selected closure
 expression call invalidation is covered in Step 2Z below; immutable local
 boolean guard constants are covered in Step 2ZA below; same-module top-level
 boolean guard constants are covered in Step 2ZB below; scoped named/glob
-imported top-level boolean guard constants are covered in Step 2ZC below; loop fixed-point and
-broader mutable/escaped/general higher-order closure invocation/call-effect
-flow, cross-file/package imports, recursive/open payload reasoning, richer type
-inference, module-qualified/path const guard expressions, open-domain
-exhaustiveness/range reasoning, and broader non-literal guard reasoning remain
-pending.
+imported top-level boolean guard constants are covered in Step 2ZC below;
+path-qualified top-level boolean guard constants are covered in Step 2ZD below;
+loop fixed-point and broader mutable/escaped/general higher-order closure
+invocation/call-effect flow, cross-file/package imports, recursive/open payload
+reasoning, richer type inference, const aliases and broad const expression
+evaluation, open-domain exhaustiveness/range reasoning, and broader non-literal
+guard reasoning remain pending.
 
 - [x] **Step 2P: Join nested if assignment domains inside branch bodies**
 
@@ -798,8 +799,22 @@ Evidence: Phase 4AH resolves scoped named and glob imports of top-level boolean
 guards count as coverage, glob-imported false const guards are statically false
 and non-covering, and function parameters with the same name shadow the
 imported const fact so parameterized guards remain conservative.
-Module-qualified/path const guard expressions and broad const evaluation remain
-deferred.
+
+- [x] **Step 2ZD: Recognize path-qualified boolean guard constants**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage path_qualified
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AI resolves path-qualified top-level boolean `const` guard
+expressions through the same scoped const-fact index. `Flags::ALWAYS` guards
+count as coverage, `Flags::NEVER` guards are statically false and
+non-covering, and ambiguous or non-constant paths remain conservative. Const
+aliases and broad const expression evaluation remain deferred.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 

@@ -542,9 +542,9 @@ impl Checker {
             Expr::Match { subject, arms, .. } => {
                 self.walk_expr(subject, fn_name, env, closure_effects, guard_facts, scope);
                 if let Some(domain) = self.domain_from_expr(subject, env, scope) {
-                    self.check_match_arms(fn_name, &domain, arms, guard_facts);
+                    self.check_match_arms(fn_name, &domain, arms, guard_facts, scope);
                 } else {
-                    self.check_open_match_reachability(fn_name, arms, guard_facts);
+                    self.check_open_match_reachability(fn_name, arms, guard_facts, scope);
                 }
                 for arm in arms {
                     let mut arm_guard_facts = guard_facts.clone();
@@ -675,6 +675,7 @@ impl Checker {
         domain: &FiniteDomain,
         arms: &[garnet_parser::ast::MatchArm],
         guard_facts: &GuardFacts,
+        scope: &Scope,
     ) {
         let mut covered = BTreeSet::new();
         let mut catch_all_seen = false;
@@ -704,7 +705,7 @@ impl Checker {
 
             let mut arm_guard_facts = guard_facts.clone();
             remove_pattern_guard_facts(&arm.pattern, &mut arm_guard_facts);
-            match guard_coverage(&arm.guard, &arm_guard_facts) {
+            match self.guard_coverage(&arm.guard, &arm_guard_facts, scope) {
                 GuardCoverage::AlwaysFalse => {
                     self.errors.push(CheckError::SafeModeViolation(format!(
                         "unreachable match arm in safe function '{fn_name}': pattern {pattern} has a statically false guard"
@@ -739,6 +740,7 @@ impl Checker {
         fn_name: &str,
         arms: &[garnet_parser::ast::MatchArm],
         guard_facts: &GuardFacts,
+        scope: &Scope,
     ) {
         let mut covered_literals = BTreeSet::new();
         let mut catch_all_seen = false;
@@ -764,7 +766,7 @@ impl Checker {
 
             let mut arm_guard_facts = guard_facts.clone();
             remove_pattern_guard_facts(&arm.pattern, &mut arm_guard_facts);
-            match guard_coverage(&arm.guard, &arm_guard_facts) {
+            match self.guard_coverage(&arm.guard, &arm_guard_facts, scope) {
                 GuardCoverage::AlwaysFalse => {
                     self.errors.push(CheckError::SafeModeViolation(format!(
                         "unreachable match arm in safe function '{fn_name}': pattern {pattern} has a statically false guard"
@@ -1078,6 +1080,64 @@ impl Checker {
         self.const_guard_facts
             .keys()
             .any(|const_path| const_path.as_slice().starts_with(path))
+    }
+
+    fn guard_coverage(
+        &self,
+        guard: &Option<Expr>,
+        guard_facts: &GuardFacts,
+        scope: &Scope,
+    ) -> GuardCoverage {
+        match guard {
+            None => GuardCoverage::Unguarded,
+            Some(Expr::Bool(true, _)) => GuardCoverage::AlwaysTrue,
+            Some(Expr::Bool(false, _)) => GuardCoverage::AlwaysFalse,
+            Some(Expr::Ident(name, _)) => match guard_facts.get(name) {
+                Some(true) => GuardCoverage::AlwaysTrue,
+                Some(false) => GuardCoverage::AlwaysFalse,
+                None => GuardCoverage::Unknown,
+            },
+            Some(Expr::Path(path, _)) => match self.resolve_const_guard_path(path, scope) {
+                Some(true) => GuardCoverage::AlwaysTrue,
+                Some(false) => GuardCoverage::AlwaysFalse,
+                None => GuardCoverage::Unknown,
+            },
+            Some(_) => GuardCoverage::Unknown,
+        }
+    }
+
+    fn resolve_const_guard_path(&self, path: &[String], scope: &Scope) -> Option<bool> {
+        let mut candidates = BTreeMap::new();
+        self.add_const_guard_candidate(&mut candidates, path);
+
+        if !scope.module_path.is_empty() {
+            let mut relative = scope.module_path.clone();
+            relative.extend_from_slice(path);
+            self.add_const_guard_candidate(&mut candidates, &relative);
+        }
+
+        if path.len() > 1 {
+            if let Some(module_path) = scope.module_imports.get(&path[0]) {
+                let mut imported = module_path.clone();
+                imported.extend_from_slice(&path[1..]);
+                self.add_const_guard_candidate(&mut candidates, &imported);
+            }
+        }
+
+        if candidates.len() != 1 {
+            return None;
+        }
+        candidates.into_values().next()
+    }
+
+    fn add_const_guard_candidate(
+        &self,
+        candidates: &mut BTreeMap<Vec<String>, bool>,
+        path: &[String],
+    ) {
+        if let Some(value) = self.const_guard_facts.get(path) {
+            candidates.insert(path.to_vec(), *value);
+        }
     }
 
     fn same_module_const_guard_facts(&self, module_path: &[String]) -> GuardFacts {
@@ -1628,20 +1688,6 @@ fn is_catch_all(pattern: &Pattern) -> bool {
         pattern,
         Pattern::Ident(_, _) | Pattern::Wildcard(_) | Pattern::Rest(_)
     )
-}
-
-fn guard_coverage(guard: &Option<Expr>, guard_facts: &GuardFacts) -> GuardCoverage {
-    match guard {
-        None => GuardCoverage::Unguarded,
-        Some(Expr::Bool(true, _)) => GuardCoverage::AlwaysTrue,
-        Some(Expr::Bool(false, _)) => GuardCoverage::AlwaysFalse,
-        Some(Expr::Ident(name, _)) => match guard_facts.get(name) {
-            Some(true) => GuardCoverage::AlwaysTrue,
-            Some(false) => GuardCoverage::AlwaysFalse,
-            None => GuardCoverage::Unknown,
-        },
-        Some(_) => GuardCoverage::Unknown,
-    }
 }
 
 fn literal_pattern_key(pattern: &Pattern) -> Option<String> {

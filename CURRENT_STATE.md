@@ -108,7 +108,7 @@ highest-leverage next milestones are:
 The v0.5 seven-phase roadmap is now tracked in
 `F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md` and
 `F_Project_Management/ROADMAPS/GARNET_v0_5_LANGUAGE_COMPLETION_ROADMAP.md`.
-Phase 4AH / 5C / 6P are the current readiness slices. Phases 1-3D added parser parity,
+Phase 4AI / 5C / 6P are the current readiness slices. Phases 1-3D added parser parity,
 managed block/dynamic/protocol runtime slices, managed actor addresses, bounded
 source mailboxes, and a generated actor-orchestrator template. Phase 4A
 activates partial safe-mode borrow conformance for direct use-after-move
@@ -197,13 +197,15 @@ statically false/non-covering, while mutable guard locals remain unknown. Phase
 items, while function parameters with the same name shadow the const fact and
 remain non-covering. Phase 4AH extends the same guard-fact evidence through
 scoped named and glob imports of top-level boolean `const` items while preserving
-function-parameter shadowing.
+function-parameter shadowing. Phase 4AI resolves path-qualified boolean const
+guard expressions such as `Flags::ALWAYS` through the same scoped const-fact
+index.
 Escaped and general higher-order closure call effects plus
 broader mutable closure flow remain deferred. Full CFG NLL region solving, loop
 fixed-point domain inference, broader mutable/escaped/general higher-order closure invocation/call-effect analysis,
 nested/non-local terminators, cross-file/package imports, recursive/open payload
-reasoning, module-qualified/path const guard expressions, broader inference,
-and broader non-literal guard reasoning remain deferred.
+reasoning, const aliases, broader inference, and broader non-literal guard
+reasoning remain deferred.
 Phase 5A activates
 conservative trait coherence by rejecting exact duplicate trait impls and
 orphan-rule violations while preserving impls where
