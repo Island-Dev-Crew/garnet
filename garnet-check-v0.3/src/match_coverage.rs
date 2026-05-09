@@ -8,12 +8,12 @@
 //! assignments, including conservative `if`/`elsif`/`else` branch joins,
 //! nested all-path `if` assignment joins inside branch bodies, and narrowly
 //! proven direct closure call-effect invalidation for local branch-selected
-//! closures. It also recognizes immutable local boolean constants in match
-//! guards, and rejects duplicate literal arms and arms after catch-all arms in
-//! otherwise open-domain matches. It does not attempt full type
-//! inference, loop fixed-point or broader mutable/escaped/general higher-order
-//! closure call-effect analysis, recursive/open payload coverage, or
-//! broader non-literal guard reasoning.
+//! closures. It also recognizes immutable local and same-module top-level
+//! boolean constants in match guards, and rejects duplicate literal arms and
+//! arms after catch-all arms in otherwise open-domain matches. It does not
+//! attempt full type inference, loop fixed-point inference, broader
+//! mutable/escaped/general higher-order closure call-effect analysis,
+//! recursive/open payload coverage, or broader non-literal guard reasoning.
 
 use crate::CheckError;
 use garnet_parser::ast::{
@@ -60,6 +60,7 @@ struct Scope {
     enum_imports: BTreeMap<String, Vec<String>>,
     glob_imports: Vec<Vec<String>>,
     module_imports: BTreeMap<String, Vec<String>>,
+    guard_facts: GuardFacts,
 }
 
 #[derive(Debug, Default)]
@@ -130,6 +131,7 @@ impl Checker {
             module_path: module_path.to_vec(),
             ..Scope::default()
         };
+        scope.guard_facts = collect_top_level_guard_facts(items);
 
         for item in items {
             let Item::Use(use_decl) = item else {
@@ -202,7 +204,10 @@ impl Checker {
         }
 
         let mut closure_effects = ClosureEffects::new();
-        let mut guard_facts = GuardFacts::new();
+        let mut guard_facts = scope.guard_facts.clone();
+        for param in &f.params {
+            guard_facts.remove(&param.name);
+        }
         self.walk_block(
             &f.body,
             &f.name,
@@ -1442,6 +1447,23 @@ fn update_guard_fact(name: String, value: &Expr, guard_facts: &mut GuardFacts) {
     } else {
         guard_facts.remove(&name);
     }
+}
+
+fn collect_top_level_guard_facts(items: &[Item]) -> GuardFacts {
+    let mut guard_facts = GuardFacts::new();
+    let consts = items.iter().filter_map(|item| {
+        if let Item::Const(decl) = item {
+            Some((&decl.name, &decl.value))
+        } else {
+            None
+        }
+    });
+
+    for (name, value) in consts {
+        update_guard_fact(name.clone(), value, &mut guard_facts);
+    }
+
+    guard_facts
 }
 
 fn guard_fact_from_expr(expr: &Expr, guard_facts: &GuardFacts) -> Option<bool> {

@@ -1123,6 +1123,76 @@ fn false_local_bool_guard_is_unreachable_and_not_coverage() {
 }
 
 #[test]
+fn true_const_bool_guard_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        const ALWAYS = true
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "top-level true const guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_const_bool_guard_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        const NEVER = false
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "top-level false const guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn function_parameter_shadows_const_bool_guard_fact() {
+    let errs = check(
+        r#"
+        const READY = true
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status, READY: Bool) -> Int {
+            match status {
+                Status::Ready if READY => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "parameter shadowing should keep same-name const guard facts out of coverage, got {errs:?}"
+    );
+}
+
+#[test]
 fn safe_open_literal_match_rejects_duplicate_literal_arm() {
     let errs = check(
         r#"

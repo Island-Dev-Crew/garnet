@@ -585,7 +585,8 @@ invalidation is covered in Step 2W below; direct local closure-alias binding
 call invalidation is covered in Step 2X below; branch-joined local closure-alias
 call invalidation is covered in Step 2Y below; direct branch-selected closure
 expression call invalidation is covered in Step 2Z below; immutable local
-boolean guard constants are covered in Step 2ZA below; loop fixed-point and
+boolean guard constants are covered in Step 2ZA below; same-module top-level
+boolean guard constants are covered in Step 2ZB below; loop fixed-point and
 broader mutable/escaped/general higher-order closure invocation/call-effect
 flow, cross-file/package imports, recursive/open payload reasoning, richer type
 inference, open-domain exhaustiveness/range reasoning, and broader non-literal
@@ -763,6 +764,22 @@ from finite-domain subject inference. `let always = true` guards count as
 coverage, `let never = false` guards are statically false and non-covering,
 and `let mut always = true` remains unknown so mutable guard locals cannot
 produce stale coverage.
+
+- [x] **Step 2ZB: Recognize same-module top-level boolean guard constants**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage const_bool_guard
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AG seeds guard facts from same-module top-level boolean
+`const` items. `const ALWAYS = true` guards count as coverage,
+`const NEVER = false` guards are statically false and non-covering, and
+function parameters with the same name shadow the const fact so parameterized
+guards remain conservative.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 
