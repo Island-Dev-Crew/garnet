@@ -9,7 +9,8 @@
 //! nested all-path `if` assignment joins inside branch bodies, and narrowly
 //! proven direct closure call-effect invalidation for local branch-selected
 //! closures. It also recognizes immutable local, same-module top-level, and
-//! named/glob imported top-level boolean constants, narrow boolean const
+//! named/glob imported top-level boolean constants, same-module and
+//! named/glob imported top-level integer constants, narrow boolean const
 //! aliases, and basic boolean const expressions in match guards, and rejects
 //! duplicate literal arms and arms after catch-all arms in otherwise open-domain
 //! matches. Boolean const `and`/`or` folding honors decisive left operands
@@ -134,7 +135,7 @@ struct Checker {
 
 type Env = BTreeMap<String, FiniteDomain>;
 type ClosureEffects = BTreeMap<String, BTreeSet<String>>;
-type GuardFacts = BTreeMap<String, bool>;
+type GuardFacts = BTreeMap<String, ConstFact>;
 
 pub fn check_match_coverage(module: &Module) -> Vec<CheckError> {
     let mut checker = Checker::default();
@@ -358,12 +359,8 @@ impl Checker {
                         if self.enums.contains_key(&base_path) {
                             scope.enum_imports.insert(name.clone(), base_path.clone());
                         }
-                        if let Some(value) = self
-                            .const_guard_facts
-                            .get(&base_path)
-                            .and_then(|fact| fact.as_bool())
-                        {
-                            scope.guard_facts.insert(name.clone(), value);
+                        if let Some(value) = self.const_guard_facts.get(&base_path) {
+                            scope.guard_facts.insert(name.clone(), *value);
                         }
                     }
                 }
@@ -374,12 +371,8 @@ impl Checker {
                         if self.enums.contains_key(&path) {
                             scope.enum_imports.insert(name.clone(), path.clone());
                         }
-                        if let Some(value) = self
-                            .const_guard_facts
-                            .get(&path)
-                            .and_then(|fact| fact.as_bool())
-                        {
-                            scope.guard_facts.insert(name.clone(), value);
+                        if let Some(value) = self.const_guard_facts.get(&path) {
+                            scope.guard_facts.insert(name.clone(), *value);
                         }
                     }
                 }
@@ -1315,7 +1308,7 @@ impl Checker {
         match expr {
             Expr::Bool(value, _) => Some(ConstFact::Bool(*value)),
             Expr::Int(value, _) => Some(ConstFact::Int(*value)),
-            Expr::Ident(name, _) => guard_facts.get(name).copied().map(ConstFact::Bool),
+            Expr::Ident(name, _) => guard_facts.get(name).copied(),
             Expr::Path(path, _) => self.resolve_const_fact_path(path, scope),
             Expr::Unary {
                 op: UnOp::Not,
@@ -1460,13 +1453,13 @@ impl Checker {
             .collect()
     }
 
-    fn const_guard_facts_in_module(&self, module_path: &[String]) -> Vec<(Vec<String>, bool)> {
+    fn const_guard_facts_in_module(&self, module_path: &[String]) -> Vec<(Vec<String>, ConstFact)> {
         self.const_guard_facts
             .iter()
             .filter_map(|(path, value)| {
                 path.split_last()
                     .filter(|(_, parent)| parent == &module_path)
-                    .and_then(|_| value.as_bool().map(|value| (path.clone(), value)))
+                    .map(|_| (path.clone(), *value))
             })
             .collect()
     }
@@ -1873,7 +1866,7 @@ fn update_guard_fact_for_let(decl: &garnet_parser::ast::LetDecl, guard_facts: &m
 }
 
 fn update_guard_fact(name: String, value: &Expr, guard_facts: &mut GuardFacts) {
-    if let Some(value) = guard_fact_from_expr(value, guard_facts) {
+    if let Some(value) = local_guard_fact_from_expr(value, guard_facts) {
         guard_facts.insert(name, value);
     } else {
         guard_facts.remove(&name);
@@ -1902,9 +1895,10 @@ fn collect_const_guard_decls<'a>(
     }
 }
 
-fn guard_fact_from_expr(expr: &Expr, guard_facts: &GuardFacts) -> Option<bool> {
+fn local_guard_fact_from_expr(expr: &Expr, guard_facts: &GuardFacts) -> Option<ConstFact> {
     match expr {
-        Expr::Bool(value, _) => Some(*value),
+        Expr::Bool(value, _) => Some(ConstFact::Bool(*value)),
+        Expr::Int(value, _) => Some(ConstFact::Int(*value)),
         Expr::Ident(name, _) => guard_facts.get(name).copied(),
         _ => None,
     }

@@ -966,6 +966,28 @@ Core::OFFSET == 3` and `Core::LIMIT + 1 >= 3` count as coverage, while
 comparison, function-call, recursive, cross-file/package, and broader const
 expression evaluation remain deferred.
 
+- [x] **Step 2ZM: Carry integer const facts through scoped guard identifiers**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage integer_const_identifiers
+cargo test -p garnet-check --test match_coverage imported_glob_integer_const
+cargo test -p garnet-check --test match_coverage function_parameter_shadows_imported_integer_const
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AR carries integer `ConstFact` values through same-module
+bare guard identifiers and scoped named/glob imported top-level integer
+`const` identifiers. `LIMIT + OFFSET == 3` and imported `use Core::{LIMIT,
+OFFSET}` guard expressions count as coverage, glob-imported false integer
+identifier guards are statically false/non-covering, and parameter-shadowed
+imported integer identifiers remain unknown/non-covering. Cross-file/package
+imports, non-integer comparison, function-call evaluation, recursion, and
+broader const expression evaluation remain deferred.
+
 ## Phase 5: Traits, Coherence, And Monomorphization
 
 **Intent:** Make the Rust-rigor side credible without overclaiming zero-cost guarantees.

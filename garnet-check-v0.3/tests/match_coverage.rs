@@ -1939,6 +1939,116 @@ fn integer_const_divide_by_zero_guard_stays_unknown_and_non_covering() {
 }
 
 #[test]
+fn same_module_integer_const_identifiers_count_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        const LIMIT = 2
+        const OFFSET = 1
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if LIMIT + OFFSET == 3 => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "same-module integer const identifiers should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn imported_named_integer_const_identifiers_count_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+            const OFFSET = 1
+        }
+        use Core::{LIMIT, OFFSET}
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if LIMIT + OFFSET == 3 => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "named-imported integer const identifiers should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn imported_glob_integer_const_identifier_false_guard_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+        }
+        use Core::*
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if LIMIT * 2 < 4 => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "glob-imported integer const false guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn function_parameter_shadows_imported_integer_const_guard_fact() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+            const OFFSET = 1
+        }
+        use Core::{LIMIT, OFFSET}
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status, LIMIT: Int) -> Int {
+            match status {
+                Status::Ready if LIMIT + OFFSET == 3 => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "parameter shadowing should keep imported integer const facts out of coverage, got {errs:?}"
+    );
+}
+
+#[test]
 fn safe_open_literal_match_rejects_duplicate_literal_arm() {
     let errs = check(
         r#"

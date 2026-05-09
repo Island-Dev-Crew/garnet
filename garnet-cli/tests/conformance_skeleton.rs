@@ -2406,6 +2406,128 @@ fn guarded_status_code(status: Status) -> Int {
     assert_ok(&["parse"], &direct_int_arithmetic_true_guard_complete_path);
     assert_ok(&["check"], &direct_int_arithmetic_true_guard_complete_path);
 
+    let same_module_int_identifier_guard_complete_src = r#"
+const LIMIT = 2
+const OFFSET = 1
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if LIMIT + OFFSET == 3 => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let same_module_int_identifier_guard_complete_path = temp_source(
+        "match_same_module_integer_const_identifier_guard_enum_complete",
+        same_module_int_identifier_guard_complete_src,
+    );
+    assert_ok(&["parse"], &same_module_int_identifier_guard_complete_path);
+    assert_ok(&["check"], &same_module_int_identifier_guard_complete_path);
+
+    let imported_named_int_identifier_guard_complete_src = r#"
+module Core {
+  const LIMIT = 2
+  const OFFSET = 1
+}
+use Core::{LIMIT, OFFSET}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if LIMIT + OFFSET == 3 => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let imported_named_int_identifier_guard_complete_path = temp_source(
+        "match_imported_named_integer_const_identifier_guard_enum_complete",
+        imported_named_int_identifier_guard_complete_src,
+    );
+    assert_ok(
+        &["parse"],
+        &imported_named_int_identifier_guard_complete_path,
+    );
+    assert_ok(
+        &["check"],
+        &imported_named_int_identifier_guard_complete_path,
+    );
+
+    let imported_glob_int_identifier_false_guard_missing_src = r#"
+module Core {
+  const LIMIT = 2
+}
+use Core::*
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if LIMIT * 2 < 4 => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let imported_glob_int_identifier_false_guard_missing_path = temp_source(
+        "match_imported_glob_integer_const_identifier_false_guard_enum_missing",
+        imported_glob_int_identifier_false_guard_missing_src,
+    );
+    assert_ok(
+        &["parse"],
+        &imported_glob_int_identifier_false_guard_missing_path,
+    );
+    let out = run(
+        &["check"],
+        &imported_glob_int_identifier_false_guard_missing_path,
+    );
+    assert!(
+        !out.status.success(),
+        "safe-mode false imported integer identifier guards must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected imported integer identifier false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
+    let imported_int_identifier_shadowed_missing_src = r#"
+module Core {
+  const LIMIT = 2
+  const OFFSET = 1
+}
+use Core::{LIMIT, OFFSET}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status, LIMIT: Int) -> Int {
+  match status {
+    Status::Ready if LIMIT + OFFSET == 3 => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let imported_int_identifier_shadowed_missing_path = temp_source(
+        "match_imported_integer_const_identifier_shadowed_by_param_missing",
+        imported_int_identifier_shadowed_missing_src,
+    );
+    assert_ok(&["parse"], &imported_int_identifier_shadowed_missing_path);
+    let out = run(&["check"], &imported_int_identifier_shadowed_missing_path);
+    assert!(
+        !out.status.success(),
+        "parameter-shadowed imported integer identifiers must remain unknown/non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        !stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected parameter-shadowed imported integer identifier to stay unknown, got:\n{stdout}"
+    );
+
     let open_literal_duplicate_src = r#"
 fn classify(value: Int) -> Int {
   match value {
