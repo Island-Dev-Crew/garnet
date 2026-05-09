@@ -90,13 +90,16 @@ When documents conflict, use this order:
   local boolean literal and enum variant initializers seed that finite-domain
   match environment without explicit local type annotations. Phase 4S extends
   this to direct `let mut` assignment flow, where finite assignments seed the
-  domain and non-finite assignments clear inferred finite-domain state. Full
+  domain and non-finite assignments clear inferred finite-domain state. Phase
+  4T adds conservative `if`/`elsif`/`else` assignment joins for that match
+  environment, preserving a finite domain only when every possible branch
+  agrees and clearing stale domains for mixed finite/non-finite branches. Full
   Rust-grade CFG NLL, nested/non-local terminators, general loop fixed-point
-  analysis, branch-merged assignment flow, cross-file/package imports,
-  recursive/open payload reasoning, broader expression/type inference,
-  open-domain exhaustiveness/range reasoning, non-literal guard reasoning,
-  dynamic places, broader drop elaboration, and generic/trait impl dispatch
-  remain roadmap work, not current truth.
+  analysis, loop/try/closure-merged assignment flow, cross-file/package
+  imports, recursive/open payload reasoning, broader expression/type
+  inference, open-domain exhaustiveness/range reasoning, non-literal guard
+  reasoning, dynamic places, broader drop elaboration, and generic/trait impl
+  dispatch remain roadmap work, not current truth.
 - Trait coherence now has an active conservative checker slice: exact duplicate
   trait impls and orphan impls where neither trait nor type is local reject,
   simple generic blanket-vs-concrete and renamed blanket impl overlaps reject,

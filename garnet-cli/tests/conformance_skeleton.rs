@@ -880,6 +880,55 @@ fn bool_code() -> Int {
     assert_ok(&["parse"], &mutable_invalidation_path);
     assert_ok(&["check"], &mutable_invalidation_path);
 
+    let if_else_mutable_bool_src = r#"
+fn bool_code(cond: Bool) -> Int {
+  let mut flag = 1
+  if cond {
+    flag = true
+  } else {
+    flag = false
+  }
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let if_else_mutable_bool_path = temp_source(
+        "match_if_else_mutable_bool_assignment_non_exhaustive",
+        if_else_mutable_bool_src,
+    );
+    assert_ok(&["parse"], &if_else_mutable_bool_path);
+    let out = run(&["check"], &if_else_mutable_bool_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode if/else mutable Bool assignments must reject missing finite-domain cases"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("non-exhaustive match") && stdout.contains("`false`"),
+        "expected if/else mutable Bool assignment diagnostic, got:\n{stdout}"
+    );
+
+    let if_else_mixed_invalidation_src = r#"
+fn bool_code(cond: Bool) -> Int {
+  let mut flag = true
+  if cond {
+    flag = false
+  } else {
+    flag = 1
+  }
+  match flag {
+    true => 1
+  }
+}
+"#;
+    let if_else_mixed_invalidation_path = temp_source(
+        "match_if_else_mixed_assignment_invalidation_open",
+        if_else_mixed_invalidation_src,
+    );
+    assert_ok(&["parse"], &if_else_mixed_invalidation_path);
+    assert_ok(&["check"], &if_else_mixed_invalidation_path);
+
     let enum_complete_src = r#"
 enum Status { Ready, Done }
 
@@ -969,6 +1018,37 @@ fn status_code() -> Int {
     assert!(
         stdout.contains("non-exhaustive match") && stdout.contains("Status::Done"),
         "expected mutable enum initializer missing variant diagnostic, got:\n{stdout}"
+    );
+
+    let if_else_enum_assignment_src = r#"
+enum Status { Ready, Done }
+
+fn status_code(cond: Bool) -> Int {
+  let mut status = 1
+  if cond {
+    status = Status::Ready()
+  } else {
+    status = Status::Done()
+  }
+  match status {
+    Status::Ready => 1
+  }
+}
+"#;
+    let if_else_enum_assignment_path = temp_source(
+        "match_if_else_enum_assignment_missing",
+        if_else_enum_assignment_src,
+    );
+    assert_ok(&["parse"], &if_else_enum_assignment_path);
+    let out = run(&["check"], &if_else_enum_assignment_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode if/else mutable enum assignments must reject missing finite-domain cases"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("non-exhaustive match") && stdout.contains("Status::Done"),
+        "expected if/else mutable enum assignment missing variant diagnostic, got:\n{stdout}"
     );
 
     let nested_missing_src = r#"

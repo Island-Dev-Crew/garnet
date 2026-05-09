@@ -5,10 +5,11 @@
 //! aliases, finite nested constructor payloads, and literal `true`/`false`
 //! guards whose type is visible from parameter metadata, local annotations,
 //! local boolean/enum variant initializers, or direct mutable-local
-//! assignments. It also rejects duplicate literal arms and arms after catch-all
-//! arms in otherwise open-domain matches. It does not attempt full type
-//! inference, branch-merged assignment flow, recursive/open payload coverage, or
-//! non-literal guard reasoning.
+//! assignments, including conservative `if`/`elsif`/`else` branch joins. It
+//! also rejects duplicate literal arms and arms after catch-all arms in
+//! otherwise open-domain matches. It does not attempt full type inference,
+//! loop/exception/closure-merged assignment flow, recursive/open payload
+//! coverage, or non-literal guard reasoning.
 
 use crate::CheckError;
 use garnet_parser::ast::{
@@ -314,14 +315,23 @@ impl Checker {
                 ..
             } => {
                 self.walk_expr(condition, fn_name, env, scope);
-                self.walk_block(then_block, fn_name, env.clone(), scope);
+                let branch_base = env.clone();
+                let mut branch_envs =
+                    vec![self.walk_block(then_block, fn_name, branch_base.clone(), scope)];
+                let mut branch_targets = vec![assigned_outer_targets_in_block(then_block)];
                 for (condition, block) in elsif_clauses {
                     self.walk_expr(condition, fn_name, env, scope);
-                    self.walk_block(block, fn_name, env.clone(), scope);
+                    branch_envs.push(self.walk_block(block, fn_name, branch_base.clone(), scope));
+                    branch_targets.push(assigned_outer_targets_in_block(block));
                 }
                 if let Some(block) = else_block {
-                    self.walk_block(block, fn_name, env.clone(), scope);
+                    branch_envs.push(self.walk_block(block, fn_name, branch_base.clone(), scope));
+                    branch_targets.push(assigned_outer_targets_in_block(block));
+                } else {
+                    branch_envs.push(branch_base);
+                    branch_targets.push(BTreeSet::new());
                 }
+                *env = join_branch_envs(env, &branch_envs, &branch_targets);
             }
             Expr::Match { subject, arms, .. } => {
                 self.walk_expr(subject, fn_name, env, scope);
@@ -822,6 +832,81 @@ fn nested_variant_keys(
         .into_iter()
         .map(|parts| format!("{}({})", variant_label(domain, variant), parts.join(", ")))
         .collect()
+}
+
+fn join_branch_envs(
+    branch_base: &Env,
+    branch_envs: &[Env],
+    branch_targets: &[BTreeSet<String>],
+) -> Env {
+    let Some(first) = branch_envs.first() else {
+        return Env::new();
+    };
+
+    let mut eligible = branch_base.keys().cloned().collect::<BTreeSet<_>>();
+    if let Some(first_targets) = branch_targets.first() {
+        for target in first_targets {
+            if branch_targets
+                .iter()
+                .skip(1)
+                .all(|targets| targets.contains(target))
+            {
+                eligible.insert(target.clone());
+            }
+        }
+    }
+
+    let mut joined = Env::new();
+    'bindings: for (name, domain) in first {
+        if !eligible.contains(name) {
+            continue;
+        }
+        for branch in &branch_envs[1..] {
+            let Some(other) = branch.get(name) else {
+                continue 'bindings;
+            };
+            if !domains_equivalent(domain, other) {
+                continue 'bindings;
+            }
+        }
+        joined.insert(name.clone(), domain.clone());
+    }
+    joined
+}
+
+fn assigned_outer_targets_in_block(block: &Block) -> BTreeSet<String> {
+    let local_bindings = block
+        .stmts
+        .iter()
+        .filter_map(|stmt| match stmt {
+            Stmt::Let(decl) => Some(decl.name.clone()),
+            Stmt::Var(decl) => Some(decl.name.clone()),
+            Stmt::Const(decl) => Some(decl.name.clone()),
+            _ => None,
+        })
+        .collect::<BTreeSet<_>>();
+
+    block
+        .stmts
+        .iter()
+        .filter_map(|stmt| match stmt {
+            Stmt::Assign {
+                target: Expr::Ident(name, _),
+                ..
+            } if !local_bindings.contains(name) => Some(name.clone()),
+            _ => None,
+        })
+        .collect()
+}
+
+fn domains_equivalent(left: &FiniteDomain, right: &FiniteDomain) -> bool {
+    match (left, right) {
+        (FiniteDomain::Bool, FiniteDomain::Bool) => true,
+        (FiniteDomain::Enum(left), FiniteDomain::Enum(right)) => {
+            left.info.path == right.info.path && left.pattern_prefixes == right.pattern_prefixes
+        }
+        _ => false,
+    }
 }
 
 fn is_catch_all(pattern: &Pattern) -> bool {

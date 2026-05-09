@@ -218,6 +218,152 @@ fn safe_match_invalidates_mutable_domain_after_non_finite_assignment() {
 }
 
 #[test]
+fn safe_match_joins_bool_domain_after_if_else_assignments() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = 1
+            if cond {
+                flag = true
+            } else {
+                flag = false
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match") && has_safe_violation(&errs, "false"),
+        "expected if/else Bool assignments to join into a finite-domain diagnostic, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_invalidates_domain_after_mixed_if_else_assignments() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = true
+            if cond {
+                flag = false
+            } else {
+                flag = 1
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "mixed finite/non-finite branch assignments should clear inferred domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_does_not_infer_branch_assignment_without_else_path() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            let mut flag = 1
+            if cond {
+                flag = true
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "finite assignment on only one possible branch should not infer a closed domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_joins_bool_domain_after_elsif_assignments() {
+    let errs = check(
+        r#"
+        fn bool_code(first: Bool, second: Bool) -> Int {
+            let mut flag = 1
+            if first {
+                flag = true
+            } elsif second {
+                flag = false
+            } else {
+                flag = true
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match") && has_safe_violation(&errs, "false"),
+        "expected if/elsif/else Bool assignments to join into a finite-domain diagnostic, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_does_not_join_branch_local_bindings_after_if_else() {
+    let errs = check(
+        r#"
+        fn bool_code(cond: Bool) -> Int {
+            if cond {
+                let flag = true
+            } else {
+                let flag = false
+            }
+            match flag {
+                true => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match"),
+        "branch-local bindings should not seed a post-if finite domain, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_match_joins_enum_domain_after_if_else_assignments() {
+    let errs = check(
+        r#"
+        enum Status { Ready, Done }
+
+        fn status_code(cond: Bool) -> Int {
+            let mut status = 1
+            if cond {
+                status = Status::Ready()
+            } else {
+                status = Status::Done()
+            }
+            match status {
+                Status::Ready => 1
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Done"),
+        "expected if/else enum assignments to join into a finite-domain diagnostic, got {errs:?}"
+    );
+}
+
+#[test]
 fn managed_match_non_exhaustiveness_is_not_rejected_by_safe_pass() {
     let errs = check(
         r#"

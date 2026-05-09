@@ -550,10 +550,32 @@ tracking: finite boolean/enum assignments seed safe-mode match coverage, and
 non-finite assignments invalidate inferred finite-domain state before later
 matches.
 
-Remaining: branch-merged assignment flow, compound-assignment domain inference,
-cross-file/package imports, recursive/open payload reasoning, richer type
-inference, open-domain exhaustiveness/range reasoning, and non-literal guard
-reasoning remain pending.
+Remaining: direct `if`/`elsif`/`else` branch-merged assignment flow is covered
+in Step 2O below; compound-assignment domain inference, cross-file/package
+imports, recursive/open payload reasoning, richer type inference, open-domain
+exhaustiveness/range reasoning, and non-literal guard reasoning remain
+pending.
+
+- [x] **Step 2O: Join branch-local match-domain assignments**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage if_else_assignments
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4T carries direct mutable-local match-domain evidence through
+conservative `if`/`elsif`/`else` joins only when every possible branch preserves
+the same finite domain. Bool and enum branch assignments now drive
+non-exhaustiveness diagnostics after the conditional, while mixed
+finite/non-finite branches clear stale finite-domain state before later
+matches.
+
+Remaining: compound-assignment domain inference, loop/try/closure-merged
+assignment flow, cross-file/package imports, recursive/open payload reasoning,
+richer type inference, open-domain exhaustiveness/range reasoning, and
+non-literal guard reasoning remain pending.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 
