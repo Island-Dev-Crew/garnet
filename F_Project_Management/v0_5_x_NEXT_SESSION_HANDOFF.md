@@ -106,7 +106,7 @@ two-day LSP.
 
 ## Item B — Memory Core Tier 1 (Mnemos production allocator integration)
 
-### Current Phase 6D status
+### Current Phase 6E status
 
 Phase 6A added a bounded cycle-reference path before the allocator work:
 `garnet-memory-v0.3/src/cycle.rs`, `garnet-memory-v0.3/tests/cycle.rs`, and
@@ -118,8 +118,11 @@ mark-gray / scan / collect-white pass. Phase 6C adds deterministic
 finalization-order reporting and safe-mode affine allocation exclusion. This is
 not yet production ARC. Phase 6D adds a bounded `CycleRootBuffer` so
 decrement-triggered buffered roots can drive collection before the production
-allocator is available; the next session should promote those fixtures into
-allocator-integrated Bacon-Rajan trial deletion.
+allocator is available. Phase 6E adds `CycleAllocatorFixture`, so an
+allocator-owned surface now routes root releases and ARC edge removals through
+the buffered trial-deletion path. The next session should promote those
+fixtures into production Memory Core stores with allocator-integrated
+Bacon-Rajan trial deletion and runtime finalizer invocation.
 
 ### Current Phase 6F-6H cache-security status
 

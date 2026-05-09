@@ -1,6 +1,8 @@
 //! Observable cycle-collection fixtures for the Memory Core reference path.
 
-use garnet_memory::{CycleGraph, CycleNodeId, CycleRootBuffer, CycleScan, MemoryKind};
+use garnet_memory::{
+    CycleAllocatorFixture, CycleGraph, CycleNodeId, CycleRootBuffer, CycleScan, MemoryKind,
+};
 
 fn labels(graph: &CycleGraph, ids: &[CycleNodeId]) -> Vec<String> {
     let mut labels: Vec<_> = ids
@@ -227,4 +229,82 @@ fn buffered_collection_scans_only_buffered_roots() {
     assert_eq!(labels(&graph, &report.trial_candidates), vec!["root"]);
     assert_eq!(labels(&graph, &report.collected), vec!["child", "root"]);
     assert!(graph.contains(unrelated));
+}
+
+#[test]
+fn allocator_owned_root_buffer_collects_after_root_release() {
+    let mut allocator = CycleAllocatorFixture::with_threshold(CycleScan::All, 1);
+    let root = allocator.allocate_arc(MemoryKind::Working, "root");
+    let child = allocator.allocate_arc(MemoryKind::Working, "child");
+
+    allocator.add_root(root).unwrap();
+    allocator.add_edge(root, child).unwrap();
+    allocator.add_edge(child, root).unwrap();
+
+    let report = allocator
+        .release_root(root)
+        .unwrap()
+        .expect("threshold should collect immediately");
+
+    assert!(allocator.buffered_roots().is_empty());
+    assert_eq!(
+        labels(allocator.graph(), &report.trial_candidates),
+        vec!["root"]
+    );
+    assert_eq!(
+        labels(allocator.graph(), &report.collected),
+        vec!["child", "root"]
+    );
+    assert!(!allocator.contains(root));
+    assert!(!allocator.contains(child));
+}
+
+#[test]
+fn allocator_edge_decrement_buffers_newly_unreachable_cycle() {
+    let mut allocator = CycleAllocatorFixture::with_threshold(CycleScan::All, 1);
+    let root = allocator.allocate_arc(MemoryKind::Working, "root");
+    let cycle_a = allocator.allocate_arc(MemoryKind::Working, "cycle_a");
+    let cycle_b = allocator.allocate_arc(MemoryKind::Working, "cycle_b");
+
+    allocator.add_root(root).unwrap();
+    allocator.add_edge(root, cycle_a).unwrap();
+    allocator.add_edge(cycle_a, cycle_b).unwrap();
+    allocator.add_edge(cycle_b, cycle_a).unwrap();
+
+    let report = allocator
+        .remove_edge(root, cycle_a)
+        .unwrap()
+        .expect("edge decrement should collect newly unreachable cycle");
+
+    assert_eq!(
+        labels(allocator.graph(), &report.trial_candidates),
+        vec!["cycle_a"]
+    );
+    assert_eq!(
+        labels(allocator.graph(), &report.collected),
+        vec!["cycle_a", "cycle_b"]
+    );
+    assert!(allocator.contains(root));
+    assert!(!allocator.contains(cycle_a));
+    assert!(!allocator.contains(cycle_b));
+}
+
+#[test]
+fn allocator_missing_edge_removal_does_not_schedule_cycle() {
+    let mut allocator = CycleAllocatorFixture::with_threshold(CycleScan::All, 1);
+    let root = allocator.allocate_arc(MemoryKind::Working, "root");
+    let cycle_a = allocator.allocate_arc(MemoryKind::Working, "cycle_a");
+    let cycle_b = allocator.allocate_arc(MemoryKind::Working, "cycle_b");
+
+    allocator.add_root(root).unwrap();
+    allocator.add_edge(cycle_a, cycle_b).unwrap();
+    allocator.add_edge(cycle_b, cycle_a).unwrap();
+
+    let report = allocator.remove_edge(root, cycle_a).unwrap();
+
+    assert!(report.is_none());
+    assert_eq!(allocator.buffer_len(), 0);
+    assert!(allocator.contains(root));
+    assert!(allocator.contains(cycle_a));
+    assert!(allocator.contains(cycle_b));
 }

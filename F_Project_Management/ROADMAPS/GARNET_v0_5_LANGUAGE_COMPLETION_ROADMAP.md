@@ -387,7 +387,13 @@ Phase 6D adds `CycleRootBuffer`, threshold-triggered collection, and buffered
 candidate scans so the reference model no longer relies only on whole-graph
 unrooted candidate discovery.
 
-- [ ] **Step 5: Promote root-buffer/finalizer/safe-mode interaction into production allocator tests**
+- [x] **Step 5: Add allocator-owned root/edge decrement fixture**
+
+Phase 6E adds `CycleAllocatorFixture`, proving that the allocator-facing
+surface can own the graph plus root buffer and route root releases and ARC edge
+removals through buffered trial-deletion scheduling.
+
+- [ ] **Step 6: Promote root-buffer/finalizer/safe-mode interaction into production allocator tests**
 
 ## Phase 7: Release, Research, And Repeated Falsification
 

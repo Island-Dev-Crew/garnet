@@ -66,9 +66,10 @@ When documents conflict, use this order:
 - Generic instantiation now has interpreter-level evidence for generic struct
   construction, generic impl method dispatch, and generic function calls. This
   is not native monomorphization or a zero-cost backend guarantee.
-- Memory Core ARC/cycle work now has Phase 6D executable reference evidence:
-  `CycleGraph` and `CycleRootBuffer` fixtures expose decrement-triggered
-  buffered roots, threshold-driven collection, trial candidates, scan-black
+- Memory Core ARC/cycle work now has Phase 6E executable reference evidence:
+  `CycleGraph`, `CycleRootBuffer`, and `CycleAllocatorFixture` fixtures expose
+  decrement-triggered buffered roots, allocator-owned root/edge decrement
+  scheduling, threshold-driven collection, trial candidates, scan-black
   retained candidates, deterministic collect-white finalization order,
   safe-mode affine exclusion from ARC trial candidates, rooted retention,
   unrooted cycle collection, unrooted acyclic retention for ordinary

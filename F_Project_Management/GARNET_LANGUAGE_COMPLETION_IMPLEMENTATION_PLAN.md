@@ -28,7 +28,7 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | Rust-grade NLL and borrow rules | Partial Phase 4F | `garnet-check-v0.3/src/borrow.rs`; `garnet-check-v0.3/src/lib.rs`; `garnet-check-v0.3/tests/borrow.rs`; `garnet-check-v0.3/tests/extended.rs`; `partial_borrow_rule_suite` rejects direct use-after-move, direct mut-aliasing, `own self` method receiver moves, method receiver aliasing, simple typed receiver disambiguation, simple field-place aliasing/field use-after-move, and conservative index-place aliasing/index use-after-move while checking nested index operands; `deferred_nll_lifetime_inference` now covers conservative reference-return lifetime elision | Activate full CFG NLL, dynamic place tracking, generic/trait impl dispatch, and drop discipline |
 | Trait coherence | Partial Phase 5A | `garnet-check-v0.3/src/coherence.rs`; `garnet-check-v0.3/tests/coherence.rs`; `deferred_trait_coherence` rejects exact duplicate trait impls and orphan-rule violations while allowing local-trait or local-type impls | Activate generic overlap solving and package-aware coherence |
 | Generic instantiation / monomorphization | Partial Phase 5B | `generic_instantiation_runs_without_monomorphization_claims` runs generic struct construction, a generic impl method, and a generic function through the managed interpreter | Keep native zero-cost monomorphization deferred until a compiler backend exists |
-| Memory Core ARC/cycles | Partial Phase 6D | `garnet-memory-v0.3/src/cycle.rs`; `garnet-memory-v0.3/tests/cycle.rs`; active `deferred_arc_cycle_detection` | Promote the bounded root-buffer trial-deletion model into allocator-integrated ARC |
+| Memory Core ARC/cycles | Partial Phase 6E | `garnet-memory-v0.3/src/cycle.rs`; `garnet-memory-v0.3/tests/cycle.rs`; active `deferred_arc_cycle_detection`; `CycleAllocatorFixture` owns graph + root buffer for root/edge decrement scheduling | Promote the bounded allocator-owned fixture model into production allocator-integrated ARC |
 | Compiler-as-agent cache privacy/replay | Partial Phase 6H | `garnet-cli/src/{cache,cmd}.rs`; `garnet-cli/tests/cache_episodes.rs`; cache episode logs redact external absolute paths, collapse project-local absolute paths to stable relative labels, warn while ignoring same-cache foreign-key plus copied-cache replay episodes, quarantine copied/stale strategy rows whose provenance does not re-verify, and preserve bounded concurrent episode appends; CacheHMAC and ProvenanceStrategy tests remain active | Add long-running concurrent write soak and source-tree binding policy |
 | Native compiler | Long-horizon scaffold only | no backend crate | Create backend design PR before claiming compiled language status |
 | Formal RustBelt/Iris/Coq proof | Long-horizon scaffold only | Paper V theorem sketches | Open proof repo or `proofs/` workspace with checked theorem stubs |
@@ -577,13 +577,19 @@ cargo test -p garnet-cli --test conformance_skeleton deferred_arc_cycle_detectio
 ```
 
 Expected after Phase 6D: buffered root release passes for threshold-triggered
-collection and buffered-only scans. Expected after full implementation:
-production allocator decrements own and schedule the same root-buffer behavior.
+collection and buffered-only scans.
 
-- [ ] **Step 5: Promote root-buffer trial deletion to production ARC allocator roots**
+- [x] **Step 5: Add allocator-owned root/edge decrement fixture**
+
+Evidence: Phase 6E adds `CycleAllocatorFixture`, proving that the allocator
+surface can own the graph plus root buffer and route root releases and ARC edge
+decrements through the same buffered trial-deletion scheduling path.
+
+- [ ] **Step 6: Promote root-buffer trial deletion to production ARC allocator roots**
 
 Wire the trial-deletion pass to allocator-owned ARC roots and decrement events
-instead of only the deterministic fixture graph.
+inside the production Memory Core stores instead of only the deterministic
+fixture graph.
 
 ## Milestone 7: Release, Proof, Native Backend, And Empirical Evidence
 

@@ -25,16 +25,18 @@
 //! testable end-to-end while the production allocator work proceeds
 //! in parallel. They are NOT designed for production agent workloads:
 //!
-//! - No allocator integration (everything goes through `Vec` / `BTreeMap`).
+//! - No production allocator integration for the four reference stores
+//!   (they still go through `Vec` / `BTreeMap`).
 //! - No persistence (state is in-process only).
 //! - No production-grade vector index (cosine over a flat `Vec`, not
 //!   HNSW / IVF / PolarQuant).
 //! - No eviction beyond what `MemoryPolicy` exposes as scoring API.
-//! - No allocator-integrated ARC + Bacon–Rajan collector yet.
-//! - A bounded [`CycleGraph`] / [`CycleRootBuffer`] trial-deletion reference
-//!   path exposes §4.5 cycle, finalization-order, safe-mode exclusion, and
-//!   root-buffer scheduling fixtures while production allocator work remains on
-//!   the Memory Core roadmap.
+//! - No production allocator-integrated ARC + Bacon–Rajan collector yet.
+//! - A bounded [`CycleGraph`] / [`CycleRootBuffer`] /
+//!   [`CycleAllocatorFixture`] trial-deletion reference path exposes §4.5
+//!   cycle, finalization-order, safe-mode exclusion, root-buffer scheduling,
+//!   and allocator-owned root/edge decrement fixtures while production
+//!   allocator work remains on the Memory Core roadmap.
 //!
 //! ## What's planned
 //!
@@ -62,8 +64,8 @@ pub mod semantic;
 pub mod working;
 
 pub use cycle::{
-    CycleAllocationMode, CycleCollectReport, CycleGraph, CycleGraphError, CycleNodeId,
-    CycleRootBuffer, CycleScan,
+    CycleAllocationMode, CycleAllocatorFixture, CycleCollectReport, CycleGraph, CycleGraphError,
+    CycleNodeId, CycleRootBuffer, CycleScan,
 };
 pub use episodic::EpisodeStore;
 pub use policy::{MemoryKind, MemoryPolicy};

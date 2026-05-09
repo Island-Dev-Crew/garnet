@@ -130,13 +130,14 @@ duplicate trait impls and orphan-rule violations while preserving impls where
 either the trait or the type is local. Phase 5B activates interpreter-level
 generic instantiation evidence for generic structs, generic impl methods, and
 generic functions. Full generic overlap solving, package-aware coherence,
-native monomorphization, and zero-cost guarantees remain deferred. Phase 6D
+native monomorphization, and zero-cost guarantees remain deferred. Phase 6E
 adds bounded Memory Core trial-deletion fixtures with trial candidates,
 scan-black retained candidates, deterministic finalization-order reporting,
 safe-mode affine allocation exclusion, root-buffer/decrement-event scheduling,
-rooted retention, unrooted cycle collection, unrooted acyclic retention, and
-kind-scheduled cross-kind collection. Production allocator-integrated ARC and
-runtime finalizer invocation remain deferred. Phase 6F adds a cache privacy
+allocator-owned root/edge decrement fixtures, rooted retention, unrooted cycle
+collection, unrooted acyclic retention, and kind-scheduled cross-kind
+collection. Production allocator-integrated ARC and runtime finalizer
+invocation remain deferred. Phase 6F adds a cache privacy
 gate for compiler-as-agent episode logs: project-local absolute file paths are
 recorded as stable relative labels, and external absolute paths are redacted to
 `<external>/<file>` so accidental `.garnet-cache/` copies do not leak user,

@@ -6,7 +6,9 @@
 //! for normal eviction, and unrooted cycles are collected by a bounded
 //! trial-deletion pass with kind-aware scan scheduling. Safe-mode allocations
 //! can be modeled as affine nodes that are retained but excluded from ARC
-//! cycle detection.
+//! cycle detection. [`CycleAllocatorFixture`] keeps this honest while moving
+//! one step closer to the production shape: it owns the graph and root buffer
+//! together, and routes root/edge decrements through the buffered collector.
 
 use crate::MemoryKind;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
@@ -94,6 +96,84 @@ impl CycleRootBuffer {
 
     fn clear(&mut self) {
         self.roots.clear();
+    }
+}
+
+/// Allocator-owned wrapper for the bounded cycle-collection fixture.
+///
+/// This is still a deterministic reference fixture, not the production object
+/// allocator. It exists to prove the next integration boundary: root-buffer
+/// ownership belongs with the allocator surface, and decrement events from root
+/// releases or ARC edge removals enqueue trial-deletion candidates without
+/// callers manually managing a separate [`CycleRootBuffer`].
+#[derive(Debug, Clone)]
+pub struct CycleAllocatorFixture {
+    graph: CycleGraph,
+    root_buffer: CycleRootBuffer,
+}
+
+impl CycleAllocatorFixture {
+    pub fn new(scan: CycleScan) -> Self {
+        Self::with_threshold(scan, CycleRootBuffer::DEFAULT_THRESHOLD)
+    }
+
+    pub fn with_threshold(scan: CycleScan, threshold: usize) -> Self {
+        Self {
+            graph: CycleGraph::new(),
+            root_buffer: CycleRootBuffer::with_threshold(scan, threshold),
+        }
+    }
+
+    pub fn graph(&self) -> &CycleGraph {
+        &self.graph
+    }
+
+    pub fn buffered_roots(&self) -> Vec<CycleNodeId> {
+        self.root_buffer.buffered_roots()
+    }
+
+    pub fn buffer_len(&self) -> usize {
+        self.root_buffer.len()
+    }
+
+    pub fn allocate_arc(&mut self, kind: MemoryKind, label: impl Into<String>) -> CycleNodeId {
+        self.graph.add_node(kind, label)
+    }
+
+    pub fn allocate_safe(&mut self, kind: MemoryKind, label: impl Into<String>) -> CycleNodeId {
+        self.graph.add_safe_node(kind, label)
+    }
+
+    pub fn contains(&self, id: CycleNodeId) -> bool {
+        self.graph.contains(id)
+    }
+
+    pub fn add_root(&mut self, id: CycleNodeId) -> Result<(), CycleGraphError> {
+        self.graph.add_root(id)
+    }
+
+    pub fn release_root(
+        &mut self,
+        id: CycleNodeId,
+    ) -> Result<Option<CycleCollectReport>, CycleGraphError> {
+        self.graph.release_root_to_buffer(id, &mut self.root_buffer)
+    }
+
+    pub fn add_edge(&mut self, from: CycleNodeId, to: CycleNodeId) -> Result<(), CycleGraphError> {
+        self.graph.add_edge(from, to)
+    }
+
+    pub fn remove_edge(
+        &mut self,
+        from: CycleNodeId,
+        to: CycleNodeId,
+    ) -> Result<Option<CycleCollectReport>, CycleGraphError> {
+        self.graph
+            .remove_edge_to_buffer(from, to, &mut self.root_buffer)
+    }
+
+    pub fn collect_buffered_cycles(&mut self) -> CycleCollectReport {
+        self.graph.collect_buffered_cycles(&mut self.root_buffer)
     }
 }
 
@@ -227,6 +307,29 @@ impl CycleGraph {
     ) -> Result<(), CycleGraphError> {
         self.node_mut(from)?.edges.remove(&to);
         Ok(())
+    }
+
+    /// Remove one ARC edge and enqueue the target for buffered trial deletion
+    /// when that decrement leaves it unreachable from roots but still
+    /// referenced by ARC peers.
+    pub fn remove_edge_to_buffer(
+        &mut self,
+        from: CycleNodeId,
+        to: CycleNodeId,
+        buffer: &mut CycleRootBuffer,
+    ) -> Result<Option<CycleCollectReport>, CycleGraphError> {
+        self.ensure_arc_tracked(to)?;
+        let removed = self.node_mut(from)?.edges.remove(&to);
+
+        if removed && self.should_buffer_candidate(to, buffer.scan()) {
+            buffer.insert(to);
+        }
+
+        if buffer.len() >= buffer.threshold() {
+            Ok(Some(self.collect_buffered_cycles(buffer)))
+        } else {
+            Ok(None)
+        }
     }
 
     /// Collect unrooted cycles that match the requested scan.
@@ -409,6 +512,10 @@ impl CycleGraph {
     }
 
     fn should_buffer_after_release(&self, id: CycleNodeId, scan: CycleScan) -> bool {
+        self.should_buffer_candidate(id, scan)
+    }
+
+    fn should_buffer_candidate(&self, id: CycleNodeId, scan: CycleScan) -> bool {
         if !self.contains(id) || !self.is_arc_tracked(id) || !self.scan_matches_node(scan, id) {
             return false;
         }
