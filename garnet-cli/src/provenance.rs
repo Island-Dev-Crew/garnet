@@ -34,7 +34,7 @@
 //! The compiler loses a learned optimization but does not act on a
 //! potentially-poisoned one.
 
-use crate::cache::{read_all_in_with_key, Episode};
+use crate::cache::{read_all_indexed_in_with_key, Episode};
 use crate::strategies::{verify_strategy_hmac, Strategy};
 use std::path::Path;
 
@@ -80,17 +80,15 @@ pub fn verify_strategy(
         return Err(QuarantineReason::NoJustification);
     }
 
-    // 3. Re-read HMAC-verified episodes. The id we use is the
+    // 3. Re-read locally trusted episodes. The id we use is the
     //    0-indexed line number in episodes.log (same convention as
-    //    the miner). Read the whole log once and index by position.
-    let read_result = read_all_in_with_key(episode_dir, key);
-    let verified_episodes: &[Episode] = &read_result.episodes;
+    //    the miner). The cache reader enforces both the machine-key MAC
+    //    and the source-tree binding, so copied same-machine caches cannot
+    //    re-justify a strategy in a different checkout.
+    let cache_dir = resolve_cache_dir(episode_dir);
 
     // Build a map from id (line index in the ORIGINAL log) to episode.
-    // Since `read_all_in_with_key` skips unverified lines but doesn't
-    // preserve their original line numbers, we need a co-indexed read.
-    // Use a dedicated helper that preserves line indices.
-    let indexed = read_all_indexed_with_key(episode_dir, key);
+    let indexed = read_all_indexed_in_with_key(&cache_dir, key);
     let index: std::collections::BTreeMap<i64, &Episode> =
         indexed.iter().map(|(id, ep)| (*id, ep)).collect();
 
@@ -108,43 +106,16 @@ pub fn verify_strategy(
     // 5. The miner's predicate must still hold on those episodes.
     check_predicate_reholds(strategy, &resolved)?;
 
-    // Unused: verified episode count from read_all_in. We don't use
-    // it here, but if the skipped count is non-zero and we still got
-    // this far, callers may want to surface that to the user.
-    let _ = verified_episodes;
     Ok(())
 }
 
-/// Read episodes.log AND preserve each surviving episode's original
-/// line index (same convention the miner uses for `justifying_episode_ids`).
-fn read_all_indexed_with_key(dir: &Path, key: &[u8; 32]) -> Vec<(i64, Episode)> {
-    use std::fs::File;
-    use std::io::{BufRead, BufReader};
-    let path = dir.join(".garnet-cache").join("episodes.log");
-    // cache.rs hardcodes the subdir — mirror it here. If someone calls
-    // verify_strategy with `episode_dir` already pointing at `.garnet-cache`,
-    // fall back to a second path.
-    let resolved = if path.exists() {
-        path
+fn resolve_cache_dir(dir: &Path) -> std::path::PathBuf {
+    let nested = dir.join(".garnet-cache").join("episodes.log");
+    if nested.exists() {
+        dir.join(".garnet-cache")
     } else {
-        dir.join("episodes.log")
-    };
-    let Ok(file) = File::open(&resolved) else {
-        return Vec::new();
-    };
-    let mut out = Vec::new();
-    for (idx, line) in BufReader::new(file)
-        .lines()
-        .map_while(Result::ok)
-        .enumerate()
-    {
-        if let Some(ep) = Episode::from_ndjson_line(&line) {
-            if ep.verify_with_key(key) {
-                out.push((idx as i64, ep));
-            }
-        }
+        dir.to_path_buf()
     }
-    out
 }
 
 /// Check that the miner's predicate re-holds on the resolved episodes.

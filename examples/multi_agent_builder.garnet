@@ -161,7 +161,7 @@ def base_duration(kind) {
 }
 
 def has_marker(text, marker) {
-  text.starts_with?(marker)
+  text.starts_with(marker)
 }
 
 # ════════════════════════════════════════════════════════════════════
@@ -241,6 +241,7 @@ def red_sources() {
   ]
 }
 
+@caps()
 def main() {
   let green = BuildSpec("clean_build", stratified_sources(), true)
   let summary_green = orchestrate(green)

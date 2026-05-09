@@ -82,15 +82,15 @@ allocator integration is sequenced in
 | Mini-Spec | Status | Evidence | Notes |
 |---|---|---|---|
 | §4.1 Declaration form | ✅ | `grammar/memory.rs`, `MemoryDecl` AST node | |
-| §4.2 Semantics | ✅ | Mnemos: `garnet-memory-v0.3/src/{working,episodic,semantic,procedural}.rs` | Reference stores meeting the behavioural contract; not production allocators. Roadmap Tier 1 + Tier 2 productizes the backends. |
+| §4.2 Semantics | ✅ | Mnemos: `garnet-memory-v0.3/src/{alloc,working,episodic,semantic,procedural}.rs`; `garnet-memory-v0.3/tests/properties.rs` | Reference stores meet the behavioural contract and now expose Phase 6K cycle-aware store-root lifecycles in addition to Phase 6J kind-aware allocator stats and policy-configured lazy episodic/semantic eviction. Full production backends remain Roadmap Tier 2/Tier 3. |
 | §4.3 Out-of-scope items | ✅ (by design) | n/a | These remain explicit non-goals. |
-| §4.4 Generics over memory kinds | 🟠 | n/a | Explicitly deferred; tracked as Roadmap T1.3 (gates on §11.6 monomorphization). |
-| §4.5 ARC + Bacon–Rajan cycle detection | 🟠 | spec only — no implementation file | New in v1.0; tracked as Roadmap T3.1. The single largest open Memory Core item. |
-| §4.5.1 Trial-deletion algorithm | 🟠 | — | Roadmap T3.1 |
-| §4.5.2 Kind-aware root partitioning | 🟠 | — | Roadmap T3.1 |
-| §4.5.3 Finalization | 🟠 | — | Roadmap T3.1 |
-| §4.5.4 Safe-mode interaction | 🟠 | — | Roadmap T3.1 / T3.2 |
-| §4.5.5 Observable invariants | 🟠 | — | Roadmap T3.1 |
+| §4.4 Generics over memory kinds | 🟠 | n/a | Explicitly deferred; tracked as Roadmap T1.4 (gates on §11.6 monomorphization). |
+| §4.5 ARC + Bacon–Rajan cycle detection | 🟡 | `garnet-memory-v0.3/src/cycle.rs`; `garnet-memory-v0.3/tests/cycle.rs`; `deferred_arc_cycle_detection`; cycle-aware store-root property tests | Phase 6K adds observable store-root retain/release lifecycles on top of the bounded trial-deletion cycle model with root-buffer/decrement-event scheduling, finalization-order, and safe-mode exclusion signals. Production allocator-integrated ARC remains Roadmap T3.1 work. |
+| §4.5.1 Trial-deletion algorithm | 🟡 | `CycleGraph::collect_cycles`; `CycleRootBuffer`; `release_root_to_buffer`; `trial_candidates`; `trial_retained`; `finalization_order`; `trial_deletion_collects_unrooted_cycle_and_retains_roots` | Deterministic reference path exposes buffered roots, threshold-triggered collection, trial candidates, mark-gray / scan-black behavior, collect-white cycle reclamation, postorder finalization reporting, and unrooted acyclic retention. Production allocator integration remains pending. |
+| §4.5.2 Kind-aware root partitioning | 🟡 | `CycleScan::Kind`; `CycleRootBuffer::with_threshold`; `kind_partition_scan_collects_cross_kind_cycle_when_seed_kind_matches` | Phase 6A/6B/6C/6D prove kind-scheduled scans collect cross-kind components as a whole when the seed kind matches, and Phase 6K exposes kind-aware store roots through the allocator adapter. Production allocator-owned root partitions remain future work. |
+| §4.5.3 Finalization | 🟡 | `finalization_order`; `finalization_order_follows_collect_white_postorder`; `releasing_the_last_root_makes_cycle_collectable` | Bounded reference fixtures expose deterministic collect-white postorder before tombstoning. Production finalizer invocation remains allocator-runtime work. |
+| §4.5.4 Safe-mode interaction | 🟡 | `CycleAllocationMode::SafeAffine`; `safe_mode_allocations_are_not_cycle_collection_candidates`; `deferred_arc_cycle_detection` | Safe-mode affine nodes are retained and excluded from ARC trial candidates in the reference model. Full boundary/runtime safe-mode bridge remains deferred. |
+| §4.5.5 Observable invariants | 🟡 | `root_buffer_release_collects_cycle_when_threshold_is_reached`; `buffered_collection_scans_only_buffered_roots`; `rooted_cross_kind_cycle_is_retained`; `trial_deletion_leaves_unrooted_acyclic_nodes_for_later_eviction`; `finalization_order_follows_collect_white_postorder` | Buffered candidate scheduling, retained roots, cross-kind reachability, unrooted acyclic retention, collected-cycle tombstones, and reference finalization order are executable. Production allocator/drop integration remains deferred. |
 
 ## Section 5 — Function Definitions
 
@@ -99,8 +99,8 @@ allocator integration is sequenced in
 | §5.1 Managed-mode (`def`) | ✅ | `grammar/functions.rs`, `interp::eval` | |
 | §5.2 Safe-mode (`fn`) | ✅ | `grammar/functions.rs`, `garnet-check-v0.3` | |
 | §5.3 Closures (both modes) | ✅ | `ClosureBody` in `ast.rs`, `FnValue` in interp | |
-| §5.4 Blocks + `yield` | 🟡 | `KwDo`/`KwYield`/`KwNext`, `Stmt::Yield`/`Stmt::Next`, `Expr::Closure`, `parser_parity_yield_next_dynamic_and_nonsendable_parse`, `parses_do_end_block_argument` | v0.5 Phase 1 parser-stage support landed for `yield`/`next` and `do...end` block arguments; runtime semantics remain Phase 2. |
-| §5.4.1–5.4.5 sub-rules | 🟡 | `parse_do_block_body`, trailing closure argument parsing, `parses_do_end_block_argument` | `do...end` syntax and parameter parsing are parser-stage only; runtime block binding and control-flow semantics remain Phase 2 work. |
+| §5.4 Blocks + `yield` | 🟡 | `KwDo`/`KwYield`/`KwNext`, `Stmt::Yield`/`Stmt::Next`, `Expr::Closure`, `parser_parity_yield_next_dynamic_and_nonsendable_parse`, `parses_do_end_block_argument`, `deferred_blocks_and_yield`, `explicit_closure_argument_does_not_become_implicit_block` | v0.5 Phase 2A supports trailing `do...end` block invocation, block parameter binding, `yield` dispatch, and `next` as block-local return in managed mode. |
+| §5.4.1–5.4.5 sub-rules | 🟡 | `parse_do_block_body`, syntactic `do...end` block tagging, active block binding in `call_fn`, `Stmt::Yield`/`Stmt::Next` runtime paths | Core block invocation is executable; ordinary closure arguments do not bypass arity checks. Richer Ruby-compatible block return/break edge cases and yield-as-expression remain future conformance work. |
 
 ## Section 6 — Statements & Control Flow
 
@@ -124,17 +124,17 @@ allocator integration is sequenced in
 |---|---|---|---|
 | §8.1 Security Theorem (capability boundary) | 🟡 | `garnet-check-v0.3/src/caps_graph.rs` (783 lines) | CapCaps propagator implemented; *theorem* is paper-only. |
 | §8.2 Mode boundary semantics | ✅ | `garnet-check-v0.3/src/audit.rs` (268 lines) | ModeAuditLog catches every fn↔def crossing. |
-| §8.5 NLL / lifetime inference | 🟠 | spec only | Hand-coded for the simplest cases in `borrow.rs`; full NLL deferred. |
-| §8.6 Borrow-check rules B1–B5 | 🟡 | `garnet-check-v0.3/src/borrow.rs` (395 lines) | Skeleton; not all five rules formally checked. |
+| §8.5 NLL / lifetime inference | 🟡 | `check_lifetime_elision`; `deferred_nll_lifetime_inference`; `garnet-check-v0.3/tests/extended.rs` | Phase 4F activates conservative lifetime elision for reference returns: no-input and multiple-borrowed-input reference returns reject, while one borrowed input is accepted. Full CFG region solving, closure capture lifetimes, variance, and HRTB remain deferred. |
+| §8.6 Borrow-check rules B1–B5 | 🟡 | `garnet-check-v0.3/src/borrow.rs`; `partial_borrow_rule_suite`; `garnet-check-v0.3/tests/borrow.rs` | Phase 4E activates conformance for direct safe-mode B1/B2 mut-alias rejection, method receiver aliasing, simple field-place aliasing and field use-after-move, conservative index-place aliasing and index use-after-move with nested index operand checks, B4 use-after-move through `own` parameters, unambiguous `own self` method receiver moves, and simple typed receiver disambiguation for same-named impl methods. Dynamic places, full B3 lifetime containment beyond elision, B5 drop discipline, generic/trait impl dispatch, and two-phase borrows remain partial/deferred. |
 
 ## Section 9 — Sendable + Actors
 
 | Mini-Spec | Status | Evidence | Notes |
 |---|---|---|---|
-| §9.1 Actor declaration | ✅ | `grammar/actors.rs`, `ActorDef`/`ProtocolDecl`/`HandlerDecl` AST | |
-| §9.2 Bounded mailboxes | ✅ | `garnet-actor-runtime/src/runtime.rs` (mpsc-channel mailboxes) | |
+| §9.1 Actor declaration | ✅ | `grammar/actors.rs`, `ActorDef`/`ProtocolDecl`/`HandlerDecl` AST; `multi_agent_builder_runs_with_managed_actor_bridge`; `c5_actor_handler_dispatches_via_spawn_bridge`; `c5_spawn_actor_returns_address_with_persistent_state`; `new_agent_orchestrator_template_runs_and_tests` | v0.5 Phase 3B registers actor declarations into the managed interpreter and dispatches `spawn Actor.handler(args)` synchronously. Phase 3C adds `spawn Actor` managed addresses with persistent actor-local state. Phase 3D makes generated agent projects run actor declarations through `garnet run`/`garnet test`. |
+| §9.2 Bounded mailboxes | ✅ | `garnet-actor-runtime/src/runtime.rs` (mpsc-channel mailboxes); `parses_spawn_keyword_as_member_method_name`; `c5_actor_address_enforces_bounded_mailbox`; `c5_actor_address_tell_reports_full_mailbox`; `c5_actor_spawn_rejects_extra_capacity_args`; `new_agent_orchestrator_template_runs_and_tests` | v0.5 Phase 3C adds source-level `Actor.spawn(capacity)`, `try_tell`, `tell`, `drain`, `mailbox_size`, and `mailbox_capacity` semantics in the managed interpreter. Phase 3D proves these calls inside a freshly generated `agent-orchestrator` project. |
 | §9.3 Hot-reload | ✅ | `garnet-actor-runtime/src/{statecert,reloadkey}.rs` | Ed25519-signed, schema-fingerprinted (StateCert). |
-| §9.4 `Sendable` marker trait + Actor Isolation Theorem | 🟡 | 2 hits in actor-runtime; basic enforcement | Full theorem is paper-only; runtime guard is partial. |
+| §9.4 `Sendable` marker trait + Actor Isolation Theorem | 🟡 | `actor_sendable_rejects_nonsendable_protocol_payloads`; `actor_protocol_rejects_nonsendable_payload_type`; `multi_agent_builder_runs_with_managed_actor_bridge`; `c5_spawn_actor_returns_address_with_persistent_state`; `c5_actor_address_enforces_bounded_mailbox`; `c5_actor_address_tell_reports_full_mailbox`; `c5_actor_spawn_rejects_extra_capacity_args`; `new_agent_orchestrator_template_runs_and_tests`; actor-runtime tests | v0.5 Phase 3A rejects `@nonsendable` payload types at actor protocol/handler boundaries before runtime. Phase 3B adds synchronous managed actor handler dispatch. Phase 3C adds managed actor addresses and bounded mailbox calls from Garnet source. Phase 3D wires that surface into the generated agent template. Full async runtime bridge, transitive generic Sendable derivation, and the formal theorem remain partial. |
 
 ## Section 10 — Mode Boundaries
 
@@ -148,12 +148,12 @@ allocator integration is sequenced in
 |---|---|---|---|
 | §11.1 `struct` | ✅ | `StructDef`, `FieldDef`, `interp::eval` | Construction + field access. |
 | §11.2 `enum` | ✅ | `EnumDef`, `Variant`, pattern match arms | |
-| §11.3 `trait` | 🔵 | `TraitDef`, `TraitItem`, `FnSig` AST present | Parsed; runtime dispatch is interp-side basic; no method resolution table. |
-| §11.4 `impl` blocks | 🔵 | `ImplBlock` AST | Same status as §11.3. |
-| §11.5 Trait coherence (formal orphan-rule algorithm) | 🟠 | spec only | New in v1.0; no enforcement in checker today. |
-| §11.6 Monomorphization + Zero-Cost Abstraction Theorem | 🔵 | `type_params: Vec<String>` parsed throughout AST; `dyn Trait` parses as `TypeExpr::Dyn` | Generics and trait-object syntax parse. No monomorphization — interpreter uses dynamic dispatch only. Theorem applies to a hypothetical future native compiler. |
-| §11.7 `@dynamic` method dispatch | 🔵 | `Annotation::Dynamic` preserved on `struct` and `impl`; safe modules reject `@dynamic` struct/impl metadata | Parser/checker metadata support only. No per-instance method table or dispatch order yet. |
-| §11.8 Structural protocols (duck typing) | 🔵 | `Item::Protocol`, `ProtocolDef`, `parser_parity_top_level_protocol_and_dyn_trait_parse` | Top-level protocol declarations parse. Type-side structural satisfaction and runtime casts remain Phase 2. |
+| §11.3 `trait` | 🔵 | `TraitDef`, `TraitItem`, `FnSig` AST present | Parsed; nominal trait enforcement and coherence remain deferred. |
+| §11.4 `impl` blocks | 🟡 | `ImplBlock` AST; `static_impl_dispatch_and_method_missing`; `dynamic_impl_dispatch_tables`; `deferred_trait_coherence` | v0.5 Phase 2D registers inherent managed impl methods for struct instances. v0.5 Phase 2H registers `@dynamic impl Type for Protocol` methods into runtime dispatch tables. v0.5 Phase 5A adds conservative trait impl coherence; generic impl resolution remains deferred. |
+| §11.5 Trait coherence (formal orphan-rule algorithm) | 🟡 | `garnet-check-v0.3/src/coherence.rs`; `deferred_trait_coherence`; `garnet-check-v0.3/tests/coherence.rs` | Phase 5A rejects exact duplicate trait impls and impls where neither the trait nor the type is local. Full generic overlap solving, specialization, and coherence across imported packages remain deferred. |
+| §11.6 Monomorphization + Zero-Cost Abstraction Theorem | 🟡 | `type_params: Vec<String>` parsed throughout AST; `generic_instantiation_runs_without_monomorphization_claims`; `dyn Trait` parses as `TypeExpr::Dyn` | Phase 5B proves interpreter-level generic struct construction, generic impl method dispatch, and generic function calls. No native monomorphization exists — interpreter uses dynamic dispatch only. Theorem applies to a hypothetical future native compiler. |
+| §11.7 `@dynamic` method dispatch | 🟡 | `Annotation::Dynamic` preserved on `struct` and `impl`; safe modules reject `@dynamic` struct/impl metadata; `deferred_dynamic_dispatch`; `static_impl_dispatch_and_method_missing`; `dynamic_impl_dispatch_tables` | v0.5 Phase 2B supports per-instance dynamic method tables for `@dynamic` struct values via `def_method`, dynamic table lookup, and `responds_to`/`method_names` helpers. v0.5 Phase 2D adds static inherent `impl` fallback and `method_missing` after the dynamic table. v0.5 Phase 2H registers `@dynamic impl Type for Protocol` methods for protocol-backed dispatch while preserving per-instance overrides. Ambiguous multi-trait method selection and broader coherence remain deferred. |
+| §11.8 Structural protocols (duck typing) | 🟡 | `Item::Protocol`, `ProtocolDef`, `Expr::Cast`, `parser_parity_top_level_protocol_and_dyn_trait_parse`, `parses_protocol_cast_expression`, `deferred_structural_protocols`, `dynamic_impl_dispatch_tables` | v0.5 Phase 2C registers top-level protocol declarations and checks protocol-typed managed function parameters at call binding against available runtime methods. v0.5 Phase 2D lets static inherent impl methods satisfy that check. v0.5 Phase 2E validates method mode, receiver-adjusted arity, annotated parameter types, and required return types. v0.5 Phase 2F parses and executes `value as Protocol` casts with positive and negative runtime gates. v0.5 Phase 2G substitutes generic protocol type parameters into required method signatures and adds typed built-in signature tables for core String/Array/Map/number methods. v0.5 Phase 2H lets `@dynamic impl` methods satisfy protocols and remain dispatchable through protocol-typed call sites. Broader trait/generic coherence remains deferred. |
 
 ## Section 15 — REPL
 
@@ -166,7 +166,7 @@ allocator integration is sequenced in
 | Mini-Spec | Status | Evidence | Notes |
 |---|---|---|---|
 | §16.1 Single-CLI principle | ✅ | `garnet-cli/src/bin/garnet.rs` (single `garnet` binary) | parse / check / run / test / build / verify / convert / new / keygen / version / help. |
-| §16.2 Project layout | ✅ | `garnet-cli/templates/{cli,web-api,agent-orchestrator}` | |
+| §16.2 Project layout | ✅ | `garnet-cli/templates/{cli,web-api,agent-orchestrator}`; `new_agent_orchestrator_template_runs_and_tests` | Generated `agent-orchestrator` projects now run actor syntax and bounded mailbox tests, not only pure helper scaffolding. |
 | §16.3 Manifest (`Garnet.toml`) | ✅ | `garnet-cli/src/manifest.rs` (signed manifest support) | |
 | §16.4 Doc-comment syntax | ✅ | `garnet-cli/src/cmd/doc.rs`; parser tolerates `///` | `garnet doc` ships as a Markdown extractor. Full HTML/cross-reference rendering remains a v0.5.x CST/LSP follow-up. |
 | §16.5 Cross-platform installer | ✅ | `installer/sh.garnet-lang.org/install.sh`, `docs/install.sh` | Linux package paths verified Phase 6D; release-backed curl install requires published `v0.4.2` assets. |
@@ -180,17 +180,17 @@ allocator integration is sequenced in
 |---|---|---|---|---|---|
 | §2 Lexical | 4 | — | — | — | Complete. |
 | §3 Modules | 4 | — | — | — | Cross-module visibility audit pending. |
-| §4 Memory | 3 | — | — | 7 | ARC cycle detection (§4.5) is the largest single open Mini-Spec deliverable. |
-| §5 Functions | 3 | — | 2 | 4 | `yield`/`next` and `do...end` parser-stage support exists; block runtime semantics remain next-largest. |
+| §4 Memory | 3 | — | 6 | 1 | Phase 6K adds cycle-aware store-root lifecycles on top of Phase 6J kind-aware allocator stats and policy-configured lazy episodic/semantic eviction; production ARC allocator integration remains the largest Memory Core gap. |
+| §5 Functions | 3 | — | 2 | 4 | `yield`/`next` and `do...end` now have managed-mode block invocation evidence; richer block edge cases still need later conformance. |
 | §6 Control flow | 3 | — | — | — | Complete. |
 | §7 Errors | 3 | — | — | — | Complete. |
-| §8 Safe-mode | 1 | — | 3 | — | Skeleton checker; formal theorem stays paper-side. |
-| §9 Actors | 3 | — | 1 | — | `Sendable` runtime guard is partial. |
+| §8 Safe-mode | 1 | 1 | 2 | — | Phase 4F activates partial borrow-rule conformance plus a conservative lifetime-elision subset for reference returns; full CFG NLL/lifetime inference and formal theorem stay paper-side. |
+| §9 Actors | 3 | — | 1 | — | Phase 3A adds source-level `@nonsendable` actor boundary rejection; Phase 3B adds synchronous managed actor handler dispatch; Phase 3C adds managed actor addresses and bounded mailbox calls; Phase 3D proves generated agent projects use that surface. Full async runtime bridge remains partial. |
 | §10 Boundaries | 1 | — | — | — | Audit log complete. |
-| §11 User types | 2 | 6 | — | — | Generics, `dyn Trait`, `@dynamic` metadata, and protocols parse; semantic/runtime support remains incomplete. |
+| §11 User types | 2 | 3 | 3 | — | Generics and `dyn Trait` parse; `impl`, `@dynamic`, structural protocol semantics, conservative trait coherence, and interpreter-level generic instantiation now have executable slices, but generic overlap solving and native monomorphization remain incomplete. |
 | §15 REPL | — | — | 1 | — | Basic working; commands/history pending. |
 | §16 Tooling | 5 | — | — | — | `garnet doc` landed in v0.4.2 Refactor #7. |
-| **Totals** | **32** | **6** | **6** | **10** | 54 tracked items after v0.5 Phase 1 parser-stage split. |
+| **Totals** | **32** | **3** | **8** | **11** | 54 tracked items after v0.5 Phase 5B trait/generic slices. |
 
 ## What this matrix is not
 

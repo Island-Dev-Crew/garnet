@@ -145,7 +145,7 @@ fn lexes_path_separator() {
 
 #[test]
 fn lexes_keywords() {
-    let toks = kinds("def fn let mut if else match");
+    let toks = kinds("def fn let mut if else match as");
     assert!(matches!(toks[0], TokenKind::KwDef));
     assert!(matches!(toks[1], TokenKind::KwFn));
     assert!(matches!(toks[2], TokenKind::KwLet));
@@ -153,6 +153,7 @@ fn lexes_keywords() {
     assert!(matches!(toks[4], TokenKind::KwIf));
     assert!(matches!(toks[5], TokenKind::KwElse));
     assert!(matches!(toks[6], TokenKind::KwMatch));
+    assert!(matches!(toks[7], TokenKind::KwAs));
 }
 
 #[test]

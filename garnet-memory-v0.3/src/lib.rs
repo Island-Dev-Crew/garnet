@@ -25,12 +25,23 @@
 //! testable end-to-end while the production allocator work proceeds
 //! in parallel. They are NOT designed for production agent workloads:
 //!
-//! - No allocator integration (everything goes through `Vec` / `BTreeMap`).
+//! - The four stores expose a production-facing kind-aware allocator surface,
+//!   while their backing storage still uses `Vec` / `BTreeMap`.
+//! - Cycle-aware allocator fixtures can observe store-root retention and
+//!   release on write, clear, policy eviction, replacement, and drop.
 //! - No persistence (state is in-process only).
 //! - No production-grade vector index (cosine over a flat `Vec`, not
 //!   HNSW / IVF / PolarQuant).
-//! - No eviction beyond what `MemoryPolicy` exposes as scoring API.
-//! - No ARC + Bacon–Rajan cycle detection (Mini-Spec §4.5 is deferred).
+//! - Lazy eviction is wired for policy-configured episodic and semantic
+//!   stores; default constructors preserve the v0.4.x unbounded reference
+//!   behaviour.
+//! - No production allocator-integrated ARC + Bacon–Rajan collector yet.
+//! - A bounded [`CycleGraph`] / [`CycleRootBuffer`] /
+//!   [`CycleAllocatorFixture`] trial-deletion reference path exposes §4.5
+//!   cycle, finalization-order, safe-mode exclusion, root-buffer scheduling,
+//!   allocator-owned root/edge decrement fixtures, and store-root lifecycle
+//!   evidence while production allocator work remains on the Memory Core
+//!   roadmap.
 //!
 //! ## What's planned
 //!
@@ -50,12 +61,22 @@
 //! - Mini-Spec section reference → §4 (declaration, semantics, kinds)
 //!   and the deferred §4.4 (generics over kinds) / §4.5 (ARC).
 
+pub mod alloc;
+pub mod cycle;
 pub mod episodic;
 pub mod policy;
 pub mod procedural;
 pub mod semantic;
 pub mod working;
 
+pub use alloc::{
+    AllocRequest, AllocRootStats, AllocStats, CycleAwareKindAllocator, HeapKindAllocator,
+    KindAllocator,
+};
+pub use cycle::{
+    CycleAllocationMode, CycleAllocatorFixture, CycleCollectReport, CycleGraph, CycleGraphError,
+    CycleNodeId, CycleRootBuffer, CycleScan,
+};
 pub use episodic::EpisodeStore;
 pub use policy::{MemoryKind, MemoryPolicy};
 pub use procedural::WorkflowStore;

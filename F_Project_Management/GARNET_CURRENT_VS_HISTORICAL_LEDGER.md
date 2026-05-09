@@ -1,6 +1,6 @@
 # Garnet Current vs Historical Ledger
 
-Date: 2026-05-06
+Date: 2026-05-08
 
 This ledger prevents historical handoffs from being misread as current
 implementation truth.
@@ -43,8 +43,58 @@ When documents conflict, use this order:
 - The 10 canonical MVP examples are now compact executable smokes, not the old
   large design drafts.
 - The three larger real-world examples remain parser-scale design drafts.
-- The `agent-orchestrator` template now uses pure role functions so first run
-  succeeds on the current interpreter.
+- The `agent-orchestrator` template now uses managed actor addresses, bounded
+  mailbox calls, and actor-local memory while still succeeding on the current
+  interpreter.
+- Safe-mode borrow checking now has an active CLI conformance slice for direct
+  `own` use-after-move, direct `mut`+`borrow` aliasing, and unambiguous
+  `own self` method receiver moves. It now uses simple declared receiver types
+  to distinguish same-named impl methods, and it tracks simple field places for
+  same-field/parent-child aliasing plus field use-after-move. It also tracks
+  indexed places conservatively as wildcard sub-places, so indexes under the
+  same receiver conflict while indexes under distinct sibling fields remain
+  distinct, and nested index operand expressions stay checked. It now also
+  enforces a conservative lifetime-elision subset for reference returns: no
+  borrowed input and multiple borrowed inputs reject, while one borrowed input
+  is accepted. Full Rust-grade CFG NLL, dynamic places, B5 drop discipline, and
+  generic/trait impl dispatch remain roadmap work, not current truth.
+- Trait coherence now has an active conservative checker slice: exact duplicate
+  trait impls and orphan impls where neither trait nor type is local reject,
+  while local-trait and local-type impls remain accepted. Generic overlap
+  solving, specialization, imported-package coherence, and native
+  monomorphization remain roadmap work.
+- Generic instantiation now has interpreter-level evidence for generic struct
+  construction, generic impl method dispatch, and generic function calls. This
+  is not native monomorphization or a zero-cost backend guarantee.
+- Memory Core ARC/cycle work now has Phase 6E executable reference evidence:
+  `CycleGraph`, `CycleRootBuffer`, and `CycleAllocatorFixture` fixtures expose
+  decrement-triggered buffered roots, allocator-owned root/edge decrement
+  scheduling, threshold-driven collection, trial candidates, scan-black
+  retained candidates, deterministic collect-white finalization order,
+  safe-mode affine exclusion from ARC trial candidates, rooted retention,
+  unrooted cycle collection, unrooted acyclic retention for ordinary
+  retention/eviction, and kind-partitioned cross-kind scans. Phase 6J adds a
+  kind-aware allocator surface to all four stores and makes policy-configured
+  episodic/semantic stores perform lazy eviction on read/search. Phase 6K adds
+  `CycleAwareKindAllocator` and verifies observable store-root retain/release
+  lifecycles on write, clear, policy eviction, workflow replacement, and store
+  drop. This is not the production allocator-integrated Bacon-Rajan collector
+  or runtime finalizer path.
+- Compiler-as-agent cache privacy now has Phase 6F executable evidence:
+  absolute paths inside the active project are persisted as stable relative
+  labels, while external absolute paths are redacted to `<external>/<file>`.
+  Phase 6G extends this to CLI-level replay stress: same-cache foreign
+  machine-key episodes and copied `.garnet-cache` episodes are ignored,
+  counted, and warned as untrusted instead of surfacing stale prior-failure
+  advice. Phase 6H wires CLI strategy notes through ProvenanceStrategy, so
+  copied same-machine `strategies.db` rows with missing local justifying
+  episodes are quarantined before they can influence diagnostics, and bounded
+  concurrent episode append stress preserves all verified records. Phase 6I
+  adds keyed source-tree binding, so same-machine cache copies from another
+  project root are skipped before prior-failure or strategy advice can apply,
+  and a 16-writer/1920-record bounded append soak preserves parseable NDJSON
+  plus all verified records. Extended release-duration soak remains follow-up
+  work.
 - CI has an explicit canonical MVP example job in addition to the Rust test
   suite.
 

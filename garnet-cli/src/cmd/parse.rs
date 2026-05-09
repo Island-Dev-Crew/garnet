@@ -1,6 +1,6 @@
 //! `garnet parse <file>` — parse a file and print a structural summary.
 
-use super::{describe_item, record, surface_prior};
+use super::{cache_file_label, describe_item, record, surface_prior};
 use crate::read_file;
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -15,6 +15,7 @@ pub fn run(path: PathBuf) -> ExitCode {
             return ExitCode::from(1);
         }
     };
+    let file_label = cache_file_label(&path);
     surface_prior(&src);
     match garnet_parser::parse_source(&src) {
         Ok(module) => {
@@ -27,15 +28,7 @@ pub fn run(path: PathBuf) -> ExitCode {
             for item in &module.items {
                 println!("  - {}", describe_item(item));
             }
-            record(
-                "parse",
-                &path.display().to_string(),
-                &src,
-                "ok",
-                None,
-                started,
-                0,
-            );
+            record("parse", &file_label, &src, "ok", None, started, 0);
             ExitCode::SUCCESS
         }
         Err(e) => {
@@ -43,7 +36,7 @@ pub fn run(path: PathBuf) -> ExitCode {
             eprintln!("{report:?}");
             record(
                 "parse",
-                &path.display().to_string(),
+                &file_label,
                 &src,
                 "parse_err",
                 Some("UnexpectedToken".to_string()),

@@ -8,11 +8,15 @@
 //! **v3.3 CacheHMAC hardening.** Every record carries an HMAC-equivalent
 //! BLAKE3 keyed MAC over its canonical serialization, computed using the
 //! per-machine key from `machine_key.rs`. Records whose MAC doesn't
-//! verify against this machine's key are silently skipped on read — so
-//! a committed `.garnet-cache/` from another machine, or a file mutated
-//! by a co-tenant in a shared tmp/CI dir, cannot influence compilation
-//! decisions. The read path returns the SkipCount so callers can warn
-//! loudly when any unverified entries are found.
+//! verify against this machine's key are silently skipped on read.
+//!
+//! **v3.4 source-tree binding.** A same-machine cache copied from another
+//! project root is also skipped: records carry a keyed, non-reversible
+//! `source_tree` identifier derived from the cache's owning project root.
+//! This prevents prior failures or mined strategies from one checkout
+//! becoming ambient advice in another checkout with identical source text.
+//! The read path returns the SkipCount so callers can warn loudly when any
+//! untrusted entries are found.
 
 use crate::machine_key;
 use std::fmt::Write as _;
@@ -23,6 +27,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 const CACHE_DIR: &str = ".garnet-cache";
 const EPISODES_FILE: &str = "episodes.log";
+const SOURCE_TREE_DOMAIN: &[u8] = b"garnet-cache-source-tree-v1";
 
 /// One record per CLI invocation. Schema is stable; new fields go at the
 /// end and are optional in the parser.
@@ -42,6 +47,10 @@ pub struct Episode {
     pub duration_ms: u64,
     pub parser_version: String,
     pub exit_code: i32,
+    /// Keyed, non-reversible identifier for the project root that owns
+    /// the cache directory. `None` for records built in-memory or before
+    /// v3.4; on-disk read paths reject missing or mismatched bindings.
+    pub source_tree: Option<String>,
     /// Hex-encoded BLAKE3-keyed MAC over canonical serialization of the
     /// other fields. `None` until computed by `sign_with_key`.
     pub hmac: Option<String>,
@@ -71,6 +80,7 @@ impl Episode {
             duration_ms,
             parser_version: env!("CARGO_PKG_VERSION").to_string(),
             exit_code,
+            source_tree: None,
             hmac: None,
         }
     }
@@ -98,7 +108,20 @@ impl Episode {
         push_field(&mut out, &self.duration_ms.to_le_bytes());
         push_field(&mut out, self.parser_version.as_bytes());
         push_field(&mut out, &self.exit_code.to_le_bytes());
+        match &self.source_tree {
+            Some(source_tree) => {
+                out.push(1);
+                push_field(&mut out, source_tree.as_bytes());
+            }
+            None => out.push(0),
+        }
         out
+    }
+
+    /// Bind this episode to the source tree that owns `dir`, where `dir`
+    /// is normally `<project>/.garnet-cache`.
+    pub fn bind_source_tree_with_key(&mut self, dir: &Path, key: &[u8; 32]) {
+        self.source_tree = Some(source_tree_for_cache_dir_with_key(dir, key));
     }
 
     /// Compute the HMAC-equivalent MAC for this episode using the
@@ -131,6 +154,16 @@ impl Episode {
         self.verify_with_key(machine_key::machine_key())
     }
 
+    /// Verify both the record MAC and the source-tree binding for the
+    /// cache directory being read. Missing source-tree bindings fail closed
+    /// on disk reads even if their v3.3 MAC is otherwise valid.
+    pub fn verify_for_cache_dir_with_key(&self, dir: &Path, key: &[u8; 32]) -> bool {
+        if !self.verify_with_key(key) {
+            return false;
+        }
+        self.source_tree.as_deref() == Some(source_tree_for_cache_dir_with_key(dir, key).as_str())
+    }
+
     pub fn to_ndjson_line(&self) -> String {
         let mut s = String::from("{");
         let _ = write!(s, "\"ts\":{}", self.ts);
@@ -144,6 +177,9 @@ impl Episode {
         let _ = write!(s, ",\"duration_ms\":{}", self.duration_ms);
         let _ = write!(s, ",\"parser_version\":{}", json_str(&self.parser_version));
         let _ = write!(s, ",\"exit_code\":{}", self.exit_code);
+        if let Some(source_tree) = &self.source_tree {
+            let _ = write!(s, ",\"source_tree\":{}", json_str(source_tree));
+        }
         if let Some(hmac) = &self.hmac {
             let _ = write!(s, ",\"hmac\":{}", json_str(hmac));
         }
@@ -169,6 +205,7 @@ impl Episode {
         let mut duration_ms = None;
         let mut parser_version = None;
         let mut exit_code = None;
+        let mut source_tree = None;
         let mut hmac = None;
         for field in split_top_level(line.trim().trim_start_matches('{').trim_end_matches('}')) {
             if let Some((key, value)) = field.split_once(':') {
@@ -184,6 +221,7 @@ impl Episode {
                     "duration_ms" => duration_ms = value.parse().ok(),
                     "parser_version" => parser_version = Some(unjson_str(value)),
                     "exit_code" => exit_code = value.parse().ok(),
+                    "source_tree" => source_tree = Some(unjson_str(value)),
                     "hmac" => hmac = Some(unjson_str(value)),
                     _ => {}
                 }
@@ -199,6 +237,7 @@ impl Episode {
             duration_ms: duration_ms?,
             parser_version: parser_version?,
             exit_code: exit_code?,
+            source_tree,
             hmac,
         })
     }
@@ -231,6 +270,34 @@ pub fn cache_dir_for(base: &Path) -> PathBuf {
     base.join(CACHE_DIR)
 }
 
+/// Keyed, non-reversible identifier for the source tree that owns a cache
+/// directory. This intentionally stores only a MAC, not the path itself.
+pub fn source_tree_for_cache_dir_with_key(dir: &Path, key: &[u8; 32]) -> String {
+    let base = source_tree_base_for_cache_dir(dir);
+    let canonical = base.canonicalize().unwrap_or(base);
+    let mut bytes = Vec::with_capacity(SOURCE_TREE_DOMAIN.len() + 1 + 256);
+    bytes.extend_from_slice(SOURCE_TREE_DOMAIN);
+    bytes.push(0);
+    bytes.extend_from_slice(canonical.to_string_lossy().as_bytes());
+    machine_key::mac_to_hex(&machine_key::mac_with_key(key, &bytes))
+}
+
+fn source_tree_base_for_cache_dir(dir: &Path) -> PathBuf {
+    let absolute_dir = if dir.is_absolute() {
+        dir.to_path_buf()
+    } else {
+        std::env::current_dir()
+            .map(|cwd| cwd.join(dir))
+            .unwrap_or_else(|_| dir.to_path_buf())
+    };
+
+    if absolute_dir.file_name().and_then(|name| name.to_str()) == Some(CACHE_DIR) {
+        absolute_dir.parent().unwrap_or(&absolute_dir).to_path_buf()
+    } else {
+        absolute_dir
+    }
+}
+
 /// Append one episode to `<cache_dir>/episodes.log`, creating the directory
 /// if missing. Errors are non-fatal: we suppress them and return `false` so
 /// the CLI never fails because of cache I/O.
@@ -253,6 +320,7 @@ pub fn record_episode_in_with_key(dir: &Path, ep: &Episode, key: &[u8; 32]) -> b
         return false;
     };
     let mut signed = ep.clone();
+    signed.bind_source_tree_with_key(dir, key);
     signed.sign_with_key(key);
     file.write_all(signed.to_ndjson_line().as_bytes()).is_ok()
 }
@@ -262,6 +330,10 @@ pub fn record_episode_in_with_key(dir: &Path, ep: &Episode, key: &[u8; 32]) -> b
 /// for a variant that reports the skip count.
 pub fn recall(target: &str) -> Vec<Episode> {
     recall_in(&cache_dir(), target)
+}
+
+pub fn recall_audit(target: &str) -> ReadResult {
+    recall_in_with_key(&cache_dir(), target, machine_key::machine_key())
 }
 
 pub fn recall_in(dir: &Path, target: &str) -> Vec<Episode> {
@@ -290,7 +362,7 @@ pub fn recall_in_with_key(dir: &Path, target: &str, key: &[u8; 32]) -> ReadResul
     let mut skipped = 0;
     for line in BufReader::new(file).lines().map_while(Result::ok) {
         if let Some(ep) = Episode::from_ndjson_line(&line) {
-            if !ep.verify_with_key(key) {
+            if !ep.verify_for_cache_dir_with_key(dir, key) {
                 skipped += 1;
                 continue;
             }
@@ -333,7 +405,7 @@ pub fn read_all_indexed_in_with_key(dir: &Path, key: &[u8; 32]) -> Vec<(i64, Epi
         .enumerate()
     {
         if let Some(ep) = Episode::from_ndjson_line(&line) {
-            if ep.verify_with_key(key) {
+            if ep.verify_for_cache_dir_with_key(dir, key) {
                 out.push((idx as i64, ep));
             }
         }
@@ -353,7 +425,7 @@ pub fn read_all_in_with_key(dir: &Path, key: &[u8; 32]) -> ReadResult {
     let mut skipped = 0;
     for line in BufReader::new(file).lines().map_while(Result::ok) {
         if let Some(ep) = Episode::from_ndjson_line(&line) {
-            if ep.verify_with_key(key) {
+            if ep.verify_for_cache_dir_with_key(dir, key) {
                 out.push(ep);
             } else {
                 skipped += 1;

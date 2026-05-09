@@ -30,7 +30,7 @@ pub use error::RuntimeError;
 pub use prelude::{PRELUDE_SOURCE, PRELUDE_VERSION};
 pub use value::Value;
 
-use garnet_parser::ast::{FnDef, Item, Module};
+use garnet_parser::ast::{FnDef, Item, Module, TypeExpr};
 use std::rc::Rc;
 
 /// The top-level interpreter. Owns the global environment and the set of
@@ -72,6 +72,7 @@ impl Interpreter {
                 let closure = Value::Fn(Rc::new(value::FnValue {
                     def: fn_def,
                     captured: Rc::clone(&self.global),
+                    is_block: false,
                 }));
                 self.global.define(&name, closure);
             }
@@ -104,16 +105,52 @@ impl Interpreter {
                 self.global
                     .define(&name, Value::Type(Rc::new(value::TypeValue::Enum(e))));
             }
-            Item::Trait(_)
-            | Item::Protocol(_)
-            | Item::Impl(_)
-            | Item::Module(_)
-            | Item::Use(_)
-            | Item::Actor(_) => {
+            Item::Protocol(protocol) => {
+                self.global.define_protocol(protocol);
+            }
+            Item::Actor(actor) => {
+                let name = actor.name.clone();
+                self.global.define(&name, Value::ActorType(Rc::new(actor)));
+            }
+            Item::Impl(impl_block) => {
+                let type_name = named_type_name(&impl_block.target).map(str::to_string);
+                let trait_name = impl_block.trait_ty.as_ref().and_then(named_type_name);
+                if let (Some(type_name), Some(trait_name)) = (type_name.as_ref(), trait_name) {
+                    if value::has_dynamic_annotation(&impl_block.annotations) {
+                        for method in impl_block.methods {
+                            let method_name = method.name.clone();
+                            let closure = Value::Fn(Rc::new(value::FnValue {
+                                def: method,
+                                captured: Rc::clone(&self.global),
+                                is_block: false,
+                            }));
+                            self.global.define_dynamic_impl_method(
+                                type_name,
+                                trait_name,
+                                &method_name,
+                                closure,
+                            );
+                        }
+                    }
+                    return Ok(());
+                }
+                if let Some(type_name) = type_name {
+                    for method in impl_block.methods {
+                        let method_name = method.name.clone();
+                        let closure = Value::Fn(Rc::new(value::FnValue {
+                            def: method,
+                            captured: Rc::clone(&self.global),
+                            is_block: false,
+                        }));
+                        self.global
+                            .define_impl_method(&type_name, &method_name, closure);
+                    }
+                }
+            }
+            Item::Trait(_) | Item::Module(_) | Item::Use(_) => {
                 // Parsed and accepted, but deferred to later rungs for full
-                // evaluation. Traits/Protocols/Impls wait on type-check;
-                // Modules/Use need module-system plumbing; Actors need the
-                // interpreter bridge to the runtime crate.
+                // evaluation. Traits wait on type-check;
+                // Modules/Use need module-system plumbing.
             }
         }
         Ok(())
@@ -148,6 +185,13 @@ impl Interpreter {
             .get(name)
             .ok_or_else(|| RuntimeError::Message(format!("unknown function '{name}'")))?;
         eval::call_value(&callee, args)
+    }
+}
+
+fn named_type_name(ty: &TypeExpr) -> Option<&str> {
+    match ty {
+        TypeExpr::Named { path, .. } => path.last().map(String::as_str),
+        _ => None,
     }
 }
 

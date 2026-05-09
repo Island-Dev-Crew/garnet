@@ -129,6 +129,9 @@ fn render_summary(o: &ConvertOutcome) {
 mod tests {
     use super::*;
     use std::io::Write;
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    static TEMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 
     fn write_temp(ext: &str, contents: &str) -> PathBuf {
         let dir = std::env::temp_dir().join(format!("garnet-convert-test-{}", rand_suffix()));
@@ -143,9 +146,10 @@ mod tests {
         use std::time::SystemTime;
         let nanos = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
-            .map(|d| d.subsec_nanos())
+            .map(|d| d.as_nanos())
             .unwrap_or(0);
-        format!("{nanos:x}")
+        let seq = TEMP_COUNTER.fetch_add(1, Ordering::Relaxed);
+        format!("{}-{nanos:x}-{seq:x}", std::process::id())
     }
 
     #[test]

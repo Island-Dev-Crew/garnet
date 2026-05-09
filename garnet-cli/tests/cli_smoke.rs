@@ -3,6 +3,7 @@
 
 use std::path::PathBuf;
 use std::process::Command;
+use tempfile::tempdir;
 
 fn garnet_bin() -> PathBuf {
     // CARGO_BIN_EXE_garnet is set by cargo when running integration tests
@@ -111,4 +112,67 @@ fn parse_nonexistent_file_exits_nonzero() {
         .output()
         .unwrap();
     assert!(!out.status.success());
+}
+
+#[test]
+fn new_agent_orchestrator_template_runs_and_tests() {
+    let dir = tempdir().unwrap();
+    let target = dir.path().join("my_agents");
+    let target_arg = target.to_str().unwrap();
+
+    let out = Command::new(garnet_bin())
+        .args(["new", "--template", "agent-orchestrator", target_arg])
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "garnet new failed\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+
+    for rel in ["src/main.garnet", "tests/test_main.garnet", "README.md"] {
+        let text = std::fs::read_to_string(target.join(rel)).unwrap();
+        assert!(
+            !text.contains("{{name}}"),
+            "{rel} leaked template placeholder"
+        );
+        assert!(
+            !text.contains("actor spawning is deliberately left"),
+            "{rel} still describes actor spawning as future-only"
+        );
+    }
+
+    let main = target.join("src/main.garnet");
+    let out = Command::new(garnet_bin())
+        .args(["run", main.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "generated agent run failed\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("=> 25"),
+        "generated agent run did not emit expected score\nstdout:\n{stdout}"
+    );
+
+    let out = Command::new(garnet_bin())
+        .args(["test", target_arg])
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "generated agent tests failed\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("3 passed; 0 failed"),
+        "generated agent tests did not report all tests passing\nstdout:\n{stdout}"
+    );
 }

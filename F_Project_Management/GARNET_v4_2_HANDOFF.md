@@ -103,7 +103,7 @@ Every v4.2 feature surface exercised end-to-end:
 | CapCaps violating program (`@caps()` + `read_file`) | ✅ Live error: *"function `main` does not declare `fs` but transitively calls `read_file` which requires it"* |
 | `garnet convert ruby foo.rb` end-to-end | ✅ 4 artifacts emitted with `@sandbox @caps()` SandboxMode header |
 | `garnet keygen` → `build --deterministic --sign` → `verify --signature` | ✅ cryptographic round-trip on Ed25519 |
-| `garnet test` on all 3 templates | ✅ cli (2 pass), web-api (1 pass — exercises cross-file helper resolution from src/main.garnet), agent-orchestrator (2 pass) |
+| `garnet test` on all 3 templates | ✅ v4.2 historical: cli (2 pass), web-api (1 pass), agent-orchestrator (2 pass). v0.5 Phase 3D supersedes agent-orchestrator with 3 pass and managed actor address coverage. |
 | Wordmark renders on TTY (Garnet-red) and pipe (plain ASCII) | ✅ |
 | Universal `install.sh` wordmark + format dispatch | ✅ |
 

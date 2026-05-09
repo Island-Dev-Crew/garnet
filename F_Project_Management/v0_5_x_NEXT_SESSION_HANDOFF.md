@@ -106,69 +106,105 @@ two-day LSP.
 
 ## Item B — Memory Core Tier 1 (Mnemos production allocator integration)
 
+### Current Phase 6K status
+
+Phase 6A added a bounded cycle-reference path before the allocator work:
+`garnet-memory-v0.3/src/cycle.rs`, `garnet-memory-v0.3/tests/cycle.rs`, and
+the active `deferred_arc_cycle_detection` conformance handle prove retained
+roots, unrooted cycle collection, unrooted acyclic retention, and
+kind-scheduled cross-kind collection. Phase 6B tightens that path with
+trial-candidate and scan-black retained-candidate evidence plus a bounded
+mark-gray / scan / collect-white pass. Phase 6C adds deterministic
+finalization-order reporting and safe-mode affine allocation exclusion. This is
+not yet production ARC. Phase 6D adds a bounded `CycleRootBuffer` so
+decrement-triggered buffered roots can drive collection before the production
+allocator is available. Phase 6E adds `CycleAllocatorFixture`, so an
+allocator-owned surface now routes root releases and ARC edge removals through
+the buffered trial-deletion path. Phase 6J starts the Tier 1 promotion by
+adding an object-safe kind-aware allocator surface (`KindAllocator`,
+`HeapKindAllocator`, `AllocStats`) across the four Memory Core stores and by
+wiring policy-configured lazy eviction into `EpisodeStore` and `VectorIndex`.
+Phase 6K adds `CycleAwareKindAllocator`, `AllocRootStats`, and object-safe root
+hooks so the four stores retain observable roots on write and release them on
+clear, policy eviction, workflow replacement, and drop. The next production
+step is still allocator-integrated Bacon-Rajan trial deletion and runtime
+finalizer invocation.
+
+### Current Phase 6F-6I cache-security status
+
+Phase 6F adds a narrower security/readiness gate around the compiler-as-agent
+cache. `parse`, `check`, and `run` now persist privacy-preserving episode file
+labels: absolute paths under the project root become stable relative labels,
+and absolute paths outside the project root become `<external>/<file>`.
+Phase 6G adds CLI-level replay stress: a foreign machine-key episode in the
+same cache and a copied `.garnet-cache` replay are ignored, counted, and
+surfaced as untrusted before stale prior-failure advice can appear. Existing
+CacheHMAC and ProvenanceStrategy tests remain green. Phase 6H wires CLI
+strategy notes through provenance verification: copied same-machine
+`strategies.db` rows with missing local justifying episodes are quarantined
+instead of printed as applicable strategies, and bounded concurrent episode
+append stress preserves all verified records. Phase 6I binds episodes to a
+keyed, non-reversible source-tree identifier, skips copied same-machine cache
+records from a different project root, quarantines copied same-machine strategy
+rows whose replayed justifications no longer verify in the current source tree,
+and adds a 16-writer/1920-record bounded append soak. The next cache security
+slice should add extended release-duration/cross-platform soak if needed before
+release.
+
 ### Why deferred
 
 v0.4.2 locked in the **naming** (Memory Core / Mnemos) and the
 **roadmap** (`C_Language_Specification/MEMORY_CORE_ROADMAP.md`).
-Tier 0 (today's reference stores) ships. Tier 1 is the first
-productization step: a kind-aware allocator trait that the four
-stores delegate to, eviction policy enforcement, and generics over
-memory kinds. Doing it well takes a focused session; doing it
-sloppily would entrench the wrong allocator surface.
+Tier 0 (the original reference stores) ships. Phase 6J begins Tier 1:
+a kind-aware allocator trait that the four stores delegate to, plus
+policy-configured eviction enforcement for episodic and semantic stores. Phase
+6K continues Tier 1 by proving observable store-root lifecycles through the
+cycle-aware allocator adapter. Generics over memory kinds and
+allocator-integrated ARC remain pending.
 
 ### Tier 1 scope (per the Roadmap)
 
 #### T1.1 — Kind-aware allocator trait
 
-Define the following in `garnet-memory-v0.3/src/lib.rs` or a new
-`alloc.rs`:
+Phase 6J lands this as an object-safe allocator surface in
+`garnet-memory-v0.3/src/alloc.rs`. It intentionally records typed allocation
+intent through `AllocRequest` / `AllocStats` instead of exposing a generic
+`allocate<T>` method on the trait, because generic trait methods are not object
+safe and would prevent stores from carrying `Arc<dyn KindAllocator>`.
 
-```rust
-/// Allocator strategy, parameterized by the memory kind. Stores
-/// delegate every backing allocation to an instance of this trait.
-pub trait KindAllocator: Send + Sync {
-    fn kind(&self) -> MemoryKind;
-    /// Allocate enough space for `n` items of size `size_of::<T>()`,
-    /// alignment `align_of::<T>()`. Returns a typed slab the store
-    /// owns. Implementations should respect kind-specific retention.
-    fn allocate<T: 'static>(&self, n: usize) -> Box<[std::mem::MaybeUninit<T>]>;
-    /// Reset the entire allocator (working: drop arena; episodic:
-    /// rotate log; semantic: clear index; procedural: drop history).
-    fn reset(&self);
-    /// Optional: report allocator-level stats.
-    fn stats(&self) -> Option<AllocStats> { None }
-}
-```
-
-The four reference stores get a `KindAllocator` field:
-
-```rust
-pub struct WorkingStore<T> {
-    arena: RefCell<Vec<T>>,
-    alloc: Box<dyn KindAllocator>,  // NEW
-}
-```
-
-with a `Default` impl (for backwards compat) that uses a built-in
-`HeapKindAllocator` matching today's behaviour. Existing tests
-should pass unchanged.
+The four reference stores now carry a `KindAllocator` field with a
+`HeapKindAllocator` default, preserving `new()` / `Default` compatibility while
+making allocation stats observable.
 
 #### T1.2 — Eviction policy enforcement
 
-Today `MemoryPolicy::score` and `should_retain` exist but are never
-called. Wire them into actual eviction loops in `EpisodeStore` and
-`VectorIndex`. Recommended approach: lazy eviction at read time —
-when `query_top_k` or `recall_recent` runs, evict any item where
-`should_retain(score) == false`. Cheaper than background sweep, no
-extra threads, no synchronization.
+Phase 6J wires `MemoryPolicy::score` and `should_retain` into
+`EpisodeStore::with_policy` and `VectorIndex::with_policy`. Eviction is lazy at
+read/search time, so no background thread or synchronization surface is added.
+Default constructors preserve the prior unbounded reference behaviour.
 
-Add a property test: capping a store at N entries with random
-inserts converges to ≤ N entries within finite reads.
+Covered property tests: capping an episodic store at N entries converges to N
+within a finite read, semantic search keeps top policy matches under high-water
+pressure, and low-relevance semantic facts are dropped when policy thresholds
+require it.
 
-#### T1.3 — Generics over memory kinds (Mini-Spec §4.4)
+#### T1.3 — Cycle-aware store-root lifecycle
 
-This is the gnarliest of the three. Today the Mini-Spec explicitly
-defers it because §11.6 monomorphization is parsed-only. The
+Phase 6K adds `CycleAwareKindAllocator` and `AllocRootStats`. Stores retain
+cycle-aware roots when values enter working, episodic, semantic, and procedural
+memory and release those roots on `WorkingStore::clear`, episodic/semantic
+policy eviction, procedural workflow replacement, and store drop. This is the
+observable root-lifecycle proof, not the production ARC finalizer path.
+
+Covered property tests: all four stores record created/active roots, working
+clear releases roots, episodic and semantic policy eviction release roots,
+procedural replacement releases the previous root, and dropping each store
+releases any remaining roots.
+
+#### T1.4 — Generics over memory kinds (Mini-Spec §4.4)
+
+This is the gnarliest of the three. Phase 5B gives §11.6 interpreter-level
+generic instantiation evidence, but native monomorphization is still deferred. The
 realistic v0.5.0 path:
 
 1. Add `<Kind: MemoryKindTrait>` parameter to `MemoryHandle` and the
@@ -182,14 +218,16 @@ realistic v0.5.0 path:
 
 ### Files to touch
 
-- `garnet-memory-v0.3/src/lib.rs` — `KindAllocator` trait, default
-  impl.
+- `garnet-memory-v0.3/src/alloc.rs` — `KindAllocator`, `HeapKindAllocator`,
+  `CycleAwareKindAllocator`, `AllocStats`, and `AllocRootStats`.
+- `garnet-memory-v0.3/src/lib.rs` — public Memory Core exports and module
+  docs.
 - `garnet-memory-v0.3/src/{working,episodic,semantic,procedural}.rs`
-  — accept the allocator, route allocations through it.
+  — accept the allocator, route allocations and observable roots through it.
 - `garnet-memory-v0.3/src/policy.rs` — already has `score` /
   `should_retain`; no changes needed there.
-- `garnet-memory-v0.3/tests/properties.rs` — add eviction-convergence
-  property test.
+- `garnet-memory-v0.3/tests/properties.rs` — allocator stats, eviction
+  convergence, cycle-aware root lifecycle, and drop-release property tests.
 - `C_Language_Specification/GARNET_v0_4_2_Conformance_Matrix.md` —
   rename to `GARNET_v0_5_0_Conformance_Matrix.md` (or update in
   place); flip §4.4 / §4.5 rows as items land.
@@ -197,18 +235,18 @@ realistic v0.5.0 path:
   rows as items land. **Do this in the same commit** that lands the
   work, per the policy at the bottom of the Roadmap.
 
-### Pre-requisites (do these first)
+### Remaining pre-requisites
 
-- None for T1.1 / T1.2 — they are self-contained inside Mnemos.
-- T1.3 wants Mini-Spec §11.6 monomorphization to actually
+- T1.1, T1.2, and T1.3 are now self-contained Mnemos evidence slices.
+- T1.4 wants Mini-Spec §11.6 monomorphization to actually
   monomorphize. Today it is parsed-only (see Conformance Matrix
   §11.6 row). If you can punt the language-level syntax, the
   library-side trait can land first; the syntax follows.
 
-### Estimate
+### Remaining estimate
 
-T1.1 + T1.2 in a focused session. T1.3 in a separate session
-(probably alongside parser work).
+T1.4 in a separate session, probably alongside parser work. Production ARC
+finalizers and persistence stay separate from the Tier 1 adapter evidence.
 
 ---
 

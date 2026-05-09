@@ -15,14 +15,23 @@ fn repo_root() -> PathBuf {
 }
 
 #[test]
-fn parser_parity_conformance_tests_are_active() {
+fn implemented_conformance_tests_are_active() {
     let source = fs::read_to_string(repo_root().join("garnet-cli/tests/conformance_skeleton.rs"))
         .expect("conformance skeleton");
     for name in [
         "parser_parity_top_level_protocol_and_dyn_trait_parse",
         "parser_parity_yield_next_dynamic_and_nonsendable_parse",
+        "deferred_blocks_and_yield",
+        "deferred_dynamic_dispatch",
+        "static_impl_dispatch_and_method_missing",
+        "deferred_structural_protocols",
+        "deferred_nll_lifetime_inference",
+        "partial_borrow_rule_suite",
+        "deferred_trait_coherence",
+        "generic_instantiation_runs_without_monomorphization_claims",
+        "deferred_arc_cycle_detection",
     ] {
-        let idx = source.find(name).expect("parser parity test exists");
+        let idx = source.find(name).expect("active conformance test exists");
         let prefix = &source[..idx];
         let nearby = &prefix[prefix.len().saturating_sub(160)..];
         assert!(
@@ -33,27 +42,17 @@ fn parser_parity_conformance_tests_are_active() {
 }
 
 #[test]
-fn deferred_semantic_handles_remain_explicit() {
+fn remaining_deferred_handles_remain_explicit() {
     let source = fs::read_to_string(repo_root().join("garnet-cli/tests/conformance_skeleton.rs"))
         .expect("conformance skeleton");
-    for name in [
-        "deferred_arc_cycle_detection",
-        "deferred_blocks_and_yield",
-        "deferred_nll_lifetime_inference",
-        "partial_borrow_rule_suite",
-        "deferred_trait_coherence",
-        "parsed_only_monomorphization",
-        "deferred_dynamic_dispatch",
-        "deferred_structural_protocols",
-    ] {
-        let idx = source.find(name).expect("deferred handle exists");
-        let prefix = &source[..idx];
-        let nearby = &prefix[prefix.len().saturating_sub(220)..];
-        assert!(
-            nearby.contains("#[ignore = \"Mini-Spec"),
-            "{name} must carry an explicit Mini-Spec ignore reason"
-        );
-    }
+    let name = "deferred_full_borrow_rule_suite";
+    let idx = source.find(name).expect("deferred handle exists");
+    let prefix = &source[..idx];
+    let nearby = &prefix[prefix.len().saturating_sub(220)..];
+    assert!(
+        nearby.contains("#[ignore = \"Mini-Spec"),
+        "{name} must carry an explicit Mini-Spec ignore reason"
+    );
 }
 
 #[test]

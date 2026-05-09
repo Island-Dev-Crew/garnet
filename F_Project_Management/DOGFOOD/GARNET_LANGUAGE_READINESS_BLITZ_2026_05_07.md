@@ -45,11 +45,11 @@ itself make deferred language semantics real.
 | 1 | Merge PR #2 after draft exit | establishes current-vs-deferred truth, MVP corpus, and phase gates | CI green plus local format/test/security gates |
 | 2 | Harden and merge PR #1 | turns procedural memory from prose into a semantic CI gate | Python checker regressions, contract check, CI agent-contract job |
 | 3 | Phase 1 finish parser parity | closes `do ... end` syntax gap without overstating runtime semantics | active parser test plus conformance matrix update |
-| 4 | Phase 2 managed runtime | converts `yield`, `next`, dynamic dispatch, and structural protocols from ignored handles into running behavior | ignored tests activated and passing through `garnet run` |
-| 5 | Phase 3 actors + Sendable | makes agent-native examples executable instead of Rust-runtime-only | actor syntax template smoke plus nonsendable rejection |
+| 4 | Phase 2 managed runtime | converts `yield`, `next`, dynamic dispatch, and structural protocols from ignored handles into running behavior | Phase 2A block/yield/next active; Phase 2B per-instance `@dynamic` method table active; Phase 2C protocol-typed managed parameter checks active; Phase 2D static inherent impl fallback and method_missing active; Phase 2E protocol method signature checks active; Phase 2F runtime `as Protocol` casts active; Phase 2G generic protocol substitution and core built-in typed signatures active; Phase 2H `@dynamic impl` dispatch tables active |
+| 5 | Phase 3 actors + Sendable | makes agent-native examples executable instead of Rust-runtime-only | Phase 3D active: nonsendable actor payload rejection, managed actor handler dispatch, managed actor addresses, bounded mailbox source calls, and generated `agent-orchestrator` actor template smoke pass |
 | 6 | Phase 4 safe mode | moves borrow/capability enforcement toward language law | active borrow-rule suite, NLL/lifetime negative probes, CapCaps bypass probes |
-| 7 | Phase 5 traits/generics | prevents dynamic/trait claims from being parser-only | coherence, generic, dyn-trait check/run fixtures |
-| 8 | Phase 6 Memory Core | raises Memory Core from reference stores to production-grade semantics | ARC/cycle fixtures, machine-key isolation, tamper/privacy tests |
+| 7 | Phase 5 traits/generics | prevents dynamic/trait claims from being parser-only | Phase 5B exact duplicate/orphan trait coherence and interpreter-level generic instantiation active; generic overlap, imported-package coherence, native monomorphization, and dyn-trait check/run fixtures remain |
+| 8 | Phase 6 Memory Core + cache security | raises Memory Core from reference stores toward production-grade semantics without leaving cache/privacy gaps invisible | Phase 6K cycle-aware store-root retain/release lifecycles active across working, episodic, semantic, and procedural stores; Phase 6J kind-aware store allocator stats and policy-configured lazy episodic/semantic eviction active; Phase 6E bounded root-buffer trial-deletion, finalization-order, safe-mode exclusion, and allocator-owned root/edge decrement fixtures active; Phase 6F cache episode path privacy gate active; Phase 6G same-cache foreign-key and copied-cache replay warning gates active; Phase 6H copied `strategies.db` quarantine and bounded concurrent episode append stress active; Phase 6I keyed source-tree binding and 16-writer append soak active; next: production ARC allocator integration and extended release-duration cache soak |
 | 9 | Phase 7 release/proof/empirics | separates production packaging from academic novelty proof | signed/notarized installer smokes, datasets/scripts, proof stubs or proof repo |
 
 ## Feature Scorecards
@@ -57,11 +57,11 @@ itself make deferred language semantics real.
 | Feature | Current dogfood status | 85+ condition |
 |---|---|---|
 | Parser parity | partial positive; current parser tests pass | `do ... end` and parser-vs-spec matrix complete |
-| Managed runtime | not ready; eight semantic handles remain ignored | blocks/yield/dynamic/protocol tests active and green |
+| Managed runtime | Phase 2A active for syntactic block invocation, `yield`, and `next`; Phase 2B active for per-instance `@dynamic` method tables; Phase 2C active for protocol-typed managed parameter checks; Phase 2D active for static inherent impl fallback and `method_missing`; Phase 2E active for protocol method mode, arity, annotated parameter type, and required return type checks; Phase 2F active for runtime `as Protocol` casts; Phase 2G active for generic protocol substitution and core built-in typed signatures; Phase 2H active for `@dynamic impl` dispatch tables | full §11.7/§11.8 tests active and green; ordinary trait/generic coherence still pending |
 | Converter | useful scaffold; sandbox posture exists | unsafe/eval/exec corpus gate across Rust/Ruby/Python/Go and migration TODO quality checks |
-| Memory Core | reference implementation only | ARC/cycle semantics, persistence/privacy, and machine-key isolation gates active |
-| Safe mode | useful skeleton | formal B1-B5/NLL probes plus CapCaps bypass negatives active |
-| Actors/Sendable | Rust runtime exists; source bridge incomplete | agent-orchestrator source template uses actor/protocol syntax and passes |
+| Memory Core | Phase 6K extends Mnemos Tier 1 with `CycleAwareKindAllocator` and observable store-root lifecycles across working, episodic, semantic, and procedural stores; Phase 6J starts the tier with a kind-aware allocator surface across all four stores plus policy-configured lazy eviction in episodic/semantic stores; Phase 6E bounded root-buffer trial-deletion, finalization-order, safe-mode exclusion, and allocator-owned root/edge decrement fixtures active; Phase 6F prevents absolute project/external paths from being persisted in compiler-as-agent cache episodes; Phase 6G warns while ignoring foreign machine-key and copied-cache replay episodes; Phase 6H quarantines copied/stale `strategies.db` rows whose justifying episodes do not re-verify and stresses bounded concurrent episode appends; Phase 6I rejects same-machine cache copies from another source tree and adds a 16-writer bounded append soak | production ARC allocator integration, persistence/privacy, and extended release-duration cache soak gates active |
+| Safe mode | Phase 4F active for direct use-after-move, direct mut-aliasing, `own self` method receiver moves, method receiver aliasing, simple typed receiver disambiguation, simple field-place aliasing/field use-after-move, conservative index-place checks, nested index operand checks, and conservative lifetime-elision probes; CapCaps already active | full dynamic place tracking, full CFG NLL/lifetime probes, generic/trait impl dispatch, drop discipline, and CapCaps bypass negatives active |
+| Actors/Sendable | Rust runtime exists; Phase 3A rejects `@nonsendable` actor protocol/handler payloads before runtime; Phase 3B runs a source actor handler through managed `spawn Actor.handler(args)` dispatch; Phase 3C creates managed actor addresses with persistent state and bounded source mailboxes; Phase 3D makes `garnet new --template agent-orchestrator` generate a runnable actor project with episodic/semantic/procedural memory and bounded mailbox tests | full async actor-runtime OS-thread bridge |
 | Security posture | supply-chain gates green; trust-boundary rubric now explicit | FS/net/db/converter/release trust-boundary probes active in CI |
 | Release path | fork release available; org release path evidenced | org release published by authorized session plus live installer smoke |
 
@@ -79,7 +79,14 @@ itself make deferred language semantics real.
 |---|---|---|
 | P0 | PR #1 semantic contract checker regressions and CI step | `feat/agent-documentation-contracts` |
 | P0 | Security dogfood rubric and phase gate | `codex/garnet-readiness-remediation` |
-| P1 | `do ... end` parser failing test, then implementation | follow-up from PR #2 |
-| P1 | Convert `deferred_blocks_and_yield` into active failing runtime test | follow-up from PR #2 |
+| Done | `do ... end` parser failing test, then implementation | PR #3 |
+| Done | Convert `deferred_blocks_and_yield` into active block/yield/next runtime test plus block-vs-closure boundary regression | `codex/phase2-block-yield-runtime` |
+| Done | Convert `deferred_dynamic_dispatch` into active per-instance `@dynamic` method-table runtime test | `codex/phase2-dynamic-dispatch` |
+| Done | Convert `deferred_structural_protocols` into active protocol-typed parameter check | `codex/phase2-structural-protocols` |
+| Done | Add static inherent impl fallback and `method_missing` runtime dispatch after per-instance dynamic methods | `codex/phase2-static-impl-dispatch` |
+| Done | Tighten structural protocol compatibility beyond name-only method presence | `codex/phase2-protocol-signatures` |
+| Done | Parse and execute runtime `as Protocol` casts through the structural protocol gate | `codex/phase2-protocol-casts` |
+| Done | Substitute generic protocol type parameters and add typed built-in method signature tables | `codex/phase2-protocol-generics-builtins` |
+| Done | Register `@dynamic impl Type for Protocol` methods for dispatch and protocol satisfaction | `codex/phase2-dynamic-impl-dispatch` |
 | P1 | FS/net source-level CapCaps negative tests | follow-up from PR #2 |
-| P2 | Memory Core ARC/cycle fixtures and machine-key stress tests | follow-up milestone branch |
+| P2 | Production Memory Core ARC integration and extended release-duration cache write soak tests | follow-up milestone branch |

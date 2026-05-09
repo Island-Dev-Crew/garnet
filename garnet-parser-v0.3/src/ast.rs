@@ -496,6 +496,11 @@ pub enum Expr {
         index: Box<Expr>,
         span: Span,
     },
+    Cast {
+        expr: Box<Expr>,
+        ty: TypeExpr,
+        span: Span,
+    },
 
     If {
         condition: Box<Expr>,
@@ -520,6 +525,7 @@ pub enum Expr {
         params: Vec<Param>,
         return_ty: Option<Box<TypeExpr>>,
         body: Box<ClosureBody>,
+        is_do_block: bool,
         span: Span,
     },
     Spawn {
@@ -559,6 +565,7 @@ impl Expr {
             | Expr::Method { span, .. }
             | Expr::Field { span, .. }
             | Expr::Index { span, .. }
+            | Expr::Cast { span, .. }
             | Expr::If { span, .. }
             | Expr::Match { span, .. }
             | Expr::Try { span, .. }

@@ -1,6 +1,6 @@
 # Garnet Current State and Reviewer Guide
 
-Date: 2026-05-06
+Date: 2026-05-08
 Status: research-grade language/toolchain prototype
 
 This is the first file a fresh MIT reviewer, contributor, or agent should read
@@ -61,12 +61,12 @@ done
 | `garnet-interp-v0.3/` | active tree-walk interpreter | current implementation |
 | `garnet-check-v0.3/` | safe-mode and CapCaps validator | current implementation |
 | `garnet-memory-v0.3/` | Mnemos reference memory stores | current implementation |
-| `garnet-actor-runtime/` | actor runtime crate | current implementation; CLI bridge still staged |
+| `garnet-actor-runtime/` | actor runtime crate | current implementation; managed source bridge active, full OS-thread CLI bridge still staged |
 | `garnet-stdlib/` | capability-tagged primitives | current implementation |
 | `garnet-cli/` | user-facing CLI and templates | current implementation |
 | `garnet-convert/` | migration assistant | current implementation |
 | `examples/mvp_*.garnet` | canonical app-level smokes | must parse/check/run |
-| `examples/{multi_agent_builder,agentic_log_analyzer,safe_io_layer}.garnet` | design-scale examples | parser-scale references, not runtime proof |
+| `examples/{multi_agent_builder,agentic_log_analyzer,safe_io_layer}.garnet` | design-scale examples | `multi_agent_builder` is runtime proof; `agentic_log_analyzer`/`safe_io_layer` remain parser/check references |
 | `A_Research_Papers/` | academic research corpus | normative/research context |
 | `B_Four_Model_Consensus/` | consensus/adjudication docs | research context |
 | `C_Language_Specification/` | specs, matrices, roadmaps | normative + descriptive status |
@@ -108,10 +108,57 @@ highest-leverage next milestones are:
 The v0.5 seven-phase roadmap is now tracked in
 `F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md` and
 `F_Project_Management/ROADMAPS/GARNET_v0_5_LANGUAGE_COMPLETION_ROADMAP.md`.
-Phase 1 has begun with parser-parity surfaces for top-level structural
-protocols, `dyn Trait`, staged `yield`/`next`, and preserved
-`@dynamic`/`@nonsendable` annotations. These are parser/conformance advances,
-not runtime-completeness claims.
+Phase 5B is the current readiness slice. Phases 1-3D added parser parity,
+managed block/dynamic/protocol runtime slices, managed actor addresses, bounded
+source mailboxes, and a generated actor-orchestrator template. Phase 4A
+activates partial safe-mode borrow conformance for direct use-after-move
+through `own` parameters and direct `mut`+`borrow` aliasing while preserving
+managed ARC behavior. Phase 4B adds unambiguous same-module `own self` method
+receiver move tracking and method receiver aliasing. Phase 4C uses simple
+declared receiver types to distinguish same-named impl methods. Phase 4D adds
+simple field-place tracking so same-field and parent/child `mut`+`borrow`
+aliasing are rejected, moved fields cannot be reused, and distinct sibling
+fields remain usable. Phase 4E adds conservative wildcard index-place tracking
+so indexes of the same receiver conflict, nested index operand expressions stay
+checked, and indexes under distinct sibling fields remain distinct.
+Phase 4F activates a conservative lifetime-elision subset so reference returns
+must tie to exactly one borrowed input lifetime, or to borrowed `self`, while
+ambiguous multi-input and no-input reference returns are rejected. Full NLL
+region solving, dynamic places, drop discipline, and two-phase borrows remain
+deferred. Phase 5A activates conservative trait coherence by rejecting exact
+duplicate trait impls and orphan-rule violations while preserving impls where
+either the trait or the type is local. Phase 5B activates interpreter-level
+generic instantiation evidence for generic structs, generic impl methods, and
+generic functions. Full generic overlap solving, package-aware coherence,
+native monomorphization, and zero-cost guarantees remain deferred. Phase 6E
+adds bounded Memory Core trial-deletion fixtures with trial candidates,
+scan-black retained candidates, deterministic finalization-order reporting,
+safe-mode affine allocation exclusion, root-buffer/decrement-event scheduling,
+allocator-owned root/edge decrement fixtures, rooted retention, unrooted cycle
+collection, unrooted acyclic retention, and kind-scheduled cross-kind
+collection. Production allocator-integrated ARC and runtime finalizer
+invocation remain deferred. Phase 6F adds a cache privacy
+gate for compiler-as-agent episode logs: project-local absolute file paths are
+recorded as stable relative labels, and external absolute paths are redacted to
+`<external>/<file>` so accidental `.garnet-cache/` copies do not leak user,
+temp, or CI workspace roots. Phase 6G adds CLI-level cache replay stress:
+foreign machine-key episodes in the same cache and copied `.garnet-cache`
+episodes are ignored and signaled as untrusted before they can surface stale
+failure advice. Phase 6H wires strategy notes through provenance verification,
+so copied same-machine `strategies.db` rows without local justifying episodes
+are quarantined instead of applied, and adds a bounded concurrent episode-append
+stress test. Phase 6I binds each episode to a keyed, non-reversible source-tree
+identifier so same-machine `.garnet-cache` copies from another project root are
+ignored before prior-failure or strategy advice can apply, and extends the
+append stress into a 16-writer bounded soak that preserves valid NDJSON and all
+verified records. Phase 6J starts Mnemos Tier 1 allocator integration: the four
+Memory Core stores now expose a kind-aware allocator surface with allocation
+stats, and policy-configured episodic/semantic stores perform lazy retention
+eviction at read/search time. Phase 6K adds a cycle-aware allocator adapter and
+has working, episodic, semantic, and procedural stores retain and release
+observable roots on write, clear, policy eviction, replacement, and store drop.
+Production ARC integration, runtime finalizer invocation, persistence, and
+extended release-duration soak remain follow-up work.
 
 ## Historical Material
 

@@ -119,6 +119,7 @@ pub enum TokenKind {
     KwMut,
     KwMove,
     KwDyn,
+    KwAs,
 
     // ── Logical keywords ──
     KwAnd,
@@ -239,6 +240,7 @@ pub fn keyword_lookup(s: &str) -> Option<TokenKind> {
         "mut" => Some(TokenKind::KwMut),
         "move" => Some(TokenKind::KwMove),
         "dyn" => Some(TokenKind::KwDyn),
+        "as" => Some(TokenKind::KwAs),
         "and" => Some(TokenKind::KwAnd),
         "or" => Some(TokenKind::KwOr),
         "not" => Some(TokenKind::KwNot),
@@ -309,6 +311,7 @@ pub fn describe_kind(kind: &TokenKind) -> &'static str {
         TokenKind::KwMut => "'mut'",
         TokenKind::KwMove => "'move'",
         TokenKind::KwDyn => "'dyn'",
+        TokenKind::KwAs => "'as'",
         TokenKind::KwAnd => "'and'",
         TokenKind::KwOr => "'or'",
         TokenKind::KwNot => "'not'",

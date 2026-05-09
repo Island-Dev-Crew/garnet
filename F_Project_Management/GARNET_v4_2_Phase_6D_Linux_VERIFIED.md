@@ -83,7 +83,7 @@ The initial pass 1 covered the `cli` template + signed manifest. Pass 2 added th
 | `garnet check` on caps-clean program (`@caps(fs)` + `read_file`) | ✅ "1 functions checked, 0 diagnostics" |
 | `garnet check` on caps-violating program (`@caps()` + `read_file`) | ✅ Flagged: *"caps coverage: function `main` does not declare `fs` but transitively calls `read_file` which requires it"* — this is the v3.4.1 Day 2 propagator running live on real Linux |
 | `garnet convert ruby /tmp/hello.rb` | ✅ 4 artifacts: `.garnet`, `.lineage.json`, `.migrate_todo.md`, `.metrics.json`. Output starts `@sandbox @caps()` per v4.1 SandboxMode default. 100.0% clean translation, 3 CIR nodes, 0 migrate-todos. |
-| `garnet test` on all 3 scaffolded templates (Phase 6E addition) | ✅ cli (2 pass), web-api (1 pass — verifies cross-file helper resolution: test calls `timestamp()` defined in src/main.garnet), agent-orchestrator (2 pass — pure helpers + bridged crypto). Per-test report with pass/fail summary; exit non-zero on failure. |
+| `garnet test` on all 3 scaffolded templates (Phase 6E addition) | ✅ v4.2 historical result: cli (2 pass), web-api (1 pass), agent-orchestrator (2 pass). Superseded in v0.5 Phase 3D by the actor-mode agent template: agent-orchestrator now reports 3 pass with managed actor address and bounded-mailbox coverage. |
 
 ### Bug found + patched in pass 2
 

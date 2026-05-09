@@ -3,12 +3,18 @@
 //! test in this file means a published contribution has lost its grounding
 //! in the reference implementation.
 
-use garnet_interp::{Interpreter, Value};
+use garnet_interp::{Interpreter, RuntimeError, Value};
 
 fn run(src: &str, fn_name: &str) -> Value {
     let mut interp = Interpreter::new();
     interp.load_source(src).expect("load");
     interp.call(fn_name, vec![]).expect("call")
+}
+
+fn run_result(src: &str, fn_name: &str) -> Result<Value, RuntimeError> {
+    let mut interp = Interpreter::new();
+    interp.load_source(src).expect("load");
+    interp.call(fn_name, vec![])
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -183,6 +189,133 @@ fn c5_actor_with_annotations_on_handlers() {
         def main() { 1 }
     "#;
     assert!(matches!(run(src, "main"), Value::Int(1)));
+}
+
+#[test]
+fn c5_actor_handler_dispatches_via_spawn_bridge() {
+    let src = r#"
+        actor Counter {
+            let mut n = 0
+            protocol incr(delta: Int) -> Int
+            on incr(delta) {
+                n += delta
+                n
+            }
+        }
+        def main() {
+            spawn Counter.incr(5)
+        }
+    "#;
+    let actual = run(src, "main");
+    assert!(
+        matches!(actual, Value::Int(5)),
+        "expected 5, got {actual:?}"
+    );
+}
+
+#[test]
+fn c5_spawn_actor_returns_address_with_persistent_state() {
+    let src = r#"
+        actor Counter {
+            let mut n = 0
+            protocol incr(delta: Int) -> Int
+            protocol get() -> Int
+            on incr(delta) {
+                n += delta
+                n
+            }
+            on get() { n }
+        }
+        def main() {
+            let counter = spawn Counter
+            counter.tell(:incr, 1)
+            counter.tell(:incr, 2)
+            let drained = counter.drain()
+            counter.ask(:get) + drained
+        }
+    "#;
+    let actual = run(src, "main");
+    assert!(
+        matches!(actual, Value::Int(5)),
+        "expected 5, got {actual:?}"
+    );
+}
+
+#[test]
+fn c5_actor_address_enforces_bounded_mailbox() {
+    let src = r#"
+        actor Counter {
+            let mut n = 0
+            protocol incr(delta: Int) -> Int
+            protocol get() -> Int
+            on incr(delta) {
+                n += delta
+                n
+            }
+            on get() { n }
+        }
+        def main() {
+            let counter = Counter.spawn(1)
+            let first = counter.try_tell(:incr, 4)
+            let second = counter.try_tell(:incr, 8)
+            let queued = counter.mailbox_size()
+            let drained = counter.drain()
+            let third = counter.try_tell(:incr, 8)
+            counter.drain()
+            if first and not second and third {
+                counter.ask(:get) + queued + drained
+            } else {
+                -1
+            }
+        }
+    "#;
+    let actual = run(src, "main");
+    assert!(
+        matches!(actual, Value::Int(14)),
+        "expected 14, got {actual:?}"
+    );
+}
+
+#[test]
+fn c5_actor_address_tell_reports_full_mailbox() {
+    let src = r#"
+        actor Counter {
+            let mut n = 0
+            protocol incr(delta: Int) -> Int
+            on incr(delta) {
+                n += delta
+                n
+            }
+        }
+        def main() {
+            let counter = Counter.spawn(1)
+            counter.tell(:incr, 4)
+            counter.tell(:incr, 8)
+        }
+    "#;
+    let err = run_result(src, "main").expect_err("second tell should fail");
+    assert!(
+        format!("{err:?}").contains("mailbox is full"),
+        "expected full mailbox error, got {err:?}"
+    );
+}
+
+#[test]
+fn c5_actor_spawn_rejects_extra_capacity_args() {
+    let src = r#"
+        actor Counter {
+            protocol get() -> Int
+            on get() { 0 }
+        }
+        def main() {
+            Counter.spawn(1, 2)
+        }
+    "#;
+    let err = run_result(src, "main").expect_err("extra spawn argument should fail");
+    assert!(
+        format!("{err:?}").contains("expected at most one argument"),
+        "expected arity error, got {err:?}"
+    );
 }
 
 // ════════════════════════════════════════════════════════════════════

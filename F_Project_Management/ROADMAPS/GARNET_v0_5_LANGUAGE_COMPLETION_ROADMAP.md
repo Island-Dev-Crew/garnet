@@ -14,7 +14,7 @@
 
 **Intent:** Make Mini-Spec v1.0 syntax visible in the AST before pretending the runtime can execute it.
 
-**Status:** started.
+**Status:** complete for parser parity; Phase 2A now builds on it.
 
 **Implemented in current branch:**
 
@@ -48,7 +48,7 @@ cargo test -p garnet-cli --test conformance_skeleton
 
 Expected: parser-parity tests pass; deferred runtime/type-system handles remain ignored.
 
-- [ ] **Step 2: Add parse support for `do ... end` block arguments**
+- [x] **Step 2: Add parse support for `do ... end` block arguments**
 
 Add parser tests before implementation:
 
@@ -61,11 +61,12 @@ fn parses_do_end_block_argument() {
 
 Expected first run before implementation: parser rejects `do`.
 
-- [ ] **Step 3: Update matrix rows**
+- [x] **Step 3: Update matrix rows**
 
-Rows that may move after Phase 1:
+Rows moved after Phase 1:
 
-- `§5.4 Blocks + yield`: from deferred to partial/parser-stage only.
+- `§5.4 Blocks + yield`: from deferred to partial/parser-stage, then Phase 2A
+  managed-runtime evidence for block invocation, `yield`, and `next`.
 - `§11.6 dyn Trait syntax`: parsed-only.
 - `§11.7 @dynamic method dispatch`: parsed-only metadata.
 - `§11.8 Structural protocols`: parsed-only top-level declarations.
@@ -83,35 +84,92 @@ Rows that may move after Phase 1:
 - Test: `garnet-cli/tests/conformance_skeleton.rs`
 - Test: `examples/mvp_06_multi_agent.garnet`
 
-- [ ] **Step 1: Implement block/yield/next runtime semantics**
+- [x] **Step 1: Implement block/yield/next runtime semantics**
 
 Acceptance:
 
 ```sh
-cargo test -p garnet-cli --test conformance_skeleton deferred_blocks_and_yield -- --ignored
+cargo test -p garnet-cli --test conformance_skeleton deferred_blocks_and_yield
 ```
 
-Expected after implementation: pass without `#[ignore]`.
+Expected after implementation: pass without `#[ignore]`, with the
+`explicit_closure_argument_does_not_become_implicit_block` regression proving
+ordinary closure arguments are not silently consumed as implicit blocks.
 
-- [ ] **Step 2: Implement dynamic method table for managed mode**
+- [x] **Step 2: Implement dynamic method table for managed mode**
 
 Acceptance:
 
 ```sh
-cargo test -p garnet-cli --test conformance_skeleton deferred_dynamic_dispatch -- --ignored
+cargo test -p garnet-cli --test conformance_skeleton deferred_dynamic_dispatch
 ```
 
-Expected after implementation: pass without `#[ignore]`.
+Expected after implementation: pass without `#[ignore]` for per-instance `@dynamic` method tables. Static `impl` fallback and `method_missing` remain follow-up work.
 
-- [ ] **Step 3: Implement structural protocol compatibility checks**
+- [x] **Step 2D: Implement static impl fallback and method_missing**
 
 Acceptance:
 
 ```sh
-cargo test -p garnet-cli --test conformance_skeleton deferred_structural_protocols -- --ignored
+cargo test -p garnet-cli --test conformance_skeleton static_impl_dispatch_and_method_missing
 ```
 
-Expected after implementation: pass without `#[ignore]`.
+Expected after implementation: pass with static inherent impl methods resolving after per-instance dynamic methods and `method_missing` resolving unresolved calls.
+
+- [x] **Step 3: Implement structural protocol compatibility checks**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-cli --test conformance_skeleton deferred_structural_protocols
+```
+
+Expected after implementation: pass without `#[ignore]` for protocol-typed managed parameter checks, including static inherent impl-backed method presence.
+
+- [x] **Step 3E: Tighten structural protocol signature checks**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-cli --test conformance_skeleton deferred_structural_protocols
+```
+
+Expected after implementation: `deferred_structural_protocols` rejects arity and required return-type mismatches in addition to missing methods.
+
+- [x] **Step 3F: Implement runtime `as Protocol` casts**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-parser --test parse_v1_parser_parity parses_protocol_cast_expression
+cargo test -p garnet-cli --test conformance_skeleton deferred_structural_protocols
+```
+
+Expected after implementation: `value as Protocol` parses as `Expr::Cast`, structurally compatible values pass through unchanged, and incompatible values fail at runtime with the structural protocol diagnostic. Generic protocol substitution and built-in typed signatures remain follow-up work.
+
+- [x] **Step 3G: Substitute generic protocol types and add typed built-in signatures**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-cli --test conformance_skeleton deferred_structural_protocols
+```
+
+Observed before implementation: `BoxLike<String>` still compared required method returns against the unresolved type parameter `T`, so a `TextBox.value() -> String` method was rejected. Built-in `String` methods also satisfied protocols only when signatures had no parameter or return-type requirements.
+
+Expected after implementation: `Protocol<T>` annotations and casts instantiate required signatures before structural checks; incompatible concrete substitutions still fail; core built-in String/Array/Map/number method signatures can satisfy typed protocols without accepting incompatible return types.
+
+- [x] **Step 3H: Register `@dynamic impl` dispatch tables**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-cli --test conformance_skeleton dynamic_impl_dispatch_tables
+```
+
+Observed before implementation: `@dynamic impl TraitWidget for Renderable` was preserved in the AST but did not participate in protocol satisfaction or method dispatch.
+
+Expected after implementation: `@dynamic impl Type for Protocol` methods are registered in managed mode, satisfy protocol-typed parameters, appear in dynamic receiver introspection, and dispatch before static inherent impl fallback while per-instance dynamic methods still override them.
 
 ## Phase 3: Actor Runtime Bridge And Sendable
 
@@ -125,13 +183,31 @@ Expected after implementation: pass without `#[ignore]`.
 - Modify: `garnet-interp-v0.3/src/eval.rs`
 - Modify: `garnet-cli/templates/agent-orchestrator/src/main.garnet`
 
-- [ ] **Step 1: Add declaration-site Sendable checks for actor protocols**
+- [x] **Step 1: Add declaration-site Sendable checks for actor protocols**
 
-Acceptance: protocol parameters marked `@nonsendable` are rejected before run.
+Acceptance: protocol and handler parameters using `@nonsendable` payload types are rejected before run.
 
-- [ ] **Step 2: Bridge Garnet `actor` declarations to `garnet-actor-runtime`**
+- [x] **Step 2: Bridge Garnet `actor` declarations to managed runtime dispatch**
 
-Acceptance: `agent-orchestrator` can use actor syntax, not only pure role functions.
+Acceptance: source actor syntax can run through `spawn Actor.handler(args)` in managed mode, not only parse as a deferred declaration.
+
+Evidence: `multi_agent_builder_runs_with_managed_actor_bridge`; `c5_actor_handler_dispatches_via_spawn_bridge`.
+
+- [x] **Step 3: Add managed actor addresses and bounded source mailboxes**
+
+Acceptance: `spawn Actor` returns an address with persistent actor-local state, `Actor.spawn(capacity)` constructs a bounded mailbox, and managed code can `ask`, `tell`/`try_tell`, inspect `mailbox_size`, and `drain` queued protocol messages. Full mailboxes surface explicit failure through `tell` and non-throwing backpressure through `try_tell`.
+
+Evidence: `parses_spawn_keyword_as_member_method_name`; `c5_spawn_actor_returns_address_with_persistent_state`; `c5_actor_address_enforces_bounded_mailbox`; `c5_actor_address_tell_reports_full_mailbox`; `c5_actor_spawn_rejects_extra_capacity_args`.
+
+Remaining: the full `garnet-actor-runtime` OS-thread async address/mailbox bridge is still pending.
+
+- [x] **Step 4: Move `agent-orchestrator` from roadmap prose to actor-mode starter**
+
+Acceptance: a fresh `garnet new --template agent-orchestrator` project runs
+Researcher / Synthesizer / Reviewer actor declarations through managed actor
+addresses, bounded `try_tell` backpressure, and actor-local memory stores.
+
+Evidence: `cargo test -p garnet-cli --test cli_smoke new_agent_orchestrator_template_runs_and_tests`; generated-project smoke with `garnet run` returning `=> 25` and `garnet test` reporting 3 passed.
 
 ## Phase 4: Safe-Mode Ownership Hardening
 
@@ -143,21 +219,104 @@ Acceptance: `agent-orchestrator` can use actor syntax, not only pure role functi
 - Modify: `garnet-check-v0.3/src/lib.rs`
 - Test: `garnet-cli/tests/conformance_skeleton.rs`
 
-- [ ] **Step 1: Complete borrow rules B1-B5 with over-rejecting diagnostics**
+- [x] **Step 1: Activate partial B1/B2/B4 borrow-rule conformance**
 
 Acceptance:
 
 ```sh
-cargo test -p garnet-cli --test conformance_skeleton partial_borrow_rule_suite -- --ignored
+cargo test -p garnet-cli --test conformance_skeleton partial_borrow_rule_suite
 ```
 
-- [ ] **Step 2: Implement a conservative NLL subset**
+Evidence: direct use-after-move through `own` parameters and direct
+`mut`+`borrow` aliasing are rejected by `garnet check`; managed `def` code
+remains ARC-governed rather than affine.
+
+Remaining: full place-granular B1-B5, method-call ownership, B3 lifetime
+containment, B5 drop discipline, two-phase borrows, and NLL are still pending.
+
+- [x] **Step 1B: Track unambiguous method receiver ownership**
 
 Acceptance:
 
 ```sh
-cargo test -p garnet-cli --test conformance_skeleton deferred_nll_lifetime_inference -- --ignored
+cargo test -p garnet-check --test borrow
+cargo test -p garnet-cli --test conformance_skeleton partial_borrow_rule_suite
 ```
+
+Evidence: unambiguous same-module `own self` method receivers now move the
+receiver binding, receiver `mut` plus borrowed arguments trigger aliasing, and
+conflicting same-named method signatures are skipped until type resolution can
+disambiguate them.
+
+Remaining: type-resolved impl dispatch and full receiver/field/place-granular
+borrows are still pending.
+
+- [x] **Step 1C: Disambiguate simple typed method receivers**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test borrow
+cargo test -p garnet-cli --test conformance_skeleton partial_borrow_rule_suite
+```
+
+Evidence: simple declared receiver types now select the matching impl method
+for same-named methods across different receiver types, and typed receivers do
+not fall back to another type's method when no matching impl exists.
+
+Remaining: generic receiver types, trait impl dispatch, inferred local types,
+and full receiver/field/place-granular borrows are still pending.
+
+- [x] **Step 1D: Track simple field places for aliasing and moves**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test borrow
+cargo test -p garnet-cli --test conformance_skeleton partial_borrow_rule_suite
+```
+
+Evidence: simple field projections now participate in B1/B2 aliasing and B4
+move tracking. The checker rejects same-field `mut`+`borrow` aliasing,
+parent/child aliasing, and same-field use-after-move while allowing distinct
+sibling fields to remain usable.
+
+Remaining: index/dynamic places, generic receiver types, trait impl dispatch,
+inferred local types, drop discipline, two-phase borrows, and NLL are still
+pending.
+
+- [x] **Step 1E: Track indexed places conservatively**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test borrow
+cargo test -p garnet-cli --test conformance_skeleton partial_borrow_rule_suite
+```
+
+Evidence: `root[index]` projections now participate in B1/B2 aliasing and B4
+move tracking as wildcard index sub-places. Indexes under the same receiver
+conflict conservatively; nested index receiver operands are still checked; and
+indexes under distinct sibling fields remain usable.
+
+Remaining: dynamic places, generic receiver types, trait impl dispatch,
+inferred local types, drop discipline, two-phase borrows, and NLL are still
+pending.
+
+- [x] **Step 2: Implement a conservative NLL subset**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test extended return_ref
+cargo test -p garnet-cli --test conformance_skeleton deferred_nll_lifetime_inference
+```
+
+Evidence: Phase 4F activates a conservative Mini-Spec §8.5.2
+lifetime-elision subset for reference returns. No-input and
+multiple-borrowed-input reference returns reject; one borrowed input is
+accepted. Full CFG NLL, closure capture lifetimes, variance, dynamic places,
+drop discipline, and two-phase borrows remain pending.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 
@@ -170,11 +329,27 @@ cargo test -p garnet-cli --test conformance_skeleton deferred_nll_lifetime_infer
 - Create: `garnet-check-v0.3/src/monomorph.rs`
 - Test: `garnet-cli/tests/conformance_skeleton.rs`
 
-- [ ] **Step 1: Enforce trait coherence with a conservative orphan-rule checker**
+- [x] **Step 1: Enforce trait coherence with a conservative orphan-rule checker**
 
-- [ ] **Step 2: Add interpreter-level generic instantiation evidence**
+Acceptance:
 
-- [ ] **Step 3: Defer native zero-cost claims until a compiler backend exists**
+```sh
+cargo test -p garnet-check --test coherence
+cargo test -p garnet-cli --test conformance_skeleton deferred_trait_coherence
+```
+
+Evidence: Phase 5A rejects exact duplicate trait impls and orphan impls where
+neither the trait nor the type is local, while preserving local-trait and
+local-type positive cases. Full generic overlap solving remains pending.
+
+- [x] **Step 2: Add interpreter-level generic instantiation evidence**
+
+Evidence: Phase 5B activates
+`generic_instantiation_runs_without_monomorphization_claims`, proving a generic
+struct, generic impl method, and generic function through the managed
+interpreter while keeping native zero-cost claims out of scope.
+
+- [x] **Step 3: Defer native zero-cost claims until a compiler backend exists**
 
 ## Phase 6: Memory Core Productization
 
@@ -186,11 +361,61 @@ cargo test -p garnet-cli --test conformance_skeleton deferred_nll_lifetime_infer
 - Modify: `C_Language_Specification/MEMORY_CORE_ROADMAP.md`
 - Test: `garnet-cli/tests/conformance_skeleton.rs`
 
-- [ ] **Step 1: Implement observable ARC cycle fixtures**
+- [x] **Step 1: Implement observable ARC cycle fixtures**
 
-- [ ] **Step 2: Implement Bacon-Rajan trial deletion in a bounded reference path**
+Phase 6A added `garnet-memory-v0.3/src/cycle.rs` and
+`garnet-memory-v0.3/tests/cycle.rs`, then activates
+`deferred_arc_cycle_detection` as a bounded reference-model gate for retained
+roots, collectable unrooted cycles, unrooted acyclic retention, and
+kind-scheduled cross-kind collection.
 
-- [ ] **Step 3: Add kind-aware root partitioning and safe-mode interaction tests**
+- [x] **Step 2: Implement bounded Bacon-Rajan-style trial deletion reference path**
+
+Phase 6B exposes trial candidates and scan-black retained candidates, then runs
+a bounded mark-gray / scan / collect-white pass over the deterministic cycle
+graph. This is still not production allocator-integrated ARC.
+
+- [x] **Step 3: Add finalization-order and safe-mode interaction reference tests**
+
+Phase 6C exposes deterministic collect-white finalization order and models
+safe-mode affine nodes as retained non-ARC allocations excluded from trial
+candidates.
+
+- [x] **Step 4: Add bounded root-buffer/decrement-event reference path**
+
+Phase 6D adds `CycleRootBuffer`, threshold-triggered collection, and buffered
+candidate scans so the reference model no longer relies only on whole-graph
+unrooted candidate discovery.
+
+- [x] **Step 5: Add allocator-owned root/edge decrement fixture**
+
+Phase 6E adds `CycleAllocatorFixture`, proving that the allocator-facing
+surface can own the graph plus root buffer and route root releases and ARC edge
+removals through buffered trial-deletion scheduling.
+
+- [x] **Step 6: Add kind-aware allocator surface and policy-configured lazy eviction**
+
+Phase 6J adds an object-safe `KindAllocator` / `HeapKindAllocator` surface with
+allocator stats across all four Memory Core stores. `EpisodeStore::with_policy`
+and `VectorIndex::with_policy` now lazily compact on read/search using
+`MemoryPolicy::score`, `should_retain`, and `compaction_high_water` while
+default constructors preserve the original unbounded reference behavior.
+
+Cache-security sidecar: Phase 6I adds keyed source-tree binding for
+compiler-as-agent episode records, quarantines copied same-machine strategy
+rows whose replayed justifications do not verify in the current source tree,
+and preserves valid NDJSON/all verified records under a 16-writer bounded
+append soak.
+
+- [x] **Step 7: Connect store root lifecycles to the cycle-aware allocator adapter**
+
+Phase 6K adds `CycleAwareKindAllocator`, `AllocRootStats`, and object-safe root
+hooks on `KindAllocator`. The four Memory Core stores now retain observable
+roots on write and release them on clear, policy eviction, workflow replacement,
+and drop. This proves store-root lifecycle wiring through the bounded cycle
+fixture, not the final production ARC backend.
+
+- [ ] **Step 8: Promote root-buffer/finalizer/safe-mode interaction into production allocator tests**
 
 ## Phase 7: Release, Research, And Repeated Falsification
 
@@ -210,4 +435,3 @@ cargo test -p garnet-cli --test conformance_skeleton deferred_nll_lifetime_infer
 - each item has a falsifiable success criterion,
 - dogfood readiness is rerun after every phase,
 - `canonical_mvp_examples_emit_stable_results` remains green.
-

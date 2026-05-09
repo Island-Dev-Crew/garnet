@@ -142,6 +142,17 @@ fn parses_method_call_chain() {
 }
 
 #[test]
+fn parses_spawn_keyword_as_member_method_name() {
+    match expr_of("Counter.spawn(1)") {
+        Expr::Method { method, args, .. } => {
+            assert_eq!(method, "spawn");
+            assert_eq!(args.len(), 1);
+        }
+        _ => panic!("expected method call at top"),
+    }
+}
+
+#[test]
 fn parses_field_access() {
     match expr_of("config.host") {
         Expr::Field { field, .. } => assert_eq!(field, "host"),

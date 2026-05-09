@@ -1,30 +1,87 @@
-# {{name}} - a runnable Researcher / Synthesizer / Reviewer orchestrator.
-#
-# This template keeps the first-run path executable on the current v0.3
-# interpreter. The role names and memory-kind vocabulary match MVP 6, but actor
-# spawning is deliberately left to the roadmap until `garnet run` bridges the
-# actor runtime end-to-end.
+# {{name}} - a runnable Researcher / Synthesizer / Reviewer actor orchestrator.
 
-def researcher(seed) {
-  seed + 2
+actor Researcher {
+  memory episodic trace : EpisodeStore<Fact>
+  let mut runs = 0
+
+  protocol find(seed: Int) -> Int
+  protocol trace_count() -> Int
+
+  on find(seed) {
+    runs += 1
+    let fact = seed + 2
+    trace.append(fact)
+    fact
+  }
+
+  on trace_count() {
+    trace.len()
+  }
 }
 
-def synthesizer(facts) {
-  facts * 3
+actor Synthesizer {
+  memory semantic facts : VectorIndex<Fact>
+  let mut drafts = 0
+
+  protocol synthesize(fact: Int) -> Int
+  protocol indexed_count() -> Int
+
+  on synthesize(fact) {
+    drafts += 1
+    facts.insert([1.0, 0.0, 0.0], fact)
+    fact * 3
+  }
+
+  on indexed_count() {
+    facts.len()
+  }
 }
 
-def reviewer(score) {
-  if score >= 12 {
-    score + 1
-  } else {
-    score
+actor Reviewer {
+  memory procedural workflow : WorkflowStore<Decision>
+  let mut accepted = 0
+
+  protocol review(score: Int) -> Int
+  protocol accepted_count() -> Int
+
+  on review(score) {
+    workflow.register("acceptance-threshold", score)
+    if score >= 12 {
+      accepted += 1
+      score + 1
+    } else {
+      score
+    }
+  }
+
+  on accepted_count() {
+    accepted
   }
 }
 
 def orchestrate(seed) {
-  let facts = researcher(seed)
-  let draft = synthesizer(facts)
-  reviewer(draft)
+  let researcher = spawn Researcher
+  let synthesizer = spawn Synthesizer
+  let reviewer = Reviewer.spawn(2)
+
+  let fact = researcher.ask(:find, seed)
+  let draft = synthesizer.ask(:synthesize, fact)
+  let accepted = reviewer.ask(:review, draft)
+
+  let first = reviewer.try_tell(:review, draft + 1)
+  let second = reviewer.try_tell(:review, draft + 2)
+  let overflow = reviewer.try_tell(:review, draft + 3)
+  let queued = reviewer.mailbox_size()
+  let drained = reviewer.drain()
+
+  if first and second and not overflow {
+    let trace_total = researcher.ask(:trace_count)
+    let indexed_total = synthesizer.ask(:indexed_count)
+    let accepted_total = reviewer.ask(:accepted_count)
+    accepted + trace_total + indexed_total + accepted_total + queued + drained
+  } else {
+    -1
+  }
 }
 
 @caps()

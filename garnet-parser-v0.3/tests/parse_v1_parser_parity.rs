@@ -58,6 +58,48 @@ fn parses_dyn_trait_type_annotation() {
 }
 
 #[test]
+fn parses_protocol_cast_expression() {
+    let src = r#"
+        protocol Renderable {
+            def render() -> String
+        }
+
+        struct Widget {
+            name: String
+        }
+
+        @caps()
+        def main() {
+            let widget = Widget("panel")
+            let renderable = widget as Renderable
+            renderable.render()
+        }
+    "#;
+
+    let module = parse_source(src).unwrap();
+    let function = match module.items.last().expect("main function") {
+        Item::Fn(f) => f,
+        other => panic!("expected function, got {other:?}"),
+    };
+    let let_stmt = function
+        .body
+        .stmts
+        .iter()
+        .find_map(|stmt| match stmt {
+            Stmt::Let(decl) if decl.name == "renderable" => Some(decl),
+            _ => None,
+        })
+        .expect("renderable cast binding");
+    let Expr::Cast { ty, .. } = &let_stmt.value else {
+        panic!("expected renderable binding to parse as a cast expression");
+    };
+    match ty {
+        TypeExpr::Named { path, .. } => assert_eq!(path, &vec!["Renderable".to_string()]),
+        other => panic!("expected named protocol cast type, got {other:?}"),
+    }
+}
+
+#[test]
 fn parses_yield_and_next_statements_as_staged_surface() {
     let src = r#"
         @caps()

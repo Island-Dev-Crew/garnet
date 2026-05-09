@@ -8,6 +8,7 @@ Date: 2026-05-07
 | Parser parity | `cargo test -p garnet-parser --test parse_v1_parser_parity` | Phase 1 merge |
 | Conformance skeleton | `cargo test -p garnet-cli --test conformance_skeleton` | every language feature PR |
 | Conformance phase gates | `cargo test -p garnet-cli --test conformance_phase_gates` | every roadmap/matrix PR |
+| Memory Core cycle fixtures | `cargo test -p garnet-memory --test cycle` | Phase 6+ Memory Core PRs |
 | Dogfood output stability | `cargo test -p garnet-cli --test dogfood_readiness_examples` | every example/runtime PR |
 | Canonical examples | `cargo test -p garnet-cli --test examples` and `target/debug/garnet parse/check/run examples/mvp_*.garnet` | every public-readiness PR |
 | Workspace tests | `cargo test --workspace --no-fail-fast` | merge |

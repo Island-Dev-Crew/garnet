@@ -4,12 +4,20 @@ use crate::control::{eval_if, eval_match, eval_try};
 use crate::env::Env;
 use crate::error::RuntimeError;
 use crate::stmt;
-use crate::value::{bind_params, FnValue, MemoryBackend, TypeValue, Value};
-use garnet_parser::ast::{BinOp, ClosureBody, Expr, StringLit, UnOp};
+use crate::value::{
+    bind_params, ensure_protocol_satisfied, has_dynamic_annotation, protocol_for_type, ActorHandle,
+    ActorMessage, FnValue, MemoryBackend, TypeValue, Value,
+};
+use garnet_parser::ast::{
+    ActorDef, ActorItem, BinOp, ClosureBody, Expr, StringLit, TypeExpr, UnOp,
+};
 use garnet_parser::token::StrPart;
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::rc::Rc;
+
+const DEFAULT_MANAGED_ACTOR_MAILBOX_CAPACITY: usize = 1024;
+const MAX_MANAGED_ACTOR_MAILBOX_CAPACITY: usize = 1_048_576;
 
 /// Evaluate an expression in the given environment.
 pub fn eval_expr(expr: &Expr, env: &Rc<Env>) -> Result<Value, RuntimeError> {
@@ -61,6 +69,14 @@ pub fn eval_expr(expr: &Expr, env: &Rc<Env>) -> Result<Value, RuntimeError> {
             let idx = eval_expr(index, env)?;
             access_index(&recv, &idx)
         }
+        Expr::Cast { expr, ty, .. } => {
+            let value = eval_expr(expr, env)?;
+            let protocol = protocol_for_type(ty, env).ok_or_else(|| {
+                RuntimeError::msg(format!("cast target {} is not a protocol", type_name(ty)))
+            })?;
+            ensure_protocol_satisfied(&value, &protocol, env)?;
+            Ok(value)
+        }
 
         // ── Control-flow expressions ──
         Expr::If {
@@ -85,7 +101,12 @@ pub fn eval_expr(expr: &Expr, env: &Rc<Env>) -> Result<Value, RuntimeError> {
         } => eval_try(body, rescues, ensure.as_ref(), env),
 
         // ── First-class values ──
-        Expr::Closure { params, body, .. } => {
+        Expr::Closure {
+            params,
+            body,
+            is_do_block,
+            ..
+        } => {
             // Build a synthetic FnDef so `call_value` can reuse the same code path.
             let fn_def = garnet_parser::ast::FnDef {
                 annotations: vec![],
@@ -108,12 +129,16 @@ pub fn eval_expr(expr: &Expr, env: &Rc<Env>) -> Result<Value, RuntimeError> {
             Ok(Value::Fn(Rc::new(FnValue {
                 def: fn_def,
                 captured: Rc::clone(env),
+                is_block: *is_do_block,
             })))
         }
         Expr::Spawn { expr, .. } => {
             // Rung-3 interpreter runs `spawn` synchronously. The actor
             // runtime (Rung 6) supplies the real parallelism later.
-            eval_expr(expr, env)
+            match eval_expr(expr, env)? {
+                Value::ActorType(actor) => spawn_actor_address(actor, env, None),
+                other => Ok(other),
+            }
         }
         Expr::Array { elements, .. } => {
             let items: Result<Vec<_>, _> = elements.iter().map(|e| eval_expr(e, env)).collect();
@@ -133,6 +158,16 @@ pub fn eval_expr(expr: &Expr, env: &Rc<Env>) -> Result<Value, RuntimeError> {
             }
             Ok(Value::Map(Rc::new(RefCell::new(m))))
         }
+    }
+}
+
+fn type_name(ty: &TypeExpr) -> String {
+    match ty {
+        TypeExpr::Named { path, .. } => path.join("::"),
+        TypeExpr::Dyn { trait_ty, .. } => format!("dyn {}", type_name(trait_ty)),
+        TypeExpr::Fn { .. } => "fn type".to_string(),
+        TypeExpr::Tuple { .. } => "tuple type".to_string(),
+        TypeExpr::Ref { inner, .. } => format!("ref {}", type_name(inner)),
     }
 }
 
@@ -409,6 +444,8 @@ pub fn call_value(callee: &Value, args: Vec<Value>) -> Result<Value, RuntimeErro
                     Ok(Value::Struct {
                         name: Rc::new(s.name.clone()),
                         fields: Rc::new(RefCell::new(m)),
+                        dynamic_methods: has_dynamic_annotation(&s.annotations)
+                            .then(|| Rc::new(RefCell::new(BTreeMap::new()))),
                     })
                 }
                 TypeValue::Enum(_) => Err(RuntimeError::Message(
@@ -430,14 +467,35 @@ pub fn call_value(callee: &Value, args: Vec<Value>) -> Result<Value, RuntimeErro
     }
 }
 
-fn call_fn(f: &FnValue, args: Vec<Value>) -> Result<Value, RuntimeError> {
+fn call_fn(f: &FnValue, mut args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let active_block = if args.len() == f.def.params.len() + 1 {
+        match args.last() {
+            Some(Value::Fn(block)) if block.is_block => {
+                match args.pop().expect("trailing block arg exists") {
+                    Value::Fn(block) => Some(block),
+                    _ => unreachable!(),
+                }
+            }
+            _ => None,
+        }
+    } else {
+        None
+    };
     let call_env = Env::new_child(&f.captured);
     bind_params(&f.def.params, args, &call_env)?;
+    if let Some(block) = active_block {
+        call_env.set_active_block(Value::Fn(block));
+    }
+    let is_block_closure = f.is_block;
     // Execute body.
     for s in &f.def.body.stmts {
         match stmt::exec_stmt(s, &call_env) {
             Ok(()) => {}
             Err(RuntimeError::Return(v)) => return Ok(v),
+            Err(RuntimeError::Next(v)) if is_block_closure => return Ok(v),
+            Err(RuntimeError::Next(_)) => {
+                return Err(RuntimeError::msg("`next` used outside block"))
+            }
             Err(e) => return Err(e),
         }
     }
@@ -445,6 +503,8 @@ fn call_fn(f: &FnValue, args: Vec<Value>) -> Result<Value, RuntimeError> {
         match eval_expr(tail, &call_env) {
             Ok(v) => Ok(v),
             Err(RuntimeError::Return(v)) => Ok(v),
+            Err(RuntimeError::Next(v)) if is_block_closure => Ok(v),
+            Err(RuntimeError::Next(_)) => Err(RuntimeError::msg("`next` used outside block")),
             Err(e) => Err(e),
         }
     } else {
@@ -456,7 +516,7 @@ fn call_method(
     recv: &Value,
     method: &str,
     args: Vec<Value>,
-    _env: &Rc<Env>,
+    env: &Rc<Env>,
 ) -> Result<Value, RuntimeError> {
     // Intrinsic methods on built-in values. Extending this to user-defined
     // struct methods requires linking impl blocks to structs, which is a
@@ -609,18 +669,101 @@ fn call_method(
                 "Number has no method '{method}'"
             ))),
         },
-        Value::Struct { fields, .. } => {
-            // User-written methods aren't wired up until Rung 4 resolves `impl`
-            // blocks. Fall back to field access by name if possible.
+        Value::Struct {
+            name,
+            fields,
+            dynamic_methods,
+        } => {
+            if let Some(methods) = dynamic_methods {
+                match method {
+                    "def_method" => {
+                        let name = method_name_arg("def_method", args.first())?;
+                        let body = args
+                            .get(1)
+                            .ok_or_else(|| RuntimeError::msg("def_method: missing body"))?
+                            .clone();
+                        if !matches!(body, Value::Fn(_)) {
+                            return Err(RuntimeError::type_err("Fn", &body));
+                        }
+                        methods.borrow_mut().insert(name, body);
+                        return Ok(recv.clone());
+                    }
+                    "undef_method" => {
+                        let name = method_name_arg("undef_method", args.first())?;
+                        methods.borrow_mut().remove(&name);
+                        return Ok(recv.clone());
+                    }
+                    "responds_to" | "respond_to" => {
+                        let queried = method_name_arg(method, args.first())?;
+                        let has_dynamic = methods.borrow().contains_key(&queried);
+                        let has_dynamic_impl = env.has_dynamic_impl_method(name.as_ref(), &queried);
+                        let has_static = env.has_impl_method(name.as_ref(), &queried);
+                        let has_field = fields.borrow().contains_key(&queried);
+                        return Ok(Value::Bool(
+                            has_dynamic || has_dynamic_impl || has_static || has_field,
+                        ));
+                    }
+                    "method_names" => {
+                        let mut names = methods
+                            .borrow()
+                            .keys()
+                            .cloned()
+                            .chain(env.dynamic_impl_method_names(name.as_ref()))
+                            .chain(env.impl_method_names(name.as_ref()))
+                            .collect::<Vec<_>>();
+                        names.sort();
+                        names.dedup();
+                        let names = names.into_iter().map(Value::sym).collect::<Vec<_>>();
+                        return Ok(Value::array(names));
+                    }
+                    _ => {
+                        if let Some(dynamic) = methods.borrow().get(method).cloned() {
+                            let mut dynamic_args = Vec::with_capacity(args.len() + 1);
+                            dynamic_args.push(recv.clone());
+                            dynamic_args.extend(args);
+                            return call_value(&dynamic, dynamic_args);
+                        }
+                    }
+                }
+            }
+
+            if let Some(dynamic_impl_method) = env.get_dynamic_impl_method(name.as_ref(), method) {
+                let mut dynamic_impl_args = Vec::with_capacity(args.len() + 1);
+                dynamic_impl_args.push(recv.clone());
+                dynamic_impl_args.extend(args);
+                return call_value(&dynamic_impl_method, dynamic_impl_args);
+            }
+
+            if let Some(static_method) = env.get_impl_method(name.as_ref(), method) {
+                let mut static_args = Vec::with_capacity(args.len() + 1);
+                static_args.push(recv.clone());
+                static_args.extend(args);
+                return call_value(&static_method, static_args);
+            }
+
+            // Field access by method name remains a cheap managed-mode
+            // convenience and preserves the previous struct dispatch behavior.
             if args.is_empty() {
                 if let Some(v) = fields.borrow().get(method) {
                     return Ok(v.clone());
                 }
             }
+
+            if method != "method_missing" {
+                if let Some(method_missing) = env.get_impl_method(name.as_ref(), "method_missing") {
+                    return call_value(
+                        &method_missing,
+                        vec![recv.clone(), Value::sym(method), Value::array(args)],
+                    );
+                }
+            }
+
             Err(RuntimeError::msg(format!(
-                "struct method dispatch for '{method}' requires Rung 4 impl resolution"
+                "Struct has no method '{method}'"
             )))
         }
+        Value::ActorType(actor) => call_actor_type_method(actor, method, args, env),
+        Value::ActorAddress(handle) => call_actor_address_method(handle, method, args),
         Value::MemoryStore { kind, backend, .. } => {
             // v3.3 KindGuard: validate the declared kind against the
             // backend's runtime tag before dispatch. Catches
@@ -647,6 +790,178 @@ fn call_method(
             "value of type {} has no method '{method}'",
             recv.type_name()
         ))),
+    }
+}
+
+fn call_actor_type_method(
+    actor: &Rc<ActorDef>,
+    method: &str,
+    args: Vec<Value>,
+    env: &Rc<Env>,
+) -> Result<Value, RuntimeError> {
+    if method == "spawn" {
+        if args.len() > 1 {
+            return Err(RuntimeError::msg("spawn: expected at most one argument"));
+        }
+        let capacity = match args.first() {
+            Some(Value::Int(n)) => Some(valid_mailbox_capacity(*n)?),
+            Some(other) => return Err(RuntimeError::type_err("Int", other)),
+            None => None,
+        };
+        return spawn_actor_address(Rc::clone(actor), env, capacity);
+    }
+
+    let actor_env = init_actor_env(actor, env)?;
+    call_actor_handler(actor, &actor_env, method, args)
+}
+
+fn spawn_actor_address(
+    actor: Rc<ActorDef>,
+    env: &Rc<Env>,
+    capacity: Option<usize>,
+) -> Result<Value, RuntimeError> {
+    let actor_env = init_actor_env(actor.as_ref(), env)?;
+    Ok(Value::ActorAddress(Rc::new(ActorHandle {
+        actor,
+        env: actor_env,
+        mailbox: RefCell::new(Default::default()),
+        capacity: capacity.unwrap_or(DEFAULT_MANAGED_ACTOR_MAILBOX_CAPACITY),
+    })))
+}
+
+fn init_actor_env(actor: &ActorDef, env: &Rc<Env>) -> Result<Rc<Env>, RuntimeError> {
+    let actor_env = Env::new_child(env);
+    for item in &actor.items {
+        match item {
+            ActorItem::Let(decl) => {
+                let value = eval_expr(&decl.value, &actor_env)?;
+                actor_env.define(&decl.name, value);
+            }
+            ActorItem::Memory(decl) => {
+                actor_env.define(
+                    &decl.name,
+                    Value::MemoryStore {
+                        kind: decl.kind,
+                        name: decl.name.clone(),
+                        backend: MemoryBackend::for_kind(decl.kind),
+                    },
+                );
+            }
+            ActorItem::Protocol(_) | ActorItem::Handler(_) => {}
+        }
+    }
+    Ok(actor_env)
+}
+
+fn call_actor_handler(
+    actor: &ActorDef,
+    actor_env: &Rc<Env>,
+    method: &str,
+    args: Vec<Value>,
+) -> Result<Value, RuntimeError> {
+    let handler = actor
+        .items
+        .iter()
+        .find_map(|item| match item {
+            ActorItem::Handler(handler) if handler.name == method => Some(handler),
+            _ => None,
+        })
+        .ok_or_else(|| {
+            RuntimeError::msg(format!("actor {} has no handler '{method}'", actor.name))
+        })?;
+
+    let call_env = Env::new_child(actor_env);
+    bind_params(&handler.params, args, &call_env)?;
+    match stmt::exec_block_value(&handler.body, &call_env) {
+        Ok(value) => Ok(value),
+        Err(RuntimeError::Return(value)) => Ok(value),
+        Err(err) => Err(err),
+    }
+}
+
+fn call_actor_address_method(
+    handle: &ActorHandle,
+    method: &str,
+    args: Vec<Value>,
+) -> Result<Value, RuntimeError> {
+    match method {
+        "ask" => {
+            let message = actor_message_arg("ask", args)?;
+            call_actor_handler(&handle.actor, &handle.env, &message.method, message.args)
+        }
+        "tell" => {
+            let message = actor_message_arg(method, args)?;
+            if queue_actor_message(handle, message) {
+                Ok(Value::Bool(true))
+            } else {
+                Err(RuntimeError::msg("tell: actor mailbox is full"))
+            }
+        }
+        "try_tell" => {
+            let message = actor_message_arg(method, args)?;
+            Ok(Value::Bool(queue_actor_message(handle, message)))
+        }
+        "drain" => {
+            if !args.is_empty() {
+                return Err(RuntimeError::msg("drain: expected no arguments"));
+            }
+            let mut drained = 0;
+            while let Some(message) = handle.mailbox.borrow_mut().pop_front() {
+                call_actor_handler(&handle.actor, &handle.env, &message.method, message.args)?;
+                drained += 1;
+            }
+            Ok(Value::Int(drained))
+        }
+        "mailbox_size" | "mailbox_len" => {
+            if !args.is_empty() {
+                return Err(RuntimeError::msg(format!(
+                    "{method}: expected no arguments"
+                )));
+            }
+            Ok(Value::Int(handle.mailbox.borrow().len() as i64))
+        }
+        "mailbox_capacity" | "capacity" => {
+            if !args.is_empty() {
+                return Err(RuntimeError::msg(format!(
+                    "{method}: expected no arguments"
+                )));
+            }
+            Ok(Value::Int(handle.capacity as i64))
+        }
+        _ => call_actor_handler(&handle.actor, &handle.env, method, args),
+    }
+}
+
+fn queue_actor_message(handle: &ActorHandle, message: ActorMessage) -> bool {
+    let mut mailbox = handle.mailbox.borrow_mut();
+    if mailbox.len() >= handle.capacity {
+        return false;
+    }
+    mailbox.push_back(message);
+    true
+}
+
+fn actor_message_arg(api: &str, args: Vec<Value>) -> Result<ActorMessage, RuntimeError> {
+    let method = method_name_arg(api, args.first())?;
+    Ok(ActorMessage {
+        method,
+        args: args.into_iter().skip(1).collect(),
+    })
+}
+
+fn valid_mailbox_capacity(n: i64) -> Result<usize, RuntimeError> {
+    if n <= 0 || n as usize > MAX_MANAGED_ACTOR_MAILBOX_CAPACITY {
+        return Err(RuntimeError::msg(format!(
+            "actor mailbox capacity must be in 1..={MAX_MANAGED_ACTOR_MAILBOX_CAPACITY}, got {n}"
+        )));
+    }
+    Ok(n as usize)
+}
+
+fn method_name_arg(api: &str, arg: Option<&Value>) -> Result<String, RuntimeError> {
+    match arg.ok_or_else(|| RuntimeError::msg(format!("{api}: missing method name")))? {
+        Value::Symbol(s) | Value::Str(s) => Ok(s.to_string()),
+        other => Err(RuntimeError::type_err("Symbol", other)),
     }
 }
 

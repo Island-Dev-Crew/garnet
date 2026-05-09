@@ -24,7 +24,8 @@ pub mod test;
 pub mod verify;
 
 use crate::cache::{self, Episode};
-use crate::{knowledge, strategies};
+use crate::{knowledge, machine_key, provenance, strategies};
+use std::path::Path;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 /// Helper used by every subcommand at start: surface a one-line note for any
@@ -32,8 +33,14 @@ use std::time::{Instant, SystemTime, UNIX_EPOCH};
 /// matched by AST fingerprint similarity. Silent if nothing relevant.
 pub(crate) fn surface_prior(source: &str) {
     let hash = cache::source_hash(source);
-    let prior = cache::recall(&hash);
-    let failures = prior.iter().filter(|e| e.outcome != "ok").count();
+    let prior = cache::recall_audit(&hash);
+    if prior.skipped > 0 {
+        eprintln!(
+            "note: ignored {} untrusted cache record(s) in .garnet-cache/episodes.log",
+            prior.skipped
+        );
+    }
+    let failures = prior.episodes.iter().filter(|e| e.outcome != "ok").count();
     if failures > 0 {
         eprintln!(
             "note: this source has {failures} prior failure(s) recorded in .garnet-cache/episodes.log"
@@ -44,11 +51,34 @@ pub(crate) fn surface_prior(source: &str) {
         let target = knowledge::fingerprint(&module);
         let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
         if let Ok(conn) = strategies::open(&cwd) {
-            if let Ok(matches) = strategies::consult(&conn, &target, 3) {
-                for (dist, s) in matches.iter().filter(|(d, _)| *d <= 32) {
+            let key = machine_key::machine_key();
+            if let Ok(matches) = strategies::consult_with_audit(&conn, &target, 16, key) {
+                if matches.skipped > 0 {
+                    eprintln!(
+                        "note: ignored {} untrusted strategy record(s) in .garnet-cache/strategies.db",
+                        matches.skipped
+                    );
+                }
+                let mut printed = 0;
+                let mut quarantined = 0;
+                for (dist, s) in matches.strategies.iter().filter(|(d, _)| *d <= 32) {
+                    if provenance::verify_strategy(s, &cwd, key).is_err() {
+                        quarantined += 1;
+                        continue;
+                    }
                     eprintln!(
                         "note: strategy '{}' applies (Hamming distance {dist}/256, last triggered ts={})",
                         s.heuristic, s.created_ts
+                    );
+                    printed += 1;
+                    if printed == 3 {
+                        break;
+                    }
+                }
+                if quarantined > 0 {
+                    eprintln!(
+                        "note: quarantined {} untrusted strategy record(s) in .garnet-cache/strategies.db",
+                        quarantined
                     );
                 }
             }
@@ -123,6 +153,51 @@ pub(crate) fn record(
     );
     let _ = cache::record_episode(&ep);
     persist_knowledge(source, &hash, outcome);
+}
+
+/// Privacy-preserving label for cache episode records.
+///
+/// Episode logs can be copied accidentally even though generated projects
+/// ignore `.garnet-cache/`. Keep useful project-local context without writing
+/// absolute user, temp, or CI workspace paths into the cache.
+pub(crate) fn cache_file_label(path: &Path) -> String {
+    if !path.is_absolute() {
+        return stable_path_label(path);
+    }
+
+    if let Ok(cwd) = std::env::current_dir() {
+        if let Ok(rel) = path.strip_prefix(&cwd) {
+            if !rel.as_os_str().is_empty() {
+                return stable_path_label(rel);
+            }
+        }
+        if let (Ok(cwd), Ok(path)) = (cwd.canonicalize(), path.canonicalize()) {
+            if let Ok(rel) = path.strip_prefix(&cwd) {
+                if !rel.as_os_str().is_empty() {
+                    return stable_path_label(rel);
+                }
+            }
+        }
+    }
+
+    match path.file_name().and_then(|name| name.to_str()) {
+        Some(name) if !name.is_empty() => format!("<external>/{name}"),
+        _ => "<external>".to_string(),
+    }
+}
+
+fn stable_path_label(path: &Path) -> String {
+    let parts: Vec<String> = path
+        .components()
+        .map(|component| component.as_os_str().to_string_lossy().into_owned())
+        .filter(|part| !part.is_empty())
+        .collect();
+
+    if parts.is_empty() {
+        ".".to_string()
+    } else {
+        parts.join("/")
+    }
 }
 
 /// One-line description of an AST `Item` — used by `garnet parse` for

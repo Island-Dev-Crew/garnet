@@ -23,18 +23,24 @@
 //! Deferred to a later pass (full Rung 4):
 //! - Ownership inference (single-owner per affine value)
 //! - Borrow checking (aliasing XOR mutation)
-//! - Non-lexical lifetime inference (NLL per Rust RFC 2094)
+//! - Full non-lexical lifetime inference (NLL per Rust RFC 2094). The
+//!   checker currently enforces the conservative reference-return elision
+//!   subset from Mini-Spec §8.5.2.
 //! - Trait coherence verification (Mini-Spec §11.5)
 //! - Automatic error-model bridging code generation (§7.4)
 
 pub mod audit;
 pub mod borrow;
 pub mod caps_graph;
+pub mod coherence;
 
 pub use audit::{AuditLog, BoundaryCall, BoundaryDirection};
 pub use caps_graph::{CapsReport, CapsViolation};
 
-use garnet_parser::ast::{Annotation, FnDef, FnMode, Item, Module, Stmt};
+use garnet_parser::ast::{
+    ActorDef, ActorItem, Annotation, FnDef, FnMode, Item, Module, Ownership, Param, Stmt, TypeExpr,
+};
+use std::collections::BTreeSet;
 
 /// A diagnostic from the checker, with a user-readable message and severity.
 #[derive(Debug, Clone, thiserror::Error)]
@@ -86,15 +92,22 @@ impl CheckReport {
 pub fn check_module(module: &Module) -> CheckReport {
     let mut report = CheckReport::default();
     let module_safe = module.safe;
+    let nonsendable_types = collect_nonsendable_types(module);
 
     for item in &module.items {
-        check_item(item, module_safe, &mut report);
+        check_item(item, module_safe, &nonsendable_types, &mut report);
     }
 
     // Borrow-checker pass: layered on top of the syntactic checks. Only
     // produces diagnostics for safe-mode functions; managed-mode `def`
     // functions are skipped because ARC sharing is the contract there.
     report.errors.extend(borrow::check_borrows(module));
+
+    // Conservative trait coherence: exact duplicate impls and orphan-rule
+    // violations are rejected before richer generic overlap solving exists.
+    report
+        .errors
+        .extend(coherence::check_trait_coherence(module));
 
     // v3.4.1 Day 2 — CapCaps call-graph propagator. Reads primitive caps
     // from `garnet_stdlib::registry` at check time and verifies every
@@ -111,13 +124,18 @@ pub fn check_module(module: &Module) -> CheckReport {
     report
 }
 
-fn check_item(item: &Item, module_safe: bool, report: &mut CheckReport) {
+fn check_item(
+    item: &Item,
+    module_safe: bool,
+    nonsendable_types: &BTreeSet<String>,
+    report: &mut CheckReport,
+) {
     match item {
         Item::Fn(f) => check_fn(f, module_safe, report),
         Item::Module(m) => {
             let merged = module_safe || m.safe;
             for inner in &m.items {
-                check_item(inner, merged, report);
+                check_item(inner, merged, nonsendable_types, report);
             }
         }
         Item::Impl(impl_block) => {
@@ -139,6 +157,7 @@ fn check_item(item: &Item, module_safe: bool, report: &mut CheckReport) {
                 struct_def.name
             )));
         }
+        Item::Actor(actor) => check_actor_sendable(actor, nonsendable_types, report),
         _ => {}
     }
 }
@@ -147,6 +166,150 @@ fn has_dynamic_annotation(annotations: &[Annotation]) -> bool {
     annotations
         .iter()
         .any(|ann| matches!(ann, Annotation::Dynamic(_)))
+}
+
+fn has_nonsendable_annotation(annotations: &[Annotation]) -> bool {
+    annotations
+        .iter()
+        .any(|ann| matches!(ann, Annotation::NonSendable(_)))
+}
+
+fn contains_ref_type(ty: &TypeExpr) -> bool {
+    match ty {
+        TypeExpr::Ref { .. } => true,
+        TypeExpr::Named { args, .. } => args.iter().any(contains_ref_type),
+        TypeExpr::Fn { params, ret, .. } => {
+            params.iter().any(contains_ref_type) || contains_ref_type(ret)
+        }
+        TypeExpr::Tuple { elements, .. } => elements.iter().any(contains_ref_type),
+        TypeExpr::Dyn { trait_ty, .. } => contains_ref_type(trait_ty),
+    }
+}
+
+fn contributes_input_lifetime(param: &Param) -> bool {
+    matches!(
+        param.ownership,
+        Some(Ownership::Borrow | Ownership::Mut | Ownership::Ref)
+    ) || param.ty.as_ref().is_some_and(contains_ref_type)
+}
+
+fn is_borrowed_self(param: &Param) -> bool {
+    param.name == "self"
+        && matches!(
+            param.ownership,
+            Some(Ownership::Borrow | Ownership::Mut | Ownership::Ref)
+        )
+}
+
+fn collect_nonsendable_types(module: &Module) -> BTreeSet<String> {
+    let mut names = BTreeSet::new();
+    collect_nonsendable_types_from_items(&module.items, &mut names);
+    names
+}
+
+fn collect_nonsendable_types_from_items(items: &[Item], names: &mut BTreeSet<String>) {
+    for item in items {
+        match item {
+            Item::Struct(struct_def) if has_nonsendable_annotation(&struct_def.annotations) => {
+                names.insert(struct_def.name.clone());
+            }
+            Item::Module(module) => collect_nonsendable_types_from_items(&module.items, names),
+            _ => {}
+        }
+    }
+}
+
+fn check_actor_sendable(
+    actor: &ActorDef,
+    nonsendable_types: &BTreeSet<String>,
+    report: &mut CheckReport,
+) {
+    if nonsendable_types.is_empty() {
+        return;
+    }
+    for item in &actor.items {
+        match item {
+            ActorItem::Protocol(protocol) => check_actor_params_sendable(
+                &actor.name,
+                "protocol",
+                &protocol.name,
+                &protocol.params,
+                nonsendable_types,
+                report,
+            ),
+            ActorItem::Handler(handler) => check_actor_params_sendable(
+                &actor.name,
+                "handler",
+                &handler.name,
+                &handler.params,
+                nonsendable_types,
+                report,
+            ),
+            _ => {}
+        }
+    }
+}
+
+fn check_actor_params_sendable(
+    actor_name: &str,
+    boundary_kind: &str,
+    boundary_name: &str,
+    params: &[Param],
+    nonsendable_types: &BTreeSet<String>,
+    report: &mut CheckReport,
+) {
+    for param in params {
+        if let Some(ty) = &param.ty {
+            for name in nonsendable_type_names(ty, nonsendable_types) {
+                report.errors.push(CheckError::AnnotationError(format!(
+                    "@nonsendable type `{name}` cannot cross actor `{actor_name}` {boundary_kind} `{boundary_name}` via parameter `{}`",
+                    param.name
+                )));
+            }
+        }
+    }
+}
+
+fn nonsendable_type_names(ty: &TypeExpr, nonsendable_types: &BTreeSet<String>) -> BTreeSet<String> {
+    let mut names = BTreeSet::new();
+    collect_nonsendable_type_names(ty, nonsendable_types, &mut names);
+    names
+}
+
+fn collect_nonsendable_type_names(
+    ty: &TypeExpr,
+    nonsendable_types: &BTreeSet<String>,
+    names: &mut BTreeSet<String>,
+) {
+    match ty {
+        TypeExpr::Named { path, args, .. } => {
+            if let Some(name) = path.last() {
+                if nonsendable_types.contains(name) {
+                    names.insert(name.clone());
+                }
+            }
+            for arg in args {
+                collect_nonsendable_type_names(arg, nonsendable_types, names);
+            }
+        }
+        TypeExpr::Fn { params, ret, .. } => {
+            for param in params {
+                collect_nonsendable_type_names(param, nonsendable_types, names);
+            }
+            collect_nonsendable_type_names(ret, nonsendable_types, names);
+        }
+        TypeExpr::Tuple { elements, .. } => {
+            for element in elements {
+                collect_nonsendable_type_names(element, nonsendable_types, names);
+            }
+        }
+        TypeExpr::Ref { inner, .. }
+        | TypeExpr::Dyn {
+            trait_ty: inner, ..
+        } => {
+            collect_nonsendable_type_names(inner, nonsendable_types, names);
+        }
+    }
 }
 
 fn check_fn(f: &FnDef, module_safe: bool, report: &mut CheckReport) {
@@ -244,6 +407,7 @@ fn check_fn(f: &FnDef, module_safe: bool, report: &mut CheckReport) {
                 f.name
             )));
         }
+        check_lifetime_elision(f, report);
     }
 
     // Always walk the body to count call sites; only emit safe-mode
@@ -253,6 +417,36 @@ fn check_fn(f: &FnDef, module_safe: bool, report: &mut CheckReport) {
     walk_stmts_for_safe_violations(&f.body.stmts, &f.name, report, effective_safe);
     if let Some(tail) = &f.body.tail_expr {
         walk_expr_for_safe_violations(tail, &f.name, report, effective_safe);
+    }
+}
+
+fn check_lifetime_elision(f: &FnDef, report: &mut CheckReport) {
+    let Some(return_ty) = &f.return_ty else {
+        return;
+    };
+    if !contains_ref_type(return_ty) {
+        return;
+    }
+
+    let borrowed_inputs = f
+        .params
+        .iter()
+        .filter(|p| contributes_input_lifetime(p))
+        .count();
+    if borrowed_inputs == 0 {
+        report.errors.push(CheckError::SafeModeViolation(format!(
+            "missing lifetime specifier: safe function '{}' returns a reference but has no borrowed input lifetime to tie it to",
+            f.name
+        )));
+        return;
+    }
+
+    let has_borrowed_self = f.params.iter().any(is_borrowed_self);
+    if borrowed_inputs > 1 && !has_borrowed_self {
+        report.errors.push(CheckError::SafeModeViolation(format!(
+            "missing lifetime specifier: safe function '{}' returns a reference with multiple borrowed inputs; write an explicit lifetime once lifetime syntax is enabled",
+            f.name
+        )));
     }
 }
 
