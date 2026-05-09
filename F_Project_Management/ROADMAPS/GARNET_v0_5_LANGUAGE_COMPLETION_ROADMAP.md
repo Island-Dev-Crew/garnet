@@ -594,9 +594,10 @@ basic boolean const expressions are covered in Step 2ZF below;
 short-circuit boolean const expressions are covered in Step 2ZG below;
 boolean const equality/inequality expressions are covered in Step 2ZH below;
 direct boolean match guard expressions are covered in Step 2ZI below;
+integer const equality/inequality expressions are covered in Step 2ZJ below;
 loop fixed-point and broader mutable/escaped/general higher-order closure
 invocation/call-effect flow, cross-file/package imports, recursive/open payload
-reasoning, richer type inference, arithmetic, broader comparison,
+reasoning, richer type inference, arithmetic, relational/broader comparison,
 function-call, and broader const expression evaluation, open-domain exhaustiveness/range
 reasoning, and broader non-literal guard reasoning remain pending.
 
@@ -907,6 +908,24 @@ coverage, and `Status::Ready if Core::RAW != true` is statically
 false/non-covering without requiring an intermediate alias const. Arithmetic,
 relational comparison, function-call, recursive, cross-file/package, and
 broader const expression evaluation remain deferred.
+
+- [x] **Step 2ZJ: Fold integer const equality/inequality guard facts**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage integer_const_equality
+cargo test -p garnet-check --test match_coverage false_integer_const_inequality
+cargo test -p garnet-check --test match_coverage direct_integer_const_equality
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AO extends the narrow guard fact domain to integer literals
+for equality/inequality only. `Core::LIMIT == 2` counts as coverage, and
+`Core::LIMIT != 2` is statically false/non-covering. Arithmetic, relational
+comparison, function-call, recursive, cross-file/package, and broader const
+expression evaluation remain deferred.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 

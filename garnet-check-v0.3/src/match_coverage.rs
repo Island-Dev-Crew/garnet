@@ -53,6 +53,29 @@ enum GuardCoverage {
     Unknown,
 }
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+enum ConstFact {
+    Bool(bool),
+    Int(i64),
+}
+
+impl ConstFact {
+    fn as_bool(self) -> Option<bool> {
+        match self {
+            ConstFact::Bool(value) => Some(value),
+            ConstFact::Int(_) => None,
+        }
+    }
+
+    fn same_kind_eq(self, other: Self) -> Option<bool> {
+        match (self, other) {
+            (ConstFact::Bool(lhs), ConstFact::Bool(rhs)) => Some(lhs == rhs),
+            (ConstFact::Int(lhs), ConstFact::Int(rhs)) => Some(lhs == rhs),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 struct EnumDomain {
     info: EnumInfo,
@@ -71,7 +94,7 @@ struct Scope {
 #[derive(Debug, Default)]
 struct Checker {
     enums: BTreeMap<Vec<String>, EnumInfo>,
-    const_guard_facts: BTreeMap<Vec<String>, bool>,
+    const_guard_facts: BTreeMap<Vec<String>, ConstFact>,
     scopes: BTreeMap<Vec<String>, Scope>,
     errors: Vec<CheckError>,
 }
@@ -132,7 +155,7 @@ impl Checker {
                 }
 
                 let module_path = &path[..path.len().saturating_sub(1)];
-                if let Some(value) = self.const_guard_fact_from_expr(value, module_path) {
+                if let Some(value) = self.const_fact_from_expr(value, module_path) {
                     self.const_guard_facts.insert(path.clone(), value);
                     changed = true;
                 }
@@ -144,22 +167,24 @@ impl Checker {
         }
     }
 
-    fn const_guard_fact_from_expr(&self, expr: &Expr, module_path: &[String]) -> Option<bool> {
+    fn const_fact_from_expr(&self, expr: &Expr, module_path: &[String]) -> Option<ConstFact> {
         match expr {
-            Expr::Bool(value, _) => Some(*value),
+            Expr::Bool(value, _) => Some(ConstFact::Bool(*value)),
+            Expr::Int(value, _) => Some(ConstFact::Int(*value)),
             Expr::Ident(name, _) => {
                 let mut path = module_path.to_vec();
                 path.push(name.clone());
                 self.const_guard_facts.get(&path).copied()
             }
-            Expr::Path(path, _) => self.resolve_const_guard_path_from_module(path, module_path),
+            Expr::Path(path, _) => self.resolve_const_fact_path_from_module(path, module_path),
             Expr::Unary {
                 op: UnOp::Not,
                 expr,
                 ..
             } => self
-                .const_guard_fact_from_expr(expr, module_path)
-                .map(|value| !value),
+                .const_fact_from_expr(expr, module_path)
+                .and_then(ConstFact::as_bool)
+                .map(|value| ConstFact::Bool(!value)),
             Expr::Unary { .. } => None,
             Expr::Binary {
                 op: BinOp::And,
@@ -167,12 +192,12 @@ impl Checker {
                 rhs,
                 ..
             } => {
-                let lhs = self.const_guard_fact_from_expr(lhs, module_path)?;
+                let lhs = self.const_fact_from_expr(lhs, module_path)?.as_bool()?;
                 if !lhs {
-                    Some(false)
+                    Some(ConstFact::Bool(false))
                 } else {
-                    let rhs = self.const_guard_fact_from_expr(rhs, module_path)?;
-                    Some(rhs)
+                    let rhs = self.const_fact_from_expr(rhs, module_path)?.as_bool()?;
+                    Some(ConstFact::Bool(rhs))
                 }
             }
             Expr::Binary {
@@ -181,12 +206,12 @@ impl Checker {
                 rhs,
                 ..
             } => {
-                let lhs = self.const_guard_fact_from_expr(lhs, module_path)?;
+                let lhs = self.const_fact_from_expr(lhs, module_path)?.as_bool()?;
                 if lhs {
-                    Some(true)
+                    Some(ConstFact::Bool(true))
                 } else {
-                    let rhs = self.const_guard_fact_from_expr(rhs, module_path)?;
-                    Some(rhs)
+                    let rhs = self.const_fact_from_expr(rhs, module_path)?.as_bool()?;
+                    Some(ConstFact::Bool(rhs))
                 }
             }
             Expr::Binary {
@@ -195,9 +220,9 @@ impl Checker {
                 rhs,
                 ..
             } => {
-                let lhs = self.const_guard_fact_from_expr(lhs, module_path)?;
-                let rhs = self.const_guard_fact_from_expr(rhs, module_path)?;
-                Some(lhs == rhs)
+                let lhs = self.const_fact_from_expr(lhs, module_path)?;
+                let rhs = self.const_fact_from_expr(rhs, module_path)?;
+                lhs.same_kind_eq(rhs).map(ConstFact::Bool)
             }
             Expr::Binary {
                 op: BinOp::NotEq,
@@ -205,27 +230,27 @@ impl Checker {
                 rhs,
                 ..
             } => {
-                let lhs = self.const_guard_fact_from_expr(lhs, module_path)?;
-                let rhs = self.const_guard_fact_from_expr(rhs, module_path)?;
-                Some(lhs != rhs)
+                let lhs = self.const_fact_from_expr(lhs, module_path)?;
+                let rhs = self.const_fact_from_expr(rhs, module_path)?;
+                lhs.same_kind_eq(rhs).map(|value| ConstFact::Bool(!value))
             }
             Expr::Binary { .. } => None,
             _ => None,
         }
     }
 
-    fn resolve_const_guard_path_from_module(
+    fn resolve_const_fact_path_from_module(
         &self,
         path: &[String],
         module_path: &[String],
-    ) -> Option<bool> {
+    ) -> Option<ConstFact> {
         let mut candidates = BTreeMap::new();
-        self.add_const_guard_candidate(&mut candidates, path);
+        self.add_const_fact_candidate(&mut candidates, path);
 
         if !module_path.is_empty() {
             let mut relative = module_path.to_vec();
             relative.extend_from_slice(path);
-            self.add_const_guard_candidate(&mut candidates, &relative);
+            self.add_const_fact_candidate(&mut candidates, &relative);
         }
 
         if candidates.len() != 1 {
@@ -270,8 +295,12 @@ impl Checker {
                         if self.enums.contains_key(&base_path) {
                             scope.enum_imports.insert(name.clone(), base_path.clone());
                         }
-                        if let Some(value) = self.const_guard_facts.get(&base_path) {
-                            scope.guard_facts.insert(name.clone(), *value);
+                        if let Some(value) = self
+                            .const_guard_facts
+                            .get(&base_path)
+                            .and_then(|fact| fact.as_bool())
+                        {
+                            scope.guard_facts.insert(name.clone(), value);
                         }
                     }
                 }
@@ -282,8 +311,12 @@ impl Checker {
                         if self.enums.contains_key(&path) {
                             scope.enum_imports.insert(name.clone(), path.clone());
                         }
-                        if let Some(value) = self.const_guard_facts.get(&path) {
-                            scope.guard_facts.insert(name.clone(), *value);
+                        if let Some(value) = self
+                            .const_guard_facts
+                            .get(&path)
+                            .and_then(|fact| fact.as_bool())
+                        {
+                            scope.guard_facts.insert(name.clone(), value);
                         }
                     }
                 }
@@ -1206,17 +1239,29 @@ impl Checker {
         guard_facts: &GuardFacts,
         scope: &Scope,
     ) -> Option<bool> {
+        self.guard_value_from_match_guard(expr, guard_facts, scope)?
+            .as_bool()
+    }
+
+    fn guard_value_from_match_guard(
+        &self,
+        expr: &Expr,
+        guard_facts: &GuardFacts,
+        scope: &Scope,
+    ) -> Option<ConstFact> {
         match expr {
-            Expr::Bool(value, _) => Some(*value),
-            Expr::Ident(name, _) => guard_facts.get(name).copied(),
-            Expr::Path(path, _) => self.resolve_const_guard_path(path, scope),
+            Expr::Bool(value, _) => Some(ConstFact::Bool(*value)),
+            Expr::Int(value, _) => Some(ConstFact::Int(*value)),
+            Expr::Ident(name, _) => guard_facts.get(name).copied().map(ConstFact::Bool),
+            Expr::Path(path, _) => self.resolve_const_fact_path(path, scope),
             Expr::Unary {
                 op: UnOp::Not,
                 expr,
                 ..
             } => self
-                .guard_fact_from_match_guard(expr, guard_facts, scope)
-                .map(|value| !value),
+                .guard_value_from_match_guard(expr, guard_facts, scope)
+                .and_then(ConstFact::as_bool)
+                .map(|value| ConstFact::Bool(!value)),
             Expr::Unary { .. } => None,
             Expr::Binary {
                 op: BinOp::And,
@@ -1224,12 +1269,16 @@ impl Checker {
                 rhs,
                 ..
             } => {
-                let lhs = self.guard_fact_from_match_guard(lhs, guard_facts, scope)?;
+                let lhs = self
+                    .guard_value_from_match_guard(lhs, guard_facts, scope)?
+                    .as_bool()?;
                 if !lhs {
-                    Some(false)
+                    Some(ConstFact::Bool(false))
                 } else {
-                    let rhs = self.guard_fact_from_match_guard(rhs, guard_facts, scope)?;
-                    Some(rhs)
+                    let rhs = self
+                        .guard_value_from_match_guard(rhs, guard_facts, scope)?
+                        .as_bool()?;
+                    Some(ConstFact::Bool(rhs))
                 }
             }
             Expr::Binary {
@@ -1238,12 +1287,16 @@ impl Checker {
                 rhs,
                 ..
             } => {
-                let lhs = self.guard_fact_from_match_guard(lhs, guard_facts, scope)?;
+                let lhs = self
+                    .guard_value_from_match_guard(lhs, guard_facts, scope)?
+                    .as_bool()?;
                 if lhs {
-                    Some(true)
+                    Some(ConstFact::Bool(true))
                 } else {
-                    let rhs = self.guard_fact_from_match_guard(rhs, guard_facts, scope)?;
-                    Some(rhs)
+                    let rhs = self
+                        .guard_value_from_match_guard(rhs, guard_facts, scope)?
+                        .as_bool()?;
+                    Some(ConstFact::Bool(rhs))
                 }
             }
             Expr::Binary {
@@ -1252,9 +1305,9 @@ impl Checker {
                 rhs,
                 ..
             } => {
-                let lhs = self.guard_fact_from_match_guard(lhs, guard_facts, scope)?;
-                let rhs = self.guard_fact_from_match_guard(rhs, guard_facts, scope)?;
-                Some(lhs == rhs)
+                let lhs = self.guard_value_from_match_guard(lhs, guard_facts, scope)?;
+                let rhs = self.guard_value_from_match_guard(rhs, guard_facts, scope)?;
+                lhs.same_kind_eq(rhs).map(ConstFact::Bool)
             }
             Expr::Binary {
                 op: BinOp::NotEq,
@@ -1262,30 +1315,30 @@ impl Checker {
                 rhs,
                 ..
             } => {
-                let lhs = self.guard_fact_from_match_guard(lhs, guard_facts, scope)?;
-                let rhs = self.guard_fact_from_match_guard(rhs, guard_facts, scope)?;
-                Some(lhs != rhs)
+                let lhs = self.guard_value_from_match_guard(lhs, guard_facts, scope)?;
+                let rhs = self.guard_value_from_match_guard(rhs, guard_facts, scope)?;
+                lhs.same_kind_eq(rhs).map(|value| ConstFact::Bool(!value))
             }
             Expr::Binary { .. } => None,
             _ => None,
         }
     }
 
-    fn resolve_const_guard_path(&self, path: &[String], scope: &Scope) -> Option<bool> {
+    fn resolve_const_fact_path(&self, path: &[String], scope: &Scope) -> Option<ConstFact> {
         let mut candidates = BTreeMap::new();
-        self.add_const_guard_candidate(&mut candidates, path);
+        self.add_const_fact_candidate(&mut candidates, path);
 
         if !scope.module_path.is_empty() {
             let mut relative = scope.module_path.clone();
             relative.extend_from_slice(path);
-            self.add_const_guard_candidate(&mut candidates, &relative);
+            self.add_const_fact_candidate(&mut candidates, &relative);
         }
 
         if path.len() > 1 {
             if let Some(module_path) = scope.module_imports.get(&path[0]) {
                 let mut imported = module_path.clone();
                 imported.extend_from_slice(&path[1..]);
-                self.add_const_guard_candidate(&mut candidates, &imported);
+                self.add_const_fact_candidate(&mut candidates, &imported);
             }
         }
 
@@ -1295,9 +1348,9 @@ impl Checker {
         candidates.into_values().next()
     }
 
-    fn add_const_guard_candidate(
+    fn add_const_fact_candidate(
         &self,
-        candidates: &mut BTreeMap<Vec<String>, bool>,
+        candidates: &mut BTreeMap<Vec<String>, ConstFact>,
         path: &[String],
     ) {
         if let Some(value) = self.const_guard_facts.get(path) {
@@ -1318,7 +1371,7 @@ impl Checker {
             .filter_map(|(path, value)| {
                 path.split_last()
                     .filter(|(_, parent)| parent == &module_path)
-                    .map(|_| (path.clone(), *value))
+                    .and_then(|_| value.as_bool().map(|value| (path.clone(), value)))
             })
             .collect()
     }

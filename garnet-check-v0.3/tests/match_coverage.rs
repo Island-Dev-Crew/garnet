@@ -1646,6 +1646,93 @@ fn direct_false_boolean_const_inequality_guard_is_unreachable_and_not_coverage()
 }
 
 #[test]
+fn integer_const_equality_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+        }
+
+        module Flags {
+            const ALWAYS = Core::LIMIT == 2
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true integer const equality guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_integer_const_inequality_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+        }
+
+        module Flags {
+            const NEVER = Core::LIMIT != 2
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false integer const inequality guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn direct_integer_const_equality_guard_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const LIMIT = 2
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Core::LIMIT == 2 => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "direct true integer const equality guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
 fn safe_open_literal_match_rejects_duplicate_literal_arm() {
     let errs = check(
         r#"
