@@ -25,12 +25,14 @@
 //! testable end-to-end while the production allocator work proceeds
 //! in parallel. They are NOT designed for production agent workloads:
 //!
-//! - No production allocator integration for the four reference stores
-//!   (they still go through `Vec` / `BTreeMap`).
+//! - The four stores expose a production-facing kind-aware allocator surface,
+//!   while their backing storage still uses `Vec` / `BTreeMap`.
 //! - No persistence (state is in-process only).
 //! - No production-grade vector index (cosine over a flat `Vec`, not
 //!   HNSW / IVF / PolarQuant).
-//! - No eviction beyond what `MemoryPolicy` exposes as scoring API.
+//! - Lazy eviction is wired for policy-configured episodic and semantic
+//!   stores; default constructors preserve the v0.4.x unbounded reference
+//!   behaviour.
 //! - No production allocator-integrated ARC + Bacon–Rajan collector yet.
 //! - A bounded [`CycleGraph`] / [`CycleRootBuffer`] /
 //!   [`CycleAllocatorFixture`] trial-deletion reference path exposes §4.5
@@ -56,6 +58,7 @@
 //! - Mini-Spec section reference → §4 (declaration, semantics, kinds)
 //!   and the deferred §4.4 (generics over kinds) / §4.5 (ARC).
 
+pub mod alloc;
 pub mod cycle;
 pub mod episodic;
 pub mod policy;
@@ -63,6 +66,7 @@ pub mod procedural;
 pub mod semantic;
 pub mod working;
 
+pub use alloc::{AllocRequest, AllocStats, HeapKindAllocator, KindAllocator};
 pub use cycle::{
     CycleAllocationMode, CycleAllocatorFixture, CycleCollectReport, CycleGraph, CycleGraphError,
     CycleNodeId, CycleRootBuffer, CycleScan,

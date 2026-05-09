@@ -393,13 +393,21 @@ Phase 6E adds `CycleAllocatorFixture`, proving that the allocator-facing
 surface can own the graph plus root buffer and route root releases and ARC edge
 removals through buffered trial-deletion scheduling.
 
+- [x] **Step 6: Add kind-aware allocator surface and policy-configured lazy eviction**
+
+Phase 6J adds an object-safe `KindAllocator` / `HeapKindAllocator` surface with
+allocator stats across all four Memory Core stores. `EpisodeStore::with_policy`
+and `VectorIndex::with_policy` now lazily compact on read/search using
+`MemoryPolicy::score`, `should_retain`, and `compaction_high_water` while
+default constructors preserve the original unbounded reference behavior.
+
 Cache-security sidecar: Phase 6I adds keyed source-tree binding for
 compiler-as-agent episode records, quarantines copied same-machine strategy
 rows whose replayed justifications do not verify in the current source tree,
 and preserves valid NDJSON/all verified records under a 16-writer bounded
 append soak.
 
-- [ ] **Step 6: Promote root-buffer/finalizer/safe-mode interaction into production allocator tests**
+- [ ] **Step 7: Promote root-buffer/finalizer/safe-mode interaction into production allocator tests**
 
 ## Phase 7: Release, Research, And Repeated Falsification
 

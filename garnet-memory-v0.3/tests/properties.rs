@@ -66,6 +66,45 @@ fn working_store_thousand_pushes() {
     assert_eq!(s.len(), 1000);
 }
 
+#[test]
+fn working_store_routes_pushes_through_kind_allocator() {
+    let s: WorkingStore<i32> = WorkingStore::new();
+
+    s.push(10);
+    s.push(20);
+    let stats = s.allocator_stats();
+
+    assert_eq!(stats.kind, MemoryKind::Working);
+    assert_eq!(stats.allocations, 2);
+    assert_eq!(stats.allocated_items, 2);
+    assert!(stats.bytes_reserved >= 2 * std::mem::size_of::<i32>());
+
+    s.clear();
+    assert_eq!(s.allocator_stats().resets, 1);
+}
+
+#[test]
+fn all_reference_stores_route_allocations_to_their_kind_allocator() {
+    let working: WorkingStore<i32> = WorkingStore::new();
+    let episodic: EpisodeStore<i32> = EpisodeStore::new();
+    let semantic: VectorIndex<i32> = VectorIndex::new();
+    let procedural: WorkflowStore<i32> = WorkflowStore::new();
+
+    working.push(1);
+    episodic.append_at(1, 2);
+    semantic.insert(vec![1.0, 0.0], 3);
+    procedural.register("wf", 4);
+
+    assert_eq!(working.allocator_stats().kind, MemoryKind::Working);
+    assert_eq!(episodic.allocator_stats().kind, MemoryKind::Episodic);
+    assert_eq!(semantic.allocator_stats().kind, MemoryKind::Semantic);
+    assert_eq!(procedural.allocator_stats().kind, MemoryKind::Procedural);
+    assert_eq!(working.allocator_stats().allocated_items, 1);
+    assert_eq!(episodic.allocator_stats().allocated_items, 1);
+    assert_eq!(semantic.allocator_stats().allocated_items, 1);
+    assert_eq!(procedural.allocator_stats().allocated_items, 1);
+}
+
 // ════════════════════════════════════════════════════════════════════
 // EpisodeStore — append-only log
 // ════════════════════════════════════════════════════════════════════
@@ -83,6 +122,7 @@ fn episode_store_append_grows_len() {
     s.append(2);
     s.append(3);
     assert_eq!(s.len(), 3);
+    assert_eq!(s.allocator_stats().allocated_items, 3);
 }
 
 #[test]
@@ -136,6 +176,24 @@ fn episode_store_since_zero_returns_all() {
     s.append_at(100, 1);
     s.append_at(200, 2);
     assert_eq!(s.since(0).len(), 2);
+}
+
+#[test]
+fn episode_store_lazy_eviction_enforces_policy_cap_on_reads() {
+    let mut policy = MemoryPolicy::default_for(MemoryKind::Episodic);
+    policy.compaction_high_water = 3;
+    policy.retention_threshold = 0.0;
+    let s: EpisodeStore<i32> = EpisodeStore::with_policy(policy);
+
+    for i in 0..10 {
+        s.append_at(i, i as i32);
+    }
+
+    let recent = s.recent(10);
+    let values: Vec<_> = recent.into_iter().map(|episode| episode.value).collect();
+
+    assert_eq!(values, vec![7, 8, 9]);
+    assert_eq!(s.len(), 3);
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -202,6 +260,41 @@ fn vector_index_dim_mismatch_yields_zero() {
     idx.insert(vec![1.0, 0.0, 0.0], "3d");
     let r = idx.search(&[1.0, 0.0], 1);
     assert!(r[0].0.abs() < 1e-9);
+}
+
+#[test]
+fn vector_index_lazy_eviction_keeps_top_policy_matches() {
+    let mut policy = MemoryPolicy::default_for(MemoryKind::Semantic);
+    policy.compaction_high_water = 2;
+    policy.retention_threshold = 0.0;
+    let idx: VectorIndex<&str> = VectorIndex::with_policy(policy);
+
+    idx.insert(vec![1.0, 0.0], "x");
+    idx.insert(vec![0.95, 0.05], "near_x");
+    idx.insert(vec![0.0, 1.0], "y");
+    idx.insert(vec![0.0, 0.0], "zero");
+
+    let r = idx.search(&[1.0, 0.0], 4);
+    let values: Vec<_> = r.into_iter().map(|(_score, value)| value).collect();
+
+    assert_eq!(values, vec!["x", "near_x"]);
+    assert_eq!(idx.len(), 2);
+}
+
+#[test]
+fn vector_index_lazy_eviction_drops_low_relevance_matches() {
+    let mut policy = MemoryPolicy::default_for(MemoryKind::Semantic);
+    policy.retention_threshold = 0.5;
+    let idx: VectorIndex<&str> = VectorIndex::with_policy(policy);
+
+    idx.insert(vec![1.0, 0.0], "x");
+    idx.insert(vec![0.0, 1.0], "y");
+
+    let r = idx.search(&[1.0, 0.0], 2);
+    let values: Vec<_> = r.into_iter().map(|(_score, value)| value).collect();
+
+    assert_eq!(values, vec!["x"]);
+    assert_eq!(idx.len(), 1);
 }
 
 // ════════════════════════════════════════════════════════════════════

@@ -28,7 +28,7 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | Rust-grade NLL and borrow rules | Partial Phase 4F | `garnet-check-v0.3/src/borrow.rs`; `garnet-check-v0.3/src/lib.rs`; `garnet-check-v0.3/tests/borrow.rs`; `garnet-check-v0.3/tests/extended.rs`; `partial_borrow_rule_suite` rejects direct use-after-move, direct mut-aliasing, `own self` method receiver moves, method receiver aliasing, simple typed receiver disambiguation, simple field-place aliasing/field use-after-move, and conservative index-place aliasing/index use-after-move while checking nested index operands; `deferred_nll_lifetime_inference` now covers conservative reference-return lifetime elision | Activate full CFG NLL, dynamic place tracking, generic/trait impl dispatch, and drop discipline |
 | Trait coherence | Partial Phase 5A | `garnet-check-v0.3/src/coherence.rs`; `garnet-check-v0.3/tests/coherence.rs`; `deferred_trait_coherence` rejects exact duplicate trait impls and orphan-rule violations while allowing local-trait or local-type impls | Activate generic overlap solving and package-aware coherence |
 | Generic instantiation / monomorphization | Partial Phase 5B | `generic_instantiation_runs_without_monomorphization_claims` runs generic struct construction, a generic impl method, and a generic function through the managed interpreter | Keep native zero-cost monomorphization deferred until a compiler backend exists |
-| Memory Core ARC/cycles | Partial Phase 6E | `garnet-memory-v0.3/src/cycle.rs`; `garnet-memory-v0.3/tests/cycle.rs`; active `deferred_arc_cycle_detection`; `CycleAllocatorFixture` owns graph + root buffer for root/edge decrement scheduling | Promote the bounded allocator-owned fixture model into production allocator-integrated ARC |
+| Memory Core ARC/cycles and allocator integration | Partial Phase 6J | `garnet-memory-v0.3/src/{alloc,cycle,working,episodic,semantic,procedural}.rs`; `garnet-memory-v0.3/tests/{cycle,properties}.rs`; active `deferred_arc_cycle_detection`; `CycleAllocatorFixture` owns graph + root buffer for root/edge decrement scheduling; all four stores expose kind-aware allocator stats; policy-configured episodic/semantic stores evict lazily on read/search | Promote the bounded allocator-owned fixture model into production allocator-integrated ARC and add persistence/backend hardening |
 | Compiler-as-agent cache privacy/replay | Partial Phase 6I | `garnet-cli/src/{cache,cmd,provenance}.rs`; `garnet-cli/tests/cache_episodes.rs`; cache episode logs redact external absolute paths, collapse project-local absolute paths to stable relative labels, warn while ignoring same-cache foreign-key plus copied-cache replay episodes, bind verified episodes to a keyed source-tree identifier, quarantine copied/stale strategy rows whose provenance does not re-verify in the current source tree, and preserve bounded concurrent plus 16-writer soak appends; CacheHMAC and ProvenanceStrategy tests remain active | Add extended release-duration/cross-platform cache soak and keep production Memory Core ARC integration separate |
 | Native compiler | Long-horizon scaffold only | no backend crate | Create backend design PR before claiming compiled language status |
 | Formal RustBelt/Iris/Coq proof | Long-horizon scaffold only | Paper V theorem sketches | Open proof repo or `proofs/` workspace with checked theorem stubs |
@@ -585,7 +585,27 @@ Evidence: Phase 6E adds `CycleAllocatorFixture`, proving that the allocator
 surface can own the graph plus root buffer and route root releases and ARC edge
 decrements through the same buffered trial-deletion scheduling path.
 
-- [ ] **Step 6: Promote root-buffer trial deletion to production ARC allocator roots**
+- [x] **Step 6: Add kind-aware allocator surface and policy-configured store eviction**
+
+Evidence: Phase 6J adds `KindAllocator`, `HeapKindAllocator`, `AllocRequest`,
+and `AllocStats`, then threads the allocator surface through working,
+episodic, semantic, and procedural stores without breaking existing `new()` /
+`Default` callers. Policy-configured `EpisodeStore` and `VectorIndex` now
+compact lazily at read/search time using `MemoryPolicy::score` and
+`should_retain`.
+
+Run:
+
+```sh
+cargo test -p garnet-memory --test properties
+cargo test -p garnet-memory
+cargo test -p garnet-cli cache
+```
+
+Expected after Phase 6J: allocator stats and policy eviction tests pass while
+existing Memory Core and CLI cache callers remain compatible.
+
+- [ ] **Step 7: Promote root-buffer trial deletion to production ARC allocator roots**
 
 Wire the trial-deletion pass to allocator-owned ARC roots and decrement events
 inside the production Memory Core stores instead of only the deterministic

@@ -151,7 +151,11 @@ stress test. Phase 6I binds each episode to a keyed, non-reversible source-tree
 identifier so same-machine `.garnet-cache` copies from another project root are
 ignored before prior-failure or strategy advice can apply, and extends the
 append stress into a 16-writer bounded soak that preserves valid NDJSON and all
-verified records. Extended release-duration soak remains follow-up work.
+verified records. Phase 6J starts Mnemos Tier 1 allocator integration: the four
+Memory Core stores now expose a kind-aware allocator surface with allocation
+stats, and policy-configured episodic/semantic stores perform lazy retention
+eviction at read/search time. Production ARC integration, persistence, and
+extended release-duration soak remain follow-up work.
 
 ## Historical Material
 

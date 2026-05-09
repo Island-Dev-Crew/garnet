@@ -106,7 +106,7 @@ two-day LSP.
 
 ## Item B — Memory Core Tier 1 (Mnemos production allocator integration)
 
-### Current Phase 6E status
+### Current Phase 6J status
 
 Phase 6A added a bounded cycle-reference path before the allocator work:
 `garnet-memory-v0.3/src/cycle.rs`, `garnet-memory-v0.3/tests/cycle.rs`, and
@@ -120,9 +120,12 @@ not yet production ARC. Phase 6D adds a bounded `CycleRootBuffer` so
 decrement-triggered buffered roots can drive collection before the production
 allocator is available. Phase 6E adds `CycleAllocatorFixture`, so an
 allocator-owned surface now routes root releases and ARC edge removals through
-the buffered trial-deletion path. The next session should promote those
-fixtures into production Memory Core stores with allocator-integrated
-Bacon-Rajan trial deletion and runtime finalizer invocation.
+the buffered trial-deletion path. Phase 6J starts the Tier 1 promotion by
+adding an object-safe kind-aware allocator surface (`KindAllocator`,
+`HeapKindAllocator`, `AllocStats`) across the four Memory Core stores and by
+wiring policy-configured lazy eviction into `EpisodeStore` and `VectorIndex`.
+The next production step is still allocator-integrated Bacon-Rajan trial
+deletion and runtime finalizer invocation.
 
 ### Current Phase 6F-6I cache-security status
 
@@ -149,60 +152,36 @@ release.
 
 v0.4.2 locked in the **naming** (Memory Core / Mnemos) and the
 **roadmap** (`C_Language_Specification/MEMORY_CORE_ROADMAP.md`).
-Tier 0 (today's reference stores) ships. Tier 1 is the first
-productization step: a kind-aware allocator trait that the four
-stores delegate to, eviction policy enforcement, and generics over
-memory kinds. Doing it well takes a focused session; doing it
-sloppily would entrench the wrong allocator surface.
+Tier 0 (the original reference stores) ships. Phase 6J begins Tier 1:
+a kind-aware allocator trait that the four stores delegate to, plus
+policy-configured eviction enforcement for episodic and semantic stores.
+Generics over memory kinds and allocator-integrated ARC remain pending.
 
 ### Tier 1 scope (per the Roadmap)
 
 #### T1.1 — Kind-aware allocator trait
 
-Define the following in `garnet-memory-v0.3/src/lib.rs` or a new
-`alloc.rs`:
+Phase 6J lands this as an object-safe allocator surface in
+`garnet-memory-v0.3/src/alloc.rs`. It intentionally records typed allocation
+intent through `AllocRequest` / `AllocStats` instead of exposing a generic
+`allocate<T>` method on the trait, because generic trait methods are not object
+safe and would prevent stores from carrying `Arc<dyn KindAllocator>`.
 
-```rust
-/// Allocator strategy, parameterized by the memory kind. Stores
-/// delegate every backing allocation to an instance of this trait.
-pub trait KindAllocator: Send + Sync {
-    fn kind(&self) -> MemoryKind;
-    /// Allocate enough space for `n` items of size `size_of::<T>()`,
-    /// alignment `align_of::<T>()`. Returns a typed slab the store
-    /// owns. Implementations should respect kind-specific retention.
-    fn allocate<T: 'static>(&self, n: usize) -> Box<[std::mem::MaybeUninit<T>]>;
-    /// Reset the entire allocator (working: drop arena; episodic:
-    /// rotate log; semantic: clear index; procedural: drop history).
-    fn reset(&self);
-    /// Optional: report allocator-level stats.
-    fn stats(&self) -> Option<AllocStats> { None }
-}
-```
-
-The four reference stores get a `KindAllocator` field:
-
-```rust
-pub struct WorkingStore<T> {
-    arena: RefCell<Vec<T>>,
-    alloc: Box<dyn KindAllocator>,  // NEW
-}
-```
-
-with a `Default` impl (for backwards compat) that uses a built-in
-`HeapKindAllocator` matching today's behaviour. Existing tests
-should pass unchanged.
+The four reference stores now carry a `KindAllocator` field with a
+`HeapKindAllocator` default, preserving `new()` / `Default` compatibility while
+making allocation stats observable.
 
 #### T1.2 — Eviction policy enforcement
 
-Today `MemoryPolicy::score` and `should_retain` exist but are never
-called. Wire them into actual eviction loops in `EpisodeStore` and
-`VectorIndex`. Recommended approach: lazy eviction at read time —
-when `query_top_k` or `recall_recent` runs, evict any item where
-`should_retain(score) == false`. Cheaper than background sweep, no
-extra threads, no synchronization.
+Phase 6J wires `MemoryPolicy::score` and `should_retain` into
+`EpisodeStore::with_policy` and `VectorIndex::with_policy`. Eviction is lazy at
+read/search time, so no background thread or synchronization surface is added.
+Default constructors preserve the prior unbounded reference behaviour.
 
-Add a property test: capping a store at N entries with random
-inserts converges to ≤ N entries within finite reads.
+Covered property tests: capping an episodic store at N entries converges to N
+within a finite read, semantic search keeps top policy matches under high-water
+pressure, and low-relevance semantic facts are dropped when policy thresholds
+require it.
 
 #### T1.3 — Generics over memory kinds (Mini-Spec §4.4)
 

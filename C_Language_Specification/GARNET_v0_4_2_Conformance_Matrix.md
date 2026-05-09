@@ -82,7 +82,7 @@ allocator integration is sequenced in
 | Mini-Spec | Status | Evidence | Notes |
 |---|---|---|---|
 | §4.1 Declaration form | ✅ | `grammar/memory.rs`, `MemoryDecl` AST node | |
-| §4.2 Semantics | ✅ | Mnemos: `garnet-memory-v0.3/src/{working,episodic,semantic,procedural}.rs` | Reference stores meeting the behavioural contract; not production allocators. Roadmap Tier 1 + Tier 2 productizes the backends. |
+| §4.2 Semantics | ✅ | Mnemos: `garnet-memory-v0.3/src/{alloc,working,episodic,semantic,procedural}.rs`; `garnet-memory-v0.3/tests/properties.rs` | Reference stores meet the behavioural contract and now expose Phase 6J kind-aware allocator stats plus policy-configured lazy episodic/semantic eviction. Full production backends remain Roadmap Tier 2/Tier 3. |
 | §4.3 Out-of-scope items | ✅ (by design) | n/a | These remain explicit non-goals. |
 | §4.4 Generics over memory kinds | 🟠 | n/a | Explicitly deferred; tracked as Roadmap T1.3 (gates on §11.6 monomorphization). |
 | §4.5 ARC + Bacon–Rajan cycle detection | 🟡 | `garnet-memory-v0.3/src/cycle.rs`; `garnet-memory-v0.3/tests/cycle.rs`; `deferred_arc_cycle_detection` | Phase 6D adds a bounded trial-deletion cycle model with root-buffer/decrement-event scheduling, finalization-order, and safe-mode exclusion signals. Production allocator-integrated ARC remains Roadmap T3.1 work. |
@@ -180,7 +180,7 @@ allocator integration is sequenced in
 |---|---|---|---|---|---|
 | §2 Lexical | 4 | — | — | — | Complete. |
 | §3 Modules | 4 | — | — | — | Cross-module visibility audit pending. |
-| §4 Memory | 3 | — | 6 | 1 | Phase 6D adds bounded root-buffer trial-deletion, finalization-order, and safe-mode exclusion fixtures; production ARC allocator integration remains the largest Memory Core gap. |
+| §4 Memory | 3 | — | 6 | 1 | Phase 6J adds a kind-aware allocator surface plus policy-configured lazy episodic/semantic eviction; production ARC allocator integration remains the largest Memory Core gap. |
 | §5 Functions | 3 | — | 2 | 4 | `yield`/`next` and `do...end` now have managed-mode block invocation evidence; richer block edge cases still need later conformance. |
 | §6 Control flow | 3 | — | — | — | Complete. |
 | §7 Errors | 3 | — | — | — | Complete. |
