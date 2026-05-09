@@ -591,6 +591,7 @@ imported top-level boolean guard constants are covered in Step 2ZC below;
 path-qualified top-level boolean guard constants are covered in Step 2ZD below;
 narrow boolean const aliases are covered in Step 2ZE below;
 basic boolean const expressions are covered in Step 2ZF below;
+short-circuit boolean const expressions are covered in Step 2ZG below;
 loop fixed-point and broader mutable/escaped/general higher-order closure
 invocation/call-effect flow, cross-file/package imports, recursive/open payload
 reasoning, richer type inference, arithmetic, comparison, function-call, and
@@ -852,6 +853,23 @@ expressions such as `not Core::RAW or false` resolve to statically
 false/non-covering guards when they resolve to `false`. Arithmetic,
 comparison, function-call, recursive, and broader const expression evaluation
 remain deferred.
+
+- [x] **Step 2ZG: Honor short-circuit boolean const guard expressions**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage short_circuit
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AL honors decisive left operands for boolean const
+`or`/`and` expressions. `true or Missing::VALUE` counts as coverage without
+resolving the right operand, and `false and Missing::VALUE` is statically
+false/non-covering without resolving the right operand. Arithmetic, comparison,
+function-call, recursive, cross-file/package, and broader const expression
+evaluation remain deferred.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 

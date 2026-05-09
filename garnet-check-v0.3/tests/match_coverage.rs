@@ -1479,6 +1479,59 @@ fn false_boolean_const_expression_is_unreachable_and_not_coverage() {
 }
 
 #[test]
+fn true_short_circuit_const_bool_or_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Flags {
+            const ALWAYS = true or Missing::VALUE
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true short-circuit OR const guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_short_circuit_const_bool_and_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Flags {
+            const NEVER = false and Missing::VALUE
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false short-circuit AND const guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
 fn safe_open_literal_match_rejects_duplicate_literal_arm() {
     let errs = check(
         r#"

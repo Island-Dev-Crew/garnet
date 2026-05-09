@@ -1992,6 +1992,59 @@ fn guarded_status_code(status: Status) -> Int {
         "expected boolean const expression false-guard and missing-case diagnostics, got:\n{stdout}"
     );
 
+    let short_circuit_or_true_guard_complete_src = r#"
+module Flags {
+  const ALWAYS = true or Missing::VALUE
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let short_circuit_or_true_guard_complete_path = temp_source(
+        "match_short_circuit_or_true_guard_enum_complete",
+        short_circuit_or_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &short_circuit_or_true_guard_complete_path);
+    assert_ok(&["check"], &short_circuit_or_true_guard_complete_path);
+
+    let short_circuit_and_false_guard_missing_src = r#"
+module Flags {
+  const NEVER = false and Missing::VALUE
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let short_circuit_and_false_guard_missing_path = temp_source(
+        "match_short_circuit_and_false_guard_enum_missing",
+        short_circuit_and_false_guard_missing_src,
+    );
+    assert_ok(&["parse"], &short_circuit_and_false_guard_missing_path);
+    let out = run(&["check"], &short_circuit_and_false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode short-circuit false boolean const expressions must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected short-circuit boolean const expression false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
     let open_literal_duplicate_src = r#"
 fn classify(value: Int) -> Int {
   match value {

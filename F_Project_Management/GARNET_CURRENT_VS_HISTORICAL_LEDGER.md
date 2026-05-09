@@ -121,7 +121,9 @@ When documents conflict, use this order:
   resolves path-qualified boolean const guard expressions through the same
   scoped const-fact index. Phase 4AJ resolves narrow boolean const aliases
   through that same index. Phase 4AK folds basic boolean `not`/`and`/`or`
-  const expressions over already-resolved boolean facts. Full
+  const expressions over already-resolved boolean facts. Phase 4AL honors
+  decisive left operands for short-circuit boolean `or`/`and` const
+  expressions without requiring the right operand to resolve. Full
   Rust-grade CFG NLL, nested/non-local terminators, general loop fixed-point
   analysis, loop fixed-point domain inference, broader mutable/escaped/general higher-order closure invocation/call-effect analysis, cross-file/package
   imports, arithmetic, comparison, function-call, and broader const expression evaluation, recursive/open payload reasoning, broader expression/type
