@@ -1024,6 +1024,25 @@ for equality/inequality checks. `Core::EMPTY == nil` counts as coverage, and
 `Core::EMPTY != nil` is statically false/non-covering. Broader const expression
 evaluation remains deferred.
 
+- [x] **Step 2ZP: Fold mixed literal const equality facts**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage mixed_literal_const_inequality
+cargo test -p garnet-check --test match_coverage false_mixed_literal_const_equality
+cargo test -p garnet-check --test match_coverage
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AU applies the runtime equality rule for distinct known
+literal kinds inside the narrow const guard fact domain. `Core::EMPTY != false`
+counts as coverage, and `Core::EMPTY == false` is statically
+false/non-covering. Floats, interpolated strings, ordering comparisons,
+function-call evaluation, recursion, cross-file/package imports, and broader
+const expression evaluation remain deferred.
+
 ## Phase 5: Traits, Coherence, And Monomorphization
 
 **Intent:** Make the Rust-rigor side credible without overclaiming zero-cost guarantees.

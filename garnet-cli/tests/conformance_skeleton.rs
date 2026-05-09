@@ -2656,6 +2656,79 @@ fn guarded_status_code(status: Status) -> Int {
         "expected nil const inequality false-guard and missing-case diagnostics, got:\n{stdout}"
     );
 
+    let mixed_literal_const_inequality_true_guard_complete_src = r#"
+module Core {
+  const EMPTY = nil
+}
+
+module Flags {
+  const ALWAYS = Core::EMPTY != false
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let mixed_literal_const_inequality_true_guard_complete_path = temp_source(
+        "match_mixed_literal_const_inequality_true_guard_enum_complete",
+        mixed_literal_const_inequality_true_guard_complete_src,
+    );
+    assert_ok(
+        &["parse"],
+        &mixed_literal_const_inequality_true_guard_complete_path,
+    );
+    assert_ok(
+        &["check"],
+        &mixed_literal_const_inequality_true_guard_complete_path,
+    );
+
+    let mixed_literal_const_equality_false_guard_missing_src = r#"
+module Core {
+  const EMPTY = nil
+}
+
+module Flags {
+  const NEVER = Core::EMPTY == false
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let mixed_literal_const_equality_false_guard_missing_path = temp_source(
+        "match_mixed_literal_const_equality_false_guard_enum_missing",
+        mixed_literal_const_equality_false_guard_missing_src,
+    );
+    assert_ok(
+        &["parse"],
+        &mixed_literal_const_equality_false_guard_missing_path,
+    );
+    let out = run(
+        &["check"],
+        &mixed_literal_const_equality_false_guard_missing_path,
+    );
+    assert!(
+        !out.status.success(),
+        "safe-mode false mixed-literal const equality guards must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected mixed-literal const equality false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
     let open_literal_duplicate_src = r#"
 fn classify(value: Int) -> Int {
   match value {

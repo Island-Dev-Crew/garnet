@@ -11,12 +11,13 @@
 //! closures. It also recognizes immutable local, same-module top-level, and
 //! named/glob imported top-level boolean constants, same-module and
 //! named/glob imported top-level integer constants, static nil/symbol/plain-string
-//! equality and inequality facts, narrow boolean const aliases, and basic
-//! boolean const expressions in match guards, and rejects
-//! duplicate literal arms and arms after catch-all arms in otherwise open-domain
-//! matches. Boolean const `and`/`or` folding honors decisive left operands
-//! without requiring the right operand to resolve, and boolean const equality /
-//! inequality comparisons fold over already-resolved boolean facts. Direct
+//! equality and inequality facts, mixed known-literal equality/inequality facts,
+//! narrow boolean const aliases, and basic boolean const expressions in match
+//! guards, and rejects duplicate literal arms and arms after catch-all arms in
+//! otherwise open-domain matches. Boolean const `and`/`or` folding honors
+//! decisive left operands without requiring the right operand to resolve, and
+//! boolean const equality / inequality comparisons fold over already-resolved
+//! boolean facts. Direct
 //! boolean match guards use the same conservative folding, and narrow integer
 //! arithmetic plus equality/inequality and relational guard comparisons fold
 //! over the same fact domain using checked arithmetic. It does not attempt
@@ -74,14 +75,14 @@ impl ConstFact {
         }
     }
 
-    fn same_kind_eq(self, other: Self) -> Option<bool> {
+    fn literal_eq(self, other: Self) -> bool {
         match (self, other) {
-            (ConstFact::Bool(lhs), ConstFact::Bool(rhs)) => Some(lhs == rhs),
-            (ConstFact::Int(lhs), ConstFact::Int(rhs)) => Some(lhs == rhs),
-            (ConstFact::Nil, ConstFact::Nil) => Some(true),
-            (ConstFact::Symbol(lhs), ConstFact::Symbol(rhs)) => Some(lhs == rhs),
-            (ConstFact::Str(lhs), ConstFact::Str(rhs)) => Some(lhs == rhs),
-            _ => None,
+            (ConstFact::Bool(lhs), ConstFact::Bool(rhs)) => lhs == rhs,
+            (ConstFact::Int(lhs), ConstFact::Int(rhs)) => lhs == rhs,
+            (ConstFact::Nil, ConstFact::Nil) => true,
+            (ConstFact::Symbol(lhs), ConstFact::Symbol(rhs)) => lhs == rhs,
+            (ConstFact::Str(lhs), ConstFact::Str(rhs)) => lhs == rhs,
+            _ => false,
         }
     }
 
@@ -276,7 +277,7 @@ impl Checker {
             } => {
                 let lhs = self.const_fact_from_expr(lhs, module_path)?;
                 let rhs = self.const_fact_from_expr(rhs, module_path)?;
-                lhs.same_kind_eq(rhs).map(ConstFact::Bool)
+                Some(ConstFact::Bool(lhs.literal_eq(rhs)))
             }
             Expr::Binary {
                 op: BinOp::NotEq,
@@ -286,7 +287,7 @@ impl Checker {
             } => {
                 let lhs = self.const_fact_from_expr(lhs, module_path)?;
                 let rhs = self.const_fact_from_expr(rhs, module_path)?;
-                lhs.same_kind_eq(rhs).map(|value| ConstFact::Bool(!value))
+                Some(ConstFact::Bool(!lhs.literal_eq(rhs)))
             }
             Expr::Binary {
                 op: op @ (BinOp::Lt | BinOp::Gt | BinOp::LtEq | BinOp::GtEq),
@@ -1388,7 +1389,7 @@ impl Checker {
             } => {
                 let lhs = self.guard_value_from_match_guard(lhs, guard_facts, scope)?;
                 let rhs = self.guard_value_from_match_guard(rhs, guard_facts, scope)?;
-                lhs.same_kind_eq(rhs).map(ConstFact::Bool)
+                Some(ConstFact::Bool(lhs.literal_eq(rhs)))
             }
             Expr::Binary {
                 op: BinOp::NotEq,
@@ -1398,7 +1399,7 @@ impl Checker {
             } => {
                 let lhs = self.guard_value_from_match_guard(lhs, guard_facts, scope)?;
                 let rhs = self.guard_value_from_match_guard(rhs, guard_facts, scope)?;
-                lhs.same_kind_eq(rhs).map(|value| ConstFact::Bool(!value))
+                Some(ConstFact::Bool(!lhs.literal_eq(rhs)))
             }
             Expr::Binary {
                 op: op @ (BinOp::Lt | BinOp::Gt | BinOp::LtEq | BinOp::GtEq),
