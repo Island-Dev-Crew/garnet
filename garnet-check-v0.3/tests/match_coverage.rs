@@ -1418,6 +1418,67 @@ fn path_qualified_false_const_bool_alias_is_unreachable_and_not_coverage() {
 }
 
 #[test]
+fn boolean_const_expression_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const RAW = true
+        }
+
+        module Flags {
+            const ALWAYS = Core::RAW and not false
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "boolean const expressions should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_boolean_const_expression_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const RAW = true
+        }
+
+        module Flags {
+            const NEVER = not Core::RAW or false
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false boolean const expressions should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
 fn safe_open_literal_match_rejects_duplicate_literal_arm() {
     let errs = check(
         r#"

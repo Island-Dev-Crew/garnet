@@ -590,11 +590,12 @@ boolean guard constants are covered in Step 2ZB below; scoped named/glob
 imported top-level boolean guard constants are covered in Step 2ZC below;
 path-qualified top-level boolean guard constants are covered in Step 2ZD below;
 narrow boolean const aliases are covered in Step 2ZE below;
+basic boolean const expressions are covered in Step 2ZF below;
 loop fixed-point and broader mutable/escaped/general higher-order closure
 invocation/call-effect flow, cross-file/package imports, recursive/open payload
-reasoning, richer type inference, broad const expression evaluation, open-domain
-exhaustiveness/range reasoning, and broader non-literal
-guard reasoning remain pending.
+reasoning, richer type inference, arithmetic, comparison, function-call, and
+broader const expression evaluation, open-domain exhaustiveness/range
+reasoning, and broader non-literal guard reasoning remain pending.
 
 - [x] **Step 2P: Join nested if assignment domains inside branch bodies**
 
@@ -831,7 +832,26 @@ Evidence: Phase 4AJ resolves direct boolean const aliases through the scoped
 const-fact index without evaluating arbitrary expressions. Path-valued aliases
 such as `Flags::ALWAYS = Core::RAW` count as coverage when they resolve to
 `true`, resolve to statically false/non-covering guards when they resolve to
-`false`, and leave broad const expression evaluation deferred.
+`false`, and leave arithmetic, comparison, function-call, and broader const
+expression evaluation deferred.
+
+- [x] **Step 2ZF: Fold basic boolean const guard expressions**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage boolean_const_expression
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+cargo test -p garnet-cli --test conformance_phase_gates match_exhaustiveness_handle_documents_active_partial_scope
+```
+
+Evidence: Phase 4AK folds basic boolean `not`, `and`, and `or` const
+expressions over already-resolved boolean facts. Expressions such as
+`Core::RAW and not false` count as coverage when they resolve to `true`;
+expressions such as `not Core::RAW or false` resolve to statically
+false/non-covering guards when they resolve to `false`. Arithmetic,
+comparison, function-call, recursive, and broader const expression evaluation
+remain deferred.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 

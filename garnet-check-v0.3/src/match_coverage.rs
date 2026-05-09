@@ -9,18 +9,18 @@
 //! nested all-path `if` assignment joins inside branch bodies, and narrowly
 //! proven direct closure call-effect invalidation for local branch-selected
 //! closures. It also recognizes immutable local, same-module top-level, and
-//! named/glob imported top-level boolean constants and narrow boolean const
-//! aliases in match guards, and rejects duplicate literal arms and arms after
-//! catch-all arms in otherwise open-domain matches. It does not attempt full
-//! type inference, loop fixed-point
+//! named/glob imported top-level boolean constants, narrow boolean const
+//! aliases, and basic boolean const expressions in match guards, and rejects
+//! duplicate literal arms and arms after catch-all arms in otherwise open-domain
+//! matches. It does not attempt full type inference, loop fixed-point
 //! inference, broader mutable/escaped/general higher-order closure call-effect
 //! analysis, recursive/open payload coverage, or broader non-literal guard
 //! reasoning.
 
 use crate::CheckError;
 use garnet_parser::ast::{
-    AssignOp, Block, ClosureBody, Expr, FnDef, FnMode, Item, Module, Param, Pattern, Stmt,
-    StringLit, TypeExpr, UseImports,
+    AssignOp, BinOp, Block, ClosureBody, Expr, FnDef, FnMode, Item, Module, Param, Pattern, Stmt,
+    StringLit, TypeExpr, UnOp, UseImports,
 };
 use garnet_parser::token::StrPart;
 use std::collections::{BTreeMap, BTreeSet};
@@ -150,6 +150,35 @@ impl Checker {
                 self.const_guard_facts.get(&path).copied()
             }
             Expr::Path(path, _) => self.resolve_const_guard_path_from_module(path, module_path),
+            Expr::Unary {
+                op: UnOp::Not,
+                expr,
+                ..
+            } => self
+                .const_guard_fact_from_expr(expr, module_path)
+                .map(|value| !value),
+            Expr::Unary { .. } => None,
+            Expr::Binary {
+                op: BinOp::And,
+                lhs,
+                rhs,
+                ..
+            } => {
+                let lhs = self.const_guard_fact_from_expr(lhs, module_path)?;
+                let rhs = self.const_guard_fact_from_expr(rhs, module_path)?;
+                Some(lhs && rhs)
+            }
+            Expr::Binary {
+                op: BinOp::Or,
+                lhs,
+                rhs,
+                ..
+            } => {
+                let lhs = self.const_guard_fact_from_expr(lhs, module_path)?;
+                let rhs = self.const_guard_fact_from_expr(rhs, module_path)?;
+                Some(lhs || rhs)
+            }
+            Expr::Binary { .. } => None,
             _ => None,
         }
     }

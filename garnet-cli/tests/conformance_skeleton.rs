@@ -1931,6 +1931,67 @@ fn guarded_status_code(status: Status) -> Int {
         "expected path const false-alias and missing-case diagnostics, got:\n{stdout}"
     );
 
+    let boolean_const_expr_true_guard_complete_src = r#"
+module Core {
+  const RAW = true
+}
+
+module Flags {
+  const ALWAYS = Core::RAW and not false
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::ALWAYS => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let boolean_const_expr_true_guard_complete_path = temp_source(
+        "match_boolean_const_expr_true_guard_enum_complete",
+        boolean_const_expr_true_guard_complete_src,
+    );
+    assert_ok(&["parse"], &boolean_const_expr_true_guard_complete_path);
+    assert_ok(&["check"], &boolean_const_expr_true_guard_complete_path);
+
+    let boolean_const_expr_false_guard_missing_src = r#"
+module Core {
+  const RAW = true
+}
+
+module Flags {
+  const NEVER = not Core::RAW or false
+}
+
+enum Status { Ready, Done }
+
+fn guarded_status_code(status: Status) -> Int {
+  match status {
+    Status::Ready if Flags::NEVER => 1
+    Status::Done => 2
+  }
+}
+"#;
+    let boolean_const_expr_false_guard_missing_path = temp_source(
+        "match_boolean_const_expr_false_guard_enum_missing",
+        boolean_const_expr_false_guard_missing_src,
+    );
+    assert_ok(&["parse"], &boolean_const_expr_false_guard_missing_path);
+    let out = run(&["check"], &boolean_const_expr_false_guard_missing_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode false boolean const expressions must be unreachable and non-covering"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("statically false guard")
+            && stdout.contains("non-exhaustive match")
+            && stdout.contains("Status::Ready"),
+        "expected boolean const expression false-guard and missing-case diagnostics, got:\n{stdout}"
+    );
+
     let open_literal_duplicate_src = r#"
 fn classify(value: Int) -> Int {
   match value {
