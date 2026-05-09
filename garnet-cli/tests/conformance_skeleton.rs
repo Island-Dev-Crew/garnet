@@ -981,6 +981,55 @@ fn guarded_status_code(status: Status) -> Int {
             && stdout.contains("Status::Ready"),
         "expected false-guard and missing-case diagnostics, got:\n{stdout}"
     );
+
+    let open_literal_duplicate_src = r#"
+fn classify(value: Int) -> Int {
+  match value {
+    1 => 10
+    1 => 11
+    _ => 0
+  }
+}
+"#;
+    let open_literal_duplicate_path = temp_source(
+        "match_open_literal_duplicate_unreachable",
+        open_literal_duplicate_src,
+    );
+    assert_ok(&["parse"], &open_literal_duplicate_path);
+    let out = run(&["check"], &open_literal_duplicate_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode open-domain matches must reject duplicate literal arms"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("unreachable match arm") && stdout.contains("`1`"),
+        "expected duplicate open literal diagnostic, got:\n{stdout}"
+    );
+
+    let open_catch_all_src = r#"
+fn classify(value: Int) -> Int {
+  match value {
+    _ => 0
+    1 => 10
+  }
+}
+"#;
+    let open_catch_all_path = temp_source(
+        "match_open_arm_after_catch_all_unreachable",
+        open_catch_all_src,
+    );
+    assert_ok(&["parse"], &open_catch_all_path);
+    let out = run(&["check"], &open_catch_all_path);
+    assert!(
+        !out.status.success(),
+        "safe-mode open-domain matches must reject arms after catch-all arms"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("unreachable match arm") && stdout.contains("covered by prior catch-all"),
+        "expected open-domain catch-all reachability diagnostic, got:\n{stdout}"
+    );
 }
 
 #[test]

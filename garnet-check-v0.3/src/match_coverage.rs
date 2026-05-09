@@ -3,9 +3,10 @@
 //! This is intentionally a narrow semantic slice: it proves exhaustiveness and
 //! simple reachability for `Bool`, same-module enum subjects, imported enum
 //! aliases, finite nested constructor payloads, and literal `true`/`false`
-//! guards whose type is visible from parameter or local annotation metadata. It
-//! does not attempt full type inference, recursive/open payload coverage, or
-//! non-literal guard reasoning.
+//! guards whose type is visible from parameter or local annotation metadata.
+//! It also rejects duplicate literal arms and arms after catch-all arms in
+//! otherwise open-domain matches. It does not attempt full type inference,
+//! recursive/open payload coverage, or non-literal guard reasoning.
 
 use crate::CheckError;
 use garnet_parser::ast::{
@@ -307,6 +308,8 @@ impl Checker {
                 self.walk_expr(subject, fn_name, env, scope);
                 if let Some(domain) = self.domain_from_expr(subject, env, scope) {
                     self.check_match_arms(fn_name, &domain, arms);
+                } else {
+                    self.check_open_match_reachability(fn_name, arms);
                 }
                 for arm in arms {
                     if let Some(guard) = &arm.guard {
@@ -418,6 +421,52 @@ impl Checker {
             self.errors.push(CheckError::SafeModeViolation(format!(
                 "non-exhaustive match in safe function '{fn_name}': missing {missing}"
             )));
+        }
+    }
+
+    fn check_open_match_reachability(
+        &mut self,
+        fn_name: &str,
+        arms: &[garnet_parser::ast::MatchArm],
+    ) {
+        let mut covered_literals = BTreeSet::new();
+        let mut catch_all_seen = false;
+
+        for arm in arms {
+            let pattern = describe_pattern(&arm.pattern);
+            if catch_all_seen {
+                self.errors.push(CheckError::SafeModeViolation(format!(
+                    "unreachable match arm in safe function '{fn_name}': pattern {pattern} is covered by prior catch-all arm"
+                )));
+                continue;
+            }
+
+            let literal_key = literal_pattern_key(&arm.pattern);
+            if literal_key
+                .as_ref()
+                .is_some_and(|key| covered_literals.contains(key))
+            {
+                self.errors.push(CheckError::SafeModeViolation(format!(
+                    "unreachable match arm in safe function '{fn_name}': pattern {pattern} is already covered by prior literal arm"
+                )));
+            }
+
+            match guard_coverage(&arm.guard) {
+                GuardCoverage::AlwaysFalse => {
+                    self.errors.push(CheckError::SafeModeViolation(format!(
+                        "unreachable match arm in safe function '{fn_name}': pattern {pattern} has a statically false guard"
+                    )));
+                    continue;
+                }
+                GuardCoverage::Unknown => continue,
+                GuardCoverage::Unguarded | GuardCoverage::AlwaysTrue => {}
+            }
+
+            if is_catch_all(&arm.pattern) {
+                catch_all_seen = true;
+            } else if let Some(key) = literal_key {
+                covered_literals.insert(key);
+            }
         }
     }
 
@@ -747,6 +796,22 @@ fn guard_coverage(guard: &Option<Expr>) -> GuardCoverage {
         Some(Expr::Bool(true, _)) => GuardCoverage::AlwaysTrue,
         Some(Expr::Bool(false, _)) => GuardCoverage::AlwaysFalse,
         Some(_) => GuardCoverage::Unknown,
+    }
+}
+
+fn literal_pattern_key(pattern: &Pattern) -> Option<String> {
+    let Pattern::Literal(expr, _) = pattern else {
+        return None;
+    };
+
+    match expr {
+        Expr::Bool(value, _) => Some(format!("bool:{value}")),
+        Expr::Int(value, _) => Some(format!("int:{value}")),
+        Expr::Float(value, _) => Some(format!("float:{value}")),
+        Expr::Nil(_) => Some("nil".to_string()),
+        Expr::Str(value, _) => Some(format!("str:{}", describe_string_literal(value))),
+        Expr::Symbol(value, _) => Some(format!("symbol:{value}")),
+        _ => None,
     }
 }
 

@@ -181,6 +181,66 @@ fn false_guarded_enum_arm_is_unreachable_and_not_coverage() {
 }
 
 #[test]
+fn safe_open_literal_match_rejects_duplicate_literal_arm() {
+    let errs = check(
+        r#"
+        fn classify(value: Int) -> Int {
+            match value {
+                1 => 10
+                1 => 11
+                _ => 0
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "unreachable match arm") && has_safe_violation(&errs, "`1`"),
+        "expected duplicate open-domain literal arm to be unreachable, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_open_match_rejects_arm_after_catch_all() {
+    let errs = check(
+        r#"
+        fn classify(value: Int) -> Int {
+            match value {
+                _ => 0
+                1 => 10
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "unreachable match arm")
+            && has_safe_violation(&errs, "covered by prior catch-all"),
+        "expected open-domain arm after catch-all to be unreachable, got {errs:?}"
+    );
+}
+
+#[test]
+fn safe_open_literal_match_keeps_unknown_guard_non_covering() {
+    let errs = check(
+        r#"
+        fn classify(value: Int, ok: Bool) -> Int {
+            match value {
+                1 if ok => 10
+                1 => 11
+                _ => 0
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "unreachable match arm"),
+        "unknown guards should not cover open-domain literals, got {errs:?}"
+    );
+}
+
+#[test]
 fn safe_match_rejects_duplicate_covered_arm() {
     let errs = check(
         r#"

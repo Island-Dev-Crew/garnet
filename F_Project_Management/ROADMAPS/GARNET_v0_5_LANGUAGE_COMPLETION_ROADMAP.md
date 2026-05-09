@@ -497,8 +497,25 @@ literal `if false` guards as statically unreachable/non-covering. Non-literal
 guards still remain non-covering until a later predicate-proof pass exists.
 
 Remaining: cross-file/package imports, recursive/open payload reasoning, richer
-type inference, open-domain literal reasoning, and non-literal guard reasoning
+type inference, open-domain exhaustiveness/range reasoning, and non-literal guard reasoning
 remain pending.
+
+- [x] **Step 2L: Add open-domain literal match reachability**
+
+Acceptance:
+
+```sh
+cargo test -p garnet-check --test match_coverage safe_open_
+cargo test -p garnet-cli --test conformance_skeleton deferred_match_exhaustiveness_and_reachability
+```
+
+Evidence: Phase 4Q rejects duplicate open-domain literal arms and arms after
+catch-all patterns in safe-mode `match` expressions while preserving unknown
+guard conservatism (`1 if ok` does not cover a later `1` arm).
+
+Remaining: cross-file/package imports, recursive/open payload reasoning, richer
+type inference, open-domain exhaustiveness/range reasoning, and non-literal
+guard reasoning remain pending.
 
 ## Phase 5: Traits, Coherence, And Monomorphization
 
