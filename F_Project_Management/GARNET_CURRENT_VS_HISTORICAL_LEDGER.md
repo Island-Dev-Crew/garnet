@@ -80,9 +80,11 @@ When documents conflict, use this order:
   Phase 6G extends this to CLI-level replay stress: same-cache foreign
   machine-key episodes and copied `.garnet-cache` episodes are ignored,
   counted, and warned as untrusted instead of surfacing stale prior-failure
-  advice. CacheHMAC and ProvenanceStrategy still protect tamper/foreign-cache
-  abuse; broader strategy replay and long-running concurrent writes remain
-  follow-up work.
+  advice. Phase 6H wires CLI strategy notes through ProvenanceStrategy, so
+  copied same-machine `strategies.db` rows with missing local justifying
+  episodes are quarantined before they can influence diagnostics, and bounded
+  concurrent episode append stress preserves all verified records. Long-running
+  write soak remains follow-up work.
 - CI has an explicit canonical MVP example job in addition to the Rust test
   suite.
 

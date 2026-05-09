@@ -121,7 +121,7 @@ decrement-triggered buffered roots can drive collection before the production
 allocator is available; the next session should promote those fixtures into
 allocator-integrated Bacon-Rajan trial deletion.
 
-### Current Phase 6F/6G cache-security status
+### Current Phase 6F-6H cache-security status
 
 Phase 6F adds a narrower security/readiness gate around the compiler-as-agent
 cache. `parse`, `check`, and `run` now persist privacy-preserving episode file
@@ -130,8 +130,13 @@ and absolute paths outside the project root become `<external>/<file>`.
 Phase 6G adds CLI-level replay stress: a foreign machine-key episode in the
 same cache and a copied `.garnet-cache` replay are ignored, counted, and
 surfaced as untrusted before stale prior-failure advice can appear. Existing
-CacheHMAC and ProvenanceStrategy tests remain green. The next cache security
-slice should stress strategy replay and long-running concurrent writes.
+CacheHMAC and ProvenanceStrategy tests remain green. Phase 6H wires CLI
+strategy notes through provenance verification: copied same-machine
+`strategies.db` rows with missing local justifying episodes are quarantined
+instead of printed as applicable strategies, and bounded concurrent episode
+append stress preserves all verified records. The next cache security slice
+should add long-running write soak and any source-tree binding policy the team
+wants before release.
 
 ### Why deferred
 

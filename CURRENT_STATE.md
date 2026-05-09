@@ -143,8 +143,10 @@ recorded as stable relative labels, and external absolute paths are redacted to
 temp, or CI workspace roots. Phase 6G adds CLI-level cache replay stress:
 foreign machine-key episodes in the same cache and copied `.garnet-cache`
 episodes are ignored and signaled as untrusted before they can surface stale
-failure advice. Broader strategy replay and long-running concurrent writes
-remain follow-up work.
+failure advice. Phase 6H wires strategy notes through provenance verification,
+so copied same-machine `strategies.db` rows without local justifying episodes
+are quarantined instead of applied, and adds a bounded concurrent episode-append
+stress test. Long-running cache write soak remains follow-up work.
 
 ## Historical Material
 

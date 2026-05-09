@@ -24,7 +24,7 @@ pub mod test;
 pub mod verify;
 
 use crate::cache::{self, Episode};
-use crate::{knowledge, strategies};
+use crate::{knowledge, machine_key, provenance, strategies};
 use std::path::Path;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
@@ -51,11 +51,34 @@ pub(crate) fn surface_prior(source: &str) {
         let target = knowledge::fingerprint(&module);
         let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
         if let Ok(conn) = strategies::open(&cwd) {
-            if let Ok(matches) = strategies::consult(&conn, &target, 3) {
-                for (dist, s) in matches.iter().filter(|(d, _)| *d <= 32) {
+            let key = machine_key::machine_key();
+            if let Ok(matches) = strategies::consult_with_audit(&conn, &target, 16, key) {
+                if matches.skipped > 0 {
+                    eprintln!(
+                        "note: ignored {} untrusted strategy record(s) in .garnet-cache/strategies.db",
+                        matches.skipped
+                    );
+                }
+                let mut printed = 0;
+                let mut quarantined = 0;
+                for (dist, s) in matches.strategies.iter().filter(|(d, _)| *d <= 32) {
+                    if provenance::verify_strategy(s, &cwd, key).is_err() {
+                        quarantined += 1;
+                        continue;
+                    }
                     eprintln!(
                         "note: strategy '{}' applies (Hamming distance {dist}/256, last triggered ts={})",
                         s.heuristic, s.created_ts
+                    );
+                    printed += 1;
+                    if printed == 3 {
+                        break;
+                    }
+                }
+                if quarantined > 0 {
+                    eprintln!(
+                        "note: quarantined {} untrusted strategy record(s) in .garnet-cache/strategies.db",
+                        quarantined
                     );
                 }
             }

@@ -10,11 +10,13 @@
 
 use garnet_cli::{
     cache::{self, Episode},
-    machine_key,
+    knowledge, machine_key,
+    strategies::{self, NewStrategy},
 };
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
 
 static TEMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 
@@ -318,4 +320,86 @@ fn copied_foreign_cache_replay_is_ignored_and_warned() {
 
     let result = read_episodes(&victim);
     assert_eq!(result.len(), 1);
+}
+
+#[test]
+fn copied_strategy_db_without_local_justifications_is_quarantined_and_warned() {
+    let attacker = fresh_temp_dir("attacker_strategy");
+    let victim = fresh_temp_dir("victim_strategy");
+    let shared_key_path = victim.join("shared-machine.key");
+    let key = cache_key_at(&shared_key_path);
+    let source = "def main() { 42 }";
+    let victim_file = victim.join("safe.garnet");
+    std::fs::write(&victim_file, source).unwrap();
+
+    let module = garnet_parser::parse_source(source).unwrap();
+    let fp = knowledge::fingerprint(&module);
+    let conn = strategies::open(&attacker).unwrap();
+    let replayed = NewStrategy {
+        trigger_fingerprint: fp,
+        heuristic: "skip_check_if_unchanged_since_last_ok".to_string(),
+        justifying_episode_ids: vec![0, 1, 2],
+    };
+    strategies::record_strategy_with_key(&conn, &replayed, 4242, &key).unwrap();
+    drop(conn);
+
+    let victim_cache = victim.join(".garnet-cache");
+    std::fs::create_dir_all(&victim_cache).unwrap();
+    std::fs::copy(
+        attacker.join(".garnet-cache").join("strategies.db"),
+        victim_cache.join("strategies.db"),
+    )
+    .unwrap();
+
+    let out = garnet_cmd_with_key(&victim, &shared_key_path)
+        .args(["parse", victim_file.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(out.status.success(), "victim parse should still succeed");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("quarantined 1 untrusted strategy record"),
+        "expected strategy quarantine warning, got stderr: {stderr}"
+    );
+    assert!(
+        !stderr.contains("strategy 'skip_check_if_unchanged_since_last_ok' applies"),
+        "copied strategy must not influence diagnostics: {stderr}"
+    );
+}
+
+#[test]
+fn concurrent_episode_appends_preserve_all_verified_records() {
+    let dir = fresh_temp_dir("concurrent_appends");
+    let cache_dir = Arc::new(dir.join(".garnet-cache"));
+    let key = Arc::new(cache_key(&dir));
+    let writers = 8;
+    let records_per_writer = 40;
+    let mut handles = Vec::new();
+
+    for writer in 0..writers {
+        let cache_dir = Arc::clone(&cache_dir);
+        let key = Arc::clone(&key);
+        handles.push(std::thread::spawn(move || {
+            for seq in 0..records_per_writer {
+                let ep = Episode::now(
+                    "check",
+                    format!("writer_{writer}.garnet"),
+                    format!("hash_{writer}_{seq}"),
+                    "ok",
+                    None,
+                    seq as u64,
+                    0,
+                );
+                assert!(cache::record_episode_in_with_key(&cache_dir, &ep, &key));
+            }
+        }));
+    }
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+
+    let result = cache::read_all_in_with_key(&cache_dir, &key);
+    assert_eq!(result.skipped, 0);
+    assert_eq!(result.episodes.len(), writers * records_per_writer);
 }
