@@ -9,7 +9,7 @@ use std::cell::RefCell;
 use std::ffi::CString;
 use std::fmt;
 use std::fs::{self, File, OpenOptions};
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 use std::io;
 #[cfg(unix)]
 use std::io::Read;
@@ -823,7 +823,7 @@ fn acquire_cache_lock_at(
         "open",
     )?;
     lock_cache_file(&file, path)?;
-    write_cache_lock_header(&mut file, path, &new_lock_nonce())?;
+    write_cache_lock_header(&mut file, path, &new_lock_marker())?;
     Ok(CacheLock {
         path: path.to_path_buf(),
         file,
@@ -843,13 +843,13 @@ fn acquire_cache_lock(path: &Path) -> Result<CacheLock, EpisodePersistenceError>
             .open(path)
         {
             Ok(mut file) => {
-                write_cache_lock_header(&mut file, path, &new_lock_nonce())?;
+                write_cache_lock_header(&mut file, path, &new_lock_marker())?;
                 return Ok(CacheLock {
                     _path: path.to_path_buf(),
                     _file: file,
                 });
             }
-            Err(error) if error.kind() == ErrorKind::PermissionDenied => {
+            Err(error) if is_windows_lock_contention(&error) => {
                 thread::sleep(EPISODIC_CACHE_LOCK_SLEEP);
             }
             Err(error) => return Err(persistence_io("lock", path, error)),
@@ -876,26 +876,32 @@ fn acquire_cache_lock(path: &Path) -> Result<CacheLock, EpisodePersistenceError>
 fn write_cache_lock_header(
     file: &mut File,
     path: &Path,
-    nonce: &str,
+    marker: &str,
 ) -> Result<(), EpisodePersistenceError> {
     set_file_private(file, path)?;
     file.set_len(0)
         .map_err(|error| persistence_io("truncate", path, error))?;
     writeln!(file, "pid={}", std::process::id())
         .map_err(|error| persistence_io("write", path, error))?;
-    writeln!(file, "nonce={nonce}").map_err(|error| persistence_io("write", path, error))?;
+    writeln!(file, "marker={marker}").map_err(|error| persistence_io("write", path, error))?;
     writeln!(file, "created_unix={}", unix_now())
         .map_err(|error| persistence_io("write", path, error))?;
     file.sync_data()
         .map_err(|error| persistence_io("sync", path, error))
 }
 
-fn new_lock_nonce() -> String {
-    let nanos = SystemTime::now()
+fn new_lock_marker() -> String {
+    let stamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_nanos())
-        .unwrap_or(0);
-    format!("{}-{nanos}", std::process::id())
+        .map(|duration| duration.as_nanos().to_string())
+        .unwrap_or_else(|error| format!("clock-error-{error:?}"));
+    format!("{}-{stamp}", std::process::id())
+}
+
+#[cfg(windows)]
+fn is_windows_lock_contention(error: &io::Error) -> bool {
+    matches!(error.raw_os_error(), Some(32) | Some(33))
+        || error.kind() == ErrorKind::PermissionDenied
 }
 
 #[cfg(unix)]
@@ -1598,5 +1604,28 @@ mod tests {
             "prepared backend must not follow a swapped episodic-dir symlink"
         );
         assert!(store.is_empty());
+    }
+}
+
+#[cfg(all(test, windows))]
+mod windows_tests {
+    use super::*;
+
+    #[test]
+    fn windows_lock_contention_retries_sharing_and_lock_violations() {
+        assert!(is_windows_lock_contention(&io::Error::from_raw_os_error(
+            32
+        )));
+        assert!(is_windows_lock_contention(&io::Error::from_raw_os_error(
+            33
+        )));
+        assert!(is_windows_lock_contention(&io::Error::new(
+            ErrorKind::PermissionDenied,
+            "exclusive lock busy",
+        )));
+        assert!(!is_windows_lock_contention(&io::Error::new(
+            ErrorKind::NotFound,
+            "missing lock parent",
+        )));
     }
 }
