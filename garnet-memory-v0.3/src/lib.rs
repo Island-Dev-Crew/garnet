@@ -13,7 +13,7 @@
 //! | Kind          | Purpose                                  | Reference store                     |
 //! |---------------|------------------------------------------|-------------------------------------|
 //! | [`WorkingStore`]   | Bulk-allocated scratch tied to a scope   | Arena `RefCell<Vec<T>>`             |
-//! | [`EpisodeStore`]   | Append-only timestamped event log        | `RefCell<Vec<Episode<T>>>` + text snapshots |
+//! | [`EpisodeStore`]   | Append-style timestamped event log       | `RefCell<Vec<Episode<T>>>` + text snapshots/log commits |
 //! | [`VectorIndex`]    | Cosine-similarity semantic recall        | `RefCell<Vec<(Vec<f32>, T)>>`       |
 //! | [`WorkflowStore`]  | Copy-on-write versioned procedure store  | `RefCell<BTreeMap<Version, T>>`     |
 //!
@@ -29,8 +29,9 @@
 //!   while their backing storage still uses `Vec` / `BTreeMap`.
 //! - Cycle-aware allocator fixtures can observe store-root retention and
 //!   release on write, clear, policy eviction, replacement, and drop.
-//! - `EpisodeStore` exposes fenced, versioned text snapshot persistence;
-//!   the other stores and production backends remain in-process only.
+//! - `EpisodeStore` exposes fenced, versioned text snapshot persistence
+//!   and guarded append-style text log commits; the other stores and broad
+//!   production backends remain in-process only.
 //! - No production-grade vector index (cosine over a flat `Vec`, not
 //!   HNSW / IVF / PolarQuant).
 //! - Lazy eviction is wired for policy-configured episodic and semantic
@@ -78,7 +79,7 @@ pub use cycle::{
     CycleAllocationMode, CycleAllocatorFixture, CycleCollectReport, CycleGraph, CycleGraphError,
     CycleNodeId, CycleRootBuffer, CycleScan,
 };
-pub use episodic::{EpisodePersistenceError, EpisodeStore};
+pub use episodic::{EpisodePersistenceError, EpisodeStore, EPISODIC_TEXT_LOG_MAX_BYTES};
 pub use policy::{MemoryKind, MemoryPolicy};
 pub use procedural::WorkflowStore;
 pub use semantic::VectorIndex;

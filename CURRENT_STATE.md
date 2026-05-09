@@ -159,9 +159,14 @@ has working, episodic, semantic, and procedural stores retain and release
 observable roots on write, clear, policy eviction, replacement, and store drop.
 Phase 6L adds a fenced episodic text snapshot path with delimiter-safe payload
 encoding, malformed-file non-mutation, and cycle-aware root rehydration on
-load. Production ARC integration, runtime finalizer invocation, broad
-production persistence backends, and extended release-duration soak remain
-follow-up work.
+load. Phase 6M adds guarded append-style episodic text log commits: existing
+logs are size-bounded and parsed as the store value type before extension,
+corrupt, empty, type-invalid, or oversized logs are not carried forward,
+projected oversize commits are rejected before file creation, accepted record
+data is synced through a temp-file rewrite and rename, and the live store
+mutates only after the on-disk commit is accepted.
+Production ARC integration, runtime finalizer invocation, broad pluggable
+persistence backends, and extended release-duration soak remain follow-up work.
 
 ## Historical Material
 

@@ -423,6 +423,17 @@ before rename, malformed files fail before mutating the live store, and loaded
 episodes retain fresh cycle-aware roots. This is reference-store recovery
 evidence, not a pluggable production persistence backend.
 
+- [x] **Step 8b: Add guarded append-style episodic text log commits**
+
+Phase 6M adds `EpisodeStore::append_text` for dependency-free incremental
+text-log commits. Existing logs are size-bounded and parsed as the store value
+type before extension, corrupt, empty, type-invalid, or oversized logs are not
+carried forward, projected oversize commits are rejected before file creation,
+accepted record data is synced through a temp-file rewrite and rename, and the
+live store changes only after the on-disk commit succeeds. This is still a
+guardrail on the reference text format, not the default
+`.garnet-cache/episodic/` production backend.
+
 - [ ] **Step 9: Promote root-buffer/finalizer/safe-mode interaction into production allocator tests**
 
 ## Phase 7: Release, Research, And Repeated Falsification

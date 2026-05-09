@@ -80,7 +80,10 @@ When documents conflict, use this order:
   lifecycles on write, clear, policy eviction, workflow replacement, and store
   drop. Phase 6L adds fenced `EpisodeStore` text snapshot save/load with
   delimiter-safe payload encoding, malformed-file non-mutation, and
-  cycle-aware root rehydration. This is not the production
+  cycle-aware root rehydration. Phase 6M adds guarded append-style text log
+  commits that size-bound and validate existing logs as the store value type
+  before extension and avoid live-store mutation on corrupt, empty,
+  type-invalid, or oversized persistence files. This is not the production
   allocator-integrated Bacon-Rajan collector, runtime finalizer path, or
   pluggable persistence backend.
 - Compiler-as-agent cache privacy now has Phase 6F executable evidence:

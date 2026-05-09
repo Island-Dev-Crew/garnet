@@ -2,7 +2,7 @@
 
 **Subject:** Garnet's Memory Core (the architectural subsystem) and **Mnemos** (its v0.4.x reference implementation crate, `garnet-memory-v0.3/`).
 **Status of this document:** Forward-looking. Work items are not committed to a delivery date here; that belongs in per-version handoffs in `F_Project_Management/`.
-**As of:** 2026-05-08 (v0.5 readiness Phase 6L in progress).
+**As of:** 2026-05-08 (v0.5 readiness Phase 6M in progress).
 
 ---
 
@@ -23,12 +23,12 @@ The naming convention used throughout:
 
 ## Tier 0 — what already ships in v0.4.2 (Mnemos reference stores)
 
-Implemented, tested, behaviourally correct against the Mini-Spec §4 contract. The reference stores now expose kind-aware allocator statistics, cycle-aware root lifecycle evidence, and a narrow episodic text snapshot path. They are not full production-throughput backends, and persistence is not yet generalized across all memory kinds.
+Implemented, tested, behaviourally correct against the Mini-Spec §4 contract. The reference stores now expose kind-aware allocator statistics, cycle-aware root lifecycle evidence, a narrow episodic text snapshot path, and guarded append-style episodic text log commits. They are not full production-throughput backends, and persistence is not yet generalized across all memory kinds.
 
 | Kind | Reference store | File | Tests |
 |---|---|---|---|
 | Working | `RefCell<Vec<T>>` arena with Phase 6K cycle-aware roots on push, clear, and drop | `garnet-memory-v0.3/src/working.rs` | `tests/basic.rs`, `tests/properties.rs` |
-| Episodic | `RefCell<Vec<Episode<T>>>` append log with Phase 6K root release on policy eviction/drop and Phase 6L versioned text snapshot save/load | `src/episodic.rs` | ditto + `tests/persistence.rs` |
+| Episodic | `RefCell<Vec<Episode<T>>>` append-style log with Phase 6K root release on policy eviction/drop, Phase 6L versioned text snapshot save/load, and Phase 6M guarded text log commits | `src/episodic.rs` | ditto + `tests/persistence.rs` |
 | Semantic | `RefCell<Vec<(Vec<f32>, T)>>` flat-cosine index with Phase 6K root release on policy eviction and drop | `src/semantic.rs` | ditto + `benches/vector.rs` |
 | Procedural | `RefCell<BTreeMap<Version, T>>` COW store with Phase 6K root release on workflow replacement and drop | `src/procedural.rs` | ditto |
 | Allocator surface | object-safe `KindAllocator`, `HeapKindAllocator`, `CycleAwareKindAllocator`, `AllocStats`, and `AllocRootStats` | `src/alloc.rs` | `tests/properties.rs` |
@@ -41,7 +41,7 @@ These will not be removed or replaced wholesale. Each tier below either upgrades
 
 ## Tier 1 — Allocator integration (Mnemos v0.5.0)
 
-The biggest single jump in maturity. Phase 6J starts this tier: stores still use standard Rust collections (`Vec`, `BTreeMap`) for backing storage, but they now delegate allocation intent to a kind-aware allocator surface and policy-configured episodic/semantic stores enforce retention lazily on read/search. Phase 6K connects that allocator surface to observable store-root lifecycles through a cycle-aware adapter: writes retain roots, clear/policy eviction/replacement/drop release them, and `AllocRootStats` makes the behavior testable. Phase 6L starts a fenced episodic text snapshot path so root lifecycle evidence survives save/load recovery. Full custom backends, production ARC finalizers, and broad persistence remain later Tier 2/Tier 3 work.
+The biggest single jump in maturity. Phase 6J starts this tier: stores still use standard Rust collections (`Vec`, `BTreeMap`) for backing storage, but they now delegate allocation intent to a kind-aware allocator surface and policy-configured episodic/semantic stores enforce retention lazily on read/search. Phase 6K connects that allocator surface to observable store-root lifecycles through a cycle-aware adapter: writes retain roots, clear/policy eviction/replacement/drop release them, and `AllocRootStats` makes the behavior testable. Phase 6L starts a fenced episodic text snapshot path so root lifecycle evidence survives save/load recovery. Phase 6M extends that path with guarded append-style text log commits that refuse corrupt, empty, type-invalid, or oversized logs before mutating live memory. Full custom backends, production ARC finalizers, and broad persistence remain later Tier 2/Tier 3 work.
 
 ### T1.1 — Kind-aware allocator trait
 
@@ -103,7 +103,8 @@ The Memory Core sits on the same kind-aware infrastructure that Paper IV's Recur
 `EpisodeStore` now has a narrow versioned text snapshot API, but it is not a production persistence backend. For an agent harness that survives process restart under real workload pressure, episodic memory has to persist through a pluggable backend (default: append-only file in `.garnet-cache/episodic/`, mirroring the existing episode log structure in `garnet-cli/src/cache.rs`).
 
 - **References:** Mini-Spec §4.2 (semantics — does not require persistence but does not forbid it); Paper VI Contribution 3 (compiler-as-agent uses persistent episodes today via `cache.rs`, so the pattern is in production already).
-- **Phase 6L first slice:** `EpisodeStore::save_text` / `load_text` provide a deliberately narrow, dependency-free, versioned text snapshot API for `T: ToString + FromStr`. Payloads are hex-encoded so tabs/newlines cannot corrupt record boundaries, writes go through a sibling temp file and rename, malformed files are parsed all-or-nothing before mutating the live store, and recovery rehydrates cycle-aware store roots. This is not yet the append-only `.garnet-cache/episodic/` backend, fsync-grade durability, or a pluggable production persistence layer.
+- **Phase 6L first slice:** `EpisodeStore::save_text` / `load_text` provide a deliberately narrow, dependency-free, versioned text snapshot API for `T: ToString + FromStr`. Payloads are hex-encoded so tabs/newlines cannot corrupt record boundaries, writes go through a sibling temp file and rename, malformed files are parsed all-or-nothing before mutating the live store, and recovery rehydrates cycle-aware store roots.
+- **Phase 6M guardrail:** `EpisodeStore::append_text` commits individual records to the same versioned text format, size-bounds and validates any existing log against the store value type before extension, rejects projected oversize commits, refuses corrupt, empty, type-invalid, or oversized logs without mutating live memory, and syncs accepted record data through a temp-file rewrite before calling `append_at`. This is still not the default `.garnet-cache/episodic/` backend, directory-fsync durability, or a broad pluggable persistence layer.
 
 ### T2.4 — Procedural store transactional versioning
 
