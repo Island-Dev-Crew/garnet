@@ -331,6 +331,12 @@ allocator-owned root release can now report buffered collection candidates,
 deterministic finalization order, collected nodes, and safe-affine exclusion
 without callers manually owning a fixture graph. This is production-facing
 allocator evidence, not production ARC completion.
+Phase 6R extends this with the allocator-facing buffered edge-removal
+collection path: threshold-driven `CycleAwareKindAllocator::remove_edge` now
+reports trial candidates, finalization order, collected nodes, and
+`root_stats` updates at the wrapper layer across all four `MemoryKind`s,
+while safe-affine allocations remain excluded from ARC cycle collection. This
+is sibling partial-pass evidence, not production ARC.
 Production allocator-integrated ARC, runtime finalizer invocation, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.

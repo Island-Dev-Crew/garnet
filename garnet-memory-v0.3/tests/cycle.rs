@@ -371,3 +371,100 @@ fn cycle_aware_kind_allocator_reports_root_release_collection_and_safe_exclusion
     assert_eq!(stats.buffered_roots, 0);
     assert_eq!(stats.collected_roots, 2);
 }
+
+#[test]
+fn cycle_aware_allocator_edge_removal_triggers_buffered_collection_on_threshold() {
+    let allocator = CycleAwareKindAllocator::new(MemoryKind::Working, 1);
+    let root = allocator.retain_root("root").expect("root handle");
+    let cycle_a = allocator.allocate_arc("cycle_a");
+    let cycle_b = allocator.allocate_arc("cycle_b");
+
+    allocator.add_edge(root, cycle_a).unwrap();
+    allocator.add_edge(cycle_a, cycle_b).unwrap();
+    allocator.add_edge(cycle_b, cycle_a).unwrap();
+
+    let report = allocator
+        .remove_edge(root, cycle_a)
+        .expect("remove_edge should not error")
+        .expect("threshold-crossing edge removal should collect");
+
+    assert_eq!(
+        allocator_labels(&allocator, &report.trial_candidates),
+        vec!["cycle_a"]
+    );
+    assert_eq!(
+        allocator_labels(&allocator, &report.collected),
+        vec!["cycle_a", "cycle_b"]
+    );
+    assert!(allocator.contains(root));
+    assert!(!allocator.contains(cycle_a));
+    assert!(!allocator.contains(cycle_b));
+    assert!(allocator.buffered_roots().is_empty());
+
+    let stats = allocator.root_stats();
+    assert_eq!(stats.roots_created, 1);
+    assert_eq!(stats.active_roots, 1);
+    assert_eq!(stats.buffered_roots, 0);
+    assert_eq!(stats.collected_roots, 2);
+}
+
+#[test]
+fn cycle_aware_allocator_edge_removal_keeps_safe_affine_node_excluded() {
+    let allocator = CycleAwareKindAllocator::new(MemoryKind::Working, 1);
+    let root = allocator.retain_root("root").expect("root handle");
+    let cycle_a = allocator.allocate_arc("cycle_a");
+    let cycle_b = allocator.allocate_arc("cycle_b");
+    let safe = allocator.allocate_safe("safe_affine");
+
+    allocator.add_edge(root, cycle_a).unwrap();
+    allocator.add_edge(cycle_a, cycle_b).unwrap();
+    allocator.add_edge(cycle_b, cycle_a).unwrap();
+    allocator.add_edge(safe, safe).unwrap();
+
+    let report = allocator
+        .remove_edge(root, cycle_a)
+        .expect("remove_edge should not error")
+        .expect("threshold-crossing edge removal should collect");
+
+    assert_eq!(
+        allocator_labels(&allocator, &report.collected),
+        vec!["cycle_a", "cycle_b"]
+    );
+    assert!(allocator.contains(safe));
+    assert_eq!(
+        allocator.allocation_mode(safe),
+        Some(CycleAllocationMode::SafeAffine)
+    );
+
+    let stats = allocator.root_stats();
+    assert_eq!(stats.collected_roots, 2);
+}
+
+#[test]
+fn cycle_aware_allocator_edge_removal_below_threshold_buffers_only() {
+    // Threshold of 4 means a single buffered root from one edge removal
+    // does not trigger collection; the cycle stays alive in the buffer.
+    let allocator = CycleAwareKindAllocator::new(MemoryKind::Working, 4);
+    let root = allocator.retain_root("root").expect("root handle");
+    let cycle_a = allocator.allocate_arc("cycle_a");
+    let cycle_b = allocator.allocate_arc("cycle_b");
+
+    allocator.add_edge(root, cycle_a).unwrap();
+    allocator.add_edge(cycle_a, cycle_b).unwrap();
+    allocator.add_edge(cycle_b, cycle_a).unwrap();
+
+    let report = allocator
+        .remove_edge(root, cycle_a)
+        .expect("remove_edge should not error");
+
+    assert!(report.is_none());
+    assert_eq!(allocator.buffered_roots(), vec![cycle_a]);
+    assert!(allocator.contains(root));
+    assert!(allocator.contains(cycle_a));
+    assert!(allocator.contains(cycle_b));
+
+    let stats = allocator.root_stats();
+    assert_eq!(stats.collected_roots, 0);
+    assert_eq!(stats.buffered_roots, 1);
+    assert_eq!(stats.active_roots, 1);
+}

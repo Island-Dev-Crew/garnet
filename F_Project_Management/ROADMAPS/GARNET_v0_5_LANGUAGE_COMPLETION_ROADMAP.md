@@ -1374,6 +1374,14 @@ finalization order, and verify that safe-mode affine allocations stay outside
 ARC collection through the allocator-facing API. Production
 allocator-integrated ARC and runtime finalizer invocation remain pending.
 
+Phase 6R sibling partial pass: the allocator-facing buffered edge-removal
+collection path is now exercised through `CycleAwareKindAllocator::remove_edge`
+across all four `MemoryKind`s, with threshold-crossing decrements producing
+trial candidates, finalization order, collected nodes, and `root_stats`
+updates while below-threshold decrements buffer without collection and
+safe-affine allocations remain excluded. Production allocator-integrated ARC
+and runtime finalizer invocation still remain pending.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.
