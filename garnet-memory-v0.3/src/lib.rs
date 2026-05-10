@@ -43,7 +43,8 @@
 //! - A bounded [`CycleGraph`] / [`CycleRootBuffer`] /
 //!   [`CycleAllocatorFixture`] trial-deletion reference path exposes §4.5
 //!   cycle, finalization-order, safe-mode exclusion, root-buffer scheduling,
-//!   allocator-owned root/edge decrement fixtures, and store-root lifecycle
+//!   allocator-owned root/edge decrement fixtures, concrete
+//!   `CycleAwareKindAllocator` root-release evidence, and store-root lifecycle
 //!   evidence while production allocator work remains on the Memory Core
 //!   roadmap.
 //!

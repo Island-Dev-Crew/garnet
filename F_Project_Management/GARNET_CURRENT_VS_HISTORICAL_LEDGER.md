@@ -193,10 +193,13 @@ When documents conflict, use this order:
   episodic cache backend at `.garnet-cache/episodic/episodes.mnemos` with
   canonical project-root pathing, symlink/non-regular rejection, pre-read size
   bounds, OS-backed lockfile serialization on Unix/Windows, private Unix permissions,
-  concurrent append preservation, and cycle-aware root rehydration. This is not the production
-  allocator-integrated Bacon-Rajan collector, runtime finalizer path, broad
-  pluggable persistence backend, or CLI signed NDJSON advisory-cache trust
-  layer.
+  concurrent append preservation, and cycle-aware root rehydration. Phase 6Q
+  adds concrete `CycleAwareKindAllocator` root-release evidence for buffered
+  trial candidates, deterministic finalization order, collected nodes, and
+  safe-affine exclusion through the allocator-facing API. This is not the
+  production allocator-integrated Bacon-Rajan collector, runtime finalizer
+  path, broad pluggable persistence backend, or CLI signed NDJSON
+  advisory-cache trust layer.
 - Compiler-as-agent cache privacy now has Phase 6F executable evidence:
   absolute paths inside the active project are persisted as stable relative
   labels, while external absolute paths are redacted to `<external>/<file>`.

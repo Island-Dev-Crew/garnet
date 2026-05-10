@@ -1,7 +1,8 @@
 //! Observable cycle-collection fixtures for the Memory Core reference path.
 
 use garnet_memory::{
-    CycleAllocatorFixture, CycleGraph, CycleNodeId, CycleRootBuffer, CycleScan, MemoryKind,
+    CycleAllocationMode, CycleAllocatorFixture, CycleAwareKindAllocator, CycleGraph, CycleNodeId,
+    CycleRootBuffer, CycleScan, KindAllocator, MemoryKind,
 };
 
 fn labels(graph: &CycleGraph, ids: &[CycleNodeId]) -> Vec<String> {
@@ -16,6 +17,24 @@ fn labels(graph: &CycleGraph, ids: &[CycleNodeId]) -> Vec<String> {
 fn labels_in_order(graph: &CycleGraph, ids: &[CycleNodeId]) -> Vec<String> {
     ids.iter()
         .map(|id| graph.label(*id).expect("node label").to_string())
+        .collect()
+}
+
+fn allocator_labels(allocator: &CycleAwareKindAllocator, ids: &[CycleNodeId]) -> Vec<String> {
+    let mut labels: Vec<_> = ids
+        .iter()
+        .map(|id| allocator.label(*id).expect("node label"))
+        .collect();
+    labels.sort();
+    labels
+}
+
+fn allocator_labels_in_order(
+    allocator: &CycleAwareKindAllocator,
+    ids: &[CycleNodeId],
+) -> Vec<String> {
+    ids.iter()
+        .map(|id| allocator.label(*id).expect("node label"))
         .collect()
 }
 
@@ -307,4 +326,48 @@ fn allocator_missing_edge_removal_does_not_schedule_cycle() {
     assert!(allocator.contains(root));
     assert!(allocator.contains(cycle_a));
     assert!(allocator.contains(cycle_b));
+}
+
+#[test]
+fn cycle_aware_kind_allocator_reports_root_release_collection_and_safe_exclusion() {
+    let allocator = CycleAwareKindAllocator::new(MemoryKind::Working, 1);
+    let root = allocator.retain_root("root").expect("root handle");
+    let child = allocator.allocate_arc("child");
+    let safe = allocator.allocate_safe("safe_affine");
+
+    allocator.add_edge(root, child).unwrap();
+    allocator.add_edge(child, root).unwrap();
+    allocator.add_edge(safe, safe).unwrap();
+
+    let report = allocator
+        .release_root(root)
+        .expect("root release should collect immediately");
+
+    assert!(allocator.buffered_roots().is_empty());
+    assert_eq!(
+        allocator_labels(&allocator, &report.trial_candidates),
+        vec!["root"]
+    );
+    assert_eq!(
+        allocator_labels_in_order(&allocator, &report.finalization_order),
+        vec!["child", "root"]
+    );
+    assert_eq!(
+        allocator_labels(&allocator, &report.collected),
+        vec!["child", "root"]
+    );
+    assert!(!allocator.contains(root));
+    assert!(!allocator.contains(child));
+    assert!(allocator.contains(safe));
+    assert_eq!(
+        allocator.allocation_mode(safe),
+        Some(CycleAllocationMode::SafeAffine)
+    );
+
+    let stats = allocator.root_stats();
+    assert_eq!(stats.roots_created, 1);
+    assert_eq!(stats.roots_released, 1);
+    assert_eq!(stats.active_roots, 0);
+    assert_eq!(stats.buffered_roots, 0);
+    assert_eq!(stats.collected_roots, 2);
 }

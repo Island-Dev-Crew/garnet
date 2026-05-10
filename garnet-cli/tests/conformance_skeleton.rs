@@ -4,7 +4,10 @@
 //! implemented today. Ignored tests name partial/deferred rows so language
 //! completeness work has stable test handles before the implementation lands.
 
-use garnet_memory::{CycleGraph, CycleRootBuffer, CycleScan, MemoryKind};
+use garnet_memory::{
+    CycleAllocationMode, CycleAwareKindAllocator, CycleGraph, CycleRootBuffer, CycleScan,
+    KindAllocator, MemoryKind,
+};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -249,6 +252,35 @@ fn deferred_arc_cycle_detection() {
     assert_eq!(
         buffered_report.collected,
         vec![buffered_root, buffered_child]
+    );
+
+    let allocator = CycleAwareKindAllocator::new(MemoryKind::Working, 1);
+    let allocator_root = allocator.retain_root("allocator_root").unwrap();
+    let allocator_child = allocator.allocate_arc("allocator_child");
+    let allocator_safe = allocator.allocate_safe("allocator_safe");
+
+    allocator.add_edge(allocator_root, allocator_child).unwrap();
+    allocator.add_edge(allocator_child, allocator_root).unwrap();
+    allocator.add_edge(allocator_safe, allocator_safe).unwrap();
+
+    let allocator_report = allocator
+        .release_root(allocator_root)
+        .expect("allocator-facing root release should collect immediately");
+
+    assert_eq!(allocator_report.trial_candidates, vec![allocator_root]);
+    assert_eq!(
+        allocator_report.finalization_order,
+        vec![allocator_child, allocator_root]
+    );
+    assert_eq!(
+        allocator_report.collected,
+        vec![allocator_root, allocator_child]
+    );
+    assert_eq!(allocator.root_stats().collected_roots, 2);
+    assert!(allocator.contains(allocator_safe));
+    assert_eq!(
+        allocator.allocation_mode(allocator_safe),
+        Some(CycleAllocationMode::SafeAffine)
     );
 }
 
