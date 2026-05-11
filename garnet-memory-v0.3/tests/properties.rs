@@ -638,3 +638,70 @@ fn memory_handle_works_with_workflow_store() {
     let w = h.store.find("counter").unwrap();
     assert_eq!(*w.current().unwrap(), 1);
 }
+
+#[test]
+fn cycle_aware_allocator_edge_removal_collection_is_deterministic_across_kinds() {
+    // Threshold-crossing edge removal at the allocator wrapper layer must
+    // produce consistent collection behavior for every MemoryKind, with
+    // root_stats invariants preserved across kinds.
+    let kinds = [
+        MemoryKind::Working,
+        MemoryKind::Episodic,
+        MemoryKind::Semantic,
+        MemoryKind::Procedural,
+    ];
+
+    for kind in kinds {
+        let allocator = CycleAwareKindAllocator::new(kind, 1);
+        let root = allocator
+            .retain_root("root")
+            .unwrap_or_else(|| panic!("retain_root for {:?}", kind));
+        let cycle_a = allocator.allocate_arc("cycle_a");
+        let cycle_b = allocator.allocate_arc("cycle_b");
+
+        allocator.add_edge(root, cycle_a).unwrap();
+        allocator.add_edge(cycle_a, cycle_b).unwrap();
+        allocator.add_edge(cycle_b, cycle_a).unwrap();
+
+        let report = allocator
+            .remove_edge(root, cycle_a)
+            .unwrap_or_else(|err| panic!("remove_edge for {:?}: {:?}", kind, err))
+            .unwrap_or_else(|| {
+                panic!(
+                    "threshold-crossing remove_edge should collect for {:?}",
+                    kind
+                )
+            });
+
+        assert_eq!(report.collected.len(), 2, "collected count for {:?}", kind);
+        assert_eq!(
+            report.finalization_order.len(),
+            2,
+            "finalization_order length for {:?}",
+            kind
+        );
+        assert!(allocator.contains(root), "root retained for {:?}", kind);
+        assert!(
+            !allocator.contains(cycle_a),
+            "cycle_a collected for {:?}",
+            kind
+        );
+        assert!(
+            !allocator.contains(cycle_b),
+            "cycle_b collected for {:?}",
+            kind
+        );
+
+        let stats = allocator.root_stats();
+        assert_eq!(stats.roots_created, 1, "roots_created for {:?}", kind);
+        assert_eq!(stats.active_roots, 1, "active_roots for {:?}", kind);
+        assert_eq!(stats.buffered_roots, 0, "buffered_roots for {:?}", kind);
+        assert_eq!(stats.collected_roots, 2, "collected_roots for {:?}", kind);
+        assert_eq!(
+            stats.active_roots,
+            stats.roots_created.saturating_sub(stats.roots_released),
+            "active_roots invariant for {:?}",
+            kind
+        );
+    }
+}
