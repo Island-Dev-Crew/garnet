@@ -6,7 +6,10 @@
 //! object-safe so stores can carry `Arc<dyn KindAllocator>` without forcing a
 //! generic allocator parameter through every interpreter-facing type.
 
-use crate::cycle::{CycleAllocatorFixture, CycleCollectReport, CycleNodeId, CycleScan};
+use crate::cycle::{
+    CycleAllocationMode, CycleAllocatorFixture, CycleCollectReport, CycleGraphError, CycleNodeId,
+    CycleScan,
+};
 use crate::policy::MemoryKind;
 use std::sync::{Arc, Mutex};
 
@@ -159,6 +162,83 @@ impl CycleAwareKindAllocator {
     pub fn shared(kind: MemoryKind, threshold: usize) -> Arc<dyn KindAllocator> {
         Arc::new(Self::new(kind, threshold))
     }
+
+    pub fn allocate_arc(&self, label: impl Into<String>) -> CycleNodeId {
+        self.cycle_fixture
+            .lock()
+            .expect("cycle fixture poisoned")
+            .allocate_arc(self.kind, label)
+    }
+
+    pub fn allocate_safe(&self, label: impl Into<String>) -> CycleNodeId {
+        self.cycle_fixture
+            .lock()
+            .expect("cycle fixture poisoned")
+            .allocate_safe(self.kind, label)
+    }
+
+    pub fn add_edge(&self, from: CycleNodeId, to: CycleNodeId) -> Result<(), CycleGraphError> {
+        self.cycle_fixture
+            .lock()
+            .expect("cycle fixture poisoned")
+            .add_edge(from, to)
+    }
+
+    pub fn remove_edge(
+        &self,
+        from: CycleNodeId,
+        to: CycleNodeId,
+    ) -> Result<Option<CycleCollectReport>, CycleGraphError> {
+        let mut fixture = self.cycle_fixture.lock().expect("cycle fixture poisoned");
+        let report = fixture.remove_edge(from, to)?;
+        let buffered_roots = fixture.buffer_len();
+        drop(fixture);
+
+        self.record_collection(buffered_roots, &report);
+        Ok(report)
+    }
+
+    pub fn buffered_roots(&self) -> Vec<CycleNodeId> {
+        self.cycle_fixture
+            .lock()
+            .expect("cycle fixture poisoned")
+            .buffered_roots()
+    }
+
+    pub fn contains(&self, id: CycleNodeId) -> bool {
+        self.cycle_fixture
+            .lock()
+            .expect("cycle fixture poisoned")
+            .contains(id)
+    }
+
+    pub fn label(&self, id: CycleNodeId) -> Option<String> {
+        self.cycle_fixture
+            .lock()
+            .expect("cycle fixture poisoned")
+            .graph()
+            .label(id)
+            .map(str::to_owned)
+    }
+
+    pub fn allocation_mode(&self, id: CycleNodeId) -> Option<CycleAllocationMode> {
+        self.cycle_fixture
+            .lock()
+            .expect("cycle fixture poisoned")
+            .graph()
+            .allocation_mode(id)
+    }
+
+    fn record_collection(&self, buffered_roots: usize, report: &Option<CycleCollectReport>) {
+        let mut stats = self
+            .root_stats
+            .lock()
+            .expect("allocator root stats poisoned");
+        stats.buffered_roots = buffered_roots;
+        if let Some(report) = report {
+            stats.collected_roots += report.collected.len();
+        }
+    }
 }
 
 impl KindAllocator for CycleAwareKindAllocator {
@@ -208,16 +288,13 @@ impl KindAllocator for CycleAwareKindAllocator {
         let buffered_roots = fixture.buffer_len();
         drop(fixture);
 
+        self.record_collection(buffered_roots, &report);
         let mut stats = self
             .root_stats
             .lock()
             .expect("allocator root stats poisoned");
         stats.roots_released += 1;
         stats.active_roots = stats.active_roots.saturating_sub(1);
-        stats.buffered_roots = buffered_roots;
-        if let Some(report) = &report {
-            stats.collected_roots += report.collected.len();
-        }
         report
     }
 

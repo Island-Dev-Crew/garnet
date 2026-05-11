@@ -325,9 +325,15 @@ is added. Phase 6P adds a dependency-free typed-cache source-tree binding:
 `episodes.mnemos` records now include a non-path binding for the canonical
 project root, and copied typed cache files from another root are rejected
 before the live store is mutated. This is replay-hardening evidence, not a
-cryptographic MAC.
-Production ARC integration, runtime finalizer invocation, broad pluggable
-persistence backends, and extended release-duration soak remain follow-up work.
+cryptographic MAC. Phase 6Q promotes one root-buffer/finalizer/safe-mode
+interaction into the concrete `CycleAwareKindAllocator` surface:
+allocator-owned root release can now report buffered collection candidates,
+deterministic finalization order, collected nodes, and safe-affine exclusion
+without callers manually owning a fixture graph. This is production-facing
+allocator evidence, not production ARC completion.
+Production allocator-integrated ARC, runtime finalizer invocation, broad
+pluggable persistence backends, and extended release-duration soak remain
+follow-up work.
 
 ## Historical Material
 

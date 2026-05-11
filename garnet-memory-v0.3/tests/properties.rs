@@ -149,6 +149,37 @@ fn working_store_clear_releases_cycle_aware_roots() {
 }
 
 #[test]
+fn cycle_aware_allocator_surface_reports_root_finalization_without_collecting_safe_allocations() {
+    let alloc = CycleAwareKindAllocator::new(MemoryKind::Working, 1);
+    let root = alloc.retain_root("root").unwrap();
+    let child = alloc.allocate_arc("child");
+    let safe = alloc.allocate_safe("safe_affine");
+
+    alloc.add_edge(root, child).unwrap();
+    alloc.add_edge(child, root).unwrap();
+    alloc.add_edge(safe, safe).unwrap();
+
+    let report = alloc
+        .release_root(root)
+        .expect("root release should report collection");
+
+    assert_eq!(
+        report
+            .finalization_order
+            .iter()
+            .map(|id| alloc.label(*id).unwrap())
+            .collect::<Vec<_>>(),
+        vec!["child", "root"]
+    );
+    assert_eq!(alloc.root_stats().collected_roots, 2);
+    assert!(alloc.contains(safe));
+    assert_eq!(
+        alloc.allocation_mode(safe),
+        Some(CycleAllocationMode::SafeAffine)
+    );
+}
+
+#[test]
 fn episodic_policy_eviction_releases_cycle_aware_roots() {
     let mut policy = MemoryPolicy::default_for(MemoryKind::Episodic);
     policy.compaction_high_water = 2;
