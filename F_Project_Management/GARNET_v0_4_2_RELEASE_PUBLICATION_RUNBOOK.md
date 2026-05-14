@@ -70,6 +70,22 @@ GARNET_CHECKSUM_URL=file:///tmp/garnet-v0.4.2-release-assets/SHA256SUMS \
 sh installer/sh.garnet-lang.org/install.sh
 ```
 
+## Fast Org Release Smoke
+
+From a checked-out branch where PRs are merged and the org tag is expected to exist, run:
+
+```sh
+./scripts/verify_org_release_smoke.sh
+```
+
+This verifies the tag first and then installs with:
+
+```sh
+GARNET_INSTALL_MODE=release GARNET_VERSION=v0.4.2 sh installer/sh.garnet-lang.org/install.sh
+```
+
+If either check fails, the script exits non-zero and marks the smoke as not release-backed.
+
 ## Official Publication Steps
 
 Run only after the remediation branch is merged to `main` and the maintainer

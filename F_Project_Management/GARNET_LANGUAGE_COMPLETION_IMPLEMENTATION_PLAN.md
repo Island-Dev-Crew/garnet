@@ -1809,11 +1809,12 @@ Expected: org release exists and lists tarball/package/checksum assets.
 Run:
 
 ```sh
-GARNET_VERSION=v0.4.2 sh installer/sh.garnet-lang.org/install.sh
+GARNET_INSTALL_MODE=release GARNET_VERSION=v0.4.2 sh installer/sh.garnet-lang.org/install.sh
+./scripts/verify_org_release_smoke.sh
 garnet --version
 ```
 
-Expected: installer uses release assets when available and reports `garnet 0.4.2`.
+Expected: installer uses release assets when available and reports `garnet 0.4.2`; the smoke fails explicitly when release assets are missing.
 
 - [x] **Step 3: Create native backend, proof, and empirical plans**
 
