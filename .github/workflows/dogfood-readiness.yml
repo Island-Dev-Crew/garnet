@@ -30,6 +30,8 @@ jobs:
         with:
           python-version: '3.x'
       - run: python3 scripts/test_check_dogfood_pr_body.py
+      - run: python3 scripts/test_garnet_readiness_status.py
+      - run: python3 scripts/garnet_readiness_status.py
       - name: Validate readiness-sensitive PR body
         if: github.event_name == 'pull_request'
         env:

@@ -56,6 +56,7 @@ release readiness unless the production path was actually proven.
 ### Current truth
 
 - [ ] Refreshed `origin/main` and confirmed open PR state before branching.
+- [ ] `python3 scripts/garnet_readiness_status.py` was run and the current slice completion status is understood.
 
 ### Local verification
 
@@ -70,6 +71,7 @@ release readiness unless the production path was actually proven.
 ### Desktop dogfood bundle
 
 - [ ] `/Users/idc2.0/Desktop/dogfood/<bundle-name>` contains PR metadata, logs, and verified manifest.
+- [ ] Bundle includes `readiness-slice-status.md` when this PR changes readiness evidence or implementation-plan status.
 
 ### Deferred / out of scope
 
