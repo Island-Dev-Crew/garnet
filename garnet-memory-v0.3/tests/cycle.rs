@@ -373,6 +373,97 @@ fn cycle_aware_kind_allocator_reports_root_release_collection_and_safe_exclusion
 }
 
 #[test]
+fn cycle_aware_allocator_release_root_finalizer_callback_follows_order() {
+    let allocator = CycleAwareKindAllocator::new(MemoryKind::Working, 1);
+    let root = allocator.retain_root("root").expect("root handle");
+    let child = allocator.allocate_arc("child");
+
+    allocator
+        .add_edge(root, child)
+        .expect("add_edge should link root -> child");
+    allocator
+        .add_edge(child, root)
+        .expect("add_edge should complete cycle");
+
+    let mut finalized = Vec::new();
+    let report = allocator
+        .release_root_with_finalizer(root, |id| finalized.push(id))
+        .expect("release should trigger collection immediately");
+
+    assert_eq!(finalized, report.finalization_order);
+    let mut collected_labels = allocator_labels(&allocator, &report.collected);
+    collected_labels.sort();
+    assert_eq!(collected_labels, vec!["child", "root"]);
+    assert!(allocator.root_stats().collected_roots >= 2);
+    assert_eq!(allocator.buffered_roots(), vec![]);
+}
+
+#[test]
+fn cycle_aware_allocator_collect_roots_finalizer_callback_only_on_collection() {
+    let allocator = CycleAwareKindAllocator::new(MemoryKind::Working, 4);
+    let root = allocator
+        .retain_root("root")
+        .expect("root should be retained");
+    let child = allocator.allocate_arc("child");
+
+    allocator
+        .add_edge(root, child)
+        .expect("add_edge should link root -> child");
+    allocator
+        .add_edge(child, root)
+        .expect("add_edge should complete cycle");
+
+    assert!(allocator.release_root(root).is_none());
+    assert_eq!(allocator.buffered_roots(), vec![root]);
+
+    let mut finalized = Vec::new();
+    let report = allocator
+        .collect_roots_with_finalizer(|id| finalized.push(id))
+        .expect("collect should drain buffered candidate");
+
+    assert_eq!(finalized, report.finalization_order);
+    assert_eq!(report.trial_candidates, vec![root]);
+    assert_eq!(report.collected.len(), 2);
+    assert!(report.collected.contains(&root));
+    assert!(report.collected.contains(&child));
+    assert_eq!(allocator.root_stats().collected_roots, 2);
+    assert!(allocator.buffered_roots().is_empty());
+}
+
+#[test]
+fn cycle_aware_allocator_remove_edge_finalizer_callback_only_when_collecting() {
+    let allocator = CycleAwareKindAllocator::new(MemoryKind::Working, 1);
+    let root = allocator.retain_root("root").expect("root handle");
+    let cycle_a = allocator.allocate_arc("cycle_a");
+    let cycle_b = allocator.allocate_arc("cycle_b");
+
+    allocator
+        .add_edge(root, cycle_a)
+        .expect("root should link to cycle node");
+    allocator
+        .add_edge(cycle_a, cycle_b)
+        .expect("cycle path should link through cycle");
+    allocator
+        .add_edge(cycle_b, cycle_a)
+        .expect("cycle path should complete the sub-cycle");
+
+    let mut finalized = Vec::new();
+    let report = allocator
+        .remove_edge_with_finalizer(root, cycle_a, |id| finalized.push(id))
+        .expect("threshold-crossing edge removal should collect");
+
+    assert_eq!(finalized, report.finalization_order);
+    assert_eq!(report.trial_candidates, vec![cycle_a]);
+    assert_eq!(report.collected.len(), 2);
+    assert!(report.collected.contains(&cycle_a));
+    assert!(report.collected.contains(&cycle_b));
+    assert!(!allocator.contains(cycle_a));
+    assert!(!allocator.contains(cycle_b));
+    assert!(allocator.contains(root));
+    assert_eq!(allocator.buffered_roots(), vec![]);
+}
+
+#[test]
 fn cycle_aware_allocator_edge_removal_triggers_buffered_collection_on_threshold() {
     let allocator = CycleAwareKindAllocator::new(MemoryKind::Working, 1);
     let root = allocator.retain_root("root").expect("root handle");

@@ -208,6 +208,55 @@ impl CycleAwareKindAllocator {
         Ok(report)
     }
 
+    /// Collect a buffered candidate set and invoke `finalize` for each finalizable
+    /// node in deterministic finalization order.
+    pub fn collect_roots_with_finalizer<F>(&self, mut finalize: F) -> Option<CycleCollectReport>
+    where
+        F: FnMut(CycleNodeId),
+    {
+        let report = KindAllocator::collect_roots(self)?;
+        for id in report.finalization_order.iter().copied() {
+            finalize(id);
+        }
+        Some(report)
+    }
+
+    /// Release a root and invoke `finalize` for each finalizable node in
+    /// deterministic finalization order.
+    pub fn release_root_with_finalizer<F>(
+        &self,
+        root: CycleNodeId,
+        mut finalize: F,
+    ) -> Option<CycleCollectReport>
+    where
+        F: FnMut(CycleNodeId),
+    {
+        let report = KindAllocator::release_root(self, root)?;
+        for id in report.finalization_order.iter().copied() {
+            finalize(id);
+        }
+        Some(report)
+    }
+
+    /// Remove one ARC edge and invoke `finalize` for each finalizable node in
+    /// deterministic finalization order when threshold-triggered collection
+    /// occurs.
+    pub fn remove_edge_with_finalizer<F>(
+        &self,
+        from: CycleNodeId,
+        to: CycleNodeId,
+        mut finalize: F,
+    ) -> Option<CycleCollectReport>
+    where
+        F: FnMut(CycleNodeId),
+    {
+        let report = self.remove_edge(from, to).ok()??;
+        for id in report.finalization_order.iter().copied() {
+            finalize(id);
+        }
+        Some(report)
+    }
+
     pub fn buffered_roots(&self) -> Vec<CycleNodeId> {
         self.cycle_fixture
             .lock()
