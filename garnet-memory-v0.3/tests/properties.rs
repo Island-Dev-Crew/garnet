@@ -202,6 +202,106 @@ fn cycle_aware_allocator_surface_reports_root_finalization_without_collecting_sa
 }
 
 #[test]
+fn cycle_aware_kind_allocator_trait_surface_reports_finalizers_on_release_root() {
+    let concrete = CycleAwareKindAllocator::new(MemoryKind::Working, 1);
+    let alloc: &dyn KindAllocator = &concrete;
+
+    let root = concrete.retain_root("root").unwrap();
+    let child = concrete.allocate_arc("child");
+
+    concrete
+        .add_edge(root, child)
+        .expect("root should link child");
+    concrete
+        .add_edge(child, root)
+        .expect("child should link back to root");
+
+    let mut finalized = Vec::new();
+    let report = alloc
+        .release_root_with_finalizer(root, &mut |id| finalized.push(id))
+        .expect("release should trigger collection");
+
+    assert_eq!(finalized, report.finalization_order);
+    assert_eq!(finalized.len(), 2);
+    assert_eq!(concrete.root_stats().collected_roots, 2);
+}
+
+#[test]
+fn cycle_aware_kind_allocator_trait_surface_reports_finalizers_on_remove_edge() {
+    let concrete = CycleAwareKindAllocator::new(MemoryKind::Working, 1);
+    let alloc: &dyn KindAllocator = &concrete;
+
+    let root = concrete
+        .retain_root("root")
+        .expect("root should be retained");
+    let cycle_a = concrete.allocate_arc("cycle_a");
+    let cycle_b = concrete.allocate_arc("cycle_b");
+
+    concrete
+        .add_edge(root, cycle_a)
+        .expect("root should link to cycle_a");
+    concrete
+        .add_edge(cycle_a, cycle_b)
+        .expect("cycle_a should link to cycle_b");
+    concrete
+        .add_edge(cycle_b, cycle_a)
+        .expect("cycle_b should link to cycle_a");
+    concrete
+        .add_edge(cycle_b, root)
+        .expect("cycle_b should link back to root");
+
+    let mut finalized = Vec::new();
+    let report = alloc
+        .remove_edge_with_finalizer(root, cycle_a, &mut |id| finalized.push(id))
+        .expect("edge decrement should trigger collection");
+
+    assert_eq!(finalized, report.finalization_order);
+    assert_eq!(finalized.len(), 2);
+    assert!(!concrete.contains(cycle_a));
+    assert!(!concrete.contains(cycle_b));
+    assert!(concrete.contains(root));
+}
+
+#[test]
+fn cycle_aware_kind_allocator_trait_surface_flushes_buffered_roots_with_callbacks() {
+    let concrete = CycleAwareKindAllocator::new(MemoryKind::Working, 4);
+    let alloc: &dyn KindAllocator = &concrete;
+
+    let root = concrete
+        .retain_root("root")
+        .expect("root should be retained for buffering test");
+    let cycle_a = concrete.allocate_arc("cycle_a");
+    let cycle_b = concrete.allocate_arc("cycle_b");
+
+    concrete
+        .add_edge(root, cycle_a)
+        .expect("root should link to cycle_a");
+    concrete
+        .add_edge(cycle_a, cycle_b)
+        .expect("cycle_a should link to cycle_b");
+    concrete
+        .add_edge(cycle_b, cycle_a)
+        .expect("cycle_b should link to cycle_a");
+    concrete
+        .add_edge(cycle_b, root)
+        .expect("cycle_b should link back to root");
+
+    assert!(alloc.release_root(root).is_none());
+    assert_eq!(concrete.buffered_roots(), vec![root]);
+
+    let mut finalized = Vec::new();
+    let report = alloc
+        .collect_roots_with_finalizer(&mut |id| finalized.push(id))
+        .expect("collect_roots should drain buffered candidate");
+
+    assert_eq!(finalized, report.finalization_order);
+    assert_eq!(concrete.buffered_roots().as_slice(), []);
+    assert!(!concrete.contains(cycle_a));
+    assert!(!concrete.contains(cycle_b));
+    assert!(!concrete.contains(root));
+}
+
+#[test]
 fn episodic_policy_eviction_releases_cycle_aware_roots() {
     let mut policy = MemoryPolicy::default_for(MemoryKind::Episodic);
     policy.compaction_high_water = 2;
