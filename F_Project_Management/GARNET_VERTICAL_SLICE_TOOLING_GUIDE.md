@@ -1,6 +1,6 @@
 # Garnet Vertical Slice And Tooling Guide
 
-Generated: 2026-05-09
+Generated: 2026-05-14
 
 This file is the lightweight companion to
 `F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md`.
@@ -13,16 +13,21 @@ publishing discipline.
 - Repository: `Island-Dev-Crew/garnet`
 - Primary remote: `origin = https://github.com/Island-Dev-Crew/garnet.git`
 - Working fork: `fork = https://github.com/Navigata1/garnet.git`
-- Main baseline after the latest integration: `origin/main` at `5b940d8`
-- Integrated PR: `#67`, "Phase 4BC: Fold static boolean relational guards"
-- Merge commit: `5b940d8`, "Integrate verified Garnet readiness train through Phase 4BC"
+- Main baseline after the latest integration: `origin/main` at `43d98f2`
+- Integrated PRs through PR #72: Phase 4BC readiness slices, dogfood evidence gate, and status-skill process updates
 - Open PRs after that merge: none
 - Desktop evidence root: `/Users/idc2.0/Desktop/dogfood`
 
-The merged train covers the cumulative readiness work from Phase 6N through
-Phase 4BC. It includes Memory Core cache hardening, trait overlap/coherence
-improvements, borrow-checker slices, and a long sequence of safe-mode match
-coverage improvements through static boolean relational guard facts.
+The merged train covers the cumulative readiness work through PR #72, including:
+
+- Phase 4BC static boolean relational guard integration
+- Phase 4BD–4BF allocator/ARC production-facing evidence, conformance gate,
+  and dogfood evidence-gate process
+- Phase 4BG slice-status and dashboard/reporting updates
+- Ongoing readiness slices in Memory Core Step 9 and Milestone 7 release gates
+
+Current completion signal from `scripts/garnet_readiness_status.py`: `82/86` slices
+(`95.3%`) with 4 slices open.
 
 ## Canonical Project Files
 
@@ -211,12 +216,14 @@ Security proof should be concrete: a regression test, a static gate, a CI
 security job, a threat-model update, or a verified negative case. Avoid
 security prose without a falsifiable check.
 
-## Next Slice Candidates After Phase 4BC
+## Next Slice Candidates After PR #72
 
 Current concrete unchecked implementation row:
 
 - Memory Core Step 9: promote fixture-backed roots toward production ARC
   allocator roots.
+- Current concrete open slices remain: Step 9, release publish, networked installer
+  rerun, and native/proof/empirical planning.
 
 Treat that as a test-first, bounded slice. A good first move is not "production
 ARC complete"; it is a falsifiable production-facing allocator interaction

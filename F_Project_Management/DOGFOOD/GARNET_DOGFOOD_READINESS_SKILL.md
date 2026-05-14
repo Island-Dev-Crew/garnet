@@ -7,6 +7,11 @@ what remains deferred. This skill fuses the PR #71 dogfood evidence gate with
 the useful No Mistakes pattern: work on a branch, verify locally, preserve
 evidence, then let remote CI confirm the merge decision before promotion.
 
+As of 2026-05-14 this run reports `82/86` slices complete (`95.3%`), with the
+same four open slices carried forward in `F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md`:
+1) Memory Core Step 9, 2) org release publish, 3) networked installer smoke,
+4) native/proof/empirical planning.
+
 ## When To Use
 
 Use this skill for any PR touching language readiness, Memory Core, parser,
@@ -31,6 +36,10 @@ python3 scripts/garnet_readiness_status.py
 Use the output to decide whether the next action is implementation, cleanup,
 or process hardening. Historical handoffs are useful context, but live git
 state and tracked docs win.
+
+The dogfood gate is intentionally "no-mistakes"-style: it requires explicit local
+verification, explicit remote checks, and no unqualified production ARC completion
+claims in readiness-sensitive PRs before merge review.
 
 ## Slice Completion Signal
 
