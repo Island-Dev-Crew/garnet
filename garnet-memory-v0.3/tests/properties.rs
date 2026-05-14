@@ -705,3 +705,61 @@ fn cycle_aware_allocator_edge_removal_collection_is_deterministic_across_kinds()
         );
     }
 }
+
+#[test]
+fn cycle_aware_allocator_collect_roots_drains_buffered_candidates() {
+    let allocator = CycleAwareKindAllocator::new(MemoryKind::Working, 4);
+    let root = allocator
+        .retain_root("root")
+        .expect("retain_root should allocate a managed root");
+    let cycle_a = allocator.allocate_arc("cycle_a");
+    let cycle_b = allocator.allocate_arc("cycle_b");
+    let safe = allocator.allocate_safe("safe_affine");
+
+    allocator
+        .add_edge(root, cycle_a)
+        .expect("add_edge should link root -> cycle_a");
+    allocator
+        .add_edge(cycle_a, cycle_b)
+        .expect("add_edge should link cycle_a -> cycle_b");
+    allocator
+        .add_edge(cycle_b, cycle_a)
+        .expect("add_edge should close the cycle");
+    allocator
+        .add_edge(cycle_b, root)
+        .expect("add_edge should keep root in the cycle");
+    allocator
+        .add_edge(safe, safe)
+        .expect("safe-affine self-edge should be tracked");
+
+    assert_eq!(allocator.release_root(root), None);
+
+    let buffered = allocator.buffered_roots();
+    assert_eq!(buffered, vec![root]);
+
+    let collect_report = allocator
+        .collect_roots()
+        .expect("collect_roots should drain buffered candidates");
+
+    assert_eq!(collect_report.trial_candidates, vec![root]);
+    assert_eq!(
+        collect_report.finalization_order,
+        vec![cycle_b, cycle_a, root]
+    );
+    assert_eq!(collect_report.collected, vec![root, cycle_a, cycle_b]);
+
+    assert!(allocator.buffered_roots().is_empty());
+    assert!(!allocator.contains(cycle_a));
+    assert!(!allocator.contains(cycle_b));
+    assert!(!allocator.contains(root));
+    assert!(allocator.contains(safe));
+    assert_eq!(
+        allocator.allocation_mode(safe),
+        Some(CycleAllocationMode::SafeAffine)
+    );
+
+    let stats = allocator.root_stats();
+    assert_eq!(stats.buffered_roots, 0);
+    assert_eq!(stats.collected_roots, 3);
+    assert_eq!(stats.active_roots, 0);
+}

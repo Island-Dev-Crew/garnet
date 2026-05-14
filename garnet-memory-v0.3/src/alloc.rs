@@ -92,6 +92,16 @@ pub trait KindAllocator: Send + Sync {
         None
     }
 
+    /// Run any pending allocator-owned cycle-collection work.
+    ///
+    /// Production allocator-integrated ARC collectors will call this as a
+    /// deferred finalization boundary; this reference implementation exposes it
+    /// to keep the API surface explicit even while the final runtime path is
+    /// still deferred.
+    fn collect_roots(&self) -> Option<CycleCollectReport> {
+        None
+    }
+
     fn root_stats(&self) -> AllocRootStats {
         AllocRootStats::new(self.kind())
     }
@@ -295,6 +305,20 @@ impl KindAllocator for CycleAwareKindAllocator {
             .expect("allocator root stats poisoned");
         stats.roots_released += 1;
         stats.active_roots = stats.active_roots.saturating_sub(1);
+        report
+    }
+
+    fn collect_roots(&self) -> Option<CycleCollectReport> {
+        let mut fixture = self.cycle_fixture.lock().expect("cycle fixture poisoned");
+        let buffered_roots = fixture.buffer_len();
+        if buffered_roots == 0 {
+            return None;
+        }
+
+        let report = Some(fixture.collect_buffered_cycles());
+        drop(fixture);
+
+        self.record_collection(0, &report);
         report
     }
 
