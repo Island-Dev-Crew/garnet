@@ -373,6 +373,7 @@ impl<T> EpisodeStore<T> {
                 self.release_event_root(event);
             }
         }
+        self.alloc.collect_roots();
     }
 
     fn release_event_root(&self, event: StoredEpisode<T>) {
@@ -394,6 +395,7 @@ impl<T> EpisodeStore<T> {
                 root: self.alloc.retain_root("episodic:event"),
             });
         }
+        self.alloc.collect_roots();
     }
 }
 
@@ -1837,6 +1839,7 @@ impl<T> Drop for EpisodeStore<T> {
                 self.alloc.release_root(root);
             }
         }
+        self.alloc.collect_roots();
     }
 }
 

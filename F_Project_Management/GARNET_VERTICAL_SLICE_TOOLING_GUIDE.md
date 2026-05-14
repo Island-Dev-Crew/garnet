@@ -15,7 +15,7 @@ publishing discipline.
 - Working fork: `fork = https://github.com/Navigata1/garnet.git`
 - Main baseline after the latest integration: `origin/main` at `43d98f2`
 - Integrated PRs through PR #72: Phase 4BC readiness slices, dogfood evidence gate, and status-skill process updates
-- Open PRs after that merge: none
+- Open PRs after that merge: `#73` (ready-for-review, check-gate green, merge blocked by org permissions in this token)
 - Desktop evidence root: `/Users/idc2.0/Desktop/dogfood`
 
 The merged train covers the cumulative readiness work through PR #72, including:

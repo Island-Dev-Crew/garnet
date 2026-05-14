@@ -72,6 +72,7 @@ impl<T> WorkingStore<T> {
         }
         self.items.borrow_mut().clear();
         self.alloc.reset();
+        self.alloc.collect_roots();
     }
 
     pub fn allocator_stats(&self) -> AllocStats {
@@ -94,5 +95,6 @@ impl<T> Drop for WorkingStore<T> {
         for root in self.roots.get_mut().drain(..) {
             self.alloc.release_root(root);
         }
+        self.alloc.collect_roots();
     }
 }

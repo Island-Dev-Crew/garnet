@@ -90,6 +90,7 @@ impl<T: Clone> WorkflowStore<T> {
         if let Some(root) = root {
             self.roots.borrow_mut().insert(name, root);
         }
+        self.alloc.collect_roots();
     }
 
     pub fn find(&self, name: &str) -> Option<Workflow<T>> {
@@ -120,5 +121,6 @@ impl<T> Drop for WorkflowStore<T> {
         for root in roots.into_values() {
             self.alloc.release_root(root);
         }
+        self.alloc.collect_roots();
     }
 }

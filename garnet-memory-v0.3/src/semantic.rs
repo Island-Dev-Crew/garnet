@@ -161,6 +161,7 @@ impl<T> VectorIndex<T> {
                 self.release_fact_root(fact);
             }
         }
+        self.alloc.collect_roots();
     }
 
     fn release_fact_root(&self, fact: StoredFact<T>) {
@@ -222,5 +223,6 @@ impl<T> Drop for VectorIndex<T> {
                 self.alloc.release_root(root);
             }
         }
+        self.alloc.collect_roots();
     }
 }

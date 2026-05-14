@@ -202,6 +202,7 @@ fn episodic_policy_eviction_releases_cycle_aware_roots() {
     assert_eq!(values, vec![3, 4]);
     assert_eq!(stats.active_roots, 2);
     assert_eq!(stats.roots_released, 3);
+    assert_eq!(stats.buffered_roots, 0);
 }
 
 #[test]
@@ -227,6 +228,7 @@ fn semantic_policy_eviction_releases_cycle_aware_roots() {
     assert_eq!(values, vec!["x"]);
     assert_eq!(stats.active_roots, 1);
     assert_eq!(stats.roots_released, 2);
+    assert_eq!(stats.buffered_roots, 0);
 }
 
 #[test]
@@ -241,6 +243,7 @@ fn procedural_register_replacement_releases_previous_cycle_aware_root() {
     assert_eq!(stats.roots_created, 2);
     assert_eq!(stats.active_roots, 1);
     assert_eq!(stats.roots_released, 1);
+    assert_eq!(stats.buffered_roots, 0);
 }
 
 #[test]
@@ -271,6 +274,85 @@ fn dropping_stores_releases_cycle_aware_roots() {
     assert_eq!(episodic_alloc.root_stats().roots_released, 1);
     assert_eq!(semantic_alloc.root_stats().roots_released, 1);
     assert_eq!(procedural_alloc.root_stats().roots_released, 1);
+    assert_eq!(working_alloc.root_stats().buffered_roots, 0);
+    assert_eq!(episodic_alloc.root_stats().buffered_roots, 0);
+    assert_eq!(semantic_alloc.root_stats().buffered_roots, 0);
+    assert_eq!(procedural_alloc.root_stats().buffered_roots, 0);
+}
+
+#[test]
+fn cycle_aware_allocator_boundary_methods_flush_all_store_root_buffers() {
+    let mut episodic_policy = MemoryPolicy::default_for(MemoryKind::Episodic);
+    episodic_policy.compaction_high_water = 1;
+    episodic_policy.retention_threshold = 0.0;
+    let mut semantic_policy = MemoryPolicy::default_for(MemoryKind::Semantic);
+    semantic_policy.compaction_high_water = 1;
+    semantic_policy.retention_threshold = 0.0;
+
+    let working_alloc = CycleAwareKindAllocator::shared(MemoryKind::Working, 8);
+    let episodic_alloc = CycleAwareKindAllocator::shared(MemoryKind::Episodic, 8);
+    let semantic_alloc = CycleAwareKindAllocator::shared(MemoryKind::Semantic, 8);
+    let procedural_alloc = CycleAwareKindAllocator::shared(MemoryKind::Procedural, 8);
+
+    let working: WorkingStore<i32> = WorkingStore::with_allocator(working_alloc.clone());
+    let episodic: EpisodeStore<i32> =
+        EpisodeStore::with_policy_and_allocator(episodic_policy, episodic_alloc.clone());
+    let semantic: VectorIndex<i32> =
+        VectorIndex::with_policy_and_allocator(semantic_policy, semantic_alloc.clone());
+    let procedural: WorkflowStore<i32> = WorkflowStore::with_allocator(procedural_alloc.clone());
+
+    working.push(1);
+    working.push(2);
+    episodic.append(10);
+    episodic.append(20);
+    episodic.append(30);
+    episodic.append(40);
+    semantic.insert(vec![1.0, 0.0], 1);
+    semantic.insert(vec![0.0, 1.0], 2);
+    semantic.insert(vec![0.5, 0.5], 3);
+    procedural.register("workflow", 1);
+    procedural.register("workflow", 2);
+
+    let _ = episodic.recent(1);
+    let _ = semantic.search(&[1.0, 0.0], 1);
+
+    working.clear();
+    procedural.find("workflow");
+
+    {
+        let working_stats = working.allocator_root_stats();
+        assert_eq!(working_stats.active_roots, 0);
+        assert_eq!(working_stats.buffered_roots, 0);
+        assert_eq!(working_stats.roots_released, 2);
+    }
+    {
+        let episodic_stats = episodic.allocator_root_stats();
+        assert_eq!(episodic_stats.active_roots, 1);
+        assert_eq!(episodic_stats.buffered_roots, 0);
+        assert_eq!(episodic_stats.roots_released, 3);
+    }
+    {
+        let semantic_stats = semantic.allocator_root_stats();
+        assert_eq!(semantic_stats.active_roots, 1);
+        assert_eq!(semantic_stats.buffered_roots, 0);
+        assert_eq!(semantic_stats.roots_released, 2);
+    }
+    {
+        let procedural_stats = procedural.allocator_root_stats();
+        assert_eq!(procedural_stats.active_roots, 1);
+        assert_eq!(procedural_stats.buffered_roots, 0);
+        assert_eq!(procedural_stats.roots_released, 1);
+    }
+
+    drop(working);
+    drop(episodic);
+    drop(semantic);
+    drop(procedural);
+
+    assert_eq!(working_alloc.root_stats().active_roots, 0);
+    assert_eq!(episodic_alloc.root_stats().active_roots, 0);
+    assert_eq!(semantic_alloc.root_stats().active_roots, 0);
+    assert_eq!(procedural_alloc.root_stats().active_roots, 0);
 }
 
 // ════════════════════════════════════════════════════════════════════
