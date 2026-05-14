@@ -55,6 +55,13 @@ python3 scripts/garnet_readiness_status.py --format markdown
 python3 scripts/garnet_readiness_status.py --format json
 ```
 
+If you want a quick milestone completion view, reuse the markdown output and read
+the `## Section Completion` block (added by this skill):
+
+```sh
+python3 scripts/garnet_readiness_status.py | sed -n '/## Section Completion/,$p'
+```
+
 Include the markdown output in Desktop dogfood bundles and use the JSON output
 when a future dashboard or project tracker needs machine-readable progress.
 
