@@ -185,6 +185,11 @@ dogfood bundle, and deferred/out-of-scope evidence. This adapts the useful
 travels with the PR and CI rejects readiness-sensitive PRs that omit it or make
 an unqualified production ARC completion claim.
 
+Use `F_Project_Management/DOGFOOD/GARNET_DOGFOOD_READINESS_SKILL.md` as the
+model-agnostic readiness workflow. It fuses the PR evidence gate with local
+gate discipline and adds `python3 scripts/garnet_readiness_status.py` for
+checkbox-based slice completion reporting.
+
 The CLI may not have org merge permissions. If `gh pr merge` returns a
 permission error, use the org-authorized browser/Desktop session. The browser
 path successfully merged PR `#67` when CLI merge was blocked.

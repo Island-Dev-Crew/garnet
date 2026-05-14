@@ -282,3 +282,37 @@ fn security_dogfood_rubric_is_indexed_and_actionable() {
         assert!(rubric.contains(needle), "security rubric missing {needle}");
     }
 }
+
+#[test]
+fn dogfood_readiness_skill_tracks_slice_status() {
+    let skill = fs::read_to_string(
+        repo_root().join("F_Project_Management/DOGFOOD/GARNET_DOGFOOD_READINESS_SKILL.md"),
+    )
+    .expect("dogfood readiness skill");
+    for needle in [
+        "python3 scripts/garnet_readiness_status.py",
+        "F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md",
+        "readiness-slice-status.md",
+        "production allocator-integrated ARC",
+        "No Mistakes",
+    ] {
+        assert!(
+            skill.contains(needle),
+            "dogfood readiness skill missing {needle}"
+        );
+    }
+
+    let script = fs::read_to_string(repo_root().join("scripts/garnet_readiness_status.py"))
+        .expect("readiness status script");
+    for needle in [
+        "Completion:",
+        "open_slices",
+        "completion_percent",
+        "CHECKBOX_RE",
+    ] {
+        assert!(
+            script.contains(needle),
+            "readiness status script missing {needle}"
+        );
+    }
+}
