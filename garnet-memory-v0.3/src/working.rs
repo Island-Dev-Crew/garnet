@@ -1,7 +1,7 @@
 //! Arena-style working memory: bulk-alloc, bulk-free at scope exit.
 
 use crate::{
-    AllocRequest, AllocRootStats, AllocStats, CycleNodeId, HeapKindAllocator, KindAllocator,
+    AllocRequest, AllocRootStats, AllocStats, CycleAwareKindAllocator, CycleNodeId, KindAllocator,
     MemoryKind,
 };
 use std::cell::RefCell;
@@ -18,7 +18,7 @@ pub struct WorkingStore<T> {
 
 impl<T> Default for WorkingStore<T> {
     fn default() -> Self {
-        Self::with_allocator(HeapKindAllocator::shared(MemoryKind::Working))
+        Self::with_allocator(CycleAwareKindAllocator::shared(MemoryKind::Working, 8))
     }
 }
 

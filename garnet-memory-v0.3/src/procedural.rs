@@ -1,7 +1,7 @@
 //! Procedural memory: copy-on-write workflow store with version history.
 
 use crate::{
-    AllocRequest, AllocRootStats, AllocStats, CycleNodeId, HeapKindAllocator, KindAllocator,
+    AllocRequest, AllocRootStats, AllocStats, CycleAwareKindAllocator, CycleNodeId, KindAllocator,
     MemoryKind,
 };
 use std::cell::RefCell;
@@ -44,7 +44,7 @@ pub struct WorkflowStore<T> {
 
 impl<T> Default for WorkflowStore<T> {
     fn default() -> Self {
-        Self::with_allocator(HeapKindAllocator::shared(MemoryKind::Procedural))
+        Self::with_allocator(CycleAwareKindAllocator::shared(MemoryKind::Procedural, 8))
     }
 }
 

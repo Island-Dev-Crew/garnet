@@ -1,7 +1,7 @@
 //! Episodic memory: append-only log with timestamp indexing.
 
 use crate::{
-    AllocRequest, AllocRootStats, AllocStats, CycleNodeId, HeapKindAllocator, KindAllocator,
+    AllocRequest, AllocRootStats, AllocStats, CycleAwareKindAllocator, CycleNodeId, KindAllocator,
     MemoryKind, MemoryPolicy,
 };
 use std::cell::RefCell;
@@ -296,7 +296,7 @@ impl<T> EpisodeStore<T> {
     fn with_policy_state(policy: MemoryPolicy, eviction_enabled: bool) -> Self {
         Self::with_policy_allocator_state(
             policy,
-            HeapKindAllocator::shared(MemoryKind::Episodic),
+            CycleAwareKindAllocator::shared(MemoryKind::Episodic, 8),
             eviction_enabled,
         )
     }

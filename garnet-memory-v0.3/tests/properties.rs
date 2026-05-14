@@ -132,6 +132,28 @@ fn cycle_aware_allocators_record_store_roots_for_each_memory_kind() {
 }
 
 #[test]
+fn default_stores_route_roots_to_cycle_aware_allocator_backend() {
+    let working: WorkingStore<i32> = WorkingStore::new();
+    let episodic: EpisodeStore<i32> = EpisodeStore::new();
+    let semantic: VectorIndex<i32> = VectorIndex::new();
+    let procedural: WorkflowStore<i32> = WorkflowStore::new();
+
+    working.push(1);
+    episodic.append(2);
+    semantic.insert(vec![1.0, 0.0], 3);
+    procedural.register("wf", 4);
+
+    assert_eq!(working.allocator_root_stats().roots_created, 1);
+    assert_eq!(working.allocator_root_stats().active_roots, 1);
+    assert_eq!(episodic.allocator_root_stats().roots_created, 1);
+    assert_eq!(episodic.allocator_root_stats().active_roots, 1);
+    assert_eq!(semantic.allocator_root_stats().roots_created, 1);
+    assert_eq!(semantic.allocator_root_stats().active_roots, 1);
+    assert_eq!(procedural.allocator_root_stats().roots_created, 1);
+    assert_eq!(procedural.allocator_root_stats().active_roots, 1);
+}
+
+#[test]
 fn working_store_clear_releases_cycle_aware_roots() {
     let alloc = CycleAwareKindAllocator::shared(MemoryKind::Working, 8);
     let s = WorkingStore::with_allocator(alloc);

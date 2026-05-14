@@ -1,7 +1,7 @@
 //! Semantic memory: a vector-indexed fact store with cosine similarity search.
 
 use crate::{
-    AllocRequest, AllocRootStats, AllocStats, CycleNodeId, HeapKindAllocator, KindAllocator,
+    AllocRequest, AllocRootStats, AllocStats, CycleAwareKindAllocator, CycleNodeId, KindAllocator,
     MemoryKind, MemoryPolicy,
 };
 use std::cell::RefCell;
@@ -58,7 +58,7 @@ impl<T> VectorIndex<T> {
     fn with_policy_state(policy: MemoryPolicy, eviction_enabled: bool) -> Self {
         Self::with_policy_allocator_state(
             policy,
-            HeapKindAllocator::shared(MemoryKind::Semantic),
+            CycleAwareKindAllocator::shared(MemoryKind::Semantic, 8),
             eviction_enabled,
         )
     }
