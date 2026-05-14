@@ -26,8 +26,8 @@ The merged train covers the cumulative readiness work through PR #72, including:
 - Phase 4BG slice-status and dashboard/reporting updates
 - Ongoing readiness slices in Memory Core Step 9 and Milestone 7 release gates
 
-Current completion signal from `scripts/garnet_readiness_status.py`: `82/86` slices
-(`95.3%`) with 4 slices open.
+Current completion signal from `scripts/garnet_readiness_status.py`: `83/86` slices
+(`96.5%`) with 3 slices open.
 
 ## Canonical Project Files
 
@@ -222,8 +222,8 @@ Current concrete unchecked implementation row:
 
 - Memory Core Step 9: promote fixture-backed roots toward production ARC
   allocator roots.
-- Current concrete open slices remain: Step 9, release publish, networked installer
-  rerun, and native/proof/empirical planning.
+- Current concrete open slices remain: Step 9, release publish, and networked
+  installer rerun.
 
 Treat that as a test-first, bounded slice. A good first move is not "production
 ARC complete"; it is a falsifiable production-facing allocator interaction

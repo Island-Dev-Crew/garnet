@@ -1815,7 +1815,13 @@ garnet --version
 
 Expected: installer uses release assets when available and reports `garnet 0.4.2`.
 
-- [ ] **Step 3: Create native backend, proof, and empirical plans**
+- [x] **Step 3: Create native backend, proof, and empirical plans**
+
+Milestone 7 step 3 now has scaffolded plans:
+
+- `F_Project_Management/ROADMAPS/GARNET_NATIVE_BACKEND_PLAN.md`
+- `F_Project_Management/ROADMAPS/GARNET_FORMAL_PROOF_PLAN.md`
+- `F_Project_Management/ROADMAPS/GARNET_EMPIRICAL_VALIDATION_PLAN.md`
 
 Each plan must define a falsifiable first milestone:
 
