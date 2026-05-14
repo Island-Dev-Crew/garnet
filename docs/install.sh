@@ -12,6 +12,11 @@
 set -eu
 
 GARNET_VERSION="${GARNET_VERSION:-0.4.2}"
+case "${GARNET_VERSION}" in
+  v*)
+    GARNET_VERSION="${GARNET_VERSION#v}"
+    ;;
+esac
 GARNET_CHANNEL="${GARNET_CHANNEL:-stable}"
 GARNET_REPO="${GARNET_REPO:-Island-Dev-Crew/garnet}"
 GARNET_TAG="${GARNET_TAG:-v${GARNET_VERSION}}"
