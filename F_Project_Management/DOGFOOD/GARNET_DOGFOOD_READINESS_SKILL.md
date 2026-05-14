@@ -59,6 +59,13 @@ python3 scripts/garnet_readiness_status.py --format json
 Include the markdown output in Desktop dogfood bundles and use the JSON output
 when a future dashboard or project tracker needs machine-readable progress.
 
+### Live run snapshot
+
+- `origin/main` at `43d98f2`
+- Open PRs in `Island-Dev-Crew/garnet` as of this run: `#73`
+- Status: all green except PR dogfood evidence gate on PR #73 due PR-body format.
+- Completion: `82/86` slices (`95.3%`), with four open slices listed under `Milestone 6 Step 9` and `Milestone 7 Steps 1–3`.
+
 ## Evidence Gate
 
 Readiness-sensitive PRs must satisfy `.github/workflows/dogfood-readiness.yml`.
