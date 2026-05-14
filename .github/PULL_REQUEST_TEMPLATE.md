@@ -44,6 +44,37 @@ Fixes #<!-- issue number, if applicable -->
 - [ ] New unit tests added for new code: **<list tests here>**
 - [ ] `cargo clippy --workspace --all-targets` — no new warnings vs. main
 
+## Dogfood Readiness
+
+<!--
+Required for readiness-sensitive PRs touching language/spec/conformance,
+Memory Core, checker/interpreter/parser, examples, workflows, or project
+management evidence. Keep unknowns explicit; do not claim production ARC or
+release readiness unless the production path was actually proven.
+-->
+
+### Current truth
+
+- [ ] Refreshed `origin/main` and confirmed open PR state before branching.
+
+### Local verification
+
+- [ ] `cargo fmt --all -- --check`
+- [ ] `git diff --check`
+- [ ] Focused crate/conformance command(s): **<list commands here>**
+
+### Remote verification
+
+- [ ] Draft PR checks are green or remaining failures are explained below.
+
+### Desktop dogfood bundle
+
+- [ ] `/Users/idc2.0/Desktop/dogfood/<bundle-name>` contains PR metadata, logs, and verified manifest.
+
+### Deferred / out of scope
+
+- [ ] Deferred production/runtime/security claims are named here instead of implied complete.
+
 ## Rigor checklist
 
 <!-- Garnet's pre-registration discipline. Tick each that applies. -->

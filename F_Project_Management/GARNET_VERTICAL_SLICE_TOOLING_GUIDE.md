@@ -175,6 +175,16 @@ gh pr view <number> --repo Island-Dev-Crew/garnet --json statusCheckRollup,merge
 gh pr edit <number> --repo Island-Dev-Crew/garnet --body-file <body-file>
 ```
 
+Readiness-sensitive PRs are guarded by `.github/workflows/dogfood-readiness.yml`.
+If the diff touches language/spec/conformance, Memory Core, checker,
+interpreter, parser, examples, workflow, or project-management evidence paths,
+the PR body must keep the `## Dogfood Readiness` section from the template and
+fill in current truth, local verification, remote verification, Desktop
+dogfood bundle, and deferred/out-of-scope evidence. This adapts the useful
+`no-mistakes` pipeline idea to Garnet without adding a push proxy: the evidence
+travels with the PR and CI rejects readiness-sensitive PRs that omit it or make
+an unqualified production ARC completion claim.
+
 The CLI may not have org merge permissions. If `gh pr merge` returns a
 permission error, use the org-authorized browser/Desktop session. The browser
 path successfully merged PR `#67` when CLI merge was blocked.

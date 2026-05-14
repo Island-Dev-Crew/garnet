@@ -1,0 +1,39 @@
+# Garnet dogfood readiness evidence gate.
+#
+# Readiness-sensitive PRs must carry enough current-truth, local verification,
+# remote verification, Desktop bundle, and deferred-boundary evidence for a
+# reviewer or future agent to reproduce the merge decision.
+
+name: Dogfood readiness
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dogfood-readiness-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pr-evidence:
+    name: PR dogfood evidence
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - run: python3 scripts/test_check_dogfood_pr_body.py
+      - name: Validate readiness-sensitive PR body
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: python3 scripts/check_dogfood_pr_body.py --base "$BASE_SHA" --head "$HEAD_SHA"
