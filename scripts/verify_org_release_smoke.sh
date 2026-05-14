@@ -12,13 +12,25 @@ if [[ ! -x "$INSTALLER" && ! -f "$INSTALLER" ]]; then
   exit 2
 fi
 
-if ! command -v gh >/dev/null 2>&1; then
-  echo "gh CLI is required for release verification" >&2
-  exit 3
+echo "verifying organization release exists: ${REPO} ${TAG}"
+release_available=0
+if command -v gh >/dev/null 2>&1 && gh release view "${TAG}" --repo "${REPO}" >/dev/null 2>&1; then
+  release_available=1
+else
+  echo "gh CLI check unavailable or failed; checking public API directly"
+  status="$(curl -sS -o /tmp/garnet-release-check.json -w '%{http_code}' "https://api.github.com/repos/${REPO}/releases/tags/${TAG}" || true)"
+  if [ "${status}" != "200" ]; then
+    if [ "${status}" = "404" ]; then
+      echo "release ${TAG} is not available on ${REPO}" >&2
+      exit 10
+    fi
+    echo "release check failed (HTTP ${status}); could not verify availability" >&2
+    exit 12
+  fi
+  release_available=1
 fi
 
-echo "verifying organization release exists: ${REPO} ${TAG}"
-if ! gh release view "${TAG}" --repo "${REPO}" >/dev/null; then
+if [ "${release_available}" -ne 1 ]; then
   echo "release ${TAG} is not available on ${REPO}" >&2
   exit 10
 fi
