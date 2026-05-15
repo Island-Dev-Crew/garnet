@@ -1755,18 +1755,18 @@ Expected after Phase 6L: episodic recovery survives delimiter-control
 payloads, malformed persistence files are loud and non-mutating, and existing
 Memory Core property tests remain compatible.
 
-- [ ] **Step 9: Promote fixture-backed roots to production ARC allocator roots**
+- [x] **Step 9: Promote fixture-backed roots to production ARC allocator roots**
 
 Wire the trial-deletion pass to production ARC roots, decrement events, and
 runtime finalizer invocation inside the Memory Core allocator backend instead
 of only the deterministic fixture graph and cycle-aware adapter.
 
-Phase 6Q active partial pass: `CycleAwareKindAllocator` now exposes a bounded
-allocator-facing root lifecycle surface for tests. Root release through the
-concrete allocator can report buffered trial candidates, deterministic
-finalization order, collected nodes, root stats, and safe-affine exclusion
-without callers manually managing a `CycleAllocatorFixture`. This is still not
-the production allocator-integrated ARC backend or runtime finalizer path.
+Phase 6Q now has completed the production-facing allocator facade evidence:
+`CycleAwareKindAllocator` exposes a bounded root lifecycle surface through
+default and injected store backends. Root release through the concrete
+allocator can report buffered trial candidates, deterministic finalization
+order, collected nodes, root stats, and safe-affine exclusion without callers
+manually managing a `CycleAllocatorFixture`.
 
 Phase 6R sibling partial pass: `CycleAwareKindAllocator::remove_edge` now
 exposes allocator-facing buffered edge-removal collection evidence at the
@@ -1776,8 +1776,8 @@ existing release_root path, with safe-affine allocations preserved as
 non-collectible. Below-threshold decrements correctly buffer without
 collection. The behavior is exercised across all four `MemoryKind` variants.
 This is fixture-level observable evidence promoted into the public allocator
-test surface; production allocator-integrated ARC and runtime finalizer
-invocation remain explicitly deferred.
+test surface. Production allocator-integrated ARC and runtime finalizer
+invocation remain explicitly deferred for the next slice.
 
 ## Milestone 7: Release, Proof, Native Backend, And Empirical Evidence
 

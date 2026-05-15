@@ -14,7 +14,7 @@ publishing discipline.
 - Primary remote: `origin = https://github.com/Island-Dev-Crew/garnet.git`
 - Working fork: `fork = https://github.com/Navigata1/garnet.git`
 - Main baseline after the latest integration: `origin/main` at `43d98f2`
-- Integrated PRs through PR #72: Phase 4BC readiness slices, dogfood evidence gate, and status-skill process updates
+- Integrated PRs through PR #73: Phase 4BC readiness slices, dogfood evidence gate, and status-skill process updates
 - Open PRs after that merge: `#73` (ready-for-review, check-gate green, merge blocked by org permissions in this token)
 - Desktop evidence root: `/Users/idc2.0/Desktop/dogfood`
 
@@ -24,10 +24,10 @@ The merged train covers the cumulative readiness work through PR #72, including:
 - Phase 4BD–4BF allocator/ARC production-facing evidence, conformance gate,
   and dogfood evidence-gate process
 - Phase 4BG slice-status and dashboard/reporting updates
-- Ongoing readiness slices in Memory Core Step 9 and Milestone 7 release gates
+- Ongoing readiness slices in Milestone 7 release gates
 
-Current completion signal from `scripts/garnet_readiness_status.py`: `83/86` slices
-(`96.5%`) with 3 slices open.
+Current completion signal from `scripts/garnet_readiness_status.py`: `84/86` slices
+(`97.7%`) with 2 slices open.
 
 ## Canonical Project Files
 
@@ -218,12 +218,10 @@ security prose without a falsifiable check.
 
 ## Next Slice Candidates After PR #72
 
-Current concrete unchecked implementation row:
+Current concrete open implementation rows:
 
-- Memory Core Step 9: promote fixture-backed roots toward production ARC
-  allocator roots.
-- Current concrete open slices remain: Step 9, release publish, and networked
-  installer rerun.
+- Milestone 7 Step 1: publish the org release using an org-authorized browser or desktop session.
+- Milestone 7 Step 2: rerun networked installer smoke against the org release.
 
 Treat that as a test-first, bounded slice. A good first move is not "production
 ARC complete"; it is a falsifiable production-facing allocator interaction

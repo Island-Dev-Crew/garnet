@@ -7,9 +7,9 @@ what remains deferred. This skill fuses the PR #71 dogfood evidence gate with
 the useful No Mistakes pattern: work on a branch, verify locally, preserve
 evidence, then let remote CI confirm the merge decision before promotion.
 
-As of 2026-05-14 this run reports `83/86` slices complete (`96.5%`), with the
-same three open slices carried forward in `F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md`:
-1) Memory Core Step 9, 2) org release publish, 3) networked installer smoke.
+As of 2026-05-14 this run reports `84/86` slices complete (`97.7%`), with the
+same two open slices carried forward in `F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md`:
+1) Milestone 7 Step 1: org release publish, 2) Milestone 7 Step 2: networked installer smoke.
 
 ## When To Use
 
@@ -70,8 +70,8 @@ when a future dashboard or project tracker needs machine-readable progress.
 - `origin/main` at `43d98f2`
 - Open PRs in `Island-Dev-Crew/garnet` as of this run: `#73`
 - PR #73 is open but marked ready for review; all merge checks are green.
-- Completion: `83/86` slices (`96.5`%), with three open slices listed under
-  `Milestone 6 Step 9`, `Milestone 7 Step 1`, and `Milestone 7 Step 2`.
+- Completion: `84/86` slices (`97.7`%), with two open slices listed under
+  `Milestone 7 Step 1` and `Milestone 7 Step 2`.
 
 ## Evidence Gate
 
