@@ -2603,6 +2603,99 @@ fn false_nil_const_inequality_is_unreachable_and_not_coverage() {
 }
 
 #[test]
+fn nil_const_relational_counts_as_safe_match_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const EMPTY = nil
+        }
+
+        module Flags {
+            const ALWAYS = Core::EMPTY <= nil
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        !has_safe_violation(&errs, "non-exhaustive match")
+            && !has_safe_violation(&errs, "unreachable match arm"),
+        "true nil const relational guards should count as coverage, got {errs:?}"
+    );
+}
+
+#[test]
+fn false_nil_const_relational_is_unreachable_and_not_coverage() {
+    let errs = check(
+        r#"
+        module Core {
+            const EMPTY = nil
+        }
+
+        module Flags {
+            const NEVER = Core::EMPTY < nil
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::NEVER => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "statically false guard")
+            && has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready"),
+        "false nil const relational guards should be unreachable and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
+fn mixed_nil_int_relational_guard_stays_unknown_and_non_covering() {
+    let errs = check(
+        r#"
+        module Core {
+            const EMPTY = nil
+            const ZERO = 0
+        }
+
+        module Flags {
+            const ALWAYS = Core::EMPTY < Core::ZERO
+        }
+
+        enum Status { Ready, Done }
+
+        fn status_code(status: Status) -> Int {
+            match status {
+                Status::Ready if Flags::ALWAYS => 1
+                Status::Done => 2
+            }
+        }
+        "#,
+    );
+
+    assert!(
+        has_safe_violation(&errs, "non-exhaustive match")
+            && has_safe_violation(&errs, "Status::Ready")
+            && !has_safe_violation(&errs, "statically false guard"),
+        "mixed nil/int relational guards should stay unknown and non-covering, got {errs:?}"
+    );
+}
+
+#[test]
 fn mixed_literal_const_inequality_counts_as_safe_match_coverage() {
     let errs = check(
         r#"
