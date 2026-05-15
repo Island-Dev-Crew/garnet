@@ -111,6 +111,45 @@ curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh \
   | GARNET_INSTALL_MODE=release sh
 ```
 
+## Org-Blocked Continuation Path (what to do while waiting for org write access)
+
+If this machine/account only has read permission on `Island-Dev-Crew/garnet`,
+you can still complete the release-readiness lane preparation:
+
+1. Confirm the fork has the expected tag and assets:
+
+   ```sh
+   gh api repos/Navigata1/garnet/releases --jq '.[0].tag_name, .[0].assets[].name'
+   ```
+
+2. Confirm the org release is absent (expected for this lane):
+
+   ```sh
+   gh api repos/Island-Dev-Crew/garnet/releases/tags/v0.4.2 --jq '.tag_name' || true
+   ```
+
+3. When an org maintainer signs in, use this exact sequence:
+
+   ```sh
+   gh release create v0.4.2 \
+     --repo Island-Dev-Crew/garnet \
+     --target main \
+     --title "Release Garnet v0.4.2" \
+     --notes "Promotes v0.4.2 readiness artifacts for org release consumption." \
+     https://github.com/Navigata1/garnet/releases/download/v0.4.2/garnet-0.4.2-1.x86_64.rpm \
+     https://github.com/Navigata1/garnet/releases/download/v0.4.2/garnet_0.4.2-1_amd64.deb \
+     https://github.com/Navigata1/garnet/releases/download/v0.4.2/SHA256SUMS \
+     https://github.com/Navigata1/garnet/releases/download/v0.4.2/garnet-0.4.2-aarch64-apple-darwin.tar.gz
+   ```
+
+4. Re-run the existing smoke:
+
+   ```sh
+   ./scripts/verify_org_release_smoke.sh
+   ```
+
+   The success condition is `garnet 0.4.2` after `GARNET_INSTALL_MODE=release`.
+
 ## Credential-Gated Assets
 
 The following are still credential or platform gated:
