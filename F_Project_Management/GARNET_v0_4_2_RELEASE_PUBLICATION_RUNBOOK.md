@@ -85,6 +85,10 @@ GARNET_INSTALL_MODE=release GARNET_VERSION=v0.4.2 sh installer/sh.garnet-lang.or
 ```
 
 If either check fails, the script exits non-zero and marks the smoke as not release-backed.
+The installer prefers native packages, but when no explicit `GARNET_FORMAT` is
+set it may fall back to the release tarball before source fallback. This keeps
+the org release smoke usable while macOS `.pkg` signing/notarization remains a
+separate credential-gated step.
 
 ## Official Publication Steps
 
@@ -149,6 +153,9 @@ you can still complete the release-readiness lane preparation:
    ```
 
    The success condition is `garnet 0.4.2` after `GARNET_INSTALL_MODE=release`.
+   On macOS before signed `.pkg` publication, the installer should prove the
+   release path through the uploaded `aarch64-apple-darwin` tarball rather than
+   falling back to source.
 
 ## Credential-Gated Assets
 

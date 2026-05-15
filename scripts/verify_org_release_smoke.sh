@@ -36,13 +36,31 @@ if [ "${release_available}" -ne 1 ]; then
 fi
 
 echo "running network-backed installer smoke in release-only mode"
-GARNET_INSTALL_MODE=release GARNET_VERSION="${VERSION}" sh "${INSTALLER}"
+SMOKE_PREFIX="${GARNET_PREFIX:-$(mktemp -d "${TMPDIR:-/tmp}/garnet-release-smoke.XXXXXX")}"
+CHECKSUM_URL="${GARNET_CHECKSUM_URL:-https://github.com/${REPO}/releases/download/${TAG}/SHA256SUMS?garnet_smoke=$(date +%s)}"
+GARNET_CHECKSUM_URL="${CHECKSUM_URL}" GARNET_REPO="${REPO}" GARNET_PREFIX="${SMOKE_PREFIX}" GARNET_INSTALL_MODE=release GARNET_VERSION="${VERSION}" sh "${INSTALLER}"
 
 expected_version="garnet ${SEMVER}"
 echo "verifying launcher is release-backed (${expected_version})"
-if ! garnet --version | grep -q "${expected_version}"; then
-  echo "unexpected garnet version after installer smoke" >&2
+if [ -x "${SMOKE_PREFIX}/bin/garnet" ]; then
+  "${SMOKE_PREFIX}/bin/garnet" --version | grep -q "${expected_version}" || {
+    echo "unexpected garnet version after installer smoke" >&2
+    exit 11
+  }
+elif command -v garnet >/dev/null 2>&1; then
+  garnet --version | grep -q "${expected_version}" || {
+    echo "unexpected garnet version after installer smoke" >&2
+    exit 11
+  }
+else
+  echo "garnet launcher not found after installer smoke" >&2
   exit 11
+fi
+
+if [ -n "${GARNET_PREFIX:-}" ]; then
+  :
+else
+  rm -rf "${SMOKE_PREFIX}"
 fi
 
 echo "release smoke PASSED"
