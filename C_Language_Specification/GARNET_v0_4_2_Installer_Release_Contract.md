@@ -1,11 +1,12 @@
 # Garnet v0.4.2 Installer and Release Contract
 
-**Status:** release-ready scaffolding; no public `v0.4.2` GitHub Release assets
-exist yet.
+**Status:** org `v0.4.2` GitHub Release published; release-backed installer
+smoke passed with the macOS tarball fallback.
 
 This document is the truth-first contract for the v0.4.2 installer path. It
-describes what the checked-in repository supports today and what must exist
-online before the one-line installer can complete end to end.
+describes what the checked-in repository supports today, what is live in the
+org release, and which signed/native distribution surfaces remain
+credential-gated.
 
 ## Goal
 
@@ -58,9 +59,11 @@ Expected v0.4.2 assets:
 | Tar fallback | `garnet-0.4.2-<triple>.tar.gz` |
 | Checksums | `SHA256SUMS` |
 
-Linux `.deb` and `.rpm` assets are produced by GitHub Actions on `v*` tags.
-macOS and Windows assets are currently credential-gated and must be attached
-manually or by future signing-aware workflows.
+The org `v0.4.2` release currently publishes the Linux `.deb`, Linux `.rpm`,
+macOS `aarch64-apple-darwin` tarball fallback, and `SHA256SUMS` assets.
+macOS `.pkg` and Windows `.msi` assets are still credential-gated and must be
+attached manually or by future signing-aware workflows before claiming native
+signed installer coverage on those platforms.
 
 ## C. Integrity Spec
 
@@ -109,7 +112,21 @@ Manual/credential-gated release path:
 
 ## Current Live State
 
-As of this refactor, the public repository exists, but no GitHub Release assets
-are published. `https://garnet-lang.org/install.sh` will 404 until `docs/install.sh`
-is committed and GitHub Pages redeploys. The script is therefore ready for the
-release backend, but the online release is not live yet.
+As of 2026-05-15, the public org release exists at
+`https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.4.2`, points at
+merge commit `6e945d6a151c2b97ae842c21aeeaa5a678ae65f5`, and contains:
+
+- `garnet_0.4.2-1_amd64.deb`
+- `garnet-0.4.2-1.x86_64.rpm`
+- `garnet-0.4.2-aarch64-apple-darwin.tar.gz`
+- `SHA256SUMS`
+
+`./scripts/verify_org_release_smoke.sh` passed against `Island-Dev-Crew/garnet`
+by downloading the org release checksums, falling back from the unavailable
+signed macOS `.pkg` to the published macOS tarball, verifying SHA-256,
+installing into a temporary prefix, and running `garnet --version`.
+
+The repository copy `docs/install.sh` is present and synchronized with
+`installer/sh.garnet-lang.org/install.sh`. A live public-domain smoke for
+`https://garnet-lang.org/install.sh` remains a separate DNS/GitHub Pages check
+unless that domain is verified during the release pass.

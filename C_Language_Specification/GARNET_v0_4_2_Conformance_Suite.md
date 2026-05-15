@@ -18,6 +18,7 @@ language-completeness work can move from prose to executable evidence.
 | §4 memory declarations | v0.4.2 baseline | Conformance Gate | `implemented_memory_declaration_parses` | active pass |
 | §8 CapCaps authority checking | v0.4.2 baseline | Security Gate | `implemented_capcaps_rejects_missing_fs_authority` | active pass |
 | §16 deterministic manifest tooling | v0.4.2 baseline | Release Gate | `implemented_reproducible_manifest_smoke_builds` | active pass |
+| §16.5 org release installer | v0.4.2 release | Release Gate | `scripts/verify_org_release_smoke.sh` | active pass against `Island-Dev-Crew/garnet` release `v0.4.2`, with SHA-256 verification and macOS tarball fallback; signed `.pkg`/MSI remain deferred |
 | §9.4 actor Sendable boundary | v0.5 Phase 3A | Security Gate | `actor_sendable_rejects_nonsendable_protocol_payloads` | active pass |
 | §9.1 actor source-to-runtime bridge | v0.5 Phase 3B | Runtime Gate | `multi_agent_builder_runs_with_managed_actor_bridge`; `c5_actor_handler_dispatches_via_spawn_bridge` | active pass |
 | §9.1/§9.2 managed actor address + bounded mailbox | v0.5 Phase 3C | Runtime Gate | `parses_spawn_keyword_as_member_method_name`; `c5_spawn_actor_returns_address_with_persistent_state`; `c5_actor_address_enforces_bounded_mailbox`; `c5_actor_address_tell_reports_full_mailbox`; `c5_actor_spawn_rejects_extra_capacity_args` | active pass |
