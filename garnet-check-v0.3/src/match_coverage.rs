@@ -108,6 +108,11 @@ impl ConstFact {
             (ConstFact::Int(lhs), ConstFact::Float(rhs)) => (lhs as f64).partial_cmp(&rhs),
             (ConstFact::Float(lhs), ConstFact::Int(rhs)) => lhs.partial_cmp(&(rhs as f64)),
             (ConstFact::Str(lhs), ConstFact::Str(rhs)) => Some(lhs.cmp(&rhs)),
+            // Runtime aligns `nil <=> nil` to Equal (Value::partial_compare),
+            // so `nil <= nil` / `nil >= nil` hold and `nil < nil` / `nil > nil`
+            // do not. Mixed nil/other relational stays unknown because the
+            // runtime raises a type error on those pairs.
+            (ConstFact::Nil, ConstFact::Nil) => Some(std::cmp::Ordering::Equal),
             _ => None,
         }?;
 

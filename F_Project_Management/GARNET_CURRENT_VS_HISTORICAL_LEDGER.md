@@ -153,7 +153,9 @@ When documents conflict, use this order:
   runtime-aligned static string relational guard facts while keeping mixed-kind
   relational facts unknown. Phase 4BC folds runtime-aligned static boolean
   relational guard facts while keeping nil/symbol and mixed-kind relational
-  facts unknown.
+  facts unknown. Phase 4BI folds runtime-aligned static nil/nil relational
+  guard facts (`nil <=> nil = Equal`) while keeping symbol and mixed-kind
+  (nil/other) relational facts unknown because the runtime raises on them.
   Full
   Rust-grade CFG NLL, nested/non-local terminators, general loop fixed-point
   analysis, loop fixed-point domain inference, broader mutable/escaped/general higher-order closure invocation/call-effect analysis, cross-file/package

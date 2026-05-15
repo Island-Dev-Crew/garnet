@@ -261,6 +261,11 @@ Phase 4BC folds runtime-aligned static boolean relational guard facts, so
 `Core::RAW < true` follows the managed runtime's `false < true` ordering while
 false boolean relational comparisons become statically false/non-covering and
 mixed boolean/nil relational comparisons stay unknown.
+Phase 4BI folds runtime-aligned static `nil` relational guard facts, so
+`Core::EMPTY <= nil` follows the managed runtime's `nil <=> nil = Equal`
+ordering and counts as coverage while `Core::EMPTY < nil` is statically
+false/non-covering and mixed nil/integer (and other non-runtime-comparable)
+relational facts stay unknown because the runtime raises on them.
 Escaped and general higher-order closure call effects plus
 broader mutable closure flow remain deferred. Full CFG NLL region solving, loop
 fixed-point domain inference, broader mutable/escaped/general higher-order closure invocation/call-effect analysis,
