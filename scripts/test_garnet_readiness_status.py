@@ -56,6 +56,14 @@ class GarnetReadinessStatusTests(unittest.TestCase):
                     section="Milestone 1",
                 )
             ],
+            section_summaries=[
+                status_mod.SectionSummary(
+                    section="Milestone 1",
+                    total_slices=2,
+                    completed_slices=1,
+                    completion_percent=50.0,
+                )
+            ],
         )
 
         rendered = status_mod.render_markdown(result)

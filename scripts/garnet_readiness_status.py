@@ -26,6 +26,16 @@ class SliceStatus:
 
 
 @dataclass(frozen=True)
+class SectionSummary:
+    """Completion statistics for one checklist section."""
+
+    section: str
+    total_slices: int
+    completed_slices: int
+    completion_percent: float
+
+
+@dataclass(frozen=True)
 class ReadinessStatus:
     """Aggregate readiness status suitable for PR bodies and dogfood bundles."""
 
@@ -34,6 +44,7 @@ class ReadinessStatus:
     completed_slices: int
     completion_percent: float
     open_slices: list[SliceStatus]
+    section_summaries: list[SectionSummary]
 
 
 def _section_for(text: str, offset: int) -> str:
@@ -46,13 +57,31 @@ def _section_for(text: str, offset: int) -> str:
 def read_status(path: Path) -> ReadinessStatus:
     text = path.read_text(encoding="utf-8")
     slices: list[SliceStatus] = []
+    section_totals: dict[str, list[bool]] = {}
     for match in CHECKBOX_RE.finditer(text):
         mark = match.group("mark")
+        section = _section_for(text, match.start())
+        done = mark.lower() == "x"
         slices.append(
             SliceStatus(
                 title=match.group("title").strip(),
-                done=mark.lower() == "x",
-                section=_section_for(text, match.start()),
+                done=done,
+                section=section,
+            )
+        )
+        section_totals.setdefault(section, []).append(done)
+
+    section_summaries: list[SectionSummary] = []
+    for section, done_flags in section_totals.items():
+        total = len(done_flags)
+        completed = sum(1 for item in done_flags if item)
+        summary_pct = round((completed / total * 100.0) if total else 0.0, 1)
+        section_summaries.append(
+            SectionSummary(
+                section=section,
+                total_slices=total,
+                completed_slices=completed,
+                completion_percent=summary_pct,
             )
         )
 
@@ -65,6 +94,7 @@ def read_status(path: Path) -> ReadinessStatus:
         completed_slices=completed,
         completion_percent=percent,
         open_slices=[item for item in slices if not item.done],
+        section_summaries=section_summaries,
     )
 
 
@@ -87,6 +117,13 @@ def render_markdown(status: ReadinessStatus) -> str:
     else:
         for item in status.open_slices:
             lines.append(f"- `{item.section}` - {item.title}")
+
+    lines.extend(["", "## Section Completion"])
+    for section in status.section_summaries:
+        lines.append(
+            f"- {section.section}: {section.completed_slices}/{section.total_slices} "
+            f"({section.completion_percent:.1f}%)"
+        )
     return "\n".join(lines) + "\n"
 
 

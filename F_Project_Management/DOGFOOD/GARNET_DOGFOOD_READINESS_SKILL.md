@@ -7,6 +7,10 @@ what remains deferred. This skill fuses the PR #71 dogfood evidence gate with
 the useful No Mistakes pattern: work on a branch, verify locally, preserve
 evidence, then let remote CI confirm the merge decision before promotion.
 
+As of 2026-05-14 this run reports `84/86` slices complete (`97.7%`), with the
+same two open slices carried forward in `F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md`:
+1) Milestone 7 Step 1: org release publish, 2) Milestone 7 Step 2: networked installer smoke.
+
 ## When To Use
 
 Use this skill for any PR touching language readiness, Memory Core, parser,
@@ -32,6 +36,10 @@ Use the output to decide whether the next action is implementation, cleanup,
 or process hardening. Historical handoffs are useful context, but live git
 state and tracked docs win.
 
+The dogfood gate is intentionally "no-mistakes"-style: it requires explicit local
+verification, explicit remote checks, and no unqualified production ARC completion
+claims in readiness-sensitive PRs before merge review.
+
 ## Slice Completion Signal
 
 The canonical sliced implementation plan is:
@@ -47,8 +55,23 @@ python3 scripts/garnet_readiness_status.py --format markdown
 python3 scripts/garnet_readiness_status.py --format json
 ```
 
+If you want a quick milestone completion view, reuse the markdown output and read
+the `## Section Completion` block (added by this skill):
+
+```sh
+python3 scripts/garnet_readiness_status.py | sed -n '/## Section Completion/,$p'
+```
+
 Include the markdown output in Desktop dogfood bundles and use the JSON output
 when a future dashboard or project tracker needs machine-readable progress.
+
+### Live run snapshot
+
+- `origin/main` at `43d98f2`
+- Open PRs in `Island-Dev-Crew/garnet` as of this run: `#73`
+- PR #73 is open but marked ready for review; all merge checks are green.
+- Completion: `84/86` slices (`97.7`%), with two open slices listed under
+  `Milestone 7 Step 1` and `Milestone 7 Step 2`.
 
 ## Evidence Gate
 

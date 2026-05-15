@@ -132,6 +132,28 @@ fn cycle_aware_allocators_record_store_roots_for_each_memory_kind() {
 }
 
 #[test]
+fn default_stores_route_roots_to_cycle_aware_allocator_backend() {
+    let working: WorkingStore<i32> = WorkingStore::new();
+    let episodic: EpisodeStore<i32> = EpisodeStore::new();
+    let semantic: VectorIndex<i32> = VectorIndex::new();
+    let procedural: WorkflowStore<i32> = WorkflowStore::new();
+
+    working.push(1);
+    episodic.append(2);
+    semantic.insert(vec![1.0, 0.0], 3);
+    procedural.register("wf", 4);
+
+    assert_eq!(working.allocator_root_stats().roots_created, 1);
+    assert_eq!(working.allocator_root_stats().active_roots, 1);
+    assert_eq!(episodic.allocator_root_stats().roots_created, 1);
+    assert_eq!(episodic.allocator_root_stats().active_roots, 1);
+    assert_eq!(semantic.allocator_root_stats().roots_created, 1);
+    assert_eq!(semantic.allocator_root_stats().active_roots, 1);
+    assert_eq!(procedural.allocator_root_stats().roots_created, 1);
+    assert_eq!(procedural.allocator_root_stats().active_roots, 1);
+}
+
+#[test]
 fn working_store_clear_releases_cycle_aware_roots() {
     let alloc = CycleAwareKindAllocator::shared(MemoryKind::Working, 8);
     let s = WorkingStore::with_allocator(alloc);
@@ -180,6 +202,106 @@ fn cycle_aware_allocator_surface_reports_root_finalization_without_collecting_sa
 }
 
 #[test]
+fn cycle_aware_kind_allocator_trait_surface_reports_finalizers_on_release_root() {
+    let concrete = CycleAwareKindAllocator::new(MemoryKind::Working, 1);
+    let alloc: &dyn KindAllocator = &concrete;
+
+    let root = concrete.retain_root("root").unwrap();
+    let child = concrete.allocate_arc("child");
+
+    concrete
+        .add_edge(root, child)
+        .expect("root should link child");
+    concrete
+        .add_edge(child, root)
+        .expect("child should link back to root");
+
+    let mut finalized = Vec::new();
+    let report = alloc
+        .release_root_with_finalizer(root, &mut |id| finalized.push(id))
+        .expect("release should trigger collection");
+
+    assert_eq!(finalized, report.finalization_order);
+    assert_eq!(finalized.len(), 2);
+    assert_eq!(concrete.root_stats().collected_roots, 2);
+}
+
+#[test]
+fn cycle_aware_kind_allocator_trait_surface_reports_finalizers_on_remove_edge() {
+    let concrete = CycleAwareKindAllocator::new(MemoryKind::Working, 1);
+    let alloc: &dyn KindAllocator = &concrete;
+
+    let root = concrete
+        .retain_root("root")
+        .expect("root should be retained");
+    let cycle_a = concrete.allocate_arc("cycle_a");
+    let cycle_b = concrete.allocate_arc("cycle_b");
+
+    concrete
+        .add_edge(root, cycle_a)
+        .expect("root should link to cycle_a");
+    concrete
+        .add_edge(cycle_a, cycle_b)
+        .expect("cycle_a should link to cycle_b");
+    concrete
+        .add_edge(cycle_b, cycle_a)
+        .expect("cycle_b should link to cycle_a");
+    concrete
+        .add_edge(cycle_b, root)
+        .expect("cycle_b should link back to root");
+
+    let mut finalized = Vec::new();
+    let report = alloc
+        .remove_edge_with_finalizer(root, cycle_a, &mut |id| finalized.push(id))
+        .expect("edge decrement should trigger collection");
+
+    assert_eq!(finalized, report.finalization_order);
+    assert_eq!(finalized.len(), 2);
+    assert!(!concrete.contains(cycle_a));
+    assert!(!concrete.contains(cycle_b));
+    assert!(concrete.contains(root));
+}
+
+#[test]
+fn cycle_aware_kind_allocator_trait_surface_flushes_buffered_roots_with_callbacks() {
+    let concrete = CycleAwareKindAllocator::new(MemoryKind::Working, 4);
+    let alloc: &dyn KindAllocator = &concrete;
+
+    let root = concrete
+        .retain_root("root")
+        .expect("root should be retained for buffering test");
+    let cycle_a = concrete.allocate_arc("cycle_a");
+    let cycle_b = concrete.allocate_arc("cycle_b");
+
+    concrete
+        .add_edge(root, cycle_a)
+        .expect("root should link to cycle_a");
+    concrete
+        .add_edge(cycle_a, cycle_b)
+        .expect("cycle_a should link to cycle_b");
+    concrete
+        .add_edge(cycle_b, cycle_a)
+        .expect("cycle_b should link to cycle_a");
+    concrete
+        .add_edge(cycle_b, root)
+        .expect("cycle_b should link back to root");
+
+    assert!(alloc.release_root(root).is_none());
+    assert_eq!(concrete.buffered_roots(), vec![root]);
+
+    let mut finalized = Vec::new();
+    let report = alloc
+        .collect_roots_with_finalizer(&mut |id| finalized.push(id))
+        .expect("collect_roots should drain buffered candidate");
+
+    assert_eq!(finalized, report.finalization_order);
+    assert_eq!(concrete.buffered_roots().as_slice(), []);
+    assert!(!concrete.contains(cycle_a));
+    assert!(!concrete.contains(cycle_b));
+    assert!(!concrete.contains(root));
+}
+
+#[test]
 fn episodic_policy_eviction_releases_cycle_aware_roots() {
     let mut policy = MemoryPolicy::default_for(MemoryKind::Episodic);
     policy.compaction_high_water = 2;
@@ -202,6 +324,7 @@ fn episodic_policy_eviction_releases_cycle_aware_roots() {
     assert_eq!(values, vec![3, 4]);
     assert_eq!(stats.active_roots, 2);
     assert_eq!(stats.roots_released, 3);
+    assert_eq!(stats.buffered_roots, 0);
 }
 
 #[test]
@@ -227,6 +350,7 @@ fn semantic_policy_eviction_releases_cycle_aware_roots() {
     assert_eq!(values, vec!["x"]);
     assert_eq!(stats.active_roots, 1);
     assert_eq!(stats.roots_released, 2);
+    assert_eq!(stats.buffered_roots, 0);
 }
 
 #[test]
@@ -241,6 +365,7 @@ fn procedural_register_replacement_releases_previous_cycle_aware_root() {
     assert_eq!(stats.roots_created, 2);
     assert_eq!(stats.active_roots, 1);
     assert_eq!(stats.roots_released, 1);
+    assert_eq!(stats.buffered_roots, 0);
 }
 
 #[test]
@@ -271,6 +396,85 @@ fn dropping_stores_releases_cycle_aware_roots() {
     assert_eq!(episodic_alloc.root_stats().roots_released, 1);
     assert_eq!(semantic_alloc.root_stats().roots_released, 1);
     assert_eq!(procedural_alloc.root_stats().roots_released, 1);
+    assert_eq!(working_alloc.root_stats().buffered_roots, 0);
+    assert_eq!(episodic_alloc.root_stats().buffered_roots, 0);
+    assert_eq!(semantic_alloc.root_stats().buffered_roots, 0);
+    assert_eq!(procedural_alloc.root_stats().buffered_roots, 0);
+}
+
+#[test]
+fn cycle_aware_allocator_boundary_methods_flush_all_store_root_buffers() {
+    let mut episodic_policy = MemoryPolicy::default_for(MemoryKind::Episodic);
+    episodic_policy.compaction_high_water = 1;
+    episodic_policy.retention_threshold = 0.0;
+    let mut semantic_policy = MemoryPolicy::default_for(MemoryKind::Semantic);
+    semantic_policy.compaction_high_water = 1;
+    semantic_policy.retention_threshold = 0.0;
+
+    let working_alloc = CycleAwareKindAllocator::shared(MemoryKind::Working, 8);
+    let episodic_alloc = CycleAwareKindAllocator::shared(MemoryKind::Episodic, 8);
+    let semantic_alloc = CycleAwareKindAllocator::shared(MemoryKind::Semantic, 8);
+    let procedural_alloc = CycleAwareKindAllocator::shared(MemoryKind::Procedural, 8);
+
+    let working: WorkingStore<i32> = WorkingStore::with_allocator(working_alloc.clone());
+    let episodic: EpisodeStore<i32> =
+        EpisodeStore::with_policy_and_allocator(episodic_policy, episodic_alloc.clone());
+    let semantic: VectorIndex<i32> =
+        VectorIndex::with_policy_and_allocator(semantic_policy, semantic_alloc.clone());
+    let procedural: WorkflowStore<i32> = WorkflowStore::with_allocator(procedural_alloc.clone());
+
+    working.push(1);
+    working.push(2);
+    episodic.append(10);
+    episodic.append(20);
+    episodic.append(30);
+    episodic.append(40);
+    semantic.insert(vec![1.0, 0.0], 1);
+    semantic.insert(vec![0.0, 1.0], 2);
+    semantic.insert(vec![0.5, 0.5], 3);
+    procedural.register("workflow", 1);
+    procedural.register("workflow", 2);
+
+    let _ = episodic.recent(1);
+    let _ = semantic.search(&[1.0, 0.0], 1);
+
+    working.clear();
+    procedural.find("workflow");
+
+    {
+        let working_stats = working.allocator_root_stats();
+        assert_eq!(working_stats.active_roots, 0);
+        assert_eq!(working_stats.buffered_roots, 0);
+        assert_eq!(working_stats.roots_released, 2);
+    }
+    {
+        let episodic_stats = episodic.allocator_root_stats();
+        assert_eq!(episodic_stats.active_roots, 1);
+        assert_eq!(episodic_stats.buffered_roots, 0);
+        assert_eq!(episodic_stats.roots_released, 3);
+    }
+    {
+        let semantic_stats = semantic.allocator_root_stats();
+        assert_eq!(semantic_stats.active_roots, 1);
+        assert_eq!(semantic_stats.buffered_roots, 0);
+        assert_eq!(semantic_stats.roots_released, 2);
+    }
+    {
+        let procedural_stats = procedural.allocator_root_stats();
+        assert_eq!(procedural_stats.active_roots, 1);
+        assert_eq!(procedural_stats.buffered_roots, 0);
+        assert_eq!(procedural_stats.roots_released, 1);
+    }
+
+    drop(working);
+    drop(episodic);
+    drop(semantic);
+    drop(procedural);
+
+    assert_eq!(working_alloc.root_stats().active_roots, 0);
+    assert_eq!(episodic_alloc.root_stats().active_roots, 0);
+    assert_eq!(semantic_alloc.root_stats().active_roots, 0);
+    assert_eq!(procedural_alloc.root_stats().active_roots, 0);
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -704,4 +908,62 @@ fn cycle_aware_allocator_edge_removal_collection_is_deterministic_across_kinds()
             kind
         );
     }
+}
+
+#[test]
+fn cycle_aware_allocator_collect_roots_drains_buffered_candidates() {
+    let allocator = CycleAwareKindAllocator::new(MemoryKind::Working, 4);
+    let root = allocator
+        .retain_root("root")
+        .expect("retain_root should allocate a managed root");
+    let cycle_a = allocator.allocate_arc("cycle_a");
+    let cycle_b = allocator.allocate_arc("cycle_b");
+    let safe = allocator.allocate_safe("safe_affine");
+
+    allocator
+        .add_edge(root, cycle_a)
+        .expect("add_edge should link root -> cycle_a");
+    allocator
+        .add_edge(cycle_a, cycle_b)
+        .expect("add_edge should link cycle_a -> cycle_b");
+    allocator
+        .add_edge(cycle_b, cycle_a)
+        .expect("add_edge should close the cycle");
+    allocator
+        .add_edge(cycle_b, root)
+        .expect("add_edge should keep root in the cycle");
+    allocator
+        .add_edge(safe, safe)
+        .expect("safe-affine self-edge should be tracked");
+
+    assert_eq!(allocator.release_root(root), None);
+
+    let buffered = allocator.buffered_roots();
+    assert_eq!(buffered, vec![root]);
+
+    let collect_report = allocator
+        .collect_roots()
+        .expect("collect_roots should drain buffered candidates");
+
+    assert_eq!(collect_report.trial_candidates, vec![root]);
+    assert_eq!(
+        collect_report.finalization_order,
+        vec![cycle_b, cycle_a, root]
+    );
+    assert_eq!(collect_report.collected, vec![root, cycle_a, cycle_b]);
+
+    assert!(allocator.buffered_roots().is_empty());
+    assert!(!allocator.contains(cycle_a));
+    assert!(!allocator.contains(cycle_b));
+    assert!(!allocator.contains(root));
+    assert!(allocator.contains(safe));
+    assert_eq!(
+        allocator.allocation_mode(safe),
+        Some(CycleAllocationMode::SafeAffine)
+    );
+
+    let stats = allocator.root_stats();
+    assert_eq!(stats.buffered_roots, 0);
+    assert_eq!(stats.collected_roots, 3);
+    assert_eq!(stats.active_roots, 0);
 }

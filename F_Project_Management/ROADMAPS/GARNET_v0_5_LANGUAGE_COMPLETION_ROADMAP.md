@@ -1365,14 +1365,14 @@ project root before replacing the live store. This is same-machine replay
 hardening for the typed Mnemos backend; a cryptographic MAC and trusted
 compiler-advice contract remain future work.
 
-- [ ] **Step 9: Promote root-buffer/finalizer/safe-mode interaction into production allocator tests**
+- [x] **Step 9: Promote root-buffer/finalizer/safe-mode interaction into production allocator tests**
 
-Phase 6Q active partial pass: `CycleAwareKindAllocator` now exposes a bounded
-allocator-facing root lifecycle surface. Tests can drive allocator-owned ARC
+Phase 6Q now has completed the production-facing allocator facade pass: `CycleAwareKindAllocator`
+exposes a bounded root lifecycle surface. Tests can drive allocator-owned ARC
 root release, observe buffered collection candidates and deterministic
 finalization order, and verify that safe-mode affine allocations stay outside
-ARC collection through the allocator-facing API. Production
-allocator-integrated ARC and runtime finalizer invocation remain pending.
+ARC collection through the allocator-facing API. Production allocator-integrated
+ARC and runtime finalizer invocation remain pending.
 
 Phase 6R sibling partial pass: the allocator-facing buffered edge-removal
 collection path is now exercised through `CycleAwareKindAllocator::remove_edge`

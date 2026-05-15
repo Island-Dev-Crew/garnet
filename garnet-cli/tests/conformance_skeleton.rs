@@ -285,6 +285,81 @@ fn deferred_arc_cycle_detection() {
 }
 
 #[test]
+fn deferred_arc_cycle_detection_allocator_edge_decrement_collects_cycles() {
+    let allocator = CycleAwareKindAllocator::new(MemoryKind::Working, 1);
+    let allocator_root = allocator.retain_root("allocator_root").unwrap();
+    let cycle_a = allocator.allocate_arc("allocator_cycle_a");
+    let cycle_b = allocator.allocate_arc("allocator_cycle_b");
+    let allocator_safe = allocator.allocate_safe("allocator_safe");
+
+    allocator.add_edge(allocator_root, cycle_a).unwrap();
+    allocator.add_edge(cycle_a, cycle_b).unwrap();
+    allocator.add_edge(cycle_b, cycle_a).unwrap();
+    allocator.add_edge(allocator_safe, allocator_safe).unwrap();
+
+    let report = allocator
+        .remove_edge(allocator_root, cycle_a)
+        .unwrap()
+        .expect("allocator-facing edge decrement should drive buffered collection at threshold 1");
+
+    assert_eq!(report.trial_candidates, vec![cycle_a]);
+    assert_eq!(report.finalization_order, vec![cycle_b, cycle_a]);
+    assert_eq!(report.collected, vec![cycle_a, cycle_b]);
+    assert_eq!(allocator.buffered_roots(), vec![]);
+    assert_eq!(allocator.root_stats().collected_roots, 2);
+    assert_eq!(allocator.root_stats().buffered_roots, 0);
+    assert_eq!(allocator.root_stats().active_roots, 1);
+    assert!(!allocator.contains(cycle_a));
+    assert!(!allocator.contains(cycle_b));
+    assert!(allocator.contains(allocator_safe));
+    assert_eq!(
+        allocator.allocation_mode(allocator_safe),
+        Some(CycleAllocationMode::SafeAffine)
+    );
+}
+
+#[test]
+fn deferred_arc_cycle_detection_allocator_finalizer_collects_buffered_roots() {
+    let allocator = CycleAwareKindAllocator::new(MemoryKind::Working, 4);
+    let allocator_root = allocator.retain_root("allocator_root").unwrap();
+    let cycle_a = allocator.allocate_arc("allocator_cycle_a");
+    let cycle_b = allocator.allocate_arc("allocator_cycle_b");
+    let allocator_safe = allocator.allocate_safe("allocator_safe");
+
+    allocator.add_edge(allocator_root, cycle_a).unwrap();
+    allocator.add_edge(cycle_a, cycle_b).unwrap();
+    allocator.add_edge(cycle_b, cycle_a).unwrap();
+    allocator.add_edge(cycle_b, allocator_root).unwrap();
+    allocator.add_edge(allocator_safe, allocator_safe).unwrap();
+
+    assert!(allocator.release_root(allocator_root).is_none());
+
+    assert_eq!(allocator.buffered_roots(), vec![allocator_root]);
+    assert_eq!(allocator.root_stats().collected_roots, 0);
+
+    let report = allocator
+        .collect_roots()
+        .expect("allocator-facing finalizer should collect buffered candidates");
+    assert_eq!(report.trial_candidates, vec![allocator_root]);
+    assert_eq!(
+        report.finalization_order,
+        vec![cycle_b, cycle_a, allocator_root]
+    );
+    assert_eq!(report.collected, vec![allocator_root, cycle_a, cycle_b]);
+    assert!(allocator.buffered_roots().is_empty());
+    assert_eq!(allocator.root_stats().collected_roots, 3);
+    assert_eq!(allocator.root_stats().active_roots, 0);
+    assert!(!allocator.contains(allocator_root));
+    assert!(!allocator.contains(cycle_a));
+    assert!(!allocator.contains(cycle_b));
+    assert!(allocator.contains(allocator_safe));
+    assert_eq!(
+        allocator.allocation_mode(allocator_safe),
+        Some(CycleAllocationMode::SafeAffine)
+    );
+}
+
+#[test]
 fn deferred_blocks_and_yield() {
     let src = r#"
 @caps()

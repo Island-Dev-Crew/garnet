@@ -92,6 +92,61 @@ pub trait KindAllocator: Send + Sync {
         None
     }
 
+    /// Run any pending allocator-owned cycle-collection work.
+    ///
+    /// Production allocator-integrated ARC collectors will call this as a
+    /// deferred finalization boundary; this reference implementation exposes it
+    /// to keep the API surface explicit even while the final runtime path is
+    /// still deferred.
+    fn collect_roots(&self) -> Option<CycleCollectReport> {
+        None
+    }
+
+    fn remove_edge(
+        &self,
+        _from: CycleNodeId,
+        _to: CycleNodeId,
+    ) -> Result<Option<CycleCollectReport>, CycleGraphError> {
+        let _ = (_from, _to);
+        Ok(None)
+    }
+
+    fn collect_roots_with_finalizer(
+        &self,
+        finalize: &mut dyn FnMut(CycleNodeId),
+    ) -> Option<CycleCollectReport> {
+        let report = self.collect_roots()?;
+        for id in report.finalization_order.iter().copied() {
+            finalize(id);
+        }
+        Some(report)
+    }
+
+    fn release_root_with_finalizer(
+        &self,
+        root: CycleNodeId,
+        finalize: &mut dyn FnMut(CycleNodeId),
+    ) -> Option<CycleCollectReport> {
+        let report = self.release_root(root)?;
+        for id in report.finalization_order.iter().copied() {
+            finalize(id);
+        }
+        Some(report)
+    }
+
+    fn remove_edge_with_finalizer(
+        &self,
+        _from: CycleNodeId,
+        _to: CycleNodeId,
+        _finalize: &mut dyn FnMut(CycleNodeId),
+    ) -> Option<CycleCollectReport> {
+        let report = self.remove_edge(_from, _to).ok()??;
+        for id in report.finalization_order.iter().copied() {
+            _finalize(id);
+        }
+        Some(report)
+    }
+
     fn root_stats(&self) -> AllocRootStats {
         AllocRootStats::new(self.kind())
     }
@@ -198,6 +253,55 @@ impl CycleAwareKindAllocator {
         Ok(report)
     }
 
+    /// Collect a buffered candidate set and invoke `finalize` for each finalizable
+    /// node in deterministic finalization order.
+    pub fn collect_roots_with_finalizer<F>(&self, mut finalize: F) -> Option<CycleCollectReport>
+    where
+        F: FnMut(CycleNodeId),
+    {
+        let report = KindAllocator::collect_roots(self)?;
+        for id in report.finalization_order.iter().copied() {
+            finalize(id);
+        }
+        Some(report)
+    }
+
+    /// Release a root and invoke `finalize` for each finalizable node in
+    /// deterministic finalization order.
+    pub fn release_root_with_finalizer<F>(
+        &self,
+        root: CycleNodeId,
+        mut finalize: F,
+    ) -> Option<CycleCollectReport>
+    where
+        F: FnMut(CycleNodeId),
+    {
+        let report = KindAllocator::release_root(self, root)?;
+        for id in report.finalization_order.iter().copied() {
+            finalize(id);
+        }
+        Some(report)
+    }
+
+    /// Remove one ARC edge and invoke `finalize` for each finalizable node in
+    /// deterministic finalization order when threshold-triggered collection
+    /// occurs.
+    pub fn remove_edge_with_finalizer<F>(
+        &self,
+        from: CycleNodeId,
+        to: CycleNodeId,
+        mut finalize: F,
+    ) -> Option<CycleCollectReport>
+    where
+        F: FnMut(CycleNodeId),
+    {
+        let report = self.remove_edge(from, to).ok()??;
+        for id in report.finalization_order.iter().copied() {
+            finalize(id);
+        }
+        Some(report)
+    }
+
     pub fn buffered_roots(&self) -> Vec<CycleNodeId> {
         self.cycle_fixture
             .lock()
@@ -295,6 +399,34 @@ impl KindAllocator for CycleAwareKindAllocator {
             .expect("allocator root stats poisoned");
         stats.roots_released += 1;
         stats.active_roots = stats.active_roots.saturating_sub(1);
+        report
+    }
+
+    fn remove_edge(
+        &self,
+        from: CycleNodeId,
+        to: CycleNodeId,
+    ) -> Result<Option<CycleCollectReport>, CycleGraphError> {
+        let mut fixture = self.cycle_fixture.lock().expect("cycle fixture poisoned");
+        let report = fixture.remove_edge(from, to)?;
+        let buffered_roots = fixture.buffer_len();
+        drop(fixture);
+
+        self.record_collection(buffered_roots, &report);
+        Ok(report)
+    }
+
+    fn collect_roots(&self) -> Option<CycleCollectReport> {
+        let mut fixture = self.cycle_fixture.lock().expect("cycle fixture poisoned");
+        let buffered_roots = fixture.buffer_len();
+        if buffered_roots == 0 {
+            return None;
+        }
+
+        let report = Some(fixture.collect_buffered_cycles());
+        drop(fixture);
+
+        self.record_collection(0, &report);
         report
     }
 

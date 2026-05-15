@@ -12,6 +12,11 @@
 set -eu
 
 GARNET_VERSION="${GARNET_VERSION:-0.4.2}"
+case "${GARNET_VERSION}" in
+  v*)
+    GARNET_VERSION="${GARNET_VERSION#v}"
+    ;;
+esac
 GARNET_CHANNEL="${GARNET_CHANNEL:-stable}"
 GARNET_REPO="${GARNET_REPO:-Island-Dev-Crew/garnet}"
 GARNET_TAG="${GARNET_TAG:-v${GARNET_VERSION}}"
@@ -313,9 +318,9 @@ source_install() {
     esac
 }
 
-release_install() {
-    _triple="$(detect_triple)"
-    _format="$(detect_format)"
+release_install_for_format() {
+    _triple="$1"
+    _format="$2"
     _asset="$(asset_name "$_triple" "$_format")"
     _url="${GARNET_BASE_URL}/${_asset}"
     _dest="$(mktemp_file "$_asset")"
@@ -340,6 +345,23 @@ release_install() {
     esac
 
     run_version_check
+}
+
+release_install() {
+    _triple="$(detect_triple)"
+    _format="$(detect_format)"
+
+    if release_install_for_format "$_triple" "$_format"; then
+        return
+    fi
+
+    if [ -z "$GARNET_FORMAT" ] && [ "$_format" != "tar" ]; then
+        warn "native $_format release asset unavailable; trying tarball release asset"
+        release_install_for_format "$_triple" "tar"
+        return
+    fi
+
+    return 1
 }
 
 main() {
