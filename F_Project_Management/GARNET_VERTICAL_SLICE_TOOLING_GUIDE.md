@@ -1,6 +1,6 @@
 # Garnet Vertical Slice And Tooling Guide
 
-Generated: 2026-05-14
+Generated: 2026-05-15
 
 This file is the lightweight companion to
 `F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md`.
@@ -13,21 +13,22 @@ publishing discipline.
 - Repository: `Island-Dev-Crew/garnet`
 - Primary remote: `origin = https://github.com/Island-Dev-Crew/garnet.git`
 - Working fork: `fork = https://github.com/Navigata1/garnet.git`
-- Main baseline after the latest integration: `origin/main` at `43d98f2`
-- Integrated PRs through PR #73: Phase 4BC readiness slices, dogfood evidence gate, and status-skill process updates
-- Open PRs after that merge: `#73` (ready-for-review, check-gate green, merge blocked by org permissions in this token)
+- Main baseline after the latest integration: `origin/main` at `6e945d6`
+- Integrated PRs through PR #73: Phase 4BC readiness slices, dogfood evidence gate, status-skill process updates, Memory Core allocator evidence, release smoke hardening, and org release publication
+- Open PRs after that merge: none
 - Desktop evidence root: `/Users/idc2.0/Desktop/dogfood`
 
-The merged train covers the cumulative readiness work through PR #72, including:
+The merged train covers the cumulative readiness work through PR #73, including:
 
 - Phase 4BC static boolean relational guard integration
 - Phase 4BD–4BF allocator/ARC production-facing evidence, conformance gate,
   and dogfood evidence-gate process
 - Phase 4BG slice-status and dashboard/reporting updates
-- Ongoing readiness slices in Milestone 7 release gates
+- Phase 4BH edge/remove conformance work plus release-smoke hardening
+- Milestone 7 org `v0.4.2` release publication and release-backed installer smoke
 
-Current completion signal from `scripts/garnet_readiness_status.py`: `84/86` slices
-(`97.7%`) with 2 slices open.
+Current completion signal from `scripts/garnet_readiness_status.py`: `86/86`
+tracked implementation-plan slices (`100.0%`) with no open tracked slices.
 
 ## Canonical Project Files
 
@@ -216,26 +217,30 @@ Security proof should be concrete: a regression test, a static gate, a CI
 security job, a threat-model update, or a verified negative case. Avoid
 security prose without a falsifiable check.
 
-## Next Slice Candidates After PR #72
+## Next Slice Candidates After PR #73
 
-Current concrete open implementation rows:
+The tracked implementation-plan checkbox ledger is closed as of PR #73 and
+the org `v0.4.2` release smoke. Do not translate that into a claim that Garnet
+is a complete production language; it means the current readiness sprint has no
+open checkbox rows.
 
-- Milestone 7 Step 1: publish the org release using an org-authorized browser or desktop session.
-- Milestone 7 Step 2: rerun networked installer smoke against the org release.
+Next work should start a fresh post-v0.4.2 lane and keep each improvement in a
+small PR:
+
+- signed/notarized macOS `.pkg` and signed Windows MSI publication
+- live public-domain installer smoke for `https://garnet-lang.org/install.sh`
+- production allocator-integrated ARC/finalizer runtime behavior beyond the
+  current allocator-facing evidence tests
+- full CFG NLL, loop fixed points, drop elaboration, and two-phase borrows
+- imported-package trait coherence and specialization
+- cross-file/package const imports and broad const evaluation
+- recursive/open payload match reasoning and open-domain range exhaustiveness
+- native backend, proof mechanization, and empirical PLDI-grade validation
 
 Treat that as a test-first, bounded slice. A good first move is not "production
 ARC complete"; it is a falsifiable production-facing allocator interaction
 such as finalization reporting, root-buffer/decrement behavior through the
 allocator surface, or safe-mode exclusion evidence that is no longer only a
 standalone fixture graph.
-
-Still-deferred larger tracks:
-
-- full CFG NLL, loop fixed points, drop elaboration, two-phase borrows
-- imported-package trait coherence and specialization
-- cross-file/package const imports and broad const evaluation
-- recursive/open payload match reasoning and open-domain range exhaustiveness
-- native backend, proof mechanization, and empirical PLDI-grade validation
-- org release publication and network-backed installer smoke
 
 Keep each one in its own narrow PR train with evidence.

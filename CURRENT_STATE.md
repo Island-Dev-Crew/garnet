@@ -100,15 +100,21 @@ highest-leverage next milestones are:
    types, actor spawning, method dispatch, and richer stdlib methods.
 3. **Memory Core productionization:** move from Mnemos reference stores toward
    allocator/runtime semantics described in `MEMORY_CORE_ROADMAP.md`.
-4. **Native/release toolchain:** publish release assets, checksums, and platform
-   install smokes before making low-friction adoption claims.
+4. **Native/release toolchain:** keep the org `v0.4.2` release assets,
+   checksums, and release-backed installer smoke green while separating signed
+   macOS `.pkg`, Windows MSI, and live public-domain installer work from the
+   current release claim.
 5. **Formal/empirical proof:** keep Paper V theorem sketches and Paper VI
    experiments separate from implemented guarantees until tests or proofs land.
 
-The v0.5 seven-phase roadmap is now tracked in
+The v0.5 seven-phase roadmap is tracked in
 `F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md` and
 `F_Project_Management/ROADMAPS/GARNET_v0_5_LANGUAGE_COMPLETION_ROADMAP.md`.
-Phase 4BC / 5C / 6P are the current readiness slices. Phases 1-3D added parser parity,
+As of PR #73, the tracked implementation-plan checkbox ledger is closed at
+`86/86` slices and the org `v0.4.2` release smoke has passed. This closes the
+current readiness sprint, not the full language: signed native installers,
+production allocator-integrated ARC, full native backend, mechanized proof, and
+empirical validation remain post-v0.4.2 lanes. Phases 1-3D added parser parity,
 managed block/dynamic/protocol runtime slices, managed actor addresses, bounded
 source mailboxes, and a generated actor-orchestrator template. Phase 4A
 activates partial safe-mode borrow conformance for direct use-after-move

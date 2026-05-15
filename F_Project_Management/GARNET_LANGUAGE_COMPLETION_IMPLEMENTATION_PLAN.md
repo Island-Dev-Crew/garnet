@@ -19,7 +19,7 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | 10 MVP app corpus | Complete for current v0.4.2 examples | `garnet-cli/tests/dogfood_readiness_examples.rs`; CI `canonical MVP examples` job | Keep `cargo test -p garnet-cli --test dogfood_readiness_examples` green |
 | Current-state/reviewer guide | Complete first pass | `CURRENT_STATE.md`; `F_Project_Management/GARNET_CURRENT_VS_HISTORICAL_LEDGER.md` | Review before each public/MIT packaging pass |
 | Repo IA truth separation | Complete first pass | `CURRENT_STATE.md`; `archive/history/`; roadmap index | Finish link-rewrite cleanup before a public main-page launch |
-| v0.4.2 release assets | Fork release published; org release path requires browser/desktop-authorized publication | `Navigata1/garnet` release assets; CLI reports org `push: false`; browser session can open org release form | Publish org `v0.4.2` release from an org-authorized session and rerun installer smoke |
+| v0.4.2 release assets | Org release published and release-backed installer smoke passed | `Island-Dev-Crew/garnet` release `v0.4.2`; `./scripts/verify_org_release_smoke.sh`; Desktop bundle `/Users/idc2.0/Desktop/dogfood/garnet-phase4bi-org-release-closed-20260515-1843` | Keep release assets/checksums intact; signed macOS `.pkg` and Windows MSI remain separate authority work |
 | Parser parity for old ambition | Partial, Phase 1 active | `protocol`, `dyn Trait`, `yield`, `next`, `@dynamic`, `@nonsendable`, and `do ... end` parser tests | Keep runtime gaps explicit and activate Phase 2 only with executable semantics |
 | Blocks, `yield`, `next` runtime semantics | Phase 2A active | `do ... end` parses as a trailing closure argument; `deferred_blocks_and_yield` runs a managed-mode block/yield/next program | Keep `cargo test -p garnet-cli --test conformance_skeleton deferred_blocks_and_yield` green; add richer block edge cases later |
 | Dynamic method dispatch tables | Partial Phase 2H | `deferred_dynamic_dispatch` covers per-instance method tables; `static_impl_dispatch_and_method_missing` covers static inherent impl fallback and `method_missing`; `dynamic_impl_dispatch_tables` covers `@dynamic impl Type for Protocol` registration and dispatch | Add richer dispatch precedence and ambiguity probes |
@@ -1792,7 +1792,7 @@ invocation remain explicitly deferred for the next slice.
 - Create: `F_Project_Management/ROADMAPS/GARNET_EMPIRICAL_VALIDATION_PLAN.md`
 - Test: release workflow, installer smoke, and dogfood-readiness Part 1
 
-- [ ] **Step 1: Publish the org release using an org-authorized browser or desktop session**
+- [x] **Step 1: Publish the org release using an org-authorized browser or desktop session**
 
 Use the already-built v0.4.2 assets. The CLI token for `Navigata1` has `push: false` on `Island-Dev-Crew/garnet`, but the current browser session can open the org release form and shows `Publish release`.
 
@@ -1802,9 +1802,12 @@ Run after publication:
 gh release view v0.4.2 --repo Island-Dev-Crew/garnet --json tagName,url,assets
 ```
 
-Expected: org release exists and lists tarball/package/checksum assets.
+Observed 2026-05-15: org release exists at
+`https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.4.2`, points at
+merge commit `6e945d6a151c2b97ae842c21aeeaa5a678ae65f5`, and lists the `.deb`,
+`.rpm`, macOS tarball, and `SHA256SUMS` assets.
 
-- [ ] **Step 2: Rerun a network-backed installer smoke against the org release**
+- [x] **Step 2: Rerun a network-backed installer smoke against the org release**
 
 Run:
 
@@ -1814,7 +1817,10 @@ GARNET_INSTALL_MODE=release GARNET_VERSION=v0.4.2 sh installer/sh.garnet-lang.or
 garnet --version
 ```
 
-Expected: installer uses release assets when available and reports `garnet 0.4.2`; the smoke fails explicitly when release assets are missing.
+Observed 2026-05-15: `./scripts/verify_org_release_smoke.sh` passed against
+`Island-Dev-Crew/garnet`. On macOS it tried the unsigned `.pkg`, fell back to
+the uploaded `aarch64-apple-darwin` tarball, verified SHA-256, installed into a
+temporary prefix, and reported `garnet 0.4.2`.
 
 - [x] **Step 3: Create native backend, proof, and empirical plans**
 

@@ -7,9 +7,9 @@ what remains deferred. This skill fuses the PR #71 dogfood evidence gate with
 the useful No Mistakes pattern: work on a branch, verify locally, preserve
 evidence, then let remote CI confirm the merge decision before promotion.
 
-As of 2026-05-14 this run reports `84/86` slices complete (`97.7%`), with the
-same two open slices carried forward in `F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md`:
-1) Milestone 7 Step 1: org release publish, 2) Milestone 7 Step 2: networked installer smoke.
+As of 2026-05-15 this run reports `86/86` tracked implementation-plan slices
+complete (`100.0%`). The org `v0.4.2` release is published and the
+network-backed installer smoke passed against `Island-Dev-Crew/garnet`.
 
 ## When To Use
 
@@ -67,11 +67,15 @@ when a future dashboard or project tracker needs machine-readable progress.
 
 ### Live run snapshot
 
-- `origin/main` at `43d98f2`
-- Open PRs in `Island-Dev-Crew/garnet` as of this run: `#73`
-- PR #73 is open but marked ready for review; all merge checks are green.
-- Completion: `84/86` slices (`97.7`%), with two open slices listed under
-  `Milestone 7 Step 1` and `Milestone 7 Step 2`.
+- `origin/main` at `6e945d6`
+- Open PRs in `Island-Dev-Crew/garnet` as of this run: none.
+- PR #73 merged through the org-authorized browser path after all checks passed.
+- Completion: `86/86` tracked slices (`100.0%`).
+- Release evidence: `Island-Dev-Crew/garnet` release `v0.4.2` exists with
+  `.deb`, `.rpm`, macOS tarball, and `SHA256SUMS` assets.
+- Installer evidence: `./scripts/verify_org_release_smoke.sh` passed against
+  the org release, using the macOS tarball fallback while signed `.pkg`
+  publication remains credential-gated.
 
 ## Evidence Gate
 

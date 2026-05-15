@@ -169,7 +169,7 @@ allocator integration is sequenced in
 | §16.2 Project layout | ✅ | `garnet-cli/templates/{cli,web-api,agent-orchestrator}`; `new_agent_orchestrator_template_runs_and_tests` | Generated `agent-orchestrator` projects now run actor syntax and bounded mailbox tests, not only pure helper scaffolding. |
 | §16.3 Manifest (`Garnet.toml`) | ✅ | `garnet-cli/src/manifest.rs` (signed manifest support) | |
 | §16.4 Doc-comment syntax | ✅ | `garnet-cli/src/cmd/doc.rs`; parser tolerates `///` | `garnet doc` ships as a Markdown extractor. Full HTML/cross-reference rendering remains a v0.5.x CST/LSP follow-up. |
-| §16.5 Cross-platform installer | ✅ | `installer/sh.garnet-lang.org/install.sh`, `docs/install.sh` | Linux package paths verified Phase 6D; release-backed curl install requires published `v0.4.2` assets. |
+| §16.5 Cross-platform installer | ✅ | `installer/sh.garnet-lang.org/install.sh`, `docs/install.sh`, `scripts/verify_org_release_smoke.sh` | Linux package paths verified Phase 6D; org `v0.4.2` release-backed smoke passed with SHA-256 verification and macOS tarball fallback. Signed macOS `.pkg`, Windows `.msi`, and live public-domain installer smoke remain separate release-hardening work. |
 | §16.6 Why single-CLI matters | n/a (rationale) | Paper VII | |
 
 ---
