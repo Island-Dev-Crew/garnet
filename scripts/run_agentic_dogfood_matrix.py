@@ -641,6 +641,15 @@ def probe_set(
             security_domain="sandbox",
         ),
         Probe(
+            "report-converter-adoption-status",
+            "migration assistant",
+            "converter adoption status should separate active deterministic languages from gated future lanes",
+            [sys.executable, str(ROOT / "scripts" / "garnet_converter_status.py"), "--format", "json"],
+            True,
+            ("stylized-migration-assistant", "proposed-gated", "javascript", "requires_garnet_check"),
+            security_domain="sandbox",
+        ),
+        Probe(
             "build-deterministic-manifest",
             "release integrity",
             "deterministic build should emit a manifest sidecar",

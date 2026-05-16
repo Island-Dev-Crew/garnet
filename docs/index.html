@@ -979,7 +979,7 @@
   <div class="container reveal">
     <h3>Migrate at Your Pace</h3>
     <h2>Convert <span class="accent">Rust · Ruby · Python · Go</span> source to Garnet.</h2>
-    <p class="lead">The <code>garnet convert</code> tool reads four source languages and emits Garnet — every output starts <code>@sandbox</code> + <code>@caps()</code>. Human audit lifts the sandbox. A lineage JSON maps every emitted node back to its source span.</p>
+    <p class="lead">The <code>garnet convert</code> tool is a migration assistant, not a full transpiler: it reads four deterministic source lanes and emits sandboxed Garnet with lineage, metrics, and a human migration checklist. JavaScript, TypeScript, Swift, Java, C-family, and Perl lanes are planned only behind the same converter evidence gate.</p>
 
     <div class="convert-grid">
       <div class="code-col ruby"><div class="head"><div class="swatch"></div>RUBY — source</div>
@@ -1013,6 +1013,7 @@
       <div class="lang-badge">Ruby</div>
       <div class="lang-badge">Python</div>
       <div class="lang-badge">Go</div>
+      <div class="lang-badge">LLM assist: gated advisory</div>
     </div>
   </div>
 </section>

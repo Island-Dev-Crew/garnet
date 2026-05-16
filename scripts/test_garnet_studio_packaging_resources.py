@@ -19,8 +19,14 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
             '"${APP_DIR}/Contents/Resources/scripts/smoke_garnet_web_pwa_offline.mjs"',
             script,
         )
+        self.assertIn(
+            'cp "${ROOT}/scripts/garnet_converter_status.py" '
+            '"${APP_DIR}/Contents/Resources/scripts/garnet_converter_status.py"',
+            script,
+        )
         self.assertIn('cp -R "${ROOT}/docs" "${APP_DIR}/Contents/Resources/docs"', script)
         self.assertIn('chmod 0755 "${APP_DIR}/Contents/Resources/scripts/smoke_garnet_web_pwa_offline.mjs"', script)
+        self.assertIn('chmod 0755 "${APP_DIR}/Contents/Resources/scripts/garnet_converter_status.py"', script)
 
     def test_dmg_smoke_requires_packaged_pwa_assets(self) -> None:
         script = DMG_SMOKE_SCRIPT.read_text(encoding="utf-8")

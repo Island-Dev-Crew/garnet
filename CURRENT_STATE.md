@@ -64,7 +64,8 @@ done
 | `garnet-actor-runtime/` | actor runtime crate | current implementation; managed source bridge active, full OS-thread CLI bridge still staged |
 | `garnet-stdlib/` | capability-tagged primitives | current implementation |
 | `garnet-cli/` | user-facing CLI and templates | current implementation |
-| `garnet-convert/` | migration assistant | current implementation |
+| `garnet-convert/` | migration assistant | current implementation for stylized Rust/Ruby/Python/Go only; broader language and gated LLM-assist lanes are planned, not implemented |
+| `scripts/garnet_converter_status.py` | converter adoption inventory | current machine-readable truth for active converter lanes, planned languages, and trust boundaries |
 | `examples/mvp_*.garnet` | canonical app-level smokes | must parse/check/run |
 | `examples/{multi_agent_builder,agentic_log_analyzer,safe_io_layer}.garnet` | design-scale examples | `multi_agent_builder` is runtime proof; `agentic_log_analyzer`/`safe_io_layer` remain parser/check references |
 | `A_Research_Papers/` | academic research corpus | normative/research context |
@@ -127,6 +128,10 @@ highest-leverage next milestones are:
    web/PWA productization domain now has offline-handler and full local-smoke
    probes, plus a local Chrome DevTools browser offline gate, while richer
    browser IDE and cross-browser validation remain separate gates.
+   The migration-assistant domain also carries a converter adoption-status
+   probe so Rust/Ruby/Python/Go support, planned broader languages, and gated
+   LLM-assist claims remain machine-readable instead of living only in
+   marketing copy.
 7. **Formal/empirical proof:** keep Paper V theorem sketches and Paper VI
    experiments separate from implemented guarantees until tests or proofs land.
 
