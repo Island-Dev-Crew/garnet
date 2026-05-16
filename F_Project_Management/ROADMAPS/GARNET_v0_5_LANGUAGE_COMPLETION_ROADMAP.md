@@ -1438,6 +1438,15 @@ evidence:
 `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-042402`
 (`63/63`, `skipped=0`).
 
+Phase 6AF planned-language assist breadth pass: the source-checkout matrix now
+adds JavaScript, Swift, Java, and C++ planned-language fixtures to the assist
+planning domain, covering web-agent, Apple-app, JVM-service, and native-memory
+migration risks while preserving inactive conversion and human-audit gates.
+Java `CompletableFuture`/executor vocabulary is now classified as
+actor/orchestration risk evidence. Verified source evidence:
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-055816`
+(`68/68`, `skipped=0`).
+
 Phase 6Z packaged assist-plan resource pass: packaged Garnet Studio now stages
 and chmods `scripts/garnet_converter_assist_plan.py`, and the DMG install
 smoke checks it as a required executable bundled asset before running copied-app

@@ -36,6 +36,21 @@ export class AgentRouter {
         )
         return source
 
+    def _write_java_fixture(self, directory: Path) -> Path:
+        source = directory / "AgentGateway.java"
+        source.write_text(
+            """\
+import java.net.Socket;
+import java.util.concurrent.CompletableFuture;
+
+interface AgentGateway {
+  CompletableFuture<String> route(Socket socket);
+}
+""",
+            encoding="utf-8",
+        )
+        return source
+
     def test_planned_language_plan_is_advisory_and_gated(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             source = self._write_typescript_fixture(Path(temp))
@@ -112,6 +127,32 @@ export class AgentRouter {
             data["current_truth"],
         )
         self.assertIn("Use `garnet convert python", "\n".join(data["next_steps"]))
+
+    def test_java_completable_future_surfaces_orchestration_risk(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            source = self._write_java_fixture(Path(temp))
+            output = subprocess.check_output(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--language",
+                    "java",
+                    "--source",
+                    str(source),
+                    "--format",
+                    "json",
+                ],
+                text=True,
+            )
+
+        data = json.loads(output)
+        risk_titles = {risk["title"] for risk in data["risk_inventory"]}
+
+        self.assertEqual("Java", data["language"])
+        self.assertEqual("planned", data["language_status"])
+        self.assertFalse(data["conversion_active"])
+        self.assertIn("actor or async orchestration mapping", risk_titles)
+        self.assertIn("network or external capability boundary", risk_titles)
 
     def test_unknown_language_fails_loudly(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
