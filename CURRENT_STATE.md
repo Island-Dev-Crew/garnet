@@ -512,6 +512,16 @@ Phase 6AB adds a local Codex Run-button path for the Studio workbench:
 wires the Codex app `Run` action to that script. Verified local evidence:
 `python3 scripts/test_garnet_studio_run_button.py` and
 `./script/build_and_run.sh --verify`.
+Phase 6AC aligns the repo/site adoption surface with that app work: the public
+site now has a `Garnet Studio workbench` section for Codex Run,
+`dist/Garnet Studio.app`, and planned-language `Assist Plan`, while
+`scripts/garnet_adoption_surface_status.py` ties the same hook to source
+evidence. This is site/current-truth UX, not a notarization, broad converter,
+or provider-backed LLM conversion claim. Verified local evidence:
+`python3 scripts/test_garnet_adoption_surface_status.py`,
+`scripts/smoke_garnet_web_pwa.sh --copy-to-desktop --strict`,
+`scripts/smoke_garnet_web_pwa_offline.mjs --docs-dir docs --output target/service-worker-offline-check-phase6ac.json`,
+and a Browser smoke of `http://127.0.0.1:8765/index.html#studio`.
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.

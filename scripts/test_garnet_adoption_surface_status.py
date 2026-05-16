@@ -49,6 +49,17 @@ class GarnetAdoptionSurfaceStatusTests(unittest.TestCase):
         self.assertIn("planned lanes", contract)
         self.assertIn("not active conversion", contract)
 
+    def test_macos_workbench_hook_reflects_current_studio_workflows(self) -> None:
+        data = asdict(status_script.read_surface())
+        workbench = next(item for item in data["verified_use_cases"] if item["id"] == "macos-workbench")
+
+        self.assertIn("Assist Plan", workbench["hook"])
+        self.assertIn("Codex Run", workbench["hook"])
+        self.assertIn("dist/Garnet Studio.app", workbench["hook"])
+        self.assertIn("script/build_and_run.sh", workbench["evidence"])
+        self.assertIn(".codex/environments/environment.toml", workbench["evidence"])
+        self.assertIn("scripts/test_garnet_studio_run_button.py", workbench["evidence"])
+
     def test_json_keeps_productization_gates_open(self) -> None:
         gates = set(asdict(status_script.read_surface())["open_gates"])
 
@@ -84,6 +95,10 @@ class GarnetAdoptionSurfaceStatusTests(unittest.TestCase):
         self.assertIn("scripts/garnet_adoption_surface_status.py", readme)
         self.assertIn("scripts/garnet_adoption_surface_status.py", site)
         self.assertIn("Adoption surface", site)
+        self.assertIn("Garnet Studio workbench", site)
+        self.assertIn("Codex Run", site)
+        self.assertIn("dist/Garnet Studio.app", site)
+        self.assertIn("Assist Plan", site)
 
 
 if __name__ == "__main__":
