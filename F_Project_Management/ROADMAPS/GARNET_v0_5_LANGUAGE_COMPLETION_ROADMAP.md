@@ -1646,6 +1646,18 @@ The copied-DMG smoke passes at
 DMG SHA-256
 `793aaec45055c338fda45386006f545356b4d0a2adad79ad8e6048ef012dee36`.
 
+Phase 6AT converter advisory review UX pass: the macOS Studio Converter panel
+now exposes `Advisory Review` beside `Advisory Bundle`. It creates a no-source
+advisory bundle, runs the provider-neutral review gate, and writes review
+evidence under `~/Desktop/dogfood/garnet-studio-advisory-review-<stamp>`.
+The refreshed source-checkout matrix adds a three-probe `converter advisory
+review UX` domain and passes `97/97` with `skipped=0` at
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-101247`.
+The copied-DMG smoke passes at
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-101312` for
+DMG SHA-256
+`68babfa7974a4b31173651eee27f0e5f6844637486478c42802b53bd34a80863`.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.

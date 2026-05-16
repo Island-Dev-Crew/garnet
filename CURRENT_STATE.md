@@ -704,6 +704,21 @@ the packaged app/DMG smoke passes in
 `/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-100034` for
 DMG SHA-256
 `793aaec45055c338fda45386006f545356b4d0a2adad79ad8e6048ef012dee36`.
+Phase 6AT makes that review gate available from Garnet Studio. The Converter
+panel now exposes `Advisory Review`, which creates a default no-source advisory
+bundle, runs `garnet_converter_advisory_review.py`, and preserves the review
+report under `~/Desktop/dogfood/garnet-studio-advisory-review-<stamp>` before
+any model/agent handoff. The agentic matrix adds a three-probe `converter
+advisory review UX` domain for the Studio action, runner, and Desktop evidence
+path; the refreshed source-checkout matrix passes `97/97` with `skipped=0` in
+Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-101247`;
+refreshed web/PWA evidence lives at
+`/Users/idc2.0/Desktop/dogfood/web-pwa-readiness-20260516-101246`;
+the packaged app/DMG smoke passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-101312` for
+DMG SHA-256
+`68babfa7974a4b31173651eee27f0e5f6844637486478c42802b53bd34a80863`.
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.
