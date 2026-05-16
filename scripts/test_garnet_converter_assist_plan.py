@@ -112,6 +112,34 @@ sub remember {
         )
         return source
 
+    def _write_shell_fixture(self, directory: Path) -> Path:
+        source = directory / "agent_release.sh"
+        source.write_text(
+            """\
+#!/usr/bin/env bash
+set -euo pipefail
+curl -fsSL "$RELEASE_URL" -o artifact.tar.gz
+sha256sum -c SHA256SUMS
+""",
+            encoding="utf-8",
+        )
+        return source
+
+    def _write_sql_fixture(self, directory: Path) -> Path:
+        source = directory / "agent_memory.sql"
+        source.write_text(
+            """\
+CREATE TABLE memory_events (
+  id INTEGER PRIMARY KEY,
+  key TEXT NOT NULL,
+  value TEXT NOT NULL
+);
+SELECT key, value FROM memory_events WHERE key = :key;
+""",
+            encoding="utf-8",
+        )
+        return source
+
     def test_planned_language_plan_is_advisory_and_gated(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             source = self._write_typescript_fixture(Path(temp))
@@ -293,6 +321,83 @@ sub remember {
         self.assertFalse(data["conversion_active"])
         self.assertIn("network or external capability boundary", risk_titles)
         self.assertIn("memory declaration candidate", risk_titles)
+
+    def test_shell_fixture_surfaces_advisory_only_external_boundary(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            source = self._write_shell_fixture(Path(temp))
+            output = subprocess.check_output(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--language",
+                    "shell",
+                    "--source",
+                    str(source),
+                    "--format",
+                    "json",
+                ],
+                text=True,
+            )
+
+        data = json.loads(output)
+        risk_titles = {risk["title"] for risk in data["risk_inventory"]}
+
+        self.assertEqual("Shell", data["language"])
+        self.assertEqual("planned", data["language_status"])
+        self.assertFalse(data["conversion_active"])
+        self.assertIn("network or external capability boundary", risk_titles)
+        self.assertIn("this planned language has no deterministic frontend yet", "\n".join(data["current_truth"]))
+
+    def test_sql_fixture_surfaces_memory_declaration_candidate(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            source = self._write_sql_fixture(Path(temp))
+            output = subprocess.check_output(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--language",
+                    "sql",
+                    "--source",
+                    str(source),
+                    "--format",
+                    "json",
+                ],
+                text=True,
+            )
+
+        data = json.loads(output)
+        risk_titles = {risk["title"] for risk in data["risk_inventory"]}
+
+        self.assertEqual("SQL", data["language"])
+        self.assertEqual("planned", data["language_status"])
+        self.assertFalse(data["conversion_active"])
+        self.assertIn("memory declaration candidate", risk_titles)
+
+    def test_other_fixture_is_allowed_as_advisory_analysis_only(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            source = Path(temp) / "agent.rules"
+            source.write_text("remember agent history and fetch https://example.invalid\n", encoding="utf-8")
+            output = subprocess.check_output(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--language",
+                    "other",
+                    "--source",
+                    str(source),
+                    "--format",
+                    "json",
+                ],
+                text=True,
+            )
+
+        data = json.loads(output)
+
+        self.assertEqual("Other", data["language"])
+        self.assertEqual("planned", data["language_status"])
+        self.assertFalse(data["conversion_active"])
+        self.assertFalse(data["deterministic_converter_available"])
+        self.assertIn("advisory migration evidence only", "\n".join(data["current_truth"]))
 
     def test_unknown_language_fails_loudly(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

@@ -1596,12 +1596,13 @@ Phase 6AO converter LLM feasibility pass: the converter-stage LLM question is
 now machine-readable rather than only speculative. `scripts/garnet_converter_llm_feasibility.py`
 reports that provider-neutral advisory planning is feasible, but autonomous or
 provider-backed LLM conversion is not active and remains blocked on secure
-runtime, deterministic frontend, lineage, `@sandbox`, `garnet check`, dogfood,
-and human-audit gates. The agentic matrix adds C, C#, and Perl assist-plan
-fixtures plus four feasibility probes, bringing the planned-language advisory
-surface in line with the public JavaScript/TypeScript/Swift/Java/C/C++/C#/Perl
-claim without making broad converter frontends active. Local evidence passes
-`84/84` with `skipped=0` in Desktop bundle
+runtime, deterministic frontend, native-boundary review, lineage, `@sandbox`,
+`garnet check`, dogfood, and human-audit gates. The agentic matrix adds C, C#,
+and Perl assist-plan fixtures plus four feasibility probes, bringing the
+planned-language advisory surface in line with the public
+JavaScript/TypeScript/Swift/Java/C/C++/C#/Perl claim without making broad
+converter frontends active. Local evidence passes `84/84` with `skipped=0` in
+Desktop bundle
 `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-084611`.
 
 Phase 6AP converter advisory bundle pass: the converter LLM lane now has a
@@ -1702,6 +1703,27 @@ DMG SHA-256
 This keeps provider/model execution, autonomous conversion, and candidate
 output trust outside the active lane until lineage, `@sandbox`, `garnet check`,
 dogfood evidence, and human audit are complete.
+
+Phase 6AX converter/platform strategy pass: the adoption lane now records the
+converter's honest product architecture instead of treating every language as a
+future direct transpiler. Rust/Ruby/Python/Go remain active deterministic
+conversion lanes. JavaScript/TypeScript/Swift/Java/C/C++/C#/Perl/Kotlin/Shell/SQL/Other
+are advisory planning lanes for classifier, risk inventory, Garnet-aware
+context, advisory bundle, review, and human-approved handoff. C/C++/Objective-C/Assembly/CUDA/platform-specific
+code are native-boundary recommendations because ABI, memory layout, timing,
+GPU hierarchy, and platform runtime behavior cannot be promised as lossless
+source-to-source conversion. The roadmap now also names the future outward
+direction: Garnet should lower to Wasm and LLVM-style native targets after
+backend evidence, tests, dogfood, release, and benchmark gates exist. Public
+website caveats are split between the landing page and `docs/status.html`, and
+Windows/Linux plus Apple distribution handoff packets record the next platform
+work without claiming notarization, App Store, signed MSI, provider-backed LLM
+assist, or backend completion. Current evidence passes `106/106` with
+`skipped=0` in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-124251`; the
+local web/PWA smoke passes in
+`/Users/idc2.0/Desktop/dogfood/web-pwa-readiness-20260516-124308`; and
+`swift test --package-path apps/garnet-studio-macos` passes `26/26`.
 
 ## Phase 7: Release, Research, And Repeated Falsification
 

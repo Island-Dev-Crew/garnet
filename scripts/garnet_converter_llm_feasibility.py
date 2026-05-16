@@ -46,7 +46,9 @@ class ConverterLlmFeasibility:
     current_truth: list[str]
     active_languages: list[garnet_converter_status.LanguageLane]
     planned_languages: list[garnet_converter_status.LanguageLane]
+    native_boundary_languages: list[garnet_converter_status.LanguageLane]
     planned_language_assist_coverage: list[PlannedLanguageCoverage]
+    recommended_pipeline: list[str]
     required_context: list[str]
     analysis_targets: list[str]
     required_gates: list[str]
@@ -89,11 +91,13 @@ def read_status() -> ConverterLlmFeasibility:
             "not active LLM conversion",
             "source code must not be executed during analysis",
             "deterministic converter output remains authoritative",
-            "broad planned languages require separate deterministic frontend slices",
+            "broad planned languages require separate deterministic frontend slices or native-boundary handoffs",
         ],
         active_languages=converter.active_languages,
         planned_languages=converter.planned_languages,
+        native_boundary_languages=converter.native_boundary_languages,
         planned_language_assist_coverage=coverage,
+        recommended_pipeline=contract.pipeline,
         required_context=[document.path for document in pack.context_documents if document.exists],
         analysis_targets=contract.analysis_targets,
         required_gates=contract.required_gates,
@@ -116,6 +120,7 @@ def read_status() -> ConverterLlmFeasibility:
 def render_markdown(status: ConverterLlmFeasibility) -> str:
     active = ", ".join(language.label for language in status.active_languages)
     planned = ", ".join(language.label for language in status.planned_languages)
+    native = ", ".join(language.label for language in status.native_boundary_languages)
     coverage = "\n".join(
         f"| {language.label} | `{language.status}` | "
         f"{'yes' if language.deterministic_converter_available else 'no'} | "
@@ -134,6 +139,7 @@ Advisory assist is feasible as a provider-neutral planning lane. Autonomous LLM 
 
 - Active deterministic converter lanes: {active}.
 - Planned language lanes: {planned}.
+- Native boundary recommended lanes: {native}.
 - Recommended first lane: `{status.recommended_first_lane}`.
 - Conversion active: `{str(status.conversion_active).lower()}`.
 - Provider required now: `{str(status.provider_required).lower()}`.
@@ -147,6 +153,14 @@ Advisory assist is feasible as a provider-neutral planning lane. Autonomous LLM 
 | Language | Status | Deterministic converter | LLM conversion active | Required next gate |
 | --- | --- | --- | --- | --- |
 {coverage}
+
+## Native Boundary Coverage
+
+{chr(10).join(f"- {language.label}: {language.notes}" for language in status.native_boundary_languages)}
+
+## Recommended Pipeline
+
+{chr(10).join(f"- {step}" for step in status.recommended_pipeline)}
 
 ## Required Gates
 

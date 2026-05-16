@@ -64,11 +64,11 @@ done
 | `garnet-actor-runtime/` | actor runtime crate | current implementation; managed source bridge active, full OS-thread CLI bridge still staged |
 | `garnet-stdlib/` | capability-tagged primitives | current implementation |
 | `garnet-cli/` | user-facing CLI and templates | current implementation |
-| `garnet-convert/` | migration assistant | current implementation for stylized Rust/Ruby/Python/Go only; broader language and gated LLM-assist lanes are planned, not implemented |
-| `scripts/garnet_converter_status.py` | converter adoption inventory | current machine-readable truth for active converter lanes, planned languages, trust boundaries, and the future Garnet-aware assist contract |
+| `garnet-convert/` | migration assistant | current implementation for stylized Rust/Ruby/Python/Go only; advisory planning covers JavaScript/TypeScript/Swift/Java/C/C++/C#/Perl/Kotlin/Shell/SQL/Other without activating broad conversion; native-boundary and backend-lowering lanes remain planned |
+| `scripts/garnet_converter_status.py` | converter adoption inventory | current machine-readable truth for active converter lanes, advisory language lanes, native-boundary recommendations, backend-lowering plans, trust boundaries, and the future Garnet-aware assist contract |
 | `scripts/garnet_assist_context_pack.py` | Garnet-aware assist context and prompt pack | current machine-readable context bundle plus provider-neutral prompt pack for future provider-backed converter assist; hashes current truth/spec/dogfood docs and preserves advisory-only gates without enabling LLM conversion |
-| `scripts/garnet_converter_assist_plan.py` | planned-language converter assist plan | current deterministic planner for a single source file in an active or planned converter language; inventories safe-mode, memory, CapCaps, actor/orchestration, and migration risks without executing source or enabling LLM conversion |
-| `scripts/garnet_converter_llm_feasibility.py` | converter LLM feasibility reporter | current machine-readable decision surface: provider-neutral advisory planning is feasible; autonomous/provider-backed LLM conversion is not active and remains blocked on secure runtime, deterministic frontend, sandbox, lineage, check, dogfood, and human-audit gates |
+| `scripts/garnet_converter_assist_plan.py` | advisory-language converter assist plan | current deterministic planner for a single source file in an active or advisory converter language; inventories safe-mode, memory, CapCaps, actor/orchestration, shell/process, SQL/data, and migration risks without executing source or enabling LLM conversion |
+| `scripts/garnet_converter_llm_feasibility.py` | converter LLM feasibility reporter | current machine-readable decision surface: provider-neutral advisory planning is feasible; autonomous/provider-backed LLM conversion is not active and remains blocked on secure runtime, deterministic frontend, sandbox, lineage, check, dogfood, human-audit, and native-boundary gates |
 | `scripts/garnet_converter_advisory_bundle.py` | converter advisory bundle | current provider-neutral handoff bundle that combines feasibility, context, and per-file assist-plan evidence; omits source text by default, requires `--include-source` for explicit local/provider handoff, and does not enable LLM conversion |
 | `scripts/garnet_converter_advisory_review.py` | converter advisory review gate | current provider-neutral review gate for advisory bundles; verifies bundle manifests, blocks source-included bundles unless explicitly approved, emits a human-review checklist, and does not enable provider-backed conversion |
 | `scripts/garnet_converter_advisory_handoff.py` | converter advisory handoff packet | current provider-neutral final packet builder for a reviewed no-source advisory bundle; refuses blocked/source-included reviews, emits a source-free prompt packet, and does not call a provider or enable conversion |
@@ -79,7 +79,11 @@ done
 | `scripts/export_garnet_promo_video_site.mjs` | promo website-export harness | current local package step that copies visual-QA-approved MP4/WebM/poster assets, writes an embed snippet, JSON/Markdown evidence, and a manifest without embedding the video on the public site |
 | `scripts/sync_garnet_promo_video_site.mjs` | promo public-site sync harness | current local package step that copies verified website-export media into `docs/assets/`, verifies public-site and service-worker references, and writes JSON/Markdown plus manifest evidence without claiming final human/aesthetic acceptance |
 | `scripts/garnet_studio_notarization_status.py` | macOS notarization preflight inventory | current machine-readable summary for notarization preflight bundles; preserves blocker/warning evidence, redacts credential values, and explicitly avoids claiming Apple submission or notarization |
-| `scripts/garnet_adoption_surface_status.py` | repo/site adoption truth inventory | current machine-readable status linking the public hook, verified use cases, active converter lanes, planned language lanes, LLM-assist boundaries, and productization gates |
+| `scripts/garnet_adoption_surface_status.py` | repo/site adoption truth inventory | current machine-readable status linking the public hook, verified use cases, active converter lanes, advisory language lanes, native-boundary labels, LLM-assist boundaries, landing/status page split, and productization gates |
+| `F_Project_Management/GARNET_CONVERTER_AND_PLATFORM_STRATEGY.md` | converter/platform strategy | current human-readable strategy for best-fit imports, bad direct-conversion fits, active/advisory/native-boundary menu labels, future Wasm/LLVM lowering, and provider-backed assist options |
+| `F_Project_Management/GARNET_WINDOWS_LINUX_STUDIO_HANDOFF_2026_05_16.md` | Windows/Linux Studio handoff | current executable handoff for Codex Desktop on Windows and Claude Code on Windows to split cross-platform Studio MVP and release/productization gates |
+| `F_Project_Management/GARNET_APPLE_DISTRIBUTION_WALKTHROUGH_2026_05_16.md` | Apple distribution walkthrough | current operator walkthrough for Apple Developer Program enrollment, Developer ID certificates, notary profile setup, and Garnet notarization evidence; not completed enrollment evidence |
+| `docs/status.html` | public readiness status page | current public status page that carries detailed readiness caveats so `docs/index.html` can stay landing-page focused |
 | `examples/mvp_*.garnet` | canonical app-level smokes | must parse/check/run |
 | `examples/{multi_agent_builder,agentic_log_analyzer,safe_io_layer}.garnet` | design-scale examples | `multi_agent_builder`, `agentic_log_analyzer`, and `safe_io_layer` are covered by active agentic matrix probes |
 | `A_Research_Papers/` | academic research corpus | normative/research context |
@@ -146,9 +150,12 @@ highest-leverage next milestones are:
    are separately verified.
 6. **Repo/site adoption surface:** keep the public hook and Garnet website copy
    tied to `scripts/garnet_adoption_surface_status.py` so active converter
-   lanes, planned language lanes, LLM-assist boundaries, verified use cases,
-   and open productization gates remain evidence-backed instead of promotional
-   drift.
+   lanes, advisory language lanes, native-boundary recommendations, future
+   backend-lowering posture, LLM-assist boundaries, verified use cases, and open
+   productization gates remain evidence-backed instead of promotional drift.
+   Detailed readiness caveats belong on `docs/status.html`; `docs/index.html`
+   should read like a landing page without hiding the machine-readable status
+   sources.
 7. **Promo/video readiness:** keep the future HyperFrames or Remotion ad lane
    tied to `scripts/garnet_promo_video_status.py` so the storyboard,
    visual identity/source-surface lock, render/visual-QA gates, website export,
@@ -181,17 +188,19 @@ highest-leverage next milestones are:
    while richer browser IDE, cross-browser validation, and signed native
    distribution remain separate gates.
    The migration-assistant domain also carries a converter adoption-status
-   probe so Rust/Ruby/Python/Go support, planned broader languages, and gated
-   LLM-assist claims remain machine-readable instead of living only in
-   marketing copy. The planned Garnet-aware assist contract is provider- and
-   model-optional: it documents required context, safe-mode/memory/CapCaps
-   analysis targets, lineage, sandbox, `garnet check`, dogfood-bundle, and
+   probe so Rust/Ruby/Python/Go active support, JavaScript/TypeScript/Swift/Java/C/C++/C#/Perl/Kotlin/Shell/SQL/Other
+   advisory planning, native-boundary recommendations for C/C++/Objective-C/Assembly/CUDA/platform-specific
+   code, Wasm/LLVM-style backend-lowering plans, and gated LLM-assist claims
+   remain machine-readable instead of living only in marketing copy. The planned
+   Garnet-aware assist contract is provider- and model-optional: it documents
+   required context, safe-mode/memory/CapCaps analysis targets, risk inventory,
+   review handoff, lineage, sandbox, `garnet check`, dogfood-bundle, and
    human-audit gates without claiming broad or active LLM conversion. The
    deterministic local assist context pack now hashes the current truth, public
    README, Mini-Spec, conformance matrix, and dogfood ledger so a future
    provider-backed assist lane has a concrete context source before any model
    or network dependency is introduced. The deterministic converter assist-plan
-   reporter takes an active or planned language plus one source file and emits
+   reporter takes an active or advisory language plus one source file and emits
    advisory migration risks, required gates, next steps, JSON/Markdown, and a
    manifest while keeping planned-language conversion inactive. The promo video
    readiness contract now locks the 30-second storyboard, brand assets, and
@@ -202,7 +211,8 @@ highest-leverage next milestones are:
    `scripts/garnet_mit_readiness_status.py`, so agents and public-site copy can
    report `87/87` tracked slices without turning that into a false claim that
    notarization, mobile distribution, promo video, broad converter frontends,
-   LLM assist, proof, or empirical validation are complete.
+   provider-backed LLM assist, native backend lowering, proof, or empirical
+   validation are complete.
 9. **Formal/empirical proof:** keep Paper V theorem sketches and Paper VI
    experiments separate from implemented guarantees until tests or proofs land.
 
@@ -772,6 +782,32 @@ DMG SHA-256
 This is still provider-neutral handoff packaging, not provider-backed LLM
 conversion or trusted candidate output before lineage, `@sandbox`,
 `garnet check`, dogfood evidence, and human audit.
+Phase 6AX aligns the converter/productization strategy after the advisory
+handoff lane. `scripts/garnet_converter_status.py`,
+`scripts/garnet_converter_llm_feasibility.py`, and
+`scripts/garnet_adoption_surface_status.py` now preserve a three-label language
+menu: active deterministic conversion for Rust/Ruby/Python/Go, advisory
+planning for JavaScript/TypeScript/Swift/Java/C/C++/C#/Perl/Kotlin/Shell/SQL/Other,
+and native-boundary recommendations for C/C++/Objective-C/Assembly/CUDA/platform-specific
+code. The new strategy doc records why best-fit imports map to high-level
+product logic, agent orchestration, policy, memory, and capability surfaces
+while bad direct-conversion fits depend on ABI, layout, timing, hardware, or
+platform runtime fidelity. The same slice records the longer-term two-way
+architecture: Garnet can import high-level logic where it fits and later lower
+Garnet code toward Wasm/LLVM-style native targets after backend evidence exists,
+without pretending source-to-source conversion preserves low-level behavior.
+`docs/index.html` now stays landing-page oriented while `docs/status.html`
+carries detailed readiness gates, and the Windows/Linux plus Apple distribution
+handoffs tell future Windows Codex, Claude Code, and account-owner work exactly
+which claims remain credential- or platform-gated. This is a truth/architecture
+slice, not provider-backed LLM conversion, implemented C/C++/Objective-C/CUDA
+translation, App Store release, signed Windows package, or native compiler
+backend evidence. Current source-checkout evidence passes `106/106` with
+`skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-124251`;
+refreshed web/PWA evidence lives at
+`/Users/idc2.0/Desktop/dogfood/web-pwa-readiness-20260516-124308`; and Swift
+Studio tests pass `26/26`.
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.

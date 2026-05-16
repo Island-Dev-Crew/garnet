@@ -22,11 +22,11 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | v0.4.2 release assets | Org release published and release-backed installer smoke passed | `Island-Dev-Crew/garnet` release `v0.4.2`; `./scripts/verify_org_release_smoke.sh`; Desktop bundle `/Users/idc2.0/Desktop/dogfood/garnet-phase4bi-org-release-closed-20260515-1843` | Keep release assets/checksums intact; signed macOS `.pkg` and Windows MSI remain separate authority work |
 | Agentic dogfood stress matrix | Active for audited agent-facing workflows, packaged-app mode, diagnostics, adversarial input boundaries, web/PWA productization, macOS CI artifact capture, packaged-resource source-workspace boundaries, and per-domain coverage adequacy | `scripts/run_agentic_dogfood_matrix.py --copy-to-desktop --strict`; `.github/workflows/agentic-dogfood-matrix.yml` runs the headless-safe matrix with `--skip-app-workbench`; Desktop bundles under `/Users/idc2.0/Desktop/dogfood/`; `F_Project_Management/DOGFOOD/GARNET_AGENTIC_DOGFOOD_STRESS_PLAN.md` | Keep the 3-5 probe bar visible while keeping functional failures, documented skips, and coverage debt separate; all current source-checkout domains are adequate after template scaffold-run-test, doc/fmt check/fmt repair, adversarial parser/capability/safe-mode rejection, advertised log-analyzer parse/check/run, offline/local/browser PWA probes, and Garnet Studio self/smoke/XCTest app probes |
 | Garnet Studio agentic matrix surface | Active for source-checkout, packaged app, mounted-DMG install-smoke, packaged docs/PWA resources, converter assist-plan packaged resource staging, Converter-panel assist-plan UI, source-checkout Run-button workflow, source-workspace-only cargo probe skip accounting, manifest-backed DMG smoke evidence, credential-gated Developer ID hardened-runtime signing, and notarization-preflight workflows | `python3 scripts/test_garnet_studio_run_button.py`; `./script/build_and_run.sh --verify`; `swift run --package-path apps/garnet-studio-macos GarnetStudio --agentic-matrix-test`; `swift test --package-path apps/garnet-studio-macos`; `swift run --package-path apps/garnet-studio-macos GarnetStudio --self-test`; `swift run --package-path apps/garnet-studio-macos GarnetStudio --smoke-test`; `./scripts/package_garnet_studio_macos.sh`; `scripts/smoke_garnet_studio_dmg.sh --copy-to-desktop target/macos/GarnetStudio.dmg`; `scripts/preflight_garnet_studio_notarization.sh --copy-to-desktop`; `security find-identity -p codesigning -v`; Desktop bundles `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-040631`, `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-045430`, `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-045440`, `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-074756`, `/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-074816`, and `/Users/idc2.0/Desktop/dogfood/garnet-studio-notarization-preflight-20260516-021713` | Configure a valid Developer ID identity plus notary profile, then run strict notarization preflight and real-browser web/PWA/mobile gates as separate productization slices |
-| Garnet web/PWA readiness | Active seed installable docs surface plus offline service-worker, Studio workbench adoption section, live Pages Studio-copy smoke, and local real-browser offline gate | `docs/manifest.webmanifest`; `docs/service-worker.js`; `docs/index.html`; `scripts/smoke_garnet_web_pwa.sh --copy-to-desktop --strict`; `scripts/smoke_garnet_web_pwa_offline.mjs --docs-dir docs`; `scripts/smoke_garnet_web_pwa_browser.mjs --docs-dir docs`; `scripts/smoke_garnet_pages_pwa.sh --copy-to-desktop --strict`; `python3 scripts/test_smoke_garnet_pages_pwa.py`; `.github/workflows/web-pwa-readiness.yml`; Browser smoke of `http://127.0.0.1:8765/index.html#studio` | Broaden beyond static docs into a richer web workbench only after the shell, offline service-worker fallback, browser offline gate, Pages deployment smoke, and Studio adoption-copy guard stay green |
-| Converter adoption truth | Active for deterministic Rust/Ruby/Python/Go migration assistance plus explicit planned language and Garnet-aware LLM/agentic assist gates | `scripts/garnet_converter_status.py`; `python3 scripts/test_garnet_converter_status.py`; `scripts/run_agentic_dogfood_matrix.py` probe `report-converter-adoption-status`; `docs/index.html`; `docs/ladder.html` | Add JavaScript/TypeScript or other high-value language frontends only as separate tested slices; keep intelligent assist advisory, provider-optional, sandboxed, lineage-preserving, `garnet check`-verified, human-audited, and dogfood-gated |
+| Garnet web/PWA readiness | Active seed installable docs surface plus offline service-worker, Studio workbench adoption section, readiness status page, live Pages Studio/status-copy smoke, and local real-browser offline gate | `docs/manifest.webmanifest`; `docs/service-worker.js`; `docs/index.html`; `docs/status.html`; `scripts/smoke_garnet_web_pwa.sh --copy-to-desktop --strict`; `scripts/smoke_garnet_web_pwa_offline.mjs --docs-dir docs`; `scripts/smoke_garnet_web_pwa_browser.mjs --docs-dir docs`; `scripts/smoke_garnet_pages_pwa.sh --copy-to-desktop --strict`; `python3 scripts/test_smoke_garnet_pages_pwa.py`; `.github/workflows/web-pwa-readiness.yml`; Browser smoke of `http://127.0.0.1:8765/index.html#studio` | Broaden beyond static docs into a richer web workbench only after the shell, offline service-worker fallback, browser offline gate, Pages deployment smoke, Studio adoption-copy guard, and status-page guard stay green |
+| Converter adoption truth | Active for deterministic Rust/Ruby/Python/Go migration assistance plus explicit advisory language, native-boundary, backend-lowering, and Garnet-aware LLM/agentic assist gates | `scripts/garnet_converter_status.py`; `python3 scripts/test_garnet_converter_status.py`; `scripts/run_agentic_dogfood_matrix.py` probe `report-converter-adoption-status`; `docs/index.html`; `docs/status.html`; `F_Project_Management/GARNET_CONVERTER_AND_PLATFORM_STRATEGY.md` | Add JavaScript/TypeScript or other high-value deterministic frontends only as separate tested slices; keep advisory planning provider-optional, sandboxed, lineage-preserving, `garnet check`-verified, human-audited, native-boundary honest, and dogfood-gated |
 | Garnet-aware assist context pack | Active for deterministic current-truth context and provider-neutral prompt packaging before any provider-backed converter assist is enabled | `scripts/garnet_assist_context_pack.py`; `python3 scripts/test_garnet_assist_context_pack.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-assist-context-*`; `docs/index.html` | Use this pack as the future LLM/agentic assist input contract; do not claim model-backed conversion until provider/runtime boundaries and dogfood gates exist |
-| Converter assist planning | Active for deterministic per-file planned-language migration risk planning without activating broad conversion | `scripts/garnet_converter_assist_plan.py`; `python3 scripts/test_garnet_converter_assist_plan.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-assist-plan-*`; `docs/index.html` | Keep this advisory-only: it may inventory safe-mode, memory, CapCaps, actor/orchestration, and migration risks for TypeScript, JavaScript, Swift, Java, C, C++, C#, Perl, and other planned sources, but deterministic frontends and provider-backed conversion remain separate gated slices |
-| Converter LLM feasibility | Active for answering whether an LLM belongs in the converter path without overclaiming active conversion | `scripts/garnet_converter_llm_feasibility.py`; `python3 scripts/test_garnet_converter_llm_feasibility.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-converter-llm-feasibility-*`; `docs/index.html` | Treat provider-neutral advisory planning as feasible; keep autonomous/provider-backed LLM conversion inactive until secure runtime, deterministic frontend, lineage, `@sandbox`, `garnet check`, dogfood, and human-audit gates exist |
+| Converter assist planning | Active for deterministic per-file advisory-language migration risk planning without activating broad conversion | `scripts/garnet_converter_assist_plan.py`; `python3 scripts/test_garnet_converter_assist_plan.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-assist-plan-*`; `docs/index.html`; `docs/status.html` | Keep this advisory-only: it may inventory safe-mode, memory, CapCaps, actor/orchestration, shell/process, SQL/data, and migration risks for TypeScript, JavaScript, Swift, Java, C, C++, C#, Perl, Kotlin, Shell, SQL, Other, and native-boundary sources, but deterministic frontends and provider-backed conversion remain separate gated slices |
+| Converter LLM feasibility | Active for answering whether an LLM belongs in the converter path without overclaiming active conversion | `scripts/garnet_converter_llm_feasibility.py`; `python3 scripts/test_garnet_converter_llm_feasibility.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-converter-llm-feasibility-*`; `docs/index.html`; `docs/status.html` | Treat provider-neutral advisory planning as feasible; keep autonomous/provider-backed LLM conversion inactive until secure runtime, deterministic frontend, native-boundary, lineage, `@sandbox`, `garnet check`, dogfood, and human-audit gates exist |
 | Converter advisory bundle | Active for provider-neutral local handoff packaging before any provider-backed model lane exists | `scripts/garnet_converter_advisory_bundle.py`; `python3 scripts/test_garnet_converter_advisory_bundle.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-converter-advisory-bundle-*`; `docs/index.html` | Combine feasibility, context, and per-file assist-plan evidence in a manifested bundle; omit source by default, require `--include-source` for explicit local/provider handoff, and keep conversion inactive |
 | Converter advisory review | Active for checking a manifested advisory bundle before any model/agent handoff | `scripts/garnet_converter_advisory_review.py`; `python3 scripts/test_garnet_converter_advisory_review.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-converter-advisory-review-*`; `docs/index.html` | Verify the bundle manifest, block source-included bundles unless explicitly approved, emit a human-review checklist, and keep provider-backed conversion inactive |
 | Converter advisory handoff | Active for source-free provider-neutral prompt packaging after the review gate | `scripts/garnet_converter_advisory_handoff.py`; `python3 scripts/test_garnet_converter_advisory_handoff.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-converter-advisory-handoff-*`; `docs/index.html` | Consume the reviewed advisory bundle, refuse blocked/source-included reviews, emit a no-source handoff packet, and keep model calls plus conversion inactive |
@@ -1880,12 +1880,12 @@ clean-machine Gatekeeper proof.
 
 Phase 6AA Studio assist-plan UI pass: the macOS Converter panel now exposes a
 separate `Assist Plan` action backed by `scripts/garnet_converter_assist_plan.py`.
-The language picker includes planned adoption targets such as TypeScript,
-JavaScript, Swift, Java, C, C++, C#, and Perl for advisory planning, while normal
-`Convert` remains limited to active deterministic converter frontends
-(Rust/Ruby/Python/Go). This is a productization pass over deterministic
-planning evidence; it does not make planned languages active converters and
-does not claim provider-backed LLM conversion.
+The language picker includes advisory adoption targets such as TypeScript,
+JavaScript, Swift, Java, C, C++, C#, Perl, Kotlin, Shell, SQL, and Other for
+planning, while normal `Convert` remains limited to active deterministic
+converter frontends (Rust/Ruby/Python/Go). This is a productization pass over
+deterministic planning evidence; it does not make advisory languages active
+converters and does not claim provider-backed LLM conversion.
 
 Phase 6AB Studio Run-button workflow pass: the source checkout now includes
 `script/build_and_run.sh`, which builds the SwiftPM Studio package, stages
@@ -1925,7 +1925,9 @@ Phase 6AF planned-language assist breadth pass: the agentic matrix now carries
 JavaScript, Swift, Java, and C++ assist-plan fixtures alongside TypeScript, and
 `scripts/garnet_converter_assist_plan.py` recognizes Java
 `CompletableFuture`/executor-style orchestration vocabulary as an
-actor/orchestration migration risk. This expands advisory planned-language
+actor/orchestration migration risk. Phase 6AX extends the same taxonomy to keep
+Kotlin, Shell, SQL, and Other advisory-only, while C/C++/Objective-C/Assembly/CUDA/platform-specific
+code are labeled native-boundary first. This expands advisory planned-language
 evidence without activating broad deterministic conversion or provider-backed
 LLM conversion. Local evidence passes `68/68` with `skipped=0` in Desktop
 bundle `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-055816`.
@@ -1933,12 +1935,13 @@ bundle `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-055816`.
 Phase 6AO converter LLM feasibility pass: `scripts/garnet_converter_llm_feasibility.py`
 now makes the current feasibility decision executable. Advisory, provider-neutral
 planning is feasible; autonomous/provider-backed LLM conversion is not active and
-is blocked on secure runtime boundaries, deterministic frontend gates, lineage,
-`@sandbox`, `garnet check`, dogfood evidence, and human audit. The agentic matrix
-adds C, C#, and Perl planned-language assist fixtures plus a four-probe
-`converter LLM feasibility` domain so the advertised broad-language assist
-surface is dogfood-probed without activating those languages as deterministic
-frontends. Local evidence passes `84/84` with `skipped=0` in Desktop bundle
+is blocked on secure runtime boundaries, deterministic frontend gates, native
+boundary review, lineage, `@sandbox`, `garnet check`, dogfood evidence, and
+human audit. The agentic matrix adds C, C#, and Perl planned-language assist
+fixtures plus a four-probe `converter LLM feasibility` domain so the advertised
+broad-language assist surface is dogfood-probed without activating those
+languages as deterministic frontends. Local evidence passes `84/84` with
+`skipped=0` in Desktop bundle
 `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-084611`.
 
 Phase 6AP converter advisory bundle pass: `scripts/garnet_converter_advisory_bundle.py`
@@ -2036,6 +2039,41 @@ The packaged app/DMG smoke passes in
 `/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-103813` with
 DMG SHA-256
 `396c5afc7e5409fc9977d0dcd582a363851f65f1479ceb7be8f1c838d94cb932`.
+
+Phase 6AW converter advisory handoff UX pass: the macOS Studio Converter panel
+exposes `Advisory Handoff` after `Advisory Review`. The action creates a
+default no-source advisory bundle, runs the provider-neutral review gate, then
+packages the reviewed no-source context through
+`garnet_converter_advisory_handoff.py` into
+`~/Desktop/dogfood/garnet-studio-advisory-handoff-<stamp>`. This keeps
+provider/model execution, autonomous conversion, and candidate-output trust
+outside the active lane until lineage, `@sandbox`, `garnet check`, dogfood
+evidence, and human audit are complete.
+
+Phase 6AX converter/platform strategy pass: the converter and public adoption
+surface now use an explicit three-label language taxonomy. Active deterministic
+conversion remains Rust/Ruby/Python/Go. Advisory planning now covers
+JavaScript/TypeScript/Swift/Java/C/C++/C#/Perl/Kotlin/Shell/SQL/Other through
+risk inventory, Garnet-aware context, advisory bundle, review, and handoff.
+C/C++/Objective-C/Assembly/CUDA/platform-specific code are labeled
+native-boundary recommended so low-level ABI, timing, layout, GPU, and platform
+runtime behavior is wrapped through native modules or FFI instead of promised
+as lossless source conversion. The new
+`F_Project_Management/GARNET_CONVERTER_AND_PLATFORM_STRATEGY.md` records the
+two-way architecture: import high-level agent/product logic into Garnet where
+it fits, keep precision-native code beside Garnet with CapCaps, lineage,
+memory, and sandbox declarations, and later lower Garnet out to Wasm or
+LLVM-style native targets only after compiler-backend evidence exists.
+`docs/index.html` now stays landing-page focused while `docs/status.html`
+carries detailed readiness gates. The same slice adds Apple distribution and
+Windows/Linux Studio handoff packets so account-owner signing work and
+cross-platform Studio MVP work can proceed without overclaiming App Store,
+notarization, signed MSI, provider-backed LLM conversion, or native backend
+completion. Local evidence passes `106/106` with `skipped=0` in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-124251`,
+web/PWA readiness passes with blockers/warnings at zero in
+`/Users/idc2.0/Desktop/dogfood/web-pwa-readiness-20260516-124308`, and
+`swift test --package-path apps/garnet-studio-macos` passes `26/26`.
 
 Phase 6AG promo-video readiness pass: `scripts/garnet_promo_video_status.py`
 now records the requested 30-second Garnet promo as a planned-contract lane

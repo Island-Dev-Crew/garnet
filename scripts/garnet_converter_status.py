@@ -46,10 +46,19 @@ class IntelligentAssistContract:
     status: str
     provider_required: bool
     model_required: bool
+    pipeline: list[str]
     required_context: list[str]
     analysis_targets: list[str]
     required_gates: list[str]
     notes: list[str]
+
+
+@dataclass(frozen=True)
+class BackendLoweringStrategy:
+    status: str
+    planned_targets: list[str]
+    use_cases: list[str]
+    guardrails: list[str]
 
 
 @dataclass(frozen=True)
@@ -58,9 +67,11 @@ class ConverterStatus:
     converter_scope: str
     active_languages: list[LanguageLane]
     planned_languages: list[LanguageLane]
+    native_boundary_languages: list[LanguageLane]
     trust_boundaries: TrustBoundaries
     llm_assist: LlmAssist
     intelligent_assist_contract: IntelligentAssistContract
+    backend_lowering_strategy: BackendLoweringStrategy
 
 
 def active_languages() -> list[LanguageLane]:
@@ -118,6 +129,10 @@ def planned_languages() -> list[LanguageLane]:
         ("cpp", "C++"),
         ("csharp", "C#"),
         ("perl", "Perl"),
+        ("kotlin", "Kotlin"),
+        ("shell", "Shell"),
+        ("sql", "SQL"),
+        ("other", "Other"),
     ]
     return [
         LanguageLane(
@@ -134,12 +149,37 @@ def planned_languages() -> list[LanguageLane]:
     ]
 
 
+def native_boundary_languages() -> list[LanguageLane]:
+    native = [
+        ("c", "C"),
+        ("cpp", "C++"),
+        ("objective_c", "Objective-C"),
+        ("assembly", "Assembly"),
+        ("cuda", "CUDA"),
+        ("platform_specific", "platform-specific code"),
+    ]
+    return [
+        LanguageLane(
+            id=identifier,
+            label=label,
+            status="native-boundary-recommended",
+            evidence=[],
+            notes=(
+                "Prefer native modules or FFI with explicit Garnet CapCaps, memory declarations, "
+                "lineage, and sandbox boundaries instead of direct source-to-source conversion."
+            ),
+        )
+        for identifier, label in native
+    ]
+
+
 def read_status() -> ConverterStatus:
     return ConverterStatus(
         source=str(ROOT / "garnet-convert"),
-        converter_scope="stylized-migration-assistant",
+        converter_scope="bidirectional-advisory-migration-surface",
         active_languages=active_languages(),
         planned_languages=planned_languages(),
+        native_boundary_languages=native_boundary_languages(),
         trust_boundaries=TrustBoundaries(
             sandbox_on_by_default=True,
             lineage_required=True,
@@ -165,6 +205,15 @@ def read_status() -> ConverterStatus:
             status="planned-contract",
             provider_required=False,
             model_required=False,
+            pipeline=[
+                "source language classifier",
+                "risk inventory",
+                "Garnet-aware context pack",
+                "advisory plan",
+                "review handoff",
+                "human-approved candidate",
+                "garnet check/test/dogfood",
+            ],
             required_context=[
                 "CURRENT_STATE.md",
                 "README.md",
@@ -193,6 +242,24 @@ def read_status() -> ConverterStatus:
                 "Provider choice remains outside the converter contract until a secure execution design exists.",
             ],
         ),
+        backend_lowering_strategy=BackendLoweringStrategy(
+            status="planned-two-way-architecture",
+            planned_targets=[
+                "Wasm",
+                "LLVM-style native targets",
+                "native package toolchains",
+            ],
+            use_cases=[
+                "performance-sensitive kernels written in Garnet",
+                "system integration where Garnet should lower out rather than replace native code",
+                "sandboxed plugin surfaces that need portable execution",
+            ],
+            guardrails=[
+                "Do not claim source-to-source conversion preserves low-level fidelity.",
+                "Do not claim Wasm, LLVM, or native backends are implemented until compiler evidence lands.",
+                "Keep C/C++/Objective-C/Assembly/CUDA/platform-specific code behind FFI/native-module contracts until then.",
+            ],
+        ),
     )
 
 
@@ -204,6 +271,8 @@ def render_markdown(status: ConverterStatus) -> str:
         for language in status.planned_languages
         if language.label not in {"JavaScript", "TypeScript"}
     )
+    native_labels = ", ".join(language.label for language in status.native_boundary_languages)
+    backend_targets = ", ".join(status.backend_lowering_strategy.planned_targets)
     lines = [
         "# Garnet Converter Adoption Status",
         "",
@@ -213,6 +282,10 @@ def render_markdown(status: ConverterStatus) -> str:
             f"Active today: {active_labels}. This is a "
             "stylized migration assistant, not a full transpiler."
         ),
+        "",
+        "Best-fit imports: agent orchestration, app glue, capability-aware workflows, memory-aware services, and migration planning.",
+        "",
+        "Bad direct-conversion fits: kernels, drivers, pointer-heavy native systems, GPU kernels, hard real-time paths, SIMD loops, and platform ABI glue.",
         "",
         "## Active Deterministic Lanes",
         "",
@@ -231,6 +304,17 @@ def render_markdown(status: ConverterStatus) -> str:
                 "but not implemented yet."
             ),
             f"- {other_planned}: planned only after a tested frontend boundary exists.",
+            "- Other: advisory analysis only until deterministic support exists.",
+            "",
+            "## Native boundary recommended",
+            "",
+            f"- {native_labels}: keep low-level fidelity in native modules or FFI and wrap it with Garnet CapCaps, memory declarations, lineage, and sandbox policy.",
+            "",
+            "## Backend Lowering Strategy",
+            "",
+            f"- Status: {status.backend_lowering_strategy.status}.",
+            f"- Planned targets: {backend_targets}.",
+            "- Garnet should lower out to native backends for performance and system integration rather than pretending every low-level source maps cleanly into Garnet.",
             "",
             "## Trust Boundaries",
             "",
@@ -269,6 +353,9 @@ def render_markdown(status: ConverterStatus) -> str:
     lines.extend(["", "Required gates:"])
     for item in status.intelligent_assist_contract.required_gates:
         lines.append(f"- {item}")
+
+    lines.extend(["", "Recommended pipeline:"])
+    lines.append(" -> ".join(status.intelligent_assist_contract.pipeline))
 
     lines.extend(
         [
