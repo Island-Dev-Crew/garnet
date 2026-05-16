@@ -226,6 +226,21 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertEqual(domains["agent memory and analysis"], 3)
         self.assertIn("parse-advertised-log-analyzer-memory", ids)
 
+    def test_probe_inventory_covers_signed_memory_persistence_integrity(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            fixtures = matrix.prepare_fixtures(work)
+            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
+
+        ids = {probe.id for probe in concrete_probes}
+        domains = Counter(probe.domain for probe in concrete_probes)
+
+        self.assertEqual(domains["memory persistence integrity"], 3)
+        self.assertIn("memory-signed-cache-roundtrip", ids)
+        self.assertIn("memory-signed-cache-tamper-rejection", ids)
+        self.assertIn("memory-signed-cache-foreign-key-rejection", ids)
+
     def test_probe_inventory_covers_agent_toolbelt_examples(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
@@ -290,6 +305,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertEqual(coverage["developer experience"]["status"], "adequate")
         self.assertEqual(coverage["agent toolbelt examples"]["status"], "adequate")
         self.assertEqual(coverage["agent memory and analysis"]["status"], "adequate")
+        self.assertEqual(coverage["memory persistence integrity"]["status"], "adequate")
         self.assertEqual(coverage["agent recovery and diagnostics"]["status"], "adequate")
         self.assertEqual(coverage["MIT readiness accounting"]["status"], "adequate")
         self.assertEqual(coverage["converter intelligent assist"]["status"], "adequate")

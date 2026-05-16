@@ -1826,6 +1826,12 @@ memory. Tampered payloads and foreign keys are rejected as `MacMismatch`. The
 existing unsigned typed-cache API remains for compatibility, so broad signed
 persistence and production allocator-integrated ARC remain deferred.
 
+Phase 6V dogfood evidence pass: the agentic dogfood matrix now includes a
+`memory persistence integrity` domain with three signed typed-cache probes:
+round-trip with the same key, tampered payload rejection, and foreign-key
+rejection before live mutation. This raises source/app dogfood coverage for the
+Phase 6U trust boundary without broadening the underlying runtime claim.
+
 ## Milestone 7: Release, Proof, Native Backend, And Empirical Evidence
 
 **Purpose:** Give the too-large ambitions their own rigorous tracks so they stop being confused with current runtime truth.
