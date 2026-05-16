@@ -37,6 +37,8 @@ class AdoptionSurface:
     accurate_pitch: str
     active_converter_languages: list[str]
     planned_converter_languages: list[str]
+    native_boundary_languages: list[str]
+    two_way_architecture: str
     llm_assist_status: str
     llm_assist_truth: list[str]
     verified_use_cases: list[UseCase]
@@ -139,6 +141,13 @@ def read_surface() -> AdoptionSurface:
         ),
         active_converter_languages=active_languages,
         planned_converter_languages=planned_languages,
+        native_boundary_languages=[language.label for language in converter.native_boundary_languages],
+        two_way_architecture=(
+            "Import high-level product logic into Garnet through advisory planning; keep low-level "
+            "C/C++/Rust/C#/Objective-C/Assembly/CUDA/platform-specific code in native modules or FFI "
+            "with Garnet CapCaps, memory declarations, lineage, and sandbox policy; plan longer-term "
+            "Garnet lowering out to Wasm and LLVM-style native targets for performance."
+        ),
         llm_assist_status=lanes["llm_assist"].status,
         llm_assist_truth=[
             f"converter LLM feasibility is {feasibility.status}",
@@ -149,13 +158,15 @@ def read_surface() -> AdoptionSurface:
             "advisory review gate is active before model handoff",
             "provider-neutral advisory handoff packet is active",
             "provider-backed conversion is not active",
+            "source classifier -> risk inventory -> Garnet context -> advisory plan -> review handoff -> human-approved candidate -> garnet check/test/dogfood is the required pipeline",
             "suggestions must preserve lineage, sandboxing, garnet check, dogfood evidence, and human audit",
             "deterministic converter output remains authoritative",
         ],
         verified_use_cases=verified_use_cases(),
         repo_site_contract=[
             "Site copy must say active converter lanes are Rust, Ruby, Python, and Go only.",
-            "Site copy may discuss JavaScript, TypeScript, Swift, Java, C, C++, C#, and Perl only as planned lanes.",
+            "Site copy may discuss JavaScript, TypeScript, Swift, Java, C, C++, C#, Perl, Kotlin, Shell, SQL, and Other only as advisory planning lanes.",
+            "Site copy must label C, C++, Objective-C, Assembly, CUDA, and platform-specific code as native-boundary languages, not direct conversion promises.",
             "LLM assist must be described as gated advisory context and assist planning, not active conversion.",
             "Install and app copy must not claim Developer ID notarization or clean-machine Gatekeeper success.",
             "Use-case hooks must point to current tests, scripts, examples, or dogfood bundles.",
@@ -184,7 +195,9 @@ def render_markdown(surface: AdoptionSurface) -> str:
         "## Converter Truth",
         "",
         f"Active deterministic lanes: {', '.join(surface.active_converter_languages)}.",
-        f"Planned lanes only: {', '.join(surface.planned_converter_languages)}.",
+        f"Advisory planning lanes only: {', '.join(surface.planned_converter_languages)}.",
+        f"Native boundary recommended: {', '.join(surface.native_boundary_languages)}.",
+        f"Two-way architecture: {surface.two_way_architecture}",
         f"LLM assist status: **{surface.llm_assist_status}**.",
         "",
         "LLM assist truth:",

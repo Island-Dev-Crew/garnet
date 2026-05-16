@@ -86,6 +86,10 @@ def _normalise_language(value: str) -> str:
         "rb": "ruby",
         "rs": "rust",
         "golang": "go",
+        "bash": "shell",
+        "sh": "shell",
+        "zsh": "shell",
+        "sqlite": "sql",
     }
     lowered = value.strip().lower()
     return aliases.get(lowered, lowered)
@@ -137,6 +141,8 @@ def _risk_inventory(text: str) -> list[MigrationRisk]:
             "CapCaps/capability boundaries",
             (
                 "fetch",
+                "curl",
+                "wget",
                 "http",
                 "https",
                 "socket",
@@ -144,6 +150,8 @@ def _risk_inventory(text: str) -> list[MigrationRisk]:
                 "file",
                 "readfile",
                 "writefile",
+                "exec",
+                "spawn",
                 "lwp::useragent",
                 "useragent",
                 "->get",
@@ -159,7 +167,21 @@ def _risk_inventory(text: str) -> list[MigrationRisk]:
         (
             "memory declaration candidate",
             "memory declarations",
-            ("cache", "memory", "remember", "history", "vector", "embedding", "map<", "new map"),
+            (
+                "cache",
+                "memory",
+                "remember",
+                "history",
+                "vector",
+                "embedding",
+                "map<",
+                "new map",
+                "create table",
+                "select ",
+                "insert ",
+                "update ",
+                "delete ",
+            ),
             "Promote durable state into explicit Garnet memory declarations where appropriate.",
         ),
     ]

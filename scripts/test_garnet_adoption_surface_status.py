@@ -23,9 +23,36 @@ class GarnetAdoptionSurfaceStatusTests(unittest.TestCase):
 
         self.assertEqual(["Rust", "Ruby", "Python", "Go"], data["active_converter_languages"])
         self.assertEqual(
-            {"JavaScript", "TypeScript", "Swift", "Java", "C", "C++", "C#", "Perl"},
+            {
+                "JavaScript",
+                "TypeScript",
+                "Swift",
+                "Java",
+                "C",
+                "C++",
+                "C#",
+                "Perl",
+                "Kotlin",
+                "Shell",
+                "SQL",
+                "Other",
+            },
             set(data["planned_converter_languages"]),
         )
+        self.assertEqual(
+            {
+                "C",
+                "C++",
+                "Objective-C",
+                "Assembly",
+                "CUDA",
+                "platform-specific code",
+            },
+            set(data["native_boundary_languages"]),
+        )
+        self.assertIn("native modules or FFI", data["two_way_architecture"])
+        self.assertIn("Wasm", data["two_way_architecture"])
+        self.assertIn("LLVM-style native targets", data["two_way_architecture"])
         self.assertEqual("active-partial", data["llm_assist_status"])
         self.assertIn("converter LLM feasibility is advisory-feasible", data["llm_assist_truth"])
         self.assertIn(
@@ -54,7 +81,8 @@ class GarnetAdoptionSurfaceStatusTests(unittest.TestCase):
         )
         contract = "\n".join(data["repo_site_contract"])
         self.assertIn("Rust, Ruby, Python, and Go only", contract)
-        self.assertIn("planned lanes", contract)
+        self.assertIn("advisory planning lanes", contract)
+        self.assertIn("native-boundary languages", contract)
         self.assertIn("not active conversion", contract)
 
     def test_macos_workbench_hook_reflects_current_studio_workflows(self) -> None:
@@ -91,7 +119,12 @@ class GarnetAdoptionSurfaceStatusTests(unittest.TestCase):
 
         self.assertIn("Rust rigor, Ruby velocity, agent-native dogfood evidence.", markdown)
         self.assertIn("Active deterministic lanes: Rust, Ruby, Python, Go.", markdown)
-        self.assertIn("Planned lanes only: JavaScript, TypeScript, Swift", markdown)
+        self.assertIn("Advisory planning lanes only: JavaScript, TypeScript, Swift", markdown)
+        self.assertIn("Kotlin", markdown)
+        self.assertIn("Shell", markdown)
+        self.assertIn("SQL", markdown)
+        self.assertIn("Other", markdown)
+        self.assertIn("Native boundary recommended: C, C++, Objective-C, Assembly, CUDA, platform-specific code.", markdown)
         self.assertIn("provider-backed conversion is not active", markdown)
         self.assertIn("It is not yet a notarized product", markdown)
         self.assertIn("Dual-mode programming", markdown)
@@ -117,9 +150,16 @@ class GarnetAdoptionSurfaceStatusTests(unittest.TestCase):
         self.assertIn("Objective Pulse", site)
         self.assertIn("provider-neutral prompt pack", site)
         self.assertIn(
-            "feasibility + context + prompt + assist plan + advisory bundle + review gate + handoff packet active",
+            "source classifier -> risk inventory -> Garnet context -> advisory plan -> review handoff -> human-approved candidate -> garnet check/test/dogfood",
             site,
         )
+        self.assertIn("Active conversion", site)
+        self.assertIn("Advisory planning", site)
+        self.assertIn("Native boundary", site)
+        self.assertIn("Kotlin", site)
+        self.assertIn("Shell", site)
+        self.assertIn("SQL", site)
+        self.assertIn("Other", site)
 
 
 if __name__ == "__main__":

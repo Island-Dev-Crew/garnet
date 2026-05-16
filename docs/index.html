@@ -752,6 +752,7 @@
       <a href="#install">Install</a>
       <a href="#studio">Studio</a>
       <a href="#docs">Docs</a>
+      <a href="status.html">Status</a>
     </div>
     <a href="#install" class="cta">Get Started</a>
   </div>
@@ -1064,9 +1065,9 @@
   <div class="container reveal">
     <h3>Migrate at Your Pace</h3>
     <h2>Convert <span class="accent">Rust · Ruby · Python · Go</span> source to Garnet.</h2>
-    <p class="lead">The <code>garnet convert</code> tool is a migration assistant, not a full transpiler: it reads four deterministic source lanes and emits sandboxed Garnet with lineage, metrics, and a human migration checklist. JavaScript, TypeScript, Swift, Java, C, C++, C#, and Perl lanes are planned only behind the same converter evidence gate.</p>
-    <p class="lead">The next adoption frontier now has a deterministic Garnet-aware context pack, provider-neutral prompt pack, per-file assist planner, LLM feasibility reporter, manifested advisory bundle, and review gate: advisory planning is feasible, but autonomous/provider-backed LLM conversion is not active and remains blocked on secure runtime boundaries, deterministic frontend gates, lineage, <code>@sandbox</code>, <code>garnet check</code>, dogfood evidence, and human audit. An optional future advisor can read the current truth, Mini-Spec, conformance matrix, dogfood ledger, and per-source risk bundle only after the review gate verifies the bundle manifest and source-privacy boundary.</p>
-    <p class="lead">Adoption surface status is machine-readable through <code>scripts/garnet_adoption_surface_status.py</code>; the site keeps active lanes, planned lanes, LLM-assist boundaries, verified use-case hooks, and open productization gates tied to the same evidence.</p>
+    <p class="lead">The <code>garnet convert</code> tool is a migration assistant, not a full transpiler: it reads four deterministic source lanes and emits sandboxed Garnet with lineage, metrics, and a human migration checklist.</p>
+    <p class="lead">The broader converter surface is honest by design: active conversion for the languages with deterministic frontends, advisory planning for broader source, native boundaries where low-level fidelity matters, and future Garnet-to-Wasm/LLVM-style lowering when backend evidence exists. Adoption surface truth is machine-readable through <code>scripts/garnet_adoption_surface_status.py</code>.</p>
+    <p class="lead">LLM advisory work uses the provider-neutral prompt pack and follows one reviewable path: source classifier -> risk inventory -> Garnet context -> advisory plan -> review handoff -> human-approved candidate -> garnet check/test/dogfood.</p>
 
     <div class="convert-grid">
       <div class="code-col ruby"><div class="head"><div class="swatch"></div>RUBY — source</div>
@@ -1096,12 +1097,10 @@
     </div>
 
     <div class="lang-badges">
-      <div class="lang-badge">Rust</div>
-      <div class="lang-badge">Ruby</div>
-      <div class="lang-badge">Python</div>
-      <div class="lang-badge">Go</div>
-      <div class="lang-badge">Planned: JS · TS · Swift · Java · C/C++ · C# · Perl</div>
-      <div class="lang-badge">LLM assist: feasibility + context + prompt + assist plan + advisory bundle + review gate + handoff packet active</div>
+      <div class="lang-badge">Active conversion: Rust · Ruby · Python · Go</div>
+      <div class="lang-badge">Advisory planning: JS · TS · Swift · Java · C · C++ · C# · Perl · Kotlin · Shell · SQL · Other</div>
+      <div class="lang-badge">Native boundary: C · C++ · Objective-C · Assembly · CUDA · platform-specific code</div>
+      <div class="lang-badge">Backend lowering: Wasm · LLVM-style native targets planned</div>
       <div class="lang-badge">Adoption surface: evidence-backed</div>
     </div>
   </div>
@@ -1112,7 +1111,7 @@
   <div class="container reveal">
     <h3>Get Garnet</h3>
     <h2>Install with one curl command.</h2>
-    <p class="lead">The <strong>v0.4.2 release is live</strong> on GitHub. The universal installer pulls the release package, verifies it against <code>SHA256SUMS</code>, and falls back to a source install through <code>cargo install --locked</code> if a platform package is unavailable. Signed macOS <code>.pkg</code> and Windows MSI artifacts remain in progress and are <em>not</em> required for the verified install paths below.</p>
+    <p class="lead">The <strong>v0.4.2 release is live</strong> on GitHub. The universal installer pulls the release package, verifies it against <code>SHA256SUMS</code>, and falls back to a source install through <code>cargo install --locked</code> if a platform package is unavailable. Detailed productization gates live on the <a href="status.html">readiness status page</a>.</p>
 
     <div class="tabs install-tabs-bar" role="tablist">
       <button class="tab active" data-install="universal">Universal</button>
@@ -1146,9 +1145,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 # Source install (any arch, needs a Rust toolchain):
 git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && cargo install --path .
 
-# Note: a signed + notarized Apple Developer ID .pkg is
-# still in progress. The tarball above is SHA-256 verified
-# and is the supported macOS path until then.</pre>
+# For Apple distribution evidence, see status.html.</pre>
         </div>
       </div>
       <div class="install-pane" data-pane="linux">
@@ -1176,10 +1173,7 @@ git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && c
 <pre># Supported today — source install (needs a Rust toolchain):
 git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && cargo install --path .
 
-# v0.4.2 does not ship a Windows package yet.
-# An Authenticode-signed MSI and a winget manifest
-# (winget install IslandDevCrew.Garnet) are planned but
-# not part of this release.</pre>
+# Windows package evidence is tracked on status.html.</pre>
         </div>
       </div>
     </div>
@@ -1216,12 +1210,12 @@ garnet run src/main.garnet</pre>
       <div class="feature">
         <div class="icon">Assist</div>
         <h4>Migration Planning</h4>
-        <p>Studio exposes <code>Assist Plan</code>, <code>Advisory Bundle</code>, <code>Advisory Review</code>, and <code>Advisory Handoff</code> for TypeScript, JavaScript, Swift, Java, C, C++, C#, and Perl as local planning, review, and source-free handoff evidence under <code>~/Desktop/dogfood/</code>, not active conversion.</p>
+        <p>Studio exposes <code>Assist Plan</code>, <code>Advisory Bundle</code>, <code>Advisory Review</code>, and <code>Advisory Handoff</code> for TypeScript, JavaScript, Swift, Java, C, C++, C#, Perl, Kotlin, Shell, SQL, and Other as local planning, review, and source-free handoff evidence under <code>~/Desktop/dogfood/</code>, not active conversion.</p>
       </div>
       <div class="feature">
         <div class="icon">DMG</div>
         <h4>Objective Pulse</h4>
-        <p>The Release panel can run the repo-native MIT/productization reporter, keeping the overall percentage separate from the completed tracked-slice ledger. Developer ID notarization and clean-machine Gatekeeper proof are not claimed yet.</p>
+        <p>The Release panel can run the repo-native MIT/productization reporter, keeping the overall percentage separate from the completed tracked-slice ledger. Detailed signing, notarization, and clean-machine Gatekeeper evidence stays on the readiness status page.</p>
       </div>
     </div>
 
@@ -1256,7 +1250,7 @@ dist/Garnet Studio.app</pre>
       </video>
     </div>
 
-    <p class="evidence-note">Public-site embedded means the repo has a synced site asset path and manifest-backed evidence. It does not mean final human/aesthetic acceptance, notarized distribution, mobile release, provider-backed LLM conversion, or full MIT/productization completion.</p>
+    <p class="evidence-note">Public-site embedded means the repo has a synced site asset path and manifest-backed evidence. Detailed acceptance and distribution gates are tracked on <a href="status.html">status.html</a>.</p>
   </div>
 </section>
 
@@ -1286,12 +1280,12 @@ dist/Garnet Studio.app</pre>
           <li><strong>87/87 tracked slices</strong> are verified, but that is not full MIT/productization completion.</li>
           <li>Promo video is public-site embedded at 95.0%; human/aesthetic acceptance remains open.</li>
           <li>Web/PWA productization is verified; mobile distribution is still planned.</li>
-          <li>Developer ID notarization is blocked by signing identity, notary profile, and stapled-ticket gates.</li>
-          <li>Provider-backed LLM assist and broad converter frontends remain separate gated slices.</li>
+          <li>Apple distribution, mobile, provider-backed LLM assist, and backend lowering each have their own readiness gates.</li>
+          <li>Detailed caveats and exact status evidence live on <a href="status.html">status.html</a>.</li>
         </ul>
       </div>
     </div>
-    <p class="lead" style="margin-top:28px;font-size:15px;">Objective accounting: the tracked implementation plan is complete, but that is not full MIT/productization completion. The remaining gates include notarization, mobile distribution, broad converter frontends, provider-backed LLM assist, and human/aesthetic acceptance for the promo. The promo lane now has a composition-ready 30-second storyboard with visual identity, product surfaces, a HyperFrames-compatible composition source tied to repo assets, local manifest-backed MP4/WebM render evidence, automated visual-QA evidence, a website-export package, and public-site embedded sync evidence. Notarization readiness also has a machine-readable preflight status reporter; it records blockers without submitting to Apple or claiming notarization.</p>
+    <p class="lead" style="margin-top:28px;font-size:15px;">Objective accounting keeps the landing page confident and the status page precise: the tracked implementation plan is complete, while platform distribution, provider-backed assist, backend lowering, proof, and empirical validation remain separately gated.</p>
   </div>
 </section>
 

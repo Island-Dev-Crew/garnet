@@ -129,7 +129,7 @@ def expect(condition, message, errors):
 
 errors = []
 responses = {}
-for url_path in ["/", "/manifest.webmanifest", "/service-worker.js", "/icons/garnet-192.png", "/icons/garnet-512.png"]:
+for url_path in ["/", "/status.html", "/manifest.webmanifest", "/service-worker.js", "/icons/garnet-192.png", "/icons/garnet-512.png"]:
     url = urljoin(base_url, url_path.lstrip("/"))
     try:
         responses[url_path] = fetch(url)
@@ -185,7 +185,7 @@ if manifest:
 if worker_response:
     expect(worker_response["status"] == 200, "service worker did not return HTTP 200", errors)
     expect("javascript" in worker_response["content_type"], "service worker content-type is not JavaScript", errors)
-    for asset in ["index.html", "install.sh", "ladder.html", "manifest.webmanifest", "minispec.html", "novel.html", "synthesis.html", "icons/garnet-192.png", "icons/garnet-512.png"]:
+    for asset in ["index.html", "install.sh", "ladder.html", "manifest.webmanifest", "minispec.html", "novel.html", "status.html", "synthesis.html", "icons/garnet-192.png", "icons/garnet-512.png"]:
         expect(f'"{asset}"' in worker_response["text"], f"service worker does not cache {asset}", errors)
 
 for label, response in [("192 icon", icon_192), ("512 icon", icon_512)]:

@@ -7,6 +7,7 @@ const OFFLINE_ASSETS = [
   "manifest.webmanifest",
   "minispec.html",
   "novel.html",
+  "status.html",
   "synthesis.html",
   "assets/garnet-promo.mp4",
   "assets/garnet-promo.webm",

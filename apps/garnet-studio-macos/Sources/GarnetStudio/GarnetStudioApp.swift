@@ -1509,9 +1509,13 @@ struct GarnetStudioRootView: View {
                         Text("C++").tag("cpp")
                         Text("C#").tag("csharp")
                         Text("Perl").tag("perl")
+                        Text("Kotlin").tag("kotlin")
+                        Text("Shell").tag("shell")
+                        Text("SQL").tag("sql")
+                        Text("Other").tag("other")
                     }
                     .pickerStyle(.menu)
-                    Text("The converter is a migration assistant. Planned-language advisory actions create local evidence without embedding source by default or claiming provider-backed conversion.")
+                    Text("The converter is a migration assistant. Active conversion is limited to Rust, Ruby, Python, and Go; advisory planning covers broader languages, while native-boundary code should stay behind FFI or native modules until explicit backend evidence lands. Advisory bundles omit source by default.")
                         .font(.callout)
                         .foregroundStyle(.secondary)
                 }

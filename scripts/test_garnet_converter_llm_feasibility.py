@@ -45,12 +45,43 @@ class GarnetConverterLlmFeasibilityTests(unittest.TestCase):
         self.assertGreaterEqual(active, {"rust", "ruby", "python", "go"})
         self.assertGreaterEqual(
             planned,
-            {"javascript", "typescript", "swift", "java", "c", "cpp", "csharp", "perl"},
+            {
+                "javascript",
+                "typescript",
+                "swift",
+                "java",
+                "c",
+                "cpp",
+                "csharp",
+                "perl",
+                "kotlin",
+                "shell",
+                "sql",
+                "other",
+            },
         )
-        for language in ("javascript", "typescript", "swift", "java", "c", "cpp", "csharp", "perl"):
+        for language in (
+            "javascript",
+            "typescript",
+            "swift",
+            "java",
+            "c",
+            "cpp",
+            "csharp",
+            "perl",
+            "kotlin",
+            "shell",
+            "sql",
+            "other",
+        ):
             self.assertEqual("planned-assist-required", coverage[language]["status"])
             self.assertFalse(coverage[language]["deterministic_converter_available"])
             self.assertFalse(coverage[language]["llm_conversion_active"])
+
+        native = {item["id"] for item in data["native_boundary_languages"]}
+        self.assertGreaterEqual(native, {"c", "cpp", "objective_c", "assembly", "cuda", "platform_specific"})
+        self.assertIn("source language classifier", data["recommended_pipeline"])
+        self.assertIn("human-approved candidate", data["recommended_pipeline"])
 
     def test_markdown_answers_feasibility_without_overclaiming(self) -> None:
         rendered = subprocess.check_output([sys.executable, str(SCRIPT)], text=True)
@@ -58,7 +89,9 @@ class GarnetConverterLlmFeasibilityTests(unittest.TestCase):
         self.assertIn("Garnet Converter LLM Feasibility", rendered)
         self.assertIn("Advisory assist is feasible", rendered)
         self.assertIn("Autonomous LLM conversion is not feasible yet", rendered)
-        self.assertIn("C, C++, C#, Perl", rendered)
+        self.assertIn("Kotlin, Shell, SQL, Other", rendered)
+        self.assertIn("Native Boundary Coverage", rendered)
+        self.assertIn("source language classifier", rendered)
         self.assertIn("not active LLM conversion", rendered)
         self.assertIn("human audit before unquarantine", rendered)
 
