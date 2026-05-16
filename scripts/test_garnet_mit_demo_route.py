@@ -24,9 +24,10 @@ class GarnetMitDemoRouteTests(unittest.TestCase):
     def test_route_has_timed_beats_for_verified_surfaces(self) -> None:
         route = demo_mod.read_route()
         beats = {beat.id: beat for beat in route.beats}
+        mit = demo_mod.garnet_mit_readiness_status.read_status()
 
         self.assertEqual("active-partial", route.overall_status)
-        self.assertEqual(58.6, route.objective_completion_percent)
+        self.assertEqual(mit.completion_percent, route.objective_completion_percent)
         self.assertGreaterEqual(len(route.beats), 6)
         self.assertEqual(sum(beat.duration_seconds for beat in route.beats), route.total_duration_seconds)
         self.assertLessEqual(route.total_duration_seconds, 480)
@@ -58,10 +59,11 @@ class GarnetMitDemoRouteTests(unittest.TestCase):
         self.assertIn("production-ready language", route.forbidden_claims)
 
     def test_markdown_is_presentation_ready_without_overclaiming(self) -> None:
+        route = demo_mod.read_route()
         rendered = subprocess.check_output([sys.executable, str(SCRIPT)], text=True)
 
         self.assertIn("# Garnet MIT Demo Route", rendered)
-        self.assertIn("58.6%", rendered)
+        self.assertIn(f"{route.objective_completion_percent:.1f}%", rendered)
         self.assertIn("87/87", rendered)
         self.assertIn("Continuation Pulse", rendered)
         self.assertIn("provider-backed LLM conversion", rendered)
@@ -87,8 +89,9 @@ class GarnetMitDemoRouteTests(unittest.TestCase):
             self.assertTrue(report_path.is_file())
             self.assertTrue(manifest_path.is_file())
             data = json.loads(data_path.read_text(encoding="utf-8"))
+            route = demo_mod.read_route()
             self.assertEqual("active-partial", data["overall_status"])
-            self.assertEqual(58.6, data["objective_completion_percent"])
+            self.assertEqual(route.objective_completion_percent, data["objective_completion_percent"])
             self.assertGreaterEqual(len(data["beats"]), 6)
             self.assertIn("garnet-mit-demo-route.json", manifest_path.read_text(encoding="utf-8"))
             self.assertIn("garnet-mit-demo-route.md", manifest_path.read_text(encoding="utf-8"))

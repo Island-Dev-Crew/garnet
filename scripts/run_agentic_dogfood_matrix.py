@@ -2671,7 +2671,8 @@ def probe_set(
             [sys.executable, str(ROOT / "scripts" / "garnet_mit_demo_route.py"), "--format", "json"],
             True,
             (
-                "\"objective_completion_percent\": 58.6",
+                "\"overall_status\": \"active-partial\"",
+                "\"objective_completion_percent\":",
                 "\"tracked_slices\": \"87/87\"",
                 "Continuation Pulse",
                 "run_agentic_dogfood_matrix.py",
