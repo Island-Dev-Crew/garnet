@@ -116,7 +116,7 @@ LLM-assist boundaries, verified use cases, and open productization gates.
 Latest mounted-DMG install evidence bundle:
 
 ```text
-/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-010747
+/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-025813
 ```
 
 The package script now runs the DMG smoke with `--copy-to-desktop`. That smoke
@@ -125,10 +125,22 @@ Applications-style directory, verifies the copied app signature, runs
 self-test, bundled CLI version, workbench, packaged PWA offline-handler, and
 copied-app agentic matrix probes, then preserves `dmg-smoke-report.md`,
 `dmg-smoke-data.env`, per-command logs, packaged PWA JSON, and
-`MANIFEST.sha256`. The latest DMG SHA-256 is:
+`MANIFEST.sha256`. The packaged app now stages the matrix status reporters and
+current-truth context docs needed for repo/site adoption, converter assist, MIT
+readiness, and notarization-status probes. Matrix runs from the app force
+`PYTHONDONTWRITEBYTECODE=1`, preventing Python imports from adding
+`__pycache__` files to the signed resource envelope. A direct packaged-app
+matrix run now reports:
 
 ```text
-e3d390ea6726f5ab040f29876d3cdcbbf43020f93f0ee4b278e5d0b213254a32
+readiness=100
+passed=54/54
+```
+
+The latest DMG SHA-256 is:
+
+```text
+502873c9e11cc2e0a1ed333f2956d8a94279cbcf6b36bc3526b7c58596a83bce
 ```
 
 The package script also has a credential-gated Developer ID signing branch: when
