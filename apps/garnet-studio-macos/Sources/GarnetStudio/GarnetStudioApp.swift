@@ -410,7 +410,7 @@ final class GarnetStudioViewModel: ObservableObject {
             lastStatus = .failure
             return
         }
-        output = "Running the 24-probe agentic dogfood matrix..."
+        output = "Running the agentic dogfood matrix..."
         let result = AgenticDogfoodRunner(
             location: location,
             garnetBinaryPath: AgenticDogfoodRunner.checkoutGarnetBinary(for: location),
@@ -996,7 +996,7 @@ enum GarnetStudioSelfTest {
         ).run()
         guard result.status == .success,
               result.output.contains("readiness=100"),
-              result.output.contains("passed=24/24")
+              result.output.contains("passed=28/28")
         else {
             fputs("GarnetStudio agentic matrix failed:\n\(result.output)\n", stderr)
             return 7
