@@ -1747,6 +1747,17 @@ distribution signing, target-platform proof, provider-backed conversion,
 backend lowering, mobile distribution, and final acceptance remain separate
 gates.
 
+Phase 6BF MIT deck-preview pass: the presentation lane now has a
+browser-smokeable HTML review artifact generated from the deterministic deck
+outline. `scripts/garnet_mit_deck_preview.py` emits self-contained HTML, JSON,
+outline Markdown, and a checksum manifest so reviewers can inspect the slide
+story, evidence, speaker notes, blocked gates, and forbidden claims without
+treating the artifact as final MIT/productization acceptance. The agentic
+matrix adds a `MIT deck preview` domain for current truth, HTML content, output
+contract, and verified manifest evidence. Human/aesthetic deck approval,
+distribution signing, target-platform proof, provider-backed conversion,
+backend lowering, and mobile distribution remain separate gates.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.

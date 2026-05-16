@@ -1367,6 +1367,47 @@ def build_mit_deck_outline_manifest_probe(work: Path) -> ProbeResult:
     )
 
 
+def build_mit_deck_preview_manifest_probe(work: Path) -> ProbeResult:
+    output_dir = work / "mit-deck-preview"
+    probe = Probe(
+        "report-mit-deck-preview-output-manifest",
+        "MIT deck preview",
+        "MIT deck preview should write HTML, JSON, outline Markdown, and a verified manifest",
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "garnet_mit_deck_preview.py"),
+            "--output-dir",
+            str(output_dir),
+        ],
+        True,
+        (
+            "Garnet MIT Deck Preview",
+            "garnet-mit-deck-preview.html: OK",
+            "garnet-mit-deck-preview.json: OK",
+            "garnet-mit-deck-outline.md: OK",
+        ),
+        security_domain="release-integrity",
+    )
+    start = time.monotonic()
+    completed = run(probe.command, work)
+    stdout = [completed.stdout]
+    stderr = [completed.stderr]
+    exit_code = completed.returncode
+    if completed.returncode == 0:
+        verify = run(["shasum", "-a", "256", "-c", "MANIFEST.sha256"], output_dir)
+        stdout.append(verify.stdout)
+        stderr.append(verify.stderr)
+        exit_code = verify.returncode
+    return classify_result(
+        probe,
+        exit_code,
+        "\n".join(stdout),
+        "\n".join(stderr),
+        int((time.monotonic() - start) * 1000),
+        work,
+    )
+
+
 def app_workbench_probes(app_executable: Path | None, garnet: Path) -> list[Probe]:
     if app_executable is not None:
         return [
@@ -2895,6 +2936,59 @@ def probe_set(
             security_domain="release-integrity",
         ),
         lambda: build_mit_deck_outline_manifest_probe(work),
+        Probe(
+            "report-mit-deck-preview-current-truth",
+            "MIT deck preview",
+            "MIT deck preview should render from current outline truth without claiming final acceptance",
+            [sys.executable, str(ROOT / "scripts" / "garnet_mit_deck_preview.py"), "--format", "json"],
+            True,
+            (
+                "\"overall_status\": \"active-partial\"",
+                "\"tracked_slices\": \"87/87\"",
+                "browser-smokeable HTML preview",
+                "\"claims_final_acceptance\": false",
+                "not full MIT/productization completion",
+            ),
+            security_domain="not-applicable",
+        ),
+        Probe(
+            "report-mit-deck-preview-html",
+            "MIT deck preview",
+            "MIT deck preview should emit a self-contained HTML artifact with slide evidence and speaker notes",
+            [sys.executable, str(ROOT / "scripts" / "garnet_mit_deck_preview.py")],
+            True,
+            (
+                "Garnet MIT Deck Preview",
+                'data-slide-id="title-current-truth"',
+                "Evidence",
+                "Speaker note",
+                "final MIT/productization acceptance",
+            ),
+            security_domain="not-applicable",
+        ),
+        Probe(
+            "report-mit-deck-preview-output-contract",
+            "MIT deck preview",
+            "MIT deck preview source should preserve manifested HTML, JSON, and outline outputs",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(ROOT / 'scripts' / 'garnet_mit_deck_preview.py')!r}).read_text()\n"
+                    "required = ['garnet-mit-deck-preview.html', "
+                    "'garnet-mit-deck-preview.json', 'garnet-mit-deck-outline.md', "
+                    "'MANIFEST.sha256']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('MIT deck preview output contract present')\n"
+                ),
+            ],
+            True,
+            ("MIT deck preview output contract present",),
+            security_domain="release-integrity",
+        ),
+        lambda: build_mit_deck_preview_manifest_probe(work),
         Probe(
             "report-promo-video-current-truth",
             "promo video readiness",
