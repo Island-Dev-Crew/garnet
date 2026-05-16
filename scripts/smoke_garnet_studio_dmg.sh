@@ -167,6 +167,7 @@ ASSIST_PLAN="${INSTALLED_APP}/Contents/Resources/scripts/garnet_converter_assist
 CONVERTER_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_converter_status.py"
 MIT_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_mit_readiness_status.py"
 PROMO_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_promo_video_status.py"
+PROMO_RENDER="${INSTALLED_APP}/Contents/Resources/scripts/render_garnet_promo_video.mjs"
 READINESS_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_readiness_status.py"
 NOTARIZATION_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_studio_notarization_status.py"
 PROMO_ASSETS_DIR="${INSTALLED_APP}/Contents/Resources/assets"
@@ -179,13 +180,13 @@ PROMO_COMPOSITION="${DOCS_DIR}/promo/composition.html"
 SPEC_DIR="${INSTALLED_APP}/Contents/Resources/C_Language_Specification"
 PROJECT_DOGFOOD_DIR="${INSTALLED_APP}/Contents/Resources/F_Project_Management/DOGFOOD"
 
-for required in "${APP_EXECUTABLE}" "${GARNET_BIN}" "${MATRIX_SCRIPT}" "${OFFLINE_PWA_SMOKE}" "${ADOPTION_STATUS}" "${ASSIST_CONTEXT}" "${ASSIST_PLAN}" "${CONVERTER_STATUS}" "${MIT_STATUS}" "${PROMO_STATUS}" "${READINESS_STATUS}" "${NOTARIZATION_STATUS}"; do
+for required in "${APP_EXECUTABLE}" "${GARNET_BIN}" "${MATRIX_SCRIPT}" "${OFFLINE_PWA_SMOKE}" "${ADOPTION_STATUS}" "${ASSIST_CONTEXT}" "${ASSIST_PLAN}" "${CONVERTER_STATUS}" "${MIT_STATUS}" "${PROMO_STATUS}" "${PROMO_RENDER}" "${READINESS_STATUS}" "${NOTARIZATION_STATUS}"; do
   if [ ! -x "${required}" ]; then
     echo "error: copied app is missing executable asset: ${required}" >&2
     exit 4
   fi
 done
-record "pass" "Copied app executable assets exist" "app executable, bundled CLI, matrix script, status reporters, PWA smoke" "None."
+record "pass" "Copied app executable assets exist" "app executable, bundled CLI, matrix script, status reporters, promo render harness, PWA smoke" "None."
 
 for required_dir in "${EXAMPLES_DIR}" "${DOCS_DIR}" "${SPEC_DIR}" "${PROJECT_DOGFOOD_DIR}" "${PROMO_ASSETS_DIR}"; do
   if [ ! -d "${required_dir}" ]; then

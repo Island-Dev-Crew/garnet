@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -50,7 +51,7 @@ def _sha256(path: Path) -> str:
 
 
 def _candidate_artifact_paths() -> tuple[list[Path], list[Path]]:
-    desktop = Path.home() / "Desktop" / "dogfood"
+    desktop = Path(os.environ.get("GARNET_PROMO_VIDEO_DESKTOP_DIR", str(Path.home() / "Desktop" / "dogfood")))
     rendered_candidates = [
         ROOT / "docs" / "assets" / "garnet-promo.mp4",
         ROOT / "docs" / "assets" / "garnet-promo.webm",
@@ -214,6 +215,8 @@ def read_status() -> PromoVideoStatus:
     completed_gates.append("30-second storyboard and shot list")
     if composition_source_present:
         completed_gates.append("HyperFrames or Remotion composition")
+    if rendered_video_present:
+        completed_gates.append("rendered MP4 or WebM artifact")
 
     required_gates = [
         "visual identity lock",
@@ -228,6 +231,10 @@ def read_status() -> PromoVideoStatus:
     open_gates = [gate for gate in required_gates if gate not in completed_gates]
     status = "verified" if rendered_video_present and website_export_present else "planned-contract"
     completion_percent = 100.0 if rendered_video_present and website_export_present else 25.0
+    if status == "planned-contract" and rendered_video_present:
+        status = "rendered-artifact-ready"
+        completion_percent = 65.0
+        open_gates = [gate for gate in required_gates if gate not in completed_gates]
     if status == "planned-contract" and composition_source_present and visual_identity_locked and source_surfaces_locked:
         status = "composition-ready"
         completion_percent = 50.0
@@ -246,11 +253,23 @@ def read_status() -> PromoVideoStatus:
         visual_identity_locked=visual_identity_locked,
         source_surfaces_locked=source_surfaces_locked,
         current_truth=[
-            "No verified rendered promo video is present.",
+            (
+                "A rendered MP4/WebM promo artifact is present, but visual QA and website export remain open."
+                if rendered_video_present
+                else "No verified rendered promo video is present."
+            ),
             "No verified website-ready promo export is present.",
-            "Visual identity and source surfaces are locked to real repo assets for the next render slice.",
-            "A HyperFrames-compatible composition source exists for a later render slice.",
-            "The video lane is composition-ready, not a completed marketing asset.",
+            (
+                "Visual identity and source surfaces remain locked to real repo assets for visual QA and export."
+                if rendered_video_present
+                else "Visual identity and source surfaces are locked to real repo assets for the next render slice."
+            ),
+            (
+                "A HyperFrames-compatible composition source exists for local rendering and future exports."
+                if rendered_video_present
+                else "A HyperFrames-compatible composition source exists for a later render slice."
+            ),
+            f"The video lane is {status}, not a completed marketing asset.",
         ],
         required_gates=required_gates,
         completed_gates=completed_gates,
@@ -292,14 +311,22 @@ def read_status() -> PromoVideoStatus:
             "Do not use a rendered asset on the public site until visual QA and manifest verification pass.",
         ],
         forbidden_claims=[
-            "Do not claim a rendered promo video exists.",
+            (
+                "Do not claim the rendered promo artifact is visual-QA-approved or website-ready."
+                if rendered_video_present
+                else "Do not claim a rendered promo video exists."
+            ),
             "Do not claim notarized macOS distribution.",
             "Do not claim mobile distribution is active.",
             "Do not claim provider-backed LLM conversion is active.",
             "Do not claim full MIT/productization completion.",
         ],
         next_steps=[
-            "Render MP4/WebM outputs and preserve them in Desktop dogfood.",
+            (
+                "Run visual QA against the rendered MP4/WebM outputs."
+                if rendered_video_present
+                else "Render MP4/WebM outputs and preserve them in Desktop dogfood."
+            ),
             "Run visual QA before embedding or linking the video from the website.",
             "Export website-ready promo assets only after rendered media and visual QA pass.",
         ],

@@ -69,7 +69,8 @@ done
 | `scripts/garnet_assist_context_pack.py` | Garnet-aware assist context and prompt pack | current machine-readable context bundle plus provider-neutral prompt pack for future provider-backed converter assist; hashes current truth/spec/dogfood docs and preserves advisory-only gates without enabling LLM conversion |
 | `scripts/garnet_converter_assist_plan.py` | planned-language converter assist plan | current deterministic planner for a single source file in an active or planned converter language; inventories safe-mode, memory, CapCaps, actor/orchestration, and migration risks without executing source or enabling LLM conversion |
 | `scripts/garnet_mit_readiness_status.py` | MIT/productization objective inventory | current machine-readable truth that the tracked implementation plan is complete while notarization, mobile distribution, promo video, broad converter frontends, LLM assist, and proof/empirics remain open gates |
-| `scripts/garnet_promo_video_status.py` | promo video readiness contract | current machine-readable composition-ready storyboard/gate contract for a future 30-second HyperFrames promo; visual identity/source surfaces and `docs/promo/` composition source are tied to repo assets, and no rendered video or website-ready export is claimed |
+| `scripts/garnet_promo_video_status.py` | promo video readiness contract | current machine-readable storyboard/gate contract for a future 30-second HyperFrames promo; visual identity/source surfaces and `docs/promo/` composition source are tied to repo assets, local Desktop MP4/WebM evidence can promote the lane to `rendered-artifact-ready`, and no visual-QA-approved website export is claimed |
+| `scripts/render_garnet_promo_video.mjs` | promo video render harness | current local Chrome DevTools + `ffmpeg` harness for manifest-backed MP4/WebM/poster render evidence; this is not a substitute for visual QA or website export |
 | `scripts/garnet_studio_notarization_status.py` | macOS notarization preflight inventory | current machine-readable summary for notarization preflight bundles; preserves blocker/warning evidence, redacts credential values, and explicitly avoids claiming Apple submission or notarization |
 | `scripts/garnet_adoption_surface_status.py` | repo/site adoption truth inventory | current machine-readable status linking the public hook, verified use cases, active converter lanes, planned language lanes, LLM-assist boundaries, and productization gates |
 | `examples/mvp_*.garnet` | canonical app-level smokes | must parse/check/run |
@@ -512,9 +513,9 @@ LLM conversion or broad planned-language conversion. Current Desktop evidence:
 (packaged app),
 `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-045440`
 (copied app), and
-`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-045439`
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-071720`
 (DMG install smoke; DMG SHA-256
-`bce70f3c44af1d335d0af4ecd466386f85d918bea8b310cad24a2855c59ec345`).
+`98d32b6b9970090f219074e41cc51e4163041b4f829c1e308d889fcb95cecfec`).
 Phase 6AB adds a local Codex Run-button path for the Studio workbench:
 `script/build_and_run.sh` builds the SwiftPM package, stages
 `dist/Garnet Studio.app`, launches it as a real macOS app bundle, and supports
@@ -570,8 +571,16 @@ for a 30-second composition source. The promo lane now reports
 `composition-ready` at 50.0%; the source-checkout matrix passes `73/73` with
 `skipped=0` in Desktop bundle
 `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-065332`.
-Rendered MP4/WebM, visual QA, website-ready export, Desktop dogfood evidence
-for those rendered artifacts, and repo/site overclaim checks remain open gates.
+Phase 6AJ adds `scripts/render_garnet_promo_video.mjs`, a local headless
+Chrome/CDP plus `ffmpeg` harness that renders the composition into
+manifest-backed MP4, WebM, poster, JSON, and Markdown artifacts. Local Desktop
+evidence at `/Users/idc2.0/Desktop/dogfood/garnet-promo-video` verifies
+30.000-second 1920x1080 MP4/WebM renders at 12 fps, and the source-checkout
+matrix adds a sixth promo-video probe and passes `74/74` with `skipped=0` in
+Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-071841`.
+Visual QA, website-ready export, and repo/site overclaim checks remain open
+gates.
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.

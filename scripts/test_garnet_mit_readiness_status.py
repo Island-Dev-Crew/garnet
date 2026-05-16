@@ -4,12 +4,17 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 SCRIPT = Path(__file__).with_name("garnet_mit_readiness_status.py")
+TEST_DOGFOOD_DIR = tempfile.TemporaryDirectory()
+os.environ["GARNET_PROMO_VIDEO_DESKTOP_DIR"] = TEST_DOGFOOD_DIR.name
 SPEC = importlib.util.spec_from_file_location("garnet_mit_readiness_status", SCRIPT)
 assert SPEC is not None
 status_mod = importlib.util.module_from_spec(SPEC)
@@ -19,6 +24,10 @@ SPEC.loader.exec_module(status_mod)
 
 
 class GarnetMitReadinessStatusTests(unittest.TestCase):
+    @classmethod
+    def tearDownClass(cls) -> None:
+        TEST_DOGFOOD_DIR.cleanup()
+
     def test_status_distinguishes_plan_completion_from_goal_completion(self) -> None:
         status = status_mod.read_status()
         lanes = {lane.id: lane for lane in status.lanes}
@@ -38,6 +47,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
     def test_json_exposes_evidence_and_deferred_boundaries(self) -> None:
         output = subprocess.check_output(
             [sys.executable, str(SCRIPT), "--format", "json"],
+            env={**os.environ, "GARNET_PROMO_VIDEO_DESKTOP_DIR": TEST_DOGFOOD_DIR.name},
             text=True,
         )
         data = json.loads(output)
@@ -56,8 +66,30 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("JavaScript", lanes["broad_converter_frontends"]["deferred"])
         self.assertIn("Android", lanes["mobile_distribution"]["deferred"])
 
+    def test_rendered_promo_artifacts_update_objective_blockers(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            artifact_dir = Path(temp) / "garnet-promo-video"
+            artifact_dir.mkdir()
+            (artifact_dir / "garnet-promo.mp4").write_bytes(b"fake-mp4")
+            (artifact_dir / "garnet-promo.webm").write_bytes(b"fake-webm")
+
+            with mock.patch.dict(os.environ, {"GARNET_PROMO_VIDEO_DESKTOP_DIR": temp}):
+                status = status_mod.read_status()
+
+        lanes = {lane.id: lane for lane in status.lanes}
+        promo_lane = lanes["promo_video"]
+        self.assertEqual("rendered-artifact-ready", promo_lane.status)
+        self.assertEqual(65.0, promo_lane.completion_percent)
+        self.assertIn("rendered MP4/WebM evidence", promo_lane.evidence)
+        self.assertNotIn("rendered artifact", promo_lane.blocked_by)
+        self.assertIn("visual QA verdict", promo_lane.blocked_by)
+
     def test_markdown_is_human_readable_and_honest(self) -> None:
-        rendered = subprocess.check_output([sys.executable, str(SCRIPT)], text=True)
+        rendered = subprocess.check_output(
+            [sys.executable, str(SCRIPT)],
+            env={**os.environ, "GARNET_PROMO_VIDEO_DESKTOP_DIR": TEST_DOGFOOD_DIR.name},
+            text=True,
+        )
 
         self.assertIn("not full MIT/productization completion", rendered)
         self.assertIn("Developer ID notarization", rendered)
