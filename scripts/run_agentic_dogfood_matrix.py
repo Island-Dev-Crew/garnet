@@ -350,6 +350,152 @@ def build_tamper_probe(garnet: Path, work: Path, source: Path) -> ProbeResult:
     )
 
 
+def copy_release_source(work: Path, source: Path, stem: str) -> Path:
+    target = work / "signed-release" / f"{stem}.garnet"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
+    return target
+
+
+def scrub_transient_key(keyfile: Path) -> None:
+    keyfile.unlink(missing_ok=True)
+
+
+def build_signed_release_probe(garnet: Path, work: Path, source: Path) -> ProbeResult:
+    release_source = copy_release_source(work, source, "signed-release")
+    keyfile = release_source.with_name("signing.key")
+    probe = Probe(
+        id="release-keygen-build-verify-signature",
+        domain="signed release provenance",
+        claim="an agent should be able to generate a signing key, sign a deterministic manifest, and verify the signature",
+        command=[str(garnet), "keygen", str(keyfile)],
+        expect_success=True,
+        expected_stdout=("generated Ed25519 signing keypair", "signed_by", "signature valid"),
+        security_domain="release-integrity",
+    )
+    start = time.monotonic()
+    stdout = ["$ " + " ".join(probe.command)]
+    stderr: list[str] = []
+    keygen = run(probe.command, work)
+    stdout.append(keygen.stdout)
+    stderr.append(keygen.stderr)
+    exit_code = keygen.returncode
+    if keygen.returncode == 0:
+        build_cmd = [str(garnet), "build", "--deterministic", "--sign", str(keyfile), str(release_source)]
+        build = run(build_cmd, work)
+        stdout.extend(["$ " + " ".join(build_cmd), build.stdout])
+        stderr.append(build.stderr)
+        exit_code = build.returncode
+        if build.returncode == 0:
+            verify_cmd = [
+                str(garnet),
+                "verify",
+                str(release_source),
+                str(release_source.with_name(release_source.name + ".manifest.json")),
+                "--signature",
+            ]
+            verify = run(verify_cmd, work)
+            stdout.extend(["$ " + " ".join(verify_cmd), verify.stdout])
+            stderr.append(verify.stderr)
+            exit_code = verify.returncode
+    scrub_transient_key(keyfile)
+    return classify_result(
+        probe,
+        exit_code,
+        "\n".join(stdout),
+        "\n".join(stderr),
+        int((time.monotonic() - start) * 1000),
+        work,
+    )
+
+
+def build_unsigned_signature_required_probe(garnet: Path, work: Path, source: Path) -> ProbeResult:
+    release_source = copy_release_source(work, source, "unsigned-release")
+    probe = Probe(
+        id="release-unsigned-manifest-requires-signature",
+        domain="signed release provenance",
+        claim="signature-required verification should reject an unsigned deterministic manifest",
+        command=[str(garnet), "build", "--deterministic", str(release_source)],
+        expect_success=True,
+        expected_stderr=("manifest is unsigned", "--signature was required"),
+        security_domain="release-integrity",
+    )
+    start = time.monotonic()
+    build = run(probe.command, work)
+    stdout = ["$ " + " ".join(probe.command), build.stdout]
+    stderr = [build.stderr]
+    exit_code = build.returncode
+    if build.returncode == 0:
+        verify_cmd = [
+            str(garnet),
+            "verify",
+            str(release_source),
+            str(release_source.with_name(release_source.name + ".manifest.json")),
+            "--signature",
+        ]
+        verify = run(verify_cmd, work)
+        stdout.extend(["$ " + " ".join(verify_cmd), verify.stdout])
+        stderr.append(verify.stderr)
+        exit_code = 0 if verify.returncode != 0 else 1
+    return classify_result(
+        probe,
+        exit_code,
+        "\n".join(stdout),
+        "\n".join(stderr),
+        int((time.monotonic() - start) * 1000),
+        work,
+    )
+
+
+def build_signed_tamper_probe(garnet: Path, work: Path, source: Path) -> ProbeResult:
+    release_source = copy_release_source(work, source, "tampered-signed-release")
+    keyfile = release_source.with_name("tamper-signing.key")
+    probe = Probe(
+        id="release-signed-manifest-tamper-detection",
+        domain="signed release provenance",
+        claim="signed manifest verification should still reject source tampering before trusting signature provenance",
+        command=[str(garnet), "keygen", str(keyfile)],
+        expect_success=True,
+        expected_stderr=("source_hash mismatch",),
+        security_domain="release-integrity",
+    )
+    start = time.monotonic()
+    stdout = ["$ " + " ".join(probe.command)]
+    stderr: list[str] = []
+    keygen = run(probe.command, work)
+    stdout.append(keygen.stdout)
+    stderr.append(keygen.stderr)
+    exit_code = keygen.returncode
+    if keygen.returncode == 0:
+        build_cmd = [str(garnet), "build", "--deterministic", "--sign", str(keyfile), str(release_source)]
+        build = run(build_cmd, work)
+        stdout.extend(["$ " + " ".join(build_cmd), build.stdout])
+        stderr.append(build.stderr)
+        exit_code = build.returncode
+        if build.returncode == 0:
+            release_source.write_text("def main() { 999 }\n", encoding="utf-8")
+            verify_cmd = [
+                str(garnet),
+                "verify",
+                str(release_source),
+                str(release_source.with_name(release_source.name + ".manifest.json")),
+                "--signature",
+            ]
+            verify = run(verify_cmd, work)
+            stdout.extend(["$ " + " ".join(verify_cmd), verify.stdout])
+            stderr.append(verify.stderr)
+            exit_code = 0 if verify.returncode != 0 else 1
+    scrub_transient_key(keyfile)
+    return classify_result(
+        probe,
+        exit_code,
+        "\n".join(stdout),
+        "\n".join(stderr),
+        int((time.monotonic() - start) * 1000),
+        work,
+    )
+
+
 def classify_result(
     probe: Probe,
     exit_code: int,
@@ -844,6 +990,9 @@ def probe_set(
             security_domain="release-integrity",
         ),
         lambda: build_tamper_probe(garnet, work, fixtures["tamper"]),
+        lambda: build_signed_release_probe(garnet, work, fixtures["build_source"]),
+        lambda: build_unsigned_signature_required_probe(garnet, work, fixtures["build_source"]),
+        lambda: build_signed_tamper_probe(garnet, work, fixtures["build_source"]),
         Probe(
             "doc-extract-documented-agent",
             "developer experience",
@@ -991,8 +1140,8 @@ def render_report(results: list[ProbeResult], metadata: dict[str, str], score_da
     )
     app_workbench_note = ""
     audited_surfaces = (
-        "CLI, template, converter, release-integrity, documentation, safe-mode, "
-        "agent-memory, and macOS app workbench paths"
+        "CLI, template, converter, release-integrity, signed-release provenance, "
+        "documentation, safe-mode, agent-memory, and macOS app workbench paths"
     )
     if metadata["app_workbench"] == "skipped":
         app_workbench_note = (
@@ -1000,8 +1149,8 @@ def render_report(results: list[ProbeResult], metadata: dict[str, str], score_da
             "Garnet Studio local/Desktop/package/DMG gates instead of the headless CI matrix."
         )
         audited_surfaces = (
-            "CLI, template, converter, release-integrity, documentation, safe-mode, "
-            "and agent-memory paths"
+            "CLI, template, converter, release-integrity, signed-release provenance, "
+            "documentation, safe-mode, and agent-memory paths"
         )
     if failures:
         decision = (
@@ -1133,7 +1282,7 @@ def render_deck(results: list[ProbeResult], metadata: dict[str, str], score_data
 <body>
   <section>
     <h1>Garnet Agentic Dogfood</h1>
-    <p>Advanced probes for agent orchestration, safe-mode boundaries, migration, release integrity, docs, web/PWA productization, app onboarding, and memory-analysis examples.</p>
+    <p>Advanced probes for agent orchestration, safe-mode boundaries, migration, release integrity, signed-release provenance, docs, web/PWA productization, app onboarding, and memory-analysis examples.</p>
     <p><code>{metadata["head"][:12]}</code> · <code>{metadata["branch"]}</code></p>
   </section>
   <section>

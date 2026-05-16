@@ -8,6 +8,7 @@ import tempfile
 import unittest
 from collections import Counter
 from pathlib import Path
+from textwrap import dedent
 
 SCRIPT = Path(__file__).with_name("run_agentic_dogfood_matrix.py")
 SPEC = importlib.util.spec_from_file_location("run_agentic_dogfood_matrix", SCRIPT)
@@ -119,6 +120,56 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertIn("smoke-web-pwa-local-readiness", ids)
         self.assertIn("smoke-web-pwa-browser-offline", ids)
 
+    def test_probe_inventory_includes_signed_release_provenance(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            fixtures = matrix.prepare_fixtures(work)
+            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            results = self._inventory_results(probes)
+
+        ids = {result.probe.id for result in results}
+        domains = Counter(result.probe.domain for result in results)
+
+        self.assertEqual(domains["signed release provenance"], 3)
+        self.assertIn("release-keygen-build-verify-signature", ids)
+        self.assertIn("release-unsigned-manifest-requires-signature", ids)
+        self.assertIn("release-signed-manifest-tamper-detection", ids)
+
+    def test_signed_release_probe_does_not_persist_generated_private_keys(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            fake_garnet = work / "fake-garnet"
+            fake_garnet.write_text(
+                dedent(
+                    """\
+                    #!/usr/bin/env sh
+                    case "$1" in
+                      keygen)
+                        printf 'private test key\\n' > "$2"
+                        echo 'generated Ed25519 signing keypair'
+                        ;;
+                      build)
+                        source="${5:-$3}"
+                        manifest="${source}.manifest.json"
+                        printf '{"signature":"test","signer_pubkey":"test"}\\n' > "$manifest"
+                        echo 'signed_by test'
+                        ;;
+                      verify)
+                        echo 'signature valid'
+                        ;;
+                    esac
+                    """
+                ),
+                encoding="utf-8",
+            )
+            fake_garnet.chmod(0o755)
+            fixtures = matrix.prepare_fixtures(work)
+
+            result = matrix.build_signed_release_probe(fake_garnet, work, fixtures["build_source"])
+
+            self.assertTrue(result.passed)
+            self.assertEqual([], list((work / "signed-release").glob("*.key")))
+
     def test_probe_inventory_covers_developer_experience_repair(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
@@ -194,6 +245,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertEqual(coverage["agent recovery and diagnostics"]["status"], "adequate")
         self.assertEqual(coverage["MIT readiness accounting"]["status"], "adequate")
         self.assertEqual(coverage["converter intelligent assist"]["status"], "adequate")
+        self.assertEqual(coverage["signed release provenance"]["status"], "adequate")
 
     def test_write_outputs_persists_domain_coverage(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
