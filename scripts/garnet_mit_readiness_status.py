@@ -119,7 +119,9 @@ def read_status() -> MitReadinessStatus:
             completion_percent=0.0,
             evidence=(
                 "`scripts/preflight_garnet_studio_notarization.sh --copy-to-desktop` "
-                "records the current blockers without claiming notarization."
+                "records the current blockers without claiming notarization; "
+                "`scripts/garnet_studio_notarization_status.py` summarizes that "
+                "bundle for agents and PR/site evidence."
             ),
             blocked_by=[
                 "APPLE_DEV_ID_APP",

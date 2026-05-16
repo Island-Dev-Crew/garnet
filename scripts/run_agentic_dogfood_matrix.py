@@ -263,6 +263,38 @@ end
         fixtures / "score.go",
         "func score(x int) int { if x > 3 { return x * 2 }; return x }\n",
     )
+    notarization = fixtures / "notarization-preflight"
+    notarization.mkdir(parents=True, exist_ok=True)
+    write(
+        notarization / "checks.tsv",
+        "\n".join(
+            [
+                "pass\tApp bundle exists\t/tmp/Garnet Studio.app\tNone.",
+                "blocker\tDeveloper ID Application signature missing\tSignature=adhoc\tSign with APPLE_DEV_ID_APP and hardened runtime before notarization.",
+                "blocker\tAPPLE_NOTARY_PROFILE not configured\tenvironment variable is empty\tCreate a notarytool keychain profile and export its name.",
+                "warning\tDMG has no stapled notarization ticket\txcrun stapler validate failed\tExpected before notarization; must pass after notarytool submit and stapler staple.",
+            ]
+        )
+        + "\n",
+    )
+    write(
+        notarization / "notarization-preflight-data.env",
+        "\n".join(
+            [
+                "app_path=/tmp/Garnet Studio.app",
+                "dmg_path=/tmp/GarnetStudio.dmg",
+                f"output_dir={notarization}",
+                "blockers=2",
+                "warnings=1",
+                "strict=0",
+                "copy_to_desktop=0",
+            ]
+        )
+        + "\n",
+    )
+    write(notarization / "MANIFEST.sha256", "fixture  ./checks.tsv\n")
+    write(notarization / "MANIFEST.verify.log", "./checks.tsv: OK\n")
+    paths["notarization_bundle"] = notarization
     return paths
 
 
@@ -967,6 +999,56 @@ def probe_set(
             security_domain="sandbox",
         ),
         Probe(
+            "report-notarization-status-blockers",
+            "macOS notarization readiness",
+            "notarization status reporter should summarize blockers without claiming Apple notarization",
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "garnet_studio_notarization_status.py"),
+                "--bundle",
+                str(fixtures["notarization_bundle"]),
+            ],
+            True,
+            ("Overall status: **blocked**", "This is not a notarization claim.", "Developer ID Application signature missing"),
+            security_domain="release-integrity",
+        ),
+        Probe(
+            "report-notarization-status-redaction",
+            "macOS notarization readiness",
+            "notarization status JSON should preserve credential boundary redaction and next actions",
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "garnet_studio_notarization_status.py"),
+                "--bundle",
+                str(fixtures["notarization_bundle"]),
+                "--format",
+                "json",
+            ],
+            True,
+            (
+                '"credential_values_redacted": true',
+                '"overall_status": "blocked"',
+                "Create a notarytool keychain profile",
+            ),
+            security_domain="secrets",
+        ),
+        Probe(
+            "report-notarization-status-missing-bundle",
+            "macOS notarization readiness",
+            "notarization status reporter should fail loudly when the evidence bundle is absent",
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "garnet_studio_notarization_status.py"),
+                "--bundle",
+                str(work / "missing-notarization-bundle"),
+                "--format",
+                "json",
+            ],
+            False,
+            expected_stderr=("preflight bundle not found",),
+            security_domain="release-integrity",
+        ),
+        Probe(
             "build-deterministic-manifest",
             "release integrity",
             "deterministic build should emit a manifest sidecar",
@@ -1141,7 +1223,8 @@ def render_report(results: list[ProbeResult], metadata: dict[str, str], score_da
     app_workbench_note = ""
     audited_surfaces = (
         "CLI, template, converter, release-integrity, signed-release provenance, "
-        "documentation, safe-mode, agent-memory, and macOS app workbench paths"
+        "documentation, safe-mode, agent-memory, macOS notarization readiness, "
+        "and macOS app workbench paths"
     )
     if metadata["app_workbench"] == "skipped":
         app_workbench_note = (
@@ -1150,7 +1233,7 @@ def render_report(results: list[ProbeResult], metadata: dict[str, str], score_da
         )
         audited_surfaces = (
             "CLI, template, converter, release-integrity, signed-release provenance, "
-            "documentation, safe-mode, and agent-memory paths"
+            "documentation, safe-mode, agent-memory, and macOS notarization readiness paths"
         )
     if failures:
         decision = (
@@ -1282,7 +1365,7 @@ def render_deck(results: list[ProbeResult], metadata: dict[str, str], score_data
 <body>
   <section>
     <h1>Garnet Agentic Dogfood</h1>
-    <p>Advanced probes for agent orchestration, safe-mode boundaries, migration, release integrity, signed-release provenance, docs, web/PWA productization, app onboarding, and memory-analysis examples.</p>
+    <p>Advanced probes for agent orchestration, safe-mode boundaries, migration, release integrity, signed-release provenance, macOS notarization readiness, docs, web/PWA productization, app onboarding, and memory-analysis examples.</p>
     <p><code>{metadata["head"][:12]}</code> · <code>{metadata["branch"]}</code></p>
   </section>
   <section>

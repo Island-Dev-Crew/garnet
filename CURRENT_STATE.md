@@ -68,6 +68,7 @@ done
 | `scripts/garnet_converter_status.py` | converter adoption inventory | current machine-readable truth for active converter lanes, planned languages, trust boundaries, and the future Garnet-aware assist contract |
 | `scripts/garnet_assist_context_pack.py` | Garnet-aware assist context pack | current machine-readable context bundle for future provider-backed converter assist; hashes current truth/spec/dogfood docs and preserves advisory-only gates without enabling LLM conversion |
 | `scripts/garnet_mit_readiness_status.py` | MIT/productization objective inventory | current machine-readable truth that the tracked implementation plan is complete while notarization, mobile distribution, promo video, broad converter frontends, LLM assist, and proof/empirics remain open gates |
+| `scripts/garnet_studio_notarization_status.py` | macOS notarization preflight inventory | current machine-readable summary for notarization preflight bundles; preserves blocker/warning evidence, redacts credential values, and explicitly avoids claiming Apple submission or notarization |
 | `examples/mvp_*.garnet` | canonical app-level smokes | must parse/check/run |
 | `examples/{multi_agent_builder,agentic_log_analyzer,safe_io_layer}.garnet` | design-scale examples | `multi_agent_builder`, `agentic_log_analyzer`, and `safe_io_layer` are covered by active agentic matrix probes |
 | `A_Research_Papers/` | academic research corpus | normative/research context |
@@ -117,7 +118,9 @@ highest-leverage next milestones are:
    onboarding. The package script can use `APPLE_DEV_ID_APP` for a
    Developer ID hardened-runtime signature when that identity exists, while a
    notarization preflight records the current Developer ID, hardened-runtime,
-   Gatekeeper, and notary credential blockers. The docs site now has a seed
+   Gatekeeper, and notary credential blockers. A notarization status reporter
+   turns that evidence bundle into JSON/Markdown for agents, PRs, and site
+   truth without submitting to Apple or exposing credential values. The docs site now has a seed
    installable PWA shell with
    manifest, icons, service worker, local HTTP smoke, dependency-free offline
    service-worker behavior simulation, local Chrome DevTools offline smoke,
@@ -127,7 +130,8 @@ highest-leverage next milestones are:
    are separately verified.
 6. **Agentic dogfood stress:** keep the advanced multi-domain matrix green so
    agents can exercise orchestration, recovery diagnostics, migration,
-   safe-mode, release-integrity, signed-release provenance, docs, app, and memory-analysis surfaces as one
+   safe-mode, release-integrity, signed-release provenance, macOS
+   notarization readiness, docs, app, and memory-analysis surfaces as one
    falsifiable workflow, with macOS CI preserving a downloadable evidence
    artifact for readiness-sensitive PRs. The matrix now records per-domain
    coverage adequacy separately from pass/fail readiness so under-tested
