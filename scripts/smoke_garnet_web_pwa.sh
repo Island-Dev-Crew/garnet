@@ -54,6 +54,7 @@ REPORT="${OUTPUT_DIR}/web-pwa-readiness-report.md"
 DATA="${OUTPUT_DIR}/web-pwa-readiness-data.env"
 CHECKS="${OUTPUT_DIR}/checks.tsv"
 COMMAND_LOG="${OUTPUT_DIR}/logs/commands.log"
+OFFLINE_BEHAVIOR="${OUTPUT_DIR}/service-worker-offline-behavior.json"
 BLOCKERS=0
 WARNINGS=0
 SERVER_PID=""
@@ -206,6 +207,13 @@ for asset in "index.html" "install.sh" "ladder.html" "manifest.webmanifest" "min
     record "blocker" "Service worker does not cache ${asset}" "docs/service-worker.js" "Add the asset to OFFLINE_ASSETS."
   fi
 done
+
+run_capture "service-worker-offline-behavior" node "${ROOT}/scripts/smoke_garnet_web_pwa_offline.mjs" --docs-dir "${DOCS_DIR}" --output "${OFFLINE_BEHAVIOR}"
+if node "${ROOT}/scripts/smoke_garnet_web_pwa_offline.mjs" --docs-dir "${DOCS_DIR}" --output "${OFFLINE_BEHAVIOR}" >/dev/null 2>&1; then
+  record "pass" "Service worker serves cached navigation offline" "service-worker-offline-behavior.json" "None."
+else
+  record "blocker" "Service worker offline behavior check failed" "service-worker-offline-behavior.json" "Fix install/fetch behavior before claiming offline PWA readiness."
+fi
 
 PORT="$(python3 - <<'PY'
 import socket

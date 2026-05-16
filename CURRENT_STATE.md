@@ -112,9 +112,11 @@ highest-leverage next milestones are:
    and onboarding while a notarization preflight records the current Developer
    ID, hardened-runtime, Gatekeeper, and notary credential blockers. The docs
    site now has a seed installable PWA shell with manifest, icons, service
-   worker, local HTTP smoke, and CI evidence gate. Do not claim signing,
-   notarization, clean-machine Gatekeeper, TestFlight, App Store, mobile app,
-   or full offline IDE completion before those lanes are separately verified.
+   worker, local HTTP smoke, dependency-free offline service-worker behavior
+   simulation, and CI evidence gate. Do not claim signing, notarization,
+   clean-machine Gatekeeper, TestFlight, App Store, mobile app, real browser
+   offline validation, or offline IDE completion before those lanes are
+   separately verified.
 6. **Agentic dogfood stress:** keep the advanced multi-domain matrix green so
    agents can exercise orchestration, recovery diagnostics, migration,
    safe-mode, release-integrity, docs, app, and memory-analysis surfaces as one

@@ -5,6 +5,7 @@ on:
     paths:
       - "docs/**"
       - "scripts/smoke_garnet_web_pwa.sh"
+      - "scripts/smoke_garnet_web_pwa_offline.mjs"
       - ".github/workflows/web-pwa-readiness.yml"
   push:
     branches:
@@ -12,6 +13,7 @@ on:
     paths:
       - "docs/**"
       - "scripts/smoke_garnet_web_pwa.sh"
+      - "scripts/smoke_garnet_web_pwa_offline.mjs"
       - ".github/workflows/web-pwa-readiness.yml"
 
 jobs:
