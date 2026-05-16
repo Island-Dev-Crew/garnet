@@ -33,6 +33,13 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
 
         self.assertIn('"${ROOT}/scripts/smoke_garnet_studio_dmg.sh" --copy-to-desktop "${DMG_PATH}"', script)
 
+    def test_package_script_uses_developer_id_hardened_runtime_when_configured(self) -> None:
+        script = PACKAGE_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn('APPLE_DEV_ID_APP="${APPLE_DEV_ID_APP:-}"', script)
+        self.assertIn('codesign --force --deep --options runtime --timestamp --sign "${APPLE_DEV_ID_APP}" "${APP_DIR}"', script)
+        self.assertIn('codesign --force --deep --sign - "${APP_DIR}"', script)
+
     def test_dmg_smoke_requires_packaged_pwa_assets(self) -> None:
         script = DMG_SMOKE_SCRIPT.read_text(encoding="utf-8")
 

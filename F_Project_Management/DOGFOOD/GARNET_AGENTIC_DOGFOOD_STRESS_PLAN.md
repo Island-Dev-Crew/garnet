@@ -101,7 +101,7 @@ and coverage adequacy evidence travel with the bundle.
 Latest mounted-DMG install evidence bundle:
 
 ```text
-/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-005718
+/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-010747
 ```
 
 The package script now runs the DMG smoke with `--copy-to-desktop`. That smoke
@@ -113,7 +113,17 @@ copied-app agentic matrix probes, then preserves `dmg-smoke-report.md`,
 `MANIFEST.sha256`. The latest DMG SHA-256 is:
 
 ```text
-91aeff3b93df1bffeb77524f705f0d9340eef7af845398753c79a1d360aaea46
+e3d390ea6726f5ab040f29876d3cdcbbf43020f93f0ee4b278e5d0b213254a32
+```
+
+The package script also has a credential-gated Developer ID signing branch: when
+`APPLE_DEV_ID_APP` is exported, it signs the app with `--options runtime` and
+`--timestamp`; otherwise it preserves the ad-hoc local fallback. The current
+machine reports `0 valid identities found`, and the latest notarization
+preflight remains a blocker report rather than a notarization claim:
+
+```text
+/Users/idc2.0/Desktop/dogfood/garnet-studio-notarization-preflight-20260516-010803
 ```
 
 ## Next Gates
