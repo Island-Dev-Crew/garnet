@@ -32,8 +32,9 @@
 //! - `EpisodeStore` exposes fenced, versioned text snapshot persistence,
 //!   guarded append-style text log commits, and a fixed
 //!   `.garnet-cache/episodic/episodes.mnemos` typed backend boundary with
-//!   path/size/permission/serialization guardrails; the other stores and broad
-//!   pluggable production backends remain in-process only.
+//!   path/size/permission/serialization guardrails plus opt-in keyed MAC
+//!   verification; the other stores and broad pluggable production backends
+//!   remain in-process only.
 //! - No production-grade vector index (cosine over a flat `Vec`, not
 //!   HNSW / IVF / PolarQuant).
 //! - Lazy eviction is wired for policy-configured episodic and semantic

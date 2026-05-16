@@ -328,6 +328,105 @@ fn episodic_cache_append_and_load_round_trips_under_default_cache_dir() {
 }
 
 #[test]
+fn episodic_cache_signed_append_and_load_round_trips_with_key() {
+    let project = temp_dir("cache-signed-roundtrip");
+    let path = episodic_cache_log_path_for(&project).expect("construct backend path");
+    let key = [0xA5; 32];
+    let store: EpisodeStore<String> = EpisodeStore::new();
+
+    store
+        .append_cache_text_with_mac(&project, 11, "alpha".to_string(), &key)
+        .expect("append first signed backend episode");
+    store
+        .append_cache_text_with_mac(&project, 12, "beta\twith\ncontrols".to_string(), &key)
+        .expect("append second signed backend episode");
+
+    let raw = std::fs::read_to_string(&path).expect("read signed backend log");
+    assert!(
+        raw.lines()
+            .nth(2)
+            .is_some_and(|line| line == "cache-mac\tblake3-keyed-v1"),
+        "signed typed backend must advertise the MAC algorithm"
+    );
+    assert!(
+        raw.lines()
+            .skip(3)
+            .all(|line| line.matches('\t').count() == 2),
+        "signed records must carry timestamp, payload, and MAC fields"
+    );
+
+    let recovered: EpisodeStore<String> = EpisodeStore::new();
+    recovered
+        .load_cache_text_with_mac(&project, &key)
+        .expect("load signed backend episodes");
+
+    let values: Vec<_> = recovered
+        .snapshot()
+        .into_iter()
+        .map(|episode| episode.value)
+        .collect();
+    assert_eq!(
+        values,
+        vec!["alpha".to_string(), "beta\twith\ncontrols".to_string()]
+    );
+}
+
+#[test]
+fn episodic_cache_signed_load_rejects_tampered_payload_without_mutating_store() {
+    let project = temp_dir("cache-signed-tamper");
+    let path = episodic_cache_log_path_for(&project).expect("construct backend path");
+    let key = [0xB6; 32];
+    let store: EpisodeStore<String> = EpisodeStore::new();
+
+    store
+        .append_cache_text_with_mac(&project, 11, "alpha".to_string(), &key)
+        .expect("append signed backend episode");
+
+    let raw = std::fs::read_to_string(&path).expect("read signed backend log");
+    let tampered = raw.replace("616c706861", "616c706962");
+    assert_ne!(raw, tampered, "test fixture must alter the payload bytes");
+    std::fs::write(&path, tampered).expect("write tampered signed backend log");
+
+    let recovered: EpisodeStore<String> = EpisodeStore::new();
+    recovered.append_at(1, "keep".to_string());
+
+    let result = recovered.load_cache_text_with_mac(&project, &key);
+
+    assert!(matches!(
+        result,
+        Err(EpisodePersistenceError::MacMismatch { line: 4, .. })
+    ));
+    let snapshot = recovered.snapshot();
+    assert_eq!(snapshot.len(), 1);
+    assert_eq!(snapshot[0].value, "keep");
+}
+
+#[test]
+fn episodic_cache_signed_load_rejects_foreign_key_without_mutating_store() {
+    let project = temp_dir("cache-signed-foreign-key");
+    let writer_key = [0xC7; 32];
+    let reader_key = [0xD8; 32];
+    let store: EpisodeStore<String> = EpisodeStore::new();
+
+    store
+        .append_cache_text_with_mac(&project, 11, "foreign".to_string(), &writer_key)
+        .expect("append signed backend episode");
+
+    let recovered: EpisodeStore<String> = EpisodeStore::new();
+    recovered.append_at(1, "keep".to_string());
+
+    let result = recovered.load_cache_text_with_mac(&project, &reader_key);
+
+    assert!(matches!(
+        result,
+        Err(EpisodePersistenceError::MacMismatch { line: 4, .. })
+    ));
+    let snapshot = recovered.snapshot();
+    assert_eq!(snapshot.len(), 1);
+    assert_eq!(snapshot[0].value, "keep");
+}
+
+#[test]
 fn episodic_cache_load_rehydrates_cycle_roots() {
     let project = temp_dir("cache-roots");
     let alloc = CycleAwareKindAllocator::shared(MemoryKind::Episodic, 8);

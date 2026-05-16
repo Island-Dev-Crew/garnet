@@ -39,6 +39,9 @@ pub const EPISODIC_CACHE_LOG_FILE: &str = "episodes.mnemos";
 const EPISODIC_CACHE_LOCK_FILE: &str = "episodes.mnemos.lock";
 const EPISODIC_CACHE_SOURCE_TREE_PREFIX: &str = "source-tree\t";
 const EPISODIC_CACHE_SOURCE_TREE_DOMAIN: &[u8] = b"garnet-memory-episodic-source-tree-v1";
+const EPISODIC_CACHE_MAC_PREFIX: &str = "cache-mac\t";
+const EPISODIC_CACHE_MAC_ALGORITHM: &str = "blake3-keyed-v1";
+const EPISODIC_CACHE_RECORD_MAC_DOMAIN: &[u8] = b"garnet-memory-episodic-cache-record-v1";
 #[cfg(windows)]
 const EPISODIC_CACHE_LOCK_ATTEMPTS: usize = 1_000;
 #[cfg(windows)]
@@ -192,6 +195,10 @@ pub enum EpisodePersistenceError {
         expected: String,
         actual: String,
     },
+    MacMismatch {
+        line: usize,
+        reason: String,
+    },
 }
 
 impl fmt::Display for EpisodePersistenceError {
@@ -253,6 +260,9 @@ impl fmt::Display for EpisodePersistenceError {
                 f,
                 "episodic cache source-tree binding mismatch for {path}: expected {expected}, found {actual}"
             ),
+            Self::MacMismatch { line, reason } => {
+                write!(f, "episodic cache MAC mismatch on line {line}: {reason}")
+            }
         }
     }
 }
@@ -549,6 +559,23 @@ where
         self.append_prepared_cache_text(&backend, timestamp, value)
     }
 
+    /// Commit one signed episode into the default per-project typed cache.
+    ///
+    /// This opt-in Phase 6U path keeps the existing unsigned cache API
+    /// backward-compatible while giving agents and future runtime callers a
+    /// concrete MAC-verified backend surface. The keyed BLAKE3 MAC covers the
+    /// source-tree binding, timestamp, and encoded payload for each record.
+    pub fn append_cache_text_with_mac<P: AsRef<Path>>(
+        &self,
+        project_root: P,
+        timestamp: u64,
+        value: T,
+        key: &[u8; 32],
+    ) -> Result<(), EpisodePersistenceError> {
+        let backend = EpisodicCacheBackend::prepare(project_root.as_ref())?;
+        self.append_prepared_cache_text_with_mac(&backend, timestamp, value, key)
+    }
+
     fn append_prepared_cache_text(
         &self,
         backend: &EpisodicCacheBackend,
@@ -570,6 +597,35 @@ where
                 &backend.source_tree,
                 timestamp,
                 value,
+            )?;
+            set_path_private_file(&backend.log_path)?;
+            Ok(())
+        }
+    }
+
+    fn append_prepared_cache_text_with_mac(
+        &self,
+        backend: &EpisodicCacheBackend,
+        timestamp: u64,
+        value: T,
+        key: &[u8; 32],
+    ) -> Result<(), EpisodePersistenceError> {
+        backend.validate_dir_identity()?;
+        let _lock = backend.acquire_lock()?;
+        backend.validate_dir_identity()?;
+        #[cfg(unix)]
+        {
+            self.append_text_in_prepared_cache_with_mac(backend, timestamp, value, key)
+        }
+        #[cfg(not(unix))]
+        {
+            validate_regular_target_if_exists(&backend.log_path)?;
+            self.append_cache_text_by_path_with_mac(
+                &backend.log_path,
+                &backend.source_tree,
+                timestamp,
+                value,
+                key,
             )?;
             set_path_private_file(&backend.log_path)?;
             Ok(())
@@ -607,6 +663,19 @@ where
         self.load_prepared_cache_text(&backend)
     }
 
+    /// Replace this store with MAC-verified contents of the typed cache.
+    ///
+    /// Any missing, malformed, foreign-key, or tampered MAC fails before live
+    /// memory is mutated.
+    pub fn load_cache_text_with_mac<P: AsRef<Path>>(
+        &self,
+        project_root: P,
+        key: &[u8; 32],
+    ) -> Result<(), EpisodePersistenceError> {
+        let backend = EpisodicCacheBackend::prepare(project_root.as_ref())?;
+        self.load_prepared_cache_text_with_mac(&backend, key)
+    }
+
     fn load_prepared_cache_text(
         &self,
         backend: &EpisodicCacheBackend,
@@ -640,6 +709,45 @@ where
             self.load_cache_text_from_path(&backend.log_path, &backend.source_tree)
         }
     }
+
+    fn load_prepared_cache_text_with_mac(
+        &self,
+        backend: &EpisodicCacheBackend,
+        key: &[u8; 32],
+    ) -> Result<(), EpisodePersistenceError> {
+        backend.validate_dir_identity()?;
+        let _lock = backend.acquire_lock()?;
+        backend.validate_dir_identity()?;
+        #[cfg(unix)]
+        {
+            let Some(raw) = read_persistence_text_in_dir_optional(
+                &backend.episodic_dir,
+                EPISODIC_CACHE_LOG_FILE,
+                &backend.log_path,
+            )?
+            else {
+                self.replace_events(Vec::new());
+                return Ok(());
+            };
+            let episodes = parse_signed_cache_persisted_episodes(
+                &raw,
+                &backend.source_tree,
+                &backend.log_path,
+                key,
+            )?;
+            self.replace_events(episodes);
+            Ok(())
+        }
+        #[cfg(not(unix))]
+        {
+            validate_regular_target_if_exists(&backend.log_path)?;
+            if !backend.log_path.exists() {
+                self.replace_events(Vec::new());
+                return Ok(());
+            }
+            self.load_cache_text_from_path_with_mac(&backend.log_path, &backend.source_tree, key)
+        }
+    }
 }
 
 #[cfg(unix)]
@@ -671,6 +779,48 @@ where
         record.push('\t');
         record.push_str(&hex_encode(value.to_string().as_bytes()));
         record.push('\n');
+
+        let projected_bytes = existing.len().saturating_add(record.len()) as u64;
+        if projected_bytes > EPISODIC_TEXT_LOG_MAX_BYTES {
+            return Err(EpisodePersistenceError::LogTooLarge {
+                path: backend.log_path.display().to_string(),
+                bytes: projected_bytes,
+                limit: EPISODIC_TEXT_LOG_MAX_BYTES,
+            });
+        }
+
+        write_persistence_text_in_dir(
+            &backend.episodic_dir,
+            EPISODIC_CACHE_LOG_FILE,
+            &backend.log_path,
+            &[existing.as_bytes(), record.as_bytes()],
+        )?;
+        backend.validate_dir_identity()?;
+        self.append_at(timestamp, value);
+        Ok(())
+    }
+
+    fn append_text_in_prepared_cache_with_mac(
+        &self,
+        backend: &EpisodicCacheBackend,
+        timestamp: u64,
+        value: T,
+        key: &[u8; 32],
+    ) -> Result<(), EpisodePersistenceError> {
+        let existing = prepare_append_signed_cache_log_in_dir::<T>(
+            &backend.episodic_dir,
+            EPISODIC_CACHE_LOG_FILE,
+            &backend.log_path,
+            &backend.source_tree,
+            key,
+        )?;
+        let payload_hex = hex_encode(value.to_string().as_bytes());
+        let mac = episodic_cache_record_mac_hex(key, &backend.source_tree, timestamp, &payload_hex);
+        let mut record = String::new();
+        if existing.is_empty() {
+            record.push_str(&signed_cache_header(&backend.source_tree));
+        }
+        record.push_str(&signed_cache_record(timestamp, &payload_hex, &mac));
 
         let projected_bytes = existing.len().saturating_add(record.len()) as u64;
         if projected_bytes > EPISODIC_TEXT_LOG_MAX_BYTES {
@@ -747,6 +897,52 @@ where
         self.append_at(timestamp, value);
         Ok(())
     }
+
+    fn append_cache_text_by_path_with_mac(
+        &self,
+        path: &Path,
+        source_tree: &str,
+        timestamp: u64,
+        value: T,
+        key: &[u8; 32],
+    ) -> Result<(), EpisodePersistenceError> {
+        ensure_parent_dir(path)?;
+        let existing = prepare_append_signed_cache_log::<T>(path, source_tree, key)?;
+        let payload_hex = hex_encode(value.to_string().as_bytes());
+        let mac = episodic_cache_record_mac_hex(key, source_tree, timestamp, &payload_hex);
+        let mut record = String::new();
+        if existing.is_empty() {
+            record.push_str(&signed_cache_header(source_tree));
+        }
+        record.push_str(&signed_cache_record(timestamp, &payload_hex, &mac));
+
+        let projected_bytes = existing.len().saturating_add(record.len()) as u64;
+        if projected_bytes > EPISODIC_TEXT_LOG_MAX_BYTES {
+            return Err(EpisodePersistenceError::LogTooLarge {
+                path: path.display().to_string(),
+                bytes: projected_bytes,
+                limit: EPISODIC_TEXT_LOG_MAX_BYTES,
+            });
+        }
+
+        let tmp = temp_path_for(path);
+        let mut file = create_private_new_file(&tmp)?;
+        file.write_all(existing.as_bytes())
+            .map_err(|error| persistence_io("write", &tmp, error))?;
+        file.write_all(record.as_bytes())
+            .map_err(|error| persistence_io("write", &tmp, error))?;
+        file.sync_data()
+            .map_err(|error| persistence_io("sync", &tmp, error))?;
+        drop(file);
+        fs::rename(&tmp, path).map_err(|error| {
+            let _ = fs::remove_file(&tmp);
+            persistence_io("rename", path, error)
+        })?;
+        sync_parent_dir_after_commit(path)?;
+        set_path_private_file(path)?;
+        self.append_at(timestamp, value);
+        Ok(())
+    }
 }
 
 #[cfg(not(unix))]
@@ -762,6 +958,18 @@ where
     ) -> Result<(), EpisodePersistenceError> {
         let raw = read_persistence_text(path)?;
         let episodes = parse_cache_persisted_episodes(&raw, source_tree, path)?;
+        self.replace_events(episodes);
+        Ok(())
+    }
+
+    fn load_cache_text_from_path_with_mac(
+        &self,
+        path: &Path,
+        source_tree: &str,
+        key: &[u8; 32],
+    ) -> Result<(), EpisodePersistenceError> {
+        let raw = read_persistence_text(path)?;
+        let episodes = parse_signed_cache_persisted_episodes(&raw, source_tree, path, key)?;
         self.replace_events(episodes);
         Ok(())
     }
@@ -1193,6 +1401,31 @@ where
 }
 
 #[cfg(unix)]
+fn prepare_append_signed_cache_log_in_dir<T>(
+    dir: &File,
+    name: &str,
+    path: &Path,
+    source_tree: &str,
+    key: &[u8; 32],
+) -> Result<String, EpisodePersistenceError>
+where
+    T: FromStr,
+    T::Err: fmt::Display,
+{
+    let Some(raw) = read_persistence_text_in_dir_optional(dir, name, path)? else {
+        return Ok(String::new());
+    };
+    parse_signed_cache_persisted_episodes::<T>(&raw, source_tree, path, key)?;
+    if !raw.ends_with('\n') {
+        return Err(EpisodePersistenceError::MalformedLine {
+            line: raw.lines().count(),
+            reason: "append log must end at a complete record boundary".to_string(),
+        });
+    }
+    Ok(raw)
+}
+
+#[cfg(unix)]
 fn read_persistence_text_in_dir_optional(
     dir: &File,
     name: &str,
@@ -1508,6 +1741,48 @@ where
     Ok(raw)
 }
 
+#[cfg(not(unix))]
+fn prepare_append_signed_cache_log<T>(
+    path: &Path,
+    source_tree: &str,
+    key: &[u8; 32],
+) -> Result<String, EpisodePersistenceError>
+where
+    T: FromStr,
+    T::Err: fmt::Display,
+{
+    match fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.file_type().is_symlink() => {
+            return Err(unsafe_path(path, "target must not be a symlink"));
+        }
+        Ok(metadata) if !metadata.is_file() => {
+            return Err(unsafe_path(path, "target must be a regular file"));
+        }
+        Ok(metadata) if metadata.len() > EPISODIC_TEXT_LOG_MAX_BYTES => {
+            return Err(EpisodePersistenceError::LogTooLarge {
+                path: path.display().to_string(),
+                bytes: metadata.len(),
+                limit: EPISODIC_TEXT_LOG_MAX_BYTES,
+            });
+        }
+        Ok(_) => {}
+        Err(error) if error.kind() == ErrorKind::NotFound => {
+            return Ok(String::new());
+        }
+        Err(error) => return Err(persistence_io("metadata", path, error)),
+    }
+
+    let raw = read_persistence_text(path)?;
+    parse_signed_cache_persisted_episodes::<T>(&raw, source_tree, path, key)?;
+    if !raw.ends_with('\n') {
+        return Err(EpisodePersistenceError::MalformedLine {
+            line: raw.lines().count(),
+            reason: "append log must end at a complete record boundary".to_string(),
+        });
+    }
+    Ok(raw)
+}
+
 fn read_persistence_text(path: &Path) -> Result<String, EpisodePersistenceError> {
     match fs::symlink_metadata(path) {
         Ok(metadata) if metadata.file_type().is_symlink() => {
@@ -1710,11 +1985,62 @@ where
     parse_episode_record_lines(lines, 3)
 }
 
+fn parse_signed_cache_persisted_episodes<T>(
+    raw: &str,
+    expected_source_tree: &str,
+    path: &Path,
+    key: &[u8; 32],
+) -> Result<Vec<Episode<T>>, EpisodePersistenceError>
+where
+    T: FromStr,
+    T::Err: fmt::Display,
+{
+    let mut lines = raw.lines();
+    let header = lines.next().ok_or(EpisodePersistenceError::MissingHeader)?;
+    if header != "garnet-episodic-v1" {
+        return Err(EpisodePersistenceError::UnsupportedHeader(
+            header.to_string(),
+        ));
+    }
+    let Some(source_tree_line) = lines.next() else {
+        return Err(source_tree_mismatch(path, expected_source_tree, "missing"));
+    };
+    let Some(actual_source_tree) = source_tree_line.strip_prefix(EPISODIC_CACHE_SOURCE_TREE_PREFIX)
+    else {
+        return Err(source_tree_mismatch(path, expected_source_tree, "missing"));
+    };
+    if actual_source_tree != expected_source_tree {
+        return Err(source_tree_mismatch(
+            path,
+            expected_source_tree,
+            actual_source_tree,
+        ));
+    }
+    let Some(mac_line) = lines.next() else {
+        return Err(cache_mac_mismatch(3, "missing MAC algorithm header"));
+    };
+    let expected_mac_line = format!("{EPISODIC_CACHE_MAC_PREFIX}{EPISODIC_CACHE_MAC_ALGORITHM}");
+    if mac_line != expected_mac_line {
+        return Err(cache_mac_mismatch(
+            3,
+            format!("unsupported MAC algorithm header {mac_line:?}"),
+        ));
+    }
+    parse_signed_episode_record_lines(lines, 4, actual_source_tree, key)
+}
+
 fn source_tree_mismatch(path: &Path, expected: &str, actual: &str) -> EpisodePersistenceError {
     EpisodePersistenceError::SourceTreeMismatch {
         path: path.display().to_string(),
         expected: expected.to_string(),
         actual: actual.to_string(),
+    }
+}
+
+fn cache_mac_mismatch(line: usize, reason: impl Into<String>) -> EpisodePersistenceError {
+    EpisodePersistenceError::MacMismatch {
+        line,
+        reason: reason.into(),
     }
 }
 
@@ -1768,6 +2094,109 @@ where
         });
     }
     Ok(episodes)
+}
+
+fn parse_signed_episode_record_lines<'a, T, I>(
+    lines: I,
+    first_line_number: usize,
+    source_tree: &str,
+    key: &[u8; 32],
+) -> Result<Vec<Episode<T>>, EpisodePersistenceError>
+where
+    T: FromStr,
+    T::Err: fmt::Display,
+    I: Iterator<Item = &'a str>,
+{
+    let mut episodes = Vec::new();
+    for (idx, line) in lines.enumerate() {
+        let line_no = idx + first_line_number;
+        let mut fields = line.split('\t');
+        let Some(timestamp_text) = fields.next() else {
+            return Err(cache_mac_mismatch(line_no, "missing timestamp"));
+        };
+        let Some(payload_hex) = fields.next() else {
+            return Err(EpisodePersistenceError::MalformedLine {
+                line: line_no,
+                reason: "expected timestamp, hex payload, and MAC separated by tabs".to_string(),
+            });
+        };
+        let Some(recorded_mac) = fields.next() else {
+            return Err(cache_mac_mismatch(line_no, "missing record MAC"));
+        };
+        if fields.next().is_some() {
+            return Err(EpisodePersistenceError::MalformedLine {
+                line: line_no,
+                reason: "unexpected extra tab in signed cache record".to_string(),
+            });
+        }
+        let timestamp = timestamp_text.parse::<u64>().map_err(|_| {
+            EpisodePersistenceError::InvalidTimestamp {
+                line: line_no,
+                value: timestamp_text.to_string(),
+            }
+        })?;
+        let expected_mac = episodic_cache_record_mac_hex(key, source_tree, timestamp, payload_hex);
+        if !constant_time_eq_hex(recorded_mac, &expected_mac) {
+            return Err(cache_mac_mismatch(line_no, "record MAC did not verify"));
+        }
+        let bytes = hex_decode(payload_hex, line_no)?;
+        let value_text =
+            String::from_utf8(bytes).map_err(|error| EpisodePersistenceError::InvalidUtf8 {
+                line: line_no,
+                error: error.to_string(),
+            })?;
+        let value =
+            value_text
+                .parse::<T>()
+                .map_err(|error| EpisodePersistenceError::InvalidValue {
+                    line: line_no,
+                    value: value_text.clone(),
+                    error: error.to_string(),
+                })?;
+        episodes.push(Episode {
+            timestamp_unix: timestamp,
+            value,
+        });
+    }
+    Ok(episodes)
+}
+
+fn signed_cache_header(source_tree: &str) -> String {
+    format!(
+        "garnet-episodic-v1\n{EPISODIC_CACHE_SOURCE_TREE_PREFIX}{source_tree}\n{EPISODIC_CACHE_MAC_PREFIX}{EPISODIC_CACHE_MAC_ALGORITHM}\n"
+    )
+}
+
+fn signed_cache_record(timestamp: u64, payload_hex: &str, mac: &str) -> String {
+    format!("{timestamp}\t{payload_hex}\t{mac}\n")
+}
+
+fn episodic_cache_record_mac_hex(
+    key: &[u8; 32],
+    source_tree: &str,
+    timestamp: u64,
+    payload_hex: &str,
+) -> String {
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(EPISODIC_CACHE_RECORD_MAC_DOMAIN);
+    bytes.push(0);
+    bytes.extend_from_slice(source_tree.as_bytes());
+    bytes.push(0);
+    bytes.extend_from_slice(timestamp.to_string().as_bytes());
+    bytes.push(0);
+    bytes.extend_from_slice(payload_hex.as_bytes());
+    hex_encode(blake3::keyed_hash(key, &bytes).as_bytes())
+}
+
+fn constant_time_eq_hex(a: &str, b: &str) -> bool {
+    if a.len() != b.len() {
+        return false;
+    }
+    let mut diff = 0_u8;
+    for (left, right) in a.as_bytes().iter().zip(b.as_bytes()) {
+        diff |= left ^ right;
+    }
+    diff == 0
 }
 
 fn episodic_cache_source_tree_for_root(root: &Path) -> String {
