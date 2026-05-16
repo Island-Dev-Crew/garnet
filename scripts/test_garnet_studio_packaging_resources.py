@@ -18,6 +18,8 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
             "garnet_adoption_surface_status.py",
             "garnet_assist_context_pack.py",
             "garnet_converter_advisory_bundle.py",
+            "garnet_converter_advisory_handoff.py",
+            "garnet_converter_advisory_review.py",
             "garnet_converter_assist_plan.py",
             "garnet_converter_llm_feasibility.py",
             "garnet_converter_status.py",
@@ -100,6 +102,8 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
         self.assertIn('ADOPTION_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_adoption_surface_status.py"', script)
         self.assertIn('ASSIST_CONTEXT="${INSTALLED_APP}/Contents/Resources/scripts/garnet_assist_context_pack.py"', script)
         self.assertIn('ADVISORY_BUNDLE="${INSTALLED_APP}/Contents/Resources/scripts/garnet_converter_advisory_bundle.py"', script)
+        self.assertIn('ADVISORY_HANDOFF="${INSTALLED_APP}/Contents/Resources/scripts/garnet_converter_advisory_handoff.py"', script)
+        self.assertIn('ADVISORY_REVIEW="${INSTALLED_APP}/Contents/Resources/scripts/garnet_converter_advisory_review.py"', script)
         self.assertIn('ASSIST_PLAN="${INSTALLED_APP}/Contents/Resources/scripts/garnet_converter_assist_plan.py"', script)
         self.assertIn('LLM_FEASIBILITY="${INSTALLED_APP}/Contents/Resources/scripts/garnet_converter_llm_feasibility.py"', script)
         self.assertIn('MIT_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_mit_readiness_status.py"', script)

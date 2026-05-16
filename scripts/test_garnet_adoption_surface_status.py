@@ -34,6 +34,7 @@ class GarnetAdoptionSurfaceStatusTests(unittest.TestCase):
         )
         self.assertIn("provider-neutral advisory bundle is active", data["llm_assist_truth"])
         self.assertIn("advisory review gate is active before model handoff", data["llm_assist_truth"])
+        self.assertIn("provider-neutral advisory handoff packet is active", data["llm_assist_truth"])
         self.assertIn("provider-backed conversion is not active", data["llm_assist_truth"])
         self.assertIn("deterministic converter output remains authoritative", data["llm_assist_truth"])
 
@@ -113,7 +114,10 @@ class GarnetAdoptionSurfaceStatusTests(unittest.TestCase):
         self.assertIn("Advisory Review", site)
         self.assertIn("Objective Pulse", site)
         self.assertIn("provider-neutral prompt pack", site)
-        self.assertIn("feasibility + context + prompt + assist plan + advisory bundle + review gate active", site)
+        self.assertIn(
+            "feasibility + context + prompt + assist plan + advisory bundle + review gate + handoff packet active",
+            site,
+        )
 
 
 if __name__ == "__main__":

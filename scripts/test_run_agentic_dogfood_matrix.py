@@ -256,6 +256,21 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertIn("report-converter-advisory-review-source-included-block", ids)
         self.assertIn("report-converter-advisory-review-output-manifest", ids)
 
+    def test_probe_inventory_includes_converter_advisory_handoff_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            fixtures = matrix.prepare_fixtures(work)
+            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            results = self._inventory_results(probes)
+
+        ids = {result.probe.id for result in results}
+        domains = Counter(result.probe.domain for result in results)
+
+        self.assertEqual(domains["converter advisory handoff"], 3)
+        self.assertIn("report-converter-advisory-handoff-current-truth", ids)
+        self.assertIn("report-converter-advisory-handoff-source-included-block", ids)
+        self.assertIn("report-converter-advisory-handoff-output-manifest", ids)
+
     def test_probe_inventory_includes_web_pwa_offline_gate(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
@@ -484,6 +499,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertEqual(coverage["converter LLM feasibility"]["status"], "adequate")
         self.assertEqual(coverage["converter advisory bundle"]["status"], "adequate")
         self.assertEqual(coverage["converter advisory review"]["status"], "adequate")
+        self.assertEqual(coverage["converter advisory handoff"]["status"], "adequate")
         self.assertEqual(coverage["converter advisory bundle UX"]["status"], "adequate")
         self.assertEqual(coverage["converter advisory review UX"]["status"], "adequate")
         self.assertEqual(coverage["MIT objective pulse UX"]["status"], "adequate")
