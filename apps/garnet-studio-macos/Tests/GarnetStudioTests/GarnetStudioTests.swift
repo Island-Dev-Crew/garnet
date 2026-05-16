@@ -125,6 +125,17 @@ final class GarnetStudioTests: XCTestCase {
         )
     }
 
+    func testAgenticMatrixOutputAcceptsAnyCompleteProbeCount() {
+        XCTAssertTrue(AgenticDogfoodRunner.outputProvesCompleteReadiness("readiness=100\npassed=28/28\n"))
+        XCTAssertTrue(AgenticDogfoodRunner.outputProvesCompleteReadiness("artifact_dir=/tmp/run\nreadiness=100\npassed=29/29\n"))
+    }
+
+    func testAgenticMatrixOutputRejectsPartialOrLowReadinessRuns() {
+        XCTAssertFalse(AgenticDogfoodRunner.outputProvesCompleteReadiness("readiness=100\npassed=27/28\n"))
+        XCTAssertFalse(AgenticDogfoodRunner.outputProvesCompleteReadiness("readiness=95\npassed=28/28\n"))
+        XCTAssertFalse(AgenticDogfoodRunner.outputProvesCompleteReadiness("readiness=100\npassed=twenty-eight/twenty-eight\n"))
+    }
+
     func testAgenticMatrixRunnerFindsBundledResources() {
         let temporary = FileManager.default.temporaryDirectory
             .appendingPathComponent("GarnetStudioTests-\(UUID().uuidString)", isDirectory: true)
