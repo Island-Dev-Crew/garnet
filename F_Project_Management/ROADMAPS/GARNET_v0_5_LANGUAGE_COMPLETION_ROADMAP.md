@@ -1438,6 +1438,20 @@ evidence:
 `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-042402`
 (`63/63`, `skipped=0`).
 
+Phase 6Z packaged assist-plan resource pass: packaged Garnet Studio now stages
+and chmods `scripts/garnet_converter_assist_plan.py`, and the DMG install
+smoke checks it as a required executable bundled asset before running copied-app
+matrix probes. Verified local evidence:
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-043725`
+(packaged app),
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-043735`
+(copied app), and
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-043735`
+for DMG SHA-256
+`be625f7cff7500d67223de47fdeb195e2e59876ecd2968f06976d5971ef5e8b3`.
+This is local ad-hoc packaging evidence; Developer ID notarization and
+clean-machine Gatekeeper proof remain separate gates.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.

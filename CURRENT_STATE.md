@@ -478,6 +478,20 @@ JSON/Markdown plus a manifest, and is covered by three matrix probes. Current
 Desktop evidence:
 `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-042402`
 (source, `63/63`, `skipped=0`).
+Phase 6Z closes the immediate packaged-app resource drift introduced by that
+reporter: `Garnet Studio.app` now stages and chmods
+`scripts/garnet_converter_assist_plan.py`, and the mounted-DMG smoke treats it
+as a required executable bundled asset before running the copied-app matrix.
+Current Desktop evidence:
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-043627`
+(source, `63/63`, `skipped=0`),
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-043725`
+(packaged app),
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-043735`
+(copied app),
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-043735`
+(DMG install smoke; DMG SHA-256
+`be625f7cff7500d67223de47fdeb195e2e59876ecd2968f06976d5971ef5e8b3`).
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.
