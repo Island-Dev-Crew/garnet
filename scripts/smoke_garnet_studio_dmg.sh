@@ -166,6 +166,7 @@ ASSIST_CONTEXT="${INSTALLED_APP}/Contents/Resources/scripts/garnet_assist_contex
 ASSIST_PLAN="${INSTALLED_APP}/Contents/Resources/scripts/garnet_converter_assist_plan.py"
 CONVERTER_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_converter_status.py"
 MIT_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_mit_readiness_status.py"
+PROMO_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_promo_video_status.py"
 READINESS_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_readiness_status.py"
 NOTARIZATION_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_studio_notarization_status.py"
 EXAMPLES_DIR="${INSTALLED_APP}/Contents/Resources/examples"
@@ -173,7 +174,7 @@ DOCS_DIR="${INSTALLED_APP}/Contents/Resources/docs"
 SPEC_DIR="${INSTALLED_APP}/Contents/Resources/C_Language_Specification"
 PROJECT_DOGFOOD_DIR="${INSTALLED_APP}/Contents/Resources/F_Project_Management/DOGFOOD"
 
-for required in "${APP_EXECUTABLE}" "${GARNET_BIN}" "${MATRIX_SCRIPT}" "${OFFLINE_PWA_SMOKE}" "${ADOPTION_STATUS}" "${ASSIST_CONTEXT}" "${ASSIST_PLAN}" "${CONVERTER_STATUS}" "${MIT_STATUS}" "${READINESS_STATUS}" "${NOTARIZATION_STATUS}"; do
+for required in "${APP_EXECUTABLE}" "${GARNET_BIN}" "${MATRIX_SCRIPT}" "${OFFLINE_PWA_SMOKE}" "${ADOPTION_STATUS}" "${ASSIST_CONTEXT}" "${ASSIST_PLAN}" "${CONVERTER_STATUS}" "${MIT_STATUS}" "${PROMO_STATUS}" "${READINESS_STATUS}" "${NOTARIZATION_STATUS}"; do
   if [ ! -x "${required}" ]; then
     echo "error: copied app is missing executable asset: ${required}" >&2
     exit 4

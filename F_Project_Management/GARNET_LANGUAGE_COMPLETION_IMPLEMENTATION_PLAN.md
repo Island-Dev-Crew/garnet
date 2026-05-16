@@ -27,6 +27,7 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | Garnet-aware assist context pack | Active for deterministic current-truth context and provider-neutral prompt packaging before any provider-backed converter assist is enabled | `scripts/garnet_assist_context_pack.py`; `python3 scripts/test_garnet_assist_context_pack.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-assist-context-*`; `docs/index.html` | Use this pack as the future LLM/agentic assist input contract; do not claim model-backed conversion until provider/runtime boundaries and dogfood gates exist |
 | Converter assist planning | Active for deterministic per-file planned-language migration risk planning without activating broad conversion | `scripts/garnet_converter_assist_plan.py`; `python3 scripts/test_garnet_converter_assist_plan.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-assist-plan-*`; `docs/index.html` | Keep this advisory-only: it may inventory safe-mode, memory, CapCaps, actor/orchestration, and migration risks for TypeScript, JavaScript, Swift, Java, C++, and other planned sources, but deterministic frontends and provider-backed conversion remain separate gated slices |
 | MIT readiness objective accounting | Active for broader productization truth beyond the complete tracked implementation-plan ledger | `scripts/garnet_mit_readiness_status.py`; `python3 scripts/test_garnet_mit_readiness_status.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-mit-readiness-*`; `docs/index.html` | Use this reporter when discussing public/MIT readiness so `87/87` tracked slices are not confused with notarization, mobile distribution, promo video, broad converter frontends, LLM assist, proof, or empirical validation completion |
+| Promo video readiness contract | Active as planned-contract evidence for the future 30-second Garnet promo/ad lane | `scripts/garnet_promo_video_status.py`; `python3 scripts/test_garnet_promo_video_status.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-promo-video-*` | Keep HyperFrames/Remotion composition, rendered MP4/WebM, visual QA, website export, and Desktop dogfood evidence as required gates before claiming a shipped video |
 | Parser parity for old ambition | Partial, Phase 1 active | `protocol`, `dyn Trait`, `yield`, `next`, `@dynamic`, `@nonsendable`, and `do ... end` parser tests | Keep runtime gaps explicit and activate Phase 2 only with executable semantics |
 | Blocks, `yield`, `next` runtime semantics | Phase 2A active | `do ... end` parses as a trailing closure argument; `deferred_blocks_and_yield` runs a managed-mode block/yield/next program | Keep `cargo test -p garnet-cli --test conformance_skeleton deferred_blocks_and_yield` green; add richer block edge cases later |
 | Dynamic method dispatch tables | Partial Phase 2H | `deferred_dynamic_dispatch` covers per-instance method tables; `static_impl_dispatch_and_method_missing` covers static inherent impl fallback and `method_missing`; `dynamic_impl_dispatch_tables` covers `@dynamic impl Type for Protocol` registration and dispatch | Add richer dispatch precedence and ambiguity probes |
@@ -1921,6 +1922,18 @@ actor/orchestration migration risk. This expands advisory planned-language
 evidence without activating broad deterministic conversion or provider-backed
 LLM conversion. Local evidence passes `68/68` with `skipped=0` in Desktop
 bundle `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-055816`.
+
+Phase 6AG promo-video readiness pass: `scripts/garnet_promo_video_status.py`
+now records the requested 30-second Garnet promo as a planned-contract lane
+with storyboard beats, HyperFrames/Remotion composition, rendered-artifact,
+visual-QA, website-export, Desktop-bundle, and overclaim gates. This prepares
+the ad lane for a later rendering slice without claiming that a video artifact
+or website-ready export exists. Local source-checkout matrix evidence passes
+`71/71` with `skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-061302`.
+Packaged app/DMG evidence also passes after staging the promo reporter, with
+DMG smoke bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-061434`.
 
 ## Milestone 7: Release, Proof, Native Backend, And Empirical Evidence
 

@@ -739,6 +739,46 @@ def build_assist_plan_manifest_probe(work: Path, source: Path) -> ProbeResult:
     )
 
 
+def build_promo_video_manifest_probe(work: Path) -> ProbeResult:
+    output_dir = work / "promo-video-status"
+    probe = Probe(
+        "report-promo-video-output-manifest",
+        "promo video readiness",
+        "promo readiness contract should write JSON, Markdown, and a verified manifest",
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "garnet_promo_video_status.py"),
+            "--output-dir",
+            str(output_dir),
+        ],
+        True,
+        (
+            "Garnet Promo Video Readiness Contract",
+            "garnet-promo-video-status.json: OK",
+            "garnet-promo-video-status.md: OK",
+        ),
+        security_domain="release-integrity",
+    )
+    start = time.monotonic()
+    completed = run(probe.command, work)
+    stdout = [completed.stdout]
+    stderr = [completed.stderr]
+    exit_code = completed.returncode
+    if completed.returncode == 0:
+        verify = run(["shasum", "-a", "256", "-c", "MANIFEST.sha256"], output_dir)
+        stdout.append(verify.stdout)
+        stderr.append(verify.stderr)
+        exit_code = verify.returncode
+    return classify_result(
+        probe,
+        exit_code,
+        "\n".join(stdout),
+        "\n".join(stderr),
+        int((time.monotonic() - start) * 1000),
+        work,
+    )
+
+
 def app_workbench_probes(app_executable: Path | None, garnet: Path) -> list[Probe]:
     if app_executable is not None:
         return [
@@ -1503,6 +1543,36 @@ def probe_set(
             ),
             security_domain="sandbox",
         ),
+        Probe(
+            "report-promo-video-current-truth",
+            "promo video readiness",
+            "promo readiness status should expose a 30-second contract without claiming a render",
+            [sys.executable, str(ROOT / "scripts" / "garnet_promo_video_status.py"), "--format", "json"],
+            True,
+            (
+                "\"status\": \"planned-contract\"",
+                "\"target_duration_seconds\": 30",
+                "\"rendered_video_present\": false",
+                "No verified rendered promo video is present.",
+            ),
+            security_domain="not-applicable",
+        ),
+        Probe(
+            "report-promo-video-required-gates",
+            "promo video readiness",
+            "promo readiness status should preserve render, QA, website, and overclaim gates",
+            [sys.executable, str(ROOT / "scripts" / "garnet_promo_video_status.py"), "--format", "json"],
+            True,
+            (
+                "HyperFrames or Remotion composition",
+                "rendered MP4 or WebM artifact",
+                "visual QA verdict",
+                "repo/site copy check for overclaims",
+                "Do not claim provider-backed LLM conversion is active.",
+            ),
+            security_domain="release-integrity",
+        ),
+        lambda: build_promo_video_manifest_probe(work),
         Probe(
             "report-adoption-surface-active-truth",
             "repo/site adoption surface",
