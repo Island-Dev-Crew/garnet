@@ -114,10 +114,11 @@ highest-leverage next milestones are:
    records the current Developer ID, hardened-runtime, Gatekeeper, and notary
    credential blockers. The docs site now has a seed installable PWA shell with
    manifest, icons, service worker, local HTTP smoke, dependency-free offline
-   service-worker behavior simulation, packaged-app resource smoke, and CI
-   evidence gate. Do not claim signing, notarization, clean-machine Gatekeeper,
-   TestFlight, App Store, mobile app, real browser offline validation, or
-   offline IDE completion before those lanes are separately verified.
+   service-worker behavior simulation, local Chrome DevTools offline smoke,
+   packaged-app resource smoke, and CI evidence gate. Do not claim signing,
+   notarization, clean-machine Gatekeeper, TestFlight, App Store, mobile app,
+   cross-browser certification, or offline IDE completion before those lanes
+   are separately verified.
 6. **Agentic dogfood stress:** keep the advanced multi-domain matrix green so
    agents can exercise orchestration, recovery diagnostics, migration,
    safe-mode, release-integrity, docs, app, and memory-analysis surfaces as one
@@ -129,10 +130,10 @@ highest-leverage next milestones are:
    (`cli`, `web-api`, and `agent-orchestrator`) through scaffold/run/test
    probes, developer experience covers doc extraction plus formatter check and
    repair behavior, agent memory/analysis covers parse-time memory declaration
-   surfacing plus check/run of the advertised log analyzer, and the web/PWA
-   productization domain now has offline-handler and full local-smoke probes,
-   plus a local Chrome DevTools browser offline gate, while richer browser IDE
-   and cross-browser validation remain separate gates.
+   surfacing plus check/run of the advertised log analyzer, and web/PWA
+   productization covers offline-handler, full local-smoke, and local Chrome
+   DevTools browser offline probes, while richer browser IDE and cross-browser
+   validation remain separate gates.
    The migration-assistant domain also carries a converter adoption-status
    probe so Rust/Ruby/Python/Go support, planned broader languages, and gated
    LLM-assist claims remain machine-readable instead of living only in

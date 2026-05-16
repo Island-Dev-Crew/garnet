@@ -441,6 +441,7 @@ def web_pwa_probes(work: Path) -> list[Probe]:
     docs_dir = ROOT / "docs"
     offline_smoke = ROOT / "scripts" / "smoke_garnet_web_pwa_offline.mjs"
     local_smoke = ROOT / "scripts" / "smoke_garnet_web_pwa.sh"
+    browser_smoke = ROOT / "scripts" / "smoke_garnet_web_pwa_browser.mjs"
     if not (docs_dir / "service-worker.js").is_file() or not offline_smoke.is_file():
         return []
     probes = [
@@ -478,6 +479,26 @@ def web_pwa_probes(work: Path) -> list[Probe]:
                 ("Garnet Web/PWA readiness smoke: blockers=0 warnings=0",),
                 security_domain="filesystem-localhost",
                 notes="Uses only the checkout docs directory, Node offline handler, and a localhost static server.",
+            )
+        )
+    if browser_smoke.is_file():
+        probes.append(
+            Probe(
+                "smoke-web-pwa-browser-offline",
+                "web/PWA productization",
+                "docs PWA browser smoke should prove service-worker control and offline navigation through Chrome DevTools",
+                [
+                    "node",
+                    str(browser_smoke),
+                    "--docs-dir",
+                    str(docs_dir),
+                    "--output",
+                    str(work / "web-pwa-browser-offline.json"),
+                ],
+                True,
+                ("Garnet browser PWA offline smoke: passed",),
+                security_domain="filesystem-localhost-browser",
+                notes="Uses local headless Chrome through the dependency-free Chrome DevTools Protocol harness.",
             )
         )
     return probes
