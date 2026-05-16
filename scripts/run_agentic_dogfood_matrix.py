@@ -185,6 +185,8 @@ def bad() {
 """,
     )
 
+    paths["malformed"] = write(fixtures / "malformed_agent.garnet", "def main( { 1 }\n")
+
     paths["doc_source"] = write(
         fixtures / "documented_agent.garnet",
         """/// Score an agent handoff for review priority.
@@ -274,6 +276,8 @@ def build_project_template_probe(garnet: Path, work: Path) -> ProbeResult:
     stdout_parts: list[str] = []
     stderr_parts: list[str] = []
     target = work / "generated_agents"
+    if target.exists():
+        shutil.rmtree(target)
     first = run(probe.command, work)
     stdout_parts.append("$ " + " ".join(probe.command))
     stdout_parts.append(first.stdout)
@@ -464,6 +468,45 @@ def probe_set(
             [str(garnet), "run", str(examples / "multi_agent_builder.garnet")],
             True,
             ("clean build:", "red build:", "=> 46"),
+        ),
+        Probe(
+            "check-malformed-agent-source",
+            "agent recovery and diagnostics",
+            "malformed agent source should fail with a parser diagnostic an agent can act on",
+            [str(garnet), "check", str(fixtures["malformed"])],
+            False,
+            expected_stderr=("expected identifier in parameter name",),
+        ),
+        Probe(
+            "check-missing-agent-source",
+            "agent recovery and diagnostics",
+            "missing agent source should fail loudly instead of looking like an empty successful check",
+            [str(garnet), "check", str(work / "fixtures" / "missing_agent_source.garnet")],
+            False,
+            expected_stderr=("failed to read", "No such file or directory"),
+            security_domain="filesystem",
+        ),
+        Probe(
+            "eval-unknown-agent-symbol",
+            "agent recovery and diagnostics",
+            "unknown symbols in quick agent eval should produce a concrete undefined-variable diagnostic",
+            [str(garnet), "eval", "unknown_symbol + 1"],
+            False,
+            expected_stderr=("undefined variable: unknown_symbol",),
+        ),
+        Probe(
+            "verify-missing-release-manifest",
+            "agent recovery and diagnostics",
+            "manifest verification should fail loudly when the referenced manifest is absent",
+            [
+                str(garnet),
+                "verify",
+                str(fixtures["build_source"]),
+                str(work / "fixtures" / "missing.manifest.json"),
+            ],
+            False,
+            expected_stderr=("failed to read", "missing.manifest.json"),
+            security_domain="release-integrity",
         ),
         Probe(
             "check-safe-pure",
@@ -879,9 +922,22 @@ def write_outputs(work: Path, results: list[ProbeResult], metadata: dict[str, st
     (work / "dogfood-readiness-mutations.md").write_text(
         "# Agentic Garnet Mutation Log\n\n"
         "- `release-manifest-tamper-detection` mutates `tamper.garnet` after deterministic build and expects `verify` to fail with `source_hash mismatch`.\n"
-        "- `check-safe-violation` injects a forbidden safe-mode `raise`/`var` body and expects the checker to reject it.\n",
+        "- `check-safe-violation` injects a forbidden safe-mode `raise`/`var` body and expects the checker to reject it.\n"
+        "- `check-malformed-agent-source` injects malformed syntax and expects the parser diagnostic to stay actionable.\n"
+        "- `check-missing-agent-source`, `eval-unknown-agent-symbol`, and `verify-missing-release-manifest` exercise missing-input and undefined-symbol recovery paths.\n",
         encoding="utf-8",
     )
+    status_script = ROOT / "scripts" / "garnet_readiness_status.py"
+    if status_script.exists():
+        status = run(["python3", str(status_script)], ROOT, timeout=30)
+        status_text = status.stdout if status.returncode == 0 else status.stderr
+        (work / "readiness-slice-status.md").write_text(status_text, encoding="utf-8")
+    else:
+        (work / "readiness-slice-status.md").write_text(
+            "# Garnet Readiness Slice Status\n\n"
+            "Not available in this packaged matrix context.\n",
+            encoding="utf-8",
+        )
     subprocess.run(
         "find . -type f ! -name MANIFEST.sha256 ! -name MANIFEST.verify.log -print0 | "
         "sort -z | xargs -0 shasum -a 256 > MANIFEST.sha256 && "

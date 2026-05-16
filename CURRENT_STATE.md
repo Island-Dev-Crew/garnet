@@ -116,10 +116,10 @@ highest-leverage next milestones are:
    notarization, clean-machine Gatekeeper, TestFlight, App Store, mobile app,
    or full offline IDE completion before those lanes are separately verified.
 6. **Agentic dogfood stress:** keep the advanced multi-domain matrix green so
-   agents can exercise orchestration, migration, safe-mode, release-integrity,
-   docs, app, and memory-analysis surfaces as one falsifiable workflow, with
-   macOS CI preserving a downloadable evidence artifact for readiness-sensitive
-   PRs.
+   agents can exercise orchestration, recovery diagnostics, migration,
+   safe-mode, release-integrity, docs, app, and memory-analysis surfaces as one
+   falsifiable workflow, with macOS CI preserving a downloadable evidence
+   artifact for readiness-sensitive PRs.
 7. **Formal/empirical proof:** keep Paper V theorem sketches and Paper VI
    experiments separate from implemented guarantees until tests or proofs land.
 

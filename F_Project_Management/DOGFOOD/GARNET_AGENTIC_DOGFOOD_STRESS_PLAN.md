@@ -22,12 +22,14 @@ falsifiable dogfood bundle with:
 - per-probe stdout/stderr logs
 - `MANIFEST.sha256`
 
-The current probe set covers 24 checks across eight domains:
+The current probe set covers 28 checks across nine domains, or 26 checks when
+the SwiftUI/macOS app workbench probes are intentionally skipped in headless CI:
 
 | Domain | Probe count | Purpose |
 |---|---:|---|
 | Agent orchestration | 4 | routing, capability policy, expression evaluation, and canonical multi-agent example execution |
 | Project scaffolding | 1 | generated `agent-orchestrator` template runs and tests |
+| Agent recovery and diagnostics | 4 | malformed source, missing source, undefined eval symbol, and missing manifest failures stay actionable |
 | Safe mode and capabilities | 5 | valid safe programs, unsafe rejection, and advertised safe I/O example check/run |
 | Migration assistant | 5 | Python/Ruby/Rust/Go conversion plus explicit unsupported-language rejection |
 | Release integrity | 3 | deterministic manifest generation, verification, and tamper rejection |
@@ -56,36 +58,36 @@ Those failures became focused fixes and regression tests in this slice.
 
 ## Current Evidence
 
-Latest DMG install-smoke evidence bundle:
+Latest source-checkout evidence bundle:
 
 ```text
-/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260515-212912
+/Users/idc2.0/Desktop/dogfood/agentic-dogfood-recovery-domain-full
 ```
 
 Current result:
 
 ```text
 readiness=100
-passed=24/24
+passed=28/28
 ```
 
 Manifest verification:
 
 ```sh
-cd /Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260515-212912
+cd /Users/idc2.0/Desktop/dogfood/agentic-dogfood-recovery-domain-full
 shasum -a 256 -c MANIFEST.sha256
 ```
 
 All files in the bundle verified at creation time. This bundle was produced by
-mounting `target/macos/GarnetStudio.dmg`, copying `Garnet Studio.app` into a
-temporary Applications-style directory, and running the copied app's
-`--agentic-matrix-test` against its bundled matrix script, examples, and Garnet
-CLI.
+running the source-checkout matrix with app workbench probes enabled and
+copying the completed evidence directory to Desktop dogfood storage. The matrix
+now also writes `readiness-slice-status.md` so completion percentage evidence
+travels with the bundle.
 
 ## Next Gates
 
-1. Add the matrix to CI once its runtime cost is acceptable for routine PR
-   checks.
+1. Keep the headless 26-probe matrix in CI while app workbench probes remain
+   covered by local/package/DMG gates.
 2. Keep Garnet Studio's "Agentic Tests" surface wired to this same harness for
    both source-checkout and packaged-app runs.
 3. Add a lower-cost CI variant if the full matrix remains too expensive for
