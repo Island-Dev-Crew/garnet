@@ -104,7 +104,12 @@ highest-leverage next milestones are:
    checksums, and release-backed installer smoke green while separating signed
    macOS `.pkg`, Windows MSI, and live public-domain installer work from the
    current release claim.
-5. **Formal/empirical proof:** keep Paper V theorem sketches and Paper VI
+5. **Garnet Studio app distribution:** build a polished local macOS workbench
+   that opens like a normal app, bundles the Garnet CLI, and exposes health,
+   examples, conversion, release status, and onboarding without claiming
+   Developer ID signing, notarization, TestFlight, App Store, web, or mobile
+   distribution before those lanes are separately verified.
+6. **Formal/empirical proof:** keep Paper V theorem sketches and Paper VI
    experiments separate from implemented guarantees until tests or proofs land.
 
 The v0.5 seven-phase roadmap is tracked in

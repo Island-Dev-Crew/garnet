@@ -1,0 +1,780 @@
+import Foundation
+import SwiftUI
+
+enum GarnetCommandStatus: Equatable {
+    case success
+    case failure
+}
+
+struct GarnetCommandResult: Equatable {
+    let command: String
+    let exitCode: Int32
+    let output: String
+
+    var status: GarnetCommandStatus {
+        exitCode == 0 ? .success : .failure
+    }
+}
+
+enum GarnetSampleMode: String, CaseIterable, Identifiable {
+    case parse = "Parse"
+    case check = "Check"
+    case run = "Run"
+    case convert = "Convert"
+
+    var id: String { rawValue }
+}
+
+struct GarnetSample: Identifiable, Equatable {
+    let id: String
+    let title: String
+    let subtitle: String
+    let mode: GarnetSampleMode
+    let language: String?
+    let filename: String
+    let source: String
+}
+
+enum GarnetSampleCatalog {
+    static let samples: [GarnetSample] = [
+        GarnetSample(
+            id: "mvp-os-run",
+            title: "Run a canonical MVP",
+            subtitle: "Cooperative scheduler smoke from the current runnable examples.",
+            mode: .run,
+            language: nil,
+            filename: "mvp_01_os_simulator.garnet",
+            source: """
+            def run_scheduler(ticks) {
+              let mut tick = 0
+              let mut ready = 3
+              let mut completed = 0
+              while tick < ticks {
+                if ready > 0 {
+                  completed += 1
+                  ready -= 1
+                } else {
+                  ready = 3
+                }
+                tick += 1
+              }
+              completed
+            }
+
+            @caps()
+            def main() {
+              let completed = run_scheduler(12)
+              println("garnet studio completed:", completed)
+              completed
+            }
+            """
+        ),
+        GarnetSample(
+            id: "safe-check",
+            title: "Check safe-mode ownership",
+            subtitle: "Shows the checker path without needing a terminal.",
+            mode: .check,
+            language: nil,
+            filename: "safe_mode_check.garnet",
+            source: """
+            @safe
+            def score(value) {
+              let owned = value
+              owned + 1
+            }
+            """
+        ),
+        GarnetSample(
+            id: "parse-actor-shape",
+            title: "Parse an agent-facing shape",
+            subtitle: "A small actor-like source sample for parser exploration.",
+            mode: .parse,
+            language: nil,
+            filename: "agent_shape.garnet",
+            source: """
+            struct BuildTask {
+              id: Int,
+              name: String,
+            }
+
+            def describe(task) {
+              task.name
+            }
+            """
+        ),
+        GarnetSample(
+            id: "convert-python",
+            title: "Convert Python into Garnet",
+            subtitle: "Use the migration assistant and inspect the generated checklist.",
+            mode: .convert,
+            language: "python",
+            filename: "sample.py",
+            source: """
+            def route_weight(path):
+                if path == "/":
+                    return 10
+                if path == "/health":
+                    return 20
+                return 1
+            """
+        ),
+    ]
+}
+
+struct GarnetCLILocator {
+    let bundleResourceURL: URL?
+    let environmentPath: String
+
+    init(
+        bundleResourceURL: URL? = Bundle.main.resourceURL,
+        environmentPath: String = ProcessInfo.processInfo.environment["PATH"] ?? ""
+    ) {
+        self.bundleResourceURL = bundleResourceURL
+        self.environmentPath = environmentPath
+    }
+
+    func candidatePaths() -> [String] {
+        var paths: [String] = []
+        if let bundleResourceURL {
+            paths.append(bundleResourceURL.appendingPathComponent("garnet").path)
+        }
+        for directory in environmentPath.split(separator: ":") {
+            paths.append(String(directory) + "/garnet")
+        }
+        paths.append(contentsOf: [
+            "/usr/local/bin/garnet",
+            "/opt/homebrew/bin/garnet",
+            "/usr/local/garnet/bin/garnet",
+        ])
+        return Array(NSOrderedSet(array: paths)) as? [String] ?? paths
+    }
+
+    func locate(fileManager: FileManager = .default) -> String? {
+        candidatePaths().first { candidate in
+            fileManager.isExecutableFile(atPath: candidate)
+        }
+    }
+}
+
+struct GarnetCLI {
+    let executablePath: String
+
+    func run(arguments: [String], workingDirectory: URL? = nil) -> GarnetCommandResult {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: executablePath)
+        process.arguments = arguments
+        process.currentDirectoryURL = workingDirectory
+
+        let outputPipe = Pipe()
+        process.standardOutput = outputPipe
+        process.standardError = outputPipe
+
+        let command = ([executablePath] + arguments).joined(separator: " ")
+        do {
+            try process.run()
+            process.waitUntilExit()
+            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: data, encoding: .utf8) ?? ""
+            return GarnetCommandResult(command: command, exitCode: process.terminationStatus, output: output)
+        } catch {
+            return GarnetCommandResult(command: command, exitCode: 127, output: error.localizedDescription)
+        }
+    }
+}
+
+@MainActor
+final class GarnetStudioViewModel: ObservableObject {
+    @Published var selectedSection: StudioSection = .overview
+    @Published var selectedSample: GarnetSample = GarnetSampleCatalog.samples[0]
+    @Published var sourceText: String = GarnetSampleCatalog.samples[0].source
+    @Published var converterLanguage: String = "python"
+    @Published var output: String = "Run a health check or pick a sample to start."
+    @Published var lastStatus: GarnetCommandStatus?
+    @Published var cliPath: String?
+
+    private let locator: GarnetCLILocator
+
+    init(locator: GarnetCLILocator = GarnetCLILocator()) {
+        self.locator = locator
+        self.cliPath = locator.locate()
+    }
+
+    func select(sample: GarnetSample) {
+        selectedSample = sample
+        sourceText = sample.source
+        converterLanguage = sample.language ?? converterLanguage
+        selectedSection = sample.mode == .convert ? .converter : .examples
+    }
+
+    func runHealthCheck() {
+        run(arguments: ["version"])
+    }
+
+    func runSelectedSample() {
+        switch selectedSample.mode {
+        case .parse:
+            runSource(arguments: ["parse"], filename: selectedSample.filename)
+        case .check:
+            runSource(arguments: ["check"], filename: selectedSample.filename)
+        case .run:
+            runSource(arguments: ["run"], filename: selectedSample.filename)
+        case .convert:
+            runConverter()
+        }
+    }
+
+    func runParse() {
+        runSource(arguments: ["parse"], filename: "studio-input.garnet")
+    }
+
+    func runCheck() {
+        runSource(arguments: ["check"], filename: "studio-input.garnet")
+    }
+
+    func runProgram() {
+        runSource(arguments: ["run"], filename: "studio-input.garnet")
+    }
+
+    func runConverter() {
+        let ext = converterLanguage == "python" ? "py" : converterLanguage
+        runSource(arguments: ["convert", converterLanguage], filename: "studio-input.\(ext)")
+    }
+
+    private func run(arguments: [String]) {
+        guard let cliPath else {
+            output = "No Garnet CLI found. Bundle Garnet Studio with the CLI or install `garnet` on PATH."
+            lastStatus = .failure
+            return
+        }
+        let result = GarnetCLI(executablePath: cliPath).run(arguments: arguments)
+        apply(result: result)
+    }
+
+    private func runSource(arguments: [String], filename: String) {
+        guard let cliPath else {
+            output = "No Garnet CLI found. Bundle Garnet Studio with the CLI or install `garnet` on PATH."
+            lastStatus = .failure
+            return
+        }
+        do {
+            let directory = FileManager.default.temporaryDirectory
+                .appendingPathComponent("GarnetStudio", isDirectory: true)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            let file = directory.appendingPathComponent(filename)
+            try sourceText.write(to: file, atomically: true, encoding: .utf8)
+            let result = GarnetCLI(executablePath: cliPath).run(
+                arguments: arguments + [file.path],
+                workingDirectory: directory
+            )
+            apply(result: result)
+        } catch {
+            output = error.localizedDescription
+            lastStatus = .failure
+        }
+    }
+
+    private func apply(result: GarnetCommandResult) {
+        lastStatus = result.status
+        let status = result.status == .success ? "PASS" : "FAIL"
+        output = "$ \(result.command)\n[\(status), exit \(result.exitCode)]\n\n\(result.output)"
+    }
+}
+
+enum StudioSection: String, CaseIterable, Identifiable {
+    case overview = "Overview"
+    case examples = "Examples"
+    case converter = "Converter"
+    case release = "Release"
+
+    var id: String { rawValue }
+}
+
+struct GarnetStudioRootView: View {
+    @StateObject private var model = GarnetStudioViewModel()
+
+    var body: some View {
+        NavigationSplitView {
+            List(StudioSection.allCases, selection: $model.selectedSection) { section in
+                Text(section.rawValue).tag(section)
+            }
+            .navigationTitle("Garnet Studio")
+        } detail: {
+            VStack(spacing: 0) {
+                header
+                Divider()
+                content
+            }
+            .background(Color(red: 0.05, green: 0.05, blue: 0.06))
+        }
+        .frame(minWidth: 1080, minHeight: 720)
+    }
+
+    private var header: some View {
+        HStack(spacing: 16) {
+            LogoView()
+                .frame(width: 54, height: 54)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Garnet Studio")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                Text("Rust rigor. Ruby velocity. One coherent local workbench.")
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            StatusPill(status: model.lastStatus)
+            Button("Health Check") { model.runHealthCheck() }
+                .buttonStyle(.borderedProminent)
+        }
+        .padding(22)
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        switch model.selectedSection {
+        case .overview:
+            overview
+        case .examples:
+            examples
+        case .converter:
+            converter
+        case .release:
+            release
+        }
+    }
+
+    private var overview: some View {
+        WorkbenchLayout {
+            VStack(alignment: .leading, spacing: 16) {
+                Panel(title: "CLI Status") {
+                    Label(model.cliPath ?? "No bundled or PATH Garnet CLI found", systemImage: model.cliPath == nil ? "exclamationmark.triangle" : "checkmark.seal")
+                        .font(.system(size: 14, weight: .medium))
+                    Text("Garnet Studio prefers a bundled CLI inside the app, then searches PATH, /usr/local/bin, /opt/homebrew/bin, and /usr/local/garnet/bin.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+                Panel(title: "Core Workflows") {
+                    WorkflowGrid(model: model)
+                }
+                Panel(title: "First-Run Onboarding") {
+                    OnboardingChecklist()
+                }
+            }
+        } trailing: {
+            ConsoleView(output: model.output)
+        }
+    }
+
+    private var examples: some View {
+        WorkbenchLayout {
+            VStack(alignment: .leading, spacing: 16) {
+                Panel(title: "Runnable Samples") {
+                    ForEach(GarnetSampleCatalog.samples) { sample in
+                        SampleRow(sample: sample, selected: sample.id == model.selectedSample.id) {
+                            model.select(sample: sample)
+                        }
+                    }
+                }
+                editor(actions: [
+                    ("Parse", model.runParse),
+                    ("Check", model.runCheck),
+                    ("Run", model.runProgram),
+                    ("Run Selected", model.runSelectedSample),
+                ])
+            }
+        } trailing: {
+            ConsoleView(output: model.output)
+        }
+    }
+
+    private var converter: some View {
+        WorkbenchLayout {
+            VStack(alignment: .leading, spacing: 16) {
+                Panel(title: "Code Converter") {
+                    Picker("Language", selection: $model.converterLanguage) {
+                        Text("Python").tag("python")
+                        Text("Ruby").tag("ruby")
+                        Text("Rust").tag("rust")
+                        Text("Go").tag("go")
+                    }
+                    .pickerStyle(.segmented)
+                    Text("The converter is a migration assistant. It emits Garnet plus a MigrateTodo checklist instead of pretending every source feature is lossless.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+                editor(actions: [("Convert", model.runConverter)])
+            }
+        } trailing: {
+            ConsoleView(output: model.output)
+        }
+    }
+
+    private var release: some View {
+        WorkbenchLayout {
+            VStack(alignment: .leading, spacing: 16) {
+                Panel(title: "Release Evidence") {
+                    ReleaseLine(label: "Tracked plan", value: "87/87 slices complete on current main")
+                    ReleaseLine(label: "Org release", value: "v0.4.2 published with deb, rpm, macOS tarball, and SHA256SUMS")
+                    ReleaseLine(label: "macOS app", value: "Local .app/.dmg packaging active in this slice")
+                    ReleaseLine(label: "Deferred", value: "Developer ID signing, notarization, App Store, iOS, Android, and web/PWA")
+                }
+                Panel(title: "Install Philosophy") {
+                    Text("Garnet should be approachable in the same spirit as modern agent workbench apps: download, open, see what is possible, and run a real tool immediately. This app keeps that promise grounded by launching the actual Garnet CLI.")
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        } trailing: {
+            ConsoleView(output: model.output)
+        }
+    }
+
+    private func editor(actions: [(String, () -> Void)]) -> some View {
+        Panel(title: "Source") {
+            TextEditor(text: $model.sourceText)
+                .font(.system(.body, design: .monospaced))
+                .frame(minHeight: 260)
+                .scrollContentBackground(.hidden)
+                .background(Color.black.opacity(0.18))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            HStack {
+                ForEach(actions, id: \.0) { title, action in
+                    Button(title, action: action)
+                        .buttonStyle(.borderedProminent)
+                }
+                Spacer()
+            }
+        }
+    }
+}
+
+struct WorkbenchLayout<Leading: View, Trailing: View>: View {
+    let leading: Leading
+    let trailing: Trailing
+
+    init(@ViewBuilder leading: () -> Leading, @ViewBuilder trailing: () -> Trailing) {
+        self.leading = leading()
+        self.trailing = trailing()
+    }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 18) {
+            ScrollView { leading.padding(22) }
+                .frame(minWidth: 500)
+            trailing
+                .frame(minWidth: 420)
+        }
+    }
+}
+
+struct Panel<Content: View>: View {
+    let title: String
+    let content: Content
+
+    init(title: String, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title)
+                .font(.headline)
+            content
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.white.opacity(0.08))
+        )
+    }
+}
+
+struct LogoView: View {
+    var body: some View {
+        let mainURL = Bundle.main.resourceURL?.appendingPathComponent("garnet-logo.png")
+        let moduleURL = Bundle.module.url(forResource: "garnet-logo", withExtension: "png")
+        if let url = mainURL ?? moduleURL,
+           let image = NSImage(contentsOf: url) {
+            Image(nsImage: image)
+                .resizable()
+                .scaledToFit()
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+        } else {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(red: 0.62, green: 0.17, blue: 0.18))
+                .overlay(Text("G").font(.title.bold()))
+        }
+    }
+}
+
+struct StatusPill: View {
+    let status: GarnetCommandStatus?
+
+    var body: some View {
+        let text = status == nil ? "Idle" : (status == .success ? "Passing" : "Needs attention")
+        let color = status == .failure ? Color.orange : Color.green
+        Text(text)
+            .font(.caption.weight(.semibold))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(color.opacity(0.18))
+            .foregroundStyle(color)
+            .clipShape(Capsule())
+    }
+}
+
+struct WorkflowGrid: View {
+    @ObservedObject var model: GarnetStudioViewModel
+
+    var body: some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+            WorkflowButton(title: "Run examples", systemImage: "play.circle") {
+                model.selectedSection = .examples
+            }
+            WorkflowButton(title: "Check safe mode", systemImage: "checkmark.shield") {
+                if let sample = GarnetSampleCatalog.samples.first(where: { $0.mode == .check }) {
+                    model.select(sample: sample)
+                    model.runSelectedSample()
+                }
+            }
+            WorkflowButton(title: "Convert code", systemImage: "arrow.triangle.2.circlepath") {
+                if let sample = GarnetSampleCatalog.samples.first(where: { $0.mode == .convert }) {
+                    model.select(sample: sample)
+                }
+            }
+            WorkflowButton(title: "Release status", systemImage: "shippingbox") {
+                model.selectedSection = .release
+            }
+        }
+    }
+}
+
+struct OnboardingChecklist: View {
+    private let items = [
+        ("1", "Verify the bundled CLI", "Run Health Check and confirm the console reports `garnet 0.4.2`."),
+        ("2", "Run a real Garnet example", "Open Examples, run the scheduler MVP, and inspect the returned value."),
+        ("3", "Try code conversion", "Open Converter, convert the Python route sample, and review the migration checklist."),
+        ("4", "Check release boundaries", "Open Release and confirm signed/native distribution caveats are still explicit."),
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(items, id: \.0) { number, title, detail in
+                HStack(alignment: .top, spacing: 10) {
+                    Text(number)
+                        .font(.caption.weight(.bold))
+                        .frame(width: 24, height: 24)
+                        .background(Color(red: 0.62, green: 0.17, blue: 0.18).opacity(0.35))
+                        .clipShape(Circle())
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(title)
+                            .font(.system(size: 13, weight: .semibold))
+                        Text(detail)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct WorkflowButton: View {
+    let title: String
+    let systemImage: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .frame(maxWidth: .infinity, minHeight: 44)
+        }
+        .buttonStyle(.bordered)
+    }
+}
+
+struct SampleRow: View {
+    let sample: GarnetSample
+    let selected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(sample.title).font(.system(size: 14, weight: .semibold))
+                    Text(sample.subtitle).font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Text(sample.mode.rawValue)
+                    .font(.caption.weight(.bold))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.white.opacity(0.08))
+                    .clipShape(Capsule())
+            }
+            .padding(10)
+            .background(selected ? Color(red: 0.62, green: 0.17, blue: 0.18).opacity(0.24) : Color.clear)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+struct ConsoleView: View {
+    let output: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Console")
+                .font(.headline)
+            ScrollView {
+                Text(output)
+                    .font(.system(.callout, design: .monospaced))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .textSelection(.enabled)
+                    .padding(14)
+            }
+            .background(Color.black.opacity(0.45))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
+        .padding(22)
+        .background(Color.black.opacity(0.18))
+    }
+}
+
+struct ReleaseLine: View {
+    let label: String
+    let value: String
+
+    var body: some View {
+        HStack(alignment: .top) {
+            Text(label)
+                .font(.system(size: 13, weight: .semibold))
+                .frame(width: 120, alignment: .leading)
+            Text(value)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+    }
+}
+
+enum GarnetStudioSelfTest {
+    static func run() -> Int32 {
+        var failures: [String] = []
+
+        let bundled = URL(fileURLWithPath: "/Applications/Garnet Studio.app/Contents/Resources/garnet")
+        let bundledLocator = GarnetCLILocator(
+            bundleResourceURL: bundled.deletingLastPathComponent(),
+            environmentPath: "/usr/local/bin:/opt/homebrew/bin"
+        )
+        if bundledLocator.candidatePaths().first != bundled.path {
+            failures.append("bundled CLI path was not preferred")
+        }
+
+        let fallbackLocator = GarnetCLILocator(bundleResourceURL: nil, environmentPath: "/custom/bin:/usr/bin")
+        let candidates = fallbackLocator.candidatePaths()
+        for expected in ["/custom/bin/garnet", "/usr/local/bin/garnet", "/opt/homebrew/bin/garnet"] {
+            if !candidates.contains(expected) {
+                failures.append("missing fallback candidate: \(expected)")
+            }
+        }
+
+        let modes = Set(GarnetSampleCatalog.samples.map(\.mode))
+        for expected in GarnetSampleMode.allCases where !modes.contains(expected) {
+            failures.append("sample catalog missing mode: \(expected.rawValue)")
+        }
+
+        let success = GarnetCommandResult(command: "garnet version", exitCode: 0, output: "garnet 0.4.2")
+        let failure = GarnetCommandResult(command: "garnet check broken.garnet", exitCode: 1, output: "diagnostic")
+        if success.status != .success {
+            failures.append("zero exit was not classified as success")
+        }
+        if failure.status != .failure {
+            failures.append("nonzero exit was not classified as failure")
+        }
+
+        if failures.isEmpty {
+            print("GarnetStudio self-test passed")
+            return 0
+        }
+        for failure in failures {
+            fputs("GarnetStudio self-test failed: \(failure)\n", stderr)
+        }
+        return 1
+    }
+
+    static func runSmokeTest() -> Int32 {
+        let locator = GarnetCLILocator()
+        guard let cliPath = locator.locate() else {
+            fputs("GarnetStudio smoke failed: no Garnet CLI found\n", stderr)
+            return 2
+        }
+
+        let cli = GarnetCLI(executablePath: cliPath)
+        let version = cli.run(arguments: ["version"])
+        guard version.status == .success, version.output.contains("garnet 0.4.2") else {
+            fputs("GarnetStudio smoke failed during version:\n\(version.output)\n", stderr)
+            return 3
+        }
+
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("GarnetStudioSmoke-\(UUID().uuidString)", isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            defer { try? FileManager.default.removeItem(at: directory) }
+
+            for sample in GarnetSampleCatalog.samples {
+                let file = directory.appendingPathComponent(sample.filename)
+                try sample.source.write(to: file, atomically: true, encoding: .utf8)
+
+                let arguments: [String]
+                switch sample.mode {
+                case .parse:
+                    arguments = ["parse", file.path]
+                case .check:
+                    arguments = ["check", file.path]
+                case .run:
+                    arguments = ["run", file.path]
+                case .convert:
+                    arguments = ["convert", sample.language ?? "python", file.path]
+                }
+
+                let result = cli.run(arguments: arguments, workingDirectory: directory)
+                guard result.status == .success else {
+                    fputs("GarnetStudio smoke failed for \(sample.title):\n\(result.output)\n", stderr)
+                    return 4
+                }
+            }
+        } catch {
+            fputs("GarnetStudio smoke failed while preparing samples: \(error.localizedDescription)\n", stderr)
+            return 5
+        }
+
+        print("GarnetStudio smoke passed with \(cliPath)")
+        return 0
+    }
+}
+
+@main
+struct GarnetStudioApp: App {
+    init() {
+        if CommandLine.arguments.contains("--self-test") {
+            Foundation.exit(GarnetStudioSelfTest.run())
+        }
+        if CommandLine.arguments.contains("--smoke-test") {
+            Foundation.exit(GarnetStudioSelfTest.runSmokeTest())
+        }
+    }
+
+    var body: some Scene {
+        WindowGroup {
+            GarnetStudioRootView()
+                .preferredColorScheme(.dark)
+        }
+        .windowStyle(.titleBar)
+    }
+}
