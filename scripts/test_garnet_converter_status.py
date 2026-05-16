@@ -75,7 +75,7 @@ class GarnetConverterStatusTests(unittest.TestCase):
 
         self.assertIn("Rust · Ruby · Python · Go", site)
         self.assertIn("migration assistant, not a full transpiler", site)
-        self.assertIn("LLM assist: feasibility + context + prompt + assist plan active", site)
+        self.assertIn("LLM assist: feasibility + context + prompt + assist plan + advisory bundle active", site)
         self.assertIn("safe-mode", site)
         self.assertIn("memory", site)
         self.assertIn("CapCaps", site)

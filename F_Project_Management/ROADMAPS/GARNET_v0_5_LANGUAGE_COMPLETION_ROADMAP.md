@@ -1528,12 +1528,12 @@ public-site `<video>` block and service-worker cache references, and writes
 evidence. The promo lane advances to `public-site-embedded` at 95.0% when
 render, visual-QA, website-export, and site-sync bundles are all present.
 Human/aesthetic acceptance remains open before final marketing acceptance. The
-source-checkout matrix passes `84/84` with `skipped=0` in Desktop bundle
-`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-084611`, and the
+source-checkout matrix passes `88/88` with `skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-090352`, and the
 refreshed copied-DMG smoke passes in Desktop bundle
-`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-084842` for DMG
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-090543` for DMG
 SHA-256
-`4887d116bc077e3d299009a3218165294707f0f1a7c95526d8d07e484018fa8e`.
+`72af0dc3155fb9c7897167645b10ed4f3caca0b7680bd15a40826cc06d8cc720`.
 
 Phase 6Z packaged assist-plan resource pass: packaged Garnet Studio now stages
 and chmods `scripts/garnet_converter_assist_plan.py`, and the DMG install
@@ -1603,6 +1603,15 @@ surface in line with the public JavaScript/TypeScript/Swift/Java/C/C++/C#/Perl
 claim without making broad converter frontends active. Local evidence passes
 `84/84` with `skipped=0` in Desktop bundle
 `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-084611`.
+
+Phase 6AP converter advisory bundle pass: the converter LLM lane now has a
+provider-neutral manifested handoff package, not just separate feasibility,
+context, and assist-plan reporters. `scripts/garnet_converter_advisory_bundle.py`
+combines those inputs, omits source text by default, requires `--include-source`
+for explicit local/provider handoff, and keeps autonomous/provider-backed
+conversion inactive. The agentic matrix adds four advisory-bundle probes and
+passes `88/88` with `skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-090352`.
 
 ## Phase 7: Release, Research, And Repeated Falsification
 

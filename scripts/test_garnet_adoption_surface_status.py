@@ -32,6 +32,7 @@ class GarnetAdoptionSurfaceStatusTests(unittest.TestCase):
             "advisory planning is feasible, autonomous LLM conversion is not feasible yet",
             data["llm_assist_truth"],
         )
+        self.assertIn("provider-neutral advisory bundle is active", data["llm_assist_truth"])
         self.assertIn("provider-backed conversion is not active", data["llm_assist_truth"])
         self.assertIn("deterministic converter output remains authoritative", data["llm_assist_truth"])
 
@@ -105,7 +106,7 @@ class GarnetAdoptionSurfaceStatusTests(unittest.TestCase):
         self.assertIn("dist/Garnet Studio.app", site)
         self.assertIn("Assist Plan", site)
         self.assertIn("provider-neutral prompt pack", site)
-        self.assertIn("feasibility + context + prompt + assist plan active", site)
+        self.assertIn("feasibility + context + prompt + assist plan + advisory bundle active", site)
 
 
 if __name__ == "__main__":

@@ -830,6 +830,51 @@ def build_converter_llm_feasibility_manifest_probe(work: Path) -> ProbeResult:
     )
 
 
+def build_converter_advisory_bundle_manifest_probe(work: Path, source: Path) -> ProbeResult:
+    output_dir = work / "converter-advisory-bundle"
+    probe = Probe(
+        "report-converter-advisory-bundle-output-manifest",
+        "converter advisory bundle",
+        "converter advisory bundle should write JSON, Markdown, request, and a verified manifest",
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "garnet_converter_advisory_bundle.py"),
+            "--language",
+            "typescript",
+            "--source",
+            str(source),
+            "--output-dir",
+            str(output_dir),
+        ],
+        True,
+        (
+            "Garnet Converter Advisory Bundle",
+            "garnet-converter-advisory-bundle.json: OK",
+            "garnet-converter-advisory-bundle.md: OK",
+            "garnet-converter-advisory-request.md: OK",
+        ),
+        security_domain="release-integrity",
+    )
+    start = time.monotonic()
+    completed = run(probe.command, work)
+    stdout = [completed.stdout]
+    stderr = [completed.stderr]
+    exit_code = completed.returncode
+    if completed.returncode == 0:
+        verify = run(["shasum", "-a", "256", "-c", "MANIFEST.sha256"], output_dir)
+        stdout.append(verify.stdout)
+        stderr.append(verify.stderr)
+        exit_code = verify.returncode
+    return classify_result(
+        probe,
+        exit_code,
+        "\n".join(stdout),
+        "\n".join(stderr),
+        int((time.monotonic() - start) * 1000),
+        work,
+    )
+
+
 def build_promo_video_manifest_probe(work: Path) -> ProbeResult:
     output_dir = work / "promo-video-status"
     probe = Probe(
@@ -1721,6 +1766,80 @@ def probe_set(
             security_domain="sandbox",
         ),
         lambda: build_converter_llm_feasibility_manifest_probe(work),
+        Probe(
+            "report-converter-advisory-bundle-current-truth",
+            "converter advisory bundle",
+            "converter advisory bundle should combine context, assist plan, and feasibility without activating conversion",
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "garnet_converter_advisory_bundle.py"),
+                "--language",
+                "typescript",
+                "--source",
+                str(fixtures["typescript_assist"]),
+                "--format",
+                "json",
+            ],
+            True,
+            (
+                "\"status\": \"active-advisory-bundle\"",
+                "\"conversion_active\": false",
+                "\"provider_required\": false",
+                "\"status\": \"active-context-pack\"",
+                "\"status\": \"active-assist-plan\"",
+                "\"status\": \"advisory-feasible\"",
+                "provider-neutral advisory planning",
+            ),
+            security_domain="sandbox",
+        ),
+        Probe(
+            "report-converter-advisory-bundle-omits-source",
+            "converter advisory bundle",
+            "converter advisory bundle should omit source text by default for privacy and provider-boundary safety",
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "garnet_converter_advisory_bundle.py"),
+                "--language",
+                "typescript",
+                "--source",
+                str(fixtures["typescript_assist"]),
+                "--format",
+                "json",
+            ],
+            True,
+            (
+                "\"source_included\": false",
+                "\"source_text\": null",
+                "source omitted by default",
+                "human audit is required before unquarantine",
+            ),
+            security_domain="privacy",
+        ),
+        Probe(
+            "report-converter-advisory-bundle-include-source-gate",
+            "converter advisory bundle",
+            "converter advisory bundle should include source only through an explicit opt-in gate",
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "garnet_converter_advisory_bundle.py"),
+                "--language",
+                "typescript",
+                "--source",
+                str(fixtures["typescript_assist"]),
+                "--include-source",
+                "--format",
+                "json",
+            ],
+            True,
+            (
+                "\"source_included\": true",
+                "local or explicitly approved provider handoff",
+                "AgentRouter",
+                "\"conversion_active\": false",
+            ),
+            security_domain="privacy",
+        ),
+        lambda: build_converter_advisory_bundle_manifest_probe(work, fixtures["typescript_assist"]),
         Probe(
             "report-mit-readiness-plan-complete",
             "MIT readiness accounting",
