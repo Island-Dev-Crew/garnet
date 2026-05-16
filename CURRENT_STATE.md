@@ -110,11 +110,14 @@ highest-leverage next milestones are:
 The v0.5 seven-phase roadmap is tracked in
 `F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md` and
 `F_Project_Management/ROADMAPS/GARNET_v0_5_LANGUAGE_COMPLETION_ROADMAP.md`.
-As of PR #73, the tracked implementation-plan checkbox ledger is closed at
-`86/86` slices and the org `v0.4.2` release smoke has passed. This closes the
-current readiness sprint, not the full language: signed native installers,
-production allocator-integrated ARC, full native backend, mechanized proof, and
-empirical validation remain post-v0.4.2 lanes. Phases 1-3D added parser parity,
+As of PR #75, the tracked implementation-plan checkbox ledger is at `87/87`
+slices: PR #74 closed Milestone 7 (org `v0.4.2` release published and the
+org-backed installer smoke passed, taking the ledger to `86/86`), and PR #75
+added the Phase 4BI nil/nil relational const-guard slice (Milestone 4 Step
+2ZY), taking it to `87/87`. This closes the current readiness sprint, not the
+full language: signed native installers, production allocator-integrated ARC,
+full native backend, mechanized proof, and empirical validation remain
+post-v0.4.2 lanes. Phases 1-3D added parser parity,
 managed block/dynamic/protocol runtime slices, managed actor addresses, bounded
 source mailboxes, and a generated actor-orchestrator template. Phase 4A
 activates partial safe-mode borrow conformance for direct use-after-move
