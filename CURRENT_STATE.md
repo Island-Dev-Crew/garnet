@@ -132,8 +132,10 @@ highest-leverage next milestones are:
    repair behavior, agent memory/analysis covers parse-time memory declaration
    surfacing plus check/run of the advertised log analyzer, and web/PWA
    productization covers offline-handler, full local-smoke, and local Chrome
-   DevTools browser offline probes, while richer browser IDE and cross-browser
-   validation remain separate gates.
+   DevTools browser offline probes. The macOS app workbench covers self-test,
+   workbench sample smoke against the matrix-built CLI, and XCTest locally
+   while richer browser IDE, cross-browser validation, and signed native
+   distribution remain separate gates.
    The migration-assistant domain also carries a converter adoption-status
    probe so Rust/Ruby/Python/Go support, planned broader languages, and gated
    LLM-assist claims remain machine-readable instead of living only in

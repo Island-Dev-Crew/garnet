@@ -397,7 +397,7 @@ def run_probe(probe: Probe, work: Path) -> ProbeResult:
     )
 
 
-def app_workbench_probes(app_executable: Path | None) -> list[Probe]:
+def app_workbench_probes(app_executable: Path | None, garnet: Path) -> list[Probe]:
     if app_executable is not None:
         return [
             Probe(
@@ -425,6 +425,24 @@ def app_workbench_probes(app_executable: Path | None) -> list[Probe]:
             ["swift", "run", "--package-path", str(ROOT / "apps" / "garnet-studio-macos"), "GarnetStudio", "--self-test"],
             True,
             ("GarnetStudio self-test passed",),
+        ),
+        Probe(
+            "app-smoke-test",
+            "macOS app workbench",
+            "Garnet Studio SwiftPM smoke should run workbench samples against the matrix-built Garnet CLI",
+            [
+                "env",
+                f"PATH={garnet.parent}:{os.environ.get('PATH', '')}",
+                "swift",
+                "run",
+                "--package-path",
+                str(ROOT / "apps" / "garnet-studio-macos"),
+                "GarnetStudio",
+                "--smoke-test",
+            ],
+            True,
+            ("GarnetStudio smoke passed",),
+            security_domain="filesystem",
         ),
         Probe(
             "app-xctest",
@@ -752,7 +770,7 @@ def probe_set(
             ("formatted",),
         ),
         *web_pwa_probes(work),
-        *(app_workbench_probes(app_executable) if include_app_workbench else []),
+        *(app_workbench_probes(app_executable, garnet) if include_app_workbench else []),
         Probe(
             "parse-advertised-log-analyzer-memory",
             "agent memory and analysis",
