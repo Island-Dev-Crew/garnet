@@ -98,10 +98,29 @@ local PWA readiness smoke probe, the App-15 browser PWA offline probe, and
 writes `readiness-slice-status.md` plus `domain_coverage` JSON so completion
 and coverage adequacy evidence travel with the bundle.
 
+Latest mounted-DMG install evidence bundle:
+
+```text
+/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-005718
+```
+
+The package script now runs the DMG smoke with `--copy-to-desktop`. That smoke
+mounts the generated DMG, copies `Garnet Studio.app` to a temporary
+Applications-style directory, verifies the copied app signature, runs
+self-test, bundled CLI version, workbench, packaged PWA offline-handler, and
+copied-app agentic matrix probes, then preserves `dmg-smoke-report.md`,
+`dmg-smoke-data.env`, per-command logs, packaged PWA JSON, and
+`MANIFEST.sha256`. The latest DMG SHA-256 is:
+
+```text
+91aeff3b93df1bffeb77524f705f0d9340eef7af845398753c79a1d360aaea46
+```
+
 ## Next Gates
 
 1. Keep the headless 34-probe matrix in CI while app workbench probes remain
-   covered by local/package/DMG gates.
+   covered by local/package/DMG gates, with manifest-backed Desktop evidence
+   for mounted-DMG copy/install smokes.
 2. Keep Garnet Studio's "Agentic Tests" surface wired to this same harness for
    both source-checkout and packaged-app runs.
 3. Add a lower-cost CI variant if the full matrix remains too expensive for
