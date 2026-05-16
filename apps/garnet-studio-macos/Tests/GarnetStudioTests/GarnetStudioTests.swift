@@ -71,6 +71,8 @@ final class GarnetStudioTests: XCTestCase {
         XCTAssertEqual(
             runner.commandArguments(),
             [
+                "env",
+                "PYTHONDONTWRITEBYTECODE=1",
                 "python3",
                 "/repo/scripts/run_agentic_dogfood_matrix.py",
                 "--garnet-bin",
@@ -95,6 +97,8 @@ final class GarnetStudioTests: XCTestCase {
         XCTAssertEqual(
             runner.commandArguments(),
             [
+                "env",
+                "PYTHONDONTWRITEBYTECODE=1",
                 "python3",
                 "/Applications/Garnet Studio.app/Contents/Resources/scripts/run_agentic_dogfood_matrix.py",
                 "--garnet-bin",
@@ -117,6 +121,8 @@ final class GarnetStudioTests: XCTestCase {
         XCTAssertEqual(
             runner.commandArguments(),
             [
+                "env",
+                "PYTHONDONTWRITEBYTECODE=1",
                 "python3",
                 "/repo/scripts/run_agentic_dogfood_matrix.py",
                 "--copy-to-desktop",

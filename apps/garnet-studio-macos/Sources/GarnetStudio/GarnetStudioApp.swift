@@ -329,7 +329,7 @@ struct AgenticDogfoodRunner {
     }
 
     func commandArguments(copyToDesktop: Bool = true, strict: Bool = true) -> [String] {
-        var arguments = ["python3", location.scriptURL.path]
+        var arguments = ["env", "PYTHONDONTWRITEBYTECODE=1", "python3", location.scriptURL.path]
         if let garnetBinaryPath, !garnetBinaryPath.isEmpty {
             arguments.append(contentsOf: ["--garnet-bin", garnetBinaryPath])
         }

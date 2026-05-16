@@ -113,15 +113,18 @@ highest-leverage next milestones are:
 5. **Garnet Studio app and web distribution:** build polished local product
    surfaces that reduce terminal-first friction without overstating release
    authority. The macOS workbench opens like a normal app, bundles the Garnet
-   CLI plus agentic matrix and docs/PWA assets, verifies mounted-DMG
-   copy-install smoke with manifest-backed Desktop evidence, and exposes
+   CLI plus the agentic matrix, status reporters, current-truth context docs,
+   examples, and docs/PWA assets, verifies mounted-DMG copy-install smoke with
+   manifest-backed Desktop evidence, and exposes
    health, examples, conversion, release status, agentic stress tests, and
    onboarding. The package script can use `APPLE_DEV_ID_APP` for a
    Developer ID hardened-runtime signature when that identity exists, while a
    notarization preflight records the current Developer ID, hardened-runtime,
    Gatekeeper, and notary credential blockers. A notarization status reporter
    turns that evidence bundle into JSON/Markdown for agents, PRs, and site
-   truth without submitting to Apple or exposing credential values. The docs site now has a seed
+   truth without submitting to Apple or exposing credential values. Packaged
+   matrix runs set `PYTHONDONTWRITEBYTECODE=1` so Python status reporters do
+   not mutate signed app resources after codesign. The docs site now has a seed
    installable PWA shell with
    manifest, icons, service worker, local HTTP smoke, dependency-free offline
    service-worker behavior simulation, local Chrome DevTools offline smoke,

@@ -11,22 +11,43 @@ DMG_SMOKE_SCRIPT = ROOT / "scripts" / "smoke_garnet_studio_dmg.sh"
 
 
 class GarnetStudioPackagingResourceTests(unittest.TestCase):
-    def test_package_script_stages_pwa_assets_for_bundled_matrix(self) -> None:
+    def test_package_script_stages_agentic_matrix_dependencies(self) -> None:
         script = PACKAGE_SCRIPT.read_text(encoding="utf-8")
+
+        for name in [
+            "garnet_adoption_surface_status.py",
+            "garnet_assist_context_pack.py",
+            "garnet_converter_status.py",
+            "garnet_mit_readiness_status.py",
+            "garnet_readiness_status.py",
+            "garnet_studio_notarization_status.py",
+            "run_agentic_dogfood_matrix.py",
+        ]:
+            with self.subTest(name=name):
+                self.assertIn(f'cp "${{ROOT}}/scripts/{name}"', script)
+                self.assertIn(f'chmod 0755 "${{APP_DIR}}/Contents/Resources/scripts/{name}"', script)
 
         self.assertIn(
             'cp "${ROOT}/scripts/smoke_garnet_web_pwa_offline.mjs" '
             '"${APP_DIR}/Contents/Resources/scripts/smoke_garnet_web_pwa_offline.mjs"',
             script,
         )
+        self.assertIn('cp -R "${ROOT}/docs" "${APP_DIR}/Contents/Resources/docs"', script)
+        self.assertIn('cp "${ROOT}/README.md" "${APP_DIR}/Contents/Resources/README.md"', script)
+        self.assertIn('cp "${ROOT}/CURRENT_STATE.md" "${APP_DIR}/Contents/Resources/CURRENT_STATE.md"', script)
+        self.assertIn('cp -R "${ROOT}/C_Language_Specification" "${APP_DIR}/Contents/Resources/C_Language_Specification"', script)
+        self.assertIn('mkdir -p "${APP_DIR}/Contents/Resources/F_Project_Management/DOGFOOD"', script)
         self.assertIn(
-            'cp "${ROOT}/scripts/garnet_converter_status.py" '
-            '"${APP_DIR}/Contents/Resources/scripts/garnet_converter_status.py"',
+            'cp "${ROOT}/F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md" '
+            '"${APP_DIR}/Contents/Resources/F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md"',
             script,
         )
-        self.assertIn('cp -R "${ROOT}/docs" "${APP_DIR}/Contents/Resources/docs"', script)
+        self.assertIn(
+            'cp "${ROOT}/F_Project_Management/DOGFOOD/GARNET_v0_5_DOGFOOD_READINESS_PHASE_LOG.md" '
+            '"${APP_DIR}/Contents/Resources/F_Project_Management/DOGFOOD/GARNET_v0_5_DOGFOOD_READINESS_PHASE_LOG.md"',
+            script,
+        )
         self.assertIn('chmod 0755 "${APP_DIR}/Contents/Resources/scripts/smoke_garnet_web_pwa_offline.mjs"', script)
-        self.assertIn('chmod 0755 "${APP_DIR}/Contents/Resources/scripts/garnet_converter_status.py"', script)
 
     def test_package_script_preserves_dmg_smoke_desktop_evidence(self) -> None:
         script = PACKAGE_SCRIPT.read_text(encoding="utf-8")
@@ -44,6 +65,10 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
         script = DMG_SMOKE_SCRIPT.read_text(encoding="utf-8")
 
         self.assertIn('OFFLINE_PWA_SMOKE="${INSTALLED_APP}/Contents/Resources/scripts/smoke_garnet_web_pwa_offline.mjs"', script)
+        self.assertIn('ADOPTION_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_adoption_surface_status.py"', script)
+        self.assertIn('ASSIST_CONTEXT="${INSTALLED_APP}/Contents/Resources/scripts/garnet_assist_context_pack.py"', script)
+        self.assertIn('MIT_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_mit_readiness_status.py"', script)
+        self.assertIn('NOTARIZATION_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_studio_notarization_status.py"', script)
         self.assertIn('DOCS_DIR="${INSTALLED_APP}/Contents/Resources/docs"', script)
         self.assertIn('"${OFFLINE_PWA_SMOKE}" --docs-dir "${DOCS_DIR}"', script)
 
