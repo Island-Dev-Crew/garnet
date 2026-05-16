@@ -46,10 +46,10 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
             probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
-            concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
+            results = self._inventory_results(probes)
 
-        ids = {probe.id for probe in concrete_probes}
-        domains = Counter(probe.domain for probe in concrete_probes)
+        ids = {result.probe.id for result in results}
+        domains = Counter(result.probe.domain for result in results)
 
         self.assertEqual(domains["agent recovery and diagnostics"], 4)
         self.assertIn("report-converter-adoption-status", ids)
@@ -102,6 +102,21 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
 
         self.assertEqual(domains["Mac-side continuation accounting"], 1)
         self.assertIn("report-mac-side-continuation-boundaries", ids)
+
+    def test_probe_inventory_includes_mit_demo_route(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            fixtures = matrix.prepare_fixtures(work)
+            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            results = self._inventory_results(probes)
+
+        ids = {result.probe.id for result in results}
+        domains = Counter(result.probe.domain for result in results)
+
+        self.assertEqual(domains["MIT demo route"], 3)
+        self.assertIn("report-mit-demo-route-current-truth", ids)
+        self.assertIn("report-mit-demo-route-blocked-gates", ids)
+        self.assertIn("report-mit-demo-route-output-manifest", ids)
 
     def test_probe_inventory_includes_promo_video_readiness_contract(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

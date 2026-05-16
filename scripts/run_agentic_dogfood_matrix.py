@@ -1287,6 +1287,46 @@ def build_promo_video_manifest_probe(work: Path) -> ProbeResult:
     )
 
 
+def build_mit_demo_route_manifest_probe(work: Path) -> ProbeResult:
+    output_dir = work / "mit-demo-route"
+    probe = Probe(
+        "report-mit-demo-route-output-manifest",
+        "MIT demo route",
+        "MIT demo route should write JSON, Markdown, and a verified manifest",
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "garnet_mit_demo_route.py"),
+            "--output-dir",
+            str(output_dir),
+        ],
+        True,
+        (
+            "Garnet MIT Demo Route",
+            "garnet-mit-demo-route.json: OK",
+            "garnet-mit-demo-route.md: OK",
+        ),
+        security_domain="release-integrity",
+    )
+    start = time.monotonic()
+    completed = run(probe.command, work)
+    stdout = [completed.stdout]
+    stderr = [completed.stderr]
+    exit_code = completed.returncode
+    if completed.returncode == 0:
+        verify = run(["shasum", "-a", "256", "-c", "MANIFEST.sha256"], output_dir)
+        stdout.append(verify.stdout)
+        stderr.append(verify.stderr)
+        exit_code = verify.returncode
+    return classify_result(
+        probe,
+        exit_code,
+        "\n".join(stdout),
+        "\n".join(stderr),
+        int((time.monotonic() - start) * 1000),
+        work,
+    )
+
+
 def app_workbench_probes(app_executable: Path | None, garnet: Path) -> list[Probe]:
     if app_executable is not None:
         return [
@@ -2624,6 +2664,38 @@ def probe_set(
             ),
             security_domain="release-integrity",
         ),
+        Probe(
+            "report-mit-demo-route-current-truth",
+            "MIT demo route",
+            "MIT demo route should turn current readiness truth into a timed presentation path",
+            [sys.executable, str(ROOT / "scripts" / "garnet_mit_demo_route.py"), "--format", "json"],
+            True,
+            (
+                "\"objective_completion_percent\": 58.6",
+                "\"tracked_slices\": \"87/87\"",
+                "Continuation Pulse",
+                "run_agentic_dogfood_matrix.py",
+                "garnet-lang.org",
+            ),
+            security_domain="not-applicable",
+        ),
+        Probe(
+            "report-mit-demo-route-blocked-gates",
+            "MIT demo route",
+            "MIT demo route should preserve blocked gates and forbidden claims",
+            [sys.executable, str(ROOT / "scripts" / "garnet_mit_demo_route.py"), "--format", "json"],
+            True,
+            (
+                "developer-id-notarization",
+                "windows-linux-studio",
+                "provider-backed-llm-conversion",
+                "native-backend-lowering",
+                "production-ready language",
+                "final MIT/productization acceptance",
+            ),
+            security_domain="release-integrity",
+        ),
+        lambda: build_mit_demo_route_manifest_probe(work),
         Probe(
             "report-promo-video-current-truth",
             "promo video readiness",
