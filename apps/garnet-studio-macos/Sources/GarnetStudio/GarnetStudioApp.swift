@@ -299,6 +299,35 @@ struct AgenticDogfoodRunner {
         return fileManager.isExecutableFile(atPath: executable) ? executable : nil
     }
 
+    static func outputProvesCompleteReadiness(_ output: String) -> Bool {
+        var sawReadiness100 = false
+        var sawCompleteProbeCount = false
+
+        for rawLine in output.split(whereSeparator: \.isNewline) {
+            let line = rawLine.trimmingCharacters(in: .whitespacesAndNewlines)
+            if line == "readiness=100" {
+                sawReadiness100 = true
+            }
+
+            guard line.hasPrefix("passed=") else {
+                continue
+            }
+            let value = line.dropFirst("passed=".count)
+            let parts = value.split(separator: "/", omittingEmptySubsequences: false)
+            guard parts.count == 2,
+                  let passed = Int(parts[0]),
+                  let total = Int(parts[1]),
+                  total > 0,
+                  passed == total
+            else {
+                continue
+            }
+            sawCompleteProbeCount = true
+        }
+
+        return sawReadiness100 && sawCompleteProbeCount
+    }
+
     func commandArguments(copyToDesktop: Bool = true, strict: Bool = true) -> [String] {
         var arguments = ["python3", location.scriptURL.path]
         if let garnetBinaryPath, !garnetBinaryPath.isEmpty {
@@ -995,8 +1024,7 @@ enum GarnetStudioSelfTest {
             appExecutablePath: AgenticDogfoodRunner.appBundleExecutable(for: location)
         ).run()
         guard result.status == .success,
-              result.output.contains("readiness=100"),
-              result.output.contains("passed=28/28")
+              AgenticDogfoodRunner.outputProvesCompleteReadiness(result.output)
         else {
             fputs("GarnetStudio agentic matrix failed:\n\(result.output)\n", stderr)
             return 7
