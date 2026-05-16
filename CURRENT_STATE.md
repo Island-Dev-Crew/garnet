@@ -492,6 +492,19 @@ Current Desktop evidence:
 `/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-043735`
 (DMG install smoke; DMG SHA-256
 `be625f7cff7500d67223de47fdeb195e2e59876ecd2968f06976d5971ef5e8b3`).
+Phase 6AA makes that packaged assist-plan capability visible in the macOS
+workbench: the Converter panel now offers an `Assist Plan` action, can target
+planned languages such as TypeScript/JavaScript/Swift/Java/C++/C#, and keeps
+the normal `Convert` action limited to the active deterministic converter
+frontends. This remains deterministic planning evidence, not provider-backed
+LLM conversion or broad planned-language conversion. Current Desktop evidence:
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-045430`
+(packaged app),
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-045440`
+(copied app), and
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-045439`
+(DMG install smoke; DMG SHA-256
+`bce70f3c44af1d335d0af4ecd466386f85d918bea8b310cad24a2855c59ec345`).
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.

@@ -1442,15 +1442,23 @@ Phase 6Z packaged assist-plan resource pass: packaged Garnet Studio now stages
 and chmods `scripts/garnet_converter_assist_plan.py`, and the DMG install
 smoke checks it as a required executable bundled asset before running copied-app
 matrix probes. Verified local evidence:
-`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-043725`
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-045430`
 (packaged app),
-`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-043735`
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-045440`
 (copied app), and
-`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-043735`
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-045439`
 for DMG SHA-256
-`be625f7cff7500d67223de47fdeb195e2e59876ecd2968f06976d5971ef5e8b3`.
+`bce70f3c44af1d335d0af4ecd466386f85d918bea8b310cad24a2855c59ec345`.
 This is local ad-hoc packaging evidence; Developer ID notarization and
 clean-machine Gatekeeper proof remain separate gates.
+
+Phase 6AA Studio assist-plan UI pass: the packaged reporter is now reachable
+from the macOS workbench. The Converter panel exposes a distinct `Assist Plan`
+action, planned languages such as TypeScript/JavaScript/Swift/Java/C++/C# are
+available for deterministic advisory planning, and the ordinary `Convert`
+action remains constrained to active deterministic converter frontends. This
+keeps the adoption path more approachable without turning planned languages or
+provider-backed LLM conversion into current implementation claims.
 
 ## Phase 7: Release, Research, And Repeated Falsification
 

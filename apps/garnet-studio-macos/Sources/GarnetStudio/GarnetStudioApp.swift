@@ -187,6 +187,86 @@ struct AgenticDogfoodScriptLocation: Equatable {
     let repoRootURL: URL
 }
 
+struct ConverterAssistPlanScriptLocation: Equatable {
+    let scriptURL: URL
+    let repoRootURL: URL
+}
+
+struct ConverterAssistPlanScriptLocator {
+    let bundleResourceURL: URL?
+    let environmentRepoRoot: String?
+    let currentDirectoryURL: URL
+
+    init(
+        bundleResourceURL: URL? = Bundle.main.resourceURL,
+        environmentRepoRoot: String? = ProcessInfo.processInfo.environment["GARNET_REPO_ROOT"],
+        currentDirectoryURL: URL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+    ) {
+        self.bundleResourceURL = bundleResourceURL
+        self.environmentRepoRoot = environmentRepoRoot
+        self.currentDirectoryURL = currentDirectoryURL
+    }
+
+    func candidateLocations() -> [ConverterAssistPlanScriptLocation] {
+        var locations: [ConverterAssistPlanScriptLocation] = []
+
+        if let environmentRepoRoot, !environmentRepoRoot.isEmpty {
+            let root = URL(fileURLWithPath: environmentRepoRoot, isDirectory: true)
+            locations.append(location(forRepoRoot: root))
+        }
+
+        if let bundleResourceURL {
+            let script = bundleResourceURL
+                .appendingPathComponent("scripts", isDirectory: true)
+                .appendingPathComponent("garnet_converter_assist_plan.py")
+            locations.append(ConverterAssistPlanScriptLocation(scriptURL: script, repoRootURL: bundleResourceURL))
+        }
+
+        for root in ancestorRoots(from: currentDirectoryURL) {
+            locations.append(location(forRepoRoot: root))
+        }
+
+        var seen: Set<String> = []
+        return locations.filter { location in
+            let key = location.scriptURL.path
+            if seen.contains(key) {
+                return false
+            }
+            seen.insert(key)
+            return true
+        }
+    }
+
+    func locate(fileManager: FileManager = .default) -> ConverterAssistPlanScriptLocation? {
+        candidateLocations().first { location in
+            fileManager.fileExists(atPath: location.scriptURL.path)
+        }
+    }
+
+    private func location(forRepoRoot root: URL) -> ConverterAssistPlanScriptLocation {
+        ConverterAssistPlanScriptLocation(
+            scriptURL: root
+                .appendingPathComponent("scripts", isDirectory: true)
+                .appendingPathComponent("garnet_converter_assist_plan.py"),
+            repoRootURL: root
+        )
+    }
+
+    private func ancestorRoots(from start: URL) -> [URL] {
+        var roots: [URL] = []
+        var cursor = start.standardizedFileURL
+        while true {
+            roots.append(cursor)
+            let parent = cursor.deletingLastPathComponent()
+            if parent.path == cursor.path {
+                break
+            }
+            cursor = parent
+        }
+        return roots
+    }
+}
+
 struct AgenticDogfoodScriptLocator {
     let bundleResourceURL: URL?
     let environmentRepoRoot: String?
@@ -259,6 +339,49 @@ struct AgenticDogfoodScriptLocator {
             cursor = parent
         }
         return roots
+    }
+}
+
+struct ConverterAssistPlanRunner {
+    let location: ConverterAssistPlanScriptLocation
+    let language: String
+    let sourceURL: URL
+
+    func commandArguments() -> [String] {
+        [
+            "env",
+            "PYTHONDONTWRITEBYTECODE=1",
+            "python3",
+            location.scriptURL.path,
+            "--language",
+            language,
+            "--source",
+            sourceURL.path,
+            "--format",
+            "markdown",
+        ]
+    }
+
+    func run() -> GarnetCommandResult {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = commandArguments()
+        process.currentDirectoryURL = location.repoRootURL
+
+        let outputPipe = Pipe()
+        process.standardOutput = outputPipe
+        process.standardError = outputPipe
+
+        let command = (["/usr/bin/env"] + (process.arguments ?? [])).joined(separator: " ")
+        do {
+            try process.run()
+            process.waitUntilExit()
+            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: data, encoding: .utf8) ?? ""
+            return GarnetCommandResult(command: command, exitCode: process.terminationStatus, output: output)
+        } catch {
+            return GarnetCommandResult(command: command, exitCode: 127, output: error.localizedDescription)
+        }
     }
 }
 
@@ -378,18 +501,23 @@ final class GarnetStudioViewModel: ObservableObject {
     @Published var lastStatus: GarnetCommandStatus?
     @Published var cliPath: String?
     @Published var agenticMatrixPath: String?
+    @Published var assistPlanPath: String?
 
     private let locator: GarnetCLILocator
     private let matrixLocator: AgenticDogfoodScriptLocator
+    private let assistPlanLocator: ConverterAssistPlanScriptLocator
 
     init(
         locator: GarnetCLILocator = GarnetCLILocator(),
-        matrixLocator: AgenticDogfoodScriptLocator = AgenticDogfoodScriptLocator()
+        matrixLocator: AgenticDogfoodScriptLocator = AgenticDogfoodScriptLocator(),
+        assistPlanLocator: ConverterAssistPlanScriptLocator = ConverterAssistPlanScriptLocator()
     ) {
         self.locator = locator
         self.matrixLocator = matrixLocator
+        self.assistPlanLocator = assistPlanLocator
         self.cliPath = locator.locate()
         self.agenticMatrixPath = matrixLocator.locate()?.scriptURL.path
+        self.assistPlanPath = assistPlanLocator.locate()?.scriptURL.path
     }
 
     func select(sample: GarnetSample) {
@@ -429,8 +557,40 @@ final class GarnetStudioViewModel: ObservableObject {
     }
 
     func runConverter() {
-        let ext = converterLanguage == "python" ? "py" : converterLanguage
+        guard ["python", "ruby", "rust", "go"].contains(converterLanguage) else {
+            output = "\(converterLanguage) is planned-only today. Use Assist Plan for deterministic migration evidence without claiming active conversion."
+            lastStatus = .failure
+            return
+        }
+        let ext = fileExtension(for: converterLanguage)
         runSource(arguments: ["convert", converterLanguage], filename: "studio-input.\(ext)")
+    }
+
+    func runConverterAssistPlan() {
+        guard let location = assistPlanLocator.locate() else {
+            output = "No converter assist-plan script found. Open Garnet Studio from a source checkout or use the packaged app resources."
+            lastStatus = .failure
+            return
+        }
+
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("GarnetStudioAssist-\(UUID().uuidString)", isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            let file = directory.appendingPathComponent("studio-input.\(fileExtension(for: converterLanguage))")
+            try sourceText.write(to: file, atomically: true, encoding: .utf8)
+            output = "Planning Garnet-aware migration evidence..."
+            let result = ConverterAssistPlanRunner(
+                location: location,
+                language: converterLanguage,
+                sourceURL: file
+            ).run()
+            apply(result: result)
+            assistPlanPath = location.scriptURL.path
+        } catch {
+            output = "Failed to prepare converter assist plan input: \(error.localizedDescription)"
+            lastStatus = .failure
+        }
     }
 
     func runAgenticStressTests() {
@@ -479,6 +639,25 @@ final class GarnetStudioViewModel: ObservableObject {
         } catch {
             output = error.localizedDescription
             lastStatus = .failure
+        }
+    }
+
+    private func fileExtension(for language: String) -> String {
+        switch language {
+        case "python":
+            return "py"
+        case "ruby":
+            return "rb"
+        case "rust":
+            return "rs"
+        case "javascript":
+            return "js"
+        case "typescript":
+            return "ts"
+        case "csharp":
+            return "cs"
+        default:
+            return language
         }
     }
 
@@ -606,13 +785,22 @@ struct GarnetStudioRootView: View {
                         Text("Ruby").tag("ruby")
                         Text("Rust").tag("rust")
                         Text("Go").tag("go")
+                        Text("TypeScript").tag("typescript")
+                        Text("JavaScript").tag("javascript")
+                        Text("Swift").tag("swift")
+                        Text("Java").tag("java")
+                        Text("C++").tag("cpp")
+                        Text("C#").tag("csharp")
                     }
-                    .pickerStyle(.segmented)
+                    .pickerStyle(.menu)
                     Text("The converter is a migration assistant. It emits Garnet plus a MigrateTodo checklist instead of pretending every source feature is lossless.")
                         .font(.callout)
                         .foregroundStyle(.secondary)
                 }
-                editor(actions: [("Convert", model.runConverter)])
+                editor(actions: [
+                    ("Convert", model.runConverter),
+                    ("Assist Plan", model.runConverterAssistPlan),
+                ])
             }
         } trailing: {
             ConsoleView(output: model.output)
@@ -939,6 +1127,15 @@ enum GarnetStudioSelfTest {
         )
         if matrixLocator.candidateLocations().first?.scriptURL.path != "/repo/scripts/run_agentic_dogfood_matrix.py" {
             failures.append("agentic matrix locator did not prefer GARNET_REPO_ROOT")
+        }
+
+        let assistLocator = ConverterAssistPlanScriptLocator(
+            bundleResourceURL: nil,
+            environmentRepoRoot: "/repo",
+            currentDirectoryURL: URL(fileURLWithPath: "/repo/apps/garnet-studio-macos", isDirectory: true)
+        )
+        if assistLocator.candidateLocations().first?.scriptURL.path != "/repo/scripts/garnet_converter_assist_plan.py" {
+            failures.append("converter assist-plan locator did not prefer GARNET_REPO_ROOT")
         }
 
         let success = GarnetCommandResult(command: "garnet version", exitCode: 0, output: "garnet 0.4.2")

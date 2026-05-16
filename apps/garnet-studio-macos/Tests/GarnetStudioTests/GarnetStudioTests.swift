@@ -61,6 +61,47 @@ final class GarnetStudioTests: XCTestCase {
         XCTAssertEqual(first?.scriptURL.path, "/Applications/Garnet Studio.app/Contents/Resources/scripts/run_agentic_dogfood_matrix.py")
     }
 
+    func testConverterAssistPlanLocatorPrefersBundledScriptBeforeAmbientCheckout() {
+        let locator = ConverterAssistPlanScriptLocator(
+            bundleResourceURL: URL(fileURLWithPath: "/Applications/Garnet Studio.app/Contents/Resources", isDirectory: true),
+            environmentRepoRoot: nil,
+            currentDirectoryURL: URL(fileURLWithPath: "/repo/apps/garnet-studio-macos", isDirectory: true)
+        )
+
+        let first = locator.candidateLocations().first
+
+        XCTAssertEqual(first?.repoRootURL.path, "/Applications/Garnet Studio.app/Contents/Resources")
+        XCTAssertEqual(first?.scriptURL.path, "/Applications/Garnet Studio.app/Contents/Resources/scripts/garnet_converter_assist_plan.py")
+    }
+
+    func testConverterAssistPlanRunnerBuildsMarkdownCommand() {
+        let location = ConverterAssistPlanScriptLocation(
+            scriptURL: URL(fileURLWithPath: "/repo/scripts/garnet_converter_assist_plan.py"),
+            repoRootURL: URL(fileURLWithPath: "/repo", isDirectory: true)
+        )
+        let runner = ConverterAssistPlanRunner(
+            location: location,
+            language: "typescript",
+            sourceURL: URL(fileURLWithPath: "/tmp/agent_router.ts")
+        )
+
+        XCTAssertEqual(
+            runner.commandArguments(),
+            [
+                "env",
+                "PYTHONDONTWRITEBYTECODE=1",
+                "python3",
+                "/repo/scripts/garnet_converter_assist_plan.py",
+                "--language",
+                "typescript",
+                "--source",
+                "/tmp/agent_router.ts",
+                "--format",
+                "markdown",
+            ]
+        )
+    }
+
     func testAgenticMatrixRunnerBuildsStrictDesktopCommand() {
         let location = AgenticDogfoodScriptLocation(
             scriptURL: URL(fileURLWithPath: "/repo/scripts/run_agentic_dogfood_matrix.py"),
