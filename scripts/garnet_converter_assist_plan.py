@@ -135,7 +135,19 @@ def _risk_inventory(text: str) -> list[MigrationRisk]:
         (
             "network or external capability boundary",
             "CapCaps/capability boundaries",
-            ("fetch", "http", "https", "socket", "open(", "file", "readfile", "writefile"),
+            (
+                "fetch",
+                "http",
+                "https",
+                "socket",
+                "open(",
+                "file",
+                "readfile",
+                "writefile",
+                "lwp::useragent",
+                "useragent",
+                "->get",
+            ),
             "Declare capability boundaries and keep external effects behind explicit CapCaps.",
         ),
         (

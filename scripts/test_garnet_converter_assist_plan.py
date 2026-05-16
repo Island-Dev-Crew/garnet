@@ -51,6 +51,67 @@ interface AgentGateway {
         )
         return source
 
+    def _write_c_fixture(self, directory: Path) -> Path:
+        source = directory / "agent_cache.c"
+        source.write_text(
+            """\
+#include <stdlib.h>
+
+typedef struct AgentCache {
+  char* memory;
+} AgentCache;
+
+void start(AgentCache* cache) {
+  cache->memory = malloc(64);
+  free(cache->memory);
+}
+""",
+            encoding="utf-8",
+        )
+        return source
+
+    def _write_csharp_fixture(self, directory: Path) -> Path:
+        source = directory / "AgentWorker.cs"
+        source.write_text(
+            """\
+using System.Net.Http;
+using System.Threading.Tasks;
+
+public class AgentWorker {
+  private readonly Dictionary<string, string> cache = new();
+
+  public async Task<string> Fetch(string endpoint) {
+    using var client = new HttpClient();
+    var body = await client.GetStringAsync(endpoint);
+    cache[endpoint] = body;
+    return body;
+  }
+}
+""",
+            encoding="utf-8",
+        )
+        return source
+
+    def _write_perl_fixture(self, directory: Path) -> Path:
+        source = directory / "agent_memory.pl"
+        source.write_text(
+            """\
+use strict;
+use warnings;
+use LWP::UserAgent;
+
+my %memory;
+sub remember {
+  my ($key, $url) = @_;
+  my $ua = LWP::UserAgent->new;
+  my $response = $ua->get($url);
+  $memory{$key} = $response->decoded_content;
+}
+""",
+            encoding="utf-8",
+        )
+        return source
+
     def test_planned_language_plan_is_advisory_and_gated(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             source = self._write_typescript_fixture(Path(temp))
@@ -153,6 +214,85 @@ interface AgentGateway {
         self.assertFalse(data["conversion_active"])
         self.assertIn("actor or async orchestration mapping", risk_titles)
         self.assertIn("network or external capability boundary", risk_titles)
+
+    def test_c_fixture_surfaces_native_memory_risk(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            source = self._write_c_fixture(Path(temp))
+            output = subprocess.check_output(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--language",
+                    "c",
+                    "--source",
+                    str(source),
+                    "--format",
+                    "json",
+                ],
+                text=True,
+            )
+
+        data = json.loads(output)
+        risk_titles = {risk["title"] for risk in data["risk_inventory"]}
+
+        self.assertEqual("C", data["language"])
+        self.assertEqual("planned", data["language_status"])
+        self.assertFalse(data["conversion_active"])
+        self.assertIn("unsafe or native memory boundary", risk_titles)
+        self.assertIn("type and ownership modeling", risk_titles)
+
+    def test_csharp_fixture_surfaces_async_network_and_memory_risks(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            source = self._write_csharp_fixture(Path(temp))
+            output = subprocess.check_output(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--language",
+                    "csharp",
+                    "--source",
+                    str(source),
+                    "--format",
+                    "json",
+                ],
+                text=True,
+            )
+
+        data = json.loads(output)
+        risk_titles = {risk["title"] for risk in data["risk_inventory"]}
+
+        self.assertEqual("C#", data["language"])
+        self.assertEqual("planned", data["language_status"])
+        self.assertFalse(data["conversion_active"])
+        self.assertIn("network or external capability boundary", risk_titles)
+        self.assertIn("actor or async orchestration mapping", risk_titles)
+        self.assertIn("memory declaration candidate", risk_titles)
+
+    def test_perl_fixture_surfaces_network_and_memory_risks(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            source = self._write_perl_fixture(Path(temp))
+            output = subprocess.check_output(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--language",
+                    "perl",
+                    "--source",
+                    str(source),
+                    "--format",
+                    "json",
+                ],
+                text=True,
+            )
+
+        data = json.loads(output)
+        risk_titles = {risk["title"] for risk in data["risk_inventory"]}
+
+        self.assertEqual("Perl", data["language"])
+        self.assertEqual("planned", data["language_status"])
+        self.assertFalse(data["conversion_active"])
+        self.assertIn("network or external capability boundary", risk_titles)
+        self.assertIn("memory declaration candidate", risk_titles)
 
     def test_unknown_language_fails_loudly(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

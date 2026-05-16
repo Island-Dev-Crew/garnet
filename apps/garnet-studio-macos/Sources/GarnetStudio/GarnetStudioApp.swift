@@ -656,6 +656,8 @@ final class GarnetStudioViewModel: ObservableObject {
             return "ts"
         case "csharp":
             return "cs"
+        case "perl":
+            return "pl"
         default:
             return language
         }
@@ -789,8 +791,10 @@ struct GarnetStudioRootView: View {
                         Text("JavaScript").tag("javascript")
                         Text("Swift").tag("swift")
                         Text("Java").tag("java")
+                        Text("C").tag("c")
                         Text("C++").tag("cpp")
                         Text("C#").tag("csharp")
+                        Text("Perl").tag("perl")
                     }
                     .pickerStyle(.menu)
                     Text("The converter is a migration assistant. It emits Garnet plus a MigrateTodo checklist instead of pretending every source feature is lossless.")

@@ -27,6 +27,11 @@ class GarnetAdoptionSurfaceStatusTests(unittest.TestCase):
             set(data["planned_converter_languages"]),
         )
         self.assertEqual("active-partial", data["llm_assist_status"])
+        self.assertIn("converter LLM feasibility is advisory-feasible", data["llm_assist_truth"])
+        self.assertIn(
+            "advisory planning is feasible, autonomous LLM conversion is not feasible yet",
+            data["llm_assist_truth"],
+        )
         self.assertIn("provider-backed conversion is not active", data["llm_assist_truth"])
         self.assertIn("deterministic converter output remains authoritative", data["llm_assist_truth"])
 
@@ -100,7 +105,7 @@ class GarnetAdoptionSurfaceStatusTests(unittest.TestCase):
         self.assertIn("dist/Garnet Studio.app", site)
         self.assertIn("Assist Plan", site)
         self.assertIn("provider-neutral prompt pack", site)
-        self.assertIn("context + prompt + assist plan active", site)
+        self.assertIn("feasibility + context + prompt + assist plan active", site)
 
 
 if __name__ == "__main__":

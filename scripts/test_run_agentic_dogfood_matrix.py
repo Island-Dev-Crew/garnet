@@ -152,14 +152,33 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         ids = {result.probe.id for result in results}
         domains = Counter(result.probe.domain for result in results)
 
-        self.assertEqual(domains["converter assist planning"], 7)
+        self.assertEqual(domains["converter assist planning"], 10)
         self.assertIn("report-assist-plan-typescript-current-truth", ids)
         self.assertIn("report-assist-plan-typescript-risks", ids)
         self.assertIn("report-assist-plan-javascript-risks", ids)
         self.assertIn("report-assist-plan-swift-risks", ids)
         self.assertIn("report-assist-plan-java-risks", ids)
+        self.assertIn("report-assist-plan-c-risks", ids)
         self.assertIn("report-assist-plan-cpp-risks", ids)
+        self.assertIn("report-assist-plan-csharp-risks", ids)
+        self.assertIn("report-assist-plan-perl-risks", ids)
         self.assertIn("report-assist-plan-output-manifest", ids)
+
+    def test_probe_inventory_includes_converter_llm_feasibility_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            fixtures = matrix.prepare_fixtures(work)
+            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            results = self._inventory_results(probes)
+
+        ids = {result.probe.id for result in results}
+        domains = Counter(result.probe.domain for result in results)
+
+        self.assertEqual(domains["converter LLM feasibility"], 4)
+        self.assertIn("report-converter-llm-feasibility-current-truth", ids)
+        self.assertIn("report-converter-llm-feasibility-language-coverage", ids)
+        self.assertIn("report-converter-llm-feasibility-blockers", ids)
+        self.assertIn("report-converter-llm-feasibility-output-manifest", ids)
 
     def test_probe_inventory_includes_web_pwa_offline_gate(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -386,6 +405,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertEqual(coverage["MIT readiness accounting"]["status"], "adequate")
         self.assertEqual(coverage["converter intelligent assist"]["status"], "adequate")
         self.assertEqual(coverage["converter assist planning"]["status"], "adequate")
+        self.assertEqual(coverage["converter LLM feasibility"]["status"], "adequate")
         self.assertEqual(coverage["signed release provenance"]["status"], "adequate")
         self.assertEqual(coverage["macOS notarization readiness"]["status"], "adequate")
 

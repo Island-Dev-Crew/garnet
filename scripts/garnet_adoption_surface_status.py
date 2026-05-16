@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import garnet_converter_status  # noqa: E402
+import garnet_converter_llm_feasibility  # noqa: E402
 import garnet_mit_readiness_status  # noqa: E402
 
 
@@ -116,6 +117,7 @@ def verified_use_cases() -> list[UseCase]:
 
 def read_surface() -> AdoptionSurface:
     converter = garnet_converter_status.read_status()
+    feasibility = garnet_converter_llm_feasibility.read_status()
     mit = garnet_mit_readiness_status.read_status()
     lanes = {lane.id: lane for lane in mit.lanes}
 
@@ -136,6 +138,8 @@ def read_surface() -> AdoptionSurface:
         planned_converter_languages=planned_languages,
         llm_assist_status=lanes["llm_assist"].status,
         llm_assist_truth=[
+            f"converter LLM feasibility is {feasibility.status}",
+            "advisory planning is feasible, autonomous LLM conversion is not feasible yet",
             "deterministic context pack is active",
             "deterministic planned-language assist plan is active",
             "provider-backed conversion is not active",
