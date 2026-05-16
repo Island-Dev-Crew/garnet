@@ -99,6 +99,8 @@ class GarnetAdoptionSurfaceStatusTests(unittest.TestCase):
         self.assertIn("Codex Run", site)
         self.assertIn("dist/Garnet Studio.app", site)
         self.assertIn("Assist Plan", site)
+        self.assertIn("provider-neutral prompt pack", site)
+        self.assertIn("context + prompt + assist plan active", site)
 
 
 if __name__ == "__main__":

@@ -1229,6 +1229,22 @@ def probe_set(
             security_domain="not-applicable",
         ),
         Probe(
+            "report-assist-context-prompt-pack",
+            "converter intelligent assist",
+            "assist context pack should expose a provider-neutral prompt contract without enabling conversion",
+            [sys.executable, str(ROOT / "scripts" / "garnet_assist_context_pack.py"), "--format", "json"],
+            True,
+            (
+                "\"status\": \"provider-neutral-assist-prompt\"",
+                "\"conversion_active\": false",
+                "Do not execute source code.",
+                "Never claim conversion is active.",
+                "candidate Garnet output or migrate_todo evidence",
+                "human audit before unquarantine",
+            ),
+            security_domain="sandbox",
+        ),
+        Probe(
             "report-assist-plan-typescript-current-truth",
             "converter assist planning",
             "planned TypeScript assist plan should be useful without activating conversion",

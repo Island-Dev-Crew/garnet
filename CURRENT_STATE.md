@@ -66,7 +66,7 @@ done
 | `garnet-cli/` | user-facing CLI and templates | current implementation |
 | `garnet-convert/` | migration assistant | current implementation for stylized Rust/Ruby/Python/Go only; broader language and gated LLM-assist lanes are planned, not implemented |
 | `scripts/garnet_converter_status.py` | converter adoption inventory | current machine-readable truth for active converter lanes, planned languages, trust boundaries, and the future Garnet-aware assist contract |
-| `scripts/garnet_assist_context_pack.py` | Garnet-aware assist context pack | current machine-readable context bundle for future provider-backed converter assist; hashes current truth/spec/dogfood docs and preserves advisory-only gates without enabling LLM conversion |
+| `scripts/garnet_assist_context_pack.py` | Garnet-aware assist context and prompt pack | current machine-readable context bundle plus provider-neutral prompt pack for future provider-backed converter assist; hashes current truth/spec/dogfood docs and preserves advisory-only gates without enabling LLM conversion |
 | `scripts/garnet_converter_assist_plan.py` | planned-language converter assist plan | current deterministic planner for a single source file in an active or planned converter language; inventories safe-mode, memory, CapCaps, actor/orchestration, and migration risks without executing source or enabling LLM conversion |
 | `scripts/garnet_mit_readiness_status.py` | MIT/productization objective inventory | current machine-readable truth that the tracked implementation plan is complete while notarization, mobile distribution, promo video, broad converter frontends, LLM assist, and proof/empirics remain open gates |
 | `scripts/garnet_studio_notarization_status.py` | macOS notarization preflight inventory | current machine-readable summary for notarization preflight bundles; preserves blocker/warning evidence, redacts credential values, and explicitly avoids claiming Apple submission or notarization |
@@ -531,6 +531,15 @@ deployment guard while still avoiding a live-domain dependency in PR CI.
 Verified evidence includes `python3 scripts/test_smoke_garnet_pages_pwa.py`,
 `scripts/smoke_garnet_pages_pwa.sh --copy-to-desktop --strict`, and Desktop
 bundle `/Users/idc2.0/Desktop/dogfood/pages-pwa-readiness-20260516-053350`.
+Phase 6AE makes the future converter-assist lane easier to hand to a model or
+agent without making it active: `scripts/garnet_assist_context_pack.py` now
+emits a provider-neutral prompt contract and `garnet-assist-prompt-pack.md`
+alongside the hashed context pack. The prompt explicitly forbids source
+execution, active-conversion claims, broad planned-language support claims, and
+unchecked safe-output claims while requiring lineage, `@sandbox`, `garnet
+check`, dogfood bundle, and human audit gates. The refreshed agentic dogfood
+matrix passes `64/64` with `skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-054543`.
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.

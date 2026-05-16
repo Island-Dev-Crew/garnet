@@ -1480,6 +1480,14 @@ Studio adoption copy as a strict blocker, and the web/PWA workflow runs a local
 fixture test that removes the Studio phrases so the smoke contract stays
 covered in PR CI without depending on Pages publication timing.
 
+Phase 6AE provider-neutral prompt-pack pass: the Garnet-aware assist context
+pack now emits a prompt contract and manifested `garnet-assist-prompt-pack.md`
+artifact for future model/agent handoff. It keeps provider, network, and
+conversion activation false while making forbidden claims and required gates
+machine-readable and dogfood-probed. Local evidence passes `64/64` with
+`skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-054543`.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.
