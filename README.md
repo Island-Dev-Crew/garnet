@@ -118,6 +118,8 @@ garnet verify src/main.garnet src/main.garnet.manifest.json --signature
 | `garnet-cli`    | Top-level `garnet` binary |
 | `garnet-convert` | Rust / Ruby / Python / Go → Garnet **migration assistant** (stylized parsers, sandbox-on output, emits a `migrate_todo.md` checklist — not a full transpiler). `python3 scripts/garnet_converter_status.py` reports the active lanes, planned language expansion candidates, and the planned Garnet-aware assist contract for future LLM/agentic guidance. |
 
+For future LLM or agentic converter guidance, run `python3 scripts/garnet_assist_context_pack.py`. It creates a deterministic local context pack from the current truth, public README, Mini-Spec, conformance matrix, and dogfood ledger; it does not enable provider-backed conversion or make planned language frontends active.
+
 For broader public-readiness accounting, run `python3 scripts/garnet_mit_readiness_status.py`. It intentionally distinguishes the complete tracked implementation-plan ledger from still-open productization gates such as Developer ID notarization, mobile distribution, promo video, broad converter frontends, LLM assist, proof, and empirical validation.
 
 ## Documentation

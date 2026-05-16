@@ -23,7 +23,7 @@ falsifiable dogfood bundle with:
 - per-probe stdout/stderr logs
 - `MANIFEST.sha256`
 
-The current probe set covers 40 checks across eleven domains, or 37 checks when
+The current probe set covers 43 checks across twelve domains, or 40 checks when
 the SwiftUI/macOS app workbench probes are intentionally skipped in headless CI.
 Functional readiness and coverage adequacy are intentionally separate: a domain
 can pass every current probe while still needing more independent probes before
@@ -36,6 +36,7 @@ the suite satisfies the requested 3-5 probe coverage bar.
 | Agent recovery and diagnostics | 4 | adequate | malformed source, missing source, undefined eval symbol, and missing manifest failures stay actionable |
 | Safe mode and capabilities | 5 | adequate | valid safe programs, unsafe rejection, and advertised safe I/O example check/run |
 | Migration assistant | 6 | adequate | Python/Ruby/Rust/Go conversion, explicit unsupported-language rejection, and converter adoption-status truth |
+| Converter intelligent assist | 3 | adequate | deterministic local assist context pack, required gates, and hashed current truth/spec corpus |
 | Release integrity | 3 | adequate | deterministic manifest generation, verification, and tamper rejection |
 | Developer experience | 3 | adequate | `garnet doc` extraction, `garnet fmt --check`, and formatter repair of dirty agent source |
 | Web/PWA productization | 3 | adequate | service-worker offline handler, full local PWA smoke, and Chrome DevTools offline navigation |
@@ -67,28 +68,28 @@ Those failures became focused fixes and regression tests in this slice.
 Latest source-checkout evidence bundle:
 
 ```text
-/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-013651
+/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-015100
 ```
 
 Current result:
 
 ```text
 readiness=100
-passed=40/40
+passed=43/43
 ```
 
 The latest merged bundle also records domain coverage adequacy. It marks agent
 orchestration, recovery/diagnostics, safe mode/capabilities, migration, release
 integrity, project scaffolding, developer experience, web/PWA productization,
-agent memory/analysis, and MIT-readiness accounting as coverage-adequate. The
-App-16 source app smoke slice promotes macOS app workbench to `3/3` locally by
-adding a SwiftPM `--smoke-test` probe that prefers the matrix-built Garnet CLI
-on `PATH`.
+agent memory/analysis, converter intelligent assist, and MIT-readiness
+accounting as coverage-adequate. The App-16 source app smoke slice promotes
+macOS app workbench to `3/3` locally by adding a SwiftPM `--smoke-test` probe
+that prefers the matrix-built Garnet CLI on `PATH`.
 
 Manifest verification:
 
 ```sh
-cd /Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-013651
+cd /Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-015100
 shasum -a 256 -c MANIFEST.sha256
 ```
 
