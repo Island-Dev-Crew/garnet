@@ -241,6 +241,25 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertIn("memory-signed-cache-tamper-rejection", ids)
         self.assertIn("memory-signed-cache-foreign-key-rejection", ids)
 
+    def test_packaged_matrix_skips_source_workspace_memory_integrity_probes(self) -> None:
+        original_root = matrix.ROOT
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp) / "dogfood"
+            packaged_resources = Path(temp) / "Garnet Studio.app" / "Contents" / "Resources"
+            packaged_resources.mkdir(parents=True)
+            matrix.ROOT = packaged_resources
+            try:
+                probes = matrix.memory_persistence_integrity_probes(work)
+                results = [probe() for probe in probes]
+            finally:
+                matrix.ROOT = original_root
+
+        self.assertEqual([result.status for result in results], ["skipped", "skipped", "skipped"])
+        self.assertTrue(all(result.passed for result in results))
+        self.assertEqual(matrix.score(results)["skipped"], 3)
+        self.assertIn("Cargo.toml", results[0].stdout_excerpt)
+        self.assertIn("source workspace", results[0].probe.notes)
+
     def test_probe_inventory_covers_agent_toolbelt_examples(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)

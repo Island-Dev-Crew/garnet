@@ -124,7 +124,9 @@ highest-leverage next milestones are:
    turns that evidence bundle into JSON/Markdown for agents, PRs, and site
    truth without submitting to Apple or exposing credential values. Packaged
    matrix runs set `PYTHONDONTWRITEBYTECODE=1` so Python status reporters do
-   not mutate signed app resources after codesign. The docs site now has a seed
+   not mutate signed app resources after codesign, and source-workspace-only
+   cargo probes are recorded as explicit packaged-resource skips instead of
+   hidden app failures. The docs site now has a seed
    installable PWA shell with
    manifest, icons, service worker, local HTTP smoke, dependency-free offline
    service-worker behavior simulation, local Chrome DevTools offline smoke,
@@ -450,6 +452,21 @@ failed `58/60` because two checker diagnostics were asserted on stderr while
 the CLI contract reports them on stdout; the corrected strict source matrix
 passes `60/60` in Desktop bundle
 `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-034939`.
+Phase 6X closes the packaged-app drift found by the DMG path: the failed
+packaged bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-040023`
+recorded `57/60` because the bundled matrix attempted source-workspace cargo
+tests under `Contents/Resources/Cargo.toml`. The fixed packaged and copied-DMG
+matrices accept `60/60` with `skipped=3`, preserving per-probe logs that name
+the source-workspace-only boundary while the source checkout continues to run
+those signed-cache probes with `skipped=0`. Current Desktop evidence:
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-040631`
+(source, `60/60`, `skipped=0`),
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-040415`
+(copied app, `60/60`, `skipped=3`), and
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-040414`
+(DMG install smoke; DMG SHA-256
+`e00d8e246fb10e339adf04c98b3f8654d841e8dd709a3ab213bd09cf7f1b34aa`).
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.
