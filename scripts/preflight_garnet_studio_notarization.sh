@@ -73,6 +73,7 @@ run_capture() {
   local status
   shift
   {
+    printf '## %s\n' "${name}"
     printf '$'
     printf ' %q' "$@"
     printf '\n'
