@@ -105,6 +105,16 @@ garnet build --deterministic --sign my.key src/main.garnet
 garnet verify src/main.garnet src/main.garnet.manifest.json --signature
 ```
 
+Summarize macOS app notarization preflight evidence:
+
+```sh
+scripts/preflight_garnet_studio_notarization.sh --copy-to-desktop
+python3 scripts/garnet_studio_notarization_status.py --bundle ~/Desktop/dogfood/<preflight-bundle>
+```
+
+This reports blocker/warning status only. It does not submit to Apple or claim
+Developer ID notarization.
+
 ## Architecture snapshot
 
 | Crate | Role |

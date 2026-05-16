@@ -135,6 +135,21 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertIn("release-unsigned-manifest-requires-signature", ids)
         self.assertIn("release-signed-manifest-tamper-detection", ids)
 
+    def test_probe_inventory_includes_macos_notarization_readiness(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            fixtures = matrix.prepare_fixtures(work)
+            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
+
+        ids = {probe.id for probe in concrete_probes}
+        domains = Counter(probe.domain for probe in concrete_probes)
+
+        self.assertEqual(domains["macOS notarization readiness"], 3)
+        self.assertIn("report-notarization-status-blockers", ids)
+        self.assertIn("report-notarization-status-redaction", ids)
+        self.assertIn("report-notarization-status-missing-bundle", ids)
+
     def test_signed_release_probe_does_not_persist_generated_private_keys(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
@@ -246,6 +261,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertEqual(coverage["MIT readiness accounting"]["status"], "adequate")
         self.assertEqual(coverage["converter intelligent assist"]["status"], "adequate")
         self.assertEqual(coverage["signed release provenance"]["status"], "adequate")
+        self.assertEqual(coverage["macOS notarization readiness"]["status"], "adequate")
 
     def test_write_outputs_persists_domain_coverage(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

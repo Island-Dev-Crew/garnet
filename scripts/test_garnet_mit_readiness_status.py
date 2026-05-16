@@ -45,6 +45,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("tracked implementation plan is complete", data["current_truth"])
         self.assertIn("goal remains active", data["current_truth"])
         self.assertIn("APPLE_DEV_ID_APP", lanes["developer_id_notarization"]["blocked_by"])
+        self.assertIn("garnet_studio_notarization_status.py", lanes["developer_id_notarization"]["evidence"])
         self.assertIn("deterministic local context pack", lanes["llm_assist"]["evidence"])
         self.assertIn("JavaScript", lanes["broad_converter_frontends"]["deferred"])
         self.assertIn("Android", lanes["mobile_distribution"]["deferred"])
@@ -68,6 +69,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("tracked implementation plan is complete", site)
         self.assertIn("not full MIT/productization completion", site)
         self.assertIn("notarization", site)
+        self.assertIn("machine-readable preflight status reporter", site)
         self.assertIn("mobile", site)
         self.assertIn("LLM assist", site)
 
