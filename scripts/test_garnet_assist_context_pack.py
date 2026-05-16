@@ -87,6 +87,25 @@ class GarnetAssistContextPackTests(unittest.TestCase):
         self.assertIn("deterministic converter output remains authoritative", data["system_boundaries"])
         self.assertIn("source code is not executed during analysis", data["system_boundaries"])
 
+    def test_json_includes_provider_neutral_prompt_contract(self) -> None:
+        output = subprocess.check_output(
+            [sys.executable, str(SCRIPT), "--format", "json"],
+            text=True,
+        )
+        data = json.loads(output)
+        prompt = data["prompt_pack"]
+
+        self.assertEqual("provider-neutral-assist-prompt", prompt["status"])
+        self.assertFalse(prompt["provider_required"])
+        self.assertFalse(prompt["network_required"])
+        self.assertFalse(prompt["conversion_active"])
+        self.assertIn("assist plan JSON", prompt["required_inputs"])
+        self.assertIn("candidate Garnet output or migrate_todo evidence", prompt["required_output_sections"])
+        self.assertIn("Do not execute source code.", prompt["system_prompt"])
+        self.assertIn("Never claim conversion is active.", prompt["system_prompt"])
+        self.assertIn("lineage per emitted node", prompt["system_prompt"])
+        self.assertIn("human audit before unquarantine", prompt["user_prompt_template"])
+
     def test_markdown_is_human_readable_and_honest(self) -> None:
         rendered = subprocess.check_output([sys.executable, str(SCRIPT)], text=True)
 
@@ -113,6 +132,7 @@ class GarnetAssistContextPackTests(unittest.TestCase):
 
             self.assertTrue((out_dir / "garnet-assist-context-pack.json").exists())
             self.assertTrue((out_dir / "garnet-assist-context-pack.md").exists())
+            self.assertTrue((out_dir / "garnet-assist-prompt-pack.md").exists())
             manifest = out_dir / "MANIFEST.sha256"
             self.assertTrue(manifest.exists())
             verify = subprocess.check_output(
@@ -122,6 +142,7 @@ class GarnetAssistContextPackTests(unittest.TestCase):
             )
             self.assertIn("garnet-assist-context-pack.json: OK", verify)
             self.assertIn("garnet-assist-context-pack.md: OK", verify)
+            self.assertIn("garnet-assist-prompt-pack.md: OK", verify)
 
 
 if __name__ == "__main__":

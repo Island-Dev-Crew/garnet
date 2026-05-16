@@ -115,10 +115,11 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         ids = {probe.id for probe in concrete_probes}
         domains = Counter(probe.domain for probe in concrete_probes)
 
-        self.assertEqual(domains["converter intelligent assist"], 3)
+        self.assertEqual(domains["converter intelligent assist"], 4)
         self.assertIn("report-assist-context-current-truth", ids)
         self.assertIn("report-assist-context-required-gates", ids)
         self.assertIn("report-assist-context-documents", ids)
+        self.assertIn("report-assist-context-prompt-pack", ids)
 
     def test_probe_inventory_includes_converter_assist_plan(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

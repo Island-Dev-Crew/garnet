@@ -47,8 +47,22 @@ class AssistContextPack:
     analysis_targets: list[str]
     required_gates: list[str]
     system_boundaries: list[str]
+    prompt_pack: PromptPack
     objective_status: str
     objective_completion_percent: float
+
+
+@dataclass(frozen=True)
+class PromptPack:
+    status: str
+    provider_required: bool
+    network_required: bool
+    conversion_active: bool
+    required_inputs: list[str]
+    required_output_sections: list[str]
+    forbidden_claims: list[str]
+    system_prompt: str
+    user_prompt_template: str
 
 
 DOCUMENT_ROLES = {
@@ -58,6 +72,72 @@ DOCUMENT_ROLES = {
     "C_Language_Specification/GARNET_v0_4_2_Conformance_Matrix.md": "conformance",
     "F_Project_Management/DOGFOOD/GARNET_v0_5_DOGFOOD_READINESS_PHASE_LOG.md": "dogfood",
 }
+
+
+def _prompt_pack(contract: garnet_converter_status.IntelligentAssistContract) -> PromptPack:
+    required_output_sections = [
+        "current truth and scope",
+        "source summary and lineage notes",
+        "risk inventory",
+        "candidate Garnet output or migrate_todo evidence",
+        "required gates evidence",
+        "human audit notes",
+    ]
+    forbidden_claims = [
+        "Never claim conversion is active.",
+        "Never claim broad planned-language support.",
+        "Never claim provider-backed LLM conversion is enabled.",
+        "Never mark unchecked Garnet output safe.",
+        "Never remove sandbox, lineage, dogfood, or human-audit gates.",
+    ]
+    gates = "; ".join(contract.required_gates)
+    targets = "; ".join(contract.analysis_targets)
+    system_prompt = "\n".join(
+        [
+            "You are a Garnet migration assistant.",
+            "Use only the provided Garnet context pack, source summary, and assist plan.",
+            "Do not execute source code.",
+            "Never claim conversion is active.",
+            "Treat deterministic converter output as authoritative when an active frontend exists.",
+            "For planned languages, emit advisory migration evidence only.",
+            f"Analyze these targets: {targets}.",
+            f"Preserve these gates: {gates}.",
+            "Keep output sandboxed by default and require human audit before unquarantine.",
+        ]
+    )
+    user_prompt_template = "\n".join(
+        [
+            "Given:",
+            "- Garnet assist context pack JSON",
+            "- Garnet converter assist plan JSON",
+            "- Source language and source file hash",
+            "",
+            "Return Markdown with these sections:",
+            *[f"- {section}" for section in required_output_sections],
+            "",
+            "Do not execute source. Do not claim active conversion.",
+            "Every candidate output must preserve lineage per emitted node, @sandbox default,",
+            "migrate_todo evidence for unsupported constructs, garnet check before validity",
+            "claims, a dogfood readiness bundle path, and human audit before unquarantine.",
+        ]
+    )
+    return PromptPack(
+        status="provider-neutral-assist-prompt",
+        provider_required=False,
+        network_required=False,
+        conversion_active=False,
+        required_inputs=[
+            "assist context pack JSON",
+            "assist plan JSON",
+            "source language id",
+            "source file sha256",
+            "human review objective",
+        ],
+        required_output_sections=required_output_sections,
+        forbidden_claims=forbidden_claims,
+        system_prompt=system_prompt,
+        user_prompt_template=user_prompt_template,
+    )
 
 
 def _sha256(path: Path) -> str:
@@ -120,6 +200,7 @@ def read_pack() -> AssistContextPack:
             "converted output stays @sandbox by default",
             "human audit is required before unquarantine",
         ],
+        prompt_pack=_prompt_pack(contract),
         objective_status=objective.overall_status,
         objective_completion_percent=objective.completion_percent,
     )
@@ -165,6 +246,23 @@ def render_markdown(pack: AssistContextPack) -> str:
     for gate in pack.required_gates:
         lines.append(f"- {gate}")
 
+    lines.extend(["", "## Provider-Neutral Prompt Pack", ""])
+    lines.extend(
+        [
+            f"Status: **{pack.prompt_pack.status}**",
+            f"Provider required: {str(pack.prompt_pack.provider_required).lower()}",
+            f"Network required: {str(pack.prompt_pack.network_required).lower()}",
+            f"Conversion active: {str(pack.prompt_pack.conversion_active).lower()}",
+            "",
+            "Required output sections:",
+        ]
+    )
+    for section in pack.prompt_pack.required_output_sections:
+        lines.append(f"- {section}")
+    lines.extend(["", "Forbidden claims:", ""])
+    for claim in pack.prompt_pack.forbidden_claims:
+        lines.append(f"- {claim}")
+
     lines.extend(
         [
             "",
@@ -186,16 +284,39 @@ def render_markdown(pack: AssistContextPack) -> str:
     return "\n".join(lines) + "\n"
 
 
+def render_prompt_pack(pack: AssistContextPack) -> str:
+    prompt = pack.prompt_pack
+    lines = [
+        "# Garnet Provider-Neutral Assist Prompt Pack",
+        "",
+        f"Status: **{prompt.status}**",
+        "",
+        "Current truth: this prompt pack is not an active converter, not a model",
+        "provider integration, and not permission to remove Garnet's migration gates.",
+        "",
+        "## Required Inputs",
+        "",
+    ]
+    lines.extend(f"- {item}" for item in prompt.required_inputs)
+    lines.extend(["", "## System Prompt", "", "```text", prompt.system_prompt, "```", ""])
+    lines.extend(["## User Prompt Template", "", "```text", prompt.user_prompt_template, "```", ""])
+    lines.extend(["## Forbidden Claims", ""])
+    lines.extend(f"- {claim}" for claim in prompt.forbidden_claims)
+    return "\n".join(lines) + "\n"
+
+
 def write_output_dir(pack: AssistContextPack, output_dir: Path) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     json_path = output_dir / "garnet-assist-context-pack.json"
     md_path = output_dir / "garnet-assist-context-pack.md"
+    prompt_path = output_dir / "garnet-assist-prompt-pack.md"
     manifest_path = output_dir / "MANIFEST.sha256"
 
     json_path.write_text(json.dumps(asdict(pack), indent=2) + "\n", encoding="utf-8")
     md_path.write_text(render_markdown(pack), encoding="utf-8")
+    prompt_path.write_text(render_prompt_pack(pack), encoding="utf-8")
     entries = []
-    for path in (json_path, md_path):
+    for path in (json_path, md_path, prompt_path):
         entries.append(f"{_sha256(path)}  {path.name}\n")
     manifest_path.write_text("".join(entries), encoding="utf-8")
 
