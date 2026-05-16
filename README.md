@@ -130,6 +130,8 @@ Developer ID notarization.
 
 For future LLM or agentic converter guidance, run `python3 scripts/garnet_assist_context_pack.py`. It creates a deterministic local context pack from the current truth, public README, Mini-Spec, conformance matrix, and dogfood ledger; it does not enable provider-backed conversion or make planned language frontends active.
 
+For repo/site adoption truth, run `python3 scripts/garnet_adoption_surface_status.py`. It ties the public hook, active converter lanes, planned converter lanes, LLM-assist boundaries, verified use cases, and productization gates to current evidence before marketing or README copy moves forward.
+
 For broader public-readiness accounting, run `python3 scripts/garnet_mit_readiness_status.py`. It intentionally distinguishes the complete tracked implementation-plan ledger from still-open productization gates such as Developer ID notarization, mobile distribution, promo video, broad converter frontends, LLM assist, proof, and empirical validation.
 
 ## Documentation

@@ -69,6 +69,7 @@ done
 | `scripts/garnet_assist_context_pack.py` | Garnet-aware assist context pack | current machine-readable context bundle for future provider-backed converter assist; hashes current truth/spec/dogfood docs and preserves advisory-only gates without enabling LLM conversion |
 | `scripts/garnet_mit_readiness_status.py` | MIT/productization objective inventory | current machine-readable truth that the tracked implementation plan is complete while notarization, mobile distribution, promo video, broad converter frontends, LLM assist, and proof/empirics remain open gates |
 | `scripts/garnet_studio_notarization_status.py` | macOS notarization preflight inventory | current machine-readable summary for notarization preflight bundles; preserves blocker/warning evidence, redacts credential values, and explicitly avoids claiming Apple submission or notarization |
+| `scripts/garnet_adoption_surface_status.py` | repo/site adoption truth inventory | current machine-readable status linking the public hook, verified use cases, active converter lanes, planned language lanes, LLM-assist boundaries, and productization gates |
 | `examples/mvp_*.garnet` | canonical app-level smokes | must parse/check/run |
 | `examples/{multi_agent_builder,agentic_log_analyzer,safe_io_layer}.garnet` | design-scale examples | `multi_agent_builder`, `agentic_log_analyzer`, and `safe_io_layer` are covered by active agentic matrix probes |
 | `A_Research_Papers/` | academic research corpus | normative/research context |
@@ -128,7 +129,12 @@ highest-leverage next milestones are:
    notarization, clean-machine Gatekeeper, TestFlight, App Store, mobile app,
    cross-browser certification, or offline IDE completion before those lanes
    are separately verified.
-6. **Agentic dogfood stress:** keep the advanced multi-domain matrix green so
+6. **Repo/site adoption surface:** keep the public hook and Garnet website copy
+   tied to `scripts/garnet_adoption_surface_status.py` so active converter
+   lanes, planned language lanes, LLM-assist boundaries, verified use cases,
+   and open productization gates remain evidence-backed instead of promotional
+   drift.
+7. **Agentic dogfood stress:** keep the advanced multi-domain matrix green so
    agents can exercise orchestration, agent toolbelt examples, recovery diagnostics, migration,
    safe-mode, release-integrity, signed-release provenance, macOS
    notarization readiness, docs, app, and memory-analysis surfaces as one
