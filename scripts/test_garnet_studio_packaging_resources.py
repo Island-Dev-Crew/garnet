@@ -101,6 +101,8 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
         self.assertIn('PROMO_STUDIO_SOURCE="${INSTALLED_APP}/Contents/Resources/apps/garnet-studio-macos/Sources/GarnetStudio/GarnetStudioApp.swift"', script)
         self.assertIn('PROMO_STUDIO_LOGO="${INSTALLED_APP}/Contents/Resources/apps/garnet-studio-macos/Sources/GarnetStudio/Resources/garnet-logo.png"', script)
         self.assertIn('DOCS_DIR="${INSTALLED_APP}/Contents/Resources/docs"', script)
+        self.assertIn('PROMO_DESIGN="${DOCS_DIR}/promo/DESIGN.md"', script)
+        self.assertIn('PROMO_COMPOSITION="${DOCS_DIR}/promo/composition.html"', script)
         self.assertIn('"${OFFLINE_PWA_SMOKE}" --docs-dir "${DOCS_DIR}"', script)
 
     def test_dmg_smoke_writes_manifest_verified_evidence_bundle(self) -> None:

@@ -1462,6 +1462,17 @@ Studio, agentic dogfood matrix, and MIT readiness reporter surfaces are present
 before rendering. The matrix adds a fourth promo-video readiness probe for the
 source lock. This is still not a rendered ad or website-ready export.
 
+Phase 6AI promo-composition source pass: `docs/promo/DESIGN.md` captures the
+visual identity contract and `docs/promo/composition.html` adds a
+HyperFrames-compatible 30-second composition source registered as
+`garnet-promo-main`. The promo lane advances to `composition-ready` at 50.0%,
+and the matrix adds a fifth promo-video readiness probe. Verified source
+evidence passes `73/73` with `skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-065332`.
+Rendered MP4/WebM, visual QA, website export, Desktop dogfood evidence for
+rendered artifacts, and overclaim checks remain open gates before any public
+video claim.
+
 Phase 6Z packaged assist-plan resource pass: packaged Garnet Studio now stages
 and chmods `scripts/garnet_converter_assist_plan.py`, and the DMG install
 smoke checks it as a required executable bundled asset before running copied-app

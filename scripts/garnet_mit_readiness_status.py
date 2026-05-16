@@ -46,6 +46,8 @@ def _lane_score(lane: ObjectiveLane) -> float:
         return 1.0
     if lane.status == "active-partial":
         return 0.5
+    if lane.status == "composition-ready":
+        return 0.5
     if lane.status == "source-locked":
         return 0.35
     if lane.status == "planned-contract":
@@ -164,7 +166,8 @@ def read_status() -> MitReadinessStatus:
             evidence=(
                 "`scripts/garnet_promo_video_status.py` defines the 30-second "
                 "promo contract, locks visual identity/source surfaces to repo evidence, "
-                "and preserves that no verified rendered artifact exists."
+                "adds a HyperFrames-compatible composition source, and preserves that "
+                "no verified rendered artifact exists."
             ),
             blocked_by=[
                 "rendered artifact",
@@ -172,7 +175,6 @@ def read_status() -> MitReadinessStatus:
                 "website-ready export",
             ],
             deferred=[
-                "HyperFrames or Remotion composition",
                 "30-second Garnet promo video",
                 "website-ready export",
             ],

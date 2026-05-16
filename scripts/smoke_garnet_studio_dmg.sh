@@ -174,6 +174,8 @@ PROMO_STUDIO_SOURCE="${INSTALLED_APP}/Contents/Resources/apps/garnet-studio-maco
 PROMO_STUDIO_LOGO="${INSTALLED_APP}/Contents/Resources/apps/garnet-studio-macos/Sources/GarnetStudio/Resources/garnet-logo.png"
 EXAMPLES_DIR="${INSTALLED_APP}/Contents/Resources/examples"
 DOCS_DIR="${INSTALLED_APP}/Contents/Resources/docs"
+PROMO_DESIGN="${DOCS_DIR}/promo/DESIGN.md"
+PROMO_COMPOSITION="${DOCS_DIR}/promo/composition.html"
 SPEC_DIR="${INSTALLED_APP}/Contents/Resources/C_Language_Specification"
 PROJECT_DOGFOOD_DIR="${INSTALLED_APP}/Contents/Resources/F_Project_Management/DOGFOOD"
 
@@ -208,13 +210,15 @@ for required_file in \
   "${PROJECT_DOGFOOD_DIR}/GARNET_v0_5_DOGFOOD_READINESS_PHASE_LOG.md" \
   "${PROMO_ASSETS_DIR}/garnet-logo.png" \
   "${PROMO_STUDIO_SOURCE}" \
-  "${PROMO_STUDIO_LOGO}"; do
+  "${PROMO_STUDIO_LOGO}" \
+  "${PROMO_DESIGN}" \
+  "${PROMO_COMPOSITION}"; do
   if [ ! -f "${required_file}" ]; then
     echo "error: copied app is missing bundled context file: ${required_file}" >&2
     exit 5
   fi
 done
-record "pass" "Copied app bundles status reporter context documents" "README, current state, spec, conformance, plan, dogfood ledger, and promo source-lock inputs" "None."
+record "pass" "Copied app bundles status reporter context documents" "README, current state, spec, conformance, plan, dogfood ledger, promo source-lock inputs, and promo composition source" "None."
 
 if command -v codesign >/dev/null 2>&1; then
   echo "==> Verifying copied app signature"
