@@ -48,6 +48,8 @@ def _lane_score(lane: ObjectiveLane) -> float:
         return 0.5
     if lane.status == "rendered-artifact-ready":
         return 0.65
+    if lane.status == "visual-qa-ready":
+        return 0.8
     if lane.status == "composition-ready":
         return 0.5
     if lane.status == "source-locked":
@@ -64,12 +66,15 @@ def read_status() -> MitReadinessStatus:
     converter = garnet_converter_status.read_status()
     contract = converter.intelligent_assist_contract
     promo = garnet_promo_video_status.read_status()
-    promo_evidence_tail = (
-        "records local rendered MP4/WebM evidence, and keeps visual QA plus website export open."
-        if promo.rendered_video_present
-        else "preserves that no verified rendered artifact exists."
-    )
-    promo_blockers = ["visual QA verdict", "website-ready export"]
+    if promo.visual_qa_present:
+        promo_evidence_tail = "records local rendered MP4/WebM evidence plus automated visual QA evidence, and keeps website export open."
+    elif promo.rendered_video_present:
+        promo_evidence_tail = "records local rendered MP4/WebM evidence, and keeps visual QA plus website export open."
+    else:
+        promo_evidence_tail = "preserves that no verified rendered artifact exists."
+    promo_blockers = ["website-ready export"]
+    if not promo.visual_qa_present:
+        promo_blockers.insert(0, "visual QA verdict")
     if not promo.rendered_video_present:
         promo_blockers.insert(0, "rendered artifact")
 
@@ -179,10 +184,7 @@ def read_status() -> MitReadinessStatus:
                 f"adds a HyperFrames-compatible composition source, and {promo_evidence_tail}"
             ),
             blocked_by=promo_blockers,
-            deferred=[
-                "30-second Garnet promo video",
-                "website-ready export",
-            ],
+            deferred=["public-site embedding and review"],
         ),
         ObjectiveLane(
             id="llm_assist",

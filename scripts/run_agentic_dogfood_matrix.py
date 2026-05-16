@@ -1627,6 +1627,21 @@ def probe_set(
             ),
             security_domain="filesystem-localhost-browser",
         ),
+        Probe(
+            "report-promo-video-visual-qa-harness-contract",
+            "promo video readiness",
+            "promo visual QA harness should expose metadata, sample frame, and manifest checks without claiming website export",
+            ["node", str(ROOT / "scripts" / "qa_garnet_promo_video.mjs"), "--help"],
+            True,
+            (
+                "qa_garnet_promo_video.mjs",
+                "visual QA",
+                "sample-00.png",
+                "promo-visual-qa-data.json",
+                "MANIFEST.sha256",
+            ),
+            security_domain="filesystem-local-video",
+        ),
         lambda: build_promo_video_manifest_probe(work),
         Probe(
             "report-adoption-surface-active-truth",
