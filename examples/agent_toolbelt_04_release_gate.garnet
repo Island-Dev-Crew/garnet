@@ -1,0 +1,30 @@
+# agent_toolbelt_04_release_gate.garnet
+#
+# Runnable agent-toolbelt smoke: separate local evidence from remote evidence
+# before deciding whether a release-facing PR can advance.
+
+def gate_points(gate) {
+  match gate {
+    "fmt" => 8,
+    "tests" => 18,
+    "audit" => 12,
+    "dogfood" => 20,
+    "remote_ci" => 22,
+    _ => 0,
+  }
+}
+
+def release_score(gates) {
+  let mut score = 0
+  for gate in gates {
+    score += gate_points(gate)
+  }
+  score
+}
+
+@caps()
+def main() {
+  let score = release_score(["fmt", "tests", "audit", "dogfood", "remote_ci"])
+  println("agent toolbelt release gate score:", score)
+  score
+}

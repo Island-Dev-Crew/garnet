@@ -767,6 +767,49 @@ def probe_set(
             ("clean build:", "red build:", "=> 46"),
         ),
         Probe(
+            "run-agent-toolbelt-triage-router",
+            "agent toolbelt examples",
+            "agent-facing triage router example should run with stable prioritization evidence",
+            [str(garnet), "run", str(examples / "agent_toolbelt_01_triage_router.garnet")],
+            True,
+            ("agent toolbelt triage score:", "=> 91"),
+        ),
+        Probe(
+            "run-agent-toolbelt-capability-budget",
+            "agent toolbelt examples",
+            "agent-facing capability budget example should run with stable tool-authority evidence",
+            [str(garnet), "run", str(examples / "agent_toolbelt_02_capability_budget.garnet")],
+            True,
+            ("agent toolbelt capability score:", "=> 61"),
+            security_domain="sandbox",
+        ),
+        Probe(
+            "run-agent-toolbelt-memory-recall",
+            "agent toolbelt examples",
+            "agent-facing memory recall example should run with stable retrieval-ranking evidence",
+            [str(garnet), "run", str(examples / "agent_toolbelt_03_memory_recall.garnet")],
+            True,
+            ("agent toolbelt memory recall score:", "=> 81"),
+            security_domain="privacy",
+        ),
+        Probe(
+            "run-agent-toolbelt-release-gate",
+            "agent toolbelt examples",
+            "agent-facing release gate example should run with stable evidence-gate scoring",
+            [str(garnet), "run", str(examples / "agent_toolbelt_04_release_gate.garnet")],
+            True,
+            ("agent toolbelt release gate score:", "=> 80"),
+            security_domain="release-integrity",
+        ),
+        Probe(
+            "run-agent-toolbelt-repair-planner",
+            "agent toolbelt examples",
+            "agent-facing repair planner example should run with stable remediation-priority evidence",
+            [str(garnet), "run", str(examples / "agent_toolbelt_05_repair_planner.garnet")],
+            True,
+            ("agent toolbelt repair plan score:", "=> 116"),
+        ),
+        Probe(
             "check-malformed-agent-source",
             "agent recovery and diagnostics",
             "malformed agent source should fail with a parser diagnostic an agent can act on",
@@ -1223,7 +1266,7 @@ def render_report(results: list[ProbeResult], metadata: dict[str, str], score_da
     app_workbench_note = ""
     audited_surfaces = (
         "CLI, template, converter, release-integrity, signed-release provenance, "
-        "documentation, safe-mode, agent-memory, macOS notarization readiness, "
+        "documentation, safe-mode, agent-toolbelt, agent-memory, macOS notarization readiness, "
         "and macOS app workbench paths"
     )
     if metadata["app_workbench"] == "skipped":
@@ -1233,7 +1276,7 @@ def render_report(results: list[ProbeResult], metadata: dict[str, str], score_da
         )
         audited_surfaces = (
             "CLI, template, converter, release-integrity, signed-release provenance, "
-            "documentation, safe-mode, agent-memory, and macOS notarization readiness paths"
+            "documentation, safe-mode, agent-toolbelt, agent-memory, and macOS notarization readiness paths"
         )
     if failures:
         decision = (
@@ -1365,7 +1408,7 @@ def render_deck(results: list[ProbeResult], metadata: dict[str, str], score_data
 <body>
   <section>
     <h1>Garnet Agentic Dogfood</h1>
-    <p>Advanced probes for agent orchestration, safe-mode boundaries, migration, release integrity, signed-release provenance, macOS notarization readiness, docs, web/PWA productization, app onboarding, and memory-analysis examples.</p>
+    <p>Advanced probes for agent orchestration, agent toolbelt examples, safe-mode boundaries, migration, release integrity, signed-release provenance, macOS notarization readiness, docs, web/PWA productization, app onboarding, and memory-analysis examples.</p>
     <p><code>{metadata["head"][:12]}</code> · <code>{metadata["branch"]}</code></p>
   </section>
   <section>

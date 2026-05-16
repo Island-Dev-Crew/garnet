@@ -61,6 +61,31 @@ fn canonical_mvp_examples_parse_check_and_run() {
 }
 
 #[test]
+fn agent_toolbelt_examples_parse_check_and_run() {
+    let cases = [
+        "agent_toolbelt_01_triage_router.garnet",
+        "agent_toolbelt_02_capability_budget.garnet",
+        "agent_toolbelt_03_memory_recall.garnet",
+        "agent_toolbelt_04_release_gate.garnet",
+        "agent_toolbelt_05_repair_planner.garnet",
+    ];
+
+    for name in cases {
+        let f = example(name);
+        assert!(f.exists(), "example file missing: {f:?}");
+        for subcommand in ["parse", "check", "run"] {
+            let out = run_garnet(&[subcommand], &f);
+            assert!(
+                out.status.success(),
+                "garnet {subcommand} {name} failed\nstdout:\n{}\nstderr:\n{}",
+                String::from_utf8_lossy(&out.stdout),
+                String::from_utf8_lossy(&out.stderr)
+            );
+        }
+    }
+}
+
+#[test]
 fn multi_agent_builder_parses() {
     let f = example("multi_agent_builder.garnet");
     assert!(f.exists(), "example file missing: {f:?}");
