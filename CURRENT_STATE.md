@@ -104,14 +104,17 @@ highest-leverage next milestones are:
    checksums, and release-backed installer smoke green while separating signed
    macOS `.pkg`, Windows MSI, and live public-domain installer work from the
    current release claim.
-5. **Garnet Studio app distribution:** build a polished local macOS workbench
-   that opens like a normal app, bundles the Garnet CLI plus agentic matrix
-   assets, verifies mounted-DMG copy-install smoke, and exposes health,
-   examples, conversion, release status, agentic stress tests, and onboarding
-   while a notarization preflight records the current Developer ID,
-   hardened-runtime, Gatekeeper, and notary credential blockers without claiming
-   signing, notarization, clean-machine Gatekeeper, TestFlight, App Store, web,
-   or mobile distribution before those lanes are separately verified.
+5. **Garnet Studio app and web distribution:** build polished local product
+   surfaces that reduce terminal-first friction without overstating release
+   authority. The macOS workbench opens like a normal app, bundles the Garnet
+   CLI plus agentic matrix assets, verifies mounted-DMG copy-install smoke, and
+   exposes health, examples, conversion, release status, agentic stress tests,
+   and onboarding while a notarization preflight records the current Developer
+   ID, hardened-runtime, Gatekeeper, and notary credential blockers. The docs
+   site now has a seed installable PWA shell with manifest, icons, service
+   worker, local HTTP smoke, and CI evidence gate. Do not claim signing,
+   notarization, clean-machine Gatekeeper, TestFlight, App Store, mobile app,
+   or full offline IDE completion before those lanes are separately verified.
 6. **Agentic dogfood stress:** keep the advanced multi-domain matrix green so
    agents can exercise orchestration, migration, safe-mode, release-integrity,
    docs, app, and memory-analysis surfaces as one falsifiable workflow, with

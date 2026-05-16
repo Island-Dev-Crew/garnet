@@ -1,0 +1,31 @@
+{
+  "name": "Garnet Language Workbench",
+  "short_name": "Garnet",
+  "description": "A compact installable Garnet web surface for language docs, installer links, release evidence, and agentic readiness review.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0A0A0F",
+  "theme_color": "#9C2B2E",
+  "orientation": "any",
+  "categories": [
+    "developer",
+    "education",
+    "productivity"
+  ],
+  "icons": [
+    {
+      "src": "icons/garnet-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/garnet-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
