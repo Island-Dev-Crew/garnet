@@ -44,9 +44,9 @@
 //!   [`CycleAllocatorFixture`] trial-deletion reference path exposes §4.5
 //!   cycle, finalization-order, safe-mode exclusion, root-buffer scheduling,
 //!   allocator-owned root/edge decrement fixtures, concrete
-//!   `CycleAwareKindAllocator` root-release evidence, and store-root lifecycle
-//!   evidence while production allocator work remains on the Memory Core
-//!   roadmap.
+//!   `CycleAwareKindAllocator` root-release evidence, allocator-owned finalizer
+//!   logging for plain allocator calls, and store-root lifecycle evidence while
+//!   production allocator work remains on the Memory Core roadmap.
 //!
 //! ## What's planned
 //!
@@ -75,8 +75,8 @@ pub mod semantic;
 pub mod working;
 
 pub use alloc::{
-    AllocRequest, AllocRootStats, AllocStats, CycleAwareKindAllocator, HeapKindAllocator,
-    KindAllocator,
+    AllocRequest, AllocRootStats, AllocStats, CycleAwareKindAllocator, CycleFinalizerLog,
+    HeapKindAllocator, KindAllocator,
 };
 pub use cycle::{
     CycleAllocationMode, CycleAllocatorFixture, CycleCollectReport, CycleGraph, CycleGraphError,

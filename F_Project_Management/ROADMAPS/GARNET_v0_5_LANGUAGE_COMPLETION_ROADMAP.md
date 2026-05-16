@@ -1380,7 +1380,14 @@ across all four `MemoryKind`s, with threshold-crossing decrements producing
 trial candidates, finalization order, collected nodes, and `root_stats`
 updates while below-threshold decrements buffer without collection and
 safe-affine allocations remain excluded. Production allocator-integrated ARC
-and runtime finalizer invocation still remain pending.
+and user-payload finalizer invocation still remain pending.
+
+Phase 6S sibling partial pass: `CycleAwareKindAllocator` can now be configured
+with an allocator-owned finalizer log. Plain `release_root`, `collect_roots`,
+and `remove_edge` calls record deterministic finalization order through that
+sink without caller-supplied callbacks, including buffered collection after a
+below-threshold root release. This is allocator-boundary runtime-finalizer
+evidence, not full production ARC or user payload destructor semantics.
 
 ## Phase 7: Release, Research, And Repeated Falsification
 
