@@ -17,6 +17,7 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
         for name in [
             "garnet_adoption_surface_status.py",
             "garnet_assist_context_pack.py",
+            "garnet_converter_assist_plan.py",
             "garnet_converter_status.py",
             "garnet_mit_readiness_status.py",
             "garnet_readiness_status.py",
@@ -67,6 +68,7 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
         self.assertIn('OFFLINE_PWA_SMOKE="${INSTALLED_APP}/Contents/Resources/scripts/smoke_garnet_web_pwa_offline.mjs"', script)
         self.assertIn('ADOPTION_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_adoption_surface_status.py"', script)
         self.assertIn('ASSIST_CONTEXT="${INSTALLED_APP}/Contents/Resources/scripts/garnet_assist_context_pack.py"', script)
+        self.assertIn('ASSIST_PLAN="${INSTALLED_APP}/Contents/Resources/scripts/garnet_converter_assist_plan.py"', script)
         self.assertIn('MIT_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_mit_readiness_status.py"', script)
         self.assertIn('NOTARIZATION_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_studio_notarization_status.py"', script)
         self.assertIn('DOCS_DIR="${INSTALLED_APP}/Contents/Resources/docs"', script)
