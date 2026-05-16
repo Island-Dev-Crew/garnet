@@ -23,7 +23,7 @@ falsifiable dogfood bundle with:
 - per-probe stdout/stderr logs
 - `MANIFEST.sha256`
 
-The current probe set covers 30 checks across ten domains, or 28 checks when
+The current probe set covers 37 checks across ten domains, or 34 checks when
 the SwiftUI/macOS app workbench probes are intentionally skipped in headless CI.
 Functional readiness and coverage adequacy are intentionally separate: a domain
 can pass every current probe while still needing more independent probes before
@@ -32,15 +32,15 @@ the suite satisfies the requested 3-5 probe coverage bar.
 | Domain | Probe count | Coverage status | Purpose |
 |---|---:|---|---|
 | Agent orchestration | 4 | adequate | routing, capability policy, expression evaluation, and canonical multi-agent example execution |
-| Project scaffolding | 1 | needs expansion | generated `agent-orchestrator` template runs and tests |
+| Project scaffolding | 3 | adequate | generated `cli`, `web-api`, and `agent-orchestrator` templates scaffold, run, and test |
 | Agent recovery and diagnostics | 4 | adequate | malformed source, missing source, undefined eval symbol, and missing manifest failures stay actionable |
 | Safe mode and capabilities | 5 | adequate | valid safe programs, unsafe rejection, and advertised safe I/O example check/run |
-| Migration assistant | 5 | adequate | Python/Ruby/Rust/Go conversion plus explicit unsupported-language rejection |
+| Migration assistant | 6 | adequate | Python/Ruby/Rust/Go conversion, explicit unsupported-language rejection, and converter adoption-status truth |
 | Release integrity | 3 | adequate | deterministic manifest generation, verification, and tamper rejection |
-| Developer experience | 2 | needs expansion | `garnet doc` extraction and `garnet fmt --check` |
-| Web/PWA productization | 2 | needs expansion | service-worker offline handler evidence plus full local PWA smoke |
-| macOS app workbench | 2 | needs expansion | Garnet Studio self-test plus either SwiftPM XCTest or packaged-app CLI smoke |
-| Agent memory and analysis | 2 | needs expansion | advertised log analyzer check/run |
+| Developer experience | 3 | adequate | `garnet doc` extraction, `garnet fmt --check`, and formatter repair of dirty agent source |
+| Web/PWA productization | 3 | adequate | service-worker offline handler, full local PWA smoke, and Chrome DevTools offline navigation |
+| macOS app workbench | 3 | adequate | Garnet Studio self-test, SwiftPM smoke against the matrix-built CLI, and SwiftPM XCTest |
+| Agent memory and analysis | 3 | adequate | advertised log analyzer parse-time memory declaration analysis plus check/run |
 
 ## Falsification History
 
@@ -66,27 +66,27 @@ Those failures became focused fixes and regression tests in this slice.
 Latest source-checkout evidence bundle:
 
 ```text
-/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260515-234617
+/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-004751
 ```
 
 Current result:
 
 ```text
 readiness=100
-passed=30/30
+passed=37/37
 ```
 
-The latest bundle also records domain coverage adequacy. It marks agent
-orchestration, recovery/diagnostics, safe mode/capabilities, migration, and
-release integrity as coverage-adequate; project scaffolding, developer
-experience, web/PWA productization, macOS app workbench, and agent
-memory/analysis remain `needs-expansion` despite all current probes passing;
-web/PWA is now `2/3` after adding the full local PWA smoke.
+The latest merged bundle also records domain coverage adequacy. It marks agent
+orchestration, recovery/diagnostics, safe mode/capabilities, migration, release
+integrity, project scaffolding, developer experience, web/PWA productization,
+and agent memory/analysis as coverage-adequate. The App-16 source app smoke
+slice promotes macOS app workbench to `3/3` locally by adding a SwiftPM
+`--smoke-test` probe that prefers the matrix-built Garnet CLI on `PATH`.
 
 Manifest verification:
 
 ```sh
-cd /Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260515-234617
+cd /Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-004751
 shasum -a 256 -c MANIFEST.sha256
 ```
 
@@ -94,13 +94,13 @@ All files in the bundle verified at creation time. This bundle was produced by
 running the source-checkout matrix with app workbench probes enabled and
 copying the completed evidence directory to Desktop dogfood storage. The matrix
 now includes the App-9 web/PWA offline service-worker handler probe, the App-13
-local PWA readiness smoke probe, and writes `readiness-slice-status.md` plus
-`domain_coverage` JSON so completion and coverage adequacy evidence travel
-with the bundle.
+local PWA readiness smoke probe, the App-15 browser PWA offline probe, and
+writes `readiness-slice-status.md` plus `domain_coverage` JSON so completion
+and coverage adequacy evidence travel with the bundle.
 
 ## Next Gates
 
-1. Keep the headless 27-probe matrix in CI while app workbench probes remain
+1. Keep the headless 34-probe matrix in CI while app workbench probes remain
    covered by local/package/DMG gates.
 2. Keep Garnet Studio's "Agentic Tests" surface wired to this same harness for
    both source-checkout and packaged-app runs.

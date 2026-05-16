@@ -98,6 +98,22 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertEqual(domains["agent memory and analysis"], 3)
         self.assertIn("parse-advertised-log-analyzer-memory", ids)
 
+    def test_probe_inventory_covers_source_app_workbench_smoke(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            fixtures = matrix.prepare_fixtures(work)
+            garnet = Path("/tmp/garnet-target/debug/garnet")
+            probes = matrix.probe_set(garnet, work, fixtures, include_app_workbench=True)
+            concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
+
+        ids = {probe.id for probe in concrete_probes}
+        domains = Counter(probe.domain for probe in concrete_probes)
+
+        self.assertEqual(domains["macOS app workbench"], 3)
+        self.assertIn("app-self-test", ids)
+        self.assertIn("app-xctest", ids)
+        self.assertIn("app-smoke-test", ids)
+
     def test_probe_inventory_covers_canonical_project_templates(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
