@@ -136,6 +136,42 @@ class GarnetPromoVideoStatusTests(unittest.TestCase):
             self.assertNotIn("website-ready export", contract.open_gates)
             self.assertIn("repo/site copy check for overclaims", contract.open_gates)
 
+    def test_repo_site_embed_promotes_public_site_status_without_claiming_final_acceptance(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            artifact_dir = Path(temp) / "garnet-promo-video"
+            artifact_dir.mkdir()
+            (artifact_dir / "garnet-promo.mp4").write_bytes(b"fake-mp4")
+            (artifact_dir / "garnet-promo.webm").write_bytes(b"fake-webm")
+            qa_dir = Path(temp) / "garnet-promo-video-visual-qa"
+            qa_dir.mkdir()
+            (qa_dir / "promo-visual-qa-data.json").write_text(
+                json.dumps({"status": "visual-qa-ready", "verdict": "pass", "checks": [{"passed": True}]}),
+                encoding="utf-8",
+            )
+            export_dir = Path(temp) / "garnet-promo-video-website-export"
+            export_dir.mkdir()
+            (export_dir / "promo-website-export-data.json").write_text(
+                json.dumps({"status": "website-export-ready", "verdict": "pass", "checks": [{"passed": True}]}),
+                encoding="utf-8",
+            )
+            sync_dir = Path(temp) / "garnet-promo-video-site-sync"
+            sync_dir.mkdir()
+            (sync_dir / "promo-site-sync-data.json").write_text(
+                json.dumps({"status": "public-site-embedded", "verdict": "pass", "checks": [{"passed": True}]}),
+                encoding="utf-8",
+            )
+
+            with mock.patch.dict(os.environ, {"GARNET_PROMO_VIDEO_DESKTOP_DIR": temp}):
+                contract = promo.read_status()
+
+        self.assertEqual("public-site-embedded", contract.status)
+        self.assertEqual(95.0, contract.completion_percent)
+        self.assertTrue(contract.website_export_present)
+        self.assertTrue(contract.public_site_embed_present)
+        self.assertIn("repo/site copy check for overclaims", contract.completed_gates)
+        self.assertIn("human/aesthetic acceptance", contract.open_gates)
+        self.assertIn("Do not claim full MIT/productization completion.", contract.forbidden_claims)
+
     def test_locked_source_packet_lists_real_repo_assets_and_surfaces(self) -> None:
         contract = promo.read_status()
         asset_ids = {asset["id"] for asset in contract.locked_assets}

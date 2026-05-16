@@ -1520,6 +1520,21 @@ SHA-256
 Public-site embedding, overclaim checks, and human/aesthetic acceptance remain
 open before any shipped-video claim.
 
+Phase 6AM promo public-site sync pass:
+`scripts/sync_garnet_promo_video_site.mjs` requires passing website-export
+evidence, copies MP4/WebM/poster assets into `docs/assets/`, verifies the
+public-site `<video>` block and service-worker cache references, and writes
+`promo-site-sync-data.json`, `promo-site-sync-report.md`, and `MANIFEST.sha256`
+evidence. The promo lane advances to `public-site-embedded` at 95.0% when
+render, visual-QA, website-export, and site-sync bundles are all present.
+Human/aesthetic acceptance remains open before final marketing acceptance. The
+source-checkout matrix passes `77/77` with `skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-081242`, and the
+refreshed copied-DMG smoke passes in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-081319` for DMG
+SHA-256
+`aff933716a2c3071156c47b57f70d44c0739c7f7b69d6a44eef555d87195d9cf`.
+
 Phase 6Z packaged assist-plan resource pass: packaged Garnet Studio now stages
 and chmods `scripts/garnet_converter_assist_plan.py`, and the DMG install
 smoke checks it as a required executable bundled asset before running copied-app

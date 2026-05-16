@@ -27,7 +27,7 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | Garnet-aware assist context pack | Active for deterministic current-truth context and provider-neutral prompt packaging before any provider-backed converter assist is enabled | `scripts/garnet_assist_context_pack.py`; `python3 scripts/test_garnet_assist_context_pack.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-assist-context-*`; `docs/index.html` | Use this pack as the future LLM/agentic assist input contract; do not claim model-backed conversion until provider/runtime boundaries and dogfood gates exist |
 | Converter assist planning | Active for deterministic per-file planned-language migration risk planning without activating broad conversion | `scripts/garnet_converter_assist_plan.py`; `python3 scripts/test_garnet_converter_assist_plan.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-assist-plan-*`; `docs/index.html` | Keep this advisory-only: it may inventory safe-mode, memory, CapCaps, actor/orchestration, and migration risks for TypeScript, JavaScript, Swift, Java, C++, and other planned sources, but deterministic frontends and provider-backed conversion remain separate gated slices |
 | MIT readiness objective accounting | Active for broader productization truth beyond the complete tracked implementation-plan ledger | `scripts/garnet_mit_readiness_status.py`; `python3 scripts/test_garnet_mit_readiness_status.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-mit-readiness-*`; `docs/index.html` | Use this reporter when discussing public/MIT readiness so `87/87` tracked slices are not confused with notarization, mobile distribution, promo video, broad converter frontends, LLM assist, proof, or empirical validation completion |
-| Promo video readiness contract | Active as composition-ready evidence for the future 30-second Garnet promo/ad lane, with local rendered-artifact, automated visual-QA, and website-export package evidence when Desktop outputs are present | `scripts/garnet_promo_video_status.py`; `scripts/render_garnet_promo_video.mjs`; `scripts/qa_garnet_promo_video.mjs`; `scripts/export_garnet_promo_video_site.mjs`; `docs/promo/DESIGN.md`; `docs/promo/composition.html`; `python3 scripts/test_garnet_promo_video_status.py`; `python3 scripts/test_render_garnet_promo_video.py`; `python3 scripts/test_qa_garnet_promo_video.py`; `python3 scripts/test_export_garnet_promo_video_site.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-promo-video-*` | Keep public-site embedding, Desktop acceptance, and overclaim checks as required gates before claiming a shipped video |
+| Promo video readiness contract | Active as public-site embedded evidence for the 30-second Garnet promo/ad lane when Desktop render, visual-QA, website-export, and site-sync bundles are present | `scripts/garnet_promo_video_status.py`; `scripts/render_garnet_promo_video.mjs`; `scripts/qa_garnet_promo_video.mjs`; `scripts/export_garnet_promo_video_site.mjs`; `scripts/sync_garnet_promo_video_site.mjs`; `docs/promo/DESIGN.md`; `docs/promo/composition.html`; `docs/assets/garnet-promo.mp4`; `docs/assets/garnet-promo.webm`; `docs/assets/garnet-promo-poster.png`; `python3 scripts/test_garnet_promo_video_status.py`; `python3 scripts/test_render_garnet_promo_video.py`; `python3 scripts/test_qa_garnet_promo_video.py`; `python3 scripts/test_export_garnet_promo_video_site.py`; `python3 scripts/test_sync_garnet_promo_video_site.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-promo-video-*` | Keep human/aesthetic acceptance as the remaining promo gate before claiming final marketing creative |
 | Parser parity for old ambition | Partial, Phase 1 active | `protocol`, `dyn Trait`, `yield`, `next`, `@dynamic`, `@nonsendable`, and `do ... end` parser tests | Keep runtime gaps explicit and activate Phase 2 only with executable semantics |
 | Blocks, `yield`, `next` runtime semantics | Phase 2A active | `do ... end` parses as a trailing closure argument; `deferred_blocks_and_yield` runs a managed-mode block/yield/next program | Keep `cargo test -p garnet-cli --test conformance_skeleton deferred_blocks_and_yield` green; add richer block edge cases later |
 | Dynamic method dispatch tables | Partial Phase 2H | `deferred_dynamic_dispatch` covers per-instance method tables; `static_impl_dispatch_and_method_missing` covers static inherent impl fallback and `method_missing`; `dynamic_impl_dispatch_tables` covers `@dynamic impl Type for Protocol` registration and dispatch | Add richer dispatch precedence and ambiguity probes |
@@ -2011,6 +2011,23 @@ the refreshed copied-DMG smoke passes in Desktop bundle
 DMG SHA-256
 `64bafd2ae61f79a156c7715e23b857f6a95b190d1a84bb491e736d06935b5b2f`. This is
 still not public-site embedding or human/aesthetic acceptance.
+
+Phase 6AM promo public-site sync pass:
+`scripts/sync_garnet_promo_video_site.mjs` now requires passing website-export
+evidence, copies MP4/WebM/poster assets into `docs/assets/`, verifies the
+public-site `<video>` block plus service-worker cache references, and writes
+manifested JSON/Markdown sync evidence. The promo lane reports
+`public-site-embedded` at 95.0% when render, visual-QA, website-export, and
+site-sync bundles are present; `scripts/garnet_mit_readiness_status.py`
+reports the broader objective at 58.6%. The public site embeds the video while
+keeping human/aesthetic acceptance, notarization, mobile distribution,
+provider-backed LLM conversion, and full MIT/productization completion open.
+The source-checkout matrix passes `77/77` with `skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-081242`, and the
+refreshed copied-DMG smoke passes in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-081319` for DMG
+SHA-256
+`aff933716a2c3071156c47b57f70d44c0739c7f7b69d6a44eef555d87195d9cf`.
 
 ## Milestone 7: Release, Proof, Native Backend, And Empirical Evidence
 

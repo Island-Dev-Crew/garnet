@@ -69,10 +69,11 @@ done
 | `scripts/garnet_assist_context_pack.py` | Garnet-aware assist context and prompt pack | current machine-readable context bundle plus provider-neutral prompt pack for future provider-backed converter assist; hashes current truth/spec/dogfood docs and preserves advisory-only gates without enabling LLM conversion |
 | `scripts/garnet_converter_assist_plan.py` | planned-language converter assist plan | current deterministic planner for a single source file in an active or planned converter language; inventories safe-mode, memory, CapCaps, actor/orchestration, and migration risks without executing source or enabling LLM conversion |
 | `scripts/garnet_mit_readiness_status.py` | MIT/productization objective inventory | current machine-readable truth that the tracked implementation plan is complete while notarization, mobile distribution, promo video, broad converter frontends, LLM assist, and proof/empirics remain open gates |
-| `scripts/garnet_promo_video_status.py` | promo video readiness contract | current machine-readable storyboard/gate contract for a future 30-second HyperFrames promo; visual identity/source surfaces and `docs/promo/` composition source are tied to repo assets, local Desktop MP4/WebM, automated visual-QA, and website-export package evidence can promote the lane to `website-export-ready`, while public-site embedding remains unclaimed |
+| `scripts/garnet_promo_video_status.py` | promo video readiness contract | current machine-readable storyboard/gate contract for a 30-second HyperFrames promo; visual identity/source surfaces and `docs/promo/` composition source are tied to repo assets, local Desktop MP4/WebM, automated visual-QA, website-export, and site-sync evidence can promote the lane to `public-site-embedded` at 95.0%, while human/aesthetic acceptance remains open |
 | `scripts/render_garnet_promo_video.mjs` | promo video render harness | current local Chrome DevTools + `ffmpeg` harness for manifest-backed MP4/WebM/poster render evidence; this is not a substitute for visual QA or website export |
 | `scripts/qa_garnet_promo_video.mjs` | promo visual-QA harness | current local `ffprobe`/`ffmpeg` harness for automated metadata and sample-frame QA evidence; this is not a substitute for website export or optional human aesthetic review |
 | `scripts/export_garnet_promo_video_site.mjs` | promo website-export harness | current local package step that copies visual-QA-approved MP4/WebM/poster assets, writes an embed snippet, JSON/Markdown evidence, and a manifest without embedding the video on the public site |
+| `scripts/sync_garnet_promo_video_site.mjs` | promo public-site sync harness | current local package step that copies verified website-export media into `docs/assets/`, verifies public-site and service-worker references, and writes JSON/Markdown plus manifest evidence without claiming final human/aesthetic acceptance |
 | `scripts/garnet_studio_notarization_status.py` | macOS notarization preflight inventory | current machine-readable summary for notarization preflight bundles; preserves blocker/warning evidence, redacts credential values, and explicitly avoids claiming Apple submission or notarization |
 | `scripts/garnet_adoption_surface_status.py` | repo/site adoption truth inventory | current machine-readable status linking the public hook, verified use cases, active converter lanes, planned language lanes, LLM-assist boundaries, and productization gates |
 | `examples/mvp_*.garnet` | canonical app-level smokes | must parse/check/run |
@@ -147,8 +148,8 @@ highest-leverage next milestones are:
 7. **Promo/video readiness:** keep the future HyperFrames or Remotion ad lane
    tied to `scripts/garnet_promo_video_status.py` so the storyboard,
    visual identity/source-surface lock, render/visual-QA gates, website export,
-   and forbidden claims are explicit before a video artifact is embedded or
-   advertised.
+   public-site sync, human/aesthetic acceptance, and forbidden claims are
+   explicit before a video artifact is treated as final creative.
 8. **Agentic dogfood stress:** keep the advanced multi-domain matrix green so
    agents can exercise orchestration, agent toolbelt examples, recovery diagnostics,
    adversarial input boundaries, migration, safe-mode, release-integrity,
@@ -191,8 +192,8 @@ highest-leverage next milestones are:
    manifest while keeping planned-language conversion inactive. The promo video
    readiness contract now locks the 30-second storyboard, brand assets, and
    source surfaces before the HyperFrames/Remotion composition gate,
-   rendered-artifact gate, visual-QA gate, website-export gate, and forbidden
-   claims can advance toward a shipped ad.
+   rendered-artifact gate, visual-QA gate, website-export gate, public-site
+   sync gate, and forbidden claims can advance toward a shipped ad.
    The MIT-readiness accounting domain also probes
    `scripts/garnet_mit_readiness_status.py`, so agents and public-site copy can
    report `87/87` tracked slices without turning that into a false claim that
@@ -611,6 +612,25 @@ DMG SHA-256
 `64bafd2ae61f79a156c7715e23b857f6a95b190d1a84bb491e736d06935b5b2f`, and the
 current MIT/productization objective reports 58.2% when that local evidence is
 present.
+Phase 6AM adds `scripts/sync_garnet_promo_video_site.mjs`, a public-site sync
+harness that requires the website-export evidence bundle, copies the verified
+MP4/WebM/poster assets into `docs/assets/`, verifies the public site and
+service worker reference those files, and writes
+`promo-site-sync-data.json`, `promo-site-sync-report.md`, and
+`MANIFEST.sha256`. Local site-sync evidence lives at
+`/Users/idc2.0/Desktop/dogfood/garnet-promo-video-site-sync`; with render,
+visual-QA, website-export, and site-sync evidence present,
+`scripts/garnet_promo_video_status.py` reports `public-site-embedded` at 95.0%
+and `scripts/garnet_mit_readiness_status.py` reports the broader objective at
+58.6%. The source-checkout matrix passes `77/77` with `skipped=0` in Desktop
+bundle `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-081242`;
+the refreshed copied-DMG evidence lives at
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-081319` for
+DMG SHA-256
+`aff933716a2c3071156c47b57f70d44c0739c7f7b69d6a44eef555d87195d9cf`.
+Human/aesthetic acceptance remains open; this is still not final
+marketing acceptance, notarized distribution, mobile distribution, provider-backed
+LLM conversion, or full MIT/productization completion.
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.
