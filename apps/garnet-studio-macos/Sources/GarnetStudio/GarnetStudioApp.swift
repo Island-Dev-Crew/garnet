@@ -192,6 +192,11 @@ struct ConverterAssistPlanScriptLocation: Equatable {
     let repoRootURL: URL
 }
 
+struct ConverterAdvisoryBundleScriptLocation: Equatable {
+    let scriptURL: URL
+    let repoRootURL: URL
+}
+
 struct ConverterAssistPlanScriptLocator {
     let bundleResourceURL: URL?
     let environmentRepoRoot: String?
@@ -248,6 +253,81 @@ struct ConverterAssistPlanScriptLocator {
             scriptURL: root
                 .appendingPathComponent("scripts", isDirectory: true)
                 .appendingPathComponent("garnet_converter_assist_plan.py"),
+            repoRootURL: root
+        )
+    }
+
+    private func ancestorRoots(from start: URL) -> [URL] {
+        var roots: [URL] = []
+        var cursor = start.standardizedFileURL
+        while true {
+            roots.append(cursor)
+            let parent = cursor.deletingLastPathComponent()
+            if parent.path == cursor.path {
+                break
+            }
+            cursor = parent
+        }
+        return roots
+    }
+}
+
+struct ConverterAdvisoryBundleScriptLocator {
+    let bundleResourceURL: URL?
+    let environmentRepoRoot: String?
+    let currentDirectoryURL: URL
+
+    init(
+        bundleResourceURL: URL? = Bundle.main.resourceURL,
+        environmentRepoRoot: String? = ProcessInfo.processInfo.environment["GARNET_REPO_ROOT"],
+        currentDirectoryURL: URL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+    ) {
+        self.bundleResourceURL = bundleResourceURL
+        self.environmentRepoRoot = environmentRepoRoot
+        self.currentDirectoryURL = currentDirectoryURL
+    }
+
+    func candidateLocations() -> [ConverterAdvisoryBundleScriptLocation] {
+        var locations: [ConverterAdvisoryBundleScriptLocation] = []
+
+        if let environmentRepoRoot, !environmentRepoRoot.isEmpty {
+            let root = URL(fileURLWithPath: environmentRepoRoot, isDirectory: true)
+            locations.append(location(forRepoRoot: root))
+        }
+
+        if let bundleResourceURL {
+            let script = bundleResourceURL
+                .appendingPathComponent("scripts", isDirectory: true)
+                .appendingPathComponent("garnet_converter_advisory_bundle.py")
+            locations.append(ConverterAdvisoryBundleScriptLocation(scriptURL: script, repoRootURL: bundleResourceURL))
+        }
+
+        for root in ancestorRoots(from: currentDirectoryURL) {
+            locations.append(location(forRepoRoot: root))
+        }
+
+        var seen: Set<String> = []
+        return locations.filter { location in
+            let key = location.scriptURL.path
+            if seen.contains(key) {
+                return false
+            }
+            seen.insert(key)
+            return true
+        }
+    }
+
+    func locate(fileManager: FileManager = .default) -> ConverterAdvisoryBundleScriptLocation? {
+        candidateLocations().first { location in
+            fileManager.fileExists(atPath: location.scriptURL.path)
+        }
+    }
+
+    private func location(forRepoRoot root: URL) -> ConverterAdvisoryBundleScriptLocation {
+        ConverterAdvisoryBundleScriptLocation(
+            scriptURL: root
+                .appendingPathComponent("scripts", isDirectory: true)
+                .appendingPathComponent("garnet_converter_advisory_bundle.py"),
             repoRootURL: root
         )
     }
@@ -357,6 +437,52 @@ struct ConverterAssistPlanRunner {
             language,
             "--source",
             sourceURL.path,
+            "--format",
+            "markdown",
+        ]
+    }
+
+    func run() -> GarnetCommandResult {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = commandArguments()
+        process.currentDirectoryURL = location.repoRootURL
+
+        let outputPipe = Pipe()
+        process.standardOutput = outputPipe
+        process.standardError = outputPipe
+
+        let command = (["/usr/bin/env"] + (process.arguments ?? [])).joined(separator: " ")
+        do {
+            try process.run()
+            process.waitUntilExit()
+            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: data, encoding: .utf8) ?? ""
+            return GarnetCommandResult(command: command, exitCode: process.terminationStatus, output: output)
+        } catch {
+            return GarnetCommandResult(command: command, exitCode: 127, output: error.localizedDescription)
+        }
+    }
+}
+
+struct ConverterAdvisoryBundleRunner {
+    let location: ConverterAdvisoryBundleScriptLocation
+    let language: String
+    let sourceURL: URL
+    let outputDirectoryURL: URL
+
+    func commandArguments() -> [String] {
+        [
+            "env",
+            "PYTHONDONTWRITEBYTECODE=1",
+            "python3",
+            location.scriptURL.path,
+            "--language",
+            language,
+            "--source",
+            sourceURL.path,
+            "--output-dir",
+            outputDirectoryURL.path,
             "--format",
             "markdown",
         ]
@@ -502,22 +628,27 @@ final class GarnetStudioViewModel: ObservableObject {
     @Published var cliPath: String?
     @Published var agenticMatrixPath: String?
     @Published var assistPlanPath: String?
+    @Published var advisoryBundlePath: String?
 
     private let locator: GarnetCLILocator
     private let matrixLocator: AgenticDogfoodScriptLocator
     private let assistPlanLocator: ConverterAssistPlanScriptLocator
+    private let advisoryBundleLocator: ConverterAdvisoryBundleScriptLocator
 
     init(
         locator: GarnetCLILocator = GarnetCLILocator(),
         matrixLocator: AgenticDogfoodScriptLocator = AgenticDogfoodScriptLocator(),
-        assistPlanLocator: ConverterAssistPlanScriptLocator = ConverterAssistPlanScriptLocator()
+        assistPlanLocator: ConverterAssistPlanScriptLocator = ConverterAssistPlanScriptLocator(),
+        advisoryBundleLocator: ConverterAdvisoryBundleScriptLocator = ConverterAdvisoryBundleScriptLocator()
     ) {
         self.locator = locator
         self.matrixLocator = matrixLocator
         self.assistPlanLocator = assistPlanLocator
+        self.advisoryBundleLocator = advisoryBundleLocator
         self.cliPath = locator.locate()
         self.agenticMatrixPath = matrixLocator.locate()?.scriptURL.path
         self.assistPlanPath = assistPlanLocator.locate()?.scriptURL.path
+        self.advisoryBundlePath = advisoryBundleLocator.locate()?.scriptURL.path
     }
 
     func select(sample: GarnetSample) {
@@ -589,6 +720,38 @@ final class GarnetStudioViewModel: ObservableObject {
             assistPlanPath = location.scriptURL.path
         } catch {
             output = "Failed to prepare converter assist plan input: \(error.localizedDescription)"
+            lastStatus = .failure
+        }
+    }
+
+    func runConverterAdvisoryBundle() {
+        guard let location = advisoryBundleLocator.locate() else {
+            output = "No converter advisory-bundle script found. Open Garnet Studio from a source checkout or use the packaged app resources."
+            lastStatus = .failure
+            return
+        }
+
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("GarnetStudioAdvisory-\(UUID().uuidString)", isDirectory: true)
+        let bundleDirectory = directory.appendingPathComponent("bundle", isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            let file = directory.appendingPathComponent("studio-input.\(fileExtension(for: converterLanguage))")
+            try sourceText.write(to: file, atomically: true, encoding: .utf8)
+            output = "Building provider-neutral advisory bundle..."
+            let result = ConverterAdvisoryBundleRunner(
+                location: location,
+                language: converterLanguage,
+                sourceURL: file,
+                outputDirectoryURL: bundleDirectory
+            ).run()
+            apply(result: result)
+            if result.status == .success {
+                output += "\nBundle output: \(bundleDirectory.path)"
+            }
+            advisoryBundlePath = location.scriptURL.path
+        } catch {
+            output = "Failed to prepare converter advisory bundle input: \(error.localizedDescription)"
             lastStatus = .failure
         }
     }
@@ -797,13 +960,14 @@ struct GarnetStudioRootView: View {
                         Text("Perl").tag("perl")
                     }
                     .pickerStyle(.menu)
-                    Text("The converter is a migration assistant. It emits Garnet plus a MigrateTodo checklist instead of pretending every source feature is lossless.")
+                    Text("The converter is a migration assistant. Planned-language advisory actions create local evidence without embedding source by default or claiming provider-backed conversion.")
                         .font(.callout)
                         .foregroundStyle(.secondary)
                 }
                 editor(actions: [
                     ("Convert", model.runConverter),
                     ("Assist Plan", model.runConverterAssistPlan),
+                    ("Advisory Bundle", model.runConverterAdvisoryBundle),
                 ])
             }
         } trailing: {

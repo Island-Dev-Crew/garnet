@@ -100,7 +100,7 @@ def verified_use_cases() -> list[UseCase]:
             hook=(
                 "Open Garnet Studio locally through Codex Run or `dist/Garnet Studio.app` "
                 "to run health checks, examples, deterministic conversion, Assist Plan, "
-                "release status, and agentic stress tests."
+                "Advisory Bundle packaging, release status, and agentic stress tests."
             ),
             evidence=[
                 "apps/garnet-studio-macos/Sources/GarnetStudio/GarnetStudioApp.swift",

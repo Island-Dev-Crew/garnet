@@ -1145,6 +1145,7 @@ def probe_set(
     include_app_workbench: bool = True,
 ) -> list[Probe | Callable[[], ProbeResult]]:
     examples = ROOT / "examples"
+    studio_source = ROOT / "apps" / "garnet-studio-macos" / "Sources" / "GarnetStudio" / "GarnetStudioApp.swift"
     promo_env = {"GARNET_PROMO_VIDEO_DESKTOP_DIR": str(work / "promo-video-external-artifacts")}
     return [
         Probe(
@@ -1840,6 +1841,67 @@ def probe_set(
             security_domain="privacy",
         ),
         lambda: build_converter_advisory_bundle_manifest_probe(work, fixtures["typescript_assist"]),
+        Probe(
+            "report-studio-advisory-bundle-action",
+            "converter advisory bundle UX",
+            "Garnet Studio should expose the provider-neutral advisory bundle from the Converter panel",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['(\"Advisory Bundle\", model.runConverterAdvisoryBundle)', "
+                    "'func runConverterAdvisoryBundle()', 'advisoryBundlePath']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio advisory bundle action present')\n"
+                ),
+            ],
+            True,
+            ("studio advisory bundle action present",),
+            security_domain="not-applicable",
+        ),
+        Probe(
+            "report-studio-advisory-bundle-runner",
+            "converter advisory bundle UX",
+            "Garnet Studio should run the manifested advisory-bundle script instead of only linking to docs",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['ConverterAdvisoryBundleRunner', 'garnet_converter_advisory_bundle.py', "
+                    "'--output-dir', 'Bundle output:']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio advisory bundle runner present')\n"
+                ),
+            ],
+            True,
+            ("studio advisory bundle runner present",),
+            security_domain="filesystem",
+        ),
+        Probe(
+            "report-studio-advisory-bundle-default-privacy",
+            "converter advisory bundle UX",
+            "Garnet Studio should preserve the advisory bundle's default no-source privacy boundary",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "assert '--include-source' not in source\n"
+                    "assert 'source by default' in source\n"
+                    "print('studio advisory bundle source omitted by default')\n"
+                ),
+            ],
+            True,
+            ("studio advisory bundle source omitted by default",),
+            security_domain="privacy",
+        ),
         Probe(
             "report-mit-readiness-plan-complete",
             "MIT readiness accounting",
