@@ -130,6 +130,7 @@ def read_surface() -> AdoptionSurface:
         llm_assist_status=lanes["llm_assist"].status,
         llm_assist_truth=[
             "deterministic context pack is active",
+            "deterministic planned-language assist plan is active",
             "provider-backed conversion is not active",
             "suggestions must preserve lineage, sandboxing, garnet check, dogfood evidence, and human audit",
             "deterministic converter output remains authoritative",
@@ -138,7 +139,7 @@ def read_surface() -> AdoptionSurface:
         repo_site_contract=[
             "Site copy must say active converter lanes are Rust, Ruby, Python, and Go only.",
             "Site copy may discuss JavaScript, TypeScript, Swift, Java, C, C++, C#, and Perl only as planned lanes.",
-            "LLM assist must be described as a gated advisory/context-pack lane, not active conversion.",
+            "LLM assist must be described as gated advisory context and assist planning, not active conversion.",
             "Install and app copy must not claim Developer ID notarization or clean-machine Gatekeeper success.",
             "Use-case hooks must point to current tests, scripts, examples, or dogfood bundles.",
         ],

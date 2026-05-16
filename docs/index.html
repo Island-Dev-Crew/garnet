@@ -980,7 +980,7 @@
     <h3>Migrate at Your Pace</h3>
     <h2>Convert <span class="accent">Rust · Ruby · Python · Go</span> source to Garnet.</h2>
     <p class="lead">The <code>garnet convert</code> tool is a migration assistant, not a full transpiler: it reads four deterministic source lanes and emits sandboxed Garnet with lineage, metrics, and a human migration checklist. JavaScript, TypeScript, Swift, Java, C, C++, C#, and Perl lanes are planned only behind the same converter evidence gate.</p>
-    <p class="lead">The next adoption frontier now has a deterministic Garnet-aware context pack: an optional future advisor can read the current truth, Mini-Spec, conformance matrix, and dogfood ledger before proposing safe-mode ownership candidates, memory declarations, CapCaps/capability boundaries, actor/orchestration mappings, and migration-risk notes. It is not active conversion today; every suggestion must still preserve lineage, stay <code>@sandbox</code> by default, pass <code>garnet check</code>, and survive dogfood readiness before promotion.</p>
+    <p class="lead">The next adoption frontier now has a deterministic Garnet-aware context pack and per-file assist planner: an optional future advisor can read the current truth, Mini-Spec, conformance matrix, and dogfood ledger before proposing safe-mode ownership candidates, memory declarations, CapCaps/capability boundaries, actor/orchestration mappings, and migration-risk notes. It is not active conversion today; every suggestion must still preserve lineage, stay <code>@sandbox</code> by default, pass <code>garnet check</code>, and survive dogfood readiness before promotion.</p>
     <p class="lead">Adoption surface status is machine-readable through <code>scripts/garnet_adoption_surface_status.py</code>; the site keeps active lanes, planned lanes, LLM-assist boundaries, verified use-case hooks, and open productization gates tied to the same evidence.</p>
 
     <div class="convert-grid">
@@ -1016,7 +1016,7 @@
       <div class="lang-badge">Python</div>
       <div class="lang-badge">Go</div>
       <div class="lang-badge">Planned: JS · TS · Swift · Java · C/C++ · C# · Perl</div>
-      <div class="lang-badge">LLM assist: context pack active</div>
+      <div class="lang-badge">LLM assist: context + assist plan active</div>
       <div class="lang-badge">Adoption surface: evidence-backed</div>
     </div>
   </div>
@@ -1128,7 +1128,7 @@ garnet run src/main.garnet</pre>
       <div class="number"><div class="big">7</div><div class="small">Research papers</div></div>
       <div class="number"><div class="big">0.93×</div><div class="small">Expressiveness ratio</div></div>
     </div>
-    <p class="lead" style="margin-top:28px;font-size:15px;">Objective accounting: the tracked implementation plan is complete, but that is not full MIT/productization completion. The remaining gates include notarization, mobile distribution, promo video, broad converter frontends, and LLM assist. Notarization readiness now has a machine-readable preflight status reporter; it records blockers without submitting to Apple or claiming notarization.</p>
+    <p class="lead" style="margin-top:28px;font-size:15px;">Objective accounting: the tracked implementation plan is complete, but that is not full MIT/productization completion. The remaining gates include notarization, mobile distribution, promo video, broad converter frontends, and provider-backed LLM assist. Notarization readiness now has a machine-readable preflight status reporter; it records blockers without submitting to Apple or claiming notarization.</p>
   </div>
 </section>
 
