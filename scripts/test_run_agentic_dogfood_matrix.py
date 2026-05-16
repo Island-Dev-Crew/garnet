@@ -100,10 +100,11 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         ids = {result.probe.id for result in results}
         domains = Counter(result.probe.domain for result in results)
 
-        self.assertEqual(domains["promo video readiness"], 4)
+        self.assertEqual(domains["promo video readiness"], 5)
         self.assertIn("report-promo-video-current-truth", ids)
         self.assertIn("report-promo-video-required-gates", ids)
         self.assertIn("report-promo-video-source-lock", ids)
+        self.assertIn("report-promo-video-composition-source", ids)
         self.assertIn("report-promo-video-output-manifest", ids)
 
     def test_probe_inventory_includes_repo_site_adoption_surface(self) -> None:

@@ -25,6 +25,7 @@ class PromoVideoStatus:
     target_duration_seconds: int
     rendered_video_present: bool
     website_export_present: bool
+    composition_source_present: bool
     visual_identity_locked: bool
     source_surfaces_locked: bool
     current_truth: list[str]
@@ -33,6 +34,7 @@ class PromoVideoStatus:
     open_gates: list[str]
     locked_assets: list[dict[str, str | bool]]
     source_surfaces: list[dict[str, str | bool]]
+    composition_source: dict[str, str | int | bool]
     storyboard_beats: list[dict[str, str | int]]
     production_rules: list[str]
     forbidden_claims: list[str]
@@ -154,16 +156,55 @@ def _source_surfaces() -> list[dict[str, str | bool]]:
     ]
 
 
+def _composition_source() -> dict[str, str | int | bool]:
+    composition_path = ROOT / "docs" / "promo" / "composition.html"
+    design_path = ROOT / "docs" / "promo" / "DESIGN.md"
+    exists = composition_path.is_file()
+    design_exists = design_path.is_file()
+    text = composition_path.read_text(encoding="utf-8") if exists else ""
+    composition_id = "garnet-promo-main"
+    timeline_registration = f'window.__timelines["{composition_id}"]'
+    duration_token = 'data-duration="30"'
+    uses_locked_assets = "../icons/garnet-512.png" in text
+    return {
+        "path": str(composition_path.relative_to(ROOT)),
+        "design_contract_path": str(design_path.relative_to(ROOT)),
+        "tool": "hyperframes-html",
+        "exists": exists,
+        "design_contract_exists": design_exists,
+        "composition_id": composition_id,
+        "duration_seconds": 30,
+        "duration_declared": duration_token in text,
+        "timeline_registered": timeline_registration in text,
+        "uses_locked_assets": uses_locked_assets,
+        "sha256": _sha256(composition_path) if exists else "",
+        "design_sha256": _sha256(design_path) if design_exists else "",
+    }
+
+
 def read_status() -> PromoVideoStatus:
     rendered_candidates, website_candidates = _candidate_artifact_paths()
     rendered_video_present = any(path.is_file() for path in rendered_candidates)
     website_export_present = any(path.exists() for path in website_candidates)
     locked_assets = _locked_assets()
     source_surfaces = _source_surfaces()
+    composition_source = _composition_source()
     visual_identity_locked = all(bool(asset["exists"]) and bool(asset["sha256"]) for asset in locked_assets)
     source_surfaces_locked = all(
         bool(surface["exists"]) and bool(surface["phrase_present"])
         for surface in source_surfaces
+    )
+    composition_source_present = all(
+        bool(composition_source[key])
+        for key in (
+            "exists",
+            "design_contract_exists",
+            "duration_declared",
+            "timeline_registered",
+            "uses_locked_assets",
+            "sha256",
+            "design_sha256",
+        )
     )
     completed_gates = []
     if visual_identity_locked:
@@ -171,6 +212,8 @@ def read_status() -> PromoVideoStatus:
     if source_surfaces_locked:
         completed_gates.append("source surface lock")
     completed_gates.append("30-second storyboard and shot list")
+    if composition_source_present:
+        completed_gates.append("HyperFrames or Remotion composition")
 
     required_gates = [
         "visual identity lock",
@@ -185,6 +228,9 @@ def read_status() -> PromoVideoStatus:
     open_gates = [gate for gate in required_gates if gate not in completed_gates]
     status = "verified" if rendered_video_present and website_export_present else "planned-contract"
     completion_percent = 100.0 if rendered_video_present and website_export_present else 25.0
+    if status == "planned-contract" and composition_source_present and visual_identity_locked and source_surfaces_locked:
+        status = "composition-ready"
+        completion_percent = 50.0
     if status == "planned-contract" and visual_identity_locked and source_surfaces_locked:
         status = "source-locked"
         completion_percent = 35.0
@@ -196,20 +242,22 @@ def read_status() -> PromoVideoStatus:
         target_duration_seconds=30,
         rendered_video_present=rendered_video_present,
         website_export_present=website_export_present,
+        composition_source_present=composition_source_present,
         visual_identity_locked=visual_identity_locked,
         source_surfaces_locked=source_surfaces_locked,
         current_truth=[
             "No verified rendered promo video is present.",
             "No verified website-ready promo export is present.",
             "Visual identity and source surfaces are locked to real repo assets for the next render slice.",
-            "HyperFrames or Remotion can be used in a later rendering slice.",
-            "The video lane is source-locked, not a completed marketing asset.",
+            "A HyperFrames-compatible composition source exists for a later render slice.",
+            "The video lane is composition-ready, not a completed marketing asset.",
         ],
         required_gates=required_gates,
         completed_gates=completed_gates,
         open_gates=open_gates,
         locked_assets=locked_assets,
         source_surfaces=source_surfaces,
+        composition_source=composition_source,
         storyboard_beats=[
             {
                 "id": "hook",
@@ -251,9 +299,9 @@ def read_status() -> PromoVideoStatus:
             "Do not claim full MIT/productization completion.",
         ],
         next_steps=[
-            "Create the HyperFrames or Remotion composition in a separate rendering slice.",
             "Render MP4/WebM outputs and preserve them in Desktop dogfood.",
             "Run visual QA before embedding or linking the video from the website.",
+            "Export website-ready promo assets only after rendered media and visual QA pass.",
         ],
     )
 
@@ -294,6 +342,16 @@ def render_markdown(status: PromoVideoStatus) -> str:
         lines.append(
             f"- **{surface['id']}** ({marker}): `{surface['path']}`"
         )
+
+    lines.extend(["", "## Composition Source", ""])
+    composition = status.composition_source
+    marker = "ready" if status.composition_source_present else "missing"
+    lines.append(
+        f"- **{composition['composition_id']}** ({marker}): `{composition['path']}`"
+    )
+    lines.append(f"- Design contract: `{composition['design_contract_path']}`")
+    lines.append(f"- Tool: `{composition['tool']}`")
+    lines.append(f"- Duration: {composition['duration_seconds']} seconds")
 
     lines.extend(["", "## Storyboard Contract", ""])
     for beat in status.storyboard_beats:

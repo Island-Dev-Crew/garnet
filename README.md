@@ -134,7 +134,7 @@ For repo/site adoption truth, run `python3 scripts/garnet_adoption_surface_statu
 
 For broader public-readiness accounting, run `python3 scripts/garnet_mit_readiness_status.py`. It intentionally distinguishes the complete tracked implementation-plan ledger from still-open productization gates such as Developer ID notarization, mobile distribution, promo video, broad converter frontends, LLM assist, proof, and empirical validation.
 
-For the requested 30-second promo/ad lane, run `python3 scripts/garnet_promo_video_status.py`. It defines the storyboard beats, locks the visual identity/source surfaces to real repo assets, keeps HyperFrames/Remotion render gates and visual QA requirements explicit, and forbids claims that a rendered video or website-ready export exists yet.
+For the requested 30-second promo/ad lane, run `python3 scripts/garnet_promo_video_status.py`. It defines the storyboard beats, locks the visual identity/source surfaces to real repo assets, verifies the HyperFrames-compatible composition source under `docs/promo/`, keeps render/export/visual-QA gates explicit, and forbids claims that a rendered video or website-ready export exists yet.
 
 ## Documentation
 
