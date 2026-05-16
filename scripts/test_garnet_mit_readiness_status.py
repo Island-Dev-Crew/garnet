@@ -58,6 +58,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("APPLE_DEV_ID_APP", lanes["developer_id_notarization"]["blocked_by"])
         self.assertIn("garnet_studio_notarization_status.py", lanes["developer_id_notarization"]["evidence"])
         self.assertIn("deterministic local context pack", lanes["llm_assist"]["evidence"])
+        self.assertIn("provider-neutral advisory bundle", lanes["llm_assist"]["evidence"])
         self.assertIn("garnet_promo_video_status.py", lanes["promo_video"]["evidence"])
         self.assertIn("visual identity", lanes["promo_video"]["evidence"])
         self.assertIn("composition source", lanes["promo_video"]["evidence"])

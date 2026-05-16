@@ -69,6 +69,7 @@ done
 | `scripts/garnet_assist_context_pack.py` | Garnet-aware assist context and prompt pack | current machine-readable context bundle plus provider-neutral prompt pack for future provider-backed converter assist; hashes current truth/spec/dogfood docs and preserves advisory-only gates without enabling LLM conversion |
 | `scripts/garnet_converter_assist_plan.py` | planned-language converter assist plan | current deterministic planner for a single source file in an active or planned converter language; inventories safe-mode, memory, CapCaps, actor/orchestration, and migration risks without executing source or enabling LLM conversion |
 | `scripts/garnet_converter_llm_feasibility.py` | converter LLM feasibility reporter | current machine-readable decision surface: provider-neutral advisory planning is feasible; autonomous/provider-backed LLM conversion is not active and remains blocked on secure runtime, deterministic frontend, sandbox, lineage, check, dogfood, and human-audit gates |
+| `scripts/garnet_converter_advisory_bundle.py` | converter advisory bundle | current provider-neutral handoff bundle that combines feasibility, context, and per-file assist-plan evidence; omits source text by default, requires `--include-source` for explicit local/provider handoff, and does not enable LLM conversion |
 | `scripts/garnet_mit_readiness_status.py` | MIT/productization objective inventory | current machine-readable truth that the tracked implementation plan is complete while notarization, mobile distribution, promo video, broad converter frontends, LLM assist, and proof/empirics remain open gates |
 | `scripts/garnet_promo_video_status.py` | promo video readiness contract | current machine-readable storyboard/gate contract for a 30-second HyperFrames promo; visual identity/source surfaces and `docs/promo/` composition source are tied to repo assets, local Desktop MP4/WebM, automated visual-QA, website-export, and site-sync evidence can promote the lane to `public-site-embedded` at 95.0%, while human/aesthetic acceptance remains open |
 | `scripts/render_garnet_promo_video.mjs` | promo video render harness | current local Chrome DevTools + `ffmpeg` harness for manifest-backed MP4/WebM/poster render evidence; this is not a substitute for visual QA or website export |
@@ -623,12 +624,12 @@ service worker reference those files, and writes
 visual-QA, website-export, and site-sync evidence present,
 `scripts/garnet_promo_video_status.py` reports `public-site-embedded` at 95.0%
 and `scripts/garnet_mit_readiness_status.py` reports the broader objective at
-58.6%. The source-checkout matrix passes `84/84` with `skipped=0` in Desktop
-bundle `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-084611`;
+58.6%. The source-checkout matrix passes `88/88` with `skipped=0` in Desktop
+bundle `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-090352`;
 the refreshed copied-DMG evidence lives at
-`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-084842` for
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-090543` for
 DMG SHA-256
-`4887d116bc077e3d299009a3218165294707f0f1a7c95526d8d07e484018fa8e`.
+`72af0dc3155fb9c7897167645b10ed4f3caca0b7680bd15a40826cc06d8cc720`.
 Human/aesthetic acceptance remains open; this is still not final
 marketing acceptance, notarized distribution, mobile distribution, provider-backed
 LLM conversion, or full MIT/productization completion.
@@ -650,6 +651,15 @@ advisory surface matches the currently advertised adoption set without making
 those languages active converters. Local evidence passes `84/84` with
 `skipped=0` in Desktop bundle
 `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-084611`.
+Phase 6AP adds the provider-neutral converter advisory bundle: `scripts/garnet_converter_advisory_bundle.py`
+combines the LLM feasibility gate, deterministic context pack, and per-file
+assist plan into one manifested handoff package for local agent/model review.
+It keeps conversion inactive, omits source text by default, requires
+`--include-source` before embedding source, and preserves lineage, `@sandbox`,
+`garnet check`, dogfood, and human-audit gates. The agentic matrix now includes
+a four-probe `converter advisory bundle` domain and passes `88/88` with
+`skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-090352`.
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.
