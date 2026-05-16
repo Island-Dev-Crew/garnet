@@ -56,10 +56,10 @@ Those failures became focused fixes and regression tests in this slice.
 
 ## Current Evidence
 
-Latest packaged-app evidence bundle:
+Latest DMG install-smoke evidence bundle:
 
 ```text
-/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260515-211707
+/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260515-212912
 ```
 
 Current result:
@@ -72,14 +72,15 @@ passed=24/24
 Manifest verification:
 
 ```sh
-cd /Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260515-211707
+cd /Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260515-212912
 shasum -a 256 -c MANIFEST.sha256
 ```
 
-All files in the bundle verified at creation time. This bundle was produced
-through `Garnet Studio.app/Contents/MacOS/GarnetStudio --agentic-matrix-test`
-after the app package staged the matrix script, examples, and bundled Garnet CLI
-inside `Contents/Resources`.
+All files in the bundle verified at creation time. This bundle was produced by
+mounting `target/macos/GarnetStudio.dmg`, copying `Garnet Studio.app` into a
+temporary Applications-style directory, and running the copied app's
+`--agentic-matrix-test` against its bundled matrix script, examples, and Garnet
+CLI.
 
 ## Next Gates
 

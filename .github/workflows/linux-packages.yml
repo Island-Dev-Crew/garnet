@@ -204,6 +204,11 @@ jobs:
             --shell=sh --severity=warning \
             /work/installer/sh.garnet-lang.org/install.sh \
             /work/docs/install.sh
+          docker run --rm -v "$PWD:/work" \
+            koalaman/shellcheck:stable \
+            --shell=bash --severity=warning \
+            /work/scripts/package_garnet_studio_macos.sh \
+            /work/scripts/smoke_garnet_studio_dmg.sh
 
   # ───────────────────────────────────────────────────────────────────
   # 5. On tagged release only: publish packages + SHA256SUMS as a
