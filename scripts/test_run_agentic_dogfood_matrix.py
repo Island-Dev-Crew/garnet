@@ -84,6 +84,19 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertEqual(domains["developer experience"], 3)
         self.assertIn("fmt-repair-dirty-agent", ids)
 
+    def test_probe_inventory_covers_memory_declaration_analysis(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            fixtures = matrix.prepare_fixtures(work)
+            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
+
+        ids = {probe.id for probe in concrete_probes}
+        domains = Counter(probe.domain for probe in concrete_probes)
+
+        self.assertEqual(domains["agent memory and analysis"], 3)
+        self.assertIn("parse-advertised-log-analyzer-memory", ids)
+
     def test_probe_inventory_covers_canonical_project_templates(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
@@ -113,6 +126,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertEqual(coverage["web/PWA productization"]["status"], "needs-expansion")
         self.assertEqual(coverage["project scaffolding"]["status"], "adequate")
         self.assertEqual(coverage["developer experience"]["status"], "adequate")
+        self.assertEqual(coverage["agent memory and analysis"]["status"], "adequate")
         self.assertEqual(coverage["agent recovery and diagnostics"]["status"], "adequate")
 
     def test_write_outputs_persists_domain_coverage(self) -> None:
