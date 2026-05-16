@@ -54,15 +54,29 @@ class ProbeResult:
         return self.status == "passed"
 
 
-def run(cmd: list[str], cwd: Path, timeout: int = 30) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        cmd,
-        cwd=cwd,
-        text=True,
-        capture_output=True,
-        timeout=timeout,
-        check=False,
-    )
+def timeout_output(value: str | bytes | None) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return value
+
+
+def run(cmd: list[str], cwd: Path, timeout: int = 120) -> subprocess.CompletedProcess[str]:
+    try:
+        return subprocess.run(
+            cmd,
+            cwd=cwd,
+            text=True,
+            capture_output=True,
+            timeout=timeout,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        stdout = timeout_output(exc.stdout)
+        stderr = timeout_output(exc.stderr)
+        stderr = f"{stderr}\nTIMEOUT after {timeout}s: {' '.join(cmd)}\n"
+        return subprocess.CompletedProcess(cmd, 124, stdout, stderr)
 
 
 def ensure_garnet_bin(explicit: str | None) -> Path:
@@ -73,12 +87,13 @@ def ensure_garnet_bin(explicit: str | None) -> Path:
         return path
 
     candidate = ROOT / "target" / "debug" / "garnet"
+    build = run(["cargo", "build", "-p", "garnet-cli"], ROOT, timeout=180)
+    if build.returncode != 0:
+        sys.stderr.write(build.stdout)
+        sys.stderr.write(build.stderr)
+        raise SystemExit("failed to build garnet-cli")
     if not os.access(candidate, os.X_OK):
-        build = run(["cargo", "build", "-p", "garnet-cli"], ROOT, timeout=180)
-        if build.returncode != 0:
-            sys.stderr.write(build.stdout)
-            sys.stderr.write(build.stderr)
-            raise SystemExit("failed to build garnet-cli")
+        raise SystemExit(f"garnet binary was not produced: {candidate}")
     return candidate
 
 
@@ -412,6 +427,7 @@ def probe_set(
     work: Path,
     fixtures: dict[str, Path],
     app_executable: Path | None = None,
+    include_app_workbench: bool = True,
 ) -> list[Probe | Callable[[], ProbeResult]]:
     examples = ROOT / "examples"
     return [
@@ -574,7 +590,7 @@ def probe_set(
             [str(garnet), "fmt", "--check", str(fixtures["fmt_source"])],
             True,
         ),
-        *app_workbench_probes(app_executable),
+        *(app_workbench_probes(app_executable) if include_app_workbench else []),
         Probe(
             "run-advertised-log-analyzer",
             "agent memory and analysis",
@@ -655,11 +671,26 @@ def render_findings(results: list[ProbeResult]) -> str:
 def render_report(results: list[ProbeResult], metadata: dict[str, str], score_data: dict[str, int | float]) -> str:
     failures = [result for result in results if not result.passed]
     failing_ids = "\n".join(f"- `{result.probe.id}`" for result in failures) or "- None"
+    app_workbench_note = ""
+    audited_surfaces = (
+        "CLI, template, converter, release-integrity, documentation, safe-mode, "
+        "agent-memory, and macOS app workbench paths"
+    )
+    if metadata["app_workbench"] == "skipped":
+        app_workbench_note = (
+            "\n\nmacOS app workbench probes were skipped for this run; they remain covered by "
+            "Garnet Studio local/Desktop/package/DMG gates instead of the headless CI matrix."
+        )
+        audited_surfaces = (
+            "CLI, template, converter, release-integrity, documentation, safe-mode, "
+            "and agent-memory paths"
+        )
     if failures:
         decision = (
             f"Passed {score_data['passed']}/{score_data['total']} probes. The matrix found "
             "agent-facing gaps that should remain MIT-readiness improvement items until "
             "they are fixed or explicitly documented as deferred."
+            f"{app_workbench_note}"
         )
         plan = (
             "1. Promote failing advanced probes into focused CLI regression tests.\n"
@@ -670,10 +701,10 @@ def render_report(results: list[ProbeResult], metadata: dict[str, str], score_da
         )
     else:
         decision = (
-            f"Passed {score_data['passed']}/{score_data['total']} probes. The audited CLI, "
-            "template, converter, release-integrity, documentation, safe-mode, "
-            "agent-memory, and macOS app workbench paths all produced the expected "
+            f"Passed {score_data['passed']}/{score_data['total']} probes. The audited "
+            f"{audited_surfaces} all produced the expected "
             "evidence for this run."
+            f"{app_workbench_note}"
         )
         plan = (
             "1. Keep the advanced examples covered by focused regression tests.\n"
@@ -879,6 +910,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         action="store_true",
         help="exit nonzero when any probe fails; default records findings and exits 0",
     )
+    parser.add_argument(
+        "--skip-app-workbench",
+        action="store_true",
+        help="skip SwiftUI/SwiftPM app probes for headless CI runs; local/package gates cover them",
+    )
     return parser.parse_args(argv)
 
 
@@ -889,7 +925,11 @@ def main(argv: list[str] | None = None) -> int:
     if app_executable is not None and not os.access(app_executable, os.X_OK):
         raise SystemExit(f"Garnet Studio executable is not executable: {app_executable}")
     stamp = time.strftime("%Y%m%d-%H%M%S")
-    work = Path(args.output_dir) if args.output_dir else Path(tempfile.gettempdir()) / f"garnet-agentic-dogfood-{stamp}"
+    work = (
+        Path(args.output_dir).expanduser().resolve()
+        if args.output_dir
+        else Path(tempfile.gettempdir()) / f"garnet-agentic-dogfood-{stamp}"
+    )
     work.mkdir(parents=True, exist_ok=True)
     fixtures = prepare_fixtures(work)
 
@@ -899,11 +939,18 @@ def main(argv: list[str] | None = None) -> int:
         "branch": run(["git", "branch", "--show-current"], ROOT).stdout.strip(),
         "garnet": str(garnet),
         "app_executable": str(app_executable) if app_executable else "",
+        "app_workbench": "skipped" if args.skip_app_workbench else "included",
         "artifact_dir": str(work),
     }
 
     results: list[ProbeResult] = []
-    for item in probe_set(garnet, work, fixtures, app_executable=app_executable):
+    for item in probe_set(
+        garnet,
+        work,
+        fixtures,
+        app_executable=app_executable,
+        include_app_workbench=not args.skip_app_workbench,
+    ):
         result = item() if callable(item) else run_probe(item, work)
         results.append(result)
         print(f"{result.status.upper():6} {result.probe.domain:28} {result.probe.id}")
