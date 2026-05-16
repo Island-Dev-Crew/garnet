@@ -121,7 +121,9 @@ highest-leverage next milestones are:
    agents can exercise orchestration, recovery diagnostics, migration,
    safe-mode, release-integrity, docs, app, and memory-analysis surfaces as one
    falsifiable workflow, with macOS CI preserving a downloadable evidence
-   artifact for readiness-sensitive PRs.
+   artifact for readiness-sensitive PRs. The matrix now records per-domain
+   coverage adequacy separately from pass/fail readiness so under-tested
+   product surfaces remain visible even when every current probe passes.
 7. **Formal/empirical proof:** keep Paper V theorem sketches and Paper VI
    experiments separate from implemented guarantees until tests or proofs land.
 

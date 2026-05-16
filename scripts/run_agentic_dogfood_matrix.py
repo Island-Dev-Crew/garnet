@@ -697,6 +697,27 @@ def score(results: list[ProbeResult]) -> dict[str, int | float]:
     }
 
 
+def domain_coverage(results: list[ProbeResult], target_probe_count: int = 3) -> list[dict[str, int | str]]:
+    by_domain: dict[str, list[ProbeResult]] = {}
+    for result in results:
+        by_domain.setdefault(result.probe.domain, []).append(result)
+    coverage: list[dict[str, int | str]] = []
+    for domain, items in sorted(by_domain.items()):
+        probe_count = len(items)
+        passed = sum(result.passed for result in items)
+        coverage.append(
+            {
+                "domain": domain,
+                "probe_count": probe_count,
+                "passed": passed,
+                "target_probe_count": target_probe_count,
+                "coverage_percent": min(100, round((probe_count / target_probe_count) * 100)),
+                "status": "adequate" if probe_count >= target_probe_count else "needs-expansion",
+            }
+        )
+    return coverage
+
+
 def render_matrix(results: list[ProbeResult]) -> str:
     lines = [
         "# Agentic Garnet Dogfood Matrix",
@@ -741,6 +762,12 @@ def render_findings(results: list[ProbeResult]) -> str:
 def render_report(results: list[ProbeResult], metadata: dict[str, str], score_data: dict[str, int | float]) -> str:
     failures = [result for result in results if not result.passed]
     failing_ids = "\n".join(f"- `{result.probe.id}`" for result in failures) or "- None"
+    coverage_rows = "\n".join(
+        "| {domain} | {passed}/{probe_count} | {probe_count}/{target_probe_count} | {coverage_percent}% | {status} |".format(
+            **item
+        )
+        for item in domain_coverage(results)
+    )
     app_workbench_note = ""
     audited_surfaces = (
         "CLI, template, converter, release-integrity, documentation, safe-mode, "
@@ -809,6 +836,16 @@ Readiness score: **{score_data["readiness"]}/100**
 {json.dumps(score_data, indent=2)}
 ```
 
+## Domain Coverage Adequacy
+
+The readiness score tracks whether probes pass. This table tracks whether each
+domain has enough independent probes to support the user's requested 3-5 probe
+coverage bar.
+
+| Domain | Passed | Probe coverage | Coverage | Status |
+| --- | ---: | ---: | ---: | --- |
+{coverage_rows}
+
 ## Next Implementation Plan
 
 {plan}
@@ -816,12 +853,9 @@ Readiness score: **{score_data["readiness"]}/100**
 
 
 def render_deck(results: list[ProbeResult], metadata: dict[str, str], score_data: dict[str, int | float]) -> str:
-    by_domain: dict[str, list[ProbeResult]] = {}
-    for result in results:
-        by_domain.setdefault(result.probe.domain, []).append(result)
     domain_cards = "\n".join(
-        f"<article><h3>{domain}</h3><p>{sum(r.passed for r in items)}/{len(items)} probes passed</p></article>"
-        for domain, items in sorted(by_domain.items())
+        f"<article><h3>{item['domain']}</h3><p>{item['passed']}/{item['probe_count']} probes passed · {item['status']}</p></article>"
+        for item in domain_coverage(results)
     )
     finding_cards = "\n".join(
         f"<li><strong>{result.probe.id}</strong>: {result.probe.claim}</li>"
@@ -910,9 +944,11 @@ def render_deck(results: list[ProbeResult], metadata: dict[str, str], score_data
 
 def write_outputs(work: Path, results: list[ProbeResult], metadata: dict[str, str]) -> None:
     score_data = score(results)
+    coverage_data = domain_coverage(results)
     data = {
         "metadata": metadata,
         "score": score_data,
+        "domain_coverage": coverage_data,
         "results": [
             {
                 "id": result.probe.id,
