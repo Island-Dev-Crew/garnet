@@ -1019,7 +1019,7 @@
   <div class="container reveal">
     <h3>Get Garnet</h3>
     <h2>Install with one curl command.</h2>
-    <p class="lead">The universal installer prefers signed-off GitHub Release packages verified by <code>SHA256SUMS</code>. Before release assets exist, it falls back to source install through <code>cargo install --locked</code>.</p>
+    <p class="lead">The <strong>v0.4.2 release is live</strong> on GitHub. The universal installer pulls the release package, verifies it against <code>SHA256SUMS</code>, and falls back to a source install through <code>cargo install --locked</code> if a platform package is unavailable. Signed macOS <code>.pkg</code> and Windows MSI artifacts remain in progress and are <em>not</em> required for the verified install paths below.</p>
 
     <div class="tabs install-tabs-bar" role="tablist">
       <button class="tab active" data-install="universal">Universal</button>
@@ -1044,42 +1044,49 @@ curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | GARNET
       </div>
       <div class="install-pane" data-pane="macos">
         <div class="install-wrap">
-          <button class="copy" data-copy="git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && cargo install --path .">Copy</button>
-<pre># Source install available today:
+          <button class="copy" data-copy="curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh">Copy</button>
+<pre># Recommended — universal installer (Apple Silicon):
+# pulls garnet-0.4.2-aarch64-apple-darwin.tar.gz from the
+# v0.4.2 release and verifies it against SHA256SUMS.
+curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
+
+# Source install (any arch, needs a Rust toolchain):
 git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && cargo install --path .
 
-# After v0.4.2 release publication:
-#   https://github.com/Island-Dev-Crew/garnet/releases
-# Asset: garnet-0.4.2-universal.pkg
-# Expected: Apple Developer ID signed + notarized + stapled</pre>
+# Note: a signed + notarized Apple Developer ID .pkg is
+# still in progress. The tarball above is SHA-256 verified
+# and is the supported macOS path until then.</pre>
         </div>
       </div>
       <div class="install-pane" data-pane="linux">
         <div class="install-wrap">
-          <button class="copy" data-copy="git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && cargo install --path .">Copy</button>
-<pre># Source install available today:
-git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && cargo install --path .
+          <button class="copy" data-copy="curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh">Copy</button>
+<pre># Recommended — universal installer (SHA256SUMS-verified):
+curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 
-# After v0.4.2 release publication:
-#   https://github.com/Island-Dev-Crew/garnet/releases
+# Distro packages from the v0.4.2 release:
+#   https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.4.2
 
-# Debian/Ubuntu (direct):
+# Debian/Ubuntu:
 sudo apt install ./garnet_0.4.2-1_amd64.deb
 
-# Fedora/RHEL (direct):
-sudo dnf install ./garnet-0.4.2-1.x86_64.rpm</pre>
+# Fedora/RHEL:
+sudo dnf install ./garnet-0.4.2-1.x86_64.rpm
+
+# Source install (any arch, needs a Rust toolchain):
+git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && cargo install --path .</pre>
         </div>
       </div>
       <div class="install-pane" data-pane="windows">
         <div class="install-wrap">
-          <button class="copy" data-copy="winget install IslandDevCrew.Garnet">Copy</button>
-<pre># Winget (when published):
-winget install IslandDevCrew.Garnet
+          <button class="copy" data-copy="git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && cargo install --path .">Copy</button>
+<pre># Supported today — source install (needs a Rust toolchain):
+git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && cargo install --path .
 
-# After v0.4.2 release publication:
-#   https://github.com/Island-Dev-Crew/garnet/releases
-# Asset: garnet-0.4.2-x86_64.msi
-# Expected: Authenticode-signed + timestamped</pre>
+# v0.4.2 does not ship a Windows package yet.
+# An Authenticode-signed MSI and a winget manifest
+# (winget install IslandDevCrew.Garnet) are planned but
+# not part of this release.</pre>
         </div>
       </div>
     </div>
@@ -1155,8 +1162,8 @@ garnet run src/main.garnet</pre>
     <div class="links">
       <a href="https://github.com/Island-Dev-Crew/garnet" target="_blank" rel="noopener noreferrer">GitHub</a>
       <a href="#docs">Documentation</a>
-      <a href="https://github.com/Island-Dev-Crew/garnet">GitHub Source</a>
-      <a href="#install">Releases</a>
+      <a href="https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.4.2" target="_blank" rel="noopener noreferrer">Releases</a>
+      <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/SECURITY.md" target="_blank" rel="noopener noreferrer">Security</a>
       <a href="https://ko-fi.com/jonisaac" target="_blank" rel="noopener noreferrer">Support ☕</a>
     </div>
     <div class="copyright">
