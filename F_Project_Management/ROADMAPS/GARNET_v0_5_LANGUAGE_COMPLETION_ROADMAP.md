@@ -1634,6 +1634,18 @@ refreshed copied-DMG smoke passes at
 DMG SHA-256
 `8a64b563a9a6b7de976d2d479ecabe52eed9b0e08f311a05643a2a3351823d4c`.
 
+Phase 6AS converter advisory review gate pass: a new provider-neutral
+`scripts/garnet_converter_advisory_review.py` gate verifies manifested advisory
+bundles, blocks source-included bundles unless explicitly approved, and emits a
+human-review checklist before any model/agent handoff can become candidate
+implementation work. The refreshed source-checkout matrix adds a three-probe
+`converter advisory review` domain and passes `94/94` with `skipped=0` at
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-100014`.
+The copied-DMG smoke passes at
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-100034` for
+DMG SHA-256
+`793aaec45055c338fda45386006f545356b4d0a2adad79ad8e6048ef012dee36`.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.
