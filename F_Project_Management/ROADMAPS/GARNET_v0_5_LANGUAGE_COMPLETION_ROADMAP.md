@@ -1397,6 +1397,12 @@ are rejected before live memory is mutated. This is signed typed-cache
 evidence, not a claim that every Memory Core backend has cryptographic trust
 or that production allocator-integrated ARC is complete.
 
+Phase 6V dogfood evidence pass: the agentic dogfood matrix now exercises the
+signed typed-cache trust boundary as a `memory persistence integrity` domain
+with round-trip, tamper-rejection, and foreign-key-rejection probes. This keeps
+the Phase 6U claim falsifiable in source and app dogfood bundles while leaving
+broad signed persistence and production allocator-integrated ARC deferred.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.

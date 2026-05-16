@@ -436,6 +436,10 @@ payload, rejecting tampered payloads and foreign keys before live store
 mutation. The legacy unsigned typed-cache API remains available for backward
 compatibility, so this is signed typed-cache evidence rather than a claim that
 every Memory Core persistence backend is cryptographically trusted.
+Phase 6V promotes that signed-cache trust boundary into the agentic dogfood
+matrix with dedicated memory-persistence integrity probes for signed round-trip,
+tampered payload rejection, and foreign-key rejection, so future app/source
+dogfood bundles exercise the new security surface directly.
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.
