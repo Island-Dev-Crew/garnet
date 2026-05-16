@@ -258,6 +258,21 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertIn("run-agent-toolbelt-release-gate", ids)
         self.assertIn("run-agent-toolbelt-repair-planner", ids)
 
+    def test_probe_inventory_covers_agent_adversarial_boundaries(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            fixtures = matrix.prepare_fixtures(work)
+            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
+
+        ids = {probe.id for probe in concrete_probes}
+        domains = Counter(probe.domain for probe in concrete_probes)
+
+        self.assertEqual(domains["agent adversarial boundaries"], 3)
+        self.assertIn("reject-agent-depth-budget-bomb", ids)
+        self.assertIn("reject-agent-main-without-caps", ids)
+        self.assertIn("reject-agent-safe-var-mutation", ids)
+
     def test_probe_inventory_covers_source_app_workbench_smoke(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
@@ -307,6 +322,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertEqual(coverage["agent memory and analysis"]["status"], "adequate")
         self.assertEqual(coverage["memory persistence integrity"]["status"], "adequate")
         self.assertEqual(coverage["agent recovery and diagnostics"]["status"], "adequate")
+        self.assertEqual(coverage["agent adversarial boundaries"]["status"], "adequate")
         self.assertEqual(coverage["MIT readiness accounting"]["status"], "adequate")
         self.assertEqual(coverage["converter intelligent assist"]["status"], "adequate")
         self.assertEqual(coverage["signed release provenance"]["status"], "adequate")

@@ -185,6 +185,29 @@ def bad() {
 """,
     )
 
+    paths["agent_depth_bomb"] = write(
+        fixtures / "agent_depth_bomb.garnet",
+        "@caps()\ndef main() {\n  " + ("(" * 300) + "1" + (")" * 300) + "\n}\n",
+    )
+
+    paths["agent_no_caps"] = write(
+        fixtures / "agent_no_caps.garnet",
+        """def main() {
+  1
+}
+""",
+    )
+
+    paths["agent_safe_var_mutation"] = write(
+        fixtures / "agent_safe_var_mutation.garnet",
+        """@safe
+def bad() {
+  var x = 1
+  x
+}
+""",
+    )
+
     paths["malformed"] = write(fixtures / "malformed_agent.garnet", "def main( { 1 }\n")
 
     paths["doc_source"] = write(
@@ -847,6 +870,33 @@ def probe_set(
             False,
             expected_stderr=("failed to read", "missing.manifest.json"),
             security_domain="release-integrity",
+        ),
+        Probe(
+            "reject-agent-depth-budget-bomb",
+            "agent adversarial boundaries",
+            "agent-supplied deeply nested source should trip the parser budget instead of consuming unbounded resources",
+            [str(garnet), "parse", str(fixtures["agent_depth_bomb"])],
+            False,
+            expected_stderr=("parse budget exceeded (depth", "budget exceeded here"),
+            security_domain="sandbox",
+        ),
+        Probe(
+            "reject-agent-main-without-caps",
+            "agent adversarial boundaries",
+            "agent-supplied entrypoints should declare capability boundaries instead of relying on ambient authority",
+            [str(garnet), "check", str(fixtures["agent_no_caps"])],
+            False,
+            expected_stdout=("main` function must declare its required capabilities",),
+            security_domain="authn-authz",
+        ),
+        Probe(
+            "reject-agent-safe-var-mutation",
+            "agent adversarial boundaries",
+            "agent-supplied @safe code should reject legacy mutable declarations that bypass the preferred safe-mode surface",
+            [str(garnet), "check", str(fixtures["agent_safe_var_mutation"])],
+            False,
+            expected_stdout=("safe-mode violation", "uses `var`"),
+            security_domain="sandbox",
         ),
         Probe(
             "check-safe-pure",

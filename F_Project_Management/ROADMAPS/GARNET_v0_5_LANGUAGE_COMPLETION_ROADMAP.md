@@ -1403,6 +1403,15 @@ with round-trip, tamper-rejection, and foreign-key-rejection probes. This keeps
 the Phase 6U claim falsifiable in source and app dogfood bundles while leaving
 broad signed persistence and production allocator-integrated ARC deferred.
 
+Phase 6W dogfood evidence pass: the agentic dogfood matrix now exercises
+agent-hostile input boundaries as a distinct `agent adversarial boundaries`
+domain. The three probes reject parser depth-budget bombs, missing `main`
+capability declarations, and legacy mutable `var` declarations inside `@safe`
+code. The negative evidence is preserved: the first strict run failed `58/60`
+until stdout/stderr expectations were aligned with the CLI diagnostic contract;
+the corrected strict source matrix passes `60/60` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-034939`.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.
