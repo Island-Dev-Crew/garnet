@@ -54,15 +54,29 @@ class ProbeResult:
         return self.status == "passed"
 
 
-def run(cmd: list[str], cwd: Path, timeout: int = 30) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        cmd,
-        cwd=cwd,
-        text=True,
-        capture_output=True,
-        timeout=timeout,
-        check=False,
-    )
+def timeout_output(value: str | bytes | None) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return value
+
+
+def run(cmd: list[str], cwd: Path, timeout: int = 120) -> subprocess.CompletedProcess[str]:
+    try:
+        return subprocess.run(
+            cmd,
+            cwd=cwd,
+            text=True,
+            capture_output=True,
+            timeout=timeout,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        stdout = timeout_output(exc.stdout)
+        stderr = timeout_output(exc.stderr)
+        stderr = f"{stderr}\nTIMEOUT after {timeout}s: {' '.join(cmd)}\n"
+        return subprocess.CompletedProcess(cmd, 124, stdout, stderr)
 
 
 def ensure_garnet_bin(explicit: str | None) -> Path:
