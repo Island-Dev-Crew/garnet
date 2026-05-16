@@ -1658,6 +1658,19 @@ The copied-DMG smoke passes at
 DMG SHA-256
 `68babfa7974a4b31173651eee27f0e5f6844637486478c42802b53bd34a80863`.
 
+Phase 6AU Studio objective pulse pass: the macOS Studio Release panel now
+exposes `Objective Pulse`, a read-only action that runs
+`scripts/garnet_mit_readiness_status.py --format markdown` from packaged or
+source-checkout resources. This makes the overall MIT/productization percentage
+visible without confusing it with the complete tracked-slice ledger. The
+refreshed source-checkout matrix adds a three-probe `MIT objective pulse UX`
+domain and passes `100/100` with `skipped=0` at
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-102355`.
+The copied-DMG smoke passes at
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-102422` for
+DMG SHA-256
+`88c1cbe96fe3bc3fa38d44fcf574970400e7739156bb569106790d4e801a22b6`.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.

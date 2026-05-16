@@ -719,6 +719,22 @@ the packaged app/DMG smoke passes in
 `/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-101312` for
 DMG SHA-256
 `68babfa7974a4b31173651eee27f0e5f6844637486478c42802b53bd34a80863`.
+Phase 6AU exposes the repo-native MIT/productization percentage from the app:
+the Studio Release panel now includes `Objective Pulse`, which locates and runs
+`scripts/garnet_mit_readiness_status.py --format markdown` from packaged
+resources, `GARNET_REPO_ROOT`, or the source checkout. This keeps the visible
+overall objective percentage separate from the complete tracked-slice ledger
+instead of hardcoding a final-completion claim. The agentic matrix adds a
+three-probe `MIT objective pulse UX` domain for the Studio action, runner, and
+truth copy; the refreshed source-checkout matrix passes `100/100` with
+`skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-102355`;
+refreshed web/PWA evidence lives at
+`/Users/idc2.0/Desktop/dogfood/web-pwa-readiness-20260516-102355`;
+the packaged app/DMG smoke passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-102422` for
+DMG SHA-256
+`88c1cbe96fe3bc3fa38d44fcf574970400e7739156bb569106790d4e801a22b6`.
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.
