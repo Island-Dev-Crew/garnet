@@ -29,6 +29,7 @@
 
 use crate::cmd::describe_item;
 use crate::read_file;
+use garnet_parser::ast::Annotation;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
@@ -143,7 +144,12 @@ fn render_module_md(
 fn item_span(item: &garnet_parser::ast::Item) -> garnet_parser::token::Span {
     use garnet_parser::ast::Item;
     match item {
-        Item::Fn(f) => f.span,
+        Item::Fn(f) => f
+            .annotations
+            .iter()
+            .filter_map(annotation_span)
+            .min_by_key(|span| span.start)
+            .unwrap_or(f.span),
         Item::Struct(s) => s.span,
         Item::Enum(e) => e.span,
         Item::Trait(t) => t.span,
@@ -155,6 +161,19 @@ fn item_span(item: &garnet_parser::ast::Item) -> garnet_parser::token::Span {
         Item::Use(u) => u.span,
         Item::Const(c) => c.span,
         Item::Let(l) => l.span,
+    }
+}
+
+fn annotation_span(annotation: &Annotation) -> Option<garnet_parser::token::Span> {
+    match annotation {
+        Annotation::MaxDepth(_, span)
+        | Annotation::FanOut(_, span)
+        | Annotation::RequireMetadata(span)
+        | Annotation::Safe(span)
+        | Annotation::Dynamic(span)
+        | Annotation::Caps(_, span)
+        | Annotation::Mailbox(_, span)
+        | Annotation::NonSendable(span) => Some(*span),
     }
 }
 

@@ -53,3 +53,32 @@ fn canonical_mvp_examples_emit_stable_results() {
         );
     }
 }
+
+#[test]
+fn advertised_agentic_examples_emit_stable_results() {
+    let cases = [
+        ("multi_agent_builder.garnet", "=> 46"),
+        ("safe_io_layer.garnet", "=> 402"),
+        ("agentic_log_analyzer.garnet", "=> 43"),
+    ];
+
+    for (name, expected) in cases {
+        let path = repo_root().join("examples").join(name);
+        let out = Command::new(garnet_bin())
+            .args(["run", path.to_str().unwrap()])
+            .output()
+            .unwrap();
+        assert!(
+            out.status.success(),
+            "garnet run {name} failed\nstdout:\n{}\nstderr:\n{}",
+            String::from_utf8_lossy(&out.stdout),
+            String::from_utf8_lossy(&out.stderr)
+        );
+
+        let stdout = String::from_utf8_lossy(&out.stdout);
+        assert!(
+            stdout.contains(expected),
+            "{name} did not emit {expected}\nstdout:\n{stdout}"
+        );
+    }
+}

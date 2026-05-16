@@ -47,13 +47,13 @@ struct OperationLog {
 
 @safe
 def stat(path) {
-  if path.starts_with?("missing/") {
+  if path.starts_with("missing/") {
     err(IoError::NotFound)
-  } elsif path.starts_with?("locked/") {
+  } elsif path.starts_with("locked/") {
     err(IoError::PermissionDenied)
-  } elsif path.starts_with?("flaky/") {
+  } elsif path.starts_with("flaky/") {
     err(IoError::Timeout)
-  } elsif path.starts_with?("dir/") {
+  } elsif path.starts_with("dir/") {
     ok(FileMeta(path, 0, FsKind::Dir))
   } else {
     ok(FileMeta(path, simulated_size(path), FsKind::File))
@@ -84,7 +84,7 @@ def write_file(path, body) {
   match meta {
     Err(_) => ok(0),
     _ => {
-      if path.starts_with?("readonly/") {
+      if path.starts_with("readonly/") {
         err(IoError::PermissionDenied)
       } else {
         ok(body.len())
@@ -105,9 +105,9 @@ def delete_path(path) {
 }
 
 def simulated_size(path) {
-  if path.starts_with?("big/") {
+  if path.starts_with("big/") {
     1048576
-  } elsif path.starts_with?("medium/") {
+  } elsif path.starts_with("medium/") {
     65536
   } else {
     1024
@@ -115,9 +115,9 @@ def simulated_size(path) {
 }
 
 def simulated_body(path) {
-  if path.starts_with?("corrupt/") {
+  if path.starts_with("corrupt/") {
     "CORRUPTED"
-  } elsif path.starts_with?("empty/") {
+  } elsif path.starts_with("empty/") {
     ""
   } else {
     "the quick brown fox jumps over the lazy dog"
@@ -133,7 +133,7 @@ def safe_read(path) {
     let contents = read_file(path)?
     contents.body
   } rescue e {
-    "(error: " + describe_error(e) + ")"
+    "(error: " + describe_result_error(e) + ")"
   }
 }
 
@@ -143,6 +143,13 @@ def safe_size(path) {
     meta.size
   } rescue e {
     -1
+  }
+}
+
+def describe_result_error(e) {
+  match e {
+    Err(inner) => describe_error(inner),
+    _ => describe_error(e),
   }
 }
 
@@ -160,7 +167,7 @@ def batch_read(paths) {
   let mut results = []
   for p in paths {
     let body = safe_read(p)
-    results.push(OperationLog("read", p, not body.starts_with?("(error"), body))
+    results.push(OperationLog("read", p, not body.starts_with("(error"), body))
   }
   results
 }
@@ -184,7 +191,7 @@ def with_retry(path, max_attempts) {
     attempt += 1
     let outcome = safe_read(path)
     last_outcome = outcome
-    if not outcome.starts_with?("(error") {
+    if not outcome.starts_with("(error") {
       break
     }
   }
@@ -216,6 +223,7 @@ def adversarial_paths() {
   ]
 }
 
+@caps()
 def main() {
   let golden = batch_read(golden_paths())
   let adv    = batch_read(adversarial_paths())

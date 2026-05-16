@@ -109,7 +109,10 @@ highest-leverage next milestones are:
    examples, conversion, release status, and onboarding without claiming
    Developer ID signing, notarization, TestFlight, App Store, web, or mobile
    distribution before those lanes are separately verified.
-6. **Formal/empirical proof:** keep Paper V theorem sketches and Paper VI
+6. **Agentic dogfood stress:** keep the advanced multi-domain matrix green so
+   agents can exercise orchestration, migration, safe-mode, release-integrity,
+   docs, app, and memory-analysis surfaces as one falsifiable workflow.
+7. **Formal/empirical proof:** keep Paper V theorem sketches and Paper VI
    experiments separate from implemented guarantees until tests or proofs land.
 
 The v0.5 seven-phase roadmap is tracked in

@@ -1,0 +1,890 @@
+#!/usr/bin/env python3
+"""Run agent-facing Garnet dogfood probes and emit evidence artifacts.
+
+The matrix intentionally exercises both canonical workflows and advertised
+advanced examples that should pass if Garnet's agent-native story is fully
+executable. Failures are captured as findings instead of being hidden behind a
+green-only smoke test.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Callable
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+@dataclass(frozen=True)
+class Probe:
+    id: str
+    domain: str
+    claim: str
+    command: list[str]
+    expect_success: bool
+    expected_stdout: tuple[str, ...] = ()
+    expected_stderr: tuple[str, ...] = ()
+    security_domain: str = "not-applicable"
+    notes: str = ""
+
+
+@dataclass
+class ProbeResult:
+    probe: Probe
+    status: str
+    exit_code: int
+    duration_ms: int
+    stdout_log: str
+    stderr_log: str
+    stdout_excerpt: str
+    stderr_excerpt: str
+    missing_stdout: list[str] = field(default_factory=list)
+    missing_stderr: list[str] = field(default_factory=list)
+
+    @property
+    def passed(self) -> bool:
+        return self.status == "passed"
+
+
+def run(cmd: list[str], cwd: Path, timeout: int = 30) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        cmd,
+        cwd=cwd,
+        text=True,
+        capture_output=True,
+        timeout=timeout,
+        check=False,
+    )
+
+
+def ensure_garnet_bin(explicit: str | None) -> Path:
+    if explicit:
+        path = Path(explicit).expanduser().resolve()
+        if not os.access(path, os.X_OK):
+            raise SystemExit(f"garnet binary is not executable: {path}")
+        return path
+
+    candidate = ROOT / "target" / "debug" / "garnet"
+    if not os.access(candidate, os.X_OK):
+        build = run(["cargo", "build", "-p", "garnet-cli"], ROOT, timeout=180)
+        if build.returncode != 0:
+            sys.stderr.write(build.stdout)
+            sys.stderr.write(build.stderr)
+            raise SystemExit("failed to build garnet-cli")
+    return candidate
+
+
+def write(path: Path, text: str) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    return path
+
+
+def prepare_fixtures(work: Path) -> dict[str, Path]:
+    fixtures = work / "fixtures"
+    paths: dict[str, Path] = {}
+
+    paths["triage"] = write(
+        fixtures / "triage_router.garnet",
+        """def severity_score(sev) {
+  match sev {
+    "fatal" => 50,
+    "error" => 30,
+    "warn" => 10,
+    _ => 1,
+  }
+}
+
+@caps()
+def main() {
+  let events = ["info", "warn", "error", "fatal"]
+  let mut score = 0
+  for event in events {
+    score += severity_score(event)
+  }
+  println("agent triage score:", score)
+  score
+}
+""",
+    )
+
+    paths["policy"] = write(
+        fixtures / "capability_policy.garnet",
+        """def allowed(tool, risk) {
+  match tool {
+    "read_file" if risk < 3 => true,
+    "write_file" if risk < 2 => true,
+    "network" => false,
+    _ => false,
+  }
+}
+
+@caps()
+def main() {
+  let checks = [
+    allowed("read_file", 1),
+    allowed("write_file", 3),
+    allowed("network", 1),
+    allowed("unknown", 0),
+  ]
+  let mut score = 0
+  for item in checks {
+    if item { score += 1 }
+  }
+  println("policy allowed count:", score)
+  score
+}
+""",
+    )
+
+    paths["safe_pure"] = write(
+        fixtures / "safe_pure.garnet",
+        """@safe
+def inc(value) {
+  value + 1
+}
+
+@caps()
+def main() {
+  inc(40)
+}
+""",
+    )
+
+    paths["safe_violation"] = write(
+        fixtures / "safe_violation.garnet",
+        """@safe
+def bad() {
+  var x = 1
+  raise "oops"
+  x
+}
+""",
+    )
+
+    paths["doc_source"] = write(
+        fixtures / "documented_agent.garnet",
+        """/// Score an agent handoff for review priority.
+def priority(risk, age) {
+  risk * 10 + age
+}
+
+/// Main smoke for documentation extraction.
+@caps()
+def main() {
+  priority(3, 7)
+}
+""",
+    )
+
+    paths["build_source"] = write(
+        fixtures / "release_agent.garnet",
+        """def priority(risk, age) {
+  risk * 10 + age
+}
+
+@caps()
+def main() {
+  priority(3, 7)
+}
+""",
+    )
+
+    paths["fmt_source"] = write(
+        fixtures / "formatted_agent.garnet",
+        """def priority(risk, age) {
+  risk * 10 + age
+}
+
+@caps()
+def main() {
+  priority(3, 7)
+}
+""",
+    )
+
+    paths["tamper"] = write(fixtures / "tamper.garnet", "def main() { 100 }\n")
+
+    paths["python"] = write(
+        fixtures / "route_weight.py",
+        """def route_weight(path):
+    if path == "/":
+        return 10
+    if path == "/health":
+        return 20
+    return 1
+""",
+    )
+    paths["ruby"] = write(
+        fixtures / "score.rb",
+        """def score(x)
+  if x > 3
+    x * 2
+  else
+    x
+  end
+end
+""",
+    )
+    paths["rust"] = write(
+        fixtures / "score.rs",
+        "fn score(x: i32) -> i32 { if x > 3 { x * 2 } else { x } }\n",
+    )
+    paths["go"] = write(
+        fixtures / "score.go",
+        "func score(x int) int { if x > 3 { return x * 2 }; return x }\n",
+    )
+    return paths
+
+
+def build_project_template_probe(garnet: Path, work: Path) -> ProbeResult:
+    probe = Probe(
+        id="template-agent-orchestrator-run-and-test",
+        domain="project scaffolding",
+        claim="agent-orchestrator template should scaffold, run, and test without manual repair",
+        command=[str(garnet), "new", "--template", "agent-orchestrator", str(work / "generated_agents")],
+        expect_success=True,
+        expected_stdout=("3 passed; 0 failed", "=> 25"),
+        security_domain="filesystem",
+    )
+    start = time.monotonic()
+    stdout_parts: list[str] = []
+    stderr_parts: list[str] = []
+    target = work / "generated_agents"
+    first = run(probe.command, work)
+    stdout_parts.append("$ " + " ".join(probe.command))
+    stdout_parts.append(first.stdout)
+    stderr_parts.append(first.stderr)
+    exit_code = first.returncode
+    if first.returncode == 0:
+        main = target / "src" / "main.garnet"
+        second = run([str(garnet), "run", str(main)], work)
+        stdout_parts.append("$ garnet run generated_agents/src/main.garnet")
+        stdout_parts.append(second.stdout)
+        stderr_parts.append(second.stderr)
+        exit_code = second.returncode
+        if second.returncode == 0:
+            third = run([str(garnet), "test", str(target)], work)
+            stdout_parts.append("$ garnet test generated_agents")
+            stdout_parts.append(third.stdout)
+            stderr_parts.append(third.stderr)
+            exit_code = third.returncode
+    return classify_result(
+        probe,
+        exit_code,
+        "\n".join(stdout_parts),
+        "\n".join(stderr_parts),
+        int((time.monotonic() - start) * 1000),
+        work,
+    )
+
+
+def build_tamper_probe(garnet: Path, work: Path, source: Path) -> ProbeResult:
+    probe = Probe(
+        id="release-manifest-tamper-detection",
+        domain="release integrity",
+        claim="deterministic build manifests should reject modified source",
+        command=[str(garnet), "build", "--deterministic", str(source)],
+        expect_success=True,
+        expected_stderr=("source_hash mismatch",),
+        security_domain="release-integrity",
+    )
+    start = time.monotonic()
+    build = run(probe.command, work)
+    manifest = source.with_name(source.name + ".manifest.json")
+    stdout = ["$ " + " ".join(probe.command), build.stdout]
+    stderr = [build.stderr]
+    exit_code = build.returncode
+    if build.returncode == 0:
+        source.write_text("def main() { 999 }\n", encoding="utf-8")
+        verify_cmd = [str(garnet), "verify", str(source), str(manifest)]
+        verify = run(verify_cmd, work)
+        stdout.extend(["$ " + " ".join(verify_cmd), verify.stdout])
+        stderr.append(verify.stderr)
+        exit_code = 0 if verify.returncode != 0 else 1
+    return classify_result(
+        probe,
+        exit_code,
+        "\n".join(stdout),
+        "\n".join(stderr),
+        int((time.monotonic() - start) * 1000),
+        work,
+    )
+
+
+def classify_result(
+    probe: Probe,
+    exit_code: int,
+    stdout: str,
+    stderr: str,
+    duration_ms: int,
+    work: Path,
+) -> ProbeResult:
+    exit_matches = (exit_code == 0) == probe.expect_success
+    missing_stdout = [needle for needle in probe.expected_stdout if needle not in stdout]
+    missing_stderr = [needle for needle in probe.expected_stderr if needle not in stderr]
+    status = "passed" if exit_matches and not missing_stdout and not missing_stderr else "failed"
+
+    logs = work / "logs"
+    logs.mkdir(exist_ok=True)
+    stdout_log = logs / f"{probe.id}.stdout.log"
+    stderr_log = logs / f"{probe.id}.stderr.log"
+    stdout_log.write_text(stdout, encoding="utf-8")
+    stderr_log.write_text(stderr, encoding="utf-8")
+
+    return ProbeResult(
+        probe=probe,
+        status=status,
+        exit_code=exit_code,
+        duration_ms=duration_ms,
+        stdout_log=str(stdout_log),
+        stderr_log=str(stderr_log),
+        stdout_excerpt=stdout[-700:],
+        stderr_excerpt=stderr[-700:],
+        missing_stdout=missing_stdout,
+        missing_stderr=missing_stderr,
+    )
+
+
+def run_probe(probe: Probe, work: Path) -> ProbeResult:
+    start = time.monotonic()
+    completed = run(probe.command, work)
+    return classify_result(
+        probe,
+        completed.returncode,
+        completed.stdout,
+        completed.stderr,
+        int((time.monotonic() - start) * 1000),
+        work,
+    )
+
+
+def probe_set(garnet: Path, work: Path, fixtures: dict[str, Path]) -> list[Probe | Callable[[], ProbeResult]]:
+    examples = ROOT / "examples"
+    return [
+        Probe(
+            "run-agent-triage-router",
+            "agent orchestration",
+            "agent triage program should parse, execute control flow, and return a stable priority score",
+            [str(garnet), "run", str(fixtures["triage"])],
+            True,
+            ("agent triage score:", "=> 91"),
+        ),
+        Probe(
+            "run-capability-policy",
+            "agent orchestration",
+            "capability policy program should handle guarded match branches and booleans",
+            [str(garnet), "run", str(fixtures["policy"])],
+            True,
+            ("policy allowed count:", "=> 1"),
+            security_domain="authn-authz",
+        ),
+        Probe(
+            "eval-agent-reducer",
+            "agent orchestration",
+            "agent can use CLI eval for quick collection reduction",
+            [str(garnet), "eval", "[1, 2, 3].reduce(0, |a, b| a + b)"],
+            True,
+            ("6",),
+        ),
+        lambda: build_project_template_probe(garnet, work),
+        Probe(
+            "run-canonical-multi-agent-example",
+            "agent orchestration",
+            "canonical multi-agent builder example should run with a stable result",
+            [str(garnet), "run", str(examples / "multi_agent_builder.garnet")],
+            True,
+            ("clean build:", "red build:", "=> 46"),
+        ),
+        Probe(
+            "check-safe-pure",
+            "safe mode and capabilities",
+            "safe pure function with @caps main should pass checker",
+            [str(garnet), "check", str(fixtures["safe_pure"])],
+            True,
+            ("0 diagnostics",),
+        ),
+        Probe(
+            "run-safe-pure",
+            "safe mode and capabilities",
+            "safe pure function should run through managed main",
+            [str(garnet), "run", str(fixtures["safe_pure"])],
+            True,
+            ("=> 41",),
+        ),
+        Probe(
+            "check-safe-violation",
+            "safe mode and capabilities",
+            "safe-mode checker should reject raise/var violations in @safe code",
+            [str(garnet), "check", str(fixtures["safe_violation"])],
+            False,
+            ("safe",),
+        ),
+        Probe(
+            "check-advertised-safe-io-example",
+            "safe mode and capabilities",
+            "advertised safe_io_layer example should satisfy checker without manual repair",
+            [str(garnet), "check", str(examples / "safe_io_layer.garnet")],
+            True,
+            ("0 diagnostics",),
+            security_domain="filesystem",
+        ),
+        Probe(
+            "run-advertised-safe-io-example",
+            "safe mode and capabilities",
+            "advertised safe_io_layer example should run as documented",
+            [str(garnet), "run", str(examples / "safe_io_layer.garnet")],
+            True,
+            ("golden ok / total:", "=> 402"),
+            security_domain="filesystem",
+        ),
+        Probe(
+            "convert-python-route",
+            "migration assistant",
+            "Python source should convert with lineage, metrics, and migrate checklist",
+            [str(garnet), "convert", "python", str(fixtures["python"])],
+            True,
+            ("converted", "lineage", "metrics", "migrate_todo"),
+            security_domain="sandbox",
+        ),
+        Probe(
+            "convert-ruby-score",
+            "migration assistant",
+            "Ruby source should convert with migration evidence",
+            [str(garnet), "convert", "ruby", str(fixtures["ruby"])],
+            True,
+            ("converted", "migrate_todo"),
+            security_domain="sandbox",
+        ),
+        Probe(
+            "convert-rust-score",
+            "migration assistant",
+            "Rust source should convert cleanly for simple function shapes",
+            [str(garnet), "convert", "rust", str(fixtures["rust"])],
+            True,
+            ("100.0% clean translation",),
+            security_domain="sandbox",
+        ),
+        Probe(
+            "convert-go-score",
+            "migration assistant",
+            "Go source should convert cleanly for simple function shapes",
+            [str(garnet), "convert", "go", str(fixtures["go"])],
+            True,
+            ("100.0% clean translation",),
+            security_domain="sandbox",
+        ),
+        Probe(
+            "convert-unsupported-language",
+            "migration assistant",
+            "unsupported source languages should fail loudly",
+            [str(garnet), "convert", "javascript", str(fixtures["python"])],
+            False,
+            security_domain="sandbox",
+        ),
+        Probe(
+            "build-deterministic-manifest",
+            "release integrity",
+            "deterministic build should emit a manifest sidecar",
+            [str(garnet), "build", "--deterministic", str(fixtures["build_source"])],
+            True,
+            ("manifest",),
+            security_domain="release-integrity",
+        ),
+        Probe(
+            "verify-deterministic-manifest",
+            "release integrity",
+            "fresh deterministic manifest should verify unchanged source",
+            [
+                str(garnet),
+                "verify",
+                str(fixtures["build_source"]),
+                str(fixtures["build_source"].with_name(fixtures["build_source"].name + ".manifest.json")),
+            ],
+            True,
+            ("OK",),
+            security_domain="release-integrity",
+        ),
+        lambda: build_tamper_probe(garnet, work, fixtures["tamper"]),
+        Probe(
+            "doc-extract-documented-agent",
+            "developer experience",
+            "doc extractor should surface /// comments for agent-facing source",
+            [str(garnet), "doc", "--stdout", str(fixtures["doc_source"])],
+            True,
+            ("Score an agent handoff", "Main smoke"),
+        ),
+        Probe(
+            "fmt-check-documented-agent",
+            "developer experience",
+            "formatter check should accept stable fixture style",
+            [str(garnet), "fmt", "--check", str(fixtures["fmt_source"])],
+            True,
+        ),
+        Probe(
+            "app-self-test",
+            "macOS app workbench",
+            "Garnet Studio self-test should pass from SwiftPM",
+            ["swift", "run", "--package-path", str(ROOT / "apps" / "garnet-studio-macos"), "GarnetStudio", "--self-test"],
+            True,
+            ("GarnetStudio self-test passed",),
+        ),
+        Probe(
+            "app-xctest",
+            "macOS app workbench",
+            "Garnet Studio XCTest target should pass",
+            ["swift", "test", "--package-path", str(ROOT / "apps" / "garnet-studio-macos")],
+            True,
+            ("Executed 4 tests", "0 failures"),
+        ),
+        Probe(
+            "run-advertised-log-analyzer",
+            "agent memory and analysis",
+            "advertised agentic log analyzer should run as documented",
+            [str(garnet), "run", str(examples / "agentic_log_analyzer.garnet")],
+            True,
+            ("ingested incidents:", "=> 43"),
+            security_domain="privacy",
+        ),
+        Probe(
+            "check-advertised-log-analyzer",
+            "agent memory and analysis",
+            "advertised agentic log analyzer should satisfy capability checks",
+            [str(garnet), "check", str(examples / "agentic_log_analyzer.garnet")],
+            True,
+            ("0 diagnostics",),
+            security_domain="privacy",
+        ),
+    ]
+
+
+def score(results: list[ProbeResult]) -> dict[str, int | float]:
+    failures = [result for result in results if not result.passed]
+    high = sum(1 for result in failures if "advertised" in result.probe.id)
+    medium = len(failures) - high
+    readiness = max(0, 100 - high * 12 - medium * 5)
+    return {
+        "total": len(results),
+        "passed": len(results) - len(failures),
+        "failed": len(failures),
+        "high_findings": high,
+        "medium_findings": medium,
+        "readiness": readiness,
+    }
+
+
+def render_matrix(results: list[ProbeResult]) -> str:
+    lines = [
+        "# Agentic Garnet Dogfood Matrix",
+        "",
+        "| Domain | Probe | Status | Exit | Claim | Evidence |",
+        "| --- | --- | --- | ---: | --- | --- |",
+    ]
+    for result in results:
+        evidence = f"`{Path(result.stdout_log).name}` / `{Path(result.stderr_log).name}`"
+        lines.append(
+            f"| {result.probe.domain} | `{result.probe.id}` | {result.status} | "
+            f"{result.exit_code} | {result.probe.claim} | {evidence} |"
+        )
+    return "\n".join(lines) + "\n"
+
+
+def render_findings(results: list[ProbeResult]) -> str:
+    failures = [result for result in results if not result.passed]
+    if not failures:
+        return "No failing probes recorded.\n"
+    chunks: list[str] = []
+    for index, result in enumerate(failures, start=1):
+        severity = "high" if "advertised" in result.probe.id else "medium"
+        chunks.append(
+            f"## AGENTIC-{index:03d}: {result.probe.id}\n\n"
+            f"- Severity: {severity}\n"
+            f"- Domain: {result.probe.domain}\n"
+            f"- Security domain: {result.probe.security_domain}\n"
+            f"- Claim tested: {result.probe.claim}\n"
+            f"- Expected: exit {'0' if result.probe.expect_success else 'nonzero'}"
+            f"{' and stdout containing ' + ', '.join(result.probe.expected_stdout) if result.probe.expected_stdout else ''}\n"
+            f"- Actual: exit {result.exit_code}; status {result.status}\n"
+            f"- Missing stdout evidence: {result.missing_stdout or 'none'}\n"
+            f"- Missing stderr evidence: {result.missing_stderr or 'none'}\n"
+            f"- Stdout log: `{result.stdout_log}`\n"
+            f"- Stderr log: `{result.stderr_log}`\n"
+            f"- Recommendation: promote this probe into a focused regression test or adjust the advertised example/docs to match implemented semantics.\n"
+        )
+    return "\n".join(chunks)
+
+
+def render_report(results: list[ProbeResult], metadata: dict[str, str], score_data: dict[str, int | float]) -> str:
+    failures = [result for result in results if not result.passed]
+    failing_ids = "\n".join(f"- `{result.probe.id}`" for result in failures) or "- None"
+    if failures:
+        decision = (
+            f"Passed {score_data['passed']}/{score_data['total']} probes. The matrix found "
+            "agent-facing gaps that should remain MIT-readiness improvement items until "
+            "they are fixed or explicitly documented as deferred."
+        )
+        plan = (
+            "1. Promote failing advanced probes into focused CLI regression tests.\n"
+            "2. Reconcile the failing examples, checker diagnostics, and interpreter behavior.\n"
+            "3. Update user-facing docs so advertised workflows match implemented semantics.\n"
+            "4. Rerun this matrix with `--strict` before moving the readiness claim forward.\n"
+            "5. Add a Garnet Studio UI entry for \"Agentic Stress Tests\" once the CLI harness stabilizes."
+        )
+    else:
+        decision = (
+            f"Passed {score_data['passed']}/{score_data['total']} probes. The audited CLI, "
+            "template, converter, release-integrity, documentation, safe-mode, "
+            "agent-memory, and macOS app workbench paths all produced the expected "
+            "evidence for this run."
+        )
+        plan = (
+            "1. Keep the advanced examples covered by focused regression tests.\n"
+            "2. Add this matrix to CI once the runtime cost is acceptable for PR checks.\n"
+            "3. Add a Garnet Studio UI entry for \"Agentic Stress Tests\" that runs the same harness.\n"
+            "4. Expand separate productization lanes for signed/notarized macOS, web/PWA, mobile, and promo video artifacts.\n"
+            "5. Preserve production allocator ARC, native backend, proof, and empirical claims as separate executable gates."
+        )
+    return f"""# Garnet Agentic Dogfood Readiness Report
+
+## Target
+
+- Repo: `{metadata["repo"]}`
+- Head: `{metadata["head"]}`
+- Branch: `{metadata["branch"]}`
+- Garnet binary: `{metadata["garnet"]}`
+- Artifact directory: `{metadata["artifact_dir"]}`
+
+## Decision
+
+Readiness score: **{score_data["readiness"]}/100**
+
+{decision}
+
+## Failing Probes
+
+{failing_ids}
+
+## Score Inputs
+
+```json
+{json.dumps(score_data, indent=2)}
+```
+
+## Next Implementation Plan
+
+{plan}
+"""
+
+
+def render_deck(results: list[ProbeResult], metadata: dict[str, str], score_data: dict[str, int | float]) -> str:
+    by_domain: dict[str, list[ProbeResult]] = {}
+    for result in results:
+        by_domain.setdefault(result.probe.domain, []).append(result)
+    domain_cards = "\n".join(
+        f"<article><h3>{domain}</h3><p>{sum(r.passed for r in items)}/{len(items)} probes passed</p></article>"
+        for domain, items in sorted(by_domain.items())
+    )
+    finding_cards = "\n".join(
+        f"<li><strong>{result.probe.id}</strong>: {result.probe.claim}</li>"
+        for result in results
+        if not result.passed
+    ) or "<li>No failing probes in this run.</li>"
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Garnet Agentic Dogfood Deck</title>
+  <style>
+    :root {{
+      color-scheme: dark;
+      --bg: #090a0f;
+      --panel: #161821;
+      --text: #f3f4f6;
+      --muted: #a7adbb;
+      --garnet: #9e2b2f;
+      --amber: #d9a441;
+      --line: rgba(255,255,255,.12);
+    }}
+    * {{ box-sizing: border-box; }}
+    body {{
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+      line-height: 1.45;
+    }}
+    section {{
+      min-height: 100vh;
+      padding: 72px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border-bottom: 1px solid var(--line);
+    }}
+    h1 {{ font-size: 72px; line-height: .95; margin: 0 0 24px; max-width: 1050px; }}
+    h2 {{ font-size: 46px; margin: 0 0 28px; }}
+    p {{ color: var(--muted); font-size: 24px; max-width: 980px; }}
+    .score {{ font-size: 128px; color: var(--amber); font-weight: 800; letter-spacing: 0; }}
+    .grid {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }}
+    article {{ background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 22px; }}
+    article h3 {{ margin: 0 0 10px; font-size: 22px; }}
+    article p {{ margin: 0; font-size: 18px; }}
+    ul {{ font-size: 24px; color: var(--muted); max-width: 1100px; }}
+    li {{ margin: 14px 0; }}
+    code {{ color: #ffd6d8; }}
+    .bar {{ height: 10px; background: var(--garnet); width: {score_data["readiness"]}%; border-radius: 999px; }}
+  </style>
+</head>
+<body>
+  <section>
+    <h1>Garnet Agentic Dogfood</h1>
+    <p>Advanced probes for agent orchestration, safe-mode boundaries, migration, release integrity, docs, app onboarding, and memory-analysis examples.</p>
+    <p><code>{metadata["head"][:12]}</code> · <code>{metadata["branch"]}</code></p>
+  </section>
+  <section>
+    <h2>Readiness Score</h2>
+    <div class="score">{score_data["readiness"]}/100</div>
+    <div class="bar"></div>
+    <p>{score_data["passed"]}/{score_data["total"]} probes passed.</p>
+  </section>
+  <section>
+    <h2>Coverage</h2>
+    <div class="grid">{domain_cards}</div>
+  </section>
+  <section>
+    <h2>Findings</h2>
+    <ul>{finding_cards}</ul>
+  </section>
+  <section>
+    <h2>Next</h2>
+    <ul>
+      <li>Keep this matrix as a reusable dogfood gate for agent-facing language claims.</li>
+      <li>Surface it inside Garnet Studio as an "Agentic Stress Tests" workflow.</li>
+      <li>Use the same artifact contract for future web/mobile/video productization lanes.</li>
+    </ul>
+  </section>
+</body>
+</html>
+"""
+
+
+def write_outputs(work: Path, results: list[ProbeResult], metadata: dict[str, str]) -> None:
+    score_data = score(results)
+    data = {
+        "metadata": metadata,
+        "score": score_data,
+        "results": [
+            {
+                "id": result.probe.id,
+                "domain": result.probe.domain,
+                "claim": result.probe.claim,
+                "status": result.status,
+                "exit_code": result.exit_code,
+                "duration_ms": result.duration_ms,
+                "security_domain": result.probe.security_domain,
+                "command": result.probe.command,
+                "expected_stdout": result.probe.expected_stdout,
+                "expected_stderr": result.probe.expected_stderr,
+                "missing_stdout": result.missing_stdout,
+                "missing_stderr": result.missing_stderr,
+                "stdout_log": result.stdout_log,
+                "stderr_log": result.stderr_log,
+                "stdout_excerpt": result.stdout_excerpt,
+                "stderr_excerpt": result.stderr_excerpt,
+            }
+            for result in results
+        ],
+    }
+    (work / "dogfood-readiness-data.json").write_text(json.dumps(data, indent=2), encoding="utf-8")
+    (work / "dogfood-readiness-matrix.md").write_text(render_matrix(results), encoding="utf-8")
+    (work / "dogfood-readiness-findings.md").write_text(render_findings(results), encoding="utf-8")
+    (work / "dogfood-readiness-report.md").write_text(
+        render_report(results, metadata, score_data),
+        encoding="utf-8",
+    )
+    (work / "dogfood-readiness-slide-deck.html").write_text(
+        render_deck(results, metadata, score_data),
+        encoding="utf-8",
+    )
+    (work / "dogfood-readiness-mutations.md").write_text(
+        "# Agentic Garnet Mutation Log\n\n"
+        "- `release-manifest-tamper-detection` mutates `tamper.garnet` after deterministic build and expects `verify` to fail with `source_hash mismatch`.\n"
+        "- `check-safe-violation` injects a forbidden safe-mode `raise`/`var` body and expects the checker to reject it.\n",
+        encoding="utf-8",
+    )
+    subprocess.run(
+        "find . -type f ! -name MANIFEST.sha256 ! -name MANIFEST.verify.log -print0 | "
+        "sort -z | xargs -0 shasum -a 256 > MANIFEST.sha256 && "
+        "shasum -a 256 -c MANIFEST.sha256 > MANIFEST.verify.log",
+        cwd=work,
+        shell=True,
+        check=True,
+    )
+
+
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--garnet-bin", help="path to an existing garnet binary")
+    parser.add_argument("--output-dir", help="artifact directory; defaults to /tmp")
+    parser.add_argument(
+        "--copy-to-desktop",
+        action="store_true",
+        help="copy the completed artifact directory into ~/Desktop/dogfood",
+    )
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="exit nonzero when any probe fails; default records findings and exits 0",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(sys.argv[1:] if argv is None else argv)
+    garnet = ensure_garnet_bin(args.garnet_bin)
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    work = Path(args.output_dir) if args.output_dir else Path(tempfile.gettempdir()) / f"garnet-agentic-dogfood-{stamp}"
+    work.mkdir(parents=True, exist_ok=True)
+    fixtures = prepare_fixtures(work)
+
+    metadata = {
+        "repo": str(ROOT),
+        "head": run(["git", "rev-parse", "HEAD"], ROOT).stdout.strip(),
+        "branch": run(["git", "branch", "--show-current"], ROOT).stdout.strip(),
+        "garnet": str(garnet),
+        "artifact_dir": str(work),
+    }
+
+    results: list[ProbeResult] = []
+    for item in probe_set(garnet, work, fixtures):
+        result = item() if callable(item) else run_probe(item, work)
+        results.append(result)
+        print(f"{result.status.upper():6} {result.probe.domain:28} {result.probe.id}")
+
+    write_outputs(work, results, metadata)
+    final_score = score(results)
+    print(f"artifact_dir={work}")
+    print(f"readiness={final_score['readiness']}")
+    print(f"passed={final_score['passed']}/{final_score['total']}")
+
+    if args.copy_to_desktop:
+        desktop = Path.home() / "Desktop" / "dogfood" / work.name
+        if desktop.exists():
+            shutil.rmtree(desktop)
+        shutil.copytree(work, desktop)
+        print(f"desktop_copy={desktop}")
+
+    return 1 if args.strict and final_score["failed"] else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
