@@ -932,6 +932,16 @@ manifest evidence. This is a browser-smokeable preview artifact, not final
 MIT/productization acceptance, a human/aesthetic deck approval, notarization,
 Windows/Linux runtime proof, provider-backed conversion, native backend
 lowering, or mobile distribution.
+Phase 6BG exposes that deck preview from Garnet Studio's Release panel:
+`Deck Preview` runs the packaged or source `garnet_mit_deck_preview.py`
+reporter, writes a manifested `garnet-studio-mit-deck-preview-<stamp>` bundle
+under `~/Desktop/dogfood/`, and prints the output path in the Studio console.
+SwiftPM tests cover the bundled locator, HTML runner command, and Desktop
+evidence path; packaging-resource tests stage the reporter into the unsigned
+local DMG; and the agentic matrix adds a three-probe `MIT deck preview UX`
+domain. This remains presentation/evidence UX only, not human/aesthetic deck
+approval, notarization, Windows/Linux runtime proof, provider-backed conversion,
+native backend lowering, mobile distribution, or final acceptance.
 
 ## Historical Material
 

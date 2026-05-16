@@ -1758,6 +1758,19 @@ contract, and verified manifest evidence. Human/aesthetic deck approval,
 distribution signing, target-platform proof, provider-backed conversion,
 backend lowering, and mobile distribution remain separate gates.
 
+Phase 6BG Studio MIT deck-preview UX pass: the macOS Studio Release panel now
+exposes `Deck Preview` beside the deck outline and demo route actions. The
+action locates the packaged or source `garnet_mit_deck_preview.py` reporter,
+runs it with `--output-dir` and `--format html`, writes a manifested
+`garnet-studio-mit-deck-preview-<stamp>` bundle under `~/Desktop/dogfood/`, and
+prints that path in the Studio console. SwiftPM tests cover the bundled locator,
+runner command, and evidence directory; packaging-resource tests require the
+preview reporter inside the unsigned/local DMG resource set; and the agentic
+matrix adds a three-probe `MIT deck preview UX` domain. This remains
+presentation/evidence UX only: human/aesthetic deck approval, distribution
+signing, target-platform proof, provider-backed conversion, backend lowering,
+mobile distribution, and final acceptance remain separate gates.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.
