@@ -1468,6 +1468,13 @@ exposes that script as the Codex `Run` action. This improves local iteration
 and demo smoothness without replacing the DMG, signing, notarization, or
 clean-machine install gates.
 
+Phase 6AC adoption-surface alignment pass: the public site now has a
+`Garnet Studio workbench` section that names Codex Run,
+`dist/Garnet Studio.app`, and planned-language `Assist Plan`, while the
+machine-readable adoption reporter points the same hook to source evidence.
+The wording keeps notarization, mobile distribution, broad converter frontends,
+and provider-backed LLM conversion out of current implementation claims.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.

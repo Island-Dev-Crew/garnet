@@ -96,9 +96,16 @@ def verified_use_cases() -> list[UseCase]:
         UseCase(
             id="macos-workbench",
             label="macOS workbench",
-            hook="Open Garnet Studio locally to run health checks, examples, converter, release status, and agentic stress tests.",
+            hook=(
+                "Open Garnet Studio locally through Codex Run or `dist/Garnet Studio.app` "
+                "to run health checks, examples, deterministic conversion, Assist Plan, "
+                "release status, and agentic stress tests."
+            ),
             evidence=[
                 "apps/garnet-studio-macos/Sources/GarnetStudio/GarnetStudioApp.swift",
+                ".codex/environments/environment.toml",
+                "script/build_and_run.sh",
+                "scripts/test_garnet_studio_run_button.py",
                 "scripts/package_garnet_studio_macos.sh",
                 "scripts/smoke_garnet_studio_dmg.sh",
             ],

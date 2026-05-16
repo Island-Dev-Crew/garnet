@@ -666,6 +666,7 @@
       <a href="#code">Code</a>
       <a href="#caps">Capabilities</a>
       <a href="#install">Install</a>
+      <a href="#studio">Studio</a>
       <a href="#docs">Docs</a>
     </div>
     <a href="#install" class="cta">Get Started</a>
@@ -1110,6 +1111,47 @@ garnet run src/main.garnet">Copy</button>
 cd my_app
 garnet test           # 2 starter tests pass green
 garnet run src/main.garnet</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ STUDIO -->
+<section id="studio" class="dense">
+  <div class="container reveal">
+    <h3>Garnet Studio workbench</h3>
+    <h2>Open the language as an app, <span class="accent">not just a terminal.</span></h2>
+    <p class="lead">The macOS Studio surface is now a source-checkout workbench for real Garnet flows: health checks, runnable examples, the deterministic converter, planned-language <strong>Assist Plan</strong>, release status, and the agentic dogfood matrix. In Codex Desktop, the repo exposes a <strong>Codex Run</strong> action wired to <code>script/build_and_run.sh</code>; the script builds SwiftPM, stages <code>dist/Garnet Studio.app</code>, and launches the app bundle.</p>
+
+    <div class="features">
+      <div class="feature">
+        <div class="icon">Run</div>
+        <h4>One Local App Loop</h4>
+        <p>Use the Codex Run action or <code>./script/build_and_run.sh --verify</code> to build, launch, and prove the app process from the checkout.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">Assist</div>
+        <h4>Migration Planning</h4>
+        <p>Studio exposes <code>Assist Plan</code> for TypeScript, JavaScript, Swift, Java, C++, and C# as deterministic planning evidence, not active conversion.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">DMG</div>
+        <h4>Packaging Gate</h4>
+        <p>The DMG smoke still remains the distribution gate. Developer ID notarization and clean-machine Gatekeeper proof are not claimed yet.</p>
+      </div>
+    </div>
+
+    <div class="install-pane active" style="display:block;margin-top:28px;">
+      <div class="install-wrap">
+        <button class="copy" data-copy="./script/build_and_run.sh --verify">Copy</button>
+<pre># From a source checkout:
+./script/build_and_run.sh --verify
+
+# Codex Desktop:
+# click Run, which calls ./script/build_and_run.sh
+
+# Output bundle:
+dist/Garnet Studio.app</pre>
       </div>
     </div>
   </div>
