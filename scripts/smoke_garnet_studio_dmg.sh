@@ -169,6 +169,9 @@ MIT_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_mit_readiness_sta
 PROMO_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_promo_video_status.py"
 READINESS_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_readiness_status.py"
 NOTARIZATION_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_studio_notarization_status.py"
+PROMO_ASSETS_DIR="${INSTALLED_APP}/Contents/Resources/assets"
+PROMO_STUDIO_SOURCE="${INSTALLED_APP}/Contents/Resources/apps/garnet-studio-macos/Sources/GarnetStudio/GarnetStudioApp.swift"
+PROMO_STUDIO_LOGO="${INSTALLED_APP}/Contents/Resources/apps/garnet-studio-macos/Sources/GarnetStudio/Resources/garnet-logo.png"
 EXAMPLES_DIR="${INSTALLED_APP}/Contents/Resources/examples"
 DOCS_DIR="${INSTALLED_APP}/Contents/Resources/docs"
 SPEC_DIR="${INSTALLED_APP}/Contents/Resources/C_Language_Specification"
@@ -182,13 +185,13 @@ for required in "${APP_EXECUTABLE}" "${GARNET_BIN}" "${MATRIX_SCRIPT}" "${OFFLIN
 done
 record "pass" "Copied app executable assets exist" "app executable, bundled CLI, matrix script, status reporters, PWA smoke" "None."
 
-for required_dir in "${EXAMPLES_DIR}" "${DOCS_DIR}" "${SPEC_DIR}" "${PROJECT_DOGFOOD_DIR}"; do
+for required_dir in "${EXAMPLES_DIR}" "${DOCS_DIR}" "${SPEC_DIR}" "${PROJECT_DOGFOOD_DIR}" "${PROMO_ASSETS_DIR}"; do
   if [ ! -d "${required_dir}" ]; then
     echo "error: copied app is missing bundled resource directory: ${required_dir}" >&2
     exit 5
   fi
 done
-record "pass" "Copied app resource directories exist" "examples, docs, specs, and dogfood context" "None."
+record "pass" "Copied app resource directories exist" "examples, docs, specs, dogfood context, and promo assets" "None."
 
 if [ ! -f "${DOCS_DIR}/service-worker.js" ]; then
   echo "error: copied app is missing bundled PWA service worker: ${DOCS_DIR}/service-worker.js" >&2
@@ -202,13 +205,16 @@ for required_file in \
   "${SPEC_DIR}/GARNET_v1_0_Mini_Spec.md" \
   "${SPEC_DIR}/GARNET_v0_4_2_Conformance_Matrix.md" \
   "${INSTALLED_APP}/Contents/Resources/F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md" \
-  "${PROJECT_DOGFOOD_DIR}/GARNET_v0_5_DOGFOOD_READINESS_PHASE_LOG.md"; do
+  "${PROJECT_DOGFOOD_DIR}/GARNET_v0_5_DOGFOOD_READINESS_PHASE_LOG.md" \
+  "${PROMO_ASSETS_DIR}/garnet-logo.png" \
+  "${PROMO_STUDIO_SOURCE}" \
+  "${PROMO_STUDIO_LOGO}"; do
   if [ ! -f "${required_file}" ]; then
     echo "error: copied app is missing bundled context file: ${required_file}" >&2
     exit 5
   fi
 done
-record "pass" "Copied app bundles status reporter context documents" "README, current state, spec, conformance, plan, dogfood ledger" "None."
+record "pass" "Copied app bundles status reporter context documents" "README, current state, spec, conformance, plan, dogfood ledger, and promo source-lock inputs" "None."
 
 if command -v codesign >/dev/null 2>&1; then
   echo "==> Verifying copied app signature"

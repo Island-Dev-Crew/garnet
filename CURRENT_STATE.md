@@ -69,7 +69,7 @@ done
 | `scripts/garnet_assist_context_pack.py` | Garnet-aware assist context and prompt pack | current machine-readable context bundle plus provider-neutral prompt pack for future provider-backed converter assist; hashes current truth/spec/dogfood docs and preserves advisory-only gates without enabling LLM conversion |
 | `scripts/garnet_converter_assist_plan.py` | planned-language converter assist plan | current deterministic planner for a single source file in an active or planned converter language; inventories safe-mode, memory, CapCaps, actor/orchestration, and migration risks without executing source or enabling LLM conversion |
 | `scripts/garnet_mit_readiness_status.py` | MIT/productization objective inventory | current machine-readable truth that the tracked implementation plan is complete while notarization, mobile distribution, promo video, broad converter frontends, LLM assist, and proof/empirics remain open gates |
-| `scripts/garnet_promo_video_status.py` | promo video readiness contract | current machine-readable storyboard/gate contract for a future 30-second HyperFrames or Remotion promo; no rendered video or website-ready export is claimed |
+| `scripts/garnet_promo_video_status.py` | promo video readiness contract | current machine-readable source-locked storyboard/gate contract for a future 30-second HyperFrames or Remotion promo; visual identity/source surfaces are tied to repo assets, and no rendered video or website-ready export is claimed |
 | `scripts/garnet_studio_notarization_status.py` | macOS notarization preflight inventory | current machine-readable summary for notarization preflight bundles; preserves blocker/warning evidence, redacts credential values, and explicitly avoids claiming Apple submission or notarization |
 | `scripts/garnet_adoption_surface_status.py` | repo/site adoption truth inventory | current machine-readable status linking the public hook, verified use cases, active converter lanes, planned language lanes, LLM-assist boundaries, and productization gates |
 | `examples/mvp_*.garnet` | canonical app-level smokes | must parse/check/run |
@@ -143,8 +143,9 @@ highest-leverage next milestones are:
    drift.
 7. **Promo/video readiness:** keep the future HyperFrames or Remotion ad lane
    tied to `scripts/garnet_promo_video_status.py` so the storyboard,
-   render/visual-QA gates, website export, and forbidden claims are explicit
-   before a video artifact is embedded or advertised.
+   visual identity/source-surface lock, render/visual-QA gates, website export,
+   and forbidden claims are explicit before a video artifact is embedded or
+   advertised.
 8. **Agentic dogfood stress:** keep the advanced multi-domain matrix green so
    agents can exercise orchestration, agent toolbelt examples, recovery diagnostics,
    adversarial input boundaries, migration, safe-mode, release-integrity,
@@ -185,10 +186,10 @@ highest-leverage next milestones are:
    reporter takes an active or planned language plus one source file and emits
    advisory migration risks, required gates, next steps, JSON/Markdown, and a
    manifest while keeping planned-language conversion inactive. The promo video
-   readiness contract records the 30-second storyboard,
-   HyperFrames/Remotion composition gate, rendered-artifact gate, visual-QA
-   gate, website-export gate, and forbidden claims before any ad is claimed as
-   shipped.
+   readiness contract now locks the 30-second storyboard, brand assets, and
+   source surfaces before the HyperFrames/Remotion composition gate,
+   rendered-artifact gate, visual-QA gate, website-export gate, and forbidden
+   claims can advance toward a shipped ad.
    The MIT-readiness accounting domain also probes
    `scripts/garnet_mit_readiness_status.py`, so agents and public-site copy can
    report `87/87` tracked slices without turning that into a false claim that
@@ -556,6 +557,16 @@ advisory reporter. Java `CompletableFuture`/executor-style orchestration terms
 are recognized as actor/orchestration risks, and the source-checkout matrix
 passes `68/68` with `skipped=0` in Desktop bundle
 `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-055816`.
+Phase 6AG starts the promo/ad productization lane without overclaiming it:
+`scripts/garnet_promo_video_status.py` defines the requested 30-second
+storyboard and render/visual-QA/website gates while explicitly reporting that
+no rendered promo video or website-ready export exists. Phase 6AH then locks
+the visual identity and source-surface packet for the future render by hashing
+canonical logo/PWA icon assets and proving the public site, Garnet Studio,
+agentic dogfood matrix, and MIT readiness reporter surfaces are present. The
+promo lane now reports `source-locked` at 35.0%, and the source-checkout matrix
+passes `72/72` with `skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-063353`.
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.
