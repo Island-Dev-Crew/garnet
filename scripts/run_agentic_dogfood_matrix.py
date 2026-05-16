@@ -2813,6 +2813,69 @@ def probe_set(
             security_domain="filesystem",
         ),
         Probe(
+            "report-studio-mit-deck-preview-action",
+            "MIT deck preview UX",
+            "Garnet Studio should expose the repo-native MIT deck preview from the Release panel",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['Button(\"Deck Preview\", action: model.runMitDeckPreview)', "
+                    "'func runMitDeckPreview()', 'mitDeckPreviewPath']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio MIT deck preview action present')\n"
+                ),
+            ],
+            True,
+            ("studio MIT deck preview action present",),
+            security_domain="not-applicable",
+        ),
+        Probe(
+            "report-studio-mit-deck-preview-runner",
+            "MIT deck preview UX",
+            "Garnet Studio should write manifested MIT deck-preview evidence instead of only rendering transient copy",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['MitDeckPreviewRunner', 'MitDeckPreviewScriptLocator', "
+                    "'garnet_mit_deck_preview.py', '--output-dir', '--format', 'html']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio MIT deck preview runner present')\n"
+                ),
+            ],
+            True,
+            ("studio MIT deck preview runner present",),
+            security_domain="not-applicable",
+        ),
+        Probe(
+            "report-studio-mit-deck-preview-desktop-evidence",
+            "MIT deck preview UX",
+            "Garnet Studio should preserve MIT deck-preview output under Desktop dogfood storage",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['func mitDeckPreviewDirectory', 'Desktop', 'dogfood', "
+                    "'garnet-studio-mit-deck-preview-', 'Deck preview output:']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio MIT deck preview desktop evidence present')\n"
+                ),
+            ],
+            True,
+            ("studio MIT deck preview desktop evidence present",),
+            security_domain="filesystem",
+        ),
+        Probe(
             "report-mit-readiness-plan-complete",
             "MIT readiness accounting",
             "objective status should separate completed tracked slices from broader productization completion",

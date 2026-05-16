@@ -152,6 +152,19 @@ final class GarnetStudioTests: XCTestCase {
         XCTAssertEqual(first?.scriptURL.path, "/Applications/Garnet Studio.app/Contents/Resources/scripts/garnet_mit_deck_outline.py")
     }
 
+    func testMitDeckPreviewLocatorPrefersBundledScriptBeforeAmbientCheckout() {
+        let locator = MitDeckPreviewScriptLocator(
+            bundleResourceURL: URL(fileURLWithPath: "/Applications/Garnet Studio.app/Contents/Resources", isDirectory: true),
+            environmentRepoRoot: nil,
+            currentDirectoryURL: URL(fileURLWithPath: "/repo/apps/garnet-studio-macos", isDirectory: true)
+        )
+
+        let first = locator.candidateLocations().first
+
+        XCTAssertEqual(first?.repoRootURL.path, "/Applications/Garnet Studio.app/Contents/Resources")
+        XCTAssertEqual(first?.scriptURL.path, "/Applications/Garnet Studio.app/Contents/Resources/scripts/garnet_mit_deck_preview.py")
+    }
+
     func testMacContinuationLocatorPrefersBundledScriptBeforeAmbientCheckout() {
         let locator = MacContinuationScriptLocator(
             bundleResourceURL: URL(fileURLWithPath: "/Applications/Garnet Studio.app/Contents/Resources", isDirectory: true),
@@ -353,6 +366,31 @@ final class GarnetStudioTests: XCTestCase {
         )
     }
 
+    func testMitDeckPreviewRunnerBuildsManifestedHtmlCommand() {
+        let location = MitDeckPreviewScriptLocation(
+            scriptURL: URL(fileURLWithPath: "/repo/scripts/garnet_mit_deck_preview.py"),
+            repoRootURL: URL(fileURLWithPath: "/repo", isDirectory: true)
+        )
+        let runner = MitDeckPreviewRunner(
+            location: location,
+            outputDirectoryURL: URL(fileURLWithPath: "/tmp/GarnetStudioMitDeckPreview")
+        )
+
+        XCTAssertEqual(
+            runner.commandArguments(),
+            [
+                "env",
+                "PYTHONDONTWRITEBYTECODE=1",
+                "python3",
+                "/repo/scripts/garnet_mit_deck_preview.py",
+                "--output-dir",
+                "/tmp/GarnetStudioMitDeckPreview",
+                "--format",
+                "html",
+            ]
+        )
+    }
+
     func testMacContinuationRunnerBuildsMarkdownCommand() {
         let location = MacContinuationScriptLocation(
             scriptURL: URL(fileURLWithPath: "/repo/scripts/garnet_mac_side_continuation_status.py"),
@@ -403,6 +441,17 @@ final class GarnetStudioTests: XCTestCase {
         XCTAssertEqual(
             directory.path,
             "/Users/example/Desktop/dogfood/garnet-studio-mit-deck-outline-20260516-181500"
+        )
+    }
+
+    func testStudioMitDeckPreviewEvidenceDirectoryDefaultsToDesktopDogfood() {
+        let directory = GarnetStudioEvidenceDirectory(
+            homeDirectoryURL: URL(fileURLWithPath: "/Users/example", isDirectory: true)
+        ).mitDeckPreviewDirectory(stamp: "20260516-184500")
+
+        XCTAssertEqual(
+            directory.path,
+            "/Users/example/Desktop/dogfood/garnet-studio-mit-deck-preview-20260516-184500"
         )
     }
 
