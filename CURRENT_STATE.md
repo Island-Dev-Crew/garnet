@@ -74,6 +74,7 @@ done
 | `scripts/garnet_converter_advisory_handoff.py` | converter advisory handoff packet | current provider-neutral final packet builder for a reviewed no-source advisory bundle; refuses blocked/source-included reviews, emits a source-free prompt packet, and does not call a provider or enable conversion |
 | `scripts/garnet_mit_readiness_status.py` | MIT/productization objective inventory | current machine-readable truth that the tracked implementation plan is complete while notarization, mobile distribution, promo video, broad converter frontends, LLM assist, and proof/empirics remain open gates |
 | `scripts/garnet_mac_side_continuation_status.py` | Mac-side continuation inventory | current machine-readable pulse for which repo, website, converter, evidence, and macOS Studio lanes can still move from this checkout while Apple Developer ID notarization remains account-holder blocked and Windows/Linux Studio runtime proof remains delegated |
+| `scripts/garnet_mit_demo_route.py` | MIT demo-route inventory | current machine-readable and Markdown presentation route for a bounded seven-minute MIT walkthrough; ties Objective Pulse, Studio continuation, converter advisory, agentic dogfood, live web/PWA, and blocked-gate closeout together without claiming final MIT/productization completion |
 | `scripts/garnet_promo_video_status.py` | promo video readiness contract | current machine-readable storyboard/gate contract for a 30-second HyperFrames promo; visual identity/source surfaces and `docs/promo/` composition source are tied to repo assets, local Desktop MP4/WebM, automated visual-QA, website-export, and site-sync evidence can promote the lane to `public-site-embedded` at 95.0%, while human/aesthetic acceptance remains open |
 | `scripts/render_garnet_promo_video.mjs` | promo video render harness | current local Chrome DevTools + `ffmpeg` harness for manifest-backed MP4/WebM/poster render evidence; this is not a substitute for visual QA or website export |
 | `scripts/qa_garnet_promo_video.mjs` | promo visual-QA harness | current local `ffprobe`/`ffmpeg` harness for automated metadata and sample-frame QA evidence; this is not a substitute for website export or optional human aesthetic review |
@@ -105,6 +106,7 @@ done
 | `F_Project_Management/DOGFOOD/GARNET_v0_5_DOGFOOD_READINESS_PHASE_LOG.md` | dogfood readiness phase ledger | dogfood-readiness Part 1 after each phase |
 | `scripts/garnet_mit_readiness_status.py` | broader MIT/productization objective status | `python3 scripts/test_garnet_mit_readiness_status.py`; `python3 scripts/garnet_mit_readiness_status.py` |
 | `scripts/garnet_mac_side_continuation_status.py` | Mac-side continuation status and blocked/delegated gate split | `python3 scripts/test_garnet_mac_side_continuation_status.py`; `python3 scripts/garnet_mac_side_continuation_status.py` |
+| `scripts/garnet_mit_demo_route.py` | seven-minute MIT demo-route status and blocked-claim closeout | `python3 scripts/test_garnet_mit_demo_route.py`; `python3 scripts/garnet_mit_demo_route.py --output-dir <bundle>` |
 | `garnet-cli/tests/conformance_skeleton.rs` | executable conformance handles | `cargo test -p garnet-cli --test conformance_skeleton` |
 | `garnet-cli/tests/dogfood_readiness_examples.rs` | semantic MVP output stability | `cargo test -p garnet-cli --test dogfood_readiness_examples` |
 | `.github/workflows/ci.yml` `canonical-examples` job | public app proof surface | GitHub Actions on PR |
@@ -855,6 +857,27 @@ refreshed local web/PWA evidence passes in
 `/Users/idc2.0/Desktop/dogfood/web-pwa-readiness-20260516-165857`.
 This is public-site source and local smoke evidence; live `garnet-lang.org`
 publication remains a post-merge Pages deployment verification step.
+Phase 6BB adds a bounded MIT demo route as repo-native presentation evidence.
+`scripts/garnet_mit_demo_route.py` reads the current MIT/productization,
+tracked-slice, and Mac-side continuation reporters, then emits JSON/Markdown
+for a seven-minute route through Objective Pulse, Garnet Studio continuation,
+converter advisory handoff, source-checkout dogfood, public web/PWA evidence,
+and blocked-gate closeout. The route explicitly forbids claims about Developer
+ID notarization, Windows/Linux Studio runtime proof, provider-backed LLM
+conversion, native backend lowering, mobile distribution, production-ready
+language status, or final MIT/productization acceptance. The agentic dogfood
+matrix now carries a three-probe `MIT demo route` domain and passes `113/113`
+with `skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-171902`.
+Standalone route evidence verifies in
+`/Users/idc2.0/Desktop/dogfood/garnet-mit-demo-route-20260516-171836`.
+Packaging resource tests now require the reporter to be copied and executable
+inside Garnet Studio DMGs, and packaged app/DMG evidence passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-172150` for
+DMG SHA-256
+`52fec2da40597de6dbaecb4b21562cf19007e4ec584f0f8174545f9bd13fe9f3`.
+Notarization and cross-platform runtime proof remain separate
+blocked/delegated gates.
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.

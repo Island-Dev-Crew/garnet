@@ -36,6 +36,7 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | MIT readiness objective accounting | Active for broader productization truth beyond the complete tracked implementation-plan ledger plus a public-site progress pulse | `scripts/garnet_mit_readiness_status.py`; `python3 scripts/test_garnet_mit_readiness_status.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-mit-readiness-*`; `docs/index.html` now surfaces the current `58.6%` local MIT/productization checkpoint beside `87/87 tracked slices` | Use this reporter when discussing public/MIT readiness so `87/87` tracked slices are not confused with notarization, mobile distribution, promo video, broad converter frontends, LLM assist, proof, or empirical validation completion |
 | Mac-side continuation accounting | Active for goal-prompt continuation after PR #141 without claiming blocked/delegated gates | `scripts/garnet_mac_side_continuation_status.py`; `python3 scripts/test_garnet_mac_side_continuation_status.py`; `scripts/run_agentic_dogfood_matrix.py` probe `report-mac-side-continuation-boundaries` | Continue Mac-actionable repo, website, converter-advisory, unsigned Studio, proof, and evidence slices; keep Apple Developer ID notarization account-holder blocked, Windows/Linux Studio target-platform delegated, provider-backed LLM conversion inactive, and native backend lowering unimplemented |
 | Mac continuation pulse UX | Active in Garnet Studio as a read-only continuation/status action | `apps/garnet-studio-macos/Sources/GarnetStudio/GarnetStudioApp.swift`; `swift test --package-path apps/garnet-studio-macos`; `scripts/run_agentic_dogfood_matrix.py` probes `report-studio-mac-continuation-pulse-*`; `./scripts/package_garnet_studio_macos.sh` | Expose `Continuation Pulse` in the Release panel, run the Mac-side continuation reporter from source or packaged resources, and keep Mac-actionable work separate from Apple Developer ID and Windows/Linux gates |
+| MIT demo-route evidence | Active as a bounded presentation route, not final MIT/productization acceptance | `scripts/garnet_mit_demo_route.py`; `python3 scripts/test_garnet_mit_demo_route.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-mit-demo-route-*`; Desktop bundle `/Users/idc2.0/Desktop/dogfood/garnet-mit-demo-route-20260516-171836` | Use this route to rehearse/demo current verified surfaces and blocked gates; keep Developer ID, Windows/Linux, provider-backed LLM conversion, native backend lowering, mobile distribution, production-ready language, and final acceptance claims forbidden until separate evidence exists |
 | Public Studio continuation hook | Active on the landing page and Pages smoke contract | `docs/index.html`; `scripts/smoke_garnet_pages_pwa.sh`; `python3 scripts/test_smoke_garnet_pages_pwa.py`; Desktop bundle `/Users/idc2.0/Desktop/dogfood/pages-pwa-readiness-20260516-165857` | Keep the landing-page hook concise and product-facing; verify live `garnet-lang.org` after merge instead of claiming Pages deployment from local source |
 | Promo video readiness contract | Active as public-site embedded evidence for the 30-second Garnet promo/ad lane when Desktop render, visual-QA, website-export, and site-sync bundles are present | `scripts/garnet_promo_video_status.py`; `scripts/render_garnet_promo_video.mjs`; `scripts/qa_garnet_promo_video.mjs`; `scripts/export_garnet_promo_video_site.mjs`; `scripts/sync_garnet_promo_video_site.mjs`; `docs/promo/DESIGN.md`; `docs/promo/composition.html`; `docs/assets/garnet-promo.mp4`; `docs/assets/garnet-promo.webm`; `docs/assets/garnet-promo-poster.png`; `python3 scripts/test_garnet_promo_video_status.py`; `python3 scripts/test_render_garnet_promo_video.py`; `python3 scripts/test_qa_garnet_promo_video.py`; `python3 scripts/test_export_garnet_promo_video_site.py`; `python3 scripts/test_sync_garnet_promo_video_site.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-promo-video-*` | Keep human/aesthetic acceptance as the remaining promo gate before claiming final marketing creative |
 | Parser parity for old ambition | Partial, Phase 1 active | `protocol`, `dyn Trait`, `yield`, `next`, `@dynamic`, `@nonsendable`, and `do ... end` parser tests | Keep runtime gaps explicit and activate Phase 2 only with executable semantics |
@@ -2121,6 +2122,26 @@ and refreshed web/PWA smoke evidence passes in
 `/Users/idc2.0/Desktop/dogfood/web-pwa-readiness-20260516-165857`. This is
 repo/public-site source evidence; live Pages publication is verified after the
 PR lands and the deployment has caught up.
+
+Phase 6BB MIT demo-route pass: `scripts/garnet_mit_demo_route.py` now turns the
+current objective pulse, Studio continuation, converter advisory workflow,
+agentic dogfood matrix, public web/PWA evidence, and blocked-gate closeout into
+a seven-minute JSON/Markdown route. It keeps the route presentation-ready while
+forbidding final claims about Developer ID notarization, Windows/Linux Studio
+runtime proof, provider-backed LLM conversion, native backend lowering, mobile
+distribution, production-ready language status, or final MIT/productization
+acceptance. The agentic dogfood matrix adds a three-probe `MIT demo route`
+domain and passes `113/113` with `skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-171902`;
+standalone route evidence verifies in
+`/Users/idc2.0/Desktop/dogfood/garnet-mit-demo-route-20260516-171836`.
+`scripts/package_garnet_studio_macos.sh` and
+`scripts/smoke_garnet_studio_dmg.sh` now stage and require the route reporter
+as a packaged executable resource so packaged matrix runs cannot silently lose
+the new presentation proof surface. Packaged app/DMG evidence passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-172150` for
+DMG SHA-256
+`52fec2da40597de6dbaecb4b21562cf19007e4ec584f0f8174545f9bd13fe9f3`.
 
 Phase 6AG promo-video readiness pass: `scripts/garnet_promo_video_status.py`
 now records the requested 30-second Garnet promo as a planned-contract lane
