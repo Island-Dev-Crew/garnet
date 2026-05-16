@@ -1412,6 +1412,20 @@ until stdout/stderr expectations were aligned with the CLI diagnostic contract;
 the corrected strict source matrix passes `60/60` in Desktop bundle
 `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-034939`.
 
+Phase 6X packaged-app evidence pass: the DMG packaging path exposed a real
+boundary drift when packaged resources tried to run signed-cache cargo probes
+without a source workspace. The failed bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-040023`
+is preserved as `57/60` evidence. The matrix now records those probes as
+explicit packaged-resource skips only when `Contents/Resources/Cargo.toml` is
+absent; source-checkout runs still execute them. Verified evidence:
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-040631`
+(`60/60`, `skipped=0`),
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-040415`
+(`60/60`, `skipped=3`), and
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-040414`
+(mounted-DMG copy-install smoke).
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.
