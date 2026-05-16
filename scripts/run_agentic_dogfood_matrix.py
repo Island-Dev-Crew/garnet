@@ -227,6 +227,10 @@ def main() {
 }
 """,
     )
+    paths["dirty_fmt_source"] = write(
+        fixtures / "dirty_formatted_agent.garnet",
+        "def main() {   \n  1   \n}",
+    )
 
     paths["tamper"] = write(fixtures / "tamper.garnet", "def main() { 100 }\n")
 
@@ -717,6 +721,14 @@ def probe_set(
             "formatter check should accept stable fixture style",
             [str(garnet), "fmt", "--check", str(fixtures["fmt_source"])],
             True,
+        ),
+        Probe(
+            "fmt-repair-dirty-agent",
+            "developer experience",
+            "formatter should repair trailing whitespace and missing terminal newline in agent source",
+            [str(garnet), "fmt", str(fixtures["dirty_fmt_source"])],
+            True,
+            ("formatted",),
         ),
         *web_pwa_probes(work),
         *(app_workbench_probes(app_executable) if include_app_workbench else []),

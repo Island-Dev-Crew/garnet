@@ -127,9 +127,11 @@ highest-leverage next milestones are:
    product surfaces remain visible even when every current probe passes; the
    project-scaffolding domain now exercises all three canonical templates
    (`cli`, `web-api`, and `agent-orchestrator`) through scaffold/run/test
-   probes, and the web/PWA productization domain now has offline-handler and
-   full local-smoke probes, plus a local Chrome DevTools browser offline gate,
-   while richer browser IDE and cross-browser validation remain separate gates.
+   probes, developer experience covers doc extraction plus formatter check and
+   repair behavior, and the web/PWA productization domain now has
+   offline-handler and full local-smoke probes, plus a local Chrome DevTools
+   browser offline gate, while richer browser IDE and cross-browser validation
+   remain separate gates.
    The migration-assistant domain also carries a converter adoption-status
    probe so Rust/Ruby/Python/Go support, planned broader languages, and gated
    LLM-assist claims remain machine-readable instead of living only in
