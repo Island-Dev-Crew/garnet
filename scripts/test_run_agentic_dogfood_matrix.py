@@ -90,6 +90,19 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertIn("report-mit-readiness-open-productization", ids)
         self.assertIn("report-mit-readiness-assist-and-frontends", ids)
 
+    def test_probe_inventory_includes_mac_side_continuation_accounting(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            fixtures = matrix.prepare_fixtures(work)
+            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
+
+        ids = {probe.id for probe in concrete_probes}
+        domains = Counter(probe.domain for probe in concrete_probes)
+
+        self.assertEqual(domains["Mac-side continuation accounting"], 1)
+        self.assertIn("report-mac-side-continuation-boundaries", ids)
+
     def test_probe_inventory_includes_promo_video_readiness_contract(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)

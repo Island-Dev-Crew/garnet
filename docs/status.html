@@ -149,6 +149,61 @@
 
 <section>
   <div class="container">
+    <h2>Mac-Side Continuation</h2>
+    <table>
+      <thead>
+        <tr><th>Lane</th><th>Status</th><th>Mac-actionable?</th><th>Boundary</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Reusable dogfood readiness skill</td>
+          <td>Published</td>
+          <td>Yes</td>
+          <td><a href="https://github.com/Navigata1/dogfood-readiness">Navigata1/dogfood-readiness</a> is a portable evidence gate, not a replacement for project CI or human release review.</td>
+        </tr>
+        <tr>
+          <td>Unsigned/local Garnet Studio quality</td>
+          <td>Active-partial</td>
+          <td>Yes</td>
+          <td>Local UX, bundled evidence, DMG smoke, and app dogfood can improve before signing.</td>
+        </tr>
+        <tr>
+          <td>Website, status, and presentation</td>
+          <td>Active-partial</td>
+          <td>Yes</td>
+          <td>Landing/status copy, decks, demos, and proof links can improve while preserving readiness truth.</td>
+        </tr>
+        <tr>
+          <td>Converter advisory quality</td>
+          <td>Active-partial</td>
+          <td>Yes</td>
+          <td>Advisory plans, reviews, and handoff packets can improve without provider calls or active LLM conversion claims.</td>
+        </tr>
+        <tr>
+          <td>Proof, benchmark, and empirical evidence</td>
+          <td>Active-partial</td>
+          <td>Yes</td>
+          <td>Add one falsifiable local evidence slice at a time.</td>
+        </tr>
+        <tr>
+          <td>Apple Developer ID notarization</td>
+          <td>Blocked-external</td>
+          <td>No</td>
+          <td>Requires account-holder identity verification, Developer ID certificate, and notary profile before any notarization claim.</td>
+        </tr>
+        <tr>
+          <td>Windows/Linux Studio</td>
+          <td>Handoff-only</td>
+          <td>No</td>
+          <td>Runtime proof belongs on target systems through the Windows/Linux handoff packet.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="container">
     <h2>Open Product Gates</h2>
     <table>
       <thead>
@@ -190,6 +245,7 @@
     <h2>Machine-Readable Sources</h2>
     <ul>
       <li><code>scripts/garnet_mit_readiness_status.py</code></li>
+      <li><code>scripts/garnet_mac_side_continuation_status.py</code></li>
       <li><code>scripts/garnet_adoption_surface_status.py</code></li>
       <li><code>scripts/garnet_converter_status.py</code></li>
       <li><code>scripts/garnet_converter_llm_feasibility.py</code></li>
