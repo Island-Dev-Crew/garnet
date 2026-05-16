@@ -125,7 +125,8 @@ highest-leverage next milestones are:
    coverage adequacy separately from pass/fail readiness so under-tested
    product surfaces remain visible even when every current probe passes; the
    web/PWA productization domain now has offline-handler and full local-smoke
-   probes while real-browser offline validation remains a separate gate.
+   probes, plus a local Chrome DevTools browser offline gate, while richer
+   browser IDE and cross-browser validation remain separate gates.
 7. **Formal/empirical proof:** keep Paper V theorem sketches and Paper VI
    experiments separate from implemented guarantees until tests or proofs land.
 
