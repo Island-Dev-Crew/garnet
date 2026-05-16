@@ -875,6 +875,128 @@ def build_converter_advisory_bundle_manifest_probe(work: Path, source: Path) -> 
     )
 
 
+def build_converter_advisory_review_source_block_probe(work: Path, source: Path) -> ProbeResult:
+    bundle_dir = work / "converter-advisory-review-source-included-bundle"
+    bundle = run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "garnet_converter_advisory_bundle.py"),
+            "--language",
+            "typescript",
+            "--source",
+            str(source),
+            "--include-source",
+            "--output-dir",
+            str(bundle_dir),
+        ],
+        work,
+    )
+    probe = Probe(
+        "report-converter-advisory-review-source-included-block",
+        "converter advisory review",
+        "advisory review should block source-included bundles without an explicit approval flag",
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "garnet_converter_advisory_review.py"),
+            "--bundle-dir",
+            str(bundle_dir),
+            "--format",
+            "json",
+        ],
+        False,
+        (
+            "\"status\": \"blocked-source-included\"",
+            "\"source_privacy_passed\": false",
+            "source text included",
+        ),
+        security_domain="privacy",
+    )
+    start = time.monotonic()
+    if bundle.returncode != 0:
+        return classify_result(
+            probe,
+            bundle.returncode,
+            bundle.stdout,
+            bundle.stderr,
+            int((time.monotonic() - start) * 1000),
+            work,
+        )
+    completed = run(probe.command, work)
+    return classify_result(
+        probe,
+        completed.returncode,
+        completed.stdout,
+        completed.stderr,
+        int((time.monotonic() - start) * 1000),
+        work,
+    )
+
+
+def build_converter_advisory_review_manifest_probe(work: Path, source: Path) -> ProbeResult:
+    bundle_dir = work / "converter-advisory-review-bundle"
+    output_dir = work / "converter-advisory-review"
+    bundle = run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "garnet_converter_advisory_bundle.py"),
+            "--language",
+            "typescript",
+            "--source",
+            str(source),
+            "--output-dir",
+            str(bundle_dir),
+        ],
+        work,
+    )
+    probe = Probe(
+        "report-converter-advisory-review-output-manifest",
+        "converter advisory review",
+        "advisory review should write JSON, Markdown, and a verified manifest",
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "garnet_converter_advisory_review.py"),
+            "--bundle-dir",
+            str(bundle_dir),
+            "--output-dir",
+            str(output_dir),
+        ],
+        True,
+        (
+            "Garnet Converter Advisory Review Gate",
+            "garnet-converter-advisory-review.json: OK",
+            "garnet-converter-advisory-review.md: OK",
+        ),
+        security_domain="release-integrity",
+    )
+    start = time.monotonic()
+    if bundle.returncode != 0:
+        return classify_result(
+            probe,
+            bundle.returncode,
+            bundle.stdout,
+            bundle.stderr,
+            int((time.monotonic() - start) * 1000),
+            work,
+        )
+    completed = run(probe.command, work)
+    stdout = [completed.stdout]
+    stderr = [completed.stderr]
+    exit_code = completed.returncode
+    if completed.returncode == 0:
+        verify = run(["shasum", "-a", "256", "-c", "MANIFEST.sha256"], output_dir)
+        stdout.append(verify.stdout)
+        stderr.append(verify.stderr)
+        exit_code = verify.returncode
+    return classify_result(
+        probe,
+        exit_code,
+        "\n".join(stdout),
+        "\n".join(stderr),
+        int((time.monotonic() - start) * 1000),
+        work,
+    )
+
+
 def build_promo_video_manifest_probe(work: Path) -> ProbeResult:
     output_dir = work / "promo-video-status"
     probe = Probe(
@@ -1841,6 +1963,30 @@ def probe_set(
             security_domain="privacy",
         ),
         lambda: build_converter_advisory_bundle_manifest_probe(work, fixtures["typescript_assist"]),
+        Probe(
+            "report-converter-advisory-review-current-truth",
+            "converter advisory review",
+            "advisory review should validate a manifested no-source bundle without enabling conversion",
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "garnet_converter_advisory_review.py"),
+                "--bundle-dir",
+                str(work / "converter-advisory-bundle"),
+                "--format",
+                "json",
+            ],
+            True,
+            (
+                "\"status\": \"ready-for-human-advisory-review\"",
+                "\"source_privacy_passed\": true",
+                "\"provider_backed_conversion_allowed\": false",
+                "run garnet check on any candidate output",
+                "attach dogfood evidence",
+            ),
+            security_domain="sandbox",
+        ),
+        lambda: build_converter_advisory_review_source_block_probe(work, fixtures["typescript_assist"]),
+        lambda: build_converter_advisory_review_manifest_probe(work, fixtures["typescript_assist"]),
         Probe(
             "report-studio-advisory-bundle-action",
             "converter advisory bundle UX",

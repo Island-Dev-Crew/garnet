@@ -211,6 +211,21 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertIn("report-studio-advisory-bundle-runner", ids)
         self.assertIn("report-studio-advisory-bundle-default-privacy", ids)
 
+    def test_probe_inventory_includes_converter_advisory_review_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            fixtures = matrix.prepare_fixtures(work)
+            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            results = self._inventory_results(probes)
+
+        ids = {result.probe.id for result in results}
+        domains = Counter(result.probe.domain for result in results)
+
+        self.assertEqual(domains["converter advisory review"], 3)
+        self.assertIn("report-converter-advisory-review-current-truth", ids)
+        self.assertIn("report-converter-advisory-review-source-included-block", ids)
+        self.assertIn("report-converter-advisory-review-output-manifest", ids)
+
     def test_probe_inventory_includes_web_pwa_offline_gate(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
@@ -438,6 +453,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertEqual(coverage["converter assist planning"]["status"], "adequate")
         self.assertEqual(coverage["converter LLM feasibility"]["status"], "adequate")
         self.assertEqual(coverage["converter advisory bundle"]["status"], "adequate")
+        self.assertEqual(coverage["converter advisory review"]["status"], "adequate")
         self.assertEqual(coverage["converter advisory bundle UX"]["status"], "adequate")
         self.assertEqual(coverage["signed release provenance"]["status"], "adequate")
         self.assertEqual(coverage["macOS notarization readiness"]["status"], "adequate")

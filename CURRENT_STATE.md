@@ -70,6 +70,7 @@ done
 | `scripts/garnet_converter_assist_plan.py` | planned-language converter assist plan | current deterministic planner for a single source file in an active or planned converter language; inventories safe-mode, memory, CapCaps, actor/orchestration, and migration risks without executing source or enabling LLM conversion |
 | `scripts/garnet_converter_llm_feasibility.py` | converter LLM feasibility reporter | current machine-readable decision surface: provider-neutral advisory planning is feasible; autonomous/provider-backed LLM conversion is not active and remains blocked on secure runtime, deterministic frontend, sandbox, lineage, check, dogfood, and human-audit gates |
 | `scripts/garnet_converter_advisory_bundle.py` | converter advisory bundle | current provider-neutral handoff bundle that combines feasibility, context, and per-file assist-plan evidence; omits source text by default, requires `--include-source` for explicit local/provider handoff, and does not enable LLM conversion |
+| `scripts/garnet_converter_advisory_review.py` | converter advisory review gate | current provider-neutral review gate for advisory bundles; verifies bundle manifests, blocks source-included bundles unless explicitly approved, emits a human-review checklist, and does not enable provider-backed conversion |
 | `scripts/garnet_mit_readiness_status.py` | MIT/productization objective inventory | current machine-readable truth that the tracked implementation plan is complete while notarization, mobile distribution, promo video, broad converter frontends, LLM assist, and proof/empirics remain open gates |
 | `scripts/garnet_promo_video_status.py` | promo video readiness contract | current machine-readable storyboard/gate contract for a 30-second HyperFrames promo; visual identity/source surfaces and `docs/promo/` composition source are tied to repo assets, local Desktop MP4/WebM, automated visual-QA, website-export, and site-sync evidence can promote the lane to `public-site-embedded` at 95.0%, while human/aesthetic acceptance remains open |
 | `scripts/render_garnet_promo_video.mjs` | promo video render harness | current local Chrome DevTools + `ffmpeg` harness for manifest-backed MP4/WebM/poster render evidence; this is not a substitute for visual QA or website export |
@@ -690,6 +691,19 @@ packaged app/DMG evidence lives at
 `/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-093402` for
 DMG SHA-256
 `8a64b563a9a6b7de976d2d479ecabe52eed9b0e08f311a05643a2a3351823d4c`.
+Phase 6AS adds `scripts/garnet_converter_advisory_review.py`, a provider-neutral
+review gate for manifested advisory bundles. It verifies the bundle manifest,
+confirms the default no-source privacy boundary, blocks source-included bundles
+unless explicitly approved, and emits the human-review checklist required before
+any model/agent handoff can turn into candidate implementation work. The
+agentic matrix adds a three-probe `converter advisory review` domain for
+current truth, source-included blocking, and review-manifest evidence; the
+refreshed source-checkout matrix passes `94/94` with `skipped=0` in Desktop
+bundle `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-100014`;
+the packaged app/DMG smoke passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-100034` for
+DMG SHA-256
+`793aaec45055c338fda45386006f545356b4d0a2adad79ad8e6048ef012dee36`.
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.
