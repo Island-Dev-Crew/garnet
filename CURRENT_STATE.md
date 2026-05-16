@@ -878,6 +878,24 @@ DMG SHA-256
 `52fec2da40597de6dbaecb4b21562cf19007e4ec584f0f8174545f9bd13fe9f3`.
 Notarization and cross-platform runtime proof remain separate
 blocked/delegated gates.
+Phase 6BC exposes that same demo route inside the macOS Studio Release panel:
+`Demo Route` runs the packaged or source `garnet_mit_demo_route.py` reporter,
+writes a manifested `garnet-studio-mit-demo-route-<stamp>` bundle under
+`~/Desktop/dogfood/`, and prints the output path in the Studio console. This
+keeps MIT rehearsal material available from the app without claiming final
+acceptance, Developer ID notarization, Windows/Linux runtime proof,
+provider-backed LLM conversion, or native backend lowering. SwiftPM tests cover
+the bundled locator, runner command, and Desktop evidence path; the agentic
+matrix adds a three-probe `MIT demo route UX` domain and passes `116/116` with
+`skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-174234`.
+The route-shaped Desktop bundle verifies in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-mit-demo-route-20260516-224439`;
+packaged app/DMG smoke passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-174457`;
+and local Pages/Web PWA smokes pass with blockers/warnings at zero in
+`/Users/idc2.0/Desktop/dogfood/pages-pwa-readiness-20260516-174644` and
+`/Users/idc2.0/Desktop/dogfood/web-pwa-readiness-20260516-174627`.
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.

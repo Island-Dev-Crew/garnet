@@ -299,6 +299,21 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertIn("report-studio-mac-continuation-pulse-runner", ids)
         self.assertIn("report-studio-mac-continuation-pulse-truth-copy", ids)
 
+    def test_probe_inventory_includes_studio_mit_demo_route_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            fixtures = matrix.prepare_fixtures(work)
+            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
+
+        ids = {probe.id for probe in concrete_probes}
+        domains = Counter(probe.domain for probe in concrete_probes)
+
+        self.assertEqual(domains["MIT demo route UX"], 3)
+        self.assertIn("report-studio-mit-demo-route-action", ids)
+        self.assertIn("report-studio-mit-demo-route-runner", ids)
+        self.assertIn("report-studio-mit-demo-route-desktop-evidence", ids)
+
     def test_probe_inventory_includes_converter_advisory_review_gate(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
@@ -562,6 +577,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertEqual(coverage["converter advisory review UX"]["status"], "adequate")
         self.assertEqual(coverage["converter advisory handoff UX"]["status"], "adequate")
         self.assertEqual(coverage["MIT objective pulse UX"]["status"], "adequate")
+        self.assertEqual(coverage["MIT demo route UX"]["status"], "adequate")
         self.assertEqual(coverage["signed release provenance"]["status"], "adequate")
         self.assertEqual(coverage["macOS notarization readiness"]["status"], "adequate")
 
