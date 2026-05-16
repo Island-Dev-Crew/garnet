@@ -23,7 +23,7 @@ falsifiable dogfood bundle with:
 - per-probe stdout/stderr logs
 - `MANIFEST.sha256`
 
-The current probe set covers 37 checks across ten domains, or 34 checks when
+The current probe set covers 40 checks across eleven domains, or 37 checks when
 the SwiftUI/macOS app workbench probes are intentionally skipped in headless CI.
 Functional readiness and coverage adequacy are intentionally separate: a domain
 can pass every current probe while still needing more independent probes before
@@ -41,6 +41,7 @@ the suite satisfies the requested 3-5 probe coverage bar.
 | Web/PWA productization | 3 | adequate | service-worker offline handler, full local PWA smoke, and Chrome DevTools offline navigation |
 | macOS app workbench | 3 | adequate | Garnet Studio self-test, SwiftPM smoke against the matrix-built CLI, and SwiftPM XCTest |
 | Agent memory and analysis | 3 | adequate | advertised log analyzer parse-time memory declaration analysis plus check/run |
+| MIT readiness accounting | 3 | adequate | tracked-plan completion, open productization gates, and LLM/broad-converter truth |
 
 ## Falsification History
 
@@ -66,27 +67,28 @@ Those failures became focused fixes and regression tests in this slice.
 Latest source-checkout evidence bundle:
 
 ```text
-/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-004751
+/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-013651
 ```
 
 Current result:
 
 ```text
 readiness=100
-passed=37/37
+passed=40/40
 ```
 
 The latest merged bundle also records domain coverage adequacy. It marks agent
 orchestration, recovery/diagnostics, safe mode/capabilities, migration, release
 integrity, project scaffolding, developer experience, web/PWA productization,
-and agent memory/analysis as coverage-adequate. The App-16 source app smoke
-slice promotes macOS app workbench to `3/3` locally by adding a SwiftPM
-`--smoke-test` probe that prefers the matrix-built Garnet CLI on `PATH`.
+agent memory/analysis, and MIT-readiness accounting as coverage-adequate. The
+App-16 source app smoke slice promotes macOS app workbench to `3/3` locally by
+adding a SwiftPM `--smoke-test` probe that prefers the matrix-built Garnet CLI
+on `PATH`.
 
 Manifest verification:
 
 ```sh
-cd /Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-004751
+cd /Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-013651
 shasum -a 256 -c MANIFEST.sha256
 ```
 
@@ -96,7 +98,11 @@ copying the completed evidence directory to Desktop dogfood storage. The matrix
 now includes the App-9 web/PWA offline service-worker handler probe, the App-13
 local PWA readiness smoke probe, the App-15 browser PWA offline probe, and
 writes `readiness-slice-status.md` plus `domain_coverage` JSON so completion
-and coverage adequacy evidence travel with the bundle.
+and coverage adequacy evidence travel with the bundle. The matrix also runs
+the objective-status reporter so `87/87` tracked implementation slices remain
+separate from broader MIT/productization gates such as notarization, mobile,
+promo video, broad converter frontends, LLM assist, proof, and empirical
+validation.
 
 Latest mounted-DMG install evidence bundle:
 

@@ -66,6 +66,7 @@ done
 | `garnet-cli/` | user-facing CLI and templates | current implementation |
 | `garnet-convert/` | migration assistant | current implementation for stylized Rust/Ruby/Python/Go only; broader language and gated LLM-assist lanes are planned, not implemented |
 | `scripts/garnet_converter_status.py` | converter adoption inventory | current machine-readable truth for active converter lanes, planned languages, trust boundaries, and the future Garnet-aware assist contract |
+| `scripts/garnet_mit_readiness_status.py` | MIT/productization objective inventory | current machine-readable truth that the tracked implementation plan is complete while notarization, mobile distribution, promo video, broad converter frontends, LLM assist, and proof/empirics remain open gates |
 | `examples/mvp_*.garnet` | canonical app-level smokes | must parse/check/run |
 | `examples/{multi_agent_builder,agentic_log_analyzer,safe_io_layer}.garnet` | design-scale examples | `multi_agent_builder`, `agentic_log_analyzer`, and `safe_io_layer` are covered by active agentic matrix probes |
 | `A_Research_Papers/` | academic research corpus | normative/research context |
@@ -84,6 +85,7 @@ done
 | `F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md` | canonical completion ledger and milestone plan | each milestone must activate or preserve conformance gates |
 | `F_Project_Management/ROADMAPS/GARNET_v0_5_LANGUAGE_COMPLETION_ROADMAP.md` | seven-phase implementation plan | `cargo test -p garnet-cli --test conformance_phase_gates` |
 | `F_Project_Management/DOGFOOD/GARNET_v0_5_DOGFOOD_READINESS_PHASE_LOG.md` | dogfood readiness phase ledger | dogfood-readiness Part 1 after each phase |
+| `scripts/garnet_mit_readiness_status.py` | broader MIT/productization objective status | `python3 scripts/test_garnet_mit_readiness_status.py`; `python3 scripts/garnet_mit_readiness_status.py` |
 | `garnet-cli/tests/conformance_skeleton.rs` | executable conformance handles | `cargo test -p garnet-cli --test conformance_skeleton` |
 | `garnet-cli/tests/dogfood_readiness_examples.rs` | semantic MVP output stability | `cargo test -p garnet-cli --test dogfood_readiness_examples` |
 | `.github/workflows/ci.yml` `canonical-examples` job | public app proof surface | GitHub Actions on PR |
@@ -146,6 +148,11 @@ highest-leverage next milestones are:
    model-optional: it documents required context, safe-mode/memory/CapCaps
    analysis targets, lineage, sandbox, `garnet check`, dogfood-bundle, and
    human-audit gates without claiming broad or active LLM conversion.
+   The MIT-readiness accounting domain also probes
+   `scripts/garnet_mit_readiness_status.py`, so agents and public-site copy can
+   report `87/87` tracked slices without turning that into a false claim that
+   notarization, mobile distribution, promo video, broad converter frontends,
+   LLM assist, proof, or empirical validation are complete.
 7. **Formal/empirical proof:** keep Paper V theorem sketches and Paper VI
    experiments separate from implemented guarantees until tests or proofs land.
 
