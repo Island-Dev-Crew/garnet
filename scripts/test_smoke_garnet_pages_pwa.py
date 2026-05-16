@@ -47,6 +47,7 @@ class PagesPwaSmokeTests(unittest.TestCase):
                 "Codex Run": "local app action",
                 "dist/Garnet Studio.app": "staged app bundle",
                 "Assist Plan": "migration planner",
+                "Continuation Pulse": "release pulse",
             }
             for phrase, replacement in replacements.items():
                 index = index.replace(phrase, replacement)
@@ -81,6 +82,7 @@ class PagesPwaSmokeTests(unittest.TestCase):
         self.assertIn("Garnet Studio workbench", result.stderr)
         self.assertIn("Codex Run", result.stderr)
         self.assertIn("Assist Plan", result.stderr)
+        self.assertIn("Continuation Pulse", result.stderr)
 
 
 if __name__ == "__main__":

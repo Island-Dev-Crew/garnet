@@ -154,6 +154,7 @@ if index:
         "Codex Run": "index does not mention the Codex Run Studio workflow",
         "dist/Garnet Studio.app": "index does not mention the staged Studio app bundle",
         "Assist Plan": "index does not mention the Studio Assist Plan workflow",
+        "Continuation Pulse": "index does not mention the Studio Continuation Pulse workflow",
     }
     for term, message in studio_terms.items():
         expect(term in index["text"], f"{message}: missing {term}", errors)

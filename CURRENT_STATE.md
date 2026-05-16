@@ -554,8 +554,9 @@ or provider-backed LLM conversion claim. Verified local evidence:
 and a Browser smoke of `http://127.0.0.1:8765/index.html#studio`.
 Phase 6AD promotes that site truth into the live Pages smoke contract:
 `scripts/smoke_garnet_pages_pwa.sh` now treats missing `Garnet Studio
-workbench`, Codex Run, `dist/Garnet Studio.app`, or `Assist Plan` copy as a
-strict blocker, and `.github/workflows/web-pwa-readiness.yml` runs
+workbench`, Codex Run, `dist/Garnet Studio.app`, `Assist Plan`, or
+`Continuation Pulse` copy as a strict blocker, and
+`.github/workflows/web-pwa-readiness.yml` runs
 `python3 scripts/test_smoke_garnet_pages_pwa.py` so PRs cannot weaken the live
 deployment guard while still avoiding a live-domain dependency in PR CI.
 Verified evidence includes `python3 scripts/test_smoke_garnet_pages_pwa.py`,
@@ -843,6 +844,17 @@ DMG SHA-256
 This is unsigned/local Mac productization evidence, not Developer ID
 notarization, App Store distribution, Windows/Linux runtime proof,
 provider-backed LLM conversion, or native backend lowering.
+Phase 6BA carries the Studio continuation boundary back onto the public landing
+surface without turning the landing page into an internal caveat wall:
+`docs/index.html` now names `Continuation Pulse` in the Studio workbench hook,
+and `scripts/smoke_garnet_pages_pwa.sh` treats that copy as part of the
+Studio adoption contract. Local Pages evidence against this source checkout
+passes with blockers/warnings at zero in
+`/Users/idc2.0/Desktop/dogfood/pages-pwa-readiness-20260516-165857`, and
+refreshed local web/PWA evidence passes in
+`/Users/idc2.0/Desktop/dogfood/web-pwa-readiness-20260516-165857`.
+This is public-site source and local smoke evidence; live `garnet-lang.org`
+publication remains a post-merge Pages deployment verification step.
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.
