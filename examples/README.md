@@ -5,7 +5,11 @@ This directory has two deliberately different example surfaces:
 1. **Canonical MVP smokes:** `mvp_01_*` through `mvp_10_*`.
    These are the current app-level dogfood corpus. Every file must parse,
    check, and run on current `main`.
-2. **Real-world design drafts:** `multi_agent_builder.garnet`,
+2. **Agent toolbelt smokes:** `agent_toolbelt_01_*` through
+   `agent_toolbelt_05_*`. These are compact, runnable programs for agent
+   triage, capability budgeting, memory recall, release evidence, and repair
+   planning.
+3. **Real-world design drafts:** `multi_agent_builder.garnet`,
    `agentic_log_analyzer.garnet`, and `safe_io_layer.garnet`.
    These are parser-scale reference programs that intentionally exercise
    actor/runtime/stdlib shapes that are still ahead of the interpreter.
@@ -43,6 +47,30 @@ The larger historical MVP drafts are archived at
 [`archive/examples/mvp-design-drafts/`](../archive/examples/mvp-design-drafts).
 They should not be cited as current runtime proof unless they are reintroduced
 under CI with parse/check/run coverage.
+
+## Agent Toolbelt Smokes
+
+Run the agent-facing toolbelt corpus from the repository root:
+
+```bash
+for file in examples/agent_toolbelt_*.garnet; do
+  garnet parse "$file"
+  garnet check "$file"
+  garnet run "$file"
+done
+```
+
+These files are intentionally smaller than the design drafts. They are
+CI-enforced current-runtime proof that Garnet can execute five agent workflow
+shapes today:
+
+| File | Workflow proved today |
+|---|---|
+| `agent_toolbelt_01_triage_router.garnet` | route build/security/release/docs work into a deterministic priority score |
+| `agent_toolbelt_02_capability_budget.garnet` | score tool authority choices before filesystem, shell, or browser use |
+| `agent_toolbelt_03_memory_recall.garnet` | rank episodic, semantic, and procedural recall evidence |
+| `agent_toolbelt_04_release_gate.garnet` | combine local and remote release evidence gates |
+| `agent_toolbelt_05_repair_planner.garnet` | prioritize repairs by severity, blast radius, and regression-test coverage |
 
 ## Real-World Design Drafts
 

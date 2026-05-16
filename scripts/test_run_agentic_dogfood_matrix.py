@@ -211,6 +211,23 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertEqual(domains["agent memory and analysis"], 3)
         self.assertIn("parse-advertised-log-analyzer-memory", ids)
 
+    def test_probe_inventory_covers_agent_toolbelt_examples(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            fixtures = matrix.prepare_fixtures(work)
+            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
+
+        ids = {probe.id for probe in concrete_probes}
+        domains = Counter(probe.domain for probe in concrete_probes)
+
+        self.assertEqual(domains["agent toolbelt examples"], 5)
+        self.assertIn("run-agent-toolbelt-triage-router", ids)
+        self.assertIn("run-agent-toolbelt-capability-budget", ids)
+        self.assertIn("run-agent-toolbelt-memory-recall", ids)
+        self.assertIn("run-agent-toolbelt-release-gate", ids)
+        self.assertIn("run-agent-toolbelt-repair-planner", ids)
+
     def test_probe_inventory_covers_source_app_workbench_smoke(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
@@ -256,6 +273,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertEqual(coverage["web/PWA productization"]["status"], "adequate")
         self.assertEqual(coverage["project scaffolding"]["status"], "adequate")
         self.assertEqual(coverage["developer experience"]["status"], "adequate")
+        self.assertEqual(coverage["agent toolbelt examples"]["status"], "adequate")
         self.assertEqual(coverage["agent memory and analysis"]["status"], "adequate")
         self.assertEqual(coverage["agent recovery and diagnostics"]["status"], "adequate")
         self.assertEqual(coverage["MIT readiness accounting"]["status"], "adequate")

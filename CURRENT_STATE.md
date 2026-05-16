@@ -129,7 +129,7 @@ highest-leverage next milestones are:
    cross-browser certification, or offline IDE completion before those lanes
    are separately verified.
 6. **Agentic dogfood stress:** keep the advanced multi-domain matrix green so
-   agents can exercise orchestration, recovery diagnostics, migration,
+   agents can exercise orchestration, agent toolbelt examples, recovery diagnostics, migration,
    safe-mode, release-integrity, signed-release provenance, macOS
    notarization readiness, docs, app, and memory-analysis surfaces as one
    falsifiable workflow, with macOS CI preserving a downloadable evidence
@@ -139,7 +139,9 @@ highest-leverage next milestones are:
    project-scaffolding domain now exercises all three canonical templates
    (`cli`, `web-api`, and `agent-orchestrator`) through scaffold/run/test
    probes, developer experience covers doc extraction plus formatter check and
-   repair behavior, agent memory/analysis covers parse-time memory declaration
+   repair behavior, agent toolbelt coverage adds five runnable examples for
+   triage routing, capability budgeting, memory recall, release evidence, and
+   repair planning, agent memory/analysis covers parse-time memory declaration
    surfacing plus check/run of the advertised log analyzer, and web/PWA
    productization covers offline-handler, full local-smoke, and local Chrome
    DevTools browser offline probes. Signed-release provenance covers key
