@@ -46,6 +46,8 @@ def _lane_score(lane: ObjectiveLane) -> float:
         return 1.0
     if lane.status == "active-partial":
         return 0.5
+    if lane.status == "source-locked":
+        return 0.35
     if lane.status == "planned-contract":
         return 0.25
     return 0.0
@@ -161,7 +163,8 @@ def read_status() -> MitReadinessStatus:
             completion_percent=promo.completion_percent,
             evidence=(
                 "`scripts/garnet_promo_video_status.py` defines the 30-second "
-                "promo contract while preserving that no verified rendered artifact exists."
+                "promo contract, locks visual identity/source surfaces to repo evidence, "
+                "and preserves that no verified rendered artifact exists."
             ),
             blocked_by=[
                 "rendered artifact",

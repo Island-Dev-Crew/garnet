@@ -1455,6 +1455,13 @@ three promo-video readiness probes, including manifested JSON/Markdown output.
 This is not a rendered ad, not a website-ready export, and not a productization
 completion claim.
 
+Phase 6AH promo-source lock pass: `scripts/garnet_promo_video_status.py`
+promotes the promo lane from planned contract to source-locked evidence by
+hashing the canonical logo/PWA icon assets and proving the public site, Garnet
+Studio, agentic dogfood matrix, and MIT readiness reporter surfaces are present
+before rendering. The matrix adds a fourth promo-video readiness probe for the
+source lock. This is still not a rendered ad or website-ready export.
+
 Phase 6Z packaged assist-plan resource pass: packaged Garnet Studio now stages
 and chmods `scripts/garnet_converter_assist_plan.py`, and the DMG install
 smoke checks it as a required executable bundled asset before running copied-app

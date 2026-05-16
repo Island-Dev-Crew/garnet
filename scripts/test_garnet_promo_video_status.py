@@ -28,14 +28,33 @@ class GarnetPromoVideoStatusTests(unittest.TestCase):
             )
         )
 
-        self.assertEqual("planned-contract", data["status"])
-        self.assertEqual(25.0, data["completion_percent"])
+        self.assertEqual("source-locked", data["status"])
+        self.assertEqual(35.0, data["completion_percent"])
         self.assertFalse(data["rendered_video_present"])
         self.assertFalse(data["website_export_present"])
+        self.assertTrue(data["visual_identity_locked"])
+        self.assertTrue(data["source_surfaces_locked"])
+        self.assertIn("visual identity lock", data["completed_gates"])
+        self.assertIn("30-second storyboard and shot list", data["completed_gates"])
         self.assertIn("HyperFrames or Remotion composition", data["required_gates"])
+        self.assertIn("HyperFrames or Remotion composition", data["open_gates"])
         self.assertIn("visual QA verdict", data["required_gates"])
         self.assertIn("No verified rendered promo video is present.", data["current_truth"])
         self.assertIn("Do not claim a rendered promo video exists.", data["forbidden_claims"])
+
+    def test_locked_source_packet_lists_real_repo_assets_and_surfaces(self) -> None:
+        contract = promo.read_status()
+        asset_ids = {asset["id"] for asset in contract.locked_assets}
+        surface_ids = {surface["id"] for surface in contract.source_surfaces}
+
+        self.assertIn("root-logo", asset_ids)
+        self.assertIn("pwa-icon-512", asset_ids)
+        self.assertIn("studio-logo", asset_ids)
+        self.assertTrue(all(asset["sha256"] for asset in contract.locked_assets))
+        self.assertIn("public-site", surface_ids)
+        self.assertIn("studio-app", surface_ids)
+        self.assertIn("mit-status", surface_ids)
+        self.assertTrue(all(surface["exists"] for surface in contract.source_surfaces))
 
     def test_storyboard_contract_is_specific_without_becoming_a_render_claim(self) -> None:
         contract = promo.read_status()
@@ -54,7 +73,9 @@ class GarnetPromoVideoStatusTests(unittest.TestCase):
         rendered = subprocess.check_output([sys.executable, str(SCRIPT)], text=True)
 
         self.assertIn("Garnet Promo Video Readiness Contract", rendered)
-        self.assertIn("Status: **planned-contract**", rendered)
+        self.assertIn("Status: **source-locked**", rendered)
+        self.assertIn("Visual Identity Lock", rendered)
+        self.assertIn("Source Surface Lock", rendered)
         self.assertIn("30 seconds", rendered)
         self.assertIn("HyperFrames or Remotion composition", rendered)
         self.assertIn("Do not claim a rendered promo video exists.", rendered)

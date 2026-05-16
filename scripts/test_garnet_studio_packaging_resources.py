@@ -35,6 +35,30 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
             script,
         )
         self.assertIn('cp -R "${ROOT}/docs" "${APP_DIR}/Contents/Resources/docs"', script)
+        self.assertIn('mkdir -p "${APP_DIR}/Contents/Resources/assets"', script)
+        self.assertIn(
+            'cp "${ROOT}/assets/garnet-logo.png" '
+            '"${APP_DIR}/Contents/Resources/assets/garnet-logo.png"',
+            script,
+        )
+        self.assertIn(
+            'mkdir -p "${APP_DIR}/Contents/Resources/apps/garnet-studio-macos/Sources/GarnetStudio"',
+            script,
+        )
+        self.assertIn(
+            'cp "${ROOT}/apps/garnet-studio-macos/Sources/GarnetStudio/GarnetStudioApp.swift" '
+            '"${APP_DIR}/Contents/Resources/apps/garnet-studio-macos/Sources/GarnetStudio/GarnetStudioApp.swift"',
+            script,
+        )
+        self.assertIn(
+            'mkdir -p "${APP_DIR}/Contents/Resources/apps/garnet-studio-macos/Sources/GarnetStudio/Resources"',
+            script,
+        )
+        self.assertIn(
+            'cp "${ROOT}/apps/garnet-studio-macos/Sources/GarnetStudio/Resources/garnet-logo.png" '
+            '"${APP_DIR}/Contents/Resources/apps/garnet-studio-macos/Sources/GarnetStudio/Resources/garnet-logo.png"',
+            script,
+        )
         self.assertIn('cp "${ROOT}/README.md" "${APP_DIR}/Contents/Resources/README.md"', script)
         self.assertIn('cp "${ROOT}/CURRENT_STATE.md" "${APP_DIR}/Contents/Resources/CURRENT_STATE.md"', script)
         self.assertIn('cp -R "${ROOT}/C_Language_Specification" "${APP_DIR}/Contents/Resources/C_Language_Specification"', script)
@@ -73,6 +97,9 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
         self.assertIn('MIT_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_mit_readiness_status.py"', script)
         self.assertIn('PROMO_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_promo_video_status.py"', script)
         self.assertIn('NOTARIZATION_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_studio_notarization_status.py"', script)
+        self.assertIn('PROMO_ASSETS_DIR="${INSTALLED_APP}/Contents/Resources/assets"', script)
+        self.assertIn('PROMO_STUDIO_SOURCE="${INSTALLED_APP}/Contents/Resources/apps/garnet-studio-macos/Sources/GarnetStudio/GarnetStudioApp.swift"', script)
+        self.assertIn('PROMO_STUDIO_LOGO="${INSTALLED_APP}/Contents/Resources/apps/garnet-studio-macos/Sources/GarnetStudio/Resources/garnet-logo.png"', script)
         self.assertIn('DOCS_DIR="${INSTALLED_APP}/Contents/Resources/docs"', script)
         self.assertIn('"${OFFLINE_PWA_SMOKE}" --docs-dir "${DOCS_DIR}"', script)
 
