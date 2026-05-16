@@ -109,10 +109,11 @@ highest-leverage next milestones are:
    surfaces that reduce terminal-first friction without overstating release
    authority. The macOS workbench opens like a normal app, bundles the Garnet
    CLI plus agentic matrix and docs/PWA assets, verifies mounted-DMG
-   copy-install smoke, and exposes health, examples, conversion, release
-   status, agentic stress tests, and onboarding while a notarization preflight
-   records the current Developer ID, hardened-runtime, Gatekeeper, and notary
-   credential blockers. The docs site now has a seed installable PWA shell with
+   copy-install smoke with manifest-backed Desktop evidence, and exposes
+   health, examples, conversion, release status, agentic stress tests, and
+   onboarding while a notarization preflight records the current Developer ID,
+   hardened-runtime, Gatekeeper, and notary credential blockers. The docs site
+   now has a seed installable PWA shell with
    manifest, icons, service worker, local HTTP smoke, dependency-free offline
    service-worker behavior simulation, local Chrome DevTools offline smoke,
    packaged-app resource smoke, and CI evidence gate. Do not claim signing,
