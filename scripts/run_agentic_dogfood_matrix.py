@@ -997,6 +997,256 @@ def build_converter_advisory_review_manifest_probe(work: Path, source: Path) -> 
     )
 
 
+def build_converter_advisory_handoff_current_probe(work: Path, source: Path) -> ProbeResult:
+    bundle_dir = work / "converter-advisory-handoff-bundle"
+    review_dir = work / "converter-advisory-handoff-review"
+    bundle = run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "garnet_converter_advisory_bundle.py"),
+            "--language",
+            "typescript",
+            "--source",
+            str(source),
+            "--output-dir",
+            str(bundle_dir),
+        ],
+        work,
+    )
+    review = run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "garnet_converter_advisory_review.py"),
+            "--bundle-dir",
+            str(bundle_dir),
+            "--output-dir",
+            str(review_dir),
+        ],
+        work,
+    )
+    probe = Probe(
+        "report-converter-advisory-handoff-current-truth",
+        "converter advisory handoff",
+        "advisory handoff should package reviewed no-source context without enabling conversion",
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "garnet_converter_advisory_handoff.py"),
+            "--bundle-dir",
+            str(bundle_dir),
+            "--review-dir",
+            str(review_dir),
+            "--format",
+            "json",
+        ],
+        True,
+        (
+            "\"status\": \"ready-for-provider-neutral-advisory-handoff\"",
+            "\"source_included\": false",
+            "\"provider_backed_conversion_allowed\": false",
+            "\"conversion_active\": false",
+            "provider-neutral advisory notes only",
+        ),
+        security_domain="privacy",
+    )
+    start = time.monotonic()
+    if bundle.returncode != 0:
+        return classify_result(
+            probe,
+            bundle.returncode,
+            bundle.stdout,
+            bundle.stderr,
+            int((time.monotonic() - start) * 1000),
+            work,
+        )
+    if review.returncode != 0:
+        return classify_result(
+            probe,
+            review.returncode,
+            review.stdout,
+            review.stderr,
+            int((time.monotonic() - start) * 1000),
+            work,
+        )
+    completed = run(probe.command, work)
+    return classify_result(
+        probe,
+        completed.returncode,
+        completed.stdout,
+        completed.stderr,
+        int((time.monotonic() - start) * 1000),
+        work,
+    )
+
+
+def build_converter_advisory_handoff_source_block_probe(work: Path, source: Path) -> ProbeResult:
+    bundle_dir = work / "converter-advisory-handoff-source-included-bundle"
+    review_dir = work / "converter-advisory-handoff-source-included-review"
+    bundle = run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "garnet_converter_advisory_bundle.py"),
+            "--language",
+            "typescript",
+            "--source",
+            str(source),
+            "--include-source",
+            "--output-dir",
+            str(bundle_dir),
+        ],
+        work,
+    )
+    review = run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "garnet_converter_advisory_review.py"),
+            "--bundle-dir",
+            str(bundle_dir),
+            "--output-dir",
+            str(review_dir),
+        ],
+        work,
+    )
+    probe = Probe(
+        "report-converter-advisory-handoff-source-included-block",
+        "converter advisory handoff",
+        "advisory handoff should refuse source-included reviews before model or agent handoff",
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "garnet_converter_advisory_handoff.py"),
+            "--bundle-dir",
+            str(bundle_dir),
+            "--review-dir",
+            str(review_dir),
+            "--format",
+            "json",
+        ],
+        False,
+        (
+            "\"status\": \"blocked-advisory-handoff\"",
+            "\"source_included\": true",
+            "source text included",
+            "Do not claim autonomous conversion",
+        ),
+        security_domain="privacy",
+    )
+    start = time.monotonic()
+    if bundle.returncode != 0:
+        return classify_result(
+            probe,
+            bundle.returncode,
+            bundle.stdout,
+            bundle.stderr,
+            int((time.monotonic() - start) * 1000),
+            work,
+        )
+    if review.returncode not in (0, 1):
+        return classify_result(
+            probe,
+            review.returncode,
+            review.stdout,
+            review.stderr,
+            int((time.monotonic() - start) * 1000),
+            work,
+        )
+    completed = run(probe.command, work)
+    return classify_result(
+        probe,
+        completed.returncode,
+        completed.stdout,
+        completed.stderr,
+        int((time.monotonic() - start) * 1000),
+        work,
+    )
+
+
+def build_converter_advisory_handoff_manifest_probe(work: Path, source: Path) -> ProbeResult:
+    bundle_dir = work / "converter-advisory-handoff-manifest-bundle"
+    review_dir = work / "converter-advisory-handoff-manifest-review"
+    output_dir = work / "converter-advisory-handoff"
+    bundle = run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "garnet_converter_advisory_bundle.py"),
+            "--language",
+            "typescript",
+            "--source",
+            str(source),
+            "--output-dir",
+            str(bundle_dir),
+        ],
+        work,
+    )
+    review = run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "garnet_converter_advisory_review.py"),
+            "--bundle-dir",
+            str(bundle_dir),
+            "--output-dir",
+            str(review_dir),
+        ],
+        work,
+    )
+    probe = Probe(
+        "report-converter-advisory-handoff-output-manifest",
+        "converter advisory handoff",
+        "advisory handoff should write JSON, Markdown, and a verified manifest",
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "garnet_converter_advisory_handoff.py"),
+            "--bundle-dir",
+            str(bundle_dir),
+            "--review-dir",
+            str(review_dir),
+            "--output-dir",
+            str(output_dir),
+        ],
+        True,
+        (
+            "Garnet Converter Advisory Handoff Packet",
+            "garnet-converter-advisory-handoff.json: OK",
+            "garnet-converter-advisory-handoff.md: OK",
+        ),
+        security_domain="release-integrity",
+    )
+    start = time.monotonic()
+    if bundle.returncode != 0:
+        return classify_result(
+            probe,
+            bundle.returncode,
+            bundle.stdout,
+            bundle.stderr,
+            int((time.monotonic() - start) * 1000),
+            work,
+        )
+    if review.returncode != 0:
+        return classify_result(
+            probe,
+            review.returncode,
+            review.stdout,
+            review.stderr,
+            int((time.monotonic() - start) * 1000),
+            work,
+        )
+    completed = run(probe.command, work)
+    stdout = [completed.stdout]
+    stderr = [completed.stderr]
+    exit_code = completed.returncode
+    if completed.returncode == 0:
+        verify = run(["shasum", "-a", "256", "-c", "MANIFEST.sha256"], output_dir)
+        stdout.append(verify.stdout)
+        stderr.append(verify.stderr)
+        exit_code = verify.returncode
+    return classify_result(
+        probe,
+        exit_code,
+        "\n".join(stdout),
+        "\n".join(stderr),
+        int((time.monotonic() - start) * 1000),
+        work,
+    )
+
+
 def build_promo_video_manifest_probe(work: Path) -> ProbeResult:
     output_dir = work / "promo-video-status"
     probe = Probe(
@@ -1987,6 +2237,9 @@ def probe_set(
         ),
         lambda: build_converter_advisory_review_source_block_probe(work, fixtures["typescript_assist"]),
         lambda: build_converter_advisory_review_manifest_probe(work, fixtures["typescript_assist"]),
+        lambda: build_converter_advisory_handoff_current_probe(work, fixtures["typescript_assist"]),
+        lambda: build_converter_advisory_handoff_source_block_probe(work, fixtures["typescript_assist"]),
+        lambda: build_converter_advisory_handoff_manifest_probe(work, fixtures["typescript_assist"]),
         Probe(
             "report-studio-advisory-bundle-action",
             "converter advisory bundle UX",

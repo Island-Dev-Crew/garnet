@@ -29,6 +29,7 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | Converter LLM feasibility | Active for answering whether an LLM belongs in the converter path without overclaiming active conversion | `scripts/garnet_converter_llm_feasibility.py`; `python3 scripts/test_garnet_converter_llm_feasibility.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-converter-llm-feasibility-*`; `docs/index.html` | Treat provider-neutral advisory planning as feasible; keep autonomous/provider-backed LLM conversion inactive until secure runtime, deterministic frontend, lineage, `@sandbox`, `garnet check`, dogfood, and human-audit gates exist |
 | Converter advisory bundle | Active for provider-neutral local handoff packaging before any provider-backed model lane exists | `scripts/garnet_converter_advisory_bundle.py`; `python3 scripts/test_garnet_converter_advisory_bundle.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-converter-advisory-bundle-*`; `docs/index.html` | Combine feasibility, context, and per-file assist-plan evidence in a manifested bundle; omit source by default, require `--include-source` for explicit local/provider handoff, and keep conversion inactive |
 | Converter advisory review | Active for checking a manifested advisory bundle before any model/agent handoff | `scripts/garnet_converter_advisory_review.py`; `python3 scripts/test_garnet_converter_advisory_review.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-converter-advisory-review-*`; `docs/index.html` | Verify the bundle manifest, block source-included bundles unless explicitly approved, emit a human-review checklist, and keep provider-backed conversion inactive |
+| Converter advisory handoff | Active for source-free provider-neutral prompt packaging after the review gate | `scripts/garnet_converter_advisory_handoff.py`; `python3 scripts/test_garnet_converter_advisory_handoff.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-converter-advisory-handoff-*`; `docs/index.html` | Consume the reviewed advisory bundle, refuse blocked/source-included reviews, emit a no-source handoff packet, and keep model calls plus conversion inactive |
 | Converter advisory bundle UX | Active in Garnet Studio as a local package action, not provider-backed conversion | `apps/garnet-studio-macos/Sources/GarnetStudio/GarnetStudioApp.swift`; `swift test --package-path apps/garnet-studio-macos`; `scripts/run_agentic_dogfood_matrix.py` probes `report-studio-advisory-bundle-*`; `docs/index.html` | Expose `Advisory Bundle` beside `Assist Plan`, write manifested local handoff output under `~/Desktop/dogfood/`, and keep source omitted by default |
 | Converter advisory review UX | Active in Garnet Studio as a local review action, not provider-backed conversion | `apps/garnet-studio-macos/Sources/GarnetStudio/GarnetStudioApp.swift`; `swift test --package-path apps/garnet-studio-macos`; `scripts/run_agentic_dogfood_matrix.py` probes `report-studio-advisory-review-*`; `docs/index.html` | Expose `Advisory Review` beside `Advisory Bundle`, create a no-source bundle, run the review gate, and preserve the review report under `~/Desktop/dogfood/` |
 | MIT readiness objective accounting | Active for broader productization truth beyond the complete tracked implementation-plan ledger plus a public-site progress pulse | `scripts/garnet_mit_readiness_status.py`; `python3 scripts/test_garnet_mit_readiness_status.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-mit-readiness-*`; `docs/index.html` now surfaces the current `58.6%` local MIT/productization checkpoint beside `87/87 tracked slices` | Use this reporter when discussing public/MIT readiness so `87/87` tracked slices are not confused with notarization, mobile distribution, promo video, broad converter frontends, LLM assist, proof, or empirical validation completion |
@@ -2016,6 +2017,24 @@ The packaged app/DMG smoke passes in
 `/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-102422` with
 DMG SHA-256
 `88c1cbe96fe3bc3fa38d44fcf574970400e7739156bb569106790d4e801a22b6`.
+
+Phase 6AV converter advisory handoff pass:
+`scripts/garnet_converter_advisory_handoff.py` now turns a manifested advisory
+bundle plus `garnet_converter_advisory_review.py` output into a final
+source-free, provider-neutral handoff packet. The packet refuses blocked or
+source-included reviews, never calls a provider, keeps conversion inactive, and
+records the required lineage, `@sandbox`, `migrate_todo`, `garnet check`,
+dogfood evidence, and human-audit gates before any candidate output can be
+trusted. The agentic matrix adds a three-probe `converter advisory handoff`
+domain for current truth, source-included blocking, and manifest verification.
+Current source-checkout evidence passes `103/103` with `skipped=0` in Desktop
+bundle `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-103651`.
+Refreshed web/PWA evidence lives at
+`/Users/idc2.0/Desktop/dogfood/web-pwa-readiness-20260516-103731`.
+The packaged app/DMG smoke passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-103813` with
+DMG SHA-256
+`396c5afc7e5409fc9977d0dcd582a363851f65f1479ceb7be8f1c838d94cb932`.
 
 Phase 6AG promo-video readiness pass: `scripts/garnet_promo_video_status.py`
 now records the requested 30-second Garnet promo as a planned-contract lane

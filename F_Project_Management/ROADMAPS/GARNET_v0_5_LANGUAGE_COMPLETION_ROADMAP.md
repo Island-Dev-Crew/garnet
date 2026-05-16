@@ -1671,6 +1671,21 @@ The copied-DMG smoke passes at
 DMG SHA-256
 `88c1cbe96fe3bc3fa38d44fcf574970400e7739156bb569106790d4e801a22b6`.
 
+Phase 6AV converter advisory handoff pass: the converter LLM lane now has a
+final provider-neutral packet builder before any human-approved model/agent
+handoff. `scripts/garnet_converter_advisory_handoff.py` consumes a manifested
+advisory bundle plus review-gate output, refuses blocked/source-included
+reviews, emits a no-source prompt packet, and keeps provider-backed/autonomous
+conversion inactive. The refreshed source-checkout matrix adds a three-probe
+`converter advisory handoff` domain; candidate output remains untrusted until
+lineage, `@sandbox`, `garnet check`, dogfood evidence, and human audit are
+complete. Local source-checkout evidence passes `103/103` with `skipped=0` at
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-103651`.
+The copied-DMG smoke passes at
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-103813` for
+DMG SHA-256
+`396c5afc7e5409fc9977d0dcd582a363851f65f1479ceb7be8f1c838d94cb932`.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.

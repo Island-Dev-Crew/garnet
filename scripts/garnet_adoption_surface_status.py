@@ -146,6 +146,7 @@ def read_surface() -> AdoptionSurface:
             "deterministic planned-language assist plan is active",
             "provider-neutral advisory bundle is active",
             "advisory review gate is active before model handoff",
+            "provider-neutral advisory handoff packet is active",
             "provider-backed conversion is not active",
             "suggestions must preserve lineage, sandboxing, garnet check, dogfood evidence, and human audit",
             "deterministic converter output remains authoritative",
