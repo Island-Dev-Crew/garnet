@@ -262,20 +262,27 @@ end
     return paths
 
 
-def build_project_template_probe(garnet: Path, work: Path) -> ProbeResult:
+def build_project_template_probe(
+    garnet: Path,
+    work: Path,
+    template: str,
+    target_name: str,
+    expected_run: tuple[str, ...],
+    expected_test: str,
+) -> ProbeResult:
+    target = work / target_name
     probe = Probe(
-        id="template-agent-orchestrator-run-and-test",
+        id=f"template-{template}-run-and-test",
         domain="project scaffolding",
-        claim="agent-orchestrator template should scaffold, run, and test without manual repair",
-        command=[str(garnet), "new", "--template", "agent-orchestrator", str(work / "generated_agents")],
+        claim=f"{template} template should scaffold, run, and test without manual repair",
+        command=[str(garnet), "new", "--template", template, str(target)],
         expect_success=True,
-        expected_stdout=("3 passed; 0 failed", "=> 25"),
+        expected_stdout=(*expected_run, expected_test),
         security_domain="filesystem",
     )
     start = time.monotonic()
     stdout_parts: list[str] = []
     stderr_parts: list[str] = []
-    target = work / "generated_agents"
     if target.exists():
         shutil.rmtree(target)
     first = run(probe.command, work)
@@ -286,13 +293,13 @@ def build_project_template_probe(garnet: Path, work: Path) -> ProbeResult:
     if first.returncode == 0:
         main = target / "src" / "main.garnet"
         second = run([str(garnet), "run", str(main)], work)
-        stdout_parts.append("$ garnet run generated_agents/src/main.garnet")
+        stdout_parts.append(f"$ garnet run {target_name}/src/main.garnet")
         stdout_parts.append(second.stdout)
         stderr_parts.append(second.stderr)
         exit_code = second.returncode
         if second.returncode == 0:
             third = run([str(garnet), "test", str(target)], work)
-            stdout_parts.append("$ garnet test generated_agents")
+            stdout_parts.append(f"$ garnet test {target_name}")
             stdout_parts.append(third.stdout)
             stderr_parts.append(third.stderr)
             exit_code = third.returncode
@@ -506,7 +513,30 @@ def probe_set(
             True,
             ("6",),
         ),
-        lambda: build_project_template_probe(garnet, work),
+        lambda: build_project_template_probe(
+            garnet,
+            work,
+            "cli",
+            "generated_cli",
+            ("Hello from generated_cli!", "=> 0"),
+            "2 passed; 0 failed",
+        ),
+        lambda: build_project_template_probe(
+            garnet,
+            work,
+            "web-api",
+            "generated_web_api",
+            ("starting generated_web_api", "=> 0"),
+            "1 passed; 0 failed",
+        ),
+        lambda: build_project_template_probe(
+            garnet,
+            work,
+            "agent-orchestrator",
+            "generated_agents",
+            ("=> 25",),
+            "3 passed; 0 failed",
+        ),
         Probe(
             "run-canonical-multi-agent-example",
             "agent orchestration",

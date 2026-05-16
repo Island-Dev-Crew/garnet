@@ -31,11 +31,20 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
             stderr_excerpt="",
         )
 
+    def _inventory_results(self, probes: list[object]) -> list[object]:
+        results = []
+        for probe in probes:
+            if isinstance(probe, matrix.Probe):
+                results.append(self._fake_result(probe))
+            else:
+                results.append(probe())
+        return results
+
     def test_probe_inventory_includes_agent_recovery_domain(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/bin/garnet"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
             concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
 
         ids = {probe.id for probe in concrete_probes}
@@ -52,7 +61,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/bin/garnet"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
             concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
 
         ids = {probe.id for probe in concrete_probes}
@@ -62,19 +71,34 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertIn("smoke-web-pwa-offline-handler", ids)
         self.assertIn("smoke-web-pwa-local-readiness", ids)
 
+    def test_probe_inventory_covers_canonical_project_templates(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            fixtures = matrix.prepare_fixtures(work)
+            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            results = self._inventory_results(probes)
+
+        ids = {result.probe.id for result in results}
+        domains = Counter(result.probe.domain for result in results)
+
+        self.assertEqual(domains["project scaffolding"], 3)
+        self.assertIn("template-cli-run-and-test", ids)
+        self.assertIn("template-web-api-run-and-test", ids)
+        self.assertIn("template-agent-orchestrator-run-and-test", ids)
+
     def test_domain_coverage_marks_undercovered_agentic_surfaces(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/bin/garnet"), work, fixtures, include_app_workbench=False)
-            concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
-            results = [self._fake_result(probe) for probe in concrete_probes]
+            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            results = self._inventory_results(probes)
 
         coverage = {item["domain"]: item for item in matrix.domain_coverage(results)}
 
         self.assertEqual(coverage["web/PWA productization"]["probe_count"], 2)
         self.assertEqual(coverage["web/PWA productization"]["target_probe_count"], 3)
         self.assertEqual(coverage["web/PWA productization"]["status"], "needs-expansion")
+        self.assertEqual(coverage["project scaffolding"]["status"], "adequate")
         self.assertEqual(coverage["agent recovery and diagnostics"]["status"], "adequate")
 
     def test_write_outputs_persists_domain_coverage(self) -> None:
