@@ -10,6 +10,7 @@ DMG_PATH="${ROOT}/target/macos/GarnetStudio.dmg"
 PACKAGE_PATH="${ROOT}/apps/garnet-studio-macos"
 SWIFT_BIN="${PACKAGE_PATH}/.build/release/${EXECUTABLE_NAME}"
 GARNET_BIN="${ROOT}/target/release/garnet"
+APPLE_DEV_ID_APP="${APPLE_DEV_ID_APP:-}"
 
 echo "==> Building Garnet CLI"
 cargo build --release -p garnet-cli
@@ -67,8 +68,13 @@ PLIST
 printf 'APPL????' > "${APP_DIR}/Contents/PkgInfo"
 
 if command -v codesign >/dev/null 2>&1; then
-  echo "==> Applying ad-hoc signature"
-  codesign --force --deep --sign - "${APP_DIR}" >/dev/null
+  if [ -n "${APPLE_DEV_ID_APP}" ]; then
+    echo "==> Applying Developer ID signature with hardened runtime"
+    codesign --force --deep --options runtime --timestamp --sign "${APPLE_DEV_ID_APP}" "${APP_DIR}" >/dev/null
+  else
+    echo "==> Applying ad-hoc signature"
+    codesign --force --deep --sign - "${APP_DIR}" >/dev/null
+  fi
 else
   echo "warning: codesign unavailable; app bundle left unsigned" >&2
 fi

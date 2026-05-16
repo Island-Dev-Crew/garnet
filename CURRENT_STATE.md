@@ -111,9 +111,11 @@ highest-leverage next milestones are:
    CLI plus agentic matrix and docs/PWA assets, verifies mounted-DMG
    copy-install smoke with manifest-backed Desktop evidence, and exposes
    health, examples, conversion, release status, agentic stress tests, and
-   onboarding while a notarization preflight records the current Developer ID,
-   hardened-runtime, Gatekeeper, and notary credential blockers. The docs site
-   now has a seed installable PWA shell with
+   onboarding. The package script can use `APPLE_DEV_ID_APP` for a
+   Developer ID hardened-runtime signature when that identity exists, while a
+   notarization preflight records the current Developer ID, hardened-runtime,
+   Gatekeeper, and notary credential blockers. The docs site now has a seed
+   installable PWA shell with
    manifest, icons, service worker, local HTTP smoke, dependency-free offline
    service-worker behavior simulation, local Chrome DevTools offline smoke,
    packaged-app resource smoke, and CI evidence gate. Do not claim signing,
