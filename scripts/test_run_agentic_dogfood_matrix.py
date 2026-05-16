@@ -57,8 +57,9 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         ids = {probe.id for probe in concrete_probes}
         domains = Counter(probe.domain for probe in concrete_probes)
 
-        self.assertEqual(domains["web/PWA productization"], 1)
+        self.assertEqual(domains["web/PWA productization"], 2)
         self.assertIn("smoke-web-pwa-offline-handler", ids)
+        self.assertIn("smoke-web-pwa-local-readiness", ids)
 
     def test_domain_coverage_marks_undercovered_agentic_surfaces(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -70,7 +71,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
 
         coverage = {item["domain"]: item for item in matrix.domain_coverage(results)}
 
-        self.assertEqual(coverage["web/PWA productization"]["probe_count"], 1)
+        self.assertEqual(coverage["web/PWA productization"]["probe_count"], 2)
         self.assertEqual(coverage["web/PWA productization"]["target_probe_count"], 3)
         self.assertEqual(coverage["web/PWA productization"]["status"], "needs-expansion")
         self.assertEqual(coverage["agent recovery and diagnostics"]["status"], "adequate")
