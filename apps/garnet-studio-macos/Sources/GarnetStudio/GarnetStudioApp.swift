@@ -511,6 +511,30 @@ struct ConverterAdvisoryBundleRunner {
     }
 }
 
+struct GarnetStudioEvidenceDirectory {
+    let homeDirectoryURL: URL
+
+    init(homeDirectoryURL: URL = FileManager.default.homeDirectoryForCurrentUser) {
+        self.homeDirectoryURL = homeDirectoryURL
+    }
+
+    func advisoryBundleDirectory(stamp: String = GarnetStudioEvidenceDirectory.timestamp()) -> URL {
+        homeDirectoryURL
+            .appendingPathComponent("Desktop", isDirectory: true)
+            .appendingPathComponent("dogfood", isDirectory: true)
+            .appendingPathComponent("garnet-studio-advisory-bundle-\(stamp)", isDirectory: true)
+    }
+
+    static func timestamp(date: Date = Date()) -> String {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyyMMdd-HHmmss"
+        return formatter.string(from: date)
+    }
+}
+
 struct AgenticDogfoodRunner {
     let location: AgenticDogfoodScriptLocation
     let garnetBinaryPath: String?
@@ -733,7 +757,7 @@ final class GarnetStudioViewModel: ObservableObject {
 
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("GarnetStudioAdvisory-\(UUID().uuidString)", isDirectory: true)
-        let bundleDirectory = directory.appendingPathComponent("bundle", isDirectory: true)
+        let bundleDirectory = GarnetStudioEvidenceDirectory().advisoryBundleDirectory()
         do {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             let file = directory.appendingPathComponent("studio-input.\(fileExtension(for: converterLanguage))")
