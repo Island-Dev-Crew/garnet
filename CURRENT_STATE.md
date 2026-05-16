@@ -108,9 +108,10 @@ highest-leverage next milestones are:
    that opens like a normal app, bundles the Garnet CLI plus agentic matrix
    assets, verifies mounted-DMG copy-install smoke, and exposes health,
    examples, conversion, release status, agentic stress tests, and onboarding
-   without claiming Developer ID signing, notarization, clean-machine
-   Gatekeeper, TestFlight, App Store, web, or mobile distribution before those
-   lanes are separately verified.
+   while a notarization preflight records the current Developer ID,
+   hardened-runtime, Gatekeeper, and notary credential blockers without claiming
+   signing, notarization, clean-machine Gatekeeper, TestFlight, App Store, web,
+   or mobile distribution before those lanes are separately verified.
 6. **Agentic dogfood stress:** keep the advanced multi-domain matrix green so
    agents can exercise orchestration, migration, safe-mode, release-integrity,
    docs, app, and memory-analysis surfaces as one falsifiable workflow.
