@@ -73,6 +73,40 @@ class GarnetPromoVideoStatusTests(unittest.TestCase):
             self.assertIn("visual QA verdict", contract.open_gates)
             self.assertIn("website-ready export", contract.open_gates)
 
+    def test_visual_qa_evidence_promotes_status_without_claiming_website_export(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            artifact_dir = Path(temp) / "garnet-promo-video"
+            artifact_dir.mkdir()
+            (artifact_dir / "garnet-promo.mp4").write_bytes(b"fake-mp4")
+            (artifact_dir / "garnet-promo.webm").write_bytes(b"fake-webm")
+            qa_dir = Path(temp) / "garnet-promo-video-visual-qa"
+            qa_dir.mkdir()
+            (qa_dir / "promo-visual-qa-data.json").write_text(
+                json.dumps(
+                    {
+                        "status": "visual-qa-ready",
+                        "verdict": "pass",
+                        "checks": [
+                            {"id": "mp4-metadata", "passed": True},
+                            {"id": "webm-metadata", "passed": True},
+                            {"id": "sample-frames", "passed": True},
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            with mock.patch.dict(os.environ, {"GARNET_PROMO_VIDEO_DESKTOP_DIR": temp}):
+                contract = promo.read_status()
+
+            self.assertEqual("visual-qa-ready", contract.status)
+            self.assertEqual(80.0, contract.completion_percent)
+            self.assertTrue(contract.rendered_video_present)
+            self.assertTrue(contract.visual_qa_present)
+            self.assertFalse(contract.website_export_present)
+            self.assertIn("visual QA verdict", contract.completed_gates)
+            self.assertIn("website-ready export", contract.open_gates)
+
     def test_locked_source_packet_lists_real_repo_assets_and_surfaces(self) -> None:
         contract = promo.read_status()
         asset_ids = {asset["id"] for asset in contract.locked_assets}

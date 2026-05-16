@@ -1486,6 +1486,23 @@ the matrix adds a sixth promo-video readiness probe and passes `74/74` with
 Visual QA, website export, and overclaim checks remain open before any public
 video claim.
 
+Phase 6AK promo automated visual-QA pass: `scripts/qa_garnet_promo_video.mjs`
+verifies the local MP4/WebM render with `ffprobe`, extracts representative
+frames with `ffmpeg`, writes JSON/Markdown plus `MANIFEST.sha256`, and records
+that website export and public embedding remain separate gates. The corrected
+composition source avoids the stale `73/73` proof count by using a `74+`
+growing-probe-set claim. Local evidence at
+`/Users/idc2.0/Desktop/dogfood/garnet-promo-video-visual-qa` passes manifest
+verification, and the promo lane reports `visual-qa-ready` at 80.0% when that
+evidence is present. The refreshed source-checkout matrix passes `75/75` with
+`skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-073242`, and
+the refreshed copied-DMG smoke passes in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-073443` for
+DMG SHA-256
+`1eecabdb8357233a9e4c3a279379c1d4c39a51795809fe8862ffdc3bdce0c1e4`. Website
+export and overclaim checks remain open before any public video claim.
+
 Phase 6Z packaged assist-plan resource pass: packaged Garnet Studio now stages
 and chmods `scripts/garnet_converter_assist_plan.py`, and the DMG install
 smoke checks it as a required executable bundled asset before running copied-app
