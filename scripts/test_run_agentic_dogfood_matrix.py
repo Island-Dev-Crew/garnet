@@ -67,9 +67,10 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         ids = {probe.id for probe in concrete_probes}
         domains = Counter(probe.domain for probe in concrete_probes)
 
-        self.assertEqual(domains["web/PWA productization"], 2)
+        self.assertEqual(domains["web/PWA productization"], 3)
         self.assertIn("smoke-web-pwa-offline-handler", ids)
         self.assertIn("smoke-web-pwa-local-readiness", ids)
+        self.assertIn("smoke-web-pwa-browser-offline", ids)
 
     def test_probe_inventory_covers_developer_experience_repair(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -121,9 +122,9 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
 
         coverage = {item["domain"]: item for item in matrix.domain_coverage(results)}
 
-        self.assertEqual(coverage["web/PWA productization"]["probe_count"], 2)
+        self.assertEqual(coverage["web/PWA productization"]["probe_count"], 3)
         self.assertEqual(coverage["web/PWA productization"]["target_probe_count"], 3)
-        self.assertEqual(coverage["web/PWA productization"]["status"], "needs-expansion")
+        self.assertEqual(coverage["web/PWA productization"]["status"], "adequate")
         self.assertEqual(coverage["project scaffolding"]["status"], "adequate")
         self.assertEqual(coverage["developer experience"]["status"], "adequate")
         self.assertEqual(coverage["agent memory and analysis"]["status"], "adequate")
