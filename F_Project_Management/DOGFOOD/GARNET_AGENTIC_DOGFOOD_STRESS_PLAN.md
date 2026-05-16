@@ -19,23 +19,28 @@ falsifiable dogfood bundle with:
 - `dogfood-readiness-report.md`
 - `dogfood-readiness-mutations.md`
 - `dogfood-readiness-slide-deck.html`
+- per-domain coverage adequacy data for the 3-5 probe bar
 - per-probe stdout/stderr logs
 - `MANIFEST.sha256`
 
-The current probe set covers 28 checks across nine domains, or 26 checks when
-the SwiftUI/macOS app workbench probes are intentionally skipped in headless CI:
+The current probe set covers 29 checks across ten domains, or 27 checks when
+the SwiftUI/macOS app workbench probes are intentionally skipped in headless CI.
+Functional readiness and coverage adequacy are intentionally separate: a domain
+can pass every current probe while still needing more independent probes before
+the suite satisfies the requested 3-5 probe coverage bar.
 
-| Domain | Probe count | Purpose |
-|---|---:|---|
-| Agent orchestration | 4 | routing, capability policy, expression evaluation, and canonical multi-agent example execution |
-| Project scaffolding | 1 | generated `agent-orchestrator` template runs and tests |
-| Agent recovery and diagnostics | 4 | malformed source, missing source, undefined eval symbol, and missing manifest failures stay actionable |
-| Safe mode and capabilities | 5 | valid safe programs, unsafe rejection, and advertised safe I/O example check/run |
-| Migration assistant | 5 | Python/Ruby/Rust/Go conversion plus explicit unsupported-language rejection |
-| Release integrity | 3 | deterministic manifest generation, verification, and tamper rejection |
-| Developer experience | 2 | `garnet doc` extraction and `garnet fmt --check` |
-| macOS app workbench | 2 | Garnet Studio self-test plus either SwiftPM XCTest or packaged-app CLI smoke |
-| Agent memory and analysis | 2 | advertised log analyzer check/run |
+| Domain | Probe count | Coverage status | Purpose |
+|---|---:|---|---|
+| Agent orchestration | 4 | adequate | routing, capability policy, expression evaluation, and canonical multi-agent example execution |
+| Project scaffolding | 1 | needs expansion | generated `agent-orchestrator` template runs and tests |
+| Agent recovery and diagnostics | 4 | adequate | malformed source, missing source, undefined eval symbol, and missing manifest failures stay actionable |
+| Safe mode and capabilities | 5 | adequate | valid safe programs, unsafe rejection, and advertised safe I/O example check/run |
+| Migration assistant | 5 | adequate | Python/Ruby/Rust/Go conversion plus explicit unsupported-language rejection |
+| Release integrity | 3 | adequate | deterministic manifest generation, verification, and tamper rejection |
+| Developer experience | 2 | needs expansion | `garnet doc` extraction and `garnet fmt --check` |
+| Web/PWA productization | 1 | needs expansion | service-worker offline handler evidence |
+| macOS app workbench | 2 | needs expansion | Garnet Studio self-test plus either SwiftPM XCTest or packaged-app CLI smoke |
+| Agent memory and analysis | 2 | needs expansion | advertised log analyzer check/run |
 
 ## Falsification History
 
@@ -61,7 +66,7 @@ Those failures became focused fixes and regression tests in this slice.
 Latest source-checkout evidence bundle:
 
 ```text
-/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260515-232014
+/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260515-233850
 ```
 
 Current result:
@@ -71,10 +76,16 @@ readiness=100
 passed=29/29
 ```
 
+The latest bundle also records domain coverage adequacy. It marks agent
+orchestration, recovery/diagnostics, safe mode/capabilities, migration, and
+release integrity as coverage-adequate; project scaffolding, developer
+experience, web/PWA productization, macOS app workbench, and agent
+memory/analysis remain `needs-expansion` despite all current probes passing.
+
 Manifest verification:
 
 ```sh
-cd /Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260515-232014
+cd /Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260515-233850
 shasum -a 256 -c MANIFEST.sha256
 ```
 
@@ -82,8 +93,8 @@ All files in the bundle verified at creation time. This bundle was produced by
 running the source-checkout matrix with app workbench probes enabled and
 copying the completed evidence directory to Desktop dogfood storage. The matrix
 now includes the App-9 web/PWA offline service-worker handler probe and writes
-`readiness-slice-status.md` so completion percentage evidence travels with the
-bundle.
+`readiness-slice-status.md` plus `domain_coverage` JSON so completion and
+coverage adequacy evidence travel with the bundle.
 
 ## Next Gates
 
@@ -93,8 +104,10 @@ bundle.
    both source-checkout and packaged-app runs.
 3. Add a lower-cost CI variant if the full matrix remains too expensive for
    every PR.
-4. Keep signed/notarized macOS, web/PWA, iOS, Android, and promo-video
+4. Fill `needs-expansion` domains with focused 3-5 probe coverage slices before
+   treating the green score as broad exhaustion evidence.
+5. Keep signed/notarized macOS, web/PWA, iOS, Android, and promo-video
    distribution as productization lanes with their own evidence gates.
-5. Keep production allocator-integrated ARC, native backend output, mechanized
+6. Keep production allocator-integrated ARC, native backend output, mechanized
    proof, and empirical validation separate from this dogfood score until those
    lanes have executable proof.
