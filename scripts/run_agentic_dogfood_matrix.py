@@ -1042,6 +1042,54 @@ def probe_set(
             security_domain="sandbox",
         ),
         Probe(
+            "report-adoption-surface-active-truth",
+            "repo/site adoption surface",
+            "adoption surface should keep the public hook compelling without promoting future converter or LLM lanes",
+            [sys.executable, str(ROOT / "scripts" / "garnet_adoption_surface_status.py"), "--format", "json"],
+            True,
+            (
+                "Rust rigor, Ruby velocity, agent-native dogfood evidence",
+                "\"active_converter_languages\"",
+                "Rust",
+                "Ruby",
+                "Python",
+                "Go",
+                "provider-backed conversion is not active",
+            ),
+            security_domain="not-applicable",
+        ),
+        Probe(
+            "report-adoption-surface-planned-frontends",
+            "repo/site adoption surface",
+            "adoption surface should classify broader import languages as planned gates only",
+            [sys.executable, str(ROOT / "scripts" / "garnet_adoption_surface_status.py"), "--format", "json"],
+            True,
+            (
+                "JavaScript",
+                "TypeScript",
+                "Swift",
+                "C++",
+                "Perl",
+                "broad deterministic converter frontends",
+            ),
+            security_domain="sandbox",
+        ),
+        Probe(
+            "report-adoption-surface-use-cases",
+            "repo/site adoption surface",
+            "adoption surface Markdown should expose evidence-backed use cases and repo/site copy rules",
+            [sys.executable, str(ROOT / "scripts" / "garnet_adoption_surface_status.py")],
+            True,
+            (
+                "Dual-mode programming",
+                "Agent toolbelt examples",
+                "Migration assistant",
+                "macOS workbench",
+                "Repo/Site Contract",
+            ),
+            security_domain="not-applicable",
+        ),
+        Probe(
             "report-notarization-status-blockers",
             "macOS notarization readiness",
             "notarization status reporter should summarize blockers without claiming Apple notarization",
@@ -1266,8 +1314,8 @@ def render_report(results: list[ProbeResult], metadata: dict[str, str], score_da
     app_workbench_note = ""
     audited_surfaces = (
         "CLI, template, converter, release-integrity, signed-release provenance, "
-        "documentation, safe-mode, agent-toolbelt, agent-memory, macOS notarization readiness, "
-        "and macOS app workbench paths"
+        "documentation, safe-mode, agent-toolbelt, agent-memory, repo/site adoption surface, "
+        "macOS notarization readiness, and macOS app workbench paths"
     )
     if metadata["app_workbench"] == "skipped":
         app_workbench_note = (
@@ -1276,7 +1324,8 @@ def render_report(results: list[ProbeResult], metadata: dict[str, str], score_da
         )
         audited_surfaces = (
             "CLI, template, converter, release-integrity, signed-release provenance, "
-            "documentation, safe-mode, agent-toolbelt, agent-memory, and macOS notarization readiness paths"
+            "documentation, safe-mode, agent-toolbelt, agent-memory, repo/site adoption surface, "
+            "and macOS notarization readiness paths"
         )
     if failures:
         decision = (
@@ -1408,7 +1457,7 @@ def render_deck(results: list[ProbeResult], metadata: dict[str, str], score_data
 <body>
   <section>
     <h1>Garnet Agentic Dogfood</h1>
-    <p>Advanced probes for agent orchestration, agent toolbelt examples, safe-mode boundaries, migration, release integrity, signed-release provenance, macOS notarization readiness, docs, web/PWA productization, app onboarding, and memory-analysis examples.</p>
+    <p>Advanced probes for agent orchestration, agent toolbelt examples, safe-mode boundaries, migration, repo/site adoption truth, release integrity, signed-release provenance, macOS notarization readiness, docs, web/PWA productization, app onboarding, and memory-analysis examples.</p>
     <p><code>{metadata["head"][:12]}</code> · <code>{metadata["branch"]}</code></p>
   </section>
   <section>
