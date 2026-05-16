@@ -126,6 +126,19 @@ final class GarnetStudioTests: XCTestCase {
         XCTAssertEqual(first?.scriptURL.path, "/Applications/Garnet Studio.app/Contents/Resources/scripts/garnet_mit_readiness_status.py")
     }
 
+    func testMacContinuationLocatorPrefersBundledScriptBeforeAmbientCheckout() {
+        let locator = MacContinuationScriptLocator(
+            bundleResourceURL: URL(fileURLWithPath: "/Applications/Garnet Studio.app/Contents/Resources", isDirectory: true),
+            environmentRepoRoot: nil,
+            currentDirectoryURL: URL(fileURLWithPath: "/repo/apps/garnet-studio-macos", isDirectory: true)
+        )
+
+        let first = locator.candidateLocations().first
+
+        XCTAssertEqual(first?.repoRootURL.path, "/Applications/Garnet Studio.app/Contents/Resources")
+        XCTAssertEqual(first?.scriptURL.path, "/Applications/Garnet Studio.app/Contents/Resources/scripts/garnet_mac_side_continuation_status.py")
+    }
+
     func testConverterAssistPlanRunnerBuildsMarkdownCommand() {
         let location = ConverterAssistPlanScriptLocation(
             scriptURL: URL(fileURLWithPath: "/repo/scripts/garnet_converter_assist_plan.py"),
@@ -258,6 +271,26 @@ final class GarnetStudioTests: XCTestCase {
                 "PYTHONDONTWRITEBYTECODE=1",
                 "python3",
                 "/repo/scripts/garnet_mit_readiness_status.py",
+                "--format",
+                "markdown",
+            ]
+        )
+    }
+
+    func testMacContinuationRunnerBuildsMarkdownCommand() {
+        let location = MacContinuationScriptLocation(
+            scriptURL: URL(fileURLWithPath: "/repo/scripts/garnet_mac_side_continuation_status.py"),
+            repoRootURL: URL(fileURLWithPath: "/repo", isDirectory: true)
+        )
+        let runner = MacContinuationRunner(location: location)
+
+        XCTAssertEqual(
+            runner.commandArguments(),
+            [
+                "env",
+                "PYTHONDONTWRITEBYTECODE=1",
+                "python3",
+                "/repo/scripts/garnet_mac_side_continuation_status.py",
                 "--format",
                 "markdown",
             ]

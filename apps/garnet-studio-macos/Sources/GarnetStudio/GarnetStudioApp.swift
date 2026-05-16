@@ -212,6 +212,11 @@ struct MitReadinessScriptLocation: Equatable {
     let repoRootURL: URL
 }
 
+struct MacContinuationScriptLocation: Equatable {
+    let scriptURL: URL
+    let repoRootURL: URL
+}
+
 struct ConverterAssistPlanScriptLocator {
     let bundleResourceURL: URL?
     let environmentRepoRoot: String?
@@ -587,6 +592,81 @@ struct MitReadinessScriptLocator {
     }
 }
 
+struct MacContinuationScriptLocator {
+    let bundleResourceURL: URL?
+    let environmentRepoRoot: String?
+    let currentDirectoryURL: URL
+
+    init(
+        bundleResourceURL: URL? = Bundle.main.resourceURL,
+        environmentRepoRoot: String? = ProcessInfo.processInfo.environment["GARNET_REPO_ROOT"],
+        currentDirectoryURL: URL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+    ) {
+        self.bundleResourceURL = bundleResourceURL
+        self.environmentRepoRoot = environmentRepoRoot
+        self.currentDirectoryURL = currentDirectoryURL
+    }
+
+    func candidateLocations() -> [MacContinuationScriptLocation] {
+        var locations: [MacContinuationScriptLocation] = []
+
+        if let environmentRepoRoot, !environmentRepoRoot.isEmpty {
+            let root = URL(fileURLWithPath: environmentRepoRoot, isDirectory: true)
+            locations.append(location(forRepoRoot: root))
+        }
+
+        if let bundleResourceURL {
+            let script = bundleResourceURL
+                .appendingPathComponent("scripts", isDirectory: true)
+                .appendingPathComponent("garnet_mac_side_continuation_status.py")
+            locations.append(MacContinuationScriptLocation(scriptURL: script, repoRootURL: bundleResourceURL))
+        }
+
+        for root in ancestorRoots(from: currentDirectoryURL) {
+            locations.append(location(forRepoRoot: root))
+        }
+
+        var seen: Set<String> = []
+        return locations.filter { location in
+            let key = location.scriptURL.path
+            if seen.contains(key) {
+                return false
+            }
+            seen.insert(key)
+            return true
+        }
+    }
+
+    func locate(fileManager: FileManager = .default) -> MacContinuationScriptLocation? {
+        candidateLocations().first { location in
+            fileManager.fileExists(atPath: location.scriptURL.path)
+        }
+    }
+
+    private func location(forRepoRoot root: URL) -> MacContinuationScriptLocation {
+        MacContinuationScriptLocation(
+            scriptURL: root
+                .appendingPathComponent("scripts", isDirectory: true)
+                .appendingPathComponent("garnet_mac_side_continuation_status.py"),
+            repoRootURL: root
+        )
+    }
+
+    private func ancestorRoots(from start: URL) -> [URL] {
+        var roots: [URL] = []
+        var cursor = start.standardizedFileURL
+        while true {
+            roots.append(cursor)
+            let parent = cursor.deletingLastPathComponent()
+            if parent.path == cursor.path {
+                break
+            }
+            cursor = parent
+        }
+        return roots
+    }
+}
+
 struct AgenticDogfoodScriptLocator {
     let bundleResourceURL: URL?
     let environmentRepoRoot: String?
@@ -873,6 +953,43 @@ struct MitReadinessRunner {
     }
 }
 
+struct MacContinuationRunner {
+    let location: MacContinuationScriptLocation
+
+    func commandArguments() -> [String] {
+        [
+            "env",
+            "PYTHONDONTWRITEBYTECODE=1",
+            "python3",
+            location.scriptURL.path,
+            "--format",
+            "markdown",
+        ]
+    }
+
+    func run() -> GarnetCommandResult {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = commandArguments()
+        process.currentDirectoryURL = location.repoRootURL
+
+        let outputPipe = Pipe()
+        process.standardOutput = outputPipe
+        process.standardError = outputPipe
+
+        let command = (["/usr/bin/env"] + (process.arguments ?? [])).joined(separator: " ")
+        do {
+            try process.run()
+            process.waitUntilExit()
+            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: data, encoding: .utf8) ?? ""
+            return GarnetCommandResult(command: command, exitCode: process.terminationStatus, output: output)
+        } catch {
+            return GarnetCommandResult(command: command, exitCode: 127, output: error.localizedDescription)
+        }
+    }
+}
+
 struct GarnetStudioEvidenceDirectory {
     let homeDirectoryURL: URL
 
@@ -1032,6 +1149,7 @@ final class GarnetStudioViewModel: ObservableObject {
     @Published var advisoryReviewPath: String?
     @Published var advisoryHandoffPath: String?
     @Published var mitReadinessPath: String?
+    @Published var macContinuationPath: String?
 
     private let locator: GarnetCLILocator
     private let matrixLocator: AgenticDogfoodScriptLocator
@@ -1040,6 +1158,7 @@ final class GarnetStudioViewModel: ObservableObject {
     private let advisoryReviewLocator: ConverterAdvisoryReviewScriptLocator
     private let advisoryHandoffLocator: ConverterAdvisoryHandoffScriptLocator
     private let mitReadinessLocator: MitReadinessScriptLocator
+    private let macContinuationLocator: MacContinuationScriptLocator
 
     init(
         locator: GarnetCLILocator = GarnetCLILocator(),
@@ -1048,7 +1167,8 @@ final class GarnetStudioViewModel: ObservableObject {
         advisoryBundleLocator: ConverterAdvisoryBundleScriptLocator = ConverterAdvisoryBundleScriptLocator(),
         advisoryReviewLocator: ConverterAdvisoryReviewScriptLocator = ConverterAdvisoryReviewScriptLocator(),
         advisoryHandoffLocator: ConverterAdvisoryHandoffScriptLocator = ConverterAdvisoryHandoffScriptLocator(),
-        mitReadinessLocator: MitReadinessScriptLocator = MitReadinessScriptLocator()
+        mitReadinessLocator: MitReadinessScriptLocator = MitReadinessScriptLocator(),
+        macContinuationLocator: MacContinuationScriptLocator = MacContinuationScriptLocator()
     ) {
         self.locator = locator
         self.matrixLocator = matrixLocator
@@ -1057,6 +1177,7 @@ final class GarnetStudioViewModel: ObservableObject {
         self.advisoryReviewLocator = advisoryReviewLocator
         self.advisoryHandoffLocator = advisoryHandoffLocator
         self.mitReadinessLocator = mitReadinessLocator
+        self.macContinuationLocator = macContinuationLocator
         self.cliPath = locator.locate()
         self.agenticMatrixPath = matrixLocator.locate()?.scriptURL.path
         self.assistPlanPath = assistPlanLocator.locate()?.scriptURL.path
@@ -1064,6 +1185,7 @@ final class GarnetStudioViewModel: ObservableObject {
         self.advisoryReviewPath = advisoryReviewLocator.locate()?.scriptURL.path
         self.advisoryHandoffPath = advisoryHandoffLocator.locate()?.scriptURL.path
         self.mitReadinessPath = mitReadinessLocator.locate()?.scriptURL.path
+        self.macContinuationPath = macContinuationLocator.locate()?.scriptURL.path
     }
 
     func select(sample: GarnetSample) {
@@ -1323,6 +1445,18 @@ final class GarnetStudioViewModel: ObservableObject {
         mitReadinessPath = location.scriptURL.path
     }
 
+    func runMacContinuationPulse() {
+        guard let location = macContinuationLocator.locate() else {
+            output = "No Mac-side continuation reporter found. Open Garnet Studio from a source checkout or use the packaged app resources."
+            lastStatus = .failure
+            return
+        }
+        output = "Loading Garnet Mac-side continuation pulse..."
+        let result = MacContinuationRunner(location: location).run()
+        apply(result: result)
+        macContinuationPath = location.scriptURL.path
+    }
+
     private func run(arguments: [String]) {
         guard let cliPath else {
             output = "No Garnet CLI found. Bundle Garnet Studio with the CLI or install `garnet` on PATH."
@@ -1538,11 +1672,16 @@ struct GarnetStudioRootView: View {
                 Panel(title: "Release Evidence") {
                     ReleaseLine(label: "Tracked plan", value: "87/87 slices complete on current main")
                     ReleaseLine(label: "MIT objective", value: "Run Objective Pulse for the current repo-native percentage")
+                    ReleaseLine(label: "Mac continuation", value: "Run Continuation Pulse for actionable Mac-side lanes and blocked/delegated gates")
                     ReleaseLine(label: "Org release", value: "v0.4.2 published with deb, rpm, macOS tarball, and SHA256SUMS")
                     ReleaseLine(label: "macOS app", value: "Local .app/.dmg packaging active in this slice")
-                    ReleaseLine(label: "Deferred", value: "Developer ID signing, notarization, App Store, iOS, Android, broad converter frontends, and provider-backed LLM conversion")
-                    Button("Objective Pulse", action: model.runMitReadinessPulse)
-                        .buttonStyle(.borderedProminent)
+                    ReleaseLine(label: "Deferred", value: "Developer ID signing, notarization, App Store, iOS, Android, Windows/Linux Studio, broad converter frontends, and provider-backed LLM conversion")
+                    HStack {
+                        Button("Objective Pulse", action: model.runMitReadinessPulse)
+                            .buttonStyle(.borderedProminent)
+                        Button("Continuation Pulse", action: model.runMacContinuationPulse)
+                            .buttonStyle(.bordered)
+                    }
                 }
                 Panel(title: "Install Philosophy") {
                     Text("Garnet should be approachable in the same spirit as modern agent workbench apps: download, open, see what is possible, and run a real tool immediately. This app keeps that promise grounded by launching the actual Garnet CLI.")
@@ -1864,6 +2003,15 @@ enum GarnetStudioSelfTest {
         )
         if assistLocator.candidateLocations().first?.scriptURL.path != "/repo/scripts/garnet_converter_assist_plan.py" {
             failures.append("converter assist-plan locator did not prefer GARNET_REPO_ROOT")
+        }
+
+        let continuationLocator = MacContinuationScriptLocator(
+            bundleResourceURL: nil,
+            environmentRepoRoot: "/repo",
+            currentDirectoryURL: URL(fileURLWithPath: "/repo/apps/garnet-studio-macos", isDirectory: true)
+        )
+        if continuationLocator.candidateLocations().first?.scriptURL.path != "/repo/scripts/garnet_mac_side_continuation_status.py" {
+            failures.append("mac continuation locator did not prefer GARNET_REPO_ROOT")
         }
 
         let success = GarnetCommandResult(command: "garnet version", exitCode: 0, output: "garnet 0.4.2")
