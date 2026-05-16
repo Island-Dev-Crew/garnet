@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import garnet_converter_status  # noqa: E402
+import garnet_promo_video_status  # noqa: E402
 import garnet_readiness_status  # noqa: E402
 
 
@@ -56,6 +57,7 @@ def read_status() -> MitReadinessStatus:
     )
     converter = garnet_converter_status.read_status()
     contract = converter.intelligent_assist_contract
+    promo = garnet_promo_video_status.read_status()
 
     lanes = [
         ObjectiveLane(
@@ -155,11 +157,22 @@ def read_status() -> MitReadinessStatus:
         ObjectiveLane(
             id="promo_video",
             label="Promo video",
-            status="planned",
-            completion_percent=0.0,
-            evidence="No verified HyperFrames/Remotion promo artifact is present in the repo or Desktop dogfood bundle.",
-            blocked_by=["storyboard", "rendered artifact", "visual QA"],
-            deferred=["30-second Garnet promo video", "website-ready export"],
+            status=promo.status,
+            completion_percent=promo.completion_percent,
+            evidence=(
+                "`scripts/garnet_promo_video_status.py` defines the 30-second "
+                "promo contract while preserving that no verified rendered artifact exists."
+            ),
+            blocked_by=[
+                "rendered artifact",
+                "visual QA verdict",
+                "website-ready export",
+            ],
+            deferred=[
+                "HyperFrames or Remotion composition",
+                "30-second Garnet promo video",
+                "website-ready export",
+            ],
         ),
         ObjectiveLane(
             id="llm_assist",

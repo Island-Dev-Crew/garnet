@@ -20,6 +20,7 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
             "garnet_converter_assist_plan.py",
             "garnet_converter_status.py",
             "garnet_mit_readiness_status.py",
+            "garnet_promo_video_status.py",
             "garnet_readiness_status.py",
             "garnet_studio_notarization_status.py",
             "run_agentic_dogfood_matrix.py",
@@ -70,6 +71,7 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
         self.assertIn('ASSIST_CONTEXT="${INSTALLED_APP}/Contents/Resources/scripts/garnet_assist_context_pack.py"', script)
         self.assertIn('ASSIST_PLAN="${INSTALLED_APP}/Contents/Resources/scripts/garnet_converter_assist_plan.py"', script)
         self.assertIn('MIT_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_mit_readiness_status.py"', script)
+        self.assertIn('PROMO_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_promo_video_status.py"', script)
         self.assertIn('NOTARIZATION_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_studio_notarization_status.py"', script)
         self.assertIn('DOCS_DIR="${INSTALLED_APP}/Contents/Resources/docs"', script)
         self.assertIn('"${OFFLINE_PWA_SMOKE}" --docs-dir "${DOCS_DIR}"', script)

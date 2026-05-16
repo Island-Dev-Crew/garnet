@@ -69,6 +69,7 @@ done
 | `scripts/garnet_assist_context_pack.py` | Garnet-aware assist context and prompt pack | current machine-readable context bundle plus provider-neutral prompt pack for future provider-backed converter assist; hashes current truth/spec/dogfood docs and preserves advisory-only gates without enabling LLM conversion |
 | `scripts/garnet_converter_assist_plan.py` | planned-language converter assist plan | current deterministic planner for a single source file in an active or planned converter language; inventories safe-mode, memory, CapCaps, actor/orchestration, and migration risks without executing source or enabling LLM conversion |
 | `scripts/garnet_mit_readiness_status.py` | MIT/productization objective inventory | current machine-readable truth that the tracked implementation plan is complete while notarization, mobile distribution, promo video, broad converter frontends, LLM assist, and proof/empirics remain open gates |
+| `scripts/garnet_promo_video_status.py` | promo video readiness contract | current machine-readable storyboard/gate contract for a future 30-second HyperFrames or Remotion promo; no rendered video or website-ready export is claimed |
 | `scripts/garnet_studio_notarization_status.py` | macOS notarization preflight inventory | current machine-readable summary for notarization preflight bundles; preserves blocker/warning evidence, redacts credential values, and explicitly avoids claiming Apple submission or notarization |
 | `scripts/garnet_adoption_surface_status.py` | repo/site adoption truth inventory | current machine-readable status linking the public hook, verified use cases, active converter lanes, planned language lanes, LLM-assist boundaries, and productization gates |
 | `examples/mvp_*.garnet` | canonical app-level smokes | must parse/check/run |
@@ -140,7 +141,11 @@ highest-leverage next milestones are:
    lanes, planned language lanes, LLM-assist boundaries, verified use cases,
    and open productization gates remain evidence-backed instead of promotional
    drift.
-7. **Agentic dogfood stress:** keep the advanced multi-domain matrix green so
+7. **Promo/video readiness:** keep the future HyperFrames or Remotion ad lane
+   tied to `scripts/garnet_promo_video_status.py` so the storyboard,
+   render/visual-QA gates, website export, and forbidden claims are explicit
+   before a video artifact is embedded or advertised.
+8. **Agentic dogfood stress:** keep the advanced multi-domain matrix green so
    agents can exercise orchestration, agent toolbelt examples, recovery diagnostics,
    adversarial input boundaries, migration, safe-mode, release-integrity,
    signed-release provenance, macOS
@@ -177,15 +182,19 @@ highest-leverage next milestones are:
    README, Mini-Spec, conformance matrix, and dogfood ledger so a future
    provider-backed assist lane has a concrete context source before any model
    or network dependency is introduced. The deterministic converter assist-plan
-   reporter now takes an active or planned language plus one source file and
-   emits advisory migration risks, required gates, next steps, JSON/Markdown,
-   and a manifest while keeping planned-language conversion inactive.
+   reporter takes an active or planned language plus one source file and emits
+   advisory migration risks, required gates, next steps, JSON/Markdown, and a
+   manifest while keeping planned-language conversion inactive. The promo video
+   readiness contract records the 30-second storyboard,
+   HyperFrames/Remotion composition gate, rendered-artifact gate, visual-QA
+   gate, website-export gate, and forbidden claims before any ad is claimed as
+   shipped.
    The MIT-readiness accounting domain also probes
    `scripts/garnet_mit_readiness_status.py`, so agents and public-site copy can
    report `87/87` tracked slices without turning that into a false claim that
    notarization, mobile distribution, promo video, broad converter frontends,
    LLM assist, proof, or empirical validation are complete.
-7. **Formal/empirical proof:** keep Paper V theorem sketches and Paper VI
+9. **Formal/empirical proof:** keep Paper V theorem sketches and Paper VI
    experiments separate from implemented guarantees until tests or proofs land.
 
 The v0.5 seven-phase roadmap is tracked in
