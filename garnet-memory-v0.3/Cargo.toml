@@ -6,6 +6,7 @@ description = "Mnemos — the v0.4.x reference implementation of Garnet's Memory
 license = "MIT OR Apache-2.0"
 
 [dependencies]
+blake3 = "1.5"
 
 [dev-dependencies]
 proptest = "1"

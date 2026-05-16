@@ -429,6 +429,13 @@ deterministic finalization order through a configured finalizer sink without
 requiring the caller to pass a callback. This is runtime-finalizer invocation
 evidence at the allocator boundary, not user-payload destructor semantics or
 full production ARC.
+Phase 6U adds an opt-in keyed MAC path for the typed episodic cache backend:
+`append_cache_text_with_mac` and `load_cache_text_with_mac` write and verify
+BLAKE3-keyed record MACs over the source-tree binding, timestamp, and encoded
+payload, rejecting tampered payloads and foreign keys before live store
+mutation. The legacy unsigned typed-cache API remains available for backward
+compatibility, so this is signed typed-cache evidence rather than a claim that
+every Memory Core persistence backend is cryptographically trusted.
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.

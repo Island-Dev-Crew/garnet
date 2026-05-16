@@ -1389,6 +1389,14 @@ sink without caller-supplied callbacks, including buffered collection after a
 below-threshold root release. This is allocator-boundary runtime-finalizer
 evidence, not full production ARC or user payload destructor semantics.
 
+Phase 6U sibling partial pass: the typed episodic cache backend can now use
+opt-in BLAKE3-keyed record MACs through `append_cache_text_with_mac` and
+`load_cache_text_with_mac`. Signed records cover the canonical source-tree
+binding, timestamp, and encoded payload, and tampered payloads or foreign keys
+are rejected before live memory is mutated. This is signed typed-cache
+evidence, not a claim that every Memory Core backend has cryptographic trust
+or that production allocator-integrated ARC is complete.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.
