@@ -505,6 +505,13 @@ LLM conversion or broad planned-language conversion. Current Desktop evidence:
 `/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-045439`
 (DMG install smoke; DMG SHA-256
 `bce70f3c44af1d335d0af4ecd466386f85d918bea8b310cad24a2855c59ec345`).
+Phase 6AB adds a local Codex Run-button path for the Studio workbench:
+`script/build_and_run.sh` builds the SwiftPM package, stages
+`dist/Garnet Studio.app`, launches it as a real macOS app bundle, and supports
+`--verify`, `--debug`, `--logs`, and `--telemetry`; `.codex/environments/environment.toml`
+wires the Codex app `Run` action to that script. Verified local evidence:
+`python3 scripts/test_garnet_studio_run_button.py` and
+`./script/build_and_run.sh --verify`.
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.

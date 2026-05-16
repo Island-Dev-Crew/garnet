@@ -1460,6 +1460,14 @@ action remains constrained to active deterministic converter frontends. This
 keeps the adoption path more approachable without turning planned languages or
 provider-backed LLM conversion into current implementation claims.
 
+Phase 6AB Studio Run-button workflow pass: the source checkout now includes a
+Codex-friendly macOS run loop. `script/build_and_run.sh` builds the SwiftPM
+Studio package, stages `dist/Garnet Studio.app`, launches it as an app bundle,
+and supports `--verify`, `--debug`, `--logs`, and `--telemetry`; `.codex/environments/environment.toml`
+exposes that script as the Codex `Run` action. This improves local iteration
+and demo smoothness without replacing the DMG, signing, notarization, or
+clean-machine install gates.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.
