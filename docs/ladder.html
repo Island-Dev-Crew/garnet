@@ -400,14 +400,17 @@ Code Converter)</h2>
 <h3 id="strategic-claim">7.1 Strategic claim</h3>
 <p>A new language faces the chicken-and-egg problem: ecosystems require
 adopters; adopters require ecosystems. The Garnet response is a
-<strong>bidirectional code converter</strong> for the three closest
-source languages (Rust, Ruby, Python) shipping in v4.1.</p>
-<p>The converter is documented in the v4.1 stage of the master plan;
-details deferred to that release. The relevant Paper VII commitment:
-<strong>converter outputs ship in <code>@sandbox</code> mode by
-default</strong> (per Mini-Spec §11 + v4.0 SandboxMode security item).
-Human audit is required before promoting converted code to non-sandbox
-status.</p>
+<strong>migration assistant</strong>, not a full transpiler: the current
+deterministic lanes cover stylized Rust, Ruby, Python, and Go source and
+emit Garnet plus lineage, metrics, and a migration checklist.</p>
+<p>The relevant Paper VII commitment remains: <strong>converter outputs
+ship in <code>@sandbox</code> mode by default</strong> (per Mini-Spec §11
++ v4.0 SandboxMode security item). Human audit is required before
+promoting converted code to non-sandbox status. JavaScript, TypeScript,
+Swift, Java, C/C++/C#, Perl, and LLM-assisted suggestions are planned
+adoption lanes only after they preserve deterministic evidence,
+lineage, sandboxing, <code>garnet check</code>, and dogfood-readiness
+gates.</p>
 <h3 id="why-this-matters-for-the-language-paper">7.2 Why this matters
 for the language Paper</h3>
 <p>A converter is a language artifact — its existence (or absence)

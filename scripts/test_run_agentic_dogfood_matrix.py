@@ -42,6 +42,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         domains = Counter(probe.domain for probe in concrete_probes)
 
         self.assertEqual(domains["agent recovery and diagnostics"], 4)
+        self.assertIn("report-converter-adoption-status", ids)
         self.assertIn("check-malformed-agent-source", ids)
         self.assertIn("check-missing-agent-source", ids)
         self.assertIn("eval-unknown-agent-symbol", ids)
