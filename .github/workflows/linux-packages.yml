@@ -208,7 +208,8 @@ jobs:
             koalaman/shellcheck:stable \
             --shell=bash --severity=warning \
             /work/scripts/package_garnet_studio_macos.sh \
-            /work/scripts/smoke_garnet_studio_dmg.sh
+            /work/scripts/smoke_garnet_studio_dmg.sh \
+            /work/scripts/preflight_garnet_studio_notarization.sh
 
   # ───────────────────────────────────────────────────────────────────
   # 5. On tagged release only: publish packages + SHA256SUMS as a
