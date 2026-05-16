@@ -643,7 +643,7 @@ struct GarnetStudioRootView: View {
         WorkbenchLayout {
             VStack(alignment: .leading, spacing: 16) {
                 Panel(title: "Agentic Stress Matrix") {
-                    ReleaseLine(label: "Coverage", value: "24 probes across orchestration, scaffolding, safe-mode, migration, release integrity, docs, macOS app, and agent memory analysis")
+                    ReleaseLine(label: "Coverage", value: "Probe count is reported by the current matrix output")
                     ReleaseLine(label: "Matrix", value: model.agenticMatrixPath ?? "No source-tree matrix script found")
                     ReleaseLine(label: "Output", value: "Writes a timestamped bundle to ~/Desktop/dogfood and verifies its manifest")
                     Button("Run Agentic Stress Tests") {
@@ -653,7 +653,7 @@ struct GarnetStudioRootView: View {
                     .disabled(model.agenticMatrixPath == nil)
                 }
                 Panel(title: "Readiness Boundary") {
-                    Text("A passing matrix proves the audited agent-facing workflows in this checkout. Production ARC, native backend, mechanized proof, empirical validation, notarized distribution, web/PWA, mobile, and promo-video lanes still need their own gates.")
+                    Text("A passing matrix proves the audited agent-facing workflows in this checkout. Production ARC, native backend, mechanized proof, empirical validation, notarized distribution, real-browser web/PWA, mobile, and promo-video lanes still need their own gates.")
                         .font(.body)
                         .foregroundStyle(.secondary)
                 }

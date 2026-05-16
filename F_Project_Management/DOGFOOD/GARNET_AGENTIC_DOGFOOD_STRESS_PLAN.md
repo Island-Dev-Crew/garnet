@@ -61,32 +61,33 @@ Those failures became focused fixes and regression tests in this slice.
 Latest source-checkout evidence bundle:
 
 ```text
-/Users/idc2.0/Desktop/dogfood/agentic-dogfood-recovery-domain-full
+/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260515-232014
 ```
 
 Current result:
 
 ```text
 readiness=100
-passed=28/28
+passed=29/29
 ```
 
 Manifest verification:
 
 ```sh
-cd /Users/idc2.0/Desktop/dogfood/agentic-dogfood-recovery-domain-full
+cd /Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260515-232014
 shasum -a 256 -c MANIFEST.sha256
 ```
 
 All files in the bundle verified at creation time. This bundle was produced by
 running the source-checkout matrix with app workbench probes enabled and
 copying the completed evidence directory to Desktop dogfood storage. The matrix
-now also writes `readiness-slice-status.md` so completion percentage evidence
-travels with the bundle.
+now includes the App-9 web/PWA offline service-worker handler probe and writes
+`readiness-slice-status.md` so completion percentage evidence travels with the
+bundle.
 
 ## Next Gates
 
-1. Keep the headless 26-probe matrix in CI while app workbench probes remain
+1. Keep the headless 27-probe matrix in CI while app workbench probes remain
    covered by local/package/DMG gates.
 2. Keep Garnet Studio's "Agentic Tests" surface wired to this same harness for
    both source-checkout and packaged-app runs.
