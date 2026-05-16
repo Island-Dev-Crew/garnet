@@ -87,6 +87,19 @@ final class GarnetStudioTests: XCTestCase {
         XCTAssertEqual(first?.scriptURL.path, "/Applications/Garnet Studio.app/Contents/Resources/scripts/garnet_converter_advisory_bundle.py")
     }
 
+    func testConverterAdvisoryReviewLocatorPrefersBundledScriptBeforeAmbientCheckout() {
+        let locator = ConverterAdvisoryReviewScriptLocator(
+            bundleResourceURL: URL(fileURLWithPath: "/Applications/Garnet Studio.app/Contents/Resources", isDirectory: true),
+            environmentRepoRoot: nil,
+            currentDirectoryURL: URL(fileURLWithPath: "/repo/apps/garnet-studio-macos", isDirectory: true)
+        )
+
+        let first = locator.candidateLocations().first
+
+        XCTAssertEqual(first?.repoRootURL.path, "/Applications/Garnet Studio.app/Contents/Resources")
+        XCTAssertEqual(first?.scriptURL.path, "/Applications/Garnet Studio.app/Contents/Resources/scripts/garnet_converter_advisory_review.py")
+    }
+
     func testConverterAssistPlanRunnerBuildsMarkdownCommand() {
         let location = ConverterAssistPlanScriptLocation(
             scriptURL: URL(fileURLWithPath: "/repo/scripts/garnet_converter_assist_plan.py"),
@@ -147,6 +160,33 @@ final class GarnetStudioTests: XCTestCase {
         XCTAssertFalse(runner.commandArguments().contains("--include-source"))
     }
 
+    func testConverterAdvisoryReviewRunnerBuildsManifestedReviewCommand() {
+        let location = ConverterAdvisoryReviewScriptLocation(
+            scriptURL: URL(fileURLWithPath: "/repo/scripts/garnet_converter_advisory_review.py"),
+            repoRootURL: URL(fileURLWithPath: "/repo", isDirectory: true)
+        )
+        let runner = ConverterAdvisoryReviewRunner(
+            location: location,
+            bundleDirectoryURL: URL(fileURLWithPath: "/tmp/GarnetStudioAdvisory"),
+            outputDirectoryURL: URL(fileURLWithPath: "/tmp/GarnetStudioReview")
+        )
+
+        XCTAssertEqual(
+            runner.commandArguments(),
+            [
+                "env",
+                "PYTHONDONTWRITEBYTECODE=1",
+                "python3",
+                "/repo/scripts/garnet_converter_advisory_review.py",
+                "--bundle-dir",
+                "/tmp/GarnetStudioAdvisory",
+                "--output-dir",
+                "/tmp/GarnetStudioReview",
+            ]
+        )
+        XCTAssertFalse(runner.commandArguments().contains("--allow-source-included"))
+    }
+
     func testStudioAdvisoryBundleEvidenceDirectoryDefaultsToDesktopDogfood() {
         let directory = GarnetStudioEvidenceDirectory(
             homeDirectoryURL: URL(fileURLWithPath: "/Users/example", isDirectory: true)
@@ -155,6 +195,17 @@ final class GarnetStudioTests: XCTestCase {
         XCTAssertEqual(
             directory.path,
             "/Users/example/Desktop/dogfood/garnet-studio-advisory-bundle-20260516-093000"
+        )
+    }
+
+    func testStudioAdvisoryReviewEvidenceDirectoryDefaultsToDesktopDogfood() {
+        let directory = GarnetStudioEvidenceDirectory(
+            homeDirectoryURL: URL(fileURLWithPath: "/Users/example", isDirectory: true)
+        ).advisoryReviewDirectory(stamp: "20260516-101500")
+
+        XCTAssertEqual(
+            directory.path,
+            "/Users/example/Desktop/dogfood/garnet-studio-advisory-review-20260516-101500"
         )
     }
 

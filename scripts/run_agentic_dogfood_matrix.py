@@ -2050,6 +2050,71 @@ def probe_set(
             security_domain="privacy",
         ),
         Probe(
+            "report-studio-advisory-review-action",
+            "converter advisory review UX",
+            "Garnet Studio should expose the advisory review gate from the Converter panel",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['(\"Advisory Review\", model.runConverterAdvisoryReview)', "
+                    "'func runConverterAdvisoryReview()', 'advisoryReviewPath']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio advisory review action present')\n"
+                ),
+            ],
+            True,
+            ("studio advisory review action present",),
+            security_domain="not-applicable",
+        ),
+        Probe(
+            "report-studio-advisory-review-runner",
+            "converter advisory review UX",
+            "Garnet Studio should run the manifested advisory-review gate after creating a no-source bundle",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['ConverterAdvisoryReviewRunner', 'garnet_converter_advisory_review.py', "
+                    "'--bundle-dir', '--output-dir', 'Review output:', "
+                    "'garnet-studio-advisory-review-', 'garnet-studio-advisory-bundle-']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "assert '--allow-source-included' not in source\n"
+                    "print('studio advisory review runner present')\n"
+                ),
+            ],
+            True,
+            ("studio advisory review runner present",),
+            security_domain="privacy",
+        ),
+        Probe(
+            "report-studio-advisory-review-desktop-evidence",
+            "converter advisory review UX",
+            "Garnet Studio should preserve advisory-review evidence under Desktop dogfood storage",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['func advisoryReviewDirectory', 'Desktop', 'dogfood', "
+                    "'garnet-studio-advisory-review-', 'Review output:']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio advisory review desktop evidence present')\n"
+                ),
+            ],
+            True,
+            ("studio advisory review desktop evidence present",),
+            security_domain="filesystem",
+        ),
+        Probe(
             "report-mit-readiness-plan-complete",
             "MIT readiness accounting",
             "objective status should separate completed tracked slices from broader productization completion",
