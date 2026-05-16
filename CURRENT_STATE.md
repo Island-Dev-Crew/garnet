@@ -65,7 +65,7 @@ done
 | `garnet-stdlib/` | capability-tagged primitives | current implementation |
 | `garnet-cli/` | user-facing CLI and templates | current implementation |
 | `garnet-convert/` | migration assistant | current implementation for stylized Rust/Ruby/Python/Go only; broader language and gated LLM-assist lanes are planned, not implemented |
-| `scripts/garnet_converter_status.py` | converter adoption inventory | current machine-readable truth for active converter lanes, planned languages, and trust boundaries |
+| `scripts/garnet_converter_status.py` | converter adoption inventory | current machine-readable truth for active converter lanes, planned languages, trust boundaries, and the future Garnet-aware assist contract |
 | `examples/mvp_*.garnet` | canonical app-level smokes | must parse/check/run |
 | `examples/{multi_agent_builder,agentic_log_analyzer,safe_io_layer}.garnet` | design-scale examples | `multi_agent_builder`, `agentic_log_analyzer`, and `safe_io_layer` are covered by active agentic matrix probes |
 | `A_Research_Papers/` | academic research corpus | normative/research context |
@@ -142,7 +142,10 @@ highest-leverage next milestones are:
    The migration-assistant domain also carries a converter adoption-status
    probe so Rust/Ruby/Python/Go support, planned broader languages, and gated
    LLM-assist claims remain machine-readable instead of living only in
-   marketing copy.
+   marketing copy. The planned Garnet-aware assist contract is provider- and
+   model-optional: it documents required context, safe-mode/memory/CapCaps
+   analysis targets, lineage, sandbox, `garnet check`, dogfood-bundle, and
+   human-audit gates without claiming broad or active LLM conversion.
 7. **Formal/empirical proof:** keep Paper V theorem sketches and Paper VI
    experiments separate from implemented guarantees until tests or proofs land.
 

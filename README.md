@@ -116,7 +116,7 @@ garnet verify src/main.garnet src/main.garnet.manifest.json --signature
 | `garnet-actor-runtime` | Bounded-mailbox actors + Ed25519 signed hot-reload |
 | `garnet-stdlib` | OS-I/O primitives with capability metadata |
 | `garnet-cli`    | Top-level `garnet` binary |
-| `garnet-convert` | Rust / Ruby / Python / Go → Garnet **migration assistant** (stylized parsers, sandbox-on output, emits a `migrate_todo.md` checklist — not a full transpiler). `python3 scripts/garnet_converter_status.py` reports the active lanes, planned language expansion candidates, and the gated LLM-assist trust boundary. |
+| `garnet-convert` | Rust / Ruby / Python / Go → Garnet **migration assistant** (stylized parsers, sandbox-on output, emits a `migrate_todo.md` checklist — not a full transpiler). `python3 scripts/garnet_converter_status.py` reports the active lanes, planned language expansion candidates, and the planned Garnet-aware assist contract for future LLM/agentic guidance. |
 
 ## Documentation
 

@@ -979,7 +979,8 @@
   <div class="container reveal">
     <h3>Migrate at Your Pace</h3>
     <h2>Convert <span class="accent">Rust · Ruby · Python · Go</span> source to Garnet.</h2>
-    <p class="lead">The <code>garnet convert</code> tool is a migration assistant, not a full transpiler: it reads four deterministic source lanes and emits sandboxed Garnet with lineage, metrics, and a human migration checklist. JavaScript, TypeScript, Swift, Java, C-family, and Perl lanes are planned only behind the same converter evidence gate.</p>
+    <p class="lead">The <code>garnet convert</code> tool is a migration assistant, not a full transpiler: it reads four deterministic source lanes and emits sandboxed Garnet with lineage, metrics, and a human migration checklist. JavaScript, TypeScript, Swift, Java, C, C++, C#, and Perl lanes are planned only behind the same converter evidence gate.</p>
+    <p class="lead">The next adoption frontier is a Garnet-aware intelligent assist contract: an optional advisor that reads the current spec/context pack and proposes safe-mode ownership candidates, memory declarations, CapCaps/capability boundaries, actor/orchestration mappings, and migration-risk notes. It is not active conversion today; every suggestion must still preserve lineage, stay <code>@sandbox</code> by default, pass <code>garnet check</code>, and survive dogfood readiness before promotion.</p>
 
     <div class="convert-grid">
       <div class="code-col ruby"><div class="head"><div class="swatch"></div>RUBY — source</div>
@@ -1013,7 +1014,7 @@
       <div class="lang-badge">Ruby</div>
       <div class="lang-badge">Python</div>
       <div class="lang-badge">Go</div>
-      <div class="lang-badge">LLM assist: gated advisory</div>
+      <div class="lang-badge">LLM assist: planned contract</div>
     </div>
   </div>
 </section>

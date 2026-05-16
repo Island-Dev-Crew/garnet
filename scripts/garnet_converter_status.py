@@ -42,6 +42,17 @@ class LlmAssist:
 
 
 @dataclass(frozen=True)
+class IntelligentAssistContract:
+    status: str
+    provider_required: bool
+    model_required: bool
+    required_context: list[str]
+    analysis_targets: list[str]
+    required_gates: list[str]
+    notes: list[str]
+
+
+@dataclass(frozen=True)
 class ConverterStatus:
     source: str
     converter_scope: str
@@ -49,6 +60,7 @@ class ConverterStatus:
     planned_languages: list[LanguageLane]
     trust_boundaries: TrustBoundaries
     llm_assist: LlmAssist
+    intelligent_assist_contract: IntelligentAssistContract
 
 
 def active_languages() -> list[LanguageLane]:
@@ -149,6 +161,38 @@ def read_status() -> ConverterStatus:
                 "No provider, model, or network dependency is required for the current converter.",
             ],
         ),
+        intelligent_assist_contract=IntelligentAssistContract(
+            status="planned-contract",
+            provider_required=False,
+            model_required=False,
+            required_context=[
+                "CURRENT_STATE.md",
+                "README.md",
+                "C_Language_Specification/GARNET_v1_0_Mini_Spec.md",
+                "C_Language_Specification/GARNET_v0_4_2_Conformance_Matrix.md",
+                "F_Project_Management/DOGFOOD/GARNET_v0_5_DOGFOOD_READINESS_PHASE_LOG.md",
+            ],
+            analysis_targets=[
+                "safe-mode ownership candidates",
+                "memory declarations",
+                "CapCaps/capability boundaries",
+                "actor/orchestration mappings",
+                "migration risk inventory",
+            ],
+            required_gates=[
+                "lineage per emitted node",
+                "@sandbox default",
+                "migrate_todo evidence",
+                "garnet check",
+                "dogfood readiness bundle",
+                "human audit before unquarantine",
+            ],
+            notes=[
+                "The contract describes what a future LLM or agentic assist lane must preserve.",
+                "It does not make any source language active without a deterministic frontend.",
+                "Provider choice remains outside the converter contract until a secure execution design exists.",
+            ],
+        ),
     )
 
 
@@ -202,6 +246,36 @@ def render_markdown(status: ConverterStatus) -> str:
                 "Garnet-aware rewrites, safe-mode opportunities, or migration notes, but "
                 "deterministic converter output, lineage, sandboxing, `garnet check`, and "
                 "dogfood readiness remain the authority."
+            ),
+            "",
+            "## Planned Garnet-Aware Assist Contract",
+            "",
+            (
+                "A future intelligent assist lane must read the current Garnet context pack, "
+                "remain provider-optional, and produce only auditable migration guidance until "
+                "the deterministic converter/checker accepts the result."
+            ),
+            "",
+            "Required context:",
+        ]
+    )
+    for item in status.intelligent_assist_contract.required_context:
+        lines.append(f"- `{item}`")
+
+    lines.extend(["", "Required analysis targets:"])
+    for item in status.intelligent_assist_contract.analysis_targets:
+        lines.append(f"- {item}")
+
+    lines.extend(["", "Required gates:"])
+    for item in status.intelligent_assist_contract.required_gates:
+        lines.append(f"- {item}")
+
+    lines.extend(
+        [
+            "",
+            (
+                "This keeps broad-language adoption possible without claiming that LLM "
+                "conversion, provider execution, or non-deterministic rewrites are active today."
             ),
         ]
     )

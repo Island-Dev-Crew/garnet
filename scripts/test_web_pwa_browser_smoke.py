@@ -25,6 +25,14 @@ class WebPwaBrowserSmokeTests(unittest.TestCase):
         self.assertIn("offlineNavigation", script)
         self.assertIn("manifestFetch", script)
 
+    def test_browser_smoke_retries_profile_cleanup_after_chrome_exit(self) -> None:
+        script = SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn("async function waitForProcessExit", script)
+        self.assertIn("async function removeBrowserProfile", script)
+        self.assertIn("maxRetries", script)
+        self.assertIn("await removeBrowserProfile(userDataDir)", script)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -719,7 +719,15 @@ def probe_set(
             "converter adoption status should separate active deterministic languages from gated future lanes",
             [sys.executable, str(ROOT / "scripts" / "garnet_converter_status.py"), "--format", "json"],
             True,
-            ("stylized-migration-assistant", "proposed-gated", "javascript", "requires_garnet_check"),
+            (
+                "stylized-migration-assistant",
+                "proposed-gated",
+                "javascript",
+                "requires_garnet_check",
+                "planned-contract",
+                "provider_required",
+                "CapCaps/capability boundaries",
+            ),
             security_domain="sandbox",
         ),
         Probe(
