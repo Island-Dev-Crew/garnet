@@ -426,6 +426,32 @@ def app_workbench_probes(app_executable: Path | None) -> list[Probe]:
     ]
 
 
+def web_pwa_probes(work: Path) -> list[Probe]:
+    docs_dir = ROOT / "docs"
+    offline_smoke = ROOT / "scripts" / "smoke_garnet_web_pwa_offline.mjs"
+    if not (docs_dir / "service-worker.js").is_file() or not offline_smoke.is_file():
+        return []
+    return [
+        Probe(
+            "smoke-web-pwa-offline-handler",
+            "web/PWA productization",
+            "docs PWA service worker should serve the offline shell through executable handler evidence",
+            [
+                "node",
+                str(offline_smoke),
+                "--docs-dir",
+                str(docs_dir),
+                "--output",
+                str(work / "web-pwa-offline-handler.json"),
+            ],
+            True,
+            ("Garnet service worker offline behavior: passed",),
+            security_domain="filesystem",
+            notes="Source-checkout productization probe; packaged app resources may omit docs/PWA assets.",
+        )
+    ]
+
+
 def probe_set(
     garnet: Path,
     work: Path,
@@ -633,6 +659,7 @@ def probe_set(
             [str(garnet), "fmt", "--check", str(fixtures["fmt_source"])],
             True,
         ),
+        *web_pwa_probes(work),
         *(app_workbench_probes(app_executable) if include_app_workbench else []),
         Probe(
             "run-advertised-log-analyzer",
@@ -851,7 +878,7 @@ def render_deck(results: list[ProbeResult], metadata: dict[str, str], score_data
 <body>
   <section>
     <h1>Garnet Agentic Dogfood</h1>
-    <p>Advanced probes for agent orchestration, safe-mode boundaries, migration, release integrity, docs, app onboarding, and memory-analysis examples.</p>
+    <p>Advanced probes for agent orchestration, safe-mode boundaries, migration, release integrity, docs, web/PWA productization, app onboarding, and memory-analysis examples.</p>
     <p><code>{metadata["head"][:12]}</code> · <code>{metadata["branch"]}</code></p>
   </section>
   <section>

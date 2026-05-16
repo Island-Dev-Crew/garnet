@@ -35,6 +35,19 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertIn("eval-unknown-agent-symbol", ids)
         self.assertIn("verify-missing-release-manifest", ids)
 
+    def test_probe_inventory_includes_web_pwa_offline_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            fixtures = matrix.prepare_fixtures(work)
+            probes = matrix.probe_set(Path("/bin/garnet"), work, fixtures, include_app_workbench=False)
+            concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
+
+        ids = {probe.id for probe in concrete_probes}
+        domains = Counter(probe.domain for probe in concrete_probes)
+
+        self.assertEqual(domains["web/PWA productization"], 1)
+        self.assertIn("smoke-web-pwa-offline-handler", ids)
+
 
 if __name__ == "__main__":
     unittest.main()
