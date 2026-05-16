@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+"""Regression tests for Mac-side continuation status reporting."""
+from __future__ import annotations
+
+import importlib.util
+import json
+import subprocess
+import sys
+import unittest
+from pathlib import Path
+
+SCRIPT = Path(__file__).with_name("garnet_mac_side_continuation_status.py")
+SPEC = importlib.util.spec_from_file_location("garnet_mac_side_continuation_status", SCRIPT)
+assert SPEC is not None
+status_mod = importlib.util.module_from_spec(SPEC)
+assert SPEC.loader is not None
+sys.modules["garnet_mac_side_continuation_status"] = status_mod
+SPEC.loader.exec_module(status_mod)
+
+
+class GarnetMacSideContinuationStatusTests(unittest.TestCase):
+    def test_status_separates_actionable_mac_lanes_from_external_blockers(self) -> None:
+        status = status_mod.read_status()
+        lanes = {lane.id: lane for lane in status.lanes}
+
+        self.assertEqual("published", lanes["reusable_dogfood_skill"].status)
+        self.assertTrue(lanes["macos_studio_unsigned_quality"].mac_actionable)
+        self.assertFalse(lanes["apple_developer_id"].mac_actionable)
+        self.assertEqual("blocked-external", lanes["apple_developer_id"].status)
+        self.assertFalse(lanes["windows_linux_studio"].mac_actionable)
+        self.assertEqual("handoff-only", lanes["windows_linux_studio"].status)
+
+    def test_json_preserves_not_claimed_boundaries(self) -> None:
+        output = subprocess.check_output(
+            [sys.executable, str(SCRIPT), "--format", "json"],
+            text=True,
+        )
+        data = json.loads(output)
+        lanes = {lane["id"]: lane for lane in data["lanes"]}
+
+        self.assertEqual(status_mod.read_status().objective_completion_percent, data["objective_completion_percent"])
+        self.assertIn("must not be claimed", " ".join(data["current_truth"]))
+        self.assertIn("Apple Developer Program identity verification", lanes["apple_developer_id"]["blocked_by"])
+        self.assertIn("do not claim Windows/Linux runtime completion", lanes["windows_linux_studio"]["next_slice"])
+        self.assertIn("without calling providers", lanes["converter_advisory"]["next_slice"])
+
+    def test_markdown_is_a_goal_prompt_friendly_pulse(self) -> None:
+        rendered = subprocess.check_output([sys.executable, str(SCRIPT)], text=True)
+
+        self.assertIn("Garnet Mac-Side Continuation Status", rendered)
+        self.assertIn("Overall MIT/productization objective", rendered)
+        self.assertIn("Mac-actionable", rendered)
+        self.assertIn("Developer ID notarization", rendered)
+        self.assertIn("Windows/Linux Studio", rendered)
+        self.assertIn("provider-backed LLM conversion", rendered)
+
+
+if __name__ == "__main__":
+    unittest.main()

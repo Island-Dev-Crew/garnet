@@ -73,6 +73,7 @@ done
 | `scripts/garnet_converter_advisory_review.py` | converter advisory review gate | current provider-neutral review gate for advisory bundles; verifies bundle manifests, blocks source-included bundles unless explicitly approved, emits a human-review checklist, and does not enable provider-backed conversion |
 | `scripts/garnet_converter_advisory_handoff.py` | converter advisory handoff packet | current provider-neutral final packet builder for a reviewed no-source advisory bundle; refuses blocked/source-included reviews, emits a source-free prompt packet, and does not call a provider or enable conversion |
 | `scripts/garnet_mit_readiness_status.py` | MIT/productization objective inventory | current machine-readable truth that the tracked implementation plan is complete while notarization, mobile distribution, promo video, broad converter frontends, LLM assist, and proof/empirics remain open gates |
+| `scripts/garnet_mac_side_continuation_status.py` | Mac-side continuation inventory | current machine-readable pulse for which repo, website, converter, evidence, and macOS Studio lanes can still move from this checkout while Apple Developer ID notarization remains account-holder blocked and Windows/Linux Studio runtime proof remains delegated |
 | `scripts/garnet_promo_video_status.py` | promo video readiness contract | current machine-readable storyboard/gate contract for a 30-second HyperFrames promo; visual identity/source surfaces and `docs/promo/` composition source are tied to repo assets, local Desktop MP4/WebM, automated visual-QA, website-export, and site-sync evidence can promote the lane to `public-site-embedded` at 95.0%, while human/aesthetic acceptance remains open |
 | `scripts/render_garnet_promo_video.mjs` | promo video render harness | current local Chrome DevTools + `ffmpeg` harness for manifest-backed MP4/WebM/poster render evidence; this is not a substitute for visual QA or website export |
 | `scripts/qa_garnet_promo_video.mjs` | promo visual-QA harness | current local `ffprobe`/`ffmpeg` harness for automated metadata and sample-frame QA evidence; this is not a substitute for website export or optional human aesthetic review |
@@ -103,6 +104,7 @@ done
 | `F_Project_Management/ROADMAPS/GARNET_v0_5_LANGUAGE_COMPLETION_ROADMAP.md` | seven-phase implementation plan | `cargo test -p garnet-cli --test conformance_phase_gates` |
 | `F_Project_Management/DOGFOOD/GARNET_v0_5_DOGFOOD_READINESS_PHASE_LOG.md` | dogfood readiness phase ledger | dogfood-readiness Part 1 after each phase |
 | `scripts/garnet_mit_readiness_status.py` | broader MIT/productization objective status | `python3 scripts/test_garnet_mit_readiness_status.py`; `python3 scripts/garnet_mit_readiness_status.py` |
+| `scripts/garnet_mac_side_continuation_status.py` | Mac-side continuation status and blocked/delegated gate split | `python3 scripts/test_garnet_mac_side_continuation_status.py`; `python3 scripts/garnet_mac_side_continuation_status.py` |
 | `garnet-cli/tests/conformance_skeleton.rs` | executable conformance handles | `cargo test -p garnet-cli --test conformance_skeleton` |
 | `garnet-cli/tests/dogfood_readiness_examples.rs` | semantic MVP output stability | `cargo test -p garnet-cli --test dogfood_readiness_examples` |
 | `.github/workflows/ci.yml` `canonical-examples` job | public app proof surface | GitHub Actions on PR |
@@ -808,6 +810,22 @@ backend evidence. Current source-checkout evidence passes `106/106` with
 refreshed web/PWA evidence lives at
 `/Users/idc2.0/Desktop/dogfood/web-pwa-readiness-20260516-124308`; and Swift
 Studio tests pass `26/26`.
+Phase 6AY records the post-PR #141 Mac-side continuation boundary as a
+repo-native reporter. `scripts/garnet_mac_side_continuation_status.py`
+pulls the live MIT/productization percentage from
+`scripts/garnet_mit_readiness_status.py`, then separates lanes that can still
+move from this macOS checkout from externally blocked or delegated lanes:
+the reusable `Navigata1/dogfood-readiness` skill repo is published and usable,
+unsigned/local Garnet Studio quality, website/status/presentation work,
+converter advisory quality, and proof/benchmark evidence remain Mac-actionable,
+while Apple Developer ID notarization stays account-holder blocked and
+Windows/Linux Studio runtime proof stays target-platform delegated. The agentic
+matrix now carries a `Mac-side continuation accounting` probe so future goal
+prompts and public status copy cannot turn local actionability into notarized,
+Windows/Linux, provider-backed LLM, or native-backend completion claims. The
+standalone dogfood-readiness toolkit is a portable PR/product evidence gate,
+not a replacement for project-specific CI, security review, or human release
+approval.
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.

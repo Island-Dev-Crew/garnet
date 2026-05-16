@@ -2546,6 +2546,22 @@ def probe_set(
             security_domain="sandbox",
         ),
         Probe(
+            "report-mac-side-continuation-boundaries",
+            "Mac-side continuation accounting",
+            "Mac-side continuation status should list actionable local lanes without claiming Apple or Windows/Linux completion",
+            [sys.executable, str(ROOT / "scripts" / "garnet_mac_side_continuation_status.py"), "--format", "json"],
+            True,
+            (
+                "reusable_dogfood_skill",
+                "macos_studio_unsigned_quality",
+                "blocked-external",
+                "Apple Developer Program identity verification",
+                "handoff-only",
+                "provider-backed LLM conversion and native backend lowering remain unimplemented",
+            ),
+            security_domain="release-integrity",
+        ),
+        Probe(
             "report-promo-video-current-truth",
             "promo video readiness",
             "promo readiness status should expose a 30-second contract without claiming a render",
