@@ -1642,6 +1642,21 @@ def probe_set(
             ),
             security_domain="filesystem-local-video",
         ),
+        Probe(
+            "report-promo-video-website-export-harness-contract",
+            "promo video readiness",
+            "promo website export harness should package media, an embed snippet, and manifest evidence without embedding the public site",
+            ["node", str(ROOT / "scripts" / "export_garnet_promo_video_site.mjs"), "--help"],
+            True,
+            (
+                "export_garnet_promo_video_site.mjs",
+                "website export",
+                "embed-snippet.html",
+                "promo-website-export-data.json",
+                "MANIFEST.sha256",
+            ),
+            security_domain="filesystem-local-video",
+        ),
         lambda: build_promo_video_manifest_probe(work),
         Probe(
             "report-adoption-surface-active-truth",

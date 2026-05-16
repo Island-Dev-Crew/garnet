@@ -107,6 +107,35 @@ class GarnetPromoVideoStatusTests(unittest.TestCase):
             self.assertIn("visual QA verdict", contract.completed_gates)
             self.assertIn("website-ready export", contract.open_gates)
 
+    def test_website_export_evidence_promotes_status_without_claiming_public_embed(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            artifact_dir = Path(temp) / "garnet-promo-video"
+            artifact_dir.mkdir()
+            (artifact_dir / "garnet-promo.mp4").write_bytes(b"fake-mp4")
+            (artifact_dir / "garnet-promo.webm").write_bytes(b"fake-webm")
+            qa_dir = Path(temp) / "garnet-promo-video-visual-qa"
+            qa_dir.mkdir()
+            (qa_dir / "promo-visual-qa-data.json").write_text(
+                json.dumps({"status": "visual-qa-ready", "verdict": "pass", "checks": [{"passed": True}]}),
+                encoding="utf-8",
+            )
+            export_dir = Path(temp) / "garnet-promo-video-website-export"
+            export_dir.mkdir()
+            (export_dir / "promo-website-export-data.json").write_text(
+                json.dumps({"status": "website-export-ready", "verdict": "pass", "checks": [{"passed": True}]}),
+                encoding="utf-8",
+            )
+
+            with mock.patch.dict(os.environ, {"GARNET_PROMO_VIDEO_DESKTOP_DIR": temp}):
+                contract = promo.read_status()
+
+            self.assertEqual("website-export-ready", contract.status)
+            self.assertEqual(90.0, contract.completion_percent)
+            self.assertTrue(contract.website_export_present)
+            self.assertIn("website-ready export", contract.completed_gates)
+            self.assertNotIn("website-ready export", contract.open_gates)
+            self.assertIn("repo/site copy check for overclaims", contract.open_gates)
+
     def test_locked_source_packet_lists_real_repo_assets_and_surfaces(self) -> None:
         contract = promo.read_status()
         asset_ids = {asset["id"] for asset in contract.locked_assets}

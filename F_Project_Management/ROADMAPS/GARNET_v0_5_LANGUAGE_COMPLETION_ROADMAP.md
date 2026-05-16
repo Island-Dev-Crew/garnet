@@ -1496,12 +1496,29 @@ growing-probe-set claim. Local evidence at
 verification, and the promo lane reports `visual-qa-ready` at 80.0% when that
 evidence is present. The refreshed source-checkout matrix passes `75/75` with
 `skipped=0` in Desktop bundle
-`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-073242`, and
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-074756`, and
 the refreshed copied-DMG smoke passes in Desktop bundle
-`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-073443` for
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-074816` for
 DMG SHA-256
-`1eecabdb8357233a9e4c3a279379c1d4c39a51795809fe8862ffdc3bdce0c1e4`. Website
+`64bafd2ae61f79a156c7715e23b857f6a95b190d1a84bb491e736d06935b5b2f`. Website
 export and overclaim checks remain open before any public video claim.
+
+Phase 6AL promo website-export package pass:
+`scripts/export_garnet_promo_video_site.mjs` requires passing visual-QA
+evidence, copies MP4/WebM/poster assets into a website-export bundle, writes
+`embed-snippet.html`, JSON/Markdown evidence, and `MANIFEST.sha256`, and keeps
+public-site embedding as a separate gate. Local export evidence at
+`/Users/idc2.0/Desktop/dogfood/garnet-promo-video-website-export` passes
+manifest verification, and the promo lane reports `website-export-ready` at
+90.0% when that evidence is present. The source-checkout matrix passes `76/76`
+with `skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-074756`, and the
+refreshed copied-DMG smoke passes in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-074816` for DMG
+SHA-256
+`64bafd2ae61f79a156c7715e23b857f6a95b190d1a84bb491e736d06935b5b2f`.
+Public-site embedding, overclaim checks, and human/aesthetic acceptance remain
+open before any shipped-video claim.
 
 Phase 6Z packaged assist-plan resource pass: packaged Garnet Studio now stages
 and chmods `scripts/garnet_converter_assist_plan.py`, and the DMG install
