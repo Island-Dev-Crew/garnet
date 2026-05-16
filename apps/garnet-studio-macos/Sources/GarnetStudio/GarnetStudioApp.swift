@@ -212,6 +212,11 @@ struct MitReadinessScriptLocation: Equatable {
     let repoRootURL: URL
 }
 
+struct MitDemoRouteScriptLocation: Equatable {
+    let scriptURL: URL
+    let repoRootURL: URL
+}
+
 struct MacContinuationScriptLocation: Equatable {
     let scriptURL: URL
     let repoRootURL: URL
@@ -592,6 +597,81 @@ struct MitReadinessScriptLocator {
     }
 }
 
+struct MitDemoRouteScriptLocator {
+    let bundleResourceURL: URL?
+    let environmentRepoRoot: String?
+    let currentDirectoryURL: URL
+
+    init(
+        bundleResourceURL: URL? = Bundle.main.resourceURL,
+        environmentRepoRoot: String? = ProcessInfo.processInfo.environment["GARNET_REPO_ROOT"],
+        currentDirectoryURL: URL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+    ) {
+        self.bundleResourceURL = bundleResourceURL
+        self.environmentRepoRoot = environmentRepoRoot
+        self.currentDirectoryURL = currentDirectoryURL
+    }
+
+    func candidateLocations() -> [MitDemoRouteScriptLocation] {
+        var locations: [MitDemoRouteScriptLocation] = []
+
+        if let environmentRepoRoot, !environmentRepoRoot.isEmpty {
+            let root = URL(fileURLWithPath: environmentRepoRoot, isDirectory: true)
+            locations.append(location(forRepoRoot: root))
+        }
+
+        if let bundleResourceURL {
+            let script = bundleResourceURL
+                .appendingPathComponent("scripts", isDirectory: true)
+                .appendingPathComponent("garnet_mit_demo_route.py")
+            locations.append(MitDemoRouteScriptLocation(scriptURL: script, repoRootURL: bundleResourceURL))
+        }
+
+        for root in ancestorRoots(from: currentDirectoryURL) {
+            locations.append(location(forRepoRoot: root))
+        }
+
+        var seen: Set<String> = []
+        return locations.filter { location in
+            let key = location.scriptURL.path
+            if seen.contains(key) {
+                return false
+            }
+            seen.insert(key)
+            return true
+        }
+    }
+
+    func locate(fileManager: FileManager = .default) -> MitDemoRouteScriptLocation? {
+        candidateLocations().first { location in
+            fileManager.fileExists(atPath: location.scriptURL.path)
+        }
+    }
+
+    private func location(forRepoRoot root: URL) -> MitDemoRouteScriptLocation {
+        MitDemoRouteScriptLocation(
+            scriptURL: root
+                .appendingPathComponent("scripts", isDirectory: true)
+                .appendingPathComponent("garnet_mit_demo_route.py"),
+            repoRootURL: root
+        )
+    }
+
+    private func ancestorRoots(from start: URL) -> [URL] {
+        var roots: [URL] = []
+        var cursor = start.standardizedFileURL
+        while true {
+            roots.append(cursor)
+            let parent = cursor.deletingLastPathComponent()
+            if parent.path == cursor.path {
+                break
+            }
+            cursor = parent
+        }
+        return roots
+    }
+}
+
 struct MacContinuationScriptLocator {
     let bundleResourceURL: URL?
     let environmentRepoRoot: String?
@@ -953,6 +1033,46 @@ struct MitReadinessRunner {
     }
 }
 
+struct MitDemoRouteRunner {
+    let location: MitDemoRouteScriptLocation
+    let outputDirectoryURL: URL
+
+    func commandArguments() -> [String] {
+        [
+            "env",
+            "PYTHONDONTWRITEBYTECODE=1",
+            "python3",
+            location.scriptURL.path,
+            "--output-dir",
+            outputDirectoryURL.path,
+            "--format",
+            "markdown",
+        ]
+    }
+
+    func run() -> GarnetCommandResult {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = commandArguments()
+        process.currentDirectoryURL = location.repoRootURL
+
+        let outputPipe = Pipe()
+        process.standardOutput = outputPipe
+        process.standardError = outputPipe
+
+        let command = (["/usr/bin/env"] + (process.arguments ?? [])).joined(separator: " ")
+        do {
+            try process.run()
+            process.waitUntilExit()
+            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: data, encoding: .utf8) ?? ""
+            return GarnetCommandResult(command: command, exitCode: process.terminationStatus, output: output)
+        } catch {
+            return GarnetCommandResult(command: command, exitCode: 127, output: error.localizedDescription)
+        }
+    }
+}
+
 struct MacContinuationRunner {
     let location: MacContinuationScriptLocation
 
@@ -1016,6 +1136,13 @@ struct GarnetStudioEvidenceDirectory {
             .appendingPathComponent("Desktop", isDirectory: true)
             .appendingPathComponent("dogfood", isDirectory: true)
             .appendingPathComponent("garnet-studio-advisory-handoff-\(stamp)", isDirectory: true)
+    }
+
+    func mitDemoRouteDirectory(stamp: String = GarnetStudioEvidenceDirectory.timestamp()) -> URL {
+        homeDirectoryURL
+            .appendingPathComponent("Desktop", isDirectory: true)
+            .appendingPathComponent("dogfood", isDirectory: true)
+            .appendingPathComponent("garnet-studio-mit-demo-route-\(stamp)", isDirectory: true)
     }
 
     static func timestamp(date: Date = Date()) -> String {
@@ -1149,6 +1276,7 @@ final class GarnetStudioViewModel: ObservableObject {
     @Published var advisoryReviewPath: String?
     @Published var advisoryHandoffPath: String?
     @Published var mitReadinessPath: String?
+    @Published var mitDemoRoutePath: String?
     @Published var macContinuationPath: String?
 
     private let locator: GarnetCLILocator
@@ -1158,6 +1286,7 @@ final class GarnetStudioViewModel: ObservableObject {
     private let advisoryReviewLocator: ConverterAdvisoryReviewScriptLocator
     private let advisoryHandoffLocator: ConverterAdvisoryHandoffScriptLocator
     private let mitReadinessLocator: MitReadinessScriptLocator
+    private let mitDemoRouteLocator: MitDemoRouteScriptLocator
     private let macContinuationLocator: MacContinuationScriptLocator
 
     init(
@@ -1168,6 +1297,7 @@ final class GarnetStudioViewModel: ObservableObject {
         advisoryReviewLocator: ConverterAdvisoryReviewScriptLocator = ConverterAdvisoryReviewScriptLocator(),
         advisoryHandoffLocator: ConverterAdvisoryHandoffScriptLocator = ConverterAdvisoryHandoffScriptLocator(),
         mitReadinessLocator: MitReadinessScriptLocator = MitReadinessScriptLocator(),
+        mitDemoRouteLocator: MitDemoRouteScriptLocator = MitDemoRouteScriptLocator(),
         macContinuationLocator: MacContinuationScriptLocator = MacContinuationScriptLocator()
     ) {
         self.locator = locator
@@ -1177,6 +1307,7 @@ final class GarnetStudioViewModel: ObservableObject {
         self.advisoryReviewLocator = advisoryReviewLocator
         self.advisoryHandoffLocator = advisoryHandoffLocator
         self.mitReadinessLocator = mitReadinessLocator
+        self.mitDemoRouteLocator = mitDemoRouteLocator
         self.macContinuationLocator = macContinuationLocator
         self.cliPath = locator.locate()
         self.agenticMatrixPath = matrixLocator.locate()?.scriptURL.path
@@ -1185,6 +1316,7 @@ final class GarnetStudioViewModel: ObservableObject {
         self.advisoryReviewPath = advisoryReviewLocator.locate()?.scriptURL.path
         self.advisoryHandoffPath = advisoryHandoffLocator.locate()?.scriptURL.path
         self.mitReadinessPath = mitReadinessLocator.locate()?.scriptURL.path
+        self.mitDemoRoutePath = mitDemoRouteLocator.locate()?.scriptURL.path
         self.macContinuationPath = macContinuationLocator.locate()?.scriptURL.path
     }
 
@@ -1445,6 +1577,22 @@ final class GarnetStudioViewModel: ObservableObject {
         mitReadinessPath = location.scriptURL.path
     }
 
+    func runMitDemoRoute() {
+        guard let location = mitDemoRouteLocator.locate() else {
+            output = "No MIT demo-route reporter found. Open Garnet Studio from a source checkout or use the packaged app resources."
+            lastStatus = .failure
+            return
+        }
+        let directory = GarnetStudioEvidenceDirectory().mitDemoRouteDirectory()
+        output = "Building Garnet MIT demo-route evidence..."
+        let result = MitDemoRouteRunner(location: location, outputDirectoryURL: directory).run()
+        apply(result: result)
+        if result.status == .success {
+            output += "\nDemo route output: \(directory.path)"
+        }
+        mitDemoRoutePath = location.scriptURL.path
+    }
+
     func runMacContinuationPulse() {
         guard let location = macContinuationLocator.locate() else {
             output = "No Mac-side continuation reporter found. Open Garnet Studio from a source checkout or use the packaged app resources."
@@ -1672,6 +1820,7 @@ struct GarnetStudioRootView: View {
                 Panel(title: "Release Evidence") {
                     ReleaseLine(label: "Tracked plan", value: "87/87 slices complete on current main")
                     ReleaseLine(label: "MIT objective", value: "Run Objective Pulse for the current repo-native percentage")
+                    ReleaseLine(label: "MIT demo route", value: "Run Demo Route to create a manifested seven-minute walkthrough bundle")
                     ReleaseLine(label: "Mac continuation", value: "Run Continuation Pulse for actionable Mac-side lanes and blocked/delegated gates")
                     ReleaseLine(label: "Org release", value: "v0.4.2 published with deb, rpm, macOS tarball, and SHA256SUMS")
                     ReleaseLine(label: "macOS app", value: "Local .app/.dmg packaging active in this slice")
@@ -1679,6 +1828,8 @@ struct GarnetStudioRootView: View {
                     HStack {
                         Button("Objective Pulse", action: model.runMitReadinessPulse)
                             .buttonStyle(.borderedProminent)
+                        Button("Demo Route", action: model.runMitDemoRoute)
+                            .buttonStyle(.bordered)
                         Button("Continuation Pulse", action: model.runMacContinuationPulse)
                             .buttonStyle(.bordered)
                     }

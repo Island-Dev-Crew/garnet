@@ -126,6 +126,19 @@ final class GarnetStudioTests: XCTestCase {
         XCTAssertEqual(first?.scriptURL.path, "/Applications/Garnet Studio.app/Contents/Resources/scripts/garnet_mit_readiness_status.py")
     }
 
+    func testMitDemoRouteLocatorPrefersBundledScriptBeforeAmbientCheckout() {
+        let locator = MitDemoRouteScriptLocator(
+            bundleResourceURL: URL(fileURLWithPath: "/Applications/Garnet Studio.app/Contents/Resources", isDirectory: true),
+            environmentRepoRoot: nil,
+            currentDirectoryURL: URL(fileURLWithPath: "/repo/apps/garnet-studio-macos", isDirectory: true)
+        )
+
+        let first = locator.candidateLocations().first
+
+        XCTAssertEqual(first?.repoRootURL.path, "/Applications/Garnet Studio.app/Contents/Resources")
+        XCTAssertEqual(first?.scriptURL.path, "/Applications/Garnet Studio.app/Contents/Resources/scripts/garnet_mit_demo_route.py")
+    }
+
     func testMacContinuationLocatorPrefersBundledScriptBeforeAmbientCheckout() {
         let locator = MacContinuationScriptLocator(
             bundleResourceURL: URL(fileURLWithPath: "/Applications/Garnet Studio.app/Contents/Resources", isDirectory: true),
@@ -277,6 +290,31 @@ final class GarnetStudioTests: XCTestCase {
         )
     }
 
+    func testMitDemoRouteRunnerBuildsManifestedMarkdownCommand() {
+        let location = MitDemoRouteScriptLocation(
+            scriptURL: URL(fileURLWithPath: "/repo/scripts/garnet_mit_demo_route.py"),
+            repoRootURL: URL(fileURLWithPath: "/repo", isDirectory: true)
+        )
+        let runner = MitDemoRouteRunner(
+            location: location,
+            outputDirectoryURL: URL(fileURLWithPath: "/tmp/GarnetStudioMitDemoRoute")
+        )
+
+        XCTAssertEqual(
+            runner.commandArguments(),
+            [
+                "env",
+                "PYTHONDONTWRITEBYTECODE=1",
+                "python3",
+                "/repo/scripts/garnet_mit_demo_route.py",
+                "--output-dir",
+                "/tmp/GarnetStudioMitDemoRoute",
+                "--format",
+                "markdown",
+            ]
+        )
+    }
+
     func testMacContinuationRunnerBuildsMarkdownCommand() {
         let location = MacContinuationScriptLocation(
             scriptURL: URL(fileURLWithPath: "/repo/scripts/garnet_mac_side_continuation_status.py"),
@@ -305,6 +343,17 @@ final class GarnetStudioTests: XCTestCase {
         XCTAssertEqual(
             directory.path,
             "/Users/example/Desktop/dogfood/garnet-studio-advisory-bundle-20260516-093000"
+        )
+    }
+
+    func testStudioMitDemoRouteEvidenceDirectoryDefaultsToDesktopDogfood() {
+        let directory = GarnetStudioEvidenceDirectory(
+            homeDirectoryURL: URL(fileURLWithPath: "/Users/example", isDirectory: true)
+        ).mitDemoRouteDirectory(stamp: "20260516-174000")
+
+        XCTAssertEqual(
+            directory.path,
+            "/Users/example/Desktop/dogfood/garnet-studio-mit-demo-route-20260516-174000"
         )
     }
 

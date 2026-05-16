@@ -2606,6 +2606,69 @@ def probe_set(
             security_domain="not-applicable",
         ),
         Probe(
+            "report-studio-mit-demo-route-action",
+            "MIT demo route UX",
+            "Garnet Studio should expose the repo-native MIT demo route from the Release panel",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['Button(\"Demo Route\", action: model.runMitDemoRoute)', "
+                    "'func runMitDemoRoute()', 'mitDemoRoutePath']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio MIT demo route action present')\n"
+                ),
+            ],
+            True,
+            ("studio MIT demo route action present",),
+            security_domain="not-applicable",
+        ),
+        Probe(
+            "report-studio-mit-demo-route-runner",
+            "MIT demo route UX",
+            "Garnet Studio should write manifested MIT demo-route evidence instead of only rendering transient copy",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['MitDemoRouteRunner', 'MitDemoRouteScriptLocator', "
+                    "'garnet_mit_demo_route.py', '--output-dir', '--format', 'markdown']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio MIT demo route runner present')\n"
+                ),
+            ],
+            True,
+            ("studio MIT demo route runner present",),
+            security_domain="not-applicable",
+        ),
+        Probe(
+            "report-studio-mit-demo-route-desktop-evidence",
+            "MIT demo route UX",
+            "Garnet Studio should preserve MIT demo-route output under Desktop dogfood storage",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['func mitDemoRouteDirectory', 'Desktop', 'dogfood', "
+                    "'garnet-studio-mit-demo-route-', 'Demo route output:']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio MIT demo route desktop evidence present')\n"
+                ),
+            ],
+            True,
+            ("studio MIT demo route desktop evidence present",),
+            security_domain="filesystem",
+        ),
+        Probe(
             "report-mit-readiness-plan-complete",
             "MIT readiness accounting",
             "objective status should separate completed tracked slices from broader productization completion",
