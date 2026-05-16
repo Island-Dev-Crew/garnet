@@ -48,6 +48,19 @@ final class GarnetStudioTests: XCTestCase {
         XCTAssertEqual(first?.scriptURL.path, "/repo/scripts/run_agentic_dogfood_matrix.py")
     }
 
+    func testAgenticMatrixLocatorPrefersBundledScriptBeforeAmbientCheckout() {
+        let locator = AgenticDogfoodScriptLocator(
+            bundleResourceURL: URL(fileURLWithPath: "/Applications/Garnet Studio.app/Contents/Resources", isDirectory: true),
+            environmentRepoRoot: nil,
+            currentDirectoryURL: URL(fileURLWithPath: "/repo/apps/garnet-studio-macos", isDirectory: true)
+        )
+
+        let first = locator.candidateLocations().first
+
+        XCTAssertEqual(first?.repoRootURL.path, "/Applications/Garnet Studio.app/Contents/Resources")
+        XCTAssertEqual(first?.scriptURL.path, "/Applications/Garnet Studio.app/Contents/Resources/scripts/run_agentic_dogfood_matrix.py")
+    }
+
     func testAgenticMatrixRunnerBuildsStrictDesktopCommand() {
         let location = AgenticDogfoodScriptLocation(
             scriptURL: URL(fileURLWithPath: "/repo/scripts/run_agentic_dogfood_matrix.py"),
@@ -62,6 +75,32 @@ final class GarnetStudioTests: XCTestCase {
                 "/repo/scripts/run_agentic_dogfood_matrix.py",
                 "--garnet-bin",
                 "/repo/target/debug/garnet",
+                "--copy-to-desktop",
+                "--strict",
+            ]
+        )
+    }
+
+    func testAgenticMatrixRunnerBuildsPackagedAppCommand() {
+        let location = AgenticDogfoodScriptLocation(
+            scriptURL: URL(fileURLWithPath: "/Applications/Garnet Studio.app/Contents/Resources/scripts/run_agentic_dogfood_matrix.py"),
+            repoRootURL: URL(fileURLWithPath: "/Applications/Garnet Studio.app/Contents/Resources", isDirectory: true)
+        )
+        let runner = AgenticDogfoodRunner(
+            location: location,
+            garnetBinaryPath: "/Applications/Garnet Studio.app/Contents/Resources/garnet",
+            appExecutablePath: "/Applications/Garnet Studio.app/Contents/MacOS/GarnetStudio"
+        )
+
+        XCTAssertEqual(
+            runner.commandArguments(),
+            [
+                "python3",
+                "/Applications/Garnet Studio.app/Contents/Resources/scripts/run_agentic_dogfood_matrix.py",
+                "--garnet-bin",
+                "/Applications/Garnet Studio.app/Contents/Resources/garnet",
+                "--app-executable",
+                "/Applications/Garnet Studio.app/Contents/MacOS/GarnetStudio",
                 "--copy-to-desktop",
                 "--strict",
             ]
@@ -84,6 +123,40 @@ final class GarnetStudioTests: XCTestCase {
                 "--strict",
             ]
         )
+    }
+
+    func testAgenticMatrixRunnerFindsBundledResources() {
+        let temporary = FileManager.default.temporaryDirectory
+            .appendingPathComponent("GarnetStudioTests-\(UUID().uuidString)", isDirectory: true)
+        let resources = temporary
+            .appendingPathComponent("Garnet Studio.app", isDirectory: true)
+            .appendingPathComponent("Contents", isDirectory: true)
+            .appendingPathComponent("Resources", isDirectory: true)
+        let macOS = resources
+            .deletingLastPathComponent()
+            .appendingPathComponent("MacOS", isDirectory: true)
+        let garnet = resources.appendingPathComponent("garnet")
+        let executable = macOS.appendingPathComponent("GarnetStudio")
+
+        do {
+            try FileManager.default.createDirectory(at: resources, withIntermediateDirectories: true)
+            try FileManager.default.createDirectory(at: macOS, withIntermediateDirectories: true)
+            FileManager.default.createFile(atPath: garnet.path, contents: Data(), attributes: [.posixPermissions: 0o755])
+            FileManager.default.createFile(atPath: executable.path, contents: Data(), attributes: [.posixPermissions: 0o755])
+            defer { try? FileManager.default.removeItem(at: temporary) }
+
+            let location = AgenticDogfoodScriptLocation(
+                scriptURL: resources
+                    .appendingPathComponent("scripts", isDirectory: true)
+                    .appendingPathComponent("run_agentic_dogfood_matrix.py"),
+                repoRootURL: resources
+            )
+
+            XCTAssertEqual(AgenticDogfoodRunner.checkoutGarnetBinary(for: location), garnet.path)
+            XCTAssertEqual(AgenticDogfoodRunner.appBundleExecutable(for: location), executable.path)
+        } catch {
+            XCTFail("failed to prepare temporary bundle: \(error)")
+        }
     }
 
     func testCommandResultClassifiesExitStatus() {

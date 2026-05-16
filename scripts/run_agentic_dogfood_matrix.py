@@ -367,7 +367,52 @@ def run_probe(probe: Probe, work: Path) -> ProbeResult:
     )
 
 
-def probe_set(garnet: Path, work: Path, fixtures: dict[str, Path]) -> list[Probe | Callable[[], ProbeResult]]:
+def app_workbench_probes(app_executable: Path | None) -> list[Probe]:
+    if app_executable is not None:
+        return [
+            Probe(
+                "app-self-test",
+                "macOS app workbench",
+                "packaged Garnet Studio self-test should pass without a source checkout",
+                [str(app_executable), "--self-test"],
+                True,
+                ("GarnetStudio self-test passed",),
+            ),
+            Probe(
+                "app-smoke-test",
+                "macOS app workbench",
+                "packaged Garnet Studio should run the bundled CLI across workbench samples",
+                [str(app_executable), "--smoke-test"],
+                True,
+                ("GarnetStudio smoke passed",),
+            ),
+        ]
+    return [
+        Probe(
+            "app-self-test",
+            "macOS app workbench",
+            "Garnet Studio self-test should pass from SwiftPM",
+            ["swift", "run", "--package-path", str(ROOT / "apps" / "garnet-studio-macos"), "GarnetStudio", "--self-test"],
+            True,
+            ("GarnetStudio self-test passed",),
+        ),
+        Probe(
+            "app-xctest",
+            "macOS app workbench",
+            "Garnet Studio XCTest target should pass",
+            ["swift", "test", "--package-path", str(ROOT / "apps" / "garnet-studio-macos")],
+            True,
+            ("GarnetStudioTests", "0 failures"),
+        ),
+    ]
+
+
+def probe_set(
+    garnet: Path,
+    work: Path,
+    fixtures: dict[str, Path],
+    app_executable: Path | None = None,
+) -> list[Probe | Callable[[], ProbeResult]]:
     examples = ROOT / "examples"
     return [
         Probe(
@@ -529,22 +574,7 @@ def probe_set(garnet: Path, work: Path, fixtures: dict[str, Path]) -> list[Probe
             [str(garnet), "fmt", "--check", str(fixtures["fmt_source"])],
             True,
         ),
-        Probe(
-            "app-self-test",
-            "macOS app workbench",
-            "Garnet Studio self-test should pass from SwiftPM",
-            ["swift", "run", "--package-path", str(ROOT / "apps" / "garnet-studio-macos"), "GarnetStudio", "--self-test"],
-            True,
-            ("GarnetStudio self-test passed",),
-        ),
-        Probe(
-            "app-xctest",
-            "macOS app workbench",
-            "Garnet Studio XCTest target should pass",
-            ["swift", "test", "--package-path", str(ROOT / "apps" / "garnet-studio-macos")],
-            True,
-            ("GarnetStudioTests", "0 failures"),
-        ),
+        *app_workbench_probes(app_executable),
         Probe(
             "run-advertised-log-analyzer",
             "agent memory and analysis",
@@ -834,6 +864,10 @@ def write_outputs(work: Path, results: list[ProbeResult], metadata: dict[str, st
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--garnet-bin", help="path to an existing garnet binary")
+    parser.add_argument(
+        "--app-executable",
+        help="path to a packaged Garnet Studio executable; replaces SwiftPM app probes with packaged-app probes",
+    )
     parser.add_argument("--output-dir", help="artifact directory; defaults to /tmp")
     parser.add_argument(
         "--copy-to-desktop",
@@ -851,6 +885,9 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
     garnet = ensure_garnet_bin(args.garnet_bin)
+    app_executable = Path(args.app_executable).expanduser().resolve() if args.app_executable else None
+    if app_executable is not None and not os.access(app_executable, os.X_OK):
+        raise SystemExit(f"Garnet Studio executable is not executable: {app_executable}")
     stamp = time.strftime("%Y%m%d-%H%M%S")
     work = Path(args.output_dir) if args.output_dir else Path(tempfile.gettempdir()) / f"garnet-agentic-dogfood-{stamp}"
     work.mkdir(parents=True, exist_ok=True)
@@ -861,11 +898,12 @@ def main(argv: list[str] | None = None) -> int:
         "head": run(["git", "rev-parse", "HEAD"], ROOT).stdout.strip(),
         "branch": run(["git", "branch", "--show-current"], ROOT).stdout.strip(),
         "garnet": str(garnet),
+        "app_executable": str(app_executable) if app_executable else "",
         "artifact_dir": str(work),
     }
 
     results: list[ProbeResult] = []
-    for item in probe_set(garnet, work, fixtures):
+    for item in probe_set(garnet, work, fixtures, app_executable=app_executable):
         result = item() if callable(item) else run_probe(item, work)
         results.append(result)
         print(f"{result.status.upper():6} {result.probe.domain:28} {result.probe.id}")

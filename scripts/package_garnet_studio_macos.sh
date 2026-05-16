@@ -19,13 +19,16 @@ swift build --package-path "${PACKAGE_PATH}" -c release
 
 echo "==> Assembling ${APP_DIR}"
 rm -rf "${APP_DIR}" "${DMG_PATH}"
-mkdir -p "${APP_DIR}/Contents/MacOS" "${APP_DIR}/Contents/Resources"
+mkdir -p "${APP_DIR}/Contents/MacOS" "${APP_DIR}/Contents/Resources/scripts"
 
 cp "${SWIFT_BIN}" "${APP_DIR}/Contents/MacOS/${EXECUTABLE_NAME}"
 cp "${GARNET_BIN}" "${APP_DIR}/Contents/Resources/garnet"
 cp "${ROOT}/assets/garnet-logo.png" "${APP_DIR}/Contents/Resources/garnet-logo.png"
+cp "${ROOT}/scripts/run_agentic_dogfood_matrix.py" "${APP_DIR}/Contents/Resources/scripts/run_agentic_dogfood_matrix.py"
+cp -R "${ROOT}/examples" "${APP_DIR}/Contents/Resources/examples"
 chmod 0755 "${APP_DIR}/Contents/MacOS/${EXECUTABLE_NAME}"
 chmod 0755 "${APP_DIR}/Contents/Resources/garnet"
+chmod 0755 "${APP_DIR}/Contents/Resources/scripts/run_agentic_dogfood_matrix.py"
 
 cat > "${APP_DIR}/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -73,6 +76,9 @@ echo "==> Running bundled CLI smoke"
 
 echo "==> Running packaged app CLI smoke"
 "${APP_DIR}/Contents/MacOS/${EXECUTABLE_NAME}" --smoke-test
+
+echo "==> Running packaged app agentic matrix smoke"
+"${APP_DIR}/Contents/MacOS/${EXECUTABLE_NAME}" --agentic-matrix-test
 
 if command -v hdiutil >/dev/null 2>&1; then
   echo "==> Creating DMG"
