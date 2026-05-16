@@ -127,7 +127,7 @@ highest-leverage next milestones are:
    are separately verified.
 6. **Agentic dogfood stress:** keep the advanced multi-domain matrix green so
    agents can exercise orchestration, recovery diagnostics, migration,
-   safe-mode, release-integrity, docs, app, and memory-analysis surfaces as one
+   safe-mode, release-integrity, signed-release provenance, docs, app, and memory-analysis surfaces as one
    falsifiable workflow, with macOS CI preserving a downloadable evidence
    artifact for readiness-sensitive PRs. The matrix now records per-domain
    coverage adequacy separately from pass/fail readiness so under-tested
@@ -138,7 +138,10 @@ highest-leverage next milestones are:
    repair behavior, agent memory/analysis covers parse-time memory declaration
    surfacing plus check/run of the advertised log analyzer, and web/PWA
    productization covers offline-handler, full local-smoke, and local Chrome
-   DevTools browser offline probes. The macOS app workbench covers self-test,
+   DevTools browser offline probes. Signed-release provenance covers key
+   generation, signed deterministic manifests, signature-required unsigned
+   manifest rejection, and signed manifest tamper rejection without preserving
+   generated private keys in Desktop evidence bundles. The macOS app workbench covers self-test,
    workbench sample smoke against the matrix-built CLI, and XCTest locally
    while richer browser IDE, cross-browser validation, and signed native
    distribution remain separate gates.
