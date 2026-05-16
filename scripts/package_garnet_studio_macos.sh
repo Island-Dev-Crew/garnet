@@ -90,6 +90,9 @@ if command -v hdiutil >/dev/null 2>&1; then
     "${DMG_PATH}" >/dev/null
   hdiutil verify "${DMG_PATH}" >/dev/null
   shasum -a 256 "${DMG_PATH}"
+
+  echo "==> Running DMG install smoke"
+  "${ROOT}/scripts/smoke_garnet_studio_dmg.sh" "${DMG_PATH}"
 else
   echo "warning: hdiutil unavailable; DMG not created" >&2
 fi
