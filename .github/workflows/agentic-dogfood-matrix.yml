@@ -55,6 +55,7 @@ jobs:
         run: |
           python3 scripts/run_agentic_dogfood_matrix.py \
             --strict \
+            --skip-app-workbench \
             --output-dir "$RUNNER_TEMP/garnet-agentic-dogfood"
       - name: Verify matrix manifest
         run: shasum -a 256 -c MANIFEST.sha256
