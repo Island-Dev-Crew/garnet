@@ -1528,12 +1528,12 @@ public-site `<video>` block and service-worker cache references, and writes
 evidence. The promo lane advances to `public-site-embedded` at 95.0% when
 render, visual-QA, website-export, and site-sync bundles are all present.
 Human/aesthetic acceptance remains open before final marketing acceptance. The
-source-checkout matrix passes `77/77` with `skipped=0` in Desktop bundle
-`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-081242`, and the
+source-checkout matrix passes `84/84` with `skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-084611`, and the
 refreshed copied-DMG smoke passes in Desktop bundle
-`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-081319` for DMG
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-084842` for DMG
 SHA-256
-`aff933716a2c3071156c47b57f70d44c0739c7f7b69d6a44eef555d87195d9cf`.
+`4887d116bc077e3d299009a3218165294707f0f1a7c95526d8d07e484018fa8e`.
 
 Phase 6Z packaged assist-plan resource pass: packaged Garnet Studio now stages
 and chmods `scripts/garnet_converter_assist_plan.py`, and the DMG install
@@ -1551,7 +1551,7 @@ clean-machine Gatekeeper proof remain separate gates.
 
 Phase 6AA Studio assist-plan UI pass: the packaged reporter is now reachable
 from the macOS workbench. The Converter panel exposes a distinct `Assist Plan`
-action, planned languages such as TypeScript/JavaScript/Swift/Java/C++/C# are
+action, planned languages such as TypeScript/JavaScript/Swift/Java/C/C++/C#/Perl are
 available for deterministic advisory planning, and the ordinary `Convert`
 action remains constrained to active deterministic converter frontends. This
 keeps the adoption path more approachable without turning planned languages or
@@ -1591,6 +1591,18 @@ pulse, explicitly distinguishes it from `87/87 tracked slices`, and names the
 open notarization, mobile, provider-backed LLM assist, broad converter
 frontends, and promo human-review gates. This is a reporting/UX alignment
 slice, not a new completion claim.
+
+Phase 6AO converter LLM feasibility pass: the converter-stage LLM question is
+now machine-readable rather than only speculative. `scripts/garnet_converter_llm_feasibility.py`
+reports that provider-neutral advisory planning is feasible, but autonomous or
+provider-backed LLM conversion is not active and remains blocked on secure
+runtime, deterministic frontend, lineage, `@sandbox`, `garnet check`, dogfood,
+and human-audit gates. The agentic matrix adds C, C#, and Perl assist-plan
+fixtures plus four feasibility probes, bringing the planned-language advisory
+surface in line with the public JavaScript/TypeScript/Swift/Java/C/C++/C#/Perl
+claim without making broad converter frontends active. Local evidence passes
+`84/84` with `skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-084611`.
 
 ## Phase 7: Release, Research, And Repeated Falsification
 

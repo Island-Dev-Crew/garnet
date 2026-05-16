@@ -68,6 +68,7 @@ done
 | `scripts/garnet_converter_status.py` | converter adoption inventory | current machine-readable truth for active converter lanes, planned languages, trust boundaries, and the future Garnet-aware assist contract |
 | `scripts/garnet_assist_context_pack.py` | Garnet-aware assist context and prompt pack | current machine-readable context bundle plus provider-neutral prompt pack for future provider-backed converter assist; hashes current truth/spec/dogfood docs and preserves advisory-only gates without enabling LLM conversion |
 | `scripts/garnet_converter_assist_plan.py` | planned-language converter assist plan | current deterministic planner for a single source file in an active or planned converter language; inventories safe-mode, memory, CapCaps, actor/orchestration, and migration risks without executing source or enabling LLM conversion |
+| `scripts/garnet_converter_llm_feasibility.py` | converter LLM feasibility reporter | current machine-readable decision surface: provider-neutral advisory planning is feasible; autonomous/provider-backed LLM conversion is not active and remains blocked on secure runtime, deterministic frontend, sandbox, lineage, check, dogfood, and human-audit gates |
 | `scripts/garnet_mit_readiness_status.py` | MIT/productization objective inventory | current machine-readable truth that the tracked implementation plan is complete while notarization, mobile distribution, promo video, broad converter frontends, LLM assist, and proof/empirics remain open gates |
 | `scripts/garnet_promo_video_status.py` | promo video readiness contract | current machine-readable storyboard/gate contract for a 30-second HyperFrames promo; visual identity/source surfaces and `docs/promo/` composition source are tied to repo assets, local Desktop MP4/WebM, automated visual-QA, website-export, and site-sync evidence can promote the lane to `public-site-embedded` at 95.0%, while human/aesthetic acceptance remains open |
 | `scripts/render_garnet_promo_video.mjs` | promo video render harness | current local Chrome DevTools + `ffmpeg` harness for manifest-backed MP4/WebM/poster render evidence; this is not a substitute for visual QA or website export |
@@ -622,12 +623,12 @@ service worker reference those files, and writes
 visual-QA, website-export, and site-sync evidence present,
 `scripts/garnet_promo_video_status.py` reports `public-site-embedded` at 95.0%
 and `scripts/garnet_mit_readiness_status.py` reports the broader objective at
-58.6%. The source-checkout matrix passes `77/77` with `skipped=0` in Desktop
-bundle `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-081242`;
+58.6%. The source-checkout matrix passes `84/84` with `skipped=0` in Desktop
+bundle `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-084611`;
 the refreshed copied-DMG evidence lives at
-`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-081319` for
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-084842` for
 DMG SHA-256
-`aff933716a2c3071156c47b57f70d44c0739c7f7b69d6a44eef555d87195d9cf`.
+`4887d116bc077e3d299009a3218165294707f0f1a7c95526d8d07e484018fa8e`.
 Human/aesthetic acceptance remains open; this is still not final
 marketing acceptance, notarized distribution, mobile distribution, provider-backed
 LLM conversion, or full MIT/productization completion.
@@ -638,6 +639,17 @@ claim and lists the open notarization, mobile, LLM-assist, broad-converter, and
 promo human-review gates. `python3 scripts/test_garnet_mit_readiness_status.py`
 now fails if the public site hides that pulse or confuses tracked-plan
 completion with full productization completion.
+Phase 6AO moves the converter-stage LLM question into an executable feasibility
+gate: `scripts/garnet_converter_llm_feasibility.py` reports that
+provider-neutral advisory planning is feasible while autonomous/provider-backed
+LLM conversion remains inactive and blocked on secure runtime, deterministic
+frontend, lineage, `@sandbox`, `garnet check`, dogfood, and human-audit gates.
+The agentic matrix now covers C, C#, and Perl assist-plan fixtures in addition
+to JavaScript, TypeScript, Swift, Java, and C++, so the planned-language
+advisory surface matches the currently advertised adoption set without making
+those languages active converters. Local evidence passes `84/84` with
+`skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-084611`.
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.

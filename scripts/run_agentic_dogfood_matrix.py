@@ -350,6 +350,20 @@ interface AgentGateway {
 }
 """,
     )
+    paths["c_assist"] = write(
+        fixtures / "agent_cache.c",
+        """#include <stdlib.h>
+
+typedef struct AgentCache {
+  char* memory;
+} AgentCache;
+
+void start(AgentCache* cache) {
+  cache->memory = malloc(64);
+  free(cache->memory);
+}
+""",
+    )
     paths["cpp_assist"] = write(
         fixtures / "native_agent.cpp",
         """#include <cstdlib>
@@ -365,6 +379,38 @@ struct NativeAgent {
     free(memory);
   }
 };
+""",
+    )
+    paths["csharp_assist"] = write(
+        fixtures / "AgentWorker.cs",
+        """using System.Net.Http;
+using System.Threading.Tasks;
+
+public class AgentWorker {
+  private readonly Dictionary<string, string> cache = new();
+
+  public async Task<string> Fetch(string endpoint) {
+    using var client = new HttpClient();
+    var body = await client.GetStringAsync(endpoint);
+    cache[endpoint] = body;
+    return body;
+  }
+}
+""",
+    )
+    paths["perl_assist"] = write(
+        fixtures / "agent_memory.pl",
+        """use strict;
+use warnings;
+use LWP::UserAgent;
+
+my %memory;
+sub remember {
+  my ($key, $url) = @_;
+  my $ua = LWP::UserAgent->new;
+  my $response = $ua->get($url);
+  $memory{$key} = $response->decoded_content;
+}
 """,
     )
     notarization = fixtures / "notarization-preflight"
@@ -721,6 +767,46 @@ def build_assist_plan_manifest_probe(work: Path, source: Path) -> ProbeResult:
             "Garnet Converter Assist Plan",
             "garnet-converter-assist-plan.json: OK",
             "garnet-converter-assist-plan.md: OK",
+        ),
+        security_domain="release-integrity",
+    )
+    start = time.monotonic()
+    completed = run(probe.command, work)
+    stdout = [completed.stdout]
+    stderr = [completed.stderr]
+    exit_code = completed.returncode
+    if completed.returncode == 0:
+        verify = run(["shasum", "-a", "256", "-c", "MANIFEST.sha256"], output_dir)
+        stdout.append(verify.stdout)
+        stderr.append(verify.stderr)
+        exit_code = verify.returncode
+    return classify_result(
+        probe,
+        exit_code,
+        "\n".join(stdout),
+        "\n".join(stderr),
+        int((time.monotonic() - start) * 1000),
+        work,
+    )
+
+
+def build_converter_llm_feasibility_manifest_probe(work: Path) -> ProbeResult:
+    output_dir = work / "converter-llm-feasibility"
+    probe = Probe(
+        "report-converter-llm-feasibility-output-manifest",
+        "converter LLM feasibility",
+        "converter LLM feasibility reporter should write JSON, Markdown, and a verified manifest",
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "garnet_converter_llm_feasibility.py"),
+            "--output-dir",
+            str(output_dir),
+        ],
+        True,
+        (
+            "Garnet Converter LLM Feasibility",
+            "garnet-converter-llm-feasibility.json: OK",
+            "garnet-converter-llm-feasibility.md: OK",
         ),
         security_domain="release-integrity",
     )
@@ -1480,6 +1566,32 @@ def probe_set(
             security_domain="sandbox",
         ),
         Probe(
+            "report-assist-plan-c-risks",
+            "converter assist planning",
+            "planned C assist plan should preserve advisory-only native memory migration evidence",
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "garnet_converter_assist_plan.py"),
+                "--language",
+                "c",
+                "--source",
+                str(fixtures["c_assist"]),
+                "--format",
+                "json",
+            ],
+            True,
+            (
+                "\"language\": \"C\"",
+                "\"language_status\": \"planned\"",
+                "\"conversion_active\": false",
+                "unsafe or native memory boundary",
+                "type and ownership modeling",
+                "safe-mode ownership candidates",
+                "lineage per emitted node",
+            ),
+            security_domain="sandbox",
+        ),
+        Probe(
             "report-assist-plan-cpp-risks",
             "converter assist planning",
             "planned C++ assist plan should preserve advisory-only native memory migration evidence",
@@ -1505,7 +1617,110 @@ def probe_set(
             ),
             security_domain="sandbox",
         ),
+        Probe(
+            "report-assist-plan-csharp-risks",
+            "converter assist planning",
+            "planned C# assist plan should preserve advisory-only async service migration evidence",
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "garnet_converter_assist_plan.py"),
+                "--language",
+                "csharp",
+                "--source",
+                str(fixtures["csharp_assist"]),
+                "--format",
+                "json",
+            ],
+            True,
+            (
+                "\"language\": \"C#\"",
+                "\"language_status\": \"planned\"",
+                "\"conversion_active\": false",
+                "network or external capability boundary",
+                "actor or async orchestration mapping",
+                "memory declaration candidate",
+                "CapCaps/capability boundaries",
+            ),
+            security_domain="sandbox",
+        ),
+        Probe(
+            "report-assist-plan-perl-risks",
+            "converter assist planning",
+            "planned Perl assist plan should preserve advisory-only scripting migration evidence",
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "garnet_converter_assist_plan.py"),
+                "--language",
+                "perl",
+                "--source",
+                str(fixtures["perl_assist"]),
+                "--format",
+                "json",
+            ],
+            True,
+            (
+                "\"language\": \"Perl\"",
+                "\"language_status\": \"planned\"",
+                "\"conversion_active\": false",
+                "network or external capability boundary",
+                "memory declaration candidate",
+                "human audit before unquarantine",
+            ),
+            security_domain="sandbox",
+        ),
         lambda: build_assist_plan_manifest_probe(work, fixtures["typescript_assist"]),
+        Probe(
+            "report-converter-llm-feasibility-current-truth",
+            "converter LLM feasibility",
+            "LLM feasibility reporter should allow advisory planning without activating conversion",
+            [sys.executable, str(ROOT / "scripts" / "garnet_converter_llm_feasibility.py"), "--format", "json"],
+            True,
+            (
+                "\"status\": \"advisory-feasible\"",
+                "\"conversion_active\": false",
+                "\"autonomous_conversion_feasible\": false",
+                "\"recommended_first_lane\": \"provider-neutral advisory planning\"",
+                "not active LLM conversion",
+            ),
+            security_domain="sandbox",
+        ),
+        Probe(
+            "report-converter-llm-feasibility-language-coverage",
+            "converter LLM feasibility",
+            "LLM feasibility reporter should account for all requested active and planned language surfaces",
+            [sys.executable, str(ROOT / "scripts" / "garnet_converter_llm_feasibility.py"), "--format", "json"],
+            True,
+            (
+                "\"id\": \"python\"",
+                "\"id\": \"javascript\"",
+                "\"id\": \"typescript\"",
+                "\"id\": \"swift\"",
+                "\"id\": \"java\"",
+                "\"id\": \"c\"",
+                "\"id\": \"cpp\"",
+                "\"id\": \"csharp\"",
+                "\"id\": \"perl\"",
+                "planned-assist-required",
+            ),
+            security_domain="sandbox",
+        ),
+        Probe(
+            "report-converter-llm-feasibility-blockers",
+            "converter LLM feasibility",
+            "LLM feasibility reporter should keep provider/runtime, dogfood, and human-audit gates explicit",
+            [sys.executable, str(ROOT / "scripts" / "garnet_converter_llm_feasibility.py")],
+            True,
+            (
+                "Advisory assist is feasible",
+                "Autonomous LLM",
+                "secure advisory implementation",
+                "provider/runtime boundary",
+                "dogfood gate",
+                "human audit before unquarantine",
+            ),
+            security_domain="sandbox",
+        ),
+        lambda: build_converter_llm_feasibility_manifest_probe(work),
         Probe(
             "report-mit-readiness-plan-complete",
             "MIT readiness accounting",
