@@ -74,6 +74,19 @@ final class GarnetStudioTests: XCTestCase {
         XCTAssertEqual(first?.scriptURL.path, "/Applications/Garnet Studio.app/Contents/Resources/scripts/garnet_converter_assist_plan.py")
     }
 
+    func testConverterAdvisoryBundleLocatorPrefersBundledScriptBeforeAmbientCheckout() {
+        let locator = ConverterAdvisoryBundleScriptLocator(
+            bundleResourceURL: URL(fileURLWithPath: "/Applications/Garnet Studio.app/Contents/Resources", isDirectory: true),
+            environmentRepoRoot: nil,
+            currentDirectoryURL: URL(fileURLWithPath: "/repo/apps/garnet-studio-macos", isDirectory: true)
+        )
+
+        let first = locator.candidateLocations().first
+
+        XCTAssertEqual(first?.repoRootURL.path, "/Applications/Garnet Studio.app/Contents/Resources")
+        XCTAssertEqual(first?.scriptURL.path, "/Applications/Garnet Studio.app/Contents/Resources/scripts/garnet_converter_advisory_bundle.py")
+    }
+
     func testConverterAssistPlanRunnerBuildsMarkdownCommand() {
         let location = ConverterAssistPlanScriptLocation(
             scriptURL: URL(fileURLWithPath: "/repo/scripts/garnet_converter_assist_plan.py"),
@@ -100,6 +113,38 @@ final class GarnetStudioTests: XCTestCase {
                 "markdown",
             ]
         )
+    }
+
+    func testConverterAdvisoryBundleRunnerBuildsManifestedNoSourceCommand() {
+        let location = ConverterAdvisoryBundleScriptLocation(
+            scriptURL: URL(fileURLWithPath: "/repo/scripts/garnet_converter_advisory_bundle.py"),
+            repoRootURL: URL(fileURLWithPath: "/repo", isDirectory: true)
+        )
+        let runner = ConverterAdvisoryBundleRunner(
+            location: location,
+            language: "typescript",
+            sourceURL: URL(fileURLWithPath: "/tmp/agent_router.ts"),
+            outputDirectoryURL: URL(fileURLWithPath: "/tmp/GarnetStudioAdvisory")
+        )
+
+        XCTAssertEqual(
+            runner.commandArguments(),
+            [
+                "env",
+                "PYTHONDONTWRITEBYTECODE=1",
+                "python3",
+                "/repo/scripts/garnet_converter_advisory_bundle.py",
+                "--language",
+                "typescript",
+                "--source",
+                "/tmp/agent_router.ts",
+                "--output-dir",
+                "/tmp/GarnetStudioAdvisory",
+                "--format",
+                "markdown",
+            ]
+        )
+        XCTAssertFalse(runner.commandArguments().contains("--include-source"))
     }
 
     func testAgenticMatrixRunnerBuildsStrictDesktopCommand() {

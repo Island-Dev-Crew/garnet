@@ -660,6 +660,22 @@ It keeps conversion inactive, omits source text by default, requires
 a four-probe `converter advisory bundle` domain and passes `88/88` with
 `skipped=0` in Desktop bundle
 `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-090352`.
+Phase 6AQ makes that advisory bundle visible from the macOS Studio converter
+panel: `Advisory Bundle` writes a manifested local handoff package through the
+same packaged/source script locator as the existing planned-language assist
+lane, while preserving the no-`--include-source` default privacy boundary. The
+agentic matrix now adds a three-probe `converter advisory bundle UX` domain.
+It preserved the useful failed `88/91` run at
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-091859` where
+the new probes incorrectly read the Studio source relative to the temporary
+work directory, then passed `91/91` with `skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-091949`.
+The refreshed web/PWA evidence lives at
+`/Users/idc2.0/Desktop/dogfood/web-pwa-readiness-20260516-092247`; refreshed
+packaged app/DMG evidence lives at
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-092317` for
+DMG SHA-256
+`f40375e301f785b87091494a1e1e12cdedf5c46eb4b10f1a62525438244f5e09`.
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.

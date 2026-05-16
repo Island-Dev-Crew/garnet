@@ -1613,6 +1613,15 @@ conversion inactive. The agentic matrix adds four advisory-bundle probes and
 passes `88/88` with `skipped=0` in Desktop bundle
 `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-090352`.
 
+Phase 6AQ converter advisory bundle UX pass: the macOS Studio Converter panel
+now exposes `Advisory Bundle` beside `Assist Plan`, using the packaged/source
+`garnet_converter_advisory_bundle.py` locator and runner to write a manifested
+local handoff bundle without passing `--include-source`. The source-checkout
+matrix preserved a failed `88/91` bug-catcher at
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-091859`, then
+passed `91/91` with `skipped=0` at
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-091949`.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.
