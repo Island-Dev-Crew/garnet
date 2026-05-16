@@ -128,7 +128,7 @@ Developer ID notarization.
 | `garnet-cli`    | Top-level `garnet` binary |
 | `garnet-convert` | Rust / Ruby / Python / Go → Garnet **migration assistant** (stylized parsers, sandbox-on output, emits a `migrate_todo.md` checklist — not a full transpiler). `python3 scripts/garnet_converter_status.py` reports the active lanes, planned language expansion candidates, and the planned Garnet-aware assist contract for future LLM/agentic guidance. |
 
-For future LLM or agentic converter guidance, run `python3 scripts/garnet_assist_context_pack.py`. It creates a deterministic local context pack from the current truth, public README, Mini-Spec, conformance matrix, and dogfood ledger; it does not enable provider-backed conversion or make planned language frontends active.
+For future LLM or agentic converter guidance, run `python3 scripts/garnet_assist_context_pack.py`. It creates a deterministic local context pack from the current truth, public README, Mini-Spec, conformance matrix, and dogfood ledger; it does not enable provider-backed conversion or make planned language frontends active. For a single active or planned source file, run `python3 scripts/garnet_converter_assist_plan.py --language typescript --source path/to/file.ts`; it emits advisory safe-mode, memory, CapCaps, actor/orchestration, migration-risk, and gate evidence without executing source code or claiming conversion.
 
 For repo/site adoption truth, run `python3 scripts/garnet_adoption_surface_status.py`. It ties the public hook, active converter lanes, planned converter lanes, LLM-assist boundaries, verified use cases, and productization gates to current evidence before marketing or README copy moves forward.
 

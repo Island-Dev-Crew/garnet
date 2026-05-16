@@ -67,6 +67,7 @@ done
 | `garnet-convert/` | migration assistant | current implementation for stylized Rust/Ruby/Python/Go only; broader language and gated LLM-assist lanes are planned, not implemented |
 | `scripts/garnet_converter_status.py` | converter adoption inventory | current machine-readable truth for active converter lanes, planned languages, trust boundaries, and the future Garnet-aware assist contract |
 | `scripts/garnet_assist_context_pack.py` | Garnet-aware assist context pack | current machine-readable context bundle for future provider-backed converter assist; hashes current truth/spec/dogfood docs and preserves advisory-only gates without enabling LLM conversion |
+| `scripts/garnet_converter_assist_plan.py` | planned-language converter assist plan | current deterministic planner for a single source file in an active or planned converter language; inventories safe-mode, memory, CapCaps, actor/orchestration, and migration risks without executing source or enabling LLM conversion |
 | `scripts/garnet_mit_readiness_status.py` | MIT/productization objective inventory | current machine-readable truth that the tracked implementation plan is complete while notarization, mobile distribution, promo video, broad converter frontends, LLM assist, and proof/empirics remain open gates |
 | `scripts/garnet_studio_notarization_status.py` | macOS notarization preflight inventory | current machine-readable summary for notarization preflight bundles; preserves blocker/warning evidence, redacts credential values, and explicitly avoids claiming Apple submission or notarization |
 | `scripts/garnet_adoption_surface_status.py` | repo/site adoption truth inventory | current machine-readable status linking the public hook, verified use cases, active converter lanes, planned language lanes, LLM-assist boundaries, and productization gates |
@@ -175,7 +176,10 @@ highest-leverage next milestones are:
    deterministic local assist context pack now hashes the current truth, public
    README, Mini-Spec, conformance matrix, and dogfood ledger so a future
    provider-backed assist lane has a concrete context source before any model
-   or network dependency is introduced.
+   or network dependency is introduced. The deterministic converter assist-plan
+   reporter now takes an active or planned language plus one source file and
+   emits advisory migration risks, required gates, next steps, JSON/Markdown,
+   and a manifest while keeping planned-language conversion inactive.
    The MIT-readiness accounting domain also probes
    `scripts/garnet_mit_readiness_status.py`, so agents and public-site copy can
    report `87/87` tracked slices without turning that into a false claim that
@@ -467,6 +471,13 @@ those signed-cache probes with `skipped=0`. Current Desktop evidence:
 `/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-040414`
 (DMG install smoke; DMG SHA-256
 `e00d8e246fb10e339adf04c98b3f8654d841e8dd709a3ab213bd09cf7f1b34aa`).
+Phase 6Y adds deterministic converter assist planning for active/planned
+source languages without activating broad conversion: the new per-file reporter
+hashes TypeScript or other known source, inventories migration risks, writes
+JSON/Markdown plus a manifest, and is covered by three matrix probes. Current
+Desktop evidence:
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-042402`
+(source, `63/63`, `skipped=0`).
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.

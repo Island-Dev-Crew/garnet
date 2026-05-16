@@ -1426,6 +1426,18 @@ absent; source-checkout runs still execute them. Verified evidence:
 `/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-040414`
 (mounted-DMG copy-install smoke).
 
+Phase 6Y converter-assist planning pass: the planned Garnet-aware assist lane
+now has a deterministic per-file reporter. `scripts/garnet_converter_assist_plan.py`
+reads one active or planned source file, hashes it, inventories safe-mode,
+memory, CapCaps, actor/orchestration, and migration risks, and writes
+JSON/Markdown plus `MANIFEST.sha256`. The agentic dogfood matrix adds a
+TypeScript planned-language fixture and three `converter assist planning`
+probes, including manifest verification. This is advisory planning evidence,
+not active LLM conversion or a broad deterministic frontend. Verified source
+evidence:
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-042402`
+(`63/63`, `skipped=0`).
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.

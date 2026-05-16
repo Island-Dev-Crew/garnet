@@ -286,6 +286,24 @@ end
         fixtures / "score.go",
         "func score(x int) int { if x > 3 { return x * 2 }; return x }\n",
     )
+    paths["typescript_assist"] = write(
+        fixtures / "agent_router.ts",
+        """export class AgentRouter {
+  private cache = new Map<string, string>();
+
+  async route(endpoint: string): Promise<string> {
+    const prior = this.cache.get(endpoint);
+    if (prior) {
+      return prior;
+    }
+    const response = await fetch(endpoint);
+    const body = await response.text();
+    this.cache.set(endpoint, body);
+    return body;
+  }
+}
+""",
+    )
     notarization = fixtures / "notarization-preflight"
     notarization.mkdir(parents=True, exist_ok=True)
     write(
@@ -614,6 +632,50 @@ def run_probe(probe: Probe, work: Path) -> ProbeResult:
         completed.returncode,
         completed.stdout,
         completed.stderr,
+        int((time.monotonic() - start) * 1000),
+        work,
+    )
+
+
+def build_assist_plan_manifest_probe(work: Path, source: Path) -> ProbeResult:
+    output_dir = work / "assist-plan"
+    probe = Probe(
+        "report-assist-plan-output-manifest",
+        "converter assist planning",
+        "planned-language assist plan should write JSON, Markdown, and a verified manifest",
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "garnet_converter_assist_plan.py"),
+            "--language",
+            "typescript",
+            "--source",
+            str(source),
+            "--output-dir",
+            str(output_dir),
+        ],
+        True,
+        (
+            "Garnet Converter Assist Plan",
+            "garnet-converter-assist-plan.json: OK",
+            "garnet-converter-assist-plan.md: OK",
+        ),
+        security_domain="release-integrity",
+    )
+    start = time.monotonic()
+    completed = run(probe.command, work)
+    stdout = [completed.stdout]
+    stderr = [completed.stderr]
+    exit_code = completed.returncode
+    if completed.returncode == 0:
+        verify = run(["shasum", "-a", "256", "-c", "MANIFEST.sha256"], output_dir)
+        stdout.append(verify.stdout)
+        stderr.append(verify.stderr)
+        exit_code = verify.returncode
+    return classify_result(
+        probe,
+        exit_code,
+        "\n".join(stdout),
+        "\n".join(stderr),
         int((time.monotonic() - start) * 1000),
         work,
     )
@@ -1166,6 +1228,60 @@ def probe_set(
             ),
             security_domain="not-applicable",
         ),
+        Probe(
+            "report-assist-plan-typescript-current-truth",
+            "converter assist planning",
+            "planned TypeScript assist plan should be useful without activating conversion",
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "garnet_converter_assist_plan.py"),
+                "--language",
+                "typescript",
+                "--source",
+                str(fixtures["typescript_assist"]),
+                "--format",
+                "json",
+            ],
+            True,
+            (
+                "\"language_status\": \"planned\"",
+                "\"conversion_active\": false",
+                "\"provider_required\": false",
+                "\"network_required\": false",
+                "\"source_execution_allowed\": false",
+                "not active conversion today",
+            ),
+            security_domain="sandbox",
+        ),
+        Probe(
+            "report-assist-plan-typescript-risks",
+            "converter assist planning",
+            "planned TypeScript assist plan should inventory agent-relevant Garnet migration risks",
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "garnet_converter_assist_plan.py"),
+                "--language",
+                "typescript",
+                "--source",
+                str(fixtures["typescript_assist"]),
+                "--format",
+                "json",
+            ],
+            True,
+            (
+                "CapCaps/capability boundaries",
+                "actor/orchestration mappings",
+                "memory declarations",
+                "network or external capability boundary",
+                "actor or async orchestration mapping",
+                "memory declaration candidate",
+                "lineage per emitted node",
+                "@sandbox default",
+                "garnet check",
+            ),
+            security_domain="sandbox",
+        ),
+        lambda: build_assist_plan_manifest_probe(work, fixtures["typescript_assist"]),
         Probe(
             "report-mit-readiness-plan-complete",
             "MIT readiness accounting",
