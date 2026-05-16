@@ -162,9 +162,12 @@ def read_status() -> MitReadinessStatus:
         ObjectiveLane(
             id="llm_assist",
             label="LLM assist",
-            status=contract.status,
-            completion_percent=25.0,
-            evidence="Garnet-aware assist contract is machine-readable, but no provider-backed assist lane is active.",
+            status="active-partial",
+            completion_percent=35.0,
+            evidence=(
+                "Garnet-aware assist contract and deterministic local context pack are active, "
+                "but no provider-backed assist lane or LLM conversion is active."
+            ),
             blocked_by=["secure advisory implementation", "provider/runtime boundary", "dogfood gate"],
             deferred=contract.analysis_targets + contract.required_gates,
         ),

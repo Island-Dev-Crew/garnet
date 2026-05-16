@@ -89,6 +89,21 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertIn("report-mit-readiness-open-productization", ids)
         self.assertIn("report-mit-readiness-assist-and-frontends", ids)
 
+    def test_probe_inventory_includes_assist_context_pack(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            fixtures = matrix.prepare_fixtures(work)
+            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
+
+        ids = {probe.id for probe in concrete_probes}
+        domains = Counter(probe.domain for probe in concrete_probes)
+
+        self.assertEqual(domains["converter intelligent assist"], 3)
+        self.assertIn("report-assist-context-current-truth", ids)
+        self.assertIn("report-assist-context-required-gates", ids)
+        self.assertIn("report-assist-context-documents", ids)
+
     def test_probe_inventory_includes_web_pwa_offline_gate(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
@@ -178,6 +193,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertEqual(coverage["agent memory and analysis"]["status"], "adequate")
         self.assertEqual(coverage["agent recovery and diagnostics"]["status"], "adequate")
         self.assertEqual(coverage["MIT readiness accounting"]["status"], "adequate")
+        self.assertEqual(coverage["converter intelligent assist"]["status"], "adequate")
 
     def test_write_outputs_persists_domain_coverage(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

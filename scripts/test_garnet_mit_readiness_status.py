@@ -30,7 +30,8 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertEqual("blocked", lanes["developer_id_notarization"].status)
         self.assertEqual("planned", lanes["mobile_distribution"].status)
         self.assertEqual("planned", lanes["promo_video"].status)
-        self.assertEqual("planned-contract", lanes["llm_assist"].status)
+        self.assertEqual("active-partial", lanes["llm_assist"].status)
+        self.assertLess(lanes["llm_assist"].completion_percent, 100.0)
         self.assertEqual("planned", lanes["broad_converter_frontends"].status)
 
     def test_json_exposes_evidence_and_deferred_boundaries(self) -> None:
@@ -44,7 +45,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("tracked implementation plan is complete", data["current_truth"])
         self.assertIn("goal remains active", data["current_truth"])
         self.assertIn("APPLE_DEV_ID_APP", lanes["developer_id_notarization"]["blocked_by"])
-        self.assertIn("Garnet-aware assist contract", lanes["llm_assist"]["evidence"])
+        self.assertIn("deterministic local context pack", lanes["llm_assist"]["evidence"])
         self.assertIn("JavaScript", lanes["broad_converter_frontends"]["deferred"])
         self.assertIn("Android", lanes["mobile_distribution"]["deferred"])
 
