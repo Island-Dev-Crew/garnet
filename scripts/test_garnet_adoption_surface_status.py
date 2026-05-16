@@ -63,6 +63,7 @@ class GarnetAdoptionSurfaceStatusTests(unittest.TestCase):
 
         self.assertIn("Assist Plan", workbench["hook"])
         self.assertIn("Advisory Review", workbench["hook"])
+        self.assertIn("Advisory Handoff", workbench["hook"])
         self.assertIn("MIT objective pulse", workbench["hook"])
         self.assertIn("Codex Run", workbench["hook"])
         self.assertIn("dist/Garnet Studio.app", workbench["hook"])
@@ -112,6 +113,7 @@ class GarnetAdoptionSurfaceStatusTests(unittest.TestCase):
         self.assertIn("Assist Plan", site)
         self.assertIn("Advisory Bundle", site)
         self.assertIn("Advisory Review", site)
+        self.assertIn("Advisory Handoff", site)
         self.assertIn("Objective Pulse", site)
         self.assertIn("provider-neutral prompt pack", site)
         self.assertIn(

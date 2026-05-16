@@ -2368,6 +2368,73 @@ def probe_set(
             security_domain="filesystem",
         ),
         Probe(
+            "report-studio-advisory-handoff-action",
+            "converter advisory handoff UX",
+            "Garnet Studio should expose the final provider-neutral advisory handoff packet from the Converter panel",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['(\"Advisory Handoff\", model.runConverterAdvisoryHandoff)', "
+                    "'func runConverterAdvisoryHandoff()', 'advisoryHandoffPath']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio advisory handoff action present')\n"
+                ),
+            ],
+            True,
+            ("studio advisory handoff action present",),
+            security_domain="not-applicable",
+        ),
+        Probe(
+            "report-studio-advisory-handoff-runner",
+            "converter advisory handoff UX",
+            "Garnet Studio should run the handoff packet only after producing a no-source bundle and review",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['ConverterAdvisoryHandoffRunner', 'garnet_converter_advisory_handoff.py', "
+                    "'--bundle-dir', '--review-dir', '--output-dir', 'Handoff output:', "
+                    "'garnet-studio-advisory-handoff-', 'garnet-studio-advisory-review-', "
+                    "'garnet-studio-advisory-bundle-']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "assert '--allow-source-included' not in source\n"
+                    "assert '--include-source' not in source\n"
+                    "print('studio advisory handoff runner present')\n"
+                ),
+            ],
+            True,
+            ("studio advisory handoff runner present",),
+            security_domain="privacy",
+        ),
+        Probe(
+            "report-studio-advisory-handoff-desktop-evidence",
+            "converter advisory handoff UX",
+            "Garnet Studio should preserve handoff-packet evidence under Desktop dogfood storage",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['func advisoryHandoffDirectory', 'Desktop', 'dogfood', "
+                    "'garnet-studio-advisory-handoff-', 'Handoff output:']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio advisory handoff desktop evidence present')\n"
+                ),
+            ],
+            True,
+            ("studio advisory handoff desktop evidence present",),
+            security_domain="filesystem",
+        ),
+        Probe(
             "report-studio-objective-pulse-action",
             "MIT objective pulse UX",
             "Garnet Studio should expose the repo-native MIT/productization objective pulse from the Release panel",
