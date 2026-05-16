@@ -304,6 +304,64 @@ end
 }
 """,
     )
+    paths["javascript_assist"] = write(
+        fixtures / "browser_agent.js",
+        """export class BrowserAgent {
+  constructor() {
+    this.cache = new Map();
+  }
+
+  async inspect(endpoint) {
+    const response = await fetch(endpoint);
+    const text = await response.text();
+    this.cache.set(endpoint, text);
+    return text;
+  }
+}
+""",
+    )
+    paths["swift_assist"] = write(
+        fixtures / "StudioAgent.swift",
+        """actor StudioAgent {
+  private var cache: [String: String] = [:]
+
+  func load(endpoint: String) async throws -> String {
+    let url = URL(string: endpoint)!
+    let (data, _) = try await URLSession.shared.data(from: url)
+    let body = String(decoding: data, as: UTF8.self)
+    cache[endpoint] = body
+    return body
+  }
+}
+""",
+    )
+    paths["java_assist"] = write(
+        fixtures / "AgentGateway.java",
+        """import java.net.Socket;
+import java.util.concurrent.CompletableFuture;
+
+interface AgentGateway {
+  CompletableFuture<String> route(Socket socket);
+}
+""",
+    )
+    paths["cpp_assist"] = write(
+        fixtures / "native_agent.cpp",
+        """#include <cstdlib>
+#include <thread>
+
+struct NativeAgent {
+  int* memory;
+
+  void start() {
+    memory = static_cast<int*>(malloc(sizeof(int)));
+    std::thread worker([this]() { *memory = 42; });
+    worker.join();
+    free(memory);
+  }
+};
+""",
+    )
     notarization = fixtures / "notarization-preflight"
     notarization.mkdir(parents=True, exist_ok=True)
     write(
@@ -1294,6 +1352,110 @@ def probe_set(
                 "lineage per emitted node",
                 "@sandbox default",
                 "garnet check",
+            ),
+            security_domain="sandbox",
+        ),
+        Probe(
+            "report-assist-plan-javascript-risks",
+            "converter assist planning",
+            "planned JavaScript assist plan should preserve advisory-only web agent risk evidence",
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "garnet_converter_assist_plan.py"),
+                "--language",
+                "javascript",
+                "--source",
+                str(fixtures["javascript_assist"]),
+                "--format",
+                "json",
+            ],
+            True,
+            (
+                "\"language\": \"JavaScript\"",
+                "\"language_status\": \"planned\"",
+                "\"conversion_active\": false",
+                "network or external capability boundary",
+                "actor or async orchestration mapping",
+                "memory declaration candidate",
+                "human audit before unquarantine",
+            ),
+            security_domain="sandbox",
+        ),
+        Probe(
+            "report-assist-plan-swift-risks",
+            "converter assist planning",
+            "planned Swift assist plan should preserve advisory-only Apple app migration evidence",
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "garnet_converter_assist_plan.py"),
+                "--language",
+                "swift",
+                "--source",
+                str(fixtures["swift_assist"]),
+                "--format",
+                "json",
+            ],
+            True,
+            (
+                "\"language\": \"Swift\"",
+                "\"language_status\": \"planned\"",
+                "\"conversion_active\": false",
+                "actor or async orchestration mapping",
+                "memory declaration candidate",
+                "lineage per emitted node",
+                "@sandbox default",
+            ),
+            security_domain="sandbox",
+        ),
+        Probe(
+            "report-assist-plan-java-risks",
+            "converter assist planning",
+            "planned Java assist plan should preserve advisory-only JVM service migration evidence",
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "garnet_converter_assist_plan.py"),
+                "--language",
+                "java",
+                "--source",
+                str(fixtures["java_assist"]),
+                "--format",
+                "json",
+            ],
+            True,
+            (
+                "\"language\": \"Java\"",
+                "\"language_status\": \"planned\"",
+                "\"conversion_active\": false",
+                "network or external capability boundary",
+                "actor or async orchestration mapping",
+                "type and ownership modeling",
+                "garnet check",
+            ),
+            security_domain="sandbox",
+        ),
+        Probe(
+            "report-assist-plan-cpp-risks",
+            "converter assist planning",
+            "planned C++ assist plan should preserve advisory-only native memory migration evidence",
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "garnet_converter_assist_plan.py"),
+                "--language",
+                "cpp",
+                "--source",
+                str(fixtures["cpp_assist"]),
+                "--format",
+                "json",
+            ],
+            True,
+            (
+                "\"language\": \"C++\"",
+                "\"language_status\": \"planned\"",
+                "\"conversion_active\": false",
+                "unsafe or native memory boundary",
+                "actor or async orchestration mapping",
+                "safe-mode ownership candidates",
+                "migrate_todo evidence",
             ),
             security_domain="sandbox",
         ),

@@ -540,6 +540,13 @@ unchecked safe-output claims while requiring lineage, `@sandbox`, `garnet
 check`, dogfood bundle, and human audit gates. The refreshed agentic dogfood
 matrix passes `64/64` with `skipped=0` in Desktop bundle
 `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-054543`.
+Phase 6AF broadens planned-language assist-plan dogfood without broadening
+conversion: JavaScript, Swift, Java, and C++ fixtures now exercise web-agent,
+Apple-app, JVM-service, and native-memory migration risks through the same
+advisory reporter. Java `CompletableFuture`/executor-style orchestration terms
+are recognized as actor/orchestration risks, and the source-checkout matrix
+passes `68/68` with `skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-055816`.
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.

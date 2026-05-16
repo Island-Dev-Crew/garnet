@@ -115,7 +115,21 @@ def _risk_inventory(text: str) -> list[MigrationRisk]:
         (
             "actor or async orchestration mapping",
             "actor/orchestration mappings",
-            ("async", "await", "promise", "thread", "spawn", "task", "goroutine", "channel"),
+            (
+                "async",
+                "await",
+                "promise",
+                "completablefuture",
+                "executor",
+                "dispatchqueue",
+                "actor",
+                "thread",
+                "std::thread",
+                "spawn",
+                "task",
+                "goroutine",
+                "channel",
+            ),
             "Map concurrent control flow to Garnet orchestration constructs before emitting runnable code.",
         ),
         (

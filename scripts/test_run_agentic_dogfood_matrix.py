@@ -131,9 +131,13 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         ids = {result.probe.id for result in results}
         domains = Counter(result.probe.domain for result in results)
 
-        self.assertEqual(domains["converter assist planning"], 3)
+        self.assertEqual(domains["converter assist planning"], 7)
         self.assertIn("report-assist-plan-typescript-current-truth", ids)
         self.assertIn("report-assist-plan-typescript-risks", ids)
+        self.assertIn("report-assist-plan-javascript-risks", ids)
+        self.assertIn("report-assist-plan-swift-risks", ids)
+        self.assertIn("report-assist-plan-java-risks", ids)
+        self.assertIn("report-assist-plan-cpp-risks", ids)
         self.assertIn("report-assist-plan-output-manifest", ids)
 
     def test_probe_inventory_includes_web_pwa_offline_gate(self) -> None:
