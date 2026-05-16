@@ -2115,6 +2115,69 @@ def probe_set(
             security_domain="filesystem",
         ),
         Probe(
+            "report-studio-objective-pulse-action",
+            "MIT objective pulse UX",
+            "Garnet Studio should expose the repo-native MIT/productization objective pulse from the Release panel",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['Button(\"Objective Pulse\", action: model.runMitReadinessPulse)', "
+                    "'func runMitReadinessPulse()', 'mitReadinessPath']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio objective pulse action present')\n"
+                ),
+            ],
+            True,
+            ("studio objective pulse action present",),
+            security_domain="not-applicable",
+        ),
+        Probe(
+            "report-studio-objective-pulse-runner",
+            "MIT objective pulse UX",
+            "Garnet Studio should run the packaged/source MIT readiness reporter instead of hardcoding progress as final truth",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['MitReadinessRunner', 'MitReadinessScriptLocator', "
+                    "'garnet_mit_readiness_status.py', '--format', 'markdown']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio objective pulse runner present')\n"
+                ),
+            ],
+            True,
+            ("studio objective pulse runner present",),
+            security_domain="not-applicable",
+        ),
+        Probe(
+            "report-studio-objective-pulse-truth-copy",
+            "MIT objective pulse UX",
+            "Garnet Studio should distinguish tracked-slice completion from overall MIT/productization completion",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['Tracked plan', '87/87 slices complete', 'MIT objective', "
+                    "'repo-native percentage', 'provider-backed LLM conversion']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio objective pulse truth copy present')\n"
+                ),
+            ],
+            True,
+            ("studio objective pulse truth copy present",),
+            security_domain="not-applicable",
+        ),
+        Probe(
             "report-mit-readiness-plan-complete",
             "MIT readiness accounting",
             "objective status should separate completed tracked slices from broader productization completion",

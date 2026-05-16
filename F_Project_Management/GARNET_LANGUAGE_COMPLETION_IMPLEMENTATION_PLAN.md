@@ -2002,6 +2002,21 @@ The packaged app/DMG smoke passes in
 DMG SHA-256
 `68babfa7974a4b31173651eee27f0e5f6844637486478c42802b53bd34a80863`.
 
+Phase 6AU Studio objective pulse pass: Garnet Studio now exposes an
+`Objective Pulse` action in the Release panel. The action runs the repo-native
+`scripts/garnet_mit_readiness_status.py --format markdown` reporter from
+packaged resources, `GARNET_REPO_ROOT`, or the source checkout so the app can
+show the overall MIT/productization percentage separately from the completed
+tracked-slice ledger. The agentic matrix adds a three-probe `MIT objective
+pulse UX` domain and passes `100/100` with `skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-102355`.
+Refreshed web/PWA evidence lives at
+`/Users/idc2.0/Desktop/dogfood/web-pwa-readiness-20260516-102355`.
+The packaged app/DMG smoke passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-102422` with
+DMG SHA-256
+`88c1cbe96fe3bc3fa38d44fcf574970400e7739156bb569106790d4e801a22b6`.
+
 Phase 6AG promo-video readiness pass: `scripts/garnet_promo_video_status.py`
 now records the requested 30-second Garnet promo as a planned-contract lane
 with storyboard beats, HyperFrames/Remotion composition, rendered-artifact,

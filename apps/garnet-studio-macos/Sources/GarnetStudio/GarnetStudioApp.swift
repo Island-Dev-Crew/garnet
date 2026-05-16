@@ -202,6 +202,11 @@ struct ConverterAdvisoryReviewScriptLocation: Equatable {
     let repoRootURL: URL
 }
 
+struct MitReadinessScriptLocation: Equatable {
+    let scriptURL: URL
+    let repoRootURL: URL
+}
+
 struct ConverterAssistPlanScriptLocator {
     let bundleResourceURL: URL?
     let environmentRepoRoot: String?
@@ -427,6 +432,81 @@ struct ConverterAdvisoryReviewScriptLocator {
     }
 }
 
+struct MitReadinessScriptLocator {
+    let bundleResourceURL: URL?
+    let environmentRepoRoot: String?
+    let currentDirectoryURL: URL
+
+    init(
+        bundleResourceURL: URL? = Bundle.main.resourceURL,
+        environmentRepoRoot: String? = ProcessInfo.processInfo.environment["GARNET_REPO_ROOT"],
+        currentDirectoryURL: URL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+    ) {
+        self.bundleResourceURL = bundleResourceURL
+        self.environmentRepoRoot = environmentRepoRoot
+        self.currentDirectoryURL = currentDirectoryURL
+    }
+
+    func candidateLocations() -> [MitReadinessScriptLocation] {
+        var locations: [MitReadinessScriptLocation] = []
+
+        if let environmentRepoRoot, !environmentRepoRoot.isEmpty {
+            let root = URL(fileURLWithPath: environmentRepoRoot, isDirectory: true)
+            locations.append(location(forRepoRoot: root))
+        }
+
+        if let bundleResourceURL {
+            let script = bundleResourceURL
+                .appendingPathComponent("scripts", isDirectory: true)
+                .appendingPathComponent("garnet_mit_readiness_status.py")
+            locations.append(MitReadinessScriptLocation(scriptURL: script, repoRootURL: bundleResourceURL))
+        }
+
+        for root in ancestorRoots(from: currentDirectoryURL) {
+            locations.append(location(forRepoRoot: root))
+        }
+
+        var seen: Set<String> = []
+        return locations.filter { location in
+            let key = location.scriptURL.path
+            if seen.contains(key) {
+                return false
+            }
+            seen.insert(key)
+            return true
+        }
+    }
+
+    func locate(fileManager: FileManager = .default) -> MitReadinessScriptLocation? {
+        candidateLocations().first { location in
+            fileManager.fileExists(atPath: location.scriptURL.path)
+        }
+    }
+
+    private func location(forRepoRoot root: URL) -> MitReadinessScriptLocation {
+        MitReadinessScriptLocation(
+            scriptURL: root
+                .appendingPathComponent("scripts", isDirectory: true)
+                .appendingPathComponent("garnet_mit_readiness_status.py"),
+            repoRootURL: root
+        )
+    }
+
+    private func ancestorRoots(from start: URL) -> [URL] {
+        var roots: [URL] = []
+        var cursor = start.standardizedFileURL
+        while true {
+            roots.append(cursor)
+            let parent = cursor.deletingLastPathComponent()
+            if parent.path == cursor.path {
+                break
+            }
+            cursor = parent
+        }
+        return roots
+    }
+}
+
 struct AgenticDogfoodScriptLocator {
     let bundleResourceURL: URL?
     let environmentRepoRoot: String?
@@ -632,6 +712,43 @@ struct ConverterAdvisoryReviewRunner {
     }
 }
 
+struct MitReadinessRunner {
+    let location: MitReadinessScriptLocation
+
+    func commandArguments() -> [String] {
+        [
+            "env",
+            "PYTHONDONTWRITEBYTECODE=1",
+            "python3",
+            location.scriptURL.path,
+            "--format",
+            "markdown",
+        ]
+    }
+
+    func run() -> GarnetCommandResult {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = commandArguments()
+        process.currentDirectoryURL = location.repoRootURL
+
+        let outputPipe = Pipe()
+        process.standardOutput = outputPipe
+        process.standardError = outputPipe
+
+        let command = (["/usr/bin/env"] + (process.arguments ?? [])).joined(separator: " ")
+        do {
+            try process.run()
+            process.waitUntilExit()
+            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: data, encoding: .utf8) ?? ""
+            return GarnetCommandResult(command: command, exitCode: process.terminationStatus, output: output)
+        } catch {
+            return GarnetCommandResult(command: command, exitCode: 127, output: error.localizedDescription)
+        }
+    }
+}
+
 struct GarnetStudioEvidenceDirectory {
     let homeDirectoryURL: URL
 
@@ -782,30 +899,35 @@ final class GarnetStudioViewModel: ObservableObject {
     @Published var assistPlanPath: String?
     @Published var advisoryBundlePath: String?
     @Published var advisoryReviewPath: String?
+    @Published var mitReadinessPath: String?
 
     private let locator: GarnetCLILocator
     private let matrixLocator: AgenticDogfoodScriptLocator
     private let assistPlanLocator: ConverterAssistPlanScriptLocator
     private let advisoryBundleLocator: ConverterAdvisoryBundleScriptLocator
     private let advisoryReviewLocator: ConverterAdvisoryReviewScriptLocator
+    private let mitReadinessLocator: MitReadinessScriptLocator
 
     init(
         locator: GarnetCLILocator = GarnetCLILocator(),
         matrixLocator: AgenticDogfoodScriptLocator = AgenticDogfoodScriptLocator(),
         assistPlanLocator: ConverterAssistPlanScriptLocator = ConverterAssistPlanScriptLocator(),
         advisoryBundleLocator: ConverterAdvisoryBundleScriptLocator = ConverterAdvisoryBundleScriptLocator(),
-        advisoryReviewLocator: ConverterAdvisoryReviewScriptLocator = ConverterAdvisoryReviewScriptLocator()
+        advisoryReviewLocator: ConverterAdvisoryReviewScriptLocator = ConverterAdvisoryReviewScriptLocator(),
+        mitReadinessLocator: MitReadinessScriptLocator = MitReadinessScriptLocator()
     ) {
         self.locator = locator
         self.matrixLocator = matrixLocator
         self.assistPlanLocator = assistPlanLocator
         self.advisoryBundleLocator = advisoryBundleLocator
         self.advisoryReviewLocator = advisoryReviewLocator
+        self.mitReadinessLocator = mitReadinessLocator
         self.cliPath = locator.locate()
         self.agenticMatrixPath = matrixLocator.locate()?.scriptURL.path
         self.assistPlanPath = assistPlanLocator.locate()?.scriptURL.path
         self.advisoryBundlePath = advisoryBundleLocator.locate()?.scriptURL.path
         self.advisoryReviewPath = advisoryReviewLocator.locate()?.scriptURL.path
+        self.mitReadinessPath = mitReadinessLocator.locate()?.scriptURL.path
     }
 
     func select(sample: GarnetSample) {
@@ -979,6 +1101,18 @@ final class GarnetStudioViewModel: ObservableObject {
         ).run()
         apply(result: result)
         agenticMatrixPath = location.scriptURL.path
+    }
+
+    func runMitReadinessPulse() {
+        guard let location = mitReadinessLocator.locate() else {
+            output = "No MIT/productization readiness reporter found. Open Garnet Studio from a source checkout or use the packaged app resources."
+            lastStatus = .failure
+            return
+        }
+        output = "Loading Garnet MIT/productization objective pulse..."
+        let result = MitReadinessRunner(location: location).run()
+        apply(result: result)
+        mitReadinessPath = location.scriptURL.path
     }
 
     private func run(arguments: [String]) {
@@ -1190,9 +1324,12 @@ struct GarnetStudioRootView: View {
             VStack(alignment: .leading, spacing: 16) {
                 Panel(title: "Release Evidence") {
                     ReleaseLine(label: "Tracked plan", value: "87/87 slices complete on current main")
+                    ReleaseLine(label: "MIT objective", value: "Run Objective Pulse for the current repo-native percentage")
                     ReleaseLine(label: "Org release", value: "v0.4.2 published with deb, rpm, macOS tarball, and SHA256SUMS")
                     ReleaseLine(label: "macOS app", value: "Local .app/.dmg packaging active in this slice")
-                    ReleaseLine(label: "Deferred", value: "Developer ID signing, notarization, App Store, iOS, Android, and web/PWA")
+                    ReleaseLine(label: "Deferred", value: "Developer ID signing, notarization, App Store, iOS, Android, broad converter frontends, and provider-backed LLM conversion")
+                    Button("Objective Pulse", action: model.runMitReadinessPulse)
+                        .buttonStyle(.borderedProminent)
                 }
                 Panel(title: "Install Philosophy") {
                     Text("Garnet should be approachable in the same spirit as modern agent workbench apps: download, open, see what is possible, and run a real tool immediately. This app keeps that promise grounded by launching the actual Garnet CLI.")

@@ -61,11 +61,14 @@ class GarnetAdoptionSurfaceStatusTests(unittest.TestCase):
         workbench = next(item for item in data["verified_use_cases"] if item["id"] == "macos-workbench")
 
         self.assertIn("Assist Plan", workbench["hook"])
+        self.assertIn("Advisory Review", workbench["hook"])
+        self.assertIn("MIT objective pulse", workbench["hook"])
         self.assertIn("Codex Run", workbench["hook"])
         self.assertIn("dist/Garnet Studio.app", workbench["hook"])
         self.assertIn("script/build_and_run.sh", workbench["evidence"])
         self.assertIn(".codex/environments/environment.toml", workbench["evidence"])
         self.assertIn("scripts/test_garnet_studio_run_button.py", workbench["evidence"])
+        self.assertIn("scripts/garnet_mit_readiness_status.py", workbench["evidence"])
 
     def test_json_keeps_productization_gates_open(self) -> None:
         gates = set(asdict(status_script.read_surface())["open_gates"])
@@ -107,6 +110,8 @@ class GarnetAdoptionSurfaceStatusTests(unittest.TestCase):
         self.assertIn("dist/Garnet Studio.app", site)
         self.assertIn("Assist Plan", site)
         self.assertIn("Advisory Bundle", site)
+        self.assertIn("Advisory Review", site)
+        self.assertIn("Objective Pulse", site)
         self.assertIn("provider-neutral prompt pack", site)
         self.assertIn("feasibility + context + prompt + assist plan + advisory bundle + review gate active", site)
 
