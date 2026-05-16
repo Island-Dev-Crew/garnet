@@ -1808,8 +1808,15 @@ existing release_root path, with safe-affine allocations preserved as
 non-collectible. Below-threshold decrements correctly buffer without
 collection. The behavior is exercised across all four `MemoryKind` variants.
 This is fixture-level observable evidence promoted into the public allocator
-test surface. Production allocator-integrated ARC and runtime finalizer
-invocation remain explicitly deferred for the next slice.
+test surface.
+
+Phase 6S sibling partial pass: the concrete allocator now accepts an
+allocator-owned finalizer log. Plain `release_root`, `collect_roots`, and
+`remove_edge` calls record deterministic finalization order without requiring
+callers to pass per-call callbacks, including delayed callback evidence after a
+below-threshold root release is flushed. This is allocator-boundary
+runtime-finalizer evidence; production allocator-integrated ARC and user
+payload destructor semantics remain explicitly deferred.
 
 ## Milestone 7: Release, Proof, Native Backend, And Empirical Evidence
 

@@ -423,7 +423,13 @@ reports trial candidates, finalization order, collected nodes, and
 `root_stats` updates at the wrapper layer across all four `MemoryKind`s,
 while safe-affine allocations remain excluded from ARC cycle collection. This
 is sibling partial-pass evidence, not production ARC.
-Production allocator-integrated ARC, runtime finalizer invocation, broad
+Phase 6S adds allocator-owned finalizer logging to the same concrete allocator:
+plain `release_root`, `collect_roots`, and `remove_edge` calls now record
+deterministic finalization order through a configured finalizer sink without
+requiring the caller to pass a callback. This is runtime-finalizer invocation
+evidence at the allocator boundary, not user-payload destructor semantics or
+full production ARC.
+Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.
 

@@ -78,6 +78,49 @@ impl AllocRootStats {
     }
 }
 
+/// Allocator-owned finalization evidence for collected cycle nodes.
+///
+/// This is a deterministic local sink that lets production-facing allocator
+/// calls prove they invoked finalization without forcing each caller to pass a
+/// one-off callback. It records cycle node ids, not user payload drops.
+#[derive(Debug, Default)]
+pub struct CycleFinalizerLog {
+    finalized: Mutex<Vec<CycleNodeId>>,
+}
+
+impl CycleFinalizerLog {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn record(&self, id: CycleNodeId) {
+        self.finalized
+            .lock()
+            .expect("cycle finalizer log poisoned")
+            .push(id);
+    }
+
+    pub fn record_all(&self, ids: impl IntoIterator<Item = CycleNodeId>) {
+        let mut finalized = self.finalized.lock().expect("cycle finalizer log poisoned");
+        finalized.extend(ids);
+    }
+
+    pub fn snapshot(&self) -> Vec<CycleNodeId> {
+        self.finalized
+            .lock()
+            .expect("cycle finalizer log poisoned")
+            .clone()
+    }
+
+    pub fn drain(&self) -> Vec<CycleNodeId> {
+        self.finalized
+            .lock()
+            .expect("cycle finalizer log poisoned")
+            .drain(..)
+            .collect()
+    }
+}
+
 pub trait KindAllocator: Send + Sync {
     fn kind(&self) -> MemoryKind;
     fn reserve(&self, request: AllocRequest);
@@ -199,6 +242,7 @@ pub struct CycleAwareKindAllocator {
     stats: Mutex<AllocStats>,
     root_stats: Mutex<AllocRootStats>,
     cycle_fixture: Mutex<CycleAllocatorFixture>,
+    finalizer: Option<Arc<CycleFinalizerLog>>,
 }
 
 impl CycleAwareKindAllocator {
@@ -211,11 +255,37 @@ impl CycleAwareKindAllocator {
                 CycleScan::Kind(kind),
                 threshold,
             )),
+            finalizer: None,
+        }
+    }
+
+    pub fn with_finalizer(
+        kind: MemoryKind,
+        threshold: usize,
+        finalizer: Arc<CycleFinalizerLog>,
+    ) -> Self {
+        Self {
+            kind,
+            stats: Mutex::new(AllocStats::new(kind)),
+            root_stats: Mutex::new(AllocRootStats::new(kind)),
+            cycle_fixture: Mutex::new(CycleAllocatorFixture::with_threshold(
+                CycleScan::Kind(kind),
+                threshold,
+            )),
+            finalizer: Some(finalizer),
         }
     }
 
     pub fn shared(kind: MemoryKind, threshold: usize) -> Arc<dyn KindAllocator> {
         Arc::new(Self::new(kind, threshold))
+    }
+
+    pub fn shared_with_finalizer(
+        kind: MemoryKind,
+        threshold: usize,
+        finalizer: Arc<CycleFinalizerLog>,
+    ) -> Arc<dyn KindAllocator> {
+        Arc::new(Self::with_finalizer(kind, threshold, finalizer))
     }
 
     pub fn allocate_arc(&self, label: impl Into<String>) -> CycleNodeId {
@@ -334,6 +404,10 @@ impl CycleAwareKindAllocator {
     }
 
     fn record_collection(&self, buffered_roots: usize, report: &Option<CycleCollectReport>) {
+        if let (Some(finalizer), Some(report)) = (&self.finalizer, report) {
+            finalizer.record_all(report.finalization_order.iter().copied());
+        }
+
         let mut stats = self
             .root_stats
             .lock()

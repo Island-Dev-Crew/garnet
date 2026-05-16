@@ -3,6 +3,7 @@
 //! invariants documented in `GARNET_Memory_Manager_Architecture.md`.
 
 use garnet_memory::*;
+use std::sync::Arc;
 
 // ════════════════════════════════════════════════════════════════════
 // WorkingStore — arena semantics
@@ -299,6 +300,78 @@ fn cycle_aware_kind_allocator_trait_surface_flushes_buffered_roots_with_callback
     assert!(!concrete.contains(cycle_a));
     assert!(!concrete.contains(cycle_b));
     assert!(!concrete.contains(root));
+}
+
+#[test]
+fn cycle_aware_allocator_owned_finalizer_runs_on_plain_release_root() {
+    let finalizer = Arc::new(CycleFinalizerLog::new());
+    let alloc =
+        CycleAwareKindAllocator::with_finalizer(MemoryKind::Working, 1, Arc::clone(&finalizer));
+
+    let root = alloc.retain_root("root").unwrap();
+    let child = alloc.allocate_arc("child");
+
+    alloc.add_edge(root, child).unwrap();
+    alloc.add_edge(child, root).unwrap();
+
+    let report = alloc
+        .release_root(root)
+        .expect("plain release_root should collect and run allocator finalizer");
+
+    assert_eq!(finalizer.snapshot(), report.finalization_order);
+    assert_eq!(finalizer.snapshot().len(), 2);
+    assert_eq!(alloc.root_stats().collected_roots, 2);
+}
+
+#[test]
+fn cycle_aware_allocator_owned_finalizer_waits_until_buffered_collect() {
+    let finalizer = Arc::new(CycleFinalizerLog::new());
+    let concrete =
+        CycleAwareKindAllocator::with_finalizer(MemoryKind::Working, 4, Arc::clone(&finalizer));
+    let alloc: &dyn KindAllocator = &concrete;
+
+    let root = concrete.retain_root("root").unwrap();
+    let child = concrete.allocate_arc("child");
+
+    concrete.add_edge(root, child).unwrap();
+    concrete.add_edge(child, root).unwrap();
+
+    assert!(alloc.release_root(root).is_none());
+    assert!(finalizer.snapshot().is_empty());
+
+    let report = alloc
+        .collect_roots()
+        .expect("collect_roots should flush buffered root and run finalizer");
+
+    assert_eq!(finalizer.snapshot(), report.finalization_order);
+    assert_eq!(finalizer.snapshot().len(), 2);
+}
+
+#[test]
+fn cycle_aware_allocator_owned_finalizer_runs_on_plain_edge_decrement() {
+    let finalizer = Arc::new(CycleFinalizerLog::new());
+    let concrete =
+        CycleAwareKindAllocator::with_finalizer(MemoryKind::Working, 1, Arc::clone(&finalizer));
+    let alloc: &dyn KindAllocator = &concrete;
+
+    let root = concrete.retain_root("root").unwrap();
+    let cycle_a = concrete.allocate_arc("cycle_a");
+    let cycle_b = concrete.allocate_arc("cycle_b");
+
+    concrete.add_edge(root, cycle_a).unwrap();
+    concrete.add_edge(cycle_a, cycle_b).unwrap();
+    concrete.add_edge(cycle_b, cycle_a).unwrap();
+
+    let report = alloc
+        .remove_edge(root, cycle_a)
+        .expect("edge removal should not error")
+        .expect("plain edge decrement should collect and run allocator finalizer");
+
+    assert_eq!(finalizer.snapshot(), report.finalization_order);
+    assert_eq!(finalizer.snapshot().len(), 2);
+    assert!(!concrete.contains(cycle_a));
+    assert!(!concrete.contains(cycle_b));
+    assert!(concrete.contains(root));
 }
 
 #[test]
