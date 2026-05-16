@@ -123,7 +123,9 @@ highest-leverage next milestones are:
    falsifiable workflow, with macOS CI preserving a downloadable evidence
    artifact for readiness-sensitive PRs. The matrix now records per-domain
    coverage adequacy separately from pass/fail readiness so under-tested
-   product surfaces remain visible even when every current probe passes.
+   product surfaces remain visible even when every current probe passes; the
+   web/PWA productization domain now has offline-handler and full local-smoke
+   probes while real-browser offline validation remains a separate gate.
 7. **Formal/empirical proof:** keep Paper V theorem sketches and Paper VI
    experiments separate from implemented guarantees until tests or proofs land.
 

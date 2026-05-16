@@ -429,9 +429,10 @@ def app_workbench_probes(app_executable: Path | None) -> list[Probe]:
 def web_pwa_probes(work: Path) -> list[Probe]:
     docs_dir = ROOT / "docs"
     offline_smoke = ROOT / "scripts" / "smoke_garnet_web_pwa_offline.mjs"
+    local_smoke = ROOT / "scripts" / "smoke_garnet_web_pwa.sh"
     if not (docs_dir / "service-worker.js").is_file() or not offline_smoke.is_file():
         return []
-    return [
+    probes = [
         Probe(
             "smoke-web-pwa-offline-handler",
             "web/PWA productization",
@@ -450,6 +451,25 @@ def web_pwa_probes(work: Path) -> list[Probe]:
             notes="Runs when the current root carries docs/PWA assets; source checkouts and packaged apps both stage them.",
         )
     ]
+    if local_smoke.is_file():
+        probes.append(
+            Probe(
+                "smoke-web-pwa-local-readiness",
+                "web/PWA productization",
+                "docs PWA local smoke should validate manifest, cache inventory, offline behavior, and local HTTP fetches",
+                [
+                    str(local_smoke),
+                    "--strict",
+                    "--output-dir",
+                    str(work / "web-pwa-local-readiness"),
+                ],
+                True,
+                ("Garnet Web/PWA readiness smoke: blockers=0 warnings=0",),
+                security_domain="filesystem-localhost",
+                notes="Uses only the checkout docs directory, Node offline handler, and a localhost static server.",
+            )
+        )
+    return probes
 
 
 def probe_set(
