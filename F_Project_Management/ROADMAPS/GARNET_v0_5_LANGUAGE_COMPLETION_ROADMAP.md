@@ -1725,6 +1725,18 @@ local web/PWA smoke passes in
 `/Users/idc2.0/Desktop/dogfood/web-pwa-readiness-20260516-124308`; and
 `swift test --package-path apps/garnet-studio-macos` passes `26/26`.
 
+Phase 6BD MIT deck-outline pass: the presentation lane now has a deterministic
+repo-native slide outline before any generated deck is treated as final.
+`scripts/garnet_mit_deck_outline.py` emits JSON/Markdown for an 8-slide MIT
+reviewer sequence built from the demo route, adoption surface, current
+readiness percentage, blocked gates, and evidence notes. The source-checkout
+agentic matrix adds a three-probe `MIT deck outline` domain, and packaged
+Studio resource tests require the reporter to be copied into DMG resources so
+packaged matrix smoke can exercise the same surface. This is deck planning
+evidence only; final MIT/productization acceptance, Developer ID notarization,
+Windows/Linux runtime proof, provider-backed LLM conversion, native backend
+lowering, and mobile distribution remain separate gates.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.
