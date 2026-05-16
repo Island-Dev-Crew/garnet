@@ -73,12 +73,13 @@ def ensure_garnet_bin(explicit: str | None) -> Path:
         return path
 
     candidate = ROOT / "target" / "debug" / "garnet"
+    build = run(["cargo", "build", "-p", "garnet-cli"], ROOT, timeout=180)
+    if build.returncode != 0:
+        sys.stderr.write(build.stdout)
+        sys.stderr.write(build.stderr)
+        raise SystemExit("failed to build garnet-cli")
     if not os.access(candidate, os.X_OK):
-        build = run(["cargo", "build", "-p", "garnet-cli"], ROOT, timeout=180)
-        if build.returncode != 0:
-            sys.stderr.write(build.stdout)
-            sys.stderr.write(build.stderr)
-            raise SystemExit("failed to build garnet-cli")
+        raise SystemExit(f"garnet binary was not produced: {candidate}")
     return candidate
 
 
@@ -889,7 +890,11 @@ def main(argv: list[str] | None = None) -> int:
     if app_executable is not None and not os.access(app_executable, os.X_OK):
         raise SystemExit(f"Garnet Studio executable is not executable: {app_executable}")
     stamp = time.strftime("%Y%m%d-%H%M%S")
-    work = Path(args.output_dir) if args.output_dir else Path(tempfile.gettempdir()) / f"garnet-agentic-dogfood-{stamp}"
+    work = (
+        Path(args.output_dir).expanduser().resolve()
+        if args.output_dir
+        else Path(tempfile.gettempdir()) / f"garnet-agentic-dogfood-{stamp}"
+    )
     work.mkdir(parents=True, exist_ok=True)
     fixtures = prepare_fixtures(work)
 
