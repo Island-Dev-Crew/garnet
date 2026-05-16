@@ -2709,6 +2709,69 @@ def probe_set(
             security_domain="filesystem",
         ),
         Probe(
+            "report-studio-mit-deck-outline-action",
+            "MIT deck outline UX",
+            "Garnet Studio should expose the repo-native MIT deck outline from the Release panel",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['Button(\"Deck Outline\", action: model.runMitDeckOutline)', "
+                    "'func runMitDeckOutline()', 'mitDeckOutlinePath']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio MIT deck outline action present')\n"
+                ),
+            ],
+            True,
+            ("studio MIT deck outline action present",),
+            security_domain="not-applicable",
+        ),
+        Probe(
+            "report-studio-mit-deck-outline-runner",
+            "MIT deck outline UX",
+            "Garnet Studio should write manifested MIT deck-outline evidence instead of only rendering transient copy",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['MitDeckOutlineRunner', 'MitDeckOutlineScriptLocator', "
+                    "'garnet_mit_deck_outline.py', '--output-dir', '--format', 'markdown']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio MIT deck outline runner present')\n"
+                ),
+            ],
+            True,
+            ("studio MIT deck outline runner present",),
+            security_domain="not-applicable",
+        ),
+        Probe(
+            "report-studio-mit-deck-outline-desktop-evidence",
+            "MIT deck outline UX",
+            "Garnet Studio should preserve MIT deck-outline output under Desktop dogfood storage",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['func mitDeckOutlineDirectory', 'Desktop', 'dogfood', "
+                    "'garnet-studio-mit-deck-outline-', 'Deck outline output:']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio MIT deck outline desktop evidence present')\n"
+                ),
+            ],
+            True,
+            ("studio MIT deck outline desktop evidence present",),
+            security_domain="filesystem",
+        ),
+        Probe(
             "report-mit-readiness-plan-complete",
             "MIT readiness accounting",
             "objective status should separate completed tracked slices from broader productization completion",

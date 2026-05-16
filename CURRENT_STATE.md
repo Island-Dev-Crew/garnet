@@ -912,6 +912,15 @@ the deck is a presentation planning artifact, not full MIT/productization
 completion, Developer ID notarization, Windows/Linux runtime proof,
 provider-backed LLM conversion, native backend lowering, mobile distribution,
 or final acceptance.
+Phase 6BE exposes that deck outline from Garnet Studio's Release panel:
+`Deck Outline` runs the packaged or source `garnet_mit_deck_outline.py`
+reporter, writes a manifested `garnet-studio-mit-deck-outline-<stamp>` bundle
+under `~/Desktop/dogfood/`, and prints the output path in the Studio console.
+SwiftPM tests cover the bundled locator, runner command, and Desktop evidence
+path, and the agentic matrix adds a three-probe `MIT deck outline UX` domain.
+This is still presentation/evidence UX only, not final acceptance,
+notarization, Windows/Linux runtime proof, provider-backed conversion, native
+backend lowering, or mobile distribution.
 
 ## Historical Material
 

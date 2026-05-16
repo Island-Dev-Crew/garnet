@@ -1737,6 +1737,16 @@ evidence only; final MIT/productization acceptance, Developer ID notarization,
 Windows/Linux runtime proof, provider-backed LLM conversion, native backend
 lowering, and mobile distribution remain separate gates.
 
+Phase 6BE Studio deck-outline UX pass: Garnet Studio now exposes the deck
+outline as a Release-panel action. `Deck Outline` locates the packaged or
+source reporter, writes a manifested Desktop dogfood bundle, and prints the
+output path in the Studio console. The source-checkout matrix adds a
+three-probe `MIT deck outline UX` domain so the app button, runner, and
+evidence path remain locked. This is Mac-side presentation/evidence UX only;
+distribution signing, target-platform proof, provider-backed conversion,
+backend lowering, mobile distribution, and final acceptance remain separate
+gates.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.
