@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { createServer } from "node:http";
-import { createReadStream, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { access, readFile, stat } from "node:fs/promises";
+import { createReadStream, mkdtempSync, writeFileSync } from "node:fs";
+import { access, readFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, extname, join, resolve, sep } from "node:path";
 import { spawn } from "node:child_process";
@@ -82,6 +82,29 @@ async function startServer(docsDir) {
 
 function wait(ms) {
   return new Promise((resolveWait) => setTimeout(resolveWait, ms));
+}
+
+async function waitForProcessExit(child, timeoutMs = 5_000) {
+  if (child.exitCode !== null || child.signalCode !== null) return;
+  await new Promise((resolveExit) => {
+    const timer = setTimeout(resolveExit, timeoutMs);
+    child.once("exit", () => {
+      clearTimeout(timer);
+      resolveExit();
+    });
+  });
+}
+
+async function removeBrowserProfile(path, maxRetries = 8) {
+  for (let attempt = 0; attempt < maxRetries; attempt += 1) {
+    try {
+      await rm(path, { recursive: true, force: true, maxRetries: 2, retryDelay: 100 });
+      return;
+    } catch (error) {
+      if (attempt === maxRetries - 1) throw error;
+      await wait(150 * (attempt + 1));
+    }
+  }
 }
 
 async function waitForJson(url, timeoutMs = 10_000, init = {}) {
@@ -299,9 +322,10 @@ async function main() {
     console.log(`Garnet browser PWA offline smoke: passed (${basename(args.output)})`);
   } finally {
     if (client) client.close();
-    server.close();
+    await new Promise((resolveClose) => server.close(resolveClose));
     chrome.kill("SIGTERM");
-    if (!args.keepBrowser) rmSync(userDataDir, { recursive: true, force: true });
+    await waitForProcessExit(chrome);
+    if (!args.keepBrowser) await removeBrowserProfile(userDataDir);
     if (stderr.length && process.env.GARNET_PWA_BROWSER_DEBUG) {
       console.error(stderr.join(""));
     }

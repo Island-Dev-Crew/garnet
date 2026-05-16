@@ -57,6 +57,23 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertIn("eval-unknown-agent-symbol", ids)
         self.assertIn("verify-missing-release-manifest", ids)
 
+    def test_converter_status_probe_guards_intelligent_assist_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            fixtures = matrix.prepare_fixtures(work)
+            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+
+        probe = next(
+            probe
+            for probe in probes
+            if isinstance(probe, matrix.Probe)
+            and probe.id == "report-converter-adoption-status"
+        )
+
+        self.assertIn("planned-contract", probe.expected_stdout)
+        self.assertIn("CapCaps/capability boundaries", probe.expected_stdout)
+        self.assertIn("provider_required", probe.expected_stdout)
+
     def test_probe_inventory_includes_web_pwa_offline_gate(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)

@@ -8,6 +8,7 @@ import sys
 import unittest
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = Path(__file__).with_name("garnet_converter_status.py")
 
 
@@ -40,6 +41,22 @@ class GarnetConverterStatusTests(unittest.TestCase):
         self.assertTrue(llm["requires_garnet_check"])
         self.assertFalse(llm["enabled_by_default"])
 
+        contract = data["intelligent_assist_contract"]
+        self.assertEqual("planned-contract", contract["status"])
+        self.assertFalse(contract["provider_required"])
+        self.assertFalse(contract["model_required"])
+        self.assertIn("CURRENT_STATE.md", contract["required_context"])
+        self.assertIn(
+            "C_Language_Specification/GARNET_v1_0_Mini_Spec.md",
+            contract["required_context"],
+        )
+        self.assertIn("safe-mode ownership candidates", contract["analysis_targets"])
+        self.assertIn("memory declarations", contract["analysis_targets"])
+        self.assertIn("CapCaps/capability boundaries", contract["analysis_targets"])
+        self.assertIn("lineage per emitted node", contract["required_gates"])
+        self.assertIn("@sandbox default", contract["required_gates"])
+        self.assertIn("dogfood readiness bundle", contract["required_gates"])
+
     def test_markdown_is_user_facing_and_honest(self) -> None:
         rendered = subprocess.check_output(
             [sys.executable, str(SCRIPT)],
@@ -50,6 +67,22 @@ class GarnetConverterStatusTests(unittest.TestCase):
         self.assertIn("not a full transpiler", rendered)
         self.assertIn("LLM assist is proposed only as a gated advisory lane", rendered)
         self.assertIn("JavaScript / TypeScript", rendered)
+        self.assertIn("Planned Garnet-Aware Assist Contract", rendered)
+        self.assertIn("safe-mode ownership candidates", rendered)
+
+    def test_docs_converter_section_matches_current_truth(self) -> None:
+        site = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
+
+        self.assertIn("Rust · Ruby · Python · Go", site)
+        self.assertIn("migration assistant, not a full transpiler", site)
+        self.assertIn("LLM assist: planned contract", site)
+        self.assertIn("safe-mode", site)
+        self.assertIn("memory", site)
+        self.assertIn("CapCaps", site)
+        self.assertIn("JavaScript", site)
+        self.assertIn("TypeScript", site)
+        self.assertIn("C++", site)
+        self.assertNotIn("LLM assist: available", site)
 
 
 if __name__ == "__main__":
