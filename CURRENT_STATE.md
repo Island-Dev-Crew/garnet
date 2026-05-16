@@ -67,7 +67,7 @@ done
 | `garnet-convert/` | migration assistant | current implementation for stylized Rust/Ruby/Python/Go only; broader language and gated LLM-assist lanes are planned, not implemented |
 | `scripts/garnet_converter_status.py` | converter adoption inventory | current machine-readable truth for active converter lanes, planned languages, and trust boundaries |
 | `examples/mvp_*.garnet` | canonical app-level smokes | must parse/check/run |
-| `examples/{multi_agent_builder,agentic_log_analyzer,safe_io_layer}.garnet` | design-scale examples | `multi_agent_builder` is runtime proof; `agentic_log_analyzer`/`safe_io_layer` remain parser/check references |
+| `examples/{multi_agent_builder,agentic_log_analyzer,safe_io_layer}.garnet` | design-scale examples | `multi_agent_builder`, `agentic_log_analyzer`, and `safe_io_layer` are covered by active agentic matrix probes |
 | `A_Research_Papers/` | academic research corpus | normative/research context |
 | `B_Four_Model_Consensus/` | consensus/adjudication docs | research context |
 | `C_Language_Specification/` | specs, matrices, roadmaps | normative + descriptive status |
@@ -128,10 +128,11 @@ highest-leverage next milestones are:
    project-scaffolding domain now exercises all three canonical templates
    (`cli`, `web-api`, and `agent-orchestrator`) through scaffold/run/test
    probes, developer experience covers doc extraction plus formatter check and
-   repair behavior, and the web/PWA productization domain now has
-   offline-handler and full local-smoke probes, plus a local Chrome DevTools
-   browser offline gate, while richer browser IDE and cross-browser validation
-   remain separate gates.
+   repair behavior, agent memory/analysis covers parse-time memory declaration
+   surfacing plus check/run of the advertised log analyzer, and the web/PWA
+   productization domain now has offline-handler and full local-smoke probes,
+   plus a local Chrome DevTools browser offline gate, while richer browser IDE
+   and cross-browser validation remain separate gates.
    The migration-assistant domain also carries a converter adoption-status
    probe so Rust/Ruby/Python/Go support, planned broader languages, and gated
    LLM-assist claims remain machine-readable instead of living only in

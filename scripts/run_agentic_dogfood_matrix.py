@@ -733,6 +733,19 @@ def probe_set(
         *web_pwa_probes(work),
         *(app_workbench_probes(app_executable) if include_app_workbench else []),
         Probe(
+            "parse-advertised-log-analyzer-memory",
+            "agent memory and analysis",
+            "advertised log analyzer should expose semantic, episodic, and procedural memory declarations to CLI analysis",
+            [str(garnet), "parse", str(examples / "agentic_log_analyzer.garnet")],
+            True,
+            (
+                "memory Semantic spec_index",
+                "memory Episodic incidents",
+                "memory Procedural playbooks",
+            ),
+            security_domain="privacy",
+        ),
+        Probe(
             "run-advertised-log-analyzer",
             "agent memory and analysis",
             "advertised agentic log analyzer should run as documented",
