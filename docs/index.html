@@ -595,6 +595,64 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
+  .objective-pulse {
+    margin-top: 30px;
+    display: grid;
+    grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.2fr);
+    gap: 20px;
+    align-items: stretch;
+  }
+  .objective-meter,
+  .objective-list {
+    background: var(--bg-soft);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 24px;
+  }
+  .objective-meter .label,
+  .objective-list .label {
+    color: var(--gold);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .objective-meter .percent {
+    font-family: var(--serif);
+    font-size: clamp(44px, 7vw, 72px);
+    font-weight: 700;
+    line-height: 1;
+    margin: 14px 0 10px;
+    color: var(--ink);
+  }
+  .objective-meter .meter {
+    width: 100%;
+    height: 10px;
+    border-radius: 999px;
+    background: var(--bg-code);
+    border: 1px solid var(--rule);
+    overflow: hidden;
+  }
+  .objective-meter .fill {
+    width: 58.6%;
+    height: 100%;
+    background: var(--garnet);
+  }
+  .objective-list ul {
+    list-style: none;
+    margin: 14px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 10px;
+  }
+  .objective-list li {
+    color: var(--ink-soft);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .objective-list code {
+    color: var(--gold);
+  }
 
   /* ─── Docs cards ───────────────────────────────────────────── */
   .doc-cards {
@@ -668,6 +726,7 @@
     .caps-showcase { grid-template-columns: 1fr; }
     .convert-grid { grid-template-columns: 1fr; }
     .numbers { grid-template-columns: 1fr 1fr 1fr; }
+    .objective-pulse { grid-template-columns: 1fr; }
     .doc-cards { grid-template-columns: 1fr; }
     .hero { padding: 80px 0 60px; }
     .hero .logo-wrap { width: 200px; height: 200px; }
@@ -1213,6 +1272,24 @@ dist/Garnet Studio.app</pre>
       <div class="number"><div class="big">10</div><div class="small">MVP drafts</div></div>
       <div class="number"><div class="big">7</div><div class="small">Research papers</div></div>
       <div class="number"><div class="big">0.93×</div><div class="small">Expressiveness ratio</div></div>
+    </div>
+    <div class="objective-pulse" aria-label="MIT/productization objective progress pulse">
+      <div class="objective-meter">
+        <div class="label">MIT/productization objective</div>
+        <div class="percent">58.6%</div>
+        <div class="meter" aria-hidden="true"><div class="fill"></div></div>
+        <p class="evidence-note">Latest local dogfood pulse from <code>scripts/garnet_mit_readiness_status.py</code>. This is not the same as tracked implementation completion.</p>
+      </div>
+      <div class="objective-list">
+        <div class="label">Current pulse</div>
+        <ul>
+          <li><strong>87/87 tracked slices</strong> are verified, but that is not full MIT/productization completion.</li>
+          <li>Promo video is public-site embedded at 95.0%; human/aesthetic acceptance remains open.</li>
+          <li>Web/PWA productization is verified; mobile distribution is still planned.</li>
+          <li>Developer ID notarization is blocked by signing identity, notary profile, and stapled-ticket gates.</li>
+          <li>Provider-backed LLM assist and broad converter frontends remain separate gated slices.</li>
+        </ul>
+      </div>
     </div>
     <p class="lead" style="margin-top:28px;font-size:15px;">Objective accounting: the tracked implementation plan is complete, but that is not full MIT/productization completion. The remaining gates include notarization, mobile distribution, broad converter frontends, provider-backed LLM assist, and human/aesthetic acceptance for the promo. The promo lane now has a composition-ready 30-second storyboard with visual identity, product surfaces, a HyperFrames-compatible composition source tied to repo assets, local manifest-backed MP4/WebM render evidence, automated visual-QA evidence, a website-export package, and public-site embedded sync evidence. Notarization readiness also has a machine-readable preflight status reporter; it records blockers without submitting to Apple or claiming notarization.</p>
   </div>

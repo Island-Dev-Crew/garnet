@@ -631,6 +631,13 @@ DMG SHA-256
 Human/aesthetic acceptance remains open; this is still not final
 marketing acceptance, notarized distribution, mobile distribution, provider-backed
 LLM conversion, or full MIT/productization completion.
+Phase 6AN adds the missing visible progress pulse to the public site: the
+`By the Numbers` section now surfaces the current local MIT/productization
+objective checkpoint (`58.6%`) next to the `87/87` tracked-slice completion
+claim and lists the open notarization, mobile, LLM-assist, broad-converter, and
+promo human-review gates. `python3 scripts/test_garnet_mit_readiness_status.py`
+now fails if the public site hides that pulse or confuses tracked-plan
+completion with full productization completion.
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.

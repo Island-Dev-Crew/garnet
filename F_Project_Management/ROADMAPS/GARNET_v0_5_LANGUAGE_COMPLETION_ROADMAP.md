@@ -1585,6 +1585,13 @@ machine-readable and dogfood-probed. Local evidence passes `64/64` with
 `skipped=0` in Desktop bundle
 `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-054543`.
 
+Phase 6AN progress-pulse site pass: the public site now exposes the current
+local MIT/productization objective checkpoint (`58.6%`) as a visible progress
+pulse, explicitly distinguishes it from `87/87 tracked slices`, and names the
+open notarization, mobile, provider-backed LLM assist, broad converter
+frontends, and promo human-review gates. This is a reporting/UX alignment
+slice, not a new completion claim.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.

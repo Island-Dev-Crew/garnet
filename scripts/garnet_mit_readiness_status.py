@@ -63,6 +63,16 @@ def _lane_score(lane: ObjectiveLane) -> float:
     return 0.0
 
 
+def _dedupe(items: list[str]) -> list[str]:
+    seen: set[str] = set()
+    deduped: list[str] = []
+    for item in items:
+        if item not in seen:
+            deduped.append(item)
+            seen.add(item)
+    return deduped
+
+
 def read_status() -> MitReadinessStatus:
     plan = garnet_readiness_status.read_status(
         ROOT / "F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md"
@@ -263,7 +273,7 @@ def render_markdown(status: MitReadinessStatus) -> str:
         "|---|---|---:|---|---|",
     ]
     for lane in status.lanes:
-        blockers = lane.blocked_by + lane.deferred
+        blockers = _dedupe(lane.blocked_by + lane.deferred)
         blocked_text = "<br>".join(blockers) if blockers else "None"
         lines.append(
             f"| {lane.label} | `{lane.status}` | {lane.completion_percent:.1f}% | "
