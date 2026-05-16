@@ -31,6 +31,61 @@ final class GarnetStudioTests: XCTestCase {
         XCTAssertTrue(modes.contains(.convert))
     }
 
+    func testStudioSectionsExposeAgenticTests() {
+        XCTAssertTrue(StudioSection.allCases.contains(.agentic))
+    }
+
+    func testAgenticMatrixLocatorPrefersExplicitRepoRoot() {
+        let locator = AgenticDogfoodScriptLocator(
+            bundleResourceURL: nil,
+            environmentRepoRoot: "/repo",
+            currentDirectoryURL: URL(fileURLWithPath: "/repo/apps/garnet-studio-macos", isDirectory: true)
+        )
+
+        let first = locator.candidateLocations().first
+
+        XCTAssertEqual(first?.repoRootURL.path, "/repo")
+        XCTAssertEqual(first?.scriptURL.path, "/repo/scripts/run_agentic_dogfood_matrix.py")
+    }
+
+    func testAgenticMatrixRunnerBuildsStrictDesktopCommand() {
+        let location = AgenticDogfoodScriptLocation(
+            scriptURL: URL(fileURLWithPath: "/repo/scripts/run_agentic_dogfood_matrix.py"),
+            repoRootURL: URL(fileURLWithPath: "/repo", isDirectory: true)
+        )
+        let runner = AgenticDogfoodRunner(location: location, garnetBinaryPath: "/repo/target/debug/garnet")
+
+        XCTAssertEqual(
+            runner.commandArguments(),
+            [
+                "python3",
+                "/repo/scripts/run_agentic_dogfood_matrix.py",
+                "--garnet-bin",
+                "/repo/target/debug/garnet",
+                "--copy-to-desktop",
+                "--strict",
+            ]
+        )
+    }
+
+    func testAgenticMatrixRunnerCanDelegateBinarySelectionToScript() {
+        let location = AgenticDogfoodScriptLocation(
+            scriptURL: URL(fileURLWithPath: "/repo/scripts/run_agentic_dogfood_matrix.py"),
+            repoRootURL: URL(fileURLWithPath: "/repo", isDirectory: true)
+        )
+        let runner = AgenticDogfoodRunner(location: location, garnetBinaryPath: nil)
+
+        XCTAssertEqual(
+            runner.commandArguments(),
+            [
+                "python3",
+                "/repo/scripts/run_agentic_dogfood_matrix.py",
+                "--copy-to-desktop",
+                "--strict",
+            ]
+        )
+    }
+
     func testCommandResultClassifiesExitStatus() {
         let success = GarnetCommandResult(command: "garnet version", exitCode: 0, output: "garnet 0.4.2")
         let failure = GarnetCommandResult(command: "garnet check broken.garnet", exitCode: 1, output: "diagnostic")

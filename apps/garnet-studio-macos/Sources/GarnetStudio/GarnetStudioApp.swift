@@ -182,6 +182,136 @@ struct GarnetCLI {
     }
 }
 
+struct AgenticDogfoodScriptLocation: Equatable {
+    let scriptURL: URL
+    let repoRootURL: URL
+}
+
+struct AgenticDogfoodScriptLocator {
+    let bundleResourceURL: URL?
+    let environmentRepoRoot: String?
+    let currentDirectoryURL: URL
+
+    init(
+        bundleResourceURL: URL? = Bundle.main.resourceURL,
+        environmentRepoRoot: String? = ProcessInfo.processInfo.environment["GARNET_REPO_ROOT"],
+        currentDirectoryURL: URL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+    ) {
+        self.bundleResourceURL = bundleResourceURL
+        self.environmentRepoRoot = environmentRepoRoot
+        self.currentDirectoryURL = currentDirectoryURL
+    }
+
+    func candidateLocations() -> [AgenticDogfoodScriptLocation] {
+        var locations: [AgenticDogfoodScriptLocation] = []
+
+        if let environmentRepoRoot, !environmentRepoRoot.isEmpty {
+            let root = URL(fileURLWithPath: environmentRepoRoot, isDirectory: true)
+            locations.append(location(forRepoRoot: root))
+        }
+
+        for root in ancestorRoots(from: currentDirectoryURL) {
+            locations.append(location(forRepoRoot: root))
+        }
+
+        if let bundleResourceURL {
+            let script = bundleResourceURL
+                .appendingPathComponent("scripts", isDirectory: true)
+                .appendingPathComponent("run_agentic_dogfood_matrix.py")
+            locations.append(AgenticDogfoodScriptLocation(scriptURL: script, repoRootURL: bundleResourceURL))
+        }
+
+        var seen: Set<String> = []
+        return locations.filter { location in
+            let key = location.scriptURL.path
+            if seen.contains(key) {
+                return false
+            }
+            seen.insert(key)
+            return true
+        }
+    }
+
+    func locate(fileManager: FileManager = .default) -> AgenticDogfoodScriptLocation? {
+        candidateLocations().first { location in
+            fileManager.fileExists(atPath: location.scriptURL.path)
+        }
+    }
+
+    private func location(forRepoRoot root: URL) -> AgenticDogfoodScriptLocation {
+        AgenticDogfoodScriptLocation(
+            scriptURL: root
+                .appendingPathComponent("scripts", isDirectory: true)
+                .appendingPathComponent("run_agentic_dogfood_matrix.py"),
+            repoRootURL: root
+        )
+    }
+
+    private func ancestorRoots(from start: URL) -> [URL] {
+        var roots: [URL] = []
+        var cursor = start.standardizedFileURL
+        while true {
+            roots.append(cursor)
+            let parent = cursor.deletingLastPathComponent()
+            if parent.path == cursor.path {
+                break
+            }
+            cursor = parent
+        }
+        return roots
+    }
+}
+
+struct AgenticDogfoodRunner {
+    let location: AgenticDogfoodScriptLocation
+    let garnetBinaryPath: String?
+
+    static func checkoutGarnetBinary(for location: AgenticDogfoodScriptLocation, fileManager: FileManager = .default) -> String? {
+        let debugBinary = location.repoRootURL
+            .appendingPathComponent("target", isDirectory: true)
+            .appendingPathComponent("debug", isDirectory: true)
+            .appendingPathComponent("garnet")
+            .path
+        return fileManager.isExecutableFile(atPath: debugBinary) ? debugBinary : nil
+    }
+
+    func commandArguments(copyToDesktop: Bool = true, strict: Bool = true) -> [String] {
+        var arguments = ["python3", location.scriptURL.path]
+        if let garnetBinaryPath, !garnetBinaryPath.isEmpty {
+            arguments.append(contentsOf: ["--garnet-bin", garnetBinaryPath])
+        }
+        if copyToDesktop {
+            arguments.append("--copy-to-desktop")
+        }
+        if strict {
+            arguments.append("--strict")
+        }
+        return arguments
+    }
+
+    func run(copyToDesktop: Bool = true, strict: Bool = true) -> GarnetCommandResult {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = commandArguments(copyToDesktop: copyToDesktop, strict: strict)
+        process.currentDirectoryURL = location.repoRootURL
+
+        let outputPipe = Pipe()
+        process.standardOutput = outputPipe
+        process.standardError = outputPipe
+
+        let command = (["/usr/bin/env"] + (process.arguments ?? [])).joined(separator: " ")
+        do {
+            try process.run()
+            process.waitUntilExit()
+            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: data, encoding: .utf8) ?? ""
+            return GarnetCommandResult(command: command, exitCode: process.terminationStatus, output: output)
+        } catch {
+            return GarnetCommandResult(command: command, exitCode: 127, output: error.localizedDescription)
+        }
+    }
+}
+
 @MainActor
 final class GarnetStudioViewModel: ObservableObject {
     @Published var selectedSection: StudioSection = .overview
@@ -191,12 +321,19 @@ final class GarnetStudioViewModel: ObservableObject {
     @Published var output: String = "Run a health check or pick a sample to start."
     @Published var lastStatus: GarnetCommandStatus?
     @Published var cliPath: String?
+    @Published var agenticMatrixPath: String?
 
     private let locator: GarnetCLILocator
+    private let matrixLocator: AgenticDogfoodScriptLocator
 
-    init(locator: GarnetCLILocator = GarnetCLILocator()) {
+    init(
+        locator: GarnetCLILocator = GarnetCLILocator(),
+        matrixLocator: AgenticDogfoodScriptLocator = AgenticDogfoodScriptLocator()
+    ) {
         self.locator = locator
+        self.matrixLocator = matrixLocator
         self.cliPath = locator.locate()
+        self.agenticMatrixPath = matrixLocator.locate()?.scriptURL.path
     }
 
     func select(sample: GarnetSample) {
@@ -238,6 +375,21 @@ final class GarnetStudioViewModel: ObservableObject {
     func runConverter() {
         let ext = converterLanguage == "python" ? "py" : converterLanguage
         runSource(arguments: ["convert", converterLanguage], filename: "studio-input.\(ext)")
+    }
+
+    func runAgenticStressTests() {
+        guard let location = matrixLocator.locate() else {
+            output = "No agentic dogfood matrix found. Open Garnet Studio from a source checkout or set GARNET_REPO_ROOT to the repository root."
+            lastStatus = .failure
+            return
+        }
+        output = "Running the 24-probe agentic dogfood matrix..."
+        let result = AgenticDogfoodRunner(
+            location: location,
+            garnetBinaryPath: AgenticDogfoodRunner.checkoutGarnetBinary(for: location)
+        ).run()
+        apply(result: result)
+        agenticMatrixPath = location.scriptURL.path
     }
 
     private func run(arguments: [String]) {
@@ -284,6 +436,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
     case overview = "Overview"
     case examples = "Examples"
     case converter = "Converter"
+    case agentic = "Agentic Tests"
     case release = "Release"
 
     var id: String { rawValue }
@@ -336,6 +489,8 @@ struct GarnetStudioRootView: View {
             examples
         case .converter:
             converter
+        case .agentic:
+            agenticTests
         case .release:
             release
         }
@@ -418,6 +573,30 @@ struct GarnetStudioRootView: View {
                 }
                 Panel(title: "Install Philosophy") {
                     Text("Garnet should be approachable in the same spirit as modern agent workbench apps: download, open, see what is possible, and run a real tool immediately. This app keeps that promise grounded by launching the actual Garnet CLI.")
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        } trailing: {
+            ConsoleView(output: model.output)
+        }
+    }
+
+    private var agenticTests: some View {
+        WorkbenchLayout {
+            VStack(alignment: .leading, spacing: 16) {
+                Panel(title: "Agentic Stress Matrix") {
+                    ReleaseLine(label: "Coverage", value: "24 probes across orchestration, scaffolding, safe-mode, migration, release integrity, docs, macOS app, and agent memory analysis")
+                    ReleaseLine(label: "Matrix", value: model.agenticMatrixPath ?? "No source-tree matrix script found")
+                    ReleaseLine(label: "Output", value: "Writes a timestamped bundle to ~/Desktop/dogfood and verifies its manifest")
+                    Button("Run Agentic Stress Tests") {
+                        model.runAgenticStressTests()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(model.agenticMatrixPath == nil)
+                }
+                Panel(title: "Readiness Boundary") {
+                    Text("A passing matrix proves the audited agent-facing workflows in this checkout. Production ARC, native backend, mechanized proof, empirical validation, notarized distribution, web/PWA, mobile, and promo-video lanes still need their own gates.")
                         .font(.body)
                         .foregroundStyle(.secondary)
                 }
@@ -544,6 +723,9 @@ struct WorkflowGrid: View {
                     model.select(sample: sample)
                 }
             }
+            WorkflowButton(title: "Agentic tests", systemImage: "checklist.checked") {
+                model.selectedSection = .agentic
+            }
             WorkflowButton(title: "Release status", systemImage: "shippingbox") {
                 model.selectedSection = .release
             }
@@ -556,7 +738,8 @@ struct OnboardingChecklist: View {
         ("1", "Verify the bundled CLI", "Run Health Check and confirm the console reports `garnet 0.4.2`."),
         ("2", "Run a real Garnet example", "Open Examples, run the scheduler MVP, and inspect the returned value."),
         ("3", "Try code conversion", "Open Converter, convert the Python route sample, and review the migration checklist."),
-        ("4", "Check release boundaries", "Open Release and confirm signed/native distribution caveats are still explicit."),
+        ("4", "Run agentic stress tests", "Open Agentic Tests and generate a Desktop dogfood bundle from the matrix."),
+        ("5", "Check release boundaries", "Open Release and confirm signed/native distribution caveats are still explicit."),
     ]
 
     var body: some View {
@@ -688,6 +871,19 @@ enum GarnetStudioSelfTest {
             failures.append("sample catalog missing mode: \(expected.rawValue)")
         }
 
+        if !StudioSection.allCases.contains(.agentic) {
+            failures.append("studio sections missing Agentic Tests")
+        }
+
+        let matrixLocator = AgenticDogfoodScriptLocator(
+            bundleResourceURL: nil,
+            environmentRepoRoot: "/repo",
+            currentDirectoryURL: URL(fileURLWithPath: "/repo/apps/garnet-studio-macos", isDirectory: true)
+        )
+        if matrixLocator.candidateLocations().first?.scriptURL.path != "/repo/scripts/run_agentic_dogfood_matrix.py" {
+            failures.append("agentic matrix locator did not prefer GARNET_REPO_ROOT")
+        }
+
         let success = GarnetCommandResult(command: "garnet version", exitCode: 0, output: "garnet 0.4.2")
         let failure = GarnetCommandResult(command: "garnet check broken.garnet", exitCode: 1, output: "diagnostic")
         if success.status != .success {
@@ -757,6 +953,29 @@ enum GarnetStudioSelfTest {
         print("GarnetStudio smoke passed with \(cliPath)")
         return 0
     }
+
+    static func runAgenticMatrixTest() -> Int32 {
+        let matrixLocator = AgenticDogfoodScriptLocator()
+        guard let location = matrixLocator.locate() else {
+            fputs("GarnetStudio agentic matrix failed: no matrix script found\n", stderr)
+            return 6
+        }
+
+        let result = AgenticDogfoodRunner(
+            location: location,
+            garnetBinaryPath: AgenticDogfoodRunner.checkoutGarnetBinary(for: location)
+        ).run()
+        guard result.status == .success,
+              result.output.contains("readiness=100"),
+              result.output.contains("passed=24/24")
+        else {
+            fputs("GarnetStudio agentic matrix failed:\n\(result.output)\n", stderr)
+            return 7
+        }
+
+        print("GarnetStudio agentic matrix passed")
+        return 0
+    }
 }
 
 @main
@@ -767,6 +986,9 @@ struct GarnetStudioApp: App {
         }
         if CommandLine.arguments.contains("--smoke-test") {
             Foundation.exit(GarnetStudioSelfTest.runSmokeTest())
+        }
+        if CommandLine.arguments.contains("--agentic-matrix-test") {
+            Foundation.exit(GarnetStudioSelfTest.runAgenticMatrixTest())
         }
     }
 

@@ -82,10 +82,12 @@ All files in the bundle verified at creation time.
 
 1. Add the matrix to CI once its runtime cost is acceptable for routine PR
    checks.
-2. Add a Garnet Studio "Agentic Stress Tests" view or command button that runs
-   the same harness and opens the latest bundle.
-3. Keep signed/notarized macOS, web/PWA, iOS, Android, and promo-video
+2. Keep Garnet Studio's "Agentic Tests" surface wired to this same harness, and
+   preserve the `--agentic-matrix-test` CLI gate as the packaged-app smoke path.
+3. Add a lower-cost CI variant if the full matrix remains too expensive for
+   every PR.
+4. Keep signed/notarized macOS, web/PWA, iOS, Android, and promo-video
    distribution as productization lanes with their own evidence gates.
-4. Keep production allocator-integrated ARC, native backend output, mechanized
+5. Keep production allocator-integrated ARC, native backend output, mechanized
    proof, and empirical validation separate from this dogfood score until those
    lanes have executable proof.

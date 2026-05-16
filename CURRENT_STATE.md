@@ -106,9 +106,9 @@ highest-leverage next milestones are:
    current release claim.
 5. **Garnet Studio app distribution:** build a polished local macOS workbench
    that opens like a normal app, bundles the Garnet CLI, and exposes health,
-   examples, conversion, release status, and onboarding without claiming
-   Developer ID signing, notarization, TestFlight, App Store, web, or mobile
-   distribution before those lanes are separately verified.
+   examples, conversion, release status, agentic stress tests, and onboarding
+   without claiming Developer ID signing, notarization, TestFlight, App Store,
+   web, or mobile distribution before those lanes are separately verified.
 6. **Agentic dogfood stress:** keep the advanced multi-domain matrix green so
    agents can exercise orchestration, migration, safe-mode, release-integrity,
    docs, app, and memory-analysis surfaces as one falsifiable workflow.
