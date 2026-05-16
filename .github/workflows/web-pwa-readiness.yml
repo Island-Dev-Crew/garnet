@@ -1,0 +1,34 @@
+name: Web PWA Readiness
+
+on:
+  pull_request:
+    paths:
+      - "docs/**"
+      - "scripts/smoke_garnet_web_pwa.sh"
+      - ".github/workflows/web-pwa-readiness.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "docs/**"
+      - "scripts/smoke_garnet_web_pwa.sh"
+      - ".github/workflows/web-pwa-readiness.yml"
+
+jobs:
+  web-pwa-readiness:
+    name: Garnet web PWA smoke
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify docs PWA surface
+        run: scripts/smoke_garnet_web_pwa.sh --strict
+
+      - name: Upload PWA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: garnet-web-pwa-${{ github.run_id }}
+          path: target/web-pwa-readiness-*
+          if-no-files-found: warn

@@ -6,6 +6,9 @@
 <title>Garnet — Rust Rigor. Ruby Velocity. One Coherent Language.</title>
 <meta name="description" content="Garnet is a dual-mode, agent-native language platform. Managed mode feels Ruby-like. Safe mode feels Rust-like. The mode boundary auto-bridges errors and ownership.">
 <meta name="theme-color" content="#9C2B2E">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/garnet-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/garnet-192.png">
 <meta property="og:title" content="Garnet — Rust Rigor. Ruby Velocity.">
 <meta property="og:description" content="A dual-mode language platform: managed mode for velocity, safe mode for rigor, mode boundary auto-bridged.">
 <meta property="og:type" content="website">
@@ -1238,6 +1241,13 @@ garnet run src/main.garnet</pre>
       }
     });
   });
+
+  // Keep file:// previews quiet while enabling installability on localhost/HTTPS.
+  if ('serviceWorker' in navigator && /^(https?:)$/.test(window.location.protocol)) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('service-worker.js').catch(() => {});
+    });
+  }
 </script>
 </body>
 </html>
