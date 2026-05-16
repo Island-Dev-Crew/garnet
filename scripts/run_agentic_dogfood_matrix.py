@@ -543,7 +543,7 @@ def probe_set(garnet: Path, work: Path, fixtures: dict[str, Path]) -> list[Probe
             "Garnet Studio XCTest target should pass",
             ["swift", "test", "--package-path", str(ROOT / "apps" / "garnet-studio-macos")],
             True,
-            ("Executed 4 tests", "0 failures"),
+            ("GarnetStudioTests", "0 failures"),
         ),
         Probe(
             "run-advertised-log-analyzer",
