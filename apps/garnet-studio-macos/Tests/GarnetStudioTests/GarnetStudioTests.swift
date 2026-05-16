@@ -100,6 +100,19 @@ final class GarnetStudioTests: XCTestCase {
         XCTAssertEqual(first?.scriptURL.path, "/Applications/Garnet Studio.app/Contents/Resources/scripts/garnet_converter_advisory_review.py")
     }
 
+    func testConverterAdvisoryHandoffLocatorPrefersBundledScriptBeforeAmbientCheckout() {
+        let locator = ConverterAdvisoryHandoffScriptLocator(
+            bundleResourceURL: URL(fileURLWithPath: "/Applications/Garnet Studio.app/Contents/Resources", isDirectory: true),
+            environmentRepoRoot: nil,
+            currentDirectoryURL: URL(fileURLWithPath: "/repo/apps/garnet-studio-macos", isDirectory: true)
+        )
+
+        let first = locator.candidateLocations().first
+
+        XCTAssertEqual(first?.repoRootURL.path, "/Applications/Garnet Studio.app/Contents/Resources")
+        XCTAssertEqual(first?.scriptURL.path, "/Applications/Garnet Studio.app/Contents/Resources/scripts/garnet_converter_advisory_handoff.py")
+    }
+
     func testMitReadinessLocatorPrefersBundledScriptBeforeAmbientCheckout() {
         let locator = MitReadinessScriptLocator(
             bundleResourceURL: URL(fileURLWithPath: "/Applications/Garnet Studio.app/Contents/Resources", isDirectory: true),
@@ -200,6 +213,37 @@ final class GarnetStudioTests: XCTestCase {
         XCTAssertFalse(runner.commandArguments().contains("--allow-source-included"))
     }
 
+    func testConverterAdvisoryHandoffRunnerBuildsReviewedNoSourceCommand() {
+        let location = ConverterAdvisoryHandoffScriptLocation(
+            scriptURL: URL(fileURLWithPath: "/repo/scripts/garnet_converter_advisory_handoff.py"),
+            repoRootURL: URL(fileURLWithPath: "/repo", isDirectory: true)
+        )
+        let runner = ConverterAdvisoryHandoffRunner(
+            location: location,
+            bundleDirectoryURL: URL(fileURLWithPath: "/tmp/GarnetStudioAdvisory"),
+            reviewDirectoryURL: URL(fileURLWithPath: "/tmp/GarnetStudioReview"),
+            outputDirectoryURL: URL(fileURLWithPath: "/tmp/GarnetStudioHandoff")
+        )
+
+        XCTAssertEqual(
+            runner.commandArguments(),
+            [
+                "env",
+                "PYTHONDONTWRITEBYTECODE=1",
+                "python3",
+                "/repo/scripts/garnet_converter_advisory_handoff.py",
+                "--bundle-dir",
+                "/tmp/GarnetStudioAdvisory",
+                "--review-dir",
+                "/tmp/GarnetStudioReview",
+                "--output-dir",
+                "/tmp/GarnetStudioHandoff",
+            ]
+        )
+        XCTAssertFalse(runner.commandArguments().contains("--allow-source-included"))
+        XCTAssertFalse(runner.commandArguments().contains("--include-source"))
+    }
+
     func testMitReadinessRunnerBuildsMarkdownCommand() {
         let location = MitReadinessScriptLocation(
             scriptURL: URL(fileURLWithPath: "/repo/scripts/garnet_mit_readiness_status.py"),
@@ -239,6 +283,17 @@ final class GarnetStudioTests: XCTestCase {
         XCTAssertEqual(
             directory.path,
             "/Users/example/Desktop/dogfood/garnet-studio-advisory-review-20260516-101500"
+        )
+    }
+
+    func testStudioAdvisoryHandoffEvidenceDirectoryDefaultsToDesktopDogfood() {
+        let directory = GarnetStudioEvidenceDirectory(
+            homeDirectoryURL: URL(fileURLWithPath: "/Users/example", isDirectory: true)
+        ).advisoryHandoffDirectory(stamp: "20260516-104500")
+
+        XCTAssertEqual(
+            directory.path,
+            "/Users/example/Desktop/dogfood/garnet-studio-advisory-handoff-20260516-104500"
         )
     }
 

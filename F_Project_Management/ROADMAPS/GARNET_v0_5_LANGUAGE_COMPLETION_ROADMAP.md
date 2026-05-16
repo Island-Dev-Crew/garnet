@@ -1686,6 +1686,23 @@ The copied-DMG smoke passes at
 DMG SHA-256
 `396c5afc7e5409fc9977d0dcd582a363851f65f1479ceb7be8f1c838d94cb932`.
 
+Phase 6AW converter advisory handoff UX pass: the macOS Studio Converter panel
+now exposes `Advisory Handoff` after `Advisory Review`. The action creates a
+default no-source advisory bundle, runs the provider-neutral review gate, then
+packages the reviewed no-source context through
+`garnet_converter_advisory_handoff.py` into
+`~/Desktop/dogfood/garnet-studio-advisory-handoff-<stamp>`. The refreshed
+source-checkout matrix adds a three-probe `converter advisory handoff UX`
+domain and passes `106/106` with `skipped=0` at
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-105145`.
+The refreshed copied-DMG smoke passes at
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-105515` for
+DMG SHA-256
+`3eaee71e813a67c299411ba981eb6588a299e7ea8e7698317c6d18911423dee8`.
+This keeps provider/model execution, autonomous conversion, and candidate
+output trust outside the active lane until lineage, `@sandbox`, `garnet check`,
+dogfood evidence, and human audit are complete.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.

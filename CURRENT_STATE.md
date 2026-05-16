@@ -754,6 +754,24 @@ the packaged app/DMG smoke passes in
 `/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-103813` for
 DMG SHA-256
 `396c5afc7e5409fc9977d0dcd582a363851f65f1479ceb7be8f1c838d94cb932`.
+Phase 6AW makes that final packet reachable from Garnet Studio without
+weakening the boundary. The Converter panel now exposes `Advisory Handoff`,
+which creates the default no-source advisory bundle, runs the review gate, then
+packages only the reviewed no-source context under
+`~/Desktop/dogfood/garnet-studio-advisory-handoff-<stamp>`. The agentic matrix
+adds a three-probe `converter advisory handoff UX` domain for the app action,
+runner, and Desktop evidence path; current source-checkout evidence passes
+`106/106` with `skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-105145`;
+refreshed web/PWA evidence lives at
+`/Users/idc2.0/Desktop/dogfood/web-pwa-readiness-20260516-105458`; the
+packaged app/DMG smoke passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-105515` for
+DMG SHA-256
+`3eaee71e813a67c299411ba981eb6588a299e7ea8e7698317c6d18911423dee8`.
+This is still provider-neutral handoff packaging, not provider-backed LLM
+conversion or trusted candidate output before lineage, `@sandbox`,
+`garnet check`, dogfood evidence, and human audit.
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.
