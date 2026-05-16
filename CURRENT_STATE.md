@@ -522,6 +522,15 @@ or provider-backed LLM conversion claim. Verified local evidence:
 `scripts/smoke_garnet_web_pwa.sh --copy-to-desktop --strict`,
 `scripts/smoke_garnet_web_pwa_offline.mjs --docs-dir docs --output target/service-worker-offline-check-phase6ac.json`,
 and a Browser smoke of `http://127.0.0.1:8765/index.html#studio`.
+Phase 6AD promotes that site truth into the live Pages smoke contract:
+`scripts/smoke_garnet_pages_pwa.sh` now treats missing `Garnet Studio
+workbench`, Codex Run, `dist/Garnet Studio.app`, or `Assist Plan` copy as a
+strict blocker, and `.github/workflows/web-pwa-readiness.yml` runs
+`python3 scripts/test_smoke_garnet_pages_pwa.py` so PRs cannot weaken the live
+deployment guard while still avoiding a live-domain dependency in PR CI.
+Verified evidence includes `python3 scripts/test_smoke_garnet_pages_pwa.py`,
+`scripts/smoke_garnet_pages_pwa.sh --copy-to-desktop --strict`, and Desktop
+bundle `/Users/idc2.0/Desktop/dogfood/pages-pwa-readiness-20260516-053350`.
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.
