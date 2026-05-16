@@ -447,7 +447,7 @@ def web_pwa_probes(work: Path) -> list[Probe]:
             True,
             ("Garnet service worker offline behavior: passed",),
             security_domain="filesystem",
-            notes="Source-checkout productization probe; packaged app resources may omit docs/PWA assets.",
+            notes="Runs when the current root carries docs/PWA assets; source checkouts and packaged apps both stage them.",
         )
     ]
 
