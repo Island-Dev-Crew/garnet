@@ -138,8 +138,9 @@ highest-leverage next milestones are:
    and open productization gates remain evidence-backed instead of promotional
    drift.
 7. **Agentic dogfood stress:** keep the advanced multi-domain matrix green so
-   agents can exercise orchestration, agent toolbelt examples, recovery diagnostics, migration,
-   safe-mode, release-integrity, signed-release provenance, macOS
+   agents can exercise orchestration, agent toolbelt examples, recovery diagnostics,
+   adversarial input boundaries, migration, safe-mode, release-integrity,
+   signed-release provenance, macOS
    notarization readiness, docs, app, and memory-analysis surfaces as one
    falsifiable workflow, with macOS CI preserving a downloadable evidence
    artifact for readiness-sensitive PRs. The matrix now records per-domain
@@ -150,7 +151,9 @@ highest-leverage next milestones are:
    probes, developer experience covers doc extraction plus formatter check and
    repair behavior, agent toolbelt coverage adds five runnable examples for
    triage routing, capability budgeting, memory recall, release evidence, and
-   repair planning, agent memory/analysis covers parse-time memory declaration
+   repair planning, adversarial-boundary coverage rejects parser depth bombs,
+   missing entrypoint capability declarations, and unsafe legacy mutable
+   declarations in `@safe` code, agent memory/analysis covers parse-time memory declaration
    surfacing plus check/run of the advertised log analyzer, and web/PWA
    productization covers offline-handler, full local-smoke, and local Chrome
    DevTools browser offline probes. Signed-release provenance covers key
@@ -440,6 +443,13 @@ Phase 6V promotes that signed-cache trust boundary into the agentic dogfood
 matrix with dedicated memory-persistence integrity probes for signed round-trip,
 tampered payload rejection, and foreign-key rejection, so future app/source
 dogfood bundles exercise the new security surface directly.
+Phase 6W extends the same matrix with an `agent adversarial boundaries` domain:
+parser depth-budget bomb rejection, missing `main` `@caps` rejection, and
+`@safe` legacy `var` rejection. The first strict run after adding the probes
+failed `58/60` because two checker diagnostics were asserted on stderr while
+the CLI contract reports them on stdout; the corrected strict source matrix
+passes `60/60` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-034939`.
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.
