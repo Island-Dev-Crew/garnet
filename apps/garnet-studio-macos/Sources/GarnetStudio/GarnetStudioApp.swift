@@ -210,15 +210,15 @@ struct AgenticDogfoodScriptLocator {
             locations.append(location(forRepoRoot: root))
         }
 
-        for root in ancestorRoots(from: currentDirectoryURL) {
-            locations.append(location(forRepoRoot: root))
-        }
-
         if let bundleResourceURL {
             let script = bundleResourceURL
                 .appendingPathComponent("scripts", isDirectory: true)
                 .appendingPathComponent("run_agentic_dogfood_matrix.py")
             locations.append(AgenticDogfoodScriptLocation(scriptURL: script, repoRootURL: bundleResourceURL))
+        }
+
+        for root in ancestorRoots(from: currentDirectoryURL) {
+            locations.append(location(forRepoRoot: root))
         }
 
         var seen: Set<String> = []
@@ -265,6 +265,17 @@ struct AgenticDogfoodScriptLocator {
 struct AgenticDogfoodRunner {
     let location: AgenticDogfoodScriptLocation
     let garnetBinaryPath: String?
+    let appExecutablePath: String?
+
+    init(
+        location: AgenticDogfoodScriptLocation,
+        garnetBinaryPath: String?,
+        appExecutablePath: String? = nil
+    ) {
+        self.location = location
+        self.garnetBinaryPath = garnetBinaryPath
+        self.appExecutablePath = appExecutablePath
+    }
 
     static func checkoutGarnetBinary(for location: AgenticDogfoodScriptLocation, fileManager: FileManager = .default) -> String? {
         let debugBinary = location.repoRootURL
@@ -272,13 +283,29 @@ struct AgenticDogfoodRunner {
             .appendingPathComponent("debug", isDirectory: true)
             .appendingPathComponent("garnet")
             .path
-        return fileManager.isExecutableFile(atPath: debugBinary) ? debugBinary : nil
+        if fileManager.isExecutableFile(atPath: debugBinary) {
+            return debugBinary
+        }
+        let bundledBinary = location.repoRootURL.appendingPathComponent("garnet").path
+        return fileManager.isExecutableFile(atPath: bundledBinary) ? bundledBinary : nil
+    }
+
+    static func appBundleExecutable(for location: AgenticDogfoodScriptLocation, fileManager: FileManager = .default) -> String? {
+        let executable = location.repoRootURL
+            .deletingLastPathComponent()
+            .appendingPathComponent("MacOS", isDirectory: true)
+            .appendingPathComponent("GarnetStudio")
+            .path
+        return fileManager.isExecutableFile(atPath: executable) ? executable : nil
     }
 
     func commandArguments(copyToDesktop: Bool = true, strict: Bool = true) -> [String] {
         var arguments = ["python3", location.scriptURL.path]
         if let garnetBinaryPath, !garnetBinaryPath.isEmpty {
             arguments.append(contentsOf: ["--garnet-bin", garnetBinaryPath])
+        }
+        if let appExecutablePath, !appExecutablePath.isEmpty {
+            arguments.append(contentsOf: ["--app-executable", appExecutablePath])
         }
         if copyToDesktop {
             arguments.append("--copy-to-desktop")
@@ -386,7 +413,8 @@ final class GarnetStudioViewModel: ObservableObject {
         output = "Running the 24-probe agentic dogfood matrix..."
         let result = AgenticDogfoodRunner(
             location: location,
-            garnetBinaryPath: AgenticDogfoodRunner.checkoutGarnetBinary(for: location)
+            garnetBinaryPath: AgenticDogfoodRunner.checkoutGarnetBinary(for: location),
+            appExecutablePath: AgenticDogfoodRunner.appBundleExecutable(for: location)
         ).run()
         apply(result: result)
         agenticMatrixPath = location.scriptURL.path
@@ -963,7 +991,8 @@ enum GarnetStudioSelfTest {
 
         let result = AgenticDogfoodRunner(
             location: location,
-            garnetBinaryPath: AgenticDogfoodRunner.checkoutGarnetBinary(for: location)
+            garnetBinaryPath: AgenticDogfoodRunner.checkoutGarnetBinary(for: location),
+            appExecutablePath: AgenticDogfoodRunner.appBundleExecutable(for: location)
         ).run()
         guard result.status == .success,
               result.output.contains("readiness=100"),
