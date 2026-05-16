@@ -1475,6 +1475,11 @@ machine-readable adoption reporter points the same hook to source evidence.
 The wording keeps notarization, mobile distribution, broad converter frontends,
 and provider-backed LLM conversion out of current implementation claims.
 
+Phase 6AD live Pages smoke pass: the live-domain PWA smoke now treats missing
+Studio adoption copy as a strict blocker, and the web/PWA workflow runs a local
+fixture test that removes the Studio phrases so the smoke contract stays
+covered in PR CI without depending on Pages publication timing.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.

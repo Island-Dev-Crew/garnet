@@ -6,6 +6,8 @@ on:
       - "docs/**"
       - "scripts/smoke_garnet_web_pwa.sh"
       - "scripts/smoke_garnet_web_pwa_offline.mjs"
+      - "scripts/smoke_garnet_pages_pwa.sh"
+      - "scripts/test_smoke_garnet_pages_pwa.py"
       - ".github/workflows/web-pwa-readiness.yml"
   push:
     branches:
@@ -14,6 +16,8 @@ on:
       - "docs/**"
       - "scripts/smoke_garnet_web_pwa.sh"
       - "scripts/smoke_garnet_web_pwa_offline.mjs"
+      - "scripts/smoke_garnet_pages_pwa.sh"
+      - "scripts/test_smoke_garnet_pages_pwa.py"
       - ".github/workflows/web-pwa-readiness.yml"
 
 jobs:
@@ -26,6 +30,9 @@ jobs:
 
       - name: Verify docs PWA surface
         run: scripts/smoke_garnet_web_pwa.sh --strict
+
+      - name: Verify live Pages smoke regression contract
+        run: python3 scripts/test_smoke_garnet_pages_pwa.py
 
       - name: Upload PWA evidence
         if: always()

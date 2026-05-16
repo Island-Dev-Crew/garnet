@@ -149,8 +149,17 @@ if index:
     expect("text/html" in index["content_type"], "index content-type is not HTML", errors)
     expect(parser.manifest_href == "manifest.webmanifest", "index does not link manifest.webmanifest", errors)
     expect("serviceWorker.register('service-worker.js')" in index["text"], "index does not register service-worker.js", errors)
+    studio_terms = {
+        "Garnet Studio workbench": "index does not expose the Garnet Studio workbench section",
+        "Codex Run": "index does not mention the Codex Run Studio workflow",
+        "dist/Garnet Studio.app": "index does not mention the staged Studio app bundle",
+        "Assist Plan": "index does not mention the Studio Assist Plan workflow",
+    }
+    for term, message in studio_terms.items():
+        expect(term in index["text"], f"{message}: missing {term}", errors)
 else:
     parser = LinkParser()
+    studio_terms = {}
 
 manifest = {}
 if manifest_response:
@@ -205,6 +214,9 @@ summary = {
         "start_url": manifest.get("start_url"),
         "scope": manifest.get("scope"),
         "icons": manifest.get("icons", []),
+    },
+    "studio_adoption_terms": {
+        term: term in index["text"] if index else False for term in studio_terms
     },
     "errors": errors,
 }
