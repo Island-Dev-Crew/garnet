@@ -344,6 +344,21 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertIn("report-studio-mit-deck-outline-runner", ids)
         self.assertIn("report-studio-mit-deck-outline-desktop-evidence", ids)
 
+    def test_probe_inventory_includes_mit_deck_preview_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            fixtures = matrix.prepare_fixtures(work)
+            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
+
+        ids = {probe.id for probe in concrete_probes}
+        domains = Counter(probe.domain for probe in concrete_probes)
+
+        self.assertEqual(domains["MIT deck preview"], 3)
+        self.assertIn("report-mit-deck-preview-current-truth", ids)
+        self.assertIn("report-mit-deck-preview-html", ids)
+        self.assertIn("report-mit-deck-preview-output-contract", ids)
+
     def test_probe_inventory_includes_converter_advisory_review_gate(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
@@ -610,6 +625,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertEqual(coverage["MIT demo route UX"]["status"], "adequate")
         self.assertEqual(coverage["MIT deck outline"]["status"], "adequate")
         self.assertEqual(coverage["MIT deck outline UX"]["status"], "adequate")
+        self.assertEqual(coverage["MIT deck preview"]["status"], "adequate")
         self.assertEqual(coverage["signed release provenance"]["status"], "adequate")
         self.assertEqual(coverage["macOS notarization readiness"]["status"], "adequate")
 

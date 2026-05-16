@@ -76,6 +76,7 @@ done
 | `scripts/garnet_mac_side_continuation_status.py` | Mac-side continuation inventory | current machine-readable pulse for which repo, website, converter, evidence, and macOS Studio lanes can still move from this checkout while Apple Developer ID notarization remains account-holder blocked and Windows/Linux Studio runtime proof remains delegated |
 | `scripts/garnet_mit_demo_route.py` | MIT demo-route inventory | current machine-readable and Markdown presentation route for a bounded seven-minute MIT walkthrough; ties Objective Pulse, Studio continuation, converter advisory, agentic dogfood, live web/PWA, and blocked-gate closeout together without claiming final MIT/productization completion |
 | `scripts/garnet_mit_deck_outline.py` | MIT deck-outline inventory | current machine-readable and Markdown slide outline for an 8-slide MIT reviewer deck; turns the demo route, adoption status, blocked gates, and Desktop evidence boundaries into presentation notes without claiming final MIT/productization acceptance |
+| `scripts/garnet_mit_deck_preview.py` | MIT deck-preview artifact | current browser-smokeable HTML/JSON preview generated from the deck outline; packages slide story, evidence, speaker notes, blocked gates, and forbidden claims into a manifested review artifact without claiming final MIT/productization acceptance |
 | `scripts/garnet_promo_video_status.py` | promo video readiness contract | current machine-readable storyboard/gate contract for a 30-second HyperFrames promo; visual identity/source surfaces and `docs/promo/` composition source are tied to repo assets, local Desktop MP4/WebM, automated visual-QA, website-export, and site-sync evidence can promote the lane to `public-site-embedded` at 95.0%, while human/aesthetic acceptance remains open |
 | `scripts/render_garnet_promo_video.mjs` | promo video render harness | current local Chrome DevTools + `ffmpeg` harness for manifest-backed MP4/WebM/poster render evidence; this is not a substitute for visual QA or website export |
 | `scripts/qa_garnet_promo_video.mjs` | promo visual-QA harness | current local `ffprobe`/`ffmpeg` harness for automated metadata and sample-frame QA evidence; this is not a substitute for website export or optional human aesthetic review |
@@ -921,6 +922,16 @@ path, and the agentic matrix adds a three-probe `MIT deck outline UX` domain.
 This is still presentation/evidence UX only, not final acceptance,
 notarization, Windows/Linux runtime proof, provider-backed conversion, native
 backend lowering, or mobile distribution.
+Phase 6BF adds a repo-native MIT deck preview artifact:
+`scripts/garnet_mit_deck_preview.py` renders the deck outline into a
+self-contained HTML review deck plus JSON and outline Markdown, writes a
+verified `MANIFEST.sha256` when bundled, and keeps blocked gates plus forbidden
+claims visible inside the artifact. The agentic matrix adds a `MIT deck
+preview` domain for current truth, HTML content, output contract, and verified
+manifest evidence. This is a browser-smokeable preview artifact, not final
+MIT/productization acceptance, a human/aesthetic deck approval, notarization,
+Windows/Linux runtime proof, provider-backed conversion, native backend
+lowering, or mobile distribution.
 
 ## Historical Material
 
