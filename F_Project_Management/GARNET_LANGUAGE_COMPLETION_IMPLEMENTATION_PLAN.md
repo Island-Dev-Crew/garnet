@@ -28,7 +28,7 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | Converter assist planning | Active for deterministic per-file planned-language migration risk planning without activating broad conversion | `scripts/garnet_converter_assist_plan.py`; `python3 scripts/test_garnet_converter_assist_plan.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-assist-plan-*`; `docs/index.html` | Keep this advisory-only: it may inventory safe-mode, memory, CapCaps, actor/orchestration, and migration risks for TypeScript, JavaScript, Swift, Java, C, C++, C#, Perl, and other planned sources, but deterministic frontends and provider-backed conversion remain separate gated slices |
 | Converter LLM feasibility | Active for answering whether an LLM belongs in the converter path without overclaiming active conversion | `scripts/garnet_converter_llm_feasibility.py`; `python3 scripts/test_garnet_converter_llm_feasibility.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-converter-llm-feasibility-*`; `docs/index.html` | Treat provider-neutral advisory planning as feasible; keep autonomous/provider-backed LLM conversion inactive until secure runtime, deterministic frontend, lineage, `@sandbox`, `garnet check`, dogfood, and human-audit gates exist |
 | Converter advisory bundle | Active for provider-neutral local handoff packaging before any provider-backed model lane exists | `scripts/garnet_converter_advisory_bundle.py`; `python3 scripts/test_garnet_converter_advisory_bundle.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-converter-advisory-bundle-*`; `docs/index.html` | Combine feasibility, context, and per-file assist-plan evidence in a manifested bundle; omit source by default, require `--include-source` for explicit local/provider handoff, and keep conversion inactive |
-| Converter advisory bundle UX | Active in Garnet Studio as a local package action, not provider-backed conversion | `apps/garnet-studio-macos/Sources/GarnetStudio/GarnetStudioApp.swift`; `swift test --package-path apps/garnet-studio-macos`; `scripts/run_agentic_dogfood_matrix.py` probes `report-studio-advisory-bundle-*`; `docs/index.html` | Expose `Advisory Bundle` beside `Assist Plan`, write manifested local handoff output, and keep source omitted by default |
+| Converter advisory bundle UX | Active in Garnet Studio as a local package action, not provider-backed conversion | `apps/garnet-studio-macos/Sources/GarnetStudio/GarnetStudioApp.swift`; `swift test --package-path apps/garnet-studio-macos`; `scripts/run_agentic_dogfood_matrix.py` probes `report-studio-advisory-bundle-*`; `docs/index.html` | Expose `Advisory Bundle` beside `Assist Plan`, write manifested local handoff output under `~/Desktop/dogfood/`, and keep source omitted by default |
 | MIT readiness objective accounting | Active for broader productization truth beyond the complete tracked implementation-plan ledger plus a public-site progress pulse | `scripts/garnet_mit_readiness_status.py`; `python3 scripts/test_garnet_mit_readiness_status.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-mit-readiness-*`; `docs/index.html` now surfaces the current `58.6%` local MIT/productization checkpoint beside `87/87 tracked slices` | Use this reporter when discussing public/MIT readiness so `87/87` tracked slices are not confused with notarization, mobile distribution, promo video, broad converter frontends, LLM assist, proof, or empirical validation completion |
 | Promo video readiness contract | Active as public-site embedded evidence for the 30-second Garnet promo/ad lane when Desktop render, visual-QA, website-export, and site-sync bundles are present | `scripts/garnet_promo_video_status.py`; `scripts/render_garnet_promo_video.mjs`; `scripts/qa_garnet_promo_video.mjs`; `scripts/export_garnet_promo_video_site.mjs`; `scripts/sync_garnet_promo_video_site.mjs`; `docs/promo/DESIGN.md`; `docs/promo/composition.html`; `docs/assets/garnet-promo.mp4`; `docs/assets/garnet-promo.webm`; `docs/assets/garnet-promo-poster.png`; `python3 scripts/test_garnet_promo_video_status.py`; `python3 scripts/test_render_garnet_promo_video.py`; `python3 scripts/test_qa_garnet_promo_video.py`; `python3 scripts/test_export_garnet_promo_video_site.py`; `python3 scripts/test_sync_garnet_promo_video_site.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-promo-video-*` | Keep human/aesthetic acceptance as the remaining promo gate before claiming final marketing creative |
 | Parser parity for old ambition | Partial, Phase 1 active | `protocol`, `dyn Trait`, `yield`, `next`, `@dynamic`, `@nonsendable`, and `do ... end` parser tests | Keep runtime gaps explicit and activate Phase 2 only with executable semantics |
@@ -1952,11 +1952,23 @@ Phase 6AQ converter advisory bundle UX pass: Garnet Studio now exposes an
 `Advisory Bundle` action in the Converter panel. The action locates
 `scripts/garnet_converter_advisory_bundle.py` from packaged app resources,
 `GARNET_REPO_ROOT`, or the source checkout, writes a temporary source file and
-manifested bundle directory, and never passes `--include-source` from the app
-surface. The agentic matrix preserved the failed `88/91` run at
+manifested bundle directory under `~/Desktop/dogfood/`, and never passes
+`--include-source` from the app surface. The agentic matrix preserved the failed
+`88/91` run at
 `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-091859` before
 fixing the probe path, then passed `91/91` with `skipped=0` in Desktop bundle
 `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-091949`.
+
+Phase 6AR durable Studio advisory evidence pass: `GarnetStudioEvidenceDirectory`
+now makes the Studio advisory-bundle output path explicit and stable under
+`~/Desktop/dogfood/garnet-studio-advisory-bundle-<stamp>`. The transient source
+input still lives outside the preserved bundle, and the app still omits
+`--include-source`. Local evidence passes `91/91` with `skipped=0` in Desktop
+bundle `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-093319`;
+packaged app/DMG evidence passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-093402` with
+DMG SHA-256
+`8a64b563a9a6b7de976d2d479ecabe52eed9b0e08f311a05643a2a3351823d4c`.
 
 Phase 6AG promo-video readiness pass: `scripts/garnet_promo_video_status.py`
 now records the requested 30-second Garnet promo as a planned-contract lane

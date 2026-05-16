@@ -147,6 +147,17 @@ final class GarnetStudioTests: XCTestCase {
         XCTAssertFalse(runner.commandArguments().contains("--include-source"))
     }
 
+    func testStudioAdvisoryBundleEvidenceDirectoryDefaultsToDesktopDogfood() {
+        let directory = GarnetStudioEvidenceDirectory(
+            homeDirectoryURL: URL(fileURLWithPath: "/Users/example", isDirectory: true)
+        ).advisoryBundleDirectory(stamp: "20260516-093000")
+
+        XCTAssertEqual(
+            directory.path,
+            "/Users/example/Desktop/dogfood/garnet-studio-advisory-bundle-20260516-093000"
+        )
+    }
+
     func testAgenticMatrixRunnerBuildsStrictDesktopCommand() {
         let location = AgenticDogfoodScriptLocation(
             scriptURL: URL(fileURLWithPath: "/repo/scripts/run_agentic_dogfood_matrix.py"),

@@ -663,7 +663,9 @@ a four-probe `converter advisory bundle` domain and passes `88/88` with
 Phase 6AQ makes that advisory bundle visible from the macOS Studio converter
 panel: `Advisory Bundle` writes a manifested local handoff package through the
 same packaged/source script locator as the existing planned-language assist
-lane, while preserving the no-`--include-source` default privacy boundary. The
+lane under `~/Desktop/dogfood/`, while preserving the no-`--include-source`
+default privacy boundary and keeping transient source input outside the
+preserved bundle. The
 agentic matrix now adds a three-probe `converter advisory bundle UX` domain.
 It preserved the useful failed `88/91` run at
 `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-091859` where
@@ -676,6 +678,18 @@ packaged app/DMG evidence lives at
 `/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-092317` for
 DMG SHA-256
 `f40375e301f785b87091494a1e1e12cdedf5c46eb4b10f1a62525438244f5e09`.
+Phase 6AR tightens the same Studio action so app-created advisory bundles land
+under `~/Desktop/dogfood/garnet-studio-advisory-bundle-<stamp>` by default,
+instead of disappearing into anonymous temporary storage; the source input file
+remains temporary and is not preserved in that evidence bundle. The refreshed
+source-checkout matrix passes `91/91` with `skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-093319`;
+refreshed web/PWA evidence lives at
+`/Users/idc2.0/Desktop/dogfood/web-pwa-readiness-20260516-093333`; refreshed
+packaged app/DMG evidence lives at
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-093402` for
+DMG SHA-256
+`8a64b563a9a6b7de976d2d479ecabe52eed9b0e08f311a05643a2a3351823d4c`.
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.

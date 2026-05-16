@@ -1616,11 +1616,23 @@ passes `88/88` with `skipped=0` in Desktop bundle
 Phase 6AQ converter advisory bundle UX pass: the macOS Studio Converter panel
 now exposes `Advisory Bundle` beside `Assist Plan`, using the packaged/source
 `garnet_converter_advisory_bundle.py` locator and runner to write a manifested
-local handoff bundle without passing `--include-source`. The source-checkout
+local handoff bundle under `~/Desktop/dogfood/` without passing
+`--include-source`. The source-checkout
 matrix preserved a failed `88/91` bug-catcher at
 `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-091859`, then
 passed `91/91` with `skipped=0` at
 `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-091949`.
+
+Phase 6AR durable Studio advisory evidence pass: Studio advisory bundles now
+use `GarnetStudioEvidenceDirectory` to write manifested output under
+`~/Desktop/dogfood/garnet-studio-advisory-bundle-<stamp>` by default while
+keeping source input temporary and omitting `--include-source`. The refreshed
+source-checkout matrix passes `91/91` at
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-093319`; the
+refreshed copied-DMG smoke passes at
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-093402` for
+DMG SHA-256
+`8a64b563a9a6b7de976d2d479ecabe52eed9b0e08f311a05643a2a3351823d4c`.
 
 ## Phase 7: Release, Research, And Repeated Falsification
 
