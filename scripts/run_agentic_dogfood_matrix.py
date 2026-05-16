@@ -1657,6 +1657,21 @@ def probe_set(
             ),
             security_domain="filesystem-local-video",
         ),
+        Probe(
+            "report-promo-video-site-sync-harness-contract",
+            "promo video readiness",
+            "promo site sync harness should copy a verified website export into docs/assets without claiming final human acceptance",
+            ["node", str(ROOT / "scripts" / "sync_garnet_promo_video_site.mjs"), "--help"],
+            True,
+            (
+                "sync_garnet_promo_video_site.mjs",
+                "public site",
+                "docs/assets/garnet-promo.mp4",
+                "promo-site-sync-data.json",
+                "MANIFEST.sha256",
+            ),
+            security_domain="filesystem-local-video",
+        ),
         lambda: build_promo_video_manifest_probe(work),
         Probe(
             "report-adoption-surface-active-truth",

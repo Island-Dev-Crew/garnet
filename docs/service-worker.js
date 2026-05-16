@@ -8,6 +8,9 @@ const OFFLINE_ASSETS = [
   "minispec.html",
   "novel.html",
   "synthesis.html",
+  "assets/garnet-promo.mp4",
+  "assets/garnet-promo.webm",
+  "assets/garnet-promo-poster.png",
   "icons/garnet-192.png",
   "icons/garnet-512.png"
 ];

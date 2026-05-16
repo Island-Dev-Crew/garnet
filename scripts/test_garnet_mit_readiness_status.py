@@ -136,6 +136,42 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertNotIn("website-ready export", promo_lane.blocked_by)
         self.assertIn("public-site embedding and review", promo_lane.blocked_by)
 
+    def test_repo_site_embed_updates_objective_blockers_without_full_completion(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            artifact_dir = Path(temp) / "garnet-promo-video"
+            artifact_dir.mkdir()
+            (artifact_dir / "garnet-promo.mp4").write_bytes(b"fake-mp4")
+            (artifact_dir / "garnet-promo.webm").write_bytes(b"fake-webm")
+            qa_dir = Path(temp) / "garnet-promo-video-visual-qa"
+            qa_dir.mkdir()
+            (qa_dir / "promo-visual-qa-data.json").write_text(
+                json.dumps({"status": "visual-qa-ready", "verdict": "pass", "checks": [{"passed": True}]}),
+                encoding="utf-8",
+            )
+            export_dir = Path(temp) / "garnet-promo-video-website-export"
+            export_dir.mkdir()
+            (export_dir / "promo-website-export-data.json").write_text(
+                json.dumps({"status": "website-export-ready", "verdict": "pass", "checks": [{"passed": True}]}),
+                encoding="utf-8",
+            )
+            sync_dir = Path(temp) / "garnet-promo-video-site-sync"
+            sync_dir.mkdir()
+            (sync_dir / "promo-site-sync-data.json").write_text(
+                json.dumps({"status": "public-site-embedded", "verdict": "pass", "checks": [{"passed": True}]}),
+                encoding="utf-8",
+            )
+
+            with mock.patch.dict(os.environ, {"GARNET_PROMO_VIDEO_DESKTOP_DIR": temp}):
+                status = status_mod.read_status()
+        lanes = {lane.id: lane for lane in status.lanes}
+        promo_lane = lanes["promo_video"]
+
+        self.assertEqual("public-site-embedded", promo_lane.status)
+        self.assertEqual(95.0, promo_lane.completion_percent)
+        self.assertNotIn("public-site embedding and review", promo_lane.blocked_by)
+        self.assertIn("human/aesthetic acceptance review", promo_lane.blocked_by)
+        self.assertLess(status.completion_percent, 100.0)
+
     def test_markdown_is_human_readable_and_honest(self) -> None:
         rendered = subprocess.check_output(
             [sys.executable, str(SCRIPT)],

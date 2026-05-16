@@ -52,6 +52,8 @@ def _lane_score(lane: ObjectiveLane) -> float:
         return 0.8
     if lane.status == "website-export-ready":
         return 0.9
+    if lane.status == "public-site-embedded":
+        return 0.95
     if lane.status == "composition-ready":
         return 0.5
     if lane.status == "source-locked":
@@ -68,7 +70,9 @@ def read_status() -> MitReadinessStatus:
     converter = garnet_converter_status.read_status()
     contract = converter.intelligent_assist_contract
     promo = garnet_promo_video_status.read_status()
-    if promo.website_export_present:
+    if promo.public_site_embed_present:
+        promo_evidence_tail = "records local rendered MP4/WebM evidence, automated visual QA evidence, a website export package, and public-site embedding while keeping human/aesthetic acceptance open."
+    elif promo.website_export_present:
         promo_evidence_tail = "records local rendered MP4/WebM evidence, automated visual QA evidence, and a website export package while keeping public-site embedding open."
     elif promo.visual_qa_present:
         promo_evidence_tail = "records local rendered MP4/WebM evidence plus automated visual QA evidence, and keeps website export open."
@@ -77,7 +81,9 @@ def read_status() -> MitReadinessStatus:
     else:
         promo_evidence_tail = "preserves that no verified rendered artifact exists."
     promo_blockers = ["website-ready export"]
-    if promo.website_export_present:
+    if promo.public_site_embed_present:
+        promo_blockers = ["human/aesthetic acceptance review"]
+    elif promo.website_export_present:
         promo_blockers = ["public-site embedding and review"]
     if not promo.visual_qa_present:
         promo_blockers.insert(0, "visual QA verdict")

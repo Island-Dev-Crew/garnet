@@ -27,6 +27,7 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
             "qa_garnet_promo_video.mjs",
             "render_garnet_promo_video.mjs",
             "run_agentic_dogfood_matrix.py",
+            "sync_garnet_promo_video_site.mjs",
         ]:
             with self.subTest(name=name):
                 self.assertIn(f'cp "${{ROOT}}/scripts/{name}"', script)
@@ -102,6 +103,7 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
         self.assertIn('PROMO_EXPORT="${INSTALLED_APP}/Contents/Resources/scripts/export_garnet_promo_video_site.mjs"', script)
         self.assertIn('PROMO_QA="${INSTALLED_APP}/Contents/Resources/scripts/qa_garnet_promo_video.mjs"', script)
         self.assertIn('PROMO_RENDER="${INSTALLED_APP}/Contents/Resources/scripts/render_garnet_promo_video.mjs"', script)
+        self.assertIn('PROMO_SYNC="${INSTALLED_APP}/Contents/Resources/scripts/sync_garnet_promo_video_site.mjs"', script)
         self.assertIn('NOTARIZATION_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_studio_notarization_status.py"', script)
         self.assertIn('PROMO_ASSETS_DIR="${INSTALLED_APP}/Contents/Resources/assets"', script)
         self.assertIn('PROMO_STUDIO_SOURCE="${INSTALLED_APP}/Contents/Resources/apps/garnet-studio-macos/Sources/GarnetStudio/GarnetStudioApp.swift"', script)

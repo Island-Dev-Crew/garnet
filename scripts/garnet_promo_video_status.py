@@ -27,6 +27,7 @@ class PromoVideoStatus:
     rendered_video_present: bool
     visual_qa_present: bool
     website_export_present: bool
+    public_site_embed_present: bool
     composition_source_present: bool
     visual_identity_locked: bool
     source_surfaces_locked: bool
@@ -51,11 +52,13 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _desktop_dogfood_dir() -> Path:
+    return Path(os.environ.get("GARNET_PROMO_VIDEO_DESKTOP_DIR", str(Path.home() / "Desktop" / "dogfood")))
+
+
 def _candidate_artifact_paths() -> tuple[list[Path], list[Path], list[Path]]:
-    desktop = Path(os.environ.get("GARNET_PROMO_VIDEO_DESKTOP_DIR", str(Path.home() / "Desktop" / "dogfood")))
+    desktop = _desktop_dogfood_dir()
     rendered_candidates = [
-        ROOT / "docs" / "assets" / "garnet-promo.mp4",
-        ROOT / "docs" / "assets" / "garnet-promo.webm",
         desktop / "garnet-promo-video" / "garnet-promo.mp4",
         desktop / "garnet-promo-video" / "garnet-promo.webm",
     ]
@@ -102,6 +105,62 @@ def _website_export_passed(path: Path) -> bool:
         and isinstance(checks, list)
         and bool(checks)
         and all(isinstance(check, dict) and check.get("passed") is True for check in checks)
+    )
+
+
+def _site_sync_passed(desktop: Path) -> bool:
+    sync_data = desktop / "garnet-promo-video-site-sync" / "promo-site-sync-data.json"
+    if not sync_data.is_file():
+        return False
+    try:
+        data = json.loads(sync_data.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    checks = data.get("checks", [])
+    return (
+        data.get("status") == "public-site-embedded"
+        and data.get("verdict") == "pass"
+        and isinstance(checks, list)
+        and bool(checks)
+        and all(isinstance(check, dict) and check.get("passed") is True for check in checks)
+    )
+
+
+def _public_site_embed_passed(desktop: Path) -> bool:
+    if not _site_sync_passed(desktop):
+        return False
+    site = ROOT / "docs" / "index.html"
+    worker = ROOT / "docs" / "service-worker.js"
+    assets = [
+        ROOT / "docs" / "assets" / "garnet-promo.mp4",
+        ROOT / "docs" / "assets" / "garnet-promo.webm",
+        ROOT / "docs" / "assets" / "garnet-promo-poster.png",
+    ]
+    if not site.is_file() or not worker.is_file():
+        return False
+    if not all(path.is_file() and path.stat().st_size > 0 for path in assets):
+        return False
+    site_text = site.read_text(encoding="utf-8")
+    worker_text = worker.read_text(encoding="utf-8")
+    return all(
+        token in site_text
+        for token in (
+            'id="promo"',
+            'class="promo-video"',
+            'poster="assets/garnet-promo-poster.png"',
+            'src="assets/garnet-promo.webm"',
+            'src="assets/garnet-promo.mp4"',
+            "Public-site embedded",
+            "human/aesthetic acceptance",
+            "not full MIT/productization completion",
+        )
+    ) and all(
+        token in worker_text
+        for token in (
+            "assets/garnet-promo.mp4",
+            "assets/garnet-promo.webm",
+            "assets/garnet-promo-poster.png",
+        )
     )
 
 
@@ -224,11 +283,13 @@ def _composition_source() -> dict[str, str | int | bool]:
 
 def read_status() -> PromoVideoStatus:
     rendered_candidates, visual_qa_candidates, website_candidates = _candidate_artifact_paths()
+    desktop = _desktop_dogfood_dir()
     rendered_video_present = any(path.is_file() for path in rendered_candidates)
     visual_qa_present = rendered_video_present and any(_visual_qa_passed(path) for path in visual_qa_candidates)
     website_export_present = rendered_video_present and visual_qa_present and any(
         _website_export_passed(path) for path in website_candidates
     )
+    public_site_embed_present = website_export_present and _public_site_embed_passed(desktop)
     locked_assets = _locked_assets()
     source_surfaces = _source_surfaces()
     composition_source = _composition_source()
@@ -263,6 +324,9 @@ def read_status() -> PromoVideoStatus:
         completed_gates.append("visual QA verdict")
     if website_export_present:
         completed_gates.append("website-ready export")
+        completed_gates.append("Desktop dogfood evidence bundle")
+    if public_site_embed_present:
+        completed_gates.append("repo/site copy check for overclaims")
 
     required_gates = [
         "visual identity lock",
@@ -273,6 +337,7 @@ def read_status() -> PromoVideoStatus:
         "website-ready export",
         "Desktop dogfood evidence bundle",
         "repo/site copy check for overclaims",
+        "human/aesthetic acceptance",
     ]
     open_gates = [gate for gate in required_gates if gate not in completed_gates]
     status = "planned-contract"
@@ -289,6 +354,10 @@ def read_status() -> PromoVideoStatus:
         status = "website-export-ready"
         completion_percent = 90.0
         open_gates = [gate for gate in required_gates if gate not in completed_gates]
+    if status == "website-export-ready" and public_site_embed_present:
+        status = "public-site-embedded"
+        completion_percent = 95.0
+        open_gates = [gate for gate in required_gates if gate not in completed_gates]
     if status == "planned-contract" and composition_source_present and visual_identity_locked and source_surfaces_locked:
         status = "composition-ready"
         completion_percent = 50.0
@@ -304,12 +373,15 @@ def read_status() -> PromoVideoStatus:
         rendered_video_present=rendered_video_present,
         visual_qa_present=visual_qa_present,
         website_export_present=website_export_present,
+        public_site_embed_present=public_site_embed_present,
         composition_source_present=composition_source_present,
         visual_identity_locked=visual_identity_locked,
         source_surfaces_locked=source_surfaces_locked,
         current_truth=[
             (
-                "A website export package exists for the rendered and visual-QA-checked promo artifact, but public-site embedding remains open."
+                "The verified promo export is embedded on the public site, but human/aesthetic acceptance remains open."
+                if public_site_embed_present
+                else "A website export package exists for the rendered and visual-QA-checked promo artifact, but public-site embedding remains open."
                 if website_export_present
                 else "A rendered MP4/WebM promo artifact has automated visual QA evidence, but website export remains open."
                 if visual_qa_present
@@ -318,7 +390,9 @@ def read_status() -> PromoVideoStatus:
                 else "No verified rendered promo video is present."
             ),
             (
-                "No verified public-site promo embed is present."
+                "Public-site embedded evidence is present and manifest-ready; it is not final human acceptance."
+                if public_site_embed_present
+                else "No verified public-site promo embed is present."
                 if website_export_present
                 else "No verified website-ready promo export is present."
             ),
@@ -375,7 +449,9 @@ def read_status() -> PromoVideoStatus:
         ],
         forbidden_claims=[
             (
-                "Do not claim the promo artifact is embedded on the public site."
+                "Do not claim the public-site embedded promo has final human/aesthetic acceptance."
+                if public_site_embed_present
+                else "Do not claim the promo artifact is embedded on the public site."
                 if website_export_present
                 else "Do not claim the rendered promo artifact is website-ready."
                 if visual_qa_present
@@ -390,7 +466,9 @@ def read_status() -> PromoVideoStatus:
         ],
         next_steps=[
             (
-                "Review and wire the website export package before public-site embedding."
+                "Complete human/aesthetic acceptance review before using the promo as final marketing creative."
+                if public_site_embed_present
+                else "Review and wire the website export package before public-site embedding."
                 if website_export_present
                 else "Review representative visual-QA frames before public-site embedding."
                 if visual_qa_present
