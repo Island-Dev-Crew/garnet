@@ -23,6 +23,7 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
             "garnet_converter_assist_plan.py",
             "garnet_converter_llm_feasibility.py",
             "garnet_converter_status.py",
+            "garnet_mac_side_continuation_status.py",
             "garnet_mit_readiness_status.py",
             "garnet_promo_video_status.py",
             "garnet_readiness_status.py",
@@ -106,6 +107,7 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
         self.assertIn('ADVISORY_REVIEW="${INSTALLED_APP}/Contents/Resources/scripts/garnet_converter_advisory_review.py"', script)
         self.assertIn('ASSIST_PLAN="${INSTALLED_APP}/Contents/Resources/scripts/garnet_converter_assist_plan.py"', script)
         self.assertIn('LLM_FEASIBILITY="${INSTALLED_APP}/Contents/Resources/scripts/garnet_converter_llm_feasibility.py"', script)
+        self.assertIn('MAC_CONTINUATION="${INSTALLED_APP}/Contents/Resources/scripts/garnet_mac_side_continuation_status.py"', script)
         self.assertIn('MIT_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_mit_readiness_status.py"', script)
         self.assertIn('PROMO_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_promo_video_status.py"', script)
         self.assertIn('PROMO_EXPORT="${INSTALLED_APP}/Contents/Resources/scripts/export_garnet_promo_video_site.mjs"', script)

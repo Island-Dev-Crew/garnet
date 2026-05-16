@@ -826,6 +826,23 @@ Windows/Linux, provider-backed LLM, or native-backend completion claims. The
 standalone dogfood-readiness toolkit is a portable PR/product evidence gate,
 not a replacement for project-specific CI, security review, or human release
 approval.
+Phase 6AZ makes that same continuation boundary visible inside Garnet Studio:
+the Release panel now exposes `Continuation Pulse`, which locates and runs
+`scripts/garnet_mac_side_continuation_status.py --format markdown` from
+packaged resources, `GARNET_REPO_ROOT`, or the source checkout. The app keeps
+`87/87` tracked-plan completion, the broader `58.6%` MIT/productization pulse,
+Mac-actionable lanes, Apple Developer ID notarization blockers, and
+Windows/Linux Studio delegation visibly separate. The agentic dogfood matrix
+now carries a three-probe `Mac continuation pulse UX` domain, and local
+source-checkout evidence passes `110/110` with `skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-164602`.
+The packaged app/DMG smoke stages the continuation reporter and passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-164632` for
+DMG SHA-256
+`4a7fbd77361e6c4d684032fc5f486e3b1abd40598b8bf87f9178b88c657e397e`.
+This is unsigned/local Mac productization evidence, not Developer ID
+notarization, App Store distribution, Windows/Linux runtime proof,
+provider-backed LLM conversion, or native backend lowering.
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.

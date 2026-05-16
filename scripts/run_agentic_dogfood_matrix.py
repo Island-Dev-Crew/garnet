@@ -2503,6 +2503,69 @@ def probe_set(
             security_domain="not-applicable",
         ),
         Probe(
+            "report-studio-mac-continuation-pulse-action",
+            "Mac continuation pulse UX",
+            "Garnet Studio should expose the Mac-side continuation reporter from the Release panel",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['Button(\"Continuation Pulse\", action: model.runMacContinuationPulse)', "
+                    "'func runMacContinuationPulse()', 'macContinuationPath']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio mac continuation pulse action present')\n"
+                ),
+            ],
+            True,
+            ("studio mac continuation pulse action present",),
+            security_domain="not-applicable",
+        ),
+        Probe(
+            "report-studio-mac-continuation-pulse-runner",
+            "Mac continuation pulse UX",
+            "Garnet Studio should run the packaged/source Mac-side continuation reporter instead of hardcoding continuation boundaries",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['MacContinuationRunner', 'MacContinuationScriptLocator', "
+                    "'garnet_mac_side_continuation_status.py', '--format', 'markdown']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio mac continuation pulse runner present')\n"
+                ),
+            ],
+            True,
+            ("studio mac continuation pulse runner present",),
+            security_domain="not-applicable",
+        ),
+        Probe(
+            "report-studio-mac-continuation-pulse-truth-copy",
+            "Mac continuation pulse UX",
+            "Garnet Studio should keep actionable Mac-side lanes separate from externally blocked and delegated gates",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['Mac continuation', 'actionable Mac-side lanes', "
+                    "'blocked/delegated gates', 'Developer ID signing', 'Windows']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio mac continuation pulse truth copy present')\n"
+                ),
+            ],
+            True,
+            ("studio mac continuation pulse truth copy present",),
+            security_domain="not-applicable",
+        ),
+        Probe(
             "report-mit-readiness-plan-complete",
             "MIT readiness accounting",
             "objective status should separate completed tracked slices from broader productization completion",
