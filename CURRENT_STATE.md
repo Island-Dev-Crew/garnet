@@ -125,9 +125,11 @@ highest-leverage next milestones are:
    artifact for readiness-sensitive PRs. The matrix now records per-domain
    coverage adequacy separately from pass/fail readiness so under-tested
    product surfaces remain visible even when every current probe passes; the
-   web/PWA productization domain now has offline-handler and full local-smoke
-   probes, plus a local Chrome DevTools browser offline gate, while richer
-   browser IDE and cross-browser validation remain separate gates.
+   project-scaffolding domain now exercises all three canonical templates
+   (`cli`, `web-api`, and `agent-orchestrator`) through scaffold/run/test
+   probes, and the web/PWA productization domain now has offline-handler and
+   full local-smoke probes, plus a local Chrome DevTools browser offline gate,
+   while richer browser IDE and cross-browser validation remain separate gates.
    The migration-assistant domain also carries a converter adoption-status
    probe so Rust/Ruby/Python/Go support, planned broader languages, and gated
    LLM-assist claims remain machine-readable instead of living only in
