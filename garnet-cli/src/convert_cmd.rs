@@ -29,22 +29,20 @@ pub struct ConvertOutcome {
 }
 
 pub fn run(args: ConvertArgs) -> Result<ConvertOutcome, String> {
-    let lang = args
-        .source_lang
-        .parse::<SourceLang>()
-        .ok()
-        .or_else(|| {
-            args.source_path
-                .extension()
-                .and_then(|e| e.to_str())
-                .and_then(SourceLang::from_extension)
-        })
-        .ok_or_else(|| {
-            format!(
-                "unknown source language: {} (recognised: rust/rs, ruby/rb, python/py, go)",
-                args.source_lang
-            )
-        })?;
+    let lang = if args.source_lang.trim().is_empty() {
+        args.source_path
+            .extension()
+            .and_then(|e| e.to_str())
+            .and_then(SourceLang::from_extension)
+    } else {
+        args.source_lang.parse::<SourceLang>().ok()
+    }
+    .ok_or_else(|| {
+        format!(
+            "unknown source language: {} (recognised: rust/rs, ruby/rb, python/py, go)",
+            args.source_lang
+        )
+    })?;
 
     let source = fs::read_to_string(&args.source_path)
         .map_err(|e| format!("read {}: {e}", args.source_path.display()))?;
@@ -210,6 +208,21 @@ mod tests {
         let path = write_temp("xyz", "garbage\n");
         let r = run(ConvertArgs {
             source_lang: "klingon".into(),
+            source_path: path,
+            strict: false,
+            fail_on_todo: false,
+            fail_on_untranslatable: false,
+            out_dir: None,
+            quiet: true,
+        });
+        assert!(r.is_err());
+    }
+
+    #[test]
+    fn explicit_unknown_language_does_not_fallback_to_extension() {
+        let path = write_temp("py", "def f(x):\n    return x\n");
+        let r = run(ConvertArgs {
+            source_lang: "javascript".into(),
             source_path: path,
             strict: false,
             fail_on_todo: false,

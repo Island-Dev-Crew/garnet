@@ -214,7 +214,16 @@ impl<'a> Lexer<'a> {
                 '/' => {
                     let start = self.pos;
                     self.pos += 1;
-                    if self.peek_ch() == Some('=') {
+                    if self.peek_ch() == Some('/') {
+                        self.pos += 1;
+                        while self.pos < self.src.len() && self.src[self.pos] != b'\n' {
+                            self.pos += 1;
+                        }
+                        self.budget.check_literal_bytes(
+                            self.pos - start,
+                            Span::new(start, self.pos - start),
+                        )?;
+                    } else if self.peek_ch() == Some('=') {
                         self.pos += 1;
                         tokens.push(Token {
                             kind: TokenKind::SlashEq,

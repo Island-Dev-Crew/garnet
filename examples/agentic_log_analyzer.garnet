@@ -75,7 +75,7 @@ def classify(line) {
 }
 
 def has_keyword(text, keyword) {
-  text.starts_with?(keyword) or text.starts_with?("[" + keyword)
+  text.starts_with(keyword) or text.starts_with("[" + keyword)
 }
 
 def severity_to_int(sev) {
@@ -124,17 +124,17 @@ def extract_pattern(line) {
 }
 
 def first_word(text) {
-  if text.starts_with?("[") {
+  if text.starts_with("[") {
     "bracket"
-  } elsif text.starts_with?("connection") {
+  } elsif text.starts_with("connection") {
     "connection"
-  } elsif text.starts_with?("timeout") {
+  } elsif text.starts_with("timeout") {
     "timeout"
-  } elsif text.starts_with?("auth") {
+  } elsif text.starts_with("auth") {
     "auth"
-  } elsif text.starts_with?("retry") {
+  } elsif text.starts_with("retry") {
     "retry"
-  } elsif text.starts_with?("ok") {
+  } elsif text.starts_with("ok") {
     "ok"
   } else {
     "other"
@@ -191,7 +191,7 @@ def pattern_to_vector(pattern) {
 }
 
 def to_f(n) {
-  to_f(n)
+  n
 }
 
 def count_vowels(text) {
@@ -298,6 +298,7 @@ def synthetic_log() {
   ]
 }
 
+@caps()
 def main() {
   let log = synthetic_log()
   let recorded = ingest(log)

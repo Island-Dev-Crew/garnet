@@ -106,6 +106,52 @@ fn eval_nonsense_exits_nonzero() {
 }
 
 #[test]
+fn convert_explicit_unknown_language_exits_nonzero_even_when_extension_is_known() {
+    let dir = tempdir().unwrap();
+    let source = dir.path().join("input.py");
+    std::fs::write(&source, "def f(x):\n    return x\n").unwrap();
+
+    let out = Command::new(garnet_bin())
+        .args(["convert", "javascript", source.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        !out.status.success(),
+        "explicit unsupported language must not fallback to extension\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(String::from_utf8_lossy(&out.stderr).contains("unknown source language"));
+}
+
+#[test]
+fn doc_extracts_triple_slash_comments() {
+    let dir = tempdir().unwrap();
+    let source = dir.path().join("documented.garnet");
+    std::fs::write(
+        &source,
+        "/// Score an agent handoff.\ndef score(risk) {\n  risk * 10\n}\n\n/// Main entry docs survive annotations.\n@caps()\ndef main() {\n  score(3)\n}\n",
+    )
+    .unwrap();
+
+    let out = Command::new(garnet_bin())
+        .args(["doc", "--stdout", source.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "doc extraction failed\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("Score an agent handoff."));
+    assert!(stdout.contains("Main entry docs survive annotations."));
+    assert!(stdout.contains("fn/def score"));
+    assert!(stdout.contains("fn/def main"));
+}
+
+#[test]
 fn parse_nonexistent_file_exits_nonzero() {
     let out = Command::new(garnet_bin())
         .args(["parse", "this_file_does_not_exist.garnet"])
