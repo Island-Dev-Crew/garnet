@@ -41,6 +41,7 @@ cp "${ROOT}/scripts/garnet_mit_readiness_status.py" "${APP_DIR}/Contents/Resourc
 cp "${ROOT}/scripts/garnet_promo_video_status.py" "${APP_DIR}/Contents/Resources/scripts/garnet_promo_video_status.py"
 cp "${ROOT}/scripts/garnet_readiness_status.py" "${APP_DIR}/Contents/Resources/scripts/garnet_readiness_status.py"
 cp "${ROOT}/scripts/garnet_studio_notarization_status.py" "${APP_DIR}/Contents/Resources/scripts/garnet_studio_notarization_status.py"
+cp "${ROOT}/scripts/render_garnet_promo_video.mjs" "${APP_DIR}/Contents/Resources/scripts/render_garnet_promo_video.mjs"
 cp "${ROOT}/scripts/smoke_garnet_web_pwa_offline.mjs" "${APP_DIR}/Contents/Resources/scripts/smoke_garnet_web_pwa_offline.mjs"
 cp "${ROOT}/README.md" "${APP_DIR}/Contents/Resources/README.md"
 cp "${ROOT}/CURRENT_STATE.md" "${APP_DIR}/Contents/Resources/CURRENT_STATE.md"
@@ -60,6 +61,7 @@ chmod 0755 "${APP_DIR}/Contents/Resources/scripts/garnet_mit_readiness_status.py
 chmod 0755 "${APP_DIR}/Contents/Resources/scripts/garnet_promo_video_status.py"
 chmod 0755 "${APP_DIR}/Contents/Resources/scripts/garnet_readiness_status.py"
 chmod 0755 "${APP_DIR}/Contents/Resources/scripts/garnet_studio_notarization_status.py"
+chmod 0755 "${APP_DIR}/Contents/Resources/scripts/render_garnet_promo_video.mjs"
 chmod 0755 "${APP_DIR}/Contents/Resources/scripts/smoke_garnet_web_pwa_offline.mjs"
 
 cat > "${APP_DIR}/Contents/Info.plist" <<PLIST

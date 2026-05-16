@@ -34,6 +34,7 @@ class Probe:
     expected_stderr: tuple[str, ...] = ()
     security_domain: str = "not-applicable"
     notes: str = ""
+    env: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -62,7 +63,10 @@ def timeout_output(value: str | bytes | None) -> str:
     return value
 
 
-def run(cmd: list[str], cwd: Path, timeout: int = 120) -> subprocess.CompletedProcess[str]:
+def run(cmd: list[str], cwd: Path, timeout: int = 120, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+    process_env = os.environ.copy()
+    if env:
+        process_env.update(env)
     try:
         return subprocess.run(
             cmd,
@@ -71,6 +75,7 @@ def run(cmd: list[str], cwd: Path, timeout: int = 120) -> subprocess.CompletedPr
             capture_output=True,
             timeout=timeout,
             check=False,
+            env=process_env,
         )
     except subprocess.TimeoutExpired as exc:
         stdout = timeout_output(exc.stdout)
@@ -684,7 +689,7 @@ def skipped_result(probe: Probe, work: Path, reason: str) -> ProbeResult:
 
 def run_probe(probe: Probe, work: Path) -> ProbeResult:
     start = time.monotonic()
-    completed = run(probe.command, work)
+    completed = run(probe.command, work, env=probe.env)
     return classify_result(
         probe,
         completed.returncode,
@@ -1009,6 +1014,7 @@ def probe_set(
     include_app_workbench: bool = True,
 ) -> list[Probe | Callable[[], ProbeResult]]:
     examples = ROOT / "examples"
+    promo_env = {"GARNET_PROMO_VIDEO_DESKTOP_DIR": str(work / "promo-video-external-artifacts")}
     return [
         Probe(
             "run-agent-triage-router",
@@ -1556,6 +1562,7 @@ def probe_set(
                 "No verified rendered promo video is present.",
             ),
             security_domain="not-applicable",
+            env=promo_env,
         ),
         Probe(
             "report-promo-video-required-gates",
@@ -1571,6 +1578,7 @@ def probe_set(
                 "Do not claim provider-backed LLM conversion is active.",
             ),
             security_domain="release-integrity",
+            env=promo_env,
         ),
         Probe(
             "report-promo-video-source-lock",
@@ -1586,6 +1594,7 @@ def probe_set(
                 "visual identity lock",
             ),
             security_domain="release-integrity",
+            env=promo_env,
         ),
         Probe(
             "report-promo-video-composition-source",
@@ -1601,6 +1610,22 @@ def probe_set(
                 "\"tool\": \"hyperframes-html\"",
             ),
             security_domain="release-integrity",
+            env=promo_env,
+        ),
+        Probe(
+            "report-promo-video-render-harness-contract",
+            "promo video readiness",
+            "promo render harness should expose a deterministic CDP and ffmpeg artifact path without claiming visual QA",
+            ["node", str(ROOT / "scripts" / "render_garnet_promo_video.mjs"), "--help"],
+            True,
+            (
+                "render_garnet_promo_video.mjs",
+                "MP4",
+                "WebM",
+                "MANIFEST.sha256",
+                "--output-dir",
+            ),
+            security_domain="filesystem-localhost-browser",
         ),
         lambda: build_promo_video_manifest_probe(work),
         Probe(

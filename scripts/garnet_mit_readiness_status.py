@@ -46,6 +46,8 @@ def _lane_score(lane: ObjectiveLane) -> float:
         return 1.0
     if lane.status == "active-partial":
         return 0.5
+    if lane.status == "rendered-artifact-ready":
+        return 0.65
     if lane.status == "composition-ready":
         return 0.5
     if lane.status == "source-locked":
@@ -62,6 +64,14 @@ def read_status() -> MitReadinessStatus:
     converter = garnet_converter_status.read_status()
     contract = converter.intelligent_assist_contract
     promo = garnet_promo_video_status.read_status()
+    promo_evidence_tail = (
+        "records local rendered MP4/WebM evidence, and keeps visual QA plus website export open."
+        if promo.rendered_video_present
+        else "preserves that no verified rendered artifact exists."
+    )
+    promo_blockers = ["visual QA verdict", "website-ready export"]
+    if not promo.rendered_video_present:
+        promo_blockers.insert(0, "rendered artifact")
 
     lanes = [
         ObjectiveLane(
@@ -166,14 +176,9 @@ def read_status() -> MitReadinessStatus:
             evidence=(
                 "`scripts/garnet_promo_video_status.py` defines the 30-second "
                 "promo contract, locks visual identity/source surfaces to repo evidence, "
-                "adds a HyperFrames-compatible composition source, and preserves that "
-                "no verified rendered artifact exists."
+                f"adds a HyperFrames-compatible composition source, and {promo_evidence_tail}"
             ),
-            blocked_by=[
-                "rendered artifact",
-                "visual QA verdict",
-                "website-ready export",
-            ],
+            blocked_by=promo_blockers,
             deferred=[
                 "30-second Garnet promo video",
                 "website-ready export",

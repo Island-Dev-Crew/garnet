@@ -1473,6 +1473,19 @@ Rendered MP4/WebM, visual QA, website export, Desktop dogfood evidence for
 rendered artifacts, and overclaim checks remain open gates before any public
 video claim.
 
+Phase 6AJ promo-render harness pass: `scripts/render_garnet_promo_video.mjs`
+renders `docs/promo/composition.html` through headless Chrome/CDP and
+`ffmpeg`, producing MP4, WebM, poster, JSON, Markdown, and `MANIFEST.sha256`
+evidence. Local Desktop evidence at
+`/Users/idc2.0/Desktop/dogfood/garnet-promo-video` verifies a 30.000-second
+1920x1080 render at 12 fps for both H.264 MP4 and VP9 WebM. With those local
+artifacts present, the promo lane reports `rendered-artifact-ready` at 65.0%;
+the matrix adds a sixth promo-video readiness probe and passes `74/74` with
+`skipped=0` in Desktop bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-071841`.
+Visual QA, website export, and overclaim checks remain open before any public
+video claim.
+
 Phase 6Z packaged assist-plan resource pass: packaged Garnet Studio now stages
 and chmods `scripts/garnet_converter_assist_plan.py`, and the DMG install
 smoke checks it as a required executable bundled asset before running copied-app
@@ -1481,9 +1494,9 @@ matrix probes. Verified local evidence:
 (packaged app),
 `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-045440`
 (copied app), and
-`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-045439`
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-071720`
 for DMG SHA-256
-`bce70f3c44af1d335d0af4ecd466386f85d918bea8b310cad24a2855c59ec345`.
+`98d32b6b9970090f219074e41cc51e4163041b4f829c1e308d889fcb95cecfec`.
 This is local ad-hoc packaging evidence; Developer ID notarization and
 clean-machine Gatekeeper proof remain separate gates.
 

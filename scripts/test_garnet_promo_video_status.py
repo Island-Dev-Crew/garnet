@@ -4,13 +4,17 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 SCRIPT = Path(__file__).with_name("garnet_promo_video_status.py")
+TEST_DOGFOOD_DIR = tempfile.TemporaryDirectory()
+os.environ["GARNET_PROMO_VIDEO_DESKTOP_DIR"] = TEST_DOGFOOD_DIR.name
 SPEC = importlib.util.spec_from_file_location("garnet_promo_video_status", SCRIPT)
 assert SPEC is not None
 promo = importlib.util.module_from_spec(SPEC)
@@ -20,10 +24,17 @@ SPEC.loader.exec_module(promo)
 
 
 class GarnetPromoVideoStatusTests(unittest.TestCase):
+    @classmethod
+    def tearDownClass(cls) -> None:
+        TEST_DOGFOOD_DIR.cleanup()
+
     def test_json_contract_keeps_video_unrendered_until_evidence_exists(self) -> None:
+        env = os.environ.copy()
+        env["GARNET_PROMO_VIDEO_DESKTOP_DIR"] = TEST_DOGFOOD_DIR.name
         data = json.loads(
             subprocess.check_output(
                 [sys.executable, str(SCRIPT), "--format", "json"],
+                env=env,
                 text=True,
             )
         )
@@ -43,6 +54,24 @@ class GarnetPromoVideoStatusTests(unittest.TestCase):
         self.assertIn("visual QA verdict", data["required_gates"])
         self.assertIn("No verified rendered promo video is present.", data["current_truth"])
         self.assertIn("Do not claim a rendered promo video exists.", data["forbidden_claims"])
+
+    def test_rendered_artifacts_promote_status_without_claiming_website_export(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            artifact_dir = Path(temp) / "garnet-promo-video"
+            artifact_dir.mkdir()
+            (artifact_dir / "garnet-promo.mp4").write_bytes(b"fake-mp4")
+            (artifact_dir / "garnet-promo.webm").write_bytes(b"fake-webm")
+
+            with mock.patch.dict(os.environ, {"GARNET_PROMO_VIDEO_DESKTOP_DIR": temp}):
+                contract = promo.read_status()
+
+            self.assertEqual("rendered-artifact-ready", contract.status)
+            self.assertEqual(65.0, contract.completion_percent)
+            self.assertTrue(contract.rendered_video_present)
+            self.assertFalse(contract.website_export_present)
+            self.assertIn("rendered MP4 or WebM artifact", contract.completed_gates)
+            self.assertIn("visual QA verdict", contract.open_gates)
+            self.assertIn("website-ready export", contract.open_gates)
 
     def test_locked_source_packet_lists_real_repo_assets_and_surfaces(self) -> None:
         contract = promo.read_status()
