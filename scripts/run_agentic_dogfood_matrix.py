@@ -1327,6 +1327,46 @@ def build_mit_demo_route_manifest_probe(work: Path) -> ProbeResult:
     )
 
 
+def build_mit_deck_outline_manifest_probe(work: Path) -> ProbeResult:
+    output_dir = work / "mit-deck-outline"
+    probe = Probe(
+        "report-mit-deck-outline-output-manifest",
+        "MIT deck outline",
+        "MIT deck outline should write JSON, Markdown, and a verified manifest",
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "garnet_mit_deck_outline.py"),
+            "--output-dir",
+            str(output_dir),
+        ],
+        True,
+        (
+            "Garnet MIT Deck Outline",
+            "garnet-mit-deck-outline.json: OK",
+            "garnet-mit-deck-outline.md: OK",
+        ),
+        security_domain="release-integrity",
+    )
+    start = time.monotonic()
+    completed = run(probe.command, work)
+    stdout = [completed.stdout]
+    stderr = [completed.stderr]
+    exit_code = completed.returncode
+    if completed.returncode == 0:
+        verify = run(["shasum", "-a", "256", "-c", "MANIFEST.sha256"], output_dir)
+        stdout.append(verify.stdout)
+        stderr.append(verify.stderr)
+        exit_code = verify.returncode
+    return classify_result(
+        probe,
+        exit_code,
+        "\n".join(stdout),
+        "\n".join(stderr),
+        int((time.monotonic() - start) * 1000),
+        work,
+    )
+
+
 def app_workbench_probes(app_executable: Path | None, garnet: Path) -> list[Probe]:
     if app_executable is not None:
         return [
@@ -2760,6 +2800,38 @@ def probe_set(
             security_domain="release-integrity",
         ),
         lambda: build_mit_demo_route_manifest_probe(work),
+        Probe(
+            "report-mit-deck-outline-current-truth",
+            "MIT deck outline",
+            "MIT deck outline should turn current readiness truth into a reviewer-safe slide sequence",
+            [sys.executable, str(ROOT / "scripts" / "garnet_mit_deck_outline.py"), "--format", "json"],
+            True,
+            (
+                "\"overall_status\": \"active-partial\"",
+                "\"objective_completion_percent\":",
+                "\"tracked_slices\": \"87/87\"",
+                "Rust rigor, Ruby velocity",
+                "Demo Route",
+                "not full MIT/productization completion",
+            ),
+            security_domain="not-applicable",
+        ),
+        Probe(
+            "report-mit-deck-outline-blocked-gates",
+            "MIT deck outline",
+            "MIT deck outline should preserve blocked gates and forbidden claims",
+            [sys.executable, str(ROOT / "scripts" / "garnet_mit_deck_outline.py"), "--format", "json"],
+            True,
+            (
+                "developer-id-notarization",
+                "windows-linux-studio",
+                "provider-backed-llm-conversion",
+                "native-backend-lowering",
+                "final MIT/productization acceptance",
+            ),
+            security_domain="release-integrity",
+        ),
+        lambda: build_mit_deck_outline_manifest_probe(work),
         Probe(
             "report-promo-video-current-truth",
             "promo video readiness",

@@ -24,6 +24,7 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
             "garnet_converter_llm_feasibility.py",
             "garnet_converter_status.py",
             "garnet_mac_side_continuation_status.py",
+            "garnet_mit_deck_outline.py",
             "garnet_mit_demo_route.py",
             "garnet_mit_readiness_status.py",
             "garnet_promo_video_status.py",
@@ -109,6 +110,7 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
         self.assertIn('ASSIST_PLAN="${INSTALLED_APP}/Contents/Resources/scripts/garnet_converter_assist_plan.py"', script)
         self.assertIn('LLM_FEASIBILITY="${INSTALLED_APP}/Contents/Resources/scripts/garnet_converter_llm_feasibility.py"', script)
         self.assertIn('MAC_CONTINUATION="${INSTALLED_APP}/Contents/Resources/scripts/garnet_mac_side_continuation_status.py"', script)
+        self.assertIn('MIT_DECK_OUTLINE="${INSTALLED_APP}/Contents/Resources/scripts/garnet_mit_deck_outline.py"', script)
         self.assertIn('MIT_DEMO_ROUTE="${INSTALLED_APP}/Contents/Resources/scripts/garnet_mit_demo_route.py"', script)
         self.assertIn('MIT_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_mit_readiness_status.py"', script)
         self.assertIn('PROMO_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_promo_video_status.py"', script)

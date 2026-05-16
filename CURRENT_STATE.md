@@ -75,6 +75,7 @@ done
 | `scripts/garnet_mit_readiness_status.py` | MIT/productization objective inventory | current machine-readable truth that the tracked implementation plan is complete while notarization, mobile distribution, promo video, broad converter frontends, LLM assist, and proof/empirics remain open gates |
 | `scripts/garnet_mac_side_continuation_status.py` | Mac-side continuation inventory | current machine-readable pulse for which repo, website, converter, evidence, and macOS Studio lanes can still move from this checkout while Apple Developer ID notarization remains account-holder blocked and Windows/Linux Studio runtime proof remains delegated |
 | `scripts/garnet_mit_demo_route.py` | MIT demo-route inventory | current machine-readable and Markdown presentation route for a bounded seven-minute MIT walkthrough; ties Objective Pulse, Studio continuation, converter advisory, agentic dogfood, live web/PWA, and blocked-gate closeout together without claiming final MIT/productization completion |
+| `scripts/garnet_mit_deck_outline.py` | MIT deck-outline inventory | current machine-readable and Markdown slide outline for an 8-slide MIT reviewer deck; turns the demo route, adoption status, blocked gates, and Desktop evidence boundaries into presentation notes without claiming final MIT/productization acceptance |
 | `scripts/garnet_promo_video_status.py` | promo video readiness contract | current machine-readable storyboard/gate contract for a 30-second HyperFrames promo; visual identity/source surfaces and `docs/promo/` composition source are tied to repo assets, local Desktop MP4/WebM, automated visual-QA, website-export, and site-sync evidence can promote the lane to `public-site-embedded` at 95.0%, while human/aesthetic acceptance remains open |
 | `scripts/render_garnet_promo_video.mjs` | promo video render harness | current local Chrome DevTools + `ffmpeg` harness for manifest-backed MP4/WebM/poster render evidence; this is not a substitute for visual QA or website export |
 | `scripts/qa_garnet_promo_video.mjs` | promo visual-QA harness | current local `ffprobe`/`ffmpeg` harness for automated metadata and sample-frame QA evidence; this is not a substitute for website export or optional human aesthetic review |
@@ -899,6 +900,18 @@ and local Pages/Web PWA smokes pass with blockers/warnings at zero in
 Production allocator-integrated ARC, broad
 pluggable persistence backends, and extended release-duration soak remain
 follow-up work.
+Phase 6BD adds a repo-native MIT deck outline as presentation evidence:
+`scripts/garnet_mit_deck_outline.py` reads the current demo route, adoption
+surface, MIT readiness, and tracked-slice reporters, then emits JSON/Markdown
+for an 8-slide reviewer sequence covering current truth, the language hook,
+Garnet Studio, converter advisory strategy, dogfood evidence, web/PWA surface,
+blocked gates, and next slices. The outline is manifested when written to an
+output directory and is staged into packaged Studio resources so packaged
+agentic-matrix smoke keeps working. It explicitly preserves the boundary that
+the deck is a presentation planning artifact, not full MIT/productization
+completion, Developer ID notarization, Windows/Linux runtime proof,
+provider-backed LLM conversion, native backend lowering, mobile distribution,
+or final acceptance.
 
 ## Historical Material
 
