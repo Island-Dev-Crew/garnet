@@ -1228,6 +1228,49 @@ git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && c
       </div>
     </div>
 
+    <p class="lead" style="margin-top:32px;font-size:15px;">See it run — the real first-project loop:</p>
+    <div class="garnet-term" id="garnet-term" role="img" aria-label="Terminal: garnet new --template cli my_app; cd my_app; garnet test (2 passed); garnet run src/main.garnet" style="border:1px solid var(--rule);border-radius:10px;background:#0b0b0f;overflow:hidden;font-family:var(--mono);font-size:13px;line-height:1.7;">
+      <div style="display:flex;gap:7px;padding:10px 14px;border-bottom:1px solid var(--rule);background:var(--bg-soft);">
+        <span style="width:11px;height:11px;border-radius:50%;background:#ff5f56;display:inline-block;"></span>
+        <span style="width:11px;height:11px;border-radius:50%;background:#ffbd2e;display:inline-block;"></span>
+        <span style="width:11px;height:11px;border-radius:50%;background:#27c93f;display:inline-block;"></span>
+        <span style="color:var(--ink-muted);margin-left:8px;font-size:12px;">zsh — garnet</span>
+      </div>
+      <pre id="garnet-term-body" style="margin:0;padding:16px 18px;color:var(--code-fg);white-space:pre-wrap;min-height:210px;"></pre>
+    </div>
+    <script>
+    (function(){
+      var body=document.getElementById('garnet-term-body');
+      if(!body)return;
+      var G='<span style="color:#9C2B2E">$</span> ';
+      var lines=[
+        G+'garnet new --template cli my_app',
+        '  created my_app/ (cli template)',
+        G+'cd my_app',
+        G+'garnet test',
+        '  test test_arithmetic ... ok',
+        '  test test_string_interpolation ... ok',
+        '',
+        '  test result: ok. 2 passed; 0 failed; in 2 file(s)',
+        G+'garnet run src/main.garnet',
+        '  Edit src/main.garnet to change this message.',
+        '  => 0'
+      ];
+      var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if(reduce){ body.innerHTML=lines.join('\n'); return; }
+      var i=0;
+      function step(){
+        if(i>=lines.length)return;
+        body.innerHTML += (i?'\n':'') + lines[i];
+        i++;
+        setTimeout(step, lines[i-1].indexOf('$')>-1?520:240);
+      }
+      var io=new IntersectionObserver(function(es){
+        es.forEach(function(e){ if(e.isIntersecting){ io.disconnect(); step(); }});
+      },{threshold:0.35});
+      io.observe(document.getElementById('garnet-term'));
+    })();
+    </script>
     <p class="lead" style="margin-top:32px;font-size:15px;">After install, scaffold a project:</p>
     <div class="install-pane active" style="display:block;">
       <div class="install-wrap">
