@@ -126,6 +126,19 @@ final class GarnetStudioTests: XCTestCase {
         XCTAssertEqual(first?.scriptURL.path, "/Applications/Garnet Studio.app/Contents/Resources/scripts/garnet_converter_llm_feasibility.py")
     }
 
+    func testConverterStatusLocatorPrefersBundledScriptBeforeAmbientCheckout() {
+        let locator = ConverterStatusScriptLocator(
+            bundleResourceURL: URL(fileURLWithPath: "/Applications/Garnet Studio.app/Contents/Resources", isDirectory: true),
+            environmentRepoRoot: nil,
+            currentDirectoryURL: URL(fileURLWithPath: "/repo/apps/garnet-studio-macos", isDirectory: true)
+        )
+
+        let first = locator.candidateLocations().first
+
+        XCTAssertEqual(first?.repoRootURL.path, "/Applications/Garnet Studio.app/Contents/Resources")
+        XCTAssertEqual(first?.scriptURL.path, "/Applications/Garnet Studio.app/Contents/Resources/scripts/garnet_converter_status.py")
+    }
+
     func testMitReadinessLocatorPrefersBundledScriptBeforeAmbientCheckout() {
         let locator = MitReadinessScriptLocator(
             bundleResourceURL: URL(fileURLWithPath: "/Applications/Garnet Studio.app/Contents/Resources", isDirectory: true),
@@ -333,6 +346,26 @@ final class GarnetStudioTests: XCTestCase {
             ]
         )
         XCTAssertFalse(runner.commandArguments().contains("--include-source"))
+    }
+
+    func testConverterStatusRunnerBuildsMarkdownCommand() {
+        let location = ConverterStatusScriptLocation(
+            scriptURL: URL(fileURLWithPath: "/repo/scripts/garnet_converter_status.py"),
+            repoRootURL: URL(fileURLWithPath: "/repo", isDirectory: true)
+        )
+        let runner = ConverterStatusRunner(location: location)
+
+        XCTAssertEqual(
+            runner.commandArguments(),
+            [
+                "env",
+                "PYTHONDONTWRITEBYTECODE=1",
+                "python3",
+                "/repo/scripts/garnet_converter_status.py",
+                "--format",
+                "markdown",
+            ]
+        )
     }
 
     func testMitReadinessRunnerBuildsMarkdownCommand() {
