@@ -1771,6 +1771,25 @@ presentation/evidence UX only: human/aesthetic deck approval, distribution
 signing, target-platform proof, provider-backed conversion, backend lowering,
 mobile distribution, and final acceptance remain separate gates.
 
+Phase 6BH packaged deck-preview smoke pass: the copied-app DMG smoke now runs
+`GarnetStudio --mit-deck-preview-smoke` against the mounted and copied app
+bundle. The smoke command locates the packaged or source
+`garnet_mit_deck_preview.py` reporter, honors
+`GARNET_STUDIO_DECK_PREVIEW_SMOKE_OUTPUT_DIR`, runs the reporter, and fails
+unless the HTML, JSON, outline Markdown, and manifest outputs exist. The DMG
+smoke preserves that `studio-deck-preview/` output under the manifest-verified
+evidence directory, and the agentic matrix adds a three-probe
+`MIT deck preview smoke` domain. Current source-checkout evidence passes
+`132/132` with `skipped=0` in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-190902`, and
+packaged app/DMG smoke passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-190737` for DMG
+SHA-256 `eb91e2d6525b7c71ff8c1066501e83bc889403af0fcc3e8b6a4bbc85becf8de6`.
+This proves executable packaged-app deck-preview generation only;
+human/aesthetic deck approval, distribution signing, target-platform proof,
+provider-backed conversion, backend lowering, mobile distribution, and final
+acceptance remain separate gates.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.

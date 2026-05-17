@@ -2559,6 +2559,51 @@ enum GarnetStudioSelfTest {
         print("GarnetStudio agentic matrix passed")
         return 0
     }
+
+    static func deckPreviewSmokeOutputDirectory(
+        environment: [String: String] = ProcessInfo.processInfo.environment
+    ) -> URL {
+        if let explicit = environment["GARNET_STUDIO_DECK_PREVIEW_SMOKE_OUTPUT_DIR"],
+           !explicit.isEmpty
+        {
+            return URL(fileURLWithPath: explicit, isDirectory: true)
+        }
+        return FileManager.default.temporaryDirectory
+            .appendingPathComponent("GarnetStudioDeckPreviewSmoke-\(UUID().uuidString)", isDirectory: true)
+    }
+
+    static func runDeckPreviewSmoke(
+        locator: MitDeckPreviewScriptLocator = MitDeckPreviewScriptLocator(),
+        outputDirectoryURL: URL = deckPreviewSmokeOutputDirectory()
+    ) -> Int32 {
+        guard let location = locator.locate() else {
+            fputs("GarnetStudio deck preview smoke failed: no MIT deck-preview reporter found\n", stderr)
+            return 8
+        }
+
+        let result = MitDeckPreviewRunner(location: location, outputDirectoryURL: outputDirectoryURL).run()
+        guard result.status == .success else {
+            fputs("GarnetStudio deck preview smoke failed while running reporter:\n\(result.output)\n", stderr)
+            return 9
+        }
+
+        let requiredOutputs = [
+            "garnet-mit-deck-preview.html",
+            "garnet-mit-deck-preview.json",
+            "garnet-mit-deck-outline.md",
+            "MANIFEST.sha256",
+        ]
+        for filename in requiredOutputs {
+            let path = outputDirectoryURL.appendingPathComponent(filename).path
+            if !FileManager.default.fileExists(atPath: path) {
+                fputs("GarnetStudio deck preview smoke failed: missing \(filename)\n", stderr)
+                return 10
+            }
+        }
+
+        print("GarnetStudio deck preview smoke passed with \(outputDirectoryURL.path)")
+        return 0
+    }
 }
 
 @main
@@ -2572,6 +2617,9 @@ struct GarnetStudioApp: App {
         }
         if CommandLine.arguments.contains("--agentic-matrix-test") {
             Foundation.exit(GarnetStudioSelfTest.runAgenticMatrixTest())
+        }
+        if CommandLine.arguments.contains("--mit-deck-preview-smoke") {
+            Foundation.exit(GarnetStudioSelfTest.runDeckPreviewSmoke())
         }
     }
 

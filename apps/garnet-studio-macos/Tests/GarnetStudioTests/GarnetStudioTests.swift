@@ -391,6 +391,52 @@ final class GarnetStudioTests: XCTestCase {
         )
     }
 
+    func testDeckPreviewSmokeUsesExplicitOutputDirectory() {
+        let directory = URL(fileURLWithPath: "/tmp/GarnetStudioDeckPreviewSmoke", isDirectory: true)
+
+        XCTAssertEqual(
+            GarnetStudioSelfTest.deckPreviewSmokeOutputDirectory(
+                environment: ["GARNET_STUDIO_DECK_PREVIEW_SMOKE_OUTPUT_DIR": directory.path]
+            ).path,
+            directory.path
+        )
+    }
+
+    func testDeckPreviewSmokeRunsReporterAndRequiresManifestedOutputs() throws {
+        let temp = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+            .appendingPathComponent("GarnetStudioDeckPreviewSmokeTest-\(UUID().uuidString)", isDirectory: true)
+        let repo = temp.appendingPathComponent("repo", isDirectory: true)
+        let scripts = repo.appendingPathComponent("scripts", isDirectory: true)
+        let output = temp.appendingPathComponent("output", isDirectory: true)
+        try FileManager.default.createDirectory(at: scripts, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: temp) }
+
+        let reporter = scripts.appendingPathComponent("garnet_mit_deck_preview.py")
+        let source = """
+        #!/usr/bin/env python3
+        from pathlib import Path
+        import sys
+
+        out = Path(sys.argv[sys.argv.index("--output-dir") + 1])
+        out.mkdir(parents=True, exist_ok=True)
+        for name in ["garnet-mit-deck-preview.html", "garnet-mit-deck-preview.json", "garnet-mit-deck-outline.md", "MANIFEST.sha256"]:
+            (out / name).write_text("ok\\n", encoding="utf-8")
+        """
+        try source.write(to: reporter, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: reporter.path)
+
+        let locator = MitDeckPreviewScriptLocator(
+            bundleResourceURL: nil,
+            environmentRepoRoot: repo.path,
+            currentDirectoryURL: repo
+        )
+
+        XCTAssertEqual(
+            GarnetStudioSelfTest.runDeckPreviewSmoke(locator: locator, outputDirectoryURL: output),
+            0
+        )
+    }
+
     func testMacContinuationRunnerBuildsMarkdownCommand() {
         let location = MacContinuationScriptLocation(
             scriptURL: URL(fileURLWithPath: "/repo/scripts/garnet_mac_side_continuation_status.py"),

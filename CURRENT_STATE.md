@@ -942,6 +942,23 @@ local DMG; and the agentic matrix adds a three-probe `MIT deck preview UX`
 domain. This remains presentation/evidence UX only, not human/aesthetic deck
 approval, notarization, Windows/Linux runtime proof, provider-backed conversion,
 native backend lowering, mobile distribution, or final acceptance.
+Phase 6BH promotes that Studio action into packaged-app smoke evidence:
+`GarnetStudio --mit-deck-preview-smoke` runs the packaged or source deck-preview
+reporter, writes the preview bundle to an explicit smoke output directory, and
+fails if the HTML, JSON, outline Markdown, or manifest output is missing. The
+mounted-DMG smoke now runs that command against the copied app bundle and
+preserves the generated `studio-deck-preview/` directory inside the DMG smoke
+evidence. The agentic matrix adds a three-probe `MIT deck preview smoke` domain
+for the command, output contract, and DMG smoke script. Current source-checkout
+evidence passes `132/132` with `skipped=0` in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-190902`, and
+packaged app/DMG smoke passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-190737` for DMG
+SHA-256 `eb91e2d6525b7c71ff8c1066501e83bc889403af0fcc3e8b6a4bbc85becf8de6`.
+This proves executable packaged-app deck-preview generation only; it is still
+not human/aesthetic deck approval, notarization, Windows/Linux runtime proof,
+provider-backed conversion, native backend lowering, mobile distribution, or
+final acceptance.
 
 ## Historical Material
 

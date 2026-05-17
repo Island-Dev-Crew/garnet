@@ -35,6 +35,7 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
             "qa_garnet_promo_video.mjs",
             "render_garnet_promo_video.mjs",
             "run_agentic_dogfood_matrix.py",
+            "smoke_garnet_studio_dmg.sh",
             "sync_garnet_promo_video_site.mjs",
         ]:
             with self.subTest(name=name):
@@ -103,6 +104,8 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
         script = DMG_SMOKE_SCRIPT.read_text(encoding="utf-8")
 
         self.assertIn('OFFLINE_PWA_SMOKE="${INSTALLED_APP}/Contents/Resources/scripts/smoke_garnet_web_pwa_offline.mjs"', script)
+        self.assertIn('"GARNET_STUDIO_DECK_PREVIEW_SMOKE_OUTPUT_DIR=${OUTPUT_DIR}/studio-deck-preview"', script)
+        self.assertIn('"${APP_EXECUTABLE}" --mit-deck-preview-smoke', script)
         self.assertIn('ADOPTION_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_adoption_surface_status.py"', script)
         self.assertIn('ASSIST_CONTEXT="${INSTALLED_APP}/Contents/Resources/scripts/garnet_assist_context_pack.py"', script)
         self.assertIn('ADVISORY_BUNDLE="${INSTALLED_APP}/Contents/Resources/scripts/garnet_converter_advisory_bundle.py"', script)

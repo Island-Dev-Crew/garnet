@@ -2876,6 +2876,71 @@ def probe_set(
             security_domain="filesystem",
         ),
         Probe(
+            "report-studio-mit-deck-preview-smoke-command",
+            "MIT deck preview smoke",
+            "Garnet Studio should expose an executable smoke command for the MIT deck-preview reporter",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['--mit-deck-preview-smoke', 'runDeckPreviewSmoke', "
+                    "'deckPreviewSmokeOutputDirectory']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio MIT deck preview smoke command present')\n"
+                ),
+            ],
+            True,
+            ("studio MIT deck preview smoke command present",),
+            security_domain="not-applicable",
+        ),
+        Probe(
+            "report-studio-mit-deck-preview-smoke-output-contract",
+            "MIT deck preview smoke",
+            "Garnet Studio deck-preview smoke should require the manifested preview outputs",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['garnet-mit-deck-preview.html', "
+                    "'garnet-mit-deck-preview.json', 'garnet-mit-deck-outline.md', "
+                    "'MANIFEST.sha256']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio MIT deck preview smoke output contract present')\n"
+                ),
+            ],
+            True,
+            ("studio MIT deck preview smoke output contract present",),
+            security_domain="not-applicable",
+        ),
+        Probe(
+            "report-studio-mit-deck-preview-dmg-smoke",
+            "MIT deck preview smoke",
+            "Mounted-DMG smoke should run the copied app deck-preview smoke command and preserve its output",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(ROOT / 'scripts' / 'smoke_garnet_studio_dmg.sh')!r}).read_text()\n"
+                    "required = ['GARNET_STUDIO_DECK_PREVIEW_SMOKE_OUTPUT_DIR', "
+                    "'copied-app-mit-deck-preview-smoke', 'studio-deck-preview', "
+                    "'--mit-deck-preview-smoke']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio MIT deck preview DMG smoke present')\n"
+                ),
+            ],
+            True,
+            ("studio MIT deck preview DMG smoke present",),
+            security_domain="filesystem",
+        ),
+        Probe(
             "report-mit-readiness-plan-complete",
             "MIT readiness accounting",
             "objective status should separate completed tracked slices from broader productization completion",

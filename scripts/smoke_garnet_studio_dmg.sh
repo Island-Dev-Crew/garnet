@@ -254,6 +254,12 @@ echo "==> Running copied bundled PWA offline handler smoke"
 run_logged "copied-packaged-pwa-offline-handler" "${OFFLINE_PWA_SMOKE}" --docs-dir "${DOCS_DIR}" --output "${OUTPUT_DIR}/packaged-pwa-offline-handler.json"
 record "pass" "Copied bundled PWA offline handler smoke passed" "${OUTPUT_DIR}/packaged-pwa-offline-handler.json" "None."
 
+echo "==> Running copied app MIT deck-preview smoke"
+run_logged "copied-app-mit-deck-preview-smoke" /usr/bin/env \
+  "GARNET_STUDIO_DECK_PREVIEW_SMOKE_OUTPUT_DIR=${OUTPUT_DIR}/studio-deck-preview" \
+  "${APP_EXECUTABLE}" --mit-deck-preview-smoke
+record "pass" "Copied app MIT deck-preview smoke passed" "${OUTPUT_DIR}/studio-deck-preview" "None."
+
 if [ "${RUN_AGENTIC_MATRIX}" != "0" ]; then
   echo "==> Running copied app agentic matrix smoke"
   run_logged "copied-app-agentic-matrix-smoke" "${APP_EXECUTABLE}" --agentic-matrix-test
