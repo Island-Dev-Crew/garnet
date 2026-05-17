@@ -976,6 +976,24 @@ not human/aesthetic deck approval, Developer ID notarization, Windows/Linux
 runtime proof, provider-backed conversion, native backend lowering, mobile
 distribution, production-ready language status, or final MIT/productization
 acceptance.
+Phase 6BJ makes that proof easier to audit from the Desktop bundle: the
+mounted-DMG smoke now runs a separate
+`copied-app-mit-deck-preview-manifest-verify` command after the copied app
+generates the preview, preserves stdout/stderr logs for that nested checksum
+verification, and records a checks-table row pointing directly at
+`studio-deck-preview/MANIFEST.sha256`. The agentic matrix expands the `MIT deck
+preview smoke` domain to five probes by checking that the dedicated DMG manifest
+log remains wired. Current source-checkout evidence passes `134/134` with
+`skipped=0` in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-194315`.
+Packaged app/DMG smoke passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-194329` for DMG
+SHA-256 `c277e20c90a7cf11bcbcba41eee9d63414c8c737c2ddf5040a26601a5f777ffb`;
+the dedicated log shows all three nested preview files as `OK`. This remains
+unsigned/local packaged-app evidence, not human/aesthetic deck approval,
+Developer ID notarization, Windows/Linux runtime proof, provider-backed
+conversion, native backend lowering, mobile distribution, production-ready
+language status, or final MIT/productization acceptance.
 
 ## Historical Material
 

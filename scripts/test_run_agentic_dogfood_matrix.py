@@ -384,11 +384,12 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         ids = {probe.id for probe in concrete_probes}
         domains = Counter(probe.domain for probe in concrete_probes)
 
-        self.assertEqual(domains["MIT deck preview smoke"], 4)
+        self.assertEqual(domains["MIT deck preview smoke"], 5)
         self.assertIn("report-studio-mit-deck-preview-smoke-command", ids)
         self.assertIn("report-studio-mit-deck-preview-smoke-output-contract", ids)
         self.assertIn("report-studio-mit-deck-preview-smoke-manifest-verification", ids)
         self.assertIn("report-studio-mit-deck-preview-dmg-smoke", ids)
+        self.assertIn("report-studio-mit-deck-preview-dmg-manifest-log", ids)
 
     def test_probe_inventory_includes_converter_advisory_review_gate(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
