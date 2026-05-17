@@ -216,9 +216,10 @@ def read_status() -> MitReadinessStatus:
             evidence=(
                 "Garnet-aware assist contract, deterministic local context pack, "
                 "planned-language assist-plan reporter, converter LLM feasibility "
-                "gate, provider-neutral advisory bundle, advisory review gate, and "
-                "provider-neutral handoff packet are active, but no provider-backed "
-                "assist lane or LLM conversion is active."
+                "gate, advisory-only provider option registry, provider-neutral "
+                "advisory bundle, advisory review gate, and provider-neutral "
+                "handoff packet are active, but no provider-backed assist lane or "
+                "LLM conversion is active."
             ),
             blocked_by=["secure advisory implementation", "provider/runtime boundary", "dogfood gate"],
             deferred=contract.analysis_targets + contract.required_gates,

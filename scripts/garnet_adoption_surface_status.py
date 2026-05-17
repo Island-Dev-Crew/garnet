@@ -154,6 +154,7 @@ def read_surface() -> AdoptionSurface:
             "advisory planning is feasible, autonomous LLM conversion is not feasible yet",
             "deterministic context pack is active",
             "deterministic planned-language assist plan is active",
+            f"provider option registry lists {len(feasibility.provider_options)} advisory-only candidates",
             "provider-neutral advisory bundle is active",
             "advisory review gate is active before model handoff",
             "provider-neutral advisory handoff packet is active",

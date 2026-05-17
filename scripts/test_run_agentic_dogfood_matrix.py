@@ -230,9 +230,10 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         ids = {result.probe.id for result in results}
         domains = Counter(result.probe.domain for result in results)
 
-        self.assertEqual(domains["converter LLM feasibility"], 4)
+        self.assertEqual(domains["converter LLM feasibility"], 5)
         self.assertIn("report-converter-llm-feasibility-current-truth", ids)
         self.assertIn("report-converter-llm-feasibility-language-coverage", ids)
+        self.assertIn("report-converter-llm-feasibility-provider-options", ids)
         self.assertIn("report-converter-llm-feasibility-blockers", ids)
         self.assertIn("report-converter-llm-feasibility-output-manifest", ids)
 

@@ -68,7 +68,7 @@ done
 | `scripts/garnet_converter_status.py` | converter adoption inventory | current machine-readable truth for active converter lanes, advisory language lanes, native-boundary recommendations, backend-lowering plans, trust boundaries, and the future Garnet-aware assist contract |
 | `scripts/garnet_assist_context_pack.py` | Garnet-aware assist context and prompt pack | current machine-readable context bundle plus provider-neutral prompt pack for future provider-backed converter assist; hashes current truth/spec/dogfood docs and preserves advisory-only gates without enabling LLM conversion |
 | `scripts/garnet_converter_assist_plan.py` | advisory-language converter assist plan | current deterministic planner for a single source file in an active or advisory converter language; inventories safe-mode, memory, CapCaps, actor/orchestration, shell/process, SQL/data, and migration risks without executing source or enabling LLM conversion |
-| `scripts/garnet_converter_llm_feasibility.py` | converter LLM feasibility reporter | current machine-readable decision surface: provider-neutral advisory planning is feasible; autonomous/provider-backed LLM conversion is not active and remains blocked on secure runtime, deterministic frontend, sandbox, lineage, check, dogfood, human-audit, and native-boundary gates |
+| `scripts/garnet_converter_llm_feasibility.py` | converter LLM feasibility reporter | current machine-readable decision surface: provider-neutral advisory planning is feasible; autonomous/provider-backed LLM conversion is not active; the reporter now exposes ten advisory-only provider options with provider-backed conversion disabled, source omitted by default, privacy review required, and human approval required before any future provider handoff |
 | `scripts/garnet_converter_advisory_bundle.py` | converter advisory bundle | current provider-neutral handoff bundle that combines feasibility, context, and per-file assist-plan evidence; omits source text by default, requires `--include-source` for explicit local/provider handoff, and does not enable LLM conversion |
 | `scripts/garnet_converter_advisory_review.py` | converter advisory review gate | current provider-neutral review gate for advisory bundles; verifies bundle manifests, blocks source-included bundles unless explicitly approved, emits a human-review checklist, and does not enable provider-backed conversion |
 | `scripts/garnet_converter_advisory_handoff.py` | converter advisory handoff packet | current provider-neutral final packet builder for a reviewed no-source advisory bundle; refuses blocked/source-included reviews, emits a source-free prompt packet, and does not call a provider or enable conversion |
@@ -1027,6 +1027,24 @@ passes `136/136` with `skipped=0` in
 `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-203908`.
 This is CI runtime hardening only, not a new language/runtime capability or a
 claim of final MIT/productization acceptance.
+
+Phase 6BM makes the future provider-backed converter question more concrete
+without enabling providers. `scripts/garnet_converter_llm_feasibility.py` now
+emits a machine-readable Provider Option Registry for ten candidates: OpenAI
+GPT-5.5 class models, Anthropic Claude Opus/Sonnet class models, xAI Grok code
+models, Kimi/Moonshot Kimi K-series, Google Gemini/Gemma, DeepSeek coder models,
+Qwen coder models, local 1.58-bit models, a domain-fine-tuned Garnet adapter,
+and a multi-model reviewer quorum. Each option remains advisory-only,
+disabled by default, source-omitted by default, privacy-review-gated, and
+human-approval-gated; provider-backed conversion is still inactive. The
+adoption and MIT-readiness reporters surface that registry honestly, the public
+landing/status pages name it as an evaluation contract, and the agentic matrix
+adds a fifth `converter LLM feasibility` probe. Current source-checkout evidence
+passes `137/137` with `skipped=0` in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-210126`.
+This is converter-advisory structure only, not provider-backed LLM conversion,
+deterministic broad-language frontends, native backend lowering, production
+readiness, or final MIT/productization acceptance.
 
 ## Historical Material
 

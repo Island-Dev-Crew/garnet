@@ -31,6 +31,40 @@ class GarnetConverterLlmFeasibilityTests(unittest.TestCase):
         self.assertIn("secure advisory implementation", data["blocking_gates"])
         self.assertIn("human audit before unquarantine", data["required_gates"])
 
+    def test_provider_options_are_machine_readable_and_advisory_only(self) -> None:
+        output = subprocess.check_output(
+            [sys.executable, str(SCRIPT), "--format", "json"],
+            text=True,
+        )
+        data = json.loads(output)
+        options = data["provider_options"]
+
+        self.assertEqual(10, len(options))
+        option_ids = {option["id"] for option in options}
+        self.assertEqual(
+            {
+                "openai-gpt-5-5-class",
+                "anthropic-claude-opus-sonnet-class",
+                "xai-grok-code",
+                "kimi-moonshot-k-series",
+                "google-gemini-gemma",
+                "deepseek-coder",
+                "qwen-coder",
+                "local-1-58-bit",
+                "domain-fine-tuned-garnet-adapter",
+                "multi-model-reviewer-quorum",
+            },
+            option_ids,
+        )
+        for option in options:
+            self.assertIn(option["status"], {"candidate-to-evaluate", "long-term-candidate"})
+            self.assertFalse(option["provider_backed_conversion_allowed"])
+            self.assertFalse(option["enabled_by_default"])
+            self.assertEqual("omit-source-by-default", option["source_inclusion_default"])
+            self.assertTrue(option["requires_privacy_review"])
+            self.assertTrue(option["requires_human_approval"])
+            self.assertIn("advisory", option["first_safe_use"])
+
     def test_reports_user_requested_language_surface(self) -> None:
         output = subprocess.check_output(
             [sys.executable, str(SCRIPT), "--format", "json"],
@@ -91,6 +125,11 @@ class GarnetConverterLlmFeasibilityTests(unittest.TestCase):
         self.assertIn("Autonomous LLM conversion is not feasible yet", rendered)
         self.assertIn("Kotlin, Shell, SQL, Other", rendered)
         self.assertIn("Native Boundary Coverage", rendered)
+        self.assertIn("Provider Option Registry", rendered)
+        self.assertIn("OpenAI GPT-5.5 class models", rendered)
+        self.assertIn("Kimi/Moonshot Kimi K-series", rendered)
+        self.assertIn("local 1.58-bit models", rendered)
+        self.assertIn("provider-backed conversion allowed: false", rendered)
         self.assertIn("source language classifier", rendered)
         self.assertIn("not active LLM conversion", rendered)
         self.assertIn("human audit before unquarantine", rendered)

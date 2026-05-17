@@ -59,6 +59,7 @@ class GarnetAdoptionSurfaceStatusTests(unittest.TestCase):
             "advisory planning is feasible, autonomous LLM conversion is not feasible yet",
             data["llm_assist_truth"],
         )
+        self.assertIn("provider option registry lists 10 advisory-only candidates", data["llm_assist_truth"])
         self.assertIn("provider-neutral advisory bundle is active", data["llm_assist_truth"])
         self.assertIn("advisory review gate is active before model handoff", data["llm_assist_truth"])
         self.assertIn("provider-neutral advisory handoff packet is active", data["llm_assist_truth"])
@@ -149,6 +150,7 @@ class GarnetAdoptionSurfaceStatusTests(unittest.TestCase):
         self.assertIn("Advisory Handoff", site)
         self.assertIn("Objective Pulse", site)
         self.assertIn("provider-neutral prompt pack", site)
+        self.assertIn("provider-option registry", site)
         self.assertIn(
             "source classifier -> risk inventory -> Garnet context -> advisory plan -> review handoff -> human-approved candidate -> garnet check/test/dogfood",
             site,

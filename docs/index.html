@@ -1067,7 +1067,7 @@
     <h2>Convert <span class="accent">Rust · Ruby · Python · Go</span> source to Garnet.</h2>
     <p class="lead">The <code>garnet convert</code> tool is a migration assistant, not a full transpiler: it reads four deterministic source lanes and emits sandboxed Garnet with lineage, metrics, and a human migration checklist.</p>
     <p class="lead">The broader converter surface is honest by design: active conversion for the languages with deterministic frontends, advisory planning for broader source, native boundaries where low-level fidelity matters, and future Garnet-to-Wasm/LLVM-style lowering when backend evidence exists. Adoption surface truth is machine-readable through <code>scripts/garnet_adoption_surface_status.py</code>.</p>
-    <p class="lead">LLM advisory work uses the provider-neutral prompt pack and follows one reviewable path: source classifier -> risk inventory -> Garnet context -> advisory plan -> review handoff -> human-approved candidate -> garnet check/test/dogfood.</p>
+    <p class="lead">LLM advisory work uses the provider-neutral prompt pack and a machine-readable provider-option registry. Provider-backed conversion remains inactive; each future provider candidate is advisory-only, no-source by default, privacy-reviewed, and human-approved before any handoff can matter. The reviewable path is: source classifier -> risk inventory -> Garnet context -> advisory plan -> review handoff -> human-approved candidate -> garnet check/test/dogfood.</p>
 
     <div class="convert-grid">
       <div class="code-col ruby"><div class="head"><div class="swatch"></div>RUBY — source</div>
