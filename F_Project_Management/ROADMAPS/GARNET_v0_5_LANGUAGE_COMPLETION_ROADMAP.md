@@ -1837,6 +1837,18 @@ approval, Developer ID notarization, Windows/Linux runtime proof,
 provider-backed conversion, backend lowering, mobile distribution, or final
 MIT/productization acceptance.
 
+Phase 6BL hardens the remote evidence machinery itself: GitHub-hosted
+first-party actions are now pinned to Node 24-capable majors, and
+`scripts/test_github_actions_node24_readiness.py` is part of CI plus the
+agentic dogfood matrix. The preserved red matrix bundle
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-203128`
+showed the new probe catching its own stream expectation mistake; the corrected
+source-checkout matrix passes `136/136` with `skipped=0` in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-203908`. This is
+release-integrity hardening only, not proof of Developer ID notarization,
+Windows/Linux runtime completion, provider-backed conversion, backend lowering,
+mobile distribution, or final MIT/productization acceptance.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.

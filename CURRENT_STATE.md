@@ -1012,6 +1012,21 @@ browser-layout evidence for a generated review artifact, not human/aesthetic
 deck approval, Developer ID notarization, Windows/Linux runtime proof,
 provider-backed conversion, native backend lowering, mobile distribution,
 production-ready language status, or final MIT/productization acceptance.
+Phase 6BL removes the Node 20-backed first-party GitHub Action warnings that
+surfaced during the post-merge verification for PR #154. The workflows now pin
+GitHub-hosted actions to Node 24-capable majors (`actions/checkout@v6`,
+`actions/setup-python@v6`, `actions/cache@v5`, `actions/upload-artifact@v6`,
+and `actions/download-artifact@v8`) while leaving non-GitHub actions unchanged.
+`scripts/test_github_actions_node24_readiness.py` is wired into CI's agent
+documentation contract job, and the agentic dogfood matrix adds a `CI action
+runtime` probe so future regressions are caught before merge. The first source
+matrix run preserved the expected stream-mismatch failure in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-203128`; after
+fixing the probe to check unittest stderr, current source-checkout evidence
+passes `136/136` with `skipped=0` in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-203908`.
+This is CI runtime hardening only, not a new language/runtime capability or a
+claim of final MIT/productization acceptance.
 
 ## Historical Material
 

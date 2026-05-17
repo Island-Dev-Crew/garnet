@@ -2985,6 +2985,16 @@ def probe_set(
             security_domain="filesystem",
         ),
         Probe(
+            "report-github-actions-node24-readiness",
+            "CI action runtime",
+            "GitHub workflows should pin first-party actions to Node 24-capable major versions",
+            [sys.executable, str(ROOT / "scripts" / "test_github_actions_node24_readiness.py")],
+            True,
+            (),
+            ("Ran 2 tests", "OK"),
+            security_domain="release-integrity",
+        ),
+        Probe(
             "report-mit-readiness-plan-complete",
             "MIT readiness accounting",
             "objective status should separate completed tracked slices from broader productization completion",

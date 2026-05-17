@@ -2423,3 +2423,17 @@ smoke evidence passes in
 This is layout/browser evidence only, not human/aesthetic deck approval,
 Developer ID notarization, Windows/Linux proof, provider-backed conversion,
 native lowering, mobile distribution, or final MIT/productization acceptance.
+
+Phase 6BL CI action-runtime hardening:
+first-party GitHub workflow actions now use Node 24-capable majors
+(`actions/checkout@v6`, `actions/setup-python@v6`, `actions/cache@v5`,
+`actions/upload-artifact@v6`, and `actions/download-artifact@v8`) so the remote
+Node 20 deprecation annotations do not become a June 2026 surprise. A new
+`scripts/test_github_actions_node24_readiness.py` regression test is wired into
+CI, and the agentic dogfood matrix includes a `CI action runtime` probe. The
+first source matrix run preserved the expected failed evidence bundle at
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-203128`; the
+corrected matrix passes `136/136` with `skipped=0` in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-203908`. This is
+release-integrity maintenance, not language feature completion, distribution
+signing, or final MIT/productization acceptance.

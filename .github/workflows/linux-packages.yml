@@ -38,13 +38,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Rust toolchain (stable)
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache cargo registry + target
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -90,7 +90,7 @@ jobs:
           cat SHA256SUMS
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: garnet-linux-packages
           path: |
@@ -108,7 +108,7 @@ jobs:
     container: ubuntu:24.04
     steps:
       - name: Fetch artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: garnet-linux-packages
           path: dist/
@@ -161,7 +161,7 @@ jobs:
     container: fedora:40
     steps:
       - name: Fetch artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: garnet-linux-packages
           path: dist/
@@ -193,7 +193,7 @@ jobs:
   shellcheck-installer:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Installer copies stay identical
         run: cmp -s installer/sh.garnet-lang.org/install.sh docs/install.sh
 
@@ -223,7 +223,7 @@ jobs:
       contents: write
     steps:
       - name: Fetch artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: garnet-linux-packages
           path: dist/
