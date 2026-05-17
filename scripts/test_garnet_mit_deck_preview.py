@@ -44,6 +44,8 @@ class GarnetMitDeckPreviewTests(unittest.TestCase):
         self.assertIn("Evidence", html)
         self.assertIn("Speaker note", html)
         self.assertIn("not full MIT/productization completion", html)
+        self.assertIn("overflow-wrap: anywhere", html)
+        self.assertIn("word-break: break-word", html)
         self.assertNotIn("production ready", html.lower())
 
     def test_output_dir_writes_manifested_html_json_and_outline(self) -> None:

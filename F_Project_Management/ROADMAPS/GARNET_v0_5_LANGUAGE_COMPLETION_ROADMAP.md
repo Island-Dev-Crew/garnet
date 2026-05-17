@@ -1821,6 +1821,22 @@ approval, Developer ID notarization, Windows/Linux runtime proof,
 provider-backed conversion, backend lowering, mobile distribution, or final
 MIT/productization acceptance.
 
+Phase 6BK adds real browser-smoke evidence for the generated MIT deck preview:
+`scripts/smoke_garnet_mit_deck_preview_browser.mjs` creates and manifest-verifies
+the deck-preview bundle, serves it locally, opens it in headless Chrome through
+CDP, captures a screenshot, and verifies desktop/mobile layout, no external
+assets, visible readiness metrics, speaker notes, evidence sections, and
+forbidden-claim copy. The first live browser run caught horizontal overflow in
+long evidence paths, so the generated deck CSS now wraps long content. Current
+source-checkout evidence passes `135/135` with `skipped=0` in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-200458`, and
+browser-smoke evidence passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-mit-deck-preview-browser-smoke-20260516-201326`.
+This is browser/layout evidence for a review artifact, not human/aesthetic deck
+approval, Developer ID notarization, Windows/Linux runtime proof,
+provider-backed conversion, backend lowering, mobile distribution, or final
+MIT/productization acceptance.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.
