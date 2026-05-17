@@ -1121,6 +1121,20 @@
     <h2>Install with one curl command.</h2>
     <p class="lead">The <strong>v0.4.2 release is live</strong> on GitHub. The universal installer pulls the release package, verifies it against <code>SHA256SUMS</code>, and falls back to a source install through <code>cargo install --locked</code> if a platform package is unavailable. Detailed productization gates live on the <a href="status.html">readiness status page</a>.</p>
 
+    <div class="install-note" style="margin:8px 0 26px;padding:16px 18px;border:1px solid var(--rule);border-radius:10px;background:var(--bg-soft);font-size:14.5px;color:var(--ink-soft);">
+      <strong style="color:var(--ink);">Before you install.</strong> Prebuilt release packages need <em>no toolchain</em>. The <em>source</em> install needs <strong>Rust 1.75+</strong>. v0.4.2 ships these checksum-verified assets; other targets fall back to the source install:
+      <table style="border-collapse:collapse;margin:12px 0 4px;font-size:13.5px;width:100%;">
+        <tr style="color:var(--ink);"><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">Platform</th><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">v0.4.2 asset</th><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">Path</th></tr>
+        <tr><td style="padding:4px 10px;">macOS · Apple Silicon</td><td style="padding:4px 10px;"><code>garnet-0.4.2-aarch64-apple-darwin.tar.gz</code></td><td style="padding:4px 10px;">universal installer</td></tr>
+        <tr><td style="padding:4px 10px;">macOS · Intel</td><td style="padding:4px 10px;">— none in v0.4.2 —</td><td style="padding:4px 10px;">source install</td></tr>
+        <tr><td style="padding:4px 10px;">Linux x86_64</td><td style="padding:4px 10px;"><code>garnet_0.4.2-1_amd64.deb</code> · <code>garnet-0.4.2-1.x86_64.rpm</code></td><td style="padding:4px 10px;">universal / distro pkg</td></tr>
+        <tr><td style="padding:4px 10px;">Linux aarch64</td><td style="padding:4px 10px;">— none in v0.4.2 —</td><td style="padding:4px 10px;">source install</td></tr>
+        <tr><td style="padding:4px 10px;">Windows</td><td style="padding:4px 10px;">— none in v0.4.2 —</td><td style="padding:4px 10px;">source install</td></tr>
+      </table>
+      <div style="margin-top:10px;">Verify any manual download before running it (from the folder containing the asset and <code>SHA256SUMS</code>):</div>
+<pre style="margin:8px 0 0;">shasum -a 256 --ignore-missing -c SHA256SUMS</pre>
+    </div>
+
     <div class="tabs install-tabs-bar" role="tablist">
       <button class="tab active" data-install="universal">Universal</button>
       <button class="tab" data-install="macos">macOS</button>
