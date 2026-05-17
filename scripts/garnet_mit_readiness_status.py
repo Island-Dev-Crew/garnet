@@ -20,6 +20,7 @@ import garnet_converter_status  # noqa: E402
 import garnet_proof_benchmark_status  # noqa: E402
 import garnet_promo_video_status  # noqa: E402
 import garnet_readiness_status  # noqa: E402
+import garnet_windows_linux_studio_status  # noqa: E402
 
 
 @dataclass(frozen=True)
@@ -82,6 +83,7 @@ def read_status() -> MitReadinessStatus:
     contract = converter.intelligent_assist_contract
     promo = garnet_promo_video_status.read_status()
     proof = garnet_proof_benchmark_status.read_status()
+    wls = garnet_windows_linux_studio_status.read_status()
     if promo.public_site_embed_present:
         promo_evidence_tail = "records local rendered MP4/WebM evidence, automated visual QA evidence, a website export package, and public-site embedding while keeping human/aesthetic acceptance open."
     elif promo.website_export_present:
@@ -175,6 +177,20 @@ def read_status() -> MitReadinessStatus:
                 "stapled DMG ticket",
             ],
             deferred=["Signed + notarized macOS distribution"],
+        ),
+        ObjectiveLane(
+            id="windows_linux_distribution",
+            label="Windows/Linux distribution",
+            status="planned-contract",
+            completion_percent=25.0,
+            evidence=(
+                "`scripts/garnet_windows_linux_studio_status.py` lands a "
+                "no-new-dependency command/evidence contract and status "
+                f"accounting; all {len(wls.packaging_gates)} packaging gates "
+                f"are `{wls.status}` with no Windows/Linux Studio runtime proof."
+            ),
+            blocked_by=list(wls.user_assistance_needed),
+            deferred=list(wls.next_slices),
         ),
         ObjectiveLane(
             id="web_pwa",
