@@ -3336,6 +3336,8 @@ def probe_set(
                 "\"design_contract_path\": \"docs/promo/DESIGN.md\"",
                 "\"timeline_registered\": true",
                 "\"tool\": \"hyperframes-html\"",
+                "\"dogfood_probe_count\": 140",
+                "\"dogfood_probe_count_matches\": true",
             ),
             security_domain="release-integrity",
             env=promo_env,

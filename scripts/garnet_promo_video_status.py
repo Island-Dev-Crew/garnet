@@ -10,8 +10,12 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import os
+import re
+import sys
+import tempfile
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -191,6 +195,25 @@ def _surface_entry(id: str, path: Path, role: str, required_phrase: str) -> dict
     }
 
 
+def _current_dogfood_probe_count() -> int:
+    matrix_path = ROOT / "scripts" / "run_agentic_dogfood_matrix.py"
+    if not matrix_path.is_file():
+        return 0
+
+    spec = importlib.util.spec_from_file_location("garnet_promo_matrix_inventory", matrix_path)
+    if spec is None or spec.loader is None:
+        return 0
+
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["garnet_promo_matrix_inventory"] = module
+    spec.loader.exec_module(module)
+    with tempfile.TemporaryDirectory() as temp:
+        work = Path(temp)
+        fixtures = module.prepare_fixtures(work)
+        probes = module.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+    return len(probes)
+
+
 def _locked_assets() -> list[dict[str, str | bool]]:
     return [
         _asset_entry(
@@ -265,6 +288,20 @@ def _composition_source() -> dict[str, str | int | bool]:
     timeline_registration = f'window.__timelines["{composition_id}"]'
     duration_token = 'data-duration="30"'
     uses_locked_assets = "../icons/garnet-512.png" in text
+    computed_probe_count = _current_dogfood_probe_count()
+    declared_count_match = re.search(r'data-dogfood-probes="([0-9]+)"', text)
+    declared_probe_count = int(declared_count_match.group(1)) if declared_count_match else 0
+    source_checkout = (ROOT / "Cargo.toml").is_file()
+    expected_probe_count = (
+        computed_probe_count
+        if source_checkout
+        else max(computed_probe_count, declared_probe_count)
+    )
+    dogfood_probe_count_matches = (
+        expected_probe_count > 0
+        and declared_probe_count == expected_probe_count
+        and f'<div class="proof-key">{expected_probe_count}</div>' in text
+    )
     return {
         "path": str(composition_path.relative_to(ROOT)),
         "design_contract_path": str(design_path.relative_to(ROOT)),
@@ -276,6 +313,10 @@ def _composition_source() -> dict[str, str | int | bool]:
         "duration_declared": duration_token in text,
         "timeline_registered": timeline_registration in text,
         "uses_locked_assets": uses_locked_assets,
+        "dogfood_probe_count": expected_probe_count,
+        "computed_dogfood_probe_count": computed_probe_count,
+        "declared_dogfood_probe_count": declared_probe_count,
+        "dogfood_probe_count_matches": dogfood_probe_count_matches,
         "sha256": _sha256(composition_path) if exists else "",
         "design_sha256": _sha256(design_path) if design_exists else "",
     }
@@ -306,6 +347,7 @@ def read_status() -> PromoVideoStatus:
             "duration_declared",
             "timeline_registered",
             "uses_locked_assets",
+            "dogfood_probe_count_matches",
             "sha256",
             "design_sha256",
         )

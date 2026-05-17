@@ -2524,3 +2524,19 @@ DMG SHA-256
 `eb853428fad50f91e6df4962f5c05437e05a58b6ea0a2b48af89cf934d4ec731`. This is
 release-integrity checker coverage only, not language feature completion,
 distribution signing, or final MIT/productization acceptance.
+
+Phase 6BQ promo proof-count sync:
+the 30-second promo composition now keeps its visible dogfood proof beat aligned
+with the current source-checkout dogfood matrix. A regression derives the matrix
+inventory and requires `docs/promo/composition.html` to expose
+`data-dogfood-probes="140"` plus a matching visible proof number. The promo
+status reporter now surfaces the expected count, the declared count, and a
+`dogfood_probe_count_matches` boolean as part of the composition contract, and
+the agentic matrix checks that field. The promo was rerendered into
+`/Users/idc2.0/Desktop/dogfood/garnet-promo-video`, visual-QA verified in
+`/Users/idc2.0/Desktop/dogfood/garnet-promo-video-visual-qa`, exported for the
+website in `/Users/idc2.0/Desktop/dogfood/garnet-promo-video-website-export`,
+and synced back into the public site with evidence in
+`/Users/idc2.0/Desktop/dogfood/garnet-promo-video-site-sync`. This is promo
+evidence freshness and public-site asset sync only; human/aesthetic acceptance
+and final MIT/productization acceptance remain open.

@@ -27,6 +27,6 @@ Build the 30-second Garnet promo as a precise evidence-driven product film: dark
 ## What NOT To Do
 
 - Do not use generic blue/purple gradients as the main identity.
-- Do not imply a rendered promo video, notarized app, mobile app, or provider-backed converter exists.
+- Do not imply final human/aesthetic acceptance, a notarized app, a mobile app, or a provider-backed converter exists.
 - Do not use abstract blobs, floating orbs, or stock-like atmospheric imagery.
 - Do not hide current readiness caveats behind decorative motion.

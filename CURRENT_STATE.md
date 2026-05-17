@@ -78,7 +78,7 @@ done
 | `scripts/garnet_mit_deck_outline.py` | MIT deck-outline inventory | current machine-readable and Markdown slide outline for an 8-slide MIT reviewer deck; turns the demo route, adoption status, blocked gates, and Desktop evidence boundaries into presentation notes without claiming final MIT/productization acceptance |
 | `scripts/garnet_mit_deck_preview.py` | MIT deck-preview artifact | current browser-smokeable HTML/JSON preview generated from the deck outline; packages slide story, evidence, speaker notes, blocked gates, and forbidden claims into a manifested review artifact without claiming final MIT/productization acceptance |
 | `scripts/smoke_garnet_mit_deck_preview_browser.mjs` | MIT deck-preview browser smoke | current local Chrome/CDP smoke harness for the generated deck preview; verifies manifested output, desktop/mobile horizontal overflow, self-contained assets, status metrics, boundary copy, and screenshot evidence without claiming human/aesthetic deck approval |
-| `scripts/garnet_promo_video_status.py` | promo video readiness contract | current machine-readable storyboard/gate contract for a 30-second HyperFrames promo; visual identity/source surfaces and `docs/promo/` composition source are tied to repo assets, local Desktop MP4/WebM, automated visual-QA, website-export, and site-sync evidence can promote the lane to `public-site-embedded` at 95.0%, while human/aesthetic acceptance remains open |
+| `scripts/garnet_promo_video_status.py` | promo video readiness contract | current machine-readable storyboard/gate contract for a 30-second HyperFrames promo; visual identity/source surfaces and `docs/promo/` composition source are tied to repo assets, local Desktop MP4/WebM, automated visual-QA, website-export, and site-sync evidence can promote the lane to `public-site-embedded` at 95.0%, while human/aesthetic acceptance remains open; the composition source now exposes a dogfood probe count contract that must match the current matrix inventory |
 | `scripts/render_garnet_promo_video.mjs` | promo video render harness | current local Chrome DevTools + `ffmpeg` harness for manifest-backed MP4/WebM/poster render evidence; this is not a substitute for visual QA or website export |
 | `scripts/qa_garnet_promo_video.mjs` | promo visual-QA harness | current local `ffprobe`/`ffmpeg` harness for automated metadata and sample-frame QA evidence; this is not a substitute for website export or optional human aesthetic review |
 | `scripts/export_garnet_promo_video_site.mjs` | promo website-export harness | current local package step that copies visual-QA-approved MP4/WebM/poster assets, writes an embed snippet, JSON/Markdown evidence, and a manifest without embedding the video on the public site |
@@ -1112,6 +1112,22 @@ the DMG smoke bundle verifies in
 DMG SHA-256
 `eb853428fad50f91e6df4962f5c05437e05a58b6ea0a2b48af89cf934d4ec731`. This is
 CI checker coverage only, not a new product or language capability.
+
+Phase 6BQ refreshes the repo-owned promo proof beat after the dogfood matrix
+expanded to `140` source-checkout probes. A new regression derives the current
+matrix inventory and requires `docs/promo/composition.html` to expose the same
+`data-dogfood-probes` value and visible proof number; `scripts/garnet_promo_video_status.py`
+now reports `dogfood_probe_count`, `declared_dogfood_probe_count`, and
+`dogfood_probe_count_matches` inside the composition source contract. The
+promo was rerendered from that source into
+`/Users/idc2.0/Desktop/dogfood/garnet-promo-video`, passed automated visual QA
+in `/Users/idc2.0/Desktop/dogfood/garnet-promo-video-visual-qa`, exported
+website-ready assets in
+`/Users/idc2.0/Desktop/dogfood/garnet-promo-video-website-export`, and synced
+the public site assets with manifested evidence in
+`/Users/idc2.0/Desktop/dogfood/garnet-promo-video-site-sync`. The promo lane
+remains `public-site-embedded` at `95.0%`; human/aesthetic acceptance remains
+open, and this is not a claim of final MIT/productization acceptance.
 
 ## Historical Material
 

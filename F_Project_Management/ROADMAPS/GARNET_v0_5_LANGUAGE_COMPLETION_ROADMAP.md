@@ -1930,6 +1930,17 @@ checker-surface hardening only, not proof of Developer ID notarization,
 Windows/Linux runtime completion, provider-backed conversion, backend lowering,
 mobile distribution, or final MIT/productization acceptance.
 
+Phase 6BQ closes a presentation-evidence freshness gap in the promo lane. The
+repo-owned HyperFrames composition had a stale dogfood proof number after the
+matrix grew to `140` probes, so a new regression now derives the current matrix
+inventory and requires the composition's machine-readable and visible proof
+count to match. `scripts/garnet_promo_video_status.py` exposes
+`dogfood_probe_count_matches`, and the agentic matrix checks that contract. The
+promo was rerendered, visual-QA checked, website-exported, and public-site
+synced through Desktop dogfood bundles, keeping the lane
+`public-site-embedded` at `95.0%` while leaving human/aesthetic acceptance and
+final MIT/productization acceptance open.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.
