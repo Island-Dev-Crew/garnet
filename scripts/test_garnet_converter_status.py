@@ -50,6 +50,18 @@ class GarnetConverterStatusTests(unittest.TestCase):
             self.assertEqual("planned", planned[language]["status"])
             self.assertIn("fit_rationale", planned[language])
             self.assertTrue(planned[language]["fit_rationale"])
+        self.assertIn("dynamic and side-effect-heavy", planned["javascript"]["fit_rationale"].lower())
+        self.assertIn("type-stripping conversion", planned["typescript"]["fit_rationale"].lower())
+        self.assertIn("arc", planned["swift"]["fit_rationale"].lower())
+        self.assertIn("jvm", planned["java"]["fit_rationale"].lower())
+        self.assertIn("abi", planned["c"]["fit_rationale"].lower())
+        self.assertIn("templates", planned["cpp"]["fit_rationale"].lower())
+        self.assertIn("clr", planned["csharp"]["fit_rationale"].lower())
+        self.assertIn("dynamic symbol", planned["perl"]["fit_rationale"].lower())
+        self.assertIn("coroutines", planned["kotlin"]["fit_rationale"].lower())
+        self.assertIn("process", planned["shell"]["fit_rationale"].lower())
+        self.assertIn("dialect", planned["sql"]["fit_rationale"].lower())
+        self.assertIn("deterministic frontend", planned["other"]["fit_rationale"].lower())
 
         native = {item["id"]: item for item in data["native_boundary_languages"]}
         for language in ("c", "cpp", "objective_c", "assembly", "cuda", "platform_specific"):

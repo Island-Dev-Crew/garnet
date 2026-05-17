@@ -138,18 +138,101 @@ def active_languages() -> list[LanguageLane]:
 
 def planned_languages() -> list[LanguageLane]:
     planned = [
-        ("javascript", "JavaScript"),
-        ("typescript", "TypeScript"),
-        ("swift", "Swift"),
-        ("java", "Java"),
-        ("c", "C"),
-        ("cpp", "C++"),
-        ("csharp", "C#"),
-        ("perl", "Perl"),
-        ("kotlin", "Kotlin"),
-        ("shell", "Shell"),
-        ("sql", "SQL"),
-        ("other", "Other"),
+        (
+            "javascript",
+            "JavaScript",
+            (
+                "Parser and runtime shape are dynamic and side-effect-heavy, so deterministic "
+                "frontend output must be proven before direct conversion."
+            ),
+        ),
+        (
+            "typescript",
+            "TypeScript",
+            (
+                "Type-stripping conversion is currently incomplete for complex generics and emits "
+                "insufficient deterministic ownership evidence."
+            ),
+        ),
+        (
+            "swift",
+            "Swift",
+            (
+                "ARC lifecycle and Objective-C interoperability must remain source-of-truth through "
+                "native modules until compiler and memory guarantees are fully mapped."
+            ),
+        ),
+        (
+            "java",
+            "Java",
+            (
+                "JVM bytecode/runtime contracts and exception-flow semantics require a proven deterministic "
+                "frontend and migration test suite first."
+            ),
+        ),
+        (
+            "c",
+            "C",
+            (
+                "ABI, pointer semantics, and platform-specific layout assumptions argue for native modules/FFI "
+                "unless a backend lowering strategy is proven."
+            ),
+        ),
+        (
+            "cpp",
+            "C++",
+            (
+                "Templates, overload resolution, and low-level object/memory behavior require backend-backed "
+                "lowering before source conversion is reliable."
+            ),
+        ),
+        (
+            "csharp",
+            "C#",
+            (
+                "CLR identity, reflection, and runtime type behaviors need deterministic frontend and "
+                "evidence gates before deterministic migration."
+            ),
+        ),
+        (
+            "perl",
+            "Perl",
+            (
+                "Dynamic symbol tables and context-dependent execution patterns prevent safe deterministic translation "
+                "without a dedicated frontend."
+            ),
+        ),
+        (
+            "kotlin",
+            "Kotlin",
+            (
+                "Coroutines, platform-specific nullability, and JVM/runtime interactions require proven checks and "
+                "frontend maturity."
+            ),
+        ),
+        (
+            "shell",
+            "Shell",
+            (
+                "Process graph execution and environment state coupling do not preserve well to source conversion today."
+            ),
+        ),
+        (
+            "sql",
+            "SQL",
+            (
+                "Schema migration, dialect variance, and execution side effects require dedicated planning rather "
+                "than direct converter output."
+            ),
+        ),
+        (
+            "other",
+            "Other",
+            (
+                "No deterministic frontend is available yet; classification, risk inventory, and pilot plans "
+                "must precede converter claims."
+            ),
+        ),
     ]
     return [
         LanguageLane(
@@ -162,11 +245,11 @@ def planned_languages() -> list[LanguageLane]:
                 "a tested frontend, CIR lineage, sandbox output, and dogfood readiness gate."
             ),
             fit_rationale=(
-                "Requires a deterministic frontend, checker support, and evidence pipeline "
-                "before conversion can be active."
+                rationale
+                + " Requires a deterministic frontend, checker support, and evidence pipeline before conversion can be active."
             ),
         )
-        for identifier, label in planned
+        for identifier, label, rationale in planned
     ]
 
 
