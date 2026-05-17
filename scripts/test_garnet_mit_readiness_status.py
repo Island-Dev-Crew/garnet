@@ -43,6 +43,14 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertEqual("active-partial", lanes["llm_assist"].status)
         self.assertLess(lanes["llm_assist"].completion_percent, 100.0)
         self.assertEqual("planned", lanes["broad_converter_frontends"].status)
+        self.assertIn("windows_linux_distribution", lanes)
+        self.assertEqual(
+            "planned-contract", lanes["windows_linux_distribution"].status
+        )
+        self.assertLess(
+            lanes["windows_linux_distribution"].completion_percent, 100.0
+        )
+        self.assertTrue(lanes["windows_linux_distribution"].blocked_by)
 
     def test_json_exposes_evidence_and_deferred_boundaries(self) -> None:
         output = subprocess.check_output(
