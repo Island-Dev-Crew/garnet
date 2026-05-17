@@ -151,11 +151,7 @@ class GarnetConverterLlmFeasibilityTests(unittest.TestCase):
             self.assertTrue((out_dir / "garnet-converter-llm-feasibility.md").exists())
             manifest = out_dir / "MANIFEST.sha256"
             self.assertTrue(manifest.exists())
-            verify = subprocess.check_output(
-                ["shasum", "-a", "256", "-c", manifest.name],
-                cwd=out_dir,
-                text=True,
-            )
+            verify = (out_dir / "MANIFEST.verify.log").read_text(encoding="utf-8")
 
         self.assertIn("garnet-converter-llm-feasibility.json: OK", verify)
         self.assertIn("garnet-converter-llm-feasibility.md: OK", verify)

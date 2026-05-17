@@ -215,7 +215,7 @@ def validate(root: Path = ROOT) -> int:
         seen.add(rel)
 
     actual = sorted(
-        str(path.relative_to(root))
+        path.relative_to(root).as_posix()
         for path in root.rglob("AGENTS.md")
         if not skip_path(path)
     )

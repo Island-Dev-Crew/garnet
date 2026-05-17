@@ -52,6 +52,14 @@ If Swift tooling is unavailable on Windows/Linux, do not mark SwiftUI Studio tes
 
 Recommended owner: GPT-5.5 xhigh/fast when available.
 
+2026-05-17 update: live `origin/main` is newer than this handoff baseline. The
+first Windows-side slice is now captured in
+`F_Project_Management/GARNET_WINDOWS_LINUX_STUDIO_MVP_ARCHITECTURE_2026_05_17.md`
+and `scripts/garnet_windows_linux_studio_status.py`. Treat the zip/handoff
+packet as input, not as source truth. The current CLI has no `garnet health`
+subcommand, so the Studio `CLI Health` action maps to `garnet version` unless a
+real health command is added later.
+
 Primary work:
 
 1. Create the cross-platform Studio shell plan.

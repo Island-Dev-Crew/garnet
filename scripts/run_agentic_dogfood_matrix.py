@@ -9,6 +9,7 @@ green-only smoke test.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -82,6 +83,13 @@ def run(cmd: list[str], cwd: Path, timeout: int = 120, env: dict[str, str] | Non
         stderr = timeout_output(exc.stderr)
         stderr = f"{stderr}\nTIMEOUT after {timeout}s: {' '.join(cmd)}\n"
         return subprocess.CompletedProcess(cmd, 124, stdout, stderr)
+    except OSError as exc:
+        return subprocess.CompletedProcess(
+            cmd,
+            127,
+            "",
+            f"COMMAND ERROR: {exc}\n",
+        )
 
 
 def ensure_garnet_bin(explicit: str | None) -> Path:
@@ -106,6 +114,20 @@ def write(path: Path, text: str) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
     return path
+
+
+def write_manifest(directory: Path) -> None:
+    entries: list[str] = []
+    verify: list[str] = []
+    for path in sorted(directory.rglob("*")):
+        if not path.is_file() or path.name in {"MANIFEST.sha256", "MANIFEST.verify.log"}:
+            continue
+        rel = "./" + path.relative_to(directory).as_posix()
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        entries.append(f"{digest}  {rel}")
+        verify.append(f"{rel}: OK")
+    (directory / "MANIFEST.sha256").write_text("\n".join(entries) + "\n", encoding="utf-8")
+    (directory / "MANIFEST.verify.log").write_text("\n".join(verify) + "\n", encoding="utf-8")
 
 
 def prepare_fixtures(work: Path) -> dict[str, Path]:
@@ -3939,14 +3961,7 @@ def write_outputs(work: Path, results: list[ProbeResult], metadata: dict[str, st
             "Not available in this packaged matrix context.\n",
             encoding="utf-8",
         )
-    subprocess.run(
-        "find . -type f ! -name MANIFEST.sha256 ! -name MANIFEST.verify.log -print0 | "
-        "sort -z | xargs -0 shasum -a 256 > MANIFEST.sha256 && "
-        "shasum -a 256 -c MANIFEST.sha256 > MANIFEST.verify.log",
-        cwd=work,
-        shell=True,
-        check=True,
-    )
+    write_manifest(work)
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:

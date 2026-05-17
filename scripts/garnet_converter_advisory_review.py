@@ -11,7 +11,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import subprocess
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -73,15 +72,22 @@ def verify_manifest(bundle_dir: Path) -> tuple[bool, str]:
     manifest = bundle_dir / "MANIFEST.sha256"
     if not manifest.exists():
         return False, "MANIFEST.sha256 missing"
-    result = subprocess.run(
-        ["shasum", "-a", "256", "-c", "MANIFEST.sha256"],
-        cwd=bundle_dir,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        check=False,
-    )
-    return result.returncode == 0, result.stdout
+    lines: list[str] = []
+    for raw in manifest.read_text(encoding="utf-8").splitlines():
+        if not raw.strip():
+            continue
+        try:
+            expected, rel = raw.split(maxsplit=1)
+        except ValueError:
+            return False, f"malformed manifest line: {raw}"
+        path = bundle_dir / rel.strip()
+        if not path.exists():
+            return False, f"{rel}: missing"
+        actual = file_sha256(path)
+        if actual != expected:
+            return False, f"{rel}: FAILED"
+        lines.append(f"{rel}: OK")
+    return True, "\n".join(lines) + ("\n" if lines else "")
 
 
 def read_review(bundle_dir: Path, *, allow_source_included: bool = False) -> ConverterAdvisoryReview:
