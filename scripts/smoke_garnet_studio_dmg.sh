@@ -175,6 +175,7 @@ MIT_DECK_PREVIEW="${INSTALLED_APP}/Contents/Resources/scripts/garnet_mit_deck_pr
 MIT_DEMO_ROUTE="${INSTALLED_APP}/Contents/Resources/scripts/garnet_mit_demo_route.py"
 MIT_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_mit_readiness_status.py"
 PROMO_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_promo_video_status.py"
+PROOF_BENCHMARK_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_proof_benchmark_status.py"
 PROMO_EXPORT="${INSTALLED_APP}/Contents/Resources/scripts/export_garnet_promo_video_site.mjs"
 PROMO_QA="${INSTALLED_APP}/Contents/Resources/scripts/qa_garnet_promo_video.mjs"
 PROMO_RENDER="${INSTALLED_APP}/Contents/Resources/scripts/render_garnet_promo_video.mjs"
@@ -193,14 +194,23 @@ PROMO_DESIGN="${DOCS_DIR}/promo/DESIGN.md"
 PROMO_COMPOSITION="${DOCS_DIR}/promo/composition.html"
 SPEC_DIR="${INSTALLED_APP}/Contents/Resources/C_Language_Specification"
 PROJECT_DOGFOOD_DIR="${INSTALLED_APP}/Contents/Resources/F_Project_Management/DOGFOOD"
+EMPIRICAL_PLAN="${INSTALLED_APP}/Contents/Resources/F_Project_Management/ROADMAPS/GARNET_EMPIRICAL_VALIDATION_PLAN.md"
+DEVELOPER_COMPREHENSION_PROTOCOL="${INSTALLED_APP}/Contents/Resources/F_Project_Management/GARNET_v4_2_Developer_Comprehension_Study_Protocol.md"
+PAPER_VI_EXECUTION="${INSTALLED_APP}/Contents/Resources/F_Project_Management/GARNET_v4_0_PAPER_VI_EXECUTION.md"
+PARSER_CARGO="${INSTALLED_APP}/Contents/Resources/garnet-parser-v0.3/Cargo.toml"
+PARSER_BENCH="${INSTALLED_APP}/Contents/Resources/garnet-parser-v0.3/benches/parse.rs"
+INTERP_CARGO="${INSTALLED_APP}/Contents/Resources/garnet-interp-v0.3/Cargo.toml"
+INTERP_BENCH="${INSTALLED_APP}/Contents/Resources/garnet-interp-v0.3/benches/eval.rs"
+MEMORY_CARGO="${INSTALLED_APP}/Contents/Resources/garnet-memory-v0.3/Cargo.toml"
+MEMORY_BENCH="${INSTALLED_APP}/Contents/Resources/garnet-memory-v0.3/benches/vector.rs"
 
-for required in "${APP_EXECUTABLE}" "${GARNET_BIN}" "${MATRIX_SCRIPT}" "${OFFLINE_PWA_SMOKE}" "${ADOPTION_STATUS}" "${ASSIST_CONTEXT}" "${ADVISORY_BUNDLE}" "${ADVISORY_HANDOFF}" "${ADVISORY_REVIEW}" "${ASSIST_PLAN}" "${LLM_FEASIBILITY}" "${CONVERTER_STATUS}" "${MAC_CONTINUATION}" "${MIT_DECK_OUTLINE}" "${MIT_DECK_PREVIEW}" "${MIT_DEMO_ROUTE}" "${MIT_STATUS}" "${PROMO_STATUS}" "${PROMO_EXPORT}" "${PROMO_QA}" "${PROMO_RENDER}" "${PROMO_SYNC}" "${DECK_PREVIEW_BROWSER_SMOKE}" "${NODE24_READINESS}" "${READINESS_STATUS}" "${NOTARIZATION_STATUS}"; do
+for required in "${APP_EXECUTABLE}" "${GARNET_BIN}" "${MATRIX_SCRIPT}" "${OFFLINE_PWA_SMOKE}" "${ADOPTION_STATUS}" "${ASSIST_CONTEXT}" "${ADVISORY_BUNDLE}" "${ADVISORY_HANDOFF}" "${ADVISORY_REVIEW}" "${ASSIST_PLAN}" "${LLM_FEASIBILITY}" "${CONVERTER_STATUS}" "${MAC_CONTINUATION}" "${MIT_DECK_OUTLINE}" "${MIT_DECK_PREVIEW}" "${MIT_DEMO_ROUTE}" "${MIT_STATUS}" "${PROMO_STATUS}" "${PROOF_BENCHMARK_STATUS}" "${PROMO_EXPORT}" "${PROMO_QA}" "${PROMO_RENDER}" "${PROMO_SYNC}" "${DECK_PREVIEW_BROWSER_SMOKE}" "${NODE24_READINESS}" "${READINESS_STATUS}" "${NOTARIZATION_STATUS}"; do
   if [ ! -x "${required}" ]; then
     echo "error: copied app is missing executable asset: ${required}" >&2
     exit 4
   fi
 done
-record "pass" "Copied app executable assets exist" "app executable, bundled CLI, matrix script, status reporters, MIT deck-outline reporter, MIT deck-preview reporter, MIT deck-preview browser-smoke harness, MIT demo-route reporter, Mac-side continuation reporter, converter advisory bundle, converter advisory handoff packet, converter advisory review gate, converter LLM feasibility reporter, Node 24 readiness checker, promo render, visual-QA, website-export, site-sync harnesses, PWA smoke" "None."
+record "pass" "Copied app executable assets exist" "app executable, bundled CLI, matrix script, status reporters, MIT deck-outline reporter, MIT deck-preview reporter, MIT deck-preview browser-smoke harness, MIT demo-route reporter, Mac-side continuation reporter, proof/benchmark status reporter, converter advisory bundle, converter advisory handoff packet, converter advisory review gate, converter LLM feasibility reporter, Node 24 readiness checker, promo render, visual-QA, website-export, site-sync harnesses, PWA smoke" "None."
 
 for required_dir in "${EXAMPLES_DIR}" "${DOCS_DIR}" "${SPEC_DIR}" "${PROJECT_DOGFOOD_DIR}" "${PROMO_ASSETS_DIR}" "${WORKFLOWS_DIR}"; do
   if [ ! -d "${required_dir}" ]; then
@@ -223,6 +233,15 @@ for required_file in \
   "${SPEC_DIR}/GARNET_v0_4_2_Conformance_Matrix.md" \
   "${INSTALLED_APP}/Contents/Resources/F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md" \
   "${PROJECT_DOGFOOD_DIR}/GARNET_v0_5_DOGFOOD_READINESS_PHASE_LOG.md" \
+  "${EMPIRICAL_PLAN}" \
+  "${DEVELOPER_COMPREHENSION_PROTOCOL}" \
+  "${PAPER_VI_EXECUTION}" \
+  "${PARSER_CARGO}" \
+  "${PARSER_BENCH}" \
+  "${INTERP_CARGO}" \
+  "${INTERP_BENCH}" \
+  "${MEMORY_CARGO}" \
+  "${MEMORY_BENCH}" \
   "${PROMO_ASSETS_DIR}/garnet-logo.png" \
   "${PROMO_STUDIO_SOURCE}" \
   "${PROMO_STUDIO_LOGO}" \
@@ -233,7 +252,7 @@ for required_file in \
     exit 5
   fi
 done
-record "pass" "Copied app bundles status reporter context documents" "README, current state, spec, conformance, plan, dogfood ledger, promo source-lock inputs, and promo composition source" "None."
+record "pass" "Copied app bundles status reporter context documents" "README, current state, spec, conformance, plan, dogfood ledger, proof/benchmark protocols, benchmark harness sources, promo source-lock inputs, and promo composition source" "None."
 
 if command -v codesign >/dev/null 2>&1; then
   echo "==> Verifying copied app signature"

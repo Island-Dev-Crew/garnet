@@ -1930,9 +1930,9 @@ checker-surface hardening only, not proof of Developer ID notarization,
 Windows/Linux runtime completion, provider-backed conversion, backend lowering,
 mobile distribution, or final MIT/productization acceptance.
 
-Phase 6BQ closes a presentation-evidence freshness gap in the promo lane. The
+Phase 6BR closes a presentation-evidence freshness gap in the promo lane. The
 repo-owned HyperFrames composition had a stale dogfood proof number after the
-matrix grew to `140` probes, so a new regression now derives the current matrix
+matrix grew to `141` probes, so a new regression now derives the current matrix
 inventory and requires the composition's machine-readable and visible proof
 count to match. `scripts/garnet_promo_video_status.py` exposes
 `dogfood_probe_count_matches`, and the agentic matrix checks that contract. The
@@ -1940,6 +1940,19 @@ promo was rerendered, visual-QA checked, website-exported, and public-site
 synced through Desktop dogfood bundles, keeping the lane
 `public-site-embedded` at `95.0%` while leaving human/aesthetic acceptance and
 final MIT/productization acceptance open.
+
+Phase 6BR gives Phase 7 a concrete local evidence surface before any deeper
+research claim is made. `scripts/garnet_proof_benchmark_status.py` reports the
+current parser/interpreter/memory Criterion benchmark harnesses, proof and
+empirical protocols, blockers, deferred work, and forbidden claims as
+JSON/Markdown with an optional checksum manifest. MIT/productization and
+Mac-continuation status now consume that reporter, packaged Studio resources
+stage the reporter plus the small bench/protocol context it needs, and the
+agentic dogfood matrix adds `report-proof-benchmark-status`. The extra probe
+updates current matrix truth to `141`, and the promo proof beat plus rendered
+site assets were refreshed accordingly. This remains scaffold and inventory
+evidence, not a benchmark result, mechanized proof, native backend proof,
+external study result, or final MIT/productization acceptance.
 
 ## Phase 7: Release, Research, And Repeated Falsification
 

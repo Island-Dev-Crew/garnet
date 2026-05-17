@@ -118,8 +118,12 @@ def read_status() -> MacContinuationStatus:
             status="active-partial",
             category="research evidence",
             mac_actionable=True,
-            evidence="Proof and benchmark lanes are scaffolded/partial and can receive narrow local evidence slices.",
-            next_slice="Add one falsifiable proof or benchmark report at a time, tied to repo commands and dogfood evidence.",
+            evidence=(
+                "`scripts/garnet_proof_benchmark_status.py` now inventories "
+                "Criterion benchmark harnesses and research protocols while keeping "
+                "measurements, mechanized proof, and external studies unclaimed."
+            ),
+            next_slice="Run one benchmark no-run or measurement evidence bundle at a time, tied to machine metadata and dogfood evidence.",
             blocked_by=["mechanized proof depth", "fresh empirical validation budget"],
         ),
         MacContinuationLane(
@@ -191,4 +195,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

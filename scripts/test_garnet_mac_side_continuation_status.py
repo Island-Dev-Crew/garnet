@@ -43,6 +43,7 @@ class GarnetMacSideContinuationStatusTests(unittest.TestCase):
         self.assertIn("Apple Developer Program identity verification", lanes["apple_developer_id"]["blocked_by"])
         self.assertIn("do not claim Windows/Linux runtime completion", lanes["windows_linux_studio"]["next_slice"])
         self.assertIn("without calling providers", lanes["converter_advisory"]["next_slice"])
+        self.assertIn("garnet_proof_benchmark_status.py", lanes["proof_benchmark_empirics"]["evidence"])
 
     def test_markdown_is_a_goal_prompt_friendly_pulse(self) -> None:
         rendered = subprocess.check_output([sys.executable, str(SCRIPT)], text=True)

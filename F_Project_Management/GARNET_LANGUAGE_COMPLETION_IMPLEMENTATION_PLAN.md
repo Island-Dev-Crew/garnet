@@ -2529,7 +2529,7 @@ Phase 6BQ promo proof-count sync:
 the 30-second promo composition now keeps its visible dogfood proof beat aligned
 with the current source-checkout dogfood matrix. A regression derives the matrix
 inventory and requires `docs/promo/composition.html` to expose
-`data-dogfood-probes="140"` plus a matching visible proof number. The promo
+`data-dogfood-probes="141"` plus a matching visible proof number. The promo
 status reporter now surfaces the expected count, the declared count, and a
 `dogfood_probe_count_matches` boolean as part of the composition contract, and
 the agentic matrix checks that field. The promo was rerendered into
@@ -2540,3 +2540,21 @@ and synced back into the public site with evidence in
 `/Users/idc2.0/Desktop/dogfood/garnet-promo-video-site-sync`. This is promo
 evidence freshness and public-site asset sync only; human/aesthetic acceptance
 and final MIT/productization acceptance remain open.
+
+Phase 6BR proof/benchmark status pass:
+`scripts/garnet_proof_benchmark_status.py` turns the proof, benchmark, and
+empirical lane from loose roadmap caveat into a manifest-capable status surface.
+It inventories the parser/interpreter/memory Criterion harnesses, confirms
+their Cargo bench entries, records the empirical and comprehension protocols as
+protocol-only, and keeps measurement runs, mechanized RustBelt/Iris/Coq proof,
+native backend proof, and external study results unclaimed. The MIT objective
+and Mac-continuation reporters now reference this status instead of only saying
+the lane is documented partial; packaged Garnet Studio resources stage the
+reporter plus minimal bench/protocol context so Objective Pulse keeps working
+from the unsigned/local app; and the dogfood matrix adds a one-probe `proof
+benchmark empirics` domain. The new matrix probe expands current source
+inventory to `141`, so the promo composition and rendered public-site assets
+were refreshed to keep the proof beat aligned. This is not benchmark
+measurement, formal mechanization, native backend proof, PLDI-grade empirical
+validation, human/aesthetic promo approval, or final MIT/productization
+acceptance.
