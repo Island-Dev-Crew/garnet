@@ -12,6 +12,7 @@
 <meta property="og:title" content="Garnet — Rust Rigor. Ruby Velocity.">
 <meta property="og:description" content="A dual-mode language platform: managed mode for velocity, safe mode for rigor, mode boundary auto-bridged.">
 <meta property="og:type" content="website">
+<link rel="canonical" href="https://garnet-lang.org/">
 <style>
   /* ─── Palette + tokens ─────────────────────────────────────── */
   :root {
@@ -735,6 +736,18 @@
     .features { grid-template-columns: 1fr; }
     .numbers { grid-template-columns: 1fr 1fr; }
     .hero { padding: 60px 0 40px; }
+  }
+
+  /* Accessibility: honor reduced-motion — no starfield twinkle, no
+     float/pulse, no reveal/scroll animation. Content stays fully visible. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation: none !important;
+      transition: none !important;
+      scroll-behavior: auto !important;
+    }
+    .starfield { animation: none !important; }
+    .reveal { opacity: 1 !important; transform: none !important; }
   }
 </style>
 </head>
