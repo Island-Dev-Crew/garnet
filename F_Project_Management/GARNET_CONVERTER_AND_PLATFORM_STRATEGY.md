@@ -114,7 +114,10 @@ Required invariants:
 
 ## Provider-Backed Assist Options
 
-Provider-backed adapters should come after the local pipeline is stable. Ten useful options to evaluate:
+Provider-backed adapters should come after the local pipeline is stable. The
+current feasibility reporter exposes the same ten options as a machine-readable
+advisory-only registry with provider-backed conversion disabled, source omitted
+by default, privacy review required, and human approval required:
 
 | Option | Best role | Why consider it | Caution |
 | --- | --- | --- | --- |

@@ -1849,6 +1849,20 @@ release-integrity hardening only, not proof of Developer ID notarization,
 Windows/Linux runtime completion, provider-backed conversion, backend lowering,
 mobile distribution, or final MIT/productization acceptance.
 
+Phase 6BM turns provider selection for future converter assist into
+machine-readable advisory evidence instead of loose ambition. The converter LLM
+feasibility reporter now lists ten provider options with evaluation roles,
+cautions, first safe use, source-inclusion defaults, privacy-review gates, and
+human-approval gates, while keeping provider-backed conversion disallowed and
+disabled by default. The public site, status page, adoption reporter, MIT
+readiness reporter, and converter strategy doc now describe that registry as an
+evaluation contract only. The agentic matrix adds a provider-options probe to
+the `converter LLM feasibility` domain; current evidence passes `137/137` with
+`skipped=0` in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-210126`. This is
+not provider-backed LLM conversion, broad deterministic frontend support,
+native backend lowering, or final MIT/productization acceptance.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.
