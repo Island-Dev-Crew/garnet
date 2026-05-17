@@ -3070,7 +3070,7 @@ def probe_set(
         Probe(
             "report-github-actions-node24-readiness",
             "CI action runtime",
-            "GitHub workflows should pin first-party actions to Node 24-capable major versions",
+            "GitHub workflows should pin first-party and CodeQL actions to Node 24-capable major versions",
             [sys.executable, str(ROOT / "scripts" / "test_github_actions_node24_readiness.py")],
             True,
             (),

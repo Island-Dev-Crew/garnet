@@ -1887,6 +1887,28 @@ Studio evidence UX, not provider-backed conversion, broad deterministic
 frontend support, native backend lowering, notarized distribution, or final
 MIT/productization acceptance.
 
+Phase 6BO extends the action-runtime gate to CodeQL itself. The post-merge
+PR #157 CodeQL job was green, but GitHub annotated the workflow because
+`github/codeql-action/*@v3` still used the deprecated Node 20 runtime. The
+workflow now pins `github/codeql-action/init@v4`,
+`github/codeql-action/autobuild@v4`, and
+`github/codeql-action/analyze@v4`; the Node 24 readiness checker scans CodeQL
+pins alongside first-party `actions/*` pins; and the agentic matrix records the
+broader CI action-runtime claim. Current source-checkout evidence passes
+`140/140` with `skipped=0` in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-215539`;
+packaged app evidence passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-215723`;
+copied-DMG evidence passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-215740`; and the
+DMG smoke bundle verifies in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-215739` for
+DMG SHA-256
+`93daca36ae5877560122fd21692ba451a6993803503267998b01a2e3b76d9fbd`. This is
+release-integrity maintenance only, not proof of Developer ID notarization,
+Windows/Linux runtime completion, provider-backed conversion, backend lowering,
+mobile distribution, or final MIT/productization acceptance.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.
