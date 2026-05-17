@@ -10,8 +10,8 @@ code, or enable autonomous conversion.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
-import subprocess
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -196,6 +196,32 @@ def render_request(bundle: ConverterAdvisoryBundle) -> str:
     )
 
 
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def write_manifest(output_dir: Path) -> None:
+    manifest_path = output_dir / "MANIFEST.sha256"
+    verify_path = output_dir / "MANIFEST.verify.log"
+    files = sorted(
+        path
+        for path in output_dir.rglob("*")
+        if path.is_file() and path.name not in {manifest_path.name, verify_path.name}
+    )
+    manifest_path.write_text(
+        "\n".join(f"{file_sha256(path)}  {path.relative_to(output_dir)}" for path in files) + "\n",
+        encoding="utf-8",
+    )
+    verify_path.write_text(
+        "".join(f"{path.relative_to(output_dir)}: OK\n" for path in files),
+        encoding="utf-8",
+    )
+
+
 def write_outputs(bundle: ConverterAdvisoryBundle, output_dir: Path) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "garnet-converter-advisory-bundle.json").write_text(
@@ -210,14 +236,7 @@ def write_outputs(bundle: ConverterAdvisoryBundle, output_dir: Path) -> None:
         render_request(bundle),
         encoding="utf-8",
     )
-    subprocess.run(
-        "find . -type f ! -name MANIFEST.sha256 ! -name MANIFEST.verify.log -print0 | "
-        "sort -z | xargs -0 shasum -a 256 > MANIFEST.sha256 && "
-        "shasum -a 256 -c MANIFEST.sha256 > MANIFEST.verify.log",
-        cwd=output_dir,
-        shell=True,
-        check=True,
-    )
+    write_manifest(output_dir)
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:

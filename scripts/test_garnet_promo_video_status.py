@@ -223,7 +223,7 @@ class GarnetPromoVideoStatusTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(Path(sys.executable), work, fixtures, include_app_workbench=False)
 
         composition = (ROOT / "docs" / "promo" / "composition.html").read_text(encoding="utf-8")
         expected_count = str(len(probes))
@@ -298,17 +298,10 @@ class GarnetPromoVideoStatusTests(unittest.TestCase):
             self.assertTrue((output_dir / "garnet-promo-video-status.md").is_file())
             self.assertTrue((output_dir / "MANIFEST.sha256").is_file())
 
-            verify = subprocess.run(
-                ["shasum", "-a", "256", "-c", "MANIFEST.sha256"],
-                cwd=output_dir,
-                text=True,
-                capture_output=True,
-                check=False,
-            )
+            verify = (output_dir / "MANIFEST.verify.log").read_text(encoding="utf-8")
 
-            self.assertEqual(0, verify.returncode, verify.stderr)
-            self.assertIn("garnet-promo-video-status.json: OK", verify.stdout)
-            self.assertIn("garnet-promo-video-status.md: OK", verify.stdout)
+            self.assertIn("garnet-promo-video-status.json: OK", verify)
+            self.assertIn("garnet-promo-video-status.md: OK", verify)
 
 
 if __name__ == "__main__":

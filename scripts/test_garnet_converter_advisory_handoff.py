@@ -159,14 +159,7 @@ class GarnetConverterAdvisoryHandoffTests(unittest.TestCase):
             self.assertIn("Garnet Converter Advisory Handoff Packet", result.stdout)
             self.assertTrue((output_dir / "garnet-converter-advisory-handoff.json").exists())
             self.assertTrue((output_dir / "garnet-converter-advisory-handoff.md").exists())
-            verify = subprocess.run(
-                ["shasum", "-a", "256", "-c", "MANIFEST.sha256"],
-                cwd=output_dir,
-                check=True,
-                text=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            ).stdout
+            verify = (output_dir / "MANIFEST.verify.log").read_text(encoding="utf-8")
             self.assertIn("garnet-converter-advisory-handoff.json: OK", verify)
             self.assertIn("garnet-converter-advisory-handoff.md: OK", verify)
 

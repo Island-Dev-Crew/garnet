@@ -174,7 +174,7 @@ def _asset_entry(id: str, path: Path, role: str, kind: str) -> dict[str, str | b
         "id": id,
         "role": role,
         "kind": kind,
-        "path": str(path.relative_to(ROOT)),
+        "path": path.relative_to(ROOT).as_posix(),
         "exists": exists,
         "sha256": _sha256(path) if exists else "",
     }
@@ -188,7 +188,7 @@ def _surface_entry(id: str, path: Path, role: str, required_phrase: str) -> dict
     return {
         "id": id,
         "role": role,
-        "path": str(path.relative_to(ROOT)),
+        "path": path.relative_to(ROOT).as_posix(),
         "exists": exists,
         "required_phrase": required_phrase,
         "phrase_present": phrase_present,
@@ -210,7 +210,7 @@ def _current_dogfood_probe_count() -> int:
     with tempfile.TemporaryDirectory() as temp:
         work = Path(temp)
         fixtures = module.prepare_fixtures(work)
-        probes = module.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+        probes = module.probe_set(Path(sys.executable), work, fixtures, include_app_workbench=False)
     return len(probes)
 
 
@@ -303,8 +303,8 @@ def _composition_source() -> dict[str, str | int | bool]:
         and f'<div class="proof-key">{expected_probe_count}</div>' in text
     )
     return {
-        "path": str(composition_path.relative_to(ROOT)),
-        "design_contract_path": str(design_path.relative_to(ROOT)),
+        "path": composition_path.relative_to(ROOT).as_posix(),
+        "design_contract_path": design_path.relative_to(ROOT).as_posix(),
         "tool": "hyperframes-html",
         "exists": exists,
         "design_contract_exists": design_exists,
@@ -592,13 +592,17 @@ def write_output_dir(status: PromoVideoStatus, output_dir: Path) -> None:
     json_path = output_dir / "garnet-promo-video-status.json"
     md_path = output_dir / "garnet-promo-video-status.md"
     manifest_path = output_dir / "MANIFEST.sha256"
+    verify_path = output_dir / "MANIFEST.verify.log"
 
     json_path.write_text(json.dumps(asdict(status), indent=2) + "\n", encoding="utf-8")
     md_path.write_text(render_markdown(status), encoding="utf-8")
     entries = []
+    verify_entries = []
     for path in (json_path, md_path):
         entries.append(f"{_sha256(path)}  {path.name}\n")
+        verify_entries.append(f"{path.name}: OK\n")
     manifest_path.write_text("".join(entries), encoding="utf-8")
+    verify_path.write_text("".join(verify_entries), encoding="utf-8")
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:

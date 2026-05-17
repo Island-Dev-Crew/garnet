@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -20,6 +21,9 @@ SPEC.loader.exec_module(matrix)
 
 
 class AgenticDogfoodMatrixTests(unittest.TestCase):
+    def _fake_garnet_path(self) -> Path:
+        return Path(sys.executable)
+
     def _fake_result(self, probe: object) -> object:
         return matrix.ProbeResult(
             probe=probe,
@@ -34,18 +38,27 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
 
     def _inventory_results(self, probes: list[object]) -> list[object]:
         results = []
+        original_run = matrix.run
+
+        def fake_run(cmd: list[str], cwd: Path, timeout: int = 120, env: dict[str, str] | None = None) -> object:
+            return subprocess.CompletedProcess(cmd, 0, "inventory probe stub\n", "")
+
         for probe in probes:
             if isinstance(probe, matrix.Probe):
                 results.append(self._fake_result(probe))
             else:
-                results.append(probe())
+                matrix.run = fake_run
+                try:
+                    results.append(probe())
+                finally:
+                    matrix.run = original_run
         return results
 
     def test_probe_inventory_includes_agent_recovery_domain(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             results = self._inventory_results(probes)
 
         ids = {result.probe.id for result in results}
@@ -62,7 +75,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
 
         probe = next(
             probe
@@ -79,7 +92,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
 
         ids = {probe.id for probe in concrete_probes}
@@ -94,7 +107,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
 
         ids = {probe.id for probe in concrete_probes}
@@ -107,7 +120,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
 
         ids = {probe.id for probe in concrete_probes}
@@ -122,7 +135,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
 
         ids = {probe.id for probe in concrete_probes}
@@ -136,7 +149,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             results = self._inventory_results(probes)
 
         ids = {result.probe.id for result in results}
@@ -151,7 +164,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             results = self._inventory_results(probes)
 
         ids = {result.probe.id for result in results}
@@ -166,7 +179,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             results = self._inventory_results(probes)
 
         ids = {result.probe.id for result in results}
@@ -187,7 +200,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
 
         ids = {probe.id for probe in concrete_probes}
@@ -202,7 +215,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
 
         ids = {probe.id for probe in concrete_probes}
@@ -218,7 +231,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             results = self._inventory_results(probes)
 
         ids = {result.probe.id for result in results}
@@ -240,7 +253,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             results = self._inventory_results(probes)
 
         ids = {result.probe.id for result in results}
@@ -257,7 +270,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
 
         ids = {probe.id for probe in concrete_probes}
@@ -272,7 +285,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             results = self._inventory_results(probes)
 
         ids = {result.probe.id for result in results}
@@ -288,7 +301,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
 
         ids = {probe.id for probe in concrete_probes}
@@ -303,7 +316,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
 
         ids = {probe.id for probe in concrete_probes}
@@ -318,7 +331,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
 
         ids = {probe.id for probe in concrete_probes}
@@ -333,7 +346,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
 
         ids = {probe.id for probe in concrete_probes}
@@ -348,7 +361,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
 
         ids = {probe.id for probe in concrete_probes}
@@ -363,7 +376,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
 
         ids = {probe.id for probe in concrete_probes}
@@ -378,7 +391,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
 
         ids = {probe.id for probe in concrete_probes}
@@ -393,7 +406,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
 
         ids = {probe.id for probe in concrete_probes}
@@ -409,7 +422,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
 
         ids = {probe.id for probe in concrete_probes}
@@ -424,7 +437,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
 
         ids = {probe.id for probe in concrete_probes}
@@ -441,7 +454,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             results = self._inventory_results(probes)
 
         ids = {result.probe.id for result in results}
@@ -456,7 +469,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             results = self._inventory_results(probes)
 
         ids = {result.probe.id for result in results}
@@ -471,7 +484,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
 
         ids = {probe.id for probe in concrete_probes}
@@ -486,7 +499,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             results = self._inventory_results(probes)
 
         ids = {result.probe.id for result in results}
@@ -501,7 +514,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
 
         ids = {probe.id for probe in concrete_probes}
@@ -515,30 +528,56 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
     def test_signed_release_probe_does_not_persist_generated_private_keys(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
-            fake_garnet = work / "fake-garnet"
-            fake_garnet.write_text(
-                dedent(
-                    """\
-                    #!/usr/bin/env sh
-                    case "$1" in
-                      keygen)
-                        printf 'private test key\\n' > "$2"
-                        echo 'generated Ed25519 signing keypair'
-                        ;;
-                      build)
-                        source="${5:-$3}"
-                        manifest="${source}.manifest.json"
-                        printf '{"signature":"test","signer_pubkey":"test"}\\n' > "$manifest"
-                        echo 'signed_by test'
-                        ;;
-                      verify)
-                        echo 'signature valid'
-                        ;;
-                    esac
-                    """
-                ),
-                encoding="utf-8",
-            )
+            if sys.platform == "win32":
+                fake_garnet = work / "fake-garnet.cmd"
+                fake_garnet.write_text(
+                    dedent(
+                        """\
+                        @echo off
+                        if "%1"=="keygen" (
+                          echo private test key>"%2"
+                          echo generated Ed25519 signing keypair
+                          exit /b 0
+                        )
+                        if "%1"=="build" (
+                          echo {"signature":"test","signer_pubkey":"test"}>"%5.manifest.json"
+                          echo signed_by test
+                          exit /b 0
+                        )
+                        if "%1"=="verify" (
+                          echo signature valid
+                          exit /b 0
+                        )
+                        exit /b 1
+                        """
+                    ),
+                    encoding="utf-8",
+                )
+            else:
+                fake_garnet = work / "fake-garnet"
+                fake_garnet.write_text(
+                    dedent(
+                        """\
+                        #!/usr/bin/env sh
+                        case "$1" in
+                          keygen)
+                            printf 'private test key\\n' > "$2"
+                            echo 'generated Ed25519 signing keypair'
+                            ;;
+                          build)
+                            source="${5:-$3}"
+                            manifest="${source}.manifest.json"
+                            printf '{"signature":"test","signer_pubkey":"test"}\\n' > "$manifest"
+                            echo 'signed_by test'
+                            ;;
+                          verify)
+                            echo 'signature valid'
+                            ;;
+                        esac
+                        """
+                    ),
+                    encoding="utf-8",
+                )
             fake_garnet.chmod(0o755)
             fixtures = matrix.prepare_fixtures(work)
 
@@ -551,7 +590,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
 
         ids = {probe.id for probe in concrete_probes}
@@ -564,7 +603,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
 
         ids = {probe.id for probe in concrete_probes}
@@ -577,7 +616,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
 
         ids = {probe.id for probe in concrete_probes}
@@ -611,7 +650,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
 
         ids = {probe.id for probe in concrete_probes}
@@ -628,7 +667,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
 
         ids = {probe.id for probe in concrete_probes}
@@ -659,7 +698,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             results = self._inventory_results(probes)
 
         ids = {result.probe.id for result in results}
@@ -674,7 +713,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
-            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
             results = self._inventory_results(probes)
 
         coverage = {item["domain"]: item for item in matrix.domain_coverage(results)}
