@@ -737,6 +737,18 @@
     .numbers { grid-template-columns: 1fr 1fr; }
     .hero { padding: 60px 0 40px; }
   }
+
+  /* Accessibility: honor reduced-motion — no starfield twinkle, no
+     float/pulse, no reveal/scroll animation. Content stays fully visible. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation: none !important;
+      transition: none !important;
+      scroll-behavior: auto !important;
+    }
+    .starfield { animation: none !important; }
+    .reveal { opacity: 1 !important; transform: none !important; }
+  }
 </style>
 </head>
 <body>
