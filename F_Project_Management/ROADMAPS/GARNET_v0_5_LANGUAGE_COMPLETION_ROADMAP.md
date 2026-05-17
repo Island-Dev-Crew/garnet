@@ -1790,6 +1790,21 @@ human/aesthetic deck approval, distribution signing, target-platform proof,
 provider-backed conversion, backend lowering, mobile distribution, and final
 acceptance remain separate gates.
 
+Phase 6BI manifest-verifies the generated deck-preview bundle from the app
+smoke path: `GarnetStudio --mit-deck-preview-smoke` now runs `shasum -a 256 -c
+MANIFEST.sha256` inside the generated preview output directory and rejects stale
+checksum manifests before reporting success. The agentic matrix adds a fourth
+`MIT deck preview smoke` probe for the manifest-verification contract. Current
+source-checkout evidence passes `133/133` with `skipped=0` in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-192458`, and
+packaged app/DMG smoke passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-192532` for DMG
+SHA-256 `ee6426be2e8ef9bc85de32dfc156297cc1662b51abd49bb74fccadfff2a2a12c`.
+This is still unsigned/local presentation evidence, not human/aesthetic deck
+approval, Developer ID notarization, Windows/Linux runtime proof,
+provider-backed conversion, backend lowering, mobile distribution, or final
+MIT/productization acceptance.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.

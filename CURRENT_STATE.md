@@ -959,6 +959,23 @@ This proves executable packaged-app deck-preview generation only; it is still
 not human/aesthetic deck approval, notarization, Windows/Linux runtime proof,
 provider-backed conversion, native backend lowering, mobile distribution, or
 final acceptance.
+Phase 6BI tightens that packaged-app smoke into manifest-verified deck-preview
+evidence: `GarnetStudio --mit-deck-preview-smoke` now runs `shasum -a 256 -c
+MANIFEST.sha256` inside the generated preview output directory and exits through
+the deck-preview smoke failure path when a stale manifest is present. The
+agentic matrix expands the `MIT deck preview smoke` domain to four probes by
+checking the checksum-verification contract, and current source-checkout
+evidence passes `133/133` with `skipped=0` in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-192458`.
+Packaged app/DMG smoke passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-192532` for DMG
+SHA-256 `ee6426be2e8ef9bc85de32dfc156297cc1662b51abd49bb74fccadfff2a2a12c`;
+the nested `studio-deck-preview/MANIFEST.sha256` verifies the HTML, JSON, and
+outline Markdown outputs. This remains unsigned/local packaged-app evidence,
+not human/aesthetic deck approval, Developer ID notarization, Windows/Linux
+runtime proof, provider-backed conversion, native backend lowering, mobile
+distribution, production-ready language status, or final MIT/productization
+acceptance.
 
 ## Historical Material
 

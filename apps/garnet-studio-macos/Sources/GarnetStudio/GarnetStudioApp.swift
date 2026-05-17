@@ -2601,8 +2601,36 @@ enum GarnetStudioSelfTest {
             }
         }
 
+        let manifest = runDeckPreviewManifestCheck(outputDirectoryURL: outputDirectoryURL)
+        guard manifest.status == .success else {
+            fputs("GarnetStudio deck preview smoke failed: manifest verification failed\n\(manifest.output)\n", stderr)
+            return 11
+        }
+
         print("GarnetStudio deck preview smoke passed with \(outputDirectoryURL.path)")
         return 0
+    }
+
+    static func runDeckPreviewManifestCheck(outputDirectoryURL: URL) -> GarnetCommandResult {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = ["shasum", "-a", "256", "-c", "MANIFEST.sha256"]
+        process.currentDirectoryURL = outputDirectoryURL
+
+        let outputPipe = Pipe()
+        process.standardOutput = outputPipe
+        process.standardError = outputPipe
+
+        let command = (["/usr/bin/env"] + (process.arguments ?? [])).joined(separator: " ")
+        do {
+            try process.run()
+            process.waitUntilExit()
+            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: data, encoding: .utf8) ?? ""
+            return GarnetCommandResult(command: command, exitCode: process.terminationStatus, output: output)
+        } catch {
+            return GarnetCommandResult(command: command, exitCode: 127, output: error.localizedDescription)
+        }
     }
 }
 

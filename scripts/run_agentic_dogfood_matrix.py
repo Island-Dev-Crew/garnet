@@ -2919,6 +2919,27 @@ def probe_set(
             security_domain="not-applicable",
         ),
         Probe(
+            "report-studio-mit-deck-preview-smoke-manifest-verification",
+            "MIT deck preview smoke",
+            "Garnet Studio deck-preview smoke should verify generated preview checksums before passing",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['runDeckPreviewManifestCheck', 'shasum', '-c', "
+                    "'MANIFEST.sha256', 'manifest verification failed', 'return 11']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio MIT deck preview smoke manifest verification present')\n"
+                ),
+            ],
+            True,
+            ("studio MIT deck preview smoke manifest verification present",),
+            security_domain="filesystem",
+        ),
+        Probe(
             "report-studio-mit-deck-preview-dmg-smoke",
             "MIT deck preview smoke",
             "Mounted-DMG smoke should run the copied app deck-preview smoke command and preserve its output",
