@@ -64,6 +64,8 @@ unless current source and tests prove otherwise.
 ## Mandatory Discipline
 
 - Verify git state and manifests before edits.
+- Allocate phase ids with `python3 scripts/garnet_phase_id.py` (never hand-pick;
+  see AGENTS.md "Phase ID Allocation").
 - Red tests before behavior changes.
 - Keep each PR narrow and evidence-backed.
 - Preserve safe affine exclusion from ARC cycle collection.
