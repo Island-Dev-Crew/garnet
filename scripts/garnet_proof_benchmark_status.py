@@ -173,8 +173,8 @@ def read_status() -> ProofBenchmarkStatus:
             "formal mechanized soundness proof complete",
         ],
         next_slices=[
-            "Run cargo bench no-run gates for parser/interpreter/memory in CI or a local evidence bundle.",
-            "Add a benchmark measurement bundle only when machine, command, and variance metadata are recorded.",
+            "Run benchmark timing bundles only after measurement protocol and variance guardrails are in place.",
+            "Run benchmark measurement bundle only when machine, command, and variance metadata are recorded.",
             "Turn one proof sketch into a checked mechanization artifact before claiming formal proof.",
             "Execute the comprehension study only with consent, recruitment, and data-retention controls in place.",
         ],

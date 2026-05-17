@@ -1116,7 +1116,7 @@ DMG SHA-256
 CI checker coverage only, not a new product or language capability.
 
 Phase 6BR refreshes the repo-owned promo proof beat after the dogfood matrix
-expanded to `141` source-checkout probes. A new regression derives the current
+expanded to `142` source-checkout probes. A new regression derives the current
 matrix inventory and requires `docs/promo/composition.html` to expose the same
 `data-dogfood-probes` value and visible proof number; `scripts/garnet_promo_video_status.py`
 now reports `dogfood_probe_count`, `declared_dogfood_probe_count`, and
@@ -1141,8 +1141,8 @@ proof, and external study execution as unclaimed. The MIT objective and
 Mac-continuation reporters consume that status, the packaged Studio resources
 now include the reporter plus its minimal benchmark/protocol context, and the
 agentic dogfood matrix adds a `proof benchmark empirics` probe. That expands
-the source-checkout matrix inventory to `141` probes, so the promo composition
-and rendered public-site assets were refreshed to expose `141` instead of
+the source-checkout matrix inventory to `142` probes, so the promo composition
+and rendered public-site assets were refreshed to expose `142` instead of
 `140`. Local proof-status evidence verifies in
 `/Users/idc2.0/Desktop/dogfood/garnet-proof-benchmark-status-20260516-2312`;
 the promo render, visual QA, website export, and site sync bundles were
@@ -1150,6 +1150,14 @@ refreshed under their stable Desktop paths. This is a scaffold/inventory and
 presentation-freshness pass only, not benchmark measurement, formal proof,
 production native compiler proof, PLDI-grade empirical validation, human
 aesthetic promo acceptance, or final MIT/productization acceptance.
+
+Phase 6BS adds a compile-only benchmark verification slice for the same harnesses.
+`scripts/garnet_benchmark_no_run.py` now emits manifest-checked evidence for
+`cargo bench --no-run` on parser/interp/memory with strict no-claim boundaries:
+command shape, return codes, stdout/stderr logs, environment metadata, and
+`not-measured` status. The agentic matrix now includes a dedicated
+`report-benchmark-no-run-status` probe that expects compile-verified overall
+status when the commands run successfully.
 
 ## Historical Material
 
