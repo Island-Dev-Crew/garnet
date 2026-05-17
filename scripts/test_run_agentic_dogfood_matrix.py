@@ -103,6 +103,19 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertEqual(domains["Mac-side continuation accounting"], 1)
         self.assertIn("report-mac-side-continuation-boundaries", ids)
 
+    def test_probe_inventory_includes_github_actions_node24_readiness(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            fixtures = matrix.prepare_fixtures(work)
+            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
+
+        ids = {probe.id for probe in concrete_probes}
+        domains = Counter(probe.domain for probe in concrete_probes)
+
+        self.assertEqual(domains["CI action runtime"], 1)
+        self.assertIn("report-github-actions-node24-readiness", ids)
+
     def test_probe_inventory_includes_mit_demo_route(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)
