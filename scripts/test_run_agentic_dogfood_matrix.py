@@ -115,6 +115,8 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
 
         self.assertEqual(domains["CI action runtime"], 1)
         self.assertIn("report-github-actions-node24-readiness", ids)
+        probe = next(probe for probe in concrete_probes if probe.id == "report-github-actions-node24-readiness")
+        self.assertIn("Ran 3 tests", probe.expected_stderr)
 
     def test_probe_inventory_includes_mit_demo_route(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

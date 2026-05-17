@@ -2503,3 +2503,24 @@ DMG SHA-256
 CI/runtime evidence maintenance, not language feature completion, Developer ID
 notarization, Windows/Linux runtime proof, provider-backed conversion, native
 backend lowering, mobile distribution, or final MIT/productization acceptance.
+
+Phase 6BP workflow-extension coverage:
+the Node 24 action-runtime checker now scans both `.yml` and `.yaml` workflow
+files. A red temp-workflow regression requires a `.yaml` workflow containing
+`actions/checkout@v5` to be caught by the same gate; the checker now shares
+workflow discovery and action-pin scanning helpers across production and tests.
+A first strict matrix run preserved the expected stale-output mismatch after the
+checker grew from two to three tests; the matrix expectation now tracks
+`Ran 3 tests`. Current source-checkout evidence passes `140/140` with
+`skipped=0` in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-221320`;
+packaged app evidence passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-221336`;
+copied-DMG evidence passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-221403`; and
+the DMG smoke bundle verifies in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-221402` for
+DMG SHA-256
+`eb853428fad50f91e6df4962f5c05437e05a58b6ea0a2b48af89cf934d4ec731`. This is
+release-integrity checker coverage only, not language feature completion,
+distribution signing, or final MIT/productization acceptance.

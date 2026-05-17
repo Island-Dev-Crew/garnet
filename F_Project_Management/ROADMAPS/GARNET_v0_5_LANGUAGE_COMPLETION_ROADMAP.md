@@ -1909,6 +1909,27 @@ release-integrity maintenance only, not proof of Developer ID notarization,
 Windows/Linux runtime completion, provider-backed conversion, backend lowering,
 mobile distribution, or final MIT/productization acceptance.
 
+Phase 6BP tightens the same gate against workflow-extension drift. The Node 24
+checker now discovers both `.yml` and `.yaml` workflows, with a temp `.yaml`
+regression proving an old action pin is rejected before a future workflow can
+silently bypass the release-integrity check. The scanner is factored into
+helper functions shared by the production test and regression test, and the
+agentic matrix expectation now follows the expanded three-test contract after
+an initial strict run preserved the stale `Ran 2 tests` mismatch. Current
+source-checkout evidence passes `140/140` with `skipped=0` in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-221320`;
+packaged app evidence passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-221336`;
+copied-DMG evidence passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-221403`; and the
+DMG smoke bundle verifies in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-221402` for
+DMG SHA-256
+`eb853428fad50f91e6df4962f5c05437e05a58b6ea0a2b48af89cf934d4ec731`. This is
+checker-surface hardening only, not proof of Developer ID notarization,
+Windows/Linux runtime completion, provider-backed conversion, backend lowering,
+mobile distribution, or final MIT/productization acceptance.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.

@@ -1093,6 +1093,26 @@ DMG SHA-256
 CI runtime maintenance only, not a new language/runtime capability,
 distribution-signing proof, or final MIT/productization acceptance.
 
+Phase 6BP closes a small checker-surface gap in the same CI action-runtime
+gate: `scripts/test_github_actions_node24_readiness.py` now scans both `.yml`
+and `.yaml` workflow files. A new temp-workflow regression requires a `.yaml`
+file with `actions/checkout@v5` to be rejected by the shared scanner; the
+checker now extracts workflow discovery and action pin scanning into reusable
+functions, and the agentic dogfood matrix expectation was updated to the
+expanded three-test contract after the first strict matrix run preserved that
+stale-output mismatch. Current source-checkout evidence
+passes `140/140` with `skipped=0` in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-221320`;
+packaged app evidence passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-221336`;
+copied-DMG evidence passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-221403`; and
+the DMG smoke bundle verifies in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-221402` for
+DMG SHA-256
+`eb853428fad50f91e6df4962f5c05437e05a58b6ea0a2b48af89cf934d4ec731`. This is
+CI checker coverage only, not a new product or language capability.
+
 ## Historical Material
 
 Older milestone files are preserved because they explain how the project got
