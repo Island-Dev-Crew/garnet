@@ -55,6 +55,21 @@ Do not let handoff files become the only source of current truth. If a handoff r
 
 Do not add hidden compatibility seams, generated artifacts, or ad hoc scratch directories as tracked content unless the owning contract says they are durable project state.
 
+## Phase ID Allocation
+
+Phase identifiers (e.g. `Phase 6BT`) are a single shared global counter. With
+multiple concurrent agents, hand-picking a letter causes collisions (PR #74 and
+PR #75 both shipped as "Phase 4BI"). Before choosing a phase id:
+
+1. Run `python3 scripts/garnet_phase_id.py` and use the id it prints.
+2. Never hand-pick or reuse a letter from memory or a stale handoff.
+3. CI and agents may run `python3 scripts/garnet_phase_id.py --check <ID>`;
+   it exits non-zero if `<ID>` already appears in the implementation plan,
+   the phase ownership register, or recent git history.
+
+This rule is procedural memory: it changes agent behavior, so it lives here,
+not only in a transcript.
+
 ## Verification Ladder
 
 For documentation-contract changes, run:
