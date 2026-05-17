@@ -2962,6 +2962,29 @@ def probe_set(
             security_domain="filesystem",
         ),
         Probe(
+            "report-studio-mit-deck-preview-dmg-manifest-log",
+            "MIT deck preview smoke",
+            "Mounted-DMG smoke should preserve a separate log for copied-app deck-preview manifest verification",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(ROOT / 'scripts' / 'smoke_garnet_studio_dmg.sh')!r}).read_text()\n"
+                    "required = ['copied-app-mit-deck-preview-manifest-verify', "
+                    "'shasum -a 256 -c MANIFEST.sha256', "
+                    "'Copied app MIT deck-preview manifest verified', "
+                    "'${OUTPUT_DIR}/studio-deck-preview/MANIFEST.sha256']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio MIT deck preview DMG manifest log present')\n"
+                ),
+            ],
+            True,
+            ("studio MIT deck preview DMG manifest log present",),
+            security_domain="filesystem",
+        ),
+        Probe(
             "report-mit-readiness-plan-complete",
             "MIT readiness accounting",
             "objective status should separate completed tracked slices from broader productization completion",

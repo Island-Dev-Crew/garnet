@@ -260,6 +260,11 @@ run_logged "copied-app-mit-deck-preview-smoke" /usr/bin/env \
   "${APP_EXECUTABLE}" --mit-deck-preview-smoke
 record "pass" "Copied app MIT deck-preview smoke passed" "${OUTPUT_DIR}/studio-deck-preview" "None."
 
+echo "==> Verifying copied app MIT deck-preview manifest"
+run_logged "copied-app-mit-deck-preview-manifest-verify" /bin/bash -c \
+  "(cd \"${OUTPUT_DIR}/studio-deck-preview\" && shasum -a 256 -c MANIFEST.sha256)"
+record "pass" "Copied app MIT deck-preview manifest verified" "${OUTPUT_DIR}/studio-deck-preview/MANIFEST.sha256" "None."
+
 if [ "${RUN_AGENTIC_MATRIX}" != "0" ]; then
   echo "==> Running copied app agentic matrix smoke"
   run_logged "copied-app-agentic-matrix-smoke" "${APP_EXECUTABLE}" --agentic-matrix-test

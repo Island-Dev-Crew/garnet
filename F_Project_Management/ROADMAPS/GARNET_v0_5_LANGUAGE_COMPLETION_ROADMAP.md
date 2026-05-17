@@ -1805,6 +1805,22 @@ approval, Developer ID notarization, Windows/Linux runtime proof,
 provider-backed conversion, backend lowering, mobile distribution, or final
 MIT/productization acceptance.
 
+Phase 6BJ preserves a first-class manifest-verification log in the copied-DMG
+evidence bundle: after `GarnetStudio --mit-deck-preview-smoke` generates
+`studio-deck-preview/`, `scripts/smoke_garnet_studio_dmg.sh` runs a dedicated
+`copied-app-mit-deck-preview-manifest-verify` command and stores the stdout log
+showing the HTML, JSON, and outline Markdown outputs as `OK`. The source matrix
+adds a fifth `MIT deck preview smoke` probe for that evidence-log contract.
+Current source-checkout evidence passes `134/134` with `skipped=0` in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-194315`, and
+packaged app/DMG smoke passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-194329` for DMG
+SHA-256 `c277e20c90a7cf11bcbcba41eee9d63414c8c737c2ddf5040a26601a5f777ffb`.
+This remains unsigned/local presentation evidence, not human/aesthetic deck
+approval, Developer ID notarization, Windows/Linux runtime proof,
+provider-backed conversion, backend lowering, mobile distribution, or final
+MIT/productization acceptance.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.
