@@ -28,6 +28,9 @@ class GarnetConverterStatusTests(unittest.TestCase):
         self.assertTrue(data["trust_boundaries"]["sandbox_on_by_default"])
         self.assertTrue(data["trust_boundaries"]["lineage_required"])
         self.assertFalse(data["trust_boundaries"]["source_execution_allowed"])
+        for language in ("go", "python", "ruby", "rust"):
+            self.assertIn("fit_rationale", active[language])
+            self.assertTrue(active[language]["fit_rationale"])
 
         for language in (
             "javascript",
@@ -45,12 +48,17 @@ class GarnetConverterStatusTests(unittest.TestCase):
         ):
             self.assertIn(language, planned)
             self.assertEqual("planned", planned[language]["status"])
+            self.assertIn("fit_rationale", planned[language])
+            self.assertTrue(planned[language]["fit_rationale"])
 
         native = {item["id"]: item for item in data["native_boundary_languages"]}
         for language in ("c", "cpp", "objective_c", "assembly", "cuda", "platform_specific"):
             self.assertIn(language, native)
             self.assertEqual("native-boundary-recommended", native[language]["status"])
             self.assertIn("FFI", native[language]["notes"])
+            self.assertIn("fit_rationale", native[language])
+            self.assertIn("low-level", native[language]["fit_rationale"].lower())
+            self.assertTrue(native[language]["fit_rationale"])
 
         backend = data["backend_lowering_strategy"]
         self.assertEqual("planned-two-way-architecture", backend["status"])
@@ -95,7 +103,7 @@ class GarnetConverterStatusTests(unittest.TestCase):
         self.assertIn("not a full transpiler", rendered)
         self.assertIn("Best-fit imports", rendered)
         self.assertIn("Bad direct-conversion fits", rendered)
-        self.assertIn("Native boundary recommended", rendered)
+        self.assertIn("Native Boundary Recommended", rendered)
         self.assertIn("Wasm", rendered)
         self.assertIn("LLVM-style native targets", rendered)
         self.assertIn("LLM assist is proposed only as a gated advisory lane", rendered)
@@ -104,6 +112,8 @@ class GarnetConverterStatusTests(unittest.TestCase):
         self.assertIn("Shell", rendered)
         self.assertIn("SQL", rendered)
         self.assertIn("Other", rendered)
+        self.assertIn("Why this is not a direct fit yet", rendered)
+        self.assertIn("Why: ", rendered)
         self.assertIn("Planned Garnet-Aware Assist Contract", rendered)
         self.assertIn("safe-mode ownership candidates", rendered)
 
