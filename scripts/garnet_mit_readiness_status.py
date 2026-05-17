@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import garnet_converter_status  # noqa: E402
+import garnet_proof_benchmark_status  # noqa: E402
 import garnet_promo_video_status  # noqa: E402
 import garnet_readiness_status  # noqa: E402
 
@@ -80,6 +81,7 @@ def read_status() -> MitReadinessStatus:
     converter = garnet_converter_status.read_status()
     contract = converter.intelligent_assist_contract
     promo = garnet_promo_video_status.read_status()
+    proof = garnet_proof_benchmark_status.read_status()
     if promo.public_site_embed_present:
         promo_evidence_tail = "records local rendered MP4/WebM evidence, automated visual QA evidence, a website export package, and public-site embedding while keeping human/aesthetic acceptance open."
     elif promo.website_export_present:
@@ -238,9 +240,14 @@ def read_status() -> MitReadinessStatus:
             label="Proof and empirical validation",
             status="active-partial",
             completion_percent=40.0,
-            evidence="Proof and benchmark lanes are documented as scaffold/partial rather than complete.",
-            blocked_by=["mechanized proof", "fresh empirical validation budget"],
-            deferred=["native backend proof", "benchmarks", "external user study"],
+            evidence=(
+                "`scripts/garnet_proof_benchmark_status.py` inventories the current "
+                f"{len(proof.benchmarks)} Criterion benchmark harnesses plus proof/study "
+                "protocols while reporting measurements, mechanized proof, and empirical "
+                "study execution as unclaimed."
+            ),
+            blocked_by=proof.blocked_by,
+            deferred=proof.deferred,
         ),
     ]
 

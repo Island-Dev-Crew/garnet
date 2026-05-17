@@ -29,6 +29,7 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
             "garnet_mit_demo_route.py",
             "garnet_mit_readiness_status.py",
             "garnet_promo_video_status.py",
+            "garnet_proof_benchmark_status.py",
             "garnet_readiness_status.py",
             "garnet_studio_notarization_status.py",
             "export_garnet_promo_video_site.mjs",
@@ -83,6 +84,10 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
         self.assertIn('cp "${ROOT}/CURRENT_STATE.md" "${APP_DIR}/Contents/Resources/CURRENT_STATE.md"', script)
         self.assertIn('cp -R "${ROOT}/C_Language_Specification" "${APP_DIR}/Contents/Resources/C_Language_Specification"', script)
         self.assertIn('mkdir -p "${APP_DIR}/Contents/Resources/F_Project_Management/DOGFOOD"', script)
+        self.assertIn('mkdir -p "${APP_DIR}/Contents/Resources/F_Project_Management/ROADMAPS"', script)
+        self.assertIn('mkdir -p "${APP_DIR}/Contents/Resources/garnet-parser-v0.3/benches"', script)
+        self.assertIn('mkdir -p "${APP_DIR}/Contents/Resources/garnet-interp-v0.3/benches"', script)
+        self.assertIn('mkdir -p "${APP_DIR}/Contents/Resources/garnet-memory-v0.3/benches"', script)
         self.assertIn(
             'cp "${ROOT}/F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md" '
             '"${APP_DIR}/Contents/Resources/F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md"',
@@ -93,6 +98,27 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
             '"${APP_DIR}/Contents/Resources/F_Project_Management/DOGFOOD/GARNET_v0_5_DOGFOOD_READINESS_PHASE_LOG.md"',
             script,
         )
+        self.assertIn(
+            'cp "${ROOT}/F_Project_Management/ROADMAPS/GARNET_EMPIRICAL_VALIDATION_PLAN.md" '
+            '"${APP_DIR}/Contents/Resources/F_Project_Management/ROADMAPS/GARNET_EMPIRICAL_VALIDATION_PLAN.md"',
+            script,
+        )
+        self.assertIn(
+            'cp "${ROOT}/F_Project_Management/GARNET_v4_2_Developer_Comprehension_Study_Protocol.md" '
+            '"${APP_DIR}/Contents/Resources/F_Project_Management/GARNET_v4_2_Developer_Comprehension_Study_Protocol.md"',
+            script,
+        )
+        self.assertIn(
+            'cp "${ROOT}/F_Project_Management/GARNET_v4_0_PAPER_VI_EXECUTION.md" '
+            '"${APP_DIR}/Contents/Resources/F_Project_Management/GARNET_v4_0_PAPER_VI_EXECUTION.md"',
+            script,
+        )
+        self.assertIn('cp "${ROOT}/garnet-parser-v0.3/Cargo.toml" "${APP_DIR}/Contents/Resources/garnet-parser-v0.3/Cargo.toml"', script)
+        self.assertIn('cp "${ROOT}/garnet-parser-v0.3/benches/parse.rs" "${APP_DIR}/Contents/Resources/garnet-parser-v0.3/benches/parse.rs"', script)
+        self.assertIn('cp "${ROOT}/garnet-interp-v0.3/Cargo.toml" "${APP_DIR}/Contents/Resources/garnet-interp-v0.3/Cargo.toml"', script)
+        self.assertIn('cp "${ROOT}/garnet-interp-v0.3/benches/eval.rs" "${APP_DIR}/Contents/Resources/garnet-interp-v0.3/benches/eval.rs"', script)
+        self.assertIn('cp "${ROOT}/garnet-memory-v0.3/Cargo.toml" "${APP_DIR}/Contents/Resources/garnet-memory-v0.3/Cargo.toml"', script)
+        self.assertIn('cp "${ROOT}/garnet-memory-v0.3/benches/vector.rs" "${APP_DIR}/Contents/Resources/garnet-memory-v0.3/benches/vector.rs"', script)
         self.assertIn('chmod 0755 "${APP_DIR}/Contents/Resources/scripts/smoke_garnet_web_pwa_offline.mjs"', script)
 
     def test_package_script_preserves_dmg_smoke_desktop_evidence(self) -> None:
@@ -129,6 +155,7 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
         self.assertIn('MIT_DEMO_ROUTE="${INSTALLED_APP}/Contents/Resources/scripts/garnet_mit_demo_route.py"', script)
         self.assertIn('MIT_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_mit_readiness_status.py"', script)
         self.assertIn('PROMO_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_promo_video_status.py"', script)
+        self.assertIn('PROOF_BENCHMARK_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_proof_benchmark_status.py"', script)
         self.assertIn('PROMO_EXPORT="${INSTALLED_APP}/Contents/Resources/scripts/export_garnet_promo_video_site.mjs"', script)
         self.assertIn('PROMO_QA="${INSTALLED_APP}/Contents/Resources/scripts/qa_garnet_promo_video.mjs"', script)
         self.assertIn('PROMO_RENDER="${INSTALLED_APP}/Contents/Resources/scripts/render_garnet_promo_video.mjs"', script)
@@ -143,6 +170,12 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
         self.assertIn('DOCS_DIR="${INSTALLED_APP}/Contents/Resources/docs"', script)
         self.assertIn('PROMO_DESIGN="${DOCS_DIR}/promo/DESIGN.md"', script)
         self.assertIn('PROMO_COMPOSITION="${DOCS_DIR}/promo/composition.html"', script)
+        self.assertIn('EMPIRICAL_PLAN="${INSTALLED_APP}/Contents/Resources/F_Project_Management/ROADMAPS/GARNET_EMPIRICAL_VALIDATION_PLAN.md"', script)
+        self.assertIn('DEVELOPER_COMPREHENSION_PROTOCOL="${INSTALLED_APP}/Contents/Resources/F_Project_Management/GARNET_v4_2_Developer_Comprehension_Study_Protocol.md"', script)
+        self.assertIn('PAPER_VI_EXECUTION="${INSTALLED_APP}/Contents/Resources/F_Project_Management/GARNET_v4_0_PAPER_VI_EXECUTION.md"', script)
+        self.assertIn('PARSER_BENCH="${INSTALLED_APP}/Contents/Resources/garnet-parser-v0.3/benches/parse.rs"', script)
+        self.assertIn('INTERP_BENCH="${INSTALLED_APP}/Contents/Resources/garnet-interp-v0.3/benches/eval.rs"', script)
+        self.assertIn('MEMORY_BENCH="${INSTALLED_APP}/Contents/Resources/garnet-memory-v0.3/benches/vector.rs"', script)
         self.assertIn('"${OFFLINE_PWA_SMOKE}" --docs-dir "${DOCS_DIR}"', script)
         self.assertIn('"${NODE24_READINESS}"', script)
         self.assertIn('"${DECK_PREVIEW_BROWSER_SMOKE}"', script)

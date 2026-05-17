@@ -68,6 +68,9 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertNotIn("HyperFrames or Remotion composition", lanes["promo_video"]["deferred"])
         self.assertIn("JavaScript", lanes["broad_converter_frontends"]["deferred"])
         self.assertIn("Android", lanes["mobile_distribution"]["deferred"])
+        self.assertIn("garnet_proof_benchmark_status.py", lanes["proof_empirics"]["evidence"])
+        self.assertIn("fresh benchmark measurement run", lanes["proof_empirics"]["blocked_by"])
+        self.assertIn("formal RustBelt/Iris/Coq mechanization", lanes["proof_empirics"]["deferred"])
 
     def test_rendered_promo_artifacts_update_objective_blockers(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

@@ -204,9 +204,9 @@ class GarnetPromoVideoStatusTests(unittest.TestCase):
         self.assertEqual("hyperframes-html", composition["tool"])
         self.assertTrue(composition["timeline_registered"])
         self.assertTrue(composition["uses_locked_assets"])
-        self.assertEqual(140, composition["dogfood_probe_count"])
-        self.assertEqual(140, composition["computed_dogfood_probe_count"])
-        self.assertEqual(140, composition["declared_dogfood_probe_count"])
+        self.assertEqual(141, composition["dogfood_probe_count"])
+        self.assertEqual(141, composition["computed_dogfood_probe_count"])
+        self.assertEqual(141, composition["declared_dogfood_probe_count"])
         self.assertTrue(composition["dogfood_probe_count_matches"])
         self.assertEqual(30, composition["duration_seconds"])
         self.assertIn("garnet-promo-main", composition["composition_id"])
@@ -242,9 +242,9 @@ class GarnetPromoVideoStatusTests(unittest.TestCase):
             ):
                 composition = promo._composition_source()
 
-        self.assertEqual(140, composition["dogfood_probe_count"])
+        self.assertEqual(141, composition["dogfood_probe_count"])
         self.assertEqual(138, composition["computed_dogfood_probe_count"])
-        self.assertEqual(140, composition["declared_dogfood_probe_count"])
+        self.assertEqual(141, composition["declared_dogfood_probe_count"])
         self.assertTrue(composition["dogfood_probe_count_matches"])
 
     def test_storyboard_contract_is_specific_without_becoming_a_render_claim(self) -> None:

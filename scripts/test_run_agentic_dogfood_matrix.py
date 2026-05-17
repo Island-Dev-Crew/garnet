@@ -118,6 +118,19 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         probe = next(probe for probe in concrete_probes if probe.id == "report-github-actions-node24-readiness")
         self.assertIn("Ran 3 tests", probe.expected_stderr)
 
+    def test_probe_inventory_includes_proof_benchmark_empirics(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            fixtures = matrix.prepare_fixtures(work)
+            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
+
+        ids = {probe.id for probe in concrete_probes}
+        domains = Counter(probe.domain for probe in concrete_probes)
+
+        self.assertEqual(domains["proof benchmark empirics"], 1)
+        self.assertIn("report-proof-benchmark-status", ids)
+
     def test_probe_inventory_includes_mit_demo_route(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)

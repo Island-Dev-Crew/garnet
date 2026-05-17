@@ -74,6 +74,7 @@ done
 | `scripts/garnet_converter_advisory_handoff.py` | converter advisory handoff packet | current provider-neutral final packet builder for a reviewed no-source advisory bundle; refuses blocked/source-included reviews, emits a source-free prompt packet, and does not call a provider or enable conversion |
 | `scripts/garnet_mit_readiness_status.py` | MIT/productization objective inventory | current machine-readable truth that the tracked implementation plan is complete while notarization, mobile distribution, promo video, broad converter frontends, LLM assist, and proof/empirics remain open gates |
 | `scripts/garnet_mac_side_continuation_status.py` | Mac-side continuation inventory | current machine-readable pulse for which repo, website, converter, evidence, and macOS Studio lanes can still move from this checkout while Apple Developer ID notarization remains account-holder blocked and Windows/Linux Studio runtime proof remains delegated |
+| `scripts/garnet_proof_benchmark_status.py` | proof/benchmark/empirical inventory | current machine-readable status for existing Criterion benchmark harnesses and research protocols; writes manifested JSON/Markdown evidence while keeping benchmark measurements, mechanized proof, and external study execution unclaimed |
 | `scripts/garnet_mit_demo_route.py` | MIT demo-route inventory | current machine-readable and Markdown presentation route for a bounded seven-minute MIT walkthrough; ties Objective Pulse, Studio continuation, converter advisory, agentic dogfood, live web/PWA, and blocked-gate closeout together without claiming final MIT/productization completion |
 | `scripts/garnet_mit_deck_outline.py` | MIT deck-outline inventory | current machine-readable and Markdown slide outline for an 8-slide MIT reviewer deck; turns the demo route, adoption status, blocked gates, and Desktop evidence boundaries into presentation notes without claiming final MIT/productization acceptance |
 | `scripts/garnet_mit_deck_preview.py` | MIT deck-preview artifact | current browser-smokeable HTML/JSON preview generated from the deck outline; packages slide story, evidence, speaker notes, blocked gates, and forbidden claims into a manifested review artifact without claiming final MIT/productization acceptance |
@@ -109,6 +110,7 @@ done
 | `F_Project_Management/DOGFOOD/GARNET_v0_5_DOGFOOD_READINESS_PHASE_LOG.md` | dogfood readiness phase ledger | dogfood-readiness Part 1 after each phase |
 | `scripts/garnet_mit_readiness_status.py` | broader MIT/productization objective status | `python3 scripts/test_garnet_mit_readiness_status.py`; `python3 scripts/garnet_mit_readiness_status.py` |
 | `scripts/garnet_mac_side_continuation_status.py` | Mac-side continuation status and blocked/delegated gate split | `python3 scripts/test_garnet_mac_side_continuation_status.py`; `python3 scripts/garnet_mac_side_continuation_status.py` |
+| `scripts/garnet_proof_benchmark_status.py` | proof/benchmark/empirical status and manifest bundle | `python3 scripts/test_garnet_proof_benchmark_status.py`; `python3 scripts/garnet_proof_benchmark_status.py --output-dir <bundle>` |
 | `scripts/garnet_mit_demo_route.py` | seven-minute MIT demo-route status and blocked-claim closeout | `python3 scripts/test_garnet_mit_demo_route.py`; `python3 scripts/garnet_mit_demo_route.py --output-dir <bundle>` |
 | `garnet-cli/tests/conformance_skeleton.rs` | executable conformance handles | `cargo test -p garnet-cli --test conformance_skeleton` |
 | `garnet-cli/tests/dogfood_readiness_examples.rs` | semantic MVP output stability | `cargo test -p garnet-cli --test dogfood_readiness_examples` |
@@ -1113,8 +1115,8 @@ DMG SHA-256
 `eb853428fad50f91e6df4962f5c05437e05a58b6ea0a2b48af89cf934d4ec731`. This is
 CI checker coverage only, not a new product or language capability.
 
-Phase 6BQ refreshes the repo-owned promo proof beat after the dogfood matrix
-expanded to `140` source-checkout probes. A new regression derives the current
+Phase 6BR refreshes the repo-owned promo proof beat after the dogfood matrix
+expanded to `141` source-checkout probes. A new regression derives the current
 matrix inventory and requires `docs/promo/composition.html` to expose the same
 `data-dogfood-probes` value and visible proof number; `scripts/garnet_promo_video_status.py`
 now reports `dogfood_probe_count`, `declared_dogfood_probe_count`, and
@@ -1128,6 +1130,26 @@ the public site assets with manifested evidence in
 `/Users/idc2.0/Desktop/dogfood/garnet-promo-video-site-sync`. The promo lane
 remains `public-site-embedded` at `95.0%`; human/aesthetic acceptance remains
 open, and this is not a claim of final MIT/productization acceptance.
+
+Phase 6BR makes the proof/benchmark/empirical lane falsifiable without
+pretending it is complete. `scripts/garnet_proof_benchmark_status.py` now
+inventories the three current Criterion harnesses (`garnet-parser` parse,
+`garnet-interp` eval, and `garnet-memory` vector), the empirical validation
+plan, the developer-comprehension protocol, and Paper VI notes while reporting
+benchmark measurements, mechanized RustBelt/Iris/Coq proof, native backend
+proof, and external study execution as unclaimed. The MIT objective and
+Mac-continuation reporters consume that status, the packaged Studio resources
+now include the reporter plus its minimal benchmark/protocol context, and the
+agentic dogfood matrix adds a `proof benchmark empirics` probe. That expands
+the source-checkout matrix inventory to `141` probes, so the promo composition
+and rendered public-site assets were refreshed to expose `141` instead of
+`140`. Local proof-status evidence verifies in
+`/Users/idc2.0/Desktop/dogfood/garnet-proof-benchmark-status-20260516-2312`;
+the promo render, visual QA, website export, and site sync bundles were
+refreshed under their stable Desktop paths. This is a scaffold/inventory and
+presentation-freshness pass only, not benchmark measurement, formal proof,
+production native compiler proof, PLDI-grade empirical validation, human
+aesthetic promo acceptance, or final MIT/productization acceptance.
 
 ## Historical Material
 
