@@ -179,6 +179,8 @@ PROMO_EXPORT="${INSTALLED_APP}/Contents/Resources/scripts/export_garnet_promo_vi
 PROMO_QA="${INSTALLED_APP}/Contents/Resources/scripts/qa_garnet_promo_video.mjs"
 PROMO_RENDER="${INSTALLED_APP}/Contents/Resources/scripts/render_garnet_promo_video.mjs"
 PROMO_SYNC="${INSTALLED_APP}/Contents/Resources/scripts/sync_garnet_promo_video_site.mjs"
+DECK_PREVIEW_BROWSER_SMOKE="${INSTALLED_APP}/Contents/Resources/scripts/smoke_garnet_mit_deck_preview_browser.mjs"
+NODE24_READINESS="${INSTALLED_APP}/Contents/Resources/scripts/test_github_actions_node24_readiness.py"
 READINESS_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_readiness_status.py"
 NOTARIZATION_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_studio_notarization_status.py"
 PROMO_ASSETS_DIR="${INSTALLED_APP}/Contents/Resources/assets"
@@ -186,20 +188,21 @@ PROMO_STUDIO_SOURCE="${INSTALLED_APP}/Contents/Resources/apps/garnet-studio-maco
 PROMO_STUDIO_LOGO="${INSTALLED_APP}/Contents/Resources/apps/garnet-studio-macos/Sources/GarnetStudio/Resources/garnet-logo.png"
 EXAMPLES_DIR="${INSTALLED_APP}/Contents/Resources/examples"
 DOCS_DIR="${INSTALLED_APP}/Contents/Resources/docs"
+WORKFLOWS_DIR="${INSTALLED_APP}/Contents/Resources/.github/workflows"
 PROMO_DESIGN="${DOCS_DIR}/promo/DESIGN.md"
 PROMO_COMPOSITION="${DOCS_DIR}/promo/composition.html"
 SPEC_DIR="${INSTALLED_APP}/Contents/Resources/C_Language_Specification"
 PROJECT_DOGFOOD_DIR="${INSTALLED_APP}/Contents/Resources/F_Project_Management/DOGFOOD"
 
-for required in "${APP_EXECUTABLE}" "${GARNET_BIN}" "${MATRIX_SCRIPT}" "${OFFLINE_PWA_SMOKE}" "${ADOPTION_STATUS}" "${ASSIST_CONTEXT}" "${ADVISORY_BUNDLE}" "${ADVISORY_HANDOFF}" "${ADVISORY_REVIEW}" "${ASSIST_PLAN}" "${LLM_FEASIBILITY}" "${CONVERTER_STATUS}" "${MAC_CONTINUATION}" "${MIT_DECK_OUTLINE}" "${MIT_DECK_PREVIEW}" "${MIT_DEMO_ROUTE}" "${MIT_STATUS}" "${PROMO_STATUS}" "${PROMO_EXPORT}" "${PROMO_QA}" "${PROMO_RENDER}" "${PROMO_SYNC}" "${READINESS_STATUS}" "${NOTARIZATION_STATUS}"; do
+for required in "${APP_EXECUTABLE}" "${GARNET_BIN}" "${MATRIX_SCRIPT}" "${OFFLINE_PWA_SMOKE}" "${ADOPTION_STATUS}" "${ASSIST_CONTEXT}" "${ADVISORY_BUNDLE}" "${ADVISORY_HANDOFF}" "${ADVISORY_REVIEW}" "${ASSIST_PLAN}" "${LLM_FEASIBILITY}" "${CONVERTER_STATUS}" "${MAC_CONTINUATION}" "${MIT_DECK_OUTLINE}" "${MIT_DECK_PREVIEW}" "${MIT_DEMO_ROUTE}" "${MIT_STATUS}" "${PROMO_STATUS}" "${PROMO_EXPORT}" "${PROMO_QA}" "${PROMO_RENDER}" "${PROMO_SYNC}" "${DECK_PREVIEW_BROWSER_SMOKE}" "${NODE24_READINESS}" "${READINESS_STATUS}" "${NOTARIZATION_STATUS}"; do
   if [ ! -x "${required}" ]; then
     echo "error: copied app is missing executable asset: ${required}" >&2
     exit 4
   fi
 done
-record "pass" "Copied app executable assets exist" "app executable, bundled CLI, matrix script, status reporters, MIT deck-outline reporter, MIT deck-preview reporter, MIT demo-route reporter, Mac-side continuation reporter, converter advisory bundle, converter advisory handoff packet, converter advisory review gate, converter LLM feasibility reporter, promo render, visual-QA, website-export, site-sync harnesses, PWA smoke" "None."
+record "pass" "Copied app executable assets exist" "app executable, bundled CLI, matrix script, status reporters, MIT deck-outline reporter, MIT deck-preview reporter, MIT deck-preview browser-smoke harness, MIT demo-route reporter, Mac-side continuation reporter, converter advisory bundle, converter advisory handoff packet, converter advisory review gate, converter LLM feasibility reporter, Node 24 readiness checker, promo render, visual-QA, website-export, site-sync harnesses, PWA smoke" "None."
 
-for required_dir in "${EXAMPLES_DIR}" "${DOCS_DIR}" "${SPEC_DIR}" "${PROJECT_DOGFOOD_DIR}" "${PROMO_ASSETS_DIR}"; do
+for required_dir in "${EXAMPLES_DIR}" "${DOCS_DIR}" "${SPEC_DIR}" "${PROJECT_DOGFOOD_DIR}" "${PROMO_ASSETS_DIR}" "${WORKFLOWS_DIR}"; do
   if [ ! -d "${required_dir}" ]; then
     echo "error: copied app is missing bundled resource directory: ${required_dir}" >&2
     exit 5

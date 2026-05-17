@@ -2284,6 +2284,71 @@ def probe_set(
         ),
         lambda: build_converter_llm_feasibility_manifest_probe(work),
         Probe(
+            "report-studio-provider-options-action",
+            "converter provider options UX",
+            "Garnet Studio should expose provider-option evidence without enabling provider-backed conversion",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['(\"Provider Options\", model.runConverterProviderOptions)', "
+                    "'func runConverterProviderOptions()', 'providerOptionsPath']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio provider options action present')\n"
+                ),
+            ],
+            True,
+            ("studio provider options action present",),
+            security_domain="not-applicable",
+        ),
+        Probe(
+            "report-studio-provider-options-runner",
+            "converter provider options UX",
+            "Garnet Studio should run the manifested LLM-feasibility reporter into a Desktop dogfood bundle",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['ConverterProviderOptionsRunner', 'garnet_converter_llm_feasibility.py', "
+                    "'--output-dir', 'Provider options output:', 'garnet-studio-provider-options-', "
+                    "'provider-backed conversion is not active']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('studio provider options runner present')\n"
+                ),
+            ],
+            True,
+            ("studio provider options runner present",),
+            security_domain="filesystem",
+        ),
+        Probe(
+            "report-studio-provider-options-desktop-evidence",
+            "converter provider options UX",
+            "Garnet Studio should preserve provider-option evidence under Desktop dogfood storage without source inclusion",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(studio_source)!r}).read_text()\n"
+                    "required = ['func providerOptionsDirectory', 'Desktop', 'dogfood', "
+                    "'garnet-studio-provider-options-', 'providerOptionsPath']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "assert '--include-source' not in source\n"
+                    "print('studio provider options desktop evidence present')\n"
+                ),
+            ],
+            True,
+            ("studio provider options desktop evidence present",),
+            security_domain="privacy",
+        ),
+        Probe(
             "report-converter-advisory-bundle-current-truth",
             "converter advisory bundle",
             "converter advisory bundle should combine context, assist plan, and feasibility without activating conversion",

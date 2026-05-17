@@ -103,8 +103,8 @@ def verified_use_cases() -> list[UseCase]:
                 "Open Garnet Studio locally through Codex Run or `dist/Garnet Studio.app` "
                 "to run health checks, examples, deterministic conversion, Assist Plan, "
                 "Advisory Bundle packaging, Advisory Review gating, Advisory Handoff "
-                "packet creation, the MIT objective pulse, release status, and agentic "
-                "stress tests."
+                "packet creation, Provider Options registry evidence, the MIT objective "
+                "pulse, release status, and agentic stress tests."
             ),
             evidence=[
                 "apps/garnet-studio-macos/Sources/GarnetStudio/GarnetStudioApp.swift",
@@ -155,6 +155,7 @@ def read_surface() -> AdoptionSurface:
             "deterministic context pack is active",
             "deterministic planned-language assist plan is active",
             f"provider option registry lists {len(feasibility.provider_options)} advisory-only candidates",
+            "Garnet Studio can preserve provider-option registry evidence without source inclusion",
             "provider-neutral advisory bundle is active",
             "advisory review gate is active before model handoff",
             "provider-neutral advisory handoff packet is active",

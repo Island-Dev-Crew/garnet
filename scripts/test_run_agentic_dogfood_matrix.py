@@ -237,6 +237,21 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertIn("report-converter-llm-feasibility-blockers", ids)
         self.assertIn("report-converter-llm-feasibility-output-manifest", ids)
 
+    def test_probe_inventory_includes_converter_provider_options_studio_ux(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            fixtures = matrix.prepare_fixtures(work)
+            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+            concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
+
+        ids = {probe.id for probe in concrete_probes}
+        domains = Counter(probe.domain for probe in concrete_probes)
+
+        self.assertEqual(domains["converter provider options UX"], 3)
+        self.assertIn("report-studio-provider-options-action", ids)
+        self.assertIn("report-studio-provider-options-runner", ids)
+        self.assertIn("report-studio-provider-options-desktop-evidence", ids)
+
     def test_probe_inventory_includes_converter_advisory_bundle(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)

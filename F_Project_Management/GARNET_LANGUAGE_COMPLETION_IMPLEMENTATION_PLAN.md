@@ -27,6 +27,7 @@ This table is the current truth as of the v0.5 readiness-remediation branch. It 
 | Garnet-aware assist context pack | Active for deterministic current-truth context and provider-neutral prompt packaging before any provider-backed converter assist is enabled | `scripts/garnet_assist_context_pack.py`; `python3 scripts/test_garnet_assist_context_pack.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-assist-context-*`; `docs/index.html` | Use this pack as the future LLM/agentic assist input contract; do not claim model-backed conversion until provider/runtime boundaries and dogfood gates exist |
 | Converter assist planning | Active for deterministic per-file advisory-language migration risk planning without activating broad conversion | `scripts/garnet_converter_assist_plan.py`; `python3 scripts/test_garnet_converter_assist_plan.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-assist-plan-*`; `docs/index.html`; `docs/status.html` | Keep this advisory-only: it may inventory safe-mode, memory, CapCaps, actor/orchestration, shell/process, SQL/data, and migration risks for TypeScript, JavaScript, Swift, Java, C, C++, C#, Perl, Kotlin, Shell, SQL, Other, and native-boundary sources, but deterministic frontends and provider-backed conversion remain separate gated slices |
 | Converter LLM feasibility | Active for answering whether an LLM belongs in the converter path without overclaiming active conversion | `scripts/garnet_converter_llm_feasibility.py`; `python3 scripts/test_garnet_converter_llm_feasibility.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-converter-llm-feasibility-*`; `docs/index.html`; `docs/status.html` | Treat provider-neutral advisory planning as feasible and expose provider options as advisory-only candidates; keep autonomous/provider-backed LLM conversion inactive until secure runtime, deterministic frontend, native-boundary, lineage, `@sandbox`, `garnet check`, dogfood, and human-audit gates exist |
+| Converter provider options UX | Active in Garnet Studio as manifested advisory evidence, not provider-backed conversion | `apps/garnet-studio-macos/Sources/GarnetStudio/GarnetStudioApp.swift`; `swift test --package-path apps/garnet-studio-macos`; `scripts/run_agentic_dogfood_matrix.py` probes `report-studio-provider-options-*`; source-checkout bundle `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-213339`; packaged app bundle `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-213430`; copied-DMG bundle `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-213445`; DMG smoke `/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-213444` | Expose `Provider Options` beside the advisory converter actions, run the local feasibility reporter with `--output-dir`, preserve `~/Desktop/dogfood/garnet-studio-provider-options-<stamp>`, stage the checker/browser-smoke/workflow resources needed by packaged matrix evidence, and keep source inclusion, provider calls, and provider-backed conversion inactive |
 | Converter advisory bundle | Active for provider-neutral local handoff packaging before any provider-backed model lane exists | `scripts/garnet_converter_advisory_bundle.py`; `python3 scripts/test_garnet_converter_advisory_bundle.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-converter-advisory-bundle-*`; `docs/index.html` | Combine feasibility, context, and per-file assist-plan evidence in a manifested bundle; omit source by default, require `--include-source` for explicit local/provider handoff, and keep conversion inactive |
 | Converter advisory review | Active for checking a manifested advisory bundle before any model/agent handoff | `scripts/garnet_converter_advisory_review.py`; `python3 scripts/test_garnet_converter_advisory_review.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-converter-advisory-review-*`; `docs/index.html` | Verify the bundle manifest, block source-included bundles unless explicitly approved, emit a human-review checklist, and keep provider-backed conversion inactive |
 | Converter advisory handoff | Active for source-free provider-neutral prompt packaging after the review gate | `scripts/garnet_converter_advisory_handoff.py`; `python3 scripts/test_garnet_converter_advisory_handoff.py`; `scripts/run_agentic_dogfood_matrix.py` probes `report-converter-advisory-handoff-*`; `docs/index.html` | Consume the reviewed advisory bundle, refuse blocked/source-included reviews, emit a no-source handoff packet, and keep model calls plus conversion inactive |
@@ -2454,3 +2455,29 @@ source-checkout evidence passes `137/137` with `skipped=0` in
 does not enable provider-backed LLM conversion, broad deterministic frontends,
 native backend lowering, notarized distribution, or final MIT/productization
 acceptance.
+
+Phase 6BN Studio provider-options UX pass: the macOS Studio Converter panel now
+exposes `Provider Options` beside the existing advisory actions. The action
+locates the packaged or source `garnet_converter_llm_feasibility.py`, runs it
+with `--output-dir`, and preserves a manifested
+`~/Desktop/dogfood/garnet-studio-provider-options-<stamp>` bundle while the
+Studio console states that provider-backed conversion is not active. SwiftPM
+tests cover the locator, runner command, and Desktop evidence directory; the
+agentic matrix adds a three-probe `converter provider options UX` domain.
+Current source-checkout evidence passes `140/140` with `skipped=0` in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-213339`.
+The package smoke then caught source-checkout-only resource drift for
+`scripts/test_github_actions_node24_readiness.py`,
+`scripts/smoke_garnet_mit_deck_preview_browser.mjs`, and `.github/workflows`;
+the package script and DMG smoke now stage and verify those resources before
+running packaged matrix proof. Packaged app evidence passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-213430`;
+copied-DMG evidence passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-213445`; and
+the DMG smoke bundle verifies in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-213444` with
+DMG SHA-256
+`0b6bd57e9737c9ab62b84ee858f1905396b4843f85be5a09ba917730ecd578e8`. This
+is app evidence access only, not source upload, provider-backed conversion,
+broad deterministic frontend support, native backend lowering, notarized
+distribution, or final MIT/productization acceptance.

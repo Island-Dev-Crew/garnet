@@ -119,6 +119,11 @@ current feasibility reporter exposes the same ten options as a machine-readable
 advisory-only registry with provider-backed conversion disabled, source omitted
 by default, privacy review required, and human approval required:
 
+Garnet Studio exposes this as **Provider Options** evidence. That action runs
+the local feasibility reporter into a manifested Desktop dogfood bundle; it does
+not pass source text, call a provider, or promote any option into active
+conversion.
+
 | Option | Best role | Why consider it | Caution |
 | --- | --- | --- | --- |
 | OpenAI GPT-5.5 class models | Deep migration reasoning, policy synthesis, high-quality review | Strong instruction following and code reasoning for multi-file migrations. | Cost and privacy controls must be explicit. |

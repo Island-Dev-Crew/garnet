@@ -1863,6 +1863,30 @@ the `converter LLM feasibility` domain; current evidence passes `137/137` with
 not provider-backed LLM conversion, broad deterministic frontend support,
 native backend lowering, or final MIT/productization acceptance.
 
+Phase 6BN makes that provider registry reachable from Garnet Studio while
+preserving the same boundary. The Converter panel now has `Provider Options`,
+which runs the local feasibility reporter into a manifested Desktop dogfood
+bundle under `~/Desktop/dogfood/garnet-studio-provider-options-<stamp>` without
+source inclusion or provider calls. SwiftPM covers the locator, command, and
+evidence path; the agentic matrix adds a three-probe `converter provider options
+UX` domain and current source-checkout evidence passes `140/140` with
+`skipped=0` in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-213339`. A
+follow-up package smoke in the same slice caught missing packaged resources for
+the Node 24 checker, MIT deck-preview browser smoke harness, and
+`.github/workflows`; those resources are now staged into `Contents/Resources`
+and verified by the DMG smoke before packaged matrix runs. Packaged app evidence
+passes in `/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-213430`;
+copied-DMG evidence passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-213445`; and the
+DMG smoke bundle verifies in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-213444` for
+DMG SHA-256
+`0b6bd57e9737c9ab62b84ee858f1905396b4843f85be5a09ba917730ecd578e8`. This is
+Studio evidence UX, not provider-backed conversion, broad deterministic
+frontend support, native backend lowering, notarized distribution, or final
+MIT/productization acceptance.
+
 ## Phase 7: Release, Research, And Repeated Falsification
 
 **Intent:** Put the too-large ambitions into rigorous scaffolds instead of pretending they are done.
