@@ -207,6 +207,11 @@ struct ConverterAdvisoryHandoffScriptLocation: Equatable {
     let repoRootURL: URL
 }
 
+struct ConverterProviderOptionsScriptLocation: Equatable {
+    let scriptURL: URL
+    let repoRootURL: URL
+}
+
 struct MitReadinessScriptLocation: Equatable {
     let scriptURL: URL
     let repoRootURL: URL
@@ -513,6 +518,81 @@ struct ConverterAdvisoryHandoffScriptLocator {
             scriptURL: root
                 .appendingPathComponent("scripts", isDirectory: true)
                 .appendingPathComponent("garnet_converter_advisory_handoff.py"),
+            repoRootURL: root
+        )
+    }
+
+    private func ancestorRoots(from start: URL) -> [URL] {
+        var roots: [URL] = []
+        var cursor = start.standardizedFileURL
+        while true {
+            roots.append(cursor)
+            let parent = cursor.deletingLastPathComponent()
+            if parent.path == cursor.path {
+                break
+            }
+            cursor = parent
+        }
+        return roots
+    }
+}
+
+struct ConverterProviderOptionsScriptLocator {
+    let bundleResourceURL: URL?
+    let environmentRepoRoot: String?
+    let currentDirectoryURL: URL
+
+    init(
+        bundleResourceURL: URL? = Bundle.main.resourceURL,
+        environmentRepoRoot: String? = ProcessInfo.processInfo.environment["GARNET_REPO_ROOT"],
+        currentDirectoryURL: URL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+    ) {
+        self.bundleResourceURL = bundleResourceURL
+        self.environmentRepoRoot = environmentRepoRoot
+        self.currentDirectoryURL = currentDirectoryURL
+    }
+
+    func candidateLocations() -> [ConverterProviderOptionsScriptLocation] {
+        var locations: [ConverterProviderOptionsScriptLocation] = []
+
+        if let environmentRepoRoot, !environmentRepoRoot.isEmpty {
+            let root = URL(fileURLWithPath: environmentRepoRoot, isDirectory: true)
+            locations.append(location(forRepoRoot: root))
+        }
+
+        if let bundleResourceURL {
+            let script = bundleResourceURL
+                .appendingPathComponent("scripts", isDirectory: true)
+                .appendingPathComponent("garnet_converter_llm_feasibility.py")
+            locations.append(ConverterProviderOptionsScriptLocation(scriptURL: script, repoRootURL: bundleResourceURL))
+        }
+
+        for root in ancestorRoots(from: currentDirectoryURL) {
+            locations.append(location(forRepoRoot: root))
+        }
+
+        var seen: Set<String> = []
+        return locations.filter { location in
+            let key = location.scriptURL.path
+            if seen.contains(key) {
+                return false
+            }
+            seen.insert(key)
+            return true
+        }
+    }
+
+    func locate(fileManager: FileManager = .default) -> ConverterProviderOptionsScriptLocation? {
+        candidateLocations().first { location in
+            fileManager.fileExists(atPath: location.scriptURL.path)
+        }
+    }
+
+    private func location(forRepoRoot root: URL) -> ConverterProviderOptionsScriptLocation {
+        ConverterProviderOptionsScriptLocation(
+            scriptURL: root
+                .appendingPathComponent("scripts", isDirectory: true)
+                .appendingPathComponent("garnet_converter_llm_feasibility.py"),
             repoRootURL: root
         )
     }
@@ -1350,6 +1430,46 @@ struct MacContinuationRunner {
     }
 }
 
+struct ConverterProviderOptionsRunner {
+    let location: ConverterProviderOptionsScriptLocation
+    let outputDirectoryURL: URL
+
+    func commandArguments() -> [String] {
+        [
+            "env",
+            "PYTHONDONTWRITEBYTECODE=1",
+            "python3",
+            location.scriptURL.path,
+            "--output-dir",
+            outputDirectoryURL.path,
+            "--format",
+            "markdown",
+        ]
+    }
+
+    func run() -> GarnetCommandResult {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = commandArguments()
+        process.currentDirectoryURL = location.repoRootURL
+
+        let outputPipe = Pipe()
+        process.standardOutput = outputPipe
+        process.standardError = outputPipe
+
+        let command = (["/usr/bin/env"] + (process.arguments ?? [])).joined(separator: " ")
+        do {
+            try process.run()
+            process.waitUntilExit()
+            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: data, encoding: .utf8) ?? ""
+            return GarnetCommandResult(command: command, exitCode: process.terminationStatus, output: output)
+        } catch {
+            return GarnetCommandResult(command: command, exitCode: 127, output: error.localizedDescription)
+        }
+    }
+}
+
 struct GarnetStudioEvidenceDirectory {
     let homeDirectoryURL: URL
 
@@ -1376,6 +1496,13 @@ struct GarnetStudioEvidenceDirectory {
             .appendingPathComponent("Desktop", isDirectory: true)
             .appendingPathComponent("dogfood", isDirectory: true)
             .appendingPathComponent("garnet-studio-advisory-handoff-\(stamp)", isDirectory: true)
+    }
+
+    func providerOptionsDirectory(stamp: String = GarnetStudioEvidenceDirectory.timestamp()) -> URL {
+        homeDirectoryURL
+            .appendingPathComponent("Desktop", isDirectory: true)
+            .appendingPathComponent("dogfood", isDirectory: true)
+            .appendingPathComponent("garnet-studio-provider-options-\(stamp)", isDirectory: true)
     }
 
     func mitDemoRouteDirectory(stamp: String = GarnetStudioEvidenceDirectory.timestamp()) -> URL {
@@ -1529,6 +1656,7 @@ final class GarnetStudioViewModel: ObservableObject {
     @Published var advisoryBundlePath: String?
     @Published var advisoryReviewPath: String?
     @Published var advisoryHandoffPath: String?
+    @Published var providerOptionsPath: String?
     @Published var mitReadinessPath: String?
     @Published var mitDemoRoutePath: String?
     @Published var mitDeckOutlinePath: String?
@@ -1541,6 +1669,7 @@ final class GarnetStudioViewModel: ObservableObject {
     private let advisoryBundleLocator: ConverterAdvisoryBundleScriptLocator
     private let advisoryReviewLocator: ConverterAdvisoryReviewScriptLocator
     private let advisoryHandoffLocator: ConverterAdvisoryHandoffScriptLocator
+    private let providerOptionsLocator: ConverterProviderOptionsScriptLocator
     private let mitReadinessLocator: MitReadinessScriptLocator
     private let mitDemoRouteLocator: MitDemoRouteScriptLocator
     private let mitDeckOutlineLocator: MitDeckOutlineScriptLocator
@@ -1554,6 +1683,7 @@ final class GarnetStudioViewModel: ObservableObject {
         advisoryBundleLocator: ConverterAdvisoryBundleScriptLocator = ConverterAdvisoryBundleScriptLocator(),
         advisoryReviewLocator: ConverterAdvisoryReviewScriptLocator = ConverterAdvisoryReviewScriptLocator(),
         advisoryHandoffLocator: ConverterAdvisoryHandoffScriptLocator = ConverterAdvisoryHandoffScriptLocator(),
+        providerOptionsLocator: ConverterProviderOptionsScriptLocator = ConverterProviderOptionsScriptLocator(),
         mitReadinessLocator: MitReadinessScriptLocator = MitReadinessScriptLocator(),
         mitDemoRouteLocator: MitDemoRouteScriptLocator = MitDemoRouteScriptLocator(),
         mitDeckOutlineLocator: MitDeckOutlineScriptLocator = MitDeckOutlineScriptLocator(),
@@ -1566,6 +1696,7 @@ final class GarnetStudioViewModel: ObservableObject {
         self.advisoryBundleLocator = advisoryBundleLocator
         self.advisoryReviewLocator = advisoryReviewLocator
         self.advisoryHandoffLocator = advisoryHandoffLocator
+        self.providerOptionsLocator = providerOptionsLocator
         self.mitReadinessLocator = mitReadinessLocator
         self.mitDemoRouteLocator = mitDemoRouteLocator
         self.mitDeckOutlineLocator = mitDeckOutlineLocator
@@ -1577,6 +1708,7 @@ final class GarnetStudioViewModel: ObservableObject {
         self.advisoryBundlePath = advisoryBundleLocator.locate()?.scriptURL.path
         self.advisoryReviewPath = advisoryReviewLocator.locate()?.scriptURL.path
         self.advisoryHandoffPath = advisoryHandoffLocator.locate()?.scriptURL.path
+        self.providerOptionsPath = providerOptionsLocator.locate()?.scriptURL.path
         self.mitReadinessPath = mitReadinessLocator.locate()?.scriptURL.path
         self.mitDemoRoutePath = mitDemoRouteLocator.locate()?.scriptURL.path
         self.mitDeckOutlinePath = mitDeckOutlineLocator.locate()?.scriptURL.path
@@ -1811,6 +1943,27 @@ final class GarnetStudioViewModel: ObservableObject {
             output = "Failed to prepare converter advisory handoff input: \(error.localizedDescription)"
             lastStatus = .failure
         }
+    }
+
+    func runConverterProviderOptions() {
+        guard let location = providerOptionsLocator.locate() else {
+            output = "No converter provider-options script found. Open Garnet Studio from a source checkout or use the packaged app resources."
+            lastStatus = .failure
+            return
+        }
+
+        let outputDirectory = GarnetStudioEvidenceDirectory().providerOptionsDirectory()
+        output = "Writing provider-option registry evidence; provider-backed conversion is not active."
+        let result = ConverterProviderOptionsRunner(
+            location: location,
+            outputDirectoryURL: outputDirectory
+        ).run()
+        apply(result: result)
+        if result.status == .success {
+            output += "\nProvider options output: \(outputDirectory.path)"
+            output += "\nprovider-backed conversion is not active."
+        }
+        providerOptionsPath = location.scriptURL.path
     }
 
     func runAgenticStressTests() {
@@ -2093,7 +2246,7 @@ struct GarnetStudioRootView: View {
                         Text("Other").tag("other")
                     }
                     .pickerStyle(.menu)
-                    Text("The converter is a migration assistant. Active conversion is limited to Rust, Ruby, Python, and Go; advisory planning covers broader languages, while native-boundary code should stay behind FFI or native modules until explicit backend evidence lands. Advisory bundles omit source by default.")
+                    Text("The converter is a migration assistant. Active conversion is limited to Rust, Ruby, Python, and Go; advisory planning covers broader languages, while native-boundary code should stay behind FFI or native modules until explicit backend evidence lands. Advisory bundles omit source by default. Provider options are advisory-only; provider-backed conversion is not active.")
                         .font(.callout)
                         .foregroundStyle(.secondary)
                 }
@@ -2103,6 +2256,7 @@ struct GarnetStudioRootView: View {
                     ("Advisory Bundle", model.runConverterAdvisoryBundle),
                     ("Advisory Review", model.runConverterAdvisoryReview),
                     ("Advisory Handoff", model.runConverterAdvisoryHandoff),
+                    ("Provider Options", model.runConverterProviderOptions),
                 ])
             }
         } trailing: {

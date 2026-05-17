@@ -25,6 +25,7 @@ mkdir -p "${APP_DIR}/Contents/Resources/assets"
 mkdir -p "${APP_DIR}/Contents/Resources/apps/garnet-studio-macos/Sources/GarnetStudio"
 mkdir -p "${APP_DIR}/Contents/Resources/apps/garnet-studio-macos/Sources/GarnetStudio/Resources"
 mkdir -p "${APP_DIR}/Contents/Resources/F_Project_Management/DOGFOOD"
+mkdir -p "${APP_DIR}/Contents/Resources/.github"
 
 cp "${SWIFT_BIN}" "${APP_DIR}/Contents/MacOS/${EXECUTABLE_NAME}"
 cp "${GARNET_BIN}" "${APP_DIR}/Contents/Resources/garnet"
@@ -53,10 +54,13 @@ cp "${ROOT}/scripts/export_garnet_promo_video_site.mjs" "${APP_DIR}/Contents/Res
 cp "${ROOT}/scripts/qa_garnet_promo_video.mjs" "${APP_DIR}/Contents/Resources/scripts/qa_garnet_promo_video.mjs"
 cp "${ROOT}/scripts/render_garnet_promo_video.mjs" "${APP_DIR}/Contents/Resources/scripts/render_garnet_promo_video.mjs"
 cp "${ROOT}/scripts/sync_garnet_promo_video_site.mjs" "${APP_DIR}/Contents/Resources/scripts/sync_garnet_promo_video_site.mjs"
+cp "${ROOT}/scripts/smoke_garnet_mit_deck_preview_browser.mjs" "${APP_DIR}/Contents/Resources/scripts/smoke_garnet_mit_deck_preview_browser.mjs"
 cp "${ROOT}/scripts/smoke_garnet_studio_dmg.sh" "${APP_DIR}/Contents/Resources/scripts/smoke_garnet_studio_dmg.sh"
 cp "${ROOT}/scripts/smoke_garnet_web_pwa_offline.mjs" "${APP_DIR}/Contents/Resources/scripts/smoke_garnet_web_pwa_offline.mjs"
+cp "${ROOT}/scripts/test_github_actions_node24_readiness.py" "${APP_DIR}/Contents/Resources/scripts/test_github_actions_node24_readiness.py"
 cp "${ROOT}/README.md" "${APP_DIR}/Contents/Resources/README.md"
 cp "${ROOT}/CURRENT_STATE.md" "${APP_DIR}/Contents/Resources/CURRENT_STATE.md"
+cp -R "${ROOT}/.github/workflows" "${APP_DIR}/Contents/Resources/.github/workflows"
 cp -R "${ROOT}/C_Language_Specification" "${APP_DIR}/Contents/Resources/C_Language_Specification"
 cp "${ROOT}/F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md" "${APP_DIR}/Contents/Resources/F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md"
 cp "${ROOT}/F_Project_Management/DOGFOOD/GARNET_v0_5_DOGFOOD_READINESS_PHASE_LOG.md" "${APP_DIR}/Contents/Resources/F_Project_Management/DOGFOOD/GARNET_v0_5_DOGFOOD_READINESS_PHASE_LOG.md"
@@ -85,8 +89,10 @@ chmod 0755 "${APP_DIR}/Contents/Resources/scripts/export_garnet_promo_video_site
 chmod 0755 "${APP_DIR}/Contents/Resources/scripts/qa_garnet_promo_video.mjs"
 chmod 0755 "${APP_DIR}/Contents/Resources/scripts/render_garnet_promo_video.mjs"
 chmod 0755 "${APP_DIR}/Contents/Resources/scripts/sync_garnet_promo_video_site.mjs"
+chmod 0755 "${APP_DIR}/Contents/Resources/scripts/smoke_garnet_mit_deck_preview_browser.mjs"
 chmod 0755 "${APP_DIR}/Contents/Resources/scripts/smoke_garnet_studio_dmg.sh"
 chmod 0755 "${APP_DIR}/Contents/Resources/scripts/smoke_garnet_web_pwa_offline.mjs"
+chmod 0755 "${APP_DIR}/Contents/Resources/scripts/test_github_actions_node24_readiness.py"
 
 cat > "${APP_DIR}/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>

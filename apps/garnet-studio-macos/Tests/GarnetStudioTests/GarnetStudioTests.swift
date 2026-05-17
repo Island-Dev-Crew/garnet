@@ -113,6 +113,19 @@ final class GarnetStudioTests: XCTestCase {
         XCTAssertEqual(first?.scriptURL.path, "/Applications/Garnet Studio.app/Contents/Resources/scripts/garnet_converter_advisory_handoff.py")
     }
 
+    func testConverterProviderOptionsLocatorPrefersBundledScriptBeforeAmbientCheckout() {
+        let locator = ConverterProviderOptionsScriptLocator(
+            bundleResourceURL: URL(fileURLWithPath: "/Applications/Garnet Studio.app/Contents/Resources", isDirectory: true),
+            environmentRepoRoot: nil,
+            currentDirectoryURL: URL(fileURLWithPath: "/repo/apps/garnet-studio-macos", isDirectory: true)
+        )
+
+        let first = locator.candidateLocations().first
+
+        XCTAssertEqual(first?.repoRootURL.path, "/Applications/Garnet Studio.app/Contents/Resources")
+        XCTAssertEqual(first?.scriptURL.path, "/Applications/Garnet Studio.app/Contents/Resources/scripts/garnet_converter_llm_feasibility.py")
+    }
+
     func testMitReadinessLocatorPrefersBundledScriptBeforeAmbientCheckout() {
         let locator = MitReadinessScriptLocator(
             bundleResourceURL: URL(fileURLWithPath: "/Applications/Garnet Studio.app/Contents/Resources", isDirectory: true),
@@ -293,6 +306,32 @@ final class GarnetStudioTests: XCTestCase {
             ]
         )
         XCTAssertFalse(runner.commandArguments().contains("--allow-source-included"))
+        XCTAssertFalse(runner.commandArguments().contains("--include-source"))
+    }
+
+    func testConverterProviderOptionsRunnerBuildsManifestedNoSourceCommand() {
+        let location = ConverterProviderOptionsScriptLocation(
+            scriptURL: URL(fileURLWithPath: "/repo/scripts/garnet_converter_llm_feasibility.py"),
+            repoRootURL: URL(fileURLWithPath: "/repo", isDirectory: true)
+        )
+        let runner = ConverterProviderOptionsRunner(
+            location: location,
+            outputDirectoryURL: URL(fileURLWithPath: "/tmp/GarnetStudioProviderOptions")
+        )
+
+        XCTAssertEqual(
+            runner.commandArguments(),
+            [
+                "env",
+                "PYTHONDONTWRITEBYTECODE=1",
+                "python3",
+                "/repo/scripts/garnet_converter_llm_feasibility.py",
+                "--output-dir",
+                "/tmp/GarnetStudioProviderOptions",
+                "--format",
+                "markdown",
+            ]
+        )
         XCTAssertFalse(runner.commandArguments().contains("--include-source"))
     }
 
@@ -560,6 +599,17 @@ final class GarnetStudioTests: XCTestCase {
         XCTAssertEqual(
             directory.path,
             "/Users/example/Desktop/dogfood/garnet-studio-advisory-handoff-20260516-104500"
+        )
+    }
+
+    func testStudioProviderOptionsEvidenceDirectoryDefaultsToDesktopDogfood() {
+        let directory = GarnetStudioEvidenceDirectory(
+            homeDirectoryURL: URL(fileURLWithPath: "/Users/example", isDirectory: true)
+        ).providerOptionsDirectory(stamp: "20260516-212500")
+
+        XCTAssertEqual(
+            directory.path,
+            "/Users/example/Desktop/dogfood/garnet-studio-provider-options-20260516-212500"
         )
     }
 

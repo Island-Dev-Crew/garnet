@@ -60,6 +60,10 @@ class GarnetAdoptionSurfaceStatusTests(unittest.TestCase):
             data["llm_assist_truth"],
         )
         self.assertIn("provider option registry lists 10 advisory-only candidates", data["llm_assist_truth"])
+        self.assertIn(
+            "Garnet Studio can preserve provider-option registry evidence without source inclusion",
+            data["llm_assist_truth"],
+        )
         self.assertIn("provider-neutral advisory bundle is active", data["llm_assist_truth"])
         self.assertIn("advisory review gate is active before model handoff", data["llm_assist_truth"])
         self.assertIn("provider-neutral advisory handoff packet is active", data["llm_assist_truth"])
@@ -93,6 +97,7 @@ class GarnetAdoptionSurfaceStatusTests(unittest.TestCase):
         self.assertIn("Assist Plan", workbench["hook"])
         self.assertIn("Advisory Review", workbench["hook"])
         self.assertIn("Advisory Handoff", workbench["hook"])
+        self.assertIn("Provider Options", workbench["hook"])
         self.assertIn("MIT objective pulse", workbench["hook"])
         self.assertIn("Codex Run", workbench["hook"])
         self.assertIn("dist/Garnet Studio.app", workbench["hook"])
@@ -148,6 +153,7 @@ class GarnetAdoptionSurfaceStatusTests(unittest.TestCase):
         self.assertIn("Advisory Bundle", site)
         self.assertIn("Advisory Review", site)
         self.assertIn("Advisory Handoff", site)
+        self.assertIn("Provider Options", site)
         self.assertIn("Objective Pulse", site)
         self.assertIn("provider-neutral prompt pack", site)
         self.assertIn("provider-option registry", site)

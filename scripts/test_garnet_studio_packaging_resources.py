@@ -35,13 +35,20 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
             "qa_garnet_promo_video.mjs",
             "render_garnet_promo_video.mjs",
             "run_agentic_dogfood_matrix.py",
+            "smoke_garnet_mit_deck_preview_browser.mjs",
             "smoke_garnet_studio_dmg.sh",
             "sync_garnet_promo_video_site.mjs",
+            "test_github_actions_node24_readiness.py",
         ]:
             with self.subTest(name=name):
                 self.assertIn(f'cp "${{ROOT}}/scripts/{name}"', script)
                 self.assertIn(f'chmod 0755 "${{APP_DIR}}/Contents/Resources/scripts/{name}"', script)
 
+        self.assertIn('mkdir -p "${APP_DIR}/Contents/Resources/.github"', script)
+        self.assertIn(
+            'cp -R "${ROOT}/.github/workflows" "${APP_DIR}/Contents/Resources/.github/workflows"',
+            script,
+        )
         self.assertIn(
             'cp "${ROOT}/scripts/smoke_garnet_web_pwa_offline.mjs" '
             '"${APP_DIR}/Contents/Resources/scripts/smoke_garnet_web_pwa_offline.mjs"',
@@ -126,6 +133,9 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
         self.assertIn('PROMO_QA="${INSTALLED_APP}/Contents/Resources/scripts/qa_garnet_promo_video.mjs"', script)
         self.assertIn('PROMO_RENDER="${INSTALLED_APP}/Contents/Resources/scripts/render_garnet_promo_video.mjs"', script)
         self.assertIn('PROMO_SYNC="${INSTALLED_APP}/Contents/Resources/scripts/sync_garnet_promo_video_site.mjs"', script)
+        self.assertIn('DECK_PREVIEW_BROWSER_SMOKE="${INSTALLED_APP}/Contents/Resources/scripts/smoke_garnet_mit_deck_preview_browser.mjs"', script)
+        self.assertIn('NODE24_READINESS="${INSTALLED_APP}/Contents/Resources/scripts/test_github_actions_node24_readiness.py"', script)
+        self.assertIn('WORKFLOWS_DIR="${INSTALLED_APP}/Contents/Resources/.github/workflows"', script)
         self.assertIn('NOTARIZATION_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_studio_notarization_status.py"', script)
         self.assertIn('PROMO_ASSETS_DIR="${INSTALLED_APP}/Contents/Resources/assets"', script)
         self.assertIn('PROMO_STUDIO_SOURCE="${INSTALLED_APP}/Contents/Resources/apps/garnet-studio-macos/Sources/GarnetStudio/GarnetStudioApp.swift"', script)
@@ -134,6 +144,8 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
         self.assertIn('PROMO_DESIGN="${DOCS_DIR}/promo/DESIGN.md"', script)
         self.assertIn('PROMO_COMPOSITION="${DOCS_DIR}/promo/composition.html"', script)
         self.assertIn('"${OFFLINE_PWA_SMOKE}" --docs-dir "${DOCS_DIR}"', script)
+        self.assertIn('"${NODE24_READINESS}"', script)
+        self.assertIn('"${DECK_PREVIEW_BROWSER_SMOKE}"', script)
 
     def test_dmg_smoke_writes_manifest_verified_evidence_bundle(self) -> None:
         script = DMG_SMOKE_SCRIPT.read_text(encoding="utf-8")
