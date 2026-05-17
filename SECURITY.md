@@ -18,7 +18,7 @@ Garnet follows a forward-compatible security support window: the current release
 Instead, use one of:
 
 1. **GitHub Security Advisory** (preferred): open a private advisory at [github.com/Island-Dev-Crew/garnet/security/advisories/new](https://github.com/Island-Dev-Crew/garnet/security/advisories/new). GitHub notifies the maintainer privately; the disclosure stays invisible to the public until published.
-2. **Email**: `security@garnet-lang.org` (once the domain is registered) or `jon@island-dev-crew.example`. PGP-encrypt if you have a key reference from a prior handoff; otherwise plaintext is fine — the maintainer will respond with a secure channel.
+2. **Email**: `jon-isaac@islanddevcrew.com`. **Voice/SMS (security reports only)**: +1 256-652-5534. PGP-encrypt if you have a key reference from a prior handoff; otherwise plaintext is fine — the maintainer will respond with a secure channel. Please reserve the phone line for security disclosure, not general or support questions.
 
 ### What to include
 
