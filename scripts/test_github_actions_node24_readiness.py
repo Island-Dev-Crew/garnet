@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -24,31 +25,59 @@ MINIMUM_NODE24_ACTION_MAJORS = {
 USES_RE = re.compile(r"uses:\s*[\"']?((?:actions/[a-z-]+)|(?:github/codeql-action/[a-z-]+))@v([0-9]+)")
 
 
-class GithubActionsNode24ReadinessTests(unittest.TestCase):
-    def test_actions_use_node24_capable_majors(self) -> None:
-        failures: list[str] = []
-        scanned = 0
+def workflow_files(workflows: Path) -> list[Path]:
+    return sorted([*workflows.glob("*.yml"), *workflows.glob("*.yaml")])
 
-        for workflow in sorted(WORKFLOWS.glob("*.yml")):
-            text = workflow.read_text(encoding="utf-8")
-            for match in USES_RE.finditer(text):
-                action = match.group(1)
-                major = int(match.group(2))
-                minimum = MINIMUM_NODE24_ACTION_MAJORS.get(action)
-                if minimum is None:
-                    continue
-                scanned += 1
-                if major < minimum:
-                    failures.append(
-                        f"{workflow.relative_to(ROOT)} pins {action}@v{major}; expected v{minimum}+",
-                    )
+
+def workflow_label(workflow: Path, display_base: Path) -> str:
+    return str(workflow.relative_to(display_base))
+
+
+def scan_action_pins(workflows: Path, *, display_base: Path | None = None) -> tuple[int, list[str]]:
+    failures: list[str] = []
+    scanned = 0
+    label_base = display_base or workflows
+
+    for workflow in workflow_files(workflows):
+        text = workflow.read_text(encoding="utf-8")
+        for match in USES_RE.finditer(text):
+            action = match.group(1)
+            major = int(match.group(2))
+            minimum = MINIMUM_NODE24_ACTION_MAJORS.get(action)
+            if minimum is None:
+                continue
+            scanned += 1
+            if major < minimum:
+                failures.append(
+                    f"{workflow_label(workflow, label_base)} pins {action}@v{major}; expected v{minimum}+",
+                )
+
+    return scanned, failures
+
+
+class GithubActionsNode24ReadinessTests(unittest.TestCase):
+    def test_yaml_extension_workflows_are_scanned(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workflows = Path(temp_dir)
+            (workflows / "node24.yaml").write_text(
+                "name: yaml workflow\njobs:\n  test:\n    steps:\n      - uses: actions/checkout@v5\n",
+                encoding="utf-8",
+            )
+
+            scanned, failures = scan_action_pins(workflows)
+
+        self.assertEqual(1, scanned)
+        self.assertEqual(["node24.yaml pins actions/checkout@v5; expected v6+"], failures)
+
+    def test_actions_use_node24_capable_majors(self) -> None:
+        scanned, failures = scan_action_pins(WORKFLOWS, display_base=ROOT)
 
         self.assertGreater(scanned, 0, "expected to scan at least one Node 24-gated workflow action")
         self.assertEqual([], failures)
 
     def test_no_workflow_pins_explicit_node20_action_variants(self) -> None:
         offenders = []
-        for workflow in sorted(WORKFLOWS.glob("*.yml")):
+        for workflow in workflow_files(WORKFLOWS):
             text = workflow.read_text(encoding="utf-8")
             if "node20" in text.lower():
                 offenders.append(str(workflow.relative_to(ROOT)))

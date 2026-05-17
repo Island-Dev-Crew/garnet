@@ -3074,7 +3074,7 @@ def probe_set(
             [sys.executable, str(ROOT / "scripts" / "test_github_actions_node24_readiness.py")],
             True,
             (),
-            ("Ran 2 tests", "OK"),
+            ("Ran 3 tests", "OK"),
             security_domain="release-integrity",
         ),
         Probe(
