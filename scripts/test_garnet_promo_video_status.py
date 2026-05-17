@@ -13,6 +13,8 @@ from pathlib import Path
 from unittest import mock
 
 SCRIPT = Path(__file__).with_name("garnet_promo_video_status.py")
+MATRIX_SCRIPT = Path(__file__).with_name("run_agentic_dogfood_matrix.py")
+ROOT = Path(__file__).resolve().parents[1]
 TEST_DOGFOOD_DIR = tempfile.TemporaryDirectory()
 os.environ["GARNET_PROMO_VIDEO_DESKTOP_DIR"] = TEST_DOGFOOD_DIR.name
 SPEC = importlib.util.spec_from_file_location("garnet_promo_video_status", SCRIPT)
@@ -21,6 +23,12 @@ promo = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
 sys.modules["garnet_promo_video_status"] = promo
 SPEC.loader.exec_module(promo)
+MATRIX_SPEC = importlib.util.spec_from_file_location("run_agentic_dogfood_matrix", MATRIX_SCRIPT)
+assert MATRIX_SPEC is not None
+matrix = importlib.util.module_from_spec(MATRIX_SPEC)
+assert MATRIX_SPEC.loader is not None
+sys.modules["run_agentic_dogfood_matrix"] = matrix
+MATRIX_SPEC.loader.exec_module(matrix)
 
 
 class GarnetPromoVideoStatusTests(unittest.TestCase):
@@ -196,8 +204,48 @@ class GarnetPromoVideoStatusTests(unittest.TestCase):
         self.assertEqual("hyperframes-html", composition["tool"])
         self.assertTrue(composition["timeline_registered"])
         self.assertTrue(composition["uses_locked_assets"])
+        self.assertEqual(140, composition["dogfood_probe_count"])
+        self.assertEqual(140, composition["computed_dogfood_probe_count"])
+        self.assertEqual(140, composition["declared_dogfood_probe_count"])
+        self.assertTrue(composition["dogfood_probe_count_matches"])
         self.assertEqual(30, composition["duration_seconds"])
         self.assertIn("garnet-promo-main", composition["composition_id"])
+
+    def test_composition_dogfood_probe_count_matches_current_matrix_inventory(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            fixtures = matrix.prepare_fixtures(work)
+            probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+
+        composition = (ROOT / "docs" / "promo" / "composition.html").read_text(encoding="utf-8")
+        expected_count = str(len(probes))
+        self.assertIn(f'data-dogfood-probes="{expected_count}"', composition)
+        self.assertIn(f'<div class="proof-key">{expected_count}</div>', composition)
+
+    def test_packaged_resource_composition_accepts_source_checkout_probe_count(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            package_root = Path(temp)
+            promo_dir = package_root / "docs" / "promo"
+            promo_dir.mkdir(parents=True)
+            (promo_dir / "composition.html").write_text(
+                (ROOT / "docs" / "promo" / "composition.html").read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            (promo_dir / "DESIGN.md").write_text(
+                (ROOT / "docs" / "promo" / "DESIGN.md").read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+
+            with (
+                mock.patch.object(promo, "ROOT", package_root),
+                mock.patch.object(promo, "_current_dogfood_probe_count", return_value=138),
+            ):
+                composition = promo._composition_source()
+
+        self.assertEqual(140, composition["dogfood_probe_count"])
+        self.assertEqual(138, composition["computed_dogfood_probe_count"])
+        self.assertEqual(140, composition["declared_dogfood_probe_count"])
+        self.assertTrue(composition["dogfood_probe_count_matches"])
 
     def test_storyboard_contract_is_specific_without_becoming_a_render_claim(self) -> None:
         contract = promo.read_status()
