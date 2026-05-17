@@ -1007,6 +1007,33 @@
 </section>
 
 <!-- ═══════════════════════════════════════════════════════ CAPS -->
+<section id="compare" class="dense">
+  <div class="container reveal">
+    <h3>Positioning</h3>
+    <h2>Rust, Ruby, Garnet — <span class="accent">honestly side by side.</span></h2>
+    <p class="lead">Garnet is not claiming to replace either parent. This table is positioning, not a benchmark: where each language sits, and what Garnet's dual-mode design buys you. The last row stays deliberately honest.</p>
+    <div class="install-note" style="margin:8px 0 0;padding:0;border:1px solid var(--rule);border-radius:10px;background:var(--bg-soft);overflow-x:auto;">
+      <table style="border-collapse:collapse;width:100%;font-size:13.5px;color:var(--ink-soft);min-width:680px;">
+        <tr style="color:var(--ink);">
+          <th style="text-align:left;padding:10px 14px;border-bottom:1px solid var(--rule);">Axis</th>
+          <th style="text-align:left;padding:10px 14px;border-bottom:1px solid var(--rule);">Rust</th>
+          <th style="text-align:left;padding:10px 14px;border-bottom:1px solid var(--rule);">Ruby</th>
+          <th style="text-align:left;padding:10px 14px;border-bottom:1px solid var(--rule);color:var(--gold);">Garnet</th>
+        </tr>
+        <tr><td style="padding:8px 14px;">Memory safety</td><td style="padding:8px 14px;">Compile-time ownership</td><td style="padding:8px 14px;">Runtime GC</td><td style="padding:8px 14px;color:var(--ink);">Safe mode: ownership · Managed mode: ARC-managed</td></tr>
+        <tr><td style="padding:8px 14px;">Cognitive load</td><td style="padding:8px 14px;">High (lifetimes)</td><td style="padding:8px 14px;">Low</td><td style="padding:8px 14px;color:var(--ink);">Progressive — low in managed, Rust-like in safe</td></tr>
+        <tr><td style="padding:8px 14px;">Error model</td><td style="padding:8px 14px;"><code>Result&lt;T,E&gt;</code></td><td style="padding:8px 14px;">Exceptions</td><td style="padding:8px 14px;color:var(--ink);">Both, auto-bridged at the mode boundary</td></tr>
+        <tr><td style="padding:8px 14px;">Concurrency</td><td style="padding:8px 14px;">Threads/async, Send+Sync</td><td style="padding:8px 14px;">GVL-limited</td><td style="padding:8px 14px;color:var(--ink);">Actors + <code>Sendable</code> checking</td></tr>
+        <tr><td style="padding:8px 14px;">Agent/memory primitives</td><td style="padding:8px 14px;">Library</td><td style="padding:8px 14px;">Library</td><td style="padding:8px 14px;color:var(--ink);">Language-level (working/episodic/semantic/procedural)</td></tr>
+        <tr><td style="padding:8px 14px;">Capability control</td><td style="padding:8px 14px;">External crates</td><td style="padding:8px 14px;">External gems</td><td style="padding:8px 14px;color:var(--ink);"><code>@caps(...)</code> in the language</td></tr>
+        <tr><td style="padding:8px 14px;">Reproducible builds</td><td style="padding:8px 14px;">Tooling-dependent</td><td style="padding:8px 14px;">Not a goal</td><td style="padding:8px 14px;color:var(--ink);">Manifest + Ed25519 signature contract</td></tr>
+        <tr><td style="padding:8px 14px 12px;border-top:1px solid var(--rule);">Maturity</td><td style="padding:8px 14px 12px;border-top:1px solid var(--rule);">Production</td><td style="padding:8px 14px 12px;border-top:1px solid var(--rule);">Production</td><td style="padding:8px 14px 12px;border-top:1px solid var(--rule);color:var(--ink);"><strong>Research-grade prototype (v0.4.2)</strong> — not production-complete</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ CAPS -->
 <section id="caps">
   <div class="container reveal">
     <h3>The Capability Model</h3>
