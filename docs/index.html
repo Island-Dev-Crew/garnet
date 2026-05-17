@@ -1068,6 +1068,12 @@
     <p class="lead">The <code>garnet convert</code> tool is a migration assistant, not a full transpiler: it reads four deterministic source lanes and emits sandboxed Garnet with lineage, metrics, and a human migration checklist.</p>
     <p class="lead">The broader converter surface is honest by design: active conversion for the languages with deterministic frontends, advisory planning for broader source, native boundaries where low-level fidelity matters, and future Garnet-to-Wasm/LLVM-style lowering when backend evidence exists.</p>
     <p class="lead">Why the split: active languages are low-friction migration lanes with stable frontends, advisory languages get risk-first planning until deterministic support lands, and native-boundary languages are best represented as explicit modules or FFI with CapCaps and sandbox policy.</p>
+    <p class="lead">Direct conversion fit rule: do not convert before a deterministic frontend and checker contract exists for source, parser edges, and capability-preserving lowering. Advisory planning is acceptable only when migration risk is explicit and gated by a human review handoff.</p>
+    <ul>
+      <li><strong>Active conversion:</strong> Rust / Ruby / Python / Go can carry ownership-like shape, module boundaries, and migration evidence with deterministic behavior.</li>
+      <li><strong>Advisory planning:</strong> JavaScript, TypeScript, Swift, Java, Perl, Kotlin, Shell, SQL, and similar sources gain value as migration planning + risk inventory until parser/lineage support is implemented.</li>
+      <li><strong>Native boundary:</strong> C, C++, Objective-C, Assembly, CUDA, and platform-specific code are best handled as native modules/FFI where ABI and hardware behavior are source-of-truth.</li>
+    </ul>
     <p class="lead">Adoption surface truth is machine-readable through <code>scripts/garnet_adoption_surface_status.py</code>.</p>
     <p class="lead">LLM advisory work uses the provider-neutral prompt pack and a machine-readable provider-option registry. Provider-backed conversion remains inactive; each future provider candidate is advisory-only, no-source by default, privacy-reviewed, and human-approved before any handoff can matter. The reviewable path is: source classifier -> risk inventory -> Garnet context -> advisory plan -> review handoff -> human-approved candidate -> garnet check/test/dogfood.</p>
 

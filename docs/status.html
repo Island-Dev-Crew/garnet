@@ -130,6 +130,12 @@
         </tr>
       </tbody>
     </table>
+    <p class="lead" style="margin-top:16px;">Converter fit is decided by parser certainty and memory/capability preservation:</p>
+    <ul>
+      <li><strong>Active lanes</strong> only enter deterministic mode when parser, lowering, migration check, and evidence output are proven in local checks.</li>
+      <li><strong>Advisory lanes</strong> are useful for migration planning, but not source replacement, until deterministic frontend support and dogfood gates are in place.</li>
+      <li><strong>Native-boundary lanes</strong> preserve ABI, platform, and performance contracts; they stay native modules/FFI unless a backend lowering strategy changes the guarantee surface.</li>
+    </ul>
   </div>
 </section>
 
