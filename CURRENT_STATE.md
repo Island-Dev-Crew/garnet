@@ -1072,6 +1072,27 @@ provider-backed conversion, broad deterministic frontend support, native
 backend lowering, notarized distribution, or final MIT/productization
 acceptance.
 
+Phase 6BO closes the follow-on CodeQL action-runtime drift found by the
+post-merge PR #157 checks. CodeQL passed, but GitHub annotated the workflow for
+using `github/codeql-action/*@v3` on the deprecated Node 20 action runtime, so
+the CodeQL workflow now pins `github/codeql-action/init@v4`,
+`github/codeql-action/autobuild@v4`, and
+`github/codeql-action/analyze@v4`. The Node 24 readiness regression test now
+scans both first-party `actions/*` pins and CodeQL pins, and the agentic
+dogfood matrix claim names both surfaces. Current source-checkout evidence
+passes `140/140` with `skipped=0` in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-215539`;
+packaged app evidence passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-215723`;
+copied-DMG evidence passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-215740`; and
+the DMG smoke bundle verifies in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-215739` for
+DMG SHA-256
+`93daca36ae5877560122fd21692ba451a6993803503267998b01a2e3b76d9fbd`. This is
+CI runtime maintenance only, not a new language/runtime capability,
+distribution-signing proof, or final MIT/productization acceptance.
+
 ## Historical Material
 
 Older milestone files are preserved because they explain how the project got

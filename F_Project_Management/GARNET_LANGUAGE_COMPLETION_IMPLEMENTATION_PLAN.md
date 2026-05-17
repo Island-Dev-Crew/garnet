@@ -2481,3 +2481,25 @@ DMG SHA-256
 is app evidence access only, not source upload, provider-backed conversion,
 broad deterministic frontend support, native backend lowering, notarized
 distribution, or final MIT/productization acceptance.
+
+Phase 6BO CodeQL action-runtime readiness:
+the CodeQL workflow now uses Node 24-capable CodeQL action majors
+(`github/codeql-action/init@v4`, `github/codeql-action/autobuild@v4`, and
+`github/codeql-action/analyze@v4`) after the post-merge PR #157 CodeQL run
+passed but emitted Node 20 deprecation annotations for the previous v3 pins.
+`scripts/test_github_actions_node24_readiness.py` now scans both first-party
+`actions/*` pins and CodeQL pins, and the agentic dogfood matrix keeps this as
+a release-integrity probe. Current source-checkout evidence passes `140/140`
+with `skipped=0` in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-215539`;
+packaged app evidence passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-215723`;
+copied-DMG evidence passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-215740`; and
+the DMG smoke bundle verifies in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260516-215739` for
+DMG SHA-256
+`93daca36ae5877560122fd21692ba451a6993803503267998b01a2e3b76d9fbd`. This is
+CI/runtime evidence maintenance, not language feature completion, Developer ID
+notarization, Windows/Linux runtime proof, provider-backed conversion, native
+backend lowering, mobile distribution, or final MIT/productization acceptance.
