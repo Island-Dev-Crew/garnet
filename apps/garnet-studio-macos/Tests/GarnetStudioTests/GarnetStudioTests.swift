@@ -419,8 +419,11 @@ final class GarnetStudioTests: XCTestCase {
 
         out = Path(sys.argv[sys.argv.index("--output-dir") + 1])
         out.mkdir(parents=True, exist_ok=True)
-        for name in ["garnet-mit-deck-preview.html", "garnet-mit-deck-preview.json", "garnet-mit-deck-outline.md", "MANIFEST.sha256"]:
+        digest = "dc51b8c96c2d745df3bd5590d990230a482fd247123599548e0632fdbf97fc22"
+        names = ["garnet-mit-deck-preview.html", "garnet-mit-deck-preview.json", "garnet-mit-deck-outline.md"]
+        for name in names:
             (out / name).write_text("ok\\n", encoding="utf-8")
+        (out / "MANIFEST.sha256").write_text("".join(f"{digest}  ./{name}\\n" for name in names), encoding="utf-8")
         """
         try source.write(to: reporter, atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: reporter.path)
@@ -434,6 +437,43 @@ final class GarnetStudioTests: XCTestCase {
         XCTAssertEqual(
             GarnetStudioSelfTest.runDeckPreviewSmoke(locator: locator, outputDirectoryURL: output),
             0
+        )
+    }
+
+    func testDeckPreviewSmokeRejectsStaleManifest() throws {
+        let temp = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+            .appendingPathComponent("GarnetStudioDeckPreviewSmokeManifestTest-\(UUID().uuidString)", isDirectory: true)
+        let repo = temp.appendingPathComponent("repo", isDirectory: true)
+        let scripts = repo.appendingPathComponent("scripts", isDirectory: true)
+        let output = temp.appendingPathComponent("output", isDirectory: true)
+        try FileManager.default.createDirectory(at: scripts, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: temp) }
+
+        let reporter = scripts.appendingPathComponent("garnet_mit_deck_preview.py")
+        let source = """
+        #!/usr/bin/env python3
+        from pathlib import Path
+        import sys
+
+        out = Path(sys.argv[sys.argv.index("--output-dir") + 1])
+        out.mkdir(parents=True, exist_ok=True)
+        names = ["garnet-mit-deck-preview.html", "garnet-mit-deck-preview.json", "garnet-mit-deck-outline.md"]
+        for name in names:
+            (out / name).write_text("ok\\n", encoding="utf-8")
+        (out / "MANIFEST.sha256").write_text("".join(f"{'0' * 64}  ./{name}\\n" for name in names), encoding="utf-8")
+        """
+        try source.write(to: reporter, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: reporter.path)
+
+        let locator = MitDeckPreviewScriptLocator(
+            bundleResourceURL: nil,
+            environmentRepoRoot: repo.path,
+            currentDirectoryURL: repo
+        )
+
+        XCTAssertEqual(
+            GarnetStudioSelfTest.runDeckPreviewSmoke(locator: locator, outputDirectoryURL: output),
+            11
         )
     }
 
