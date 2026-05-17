@@ -3160,6 +3160,29 @@ def probe_set(
             ("MIT deck preview output contract present",),
             security_domain="release-integrity",
         ),
+        Probe(
+            "report-mit-deck-preview-browser-smoke-harness",
+            "MIT deck preview",
+            "MIT deck preview should have a real-browser smoke harness before browser-readiness claims",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"source = Path({str(ROOT / 'scripts' / 'smoke_garnet_mit_deck_preview_browser.mjs')!r}).read_text()\n"
+                    "required = ['garnet_mit_deck_preview.py', 'MANIFEST.sha256', "
+                    "'Page.captureScreenshot', 'Emulation.setDeviceMetricsOverride', "
+                    "'externalAssets', 'horizontalOverflow', "
+                    "'final MIT/productization acceptance']\n"
+                    "missing = [item for item in required if item not in source]\n"
+                    "assert not missing, missing\n"
+                    "print('MIT deck preview browser smoke harness present')\n"
+                ),
+            ],
+            True,
+            ("MIT deck preview browser smoke harness present",),
+            security_domain="not-applicable",
+        ),
         lambda: build_mit_deck_preview_manifest_probe(work),
         Probe(
             "report-promo-video-current-truth",

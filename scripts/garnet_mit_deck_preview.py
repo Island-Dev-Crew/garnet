@@ -158,12 +158,17 @@ def render_html(preview: DeckPreviewStatus) -> str:
       margin-top: 28px;
     }
     ul { margin: 0; padding-left: 20px; }
+    p, li, td {
+      overflow-wrap: anywhere;
+    }
     li { margin: 10px 0; }
     code {
       color: #ffd7c2;
       background: rgba(180, 76, 67, 0.18);
       padding: 2px 5px;
       border-radius: 4px;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     .speaker-note {
       border-left: 4px solid var(--garnet);

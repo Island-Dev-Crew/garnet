@@ -77,6 +77,7 @@ done
 | `scripts/garnet_mit_demo_route.py` | MIT demo-route inventory | current machine-readable and Markdown presentation route for a bounded seven-minute MIT walkthrough; ties Objective Pulse, Studio continuation, converter advisory, agentic dogfood, live web/PWA, and blocked-gate closeout together without claiming final MIT/productization completion |
 | `scripts/garnet_mit_deck_outline.py` | MIT deck-outline inventory | current machine-readable and Markdown slide outline for an 8-slide MIT reviewer deck; turns the demo route, adoption status, blocked gates, and Desktop evidence boundaries into presentation notes without claiming final MIT/productization acceptance |
 | `scripts/garnet_mit_deck_preview.py` | MIT deck-preview artifact | current browser-smokeable HTML/JSON preview generated from the deck outline; packages slide story, evidence, speaker notes, blocked gates, and forbidden claims into a manifested review artifact without claiming final MIT/productization acceptance |
+| `scripts/smoke_garnet_mit_deck_preview_browser.mjs` | MIT deck-preview browser smoke | current local Chrome/CDP smoke harness for the generated deck preview; verifies manifested output, desktop/mobile horizontal overflow, self-contained assets, status metrics, boundary copy, and screenshot evidence without claiming human/aesthetic deck approval |
 | `scripts/garnet_promo_video_status.py` | promo video readiness contract | current machine-readable storyboard/gate contract for a 30-second HyperFrames promo; visual identity/source surfaces and `docs/promo/` composition source are tied to repo assets, local Desktop MP4/WebM, automated visual-QA, website-export, and site-sync evidence can promote the lane to `public-site-embedded` at 95.0%, while human/aesthetic acceptance remains open |
 | `scripts/render_garnet_promo_video.mjs` | promo video render harness | current local Chrome DevTools + `ffmpeg` harness for manifest-backed MP4/WebM/poster render evidence; this is not a substitute for visual QA or website export |
 | `scripts/qa_garnet_promo_video.mjs` | promo visual-QA harness | current local `ffprobe`/`ffmpeg` harness for automated metadata and sample-frame QA evidence; this is not a substitute for website export or optional human aesthetic review |
@@ -994,6 +995,23 @@ unsigned/local packaged-app evidence, not human/aesthetic deck approval,
 Developer ID notarization, Windows/Linux runtime proof, provider-backed
 conversion, native backend lowering, mobile distribution, production-ready
 language status, or final MIT/productization acceptance.
+Phase 6BK turns the deck-preview browser-smokeable claim into a real browser
+proof surface. `scripts/smoke_garnet_mit_deck_preview_browser.mjs` generates the
+deck-preview bundle, verifies its `MANIFEST.sha256`, serves it locally, opens it
+in headless Chrome through CDP, captures a screenshot, and checks desktop plus
+mobile layout for no horizontal overflow, no external assets, current `58.6%`
+and `87/87` metrics, speaker notes, evidence sections, and forbidden-claim
+boundary copy. The first live run caught desktop overflow in long evidence
+paths; the deck CSS now wraps long `code`, `li`, `p`, and table-cell content.
+Current source-checkout evidence passes `135/135` with `skipped=0` in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260516-200458`.
+Browser smoke evidence passes in
+`/Users/idc2.0/Desktop/dogfood/garnet-mit-deck-preview-browser-smoke-20260516-201326`;
+both the smoke bundle and nested deck-preview manifest verify. This remains
+browser-layout evidence for a generated review artifact, not human/aesthetic
+deck approval, Developer ID notarization, Windows/Linux runtime proof,
+provider-backed conversion, native backend lowering, mobile distribution,
+production-ready language status, or final MIT/productization acceptance.
 
 ## Historical Material
 
