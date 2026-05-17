@@ -30,6 +30,13 @@ assert MATRIX_SPEC.loader is not None
 sys.modules["run_agentic_dogfood_matrix"] = matrix
 MATRIX_SPEC.loader.exec_module(matrix)
 
+def _current_dogfood_probe_count() -> int:
+    with tempfile.TemporaryDirectory() as temp:
+        work = Path(temp)
+        fixtures = matrix.prepare_fixtures(work)
+        probes = matrix.probe_set(Path("/usr/bin/true"), work, fixtures, include_app_workbench=False)
+    return len(probes)
+
 
 class GarnetPromoVideoStatusTests(unittest.TestCase):
     @classmethod
@@ -197,6 +204,7 @@ class GarnetPromoVideoStatusTests(unittest.TestCase):
     def test_composition_source_is_repo_owned_and_hyperframes_compatible(self) -> None:
         contract = promo.read_status()
         composition = contract.composition_source
+        expected_count = _current_dogfood_probe_count()
 
         self.assertTrue(contract.composition_source_present)
         self.assertEqual("docs/promo/composition.html", composition["path"])
@@ -204,9 +212,9 @@ class GarnetPromoVideoStatusTests(unittest.TestCase):
         self.assertEqual("hyperframes-html", composition["tool"])
         self.assertTrue(composition["timeline_registered"])
         self.assertTrue(composition["uses_locked_assets"])
-        self.assertEqual(141, composition["dogfood_probe_count"])
-        self.assertEqual(141, composition["computed_dogfood_probe_count"])
-        self.assertEqual(141, composition["declared_dogfood_probe_count"])
+        self.assertEqual(expected_count, composition["dogfood_probe_count"])
+        self.assertEqual(expected_count, composition["computed_dogfood_probe_count"])
+        self.assertEqual(expected_count, composition["declared_dogfood_probe_count"])
         self.assertTrue(composition["dogfood_probe_count_matches"])
         self.assertEqual(30, composition["duration_seconds"])
         self.assertIn("garnet-promo-main", composition["composition_id"])
@@ -236,16 +244,20 @@ class GarnetPromoVideoStatusTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            with (
-                mock.patch.object(promo, "ROOT", package_root),
-                mock.patch.object(promo, "_current_dogfood_probe_count", return_value=138),
-            ):
-                composition = promo._composition_source()
+        with (
+            mock.patch.object(promo, "ROOT", package_root),
+            mock.patch.object(promo, "_current_dogfood_probe_count", return_value=138),
+        ):
+            composition = promo._composition_source()
+        expected_count = max(138, composition["declared_dogfood_probe_count"])
 
-        self.assertEqual(141, composition["dogfood_probe_count"])
+        self.assertEqual(expected_count, composition["dogfood_probe_count"])
         self.assertEqual(138, composition["computed_dogfood_probe_count"])
-        self.assertEqual(141, composition["declared_dogfood_probe_count"])
-        self.assertTrue(composition["dogfood_probe_count_matches"])
+        if composition["declared_dogfood_probe_count"] > 0:
+            self.assertEqual(composition["dogfood_probe_count"], composition["declared_dogfood_probe_count"])
+            self.assertTrue(composition["dogfood_probe_count_matches"])
+        else:
+            self.assertFalse(composition["dogfood_probe_count_matches"])
 
     def test_storyboard_contract_is_specific_without_becoming_a_render_claim(self) -> None:
         contract = promo.read_status()

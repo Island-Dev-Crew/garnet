@@ -128,8 +128,9 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         ids = {probe.id for probe in concrete_probes}
         domains = Counter(probe.domain for probe in concrete_probes)
 
-        self.assertEqual(domains["proof benchmark empirics"], 1)
+        self.assertEqual(domains["proof benchmark empirics"], 2)
         self.assertIn("report-proof-benchmark-status", ids)
+        self.assertIn("report-benchmark-no-run-status", ids)
 
     def test_probe_inventory_includes_mit_demo_route(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

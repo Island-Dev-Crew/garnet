@@ -212,6 +212,11 @@ struct ConverterProviderOptionsScriptLocation: Equatable {
     let repoRootURL: URL
 }
 
+struct ConverterStatusScriptLocation: Equatable {
+    let scriptURL: URL
+    let repoRootURL: URL
+}
+
 struct MitReadinessScriptLocation: Equatable {
     let scriptURL: URL
     let repoRootURL: URL
@@ -593,6 +598,81 @@ struct ConverterProviderOptionsScriptLocator {
             scriptURL: root
                 .appendingPathComponent("scripts", isDirectory: true)
                 .appendingPathComponent("garnet_converter_llm_feasibility.py"),
+            repoRootURL: root
+        )
+    }
+
+    private func ancestorRoots(from start: URL) -> [URL] {
+        var roots: [URL] = []
+        var cursor = start.standardizedFileURL
+        while true {
+            roots.append(cursor)
+            let parent = cursor.deletingLastPathComponent()
+            if parent.path == cursor.path {
+                break
+            }
+            cursor = parent
+        }
+        return roots
+    }
+}
+
+struct ConverterStatusScriptLocator {
+    let bundleResourceURL: URL?
+    let environmentRepoRoot: String?
+    let currentDirectoryURL: URL
+
+    init(
+        bundleResourceURL: URL? = Bundle.main.resourceURL,
+        environmentRepoRoot: String? = ProcessInfo.processInfo.environment["GARNET_REPO_ROOT"],
+        currentDirectoryURL: URL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+    ) {
+        self.bundleResourceURL = bundleResourceURL
+        self.environmentRepoRoot = environmentRepoRoot
+        self.currentDirectoryURL = currentDirectoryURL
+    }
+
+    func candidateLocations() -> [ConverterStatusScriptLocation] {
+        var locations: [ConverterStatusScriptLocation] = []
+
+        if let environmentRepoRoot, !environmentRepoRoot.isEmpty {
+            let root = URL(fileURLWithPath: environmentRepoRoot, isDirectory: true)
+            locations.append(location(forRepoRoot: root))
+        }
+
+        if let bundleResourceURL {
+            let script = bundleResourceURL
+                .appendingPathComponent("scripts", isDirectory: true)
+                .appendingPathComponent("garnet_converter_status.py")
+            locations.append(ConverterStatusScriptLocation(scriptURL: script, repoRootURL: bundleResourceURL))
+        }
+
+        for root in ancestorRoots(from: currentDirectoryURL) {
+            locations.append(location(forRepoRoot: root))
+        }
+
+        var seen: Set<String> = []
+        return locations.filter { location in
+            let key = location.scriptURL.path
+            if seen.contains(key) {
+                return false
+            }
+            seen.insert(key)
+            return true
+        }
+    }
+
+    func locate(fileManager: FileManager = .default) -> ConverterStatusScriptLocation? {
+        candidateLocations().first { location in
+            fileManager.fileExists(atPath: location.scriptURL.path)
+        }
+    }
+
+    private func location(forRepoRoot root: URL) -> ConverterStatusScriptLocation {
+        ConverterStatusScriptLocation(
+            scriptURL: root
+                .appendingPathComponent("scripts", isDirectory: true)
+                .appendingPathComponent("garnet_converter_status.py"),
             repoRootURL: root
         )
     }
@@ -1470,6 +1550,43 @@ struct ConverterProviderOptionsRunner {
     }
 }
 
+struct ConverterStatusRunner {
+    let location: ConverterStatusScriptLocation
+
+    func commandArguments() -> [String] {
+        [
+            "env",
+            "PYTHONDONTWRITEBYTECODE=1",
+            "python3",
+            location.scriptURL.path,
+            "--format",
+            "markdown",
+        ]
+    }
+
+    func run() -> GarnetCommandResult {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = commandArguments()
+        process.currentDirectoryURL = location.repoRootURL
+
+        let outputPipe = Pipe()
+        process.standardOutput = outputPipe
+        process.standardError = outputPipe
+
+        let command = (["/usr/bin/env"] + (process.arguments ?? [])).joined(separator: " ")
+        do {
+            try process.run()
+            process.waitUntilExit()
+            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: data, encoding: .utf8) ?? ""
+            return GarnetCommandResult(command: command, exitCode: process.terminationStatus, output: output)
+        } catch {
+            return GarnetCommandResult(command: command, exitCode: 127, output: error.localizedDescription)
+        }
+    }
+}
+
 struct GarnetStudioEvidenceDirectory {
     let homeDirectoryURL: URL
 
@@ -1657,6 +1774,7 @@ final class GarnetStudioViewModel: ObservableObject {
     @Published var advisoryReviewPath: String?
     @Published var advisoryHandoffPath: String?
     @Published var providerOptionsPath: String?
+    @Published var converterStatusPath: String?
     @Published var mitReadinessPath: String?
     @Published var mitDemoRoutePath: String?
     @Published var mitDeckOutlinePath: String?
@@ -1670,6 +1788,7 @@ final class GarnetStudioViewModel: ObservableObject {
     private let advisoryReviewLocator: ConverterAdvisoryReviewScriptLocator
     private let advisoryHandoffLocator: ConverterAdvisoryHandoffScriptLocator
     private let providerOptionsLocator: ConverterProviderOptionsScriptLocator
+    private let converterStatusLocator: ConverterStatusScriptLocator
     private let mitReadinessLocator: MitReadinessScriptLocator
     private let mitDemoRouteLocator: MitDemoRouteScriptLocator
     private let mitDeckOutlineLocator: MitDeckOutlineScriptLocator
@@ -1684,6 +1803,7 @@ final class GarnetStudioViewModel: ObservableObject {
         advisoryReviewLocator: ConverterAdvisoryReviewScriptLocator = ConverterAdvisoryReviewScriptLocator(),
         advisoryHandoffLocator: ConverterAdvisoryHandoffScriptLocator = ConverterAdvisoryHandoffScriptLocator(),
         providerOptionsLocator: ConverterProviderOptionsScriptLocator = ConverterProviderOptionsScriptLocator(),
+        converterStatusLocator: ConverterStatusScriptLocator = ConverterStatusScriptLocator(),
         mitReadinessLocator: MitReadinessScriptLocator = MitReadinessScriptLocator(),
         mitDemoRouteLocator: MitDemoRouteScriptLocator = MitDemoRouteScriptLocator(),
         mitDeckOutlineLocator: MitDeckOutlineScriptLocator = MitDeckOutlineScriptLocator(),
@@ -1697,6 +1817,7 @@ final class GarnetStudioViewModel: ObservableObject {
         self.advisoryReviewLocator = advisoryReviewLocator
         self.advisoryHandoffLocator = advisoryHandoffLocator
         self.providerOptionsLocator = providerOptionsLocator
+        self.converterStatusLocator = converterStatusLocator
         self.mitReadinessLocator = mitReadinessLocator
         self.mitDemoRouteLocator = mitDemoRouteLocator
         self.mitDeckOutlineLocator = mitDeckOutlineLocator
@@ -1709,6 +1830,7 @@ final class GarnetStudioViewModel: ObservableObject {
         self.advisoryReviewPath = advisoryReviewLocator.locate()?.scriptURL.path
         self.advisoryHandoffPath = advisoryHandoffLocator.locate()?.scriptURL.path
         self.providerOptionsPath = providerOptionsLocator.locate()?.scriptURL.path
+        self.converterStatusPath = converterStatusLocator.locate()?.scriptURL.path
         self.mitReadinessPath = mitReadinessLocator.locate()?.scriptURL.path
         self.mitDemoRoutePath = mitDemoRouteLocator.locate()?.scriptURL.path
         self.mitDeckOutlinePath = mitDeckOutlineLocator.locate()?.scriptURL.path
@@ -1760,6 +1882,19 @@ final class GarnetStudioViewModel: ObservableObject {
         }
         let ext = fileExtension(for: converterLanguage)
         runSource(arguments: ["convert", converterLanguage], filename: "studio-input.\(ext)")
+    }
+
+    func runConverterStatus() {
+        guard let location = converterStatusLocator.locate() else {
+            output = "No converter status script found. Open Garnet Studio from a source checkout or use the packaged app resources."
+            lastStatus = .failure
+            return
+        }
+
+        output = "Loading converter fit matrix and adoption boundaries..."
+        let result = ConverterStatusRunner(location: location).run()
+        apply(result: result)
+        converterStatusPath = location.scriptURL.path
     }
 
     func runConverterAssistPlan() {
@@ -2256,6 +2391,7 @@ struct GarnetStudioRootView: View {
                     ("Advisory Bundle", model.runConverterAdvisoryBundle),
                     ("Advisory Review", model.runConverterAdvisoryReview),
                     ("Advisory Handoff", model.runConverterAdvisoryHandoff),
+                    ("Converter Fit Matrix", model.runConverterStatus),
                     ("Provider Options", model.runConverterProviderOptions),
                 ])
             }

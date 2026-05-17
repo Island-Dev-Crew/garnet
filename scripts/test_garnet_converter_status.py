@@ -28,6 +28,9 @@ class GarnetConverterStatusTests(unittest.TestCase):
         self.assertTrue(data["trust_boundaries"]["sandbox_on_by_default"])
         self.assertTrue(data["trust_boundaries"]["lineage_required"])
         self.assertFalse(data["trust_boundaries"]["source_execution_allowed"])
+        for language in ("go", "python", "ruby", "rust"):
+            self.assertIn("fit_rationale", active[language])
+            self.assertTrue(active[language]["fit_rationale"])
 
         for language in (
             "javascript",
@@ -45,12 +48,29 @@ class GarnetConverterStatusTests(unittest.TestCase):
         ):
             self.assertIn(language, planned)
             self.assertEqual("planned", planned[language]["status"])
+            self.assertIn("fit_rationale", planned[language])
+            self.assertTrue(planned[language]["fit_rationale"])
+        self.assertIn("dynamic and side-effect-heavy", planned["javascript"]["fit_rationale"].lower())
+        self.assertIn("type-stripping conversion", planned["typescript"]["fit_rationale"].lower())
+        self.assertIn("arc", planned["swift"]["fit_rationale"].lower())
+        self.assertIn("jvm", planned["java"]["fit_rationale"].lower())
+        self.assertIn("abi", planned["c"]["fit_rationale"].lower())
+        self.assertIn("templates", planned["cpp"]["fit_rationale"].lower())
+        self.assertIn("clr", planned["csharp"]["fit_rationale"].lower())
+        self.assertIn("dynamic symbol", planned["perl"]["fit_rationale"].lower())
+        self.assertIn("coroutines", planned["kotlin"]["fit_rationale"].lower())
+        self.assertIn("process", planned["shell"]["fit_rationale"].lower())
+        self.assertIn("dialect", planned["sql"]["fit_rationale"].lower())
+        self.assertIn("deterministic frontend", planned["other"]["fit_rationale"].lower())
 
         native = {item["id"]: item for item in data["native_boundary_languages"]}
         for language in ("c", "cpp", "objective_c", "assembly", "cuda", "platform_specific"):
             self.assertIn(language, native)
             self.assertEqual("native-boundary-recommended", native[language]["status"])
             self.assertIn("FFI", native[language]["notes"])
+            self.assertIn("fit_rationale", native[language])
+            self.assertIn("low-level", native[language]["fit_rationale"].lower())
+            self.assertTrue(native[language]["fit_rationale"])
 
         backend = data["backend_lowering_strategy"]
         self.assertEqual("planned-two-way-architecture", backend["status"])
@@ -95,7 +115,7 @@ class GarnetConverterStatusTests(unittest.TestCase):
         self.assertIn("not a full transpiler", rendered)
         self.assertIn("Best-fit imports", rendered)
         self.assertIn("Bad direct-conversion fits", rendered)
-        self.assertIn("Native boundary recommended", rendered)
+        self.assertIn("Native Boundary Recommended", rendered)
         self.assertIn("Wasm", rendered)
         self.assertIn("LLVM-style native targets", rendered)
         self.assertIn("LLM assist is proposed only as a gated advisory lane", rendered)
@@ -104,6 +124,8 @@ class GarnetConverterStatusTests(unittest.TestCase):
         self.assertIn("Shell", rendered)
         self.assertIn("SQL", rendered)
         self.assertIn("Other", rendered)
+        self.assertIn("Why this is not a direct fit yet", rendered)
+        self.assertIn("Why: ", rendered)
         self.assertIn("Planned Garnet-Aware Assist Contract", rendered)
         self.assertIn("safe-mode ownership candidates", rendered)
 
@@ -143,6 +165,30 @@ class GarnetConverterStatusTests(unittest.TestCase):
         self.assertIn("Kimi", strategy)
         self.assertIn("xAI", strategy)
         self.assertIn("local 1.58-bit", strategy)
+
+    def test_converter_sections_use_disjoint_ids_and_gates(self) -> None:
+        output = subprocess.check_output(
+            [sys.executable, str(SCRIPT), "--format", "json"],
+            text=True,
+        )
+        data = json.loads(output)
+
+        active_ids = [item["id"] for item in data["active_languages"]]
+        planned_ids = [item["id"] for item in data["planned_languages"]]
+        native_ids = [item["id"] for item in data["native_boundary_languages"]]
+        required_gates = data["intelligent_assist_contract"]["required_gates"]
+
+        self.assertEqual(sorted(active_ids), sorted(set(active_ids)))
+        self.assertEqual(sorted(planned_ids), sorted(set(planned_ids)))
+        self.assertEqual(sorted(native_ids), sorted(set(native_ids)))
+        self.assertEqual(sorted(required_gates), sorted(set(required_gates)))
+
+        for source, destination in (
+            (active_ids, "active"),
+            (planned_ids, "planned"),
+            (native_ids, "native_boundary"),
+        ):
+            self.assertEqual(len(source), len(set(source)), f"{destination} ids should be unique")
 
 
 if __name__ == "__main__":

@@ -18,6 +18,7 @@ class LanguageLane:
     status: str
     evidence: list[str]
     notes: str
+    fit_rationale: str
 
 
 @dataclass(frozen=True)
@@ -85,6 +86,10 @@ def active_languages() -> list[LanguageLane]:
                 "garnet-convert/tests/corpus.rs",
             ],
             notes="Stylized Rust function/type shapes lower through CIR into sandboxed Garnet.",
+            fit_rationale=(
+                "Best fit: explicit ownership and module boundaries in Rust map directly into "
+                "deterministic lowering with lineage and capability annotations."
+            ),
         ),
         LanguageLane(
             id="ruby",
@@ -95,6 +100,10 @@ def active_languages() -> list[LanguageLane]:
                 "garnet-convert/tests/corpus.rs",
             ],
             notes="Stylized Ruby methods and dynamic-risk patterns emit explicit migration evidence.",
+            fit_rationale=(
+                "Best fit: Ruby style orchestration and scripting surfaces can be migrated as "
+                "policy/flow code with manageable risk captured in migrate_todo output."
+            ),
         ),
         LanguageLane(
             id="python",
@@ -105,6 +114,10 @@ def active_languages() -> list[LanguageLane]:
                 "garnet-convert/tests/corpus.rs",
             ],
             notes="Stylized Python defs/classes and decorators become Garnet plus migrate_todo items.",
+            fit_rationale=(
+                "Best fit: high-level Python data-flow and service glue often convert cleanly, "
+                "while risky runtime patterns are surfaced by migration evidence."
+            ),
         ),
         LanguageLane(
             id="go",
@@ -115,24 +128,111 @@ def active_languages() -> list[LanguageLane]:
                 "garnet-convert/tests/corpus.rs",
             ],
             notes="Stylized Go funcs/structs lower into Garnet with ownership and lineage evidence.",
+            fit_rationale=(
+                "Best fit: Go service and utility constructs already have a stable deterministic "
+                "frontend shape suitable for migration assistant output."
+            ),
         ),
     ]
 
 
 def planned_languages() -> list[LanguageLane]:
     planned = [
-        ("javascript", "JavaScript"),
-        ("typescript", "TypeScript"),
-        ("swift", "Swift"),
-        ("java", "Java"),
-        ("c", "C"),
-        ("cpp", "C++"),
-        ("csharp", "C#"),
-        ("perl", "Perl"),
-        ("kotlin", "Kotlin"),
-        ("shell", "Shell"),
-        ("sql", "SQL"),
-        ("other", "Other"),
+        (
+            "javascript",
+            "JavaScript",
+            (
+                "Parser and runtime shape are dynamic and side-effect-heavy, so deterministic "
+                "frontend output must be proven before direct conversion."
+            ),
+        ),
+        (
+            "typescript",
+            "TypeScript",
+            (
+                "Type-stripping conversion is currently incomplete for complex generics and emits "
+                "insufficient deterministic ownership evidence."
+            ),
+        ),
+        (
+            "swift",
+            "Swift",
+            (
+                "ARC lifecycle and Objective-C interoperability must remain source-of-truth through "
+                "native modules until compiler and memory guarantees are fully mapped."
+            ),
+        ),
+        (
+            "java",
+            "Java",
+            (
+                "JVM bytecode/runtime contracts and exception-flow semantics require a proven deterministic "
+                "frontend and migration test suite first."
+            ),
+        ),
+        (
+            "c",
+            "C",
+            (
+                "ABI, pointer semantics, and platform-specific layout assumptions argue for native modules/FFI "
+                "unless a backend lowering strategy is proven."
+            ),
+        ),
+        (
+            "cpp",
+            "C++",
+            (
+                "Templates, overload resolution, and low-level object/memory behavior require backend-backed "
+                "lowering before source conversion is reliable."
+            ),
+        ),
+        (
+            "csharp",
+            "C#",
+            (
+                "CLR identity, reflection, and runtime type behaviors need deterministic frontend and "
+                "evidence gates before deterministic migration."
+            ),
+        ),
+        (
+            "perl",
+            "Perl",
+            (
+                "Dynamic symbol tables and context-dependent execution patterns prevent safe deterministic translation "
+                "without a dedicated frontend."
+            ),
+        ),
+        (
+            "kotlin",
+            "Kotlin",
+            (
+                "Coroutines, platform-specific nullability, and JVM/runtime interactions require proven checks and "
+                "frontend maturity."
+            ),
+        ),
+        (
+            "shell",
+            "Shell",
+            (
+                "Process graph execution and environment state coupling do not preserve well to source conversion today."
+            ),
+        ),
+        (
+            "sql",
+            "SQL",
+            (
+                "Schema migration, dialect variance, and execution side effects require dedicated planning rather "
+                "than direct converter output."
+            ),
+        ),
+        (
+            "other",
+            "Other",
+            (
+                "No deterministic frontend is available yet; classification, risk inventory, and pilot plans "
+                "must precede converter claims."
+            ),
+        ),
     ]
     return [
         LanguageLane(
@@ -144,8 +244,12 @@ def planned_languages() -> list[LanguageLane]:
                 "Not implemented in the deterministic converter yet; must enter through "
                 "a tested frontend, CIR lineage, sandbox output, and dogfood readiness gate."
             ),
+            fit_rationale=(
+                rationale
+                + " Requires a deterministic frontend, checker support, and evidence pipeline before conversion can be active."
+            ),
         )
-        for identifier, label in planned
+        for identifier, label, rationale in planned
     ]
 
 
@@ -167,6 +271,10 @@ def native_boundary_languages() -> list[LanguageLane]:
             notes=(
                 "Prefer native modules or FFI with explicit Garnet CapCaps, memory declarations, "
                 "lineage, and sandbox boundaries instead of direct source-to-source conversion."
+            ),
+            fit_rationale=(
+                "Low-level control, ABI constraints, or platform contracts would be lost by "
+                "direct source translation without a bound compiler backend."
             ),
         )
         for identifier, label in native
@@ -265,12 +373,6 @@ def read_status() -> ConverterStatus:
 
 def render_markdown(status: ConverterStatus) -> str:
     active_labels = "Rust, Ruby, Python, and Go"
-    planned_labels = " / ".join(["JavaScript", "TypeScript"])
-    other_planned = ", ".join(
-        language.label
-        for language in status.planned_languages
-        if language.label not in {"JavaScript", "TypeScript"}
-    )
     native_labels = ", ".join(language.label for language in status.native_boundary_languages)
     backend_targets = ", ".join(status.backend_lowering_strategy.planned_targets)
     lines = [
@@ -292,23 +394,37 @@ def render_markdown(status: ConverterStatus) -> str:
     ]
     for language in status.active_languages:
         evidence = ", ".join(f"`{item}`" for item in language.evidence)
-        lines.append(f"- {language.label}: {language.notes} Evidence: {evidence}.")
+        lines.append(
+            f"- {language.label}: {language.notes} Why: {language.fit_rationale} Evidence: {evidence}."
+        )
 
     lines.extend(
         [
             "",
             "## Planned Adoption Lanes",
             "",
-            (
-                f"- {planned_labels}: planned as the first web/frontend expansion lane, "
-                "but not implemented yet."
-            ),
-            f"- {other_planned}: planned only after a tested frontend boundary exists.",
-            "- Other: advisory analysis only until deterministic support exists.",
+            "JavaScript / TypeScript are currently the first planned frontend expansion path, but not implemented yet.",
+            "All planned languages are advisory-only until deterministic fronts are proven.",
             "",
-            "## Native boundary recommended",
+        ]
+    )
+    for language in status.planned_languages:
+        lines.append(
+            f"- {language.label}: Why this is not a direct fit yet: {language.fit_rationale}"
+        )
+    lines.extend(
+        [
             "",
-            f"- {native_labels}: keep low-level fidelity in native modules or FFI and wrap it with Garnet CapCaps, memory declarations, lineage, and sandbox policy.",
+            "## Native Boundary Recommended",
+            "",
+        ]
+    )
+    for language in status.native_boundary_languages:
+        lines.append(f"- {language.label}: {language.notes} Why: {language.fit_rationale}")
+    lines.extend(
+        [
+            "",
+            f"- Native summary: {native_labels}.",
             "",
             "## Backend Lowering Strategy",
             "",

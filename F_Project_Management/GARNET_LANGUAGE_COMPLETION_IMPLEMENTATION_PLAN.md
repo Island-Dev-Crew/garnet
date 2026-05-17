@@ -2529,7 +2529,7 @@ Phase 6BQ promo proof-count sync:
 the 30-second promo composition now keeps its visible dogfood proof beat aligned
 with the current source-checkout dogfood matrix. A regression derives the matrix
 inventory and requires `docs/promo/composition.html` to expose
-`data-dogfood-probes="141"` plus a matching visible proof number. The promo
+`data-dogfood-probes="142"` plus a matching visible proof number. The promo
 status reporter now surfaces the expected count, the declared count, and a
 `dogfood_probe_count_matches` boolean as part of the composition contract, and
 the agentic matrix checks that field. The promo was rerendered into
@@ -2553,8 +2553,17 @@ the lane is documented partial; packaged Garnet Studio resources stage the
 reporter plus minimal bench/protocol context so Objective Pulse keeps working
 from the unsigned/local app; and the dogfood matrix adds a one-probe `proof
 benchmark empirics` domain. The new matrix probe expands current source
-inventory to `141`, so the promo composition and rendered public-site assets
+inventory to `142`, so the promo composition and rendered public-site assets
 were refreshed to keep the proof beat aligned. This is not benchmark
 measurement, formal mechanization, native backend proof, PLDI-grade empirical
 validation, human/aesthetic promo approval, or final MIT/productization
 acceptance.
+
+Phase 6BS compile-only benchmark harness pass:
+`scripts/garnet_benchmark_no_run.py` makes the next benchmark lane compile
+transparent by running `cargo bench --no-run` for parser/interpreter/memory
+harnesses and emitting manifested evidence with manifest-verified stdout/stderr
+logs, environment metadata, and explicit non-measurement boundaries.
+`report-benchmark-no-run-status` in the dogfood matrix verifies that this phase
+keeps performance claims unmade while preserving false-free evidence of
+compile readiness for the three harnesses.
