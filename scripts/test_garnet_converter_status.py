@@ -166,6 +166,30 @@ class GarnetConverterStatusTests(unittest.TestCase):
         self.assertIn("xAI", strategy)
         self.assertIn("local 1.58-bit", strategy)
 
+    def test_converter_sections_use_disjoint_ids_and_gates(self) -> None:
+        output = subprocess.check_output(
+            [sys.executable, str(SCRIPT), "--format", "json"],
+            text=True,
+        )
+        data = json.loads(output)
+
+        active_ids = [item["id"] for item in data["active_languages"]]
+        planned_ids = [item["id"] for item in data["planned_languages"]]
+        native_ids = [item["id"] for item in data["native_boundary_languages"]]
+        required_gates = data["intelligent_assist_contract"]["required_gates"]
+
+        self.assertEqual(sorted(active_ids), sorted(set(active_ids)))
+        self.assertEqual(sorted(planned_ids), sorted(set(planned_ids)))
+        self.assertEqual(sorted(native_ids), sorted(set(native_ids)))
+        self.assertEqual(sorted(required_gates), sorted(set(required_gates)))
+
+        for source, destination in (
+            (active_ids, "active"),
+            (planned_ids, "planned"),
+            (native_ids, "native_boundary"),
+        ):
+            self.assertEqual(len(source), len(set(source)), f"{destination} ids should be unique")
+
 
 if __name__ == "__main__":
     unittest.main()
