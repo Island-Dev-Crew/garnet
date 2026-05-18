@@ -203,13 +203,18 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("Broad converter frontends", rendered)
 
     def test_public_site_surfaces_objective_accounting_without_overclaiming(self) -> None:
-        site = (Path(__file__).resolve().parents[1] / "docs" / "index.html").read_text(
+        docs_dir = Path(__file__).resolve().parents[1] / "docs"
+        site = (docs_dir / "index.html").read_text(
             encoding="utf-8"
         )
+        status_site = (docs_dir / "status.html").read_text(encoding="utf-8")
 
         self.assertIn("Objective accounting", site)
         self.assertIn("MIT/productization objective", site)
-        self.assertIn("58.6%", site)
+        self.assertIn("55.8%", site)
+        self.assertNotIn("58.6%", site)
+        self.assertIn("55.8%", status_site)
+        self.assertNotIn("58.6%", status_site)
         self.assertIn("87/87 tracked slices", site)
         self.assertIn("tracked implementation plan is complete", site)
         self.assertIn("not full MIT/productization completion", site)

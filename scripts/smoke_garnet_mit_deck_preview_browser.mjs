@@ -273,7 +273,7 @@ async function evaluate(client, expression, awaitPromise = true) {
   return result.result?.value;
 }
 
-async function inspectPage(client, width, height, mobile) {
+async function inspectPage(client, width, height, mobile, expectedObjectiveMetric) {
   await client.send("Emulation.setDeviceMetricsOverride", {
     width,
     height,
@@ -305,7 +305,7 @@ async function inspectPage(client, width, height, mobile) {
         hasFinalAcceptanceBoundary: text.includes("final MIT/productization acceptance"),
         hasCompletionBoundary: text.includes("not full MIT/productization completion"),
         hasTrackedSlices: text.includes("87/87"),
-        hasObjectiveMetric: metrics.includes("58.6%"),
+        hasObjectiveMetric: metrics.includes(${JSON.stringify(expectedObjectiveMetric)}),
       };
     })()`,
   );
@@ -336,6 +336,8 @@ async function main() {
   mkdirSync(bundleDir, { recursive: true });
 
   runChecked(args.python, [join(ROOT, "scripts", "garnet_mit_deck_preview.py"), "--output-dir", bundleDir], ROOT);
+  const previewData = JSON.parse(readFileSync(join(bundleDir, "garnet-mit-deck-preview.json"), "utf-8"));
+  const expectedObjectiveMetric = `${previewData.objective_completion_percent.toFixed(1)}%`;
   const manifestCheck = runChecked("shasum", ["-a", "256", "-c", "MANIFEST.sha256"], bundleDir);
 
   const { server, baseUrl } = await startServer(bundleDir);
@@ -359,7 +361,7 @@ async function main() {
     await client.send("Runtime.enable");
 
     await navigate(client, `${baseUrl}/garnet-mit-deck-preview.html`);
-    const desktop = await inspectPage(client, 1440, 1000, false);
+    const desktop = await inspectPage(client, 1440, 1000, false, expectedObjectiveMetric);
     const capture = await client.send("Page.captureScreenshot", {
       format: "png",
       captureBeyondViewport: false,
@@ -367,7 +369,7 @@ async function main() {
     writeFileSync(screenshot, Buffer.from(capture.data, "base64"));
 
     await navigate(client, `${baseUrl}/garnet-mit-deck-preview.html`);
-    const mobile = await inspectPage(client, 390, 844, true);
+    const mobile = await inspectPage(client, 390, 844, true, expectedObjectiveMetric);
     await client.send("Emulation.clearDeviceMetricsOverride");
 
     const passed =
