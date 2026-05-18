@@ -163,6 +163,7 @@ MATRIX_SCRIPT="${INSTALLED_APP}/Contents/Resources/scripts/run_agentic_dogfood_m
 OFFLINE_PWA_SMOKE="${INSTALLED_APP}/Contents/Resources/scripts/smoke_garnet_web_pwa_offline.mjs"
 ADOPTION_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_adoption_surface_status.py"
 ASSIST_CONTEXT="${INSTALLED_APP}/Contents/Resources/scripts/garnet_assist_context_pack.py"
+BENCHMARK_NO_RUN="${INSTALLED_APP}/Contents/Resources/scripts/garnet_benchmark_no_run.py"
 ADVISORY_BUNDLE="${INSTALLED_APP}/Contents/Resources/scripts/garnet_converter_advisory_bundle.py"
 ADVISORY_HANDOFF="${INSTALLED_APP}/Contents/Resources/scripts/garnet_converter_advisory_handoff.py"
 ADVISORY_REVIEW="${INSTALLED_APP}/Contents/Resources/scripts/garnet_converter_advisory_review.py"
@@ -184,6 +185,7 @@ DECK_PREVIEW_BROWSER_SMOKE="${INSTALLED_APP}/Contents/Resources/scripts/smoke_ga
 NODE24_READINESS="${INSTALLED_APP}/Contents/Resources/scripts/test_github_actions_node24_readiness.py"
 READINESS_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_readiness_status.py"
 NOTARIZATION_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_studio_notarization_status.py"
+WINDOWS_LINUX_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_windows_linux_studio_status.py"
 PROMO_ASSETS_DIR="${INSTALLED_APP}/Contents/Resources/assets"
 PROMO_STUDIO_SOURCE="${INSTALLED_APP}/Contents/Resources/apps/garnet-studio-macos/Sources/GarnetStudio/GarnetStudioApp.swift"
 PROMO_STUDIO_LOGO="${INSTALLED_APP}/Contents/Resources/apps/garnet-studio-macos/Sources/GarnetStudio/Resources/garnet-logo.png"
@@ -204,13 +206,13 @@ INTERP_BENCH="${INSTALLED_APP}/Contents/Resources/garnet-interp-v0.3/benches/eva
 MEMORY_CARGO="${INSTALLED_APP}/Contents/Resources/garnet-memory-v0.3/Cargo.toml"
 MEMORY_BENCH="${INSTALLED_APP}/Contents/Resources/garnet-memory-v0.3/benches/vector.rs"
 
-for required in "${APP_EXECUTABLE}" "${GARNET_BIN}" "${MATRIX_SCRIPT}" "${OFFLINE_PWA_SMOKE}" "${ADOPTION_STATUS}" "${ASSIST_CONTEXT}" "${ADVISORY_BUNDLE}" "${ADVISORY_HANDOFF}" "${ADVISORY_REVIEW}" "${ASSIST_PLAN}" "${LLM_FEASIBILITY}" "${CONVERTER_STATUS}" "${MAC_CONTINUATION}" "${MIT_DECK_OUTLINE}" "${MIT_DECK_PREVIEW}" "${MIT_DEMO_ROUTE}" "${MIT_STATUS}" "${PROMO_STATUS}" "${PROOF_BENCHMARK_STATUS}" "${PROMO_EXPORT}" "${PROMO_QA}" "${PROMO_RENDER}" "${PROMO_SYNC}" "${DECK_PREVIEW_BROWSER_SMOKE}" "${NODE24_READINESS}" "${READINESS_STATUS}" "${NOTARIZATION_STATUS}"; do
+for required in "${APP_EXECUTABLE}" "${GARNET_BIN}" "${MATRIX_SCRIPT}" "${OFFLINE_PWA_SMOKE}" "${ADOPTION_STATUS}" "${ASSIST_CONTEXT}" "${BENCHMARK_NO_RUN}" "${ADVISORY_BUNDLE}" "${ADVISORY_HANDOFF}" "${ADVISORY_REVIEW}" "${ASSIST_PLAN}" "${LLM_FEASIBILITY}" "${CONVERTER_STATUS}" "${MAC_CONTINUATION}" "${MIT_DECK_OUTLINE}" "${MIT_DECK_PREVIEW}" "${MIT_DEMO_ROUTE}" "${MIT_STATUS}" "${PROMO_STATUS}" "${PROOF_BENCHMARK_STATUS}" "${PROMO_EXPORT}" "${PROMO_QA}" "${PROMO_RENDER}" "${PROMO_SYNC}" "${DECK_PREVIEW_BROWSER_SMOKE}" "${NODE24_READINESS}" "${READINESS_STATUS}" "${NOTARIZATION_STATUS}" "${WINDOWS_LINUX_STATUS}"; do
   if [ ! -x "${required}" ]; then
     echo "error: copied app is missing executable asset: ${required}" >&2
     exit 4
   fi
 done
-record "pass" "Copied app executable assets exist" "app executable, bundled CLI, matrix script, status reporters, MIT deck-outline reporter, MIT deck-preview reporter, MIT deck-preview browser-smoke harness, MIT demo-route reporter, Mac-side continuation reporter, proof/benchmark status reporter, converter advisory bundle, converter advisory handoff packet, converter advisory review gate, converter LLM feasibility reporter, Node 24 readiness checker, promo render, visual-QA, website-export, site-sync harnesses, PWA smoke" "None."
+record "pass" "Copied app executable assets exist" "app executable, bundled CLI, matrix script, status reporters, MIT deck-outline reporter, MIT deck-preview reporter, MIT deck-preview browser-smoke harness, MIT demo-route reporter, Mac-side continuation reporter, proof/benchmark status reporter, benchmark no-run reporter, Windows/Linux handoff reporter, converter advisory bundle, converter advisory handoff packet, converter advisory review gate, converter LLM feasibility reporter, Node 24 readiness checker, promo render, visual-QA, website-export, site-sync harnesses, PWA smoke" "None."
 
 for required_dir in "${EXAMPLES_DIR}" "${DOCS_DIR}" "${SPEC_DIR}" "${PROJECT_DOGFOOD_DIR}" "${PROMO_ASSETS_DIR}" "${WORKFLOWS_DIR}"; do
   if [ ! -d "${required_dir}" ]; then

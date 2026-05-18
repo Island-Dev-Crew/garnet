@@ -1585,6 +1585,45 @@ def memory_persistence_integrity_probes(work: Path) -> list[Probe | Callable[[],
     ]
 
 
+def benchmark_no_run_probes(work: Path) -> list[Probe | Callable[[], ProbeResult]]:
+    manifest = ROOT / "Cargo.toml"
+    probe = Probe(
+        "report-benchmark-no-run-status",
+        "proof benchmark empirics",
+        "Criterion benchmark harnesses should compile with --no-run and produce no-claim compile evidence",
+        [sys.executable, str(ROOT / "scripts" / "garnet_benchmark_no_run.py"), "--format", "json", "--execute"],
+        True,
+        (
+            "\"overall_status\": \"compile-verified\"",
+            "\"measurement_status\": \"not-measured\"",
+            "--no-run",
+            "\"mechanized_proof_status\": \"not-mechanized\"",
+        ),
+        security_domain="not-applicable",
+    )
+    if manifest.is_file():
+        return [probe]
+
+    reason = (
+        f"source workspace Cargo.toml is absent at {manifest}; packaged Garnet Studio resources "
+        "accept this source-workspace-only benchmark compile boundary while source checkout and CI "
+        "runs continue to execute this probe."
+    )
+    return [
+        lambda probe=Probe(
+            probe.id,
+            probe.domain,
+            probe.claim,
+            probe.command,
+            probe.expect_success,
+            probe.expected_stdout,
+            probe.expected_stderr,
+            probe.security_domain,
+            f"Packaged resource boundary: {reason}",
+        ): skipped_result(probe, work, reason)
+    ]
+
+
 def web_pwa_probes(work: Path) -> list[Probe]:
     docs_dir = ROOT / "docs"
     offline_smoke = ROOT / "scripts" / "smoke_garnet_web_pwa_offline.mjs"
@@ -3114,20 +3153,7 @@ def probe_set(
             ),
             security_domain="not-applicable",
         ),
-        Probe(
-            "report-benchmark-no-run-status",
-            "proof benchmark empirics",
-            "Criterion benchmark harnesses should compile with --no-run and produce no-claim compile evidence",
-            [sys.executable, str(ROOT / "scripts" / "garnet_benchmark_no_run.py"), "--format", "json", "--execute"],
-            True,
-            (
-                "\"overall_status\": \"compile-verified\"",
-                "\"measurement_status\": \"not-measured\"",
-                "--no-run",
-                "\"mechanized_proof_status\": \"not-mechanized\"",
-            ),
-            security_domain="not-applicable",
-        ),
+        *benchmark_no_run_probes(work),
         Probe(
             "report-mit-readiness-plan-complete",
             "MIT readiness accounting",

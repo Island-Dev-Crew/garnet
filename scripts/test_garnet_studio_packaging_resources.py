@@ -17,6 +17,7 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
         for name in [
             "garnet_adoption_surface_status.py",
             "garnet_assist_context_pack.py",
+            "garnet_benchmark_no_run.py",
             "garnet_converter_advisory_bundle.py",
             "garnet_converter_advisory_handoff.py",
             "garnet_converter_advisory_review.py",
@@ -32,6 +33,7 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
             "garnet_proof_benchmark_status.py",
             "garnet_readiness_status.py",
             "garnet_studio_notarization_status.py",
+            "garnet_windows_linux_studio_status.py",
             "export_garnet_promo_video_site.mjs",
             "qa_garnet_promo_video.mjs",
             "render_garnet_promo_video.mjs",
@@ -144,6 +146,7 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
         self.assertIn('"${OUTPUT_DIR}/studio-deck-preview/MANIFEST.sha256"', script)
         self.assertIn('ADOPTION_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_adoption_surface_status.py"', script)
         self.assertIn('ASSIST_CONTEXT="${INSTALLED_APP}/Contents/Resources/scripts/garnet_assist_context_pack.py"', script)
+        self.assertIn('BENCHMARK_NO_RUN="${INSTALLED_APP}/Contents/Resources/scripts/garnet_benchmark_no_run.py"', script)
         self.assertIn('ADVISORY_BUNDLE="${INSTALLED_APP}/Contents/Resources/scripts/garnet_converter_advisory_bundle.py"', script)
         self.assertIn('ADVISORY_HANDOFF="${INSTALLED_APP}/Contents/Resources/scripts/garnet_converter_advisory_handoff.py"', script)
         self.assertIn('ADVISORY_REVIEW="${INSTALLED_APP}/Contents/Resources/scripts/garnet_converter_advisory_review.py"', script)
@@ -164,6 +167,7 @@ class GarnetStudioPackagingResourceTests(unittest.TestCase):
         self.assertIn('NODE24_READINESS="${INSTALLED_APP}/Contents/Resources/scripts/test_github_actions_node24_readiness.py"', script)
         self.assertIn('WORKFLOWS_DIR="${INSTALLED_APP}/Contents/Resources/.github/workflows"', script)
         self.assertIn('NOTARIZATION_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_studio_notarization_status.py"', script)
+        self.assertIn('WINDOWS_LINUX_STATUS="${INSTALLED_APP}/Contents/Resources/scripts/garnet_windows_linux_studio_status.py"', script)
         self.assertIn('PROMO_ASSETS_DIR="${INSTALLED_APP}/Contents/Resources/assets"', script)
         self.assertIn('PROMO_STUDIO_SOURCE="${INSTALLED_APP}/Contents/Resources/apps/garnet-studio-macos/Sources/GarnetStudio/GarnetStudioApp.swift"', script)
         self.assertIn('PROMO_STUDIO_LOGO="${INSTALLED_APP}/Contents/Resources/apps/garnet-studio-macos/Sources/GarnetStudio/Resources/garnet-logo.png"', script)
