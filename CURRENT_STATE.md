@@ -75,7 +75,8 @@ done
 | `scripts/garnet_mit_readiness_status.py` | MIT/productization objective inventory | current machine-readable truth that the tracked implementation plan is complete while notarization, mobile distribution, promo video, broad converter frontends, LLM assist, and proof/empirics remain open gates |
 | `scripts/garnet_mac_side_continuation_status.py` | Mac-side continuation inventory | current machine-readable pulse for which repo, website, converter, evidence, and macOS Studio lanes can still move from this checkout while Apple Developer ID notarization remains account-holder blocked and Windows/Linux Studio runtime proof remains delegated |
 | `scripts/garnet_windows_linux_studio_status.py` | Windows/Linux Studio MVP contract | current machine-readable target-platform contract for the first cross-platform Studio shell: exact action inventory, safe command vectors, Desktop dogfood evidence defaults, language taxonomy, packaging gates, and explicit no-runtime-completion/no-signed-package claims |
-| `scripts/garnet_proof_benchmark_status.py` | proof/benchmark/empirical inventory | current machine-readable status for existing Criterion benchmark harnesses and research protocols; writes manifested JSON/Markdown evidence while keeping benchmark measurements, mechanized proof, and external study execution unclaimed |
+| `scripts/garnet_proof_benchmark_status.py` | proof/benchmark/empirical inventory | current machine-readable status for existing Criterion benchmark harnesses and research protocols; writes manifested JSON/Markdown evidence while keeping the broader benchmark campaign, mechanized proof, and external study execution unclaimed |
+| `scripts/garnet_benchmark_no_run.py` | benchmark compile evidence | current compile-only benchmark evidence runner for parser/interpreter/memory Criterion harnesses; writes manifest-checked logs and metadata while reporting `not-measured` |
 | `scripts/garnet_mit_demo_route.py` | MIT demo-route inventory | current machine-readable and Markdown presentation route for a bounded seven-minute MIT walkthrough; ties Objective Pulse, Studio continuation, converter advisory, agentic dogfood, live web/PWA, and blocked-gate closeout together without claiming final MIT/productization completion |
 | `scripts/garnet_mit_deck_outline.py` | MIT deck-outline inventory | current machine-readable and Markdown slide outline for an 8-slide MIT reviewer deck; turns the demo route, adoption status, blocked gates, and Desktop evidence boundaries into presentation notes without claiming final MIT/productization acceptance |
 | `scripts/garnet_mit_deck_preview.py` | MIT deck-preview artifact | current browser-smokeable HTML/JSON preview generated from the deck outline; packages slide story, evidence, speaker notes, blocked gates, and forbidden claims into a manifested review artifact without claiming final MIT/productization acceptance |
@@ -1160,6 +1161,28 @@ command shape, return codes, stdout/stderr logs, environment metadata, and
 `not-measured` status. The agentic matrix now includes a dedicated
 `report-benchmark-no-run-status` probe that expects compile-verified overall
 status when the commands run successfully.
+
+Phase 6BT refreshes final Mac-side build evidence from the Apple M5 checkout at
+`a238b20` without moving the MIT/productization percentage. The macOS Studio
+package now stages `garnet_benchmark_no_run.py` and
+`garnet_windows_linux_studio_status.py`, and copied-DMG matrix runs treat
+source-workspace-only benchmark compile probes as explicit packaged-resource
+skips when `Contents/Resources/Cargo.toml` is absent. Fresh evidence verifies
+the rebuilt unsigned/ad-hoc Studio DMG in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260518-182114`,
+the notarization preflight blocker bundle in
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-notarization-preflight-20260518-182133`,
+the web/PWA browser smoke in
+`/Users/idc2.0/Desktop/dogfood/garnet-web-pwa-browser-smoke-20260518-182208`,
+the deck-preview browser smoke in
+`/Users/idc2.0/Desktop/dogfood/garnet-mit-deck-preview-browser-smoke-20260518-182149`,
+the source-checkout strict dogfood matrix in
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260518-182651`,
+and one real Apple M5 parser Criterion measurement bundle in
+`/Users/idc2.0/Desktop/dogfood/garnet-m5-parser-benchmark-measurement-20260518-182310`.
+That measurement is a scoped parser run only; it is not a full benchmark
+campaign, native backend performance claim, mechanized proof, notarized macOS
+distribution claim, or Windows/Linux runtime proof.
 
 ## Historical Material
 

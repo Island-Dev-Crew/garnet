@@ -2567,3 +2567,23 @@ logs, environment metadata, and explicit non-measurement boundaries.
 `report-benchmark-no-run-status` in the dogfood matrix verifies that this phase
 keeps performance claims unmade while preserving false-free evidence of
 compile readiness for the three harnesses.
+
+Phase 6BT final Mac-side build evidence pass:
+the Apple M5 checkout at `a238b20` refreshed the macOS Studio, notarization,
+web/PWA, deck-preview, status-gate, and benchmark evidence without changing the
+`55.8%` MIT/productization reporter or the `87/87` tracked implementation
+ledger. `scripts/package_garnet_studio_macos.sh` now stages
+`garnet_benchmark_no_run.py` and `garnet_windows_linux_studio_status.py` into
+packaged resources, while the dogfood matrix marks benchmark no-run cargo
+execution as a source-workspace-only packaged-resource skip when
+`Contents/Resources/Cargo.toml` is absent. Fresh Desktop evidence includes
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-dmg-smoke-20260518-182114`,
+`/Users/idc2.0/Desktop/dogfood/garnet-studio-notarization-preflight-20260518-182133`,
+`/Users/idc2.0/Desktop/dogfood/garnet-web-pwa-browser-smoke-20260518-182208`,
+`/Users/idc2.0/Desktop/dogfood/garnet-mit-deck-preview-browser-smoke-20260518-182149`,
+`/Users/idc2.0/Desktop/dogfood/garnet-agentic-dogfood-20260518-182651`,
+and `/Users/idc2.0/Desktop/dogfood/garnet-m5-parser-benchmark-measurement-20260518-182310`.
+The benchmark bundle records one real parser Criterion run on Apple M5 with
+machine metadata and a verified manifest; it does not complete the broader
+benchmark campaign, mechanized proof, native backend proof, notarized
+distribution, clean-machine Gatekeeper, or Windows/Linux runtime gates.
