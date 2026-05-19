@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Garnet releases</title>
+  <subtitle>Published GitHub releases for Island-Dev-Crew/garnet. Real releases only.</subtitle>
+  <link href="https://garnet-lang.org/releases.xml" rel="self"/>
+  <link href="https://github.com/Island-Dev-Crew/garnet/releases"/>
+  <id>https://garnet-lang.org/releases.xml</id>
+  <updated>2026-05-15T23:38:42Z</updated>
+  <author><name>Island Development Crew</name></author>
+  <entry>
+    <title>Garnet v0.4.2</title>
+    <id>https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.4.2</id>
+    <link href="https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.4.2"/>
+    <updated>2026-05-15T23:38:42Z</updated>
+    <published>2026-05-15T23:38:42Z</published>
+    <summary>v0.4.2 — checksum-verified macOS Apple-Silicon tarball, Linux .deb/.rpm, and SHA256SUMS. The universal installer pulls and verifies it end to end. Research-grade prototype, not production-complete.</summary>
+  </entry>
+</feed>
