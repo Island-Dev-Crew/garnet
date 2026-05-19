@@ -3,31 +3,45 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Garnet — Blog (no posts yet)</title>
-<meta name="description" content="The Garnet blog has no posts yet. When there is a real cadence of updates, they will appear here.">
+<title>Garnet — Blog</title>
+<meta name="description" content="Narrative engineering and release notes for Garnet — the dual-mode, agent-native language. Numbers that occasionally go down on purpose.">
 <meta name="theme-color" content="#9C2B2E">
-<meta name="robots" content="noindex">
 <link rel="canonical" href="https://garnet-lang.org/blog/">
+<meta property="og:title" content="Garnet — Blog">
+<meta property="og:description" content="Narrative engineering and release notes for Garnet.">
+<meta property="og:type" content="website">
 <style>
-  :root{--bg:#0A0A0F;--bg-soft:#121218;--garnet-2:#B0303A;--gold:#E5C07B;--ink:#E8E8E8;--ink-soft:#C8C8D0;--ink-muted:#6272A4;--rule:#3A3A45;--serif:'Georgia','Source Serif Pro',serif;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,system-ui,sans-serif;}
+  :root{--bg:#0A0A0F;--bg-soft:#121218;--garnet:#9C2B2E;--garnet-2:#B0303A;--gold:#E5C07B;--ink:#E8E8E8;--ink-soft:#C8C8D0;--ink-muted:#6272A4;--rule:#3A3A45;--serif:'Georgia','Source Serif Pro',serif;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,system-ui,sans-serif;--mono:'SF Mono','Menlo','Consolas',monospace;--maxw:760px;}
   *,*::before,*::after{box-sizing:border-box;}html,body{margin:0;padding:0;}
-  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;display:flex;min-height:100vh;align-items:center;justify-content:center;}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.7;-webkit-font-smoothing:antialiased;}
   a{color:var(--gold);text-decoration:none;}a:hover{color:var(--garnet-2);}
-  .wrap{max-width:600px;padding:48px 28px;text-align:center;}
-  .badge{display:inline-block;font-family:'SF Mono',Menlo,monospace;font-size:12px;letter-spacing:.08em;color:var(--gold);border:1px solid var(--rule);border-radius:999px;padding:5px 14px;margin-bottom:24px;}
-  h1{font-family:var(--serif);font-size:34px;margin:0 0 14px;}
-  p{color:var(--ink-soft);margin:0 0 18px;}
-  .foot{margin-top:38px;color:var(--ink-muted);font-size:13px;}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:60px 24px 96px;}
+  .top{font-family:var(--mono);font-size:12px;letter-spacing:.07em;color:var(--ink-muted);margin-bottom:34px;}
+  .top a{color:var(--ink-muted);}.top a:hover{color:var(--gold);}
+  h1{font-family:var(--serif);font-size:40px;margin:0 0 8px;}
+  .sub{color:var(--ink-soft);font-size:17px;margin:0 0 44px;}
+  .post{border-top:1px solid var(--rule);padding:24px 0;}
+  .post .date{font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--gold);}
+  .post h2{font-family:var(--serif);font-size:24px;margin:8px 0 8px;}
+  .post h2 a{color:var(--ink);}.post h2 a:hover{color:var(--gold);}
+  .post p{color:var(--ink-soft);margin:0;}
+  .foot{border-top:1px solid var(--rule);margin-top:48px;padding-top:20px;color:var(--ink-muted);font-size:13px;}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="badge">NO POSTS YET</div>
-  <h1>The Garnet blog hasn't started.</h1>
-  <p>Rather than seed a blog with a fake "Hello World" post, this page is honest: there are no entries yet. When there is a real cadence of engineering and release notes worth publishing, they will appear here.</p>
-  <p>Until then, the project's pulse is the commit history and release notes.</p>
-  <p><a href="https://github.com/Island-Dev-Crew/garnet/commits/main" target="_blank" rel="noopener noreferrer">Commit history</a> &nbsp;·&nbsp; <a href="https://github.com/Island-Dev-Crew/garnet/releases" target="_blank" rel="noopener noreferrer">Releases</a> &nbsp;·&nbsp; <a href="/index.html">← Home</a></p>
-  <p class="foot">© 2026 Island Development Crew · garnet-lang.org</p>
+  <div class="top"><a href="/index.html">← garnet-lang.org</a> &nbsp;·&nbsp; <a href="https://github.com/Island-Dev-Crew/garnet/releases" target="_blank" rel="noopener noreferrer">Releases ↗</a></div>
+
+  <h1>Blog</h1>
+  <p class="sub">Narrative engineering and release notes. The commit history and releases are the raw pulse; these are the posts that need a paragraph instead of a diff.</p>
+
+  <div class="post">
+    <div class="date">2026-05-19 · Release &amp; engineering</div>
+    <h2><a href="2026-05-19-v0-4-2-and-honest-accounting.html">Garnet v0.4.2, and the case for honest accounting</a></h2>
+    <p>v0.4.2 is live and the tracked implementation ledger is 87/87 — and the MIT readiness pulse went <em>down</em> to 55.8%, on purpose. Why a decreasing number is a feature, not a regression.</p>
+  </div>
+
+  <div class="foot">© 2026 Island Development Crew · Garnet is dual-licensed MIT OR Apache-2.0 · <a href="https://garnet-lang.org">garnet-lang.org</a></div>
 </div>
 </body>
 </html>
