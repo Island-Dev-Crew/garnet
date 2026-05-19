@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Garnet — Getting Started</title>
+<meta name="description" content="From install to your first running Garnet program in about two minutes: scaffold, test, run, and edit a CLI project — with the real command output.">
+<meta name="theme-color" content="#9C2B2E">
+<link rel="canonical" href="https://garnet-lang.org/getting-started.html">
+<meta property="og:title" content="Garnet — Getting Started">
+<meta property="og:description" content="Install to first running program in ~2 minutes, with real output.">
+<meta property="og:type" content="article">
+<style>
+  :root{--bg:#0A0A0F;--bg-soft:#121218;--bg-code:#18181B;--garnet:#9C2B2E;--garnet-2:#B0303A;--gold:#E5C07B;--ink:#E8E8E8;--ink-soft:#C8C8D0;--ink-muted:#6272A4;--rule:#3A3A45;--code-fg:#F8F8F2;--serif:'Georgia','Source Serif Pro',serif;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,system-ui,sans-serif;--mono:'SF Mono','Menlo','Consolas',monospace;--maxw:820px;}
+  *,*::before,*::after{box-sizing:border-box;}html,body{margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.7;-webkit-font-smoothing:antialiased;}
+  a{color:var(--gold);text-decoration:none;}a:hover{color:var(--garnet-2);}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:64px 24px 96px;}
+  .top{font-family:var(--mono);font-size:12px;letter-spacing:.08em;color:var(--ink-muted);margin-bottom:30px;}
+  .top a{color:var(--ink-muted);}.top a:hover{color:var(--gold);}
+  h1{font-family:var(--serif);font-size:40px;line-height:1.15;margin:0 0 12px;}
+  .sub{color:var(--ink-soft);font-size:18px;margin:0 0 14px;}
+  .note{color:var(--ink-muted);font-size:14px;border-left:2px solid var(--rule);padding:6px 0 6px 16px;margin:20px 0;}
+  h2{font-family:var(--serif);font-size:24px;margin:46px 0 10px;border-bottom:1px solid var(--rule);padding-bottom:8px;}
+  p{color:var(--ink-soft);}
+  ol{color:var(--ink-soft);padding-left:20px;}li{margin:6px 0;}
+  code{background:var(--bg-code);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:.9em;color:var(--code-fg);}
+  pre{background:var(--bg-code);border:1px solid var(--rule);border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.65;color:var(--code-fg);}
+  pre .p{color:var(--garnet-2);}
+  .step{display:inline-block;font-family:var(--mono);font-size:12px;color:var(--gold);border:1px solid var(--rule);border-radius:999px;padding:3px 10px;margin-right:8px;}
+  .next{display:flex;flex-wrap:wrap;gap:14px 26px;margin-top:16px;font-size:15px;}
+  footer{border-top:1px solid var(--rule);margin-top:64px;padding-top:22px;color:var(--ink-muted);font-size:13px;text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><a href="/index.html">← garnet-lang.org</a> &nbsp;·&nbsp; <a href="/index.html#install">Install</a> &nbsp;·&nbsp; <a href="minispec.html">Mini-Spec</a> &nbsp;·&nbsp; <a href="https://github.com/Island-Dev-Crew/garnet" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div>
+
+  <h1>Getting Started</h1>
+  <p class="sub">Install → a running first program in about two minutes. Every command and its output below is real, captured from the v0.4.2 toolchain.</p>
+  <p class="note">Garnet v0.4.2 is a research-grade prototype, not a production-complete language. This page is the honest happy path; the <a href="/index.html#install">install section</a> covers per-OS specifics and fallbacks.</p>
+
+  <h2><span class="step">1</span>Prerequisites</h2>
+  <p>None for the prebuilt path — the universal installer pulls a release package verified against <code>SHA256SUMS</code>. The <em>source</em> path needs Rust 1.75+.</p>
+
+  <h2><span class="step">2</span>Install</h2>
+<pre><span class="p">$</span> curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh</pre>
+  <p>This verifies the download, extracts <code>garnet</code>, and prints where it landed. Add that <code>bin</code> dir to your <code>PATH</code> if the installer warns it isn't there.</p>
+
+  <h2><span class="step">3</span>Scaffold a project</h2>
+<pre><span class="p">$</span> garnet new --template cli my_app
+  created my_app/ (cli template)
+<span class="p">$</span> cd my_app</pre>
+  <p>You get a small, real project:</p>
+<pre>my_app/
+├── Garnet.toml          # project manifest
+├── README.md
+├── src/main.garnet      # entry point
+└── tests/test_main.garnet</pre>
+
+  <h2><span class="step">4</span>Read the entry point</h2>
+  <p><code>src/main.garnet</code> is deliberately tiny — and it teaches the one idea that makes Garnet different: <strong>capabilities</strong>.</p>
+<pre>@caps()
+def main() {
+  println("Hello from my_app!")
+  println("")
+  println("Edit src/main.garnet to change this message.")
+  println("Run `garnet run src/main.garnet` to execute.")
+  0
+}</pre>
+  <p>The <code>@caps()</code> annotation declares the OS authority this program may exercise. Empty means <em>pure computation</em>. Need files, time, network, or subprocesses? You write <code>@caps(fs)</code>, <code>@caps(time)</code>, <code>@caps(net)</code>, <code>@caps(proc)</code> — and every primitive call site is checked at compile time against that declaration. Authority is explicit, not ambient.</p>
+
+  <h2><span class="step">5</span>Test it</h2>
+<pre><span class="p">$</span> garnet test
+  test test_arithmetic ... ok
+  test test_string_interpolation ... ok
+
+  test result: ok. 2 passed; 0 failed; in 2 file(s)</pre>
+  <p>The template ships with two green starter tests so you start from a known-good state.</p>
+
+  <h2><span class="step">6</span>Run it</h2>
+<pre><span class="p">$</span> garnet run src/main.garnet
+  Hello from my_app!
+
+  Edit src/main.garnet to change this message.
+  Run `garnet run src/main.garnet` to execute.
+  =&gt; 0</pre>
+  <p>The trailing <code>=&gt; 0</code> is <code>main</code>'s return value (its exit code).</p>
+
+  <h2><span class="step">7</span>Make a change</h2>
+  <p>Edit the first <code>println</code> in <code>src/main.garnet</code>, then re-run <code>garnet run src/main.garnet</code>. That edit/run loop is the whole inner cycle.</p>
+
+  <h2>Where to go next</h2>
+  <div class="next">
+    <a href="/index.html#install">Other install paths &amp; OS notes</a>
+    <a href="minispec.html">The Mini-Spec (language reference)</a>
+    <a href="/index.html#caps">The capability model in depth</a>
+    <a href="/index.html#compare">How Garnet compares to Rust &amp; Ruby</a>
+    <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">Contributing</a>
+  </div>
+  <p class="note">Try the other starters too: <code>garnet new --template web-api</code> and <code>garnet new --template agent-orchestrator</code> — each scaffolds, tests, and runs the same way.</p>
+
+  <footer>© 2026 Island Development Crew · Garnet is dual-licensed MIT OR Apache-2.0 · <a href="https://garnet-lang.org">garnet-lang.org</a></footer>
+</div>
+</body>
+</html>

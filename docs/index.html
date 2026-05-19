@@ -1250,28 +1250,31 @@ git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && c
         <span style="width:11px;height:11px;border-radius:50%;background:#27c93f;display:inline-block;"></span>
         <span style="color:var(--ink-muted);margin-left:8px;font-size:12px;">zsh — garnet</span>
       </div>
-      <pre id="garnet-term-body" style="margin:0;padding:16px 18px;color:var(--code-fg);white-space:pre-wrap;min-height:210px;"></pre>
+      <pre id="garnet-term-body" style="margin:0;padding:16px 18px;color:var(--code-fg);white-space:pre-wrap;min-height:210px;"><span style="color:#9C2B2E">$</span> garnet new --template cli my_app
+  created my_app/ (cli template)
+<span style="color:#9C2B2E">$</span> cd my_app
+<span style="color:#9C2B2E">$</span> garnet test
+  test test_arithmetic ... ok
+  test test_string_interpolation ... ok
+
+  test result: ok. 2 passed; 0 failed; in 2 file(s)
+<span style="color:#9C2B2E">$</span> garnet run src/main.garnet
+  Edit src/main.garnet to change this message.
+  =&gt; 0</pre>
     </div>
     <script>
     (function(){
+      // Progressive enhancement: the real captured session is already in
+      // the DOM above, so it is never empty for no-JS, crawlers, or
+      // reduced-motion. Only clear + retype it as a flourish when motion
+      // is allowed and IntersectionObserver is available.
+      var term=document.getElementById('garnet-term');
       var body=document.getElementById('garnet-term-body');
-      if(!body)return;
-      var G='<span style="color:#9C2B2E">$</span> ';
-      var lines=[
-        G+'garnet new --template cli my_app',
-        '  created my_app/ (cli template)',
-        G+'cd my_app',
-        G+'garnet test',
-        '  test test_arithmetic ... ok',
-        '  test test_string_interpolation ... ok',
-        '',
-        '  test result: ok. 2 passed; 0 failed; in 2 file(s)',
-        G+'garnet run src/main.garnet',
-        '  Edit src/main.garnet to change this message.',
-        '  => 0'
-      ];
+      if(!term||!body)return;
       var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if(reduce){ body.innerHTML=lines.join('\n'); return; }
+      if(reduce||!('IntersectionObserver' in window))return;
+      var lines=body.innerHTML.split('\n');
+      body.innerHTML='';
       var i=0;
       function step(){
         if(i>=lines.length)return;
@@ -1282,7 +1285,7 @@ git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && c
       var io=new IntersectionObserver(function(es){
         es.forEach(function(e){ if(e.isIntersecting){ io.disconnect(); step(); }});
       },{threshold:0.35});
-      io.observe(document.getElementById('garnet-term'));
+      io.observe(term);
     })();
     </script>
     <p class="lead" style="margin-top:32px;font-size:15px;">After install, scaffold a project:</p>
@@ -1298,6 +1301,8 @@ garnet test           # 2 starter tests pass green
 garnet run src/main.garnet</pre>
       </div>
     </div>
+
+    <p style="margin-top:22px;"><a href="getting-started.html" class="btn btn-ghost">New here? Follow the Getting Started walkthrough →</a></p>
 
     <p class="lead" style="margin-top:32px;font-size:15px;">Keeping Garnet updated:</p>
     <div class="install-note" style="margin:8px 0 0;padding:16px 18px;border:1px solid var(--rule);border-radius:10px;background:var(--bg-soft);font-size:14.5px;color:var(--ink-soft);">
@@ -1445,6 +1450,7 @@ dist/Garnet Studio.app</pre>
     <h2>Ask, report, contribute.</h2>
     <p class="lead">Garnet is early and the community surface is honest about it: there is no Discord or chat server yet. The real, active places today are GitHub.</p>
     <div class="links" style="display:flex;flex-wrap:wrap;gap:18px 28px;margin-top:18px;font-size:15px;">
+      <a href="getting-started.html">Getting Started walkthrough</a>
       <a href="https://github.com/Island-Dev-Crew/garnet/issues" target="_blank" rel="noopener noreferrer">Questions &amp; bug reports → GitHub Issues</a>
       <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">Contributing guide</a>
       <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/SECURITY.md" target="_blank" rel="noopener noreferrer">Security disclosure</a>
