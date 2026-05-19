@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Garnet — Governance</title>
+<meta name="description" content="How decisions are made in Garnet today: a single maintainer under Island Development Crew, changes via PR + review, honest about the absence of a formal RFC process.">
+<meta name="theme-color" content="#9C2B2E">
+<link rel="canonical" href="https://garnet-lang.org/governance.html">
+<style>
+  :root{--bg:#0A0A0F;--bg-soft:#121218;--garnet:#9C2B2E;--garnet-2:#B0303A;--gold:#E5C07B;--ink:#E8E8E8;--ink-soft:#C8C8D0;--ink-muted:#6272A4;--rule:#3A3A45;--serif:'Georgia','Source Serif Pro',serif;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,system-ui,sans-serif;--mono:'SF Mono','Menlo','Consolas',monospace;--maxw:760px;}
+  *,*::before,*::after{box-sizing:border-box;}html,body{margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.7;-webkit-font-smoothing:antialiased;}
+  a{color:var(--gold);text-decoration:none;}a:hover{color:var(--garnet-2);}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:64px 24px 96px;}
+  .top{font-family:var(--mono);font-size:12px;letter-spacing:.07em;color:var(--ink-muted);margin-bottom:30px;}
+  .top a{color:var(--ink-muted);}.top a:hover{color:var(--gold);}
+  h1{font-family:var(--serif);font-size:36px;margin:0 0 6px;}
+  .sub{color:var(--ink-soft);margin:0 0 28px;}
+  h2{font-family:var(--serif);font-size:21px;margin:40px 0 10px;color:var(--gold);border-bottom:1px solid var(--rule);padding-bottom:7px;}
+  p{color:var(--ink-soft);}strong{color:var(--ink);}
+  ol,ul{color:var(--ink-soft);padding-left:20px;}li{margin:6px 0;}
+  code{background:#18181B;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:.9em;}
+  .badge{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--gold);border:1px solid var(--rule);border-radius:999px;padding:3px 9px;margin-left:8px;vertical-align:middle;}
+  .foot{border-top:1px solid var(--rule);margin-top:52px;padding-top:20px;color:var(--ink-muted);font-size:13px;text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><a href="/index.html">← garnet-lang.org</a> &nbsp;·&nbsp; <a href="funding.html">Funding</a> &nbsp;·&nbsp; <a href="https://github.com/Island-Dev-Crew/garnet" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div>
+
+  <h1>Governance</h1>
+  <p class="sub">Garnet is small and this page says so. Pretending to have a foundation and a voting council would be the opposite of the project's stated values.</p>
+
+  <h2>Who decides</h2>
+  <p>Garnet is maintained by <strong>Island Development Crew</strong> (Jon Isaac, maintainer). Final decisions on language design, releases, and what merges are the maintainer's, exercised through the <code>Island-Dev-Crew</code> GitHub organization. There is no separate steering committee; claiming one would be fiction.</p>
+
+  <h2>How a change lands</h2>
+  <ol>
+    <li>Work happens on a branch in a fork (e.g. <code>Navigata1/garnet</code>).</li>
+    <li>A pull request is opened against <code>Island-Dev-Crew/garnet</code> <code>main</code>.</li>
+    <li>It must pass the <strong>dogfood-readiness gate</strong>: local verification, evidence in the PR body, a Desktop evidence bundle, and explicit deferred/out-of-scope claims. The gate rejects unqualified production-completeness claims.</li>
+    <li>The maintainer (org-owner account) reviews and merges. CI and the readiness ledger must stay consistent.</li>
+  </ol>
+
+  <h2>Proposing larger changes <span class="badge">RFC: PLANNED</span></h2>
+  <p>A formal RFC process does not exist yet. Today, propose a significant change by opening a <a href="https://github.com/Island-Dev-Crew/garnet/issues" target="_blank" rel="noopener noreferrer">GitHub issue</a> describing the problem, the proposed design, and the falsifiable evidence that would justify it. A lightweight written-RFC template is planned; this section will change when it is real, not before.</p>
+
+  <h2>Conduct &amp; security</h2>
+  <p>Contribution is governed by the <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/CODE_OF_CONDUCT.md" target="_blank" rel="noopener noreferrer">Code of Conduct</a>. Security issues follow the disclosure path in <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/SECURITY.md" target="_blank" rel="noopener noreferrer">SECURITY.md</a> — not public issues.</p>
+
+  <h2>Honest status</h2>
+  <p>This is single-maintainer governance for a research-grade prototype. It is enough to evaluate the project's decision path; it is not a claim of institutional permanence. As contributors arrive, this document changes with the reality, not ahead of it.</p>
+
+  <div class="foot">© 2026 Island Development Crew · Garnet is dual-licensed MIT OR Apache-2.0 · <a href="https://garnet-lang.org">garnet-lang.org</a></div>
+</div>
+</body>
+</html>
