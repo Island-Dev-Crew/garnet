@@ -1163,6 +1163,33 @@
     <h2>Install with one curl command.</h2>
     <p class="lead">The <strong>v0.4.2 release is live</strong> on GitHub. The universal installer pulls the release package, verifies it against <code>SHA256SUMS</code>, and falls back to a source install through <code>cargo install --locked</code> if a platform package is unavailable. Detailed productization gates live on the <a href="status.html">readiness status page</a>.</p>
 
+    <div id="os-detect" hidden style="display:none;align-items:center;gap:12px;margin:0 0 18px;padding:12px 16px;border:1px solid var(--rule);border-radius:10px;background:var(--bg-soft);font-size:14px;color:var(--ink-soft);">
+      <span id="os-detect-msg"></span>
+      <button id="os-detect-x" type="button" aria-label="Dismiss" style="margin-left:auto;background:none;border:0;color:var(--ink-muted);font-size:18px;line-height:1;cursor:pointer;padding:0 2px;">×</button>
+    </div>
+    <script>
+    (function(){
+      try{
+        var el=document.getElementById('os-detect');
+        var msg=document.getElementById('os-detect-msg');
+        var x=document.getElementById('os-detect-x');
+        if(!el||!msg)return;
+        try{ if(sessionStorage.getItem('garnet-osbanner-dismissed')==='1')return; }catch(e){}
+        var uad=navigator.userAgentData;
+        var plat=(uad&&uad.platform)?uad.platform:(navigator.platform||'');
+        var s=(plat+' '+(navigator.userAgent||'')).toLowerCase();
+        var t='';
+        if(s.indexOf('mac')>-1) t='Detected: macOS — the universal installer below pulls the SHA-256-verified Apple-Silicon tarball. (Intel Macs use the source install.)';
+        else if(s.indexOf('win')>-1) t='Detected: Windows — v0.4.2 has no Windows package yet; use the source install (needs Rust 1.75+).';
+        else if(s.indexOf('linux')>-1||s.indexOf('android')>-1) t='Detected: Linux — the universal installer pulls the checksum-verified x86_64 package; aarch64 falls back to the source install.';
+        if(!t)return; // unknown platform → no banner, silent
+        msg.textContent=t;
+        el.hidden=false; el.style.display='flex';
+        if(x) x.addEventListener('click',function(){ el.style.display='none'; try{sessionStorage.setItem('garnet-osbanner-dismissed','1');}catch(e){} });
+      }catch(e){ /* silent degrade — never block the install section */ }
+    })();
+    </script>
+
     <div class="install-note" style="margin:8px 0 26px;padding:16px 18px;border:1px solid var(--rule);border-radius:10px;background:var(--bg-soft);font-size:14.5px;color:var(--ink-soft);">
       <strong style="color:var(--ink);">Before you install.</strong> Prebuilt release packages need <em>no toolchain</em>. The <em>source</em> install needs <strong>Rust 1.75+</strong>. v0.4.2 ships these checksum-verified assets; other targets fall back to the source install:
       <table style="border-collapse:collapse;margin:12px 0 4px;font-size:13.5px;width:100%;">
