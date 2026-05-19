@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Report the Windows/Linux Garnet Studio MVP contract.
+"""Report the Windows/Linux Garnet Studio MVP status.
 
 This is the target-platform counterpart to the Mac-side continuation pulse. It
-does not claim a completed desktop shell. It records the first Windows/Linux
-Studio slice as a verified contract: action inventory, safe command
-construction, Desktop dogfood evidence defaults, copy-truth taxonomy, and
-packaging gates that a future Tauri/PWA shell must satisfy.
+records the current Windows/Linux Studio source truth: the original command and
+evidence contract plus the first Tauri v2 shell scaffold. It still does not
+claim signed Windows distribution, winget, Linux runtime proof, or a completed
+cross-platform release.
 """
 from __future__ import annotations
 
@@ -150,7 +150,7 @@ def create_evidence_bundle(
         "source": str(ROOT),
         "include_source_by_default": False,
         "source_included": False,
-        "status": "contract-only",
+        "status": "tauri-v2-shell-scaffold",
         "required_runtime_proof": [
             "launch on Windows",
             "launch on Linux",
@@ -410,7 +410,7 @@ def _sample_actions() -> list[StudioAction]:
             current_command=plan.argv,
             evidence_required=plan.action_id not in {"cli_health", "parse", "check", "run"},
             source_included_by_default=plan.source_included_by_default,
-            status="contracted-not-yet-shell-wired",
+            status="tauri-v2-command-wired",
         )
         for plan in samples
     ]
@@ -419,18 +419,20 @@ def _sample_actions() -> list[StudioAction]:
 def read_status() -> WindowsLinuxStudioStatus:
     return WindowsLinuxStudioStatus(
         source=str(ROOT),
-        status="contract-only-runtime-proof-open",
+        status="tauri-v2-shell-scaffold-windows-build-verified-linux-open",
         current_truth=[
             "origin/main is newer than PR #140; live main remains the source of truth",
             "macOS SwiftUI Studio remains the native Apple reference app",
-            "Windows/Linux Studio runtime proof is not complete until it launches on target systems",
-            "the first shell must wrap existing CLI, docs/PWA, advisory scripts, and dogfood gates",
-            "Tauri is a candidate dependency, not an adopted dependency in this slice",
+            "Tauri v2 is now adopted for the first Windows/Linux shell scaffold in `apps/garnet-studio`",
+            "Windows local source-build proof exists for the Tauri frontend, backend tests, release executable, unsigned NSIS bundle, and `--studio-smoke` evidence",
+            "Linux runtime proof is not complete until the shell launches in a Linux desktop environment",
+            "Windows clean-machine installer proof remains open until the unsigned NSIS artifact is exercised in a fresh VM",
+            "the shell wraps existing CLI, docs/PWA, advisory scripts, and dogfood gates without duplicating converter logic",
             "CLI Health maps to the existing `garnet version` probe unless a real health subcommand is added",
         ],
         least_new_dependency_decision=(
-            "Start with this no-new-dependency command/evidence contract. Add Tauri v2 only "
-            "after dependency review and Windows/Linux build verification; otherwise keep a PWA-first shell."
+            "Tauri v2 is accepted for the first shell scaffold. The scaffold keeps webview permissions minimal "
+            "(`core:default` only), removes the Tauri shell plugin, and delegates privileged execution to typed Rust commands."
         ),
         taxonomy=LanguageTaxonomy(
             active_conversion=ACTIVE_CONVERSION,
@@ -477,9 +479,16 @@ def read_status() -> WindowsLinuxStudioStatus:
             PackagingGate(
                 id="windows_msvc_build",
                 platform="Windows",
-                status="open",
-                next_evidence="cargo build --release --target x86_64-pc-windows-msvc for CLI plus future shell",
+                status="local-pass",
+                next_evidence="Preserve PR evidence for cargo build --release, Tauri release executable, and Studio smoke bundle",
                 forbidden_claim="Windows packaged Studio build is complete",
+            ),
+            PackagingGate(
+                id="windows_unsigned_nsis",
+                platform="Windows",
+                status="local-pass-unsigned",
+                next_evidence="Exercise the generated unsigned NSIS installer in a clean Windows VM and preserve logs/screenshots",
+                forbidden_claim="signed or clean-machine Windows installer is verified",
             ),
             PackagingGate(
                 id="windows_msi_signing",
@@ -504,18 +513,17 @@ def read_status() -> WindowsLinuxStudioStatus:
             ),
         ],
         next_slices=[
-            "Minimal shell scaffold wired to these command plans",
-            "CLI health plus parse/check/run action execution",
-            "Active convert and advisory planning UI with source omitted by default",
-            "Desktop dogfood evidence browser plus manifest checks",
-            "Windows package smoke and copy review",
-            "Linux package smoke and copy review",
+            "Windows clean-machine NSIS install and CLI smoke evidence",
+            "Linux desktop launch proof and first package-format decision",
+            "Parse/check/run plus active converter end-to-end screenshots from the shell",
+            "Advisory bundle/review/handoff evidence walkthrough without source inclusion",
+            "Unsigned-to-signed Windows MSI/AuthentiCode plan after VM smoke",
+            "Website/status copy sync after target smoke evidence",
         ],
         user_assistance_needed=[
-            "Provide a real Windows machine or Windows VM for runtime launch evidence",
+            "Run the unsigned NSIS installer in a clean Windows VM for installer/runtime launch evidence",
             "Provide a Linux VM/container with GUI or AppImage-capable desktop session for runtime launch evidence",
             "Provide signing credentials only when ready to verify signed MSI claims",
-            "Confirm whether Tauri v2 is acceptable after this no-new-dependency contract passes",
         ],
     )
 

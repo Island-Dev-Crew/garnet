@@ -14,7 +14,7 @@ members = [
 # Exclude the archived v0.2 parser (flat-file layout, retained at
 # `archive/garnet-parser-v0.2/` for audit trail only — superseded by
 # `garnet-parser-v0.3/`).
-exclude = ["archive/garnet-parser-v0.2"]
+exclude = ["archive/garnet-parser-v0.2", "apps/garnet-studio/src-tauri"]
 
 # The user-facing Garnet release version. The `garnet` CLI binary (in
 # `garnet-cli/`) is the canonical public version surface and stays in lockstep

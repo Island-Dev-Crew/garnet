@@ -21,6 +21,10 @@ SPEC.loader.exec_module(matrix)
 
 
 class AgenticDogfoodMatrixTests(unittest.TestCase):
+    def test_default_garnet_binary_name_is_platform_aware(self) -> None:
+        expected = "garnet.exe" if sys.platform.startswith("win") else "garnet"
+        self.assertEqual(expected, matrix.executable_name("garnet"))
+
     def _fake_garnet_path(self) -> Path:
         return Path(sys.executable)
 
@@ -93,10 +97,10 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
             probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
-            concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
+            results = self._inventory_results(probes)
 
-        ids = {probe.id for probe in concrete_probes}
-        domains = Counter(probe.domain for probe in concrete_probes)
+        ids = {result.probe.id for result in results}
+        domains = Counter(result.probe.domain for result in results)
 
         self.assertEqual(domains["MIT readiness accounting"], 3)
         self.assertIn("report-mit-readiness-plan-complete", ids)
@@ -108,10 +112,10 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
             probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
-            concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
+            results = self._inventory_results(probes)
 
-        ids = {probe.id for probe in concrete_probes}
-        domains = Counter(probe.domain for probe in concrete_probes)
+        ids = {result.probe.id for result in results}
+        domains = Counter(result.probe.domain for result in results)
 
         self.assertEqual(domains["Mac-side continuation accounting"], 1)
         self.assertIn("report-mac-side-continuation-boundaries", ids)
@@ -121,14 +125,14 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
             probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
-            concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
+            results = self._inventory_results(probes)
 
-        ids = {probe.id for probe in concrete_probes}
-        domains = Counter(probe.domain for probe in concrete_probes)
+        ids = {result.probe.id for result in results}
+        domains = Counter(result.probe.domain for result in results)
 
         self.assertEqual(domains["CI action runtime"], 1)
         self.assertIn("report-github-actions-node24-readiness", ids)
-        probe = next(probe for probe in concrete_probes if probe.id == "report-github-actions-node24-readiness")
+        probe = next(result.probe for result in results if result.probe.id == "report-github-actions-node24-readiness")
         self.assertIn("Ran 3 tests", probe.expected_stderr)
 
     def test_probe_inventory_includes_proof_benchmark_empirics(self) -> None:
@@ -280,6 +284,21 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertIn("report-studio-provider-options-action", ids)
         self.assertIn("report-studio-provider-options-runner", ids)
         self.assertIn("report-studio-provider-options-desktop-evidence", ids)
+
+    def test_probe_inventory_includes_windows_linux_studio_shell(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            fixtures = matrix.prepare_fixtures(work)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
+            concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
+
+        ids = {probe.id for probe in concrete_probes}
+        domains = Counter(probe.domain for probe in concrete_probes)
+
+        self.assertEqual(domains["Windows/Linux Studio shell"], 3)
+        self.assertIn("report-windows-linux-studio-tauri-scaffold", ids)
+        self.assertIn("report-windows-linux-studio-command-contract", ids)
+        self.assertIn("report-windows-linux-studio-evidence-smoke", ids)
 
     def test_probe_inventory_includes_converter_advisory_bundle(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -485,10 +504,10 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
             work = Path(temp)
             fixtures = matrix.prepare_fixtures(work)
             probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
-            concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
+            results = self._inventory_results(probes)
 
-        ids = {probe.id for probe in concrete_probes}
-        domains = Counter(probe.domain for probe in concrete_probes)
+        ids = {result.probe.id for result in results}
+        domains = Counter(result.probe.domain for result in results)
 
         self.assertEqual(domains["web/PWA productization"], 3)
         self.assertIn("smoke-web-pwa-offline-handler", ids)

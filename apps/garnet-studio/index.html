@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Cross-platform Garnet Studio shell for Windows and Linux."
+    />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <script type="module" src="/src/main.ts" defer></script>
+    <title>Garnet Studio</title>
+  </head>
+
+  <body>
+    <aside class="sidebar" aria-label="Studio navigation">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <div>
+          <h1>Garnet Studio</h1>
+          <p>Windows/Linux MVP</p>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <button class="active" data-panel="health">CLI Health</button>
+        <button data-panel="garnet">Parse / Check / Run</button>
+        <button data-panel="convert">Active Conversion</button>
+        <button data-panel="advisory">Advisory Pipeline</button>
+        <button data-panel="evidence">Evidence</button>
+        <button data-panel="taxonomy">Taxonomy</button>
+      </nav>
+
+      <div class="contract">
+        <strong>Safety contract</strong>
+          <span>No provider APIs</span>
+          <span>Source omitted by default</span>
+          <span>Advisory output is never marked safe</span>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <section id="panel-health" class="panel active">
+        <header class="panel-header">
+          <p class="eyebrow">Runtime</p>
+          <h2>CLI Health</h2>
+          <p>
+            Locate the Garnet CLI, source checkout, Python interpreter, and
+            Desktop dogfood evidence root.
+          </p>
+        </header>
+        <button id="btn-health" class="primary">Run Health Check</button>
+        <div id="health-result" class="result-area"></div>
+      </section>
+
+      <section id="panel-garnet" class="panel">
+        <header class="panel-header">
+          <p class="eyebrow">Garnet source</p>
+          <h2>Parse, Check, Run</h2>
+          <p>
+            These actions operate on local Garnet files only. Run is an explicit
+            local CLI action, separate from advisory source inspection.
+          </p>
+        </header>
+
+        <label class="field">
+          <span>Garnet file path</span>
+          <input id="garnet-file" type="text" spellcheck="false" />
+        </label>
+
+        <div class="button-row">
+          <button id="btn-parse" class="primary">Parse</button>
+          <button id="btn-check" class="primary">Check</button>
+          <button id="btn-run" class="secondary">Run</button>
+        </div>
+
+        <div id="garnet-result" class="result-area"></div>
+      </section>
+
+      <section id="panel-convert" class="panel">
+        <header class="panel-header">
+          <p class="eyebrow">Active conversion</p>
+          <h2>Rust/Ruby/Python/Go to Garnet</h2>
+          <p>
+            The deterministic converter lifts only the active source languages
+            into sandboxed Garnet output with lineage and migration evidence.
+          </p>
+        </header>
+
+        <div class="form-grid">
+          <label class="field">
+            <span>Source file path</span>
+            <input id="convert-source" type="text" spellcheck="false" />
+          </label>
+
+          <label class="field compact">
+            <span>Source language</span>
+            <select id="convert-lang">
+              <option value="rust">Rust</option>
+              <option value="ruby">Ruby</option>
+              <option value="python" selected>Python</option>
+              <option value="go">Go</option>
+            </select>
+          </label>
+        </div>
+
+        <button id="btn-convert" class="primary">Convert to Garnet</button>
+        <div id="convert-result" class="result-area"></div>
+      </section>
+
+      <section id="panel-advisory" class="panel">
+        <header class="panel-header">
+          <p class="eyebrow">Advisory planning</p>
+          <h2>Assist, Bundle, Review, Handoff</h2>
+          <p>
+            Advisory actions produce local planning and handoff evidence. Source
+            text is omitted from provider-facing packets by default.
+          </p>
+        </header>
+
+        <div class="tool-block">
+          <h3>Assist Plan</h3>
+          <div class="form-grid">
+            <label class="field">
+              <span>Source file path</span>
+              <input id="assist-source" type="text" spellcheck="false" />
+            </label>
+            <label class="field compact">
+              <span>Language</span>
+              <select id="assist-lang">
+                <option>JavaScript</option>
+                <option selected>TypeScript</option>
+                <option>Swift</option>
+                <option>Java</option>
+                <option>C</option>
+                <option>C++</option>
+                <option>C#</option>
+                <option>Perl</option>
+                <option>Kotlin</option>
+                <option>Shell</option>
+                <option>SQL</option>
+                <option>Other</option>
+              </select>
+            </label>
+          </div>
+          <button id="btn-assist" class="secondary">Generate Assist Plan</button>
+          <div id="assist-result" class="result-area"></div>
+        </div>
+
+        <div class="tool-block">
+          <h3>Advisory Bundle</h3>
+          <div class="form-grid">
+            <label class="field">
+              <span>Source file path</span>
+              <input id="bundle-source" type="text" spellcheck="false" />
+            </label>
+            <label class="field compact">
+              <span>Language</span>
+              <select id="bundle-lang">
+                <option>JavaScript</option>
+                <option selected>TypeScript</option>
+                <option>Swift</option>
+                <option>Java</option>
+                <option>C</option>
+                <option>C++</option>
+                <option>C#</option>
+                <option>Perl</option>
+                <option>Kotlin</option>
+                <option>Shell</option>
+                <option>SQL</option>
+                <option>Other</option>
+              </select>
+            </label>
+          </div>
+          <button id="btn-bundle" class="secondary">Create Advisory Bundle</button>
+          <div id="bundle-result" class="result-area"></div>
+        </div>
+
+        <div class="tool-block">
+          <h3>Review and Handoff</h3>
+          <label class="field">
+            <span>Bundle directory</span>
+            <input id="review-bundle" type="text" spellcheck="false" />
+          </label>
+          <button id="btn-review" class="secondary">Run Advisory Review</button>
+          <div id="review-result" class="result-area"></div>
+
+          <div class="form-grid spacer">
+            <label class="field">
+              <span>Bundle directory</span>
+              <input id="handoff-bundle" type="text" spellcheck="false" />
+            </label>
+            <label class="field">
+              <span>Review directory</span>
+              <input id="handoff-review" type="text" spellcheck="false" />
+            </label>
+          </div>
+          <button id="btn-handoff" class="secondary">Create Advisory Handoff</button>
+          <div id="handoff-result" class="result-area"></div>
+        </div>
+      </section>
+
+      <section id="panel-evidence" class="panel">
+        <header class="panel-header">
+          <p class="eyebrow">Dogfood evidence</p>
+          <h2>Objective Pulse and Matrix</h2>
+          <p>
+            Evidence is written below the Windows/Linux Studio dogfood root.
+          </p>
+        </header>
+
+        <div class="evidence-root">
+          <span>Evidence root</span>
+          <code id="evidence-root"></code>
+        </div>
+
+        <div class="button-row">
+          <button id="btn-evidence" class="primary">Create Evidence Bundle</button>
+          <button id="btn-pulse" class="secondary">Objective Pulse</button>
+          <button id="btn-dogfood" class="secondary">Agentic Dogfood Matrix</button>
+        </div>
+
+        <div id="evidence-result" class="result-area"></div>
+        <div id="pulse-result" class="result-area"></div>
+        <div id="dogfood-result" class="result-area"></div>
+      </section>
+
+      <section id="panel-taxonomy" class="panel">
+        <header class="panel-header">
+          <p class="eyebrow">Copy truth</p>
+          <h2>Language Taxonomy</h2>
+          <p>
+            The shell preserves the active, advisory, native-boundary, and
+            future-backend labels from the handoff contract.
+          </p>
+        </header>
+        <div id="taxonomy" class="taxonomy"></div>
+      </section>
+    </main>
+  </body>
+</html>

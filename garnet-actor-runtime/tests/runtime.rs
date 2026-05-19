@@ -3,7 +3,7 @@
 use garnet_actor_runtime::{Actor, AskError, Runtime};
 use std::sync::atomic::{AtomicI64, Ordering};
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 // ── Counter actor: integer state, increment + read ──
 
@@ -146,6 +146,17 @@ impl Actor for Tally {
     }
 }
 
+fn wait_until(timeout: Duration, mut predicate: impl FnMut() -> bool) -> bool {
+    let deadline = Instant::now() + timeout;
+    while Instant::now() < deadline {
+        if predicate() {
+            return true;
+        }
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    predicate()
+}
+
 #[test]
 fn three_tally_actors_share_atomic_state() {
     let rt = Runtime::new();
@@ -190,8 +201,10 @@ fn runtime_stats_show_stopped_after_drop() {
         let _addr = rt.spawn(Counter { n: 0 });
         // address dropped here closes the mailbox.
     }
-    // Allow the actor thread to observe the closed channel and stop.
-    std::thread::sleep(Duration::from_millis(50));
+    assert!(
+        wait_until(Duration::from_secs(2), || rt.stats().stopped == 1),
+        "actor did not report stopped before timeout"
+    );
     let stats = rt.stats();
     assert_eq!(stats.spawned, 1);
     assert_eq!(stats.stopped, 1);
@@ -275,7 +288,11 @@ fn on_stop_runs_when_mailbox_closes() {
             stopped: Arc::clone(&stopped),
         });
     }
-    std::thread::sleep(Duration::from_millis(50));
+    assert!(
+        wait_until(Duration::from_secs(2), || stopped.load(Ordering::SeqCst)
+            == 1),
+        "on_stop did not run before timeout"
+    );
     assert_eq!(stopped.load(Ordering::SeqCst), 1);
 }
 
