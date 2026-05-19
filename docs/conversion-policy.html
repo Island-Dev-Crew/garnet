@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Garnet — Conversion Policy</title>
+<meta name="description" content="The full Garnet migration/conversion policy: active conversion lanes, advisory planning, native boundaries, the direct-conversion fit rule, and the LLM-advisory review path.">
+<meta name="theme-color" content="#9C2B2E">
+<link rel="canonical" href="https://garnet-lang.org/conversion-policy.html">
+<style>
+  :root{--bg:#0A0A0F;--bg-soft:#121218;--garnet:#9C2B2E;--garnet-2:#B0303A;--gold:#E5C07B;--ink:#E8E8E8;--ink-soft:#C8C8D0;--ink-muted:#6272A4;--rule:#3A3A45;--serif:'Georgia','Source Serif Pro',serif;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,system-ui,sans-serif;--mono:'SF Mono','Menlo','Consolas',monospace;--maxw:780px;}
+  *,*::before,*::after{box-sizing:border-box;}html,body{margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.75;-webkit-font-smoothing:antialiased;}
+  a{color:var(--gold);text-decoration:none;}a:hover{color:var(--garnet-2);}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:64px 24px 96px;}
+  .top{font-family:var(--mono);font-size:12px;letter-spacing:.07em;color:var(--ink-muted);margin-bottom:30px;}
+  .top a{color:var(--ink-muted);}.top a:hover{color:var(--gold);}
+  h1{font-family:var(--serif);font-size:36px;margin:0 0 6px;}
+  .sub{color:var(--ink-soft);margin:0 0 28px;}
+  h2{font-family:var(--serif);font-size:21px;margin:40px 0 10px;color:var(--gold);border-bottom:1px solid var(--rule);padding-bottom:7px;}
+  p{color:var(--ink-soft);}strong{color:var(--ink);}
+  ul{color:var(--ink-soft);padding-left:20px;}li{margin:8px 0;}
+  code{background:#18181B;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:.9em;}
+  .foot{border-top:1px solid var(--rule);margin-top:52px;padding-top:20px;color:var(--ink-muted);font-size:13px;text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><a href="/index.html">← garnet-lang.org</a> &nbsp;·&nbsp; <a href="/index.html#install">Install</a> &nbsp;·&nbsp; <a href="https://github.com/Island-Dev-Crew/garnet" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div>
+
+  <h1>Conversion Policy</h1>
+  <p class="sub">The full policy behind "Migrate at Your Pace". The homepage shows the three tiers as a table; this page is the unabridged reasoning. No claims differ between the two — this is the same policy with room to breathe.</p>
+
+  <h2>What <code>garnet convert</code> is</h2>
+  <p>The <code>garnet convert</code> tool is a migration assistant, not a full transpiler: it reads four deterministic source lanes and emits sandboxed Garnet with lineage, metrics, and a human migration checklist.</p>
+
+  <h2>Why the surface is split</h2>
+  <p>The broader converter surface is honest by design: active conversion for the languages with deterministic frontends, advisory planning for broader source, native boundaries where low-level fidelity matters, and future Garnet-to-Wasm/LLVM-style lowering when backend evidence exists.</p>
+  <p>Active languages are low-friction migration lanes with stable frontends. Advisory languages get risk-first planning until deterministic support lands. Native-boundary languages are best represented as explicit modules or FFI with CapCaps and sandbox policy.</p>
+
+  <h2>The direct-conversion fit rule</h2>
+  <p>Do not convert before a deterministic frontend and checker contract exists for source, parser edges, and capability-preserving lowering. Advisory planning is acceptable only when migration risk is explicit and gated by a human review handoff.</p>
+
+  <h2>The three tiers</h2>
+  <ul>
+    <li><strong>Active conversion</strong> — Rust / Ruby / Python / Go can carry ownership-like shape, module boundaries, and migration evidence with deterministic behavior.</li>
+    <li><strong>Advisory planning</strong> — JavaScript, TypeScript, Swift, Java, Perl, Kotlin, Shell, SQL, and similar sources gain value as migration planning + risk inventory until parser/lineage support is implemented.</li>
+    <li><strong>Native boundary</strong> — C, C++, Objective-C, Assembly, CUDA, and platform-specific code are best handled as native modules/FFI where ABI and hardware behavior are source-of-truth.</li>
+  </ul>
+
+  <h2>Adoption surface &amp; LLM-advisory path</h2>
+  <p>Adoption surface truth is machine-readable through <code>scripts/garnet_adoption_surface_status.py</code>.</p>
+  <p>LLM advisory work uses the provider-neutral prompt pack and a machine-readable provider-option registry. Provider-backed conversion remains inactive; each future provider candidate is advisory-only, no-source by default, privacy-reviewed, and human-approved before any handoff can matter. The reviewable path is: source classifier → risk inventory → Garnet context → advisory plan → review handoff → human-approved candidate → <code>garnet check/test/dogfood</code>.</p>
+
+  <div class="foot">© 2026 Island Development Crew · Garnet is dual-licensed MIT OR Apache-2.0 · <a href="https://garnet-lang.org">garnet-lang.org</a></div>
+</div>
+</body>
+</html>
