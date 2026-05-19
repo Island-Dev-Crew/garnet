@@ -20,6 +20,7 @@ on:
       - "garnet-cli/**"
       - "garnet-convert/**"
       - "apps/garnet-studio-macos/**"
+      - "apps/garnet-studio/**"
       - "examples/**"
       - "Cargo.toml"
       - "Cargo.lock"

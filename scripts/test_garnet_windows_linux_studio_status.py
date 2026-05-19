@@ -139,14 +139,15 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             text=True,
         )
         data = json.loads(output)
-        self.assertEqual("contract-only-runtime-proof-open", data["status"])
-        self.assertIn("Windows/Linux Studio runtime proof is not complete", " ".join(data["current_truth"]))
+        self.assertEqual("tauri-v2-shell-scaffold-windows-build-verified-linux-open", data["status"])
+        self.assertIn("Tauri v2 is now adopted", " ".join(data["current_truth"]))
+        self.assertIn("Linux runtime proof is not complete", " ".join(data["current_truth"]))
         self.assertFalse(data["safety_contract"]["calls_provider_apis_by_default"])
         self.assertFalse(data["safety_contract"]["includes_source_by_default"])
 
         markdown = subprocess.check_output([sys.executable, str(SCRIPT)], text=True)
         self.assertIn("Garnet Windows/Linux Studio Status", markdown)
-        self.assertIn("Tauri is a candidate dependency", markdown)
+        self.assertIn("Tauri v2 is accepted", markdown)
         self.assertIn("signed Windows MSI for Studio", json.dumps(data["safety_contract"]["forbidden_claims"]))
 
 

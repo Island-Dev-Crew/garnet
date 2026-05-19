@@ -636,7 +636,7 @@
     overflow: hidden;
   }
   .objective-meter .fill {
-    width: 55.8%;
+    width: 54.2%;
     height: 100%;
     background: var(--garnet);
   }
@@ -1357,6 +1357,7 @@ garnet run src/main.garnet</pre>
       <li>release status &amp; the agentic dogfood matrix</li>
     </ul>
     <p class="lead" style="font-size:15px;">In Codex Desktop, a <strong>Codex Run</strong> action wires <code>script/build_and_run.sh</code> to build SwiftPM, stage <code>dist/Garnet Studio.app</code>, and launch it.</p>
+    <p class="lead">The Windows/Linux lane now has a separate Tauri v2 shell scaffold under <code>apps/garnet-studio</code>. Windows local proof covers the Vite frontend build, Tauri backend tests, release executable, unsigned NSIS bundle, and <code>--studio-smoke</code> Desktop evidence. It is still not signed MSI, winget, Linux runtime, or clean-machine installer proof.</p>
 
     <div class="features">
       <div class="feature">
@@ -1432,7 +1433,7 @@ dist/Garnet Studio.app</pre>
     <div class="objective-pulse" aria-label="MIT/productization objective progress pulse">
       <div class="objective-meter">
         <div class="label">MIT/productization objective</div>
-        <div class="percent">55.8%</div>
+        <div class="percent">54.2%</div>
         <div class="meter" aria-hidden="true"><div class="fill"></div></div>
         <p class="evidence-note">Latest local dogfood pulse from <code>scripts/garnet_mit_readiness_status.py</code>. This is not the same as tracked implementation completion.</p>
       </div>
@@ -1440,6 +1441,7 @@ dist/Garnet Studio.app</pre>
         <div class="label">Current pulse</div>
         <ul>
           <li><strong>87/87 tracked slices</strong> are verified, but that is not full MIT/productization completion.</li>
+          <li>Windows now has a Tauri v2 Studio scaffold with local release build, unsigned NSIS bundle, and smoke evidence; Linux runtime and clean-machine installer proof remain open.</li>
           <li>Promo video is public-site embedded at 95.0%; human/aesthetic acceptance remains open.</li>
           <li>Web/PWA productization is verified; mobile distribution is still planned.</li>
           <li>Apple distribution, mobile, provider-backed LLM assist, and backend lowering each have their own readiness gates.</li>

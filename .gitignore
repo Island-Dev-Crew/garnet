@@ -20,6 +20,7 @@ target/
 
 # Debug
 *.dSYM/
+__pycache__/
 
 # GHA CI artifacts
 dist/*.tar.gz
@@ -43,6 +44,7 @@ dist/*.tar.gz
 
 # Local agent knowledge (not part of the language)
 .garnet-cache/
+.codex/
 garnet-cli/.garnet-cache/
 
 # Old dist artifacts (we ship via releases, not repo)

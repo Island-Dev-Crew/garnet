@@ -181,13 +181,13 @@ def read_status() -> MitReadinessStatus:
         ObjectiveLane(
             id="windows_linux_distribution",
             label="Windows/Linux distribution",
-            status="planned-contract",
-            completion_percent=25.0,
+            status="active-partial",
+            completion_percent=50.0,
             evidence=(
-                "`scripts/garnet_windows_linux_studio_status.py` lands a "
-                "no-new-dependency command/evidence contract and status "
-                f"accounting; all {len(wls.packaging_gates)} packaging gates "
-                f"are `{wls.status}` with no Windows/Linux Studio runtime proof."
+                "`scripts/garnet_windows_linux_studio_status.py` now reports the "
+                "Tauri v2 shell scaffold in `apps/garnet-studio`, minimal webview "
+                "permissions, Windows local release build/smoke evidence, and "
+                "open Linux plus clean-machine package gates."
             ),
             blocked_by=list(wls.user_assistance_needed),
             deferred=list(wls.next_slices),

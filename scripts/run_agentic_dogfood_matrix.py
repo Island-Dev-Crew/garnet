@@ -22,6 +22,11 @@ from pathlib import Path
 from typing import Callable
 
 ROOT = Path(__file__).resolve().parents[1]
+_POSIX_SHELL_CACHE: str | bool | None = None
+
+
+def executable_name(base: str) -> str:
+    return f"{base}.exe" if os.name == "nt" else base
 
 
 @dataclass(frozen=True)
@@ -36,6 +41,7 @@ class Probe:
     security_domain: str = "not-applicable"
     notes: str = ""
     env: dict[str, str] = field(default_factory=dict)
+    timeout: int = 120
 
 
 @dataclass
@@ -92,6 +98,67 @@ def run(cmd: list[str], cwd: Path, timeout: int = 120, env: dict[str, str] | Non
         )
 
 
+def working_posix_shell() -> str | None:
+    global _POSIX_SHELL_CACHE
+    if _POSIX_SHELL_CACHE is not None:
+        return _POSIX_SHELL_CACHE if isinstance(_POSIX_SHELL_CACHE, str) else None
+    if os.name != "nt":
+        _POSIX_SHELL_CACHE = False
+        return None
+    bash = shutil.which("bash")
+    if not bash:
+        _POSIX_SHELL_CACHE = False
+        return None
+    probe = run([bash, "-lc", "printf ok"], ROOT, timeout=5)
+    if probe.returncode == 0 and probe.stdout == "ok":
+        _POSIX_SHELL_CACHE = bash
+        return bash
+    _POSIX_SHELL_CACHE = False
+    return None
+
+
+def verify_sha256_manifest(directory: Path) -> subprocess.CompletedProcess[str]:
+    manifest = directory / "MANIFEST.sha256"
+    command = ["python", "verify-sha256-manifest", str(manifest)]
+    if not manifest.is_file():
+        return subprocess.CompletedProcess(command, 1, "", f"missing manifest: {manifest}\n")
+
+    stdout: list[str] = []
+    stderr: list[str] = []
+    for line_no, line in enumerate(manifest.read_text(encoding="utf-8").splitlines(), start=1):
+        if not line.strip():
+            continue
+        try:
+            expected, relative = line.split(None, 1)
+        except ValueError:
+            stderr.append(f"malformed manifest line {line_no}: {line}")
+            continue
+        rel = relative.strip()
+        if rel.startswith("./"):
+            rel = rel[2:]
+        target = (directory / rel).resolve()
+        try:
+            target.relative_to(directory.resolve())
+        except ValueError:
+            stderr.append(f"manifest path escapes bundle on line {line_no}: {relative}")
+            continue
+        if not target.is_file():
+            stderr.append(f"manifest file missing on line {line_no}: {relative}")
+            continue
+        actual = hashlib.sha256(target.read_bytes()).hexdigest()
+        if actual.lower() != expected.lower():
+            stderr.append(f"{relative}: FAILED")
+            continue
+        stdout.append(f"{relative}: OK")
+
+    return subprocess.CompletedProcess(
+        command,
+        1 if stderr else 0,
+        "\n".join(stdout) + ("\n" if stdout else ""),
+        "\n".join(stderr) + ("\n" if stderr else ""),
+    )
+
+
 def ensure_garnet_bin(explicit: str | None) -> Path:
     if explicit:
         path = Path(explicit).expanduser().resolve()
@@ -99,7 +166,7 @@ def ensure_garnet_bin(explicit: str | None) -> Path:
             raise SystemExit(f"garnet binary is not executable: {path}")
         return path
 
-    candidate = ROOT / "target" / "debug" / "garnet"
+    candidate = ROOT / "target" / "debug" / executable_name("garnet")
     build = run(["cargo", "build", "-p", "garnet-cli"], ROOT, timeout=180)
     if build.returncode != 0:
         sys.stderr.write(build.stdout)
@@ -112,7 +179,7 @@ def ensure_garnet_bin(explicit: str | None) -> Path:
 
 def write(path: Path, text: str) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text, encoding="utf-8")
+    path.write_text(text, encoding="utf-8", newline="\n")
     return path
 
 
@@ -756,8 +823,18 @@ def skipped_result(probe: Probe, work: Path, reason: str) -> ProbeResult:
 
 
 def run_probe(probe: Probe, work: Path) -> ProbeResult:
+    if (
+        probe.id == "report-benchmark-no-run-status"
+        and os.name == "nt"
+        and os.environ.get("GARNET_DOGFOOD_RUN_BENCH_NO_RUN") != "1"
+    ):
+        return skipped_result(
+            probe,
+            work,
+            "cargo bench --no-run release compilation is skipped on Windows local dogfood unless GARNET_DOGFOOD_RUN_BENCH_NO_RUN=1 is set.",
+        )
     start = time.monotonic()
-    completed = run(probe.command, work, env=probe.env)
+    completed = run(probe.command, work, timeout=probe.timeout, env=probe.env)
     return classify_result(
         probe,
         completed.returncode,
@@ -798,7 +875,7 @@ def build_assist_plan_manifest_probe(work: Path, source: Path) -> ProbeResult:
     stderr = [completed.stderr]
     exit_code = completed.returncode
     if completed.returncode == 0:
-        verify = run(["shasum", "-a", "256", "-c", "MANIFEST.sha256"], output_dir)
+        verify = verify_sha256_manifest(output_dir)
         stdout.append(verify.stdout)
         stderr.append(verify.stderr)
         exit_code = verify.returncode
@@ -838,7 +915,7 @@ def build_converter_llm_feasibility_manifest_probe(work: Path) -> ProbeResult:
     stderr = [completed.stderr]
     exit_code = completed.returncode
     if completed.returncode == 0:
-        verify = run(["shasum", "-a", "256", "-c", "MANIFEST.sha256"], output_dir)
+        verify = verify_sha256_manifest(output_dir)
         stdout.append(verify.stdout)
         stderr.append(verify.stderr)
         exit_code = verify.returncode
@@ -883,7 +960,7 @@ def build_converter_advisory_bundle_manifest_probe(work: Path, source: Path) -> 
     stderr = [completed.stderr]
     exit_code = completed.returncode
     if completed.returncode == 0:
-        verify = run(["shasum", "-a", "256", "-c", "MANIFEST.sha256"], output_dir)
+        verify = verify_sha256_manifest(output_dir)
         stdout.append(verify.stdout)
         stderr.append(verify.stderr)
         exit_code = verify.returncode
@@ -1005,7 +1082,7 @@ def build_converter_advisory_review_manifest_probe(work: Path, source: Path) -> 
     stderr = [completed.stderr]
     exit_code = completed.returncode
     if completed.returncode == 0:
-        verify = run(["shasum", "-a", "256", "-c", "MANIFEST.sha256"], output_dir)
+        verify = verify_sha256_manifest(output_dir)
         stdout.append(verify.stdout)
         stderr.append(verify.stderr)
         exit_code = verify.returncode
@@ -1255,7 +1332,7 @@ def build_converter_advisory_handoff_manifest_probe(work: Path, source: Path) ->
     stderr = [completed.stderr]
     exit_code = completed.returncode
     if completed.returncode == 0:
-        verify = run(["shasum", "-a", "256", "-c", "MANIFEST.sha256"], output_dir)
+        verify = verify_sha256_manifest(output_dir)
         stdout.append(verify.stdout)
         stderr.append(verify.stderr)
         exit_code = verify.returncode
@@ -1295,7 +1372,7 @@ def build_promo_video_manifest_probe(work: Path) -> ProbeResult:
     stderr = [completed.stderr]
     exit_code = completed.returncode
     if completed.returncode == 0:
-        verify = run(["shasum", "-a", "256", "-c", "MANIFEST.sha256"], output_dir)
+        verify = verify_sha256_manifest(output_dir)
         stdout.append(verify.stdout)
         stderr.append(verify.stderr)
         exit_code = verify.returncode
@@ -1335,7 +1412,7 @@ def build_mit_demo_route_manifest_probe(work: Path) -> ProbeResult:
     stderr = [completed.stderr]
     exit_code = completed.returncode
     if completed.returncode == 0:
-        verify = run(["shasum", "-a", "256", "-c", "MANIFEST.sha256"], output_dir)
+        verify = verify_sha256_manifest(output_dir)
         stdout.append(verify.stdout)
         stderr.append(verify.stderr)
         exit_code = verify.returncode
@@ -1375,7 +1452,7 @@ def build_mit_deck_outline_manifest_probe(work: Path) -> ProbeResult:
     stderr = [completed.stderr]
     exit_code = completed.returncode
     if completed.returncode == 0:
-        verify = run(["shasum", "-a", "256", "-c", "MANIFEST.sha256"], output_dir)
+        verify = verify_sha256_manifest(output_dir)
         stdout.append(verify.stdout)
         stderr.append(verify.stderr)
         exit_code = verify.returncode
@@ -1416,7 +1493,7 @@ def build_mit_deck_preview_manifest_probe(work: Path) -> ProbeResult:
     stderr = [completed.stderr]
     exit_code = completed.returncode
     if completed.returncode == 0:
-        verify = run(["shasum", "-a", "256", "-c", "MANIFEST.sha256"], output_dir)
+        verify = verify_sha256_manifest(output_dir)
         stdout.append(verify.stdout)
         stderr.append(verify.stderr)
         exit_code = verify.returncode
@@ -1600,6 +1677,7 @@ def benchmark_no_run_probes(work: Path) -> list[Probe | Callable[[], ProbeResult
             "\"mechanized_proof_status\": \"not-mechanized\"",
         ),
         security_domain="not-applicable",
+        timeout=300,
     )
     if manifest.is_file():
         return [probe]
@@ -1623,8 +1701,7 @@ def benchmark_no_run_probes(work: Path) -> list[Probe | Callable[[], ProbeResult
         ): skipped_result(probe, work, reason)
     ]
 
-
-def web_pwa_probes(work: Path) -> list[Probe]:
+def web_pwa_probes(work: Path) -> list[Probe | Callable[[], ProbeResult]]:
     docs_dir = ROOT / "docs"
     offline_smoke = ROOT / "scripts" / "smoke_garnet_web_pwa_offline.mjs"
     local_smoke = ROOT / "scripts" / "smoke_garnet_web_pwa.sh"
@@ -1651,23 +1728,33 @@ def web_pwa_probes(work: Path) -> list[Probe]:
         )
     ]
     if local_smoke.is_file():
-        probes.append(
-            Probe(
-                "smoke-web-pwa-local-readiness",
-                "web/PWA productization",
-                "docs PWA local smoke should validate manifest, cache inventory, offline behavior, and local HTTP fetches",
-                [
-                    str(local_smoke),
-                    "--strict",
-                    "--output-dir",
-                    str(work / "web-pwa-local-readiness"),
-                ],
-                True,
-                ("Garnet Web/PWA readiness smoke: blockers=0 warnings=0",),
-                security_domain="filesystem-localhost",
-                notes="Uses only the checkout docs directory, Node offline handler, and a localhost static server.",
-            )
+        local_command = [
+            str(local_smoke),
+            "--strict",
+            "--output-dir",
+            str(work / "web-pwa-local-readiness"),
+        ]
+        shell = working_posix_shell()
+        local_probe = Probe(
+            "smoke-web-pwa-local-readiness",
+            "web/PWA productization",
+            "docs PWA local smoke should validate manifest, cache inventory, offline behavior, and local HTTP fetches",
+            local_command if os.name != "nt" else ([shell, *local_command] if shell else local_command),
+            True,
+            ("Garnet Web/PWA readiness smoke: blockers=0 warnings=0",),
+            security_domain="filesystem-localhost",
+            notes="Uses only the checkout docs directory, Node offline handler, and a localhost static server.",
         )
+        if os.name == "nt" and shell is None:
+            probes.append(
+                lambda probe=local_probe: skipped_result(
+                    probe,
+                    work,
+                    "POSIX shell smoke skipped on Windows because no working bash-compatible shell is available.",
+                )
+            )
+        else:
+            probes.append(local_probe)
     if browser_smoke.is_file():
         probes.append(
             Probe(
@@ -1700,6 +1787,7 @@ def probe_set(
 ) -> list[Probe | Callable[[], ProbeResult]]:
     examples = ROOT / "examples"
     studio_source = ROOT / "apps" / "garnet-studio-macos" / "Sources" / "GarnetStudio" / "GarnetStudioApp.swift"
+    tauri_studio = ROOT / "apps" / "garnet-studio"
     promo_env = {"GARNET_PROMO_VIDEO_DESKTOP_DIR": str(work / "promo-video-external-artifacts")}
     return [
         Probe(
@@ -1816,7 +1904,7 @@ def probe_set(
             "missing agent source should fail loudly instead of looking like an empty successful check",
             [str(garnet), "check", str(work / "fixtures" / "missing_agent_source.garnet")],
             False,
-            expected_stderr=("failed to read", "No such file or directory"),
+            expected_stderr=("failed to read", "missing_agent_source.garnet"),
             security_domain="filesystem",
         ),
         Probe(
@@ -2408,6 +2496,88 @@ def probe_set(
             True,
             ("studio provider options desktop evidence present",),
             security_domain="privacy",
+        ),
+        Probe(
+            "report-windows-linux-studio-tauri-scaffold",
+            "Windows/Linux Studio shell",
+            "Windows/Linux Studio should use a minimal Tauri v2 scaffold without exposing the shell plugin to webview JS",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "import json\n"
+                    "from pathlib import Path\n"
+                    f"root = Path({str(tauri_studio)!r})\n"
+                    "package = json.loads((root / 'package.json').read_text())\n"
+                    "config = json.loads((root / 'src-tauri' / 'tauri.conf.json').read_text())\n"
+                    "capability = json.loads((root / 'src-tauri' / 'capabilities' / 'default.json').read_text())\n"
+                    "assert package['dependencies'].get('@tauri-apps/api', '').startswith('^2')\n"
+                    "assert '@tauri-apps/plugin-shell' not in package['dependencies']\n"
+                    "assert '@tauri-apps/plugin-opener' not in package['dependencies']\n"
+                    "assert config['app']['withGlobalTauri'] is False\n"
+                    "assert config['bundle']['targets'] == ['nsis']\n"
+                    "assert capability['permissions'] == ['core:default']\n"
+                    "print('windows linux studio tauri scaffold present')\n"
+                ),
+            ],
+            True,
+            ("windows linux studio tauri scaffold present",),
+            security_domain="sandbox",
+        ),
+        Probe(
+            "report-windows-linux-studio-command-contract",
+            "Windows/Linux Studio shell",
+            "Windows/Linux Studio command vectors should preserve converter direction and advisory/source boundaries",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"root = Path({str(tauri_studio)!r})\n"
+                    "backend = (root / 'src-tauri' / 'src' / 'commands.rs').read_text()\n"
+                    "frontend = (root / 'index.html').read_text()\n"
+                    "required = ['cli_health', 'cli_parse', 'cli_check', 'cli_run', 'cli_convert', "
+                    "'advisory_assist_plan', 'advisory_bundle', 'advisory_review', 'advisory_handoff', "
+                    "'objective_pulse', 'agentic_dogfood_matrix']\n"
+                    "missing = [item for item in required if item not in backend]\n"
+                    "assert not missing, missing\n"
+                    "assert 'Rust/Ruby/Python/Go to Garnet' in frontend\n"
+                    "assert 'Convert Garnet source to' not in frontend\n"
+                    "assert '\"--out\".to_string()' in backend\n"
+                    "assert '\"--to\"' not in backend\n"
+                    "assert 'garnet_mit_readiness_status.py' in backend\n"
+                    "print('windows linux studio command contract present')\n"
+                ),
+            ],
+            True,
+            ("windows linux studio command contract present",),
+            security_domain="privacy",
+        ),
+        Probe(
+            "report-windows-linux-studio-evidence-smoke",
+            "Windows/Linux Studio shell",
+            "Windows/Linux Studio should write Desktop dogfood evidence and expose a no-GUI smoke mode for Windows proof",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"root = Path({str(tauri_studio)!r})\n"
+                    "paths = (root / 'src-tauri' / 'src' / 'paths.rs').read_text()\n"
+                    "evidence = (root / 'src-tauri' / 'src' / 'evidence.rs').read_text()\n"
+                    "main = (root / 'src-tauri' / 'src' / 'main.rs').read_text()\n"
+                    "lib = (root / 'src-tauri' / 'src' / 'lib.rs').read_text()\n"
+                    "assert 'garnet-studio-windows-linux' in paths\n"
+                    "assert 'MANIFEST.sha256' in evidence\n"
+                    "assert '\"source_included\": false' in evidence\n"
+                    "assert '\"provider_api_called\": false' in lib\n"
+                    "assert '--studio-smoke' in main\n"
+                    "print('windows linux studio evidence smoke present')\n"
+                ),
+            ],
+            True,
+            ("windows linux studio evidence smoke present",),
+            security_domain="release-integrity",
         ),
         Probe(
             "report-converter-advisory-bundle-current-truth",
@@ -3413,7 +3583,7 @@ def probe_set(
                 "\"design_contract_path\": \"docs/promo/DESIGN.md\"",
                 "\"timeline_registered\": true",
                 "\"tool\": \"hyperframes-html\"",
-                "\"dogfood_probe_count\": 142",
+                "\"dogfood_probe_count\": 145",
                 "\"dogfood_probe_count_matches\": true",
             ),
             security_domain="release-integrity",

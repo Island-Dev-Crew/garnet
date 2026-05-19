@@ -45,8 +45,9 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertEqual("planned", lanes["broad_converter_frontends"].status)
         self.assertIn("windows_linux_distribution", lanes)
         self.assertEqual(
-            "planned-contract", lanes["windows_linux_distribution"].status
+            "active-partial", lanes["windows_linux_distribution"].status
         )
+        self.assertEqual(50.0, lanes["windows_linux_distribution"].completion_percent)
         self.assertLess(
             lanes["windows_linux_distribution"].completion_percent, 100.0
         )
@@ -79,6 +80,8 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("garnet_proof_benchmark_status.py", lanes["proof_empirics"]["evidence"])
         self.assertIn("fresh benchmark measurement run", lanes["proof_empirics"]["blocked_by"])
         self.assertIn("formal RustBelt/Iris/Coq mechanization", lanes["proof_empirics"]["deferred"])
+        self.assertIn("Tauri v2 shell scaffold", lanes["windows_linux_distribution"]["evidence"])
+        self.assertIn("clean Windows VM", " ".join(lanes["windows_linux_distribution"]["blocked_by"]))
 
     def test_rendered_promo_artifacts_update_objective_blockers(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -211,9 +214,11 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         self.assertIn("Objective accounting", site)
         self.assertIn("MIT/productization objective", site)
-        self.assertIn("55.8%", site)
+        self.assertIn("54.2%", site)
+        self.assertNotIn("55.8%", site)
         self.assertNotIn("58.6%", site)
-        self.assertIn("55.8%", status_site)
+        self.assertIn("54.2%", status_site)
+        self.assertNotIn("55.8%", status_site)
         self.assertNotIn("58.6%", status_site)
         self.assertIn("87/87 tracked slices", site)
         self.assertIn("tracked implementation plan is complete", site)

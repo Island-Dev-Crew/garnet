@@ -2,18 +2,24 @@
 import { createServer } from "node:http";
 import { createReadStream, mkdtempSync, writeFileSync } from "node:fs";
 import { access, readFile, rm, stat } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { platform, tmpdir } from "node:os";
 import { basename, extname, join, resolve, sep } from "node:path";
 import { spawn } from "node:child_process";
 
 const ROOT = resolve(new URL("..", import.meta.url).pathname);
-const DEFAULT_CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+function defaultChrome() {
+  if (process.env.CHROME_BIN) return process.env.CHROME_BIN;
+  if (platform() === "win32") {
+    return "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
+  }
+  return "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+}
 
 function parseArgs(argv) {
   const args = {
     docsDir: join(ROOT, "docs"),
     output: join(ROOT, "target", "web-pwa-browser-offline-check.json"),
-    chrome: process.env.CHROME_BIN || DEFAULT_CHROME,
+    chrome: defaultChrome(),
     keepBrowser: false,
   };
   for (let index = 0; index < argv.length; index += 1) {

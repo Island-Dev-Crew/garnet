@@ -34,6 +34,8 @@ jobs:
       - run: python3 scripts/test_check_dogfood_pr_body.py
       - run: python3 scripts/test_check_agent_contracts.py
       - run: python3 scripts/test_github_actions_node24_readiness.py
+      - run: python3 scripts/test_garnet_windows_linux_studio_status.py
+      - run: python3 scripts/test_garnet_windows_linux_studio_shell.py
       - run: python3 scripts/check-agent-contracts.py
 
   # ───────────────────────────────────────────────────────────────────

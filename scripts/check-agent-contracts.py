@@ -80,6 +80,15 @@ CONTRACT_RULES = {
     "garnet-convert/AGENTS.md": {
         "phrases": ["Rust, Ruby, Python, and Go", "sandboxing", "provenance"],
     },
+    "apps/garnet-studio/src-tauri/AGENTS.md": {
+        "phrases": [
+            "Tauri v2",
+            "Windows/Linux Studio",
+            "provider API",
+            "source inclusion",
+            "advisory",
+        ],
+    },
     "examples/AGENTS.md": {
         "phrases": ["MVP demonstration", "production readiness", "parser/interpreter/checker"],
     },

@@ -1,0 +1,22 @@
+[package]
+name = "garnet-studio"
+version = "0.1.0"
+description = "Garnet Studio cross-platform thin desktop shell for the Garnet CLI and advisory pipeline."
+authors = ["Island Development Crew"]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+[lib]
+name = "garnet_studio_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = "0.4"
+dirs = "6"
+sha2 = "0.10"
