@@ -54,6 +54,16 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertTrue(lanes["windows_linux_distribution"].blocked_by)
         self.assertEqual("source-present", lanes["editor_lsp_adoption"].status)
         self.assertEqual(60.0, lanes["editor_lsp_adoption"].completion_percent)
+        # S9: Determinism CI cross-machine lane
+        self.assertIn("determinism_ci_cross_machine", lanes)
+        self.assertEqual("verified", lanes["determinism_ci_cross_machine"].status)
+        self.assertEqual(100.0, lanes["determinism_ci_cross_machine"].completion_percent)
+        self.assertIn(
+            "determinism.yml",
+            lanes["determinism_ci_cross_machine"].evidence,
+        )
+        # Honest deferred list (Windows not in matrix yet, etc.) is non-empty
+        self.assertTrue(lanes["determinism_ci_cross_machine"].deferred)
 
     def test_json_exposes_evidence_and_deferred_boundaries(self) -> None:
         output = subprocess.check_output(

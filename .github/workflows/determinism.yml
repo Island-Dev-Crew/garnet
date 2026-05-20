@@ -1,0 +1,123 @@
+# S9: Determinism CI cross-machine gate.
+#
+# Builds `examples/det_fixture_01.garnet` with `garnet build --deterministic
+# --sign <key>` on both ubuntu-latest and macos-latest, uploads the resulting
+# manifest hash from each, and fails if the two hashes differ. The single
+# Ed25519 keypair used for signing is generated once on `prepare-key` and
+# downloaded by both build jobs so the signature input is identical across
+# OSes; without that step, two independent random keys would always produce
+# divergent signatures and the gate would never pass.
+#
+# Closes Paper VI Contribution 6 verification gap per
+# F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md § S9.
+
+name: Determinism
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: determinism-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prepare-key:
+    name: Generate single signing key for cross-OS build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cargo cache
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: prepare-key-${{ hashFiles('**/Cargo.lock') }}
+      - name: Build garnet
+        run: cargo build -p garnet-cli --release --locked
+      - name: Generate keypair
+        run: ./target/release/garnet keygen det.key
+      - name: Upload key artifact (CI-internal only — never used outside this workflow)
+        uses: actions/upload-artifact@v6
+        with:
+          name: s9-determinism-key
+          path: det.key
+          # Auto-expire fast; this key is purely for the determinism gate.
+          retention-days: 1
+
+  build:
+    name: Deterministic build on ${{ matrix.os }}
+    needs: prepare-key
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cargo cache
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: determinism-${{ matrix.os }}-${{ hashFiles('**/Cargo.lock') }}
+      - name: Build garnet
+        run: cargo build -p garnet-cli --release --locked
+      - name: Download signing key
+        uses: actions/download-artifact@v8
+        with:
+          name: s9-determinism-key
+      - name: Deterministic + signed build
+        run: |
+          ./target/release/garnet build --deterministic --sign det.key examples/det_fixture_01.garnet
+      - name: Hash manifest
+        run: |
+          shasum -a 256 examples/det_fixture_01.garnet.manifest.json | tee manifest-hash-${{ matrix.os }}.txt
+      - name: Upload per-OS manifest hash
+        uses: actions/upload-artifact@v6
+        with:
+          name: determinism-hash-${{ matrix.os }}
+          path: manifest-hash-${{ matrix.os }}.txt
+          retention-days: 7
+
+  compare:
+    name: Cross-OS determinism comparison
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: hashes
+      - name: Diff hashes
+        shell: bash
+        run: |
+          set -eu
+          ubu_file=hashes/determinism-hash-ubuntu-latest/manifest-hash-ubuntu-latest.txt
+          mac_file=hashes/determinism-hash-macos-latest/manifest-hash-macos-latest.txt
+          if [ ! -f "$ubu_file" ] || [ ! -f "$mac_file" ]; then
+            echo "::error::Missing per-OS hash artifact(s); upstream build job did not run."
+            exit 1
+          fi
+          ubu_hash=$(cut -d' ' -f1 "$ubu_file")
+          mac_hash=$(cut -d' ' -f1 "$mac_file")
+          echo "Ubuntu manifest hash: $ubu_hash"
+          echo "macOS  manifest hash: $mac_hash"
+          if [ "$ubu_hash" != "$mac_hash" ]; then
+            echo "::error::Determinism gate FAILED — cross-OS manifest hash diverged."
+            echo "  ubuntu: $ubu_hash"
+            echo "  macos : $mac_hash"
+            exit 1
+          fi
+          echo "Determinism gate PASSED — byte-identical manifest across ubuntu-latest and macos-latest."

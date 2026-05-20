@@ -11,6 +11,17 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S9 (Determinism CI):** `.github/workflows/determinism.yml` builds
+  `examples/det_fixture_01.garnet` with `garnet build --deterministic --sign
+  <key>` on a matrix of ubuntu-latest and macos-latest. A `prepare-key` job
+  generates a single short-lived ed25519 signing key and uploads it as an
+  artifact so both OSs sign with identical key bytes; the `compare` job
+  diffs the resulting per-OS SHA-256 manifest hashes and fails CI with an
+  `::error::` annotation on divergence. Closes Paper VI Contribution 6
+  verification gap. New "Determinism CI cross-machine" lane in
+  `garnet_mit_readiness_status.py` (`verified` 100%); honest deferred list
+  documents that Windows runner and Linux aarch64 are not yet in the
+  cross-OS matrix.
 - **S0 (housekeeping):** `scripts/garnet_conformance_matrix_check.py` — file-existence
   check on the conformance matrix's evidence column. Advisory by default; `--strict`
   opts into CI-fail behavior. Lands the gate before the existing matrix shorthand

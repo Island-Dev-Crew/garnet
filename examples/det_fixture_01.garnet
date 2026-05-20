@@ -1,0 +1,23 @@
+// Determinism CI fixture for S9 (v0.5.0 gate).
+//
+// This file is the smallest non-trivial input we can feed to
+// `garnet build --deterministic --sign <key>` to prove that the
+// manifest output is byte-identical across Linux x86_64 and macOS
+// aarch64 CI runners. Do NOT make this file fancier — its job is to
+// be tiny, fully managed-mode, and stable.
+//
+// If you change this file, expect the cross-OS hash to change. CI
+// uploads the per-OS hashes as artifacts and the compare job fails
+// if Ubuntu and macOS disagree.
+
+@caps()
+def main() {
+  // A short arithmetic loop that doesn't depend on platform behavior.
+  let total = 0
+  let i = 1
+  while i <= 10 {
+    total = total + i
+    i = i + 1
+  }
+  total
+}
