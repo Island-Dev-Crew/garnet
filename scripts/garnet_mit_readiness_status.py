@@ -308,6 +308,51 @@ def render_markdown(status: MitReadinessStatus) -> str:
     return "\n".join(lines) + "\n"
 
 
+DEFAULT_BASELINE = (
+    ROOT / "F_Project_Management" / "GARNET_v0_5_READINESS_BASELINE.json"
+)
+
+
+def _baseline_lanes(baseline: dict) -> dict[str, float]:
+    """Extract `id -> completion_percent` from a baseline JSON snapshot.
+
+    The baseline is the output of this same script's --format json invocation,
+    captured at a known-good point and committed to the repo. Lanes not present
+    in the baseline cannot regress (the gate is one-directional).
+    """
+    return {lane["id"]: float(lane["completion_percent"]) for lane in baseline.get("lanes", [])}
+
+
+def check_no_regression(
+    status: MitReadinessStatus, baseline_path: Path
+) -> tuple[list[str], list[str]]:
+    """Return (regressions, missing_lanes).
+
+    A regression is a lane whose live percent dropped below the baseline.
+    A missing_lane is a lane present in baseline but absent from live output
+    (a slice was deleted or renamed without updating the baseline).
+    """
+    if not baseline_path.exists():
+        return (
+            [],
+            [f"baseline missing at {baseline_path}; run with --format json > {baseline_path} to seed."],
+        )
+    baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
+    baseline_pct = _baseline_lanes(baseline)
+    live_pct = {lane.id: lane.completion_percent for lane in status.lanes}
+    regressions: list[str] = []
+    missing: list[str] = []
+    for lane_id, baseline_value in baseline_pct.items():
+        if lane_id not in live_pct:
+            missing.append(lane_id)
+            continue
+        if live_pct[lane_id] + 1e-9 < baseline_value:
+            regressions.append(
+                f"{lane_id}: live {live_pct[lane_id]:.1f}% < baseline {baseline_value:.1f}%"
+            )
+    return regressions, missing
+
+
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -315,6 +360,23 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         choices=("markdown", "json"),
         default="markdown",
         help="output format",
+    )
+    parser.add_argument(
+        "--check-no-regression",
+        action="store_true",
+        help=(
+            "Exit 1 if any lane in the committed baseline has regressed in the "
+            "current run. Used by CI to prevent silent readiness drift across "
+            "PRs. Baseline path defaults to "
+            f"{DEFAULT_BASELINE.relative_to(ROOT)} and can be overridden with "
+            "--baseline."
+        ),
+    )
+    parser.add_argument(
+        "--baseline",
+        type=Path,
+        default=DEFAULT_BASELINE,
+        help="Path to the readiness baseline JSON (for --check-no-regression).",
     )
     return parser.parse_args(argv)
 
@@ -326,6 +388,16 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(asdict(status), indent=2))
     else:
         print(render_markdown(status), end="")
+    if args.check_no_regression:
+        regressions, missing = check_no_regression(status, args.baseline)
+        if regressions or missing:
+            print("", file=sys.stderr)
+            print("Readiness regression detected vs baseline:", file=sys.stderr)
+            for r in regressions:
+                print(f"  - regressed: {r}", file=sys.stderr)
+            for m in missing:
+                print(f"  - missing lane (baseline-only): {m}", file=sys.stderr)
+            return 1
     return 0
 
 
