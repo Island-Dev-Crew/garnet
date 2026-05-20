@@ -11,6 +11,15 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **v0.5 release-gate evidence:** post-merge public installer source-fallback
+  proof is recorded in
+  `/Users/idc2.0/Desktop/dogfood/garnet-v0-5-rc-merged-20260520T121820Z`, and
+  Mac-local Cursor/VSIX diagnostic proof is recorded in
+  `/Users/idc2.0/Desktop/dogfood/garnet-v0-5-editor-gate-20260520T122611Z`.
+  The latter includes the local `garnet-0.5.0-lsp-mvp.vsix`, installed
+  `island-dev-crew.garnet@0.5.0` extension evidence, a screenshot showing
+  `1 problem in this file` / `Errors: 1`, and protocol smoke JSON for
+  diagnostics, hover, and go-to-definition.
 - **S8 (Signed hot-reload BLAKE3 demo):** `examples/mvp_11_signed_hotreload.garnet`
   and `examples/mvp_11_signed_hotreload_mismatch.garnet` are runnable
   managed-mode demonstrations of the BLAKE3 fingerprint check that drives the
@@ -93,8 +102,12 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 - Release-candidate preflight retargets the canonical workspace/CLI version and
   installer defaults to `0.5.0`, but it is not a tag and not proof that release
   assets or a published VSIX exist. The latest tagged release remains `v0.4.2`
-  until the clean-machine public installer and editor-extension gate is
-  recorded.
+  until release-backed packages plus published VSIX or clean standalone VSCode
+  evidence are recorded.
+- The current Mac has Cursor as `/usr/local/bin/code`, not standalone VS Code.
+  A fresh isolated Cursor profile installed the Garnet extension but stopped at
+  Cursor's login screen before editor proof. The Mac-local Cursor screenshot is
+  useful diagnostic evidence, not the final published/clean VSCode gate.
 - The S1 LSP slice is source-present until published-extension evidence and
   full manual VSCode hover/go-to-definition screenshots are attached to later
   review/release evidence. Safe-mode hover, workspace symbols, rename, and

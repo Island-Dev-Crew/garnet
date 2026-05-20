@@ -93,6 +93,11 @@ machine. The current open item is not code completion; it is release proof:
 - install the Garnet VSIX or published extension artifact;
 - confirm diagnostics on an injected syntax error.
 
-Until that proof exists, v0.5.0 is merge-ready in substance but not tag-ready in
-release discipline. That is the right shape for Garnet: substance first, public
-claim second.
+Post-merge evidence now proves the public installer source-fallback path on this
+Mac with a configured Rust toolchain, and Mac-local Cursor evidence proves the
+VSIX can surface diagnostics on an injected syntax error. That is useful
+release-candidate evidence, but it is not the same as release-backed packages,
+published VSIX evidence, or clean standalone VSCode proof. Until that proof
+exists, v0.5.0 is merge-ready in substance but not tag-ready in release
+discipline. That is the right shape for Garnet: substance first, public claim
+second.
