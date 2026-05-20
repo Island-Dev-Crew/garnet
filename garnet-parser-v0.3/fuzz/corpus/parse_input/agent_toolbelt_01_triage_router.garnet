@@ -1,0 +1,30 @@
+# agent_toolbelt_01_triage_router.garnet
+#
+# Runnable agent-toolbelt smoke: classify incoming work across build,
+# security, release, and documentation lanes, then produce a deterministic
+# priority score an agent could use before choosing tools.
+
+def lane_weight(lane) {
+  match lane {
+    "build" => 40,
+    "security" => 25,
+    "release" => 20,
+    "docs" => 6,
+    _ => 1,
+  }
+}
+
+def route_score(lanes) {
+  let mut score = 0
+  for lane in lanes {
+    score += lane_weight(lane)
+  }
+  score
+}
+
+@caps()
+def main() {
+  let score = route_score(["build", "security", "release", "docs"])
+  println("agent toolbelt triage score:", score)
+  score
+}

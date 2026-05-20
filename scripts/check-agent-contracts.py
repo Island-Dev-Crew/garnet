@@ -96,6 +96,9 @@ CONTRACT_RULES = {
             "Benchmark evidence",
         ],
     },
+    "garnet-parser-v0.3/fuzz/AGENTS.md": {
+        "phrases": ["cargo-fuzz", "parse_input", "ParseBudget"],
+    },
     "apps/garnet-studio/src-tauri/AGENTS.md": {
         "phrases": [
             "Tauri v2",

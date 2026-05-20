@@ -347,6 +347,36 @@ def read_status() -> MitReadinessStatus:
                 "Byte-for-byte binary determinism once a native backend exists",
             ],
         ),
+        ObjectiveLane(
+            id="parser_fuzz_harness",
+            label="Parser fuzz harness (nightly)",
+            status="verified"
+            if (ROOT / ".github/workflows/fuzz-nightly.yml").exists()
+            and (ROOT / "garnet-parser-v0.3/fuzz/Cargo.toml").exists()
+            and (ROOT / "garnet-parser-v0.3/fuzz/fuzz_targets/parse_input.rs").exists()
+            else "planned",
+            completion_percent=100.0
+            if (ROOT / ".github/workflows/fuzz-nightly.yml").exists()
+            and (ROOT / "garnet-parser-v0.3/fuzz/Cargo.toml").exists()
+            and (ROOT / "garnet-parser-v0.3/fuzz/fuzz_targets/parse_input.rs").exists()
+            else 0.0,
+            evidence=(
+                "`.github/workflows/fuzz-nightly.yml` runs `cargo fuzz run parse_input` "
+                "for ≥ 1 hour on a nightly schedule against the `garnet-parser-v0.3/fuzz/` "
+                "cargo-fuzz sub-workspace. The `parse_input` target wraps every call in a "
+                "strict `ParseBudget` (4096-byte source cap, 1024-token cap, 32-depth cap, "
+                "512-byte literal cap), so neither CPU nor memory can be unbounded. Seed "
+                "corpus is populated from canonical `examples/*.garnet` files; crashes "
+                "upload as artifacts for triage. Closes the S5 surface gap."
+            ),
+            blocked_by=[],
+            deferred=[
+                "Interpreter and checker fuzz targets",
+                "Differential fuzzing against the archived v0.2 parser",
+                "OSS-Fuzz upstream integration",
+                "Coverage-guided corpus minimization (currently raw seed only)",
+            ],
+        ),
     ]
 
     percent = round(sum(_lane_score(lane) for lane in lanes) / len(lanes) * 100.0, 1)

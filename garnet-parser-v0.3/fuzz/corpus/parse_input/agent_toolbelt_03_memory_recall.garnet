@@ -1,0 +1,38 @@
+# agent_toolbelt_03_memory_recall.garnet
+#
+# Runnable agent-toolbelt smoke: model a small memory-recall ranking step for
+# prior decisions, direct evidence, and fresh verification.
+
+def memory_weight(kind) {
+  match kind {
+    "episodic" => 14,
+    "semantic" => 16,
+    "procedural" => 18,
+    _ => 2,
+  }
+}
+
+def recency_bonus(age) {
+  if age < 2 {
+    10
+  } elsif age < 5 {
+    6
+  } else {
+    1
+  }
+}
+
+def recall_score(kind, age, verified) {
+  let mut score = memory_weight(kind) + recency_bonus(age)
+  if verified {
+    score += 8
+  }
+  score
+}
+
+@caps()
+def main() {
+  let score = recall_score("episodic", 1, true) + recall_score("semantic", 4, true) + recall_score("procedural", 7, false)
+  println("agent toolbelt memory recall score:", score)
+  score
+}

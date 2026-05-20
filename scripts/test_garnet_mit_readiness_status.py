@@ -64,6 +64,13 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         )
         # Honest deferred list (Windows not in matrix yet, etc.) is non-empty
         self.assertTrue(lanes["determinism_ci_cross_machine"].deferred)
+        # S5: Parser fuzz harness lane
+        self.assertIn("parser_fuzz_harness", lanes)
+        self.assertEqual("verified", lanes["parser_fuzz_harness"].status)
+        self.assertEqual(100.0, lanes["parser_fuzz_harness"].completion_percent)
+        self.assertIn("parse_input", lanes["parser_fuzz_harness"].evidence)
+        self.assertIn("ParseBudget", lanes["parser_fuzz_harness"].evidence)
+        self.assertTrue(lanes["parser_fuzz_harness"].deferred)
 
     def test_json_exposes_evidence_and_deferred_boundaries(self) -> None:
         output = subprocess.check_output(
