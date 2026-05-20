@@ -7,7 +7,7 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated-honesty record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
-## [Unreleased] — v0.5.0 in flight
+## [0.5.0] — 2026-05-20
 
 ### Added
 
