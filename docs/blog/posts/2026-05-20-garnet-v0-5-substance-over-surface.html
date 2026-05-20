@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Garnet v0.5: substance over surface — Garnet Blog</title>
-<meta name="description" content="v0.5.0 closes the six blocking slices with dogfood evidence. MIT pulse moves 55.8% → 67.9%, measured at finer grain. Research-grade prototype boundary intact.">
+<meta name="description" content="v0.5.0 closes the six blocking slices with dogfood evidence. Current MIT pulse is 71.3% across 19 lanes, measured at finer grain. Research-grade prototype boundary intact.">
 <meta name="theme-color" content="#9C2B2E">
 <link rel="canonical" href="https://garnet-lang.org/blog/posts/2026-05-20-garnet-v0-5-substance-over-surface.html">
 <meta property="og:title" content="Garnet v0.5: substance over surface">
-<meta property="og:description" content="Six blocking slices merged with dogfood evidence. MIT pulse 67.9%/17 lanes. Research-grade boundary intact.">
+<meta property="og:description" content="Six blocking slices merged with dogfood evidence. Current MIT pulse 71.3%/19 lanes. Research-grade boundary intact.">
 <meta property="og:type" content="article">
 <meta property="article:published_time" content="2026-05-20T18:00:00-05:00">
 <style>
@@ -67,7 +67,7 @@
 
   <h2>The number moved up, but the caveat stayed</h2>
 
-  <p>After these merges, <code>scripts/garnet_mit_readiness_status.py</code> reports <strong>67.9% across 17 productization lanes</strong>. That is higher and more granular than the v0.4.2 productization pulse, but it is still an <code>active-partial</code> status. The blocked and deferred lanes remain visible: Developer ID notarization, clean-machine Gatekeeper proof, Windows/Linux runtime proof, mobile distribution, broad converter frontends, LLM assist, proof/empirics, and human review gates.</p>
+  <p>After v0.5 plus the S4 and S6 follow-through, <code>scripts/garnet_mit_readiness_status.py</code> reports <strong>71.3% across 19 productization lanes</strong>. That is higher and more granular than the v0.4.2 productization pulse, but it is still an <code>active-partial</code> status. The blocked and deferred lanes remain visible: Developer ID notarization, clean-machine Gatekeeper proof, Windows/Linux runtime proof, mobile distribution, broad converter frontends, LLM assist, proof/empirics, and human review gates.</p>
 
   <p>Paper VI's scorecard also stays explicit:</p>
 
@@ -98,7 +98,7 @@
 
   <h2>What v0.5.1 closes next</h2>
 
-  <p>S3 (<code>garnet add</code> + manifest spec), S4 (<code>garnet fmt</code>), S6 (memory eviction policy benchmarks), and S7 (actor OS-thread bridge) remain on the v0.5.1 lane in the slice contracts. Each one has a verification block already written; the work is implementation, not redefinition.</p>
+  <p>S3 (<code>garnet add</code> + manifest spec) and S7 (actor OS-thread bridge) remain on the v0.5.1 lane in the slice contracts. S4 has landed as an idempotent whitespace-normalizing formatter baseline, and S6 has landed as measured memory-eviction policy benchmarks. Neither should be overclaimed: the formatter is not yet a trivia-preserving pretty-printer, and S6 is not the production allocator path.</p>
 
   <p>If you want to follow along between releases, the <a href="https://github.com/Island-Dev-Crew/garnet/commits/main">commit history</a> is the raw pulse; this blog will carry the narrative ones at a monthly cadence; and <a href="https://github.com/Island-Dev-Crew/garnet/discussions">Discussions</a> is the room where the design conversations happen out loud.</p>
 

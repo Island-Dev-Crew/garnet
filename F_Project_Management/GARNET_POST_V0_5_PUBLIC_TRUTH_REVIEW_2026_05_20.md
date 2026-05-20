@@ -16,8 +16,8 @@ honesty.
   package-registry shape.
 - The public site links Discussions, the getting-started walkthrough, the
   planned playground stub, promo-video assets, and current status evidence.
-- The MIT/productization reporter now reports 69.7% across 18 lanes on the
-  current Mac evidence set after S4, while keeping the tracked-slice ledger
+- The MIT/productization reporter now reports 71.3% across 19 lanes on the
+  current evidence set after S4 and S6, while keeping the tracked-slice ledger
   separate.
 
 ## Fixes Applied In This Pass
@@ -27,8 +27,8 @@ honesty.
 - Added a current `v0.5.0` release-feed entry and a dedicated blog Atom feed.
 - Added `docs/stdlib.html` so the site has a first reference page for the
   capability-tagged primitive registry.
-- Updated the front-door metric from 67.9% to 69.7% and added the S4 formatter
-  baseline to status copy.
+- Updated the front-door metric from 67.9% to 71.3% and added the S4 formatter
+  plus S6 memory-eviction benchmark baselines to status copy.
 - Added `stdlib.html` and `playground.html` to the sitemap.
 - Corrected the S4 dogfood contract to use `garnet fmt --stdout`.
 
@@ -41,8 +41,9 @@ honesty.
   exists.
 - Add a deeper tutorial page after the getting-started happy path: capabilities,
   deterministic build, and signed hot-reload in one small project.
-- Keep S3 (`garnet add`) and S6/S7 in v0.5.1 scope unless a separate PR proves
-  their dogfood blocks.
+- Keep S3 (`garnet add`) and S7 in v0.5.1 scope unless a separate PR proves
+  their dogfood blocks; S6 is now merged as a measured policy-benchmark lane,
+  not a production allocator claim.
 - Publish Marketplace/OpenVSX only after account/authorship decisions are
   complete and the release-backed VSIX proof is repeated from the public asset.
 - Do not create Discord/social accounts or post externally without maintainer
