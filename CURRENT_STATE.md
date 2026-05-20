@@ -17,7 +17,10 @@ research corpus material, generated artifacts, and local scratch.
 - **Current implementation-vs-spec status:**
   `C_Language_Specification/GARNET_v0_4_2_Conformance_Matrix.md`.
 - **Current runnable app evidence:** `examples/mvp_01_*.garnet` through
-  `examples/mvp_10_*.garnet`; each must parse, check, and run.
+  `examples/mvp_11_*.garnet`; each must parse and check. Positive examples must
+  run successfully; `examples/mvp_11_signed_hotreload_mismatch.garnet` is an
+  intentional expected-failure fixture and must exit nonzero with
+  `BLAKE3 fingerprint mismatch`.
 - **Current first-user templates:** `garnet new --template cli`,
   `garnet new --template web-api`, and
   `garnet new --template agent-orchestrator`; each must test and run.
@@ -40,7 +43,15 @@ For the canonical app corpus:
 for file in examples/mvp_*.garnet; do
   target/debug/garnet parse "$file"
   target/debug/garnet check "$file"
-  target/debug/garnet run "$file"
+  if [[ "$file" == *"_mismatch.garnet" ]]; then
+    if target/debug/garnet run "$file" 2>/tmp/garnet-mismatch.err; then
+      echo "expected mismatch failure for $file" >&2
+      exit 1
+    fi
+    grep -q "BLAKE3 fingerprint mismatch" /tmp/garnet-mismatch.err
+  else
+    target/debug/garnet run "$file"
+  fi
 done
 ```
 
@@ -99,7 +110,7 @@ done
 | `F_Project_Management/GARNET_WINDOWS_LINUX_STUDIO_MVP_ARCHITECTURE_2026_05_17.md` | Windows/Linux Studio MVP architecture | slice 1 cross-platform shell architecture and command/evidence contract; keeps Tauri as a candidate dependency rather than a completed shell claim |
 | `F_Project_Management/GARNET_APPLE_DISTRIBUTION_WALKTHROUGH_2026_05_16.md` | Apple distribution walkthrough | current operator walkthrough for Apple Developer Program enrollment, Developer ID certificates, notary profile setup, and Garnet notarization evidence; not completed enrollment evidence |
 | `docs/status.html` | public readiness status page | current public status page that carries detailed readiness caveats so `docs/index.html` can stay landing-page focused |
-| `examples/mvp_*.garnet` | canonical app-level smokes | must parse/check/run |
+| `examples/mvp_*.garnet` | canonical app-level smokes | must parse/check; positive examples must run; S8 `*_mismatch.garnet` examples must fail with the expected diagnostic |
 | `examples/{multi_agent_builder,agentic_log_analyzer,safe_io_layer}.garnet` | design-scale examples | `multi_agent_builder`, `agentic_log_analyzer`, and `safe_io_layer` are covered by active agentic matrix probes |
 | `A_Research_Papers/` | academic research corpus | normative/research context |
 | `B_Four_Model_Consensus/` | consensus/adjudication docs | research context |

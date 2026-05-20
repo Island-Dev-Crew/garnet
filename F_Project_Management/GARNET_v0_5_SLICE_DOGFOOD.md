@@ -245,7 +245,13 @@ garnet run examples/mvp_11_signed_hotreload_mismatch.garnet
 
 **Closes:** Paper VI Contribution 5 surface gap (the implementation worked; the demo didn't exist).
 
-**State:** not-started.
+**State as of 2026-05-20:** merged via PR #193. Local Mac dogfood proves the
+success fixture exits 0 with `reloaded successfully` and the mismatch fixture
+exits 1 with `BLAKE3 fingerprint mismatch`; CI's canonical MVP examples gate
+now treats `*_mismatch.garnet` as an expected-failure fixture instead of a
+positive example. Honest boundary: this is a BLAKE3 program-level demo for the
+existing Rust-runtime `actor.reload_signed` path, not managed-mode
+`actor.reload_signed` syntax or full Ed25519 payload verification.
 
 ---
 
@@ -267,7 +273,11 @@ sha256sum examples/det_fixture_01.garnet.manifest.json > /tmp/hash-$RUNNER_OS.tx
 
 **Closes:** Paper VI Contribution 6 verification gap.
 
-**State:** not-started.
+**State as of 2026-05-20:** merged via PR #187. The GitHub Actions
+determinism workflow is active and compares ubuntu-latest vs macos-latest
+manifest hashes produced by `garnet build --deterministic --sign` with a shared
+short-lived signing key. Honest boundary: Windows, Linux aarch64, multi-key
+rotation, and native-backend binary determinism are deferred.
 
 ---
 
@@ -289,7 +299,10 @@ cargo test -p garnet-check-v0.3 --test suggest_corpus
 
 **Closes:** Paper VI Contribution 7 surface (rules-based advisory tier; LLM tier remains pending-infra).
 
-**State:** not-started.
+**State as of 2026-05-20:** merged via PR #191. The rules-based advisory tier
+is active through `garnet check --suggest` and the `compiler suggested:` output
+contract; the test corpus proves at least three deterministic patterns. Honest
+boundary: provider-backed or LLM-derived suggestions remain pending-infra.
 
 ---
 
@@ -297,10 +310,12 @@ cargo test -p garnet-check-v0.3 --test suggest_corpus
 
 Tag v0.5.0 only when all of:
 
-- [ ] S1, S2, S5, S8, S9, S10 in `merged` state
-- [ ] `scripts/garnet_mit_readiness_status.py` reports a higher AND more granular %
-- [ ] `CHANGELOG.md` updated with each merged slice
-- [ ] `docs/blog/2026-Qx-garnet-v0-5.md` drafted using the substance-over-surface framing
+- [x] S1, S2, S5, S8, S9, S10 in `merged` state
+- [x] `scripts/garnet_mit_readiness_status.py` reports a higher AND more granular %
+      (`67.9%` across 17 lanes after S8, up from the v0.4.2/productization
+      pulse while preserving blocked/deferred lanes)
+- [x] `CHANGELOG.md` updated with each merged slice
+- [x] `docs/blog/2026-Qx-garnet-v0-5.md` drafted using the substance-over-surface framing
 - [ ] Clean-machine reproduction passes:
 
 ```bash
@@ -312,6 +327,15 @@ Tag v0.5.0 only when all of:
   code --install-extension <published-garnet-vsix>
   # Confirm: VSCode shows diagnostics on injected syntax error
 ```
+
+Current state as of 2026-05-20: this remains the open release gate. Do not tag
+v0.5.0 until the installer path and editor-extension proof are reproduced on a
+clean machine and the resulting evidence is recorded. Partial Mac-side source
+reproduction from the public installer with `GARNET_INSTALL_MODE=source` and
+`GARNET_SOURCE_REF=main` passed `garnet new --template cli`, `garnet test`, and
+`garnet run`, but this is not release-backed v0.5.0 proof because the public
+installer still defaults to v0.4.2 and no published Garnet VSIX evidence is
+recorded.
 
 
 
