@@ -316,7 +316,7 @@ Tag v0.5.0 only when all of:
       pulse while preserving blocked/deferred lanes)
 - [x] `CHANGELOG.md` updated with each merged slice
 - [x] `docs/blog/2026-Qx-garnet-v0-5.md` drafted using the substance-over-surface framing
-- [ ] Clean-machine reproduction passes:
+- [x] Pre-tag clean-machine/source-fallback and local release-asset reproduction passes:
 
 ```bash
   rm -rf /tmp/clean && mkdir /tmp/clean && cd /tmp/clean
@@ -328,9 +328,11 @@ Tag v0.5.0 only when all of:
   # Confirm: VSCode shows diagnostics on injected syntax error
 ```
 
-Current state as of 2026-05-20: this remains the open release gate. The
+Current state as of 2026-05-20: the pre-tag release gate is satisfied and the
+`v0.5.0` tag is authorized, but release completion is not yet proven. The
 release-candidate preflight retargets the canonical package version and public
-installer default to v0.5.0, but that is not a tag and not release-asset proof.
+installer default to v0.5.0, but source-fallback proof is not release-asset
+publication proof.
 Post-merge public installer source-fallback proof is recorded in
 `/Users/idc2.0/Desktop/dogfood/garnet-v0-5-rc-merged-20260520T121820Z`:
 `curl -fsSL https://garnet-lang.org/install.sh` installed `garnet 0.5.0` into
@@ -377,11 +379,23 @@ the `garnet-0.5.0-aarch64-apple-darwin.tar.gz` tarball verified against
 `SHA256SUMS`, installed into an isolated prefix, reported `garnet 0.5.0`, then
 `garnet new --template cli`, `garnet test`, and `garnet run` passed.
 
-Do not tag v0.5.0 yet. The current Mac has Cursor as `/usr/local/bin/code`, but
-standalone VS Code diagnostic proof now exists through the isolated `/tmp`
-downloaded app. Release-backed package proof still requires the tag/release
-assets to exist and the release-only smoke to pass. Marketplace/OpenVSX
-publication is not claimed by this gate.
+Tag authorization is ready after PR #200. The current Mac has Cursor as
+`/usr/local/bin/code`, but standalone VS Code diagnostic proof now exists
+through the isolated `/tmp` downloaded app. Release-backed package proof still
+requires the tag workflow to publish assets and the release-only smoke to pass.
+Marketplace/OpenVSX publication is not claimed by this gate.
+
+Post-tag validation required before closing the v0.5.0 goal:
+
+- [ ] `v0.5.0` tag workflow publishes Linux packages, macOS CLI tarballs,
+      `SHA256SUMS`, and host-native VSIX assets.
+- [ ] `scripts/verify_org_release_smoke.sh` passes against
+      `Island-Dev-Crew/garnet` release `v0.5.0` without source fallback.
+- [ ] Clean release install runs `garnet new --template cli`, `garnet test`,
+      and `garnet run src/main.garnet`.
+- [ ] Release-backed `garnet-0.5.0-lsp-mvp-darwin-arm64.vsix` installs into
+      standalone VS Code/Cursor and shows diagnostics on an injected syntax
+      error.
 
 
 

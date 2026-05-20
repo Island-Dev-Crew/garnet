@@ -176,10 +176,11 @@ highest-leverage next milestones are:
    the `garnet-0.5.0-aarch64-apple-darwin.tar.gz` tarball verified against
    `SHA256SUMS`, installed into an isolated prefix, reported `garnet 0.5.0`,
    then `garnet new --template cli`, `garnet test`, and `garnet run` passed.
-   Do not tag v0.5.0 until those release-backed assets exist and the
-   clean-machine smoke passes; Marketplace/OpenVSX publication, signed macOS
-   `.pkg`, Windows MSI, and live target-machine runtime proof remain separate
-   authority lanes.
+   The pre-tag gate is now tag-authorized, but release completion still depends
+   on the `v0.5.0` tag workflow publishing the organization release assets and
+   `scripts/verify_org_release_smoke.sh` passing without source fallback.
+   Marketplace/OpenVSX publication, signed macOS `.pkg`, Windows MSI, and live
+   target-machine runtime proof remain separate authority lanes.
 5. **Garnet Studio app and web distribution:** build polished local product
    surfaces that reduce terminal-first friction without overstating release
    authority. The macOS workbench opens like a normal app, bundles the Garnet

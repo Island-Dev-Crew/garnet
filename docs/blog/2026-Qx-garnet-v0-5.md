@@ -110,8 +110,8 @@ the public installer's Mac fallback path and folds them into the same
 `SHA256SUMS` manifest as the Linux packages. Local M5 evidence proves the
 tarball shape through the installer in release-only mode from a file-backed
 release directory, but that still is not Marketplace/OpenVSX publication, not a
-signed/notarized `.pkg`, and not a v0.5.0 tag. Until the release-backed
-installer packages and VSIX assets exist on the organization release and the
-clean-machine smoke passes, v0.5.0 is merge-ready in substance but not tag-ready
-in release discipline. That is the right shape for Garnet: substance first,
-public claim second.
+signed/notarized `.pkg`, and not itself an organization release. The pre-tag
+gate is ready; the final public claim waits for the `v0.5.0` tag workflow to
+publish release-backed installer packages and VSIX assets, then for the
+release-only smoke to pass against those assets. That is the right shape for
+Garnet: substance first, public claim second.
