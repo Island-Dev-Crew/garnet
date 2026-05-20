@@ -7,6 +7,21 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated-honesty record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
+## [Unreleased] — v0.5.1 in flight
+
+### Added
+
+- **S4 (Formatter idempotent baseline):** `garnet-cli/tests/fmt_idempotency.rs`
+  proves that two passes of `garnet fmt --stdout` over every canonical
+  `examples/{mvp_,det_}*.garnet` produce byte-identical output, and that
+  three runs on the same input produce identical bytes. This makes the
+  S4 contract goal (deterministic, idempotent source formatter) workspace-
+  test-enforced. New "Formatter idempotent baseline" lane in
+  `garnet_mit_readiness_status.py` (verified 100%). Honest deferred list
+  documents that AST-driven semantic formatting, comment-preserving
+  round-trip, and workspace-level fmt are NOT in scope until the parser
+  grows a trivia-preserving CST.
+
 ## [0.5.0] — 2026-05-20
 
 ### Added

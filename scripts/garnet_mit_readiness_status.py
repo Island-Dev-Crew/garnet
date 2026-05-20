@@ -458,6 +458,36 @@ def read_status() -> MitReadinessStatus:
                 "validated only in the Rust runtime today)",
             ],
         ),
+        ObjectiveLane(
+            id="formatter_idempotent_baseline",
+            label="Formatter idempotent baseline",
+            status="verified"
+            if (ROOT / "garnet-cli/src/cmd/fmt.rs").exists()
+            and (ROOT / "garnet-cli/tests/fmt_idempotency.rs").exists()
+            else "planned",
+            completion_percent=100.0
+            if (ROOT / "garnet-cli/src/cmd/fmt.rs").exists()
+            and (ROOT / "garnet-cli/tests/fmt_idempotency.rs").exists()
+            else 0.0,
+            evidence=(
+                "`garnet-cli/src/cmd/fmt.rs` normalizes trailing whitespace, "
+                "CRLF/CR line endings, and final newline to a single LF, then "
+                "re-parses to refuse any change that would break the source. "
+                "`garnet-cli/tests/fmt_idempotency.rs` proves the canonical "
+                "`examples/{mvp_,det_}*.garnet` corpus is byte-identical after "
+                "two passes of `garnet fmt --stdout` and that three runs on the "
+                "same input produce identical bytes. Satisfies the S4 contract "
+                "goal (deterministic, idempotent source formatter)."
+            ),
+            blocked_by=[],
+            deferred=[
+                "AST-driven semantic formatting (alignment, spacing rules, "
+                "import sorting) — gates on a trivia-preserving CST in the parser",
+                "Comment-preserving round-trip (today the parser drops trivia)",
+                "Pretty-printer for malformed input recovery",
+                "Workspace-level `garnet fmt --workspace`",
+            ],
+        ),
     ]
 
     percent = round(sum(_lane_score(lane) for lane in lanes) / len(lanes) * 100.0, 1)

@@ -1,7 +1,7 @@
 {
   "source": "/Users/IDC2.5/Desktop/Garnet",
   "overall_status": "active-partial",
-  "completion_percent": 65.3,
+  "completion_percent": 67.2,
   "current_truth": [
     "tracked implementation plan is complete",
     "goal remains active",
@@ -107,11 +107,11 @@
       "label": "Editor/LSP adoption",
       "status": "source-present",
       "completion_percent": 60.0,
-      "evidence": "`garnet-lsp/` and `editors/vscode/` provide the S1 source surface for diagnostics, hover, and basic go-to-definition. `scripts/smoke_garnet_lsp_protocol.py` proves those paths over stdio, and Desktop evidence records Cursor diagnostic plus clean-open screenshots. Published VSIX and the full manual screenshot trio remain review hardening work.",
+      "evidence": "`garnet-lsp/` and `editors/vscode/` provide the S1 source surface for diagnostics, hover, and basic go-to-definition. `scripts/smoke_garnet_lsp_protocol.py` proves those paths over stdio, Desktop evidence records Cursor diagnostics, and /Users/idc2.0/Desktop/dogfood/garnet-v0-5-standalone-vscode-gate-20260520T130303Z records clean standalone VS Code diagnostic proof with a bundled-server VSIX. `scripts/package_garnet_vscode_extension.sh` and `.github/workflows/vscode-extension.yml` publish host-native release-backed VSIX assets on the `v0.5.0` tag; /Users/idc2.0/Desktop/dogfood/garnet-vscode-release-assets-20260520T133747Z records fresh local darwin-arm64 release-asset-ready evidence, and /Users/idc2.0/Desktop/dogfood/garnet-v0-5-release-validation-20260520T142443Z records release-backed standalone VS Code diagnostic proof from the published darwin-arm64 VSIX. Marketplace/OpenVSX publication and the full manual screenshot trio remain review hardening work.",
       "blocked_by": [],
       "deferred": [
         "manual VSCode hover/go-to-def screenshot confirmation",
-        "published VSIX",
+        "Marketplace/OpenVSX publication",
         "safe-mode hover",
         "workspace symbols",
         "rename",
@@ -207,15 +207,17 @@
       "label": "Proof and empirical validation",
       "status": "active-partial",
       "completion_percent": 45.0,
-      "evidence": "`scripts/garnet_proof_benchmark_status.py` inventories the current 4 Criterion benchmark harnesses plus proof/study protocols, including the S2 VM parse/compile/execute harness, while reporting measurements, mechanized proof, and empirical study execution as unclaimed.",
+      "evidence": "`scripts/garnet_proof_benchmark_status.py` inventories the current 4 Criterion benchmark harnesses, 1 fuzz harness, plus proof/study protocols, including the S2 VM parse/compile/execute harness, while reporting measurements, mechanized proof, and empirical study execution as unclaimed and long-running fuzz hours as pending.",
       "blocked_by": [
         "mechanized proof is not present",
         "external user study data",
-        "fresh benchmark measurement run"
+        "fresh benchmark measurement run",
+        "nightly fuzz hours require GitHub Actions evidence after merge"
       ],
       "deferred": [
         "formal RustBelt/Iris/Coq mechanization",
         "benchmark measurement run",
+        "accumulated nightly fuzz hours",
         "native backend proof",
         "external participant study execution"
       ]
@@ -239,7 +241,7 @@
       "label": "Parser fuzz harness (nightly)",
       "status": "verified",
       "completion_percent": 100.0,
-      "evidence": "`.github/workflows/fuzz-nightly.yml` runs `cargo fuzz run parse_input` for \u2265 1 hour on a nightly schedule against the `garnet-parser-v0.3/fuzz/` cargo-fuzz sub-workspace. The `parse_input` target wraps every call in a strict `ParseBudget` (4096-byte source cap, 1024-token cap, 32-depth cap, 512-byte literal cap), so neither CPU nor memory can be unbounded. Seed corpus is populated from canonical `examples/*.garnet` files; crashes upload as artifacts for triage. Closes the S5 surface gap.",
+      "evidence": "`.github/workflows/fuzz-nightly.yml` runs `cargo +nightly fuzz run parse_input` for a 60-second PR smoke and \u2265 1 hour on a nightly schedule against the `garnet-parser-v0.3/fuzz/` cargo-fuzz sub-workspace. The `parse_input` target wraps every call in a strict `ParseBudget` (4096-byte source cap, 1024-token cap, 32-depth cap, 512-byte literal cap), so neither CPU nor memory can be unbounded. Seed corpus is populated from canonical `examples/*.garnet` files; crashes upload as artifacts for triage. Closes the S5 surface gap.",
       "blocked_by": [],
       "deferred": [
         "Interpreter and checker fuzz targets",
@@ -273,6 +275,20 @@
         "Managed-mode `actor.reload_signed` syntax (the Rust runtime API is tested separately in `garnet-actor-runtime/tests/reload.rs`; exposing it to managed mode is a separate slice)",
         "Real signed-bytes payload (the demo uses a text-shaped marker for readability; production payloads are arbitrary bytes)",
         "Ed25519 signature verification of the payload (BLAKE3 fingerprint check is one of two layers; the cryptographic signature layer is validated only in the Rust runtime today)"
+      ]
+    },
+    {
+      "id": "formatter_idempotent_baseline",
+      "label": "Formatter idempotent baseline",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`garnet-cli/src/cmd/fmt.rs` normalizes trailing whitespace, CRLF/CR line endings, and final newline to a single LF, then re-parses to refuse any change that would break the source. `garnet-cli/tests/fmt_idempotency.rs` proves the canonical `examples/{mvp_,det_}*.garnet` corpus is byte-identical after two passes of `garnet fmt --stdout` and that three runs on the same input produce identical bytes. Satisfies the S4 contract goal (deterministic, idempotent source formatter).",
+      "blocked_by": [],
+      "deferred": [
+        "AST-driven semantic formatting (alignment, spacing rules, import sorting) \u2014 gates on a trivia-preserving CST in the parser",
+        "Comment-preserving round-trip (today the parser drops trivia)",
+        "Pretty-printer for malformed input recovery",
+        "Workspace-level `garnet fmt --workspace`"
       ]
     }
   ]
