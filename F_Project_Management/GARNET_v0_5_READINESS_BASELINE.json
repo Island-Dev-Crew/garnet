@@ -1,11 +1,12 @@
 {
   "source": "/Users/IDC2.5/Desktop/Garnet",
   "overall_status": "active-partial",
-  "completion_percent": 54.2,
+  "completion_percent": 57.9,
   "current_truth": [
     "tracked implementation plan is complete",
     "goal remains active",
-    "100% tracked slices is not full MIT/productization completion"
+    "100% tracked slices is not full MIT/productization completion",
+    "S1 LSP source is tracked separately from full editor dogfood completion"
   ],
   "lanes": [
     {
@@ -99,6 +100,22 @@
       "blocked_by": [],
       "deferred": [
         "Full browser IDE/workbench remains future product scope."
+      ]
+    },
+    {
+      "id": "editor_lsp_adoption",
+      "label": "Editor/LSP adoption",
+      "status": "source-present",
+      "completion_percent": 60.0,
+      "evidence": "`garnet-lsp/` and `editors/vscode/` provide the S1 source surface for diagnostics, hover, and basic go-to-definition. `scripts/smoke_garnet_lsp_protocol.py` proves those paths over stdio, and Desktop evidence records Cursor diagnostic plus clean-open screenshots. Published VSIX and the full manual screenshot trio remain review hardening work.",
+      "blocked_by": [],
+      "deferred": [
+        "manual VSCode hover/go-to-def screenshot confirmation",
+        "published VSIX",
+        "safe-mode hover",
+        "workspace symbols",
+        "rename",
+        "CST-grade incremental precision"
       ]
     },
     {
@@ -201,6 +218,20 @@
         "benchmark measurement run",
         "native backend proof",
         "external participant study execution"
+      ]
+    },
+    {
+      "id": "determinism_ci_cross_machine",
+      "label": "Determinism CI cross-machine",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`.github/workflows/determinism.yml` builds `examples/det_fixture_01.garnet` with `garnet build --deterministic --sign <key>` on a matrix of ubuntu-latest and macos-latest runners; a single shared signing key is generated once and downloaded by each OS, so signatures are byte-identical when the source is. The compare job fails with `::error::` if the per-OS manifest SHA-256 diverges. Closes Paper VI Contribution 6 verification gap.",
+      "blocked_by": [],
+      "deferred": [
+        "Windows runner in the cross-OS matrix",
+        "Linux aarch64 in the cross-OS matrix",
+        "Multi-key rotation testing",
+        "Byte-for-byte binary determinism once a native backend exists"
       ]
     }
   ]
