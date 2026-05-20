@@ -6,9 +6,9 @@
 # install cleanly and still pass the 6-gate smoke.
 #
 # On tagged releases (`v*`) the job additionally:
-#   - Computes SHA-256 of each artifact
-#   - Appends them to a SHA256SUMS file
-#   - Uploads both packages + SHA256SUMS as a release asset
+#   - Builds Linux .deb/.rpm packages and macOS CLI tarballs
+#   - Computes one SHA-256 manifest for every release installer artifact
+#   - Uploads packages, tarballs, and SHA256SUMS as release assets
 # These are the files `docs/install.sh` fetches after GitHub Pages serves it at
 # `https://garnet-lang.org/install.sh`.
 
@@ -190,7 +190,79 @@ jobs:
           test -f /usr/share/man/man1/garnet.1
 
   # ───────────────────────────────────────────────────────────────────
-  # 4. Verify the universal installer copies stay in sync and shellcheck clean.
+  # 4. macOS CLI tarballs for the universal installer fallback path.
+  #    The public installer detects macOS .pkg first, then falls back to
+  #    `garnet-<version>-<target>.tar.gz`; v0.5.0 does not claim a
+  #    signed/notarized .pkg, so these tarballs are the honest Mac release
+  #    assets required before the M5 clean-machine smoke can pass.
+  # ───────────────────────────────────────────────────────────────────
+  macos-cli-tarballs:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [aarch64-apple-darwin, x86_64-apple-darwin]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install Rust toolchain (stable)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache cargo registry + target
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ matrix.target }}-cargo-
+
+      - name: Build CLI tarball
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(awk -F'"' '/^version =/ { print $2; exit }' Cargo.toml)"
+          target="${{ matrix.target }}"
+          cargo build --release --locked -p garnet-cli --target "${target}"
+
+          rm -rf package dist
+          mkdir -p package/bin dist
+          cp "target/${target}/release/garnet" package/bin/garnet
+          chmod 0755 package/bin/garnet
+          tar -C package -czf "dist/garnet-${version}-${target}.tar.gz" bin/garnet
+          tar -tzf "dist/garnet-${version}-${target}.tar.gz"
+
+      - name: Native CLI smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(awk -F'"' '/^version =/ { print $2; exit }' Cargo.toml)"
+          target="${{ matrix.target }}"
+          case "$(uname -m)" in
+            arm64|aarch64) host_target="aarch64-apple-darwin" ;;
+            x86_64) host_target="x86_64-apple-darwin" ;;
+            *) host_target="unknown" ;;
+          esac
+
+          if [ "${host_target}" = "${target}" ]; then
+            "target/${target}/release/garnet" --version | grep -q "garnet ${version}"
+          else
+            echo "Built ${target}; native execution skipped on ${host_target}."
+          fi
+
+      - name: Upload macOS tarball artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: garnet-macos-cli-${{ matrix.target }}
+          path: dist/*.tar.gz
+          retention-days: 30
+
+  # ───────────────────────────────────────────────────────────────────
+  # 5. Verify the universal installer copies stay in sync and shellcheck clean.
   # ───────────────────────────────────────────────────────────────────
   shellcheck-installer:
     runs-on: ubuntu-latest
@@ -214,28 +286,43 @@ jobs:
             /work/scripts/preflight_garnet_studio_notarization.sh
 
   # ───────────────────────────────────────────────────────────────────
-  # 5. On tagged release only: publish packages + SHA256SUMS as a
-  #    GitHub Release. End-users fetch via garnet-lang.org/install.sh.
+  # 6. On tagged release only: publish packages/tarballs + SHA256SUMS
+  #    as a GitHub Release. End-users fetch via garnet-lang.org/install.sh.
   # ───────────────────────────────────────────────────────────────────
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [smoke-deb, smoke-rpm, shellcheck-installer]
+    needs: [smoke-deb, smoke-rpm, macos-cli-tarballs, shellcheck-installer]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Fetch artifacts
+      - name: Fetch Linux package artifacts
         uses: actions/download-artifact@v8
         with:
           name: garnet-linux-packages
-          path: dist/
+          path: release-dist/
+
+      - name: Fetch macOS CLI tarball artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: garnet-macos-cli-*
+          merge-multiple: true
+          path: release-dist/
+
+      - name: Compose unified SHA256SUMS
+        run: |
+          cd release-dist
+          rm -f SHA256SUMS
+          sha256sum *.deb *.rpm *.tar.gz > SHA256SUMS
+          cat SHA256SUMS
 
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/*.deb
-            dist/*.rpm
-            dist/SHA256SUMS
+            release-dist/*.deb
+            release-dist/*.rpm
+            release-dist/*.tar.gz
+            release-dist/SHA256SUMS
           fail_on_unmatched_files: true
           generate_release_notes: true

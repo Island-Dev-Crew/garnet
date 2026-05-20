@@ -105,8 +105,13 @@ same as release-backed packages or a published VSIX artifact.
 The release path now has a sharper next gate: Garnet can build host-native VSIX
 artifacts with bundled `garnet-lsp` binaries, publish those artifacts on `v*`
 GitHub Releases, and fail the release smoke if the matching VSIX is absent or
-structurally incomplete. That still is not Marketplace/OpenVSX publication, and
-it still is not a v0.5.0 tag. Until the release-backed installer packages and
-VSIX assets exist and the clean-machine smoke passes, v0.5.0 is merge-ready in
-substance but not tag-ready in release discipline. That is the right shape for
-Garnet: substance first, public claim second.
+structurally incomplete. The same release path now stages macOS CLI tarballs for
+the public installer's Mac fallback path and folds them into the same
+`SHA256SUMS` manifest as the Linux packages. Local M5 evidence proves the
+tarball shape through the installer in release-only mode from a file-backed
+release directory, but that still is not Marketplace/OpenVSX publication, not a
+signed/notarized `.pkg`, and not a v0.5.0 tag. Until the release-backed
+installer packages and VSIX assets exist on the organization release and the
+clean-machine smoke passes, v0.5.0 is merge-ready in substance but not tag-ready
+in release discipline. That is the right shape for Garnet: substance first,
+public claim second.

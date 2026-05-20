@@ -167,10 +167,19 @@ highest-leverage next milestones are:
    a release smoke can pass. Fresh local M5 evidence is recorded in
    `/Users/idc2.0/Desktop/dogfood/garnet-vscode-release-assets-20260520T133747Z`
    for `garnet-0.5.0-lsp-mvp-darwin-arm64.vsix`; this is release-asset-ready
-   local evidence, not publication. Do not tag v0.5.0 until those release-backed
-   assets exist and the clean-machine smoke passes; Marketplace/OpenVSX
-   publication, signed macOS `.pkg`, Windows MSI, and live target-machine
-   runtime proof remain separate authority lanes.
+   local evidence, not publication. The release workflow also stages macOS CLI
+   tarballs for `aarch64-apple-darwin` and `x86_64-apple-darwin` and composes
+   one release-time `SHA256SUMS` across Linux packages plus those tarballs, so
+   the public installer has a Mac release asset to verify after tag publication.
+   Fresh local M5 file-backed release-mode evidence is recorded in
+   `/Users/idc2.0/Desktop/dogfood/garnet-macos-cli-tarball-release-assets-20260520T135703Z`:
+   the `garnet-0.5.0-aarch64-apple-darwin.tar.gz` tarball verified against
+   `SHA256SUMS`, installed into an isolated prefix, reported `garnet 0.5.0`,
+   then `garnet new --template cli`, `garnet test`, and `garnet run` passed.
+   Do not tag v0.5.0 until those release-backed assets exist and the
+   clean-machine smoke passes; Marketplace/OpenVSX publication, signed macOS
+   `.pkg`, Windows MSI, and live target-machine runtime proof remain separate
+   authority lanes.
 5. **Garnet Studio app and web distribution:** build polished local product
    surfaces that reduce terminal-first friction without overstating release
    authority. The macOS workbench opens like a normal app, bundles the Garnet
