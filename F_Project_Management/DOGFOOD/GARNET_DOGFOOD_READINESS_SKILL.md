@@ -7,9 +7,24 @@ what remains deferred. This skill fuses the PR #71 dogfood evidence gate with
 the useful No Mistakes pattern: work on a branch, verify locally, preserve
 evidence, then let remote CI confirm the merge decision before promotion.
 
-As of 2026-05-15 this run reports `86/86` tracked implementation-plan slices
-complete (`100.0%`). The org `v0.4.2` release is published and the
-network-backed installer smoke passed against `Island-Dev-Crew/garnet`.
+As of 2026-05-20 this skill is on its v0.5.x pulse. There are now two
+distinct readiness reporters and both matter — do not conflate them:
+
+- `scripts/garnet_readiness_status.py` — implementation-plan slice tracker
+  (`F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md`
+  checkboxes). Reports `87/87` (`100.0%`) today.
+- `scripts/garnet_mit_readiness_status.py` — MIT / productization lane
+  reporter, the live "what's actually verified" gauge. Reports
+  `71.9 % / 21 lanes / 12 verified` after the v0.5.1 sweep. **This is
+  the load-bearing signal**, and the S0 `--check-no-regression` flag is
+  enforced on every PR via `.github/workflows/dogfood-readiness.yml`.
+
+The org `v0.5.0` release is tagged (`13a5805`) with Linux `.deb`/`.rpm`,
+macOS aarch64/x86_64 CLI tarballs, unified `SHA256SUMS`, and
+darwin-arm64/linux-x64 VSIX assets. `scripts/verify_org_release_smoke.sh`
+passed against `Island-Dev-Crew/garnet` `v0.5.0` without source fallback;
+the published darwin-arm64 VSIX produced an injected standalone VS Code
+diagnostic.
 
 ## When To Use
 
@@ -67,15 +82,42 @@ when a future dashboard or project tracker needs machine-readable progress.
 
 ### Live run snapshot
 
-- `origin/main` at `6e945d6`
-- Open PRs in `Island-Dev-Crew/garnet` as of this run: none.
-- PR #73 merged through the org-authorized browser path after all checks passed.
-- Completion: `86/86` tracked slices (`100.0%`).
-- Release evidence: `Island-Dev-Crew/garnet` release `v0.4.2` exists with
-  `.deb`, `.rpm`, macOS tarball, and `SHA256SUMS` assets.
-- Installer evidence: `./scripts/verify_org_release_smoke.sh` passed against
-  the org release, using the macOS tarball fallback while signed `.pkg`
-  publication remains credential-gated.
+- `origin/main` at `e43d378` (post v0.5.0 tag + v0.5.1 sweep — S0 + S1–S10
+  all in `merged` state; eleven v0.5 slice contracts closed).
+- Open PRs in `Island-Dev-Crew/garnet` after the v0.5.1 sweep: none.
+- All v0.5 slices merged through the documented fork → PR → IslandDevCrew
+  squash-merge path; the slice discipline is captured in
+  `F_Project_Management/GARNET_AGENT_HANDOFF_2026_05_20.md` and the v0.5.x
+  PR set ([#185](https://github.com/Island-Dev-Crew/garnet/pull/185),
+  [#186](https://github.com/Island-Dev-Crew/garnet/pull/186),
+  [#187](https://github.com/Island-Dev-Crew/garnet/pull/187),
+  [#188](https://github.com/Island-Dev-Crew/garnet/pull/188),
+  [#189](https://github.com/Island-Dev-Crew/garnet/pull/189),
+  [#191](https://github.com/Island-Dev-Crew/garnet/pull/191),
+  [#193](https://github.com/Island-Dev-Crew/garnet/pull/193), tag
+  authorization [#199](https://github.com/Island-Dev-Crew/garnet/pull/199)–[#202](https://github.com/Island-Dev-Crew/garnet/pull/202),
+  and v0.5.1 follow-on [#208](https://github.com/Island-Dev-Crew/garnet/pull/208),
+  [#209](https://github.com/Island-Dev-Crew/garnet/pull/209),
+  [#211](https://github.com/Island-Dev-Crew/garnet/pull/211),
+  [#213](https://github.com/Island-Dev-Crew/garnet/pull/213)).
+- Completion: `87/87` tracked implementation-plan slices (`100.0%`)
+  AND `71.9 % / 21 lanes / 12 verified` on the MIT-lane reporter — the
+  load-bearing signal is the lane count balanced against `active-partial`
+  / `planned` / `blocked` lanes, not the headline %.
+- Release evidence: `Island-Dev-Crew/garnet` release `v0.5.0` exists at
+  tag `13a5805` with Linux `.deb`/`.rpm` packages, macOS aarch64 and
+  x86_64 CLI tarballs, unified `SHA256SUMS`, and darwin-arm64 + linux-x64
+  VSIX assets.
+- Installer evidence: `./scripts/verify_org_release_smoke.sh` passed
+  against the org `v0.5.0` release without source fallback; the installer
+  honestly fell back from the unavailable signed `.pkg` to the
+  aarch64-apple-darwin tarball and verified its `SHA256SUMS` entry. Apple
+  Developer ID notarization, signed `.pkg`, and Marketplace / OpenVSX
+  publication remain credential- or infra-blocked, not technical.
+- v0.6 forward-look: `F_Project_Management/GARNET_v0_6_SLICE_DOGFOOD.md`
+  is the successor contract; slices S11 (scaffold) and S12–S16 (resolver,
+  registry stub, VM v0.2 function-call lowering, CST, LSP v0.2) are
+  scoped there.
 
 ## Evidence Gate
 
