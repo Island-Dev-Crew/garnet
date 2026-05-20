@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REPO="${REPO:-Island-Dev-Crew/garnet}"
-VERSION="${VERSION:-0.4.2}"
+VERSION="${VERSION:-0.5.0}"
 SEMVER="${VERSION#v}"
 TAG="${TAG:-v${SEMVER}}"
 INSTALLER="${INSTALLER:-installer/sh.garnet-lang.org/install.sh}"

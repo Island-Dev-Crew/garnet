@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_NAME="Garnet Studio"
 EXECUTABLE_NAME="GarnetStudio"
-VERSION="${GARNET_VERSION:-0.4.2}"
+VERSION="${GARNET_VERSION:-0.5.0}"
 APP_DIR="${ROOT}/target/macos/${APP_NAME}.app"
 DMG_PATH="${ROOT}/target/macos/GarnetStudio.dmg"
 PACKAGE_PATH="${ROOT}/apps/garnet-studio-macos"

@@ -46,11 +46,13 @@ Single `garnet` CLI. Deterministic signed manifests. Dependency-graph audit buil
 curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 ```
 
-The universal installer is release-first and source-fallback:
+The universal installer is v0.5.0-first and source-fallback:
 
-- If `v0.4.2` release assets exist, it downloads the native package and
+- If `v0.5.0` release assets exist, it downloads the native package and
   verifies it against `SHA256SUMS`.
-- If release assets are not published yet, it falls back to:
+- If the requested release assets are not published yet, it falls back to a
+  source install. The source path tries the requested tag when it exists and
+  falls back to `main` for release-candidate proof before the tag.
 
 ```sh
 git clone https://github.com/Island-Dev-Crew/garnet
@@ -59,13 +61,15 @@ cargo install --path . --locked
 ```
 
 Use `GARNET_INSTALL_MODE=release` to require a native release package, or
-`GARNET_INSTALL_MODE=source` to force source install.
+`GARNET_INSTALL_MODE=source` to force source install. To install the latest
+published stable release while v0.5.0 is still gated, set
+`GARNET_VERSION=0.4.2`.
 
 | Platform      | Installer                                   | Integrity / release requirement   |
 |---------------|---------------------------------------------|-----------------------------------|
-| Linux (.deb)  | `garnet_0.4.2-1_amd64.deb`                  | SHA-256 checksummed               |
-| Linux (.rpm)  | `garnet-0.4.2-1.x86_64.rpm`                 | SHA-256 checksummed               |
-| macOS CLI tarball | `garnet-0.4.2-aarch64-apple-darwin.tar.gz` | SHA-256 checksummed           |
+| Linux (.deb)  | `garnet_0.5.0-1_amd64.deb` after tag        | SHA-256 checksummed               |
+| Linux (.rpm)  | `garnet-0.5.0-1.x86_64.rpm` after tag       | SHA-256 checksummed               |
+| macOS CLI tarball | `garnet-0.5.0-aarch64-apple-darwin.tar.gz` after upload | SHA-256 checksummed |
 | Windows source install | `cargo install --path garnet-cli --locked` | verified source fallback    |
 | Future signed packages | `.pkg` / `.msi`                         | credential-gated release lane     |
 
@@ -173,7 +177,11 @@ inherit it via a caller that does. Known capabilities: `fs`, `net`,
 
 ## Project status
 
-**v4.2 is research-grade.** Ready for prototype agents and scripting. Production-bearing workloads should wait for v5.0 (bytecode VM). See [FAQ.md §"Is Garnet production-ready?"](FAQ.md#is-garnet-production-ready) for the honest scorecard.
+**Current `main` is v0.5.0 release-candidate source; the latest tagged release
+remains v0.4.2 until the clean-machine installer/editor gate closes.** Garnet is
+a research-grade prototype (v0.x.x), not production-complete. See
+[FAQ.md §"Is Garnet production-ready?"](FAQ.md#is-garnet-production-ready) for
+the honest scorecard.
 
 Verification status at current `main`:
 

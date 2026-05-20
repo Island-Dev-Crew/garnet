@@ -23,7 +23,7 @@ exclude = ["archive/garnet-parser-v0.2", "apps/garnet-studio/src-tauri"]
 # with the value below; individual library crates carry their own `[package]
 # version` to allow independent semver as their public APIs stabilize.
 [workspace.package]
-version = "0.4.2"
+version = "0.5.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 authors = ["Island Development Crew"]

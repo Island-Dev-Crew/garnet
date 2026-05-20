@@ -150,10 +150,12 @@ highest-leverage next milestones are:
    types, actor spawning, method dispatch, and richer stdlib methods.
 3. **Memory Core productionization:** move from Mnemos reference stores toward
    allocator/runtime semantics described in `MEMORY_CORE_ROADMAP.md`.
-4. **Native/release toolchain:** keep the org `v0.4.2` release assets,
-   checksums, and release-backed installer smoke green while separating signed
-   macOS `.pkg`, Windows MSI, and live public-domain installer work from the
-   current release claim.
+4. **Native/release toolchain:** keep the org `v0.4.2` release assets and
+   checksums intact as the latest tagged release while the v0.5.0 release
+   candidate retargets package/version/installer defaults. Do not tag v0.5.0
+   until the clean-machine public installer path plus VSIX/editor diagnostic
+   evidence is recorded; signed macOS `.pkg`, Windows MSI, and live
+   target-machine runtime proof remain separate authority lanes.
 5. **Garnet Studio app and web distribution:** build polished local product
    surfaces that reduce terminal-first friction without overstating release
    authority. The macOS workbench opens like a normal app, bundles the Garnet
