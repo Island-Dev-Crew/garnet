@@ -40,6 +40,7 @@ Every path below is part of the current contract surface and must remain present
 - `/garnet-cli/AGENTS.md`
 - `/garnet-cli/templates/AGENTS.md`
 - `/garnet-convert/AGENTS.md`
+- `/garnet-lsp/AGENTS.md`
 - `/apps/garnet-studio/src-tauri/AGENTS.md`
 - `/examples/AGENTS.md`
 - `/xtask/AGENTS.md`

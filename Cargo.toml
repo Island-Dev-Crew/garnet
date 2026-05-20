@@ -9,6 +9,7 @@ members = [
     "garnet-actor-runtime",
     "garnet-stdlib",
     "garnet-convert",
+    "garnet-lsp",
     "xtask",
 ]
 # Exclude the archived v0.2 parser (flat-file layout, retained at

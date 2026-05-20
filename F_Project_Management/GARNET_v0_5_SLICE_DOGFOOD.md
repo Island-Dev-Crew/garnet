@@ -70,6 +70,7 @@ python3 scripts/garnet_conformance_matrix_check.py  # add in S0 housekeeping
 
 ```bash
 cargo build -p garnet-lsp --release
+python3 scripts/smoke_garnet_lsp_protocol.py target/release/garnet-lsp
 (cd editors/vscode && npm install && npm run package)
 code --install-extension editors/vscode/garnet-*.vsix
 
@@ -83,7 +84,7 @@ code --install-extension editors/vscode/garnet-*.vsix
 
 **Honest partial labels available:** "safe-mode hover not in MVP" · "workspace symbols deferred to S1.1" · "rename deferred."
 
-**State as of 2026-05-20:** not-started.
+**State as of 2026-05-20:** merged.
 
 ---
 

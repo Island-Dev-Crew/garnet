@@ -27,6 +27,18 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 - **v0.5 slice contract:** `F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md` —
   single source of truth for every v0.5 PR. State machine, dogfood blocks,
   honesty anchors, PR template.
+- **S1 (LSP MVP):** source-present `garnet-lsp/` language server and
+  `editors/vscode/` extension launcher for diagnostics, hover, and basic
+  go-to-definition. `scripts/smoke_garnet_lsp_protocol.py` proves those paths
+  over stdio; local VSIX packaging and install smoke passed on this Mac/Cursor
+  profile.
+
+### Honest partials
+
+- The S1 LSP slice is source-present until published-extension evidence and
+  full manual VSCode hover/go-to-definition screenshots are attached to later
+  review/release evidence. Safe-mode hover, workspace symbols, rename, and
+  CST-grade incremental precision remain deferred.
 
 ### Known-RED gates (inherited, not yet fixed)
 
