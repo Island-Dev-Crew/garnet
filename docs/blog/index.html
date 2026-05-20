@@ -4,11 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Garnet — Blog</title>
-<meta name="description" content="Narrative engineering and release notes for Garnet — the dual-mode, agent-native language. Numbers that occasionally go down on purpose.">
+<meta name="description" content="Narrative engineering and release notes for Garnet — the dual-mode, agent-native language. Monthly cadence. Numbers that occasionally go down on purpose.">
 <meta name="theme-color" content="#9C2B2E">
 <link rel="canonical" href="https://garnet-lang.org/blog/">
+<link rel="alternate" type="application/atom+xml" title="Garnet releases" href="/releases.xml">
 <meta property="og:title" content="Garnet — Blog">
-<meta property="og:description" content="Narrative engineering and release notes for Garnet.">
+<meta property="og:description" content="Narrative engineering and release notes for Garnet. Monthly cadence.">
 <meta property="og:type" content="website">
 <style>
   :root{--bg:#0A0A0F;--bg-soft:#121218;--garnet:#9C2B2E;--garnet-2:#B0303A;--gold:#E5C07B;--ink:#E8E8E8;--ink-soft:#C8C8D0;--ink-muted:#6272A4;--rule:#3A3A45;--serif:'Georgia','Source Serif Pro',serif;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,system-ui,sans-serif;--mono:'SF Mono','Menlo','Consolas',monospace;--maxw:760px;}
@@ -25,21 +26,58 @@
   .post h2{font-family:var(--serif);font-size:24px;margin:8px 0 8px;}
   .post h2 a{color:var(--ink);}.post h2 a:hover{color:var(--gold);}
   .post p{color:var(--ink-soft);margin:0;}
+  .section-label{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-muted);text-transform:uppercase;margin:48px 0 -4px;}
+  .upcoming{border-top:1px solid var(--rule);padding:20px 0;color:var(--ink-soft);}
+  .upcoming .date{font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--ink-muted);}
+  .upcoming h3{font-family:var(--serif);font-size:19px;margin:6px 0 4px;color:var(--ink-soft);font-weight:normal;}
+  .upcoming p{color:var(--ink-muted);font-size:14.5px;margin:0;}
+  .note{margin-top:30px;color:var(--ink-muted);font-size:13.5px;}
   .foot{border-top:1px solid var(--rule);margin-top:48px;padding-top:20px;color:var(--ink-muted);font-size:13px;}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="top"><a href="/index.html">← garnet-lang.org</a> &nbsp;·&nbsp; <a href="https://github.com/Island-Dev-Crew/garnet/releases" target="_blank" rel="noopener noreferrer">Releases ↗</a></div>
+  <div class="top"><a href="/index.html">← garnet-lang.org</a> &nbsp;·&nbsp; <a href="https://github.com/Island-Dev-Crew/garnet/releases" target="_blank" rel="noopener noreferrer">Releases ↗</a> &nbsp;·&nbsp; <a href="/releases.xml">Atom feed</a></div>
 
   <h1>Blog</h1>
-  <p class="sub">Narrative engineering and release notes. The commit history and releases are the raw pulse; these are the posts that need a paragraph instead of a diff.</p>
+  <p class="sub">Narrative engineering and release notes. Monthly cadence — the first of each month. The commit history and releases are the raw pulse; these are the posts that need a paragraph instead of a diff.</p>
+
+  <div class="post">
+    <div class="date">2026-05-20 · Founder's note · launch</div>
+    <h2><a href="posts/2026-05-20-why-garnet-exists.html">Why Garnet exists: the FFI tax I refused to keep paying</a></h2>
+    <p>The pain that made me write a new language — a Rust hot path, a Ruby orchestrator, and a binding layer that ate the weekend. The universal answer is to swallow it. Garnet refused.</p>
+  </div>
+
+  <div class="post">
+    <div class="date">2026-05-20 · Release notes</div>
+    <h2><a href="posts/2026-05-20-garnet-v0-5-substance-over-surface.html">Garnet v0.5: substance over surface</a></h2>
+    <p>v0.5.0 closes six blocking slices (LSP MVP, bytecode VM scaffold, parser fuzz, signed hot-reload demo, cross-machine determinism CI, compiler-as-agent advisory). MIT pulse moves 55.8% → 67.9% at finer grain. Research-grade boundary intact.</p>
+  </div>
 
   <div class="post">
     <div class="date">2026-05-19 · Release &amp; engineering</div>
     <h2><a href="2026-05-19-v0-4-2-and-honest-accounting.html">Garnet v0.4.2, and the case for honest accounting</a></h2>
-    <p>v0.4.2 is live and the tracked implementation ledger is 87/87 — and the MIT readiness pulse went <em>down</em> to 55.8%, on purpose. Why a decreasing number is a feature, not a regression.</p>
+    <p>v0.4.2 went live and the tracked implementation ledger hit 87/87 — and the MIT readiness pulse went <em>down</em> to 55.8%, on purpose. Why a decreasing number is a feature, not a regression.</p>
   </div>
+
+  <div class="section-label">Upcoming · monthly cadence</div>
+  <div class="upcoming">
+    <div class="date">Planned · 2026-06-01</div>
+    <h3>What <code>@caps</code> is, and why every function should declare its authority</h3>
+    <p>One before/after walkthrough: a managed function with no caps, the compiler refusing the rewrite that quietly added <code>fs::read_file</code>, and why ambient authority is the bug at the heart of every supply-chain incident. Comparison to Wasm Component Model. Draft pending.</p>
+  </div>
+  <div class="upcoming">
+    <div class="date">Planned · 2026-07-01</div>
+    <h3>The four kinds of memory an agent actually needs</h3>
+    <p>Garnet's most differentiated idea, in plain terms. Working / episodic / semantic / procedural as language keywords, not library bolt-ons — what the type system and allocator can do once they know which is which. Draft pending.</p>
+  </div>
+  <div class="upcoming">
+    <div class="date">Planned · 2026-08-01</div>
+    <h3>How we sign hot-reloads: BLAKE3, Ed25519, and zero message loss</h3>
+    <p>Technical post on <code>actor.reload_signed</code>. Why Erlang's hot-reload is great but unsigned. Why mobile reload-from-server is signed but not type-checked. Garnet's combination of both, with the 1,000-cycle zero-loss methodology and reproduction recipe. Draft pending.</p>
+  </div>
+
+  <p class="note">Cadence note: monthly is the floor, not the ceiling. Release posts (like v0.5 above) drop alongside their releases; the schedule above is the steady-state. If a post would be filler, it doesn't ship.</p>
 
   <div class="foot">© 2026 Island Development Crew · Garnet is dual-licensed MIT OR Apache-2.0 · <a href="https://garnet-lang.org">garnet-lang.org</a></div>
 </div>
