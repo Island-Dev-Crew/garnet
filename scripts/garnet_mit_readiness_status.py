@@ -496,6 +496,38 @@ def read_status() -> MitReadinessStatus:
             ],
         ),
         ObjectiveLane(
+            id="garnet_add_manifest",
+            label="Garnet manifest + vendored deps (`garnet add`)",
+            status="verified"
+            if (ROOT / "garnet-cli/src/cmd/add.rs").exists()
+            and (ROOT / "C_Language_Specification/GARNET_MANIFEST_v0_1.md").exists()
+            else "planned",
+            completion_percent=100.0
+            if (ROOT / "garnet-cli/src/cmd/add.rs").exists()
+            and (ROOT / "C_Language_Specification/GARNET_MANIFEST_v0_1.md").exists()
+            else 0.0,
+            evidence=(
+                "`garnet-cli/src/cmd/add.rs` implements `garnet add [--name <id>] "
+                "<path>` to vendor a local Garnet directory into "
+                "`.garnet/vendor/<name>/`, update `Garnet.toml`'s `[dependencies]` "
+                "table, and write `Garnet.lock` with BLAKE3-per-file hashes. "
+                "Lockfile output is deterministic (alpha-sorted deps, lex-sorted "
+                "files, lowercase hex). Six inline unit tests cover the round-trip. "
+                "Format documented in "
+                "`C_Language_Specification/GARNET_MANIFEST_v0_1.md`."
+            ),
+            blocked_by=[],
+            deferred=[
+                "Resolver contract: interpreter does NOT yet load `.garnet/vendor/` "
+                "deps at `garnet run` time (separate slice)",
+                "Remote sources (https://, git+ssh://, @scope/name registries)",
+                "Transitive dependency vendoring",
+                "SemVer matching (caret/tilde/equality beyond string compare)",
+                "Workspace mode (multi-crate projects)",
+                "`garnet verify-deps` lockfile-drift detector",
+            ],
+        ),
+        ObjectiveLane(
             id="memory_eviction_benchmarks",
             label="Memory eviction policy benchmarks",
             status="verified"
