@@ -24,9 +24,10 @@ before a tag should exist. In the repo's own words:
 S1 added the Language Server Protocol MVP: parser/checker diagnostics, hover,
 and basic go-to-definition through `garnet-lsp/` plus the VSCode extension
 launcher in `editors/vscode/`. The honest status is source-present with protocol
-smoke evidence. Published VSIX evidence, the full manual screenshot trio,
-safe-mode hover, workspace symbols, rename, and CST-grade incremental precision
-remain deferred.
+smoke evidence and local standalone VS Code diagnostic proof. Published VSIX
+evidence, the full manual hover/go-to-definition screenshot trio, safe-mode
+hover, workspace symbols, rename, and CST-grade incremental precision remain
+deferred.
 
 S2 added the bytecode VM scaffold. `garnet-vm/` now has a deterministic
 serializer, loader, execution surface for the MVP fixture path, 15 native opcode
@@ -95,9 +96,11 @@ machine. The current open item is not code completion; it is release proof:
 
 Post-merge evidence now proves the public installer source-fallback path on this
 Mac with a configured Rust toolchain, and Mac-local Cursor evidence proves the
-VSIX can surface diagnostics on an injected syntax error. That is useful
-release-candidate evidence, but it is not the same as release-backed packages,
-published VSIX evidence, or clean standalone VSCode proof. Until that proof
-exists, v0.5.0 is merge-ready in substance but not tag-ready in release
-discipline. That is the right shape for Garnet: substance first, public claim
-second.
+VSIX can surface diagnostics on an injected syntax error. A clean isolated
+standalone VS Code 1.121.0 run now proves the locally packaged VSIX can launch
+its bundled `garnet-lsp` and report the injected diagnostic without a workspace
+`garnet.lsp.path`. That is useful release-candidate evidence, but it is not the
+same as release-backed packages or a published VSIX artifact. Until those
+release-backed artifacts exist, v0.5.0 is merge-ready in substance but not
+tag-ready in release discipline. That is the right shape for Garnet: substance
+first, public claim second.

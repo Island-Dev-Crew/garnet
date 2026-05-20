@@ -125,6 +125,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("Tauri v2 shell scaffold", lanes["windows_linux_distribution"]["evidence"])
         self.assertIn("clean Windows VM", " ".join(lanes["windows_linux_distribution"]["blocked_by"]))
         self.assertIn("diagnostics, hover, and basic go-to-definition", lanes["editor_lsp_adoption"]["evidence"])
+        self.assertIn("standalone-vscode-gate", lanes["editor_lsp_adoption"]["evidence"])
         self.assertIn("manual VSCode", " ".join(lanes["editor_lsp_adoption"]["deferred"]))
 
     def test_rendered_promo_artifacts_update_objective_blockers(self) -> None:

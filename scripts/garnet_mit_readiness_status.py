@@ -236,9 +236,12 @@ def read_status() -> MitReadinessStatus:
                 "`garnet-lsp/` and `editors/vscode/` provide the S1 source "
                 "surface for diagnostics, hover, and basic go-to-definition. "
                 "`scripts/smoke_garnet_lsp_protocol.py` proves those paths over "
-                "stdio, and Desktop evidence records Cursor diagnostic plus "
-                "clean-open screenshots. Published VSIX and the full manual "
-                "screenshot trio remain review hardening work."
+                "stdio, Desktop evidence records Cursor diagnostics, and "
+                "/Users/idc2.0/Desktop/dogfood/"
+                "garnet-v0-5-standalone-vscode-gate-20260520T130303Z records "
+                "clean standalone VS Code diagnostic proof with a bundled-server "
+                "VSIX. Published VSIX and the full manual screenshot trio remain "
+                "review hardening work."
             )
             if _lsp_source_present()
             else "No committed LSP or VSCode extension source is present yet.",
