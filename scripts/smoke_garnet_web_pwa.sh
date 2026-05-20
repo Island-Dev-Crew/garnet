@@ -200,7 +200,7 @@ else
   record "blocker" "Manifest validation failed" "manifest-summary.json" "Fix manifest fields and icon references."
 fi
 
-for asset in "index.html" "install.sh" "ladder.html" "manifest.webmanifest" "minispec.html" "novel.html" "synthesis.html" "icons/garnet-192.png" "icons/garnet-512.png"; do
+for asset in "getting-started.html" "index.html" "install.sh" "ladder.html" "manifest.webmanifest" "minispec.html" "novel.html" "playground.html" "status.html" "stdlib.html" "synthesis.html" "blog/index.html" "blog/feed.xml" "releases.xml" "icons/garnet-192.png" "icons/garnet-512.png"; do
   if grep -q "\"${asset}\"" "${DOCS_DIR}/service-worker.js"; then
     record "pass" "Service worker caches ${asset}" "docs/service-worker.js" "None."
   else
