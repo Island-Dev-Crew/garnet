@@ -13,6 +13,14 @@
 name: Parser fuzz nightly
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/fuzz-nightly.yml"
+      - "garnet-parser-v0.3/fuzz/**"
+      - "scripts/garnet_proof_benchmark_status.py"
+      - "scripts/test_garnet_proof_benchmark_status.py"
+      - "F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md"
   schedule:
     # 07:00 UTC daily.
     - cron: "0 7 * * *"
@@ -50,7 +58,9 @@ jobs:
             garnet-parser-v0.3/fuzz/target
           key: fuzz-nightly-${{ hashFiles('**/Cargo.lock', 'garnet-parser-v0.3/fuzz/Cargo.toml') }}
       - name: Install cargo-fuzz
-        run: cargo install cargo-fuzz --locked
+        # cargo-fuzz's published lockfile can lag current nightly toolchains; pin
+        # the cargo-fuzz release while allowing compatible transitive fixes.
+        run: cargo install cargo-fuzz --version 0.13.1
       - name: Sub-workspace structural sanity
         working-directory: garnet-parser-v0.3/fuzz
         run: cargo metadata --no-deps > /dev/null
@@ -61,7 +71,12 @@ jobs:
           # If a crash occurs, cargo fuzz returns non-zero and the artifact upload below
           # captures the offending input. Otherwise the run terminates cleanly after
           # MAX_TOTAL_TIME seconds.
-          cargo +nightly fuzz run parse_input -- -max_total_time=${MAX_TOTAL_TIME}
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            max_total_time=60
+          else
+            max_total_time="${MAX_TOTAL_TIME}"
+          fi
+          cargo +nightly fuzz run parse_input -- -max_total_time="${max_total_time}"
       - name: Upload crash inputs (if any)
         if: failure()
         uses: actions/upload-artifact@v6

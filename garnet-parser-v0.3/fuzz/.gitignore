@@ -1,0 +1,5 @@
+artifacts/
+coverage/
+target/
+corpus/parse_input/*
+!corpus/parse_input/*.garnet
