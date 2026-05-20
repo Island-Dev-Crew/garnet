@@ -412,6 +412,40 @@ def read_status() -> MitReadinessStatus:
                 "Configurable rule severity per project",
             ],
         ),
+        ObjectiveLane(
+            id="signed_hot_reload_demo",
+            label="Signed hot-reload BLAKE3 demo",
+            status="verified"
+            if (ROOT / "examples/mvp_11_signed_hotreload.garnet").exists()
+            and (ROOT / "examples/mvp_11_signed_hotreload_mismatch.garnet").exists()
+            else "planned",
+            completion_percent=100.0
+            if (ROOT / "examples/mvp_11_signed_hotreload.garnet").exists()
+            and (ROOT / "examples/mvp_11_signed_hotreload_mismatch.garnet").exists()
+            else 0.0,
+            evidence=(
+                "`examples/mvp_11_signed_hotreload.garnet` and "
+                "`examples/mvp_11_signed_hotreload_mismatch.garnet` are runnable "
+                "managed-mode demonstrations of the BLAKE3 fingerprint check that "
+                "drives the Rust-runtime `actor.reload_signed` path. Both call "
+                "`crypto::blake3` on a payload and compare against an embedded "
+                "expected hash; the success example prints `reloaded successfully` "
+                "and exits 0, the mismatch example raises with the literal text "
+                "`BLAKE3 fingerprint mismatch` and exits 1. Closes Paper VI "
+                "Contribution 5 surface gap."
+            ),
+            blocked_by=[],
+            deferred=[
+                "Managed-mode `actor.reload_signed` syntax (the Rust runtime "
+                "API is tested separately in `garnet-actor-runtime/tests/reload.rs`; "
+                "exposing it to managed mode is a separate slice)",
+                "Real signed-bytes payload (the demo uses a text-shaped marker "
+                "for readability; production payloads are arbitrary bytes)",
+                "Ed25519 signature verification of the payload (BLAKE3 fingerprint "
+                "check is one of two layers; the cryptographic signature layer is "
+                "validated only in the Rust runtime today)",
+            ],
+        ),
     ]
 
     percent = round(sum(_lane_score(lane) for lane in lanes) / len(lanes) * 100.0, 1)

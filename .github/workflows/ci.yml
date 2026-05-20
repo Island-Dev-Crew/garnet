@@ -131,7 +131,25 @@ jobs:
             echo "::group::$file"
             target/debug/garnet parse "$file"
             target/debug/garnet check "$file"
-            target/debug/garnet run "$file"
+            if [[ "$file" == *"_mismatch.garnet" ]]; then
+              set +e
+              target/debug/garnet run "$file" > /tmp/garnet-mvp.out 2> /tmp/garnet-mvp.err
+              run_status=$?
+              set -e
+              if [[ "$run_status" -eq 0 ]]; then
+                echo "::error::$file unexpectedly succeeded"
+                cat /tmp/garnet-mvp.out
+                exit 1
+              fi
+              if ! grep -q "BLAKE3 fingerprint mismatch" /tmp/garnet-mvp.err; then
+                echo "::error::$file failed without the expected mismatch diagnostic"
+                cat /tmp/garnet-mvp.err
+                exit 1
+              fi
+              cat /tmp/garnet-mvp.err
+            else
+              target/debug/garnet run "$file"
+            fi
             echo "::endgroup::"
           done
       - name: Run dogfood and conformance phase gates

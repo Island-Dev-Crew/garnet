@@ -1,7 +1,7 @@
 {
   "source": "/Users/IDC2.5/Desktop/Garnet",
   "overall_status": "active-partial",
-  "completion_percent": 63.1,
+  "completion_percent": 65.3,
   "current_truth": [
     "tracked implementation plan is complete",
     "goal remains active",
@@ -260,6 +260,19 @@
         "Auto-apply / quick-fix wiring into LSP code-actions (meshes with S1)",
         "Cross-module suggestions (current rules are intra-module only)",
         "Configurable rule severity per project"
+      ]
+    },
+    {
+      "id": "signed_hot_reload_demo",
+      "label": "Signed hot-reload BLAKE3 demo",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`examples/mvp_11_signed_hotreload.garnet` and `examples/mvp_11_signed_hotreload_mismatch.garnet` are runnable managed-mode demonstrations of the BLAKE3 fingerprint check that drives the Rust-runtime `actor.reload_signed` path. Both call `crypto::blake3` on a payload and compare against an embedded expected hash; the success example prints `reloaded successfully` and exits 0, the mismatch example raises with the literal text `BLAKE3 fingerprint mismatch` and exits 1. Closes Paper VI Contribution 5 surface gap.",
+      "blocked_by": [],
+      "deferred": [
+        "Managed-mode `actor.reload_signed` syntax (the Rust runtime API is tested separately in `garnet-actor-runtime/tests/reload.rs`; exposing it to managed mode is a separate slice)",
+        "Real signed-bytes payload (the demo uses a text-shaped marker for readability; production payloads are arbitrary bytes)",
+        "Ed25519 signature verification of the payload (BLAKE3 fingerprint check is one of two layers; the cryptographic signature layer is validated only in the Rust runtime today)"
       ]
     }
   ]

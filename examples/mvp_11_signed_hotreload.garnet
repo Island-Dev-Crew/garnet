@@ -1,0 +1,40 @@
+// S8: Signed hot-reload demonstration (success case).
+//
+// Managed-mode demonstration of the BLAKE3 fingerprint check that drives
+// the Rust-runtime `actor.reload_signed` path. This program does NOT call
+// the Rust runtime directly — managed-mode `actor.reload_signed` syntax is
+// not exposed yet (tracked separately). The point of this example is to
+// prove the BLAKE3 primitive lives in managed mode and that the fingerprint
+// comparison pattern at the heart of signed hot-reload is reproducible end
+// to end via `garnet run`.
+//
+// Success path: actual fingerprint matches the embedded expected
+// fingerprint. The program prints "reloaded successfully" and exits 0.
+// See examples/mvp_11_signed_hotreload_mismatch.garnet for the
+// mismatch path.
+//
+// Paper VI Contribution 5 surface gap (S8 of v0.5.0).
+
+@caps()
+def main() {
+  // The "payload" stands in for the new actor behaviour bytes the runtime
+  // would feed to reload_signed. Real production payloads are arbitrary
+  // bytes; here we use a stable text-shaped marker so the demo is
+  // human-readable.
+  let payload = "actor:v2-counter@schema=2,owner=ed25519:demo"
+
+  // Precomputed BLAKE3 of the payload above. If you edit the payload,
+  // regenerate this expected hash by running:
+  //   garnet eval "crypto::blake3(\"<new payload>\")"
+  let expected = "7c3fd5b539ea406f226eaf865335dcf788655ea09010321b04e0ff9727bb97e9"
+
+  let actual = crypto::blake3(payload)
+
+  if actual == expected {
+    println("reloaded successfully:", actual)
+  } else {
+    // This branch is unreachable in this success example — the mismatch
+    // case lives in mvp_11_signed_hotreload_mismatch.garnet.
+    raise "BLAKE3 fingerprint mismatch"
+  }
+}
