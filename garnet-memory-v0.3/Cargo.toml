@@ -15,3 +15,7 @@ criterion = { version = "0.5", features = ["html_reports"] }
 [[bench]]
 name = "vector"
 harness = false
+
+[[bench]]
+name = "eviction"
+harness = false

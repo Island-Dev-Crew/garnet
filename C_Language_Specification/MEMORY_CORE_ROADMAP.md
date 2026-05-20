@@ -179,6 +179,7 @@ Items that don't gate on Tier 1–3 but make the Memory Core useful to *operate*
 | T4.2 | `MemoryHandle::stats()` — uniform per-kind metrics (size, score histogram, eviction count) | extends `lib.rs:24` |
 | T4.3 | tracing-crate integration — every store op emits a span tagged with kind + handle name | new |
 | T4.4 | LSP hover for `memory` declarations — show backend kind, capacity, current population | gates on Refactor #7 (LSP) |
+| T4.5 ✅ | Eviction-policy benchmark harness — per-kind Criterion bench (`benches/eviction.rs`) compares `MemoryPolicy::score` + `should_retain` against a naive FIFO baseline. Inventoried by `scripts/garnet_memory_eviction_status.py`. Closes the S6 contract surface and half of Paper VI Contribution 3's "production allocator path" gap. Production allocator behaviour remains Tier 1 work — this bench harness measures policy cost only. | `benches/eviction.rs` |
 
 ---
 

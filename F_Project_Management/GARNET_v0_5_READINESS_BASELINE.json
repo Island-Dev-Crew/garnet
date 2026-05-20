@@ -1,7 +1,7 @@
 {
   "source": "/Users/IDC2.5/Desktop/Garnet",
   "overall_status": "active-partial",
-  "completion_percent": 67.2,
+  "completion_percent": 68.9,
   "current_truth": [
     "tracked implementation plan is complete",
     "goal remains active",
@@ -275,6 +275,19 @@
         "Managed-mode `actor.reload_signed` syntax (the Rust runtime API is tested separately in `garnet-actor-runtime/tests/reload.rs`; exposing it to managed mode is a separate slice)",
         "Real signed-bytes payload (the demo uses a text-shaped marker for readability; production payloads are arbitrary bytes)",
         "Ed25519 signature verification of the payload (BLAKE3 fingerprint check is one of two layers; the cryptographic signature layer is validated only in the Rust runtime today)"
+      ]
+    },
+    {
+      "id": "memory_eviction_benchmarks",
+      "label": "Memory eviction policy benchmarks",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`garnet-memory-v0.3/benches/eviction.rs` is a Criterion bench that exercises `MemoryPolicy::score` + `should_retain` per Mnemos kind (working/episodic/semantic/procedural) against a naive FIFO baseline; `scripts/garnet_memory_eviction_status.py` inventories per-kind coverage. Closes the S6 contract surface and half of Paper VI Contribution 3's production-allocator gap (this is policy-cost measurement, not production allocator).",
+      "blocked_by": [],
+      "deferred": [
+        "Fresh Criterion measurement run (`cargo bench -p garnet-memory --bench eviction`) \u2014 captured as Desktop evidence on a maintainer machine, not embedded in this lane",
+        "End-to-end store throughput benches under eviction (EpisodeStore, VectorIndex, etc.) \u2014 separate slice",
+        "Production allocator path \u2014 remains Tier 1 work in MEMORY_CORE_ROADMAP.md"
       ]
     },
     {
