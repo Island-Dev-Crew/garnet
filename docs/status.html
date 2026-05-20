@@ -89,7 +89,7 @@
     </div>
     <div class="card">
       <div class="label">MIT/productization</div>
-      <div class="big">54.2%</div>
+      <div class="big">58.1%</div>
       <p class="muted">Broader productization remains active-partial and separate from tracked slice completion.</p>
     </div>
     <div class="card">
@@ -136,6 +136,35 @@
       <li><strong>Advisory lanes</strong> are useful for migration planning, but not source replacement, until deterministic frontend support and dogfood gates are in place.</li>
       <li><strong>Native-boundary lanes</strong> preserve ABI, platform, and performance contracts; they stay native modules/FFI unless a backend lowering strategy changes the guarantee surface.</li>
     </ul>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <h2>Editor/LSP Adoption</h2>
+    <p class="lead">S1 now has committed source surfaces for <code>garnet-lsp</code> and the VSCode extension, VSIX packaging, protocol smoke evidence, and a Cursor diagnostic screenshot. The claim remains source-present until full hover/go-to-def editor screenshots and published-extension evidence land.</p>
+    <table>
+      <thead>
+        <tr><th>Surface</th><th>Status</th><th>Remaining evidence</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>garnet-lsp/</code></td>
+          <td>source-present</td>
+          <td>Diagnostics, hover, and basic go-to-definition tests must stay green.</td>
+        </tr>
+        <tr>
+          <td><code>editors/vscode/</code></td>
+          <td>source-present</td>
+          <td>Local VSIX packaging and install smoke passed; published-extension evidence plus separate hover/go-to-definition screenshots remain open.</td>
+        </tr>
+        <tr>
+          <td>Deferred editor work</td>
+          <td>explicitly deferred</td>
+          <td>Safe-mode hover, workspace symbols, rename, and CST-grade incremental precision.</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </section>
 

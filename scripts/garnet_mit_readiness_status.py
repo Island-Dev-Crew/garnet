@@ -62,6 +62,8 @@ def _lane_score(lane: ObjectiveLane) -> float:
         return 0.35
     if lane.status == "planned-contract":
         return 0.25
+    if lane.status == "source-present":
+        return 0.6
     return 0.0
 
 
@@ -73,6 +75,17 @@ def _dedupe(items: list[str]) -> list[str]:
             deduped.append(item)
             seen.add(item)
     return deduped
+
+
+def _lsp_source_present() -> bool:
+    required = [
+        ROOT / "garnet-lsp" / "Cargo.toml",
+        ROOT / "garnet-lsp" / "src" / "lib.rs",
+        ROOT / "garnet-lsp" / "src" / "main.rs",
+        ROOT / "editors" / "vscode" / "package.json",
+        ROOT / "editors" / "vscode" / "src" / "extension.ts",
+    ]
+    return all(path.exists() for path in required)
 
 
 def read_status() -> MitReadinessStatus:
@@ -205,6 +218,31 @@ def read_status() -> MitReadinessStatus:
             deferred=["Full browser IDE/workbench remains future product scope."],
         ),
         ObjectiveLane(
+            id="editor_lsp_adoption",
+            label="Editor/LSP adoption",
+            status="source-present" if _lsp_source_present() else "planned",
+            completion_percent=60.0 if _lsp_source_present() else 0.0,
+            evidence=(
+                "`garnet-lsp/` and `editors/vscode/` provide the S1 source "
+                "surface for diagnostics, hover, and basic go-to-definition. "
+                "`scripts/smoke_garnet_lsp_protocol.py` proves those paths over "
+                "stdio, and Desktop evidence records Cursor diagnostic plus "
+                "clean-open screenshots. Published VSIX and the full manual "
+                "screenshot trio remain review hardening work."
+            )
+            if _lsp_source_present()
+            else "No committed LSP or VSCode extension source is present yet.",
+            blocked_by=[] if _lsp_source_present() else ["S1 LSP implementation"],
+            deferred=[
+                "manual VSCode hover/go-to-def screenshot confirmation",
+                "published VSIX",
+                "safe-mode hover",
+                "workspace symbols",
+                "rename",
+                "CST-grade incremental precision",
+            ],
+        ),
+        ObjectiveLane(
             id="mobile_distribution",
             label="Mobile distribution",
             status="planned",
@@ -276,6 +314,7 @@ def read_status() -> MitReadinessStatus:
             "tracked implementation plan is complete",
             "goal remains active",
             "100% tracked slices is not full MIT/productization completion",
+            "S1 LSP source is tracked separately from full editor dogfood completion",
         ],
         lanes=lanes,
     )

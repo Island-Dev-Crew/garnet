@@ -52,6 +52,8 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
             lanes["windows_linux_distribution"].completion_percent, 100.0
         )
         self.assertTrue(lanes["windows_linux_distribution"].blocked_by)
+        self.assertEqual("source-present", lanes["editor_lsp_adoption"].status)
+        self.assertEqual(60.0, lanes["editor_lsp_adoption"].completion_percent)
 
     def test_json_exposes_evidence_and_deferred_boundaries(self) -> None:
         output = subprocess.check_output(
@@ -82,6 +84,8 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("formal RustBelt/Iris/Coq mechanization", lanes["proof_empirics"]["deferred"])
         self.assertIn("Tauri v2 shell scaffold", lanes["windows_linux_distribution"]["evidence"])
         self.assertIn("clean Windows VM", " ".join(lanes["windows_linux_distribution"]["blocked_by"]))
+        self.assertIn("diagnostics, hover, and basic go-to-definition", lanes["editor_lsp_adoption"]["evidence"])
+        self.assertIn("manual VSCode", " ".join(lanes["editor_lsp_adoption"]["deferred"]))
 
     def test_rendered_promo_artifacts_update_objective_blockers(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -202,8 +206,22 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("Developer ID notarization", rendered)
         self.assertIn("Mobile distribution", rendered)
         self.assertIn("Promo video", rendered)
+        self.assertIn("Editor/LSP adoption", rendered)
         self.assertIn("LLM assist", rendered)
         self.assertIn("Broad converter frontends", rendered)
+
+    def test_no_regression_gate_passes_source_only_floor(self) -> None:
+        completed = subprocess.run(
+            [sys.executable, str(SCRIPT), "--check-no-regression"],
+            env={**os.environ, "GARNET_PROMO_VIDEO_DESKTOP_DIR": TEST_DOGFOOD_DIR.name},
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        self.assertEqual("", completed.stderr)
+        self.assertEqual(0, completed.returncode)
 
     def test_public_site_surfaces_objective_accounting_without_overclaiming(self) -> None:
         docs_dir = Path(__file__).resolve().parents[1] / "docs"
@@ -214,11 +232,13 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         self.assertIn("Objective accounting", site)
         self.assertIn("MIT/productization objective", site)
-        self.assertIn("54.2%", site)
+        self.assertIn("58.1%", site)
         self.assertNotIn("55.8%", site)
+        self.assertNotIn("57.9%", site)
         self.assertNotIn("58.6%", site)
-        self.assertIn("54.2%", status_site)
+        self.assertIn("58.1%", status_site)
         self.assertNotIn("55.8%", status_site)
+        self.assertNotIn("57.9%", status_site)
         self.assertNotIn("58.6%", status_site)
         self.assertIn("87/87 tracked slices", site)
         self.assertIn("tracked implementation plan is complete", site)

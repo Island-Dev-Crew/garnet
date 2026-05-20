@@ -1,0 +1,13 @@
+[package]
+name = "garnet-lsp"
+version = "0.5.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+authors = ["Island Development Crew"]
+repository = "https://github.com/Island-Dev-Crew/garnet"
+
+[dependencies]
+garnet-check = { version = "0.3.0", path = "../garnet-check-v0.3" }
+garnet-parser = { version = "0.3.0", path = "../garnet-parser-v0.3" }
+tokio = { version = "1", features = ["io-std", "macros", "rt-multi-thread", "sync"] }
+tower-lsp = "0.20"

@@ -1,0 +1,61 @@
+{
+  "name": "garnet",
+  "displayName": "Garnet",
+  "description": "Garnet language support powered by the garnet-lsp MVP.",
+  "version": "0.5.0",
+  "publisher": "island-dev-crew",
+  "license": "MIT OR Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Island-Dev-Crew/garnet.git",
+    "directory": "editors/vscode"
+  },
+  "engines": {
+    "vscode": "^1.92.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onLanguage:garnet"
+  ],
+  "main": "./dist/extension.js",
+  "scripts": {
+    "compile": "tsc -p ./",
+    "package": "npm run compile && vsce package --out garnet-0.5.0-lsp-mvp.vsix"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "garnet",
+        "aliases": [
+          "Garnet",
+          "garnet"
+        ],
+        "extensions": [
+          ".garnet"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "configuration": {
+      "title": "Garnet",
+      "properties": {
+        "garnet.lsp.path": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the garnet-lsp executable. If unset, the extension tries GARNET_LSP, target/release/garnet-lsp in the workspace, then garnet-lsp on PATH."
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "@types/vscode": "^1.92.0",
+    "@vscode/vsce": "^2.26.1",
+    "typescript": "^5.4.5"
+  }
+}
