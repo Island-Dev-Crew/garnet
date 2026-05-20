@@ -79,7 +79,7 @@ done
 | `garnet-cli/` | user-facing CLI and templates | current implementation |
 | `garnet-convert/` | migration assistant | current implementation for stylized Rust/Ruby/Python/Go only; advisory planning covers JavaScript/TypeScript/Swift/Java/C/C++/C#/Perl/Kotlin/Shell/SQL/Other without activating broad conversion; native-boundary and backend-lowering lanes remain planned |
 | `garnet-lsp/` | S1 Language Server Protocol MVP | source-present implementation for parser/checker diagnostics, top-level hover, and basic top-level go-to-definition; protocol smoke, Mac/Cursor diagnostic screenshot, and clean standalone VS Code diagnostic proof captured; separate GUI hover/go-to-definition screenshots remain review hardening |
-| `editors/vscode/` | S1 VSCode extension | source-present extension launcher for `garnet-lsp`; local VSIX packaging now bundles `server/garnet-lsp` from the release build before packaging; Mac-local Cursor diagnostic proof is recorded in `/Users/idc2.0/Desktop/dogfood/garnet-v0-5-editor-gate-20260520T122611Z`, and clean standalone VS Code 1.121.0 diagnostic proof is recorded in `/Users/idc2.0/Desktop/dogfood/garnet-v0-5-standalone-vscode-gate-20260520T130303Z`; published-extension evidence remains a release gate |
+| `editors/vscode/` | S1 VSCode extension | source-present extension launcher for `garnet-lsp`; local VSIX packaging now bundles `server/garnet-lsp` from the release build before packaging; Mac-local Cursor diagnostic proof is recorded in `/Users/idc2.0/Desktop/dogfood/garnet-v0-5-editor-gate-20260520T122611Z`, clean standalone VS Code 1.121.0 diagnostic proof is recorded in `/Users/idc2.0/Desktop/dogfood/garnet-v0-5-standalone-vscode-gate-20260520T130303Z`, and release-backed standalone VS Code diagnostic proof from the published darwin-arm64 VSIX is recorded in `/Users/idc2.0/Desktop/dogfood/garnet-v0-5-release-validation-20260520T142443Z`; Marketplace/OpenVSX publication remains open |
 | `scripts/garnet_converter_status.py` | converter adoption inventory | current machine-readable truth for active converter lanes, advisory language lanes, native-boundary recommendations, backend-lowering plans, trust boundaries, and the future Garnet-aware assist contract |
 | `scripts/garnet_assist_context_pack.py` | Garnet-aware assist context and prompt pack | current machine-readable context bundle plus provider-neutral prompt pack for future provider-backed converter assist; hashes current truth/spec/dogfood docs and preserves advisory-only gates without enabling LLM conversion |
 | `scripts/garnet_converter_assist_plan.py` | advisory-language converter assist plan | current deterministic planner for a single source file in an active or advisory converter language; inventories safe-mode, memory, CapCaps, actor/orchestration, shell/process, SQL/data, and migration risks without executing source or enabling LLM conversion |
@@ -151,8 +151,9 @@ highest-leverage next milestones are:
 3. **Memory Core productionization:** move from Mnemos reference stores toward
    allocator/runtime semantics described in `MEMORY_CORE_ROADMAP.md`.
 4. **Native/release toolchain:** keep the org `v0.4.2` release assets and
-   checksums intact as the latest tagged release while the v0.5.0 release
-   candidate retargets package/version/installer defaults. Post-merge public
+   checksums intact as the prior tagged release while `v0.5.0` is now
+   published from `13a5805250dc0777ca9212f2214fff5d07247e7b` with release
+   assets attached. Post-merge public
    installer source-fallback proof is recorded in
    `/Users/idc2.0/Desktop/dogfood/garnet-v0-5-rc-merged-20260520T121820Z`, and
    Mac-local Cursor/VSIX diagnostic proof is recorded in
@@ -176,11 +177,18 @@ highest-leverage next milestones are:
    the `garnet-0.5.0-aarch64-apple-darwin.tar.gz` tarball verified against
    `SHA256SUMS`, installed into an isolated prefix, reported `garnet 0.5.0`,
    then `garnet new --template cli`, `garnet test`, and `garnet run` passed.
-   The pre-tag gate is now tag-authorized, but release completion still depends
-   on the `v0.5.0` tag workflow publishing the organization release assets and
-   `scripts/verify_org_release_smoke.sh` passing without source fallback.
-   Marketplace/OpenVSX publication, signed macOS `.pkg`, Windows MSI, and live
-   target-machine runtime proof remain separate authority lanes.
+   Organization release validation is recorded in
+   `/Users/idc2.0/Desktop/dogfood/garnet-v0-5-release-validation-20260520T142443Z`:
+   tag workflows `26168679254` and `26168679791` published Linux `.deb`/`.rpm`,
+   macOS aarch64/x86_64 CLI tarballs, unified `SHA256SUMS`, and darwin-arm64 /
+   linux-x64 VSIX assets; `scripts/verify_org_release_smoke.sh` passed against
+   the org release without source fallback; the installed M5 release binary
+   passed `garnet new --template cli`, `garnet test`, and
+   `garnet run src/main.garnet`; and the release-backed darwin-arm64 VSIX
+   installed into isolated standalone VS Code 1.121.0 and showed the injected
+   parser diagnostic. Marketplace/OpenVSX publication, signed macOS `.pkg`,
+   Apple Developer ID notarization, Windows MSI, and live target-machine runtime
+   proof remain separate authority lanes.
 5. **Garnet Studio app and web distribution:** build polished local product
    surfaces that reduce terminal-first friction without overstating release
    authority. The macOS workbench opens like a normal app, bundles the Garnet

@@ -1,6 +1,6 @@
-# Garnet v0.5 draft: six slices merged, tag still gated
+# Garnet v0.5 draft: six slices released, productization still honest
 
-Status: draft, not a v0.5.0 release announcement  
+Status: draft post-release note, not a production-complete announcement
 Audience: contributors, reviewers, and future release agents  
 Source of truth: `F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md`
 
@@ -13,9 +13,9 @@ The standing description remains:
 
 > "research-grade prototype (v0.x.x) — not production-complete"
 
-The tracked slice work is complete for the v0.5.0 blocking lane, but the release
-gate still requires clean-machine reproduction and published-editor evidence
-before a tag should exist. In the repo's own words:
+The tracked slice work is complete for the v0.5.0 blocking lane, and the
+`v0.5.0` GitHub Release now exists with Mac-side release validation evidence.
+In the repo's own words:
 
 > "tracked-slice ledger is complete, but that is not full MIT/productization completion"
 
@@ -24,10 +24,10 @@ before a tag should exist. In the repo's own words:
 S1 added the Language Server Protocol MVP: parser/checker diagnostics, hover,
 and basic go-to-definition through `garnet-lsp/` plus the VSCode extension
 launcher in `editors/vscode/`. The honest status is source-present with protocol
-smoke evidence and local standalone VS Code diagnostic proof. Published VSIX
-evidence, the full manual hover/go-to-definition screenshot trio, safe-mode
-hover, workspace symbols, rename, and CST-grade incremental precision remain
-deferred.
+smoke evidence, local standalone VS Code diagnostic proof, and release-backed
+GitHub VSIX diagnostic proof on this Mac. Marketplace/OpenVSX publication, the
+full manual hover/go-to-definition screenshot trio, safe-mode hover, workspace
+symbols, rename, and CST-grade incremental precision remain deferred.
 
 S2 added the bytecode VM scaffold. `garnet-vm/` now has a deterministic
 serializer, loader, execution surface for the MVP fixture path, 15 native opcode
@@ -82,36 +82,29 @@ Two other anchors remain in force:
 
 Those phrases are not hedges. They are part of the product's credibility.
 
-## Why the tag waits
+## What the release proved
 
-The v0.5.0 tag should wait until the release gate in
-`F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md` is reproducible from a clean
-machine. The current open item is not code completion; it is release proof:
+The v0.5.0 tag exists, but the release proof still matters more than the tag
+label. The release gate in
+`F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md` now records the Mac-side
+validation bundle at
+`/Users/idc2.0/Desktop/dogfood/garnet-v0-5-release-validation-20260520T142443Z`.
+That bundle proves:
 
-- install from the public installer path;
-- create a fresh CLI project;
-- run `garnet test` and `garnet run src/main.garnet`;
-- install the Garnet VSIX or published extension artifact;
-- confirm diagnostics on an injected syntax error.
+- the organization release `v0.5.0` exists and is not a draft or prerelease;
+- tag workflows published Linux `.deb`/`.rpm`, macOS CLI tarballs, unified
+  `SHA256SUMS`, and host-native VSIX assets;
+- `scripts/verify_org_release_smoke.sh` passed against the organization release
+  without source fallback;
+- the M5 installer path honestly fell back from the unavailable unsigned `.pkg`
+  to the aarch64 macOS tarball and verified SHA-256;
+- the installed release binary passed `garnet new --template cli`,
+  `garnet test`, and `garnet run src/main.garnet`;
+- the published darwin-arm64 VSIX installed into isolated standalone VS Code
+  1.121.0 and surfaced the injected `garnet-parser` diagnostic.
 
-Post-merge evidence now proves the public installer source-fallback path on this
-Mac with a configured Rust toolchain, and Mac-local Cursor evidence proves the
-VSIX can surface diagnostics on an injected syntax error. A clean isolated
-standalone VS Code 1.121.0 run now proves the locally packaged VSIX can launch
-its bundled `garnet-lsp` and report the injected diagnostic without a workspace
-`garnet.lsp.path`. That is useful release-candidate evidence, but it is not the
-same as release-backed packages or a published VSIX artifact.
-
-The release path now has a sharper next gate: Garnet can build host-native VSIX
-artifacts with bundled `garnet-lsp` binaries, publish those artifacts on `v*`
-GitHub Releases, and fail the release smoke if the matching VSIX is absent or
-structurally incomplete. The same release path now stages macOS CLI tarballs for
-the public installer's Mac fallback path and folds them into the same
-`SHA256SUMS` manifest as the Linux packages. Local M5 evidence proves the
-tarball shape through the installer in release-only mode from a file-backed
-release directory, but that still is not Marketplace/OpenVSX publication, not a
-signed/notarized `.pkg`, and not itself an organization release. The pre-tag
-gate is ready; the final public claim waits for the `v0.5.0` tag workflow to
-publish release-backed installer packages and VSIX assets, then for the
-release-only smoke to pass against those assets. That is the right shape for
-Garnet: substance first, public claim second.
+The calibrated boundaries remain. This release is not Apple Developer ID
+notarization, not a signed/notarized macOS `.pkg`, not Marketplace/OpenVSX
+publication, and not Windows/Linux desktop runtime proof beyond the GitHub
+package smoke jobs. That is the right shape for Garnet: substance first, public
+claim second.

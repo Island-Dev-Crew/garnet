@@ -636,7 +636,7 @@
     overflow: hidden;
   }
   .objective-meter .fill {
-    width: 58.1%;
+    width: 67.9%;
     height: 100%;
     background: var(--garnet);
   }
@@ -1159,7 +1159,7 @@
   <div class="container reveal">
     <h3>Get Garnet</h3>
     <h2>Install with one curl command.</h2>
-    <p class="lead">The universal installer now targets the <strong>v0.5.0 release-candidate path</strong>. It pulls release packages when they exist, verifies them against <code>SHA256SUMS</code>, and falls back to a source install through <code>cargo install --locked</code> while the tag gate is still open. The latest tagged release remains <strong>v0.4.2</strong> until clean-machine installer and editor-extension evidence is recorded. Detailed productization gates live on the <a href="status.html">readiness status page</a>.</p>
+    <p class="lead">The universal installer now targets the <strong>v0.5.0 release path</strong>. It pulls release packages when they exist, verifies them against <code>SHA256SUMS</code>, and falls back to a source install through <code>cargo install --locked</code> only when no matching release asset exists. The v0.5.0 GitHub Release now has Mac-side installer and editor-extension evidence; detailed productization gates live on the <a href="status.html">readiness status page</a>.</p>
 
     <div id="os-detect" hidden style="display:none;align-items:center;gap:12px;margin:0 0 18px;padding:12px 16px;border:1px solid var(--rule);border-radius:10px;background:var(--bg-soft);font-size:14px;color:var(--ink-soft);">
       <span id="os-detect-msg"></span>
@@ -1433,7 +1433,7 @@ dist/Garnet Studio.app</pre>
     <div class="objective-pulse" aria-label="MIT/productization objective progress pulse">
       <div class="objective-meter">
         <div class="label">MIT/productization objective</div>
-        <div class="percent">58.1%</div>
+        <div class="percent">67.9%</div>
         <div class="meter" aria-hidden="true"><div class="fill"></div></div>
         <p class="evidence-note">Latest local dogfood pulse from <code>scripts/garnet_mit_readiness_status.py</code>. This is not the same as tracked implementation completion.</p>
       </div>
@@ -1521,7 +1521,7 @@ dist/Garnet Studio.app</pre>
       © 2026 Island Development Crew · Dual-licensed MIT OR Apache-2.0 · garnet-lang.org
     </div>
     <div class="copyright" style="margin-top:6px;opacity:.7;font-size:12px;">
-      Site updated 2026-05-20 · tracking Garnet v0.5.0 release-candidate source; latest tagged release remains v0.4.2
+      Site updated 2026-05-20 · tracking Garnet v0.5.0 release assets with calibrated productization boundaries
     </div>
     <div class="copyright" style="margin-top:6px;opacity:.7;font-size:12px;">
       No social accounts yet — follow development by watching the <a href="https://github.com/Island-Dev-Crew/garnet" target="_blank" rel="noopener noreferrer">repository</a>.
