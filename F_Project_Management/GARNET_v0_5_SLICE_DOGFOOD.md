@@ -167,7 +167,7 @@ done
 
 ```bash
 cd garnet-parser-v0.3
-cargo fuzz run parse_input -- -max_total_time=60
+cargo +nightly fuzz run parse_input -- -max_total_time=60
 # Expect: 0 panics, 0 hangs, memory bounded under default sanitizer limits
 ```
 
@@ -177,7 +177,7 @@ cargo fuzz run parse_input -- -max_total_time=60
 
 **Security tie-in:** primary defense against the agent-generated-Garnet adversarial corpus described in the v0.5 security plan.
 
-**State:** not-started.
+**State as of 2026-05-20:** merged.
 
 ---
 
@@ -267,7 +267,7 @@ sha256sum examples/det_fixture_01.garnet.manifest.json > /tmp/hash-$RUNNER_OS.tx
 
 **Closes:** Paper VI Contribution 6 verification gap.
 
-**State:** not-started.
+**State as of 2026-05-20:** merged via PR #187. Daily-truth note: the code and reporter lane landed before this state line was repaired.
 
 ---
 

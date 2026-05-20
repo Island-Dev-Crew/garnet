@@ -1,0 +1,12 @@
+# memory_units.garnet
+# Demonstrates all four Garnet memory kinds with simple and nested generic stores.
+# See Mini-Spec v0.3 §4.
+
+memory working   scratch      : WorkingStore<Buffer>
+memory episodic  session_log  : EpisodeStore<Interaction>
+memory semantic  knowledge    : VectorIndex<Fact>
+memory procedural workflows   : WorkflowStore<Trace>
+
+# Nested generics are parsed correctly through the recursive type grammar.
+memory semantic  embeddings   : Map<String, Vector<Embedding>>
+memory episodic  build_events : EpisodeStore<Map<String, BuildResult>>

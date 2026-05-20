@@ -1,0 +1,22 @@
+# mvp_09_graph_db.garnet
+#
+# Canonical runnable MVP smoke: a small graph traversal score. It proves the
+# query/traversal workflow without claiming full property-graph completeness.
+
+def count_reachable(edges) {
+  let mut reachable = 1
+  for edge in edges {
+    if edge > 0 {
+      reachable += 1
+    }
+  }
+  reachable
+}
+
+@caps()
+def main() {
+  let reachable = count_reachable([1, 1, 0, 1, 0])
+  let score = reachable * 100 + 5
+  println("mvp_09_graph_db score:", score)
+  score
+}

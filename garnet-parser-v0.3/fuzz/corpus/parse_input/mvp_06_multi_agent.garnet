@@ -1,0 +1,29 @@
+# mvp_06_multi_agent.garnet
+#
+# Canonical runnable MVP smoke: deterministic Researcher -> Synthesizer ->
+# Reviewer scoring without depending on actor runtime integration.
+
+def researcher(seed) {
+  seed + 2
+}
+
+def synthesizer(fact_count) {
+  fact_count * 3
+}
+
+def reviewer(score) {
+  if score >= 12 {
+    score + 1
+  } else {
+    score
+  }
+}
+
+@caps()
+def main() {
+  let facts = researcher(3)
+  let draft = synthesizer(facts)
+  let accepted = reviewer(draft)
+  println("mvp_06_multi_agent accepted:", accepted)
+  accepted
+}

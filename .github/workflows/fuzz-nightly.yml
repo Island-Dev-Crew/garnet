@@ -1,0 +1,59 @@
+# Garnet parser fuzzing gate.
+#
+# Pull requests get a short harness smoke so the fuzz target cannot rot.
+# Nightly runs spend one hour on the seeded corpus and upload crash artifacts
+# when libFuzzer finds a reproducible input.
+
+name: Fuzz Nightly
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/fuzz-nightly.yml"
+      - "garnet-parser-v0.3/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+  schedule:
+    - cron: "17 8 * * *"
+  workflow_dispatch: {}
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  parser-fuzz:
+    name: parser parse_input
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin
+            garnet-parser-v0.3/fuzz/target
+          key: ${{ runner.os }}-parser-fuzz-${{ hashFiles('garnet-parser-v0.3/fuzz/Cargo.toml') }}
+          restore-keys: ${{ runner.os }}-parser-fuzz-
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked --force
+      - name: Run parser fuzz target
+        working-directory: garnet-parser-v0.3
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            fuzz_seconds=3600
+          else
+            fuzz_seconds=60
+          fi
+          cargo +nightly fuzz run parse_input -- -max_total_time="${fuzz_seconds}"
+      - name: Upload fuzz crash artifacts
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: parser-fuzz-artifacts-${{ github.sha }}
+          path: garnet-parser-v0.3/fuzz/artifacts/
+          if-no-files-found: ignore
+          retention-days: 30

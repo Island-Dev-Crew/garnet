@@ -1,0 +1,29 @@
+# mvp_07_game_server.garnet
+#
+# Canonical runnable MVP smoke: deterministic game tick simulation. The network
+# server and hot-reload story remain roadmap work; this keeps the game workflow
+# executable.
+
+def apply_tick(hp, damage) {
+  let next_hp = hp - damage
+  if next_hp < 0 {
+    0
+  } else {
+    next_hp
+  }
+}
+
+def simulate() {
+  let mut hp = 20
+  for damage in [3, 4, 5, 6] {
+    hp = apply_tick(hp, damage)
+  }
+  hp
+}
+
+@caps()
+def main() {
+  let hp = simulate()
+  println("mvp_07_game_server remaining_hp:", hp)
+  hp
+}

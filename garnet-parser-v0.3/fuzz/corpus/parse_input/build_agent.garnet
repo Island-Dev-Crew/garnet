@@ -1,0 +1,27 @@
+# build_agent.garnet
+# A richer actor example showing actor-scoped memory, multiple protocols,
+# recursion guardrail annotations, and the pipeline operator.
+# See Mini-Spec v0.3 §9 and §10.
+
+actor BuildAgent {
+  memory episodic   log     : EpisodeStore<BuildEvent>
+  memory procedural recipes : WorkflowStore<BuildRecipe>
+  let mut build_count = 0
+
+  protocol build(spec: BuildSpec) -> BuildResult
+  protocol status() -> AgentStatus
+
+  @max_depth(3)
+  @fan_out(5)
+  on build(spec) {
+    build_count += 1
+    let recipe = recipes.find(spec.target)
+    let result = recipe.execute(spec)
+    log.append(BuildEvent::new(spec, result))
+    result
+  }
+
+  on status() {
+    AgentStatus::new(build_count, log.recent(10))
+  }
+}

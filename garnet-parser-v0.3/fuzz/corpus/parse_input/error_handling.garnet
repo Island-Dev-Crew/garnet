@@ -1,0 +1,32 @@
+# error_handling.garnet
+# Demonstrates managed-mode exception handling (try/rescue/ensure)
+# and the interaction with safe-mode code via mode-boundary bridging.
+# See Mini-Spec v0.3 §7.
+
+use Http::Client
+use Storage::Cache
+
+def fetch_with_fallback(url) {
+  try {
+    let response = Client.get(url)
+    response.parse_json()
+  } rescue e: NetworkError {
+    log("Network failed: #{e.message}")
+    Cache.lookup(url)
+  } rescue e: ParseError {
+    log("Parse failed: #{e.message}")
+    nil
+  } rescue e {
+    log("Unexpected error: #{e}")
+    raise e
+  } ensure {
+    Client.close()
+  }
+}
+
+def process_file(path) {
+  # Storage::read_block is a safe-mode fn returning Result<Block, StorageError>.
+  # Boundary bridging auto-unwraps Ok; auto-raises Err as SafeModeError.
+  let block = Storage::read_block(open(path), 0)
+  block.data
+}

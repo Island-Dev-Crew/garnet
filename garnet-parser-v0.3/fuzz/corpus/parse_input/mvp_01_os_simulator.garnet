@@ -1,0 +1,28 @@
+# mvp_01_os_simulator.garnet
+#
+# Canonical runnable MVP smoke: a cooperative scheduler simulation. The older
+# large OS draft is historical design material; this file is the current
+# executable proof that the CLI can parse, check, and run the domain path.
+
+def run_scheduler(ticks) {
+  let mut tick = 0
+  let mut ready = 3
+  let mut completed = 0
+  while tick < ticks {
+    if ready > 0 {
+      completed += 1
+      ready -= 1
+    } else {
+      ready = 3
+    }
+    tick += 1
+  }
+  completed
+}
+
+@caps()
+def main() {
+  let completed = run_scheduler(12)
+  println("mvp_01_os_simulator completed:", completed)
+  completed
+}

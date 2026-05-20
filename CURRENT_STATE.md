@@ -58,6 +58,7 @@ done
 | Surface | Meaning | Current status |
 |---|---|---|
 | `garnet-parser-v0.3/` | active parser | current implementation |
+| `garnet-parser-v0.3/fuzz/` | S5 parser fuzz harness | source-present `cargo-fuzz` target for `parse_input`, seeded from 25 current Garnet example files, with tight parser budgets and scheduled nightly CI; local dogfood proves the harness runs for 60 seconds, but accumulated nightly fuzz hours and parser correctness proof remain unclaimed |
 | `garnet-interp-v0.3/` | active tree-walk interpreter | current implementation |
 | `garnet-vm/` | S2 bytecode VM scaffold | source-present VM scaffold for the MVP fixtures; 15 native opcode families, deterministic serializer, bounded Criterion harness, and function-level fallback to the tree-walk interpreter; not a production VM or stable bytecode ABI |
 | `garnet-check-v0.3/` | safe-mode and CapCaps validator | current implementation |
@@ -78,7 +79,7 @@ done
 | `scripts/garnet_mit_readiness_status.py` | MIT/productization objective inventory | current machine-readable truth that the tracked implementation plan is complete while notarization, mobile distribution, promo video, broad converter frontends, LLM assist, and proof/empirics remain open gates |
 | `scripts/garnet_mac_side_continuation_status.py` | Mac-side continuation inventory | current machine-readable pulse for which repo, website, converter, evidence, and macOS Studio lanes can still move from this checkout while Apple Developer ID notarization remains account-holder blocked and Windows/Linux Studio runtime proof remains delegated |
 | `scripts/garnet_windows_linux_studio_status.py` | Windows/Linux Studio MVP contract | current machine-readable target-platform contract for the first cross-platform Studio shell: exact action inventory, safe command vectors, Desktop dogfood evidence defaults, language taxonomy, packaging gates, and explicit no-runtime-completion/no-signed-package claims |
-| `scripts/garnet_proof_benchmark_status.py` | proof/benchmark/empirical inventory | current machine-readable status for existing Criterion benchmark harnesses and research protocols; writes manifested JSON/Markdown evidence while keeping the broader benchmark campaign, mechanized proof, and external study execution unclaimed |
+| `scripts/garnet_proof_benchmark_status.py` | proof/benchmark/empirical inventory | current machine-readable status for existing Criterion benchmark harnesses, the S5 parser fuzz harness, and research protocols; writes manifested JSON/Markdown evidence while keeping the broader benchmark campaign, accumulated fuzz hours, mechanized proof, and external study execution unclaimed |
 | `scripts/garnet_benchmark_no_run.py` | benchmark compile evidence | current compile-only benchmark evidence runner for parser/interpreter/memory/VM Criterion harnesses; writes manifest-checked logs and metadata while reporting `not-measured` |
 | `C_Language_Specification/GARNET_BYTECODE_v0_1.md` | S2 bytecode surface note | current scaffold spec for the VM opcode families, deterministic serialization format, fallback boundary, and non-claims |
 | `scripts/garnet_mit_demo_route.py` | MIT demo-route inventory | current machine-readable and Markdown presentation route for a bounded seven-minute MIT walkthrough; ties Objective Pulse, Studio continuation, converter advisory, agentic dogfood, live web/PWA, and blocked-gate closeout together without claiming final MIT/productization completion |
@@ -119,7 +120,7 @@ done
 | `F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md` | S1-S10 slice dogfood contracts | update in the same commit as the slice work it tracks |
 | `scripts/garnet_mit_readiness_status.py` | broader MIT/productization objective status | `python3 scripts/test_garnet_mit_readiness_status.py`; `python3 scripts/garnet_mit_readiness_status.py` |
 | `scripts/garnet_mac_side_continuation_status.py` | Mac-side continuation status and blocked/delegated gate split | `python3 scripts/test_garnet_mac_side_continuation_status.py`; `python3 scripts/garnet_mac_side_continuation_status.py` |
-| `scripts/garnet_proof_benchmark_status.py` | proof/benchmark/empirical status and manifest bundle | `python3 scripts/test_garnet_proof_benchmark_status.py`; `python3 scripts/garnet_proof_benchmark_status.py --output-dir <bundle>` |
+| `scripts/garnet_proof_benchmark_status.py` | proof/benchmark/fuzz/empirical status and manifest bundle | `python3 scripts/test_garnet_proof_benchmark_status.py`; `python3 scripts/garnet_proof_benchmark_status.py --output-dir <bundle>` |
 | `scripts/garnet_mit_demo_route.py` | seven-minute MIT demo-route status and blocked-claim closeout | `python3 scripts/test_garnet_mit_demo_route.py`; `python3 scripts/garnet_mit_demo_route.py --output-dir <bundle>` |
 | `garnet-cli/tests/conformance_skeleton.rs` | executable conformance handles | `cargo test -p garnet-cli --test conformance_skeleton` |
 | `garnet-cli/tests/dogfood_readiness_examples.rs` | semantic MVP output stability | `cargo test -p garnet-cli --test dogfood_readiness_examples` |

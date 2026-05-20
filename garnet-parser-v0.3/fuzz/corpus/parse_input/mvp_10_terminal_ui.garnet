@@ -1,0 +1,22 @@
+# mvp_10_terminal_ui.garnet
+#
+# Canonical runnable MVP smoke: widget layout scoring for a terminal UI. Raw
+# terminal I/O remains outside this pure current-main smoke.
+
+def widget_area(width, height) {
+  width * height
+}
+
+def layout_score() {
+  let header = widget_area(80, 1)
+  let list = widget_area(40, 10)
+  let status = widget_area(80, 1)
+  header + list + status
+}
+
+@caps()
+def main() {
+  let score = layout_score()
+  println("mvp_10_terminal_ui score:", score)
+  score
+}

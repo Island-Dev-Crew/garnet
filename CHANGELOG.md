@@ -50,6 +50,17 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   `C_Language_Specification/GARNET_BYTECODE_v0_1.md`. The proof/benchmark
   reporter now inventories the VM harness, and the MIT reporter's proof lane is
   more granular while the overall objective remains 58.1%.
+- **S5 (Parser fuzz harness):** source-present `cargo-fuzz` harness at
+  `garnet-parser-v0.3/fuzz/` with a `parse_input` target, 25 tracked seed corpus
+  files copied from current Garnet examples, and
+  `.github/workflows/fuzz-nightly.yml`. Pull requests run a short 60-second
+  harness smoke; scheduled CI runs one hour nightly and uploads fuzz crash
+  artifacts on failure. `scripts/garnet_proof_benchmark_status.py` now
+  inventories the fuzz harness separately from Criterion benchmarks, and the MIT
+  proof lane moves from 45.0% to 50.0% while keeping long-running fuzz hours
+  pending until GitHub Actions evidence exists. `deny.toml` explicitly allows
+  the permissive NCSA license component required by `libfuzzer-sys`; the S5 PR
+  body carries the corresponding license-check output.
 
 ### Honest partials
 
@@ -62,6 +73,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   function boundaries, and does not claim a stable bytecode ABI, production
   native compiler proof, full safe-mode lowering, or standing benchmark
   measurements in the status reporter.
+- The S5 fuzz harness is source-present with local 60-second dogfood evidence
+  and scheduled nightly coverage, not a claim that one-hour nightly fuzz has
+  already accumulated or that parser correctness is proven.
 
 ### Known Advisory Gates (inherited, not yet fixed)
 

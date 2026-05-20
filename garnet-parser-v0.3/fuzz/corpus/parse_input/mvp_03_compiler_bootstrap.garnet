@@ -1,0 +1,26 @@
+# mvp_03_compiler_bootstrap.garnet
+#
+# Canonical runnable MVP smoke: a miniature expression evaluator. This is the
+# current executable proof for the compiler-bootstrap story; fuller self-hosting
+# remains roadmap work.
+
+def eval_add(left, right) {
+  left + right
+}
+
+def eval_mul(left, right) {
+  left * right
+}
+
+def eval_program() {
+  let base = eval_add(7, 8)
+  let scaled = eval_mul(base, 3)
+  scaled - 5
+}
+
+@caps()
+def main() {
+  let result = eval_program()
+  println("mvp_03_compiler_bootstrap result:", result)
+  result
+}

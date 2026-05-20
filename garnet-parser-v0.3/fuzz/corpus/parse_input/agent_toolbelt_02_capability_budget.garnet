@@ -1,0 +1,37 @@
+# agent_toolbelt_02_capability_budget.garnet
+#
+# Runnable agent-toolbelt smoke: budget tool authority before an agent chooses
+# filesystem, network, shell, or browser actions.
+
+def capability_cost(tool) {
+  match tool {
+    "read_file" => 3,
+    "write_file" => 8,
+    "shell_test" => 11,
+    "browser_smoke" => 12,
+    _ => 20,
+  }
+}
+
+def within_budget(tool, risk) {
+  capability_cost(tool) + risk <= 15
+}
+
+def approval_score(tool, risk) {
+  if within_budget(tool, risk) {
+    10 + capability_cost(tool)
+  } else {
+    risk
+  }
+}
+
+@caps()
+def main() {
+  let mut score = 0
+  score += approval_score("read_file", 1)
+  score += approval_score("write_file", 2)
+  score += approval_score("shell_test", 3)
+  score += approval_score("browser_smoke", 9)
+  println("agent toolbelt capability score:", score)
+  score
+}

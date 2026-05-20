@@ -31,6 +31,23 @@ class BenchmarkHarness:
 
 
 @dataclass(frozen=True)
+class FuzzHarness:
+    id: str
+    package: str
+    target_name: str
+    target_file: str
+    cargo_toml: str
+    corpus_dir: str
+    nightly_workflow: str
+    command: str
+    target_file_exists: bool
+    cargo_entry_present: bool
+    corpus_seed_count: int
+    nightly_workflow_exists: bool
+    fuzzing_status: str
+
+
+@dataclass(frozen=True)
 class ResearchProtocol:
     id: str
     label: str
@@ -45,10 +62,12 @@ class ProofBenchmarkStatus:
     source: str
     overall_status: str
     measurement_status: str
+    fuzzing_status: str
     mechanized_proof_status: str
     empirical_study_status: str
     current_truth: list[str]
     benchmarks: list[BenchmarkHarness]
+    fuzz_harnesses: list[FuzzHarness]
     protocols: list[ResearchProtocol]
     blocked_by: list[str]
     deferred: list[str]
@@ -88,6 +107,19 @@ BENCHMARKS = (
         "bench_file": "garnet-vm/benches/parse_compile_execute.rs",
         "cargo_toml": "garnet-vm/Cargo.toml",
         "command": "cargo bench -p garnet-vm --bench parse_compile_execute",
+    },
+)
+
+FUZZ_HARNESSES = (
+    {
+        "id": "parser_parse_input",
+        "package": "garnet-parser",
+        "target_name": "parse_input",
+        "target_file": "garnet-parser-v0.3/fuzz/fuzz_targets/parse_input.rs",
+        "cargo_toml": "garnet-parser-v0.3/fuzz/Cargo.toml",
+        "corpus_dir": "garnet-parser-v0.3/fuzz/corpus/parse_input",
+        "nightly_workflow": ".github/workflows/fuzz-nightly.yml",
+        "command": "cd garnet-parser-v0.3 && cargo +nightly fuzz run parse_input -- -max_total_time=60",
     },
 )
 
@@ -147,31 +179,99 @@ def _benchmarks() -> list[BenchmarkHarness]:
     return harnesses
 
 
+def _fuzz_cargo_entry_present(cargo_toml: Path, target_name: str) -> bool:
+    if not cargo_toml.is_file():
+        return False
+    text = cargo_toml.read_text(encoding="utf-8")
+    return (
+        'cargo-fuzz = true' in text
+        and "[[bin]]" in text
+        and f'name = "{target_name}"' in text
+        and f'path = "fuzz_targets/{target_name}.rs"' in text
+    )
+
+
+def _corpus_seed_count(corpus_dir: Path) -> int:
+    if not corpus_dir.is_dir():
+        return 0
+    return sum(1 for path in corpus_dir.iterdir() if path.is_file())
+
+
+def _fuzz_harnesses() -> list[FuzzHarness]:
+    harnesses: list[FuzzHarness] = []
+    for item in FUZZ_HARNESSES:
+        target_file = ROOT / item["target_file"]
+        cargo_toml = ROOT / item["cargo_toml"]
+        corpus_dir = ROOT / item["corpus_dir"]
+        nightly_workflow = ROOT / item["nightly_workflow"]
+        target_file_exists = target_file.is_file()
+        cargo_entry_present = _fuzz_cargo_entry_present(cargo_toml, item["target_name"])
+        corpus_seed_count = _corpus_seed_count(corpus_dir)
+        nightly_workflow_exists = nightly_workflow.is_file()
+        ready = all(
+            [
+                target_file_exists,
+                cargo_entry_present,
+                corpus_seed_count > 0,
+                nightly_workflow_exists,
+            ]
+        )
+        harnesses.append(
+            FuzzHarness(
+                id=item["id"],
+                package=item["package"],
+                target_name=item["target_name"],
+                target_file=item["target_file"],
+                cargo_toml=item["cargo_toml"],
+                corpus_dir=item["corpus_dir"],
+                nightly_workflow=item["nightly_workflow"],
+                command=item["command"],
+                target_file_exists=target_file_exists,
+                cargo_entry_present=cargo_entry_present,
+                corpus_seed_count=corpus_seed_count,
+                nightly_workflow_exists=nightly_workflow_exists,
+                fuzzing_status="harness-present-nightly-scheduled" if ready else "missing",
+            )
+        )
+    return harnesses
+
+
 def read_status() -> ProofBenchmarkStatus:
+    fuzz_harnesses = _fuzz_harnesses()
+    fuzzing_ready = any(
+        harness.fuzzing_status == "harness-present-nightly-scheduled"
+        for harness in fuzz_harnesses
+    )
     return ProofBenchmarkStatus(
         source=str(ROOT),
         overall_status="active-scaffold",
         measurement_status="not-run",
+        fuzzing_status="harness-present-nightly-scheduled" if fuzzing_ready else "not-configured",
         mechanized_proof_status="not-mechanized",
         empirical_study_status="pending",
         current_truth=[
             "Criterion benchmark harnesses exist for parser, interpreter, and memory surfaces.",
             "S2 adds a VM parse/compile/execute harness without embedding benchmark measurements in this reporter.",
+            "S5 adds a parser fuzz harness and nightly workflow without claiming accumulated fuzz hours yet.",
             "benchmarks compile/execution must be run separately",
             "No benchmark measurements are embedded in this status.",
+            "No long-running fuzz campaign result is embedded in this status.",
             "Formal RustBelt/Iris/Coq mechanization is not present in the repo.",
             "Empirical study protocols exist, but external participant data remains pending.",
         ],
         benchmarks=_benchmarks(),
+        fuzz_harnesses=fuzz_harnesses,
         protocols=list(PROTOCOLS),
         blocked_by=[
             "mechanized proof is not present",
             "external user study data",
             "fresh benchmark measurement run",
+            "nightly fuzz hours require GitHub Actions evidence after merge",
         ],
         deferred=[
             "formal RustBelt/Iris/Coq mechanization",
             "benchmark measurement run",
+            "accumulated nightly fuzz hours",
             "native backend proof",
             "external participant study execution",
         ],
@@ -183,6 +283,7 @@ def read_status() -> ProofBenchmarkStatus:
         ],
         next_slices=[
             "Use S2 VM benchmark output as local PR evidence, not as a standing reporter claim.",
+            "Use S5 local cargo-fuzz output as PR evidence until scheduled nightly runs accumulate artifacts.",
             "Run benchmark timing bundles only after measurement protocol and variance guardrails are in place.",
             "Run benchmark measurement bundle only when machine, command, and variance metadata are recorded.",
             "Turn one proof sketch into a checked mechanization artifact before claiming formal proof.",
@@ -198,6 +299,7 @@ def render_markdown(status: ProofBenchmarkStatus) -> str:
         f"Source: `{status.source}`",
         f"Overall status: `{status.overall_status}`",
         f"Benchmark measurements: `{status.measurement_status}`",
+        f"Fuzzing: `{status.fuzzing_status}`",
         f"Mechanized proof: `{status.mechanized_proof_status}`",
         f"Empirical study: `{status.empirical_study_status}`",
         "",
@@ -216,6 +318,24 @@ def render_markdown(status: ProofBenchmarkStatus) -> str:
         lines.append(
             f"| {bench.id} | `{bench.package}` | `{bench.command}` | "
             f"{file_state} | {cargo_state} | `{bench.measurement_status}` |"
+        )
+
+    lines.extend(
+        [
+            "",
+            "## Fuzz Harnesses",
+            "",
+            "| Harness | Package | Command | Target | Corpus seeds | Nightly | Status |",
+            "| --- | --- | --- | --- | ---: | --- | --- |",
+        ]
+    )
+    for harness in status.fuzz_harnesses:
+        target_state = "present" if harness.target_file_exists and harness.cargo_entry_present else "missing"
+        nightly_state = "present" if harness.nightly_workflow_exists else "missing"
+        lines.append(
+            f"| {harness.id} | `{harness.package}` | `{harness.command}` | "
+            f"{target_state} | {harness.corpus_seed_count} | {nightly_state} | "
+            f"`{harness.fuzzing_status}` |"
         )
 
     lines.extend(

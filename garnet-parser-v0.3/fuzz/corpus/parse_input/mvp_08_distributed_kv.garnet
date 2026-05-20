@@ -1,0 +1,25 @@
+# mvp_08_distributed_kv.garnet
+#
+# Canonical runnable MVP smoke: vector-clock style merge scoring for a three
+# replica key-value store without live networking.
+
+def max_int(a, b) {
+  if a > b {
+    a
+  } else {
+    b
+  }
+}
+
+def merge_clock(a, b, c) {
+  max_int(max_int(a, b), c)
+}
+
+@caps()
+def main() {
+  let latest_user = merge_clock(3, 5, 4)
+  let latest_order = merge_clock(7, 2, 7)
+  let score = latest_user * 10 + latest_order
+  println("mvp_08_distributed_kv score:", score)
+  score
+}

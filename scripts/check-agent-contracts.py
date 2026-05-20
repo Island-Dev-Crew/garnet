@@ -50,6 +50,9 @@ CONTRACT_RULES = {
     "garnet-parser-v0.3/AGENTS.md": {
         "phrases": ["Mini-Spec", "lexing", "parsing", "diagnostic span"],
     },
+    "garnet-parser-v0.3/fuzz/AGENTS.md": {
+        "phrases": ["cargo fuzz", "parse_input", "seed corpus", "nightly"],
+    },
     "garnet-interp-v0.3/AGENTS.md": {
         "phrases": ["tree-walk", "stdlib", "capability metadata", "garnet run"],
     },

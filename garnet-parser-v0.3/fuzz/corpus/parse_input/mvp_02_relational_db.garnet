@@ -1,0 +1,28 @@
+# mvp_02_relational_db.garnet
+#
+# Canonical runnable MVP smoke: a tiny in-memory relational query score. It
+# stays within the current interpreter surface while preserving the database
+# workflow: insert rows, filter active rows, and return a deterministic count.
+
+def active_rows(rows) {
+  let mut active = 0
+  for row in rows {
+    if row > 0 {
+      active += 1
+    }
+  }
+  active
+}
+
+def query_score(rows) {
+  let count = active_rows(rows)
+  count * 10 + rows.len()
+}
+
+@caps()
+def main() {
+  let rows = [1, 0, 1, 1, 0, 1]
+  let score = query_score(rows)
+  println("mvp_02_relational_db score:", score)
+  score
+}

@@ -1,0 +1,32 @@
+# mvp_05_web_app.garnet
+#
+# Canonical runnable MVP smoke: pure route dispatch for a tiny web app. Network
+# binding is release/runtime work; this smoke proves the request-routing logic
+# runs today.
+
+def route_weight(path) {
+  if path == "/" {
+    10
+  } elsif path == "/health" {
+    20
+  } elsif path == "/users" {
+    30
+  } else {
+    1
+  }
+}
+
+def dispatch_score(paths) {
+  let mut total = 0
+  for path in paths {
+    total += route_weight(path)
+  }
+  total
+}
+
+@caps()
+def main() {
+  let score = dispatch_score(["/", "/health", "/users", "/missing"])
+  println("mvp_05_web_app routes:", score)
+  score
+}

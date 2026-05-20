@@ -1,0 +1,33 @@
+# mvp_04_numerical_solver.garnet
+#
+# Canonical runnable MVP smoke: a small iterative solver that moves a value
+# toward a target and reports the final absolute error.
+
+def abs_int(value) {
+  if value < 0 {
+    0 - value
+  } else {
+    value
+  }
+}
+
+def converge(start, target, steps) {
+  let mut value = start
+  let mut i = 0
+  while i < steps {
+    if value < target {
+      value += 2
+    } elsif value > target {
+      value -= 1
+    }
+    i += 1
+  }
+  abs_int(target - value)
+}
+
+@caps()
+def main() {
+  let error = converge(0, 11, 7)
+  println("mvp_04_numerical_solver error:", error)
+  error
+}

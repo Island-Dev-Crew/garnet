@@ -1,0 +1,33 @@
+# agent_toolbelt_05_repair_planner.garnet
+#
+# Runnable agent-toolbelt smoke: prioritize repairs by combining severity,
+# blast radius, and whether a regression test already exists.
+
+def severity_points(severity) {
+  match severity {
+    "critical" => 50,
+    "high" => 30,
+    "medium" => 15,
+    "low" => 5,
+    _ => 1,
+  }
+}
+
+def regression_bonus(has_test) {
+  if has_test {
+    4
+  } else {
+    12
+  }
+}
+
+def repair_points(severity, blast_radius, has_test) {
+  severity_points(severity) + blast_radius + regression_bonus(has_test)
+}
+
+@caps()
+def main() {
+  let score = repair_points("high", 9, true) + repair_points("critical", 1, false) + repair_points("low", 1, true)
+  println("agent toolbelt repair plan score:", score)
+  score
+}
