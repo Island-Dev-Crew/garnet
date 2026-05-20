@@ -90,6 +90,11 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Honest partials
 
+- Release-candidate preflight retargets the canonical workspace/CLI version and
+  installer defaults to `0.5.0`, but it is not a tag and not proof that release
+  assets or a published VSIX exist. The latest tagged release remains `v0.4.2`
+  until the clean-machine public installer and editor-extension gate is
+  recorded.
 - The S1 LSP slice is source-present until published-extension evidence and
   full manual VSCode hover/go-to-definition screenshots are attached to later
   review/release evidence. Safe-mode hover, workspace symbols, rename, and

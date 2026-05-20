@@ -328,14 +328,15 @@ Tag v0.5.0 only when all of:
   # Confirm: VSCode shows diagnostics on injected syntax error
 ```
 
-Current state as of 2026-05-20: this remains the open release gate. Do not tag
-v0.5.0 until the installer path and editor-extension proof are reproduced on a
-clean machine and the resulting evidence is recorded. Partial Mac-side source
-reproduction from the public installer with `GARNET_INSTALL_MODE=source` and
-`GARNET_SOURCE_REF=main` passed `garnet new --template cli`, `garnet test`, and
-`garnet run`, but this is not release-backed v0.5.0 proof because the public
-installer still defaults to v0.4.2 and no published Garnet VSIX evidence is
-recorded.
+Current state as of 2026-05-20: this remains the open release gate. The
+release-candidate preflight retargets the canonical package version and public
+installer default to v0.5.0, but that is not a tag and not release-asset proof.
+Do not tag v0.5.0 until the public installer path and editor-extension proof
+are reproduced on a clean machine and the resulting evidence is recorded. The
+installer's source fallback may prove the v0.5.0 source path before the tag;
+release-backed package proof still requires the tag/release assets to exist.
+No published Garnet VSIX evidence or clean-machine VSCode diagnostic screenshot
+is recorded yet.
 
 
 

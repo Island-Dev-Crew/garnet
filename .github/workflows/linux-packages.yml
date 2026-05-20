@@ -63,12 +63,14 @@ jobs:
 
       - name: Build .deb
         run: |
+          rm -rf target/debian
           cd garnet-cli
           cargo deb --no-build
           ls -la ../target/debian/
 
       - name: Build .rpm
         run: |
+          rm -rf target/generate-rpm
           cargo generate-rpm -p garnet-cli
           ls -la target/generate-rpm/
 

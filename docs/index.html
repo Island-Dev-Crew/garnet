@@ -1042,7 +1042,7 @@
         <tr><td style="padding:8px 14px;">Agent/memory primitives</td><td style="padding:8px 14px;">Library</td><td style="padding:8px 14px;">Library</td><td style="padding:8px 14px;color:var(--ink);">Language-level (working/episodic/semantic/procedural)</td></tr>
         <tr><td style="padding:8px 14px;">Capability control</td><td style="padding:8px 14px;">External crates</td><td style="padding:8px 14px;">External gems</td><td style="padding:8px 14px;color:var(--ink);"><code>@caps(...)</code> in the language</td></tr>
         <tr><td style="padding:8px 14px;">Reproducible builds</td><td style="padding:8px 14px;">Tooling-dependent</td><td style="padding:8px 14px;">Not a goal</td><td style="padding:8px 14px;color:var(--ink);">Manifest + Ed25519 signature contract</td></tr>
-        <tr><td style="padding:8px 14px 12px;border-top:1px solid var(--rule);">Maturity</td><td style="padding:8px 14px 12px;border-top:1px solid var(--rule);">Production</td><td style="padding:8px 14px 12px;border-top:1px solid var(--rule);">Production</td><td style="padding:8px 14px 12px;border-top:1px solid var(--rule);color:var(--ink);"><strong>Research-grade prototype (v0.4.2)</strong> — not production-complete</td></tr>
+        <tr><td style="padding:8px 14px 12px;border-top:1px solid var(--rule);">Maturity</td><td style="padding:8px 14px 12px;border-top:1px solid var(--rule);">Production</td><td style="padding:8px 14px 12px;border-top:1px solid var(--rule);">Production</td><td style="padding:8px 14px 12px;border-top:1px solid var(--rule);color:var(--ink);"><strong>Research-grade prototype (v0.x.x)</strong> — not production-complete</td></tr>
       </table>
     </div>
   </div>
@@ -1159,7 +1159,7 @@
   <div class="container reveal">
     <h3>Get Garnet</h3>
     <h2>Install with one curl command.</h2>
-    <p class="lead">The <strong>v0.4.2 release is live</strong> on GitHub. The universal installer pulls the release package, verifies it against <code>SHA256SUMS</code>, and falls back to a source install through <code>cargo install --locked</code> if a platform package is unavailable. Detailed productization gates live on the <a href="status.html">readiness status page</a>.</p>
+    <p class="lead">The universal installer now targets the <strong>v0.5.0 release-candidate path</strong>. It pulls release packages when they exist, verifies them against <code>SHA256SUMS</code>, and falls back to a source install through <code>cargo install --locked</code> while the tag gate is still open. The latest tagged release remains <strong>v0.4.2</strong> until clean-machine installer and editor-extension evidence is recorded. Detailed productization gates live on the <a href="status.html">readiness status page</a>.</p>
 
     <div id="os-detect" hidden style="display:none;align-items:center;gap:12px;margin:0 0 18px;padding:12px 16px;border:1px solid var(--rule);border-radius:10px;background:var(--bg-soft);font-size:14px;color:var(--ink-soft);">
       <span id="os-detect-msg"></span>
@@ -1177,9 +1177,9 @@
         var plat=(uad&&uad.platform)?uad.platform:(navigator.platform||'');
         var s=(plat+' '+(navigator.userAgent||'')).toLowerCase();
         var t='';
-        if(s.indexOf('mac')>-1) t='Detected: macOS — the universal installer below pulls the SHA-256-verified Apple-Silicon tarball. (Intel Macs use the source install.)';
-        else if(s.indexOf('win')>-1) t='Detected: Windows — v0.4.2 has no Windows package yet; use the source install (needs Rust 1.75+).';
-        else if(s.indexOf('linux')>-1||s.indexOf('android')>-1) t='Detected: Linux — the universal installer pulls the checksum-verified x86_64 package; aarch64 falls back to the source install.';
+        if(s.indexOf('mac')>-1) t='Detected: macOS — the universal installer uses v0.5.0 release assets when available, otherwise source fallback. (Intel Macs use the source install.)';
+        else if(s.indexOf('win')>-1) t='Detected: Windows — no v0.5.0 Windows package is claimed yet; use the source install (needs Rust 1.75+).';
+        else if(s.indexOf('linux')>-1||s.indexOf('android')>-1) t='Detected: Linux — the universal installer uses checksum-verified v0.5.0 packages when tagged assets exist; other targets fall back to source.';
         if(!t)return; // unknown platform → no banner, silent
         msg.textContent=t;
         el.hidden=false; el.style.display='flex';
@@ -1189,14 +1189,14 @@
     </script>
 
     <div class="install-note" style="margin:8px 0 26px;padding:16px 18px;border:1px solid var(--rule);border-radius:10px;background:var(--bg-soft);font-size:14.5px;color:var(--ink-soft);">
-      <strong style="color:var(--ink);">Before you install.</strong> Prebuilt release packages need <em>no toolchain</em>. The <em>source</em> install needs <strong>Rust 1.75+</strong>. v0.4.2 ships these checksum-verified assets; other targets fall back to the source install:
+      <strong style="color:var(--ink);">Before you install.</strong> Prebuilt release packages need <em>no toolchain</em>. The <em>source</em> install needs <strong>Rust 1.75+</strong>. v0.5.0 package names below are release-candidate targets; until the tag exists, the installer falls back to source. v0.4.2 remains the latest published package release:
       <table style="border-collapse:collapse;margin:12px 0 4px;font-size:13.5px;width:100%;">
-        <tr style="color:var(--ink);"><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">Platform</th><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">v0.4.2 asset</th><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">Path</th></tr>
-        <tr><td style="padding:4px 10px;">macOS · Apple Silicon</td><td style="padding:4px 10px;"><code>garnet-0.4.2-aarch64-apple-darwin.tar.gz</code></td><td style="padding:4px 10px;">universal installer</td></tr>
-        <tr><td style="padding:4px 10px;">macOS · Intel</td><td style="padding:4px 10px;">— none in v0.4.2 —</td><td style="padding:4px 10px;">source install</td></tr>
-        <tr><td style="padding:4px 10px;">Linux x86_64</td><td style="padding:4px 10px;"><code>garnet_0.4.2-1_amd64.deb</code> · <code>garnet-0.4.2-1.x86_64.rpm</code></td><td style="padding:4px 10px;">universal / distro pkg</td></tr>
-        <tr><td style="padding:4px 10px;">Linux aarch64</td><td style="padding:4px 10px;">— none in v0.4.2 —</td><td style="padding:4px 10px;">source install</td></tr>
-        <tr><td style="padding:4px 10px;">Windows</td><td style="padding:4px 10px;">— none in v0.4.2 —</td><td style="padding:4px 10px;">source install</td></tr>
+        <tr style="color:var(--ink);"><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">Platform</th><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">v0.5.0 target</th><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">Path before tag</th></tr>
+        <tr><td style="padding:4px 10px;">macOS · Apple Silicon</td><td style="padding:4px 10px;"><code>garnet-0.5.0-aarch64-apple-darwin.tar.gz</code></td><td style="padding:4px 10px;">source fallback unless uploaded</td></tr>
+        <tr><td style="padding:4px 10px;">macOS · Intel</td><td style="padding:4px 10px;">— no package claimed —</td><td style="padding:4px 10px;">source install</td></tr>
+        <tr><td style="padding:4px 10px;">Linux x86_64</td><td style="padding:4px 10px;"><code>garnet_0.5.0-1_amd64.deb</code> · <code>garnet-0.5.0-1.x86_64.rpm</code></td><td style="padding:4px 10px;">source fallback until tag assets exist</td></tr>
+        <tr><td style="padding:4px 10px;">Linux aarch64</td><td style="padding:4px 10px;">— no package claimed —</td><td style="padding:4px 10px;">source install</td></tr>
+        <tr><td style="padding:4px 10px;">Windows</td><td style="padding:4px 10px;">— no package claimed —</td><td style="padding:4px 10px;">source install</td></tr>
       </table>
       <div style="margin-top:10px;">Verify any manual download before running it (from the folder containing the asset and <code>SHA256SUMS</code>):</div>
 <pre style="margin:8px 0 0;">shasum -a 256 --ignore-missing -c SHA256SUMS</pre>
@@ -1226,9 +1226,9 @@ curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | GARNET
       <div class="install-pane" data-pane="macos">
         <div class="install-wrap">
           <button class="copy" data-copy="curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh">Copy</button>
-<pre># Recommended — universal installer (Apple Silicon):
-# pulls garnet-0.4.2-aarch64-apple-darwin.tar.gz from the
-# v0.4.2 release and verifies it against SHA256SUMS.
+<pre># Recommended — universal installer:
+# uses v0.5.0 release assets when they exist and otherwise falls back
+# to source install while the tag gate is still open.
 curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 
 # Source install (any arch, needs a Rust toolchain):
@@ -1243,14 +1243,14 @@ git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && c
 <pre># Recommended — universal installer (SHA256SUMS-verified):
 curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 
-# Distro packages from the v0.4.2 release:
-#   https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.4.2
+# Distro packages after the v0.5.0 tag publishes release assets:
+#   https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.5.0
 
 # Debian/Ubuntu:
-sudo apt install ./garnet_0.4.2-1_amd64.deb
+sudo apt install ./garnet_0.5.0-1_amd64.deb
 
 # Fedora/RHEL:
-sudo dnf install ./garnet-0.4.2-1.x86_64.rpm
+sudo dnf install ./garnet-0.5.0-1.x86_64.rpm
 
 # Source install (any arch, needs a Rust toolchain):
 git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && cargo install --path .</pre>
@@ -1509,7 +1509,7 @@ dist/Garnet Studio.app</pre>
     <div class="links">
       <a href="https://github.com/Island-Dev-Crew/garnet" target="_blank" rel="noopener noreferrer">GitHub</a>
       <a href="#docs">Documentation</a>
-      <a href="https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.4.2" target="_blank" rel="noopener noreferrer">Releases</a>
+      <a href="https://github.com/Island-Dev-Crew/garnet/releases" target="_blank" rel="noopener noreferrer">Releases</a>
       <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/SECURITY.md" target="_blank" rel="noopener noreferrer">Security</a>
       <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/CODE_OF_CONDUCT.md" target="_blank" rel="noopener noreferrer">Code of Conduct</a>
       <a href="logo-policy.html">Logo Policy</a>
@@ -1521,7 +1521,7 @@ dist/Garnet Studio.app</pre>
       © 2026 Island Development Crew · Dual-licensed MIT OR Apache-2.0 · garnet-lang.org
     </div>
     <div class="copyright" style="margin-top:6px;opacity:.7;font-size:12px;">
-      Site updated 2026-05-19 · tracking Garnet v0.4.2 (updated by hand on change, not a daily build)
+      Site updated 2026-05-20 · tracking Garnet v0.5.0 release-candidate source; latest tagged release remains v0.4.2
     </div>
     <div class="copyright" style="margin-top:6px;opacity:.7;font-size:12px;">
       No social accounts yet — follow development by watching the <a href="https://github.com/Island-Dev-Crew/garnet" target="_blank" rel="noopener noreferrer">repository</a>.

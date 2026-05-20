@@ -56,8 +56,8 @@ pub fn read_file(path: &Path) -> Result<String, String> {
     fs::read_to_string(path).map_err(|e| format!("failed to read {:?}: {e}", path))
 }
 
-/// Print the v4.2 `--version` banner — ASCII wordmark + component
-/// versions + the Rung identification for each crate. Phase 6C.
+/// Print the public `--version` banner — ASCII wordmark + component
+/// versions + the Rung identification for each crate.
 ///
 /// The wordmark is tinted in the Garnet accent color when stdout is a
 /// real terminal; plain ASCII when piped or redirected (so CI logs stay
@@ -66,7 +66,11 @@ pub fn print_version() {
     print!("{}", wordmark_for_stdout());
     println!("  Rust Rigor. Ruby Velocity. One Coherent Language.");
     println!();
-    println!("garnet 0.4.2 ({})", env!("CARGO_PKG_DESCRIPTION"));
+    println!(
+        "garnet {} ({})",
+        env!("CARGO_PKG_VERSION"),
+        env!("CARGO_PKG_DESCRIPTION")
+    );
     println!("  parser    garnet-parser 0.3.0 (Mini-Spec v1.0)");
     println!("  interp    garnet-interp 0.3.0 (tree-walk, Rung 3)");
     println!("  check     garnet-check  0.3.0 (safe-mode + borrow + CapCaps v3.4.1, Rung 4)");

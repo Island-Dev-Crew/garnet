@@ -1,17 +1,17 @@
 #!/bin/sh
-# Garnet universal installer, v0.4.2.
+# Garnet universal installer, v0.5.0 release-candidate default.
 #
 # Public bootstrap URL:
 #   curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 #
 # The script detects the host OS and architecture, prefers the matching native
 # package from GitHub Releases, verifies it against SHA256SUMS, installs it, and
-# runs `garnet --version`. Before release assets exist, auto mode falls back to
-# a source install through `cargo install --path ... --locked`.
+# runs `garnet --version`. If the requested release asset is unavailable, auto
+# mode falls back to a source install through `cargo install --path ... --locked`.
 
 set -eu
 
-GARNET_VERSION="${GARNET_VERSION:-0.4.2}"
+GARNET_VERSION="${GARNET_VERSION:-0.5.0}"
 case "${GARNET_VERSION}" in
   v*)
     GARNET_VERSION="${GARNET_VERSION#v}"
@@ -25,7 +25,7 @@ GARNET_PREFIX="${GARNET_PREFIX:-}"
 GARNET_FORMAT="${GARNET_FORMAT:-}"
 GARNET_INSTALL_MODE="${GARNET_INSTALL_MODE:-auto}"
 GARNET_SOURCE_FALLBACK="${GARNET_SOURCE_FALLBACK:-1}"
-GARNET_SOURCE_REF="${GARNET_SOURCE_REF:-main}"
+GARNET_SOURCE_REF="${GARNET_SOURCE_REF:-}"
 GARNET_SOURCE_REPO_URL="${GARNET_SOURCE_REPO_URL:-https://github.com/${GARNET_REPO}.git}"
 GARNET_INSTALLED_BIN=""
 
@@ -283,12 +283,12 @@ install_tar() {
 }
 
 run_version_check() {
-    if command -v garnet >/dev/null 2>&1; then
-        say "install complete"
-        garnet --version | head -10
-    elif [ -n "$GARNET_INSTALLED_BIN" ] && [ -x "$GARNET_INSTALLED_BIN" ]; then
+    if [ -n "$GARNET_INSTALLED_BIN" ] && [ -x "$GARNET_INSTALLED_BIN" ]; then
         say "install complete"
         "$GARNET_INSTALLED_BIN" --version | head -10
+    elif command -v garnet >/dev/null 2>&1; then
+        say "install complete"
+        garnet --version | head -10
     else
         warn "installer completed but 'garnet' is not on PATH; open a new shell"
     fi
@@ -301,12 +301,30 @@ source_install() {
     _prefix="${GARNET_PREFIX:-$HOME/.local}"
     _scratch="$(mktemp -d 2>/dev/null || printf '/tmp/garnet-source-%s' "$$")"
     _src="$_scratch/garnet"
+    _chosen_ref=""
 
-    say "source   = ${GARNET_SOURCE_REPO_URL} (${GARNET_SOURCE_REF})"
+    if [ -n "$GARNET_SOURCE_REF" ]; then
+        _candidate_refs="$GARNET_SOURCE_REF"
+    else
+        _candidate_refs="$GARNET_TAG main"
+    fi
+
     say "install  = source via cargo install --locked"
 
-    git clone --depth 1 --branch "$GARNET_SOURCE_REF" "$GARNET_SOURCE_REPO_URL" "$_src" ||
-        err "failed to clone ${GARNET_SOURCE_REPO_URL} at ${GARNET_SOURCE_REF}"
+    for _ref in $_candidate_refs; do
+        say "source   = ${GARNET_SOURCE_REPO_URL} (${_ref})"
+        if git clone --depth 1 --branch "$_ref" "$GARNET_SOURCE_REPO_URL" "$_src"; then
+            _chosen_ref="$_ref"
+            break
+        fi
+        rm -rf "$_src"
+        warn "failed to clone ${GARNET_SOURCE_REPO_URL} at ${_ref}"
+    done
+
+    if [ -z "$_chosen_ref" ]; then
+        err "failed to clone ${GARNET_SOURCE_REPO_URL} at requested source refs"
+    fi
+
     cargo install --path "$_src/garnet-cli" --root "$_prefix" --locked ||
         err "failed to install Garnet from source"
 
