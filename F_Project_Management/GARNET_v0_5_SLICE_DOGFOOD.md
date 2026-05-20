@@ -81,7 +81,6 @@ code --install-extension editors/vscode/garnet-*.vsix
 ```
 
 
-
 **Honest partial labels available:** "safe-mode hover not in MVP" · "workspace symbols deferred to S1.1" · "rename deferred."
 
 **State as of 2026-05-20:** merged.
