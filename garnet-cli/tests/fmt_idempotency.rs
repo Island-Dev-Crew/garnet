@@ -41,7 +41,9 @@ fn garnet_binary() -> PathBuf {
     } else {
         "release"
     };
-    target.join(profile).join("garnet")
+    target
+        .join(profile)
+        .join(format!("garnet{}", std::env::consts::EXE_SUFFIX))
 }
 
 fn ensure_binary_built() {
@@ -109,7 +111,8 @@ fn canonical_examples_are_idempotent_under_fmt() {
         // production code path on the same `--stdout` flag.
         let tmpdir = std::env::temp_dir();
         let tmp_once = tmpdir.join(format!(
-            "garnet-fmt-once-{}.garnet",
+            "garnet-fmt-once-{}-{}.garnet",
+            std::process::id(),
             path.file_stem().unwrap().to_string_lossy()
         ));
         fs::write(&tmp_once, &once).unwrap_or_else(|e| panic!("write {tmp_once:?}: {e}"));

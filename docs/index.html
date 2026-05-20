@@ -13,7 +13,7 @@
 <meta property="og:description" content="A dual-mode language platform: managed mode for velocity, safe mode for rigor, mode boundary auto-bridged.">
 <meta property="og:type" content="website">
 <link rel="canonical" href="https://garnet-lang.org/">
-<link rel="alternate" type="application/atom+xml" title="Garnet releases" href="/releases.xml">
+<link rel="alternate" type="application/atom+xml" title="Garnet blog" href="/blog/feed.xml">
 <style>
   /* ─── Palette + tokens ─────────────────────────────────────── */
   :root {
@@ -636,7 +636,7 @@
     overflow: hidden;
   }
   .objective-meter .fill {
-    width: 67.9%;
+    width: 69.7%;
     height: 100%;
     background: var(--garnet);
   }
@@ -1177,9 +1177,9 @@
         var plat=(uad&&uad.platform)?uad.platform:(navigator.platform||'');
         var s=(plat+' '+(navigator.userAgent||'')).toLowerCase();
         var t='';
-        if(s.indexOf('mac')>-1) t='Detected: macOS — the universal installer uses v0.5.0 release assets when available, otherwise source fallback. (Intel Macs use the source install.)';
+        if(s.indexOf('mac')>-1) t='Detected: macOS — the universal installer uses v0.5.0 release assets when available, otherwise source fallback. Apple Silicon and Intel CLI tarballs are published; signed .pkg remains credential-gated.';
         else if(s.indexOf('win')>-1) t='Detected: Windows — no v0.5.0 Windows package is claimed yet; use the source install (needs Rust 1.75+).';
-        else if(s.indexOf('linux')>-1||s.indexOf('android')>-1) t='Detected: Linux — the universal installer uses checksum-verified v0.5.0 packages when tagged assets exist; other targets fall back to source.';
+        else if(s.indexOf('linux')>-1||s.indexOf('android')>-1) t='Detected: Linux — the universal installer uses checksum-verified v0.5.0 x86_64 packages when available; other targets fall back to source.';
         if(!t)return; // unknown platform → no banner, silent
         msg.textContent=t;
         el.hidden=false; el.style.display='flex';
@@ -1189,12 +1189,12 @@
     </script>
 
     <div class="install-note" style="margin:8px 0 26px;padding:16px 18px;border:1px solid var(--rule);border-radius:10px;background:var(--bg-soft);font-size:14.5px;color:var(--ink-soft);">
-      <strong style="color:var(--ink);">Before you install.</strong> Prebuilt release packages need <em>no toolchain</em>. The <em>source</em> install needs <strong>Rust 1.75+</strong>. v0.5.0 package names below are release-candidate targets; until the tag exists, the installer falls back to source. v0.4.2 remains the latest published package release:
+      <strong style="color:var(--ink);">Before you install.</strong> Prebuilt release packages need <em>no toolchain</em>. The <em>source</em> install needs <strong>Rust 1.75+</strong>. v0.5.0 is the current published release; v0.4.2 remains the previous release if you need to pin older behavior:
       <table style="border-collapse:collapse;margin:12px 0 4px;font-size:13.5px;width:100%;">
-        <tr style="color:var(--ink);"><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">Platform</th><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">v0.5.0 target</th><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">Path before tag</th></tr>
-        <tr><td style="padding:4px 10px;">macOS · Apple Silicon</td><td style="padding:4px 10px;"><code>garnet-0.5.0-aarch64-apple-darwin.tar.gz</code></td><td style="padding:4px 10px;">source fallback unless uploaded</td></tr>
-        <tr><td style="padding:4px 10px;">macOS · Intel</td><td style="padding:4px 10px;">— no package claimed —</td><td style="padding:4px 10px;">source install</td></tr>
-        <tr><td style="padding:4px 10px;">Linux x86_64</td><td style="padding:4px 10px;"><code>garnet_0.5.0-1_amd64.deb</code> · <code>garnet-0.5.0-1.x86_64.rpm</code></td><td style="padding:4px 10px;">source fallback until tag assets exist</td></tr>
+        <tr style="color:var(--ink);"><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">Platform</th><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">v0.5.0 asset</th><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">Current path</th></tr>
+        <tr><td style="padding:4px 10px;">macOS · Apple Silicon</td><td style="padding:4px 10px;"><code>garnet-0.5.0-aarch64-apple-darwin.tar.gz</code></td><td style="padding:4px 10px;">release tarball; signed .pkg not claimed</td></tr>
+        <tr><td style="padding:4px 10px;">macOS · Intel</td><td style="padding:4px 10px;"><code>garnet-0.5.0-x86_64-apple-darwin.tar.gz</code></td><td style="padding:4px 10px;">release tarball; signed .pkg not claimed</td></tr>
+        <tr><td style="padding:4px 10px;">Linux x86_64</td><td style="padding:4px 10px;"><code>garnet_0.5.0-1_amd64.deb</code> · <code>garnet-0.5.0-1.x86_64.rpm</code></td><td style="padding:4px 10px;">release package</td></tr>
         <tr><td style="padding:4px 10px;">Linux aarch64</td><td style="padding:4px 10px;">— no package claimed —</td><td style="padding:4px 10px;">source install</td></tr>
         <tr><td style="padding:4px 10px;">Windows</td><td style="padding:4px 10px;">— no package claimed —</td><td style="padding:4px 10px;">source install</td></tr>
       </table>
@@ -1227,8 +1227,8 @@ curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | GARNET
         <div class="install-wrap">
           <button class="copy" data-copy="curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh">Copy</button>
 <pre># Recommended — universal installer:
-# uses v0.5.0 release assets when they exist and otherwise falls back
-# to source install while the tag gate is still open.
+# uses v0.5.0 CLI tarballs when available and otherwise falls back
+# to source install. Signed .pkg/notarization is not claimed yet.
 curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 
 # Source install (any arch, needs a Rust toolchain):
@@ -1243,7 +1243,7 @@ git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && c
 <pre># Recommended — universal installer (SHA256SUMS-verified):
 curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 
-# Distro packages after the v0.5.0 tag publishes release assets:
+# Published v0.5.0 release assets:
 #   https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.5.0
 
 # Debian/Ubuntu:
@@ -1425,7 +1425,7 @@ dist/Garnet Studio.app</pre>
     <div class="numbers">
       <div class="number"><div class="big">1193</div><div class="small">Workspace tests</div></div>
       <div class="number"><div class="big">136</div><div class="small">Security tests</div></div>
-      <div class="number"><div class="big">22</div><div class="small">Stdlib primitives</div></div>
+      <div class="number"><div class="big">24</div><div class="small">Stdlib registry primitives</div></div>
       <div class="number"><div class="big">10</div><div class="small">MVP drafts</div></div>
       <div class="number"><div class="big">7</div><div class="small">Research papers</div></div>
       <div class="number"><div class="big">0.93×</div><div class="small">Expressiveness ratio</div></div>
@@ -1433,7 +1433,7 @@ dist/Garnet Studio.app</pre>
     <div class="objective-pulse" aria-label="MIT/productization objective progress pulse">
       <div class="objective-meter">
         <div class="label">MIT/productization objective</div>
-        <div class="percent">67.9%</div>
+        <div class="percent">69.7%</div>
         <div class="meter" aria-hidden="true"><div class="fill"></div></div>
         <p class="evidence-note">Latest local dogfood pulse from <code>scripts/garnet_mit_readiness_status.py</code>. This is not the same as tracked implementation completion.</p>
       </div>
@@ -1441,6 +1441,7 @@ dist/Garnet Studio.app</pre>
         <div class="label">Current pulse</div>
         <ul>
           <li><strong>87/87 tracked slices</strong> are verified, but that is not full MIT/productization completion.</li>
+          <li>S4 added a deterministic, idempotent formatter baseline; semantic CST-grade formatting remains deferred.</li>
           <li>Windows now has a Tauri v2 Studio scaffold with local release build, unsigned NSIS bundle, and smoke evidence; Linux runtime and clean-machine installer proof remain open.</li>
           <li>Promo video is public-site embedded at 95.0%; human/aesthetic acceptance remains open.</li>
           <li>Web/PWA productization is verified; mobile distribution is still planned.</li>
@@ -1466,6 +1467,11 @@ dist/Garnet Studio.app</pre>
         <div class="label">Specification</div>
         <h4>Mini-Spec v1.0</h4>
         <p>The canonical language specification. Grammar, type system, mode boundary, capability inventory, deterministic build manifest.</p>
+      </a>
+      <a href="stdlib.html" class="doc-card">
+        <div class="label">Reference</div>
+        <h4>Stdlib Primitive Registry</h4>
+        <p>The current capability-tagged primitive table: pure string/array/crypto helpers plus explicit time, file, and network authority.</p>
       </a>
       <a href="synthesis.html" class="doc-card">
         <div class="label">The Reconciliation</div>

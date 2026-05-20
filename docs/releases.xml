@@ -5,8 +5,16 @@
   <link href="https://garnet-lang.org/releases.xml" rel="self"/>
   <link href="https://github.com/Island-Dev-Crew/garnet/releases"/>
   <id>https://garnet-lang.org/releases.xml</id>
-  <updated>2026-05-15T23:38:42Z</updated>
+  <updated>2026-05-20T14:19:59Z</updated>
   <author><name>Island Development Crew</name></author>
+  <entry>
+    <title>Garnet v0.5.0</title>
+    <id>https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.5.0</id>
+    <link href="https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.5.0"/>
+    <updated>2026-05-20T14:19:59Z</updated>
+    <published>2026-05-20T14:19:59Z</published>
+    <summary>v0.5.0 — Linux .deb/.rpm packages, macOS Apple-Silicon and Intel CLI tarballs, host-native VSIX release assets, and SHA256SUMS. Research-grade prototype, not production-complete; Apple notarization, Windows MSI, Marketplace/OpenVSX, and Windows/Linux Studio runtime proof remain separate gates.</summary>
+  </entry>
   <entry>
     <title>Garnet v0.4.2</title>
     <id>https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.4.2</id>
