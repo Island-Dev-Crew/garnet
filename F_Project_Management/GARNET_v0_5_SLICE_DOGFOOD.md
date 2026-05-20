@@ -331,12 +331,21 @@ Tag v0.5.0 only when all of:
 Current state as of 2026-05-20: this remains the open release gate. The
 release-candidate preflight retargets the canonical package version and public
 installer default to v0.5.0, but that is not a tag and not release-asset proof.
-Do not tag v0.5.0 until the public installer path and editor-extension proof
-are reproduced on a clean machine and the resulting evidence is recorded. The
-installer's source fallback may prove the v0.5.0 source path before the tag;
-release-backed package proof still requires the tag/release assets to exist.
-No published Garnet VSIX evidence or clean-machine VSCode diagnostic screenshot
-is recorded yet.
+Post-merge public installer source-fallback proof is recorded in
+`/Users/idc2.0/Desktop/dogfood/garnet-v0-5-rc-merged-20260520T121820Z`:
+`curl -fsSL https://garnet-lang.org/install.sh` installed `garnet 0.5.0` into
+an isolated prefix with a configured Rust toolchain, then `garnet new`,
+`garnet test`, and `garnet run` passed. Mac-local editor evidence is recorded
+in `/Users/idc2.0/Desktop/dogfood/garnet-v0-5-editor-gate-20260520T122611Z`:
+`island-dev-crew.garnet@0.5.0` installed into Cursor, the injected syntax-error
+fixture showed `1 problem in this file` / `Errors: 1`, and the LSP protocol
+smoke proved diagnostics, hover, and go-to-definition over stdio.
+
+Do not tag v0.5.0 yet. The current Mac has Cursor as `/usr/local/bin/code`, not
+standalone VS Code; a fresh isolated Cursor profile installed the extension but
+stopped at Cursor's login screen before editor proof. Release-backed package
+proof still requires the tag/release assets to exist, and no published Garnet
+VSIX evidence or clean standalone VSCode diagnostic screenshot is recorded yet.
 
 
 

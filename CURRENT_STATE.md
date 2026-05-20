@@ -78,8 +78,8 @@ done
 | `garnet-stdlib/` | capability-tagged primitives | current implementation |
 | `garnet-cli/` | user-facing CLI and templates | current implementation |
 | `garnet-convert/` | migration assistant | current implementation for stylized Rust/Ruby/Python/Go only; advisory planning covers JavaScript/TypeScript/Swift/Java/C/C++/C#/Perl/Kotlin/Shell/SQL/Other without activating broad conversion; native-boundary and backend-lowering lanes remain planned |
-| `garnet-lsp/` | S1 Language Server Protocol MVP | source-present implementation for parser/checker diagnostics, top-level hover, and basic top-level go-to-definition; protocol smoke and diagnostic screenshot captured; separate GUI hover/go-to-definition screenshots remain review hardening |
-| `editors/vscode/` | S1 VSCode extension | source-present extension launcher for `garnet-lsp`; local VSIX packaging and install smoke passed; published-extension evidence and the full screenshot trio remain PR/release evidence gates |
+| `garnet-lsp/` | S1 Language Server Protocol MVP | source-present implementation for parser/checker diagnostics, top-level hover, and basic top-level go-to-definition; protocol smoke and Mac/Cursor diagnostic screenshot captured; separate GUI hover/go-to-definition screenshots remain review hardening |
+| `editors/vscode/` | S1 VSCode extension | source-present extension launcher for `garnet-lsp`; local VSIX packaging and install smoke passed; Mac-local Cursor diagnostic proof is recorded in `/Users/idc2.0/Desktop/dogfood/garnet-v0-5-editor-gate-20260520T122611Z`; published-extension evidence and clean standalone VSCode proof remain release gates |
 | `scripts/garnet_converter_status.py` | converter adoption inventory | current machine-readable truth for active converter lanes, advisory language lanes, native-boundary recommendations, backend-lowering plans, trust boundaries, and the future Garnet-aware assist contract |
 | `scripts/garnet_assist_context_pack.py` | Garnet-aware assist context and prompt pack | current machine-readable context bundle plus provider-neutral prompt pack for future provider-backed converter assist; hashes current truth/spec/dogfood docs and preserves advisory-only gates without enabling LLM conversion |
 | `scripts/garnet_converter_assist_plan.py` | advisory-language converter assist plan | current deterministic planner for a single source file in an active or advisory converter language; inventories safe-mode, memory, CapCaps, actor/orchestration, shell/process, SQL/data, and migration risks without executing source or enabling LLM conversion |
@@ -152,10 +152,14 @@ highest-leverage next milestones are:
    allocator/runtime semantics described in `MEMORY_CORE_ROADMAP.md`.
 4. **Native/release toolchain:** keep the org `v0.4.2` release assets and
    checksums intact as the latest tagged release while the v0.5.0 release
-   candidate retargets package/version/installer defaults. Do not tag v0.5.0
-   until the clean-machine public installer path plus VSIX/editor diagnostic
-   evidence is recorded; signed macOS `.pkg`, Windows MSI, and live
-   target-machine runtime proof remain separate authority lanes.
+   candidate retargets package/version/installer defaults. Post-merge public
+   installer source-fallback proof is recorded in
+   `/Users/idc2.0/Desktop/dogfood/garnet-v0-5-rc-merged-20260520T121820Z`, and
+   Mac-local Cursor/VSIX diagnostic proof is recorded in
+   `/Users/idc2.0/Desktop/dogfood/garnet-v0-5-editor-gate-20260520T122611Z`.
+   Do not tag v0.5.0 until published VSIX or clean standalone VSCode evidence
+   is recorded; signed macOS `.pkg`, Windows MSI, and live target-machine
+   runtime proof remain separate authority lanes.
 5. **Garnet Studio app and web distribution:** build polished local product
    surfaces that reduce terminal-first friction without overstating release
    authority. The macOS workbench opens like a normal app, bundles the Garnet
