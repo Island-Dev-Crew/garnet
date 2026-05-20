@@ -11,6 +11,17 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S8 (Signed hot-reload BLAKE3 demo):** `examples/mvp_11_signed_hotreload.garnet`
+  and `examples/mvp_11_signed_hotreload_mismatch.garnet` are runnable
+  managed-mode demonstrations of the BLAKE3 fingerprint check that drives the
+  Rust-runtime `actor.reload_signed` path. The success example exits 0 with
+  `reloaded successfully` on stdout; the mismatch example exits 1 with
+  `BLAKE3 fingerprint mismatch` on stderr. New "Signed hot-reload BLAKE3 demo"
+  lane in `garnet_mit_readiness_status.py` (verified 100%). Honest deferred
+  list documents that managed-mode `actor.reload_signed` syntax is NOT
+  exposed yet — the demos use `crypto::blake3` and `raise` to reproduce the
+  fingerprint-mismatch behaviour at the program level. Closes Paper VI
+  Contribution 5 surface gap.
 - **S10 (Compiler advisory mode, rules-based):** `garnet-check-v0.3/src/suggest.rs`
   ships a deterministic, no-LLM suggestion engine with three rules today —
   `managed-fn-missing-caps`, `long-parameter-list`, and `empty-function-body`.

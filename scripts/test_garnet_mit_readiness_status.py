@@ -81,6 +81,15 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         # LLM tier is explicitly deferred — pending-infra anchor preserved
         deferred_text = " ".join(lanes["compiler_advisory_rules_based"].deferred)
         self.assertIn("LLM", deferred_text)
+        # S8: Signed hot-reload BLAKE3 demo lane
+        self.assertIn("signed_hot_reload_demo", lanes)
+        self.assertEqual("verified", lanes["signed_hot_reload_demo"].status)
+        self.assertEqual(100.0, lanes["signed_hot_reload_demo"].completion_percent)
+        self.assertIn("BLAKE3 fingerprint", lanes["signed_hot_reload_demo"].evidence)
+        self.assertIn("reloaded successfully", lanes["signed_hot_reload_demo"].evidence)
+        # Honest deferred: managed-mode reload_signed syntax is NOT in this slice
+        s8_deferred = " ".join(lanes["signed_hot_reload_demo"].deferred)
+        self.assertIn("actor.reload_signed", s8_deferred)
 
     def test_json_exposes_evidence_and_deferred_boundaries(self) -> None:
         output = subprocess.check_output(

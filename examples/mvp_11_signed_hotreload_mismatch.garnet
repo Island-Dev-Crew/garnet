@@ -1,0 +1,31 @@
+// S8: Signed hot-reload demonstration (mismatch case).
+//
+// Companion to mvp_11_signed_hotreload.garnet. Same structure, but the
+// `payload` has been tampered with (different schema marker) so its BLAKE3
+// fingerprint no longer matches the embedded expected fingerprint. The
+// program raises with the literal message "BLAKE3 fingerprint mismatch"
+// and exits non-zero, the same behaviour the Rust-runtime
+// `actor.reload_signed` exhibits when a signed reload is rejected.
+//
+// Paper VI Contribution 5 surface gap (S8 of v0.5.0).
+
+@caps()
+def main() {
+  // Tampered payload — schema=3 instead of schema=2. The BLAKE3 of this
+  // text will not match the expected hash baked in below.
+  let payload = "actor:v2-counter@schema=3,owner=ed25519:demo"
+
+  // Expected hash is the BLAKE3 of the LEGITIMATE schema=2 payload, copied
+  // from mvp_11_signed_hotreload.garnet. The mismatch demo's whole point
+  // is that the runtime should refuse to reload when these differ.
+  let expected = "7c3fd5b539ea406f226eaf865335dcf788655ea09010321b04e0ff9727bb97e9"
+
+  let actual = crypto::blake3(payload)
+
+  if actual == expected {
+    // Unreachable: the tampered payload's hash will never match.
+    println("reloaded successfully:", actual)
+  } else {
+    raise "BLAKE3 fingerprint mismatch"
+  }
+}
