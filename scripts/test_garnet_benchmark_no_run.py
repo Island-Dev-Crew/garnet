@@ -32,10 +32,12 @@ def _runner_fail(command: Sequence[str], _cwd: Path) -> tuple[int, str, str]:
 class GarnetBenchmarkNoRunTests(unittest.TestCase):
     def test_planned_status_does_not_run_commands(self) -> None:
         status = mod._collect_status(execute=False)
+        expected_count = len(mod._planned_harnesses())
         self.assertEqual("planned", status.overall_status)
         self.assertEqual("not-measured", status.measurement_status)
         self.assertEqual("not-mechanized", status.mechanized_proof_status)
-        self.assertEqual(3, len(status.benchmarks))
+        self.assertEqual(expected_count, len(status.benchmarks))
+        self.assertIn("vm_parse_compile_execute", {item.id for item in status.benchmarks})
         self.assertTrue(all(item.command.endswith("--no-run") for item in status.benchmarks))
         self.assertTrue(all(item.return_code is None for item in status.benchmarks))
 
@@ -53,8 +55,9 @@ class GarnetBenchmarkNoRunTests(unittest.TestCase):
             self.assertTrue((out / "garnet-benchmark-no-run.md").is_file())
             self.assertTrue((out / "garnet-benchmark-no-run.json").is_file())
             self.assertTrue((out / "MANIFEST.sha256").is_file())
-            self.assertEqual(3, len(list(out.glob("*.stdout.log"))))
-            self.assertEqual(3, len(list(out.glob("*.stderr.log"))))
+            expected_count = len(mod._planned_harnesses())
+            self.assertEqual(expected_count, len(list(out.glob("*.stdout.log"))))
+            self.assertEqual(expected_count, len(list(out.glob("*.stderr.log"))))
             payload = json.loads((out / "garnet-benchmark-no-run.json").read_text(encoding="utf-8"))
             self.assertEqual("compile-verified", payload["overall_status"])
 

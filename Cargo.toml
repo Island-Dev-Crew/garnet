@@ -10,6 +10,7 @@ members = [
     "garnet-stdlib",
     "garnet-convert",
     "garnet-lsp",
+    "garnet-vm",
     "xtask",
 ]
 # Exclude the archived v0.2 parser (flat-file layout, retained at

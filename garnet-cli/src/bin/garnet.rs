@@ -44,10 +44,10 @@ fn main() -> ExitCode {
         }
         "run" => {
             if args.len() < 2 {
-                eprintln!("usage: garnet run <file.garnet>");
+                eprintln!("usage: garnet run [--interp|--vm] <file.garnet>");
                 return ExitCode::from(2);
             }
-            cmd::run::run(PathBuf::from(&args[1]))
+            cmd::run::run(&args[1..])
         }
         "eval" => {
             if args.len() < 2 {

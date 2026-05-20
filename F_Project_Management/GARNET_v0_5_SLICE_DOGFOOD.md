@@ -110,7 +110,7 @@ done
 
 **Honest partial labels available:** "X of N opcodes native, rest fall back to tree-walk" — must be quantified in the PR.
 
-**State:** not-started.
+**State as of 2026-05-20:** merged.
 
 ---
 

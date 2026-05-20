@@ -33,6 +33,10 @@ class GarnetProofBenchmarkStatusTests(unittest.TestCase):
         self.assertTrue(benches["parser_parse"].bench_file_exists)
         self.assertTrue(benches["parser_parse"].cargo_entry_present)
         self.assertIn("cargo bench -p garnet-parser --bench parse", benches["parser_parse"].command)
+        self.assertIn("vm_parse_compile_execute", benches)
+        self.assertEqual("garnet-vm", benches["vm_parse_compile_execute"].package)
+        self.assertTrue(benches["vm_parse_compile_execute"].bench_file_exists)
+        self.assertTrue(benches["vm_parse_compile_execute"].cargo_entry_present)
         self.assertIn("production native compiler", status.forbidden_claims[0])
 
     def test_json_preserves_blocked_and_deferred_research_boundaries(self) -> None:
@@ -48,7 +52,7 @@ class GarnetProofBenchmarkStatusTests(unittest.TestCase):
         self.assertIn("external user study data", data["blocked_by"])
         self.assertIn("formal RustBelt/Iris/Coq mechanization", data["deferred"])
         self.assertIn("benchmark measurement run", data["deferred"])
-        self.assertEqual(3, len(data["benchmarks"]))
+        self.assertEqual(4, len(data["benchmarks"]))
 
     def test_markdown_is_reviewer_safe(self) -> None:
         rendered = subprocess.check_output([sys.executable, str(SCRIPT)], text=True)
@@ -58,6 +62,7 @@ class GarnetProofBenchmarkStatusTests(unittest.TestCase):
         self.assertIn("Not Claimed", rendered)
         self.assertIn("not production native compiler proof", rendered)
         self.assertIn("cargo bench -p garnet-memory --bench vector", rendered)
+        self.assertIn("cargo bench -p garnet-vm --bench parse_compile_execute", rendered)
 
     def test_output_dir_writes_manifested_evidence_bundle(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

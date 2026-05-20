@@ -61,6 +61,40 @@ fn canonical_mvp_examples_parse_check_and_run() {
 }
 
 #[test]
+fn s2_vm_and_interp_match_for_blocking_mvp_examples() {
+    let cases = [
+        "mvp_01_os_simulator.garnet",
+        "mvp_02_relational_db.garnet",
+        "mvp_03_compiler_bootstrap.garnet",
+        "mvp_04_numerical_solver.garnet",
+        "mvp_05_web_app.garnet",
+    ];
+
+    for name in cases {
+        let f = example(name);
+        let vm = run_garnet(&["run", "--vm"], &f);
+        let interp = run_garnet(&["run", "--interp"], &f);
+        assert!(
+            vm.status.success(),
+            "garnet run --vm {name} failed\nstdout:\n{}\nstderr:\n{}",
+            String::from_utf8_lossy(&vm.stdout),
+            String::from_utf8_lossy(&vm.stderr)
+        );
+        assert!(
+            interp.status.success(),
+            "garnet run --interp {name} failed\nstdout:\n{}\nstderr:\n{}",
+            String::from_utf8_lossy(&interp.stdout),
+            String::from_utf8_lossy(&interp.stderr)
+        );
+        assert_eq!(
+            String::from_utf8_lossy(&interp.stdout),
+            String::from_utf8_lossy(&vm.stdout),
+            "VM/interp stdout mismatch for {name}"
+        );
+    }
+}
+
+#[test]
 fn agent_toolbelt_examples_parse_check_and_run() {
     let cases = [
         "agent_toolbelt_01_triage_router.garnet",
