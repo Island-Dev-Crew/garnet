@@ -9,6 +9,7 @@
 //! commands (episode logging, knowledge / strategy persistence,
 //! AST item summaries).
 
+pub mod add;
 pub mod build;
 pub mod check;
 pub mod convert;

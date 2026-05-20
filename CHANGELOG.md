@@ -11,6 +11,7 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+<<<<<<< HEAD
 - **S7 (Actor OS-thread bridge / `trust-report`):** new
   `garnet trust-report <file.garnet>` command (`garnet-cli/src/cmd/trust_report.rs`)
   produces a structural trust report including the literal line
@@ -26,6 +27,21 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   list documents that live-runtime instrumentation, mailbox/Sendable
   audit, and transitive caps aggregation are out of scope. Closes
   Paper VI Contribution 4's CLI-bridge surface gap.
+=======
+- **S3 (`garnet add` + Manifest Spec v0.1):** new `garnet-cli/src/cmd/add.rs`
+  implements `garnet add [--name <id>] <path>` to vendor a local Garnet
+  directory into `.garnet/vendor/<name>/`, update `Garnet.toml`'s
+  `[dependencies]` table, and write `Garnet.lock` with BLAKE3-per-file
+  hashes. Lockfile output is deterministic (alpha-sorted deps, lex-sorted
+  files, lowercase hex). Format documented in
+  `C_Language_Specification/GARNET_MANIFEST_v0_1.md`. New
+  "Garnet manifest + vendored deps" lane in
+  `garnet_mit_readiness_status.py` (verified 100%). Honest deferred list
+  documents that the interpreter does NOT yet resolve `use <dep>::*` at
+  `garnet run` time, remote sources / transitive deps / SemVer matching /
+  workspace mode / `garnet verify-deps` are all out of scope until later
+  slices.
+>>>>>>> 407e6ec (S3: garnet add + Garnet Manifest v0.1 (vendored deps, content-addressed lockfile))
 - **S6 (Memory eviction policy benchmarks):** `garnet-memory-v0.3/benches/eviction.rs`
   is a Criterion bench harness exercising `MemoryPolicy::score` +
   `should_retain` per Mnemos kind (working / episodic / semantic /

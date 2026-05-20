@@ -28,6 +28,7 @@ fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         "new" => cmd::new::run(&args[1..]),
+        "add" => cmd::add::run(&args[1..]),
         "parse" => {
             if args.len() < 2 {
                 eprintln!("usage: garnet parse <file.garnet>");
