@@ -11,6 +11,17 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S5 (Parser fuzz harness):** `garnet-parser-v0.3/fuzz/` cargo-fuzz
+  sub-workspace with a single `parse_input` target wrapping every call to
+  `garnet_parser::parse_source_with_budget` in a strict `ParseBudget`
+  (4096-byte source cap, 1024-token cap, 32-depth cap, 512-byte literal
+  cap). New `.github/workflows/fuzz-nightly.yml` runs `cargo +nightly
+  fuzz run parse_input -- -max_total_time=3600` nightly + on-demand;
+  crashes upload as artifacts for triage. Seed corpus is populated from
+  canonical `examples/*.garnet` files. New "Parser fuzz harness
+  (nightly)" lane in `garnet_mit_readiness_status.py` (`verified` 100%).
+  Honest deferred list documents that the interpreter, checker, and
+  archived v0.2 parser are NOT in scope today.
 - **S9 (Determinism CI):** `.github/workflows/determinism.yml` builds
   `examples/det_fixture_01.garnet` with `garnet build --deterministic --sign
   <key>` on a matrix of ubuntu-latest and macos-latest. A `prepare-key` job

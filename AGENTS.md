@@ -32,6 +32,7 @@ Every path below is part of the current contract surface and must remain present
 - `/C_Language_Specification/AGENTS.md`
 - `/F_Project_Management/AGENTS.md`
 - `/garnet-parser-v0.3/AGENTS.md`
+- `/garnet-parser-v0.3/fuzz/AGENTS.md`
 - `/garnet-interp-v0.3/AGENTS.md`
 - `/garnet-check-v0.3/AGENTS.md`
 - `/garnet-memory-v0.3/AGENTS.md`
