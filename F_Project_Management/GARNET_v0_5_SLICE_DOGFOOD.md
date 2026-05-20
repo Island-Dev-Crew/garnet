@@ -362,6 +362,21 @@ Fresh local M5 evidence is recorded in
 its manifest verifies `garnet-0.5.0-lsp-mvp-darwin-arm64.vsix` as
 release-asset-ready local evidence, not publication.
 
+The macOS CLI release asset path is also staged, not claimed:
+`.github/workflows/linux-packages.yml` builds
+`garnet-<version>-aarch64-apple-darwin.tar.gz` and
+`garnet-<version>-x86_64-apple-darwin.tar.gz` on macOS, then publishes those
+tarballs with Linux `.deb`/`.rpm` packages behind one release-time
+`SHA256SUMS`. This is required because the public installer falls back from
+unsigned/unpublished `.pkg` assets to tarballs on macOS. It is workflow proof,
+not publication proof, until the `v0.5.0` tag workflow completes and
+`scripts/verify_org_release_smoke.sh` passes against the organization release.
+Fresh local M5 file-backed release-mode evidence is recorded in
+`/Users/idc2.0/Desktop/dogfood/garnet-macos-cli-tarball-release-assets-20260520T135703Z`:
+the `garnet-0.5.0-aarch64-apple-darwin.tar.gz` tarball verified against
+`SHA256SUMS`, installed into an isolated prefix, reported `garnet 0.5.0`, then
+`garnet new --template cli`, `garnet test`, and `garnet run` passed.
+
 Do not tag v0.5.0 yet. The current Mac has Cursor as `/usr/local/bin/code`, but
 standalone VS Code diagnostic proof now exists through the isolated `/tmp`
 downloaded app. Release-backed package proof still requires the tag/release

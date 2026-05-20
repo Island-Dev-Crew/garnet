@@ -11,6 +11,16 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **v0.5 macOS release tarball path:** `.github/workflows/linux-packages.yml`
+  now stages macOS CLI tarballs for `aarch64-apple-darwin` and
+  `x86_64-apple-darwin`, then composes one release-time `SHA256SUMS` covering
+  Linux `.deb`/`.rpm` packages plus those tarballs. This closes the pre-tag
+  workflow gap that would make an M5 Mac release-only installer smoke fail
+  after publication. It is still not a `v0.5.0` tag, a signed/notarized `.pkg`,
+  or clean-machine release proof until the tag workflow publishes the assets
+  and `scripts/verify_org_release_smoke.sh` passes against the organization
+  release. Fresh local M5 file-backed release-mode evidence is sealed at
+  `/Users/idc2.0/Desktop/dogfood/garnet-macos-cli-tarball-release-assets-20260520T135703Z`.
 - **v0.5 release-backed VSIX path:** `scripts/package_garnet_vscode_extension.sh`
   now builds `garnet-lsp`, packages the VS Code extension with the bundled
   native server, writes host-labeled VSIX evidence, and can copy a sealed bundle

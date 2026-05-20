@@ -70,6 +70,23 @@ def read_status() -> MacContinuationStatus:
             blocked_by=[],
         ),
         MacContinuationLane(
+            id="macos_cli_release_assets",
+            label="macOS CLI release assets",
+            status="release-asset-ready-local",
+            category="native/release toolchain",
+            mac_actionable=True,
+            evidence=(
+                ".github/workflows/linux-packages.yml stages aarch64/x86_64 macOS CLI tarballs "
+                "and a unified release-time SHA256SUMS; local M5 file-backed release-mode evidence "
+                "is sealed at /Users/idc2.0/Desktop/dogfood/garnet-macos-cli-tarball-release-assets-20260520T135703Z."
+            ),
+            next_slice=(
+                "After the tag workflow publishes v0.5.0 assets, run scripts/verify_org_release_smoke.sh "
+                "against the organization release; do not claim signed/notarized .pkg."
+            ),
+            blocked_by=["v0.5.0 tag/release asset publication", "organization release smoke"],
+        ),
+        MacContinuationLane(
             id="apple_developer_id",
             label="Apple Developer ID notarization",
             status="blocked-external",
