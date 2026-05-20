@@ -126,6 +126,10 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("clean Windows VM", " ".join(lanes["windows_linux_distribution"]["blocked_by"]))
         self.assertIn("diagnostics, hover, and basic go-to-definition", lanes["editor_lsp_adoption"]["evidence"])
         self.assertIn("standalone-vscode-gate", lanes["editor_lsp_adoption"]["evidence"])
+        self.assertIn("garnet-vscode-release-assets-20260520T133747Z", lanes["editor_lsp_adoption"]["evidence"])
+        self.assertIn("vscode-extension.yml", lanes["editor_lsp_adoption"]["evidence"])
+        self.assertIn("release-backed VSIX smoke after tag", lanes["editor_lsp_adoption"]["deferred"])
+        self.assertIn("Marketplace/OpenVSX publication", lanes["editor_lsp_adoption"]["deferred"])
         self.assertIn("manual VSCode", " ".join(lanes["editor_lsp_adoption"]["deferred"]))
 
     def test_rendered_promo_artifacts_update_objective_blockers(self) -> None:

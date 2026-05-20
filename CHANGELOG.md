@@ -11,6 +11,18 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **v0.5 release-backed VSIX path:** `scripts/package_garnet_vscode_extension.sh`
+  now builds `garnet-lsp`, packages the VS Code extension with the bundled
+  native server, writes host-labeled VSIX evidence, and can copy a sealed bundle
+  to Desktop. `.github/workflows/vscode-extension.yml` builds those VSIX
+  artifacts on PR/main/tag runs and publishes them as GitHub Release assets on
+  `v*` tag pushes. `scripts/verify_org_release_smoke.sh` now fails the release
+  smoke unless the matching release-backed VSIX asset exists and contains the
+  extension entry point plus bundled server. This prepares the clean-machine
+  v0.5.0 gate; it is not a v0.5.0 tag, Marketplace publication, or OpenVSX
+  publication. Fresh M5 local evidence is sealed at
+  `/Users/idc2.0/Desktop/dogfood/garnet-vscode-release-assets-20260520T133747Z`
+  for `garnet-0.5.0-lsp-mvp-darwin-arm64.vsix`.
 - **v0.5 release-gate evidence:** post-merge public installer source-fallback
   proof is recorded in
   `/Users/idc2.0/Desktop/dogfood/garnet-v0-5-rc-merged-20260520T121820Z`, and

@@ -350,10 +350,23 @@ bundle includes the screenshot, VSIX, installed-server path, trace log,
 protocol smoke JSON for diagnostics/hover/go-to-definition, and
 `MANIFEST.sha256`.
 
+Release-backed VSIX publication is now staged, not claimed:
+`scripts/package_garnet_vscode_extension.sh` builds host-native
+`garnet-<version>-lsp-mvp-<target>.vsix` artifacts with the bundled server and
+manifested evidence, `.github/workflows/vscode-extension.yml` publishes those
+VSIX files as GitHub Release assets on `v*` tag pushes, and
+`scripts/verify_org_release_smoke.sh` fails until the matching release-backed
+VSIX asset exists and contains the extension entry point plus bundled server.
+Fresh local M5 evidence is recorded in
+`/Users/idc2.0/Desktop/dogfood/garnet-vscode-release-assets-20260520T133747Z`;
+its manifest verifies `garnet-0.5.0-lsp-mvp-darwin-arm64.vsix` as
+release-asset-ready local evidence, not publication.
+
 Do not tag v0.5.0 yet. The current Mac has Cursor as `/usr/local/bin/code`, but
 standalone VS Code diagnostic proof now exists through the isolated `/tmp`
 downloaded app. Release-backed package proof still requires the tag/release
-assets to exist, and no published Garnet VSIX evidence is recorded yet.
+assets to exist and the release-only smoke to pass. Marketplace/OpenVSX
+publication is not claimed by this gate.
 
 
 
