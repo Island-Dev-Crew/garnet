@@ -228,6 +228,98 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("mobile", site)
         self.assertIn("LLM assist", site)
 
+    # ──── S0: --check-no-regression flag ────────────────────────────────
+
+    def test_check_no_regression_passes_when_baseline_matches(self) -> None:
+        # Use the live status as its own baseline: nothing can have regressed.
+        status = status_mod.read_status()
+        baseline = {
+            "lanes": [
+                {"id": lane.id, "completion_percent": lane.completion_percent}
+                for lane in status.lanes
+            ]
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            baseline_path = Path(temp) / "baseline.json"
+            baseline_path.write_text(json.dumps(baseline), encoding="utf-8")
+            regressions, missing = status_mod.check_no_regression(status, baseline_path)
+        self.assertEqual([], regressions)
+        self.assertEqual([], missing)
+
+    def test_check_no_regression_detects_regression(self) -> None:
+        status = status_mod.read_status()
+        target_lane = status.lanes[0]
+        baseline = {
+            "lanes": [
+                {
+                    "id": target_lane.id,
+                    "completion_percent": target_lane.completion_percent + 25.0,
+                }
+            ]
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            baseline_path = Path(temp) / "baseline.json"
+            baseline_path.write_text(json.dumps(baseline), encoding="utf-8")
+            regressions, missing = status_mod.check_no_regression(status, baseline_path)
+        self.assertEqual(1, len(regressions))
+        self.assertIn(target_lane.id, regressions[0])
+        self.assertEqual([], missing)
+
+    def test_check_no_regression_flags_missing_lane(self) -> None:
+        status = status_mod.read_status()
+        baseline = {
+            "lanes": [
+                {
+                    "id": "ghost_lane_that_was_renamed_or_deleted",
+                    "completion_percent": 10.0,
+                }
+            ]
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            baseline_path = Path(temp) / "baseline.json"
+            baseline_path.write_text(json.dumps(baseline), encoding="utf-8")
+            regressions, missing = status_mod.check_no_regression(status, baseline_path)
+        self.assertEqual([], regressions)
+        self.assertEqual(["ghost_lane_that_was_renamed_or_deleted"], missing)
+
+    def test_check_no_regression_missing_baseline_reports_seed_instructions(self) -> None:
+        status = status_mod.read_status()
+        with tempfile.TemporaryDirectory() as temp:
+            baseline_path = Path(temp) / "nonexistent.json"
+            regressions, missing = status_mod.check_no_regression(status, baseline_path)
+        self.assertEqual([], regressions)
+        self.assertEqual(1, len(missing))
+        self.assertIn("baseline missing", missing[0])
+
+    def test_check_no_regression_cli_exit_code_on_regression(self) -> None:
+        status = status_mod.read_status()
+        target_lane = status.lanes[0]
+        baseline = {
+            "lanes": [
+                {
+                    "id": target_lane.id,
+                    "completion_percent": target_lane.completion_percent + 25.0,
+                }
+            ]
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            baseline_path = Path(temp) / "baseline.json"
+            baseline_path.write_text(json.dumps(baseline), encoding="utf-8")
+            cp = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--check-no-regression",
+                    "--baseline",
+                    str(baseline_path),
+                ],
+                env={**os.environ, "GARNET_PROMO_VIDEO_DESKTOP_DIR": TEST_DOGFOOD_DIR.name},
+                capture_output=True,
+                text=True,
+            )
+        self.assertEqual(1, cp.returncode)
+        self.assertIn("Readiness regression detected", cp.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

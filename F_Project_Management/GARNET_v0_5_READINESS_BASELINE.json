@@ -1,0 +1,207 @@
+{
+  "source": "/Users/IDC2.5/Desktop/Garnet",
+  "overall_status": "active-partial",
+  "completion_percent": 54.2,
+  "current_truth": [
+    "tracked implementation plan is complete",
+    "goal remains active",
+    "100% tracked slices is not full MIT/productization completion"
+  ],
+  "lanes": [
+    {
+      "id": "tracked_implementation_plan",
+      "label": "Tracked implementation plan",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/garnet_readiness_status.py` reports 87/87 slices.",
+      "blocked_by": [],
+      "deferred": []
+    },
+    {
+      "id": "agentic_dogfood_matrix",
+      "label": "Agentic dogfood matrix",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/run_agentic_dogfood_matrix.py --copy-to-desktop --strict` covers the current advanced source-checkout domains with Desktop evidence.",
+      "blocked_by": [],
+      "deferred": [
+        "Use future slices to add domains when product surfaces expand."
+      ]
+    },
+    {
+      "id": "converter_truth",
+      "label": "Converter adoption truth",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/garnet_converter_status.py` separates Rust/Ruby/Python/Go active lanes from planned language and LLM-assist lanes.",
+      "blocked_by": [],
+      "deferred": [
+        "New deterministic frontends require separate tested slices.",
+        "LLM assist requires a secure advisory implementation before activation."
+      ]
+    },
+    {
+      "id": "macos_studio_dmg",
+      "label": "macOS Studio DMG",
+      "status": "active-partial",
+      "completion_percent": 75.0,
+      "evidence": "Garnet Studio DMG build, mounted-copy smoke, packaged PWA smoke, and agentic matrix evidence are active in Desktop dogfood bundles.",
+      "blocked_by": [
+        "No valid local Developer ID Application identity",
+        "No notarization profile"
+      ],
+      "deferred": [
+        "Clean-machine Gatekeeper install evidence"
+      ]
+    },
+    {
+      "id": "developer_id_notarization",
+      "label": "Developer ID notarization",
+      "status": "blocked",
+      "completion_percent": 0.0,
+      "evidence": "`scripts/preflight_garnet_studio_notarization.sh --copy-to-desktop` records the current blockers without claiming notarization; `scripts/garnet_studio_notarization_status.py` summarizes that bundle for agents and PR/site evidence.",
+      "blocked_by": [
+        "APPLE_DEV_ID_APP",
+        "APPLE_NOTARY_PROFILE",
+        "valid Developer ID Application certificate",
+        "stapled DMG ticket"
+      ],
+      "deferred": [
+        "Signed + notarized macOS distribution"
+      ]
+    },
+    {
+      "id": "windows_linux_distribution",
+      "label": "Windows/Linux distribution",
+      "status": "active-partial",
+      "completion_percent": 50.0,
+      "evidence": "`scripts/garnet_windows_linux_studio_status.py` now reports the Tauri v2 shell scaffold in `apps/garnet-studio`, minimal webview permissions, Windows local release build/smoke evidence, and open Linux plus clean-machine package gates.",
+      "blocked_by": [
+        "Run the unsigned NSIS installer in a clean Windows VM for installer/runtime launch evidence",
+        "Provide a Linux VM/container with GUI or AppImage-capable desktop session for runtime launch evidence",
+        "Provide signing credentials only when ready to verify signed MSI claims"
+      ],
+      "deferred": [
+        "Windows clean-machine NSIS install and CLI smoke evidence",
+        "Linux desktop launch proof and first package-format decision",
+        "Parse/check/run plus active converter end-to-end screenshots from the shell",
+        "Advisory bundle/review/handoff evidence walkthrough without source inclusion",
+        "Unsigned-to-signed Windows MSI/AuthentiCode plan after VM smoke",
+        "Website/status copy sync after target smoke evidence"
+      ]
+    },
+    {
+      "id": "web_pwa",
+      "label": "Web/PWA productization",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "Local service-worker, local PWA, browser offline, live Pages, and CI web/PWA smoke gates are active.",
+      "blocked_by": [],
+      "deferred": [
+        "Full browser IDE/workbench remains future product scope."
+      ]
+    },
+    {
+      "id": "mobile_distribution",
+      "label": "Mobile distribution",
+      "status": "planned",
+      "completion_percent": 0.0,
+      "evidence": "No iOS, Android, Expo, TestFlight, or app-store lane is implemented yet.",
+      "blocked_by": [
+        "product surface decision",
+        "mobile build/test pipeline"
+      ],
+      "deferred": [
+        "iOS",
+        "Android",
+        "Expo",
+        "TestFlight",
+        "Play Store"
+      ]
+    },
+    {
+      "id": "promo_video",
+      "label": "Promo video",
+      "status": "composition-ready",
+      "completion_percent": 50.0,
+      "evidence": "`scripts/garnet_promo_video_status.py` defines the 30-second promo contract, locks visual identity/source surfaces to repo evidence, adds a HyperFrames-compatible composition source, and preserves that no verified rendered artifact exists.",
+      "blocked_by": [
+        "rendered artifact",
+        "visual QA verdict",
+        "website-ready export"
+      ],
+      "deferred": [
+        "human/aesthetic acceptance review"
+      ]
+    },
+    {
+      "id": "llm_assist",
+      "label": "LLM assist",
+      "status": "active-partial",
+      "completion_percent": 40.0,
+      "evidence": "Garnet-aware assist contract, deterministic local context pack, planned-language assist-plan reporter, converter LLM feasibility gate, advisory-only provider option registry, Studio provider-options evidence action, provider-neutral advisory bundle, advisory review gate, and provider-neutral handoff packet are active, but no provider-backed assist lane or LLM conversion is active.",
+      "blocked_by": [
+        "secure advisory implementation",
+        "provider/runtime boundary",
+        "dogfood gate"
+      ],
+      "deferred": [
+        "safe-mode ownership candidates",
+        "memory declarations",
+        "CapCaps/capability boundaries",
+        "actor/orchestration mappings",
+        "migration risk inventory",
+        "lineage per emitted node",
+        "@sandbox default",
+        "migrate_todo evidence",
+        "garnet check",
+        "dogfood readiness bundle",
+        "human audit before unquarantine"
+      ]
+    },
+    {
+      "id": "broad_converter_frontends",
+      "label": "Broad converter frontends",
+      "status": "planned",
+      "completion_percent": 0.0,
+      "evidence": "Only Rust/Ruby/Python/Go deterministic frontends are active today.",
+      "blocked_by": [
+        "frontend implementation slices",
+        "corpus fixtures",
+        "lineage/sandbox/check gates"
+      ],
+      "deferred": [
+        "JavaScript",
+        "TypeScript",
+        "Swift",
+        "Java",
+        "C",
+        "C++",
+        "C#",
+        "Perl",
+        "Kotlin",
+        "Shell",
+        "SQL",
+        "Other"
+      ]
+    },
+    {
+      "id": "proof_empirics",
+      "label": "Proof and empirical validation",
+      "status": "active-partial",
+      "completion_percent": 40.0,
+      "evidence": "`scripts/garnet_proof_benchmark_status.py` inventories the current 3 Criterion benchmark harnesses plus proof/study protocols while reporting measurements, mechanized proof, and empirical study execution as unclaimed.",
+      "blocked_by": [
+        "mechanized proof is not present",
+        "external user study data",
+        "fresh benchmark measurement run"
+      ],
+      "deferred": [
+        "formal RustBelt/Iris/Coq mechanization",
+        "benchmark measurement run",
+        "native backend proof",
+        "external participant study execution"
+      ]
+    }
+  ]
+}
