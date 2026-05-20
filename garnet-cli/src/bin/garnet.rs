@@ -37,10 +37,26 @@ fn main() -> ExitCode {
         }
         "check" => {
             if args.len() < 2 {
-                eprintln!("usage: garnet check <file.garnet>");
+                eprintln!("usage: garnet check [--suggest] <file.garnet>");
                 return ExitCode::from(2);
             }
-            cmd::check::run(PathBuf::from(&args[1]))
+            let mut suggest = false;
+            let mut file_arg: Option<&String> = None;
+            for arg in &args[1..] {
+                if arg == "--suggest" {
+                    suggest = true;
+                } else if file_arg.is_none() {
+                    file_arg = Some(arg);
+                } else {
+                    eprintln!("garnet check: unexpected extra argument: {arg}");
+                    return ExitCode::from(2);
+                }
+            }
+            let Some(file) = file_arg else {
+                eprintln!("usage: garnet check [--suggest] <file.garnet>");
+                return ExitCode::from(2);
+            };
+            cmd::check::run(PathBuf::from(file), suggest)
         }
         "run" => {
             if args.len() < 2 {

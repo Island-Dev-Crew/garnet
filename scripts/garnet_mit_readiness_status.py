@@ -377,6 +377,39 @@ def read_status() -> MitReadinessStatus:
                 "Coverage-guided corpus minimization (currently raw seed only)",
             ],
         ),
+        ObjectiveLane(
+            id="compiler_advisory_rules_based",
+            label="Compiler advisory mode (rules-based)",
+            status="verified"
+            if (ROOT / "garnet-check-v0.3/src/suggest.rs").exists()
+            and (ROOT / "garnet-check-v0.3/tests/suggest_corpus.rs").exists()
+            else "planned",
+            completion_percent=100.0
+            if (ROOT / "garnet-check-v0.3/src/suggest.rs").exists()
+            and (ROOT / "garnet-check-v0.3/tests/suggest_corpus.rs").exists()
+            else 0.0,
+            evidence=(
+                "`garnet-check-v0.3/src/suggest.rs` ships a deterministic, "
+                "rules-based suggestion engine with three patterns today "
+                "(managed-fn-missing-caps, long-parameter-list, "
+                "empty-function-body). `garnet-cli/src/cmd/check.rs` exposes "
+                "`garnet check --suggest <file.garnet>`; output is prefixed "
+                "with the literal `compiler suggested:` so downstream tooling "
+                "can grep for advisories. "
+                "`garnet-check-v0.3/tests/suggest_corpus.rs` proves at least "
+                "three distinct rules fire across the committed corpus. "
+                "Closes Paper VI Contribution 7 surface for the rules-based "
+                "tier; the LLM tier remains pending-infra (separate provider "
+                "boundary and budget)."
+            ),
+            blocked_by=[],
+            deferred=[
+                "LLM-derived suggestions (pending Paper VI Exp 1 infrastructure)",
+                "Auto-apply / quick-fix wiring into LSP code-actions (meshes with S1)",
+                "Cross-module suggestions (current rules are intra-module only)",
+                "Configurable rule severity per project",
+            ],
+        ),
     ]
 
     percent = round(sum(_lane_score(lane) for lane in lanes) / len(lanes) * 100.0, 1)

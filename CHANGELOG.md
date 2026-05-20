@@ -11,6 +11,16 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S10 (Compiler advisory mode, rules-based):** `garnet-check-v0.3/src/suggest.rs`
+  ships a deterministic, no-LLM suggestion engine with three rules today —
+  `managed-fn-missing-caps`, `long-parameter-list`, and `empty-function-body`.
+  `garnet check --suggest <file.garnet>` surfaces them prefixed with the
+  literal `compiler suggested:` so downstream tooling can grep. Corpus test
+  `garnet-check-v0.3/tests/suggest_corpus.rs` proves ≥ 3 distinct rules fire on
+  3 fixture programs. New "Compiler advisory mode (rules-based)" lane in
+  `garnet_mit_readiness_status.py` (verified 100%). Closes Paper VI
+  Contribution 7 surface for the rules-based tier; the LLM tier remains
+  pending-infra.
 - **S5 (Parser fuzz harness):** `garnet-parser-v0.3/fuzz/` cargo-fuzz
   sub-workspace with a single `parse_input` target wrapping every call to
   `garnet_parser::parse_source_with_budget` in a strict `ParseBudget`

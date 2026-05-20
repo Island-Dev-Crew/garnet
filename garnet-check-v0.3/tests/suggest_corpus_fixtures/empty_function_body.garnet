@@ -1,0 +1,10 @@
+// Fixture for S10 rule: empty-function-body.
+// `unfinished` has no statements and no tail expression; the rule fires.
+
+@caps()
+def unfinished() { }
+
+@caps()
+def main() {
+  unfinished()
+}
