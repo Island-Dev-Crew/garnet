@@ -22,6 +22,8 @@
   <a href="CURRENT_STATE.md"><strong>Current State</strong></a>  ·
   <a href="FAQ.md"><strong>FAQ</strong></a>  ·
   <a href="https://garnet-lang.org"><strong>Website</strong></a>  ·
+  <a href="https://garnet-lang.org/blog/"><strong>Blog</strong></a>  ·
+  <a href="https://github.com/Island-Dev-Crew/garnet/discussions"><strong>Discussions</strong></a>  ·
   <a href="A_Research_Papers/"><strong>Research Papers</strong></a>  ·
   <a href="C_Language_Specification/GARNET_v1_0_Mini_Spec.md"><strong>Mini-Spec v1.0</strong></a>
 </p>
@@ -36,7 +38,8 @@ Garnet is a dual-mode, agent-native language platform.
 
 First-class memory primitives (working / episodic / semantic / procedural) for
 agent cores. Typed actors with bounded mailboxes + Ed25519 signed hot-reload.
-Compiler-as-agent that learns from its own compilation history.
+Compiler advisory mode that emits deterministic suggestions from compilation
+patterns. The provider-backed LLM tier remains pending-infra.
 
 Single `garnet` CLI. Deterministic signed manifests. Dependency-graph audit built in.
 
@@ -50,9 +53,8 @@ The universal installer is v0.5.0-first and source-fallback:
 
 - If `v0.5.0` release assets exist, it downloads the native package and
   verifies it against `SHA256SUMS`.
-- If the requested release assets are not published yet, it falls back to a
-  source install. The source path tries the requested tag when it exists and
-  falls back to `main` for release-candidate proof before the tag.
+- If no matching asset exists for your OS/arch, auto mode falls back to a
+  source install. The source path tries the requested tag first.
 
 ```sh
 git clone https://github.com/Island-Dev-Crew/garnet
@@ -61,15 +63,14 @@ cargo install --path . --locked
 ```
 
 Use `GARNET_INSTALL_MODE=release` to require a native release package, or
-`GARNET_INSTALL_MODE=source` to force source install. To install the latest
-published stable release while v0.5.0 is still gated, set
-`GARNET_VERSION=0.4.2`.
+`GARNET_INSTALL_MODE=source` to force source install. Set
+`GARNET_VERSION=0.4.2` only when you intentionally want the previous release.
 
 | Platform      | Installer                                   | Integrity / release requirement   |
 |---------------|---------------------------------------------|-----------------------------------|
-| Linux (.deb)  | `garnet_0.5.0-1_amd64.deb` after tag        | SHA-256 checksummed               |
-| Linux (.rpm)  | `garnet-0.5.0-1.x86_64.rpm` after tag       | SHA-256 checksummed               |
-| macOS CLI tarball | `garnet-0.5.0-aarch64-apple-darwin.tar.gz` after upload | SHA-256 checksummed |
+| Linux (.deb)  | `garnet_0.5.0-1_amd64.deb`                  | SHA-256 checksummed               |
+| Linux (.rpm)  | `garnet-0.5.0-1.x86_64.rpm`                 | SHA-256 checksummed               |
+| macOS CLI tarball | `garnet-0.5.0-aarch64-apple-darwin.tar.gz` / `garnet-0.5.0-x86_64-apple-darwin.tar.gz` | SHA-256 checksummed |
 | Windows source install | `cargo install --path garnet-cli --locked` | verified source fallback    |
 | Future signed packages | `.pkg` / `.msi`                         | credential-gated release lane     |
 
@@ -79,7 +80,7 @@ verifies the selected file against `SHA256SUMS`, and falls back to source in
 auto mode when the release, checksum manifest, or package is missing. See [SECURITY.md](SECURITY.md)
 for the supply-chain story and
 [`GARNET_v0_4_2_Installer_Release_Contract.md`](C_Language_Specification/GARNET_v0_4_2_Installer_Release_Contract.md)
-for the exact hosting, artifact, integrity, and release-pipeline contract. See
+for the original hosting, artifact, integrity, and release-pipeline contract. See
 [`GARNET_v0_4_2_RELEASE_PUBLICATION_RUNBOOK.md`](F_Project_Management/GARNET_v0_4_2_RELEASE_PUBLICATION_RUNBOOK.md)
 for the maintainer release-publication steps and credential gates.
 
@@ -129,7 +130,7 @@ Developer ID notarization.
 | `garnet-check`  | Safe-mode validator + CapCaps call-graph propagator |
 | `garnet-memory` | **Mnemos** — reference implementation of Garnet's **Memory Core** (four cognitively-inspired kinds: working / episodic / semantic / procedural). Production allocator path tracked in [`MEMORY_CORE_ROADMAP.md`](C_Language_Specification/MEMORY_CORE_ROADMAP.md) |
 | `garnet-actor-runtime` | Bounded-mailbox actors + Ed25519 signed hot-reload |
-| `garnet-stdlib` | OS-I/O primitives with capability metadata |
+| `garnet-stdlib` | 24 registry primitives with capability metadata |
 | `garnet-cli`    | Top-level `garnet` binary |
 | `garnet-convert` | Rust / Ruby / Python / Go -> Garnet **migration assistant** (stylized parsers, sandbox-on output, emits a `migrate_todo.md` checklist - not a full transpiler). `python3 scripts/garnet_converter_status.py` reports the active lanes, advisory planning languages, native-boundary languages, future Wasm/LLVM-style lowering posture, and the planned Garnet-aware assist contract for future LLM/agentic guidance. |
 | `garnet-lsp` | S1 Language Server Protocol MVP for diagnostics, hover, and basic go-to-definition. VSCode source lives in `editors/vscode/`; safe-mode hover, workspace symbols, rename, and CST-grade incremental precision are deferred. |
@@ -177,9 +178,9 @@ inherit it via a caller that does. Known capabilities: `fs`, `net`,
 
 ## Project status
 
-**Current `main` is v0.5.0 release-candidate source; the latest tagged release
-remains v0.4.2 until the clean-machine installer/editor gate closes.** Garnet is
-a research-grade prototype (v0.x.x), not production-complete. See
+**Current `main` is post-v0.5.0 source; the latest tagged release is
+v0.5.0.** Garnet is a research-grade prototype (v0.x.x), not
+production-complete. See
 [FAQ.md §"Is Garnet production-ready?"](FAQ.md#is-garnet-production-ready) for
 the honest scorecard.
 
@@ -189,9 +190,10 @@ Verification status at current `main`:
 - ✅ Windows binary (MSVC) — verified end-to-end, all 6 Phase 6D gates pass
 - ✅ Workspace test/lint/doc/security gates are CI-enforced; use live CI and
   `CURRENT_STATE.md` rather than historical handoff test totals
-- ✅ 10 canonical MVP examples parse, check, and run under the current CLI
-- ✅ 22 stdlib primitives bridged through the interpreter
-- ✅ The universal curl installer works before release publication by falling back to source install; native packages remain release-gated by `SHA256SUMS`
+- ✅ Canonical MVP examples parse, check, and run under the current CLI
+- ✅ 24 stdlib registry primitives bridged through the interpreter
+- ✅ The universal curl installer verifies v0.5.0 release assets when present and uses source fallback only for unsupported or missing package targets
+- ✅ MIT/productization reporter now tracks 18 lanes and reports 69.7% on the current Mac evidence set; this is separate from the 87/87 tracked-slice ledger
 - ⏳ macOS `.pkg` and Windows `.msi` release signing/notarization remain credential-gated release steps
 
 ## Research

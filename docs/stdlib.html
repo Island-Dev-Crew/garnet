@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Garnet — Stdlib Primitive Registry</title>
+<meta name="description" content="Current Garnet standard-library primitive registry with arity, capability requirements, and honest scope boundaries.">
+<meta name="theme-color" content="#9C2B2E">
+<link rel="canonical" href="https://garnet-lang.org/stdlib.html">
+<meta property="og:title" content="Garnet — Stdlib Primitive Registry">
+<meta property="og:description" content="24 capability-tagged primitive entries: pure helpers plus explicit time, file, and network authority.">
+<meta property="og:type" content="article">
+<style>
+  :root{--bg:#0A0A0F;--bg-soft:#121218;--bg-code:#18181B;--garnet:#9C2B2E;--garnet-2:#B0303A;--gold:#E5C07B;--ink:#E8E8E8;--ink-soft:#C8C8D0;--ink-muted:#6272A4;--rule:#3A3A45;--serif:'Georgia','Source Serif Pro',serif;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,system-ui,sans-serif;--mono:'SF Mono','Menlo','Consolas',monospace;--maxw:980px;}
+  *,*::before,*::after{box-sizing:border-box;}html,body{margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;-webkit-font-smoothing:antialiased;}
+  a{color:var(--gold);text-decoration:none;}a:hover{color:var(--garnet-2);}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:64px 24px 96px;}
+  .top{font-family:var(--mono);font-size:12px;letter-spacing:.08em;color:var(--ink-muted);margin-bottom:30px;}
+  .top a{color:var(--ink-muted);}.top a:hover{color:var(--gold);}
+  h1{font-family:var(--serif);font-size:40px;line-height:1.15;margin:0 0 12px;}
+  h2{font-family:var(--serif);font-size:24px;margin:42px 0 12px;border-bottom:1px solid var(--rule);padding-bottom:8px;}
+  .sub{color:var(--ink-soft);font-size:18px;margin:0 0 14px;max-width:780px;}
+  .note{color:var(--ink-muted);font-size:14px;border-left:2px solid var(--rule);padding:6px 0 6px 16px;margin:20px 0;}
+  code{background:var(--bg-code);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:.9em;color:#F8F8F2;}
+  table{width:100%;border-collapse:collapse;border:1px solid var(--rule);background:var(--bg-soft);border-radius:8px;overflow:hidden;}
+  th,td{padding:12px 14px;border-bottom:1px solid var(--rule);text-align:left;vertical-align:top;}
+  th{font-family:var(--mono);font-size:12px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase;}
+  tr:last-child td{border-bottom:0;}
+  .cap{font-family:var(--mono);font-size:12px;color:var(--gold);}
+  .pure{color:var(--ink-muted);}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:24px 0 8px;}
+  .metric{border:1px solid var(--rule);background:var(--bg-soft);border-radius:8px;padding:16px;}
+  .metric strong{display:block;font-family:var(--mono);font-size:26px;color:var(--ink);}
+  .metric span{font-size:13px;color:var(--ink-muted);}
+  footer{border-top:1px solid var(--rule);margin-top:64px;padding-top:22px;color:var(--ink-muted);font-size:13px;text-align:center;}
+  @media (max-width:820px){.grid{grid-template-columns:repeat(2,1fr);}th:nth-child(4),td:nth-child(4){display:none;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><a href="/index.html">← garnet-lang.org</a> &nbsp;·&nbsp; <a href="getting-started.html">Getting Started</a> &nbsp;·&nbsp; <a href="minispec.html">Mini-Spec</a> &nbsp;·&nbsp; <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/garnet-stdlib/src/registry.rs" target="_blank" rel="noopener noreferrer">Source ↗</a></div>
+
+  <h1>Stdlib Primitive Registry</h1>
+  <p class="sub">The current v0.5 registry exposes 24 primitive entries. Pure helpers require <code>@caps()</code>; time, filesystem, and network primitives require explicit authority.</p>
+  <p class="note">This is a registry reference, not a promise of a mature standard library. Higher-level HTTP, JSON, package, async, and data APIs remain future library work.</p>
+
+  <div class="grid">
+    <div class="metric"><strong>24</strong><span>registry entries</span></div>
+    <div class="metric"><strong>13</strong><span>pure helper entries</span></div>
+    <div class="metric"><strong>11</strong><span>authority-gated entries</span></div>
+    <div class="metric"><strong>3</strong><span>authority classes used here</span></div>
+  </div>
+
+  <h2>Primitive Table</h2>
+  <table>
+    <thead><tr><th>Name</th><th>Arity</th><th>Caps</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>time::now_ms</code></td><td>0</td><td><span class="cap">time</span></td><td>Monotonic clock in milliseconds since process start.</td></tr>
+      <tr><td><code>time::wall_clock_ms</code></td><td>0</td><td><span class="cap">time</span></td><td>Wall clock in milliseconds since UNIX epoch.</td></tr>
+      <tr><td><code>time::sleep</code></td><td>1</td><td><span class="cap">time</span></td><td>Sleep the current thread for N milliseconds.</td></tr>
+      <tr><td><code>str::split</code></td><td>2</td><td><span class="pure">@caps()</span></td><td>Split a string on a delimiter; returns an Array&lt;String&gt;.</td></tr>
+      <tr><td><code>str::replace</code></td><td>3</td><td><span class="pure">@caps()</span></td><td>Replace all occurrences of <code>old</code> with <code>new</code>.</td></tr>
+      <tr><td><code>str::to_lower</code></td><td>1</td><td><span class="pure">@caps()</span></td><td>Lowercase a string.</td></tr>
+      <tr><td><code>str::to_upper</code></td><td>1</td><td><span class="pure">@caps()</span></td><td>Uppercase a string.</td></tr>
+      <tr><td><code>str::trim</code></td><td>1</td><td><span class="pure">@caps()</span></td><td>Trim whitespace from both ends.</td></tr>
+      <tr><td><code>str::starts_with</code></td><td>2</td><td><span class="pure">@caps()</span></td><td>Return true if the string starts with the prefix.</td></tr>
+      <tr><td><code>str::contains</code></td><td>2</td><td><span class="pure">@caps()</span></td><td>Return true if the string contains the substring.</td></tr>
+      <tr><td><code>array::insert</code></td><td>3</td><td><span class="pure">@caps()</span></td><td>Insert <code>value</code> at index; shifts following elements right.</td></tr>
+      <tr><td><code>array::remove</code></td><td>2</td><td><span class="pure">@caps()</span></td><td>Remove and return the element at index.</td></tr>
+      <tr><td><code>array::sort</code></td><td>1</td><td><span class="pure">@caps()</span></td><td>Sort the array in-place.</td></tr>
+      <tr><td><code>crypto::blake3</code></td><td>1</td><td><span class="pure">@caps()</span></td><td>BLAKE3 hash of a byte sequence.</td></tr>
+      <tr><td><code>crypto::sha256</code></td><td>1</td><td><span class="pure">@caps()</span></td><td>SHA-256 hash of a byte sequence.</td></tr>
+      <tr><td><code>crypto::hmac_sha256</code></td><td>2</td><td><span class="pure">@caps()</span></td><td>HMAC-SHA-256 of a byte sequence with a given key.</td></tr>
+      <tr><td><code>fs::read_file</code></td><td>1</td><td><span class="cap">fs</span></td><td>Read a UTF-8 file as String.</td></tr>
+      <tr><td><code>fs::write_file</code></td><td>2</td><td><span class="cap">fs</span></td><td>Write a String to a file, creating or truncating.</td></tr>
+      <tr><td><code>fs::read_bytes</code></td><td>1</td><td><span class="cap">fs</span></td><td>Read a file as Bytes.</td></tr>
+      <tr><td><code>fs::write_bytes</code></td><td>2</td><td><span class="cap">fs</span></td><td>Write Bytes to a file, creating or truncating.</td></tr>
+      <tr><td><code>fs::list_dir</code></td><td>1</td><td><span class="cap">fs</span></td><td>List entries in a directory.</td></tr>
+      <tr><td><code>net::tcp_connect</code></td><td>2</td><td><span class="cap">net</span></td><td>Open an outbound TCP connection.</td></tr>
+      <tr><td><code>net::tcp_listen</code></td><td>1</td><td><span class="cap">net</span></td><td>Open a TCP listener on a local port.</td></tr>
+      <tr><td><code>net::udp_bind</code></td><td>1</td><td><span class="cap">net</span></td><td>Bind a UDP socket on a local port.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>What Is Still Missing</h2>
+  <p class="sub">A production-feeling language needs more than this registry. The next useful layers are JSON, HTTP client/server helpers, regex, UUID, datetime, structured logging, configuration, package manifests, and richer test helpers. Those should land behind the same capability discipline, with examples and dogfood evidence beside the implementation.</p>
+
+  <footer>© 2026 Island Development Crew · Garnet is dual-licensed MIT OR Apache-2.0 · <a href="https://garnet-lang.org">garnet-lang.org</a></footer>
+</div>
+</body>
+</html>

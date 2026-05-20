@@ -89,7 +89,7 @@
     </div>
     <div class="card">
       <div class="label">MIT/productization</div>
-      <div class="big">67.9%</div>
+      <div class="big">69.7%</div>
       <p class="muted">Broader productization remains active-partial and separate from tracked slice completion.</p>
     </div>
     <div class="card">
@@ -162,6 +162,30 @@
           <td>Deferred editor work</td>
           <td>explicitly deferred</td>
           <td>Safe-mode hover, workspace symbols, rename, and CST-grade incremental precision.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <h2>Formatter Baseline</h2>
+    <p class="lead">S4 is now a merged, honest formatter baseline: deterministic whitespace, line-ending, and terminal-newline normalization enforced by integration tests. It is useful today, but it is not yet a full semantic pretty-printer.</p>
+    <table>
+      <thead>
+        <tr><th>Surface</th><th>Status</th><th>Boundary</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>garnet fmt --stdout</code></td>
+          <td>verified</td>
+          <td>Two-pass idempotency is enforced on the canonical example corpus.</td>
+        </tr>
+        <tr>
+          <td>Semantic formatting</td>
+          <td>deferred</td>
+          <td>Spacing, alignment, import sorting, comment preservation, malformed-source recovery, and workspace-wide formatting wait for a trivia-preserving CST.</td>
         </tr>
       </tbody>
     </table>

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Garnet universal installer, v0.5.0 release-candidate default.
+# Garnet universal installer, v0.5.0 stable-release default.
 #
 # Public bootstrap URL:
 #   curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh

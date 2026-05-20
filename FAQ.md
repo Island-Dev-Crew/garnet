@@ -1,6 +1,6 @@
 # Garnet — Frequently Asked Questions
 
-Last updated: 2026-04-17 · v4.2
+Last updated: 2026-05-20 · v0.5.0
 
 ---
 
@@ -46,19 +46,19 @@ Swift and Kotlin do interop between two paradigms in one language; Garnet's pitc
 
 ## What's the performance story?
 
-For pure-computational workloads the tree-walk interpreter (Rung 3) is in the same order of magnitude as Ruby — appropriate for the v0.3 research release. The next rung (Rung 8 / v5.0) is a bytecode VM behind the same surface; that closes the gap to Rust on the hot path. See [Paper VII — Implementation Ladder and Tooling](A_Research_Papers/Paper_VII_Implementation_Ladder_and_Tooling.md) for the staged roadmap.
+For pure-computational workloads the tree-walk interpreter remains the conservative runtime path. v0.5.0 adds the S2 bytecode VM scaffold and benchmark harness, but production VM performance is not claimed yet. The proof/benchmark reporter still labels fresh measured benchmark runs, mechanized proof, and empirical study data as open gates. See [Paper VII — Implementation Ladder and Tooling](A_Research_Papers/Paper_VII_Implementation_Ladder_and_Tooling.md) for the staged roadmap.
 
 Memory: Paper VI Experiment 4 measured 21% peak RSS reduction on the multi-agent MVP workload by using kind-aware allocation (`memory working|episodic|semantic|procedural` keywords) compared to a force-malloc control.
 
 ## Is Garnet production-ready?
 
-**v4.2 is research-grade.** Specifically:
+**v0.5.0 is research-grade and not production-complete.** Specifically:
 
-- **Ready**: scaffolding (`garnet new`), the four-language converter (`garnet convert`), deterministic + signed builds (`garnet build --deterministic --sign`), CapCaps enforcement, scaffolded `garnet test`, the 22 bridged stdlib primitives. Linux + Windows binaries verified end-to-end.
-- **Pending v4.3**: full socket-handle surface (`tcp_listen`, `udp_bind`, read/write/close), method-dispatch caps propagation for `arr.method()` calls, package-repo signing for `apt install garnet` / `dnf install garnet`.
-- **Pending post-MIT**: bytecode VM for performance, Coq mechanization of Paper V theorems, LLM pass@1 study (Paper VI Exp 1 — pending API budget).
+- **Ready**: scaffolding (`garnet new`), the four-language converter (`garnet convert`), deterministic + signed builds (`garnet build --deterministic --sign`), CapCaps enforcement, scaffolded `garnet test`, the 24 bridged stdlib registry primitives, parser fuzz harness, rules-based compiler advisory mode, S1 LSP source surfaces, release-backed VSIX assets, v0.5.0 Linux/macOS CLI release assets, and deterministic cross-machine CI.
+- **Active-partial**: macOS Studio packaging without Developer ID notarization, Windows/Linux Studio target proof, bytecode VM performance path, LSP hover/go-to-def screenshot hardening, promo video human/aesthetic acceptance, proof/benchmark measurements, and provider-neutral advisory handoffs.
+- **Pending**: Apple Developer ID notarization, signed `.pkg`, Windows `.msi`, Linux desktop package/runtime proof, Marketplace/OpenVSX publication, provider-backed LLM assist, mechanized proof, external empirical study data, and native backend lowering.
 
-For prototype agents and scripting — green. For production-bearing infrastructure — wait for v5.0.
+For prototype agents, research demos, and source-checkout dogfood, Garnet is useful today. For production-bearing infrastructure, keep waiting on the productization gates above.
 
 ## How do I migrate from Ruby / Rust / Python / Go?
 
@@ -87,6 +87,10 @@ Dual-licensed under MIT OR Apache-2.0 (your choice). See [LICENSE](LICENSE). Eit
 Yes — the dual MIT / Apache-2.0 license explicitly permits commercial use, modification, distribution, and private use. The two licenses cover slightly different patent-grant + attribution-notice requirements; pick whichever fits your organization's policy.
 
 ## Do I need the Rust toolchain to use Garnet?
+
+Not on platforms with a matching published release asset. The universal installer prefers the v0.5.0 release asset, verifies it against `SHA256SUMS`, and uses source fallback only when no matching package exists or when you force `GARNET_INSTALL_MODE=source`. Source fallback requires Rust 1.75+.
+
+## How do deterministic signed builds work?
 
 Not after release assets are published. The intended user install is `curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh` (or a native `.deb` / `.rpm` / `.pkg` / `.msi` from [Releases](https://github.com/Island-Dev-Crew/garnet/releases)). Until the first `v0.4.2` GitHub Release is cut, use the source install from the README, which does require Rust.
 
@@ -124,16 +128,15 @@ Signing is opt-in. Without `--sign`, the build still produces a deterministic ma
 
 ## What does the project ship as its own deliverable for MIT?
 
-The full corpus in this repository — 7 research papers + 4 addenda, the canonical Mini-Spec v1.0, the engineering workspace (9 Rust crates, 10 MVP programs, 1244 tests), the DX Comparative Paper + Deck, and 11 stage handoff documents (v3.3 → v4.2). The complete history is reproducible commit-by-commit. See [GARNET_v4_2_HANDOFF.md](F_Project_Management/GARNET_v4_2_HANDOFF.md) §"Reviewer's 15-Minute Quickstart" for the suggested reading order.
+The full corpus in this repository: seven research papers plus four addenda, the canonical Mini-Spec v1.0, the engineering workspace, current examples, v0.5 slice ledger, release evidence, public site/blog artifacts, and stage handoff documents. Start with [CURRENT_STATE.md](CURRENT_STATE.md), [F_Project_Management/GARNET_CURRENT_VS_HISTORICAL_LEDGER.md](F_Project_Management/GARNET_CURRENT_VS_HISTORICAL_LEDGER.md), and [F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md](F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md) before relying on older v4.2 handoffs.
 
-## What's coming in v4.3?
+## What's coming after v0.5.0?
 
-- Full socket handle surface (`tcp_listen`, `udp_bind`, persistent stream handles)
-- Method-dispatch caps propagation (`arr.contains(x)` style calls — currently caps_graph only walks free-function calls)
-- Package-repository signing so `apt install garnet` / `dnf install garnet` works from `pkg.garnet-lang.org`
-- Documentation site at `docs.garnet-lang.org` (mdBook scaffold)
+- v0.5.1-acceptable slices: `garnet add` plus manifest spec, semantic formatter expansion, memory eviction benchmarks, and the Actor OS-thread bridge.
+- Product gates: Apple Developer ID notarization, Windows/Linux target runtime proof, Marketplace/OpenVSX publication, and fuller clean-machine reproduction evidence.
+- Adoption surfaces: stdlib reference depth, tutorial depth, package-registry RFC, blog cadence, and GitHub Discussions community loops.
 
-See [GARNET_v4_2_HANDOFF.md](F_Project_Management/GARNET_v4_2_HANDOFF.md) §"v4.2 → POST-MIT ROADMAP" for the longer view.
+See [F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md](F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md) for the current slice contract and [CURRENT_STATE.md](CURRENT_STATE.md) for the source map.
 
 ## Who built this?
 

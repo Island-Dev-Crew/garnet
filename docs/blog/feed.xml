@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Garnet blog</title>
+  <subtitle>Narrative engineering and release notes for the Garnet language platform.</subtitle>
+  <link href="https://garnet-lang.org/blog/feed.xml" rel="self"/>
+  <link href="https://garnet-lang.org/blog/"/>
+  <id>https://garnet-lang.org/blog/feed.xml</id>
+  <updated>2026-05-20T23:00:00Z</updated>
+  <author><name>Island Development Crew</name></author>
+  <entry>
+    <title>Why Garnet exists: the FFI tax I refused to keep paying</title>
+    <id>https://garnet-lang.org/blog/posts/2026-05-20-why-garnet-exists.html</id>
+    <link href="https://garnet-lang.org/blog/posts/2026-05-20-why-garnet-exists.html"/>
+    <updated>2026-05-20T23:00:00Z</updated>
+    <published>2026-05-20T23:00:00Z</published>
+    <summary>The founder's note behind Garnet: a Rust hot path, a Ruby orchestrator, and the FFI tax Garnet was built to avoid.</summary>
+  </entry>
+  <entry>
+    <title>Garnet v0.5: substance over surface</title>
+    <id>https://garnet-lang.org/blog/posts/2026-05-20-garnet-v0-5-substance-over-surface.html</id>
+    <link href="https://garnet-lang.org/blog/posts/2026-05-20-garnet-v0-5-substance-over-surface.html"/>
+    <updated>2026-05-20T23:00:00Z</updated>
+    <published>2026-05-20T23:00:00Z</published>
+    <summary>Release notes for v0.5.0: six blocking slices, finer readiness accounting, and the research-grade boundary preserved.</summary>
+  </entry>
+  <entry>
+    <title>Garnet v0.4.2, and the case for honest accounting</title>
+    <id>https://garnet-lang.org/blog/2026-05-19-v0-4-2-and-honest-accounting.html</id>
+    <link href="https://garnet-lang.org/blog/2026-05-19-v0-4-2-and-honest-accounting.html"/>
+    <updated>2026-05-19T23:00:00Z</updated>
+    <published>2026-05-19T23:00:00Z</published>
+    <summary>Why a readiness number can go down on purpose when the measurement becomes more honest.</summary>
+  </entry>
+</feed>
