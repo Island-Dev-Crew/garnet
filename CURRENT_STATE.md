@@ -59,6 +59,7 @@ done
 |---|---|---|
 | `garnet-parser-v0.3/` | active parser | current implementation |
 | `garnet-interp-v0.3/` | active tree-walk interpreter | current implementation |
+| `garnet-vm/` | S2 bytecode VM scaffold | source-present VM scaffold for the MVP fixtures; 15 native opcode families, deterministic serializer, bounded Criterion harness, and function-level fallback to the tree-walk interpreter; not a production VM or stable bytecode ABI |
 | `garnet-check-v0.3/` | safe-mode and CapCaps validator | current implementation |
 | `garnet-memory-v0.3/` | Mnemos reference memory stores | current implementation |
 | `garnet-actor-runtime/` | actor runtime crate | current implementation; managed source bridge active, full OS-thread CLI bridge still staged |
@@ -78,7 +79,8 @@ done
 | `scripts/garnet_mac_side_continuation_status.py` | Mac-side continuation inventory | current machine-readable pulse for which repo, website, converter, evidence, and macOS Studio lanes can still move from this checkout while Apple Developer ID notarization remains account-holder blocked and Windows/Linux Studio runtime proof remains delegated |
 | `scripts/garnet_windows_linux_studio_status.py` | Windows/Linux Studio MVP contract | current machine-readable target-platform contract for the first cross-platform Studio shell: exact action inventory, safe command vectors, Desktop dogfood evidence defaults, language taxonomy, packaging gates, and explicit no-runtime-completion/no-signed-package claims |
 | `scripts/garnet_proof_benchmark_status.py` | proof/benchmark/empirical inventory | current machine-readable status for existing Criterion benchmark harnesses and research protocols; writes manifested JSON/Markdown evidence while keeping the broader benchmark campaign, mechanized proof, and external study execution unclaimed |
-| `scripts/garnet_benchmark_no_run.py` | benchmark compile evidence | current compile-only benchmark evidence runner for parser/interpreter/memory Criterion harnesses; writes manifest-checked logs and metadata while reporting `not-measured` |
+| `scripts/garnet_benchmark_no_run.py` | benchmark compile evidence | current compile-only benchmark evidence runner for parser/interpreter/memory/VM Criterion harnesses; writes manifest-checked logs and metadata while reporting `not-measured` |
+| `C_Language_Specification/GARNET_BYTECODE_v0_1.md` | S2 bytecode surface note | current scaffold spec for the VM opcode families, deterministic serialization format, fallback boundary, and non-claims |
 | `scripts/garnet_mit_demo_route.py` | MIT demo-route inventory | current machine-readable and Markdown presentation route for a bounded seven-minute MIT walkthrough; ties Objective Pulse, Studio continuation, converter advisory, agentic dogfood, live web/PWA, and blocked-gate closeout together without claiming final MIT/productization completion |
 | `scripts/garnet_mit_deck_outline.py` | MIT deck-outline inventory | current machine-readable and Markdown slide outline for an 8-slide MIT reviewer deck; turns the demo route, adoption status, blocked gates, and Desktop evidence boundaries into presentation notes without claiming final MIT/productization acceptance |
 | `scripts/garnet_mit_deck_preview.py` | MIT deck-preview artifact | current browser-smokeable HTML/JSON preview generated from the deck outline; packages slide story, evidence, speaker notes, blocked gates, and forbidden claims into a manifested review artifact without claiming final MIT/productization acceptance |

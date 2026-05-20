@@ -645,6 +645,7 @@ dependencies = [
  "garnet-interp",
  "garnet-memory",
  "garnet-parser",
+ "garnet-vm",
  "getrandom 0.2.17",
  "miette",
  "rand_core 0.6.4",
@@ -709,6 +710,15 @@ dependencies = [
  "hmac",
  "sha2",
  "tempfile",
+]
+
+[[package]]
+name = "garnet-vm"
+version = "0.5.0"
+dependencies = [
+ "criterion",
+ "garnet-interp",
+ "garnet-parser",
 ]
 
 [[package]]

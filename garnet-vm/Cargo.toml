@@ -1,0 +1,19 @@
+[package]
+name = "garnet-vm"
+version = "0.5.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+authors = ["Island Development Crew"]
+repository = "https://github.com/Island-Dev-Crew/garnet"
+description = "Bytecode VM scaffold for Garnet v0.5 MVP execution."
+
+[dependencies]
+garnet-interp = { version = "0.3.0", path = "../garnet-interp-v0.3" }
+garnet-parser = { version = "0.3.0", path = "../garnet-parser-v0.3" }
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "parse_compile_execute"
+harness = false

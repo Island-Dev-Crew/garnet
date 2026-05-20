@@ -32,6 +32,13 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   go-to-definition. `scripts/smoke_garnet_lsp_protocol.py` proves those paths
   over stdio; local VSIX packaging and install smoke passed on this Mac/Cursor
   profile.
+- **S2 (Bytecode VM scaffold):** source-present `garnet-vm/` crate with a
+  deterministic bytecode serializer, 15 native opcode families, function-level
+  tree-walk fallback, `garnet run --vm` / `--interp` dispatch, a bounded
+  Criterion VM/interpreter comparison harness, and
+  `C_Language_Specification/GARNET_BYTECODE_v0_1.md`. The proof/benchmark
+  reporter now inventories the VM harness, and the MIT reporter's proof lane is
+  more granular while the overall objective remains 58.1%.
 
 ### Honest partials
 
@@ -39,14 +46,14 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   full manual VSCode hover/go-to-definition screenshots are attached to later
   review/release evidence. Safe-mode hover, workspace symbols, rename, and
   CST-grade incremental precision remain deferred.
+- The S2 VM is a scaffold, not a production VM. It covers 15 opcode families for
+  the MVP fixtures, falls back to the tree-walk interpreter at unsupported
+  function boundaries, and does not claim a stable bytecode ABI, production
+  native compiler proof, full safe-mode lowering, or standing benchmark
+  measurements in the status reporter.
 
-### Known-RED gates (inherited, not yet fixed)
+### Known Advisory Gates (inherited, not yet fixed)
 
-- Workspace clippy fails on the in-progress S4 formatter scaffold
-  (`garnet-cli/src/formatter.rs`): 7 `clippy::single_char_add_str` errors. S4
-  owner repairs these in the S4 PR; not blocking S0.
-- Workspace tests have 2 failures in `garnet-cli/src/cmd/fmt.rs` exercising the
-  S4 formatter scaffold. Same coordination as above.
 - Conformance matrix shorthand: 9 path-like references in
   `C_Language_Specification/GARNET_v0_4_2_Conformance_Matrix.md` do not resolve
   to files on disk today. The new check surfaces these as advisory findings; a

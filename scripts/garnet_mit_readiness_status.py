@@ -88,6 +88,15 @@ def _lsp_source_present() -> bool:
     return all(path.exists() for path in required)
 
 
+def _vm_scaffold_present(proof: garnet_proof_benchmark_status.ProofBenchmarkStatus) -> bool:
+    return any(
+        bench.id == "vm_parse_compile_execute"
+        and bench.bench_file_exists
+        and bench.cargo_entry_present
+        for bench in proof.benchmarks
+    )
+
+
 def read_status() -> MitReadinessStatus:
     plan = garnet_readiness_status.read_status(
         ROOT / "F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md"
@@ -96,6 +105,7 @@ def read_status() -> MitReadinessStatus:
     contract = converter.intelligent_assist_contract
     promo = garnet_promo_video_status.read_status()
     proof = garnet_proof_benchmark_status.read_status()
+    vm_scaffold_present = _vm_scaffold_present(proof)
     wls = garnet_windows_linux_studio_status.read_status()
     if promo.public_site_embed_present:
         promo_evidence_tail = "records local rendered MP4/WebM evidence, automated visual QA evidence, a website export package, and public-site embedding while keeping human/aesthetic acceptance open."
@@ -293,11 +303,17 @@ def read_status() -> MitReadinessStatus:
             id="proof_empirics",
             label="Proof and empirical validation",
             status="active-partial",
-            completion_percent=40.0,
+            completion_percent=45.0 if vm_scaffold_present else 40.0,
             evidence=(
                 "`scripts/garnet_proof_benchmark_status.py` inventories the current "
                 f"{len(proof.benchmarks)} Criterion benchmark harnesses plus proof/study "
-                "protocols while reporting measurements, mechanized proof, and empirical "
+                "protocols"
+                + (
+                    ", including the S2 VM parse/compile/execute harness,"
+                    if vm_scaffold_present
+                    else ""
+                )
+                + " while reporting measurements, mechanized proof, and empirical "
                 "study execution as unclaimed."
             ),
             blocked_by=proof.blocked_by,

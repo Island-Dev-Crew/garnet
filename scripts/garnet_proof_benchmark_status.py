@@ -81,6 +81,14 @@ BENCHMARKS = (
         "cargo_toml": "garnet-memory-v0.3/Cargo.toml",
         "command": "cargo bench -p garnet-memory --bench vector",
     },
+    {
+        "id": "vm_parse_compile_execute",
+        "package": "garnet-vm",
+        "bench_name": "parse_compile_execute",
+        "bench_file": "garnet-vm/benches/parse_compile_execute.rs",
+        "cargo_toml": "garnet-vm/Cargo.toml",
+        "command": "cargo bench -p garnet-vm --bench parse_compile_execute",
+    },
 )
 
 PROTOCOLS = (
@@ -148,6 +156,7 @@ def read_status() -> ProofBenchmarkStatus:
         empirical_study_status="pending",
         current_truth=[
             "Criterion benchmark harnesses exist for parser, interpreter, and memory surfaces.",
+            "S2 adds a VM parse/compile/execute harness without embedding benchmark measurements in this reporter.",
             "benchmarks compile/execution must be run separately",
             "No benchmark measurements are embedded in this status.",
             "Formal RustBelt/Iris/Coq mechanization is not present in the repo.",
@@ -173,6 +182,7 @@ def read_status() -> ProofBenchmarkStatus:
             "formal mechanized soundness proof complete",
         ],
         next_slices=[
+            "Use S2 VM benchmark output as local PR evidence, not as a standing reporter claim.",
             "Run benchmark timing bundles only after measurement protocol and variance guardrails are in place.",
             "Run benchmark measurement bundle only when machine, command, and variance metadata are recorded.",
             "Turn one proof sketch into a checked mechanization artifact before claiming formal proof.",

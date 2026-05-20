@@ -88,6 +88,14 @@ CONTRACT_RULES = {
             "go-to-definition",
         ],
     },
+    "garnet-vm/AGENTS.md": {
+        "phrases": [
+            "bytecode VM scaffold",
+            "deterministic bytecode serialization",
+            "fallback counts",
+            "Benchmark evidence",
+        ],
+    },
     "apps/garnet-studio/src-tauri/AGENTS.md": {
         "phrases": [
             "Tauri v2",
