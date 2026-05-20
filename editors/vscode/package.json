@@ -22,7 +22,7 @@
   "main": "./dist/extension.js",
   "scripts": {
     "compile": "tsc -p ./",
-    "package": "npm run compile && vsce package --out garnet-0.5.0-lsp-mvp.vsix"
+    "package": "npm run compile && node scripts/bundle-server.mjs && vsce package --out garnet-0.5.0-lsp-mvp.vsix"
   },
   "contributes": {
     "languages": [
@@ -44,7 +44,7 @@
         "garnet.lsp.path": {
           "type": "string",
           "default": "",
-          "description": "Path to the garnet-lsp executable. If unset, the extension tries GARNET_LSP, target/release/garnet-lsp in the workspace, then garnet-lsp on PATH."
+          "description": "Path to the garnet-lsp executable. If unset, the extension tries GARNET_LSP, the bundled server, target/release/garnet-lsp in the workspace, then garnet-lsp on PATH."
         }
       }
     }

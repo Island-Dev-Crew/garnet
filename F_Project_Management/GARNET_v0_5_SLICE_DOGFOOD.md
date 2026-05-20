@@ -340,12 +340,20 @@ in `/Users/idc2.0/Desktop/dogfood/garnet-v0-5-editor-gate-20260520T122611Z`:
 `island-dev-crew.garnet@0.5.0` installed into Cursor, the injected syntax-error
 fixture showed `1 problem in this file` / `Errors: 1`, and the LSP protocol
 smoke proved diagnostics, hover, and go-to-definition over stdio.
+Clean standalone VS Code diagnostic evidence is recorded in
+`/Users/idc2.0/Desktop/dogfood/garnet-v0-5-standalone-vscode-gate-20260520T130303Z`:
+standalone VS Code 1.121.0 arm64 installed the locally packaged
+`garnet-0.5.0-lsp-mvp.vsix` into isolated user-data/extensions directories,
+launched the bundled `extension/server/garnet-lsp` without `garnet.lsp.path`,
+and showed `1 problem in this file` for an injected syntax error. The sealed
+bundle includes the screenshot, VSIX, installed-server path, trace log,
+protocol smoke JSON for diagnostics/hover/go-to-definition, and
+`MANIFEST.sha256`.
 
-Do not tag v0.5.0 yet. The current Mac has Cursor as `/usr/local/bin/code`, not
-standalone VS Code; a fresh isolated Cursor profile installed the extension but
-stopped at Cursor's login screen before editor proof. Release-backed package
-proof still requires the tag/release assets to exist, and no published Garnet
-VSIX evidence or clean standalone VSCode diagnostic screenshot is recorded yet.
+Do not tag v0.5.0 yet. The current Mac has Cursor as `/usr/local/bin/code`, but
+standalone VS Code diagnostic proof now exists through the isolated `/tmp`
+downloaded app. Release-backed package proof still requires the tag/release
+assets to exist, and no published Garnet VSIX evidence is recorded yet.
 
 
 
