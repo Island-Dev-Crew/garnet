@@ -11,6 +11,21 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S7 (Actor OS-thread bridge / `trust-report`):** new
+  `garnet trust-report <file.garnet>` command (`garnet-cli/src/cmd/trust_report.rs`)
+  produces a structural trust report including the literal line
+  `actors: N / threads: N`, matching the contract's dogfood grep. The
+  count is structural — `garnet-actor-runtime/src/runtime.rs` already
+  spawns one OS thread per actor (its header documents the
+  "Spawn-and-mailbox runtime" contract); S7 lands the CLI bridge that
+  surfaces what the runtime does. New
+  `examples/agent_orchestrator_3thread.garnet` is the three-actor
+  fixture; `garnet-cli/tests/trust_report.rs` asserts the dogfood block
+  on every `cargo test --workspace`. New "Actor OS-thread bridge" lane
+  in `garnet_mit_readiness_status.py` (verified 100%). Honest deferred
+  list documents that live-runtime instrumentation, mailbox/Sendable
+  audit, and transitive caps aggregation are out of scope. Closes
+  Paper VI Contribution 4's CLI-bridge surface gap.
 - **S6 (Memory eviction policy benchmarks):** `garnet-memory-v0.3/benches/eviction.rs`
   is a Criterion bench harness exercising `MemoryPolicy::score` +
   `should_retain` per Mnemos kind (working / episodic / semantic /

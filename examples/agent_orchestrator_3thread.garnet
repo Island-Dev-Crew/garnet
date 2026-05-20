@@ -1,0 +1,54 @@
+// S7: Three-actor orchestrator example for the actor OS-thread bridge.
+//
+// The Garnet actor runtime (`garnet-actor-runtime/src/runtime.rs`) spawns
+// one OS thread per actor via `std::thread::spawn`, plus an mpsc mailbox.
+// This example exercises the managed-mode actor surface that the CLI
+// bridges to that runtime: three actors, three threads, by construction.
+//
+// Dogfood:
+//   garnet run examples/agent_orchestrator_3thread.garnet
+//   garnet trust-report examples/agent_orchestrator_3thread.garnet \
+//     | grep -q "actors: 3 / threads: 3"
+//
+// Honest scope (v0.5.1):
+// - The `trust-report` count is STRUCTURAL — it counts `actor` declarations
+//   in the parsed source. It does NOT instrument the runtime to record a
+//   live thread spawn count. The 3:3 ratio follows from the runtime's
+//   one-thread-per-actor contract documented in `runtime.rs`'s header.
+// - The actors here use simple synchronous patterns so the example can
+//   `garnet run` to completion under the managed-mode interpreter.
+
+@caps()
+def main() {
+  println("agent_orchestrator_3thread: structural example for S7 trust-report")
+  println("actors: Researcher, Synthesizer, Reviewer")
+  println("threads (per actor-runtime contract): one OS thread + mpsc mailbox each")
+  3
+}
+
+actor Researcher {
+  let mut runs = 0
+
+  on inspect() {
+    runs += 1
+    runs
+  }
+}
+
+actor Synthesizer {
+  let mut drafts = 0
+
+  on compose() {
+    drafts += 1
+    drafts
+  }
+}
+
+actor Reviewer {
+  let mut verdicts = 0
+
+  on review() {
+    verdicts += 1
+    verdicts
+  }
+}
