@@ -21,6 +21,7 @@ pub mod parse;
 pub mod repl;
 pub mod run;
 pub mod test;
+pub mod trust_report;
 pub mod verify;
 
 use crate::cache::{self, Episode};

@@ -459,6 +459,43 @@ def read_status() -> MitReadinessStatus:
             ],
         ),
         ObjectiveLane(
+            id="actor_trust_report_bridge",
+            label="Actor OS-thread bridge (`trust-report`)",
+            status="verified"
+            if (ROOT / "garnet-cli/src/cmd/trust_report.rs").exists()
+            and (ROOT / "examples/agent_orchestrator_3thread.garnet").exists()
+            and (ROOT / "garnet-cli/tests/trust_report.rs").exists()
+            else "planned",
+            completion_percent=100.0
+            if (ROOT / "garnet-cli/src/cmd/trust_report.rs").exists()
+            and (ROOT / "examples/agent_orchestrator_3thread.garnet").exists()
+            and (ROOT / "garnet-cli/tests/trust_report.rs").exists()
+            else 0.0,
+            evidence=(
+                "`garnet-cli/src/cmd/trust_report.rs` implements "
+                "`garnet trust-report <file.garnet>` — a structural report that "
+                "counts actor declarations and surfaces the per-function caps "
+                "set, printing the literal line `actors: N / threads: N` per "
+                "the S7 contract dogfood. `examples/agent_orchestrator_3thread.garnet` "
+                "is the three-actor fixture; `garnet-cli/tests/trust_report.rs` "
+                "asserts the dogfood block on every `cargo test --workspace`. "
+                "The actor runtime in `garnet-actor-runtime/src/runtime.rs` "
+                "already spawns one OS thread per actor (see runtime.rs header); "
+                "S7 lands the CLI bridge that surfaces what the runtime does."
+            ),
+            blocked_by=[],
+            deferred=[
+                "Live-runtime instrumentation (current report is STRUCTURAL, "
+                "counting actor declarations; it does not spawn the runtime "
+                "or measure live thread counts)",
+                "Mailbox-size + Sendable-boundary audit beyond what "
+                "`garnet check` already enforces",
+                "Transitive caps aggregation from `use` imports (resolves to "
+                "stdlib today, not to vendored deps from S3)",
+                "Cross-actor message-graph visualization",
+            ],
+        ),
+        ObjectiveLane(
             id="memory_eviction_benchmarks",
             label="Memory eviction policy benchmarks",
             status="verified"

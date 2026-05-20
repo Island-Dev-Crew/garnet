@@ -1,7 +1,7 @@
 {
   "source": "/Users/IDC2.5/Desktop/Garnet",
   "overall_status": "active-partial",
-  "completion_percent": 68.9,
+  "completion_percent": 70.5,
   "current_truth": [
     "tracked implementation plan is complete",
     "goal remains active",
@@ -275,6 +275,20 @@
         "Managed-mode `actor.reload_signed` syntax (the Rust runtime API is tested separately in `garnet-actor-runtime/tests/reload.rs`; exposing it to managed mode is a separate slice)",
         "Real signed-bytes payload (the demo uses a text-shaped marker for readability; production payloads are arbitrary bytes)",
         "Ed25519 signature verification of the payload (BLAKE3 fingerprint check is one of two layers; the cryptographic signature layer is validated only in the Rust runtime today)"
+      ]
+    },
+    {
+      "id": "actor_trust_report_bridge",
+      "label": "Actor OS-thread bridge (`trust-report`)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`garnet-cli/src/cmd/trust_report.rs` implements `garnet trust-report <file.garnet>` \u2014 a structural report that counts actor declarations and surfaces the per-function caps set, printing the literal line `actors: N / threads: N` per the S7 contract dogfood. `examples/agent_orchestrator_3thread.garnet` is the three-actor fixture; `garnet-cli/tests/trust_report.rs` asserts the dogfood block on every `cargo test --workspace`. The actor runtime in `garnet-actor-runtime/src/runtime.rs` already spawns one OS thread per actor (see runtime.rs header); S7 lands the CLI bridge that surfaces what the runtime does.",
+      "blocked_by": [],
+      "deferred": [
+        "Live-runtime instrumentation (current report is STRUCTURAL, counting actor declarations; it does not spawn the runtime or measure live thread counts)",
+        "Mailbox-size + Sendable-boundary audit beyond what `garnet check` already enforces",
+        "Transitive caps aggregation from `use` imports (resolves to stdlib today, not to vendored deps from S3)",
+        "Cross-actor message-graph visualization"
       ]
     },
     {

@@ -143,6 +143,13 @@ fn main() -> ExitCode {
                 require_sig,
             )
         }
+        "trust-report" => {
+            if args.len() < 2 {
+                eprintln!("usage: garnet trust-report <file.garnet>");
+                return ExitCode::from(2);
+            }
+            cmd::trust_report::run(PathBuf::from(&args[1]))
+        }
         "convert" => cmd::convert::run(&args[1..]),
         "test" => cmd::test::run(&args[1..]),
         "fmt" => cmd::fmt::run(&args[1..]),
