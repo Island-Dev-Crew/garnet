@@ -1,0 +1,12 @@
+// Fixture for S10 rule: long-parameter-list.
+// `aggregate` declares 5 parameters; the threshold is 4, so the rule fires.
+
+@caps()
+def aggregate(alpha, beta, gamma, delta, epsilon) {
+  alpha + beta + gamma + delta + epsilon
+}
+
+@caps()
+def main() {
+  aggregate(1, 2, 3, 4, 5)
+}

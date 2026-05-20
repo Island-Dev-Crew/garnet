@@ -71,6 +71,16 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("parse_input", lanes["parser_fuzz_harness"].evidence)
         self.assertIn("ParseBudget", lanes["parser_fuzz_harness"].evidence)
         self.assertTrue(lanes["parser_fuzz_harness"].deferred)
+        # S10: Compiler advisory mode (rules-based)
+        self.assertIn("compiler_advisory_rules_based", lanes)
+        self.assertEqual("verified", lanes["compiler_advisory_rules_based"].status)
+        self.assertEqual(100.0, lanes["compiler_advisory_rules_based"].completion_percent)
+        self.assertIn("compiler suggested", lanes["compiler_advisory_rules_based"].evidence)
+        self.assertIn("suggest.rs", lanes["compiler_advisory_rules_based"].evidence)
+        self.assertTrue(lanes["compiler_advisory_rules_based"].deferred)
+        # LLM tier is explicitly deferred — pending-infra anchor preserved
+        deferred_text = " ".join(lanes["compiler_advisory_rules_based"].deferred)
+        self.assertIn("LLM", deferred_text)
 
     def test_json_exposes_evidence_and_deferred_boundaries(self) -> None:
         output = subprocess.check_output(

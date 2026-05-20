@@ -1,0 +1,12 @@
+// Fixture for S10 rule: managed-fn-missing-caps.
+// `helper` is a managed def without an `@caps(...)` annotation. The suggest
+// rule should fire on `helper` (not on `main`, which has @caps()).
+
+def helper(value) {
+  value + 1
+}
+
+@caps()
+def main() {
+  helper(41)
+}

@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::Instant;
 
-pub fn run(path: PathBuf) -> ExitCode {
+pub fn run(path: PathBuf, suggest: bool) -> ExitCode {
     let started = Instant::now();
     let src = match read_file(&path) {
         Ok(s) => s,
@@ -44,6 +44,17 @@ pub fn run(path: PathBuf) -> ExitCode {
         report.boundary_call_sites,
         report.errors.len()
     );
+    if suggest {
+        let suggestions = garnet_check::suggest::suggest_for_module(&module);
+        println!(
+            "\n{} advisory suggestion{}:",
+            suggestions.len(),
+            if suggestions.len() == 1 { "" } else { "s" },
+        );
+        for s in &suggestions {
+            println!("- {}", garnet_check::suggest::render(s));
+        }
+    }
     if report.ok() {
         record("check", &file_label, &src, "ok", None, started, 0);
         ExitCode::SUCCESS
