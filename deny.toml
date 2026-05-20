@@ -38,6 +38,9 @@ allow = [
     "BSD-2-Clause",
     "BSD-3-Clause",
     "ISC",
+    # S5 parser fuzz harness: libFuzzer's runtime includes the permissive
+    # University of Illinois/NCSA component via libfuzzer-sys.
+    "NCSA",
     "Unicode-3.0",
     "Unlicense",
     "Zlib",

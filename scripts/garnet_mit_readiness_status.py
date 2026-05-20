@@ -306,7 +306,9 @@ def read_status() -> MitReadinessStatus:
             completion_percent=45.0 if vm_scaffold_present else 40.0,
             evidence=(
                 "`scripts/garnet_proof_benchmark_status.py` inventories the current "
-                f"{len(proof.benchmarks)} Criterion benchmark harnesses plus proof/study "
+                f"{len(proof.benchmarks)} Criterion benchmark harnesses, "
+                f"{len(proof.fuzz_harnesses)} fuzz harness"
+                f"{'' if len(proof.fuzz_harnesses) == 1 else 'es'}, plus proof/study "
                 "protocols"
                 + (
                     ", including the S2 VM parse/compile/execute harness,"
@@ -314,7 +316,7 @@ def read_status() -> MitReadinessStatus:
                     else ""
                 )
                 + " while reporting measurements, mechanized proof, and empirical "
-                "study execution as unclaimed."
+                "study execution as unclaimed and long-running fuzz hours as pending."
             ),
             blocked_by=proof.blocked_by,
             deferred=proof.deferred,
@@ -361,8 +363,8 @@ def read_status() -> MitReadinessStatus:
             and (ROOT / "garnet-parser-v0.3/fuzz/fuzz_targets/parse_input.rs").exists()
             else 0.0,
             evidence=(
-                "`.github/workflows/fuzz-nightly.yml` runs `cargo fuzz run parse_input` "
-                "for ≥ 1 hour on a nightly schedule against the `garnet-parser-v0.3/fuzz/` "
+                "`.github/workflows/fuzz-nightly.yml` runs `cargo +nightly fuzz run parse_input` "
+                "for a 60-second PR smoke and ≥ 1 hour on a nightly schedule against the `garnet-parser-v0.3/fuzz/` "
                 "cargo-fuzz sub-workspace. The `parse_input` target wraps every call in a "
                 "strict `ParseBudget` (4096-byte source cap, 1024-token cap, 32-depth cap, "
                 "512-byte literal cap), so neither CPU nor memory can be unbounded. Seed "

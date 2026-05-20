@@ -20,8 +20,13 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   crashes upload as artifacts for triage. Seed corpus is populated from
   canonical `examples/*.garnet` files. New "Parser fuzz harness
   (nightly)" lane in `garnet_mit_readiness_status.py` (`verified` 100%).
-  Honest deferred list documents that the interpreter, checker, and
-  archived v0.2 parser are NOT in scope today.
+  `scripts/garnet_proof_benchmark_status.py` also inventories the fuzz
+  harness as evidence while keeping accumulated nightly fuzz hours unclaimed.
+  The fuzz sub-workspace carries explicit license metadata and a scoped
+  `cargo deny --manifest-path garnet-parser-v0.3/fuzz/Cargo.toml check`
+  record for `libfuzzer-sys`'s permissive NCSA component. Honest deferred list
+  documents that the interpreter, checker, and archived v0.2 parser are NOT in
+  scope today.
 - **S9 (Determinism CI):** `.github/workflows/determinism.yml` builds
   `examples/det_fixture_01.garnet` with `garnet build --deterministic --sign
   <key>` on a matrix of ubuntu-latest and macos-latest. A `prepare-key` job
@@ -73,6 +78,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   function boundaries, and does not claim a stable bytecode ABI, production
   native compiler proof, full safe-mode lowering, or standing benchmark
   measurements in the status reporter.
+- The S5 fuzz harness is source-present with local 60-second dogfood evidence
+  and scheduled nightly coverage, not a claim that one-hour nightly fuzz has
+  already accumulated or that parser correctness is proven.
 
 ### Known Advisory Gates (inherited, not yet fixed)
 
