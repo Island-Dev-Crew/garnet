@@ -145,15 +145,21 @@ garnet run src/main.garnet   # uses the added lib
 
 ```bash
 for f in examples/*.garnet; do
-  garnet fmt "$f" > /tmp/once
-  garnet fmt /tmp/once > /tmp/twice
+  garnet fmt --stdout "$f" > /tmp/once
+  garnet fmt --stdout /tmp/once > /tmp/twice
   diff /tmp/once /tmp/twice || { echo "fmt not idempotent: $f"; exit 1; }
 done
 ```
 
 
 
-**State:** not-started.
+**State as of 2026-05-20:** merged via PR #208. The current formatter is the
+literal S4 baseline: deterministic whitespace, line-ending, and terminal-newline
+normalization enforced by `garnet-cli/tests/fmt_idempotency.rs` across the
+canonical `examples/{mvp_,det_}*.garnet` corpus. Honest boundary: AST-driven
+semantic formatting, trivia/comment preservation, malformed-source recovery,
+and workspace-level `garnet fmt --workspace` remain deferred until the parser
+grows a trivia-preserving CST.
 
 ---
 
