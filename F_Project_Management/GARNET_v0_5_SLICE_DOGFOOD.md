@@ -328,11 +328,12 @@ Tag v0.5.0 only when all of:
   # Confirm: VSCode shows diagnostics on injected syntax error
 ```
 
-Current state as of 2026-05-20: the pre-tag release gate is satisfied and the
-`v0.5.0` tag is authorized, but release completion is not yet proven. The
-release-candidate preflight retargets the canonical package version and public
-installer default to v0.5.0, but source-fallback proof is not release-asset
-publication proof.
+Current state as of 2026-05-20: the `v0.5.0` tag is published from
+`13a5805250dc0777ca9212f2214fff5d07247e7b`, and the release-only Mac-side
+validation bundle is sealed at
+`/Users/idc2.0/Desktop/dogfood/garnet-v0-5-release-validation-20260520T142443Z`.
+The release remains a research-grade prototype release, not production-complete
+productization.
 Post-merge public installer source-fallback proof is recorded in
 `/Users/idc2.0/Desktop/dogfood/garnet-v0-5-rc-merged-20260520T121820Z`:
 `curl -fsSL https://garnet-lang.org/install.sh` installed `garnet 0.5.0` into
@@ -352,48 +353,62 @@ bundle includes the screenshot, VSIX, installed-server path, trace log,
 protocol smoke JSON for diagnostics/hover/go-to-definition, and
 `MANIFEST.sha256`.
 
-Release-backed VSIX publication is now staged, not claimed:
+Release-backed VSIX publication is now proven for GitHub Release assets:
 `scripts/package_garnet_vscode_extension.sh` builds host-native
 `garnet-<version>-lsp-mvp-<target>.vsix` artifacts with the bundled server and
-manifested evidence, `.github/workflows/vscode-extension.yml` publishes those
-VSIX files as GitHub Release assets on `v*` tag pushes, and
-`scripts/verify_org_release_smoke.sh` fails until the matching release-backed
-VSIX asset exists and contains the extension entry point plus bundled server.
+manifested evidence, `.github/workflows/vscode-extension.yml` published
+`garnet-0.5.0-lsp-mvp-darwin-arm64.vsix` and
+`garnet-0.5.0-lsp-mvp-linux-x64.vsix` as `v0.5.0` GitHub Release assets in
+run `26168679791`, and `scripts/verify_org_release_smoke.sh` passed only after
+the matching release-backed VSIX asset existed and contained the extension entry
+point plus bundled server.
 Fresh local M5 evidence is recorded in
 `/Users/idc2.0/Desktop/dogfood/garnet-vscode-release-assets-20260520T133747Z`;
 its manifest verifies `garnet-0.5.0-lsp-mvp-darwin-arm64.vsix` as
-release-asset-ready local evidence, not publication.
+release-asset-ready local evidence. Release-backed standalone VS Code evidence
+is recorded in
+`/Users/idc2.0/Desktop/dogfood/garnet-v0-5-release-validation-20260520T142443Z`:
+the published darwin-arm64 VSIX installed into isolated standalone VS Code
+1.121.0, the bundled `server/garnet-lsp` launched, and the injected syntax-error
+fixture showed `1 problem in this file` plus a `garnet-parser`
+`textDocument/publishDiagnostics` trace.
 
-The macOS CLI release asset path is also staged, not claimed:
+The macOS CLI release asset path is also proven for GitHub Release assets:
 `.github/workflows/linux-packages.yml` builds
 `garnet-<version>-aarch64-apple-darwin.tar.gz` and
 `garnet-<version>-x86_64-apple-darwin.tar.gz` on macOS, then publishes those
 tarballs with Linux `.deb`/`.rpm` packages behind one release-time
 `SHA256SUMS`. This is required because the public installer falls back from
-unsigned/unpublished `.pkg` assets to tarballs on macOS. It is workflow proof,
-not publication proof, until the `v0.5.0` tag workflow completes and
-`scripts/verify_org_release_smoke.sh` passes against the organization release.
+unsigned/unpublished `.pkg` assets to tarballs on macOS. Tag run `26168679254`
+published the Linux packages, macOS tarballs, and unified `SHA256SUMS`; its
+`smoke-deb`, `smoke-rpm`, and release jobs all completed successfully.
 Fresh local M5 file-backed release-mode evidence is recorded in
 `/Users/idc2.0/Desktop/dogfood/garnet-macos-cli-tarball-release-assets-20260520T135703Z`:
 the `garnet-0.5.0-aarch64-apple-darwin.tar.gz` tarball verified against
 `SHA256SUMS`, installed into an isolated prefix, reported `garnet 0.5.0`, then
 `garnet new --template cli`, `garnet test`, and `garnet run` passed.
+Release-only organization evidence is recorded in
+`/Users/idc2.0/Desktop/dogfood/garnet-v0-5-release-validation-20260520T142443Z`:
+the public installer ran in `GARNET_INSTALL_MODE=release`, failed over honestly
+from the unavailable `.pkg` to the aarch64 macOS tarball, verified SHA-256, and
+then the installed release binary passed `garnet new --template cli`,
+`garnet test`, and `garnet run src/main.garnet`.
 
-Tag authorization is ready after PR #200. The current Mac has Cursor as
-`/usr/local/bin/code`, but standalone VS Code diagnostic proof now exists
-through the isolated `/tmp` downloaded app. Release-backed package proof still
-requires the tag workflow to publish assets and the release-only smoke to pass.
-Marketplace/OpenVSX publication is not claimed by this gate.
+The current Mac has Cursor as `/usr/local/bin/code`, but standalone VS Code
+diagnostic proof now exists through the isolated `/tmp` downloaded app.
+Marketplace/OpenVSX publication is not claimed by this gate, and neither are
+Apple Developer ID notarization, a signed macOS `.pkg`, or Windows/Linux target
+runtime proof.
 
 Post-tag validation required before closing the v0.5.0 goal:
 
-- [ ] `v0.5.0` tag workflow publishes Linux packages, macOS CLI tarballs,
+- [x] `v0.5.0` tag workflow publishes Linux packages, macOS CLI tarballs,
       `SHA256SUMS`, and host-native VSIX assets.
-- [ ] `scripts/verify_org_release_smoke.sh` passes against
+- [x] `scripts/verify_org_release_smoke.sh` passes against
       `Island-Dev-Crew/garnet` release `v0.5.0` without source fallback.
-- [ ] Clean release install runs `garnet new --template cli`, `garnet test`,
+- [x] Clean release install runs `garnet new --template cli`, `garnet test`,
       and `garnet run src/main.garnet`.
-- [ ] Release-backed `garnet-0.5.0-lsp-mvp-darwin-arm64.vsix` installs into
+- [x] Release-backed `garnet-0.5.0-lsp-mvp-darwin-arm64.vsix` installs into
       standalone VS Code/Cursor and shows diagnostics on an injected syntax
       error.
 

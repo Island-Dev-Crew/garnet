@@ -11,15 +11,28 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **v0.5.0 organization release validation:** the `v0.5.0` GitHub Release now
+  exists at `13a5805250dc0777ca9212f2214fff5d07247e7b` with Linux `.deb`/`.rpm`
+  packages, macOS aarch64/x86_64 CLI tarballs, unified `SHA256SUMS`, and
+  darwin-arm64/linux-x64 VSIX assets from green tag workflows. Release-only
+  M5 evidence is sealed at
+  `/Users/idc2.0/Desktop/dogfood/garnet-v0-5-release-validation-20260520T142443Z`:
+  `scripts/verify_org_release_smoke.sh` passed against the org release without
+  source fallback, the installer honestly fell back from the unavailable `.pkg`
+  to the aarch64 tarball, `garnet new --template cli` / `garnet test` /
+  `garnet run` passed from the installed release binary, and the published
+  darwin-arm64 VSIX produced the injected standalone VS Code diagnostic. This
+  is still not Apple Developer ID notarization, a signed/notarized macOS `.pkg`,
+  Marketplace/OpenVSX publication, or Windows/Linux target-runtime proof.
 - **v0.5 macOS release tarball path:** `.github/workflows/linux-packages.yml`
   now stages macOS CLI tarballs for `aarch64-apple-darwin` and
   `x86_64-apple-darwin`, then composes one release-time `SHA256SUMS` covering
   Linux `.deb`/`.rpm` packages plus those tarballs. This closes the pre-tag
   workflow gap that would make an M5 Mac release-only installer smoke fail
-  after publication. It is still not a `v0.5.0` tag, a signed/notarized `.pkg`,
-  or clean-machine release proof until the tag workflow publishes the assets
-  and `scripts/verify_org_release_smoke.sh` passes against the organization
-  release. Fresh local M5 file-backed release-mode evidence is sealed at
+  after publication. The tag-time publication and release-only smoke evidence
+  are recorded in the v0.5.0 organization release validation entry above; this
+  remains not a signed/notarized `.pkg`. Fresh local M5 file-backed release-mode
+  evidence is sealed at
   `/Users/idc2.0/Desktop/dogfood/garnet-macos-cli-tarball-release-assets-20260520T135703Z`.
 - **v0.5 release-backed VSIX path:** `scripts/package_garnet_vscode_extension.sh`
   now builds `garnet-lsp`, packages the VS Code extension with the bundled
@@ -28,9 +41,10 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   artifacts on PR/main/tag runs and publishes them as GitHub Release assets on
   `v*` tag pushes. `scripts/verify_org_release_smoke.sh` now fails the release
   smoke unless the matching release-backed VSIX asset exists and contains the
-  extension entry point plus bundled server. This prepares the clean-machine
-  v0.5.0 gate; it is not a v0.5.0 tag, Marketplace publication, or OpenVSX
-  publication. Fresh M5 local evidence is sealed at
+  extension entry point plus bundled server. The tag-time publication and
+  release-backed diagnostic proof are recorded in the v0.5.0 organization
+  release validation entry above; this remains not Marketplace publication or
+  OpenVSX publication. Fresh M5 local evidence is sealed at
   `/Users/idc2.0/Desktop/dogfood/garnet-vscode-release-assets-20260520T133747Z`
   for `garnet-0.5.0-lsp-mvp-darwin-arm64.vsix`.
 - **v0.5 release-gate evidence:** post-merge public installer source-fallback
@@ -123,19 +137,19 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   Criterion VM/interpreter comparison harness, and
   `C_Language_Specification/GARNET_BYTECODE_v0_1.md`. The proof/benchmark
   reporter now inventories the VM harness, and the MIT reporter's proof lane is
-  more granular while the overall objective remains 58.1%.
+  more granular while the overall objective remains active-partial.
 
 ### Honest partials
 
-- Release-candidate preflight retargets the canonical workspace/CLI version and
-  installer defaults to `0.5.0`, but it is not a tag and not proof that release
-  assets or a published VSIX exist. The latest tagged release remains `v0.4.2`
-  until release-backed packages plus published VSIX evidence are recorded.
-- The current Mac has Cursor as `/usr/local/bin/code`, not standalone VS Code.
-  Clean standalone VS Code diagnostic proof now exists through an isolated
-  downloaded VS Code 1.121.0 app, but that remains local evidence rather than a
-  published extension artifact.
-- The S1 LSP slice is source-present until published-extension evidence and
+- The `v0.5.0` tag and GitHub Release exist with release-backed installer and
+  darwin-arm64 VSIX diagnostic evidence, but that is not proof of Apple
+  Developer ID notarization, a signed/notarized macOS `.pkg`,
+  Marketplace/OpenVSX publication, or Windows/Linux target-runtime evidence.
+- The current Mac has Cursor as `/usr/local/bin/code`, not the standalone VS
+  Code CLI. Clean standalone VS Code diagnostic proof exists through an
+  isolated downloaded VS Code 1.121.0 app, including the release-backed
+  darwin-arm64 VSIX installed from the GitHub Release.
+- The S1 LSP slice is source-present until Marketplace/OpenVSX publication and
   full manual VSCode hover/go-to-definition screenshots are attached to later
   review/release evidence. Safe-mode hover, workspace symbols, rename, and
   CST-grade incremental precision remain deferred.
