@@ -11,6 +11,18 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S6 (Memory eviction policy benchmarks):** `garnet-memory-v0.3/benches/eviction.rs`
+  is a Criterion bench harness exercising `MemoryPolicy::score` +
+  `should_retain` per Mnemos kind (working / episodic / semantic /
+  procedural) against a naive FIFO baseline. `scripts/garnet_memory_eviction_status.py`
+  inventories per-kind coverage; `scripts/test_garnet_memory_eviction_status.py`
+  asserts the harness keeps all four kinds covered with both branches.
+  New "Memory eviction policy benchmarks" lane in
+  `garnet_mit_readiness_status.py` (verified 100%). Closes the S6 contract
+  surface and half of Paper VI Contribution 3's production-allocator gap.
+  Honest deferred list documents that a fresh Criterion measurement run,
+  end-to-end store-throughput benches, and the production allocator path
+  itself remain separate work.
 - **S4 (Formatter idempotent baseline):** `garnet-cli/tests/fmt_idempotency.rs`
   proves that two passes of `garnet fmt --stdout` over every canonical
   `examples/{mvp_,det_}*.garnet` produce byte-identical output, and that

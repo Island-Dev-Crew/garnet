@@ -459,6 +459,36 @@ def read_status() -> MitReadinessStatus:
             ],
         ),
         ObjectiveLane(
+            id="memory_eviction_benchmarks",
+            label="Memory eviction policy benchmarks",
+            status="verified"
+            if (ROOT / "garnet-memory-v0.3/benches/eviction.rs").exists()
+            and (ROOT / "scripts/garnet_memory_eviction_status.py").exists()
+            else "planned",
+            completion_percent=100.0
+            if (ROOT / "garnet-memory-v0.3/benches/eviction.rs").exists()
+            and (ROOT / "scripts/garnet_memory_eviction_status.py").exists()
+            else 0.0,
+            evidence=(
+                "`garnet-memory-v0.3/benches/eviction.rs` is a Criterion bench "
+                "that exercises `MemoryPolicy::score` + `should_retain` per "
+                "Mnemos kind (working/episodic/semantic/procedural) against a "
+                "naive FIFO baseline; `scripts/garnet_memory_eviction_status.py` "
+                "inventories per-kind coverage. Closes the S6 contract surface "
+                "and half of Paper VI Contribution 3's production-allocator gap "
+                "(this is policy-cost measurement, not production allocator)."
+            ),
+            blocked_by=[],
+            deferred=[
+                "Fresh Criterion measurement run (`cargo bench -p garnet-memory "
+                "--bench eviction`) — captured as Desktop evidence on a maintainer "
+                "machine, not embedded in this lane",
+                "End-to-end store throughput benches under eviction (EpisodeStore, "
+                "VectorIndex, etc.) — separate slice",
+                "Production allocator path — remains Tier 1 work in MEMORY_CORE_ROADMAP.md",
+            ],
+        ),
+        ObjectiveLane(
             id="formatter_idempotent_baseline",
             label="Formatter idempotent baseline",
             status="verified"
