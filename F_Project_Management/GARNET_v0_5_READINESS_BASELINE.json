@@ -206,8 +206,8 @@
       "id": "proof_empirics",
       "label": "Proof and empirical validation",
       "status": "active-partial",
-      "completion_percent": 40.0,
-      "evidence": "`scripts/garnet_proof_benchmark_status.py` inventories the current 3 Criterion benchmark harnesses plus proof/study protocols while reporting measurements, mechanized proof, and empirical study execution as unclaimed.",
+      "completion_percent": 45.0,
+      "evidence": "`scripts/garnet_proof_benchmark_status.py` inventories the current 4 Criterion benchmark harnesses plus proof/study protocols, including the S2 VM parse/compile/execute harness, while reporting measurements, mechanized proof, and empirical study execution as unclaimed.",
       "blocked_by": [
         "mechanized proof is not present",
         "external user study data",
