@@ -100,7 +100,13 @@ VSIX can surface diagnostics on an injected syntax error. A clean isolated
 standalone VS Code 1.121.0 run now proves the locally packaged VSIX can launch
 its bundled `garnet-lsp` and report the injected diagnostic without a workspace
 `garnet.lsp.path`. That is useful release-candidate evidence, but it is not the
-same as release-backed packages or a published VSIX artifact. Until those
-release-backed artifacts exist, v0.5.0 is merge-ready in substance but not
-tag-ready in release discipline. That is the right shape for Garnet: substance
-first, public claim second.
+same as release-backed packages or a published VSIX artifact.
+
+The release path now has a sharper next gate: Garnet can build host-native VSIX
+artifacts with bundled `garnet-lsp` binaries, publish those artifacts on `v*`
+GitHub Releases, and fail the release smoke if the matching VSIX is absent or
+structurally incomplete. That still is not Marketplace/OpenVSX publication, and
+it still is not a v0.5.0 tag. Until the release-backed installer packages and
+VSIX assets exist and the clean-machine smoke passes, v0.5.0 is merge-ready in
+substance but not tag-ready in release discipline. That is the right shape for
+Garnet: substance first, public claim second.

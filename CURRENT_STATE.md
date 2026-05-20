@@ -160,9 +160,17 @@ highest-leverage next milestones are:
    Clean standalone VS Code diagnostic proof using a bundled-server VSIX is
    recorded in
    `/Users/idc2.0/Desktop/dogfood/garnet-v0-5-standalone-vscode-gate-20260520T130303Z`.
-   Do not tag v0.5.0 until published VSIX/release-backed package evidence is
-   recorded; signed macOS `.pkg`, Windows MSI, and live target-machine runtime
-   proof remain separate authority lanes.
+   `scripts/package_garnet_vscode_extension.sh` and
+   `.github/workflows/vscode-extension.yml` now prepare host-native
+   release-backed VSIX assets for `v*` tag pushes, and
+   `scripts/verify_org_release_smoke.sh` requires the matching VSIX asset before
+   a release smoke can pass. Fresh local M5 evidence is recorded in
+   `/Users/idc2.0/Desktop/dogfood/garnet-vscode-release-assets-20260520T133747Z`
+   for `garnet-0.5.0-lsp-mvp-darwin-arm64.vsix`; this is release-asset-ready
+   local evidence, not publication. Do not tag v0.5.0 until those release-backed
+   assets exist and the clean-machine smoke passes; Marketplace/OpenVSX
+   publication, signed macOS `.pkg`, Windows MSI, and live target-machine
+   runtime proof remain separate authority lanes.
 5. **Garnet Studio app and web distribution:** build polished local product
    surfaces that reduce terminal-first friction without overstating release
    authority. The macOS workbench opens like a normal app, bundles the Garnet

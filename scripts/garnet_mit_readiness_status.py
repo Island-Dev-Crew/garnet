@@ -240,15 +240,22 @@ def read_status() -> MitReadinessStatus:
                 "/Users/idc2.0/Desktop/dogfood/"
                 "garnet-v0-5-standalone-vscode-gate-20260520T130303Z records "
                 "clean standalone VS Code diagnostic proof with a bundled-server "
-                "VSIX. Published VSIX and the full manual screenshot trio remain "
-                "review hardening work."
+                "VSIX. `scripts/package_garnet_vscode_extension.sh` and "
+                "`.github/workflows/vscode-extension.yml` prepare host-native "
+                "release-backed VSIX assets for tag-time publication; "
+                "/Users/idc2.0/Desktop/dogfood/"
+                "garnet-vscode-release-assets-20260520T133747Z records "
+                "fresh local darwin-arm64 release-asset-ready evidence, while "
+                "Marketplace/OpenVSX publication and the full manual screenshot "
+                "trio remain review hardening work."
             )
             if _lsp_source_present()
             else "No committed LSP or VSCode extension source is present yet.",
             blocked_by=[] if _lsp_source_present() else ["S1 LSP implementation"],
             deferred=[
                 "manual VSCode hover/go-to-def screenshot confirmation",
-                "published VSIX",
+                "release-backed VSIX smoke after tag",
+                "Marketplace/OpenVSX publication",
                 "safe-mode hover",
                 "workspace symbols",
                 "rename",
