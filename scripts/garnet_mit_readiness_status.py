@@ -568,6 +568,50 @@ def read_status() -> MitReadinessStatus:
             ],
         ),
         ObjectiveLane(
+            id="vm_function_call_lowering",
+            label="Bytecode VM v0.2 function-call lowering (S14)",
+            status="verified"
+            if (ROOT / "garnet-vm/tests/function_call.rs").exists()
+            and (ROOT / "C_Language_Specification/GARNET_BYTECODE_v0_2.md").exists()
+            else "planned",
+            completion_percent=100.0
+            if (ROOT / "garnet-vm/tests/function_call.rs").exists()
+            and (ROOT / "C_Language_Specification/GARNET_BYTECODE_v0_2.md").exists()
+            else 0.0,
+            evidence=(
+                "`garnet-vm/src/vm.rs` executes native function calls on an "
+                "explicit, heap-allocated call-frame stack (`Frame` + "
+                "`run_frames`) instead of recursing in the host (Rust) "
+                "language, so deep Garnet recursion no longer overflows the "
+                "Rust stack. `garnet-vm/tests/function_call.rs` proves "
+                "`countdown(200000)` and mutual recursion to depth 500 run to "
+                "completion on the VM, plus VM/interpreter parity for "
+                "mixed-arity and nested calls. The codec is version-bumped to "
+                "`GARNVM02` with an explicit per-function arity field that the "
+                "deserializer cross-checks. `garnet run --vm --dump-lowering` "
+                "reports the native/fallback ratio (`lowered: N%`); "
+                "`examples/mvp_function_call_demo.garnet` reports `lowered: "
+                "100%`. Documented in "
+                "`C_Language_Specification/GARNET_BYTECODE_v0_2.md`."
+            ),
+            blocked_by=[],
+            deferred=[
+                "Tail-call optimization (each call still costs one heap frame)",
+                "Closures, captured environments, dynamic-receiver method "
+                "dispatch (still fall back)",
+                "Pattern matching, try/rescue/ensure, struct/enum constructors "
+                "(still fall back)",
+                "`and` / `or` short-circuit native lowering (Ruby-style "
+                "operand-returning semantics need value-preserving "
+                "conditional-jump + Dup opcodes)",
+                "VM-path vendored-dependency pre-load (the S12 resolver is "
+                "`--interp` only)",
+                "Stable cross-version bytecode ABI (GARNVM02 is tightened, "
+                "not frozen)",
+                "Production native-compiler proof",
+            ],
+        ),
+        ObjectiveLane(
             id="memory_eviction_benchmarks",
             label="Memory eviction policy benchmarks",
             status="verified"

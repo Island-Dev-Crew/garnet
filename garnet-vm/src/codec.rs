@@ -3,7 +3,12 @@ use crate::bytecode::{
 };
 use crate::VmError;
 
-const MAGIC: &[u8; 8] = b"GARNVM01";
+// ABI v0.2 (S14): the magic is version-bumped from `GARNVM01` and each
+// function now carries an explicit `arity` field ahead of its parameter
+// vector so a reader can validate arity without trusting the vector length.
+// This is a tightened, more self-describing schema — still NOT a stable
+// cross-version external ABI promise.
+const MAGIC: &[u8; 8] = b"GARNVM02";
 
 pub fn serialize_program(program: &BytecodeProgram) -> Vec<u8> {
     let mut out = Vec::new();
@@ -15,6 +20,8 @@ pub fn serialize_program(program: &BytecodeProgram) -> Vec<u8> {
     write_u32(&mut out, program.functions.len() as u32);
     for function in &program.functions {
         write_string(&mut out, &function.name);
+        // ABI v0.2: explicit arity ahead of the params vector.
+        write_u32(&mut out, function.params.len() as u32);
         write_u32(&mut out, function.params.len() as u32);
         for param in &function.params {
             write_string(&mut out, param);
@@ -54,7 +61,15 @@ pub fn deserialize_program(bytes: &[u8]) -> Result<BytecodeProgram, VmError> {
     let mut functions = Vec::with_capacity(function_count);
     for _ in 0..function_count {
         let name = reader.read_string()?;
+        // ABI v0.2: explicit arity, cross-checked against the params vector.
+        let arity = reader.read_u32()? as usize;
         let params = reader.read_string_vec()?;
+        if arity != params.len() {
+            return Err(VmError::Codec(format!(
+                "function `{name}`: declared arity {arity} != params length {}",
+                params.len()
+            )));
+        }
         let locals = reader.read_string_vec()?;
         let native = reader.read_u8()? != 0;
         let fallback_reason = match reader.read_u8()? {

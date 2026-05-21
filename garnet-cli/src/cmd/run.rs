@@ -27,7 +27,7 @@
 use super::{cache_file_label, record, surface_prior};
 use crate::read_file;
 use garnet_interp::Interpreter;
-use garnet_vm::{run_source_with_options, RunOptions};
+use garnet_vm::{compile_source, run_source_with_options, CompileSummary, RunOptions};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::time::Instant;
@@ -39,13 +39,18 @@ enum RunMode {
 }
 
 pub fn run(args: &[String]) -> ExitCode {
-    let (mode, path) = match parse_args(args) {
+    let parsed = match parse_args(args) {
         Ok(parsed) => parsed,
         Err(message) => {
             eprintln!("{message}");
             return ExitCode::from(2);
         }
     };
+    let RunArgs {
+        mode,
+        dump_lowering,
+        path,
+    } = parsed;
     let started = Instant::now();
     let src = match read_file(&path) {
         Ok(s) => s,
@@ -57,32 +62,48 @@ pub fn run(args: &[String]) -> ExitCode {
     let file_label = cache_file_label(&path);
     surface_prior(&src);
     match mode {
-        RunMode::Interp => run_interpreter(&file_label, &src, &path, started),
-        RunMode::Vm => run_vm(&file_label, &src, started),
+        RunMode::Interp => {
+            if dump_lowering {
+                eprintln!("garnet run: --dump-lowering applies to --vm only; ignoring");
+            }
+            run_interpreter(&file_label, &src, &path, started)
+        }
+        RunMode::Vm => run_vm(&file_label, &src, dump_lowering, started),
     }
 }
 
-fn parse_args(args: &[String]) -> Result<(RunMode, PathBuf), String> {
+struct RunArgs {
+    mode: RunMode,
+    dump_lowering: bool,
+    path: PathBuf,
+}
+
+fn parse_args(args: &[String]) -> Result<RunArgs, String> {
+    const USAGE: &str = "usage: garnet run [--interp|--vm] [--dump-lowering] <file.garnet>";
     let mut mode = RunMode::Interp;
+    let mut dump_lowering = false;
     let mut path: Option<PathBuf> = None;
     for arg in args {
         match arg.as_str() {
             "--interp" => mode = RunMode::Interp,
             "--vm" => mode = RunMode::Vm,
-            "--help" | "-h" => {
-                return Err("usage: garnet run [--interp|--vm] <file.garnet>".to_string())
-            }
+            "--dump-lowering" => dump_lowering = true,
+            "--help" | "-h" => return Err(USAGE.to_string()),
             other if other.starts_with("--") => return Err(format!("unknown run flag: {other}")),
             other => {
                 if path.is_some() {
-                    return Err("usage: garnet run [--interp|--vm] <file.garnet>".to_string());
+                    return Err(USAGE.to_string());
                 }
                 path = Some(PathBuf::from(other));
             }
         }
     }
-    path.map(|path| (mode, path))
-        .ok_or_else(|| "usage: garnet run [--interp|--vm] <file.garnet>".to_string())
+    path.map(|path| RunArgs {
+        mode,
+        dump_lowering,
+        path,
+    })
+    .ok_or_else(|| USAGE.to_string())
 }
 
 fn run_interpreter(file_label: &str, src: &str, path: &Path, started: Instant) -> ExitCode {
@@ -323,7 +344,43 @@ fn end_of_def_block(src: &str, start: usize) -> usize {
     len
 }
 
-fn run_vm(file_label: &str, src: &str, started: Instant) -> ExitCode {
+/// Print the S14 lowering summary for `garnet run --vm --dump-lowering`.
+/// The `lowered: N%` line is the headline the bytecode-VM dogfood greps.
+fn print_lowering_summary(summary: &CompileSummary) {
+    let total = summary.native_functions + summary.fallback_functions;
+    // 100% when there are no functions; checked_div sidesteps divide-by-zero.
+    let pct = (summary.native_functions * 100)
+        .checked_div(total)
+        .unwrap_or(100);
+    println!(
+        "lowering: {} native / {} fallback functions ({} native instructions)",
+        summary.native_functions, summary.fallback_functions, summary.native_instruction_count
+    );
+    println!("lowered: {pct}%");
+    for reason in &summary.fallback_reasons {
+        println!("  fallback {reason}");
+    }
+}
+
+fn run_vm(file_label: &str, src: &str, dump_lowering: bool, started: Instant) -> ExitCode {
+    if dump_lowering {
+        match compile_source(src) {
+            Ok(artifact) => print_lowering_summary(&artifact.summary),
+            Err(error) => {
+                eprintln!("vm error: {error}");
+                record(
+                    "run",
+                    file_label,
+                    src,
+                    "compile_err",
+                    Some(format!("{error}")),
+                    started,
+                    1,
+                );
+                return ExitCode::from(1);
+            }
+        }
+    }
     match run_source_with_options(src, RunOptions { emit_stdout: true }) {
         Ok(result) => {
             if result.called_entry {
