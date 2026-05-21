@@ -387,6 +387,70 @@ fn toml_escape(s: &str) -> String {
     s.replace('\\', "\\\\").replace('"', "\\\"")
 }
 
+/// One vendored dependency as recorded under `[dependencies]` in
+/// `Garnet.toml`. Symmetric to `update_manifest`'s writer; used by the S12
+/// resolver in `cmd::run` to pre-load vendored sources at `garnet run` time.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct DependencyEntry {
+    pub name: String,
+    pub vendor_rel: PathBuf,
+}
+
+/// Parse `[dependencies]` lines in `Garnet.toml` at `project_root` and
+/// return each entry's `(name, vendor_rel)` pair. Returns an empty Vec when
+/// `Garnet.toml` is missing or the `[dependencies]` block is empty. Mirrors
+/// the line-based writer in `update_manifest`; not a full TOML parser.
+pub(crate) fn read_dependency_table(project_root: &Path) -> std::io::Result<Vec<DependencyEntry>> {
+    let manifest_path = project_root.join("Garnet.toml");
+    if !manifest_path.exists() {
+        return Ok(Vec::new());
+    }
+    let text = fs::read_to_string(&manifest_path)?;
+    let mut out: Vec<DependencyEntry> = Vec::new();
+    let mut in_deps = false;
+    for raw in text.lines() {
+        let trimmed = raw.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+        if trimmed == "[dependencies]" {
+            in_deps = true;
+            continue;
+        }
+        if trimmed.starts_with('[') && trimmed.ends_with(']') {
+            in_deps = false;
+            continue;
+        }
+        if !in_deps {
+            continue;
+        }
+        if let Some((name, vendor)) = parse_dep_inline(trimmed) {
+            if is_valid_dep_name(&name) {
+                out.push(DependencyEntry {
+                    name,
+                    vendor_rel: PathBuf::from(vendor),
+                });
+            }
+        }
+    }
+    Ok(out)
+}
+
+/// Pull `<name>` and `vendor = "..."` out of one inline-table dependency
+/// line: `mylib = { path = "...", vendor = ".garnet/vendor/mylib" }`.
+/// Returns `None` if either field is missing or the shape doesn't match.
+fn parse_dep_inline(line: &str) -> Option<(String, String)> {
+    let eq_pos = line.find(" = ")?;
+    let name = line[..eq_pos].trim().to_string();
+    let rest = line[eq_pos + 3..].trim();
+    let inside = rest.strip_prefix('{')?.strip_suffix('}')?.trim();
+    let vendor_key = "vendor = \"";
+    let v_start = inside.find(vendor_key)?;
+    let after = &inside[v_start + vendor_key.len()..];
+    let v_end = after.find('"')?;
+    Some((name, after[..v_end].to_string()))
+}
+
 /// Write `Garnet.lock` recording every dep + every file hash. Idempotent:
 /// re-running `garnet add` for the same dep replaces its block in place.
 fn write_lockfile(

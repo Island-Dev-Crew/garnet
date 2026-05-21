@@ -518,13 +518,53 @@ def read_status() -> MitReadinessStatus:
             ),
             blocked_by=[],
             deferred=[
-                "Resolver contract: interpreter does NOT yet load `.garnet/vendor/` "
-                "deps at `garnet run` time (separate slice)",
                 "Remote sources (https://, git+ssh://, @scope/name registries)",
                 "Transitive dependency vendoring",
                 "SemVer matching (caret/tilde/equality beyond string compare)",
                 "Workspace mode (multi-crate projects)",
                 "`garnet verify-deps` lockfile-drift detector",
+            ],
+        ),
+        ObjectiveLane(
+            id="pkg_resolver_v0_2",
+            label="Package-manager resolver (S12)",
+            status="verified"
+            if (ROOT / "garnet-cli/tests/run_resolver.rs").exists()
+            and (ROOT / "garnet-cli/src/cmd/run.rs").exists()
+            else "planned",
+            completion_percent=100.0
+            if (ROOT / "garnet-cli/tests/run_resolver.rs").exists()
+            and (ROOT / "garnet-cli/src/cmd/run.rs").exists()
+            else 0.0,
+            evidence=(
+                "`garnet-cli/src/cmd/run.rs::preload_dependencies` reads "
+                "`Garnet.toml`'s `[dependencies]` table via "
+                "`garnet-cli/src/cmd/add.rs::read_dependency_table`, walks each "
+                "declared vendor directory, and pre-loads every `.garnet` source "
+                "into the interpreter's global environment before the user "
+                "source is loaded. `Item::Use(_)` in the interpreter stays a "
+                "no-op; the vendored symbols are already in scope by the time "
+                "`use <dep>::*` is reached. `garnet-cli/tests/run_resolver.rs` "
+                "covers the round trip end-to-end against a temp project with "
+                "the same on-disk layout `garnet add` produces. Four inline "
+                "unit tests in `cmd::run::tests` cover the `strip_top_level_main` "
+                "guard that prevents a vendored dep's own `main` from shadowing "
+                "the user's entry point. Closes the S3 deferred line on resolver."
+            ),
+            blocked_by=[],
+            deferred=[
+                "Qualified-path resolution (`local_lib::hello()` with the "
+                "prefix in the call site)",
+                "Remote sources (https://, git+ssh://, @scope/name registries)",
+                "Transitive dependency vendoring",
+                "SemVer matching (caret/tilde/equality beyond string compare)",
+                "Workspace mode (multi-crate projects)",
+                "VM path pre-load (S14 will harmonize the `--vm` resolver)",
+                "Lockfile BLAKE3 verification at run time "
+                "(`garnet verify-deps` slice)",
+                "Name-collision handling between deps (last-loaded wins today)",
+                "Module-scoped `use local_lib::Foo::bar` paths "
+                "(only top-level items are pre-loaded today)",
             ],
         ),
         ObjectiveLane(
