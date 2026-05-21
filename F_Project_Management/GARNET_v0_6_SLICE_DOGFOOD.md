@@ -144,9 +144,9 @@ garnet add ../local-lib
 garnet run src/main.garnet | grep -q "hi from local-lib"   # PASS (was deferred under S3)
 ```
 
-**Honest partial labels available:** "local-path resolver only — remote sources, transitive deps, SemVer matching, and workspace mode remain deferred to v0.7 or later." "Module re-export semantics out of scope — only direct `use` of vendored top-level symbols."
+**Honest partial labels available:** "local-path resolver only — remote sources, transitive deps, SemVer matching, and workspace mode remain deferred to v0.7 or later." "Module re-export semantics out of scope — only direct `use` of vendored top-level symbols." "Pre-load only applies to the `--interp` path; the `--vm` path skips pre-load (S14 harmonizes)." "Vendored deps declaring their own `def main` are silently stripped during pre-load so they can't shadow the user's entry point; a future slice can do this in the AST instead of via the current line-based scanner."
 
-**State:** not-started.
+**State as of 2026-05-21:** in-progress (PR to merge — see CHANGELOG). Lane: `pkg_resolver_v0_2` verified 100 %.
 
 ---
 

@@ -11,6 +11,29 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S12 (Package-manager resolver contract):** `garnet-cli/src/cmd/run.rs::preload_dependencies`
+  reads `Garnet.toml`'s `[dependencies]` table via the new
+  `garnet-cli/src/cmd/add.rs::read_dependency_table`, walks each declared
+  vendor directory, and pre-loads every `.garnet` source into the
+  interpreter's global environment **before** the user source is loaded.
+  `Item::Use(_)` in the interpreter stays a no-op; the vendored symbols
+  are already in scope by the time `use <dep>::*` is reached. New
+  workspace integration test `garnet-cli/tests/run_resolver.rs` covers
+  the end-to-end round trip (and a guard test that bare-file runs
+  outside any project still work). Four inline unit tests in
+  `garnet-cli/src/cmd/run::tests` cover the `strip_top_level_main`
+  defence that prevents a vendored dep's own `main` from shadowing the
+  user's entry point. New "Package-manager resolver (S12)" lane in
+  `garnet_mit_readiness_status.py` (verified 100 %); MIT lane count
+  21 → 22, headline 71.9 % → 73.2 %. **Closes the S3 deferred line
+  on resolver** (the existing "Garnet manifest + vendored deps" lane's
+  deferred list no longer mentions resolver). Honest deferred list for
+  S12: qualified-path resolution (`local_lib::hello()`), remote sources,
+  transitive deps, SemVer matching, workspace mode, VM-path pre-load
+  (S14 will harmonize), lockfile BLAKE3 verification at run time,
+  name-collision handling between deps (last-loaded wins today),
+  module-scoped `use local_lib::Foo::bar` paths.
+
 - **S11 (v0.6 slice contract scaffold):** new
   `F_Project_Management/GARNET_v0_6_SLICE_DOGFOOD.md` ports the v0.5
   contract pattern (state machine, common verification primitives,
