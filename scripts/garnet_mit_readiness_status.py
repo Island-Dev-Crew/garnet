@@ -16,6 +16,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
 import garnet_converter_status  # noqa: E402
 import garnet_proof_benchmark_status  # noqa: E402
 import garnet_promo_video_status  # noqa: E402
@@ -209,8 +212,9 @@ def read_status() -> MitReadinessStatus:
             evidence=(
                 "`scripts/garnet_windows_linux_studio_status.py` now reports the "
                 "Tauri v2 shell scaffold in `apps/garnet-studio`, minimal webview "
-                "permissions, Windows local release build/smoke evidence, and "
-                "open Linux plus clean-machine package gates."
+                "permissions, Windows local release build/smoke evidence, v0.5 "
+                "readiness reporter parity actions, and open Linux plus "
+                "clean-machine package gates."
             ),
             blocked_by=list(wls.user_assistance_needed),
             deferred=list(wls.next_slices),

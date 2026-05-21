@@ -123,6 +123,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("fresh benchmark measurement run", lanes["proof_empirics"]["blocked_by"])
         self.assertIn("formal RustBelt/Iris/Coq mechanization", lanes["proof_empirics"]["deferred"])
         self.assertIn("Tauri v2 shell scaffold", lanes["windows_linux_distribution"]["evidence"])
+        self.assertIn("v0.5 readiness reporter parity", lanes["windows_linux_distribution"]["evidence"])
         self.assertIn("clean Windows VM", " ".join(lanes["windows_linux_distribution"]["blocked_by"]))
         self.assertIn("diagnostics, hover, and basic go-to-definition", lanes["editor_lsp_adoption"]["evidence"])
         self.assertIn("standalone-vscode-gate", lanes["editor_lsp_adoption"]["evidence"])

@@ -199,7 +199,7 @@ pub fn objective_pulse() -> CommandResult {
     run_python_script(
         "objective-pulse",
         "garnet_mit_readiness_status.py",
-        Vec::new(),
+        vec!["--format".to_string(), "markdown".to_string()],
     )
 }
 
@@ -209,6 +209,80 @@ pub fn agentic_dogfood_matrix() -> CommandResult {
         "agentic-dogfood",
         "run_agentic_dogfood_matrix.py",
         vec!["--copy-to-desktop".to_string(), "--strict".to_string()],
+    )
+}
+
+#[tauri::command]
+pub fn windows_linux_studio_status() -> CommandResult {
+    run_python_script(
+        "windows-linux-studio-status",
+        "garnet_windows_linux_studio_status.py",
+        vec!["--format".to_string(), "markdown".to_string()],
+    )
+}
+
+#[tauri::command]
+pub fn converter_status() -> CommandResult {
+    run_python_script(
+        "converter-status",
+        "garnet_converter_status.py",
+        vec!["--format".to_string(), "markdown".to_string()],
+    )
+}
+
+#[tauri::command]
+pub fn provider_options() -> CommandResult {
+    run_report_script_with_output_dir(
+        "provider-options",
+        "garnet_converter_llm_feasibility.py",
+        "markdown",
+    )
+}
+
+#[tauri::command]
+pub fn mit_demo_route() -> CommandResult {
+    run_report_script_with_output_dir("mit-demo-route", "garnet_mit_demo_route.py", "markdown")
+}
+
+#[tauri::command]
+pub fn mit_deck_outline() -> CommandResult {
+    run_report_script_with_output_dir("mit-deck-outline", "garnet_mit_deck_outline.py", "markdown")
+}
+
+#[tauri::command]
+pub fn mit_deck_preview() -> CommandResult {
+    run_report_script_with_output_dir("mit-deck-preview", "garnet_mit_deck_preview.py", "html")
+}
+
+#[tauri::command]
+pub fn mac_continuation_pulse() -> CommandResult {
+    run_python_script(
+        "mac-continuation-pulse",
+        "garnet_mac_side_continuation_status.py",
+        vec!["--format".to_string(), "markdown".to_string()],
+    )
+}
+
+#[tauri::command]
+pub fn proof_benchmark_status() -> CommandResult {
+    run_report_script_with_output_dir(
+        "proof-benchmark-status",
+        "garnet_proof_benchmark_status.py",
+        "markdown",
+    )
+}
+
+#[tauri::command]
+pub fn benchmark_no_run() -> CommandResult {
+    run_report_script_with_output_dir("benchmark-no-run", "garnet_benchmark_no_run.py", "markdown")
+}
+
+#[tauri::command]
+pub fn notarization_status() -> CommandResult {
+    run_python_script(
+        "notarization-status",
+        "garnet_studio_notarization_status.py",
+        vec!["--format".to_string(), "markdown".to_string()],
     )
 }
 
@@ -316,6 +390,24 @@ fn run_python_script(category: &str, script_name: &str, args: Vec<String>) -> Co
         Some(bundle) => run_python_script_with_bundle(category, script_name, args, bundle),
         None => run_python_script_without_bundle(category, script_name, args),
     }
+}
+
+fn run_report_script_with_output_dir(
+    category: &str,
+    script_name: &str,
+    format: &str,
+) -> CommandResult {
+    let bundle = match evidence::create_named_bundle(category) {
+        Ok(bundle) => bundle,
+        Err(err) => return contract_error(err),
+    };
+    let args = vec![
+        "--output-dir".to_string(),
+        bundle.path.clone(),
+        "--format".to_string(),
+        format.to_string(),
+    ];
+    run_python_script_with_bundle(category, script_name, args, PathBuf::from(bundle.path))
 }
 
 fn run_python_script_with_bundle(

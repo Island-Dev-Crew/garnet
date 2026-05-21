@@ -15,6 +15,11 @@ scripts, docs/PWA truth, and dogfood readiness matrix.
 - Windows source-build proof exists for the release executable, unsigned NSIS
   bundle, and `--studio-smoke` evidence. Signed MSI, winget, Linux runtime, and
   clean-machine installer proof are still separate gates.
+- The Release / Readiness panel calls the same repo-native reporters used by the
+  macOS reference surface: Windows/Linux Studio status, converter fit/provider
+  options, MIT objective/demo/deck evidence, Mac continuation boundaries, proof
+  and benchmark status, benchmark no-run compile evidence, and notarization
+  preflight status.
 
 ## Local Verification
 
@@ -31,6 +36,7 @@ From the repository root:
 cargo test --manifest-path apps/garnet-studio/src-tauri/Cargo.toml
 target/release/garnet-studio --studio-smoke
 python scripts/test_garnet_windows_linux_studio_shell.py
+python scripts/test_garnet_windows_linux_studio_status.py
 ```
 
 On Windows, the smoke bundle is written under:

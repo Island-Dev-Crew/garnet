@@ -3,9 +3,9 @@
 
 This is the target-platform counterpart to the Mac-side continuation pulse. It
 records the current Windows/Linux Studio source truth: the original command and
-evidence contract plus the first Tauri v2 shell scaffold. It still does not
-claim signed Windows distribution, winget, Linux runtime proof, or a completed
-cross-platform release.
+evidence contract, the Tauri v2 shell scaffold, and the v0.5 readiness reporter
+parity surface. It still does not claim signed Windows distribution, winget,
+Linux runtime proof, or a completed cross-platform release.
 """
 from __future__ import annotations
 
@@ -150,7 +150,7 @@ def create_evidence_bundle(
         "source": str(ROOT),
         "include_source_by_default": False,
         "source_included": False,
-        "status": "tauri-v2-shell-scaffold",
+        "status": "tauri-v2-shell-v0-5-readiness-parity",
         "required_runtime_proof": [
             "launch on Windows",
             "launch on Linux",
@@ -258,7 +258,7 @@ def build_command_plan(
             False,
         )
     if action_id == "assist_plan":
-        advisory = _require_language(language, ACTIVE_CONVERSION + ADVISORY_PLANNING, "language")
+        advisory = _require_language(language, ADVISORY_PLANNING, "language")
         return CommandPlan(
             action_id,
             "Assist Plan",
@@ -278,7 +278,7 @@ def build_command_plan(
             False,
         )
     if action_id == "advisory_bundle":
-        advisory = _require_language(language, ACTIVE_CONVERSION + ADVISORY_PLANNING, "language")
+        advisory = _require_language(language, ADVISORY_PLANNING, "language")
         argv = [
             python_executable,
             _script("garnet_converter_advisory_bundle.py", repo_root),
@@ -353,7 +353,161 @@ def build_command_plan(
             False,
             False,
         )
+    if action_id == "windows_linux_studio_status":
+        return CommandPlan(
+            action_id,
+            "Windows/Linux Studio Status",
+            [
+                python_executable,
+                _script("garnet_windows_linux_studio_status.py", repo_root),
+                "--format",
+                "markdown",
+            ],
+            workdir,
+            False,
+            False,
+            False,
+        )
+    if action_id == "converter_status":
+        return CommandPlan(
+            action_id,
+            "Converter Fit Matrix",
+            [
+                python_executable,
+                _script("garnet_converter_status.py", repo_root),
+                "--format",
+                "markdown",
+            ],
+            workdir,
+            False,
+            False,
+            False,
+        )
+    if action_id == "provider_options":
+        return _report_command_plan(
+            action_id,
+            "Provider Options",
+            "garnet_converter_llm_feasibility.py",
+            "markdown",
+            evidence,
+            workdir,
+            python_executable,
+            repo_root,
+        )
+    if action_id == "mit_demo_route":
+        return _report_command_plan(
+            action_id,
+            "MIT Demo Route",
+            "garnet_mit_demo_route.py",
+            "markdown",
+            evidence,
+            workdir,
+            python_executable,
+            repo_root,
+        )
+    if action_id == "mit_deck_outline":
+        return _report_command_plan(
+            action_id,
+            "MIT Deck Outline",
+            "garnet_mit_deck_outline.py",
+            "markdown",
+            evidence,
+            workdir,
+            python_executable,
+            repo_root,
+        )
+    if action_id == "mit_deck_preview":
+        return _report_command_plan(
+            action_id,
+            "MIT Deck Preview",
+            "garnet_mit_deck_preview.py",
+            "html",
+            evidence,
+            workdir,
+            python_executable,
+            repo_root,
+        )
+    if action_id == "mac_continuation_pulse":
+        return CommandPlan(
+            action_id,
+            "Mac Continuation Pulse",
+            [
+                python_executable,
+                _script("garnet_mac_side_continuation_status.py", repo_root),
+                "--format",
+                "markdown",
+            ],
+            workdir,
+            False,
+            False,
+            False,
+        )
+    if action_id == "proof_benchmark_status":
+        return _report_command_plan(
+            action_id,
+            "Proof / Benchmark Status",
+            "garnet_proof_benchmark_status.py",
+            "markdown",
+            evidence,
+            workdir,
+            python_executable,
+            repo_root,
+        )
+    if action_id == "benchmark_no_run":
+        return _report_command_plan(
+            action_id,
+            "Benchmark No-Run",
+            "garnet_benchmark_no_run.py",
+            "markdown",
+            evidence,
+            workdir,
+            python_executable,
+            repo_root,
+        )
+    if action_id == "notarization_status":
+        return CommandPlan(
+            action_id,
+            "Notarization Status",
+            [
+                python_executable,
+                _script("garnet_studio_notarization_status.py", repo_root),
+                "--format",
+                "markdown",
+            ],
+            workdir,
+            False,
+            False,
+            False,
+        )
     raise CommandContractError(f"unknown Studio action: {action_id}")
+
+
+def _report_command_plan(
+    action_id: str,
+    label: str,
+    script_name: str,
+    output_format: str,
+    evidence: str,
+    workdir: str,
+    python_executable: str,
+    repo_root: Path,
+) -> CommandPlan:
+    return CommandPlan(
+        action_id,
+        label,
+        [
+            python_executable,
+            _script(script_name, repo_root),
+            "--output-dir",
+            evidence,
+            "--format",
+            output_format,
+        ],
+        workdir,
+        False,
+        False,
+        False,
+    )
 
 
 def _sample_actions() -> list[StudioAction]:
@@ -374,6 +528,16 @@ def _sample_actions() -> list[StudioAction]:
         build_command_plan("advisory_handoff", bundle_dir=bundle, review_dir=review, evidence_dir=evidence),
         build_command_plan("objective_pulse"),
         build_command_plan("agentic_dogfood_matrix"),
+        build_command_plan("windows_linux_studio_status"),
+        build_command_plan("converter_status"),
+        build_command_plan("provider_options", evidence_dir=evidence),
+        build_command_plan("mit_demo_route", evidence_dir=evidence),
+        build_command_plan("mit_deck_outline", evidence_dir=evidence),
+        build_command_plan("mit_deck_preview", evidence_dir=evidence),
+        build_command_plan("mac_continuation_pulse"),
+        build_command_plan("proof_benchmark_status", evidence_dir=evidence),
+        build_command_plan("benchmark_no_run", evidence_dir=evidence),
+        build_command_plan("notarization_status"),
     ]
     groups = {
         "cli_health": "runtime",
@@ -387,6 +551,16 @@ def _sample_actions() -> list[StudioAction]:
         "advisory_handoff": "advisory planning",
         "objective_pulse": "release evidence",
         "agentic_dogfood_matrix": "dogfood evidence",
+        "windows_linux_studio_status": "release evidence",
+        "converter_status": "converter evidence",
+        "provider_options": "advisory planning",
+        "mit_demo_route": "MIT evidence",
+        "mit_deck_outline": "MIT evidence",
+        "mit_deck_preview": "MIT evidence",
+        "mac_continuation_pulse": "platform boundary",
+        "proof_benchmark_status": "proof evidence",
+        "benchmark_no_run": "proof evidence",
+        "notarization_status": "platform boundary",
     }
     surfaces = {
         "cli_health": "garnet CLI version probe",
@@ -400,6 +574,16 @@ def _sample_actions() -> list[StudioAction]:
         "advisory_handoff": "scripts/garnet_converter_advisory_handoff.py",
         "objective_pulse": "scripts/garnet_mit_readiness_status.py",
         "agentic_dogfood_matrix": "scripts/run_agentic_dogfood_matrix.py",
+        "windows_linux_studio_status": "scripts/garnet_windows_linux_studio_status.py",
+        "converter_status": "scripts/garnet_converter_status.py",
+        "provider_options": "scripts/garnet_converter_llm_feasibility.py",
+        "mit_demo_route": "scripts/garnet_mit_demo_route.py",
+        "mit_deck_outline": "scripts/garnet_mit_deck_outline.py",
+        "mit_deck_preview": "scripts/garnet_mit_deck_preview.py",
+        "mac_continuation_pulse": "scripts/garnet_mac_side_continuation_status.py",
+        "proof_benchmark_status": "scripts/garnet_proof_benchmark_status.py",
+        "benchmark_no_run": "scripts/garnet_benchmark_no_run.py",
+        "notarization_status": "scripts/garnet_studio_notarization_status.py",
     }
     return [
         StudioAction(
@@ -419,7 +603,7 @@ def _sample_actions() -> list[StudioAction]:
 def read_status() -> WindowsLinuxStudioStatus:
     return WindowsLinuxStudioStatus(
         source=str(ROOT),
-        status="tauri-v2-shell-scaffold-windows-build-verified-linux-open",
+        status="tauri-v2-shell-v0-5-readiness-parity-windows-build-verified-linux-open",
         current_truth=[
             "origin/main is newer than PR #140; live main remains the source of truth",
             "macOS SwiftUI Studio remains the native Apple reference app",
@@ -429,6 +613,10 @@ def read_status() -> WindowsLinuxStudioStatus:
             "Windows clean-machine installer proof remains open until the unsigned NSIS artifact is exercised in a fresh VM",
             "the shell wraps existing CLI, docs/PWA, advisory scripts, and dogfood gates without duplicating converter logic",
             "CLI Health maps to the existing `garnet version` probe unless a real health subcommand is added",
+            "the Release / Readiness panel now exposes the repo-native v0.5 reporters used by the broader MIT/productization story",
+            "provider options remain advisory-only; provider-backed conversion is not active",
+            "benchmark no-run evidence is compile/status evidence only and does not claim performance measurements",
+            "notarization status is a Mac-side preflight boundary, not a Windows completion claim",
         ],
         least_new_dependency_decision=(
             "Tauri v2 is accepted for the first shell scaffold. The scaffold keeps webview permissions minimal "
@@ -472,6 +660,7 @@ def read_status() -> WindowsLinuxStudioStatus:
                 "MANIFEST.sha256",
                 "command stdout/stderr logs for invoked actions",
                 "screenshots once a shell exists",
+                "readiness reporter stdout/stderr logs for invoked release actions",
             ],
         ),
         actions=_sample_actions(),
@@ -517,6 +706,7 @@ def read_status() -> WindowsLinuxStudioStatus:
             "Linux desktop launch proof and first package-format decision",
             "Parse/check/run plus active converter end-to-end screenshots from the shell",
             "Advisory bundle/review/handoff evidence walkthrough without source inclusion",
+            "Release / Readiness panel screenshot and reporter-output evidence from the Windows shell",
             "Unsigned-to-signed Windows MSI/AuthentiCode plan after VM smoke",
             "Website/status copy sync after target smoke evidence",
         ],

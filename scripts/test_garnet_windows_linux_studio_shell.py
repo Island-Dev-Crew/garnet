@@ -45,12 +45,65 @@ class GarnetWindowsLinuxStudioShellTests(unittest.TestCase):
             "advisory_handoff",
             "objective_pulse",
             "agentic_dogfood_matrix",
+            "windows_linux_studio_status",
+            "converter_status",
+            "provider_options",
+            "mit_demo_route",
+            "mit_deck_outline",
+            "mit_deck_preview",
+            "mac_continuation_pulse",
+            "proof_benchmark_status",
+            "benchmark_no_run",
+            "notarization_status",
             "create_evidence_bundle",
         ]:
             self.assertIn(command, backend + lib)
 
         self.assertNotIn("tauri-plugin-shell", cargo)
         self.assertEqual(["core:default"], capability["permissions"])
+
+    def test_release_readiness_panel_matches_v05_truth_without_completion_claims(self) -> None:
+        frontend = (APP / "index.html").read_text(encoding="utf-8")
+        main = (APP / "src" / "main.ts").read_text(encoding="utf-8")
+        backend = (APP / "src-tauri" / "src" / "commands.rs").read_text(encoding="utf-8")
+
+        for copy in [
+            "Release / Readiness",
+            "Windows/Linux Status",
+            "Converter Fit Matrix",
+            "Provider Options",
+            "Demo Route",
+            "Deck Outline",
+            "Deck Preview",
+            "Continuation Pulse",
+            "Proof / Benchmark Status",
+            "Benchmark No-Run",
+            "Notarization Status",
+        ]:
+            self.assertIn(copy, frontend)
+
+        for command in [
+            "windows_linux_studio_status",
+            "converter_status",
+            "provider_options",
+            "mit_demo_route",
+            "mit_deck_outline",
+            "mit_deck_preview",
+            "mac_continuation_pulse",
+            "proof_benchmark_status",
+            "benchmark_no_run",
+            "notarization_status",
+        ]:
+            self.assertIn(command, main)
+
+        self.assertIn("garnet_windows_linux_studio_status.py", backend)
+        self.assertIn("garnet_converter_llm_feasibility.py", backend)
+        self.assertIn("garnet_mit_deck_preview.py", backend)
+        self.assertIn("garnet_studio_notarization_status.py", backend)
+        self.assertIn("Linux launch", frontend)
+        self.assertIn("clean Windows VM installer proof", frontend)
+        self.assertNotIn("Windows/Linux desktop runtime complete", frontend)
+        self.assertNotIn("provider-backed conversion is active", frontend)
 
     def test_converter_direction_and_command_shape_match_repo_truth(self) -> None:
         frontend = (APP / "index.html").read_text(encoding="utf-8")

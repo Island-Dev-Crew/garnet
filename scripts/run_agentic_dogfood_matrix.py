@@ -1773,6 +1773,7 @@ def web_pwa_probes(work: Path) -> list[Probe | Callable[[], ProbeResult]]:
                 ("Garnet browser PWA offline smoke: passed",),
                 security_domain="filesystem-localhost-browser",
                 notes="Uses local headless Chrome through the dependency-free Chrome DevTools Protocol harness.",
+                timeout=300,
             )
         )
     return probes
@@ -2538,10 +2539,14 @@ def probe_set(
                     "frontend = (root / 'index.html').read_text()\n"
                     "required = ['cli_health', 'cli_parse', 'cli_check', 'cli_run', 'cli_convert', "
                     "'advisory_assist_plan', 'advisory_bundle', 'advisory_review', 'advisory_handoff', "
-                    "'objective_pulse', 'agentic_dogfood_matrix']\n"
+                    "'objective_pulse', 'agentic_dogfood_matrix', 'windows_linux_studio_status', "
+                    "'converter_status', 'provider_options', 'mit_demo_route', 'mit_deck_outline', "
+                    "'mit_deck_preview', 'mac_continuation_pulse', 'proof_benchmark_status', "
+                    "'benchmark_no_run', 'notarization_status']\n"
                     "missing = [item for item in required if item not in backend]\n"
                     "assert not missing, missing\n"
                     "assert 'Rust/Ruby/Python/Go to Garnet' in frontend\n"
+                    "assert 'Release / Readiness' in frontend\n"
                     "assert 'Convert Garnet source to' not in frontend\n"
                     "assert '\"--out\".to_string()' in backend\n"
                     "assert '\"--to\"' not in backend\n"
@@ -2551,6 +2556,60 @@ def probe_set(
             ],
             True,
             ("windows linux studio command contract present",),
+            security_domain="privacy",
+        ),
+        Probe(
+            "report-windows-linux-studio-v05-readiness-parity",
+            "Windows/Linux Studio shell",
+            "Windows/Linux Studio should expose the v0.5 readiness reporters without claiming closed platform gates",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"root = Path({str(tauri_studio)!r})\n"
+                    "backend = (root / 'src-tauri' / 'src' / 'commands.rs').read_text()\n"
+                    "frontend = (root / 'index.html').read_text()\n"
+                    "main = (root / 'src' / 'main.ts').read_text()\n"
+                    "required_backend = ['garnet_windows_linux_studio_status.py', "
+                    "'garnet_converter_llm_feasibility.py', 'garnet_mit_demo_route.py', "
+                    "'garnet_mit_deck_outline.py', 'garnet_mit_deck_preview.py', "
+                    "'garnet_mac_side_continuation_status.py', 'garnet_proof_benchmark_status.py', "
+                    "'garnet_benchmark_no_run.py', 'garnet_studio_notarization_status.py']\n"
+                    "missing_backend = [item for item in required_backend if item not in backend]\n"
+                    "assert not missing_backend, missing_backend\n"
+                    "required_frontend = ['Windows/Linux Status', 'Provider Options', 'Demo Route', "
+                    "'Deck Outline', 'Deck Preview', 'Continuation Pulse', 'Proof / Benchmark Status', "
+                    "'Benchmark No-Run', 'Notarization Status', 'clean Windows VM installer proof']\n"
+                    "missing_frontend = [item for item in required_frontend if item not in frontend]\n"
+                    "assert not missing_frontend, missing_frontend\n"
+                    "assert 'provider-backed conversion is active' not in frontend\n"
+                    "assert 'provider_options' in main and 'mit_deck_preview' in main\n"
+                    "print('windows linux studio v0.5 readiness parity present')\n"
+                ),
+            ],
+            True,
+            ("windows linux studio v0.5 readiness parity present",),
+            security_domain="not-applicable",
+        ),
+        Probe(
+            "report-windows-linux-studio-advisory-boundary",
+            "Windows/Linux Studio shell",
+            "Windows/Linux Studio status should keep active conversion languages out of advisory command plans",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"status = Path({str(ROOT / 'scripts' / 'garnet_windows_linux_studio_status.py')!r}).read_text()\n"
+                    "assert '_require_language(language, ADVISORY_PLANNING, \"language\")' in status\n"
+                    "assert 'ACTIVE_CONVERSION + ADVISORY_PLANNING' not in status\n"
+                    "assert 'provider-backed conversion is not active' in status\n"
+                    "print('windows linux studio advisory boundary present')\n"
+                ),
+            ],
+            True,
+            ("windows linux studio advisory boundary present",),
             security_domain="privacy",
         ),
         Probe(
@@ -3583,7 +3642,7 @@ def probe_set(
                 "\"design_contract_path\": \"docs/promo/DESIGN.md\"",
                 "\"timeline_registered\": true",
                 "\"tool\": \"hyperframes-html\"",
-                "\"dogfood_probe_count\": 145",
+                "\"dogfood_probe_count\": 147",
                 "\"dogfood_probe_count_matches\": true",
             ),
             security_domain="release-integrity",
