@@ -1,0 +1,37 @@
+# mvp_function_call_demo.garnet
+#
+# S14 bytecode VM v0.2 demo: a fully native-lowered, function-call-heavy
+# program. Every function lowers to bytecode (no tree-walk fallback), and the
+# recursive + mutually-recursive calls run on the VM's explicit heap-allocated
+# call-frame stack rather than the host (Rust) stack.
+#
+# `garnet run --vm --dump-lowering examples/mvp_function_call_demo.garnet`
+# reports `lowered: 100%`.
+
+def fib(n) {
+  if n < 2 { n } else { fib(n - 1) + fib(n - 2) }
+}
+
+def sum_to(n) {
+  if n <= 0 { 0 } else { n + sum_to(n - 1) }
+}
+
+def is_even(n) {
+  if n == 0 { true } else { is_odd(n - 1) }
+}
+
+def is_odd(n) {
+  if n == 0 { false } else { is_even(n - 1) }
+}
+
+def classify(n) {
+  if is_even(n) { 1000 } else { 2000 }
+}
+
+@caps()
+def main() {
+  let f = fib(10)
+  let s = sum_to(100)
+  let c = classify(7)
+  f + s + c
+}

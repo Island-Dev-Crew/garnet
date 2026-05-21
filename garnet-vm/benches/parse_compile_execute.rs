@@ -63,6 +63,15 @@ fn cases() -> Vec<Case> {
                 ])]
             },
         },
+        // S14: a function-call-heavy, fully native-lowered program that
+        // exercises recursive + mutually-recursive calls through the explicit
+        // call-frame stack.
+        Case {
+            label: "mvp_function_call_demo",
+            source: include_str!("../../examples/mvp_function_call_demo.garnet"),
+            entry: "main",
+            args: Vec::new,
+        },
     ]
 }
 

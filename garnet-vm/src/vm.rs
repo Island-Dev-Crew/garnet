@@ -111,6 +111,44 @@ struct VmIterator {
     index: usize,
 }
 
+/// One activation record on the explicit call-frame stack. Holds the index
+/// of the executing function (not a borrow, to keep `&'a BytecodeProgram`
+/// decoupled from `&mut self`), its local slots, its operand stack, and the
+/// instruction pointer to resume at.
+struct Frame {
+    function_idx: usize,
+    locals: Vec<Slot>,
+    stack: Vec<Slot>,
+    ip: usize,
+}
+
+impl Frame {
+    fn new(
+        function_idx: usize,
+        function: &BytecodeFunction,
+        args: Vec<Value>,
+    ) -> Result<Self, VmError> {
+        if args.len() != function.params.len() {
+            return Err(VmError::Runtime(format!(
+                "{}: arity mismatch (expected {}, got {})",
+                function.name,
+                function.params.len(),
+                args.len()
+            )));
+        }
+        let mut locals = vec![Slot::Empty; function.locals.len()];
+        for (index, arg) in args.into_iter().enumerate() {
+            locals[index] = Slot::Runtime(arg);
+        }
+        Ok(Self {
+            function_idx,
+            locals,
+            stack: Vec::new(),
+            ip: 0,
+        })
+    }
+}
+
 impl<'a> VmEngine<'a> {
     fn new(artifact: &'a VmArtifact, options: RunOptions) -> Result<Self, VmError> {
         let mut fallback = Interpreter::new();
@@ -124,21 +162,19 @@ impl<'a> VmEngine<'a> {
     }
 
     fn call_function(&mut self, name: &str, args: Vec<Value>) -> Result<Value, VmError> {
-        let Some(function) = self.program.function(name) else {
+        let Some(idx) = self.program.functions.iter().position(|f| f.name == name) else {
             return self.call_fallback(name, args, "function not present in VM program");
         };
+        let function = &self.program.functions[idx];
         if !function.native {
-            return self.call_fallback(
-                name,
-                args,
-                function
-                    .fallback_reason
-                    .as_deref()
-                    .unwrap_or("function marked fallback"),
-            );
+            let reason = function
+                .fallback_reason
+                .clone()
+                .unwrap_or_else(|| "function marked fallback".to_string());
+            return self.call_fallback(name, args, &reason);
         }
         self.summary.native_function_calls += 1;
-        self.execute(function, args)
+        self.run_frames(idx, args)
     }
 
     fn call_fallback(
@@ -154,157 +190,215 @@ impl<'a> VmEngine<'a> {
         self.fallback.call(name, args).map_err(VmError::from)
     }
 
-    fn execute(&mut self, function: &BytecodeFunction, args: Vec<Value>) -> Result<Value, VmError> {
-        if args.len() != function.params.len() {
-            return Err(VmError::Runtime(format!(
-                "{}: arity mismatch (expected {}, got {})",
-                function.name,
-                function.params.len(),
-                args.len()
-            )));
-        }
-        let mut locals = vec![Slot::Empty; function.locals.len()];
-        for (index, arg) in args.into_iter().enumerate() {
-            locals[index] = Slot::Runtime(arg);
-        }
-        let mut stack: Vec<Slot> = Vec::new();
-        let mut ip = 0usize;
-        while ip < function.instructions.len() {
-            let instruction = &function.instructions[ip];
+    /// Execute a native function with an explicit, heap-allocated call-frame
+    /// stack. Native callees push a new `Frame` instead of recursing in the
+    /// host (Rust) language, so deep Garnet recursion runs on the heap and
+    /// does not overflow the Rust stack. Builtins and fallback callees execute
+    /// inline; the fallback path delegates to the tree-walk interpreter (its
+    /// own recursion domain — out of scope to flatten here).
+    fn run_frames(&mut self, entry_idx: usize, args: Vec<Value>) -> Result<Value, VmError> {
+        // Copy the shared program reference into a local so indexing it does
+        // not entangle the `&mut self` borrows used for summary/fallback.
+        let program = self.program;
+        let mut frames: Vec<Frame> =
+            vec![Frame::new(entry_idx, &program.functions[entry_idx], args)?];
+
+        loop {
+            let top = frames.len() - 1;
+            let func = &program.functions[frames[top].function_idx];
+
+            if frames[top].ip >= func.instructions.len() {
+                // Fell off the end of the body: implicit Nil return.
+                frames.pop();
+                match frames.last_mut() {
+                    Some(caller) => caller.stack.push(Slot::Runtime(Value::Nil)),
+                    None => return Ok(Value::Nil),
+                }
+                continue;
+            }
+
+            // Clone the current instruction to release the `program` borrow
+            // before any `&mut self` dispatch below.
+            let instruction = func.instructions[frames[top].ip].clone();
             self.summary.native_instruction_count += 1;
+
             match instruction {
-                Instruction::Const(index) => {
-                    stack.push(Slot::Runtime(self.constant(*index)?));
-                    ip += 1;
-                }
-                Instruction::LoadGlobal(index) => {
-                    let name = self.constant_string(*index)?;
-                    let value = self
-                        .fallback
-                        .global
-                        .get(name)
-                        .ok_or_else(|| VmError::Runtime(format!("undefined global: {name}")))?;
-                    stack.push(Slot::Runtime(value));
-                    ip += 1;
-                }
-                Instruction::LoadLocal(slot) => {
-                    stack.push(Slot::Runtime(runtime_slot(&locals, *slot)?.clone()));
-                    ip += 1;
-                }
-                Instruction::StoreLocal(slot) => {
-                    let value = stack
-                        .pop()
-                        .ok_or_else(|| VmError::Runtime("stack underflow".to_string()))?;
-                    store_slot(&mut locals, *slot, value)?;
-                    ip += 1;
-                }
-                Instruction::Pop => {
-                    stack.pop();
-                    ip += 1;
-                }
-                Instruction::Binary(op) => {
-                    let rhs = pop_runtime(&mut stack)?;
-                    let lhs = pop_runtime(&mut stack)?;
-                    stack.push(Slot::Runtime(apply_binary(*op, lhs, rhs)?));
-                    ip += 1;
-                }
-                Instruction::Unary(op) => {
-                    let value = pop_runtime(&mut stack)?;
-                    stack.push(Slot::Runtime(apply_unary(*op, value)?));
-                    ip += 1;
-                }
-                Instruction::Jump(target) => {
-                    ip = *target;
-                }
-                Instruction::JumpIfFalse(target) => {
-                    let value = pop_runtime(&mut stack)?;
-                    if !value.truthy() {
-                        ip = *target;
-                    } else {
-                        ip += 1;
-                    }
-                }
-                Instruction::MakeArray(count) => {
-                    let mut values = Vec::with_capacity(*count as usize);
-                    for _ in 0..*count {
-                        values.push(pop_runtime(&mut stack)?);
-                    }
-                    values.reverse();
-                    stack.push(Slot::Runtime(Value::array(values)));
-                    ip += 1;
-                }
-                Instruction::IterInit => {
-                    let value = pop_runtime(&mut stack)?;
-                    stack.push(Slot::Iterator(VmIterator {
-                        items: materialize_iter(&value)?,
-                        index: 0,
-                    }));
-                    ip += 1;
-                }
-                Instruction::IterNext {
-                    iterator_slot,
-                    item_slot,
-                    jump_to,
-                } => {
-                    let iterator = iterator_slot_mut(&mut locals, *iterator_slot)?;
-                    if iterator.index >= iterator.items.len() {
-                        ip = *jump_to;
-                    } else {
-                        let item = iterator.items[iterator.index].clone();
-                        iterator.index += 1;
-                        store_slot(&mut locals, *item_slot, Slot::Runtime(item))?;
-                        ip += 1;
-                    }
-                }
                 Instruction::Call { name, argc } => {
-                    let name = self.constant_string(*name)?.to_string();
-                    let args = pop_args(&mut stack, *argc)?;
-                    let value = self.call_named(&name, args)?;
-                    stack.push(Slot::Runtime(value));
-                    ip += 1;
-                }
-                Instruction::CallMethod { name, argc } => {
-                    let name = self.constant_string(*name)?.to_string();
-                    let args = pop_args(&mut stack, *argc)?;
-                    let receiver = pop_runtime(&mut stack)?;
-                    let value = call_method(&receiver, &name, args)?;
-                    stack.push(Slot::Runtime(value));
-                    ip += 1;
+                    let callee = self.constant_string(name)?.to_string();
+                    let call_args = pop_args(&mut frames[top].stack, argc)?;
+                    // Advance the caller past the call so it resumes correctly
+                    // once the callee returns.
+                    frames[top].ip += 1;
+
+                    if let Some(value) = self.try_builtin(&callee, &call_args)? {
+                        frames[top].stack.push(Slot::Runtime(value));
+                        continue;
+                    }
+
+                    if let Some(callee_idx) = program
+                        .functions
+                        .iter()
+                        .position(|f| f.name == callee && f.native)
+                    {
+                        self.summary.native_function_calls += 1;
+                        let frame =
+                            Frame::new(callee_idx, &program.functions[callee_idx], call_args)?;
+                        frames.push(frame);
+                        continue;
+                    }
+
+                    let value =
+                        self.call_fallback(&callee, call_args, "callee falls back to tree-walk")?;
+                    frames[top].stack.push(Slot::Runtime(value));
                 }
                 Instruction::Return => {
-                    return Ok(match stack.pop() {
+                    let value = match frames[top].stack.pop() {
                         Some(Slot::Runtime(value)) => value,
                         Some(Slot::Empty) | Some(Slot::Iterator(_)) | None => Value::Nil,
-                    });
+                    };
+                    frames.pop();
+                    match frames.last_mut() {
+                        Some(caller) => caller.stack.push(Slot::Runtime(value)),
+                        None => return Ok(value),
+                    }
                 }
+                other => self.step(&mut frames[top], &other)?,
             }
         }
-        Ok(Value::Nil)
     }
 
-    fn call_named(&mut self, name: &str, args: Vec<Value>) -> Result<Value, VmError> {
+    /// Execute one non-call, non-return instruction against a single frame.
+    fn step(&mut self, frame: &mut Frame, instruction: &Instruction) -> Result<(), VmError> {
+        match instruction {
+            Instruction::Const(index) => {
+                frame.stack.push(Slot::Runtime(self.constant(*index)?));
+                frame.ip += 1;
+            }
+            Instruction::LoadGlobal(index) => {
+                let name = self.constant_string(*index)?.to_string();
+                let value = self
+                    .fallback
+                    .global
+                    .get(&name)
+                    .ok_or_else(|| VmError::Runtime(format!("undefined global: {name}")))?;
+                frame.stack.push(Slot::Runtime(value));
+                frame.ip += 1;
+            }
+            Instruction::LoadLocal(slot) => {
+                frame
+                    .stack
+                    .push(Slot::Runtime(runtime_slot(&frame.locals, *slot)?.clone()));
+                frame.ip += 1;
+            }
+            Instruction::StoreLocal(slot) => {
+                let value = frame
+                    .stack
+                    .pop()
+                    .ok_or_else(|| VmError::Runtime("stack underflow".to_string()))?;
+                store_slot(&mut frame.locals, *slot, value)?;
+                frame.ip += 1;
+            }
+            Instruction::Pop => {
+                frame.stack.pop();
+                frame.ip += 1;
+            }
+            Instruction::Binary(op) => {
+                let rhs = pop_runtime(&mut frame.stack)?;
+                let lhs = pop_runtime(&mut frame.stack)?;
+                frame
+                    .stack
+                    .push(Slot::Runtime(apply_binary(*op, lhs, rhs)?));
+                frame.ip += 1;
+            }
+            Instruction::Unary(op) => {
+                let value = pop_runtime(&mut frame.stack)?;
+                frame.stack.push(Slot::Runtime(apply_unary(*op, value)?));
+                frame.ip += 1;
+            }
+            Instruction::Jump(target) => {
+                frame.ip = *target;
+            }
+            Instruction::JumpIfFalse(target) => {
+                let value = pop_runtime(&mut frame.stack)?;
+                if !value.truthy() {
+                    frame.ip = *target;
+                } else {
+                    frame.ip += 1;
+                }
+            }
+            Instruction::MakeArray(count) => {
+                let mut values = Vec::with_capacity(*count as usize);
+                for _ in 0..*count {
+                    values.push(pop_runtime(&mut frame.stack)?);
+                }
+                values.reverse();
+                frame.stack.push(Slot::Runtime(Value::array(values)));
+                frame.ip += 1;
+            }
+            Instruction::IterInit => {
+                let value = pop_runtime(&mut frame.stack)?;
+                frame.stack.push(Slot::Iterator(VmIterator {
+                    items: materialize_iter(&value)?,
+                    index: 0,
+                }));
+                frame.ip += 1;
+            }
+            Instruction::IterNext {
+                iterator_slot,
+                item_slot,
+                jump_to,
+            } => {
+                let iterator = iterator_slot_mut(&mut frame.locals, *iterator_slot)?;
+                if iterator.index >= iterator.items.len() {
+                    frame.ip = *jump_to;
+                } else {
+                    let item = iterator.items[iterator.index].clone();
+                    iterator.index += 1;
+                    store_slot(&mut frame.locals, *item_slot, Slot::Runtime(item))?;
+                    frame.ip += 1;
+                }
+            }
+            Instruction::CallMethod { name, argc } => {
+                let name = self.constant_string(*name)?.to_string();
+                let args = pop_args(&mut frame.stack, *argc)?;
+                let receiver = pop_runtime(&mut frame.stack)?;
+                let value = call_method(&receiver, &name, args)?;
+                frame.stack.push(Slot::Runtime(value));
+                frame.ip += 1;
+            }
+            Instruction::Call { .. } | Instruction::Return => {
+                unreachable!("Call/Return are handled by run_frames, not step")
+            }
+        }
+        Ok(())
+    }
+
+    /// Resolve a builtin call. Returns `Some(value)` for a recognized builtin
+    /// (`println`/`print`/`len`), `None` for anything else (a user function,
+    /// resolved by `run_frames` as a native frame or a tree-walk fallback).
+    fn try_builtin(&mut self, name: &str, args: &[Value]) -> Result<Option<Value>, VmError> {
         match name {
             "println" => {
                 if self.options.emit_stdout {
                     let rendered = args.iter().map(Value::display).collect::<Vec<_>>();
                     println!("{}", rendered.join(" "));
                 }
-                Ok(Value::Nil)
+                Ok(Some(Value::Nil))
             }
             "print" => {
                 if self.options.emit_stdout {
                     let rendered = args.iter().map(Value::display).collect::<Vec<_>>();
                     print!("{}", rendered.join(" "));
                 }
-                Ok(Value::Nil)
+                Ok(Some(Value::Nil))
             }
             "len" => {
                 let value = args
                     .first()
                     .ok_or_else(|| VmError::Runtime("len: missing arg".to_string()))?;
-                len_value(value)
+                Ok(Some(len_value(value)?))
             }
-            other => self.call_function(other, args),
+            _ => Ok(None),
         }
     }
 

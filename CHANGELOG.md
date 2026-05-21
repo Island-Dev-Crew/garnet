@@ -11,6 +11,35 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S14 (Bytecode VM v0.2 — explicit call-frame stack + ABI v0.2):**
+  `garnet-vm/src/vm.rs` now executes native function calls on an explicit,
+  heap-allocated call-frame stack (`Frame` + `run_frames` + `step`) instead
+  of recursing in the host (Rust) language. Before S14, deep Garnet recursion
+  overflowed the Rust stack (`countdown(100000)` via `--vm` aborted with a
+  stack overflow); after S14, `countdown(200000)` and mutual recursion to
+  depth 500 run to completion. The codec magic is version-bumped
+  `GARNVM01` → `GARNVM02` and each function record carries an explicit
+  `arity` field that the deserializer cross-checks against the parameter
+  vector. New `garnet run --vm --dump-lowering` flag prints the
+  native/fallback ratio (`lowered: N%`);
+  `examples/mvp_function_call_demo.garnet` reports `lowered: 100%`. New
+  workspace test `garnet-vm/tests/function_call.rs` (8 cases: deep recursion,
+  mutual recursion deep + shallow, mixed arity, nested returns, ABI v0.2
+  round-trip, arity-mismatch rejection, truncation rejection). New Criterion
+  bench case for the call hot path. New
+  "Bytecode VM v0.2 function-call lowering (S14)" lane in
+  `garnet_mit_readiness_status.py` (verified 100 %); MIT lane count 22 → 23,
+  headline 73.2 % → 74.3 %. Documented in
+  `C_Language_Specification/GARNET_BYTECODE_v0_2.md` (v0.1 stays for archival
+  reference). Honest deferred list: tail-call optimization (each call costs
+  one heap frame); closures / captured environments / dynamic-receiver
+  dispatch, pattern matching, try/rescue/ensure, struct/enum constructors all
+  still fall back; `and`/`or` short-circuit native lowering (Ruby-style
+  operand-returning semantics need value-preserving conditional-jump + `Dup`
+  opcodes); `--vm`-path vendored-dependency pre-load (the S12 resolver is
+  `--interp` only); stable cross-version bytecode ABI (`GARNVM02` is
+  tightened, not frozen); production native-compiler proof.
+
 - **S12 (Package-manager resolver contract):** `garnet-cli/src/cmd/run.rs::preload_dependencies`
   reads `Garnet.toml`'s `[dependencies]` table via the new
   `garnet-cli/src/cmd/add.rs::read_dependency_table`, walks each declared

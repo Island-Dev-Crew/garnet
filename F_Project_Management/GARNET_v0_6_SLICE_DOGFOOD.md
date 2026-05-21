@@ -220,9 +220,9 @@ target/release/garnet run --vm --dump-lowering examples/mvp_function_call_demo.g
   | grep -q "lowered: 100%"
 ```
 
-**Honest partial labels available:** "Closures, captured environments, and method dispatch on dynamic receivers still fall back." "Pattern matching, try/rescue/ensure, and struct/enum constructors still fall back." "Bytecode ABI v0.2 is more stable than v0.1 but not yet a cross-version ABI promise — version-bump on schema change is in v0.7."
+**Honest partial labels available:** "Closures, captured environments, and method dispatch on dynamic receivers still fall back." "Pattern matching, try/rescue/ensure, and struct/enum constructors still fall back." "Bytecode ABI v0.2 is more stable than v0.1 but not yet a cross-version ABI promise — version-bump on schema change is in v0.7." "Tail-call optimization deferred (each call costs one heap frame)." "`and`/`or` short-circuit native lowering deferred (Ruby-style operand-returning semantics need value-preserving conditional-jump + `Dup` opcodes)." "`--vm` path does NOT pre-load vendored deps (S12 resolver is `--interp` only)."
 
-**State:** not-started.
+**State as of 2026-05-21:** in-progress (PR to merge). The headline change is the explicit heap-allocated call-frame stack in `garnet-vm/src/vm.rs` (`Frame` + `run_frames`) that replaced host (Rust) recursion — `countdown(200000)` and mutual recursion to depth 500 now run on `--vm` without overflowing the Rust stack. ABI bumped to `GARNVM02` with an explicit, cross-checked arity field. `garnet run --vm --dump-lowering` reports `lowered: N%`. Lane: `vm_function_call_lowering` verified 100 %. The contract's original framing ("eliminate the function-boundary fallback for the common case") was based on the conservative S2 evidence; in fact the compiler already lowered identifier calls and the VM already executed them — the real, verified gap was host-stack-overflow on deep recursion, which the frame stack fixes.
 
 ---
 
