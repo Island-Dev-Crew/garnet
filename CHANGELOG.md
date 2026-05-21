@@ -7,11 +7,44 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated-honesty record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
+## [Unreleased] — v0.6.0 in flight
+
+### Added
+
+- **S11 (v0.6 slice contract scaffold):** new
+  `F_Project_Management/GARNET_v0_6_SLICE_DOGFOOD.md` ports the v0.5
+  contract pattern (state machine, common verification primitives,
+  cross-slice gates, PR body template, integration-with-scripts table,
+  honesty anchors) to v0.6 and defines the v0.6.0 release gate plus
+  contracts for S12–S16. New
+  `F_Project_Management/ROADMAPS/GARNET_v0_6_LANGUAGE_RUNTIME_ROADMAP.md`
+  records the v0.6 thesis ("v0.5 shipped scaffolds; v0.6 makes them
+  load-bearing"), the confirmed slice order, what's explicitly deferred
+  to v0.7+, the target lane delta (`71.9 % / 21 lanes / 12 verified` →
+  `≥ 80 % / ≥ 25 lanes / ≥ 17 verified` after S16), and v0.6 honesty
+  anchors. `F_Project_Management/DOGFOOD/GARNET_DOGFOOD_READINESS_SKILL.md`
+  is refreshed in place from its v0.4.2 / 86 slices / `6e945d6` pulse to
+  the current v0.5.x / 87 slices / `e43d378` pulse, with both readiness
+  reporters distinguished (implementation-plan vs. MIT-lane). Scaffolding
+  only — no reporter lanes added (those land with their respective
+  slices, matching the S0 pattern); no baseline regeneration.
+
+### Fixed
+
+- **CHANGELOG.md merge-conflict markers:** resolved the live
+  `<<<<<<< HEAD / ======= / >>>>>>> 407e6ec (S3: garnet add …)` markers
+  under `[Unreleased] — v0.5.1 in flight`. Both the S7 (PR
+  [#213](https://github.com/Island-Dev-Crew/garnet/pull/213)) and S3 (PR
+  [#211](https://github.com/Island-Dev-Crew/garnet/pull/211)) entries
+  are legitimate; S7 merged first, and the conflict against the
+  already-merged S7 CHANGELOG addition slipped through PR #211's merge.
+  Resolution: drop the markers, keep both entries in merge order (S7
+  first, then S3). No content changes to either entry.
+
 ## [Unreleased] — v0.5.1 in flight
 
 ### Added
 
-<<<<<<< HEAD
 - **S7 (Actor OS-thread bridge / `trust-report`):** new
   `garnet trust-report <file.garnet>` command (`garnet-cli/src/cmd/trust_report.rs`)
   produces a structural trust report including the literal line
@@ -27,7 +60,6 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   list documents that live-runtime instrumentation, mailbox/Sendable
   audit, and transitive caps aggregation are out of scope. Closes
   Paper VI Contribution 4's CLI-bridge surface gap.
-=======
 - **S3 (`garnet add` + Manifest Spec v0.1):** new `garnet-cli/src/cmd/add.rs`
   implements `garnet add [--name <id>] <path>` to vendor a local Garnet
   directory into `.garnet/vendor/<name>/`, update `Garnet.toml`'s
@@ -41,7 +73,6 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   `garnet run` time, remote sources / transitive deps / SemVer matching /
   workspace mode / `garnet verify-deps` are all out of scope until later
   slices.
->>>>>>> 407e6ec (S3: garnet add + Garnet Manifest v0.1 (vendored deps, content-addressed lockfile))
 - **S6 (Memory eviction policy benchmarks):** `garnet-memory-v0.3/benches/eviction.rs`
   is a Criterion bench harness exercising `MemoryPolicy::score` +
   `should_retain` per Mnemos kind (working / episodic / semantic /
