@@ -1,0 +1,22 @@
+[package]
+name = "garnet-registry-stub"
+version = "0.5.0"
+edition = "2021"
+description = "Garnet registry stub v0.1 — filesystem-backed index.json + content-addressed package resolution. Not a production registry: no HTTP transport, no auth, no publish flow, no signature verification."
+license = "MIT OR Apache-2.0"
+
+[[bin]]
+name = "garnet-registry-stub"
+path = "src/main.rs"
+
+[lib]
+name = "garnet_registry_stub"
+path = "src/lib.rs"
+
+[dependencies]
+blake3 = "1.5"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+tempfile = "3"

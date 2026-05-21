@@ -11,6 +11,29 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S13 (Registry stub v0.1):** new `garnet-registry-stub/` crate — a
+  filesystem-backed registry where an `index.json` (serde) maps
+  `name → version → { path, BLAKE3-per-file }` over `<name>/<version>/`
+  package directories. `garnet-registry-stub build|verify` generates and
+  checks the index deterministically. `garnet add --registry <location>
+  <name>@<version>` (in `garnet-cli/src/cmd/add.rs`) loads the index,
+  resolves the exact version, verifies every file's BLAKE3 (refusing any
+  index `path` that canonicalizes outside the registry root), and vendors
+  the package into `.garnet/vendor/<name>/` with a registry-shaped
+  `Garnet.toml` entry + `Garnet.lock` provenance. Because the S12 resolver
+  loads vendored deps at `garnet run` time, a registry-resolved
+  `use <name>::*` resolves end-to-end (`examples/registry_stub_fixture/` +
+  `garnet-cli/tests/registry_add.rs`, 3 integration tests; 6 stub-crate
+  unit tests incl. tamper-detection + path-traversal refusal). New
+  "Registry stub v0.1 (S13)" lane in `garnet_mit_readiness_status.py`
+  (verified 100 %); MIT lane count 23 → 24, headline 74.3 % → 75.4 %.
+  Documented in `C_Language_Specification/GARNET_REGISTRY_v0_1.md`. Honest
+  deferred list: HTTP(S) transport (filesystem / `file://` only); tarball
+  packaging (packages are directories); auth / accounts / publish flow;
+  signature verification (the index `signature` field is reserved but
+  unread); SemVer ranges (exact `<name>@<version>` only); multi-registry
+  resolution; transitive dependency resolution from the registry.
+
 - **S14 (Bytecode VM v0.2 — explicit call-frame stack + ABI v0.2):**
   `garnet-vm/src/vm.rs` now executes native function calls on an explicit,
   heap-allocated call-frame stack (`Frame` + `run_frames` + `step`) instead

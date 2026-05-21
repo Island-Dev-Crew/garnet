@@ -11,6 +11,7 @@ members = [
     "garnet-convert",
     "garnet-lsp",
     "garnet-vm",
+    "garnet-registry-stub",
     "xtask",
 ]
 # Exclude the archived v0.2 parser (flat-file layout, retained at

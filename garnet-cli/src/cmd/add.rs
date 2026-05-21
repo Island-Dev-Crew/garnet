@@ -46,6 +46,11 @@ struct AddArgs {
 }
 
 pub fn run(args: &[String]) -> ExitCode {
+    // S13: `garnet add --registry <location> <name>@<version>` is a separate
+    // resolution path from the local-path vendor flow below.
+    if args.iter().any(|a| a == "--registry") {
+        return run_registry_add(args);
+    }
     let parsed = match parse_args(args) {
         Ok(p) => p,
         Err(e) => {
@@ -131,16 +136,176 @@ pub fn run(args: &[String]) -> ExitCode {
     ExitCode::SUCCESS
 }
 
+/// S13: `garnet add --registry <location> <name>@<version>`. Resolves a
+/// package from a filesystem-backed registry (an `index.json` + versioned
+/// package directories), verifies its BLAKE3 content-address, and vendors it
+/// exactly like a local-path add. v0.1 stub: no HTTP, no SemVer ranges, no
+/// transitive deps, no signature verification.
+fn run_registry_add(args: &[String]) -> ExitCode {
+    let mut location: Option<PathBuf> = None;
+    let mut spec: Option<String> = None;
+    let mut i = 0;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--registry" => {
+                if i + 1 >= args.len() {
+                    eprintln!("garnet add: --registry requires a <location>");
+                    return ExitCode::from(2);
+                }
+                location = Some(PathBuf::from(strip_file_url(&args[i + 1])));
+                i += 2;
+            }
+            "--help" | "-h" => {
+                print_help();
+                return ExitCode::SUCCESS;
+            }
+            arg if arg.starts_with("--") => {
+                eprintln!("garnet add: unknown flag: {arg}");
+                return ExitCode::from(2);
+            }
+            other => {
+                if spec.is_some() {
+                    eprintln!("garnet add: unexpected extra argument: {other}");
+                    return ExitCode::from(2);
+                }
+                spec = Some(other.to_string());
+                i += 1;
+            }
+        }
+    }
+
+    let Some(location) = location else {
+        eprintln!("garnet add: --registry requires a <location>");
+        return ExitCode::from(2);
+    };
+    let Some(spec) = spec else {
+        eprintln!("garnet add: expected <name>@<version> with --registry");
+        return ExitCode::from(2);
+    };
+    let (name, version) = match spec.split_once('@') {
+        Some((n, v)) if !n.is_empty() && !v.is_empty() => (n.to_string(), v.to_string()),
+        _ => {
+            eprintln!("garnet add: registry spec must be <name>@<version>, got `{spec}`");
+            return ExitCode::from(2);
+        }
+    };
+    if !is_valid_dep_name(&name) {
+        eprintln!("garnet add: dependency name `{name}` must match [A-Za-z_][A-Za-z0-9_-]*");
+        return ExitCode::from(1);
+    }
+
+    let project_root = match find_project_root() {
+        Some(p) => p,
+        None => {
+            eprintln!(
+                "garnet add: not in a Garnet project (no `Garnet.toml` in this directory or any parent)"
+            );
+            return ExitCode::from(1);
+        }
+    };
+
+    let index = match garnet_registry_stub::load_index(&location) {
+        Ok(index) => index,
+        Err(e) => {
+            eprintln!("garnet add: registry {}: {e}", location.display());
+            return ExitCode::from(1);
+        }
+    };
+    let entry = match garnet_registry_stub::resolve(&index, &name, &version) {
+        Ok(entry) => entry,
+        Err(e) => {
+            eprintln!("garnet add: {e}");
+            return ExitCode::from(1);
+        }
+    };
+    let pkg_dir = match garnet_registry_stub::package_dir(&location, &entry) {
+        Ok(dir) => dir,
+        Err(e) => {
+            eprintln!("garnet add: {e}");
+            return ExitCode::from(1);
+        }
+    };
+    if let Err(e) = garnet_registry_stub::verify_package(&pkg_dir, &entry) {
+        eprintln!("garnet add: registry integrity check failed for {name}@{version}: {e}");
+        return ExitCode::from(1);
+    }
+
+    let vendor_root = project_root.join(".garnet/vendor").join(&name);
+    if let Err(e) = vendor_into(&pkg_dir, &vendor_root) {
+        eprintln!("garnet add: failed to copy into vendor: {e}");
+        return ExitCode::from(1);
+    }
+    let hashes = match hash_vendor_tree(&vendor_root) {
+        Ok(h) => h,
+        Err(e) => {
+            eprintln!("garnet add: failed to hash vendor tree: {e}");
+            return ExitCode::from(1);
+        }
+    };
+
+    let vendor_rel = format!(".garnet/vendor/{name}");
+    let registry_str = display_path(&location);
+    if let Err(e) =
+        update_manifest_registry(&project_root, &name, &registry_str, &version, &vendor_rel)
+    {
+        eprintln!("garnet add: failed to update Garnet.toml: {e}");
+        return ExitCode::from(1);
+    }
+    let lock_source = format!("registry+{registry_str}#{name}@{version}");
+    if let Err(e) = write_lockfile(&project_root, &name, &lock_source, &vendor_rel, &hashes) {
+        eprintln!("garnet add: failed to write Garnet.lock: {e}");
+        return ExitCode::from(1);
+    }
+
+    println!(
+        "garnet add: vendored `{name}@{version}` from registry {registry_str} into {vendor_rel} ({} file(s) hashed)",
+        hashes.len()
+    );
+    println!("  Garnet.toml [dependencies] updated");
+    println!("  Garnet.lock updated");
+    ExitCode::SUCCESS
+}
+
+/// Strip a `file://` prefix so `--registry file:///abs/path` and
+/// `--registry /abs/path` both work. HTTP(S) transport is deferred.
+fn strip_file_url(loc: &str) -> String {
+    loc.strip_prefix("file://").unwrap_or(loc).to_string()
+}
+
+/// Write a registry-shaped `[dependencies]` entry:
+/// `name = { registry = "...", version = "...", vendor = "..." }`.
+fn update_manifest_registry(
+    project_root: &Path,
+    name: &str,
+    registry: &str,
+    version: &str,
+    vendor_rel: &str,
+) -> std::io::Result<()> {
+    let manifest_path = project_root.join("Garnet.toml");
+    let text = fs::read_to_string(&manifest_path)?;
+    let entry_line = format!(
+        "{name} = {{ registry = \"{}\", version = \"{}\", vendor = \"{}\" }}",
+        toml_escape(registry),
+        toml_escape(version),
+        toml_escape(vendor_rel),
+    );
+    let updated = upsert_dependency(&text, name, &entry_line);
+    fs::write(&manifest_path, updated)?;
+    Ok(())
+}
+
 fn print_help() {
     eprintln!("usage: garnet add [--name <id>] <path>");
+    eprintln!("       garnet add --registry <location> <name>@<version>");
     eprintln!();
-    eprintln!("  Vendor a local Garnet directory as a project dependency.");
+    eprintln!("  Vendor a local Garnet directory as a project dependency, or");
+    eprintln!("  resolve one from a filesystem-backed registry (index.json).");
     eprintln!("  Updates Garnet.toml [dependencies] and Garnet.lock; copies");
     eprintln!("  source files under .garnet/vendor/<name>/.");
     eprintln!();
-    eprintln!("  Honest partial: interpreter does NOT yet resolve `use <dep>::*`");
-    eprintln!("  to vendored sources. See C_Language_Specification/");
-    eprintln!("  GARNET_MANIFEST_v0_1.md.");
+    eprintln!("  Registry v0.1 stub: filesystem/file:// only — no HTTP transport,");
+    eprintln!("  no SemVer ranges, no transitive deps, no signature verification.");
+    eprintln!("  See C_Language_Specification/GARNET_REGISTRY_v0_1.md.");
 }
 
 fn parse_args(args: &[String]) -> Result<AddArgs, String> {

@@ -182,9 +182,11 @@ grep -q "\"hello-lib\"" Garnet.lock
 garnet run src/main.garnet                                   # consumes the registry-fetched lib
 ```
 
-**Honest partial labels available:** "static index only — no central registry, no auth, no publish flow, no signature verification beyond BLAKE3 content-address." "Single registry per project — multi-registry resolution deferred." "Signature surface reserved in `index.json` but not yet verified — Ed25519 verification meshes with the notarization slice."
+**Honest partial labels available:** "static index only — no central registry, no auth, no publish flow, no signature verification beyond BLAKE3 content-address." "Single registry per project — multi-registry resolution deferred." "Signature surface reserved in `index.json` but not yet verified — Ed25519 verification meshes with the notarization slice." "Filesystem / `file://` transport only — HTTP(S) deferred to v0.7." "Packages are directories — tarball packaging deferred."
 
-**State:** not-started.
+**Scope note (v0.1, as built):** Shipped **filesystem-backed**, not HTTP. The contract sketched `--registry http://127.0.0.1:8765`; for a v0.1 stub the substance is the resolution loop (index → BLAKE3 verify → vendor), so v0.1 reads a registry directory's `index.json` and copies the versioned package dir. `--registry <dir-or-file://>` works today; `http(s)://` transport + tarball packaging are deferred. This avoided adding a network client + tar/gzip to `garnet-cli` and reuses the existing vendor + BLAKE3 machinery.
+
+**State as of 2026-05-21:** in-progress (PR to merge). `garnet-registry-stub` crate (lib `build_index`/`load_index`/`resolve`/`verify_package`/`package_dir` with a path-traversal guard + a `build`/`verify` bin), `garnet add --registry <location> <name>@<version>` in `garnet-cli/src/cmd/add.rs`, `examples/registry_stub_fixture/`, and `garnet-cli/tests/registry_add.rs` (3 integration tests, incl. the end-to-end `garnet run` resolve via the S12 resolver) all land. Lane: `registry_stub_v0_1` verified 100 %.
 
 ---
 

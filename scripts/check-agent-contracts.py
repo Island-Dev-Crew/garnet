@@ -96,6 +96,14 @@ CONTRACT_RULES = {
             "Benchmark evidence",
         ],
     },
+    "garnet-registry-stub/AGENTS.md": {
+        "phrases": [
+            "filesystem-backed",
+            "BLAKE3 per file",
+            "path-traversal guard",
+            "deterministic",
+        ],
+    },
     "garnet-parser-v0.3/fuzz/AGENTS.md": {
         "phrases": ["cargo-fuzz", "parse_input", "ParseBudget"],
     },
