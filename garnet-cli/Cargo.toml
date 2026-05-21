@@ -16,6 +16,7 @@ garnet-check = { version = "0.3.0", path = "../garnet-check-v0.3" }
 garnet-memory = { version = "0.3.0", path = "../garnet-memory-v0.3" }
 garnet-convert = { version = "0.4.0", path = "../garnet-convert" }
 garnet-vm = { version = "0.5.0", path = "../garnet-vm" }
+garnet-registry-stub = { version = "0.5.0", path = "../garnet-registry-stub" }
 miette = { version = "7.6", features = ["fancy"] }
 blake3 = "1.5"
 rusqlite = { version = "0.32", features = ["bundled"] }

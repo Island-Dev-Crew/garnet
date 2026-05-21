@@ -1,0 +1,18 @@
+{
+  "registry_version": "0.1",
+  "packages": {
+    "hello_lib": {
+      "versions": {
+        "0.1.0": {
+          "path": "hello_lib/0.1.0",
+          "files": [
+            {
+              "path": "lib.garnet",
+              "blake3": "e33082707f5fc47edcdc8a36c32b074306231f0efefc268743860d74041717a5"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

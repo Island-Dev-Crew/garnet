@@ -612,6 +612,46 @@ def read_status() -> MitReadinessStatus:
             ],
         ),
         ObjectiveLane(
+            id="registry_stub_v0_1",
+            label="Registry stub v0.1 (S13)",
+            status="verified"
+            if (ROOT / "garnet-registry-stub/src/lib.rs").exists()
+            and (ROOT / "C_Language_Specification/GARNET_REGISTRY_v0_1.md").exists()
+            else "planned",
+            completion_percent=100.0
+            if (ROOT / "garnet-registry-stub/src/lib.rs").exists()
+            and (ROOT / "C_Language_Specification/GARNET_REGISTRY_v0_1.md").exists()
+            else 0.0,
+            evidence=(
+                "`garnet-registry-stub/` is a filesystem-backed registry: an "
+                "`index.json` (serde) maps `name -> version -> { path, "
+                "BLAKE3-per-file }` over `<name>/<version>/` package "
+                "directories. `garnet-registry-stub build|verify` generates and "
+                "checks the index. `garnet add --registry <location> "
+                "<name>@<version>` (in `garnet-cli/src/cmd/add.rs`) loads the "
+                "index, resolves the version, verifies every file's BLAKE3 "
+                "(refusing path-traversal outside the registry root), and "
+                "vendors the package into `.garnet/vendor/<name>/`. Because the "
+                "S12 resolver loads vendored deps at `garnet run` time, a "
+                "registry-resolved `use <name>::*` resolves end-to-end "
+                "(`examples/registry_stub_fixture/` + "
+                "`garnet-cli/tests/registry_add.rs`, 3 integration tests + 6 "
+                "stub-crate unit tests). Documented in "
+                "`C_Language_Specification/GARNET_REGISTRY_v0_1.md`."
+            ),
+            blocked_by=[],
+            deferred=[
+                "HTTP(S) transport (filesystem / file:// only today)",
+                "Tarball packaging (packages are directories)",
+                "Authentication, accounts, publish/upload flow",
+                "Signature verification (the index `signature` field is "
+                "reserved but unread; meshes with the notarization slice)",
+                "SemVer ranges (exact <name>@<version> only)",
+                "Multi-registry resolution (one registry per invocation)",
+                "Transitive dependency resolution from the registry",
+            ],
+        ),
+        ObjectiveLane(
             id="memory_eviction_benchmarks",
             label="Memory eviction policy benchmarks",
             status="verified"
