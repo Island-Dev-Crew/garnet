@@ -6,8 +6,10 @@ Codex Desktop, Antigravity 2.0, Greptile/PR-Agent, and Jon. Update this
 file in the same commit as the work it tracks.
 
 The v0.5 successor of `F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md`.
-v0.5 is closed; this file governs every PR titled `S11:`–`S16:` and any
-later v0.6 slice added under § Slice Contracts.
+v0.5 is closed; this file governs PRs titled `S11:`–`S14:`. **S15 and S16
+were re-scoped to the four-agent v0.7 build-out** — their authoritative
+contracts now live in `F_Project_Management/GARNET_v0_7_SLICE_DOGFOOD.md`.
+The S15/S16 sections below are retained for history and marked SUPERSEDED.
 
 ---
 
@@ -230,6 +232,12 @@ target/release/garnet run --vm --dump-lowering examples/mvp_function_call_demo.g
 
 ### S15 — Trivia-preserving CST in `garnet-parser-v0.3`
 
+> **SUPERSEDED — moved to v0.7.** Re-scoped under the four-agent v0.7
+> build-out. The authoritative contract is **S15 in
+> `GARNET_v0_7_SLICE_DOGFOOD.md`**, where the CST ships as a **new
+> `garnet-cst` crate** (rowan-backed, trait-first) rather than as a module
+> inside `garnet-parser-v0.3`. Do not implement from this section.
+
 **Goal:** Add a green-tree / CST layer in `garnet-parser-v0.3` that preserves whitespace, comments, and (where present) tab vs space distinctions. The AST stays the primary semantic surface; the CST becomes the trivia-faithful spine the LSP, formatter, and richer trust-report consume.
 
 **New surfaces:**
@@ -260,6 +268,10 @@ cargo bench -p garnet-parser-v0.3 --bench cst_overhead > /tmp/cst-overhead.txt
 ---
 
 ### S16 — LSP v0.2 on the CST
+
+> **SUPERSEDED — moved to v0.7.** Re-scoped under the four-agent v0.7
+> build-out. The authoritative contract is **S16 in
+> `GARNET_v0_7_SLICE_DOGFOOD.md`**. Do not implement from this section.
 
 **Goal:** Build workspace symbols, rename, code actions, and semantic tokens on top of S15's CST. Surface S10's advisory `compiler suggested:` rules as LSP code-actions. Updates the VSCode extension to consume the new capabilities.
 
@@ -296,12 +308,20 @@ code --install-extension editors/vscode/garnet-*.vsix
 
 ## v0.6.0 Release Gate
 
+> **OPEN QUESTION FOR JON (v0.7 re-scope).** S15 and S16 moved to v0.7, so
+> this gate no longer fires on them. Decide: does **v0.6.0 tag now at
+> S12–S14** (with the readiness target reset to whatever S14-close lands),
+> or does **v0.6 fold into the v0.7.0 gate** and tag only once S15–S19 are
+> merged? Until you decide, treat the checklist below as S12–S14-scoped.
+
 Tag v0.6.0 only when all of:
 
-- [ ] S12, S13, S14, S15, S16 in `merged` state.
+- [ ] S12, S13, S14 in `merged` state. *(S15/S16 re-scoped to v0.7 — see
+      `GARNET_v0_7_SLICE_DOGFOOD.md`.)*
 - [ ] `scripts/garnet_mit_readiness_status.py` reports a higher AND more
       granular % than the v0.5.1 close (71.9 % / 21 lanes / 12 verified).
-      Target: ≥ 80 % / ≥ 25 lanes after S16 merges.
+      *(Original ≥ 80 % / ≥ 25 lanes target assumed S15/S16 lanes; reset to
+      the S14-close number once Jon resolves the open question above.)*
 - [ ] `CHANGELOG.md` updated with each merged slice; `## [Unreleased] —
       v0.6.0 in flight` block named every entry.
 - [ ] `docs/blog/2026-Qx-garnet-v0-6.md` drafted using the
@@ -338,11 +358,11 @@ code --install-extension <published-garnet-vsix-v0.6.0>
 - [ ] `scripts/verify_org_release_smoke.sh` passes against
       `Island-Dev-Crew/garnet` release `v0.6.0`.
 
-S12–S16 may land out of order under the strict slice-per-PR discipline as
-long as S15 merges before S16 opens (S16 consumes the CST API) and S12
-merges before S13's end-to-end loop is honest (S13 can still land its
-crate + spec independently, with the deferred line "end-to-end resolution
-gates on S12").
+S12–S14 may land out of order under the strict slice-per-PR discipline as
+long as S12 merges before S13's end-to-end loop is honest (S13 can still
+land its crate + spec independently, with the deferred line "end-to-end
+resolution gates on S12"). S15/S16 sequencing now lives in
+`GARNET_v0_7_SLICE_DOGFOOD.md`.
 
 ---
 
