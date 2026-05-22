@@ -214,6 +214,13 @@ select:focus {
   gap: 10px;
 }
 
+.release-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
 button.primary,
 button.secondary {
   border: 1px solid transparent;
@@ -304,6 +311,10 @@ pre {
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 12px;
   margin-bottom: 14px;
+}
+
+.release-lines {
+  margin-top: 18px;
 }
 
 .status-tile {

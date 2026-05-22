@@ -4,7 +4,7 @@ import { createReadStream, mkdtempSync, writeFileSync } from "node:fs";
 import { access, readFile, rm, stat } from "node:fs/promises";
 import { platform, tmpdir } from "node:os";
 import { basename, extname, join, resolve, sep } from "node:path";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 
 const ROOT = resolve(new URL("..", import.meta.url).pathname);
 function defaultChrome() {
@@ -99,6 +99,22 @@ async function waitForProcessExit(child, timeoutMs = 5_000) {
       resolveExit();
     });
   });
+}
+
+async function stopChrome(child) {
+  if (child.exitCode !== null || child.signalCode !== null) return;
+  child.kill("SIGTERM");
+  await waitForProcessExit(child, 5_000);
+  if (child.exitCode === null && child.signalCode === null) {
+    if (platform() === "win32") {
+      spawnSync("taskkill", ["/PID", String(child.pid), "/T", "/F"], { stdio: "ignore" });
+    } else {
+      child.kill("SIGKILL");
+    }
+    await waitForProcessExit(child, 5_000);
+  }
+  child.stdout?.destroy();
+  child.stderr?.destroy();
 }
 
 async function removeBrowserProfile(path, maxRetries = 8) {
@@ -208,9 +224,10 @@ class CdpClient {
 }
 
 async function navigate(client, url) {
-  const loaded = client.once("Page.loadEventFired", 15_000);
+  const loaded = client.once("Page.loadEventFired", 30_000).catch(() => null);
   await client.send("Page.navigate", { url });
   await loaded;
+  await waitForDocumentReady(client);
 }
 
 async function evaluate(client, expression, awaitPromise = true) {
@@ -224,6 +241,22 @@ async function evaluate(client, expression, awaitPromise = true) {
     throw new Error(result.exceptionDetails.text || "runtime evaluation failed");
   }
   return result.result?.value;
+}
+
+async function waitForDocumentReady(client, timeoutMs = 30_000) {
+  const deadline = Date.now() + timeoutMs;
+  let lastError;
+  while (Date.now() < deadline) {
+    try {
+      const readyState = await evaluate(client, "document.readyState", false);
+      if (readyState === "interactive" || readyState === "complete") return;
+    } catch (error) {
+      lastError = error;
+    }
+    await wait(100);
+  }
+  if (lastError) throw lastError;
+  throw new Error("timed out waiting for document readiness");
 }
 
 async function main() {
@@ -252,10 +285,10 @@ async function main() {
   try {
     const target = await waitForJson(
       `http://127.0.0.1:${remotePort}/json/new?${encodeURIComponent(`${baseUrl}/`)}`,
-      10_000,
+      30_000,
       { method: "PUT" },
     );
-    const version = await waitForJson(`http://127.0.0.1:${remotePort}/json/version`);
+    const version = await waitForJson(`http://127.0.0.1:${remotePort}/json/version`, 30_000);
     client = new CdpClient(target.webSocketDebuggerUrl);
     await client.open();
     await client.send("Page.enable");
@@ -328,17 +361,31 @@ async function main() {
     console.log(`Garnet browser PWA offline smoke: passed (${basename(args.output)})`);
   } finally {
     if (client) client.close();
-    await new Promise((resolveClose) => server.close(resolveClose));
-    chrome.kill("SIGTERM");
-    await waitForProcessExit(chrome);
-    if (!args.keepBrowser) await removeBrowserProfile(userDataDir);
+    if (typeof server.closeAllConnections === "function") {
+      server.closeAllConnections();
+    }
+    server.close();
+    await stopChrome(chrome);
+    if (!args.keepBrowser) {
+      try {
+        await removeBrowserProfile(userDataDir);
+      } catch (error) {
+        if (process.env.GARNET_PWA_BROWSER_DEBUG) {
+          console.error(`warning: failed to remove temporary browser profile ${userDataDir}: ${error}`);
+        }
+      }
+    }
     if (stderr.length && process.env.GARNET_PWA_BROWSER_DEBUG) {
       console.error(stderr.join(""));
     }
   }
 }
 
-main().catch((error) => {
-  console.error(error.stack || error.message || String(error));
-  process.exit(1);
-});
+main()
+  .then(() => {
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error(error.stack || error.message || String(error));
+    process.exit(1);
+  });

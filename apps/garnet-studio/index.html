@@ -28,6 +28,7 @@
         <button data-panel="convert">Active Conversion</button>
         <button data-panel="advisory">Advisory Pipeline</button>
         <button data-panel="evidence">Evidence</button>
+        <button data-panel="release">Release / Readiness</button>
         <button data-panel="taxonomy">Taxonomy</button>
       </nav>
 
@@ -223,6 +224,56 @@
         <div id="evidence-result" class="result-area"></div>
         <div id="pulse-result" class="result-area"></div>
         <div id="dogfood-result" class="result-area"></div>
+      </section>
+
+      <section id="panel-release" class="panel">
+        <header class="panel-header">
+          <p class="eyebrow">v0.5 readiness</p>
+          <h2>Release Evidence</h2>
+          <p>
+            Current repo-native reporters for Windows/Linux parity, MIT review,
+            converter advisory truth, proof boundaries, and platform gates.
+          </p>
+        </header>
+
+        <div class="release-grid">
+          <button id="btn-windows-status" class="primary">Windows/Linux Status</button>
+          <button id="btn-converter-status" class="secondary">Converter Fit Matrix</button>
+          <button id="btn-provider-options" class="secondary">Provider Options</button>
+          <button id="btn-mit-demo" class="secondary">Demo Route</button>
+          <button id="btn-deck-outline" class="secondary">Deck Outline</button>
+          <button id="btn-deck-preview" class="secondary">Deck Preview</button>
+          <button id="btn-mac-continuation" class="secondary">Continuation Pulse</button>
+          <button id="btn-proof-status" class="secondary">Proof / Benchmark Status</button>
+          <button id="btn-benchmark-no-run" class="secondary">Benchmark No-Run</button>
+          <button id="btn-notarization" class="secondary">Notarization Status</button>
+        </div>
+
+        <div class="status-grid release-lines">
+          <div class="status-tile">
+            <span class="dot ok"></span>
+            <div>
+              <strong>Tracked plan</strong>
+              <span>87/87 slices complete on current main.</span>
+            </div>
+          </div>
+          <div class="status-tile">
+            <span class="dot ok"></span>
+            <div>
+              <strong>Windows source build</strong>
+              <span>Tauri v2 shell, typed commands, unsigned NSIS, and smoke evidence.</span>
+            </div>
+          </div>
+          <div class="status-tile">
+            <span class="dot fail"></span>
+            <div>
+              <strong>Open gates</strong>
+              <span>Linux launch, clean Windows VM installer proof, signing, MSI, winget, and notarization.</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="release-result" class="result-area"></div>
       </section>
 
       <section id="panel-taxonomy" class="panel">

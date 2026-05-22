@@ -1357,7 +1357,7 @@ garnet run src/main.garnet</pre>
       <li>release status &amp; the agentic dogfood matrix</li>
     </ul>
     <p class="lead" style="font-size:15px;">In Codex Desktop, a <strong>Codex Run</strong> action wires <code>script/build_and_run.sh</code> to build SwiftPM, stage <code>dist/Garnet Studio.app</code>, and launch it.</p>
-    <p class="lead">The Windows/Linux lane now has a separate Tauri v2 shell scaffold under <code>apps/garnet-studio</code>. Windows local proof covers the Vite frontend build, Tauri backend tests, release executable, unsigned NSIS bundle, and <code>--studio-smoke</code> Desktop evidence. It is still not signed MSI, winget, Linux runtime, or clean-machine installer proof.</p>
+    <p class="lead">The Windows/Linux lane now has a separate Tauri v2 shell scaffold under <code>apps/garnet-studio</code>. Windows local proof covers the Vite frontend build, Tauri backend tests, release executable, unsigned NSIS bundle, <code>--studio-smoke</code> Desktop evidence, and a Release / Readiness panel wired to the repo-native v0.5 reporters. It is still not signed MSI, winget, Linux runtime, or clean-machine installer proof.</p>
 
     <div class="features">
       <div class="feature">

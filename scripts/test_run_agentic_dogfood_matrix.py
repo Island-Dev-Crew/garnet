@@ -295,9 +295,11 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         ids = {probe.id for probe in concrete_probes}
         domains = Counter(probe.domain for probe in concrete_probes)
 
-        self.assertEqual(domains["Windows/Linux Studio shell"], 3)
+        self.assertEqual(domains["Windows/Linux Studio shell"], 5)
         self.assertIn("report-windows-linux-studio-tauri-scaffold", ids)
         self.assertIn("report-windows-linux-studio-command-contract", ids)
+        self.assertIn("report-windows-linux-studio-v05-readiness-parity", ids)
+        self.assertIn("report-windows-linux-studio-advisory-boundary", ids)
         self.assertIn("report-windows-linux-studio-evidence-smoke", ids)
 
     def test_probe_inventory_includes_converter_advisory_bundle(self) -> None:

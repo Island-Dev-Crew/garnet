@@ -66,12 +66,26 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
                 "advisory_handoff",
                 "objective_pulse",
                 "agentic_dogfood_matrix",
+                "windows_linux_studio_status",
+                "converter_status",
+                "provider_options",
+                "mit_demo_route",
+                "mit_deck_outline",
+                "mit_deck_preview",
+                "mac_continuation_pulse",
+                "proof_benchmark_status",
+                "benchmark_no_run",
+                "notarization_status",
             },
             action_ids,
         )
         health = next(action for action in status.actions if action.id == "cli_health")
         self.assertEqual(["garnet", "version"], health.current_command)
         self.assertIn("garnet version", " ".join(status.current_truth))
+        provider = next(action for action in status.actions if action.id == "provider_options")
+        self.assertIn("--output-dir", provider.current_command)
+        self.assertIn("garnet_converter_llm_feasibility.py", " ".join(provider.current_command))
+        self.assertFalse(provider.source_included_by_default)
 
     def test_command_plans_are_argument_vectors_and_preserve_default_no_source_handoff(self) -> None:
         source = Path("sample.ts")
@@ -119,6 +133,32 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
         )
         self.assertEqual(["garnet", "convert", "python", "sample.py", "--out", "dogfood"], convert.argv)
 
+    def test_advisory_actions_reject_active_conversion_languages(self) -> None:
+        for action_id in ["assist_plan", "advisory_bundle"]:
+            with self.assertRaises(status_mod.CommandContractError):
+                status_mod.build_command_plan(
+                    action_id,
+                    language="Rust",
+                    source=Path("sample.rs"),
+                )
+
+    def test_release_readiness_plans_call_repo_native_reporters(self) -> None:
+        evidence = Path("dogfood")
+        plan = status_mod.build_command_plan(
+            "mit_deck_preview",
+            evidence_dir=evidence,
+            python_executable="python3",
+        )
+
+        self.assertEqual("MIT Deck Preview", plan.label)
+        self.assertEqual("python3", plan.argv[0])
+        self.assertIn("garnet_mit_deck_preview.py", plan.argv[1])
+        self.assertIn("--output-dir", plan.argv)
+        self.assertIn("dogfood", plan.argv)
+        self.assertIn("html", plan.argv)
+        self.assertFalse(plan.calls_provider_apis)
+        self.assertFalse(plan.source_included_by_default)
+
     def test_evidence_bundle_creation_writes_manifest_without_source(self) -> None:
         fixed = datetime(2026, 5, 17, 12, 0, 0, tzinfo=timezone.utc)
         with tempfile.TemporaryDirectory() as temp:
@@ -139,8 +179,13 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             text=True,
         )
         data = json.loads(output)
-        self.assertEqual("tauri-v2-shell-scaffold-windows-build-verified-linux-open", data["status"])
-        self.assertIn("Tauri v2 is now adopted", " ".join(data["current_truth"]))
+        self.assertEqual(
+            "tauri-v2-shell-v0-5-readiness-parity-windows-build-verified-linux-open",
+            data["status"],
+        )
+        truth = " ".join(data["current_truth"])
+        self.assertIn("Tauri v2 is now adopted", truth)
+        self.assertIn("v0.5 reporters", truth)
         self.assertIn("Linux runtime proof is not complete", " ".join(data["current_truth"]))
         self.assertFalse(data["safety_contract"]["calls_provider_apis_by_default"])
         self.assertFalse(data["safety_contract"]["includes_source_by_default"])
@@ -148,6 +193,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
         markdown = subprocess.check_output([sys.executable, str(SCRIPT)], text=True)
         self.assertIn("Garnet Windows/Linux Studio Status", markdown)
         self.assertIn("Tauri v2 is accepted", markdown)
+        self.assertIn("MIT Deck Preview", markdown)
         self.assertIn("signed Windows MSI for Studio", json.dumps(data["safety_contract"]["forbidden_claims"]))
 
 

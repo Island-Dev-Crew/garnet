@@ -289,6 +289,20 @@ window.addEventListener("DOMContentLoaded", () => {
 
   wireButton("btn-pulse", () => runCommand("pulse-result", "objective_pulse", {}));
   wireButton("btn-dogfood", () => runCommand("dogfood-result", "agentic_dogfood_matrix", {}));
+  wireButton("btn-windows-status", () =>
+    runCommand("release-result", "windows_linux_studio_status", {}),
+  );
+  wireButton("btn-converter-status", () => runCommand("release-result", "converter_status", {}));
+  wireButton("btn-provider-options", () => runCommand("release-result", "provider_options", {}));
+  wireButton("btn-mit-demo", () => runCommand("release-result", "mit_demo_route", {}));
+  wireButton("btn-deck-outline", () => runCommand("release-result", "mit_deck_outline", {}));
+  wireButton("btn-deck-preview", () => runCommand("release-result", "mit_deck_preview", {}));
+  wireButton("btn-mac-continuation", () =>
+    runCommand("release-result", "mac_continuation_pulse", {}),
+  );
+  wireButton("btn-proof-status", () => runCommand("release-result", "proof_benchmark_status", {}));
+  wireButton("btn-benchmark-no-run", () => runCommand("release-result", "benchmark_no_run", {}));
+  wireButton("btn-notarization", () => runCommand("release-result", "notarization_status", {}));
 
   wireButton("btn-evidence", async () => {
     try {
