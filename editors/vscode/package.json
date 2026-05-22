@@ -2,7 +2,7 @@
   "name": "garnet",
   "displayName": "Garnet",
   "description": "Garnet language support powered by the garnet-lsp MVP.",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "publisher": "island-dev-crew",
   "license": "MIT OR Apache-2.0",
   "repository": {
@@ -22,7 +22,7 @@
   "main": "./dist/extension.js",
   "scripts": {
     "compile": "tsc -p ./",
-    "package": "npm run compile && node scripts/bundle-server.mjs && vsce package --out garnet-0.5.0-lsp-mvp.vsix"
+    "package": "npm run compile && node scripts/bundle-server.mjs && vsce package --out garnet-0.6.0-lsp-mvp.vsix"
   },
   "contributes": {
     "languages": [

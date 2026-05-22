@@ -9,7 +9,12 @@ fn kinds(src: &str) -> Vec<TokenKind> {
         .unwrap()
         .into_iter()
         .map(|t| t.kind)
-        .filter(|k| !matches!(k, TokenKind::Newline))
+        .filter(|k| {
+            !matches!(
+                k,
+                TokenKind::Newline | TokenKind::Whitespace(_) | TokenKind::Comment(_)
+            )
+        })
         .collect()
 }
 
@@ -205,4 +210,16 @@ fn errors_on_malformed_float() {
     // "1.0e" — nothing after 'e' — f64 parse should fail.
     let result = lex_source("1.0e");
     assert!(result.is_err());
+}
+
+#[test]
+fn preserves_comments_and_whitespace_as_tokens() {
+    let result = lex_source("42 \t # comment\n7").unwrap();
+    assert_eq!(result.len(), 6); // [Int(42), Whitespace(" \t "), Comment("# comment"), Newline, Int(7), Eof]
+    assert!(matches!(&result[0].kind, TokenKind::Int(42)));
+    assert!(matches!(&result[1].kind, TokenKind::Whitespace(w) if w == " \t "));
+    assert!(matches!(&result[2].kind, TokenKind::Comment(c) if c == "# comment"));
+    assert!(matches!(&result[3].kind, TokenKind::Newline));
+    assert!(matches!(&result[4].kind, TokenKind::Int(7)));
+    assert!(matches!(&result[5].kind, TokenKind::Eof));
 }

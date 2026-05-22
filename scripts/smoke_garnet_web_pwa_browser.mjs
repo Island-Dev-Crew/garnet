@@ -5,8 +5,9 @@ import { access, readFile, rm, stat } from "node:fs/promises";
 import { platform, tmpdir } from "node:os";
 import { basename, extname, join, resolve, sep } from "node:path";
 import { spawn, spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
-const ROOT = resolve(new URL("..", import.meta.url).pathname);
+const ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
 function defaultChrome() {
   if (process.env.CHROME_BIN) return process.env.CHROME_BIN;
   if (platform() === "win32") {

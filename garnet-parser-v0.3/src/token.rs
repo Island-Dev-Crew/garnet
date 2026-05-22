@@ -49,7 +49,7 @@ pub enum StrPart {
 }
 
 /// All token kinds in the Garnet v0.3 lexical grammar.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TokenKind {
     // ── Literals ──
     Int(i64),
@@ -178,6 +178,8 @@ pub enum TokenKind {
     // ── Structural ──
     Newline,
     Eof,
+    Whitespace(String),
+    Comment(String),
 }
 
 impl TokenKind {
@@ -360,5 +362,7 @@ pub fn describe_kind(kind: &TokenKind) -> &'static str {
         TokenKind::RBracket => "']'",
         TokenKind::Newline => "newline",
         TokenKind::Eof => "end of file",
+        TokenKind::Whitespace(_) => "whitespace",
+        TokenKind::Comment(_) => "comment",
     }
 }

@@ -10,6 +10,7 @@ fn kinds(src: &str) -> Vec<TokenKind> {
         .unwrap()
         .into_iter()
         .map(|t| t.kind)
+        .filter(|k| !matches!(k, TokenKind::Whitespace(_) | TokenKind::Comment(_)))
         .collect()
 }
 

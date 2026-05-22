@@ -52,8 +52,8 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
             lanes["windows_linux_distribution"].completion_percent, 100.0
         )
         self.assertTrue(lanes["windows_linux_distribution"].blocked_by)
-        self.assertEqual("source-present", lanes["editor_lsp_adoption"].status)
-        self.assertEqual(60.0, lanes["editor_lsp_adoption"].completion_percent)
+        self.assertEqual("verified", lanes["editor_lsp_adoption"].status)
+        self.assertEqual(100.0, lanes["editor_lsp_adoption"].completion_percent)
         # S9: Determinism CI cross-machine lane
         self.assertIn("determinism_ci_cross_machine", lanes)
         self.assertEqual("verified", lanes["determinism_ci_cross_machine"].status)
@@ -78,7 +78,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("compiler suggested", lanes["compiler_advisory_rules_based"].evidence)
         self.assertIn("suggest.rs", lanes["compiler_advisory_rules_based"].evidence)
         self.assertTrue(lanes["compiler_advisory_rules_based"].deferred)
-        # LLM tier is explicitly deferred — pending-infra anchor preserved
+        # LLM tier is explicitly deferred; pending-infra anchor preserved.
         deferred_text = " ".join(lanes["compiler_advisory_rules_based"].deferred)
         self.assertIn("LLM", deferred_text)
         # S8: Signed hot-reload BLAKE3 demo lane
@@ -90,6 +90,14 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         # Honest deferred: managed-mode reload_signed syntax is NOT in this slice
         s8_deferred = " ".join(lanes["signed_hot_reload_demo"].deferred)
         self.assertIn("actor.reload_signed", s8_deferred)
+
+        # S15: Trivia-preserving CST lane
+        self.assertIn("parser_cst_layer", lanes)
+        self.assertEqual("verified", lanes["parser_cst_layer"].status)
+        self.assertEqual(100.0, lanes["parser_cst_layer"].completion_percent)
+        self.assertIn("cst.rs", lanes["parser_cst_layer"].evidence)
+        self.assertIn("cst_round_trip.rs", lanes["parser_cst_layer"].evidence)
+        self.assertIn("incremental syntax parsing", lanes["parser_cst_layer"].deferred)
 
     def test_json_exposes_evidence_and_deferred_boundaries(self) -> None:
         output = subprocess.check_output(
@@ -126,14 +134,13 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("v0.5 readiness reporter parity", lanes["windows_linux_distribution"]["evidence"])
         self.assertIn("clean-VM installer proof contract", lanes["windows_linux_distribution"]["evidence"])
         self.assertIn("clean Windows VM", " ".join(lanes["windows_linux_distribution"]["blocked_by"]))
-        self.assertIn("diagnostics, hover, and basic go-to-definition", lanes["editor_lsp_adoption"]["evidence"])
-        self.assertIn("standalone-vscode-gate", lanes["editor_lsp_adoption"]["evidence"])
-        self.assertIn("garnet-vscode-release-assets-20260520T133747Z", lanes["editor_lsp_adoption"]["evidence"])
-        self.assertIn("garnet-v0-5-release-validation-20260520T142443Z", lanes["editor_lsp_adoption"]["evidence"])
-        self.assertIn("vscode-extension.yml", lanes["editor_lsp_adoption"]["evidence"])
+        self.assertIn("S16 CST-precise LSP surface", lanes["editor_lsp_adoption"]["evidence"])
+        self.assertIn("document/workspace symbols", lanes["editor_lsp_adoption"]["evidence"])
+        self.assertIn("CST-precise rename", lanes["editor_lsp_adoption"]["evidence"])
+        self.assertIn("rules-based quick-fix actions", lanes["editor_lsp_adoption"]["evidence"])
+        self.assertIn("semantic tokens", lanes["editor_lsp_adoption"]["evidence"])
         self.assertNotIn("release-backed VSIX smoke after tag", lanes["editor_lsp_adoption"]["deferred"])
-        self.assertIn("Marketplace/OpenVSX publication", lanes["editor_lsp_adoption"]["deferred"])
-        self.assertIn("manual VSCode", " ".join(lanes["editor_lsp_adoption"]["deferred"]))
+        self.assertEqual([], lanes["editor_lsp_adoption"]["deferred"])
 
     def test_rendered_promo_artifacts_update_objective_blockers(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -280,12 +287,12 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         self.assertIn("Objective accounting", site)
         self.assertIn("MIT/productization objective", site)
-        self.assertIn("75.4%", site)
+        self.assertIn("78.0%", site)
         self.assertNotIn("58.1%", site)
         self.assertNotIn("55.8%", site)
         self.assertNotIn("57.9%", site)
         self.assertNotIn("58.6%", site)
-        self.assertIn("75.4%", status_site)
+        self.assertIn("78.0%", status_site)
         self.assertNotIn("58.1%", status_site)
         self.assertNotIn("55.8%", status_site)
         self.assertNotIn("57.9%", status_site)
@@ -298,7 +305,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("mobile", site)
         self.assertIn("LLM assist", site)
 
-    # ──── S0: --check-no-regression flag ────────────────────────────────
+    # S0: --check-no-regression flag.
 
     def test_check_no_regression_passes_when_baseline_matches(self) -> None:
         # Use the live status as its own baseline: nothing can have regressed.

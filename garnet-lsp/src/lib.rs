@@ -1,26 +1,32 @@
-//! Garnet Language Server Protocol MVP.
+//! Garnet Language Server Protocol MVP v0.2.
 //!
-//! S1 scope is intentionally narrow: parse/check diagnostics, top-level hover,
-//! and top-level go-to-definition. Rename, workspace symbols, incremental CST
-//! precision, and richer safe-mode hover remain follow-up work.
+//! S16 scope implements document symbols, workspace symbols, rename,
+//! code action quick-fixes (rules-based S10), and semantic tokens on top of the CST.
 
+use garnet_check::suggest::Rule;
 use garnet_check::{CheckError, CheckReport};
 use garnet_parser::ast::{
     ActorDef, Annotation, ConstDecl, FnDef, FnMode, Item, LetDecl, MemoryDecl, Module, ModuleDecl,
     Ownership, ProtocolDef, TypeExpr,
 };
+use garnet_parser::cst::{CstElement, CstNode, CstToken};
 use garnet_parser::error::ParseError;
-use garnet_parser::token::Span;
+use garnet_parser::token::{Span, TokenKind};
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tower_lsp::jsonrpc::Result as LspResult;
 use tower_lsp::lsp_types::{
+    CodeAction, CodeActionKind, CodeActionOrCommand, CodeActionParams, CodeActionResponse,
     Diagnostic, DiagnosticSeverity, DidChangeTextDocumentParams, DidOpenTextDocumentParams,
-    DidSaveTextDocumentParams, GotoDefinitionParams, GotoDefinitionResponse, Hover, HoverContents,
-    HoverParams, InitializeParams, InitializeResult, InitializedParams, Location, MarkupContent,
-    MarkupKind, OneOf, Position, Range, ServerCapabilities, TextDocumentSyncCapability,
-    TextDocumentSyncKind, Url,
+    DidSaveTextDocumentParams, DocumentSymbol, DocumentSymbolParams, DocumentSymbolResponse,
+    GotoDefinitionParams, GotoDefinitionResponse, Hover, HoverContents, HoverParams,
+    InitializeParams, InitializeResult, InitializedParams, Location, MarkupContent, MarkupKind,
+    NumberOrString, OneOf, Position, Range, RenameParams, SemanticToken, SemanticTokenType,
+    SemanticTokens, SemanticTokensFullOptions, SemanticTokensLegend, SemanticTokensOptions,
+    SemanticTokensParams, SemanticTokensResult, SemanticTokensServerCapabilities,
+    ServerCapabilities, SymbolInformation, SymbolKind, TextDocumentSyncCapability,
+    TextDocumentSyncKind, TextEdit, Url, WorkspaceEdit, WorkspaceSymbolParams,
 };
 use tower_lsp::{async_trait, Client, LanguageServer};
 
@@ -90,6 +96,14 @@ impl LineIndex {
         Range { start, end }
     }
 
+    pub fn insert_range_at_offset(&self, offset: usize) -> Range {
+        let position = self.offset_to_position(offset);
+        Range {
+            start: position,
+            end: position,
+        }
+    }
+
     pub fn document_range(&self) -> Range {
         Range {
             start: Position::new(0, 0),
@@ -151,13 +165,29 @@ pub fn analyze_source(source: &str) -> Analysis {
     let mut diagnostics = Vec::new();
     let mut symbols = BTreeMap::new();
 
-    match garnet_parser::parse_source(source) {
-        Ok(module) => {
+    match garnet_parser::parse_source_cst(source) {
+        Ok((module, _cst_node)) => {
             collect_symbols(source, &line_index, &module, &mut symbols);
             diagnostics.extend(check_diagnostics(
                 garnet_check::check_module(&module),
                 &line_index,
             ));
+
+            // Wire S10 rules-based suggestions into LSP diagnostics as INFORMATION
+            let suggestions = garnet_check::suggest::suggest_for_module(&module);
+            for sugg in suggestions {
+                if let Some(fn_def) = find_function_in_module(&module, &sugg.function) {
+                    let range = line_index.span_to_range(fn_def.span);
+                    diagnostics.push(Diagnostic {
+                        range,
+                        severity: Some(DiagnosticSeverity::INFORMATION),
+                        code: Some(NumberOrString::String(sugg.rule.id().to_string())),
+                        source: Some("garnet-check".to_string()),
+                        message: sugg.message.clone(),
+                        ..Diagnostic::default()
+                    });
+                }
+            }
         }
         Err(error) => diagnostics.push(parse_diagnostic(error, &line_index)),
     }
@@ -168,6 +198,31 @@ pub fn analyze_source(source: &str) -> Analysis {
         diagnostics,
         symbols,
     }
+}
+
+fn find_function_in_module<'a>(module: &'a Module, name: &str) -> Option<&'a FnDef> {
+    find_function_in_items(&module.items, name)
+}
+
+fn find_function_in_items<'a>(items: &'a [Item], name: &str) -> Option<&'a FnDef> {
+    for item in items {
+        match item {
+            Item::Fn(fn_def) if fn_def.name == name => return Some(fn_def),
+            Item::Fn(_) => {}
+            Item::Module(mod_decl) => {
+                if let Some(fn_def) = find_function_in_items(&mod_decl.items, name) {
+                    return Some(fn_def);
+                }
+            }
+            Item::Impl(impl_block) => {
+                if let Some(method) = impl_block.methods.iter().find(|method| method.name == name) {
+                    return Some(method);
+                }
+            }
+            _ => {}
+        }
+    }
+    None
 }
 
 fn parse_diagnostic(error: ParseError, line_index: &LineIndex) -> Diagnostic {
@@ -552,6 +607,140 @@ fn is_ident_char(ch: char) -> bool {
     ch == '_' || ch.is_ascii_alphanumeric()
 }
 
+fn collect_identifier_spans(node: &CstNode, name: &str, spans: &mut Vec<Span>) {
+    for child in &node.children {
+        match child {
+            CstElement::Node(child_node) => {
+                collect_identifier_spans(child_node, name, spans);
+            }
+            CstElement::Token(token) => {
+                if let TokenKind::Ident(ident_name) = &token.kind {
+                    if ident_name == name {
+                        spans.push(token.span);
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn collect_all_cst_tokens(node: &CstNode, tokens: &mut Vec<CstToken>) {
+    for child in &node.children {
+        match child {
+            CstElement::Node(child_node) => {
+                collect_all_cst_tokens(child_node, tokens);
+            }
+            CstElement::Token(token) => {
+                tokens.push(token.clone());
+            }
+        }
+    }
+}
+
+struct TempSemanticToken {
+    line: u32,
+    character: u32,
+    length: u32,
+    token_type: u32,
+}
+
+fn is_keyword_kind(kind: &TokenKind) -> bool {
+    matches!(
+        kind,
+        TokenKind::KwModule
+            | TokenKind::KwUse
+            | TokenKind::KwPub
+            | TokenKind::KwDo
+            | TokenKind::KwEnd
+            | TokenKind::KwDef
+            | TokenKind::KwFn
+            | TokenKind::KwLet
+            | TokenKind::KwVar
+            | TokenKind::KwConst
+            | TokenKind::KwType
+            | TokenKind::KwTrait
+            | TokenKind::KwImpl
+            | TokenKind::KwStruct
+            | TokenKind::KwEnum
+            | TokenKind::KwMemory
+            | TokenKind::KwWorking
+            | TokenKind::KwEpisodic
+            | TokenKind::KwSemantic
+            | TokenKind::KwProcedural
+            | TokenKind::KwActor
+            | TokenKind::KwProtocol
+            | TokenKind::KwOn
+            | TokenKind::KwSpawn
+            | TokenKind::KwSend
+            | TokenKind::KwIf
+            | TokenKind::KwElsif
+            | TokenKind::KwElse
+            | TokenKind::KwWhile
+            | TokenKind::KwFor
+            | TokenKind::KwIn
+            | TokenKind::KwLoop
+            | TokenKind::KwBreak
+            | TokenKind::KwContinue
+            | TokenKind::KwReturn
+            | TokenKind::KwYield
+            | TokenKind::KwNext
+            | TokenKind::KwMatch
+            | TokenKind::KwWhen
+            | TokenKind::KwTry
+            | TokenKind::KwRescue
+            | TokenKind::KwEnsure
+            | TokenKind::KwRaise
+            | TokenKind::KwOwn
+            | TokenKind::KwBorrow
+            | TokenKind::KwRef
+            | TokenKind::KwMut
+            | TokenKind::KwMove
+            | TokenKind::KwDyn
+            | TokenKind::KwAs
+            | TokenKind::KwAnd
+            | TokenKind::KwOr
+            | TokenKind::KwNot
+            | TokenKind::KwTrue
+            | TokenKind::KwFalse
+            | TokenKind::KwNil
+            | TokenKind::KwSelf_
+            | TokenKind::KwSuper
+    )
+}
+
+fn is_operator_kind(kind: &TokenKind) -> bool {
+    matches!(
+        kind,
+        TokenKind::Plus
+            | TokenKind::Minus
+            | TokenKind::Star
+            | TokenKind::Slash
+            | TokenKind::Percent
+            | TokenKind::Eq
+            | TokenKind::EqEq
+            | TokenKind::BangEq
+            | TokenKind::Lt
+            | TokenKind::Gt
+            | TokenKind::LtEq
+            | TokenKind::GtEq
+            | TokenKind::Bang
+            | TokenKind::Question
+            | TokenKind::PipeGt
+            | TokenKind::Pipe
+            | TokenKind::DotDot
+            | TokenKind::DotDotDot
+            | TokenKind::FatArrow
+            | TokenKind::Arrow
+            | TokenKind::PlusEq
+            | TokenKind::MinusEq
+            | TokenKind::StarEq
+            | TokenKind::SlashEq
+            | TokenKind::PercentEq
+            | TokenKind::Amp
+            | TokenKind::At
+    )
+}
+
 #[derive(Debug)]
 pub struct Backend {
     client: Client,
@@ -589,6 +778,35 @@ impl LanguageServer for Backend {
                 )),
                 hover_provider: Some(tower_lsp::lsp_types::HoverProviderCapability::Simple(true)),
                 definition_provider: Some(OneOf::Left(true)),
+                document_symbol_provider: Some(OneOf::Left(true)),
+                workspace_symbol_provider: Some(OneOf::Left(true)),
+                rename_provider: Some(OneOf::Left(true)),
+                code_action_provider: Some(
+                    tower_lsp::lsp_types::CodeActionProviderCapability::Simple(true),
+                ),
+                semantic_tokens_provider: Some(
+                    SemanticTokensServerCapabilities::SemanticTokensOptions(
+                        SemanticTokensOptions {
+                            legend: SemanticTokensLegend {
+                                token_types: vec![
+                                    SemanticTokenType::KEYWORD,
+                                    SemanticTokenType::COMMENT,
+                                    SemanticTokenType::STRING,
+                                    SemanticTokenType::NUMBER,
+                                    SemanticTokenType::TYPE,
+                                    SemanticTokenType::FUNCTION,
+                                    SemanticTokenType::VARIABLE,
+                                    SemanticTokenType::DECORATOR,
+                                    SemanticTokenType::OPERATOR,
+                                ],
+                                token_modifiers: vec![],
+                            },
+                            range: Some(false),
+                            full: Some(SemanticTokensFullOptions::Bool(true)),
+                            ..Default::default()
+                        },
+                    ),
+                ),
                 ..ServerCapabilities::default()
             },
             server_info: Some(tower_lsp::lsp_types::ServerInfo {
@@ -663,6 +881,335 @@ impl LanguageServer for Backend {
             .definition_at(position, uri)
             .map(GotoDefinitionResponse::Scalar))
     }
+
+    async fn document_symbol(
+        &self,
+        params: DocumentSymbolParams,
+    ) -> LspResult<Option<DocumentSymbolResponse>> {
+        let uri = params.text_document.uri;
+        let Some(analysis) = self.analyze_uri(&uri).await else {
+            return Ok(None);
+        };
+        let mut symbols = Vec::new();
+        for sym in analysis.symbols().values() {
+            let kind = match sym.detail.split_whitespace().next() {
+                Some("struct") => SymbolKind::STRUCT,
+                Some("enum") => SymbolKind::ENUM,
+                Some("trait") | Some("protocol") => SymbolKind::INTERFACE,
+                Some("actor") => SymbolKind::CLASS,
+                Some("memory") => SymbolKind::FIELD,
+                Some("module") => SymbolKind::MODULE,
+                Some("const") => SymbolKind::CONSTANT,
+                Some("let") => SymbolKind::VARIABLE,
+                Some("def") | Some("fn") => SymbolKind::FUNCTION,
+                _ => SymbolKind::FUNCTION,
+            };
+            #[allow(deprecated)]
+            symbols.push(DocumentSymbol {
+                name: sym.name.clone(),
+                detail: Some(sym.detail.clone()),
+                kind,
+                tags: None,
+                deprecated: None,
+                range: sym.range,
+                selection_range: sym.selection_range,
+                children: None,
+            });
+        }
+        Ok(Some(DocumentSymbolResponse::Nested(symbols)))
+    }
+
+    async fn symbol(
+        &self,
+        params: WorkspaceSymbolParams,
+    ) -> LspResult<Option<Vec<SymbolInformation>>> {
+        let query = params.query.to_lowercase();
+        let documents = self.documents.lock().await;
+        let mut result = Vec::new();
+        for (uri, source) in documents.iter() {
+            let analysis = analyze_source(source);
+            for sym in analysis.symbols().values() {
+                if sym.name.to_lowercase().contains(&query) {
+                    let kind = match sym.detail.split_whitespace().next() {
+                        Some("struct") => SymbolKind::STRUCT,
+                        Some("enum") => SymbolKind::ENUM,
+                        Some("trait") | Some("protocol") => SymbolKind::INTERFACE,
+                        Some("actor") => SymbolKind::CLASS,
+                        Some("memory") => SymbolKind::FIELD,
+                        Some("module") => SymbolKind::MODULE,
+                        Some("const") => SymbolKind::CONSTANT,
+                        Some("let") => SymbolKind::VARIABLE,
+                        Some("def") | Some("fn") => SymbolKind::FUNCTION,
+                        _ => SymbolKind::FUNCTION,
+                    };
+                    #[allow(deprecated)]
+                    result.push(SymbolInformation {
+                        name: sym.name.clone(),
+                        kind,
+                        tags: None,
+                        deprecated: None,
+                        location: Location {
+                            uri: uri.clone(),
+                            range: sym.selection_range,
+                        },
+                        container_name: None,
+                    });
+                }
+            }
+        }
+        Ok(Some(result))
+    }
+
+    async fn rename(&self, params: RenameParams) -> LspResult<Option<WorkspaceEdit>> {
+        let uri = params.text_document_position.text_document.uri;
+        let position = params.text_document_position.position;
+        let new_name = params.new_name;
+
+        let documents = self.documents.lock().await;
+        let Some(active_source) = documents.get(&uri) else {
+            return Ok(None);
+        };
+
+        let line_index = LineIndex::new(active_source);
+        let offset = line_index.position_to_offset(position);
+        let Some((start, end)) = ident_bounds_at_offset(active_source, offset) else {
+            return Ok(None);
+        };
+        let target_name = active_source[start..end].to_string();
+
+        let mut changes = HashMap::new();
+
+        for (doc_uri, source) in documents.iter() {
+            let doc_line_index = LineIndex::new(source);
+            let mut spans = Vec::new();
+            if let Ok((_, cst_root)) = garnet_parser::parse_source_cst(source) {
+                collect_identifier_spans(&cst_root, &target_name, &mut spans);
+            } else {
+                let mut start_idx = 0;
+                while let Some(pos) = source[start_idx..].find(&target_name) {
+                    let actual_pos = start_idx + pos;
+                    let is_word_start = actual_pos == 0
+                        || !is_ident_char(source.chars().nth(actual_pos - 1).unwrap());
+                    let is_word_end = actual_pos + target_name.len() == source.len()
+                        || !is_ident_char(
+                            source.chars().nth(actual_pos + target_name.len()).unwrap(),
+                        );
+                    if is_word_start && is_word_end {
+                        spans.push(Span::new(actual_pos, target_name.len()));
+                    }
+                    start_idx = actual_pos + target_name.len().max(1);
+                }
+            }
+
+            if !spans.is_empty() {
+                let edits = spans
+                    .into_iter()
+                    .map(|span| TextEdit {
+                        range: doc_line_index.span_to_range(span),
+                        new_text: new_name.clone(),
+                    })
+                    .collect();
+                changes.insert(doc_uri.clone(), edits);
+            }
+        }
+
+        Ok(Some(WorkspaceEdit {
+            changes: Some(changes),
+            document_changes: None,
+            change_annotations: None,
+        }))
+    }
+
+    async fn code_action(&self, params: CodeActionParams) -> LspResult<Option<CodeActionResponse>> {
+        let uri = params.text_document.uri;
+        let documents = self.documents.lock().await;
+        let Some(source) = documents.get(&uri) else {
+            return Ok(None);
+        };
+        let line_index = LineIndex::new(source);
+        let mut responses = Vec::new();
+
+        if let Ok((module, _)) = garnet_parser::parse_source_cst(source) {
+            let suggestions = garnet_check::suggest::suggest_for_module(&module);
+            for sugg in suggestions {
+                let Some(fn_def) = find_function_in_module(&module, &sugg.function) else {
+                    continue;
+                };
+
+                let has_diagnostic = params.context.diagnostics.iter().any(|d| {
+                    d.message.contains(&sugg.message)
+                        || d.message.contains(sugg.rule.id())
+                        || d.code.as_ref().is_some_and(|code| {
+                            let code_str = match code {
+                                NumberOrString::String(s) => s.to_lowercase(),
+                                NumberOrString::Number(n) => n.to_string().to_lowercase(),
+                            };
+                            let rule_id = sugg.rule.id().to_lowercase().replace('_', "-");
+                            code_str == rule_id
+                                || code_str.contains(&rule_id)
+                                || rule_id.contains(&code_str)
+                        })
+                });
+
+                if !has_diagnostic {
+                    continue;
+                }
+
+                let mut changes = HashMap::new();
+                let edits = match sugg.rule {
+                    Rule::ManagedFnMissingCaps => {
+                        vec![TextEdit {
+                            range: line_index.insert_range_at_offset(fn_def.span.start),
+                            new_text: "@caps()\n".to_string(),
+                        }]
+                    }
+                    Rule::EmptyFunctionBody => {
+                        vec![TextEdit {
+                            range: line_index.span_to_range(fn_def.body.span),
+                            new_text: "{\n  // TODO: implement\n}".to_string(),
+                        }]
+                    }
+                    _ => vec![],
+                };
+
+                if !edits.is_empty() {
+                    changes.insert(uri.clone(), edits);
+                    let action = CodeAction {
+                        title: match sugg.rule {
+                            Rule::ManagedFnMissingCaps => {
+                                format!("Add `@caps()` to `def {}`", sugg.function)
+                            }
+                            Rule::EmptyFunctionBody => {
+                                format!("Stub empty body of `{}`", sugg.function)
+                            }
+                            _ => format!("Fix advisory rule: {}", sugg.rule.id()),
+                        },
+                        kind: Some(CodeActionKind::QUICKFIX),
+                        edit: Some(WorkspaceEdit {
+                            changes: Some(changes),
+                            ..Default::default()
+                        }),
+                        is_preferred: Some(true),
+                        ..Default::default()
+                    };
+                    responses.push(CodeActionOrCommand::CodeAction(action));
+                }
+            }
+        }
+
+        Ok(Some(responses))
+    }
+
+    async fn semantic_tokens_full(
+        &self,
+        params: SemanticTokensParams,
+    ) -> LspResult<Option<SemanticTokensResult>> {
+        let uri = params.text_document.uri;
+        let documents = self.documents.lock().await;
+        let Some(source) = documents.get(&uri) else {
+            return Ok(None);
+        };
+        let line_index = LineIndex::new(source);
+        let mut tokens = Vec::new();
+
+        if let Ok((_, cst_root)) = garnet_parser::parse_source_cst(source) {
+            let mut cst_tokens = Vec::new();
+            collect_all_cst_tokens(&cst_root, &mut cst_tokens);
+
+            let mut previous_kind = None;
+            for token in cst_tokens {
+                let token_type = match &token.kind {
+                    TokenKind::Comment(_) => Some(1), // comment
+                    TokenKind::Str(_) | TokenKind::RawStr(_) | TokenKind::Symbol(_) => Some(2), // string
+                    TokenKind::Int(_) | TokenKind::Float(_) => Some(3), // number
+
+                    TokenKind::Ident(name) => {
+                        if let Some(TokenKind::At) = previous_kind {
+                            Some(7) // decorator (e.g. @caps, @safe)
+                        } else if name == "fs"
+                            || name == "net"
+                            || name == "time"
+                            || name == "crypto"
+                            || name == "ratelimit"
+                            || name == "sandbox"
+                            || name == "registry"
+                            || name == "strings"
+                            || name == "collections"
+                            || name == "system"
+                        {
+                            Some(7) // decorator (capability name)
+                        } else if let Some(TokenKind::KwActor) = previous_kind {
+                            Some(4) // type (custom actor name)
+                        } else if let Some(TokenKind::KwStruct) = previous_kind {
+                            Some(4) // type (struct name)
+                        } else if let Some(TokenKind::KwEnum) = previous_kind {
+                            Some(4) // type (enum name)
+                        } else if let Some(TokenKind::KwTrait) = previous_kind {
+                            Some(4) // type (trait name)
+                        } else if let Some(TokenKind::KwFn) | Some(TokenKind::KwDef) = previous_kind
+                        {
+                            Some(5) // function (function name)
+                        } else {
+                            Some(6) // variable/identifier
+                        }
+                    }
+
+                    k if is_keyword_kind(k) => Some(0), // keyword
+                    k if is_operator_kind(k) => Some(8), // operator
+                    _ => None,
+                };
+
+                if !matches!(token.kind, TokenKind::Whitespace(_) | TokenKind::Comment(_)) {
+                    previous_kind = Some(token.kind.clone());
+                }
+
+                if let Some(ty_idx) = token_type {
+                    let pos = line_index.offset_to_position(token.span.start);
+                    tokens.push(TempSemanticToken {
+                        line: pos.line,
+                        character: pos.character,
+                        length: token.span.len as u32,
+                        token_type: ty_idx,
+                    });
+                }
+            }
+        }
+
+        tokens.sort_by(|a, b| {
+            a.line
+                .cmp(&b.line)
+                .then_with(|| a.character.cmp(&b.character))
+        });
+
+        let mut data = Vec::new();
+        let mut prev_line = 0u32;
+        let mut prev_char = 0u32;
+
+        for token in tokens {
+            let delta_line = token.line - prev_line;
+            let delta_start = if delta_line == 0 {
+                token.character - prev_char
+            } else {
+                token.character
+            };
+
+            data.push(SemanticToken {
+                delta_line,
+                delta_start,
+                length: token.length,
+                token_type: token.token_type,
+                token_modifiers_bitset: 0,
+            });
+
+            prev_line = token.line;
+            prev_char = token.character;
+        }
+
+        Ok(Some(SemanticTokensResult::Tokens(SemanticTokens {
+            result_id: None,
+            data,
+        })))
+    }
 }
 
 #[cfg(test)]
@@ -672,6 +1219,15 @@ mod tests {
     fn position_for(source: &str, needle: &str) -> Position {
         let offset = source.find(needle).expect("needle present");
         LineIndex::new(source).offset_to_position(offset)
+    }
+
+    #[test]
+    fn insert_range_is_zero_width() {
+        let source = "def main() {}\n";
+        let range = LineIndex::new(source).insert_range_at_offset(0);
+
+        assert_eq!(range.start, Position::new(0, 0));
+        assert_eq!(range.end, Position::new(0, 0));
     }
 
     #[test]
