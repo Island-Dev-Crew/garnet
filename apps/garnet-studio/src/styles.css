@@ -352,6 +352,10 @@ pre {
   background: var(--garnet-strong);
 }
 
+.dot.warn {
+  background: #d2a23a;
+}
+
 .evidence-root {
   display: grid;
   gap: 5px;

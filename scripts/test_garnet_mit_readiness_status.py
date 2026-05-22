@@ -47,7 +47,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertEqual(
             "active-partial", lanes["windows_linux_distribution"].status
         )
-        self.assertEqual(50.0, lanes["windows_linux_distribution"].completion_percent)
+        self.assertEqual(55.0, lanes["windows_linux_distribution"].completion_percent)
         self.assertLess(
             lanes["windows_linux_distribution"].completion_percent, 100.0
         )
@@ -124,6 +124,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("formal RustBelt/Iris/Coq mechanization", lanes["proof_empirics"]["deferred"])
         self.assertIn("Tauri v2 shell scaffold", lanes["windows_linux_distribution"]["evidence"])
         self.assertIn("v0.5 readiness reporter parity", lanes["windows_linux_distribution"]["evidence"])
+        self.assertIn("clean-VM installer proof contract", lanes["windows_linux_distribution"]["evidence"])
         self.assertIn("clean Windows VM", " ".join(lanes["windows_linux_distribution"]["blocked_by"]))
         self.assertIn("diagnostics, hover, and basic go-to-definition", lanes["editor_lsp_adoption"]["evidence"])
         self.assertIn("standalone-vscode-gate", lanes["editor_lsp_adoption"]["evidence"])
@@ -279,12 +280,12 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         self.assertIn("Objective accounting", site)
         self.assertIn("MIT/productization objective", site)
-        self.assertIn("71.3%", site)
+        self.assertIn("75.4%", site)
         self.assertNotIn("58.1%", site)
         self.assertNotIn("55.8%", site)
         self.assertNotIn("57.9%", site)
         self.assertNotIn("58.6%", site)
-        self.assertIn("71.3%", status_site)
+        self.assertIn("75.4%", status_site)
         self.assertNotIn("58.1%", status_site)
         self.assertNotIn("55.8%", status_site)
         self.assertNotIn("57.9%", status_site)

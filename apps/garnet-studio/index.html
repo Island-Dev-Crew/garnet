@@ -247,6 +247,7 @@
           <button id="btn-proof-status" class="secondary">Proof / Benchmark Status</button>
           <button id="btn-benchmark-no-run" class="secondary">Benchmark No-Run</button>
           <button id="btn-notarization" class="secondary">Notarization Status</button>
+          <button id="btn-windows-vm-installer" class="secondary">Windows VM Installer</button>
         </div>
 
         <div class="status-grid release-lines">
@@ -268,7 +269,14 @@
             <span class="dot fail"></span>
             <div>
               <strong>Open gates</strong>
-              <span>Linux launch, clean Windows VM installer proof, signing, MSI, winget, and notarization.</span>
+              <span>Clean Windows VM proof bundle, Linux launch, signing, MSI, winget, and notarization.</span>
+            </div>
+          </div>
+          <div class="status-tile">
+            <span class="dot warn"></span>
+            <div>
+              <strong>Windows target order</strong>
+              <span>x64 clean-VM proof first; ARM64 follows; 32-bit waits for demand.</span>
             </div>
           </div>
         </div>

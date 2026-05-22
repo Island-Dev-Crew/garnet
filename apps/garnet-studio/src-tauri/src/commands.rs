@@ -287,6 +287,15 @@ pub fn notarization_status() -> CommandResult {
 }
 
 #[tauri::command]
+pub fn windows_vm_installer_status() -> CommandResult {
+    run_python_script(
+        "windows-vm-installer-status",
+        "garnet_windows_clean_vm_installer_status.py",
+        vec!["--format".to_string(), "markdown".to_string()],
+    )
+}
+
+#[tauri::command]
 pub fn create_evidence_bundle() -> Result<evidence::EvidenceBundle, String> {
     evidence::create_bundle()
 }

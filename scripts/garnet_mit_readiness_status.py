@@ -208,13 +208,13 @@ def read_status() -> MitReadinessStatus:
             id="windows_linux_distribution",
             label="Windows/Linux distribution",
             status="active-partial",
-            completion_percent=50.0,
+            completion_percent=55.0,
             evidence=(
                 "`scripts/garnet_windows_linux_studio_status.py` now reports the "
                 "Tauri v2 shell scaffold in `apps/garnet-studio`, minimal webview "
                 "permissions, Windows local release build/smoke evidence, v0.5 "
-                "readiness reporter parity actions, and open Linux plus "
-                "clean-machine package gates."
+                "readiness reporter parity actions, a Windows clean-VM installer "
+                "proof contract, and open Linux plus clean-machine package gates."
             ),
             blocked_by=list(wls.user_assistance_needed),
             deferred=list(wls.next_slices),

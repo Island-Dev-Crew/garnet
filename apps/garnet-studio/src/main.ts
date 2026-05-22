@@ -303,6 +303,9 @@ window.addEventListener("DOMContentLoaded", () => {
   wireButton("btn-proof-status", () => runCommand("release-result", "proof_benchmark_status", {}));
   wireButton("btn-benchmark-no-run", () => runCommand("release-result", "benchmark_no_run", {}));
   wireButton("btn-notarization", () => runCommand("release-result", "notarization_status", {}));
+  wireButton("btn-windows-vm-installer", () =>
+    runCommand("release-result", "windows_vm_installer_status", {}),
+  );
 
   wireButton("btn-evidence", async () => {
     try {

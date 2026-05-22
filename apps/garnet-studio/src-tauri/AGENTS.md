@@ -27,9 +27,10 @@ checker, parser, or macOS SwiftUI Studio implementation.
 - The Release / Readiness commands are wrappers around repo reporters only:
   Windows/Linux Studio status, converter fit/provider-options status,
   MIT objective/demo/deck evidence, Mac continuation boundaries, proof and
-  benchmark status, benchmark no-run compile evidence, and notarization
-  preflight status. They must not upgrade platform, package, provider, proof,
-  or notarization claims without separate target-system evidence.
+  benchmark status, benchmark no-run compile evidence, Windows clean-VM
+  installer proof status, and notarization preflight status. They must not
+  upgrade platform, package, provider, proof, or notarization claims without
+  separate target-system evidence.
 
 ## Required Checks
 

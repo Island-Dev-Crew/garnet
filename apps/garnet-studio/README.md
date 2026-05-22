@@ -18,8 +18,8 @@ scripts, docs/PWA truth, and dogfood readiness matrix.
 - The Release / Readiness panel calls the same repo-native reporters used by the
   macOS reference surface: Windows/Linux Studio status, converter fit/provider
   options, MIT objective/demo/deck evidence, Mac continuation boundaries, proof
-  and benchmark status, benchmark no-run compile evidence, and notarization
-  preflight status.
+  and benchmark status, benchmark no-run compile evidence, Windows clean-VM
+  installer proof status, and notarization preflight status.
 
 ## Local Verification
 

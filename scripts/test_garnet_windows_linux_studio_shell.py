@@ -55,6 +55,7 @@ class GarnetWindowsLinuxStudioShellTests(unittest.TestCase):
             "proof_benchmark_status",
             "benchmark_no_run",
             "notarization_status",
+            "windows_vm_installer_status",
             "create_evidence_bundle",
         ]:
             self.assertIn(command, backend + lib)
@@ -79,6 +80,7 @@ class GarnetWindowsLinuxStudioShellTests(unittest.TestCase):
             "Proof / Benchmark Status",
             "Benchmark No-Run",
             "Notarization Status",
+            "Windows VM Installer",
         ]:
             self.assertIn(copy, frontend)
 
@@ -93,6 +95,7 @@ class GarnetWindowsLinuxStudioShellTests(unittest.TestCase):
             "proof_benchmark_status",
             "benchmark_no_run",
             "notarization_status",
+            "windows_vm_installer_status",
         ]:
             self.assertIn(command, main)
 
@@ -100,8 +103,10 @@ class GarnetWindowsLinuxStudioShellTests(unittest.TestCase):
         self.assertIn("garnet_converter_llm_feasibility.py", backend)
         self.assertIn("garnet_mit_deck_preview.py", backend)
         self.assertIn("garnet_studio_notarization_status.py", backend)
+        self.assertIn("garnet_windows_clean_vm_installer_status.py", backend)
         self.assertIn("Linux launch", frontend)
-        self.assertIn("clean Windows VM installer proof", frontend)
+        self.assertIn("Clean Windows VM proof bundle", frontend)
+        self.assertIn("x64 clean-VM proof first", frontend)
         self.assertNotIn("Windows/Linux desktop runtime complete", frontend)
         self.assertNotIn("provider-backed conversion is active", frontend)
 
