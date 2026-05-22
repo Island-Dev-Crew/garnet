@@ -31,6 +31,7 @@ pub fn run() {
             proof_benchmark_status,
             benchmark_no_run,
             notarization_status,
+            windows_vm_installer_status,
             create_evidence_bundle,
             get_evidence_dir,
             get_language_taxonomy,

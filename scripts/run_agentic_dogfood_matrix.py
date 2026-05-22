@@ -2542,7 +2542,7 @@ def probe_set(
                     "'objective_pulse', 'agentic_dogfood_matrix', 'windows_linux_studio_status', "
                     "'converter_status', 'provider_options', 'mit_demo_route', 'mit_deck_outline', "
                     "'mit_deck_preview', 'mac_continuation_pulse', 'proof_benchmark_status', "
-                    "'benchmark_no_run', 'notarization_status']\n"
+                    "'benchmark_no_run', 'notarization_status', 'windows_vm_installer_status']\n"
                     "missing = [item for item in required if item not in backend]\n"
                     "assert not missing, missing\n"
                     "assert 'Rust/Ruby/Python/Go to Garnet' in frontend\n"
@@ -2575,12 +2575,14 @@ def probe_set(
                     "'garnet_converter_llm_feasibility.py', 'garnet_mit_demo_route.py', "
                     "'garnet_mit_deck_outline.py', 'garnet_mit_deck_preview.py', "
                     "'garnet_mac_side_continuation_status.py', 'garnet_proof_benchmark_status.py', "
-                    "'garnet_benchmark_no_run.py', 'garnet_studio_notarization_status.py']\n"
+                    "'garnet_benchmark_no_run.py', 'garnet_studio_notarization_status.py', "
+                    "'garnet_windows_clean_vm_installer_status.py']\n"
                     "missing_backend = [item for item in required_backend if item not in backend]\n"
                     "assert not missing_backend, missing_backend\n"
                     "required_frontend = ['Windows/Linux Status', 'Provider Options', 'Demo Route', "
                     "'Deck Outline', 'Deck Preview', 'Continuation Pulse', 'Proof / Benchmark Status', "
-                    "'Benchmark No-Run', 'Notarization Status', 'clean Windows VM installer proof']\n"
+                    "'Benchmark No-Run', 'Notarization Status', 'Windows VM Installer', "
+                    "'Clean Windows VM proof bundle']\n"
                     "missing_frontend = [item for item in required_frontend if item not in frontend]\n"
                     "assert not missing_frontend, missing_frontend\n"
                     "assert 'provider-backed conversion is active' not in frontend\n"
@@ -2637,6 +2639,76 @@ def probe_set(
             True,
             ("windows linux studio evidence smoke present",),
             security_domain="release-integrity",
+        ),
+        Probe(
+            "report-windows-clean-vm-installer-status-script",
+            "Windows clean VM installer proof",
+            "Windows Studio clean-VM proof should have a repo-owned status script and target architecture posture",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "import json, subprocess, sys\n"
+                    f"script = {str(ROOT / 'scripts' / 'garnet_windows_clean_vm_installer_status.py')!r}\n"
+                    "data = json.loads(subprocess.check_output([sys.executable, script, '--format', 'json'], text=True))\n"
+                    "targets = {item['id']: item for item in data['package_targets']}\n"
+                    "assert data['clean_vm_verified'] is False\n"
+                    "assert targets['studio-windows-x64-nsis']['rust_target'] == 'x86_64-pc-windows-msvc'\n"
+                    "assert targets['studio-windows-arm64-nsis']['rust_target'] == 'aarch64-pc-windows-msvc'\n"
+                    "assert targets['studio-windows-x86-nsis']['status'] == 'deferred-until-user-demand'\n"
+                    "print('windows clean vm installer status contract present')\n"
+                ),
+            ],
+            True,
+            ("windows clean vm installer status contract present",),
+            security_domain="release-integrity",
+        ),
+        Probe(
+            "report-windows-clean-vm-proof-boundary",
+            "Windows clean VM installer proof",
+            "Windows clean-VM proof should not turn current-host or unsigned evidence into signed installer claims",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"script = Path({str(ROOT / 'scripts' / 'garnet_windows_clean_vm_installer_status.py')!r}).read_text()\n"
+                    "required = ['current-host', 'clean-vm', 'source_included', 'provider_api_called', "
+                    "'signed Windows MSI is available', 'winget install path is verified']\n"
+                    "missing = [item for item in required if item not in script]\n"
+                    "assert not missing, missing\n"
+                    "assert 'run installers on the current host' in script\n"
+                    "print('windows clean vm proof boundary present')\n"
+                ),
+            ],
+            True,
+            ("windows clean vm proof boundary present",),
+            security_domain="release-integrity",
+        ),
+        Probe(
+            "report-windows-clean-vm-studio-action",
+            "Windows clean VM installer proof",
+            "Windows/Linux Studio should expose the clean-VM installer proof status without adding shell permissions",
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from pathlib import Path\n"
+                    f"root = Path({str(tauri_studio)!r})\n"
+                    "backend = (root / 'src-tauri' / 'src' / 'commands.rs').read_text()\n"
+                    "frontend = (root / 'index.html').read_text()\n"
+                    "main = (root / 'src' / 'main.ts').read_text()\n"
+                    "capability = (root / 'src-tauri' / 'capabilities' / 'default.json').read_text()\n"
+                    "assert 'windows_vm_installer_status' in backend and 'windows_vm_installer_status' in main\n"
+                    "assert 'garnet_windows_clean_vm_installer_status.py' in backend\n"
+                    "assert 'Windows VM Installer' in frontend\n"
+                    "assert 'core:default' in capability and 'shell:' not in capability\n"
+                    "print('windows clean vm studio action present')\n"
+                ),
+            ],
+            True,
+            ("windows clean vm studio action present",),
+            security_domain="sandbox",
         ),
         Probe(
             "report-converter-advisory-bundle-current-truth",
@@ -3642,7 +3714,7 @@ def probe_set(
                 "\"design_contract_path\": \"docs/promo/DESIGN.md\"",
                 "\"timeline_registered\": true",
                 "\"tool\": \"hyperframes-html\"",
-                "\"dogfood_probe_count\": 147",
+                "\"dogfood_probe_count\": 150",
                 "\"dogfood_probe_count_matches\": true",
             ),
             security_domain="release-integrity",

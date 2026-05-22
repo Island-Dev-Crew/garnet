@@ -302,6 +302,21 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertIn("report-windows-linux-studio-advisory-boundary", ids)
         self.assertIn("report-windows-linux-studio-evidence-smoke", ids)
 
+    def test_probe_inventory_includes_windows_clean_vm_installer_proof(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            fixtures = matrix.prepare_fixtures(work)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
+            concrete_probes = [probe for probe in probes if isinstance(probe, matrix.Probe)]
+
+        ids = {probe.id for probe in concrete_probes}
+        domains = Counter(probe.domain for probe in concrete_probes)
+
+        self.assertEqual(domains["Windows clean VM installer proof"], 3)
+        self.assertIn("report-windows-clean-vm-installer-status-script", ids)
+        self.assertIn("report-windows-clean-vm-proof-boundary", ids)
+        self.assertIn("report-windows-clean-vm-studio-action", ids)
+
     def test_probe_inventory_includes_converter_advisory_bundle(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp)

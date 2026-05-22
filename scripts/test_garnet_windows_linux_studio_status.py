@@ -76,6 +76,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
                 "proof_benchmark_status",
                 "benchmark_no_run",
                 "notarization_status",
+                "windows_vm_installer_status",
             },
             action_ids,
         )
@@ -180,12 +181,14 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
         )
         data = json.loads(output)
         self.assertEqual(
-            "tauri-v2-shell-v0-5-readiness-parity-windows-build-verified-linux-open",
+            "tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-contract-open-linux-open",
             data["status"],
         )
         truth = " ".join(data["current_truth"])
         self.assertIn("Tauri v2 is now adopted", truth)
         self.assertIn("v0.5 reporters", truth)
+        self.assertIn("repo-owned evidence contract", truth)
+        self.assertIn("Windows ARM64 follows after x64 proof", truth)
         self.assertIn("Linux runtime proof is not complete", " ".join(data["current_truth"]))
         self.assertFalse(data["safety_contract"]["calls_provider_apis_by_default"])
         self.assertFalse(data["safety_contract"]["includes_source_by_default"])
@@ -194,6 +197,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
         self.assertIn("Garnet Windows/Linux Studio Status", markdown)
         self.assertIn("Tauri v2 is accepted", markdown)
         self.assertIn("MIT Deck Preview", markdown)
+        self.assertIn("windows_target_architecture_matrix", markdown)
         self.assertIn("signed Windows MSI for Studio", json.dumps(data["safety_contract"]["forbidden_claims"]))
 
 

@@ -19,6 +19,9 @@ from pathlib import Path
 from typing import Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+import garnet_windows_clean_vm_installer_status  # noqa: E402
 
 ACTIVE_CONVERSION = ["Rust", "Ruby", "Python", "Go"]
 ADVISORY_PLANNING = [
@@ -479,6 +482,21 @@ def build_command_plan(
             False,
             False,
         )
+    if action_id == "windows_vm_installer_status":
+        return CommandPlan(
+            action_id,
+            "Windows VM Installer Status",
+            [
+                python_executable,
+                _script("garnet_windows_clean_vm_installer_status.py", repo_root),
+                "--format",
+                "markdown",
+            ],
+            workdir,
+            False,
+            False,
+            False,
+        )
     raise CommandContractError(f"unknown Studio action: {action_id}")
 
 
@@ -538,6 +556,7 @@ def _sample_actions() -> list[StudioAction]:
         build_command_plan("proof_benchmark_status", evidence_dir=evidence),
         build_command_plan("benchmark_no_run", evidence_dir=evidence),
         build_command_plan("notarization_status"),
+        build_command_plan("windows_vm_installer_status"),
     ]
     groups = {
         "cli_health": "runtime",
@@ -561,6 +580,7 @@ def _sample_actions() -> list[StudioAction]:
         "proof_benchmark_status": "proof evidence",
         "benchmark_no_run": "proof evidence",
         "notarization_status": "platform boundary",
+        "windows_vm_installer_status": "release evidence",
     }
     surfaces = {
         "cli_health": "garnet CLI version probe",
@@ -584,6 +604,7 @@ def _sample_actions() -> list[StudioAction]:
         "proof_benchmark_status": "scripts/garnet_proof_benchmark_status.py",
         "benchmark_no_run": "scripts/garnet_benchmark_no_run.py",
         "notarization_status": "scripts/garnet_studio_notarization_status.py",
+        "windows_vm_installer_status": "scripts/garnet_windows_clean_vm_installer_status.py",
     }
     return [
         StudioAction(
@@ -601,14 +622,16 @@ def _sample_actions() -> list[StudioAction]:
 
 
 def read_status() -> WindowsLinuxStudioStatus:
+    clean_vm = garnet_windows_clean_vm_installer_status.read_status()
     return WindowsLinuxStudioStatus(
         source=str(ROOT),
-        status="tauri-v2-shell-v0-5-readiness-parity-windows-build-verified-linux-open",
+        status="tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-contract-open-linux-open",
         current_truth=[
             "origin/main is newer than PR #140; live main remains the source of truth",
             "macOS SwiftUI Studio remains the native Apple reference app",
             "Tauri v2 is now adopted for the first Windows/Linux shell scaffold in `apps/garnet-studio`",
             "Windows local source-build proof exists for the Tauri frontend, backend tests, release executable, unsigned NSIS bundle, and `--studio-smoke` evidence",
+            "Windows clean-VM installer proof now has a repo-owned evidence contract and status reporter; it is not verified until a fresh VM bundle is recorded",
             "Linux runtime proof is not complete until the shell launches in a Linux desktop environment",
             "Windows clean-machine installer proof remains open until the unsigned NSIS artifact is exercised in a fresh VM",
             "the shell wraps existing CLI, docs/PWA, advisory scripts, and dogfood gates without duplicating converter logic",
@@ -617,6 +640,7 @@ def read_status() -> WindowsLinuxStudioStatus:
             "provider options remain advisory-only; provider-backed conversion is not active",
             "benchmark no-run evidence is compile/status evidence only and does not claim performance measurements",
             "notarization status is a Mac-side preflight boundary, not a Windows completion claim",
+            "Windows x64 is the first clean-VM Studio installer target; Windows ARM64 follows after x64 proof; 32-bit Windows is deferred until demand justifies the QA surface",
         ],
         least_new_dependency_decision=(
             "Tauri v2 is accepted for the first shell scaffold. The scaffold keeps webview permissions minimal "
@@ -675,9 +699,16 @@ def read_status() -> WindowsLinuxStudioStatus:
             PackagingGate(
                 id="windows_unsigned_nsis",
                 platform="Windows",
-                status="local-pass-unsigned",
-                next_evidence="Exercise the generated unsigned NSIS installer in a clean Windows VM and preserve logs/screenshots",
+                status="contract-ready-clean-vm-open",
+                next_evidence="Record a clean Windows VM proof bundle with `scripts/garnet_windows_clean_vm_installer_status.py --record-proof --mode clean-vm ...`",
                 forbidden_claim="signed or clean-machine Windows installer is verified",
+            ),
+            PackagingGate(
+                id="windows_target_architecture_matrix",
+                platform="Windows",
+                status="documented-first-target",
+                next_evidence="x64 clean-VM proof first, then ARM64 target build/smoke; 32-bit remains deferred until demand",
+                forbidden_claim="all Windows architectures are packaged and verified",
             ),
             PackagingGate(
                 id="windows_msi_signing",
@@ -711,6 +742,7 @@ def read_status() -> WindowsLinuxStudioStatus:
             "Website/status copy sync after target smoke evidence",
         ],
         user_assistance_needed=[
+            *clean_vm.blocked_by,
             "Run the unsigned NSIS installer in a clean Windows VM for installer/runtime launch evidence",
             "Provide a Linux VM/container with GUI or AppImage-capable desktop session for runtime launch evidence",
             "Provide signing credentials only when ready to verify signed MSI claims",
