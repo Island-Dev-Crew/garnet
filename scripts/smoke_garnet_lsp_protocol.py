@@ -217,6 +217,140 @@ def run_smoke(executable: Path) -> dict[str, Any]:
         if location["range"]["start"] != {"line": 1, "character": 4}:
             raise AssertionError(f"unexpected definition location: {location!r}")
 
+        write_message(
+            proc,
+            {
+                "jsonrpc": "2.0",
+                "id": 5,
+                "method": "textDocument/documentSymbol",
+                "params": {
+                    "textDocument": {"uri": clean_uri},
+                },
+            },
+        )
+        doc_sym = wait_for(messages, lambda message: message.get("id") == 5)
+        symbols = doc_sym["result"]
+        names = [s["name"] for s in symbols]
+        if "greet" not in names or "main" not in names:
+            raise AssertionError(f"missing expected document symbols: {names!r}")
+
+        write_message(
+            proc,
+            {
+                "jsonrpc": "2.0",
+                "id": 6,
+                "method": "workspace/symbol",
+                "params": {
+                    "query": "greet",
+                },
+            },
+        )
+        work_sym = wait_for(messages, lambda message: message.get("id") == 6)
+        w_symbols = work_sym["result"]
+        w_names = [s["name"] for s in w_symbols]
+        if "greet" not in w_names:
+            raise AssertionError(f"missing expected workspace symbol: {w_names!r}")
+
+        write_message(
+            proc,
+            {
+                "jsonrpc": "2.0",
+                "id": 7,
+                "method": "textDocument/rename",
+                "params": {
+                    "textDocument": {"uri": clean_uri},
+                    "position": {"line": 1, "character": 5},
+                    "newName": "greet_all",
+                },
+            },
+        )
+        rename_res = wait_for(messages, lambda message: message.get("id") == 7)
+        changes = rename_res["result"]["changes"]
+        if clean_uri not in changes:
+            raise AssertionError(f"expected rename changes on {clean_uri}")
+        edits = changes[clean_uri]
+        if len(edits) != 2:
+            raise AssertionError(f"expected 2 rename edits, got {len(edits)}: {edits!r}")
+
+        advisory_source = (
+            "def main() {\n"
+            "}\n"
+        )
+        advisory_uri = file_uri(Path(tempfile.gettempdir()) / "garnet_lsp_advisory.garnet")
+        write_message(
+            proc,
+            {
+                "jsonrpc": "2.0",
+                "method": "textDocument/didOpen",
+                "params": {
+                    "textDocument": {
+                        "uri": advisory_uri,
+                        "languageId": "garnet",
+                        "version": 1,
+                        "text": advisory_source,
+                    }
+                },
+            },
+        )
+        advisory_diagnostics = wait_for(
+            messages,
+            lambda message: message.get("method") == "textDocument/publishDiagnostics"
+            and message.get("params", {}).get("uri") == advisory_uri,
+        )
+        diagnostics = advisory_diagnostics["params"]["diagnostics"]
+        advisory_diag = next((d for d in diagnostics if d.get("code") in ("ManagedFnMissingCaps", "managed-fn-missing-caps")), None)
+        if not advisory_diag:
+            raise AssertionError(f"expected managed-fn-missing-caps advisory diagnostic, got: {diagnostics!r}")
+
+        write_message(
+            proc,
+            {
+                "jsonrpc": "2.0",
+                "id": 8,
+                "method": "textDocument/codeAction",
+                "params": {
+                    "textDocument": {"uri": advisory_uri},
+                    "range": advisory_diag["range"],
+                    "context": {
+                        "diagnostics": [advisory_diag],
+                    },
+                },
+            },
+        )
+        code_action_res = wait_for(messages, lambda message: message.get("id") == 8)
+        actions = code_action_res["result"]
+        quick_fix_actions = [
+            action for action in actions if action.get("kind") in ("quickfix", "quickfix.preferred")
+        ]
+        quick_fixes = [action.get("title", "") for action in quick_fix_actions]
+        caps_fix = next(
+            (action for action in quick_fix_actions if "Add `@caps()`" in action.get("title", "")),
+            None,
+        )
+        if caps_fix is None:
+            raise AssertionError(f"expected Add @caps() quick fix code action, got: {actions!r}")
+        caps_edit = caps_fix["edit"]["changes"][advisory_uri][0]
+        if caps_edit["newText"] != "@caps()\n":
+            raise AssertionError(f"unexpected @caps quick-fix text: {caps_edit!r}")
+        if caps_edit["range"]["start"] != caps_edit["range"]["end"]:
+            raise AssertionError(f"@caps quick fix must be a zero-width insertion: {caps_edit!r}")
+
+        write_message(
+            proc,
+            {
+                "jsonrpc": "2.0",
+                "id": 9,
+                "method": "textDocument/semanticTokens/full",
+                "params": {
+                    "textDocument": {"uri": clean_uri},
+                },
+            },
+        )
+        sem_tokens = wait_for(messages, lambda message: message.get("id") == 9)
+        tokens_data = sem_tokens["result"]["data"]
+        if not tokens_data:
+            raise AssertionError("expected semantic tokens data to not be empty")
+
         write_message(proc, {"jsonrpc": "2.0", "id": 4, "method": "shutdown", "params": None})
         wait_for(messages, lambda message: message.get("id") == 4)
         write_message(proc, {"jsonrpc": "2.0", "method": "exit", "params": None})
@@ -229,6 +363,11 @@ def run_smoke(executable: Path) -> dict[str, Any]:
             "clean_diagnostics": clean_diagnostics["params"]["diagnostics"],
             "hover_contains": ["def greet(name)", "Friendly greeting"],
             "definition_range": location["range"],
+            "document_symbols": names,
+            "workspace_symbols": w_names,
+            "rename_edits_count": len(edits),
+            "quick_fixes": quick_fixes,
+            "semantic_tokens_count": len(tokens_data),
         }
     finally:
         try:

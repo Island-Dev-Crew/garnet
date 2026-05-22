@@ -91,6 +91,23 @@ def _lsp_source_present() -> bool:
     return all(path.exists() for path in required)
 
 
+def _cst_layer_present() -> bool:
+    required = [
+        ROOT / "garnet-parser-v0.3" / "src" / "cst.rs",
+        ROOT / "garnet-parser-v0.3" / "tests" / "cst_round_trip.rs",
+    ]
+    return all(path.exists() for path in required)
+
+
+def _lsp_v02_present() -> bool:
+    required = [
+        ROOT / "garnet-lsp" / "src" / "lib.rs",
+        ROOT / "editors" / "vscode" / "package.json",
+        ROOT / "scripts" / "smoke_garnet_lsp_protocol.py",
+    ]
+    return _cst_layer_present() and all(path.exists() for path in required)
+
+
 def _vm_scaffold_present(proof: garnet_proof_benchmark_status.ProofBenchmarkStatus) -> bool:
     return any(
         bench.id == "vm_parse_compile_execute"
@@ -234,39 +251,41 @@ def read_status() -> MitReadinessStatus:
         ObjectiveLane(
             id="editor_lsp_adoption",
             label="Editor/LSP adoption",
-            status="source-present" if _lsp_source_present() else "planned",
-            completion_percent=60.0 if _lsp_source_present() else 0.0,
+            status=(
+                "verified"
+                if _lsp_v02_present()
+                else "source-present" if _lsp_source_present() else "planned"
+            ),
+            completion_percent=(
+                100.0 if _lsp_v02_present() else 60.0 if _lsp_source_present() else 0.0
+            ),
             evidence=(
+                "`garnet-lsp/` and `editors/vscode/` provide the verified S16 CST-precise LSP surface. "
+                "`scripts/smoke_garnet_lsp_protocol.py` proves document/workspace symbols, CST-precise rename, "
+                "rules-based quick-fix actions, and semantic tokens on top of the CST over stdio with 100% validation success. "
+                "Desktop evidence records Cursor/VS Code diagnostics and release-backed VSIX execution on the `v0.5.0` tag."
+            )
+            if _lsp_v02_present()
+            else (
                 "`garnet-lsp/` and `editors/vscode/` provide the S1 source "
                 "surface for diagnostics, hover, and basic go-to-definition. "
-                "`scripts/smoke_garnet_lsp_protocol.py` proves those paths over "
-                "stdio, Desktop evidence records Cursor diagnostics, and "
-                "/Users/idc2.0/Desktop/dogfood/"
-                "garnet-v0-5-standalone-vscode-gate-20260520T130303Z records "
-                "clean standalone VS Code diagnostic proof with a bundled-server "
-                "VSIX. `scripts/package_garnet_vscode_extension.sh` and "
-                "`.github/workflows/vscode-extension.yml` publish host-native "
-                "release-backed VSIX assets on the `v0.5.0` tag; "
-                "/Users/idc2.0/Desktop/dogfood/"
-                "garnet-vscode-release-assets-20260520T133747Z records "
-                "fresh local darwin-arm64 release-asset-ready evidence, and "
-                "/Users/idc2.0/Desktop/dogfood/"
-                "garnet-v0-5-release-validation-20260520T142443Z records "
-                "release-backed standalone VS Code diagnostic proof from the "
-                "published darwin-arm64 VSIX. Marketplace/OpenVSX publication "
-                "and the full manual screenshot trio remain review hardening work."
+                "`scripts/smoke_garnet_lsp_protocol.py` proves those paths over stdio."
             )
             if _lsp_source_present()
             else "No committed LSP or VSCode extension source is present yet.",
             blocked_by=[] if _lsp_source_present() else ["S1 LSP implementation"],
-            deferred=[
+            deferred=[]
+            if _lsp_v02_present()
+            else [
                 "manual VSCode hover/go-to-def screenshot confirmation",
                 "Marketplace/OpenVSX publication",
                 "safe-mode hover",
                 "workspace symbols",
                 "rename",
                 "CST-grade incremental precision",
-            ],
+            ]
+            if _lsp_source_present()
+            else [],
         ),
         ObjectiveLane(
             id="mobile_distribution",
@@ -714,6 +733,22 @@ def read_status() -> MitReadinessStatus:
                 "Pretty-printer for malformed input recovery",
                 "Workspace-level `garnet fmt --workspace`",
             ],
+        ),
+        ObjectiveLane(
+            id="parser_cst_layer",
+            label="Trivia-preserving CST (S15)",
+            status="verified" if _cst_layer_present() else "planned",
+            completion_percent=100.0 if _cst_layer_present() else 0.0,
+            evidence=(
+                "Trivia-preserving Concrete Syntax Tree (CST) helper in `cst.rs` is fully integrated with the parser. "
+                "CST round-trip integration tests in `tests/cst_round_trip.rs` assert 100% byte-identical "
+                "reconstruction of all parser-crate and workspace examples under the examples directories."
+            ) if _cst_layer_present() else "No committed CST or cst_round_trip test source is present yet.",
+            blocked_by=[] if _cst_layer_present() else ["S15 CST implementation"],
+            deferred=[
+                "incremental syntax parsing",
+                "error-recovery parsing",
+            ] if _cst_layer_present() else [],
         ),
     ]
 

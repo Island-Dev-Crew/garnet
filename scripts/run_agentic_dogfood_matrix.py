@@ -12,6 +12,7 @@ import argparse
 import hashlib
 import json
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -114,6 +115,20 @@ def working_posix_shell() -> str | None:
         _POSIX_SHELL_CACHE = bash
         return bash
     _POSIX_SHELL_CACHE = False
+    return None
+
+
+def posix_shell_path(shell: str, path: Path) -> str | None:
+    if os.name != "nt":
+        return str(path)
+    probe = run(
+        [shell, "-lc", f"wslpath {shlex.quote(str(path))}"],
+        ROOT,
+        timeout=5,
+    )
+    converted = probe.stdout.strip()
+    if probe.returncode == 0 and converted:
+        return converted
     return None
 
 
@@ -1728,29 +1743,73 @@ def web_pwa_probes(work: Path) -> list[Probe | Callable[[], ProbeResult]]:
         )
     ]
     if local_smoke.is_file():
-        local_command = [
-            str(local_smoke),
-            "--strict",
-            "--output-dir",
-            str(work / "web-pwa-local-readiness"),
-        ]
         shell = working_posix_shell()
+        local_output_dir = work / "web-pwa-local-readiness"
+        local_skip_reason = ""
+        if os.name == "nt":
+            if shell is None:
+                local_skip_reason = (
+                    "POSIX shell smoke skipped on Windows because no working "
+                    "bash-compatible shell is available."
+                )
+                local_command = [
+                    str(local_smoke),
+                    "--strict",
+                    "--output-dir",
+                    str(local_output_dir),
+                ]
+            else:
+                shell_script = posix_shell_path(shell, local_smoke)
+                shell_output_dir = posix_shell_path(shell, local_output_dir)
+                if shell_script is None or shell_output_dir is None:
+                    local_skip_reason = (
+                        "POSIX shell smoke skipped on Windows because the "
+                        "working shell could not translate Windows paths."
+                    )
+                    local_command = [
+                        str(local_smoke),
+                        "--strict",
+                        "--output-dir",
+                        str(local_output_dir),
+                    ]
+                else:
+                    local_command = [
+                        shell_script,
+                        "--strict",
+                        "--output-dir",
+                        shell_output_dir,
+                    ]
+        else:
+            local_command = [
+                str(local_smoke),
+                "--strict",
+                "--output-dir",
+                str(local_output_dir),
+            ]
+        if os.name == "nt" and shell and not local_skip_reason:
+            local_probe_command = [
+                shell,
+                "-lc",
+                "bash " + " ".join(shlex.quote(arg) for arg in local_command),
+            ]
+        else:
+            local_probe_command = local_command
         local_probe = Probe(
             "smoke-web-pwa-local-readiness",
             "web/PWA productization",
             "docs PWA local smoke should validate manifest, cache inventory, offline behavior, and local HTTP fetches",
-            local_command if os.name != "nt" else ([shell, *local_command] if shell else local_command),
+            local_probe_command,
             True,
             ("Garnet Web/PWA readiness smoke: blockers=0 warnings=0",),
             security_domain="filesystem-localhost",
             notes="Uses only the checkout docs directory, Node offline handler, and a localhost static server.",
         )
-        if os.name == "nt" and shell is None:
+        if os.name == "nt" and local_skip_reason:
             probes.append(
                 lambda probe=local_probe: skipped_result(
                     probe,
                     work,
-                    "POSIX shell smoke skipped on Windows because no working bash-compatible shell is available.",
+                    local_skip_reason,
                 )
             )
         else:

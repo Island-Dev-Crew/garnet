@@ -57,7 +57,7 @@ function parseArgs(argv) {
   }
   args.evidenceDir = resolve(args.evidenceDir);
   args.chrome = resolve(args.chrome);
-  if (args.python !== "python3") args.python = resolve(args.python);
+  if (args.python !== "python3" && args.python !== "python") args.python = resolve(args.python);
   return args;
 }
 
@@ -338,7 +338,26 @@ async function main() {
   runChecked(args.python, [join(ROOT, "scripts", "garnet_mit_deck_preview.py"), "--output-dir", bundleDir], ROOT);
   const previewData = JSON.parse(readFileSync(join(bundleDir, "garnet-mit-deck-preview.json"), "utf-8"));
   const expectedObjectiveMetric = `${previewData.objective_completion_percent.toFixed(1)}%`;
-  const manifestCheck = runChecked("shasum", ["-a", "256", "-c", "MANIFEST.sha256"], bundleDir);
+  let manifestCheck;
+  if (process.platform === "win32") {
+    const lines = readFileSync(join(bundleDir, "MANIFEST.sha256"), "utf-8").split("\n").filter(Boolean);
+    const results = [];
+    for (const line of lines) {
+      const parts = line.split("  ");
+      if (parts.length < 2) continue;
+      const expectedHash = parts[0];
+      const relFile = parts[1].replace(/^\.\//, "").trim();
+      const fileBytes = readFileSync(join(bundleDir, relFile));
+      const hash = createHash("sha256").update(fileBytes).digest("hex");
+      if (hash !== expectedHash) {
+        throw new Error(`Checksum mismatch for ${relFile}: expected ${expectedHash}, got ${hash}`);
+      }
+      results.push(`${relFile}: OK`);
+    }
+    manifestCheck = { stdout: results.join("\n") };
+  } else {
+    manifestCheck = runChecked("shasum", ["-a", "256", "-c", "MANIFEST.sha256"], bundleDir);
+  }
 
   const { server, baseUrl } = await startServer(bundleDir);
   const userDataDir = mkdtempSync(join(tmpdir(), "garnet-deck-preview-browser-"));

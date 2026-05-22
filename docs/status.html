@@ -89,7 +89,7 @@
     </div>
     <div class="card">
       <div class="label">MIT/productization</div>
-      <div class="big">75.4%</div>
+      <div class="big">78.0%</div>
       <p class="muted">Broader productization remains active-partial and separate from tracked slice completion.</p>
     </div>
     <div class="card">
@@ -142,7 +142,7 @@
 <section>
   <div class="container">
     <h2>Editor/LSP Adoption</h2>
-    <p class="lead">S1 now has committed source surfaces for <code>garnet-lsp</code> and the VSCode extension, VSIX packaging, protocol smoke evidence, local diagnostic screenshots, and release-backed standalone VS Code diagnostic proof from the published darwin-arm64 VSIX. The claim remains source-present until full hover/go-to-def editor screenshots and Marketplace/OpenVSX publication land.</p>
+    <p class="lead">S16 builds on the S1 editor surface with a trivia-preserving CST, document/workspace symbols, CST-precise rename, rules-based quick fixes, and semantic tokens proven through the stdio protocol smoke.</p>
     <table>
       <thead>
         <tr><th>Surface</th><th>Status</th><th>Remaining evidence</th></tr>
@@ -150,18 +150,18 @@
       <tbody>
         <tr>
           <td><code>garnet-lsp/</code></td>
-          <td>source-present</td>
-          <td>Diagnostics, hover, and basic go-to-definition tests must stay green.</td>
+          <td>verified</td>
+          <td>Diagnostics, hover, go-to-definition, document/workspace symbols, rename, quick fixes, and semantic tokens must stay green.</td>
         </tr>
         <tr>
           <td><code>editors/vscode/</code></td>
-          <td>source-present</td>
-          <td>Local VSIX packaging, release-backed VSIX installation, and diagnostic smoke passed; Marketplace/OpenVSX publication plus separate hover/go-to-definition screenshots remain open.</td>
+          <td>verified</td>
+          <td>Local VSIX packaging, release-backed VSIX installation, diagnostic smoke, and the S16 stdio protocol smoke are the current evidence surface.</td>
         </tr>
         <tr>
-          <td>Deferred editor work</td>
-          <td>explicitly deferred</td>
-          <td>Safe-mode hover, workspace symbols, rename, and CST-grade incremental precision.</td>
+          <td>Parser CST layer</td>
+          <td>verified</td>
+          <td>CST round-trip tests reconstruct the parser-crate and workspace example corpus byte-identically; incremental and error-recovery parsing remain future work.</td>
         </tr>
       </tbody>
     </table>

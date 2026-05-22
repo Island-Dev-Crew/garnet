@@ -636,7 +636,7 @@
     overflow: hidden;
   }
   .objective-meter .fill {
-    width: 75.4%;
+    width: 78.0%;
     height: 100%;
     background: var(--garnet);
   }
@@ -1433,7 +1433,7 @@ dist/Garnet Studio.app</pre>
     <div class="objective-pulse" aria-label="MIT/productization objective progress pulse">
       <div class="objective-meter">
         <div class="label">MIT/productization objective</div>
-        <div class="percent">75.4%</div>
+        <div class="percent">78.0%</div>
         <div class="meter" aria-hidden="true"><div class="fill"></div></div>
         <p class="evidence-note">Latest local dogfood pulse from <code>scripts/garnet_mit_readiness_status.py</code>. This is not the same as tracked implementation completion.</p>
       </div>
@@ -1441,11 +1441,11 @@ dist/Garnet Studio.app</pre>
         <div class="label">Current pulse</div>
         <ul>
           <li><strong>87/87 tracked slices</strong> are verified, but that is not full MIT/productization completion.</li>
-          <li>S4 added a deterministic, idempotent formatter baseline; semantic CST-grade formatting remains deferred.</li>
+          <li>S15 adds a trivia-preserving CST with byte-identical example round trips; incremental/error-recovery parsing remains future work.</li>
           <li>Windows now has a Tauri v2 Studio scaffold with local release build, unsigned NSIS bundle, smoke evidence, and a clean-VM proof importer; Linux runtime and the actual clean-machine installer pass remain open.</li>
           <li>Promo video is public-site embedded at 95.0%; human/aesthetic acceptance remains open.</li>
           <li>Web/PWA productization is verified; mobile distribution is still planned.</li>
-          <li>Editor/LSP adoption now has committed S1 source surfaces, VSIX packaging, protocol smoke evidence, and a Cursor diagnostic screenshot; full hover/go-to-def editor screenshots remain review hardening.</li>
+          <li>S16 advances Editor/LSP adoption to verified with document/workspace symbols, CST-precise rename, quick fixes, and semantic tokens over the release LSP protocol smoke.</li>
           <li>Apple distribution, mobile, provider-backed LLM assist, and backend lowering each have their own readiness gates.</li>
           <li>Detailed caveats and exact status evidence live on <a href="status.html">status.html</a>.</li>
         </ul>

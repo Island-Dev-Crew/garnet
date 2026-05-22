@@ -37,7 +37,10 @@ impl<'a> Lexer<'a> {
             // allocating for seconds.
             self.budget
                 .check_tokens(tokens.len(), Span::new(self.pos, 0))?;
-            self.skip_spaces();
+            if let Some(tok) = self.lex_whitespace()? {
+                tokens.push(tok);
+                continue;
+            }
             if self.pos >= self.src.len() {
                 tokens.push(Token {
                     kind: TokenKind::Eof,
@@ -67,10 +70,14 @@ impl<'a> Lexer<'a> {
                     while self.pos < self.src.len() && self.src[self.pos] != b'\n' {
                         self.pos += 1;
                     }
-                    self.budget.check_literal_bytes(
-                        self.pos - start,
-                        Span::new(start, self.pos - start),
-                    )?;
+                    let len = self.pos - start;
+                    self.budget
+                        .check_literal_bytes(len, Span::new(start, len))?;
+                    let text = String::from_utf8_lossy(&self.src[start..self.pos]).into_owned();
+                    tokens.push(Token {
+                        kind: TokenKind::Comment(text),
+                        span: Span::new(start, len),
+                    });
                 }
                 '"' => tokens.push(self.lex_string()?),
                 'r' if self.peek_at(1) == Some('"') => tokens.push(self.lex_raw_string()?),
@@ -219,10 +226,14 @@ impl<'a> Lexer<'a> {
                         while self.pos < self.src.len() && self.src[self.pos] != b'\n' {
                             self.pos += 1;
                         }
-                        self.budget.check_literal_bytes(
-                            self.pos - start,
-                            Span::new(start, self.pos - start),
-                        )?;
+                        let len = self.pos - start;
+                        self.budget
+                            .check_literal_bytes(len, Span::new(start, len))?;
+                        let text = String::from_utf8_lossy(&self.src[start..self.pos]).into_owned();
+                        tokens.push(Token {
+                            kind: TokenKind::Comment(text),
+                            span: Span::new(start, len),
+                        });
                     } else if self.peek_ch() == Some('=') {
                         self.pos += 1;
                         tokens.push(Token {
@@ -349,7 +360,8 @@ impl<'a> Lexer<'a> {
         Ok(tokens)
     }
 
-    fn skip_spaces(&mut self) {
+    fn lex_whitespace(&mut self) -> Result<Option<Token>, ParseError> {
+        let start = self.pos;
         while self.pos < self.src.len() {
             let ch = self.src[self.pos];
             if ch == b' ' || ch == b'\t' {
@@ -357,6 +369,18 @@ impl<'a> Lexer<'a> {
             } else {
                 break;
             }
+        }
+        if self.pos > start {
+            let len = self.pos - start;
+            self.budget
+                .check_literal_bytes(len, Span::new(start, len))?;
+            let text = String::from_utf8_lossy(&self.src[start..self.pos]).into_owned();
+            Ok(Some(Token {
+                kind: TokenKind::Whitespace(text),
+                span: Span::new(start, len),
+            }))
+        } else {
+            Ok(None)
         }
     }
 

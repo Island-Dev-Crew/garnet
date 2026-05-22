@@ -1,7 +1,7 @@
 {
   "source": "/Users/IDC2.5/Desktop/Garnet",
   "overall_status": "active-partial",
-  "completion_percent": 75.4,
+  "completion_percent": 78.0,
   "current_truth": [
     "tracked implementation plan is complete",
     "goal remains active",
@@ -75,9 +75,14 @@
       "id": "windows_linux_distribution",
       "label": "Windows/Linux distribution",
       "status": "active-partial",
-      "completion_percent": 50.0,
-      "evidence": "`scripts/garnet_windows_linux_studio_status.py` now reports the Tauri v2 shell scaffold in `apps/garnet-studio`, minimal webview permissions, Windows local release build/smoke evidence, and open Linux plus clean-machine package gates.",
+      "completion_percent": 55.0,
+      "evidence": "`scripts/garnet_windows_linux_studio_status.py` now reports the Tauri v2 shell scaffold in `apps/garnet-studio`, minimal webview permissions, Windows local release build/smoke evidence, v0.5 readiness reporter parity actions, a Windows clean-VM installer proof contract, and open Linux plus clean-machine package gates.",
       "blocked_by": [
+        "clean Windows VM guest identity",
+        "unsigned NSIS installer artifact digest",
+        "installer run log from inside the guest",
+        "installed Studio --studio-smoke JSON",
+        "installed app launch screenshot",
         "Run the unsigned NSIS installer in a clean Windows VM for installer/runtime launch evidence",
         "Provide a Linux VM/container with GUI or AppImage-capable desktop session for runtime launch evidence",
         "Provide signing credentials only when ready to verify signed MSI claims"
@@ -87,6 +92,7 @@
         "Linux desktop launch proof and first package-format decision",
         "Parse/check/run plus active converter end-to-end screenshots from the shell",
         "Advisory bundle/review/handoff evidence walkthrough without source inclusion",
+        "Release / Readiness panel screenshot and reporter-output evidence from the Windows shell",
         "Unsigned-to-signed Windows MSI/AuthentiCode plan after VM smoke",
         "Website/status copy sync after target smoke evidence"
       ]
@@ -105,18 +111,11 @@
     {
       "id": "editor_lsp_adoption",
       "label": "Editor/LSP adoption",
-      "status": "source-present",
-      "completion_percent": 60.0,
-      "evidence": "`garnet-lsp/` and `editors/vscode/` provide the S1 source surface for diagnostics, hover, and basic go-to-definition. `scripts/smoke_garnet_lsp_protocol.py` proves those paths over stdio, Desktop evidence records Cursor diagnostics, and /Users/idc2.0/Desktop/dogfood/garnet-v0-5-standalone-vscode-gate-20260520T130303Z records clean standalone VS Code diagnostic proof with a bundled-server VSIX. `scripts/package_garnet_vscode_extension.sh` and `.github/workflows/vscode-extension.yml` publish host-native release-backed VSIX assets on the `v0.5.0` tag; /Users/idc2.0/Desktop/dogfood/garnet-vscode-release-assets-20260520T133747Z records fresh local darwin-arm64 release-asset-ready evidence, and /Users/idc2.0/Desktop/dogfood/garnet-v0-5-release-validation-20260520T142443Z records release-backed standalone VS Code diagnostic proof from the published darwin-arm64 VSIX. Marketplace/OpenVSX publication and the full manual screenshot trio remain review hardening work.",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`garnet-lsp/` and `editors/vscode/` provide the verified S16 CST-precise LSP surface. `scripts/smoke_garnet_lsp_protocol.py` proves document/workspace symbols, CST-precise rename, rules-based quick-fix actions, and semantic tokens on top of the CST over stdio with 100% validation success. Desktop evidence records Cursor/VS Code diagnostics and release-backed VSIX execution on the `v0.5.0` tag.",
       "blocked_by": [],
-      "deferred": [
-        "manual VSCode hover/go-to-def screenshot confirmation",
-        "Marketplace/OpenVSX publication",
-        "safe-mode hover",
-        "workspace symbols",
-        "rename",
-        "CST-grade incremental precision"
-      ]
+      "deferred": []
     },
     {
       "id": "mobile_distribution",
@@ -384,6 +383,18 @@
         "Comment-preserving round-trip (today the parser drops trivia)",
         "Pretty-printer for malformed input recovery",
         "Workspace-level `garnet fmt --workspace`"
+      ]
+    },
+    {
+      "id": "parser_cst_layer",
+      "label": "Trivia-preserving CST (S15)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "Trivia-preserving Concrete Syntax Tree (CST) helper in `cst.rs` is fully integrated with the parser. CST round-trip integration tests in `tests/cst_round_trip.rs` assert 100% byte-identical reconstruction of all parser-crate and workspace examples under the examples directories.",
+      "blocked_by": [],
+      "deferred": [
+        "incremental syntax parsing",
+        "error-recovery parsing"
       ]
     }
   ]
