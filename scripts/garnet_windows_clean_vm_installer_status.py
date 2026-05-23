@@ -342,6 +342,32 @@ def latest_proof(evidence_root: Path | None = None) -> ProofRecord | None:
     )
 
 
+def blocked_by(proof: ProofRecord | None) -> list[str]:
+    if proof and proof.verified:
+        return []
+    if proof:
+        gate_blockers = {
+            "installer-artifact": "unsigned NSIS installer artifact digest",
+            "fresh-guest": "clean Windows VM guest identity",
+            "install-log": "installer run log from inside the guest",
+            "studio-smoke": "installed Studio --studio-smoke JSON",
+            "launch-screenshot": "installed app launch screenshot",
+            "claim-boundary": "claim boundary evidence",
+        }
+        return [
+            gate_blockers.get(gate.id, gate.label)
+            for gate in proof.gates
+            if gate.status != "pass"
+        ]
+    return [
+        "clean Windows VM guest identity",
+        "unsigned NSIS installer artifact digest",
+        "installer run log from inside the guest",
+        "installed Studio --studio-smoke JSON",
+        "installed app launch screenshot",
+    ]
+
+
 def read_status(evidence_root: Path | None = None) -> WindowsCleanVmInstallerStatus:
     proof = latest_proof(evidence_root)
     verified = bool(proof and proof.verified)
@@ -361,15 +387,7 @@ def read_status(evidence_root: Path | None = None) -> WindowsCleanVmInstallerSta
         package_targets=package_targets(),
         required_gates=required_gates(),
         latest_proof=proof,
-        blocked_by=[]
-        if verified
-        else [
-            "clean Windows VM guest identity",
-            "unsigned NSIS installer artifact digest",
-            "installer run log from inside the guest",
-            "installed Studio --studio-smoke JSON",
-            "installed app launch screenshot",
-        ],
+        blocked_by=blocked_by(proof),
         forbidden_claims=forbidden_claims(),
     )
 
