@@ -120,6 +120,7 @@ accurate and current.**
 
 ### mac-opus (S15)
 - [2026-05-22 20:25 CDT] STARTED agent-mac-opus/s15-cst-trait-stub — claiming S15. Building the rowan `garnet-cst` crate cold + additive per PRD A; parser `src/cst.rs` (#221) left untouched as the S15-Compare baseline. Baseline verified at main tip `c1fc957`: `cargo test --workspace` = 96 suites ok / 0 failed (exit 0); readiness 78.0%; `rowan` not yet in `Cargo.lock` (will add, must clear `cargo deny`). Confirmed `garnet_parser::lex_source*` is already `pub` (trivia-preserving), so `garnet-cst` reuses the lexer as a dependency — no parser-internal change required for PR-1/PR-2. Plan at `.agent/plans/mac-opus-S15-plan.md`; awaiting Jon approval before opening PR-1.
+- [2026-05-22 20:59 CDT] PR-OPEN PR#225 (`agent-mac-opus/s15-cst-trait-stub`) — S15 PR-1: garnet-cst trait surface + stub. New rowan crate (SyntaxKind/GarnetLanguage/CstNode/Parse/parse_cst stub), 6 tests + doc-test + proptest. Local gates all green (fmt/clippy/workspace-test/build-release/`deny`/readiness-no-regression/agent-contracts); CI: `PR dogfood evidence` + `agent documentation contracts` pass, matrix/clippy/deny running. #221 `src/cst.rs` untouched (verified). Desktop bundle `garnet-s15-cst-trait-stub-20260523T015601Z` sealed. Paused before PR-2 per Jon. **Note:** 2 pre-existing docs-sync unittest failures on origin/main (`test_garnet_adoption_surface_status`, `test_garnet_converter_status`, from #221) — not S15, not in CI.
 
 ### win-codex (S16)
 - (empty)
