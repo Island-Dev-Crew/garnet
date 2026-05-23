@@ -99,6 +99,18 @@ def _cst_layer_present() -> bool:
     return all(path.exists() for path in required)
 
 
+def _rowan_cst_present() -> bool:
+    required = [
+        ROOT / "garnet-cst" / "src" / "builder.rs",
+        ROOT / "garnet-cst" / "src" / "convert.rs",
+        ROOT / "garnet-cst" / "src" / "nodes.rs",
+        ROOT / "garnet-cst" / "tests" / "examples_roundtrip.rs",
+        ROOT / "garnet-cst" / "tests" / "cst_to_ast_parity.rs",
+        ROOT / "garnet-cst" / "benches" / "parse_cst_vs_ast.rs",
+    ]
+    return all(path.exists() for path in required)
+
+
 def _lsp_v02_present() -> bool:
     required = [
         ROOT / "garnet-lsp" / "src" / "lib.rs",
@@ -749,6 +761,39 @@ def read_status() -> MitReadinessStatus:
                 "incremental syntax parsing",
                 "error-recovery parsing",
             ] if _cst_layer_present() else [],
+        ),
+        ObjectiveLane(
+            id="parser_cst_migration",
+            label="Rowan CST migration (S15, build-both-then-compare)",
+            status="verified" if _rowan_cst_present() else "planned",
+            completion_percent=100.0 if _rowan_cst_present() else 0.0,
+            evidence=(
+                "`garnet-cst/` is a rowan-backed, trivia-preserving CST built cold "
+                "(direct recursive-descent over the token stream) for the v0.7 "
+                "build-both-then-compare A/B. `parse_cst` round-trips byte-identically "
+                "across the canonical examples corpus and a `proptest` over arbitrary "
+                "UTF-8 (`tests/examples_roundtrip.rs`, `tests/roundtrip.rs`). `cst_to_ast` "
+                "projects onto `garnet_parser::ast::Module` with span-normalized "
+                "structural parity vs `parse_source` across the corpus "
+                "(`tests/cst_to_ast_parity.rs`). The `parse_cst_vs_ast` Criterion bench "
+                "measures the CST path at ~0.99x the AST path (well under the 1.5x gate). "
+                "Reproduce via the S15 dogfood block in `GARNET_v0_7_SLICE_DOGFOOD.md`."
+            )
+            if _rowan_cst_present()
+            else "No rowan `garnet-cst` builder/converter/bench source present yet.",
+            blocked_by=[] if _rowan_cst_present() else ["S15 PR-2 rowan CST"],
+            deferred=[
+                "Canonical-CST choice is the separate S15-Compare checkpoint (Jon); "
+                "this is the second of two independent CSTs by design, not yet reconciled",
+                "Error-recovery parsing is best-effort (round-trip always holds; structure "
+                "may flatten on malformed input)",
+                "Incremental re-parsing",
+                "CST-first migration of interp/check/vm (v0.8; they stay on the AST path "
+                "via `parse_source`, untouched by S15)",
+                "`garnet parse --mode cst` CLI wiring (Handoff Request to the garnet-cli owner)",
+            ]
+            if _rowan_cst_present()
+            else [],
         ),
     ]
 

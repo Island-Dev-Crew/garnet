@@ -31,6 +31,29 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   PR. No readiness lane yet — the `parser_cst_migration` lane + baseline
   regeneration land in PR-2 with the substantive evidence.
 
+- **S15 (Trivia-preserving CST via rowan — PR-2: substantive builder + `cst_to_ast`):**
+  `garnet-cst` gains a **direct recursive-descent CST builder** (`builder.rs`)
+  over the trivia-preserving token stream, cold from Mini-Spec v1.0 §2–§11 —
+  architecturally distinct from #221's AST-projection CST (the
+  build-both-then-compare A/B). `parse_cst` now produces real composite
+  structure (items, signatures, blocks, the 11-level expression tower,
+  patterns, types) and round-trips **byte-identically** across the canonical
+  example corpus + a `proptest` over arbitrary UTF-8 (round-trip is guaranteed
+  by construction — every token emitted in order, plus a trailing flush, so it
+  holds even for malformed input). Adds typed-node wrappers (`nodes.rs`,
+  the S16-facing surface) and `cst_to_ast` (`convert.rs`) projecting onto
+  `garnet_parser::ast::Module`, validated by **span-normalized structural
+  parity** vs `parse_source` across the corpus (`tests/cst_to_ast_parity.rs`).
+  New Criterion bench `parse_cst_vs_ast`: the CST path measures **≈0.99× the
+  AST path** (well under the 1.5× gate). New readiness lane
+  `parser_cst_migration` (`verified`); MIT readiness 78.0% → 78.8%; baseline
+  regenerated. **Honest scope:** error-recovery parsing is best-effort
+  (round-trip always holds; structure may flatten on malformed input);
+  incremental re-parsing and CST-first migration of interp/check/vm are v0.8
+  (consumers stay on `parse_source`, untouched); the **canonical-CST choice is
+  the separate S15-Compare checkpoint (Jon)** — this is the second of two
+  independent CSTs by design, not yet reconciled.
+
 - **S13 (Registry stub v0.1):** new `garnet-registry-stub/` crate — a
   filesystem-backed registry where an `index.json` (serde) maps
   `name → version → { path, BLAKE3-per-file }` over `<name>/<version>/`
