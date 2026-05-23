@@ -71,6 +71,12 @@ class GarnetWindowsCleanVmInstallerStatusTests(unittest.TestCase):
             self.assertEqual("blocked", gates["fresh-guest"].status)
             self.assertEqual("pass", gates["studio-smoke"].status)
 
+            status_mod.write_proof(record, root / "current-host-proof")
+            status = status_mod.read_status(root)
+
+            self.assertFalse(status.clean_vm_verified)
+            self.assertEqual(["clean Windows VM guest identity"], status.blocked_by)
+
     def test_clean_vm_record_writes_manifest_and_verifies_all_gates(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
