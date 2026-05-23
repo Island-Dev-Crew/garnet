@@ -24,23 +24,31 @@ slice with a stub.
 
 | Slot | Machine | Harness | Slice(s) | Owned crates (writable) | Read-only |
 |---|---|---|---|---|---|
-| **mac-opus** | Mac | Claude Code Opus 4.7 1M Max | **S15** (CST) | `garnet-parser-v0.3`, `garnet-cst` (new) | everything else |
-| **win-codex** | Windows | Codex Desktop GPT-5.5 Pro Extra High Fast | **S16** (LSP precision) | `garnet-lsp`, `editors/vscode` | `garnet-cst`, `garnet-parser-v0.3`, `garnet-check-v0.3` |
+| **mac-opus** | Mac | Claude Code Opus 4.7 1M Max | **S15** (CST — rowan crate, build cold) | `garnet-cst` (new), `garnet-parser-v0.3` (CST mode opt-in; **do not touch `src/cst.rs` #221**) | everything else |
+| **win-codex** | Windows | Codex Desktop GPT-5.5 Pro Extra High Fast | **S16** (LSP precision — **HELD until S15-Compare**) | `garnet-lsp`, `editors/vscode` | `garnet-cst`, `garnet-parser-v0.3`, `garnet-check-v0.3` |
 | **win-opus** | Windows | Claude Code Opus 4.7 1M Max | **S17** (stdlib + layer policy + `@stability`) | `garnet-stdlib`, `garnet-check-v0.3` (stability surface only) | parser, interp, vm, lsp, cst |
 | **mac-codex** | Mac | Codex Desktop GPT-5.5 Pro Extra High Fast | **S18** (packages) + **S19** (LLM tier) | `garnet-suggest-llm` (new), `garnet-lang/*` (external repos) | `garnet-check-v0.3`, `garnet-stdlib` |
 
 ---
 
+> **v0.7 build-both-then-compare (#221).** A Codex PR (#221) already merged a
+> hand-rolled in-parser CST (`garnet-parser-v0.3/src/cst.rs`) + ~578 lines of
+> LSP. v0.7 does NOT override it: mac-opus builds a rowan `garnet-cst` crate
+> independently and additively (preserve #221's `src/cst.rs` untouched), then a
+> **S15-Compare** checkpoint (Jon) picks the canonical CST. **S16 is HELD until
+> that decision.** See `GARNET_v0_7_SLICE_DOGFOOD.md` → S15-Compare.
+
 ## Dependency Graph
 
 ```
-S15 (mac-opus)
-  ├─→ PR-1: CST trait stub (small, fast, ~24h target) ──┐
-  └─→ PR-2: full CST impl                                │
-                                                         ▼
-                                                    S16 (win-codex)
-                                                    starts mock-first
-                                                    after PR-1 merges
+#221 in-parser CST (already merged) ──┐
+                                       ├──► S15-Compare (Jon) ──► canonical CST
+S15 (mac-opus): rowan garnet-cst ──────┘            │
+  ├─→ PR-1: CST trait stub                          │
+  └─→ PR-2: full rowan impl (built cold)            ▼
+                                              S16 (win-codex)
+                                              HELD until S15-Compare;
+                                              targets the canonical CST
 
 S17 (win-opus) ───────────────────────────────────────────┐
                                                           ▼
@@ -56,12 +64,14 @@ S17 (win-opus, soft) ───────────────────�
 
 **Critical sync points**:
 
-1. **mac-opus opens S15 PR-1 (trait stub) immediately.** Other agents may begin
-   reading their PRDs but should not start substantive write work until PR-1
-   merges (~24h target).
-2. **win-opus's S17 must MERGE before mac-codex starts S18 substantive work.**
-3. **win-codex's S16 can start mock-first right after S15 PR-1 lands**; final
-   merge depends on S15 PR-2.
+1. **mac-opus builds the rowan `garnet-cst` crate cold** (independently of #221's
+   in-parser CST), additively, preserving `garnet-parser-v0.3/src/cst.rs`. S17
+   (win-opus) has no CST dependency and can start immediately in parallel.
+2. **S15-Compare (Jon) picks the canonical CST** once mac-opus's S15 is
+   dogfood-passing. The decision is recorded here in the ledger.
+3. **win-codex's S16 is HELD until the S15-Compare decision is posted**, then
+   targets the canonical CST. Do not start substantive LSP work before then.
+4. **win-opus's S17 must MERGE before mac-codex starts S18 substantive work.**
 
 ---
 

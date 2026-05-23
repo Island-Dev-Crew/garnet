@@ -16,6 +16,32 @@ Tree). This is the load-bearing foundation for LSP precision features (S16) and
 for any future rename, refactor, or code-action work. Until this lands, LSP work
 is constrained to MVP top-level features.
 
+## v0.7 directive — build independently, then compare (READ FIRST)
+
+A prior Codex PR (**#221, "Advance S15 CST and S16 LSP readiness"**) already
+merged a **hand-rolled, in-parser CST** at `garnet-parser-v0.3/src/cst.rs`
+(~510 lines, `CstNodeKind`) plus a roundtrip test and ~578 lines of
+S16-adjacent LSP work in `garnet-lsp/src/lib.rs`.
+
+Per Jon's directive, **do not extend, copy from, or override that work during
+S15.** Instead:
+
+1. **Build the rowan `garnet-cst` crate cold** — as if no CST existed — at full
+   Opus 1M scope, straight from the Mini-Spec grammar. Independence is the
+   point: two implementations built without reference to each other surface each
+   other's blind spots.
+2. **Build additively.** `garnet-cst` is a NEW workspace member; the parser
+   gains an opt-in CST mode. **Do not modify or delete
+   `garnet-parser-v0.3/src/cst.rs` (#221)** — it is preserved untouched as the
+   comparison baseline.
+3. **Do not reconcile during S15.** Extraction, diffing, and the
+   keep/merge/discard decision happen in the separate **S15-Compare** checkpoint
+   (see `GARNET_v0_7_SLICE_DOGFOOD.md`), a human-in-the-loop review by Jon with
+   fresh eyes on both variations — not autonomous agent work.
+
+Everything below describes the rowan crate to build. Treat #221 as out of view
+while building.
+
 ## Why Mac Opus
 
 Largest architectural slice in v0.7. Deep refactor of the parser's output surface.
@@ -25,7 +51,7 @@ without trivia loss) is a single, clear, mechanical test.
 
 ## Owned crates (writable)
 
-- `garnet-parser-v0.3` — add CST output mode behind an opt-in flag; preserve AST path
+- `garnet-parser-v0.3` — add CST output mode behind an opt-in flag; preserve AST path. **Do not modify or delete the existing `src/cst.rs` (#221) — it is the S15-Compare baseline.**
 - `garnet-cst` — **NEW crate**, primary deliverable
 
 ## Read-only crates
@@ -189,6 +215,7 @@ Expected:
 - Editor extension updates (S16's job).
 - Migrating interp/check/vm to consume CST directly (v0.8 work).
 - Performance optimization below the 1.5× bar (v0.8 optimization slice).
+- **Reconciling with #221's in-parser CST — that is the separate S15-Compare checkpoint, not S15.** Build cold; do not read or extend `garnet-parser-v0.3/src/cst.rs`.
 
 ---
 

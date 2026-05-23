@@ -4,7 +4,7 @@
 |---|---|
 | **Slot** | win-codex (Codex Desktop GPT-5.5 Pro Extra High Fast, Windows) |
 | **Slice** | S16 |
-| **Status** | not-started → planned (waiting for S15 PR-1) → in-progress → review-ready → dogfood-passing → merged |
+| **Status** | not-started → planned (HELD for S15-Compare reconciliation) → in-progress → review-ready → dogfood-passing → merged |
 | **PR count** | 1 (substantive, after mock-first prep) |
 
 ---
@@ -36,11 +36,17 @@ structured `/plan` and `/run` flow fits multi-feature implementation.
 
 ## Dependencies
 
-- **HARD BLOCK**: S15 PR-1 (the CST trait surface) must merge before you start
-  substantive work. Until then, code against a mock impl of the trait.
-- **Soft block**: S15 PR-2 (full CST impl) should land before your final PR;
-  until then, real-Garnet-source tests may fail. Use synthetic test inputs that
-  fit the mock until PR-2 lands.
+- **HELD (v0.7 update)**: S16 substantive work is on hold until the
+  **S15-Compare** CST reconciliation resolves which CST is canonical (see
+  `GARNET_v0_7_SLICE_DOGFOOD.md`). #221 already merged ~578 lines of LSP work in
+  `garnet-lsp/src/lib.rs` (plus `scripts/smoke_garnet_lsp_protocol.py`); LSP
+  precision must not be built twice. Once Jon picks the winning CST, S16 targets
+  it. **Do not delete #221's LSP work while S16 is held** — it is part of the
+  comparison surface.
+- After reconciliation: the chosen CST's trait surface must be published before
+  substantive work; code against a mock impl of that trait until it lands.
+- win-codex may read its PRD and draft a plan while held, but should not open a
+  substantive S16 PR until Jon posts the reconciliation outcome in the ledger.
 
 ---
 
@@ -155,8 +161,9 @@ python3 scripts/smoke_garnet_lsp_precision.py
 
 ## Coordination
 
-- **Hard sync point**: wait for `mac-opus` to merge S15 PR-1 (the CST trait stub).
-  Watch `AGENT_COORDINATION_LEDGER.md` for `mac-opus / S15-PR1 / MERGED` entry.
+- **Hard sync point**: wait for Jon to post the **S15-Compare reconciliation
+  outcome** (which CST is canonical) in `AGENT_COORDINATION_LEDGER.md`. Only then
+  watch for the chosen CST's trait-surface merge before starting substantive work.
 - **Read-only access** to `garnet-check-v0.3`. If you need a new diagnostic
   surface, file a Handoff Request to **win-opus** (current owner of check
   modifications during v0.7).
