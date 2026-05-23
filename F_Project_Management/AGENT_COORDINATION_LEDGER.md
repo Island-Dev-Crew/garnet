@@ -119,7 +119,7 @@ agent's section. Other agents read this section every session — keep your entr
 accurate and current.**
 
 ### mac-opus (S15)
-- (empty)
+- [2026-05-22 20:25 CDT] STARTED agent-mac-opus/s15-cst-trait-stub — claiming S15. Building the rowan `garnet-cst` crate cold + additive per PRD A; parser `src/cst.rs` (#221) left untouched as the S15-Compare baseline. Baseline verified at main tip `c1fc957`: `cargo test --workspace` = 96 suites ok / 0 failed (exit 0); readiness 78.0%; `rowan` not yet in `Cargo.lock` (will add, must clear `cargo deny`). Confirmed `garnet_parser::lex_source*` is already `pub` (trivia-preserving), so `garnet-cst` reuses the lexer as a dependency — no parser-internal change required for PR-1/PR-2. Plan at `.agent/plans/mac-opus-S15-plan.md`; awaiting Jon approval before opening PR-1.
 
 ### win-codex (S16)
 - (empty)
@@ -169,7 +169,23 @@ session.**
 owner reviews and either accepts (and does the work) or proposes an alternative.
 Do NOT proceed with the modification until the owner has accepted.**
 
-(empty)
+- [2026-05-22 20:50 CDT] FROM:mac-opus TO:Jon (no v0.7 slot owns `garnet-cli`)
+  Crate / File: `garnet-cli/src/cmd/parse.rs` (and CLI arg wiring)
+  Change requested: add a `garnet parse --mode cst <file>` flag that routes to
+  the rowan path (`garnet_cst::parse_cst`) and prints/round-trips the CST. The
+  v0.7.0 release gate's clean-machine loop references `garnet parse --mode cst
+  src/main.garnet`, but `garnet-cli` is read-only for S15 (mac-opus owns only
+  `garnet-cst` + `garnet-parser-v0.3`).
+  Why I need it: PRD A §4 lists a `--mode cst` flag, but the actual `garnet
+  parse` command lives in `garnet-cli`. My S15 dogfood block does not require
+  the CLI flag, so S15 ships the rowan path as a library API and files this so
+  the release-gate line isn't silently dropped.
+  Proposed alternative if you can't: keep S15 library-only and defer the CLI
+  flag to the release-gate prep. **Sequencing note:** best actioned *after* PR-2
+  lands the real builder, and ideally *after* S15-Compare picks the canonical
+  CST, so the CLI wires to the winner rather than a stub or a soon-to-be-
+  superseded impl.
+  RESOLUTION: <owner fills this in>
 
 ### Handoff request format
 

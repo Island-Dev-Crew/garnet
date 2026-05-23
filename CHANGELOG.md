@@ -11,6 +11,26 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S15 (Trivia-preserving CST via rowan — PR-1: trait surface + stub):** new
+  `garnet-cst/` crate (rowan-backed), built **cold** for the v0.7
+  build-both-then-compare A/B. Publishes the stable surface S16 (LSP precision)
+  targets: the full `SyntaxKind` / `GarnetLanguage: rowan::Language` binding,
+  `SyntaxNode` / `SyntaxToken` aliases, the `CstNode` trait, `Parse<T>`,
+  `SyntaxError`, `cst_to_source`, and `parse_cst`. In PR-1 `parse_cst` is an
+  **intentionally trivial stub** (whole source as one trivia leaf —
+  byte-identical round-trip, no structural parsing); the structural
+  recursive-descent builder and the `cst_to_ast` projection land in PR-2.
+  `u16` ⇄ `SyntaxKind` conversion is `unsafe`-free. Ships 6 round-trip /
+  invariant tests + 1 doc-test + a `proptest` proving the stub round-trips any
+  UTF-8 input. Registered in workspace `Cargo.toml`, the root `AGENTS.md`
+  contract index, and `scripts/check-agent-contracts.py`. Adds `rowan`
+  (MIT/Apache-2.0; clears `cargo deny`). **Honest scope:** #221's in-parser CST
+  (`garnet-parser-v0.3/src/cst.rs`) is preserved untouched as the S15-Compare
+  baseline — this rowan crate is a *second, independent* implementation; the
+  canonical-CST choice is the separate S15-Compare checkpoint (Jon), not this
+  PR. No readiness lane yet — the `parser_cst_migration` lane + baseline
+  regeneration land in PR-2 with the substantive evidence.
+
 - **S13 (Registry stub v0.1):** new `garnet-registry-stub/` crate — a
   filesystem-backed registry where an `index.json` (serde) maps
   `name → version → { path, BLAKE3-per-file }` over `<name>/<version>/`
