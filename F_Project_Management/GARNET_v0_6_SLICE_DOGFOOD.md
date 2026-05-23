@@ -7,9 +7,11 @@ file in the same commit as the work it tracks.
 
 The v0.5 successor of `F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md`.
 v0.5 is closed; this file governs PRs titled `S11:`–`S14:`. **S15 and S16
-were re-scoped to the four-agent v0.7 build-out** — their authoritative
-contracts now live in `F_Project_Management/GARNET_v0_7_SLICE_DOGFOOD.md`.
-The S15/S16 sections below are retained for history and marked SUPERSEDED.
+moved to the four-agent v0.7 build-out** — authoritative contracts live in
+`F_Project_Management/GARNET_v0_7_SLICE_DOGFOOD.md`. #221 merged an in-parser
+CST + LSP under these numbers; the S15/S16 sections below are retained as the
+**v0.7 comparison baseline** (preserved, not deleted) for the S15-Compare
+reconciliation.
 
 ---
 
@@ -232,11 +234,13 @@ target/release/garnet run --vm --dump-lowering examples/mvp_function_call_demo.g
 
 ### S15 — Trivia-preserving CST in `garnet-parser-v0.3`
 
-> **SUPERSEDED — moved to v0.7.** Re-scoped under the four-agent v0.7
-> build-out. The authoritative contract is **S15 in
-> `GARNET_v0_7_SLICE_DOGFOOD.md`**, where the CST ships as a **new
-> `garnet-cst` crate** (rowan-backed, trait-first) rather than as a module
-> inside `garnet-parser-v0.3`. Do not implement from this section.
+> **BUILD-BOTH-THEN-COMPARE BASELINE (v0.7).** This in-parser CST approach was
+> implemented and merged by **#221** (`garnet-parser-v0.3/src/cst.rs`). Under
+> v0.7 it is **preserved untouched as the comparison baseline** against the new
+> rowan `garnet-cst` crate (S15 in `GARNET_v0_7_SLICE_DOGFOOD.md`). **Do not
+> delete `garnet-parser-v0.3/src/cst.rs`.** The keep/merge/discard decision is
+> the **S15-Compare** checkpoint (Jon, fresh eyes on both). Do not start *new*
+> CST work from this section.
 
 **Goal:** Add a green-tree / CST layer in `garnet-parser-v0.3` that preserves whitespace, comments, and (where present) tab vs space distinctions. The AST stays the primary semantic surface; the CST becomes the trivia-faithful spine the LSP, formatter, and richer trust-report consume.
 
@@ -269,9 +273,11 @@ cargo bench -p garnet-parser-v0.3 --bench cst_overhead > /tmp/cst-overhead.txt
 
 ### S16 — LSP v0.2 on the CST
 
-> **SUPERSEDED — moved to v0.7.** Re-scoped under the four-agent v0.7
-> build-out. The authoritative contract is **S16 in
-> `GARNET_v0_7_SLICE_DOGFOOD.md`**. Do not implement from this section.
+> **HELD / BASELINE (v0.7).** #221 merged ~578 lines of LSP work in
+> `garnet-lsp/src/lib.rs` (preserved as the comparison baseline). S16 LSP
+> precision is **HELD until the S15-Compare reconciliation** picks the canonical
+> CST — see **S16 in `GARNET_v0_7_SLICE_DOGFOOD.md`**. Do not start *new* LSP
+> work from this section.
 
 **Goal:** Build workspace symbols, rename, code actions, and semantic tokens on top of S15's CST. Surface S10's advisory `compiler suggested:` rules as LSP code-actions. Updates the VSCode extension to consume the new capabilities.
 

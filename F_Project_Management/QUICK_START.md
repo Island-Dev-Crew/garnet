@@ -15,9 +15,10 @@ files as part of the goal-mode prompt's first action.
 
 ## Launch sequence — 4-agent rollout
 
-### Phase 1 — Mac Opus alone (~30 min start, ~24h to PR-1 merge)
+### Phase 1 — Mac Opus (S15) + Win Opus (S17) start (parallel)
 
-Open Claude Code on Mac. Drop the goal-mode prompt with the slot line:
+Open Claude Code on this Mac (the 1M Opus run). Drop the goal-mode prompt with
+the slot line:
 
 ```
 You are agent slot mac-opus.
@@ -27,31 +28,15 @@ You are agent slot mac-opus.
 
 Wait for:
 1. Mac Opus to confirm it has read the ledger + PRD A.
-2. Mac Opus to propose its plan for S15 PR-1 (the trait stub).
-3. **You approve.** Mac Opus opens PR-1.
-4. PR-1 merges (CI passes, you review, you merge).
+2. Mac Opus to propose its plan for S15 — building the rowan `garnet-cst` crate
+   **cold and additively** (it must NOT read, extend, or delete #221's existing
+   `garnet-parser-v0.3/src/cst.rs`).
+3. **You approve.** Mac Opus opens PR-1 (trait stub), then PR-2 (full rowan impl).
+4. You review + merge each PR.
 
-**Why solo at first**: PR-1 from S15 is the unblock signal for S16 (Win Codex).
-Other agents can't really start until the trait surface exists. Running them in
-parallel before PR-1 means they all sit on mock-first scaffolding without a real
-target to integrate into. One agent for ~24h is fine.
-
-### Phase 2 — Mac Opus + Win Codex + Win Opus (parallel)
-
-Once S15 PR-1 is merged:
-
-**Mac Opus** continues with S15 PR-2 (substantive CST impl). Same prompt, same
-slot — they're already running.
-
-**Win Codex** starts. Open Codex Desktop on Windows. Drop:
-
-```
-You are agent slot win-codex.
-
-[paste GOAL_MODE_PROMPT.txt]
-```
-
-**Win Opus** starts. Open Claude Code on Windows. Drop:
+**Win Opus (S17)** starts at the same time — S17 (stdlib + layer policy +
+`@stability`) has no CST dependency, so it runs fully parallel to Mac Opus. Open
+Claude Code on Windows. Drop:
 
 ```
 You are agent slot win-opus.
@@ -59,11 +44,34 @@ You are agent slot win-opus.
 [paste GOAL_MODE_PROMPT.txt]
 ```
 
-These two run independently. Win Codex codes against the trait via mock; Win
-Opus writes the Layer Policy doc + `@stability` enforcement. Neither blocks
-the other.
+**Do NOT launch Win Codex yet.** S16 (LSP precision) is HELD until the CST
+reconciliation (next phase) — #221 already merged ~578 lines of LSP, and we
+don't want it built twice on the wrong CST.
 
-### Phase 3 — Mac Codex joins (after S17 merges)
+### Phase 2 — S15-Compare reconciliation (you, with Claude)
+
+When Mac Opus's rowan `garnet-cst` is dogfood-passing, you have **two**
+trivia-preserving CSTs in the tree: #221's hand-rolled in-parser CST and Opus's
+rowan crate. Run the **S15-Compare** checkpoint (see
+`GARNET_v0_7_SLICE_DOGFOOD.md`): extract both, diff on substance (variant
+coverage, trivia fidelity, roundtrip, error recovery, perf, LSP-consumer
+ergonomics, test depth), list where they reconcile, and **decide** the canonical
+CST. Record the decision + rationale in the ledger so S16 knows its target.
+
+### Phase 3 — Win Codex (S16) joins (after S15-Compare)
+
+Once the canonical CST is recorded in the ledger, launch Win Codex for S16,
+which targets the chosen CST. Open Codex Desktop on Windows. Drop:
+
+```
+You are agent slot win-codex.
+
+[paste GOAL_MODE_PROMPT.txt]
+```
+
+Win Opus (S17) keeps running independently throughout.
+
+### Phase 4 — Mac Codex joins (after S17 merges)
 
 When Win Opus marks `S17 / MERGED` in the ledger:
 
@@ -77,10 +85,10 @@ You are agent slot mac-codex.
 
 Mac Codex sequences S18 (packages) → S19 (LLM tier).
 
-### Phase 4 — Convergence
+### Phase 5 — Convergence
 
 Watch the ledger Status Board. When all four agents have MERGED entries for
-their slices, tag v0.7.0.
+their slices (and the S15-Compare decision is recorded), tag v0.7.0.
 
 ---
 

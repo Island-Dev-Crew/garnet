@@ -9,13 +9,16 @@ The v0.6 successor of `F_Project_Management/GARNET_v0_6_SLICE_DOGFOOD.md`.
 This file governs every PR titled `S15:`–`S19:` and any later v0.7 slice
 added under § Slice Contracts.
 
-> **Slice renumbering note.** S15 and S16 were originally drafted as v0.6
-> slices in `GARNET_v0_6_SLICE_DOGFOOD.md`. Neither merged. They are
-> **re-scoped under the four-agent v0.7 build-out** and the authoritative
-> contracts now live in this file. The v0.6 sections are marked
-> SUPERSEDED. The headline change for S15 is that the CST now lands as a
-> **new `garnet-cst` crate** (rowan-backed, trait-first), not as a module
-> inside `garnet-parser-v0.3`.
+> **S15/S16 build-both-then-compare note.** S15 and S16 were drafted as v0.6
+> slices, and a Codex PR (**#221**) then merged a **hand-rolled, in-parser CST**
+> (`garnet-parser-v0.3/src/cst.rs`, ~510 lines) plus ~578 lines of S16-adjacent
+> LSP work. Rather than override or extend that, v0.7 takes a deliberate A/B
+> path: **mac-opus builds a `garnet-cst` rowan crate independently and
+> additively** (as if no CST existed, at full 1M scope), #221's in-parser CST is
+> **preserved untouched as the comparison baseline**, and a **S15-Compare**
+> checkpoint then extracts, diffs, and reconciles the two with Jon's fresh eyes.
+> **S16 (LSP) is HELD until that reconciliation picks the canonical CST.** The
+> v0.6 S15/S16 sections are retained as the baseline, not deleted.
 
 ---
 
@@ -133,7 +136,15 @@ output mode to `garnet-parser-v0.3`. The AST stays the semantic reference;
 existing consumers (interp, check, vm) keep working unchanged via a
 `cst_to_ast()` projection.
 
-**Owned crates (writable):** `garnet-parser-v0.3`, `garnet-cst` (NEW).
+**Build-both-then-compare (READ FIRST).** #221 already merged a hand-rolled
+in-parser CST at `garnet-parser-v0.3/src/cst.rs`. Build this rowan crate
+**independently and additively** — cold from the Mini-Spec, as if no CST
+existed. **Do not modify or delete `garnet-parser-v0.3/src/cst.rs`** (#221) — it
+is preserved as the **S15-Compare** baseline. Reconciliation is the S15-Compare
+checkpoint below, not part of S15. See `PRD_A_S15_CST_MIGRATION.md`.
+
+**Owned crates (writable):** `garnet-parser-v0.3` (CST mode opt-in only; do NOT
+touch `src/cst.rs`), `garnet-cst` (NEW).
 
 **New surfaces:**
 - `garnet-cst/` — NEW crate: `SyntaxKind`, `GarnetLanguage: rowan::Language`,
@@ -154,7 +165,8 @@ existing consumers (interp, check, vm) keep working unchanged via a
 1. **PR-1 — `S15: garnet-cst trait surface + stub`** (small, fast; target
    merge within 24h of open). Stub `parse_cst` returns a single CST node
    containing all source as trivia. The trait is real; the impl is trivial.
-   This is the **unblock signal for S16**.
+   (Note: S16 no longer unblocks on PR-1 — it is HELD until S15-Compare picks
+   the canonical CST. PR-1 still publishes the rowan trait early.)
 2. **PR-2 — `S15: trivia-preserving CST via rowan`** (substantive).
 
 **Deps added:** `rowan` (must pass `cargo deny`).
@@ -180,6 +192,49 @@ cargo test --workspace --no-fail-fast   # existing consumers still pass
 
 ---
 
+### S15-Compare — CST reconciliation checkpoint (human-in-the-loop)
+
+**Owner:** Jon (with Claude assist) · **Type:** review checkpoint, not autonomous agent work · **Trigger:** after S15 (rowan `garnet-cst`) reaches dogfood-passing.
+
+**Goal:** With two independent trivia-preserving CSTs in the tree — #221's
+hand-rolled in-parser CST (`garnet-parser-v0.3/src/cst.rs`) and S15's rowan
+`garnet-cst` crate — extract both, compare them side by side with fresh eyes,
+and decide how they reconcile.
+
+**Procedure:**
+1. **Extract** — surface both implementations and their tests/benches into a
+   single comparison view (e.g.,
+   `F_Project_Management/DOGFOOD/S15_CST_COMPARE.md`).
+2. **Diff on substance**, not line count: coverage of
+   `SyntaxKind`/`CstNodeKind` variants, trivia fidelity, roundtrip guarantees,
+   error-recovery behavior, performance vs the AST path, API ergonomics for the
+   LSP consumer, and test depth.
+3. **List reconcilable points** — where the two agree, where each is stronger,
+   and what a merged design would keep from each.
+4. **Decide** (Jon) — keep the rowan crate, keep the in-parser CST, or merge the
+   best of both into the canonical CST. Record the decision + rationale in the
+   ledger so S16 and downstream know the target.
+
+**Dogfood block:**
+
+```bash
+# Both implementations build and pass their own tests before comparison:
+cargo test -p garnet-cst --no-fail-fast
+cargo test -p garnet-parser-v0.3 --test cst_round_trip --no-fail-fast
+# Comparison artifact exists and the canonical-CST decision is recorded:
+test -f F_Project_Management/DOGFOOD/S15_CST_COMPARE.md
+```
+
+**Honest partial labels available:**
+- "Two CST implementations coexist during S15-Compare by design; the tree is intentionally non-canonical until Jon records the decision."
+- "Reconciliation is a human review checkpoint; no automated merge of the two CSTs is claimed."
+
+**Unblocks:** S16 (LSP precision targets the canonical CST chosen here).
+
+**State:** not-started (gated on S15).
+
+---
+
 ### S16 — LSP precision features
 
 **Slot:** win-codex · **PRD:** `PRD_B_S16_LSP_PRECISION.md` · **PR count:** 1 (substantive, after mock-first prep)
@@ -188,6 +243,14 @@ cargo test --workspace --no-fail-fast   # existing consumers still pass
 precision tier: **workspace symbols, rename, code actions, semantic
 tokens** — all CST-aware, not regex-driven. Wire S10's advisory rules into
 code actions.
+
+> **HELD until S15-Compare.** #221 already merged ~578 lines of LSP work in
+> `garnet-lsp/src/lib.rs`. S16 substantive work does not start until the
+> S15-Compare reconciliation picks the canonical CST — LSP precision then
+> targets the winner, built once on the chosen CST. Do not delete #221's LSP
+> work while held; it is part of the comparison surface. win-codex may draft a
+> plan while held but opens no substantive PR until Jon records the
+> reconciliation outcome in the ledger.
 
 **Owned crates (writable):** `garnet-lsp`, `editors/vscode`.
 
@@ -397,7 +460,8 @@ tail -1 .garnet-cache/llm-suggest-log.jsonl | python3 -m json.tool
 
 Tag v0.7.0 only when all of:
 
-- [ ] S15, S16, S17, S18, S19 in `merged` state.
+- [ ] S15, S16, S17, S18, S19 in `merged` state, and **S15-Compare** decision
+      recorded (canonical CST chosen) before S16 merges.
 - [ ] `scripts/garnet_mit_readiness_status.py` reports a higher AND more
       granular % than the v0.6.0 close baseline (record the v0.6.0 close
       numbers here when v0.6.0 tags). Five new lanes expected:
@@ -437,10 +501,12 @@ garnet check --suggest --llm anthropic src/main.garnet
 - [ ] `scripts/verify_org_release_smoke.sh` passes against
       `Island-Dev-Crew/garnet` release `v0.7.0`.
 
-**Ordering:** S15 PR-1 must merge before S16 opens substantive work. S17 must
-merge before S18 starts substantive work. S19 may run in parallel with S18
-once S17 ships `@stability`. Slices may otherwise land out of order under the
-slice-per-PR discipline.
+**Ordering:** S15 (rowan `garnet-cst`) builds independently of #221's in-parser
+CST; both coexist until **S15-Compare** records the canonical CST. **S16 is HELD
+until that decision** and then targets the winning CST. S17 must merge before
+S18 starts substantive work. S19 may run in parallel with S18 once S17 ships
+`@stability`. Slices may otherwise land out of order under the slice-per-PR
+discipline.
 
 ---
 
