@@ -14,7 +14,9 @@ from unittest import mock
 
 SCRIPT = Path(__file__).with_name("garnet_mit_readiness_status.py")
 TEST_DOGFOOD_DIR = tempfile.TemporaryDirectory()
+TEST_CLEAN_VM_ROOT = tempfile.TemporaryDirectory()
 os.environ["GARNET_PROMO_VIDEO_DESKTOP_DIR"] = TEST_DOGFOOD_DIR.name
+os.environ["GARNET_WINDOWS_CLEAN_VM_EVIDENCE_ROOT"] = TEST_CLEAN_VM_ROOT.name
 SPEC = importlib.util.spec_from_file_location("garnet_mit_readiness_status", SCRIPT)
 assert SPEC is not None
 status_mod = importlib.util.module_from_spec(SPEC)
@@ -27,6 +29,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
     @classmethod
     def tearDownClass(cls) -> None:
         TEST_DOGFOOD_DIR.cleanup()
+        TEST_CLEAN_VM_ROOT.cleanup()
 
     def test_status_distinguishes_plan_completion_from_goal_completion(self) -> None:
         status = status_mod.read_status()
@@ -141,6 +144,59 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("semantic tokens", lanes["editor_lsp_adoption"]["evidence"])
         self.assertNotIn("release-backed VSIX smoke after tag", lanes["editor_lsp_adoption"]["deferred"])
         self.assertEqual([], lanes["editor_lsp_adoption"]["deferred"])
+
+    def test_clean_vm_proof_lifts_windows_distribution_lane_without_overclaiming(self) -> None:
+        clean_vm_mod = (
+            status_mod.garnet_windows_linux_studio_status.garnet_windows_clean_vm_installer_status
+        )
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            bundle = root / "proof"
+            installer = root / "Garnet Studio_0.1.0_x64-setup.exe"
+            install_log = root / "install.log"
+            smoke = root / "studio-smoke.json"
+            screenshot = root / "launch.png"
+            installer.write_bytes(b"fake installer")
+            install_log.write_text("InstallerExitCode=0\n", encoding="utf-8")
+            smoke.write_text(
+                json.dumps(
+                    {
+                        "status": "passed",
+                        "source_included": False,
+                        "provider_api_called": False,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            screenshot.write_bytes(b"fake png")
+            clean_vm_record = clean_vm_mod.build_proof_record(
+                mode="clean-vm",
+                installer=installer,
+                vm_name="WindowsSandbox-123",
+                guest_os="Windows 11 Enterprise",
+                guest_arch="AMD64",
+                install_log=install_log,
+                studio_smoke_json=smoke,
+                screenshot=screenshot,
+            )
+            clean_vm_mod.write_proof(clean_vm_record, bundle)
+
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "GARNET_PROMO_VIDEO_DESKTOP_DIR": TEST_DOGFOOD_DIR.name,
+                    "GARNET_WINDOWS_CLEAN_VM_EVIDENCE_ROOT": str(root),
+                },
+            ):
+                status = status_mod.read_status()
+
+        lane = {lane.id: lane for lane in status.lanes}["windows_linux_distribution"]
+        self.assertEqual("active-partial", lane.status)
+        self.assertEqual(65.0, lane.completion_percent)
+        self.assertIn("verified x64 clean-VM installer proof", lane.evidence)
+        self.assertNotIn("clean Windows VM", " ".join(lane.blocked_by))
+        self.assertIn("Linux VM/container", " ".join(lane.blocked_by))
+        self.assertIn("Windows ARM64 target build/smoke", " ".join(lane.deferred))
 
     def test_rendered_promo_artifacts_update_objective_blockers(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -304,6 +360,8 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("machine-readable preflight status reporter", site)
         self.assertIn("mobile", site)
         self.assertIn("LLM assist", site)
+        self.assertIn("verified x64 clean-VM installer proof", site)
+        self.assertIn("verified x64 clean-VM installer proof", status_site)
 
     # S0: --check-no-regression flag.
 

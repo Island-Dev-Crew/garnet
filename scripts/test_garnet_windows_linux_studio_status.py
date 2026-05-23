@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -11,6 +12,8 @@ import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 
+TEST_CLEAN_VM_ROOT = tempfile.TemporaryDirectory()
+os.environ["GARNET_WINDOWS_CLEAN_VM_EVIDENCE_ROOT"] = TEST_CLEAN_VM_ROOT.name
 SCRIPT = Path(__file__).with_name("garnet_windows_linux_studio_status.py")
 SPEC = importlib.util.spec_from_file_location("garnet_windows_linux_studio_status", SCRIPT)
 assert SPEC is not None
@@ -21,6 +24,10 @@ SPEC.loader.exec_module(status_mod)
 
 
 class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
+    @classmethod
+    def tearDownClass(cls) -> None:
+        TEST_CLEAN_VM_ROOT.cleanup()
+
     def test_taxonomy_matches_handoff_copy_truth(self) -> None:
         status = status_mod.read_status()
         self.assertEqual(["Rust", "Ruby", "Python", "Go"], status.taxonomy.active_conversion)
@@ -173,6 +180,53 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             self.assertFalse(data["include_source_by_default"])
             self.assertFalse(data["source_included"])
             self.assertIn("garnet-windows-linux-studio-evidence-contract.json", manifest_path.read_text())
+
+    def test_clean_vm_proof_updates_unsigned_nsis_gate_without_overclaiming(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            bundle = root / "proof"
+            installer = root / "Garnet Studio_0.1.0_x64-setup.exe"
+            install_log = root / "install.log"
+            smoke = root / "studio-smoke.json"
+            screenshot = root / "launch.png"
+            installer.write_bytes(b"fake installer")
+            install_log.write_text("InstallerExitCode=0\n", encoding="utf-8")
+            smoke.write_text(
+                json.dumps(
+                    {
+                        "status": "passed",
+                        "source_included": False,
+                        "provider_api_called": False,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            screenshot.write_bytes(b"fake png")
+            clean_vm_record = status_mod.garnet_windows_clean_vm_installer_status.build_proof_record(
+                mode="clean-vm",
+                installer=installer,
+                vm_name="WindowsSandbox-123",
+                guest_os="Windows 11 Enterprise",
+                guest_arch="AMD64",
+                install_log=install_log,
+                studio_smoke_json=smoke,
+                screenshot=screenshot,
+            )
+            status_mod.garnet_windows_clean_vm_installer_status.write_proof(clean_vm_record, bundle)
+
+            status = status_mod.read_status(clean_vm_evidence_root=root)
+
+        self.assertEqual(
+            "tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-verified-linux-open",
+            status.status,
+        )
+        gate = next(gate for gate in status.packaging_gates if gate.id == "windows_unsigned_nsis")
+        self.assertEqual("clean-vm-proof-verified", gate.status)
+        self.assertNotIn(
+            "Run the unsigned NSIS installer in a clean Windows VM for installer/runtime launch evidence",
+            status.user_assistance_needed,
+        )
+        self.assertIn("Linux VM/container", " ".join(status.user_assistance_needed))
 
     def test_json_and_markdown_preserve_not_completed_boundary(self) -> None:
         output = subprocess.check_output(

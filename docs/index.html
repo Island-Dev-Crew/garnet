@@ -1151,6 +1151,7 @@
       <div class="lang-badge">Backend lowering: Wasm · LLVM-style native targets planned</div>
       <div class="lang-badge">Adoption surface: evidence-backed</div>
     </div>
+    <p class="evidence-note">Adoption surface evidence is machine-readable through <code>scripts/garnet_adoption_surface_status.py</code>. It keeps the provider-neutral prompt pack, provider-option registry, and advisory flow bounded: source classifier -> risk inventory -> Garnet context -> advisory plan -> review handoff -> human-approved candidate -> garnet check/test/dogfood.</p>
   </div>
 </section>
 
@@ -1357,7 +1358,7 @@ garnet run src/main.garnet</pre>
       <li>release status &amp; the agentic dogfood matrix</li>
     </ul>
     <p class="lead" style="font-size:15px;">In Codex Desktop, a <strong>Codex Run</strong> action wires <code>script/build_and_run.sh</code> to build SwiftPM, stage <code>dist/Garnet Studio.app</code>, and launch it.</p>
-    <p class="lead">The Windows/Linux lane now has a separate Tauri v2 shell scaffold under <code>apps/garnet-studio</code>. Windows local proof covers the Vite frontend build, Tauri backend tests, release executable, unsigned NSIS bundle, <code>--studio-smoke</code> Desktop evidence, a Release / Readiness panel wired to the repo-native v0.5 reporters, and a clean-VM installer proof contract. It is still not signed MSI, winget, Linux runtime, or a completed clean-machine installer pass.</p>
+    <p class="lead">The Windows/Linux lane now has a separate Tauri v2 shell scaffold under <code>apps/garnet-studio</code>. Windows local proof covers the Vite frontend build, Tauri backend tests, release executable, unsigned NSIS bundle, <code>--studio-smoke</code> Desktop evidence, a Release / Readiness panel wired to the repo-native v0.5 reporters, and a verified x64 clean-VM installer proof. It is still not signed MSI, winget, Linux runtime, Windows ARM64 proof, or completed cross-platform package proof.</p>
 
     <div class="features">
       <div class="feature">
@@ -1442,7 +1443,7 @@ dist/Garnet Studio.app</pre>
         <ul>
           <li><strong>87/87 tracked slices</strong> are verified, but that is not full MIT/productization completion.</li>
           <li>S15 adds a trivia-preserving CST with byte-identical example round trips; incremental/error-recovery parsing remains future work.</li>
-          <li>Windows now has a Tauri v2 Studio scaffold with local release build, unsigned NSIS bundle, smoke evidence, and a clean-VM proof importer; Linux runtime and the actual clean-machine installer pass remain open.</li>
+          <li>Windows now has a Tauri v2 Studio scaffold with local release build, unsigned NSIS bundle, smoke evidence, and verified x64 clean-VM installer proof; Linux runtime, signing, winget, and Windows ARM64 proof remain open.</li>
           <li>Promo video is public-site embedded at 95.0%; human/aesthetic acceptance remains open.</li>
           <li>Web/PWA productization is verified; mobile distribution is still planned.</li>
           <li>S16 advances Editor/LSP adoption to verified with document/workspace symbols, CST-precise rename, quick fixes, and semantic tokens over the release LSP protocol smoke.</li>
