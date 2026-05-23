@@ -1,0 +1,15 @@
+[package]
+name = "garnet-cst"
+version = "0.1.0"
+edition = "2021"
+description = "Trivia-preserving Concrete Syntax Tree (CST) for Garnet, backed by rowan. Built cold for the v0.7 build-both-then-compare A/B (S15)."
+license = "MIT OR Apache-2.0"
+authors = ["Island Development Crew"]
+repository = "https://github.com/Island-Dev-Crew/garnet"
+
+[dependencies]
+rowan = "0.16"
+garnet-parser = { version = "0.3.0", path = "../garnet-parser-v0.3" }
+
+[dev-dependencies]
+proptest = "1"

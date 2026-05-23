@@ -80,6 +80,9 @@ CONTRACT_RULES = {
     "garnet-convert/AGENTS.md": {
         "phrases": ["Rust, Ruby, Python, and Go", "sandboxing", "provenance"],
     },
+    "garnet-cst/AGENTS.md": {
+        "phrases": ["rowan", "trivia-preserving", "Concrete Syntax Tree", "round-trip"],
+    },
     "garnet-lsp/AGENTS.md": {
         "phrases": [
             "Language Server Protocol",

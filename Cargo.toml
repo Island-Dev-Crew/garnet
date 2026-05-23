@@ -9,6 +9,7 @@ members = [
     "garnet-actor-runtime",
     "garnet-stdlib",
     "garnet-convert",
+    "garnet-cst",
     "garnet-lsp",
     "garnet-vm",
     "garnet-registry-stub",
