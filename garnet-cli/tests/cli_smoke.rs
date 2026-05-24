@@ -59,6 +59,37 @@ fn parse_without_file_argument_exits_nonzero() {
 }
 
 #[test]
+fn parse_mode_cst_summarizes_rowan_tree() {
+    let dir = tempdir().unwrap();
+    let source = dir.path().join("main.garnet");
+    std::fs::write(&source, "def main() { 1 }\n").unwrap();
+
+    let out = Command::new(garnet_bin())
+        .args(["parse", "--mode", "cst", source.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "cst parse failed\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("as cst"));
+    assert!(stdout.contains("roundtrip=true"));
+}
+
+#[test]
+fn parse_unknown_mode_exits_nonzero() {
+    let out = Command::new(garnet_bin())
+        .args(["parse", "--mode", "wat", "x.garnet"])
+        .output()
+        .unwrap();
+    assert!(!out.status.success());
+    assert!(String::from_utf8_lossy(&out.stderr).contains("unknown parse mode"));
+}
+
+#[test]
 fn check_without_file_argument_exits_nonzero() {
     let out = Command::new(garnet_bin()).arg("check").output().unwrap();
     assert!(!out.status.success());

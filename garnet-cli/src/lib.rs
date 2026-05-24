@@ -94,7 +94,7 @@ pub fn print_help() {
     println!("    garnet <SUBCOMMAND> [ARGS]\n");
     println!("SUBCOMMANDS:");
     println!("    new    --template <T> <dir>      Scaffold a new project (T=cli|web-api|agent-orchestrator)");
-    println!("    parse  <file.garnet>             Parse a file and print a structural summary");
+    println!("    parse  [--mode ast|cst] <file>   Parse a file and print a structural summary");
     println!(
         "    check  <file.garnet>             Run the safe-mode checker (incl. CapCaps propagator)"
     );

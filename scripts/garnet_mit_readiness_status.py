@@ -782,27 +782,30 @@ def read_status() -> MitReadinessStatus:
             evidence=(
                 "`garnet-cst/` is a rowan-backed, trivia-preserving CST built cold "
                 "(direct recursive-descent over the token stream) for the v0.7 "
-                "build-both-then-compare A/B. `parse_cst` round-trips byte-identically "
+                "build-both-then-compare A/B. S15-Compare chose rowan as the "
+                "canonical CST; #221's parser CST is retained temporarily as a "
+                "legacy migration oracle. `parse_cst` round-trips byte-identically "
                 "across the canonical examples corpus and a `proptest` over arbitrary "
                 "UTF-8 (`tests/examples_roundtrip.rs`, `tests/roundtrip.rs`). `cst_to_ast` "
                 "projects onto `garnet_parser::ast::Module` with span-normalized "
                 "structural parity vs `parse_source` across the corpus "
                 "(`tests/cst_to_ast_parity.rs`). The `parse_cst_vs_ast` Criterion bench "
                 "measures the CST path at ~0.99x the AST path (well under the 1.5x gate). "
+                "`garnet parse --mode cst` routes to this rowan parser, and `tokens.rs` "
+                "preserves the #221 token/span ergonomics for LSP migration. "
                 "Reproduce via the S15 dogfood block in `GARNET_v0_7_SLICE_DOGFOOD.md`."
             )
             if _rowan_cst_present()
             else "No rowan `garnet-cst` builder/converter/bench source present yet.",
             blocked_by=[] if _rowan_cst_present() else ["S15 PR-2 rowan CST"],
             deferred=[
-                "Canonical-CST choice is the separate S15-Compare checkpoint (Jon); "
-                "this is the second of two independent CSTs by design, not yet reconciled",
                 "Error-recovery parsing is best-effort (round-trip always holds; structure "
                 "may flatten on malformed input)",
                 "Incremental re-parsing",
+                "Rowan-backed LSP migration; #221's parser CST remains as a temporary "
+                "legacy oracle until that migration is green",
                 "CST-first migration of interp/check/vm (v0.8; they stay on the AST path "
                 "via `parse_source`, untouched by S15)",
-                "`garnet parse --mode cst` CLI wiring (Handoff Request to the garnet-cli owner)",
             ]
             if _rowan_cst_present()
             else [],

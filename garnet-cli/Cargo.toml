@@ -11,6 +11,7 @@ path = "src/bin/garnet.rs"
 
 [dependencies]
 garnet-parser = { version = "0.3.0", path = "../garnet-parser-v0.3" }
+garnet-cst = { version = "0.1.0", path = "../garnet-cst" }
 garnet-interp = { version = "0.3.0", path = "../garnet-interp-v0.3" }
 garnet-check = { version = "0.3.0", path = "../garnet-check-v0.3" }
 garnet-memory = { version = "0.3.0", path = "../garnet-memory-v0.3" }

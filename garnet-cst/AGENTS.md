@@ -6,12 +6,16 @@ Owns Garnet's trivia-preserving Concrete Syntax Tree (CST): the rowan
 `SyntaxKind` / `GarnetLanguage` binding, the `SyntaxNode` / `SyntaxToken`
 aliases, the `CstNode` trait, `parse_cst`, `Parse<T>`, `cst_to_source`, the
 direct recursive-descent CST builder (`builder.rs`), the `cst_to_ast`
-projection (`convert.rs`), and the typed-node wrappers (`nodes.rs`).
+projection (`convert.rs`), the typed-node wrappers (`nodes.rs`), and the
+LSP-facing token/span helpers (`tokens.rs`, `TokenInfo`, `token_infos`,
+`identifier_spans`).
 
-Built **cold** for the v0.7 build-both-then-compare A/B (slice S15):
+Built **cold** for the v0.7 build-both-then-compare A/B (slice S15),
 independently of the in-parser CST merged in #221
-(`garnet-parser-v0.3/src/cst.rs`), which is preserved untouched as the
-S15-Compare baseline. This crate shares only two surfaces with the parser — the
+(`garnet-parser-v0.3/src/cst.rs`). The S15-Compare checkpoint chose this rowan
+crate as the canonical CST; #221's parser CST remains a temporary legacy
+migration oracle until S16's LSP work is rowan-backed and green. This crate
+shares only two surfaces with the parser — the
 trivia-preserving lexer (`garnet_parser::lex_source`) and the AST type
 (`garnet_parser::ast::Module`, the target of `cst_to_ast`). It never reads or
 extends #221's CST.
@@ -38,6 +42,11 @@ extends #221's CST.
 - `SyntaxKind` maps 1:1 from `garnet_parser::token::TokenKind` at the token
   level; composite node kinds follow Mini-Spec v1.0 §2–§11. Node kinds may be
   added additively in later PRs without breaking the trait surface.
+- `tokens.rs` preserves #221's useful editor-facing token ergonomics on top of
+  rowan: `TokenInfo` recovers `TokenKind` payloads, byte `Span`s, and exact
+  token text. `tests/parser_cst_token_parity.rs` must keep proving that this
+  token view matches the legacy parser CST on the example corpus, excluding the
+  parser's zero-width EOF sentinel.
 - `u16` <-> `SyntaxKind` conversion is safe (no `mem::transmute`); this crate
   introduces no ambient `unsafe`.
 - No OS authority: pure parsing, declares no `@caps`.
@@ -47,9 +56,9 @@ extends #221's CST.
 
 ## Stability
 
-`experimental` until the S15-Compare checkpoint (Jon, fresh eyes) records the
-canonical CST. The compiler `@stability(experimental)` annotation is wired once
-S17 ships it.
+Canonical CST for v0.7 after the S15-Compare checkpoint. The Rust API remains
+additive/experimental until S16 hardens the LSP-facing surfaces and S17 wires
+compiler `@stability(experimental)` annotations.
 
 ## CST in v0.7 (spec note)
 
@@ -58,11 +67,11 @@ maintainer's hand:
 
 > v0.7 adds a trivia-preserving CST as a first-class layer above the AST. The
 > AST remains the semantic reference; the CST is a lossless syntactic
-> projection used by editor tooling (rename, code actions, formatting). Two CST
-> implementations coexist during S15 by design — #221's in-parser CST and this
-> rowan crate — until the S15-Compare checkpoint records the canonical choice.
-> Round-trip is source-preserving for inputs that lex; recovery from malformed
-> input is best-effort and may diverge.
+> projection used by editor tooling (rename, code actions, formatting). The
+> S15-Compare checkpoint chose the rowan `garnet-cst` crate as canonical.
+> #221's in-parser CST remains a temporary legacy oracle until rowan-backed LSP
+> migration is green. Round-trip is source-preserving for inputs that lex;
+> recovery from malformed input is best-effort and may diverge.
 
 ## Required Checks
 
