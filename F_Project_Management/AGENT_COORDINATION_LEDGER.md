@@ -136,6 +136,7 @@ accurate and current.**
 - [2026-05-24 18:23 CDT] PR-OPEN PR#230 — branch `agent-win-codex/s16-rowan-lsp-precision` pushed at `09b090c`; local S16 dogfood green and readiness reporter moved 78.8% -> 79.6%. Entering review/CI loop; S16 is not merged until PR#230 is green and reviewed.
 - [2026-05-24 18:33 CDT] REVIEW PR#230 — first remote CI pass was green except `PR dogfood evidence`; root cause was missing required readiness-sensitive PR body headings, not code/test failure. PR body updated and locally validated with `scripts/check_dogfood_pr_body.py`; this ledger update retriggers remote CI against the corrected PR body. Not merged.
 - [2026-05-24 18:39 CDT] REVIEW PR#230 — Grep Loop pass 1 returned 3/5 confidence with two fixable findings: VS Code refactor command filtered QuickFix while the server emitted RefactorRewrite, and the precision smoke verified semantic-token legend but not emitted category payload. Patched both; focused local proof passes (`cargo test -p garnet-lsp --no-fail-fast`, `npm run package`, `scripts/smoke_garnet_lsp_precision.py`). Not merged.
+- [2026-05-24 18:46 CDT] MERGED PR#230 (squash `d539192` on origin/main) — S16 landed after Grep Loop pass 2 reached 5/5 and remote CI completed green (27 success / 2 skipped / 0 fail). `editor_lsp_precision` is verified in the readiness reporter at 79.6% overall; deferred scope remains safe-mode precision, cross-package rename, per-project semantic-token themes, and Marketplace/OpenVSX publication.
 
 ### win-opus (S17)
 - (empty)
