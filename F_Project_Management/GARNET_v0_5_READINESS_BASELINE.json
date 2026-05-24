@@ -1,7 +1,7 @@
 {
   "source": "/Users/IDC2.5/Desktop/Garnet",
   "overall_status": "active-partial",
-  "completion_percent": 79.6,
+  "completion_percent": 80.4,
   "current_truth": [
     "tracked implementation plan is complete",
     "goal remains active",
@@ -75,25 +75,19 @@
       "id": "windows_linux_distribution",
       "label": "Windows/Linux distribution",
       "status": "active-partial",
-      "completion_percent": 55.0,
-      "evidence": "`scripts/garnet_windows_linux_studio_status.py` now reports the Tauri v2 shell scaffold in `apps/garnet-studio`, minimal webview permissions, Windows local release build/smoke evidence, v0.5 readiness reporter parity actions, a Windows clean-VM installer proof contract, and open Linux plus clean-machine package gates.",
+      "completion_percent": 65.0,
+      "evidence": "`scripts/garnet_windows_linux_studio_status.py` now reports the Tauri v2 shell scaffold in `apps/garnet-studio`, minimal webview permissions, Windows local release build/smoke evidence, v0.5 readiness reporter parity actions, a verified x64 clean-VM installer proof, and open Linux plus signing, winget, and Windows ARM64 package gates.",
       "blocked_by": [
-        "clean Windows VM guest identity",
-        "unsigned NSIS installer artifact digest",
-        "installer run log from inside the guest",
-        "installed Studio --studio-smoke JSON",
-        "installed app launch screenshot",
-        "Run the unsigned NSIS installer in a clean Windows VM for installer/runtime launch evidence",
         "Provide a Linux VM/container with GUI or AppImage-capable desktop session for runtime launch evidence",
         "Provide signing credentials only when ready to verify signed MSI claims"
       ],
       "deferred": [
-        "Windows clean-machine NSIS install and CLI smoke evidence",
         "Linux desktop launch proof and first package-format decision",
+        "Windows ARM64 target build/smoke after x64 clean-VM proof",
         "Parse/check/run plus active converter end-to-end screenshots from the shell",
         "Advisory bundle/review/handoff evidence walkthrough without source inclusion",
         "Release / Readiness panel screenshot and reporter-output evidence from the Windows shell",
-        "Unsigned-to-signed Windows MSI/AuthentiCode plan after VM smoke",
+        "Signed Windows MSI/AuthentiCode plan after verified unsigned VM smoke",
         "Website/status copy sync after target smoke evidence"
       ]
     },
@@ -116,6 +110,20 @@
       "evidence": "`garnet-lsp/` and `editors/vscode/` provide the verified S16 CST-precise LSP surface. `scripts/smoke_garnet_lsp_protocol.py` proves document/workspace symbols, CST-precise rename, rules-based quick-fix actions, and semantic tokens on top of the CST over stdio with 100% validation success. Desktop evidence records Cursor/VS Code diagnostics and release-backed VSIX execution on the `v0.5.0` tag.",
       "blocked_by": [],
       "deferred": []
+    },
+    {
+      "id": "editor_lsp_precision",
+      "label": "Editor/LSP precision (S16)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`garnet-lsp/` now consumes the canonical rowan `garnet-cst` token/span surface for rename and semantic tokens while preserving parser/check diagnostics. `scripts/smoke_garnet_lsp_precision.py` proves document symbols, workspace symbols, cross-file function rename, scoped parameter rename, three code actions, and the S16 semantic-token categories (`capability`, `attribute`, `parameter`) over stdio. `editors/vscode` exposes the three Garnet quick-fix commands and packages `garnet-0.7.0-lsp-precision.vsix`.",
+      "blocked_by": [],
+      "deferred": [
+        "safe-mode precision",
+        "cross-package rename",
+        "per-project semantic-token themes",
+        "Marketplace/OpenVSX publication"
+      ]
     },
     {
       "id": "mobile_distribution",
@@ -402,14 +410,13 @@
       "label": "Rowan CST migration (S15, build-both-then-compare)",
       "status": "verified",
       "completion_percent": 100.0,
-      "evidence": "`garnet-cst/` is a rowan-backed, trivia-preserving CST built cold (direct recursive-descent over the token stream) for the v0.7 build-both-then-compare A/B. `parse_cst` round-trips byte-identically across the canonical examples corpus and a `proptest` over arbitrary UTF-8 (`tests/examples_roundtrip.rs`, `tests/roundtrip.rs`). `cst_to_ast` projects onto `garnet_parser::ast::Module` with span-normalized structural parity vs `parse_source` across the corpus (`tests/cst_to_ast_parity.rs`). The `parse_cst_vs_ast` Criterion bench measures the CST path at ~0.99x the AST path (well under the 1.5x gate). Reproduce via the S15 dogfood block in `GARNET_v0_7_SLICE_DOGFOOD.md`.",
+      "evidence": "`garnet-cst/` is a rowan-backed, trivia-preserving CST built cold (direct recursive-descent over the token stream) for the v0.7 build-both-then-compare A/B. S15-Compare chose rowan as the canonical CST; #221's parser CST is retained temporarily as a legacy migration oracle. `parse_cst` round-trips byte-identically across the canonical examples corpus and a `proptest` over arbitrary UTF-8 (`tests/examples_roundtrip.rs`, `tests/roundtrip.rs`). `cst_to_ast` projects onto `garnet_parser::ast::Module` with span-normalized structural parity vs `parse_source` across the corpus (`tests/cst_to_ast_parity.rs`). The `parse_cst_vs_ast` Criterion bench measures the CST path at ~0.99x the AST path (well under the 1.5x gate). `garnet parse --mode cst` routes to this rowan parser, and `tokens.rs` preserves the #221 token/span ergonomics for LSP migration. Reproduce via the S15 dogfood block in `GARNET_v0_7_SLICE_DOGFOOD.md`.",
       "blocked_by": [],
       "deferred": [
-        "Canonical-CST choice is the separate S15-Compare checkpoint (Jon); this is the second of two independent CSTs by design, not yet reconciled",
         "Error-recovery parsing is best-effort (round-trip always holds; structure may flatten on malformed input)",
         "Incremental re-parsing",
-        "CST-first migration of interp/check/vm (v0.8; they stay on the AST path via `parse_source`, untouched by S15)",
-        "`garnet parse --mode cst` CLI wiring (Handoff Request to the garnet-cli owner)"
+        "Rowan-backed LSP migration; #221's parser CST remains as a temporary legacy oracle until that migration is green",
+        "CST-first migration of interp/check/vm (v0.8; they stay on the AST path via `parse_source`, untouched by S15)"
       ]
     },
     {

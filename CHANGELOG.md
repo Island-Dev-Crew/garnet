@@ -84,7 +84,8 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   primitives warn, `frozen` is info — **non-fatal** (exit code unchanged), read
   from the registry. Adds `@caps(env)` as a known capability (for `std::env`).
   New `stdlib_layer_policy` readiness lane (`verified`); MIT readiness
-  78.8% → **79.6%**; baseline regenerated. New deps `serde_json`/`regex`/`rand`
+  79.6% → **80.4%** (on top of S16's lane; baseline regenerated to the full
+  28-lane snapshot). New deps `serde_json`/`regex`/`rand`
   (already in the lockfile) + `sha1` (RustCrypto sibling of `sha2`); `base64`
   hand-rolled. **Honest scope:** `@stability` enforcement is **warning-level**
   for backwards compat (error-level is v0.8); source-level `@stability(...)` /
@@ -95,6 +96,20 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   surface + Rust host impls + unit tests, while **interpreter dispatch** of them
   to Garnet source is v0.8 (`garnet-interp` is outside S17's ownership);
   Layer-2 `@garnet-lang/*` packages are S18.
+
+- **S16 (Rowan-backed LSP precision):** `garnet-lsp` now consumes the canonical
+  rowan `garnet-cst` token/span surface for rename and semantic tokens while
+  preserving parser/check diagnostics. The precision smoke
+  `scripts/smoke_garnet_lsp_precision.py` proves document symbols, workspace
+  symbols, cross-file function rename, scoped parameter rename, three code
+  actions (`Add @caps`, long-parameter refactor, inferred return type), and
+  semantic-token categories for `capability`, `attribute`, and `parameter`.
+  `editors/vscode` is bumped to `0.7.0`, packages
+  `garnet-0.7.0-lsp-precision.vsix`, and exposes the three Garnet quick-fix
+  commands. MIT readiness gains an `editor_lsp_precision` lane and moves
+  78.8% -> 79.6%. **Honest scope:** precision is managed-mode only;
+  cross-package rename, safe-mode precision, per-project token themes, and
+  Marketplace/OpenVSX publication remain v0.8/follow-up work.
 
 - **S13 (Registry stub v0.1):** new `garnet-registry-stub/` crate — a
   filesystem-backed registry where an `index.json` (serde) maps

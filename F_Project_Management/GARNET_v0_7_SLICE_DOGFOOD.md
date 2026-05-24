@@ -274,10 +274,10 @@ code actions.
 - `editor_lsp_precision` lane in `scripts/garnet_mit_readiness_status.py`.
 - Regenerated baseline.
 
-**Deps:** HARD block on S15 PR-1 (CST trait stub) merging before substantive
-work; code against the mock until then. Soft block on S15 PR-2 — real-Garnet-
-source tests may fail until the full CST lands; use synthetic inputs that fit
-the mock.
+**Deps:** satisfied. S15 PR-1 and PR-2 are merged, and S15-Compare selected the
+rowan `garnet-cst` crate as canonical. S16 now migrates LSP behavior to rowan
+while preserving #221's parser CST as a temporary legacy oracle until this lane
+is merged.
 
 **Dogfood block:**
 
@@ -297,9 +297,16 @@ python3 scripts/smoke_garnet_lsp_precision.py
 - "Three code actions ship in v0.7; the long-tail (add-suggested-tests, extract-fn, inline-let) is on the v0.8 roadmap."
 - "Semantic tokens use a static classification scheme; per-project token themes deferred."
 
-**State:** not-started, unblocked by S15-Compare. Target the canonical rowan
-`garnet-cst` crate; use #221's existing LSP behavior and parser CST only as a
-compatibility baseline while migrating.
+**State:** review-ready locally — branch
+`agent-win-codex/s16-rowan-lsp-precision` ports `garnet-lsp` rename and
+semantic-token spans to canonical rowan `garnet-cst`, preserves parser/check
+diagnostics, ships three code actions, bumps the VS Code extension to `0.7.0`,
+adds `scripts/smoke_garnet_lsp_precision.py`, and adds the
+`editor_lsp_precision` readiness lane. Local dogfood passes:
+`cargo build -p garnet-lsp --release`, `cargo test -p garnet-lsp
+--no-fail-fast`, `(cd editors/vscode && npm install && npm run package)`, and
+`python3 scripts/smoke_garnet_lsp_precision.py`. PR/CI/Jon review are still
+pending; do not call S16 merged until those complete.
 
 ---
 
@@ -363,7 +370,7 @@ garnet check examples/mvp_01_*.garnet   # no NEW diagnostics on existing example
 **Delivered (v0.7, honest scope):**
 - ✅ Layer Policy doc, registry expansion **24 → 77 primitives** (40 Layer-0
   `core`, 37 Layer-1 `std`), 100% explicit `@stability`, `garnet_stdlib_layer_gate.py`
-  + `stdlib_layer_policy` lane (78.8% → 79.6%), `@caps(env)` known cap, and a
+  + `stdlib_layer_policy` lane (79.6% → 80.4% on the merged tree), `@caps(env)` known cap, and a
   registry-driven `@stability` advisory at **primitive** call sites
   (`garnet-check/src/stability.rs`, non-fatal).
 - ⚠️ **Pending parser handoff (mac-opus):** source-level `@stability(...)` /

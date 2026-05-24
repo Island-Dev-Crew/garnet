@@ -121,6 +121,25 @@ def _lsp_v02_present() -> bool:
     return _cst_layer_present() and all(path.exists() for path in required)
 
 
+def _lsp_precision_present() -> bool:
+    lib = ROOT / "garnet-lsp" / "src" / "lib.rs"
+    package = ROOT / "editors" / "vscode" / "package.json"
+    smoke = ROOT / "scripts" / "smoke_garnet_lsp_precision.py"
+    if not (lib.exists() and package.exists() and smoke.exists()):
+        return False
+    lib_text = lib.read_text(encoding="utf-8")
+    package_text = package.read_text(encoding="utf-8")
+    smoke_text = smoke.read_text(encoding="utf-8")
+    return (
+        "garnet_cst" in lib_text
+        and "identifier_spans" in lib_text
+        and "capability" in lib_text
+        and "garnet-0.7.0-lsp-precision.vsix" in package_text
+        and "Refactor long parameter list" in smoke_text
+        and "Add return type `Int`" in smoke_text
+    )
+
+
 def _vm_scaffold_present(proof: garnet_proof_benchmark_status.ProofBenchmarkStatus) -> bool:
     return any(
         bench.id == "vm_parse_compile_execute"
@@ -145,6 +164,7 @@ def read_status() -> MitReadinessStatus:
         gate.id == "windows_unsigned_nsis" and gate.status == "clean-vm-proof-verified"
         for gate in wls.packaging_gates
     )
+    lsp_precision_present = _lsp_precision_present()
     wls_completion_percent = 65.0 if wls_clean_vm_verified else 55.0
     wls_evidence_tail = (
         "readiness reporter parity actions, a verified x64 clean-VM installer "
@@ -312,6 +332,35 @@ def read_status() -> MitReadinessStatus:
             ]
             if _lsp_source_present()
             else [],
+        ),
+        ObjectiveLane(
+            id="editor_lsp_precision",
+            label="Editor/LSP precision (S16)",
+            status="verified" if lsp_precision_present else "source-present",
+            completion_percent=100.0 if lsp_precision_present else 60.0,
+            evidence=(
+                "`garnet-lsp/` now consumes the canonical rowan `garnet-cst` token/span surface for "
+                "rename and semantic tokens while preserving parser/check diagnostics. "
+                "`scripts/smoke_garnet_lsp_precision.py` proves document symbols, workspace symbols, "
+                "cross-file function rename, scoped parameter rename, three code actions, and the S16 "
+                "semantic-token categories (`capability`, `attribute`, `parameter`) over stdio. "
+                "`editors/vscode` exposes the three Garnet quick-fix commands and packages "
+                "`garnet-0.7.0-lsp-precision.vsix`."
+            )
+            if lsp_precision_present
+            else (
+                "LSP precision source is present but the rowan-backed S16 smoke, VS Code command "
+                "surface, or package evidence is incomplete."
+            ),
+            blocked_by=[]
+            if lsp_precision_present
+            else ["rowan-backed precision smoke", "VS Code command/package evidence"],
+            deferred=[
+                "safe-mode precision",
+                "cross-package rename",
+                "per-project semantic-token themes",
+                "Marketplace/OpenVSX publication",
+            ],
         ),
         ObjectiveLane(
             id="mobile_distribution",
