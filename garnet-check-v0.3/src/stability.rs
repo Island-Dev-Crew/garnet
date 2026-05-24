@@ -11,9 +11,14 @@
 //! | `deprecated` | warning   |
 //! | `frozen`     | info      |
 //!
-//! Call resolution mirrors `caps_graph`: qualified path first
-//! (`std::json::parse`), then the bare last segment (`parse`), and a
-//! user-defined function of the same name shadows a primitive.
+//! Call resolution is **qualified-only**: a call is advised only when it
+//! names a primitive by its full path (`std::json::parse`). Bare-name calls
+//! (`parse`, `ok`, `map`, `replace`) are deliberately NOT advised — a bare
+//! name is ambiguous with Garnet's built-in `Ok`/`Err`/`Some` builders, user
+//! functions, and stable primitives sharing the name, so flagging it would
+//! false-positive on existing code. This is intentionally more conservative
+//! than `caps_graph` (which unions caps across bare-name collisions): an
+//! advisory must never fire on a program that did nothing experimental.
 //!
 //! ## Scope (calibrated honesty)
 //!
@@ -41,34 +46,18 @@ pub fn check_stability(module: &Module) -> Vec<CheckError> {
     advise(module, &registry_stability_map())
 }
 
-/// Build the primitive→stability map from the stdlib registry. On a bare-name
-/// collision (e.g. `core::iter::map` vs `core::result::map`) keep the most
-/// volatile tier so the advisory never under-reports.
+/// Build the primitive→stability map from the stdlib registry, indexed by the
+/// QUALIFIED key only (e.g. `std::regex::replace`). Bare names are deliberately
+/// not indexed: a bare call like `ok`, `err`, `map`, or `replace` is ambiguous
+/// with Garnet's built-in `Ok`/`Err`/`Some` builders, user-defined functions,
+/// and stable primitives that share the name — flagging it would false-positive
+/// on existing code (e.g. `safe_io_layer.garnet`'s `ok(...)`/`err(...)`). Only
+/// an unambiguous qualified reference is advised.
 fn registry_stability_map() -> StabilityMap {
-    let mut map: StabilityMap = BTreeMap::new();
-    for (qualified, meta) in garnet_stdlib::registry::all_prims() {
-        map.insert(qualified.clone(), meta.stability);
-        if let Some(bare) = qualified.split("::").last() {
-            map.entry(bare.to_string())
-                .and_modify(|existing| {
-                    if volatility(meta.stability) > volatility(*existing) {
-                        *existing = meta.stability;
-                    }
-                })
-                .or_insert(meta.stability);
-        }
-    }
-    map
-}
-
-/// Higher = more deserving of a louder advisory on a bare-name collision.
-fn volatility(s: Stability) -> u8 {
-    match s {
-        Stability::Stable => 0,
-        Stability::Frozen => 1,
-        Stability::Experimental => 2,
-        Stability::Deprecated => 3,
-    }
+    garnet_stdlib::registry::all_prims()
+        .into_iter()
+        .map(|(qualified, meta)| (qualified, meta.stability))
+        .collect()
 }
 
 /// Core policy: walk every function in `module` and, for each call into a
@@ -76,10 +65,8 @@ fn volatility(s: Stability) -> u8 {
 /// advisory (deduped per `(fn, primitive)` pair, deterministic order).
 /// Separated from the registry so it is unit-testable with synthetic maps.
 fn advise(module: &Module, stability: &StabilityMap) -> Vec<CheckError> {
-    let user_fns = collect_user_fns(module);
     let mut audit = Audit {
         stability,
-        user_fns: &user_fns,
         seen: BTreeSet::new(),
         out: Vec::new(),
     };
@@ -87,31 +74,8 @@ fn advise(module: &Module, stability: &StabilityMap) -> Vec<CheckError> {
     audit.out
 }
 
-fn collect_user_fns(module: &Module) -> BTreeSet<String> {
-    fn go(items: &[Item], out: &mut BTreeSet<String>) {
-        for item in items {
-            match item {
-                Item::Fn(f) => {
-                    out.insert(f.name.clone());
-                }
-                Item::Module(m) => go(&m.items, out),
-                Item::Impl(b) => {
-                    for m in &b.methods {
-                        out.insert(m.name.clone());
-                    }
-                }
-                _ => {}
-            }
-        }
-    }
-    let mut out = BTreeSet::new();
-    go(&module.items, &mut out);
-    out
-}
-
 struct Audit<'a> {
     stability: &'a StabilityMap,
-    user_fns: &'a BTreeSet<String>,
     seen: BTreeSet<(String, String)>,
     out: Vec<CheckError>,
 }
@@ -272,22 +236,13 @@ impl Audit<'_> {
     /// is a user function (which shadows a primitive) or unresolvable.
     fn resolve_prim(&self, callee: &Expr) -> Option<String> {
         match callee {
-            Expr::Ident(name, _) => {
-                if self.user_fns.contains(name) {
-                    return None;
-                }
-                self.stability.contains_key(name).then(|| name.clone())
-            }
+            // Only an unambiguous QUALIFIED path is flagged. Bare-name calls
+            // (`Expr::Ident`) are skipped: they collide with built-in builders
+            // (`ok`/`err`/`some`), user functions, and stable primitives, so
+            // flagging them would false-positive on existing code.
             Expr::Path(segs, _) => {
                 let qualified = segs.join("::");
-                if self.stability.contains_key(&qualified) {
-                    return Some(qualified);
-                }
-                let last = segs.last()?;
-                if self.user_fns.contains(last) {
-                    return None;
-                }
-                self.stability.contains_key(last).then(|| last.clone())
+                self.stability.contains_key(&qualified).then_some(qualified)
             }
             _ => None,
         }
@@ -375,20 +330,26 @@ mod tests {
     }
 
     #[test]
-    fn user_fn_shadowing_a_bare_prim_name_is_not_flagged() {
-        // A user `map` shadows any bare `map` primitive.
+    fn bare_call_to_experimental_prim_name_is_not_flagged() {
+        // Regression (safe_io_layer.garnet): bare `ok(...)`/`err(...)` are
+        // Garnet's built-in Result builders. `core::result::ok`/`err` are
+        // experimental in the registry, but a BARE call must NOT be flagged —
+        // only a qualified `core::result::ok(...)` would. Bare names are too
+        // ambiguous (builders, user fns, stable prims) to advise on.
         let m = parse(
             r#"
-            def map(x) { x }
             @caps()
             def main() {
-                map(1)
+                ok(1)
+                err(2)
+                map(xs, f)
+                replace("a", "b", "c")
             }
             "#,
         );
         assert!(
             msgs(&check_stability(&m)).is_empty(),
-            "user-defined `map` must shadow the primitive, got {:?}",
+            "bare ok/err/map/replace must not be flagged (ambiguous), got {:?}",
             msgs(&check_stability(&m))
         );
     }
@@ -405,12 +366,15 @@ mod tests {
             r#"
             @caps()
             def main() {
-                gone()
-                kept()
+                pkg::gone(x)
+                pkg::kept(x)
             }
             "#,
         );
-        let map = map_of(&[("gone", Stability::Deprecated), ("kept", Stability::Frozen)]);
+        let map = map_of(&[
+            ("pkg::gone", Stability::Deprecated),
+            ("pkg::kept", Stability::Frozen),
+        ]);
         let ms = msgs(&advise(&m, &map));
         assert!(
             ms.iter()
@@ -430,13 +394,13 @@ mod tests {
             r#"
             @caps()
             def main() {
-                exp()
-                exp()
-                exp()
+                pkg::exp(x)
+                pkg::exp(x)
+                pkg::exp(x)
             }
             "#,
         );
-        let map = map_of(&[("exp", Stability::Experimental)]);
+        let map = map_of(&[("pkg::exp", Stability::Experimental)]);
         assert_eq!(
             msgs(&advise(&m, &map)).len(),
             1,
