@@ -43,6 +43,27 @@ parity test proving rowan token metadata matches #221's parser CST token stream
 - Do not keep: a permanent second canonical CST. #221 remains source-present
   only as a migration oracle until S16 has rowan-backed LSP coverage.
 
+## Quantified Deltas (mac-opus verification, 2026-05-24)
+
+Independently confirmed by the rowan-crate author on the
+`codex/s15-cst-compare-rowan-canonical` branch:
+
+- **Node-kind granularity: 25 → 202.** #221's `CstNodeKind` has 25 variants,
+  with `Stmt` and `Expr` as catch-alls (a call, a binary op, and an `if` are all
+  just `Expr`). Rowan's `SyntaxKind` has 202 variants — every token plus
+  fine-grained item/statement/expression/pattern/type kinds — which is what LSP
+  semantic tokens, rename precision, and code actions need to discriminate on.
+- **Parse cost: ≈0.99× the AST path.** The `parse_cst_vs_ast` Criterion bench
+  over the `mvp_*` corpus measures the rowan CST path at ≈115 µs vs the AST path
+  at ≈116 µs — i.e., no meaningful overhead, well under the 1.5× S15 gate. So the
+  richer tree is not paid for in parse time, and there is no perf reason to
+  retain #221's AST-projection construction.
+- **Reconciliation verified green.** Re-ran `cargo test -p garnet-cst` on this
+  branch: roundtrip, `cst_to_ast` parity, typed-node, and the
+  `parser_cst_token_parity` oracle all pass — the token surface ported into
+  `garnet-cst/src/tokens.rs` matches #221's parser-CST token stream (modulo the
+  parser's zero-width EOF sentinel).
+
 ## Verification
 
 Commands run from `/Users/IDC2.5/Desktop/Garnet`:
