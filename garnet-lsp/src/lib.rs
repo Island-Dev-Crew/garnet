@@ -5,11 +5,11 @@
 
 use garnet_check::suggest::Rule;
 use garnet_check::{CheckError, CheckReport};
+use garnet_cst::{cst_to_ast, identifier_spans, parse_cst, token_infos, SyntaxNode, TokenInfo};
 use garnet_parser::ast::{
-    ActorDef, Annotation, ConstDecl, FnDef, FnMode, Item, LetDecl, MemoryDecl, Module, ModuleDecl,
-    Ownership, ProtocolDef, TypeExpr,
+    ActorDef, Annotation, ConstDecl, Expr, FnDef, FnMode, Item, LetDecl, MemoryDecl, Module,
+    ModuleDecl, Ownership, ProtocolDef, TypeExpr,
 };
-use garnet_parser::cst::{CstElement, CstNode, CstToken};
 use garnet_parser::error::ParseError;
 use garnet_parser::token::{Span, TokenKind};
 use std::collections::{BTreeMap, HashMap};
@@ -165,8 +165,8 @@ pub fn analyze_source(source: &str) -> Analysis {
     let mut diagnostics = Vec::new();
     let mut symbols = BTreeMap::new();
 
-    match garnet_parser::parse_source_cst(source) {
-        Ok((module, _cst_node)) => {
+    match parse_lsp_source(source) {
+        Ok((module, _cst_root)) => {
             collect_symbols(source, &line_index, &module, &mut symbols);
             diagnostics.extend(check_diagnostics(
                 garnet_check::check_module(&module),
@@ -198,6 +198,13 @@ pub fn analyze_source(source: &str) -> Analysis {
         diagnostics,
         symbols,
     }
+}
+
+fn parse_lsp_source(source: &str) -> Result<(Module, SyntaxNode), ParseError> {
+    garnet_parser::parse_source(source)?;
+    let parsed = parse_cst(source);
+    let module = cst_to_ast(parsed.syntax());
+    Ok((module, parsed.root))
 }
 
 fn find_function_in_module<'a>(module: &'a Module, name: &str) -> Option<&'a FnDef> {
@@ -607,32 +614,297 @@ fn is_ident_char(ch: char) -> bool {
     ch == '_' || ch.is_ascii_alphanumeric()
 }
 
-fn collect_identifier_spans(node: &CstNode, name: &str, spans: &mut Vec<Span>) {
-    for child in &node.children {
-        match child {
-            CstElement::Node(child_node) => {
-                collect_identifier_spans(child_node, name, spans);
+fn identifier_spans_for_source(source: &str, name: &str) -> Vec<Span> {
+    let parsed = parse_cst(source);
+    identifier_spans(parsed.syntax(), name)
+}
+
+fn rename_text_edits_for_source(source: &str, target_name: &str, new_name: &str) -> Vec<TextEdit> {
+    rename_text_edits_for_source_in_span(source, target_name, new_name, None)
+}
+
+fn rename_text_edits_for_source_in_span(
+    source: &str,
+    target_name: &str,
+    new_name: &str,
+    containing_span: Option<Span>,
+) -> Vec<TextEdit> {
+    let line_index = LineIndex::new(source);
+    identifier_spans_for_source(source, target_name)
+        .into_iter()
+        .filter(|span| {
+            containing_span.is_none_or(|container| {
+                span.start >= container.start && span.end() <= container.end()
+            })
+        })
+        .map(|span| TextEdit {
+            range: line_index.span_to_range(span),
+            new_text: new_name.to_string(),
+        })
+        .collect()
+}
+
+#[cfg(test)]
+fn rename_scoped_text_edits(
+    source: &str,
+    target_name: &str,
+    new_name: &str,
+    position: Position,
+) -> Vec<TextEdit> {
+    let line_index = LineIndex::new(source);
+    let offset = line_index.position_to_offset(position);
+    let containing_span = parameter_function_span_at_offset(source, target_name, offset);
+    rename_text_edits_for_source_in_span(source, target_name, new_name, containing_span)
+}
+
+fn parameter_function_span_at_offset(
+    source: &str,
+    target_name: &str,
+    offset: usize,
+) -> Option<Span> {
+    let (module, _) = parse_lsp_source(source).ok()?;
+    let function = find_function_containing_offset(&module, offset)?;
+    let param = function
+        .params
+        .iter()
+        .find(|param| param.name == target_name)?;
+    let in_param_decl = offset >= param.span.start && offset <= param.span.end();
+    let in_body = offset >= function.body.span.start && offset <= function.body.span.end();
+    (in_param_decl || in_body).then_some(function.span)
+}
+
+fn find_function_containing_offset(module: &Module, offset: usize) -> Option<&FnDef> {
+    find_function_containing_offset_in_items(&module.items, offset)
+}
+
+fn find_function_containing_offset_in_items(items: &[Item], offset: usize) -> Option<&FnDef> {
+    for item in items {
+        match item {
+            Item::Fn(function)
+                if offset >= function.span.start && offset <= function.span.end() =>
+            {
+                return Some(function);
             }
-            CstElement::Token(token) => {
-                if let TokenKind::Ident(ident_name) = &token.kind {
-                    if ident_name == name {
-                        spans.push(token.span);
-                    }
+            Item::Module(module) => {
+                if let Some(function) =
+                    find_function_containing_offset_in_items(&module.items, offset)
+                {
+                    return Some(function);
                 }
             }
+            Item::Impl(impl_block) => {
+                if let Some(function) = impl_block
+                    .methods
+                    .iter()
+                    .find(|method| offset >= method.span.start && offset <= method.span.end())
+                {
+                    return Some(function);
+                }
+            }
+            _ => {}
         }
+    }
+    None
+}
+
+fn tokens_for_source(source: &str) -> Vec<TokenInfo> {
+    let parsed = parse_cst(source);
+    token_infos(parsed.syntax())
+}
+
+fn code_actions_for_source(uri: Url, source: &str) -> Vec<CodeAction> {
+    let Ok((module, _)) = parse_lsp_source(source) else {
+        return Vec::new();
+    };
+    let line_index = LineIndex::new(source);
+    let mut actions = Vec::new();
+
+    for suggestion in garnet_check::suggest::suggest_for_module(&module) {
+        let Some(function) = find_function_in_module(&module, &suggestion.function) else {
+            continue;
+        };
+        if let Some(action) = code_action_for_rule(&uri, &line_index, function, suggestion.rule) {
+            actions.push(action);
+        }
+    }
+
+    let mut functions = Vec::new();
+    collect_functions(&module.items, &mut functions);
+    for function in functions {
+        if let Some(action) = add_return_type_action(&uri, source, &line_index, function) {
+            actions.push(action);
+        }
+    }
+
+    actions
+}
+
+fn code_action_for_rule(
+    uri: &Url,
+    line_index: &LineIndex,
+    function: &FnDef,
+    rule: Rule,
+) -> Option<CodeAction> {
+    match rule {
+        Rule::ManagedFnMissingCaps => Some(CodeAction {
+            title: format!("Add `@caps()` to `def {}`", function.name),
+            kind: Some(CodeActionKind::QUICKFIX),
+            edit: Some(workspace_edit(
+                uri,
+                vec![TextEdit {
+                    range: line_index.insert_range_at_offset(function.span.start),
+                    new_text: "@caps()\n".to_string(),
+                }],
+            )),
+            is_preferred: Some(true),
+            ..Default::default()
+        }),
+        Rule::LongParameterList => {
+            let params_span = parameter_list_inner_span(function)?;
+            let struct_name = format!("{}Params", pascal_case(&function.name));
+            Some(CodeAction {
+                title: format!(
+                    "Refactor long parameter list of `{}` into `{}`",
+                    function.name, struct_name
+                ),
+                kind: Some(CodeActionKind::REFACTOR_REWRITE),
+                edit: Some(workspace_edit(
+                    uri,
+                    vec![
+                        TextEdit {
+                            range: line_index.insert_range_at_offset(function.span.start),
+                            new_text: long_parameter_struct_text(function, &struct_name),
+                        },
+                        TextEdit {
+                            range: line_index.span_to_range(params_span),
+                            new_text: format!("options: {struct_name}"),
+                        },
+                    ],
+                )),
+                is_preferred: Some(false),
+                ..Default::default()
+            })
+        }
+        Rule::EmptyFunctionBody => Some(CodeAction {
+            title: format!("Stub empty body of `{}`", function.name),
+            kind: Some(CodeActionKind::QUICKFIX),
+            edit: Some(workspace_edit(
+                uri,
+                vec![TextEdit {
+                    range: line_index.span_to_range(function.body.span),
+                    new_text: "{\n  // intentionally empty\n}".to_string(),
+                }],
+            )),
+            is_preferred: Some(false),
+            ..Default::default()
+        }),
     }
 }
 
-fn collect_all_cst_tokens(node: &CstNode, tokens: &mut Vec<CstToken>) {
-    for child in &node.children {
-        match child {
-            CstElement::Node(child_node) => {
-                collect_all_cst_tokens(child_node, tokens);
-            }
-            CstElement::Token(token) => {
-                tokens.push(token.clone());
-            }
+fn workspace_edit(uri: &Url, edits: Vec<TextEdit>) -> WorkspaceEdit {
+    let mut changes = HashMap::new();
+    changes.insert(uri.clone(), edits);
+    WorkspaceEdit {
+        changes: Some(changes),
+        document_changes: None,
+        change_annotations: None,
+    }
+}
+
+fn parameter_list_inner_span(function: &FnDef) -> Option<Span> {
+    let first = function.params.first()?.span;
+    let last = function.params.last()?.span;
+    Some(Span::new(
+        first.start,
+        last.end().saturating_sub(first.start),
+    ))
+}
+
+fn pascal_case(value: &str) -> String {
+    let mut out = String::new();
+    let mut capitalize_next = true;
+    for ch in value.chars() {
+        if ch == '_' || ch == '-' {
+            capitalize_next = true;
+            continue;
+        }
+        if capitalize_next {
+            out.extend(ch.to_uppercase());
+            capitalize_next = false;
+        } else {
+            out.push(ch);
+        }
+    }
+    if out.is_empty() {
+        "Params".to_string()
+    } else {
+        out
+    }
+}
+
+fn long_parameter_struct_text(function: &FnDef, struct_name: &str) -> String {
+    let fields = function
+        .params
+        .iter()
+        .map(|param| {
+            let ty = param
+                .ty
+                .as_ref()
+                .map(format_type)
+                .unwrap_or_else(|| "Any".to_string());
+            format!("  {}: {ty}", param.name)
+        })
+        .collect::<Vec<_>>()
+        .join(",\n");
+    format!("struct {struct_name} {{\n{fields}\n}}\n\n")
+}
+
+fn add_return_type_action(
+    uri: &Url,
+    source: &str,
+    line_index: &LineIndex,
+    function: &FnDef,
+) -> Option<CodeAction> {
+    if function.return_ty.is_some() {
+        return None;
+    }
+    let inferred = infer_return_type(function)?;
+    let brace_offset = source[function.span.start..function.span.end().min(source.len())]
+        .find('{')
+        .map(|relative| function.span.start + relative)?;
+    Some(CodeAction {
+        title: format!("Add return type `{inferred}` to `{}`", function.name),
+        kind: Some(CodeActionKind::QUICKFIX),
+        edit: Some(workspace_edit(
+            uri,
+            vec![TextEdit {
+                range: line_index.insert_range_at_offset(brace_offset),
+                new_text: format!("-> {inferred} "),
+            }],
+        )),
+        is_preferred: Some(false),
+        ..Default::default()
+    })
+}
+
+fn infer_return_type(function: &FnDef) -> Option<&'static str> {
+    match function.body.tail_expr.as_deref()? {
+        Expr::Int(_, _) => Some("Int"),
+        Expr::Float(_, _) => Some("Float"),
+        Expr::Bool(_, _) => Some("Bool"),
+        Expr::Str(_, _) => Some("String"),
+        Expr::Nil(_) => Some("Nil"),
+        _ => None,
+    }
+}
+
+fn collect_functions<'a>(items: &'a [Item], out: &mut Vec<&'a FnDef>) {
+    for item in items {
+        match item {
+            Item::Fn(function) => out.push(function),
+            Item::Module(module) => collect_functions(&module.items, out),
+            Item::Impl(impl_block) => out.extend(impl_block.methods.iter()),
+            _ => {}
         }
     }
 }
@@ -642,6 +914,180 @@ struct TempSemanticToken {
     character: u32,
     length: u32,
     token_type: u32,
+}
+
+const TOKEN_KEYWORD: u32 = 0;
+const TOKEN_FUNCTION: u32 = 1;
+const TOKEN_TYPE: u32 = 2;
+const TOKEN_PARAMETER: u32 = 3;
+const TOKEN_COMMENT: u32 = 4;
+const TOKEN_STRING: u32 = 5;
+const TOKEN_NUMBER: u32 = 6;
+const TOKEN_OPERATOR: u32 = 7;
+const TOKEN_CAPABILITY: u32 = 8;
+const TOKEN_ATTRIBUTE: u32 = 9;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct ClassifiedSemanticToken {
+    text: String,
+    span: Span,
+    kind: String,
+    token_type: u32,
+}
+
+fn semantic_token_legend() -> SemanticTokensLegend {
+    SemanticTokensLegend {
+        token_types: vec![
+            SemanticTokenType::KEYWORD,
+            SemanticTokenType::FUNCTION,
+            SemanticTokenType::TYPE,
+            SemanticTokenType::PARAMETER,
+            SemanticTokenType::COMMENT,
+            SemanticTokenType::STRING,
+            SemanticTokenType::NUMBER,
+            SemanticTokenType::OPERATOR,
+            SemanticTokenType::new("capability"),
+            SemanticTokenType::new("attribute"),
+        ],
+        token_modifiers: vec![],
+    }
+}
+
+fn classify_semantic_tokens(source: &str) -> Vec<ClassifiedSemanticToken> {
+    let param_name_spans = parameter_name_spans(source);
+    let mut classified = Vec::new();
+    let mut previous_kind: Option<TokenKind> = None;
+    let mut previous_attribute: Option<String> = None;
+    let mut inside_caps_args = false;
+
+    for token in tokens_for_source(source) {
+        let token_type = match &token.kind {
+            TokenKind::Comment(_) => Some((TOKEN_COMMENT, "comment")),
+            TokenKind::Str(_) | TokenKind::RawStr(_) | TokenKind::Symbol(_) => {
+                Some((TOKEN_STRING, "string"))
+            }
+            TokenKind::Int(_) | TokenKind::Float(_) => Some((TOKEN_NUMBER, "number")),
+            TokenKind::Ident(name) => {
+                if matches!(previous_kind, Some(TokenKind::At)) {
+                    previous_attribute = Some(name.clone());
+                    Some((TOKEN_ATTRIBUTE, "attribute"))
+                } else if inside_caps_args {
+                    Some((TOKEN_CAPABILITY, "capability"))
+                } else if param_name_spans
+                    .iter()
+                    .any(|span| span.start == token.span.start && span.len == token.span.len)
+                {
+                    Some((TOKEN_PARAMETER, "parameter"))
+                } else if matches!(previous_kind, Some(TokenKind::KwFn | TokenKind::KwDef)) {
+                    Some((TOKEN_FUNCTION, "function"))
+                } else if matches!(
+                    previous_kind,
+                    Some(
+                        TokenKind::KwActor
+                            | TokenKind::KwStruct
+                            | TokenKind::KwEnum
+                            | TokenKind::KwTrait
+                            | TokenKind::KwProtocol
+                    )
+                ) {
+                    Some((TOKEN_TYPE, "type"))
+                } else {
+                    None
+                }
+            }
+            kind if is_keyword_kind(kind) => Some((TOKEN_KEYWORD, "keyword")),
+            kind if is_operator_kind(kind) => Some((TOKEN_OPERATOR, "operator")),
+            TokenKind::LParen if previous_attribute.as_deref() == Some("caps") => {
+                inside_caps_args = true;
+                None
+            }
+            TokenKind::RParen => {
+                inside_caps_args = false;
+                previous_attribute = None;
+                None
+            }
+            _ => None,
+        };
+
+        if !matches!(token.kind, TokenKind::Whitespace(_) | TokenKind::Comment(_)) {
+            previous_kind = Some(token.kind.clone());
+        }
+
+        if let Some((token_type, kind)) = token_type {
+            classified.push(ClassifiedSemanticToken {
+                text: token.text,
+                span: token.span,
+                kind: kind.to_string(),
+                token_type,
+            });
+        }
+    }
+
+    classified
+}
+
+fn parameter_name_spans(source: &str) -> Vec<Span> {
+    let Ok((module, _)) = parse_lsp_source(source) else {
+        return Vec::new();
+    };
+    let mut functions = Vec::new();
+    collect_functions(&module.items, &mut functions);
+    functions
+        .into_iter()
+        .flat_map(|function| {
+            function
+                .params
+                .iter()
+                .filter_map(|param| find_name_span(source, &param.name, param.span))
+        })
+        .collect()
+}
+
+fn encode_semantic_tokens(source: &str, line_index: &LineIndex) -> Vec<SemanticToken> {
+    let mut tokens = classify_semantic_tokens(source)
+        .into_iter()
+        .map(|token| {
+            let pos = line_index.offset_to_position(token.span.start);
+            TempSemanticToken {
+                line: pos.line,
+                character: pos.character,
+                length: token.span.len as u32,
+                token_type: token.token_type,
+            }
+        })
+        .collect::<Vec<_>>();
+
+    tokens.sort_by(|a, b| {
+        a.line
+            .cmp(&b.line)
+            .then_with(|| a.character.cmp(&b.character))
+    });
+
+    let mut data = Vec::new();
+    let mut prev_line = 0u32;
+    let mut prev_char = 0u32;
+
+    for token in tokens {
+        let delta_line = token.line - prev_line;
+        let delta_start = if delta_line == 0 {
+            token.character - prev_char
+        } else {
+            token.character
+        };
+
+        data.push(SemanticToken {
+            delta_line,
+            delta_start,
+            length: token.length,
+            token_type: token.token_type,
+            token_modifiers_bitset: 0,
+        });
+
+        prev_line = token.line;
+        prev_char = token.character;
+    }
+
+    data
 }
 
 fn is_keyword_kind(kind: &TokenKind) -> bool {
@@ -787,20 +1233,7 @@ impl LanguageServer for Backend {
                 semantic_tokens_provider: Some(
                     SemanticTokensServerCapabilities::SemanticTokensOptions(
                         SemanticTokensOptions {
-                            legend: SemanticTokensLegend {
-                                token_types: vec![
-                                    SemanticTokenType::KEYWORD,
-                                    SemanticTokenType::COMMENT,
-                                    SemanticTokenType::STRING,
-                                    SemanticTokenType::NUMBER,
-                                    SemanticTokenType::TYPE,
-                                    SemanticTokenType::FUNCTION,
-                                    SemanticTokenType::VARIABLE,
-                                    SemanticTokenType::DECORATOR,
-                                    SemanticTokenType::OPERATOR,
-                                ],
-                                token_modifiers: vec![],
-                            },
+                            legend: semantic_token_legend(),
                             range: Some(false),
                             full: Some(SemanticTokensFullOptions::Bool(true)),
                             ..Default::default()
@@ -976,39 +1409,28 @@ impl LanguageServer for Backend {
             return Ok(None);
         };
         let target_name = active_source[start..end].to_string();
+        let local_function_span =
+            parameter_function_span_at_offset(active_source, &target_name, offset);
 
         let mut changes = HashMap::new();
 
         for (doc_uri, source) in documents.iter() {
-            let doc_line_index = LineIndex::new(source);
-            let mut spans = Vec::new();
-            if let Ok((_, cst_root)) = garnet_parser::parse_source_cst(source) {
-                collect_identifier_spans(&cst_root, &target_name, &mut spans);
-            } else {
-                let mut start_idx = 0;
-                while let Some(pos) = source[start_idx..].find(&target_name) {
-                    let actual_pos = start_idx + pos;
-                    let is_word_start = actual_pos == 0
-                        || !is_ident_char(source.chars().nth(actual_pos - 1).unwrap());
-                    let is_word_end = actual_pos + target_name.len() == source.len()
-                        || !is_ident_char(
-                            source.chars().nth(actual_pos + target_name.len()).unwrap(),
-                        );
-                    if is_word_start && is_word_end {
-                        spans.push(Span::new(actual_pos, target_name.len()));
-                    }
-                    start_idx = actual_pos + target_name.len().max(1);
+            let edits = if let Some(function_span) = local_function_span {
+                if doc_uri == &uri {
+                    rename_text_edits_for_source_in_span(
+                        source,
+                        &target_name,
+                        &new_name,
+                        Some(function_span),
+                    )
+                } else {
+                    Vec::new()
                 }
-            }
+            } else {
+                rename_text_edits_for_source(source, &target_name, &new_name)
+            };
 
-            if !spans.is_empty() {
-                let edits = spans
-                    .into_iter()
-                    .map(|span| TextEdit {
-                        range: doc_line_index.span_to_range(span),
-                        new_text: new_name.clone(),
-                    })
-                    .collect();
+            if !edits.is_empty() {
                 changes.insert(doc_uri.clone(), edits);
             }
         }
@@ -1026,76 +1448,10 @@ impl LanguageServer for Backend {
         let Some(source) = documents.get(&uri) else {
             return Ok(None);
         };
-        let line_index = LineIndex::new(source);
-        let mut responses = Vec::new();
-
-        if let Ok((module, _)) = garnet_parser::parse_source_cst(source) {
-            let suggestions = garnet_check::suggest::suggest_for_module(&module);
-            for sugg in suggestions {
-                let Some(fn_def) = find_function_in_module(&module, &sugg.function) else {
-                    continue;
-                };
-
-                let has_diagnostic = params.context.diagnostics.iter().any(|d| {
-                    d.message.contains(&sugg.message)
-                        || d.message.contains(sugg.rule.id())
-                        || d.code.as_ref().is_some_and(|code| {
-                            let code_str = match code {
-                                NumberOrString::String(s) => s.to_lowercase(),
-                                NumberOrString::Number(n) => n.to_string().to_lowercase(),
-                            };
-                            let rule_id = sugg.rule.id().to_lowercase().replace('_', "-");
-                            code_str == rule_id
-                                || code_str.contains(&rule_id)
-                                || rule_id.contains(&code_str)
-                        })
-                });
-
-                if !has_diagnostic {
-                    continue;
-                }
-
-                let mut changes = HashMap::new();
-                let edits = match sugg.rule {
-                    Rule::ManagedFnMissingCaps => {
-                        vec![TextEdit {
-                            range: line_index.insert_range_at_offset(fn_def.span.start),
-                            new_text: "@caps()\n".to_string(),
-                        }]
-                    }
-                    Rule::EmptyFunctionBody => {
-                        vec![TextEdit {
-                            range: line_index.span_to_range(fn_def.body.span),
-                            new_text: "{\n  // TODO: implement\n}".to_string(),
-                        }]
-                    }
-                    _ => vec![],
-                };
-
-                if !edits.is_empty() {
-                    changes.insert(uri.clone(), edits);
-                    let action = CodeAction {
-                        title: match sugg.rule {
-                            Rule::ManagedFnMissingCaps => {
-                                format!("Add `@caps()` to `def {}`", sugg.function)
-                            }
-                            Rule::EmptyFunctionBody => {
-                                format!("Stub empty body of `{}`", sugg.function)
-                            }
-                            _ => format!("Fix advisory rule: {}", sugg.rule.id()),
-                        },
-                        kind: Some(CodeActionKind::QUICKFIX),
-                        edit: Some(WorkspaceEdit {
-                            changes: Some(changes),
-                            ..Default::default()
-                        }),
-                        is_preferred: Some(true),
-                        ..Default::default()
-                    };
-                    responses.push(CodeActionOrCommand::CodeAction(action));
-                }
-            }
-        }
+        let responses = code_actions_for_source(uri, source)
+            .into_iter()
+            .map(CodeActionOrCommand::CodeAction)
+            .collect();
 
         Ok(Some(responses))
     }
@@ -1110,100 +1466,11 @@ impl LanguageServer for Backend {
             return Ok(None);
         };
         let line_index = LineIndex::new(source);
-        let mut tokens = Vec::new();
-
-        if let Ok((_, cst_root)) = garnet_parser::parse_source_cst(source) {
-            let mut cst_tokens = Vec::new();
-            collect_all_cst_tokens(&cst_root, &mut cst_tokens);
-
-            let mut previous_kind = None;
-            for token in cst_tokens {
-                let token_type = match &token.kind {
-                    TokenKind::Comment(_) => Some(1), // comment
-                    TokenKind::Str(_) | TokenKind::RawStr(_) | TokenKind::Symbol(_) => Some(2), // string
-                    TokenKind::Int(_) | TokenKind::Float(_) => Some(3), // number
-
-                    TokenKind::Ident(name) => {
-                        if let Some(TokenKind::At) = previous_kind {
-                            Some(7) // decorator (e.g. @caps, @safe)
-                        } else if name == "fs"
-                            || name == "net"
-                            || name == "time"
-                            || name == "crypto"
-                            || name == "ratelimit"
-                            || name == "sandbox"
-                            || name == "registry"
-                            || name == "strings"
-                            || name == "collections"
-                            || name == "system"
-                        {
-                            Some(7) // decorator (capability name)
-                        } else if let Some(TokenKind::KwActor) = previous_kind {
-                            Some(4) // type (custom actor name)
-                        } else if let Some(TokenKind::KwStruct) = previous_kind {
-                            Some(4) // type (struct name)
-                        } else if let Some(TokenKind::KwEnum) = previous_kind {
-                            Some(4) // type (enum name)
-                        } else if let Some(TokenKind::KwTrait) = previous_kind {
-                            Some(4) // type (trait name)
-                        } else if let Some(TokenKind::KwFn) | Some(TokenKind::KwDef) = previous_kind
-                        {
-                            Some(5) // function (function name)
-                        } else {
-                            Some(6) // variable/identifier
-                        }
-                    }
-
-                    k if is_keyword_kind(k) => Some(0), // keyword
-                    k if is_operator_kind(k) => Some(8), // operator
-                    _ => None,
-                };
-
-                if !matches!(token.kind, TokenKind::Whitespace(_) | TokenKind::Comment(_)) {
-                    previous_kind = Some(token.kind.clone());
-                }
-
-                if let Some(ty_idx) = token_type {
-                    let pos = line_index.offset_to_position(token.span.start);
-                    tokens.push(TempSemanticToken {
-                        line: pos.line,
-                        character: pos.character,
-                        length: token.span.len as u32,
-                        token_type: ty_idx,
-                    });
-                }
-            }
-        }
-
-        tokens.sort_by(|a, b| {
-            a.line
-                .cmp(&b.line)
-                .then_with(|| a.character.cmp(&b.character))
-        });
-
-        let mut data = Vec::new();
-        let mut prev_line = 0u32;
-        let mut prev_char = 0u32;
-
-        for token in tokens {
-            let delta_line = token.line - prev_line;
-            let delta_start = if delta_line == 0 {
-                token.character - prev_char
-            } else {
-                token.character
-            };
-
-            data.push(SemanticToken {
-                delta_line,
-                delta_start,
-                length: token.length,
-                token_type: token.token_type,
-                token_modifiers_bitset: 0,
-            });
-
-            prev_line = token.line;
-            prev_char = token.character;
-        }
+        let data = if garnet_parser::parse_source(source).is_ok() {
+            encode_semantic_tokens(source, &line_index)
+        } else {
+            Vec::new()
+        };
 
         Ok(Some(SemanticTokensResult::Tokens(SemanticTokens {
             result_id: None,
@@ -1219,6 +1486,135 @@ mod tests {
     fn position_for(source: &str, needle: &str) -> Position {
         let offset = source.find(needle).expect("needle present");
         LineIndex::new(source).offset_to_position(offset)
+    }
+
+    #[test]
+    fn rowan_identifier_spans_drive_rename_sites() {
+        let source = "def greet(name) {\n  greet(name)\n}\n";
+        let parse = garnet_cst::parse_cst(source);
+        let spans = garnet_cst::identifier_spans(parse.syntax(), "greet");
+
+        assert_eq!(spans.len(), 2);
+        assert_eq!(&source[spans[0].start..spans[0].end()], "greet");
+        assert_eq!(&source[spans[1].start..spans[1].end()], "greet");
+    }
+
+    #[test]
+    fn rename_function_uses_rowan_identifier_tokens_only() {
+        let source = "/// greet docs\ndef greet(name) {\n  greet(name)\n}\n";
+        let edits = rename_text_edits_for_source(source, "greet", "hello");
+
+        assert_eq!(edits.len(), 2);
+        assert!(edits.iter().all(|edit| edit.new_text == "hello"));
+        assert_eq!(edits[0].range.start, Position::new(1, 4));
+        assert_eq!(edits[1].range.start, Position::new(2, 2));
+    }
+
+    #[test]
+    fn rename_parameter_stays_inside_declaring_function() {
+        let source = "def greet(name) {\n  name\n}\n\ndef other(name) {\n  name\n}\n";
+        let edits =
+            rename_scoped_text_edits(source, "name", "person", position_for(source, "name) {"));
+
+        assert_eq!(edits.len(), 2);
+        assert!(edits.iter().all(|edit| edit.new_text == "person"));
+        assert!(edits.iter().all(|edit| edit.range.start.line < 3));
+    }
+
+    #[test]
+    fn rename_parameter_use_stays_inside_declaring_function() {
+        let source = "def greet(name) {\n  name\n}\n\ndef other(name) {\n  name\n}\n";
+        let edits = rename_scoped_text_edits(
+            source,
+            "name",
+            "person",
+            position_for(source, "name\n}\n\n"),
+        );
+
+        assert_eq!(edits.len(), 2);
+        assert!(edits.iter().all(|edit| edit.new_text == "person"));
+        assert!(edits.iter().all(|edit| edit.range.start.line < 3));
+    }
+
+    #[test]
+    fn code_action_add_caps_inserts_before_def() {
+        let source = "/// entry point\ndef main() {\n}\n";
+        let actions = code_actions_for_source(
+            Url::parse("file:///tmp/code_action_add_caps.garnet").expect("url"),
+            source,
+        );
+        let action = actions
+            .iter()
+            .find(|action| action.title.contains("Add `@caps()`"))
+            .expect("caps action");
+        let edits = action
+            .edit
+            .as_ref()
+            .and_then(|edit| edit.changes.as_ref())
+            .and_then(|changes| changes.values().next())
+            .expect("edits");
+
+        assert_eq!(edits[0].new_text, "@caps()\n");
+        assert_eq!(edits[0].range.start, Position::new(1, 0));
+        assert_eq!(edits[0].range.start, edits[0].range.end);
+    }
+
+    #[test]
+    fn code_action_refactor_long_parameter_list_offers_struct_scaffold() {
+        let source = "def build(a, b, c, d) {\n  a\n}\n";
+        let actions = code_actions_for_source(
+            Url::parse("file:///tmp/code_action_long_params.garnet").expect("url"),
+            source,
+        );
+
+        assert!(actions
+            .iter()
+            .any(|action| action.title.contains("Refactor long parameter list")));
+    }
+
+    #[test]
+    fn code_action_add_return_type_infers_literal_int() {
+        let source = "@caps()\ndef answer() {\n  42\n}\n";
+        let actions = code_actions_for_source(
+            Url::parse("file:///tmp/code_action_return_type.garnet").expect("url"),
+            source,
+        );
+
+        assert!(actions
+            .iter()
+            .any(|action| action.title.contains("Add return type `Int`")));
+    }
+
+    #[test]
+    fn semantic_legend_exposes_s16_categories() {
+        let legend = semantic_token_legend();
+        let names: Vec<_> = legend
+            .token_types
+            .iter()
+            .map(SemanticTokenType::as_str)
+            .collect();
+
+        assert!(names.contains(&"keyword"));
+        assert!(names.contains(&"function"));
+        assert!(names.contains(&"parameter"));
+        assert!(names.contains(&"capability"));
+        assert!(names.contains(&"attribute"));
+    }
+
+    #[test]
+    fn semantic_tokens_classify_caps_as_capability_and_attribute() {
+        let source = "@caps(fs)\ndef main(name) {\n  fs::read_file(name)\n}\n";
+        let classified = classify_semantic_tokens(source);
+
+        assert!(classified
+            .iter()
+            .any(|token| token.text == "caps" && token.kind == "attribute"));
+        assert!(classified
+            .iter()
+            .any(|token| token.text == "fs" && token.kind == "capability"));
+        assert!(classified
+            .iter()
+            .any(|token| token.text == "name" && token.kind == "parameter"));
     }
 
     #[test]

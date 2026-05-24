@@ -31,6 +31,11 @@ export function activate(context: vscode.ExtensionContext): void {
 
   client = new LanguageClient('garnet-lsp', 'Garnet LSP', serverOptions, clientOptions);
   context.subscriptions.push(client);
+  context.subscriptions.push(
+    vscode.commands.registerCommand('garnet.addCapsAnnotation', applyQuickFix),
+    vscode.commands.registerCommand('garnet.refactorLongParameterList', applyQuickFix),
+    vscode.commands.registerCommand('garnet.addReturnTypeAnnotation', applyQuickFix)
+  );
   void client.start();
 }
 
@@ -70,4 +75,11 @@ function resolveServerCommand(context: vscode.ExtensionContext): ServerCommand {
 
 function executableName(): string {
   return process.platform === 'win32' ? 'garnet-lsp.exe' : 'garnet-lsp';
+}
+
+function applyQuickFix(): Thenable<unknown> {
+  return vscode.commands.executeCommand('editor.action.codeAction', {
+    kind: vscode.CodeActionKind.QuickFix.value,
+    apply: 'ifSingle'
+  });
 }

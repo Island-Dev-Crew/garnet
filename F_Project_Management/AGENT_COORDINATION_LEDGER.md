@@ -132,7 +132,7 @@ accurate and current.**
 - [2026-05-24 15:15 CDT] MERGED PR#226 (squash `3e45625` on origin/main) — S15 PR-2 landed. S15-Compare recorded in `F_Project_Management/DOGFOOD/S15_CST_COMPARE.md`: rowan `garnet-cst` is canonical for v0.7/S16; #221 parser CST remains a temporary legacy oracle until rowan-backed LSP migration is green. Reconciliation preserved #221's useful token/span surface in `garnet-cst/src/tokens.rs` and added parser-CST token parity tests.
 
 ### win-codex (S16)
-- (empty)
+- [2026-05-24 16:54 CDT] STARTED agent-win-codex/s16-rowan-lsp-precision — fresh branch from origin/main `09d6703`; S15-Compare has selected rowan `garnet-cst`, so S16 is unblocked. Baseline green before edits: readiness 78.8%, `cargo test --workspace --no-fail-fast` exit 0, `cargo clippy --workspace --all-targets -- -D warnings` exit 0. Plan at `.agent/plans/win-codex-S16-plan.md`; proceeding with rowan-backed LSP migration while preserving #221 as migration oracle.
 
 ### win-opus (S17)
 - (empty)
