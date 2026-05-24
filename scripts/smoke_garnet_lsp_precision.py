@@ -111,6 +111,21 @@ def titles(actions: list[dict[str, Any]]) -> list[str]:
     return [action.get("title", "") for action in actions]
 
 
+def observed_semantic_token_types(data: list[int], legend: list[str]) -> list[str]:
+    if len(data) % 5 != 0:
+        raise AssertionError(f"semantic token payload length must be a multiple of 5: {len(data)}")
+    observed: set[str] = set()
+    for index in range(0, len(data), 5):
+        token_type_index = data[index + 3]
+        try:
+            observed.add(legend[token_type_index])
+        except IndexError as exc:
+            raise AssertionError(
+                f"semantic token type index {token_type_index} outside legend {legend!r}"
+            ) from exc
+    return sorted(observed)
+
+
 def run_smoke(executable: Path) -> dict[str, Any]:
     if not executable.exists():
         raise FileNotFoundError(f"missing garnet-lsp executable: {executable}")
@@ -152,7 +167,7 @@ def run_smoke(executable: Path) -> dict[str, Any]:
         write_message(proc, {"jsonrpc": "2.0", "method": "initialized", "params": {}})
 
         lib_source = "/// Friendly greeting\ndef greet(name) {\n  name\n}\n"
-        main_source = "@caps()\ndef main() {\n  greet(\"Ada\")\n}\n"
+        main_source = "@caps(fs)\ndef main(name) {\n  greet(name)\n}\n"
         lib_uri = file_uri("garnet_lsp_precision_lib.garnet")
         main_uri = file_uri("garnet_lsp_precision_main.garnet")
         did_open(proc, lib_uri, lib_source, 1)
@@ -237,6 +252,12 @@ def run_smoke(executable: Path) -> dict[str, Any]:
         )
         if not semantic["data"]:
             raise AssertionError("semantic token response was empty")
+        observed_token_types = observed_semantic_token_types(semantic["data"], semantic_legend)
+        for required in ("capability", "attribute", "parameter"):
+            if required not in observed_token_types:
+                raise AssertionError(
+                    f"semantic tokens did not emit {required!r}: {observed_token_types!r}"
+                )
 
         write_message(proc, {"jsonrpc": "2.0", "id": 8, "method": "shutdown"})
         wait_for(messages, lambda message: message.get("id") == 8)
@@ -251,6 +272,7 @@ def run_smoke(executable: Path) -> dict[str, Any]:
             "parameter_rename_edits": len(parameter_changes[lib_uri]),
             "code_actions": action_titles,
             "semantic_token_types": semantic_legend,
+            "semantic_token_observed_types": observed_token_types,
             "semantic_token_u32_count": len(semantic["data"]),
         }
     finally:
