@@ -135,7 +135,7 @@ accurate and current.**
 - (empty)
 
 ### win-opus (S17)
-- (empty)
+- [2026-05-24 16:25 CDT] STARTED agent-win-opus/s17-stdlib-layers — branched off fresh `origin/main` (`09d6703`, S15 fully merged + S15-Compare recorded). Baseline re-verified on this base: `cargo clippy --workspace --all-targets -- -D warnings` exit 0; readiness 78.8% / 26 lanes; `--check-no-regression` exit 0 (workspace test re-running). Plan at `.agent/plans/win-opus-S17-plan.md`. S17 has no upstream dep. Checked what landed per Jon: S15 CST is in, but the parser still hard-errors on unknown annotations (`functions.rs:96`; no `Annotation::Stability`) — so `@stability`/`@uses`/`@migration` source syntax is **not yet parseable**. Filed a Handoff Request to mac-opus (below). Shipping the parser-independent bulk now (Layer Policy doc, ≥50 prims with registry stability+layer metadata, `@caps(env)` known-cap, registry-driven stability warnings, `garnet_stdlib_layer_gate.py` + `stdlib_layer_policy` lane); source-level `@stability` enforcement on user fns labeled pending-handoff.
 
 ### mac-codex (S18, S19)
 - (empty)
@@ -164,6 +164,8 @@ Example:
 session.**
 
 - [2026-05-24 15:15 CDT] FROM:Jon/Codex TO:all — S15-Compare complete: rowan `garnet-cst` is the canonical CST. S16 is unblocked and should target rowan, using #221's parser CST/LSP behavior only as a migration oracle. Do not delete `garnet-parser-v0.3/src/cst.rs` until rowan-backed LSP rename/semantic-token coverage is green.
+- [2026-05-24 16:28 CDT] FROM:win-opus TO:mac-codex — S17's Layer Policy doc `C_Language_Specification/GARNET_STDLIB_LAYER_POLICY.md` is the spec your S18 Layer-2 packages (`@garnet-lang/*`) code against: five-layer model, promotion criteria (`@garnet-lang/*` → `std::`), deprecation policy, and the `@stability(...)` semantics table. Cap-set heads-up for S19: S17 adds `@caps(env)` as a known capability in `garnet-check-v0.3`'s known-cap gate (`lib.rs`), alongside fs/net/net_internal/time/proc/ffi/*. If S19's `@caps(net)` LLM-client enforcement touches that same gate, coordinate here so we don't edit the known-set in conflicting ways.
+- [2026-05-24 16:55 CDT] FROM:win-opus TO:mac-codex — **Layer Policy doc is DRAFT-COMPLETE** at `C_Language_Specification/GARNET_STDLIB_LAYER_POLICY.md` (on branch `agent-win-opus/s17-stdlib-layers`; lands when the S17 PR opens). §1 five-layer model + concrete v0.7 module→layer table, §2 promotion criteria, §3 deprecation policy, §4 `@stability` tiers + the enforcement severity table, §5 the "capability surface + spec volatility" principle with the JSON-vs-LLM worked example. S18 packages: declare `@stability(experimental)` at v0.1.0 and target Layer 2 (`@garnet-lang/*`) — per §5, the `llm`/`http-client` packages stay Layer 2 (net authority + quarterly provider churn), not `std::`. Flag anything in the doc that's ambiguous for package authoring here.
 
 ### Message format
 
@@ -198,6 +200,13 @@ Do NOT proceed with the modification until the owner has accepted.**
   RESOLUTION: Accepted after S15-Compare selected rowan as canonical. This
   reconciliation branch wires `garnet parse --mode cst <file>` to
   `garnet_cst::parse_cst`; default `garnet parse <file>` remains AST mode.
+
+- [2026-05-24 16:28 CDT] FROM:win-opus TO:mac-opus
+  Crate / File: `garnet-parser-v0.3/src/ast.rs` (`Annotation` enum) + `garnet-parser-v0.3/src/grammar/functions.rs` (`parse_annotations`, the unknown-name arm at ~line 96)
+  Change requested: Add three annotation variants + parse rules so the attribute machinery accepts them: `@stability(<ident>)` → `Annotation::Stability(StabilityTier, Span)` (tier ∈ {stable, experimental, frozen, deprecated}); `@uses(<ident>)` → `Annotation::Uses(String, Span)` (opt-in marker, e.g. `@uses(experimental)`); `@migration("<text>")` → `Annotation::Migration(String, Span)`. Today `parse_annotations` returns `ParseError::unexpected_token` on any name outside {max_depth, fan_out, require_metadata, safe, dynamic, caps, mailbox, nonsendable}, so source containing `@stability(...)` fails to parse outright. (`@caps(env)` needs NO parser change — it already parses as `Capability::Other("env")`; S17 whitelists it inside `garnet-check-v0.3`.)
+  Why I need it: S17 ships the `@stability` semantics now — Layer Policy doc, registry stability tiers on all primitives, and registry-driven call-site warnings — all parser-independent. The remaining half is letting USER functions annotate their own `@stability/@uses/@migration` and enforcing it in `garnet-check-v0.3` (which I own and will wire immediately once the variants exist). I cannot author the parser change under crate ownership.
+  Proposed alternative if you can't / not now: No blocker on the S17 merge — S17 ships and merges with primitive-stability enforcement; the user-annotation half lands in a small follow-up PR after these variants exist. Sequencing is up to you; nothing downstream (S18/S19) waits on it.
+  RESOLUTION: <mac-opus fills this in>
 
 ### Handoff request format
 
