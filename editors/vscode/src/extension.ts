@@ -31,6 +31,17 @@ export function activate(context: vscode.ExtensionContext): void {
 
   client = new LanguageClient('garnet-lsp', 'Garnet LSP', serverOptions, clientOptions);
   context.subscriptions.push(client);
+  context.subscriptions.push(
+    vscode.commands.registerCommand('garnet.addCapsAnnotation', () =>
+      applyNamedCodeAction(vscode.CodeActionKind.QuickFix, 'Add `@caps()`')
+    ),
+    vscode.commands.registerCommand('garnet.refactorLongParameterList', () =>
+      applyNamedCodeAction(vscode.CodeActionKind.RefactorRewrite, 'Refactor long parameter list')
+    ),
+    vscode.commands.registerCommand('garnet.addReturnTypeAnnotation', () =>
+      applyNamedCodeAction(vscode.CodeActionKind.QuickFix, 'Add return type')
+    )
+  );
   void client.start();
 }
 
@@ -70,4 +81,36 @@ function resolveServerCommand(context: vscode.ExtensionContext): ServerCommand {
 
 function executableName(): string {
   return process.platform === 'win32' ? 'garnet-lsp.exe' : 'garnet-lsp';
+}
+
+async function applyNamedCodeAction(
+  kind: vscode.CodeActionKind,
+  titleFragment: string
+): Promise<void> {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor || editor.document.languageId !== 'garnet') {
+    return;
+  }
+
+  const actions = await vscode.commands.executeCommand<vscode.CodeAction[]>(
+    'vscode.executeCodeActionProvider',
+    editor.document.uri,
+    editor.selection,
+    kind.value
+  );
+  const action = actions?.find(candidate => candidate.title.includes(titleFragment));
+  if (!action) {
+    await vscode.commands.executeCommand('editor.action.codeAction', { kind: kind.value });
+    return;
+  }
+
+  if (action.edit) {
+    await vscode.workspace.applyEdit(action.edit);
+  }
+  if (action.command) {
+    await vscode.commands.executeCommand(
+      action.command.command,
+      ...(action.command.arguments ?? [])
+    );
+  }
 }

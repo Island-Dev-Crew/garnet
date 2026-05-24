@@ -68,6 +68,20 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   and byte-identical round-trip status; default `garnet parse <file>` remains
   AST mode.
 
+- **S16 (Rowan-backed LSP precision):** `garnet-lsp` now consumes the canonical
+  rowan `garnet-cst` token/span surface for rename and semantic tokens while
+  preserving parser/check diagnostics. The precision smoke
+  `scripts/smoke_garnet_lsp_precision.py` proves document symbols, workspace
+  symbols, cross-file function rename, scoped parameter rename, three code
+  actions (`Add @caps`, long-parameter refactor, inferred return type), and
+  semantic-token categories for `capability`, `attribute`, and `parameter`.
+  `editors/vscode` is bumped to `0.7.0`, packages
+  `garnet-0.7.0-lsp-precision.vsix`, and exposes the three Garnet quick-fix
+  commands. MIT readiness gains an `editor_lsp_precision` lane and moves
+  78.8% -> 79.6%. **Honest scope:** precision is managed-mode only;
+  cross-package rename, safe-mode precision, per-project token themes, and
+  Marketplace/OpenVSX publication remain v0.8/follow-up work.
+
 - **S13 (Registry stub v0.1):** new `garnet-registry-stub/` crate — a
   filesystem-backed registry where an `index.json` (serde) maps
   `name → version → { path, BLAKE3-per-file }` over `<name>/<version>/`
