@@ -133,6 +133,7 @@ accurate and current.**
 
 ### win-codex (S16)
 - [2026-05-24 16:54 CDT] STARTED agent-win-codex/s16-rowan-lsp-precision — fresh branch from origin/main `09d6703`; S15-Compare has selected rowan `garnet-cst`, so S16 is unblocked. Baseline green before edits: readiness 78.8%, `cargo test --workspace --no-fail-fast` exit 0, `cargo clippy --workspace --all-targets -- -D warnings` exit 0. Plan at `.agent/plans/win-codex-S16-plan.md`; proceeding with rowan-backed LSP migration while preserving #221 as migration oracle.
+- [2026-05-24 18:23 CDT] PR-OPEN PR#230 — branch `agent-win-codex/s16-rowan-lsp-precision` pushed at `09b090c`; local S16 dogfood green and readiness reporter moved 78.8% -> 79.6%. Entering review/CI loop; S16 is not merged until PR#230 is green and reviewed.
 
 ### win-opus (S17)
 - (empty)
