@@ -127,6 +127,20 @@ def read_status() -> MitReadinessStatus:
     proof = garnet_proof_benchmark_status.read_status()
     vm_scaffold_present = _vm_scaffold_present(proof)
     wls = garnet_windows_linux_studio_status.read_status()
+    wls_clean_vm_verified = any(
+        gate.id == "windows_unsigned_nsis" and gate.status == "clean-vm-proof-verified"
+        for gate in wls.packaging_gates
+    )
+    wls_completion_percent = 65.0 if wls_clean_vm_verified else 55.0
+    wls_evidence_tail = (
+        "readiness reporter parity actions, a verified x64 clean-VM installer "
+        "proof, and open Linux plus signing, winget, and Windows ARM64 package gates."
+        if wls_clean_vm_verified
+        else (
+            "readiness reporter parity actions, a Windows clean-VM installer "
+            "proof contract, and open Linux plus clean-machine package gates."
+        )
+    )
     if promo.public_site_embed_present:
         promo_evidence_tail = "records local rendered MP4/WebM evidence, automated visual QA evidence, a website export package, and public-site embedding while keeping human/aesthetic acceptance open."
     elif promo.website_export_present:
@@ -225,13 +239,11 @@ def read_status() -> MitReadinessStatus:
             id="windows_linux_distribution",
             label="Windows/Linux distribution",
             status="active-partial",
-            completion_percent=55.0,
+            completion_percent=wls_completion_percent,
             evidence=(
                 "`scripts/garnet_windows_linux_studio_status.py` now reports the "
                 "Tauri v2 shell scaffold in `apps/garnet-studio`, minimal webview "
-                "permissions, Windows local release build/smoke evidence, v0.5 "
-                "readiness reporter parity actions, a Windows clean-VM installer "
-                "proof contract, and open Linux plus clean-machine package gates."
+                f"permissions, Windows local release build/smoke evidence, v0.5 {wls_evidence_tail}"
             ),
             blocked_by=list(wls.user_assistance_needed),
             deferred=list(wls.next_slices),

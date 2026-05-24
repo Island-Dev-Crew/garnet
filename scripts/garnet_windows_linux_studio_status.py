@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import sys
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -51,6 +52,7 @@ FUTURE_BACKEND_LOWERING = [
     "LLVM-style native targets",
     "native package toolchains",
 ]
+CLEAN_VM_EVIDENCE_ROOT_ENV = "GARNET_WINDOWS_CLEAN_VM_EVIDENCE_ROOT"
 
 
 @dataclass(frozen=True)
@@ -183,6 +185,13 @@ def _write_manifest(directory: Path) -> None:
 
 def _script(name: str, repo_root: Path) -> str:
     return str(repo_root / "scripts" / name)
+
+
+def _clean_vm_evidence_root_from_env() -> Path | None:
+    configured = os.environ.get(CLEAN_VM_EVIDENCE_ROOT_ENV)
+    if not configured:
+        return None
+    return Path(configured).expanduser()
 
 
 def _require_path(value: Path | None, field: str) -> str:
@@ -621,19 +630,80 @@ def _sample_actions() -> list[StudioAction]:
     ]
 
 
-def read_status() -> WindowsLinuxStudioStatus:
-    clean_vm = garnet_windows_clean_vm_installer_status.read_status()
+def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudioStatus:
+    clean_vm_root = clean_vm_evidence_root or _clean_vm_evidence_root_from_env()
+    clean_vm = garnet_windows_clean_vm_installer_status.read_status(clean_vm_root)
+    clean_vm_verified = clean_vm.clean_vm_verified
+    status = (
+        "tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-verified-linux-open"
+        if clean_vm_verified
+        else "tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-contract-open-linux-open"
+    )
+    clean_vm_truth = (
+        [
+            "Windows clean-VM installer proof is verified for the unsigned x64 NSIS artifact under `scripts/garnet_windows_clean_vm_installer_status.py`",
+            "Windows unsigned x64 clean-machine proof exists; signed MSI, winget, Windows ARM64, and Linux runtime proof remain separate gates",
+        ]
+        if clean_vm_verified
+        else [
+            "Windows clean-VM installer proof now has a repo-owned evidence contract and status reporter; it is not verified until a fresh VM bundle is recorded",
+            "Windows clean-machine installer proof remains open until the unsigned NSIS artifact is exercised in a fresh VM",
+        ]
+    )
+    unsigned_nsis_gate = PackagingGate(
+        id="windows_unsigned_nsis",
+        platform="Windows",
+        status="clean-vm-proof-verified" if clean_vm_verified else "contract-ready-clean-vm-open",
+        next_evidence=(
+            "Preserve the verified clean Windows VM proof bundle; proceed to signed MSI/AuthentiCode and winget only after signing/public-release evidence exists"
+            if clean_vm_verified
+            else "Record a clean Windows VM proof bundle with `scripts/garnet_windows_clean_vm_installer_status.py --record-proof --mode clean-vm ...`"
+        ),
+        forbidden_claim=(
+            "signed Windows MSI or winget path is verified"
+            if clean_vm_verified
+            else "signed or clean-machine Windows installer is verified"
+        ),
+    )
+    next_slices = (
+        [
+            "Linux desktop launch proof and first package-format decision",
+            "Windows ARM64 target build/smoke after x64 clean-VM proof",
+            "Parse/check/run plus active converter end-to-end screenshots from the shell",
+            "Advisory bundle/review/handoff evidence walkthrough without source inclusion",
+            "Release / Readiness panel screenshot and reporter-output evidence from the Windows shell",
+            "Signed Windows MSI/AuthentiCode plan after verified unsigned VM smoke",
+            "Website/status copy sync after target smoke evidence",
+        ]
+        if clean_vm_verified
+        else [
+            "Windows clean-machine NSIS install and CLI smoke evidence",
+            "Linux desktop launch proof and first package-format decision",
+            "Parse/check/run plus active converter end-to-end screenshots from the shell",
+            "Advisory bundle/review/handoff evidence walkthrough without source inclusion",
+            "Release / Readiness panel screenshot and reporter-output evidence from the Windows shell",
+            "Unsigned-to-signed Windows MSI/AuthentiCode plan after VM smoke",
+            "Website/status copy sync after target smoke evidence",
+        ]
+    )
+    clean_vm_assistance = (
+        []
+        if clean_vm_verified
+        else [
+            *clean_vm.blocked_by,
+            "Run the unsigned NSIS installer in a clean Windows VM for installer/runtime launch evidence",
+        ]
+    )
     return WindowsLinuxStudioStatus(
         source=str(ROOT),
-        status="tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-contract-open-linux-open",
+        status=status,
         current_truth=[
             "origin/main is newer than PR #140; live main remains the source of truth",
             "macOS SwiftUI Studio remains the native Apple reference app",
             "Tauri v2 is now adopted for the first Windows/Linux shell scaffold in `apps/garnet-studio`",
             "Windows local source-build proof exists for the Tauri frontend, backend tests, release executable, unsigned NSIS bundle, and `--studio-smoke` evidence",
-            "Windows clean-VM installer proof now has a repo-owned evidence contract and status reporter; it is not verified until a fresh VM bundle is recorded",
+            *clean_vm_truth,
             "Linux runtime proof is not complete until the shell launches in a Linux desktop environment",
-            "Windows clean-machine installer proof remains open until the unsigned NSIS artifact is exercised in a fresh VM",
             "the shell wraps existing CLI, docs/PWA, advisory scripts, and dogfood gates without duplicating converter logic",
             "CLI Health maps to the existing `garnet version` probe unless a real health subcommand is added",
             "the Release / Readiness panel now exposes the repo-native v0.5 reporters used by the broader MIT/productization story",
@@ -696,13 +766,7 @@ def read_status() -> WindowsLinuxStudioStatus:
                 next_evidence="Preserve PR evidence for cargo build --release, Tauri release executable, and Studio smoke bundle",
                 forbidden_claim="Windows packaged Studio build is complete",
             ),
-            PackagingGate(
-                id="windows_unsigned_nsis",
-                platform="Windows",
-                status="contract-ready-clean-vm-open",
-                next_evidence="Record a clean Windows VM proof bundle with `scripts/garnet_windows_clean_vm_installer_status.py --record-proof --mode clean-vm ...`",
-                forbidden_claim="signed or clean-machine Windows installer is verified",
-            ),
+            unsigned_nsis_gate,
             PackagingGate(
                 id="windows_target_architecture_matrix",
                 platform="Windows",
@@ -732,18 +796,9 @@ def read_status() -> WindowsLinuxStudioStatus:
                 forbidden_claim="Linux Studio package is verified",
             ),
         ],
-        next_slices=[
-            "Windows clean-machine NSIS install and CLI smoke evidence",
-            "Linux desktop launch proof and first package-format decision",
-            "Parse/check/run plus active converter end-to-end screenshots from the shell",
-            "Advisory bundle/review/handoff evidence walkthrough without source inclusion",
-            "Release / Readiness panel screenshot and reporter-output evidence from the Windows shell",
-            "Unsigned-to-signed Windows MSI/AuthentiCode plan after VM smoke",
-            "Website/status copy sync after target smoke evidence",
-        ],
+        next_slices=next_slices,
         user_assistance_needed=[
-            *clean_vm.blocked_by,
-            "Run the unsigned NSIS installer in a clean Windows VM for installer/runtime launch evidence",
+            *clean_vm_assistance,
             "Provide a Linux VM/container with GUI or AppImage-capable desktop session for runtime launch evidence",
             "Provide signing credentials only when ready to verify signed MSI claims",
         ],
