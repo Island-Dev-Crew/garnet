@@ -12,7 +12,7 @@
 //!
 //! S17 (v0.7) adds the Layer-0 `core::` combinators ([`iter`], [`result`],
 //! [`option`], [`cmp`], [`math`]) and the Layer-1 `std::` library modules
-//! ([`json`], [`regex`], [`base64`], [`env`], [`process`], [`uuid`], [`log`]),
+//! ([`json`], [`regex`], [`base64`], [`env`](mod@env), [`process`], [`uuid`], [`log`]),
 //! all `@stability(experimental)`. Layer + stability classification lives on
 //! each [`registry::PrimMeta`]; see `GARNET_STDLIB_LAYER_POLICY.md`.
 //!
