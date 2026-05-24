@@ -1,22 +1,24 @@
 //! # garnet-cst — trivia-preserving Concrete Syntax Tree for Garnet
 //!
 //! A rowan-backed CST built **cold** for the v0.7 build-both-then-compare A/B
-//! (slice S15). See `AGENTS.md` for the full trait surface, the planned
-//! `cst_to_ast` projection, and the stability tier.
+//! (slice S15). S15-Compare chose this crate as Garnet's canonical CST for
+//! v0.7/S16. See `AGENTS.md` for the full trait surface, `cst_to_ast`
+//! projection, token/span helpers, and stability tier.
 //!
 //! ## Independence contract
 //!
-//! This crate is built without reference to the in-parser CST merged in #221
-//! (`garnet-parser-v0.3/src/cst.rs`), which is preserved untouched as the
-//! S15-Compare baseline. The only surfaces shared with the parser are the
+//! This crate was built without reference to the in-parser CST merged in #221
+//! (`garnet-parser-v0.3/src/cst.rs`), which is preserved as a temporary legacy
+//! migration oracle after S15-Compare. The only surfaces shared with the parser
+//! are the
 //! trivia-preserving lexer (`garnet_parser::lex_source`) and the AST type
-//! (`garnet_parser::ast::Module`, the target of the future `cst_to_ast`).
+//! (`garnet_parser::ast::Module`, the target of `cst_to_ast`).
 //!
 //! ## Stability
 //!
-//! `experimental`. The surface may evolve until the S15-Compare checkpoint
-//! (Jon) picks the canonical CST. The compiler `@stability(experimental)`
-//! annotation is wired once S17 ships it.
+//! Canonical for v0.7 after S15-Compare. The Rust API remains additive and
+//! experimental until S16 hardens the LSP-facing surface and S17 wires compiler
+//! `@stability(experimental)` annotations.
 //!
 //! ## Round-trip
 //!
@@ -34,10 +36,12 @@ mod builder;
 mod convert;
 mod nodes;
 mod syntax_kind;
+mod tokens;
 
 pub use convert::cst_to_ast;
 pub use nodes::{CstNodeExt, EnumDef, FnDef, Name, Param, ParamList, Root, StructDef};
 pub use syntax_kind::{GarnetLanguage, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken};
+pub use tokens::{all_tokens, identifier_spans, token_infos, token_kind, token_span, TokenInfo};
 
 /// A syntax error recorded during CST construction.
 ///

@@ -24,8 +24,8 @@ slice with a stub.
 
 | Slot | Machine | Harness | Slice(s) | Owned crates (writable) | Read-only |
 |---|---|---|---|---|---|
-| **mac-opus** | Mac | Claude Code Opus 4.7 1M Max | **S15** (CST — rowan crate, build cold) | `garnet-cst` (new), `garnet-parser-v0.3` (CST mode opt-in; **do not touch `src/cst.rs` #221**) | everything else |
-| **win-codex** | Windows | Codex Desktop GPT-5.5 Pro Extra High Fast | **S16** (LSP precision — **HELD until S15-Compare**) | `garnet-lsp`, `editors/vscode` | `garnet-cst`, `garnet-parser-v0.3`, `garnet-check-v0.3` |
+| **mac-opus** | Mac | Claude Code Opus 4.7 1M Max | **S15** (CST — rowan crate, built cold) | `garnet-cst` (new), `garnet-parser-v0.3` (lexer/API dependency; **do not touch `src/cst.rs` #221**) | everything else |
+| **win-codex** | Windows | Codex Desktop GPT-5.5 Pro Extra High Fast | **S16** (LSP precision — unblocked after S15-Compare) | `garnet-lsp`, `editors/vscode` | `garnet-cst`, `garnet-parser-v0.3`, `garnet-check-v0.3` |
 | **win-opus** | Windows | Claude Code Opus 4.7 1M Max | **S17** (stdlib + layer policy + `@stability`) | `garnet-stdlib`, `garnet-check-v0.3` (stability surface only) | parser, interp, vm, lsp, cst |
 | **mac-codex** | Mac | Codex Desktop GPT-5.5 Pro Extra High Fast | **S18** (packages) + **S19** (LLM tier) | `garnet-suggest-llm` (new), `garnet-lang/*` (external repos) | `garnet-check-v0.3`, `garnet-stdlib` |
 
@@ -35,8 +35,10 @@ slice with a stub.
 > hand-rolled in-parser CST (`garnet-parser-v0.3/src/cst.rs`) + ~578 lines of
 > LSP. v0.7 does NOT override it: mac-opus builds a rowan `garnet-cst` crate
 > independently and additively (preserve #221's `src/cst.rs` untouched), then a
-> **S15-Compare** checkpoint (Jon) picks the canonical CST. **S16 is HELD until
-> that decision.** See `GARNET_v0_7_SLICE_DOGFOOD.md` → S15-Compare.
+> **S15-Compare** checkpoint (Jon) picks the canonical CST. S15-Compare on
+> 2026-05-24 chose the rowan `garnet-cst` crate as canonical; #221 remains a
+> temporary legacy migration oracle until rowan-backed LSP migration is green.
+> See `GARNET_v0_7_SLICE_DOGFOOD.md` → S15-Compare.
 
 ## Dependency Graph
 
@@ -47,8 +49,8 @@ S15 (mac-opus): rowan garnet-cst ──────┘            │
   ├─→ PR-1: CST trait stub                          │
   └─→ PR-2: full rowan impl (built cold)            ▼
                                               S16 (win-codex)
-                                              HELD until S15-Compare;
-                                              targets the canonical CST
+                                              unblocked after S15-Compare;
+                                              targets rowan garnet-cst
 
 S17 (win-opus) ───────────────────────────────────────────┐
                                                           ▼
@@ -67,10 +69,11 @@ S17 (win-opus, soft) ───────────────────�
 1. **mac-opus builds the rowan `garnet-cst` crate cold** (independently of #221's
    in-parser CST), additively, preserving `garnet-parser-v0.3/src/cst.rs`. S17
    (win-opus) has no CST dependency and can start immediately in parallel.
-2. **S15-Compare (Jon) picks the canonical CST** once mac-opus's S15 is
-   dogfood-passing. The decision is recorded here in the ledger.
-3. **win-codex's S16 is HELD until the S15-Compare decision is posted**, then
-   targets the canonical CST. Do not start substantive LSP work before then.
+2. **S15-Compare (Jon) picked the canonical CST** once mac-opus's S15 became
+   dogfood-passing. Decision: rowan `garnet-cst` is canonical; #221 remains a
+   temporary migration oracle.
+3. **win-codex's S16 is unblocked** and targets rowan `garnet-cst`. Do not
+   delete #221's parser CST until rowan-backed LSP migration is green.
 4. **win-opus's S17 must MERGE before mac-codex starts S18 substantive work.**
 
 ---
@@ -126,6 +129,7 @@ accurate and current.**
 - [2026-05-22 23:04 CDT] STARTED agent-mac-opus/s15-cst-rowan — S15 PR-2 (substantive). Branched from fresh `origin/main` (`4110e1a`). Built the rowan CST builder cold (direct recursive-descent over the token stream → real composite structure), typed nodes, and `cst_to_ast`. Validated: examples corpus + arbitrary-UTF-8 `proptest` round-trip 100% byte-identical; `cst_to_ast` span-normalized structural parity vs `parse_source` across the corpus; `parse_cst_vs_ast` bench ≈0.99× the AST path (under the 1.5× gate). Added `parser_cst_migration` readiness lane (78.0%→78.8%), regenerated baseline. #221 `src/cst.rs` still untouched. Preparing dogfood bundle + PR-2.
 - [2026-05-22 23:12 CDT] PR-OPEN PR#226 (`agent-mac-opus/s15-cst-rowan`) — S15 PR-2: trivia-preserving CST via rowan (builder + nodes + `cst_to_ast` + bench). All 9 dogfood-block/gate commands green locally (fmt/build-release/`-p garnet-cst -p garnet-parser`/bench/workspace-test/clippy/`deny`/readiness-no-regression/agent-contracts, all EXIT 0). Roundtrip 100% (corpus + proptest); `cst_to_ast` span-normalized parity vs `parse_source` on the corpus; bench ≈0.99× AST. New `parser_cst_migration` lane (78.0%→78.8%); baseline regenerated. PR-body dogfood gate passes. Desktop bundle `garnet-s15-cst-rowan-20260523T040956Z` sealed. #221 `src/cst.rs` untouched (verified). Awaiting Jon review/merge; canonical-CST choice = S15-Compare.
 - [2026-05-22 23:18 CDT] REVIEW PR#226 — CI fully green (`gh pr checks` EXIT=0: 27 pass / 2 skip / 0 fail / 0 pending); `mergeable=MERGEABLE`, `mergeStateStatus=CLEAN`, not draft; PR-body dogfood gate passes; no review findings yet. Ready for PR-Agent Grep Loop + Jon's final merge call. **S15 status:** PR-1 (#225) merged + PR-2 (#226) review-ready ⇒ the rowan `garnet-cst` is dogfood-passing. Next gate is **S15-Compare** (Jon, fresh eyes) to pick the canonical CST before S16 unblocks. I do not merge.
+- [2026-05-24 15:15 CDT] MERGED PR#226 (squash `3e45625` on origin/main) — S15 PR-2 landed. S15-Compare recorded in `F_Project_Management/DOGFOOD/S15_CST_COMPARE.md`: rowan `garnet-cst` is canonical for v0.7/S16; #221 parser CST remains a temporary legacy oracle until rowan-backed LSP migration is green. Reconciliation preserved #221's useful token/span surface in `garnet-cst/src/tokens.rs` and added parser-CST token parity tests.
 
 ### win-codex (S16)
 - (empty)
@@ -159,7 +163,7 @@ Example:
 **Cross-agent communication. Append timestamped messages. Read by all agents every
 session.**
 
-(empty)
+- [2026-05-24 15:15 CDT] FROM:Jon/Codex TO:all — S15-Compare complete: rowan `garnet-cst` is the canonical CST. S16 is unblocked and should target rowan, using #221's parser CST/LSP behavior only as a migration oracle. Do not delete `garnet-parser-v0.3/src/cst.rs` until rowan-backed LSP rename/semantic-token coverage is green.
 
 ### Message format
 
@@ -191,7 +195,9 @@ Do NOT proceed with the modification until the owner has accepted.**
   lands the real builder, and ideally *after* S15-Compare picks the canonical
   CST, so the CLI wires to the winner rather than a stub or a soon-to-be-
   superseded impl.
-  RESOLUTION: <owner fills this in>
+  RESOLUTION: Accepted after S15-Compare selected rowan as canonical. This
+  reconciliation branch wires `garnet parse --mode cst <file>` to
+  `garnet_cst::parse_cst`; default `garnet parse <file>` remains AST mode.
 
 ### Handoff request format
 

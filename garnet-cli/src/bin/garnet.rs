@@ -29,13 +29,7 @@ fn main() -> ExitCode {
         }
         "new" => cmd::new::run(&args[1..]),
         "add" => cmd::add::run(&args[1..]),
-        "parse" => {
-            if args.len() < 2 {
-                eprintln!("usage: garnet parse <file.garnet>");
-                return ExitCode::from(2);
-            }
-            cmd::parse::run(PathBuf::from(&args[1]))
-        }
+        "parse" => cmd::parse::run(&args[1..]),
         "check" => {
             if args.len() < 2 {
                 eprintln!("usage: garnet check [--suggest] <file.garnet>");

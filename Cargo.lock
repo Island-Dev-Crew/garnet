@@ -648,6 +648,7 @@ dependencies = [
  "ed25519-dalek",
  "garnet-check",
  "garnet-convert",
+ "garnet-cst",
  "garnet-interp",
  "garnet-memory",
  "garnet-parser",

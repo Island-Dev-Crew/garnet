@@ -54,6 +54,20 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   the separate S15-Compare checkpoint (Jon)** — this is the second of two
   independent CSTs by design, not yet reconciled.
 
+- **S15-Compare (CST reconciliation):** canonical CST decision recorded:
+  the rowan-backed `garnet-cst/` crate is the v0.7/S16 target, while #221's
+  in-parser CST stays temporarily as a legacy migration oracle. The useful part
+  of #221 was preserved rather than discarded: `garnet-cst/src/tokens.rs` now
+  exposes `TokenInfo`, `token_infos`, `token_kind`, `token_span`, and
+  `identifier_spans`, giving LSP consumers the same `TokenKind` payload +
+  byte-span ergonomics on top of rowan. New
+  `tests/parser_cst_token_parity.rs` proves the rowan token view matches #221's
+  parser CST token stream across the example corpus, excluding the parser's
+  zero-width EOF sentinel. `garnet parse --mode cst <file>` now routes through
+  the canonical rowan path and reports token count, CST error count, root kind,
+  and byte-identical round-trip status; default `garnet parse <file>` remains
+  AST mode.
+
 - **S13 (Registry stub v0.1):** new `garnet-registry-stub/` crate — a
   filesystem-backed registry where an `index.json` (serde) maps
   `name → version → { path, BLAKE3-per-file }` over `<name>/<version>/`
