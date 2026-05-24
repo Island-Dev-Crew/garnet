@@ -4,8 +4,9 @@
 
 Owns Garnet's trivia-preserving Concrete Syntax Tree (CST): the rowan
 `SyntaxKind` / `GarnetLanguage` binding, the `SyntaxNode` / `SyntaxToken`
-aliases, the `CstNode` trait, `parse_cst`, `Parse<T>`, `cst_to_source`, and
-(from PR-2) the recursive-descent CST builder plus the `cst_to_ast` projection.
+aliases, the `CstNode` trait, `parse_cst`, `Parse<T>`, `cst_to_source`, the
+direct recursive-descent CST builder (`builder.rs`), the `cst_to_ast`
+projection (`convert.rs`), and the typed-node wrappers (`nodes.rs`).
 
 Built **cold** for the v0.7 build-both-then-compare A/B (slice S15):
 independently of the in-parser CST merged in #221
@@ -20,9 +21,17 @@ extends #221's CST.
 - `parse_cst(&str) -> Parse<SyntaxNode>` is **trivia-preserving**: every source
   byte — whitespace and comments included — is emitted into the rowan green
   tree in source order, so `cst_to_source(parse_cst(s).syntax()) == s` is a
-  byte-identical round-trip for inputs that lex. PR-1 ships an intentionally
-  trivial impl (whole source as one trivia leaf); PR-2 ships the structural
-  builder. The round-trip guarantee holds in both.
+  byte-identical round-trip for inputs that lex. The builder also flushes any
+  unconsumed tokens, so the round-trip holds even for grammatically invalid
+  input (error recovery is best-effort on *structure*, never on round-trip).
+- `cst_to_ast` projects the CST onto `garnet_parser::ast::Module`. It is
+  validated by span-normalized structural parity against `parse_source` across
+  the canonical example corpus (`tests/cst_to_ast_parity.rs`). Existing AST
+  consumers (interp, check, vm) keep using `parse_source` and are untouched;
+  CST-first migration is v0.8.
+- Performance: the `parse_cst_vs_ast` Criterion bench keeps the CST path within
+  1.5× the AST path (currently ≈1×). If a change pushes it over, document the
+  ratio in `CHANGELOG.md` rather than blocking the slice.
 - The `CstNode` trait (`syntax()`, `kind()`) is the load-bearing seam that S16
   (LSP precision) builds against. Evolve it only with a ledger note while the
   surface is `experimental`.

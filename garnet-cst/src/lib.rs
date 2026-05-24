@@ -30,11 +30,14 @@
 //! assert_eq!(parse.to_source(), src);
 //! ```
 
+mod builder;
+mod convert;
+mod nodes;
 mod syntax_kind;
 
+pub use convert::cst_to_ast;
+pub use nodes::{CstNodeExt, EnumDef, FnDef, Name, Param, ParamList, Root, StructDef};
 pub use syntax_kind::{GarnetLanguage, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken};
-
-use rowan::{GreenNodeBuilder, Language};
 
 /// A syntax error recorded during CST construction.
 ///
@@ -99,25 +102,16 @@ pub fn cst_to_source(node: &SyntaxNode) -> String {
     node.text().to_string()
 }
 
-/// Parse a Garnet source string into a CST.
+/// Parse a Garnet source string into a CST via the rowan recursive-descent
+/// builder (cold from Mini-Spec v1.0 §2–§11).
 ///
-/// **PR-1 stub.** This wraps the entire source in a single `Root` node holding
-/// one trivia leaf (the whole input). It is trivia-preserving by construction
-/// (round-trips byte-for-byte) but performs no structural parsing. The real
-/// rowan recursive-descent builder lands in PR-2 (`S15: trivia-preserving CST
-/// via rowan`). The trait surface above is real and stable; only this impl is
-/// intentionally trivial.
+/// Round-trip is guaranteed for any input that lexes: every token's source
+/// slice is emitted in order, so `cst_to_source(parse_cst(s).syntax()) == s`.
+/// Structural nesting follows the grammar; recovery from malformed input is
+/// best-effort (the tree still round-trips). For inputs that fail to *lex*,
+/// the whole source is preserved under an `Error` leaf and the lex error is
+/// recorded in `errors`.
 #[must_use]
 pub fn parse_cst(input: &str) -> Parse<SyntaxNode> {
-    let mut builder = GreenNodeBuilder::new();
-    builder.start_node(GarnetLanguage::kind_to_raw(SyntaxKind::Root));
-    if !input.is_empty() {
-        // Entire source as one trivia leaf — a lossless round-trip.
-        builder.token(GarnetLanguage::kind_to_raw(SyntaxKind::Whitespace), input);
-    }
-    builder.finish_node();
-    Parse {
-        root: SyntaxNode::new_root(builder.finish()),
-        errors: Vec::new(),
-    }
+    builder::parse(input)
 }

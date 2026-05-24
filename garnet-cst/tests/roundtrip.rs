@@ -51,11 +51,14 @@ fn trivia_classification() {
 }
 
 proptest::proptest! {
-    /// The stub round-trips ANY UTF-8 input byte-for-byte (newlines included).
+    /// Round-trip holds for ANY UTF-8 input (newlines included), regardless of
+    /// grammatical validity: tokens that lex are emitted in order, and input
+    /// that fails to lex is preserved under an `Error` leaf. `parse.ok()` is
+    /// NOT asserted — arbitrary text is usually not a valid program, but it
+    /// must still reconstruct byte-for-byte.
     #[test]
     fn roundtrips_any_utf8_input(s in "(?s).*") {
         let parse = parse_cst(&s);
-        proptest::prop_assert!(parse.ok());
         proptest::prop_assert_eq!(cst_to_source(parse.syntax()), s);
     }
 }

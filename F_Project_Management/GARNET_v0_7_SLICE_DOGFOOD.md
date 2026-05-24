@@ -175,7 +175,7 @@ touch `src/cst.rs`), `garnet-cst` (NEW).
 
 ```bash
 cargo build -p garnet-cst --release
-cargo test -p garnet-cst -p garnet-parser-v0.3 --no-fail-fast
+cargo test -p garnet-cst -p garnet-parser --no-fail-fast   # package name is `garnet-parser` (dir garnet-parser-v0.3)
 cargo bench -p garnet-cst --bench parse_cst_vs_ast
 cargo test --workspace --no-fail-fast   # existing consumers still pass
 # Expect: roundtrip property test 1000/1000 clean; CST path ≤ 1.5× AST path
@@ -188,7 +188,7 @@ cargo test --workspace --no-fail-fast   # existing consumers still pass
 - "CST parsing is approximately N× slower than AST parsing (committed bench numbers); optimization deferred to v0.8."
 - "Roundtrip is source-preserving for canonical examples; recovery from malformed input is best-effort and may diverge."
 
-**State:** not-started.
+**State:** in-progress — PR-1 (trait surface + stub) merged (#225); PR-2 (substantive rowan builder + `cst_to_ast` + bench + `parser_cst_migration` lane) in review. Round-trip 100% on the corpus + proptest; `cst_to_ast` span-normalized structural parity vs `parse_source` on the corpus; bench ≈0.99× AST. Canonical-CST choice remains the separate S15-Compare checkpoint.
 
 ---
 
