@@ -23,6 +23,7 @@ import garnet_converter_status  # noqa: E402
 import garnet_proof_benchmark_status  # noqa: E402
 import garnet_promo_video_status  # noqa: E402
 import garnet_readiness_status  # noqa: E402
+import garnet_stdlib_layer_gate  # noqa: E402
 import garnet_windows_linux_studio_status  # noqa: E402
 
 
@@ -139,6 +140,7 @@ def read_status() -> MitReadinessStatus:
     proof = garnet_proof_benchmark_status.read_status()
     vm_scaffold_present = _vm_scaffold_present(proof)
     wls = garnet_windows_linux_studio_status.read_status()
+    stdlib = garnet_stdlib_layer_gate.read_status()
     wls_clean_vm_verified = any(
         gate.id == "windows_unsigned_nsis" and gate.status == "clean-vm-proof-verified"
         for gate in wls.packaging_gates
@@ -809,6 +811,42 @@ def read_status() -> MitReadinessStatus:
             ]
             if _rowan_cst_present()
             else [],
+        ),
+        ObjectiveLane(
+            id="stdlib_layer_policy",
+            label="Stdlib layer policy + `@stability` (S17)",
+            status="verified" if stdlib.ok else "active-partial",
+            completion_percent=100.0
+            if stdlib.ok
+            else round(stdlib.explicit_stability_percent, 1),
+            evidence=(
+                "`C_Language_Specification/GARNET_STDLIB_LAYER_POLICY.md` codifies the "
+                "five-layer model + `@stability` semantics. `garnet-stdlib/src/registry.rs` "
+                f"tags every primitive with a Layer + Stability tier: {stdlib.total} "
+                f"primitives ({stdlib.by_layer.get('Core', 0)} Layer-0 `core`, "
+                f"{stdlib.by_layer.get('Std', 0)} Layer-1 `std`), "
+                f"{stdlib.explicit_stability_percent:.1f}% with an explicit tier. "
+                "`garnet-check-v0.3/src/stability.rs` warns non-fatally at call sites into "
+                "experimental/deprecated primitives (info for frozen); `@caps(env)` is a new "
+                "known capability. `scripts/garnet_stdlib_layer_gate.py` enforces >= 50 "
+                f"primitives and >= 95% explicit `@stability` (gate: "
+                f"{'PASS' if stdlib.ok else 'FAIL'}). Reproduce via the S17 dogfood block in "
+                "`F_Project_Management/GARNET_v0_7_SLICE_DOGFOOD.md`."
+            ),
+            blocked_by=[],
+            deferred=[
+                "Source-level `@stability(...)` on user-defined functions + "
+                "`@uses(experimental)` opt-in + `@migration(...)` hints — pending the "
+                "win-opus → mac-opus parser annotation handoff (primitive-stability "
+                "enforcement ships now)",
+                "Error-level `@stability` enforcement (v0.7 is warning-level for "
+                "backwards compat; error-level is v0.8)",
+                "Garnet-source execution of the new Layer-0/1 primitives via the "
+                "interpreter (registry surface + Rust host impls + unit tests ship now; "
+                "interpreter dispatch is v0.8, as garnet-interp is outside S17's ownership)",
+                "Layer-2 `@garnet-lang/*` packages (S18) and the `@caps(fs)` file-sink "
+                "path of `std::log`",
+            ],
         ),
     ]
 

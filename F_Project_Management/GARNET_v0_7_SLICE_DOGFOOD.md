@@ -341,13 +341,18 @@ parser doesn't already handle.
 
 **Dogfood block:**
 
+> Note: the checker's **cargo package name is `garnet-check`** (its directory is
+> `garnet-check-v0.3/`). Earlier drafts wrote `-p garnet-check-v0.3`, which cargo
+> rejects as an invalid package id; the correct flag is `-p garnet-check`.
+
 ```bash
-cargo build -p garnet-stdlib -p garnet-check-v0.3 --release
-cargo test -p garnet-stdlib -p garnet-check-v0.3 --no-fail-fast
+cargo build -p garnet-stdlib -p garnet-check --release
+cargo test  -p garnet-stdlib -p garnet-check --no-fail-fast
 python3 scripts/garnet_stdlib_layer_gate.py
-# Expect: ≥ 50 primitives total; ≥ 95% with explicit @stability;
-# GARNET_STDLIB_LAYER_POLICY.md exists.
-garnet check examples/mvp_01_*.garnet   # no unexpected diagnostics on existing examples
+# Expect: ≥ 50 primitives total (live: 77); ≥ 95% with explicit @stability
+# (live: 100%); GARNET_STDLIB_LAYER_POLICY.md exists. Exit 0 on pass.
+python3 -m unittest scripts.test_garnet_stdlib_layer_gate   # gate parser/aggregation tests
+garnet check examples/mvp_01_*.garnet   # no NEW diagnostics on existing examples
 ```
 
 **Honest partial labels available:**
@@ -355,7 +360,23 @@ garnet check examples/mvp_01_*.garnet   # no unexpected diagnostics on existing 
 - "`@stability` enforcement is at warning level, not error level, for backwards compat. Error-level enforcement is v0.8 work."
 - "Layer 2 packages (LLM client, HTTP client, etc.) are NOT bundled with v0.7 binaries; they ship via the registry as `@garnet-lang/*` packages."
 
-**State:** not-started.
+**Delivered (v0.7, honest scope):**
+- ✅ Layer Policy doc, registry expansion **24 → 77 primitives** (40 Layer-0
+  `core`, 37 Layer-1 `std`), 100% explicit `@stability`, `garnet_stdlib_layer_gate.py`
+  + `stdlib_layer_policy` lane (78.8% → 79.6%), `@caps(env)` known cap, and a
+  registry-driven `@stability` advisory at **primitive** call sites
+  (`garnet-check/src/stability.rs`, non-fatal).
+- ⚠️ **Pending parser handoff (mac-opus):** source-level `@stability(...)` /
+  `@uses(experimental)` / `@migration(...)` on **user-defined** functions — the
+  annotation parser rejects unknown names today, so the "missing annotation →
+  warning" and "`@uses` opt-in" bullets above apply to primitives now and to
+  user functions after the handoff lands. `@caps(proc)` already existed; S17
+  adds only `@caps(env)`.
+- ⚠️ **v0.8:** Garnet-source **execution** of the new Layer-0/1 primitives
+  (registry surface + Rust host impls + unit tests ship now; interpreter
+  dispatch is out of S17's crate ownership).
+
+**State:** dogfood-passing (local: 138 stdlib + 137 checker tests; layer gate 77 prims / 100% `@stability`; workspace fmt/clippy/test green; `garnet check` on the example corpus shows no new diagnostics). Pre-existing Windows-only `scripts/` test failures (`shasum`/cp1252/exec-bit/SwiftPM) are unrelated to S17; CI (Linux) is the cross-cutting authority.
 
 ---
 

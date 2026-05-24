@@ -34,6 +34,7 @@ pub mod borrow;
 pub mod caps_graph;
 pub mod coherence;
 pub mod match_coverage;
+pub mod stability;
 pub mod suggest;
 
 pub use audit::{AuditLog, BoundaryCall, BoundaryDirection};
@@ -44,6 +45,13 @@ use garnet_parser::ast::{
     TypeExpr,
 };
 use std::collections::BTreeSet;
+
+/// Capability names the checker accepts that the parser still surfaces as
+/// `Capability::Other(_)` because they postdate the parser's enum. S17
+/// (v0.7) adds `env` (process-environment access for `std::env`). The
+/// parser's built-in variants (fs, net, net_internal, time, proc, ffi, *)
+/// are validated structurally and never reach this list.
+const CHECKER_KNOWN_OTHER_CAPS: &[&str] = &["env"];
 
 /// A diagnostic from the checker, with a user-readable message and severity.
 #[derive(Debug, Clone, thiserror::Error)]
@@ -63,6 +71,13 @@ pub enum CheckError {
         missing: String,
         via: String,
     },
+    /// S17 — `@stability` advisory at a primitive call site. NON-FATAL: it is
+    /// deliberately excluded from [`CheckReport::ok`], so it never changes the
+    /// exit code. The message carries its own severity word ("warning" for
+    /// experimental/deprecated, "info" for frozen) per the Layer Policy §4
+    /// enforcement table.
+    #[error("{0}")]
+    StabilityAdvice(String),
 }
 
 /// The checker's result set: a list of diagnostics and metadata about each
@@ -130,6 +145,11 @@ pub fn check_module(module: &Module) -> CheckReport {
             via: v.via,
         });
     }
+
+    // S17 — `@stability` advisories at primitive call sites. NON-FATAL:
+    // `StabilityAdvice` is excluded from `ok()`, so these never change the
+    // exit code; they surface as visible warnings/info via `garnet check`.
+    report.errors.extend(stability::check_stability(module));
 
     report
 }
@@ -363,11 +383,13 @@ fn check_fn(f: &FnDef, module_safe: bool, report: &mut CheckReport) {
                         wildcard_used = true;
                     }
                     if let garnet_parser::ast::Capability::Other(name) = c {
-                        report.errors.push(CheckError::AnnotationError(format!(
-                            "function '{}' declares unknown capability '{}'; \
-                             known caps: fs, net, net_internal, time, proc, ffi, *",
-                            f.name, name
-                        )));
+                        if !CHECKER_KNOWN_OTHER_CAPS.contains(&name.as_str()) {
+                            report.errors.push(CheckError::AnnotationError(format!(
+                                "function '{}' declares unknown capability '{}'; \
+                                 known caps: fs, net, net_internal, time, proc, env, ffi, *",
+                                f.name, name
+                            )));
+                        }
                     }
                     caps_set.push(c.as_str().to_string());
                 }
@@ -646,5 +668,101 @@ mod tests {
         );
         let r = check_module(&m);
         assert!(r.boundary_call_sites > 0);
+    }
+
+    // ── S17: `@caps(env)` known-capability + non-fatal stability ────────
+
+    #[test]
+    fn env_is_a_known_capability() {
+        // `@caps(env)` must NOT raise an "unknown capability" AnnotationError,
+        // and it must cover the `env` requirement of `std::env::get`.
+        let m = parse(
+            r#"
+            @caps(env)
+            def main() {
+                std::env::get("HOME")
+            }
+            "#,
+        );
+        let r = check_module(&m);
+        assert!(
+            !r.errors.iter().any(
+                |e| matches!(e, CheckError::AnnotationError(m) if m.contains("unknown capability"))
+            ),
+            "env must be a known capability, got {:?}",
+            r.errors
+        );
+        assert!(
+            !r.errors
+                .iter()
+                .any(|e| matches!(e, CheckError::CapsCoverage { missing, .. } if missing == "env")),
+            "@caps(env) should cover std::env::get, got {:?}",
+            r.errors
+        );
+    }
+
+    #[test]
+    fn env_call_without_declaration_is_caps_violation() {
+        let m = parse(
+            r#"
+            @caps()
+            def main() {
+                std::env::get("HOME")
+            }
+            "#,
+        );
+        let r = check_module(&m);
+        assert!(
+            r.errors
+                .iter()
+                .any(|e| matches!(e, CheckError::CapsCoverage { missing, .. } if missing == "env")),
+            "calling std::env::get without @caps(env) must flag a missing `env` cap, got {:?}",
+            r.errors
+        );
+    }
+
+    #[test]
+    fn truly_unknown_capability_still_rejected() {
+        let m = parse(
+            r#"
+            @caps(quux)
+            def main() { 0 }
+            "#,
+        );
+        let r = check_module(&m);
+        assert!(
+            r.errors
+                .iter()
+                .any(|e| matches!(e, CheckError::AnnotationError(m) if m.contains("unknown capability") && m.contains("quux"))),
+            "an unknown cap other than env must still be rejected, got {:?}",
+            r.errors
+        );
+    }
+
+    #[test]
+    fn stability_advice_is_non_fatal() {
+        // Calling an experimental primitive emits a StabilityAdvice but must
+        // NOT flip ok() to false (warnings, not errors).
+        let m = parse(
+            r#"
+            @caps()
+            def main() {
+                core::iter::map(xs, f)
+            }
+            "#,
+        );
+        let r = check_module(&m);
+        assert!(
+            r.errors
+                .iter()
+                .any(|e| matches!(e, CheckError::StabilityAdvice(_))),
+            "expected a StabilityAdvice for an experimental prim, got {:?}",
+            r.errors
+        );
+        assert!(
+            r.ok(),
+            "stability advisories must be non-fatal (ok() stays true), got {:?}",
+            r.errors
+        );
     }
 }

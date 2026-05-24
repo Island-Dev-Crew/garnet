@@ -68,6 +68,34 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   and byte-identical round-trip status; default `garnet parse <file>` remains
   AST mode.
 
+- **S17 (Stdlib expansion + layer policy + `@stability`):** codifies Garnet's
+  five-layer stdlib model in `C_Language_Specification/GARNET_STDLIB_LAYER_POLICY.md`
+  (layer model, promotion/deprecation policy, the `@stability` semantics table,
+  and the "capability surface + spec volatility = layer assignment" first-order
+  principle). Expands `garnet-stdlib` from **24 → 77 primitives**: new Layer-0
+  `core::` combinators (`iter`, `result`, `option`, `cmp`, `math`) and Layer-1
+  `std::` modules (`json`, `regex`, `base64`, `env`, `process`, `uuid`, `log`),
+  each a real Rust host function with behavioral unit tests (138 stdlib tests).
+  Every primitive now carries an explicit `Layer` + `Stability` tier in
+  `registry.rs` (existing 24 → `stable`; the 53 additions → `experimental`);
+  `garnet_stdlib_layer_gate.py` enforces ≥ 50 primitives and ≥ 95% explicit
+  `@stability` (live: 100%). Adds a compiler-enforced `@stability` advisory in
+  `garnet-check-v0.3/src/stability.rs` — calls into `experimental`/`deprecated`
+  primitives warn, `frozen` is info — **non-fatal** (exit code unchanged), read
+  from the registry. Adds `@caps(env)` as a known capability (for `std::env`).
+  New `stdlib_layer_policy` readiness lane (`verified`); MIT readiness
+  78.8% → **79.6%**; baseline regenerated. New deps `serde_json`/`regex`/`rand`
+  (already in the lockfile) + `sha1` (RustCrypto sibling of `sha2`); `base64`
+  hand-rolled. **Honest scope:** `@stability` enforcement is **warning-level**
+  for backwards compat (error-level is v0.8); source-level `@stability(...)` /
+  `@uses(experimental)` / `@migration(...)` on **user-defined** functions is
+  **pending a parser handoff** to mac-opus (the annotation parser rejects
+  unknown names today) — primitive-stability enforcement ships now, user-function
+  enforcement in a follow-up; the new Layer-0/1 primitives ship as registry
+  surface + Rust host impls + unit tests, while **interpreter dispatch** of them
+  to Garnet source is v0.8 (`garnet-interp` is outside S17's ownership);
+  Layer-2 `@garnet-lang/*` packages are S18.
+
 - **S13 (Registry stub v0.1):** new `garnet-registry-stub/` crate — a
   filesystem-backed registry where an `index.json` (serde) maps
   `name → version → { path, BLAKE3-per-file }` over `<name>/<version>/`

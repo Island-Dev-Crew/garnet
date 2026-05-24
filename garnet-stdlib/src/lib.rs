@@ -10,6 +10,12 @@
 //! - [`fs`] — read/write/list files (gated on `@caps(fs)`)
 //! - [`net`] — TCP/UDP primitives (gated on `@caps(net)` + NetDefaults)
 //!
+//! S17 (v0.7) adds the Layer-0 `core::` combinators ([`iter`], [`result`],
+//! [`option`], [`cmp`], [`math`]) and the Layer-1 `std::` library modules
+//! ([`json`], [`regex`], [`base64`], [`env`], [`process`], [`uuid`], [`log`]),
+//! all `@stability(experimental)`. Layer + stability classification lives on
+//! each [`registry::PrimMeta`]; see `GARNET_STDLIB_LAYER_POLICY.md`.
+//!
 //! Each primitive is a Rust function that returns `Result<T, StdError>`.
 //! The interpreter bridge (Rung 3) wires these into the prelude by
 //! registering each function with its required capability set, which the
@@ -31,20 +37,32 @@
 //! `garnet-interp` can register this table at startup to expose all
 //! primitives to user programs.
 
+pub mod base64;
+pub mod cmp;
 pub mod collections;
 pub mod crypto;
+pub mod env;
 pub mod error;
 pub mod fs;
+pub mod iter;
+pub mod json;
+pub mod log;
+pub mod math;
 pub mod net;
+pub mod option;
+pub mod process;
 pub mod ratelimit;
+pub mod regex;
 pub mod registry;
+pub mod result;
 pub mod sandbox;
 pub mod strings;
 pub mod time;
+pub mod uuid;
 
 pub use error::StdError;
 pub use ratelimit::{apply_dp_noise, gate_search, IndexPolicy, RateLimitError, RateLimiter};
-pub use registry::{PrimTable, RequiredCaps};
+pub use registry::{Layer, PrimMeta, PrimTable, RequiredCaps, Stability};
 pub use sandbox::{
     active_profile, check_cap_permitted, parse_sandbox_arg, reject_unsafe_constructs,
     SandboxProfile, SandboxStatus,
