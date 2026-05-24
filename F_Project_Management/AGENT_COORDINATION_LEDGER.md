@@ -122,7 +122,8 @@ accurate and current.**
 - (empty)
 
 ### win-codex (S16)
-- (empty)
+- [2026-05-24 15:51 CT] STARTED agent-win-codex/s16-lsp-precision — baseline checks passed; S16 held awaiting S15-Compare canonical CST decision.
+- [2026-05-24 15:54 CT] BLOCKED agent-win-codex/s16-lsp-precision — S15-Compare decision is not yet recorded; substantive LSP edits and PR opening remain held.
 
 ### win-opus (S17)
 - (empty)
