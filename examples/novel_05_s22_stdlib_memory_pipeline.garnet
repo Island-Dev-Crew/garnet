@@ -35,4 +35,3 @@ def main() {
   println("novel_05 uuid:", id)
   id
 }
-

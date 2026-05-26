@@ -893,25 +893,58 @@ fn bridge_uuid_new_v7(_args: Vec<Value>) -> Result<Value, RuntimeError> {
 
 fn bridge_env_get(args: Vec<Value>) -> Result<Value, RuntimeError> {
     let key = expect_str("std::env::get", &args, 0)?;
-    Ok(garnet_stdlib::env::get(key)
-        .map(Value::str)
-        .unwrap_or(Value::Nil))
+    validate_env_key("std::env::get", key)?;
+    match std::env::var_os(key) {
+        Some(value) => value
+            .into_string()
+            .map(Value::str)
+            .map_err(|_| RuntimeError::msg("std::env::get: value is not valid Unicode")),
+        None => Ok(Value::Nil),
+    }
 }
 
 fn bridge_env_set(args: Vec<Value>) -> Result<Value, RuntimeError> {
     let key = expect_str("std::env::set", &args, 0)?;
     let value = expect_str("std::env::set", &args, 1)?;
+    validate_env_key("std::env::set", key)?;
+    validate_env_value("std::env::set", value)?;
     garnet_stdlib::env::set(key, value);
     Ok(Value::Nil)
 }
 
 fn bridge_env_vars(_args: Vec<Value>) -> Result<Value, RuntimeError> {
-    Ok(Value::array(
-        garnet_stdlib::env::vars()
-            .into_iter()
-            .map(|(k, v)| Value::array(vec![Value::str(k), Value::str(v)]))
-            .collect(),
-    ))
+    let mut vars = Vec::new();
+    for (key, value) in std::env::vars_os() {
+        let key = key
+            .into_string()
+            .map_err(|_| RuntimeError::msg("std::env::vars: key is not valid Unicode"))?;
+        let value = value
+            .into_string()
+            .map_err(|_| RuntimeError::msg("std::env::vars: value is not valid Unicode"))?;
+        vars.push(Value::array(vec![Value::str(key), Value::str(value)]));
+    }
+    Ok(Value::array(vars))
+}
+
+fn validate_env_key(prim: &str, key: &str) -> Result<(), RuntimeError> {
+    if key.is_empty() {
+        return Err(RuntimeError::msg(format!("{prim}: key must not be empty")));
+    }
+    if key.bytes().any(|b| b == b'=' || b == 0) {
+        return Err(RuntimeError::msg(format!(
+            "{prim}: key must not contain '=' or NUL"
+        )));
+    }
+    Ok(())
+}
+
+fn validate_env_value(prim: &str, value: &str) -> Result<(), RuntimeError> {
+    if value.bytes().any(|b| b == 0) {
+        return Err(RuntimeError::msg(format!(
+            "{prim}: value must not contain NUL"
+        )));
+    }
+    Ok(())
 }
 
 fn bridge_process_spawn(args: Vec<Value>) -> Result<Value, RuntimeError> {
@@ -1586,6 +1619,27 @@ mod tests {
         match call(&env, "std::regex::compile", vec![Value::str("(unclosed")]) {
             Err(RuntimeError::Raised(v)) => assert!(v.display().contains("std::regex::compile")),
             other => panic!("expected regex compile Raised error, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn s22_env_invalid_inputs_surface_runtime_errors() {
+        let env = make_env();
+        match call(&env, "std::env::get", vec![Value::str("BAD=KEY")]) {
+            Err(RuntimeError::Message(msg)) => assert!(msg.contains("must not contain")),
+            other => panic!("expected invalid key Message error, got {other:?}"),
+        }
+        match call(&env, "std::env::set", vec![Value::str(""), Value::str("x")]) {
+            Err(RuntimeError::Message(msg)) => assert!(msg.contains("must not be empty")),
+            other => panic!("expected empty key Message error, got {other:?}"),
+        }
+        match call(
+            &env,
+            "std::env::set",
+            vec![Value::str("GARNET_S22_BAD_VALUE"), Value::str("bad\0value")],
+        ) {
+            Err(RuntimeError::Message(msg)) => assert!(msg.contains("value must not contain")),
+            other => panic!("expected invalid value Message error, got {other:?}"),
         }
     }
 
