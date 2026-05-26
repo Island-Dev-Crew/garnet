@@ -874,14 +874,22 @@ fn collect_path(node: &SyntaxNode, segs: &mut Vec<String>) {
             _ => {}
         }
     }
-    // Trailing `:: ident` segment is an Ident token directly under PathExpr.
+    // Trailing `:: segment` token is stored directly under PathExpr. S22 lets a
+    // few reserved words appear only as qualified expression path segments.
     for e in node.children_with_tokens() {
         if let Some(t) = e.into_token() {
-            if t.kind() == Ident {
+            if is_expression_path_segment_token(t.kind()) {
                 segs.push(t.text().to_string());
             }
         }
     }
+}
+
+fn is_expression_path_segment_token(kind: SyntaxKind) -> bool {
+    matches!(
+        kind,
+        Ident | MemoryKw | WorkingKw | EpisodicKw | SemanticKw | ProceduralKw | SpawnKw | MatchKw
+    )
 }
 
 fn lower_args(node: &SyntaxNode) -> Vec<Expr> {

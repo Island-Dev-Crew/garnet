@@ -23,8 +23,11 @@
 
 use crate::env::Env;
 use crate::error::RuntimeError;
-use crate::value::{NativeFnValue, Value};
+use crate::value::{MemoryBackend, NativeFnValue, Value};
+use garnet_parser::ast::MemoryKind;
 use garnet_stdlib::StdError;
+use serde_json::Value as JsonValue;
+use std::cell::RefCell;
 use std::rc::Rc;
 
 /// Install every bridged stdlib primitive into the given global env.
@@ -120,6 +123,59 @@ pub fn install(global: &Env) {
     // ── std::base64 (cap: none — dispatches garnet_stdlib::base64) ──
     define_native(global, "std::base64::encode", Some(1), bridge_base64_encode);
     define_native(global, "std::base64::decode", Some(1), bridge_base64_decode);
+
+    // ── S22: remaining S17 Layer-1 runtime dispatch ──
+    define_native(global, "std::json::parse", Some(1), bridge_json_parse);
+    define_native(
+        global,
+        "std::json::stringify",
+        Some(1),
+        bridge_json_stringify,
+    );
+    define_native(global, "std::json::get", Some(2), bridge_json_get);
+    define_native(global, "std::json::set", Some(3), bridge_json_set);
+
+    define_native(global, "std::regex::compile", Some(1), bridge_regex_compile);
+    define_native(global, "std::regex::match", Some(2), bridge_regex_match);
+    define_native(
+        global,
+        "std::regex::find_all",
+        Some(2),
+        bridge_regex_find_all,
+    );
+    define_native(global, "std::regex::replace", Some(3), bridge_regex_replace);
+
+    define_native(global, "std::uuid::new_v4", Some(0), bridge_uuid_new_v4);
+    define_native(global, "std::uuid::new_v5", Some(2), bridge_uuid_new_v5);
+    define_native(global, "std::uuid::new_v7", Some(0), bridge_uuid_new_v7);
+
+    define_native(global, "std::env::get", Some(1), bridge_env_get);
+    define_native(global, "std::env::set", Some(2), bridge_env_set);
+    define_native(global, "std::env::vars", Some(0), bridge_env_vars);
+
+    define_native(global, "std::process::spawn", Some(1), bridge_process_spawn);
+    define_native(global, "std::process::wait", Some(1), bridge_process_wait);
+    define_native(
+        global,
+        "std::process::exit_code",
+        Some(1),
+        bridge_process_exit_code,
+    );
+
+    define_native(global, "std::log::info", Some(1), bridge_log_info);
+    define_native(global, "std::log::warn", Some(1), bridge_log_warn);
+    define_native(global, "std::log::error", Some(1), bridge_log_error);
+    define_native(global, "std::log::debug", Some(1), bridge_log_debug);
+
+    define_native(global, "memory::working", Some(1), bridge_memory_working);
+    define_native(global, "memory::episodic", Some(1), bridge_memory_episodic);
+    define_native(global, "memory::semantic", Some(1), bridge_memory_semantic);
+    define_native(
+        global,
+        "memory::procedural",
+        Some(1),
+        bridge_memory_procedural,
+    );
 }
 
 fn define_native(env: &Env, name: &'static str, arity: Option<usize>, ptr: crate::value::NativeFn) {
@@ -660,6 +716,303 @@ fn bridge_base64_decode(args: Vec<Value>) -> Result<Value, RuntimeError> {
         .map_err(|e| lift_std_error("std::base64::decode", e))
 }
 
+// ── S22: std::json (serde_json <-> managed Value) ──
+
+fn json_to_value(value: JsonValue) -> Result<Value, RuntimeError> {
+    match value {
+        JsonValue::Null => Ok(Value::Nil),
+        JsonValue::Bool(b) => Ok(Value::Bool(b)),
+        JsonValue::Number(n) => {
+            if let Some(i) = n.as_i64() {
+                Ok(Value::Int(i))
+            } else if let Some(u) = n.as_u64() {
+                if let Ok(i) = i64::try_from(u) {
+                    Ok(Value::Int(i))
+                } else {
+                    Ok(Value::Float(u as f64))
+                }
+            } else if let Some(f) = n.as_f64() {
+                Ok(Value::Float(f))
+            } else {
+                Err(RuntimeError::msg("std::json: unsupported number"))
+            }
+        }
+        JsonValue::String(s) => Ok(Value::str(s)),
+        JsonValue::Array(items) => Ok(Value::array(
+            items
+                .into_iter()
+                .map(json_to_value)
+                .collect::<Result<Vec<_>, _>>()?,
+        )),
+        JsonValue::Object(map) => Ok(Value::map(
+            map.into_iter()
+                .map(|(k, v)| json_to_value(v).map(|v| (k, v)))
+                .collect::<Result<Vec<_>, _>>()?,
+        )),
+    }
+}
+
+fn value_to_json(value: &Value) -> Result<JsonValue, RuntimeError> {
+    match value {
+        Value::Nil => Ok(JsonValue::Null),
+        Value::Bool(b) => Ok(JsonValue::Bool(*b)),
+        Value::Int(i) => Ok(JsonValue::Number((*i).into())),
+        Value::Float(f) => serde_json::Number::from_f64(*f)
+            .map(JsonValue::Number)
+            .ok_or_else(|| RuntimeError::msg("std::json: float must be finite")),
+        Value::Str(s) => Ok(JsonValue::String(s.to_string())),
+        Value::Array(items) => Ok(JsonValue::Array(
+            items
+                .borrow()
+                .iter()
+                .map(value_to_json)
+                .collect::<Result<Vec<_>, _>>()?,
+        )),
+        Value::Tuple(items) => Ok(JsonValue::Array(
+            items
+                .iter()
+                .map(value_to_json)
+                .collect::<Result<Vec<_>, _>>()?,
+        )),
+        Value::Map(map) => {
+            let mut out = serde_json::Map::new();
+            for (key, value) in map.borrow().iter() {
+                out.insert(key.clone(), value_to_json(value)?);
+            }
+            Ok(JsonValue::Object(out))
+        }
+        other => Err(RuntimeError::msg(format!(
+            "std::json: cannot serialize {}",
+            other.type_name()
+        ))),
+    }
+}
+
+fn bridge_json_parse(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let input = expect_str("std::json::parse", &args, 0)?;
+    garnet_stdlib::json::parse(input)
+        .map_err(|e| lift_std_error("std::json::parse", e))
+        .and_then(json_to_value)
+}
+
+fn bridge_json_stringify(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let value = expect_value("std::json::stringify", &args, 0)?;
+    let json = value_to_json(&value)?;
+    Ok(Value::str(garnet_stdlib::json::stringify(&json)))
+}
+
+fn bridge_json_get(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let value = expect_value("std::json::get", &args, 0)?;
+    let key = expect_str("std::json::get", &args, 1)?;
+    let json = value_to_json(&value)?;
+    match garnet_stdlib::json::get(&json, key) {
+        Some(child) => json_to_value(child),
+        None => Ok(Value::Nil),
+    }
+}
+
+fn bridge_json_set(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let target = expect_value("std::json::set", &args, 0)?;
+    let key = expect_str("std::json::set", &args, 1)?;
+    let value = expect_value("std::json::set", &args, 2)?;
+    let target = value_to_json(&target)?;
+    let value = value_to_json(&value)?;
+    garnet_stdlib::json::set(&target, key, value)
+        .map_err(|e| lift_std_error("std::json::set", e))
+        .and_then(json_to_value)
+}
+
+// ── S22: std::regex ──
+
+fn bridge_regex_compile(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let pattern = expect_str("std::regex::compile", &args, 0)?;
+    garnet_stdlib::regex::compile(pattern)
+        .map(|_| Value::Nil)
+        .map_err(|e| lift_std_error("std::regex::compile", e))
+}
+
+fn bridge_regex_match(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let pattern = expect_str("std::regex::match", &args, 0)?;
+    let input = expect_str("std::regex::match", &args, 1)?;
+    garnet_stdlib::regex::is_match(pattern, input)
+        .map(Value::Bool)
+        .map_err(|e| lift_std_error("std::regex::match", e))
+}
+
+fn bridge_regex_find_all(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let pattern = expect_str("std::regex::find_all", &args, 0)?;
+    let input = expect_str("std::regex::find_all", &args, 1)?;
+    garnet_stdlib::regex::find_all(pattern, input)
+        .map(|items| Value::array(items.into_iter().map(Value::str).collect()))
+        .map_err(|e| lift_std_error("std::regex::find_all", e))
+}
+
+fn bridge_regex_replace(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let pattern = expect_str("std::regex::replace", &args, 0)?;
+    let input = expect_str("std::regex::replace", &args, 1)?;
+    let replacement = expect_str("std::regex::replace", &args, 2)?;
+    garnet_stdlib::regex::replace(pattern, input, replacement)
+        .map(Value::str)
+        .map_err(|e| lift_std_error("std::regex::replace", e))
+}
+
+// ── S22: std::uuid ──
+
+fn parse_uuid_namespace(input: &str) -> Result<[u8; 16], RuntimeError> {
+    let compact: String = input.chars().filter(|c| *c != '-').collect();
+    if compact.len() != 32 || !compact.chars().all(|c| c.is_ascii_hexdigit()) {
+        return Err(RuntimeError::msg(format!(
+            "std::uuid::new_v5: namespace must be 32 hex chars or canonical UUID, got {input:?}"
+        )));
+    }
+    let mut bytes = [0u8; 16];
+    for (idx, byte) in bytes.iter_mut().enumerate() {
+        let start = idx * 2;
+        *byte = u8::from_str_radix(&compact[start..start + 2], 16).map_err(|e| {
+            RuntimeError::msg(format!("std::uuid::new_v5: invalid namespace byte: {e}"))
+        })?;
+    }
+    Ok(bytes)
+}
+
+fn bridge_uuid_new_v4(_args: Vec<Value>) -> Result<Value, RuntimeError> {
+    Ok(Value::str(garnet_stdlib::uuid::new_v4()))
+}
+
+fn bridge_uuid_new_v5(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let namespace = parse_uuid_namespace(expect_str("std::uuid::new_v5", &args, 0)?)?;
+    let name = expect_str("std::uuid::new_v5", &args, 1)?;
+    Ok(Value::str(garnet_stdlib::uuid::new_v5(&namespace, name)))
+}
+
+fn bridge_uuid_new_v7(_args: Vec<Value>) -> Result<Value, RuntimeError> {
+    Ok(Value::str(garnet_stdlib::uuid::new_v7()))
+}
+
+// ── S22: std::env and std::process ──
+
+fn bridge_env_get(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let key = expect_str("std::env::get", &args, 0)?;
+    Ok(garnet_stdlib::env::get(key)
+        .map(Value::str)
+        .unwrap_or(Value::Nil))
+}
+
+fn bridge_env_set(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let key = expect_str("std::env::set", &args, 0)?;
+    let value = expect_str("std::env::set", &args, 1)?;
+    garnet_stdlib::env::set(key, value);
+    Ok(Value::Nil)
+}
+
+fn bridge_env_vars(_args: Vec<Value>) -> Result<Value, RuntimeError> {
+    Ok(Value::array(
+        garnet_stdlib::env::vars()
+            .into_iter()
+            .map(|(k, v)| Value::array(vec![Value::str(k), Value::str(v)]))
+            .collect(),
+    ))
+}
+
+fn bridge_process_spawn(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let cmdline = expect_str("std::process::spawn", &args, 0)?;
+    garnet_stdlib::process::spawn(cmdline)
+        .map(|proc| Value::Process(Rc::new(RefCell::new(Some(proc)))))
+        .map_err(|e| lift_std_error("std::process::spawn", e))
+}
+
+fn bridge_process_wait(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let process = match args.first() {
+        Some(Value::Process(process)) => Rc::clone(process),
+        Some(other) => {
+            return Err(RuntimeError::type_err(
+                "std::process::wait: Process arg at position 0",
+                other,
+            ))
+        }
+        None => return Err(RuntimeError::msg("std::process::wait: missing process")),
+    };
+    let proc = process
+        .borrow_mut()
+        .take()
+        .ok_or_else(|| RuntimeError::msg("std::process::wait: process already waited"))?;
+    garnet_stdlib::process::wait(proc)
+        .map(Value::ProcessStatus)
+        .map_err(|e| lift_std_error("std::process::wait", e))
+}
+
+fn bridge_process_exit_code(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    match args.first() {
+        Some(Value::ProcessStatus(status)) => Ok(garnet_stdlib::process::exit_code(status)
+            .map(|code| Value::Int(code as i64))
+            .unwrap_or(Value::Nil)),
+        Some(other) => Err(RuntimeError::type_err(
+            "std::process::exit_code: ProcessStatus arg at position 0",
+            other,
+        )),
+        None => Err(RuntimeError::msg(
+            "std::process::exit_code: missing process status",
+        )),
+    }
+}
+
+// ── S22: std::log formatting ──
+
+fn bridge_log_info(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let message = expect_str("std::log::info", &args, 0)?;
+    Ok(Value::str(garnet_stdlib::log::info(message)))
+}
+
+fn bridge_log_warn(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let message = expect_str("std::log::warn", &args, 0)?;
+    Ok(Value::str(garnet_stdlib::log::warn(message)))
+}
+
+fn bridge_log_error(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let message = expect_str("std::log::error", &args, 0)?;
+    Ok(Value::str(garnet_stdlib::log::error(message)))
+}
+
+fn bridge_log_debug(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let message = expect_str("std::log::debug", &args, 0)?;
+    Ok(Value::str(garnet_stdlib::log::debug(message)))
+}
+
+// ── S22: memory:: constructors (live Mnemos handles) ──
+
+fn memory_store(kind: MemoryKind, name: String) -> Value {
+    Value::MemoryStore {
+        kind,
+        name,
+        backend: MemoryBackend::for_kind(kind),
+    }
+}
+
+fn bridge_memory_kind(
+    prim: &str,
+    kind: MemoryKind,
+    args: Vec<Value>,
+) -> Result<Value, RuntimeError> {
+    let name = expect_str(prim, &args, 0)?;
+    Ok(memory_store(kind, name.to_string()))
+}
+
+fn bridge_memory_working(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    bridge_memory_kind("memory::working", MemoryKind::Working, args)
+}
+
+fn bridge_memory_episodic(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    bridge_memory_kind("memory::episodic", MemoryKind::Episodic, args)
+}
+
+fn bridge_memory_semantic(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    bridge_memory_kind("memory::semantic", MemoryKind::Semantic, args)
+}
+
+fn bridge_memory_procedural(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    bridge_memory_kind("memory::procedural", MemoryKind::Procedural, args)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1186,6 +1539,89 @@ mod tests {
             "std::base64::decode",
         ] {
             assert!(env.get(n).is_some(), "qualified prim `{n}` not bound");
+        }
+    }
+
+    #[test]
+    fn s22_all_qualified_names_bound() {
+        let env = make_env();
+        for n in [
+            "std::json::parse",
+            "std::json::stringify",
+            "std::json::get",
+            "std::json::set",
+            "std::regex::compile",
+            "std::regex::match",
+            "std::regex::find_all",
+            "std::regex::replace",
+            "std::uuid::new_v4",
+            "std::uuid::new_v5",
+            "std::uuid::new_v7",
+            "std::env::get",
+            "std::env::set",
+            "std::env::vars",
+            "std::process::spawn",
+            "std::process::wait",
+            "std::process::exit_code",
+            "std::log::info",
+            "std::log::warn",
+            "std::log::error",
+            "std::log::debug",
+            "memory::working",
+            "memory::episodic",
+            "memory::semantic",
+            "memory::procedural",
+        ] {
+            assert!(env.get(n).is_some(), "S22 prim `{n}` not bound");
+        }
+    }
+
+    #[test]
+    fn s22_json_and_regex_error_paths_are_raised() {
+        let env = make_env();
+        match call(&env, "std::json::parse", vec![Value::str("{bad json}")]) {
+            Err(RuntimeError::Raised(v)) => assert!(v.display().contains("std::json::parse")),
+            other => panic!("expected JSON parse Raised error, got {other:?}"),
+        }
+        match call(&env, "std::regex::compile", vec![Value::str("(unclosed")]) {
+            Err(RuntimeError::Raised(v)) => assert!(v.display().contains("std::regex::compile")),
+            other => panic!("expected regex compile Raised error, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn s22_process_wait_consumes_handle_once() {
+        let env = make_env();
+        let cmd = if cfg!(windows) {
+            "cmd /c exit 0"
+        } else {
+            "true"
+        };
+        let proc = call(&env, "std::process::spawn", vec![Value::str(cmd)]).unwrap();
+        let status = call(&env, "std::process::wait", vec![proc.clone()]).unwrap();
+        assert!(matches!(
+            call(&env, "std::process::exit_code", vec![status]).unwrap(),
+            Value::Int(0)
+        ));
+        match call(&env, "std::process::wait", vec![proc]) {
+            Err(RuntimeError::Message(msg)) => assert!(msg.contains("already waited")),
+            other => panic!("expected already-waited error, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn s22_memory_constructors_return_kind_specific_stores() {
+        let env = make_env();
+        for (name, expected) in [
+            ("memory::working", "WorkingStore"),
+            ("memory::episodic", "EpisodeStore"),
+            ("memory::semantic", "VectorIndex"),
+            ("memory::procedural", "WorkflowStore"),
+        ] {
+            match call(&env, name, vec![Value::str("scratch")]).unwrap() {
+                Value::MemoryStore { backend, .. } => assert_eq!(backend.kind_name(), expected),
+                other => panic!("expected MemoryStore from {name}, got {other:?}"),
+            }
         }
     }
 }

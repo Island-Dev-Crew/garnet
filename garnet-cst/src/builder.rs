@@ -973,7 +973,7 @@ impl<'a> Builder<'a> {
                 TokenKind::ColonCol => {
                     self.start_at(cp, PathExpr);
                     self.bump(); // ::
-                    self.expect(is_ident, "path segment");
+                    self.expect(is_expression_path_segment, "path segment");
                     self.wrap();
                 }
                 TokenKind::Question => {
@@ -1083,6 +1083,11 @@ impl<'a> Builder<'a> {
                 self.wrap();
             }
             TokenKind::Ident(_) | TokenKind::KwSelf_ | TokenKind::KwSuper => {
+                self.start(NameRef);
+                self.bump();
+                self.wrap();
+            }
+            TokenKind::KwMemory if matches!(self.nth(1), TokenKind::ColonCol) => {
                 self.start(NameRef);
                 self.bump();
                 self.wrap();
@@ -1315,6 +1320,20 @@ fn is_trivia(k: &TokenKind) -> bool {
 
 fn is_ident(k: &TokenKind) -> bool {
     matches!(k, TokenKind::Ident(_))
+}
+
+fn is_expression_path_segment(k: &TokenKind) -> bool {
+    matches!(
+        k,
+        TokenKind::Ident(_)
+            | TokenKind::KwMemory
+            | TokenKind::KwWorking
+            | TokenKind::KwEpisodic
+            | TokenKind::KwSemantic
+            | TokenKind::KwProcedural
+            | TokenKind::KwSpawn
+            | TokenKind::KwMatch
+    )
 }
 
 fn is_ident_named(k: &TokenKind, name: &str) -> bool {

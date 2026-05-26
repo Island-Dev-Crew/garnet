@@ -69,6 +69,13 @@ pub enum Value {
         backend: MemoryBackend,
     },
 
+    /// A first-class child-process handle from `std::process::spawn`.
+    /// Waiting consumes the host process handle, so the Option lets clones
+    /// share one "waited or live" state.
+    Process(Rc<RefCell<Option<garnet_stdlib::process::Proc>>>),
+    /// Terminal child-process status returned by `std::process::wait`.
+    ProcessStatus(garnet_stdlib::process::ProcStatus),
+
     /// A tuple (fixed-size, heterogeneous).
     Tuple(Rc<Vec<Value>>),
 }
@@ -293,6 +300,17 @@ impl Value {
             Value::MemoryStore { kind, name, .. } => {
                 format!("<memory {} {}>", format!("{kind:?}").to_lowercase(), name)
             }
+            Value::Process(handle) => {
+                if handle.borrow().is_some() {
+                    "<process>".to_string()
+                } else {
+                    "<process:waited>".to_string()
+                }
+            }
+            Value::ProcessStatus(status) => match garnet_stdlib::process::exit_code(status) {
+                Some(code) => format!("<process-status {code}>"),
+                None => "<process-status signal>".to_string(),
+            },
             Value::Tuple(items) => {
                 let inner = items
                     .iter()
@@ -331,6 +349,8 @@ impl Value {
             Value::Struct { .. } => "Struct",
             Value::Variant { .. } => "Variant",
             Value::MemoryStore { .. } => "MemoryStore",
+            Value::Process(_) => "Process",
+            Value::ProcessStatus(_) => "ProcessStatus",
             Value::Tuple(_) => "Tuple",
         }
     }
@@ -389,6 +409,7 @@ impl Value {
                     f1.len() == f2.len() && f1.iter().zip(f2.iter()).all(|(x, y)| x.eq_deep(y))
                 }
             }
+            (ProcessStatus(a), ProcessStatus(b)) => a == b,
             _ => false,
         }
     }

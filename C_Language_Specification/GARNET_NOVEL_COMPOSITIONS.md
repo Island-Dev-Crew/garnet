@@ -3,8 +3,8 @@
 | Field | Value |
 |---|---|
 | **Document** | Novel-composition dogfood (descriptive) |
-| **Slice** | S20 (win-opus, post-v0.7 dogfood extension) |
-| **Programs** | `examples/novel_01..03_*.garnet` |
+| **Slice** | S20 plus S21/S22 runtime-dispatch extensions |
+| **Programs** | `examples/novel_01..05_*.garnet` |
 | **Harness** | `scripts/smoke_garnet_novel_compositions.py` (+ `test_*.py`) |
 | **Companion** | `scripts/smoke_garnet_studio_domain_matrix.py` (the existing single-concern corpus) |
 
@@ -13,8 +13,9 @@ mvp_06 is a deterministic agent pipeline, mvp_11 is a BLAKE3 signed-fingerprint
 check, agent_toolbelt_02 is a capability budget, agent_toolbelt_03 is
 cognitively-typed memory recall, agent_toolbelt_04 is a release gate. The
 interesting question for an agent-native language is what happens when you
-**fuse** them. These three programs do exactly that, end-to-end and
-deterministically, runnable today via `garnet run`.
+**fuse** them. The first three programs do that for modeled Paper-VI patterns;
+S21/S22 then extend the same harness to prove newly-dispatched stdlib and
+Mnemos-handle surfaces through the CLI.
 
 > **Calibrated-honesty scope.** Like the canonical corpus, these compositions
 > **model the patterns deterministically** in managed mode (the proven runnable
@@ -78,6 +79,37 @@ answer to "how does an agent decide to ship?" that is auditable (every signal is
 explicit and deterministic) rather than a black-box judgement — directly
 relevant to trustworthy autonomous release in the agentic coding industry.
 
+## novel_04 — Dispatched stdlib pipeline
+
+**Fuses:** first-class iterator combinators · math/cmp standard-library
+primitives · base64 content tags.
+
+This program proves the S21 runtime bridge: `core::iter::filter/map/fold`,
+`core::math`, `core::cmp`, and `std::base64` execute from Garnet source through
+qualified names. It yields deterministic score/tag output rather than only
+registry metadata.
+
+**Novel discovery:** once higher-order iterators and content tags are callable
+from managed Garnet, a small program can express a reproducible analysis
+pipeline whose intermediate computation and final verdict are standard-library
+operations, not bespoke demo helpers.
+
+## novel_05 — Stdlib + Mnemos handle pipeline
+
+**Fuses:** `std::json` · `std::regex` · deterministic `std::uuid::new_v5` ·
+`std::log` formatting · live `memory::` Mnemos handles.
+
+This program proves the S22 runtime bridge for deterministic surfaces: JSON is
+parsed/patched/stringified, regex extracts the signal words, UUIDv5 creates a
+stable identity, log formatting records an event, and working/episodic memory
+handles carry the data. The expected UUID is
+`ee54a926-f375-5759-a5aa-67f7d8528cff`.
+
+**Novel discovery:** the stdlib is no longer just a registry contract; it can
+feed live memory handles from Garnet source. That is the first practical shape
+of "agent program state" where structured input, text extraction, stable
+identity, log records, and recall handles compose without leaving the language.
+
 ---
 
 ## Why this matters (the story)
@@ -94,9 +126,9 @@ but the composition is the point.
 ## Reproduce
 
 ```bash
-python3 scripts/smoke_garnet_novel_compositions.py   # 3/3 check + deterministic run
+python3 scripts/smoke_garnet_novel_compositions.py   # 5/5 check + deterministic run
 python3 -m unittest scripts.test_garnet_novel_compositions
 # or individually:
 garnet check examples/novel_01_capability_budgeted_memory_agent.garnet
-garnet run   examples/novel_02_signed_provenance_pipeline.garnet
+garnet run   examples/novel_05_s22_stdlib_memory_pipeline.garnet
 ```

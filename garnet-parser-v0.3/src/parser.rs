@@ -180,6 +180,30 @@ impl Parser {
         }
     }
 
+    /// Expect a qualified-path segment, consuming it. This is narrower than
+    /// `expect_ident`: it only treats selected keywords as names after `::`,
+    /// so official paths like `std::regex::match`, `std::process::spawn`, and
+    /// `memory::working` parse without making those words legal bare
+    /// identifiers.
+    pub fn expect_path_segment(&mut self, context: &str) -> Result<(String, Span), ParseError> {
+        let tok = self.peek().clone();
+        let Some(name) = path_segment_name(&tok.kind) else {
+            return match tok.kind {
+                TokenKind::Eof => Err(ParseError::unexpected_eof(
+                    &format!("path segment in {}", context),
+                    tok.span,
+                )),
+                _ => Err(ParseError::unexpected_token(
+                    &format!("path segment in {}", context),
+                    describe_kind(&tok.kind),
+                    tok.span,
+                )),
+            };
+        };
+        self.bump();
+        Ok((name.to_string(), tok.span))
+    }
+
     /// Skip newline and semicolon tokens (statement separators).
     pub fn skip_separators(&mut self) {
         while matches!(self.peek_kind(), TokenKind::Newline | TokenKind::Semi) {
@@ -208,5 +232,19 @@ impl Parser {
         } else {
             Span::new(0, 0)
         }
+    }
+}
+
+fn path_segment_name(kind: &TokenKind) -> Option<&str> {
+    match kind {
+        TokenKind::Ident(name) => Some(name.as_str()),
+        TokenKind::KwMemory => Some("memory"),
+        TokenKind::KwWorking => Some("working"),
+        TokenKind::KwEpisodic => Some("episodic"),
+        TokenKind::KwSemantic => Some("semantic"),
+        TokenKind::KwProcedural => Some("procedural"),
+        TokenKind::KwSpawn => Some("spawn"),
+        TokenKind::KwMatch => Some("match"),
+        _ => None,
     }
 }

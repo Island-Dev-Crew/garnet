@@ -688,6 +688,7 @@ dependencies = [
  "garnet-stdlib",
  "miette",
  "proptest",
+ "serde_json",
  "thiserror",
 ]
 
