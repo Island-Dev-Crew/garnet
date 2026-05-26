@@ -1,0 +1,14 @@
+# v05: introduces an empty managed hook.
+def before_compile() {
+}
+
+def combine(a, b, c, d) {
+  let total = a + b + c + d
+  total
+}
+
+@caps()
+def main() {
+  before_compile()
+  combine(1, 2, 3, 4)
+}

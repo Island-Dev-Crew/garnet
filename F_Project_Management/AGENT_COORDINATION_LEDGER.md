@@ -146,7 +146,10 @@ accurate and current.**
 - [2026-05-24 18:45 CDT] MERGED PR#231 (squash `7bbca42` on origin/main) — S17 landed: Layer Policy doc, stdlib 24→77 prims (100% `@stability`), `@caps(env)`, qualified-only `@stability` advisory, `stdlib_layer_policy` lane (readiness → 80.4%, 28 lanes). Jon approved the squash-merge. **Unblocks mac-codex's S18** (hard-blocked on S17 MERGED) and the soft dep for S19's `@stability` tier. Open follow-up (separate small PR): wire user-fn `@stability`/`@uses`/`@migration` enforcement once mac-opus ships the parser annotation variants (Handoff Request above).
 
 ### mac-codex (S18, S19)
-- (empty)
+- [2026-05-24 17:26 CDT] STARTED agent-mac-codex/s19-suggest-llm — planning S19 first from current origin/main `09d6703`; S18 remains blocked until win-opus/S17 is MERGED. Baseline green: readiness 80.6%, `cargo test --workspace --no-fail-fast`, `cargo clippy --workspace --all-targets -- -D warnings`.
+- [2026-05-24 17:42 CDT] BLOCKED agent-mac-codex/s19-suggest-llm — S19 is feature-gated-source-ready locally: `garnet-suggest-llm` builds/tests with `--features llm`, provider-compatible Anthropic/OpenAI/Ollama request/response paths are covered by tests, repro logging and the Paper VI Exp 3 harness are present, determinism `--llm` guard is in CI, readiness moved 80.6% -> 80.7%, and workspace `cargo test`, workspace `cargo clippy`, scripts unittest discovery, `cargo deny check`, and `git diff --check` are green. Public dogfood `garnet check --suggest --llm ...` is blocked on the ledgered read-only `garnet-cli` / optional `garnet-check-v0.3` handoff. No PR opened; waiting for Jon approval plus handoff resolution before PR-open.
+- [2026-05-24 17:50 CDT] BLOCKED agent-mac-codex/s19-suggest-llm — synced over origin/main `d103525` after S16 merged; S18 remains blocked because S17 is still empty. S19 remains feature-gated-source-ready with current readiness at 81.4%; reran fmt, readiness, workspace test/clippy, feature-enabled S19 build/test/clippy, determinism guard, script unittest discovery, and harness-only Paper VI Exp 3 smoke. Public CLI dogfood is still blocked on the pending read-only `garnet-cli` handoff. No PR opened.
+- [2026-05-24 17:55 CDT] BLOCKED agent-mac-codex/s19-suggest-llm — continuation refresh from `origin/main` `d103525`: PR#230/S16 is merged; remote S17 remains empty, so S18 stays hard-blocked. Required context reread and pre-edit gates rerun: readiness 81.4%, `cargo test --workspace --no-fail-fast`, and `cargo clippy --workspace --all-targets -- -D warnings` all pass. The S19 local source lane remains feature-gated-source-ready, but public CLI dogfood still needs the pending `garnet-cli` handoff and Jon approval before PR-open.
 
 ### Entry format
 
@@ -215,6 +218,27 @@ Do NOT proceed with the modification until the owner has accepted.**
   Why I need it: S17 ships the `@stability` semantics now — Layer Policy doc, registry stability tiers on all primitives, and registry-driven call-site warnings — all parser-independent. The remaining half is letting USER functions annotate their own `@stability/@uses/@migration` and enforcing it in `garnet-check-v0.3` (which I own and will wire immediately once the variants exist). I cannot author the parser change under crate ownership.
   Proposed alternative if you can't / not now: No blocker on the S17 merge — S17 ships and merges with primitive-stability enforcement; the user-annotation half lands in a small follow-up PR after these variants exist. Sequencing is up to you; nothing downstream (S18/S19) waits on it.
   RESOLUTION: <mac-opus fills this in>
+
+- [2026-05-24 17:39 CDT] FROM:mac-codex TO:Jon (no v0.7 slot owns `garnet-cli`;
+  `garnet-check-v0.3` is read-only for mac-codex)
+  Crate / File: `garnet-cli/src/bin/garnet.rs`,
+  `garnet-cli/src/cmd/check.rs`, `garnet-cli/Cargo.toml`, and optionally
+  `garnet-check-v0.3/src/suggest.rs` if Jon wants one unified checker enum.
+  Change requested: wire `garnet check --suggest --llm <provider>
+  [--llm-budget N|unbounded] <file.garnet>` to the new feature-gated
+  `garnet-suggest-llm` crate, keeping plain `garnet check --suggest` byte-for-byte
+  equivalent to S10 output and printing deterministic findings separately from
+  LLM findings tagged `@stability(non-deterministic)`.
+  Why I need it: PRD D's public S19 dogfood block invokes the CLI, but
+  mac-codex only owns `garnet-suggest-llm/`. The current S10 `Suggestion` type
+  has a closed `Rule` enum, so this branch returns `LlmSuggestionReport` instead
+  of corrupting an existing deterministic rule variant for non-deterministic
+  suggestions.
+  Proposed alternative if you can't: accept S19 as crate-local for v0.7.0 with
+  the readiness lane labeled `feature-gated-source-ready`, then schedule a
+  release-prep handoff to expose the CLI command before the v0.7.0 clean-clone
+  release gate.
+  RESOLUTION: pending
 
 ### Handoff request format
 

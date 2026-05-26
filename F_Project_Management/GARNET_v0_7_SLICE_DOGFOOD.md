@@ -474,19 +474,31 @@ re-export here.
 
 ```bash
 cargo build --features llm -p garnet-suggest-llm --release
+cargo test --features llm -p garnet-suggest-llm
+python3 scripts/check_determinism_no_llm.py
+python3 scripts/test_check_determinism_no_llm.py
+bash benchmarks/paper_vi_exp3_compiler_as_agent/run_stateless.sh
+bash benchmarks/paper_vi_exp3_compiler_as_agent/run_history_aware.sh
+python3 scripts/garnet_mit_readiness_status.py
+
+# Pending CLI handoff before release-gate reproduction:
 # Set ANTHROPIC_API_KEY or OPENAI_API_KEY or OLLAMA_HOST.
-garnet check --suggest --llm anthropic examples/mvp_03_*.garnet
-# Expect: deterministic + non-deterministic suggestions, clearly labeled,
-# each with a stability tag. Reproducibility log appears:
-tail -1 .garnet-cache/llm-suggest-log.jsonl | python3 -m json.tool
+# garnet check --suggest --llm anthropic examples/mvp_03_*.garnet
+# Expected after handoff: deterministic + non-deterministic suggestions,
+# clearly labeled, each with a stability tag. Reproducibility log appears:
+# tail -1 .garnet-cache/llm-suggest-log.jsonl | python3 -m json.tool
 ```
 
 **Honest partial labels available:**
 - "S19's LLM tier is non-deterministic; the determinism CI gate does not run with `--llm`. This is explicit by design and noted in CHANGELOG."
 - "Streaming, function calling, and vision are NOT in v0.7; they're v0.8 work."
 - "Paper VI Experiment 3 (compiler-as-agent time-to-fix) harness ships in v0.7; **running** the experiment to produce h₃a/h₃b/h₃c results is a separate v0.7.1 task."
+- "`garnet check --suggest --llm` is pending the read-only `garnet-cli` handoff; until that lands, S19 is `feature-gated-source-ready`, not shipped end-to-end."
 
-**State:** not-started.
+**State:** planned / feature-gated-source-ready on `agent-mac-codex/s19-suggest-llm`;
+public CLI dogfood is pending the ledgered `garnet-cli` handoff before
+release-gate reproduction. PR-open is allowed only as
+`feature-gated-source-ready`, not shipped end-to-end.
 
 ---
 

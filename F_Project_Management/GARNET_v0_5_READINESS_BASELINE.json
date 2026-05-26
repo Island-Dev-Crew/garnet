@@ -1,7 +1,7 @@
 {
-  "source": "/Users/IDC2.5/Desktop/Garnet",
+  "source": "/Users/idc2.0/clawd/repos/garnet-agent-contracts",
   "overall_status": "active-partial",
-  "completion_percent": 80.4,
+  "completion_percent": 80.5,
   "current_truth": [
     "tracked implementation plan is complete",
     "goal remains active",
@@ -75,19 +75,25 @@
       "id": "windows_linux_distribution",
       "label": "Windows/Linux distribution",
       "status": "active-partial",
-      "completion_percent": 65.0,
-      "evidence": "`scripts/garnet_windows_linux_studio_status.py` now reports the Tauri v2 shell scaffold in `apps/garnet-studio`, minimal webview permissions, Windows local release build/smoke evidence, v0.5 readiness reporter parity actions, a verified x64 clean-VM installer proof, and open Linux plus signing, winget, and Windows ARM64 package gates.",
+      "completion_percent": 55.0,
+      "evidence": "`scripts/garnet_windows_linux_studio_status.py` now reports the Tauri v2 shell scaffold in `apps/garnet-studio`, minimal webview permissions, Windows local release build/smoke evidence, v0.5 readiness reporter parity actions, a Windows clean-VM installer proof contract, and open Linux plus clean-machine package gates.",
       "blocked_by": [
+        "clean Windows VM guest identity",
+        "unsigned NSIS installer artifact digest",
+        "installer run log from inside the guest",
+        "installed Studio --studio-smoke JSON",
+        "installed app launch screenshot",
+        "Run the unsigned NSIS installer in a clean Windows VM for installer/runtime launch evidence",
         "Provide a Linux VM/container with GUI or AppImage-capable desktop session for runtime launch evidence",
         "Provide signing credentials only when ready to verify signed MSI claims"
       ],
       "deferred": [
+        "Windows clean-machine NSIS install and CLI smoke evidence",
         "Linux desktop launch proof and first package-format decision",
-        "Windows ARM64 target build/smoke after x64 clean-VM proof",
         "Parse/check/run plus active converter end-to-end screenshots from the shell",
         "Advisory bundle/review/handoff evidence walkthrough without source inclusion",
         "Release / Readiness panel screenshot and reporter-output evidence from the Windows shell",
-        "Signed Windows MSI/AuthentiCode plan after verified unsigned VM smoke",
+        "Unsigned-to-signed Windows MSI/AuthentiCode plan after VM smoke",
         "Website/status copy sync after target smoke evidence"
       ]
     },
@@ -181,6 +187,20 @@
         "garnet check",
         "dogfood readiness bundle",
         "human audit before unquarantine"
+      ]
+    },
+    {
+      "id": "compiler_agent_llm_tier",
+      "label": "Compiler-as-agent LLM tier (S19)",
+      "status": "feature-gated-source-ready",
+      "completion_percent": 85.0,
+      "evidence": "`garnet-suggest-llm/` provides the feature-gated S19 source tier: deterministic suggestions run first, provider-compatible Anthropic/OpenAI/Ollama clients use an explicit `LlmTransport` boundary, LLM findings are tagged `@stability(non-deterministic)`, and `.garnet-cache/llm-suggest-log.jsonl` records prompt hashes, model identity, raw response text, emitted suggestions, timestamp, and warnings. `scripts/check_determinism_no_llm.py` guards the determinism workflow from `--llm`; `benchmarks/paper_vi_exp3_compiler_as_agent/` ships the harness-only Paper VI Exp 3 scaffold with ten snapshots. This is not a shipped end-to-end CLI claim until the `garnet-cli` handoff wires `garnet check --suggest --llm`.",
+      "blocked_by": [],
+      "deferred": [
+        "`garnet-cli` integration for `garnet check --suggest --llm` is a read-only-crate handoff",
+        "Shared `garnet-lang/llm` package trait waits on S18 after S17 merges",
+        "Streaming, tool/function calling, vision, and provider-specific edge features are v0.8+",
+        "Running Paper VI Exp 3 to produce h3a/h3b/h3c results is v0.7.1"
       ]
     },
     {

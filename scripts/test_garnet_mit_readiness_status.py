@@ -119,6 +119,17 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("advisory-only provider option registry", lanes["llm_assist"]["evidence"])
         self.assertIn("Studio provider-options evidence action", lanes["llm_assist"]["evidence"])
         self.assertIn("provider-neutral advisory bundle", lanes["llm_assist"]["evidence"])
+        self.assertIn("compiler_agent_llm_tier", lanes)
+        self.assertEqual(
+            "feature-gated-source-ready",
+            lanes["compiler_agent_llm_tier"]["status"],
+        )
+        self.assertEqual(85.0, lanes["compiler_agent_llm_tier"]["completion_percent"])
+        self.assertIn("garnet-suggest-llm", lanes["compiler_agent_llm_tier"]["evidence"])
+        self.assertIn(
+            "garnet-cli",
+            " ".join(lanes["compiler_agent_llm_tier"]["deferred"]),
+        )
         self.assertIn("garnet_promo_video_status.py", lanes["promo_video"]["evidence"])
         self.assertIn("visual identity", lanes["promo_video"]["evidence"])
         self.assertIn("composition source", lanes["promo_video"]["evidence"])

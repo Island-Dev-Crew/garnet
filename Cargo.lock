@@ -746,6 +746,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "garnet-suggest-llm"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "garnet-check",
+ "garnet-parser",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
 name = "garnet-vm"
 version = "0.5.0"
 dependencies = [

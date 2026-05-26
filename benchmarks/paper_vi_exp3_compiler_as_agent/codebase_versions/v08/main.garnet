@@ -1,0 +1,22 @@
+# v08: adds a small validation branch.
+@caps()
+def before_compile() {
+  true
+}
+
+def sum_pair(left, right) {
+  left + right
+}
+
+def combine(a, b, c, d) {
+  if before_compile() {
+    sum_pair(a, b) + sum_pair(c, d)
+  } else {
+    0
+  }
+}
+
+@caps()
+def main() {
+  combine(1, 2, 3, 4)
+}

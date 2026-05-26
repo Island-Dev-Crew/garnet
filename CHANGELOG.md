@@ -204,6 +204,29 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   only — no reporter lanes added (those land with their respective
   slices, matching the S0 pattern); no baseline regeneration.
 
+- **S19 (Compiler-as-agent LLM tier — feature-gated source-ready):** new
+  `garnet-suggest-llm/` crate behind the non-default `llm` Cargo feature. The
+  crate runs S10 deterministic suggestions first, builds a prompt that treats
+  those findings as ground truth, emits separate `LlmSuggestion` advisories
+  tagged `@stability(non-deterministic)`, and writes
+  `.garnet-cache/llm-suggest-log.jsonl` with prompt hash, provider/model,
+  temperature, raw response, emitted suggestions, timestamp, token budget, and
+  warnings. Provider-compatible Anthropic, OpenAI, and Ollama clients use an
+  explicit `LlmTransport` boundary; no API key is written to the repro log.
+  `scripts/check_determinism_no_llm.py` and its CI hook fail if the
+  determinism workflow ever contains `--llm`. The Paper VI Exp 3 harness ships
+  at `benchmarks/paper_vi_exp3_compiler_as_agent/` with ten codebase snapshots,
+  stateless/history-aware runners, and aggregate/analyze scripts. New readiness
+  lane `compiler_agent_llm_tier` is labeled
+  `feature-gated-source-ready` (85.0%); after the S17 merge on current
+  `origin/main`, the combined live MIT readiness pulse reports 82.1%.
+  **Honest scope:** this is not a shipped end-to-end CLI claim yet:
+  `garnet-cli` is read-only for mac-codex, so `garnet check --suggest --llm`
+  is filed as a ledger handoff; the shared `garnet-lang/llm` package trait
+  waits on S18 after S17; streaming, tools/function calling, vision, and
+  provider-specific edge features remain v0.8+; running Paper VI Exp 3 to
+  produce h3 results is v0.7.1 work.
+
 ### Fixed
 
 - **CHANGELOG.md merge-conflict markers:** resolved the live
