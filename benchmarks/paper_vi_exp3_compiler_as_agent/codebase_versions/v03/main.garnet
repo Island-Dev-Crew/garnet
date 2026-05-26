@@ -1,0 +1,9 @@
+# v03: grows parameter count for advisory coverage.
+def combine(a, b, c, d) {
+  a + b + c + d
+}
+
+@caps()
+def main() {
+  combine(1, 2, 3, 4)
+}

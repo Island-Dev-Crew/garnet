@@ -1,0 +1,22 @@
+# v09: gives the validation hook an explicit name.
+@caps()
+def inputs_are_ready() {
+  true
+}
+
+def sum_pair(left, right) {
+  left + right
+}
+
+def combine(a, b, c, d) {
+  if inputs_are_ready() {
+    sum_pair(a, b) + sum_pair(c, d)
+  } else {
+    0
+  }
+}
+
+@caps()
+def main() {
+  combine(1, 2, 3, 4)
+}

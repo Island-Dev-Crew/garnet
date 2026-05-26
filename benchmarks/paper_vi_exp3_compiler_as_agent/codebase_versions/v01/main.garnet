@@ -1,0 +1,9 @@
+# v01: intentionally bare helper.
+def normalize(value) {
+  value
+}
+
+@caps()
+def main() {
+  normalize(1)
+}

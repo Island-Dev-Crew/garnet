@@ -1,0 +1,18 @@
+# v07: splits one helper.
+@caps()
+def before_compile() {
+}
+
+def sum_pair(left, right) {
+  left + right
+}
+
+def combine(a, b, c, d) {
+  sum_pair(a, b) + sum_pair(c, d)
+}
+
+@caps()
+def main() {
+  before_compile()
+  combine(1, 2, 3, 4)
+}

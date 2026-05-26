@@ -8,6 +8,7 @@ members = [
     "garnet-cli",
     "garnet-actor-runtime",
     "garnet-stdlib",
+    "garnet-suggest-llm",
     "garnet-convert",
     "garnet-cst",
     "garnet-lsp",

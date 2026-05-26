@@ -91,6 +91,14 @@ CONTRACT_RULES = {
             "go-to-definition",
         ],
     },
+    "garnet-suggest-llm/AGENTS.md": {
+        "phrases": [
+            "feature-gated",
+            "non-deterministic",
+            "LlmClient",
+            "reproducibility logs",
+        ],
+    },
     "garnet-vm/AGENTS.md": {
         "phrases": [
             "bytecode VM scaffold",

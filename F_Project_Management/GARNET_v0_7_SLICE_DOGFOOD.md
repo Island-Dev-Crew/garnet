@@ -451,8 +451,9 @@ separated from the deterministic rules tier.
 - `garnet-suggest-llm/` — NEW crate with `[features] default = []; llm = []`.
   `suggest_for_module_with_llm(module, history, client)` is **additive** — it
   does not replace the deterministic `suggest_for_module`.
-- `LlmClient` trait re-exported from the `garnet-lang/llm` package (S18);
-  three provider impls: Anthropic, OpenAI, Ollama.
+- `LlmClient` trait boundary in the Rust crate while S18 remains separate;
+  the shared `garnet-lang/llm` package trait is a follow-up re-export point.
+  Three provider-compatible impls: Anthropic, OpenAI, Ollama.
 - CLI: `garnet check --suggest --llm <provider> [--llm-budget N]`. Without
   `--llm`: identical to S10. With `--llm`: deterministic findings + LLM
   findings, clearly separated, each LLM finding tagged
@@ -465,28 +466,40 @@ separated from the deterministic rules tier.
   `aggregate.py`, `analyze.py`.
 - New lane in `scripts/garnet_mit_readiness_status.py`: `compiler_agent_llm_tier`.
 
-**Deps:** Soft block on S17 (for the `@stability` tier of the `LlmClient`
-trait — ship with TODO and circle back if S17 hasn't landed). Shares the
-`LlmClient` trait with S18's `garnet-lang/llm` package — define once there,
-re-export here.
+**Deps:** S17 has landed the `@stability` vocabulary. The shared
+`garnet-lang/llm` package trait remains S18 work; this S19 PR keeps a local
+Rust trait boundary and marks the cross-package re-export as deferred.
 
 **Dogfood block:**
 
 ```bash
 cargo build --features llm -p garnet-suggest-llm --release
+cargo test --features llm -p garnet-suggest-llm
+python3 scripts/check_determinism_no_llm.py
+python3 scripts/test_check_determinism_no_llm.py
+bash benchmarks/paper_vi_exp3_compiler_as_agent/run_stateless.sh
+bash benchmarks/paper_vi_exp3_compiler_as_agent/run_history_aware.sh
+python3 scripts/garnet_mit_readiness_status.py
+
+# Pending CLI handoff before release-gate reproduction:
 # Set ANTHROPIC_API_KEY or OPENAI_API_KEY or OLLAMA_HOST.
-garnet check --suggest --llm anthropic examples/mvp_03_*.garnet
-# Expect: deterministic + non-deterministic suggestions, clearly labeled,
-# each with a stability tag. Reproducibility log appears:
-tail -1 .garnet-cache/llm-suggest-log.jsonl | python3 -m json.tool
+# garnet check --suggest --llm anthropic examples/mvp_03_*.garnet
+# Expected after handoff: deterministic + non-deterministic suggestions,
+# clearly labeled, each with a stability tag. Reproducibility log appears:
+# tail -1 .garnet-cache/llm-suggest-log.jsonl | python3 -m json.tool
 ```
 
 **Honest partial labels available:**
 - "S19's LLM tier is non-deterministic; the determinism CI gate does not run with `--llm`. This is explicit by design and noted in CHANGELOG."
 - "Streaming, function calling, and vision are NOT in v0.7; they're v0.8 work."
 - "Paper VI Experiment 3 (compiler-as-agent time-to-fix) harness ships in v0.7; **running** the experiment to produce h₃a/h₃b/h₃c results is a separate v0.7.1 task."
+- "`garnet check --suggest --llm` is pending the read-only `garnet-cli` handoff; until that lands, S19 is `feature-gated-source-ready`, not shipped end-to-end."
 
-**State:** not-started.
+**State:** PR-open / feature-gated-source-ready on `agent-mac-codex/s19-suggest-llm`
+(PR #233);
+public CLI dogfood is pending the ledgered `garnet-cli` handoff before
+release-gate reproduction. PR-open is allowed only as
+`feature-gated-source-ready`, not shipped end-to-end.
 
 ---
 

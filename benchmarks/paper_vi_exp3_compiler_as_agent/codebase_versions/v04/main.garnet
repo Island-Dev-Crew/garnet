@@ -1,0 +1,10 @@
+# v04: adds a named helper but keeps the broad signature.
+def combine(a, b, c, d) {
+  let total = a + b + c + d
+  total
+}
+
+@caps()
+def main() {
+  combine(1, 2, 3, 4)
+}

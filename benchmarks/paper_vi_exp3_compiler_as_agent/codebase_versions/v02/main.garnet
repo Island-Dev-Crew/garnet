@@ -1,0 +1,9 @@
+# v02: adds arithmetic without naming the invariant.
+def normalize(value) {
+  value + 1
+}
+
+@caps()
+def main() {
+  normalize(1)
+}
