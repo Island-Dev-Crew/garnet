@@ -77,6 +77,49 @@ pub fn install(global: &Env) {
     // through the path fallback to `nil` at runtime; the propagator still
     // requires `@caps(net)` because the registry metadata is authoritative.
     define_native(global, "tcp_connect", Some(2), bridge_net_tcp_connect);
+
+    // ════════════════════════════════════════════════════════════════
+    // S21 — Layer-0/1 qualified dispatch (S17 registry → runnable).
+    //
+    // Bound under their FULLY-QUALIFIED names so `eval_path`'s qualified-first
+    // resolution finds them without colliding with bare prelude builtins that
+    // share a last segment (`map` = Map ctor, `ok`/`err` = Result builders).
+    // `core::math` / `std::base64` / `std::json` dispatch the `garnet_stdlib`
+    // host functions directly; `core::iter` / `core::cmp` are bridged at the
+    // Value layer (Garnet's dynamic `Value` can't be passed as the stdlib's
+    // monomorphic generic `T`) with the stdlib generics as the Rust reference.
+    // ════════════════════════════════════════════════════════════════
+
+    // ── core::math (cap: none — total numeric, dispatches garnet_stdlib::math) ──
+    define_native(global, "core::math::abs", Some(1), bridge_math_abs);
+    define_native(global, "core::math::sqrt", Some(1), bridge_math_sqrt);
+    define_native(global, "core::math::pow", Some(2), bridge_math_pow);
+    define_native(global, "core::math::floor", Some(1), bridge_math_floor);
+    define_native(global, "core::math::ceil", Some(1), bridge_math_ceil);
+    define_native(global, "core::math::round", Some(1), bridge_math_round);
+
+    // ── core::cmp (cap: none — Value-level ordering) ──
+    define_native(global, "core::cmp::min", Some(2), bridge_cmp_min);
+    define_native(global, "core::cmp::max", Some(2), bridge_cmp_max);
+    define_native(global, "core::cmp::clamp", Some(3), bridge_cmp_clamp);
+    define_native(global, "core::cmp::ordering", Some(2), bridge_cmp_ordering);
+
+    // ── core::iter (cap: none — higher-order via call_value; Value-level) ──
+    define_native(global, "core::iter::map", Some(2), bridge_iter_map);
+    define_native(global, "core::iter::filter", Some(2), bridge_iter_filter);
+    define_native(global, "core::iter::fold", Some(3), bridge_iter_fold);
+    define_native(global, "core::iter::take", Some(2), bridge_iter_take);
+    define_native(global, "core::iter::drop", Some(2), bridge_iter_drop);
+    define_native(
+        global,
+        "core::iter::enumerate",
+        Some(1),
+        bridge_iter_enumerate,
+    );
+
+    // ── std::base64 (cap: none — dispatches garnet_stdlib::base64) ──
+    define_native(global, "std::base64::encode", Some(1), bridge_base64_encode);
+    define_native(global, "std::base64::decode", Some(1), bridge_base64_decode);
 }
 
 fn define_native(env: &Env, name: &'static str, arity: Option<usize>, ptr: crate::value::NativeFn) {
@@ -405,6 +448,216 @@ fn bridge_net_tcp_connect(args: Vec<Value>) -> Result<Value, RuntimeError> {
         Ok(_stream) => Ok(Value::Bool(true)),
         Err(e) => Err(lift_std_error("tcp_connect", e)),
     }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// S21 — Layer-0/1 qualified-dispatch trampolines.
+// ════════════════════════════════════════════════════════════════════
+
+/// Accept an `Int` or `Float` argument as an `f64` (numbers widen to float).
+fn expect_f64(prim: &str, args: &[Value], idx: usize) -> Result<f64, RuntimeError> {
+    match args.get(idx) {
+        Some(Value::Float(f)) => Ok(*f),
+        Some(Value::Int(i)) => Ok(*i as f64),
+        Some(other) => Err(RuntimeError::type_err(
+            &format!("{prim}: number (Int|Float) arg at position {idx}"),
+            other,
+        )),
+        None => Err(RuntimeError::msg(format!(
+            "{prim}: missing argument at position {idx}"
+        ))),
+    }
+}
+
+/// Clone the arg at `idx`, or a missing-argument error.
+fn expect_value(prim: &str, args: &[Value], idx: usize) -> Result<Value, RuntimeError> {
+    args.get(idx)
+        .cloned()
+        .ok_or_else(|| RuntimeError::msg(format!("{prim}: missing argument at position {idx}")))
+}
+
+// ── core::math (dispatches garnet_stdlib::math) ──
+
+fn bridge_math_abs(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    Ok(Value::Float(garnet_stdlib::math::abs(expect_f64(
+        "core::math::abs",
+        &args,
+        0,
+    )?)))
+}
+
+fn bridge_math_sqrt(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let x = expect_f64("core::math::sqrt", &args, 0)?;
+    garnet_stdlib::math::sqrt(x)
+        .map(Value::Float)
+        .map_err(|e| lift_std_error("core::math::sqrt", e))
+}
+
+fn bridge_math_pow(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let base = expect_f64("core::math::pow", &args, 0)?;
+    let exp = expect_f64("core::math::pow", &args, 1)?;
+    Ok(Value::Float(garnet_stdlib::math::pow(base, exp)))
+}
+
+fn bridge_math_floor(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    Ok(Value::Float(garnet_stdlib::math::floor(expect_f64(
+        "core::math::floor",
+        &args,
+        0,
+    )?)))
+}
+
+fn bridge_math_ceil(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    Ok(Value::Float(garnet_stdlib::math::ceil(expect_f64(
+        "core::math::ceil",
+        &args,
+        0,
+    )?)))
+}
+
+fn bridge_math_round(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    Ok(Value::Float(garnet_stdlib::math::round(expect_f64(
+        "core::math::round",
+        &args,
+        0,
+    )?)))
+}
+
+// ── core::cmp (Value-level; garnet_stdlib::cmp is the Rust reference) ──
+
+fn cmp_pair(
+    prim: &str,
+    args: &[Value],
+) -> Result<(Value, Value, std::cmp::Ordering), RuntimeError> {
+    let a = expect_value(prim, args, 0)?;
+    let b = expect_value(prim, args, 1)?;
+    match a.partial_compare(&b) {
+        Some(ord) => Ok((a, b, ord)),
+        None => Err(RuntimeError::msg(format!(
+            "{prim}: values not comparable ({} vs {})",
+            a.type_name(),
+            b.type_name()
+        ))),
+    }
+}
+
+fn bridge_cmp_min(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let (a, b, ord) = cmp_pair("core::cmp::min", &args)?;
+    Ok(if ord == std::cmp::Ordering::Greater {
+        b
+    } else {
+        a
+    })
+}
+
+fn bridge_cmp_max(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let (a, b, ord) = cmp_pair("core::cmp::max", &args)?;
+    Ok(if ord == std::cmp::Ordering::Less {
+        b
+    } else {
+        a
+    })
+}
+
+fn bridge_cmp_ordering(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let (_, _, ord) = cmp_pair("core::cmp::ordering", &args)?;
+    Ok(Value::Int(match ord {
+        std::cmp::Ordering::Less => -1,
+        std::cmp::Ordering::Equal => 0,
+        std::cmp::Ordering::Greater => 1,
+    }))
+}
+
+fn bridge_cmp_clamp(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let v = expect_value("core::cmp::clamp", &args, 0)?;
+    let lo = expect_value("core::cmp::clamp", &args, 1)?;
+    let hi = expect_value("core::cmp::clamp", &args, 2)?;
+    let below = v.partial_compare(&lo).ok_or_else(|| {
+        RuntimeError::msg("core::cmp::clamp: value and lower bound not comparable".to_string())
+    })?;
+    if below == std::cmp::Ordering::Less {
+        return Ok(lo);
+    }
+    let above = v.partial_compare(&hi).ok_or_else(|| {
+        RuntimeError::msg("core::cmp::clamp: value and upper bound not comparable".to_string())
+    })?;
+    if above == std::cmp::Ordering::Greater {
+        return Ok(hi);
+    }
+    Ok(v)
+}
+
+// ── core::iter (Value-level; higher-order via call_value) ──
+
+fn bridge_iter_map(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let items = expect_array_clone("core::iter::map", &args, 0)?;
+    let f = expect_value("core::iter::map", &args, 1)?;
+    let mut out = Vec::with_capacity(items.len());
+    for item in items {
+        out.push(crate::eval::call_value(&f, vec![item])?);
+    }
+    Ok(Value::array(out))
+}
+
+fn bridge_iter_filter(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let items = expect_array_clone("core::iter::filter", &args, 0)?;
+    let pred = expect_value("core::iter::filter", &args, 1)?;
+    let mut out = Vec::new();
+    for item in items {
+        if crate::eval::call_value(&pred, vec![item.clone()])?.truthy() {
+            out.push(item);
+        }
+    }
+    Ok(Value::array(out))
+}
+
+fn bridge_iter_fold(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let items = expect_array_clone("core::iter::fold", &args, 0)?;
+    let mut acc = expect_value("core::iter::fold", &args, 1)?;
+    let f = expect_value("core::iter::fold", &args, 2)?;
+    for item in items {
+        acc = crate::eval::call_value(&f, vec![acc, item])?;
+    }
+    Ok(acc)
+}
+
+fn bridge_iter_take(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let items = expect_array_clone("core::iter::take", &args, 0)?;
+    let n = expect_usize("core::iter::take", &args, 1)?;
+    Ok(Value::array(items.into_iter().take(n).collect()))
+}
+
+fn bridge_iter_drop(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let items = expect_array_clone("core::iter::drop", &args, 0)?;
+    let n = expect_usize("core::iter::drop", &args, 1)?;
+    Ok(Value::array(items.into_iter().skip(n).collect()))
+}
+
+fn bridge_iter_enumerate(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let items = expect_array_clone("core::iter::enumerate", &args, 0)?;
+    Ok(Value::array(
+        items
+            .into_iter()
+            .enumerate()
+            .map(|(i, v)| Value::array(vec![Value::Int(i as i64), v]))
+            .collect(),
+    ))
+}
+
+// ── std::base64 (dispatches garnet_stdlib::base64) ──
+
+fn bridge_base64_encode(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    // Encode the UTF-8 bytes of a string into a standard base64 string.
+    let s = expect_str("std::base64::encode", &args, 0)?;
+    Ok(Value::str(garnet_stdlib::base64::encode(s.as_bytes())))
+}
+
+fn bridge_base64_decode(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    // Decode a base64 string into a byte array (Array of Int 0..=255).
+    let s = expect_str("std::base64::decode", &args, 0)?;
+    garnet_stdlib::base64::decode(s)
+        .map(bytes_to_value)
+        .map_err(|e| lift_std_error("std::base64::decode", e))
 }
 
 #[cfg(test)]
@@ -756,6 +1009,183 @@ mod tests {
                 );
             }
             other => panic!("expected Raised, got {other:?}"),
+        }
+    }
+
+    // ── S21 qualified-dispatch tests ──
+
+    /// A test-only native that doubles an Int — stands in for a Garnet callable
+    /// passed to the higher-order iterator combinators.
+    fn double_fn() -> Value {
+        fn double(args: Vec<Value>) -> Result<Value, RuntimeError> {
+            match args.first() {
+                Some(Value::Int(i)) => Ok(Value::Int(i * 2)),
+                other => Err(RuntimeError::msg(format!(
+                    "double: int expected, got {other:?}"
+                ))),
+            }
+        }
+        Value::NativeFn(Rc::new(NativeFnValue {
+            name: "double",
+            arity: Some(1),
+            ptr: double,
+        }))
+    }
+
+    fn call(env: &Env, name: &str, args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let f = env.get(name).unwrap_or_else(|| panic!("{name} not bound"));
+        crate::eval::call_value(&f, args)
+    }
+
+    #[test]
+    fn s21_math_sqrt_pow_round() {
+        let env = make_env();
+        assert!(
+            matches!(call(&env, "core::math::sqrt", vec![Value::Float(16.0)]).unwrap(), Value::Float(f) if (f - 4.0).abs() < 1e-12)
+        );
+        assert!(
+            matches!(call(&env, "core::math::pow", vec![Value::Int(2), Value::Int(10)]).unwrap(), Value::Float(f) if (f - 1024.0).abs() < 1e-9)
+        );
+        assert!(
+            matches!(call(&env, "core::math::round", vec![Value::Float(2.5)]).unwrap(), Value::Float(f) if (f - 3.0).abs() < 1e-12)
+        );
+    }
+
+    #[test]
+    fn s21_math_sqrt_negative_raises() {
+        let env = make_env();
+        match call(&env, "core::math::sqrt", vec![Value::Float(-1.0)]) {
+            Err(RuntimeError::Raised(v)) => assert!(v.display().contains("sqrt")),
+            other => panic!("expected Raised, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn s21_cmp_min_ordering_clamp_preserve_type() {
+        let env = make_env();
+        assert!(matches!(
+            call(&env, "core::cmp::min", vec![Value::Int(3), Value::Int(7)]).unwrap(),
+            Value::Int(3)
+        ));
+        assert!(matches!(
+            call(
+                &env,
+                "core::cmp::ordering",
+                vec![Value::Int(2), Value::Int(5)]
+            )
+            .unwrap(),
+            Value::Int(-1)
+        ));
+        assert!(matches!(
+            call(
+                &env,
+                "core::cmp::clamp",
+                vec![Value::Int(99), Value::Int(0), Value::Int(10)]
+            )
+            .unwrap(),
+            Value::Int(10)
+        ));
+    }
+
+    #[test]
+    fn s21_iter_map_applies_callable() {
+        let env = make_env();
+        let arr = Value::array(vec![Value::Int(1), Value::Int(2), Value::Int(3)]);
+        match call(&env, "core::iter::map", vec![arr, double_fn()]).unwrap() {
+            Value::Array(a) => {
+                let got: Vec<i64> = a
+                    .borrow()
+                    .iter()
+                    .filter_map(|v| {
+                        if let Value::Int(i) = v {
+                            Some(*i)
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+                assert_eq!(got, vec![2, 4, 6]);
+            }
+            other => panic!("expected Array, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn s21_iter_take_and_enumerate() {
+        let env = make_env();
+        let arr = Value::array(vec![
+            Value::Int(10),
+            Value::Int(20),
+            Value::Int(30),
+            Value::Int(40),
+        ]);
+        match call(&env, "core::iter::take", vec![arr.clone(), Value::Int(2)]).unwrap() {
+            Value::Array(a) => assert_eq!(a.borrow().len(), 2),
+            other => panic!("expected Array, got {other:?}"),
+        }
+        match call(&env, "core::iter::enumerate", vec![arr]).unwrap() {
+            Value::Array(a) => match &a.borrow()[0] {
+                Value::Array(pair) => {
+                    let pair = pair.borrow();
+                    assert!(matches!(pair[0], Value::Int(0)));
+                    assert!(matches!(pair[1], Value::Int(10)));
+                }
+                other => panic!("expected pair Array, got {other:?}"),
+            },
+            other => panic!("expected Array, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn s21_base64_roundtrip() {
+        let env = make_env();
+        match call(&env, "std::base64::encode", vec![Value::str("hi")]).unwrap() {
+            Value::Str(s) => assert_eq!(&*s, "aGk="),
+            other => panic!("expected Str, got {other:?}"),
+        }
+        match call(&env, "std::base64::decode", vec![Value::str("aGk=")]).unwrap() {
+            Value::Array(a) => {
+                let bytes: Vec<i64> = a
+                    .borrow()
+                    .iter()
+                    .filter_map(|v| {
+                        if let Value::Int(i) = v {
+                            Some(*i)
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+                assert_eq!(bytes, vec![104, 105]); // 'h', 'i'
+            }
+            other => panic!("expected Array, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn s21_all_qualified_names_bound() {
+        let env = make_env();
+        for n in [
+            "core::math::abs",
+            "core::math::sqrt",
+            "core::math::pow",
+            "core::math::floor",
+            "core::math::ceil",
+            "core::math::round",
+            "core::cmp::min",
+            "core::cmp::max",
+            "core::cmp::clamp",
+            "core::cmp::ordering",
+            "core::iter::map",
+            "core::iter::filter",
+            "core::iter::fold",
+            "core::iter::take",
+            "core::iter::drop",
+            "core::iter::enumerate",
+            "std::base64::encode",
+            "std::base64::decode",
+        ] {
+            assert!(env.get(n).is_some(), "qualified prim `{n}` not bound");
         }
     }
 }

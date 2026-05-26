@@ -560,6 +560,54 @@ clean + deterministic `garnet run` on all three; workspace gates green).
 
 ---
 
+### S21 — Interpreter dispatch for the S17 Layer-0/1 stdlib + Mnemos × stdlib
+
+**Slot:** win-opus · **Type:** post-v0.7 (Jon-directed; closes the S17 deferred line) · **PR count:** 1
+
+**Goal:** Make the S17 Layer-0/1 stdlib primitives **execute from Garnet source**
+(they were registry-declared but not interpreter-dispatched), and prove the
+Mnemos memory core composes with the dispatched stdlib.
+
+**Owned (writable, under Jon's direction):** `garnet-interp-v0.3` (eval.rs +
+stdlib_bridge.rs — unowned crate; v0.7 lockdown was for the merged parallel
+build), `garnet-stdlib` (mine), new example + dogfood/readiness edits. No edits
+to garnet-lsp/cst/parser/suggest-llm/garnet-lang or win-codex's matrix.
+
+**New surfaces:**
+- `eval.rs` — fully-qualified-name-first resolution in `eval_path` (backward-compatible).
+- `stdlib_bridge.rs` — qualified dispatch for `core::math` (6), `core::cmp` (4),
+  `core::iter` (6, incl higher-order map/filter/fold via `call_value`),
+  `std::base64` (2) + Rust trampoline tests.
+- `examples/novel_04_dispatched_stdlib_pipeline.garnet` (runnable proof) +
+  `scripts/smoke_garnet_novel_compositions.py` extended to include it.
+- `garnet-interp-v0.3/tests/mnemos_stdlib_combination.rs` (4 Mnemos kinds × stdlib).
+- `interp_stdlib_dispatch` readiness lane; baseline surgically extended.
+
+**Dogfood block:**
+
+```bash
+cargo build -p garnet-cli --release
+garnet run examples/novel_04_dispatched_stdlib_pipeline.garnet   # sum 35 / score 5 / tag c2NvcmU9NQ==
+python3 scripts/smoke_garnet_novel_compositions.py               # 4/4 (novel_04 included)
+cargo test -p garnet-interp -p garnet-stdlib --no-fail-fast      # incl bridge + Mnemos combo tests
+# then the common gates + RUSTDOCFLAGS='-D warnings' cargo doc --workspace --no-deps
+```
+
+**Honest partial labels available:**
+- "`std::json` / `regex` / `uuid` / `env` / `process` / `log` dispatch is S22."
+- "A full managed-mode `memory::` prim family (Garnet-callable Mnemos with a handle
+  Value) is S22; S21 proves Mnemos × stdlib at the Rust/system level."
+- "`core::cmp` / `core::iter` are Value-level bridges; the `garnet_stdlib` generics
+  remain the tested Rust reference (Garnet's dynamic `Value` can't be the stdlib's `T`)."
+- "`garnet check` on `novel_04` emits non-fatal `@stability` warnings (the new prims
+  are `experimental`) — exit 0, by design."
+
+**State:** dogfood-passing (local: 25 bridge tests + 2 Mnemos combo tests + harness
+4/4; `core::math::sqrt(16.0)→4`, `core::iter::map([1,2,3,4],double)→[2,4,6,8]`,
+`std::base64::encode("hi")→"aGk="` verified live; workspace gates green).
+
+---
+
 ## v0.7.0 Release Gate
 
 Tag v0.7.0 only when all of:
