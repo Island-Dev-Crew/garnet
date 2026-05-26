@@ -1,0 +1,10 @@
+[package]
+name = "{{package_name}}"
+version = "0.1.0"
+edition = "garnet-0.3"
+
+[garnet_lang]
+layer = 2
+stability = "experimental"
+capabilities = []
+source_stability_annotations = "pending-parser-support"

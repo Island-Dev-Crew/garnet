@@ -45,6 +45,11 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertEqual(50.0, lanes["promo_video"].completion_percent)
         self.assertEqual("active-partial", lanes["llm_assist"].status)
         self.assertLess(lanes["llm_assist"].completion_percent, 100.0)
+        self.assertIn("official_packages_seed", lanes)
+        self.assertEqual(
+            "local-registry-source-ready", lanes["official_packages_seed"].status
+        )
+        self.assertEqual(85.0, lanes["official_packages_seed"].completion_percent)
         self.assertEqual("planned", lanes["broad_converter_frontends"].status)
         self.assertIn("windows_linux_distribution", lanes)
         self.assertEqual(
@@ -119,6 +124,18 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("advisory-only provider option registry", lanes["llm_assist"]["evidence"])
         self.assertIn("Studio provider-options evidence action", lanes["llm_assist"]["evidence"])
         self.assertIn("provider-neutral advisory bundle", lanes["llm_assist"]["evidence"])
+        self.assertIn("official_packages_seed", lanes)
+        self.assertEqual(
+            "local-registry-source-ready",
+            lanes["official_packages_seed"]["status"],
+        )
+        self.assertIn(
+            "garnet_lang_registry_seed", lanes["official_packages_seed"]["evidence"]
+        )
+        self.assertIn(
+            "github.com/garnet-lang",
+            " ".join(lanes["official_packages_seed"]["deferred"]),
+        )
         self.assertIn("compiler_agent_llm_tier", lanes)
         self.assertEqual(
             "feature-gated-source-ready",

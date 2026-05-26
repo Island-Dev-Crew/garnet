@@ -1,0 +1,9 @@
+# Local-registry seed for @garnet-lang/test-property.
+
+def test_property_forall_bool(name) {
+  "property #{name}: checked"
+}
+
+def test_property_seed(seed) {
+  "seed #{seed}"
+}

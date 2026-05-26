@@ -1,0 +1,11 @@
+# Local-registry seed for @garnet-lang/llm.
+# Live Anthropic/OpenAI/Ollama transport remains outside this source proof.
+
+def llm_prompt(template, name, value) {
+  "#{template} [#{name}=#{value}]"
+}
+
+@caps(net)
+def llm_complete(prompt, max_tokens) {
+  "complete(max_tokens=#{max_tokens}): #{prompt}"
+}

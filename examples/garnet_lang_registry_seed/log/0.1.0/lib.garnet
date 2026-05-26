@@ -1,0 +1,10 @@
+# Local-registry seed for @garnet-lang/log.
+
+def log_info(message) {
+  "INFO #{message}"
+}
+
+@caps(fs)
+def log_file_line(path, message) {
+  "FILE #{path}: #{message}"
+}

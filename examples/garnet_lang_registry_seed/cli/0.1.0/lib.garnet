@@ -1,0 +1,9 @@
+# Local-registry seed for @garnet-lang/cli.
+
+def cli_flag(name, value) {
+  "--#{name}=#{value}"
+}
+
+def cli_command(name) {
+  "command:#{name}"
+}

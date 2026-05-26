@@ -1,0 +1,3 @@
+def test_http_client_descriptor() {
+  assert_eq(http_client_get("https://example.invalid"), "GET https://example.invalid")
+}

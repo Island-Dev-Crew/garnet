@@ -403,36 +403,42 @@ ecosystem works end-to-end: `http-client`, `llm`, `cli`, `test-property`,
 - `tools/garnet-lang-template/` — scaffold: README (calibrated-honesty
   voice), dual MIT/Apache-2.0 license, CHANGELOG with `[Unreleased]`,
   `Garnet.toml` with `@stability` tier, `garnet/lib.garnet`, `tests/smoke.garnet`.
+- `examples/garnet_lang_registry_seed/` — local filesystem-registry source
+  proof for the first five packages at v0.1.0. This is the reproducible S13
+  registry stub path; it is **not** external GitHub publication.
 - Five external repos, each created independently against the layer policy
-  S17 produces; each annotates its primitives with `@stability(...)`.
-- Registry-stub `index.json` (S13) entries for each package via
-  `garnet add --registry garnet-lang/<name>`.
-- `examples/mvp_18_all_official_packages.garnet` — imports all five, uses one
-  primitive from each, runs via `garnet run`.
+  S17 produces. **Pending:** `github.com/garnet-lang/` is Jon's manual org
+  step and is not visible to the active token yet.
+- Registry-stub `index.json` (S13) entries for each package, exercised through
+  the actual implemented CLI shape:
+  `garnet add --registry <filesystem-registry> <name>@0.1.0`.
+- `examples/mvp_18_all_official_packages/` — consumer project that vendors all
+  five packages from the local registry seed, uses one primitive from each, and
+  runs via `garnet run src/main.garnet`.
 - New lane in `scripts/garnet_mit_readiness_status.py`: `official_packages_seed`.
 
 **Deps:** **HARD block on S17 / MERGED** — packages annotate per the Layer
 Policy doc. The `garnet-lang/` GitHub org is **Jon's manual step** (prompt via
-the ledger Shared Messages section if it isn't created).
+the ledger Shared Messages section if it isn't created). Source-level
+`@stability(...)` on user/package functions still waits on the parser annotation
+handoff, so v0.7 package stability is declared in `Garnet.toml` and docs while
+source remains runnable.
 
 **Dogfood block:**
 
 ```bash
-for pkg in http-client llm cli test-property log; do (cd ../garnet-lang-$pkg && cargo test); done
-garnet add --registry garnet-lang/http-client
-garnet add --registry garnet-lang/llm
-garnet add --registry garnet-lang/cli
-garnet add --registry garnet-lang/test-property
-garnet add --registry garnet-lang/log
-garnet run examples/mvp_18_all_official_packages.garnet
+cargo run -p garnet-registry-stub -- build examples/garnet_lang_registry_seed
+cargo run -p garnet-registry-stub -- verify examples/garnet_lang_registry_seed
+python3 scripts/smoke_garnet_lang_packages_seed.py
 ```
 
 **Honest partial labels available:**
-- "Five Layer-2 packages ship in v0.7 as `@stability(experimental)`."
-- "`http-client` wraps `reqwest` via a thin FFI shim until self-hosted HTTP arrives (v0.8+)."
-- "Layer-2 packages are NOT bundled with v0.7 binaries; they ship via the registry."
+- "Five Layer-2 package seeds are local-registry-source-ready at `@stability(experimental)`."
+- "External `github.com/garnet-lang/*` package repos are pending the `garnet-lang` org/manual authority."
+- "`http-client` and `llm` expose descriptor-level source proof here; live transport remains future work."
+- "Layer-2 packages are NOT bundled with v0.7 binaries; they ship via the registry once publication exists."
 
-**State:** not-started.
+**State:** started / local-registry-source-ready on `agent-mac-codex/s18-llm-package`; external publication pending.
 
 ---
 
@@ -535,9 +541,9 @@ code --install-extension <published-garnet-vsix-v0.7.0>
 # S17 stdlib: layer policy + @stability + ~50 primitives
 garnet check src/main.garnet            # @stability warnings present, not errors
 
-# S18 packages: five official Layer-2 packages resolve from the registry
-garnet add --registry garnet-lang/http-client
-garnet run examples/mvp_18_all_official_packages.garnet
+# S18 packages: local Layer-2 package seeds resolve from the filesystem registry
+# External github.com/garnet-lang/* publication remains a separate authority gate.
+python3 scripts/smoke_garnet_lang_packages_seed.py
 
 # S19 LLM tier (opt-in; non-deterministic, excluded from determinism gate)
 garnet check --suggest --llm anthropic src/main.garnet

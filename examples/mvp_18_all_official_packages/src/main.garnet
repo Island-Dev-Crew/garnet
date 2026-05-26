@@ -1,0 +1,17 @@
+@caps(net)
+def main() {
+  let http = http_client_get("https://example.invalid/status")
+  let prompt = llm_prompt("Summarize", "topic", "Layer-2 packages")
+  let completion = llm_complete(prompt, 32)
+  let flag = cli_flag("verbose", "true")
+  let property = test_property_forall_bool("registry roundtrip")
+  let line = log_info("package seed ready")
+
+  println(http)
+  println(completion)
+  println(flag)
+  println(property)
+  println(line)
+
+  "S18 packages local-registry seed: ok"
+}
