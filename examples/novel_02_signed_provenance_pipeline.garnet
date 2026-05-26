@@ -1,0 +1,41 @@
+# novel_02_signed_provenance_pipeline.garnet
+#
+# NOVEL COMPOSITION (S20): three Paper-VI contributions fused into one program —
+#   (1) BLAKE3 signed fingerprint check     (cf. mvp_11_signed_hotreload)
+#   (2) multi-stage agent pipeline           (cf. mvp_06_multi_agent)
+#   (3) deterministic, reproducible output   (cf. det_fixture_01)
+#
+# Emergent capability: CONTENT-ADDRESSED PROVENANCE across an agent pipeline.
+# Each stage extends an append-only lineage string; the final BLAKE3 digest over
+# the whole lineage is the pipeline's provenance fingerprint, verified against an
+# embedded expected hash. Any tampering with a stage changes the digest and the
+# program raises — a tamper-evident build lineage. Deterministic, so the
+# fingerprint is reproducible byte-for-byte via `garnet run`.
+
+def stage_ingest() { "ingest:specs=3" }
+def stage_transform(prev) { prev + "|transform:rules=2" }
+def stage_emit(prev) { prev + "|emit:artifacts=1" }
+
+def provenance_lineage() {
+  let after_ingest = stage_ingest()
+  let after_transform = stage_transform(after_ingest)
+  stage_emit(after_transform)
+}
+
+@caps()
+def main() {
+  let lineage = provenance_lineage()
+  let provenance = crypto::blake3(lineage)
+
+  # Embedded expected provenance fingerprint. If you change any stage, regenerate
+  # with:  garnet eval 'crypto::blake3("<new lineage>")'
+  let expected = "1f02c4147b45be3c9ea73f2cf73122d51cfc259034b845905f4e235bf2c325ce"
+
+  if provenance == expected {
+    println("novel_02 signed_provenance verified:", provenance)
+    provenance
+  } else {
+    # Unreachable on an untampered lineage; mirrors mvp_11's mismatch path.
+    raise "novel_02 provenance mismatch — pipeline lineage was tampered"
+  }
+}

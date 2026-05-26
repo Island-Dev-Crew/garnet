@@ -1,0 +1,55 @@
+# novel_03_release_gate_quorum.garnet
+#
+# NOVEL COMPOSITION (S20): four Paper-VI contributions fused into one program —
+#   (1) release-evidence gate            (cf. agent_toolbelt_04_release_gate)
+#   (2) capability-budget gating          (cf. agent_toolbelt_02)
+#   (3) BLAKE3 signed provenance check     (cf. mvp_11 / novel_02)
+#   (4) cognitively-typed memory recall    (cf. agent_toolbelt_03)
+#
+# Emergent capability: MULTI-SIGNAL AGENTIC RELEASE GOVERNANCE. A release is
+# APPROVED only when a quorum of independent signals agree — CI green, requested
+# tooling within the capability budget, artifact provenance fingerprint matches,
+# and memory recalls a prior green release of this kind. No single signal can
+# wave a release through. Deterministic, so the verdict is reproducible.
+
+def within_budget(cost, risk) {
+  cost + risk <= 15
+}
+
+def recall_prior_green(kind, age) {
+  let base = match kind {
+    "procedural" => 18,
+    "episodic" => 14,
+    _ => 2,
+  }
+  let bonus = if age < 5 { 6 } else { 1 }
+  base + bonus
+}
+
+def signal_go(ok) {
+  if ok { 1 } else { 0 }
+}
+
+@caps()
+def main() {
+  # signal 1 — CI tests passed
+  let tests_ok = true
+  # signal 2 — requested release tooling (write_file cost 8) within budget
+  let caps_ok = within_budget(8, 4)
+  # signal 3 — artifact provenance fingerprint matches the signed expected
+  let provenance = crypto::blake3("release:garnet@v0.7.0|artifacts=6")
+  let expected = "665679edcb4ff895f8487bda9899b9bcb6925dc9351ac3ee918d0e7b274e20c9"
+  let provenance_ok = provenance == expected
+  # signal 4 — memory recalls a recent prior green release of this kind
+  let memory_ok = recall_prior_green("procedural", 2) >= 20
+
+  let quorum = signal_go(tests_ok) + signal_go(caps_ok) + signal_go(provenance_ok) + signal_go(memory_ok)
+
+  if quorum >= 3 {
+    println("novel_03 release_gate APPROVED quorum:", quorum)
+    quorum
+  } else {
+    println("novel_03 release_gate BLOCKED quorum:", quorum)
+    0
+  }
+}
