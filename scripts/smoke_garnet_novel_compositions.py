@@ -39,6 +39,10 @@ class NovelCase:
     file: str
     contributions: tuple[str, ...]
     run_expect: str
+    # Substring the `garnet check` stdout must contain. Default is the
+    # clean-checker marker; programs that call experimental primitives (S21
+    # qualified dispatch) instead expect the non-fatal `@stability` advisory.
+    check_expect: str = CHECK_CLEAN_MARKER
 
 
 NOVEL_CASES: tuple[NovelCase, ...] = (
@@ -60,6 +64,15 @@ NOVEL_CASES: tuple[NovelCase, ...] = (
         "examples/novel_03_release_gate_quorum.garnet",
         ("release-gate", "capability-budget", "blake3-signed-provenance", "memory-recall"),
         "novel_03 release_gate APPROVED quorum: 4",
+    ),
+    NovelCase(
+        "novel_04_dispatched_stdlib_pipeline",
+        "examples/novel_04_dispatched_stdlib_pipeline.garnet",
+        ("core::iter-higher-order", "core::math", "core::cmp", "std::base64", "@stability-warnings"),
+        "novel_04 tag: c2NvcmU9NQ==",
+        # S21: calls qualified EXPERIMENTAL prims, so the checker emits non-fatal
+        # `@stability` warnings (exit 0) rather than "0 diagnostics".
+        check_expect="stability warning",
     ),
 )
 
@@ -88,7 +101,7 @@ def evaluate_case(
     `check` passes iff exit 0 AND the checker reports no diagnostics; `run`
     passes iff exit 0 AND the expected deterministic line is present. Separated
     from the subprocess driving so it is unit-testable with synthetic inputs."""
-    check_ok = check_code == 0 and CHECK_CLEAN_MARKER in check_stdout
+    check_ok = check_code == 0 and case.check_expect in check_stdout
     run_ok = run_code == 0 and case.run_expect in run_stdout
     return CaseResult(case.id, list(case.contributions), check_ok, run_ok)
 

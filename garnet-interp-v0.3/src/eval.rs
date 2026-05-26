@@ -220,6 +220,17 @@ fn eval_path(segs: &[String], env: &Env) -> Result<Value, RuntimeError> {
             }
         }
     }
+    // Resolve the FULLY-QUALIFIED name first (e.g. `core::math::sqrt`,
+    // `std::base64::encode`). Stdlib primitives bound under their full path
+    // (S21 qualified dispatch) resolve here without colliding with bare
+    // prelude builtins that share a last segment (`map` = Map ctor, `ok`/`err`
+    // = Result builders, ...). This is additive: names that aren't bound under
+    // their qualified form fall through to the existing last-segment behavior,
+    // so `Storage::read_block` → top-level `read_block` still works.
+    let qualified = segs.join("::");
+    if let Some(v) = env.get(&qualified) {
+        return Ok(v);
+    }
     // Fallback: treat the last segment as a top-level name. This lets simple
     // module-qualified calls like `Storage::read_block` resolve against global
     // names while the full module system is still stubbed.
@@ -227,7 +238,7 @@ fn eval_path(segs: &[String], env: &Env) -> Result<Value, RuntimeError> {
         .last()
         .ok_or_else(|| RuntimeError::Message("empty path expression".into()))?;
     env.get(last)
-        .ok_or_else(|| RuntimeError::Message(format!("unresolved path: {}", segs.join("::"))))
+        .ok_or_else(|| RuntimeError::Message(format!("unresolved path: {}", qualified)))
 }
 
 fn eval_binary(op: BinOp, lhs: &Expr, rhs: &Expr, env: &Rc<Env>) -> Result<Value, RuntimeError> {

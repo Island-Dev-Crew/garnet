@@ -11,6 +11,34 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S21 (Interpreter dispatch for the S17 Layer-0/1 stdlib + Mnemos × stdlib):**
+  closes the S17 deferred line — the new stdlib primitives now **execute from
+  Garnet source**, not just sit in the registry. `garnet-interp-v0.3/src/eval.rs`
+  resolves the **fully-qualified name first** (backward-compatible — `Storage::read_block`
+  → top-level still works), so primitives bind under their full path
+  (`core::math::sqrt`) without colliding with bare prelude builtins that share a
+  last segment (`map` = Map ctor, `ok`/`err` = Result builders). `stdlib_bridge.rs`
+  adds qualified dispatch for **`core::math`** (abs/sqrt/pow/floor/ceil/round —
+  dispatches `garnet_stdlib::math`), **`core::cmp`** (min/max/clamp/ordering —
+  Value-level), **`core::iter`** (map/filter/fold/take/drop/enumerate — map/filter/fold
+  are **higher-order via `call_value`**, i.e. first-class-function combinators
+  callable from managed Garnet), and **`std::base64`** (encode/decode — dispatches
+  `garnet_stdlib::base64`): 18 newly-runnable primitives. Verified live
+  (`core::math::sqrt(16.0)→4`, `core::iter::map([1,2,3,4], double)→[2,4,6,8]`,
+  `std::base64::encode("hi")→"aGk="`) and via the new runnable
+  `examples/novel_04_dispatched_stdlib_pipeline.garnet` (deterministic;
+  `garnet check` emits the expected non-fatal `@stability` warnings on the
+  experimental prims, exit 0). `garnet-interp-v0.3/tests/mnemos_stdlib_combination.rs`
+  composes the **four Mnemos memory kinds** (working/episodic/semantic/procedural)
+  with the dispatched stdlib (BLAKE3 provenance + base64) — real memory-core ×
+  stdlib at the system level. New `interp_stdlib_dispatch` readiness lane
+  (`verified`); MIT readiness rises; baseline surgically extended (per-lane floors
+  preserved). **Honest scope:** `std::json` / `regex` / `uuid` / `env` / `process`
+  / `log` dispatch and a full managed-mode `memory::` prim family (Garnet-callable
+  Mnemos with a handle Value) are **S22**; `core::cmp`/`core::iter` are Value-level
+  bridges (Garnet's dynamic `Value` can't be the stdlib's monomorphic `T`), with
+  the `garnet_stdlib` generics as the tested Rust reference.
+
 - **S20 (Novel-composition dogfood + program-execution discovery):** adds three
   runnable `examples/novel_*.garnet` programs that **fuse** multiple Paper-VI
   contributions per program (the existing corpus proves each in isolation):

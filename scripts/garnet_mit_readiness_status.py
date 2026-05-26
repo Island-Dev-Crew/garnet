@@ -471,6 +471,13 @@ def read_status() -> MitReadinessStatus:
             "C_Language_Specification/GARNET_NOVEL_COMPOSITIONS.md",
         )
     )
+    bridge_src = ROOT / "garnet-interp-v0.3" / "src" / "stdlib_bridge.rs"
+    interp_dispatch_present = (
+        (ROOT / "examples/novel_04_dispatched_stdlib_pipeline.garnet").exists()
+        and (ROOT / "garnet-interp-v0.3/tests/mnemos_stdlib_combination.rs").exists()
+        and bridge_src.exists()
+        and "core::math::sqrt" in bridge_src.read_text(encoding="utf-8")
+    )
     wls_clean_vm_verified = any(
         gate.id == "windows_unsigned_nsis" and gate.status == "clean-vm-proof-verified"
         for gate in wls.packaging_gates
@@ -1337,10 +1344,42 @@ def read_status() -> MitReadinessStatus:
                 "Compositions are modeled deterministically in managed mode; live "
                 "runtime integration (actor mailboxes, Mnemos stores, Ed25519 signing) "
                 "is tracked separately",
-                "The new S17 Layer-0/1 stdlib primitives are not interpreter-dispatched "
-                "yet, so these programs use the proven runnable subset + `crypto::blake3`",
+                "These programs use the proven runnable subset + `crypto::blake3`; "
+                "S21 (`interp_stdlib_dispatch`) makes the new Layer-0/1 prims runnable",
             ]
             if novel_compositions_present
+            else [],
+        ),
+        ObjectiveLane(
+            id="interp_stdlib_dispatch",
+            label="Interpreter dispatch for S17 stdlib (S21)",
+            status="verified" if interp_dispatch_present else "planned",
+            completion_percent=100.0 if interp_dispatch_present else 0.0,
+            evidence=(
+                "S21 closes the S17 deferred line — the Layer-0/1 stdlib primitives now "
+                "EXECUTE from Garnet source. `garnet-interp-v0.3/src/eval.rs` resolves "
+                "fully-qualified names first (backward-compatible), so prims bind under "
+                "`core::math::sqrt` etc. without colliding with bare prelude builtins "
+                "(`map`/`ok`). `stdlib_bridge.rs` dispatches core::math (6), core::cmp (4), "
+                "core::iter map/filter/fold/take/drop/enumerate (6 — higher-order via "
+                "call_value, first-class-function combinators from managed Garnet), and "
+                "std::base64 (2). Verified live and via "
+                "`examples/novel_04_dispatched_stdlib_pipeline.garnet` (deterministic run). "
+                "`garnet-interp-v0.3/tests/mnemos_stdlib_combination.rs` composes the four "
+                "Mnemos memory kinds with the stdlib (blake3 provenance + base64)."
+            )
+            if interp_dispatch_present
+            else "No qualified stdlib dispatch present yet.",
+            blocked_by=[],
+            deferred=[
+                "std::json / regex / uuid / env / process / log dispatch (S22)",
+                "A full managed-mode `memory::` prim family (Garnet-callable Mnemos with a "
+                "handle Value) — S22; S21 proves Mnemos × stdlib at the Rust/system level",
+                "core::cmp / core::iter are Value-level bridges; the `garnet_stdlib` "
+                "generics remain the tested Rust reference (dynamic Values can't be the "
+                "stdlib's monomorphic `T`)",
+            ]
+            if interp_dispatch_present
             else [],
         ),
     ]

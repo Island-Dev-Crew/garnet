@@ -1,7 +1,7 @@
 {
   "source": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s16-rowan-lsp-precision",
   "overall_status": "active-partial",
-  "completion_percent": 80.6,
+  "completion_percent": 81.2,
   "current_truth": [
     "tracked implementation plan is complete",
     "goal remains active",
@@ -492,6 +492,19 @@
       "deferred": [
         "Compositions are modeled deterministically in managed mode; live runtime integration (actor mailboxes, Mnemos stores, Ed25519 signing) is tracked separately",
         "The new S17 Layer-0/1 stdlib primitives are not interpreter-dispatched yet, so these programs use the proven runnable subset + `crypto::blake3`"
+      ]
+    },
+    {
+      "id": "interp_stdlib_dispatch",
+      "label": "Interpreter dispatch for S17 stdlib (S21)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "S21 closes the S17 deferred line \u2014 the Layer-0/1 stdlib primitives now EXECUTE from Garnet source. `garnet-interp-v0.3/src/eval.rs` resolves fully-qualified names first (backward-compatible), so prims bind under `core::math::sqrt` etc. without colliding with bare prelude builtins (`map`/`ok`). `stdlib_bridge.rs` dispatches core::math (6), core::cmp (4), core::iter map/filter/fold/take/drop/enumerate (6 \u2014 higher-order via call_value, first-class-function combinators from managed Garnet), and std::base64 (2). Verified live and via `examples/novel_04_dispatched_stdlib_pipeline.garnet` (deterministic run). `garnet-interp-v0.3/tests/mnemos_stdlib_combination.rs` composes the four Mnemos memory kinds with the stdlib (blake3 provenance + base64).",
+      "blocked_by": [],
+      "deferred": [
+        "std::json / regex / uuid / env / process / log dispatch (S22)",
+        "A full managed-mode `memory::` prim family (Garnet-callable Mnemos with a handle Value) \u2014 S22; S21 proves Mnemos \u00d7 stdlib at the Rust/system level",
+        "core::cmp / core::iter are Value-level bridges; the `garnet_stdlib` generics remain the tested Rust reference (dynamic Values can't be the stdlib's monomorphic `T`)"
       ]
     }
   ]
