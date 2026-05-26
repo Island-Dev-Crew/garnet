@@ -43,7 +43,7 @@ Slice contract: `F_Project_Management/GARNET_v0_7_SLICE_DOGFOOD.md`, section "S1
 
 2. Add the `garnet-suggest-llm` crate behind `default = []` and `llm = []`.
    - Keep provider-backed code opt-in.
-   - Define a local Rust `LlmClient` trait only as a pending bridge while S18/S17 are blocked, with comments stating the Garnet Layer-2 `garnet-lang/llm` trait is the intended source of truth.
+   - Define a local Rust `LlmClient` trait only as a pending bridge while S18 is still a separate PR, with comments stating the Garnet Layer-2 `garnet-lang/llm` trait is the intended source of truth.
    - Implement Anthropic, OpenAI, and Ollama clients using the least new dependency surface available. Prefer existing workspace dependency patterns; add no new dependency unless the provider implementation cannot be made useful without it.
 
 3. Preserve deterministic-first behavior.

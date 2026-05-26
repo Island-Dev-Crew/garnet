@@ -451,8 +451,9 @@ separated from the deterministic rules tier.
 - `garnet-suggest-llm/` — NEW crate with `[features] default = []; llm = []`.
   `suggest_for_module_with_llm(module, history, client)` is **additive** — it
   does not replace the deterministic `suggest_for_module`.
-- `LlmClient` trait re-exported from the `garnet-lang/llm` package (S18);
-  three provider impls: Anthropic, OpenAI, Ollama.
+- `LlmClient` trait boundary in the Rust crate while S18 remains separate;
+  the shared `garnet-lang/llm` package trait is a follow-up re-export point.
+  Three provider-compatible impls: Anthropic, OpenAI, Ollama.
 - CLI: `garnet check --suggest --llm <provider> [--llm-budget N]`. Without
   `--llm`: identical to S10. With `--llm`: deterministic findings + LLM
   findings, clearly separated, each LLM finding tagged
@@ -465,10 +466,9 @@ separated from the deterministic rules tier.
   `aggregate.py`, `analyze.py`.
 - New lane in `scripts/garnet_mit_readiness_status.py`: `compiler_agent_llm_tier`.
 
-**Deps:** Soft block on S17 (for the `@stability` tier of the `LlmClient`
-trait — ship with TODO and circle back if S17 hasn't landed). Shares the
-`LlmClient` trait with S18's `garnet-lang/llm` package — define once there,
-re-export here.
+**Deps:** S17 has landed the `@stability` vocabulary. The shared
+`garnet-lang/llm` package trait remains S18 work; this S19 PR keeps a local
+Rust trait boundary and marks the cross-package re-export as deferred.
 
 **Dogfood block:**
 
