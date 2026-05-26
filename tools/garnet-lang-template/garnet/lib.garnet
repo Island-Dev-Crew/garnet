@@ -1,0 +1,7 @@
+# {{package_name}} Layer-2 package entrypoint.
+# Stability is declared in Garnet.toml while source-level @stability
+# annotations wait on parser support.
+
+def {{function_prefix}}_version() {
+  "0.1.0"
+}

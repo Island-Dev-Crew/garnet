@@ -68,6 +68,8 @@ def _lane_score(lane: ObjectiveLane) -> float:
         return 0.25
     if lane.status == "source-present":
         return 0.6
+    if lane.status == "local-registry-source-ready":
+        return 0.85
     if lane.status == "feature-gated-source-ready":
         return 0.85
     return 0.0
@@ -185,6 +187,41 @@ def _compiler_agent_llm_tier_present() -> bool:
         for idx in range(1, 11)
     ]
     return all(path.exists() for path in required + snapshots)
+
+
+def _official_packages_seed_present() -> bool:
+    package_names = ["http-client", "llm", "cli", "test-property", "log"]
+    registry = ROOT / "examples" / "garnet_lang_registry_seed"
+    index_path = registry / "index.json"
+    required = [
+        ROOT / "tools" / "garnet-lang-template" / "README.md",
+        ROOT / "tools" / "garnet-lang-template" / "Garnet.toml",
+        ROOT / "tools" / "garnet-lang-template" / "garnet" / "lib.garnet",
+        ROOT / "tools" / "garnet-lang-template" / "tests" / "smoke.garnet",
+        ROOT / "examples" / "mvp_18_all_official_packages" / "Garnet.toml",
+        ROOT / "examples" / "mvp_18_all_official_packages" / "src" / "main.garnet",
+        ROOT / "scripts" / "smoke_garnet_lang_packages_seed.py",
+        index_path,
+    ]
+    for package in package_names:
+        package_root = registry / package / "0.1.0"
+        required.extend(
+            [
+                package_root / "README.md",
+                package_root / "CHANGELOG.md",
+                package_root / "Garnet.toml",
+                package_root / "lib.garnet",
+                package_root / "tests" / "smoke.garnet",
+            ]
+        )
+    if not all(path.exists() for path in required):
+        return False
+    try:
+        index = json.loads(index_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    packages = index.get("packages", {})
+    return all("0.1.0" in packages.get(package, {}).get("versions", {}) for package in package_names)
 
 
 def read_status() -> MitReadinessStatus:
@@ -437,6 +474,38 @@ def read_status() -> MitReadinessStatus:
             ),
             blocked_by=["secure advisory implementation", "provider/runtime boundary", "dogfood gate"],
             deferred=contract.analysis_targets + contract.required_gates,
+        ),
+        ObjectiveLane(
+            id="official_packages_seed",
+            label="Official Layer-2 package seed (S18)",
+            status=(
+                "local-registry-source-ready"
+                if _official_packages_seed_present()
+                else "planned"
+            ),
+            completion_percent=85.0 if _official_packages_seed_present() else 0.0,
+            evidence=(
+                "`tools/garnet-lang-template/` provides the reusable Layer-2 package scaffold; "
+                "`examples/garnet_lang_registry_seed/` contains local filesystem-registry "
+                "v0.1.0 seeds for `http-client`, `llm`, `cli`, `test-property`, and `log`; "
+                "`examples/mvp_18_all_official_packages/` plus "
+                "`scripts/smoke_garnet_lang_packages_seed.py` vendors all five through the "
+                "S13 registry stub and runs one primitive from each. This is local source proof, "
+                "not external GitHub publication."
+            )
+            if _official_packages_seed_present()
+            else "No committed S18 local package template, registry seed, or all-packages smoke is present yet.",
+            blocked_by=[]
+            if _official_packages_seed_present()
+            else ["S18 local package seed"],
+            deferred=[
+                "`github.com/garnet-lang/` org creation or authority is a Jon/manual step",
+                "Five external `github.com/garnet-lang/*` repos still need publication and CI",
+                "Source-level `@stability(...)` on package functions waits on the parser annotation handoff",
+                "HTTP/LLM live transport remains out of the local-registry seed proof",
+            ]
+            if _official_packages_seed_present()
+            else [],
         ),
         ObjectiveLane(
             id="compiler_agent_llm_tier",

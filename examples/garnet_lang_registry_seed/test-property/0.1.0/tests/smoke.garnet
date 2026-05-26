@@ -1,0 +1,3 @@
+def test_property_descriptor() {
+  assert_eq(test_property_forall_bool("roundtrip"), "property roundtrip: checked")
+}

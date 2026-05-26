@@ -1,0 +1,6 @@
+[package]
+name = "mvp_18_all_official_packages"
+version = "0.1.0"
+edition = "garnet-0.3"
+
+[dependencies]

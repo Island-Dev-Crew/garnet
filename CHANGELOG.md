@@ -204,6 +204,22 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   only — no reporter lanes added (those land with their respective
   slices, matching the S0 pattern); no baseline regeneration.
 
+- **S18 (First five Layer-2 packages — local-registry source-ready):**
+  adds `tools/garnet-lang-template/` as the reusable official-package scaffold
+  and `examples/garnet_lang_registry_seed/` with local filesystem-registry
+  v0.1.0 seeds for `http-client`, `llm`, `cli`, `test-property`, and `log`.
+  `examples/mvp_18_all_official_packages/` plus
+  `scripts/smoke_garnet_lang_packages_seed.py` vendors all five packages
+  through the existing S13 registry stub and runs one primitive from each.
+  New readiness lane `official_packages_seed` is labeled
+  `local-registry-source-ready` (85.0%). **Honest scope:** this is source and
+  filesystem-registry proof, not public package publication:
+  `github.com/garnet-lang/` is a Jon/manual org step and is not visible to the
+  active token yet; the five external `github.com/garnet-lang/*` repos and
+  their CI are still pending. Source-level `@stability(...)` remains pending
+  the parser annotation handoff, so v0.7 package stability is declared in
+  `Garnet.toml`/docs while package source stays runnable.
+
 - **S19 (Compiler-as-agent LLM tier — feature-gated source-ready):** new
   `garnet-suggest-llm/` crate behind the non-default `llm` Cargo feature. The
   crate runs S10 deterministic suggestions first, builds a prompt that treats

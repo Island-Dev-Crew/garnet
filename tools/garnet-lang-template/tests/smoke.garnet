@@ -1,0 +1,3 @@
+def test_{{function_prefix}}_version() {
+  assert_eq({{function_prefix}}_version(), "0.1.0")
+}

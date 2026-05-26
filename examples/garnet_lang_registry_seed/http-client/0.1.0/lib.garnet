@@ -1,0 +1,12 @@
+# Local-registry seed for @garnet-lang/http-client.
+# The functions return request descriptors; real transport stays future work.
+
+@caps(net)
+def http_client_get(url) {
+  "GET #{url}"
+}
+
+@caps(net)
+def http_client_post(url, body) {
+  "POST #{url} body=#{body}"
+}

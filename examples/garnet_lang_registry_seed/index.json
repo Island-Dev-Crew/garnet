@@ -1,0 +1,150 @@
+{
+  "registry_version": "0.1",
+  "packages": {
+    "cli": {
+      "versions": {
+        "0.1.0": {
+          "path": "cli/0.1.0",
+          "files": [
+            {
+              "path": "CHANGELOG.md",
+              "blake3": "7b1ca2d7258519bde7b03f6a8c9fa5a3cc03a916c55f350fe601a2e1b5768a35"
+            },
+            {
+              "path": "Garnet.toml",
+              "blake3": "a3b947c8d7287cec5f2f9ca66e51f0bcc9ba3bdf9f7cb74a7b9b8e3430369f3c"
+            },
+            {
+              "path": "README.md",
+              "blake3": "4bd9e04b11ceae84345e85c05667689ca2b5f734f3d4a53fd2cceedbf18e72c7"
+            },
+            {
+              "path": "lib.garnet",
+              "blake3": "4f1d4d1918a30932bde30ff1d0df8e2782c6441e6045579c6ca4a2990ea11a93"
+            },
+            {
+              "path": "tests/smoke.garnet",
+              "blake3": "f492d2ca5ba4278323ed4b71177e07450359e96cdd3319ca930456eb15d2a306"
+            }
+          ]
+        }
+      }
+    },
+    "http-client": {
+      "versions": {
+        "0.1.0": {
+          "path": "http-client/0.1.0",
+          "files": [
+            {
+              "path": "CHANGELOG.md",
+              "blake3": "5a9d2f8d2bd44ced84db35355fb5b9d0a8988b216333789e8fc7372fe54b0cb5"
+            },
+            {
+              "path": "Garnet.toml",
+              "blake3": "fc8971157ad0f2083ec758a6ca6ace811a490c3e850baa9b1b7b6af6290f5a79"
+            },
+            {
+              "path": "README.md",
+              "blake3": "b9f76e8f36a2f024a6be9c1766a8cb90dbfc1807d86f9289d25dfe363a27d830"
+            },
+            {
+              "path": "lib.garnet",
+              "blake3": "bce3d3fa7111f3d19aa0763543f021daaf59597f6bf83f02619f5e773b2f0b0c"
+            },
+            {
+              "path": "tests/smoke.garnet",
+              "blake3": "572f3c6d251acef02b7d31235d194ab4125359c7459561b92cd5f31665b13f12"
+            }
+          ]
+        }
+      }
+    },
+    "llm": {
+      "versions": {
+        "0.1.0": {
+          "path": "llm/0.1.0",
+          "files": [
+            {
+              "path": "CHANGELOG.md",
+              "blake3": "edd0345bac7b58ab1a45f431ad6d06320aaadad8cecdce9c18141341a65710de"
+            },
+            {
+              "path": "Garnet.toml",
+              "blake3": "40cef4de0bd0da211f233639e974b9d7cb8b029d9d27672312f16ff9841b9f82"
+            },
+            {
+              "path": "README.md",
+              "blake3": "b179ecda382c8ebd405b73ef53cc82403312b5f7edeb71f18bdf1df0cdeba011"
+            },
+            {
+              "path": "lib.garnet",
+              "blake3": "d97b4c7b4e33cc34df01560b3344fedd0e6efcdd63dea2515191e19e3d1d3577"
+            },
+            {
+              "path": "tests/smoke.garnet",
+              "blake3": "f3535d391956c30b2f4f69f1cef755d491acc36af6519fd2c6df8e829fe29437"
+            }
+          ]
+        }
+      }
+    },
+    "log": {
+      "versions": {
+        "0.1.0": {
+          "path": "log/0.1.0",
+          "files": [
+            {
+              "path": "CHANGELOG.md",
+              "blake3": "ecc801f3d53981f57cda9ea7aaffaa6a685007b9cb62c3a2486cd946fd7fae2e"
+            },
+            {
+              "path": "Garnet.toml",
+              "blake3": "6be60a5b781f5e523e53d21ab7968219f3cf60427c925a995177aedcfbc137f2"
+            },
+            {
+              "path": "README.md",
+              "blake3": "6b2a8328fab22e79d70df26f9b14b156055b1600ee980604559337088e3bc4d9"
+            },
+            {
+              "path": "lib.garnet",
+              "blake3": "761d6a4cd2ded354ca748a0e0eae32c54629c212ee1f9a69a8a309753887a5c8"
+            },
+            {
+              "path": "tests/smoke.garnet",
+              "blake3": "d5b6d784198bcf207247ef8cc508feb59ae05da39a275f030b90eb2254cc97d7"
+            }
+          ]
+        }
+      }
+    },
+    "test-property": {
+      "versions": {
+        "0.1.0": {
+          "path": "test-property/0.1.0",
+          "files": [
+            {
+              "path": "CHANGELOG.md",
+              "blake3": "8ed514670a654ee97dc986c4496f9b6a4331358b16d6f62478f7a01044dea785"
+            },
+            {
+              "path": "Garnet.toml",
+              "blake3": "023be78fe880b387c3a0be4f2fae62eb5594da4c5bd93ba199e5096938a2080c"
+            },
+            {
+              "path": "README.md",
+              "blake3": "8ec7a6ae77e842f505c6e9565f5d1c5a807e937607b8d2e080b016a0cce500c4"
+            },
+            {
+              "path": "lib.garnet",
+              "blake3": "df087a760cf351ff045ac01a751f23db2d281aab6a9b4cdd6f284148e3dab6a6"
+            },
+            {
+              "path": "tests/smoke.garnet",
+              "blake3": "3f78b22c91d54c7ef16935dcb349ce295b2f59bfeadba97d78691737c7bd5170"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

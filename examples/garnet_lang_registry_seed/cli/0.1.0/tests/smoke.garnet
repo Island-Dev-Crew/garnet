@@ -1,0 +1,3 @@
+def test_cli_flag_descriptor() {
+  assert_eq(cli_flag("verbose", "true"), "--verbose=true")
+}

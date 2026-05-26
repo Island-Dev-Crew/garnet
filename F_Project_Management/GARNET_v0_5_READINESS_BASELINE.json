@@ -1,7 +1,7 @@
 {
   "source": "/Users/idc2.0/clawd/repos/garnet-agent-contracts",
   "overall_status": "active-partial",
-  "completion_percent": 80.5,
+  "completion_percent": 80.7,
   "current_truth": [
     "tracked implementation plan is complete",
     "goal remains active",
@@ -187,6 +187,20 @@
         "garnet check",
         "dogfood readiness bundle",
         "human audit before unquarantine"
+      ]
+    },
+    {
+      "id": "official_packages_seed",
+      "label": "Official Layer-2 package seed (S18)",
+      "status": "local-registry-source-ready",
+      "completion_percent": 85.0,
+      "evidence": "`tools/garnet-lang-template/` provides the reusable Layer-2 package scaffold; `examples/garnet_lang_registry_seed/` contains local filesystem-registry v0.1.0 seeds for `http-client`, `llm`, `cli`, `test-property`, and `log`; `examples/mvp_18_all_official_packages/` plus `scripts/smoke_garnet_lang_packages_seed.py` vendors all five through the S13 registry stub and runs one primitive from each. This is local source proof, not external GitHub publication.",
+      "blocked_by": [],
+      "deferred": [
+        "`github.com/garnet-lang/` org creation or authority is a Jon/manual step",
+        "Five external `github.com/garnet-lang/*` repos still need publication and CI",
+        "Source-level `@stability(...)` on package functions waits on the parser annotation handoff",
+        "HTTP/LLM live transport remains out of the local-registry seed proof"
       ]
     },
     {
