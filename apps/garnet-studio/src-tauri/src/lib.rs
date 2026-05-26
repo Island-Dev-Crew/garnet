@@ -21,6 +21,7 @@ pub fn run() {
             advisory_handoff,
             objective_pulse,
             agentic_dogfood_matrix,
+            domain_proof_matrix,
             windows_linux_studio_status,
             converter_status,
             provider_options,

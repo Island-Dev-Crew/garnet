@@ -1,6 +1,7 @@
 use crate::evidence;
 use crate::paths;
 use serde::Serialize;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -213,6 +214,22 @@ pub fn agentic_dogfood_matrix() -> CommandResult {
 }
 
 #[tauri::command]
+pub fn domain_proof_matrix() -> CommandResult {
+    let cli = match paths::find_garnet_cli() {
+        Some(path) => path,
+        None => {
+            return contract_error("garnet CLI not found. Set GARNET_CLI or add garnet to PATH.")
+        }
+    };
+    run_domain_matrix_report_script(
+        "domain-proof-matrix",
+        "smoke_garnet_studio_domain_matrix.py",
+        "markdown",
+        vec!["--garnet".to_string(), display_path(&cli)],
+    )
+}
+
+#[tauri::command]
 pub fn windows_linux_studio_status() -> CommandResult {
     run_python_script(
         "windows-linux-studio-status",
@@ -406,17 +423,55 @@ fn run_report_script_with_output_dir(
     script_name: &str,
     format: &str,
 ) -> CommandResult {
+    run_report_script_with_output_dir_and_args(category, script_name, format, Vec::new())
+}
+
+fn run_report_script_with_output_dir_and_args(
+    category: &str,
+    script_name: &str,
+    format: &str,
+    extra_args: Vec<String>,
+) -> CommandResult {
     let bundle = match evidence::create_named_bundle(category) {
         Ok(bundle) => bundle,
         Err(err) => return contract_error(err),
     };
-    let args = vec![
+    let args = report_script_args(bundle.path.clone(), format, extra_args);
+    run_python_script_with_bundle(category, script_name, args, PathBuf::from(bundle.path))
+}
+
+fn run_domain_matrix_report_script(
+    category: &str,
+    script_name: &str,
+    format: &str,
+    extra_args: Vec<String>,
+) -> CommandResult {
+    let bundle = paths::domain_matrix_evidence_base_dir().join(format!(
+        "garnet-studio-domain-matrix-{}",
+        evidence::timestamp()
+    ));
+    if let Err(err) = fs::create_dir_all(&bundle) {
+        return contract_error(format!(
+            "failed to create domain matrix evidence directory: {err}"
+        ));
+    }
+    let args = report_script_args(display_path(&bundle), format, extra_args);
+    run_python_script_with_bundle(category, script_name, args, bundle)
+}
+
+fn report_script_args(
+    bundle_path: String,
+    format: &str,
+    mut extra_args: Vec<String>,
+) -> Vec<String> {
+    let mut args = vec![
         "--output-dir".to_string(),
-        bundle.path.clone(),
+        bundle_path,
         "--format".to_string(),
         format.to_string(),
     ];
-    run_python_script_with_bundle(category, script_name, args, PathBuf::from(bundle.path))
+    args.append(&mut extra_args);
+    args
 }
 
 fn run_python_script_with_bundle(
@@ -577,5 +632,35 @@ mod tests {
         assert!(taxonomy[1].languages.contains(&"TypeScript".to_string()));
         assert!(taxonomy[2].languages.contains(&"CUDA".to_string()));
         assert!(taxonomy[3].languages.contains(&"Wasm".to_string()));
+    }
+
+    #[test]
+    fn report_script_args_preserve_output_format_and_extra_garnet_cli() {
+        let args = report_script_args(
+            "bundle-dir".to_string(),
+            "markdown",
+            vec!["--garnet".to_string(), "target/release/garnet".to_string()],
+        );
+
+        assert_eq!(
+            args,
+            vec![
+                "--output-dir",
+                "bundle-dir",
+                "--format",
+                "markdown",
+                "--garnet",
+                "target/release/garnet"
+            ]
+        );
+    }
+
+    #[test]
+    fn domain_matrix_root_matches_objective_pulse_scanner() {
+        let root = paths::domain_matrix_evidence_base_dir()
+            .to_string_lossy()
+            .replace('\\', "/");
+
+        assert!(root.ends_with("Desktop/dogfood/garnet-studio-domain-matrix"));
     }
 }

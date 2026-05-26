@@ -73,6 +73,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
                 "advisory_handoff",
                 "objective_pulse",
                 "agentic_dogfood_matrix",
+                "domain_proof_matrix",
                 "windows_linux_studio_status",
                 "converter_status",
                 "provider_options",
@@ -94,6 +95,9 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
         self.assertIn("--output-dir", provider.current_command)
         self.assertIn("garnet_converter_llm_feasibility.py", " ".join(provider.current_command))
         self.assertFalse(provider.source_included_by_default)
+        domain = next(action for action in status.actions if action.id == "domain_proof_matrix")
+        self.assertIn("smoke_garnet_studio_domain_matrix.py", " ".join(domain.current_command))
+        self.assertFalse(domain.source_included_by_default)
 
     def test_command_plans_are_argument_vectors_and_preserve_default_no_source_handoff(self) -> None:
         source = Path("sample.ts")
@@ -166,6 +170,17 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
         self.assertIn("html", plan.argv)
         self.assertFalse(plan.calls_provider_apis)
         self.assertFalse(plan.source_included_by_default)
+
+        domain = status_mod.build_command_plan(
+            "domain_proof_matrix",
+            evidence_dir=evidence,
+            python_executable="python3",
+        )
+        self.assertEqual("Domain Proof Matrix", domain.label)
+        self.assertIn("smoke_garnet_studio_domain_matrix.py", domain.argv[1])
+        self.assertTrue(domain.executes_source_code)
+        self.assertFalse(domain.calls_provider_apis)
+        self.assertFalse(domain.source_included_by_default)
 
     def test_evidence_bundle_creation_writes_manifest_without_source(self) -> None:
         fixed = datetime(2026, 5, 17, 12, 0, 0, tzinfo=timezone.utc)
@@ -243,6 +258,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
         self.assertIn("v0.5 reporters", truth)
         self.assertIn("repo-owned evidence contract", truth)
         self.assertIn("Windows ARM64 follows after x64 proof", truth)
+        self.assertIn("Domain Proof Matrix", truth)
         self.assertIn("Linux runtime proof is not complete", " ".join(data["current_truth"]))
         self.assertFalse(data["safety_contract"]["calls_provider_apis_by_default"])
         self.assertFalse(data["safety_contract"]["includes_source_by_default"])

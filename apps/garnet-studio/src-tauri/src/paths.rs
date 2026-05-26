@@ -58,6 +58,21 @@ pub fn evidence_base_dir() -> PathBuf {
     desktop.join("dogfood").join("garnet-studio-windows-linux")
 }
 
+pub fn domain_matrix_evidence_base_dir() -> PathBuf {
+    if let Ok(path) = std::env::var("GARNET_STUDIO_DOMAIN_MATRIX_ROOT") {
+        return PathBuf::from(path);
+    }
+    default_domain_matrix_evidence_base_dir()
+}
+
+fn default_domain_matrix_evidence_base_dir() -> PathBuf {
+    dirs::home_dir()
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join("Desktop")
+        .join("dogfood")
+        .join("garnet-studio-domain-matrix")
+}
+
 pub fn python_cmd() -> &'static str {
     if cfg!(windows) {
         "python"
@@ -120,5 +135,23 @@ mod tests {
     fn evidence_path_uses_windows_linux_contract_root() {
         let path = evidence_base_dir().to_string_lossy().replace('\\', "/");
         assert!(path.ends_with("Desktop/dogfood/garnet-studio-windows-linux"));
+    }
+
+    #[test]
+    fn domain_matrix_evidence_path_uses_readiness_scanned_root() {
+        let path = domain_matrix_evidence_base_dir()
+            .to_string_lossy()
+            .replace('\\', "/");
+        assert!(path.ends_with("Desktop/dogfood/garnet-studio-domain-matrix"));
+    }
+
+    #[test]
+    fn default_domain_matrix_evidence_path_matches_python_scanner_default() {
+        let expected = dirs::home_dir()
+            .unwrap_or_else(|| PathBuf::from("."))
+            .join("Desktop")
+            .join("dogfood")
+            .join("garnet-studio-domain-matrix");
+        assert_eq!(default_domain_matrix_evidence_base_dir(), expected);
     }
 }

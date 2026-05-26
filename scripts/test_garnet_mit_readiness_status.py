@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import json
 import os
 import subprocess
@@ -15,8 +16,10 @@ from unittest import mock
 SCRIPT = Path(__file__).with_name("garnet_mit_readiness_status.py")
 TEST_DOGFOOD_DIR = tempfile.TemporaryDirectory()
 TEST_CLEAN_VM_ROOT = tempfile.TemporaryDirectory()
+TEST_DOMAIN_MATRIX_ROOT = tempfile.TemporaryDirectory()
 os.environ["GARNET_PROMO_VIDEO_DESKTOP_DIR"] = TEST_DOGFOOD_DIR.name
 os.environ["GARNET_WINDOWS_CLEAN_VM_EVIDENCE_ROOT"] = TEST_CLEAN_VM_ROOT.name
+os.environ["GARNET_STUDIO_DOMAIN_MATRIX_ROOT"] = TEST_DOMAIN_MATRIX_ROOT.name
 SPEC = importlib.util.spec_from_file_location("garnet_mit_readiness_status", SCRIPT)
 assert SPEC is not None
 status_mod = importlib.util.module_from_spec(SPEC)
@@ -25,11 +28,102 @@ sys.modules["garnet_mit_readiness_status"] = status_mod
 SPEC.loader.exec_module(status_mod)
 
 
+def _write_verified_domain_matrix_bundle(root: Path) -> None:
+    bundle = root / "garnet-studio-domain-matrix-test"
+    bundle.mkdir(parents=True, exist_ok=True)
+    commands_dir = bundle / "commands"
+    commands_dir.mkdir()
+    cases = []
+    repo_root = Path(__file__).resolve().parents[1]
+    for case_id, relative_file in status_mod.DOMAIN_MATRIX_CASES.items():
+        source = repo_root / relative_file
+        commands = []
+        for step in ("parse", "check", "run"):
+            stdout = commands_dir / f"{case_id}-{step}-stdout.txt"
+            stderr = commands_dir / f"{case_id}-{step}-stderr.txt"
+            stdout.write_text(f"{step} ok\n", encoding="utf-8")
+            stderr.write_text(
+                "BLAKE3 fingerprint mismatch\n"
+                if case_id == "mvp_11_signed_hotreload_mismatch" and step == "run"
+                else "",
+                encoding="utf-8",
+            )
+            commands.append(
+                {
+                    "step": step,
+                    "argv": ["garnet", step, f"examples/{case_id}.garnet"],
+                    "exit_code": 1 if case_id == "mvp_11_signed_hotreload_mismatch" and step == "run" else 0,
+                    "status": "passed",
+                    "stdout_file": stdout.relative_to(bundle).as_posix(),
+                    "stderr_file": stderr.relative_to(bundle).as_posix(),
+                    "expected_failure": case_id == "mvp_11_signed_hotreload_mismatch" and step == "run",
+                    "expectation": "nonzero exit with `BLAKE3 fingerprint mismatch`"
+                    if case_id == "mvp_11_signed_hotreload_mismatch" and step == "run"
+                    else "exit 0",
+                }
+            )
+        cases.append(
+            {
+                "id": case_id,
+                "label": case_id,
+                "group": "test",
+                "file": str(source),
+                "repo_relative_file": relative_file,
+                "source_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+                "status": "passed",
+                "commands": commands,
+            }
+        )
+    summary = {
+        "schema": "garnet.studio.domain_matrix.v1",
+        "created_at": "2026-05-25T00:00:00+00:00",
+        "source": str(Path(__file__).resolve().parents[1]),
+        "suite": "all",
+        "status": "passed",
+        "platform": "windows",
+        "arch": "AMD64",
+        "garnet_command": ["garnet"],
+        "case_count": 20,
+        "passed_cases": 20,
+        "failed_cases": 0,
+        "command_count": 60,
+        "passed_commands": 60,
+        "failed_commands": 0,
+        "source_included": False,
+        "provider_api_called": False,
+        "cases": cases,
+    }
+    (bundle / "garnet-studio-domain-matrix.json").write_text(
+        json.dumps(summary),
+        encoding="utf-8",
+    )
+    (bundle / "garnet-studio-domain-matrix.md").write_text(
+        "# Garnet Studio Domain Proof Matrix\n",
+        encoding="utf-8",
+    )
+    _write_manifest(bundle)
+
+
+def _write_manifest(bundle: Path) -> None:
+    lines = []
+    for path in sorted(bundle.rglob("*")):
+        if not path.is_file() or path.name == "MANIFEST.sha256":
+            continue
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        lines.append(f"{digest}  {path.relative_to(bundle).as_posix()}")
+    (bundle / "MANIFEST.sha256").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 class GarnetMitReadinessStatusTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        _write_verified_domain_matrix_bundle(Path(TEST_DOMAIN_MATRIX_ROOT.name))
+
     @classmethod
     def tearDownClass(cls) -> None:
         TEST_DOGFOOD_DIR.cleanup()
         TEST_CLEAN_VM_ROOT.cleanup()
+        TEST_DOMAIN_MATRIX_ROOT.cleanup()
 
     def test_status_distinguishes_plan_completion_from_goal_completion(self) -> None:
         status = status_mod.read_status()
@@ -55,11 +149,16 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertEqual(
             "active-partial", lanes["windows_linux_distribution"].status
         )
-        self.assertEqual(55.0, lanes["windows_linux_distribution"].completion_percent)
+        self.assertEqual(60.0, lanes["windows_linux_distribution"].completion_percent)
         self.assertLess(
             lanes["windows_linux_distribution"].completion_percent, 100.0
         )
         self.assertTrue(lanes["windows_linux_distribution"].blocked_by)
+        self.assertIn("windows_linux_domain_proof_matrix", lanes)
+        self.assertEqual("verified", lanes["windows_linux_domain_proof_matrix"].status)
+        self.assertEqual(100.0, lanes["windows_linux_domain_proof_matrix"].completion_percent)
+        self.assertIn("20 current examples", lanes["windows_linux_domain_proof_matrix"].evidence)
+        self.assertIn("Verified bundle", lanes["windows_linux_domain_proof_matrix"].evidence)
         self.assertEqual("verified", lanes["editor_lsp_adoption"].status)
         self.assertEqual(100.0, lanes["editor_lsp_adoption"].completion_percent)
         # S9: Determinism CI cross-machine lane
@@ -163,8 +262,12 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("formal RustBelt/Iris/Coq mechanization", lanes["proof_empirics"]["deferred"])
         self.assertIn("Tauri v2 shell scaffold", lanes["windows_linux_distribution"]["evidence"])
         self.assertIn("v0.5 readiness reporter parity", lanes["windows_linux_distribution"]["evidence"])
+        self.assertIn("Domain Proof Matrix", lanes["windows_linux_distribution"]["evidence"])
         self.assertIn("clean-VM installer proof contract", lanes["windows_linux_distribution"]["evidence"])
         self.assertIn("clean Windows VM", " ".join(lanes["windows_linux_distribution"]["blocked_by"]))
+        self.assertIn("windows_linux_domain_proof_matrix", lanes)
+        self.assertEqual("verified", lanes["windows_linux_domain_proof_matrix"]["status"])
+        self.assertIn("BLAKE3 mismatch rejection", lanes["windows_linux_domain_proof_matrix"]["evidence"])
         self.assertIn("S16 CST-precise LSP surface", lanes["editor_lsp_adoption"]["evidence"])
         self.assertIn("document/workspace symbols", lanes["editor_lsp_adoption"]["evidence"])
         self.assertIn("CST-precise rename", lanes["editor_lsp_adoption"]["evidence"])
@@ -172,6 +275,72 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("semantic tokens", lanes["editor_lsp_adoption"]["evidence"])
         self.assertNotIn("release-backed VSIX smoke after tag", lanes["editor_lsp_adoption"]["deferred"])
         self.assertEqual([], lanes["editor_lsp_adoption"]["deferred"])
+
+    def test_domain_matrix_lane_is_source_present_without_verified_bundle(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            with mock.patch.dict(os.environ, {"GARNET_STUDIO_DOMAIN_MATRIX_ROOT": temp}):
+                status = status_mod.read_status()
+
+        lanes = {lane.id: lane for lane in status.lanes}
+        lane = lanes["windows_linux_domain_proof_matrix"]
+        self.assertEqual("source-present", lane.status)
+        self.assertEqual(60.0, lane.completion_percent)
+        self.assertIn("no verified", lane.evidence)
+        self.assertIn("verified Windows/Linux domain matrix evidence bundle", lane.blocked_by)
+
+    def test_domain_matrix_verifier_rejects_fake_manifest_hashes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            _write_verified_domain_matrix_bundle(root)
+            bundle = root / "garnet-studio-domain-matrix-test"
+            (bundle / "MANIFEST.sha256").write_text(
+                "f" * 64 + "  garnet-studio-domain-matrix.json\n",
+                encoding="utf-8",
+            )
+
+            self.assertFalse(
+                status_mod._domain_matrix_summary_verified(
+                    bundle / "garnet-studio-domain-matrix.json"
+                )
+            )
+
+    def test_domain_matrix_verifier_rejects_nonzero_regular_run(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            _write_verified_domain_matrix_bundle(root)
+            bundle = root / "garnet-studio-domain-matrix-test"
+            summary = bundle / "garnet-studio-domain-matrix.json"
+            data = json.loads(summary.read_text(encoding="utf-8"))
+            case = next(
+                case
+                for case in data["cases"]
+                if case["id"] != "mvp_11_signed_hotreload_mismatch"
+            )
+            run = next(command for command in case["commands"] if command["step"] == "run")
+            run["exit_code"] = 1
+            summary.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+            _write_manifest(bundle)
+
+            self.assertFalse(status_mod._domain_matrix_summary_verified(summary))
+
+    def test_domain_matrix_verifier_rejects_mismatch_without_marker(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            _write_verified_domain_matrix_bundle(root)
+            bundle = root / "garnet-studio-domain-matrix-test"
+            stderr = (
+                bundle
+                / "commands"
+                / "mvp_11_signed_hotreload_mismatch-run-stderr.txt"
+            )
+            stderr.write_text("generic failure\n", encoding="utf-8")
+            _write_manifest(bundle)
+
+            self.assertFalse(
+                status_mod._domain_matrix_summary_verified(
+                    bundle / "garnet-studio-domain-matrix.json"
+                )
+            )
 
     def test_clean_vm_proof_lifts_windows_distribution_lane_without_overclaiming(self) -> None:
         clean_vm_mod = (
@@ -220,7 +389,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         lane = {lane.id: lane for lane in status.lanes}["windows_linux_distribution"]
         self.assertEqual("active-partial", lane.status)
-        self.assertEqual(65.0, lane.completion_percent)
+        self.assertEqual(70.0, lane.completion_percent)
         self.assertIn("verified x64 clean-VM installer proof", lane.evidence)
         self.assertNotIn("clean Windows VM", " ".join(lane.blocked_by))
         self.assertIn("Linux VM/container", " ".join(lane.blocked_by))
