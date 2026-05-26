@@ -509,6 +509,57 @@ release-gate reproduction. PR-open is allowed only as
 
 ---
 
+### S20 — Novel-composition dogfood + program-execution discovery
+
+**Slot:** win-opus · **Type:** post-v0.7 dogfood extension (Jon-directed) · **PR count:** 1
+
+**Goal:** Surface novel discoveries by **fusing** multiple Paper-VI contributions
+into single runnable programs (the existing corpus proves each in isolation), and
+prove they `garnet check` clean and `garnet run` with deterministic output.
+
+**Owned (writable):** NEW `examples/novel_*.garnet`, NEW
+`scripts/smoke_garnet_novel_compositions.py` (+ `test_*.py`), NEW
+`C_Language_Specification/GARNET_NOVEL_COMPOSITIONS.md`, section-scoped
+cross-cutting. **No edits** to any owned crate or to win-codex's
+`smoke_garnet_studio_domain_matrix.py` (this complements, not duplicates, it).
+
+**New surfaces:**
+- `examples/novel_01_capability_budgeted_memory_agent.garnet` (caps-budget +
+  memory-recall + agent pipeline → governance 16).
+- `examples/novel_02_signed_provenance_pipeline.garnet` (BLAKE3 provenance +
+  pipeline + determinism → verified content-addressed lineage).
+- `examples/novel_03_release_gate_quorum.garnet` (release-gate + caps + provenance
+  + memory quorum → APPROVED quorum 4).
+- `scripts/smoke_garnet_novel_compositions.py` (+ unittest) and the
+  `novel_composition_dogfood` readiness lane; story doc
+  `GARNET_NOVEL_COMPOSITIONS.md`. Baseline regenerated.
+
+**Deps:** none. Uses the proven runnable managed-mode subset + `crypto::blake3`.
+
+**Dogfood block:**
+
+```bash
+cargo build -p garnet-cli --release
+python3 scripts/smoke_garnet_novel_compositions.py    # 3/3 check clean + deterministic run
+python3 -m unittest scripts.test_garnet_novel_compositions
+# Expect: gate PASS; novel_01 governance 16; novel_02 verified fingerprint;
+# novel_03 APPROVED quorum 4. Then the common gates + readiness --check-no-regression.
+```
+
+**Honest partial labels available:**
+- "Novel compositions are modeled deterministically in managed mode (the proven
+  runnable subset + `crypto::blake3`); they prove the composition shape executes
+  and is reproducible, not live runtime integration."
+- "Live actor mailboxes, Mnemos stores, and Ed25519 signing are tracked
+  separately and not claimed by these programs."
+- "The new S17 Layer-0/1 stdlib primitives are not interpreter-dispatched yet, so
+  these programs use the proven runnable subset."
+
+**State:** dogfood-passing (local: harness 3/3 PASS + 8 unittests; `garnet check`
+clean + deterministic `garnet run` on all three; workspace gates green).
+
+---
+
 ## v0.7.0 Release Gate
 
 Tag v0.7.0 only when all of:

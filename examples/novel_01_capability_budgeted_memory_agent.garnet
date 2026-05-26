@@ -1,0 +1,97 @@
+# novel_01_capability_budgeted_memory_agent.garnet
+#
+# NOVEL COMPOSITION (S20): three Paper-VI contributions fused into one program —
+#   (1) capability-budget gating          (cf. agent_toolbelt_02)
+#   (2) cognitively-typed memory recall    (cf. agent_toolbelt_03)
+#   (3) researcher -> synthesizer -> reviewer agent pipeline (cf. mvp_06)
+#
+# Emergent capability: a capability-aware, memory-backed agent that executes its
+# work pipeline ONLY for actions that are BOTH within its tool-authority budget
+# AND supported by recalled prior decisions. Fully deterministic, so the final
+# governance score is reproducible byte-for-byte via `garnet run`.
+
+# ── (1) capability budget ─────────────────────────────────────────────
+def capability_cost(tool) {
+  match tool {
+    "read_file" => 3,
+    "write_file" => 8,
+    "net_fetch" => 12,
+    _ => 20,
+  }
+}
+
+def within_budget(tool, risk) {
+  capability_cost(tool) + risk <= 15
+}
+
+# ── (2) cognitively-typed memory recall ───────────────────────────────
+def memory_weight(kind) {
+  match kind {
+    "episodic" => 14,
+    "semantic" => 16,
+    "procedural" => 18,
+    _ => 2,
+  }
+}
+
+def recency_bonus(age) {
+  if age < 2 {
+    10
+  } elsif age < 5 {
+    6
+  } else {
+    1
+  }
+}
+
+def recall_score(kind, age, verified) {
+  let mut score = memory_weight(kind) + recency_bonus(age)
+  if verified {
+    score += 8
+  }
+  score
+}
+
+# ── (3) researcher -> synthesizer -> reviewer pipeline ─────────────────
+def researcher(seed) { seed + 2 }
+def synthesizer(fact_count) { fact_count * 3 }
+def reviewer(score) {
+  if score >= 12 {
+    score + 1
+  } else {
+    score
+  }
+}
+
+def run_pipeline(seed) {
+  let facts = researcher(seed)
+  let draft = synthesizer(facts)
+  reviewer(draft)
+}
+
+# ── composition: gate the pipeline on BOTH budget and recalled memory ──
+def governed_action(tool, risk, kind, age, verified, seed) {
+  let recalled = recall_score(kind, age, verified)
+  if within_budget(tool, risk) {
+    if recalled >= 20 {
+      run_pipeline(seed)   # acted: within budget AND memory supports it
+    } else {
+      0                    # deferred: insufficient recalled support
+    }
+  } else {
+    0                      # denied: over capability budget
+  }
+}
+
+@caps()
+def main() {
+  let mut governance = 0
+  # action A: cheap tool + strong recent verified episodic memory -> ACTS
+  governance += governed_action("read_file", 1, "episodic", 1, true, 3)
+  # action B: costly tool over the authority budget -> DENIED (0)
+  governance += governed_action("net_fetch", 9, "semantic", 1, true, 5)
+  # action C: cheap tool but weak/old unverified memory -> DEFERRED (0)
+  governance += governed_action("read_file", 1, "episodic", 9, false, 7)
+  println("novel_01 capability_budgeted_memory_agent governance:", governance)
+  governance
+}

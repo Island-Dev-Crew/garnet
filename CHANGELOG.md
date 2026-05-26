@@ -11,6 +11,29 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S20 (Novel-composition dogfood + program-execution discovery):** adds three
+  runnable `examples/novel_*.garnet` programs that **fuse** multiple Paper-VI
+  contributions per program (the existing corpus proves each in isolation):
+  `novel_01` fuses capability-budget gating + cognitively-typed memory recall +
+  the researcher→synthesizer→reviewer pipeline (capability-aware, memory-gated
+  agent → deterministic governance score 16); `novel_02` fuses BLAKE3 signed
+  provenance + a multi-stage pipeline + determinism (content-addressed,
+  tamper-evident build lineage → verified fingerprint); `novel_03` fuses a
+  release-evidence gate + capability budget + provenance + memory recall into a
+  multi-signal release-governance quorum (APPROVED quorum 4). `scripts/smoke_garnet_novel_compositions.py`
+  (+ `test_garnet_novel_compositions.py`, 8 tests) proves all three `garnet check`
+  clean and `garnet run` with **exact deterministic** output; the composition
+  story is `C_Language_Specification/GARNET_NOVEL_COMPOSITIONS.md`. New
+  `novel_composition_dogfood` readiness lane (`verified`); MIT readiness
+  81.3% → **81.9%** (32 lanes; baseline regenerated to the full snapshot, which
+  also caught up two lanes that had drifted upward). Complements (does not
+  duplicate) the #232 domain proof matrix. **Honest scope:** compositions are
+  **modeled deterministically** in managed mode (the proven runnable subset +
+  `crypto::blake3`) — they prove the composition *shape* executes and is
+  reproducible, not live runtime integration of actor mailboxes / Mnemos stores /
+  Ed25519 signing (tracked separately); the new S17 Layer-0/1 stdlib primitives
+  are not interpreter-dispatched yet, so these programs use the proven subset.
+
 - **Windows/Linux Studio Domain Proof Matrix:** adds
   `scripts/smoke_garnet_studio_domain_matrix.py`, a manifest-backed
   cross-platform smoke reporter for the current executable example corpus. The

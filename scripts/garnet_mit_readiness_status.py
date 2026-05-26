@@ -460,6 +460,17 @@ def read_status() -> MitReadinessStatus:
     vm_scaffold_present = _vm_scaffold_present(proof)
     wls = garnet_windows_linux_studio_status.read_status()
     stdlib = garnet_stdlib_layer_gate.read_status()
+    novel_compositions_present = all(
+        (ROOT / p).exists()
+        for p in (
+            "examples/novel_01_capability_budgeted_memory_agent.garnet",
+            "examples/novel_02_signed_provenance_pipeline.garnet",
+            "examples/novel_03_release_gate_quorum.garnet",
+            "scripts/smoke_garnet_novel_compositions.py",
+            "scripts/test_garnet_novel_compositions.py",
+            "C_Language_Specification/GARNET_NOVEL_COMPOSITIONS.md",
+        )
+    )
     wls_clean_vm_verified = any(
         gate.id == "windows_unsigned_nsis" and gate.status == "clean-vm-proof-verified"
         for gate in wls.packaging_gates
@@ -1300,6 +1311,37 @@ def read_status() -> MitReadinessStatus:
                 "Layer-2 `@garnet-lang/*` packages (S18) and the `@caps(fs)` file-sink "
                 "path of `std::log`",
             ],
+        ),
+        ObjectiveLane(
+            id="novel_composition_dogfood",
+            label="Novel-composition dogfood (S20)",
+            status="verified" if novel_compositions_present else "planned",
+            completion_percent=100.0 if novel_compositions_present else 0.0,
+            evidence=(
+                "S20 fuses Paper-VI contributions into runnable novel programs: "
+                "`novel_01` (capability-budget + memory-recall + agent pipeline → "
+                "governance 16), `novel_02` (BLAKE3 signed provenance + pipeline + "
+                "determinism → verified content-addressed lineage), `novel_03` "
+                "(release-gate + capability-budget + provenance + memory quorum → "
+                "APPROVED quorum 4). `scripts/smoke_garnet_novel_compositions.py` "
+                "(+ `test_garnet_novel_compositions.py`) proves all three `garnet "
+                "check` clean and `garnet run` with deterministic asserted output; "
+                "the composition story is in "
+                "`C_Language_Specification/GARNET_NOVEL_COMPOSITIONS.md`. Complements "
+                "the single-concern domain proof matrix (#232) without duplicating it."
+            )
+            if novel_compositions_present
+            else "No novel-composition programs/harness/story present yet.",
+            blocked_by=[],
+            deferred=[
+                "Compositions are modeled deterministically in managed mode; live "
+                "runtime integration (actor mailboxes, Mnemos stores, Ed25519 signing) "
+                "is tracked separately",
+                "The new S17 Layer-0/1 stdlib primitives are not interpreter-dispatched "
+                "yet, so these programs use the proven runnable subset + `crypto::blake3`",
+            ]
+            if novel_compositions_present
+            else [],
         ),
     ]
 
