@@ -292,6 +292,7 @@ window.addEventListener("DOMContentLoaded", () => {
   wireButton("btn-windows-status", () =>
     runCommand("release-result", "windows_linux_studio_status", {}),
   );
+  wireButton("btn-domain-proof", () => runCommand("release-result", "domain_proof_matrix", {}));
   wireButton("btn-converter-status", () => runCommand("release-result", "converter_status", {}));
   wireButton("btn-provider-options", () => runCommand("release-result", "provider_options", {}));
   wireButton("btn-mit-demo", () => runCommand("release-result", "mit_demo_route", {}));

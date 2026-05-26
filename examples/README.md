@@ -74,11 +74,10 @@ shapes today:
 
 ## Real-World Design Drafts
 
-These three programs are substantive Garnet syntax examples, but they are not
-claimed as fully runnable application demos on current `main`. Treat them as
-parser-scale reference programs: useful for syntax coverage and design review,
-not as proof that the interpreter supports every runtime feature used in the
-examples.
+These three programs began as parser-scale reference programs. On the current
+v0.7 line they are also covered by the Windows/Linux Studio Domain Proof Matrix,
+which records parse/check/run evidence without turning them into a production
+runtime claim.
 
 | File | LOC | What it demonstrates |
 |---|---|---|
@@ -92,14 +91,26 @@ From the repository root:
 
 ```bash
 garnet parse examples/multi_agent_builder.garnet
+garnet check examples/multi_agent_builder.garnet
+garnet run examples/multi_agent_builder.garnet
+
 garnet parse examples/agentic_log_analyzer.garnet
+garnet check examples/agentic_log_analyzer.garnet
+garnet run examples/agentic_log_analyzer.garnet
+
 garnet parse examples/safe_io_layer.garnet
+garnet check examples/safe_io_layer.garnet
+garnet run examples/safe_io_layer.garnet
 ```
 
-Runtime coverage lives in the dedicated crate test suites and the CLI
-template smoke path (`garnet new --template cli`, `garnet test`, `garnet run`).
-The larger design drafts intentionally stay ahead of the interpreter in a few
-places, especially actor-runtime integration and richer stdlib method calls.
+For the repo-owned bundle, run:
+
+```bash
+python3 scripts/smoke_garnet_studio_domain_matrix.py --suite agentic
+```
+
+The matrix proves current CLI behavior for these files only; it does not claim
+production actor-runtime completion or native backend lowering.
 
 ## Why these specifically
 

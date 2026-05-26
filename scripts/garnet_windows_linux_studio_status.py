@@ -161,6 +161,7 @@ def create_evidence_bundle(
             "launch on Linux",
             "locate or bundle garnet",
             "parse/check/run local examples",
+            "invoke the Domain Proof Matrix",
             "write advisory handoff evidence without source by default",
             "invoke agentic dogfood matrix",
         ],
@@ -365,6 +366,18 @@ def build_command_plan(
             False,
             False,
         )
+    if action_id == "domain_proof_matrix":
+        return _report_command_plan(
+            action_id,
+            "Domain Proof Matrix",
+            "smoke_garnet_studio_domain_matrix.py",
+            "markdown",
+            evidence,
+            workdir,
+            python_executable,
+            repo_root,
+            executes_source_code=True,
+        )
     if action_id == "windows_linux_studio_status":
         return CommandPlan(
             action_id,
@@ -518,6 +531,7 @@ def _report_command_plan(
     workdir: str,
     python_executable: str,
     repo_root: Path,
+    executes_source_code: bool = False,
 ) -> CommandPlan:
     return CommandPlan(
         action_id,
@@ -533,7 +547,7 @@ def _report_command_plan(
         workdir,
         False,
         False,
-        False,
+        executes_source_code,
     )
 
 
@@ -555,6 +569,7 @@ def _sample_actions() -> list[StudioAction]:
         build_command_plan("advisory_handoff", bundle_dir=bundle, review_dir=review, evidence_dir=evidence),
         build_command_plan("objective_pulse"),
         build_command_plan("agentic_dogfood_matrix"),
+        build_command_plan("domain_proof_matrix", evidence_dir=evidence),
         build_command_plan("windows_linux_studio_status"),
         build_command_plan("converter_status"),
         build_command_plan("provider_options", evidence_dir=evidence),
@@ -579,6 +594,7 @@ def _sample_actions() -> list[StudioAction]:
         "advisory_handoff": "advisory planning",
         "objective_pulse": "release evidence",
         "agentic_dogfood_matrix": "dogfood evidence",
+        "domain_proof_matrix": "runtime evidence",
         "windows_linux_studio_status": "release evidence",
         "converter_status": "converter evidence",
         "provider_options": "advisory planning",
@@ -603,6 +619,7 @@ def _sample_actions() -> list[StudioAction]:
         "advisory_handoff": "scripts/garnet_converter_advisory_handoff.py",
         "objective_pulse": "scripts/garnet_mit_readiness_status.py",
         "agentic_dogfood_matrix": "scripts/run_agentic_dogfood_matrix.py",
+        "domain_proof_matrix": "scripts/smoke_garnet_studio_domain_matrix.py",
         "windows_linux_studio_status": "scripts/garnet_windows_linux_studio_status.py",
         "converter_status": "scripts/garnet_converter_status.py",
         "provider_options": "scripts/garnet_converter_llm_feasibility.py",
@@ -669,7 +686,8 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
         [
             "Linux desktop launch proof and first package-format decision",
             "Windows ARM64 target build/smoke after x64 clean-VM proof",
-            "Parse/check/run plus active converter end-to-end screenshots from the shell",
+            "Domain Proof Matrix screenshots/output from the Windows shell and WSL/Linux shell",
+            "Active converter end-to-end screenshots from the shell",
             "Advisory bundle/review/handoff evidence walkthrough without source inclusion",
             "Release / Readiness panel screenshot and reporter-output evidence from the Windows shell",
             "Signed Windows MSI/AuthentiCode plan after verified unsigned VM smoke",
@@ -679,7 +697,8 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
         else [
             "Windows clean-machine NSIS install and CLI smoke evidence",
             "Linux desktop launch proof and first package-format decision",
-            "Parse/check/run plus active converter end-to-end screenshots from the shell",
+            "Domain Proof Matrix screenshots/output from the Windows shell and WSL/Linux shell",
+            "Active converter end-to-end screenshots from the shell",
             "Advisory bundle/review/handoff evidence walkthrough without source inclusion",
             "Release / Readiness panel screenshot and reporter-output evidence from the Windows shell",
             "Unsigned-to-signed Windows MSI/AuthentiCode plan after VM smoke",
@@ -706,6 +725,7 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
             "Linux runtime proof is not complete until the shell launches in a Linux desktop environment",
             "the shell wraps existing CLI, docs/PWA, advisory scripts, and dogfood gates without duplicating converter logic",
             "CLI Health maps to the existing `garnet version` probe unless a real health subcommand is added",
+            "the Domain Proof Matrix runs the current canonical MVP and agentic examples through `garnet parse`, `garnet check`, and `garnet run`, writing manifest-backed evidence without source inclusion",
             "the Release / Readiness panel now exposes the repo-native v0.5 reporters used by the broader MIT/productization story",
             "provider options remain advisory-only; provider-backed conversion is not active",
             "benchmark no-run evidence is compile/status evidence only and does not claim performance measurements",
@@ -753,6 +773,7 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
                 "garnet-windows-linux-studio-evidence-contract.json",
                 "MANIFEST.sha256",
                 "command stdout/stderr logs for invoked actions",
+                "domain proof matrix JSON/Markdown plus per-command stdout/stderr logs when invoked",
                 "screenshots once a shell exists",
                 "readiness reporter stdout/stderr logs for invoked release actions",
             ],

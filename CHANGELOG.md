@@ -11,6 +11,20 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **Windows/Linux Studio Domain Proof Matrix:** adds
+  `scripts/smoke_garnet_studio_domain_matrix.py`, a manifest-backed
+  cross-platform smoke reporter for the current executable example corpus. The
+  matrix runs 20 examples through `garnet parse`, `garnet check`, and
+  `garnet run`: the 10 canonical MVP domains, signed hot-reload success,
+  signed hot-reload mismatch rejection, five agent toolbelt programs, and the
+  three agentic design programs. The mismatch case passes only when Garnet
+  rejects it with the expected BLAKE3 fingerprint diagnostic. The Tauri Studio
+  Release Evidence panel now exposes this reporter as "Domain Proof Matrix";
+  MIT readiness tracks the Windows/Linux distribution sub-lane with a separate
+  domain-proof lane, which is only `verified` when a manifest-backed matrix
+  evidence bundle is present, while keeping Linux package choice, Windows
+  ARM64, signing, and winget open.
+
 - **S15 (Trivia-preserving CST via rowan — PR-1: trait surface + stub):** new
   `garnet-cst/` crate (rowan-backed), built **cold** for the v0.7
   build-both-then-compare A/B. Publishes the stable surface S16 (LSP precision)

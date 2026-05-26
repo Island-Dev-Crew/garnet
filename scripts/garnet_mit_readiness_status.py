@@ -8,12 +8,40 @@ goal still has distribution, mobile, video, proof, and converter-assist gates.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
+import re
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+DOMAIN_MATRIX_ROOT_ENV = "GARNET_STUDIO_DOMAIN_MATRIX_ROOT"
+DOMAIN_MATRIX_SCHEMA = "garnet.studio.domain_matrix.v1"
+DOMAIN_MATRIX_MISMATCH_MARKER = "BLAKE3 fingerprint mismatch"
+DOMAIN_MATRIX_CASES = {
+    "mvp_01_os_simulator": "examples/mvp_01_os_simulator.garnet",
+    "mvp_02_relational_db": "examples/mvp_02_relational_db.garnet",
+    "mvp_03_compiler_bootstrap": "examples/mvp_03_compiler_bootstrap.garnet",
+    "mvp_04_numerical_solver": "examples/mvp_04_numerical_solver.garnet",
+    "mvp_05_web_app": "examples/mvp_05_web_app.garnet",
+    "mvp_06_multi_agent": "examples/mvp_06_multi_agent.garnet",
+    "mvp_07_game_server": "examples/mvp_07_game_server.garnet",
+    "mvp_08_distributed_kv": "examples/mvp_08_distributed_kv.garnet",
+    "mvp_09_graph_db": "examples/mvp_09_graph_db.garnet",
+    "mvp_10_terminal_ui": "examples/mvp_10_terminal_ui.garnet",
+    "mvp_11_signed_hotreload": "examples/mvp_11_signed_hotreload.garnet",
+    "mvp_11_signed_hotreload_mismatch": "examples/mvp_11_signed_hotreload_mismatch.garnet",
+    "agent_toolbelt_01_triage_router": "examples/agent_toolbelt_01_triage_router.garnet",
+    "agent_toolbelt_02_capability_budget": "examples/agent_toolbelt_02_capability_budget.garnet",
+    "agent_toolbelt_03_memory_recall": "examples/agent_toolbelt_03_memory_recall.garnet",
+    "agent_toolbelt_04_release_gate": "examples/agent_toolbelt_04_release_gate.garnet",
+    "agent_toolbelt_05_repair_planner": "examples/agent_toolbelt_05_repair_planner.garnet",
+    "multi_agent_builder": "examples/multi_agent_builder.garnet",
+    "agentic_log_analyzer": "examples/agentic_log_analyzer.garnet",
+    "safe_io_layer": "examples/safe_io_layer.garnet",
+}
 sys.path.insert(0, str(ROOT / "scripts"))
 
 if hasattr(sys.stdout, "reconfigure"):
@@ -45,6 +73,14 @@ class MitReadinessStatus:
     completion_percent: float
     current_truth: list[str]
     lanes: list[ObjectiveLane]
+
+
+@dataclass(frozen=True)
+class DomainMatrixEvidence:
+    source_present: bool
+    verified: bool
+    bundle_json: Path | None
+    reason: str
 
 
 def _lane_score(lane: ObjectiveLane) -> float:
@@ -224,6 +260,195 @@ def _official_packages_seed_present() -> bool:
     return all("0.1.0" in packages.get(package, {}).get("versions", {}) for package in package_names)
 
 
+def _domain_matrix_root() -> Path:
+    return Path(
+        os.environ.get(
+            DOMAIN_MATRIX_ROOT_ENV,
+            str(Path.home() / "Desktop" / "dogfood" / "garnet-studio-domain-matrix"),
+        )
+    )
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _verify_manifest(bundle_dir: Path) -> set[str] | None:
+    manifest = bundle_dir / "MANIFEST.sha256"
+    if not manifest.is_file():
+        return None
+
+    try:
+        lines = [line.strip() for line in manifest.read_text(encoding="utf-8").splitlines() if line.strip()]
+    except OSError:
+        return None
+
+    recorded: set[str] = set()
+    for line in lines:
+        match = re.fullmatch(r"([0-9a-f]{64})  ([^\r\n]+)", line)
+        if not match:
+            return None
+        digest, relative = match.groups()
+        relative_path = Path(relative)
+        if relative_path.is_absolute() or ".." in relative_path.parts:
+            return None
+        target = bundle_dir / relative_path
+        if not target.is_file():
+            return None
+        try:
+            if _sha256(target) != digest:
+                return None
+        except OSError:
+            return None
+        recorded.add(relative.replace("\\", "/"))
+    return recorded
+
+
+def _source_digest_matches(case_id: str, case: dict) -> bool:
+    expected_relative = DOMAIN_MATRIX_CASES[case_id]
+    source = ROOT / expected_relative
+    return (
+        case.get("repo_relative_file") == expected_relative
+        and source.is_file()
+        and case.get("source_sha256") == _sha256(source)
+    )
+
+
+def _manifested_text(bundle_dir: Path, manifest_entries: set[str], relative: str) -> str | None:
+    if relative not in manifest_entries:
+        return None
+    try:
+        return (bundle_dir / Path(relative)).read_text(encoding="utf-8")
+    except OSError:
+        return None
+
+
+def _domain_matrix_summary_verified(path: Path) -> bool:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+
+    bundle_dir = path.parent
+    manifest_entries = _verify_manifest(bundle_dir)
+    if manifest_entries is None:
+        return False
+    required_bundle_files = {
+        "garnet-studio-domain-matrix.json",
+        "garnet-studio-domain-matrix.md",
+    }
+    if not required_bundle_files.issubset(manifest_entries):
+        return False
+    cases = data.get("cases", [])
+    if not isinstance(cases, list):
+        return False
+    by_id = {case.get("id"): case for case in cases if isinstance(case, dict)}
+    if set(by_id) != set(DOMAIN_MATRIX_CASES):
+        return False
+
+    for case_id, case in by_id.items():
+        if case.get("status") != "passed" or not _source_digest_matches(case_id, case):
+            return False
+        commands = case.get("commands", [])
+        if not isinstance(commands, list):
+            return False
+        by_step = {command.get("step"): command for command in commands if isinstance(command, dict)}
+        if set(by_step) != {"parse", "check", "run"}:
+            return False
+        for step, command in by_step.items():
+            stdout_file = command.get("stdout_file")
+            stderr_file = command.get("stderr_file")
+            if not isinstance(stdout_file, str) or not isinstance(stderr_file, str):
+                return False
+            if stdout_file not in manifest_entries or stderr_file not in manifest_entries:
+                return False
+            if command.get("status") != "passed":
+                return False
+            if step in {"parse", "check"} and command.get("exit_code") != 0:
+                return False
+            if (
+                step == "run"
+                and case_id != "mvp_11_signed_hotreload_mismatch"
+                and (
+                    command.get("exit_code") != 0
+                    or command.get("expected_failure") is not False
+                )
+            ):
+                return False
+
+    mismatch_run = next(
+        command
+        for command in by_id["mvp_11_signed_hotreload_mismatch"]["commands"]
+        if command.get("step") == "run"
+    )
+    mismatch_stdout = _manifested_text(
+        bundle_dir,
+        manifest_entries,
+        mismatch_run.get("stdout_file", ""),
+    )
+    mismatch_stderr = _manifested_text(
+        bundle_dir,
+        manifest_entries,
+        mismatch_run.get("stderr_file", ""),
+    )
+    if mismatch_stdout is None or mismatch_stderr is None:
+        return False
+    mismatch_output = f"{mismatch_stdout}\n{mismatch_stderr}"
+
+    return (
+        data.get("schema") == DOMAIN_MATRIX_SCHEMA
+        and data.get("suite") == "all"
+        and data.get("status") == "passed"
+        and data.get("case_count") == len(DOMAIN_MATRIX_CASES)
+        and data.get("passed_cases") == len(DOMAIN_MATRIX_CASES)
+        and data.get("failed_cases") == 0
+        and data.get("command_count") == len(DOMAIN_MATRIX_CASES) * 3
+        and data.get("passed_commands") == len(DOMAIN_MATRIX_CASES) * 3
+        and data.get("failed_commands") == 0
+        and data.get("source_included") is False
+        and data.get("provider_api_called") is False
+        and mismatch_run.get("status") == "passed"
+        and mismatch_run.get("expected_failure") is True
+        and mismatch_run.get("exit_code") != 0
+        and DOMAIN_MATRIX_MISMATCH_MARKER in mismatch_output
+    )
+
+
+def _domain_matrix_evidence() -> DomainMatrixEvidence:
+    source_present = (ROOT / "scripts" / "smoke_garnet_studio_domain_matrix.py").is_file()
+    if not source_present:
+        return DomainMatrixEvidence(False, False, None, "No repo-owned domain matrix script exists yet.")
+
+    root = _domain_matrix_root()
+    if root.exists():
+        candidates = sorted(
+            root.rglob("garnet-studio-domain-matrix.json"),
+            key=lambda path: path.stat().st_mtime,
+            reverse=True,
+        )
+        for candidate in candidates:
+            if _domain_matrix_summary_verified(candidate):
+                return DomainMatrixEvidence(
+                    True,
+                    True,
+                    candidate,
+                    f"Verified bundle: `{candidate}`.",
+                )
+
+    return DomainMatrixEvidence(
+        True,
+        False,
+        None,
+        (
+            "Script present, but no verified `--suite all` bundle was found in the "
+            f"configured domain-matrix evidence root (`{DOMAIN_MATRIX_ROOT_ENV}` or "
+            "`~/Desktop/dogfood/garnet-studio-domain-matrix`). Run "
+            "`scripts/smoke_garnet_studio_domain_matrix.py --suite all` and keep the "
+            "JSON/Markdown plus `MANIFEST.sha256` evidence bundle."
+        ),
+    )
+
+
 def read_status() -> MitReadinessStatus:
     plan = garnet_readiness_status.read_status(
         ROOT / "F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md"
@@ -239,14 +464,27 @@ def read_status() -> MitReadinessStatus:
         gate.id == "windows_unsigned_nsis" and gate.status == "clean-vm-proof-verified"
         for gate in wls.packaging_gates
     )
+    domain_matrix = _domain_matrix_evidence()
     lsp_precision_present = _lsp_precision_present()
-    wls_completion_percent = 65.0 if wls_clean_vm_verified else 55.0
+    if wls_clean_vm_verified:
+        wls_completion_percent = (
+            70.0 if domain_matrix.verified else 67.0 if domain_matrix.source_present else 65.0
+        )
+    else:
+        wls_completion_percent = (
+            60.0 if domain_matrix.verified else 58.0 if domain_matrix.source_present else 55.0
+        )
+    domain_matrix_tail = (
+        "a repo-owned Domain Proof Matrix for the canonical MVP plus agentic examples, "
+        if domain_matrix.source_present
+        else ""
+    )
     wls_evidence_tail = (
-        "readiness reporter parity actions, a verified x64 clean-VM installer "
+        f"readiness reporter parity actions, {domain_matrix_tail}a verified x64 clean-VM installer "
         "proof, and open Linux plus signing, winget, and Windows ARM64 package gates."
         if wls_clean_vm_verified
         else (
-            "readiness reporter parity actions, a Windows clean-VM installer "
+            f"readiness reporter parity actions, {domain_matrix_tail}a Windows clean-VM installer "
             "proof contract, and open Linux plus clean-machine package gates."
         )
     )
@@ -356,6 +594,30 @@ def read_status() -> MitReadinessStatus:
             ),
             blocked_by=list(wls.user_assistance_needed),
             deferred=list(wls.next_slices),
+        ),
+        ObjectiveLane(
+            id="windows_linux_domain_proof_matrix",
+            label="Windows/Linux domain proof matrix",
+            status=(
+                "verified"
+                if domain_matrix.verified
+                else "source-present" if domain_matrix.source_present else "planned"
+            ),
+            completion_percent=100.0 if domain_matrix.verified else 60.0 if domain_matrix.source_present else 0.0,
+            evidence=(
+                "`scripts/smoke_garnet_studio_domain_matrix.py --suite all` "
+                "has a verified manifest-backed parse/check/run bundle for 20 current examples: "
+                "10 canonical MVP domains, signed hot-reload success, expected BLAKE3 "
+                "mismatch rejection, five agent toolbelt programs, and three agentic design programs. "
+                f"{domain_matrix.reason}"
+                if domain_matrix.verified
+                else domain_matrix.reason
+            ),
+            blocked_by=[] if domain_matrix.verified else ["verified Windows/Linux domain matrix evidence bundle"],
+            deferred=[
+                "Studio screenshot evidence from Windows and WSL/Linux shells",
+                "Future native backend and package-format permutations",
+            ],
         ),
         ObjectiveLane(
             id="web_pwa",

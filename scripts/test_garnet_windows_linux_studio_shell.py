@@ -45,6 +45,7 @@ class GarnetWindowsLinuxStudioShellTests(unittest.TestCase):
             "advisory_handoff",
             "objective_pulse",
             "agentic_dogfood_matrix",
+            "domain_proof_matrix",
             "windows_linux_studio_status",
             "converter_status",
             "provider_options",
@@ -71,6 +72,7 @@ class GarnetWindowsLinuxStudioShellTests(unittest.TestCase):
         for copy in [
             "Release / Readiness",
             "Windows/Linux Status",
+            "Domain Proof Matrix",
             "Converter Fit Matrix",
             "Provider Options",
             "Demo Route",
@@ -86,6 +88,7 @@ class GarnetWindowsLinuxStudioShellTests(unittest.TestCase):
 
         for command in [
             "windows_linux_studio_status",
+            "domain_proof_matrix",
             "converter_status",
             "provider_options",
             "mit_demo_route",
@@ -100,6 +103,7 @@ class GarnetWindowsLinuxStudioShellTests(unittest.TestCase):
             self.assertIn(command, main)
 
         self.assertIn("garnet_windows_linux_studio_status.py", backend)
+        self.assertIn("smoke_garnet_studio_domain_matrix.py", backend)
         self.assertIn("garnet_converter_llm_feasibility.py", backend)
         self.assertIn("garnet_mit_deck_preview.py", backend)
         self.assertIn("garnet_studio_notarization_status.py", backend)

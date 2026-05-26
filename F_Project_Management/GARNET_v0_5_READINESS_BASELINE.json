@@ -1,7 +1,7 @@
 {
-  "source": "/Users/idc2.0/clawd/repos/garnet-agent-contracts",
+  "source": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s16-rowan-lsp-precision",
   "overall_status": "active-partial",
-  "completion_percent": 80.7,
+  "completion_percent": 80.0,
   "current_truth": [
     "tracked implementation plan is complete",
     "goal remains active",
@@ -75,8 +75,8 @@
       "id": "windows_linux_distribution",
       "label": "Windows/Linux distribution",
       "status": "active-partial",
-      "completion_percent": 55.0,
-      "evidence": "`scripts/garnet_windows_linux_studio_status.py` now reports the Tauri v2 shell scaffold in `apps/garnet-studio`, minimal webview permissions, Windows local release build/smoke evidence, v0.5 readiness reporter parity actions, a Windows clean-VM installer proof contract, and open Linux plus clean-machine package gates.",
+      "completion_percent": 58.0,
+      "evidence": "`scripts/garnet_windows_linux_studio_status.py` now reports the Tauri v2 shell scaffold in `apps/garnet-studio`, minimal webview permissions, Windows local release build/smoke evidence, v0.5 readiness reporter parity actions, a repo-owned Domain Proof Matrix for the canonical MVP plus agentic examples, a Windows clean-VM installer proof contract, and open Linux plus clean-machine package gates.",
       "blocked_by": [
         "clean Windows VM guest identity",
         "unsigned NSIS installer artifact digest",
@@ -90,11 +90,26 @@
       "deferred": [
         "Windows clean-machine NSIS install and CLI smoke evidence",
         "Linux desktop launch proof and first package-format decision",
-        "Parse/check/run plus active converter end-to-end screenshots from the shell",
+        "Domain Proof Matrix screenshots/output from the Windows shell and WSL/Linux shell",
+        "Active converter end-to-end screenshots from the shell",
         "Advisory bundle/review/handoff evidence walkthrough without source inclusion",
         "Release / Readiness panel screenshot and reporter-output evidence from the Windows shell",
         "Unsigned-to-signed Windows MSI/AuthentiCode plan after VM smoke",
         "Website/status copy sync after target smoke evidence"
+      ]
+    },
+    {
+      "id": "windows_linux_domain_proof_matrix",
+      "label": "Windows/Linux domain proof matrix",
+      "status": "source-present",
+      "completion_percent": 60.0,
+      "evidence": "Script present, but no verified `--suite all` bundle was found in the configured domain-matrix evidence root (`GARNET_STUDIO_DOMAIN_MATRIX_ROOT` or `~/Desktop/dogfood/garnet-studio-domain-matrix`). Run `scripts/smoke_garnet_studio_domain_matrix.py --suite all` and keep the JSON/Markdown plus `MANIFEST.sha256` evidence bundle.",
+      "blocked_by": [
+        "verified Windows/Linux domain matrix evidence bundle"
+      ],
+      "deferred": [
+        "Studio screenshot evidence from Windows and WSL/Linux shells",
+        "Future native backend and package-format permutations"
       ]
     },
     {

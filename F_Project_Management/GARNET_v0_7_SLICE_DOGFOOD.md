@@ -641,6 +641,27 @@ New reporters are written in the same Python style and discipline as
 existing ones: deterministic, manifest-backed, no claims beyond their
 evidence.
 
+### Windows/Linux Studio Domain Proof Addendum
+
+This is a post-S16 Windows/Linux Studio hardening lane, not a replacement for
+S18/S19. It closes the old "parse/check/run proof still needed" gap with a
+reproducible domain matrix while keeping package/signing gates open.
+
+```bash
+python3 scripts/test_smoke_garnet_studio_domain_matrix.py
+python3 scripts/smoke_garnet_studio_domain_matrix.py --suite all
+python3 scripts/test_garnet_windows_linux_studio_status.py
+python3 scripts/test_garnet_windows_linux_studio_shell.py
+```
+
+Honest scope:
+
+- A pass means the selected examples parse, check, and run on the current CLI.
+- `mvp_11_signed_hotreload_mismatch.garnet` passes only when Garnet rejects the
+  bad reload with the expected BLAKE3 fingerprint diagnostic.
+- This does not claim Linux package completion, Windows ARM64, Authenticode,
+  winget, provider-backed conversion, or production readiness.
+
 ---
 
 ## Honesty Anchors (carry forward from v0.5/v0.6, plus v0.7 additions)
