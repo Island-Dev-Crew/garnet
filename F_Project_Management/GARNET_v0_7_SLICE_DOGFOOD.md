@@ -495,7 +495,8 @@ python3 scripts/garnet_mit_readiness_status.py
 - "Paper VI Experiment 3 (compiler-as-agent time-to-fix) harness ships in v0.7; **running** the experiment to produce h₃a/h₃b/h₃c results is a separate v0.7.1 task."
 - "`garnet check --suggest --llm` is pending the read-only `garnet-cli` handoff; until that lands, S19 is `feature-gated-source-ready`, not shipped end-to-end."
 
-**State:** planned / feature-gated-source-ready on `agent-mac-codex/s19-suggest-llm`;
+**State:** PR-open / feature-gated-source-ready on `agent-mac-codex/s19-suggest-llm`
+(PR #233);
 public CLI dogfood is pending the ledgered `garnet-cli` handoff before
 release-gate reproduction. PR-open is allowed only as
 `feature-gated-source-ready`, not shipped end-to-end.
