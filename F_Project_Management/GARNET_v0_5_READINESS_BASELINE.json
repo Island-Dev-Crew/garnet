@@ -1,7 +1,7 @@
 {
-  "source": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s16-rowan-lsp-precision",
+  "source": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s22-stdlib-memory",
   "overall_status": "active-partial",
-  "completion_percent": 81.2,
+  "completion_percent": 82.9,
   "current_truth": [
     "tracked implementation plan is complete",
     "goal remains active",
@@ -75,38 +75,30 @@
       "id": "windows_linux_distribution",
       "label": "Windows/Linux distribution",
       "status": "active-partial",
-      "completion_percent": 58.0,
-      "evidence": "`scripts/garnet_windows_linux_studio_status.py` now reports the Tauri v2 shell scaffold in `apps/garnet-studio`, minimal webview permissions, Windows local release build/smoke evidence, v0.5 readiness reporter parity actions, a repo-owned Domain Proof Matrix for the canonical MVP plus agentic examples, a Windows clean-VM installer proof contract, and open Linux plus clean-machine package gates.",
+      "completion_percent": 70.0,
+      "evidence": "`scripts/garnet_windows_linux_studio_status.py` now reports the Tauri v2 shell scaffold in `apps/garnet-studio`, minimal webview permissions, Windows local release build/smoke evidence, v0.5 readiness reporter parity actions, a repo-owned Domain Proof Matrix for the canonical MVP plus agentic examples, a verified x64 clean-VM installer proof, and open Linux plus signing, winget, and Windows ARM64 package gates.",
       "blocked_by": [
-        "clean Windows VM guest identity",
-        "unsigned NSIS installer artifact digest",
-        "installer run log from inside the guest",
-        "installed Studio --studio-smoke JSON",
-        "installed app launch screenshot",
-        "Run the unsigned NSIS installer in a clean Windows VM for installer/runtime launch evidence",
         "Provide a Linux VM/container with GUI or AppImage-capable desktop session for runtime launch evidence",
         "Provide signing credentials only when ready to verify signed MSI claims"
       ],
       "deferred": [
-        "Windows clean-machine NSIS install and CLI smoke evidence",
         "Linux desktop launch proof and first package-format decision",
+        "Windows ARM64 target build/smoke after x64 clean-VM proof",
         "Domain Proof Matrix screenshots/output from the Windows shell and WSL/Linux shell",
         "Active converter end-to-end screenshots from the shell",
         "Advisory bundle/review/handoff evidence walkthrough without source inclusion",
         "Release / Readiness panel screenshot and reporter-output evidence from the Windows shell",
-        "Unsigned-to-signed Windows MSI/AuthentiCode plan after VM smoke",
+        "Signed Windows MSI/AuthentiCode plan after verified unsigned VM smoke",
         "Website/status copy sync after target smoke evidence"
       ]
     },
     {
       "id": "windows_linux_domain_proof_matrix",
       "label": "Windows/Linux domain proof matrix",
-      "status": "source-present",
-      "completion_percent": 60.0,
-      "evidence": "Script present, but no verified `--suite all` bundle was found in the configured domain-matrix evidence root (`GARNET_STUDIO_DOMAIN_MATRIX_ROOT` or `~/Desktop/dogfood/garnet-studio-domain-matrix`). Run `scripts/smoke_garnet_studio_domain_matrix.py --suite all` and keep the JSON/Markdown plus `MANIFEST.sha256` evidence bundle.",
-      "blocked_by": [
-        "verified Windows/Linux domain matrix evidence bundle"
-      ],
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_studio_domain_matrix.py --suite all` has a verified manifest-backed parse/check/run bundle for 20 current examples: 10 canonical MVP domains, signed hot-reload success, expected BLAKE3 mismatch rejection, five agent toolbelt programs, and three agentic design programs. Verified bundle: `C:\\Users\\IslandDevCrew\\Desktop\\dogfood\\garnet-studio-domain-matrix\\garnet-studio-domain-matrix-manifest-verified-wsl\\garnet-studio-domain-matrix.json`.",
+      "blocked_by": [],
       "deferred": [
         "Studio screenshot evidence from Windows and WSL/Linux shells",
         "Future native backend and package-format permutations"
@@ -487,11 +479,11 @@
       "label": "Novel-composition dogfood (S20)",
       "status": "verified",
       "completion_percent": 100.0,
-      "evidence": "S20 fuses Paper-VI contributions into runnable novel programs: `novel_01` (capability-budget + memory-recall + agent pipeline \u2192 governance 16), `novel_02` (BLAKE3 signed provenance + pipeline + determinism \u2192 verified content-addressed lineage), `novel_03` (release-gate + capability-budget + provenance + memory quorum \u2192 APPROVED quorum 4). `scripts/smoke_garnet_novel_compositions.py` (+ `test_garnet_novel_compositions.py`) proves all three `garnet check` clean and `garnet run` with deterministic asserted output; the composition story is in `C_Language_Specification/GARNET_NOVEL_COMPOSITIONS.md`. Complements the single-concern domain proof matrix (#232) without duplicating it.",
+      "evidence": "S20 fuses Paper-VI contributions into runnable novel programs: `novel_01` (capability-budget + memory-recall + agent pipeline \u2192 governance 16), `novel_02` (BLAKE3 signed provenance + pipeline + determinism \u2192 verified content-addressed lineage), `novel_03` (release-gate + capability-budget + provenance + memory quorum \u2192 APPROVED quorum 4). The same harness now also carries `novel_04` (S21 dispatched stdlib) and `novel_05` (S22 stdlib + Mnemos handles). `scripts/smoke_garnet_novel_compositions.py` (+ `test_garnet_novel_compositions.py`) proves all five `garnet check` / `garnet run` cases with deterministic asserted output; the composition story is in `C_Language_Specification/GARNET_NOVEL_COMPOSITIONS.md`. Complements the single-concern domain proof matrix (#232) without duplicating it.",
       "blocked_by": [],
       "deferred": [
         "Compositions are modeled deterministically in managed mode; live runtime integration (actor mailboxes, Mnemos stores, Ed25519 signing) is tracked separately",
-        "The new S17 Layer-0/1 stdlib primitives are not interpreter-dispatched yet, so these programs use the proven runnable subset + `crypto::blake3`"
+        "These programs use the proven runnable subset + `crypto::blake3`; S21 (`interp_stdlib_dispatch`) makes the new Layer-0/1 prims runnable"
       ]
     },
     {
@@ -502,9 +494,21 @@
       "evidence": "S21 closes the S17 deferred line \u2014 the Layer-0/1 stdlib primitives now EXECUTE from Garnet source. `garnet-interp-v0.3/src/eval.rs` resolves fully-qualified names first (backward-compatible), so prims bind under `core::math::sqrt` etc. without colliding with bare prelude builtins (`map`/`ok`). `stdlib_bridge.rs` dispatches core::math (6), core::cmp (4), core::iter map/filter/fold/take/drop/enumerate (6 \u2014 higher-order via call_value, first-class-function combinators from managed Garnet), and std::base64 (2). Verified live and via `examples/novel_04_dispatched_stdlib_pipeline.garnet` (deterministic run). `garnet-interp-v0.3/tests/mnemos_stdlib_combination.rs` composes the four Mnemos memory kinds with the stdlib (blake3 provenance + base64).",
       "blocked_by": [],
       "deferred": [
-        "std::json / regex / uuid / env / process / log dispatch (S22)",
-        "A full managed-mode `memory::` prim family (Garnet-callable Mnemos with a handle Value) \u2014 S22; S21 proves Mnemos \u00d7 stdlib at the Rust/system level",
+        "S22 closes the remaining `std::json` / regex / uuid / env / process / log and `memory::` dispatch line in the separate `stdlib_memory_runtime_dispatch` lane",
         "core::cmp / core::iter are Value-level bridges; the `garnet_stdlib` generics remain the tested Rust reference (dynamic Values can't be the stdlib's monomorphic `T`)"
+      ]
+    },
+    {
+      "id": "stdlib_memory_runtime_dispatch",
+      "label": "Stdlib + memory runtime dispatch completion (S22)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "S22 closes the S21-deferred runtime surface. `garnet-parser-v0.3` now accepts selected keywords as qualified path segments only, so official APIs such as `std::regex::match`, `std::process::spawn`, and `memory::working` are callable without making those words legal bare identifiers. `stdlib_bridge.rs` dispatches `std::json` (parse/get/set/stringify), `std::regex` (compile/match/find_all/replace), `std::uuid` (v4/v5/v7), `std::env` (get/set/vars), `std::process` (spawn/wait/exit_code with a managed Process handle), `std::log` (formatting), and `memory::working|episodic|semantic|procedural` constructors that return live Mnemos `MemoryStore` handles. `garnet-interp-v0.3/tests/stdlib_s22_dispatch.rs` proves JSON/regex/uuid/log/env/process/memory from Garnet source; `examples/novel_05_s22_stdlib_memory_pipeline.garnet` plus `scripts/smoke_garnet_novel_compositions.py` prove deterministic stdlib + Mnemos composition through the CLI.",
+      "blocked_by": [],
+      "deferred": [
+        "`std::env` and `std::process` are proven in Rust integration tests, not the deterministic novel example, because they mutate or launch host state",
+        "`std::process::spawn` still uses the v0.7 whitespace-delimited command-line contract from `garnet_stdlib`; richer argv handling is v0.8+",
+        "`std::log` remains formatting-only; file sinks that require `@caps(fs)` are v0.8+"
       ]
     }
   ]

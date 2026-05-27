@@ -472,11 +472,26 @@ def read_status() -> MitReadinessStatus:
         )
     )
     bridge_src = ROOT / "garnet-interp-v0.3" / "src" / "stdlib_bridge.rs"
+    bridge_text = bridge_src.read_text(encoding="utf-8") if bridge_src.exists() else ""
     interp_dispatch_present = (
         (ROOT / "examples/novel_04_dispatched_stdlib_pipeline.garnet").exists()
         and (ROOT / "garnet-interp-v0.3/tests/mnemos_stdlib_combination.rs").exists()
         and bridge_src.exists()
-        and "core::math::sqrt" in bridge_src.read_text(encoding="utf-8")
+        and "core::math::sqrt" in bridge_text
+    )
+    parser_path = ROOT / "garnet-parser-v0.3" / "src" / "parser.rs"
+    parser_path_text = parser_path.read_text(encoding="utf-8") if parser_path.exists() else ""
+    stdlib_memory_dispatch_present = (
+        (ROOT / "examples/novel_05_s22_stdlib_memory_pipeline.garnet").exists()
+        and (ROOT / "garnet-interp-v0.3/tests/stdlib_s22_dispatch.rs").exists()
+        and "std::json::parse" in bridge_text
+        and "std::regex::match" in bridge_text
+        and "std::uuid::new_v5" in bridge_text
+        and "std::env::set" in bridge_text
+        and "std::process::spawn" in bridge_text
+        and "std::log::info" in bridge_text
+        and "memory::working" in bridge_text
+        and "expect_path_segment" in parser_path_text
     )
     wls_clean_vm_verified = any(
         gate.id == "windows_unsigned_nsis" and gate.status == "clean-vm-proof-verified"
@@ -1330,9 +1345,11 @@ def read_status() -> MitReadinessStatus:
                 "governance 16), `novel_02` (BLAKE3 signed provenance + pipeline + "
                 "determinism → verified content-addressed lineage), `novel_03` "
                 "(release-gate + capability-budget + provenance + memory quorum → "
-                "APPROVED quorum 4). `scripts/smoke_garnet_novel_compositions.py` "
-                "(+ `test_garnet_novel_compositions.py`) proves all three `garnet "
-                "check` clean and `garnet run` with deterministic asserted output; "
+                "APPROVED quorum 4). The same harness now also carries `novel_04` "
+                "(S21 dispatched stdlib) and `novel_05` (S22 stdlib + Mnemos handles). "
+                "`scripts/smoke_garnet_novel_compositions.py` (+ "
+                "`test_garnet_novel_compositions.py`) proves all five `garnet "
+                "check` / `garnet run` cases with deterministic asserted output; "
                 "the composition story is in "
                 "`C_Language_Specification/GARNET_NOVEL_COMPOSITIONS.md`. Complements "
                 "the single-concern domain proof matrix (#232) without duplicating it."
@@ -1372,14 +1389,46 @@ def read_status() -> MitReadinessStatus:
             else "No qualified stdlib dispatch present yet.",
             blocked_by=[],
             deferred=[
-                "std::json / regex / uuid / env / process / log dispatch (S22)",
-                "A full managed-mode `memory::` prim family (Garnet-callable Mnemos with a "
-                "handle Value) — S22; S21 proves Mnemos × stdlib at the Rust/system level",
+                "S22 closes the remaining `std::json` / regex / uuid / env / process / log "
+                "and `memory::` dispatch line in the separate `stdlib_memory_runtime_dispatch` lane",
                 "core::cmp / core::iter are Value-level bridges; the `garnet_stdlib` "
                 "generics remain the tested Rust reference (dynamic Values can't be the "
                 "stdlib's monomorphic `T`)",
             ]
             if interp_dispatch_present
+            else [],
+        ),
+        ObjectiveLane(
+            id="stdlib_memory_runtime_dispatch",
+            label="Stdlib + memory runtime dispatch completion (S22)",
+            status="verified" if stdlib_memory_dispatch_present else "planned",
+            completion_percent=100.0 if stdlib_memory_dispatch_present else 0.0,
+            evidence=(
+                "S22 closes the S21-deferred runtime surface. `garnet-parser-v0.3` now accepts "
+                "selected keywords as qualified path segments only, so official APIs such as "
+                "`std::regex::match`, `std::process::spawn`, and `memory::working` are callable "
+                "without making those words legal bare identifiers. `stdlib_bridge.rs` dispatches "
+                "`std::json` (parse/get/set/stringify), `std::regex` (compile/match/find_all/replace), "
+                "`std::uuid` (v4/v5/v7), `std::env` (get/set/vars), `std::process` "
+                "(spawn/wait/exit_code with a managed Process handle), `std::log` "
+                "(formatting), and `memory::working|episodic|semantic|procedural` constructors "
+                "that return live Mnemos `MemoryStore` handles. `garnet-interp-v0.3/tests/"
+                "stdlib_s22_dispatch.rs` proves JSON/regex/uuid/log/env/process/memory from "
+                "Garnet source; `examples/novel_05_s22_stdlib_memory_pipeline.garnet` plus "
+                "`scripts/smoke_garnet_novel_compositions.py` prove deterministic stdlib + "
+                "Mnemos composition through the CLI."
+            )
+            if stdlib_memory_dispatch_present
+            else "No S22 stdlib/memory runtime dispatch proof present yet.",
+            blocked_by=[],
+            deferred=[
+                "`std::env` and `std::process` are proven in Rust integration tests, not the "
+                "deterministic novel example, because they mutate or launch host state",
+                "`std::process::spawn` still uses the v0.7 whitespace-delimited command-line "
+                "contract from `garnet_stdlib`; richer argv handling is v0.8+",
+                "`std::log` remains formatting-only; file sinks that require `@caps(fs)` are v0.8+",
+            ]
+            if stdlib_memory_dispatch_present
             else [],
         ),
     ]

@@ -74,6 +74,15 @@ NOVEL_CASES: tuple[NovelCase, ...] = (
         # `@stability` warnings (exit 0) rather than "0 diagnostics".
         check_expect="stability warning",
     ),
+    NovelCase(
+        "novel_05_s22_stdlib_memory_pipeline",
+        "examples/novel_05_s22_stdlib_memory_pipeline.garnet",
+        ("std::json", "std::regex", "std::uuid-v5", "std::log", "memory::mnemos-handles"),
+        "novel_05 uuid: ee54a926-f375-5759-a5aa-67f7d8528cff",
+        # S22 uses newly-dispatched experimental prims, so the checker emits
+        # non-fatal `@stability` warnings rather than the clean marker.
+        check_expect="stability warning",
+    ),
 )
 
 
@@ -144,7 +153,7 @@ def run_matrix(garnet: list[str]) -> list[CaseResult]:
 def render_markdown(results: list[CaseResult]) -> str:
     passed = sum(1 for r in results if r.ok)
     lines = [
-        "# Garnet novel-composition discovery matrix (S20)",
+        "# Garnet novel-composition discovery matrix (S20-S22)",
         "",
         f"Programs: **{len(results)}** · passing: **{passed}/{len(results)}**",
         "",

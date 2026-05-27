@@ -608,6 +608,49 @@ cargo test -p garnet-interp -p garnet-stdlib --no-fail-fast      # incl bridge +
 
 ---
 
+### S22 — Stdlib + memory runtime dispatch completion
+
+**Slot:** win-codex · **Type:** post-S21 (Jon-directed; closes the S21 deferred line) · **PR count:** 1
+
+**Goal:** Make the remaining S17 Layer-1 stdlib families and managed-mode
+`memory::` Mnemos handles execute from Garnet source.
+
+**New surfaces:**
+- Parser path polish: selected keywords are accepted only as qualified path
+  segments, so `std::regex::match`, `std::process::spawn`, and
+  `memory::working` parse without making those words legal bare identifiers.
+- `stdlib_bridge.rs`: dispatch for `std::json`, `std::regex`, `std::uuid`,
+  `std::env`, `std::process`, `std::log`, and `memory::working|episodic|semantic|procedural`.
+- `Value::Process` / `Value::ProcessStatus` managed process carriers.
+- `garnet-interp-v0.3/tests/stdlib_s22_dispatch.rs` source-level integration proof.
+- `examples/novel_05_s22_stdlib_memory_pipeline.garnet` and novel-composition
+  harness extension to 5/5.
+- `stdlib_memory_runtime_dispatch` readiness lane; baseline surgically extended.
+
+**Dogfood block:**
+
+```bash
+cargo build -p garnet-cli
+cargo test -p garnet-interp --test stdlib_s22_dispatch --no-fail-fast
+cargo test -p garnet-interp stdlib_bridge --no-fail-fast
+garnet run examples/novel_05_s22_stdlib_memory_pipeline.garnet  # uuid ee54a926-f375-5759-a5aa-67f7d8528cff
+python3 scripts/smoke_garnet_novel_compositions.py             # 5/5 (novel_05 included)
+python3 -m unittest scripts.test_garnet_novel_compositions
+python3 scripts/garnet_mit_readiness_status.py --check-no-regression
+```
+
+**Honest partial labels available:**
+- "`std::env` and `std::process` are proven in Rust integration tests rather
+  than `novel_05`, because they mutate or launch host state."
+- "`std::process::spawn` still uses the v0.7 whitespace-delimited command-line
+  contract from `garnet_stdlib`; richer argv handling is v0.8+."
+- "`std::log` is formatting-only; file sinks that require `@caps(fs)` remain v0.8+."
+
+**State:** dogfood-passing locally (`stdlib_s22_dispatch` 4/4, `stdlib_bridge`
+29 tests, novel-composition harness 5/5, readiness **82.9% / 34 lanes**).
+
+---
+
 ## v0.7.0 Release Gate
 
 Tag v0.7.0 only when all of:

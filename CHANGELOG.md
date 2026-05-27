@@ -11,6 +11,27 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S22 (Stdlib + memory runtime dispatch completion):** closes the S21-deferred
+  runtime surface. The parser now accepts selected keywords **only as qualified
+  path segments**, so official APIs such as `std::regex::match`,
+  `std::process::spawn`, and `memory::working` are callable without making those
+  words legal bare identifiers. `stdlib_bridge.rs` now dispatches `std::json`
+  (parse/get/set/stringify), `std::regex` (compile/match/find_all/replace),
+  `std::uuid` (v4/v5/v7), `std::env` (get/set/vars), `std::process`
+  (spawn/wait/exit_code via managed `Process` + `ProcessStatus` values),
+  `std::log` (formatting), and `memory::working|episodic|semantic|procedural`
+  constructors that return live Mnemos `MemoryStore` handles. Proof is
+  source-level, not just host-unit-level: `garnet-interp-v0.3/tests/stdlib_s22_dispatch.rs`
+  drives JSON/regex/uuid/log/env/process/memory from Garnet source, and
+  `examples/novel_05_s22_stdlib_memory_pipeline.garnet` is included in the
+  novel-composition smoke harness (now 5/5). New `stdlib_memory_runtime_dispatch`
+  readiness lane is `verified`; MIT readiness moves **82.4% -> 82.9%** (34
+  lanes; baseline regenerated). **Honest scope:** `std::env` and `std::process`
+  are proven in Rust integration tests rather than the deterministic novel
+  example because they mutate or launch host state; `std::process::spawn` still
+  uses the v0.7 whitespace-delimited command contract; `std::log` remains
+  formatting-only until the v0.8 `@caps(fs)` file-sink lane.
+
 - **S21 (Interpreter dispatch for the S17 Layer-0/1 stdlib + Mnemos × stdlib):**
   closes the S17 deferred line — the new stdlib primitives now **execute from
   Garnet source**, not just sit in the registry. `garnet-interp-v0.3/src/eval.rs`

@@ -1,0 +1,37 @@
+# novel_05_s22_stdlib_memory_pipeline.garnet
+#
+# S22 PROOF: the S21-deferred stdlib families execute from Garnet source and
+# can feed live Mnemos handles. This deterministic example drives:
+#   - std::json    (parse / get / set / stringify)
+#   - std::regex   (find_all)
+#   - std::uuid    (new_v5, deterministic)
+#   - std::log     (formatting surface)
+#   - memory::     (working + episodic constructors returning live handles)
+#
+# Host-authority surfaces (`std::env`, `std::process`) are covered in the Rust
+# S22 integration test because they mutate or launch host state.
+
+@caps()
+def main() {
+  let doc = std::json::parse("{\"domain\":\"agentic\",\"score\":7}")
+  let domain = std::json::get(doc, "domain")
+  let patched = std::json::set(doc, "lane", "s22")
+  let compact = std::json::stringify(patched)
+
+  let words = std::regex::find_all("[a-z]+", "agentic stdlib memory")
+  let id = std::uuid::new_v5("6ba7b810-9dad-11d1-80b4-00c04fd430c8", domain)
+
+  let scratch_store = memory::working("s22-scratch")
+  scratch_store.push(compact)
+  scratch_store.push(id)
+
+  let event_store = memory::episodic("s22-events")
+  event_store.append(std::log::info(domain))
+  let recent = event_store.recent(1)
+
+  println("novel_05 domain:", domain)
+  println("novel_05 hits:", words.len())
+  println("novel_05 memory:", scratch_store.len() + recent.len())
+  println("novel_05 uuid:", id)
+  id
+}

@@ -298,7 +298,7 @@ fn parse_postfix(p: &mut Parser) -> Result<Expr, ParseError> {
             }
             TokenKind::ColonCol => {
                 p.bump();
-                let (seg, seg_span) = p.expect_ident("path segment")?;
+                let (seg, seg_span) = p.expect_path_segment("qualified path")?;
                 // Extend path or create one
                 match expr {
                     Expr::Ident(ref name, ref span) => {
@@ -442,6 +442,10 @@ fn parse_primary(p: &mut Parser) -> Result<Expr, ParseError> {
         TokenKind::Ident(_) => {
             let (name, span) = p.expect_ident("expression")?;
             Ok(Expr::Ident(name, span))
+        }
+        TokenKind::KwMemory if matches!(p.peek_nth(1).kind, TokenKind::ColonCol) => {
+            let span = p.bump().span;
+            Ok(Expr::Ident("memory".to_string(), span))
         }
         TokenKind::LParen => {
             if let Some(expr) = parse_directly_nested_atom(p)? {
