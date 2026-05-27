@@ -849,6 +849,42 @@ incl. 6 new, readiness **85.1% / 39 lanes**).
 
 ---
 
+### S28 — `core::iter` completion (zip / collect / chain)
+
+**Slot:** win-opus · **Type:** post-S27 (Jon-directed; finishes the core:: registry→runtime arc) · **PR count:** 1
+
+**Goal:** Dispatch the last three registered `core::iter` combinators so all 9 are
+runnable from Garnet source.
+
+**New surfaces:**
+- `stdlib_bridge.rs`: `core::iter::zip` (pairs two arrays, shorter wins),
+  `core::iter::chain` (concatenate), `core::iter::collect` (materialize — `Range`
+  expands to ints, Array passes through). Value-level (not higher-order).
+- `garnet-interp-v0.3/tests/core_iter_completion_dispatch.rs` source-level proof
+  composed with the S21 `fold`.
+- `core_iter_completion` readiness lane; baseline surgically extended.
+
+**Dogfood block:**
+
+```bash
+cargo build -p garnet-cli
+cargo test -p garnet-interp --test core_iter_completion_dispatch --no-fail-fast
+cargo test -p garnet-interp stdlib_bridge --no-fail-fast
+cargo fmt --all -- --check ; cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace --no-fail-fast
+RUSTDOCFLAGS='-D warnings' cargo doc --workspace --no-deps
+python3 scripts/garnet_mit_readiness_status.py --check-no-regression
+```
+
+**Honest partial labels available:**
+- "`collect` materializes a `Range` or passes an Array through; there is no lazy
+  iterator protocol to collect (eager map/filter already return arrays)."
+
+**State:** dogfood-passing locally (`core_iter_completion_dispatch` 1/1, `stdlib_bridge`
+52 tests incl. 5 new, readiness **85.5% / 40 lanes**).
+
+---
+
 ## v0.7.0 Release Gate
 
 Tag v0.7.0 only when all of:

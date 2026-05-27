@@ -119,6 +119,12 @@ pub fn install(global: &Env) {
         Some(1),
         bridge_iter_enumerate,
     );
+    // S28: the last three registered core::iter combinators (Value-level, not
+    // higher-order). `zip`/`chain` pair/concat two arrays; `collect` materializes
+    // a sequence (a `Range`, or an array passed through) into an owned Array.
+    define_native(global, "core::iter::zip", Some(2), bridge_iter_zip);
+    define_native(global, "core::iter::collect", Some(1), bridge_iter_collect);
+    define_native(global, "core::iter::chain", Some(2), bridge_iter_chain);
 
     // ── core::result (cap: none — Value-level; map/and_then/or_else higher-order
     //    via call_value). Bound qualified so `core::result::map` does not collide
@@ -754,6 +760,51 @@ fn bridge_iter_enumerate(args: Vec<Value>) -> Result<Value, RuntimeError> {
             .map(|(i, v)| Value::array(vec![Value::Int(i as i64), v]))
             .collect(),
     ))
+}
+
+fn bridge_iter_zip(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let a = expect_array_clone("core::iter::zip", &args, 0)?;
+    let b = expect_array_clone("core::iter::zip", &args, 1)?;
+    // `zip` stops at the shorter sequence; each element is a 2-element pair array.
+    Ok(Value::array(
+        a.into_iter()
+            .zip(b)
+            .map(|(x, y)| Value::array(vec![x, y]))
+            .collect(),
+    ))
+}
+
+fn bridge_iter_chain(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let mut a = expect_array_clone("core::iter::chain", &args, 0)?;
+    let b = expect_array_clone("core::iter::chain", &args, 1)?;
+    a.extend(b);
+    Ok(Value::array(a))
+}
+
+fn bridge_iter_collect(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    // Materialize a sequence into an owned Array. A `Range` is expanded to its
+    // integers (exclusive or inclusive); an Array is materialized (cloned). Other
+    // values are a type error — there is no other lazy sequence in managed mode.
+    match args.first() {
+        Some(Value::Array(items)) => Ok(Value::array(items.borrow().clone())),
+        Some(Value::Range {
+            start,
+            end,
+            inclusive,
+        }) => {
+            let out: Vec<Value> = if *inclusive {
+                (*start..=*end).map(Value::Int).collect()
+            } else {
+                (*start..*end).map(Value::Int).collect()
+            };
+            Ok(Value::array(out))
+        }
+        Some(other) => Err(RuntimeError::type_err(
+            "core::iter::collect: Array or Range arg at position 0",
+            other,
+        )),
+        None => Err(RuntimeError::msg("core::iter::collect: missing argument")),
+    }
 }
 
 // ── core::result (Value-level; Ok/Err are `Value::Variant` with path ["Result"],
@@ -2324,6 +2375,116 @@ mod tests {
             Err(e) => assert!(
                 format!("{e:?}").contains("Option arg at position 0"),
                 "expected Option type error, got {e:?}"
+            ),
+            Ok(v) => panic!("expected type error, got Ok({v:?})"),
+        }
+    }
+
+    // ── S28: core::iter completion (zip / collect / chain) ──
+
+    fn ints(values: &[i64]) -> Value {
+        Value::array(values.iter().copied().map(Value::Int).collect())
+    }
+
+    fn int_vec(value: &Value) -> Vec<i64> {
+        match value {
+            Value::Array(a) => a
+                .borrow()
+                .iter()
+                .map(|v| match v {
+                    Value::Int(i) => *i,
+                    other => panic!("expected Int, got {other:?}"),
+                })
+                .collect(),
+            other => panic!("expected Array, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn s28_iter_prims_bound() {
+        let env = make_env();
+        for n in [
+            "core::iter::zip",
+            "core::iter::collect",
+            "core::iter::chain",
+        ] {
+            assert!(env.get(n).is_some(), "S28 prim `{n}` not bound");
+        }
+    }
+
+    #[test]
+    fn s28_iter_zip_pairs_to_shorter_length() {
+        let env = make_env();
+        let zipped = call(
+            &env,
+            "core::iter::zip",
+            vec![ints(&[1, 2, 3]), ints(&[10, 20])],
+        )
+        .unwrap();
+        match zipped {
+            Value::Array(a) => {
+                let a = a.borrow();
+                assert_eq!(a.len(), 2, "zip stops at the shorter sequence");
+                assert_eq!(int_vec(&a[0]), vec![1, 10]);
+                assert_eq!(int_vec(&a[1]), vec![2, 20]);
+            }
+            other => panic!("expected Array of pairs, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn s28_iter_chain_concatenates() {
+        let env = make_env();
+        let chained = call(
+            &env,
+            "core::iter::chain",
+            vec![ints(&[1, 2]), ints(&[3, 4, 5])],
+        )
+        .unwrap();
+        assert_eq!(int_vec(&chained), vec![1, 2, 3, 4, 5]);
+    }
+
+    #[test]
+    fn s28_iter_collect_expands_range_and_materializes_array() {
+        let env = make_env();
+        // Exclusive range 1..5 -> [1,2,3,4].
+        let excl = call(
+            &env,
+            "core::iter::collect",
+            vec![Value::Range {
+                start: 1,
+                end: 5,
+                inclusive: false,
+            }],
+        )
+        .unwrap();
+        assert_eq!(int_vec(&excl), vec![1, 2, 3, 4]);
+
+        // Inclusive range 1..=3 -> [1,2,3].
+        let incl = call(
+            &env,
+            "core::iter::collect",
+            vec![Value::Range {
+                start: 1,
+                end: 3,
+                inclusive: true,
+            }],
+        )
+        .unwrap();
+        assert_eq!(int_vec(&incl), vec![1, 2, 3]);
+
+        // Array passes through (materialized).
+        let arr = call(&env, "core::iter::collect", vec![ints(&[7, 8])]).unwrap();
+        assert_eq!(int_vec(&arr), vec![7, 8]);
+    }
+
+    #[test]
+    fn s28_iter_collect_rejects_non_sequence() {
+        let env = make_env();
+        match call(&env, "core::iter::collect", vec![Value::Int(3)]) {
+            Err(e) => assert!(
+                format!("{e:?}").contains("Array or Range arg at position 0"),
+                "expected sequence type error, got {e:?}"
             ),
             Ok(v) => panic!("expected type error, got Ok({v:?})"),
         }
