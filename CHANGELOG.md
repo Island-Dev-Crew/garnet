@@ -11,6 +11,22 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S30 (functional-core composition capstone):** with the full functional `core::`
+  surface now interpreter-dispatched (S26 result, S27 option, S28 iter), proves they
+  **compose** into railway-oriented pipelines from Garnet source.
+  `garnet-interp-v0.3/tests/functional_core_composition.rs` exercises BOTH tracks —
+  `core::iter` collect/map/fold → 20; `core::result` Ok-railway → 40 and Err-railway
+  recovered via `or_else` → 0; `core::option` Some → 80 and None default → 7
+  (`[20,40,0,80,7]`). The deterministic, cross-platform
+  `examples/novel_07_functional_core_pipeline.garnet` composes the happy path
+  (iter → result → option → `novel_07 final: 80`) and joins the novel-composition
+  harness (now **7/7**); the story is in
+  `C_Language_Specification/GARNET_NOVEL_COMPOSITIONS.md`. New
+  `functional_core_composition` readiness lane is `verified`; MIT readiness moves
+  **85.9% -> 86.2%** (42 lanes; baseline surgically extended). Additive — a new
+  example + a new test + docs; no parser/CST or owned-crate source change.
+  **Honest scope:** pure managed-mode compute (no host effects); the host-effect
+  composition is the separate S25 capstone.
 - **S29 (`@stability` error-level enforcement, opt-in):** ships the Layer Policy §4
   "error-level enforcement is v0.8" line as an opt-in. `garnet-check-v0.3` adds a
   FATAL `CheckError::StabilityError` variant (listed in `CheckReport::ok()`), and

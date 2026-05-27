@@ -141,6 +141,30 @@ it processed is fingerprinted.
 
 ---
 
+## novel_07 — Functional-core railway pipeline (S30 capstone)
+
+**Fuses:** `core::iter` (collect / map / fold / zip) · `core::result`
+(ok / map / and_then / unwrap_or) · `core::option` (some / map / unwrap_or).
+
+With the full functional `core::` surface now interpreter-dispatched (S26 result,
+S27 option, S28 iter), this capstone composes all three families into one
+railway-oriented pipeline — pure compute, no host effects, byte-stable output
+(`novel_07 final: 80`). An iterator pipeline builds and reduces a sequence, the
+Result "happy track" validates and transforms the aggregate, and an Option
+carries the optional final value. The companion integration test
+(`garnet-interp-v0.3/tests/functional_core_composition.rs`) drives BOTH tracks —
+the Result `Err` path recovered via `or_else`, the Option `None` default —
+asserting `[20,40,0,80,7]`.
+
+**Novel discovery:** managed Garnet now expresses complete functional data
+pipelines — railway-oriented error/optional handling fused with iterator
+combinators — without leaving the language and without any host authority. It is
+the pure-compute complement to novel_06's capability-checked host-effect pipeline:
+together they show the runtime composes both *inward* (functional core) and
+*outward* (process/file/memory effects).
+
+---
+
 ## Why this matters (the story)
 
 Single-feature demos answer "does the feature work?" Compositions answer the
@@ -155,9 +179,10 @@ but the composition is the point.
 ## Reproduce
 
 ```bash
-python3 scripts/smoke_garnet_novel_compositions.py   # 6/6 check + deterministic run
+python3 scripts/smoke_garnet_novel_compositions.py   # 7/7 check + deterministic run
 python3 -m unittest scripts.test_garnet_novel_compositions
-cargo test -p garnet-interp --test host_effect_composition   # S25 full-stack proof
+cargo test -p garnet-interp --test host_effect_composition       # S25 full-stack proof
+cargo test -p garnet-interp --test functional_core_composition   # S30 functional-core proof
 # or individually:
 garnet check examples/novel_01_capability_budgeted_memory_agent.garnet
 garnet run   examples/novel_06_observability_provenance_pipeline.garnet

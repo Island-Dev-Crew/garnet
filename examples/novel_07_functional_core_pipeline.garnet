@@ -1,0 +1,39 @@
+# novel_07_functional_core_pipeline.garnet
+#
+# S30 CAPSTONE: composes the functional `core::` surface made runnable across
+# S26-S28 into one railway-oriented pipeline that none of novel_01..06 fuse:
+#   - core::iter   (collect / map / fold / zip — S21 + S28)
+#   - core::result (ok / map / and_then / unwrap_or — S26)
+#   - core::option (some / map / unwrap_or — S27)
+#
+# Novel discovery: with the full `core::` registry now interpreter-dispatched,
+# a managed Garnet program can express a complete functional data pipeline —
+# build a sequence, transform/reduce it, validate the result on the Result
+# "happy track", and carry an optional value — without leaving the language and
+# without any host effects. The output is byte-stable (pure compute).
+
+def double(x) { x * 2 }
+def add(acc, x) { acc + x }
+def to_ok(x) { core::result::ok(x) }
+
+@caps()
+def main() {
+  # ── core::iter: build a range, map, reduce, and pair ──
+  let evens = core::iter::map(core::iter::collect(1..5), double)   # [2,4,6,8]
+  let sum = core::iter::fold(evens, 0, add)                         # 20
+  let paired = core::iter::zip(evens, core::iter::collect(1..5))    # [[2,1]..[8,4]]
+
+  # ── core::result: railway — map the Ok track, chain, default out ──
+  let mapped = core::result::map(core::result::ok(sum), double)     # Ok(40)
+  let chained = core::result::and_then(mapped, to_ok)               # Ok(40)
+  let safe = core::result::unwrap_or(chained, 0)                    # 40
+
+  # ── core::option: carry an optional, transform, default out ──
+  let opt = core::option::map(core::option::some(safe), double)     # Some(80)
+  let total = core::option::unwrap_or(opt, 0)                       # 80
+
+  println("novel_07 sum:", sum)
+  println("novel_07 pairs:", paired.len())
+  println("novel_07 final:", total)
+  total
+}

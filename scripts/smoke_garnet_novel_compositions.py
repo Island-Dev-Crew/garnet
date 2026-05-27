@@ -94,6 +94,15 @@ NOVEL_CASES: tuple[NovelCase, ...] = (
         # warnings rather than the clean marker.
         check_expect="stability warning",
     ),
+    NovelCase(
+        "novel_07_functional_core_pipeline",
+        "examples/novel_07_functional_core_pipeline.garnet",
+        ("core::iter", "core::result", "core::option", "railway-pipeline"),
+        "novel_07 final: 80",
+        # S30 capstone: composes the full functional core (result/option/iter)
+        # made runnable across S26-S28. Experimental prims → stability warning.
+        check_expect="stability warning",
+    ),
 )
 
 
