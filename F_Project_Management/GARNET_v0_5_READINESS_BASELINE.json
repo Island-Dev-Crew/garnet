@@ -1,7 +1,7 @@
 {
   "source": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s22-stdlib-memory",
   "overall_status": "active-partial",
-  "completion_percent": 84.7,
+  "completion_percent": 85.1,
   "current_truth": [
     "tracked implementation plan is complete",
     "goal remains active",
@@ -558,6 +558,18 @@
       "deferred": [
         "`and_then`/`or_else` trust the callee to return a Result (dynamic typing); no static Result-shape check",
         "Ergonomic method syntax (`result.map(..)`) is a later follow-on; S26 ships the qualified-function form"
+      ]
+    },
+    {
+      "id": "core_option_dispatch",
+      "label": "core::option combinator dispatch (S27)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "S27 makes the registered `core::option` combinators runnable from Garnet source (sibling of the S26 `core::result` work). `stdlib_bridge.rs` dispatches `core::option::{some,none,map,and_then,unwrap_or}` at the Value layer over `Option` Variants (Some/None) identical to the prelude builders; `map`/`and_then` are higher-order via `call_value`, bound qualified to avoid the bare-`map` collision. `garnet-interp-v0.3/tests/core_option_dispatch.rs` proves it from source (map over Some, None pass-through, and_then chain + short-circuit, unwrap_or default \u2192 [10,7,6,8,5,99]); bridge unit tests cover each combinator, the None constructor, and the non-Option type error.",
+      "blocked_by": [],
+      "deferred": [
+        "`and_then` trusts the callee to return an Option (dynamic typing); no static Option-shape check",
+        "Ergonomic method syntax (`option.map(..)`) is a later follow-on"
       ]
     }
   ]

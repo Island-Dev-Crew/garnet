@@ -815,6 +815,40 @@ incl. 6 new, readiness **84.7% / 38 lanes**).
 
 ---
 
+### S27 — `core::option` combinator dispatch
+
+**Slot:** win-opus · **Type:** post-S26 (Jon-directed; sibling of S26) · **PR count:** 1
+
+**Goal:** Make the 5 registered `core::option` primitives execute from Garnet source.
+
+**New surfaces:**
+- `stdlib_bridge.rs`: `core::option::{some,none,map,and_then,unwrap_or}` over `Option`
+  Variants (Some/None) identical to the prelude builders; map/and_then higher-order
+  via `call_value`; bound qualified.
+- `garnet-interp-v0.3/tests/core_option_dispatch.rs` source-level proof.
+- `core_option_dispatch` readiness lane; baseline surgically extended.
+
+**Dogfood block:**
+
+```bash
+cargo build -p garnet-cli
+cargo test -p garnet-interp --test core_option_dispatch --no-fail-fast
+cargo test -p garnet-interp stdlib_bridge --no-fail-fast
+cargo fmt --all -- --check ; cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace --no-fail-fast
+RUSTDOCFLAGS='-D warnings' cargo doc --workspace --no-deps
+python3 scripts/garnet_mit_readiness_status.py --check-no-regression
+```
+
+**Honest partial labels available:**
+- "`and_then` trusts the callee to return an Option (dynamic typing); no static shape check."
+- "Ergonomic method syntax (`option.map(..)`) is a later follow-on."
+
+**State:** dogfood-passing locally (`core_option_dispatch` 1/1, `stdlib_bridge` 47 tests
+incl. 6 new, readiness **85.1% / 39 lanes**).
+
+---
+
 ## v0.7.0 Release Gate
 
 Tag v0.7.0 only when all of:

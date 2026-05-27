@@ -145,6 +145,24 @@ pub fn install(global: &Env) {
         bridge_result_unwrap_or,
     );
 
+    // ── core::option (cap: none — Value-level; map/and_then higher-order via
+    //    call_value). Same qualified-binding rationale as core::result. ──
+    define_native(global, "core::option::some", Some(1), bridge_option_some);
+    define_native(global, "core::option::none", Some(0), bridge_option_none);
+    define_native(global, "core::option::map", Some(2), bridge_option_map);
+    define_native(
+        global,
+        "core::option::and_then",
+        Some(2),
+        bridge_option_and_then,
+    );
+    define_native(
+        global,
+        "core::option::unwrap_or",
+        Some(2),
+        bridge_option_unwrap_or,
+    );
+
     // ── std::base64 (cap: none — dispatches garnet_stdlib::base64) ──
     define_native(global, "std::base64::encode", Some(1), bridge_base64_encode);
     define_native(global, "std::base64::decode", Some(1), bridge_base64_decode);
@@ -830,6 +848,91 @@ fn bridge_result_unwrap_or(args: Vec<Value>) -> Result<Value, RuntimeError> {
     match expect_result("core::result::unwrap_or", &args, 0)? {
         ResultView::Ok(v) => Ok(v),
         ResultView::Err(_) => Ok(default),
+    }
+}
+
+// ── core::option (Value-level; Some/None are `Value::Variant` with path
+//    ["Option"], matching the prelude's `some`/`none` builders) ──
+
+/// Build an `Option::Some(value)` Variant identical to the prelude `some` builder.
+fn option_some(value: Value) -> Value {
+    Value::Variant {
+        path: Rc::new(vec!["Option".to_string()]),
+        variant: Rc::new("Some".to_string()),
+        fields: Rc::new(vec![value]),
+    }
+}
+
+/// Build the `Option::None` Variant identical to the prelude `none` builder.
+fn option_none() -> Value {
+    Value::Variant {
+        path: Rc::new(vec!["Option".to_string()]),
+        variant: Rc::new("None".to_string()),
+        fields: Rc::new(vec![]),
+    }
+}
+
+enum OptionView {
+    Some(Value),
+    None,
+}
+
+/// Classify the argument at `idx` as an `Option` Variant, or raise a type error.
+fn expect_option(prim: &str, args: &[Value], idx: usize) -> Result<OptionView, RuntimeError> {
+    match args.get(idx) {
+        Some(Value::Variant {
+            path,
+            variant,
+            fields,
+        }) if path.len() == 1 && path[0] == "Option" => match variant.as_str() {
+            "Some" => Ok(OptionView::Some(
+                fields.first().cloned().unwrap_or(Value::Nil),
+            )),
+            "None" => Ok(OptionView::None),
+            other => Err(RuntimeError::msg(format!(
+                "{prim}: unknown Option variant `{other}`"
+            ))),
+        },
+        Some(other) => Err(RuntimeError::type_err(
+            &format!("{prim}: Option arg at position {idx}"),
+            other,
+        )),
+        None => Err(RuntimeError::msg(format!(
+            "{prim}: missing Option argument"
+        ))),
+    }
+}
+
+fn bridge_option_some(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    Ok(option_some(args.into_iter().next().unwrap_or(Value::Nil)))
+}
+
+fn bridge_option_none(_args: Vec<Value>) -> Result<Value, RuntimeError> {
+    Ok(option_none())
+}
+
+fn bridge_option_map(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let f = expect_value("core::option::map", &args, 1)?;
+    match expect_option("core::option::map", &args, 0)? {
+        OptionView::Some(v) => Ok(option_some(crate::eval::call_value(&f, vec![v])?)),
+        OptionView::None => Ok(option_none()),
+    }
+}
+
+fn bridge_option_and_then(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let f = expect_value("core::option::and_then", &args, 1)?;
+    match expect_option("core::option::and_then", &args, 0)? {
+        // `f` is expected to return an Option; pass it through unchanged.
+        OptionView::Some(v) => crate::eval::call_value(&f, vec![v]),
+        OptionView::None => Ok(option_none()),
+    }
+}
+
+fn bridge_option_unwrap_or(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let default = expect_value("core::option::unwrap_or", &args, 1)?;
+    match expect_option("core::option::unwrap_or", &args, 0)? {
+        OptionView::Some(v) => Ok(v),
+        OptionView::None => Ok(default),
     }
 }
 
@@ -2101,6 +2204,126 @@ mod tests {
             Err(e) => assert!(
                 format!("{e:?}").contains("Result arg at position 0"),
                 "expected Result type error, got {e:?}"
+            ),
+            Ok(v) => panic!("expected type error, got Ok({v:?})"),
+        }
+    }
+
+    // ── S27: core::option dispatch ──
+
+    /// A test-only native returning `Some(int + 1)` — a Garnet Option-returning
+    /// callable for `and_then`.
+    fn some_succ_fn() -> Value {
+        fn some_succ(args: Vec<Value>) -> Result<Value, RuntimeError> {
+            match args.first() {
+                Some(Value::Int(i)) => Ok(option_some(Value::Int(i + 1))),
+                other => Err(RuntimeError::msg(format!(
+                    "some_succ: int expected, got {other:?}"
+                ))),
+            }
+        }
+        Value::NativeFn(Rc::new(NativeFnValue {
+            name: "some_succ",
+            arity: Some(1),
+            ptr: some_succ,
+        }))
+    }
+
+    /// `(variant_name, inner_or_nil)` for an Option Variant.
+    fn option_parts(value: &Value) -> (String, Value) {
+        match value {
+            Value::Variant {
+                path,
+                variant,
+                fields,
+            } if path.len() == 1 && path[0] == "Option" => (
+                variant.to_string(),
+                fields.first().cloned().unwrap_or(Value::Nil),
+            ),
+            other => panic!("expected Option Variant, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn s27_option_prims_bound() {
+        let env = make_env();
+        for n in [
+            "core::option::some",
+            "core::option::none",
+            "core::option::map",
+            "core::option::and_then",
+            "core::option::unwrap_or",
+        ] {
+            assert!(env.get(n).is_some(), "S27 prim `{n}` not bound");
+        }
+    }
+
+    #[test]
+    fn s27_option_none_constructor_is_none_variant() {
+        let env = make_env();
+        let none = call(&env, "core::option::none", vec![]).unwrap();
+        let (variant, _) = option_parts(&none);
+        assert_eq!(variant, "None");
+    }
+
+    #[test]
+    fn s27_option_map_transforms_some_and_passes_none() {
+        let env = make_env();
+        let some = call(&env, "core::option::some", vec![Value::Int(5)]).unwrap();
+        let mapped = call(&env, "core::option::map", vec![some, double_fn()]).unwrap();
+        let (variant, inner) = option_parts(&mapped);
+        assert_eq!(variant, "Some");
+        assert!(matches!(inner, Value::Int(10)));
+
+        let none = call(&env, "core::option::none", vec![]).unwrap();
+        let mapped_none = call(&env, "core::option::map", vec![none, double_fn()]).unwrap();
+        assert_eq!(
+            option_parts(&mapped_none).0,
+            "None",
+            "map must not touch None"
+        );
+    }
+
+    #[test]
+    fn s27_option_and_then_chains_some_and_short_circuits_none() {
+        let env = make_env();
+        let some = call(&env, "core::option::some", vec![Value::Int(5)]).unwrap();
+        let chained = call(&env, "core::option::and_then", vec![some, some_succ_fn()]).unwrap();
+        let (variant, inner) = option_parts(&chained);
+        assert_eq!(variant, "Some");
+        assert!(matches!(inner, Value::Int(6)));
+
+        let none = call(&env, "core::option::none", vec![]).unwrap();
+        let short = call(&env, "core::option::and_then", vec![none, some_succ_fn()]).unwrap();
+        assert_eq!(
+            option_parts(&short).0,
+            "None",
+            "and_then short-circuits on None"
+        );
+    }
+
+    #[test]
+    fn s27_option_unwrap_or_returns_value_or_default() {
+        let env = make_env();
+        let some = call(&env, "core::option::some", vec![Value::Int(42)]).unwrap();
+        assert!(matches!(
+            call(&env, "core::option::unwrap_or", vec![some, Value::Int(0)]).unwrap(),
+            Value::Int(42)
+        ));
+        let none = call(&env, "core::option::none", vec![]).unwrap();
+        assert!(matches!(
+            call(&env, "core::option::unwrap_or", vec![none, Value::Int(99)]).unwrap(),
+            Value::Int(99)
+        ));
+    }
+
+    #[test]
+    fn s27_option_map_rejects_non_option() {
+        let env = make_env();
+        match call(&env, "core::option::map", vec![Value::Int(3), double_fn()]) {
+            Err(e) => assert!(
+                format!("{e:?}").contains("Option arg at position 0"),
+                "expected Option type error, got {e:?}"
             ),
             Ok(v) => panic!("expected type error, got Ok({v:?})"),
         }
