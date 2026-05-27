@@ -780,6 +780,41 @@ python3 scripts/garnet_mit_readiness_status.py --check-no-regression
 
 ---
 
+### S26 — `core::result` combinator dispatch
+
+**Slot:** win-opus · **Type:** post-S25 (Jon-directed; continues the S21/S22 registry→runtime arc) · **PR count:** 1
+
+**Goal:** Make the 6 registered `core::result` primitives execute from Garnet source —
+railway-oriented error handling without leaving the language.
+
+**New surfaces:**
+- `stdlib_bridge.rs`: `core::result::{ok,err,map,and_then,or_else,unwrap_or}` over
+  `Result` Variants (Ok/Err) identical to the prelude builders; map/and_then/or_else
+  higher-order via `call_value`; bound qualified (avoids the bare-`map` collision).
+- `garnet-interp-v0.3/tests/core_result_dispatch.rs` source-level railway proof.
+- `core_result_dispatch` readiness lane; baseline surgically extended.
+
+**Dogfood block:**
+
+```bash
+cargo build -p garnet-cli
+cargo test -p garnet-interp --test core_result_dispatch --no-fail-fast
+cargo test -p garnet-interp stdlib_bridge --no-fail-fast
+cargo fmt --all -- --check ; cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace --no-fail-fast
+RUSTDOCFLAGS='-D warnings' cargo doc --workspace --no-deps
+python3 scripts/garnet_mit_readiness_status.py --check-no-regression
+```
+
+**Honest partial labels available:**
+- "`and_then`/`or_else` trust the callee to return a Result (dynamic typing); no static shape check."
+- "Ergonomic method syntax (`result.map(..)`) is a later follow-on; S26 ships the qualified-function form."
+
+**State:** dogfood-passing locally (`core_result_dispatch` 1/1, `stdlib_bridge` 41 tests
+incl. 6 new, readiness **84.7% / 38 lanes**).
+
+---
+
 ## v0.7.0 Release Gate
 
 Tag v0.7.0 only when all of:

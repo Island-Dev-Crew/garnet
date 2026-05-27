@@ -11,6 +11,22 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S26 (`core::result` combinator dispatch):** makes the 6 registered
+  `core::result` primitives runnable from Garnet source, continuing the S21/S22
+  registry-to-runtime arc. `stdlib_bridge.rs` dispatches
+  `core::result::{ok,err,map,and_then,or_else,unwrap_or}` at the Value layer over
+  `Result` Variants (Ok/Err) identical to the prelude builders — `map`/`and_then`/
+  `or_else` are higher-order via `call_value`, bound under their qualified names so
+  `core::result::map` does not collide with the bare `map` (Map constructor) on the
+  last-segment fallback. `garnet-interp-v0.3/tests/core_result_dispatch.rs` proves a
+  railway-oriented pipeline from source (map over Ok, Err pass-through, `and_then`
+  chain + short-circuit, `or_else` recovery, `unwrap_or` default → `[10,7,6,8,0,5,99]`);
+  bridge unit tests cover each combinator plus the non-`Result` type error. New
+  `core_result_dispatch` readiness lane is `verified`; MIT readiness moves
+  **84.3% -> 84.7%** (38 lanes; baseline surgically extended). Additive — bridges +
+  tests only; no parser/CST or stdlib-registry change. **Honest scope:** `and_then`/
+  `or_else` trust the callee to return a `Result` (dynamic typing); ergonomic method
+  syntax (`result.map(..)`) is a later follow-on.
 - **S25 (host-effect composition capstone):** proves the runtime surfaces
   completed across S22–S24 compose end-to-end from Garnet source.
   `garnet-interp-v0.3/tests/host_effect_composition.rs` runs a `@caps(proc, fs)`

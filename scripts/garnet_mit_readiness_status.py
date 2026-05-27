@@ -506,6 +506,10 @@ def read_status() -> MitReadinessStatus:
         (ROOT / "examples/novel_06_observability_provenance_pipeline.garnet").exists()
         and (ROOT / "garnet-interp-v0.3/tests/host_effect_composition.rs").exists()
     )
+    result_dispatch_present = (
+        (ROOT / "garnet-interp-v0.3/tests/core_result_dispatch.rs").exists()
+        and "core::result::and_then" in bridge_text
+    )
     wls_clean_vm_verified = any(
         gate.id == "windows_unsigned_nsis" and gate.status == "clean-vm-proof-verified"
         for gate in wls.packaging_gates
@@ -1532,6 +1536,36 @@ def read_status() -> MitReadinessStatus:
                 "Still synchronous managed-mode; no async actor/OS-thread runtime claim",
             ]
             if host_effect_composition_present
+            else [],
+        ),
+        ObjectiveLane(
+            id="core_result_dispatch",
+            label="core::result combinator dispatch (S26)",
+            status="verified" if result_dispatch_present else "planned",
+            completion_percent=100.0 if result_dispatch_present else 0.0,
+            evidence=(
+                "S26 makes the registered `core::result` combinators runnable from Garnet "
+                "source, continuing the S21/S22 registry-to-runtime arc. `stdlib_bridge.rs` "
+                "dispatches `core::result::{ok,err,map,and_then,or_else,unwrap_or}` at the "
+                "Value layer over `Result` Variants (Ok/Err) identical to the prelude builders; "
+                "`map`/`and_then`/`or_else` are higher-order via `call_value`. Bound under their "
+                "qualified names so `core::result::map` does not collide with the bare `map` "
+                "(Map constructor) on the last-segment fallback. "
+                "`garnet-interp-v0.3/tests/core_result_dispatch.rs` proves a railway-oriented "
+                "pipeline from source (map over Ok, Err pass-through, and_then chain + "
+                "short-circuit, or_else recovery, unwrap_or default → [10,7,6,8,0,5,99]); bridge "
+                "unit tests cover each combinator plus the non-Result type error."
+            )
+            if result_dispatch_present
+            else "No S26 core::result dispatch proof present yet.",
+            blocked_by=[],
+            deferred=[
+                "`and_then`/`or_else` trust the callee to return a Result (dynamic typing); "
+                "no static Result-shape check",
+                "Ergonomic method syntax (`result.map(..)`) is a later follow-on; S26 ships the "
+                "qualified-function form",
+            ]
+            if result_dispatch_present
             else [],
         ),
     ]

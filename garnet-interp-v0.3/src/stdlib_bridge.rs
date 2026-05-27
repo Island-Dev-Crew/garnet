@@ -120,6 +120,31 @@ pub fn install(global: &Env) {
         bridge_iter_enumerate,
     );
 
+    // ── core::result (cap: none — Value-level; map/and_then/or_else higher-order
+    //    via call_value). Bound qualified so `core::result::map` does not collide
+    //    with the bare `map` (Map constructor) on the last-segment fallback. ──
+    define_native(global, "core::result::ok", Some(1), bridge_result_ok);
+    define_native(global, "core::result::err", Some(1), bridge_result_err);
+    define_native(global, "core::result::map", Some(2), bridge_result_map);
+    define_native(
+        global,
+        "core::result::and_then",
+        Some(2),
+        bridge_result_and_then,
+    );
+    define_native(
+        global,
+        "core::result::or_else",
+        Some(2),
+        bridge_result_or_else,
+    );
+    define_native(
+        global,
+        "core::result::unwrap_or",
+        Some(2),
+        bridge_result_unwrap_or,
+    );
+
     // ── std::base64 (cap: none — dispatches garnet_stdlib::base64) ──
     define_native(global, "std::base64::encode", Some(1), bridge_base64_encode);
     define_native(global, "std::base64::decode", Some(1), bridge_base64_decode);
@@ -711,6 +736,101 @@ fn bridge_iter_enumerate(args: Vec<Value>) -> Result<Value, RuntimeError> {
             .map(|(i, v)| Value::array(vec![Value::Int(i as i64), v]))
             .collect(),
     ))
+}
+
+// ── core::result (Value-level; Ok/Err are `Value::Variant` with path ["Result"],
+//    matching the prelude's `ok`/`err` builders so pattern-matching and `?` agree) ──
+
+/// Build a `Result::Ok(value)` Variant identical to the prelude `ok` builder.
+fn result_ok(value: Value) -> Value {
+    Value::Variant {
+        path: Rc::new(vec!["Result".to_string()]),
+        variant: Rc::new("Ok".to_string()),
+        fields: Rc::new(vec![value]),
+    }
+}
+
+/// Build a `Result::Err(value)` Variant identical to the prelude `err` builder.
+fn result_err(value: Value) -> Value {
+    Value::Variant {
+        path: Rc::new(vec!["Result".to_string()]),
+        variant: Rc::new("Err".to_string()),
+        fields: Rc::new(vec![value]),
+    }
+}
+
+enum ResultView {
+    Ok(Value),
+    Err(Value),
+}
+
+/// Classify the argument at `idx` as a `Result` Variant, or raise a type error.
+fn expect_result(prim: &str, args: &[Value], idx: usize) -> Result<ResultView, RuntimeError> {
+    match args.get(idx) {
+        Some(Value::Variant {
+            path,
+            variant,
+            fields,
+        }) if path.len() == 1 && path[0] == "Result" => {
+            let inner = fields.first().cloned().unwrap_or(Value::Nil);
+            match variant.as_str() {
+                "Ok" => Ok(ResultView::Ok(inner)),
+                "Err" => Ok(ResultView::Err(inner)),
+                other => Err(RuntimeError::msg(format!(
+                    "{prim}: unknown Result variant `{other}`"
+                ))),
+            }
+        }
+        Some(other) => Err(RuntimeError::type_err(
+            &format!("{prim}: Result arg at position {idx}"),
+            other,
+        )),
+        None => Err(RuntimeError::msg(format!(
+            "{prim}: missing Result argument"
+        ))),
+    }
+}
+
+fn bridge_result_ok(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    Ok(result_ok(args.into_iter().next().unwrap_or(Value::Nil)))
+}
+
+fn bridge_result_err(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    Ok(result_err(args.into_iter().next().unwrap_or(Value::Nil)))
+}
+
+fn bridge_result_map(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let f = expect_value("core::result::map", &args, 1)?;
+    match expect_result("core::result::map", &args, 0)? {
+        ResultView::Ok(v) => Ok(result_ok(crate::eval::call_value(&f, vec![v])?)),
+        ResultView::Err(e) => Ok(result_err(e)),
+    }
+}
+
+fn bridge_result_and_then(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let f = expect_value("core::result::and_then", &args, 1)?;
+    match expect_result("core::result::and_then", &args, 0)? {
+        // `f` is expected to return a Result; pass its value through unchanged
+        // (Garnet is dynamically typed, so we trust the callee like Rust's `?`).
+        ResultView::Ok(v) => crate::eval::call_value(&f, vec![v]),
+        ResultView::Err(e) => Ok(result_err(e)),
+    }
+}
+
+fn bridge_result_or_else(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let f = expect_value("core::result::or_else", &args, 1)?;
+    match expect_result("core::result::or_else", &args, 0)? {
+        ResultView::Ok(v) => Ok(result_ok(v)),
+        ResultView::Err(e) => crate::eval::call_value(&f, vec![e]),
+    }
+}
+
+fn bridge_result_unwrap_or(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let default = expect_value("core::result::unwrap_or", &args, 1)?;
+    match expect_result("core::result::unwrap_or", &args, 0)? {
+        ResultView::Ok(v) => Ok(v),
+        ResultView::Err(_) => Ok(default),
+    }
 }
 
 // ── std::base64 (dispatches garnet_stdlib::base64) ──
@@ -1860,5 +1980,129 @@ mod tests {
             "to_file should have appended the formatted line"
         );
         std::fs::remove_file(&path).ok();
+    }
+
+    // ── S26: core::result dispatch ──
+
+    /// A test-only native returning `Ok(int + 1)` — stands in for a Garnet
+    /// Result-returning callable passed to `and_then` / `or_else`.
+    fn ok_succ_fn() -> Value {
+        fn ok_succ(args: Vec<Value>) -> Result<Value, RuntimeError> {
+            match args.first() {
+                Some(Value::Int(i)) => Ok(result_ok(Value::Int(i + 1))),
+                other => Err(RuntimeError::msg(format!(
+                    "ok_succ: int expected, got {other:?}"
+                ))),
+            }
+        }
+        Value::NativeFn(Rc::new(NativeFnValue {
+            name: "ok_succ",
+            arity: Some(1),
+            ptr: ok_succ,
+        }))
+    }
+
+    fn result_parts(value: &Value) -> (String, Value) {
+        match value {
+            Value::Variant {
+                path,
+                variant,
+                fields,
+            } if path.len() == 1 && path[0] == "Result" => (
+                variant.to_string(),
+                fields.first().cloned().unwrap_or(Value::Nil),
+            ),
+            other => panic!("expected Result Variant, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn s26_result_prims_bound() {
+        let env = make_env();
+        for n in [
+            "core::result::ok",
+            "core::result::err",
+            "core::result::map",
+            "core::result::and_then",
+            "core::result::or_else",
+            "core::result::unwrap_or",
+        ] {
+            assert!(env.get(n).is_some(), "S26 prim `{n}` not bound");
+        }
+    }
+
+    #[test]
+    fn s26_result_map_transforms_ok_and_passes_err() {
+        let env = make_env();
+        let ok = call(&env, "core::result::ok", vec![Value::Int(5)]).unwrap();
+        let mapped = call(&env, "core::result::map", vec![ok, double_fn()]).unwrap();
+        let (variant, inner) = result_parts(&mapped);
+        assert_eq!(variant, "Ok");
+        assert!(matches!(inner, Value::Int(10)));
+
+        let err = call(&env, "core::result::err", vec![Value::str("boom")]).unwrap();
+        let mapped_err = call(&env, "core::result::map", vec![err, double_fn()]).unwrap();
+        let (variant, inner) = result_parts(&mapped_err);
+        assert_eq!(variant, "Err", "map must not touch Err");
+        assert_eq!(inner.display(), "boom");
+    }
+
+    #[test]
+    fn s26_result_and_then_chains_ok_and_short_circuits_err() {
+        let env = make_env();
+        let ok = call(&env, "core::result::ok", vec![Value::Int(5)]).unwrap();
+        let chained = call(&env, "core::result::and_then", vec![ok, ok_succ_fn()]).unwrap();
+        let (variant, inner) = result_parts(&chained);
+        assert_eq!(variant, "Ok");
+        assert!(matches!(inner, Value::Int(6)), "and_then applies fn to Ok");
+
+        let err = call(&env, "core::result::err", vec![Value::str("stop")]).unwrap();
+        let short = call(&env, "core::result::and_then", vec![err, ok_succ_fn()]).unwrap();
+        let (variant, inner) = result_parts(&short);
+        assert_eq!(variant, "Err", "and_then short-circuits on Err");
+        assert_eq!(inner.display(), "stop");
+    }
+
+    #[test]
+    fn s26_result_or_else_recovers_err_and_passes_ok() {
+        let env = make_env();
+        let err = call(&env, "core::result::err", vec![Value::Int(0)]).unwrap();
+        let recovered = call(&env, "core::result::or_else", vec![err, ok_succ_fn()]).unwrap();
+        let (variant, inner) = result_parts(&recovered);
+        assert_eq!(variant, "Ok", "or_else recovers Err via fn");
+        assert!(matches!(inner, Value::Int(1)));
+
+        let ok = call(&env, "core::result::ok", vec![Value::Int(7)]).unwrap();
+        let passed = call(&env, "core::result::or_else", vec![ok, ok_succ_fn()]).unwrap();
+        let (variant, inner) = result_parts(&passed);
+        assert_eq!(variant, "Ok", "or_else leaves Ok untouched");
+        assert!(matches!(inner, Value::Int(7)));
+    }
+
+    #[test]
+    fn s26_result_unwrap_or_returns_value_or_default() {
+        let env = make_env();
+        let ok = call(&env, "core::result::ok", vec![Value::Int(42)]).unwrap();
+        assert!(matches!(
+            call(&env, "core::result::unwrap_or", vec![ok, Value::Int(0)]).unwrap(),
+            Value::Int(42)
+        ));
+        let err = call(&env, "core::result::err", vec![Value::str("e")]).unwrap();
+        assert!(matches!(
+            call(&env, "core::result::unwrap_or", vec![err, Value::Int(99)]).unwrap(),
+            Value::Int(99)
+        ));
+    }
+
+    #[test]
+    fn s26_result_map_rejects_non_result() {
+        let env = make_env();
+        match call(&env, "core::result::map", vec![Value::Int(3), double_fn()]) {
+            Err(e) => assert!(
+                format!("{e:?}").contains("Result arg at position 0"),
+                "expected Result type error, got {e:?}"
+            ),
+            Ok(v) => panic!("expected type error, got Ok({v:?})"),
+        }
     }
 }
