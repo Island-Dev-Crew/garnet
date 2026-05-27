@@ -527,6 +527,10 @@ def read_status() -> MitReadinessStatus:
     stability_errors_present = (
         "GARNET_STABILITY_ERRORS" in stability_text and "StabilityError" in stability_text
     )
+    functional_core_present = (
+        (ROOT / "examples/novel_07_functional_core_pipeline.garnet").exists()
+        and (ROOT / "garnet-interp-v0.3/tests/functional_core_composition.rs").exists()
+    )
     wls_clean_vm_verified = any(
         gate.id == "windows_unsigned_nsis" and gate.status == "clean-vm-proof-verified"
         for gate in wls.packaging_gates
@@ -1665,6 +1669,33 @@ def read_status() -> MitReadinessStatus:
                 "(win-opus → mac-opus handoff), unchanged from S17",
             ]
             if stability_errors_present
+            else [],
+        ),
+        ObjectiveLane(
+            id="functional_core_composition",
+            label="Functional-core composition capstone (S30)",
+            status="verified" if functional_core_present else "planned",
+            completion_percent=100.0 if functional_core_present else 0.0,
+            evidence=(
+                "S30 caps the S26-S28 arc: with the full functional `core::` surface now "
+                "interpreter-dispatched, result/option/iter compose into railway-oriented "
+                "pipelines from Garnet source. `garnet-interp-v0.3/tests/"
+                "functional_core_composition.rs` exercises BOTH tracks — `core::iter` "
+                "collect/map/fold → 20; `core::result` Ok-railway → 40 and Err-railway recovered "
+                "via `or_else` → 0; `core::option` Some → 80 and None default → 7 ([20,40,0,80,7]). "
+                "The deterministic, cross-platform `examples/novel_07_functional_core_pipeline.garnet` "
+                "composes the happy path (iter → result → option → 80) and joins the "
+                "novel-composition harness (now 7/7). Story: "
+                "`C_Language_Specification/GARNET_NOVEL_COMPOSITIONS.md`."
+            )
+            if functional_core_present
+            else "No S30 functional-core composition proof present yet.",
+            blocked_by=[],
+            deferred=[
+                "Composition is pure managed-mode compute (no host effects); the host-effect "
+                "composition is the separate S25 capstone",
+            ]
+            if functional_core_present
             else [],
         ),
     ]

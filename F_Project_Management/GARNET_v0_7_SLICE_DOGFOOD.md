@@ -924,6 +924,42 @@ readiness **85.9% / 41 lanes**).
 
 ---
 
+### S30 — Functional-core composition capstone
+
+**Slot:** win-opus · **Type:** post-S29 (Jon-directed; capstone of the S26-S28 functional-core arc) · **PR count:** 1
+
+**Goal:** Prove the now-runnable functional `core::` surface (result/option/iter) composes
+into railway-oriented pipelines from Garnet source. Additive composition + story.
+
+**New surfaces:**
+- `examples/novel_07_functional_core_pipeline.garnet` — deterministic `@caps()` pipeline
+  (iter → result → option → `novel_07 final: 80`); novel harness now 7/7.
+- `garnet-interp-v0.3/tests/functional_core_composition.rs` — integration test of both the
+  Ok/Some success tracks and the Err(or_else-recovered)/None default tracks → `[20,40,0,80,7]`.
+- `GARNET_NOVEL_COMPOSITIONS.md` novel_07 section; `functional_core_composition` lane.
+
+**Dogfood block:**
+
+```bash
+cargo build -p garnet-cli
+cargo test -p garnet-interp --test functional_core_composition --no-fail-fast
+garnet run examples/novel_07_functional_core_pipeline.garnet     # novel_07 final: 80
+python3 scripts/smoke_garnet_novel_compositions.py               # 7/7
+python3 -m unittest scripts.test_garnet_novel_compositions
+cargo fmt --all -- --check ; cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace --no-fail-fast
+RUSTDOCFLAGS='-D warnings' cargo doc --workspace --no-deps
+python3 scripts/garnet_mit_readiness_status.py --check-no-regression
+```
+
+**Honest partial labels available:**
+- "Pure managed-mode compute (no host effects); the host-effect composition is the S25 capstone."
+
+**State:** dogfood-passing locally (`functional_core_composition` 1/1, novel harness 7/7,
+readiness **86.2% / 42 lanes**).
+
+---
+
 ## v0.7.0 Release Gate
 
 Tag v0.7.0 only when all of:
