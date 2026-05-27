@@ -520,6 +520,13 @@ def read_status() -> MitReadinessStatus:
         and "core::iter::collect" in bridge_text
         and "core::iter::chain" in bridge_text
     )
+    stability_src = ROOT / "garnet-check-v0.3" / "src" / "stability.rs"
+    stability_text = (
+        stability_src.read_text(encoding="utf-8") if stability_src.exists() else ""
+    )
+    stability_errors_present = (
+        "GARNET_STABILITY_ERRORS" in stability_text and "StabilityError" in stability_text
+    )
     wls_clean_vm_verified = any(
         gate.id == "windows_unsigned_nsis" and gate.status == "clean-vm-proof-verified"
         for gate in wls.packaging_gates
@@ -1629,6 +1636,35 @@ def read_status() -> MitReadinessStatus:
                 "lazy sequence in managed mode to collect (eager map/filter already return arrays)",
             ]
             if iter_completion_present
+            else [],
+        ),
+        ObjectiveLane(
+            id="stability_error_enforcement",
+            label="@stability error-level enforcement, opt-in (S29)",
+            status="verified" if stability_errors_present else "planned",
+            completion_percent=100.0 if stability_errors_present else 0.0,
+            evidence=(
+                "S29 ships the Layer Policy §4 'error-level enforcement is v0.8' line as an "
+                "opt-in. `garnet-check-v0.3` adds a FATAL `CheckError::StabilityError` variant "
+                "(listed in `CheckReport::ok()`), and `stability.rs` promotes experimental/"
+                "deprecated call sites from non-fatal advisories to that fatal error when "
+                "`GARNET_STABILITY_ERRORS=1|true` is set (frozen stays informational; `stable` "
+                "silent). Default is unchanged warning-level, so existing programs/CI stay green. "
+                "Proven end-to-end through the CLI with no garnet-cli change (it already exits on "
+                "`report.ok()`): `garnet check examples/novel_04_*.garnet` warns + exits 0, while "
+                "`GARNET_STABILITY_ERRORS=1 garnet check …` prints 'stability error:' and exits 1. "
+                "Unit tests cover the policy (experimental/deprecated→error, frozen→info, "
+                "default→warning) and the `ok()` fatal classification."
+            )
+            if stability_errors_present
+            else "No S29 @stability error-level enforcement present yet.",
+            blocked_by=[],
+            deferred=[
+                "Error mode is process-global via env var; per-call-site or per-source "
+                "`@uses(experimental)` opt-out still needs the parser annotation variants "
+                "(win-opus → mac-opus handoff), unchanged from S17",
+            ]
+            if stability_errors_present
             else [],
         ),
     ]

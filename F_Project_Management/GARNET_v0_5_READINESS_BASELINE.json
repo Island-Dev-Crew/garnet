@@ -1,7 +1,7 @@
 {
   "source": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s22-stdlib-memory",
   "overall_status": "active-partial",
-  "completion_percent": 85.5,
+  "completion_percent": 85.9,
   "current_truth": [
     "tracked implementation plan is complete",
     "goal remains active",
@@ -581,6 +581,17 @@
       "blocked_by": [],
       "deferred": [
         "`collect` materializes a `Range` or passes an Array through \u2014 there is no other lazy sequence in managed mode to collect (eager map/filter already return arrays)"
+      ]
+    },
+    {
+      "id": "stability_error_enforcement",
+      "label": "@stability error-level enforcement, opt-in (S29)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "S29 ships the Layer Policy \u00a74 'error-level enforcement is v0.8' line as an opt-in. `garnet-check-v0.3` adds a FATAL `CheckError::StabilityError` variant (listed in `CheckReport::ok()`), and `stability.rs` promotes experimental/deprecated call sites from non-fatal advisories to that fatal error when `GARNET_STABILITY_ERRORS=1|true` is set (frozen stays informational; `stable` silent). Default is unchanged warning-level, so existing programs/CI stay green. Proven end-to-end through the CLI with no garnet-cli change (it already exits on `report.ok()`): `garnet check examples/novel_04_*.garnet` warns + exits 0, while `GARNET_STABILITY_ERRORS=1 garnet check \u2026` prints 'stability error:' and exits 1. Unit tests cover the policy (experimental/deprecated\u2192error, frozen\u2192info, default\u2192warning) and the `ok()` fatal classification.",
+      "blocked_by": [],
+      "deferred": [
+        "Error mode is process-global via env var; per-call-site or per-source `@uses(experimental)` opt-out still needs the parser annotation variants (win-opus \u2192 mac-opus handoff), unchanged from S17"
       ]
     }
   ]

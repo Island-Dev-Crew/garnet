@@ -885,6 +885,45 @@ python3 scripts/garnet_mit_readiness_status.py --check-no-regression
 
 ---
 
+### S29 — `@stability` error-level enforcement (opt-in)
+
+**Slot:** win-opus · **Type:** post-S28 (Jon-directed; the named v0.8 "@stability error-level" deferral) · **PR count:** 1
+
+**Goal:** Ship error-level `@stability` enforcement as an opt-in, fully within
+garnet-check's stability surface, with the default unchanged (warning-level).
+
+**New surfaces:**
+- `garnet-check-v0.3/src/lib.rs`: FATAL `CheckError::StabilityError` variant, listed
+  in `CheckReport::ok()` (garnet-cli already exits on `ok()` → no CLI change).
+- `garnet-check-v0.3/src/stability.rs`: `GARNET_STABILITY_ERRORS` env gate; under it,
+  experimental/deprecated → fatal `StabilityError` ("stability error: …"); frozen → info;
+  default → unchanged warning advisories. Unit tests via the env-free `advise(error_mode)`.
+- `stability_error_enforcement` readiness lane; baseline surgically extended.
+
+**Dogfood block:**
+
+```bash
+cargo build -p garnet-cli
+cargo test -p garnet-check stability --no-fail-fast
+garnet check examples/novel_04_dispatched_stdlib_pipeline.garnet                            # warns, exit 0
+GARNET_STABILITY_ERRORS=1 garnet check examples/novel_04_dispatched_stdlib_pipeline.garnet  # "stability error:", exit 1
+cargo fmt --all -- --check ; cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace --no-fail-fast
+RUSTDOCFLAGS='-D warnings' cargo doc --workspace --no-deps
+python3 scripts/garnet_mit_readiness_status.py --check-no-regression
+```
+
+**Honest partial labels available:**
+- "Error mode is process-global via env var; per-source `@uses(experimental)` opt-out
+  still needs the S17 parser-annotation handoff (mac-opus)."
+- "Default stays warning-level (opt-in), so CI and existing programs are unaffected."
+
+**State:** dogfood-passing locally (garnet-check 39 lib tests incl. 4 new S29, CLI
+end-to-end verified: default warns/exit 0, `GARNET_STABILITY_ERRORS=1` errors/exit 1,
+readiness **85.9% / 41 lanes**).
+
+---
+
 ## v0.7.0 Release Gate
 
 Tag v0.7.0 only when all of:
