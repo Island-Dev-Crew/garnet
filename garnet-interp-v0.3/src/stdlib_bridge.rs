@@ -154,6 +154,18 @@ pub fn install(global: &Env) {
     define_native(global, "std::env::vars", Some(0), bridge_env_vars);
 
     define_native(global, "std::process::spawn", Some(1), bridge_process_spawn);
+    define_native(
+        global,
+        "std::process::spawn_args",
+        Some(2),
+        bridge_process_spawn_args,
+    );
+    define_native(
+        global,
+        "std::process::output",
+        Some(2),
+        bridge_process_output,
+    );
     define_native(global, "std::process::wait", Some(1), bridge_process_wait);
     define_native(
         global,
@@ -989,6 +1001,51 @@ fn bridge_process_exit_code(args: Vec<Value>) -> Result<Value, RuntimeError> {
     }
 }
 
+/// Unpack a `Value::Array` of `Value::Str` into an owned `Vec<String>` for an
+/// explicit argv. Every element must be a String.
+fn expect_string_array(
+    prim: &str,
+    args: &[Value],
+    idx: usize,
+) -> Result<Vec<String>, RuntimeError> {
+    let items = expect_array_clone(prim, args, idx)?;
+    items
+        .into_iter()
+        .enumerate()
+        .map(|(i, value)| match value {
+            Value::Str(s) => Ok((*s).clone()),
+            other => Err(RuntimeError::type_err(
+                &format!("{prim}: argv element {i} must be a String"),
+                &other,
+            )),
+        })
+        .collect()
+}
+
+fn bridge_process_spawn_args(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let program = expect_str("std::process::spawn_args", &args, 0)?.to_string();
+    let argv = expect_string_array("std::process::spawn_args", &args, 1)?;
+    garnet_stdlib::process::spawn_args(&program, &argv)
+        .map(|proc| Value::Process(Rc::new(RefCell::new(Some(proc)))))
+        .map_err(|e| lift_std_error("std::process::spawn_args", e))
+}
+
+fn bridge_process_output(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let program = expect_str("std::process::output", &args, 0)?.to_string();
+    let argv = expect_string_array("std::process::output", &args, 1)?;
+    let out = garnet_stdlib::process::output(&program, &argv)
+        .map_err(|e| lift_std_error("std::process::output", e))?;
+    let code = out
+        .code()
+        .map(|c| Value::Int(c as i64))
+        .unwrap_or(Value::Nil);
+    Ok(Value::map(vec![
+        ("code".to_string(), code),
+        ("stdout".to_string(), Value::str(out.stdout())),
+        ("stderr".to_string(), Value::str(out.stderr())),
+    ]))
+}
+
 // ── S22: std::log formatting ──
 
 fn bridge_log_info(args: Vec<Value>) -> Result<Value, RuntimeError> {
@@ -1676,6 +1733,85 @@ mod tests {
                 Value::MemoryStore { backend, .. } => assert_eq!(backend.kind_name(), expected),
                 other => panic!("expected MemoryStore from {name}, got {other:?}"),
             }
+        }
+    }
+
+    // ── S23: structured argv + output capture ──
+
+    /// (program, argv-array) that echoes `marker` and exits 0, per host.
+    fn echo_argv(marker: &str) -> (Value, Value) {
+        if cfg!(windows) {
+            (
+                Value::str("cmd"),
+                Value::array(vec![
+                    Value::str("/c"),
+                    Value::str("echo"),
+                    Value::str(marker),
+                ]),
+            )
+        } else {
+            (Value::str("echo"), Value::array(vec![Value::str(marker)]))
+        }
+    }
+
+    #[test]
+    fn s23_process_prims_bound() {
+        let env = make_env();
+        for n in ["std::process::spawn_args", "std::process::output"] {
+            assert!(env.get(n).is_some(), "S23 prim `{n}` not bound");
+        }
+    }
+
+    #[test]
+    fn s23_output_returns_map_with_stdout_and_exit_code() {
+        let env = make_env();
+        let (prog, argv) = echo_argv("garnet-s23-bridge");
+        let result = call(&env, "std::process::output", vec![prog, argv]).unwrap();
+        match result {
+            Value::Map(m) => {
+                let m = m.borrow();
+                match m.get("stdout") {
+                    Some(Value::Str(s)) => assert!(
+                        s.contains("garnet-s23-bridge"),
+                        "stdout should contain the marker: {s:?}"
+                    ),
+                    other => panic!("expected stdout String, got {other:?}"),
+                }
+                assert!(matches!(m.get("code"), Some(Value::Int(0))));
+                assert!(m.contains_key("stderr"));
+            }
+            other => panic!("expected Map from std::process::output, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn s23_spawn_args_runs_explicit_argv_and_exits_zero() {
+        let env = make_env();
+        let (prog, argv) = echo_argv("ignored");
+        let proc = call(&env, "std::process::spawn_args", vec![prog, argv]).unwrap();
+        let status = call(&env, "std::process::wait", vec![proc]).unwrap();
+        assert!(matches!(
+            call(&env, "std::process::exit_code", vec![status]).unwrap(),
+            Value::Int(0)
+        ));
+    }
+
+    #[test]
+    fn s23_output_argv_must_be_strings() {
+        let env = make_env();
+        match call(
+            &env,
+            "std::process::output",
+            vec![Value::str("echo"), Value::array(vec![Value::Int(7)])],
+        ) {
+            Err(err) => {
+                let rendered = format!("{err:?}");
+                assert!(
+                    rendered.contains("argv element 0 must be a String"),
+                    "expected argv type error, got: {rendered}"
+                );
+            }
+            Ok(v) => panic!("expected argv type error, got Ok({v:?})"),
         }
     }
 }

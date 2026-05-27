@@ -651,6 +651,51 @@ python3 scripts/garnet_mit_readiness_status.py --check-no-regression
 
 ---
 
+### S23 — `std::process` structured argv + output capture
+
+**Slot:** win-opus · **Type:** post-S22 (Jon-directed; closes the S22 deferred line) · **PR count:** 1
+
+**Goal:** Replace the whitespace-split-only `std::process::spawn` contract with an
+explicit-argv path, and add captured-output execution, so a managed Garnet program
+can run a host command (program + literal argv) and consume its stdout/exit-code.
+
+**New surfaces:**
+- `garnet-stdlib` `process`: `spawn_args(program, [args])` (literal argv — spaces
+  in an argument are not re-split) and `output(program, [args])` (run-to-completion
+  capturing stdout/stderr/exit-code into an `Output`). `spawn`/`wait`/`exit_code`
+  unchanged.
+- `registry.rs`: `std::process::spawn_args` + `std::process::output` (Layer 1, cap
+  `proc`, `@stability(experimental)`).
+- `stdlib_bridge.rs`: qualified dispatch; `std::process::output` returns a
+  `{code, stdout, stderr}` map.
+- `garnet-interp-v0.3/tests/stdlib_s23_dispatch.rs` source-level integration proof.
+- `process_runtime_completion` readiness lane; baseline surgically extended.
+
+**Dogfood block:**
+
+```bash
+cargo build -p garnet-cli
+cargo test -p garnet-stdlib process --no-fail-fast
+cargo test -p garnet-interp --test stdlib_s23_dispatch --no-fail-fast
+cargo test -p garnet-interp stdlib_bridge --no-fail-fast
+cargo fmt --all -- --check ; cargo clippy --workspace --all-targets -- -D warnings
+RUSTDOCFLAGS='-D warnings' cargo doc --workspace --no-deps
+python3 scripts/garnet_mit_readiness_status.py --check-no-regression
+python3 scripts/smoke_garnet_novel_compositions.py
+```
+
+**Honest partial labels available:**
+- "Process stdout/stderr are host-dependent (line endings, locale); the
+  deterministic proof asserts substring + exit-code, not byte-exact full output."
+- "Execution is synchronous managed-mode; no async/OS-thread or streaming-stdout
+  claim."
+- "`std::log` file sinks requiring `@caps(fs)` remain the next deferred line (S24)."
+
+**State:** dogfood-passing locally (`stdlib_s23_dispatch` 3/3, `garnet-stdlib`
+`process` 8/8, `stdlib_bridge` 34 tests, readiness **83.4% / 35 lanes**).
+
+---
+
 ## v0.7.0 Release Gate
 
 Tag v0.7.0 only when all of:
