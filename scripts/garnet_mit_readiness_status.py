@@ -502,6 +502,10 @@ def read_status() -> MitReadinessStatus:
         (ROOT / "garnet-interp-v0.3/tests/stdlib_s24_dispatch.rs").exists()
         and "std::log::to_file" in bridge_text
     )
+    host_effect_composition_present = (
+        (ROOT / "examples/novel_06_observability_provenance_pipeline.garnet").exists()
+        and (ROOT / "garnet-interp-v0.3/tests/host_effect_composition.rs").exists()
+    )
     wls_clean_vm_verified = any(
         gate.id == "windows_unsigned_nsis" and gate.status == "clean-vm-proof-verified"
         for gate in wls.packaging_gates
@@ -1497,6 +1501,37 @@ def read_status() -> MitReadinessStatus:
                 "`std::log::to_file` `@caps(fs)`",
             ]
             if log_file_sink_present
+            else [],
+        ),
+        ObjectiveLane(
+            id="host_effect_composition",
+            label="Host-effect composition capstone (S25)",
+            status="verified" if host_effect_composition_present else "planned",
+            completion_percent=100.0 if host_effect_composition_present else 0.0,
+            evidence=(
+                "S25 threads the S22-S24 runtime surfaces into one capability-checked "
+                "pipeline. `garnet-interp-v0.3/tests/host_effect_composition.rs` runs a "
+                "`@caps(proc, fs)` Garnet program that captures a host command's stdout "
+                "(`std::process::output`, S23), appends a leveled line to a file "
+                "(`std::log::to_file`, S24), keeps an episodic Mnemos trace of it "
+                "(`memory::episodic`, S22), reads the sink back (`read_file`), and binds "
+                "`crypto::blake3` provenance — asserting the composed token, recall count, "
+                "file contents, exit code, and fingerprint. The deterministic, cross-platform "
+                "`examples/novel_06_observability_provenance_pipeline.garnet` composes the "
+                "side-effect-free subset (json + file-sink + episodic memory + blake3) and is "
+                "in the novel-composition harness (now 6/6). Story: "
+                "`C_Language_Specification/GARNET_NOVEL_COMPOSITIONS.md`."
+            )
+            if host_effect_composition_present
+            else "No S25 host-effect composition proof present yet.",
+            blocked_by=[],
+            deferred=[
+                "Process step in the deterministic novel example is omitted (host command + "
+                "output are platform-variable); it is proven instead in the cfg-guarded "
+                "integration test",
+                "Still synchronous managed-mode; no async actor/OS-thread runtime claim",
+            ]
+            if host_effect_composition_present
             else [],
         ),
     ]

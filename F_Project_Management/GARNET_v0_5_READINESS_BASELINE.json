@@ -1,7 +1,7 @@
 {
   "source": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s22-stdlib-memory",
   "overall_status": "active-partial",
-  "completion_percent": 83.9,
+  "completion_percent": 84.3,
   "current_truth": [
     "tracked implementation plan is complete",
     "goal remains active",
@@ -534,6 +534,18 @@
       "deferred": [
         "Line-append text sink only (create-if-missing); no log rotation, structured/JSON sinks, or async writers",
         "Capability enforcement remains the checker's job; the registry tags `std::log::to_file` `@caps(fs)`"
+      ]
+    },
+    {
+      "id": "host_effect_composition",
+      "label": "Host-effect composition capstone (S25)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "S25 threads the S22-S24 runtime surfaces into one capability-checked pipeline. `garnet-interp-v0.3/tests/host_effect_composition.rs` runs a `@caps(proc, fs)` Garnet program that captures a host command's stdout (`std::process::output`, S23), appends a leveled line to a file (`std::log::to_file`, S24), keeps an episodic Mnemos trace of it (`memory::episodic`, S22), reads the sink back (`read_file`), and binds `crypto::blake3` provenance \u2014 asserting the composed token, recall count, file contents, exit code, and fingerprint. The deterministic, cross-platform `examples/novel_06_observability_provenance_pipeline.garnet` composes the side-effect-free subset (json + file-sink + episodic memory + blake3) and is in the novel-composition harness (now 6/6). Story: `C_Language_Specification/GARNET_NOVEL_COMPOSITIONS.md`.",
+      "blocked_by": [],
+      "deferred": [
+        "Process step in the deterministic novel example is omitted (host command + output are platform-variable); it is proven instead in the cfg-guarded integration test",
+        "Still synchronous managed-mode; no async actor/OS-thread runtime claim"
       ]
     }
   ]

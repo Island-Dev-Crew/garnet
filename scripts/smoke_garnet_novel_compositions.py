@@ -83,6 +83,17 @@ NOVEL_CASES: tuple[NovelCase, ...] = (
         # non-fatal `@stability` warnings rather than the clean marker.
         check_expect="stability warning",
     ),
+    NovelCase(
+        "novel_06_observability_provenance_pipeline",
+        "examples/novel_06_observability_provenance_pipeline.garnet",
+        ("std::log::to_file", "memory::episodic", "std::json", "blake3-signed-provenance"),
+        "novel_06 provenance: "
+        "791c7dcc2c4b11a669af74c23d74d6e0bdd5127f7bf1bc00fe490eec13822f96",
+        # S25 capstone: composes S24's file sink + S22 memory/json + blake3.
+        # Uses experimental prims, so the checker emits non-fatal `@stability`
+        # warnings rather than the clean marker.
+        check_expect="stability warning",
+    ),
 )
 
 
