@@ -40,10 +40,24 @@ use std::collections::{BTreeMap, BTreeSet};
 /// matching how `caps_graph` resolves both call shapes.
 pub type StabilityMap = BTreeMap<String, Stability>;
 
+/// S29 — whether opt-in **error-level** `@stability` enforcement is enabled.
+/// Reads the `GARNET_STABILITY_ERRORS` env var (`1` or `true`). Default: off,
+/// i.e. warning-level advisories (the v0.7 behavior, kept for backward compat).
+/// This is the Layer Policy §4 "error-level enforcement is v0.8" line, shipped
+/// as an opt-in so existing programs and CI stay green by default.
+pub fn stability_error_mode() -> bool {
+    matches!(
+        std::env::var("GARNET_STABILITY_ERRORS").as_deref(),
+        Ok("1") | Ok("true")
+    )
+}
+
 /// Public entry point: advise on `@stability` for every primitive call site
-/// in `module`, reading tiers from the live stdlib registry.
+/// in `module`, reading tiers from the live stdlib registry. When the opt-in
+/// error mode is enabled, experimental/deprecated call sites become FATAL
+/// [`CheckError::StabilityError`]s instead of non-fatal advisories.
 pub fn check_stability(module: &Module) -> Vec<CheckError> {
-    advise(module, &registry_stability_map())
+    advise(module, &registry_stability_map(), stability_error_mode())
 }
 
 /// Build the primitive→stability map from the stdlib registry, indexed by the
@@ -64,9 +78,10 @@ fn registry_stability_map() -> StabilityMap {
 /// primitive present in `stability` with a non-`stable` tier, push one
 /// advisory (deduped per `(fn, primitive)` pair, deterministic order).
 /// Separated from the registry so it is unit-testable with synthetic maps.
-fn advise(module: &Module, stability: &StabilityMap) -> Vec<CheckError> {
+fn advise(module: &Module, stability: &StabilityMap, error_mode: bool) -> Vec<CheckError> {
     let mut audit = Audit {
         stability,
+        error_mode,
         seen: BTreeSet::new(),
         out: Vec::new(),
     };
@@ -76,6 +91,8 @@ fn advise(module: &Module, stability: &StabilityMap) -> Vec<CheckError> {
 
 struct Audit<'a> {
     stability: &'a StabilityMap,
+    /// When true, experimental/deprecated call sites are fatal errors (S29).
+    error_mode: bool,
     seen: BTreeSet<(String, String)>,
     out: Vec<CheckError>,
 }
@@ -105,7 +122,8 @@ impl Audit<'_> {
                     continue;
                 }
                 if self.seen.insert((f.name.clone(), prim.clone())) {
-                    self.out.push(advisory(&f.name, &prim, tier));
+                    self.out
+                        .push(advisory(&f.name, &prim, tier, self.error_mode));
                 }
             }
         }
@@ -249,25 +267,41 @@ impl Audit<'_> {
     }
 }
 
-/// Build the advisory message + severity for a (caller, primitive, tier).
-fn advisory(fn_name: &str, prim: &str, tier: Stability) -> CheckError {
-    let msg = match tier {
+/// Build the diagnostic for a (caller, primitive, tier). Under `error_mode`
+/// (S29), experimental/deprecated call sites become FATAL `StabilityError`s
+/// (severity word "error"); frozen stays informational and `stable` is silent.
+/// In the default mode every non-stable tier is a non-fatal `StabilityAdvice`,
+/// byte-for-byte the v0.7 wording.
+fn advisory(fn_name: &str, prim: &str, tier: Stability, error_mode: bool) -> CheckError {
+    // Frozen is "supported but won't grow" — informational, never an error.
+    let is_error = error_mode && matches!(tier, Stability::Experimental | Stability::Deprecated);
+    let severity = if is_error {
+        "error"
+    } else if matches!(tier, Stability::Frozen) {
+        "info"
+    } else {
+        "warning"
+    };
+    let detail = match tier {
         Stability::Experimental => format!(
-            "stability warning: function `{fn_name}` calls experimental primitive `{prim}`; \
-             its API may change between minor releases"
+            "calls experimental primitive `{prim}`; its API may change between minor releases"
         ),
         Stability::Deprecated => format!(
-            "stability warning: function `{fn_name}` calls deprecated primitive `{prim}`; \
-             it is scheduled for removal — migrate to its replacement"
+            "calls deprecated primitive `{prim}`; it is scheduled for removal — migrate to its \
+             replacement"
         ),
-        Stability::Frozen => format!(
-            "stability info: function `{fn_name}` calls frozen primitive `{prim}`; \
-             it is supported but will not grow"
-        ),
-        // `stable` never produces an advisory; included for exhaustiveness.
-        Stability::Stable => format!("stability: `{fn_name}` calls `{prim}`"),
+        Stability::Frozen => {
+            format!("calls frozen primitive `{prim}`; it is supported but will not grow")
+        }
+        // `stable` never produces a diagnostic; included for exhaustiveness.
+        Stability::Stable => format!("calls `{prim}`"),
     };
-    CheckError::StabilityAdvice(msg)
+    let msg = format!("stability {severity}: function `{fn_name}` {detail}");
+    if is_error {
+        CheckError::StabilityError(msg)
+    } else {
+        CheckError::StabilityAdvice(msg)
+    }
 }
 
 #[cfg(test)]
@@ -375,7 +409,7 @@ mod tests {
             ("pkg::gone", Stability::Deprecated),
             ("pkg::kept", Stability::Frozen),
         ]);
-        let ms = msgs(&advise(&m, &map));
+        let ms = msgs(&advise(&m, &map, false));
         assert!(
             ms.iter()
                 .any(|m| m.contains("deprecated") && m.contains("warning")),
@@ -402,7 +436,7 @@ mod tests {
         );
         let map = map_of(&[("pkg::exp", Stability::Experimental)]);
         assert_eq!(
-            msgs(&advise(&m, &map)).len(),
+            msgs(&advise(&m, &map, false)).len(),
             1,
             "three calls to the same experimental prim should warn once"
         );
@@ -419,10 +453,115 @@ mod tests {
             "#,
         );
         let map = map_of(&[("std::json::parse", Stability::Experimental)]);
-        let ms = msgs(&advise(&m, &map));
+        let ms = msgs(&advise(&m, &map, false));
         assert!(
             ms.iter().any(|m| m.contains("std::json::parse")),
             "qualified call should resolve to the qualified key, got {ms:?}"
+        );
+    }
+
+    // ── S29: opt-in error-level enforcement ─────────────────────────────
+
+    /// Collect FATAL `StabilityError` messages (vs the non-fatal advisories).
+    fn errors(errs: &[CheckError]) -> Vec<String> {
+        errs.iter()
+            .filter_map(|e| match e {
+                CheckError::StabilityError(m) => Some(m.clone()),
+                _ => None,
+            })
+            .collect()
+    }
+
+    #[test]
+    fn s29_error_mode_promotes_experimental_and_deprecated_to_fatal() {
+        let m = parse(
+            r#"
+            @caps()
+            def main() {
+                pkg::exp(x)
+                pkg::gone(x)
+            }
+            "#,
+        );
+        let map = map_of(&[
+            ("pkg::exp", Stability::Experimental),
+            ("pkg::gone", Stability::Deprecated),
+        ]);
+        let out = advise(&m, &map, true);
+        // Both become fatal StabilityErrors carrying the "error" severity word…
+        let errs = errors(&out);
+        assert_eq!(
+            errs.len(),
+            2,
+            "both non-stable calls become errors, got {errs:?}"
+        );
+        assert!(errs.iter().all(|m| m.starts_with("stability error:")));
+        assert!(errs
+            .iter()
+            .any(|m| m.contains("experimental") && m.contains("pkg::exp")));
+        assert!(errs
+            .iter()
+            .any(|m| m.contains("deprecated") && m.contains("pkg::gone")));
+        // …and NONE remain as non-fatal advisories.
+        assert!(
+            msgs(&out).is_empty(),
+            "error mode must not also emit advisories, got {:?}",
+            msgs(&out)
+        );
+    }
+
+    #[test]
+    fn s29_error_mode_keeps_frozen_informational() {
+        // Frozen is "supported but won't grow" — it must stay a non-fatal info
+        // advisory even under error mode.
+        let m = parse(
+            r#"
+            @caps()
+            def main() {
+                pkg::kept(x)
+            }
+            "#,
+        );
+        let map = map_of(&[("pkg::kept", Stability::Frozen)]);
+        let out = advise(&m, &map, true);
+        assert!(errors(&out).is_empty(), "frozen must never be an error");
+        assert!(
+            msgs(&out)
+                .iter()
+                .any(|m| m.contains("frozen") && m.contains("info")),
+            "frozen stays an info advisory, got {:?}",
+            msgs(&out)
+        );
+    }
+
+    #[test]
+    fn s29_default_mode_stays_warning_level_non_fatal() {
+        // Without error mode the v0.7 behavior is unchanged: experimental →
+        // non-fatal warning advisory, byte-for-byte the prior wording.
+        let m = parse(
+            r#"
+            @caps()
+            def main() {
+                core::iter::map(xs, f)
+            }
+            "#,
+        );
+        let out = advise(
+            &m,
+            &map_of(&[("core::iter::map", Stability::Experimental)]),
+            false,
+        );
+        assert!(
+            errors(&out).is_empty(),
+            "default mode emits no fatal errors"
+        );
+        assert_eq!(
+            msgs(&out),
+            vec![
+                "stability warning: function `main` calls experimental primitive \
+                 `core::iter::map`; its API may change between minor releases"
+                    .to_string()
+            ]
         );
     }
 }

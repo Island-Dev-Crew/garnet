@@ -11,6 +11,22 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S29 (`@stability` error-level enforcement, opt-in):** ships the Layer Policy §4
+  "error-level enforcement is v0.8" line as an opt-in. `garnet-check-v0.3` adds a
+  FATAL `CheckError::StabilityError` variant (listed in `CheckReport::ok()`), and
+  `stability.rs` promotes experimental/deprecated call sites from non-fatal
+  advisories to that fatal error when `GARNET_STABILITY_ERRORS=1` (or `true`) is set
+  — frozen stays informational, `stable` silent. The **default is unchanged
+  warning-level**, so existing programs and CI stay green. Proven end-to-end through
+  the CLI with **no garnet-cli change** (it already exits on `report.ok()`):
+  `garnet check examples/novel_04_*.garnet` warns and exits 0, while
+  `GARNET_STABILITY_ERRORS=1 garnet check …` prints `stability error:` and exits 1.
+  Unit tests cover the policy (experimental/deprecated→error, frozen→info,
+  default→warning, via the env-free `advise(error_mode)` core) and the `ok()` fatal
+  classification. New `stability_error_enforcement` readiness lane is `verified`; MIT
+  readiness moves **85.5% -> 85.9%** (41 lanes; baseline surgically extended).
+  **Honest scope:** error mode is process-global via env var; per-source
+  `@uses(experimental)` opt-out still needs the S17 parser-annotation handoff.
 - **S28 (`core::iter` completion — zip/collect/chain):** dispatches the last three
   registered `core::iter` combinators, so **all 9** are now runnable from Garnet
   source. `stdlib_bridge.rs` adds `core::iter::zip` (pairs two arrays, stopping at

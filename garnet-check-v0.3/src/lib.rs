@@ -78,6 +78,13 @@ pub enum CheckError {
     /// enforcement table.
     #[error("{0}")]
     StabilityAdvice(String),
+    /// S29 — `@stability` enforcement promoted to ERROR level. FATAL: included
+    /// in [`CheckReport::ok`], so it flips the exit code. Only emitted when the
+    /// opt-in `GARNET_STABILITY_ERRORS` mode is enabled (the Layer Policy §4
+    /// "error-level enforcement is v0.8" line); the default stays warning-level
+    /// via [`CheckError::StabilityAdvice`].
+    #[error("{0}")]
+    StabilityError(String),
 }
 
 /// The checker's result set: a list of diagnostics and metadata about each
@@ -101,6 +108,7 @@ impl CheckReport {
                 CheckError::SafeModeViolation(_)
                     | CheckError::AnnotationError(_)
                     | CheckError::CapsCoverage { .. }
+                    | CheckError::StabilityError(_)
             )
         })
     }
@@ -764,5 +772,22 @@ mod tests {
             "stability advisories must be non-fatal (ok() stays true), got {:?}",
             r.errors
         );
+    }
+
+    #[test]
+    fn s29_stability_error_is_fatal_advice_is_not() {
+        // ok() classifies the S29 fatal variant as an error and the S17 advisory
+        // as non-fatal — the mechanism the opt-in error mode relies on.
+        let mut fatal = CheckReport::default();
+        fatal
+            .errors
+            .push(CheckError::StabilityError("stability error: x".into()));
+        assert!(!fatal.ok(), "StabilityError must flip ok() to false");
+
+        let mut advisory = CheckReport::default();
+        advisory
+            .errors
+            .push(CheckError::StabilityAdvice("stability warning: x".into()));
+        assert!(advisory.ok(), "StabilityAdvice must stay non-fatal");
     }
 }
