@@ -1,7 +1,7 @@
 {
   "source": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s22-stdlib-memory",
   "overall_status": "active-partial",
-  "completion_percent": 82.9,
+  "completion_percent": 83.4,
   "current_truth": [
     "tracked implementation plan is complete",
     "goal remains active",
@@ -509,6 +509,19 @@
         "`std::env` and `std::process` are proven in Rust integration tests, not the deterministic novel example, because they mutate or launch host state",
         "`std::process::spawn` still uses the v0.7 whitespace-delimited command-line contract from `garnet_stdlib`; richer argv handling is v0.8+",
         "`std::log` remains formatting-only; file sinks that require `@caps(fs)` are v0.8+"
+      ]
+    },
+    {
+      "id": "process_runtime_completion",
+      "label": "std::process structured argv + output capture (S23)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "S23 closes the S22-deferred `std::process` argv line. `garnet-stdlib/src/process.rs` adds `spawn_args(program, [args])` (explicit argv \u2014 the program and each argument are passed to the OS literally, so an argument containing spaces is not re-split) and `output(program, [args])` (run-to-completion capturing stdout/stderr/exit-code as an `Output`), keeping `spawn`/`wait`/`exit_code` backward-compatible. `stdlib_bridge.rs` dispatches both under their qualified names; `output` returns a `{code, stdout, stderr}` map. `garnet-interp-v0.3/tests/stdlib_s23_dispatch.rs` proves stdout capture, exit-code reporting, and explicit-argv spawn from Garnet source; the stdlib unit tests prove (on POSIX) that a spaced argument survives as one argv element via the `printf \"%s\"` discriminator.",
+      "blocked_by": [],
+      "deferred": [
+        "Process stdout/stderr are host-dependent (line endings, locale); the deterministic proof asserts substring + exit-code, not byte-exact full output",
+        "Still synchronous managed-mode execution; no async/OS-thread or streaming-stdout claim",
+        "`std::log` file sinks requiring `@caps(fs)` remain the next deferred line (S24)"
       ]
     }
   ]

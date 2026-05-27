@@ -753,6 +753,26 @@ fn build_prims() -> Vec<PrimMeta> {
             Stability::Experimental,
             "Extract the integer exit code from a finished child status.",
         ),
+        p(
+            "std::process",
+            "spawn_args",
+            2,
+            RequiredCaps::proc(),
+            Layer::Std,
+            Stability::Experimental,
+            "Spawn a child from a program plus an explicit argv array (no shell \
+             splitting, so arguments containing spaces survive); returns a handle.",
+        ),
+        p(
+            "std::process",
+            "output",
+            2,
+            RequiredCaps::proc(),
+            Layer::Std,
+            Stability::Experimental,
+            "Run a program with an explicit argv array to completion, capturing \
+             stdout, stderr, and the exit code as a map.",
+        ),
         // ── std::json (no caps — pure; tracks RFC 8259) ──
         p(
             "std::json",

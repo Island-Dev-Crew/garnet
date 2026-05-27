@@ -11,6 +11,27 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S23 (`std::process` structured argv + output capture):** closes the
+  S22-deferred process line. `garnet-stdlib`'s `process` module adds
+  `spawn_args(program, [args])` — the program and each argument are handed to the
+  OS **literally**, so an argument containing spaces is not re-split the way the
+  whitespace-delimited `spawn(cmdline)` does — and `output(program, [args])`,
+  which runs a child to completion and captures its **stdout/stderr/exit-code**
+  (the v0.7 `spawn`/`wait` pair discarded captured output and kept only the exit
+  code). `spawn`/`wait`/`exit_code` are unchanged. `stdlib_bridge.rs` dispatches
+  both under their qualified names; `std::process::output` returns a
+  `{code, stdout, stderr}` map for ergonomic consumption. Proof is source-level:
+  `garnet-interp-v0.3/tests/stdlib_s23_dispatch.rs` runs a host command from a
+  `@caps(proc)` Garnet `main`, asserts the captured stdout contains the marker and
+  reports the exit code, and round-trips `spawn_args` + `wait`; the stdlib unit
+  tests prove (on POSIX, via the `printf "%s"` discriminator) that a spaced
+  argument survives as a single argv element. New `process_runtime_completion`
+  readiness lane is `verified`; MIT readiness moves **82.9% -> 83.4%** (35 lanes;
+  baseline surgically extended). **Honest scope:** process stdout/stderr are
+  host-dependent (line endings, locale), so the deterministic proof asserts
+  substring + exit-code, not byte-exact full output; execution is still
+  synchronous managed-mode (no async/OS-thread or streaming-stdout claim);
+  capability enforcement remains the checker's job, unchanged.
 - **S22 (Stdlib + memory runtime dispatch completion):** closes the S21-deferred
   runtime surface. The parser now accepts selected keywords **only as qualified
   path segments**, so official APIs such as `std::regex::match`,

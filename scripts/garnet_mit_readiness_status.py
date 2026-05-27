@@ -493,6 +493,11 @@ def read_status() -> MitReadinessStatus:
         and "memory::working" in bridge_text
         and "expect_path_segment" in parser_path_text
     )
+    process_runtime_present = (
+        (ROOT / "garnet-interp-v0.3/tests/stdlib_s23_dispatch.rs").exists()
+        and "std::process::spawn_args" in bridge_text
+        and "std::process::output" in bridge_text
+    )
     wls_clean_vm_verified = any(
         gate.id == "windows_unsigned_nsis" and gate.status == "clean-vm-proof-verified"
         for gate in wls.packaging_gates
@@ -1429,6 +1434,37 @@ def read_status() -> MitReadinessStatus:
                 "`std::log` remains formatting-only; file sinks that require `@caps(fs)` are v0.8+",
             ]
             if stdlib_memory_dispatch_present
+            else [],
+        ),
+        ObjectiveLane(
+            id="process_runtime_completion",
+            label="std::process structured argv + output capture (S23)",
+            status="verified" if process_runtime_present else "planned",
+            completion_percent=100.0 if process_runtime_present else 0.0,
+            evidence=(
+                "S23 closes the S22-deferred `std::process` argv line. "
+                "`garnet-stdlib/src/process.rs` adds `spawn_args(program, [args])` (explicit "
+                "argv — the program and each argument are passed to the OS literally, so an "
+                "argument containing spaces is not re-split) and `output(program, [args])` "
+                "(run-to-completion capturing stdout/stderr/exit-code as an `Output`), keeping "
+                "`spawn`/`wait`/`exit_code` backward-compatible. `stdlib_bridge.rs` dispatches "
+                "both under their qualified names; `output` returns a `{code, stdout, stderr}` "
+                "map. `garnet-interp-v0.3/tests/stdlib_s23_dispatch.rs` proves stdout capture, "
+                "exit-code reporting, and explicit-argv spawn from Garnet source; the stdlib "
+                "unit tests prove (on POSIX) that a spaced argument survives as one argv element "
+                "via the `printf \"%s\"` discriminator."
+            )
+            if process_runtime_present
+            else "No S23 std::process argv/output proof present yet.",
+            blocked_by=[],
+            deferred=[
+                "Process stdout/stderr are host-dependent (line endings, locale); the "
+                "deterministic proof asserts substring + exit-code, not byte-exact full output",
+                "Still synchronous managed-mode execution; no async/OS-thread or "
+                "streaming-stdout claim",
+                "`std::log` file sinks requiring `@caps(fs)` remain the next deferred line (S24)",
+            ]
+            if process_runtime_present
             else [],
         ),
     ]
