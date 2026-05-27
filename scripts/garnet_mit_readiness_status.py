@@ -510,6 +510,10 @@ def read_status() -> MitReadinessStatus:
         (ROOT / "garnet-interp-v0.3/tests/core_result_dispatch.rs").exists()
         and "core::result::and_then" in bridge_text
     )
+    option_dispatch_present = (
+        (ROOT / "garnet-interp-v0.3/tests/core_option_dispatch.rs").exists()
+        and "core::option::and_then" in bridge_text
+    )
     wls_clean_vm_verified = any(
         gate.id == "windows_unsigned_nsis" and gate.status == "clean-vm-proof-verified"
         for gate in wls.packaging_gates
@@ -1566,6 +1570,33 @@ def read_status() -> MitReadinessStatus:
                 "qualified-function form",
             ]
             if result_dispatch_present
+            else [],
+        ),
+        ObjectiveLane(
+            id="core_option_dispatch",
+            label="core::option combinator dispatch (S27)",
+            status="verified" if option_dispatch_present else "planned",
+            completion_percent=100.0 if option_dispatch_present else 0.0,
+            evidence=(
+                "S27 makes the registered `core::option` combinators runnable from Garnet "
+                "source (sibling of the S26 `core::result` work). `stdlib_bridge.rs` dispatches "
+                "`core::option::{some,none,map,and_then,unwrap_or}` at the Value layer over "
+                "`Option` Variants (Some/None) identical to the prelude builders; `map`/`and_then` "
+                "are higher-order via `call_value`, bound qualified to avoid the bare-`map` "
+                "collision. `garnet-interp-v0.3/tests/core_option_dispatch.rs` proves it from "
+                "source (map over Some, None pass-through, and_then chain + short-circuit, "
+                "unwrap_or default → [10,7,6,8,5,99]); bridge unit tests cover each combinator, "
+                "the None constructor, and the non-Option type error."
+            )
+            if option_dispatch_present
+            else "No S27 core::option dispatch proof present yet.",
+            blocked_by=[],
+            deferred=[
+                "`and_then` trusts the callee to return an Option (dynamic typing); no static "
+                "Option-shape check",
+                "Ergonomic method syntax (`option.map(..)`) is a later follow-on",
+            ]
+            if option_dispatch_present
             else [],
         ),
     ]

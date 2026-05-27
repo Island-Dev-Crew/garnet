@@ -11,6 +11,19 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S27 (`core::option` combinator dispatch):** makes the 5 registered
+  `core::option` primitives runnable from Garnet source (sibling of S26).
+  `stdlib_bridge.rs` dispatches `core::option::{some,none,map,and_then,unwrap_or}`
+  at the Value layer over `Option` Variants (Some/None) identical to the prelude
+  builders — `map`/`and_then` are higher-order via `call_value`, bound qualified to
+  avoid the bare-`map` collision. `garnet-interp-v0.3/tests/core_option_dispatch.rs`
+  proves it from source (map over Some, None pass-through, `and_then` chain +
+  short-circuit, `unwrap_or` default → `[10,7,6,8,5,99]`); bridge unit tests cover
+  each combinator, the None constructor, and the non-`Option` type error. New
+  `core_option_dispatch` readiness lane is `verified`; MIT readiness moves
+  **84.7% -> 85.1%** (39 lanes; baseline surgically extended). Additive — bridges +
+  tests only. **Honest scope:** `and_then` trusts the callee to return an `Option`
+  (dynamic typing); ergonomic method syntax is a later follow-on.
 - **S26 (`core::result` combinator dispatch):** makes the 6 registered
   `core::result` primitives runnable from Garnet source, continuing the S21/S22
   registry-to-runtime arc. `stdlib_bridge.rs` dispatches
