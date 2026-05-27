@@ -1,7 +1,7 @@
 {
   "source": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s22-stdlib-memory",
   "overall_status": "active-partial",
-  "completion_percent": 85.1,
+  "completion_percent": 85.5,
   "current_truth": [
     "tracked implementation plan is complete",
     "goal remains active",
@@ -570,6 +570,17 @@
       "deferred": [
         "`and_then` trusts the callee to return an Option (dynamic typing); no static Option-shape check",
         "Ergonomic method syntax (`option.map(..)`) is a later follow-on"
+      ]
+    },
+    {
+      "id": "core_iter_completion",
+      "label": "core::iter completion: zip/collect/chain (S28)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "S28 dispatches the last three registered `core::iter` combinators, so all 9 are now runnable. `stdlib_bridge.rs` adds `core::iter::zip` (pairs two arrays, stopping at the shorter), `core::iter::chain` (concatenates), and `core::iter::collect` (materializes a sequence \u2014 a `Range` is expanded to its integers, an Array passes through). `garnet-interp-v0.3/tests/core_iter_completion_dispatch.rs` proves them from source composed with the S21 higher-order `fold` (collect(1..4)+collect([10,20]) chained \u2192 fold-sum 36; zip stops at the shorter \u2192 [36,5,3,2,2]); bridge unit tests cover each plus the non-sequence type error.",
+      "blocked_by": [],
+      "deferred": [
+        "`collect` materializes a `Range` or passes an Array through \u2014 there is no other lazy sequence in managed mode to collect (eager map/filter already return arrays)"
       ]
     }
   ]

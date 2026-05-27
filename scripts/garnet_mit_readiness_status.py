@@ -514,6 +514,12 @@ def read_status() -> MitReadinessStatus:
         (ROOT / "garnet-interp-v0.3/tests/core_option_dispatch.rs").exists()
         and "core::option::and_then" in bridge_text
     )
+    iter_completion_present = (
+        (ROOT / "garnet-interp-v0.3/tests/core_iter_completion_dispatch.rs").exists()
+        and "core::iter::zip" in bridge_text
+        and "core::iter::collect" in bridge_text
+        and "core::iter::chain" in bridge_text
+    )
     wls_clean_vm_verified = any(
         gate.id == "windows_unsigned_nsis" and gate.status == "clean-vm-proof-verified"
         for gate in wls.packaging_gates
@@ -1597,6 +1603,32 @@ def read_status() -> MitReadinessStatus:
                 "Ergonomic method syntax (`option.map(..)`) is a later follow-on",
             ]
             if option_dispatch_present
+            else [],
+        ),
+        ObjectiveLane(
+            id="core_iter_completion",
+            label="core::iter completion: zip/collect/chain (S28)",
+            status="verified" if iter_completion_present else "planned",
+            completion_percent=100.0 if iter_completion_present else 0.0,
+            evidence=(
+                "S28 dispatches the last three registered `core::iter` combinators, so all 9 are "
+                "now runnable. `stdlib_bridge.rs` adds `core::iter::zip` (pairs two arrays, "
+                "stopping at the shorter), `core::iter::chain` (concatenates), and "
+                "`core::iter::collect` (materializes a sequence — a `Range` is expanded to its "
+                "integers, an Array passes through). `garnet-interp-v0.3/tests/"
+                "core_iter_completion_dispatch.rs` proves them from source composed with the S21 "
+                "higher-order `fold` (collect(1..4)+collect([10,20]) chained → fold-sum 36; "
+                "zip stops at the shorter → [36,5,3,2,2]); bridge unit tests cover each plus the "
+                "non-sequence type error."
+            )
+            if iter_completion_present
+            else "No S28 core::iter completion proof present yet.",
+            blocked_by=[],
+            deferred=[
+                "`collect` materializes a `Range` or passes an Array through — there is no other "
+                "lazy sequence in managed mode to collect (eager map/filter already return arrays)",
+            ]
+            if iter_completion_present
             else [],
         ),
     ]

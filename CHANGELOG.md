@@ -11,6 +11,20 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S28 (`core::iter` completion — zip/collect/chain):** dispatches the last three
+  registered `core::iter` combinators, so **all 9** are now runnable from Garnet
+  source. `stdlib_bridge.rs` adds `core::iter::zip` (pairs two arrays, stopping at
+  the shorter), `core::iter::chain` (concatenates), and `core::iter::collect`
+  (materializes a sequence — a `Range` expands to its integers, an Array passes
+  through). `garnet-interp-v0.3/tests/core_iter_completion_dispatch.rs` proves them
+  from source composed with the S21 higher-order `fold`
+  (`collect(1..4)`+`collect([10,20])` chained → fold-sum 36; `zip` stops at the
+  shorter → `[36,5,3,2,2]`); bridge unit tests cover each plus the non-sequence type
+  error. New `core_iter_completion` readiness lane is `verified`; MIT readiness moves
+  **85.1% -> 85.5%** (40 lanes; baseline surgically extended). Additive — bridges +
+  tests only. **Honest scope:** `collect` materializes a `Range` or passes an Array
+  through; there is no lazy iterator protocol to collect (eager `map`/`filter`
+  already return arrays).
 - **S27 (`core::option` combinator dispatch):** makes the 5 registered
   `core::option` primitives runnable from Garnet source (sibling of S26).
   `stdlib_bridge.rs` dispatches `core::option::{some,none,map,and_then,unwrap_or}`
