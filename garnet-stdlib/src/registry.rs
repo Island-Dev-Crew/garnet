@@ -894,7 +894,7 @@ fn build_prims() -> Vec<PrimMeta> {
             Stability::Experimental,
             "Decode a standard RFC 4648 base64 string to bytes (errors on bad input).",
         ),
-        // ── std::log (no caps for formatting; file sinks need fs — deferred) ──
+        // ── std::log (formatting needs no caps; the to_file sink needs fs) ──
         p(
             "std::log",
             "info",
@@ -930,6 +930,16 @@ fn build_prims() -> Vec<PrimMeta> {
             Layer::Std,
             Stability::Experimental,
             "Format a DEBUG-level log line.",
+        ),
+        p(
+            "std::log",
+            "to_file",
+            3,
+            RequiredCaps::fs(),
+            Layer::Std,
+            Stability::Experimental,
+            "Append a formatted `[level] message` log line to a file (creating it \
+             if missing); requires the fs capability.",
         ),
     ]
 }

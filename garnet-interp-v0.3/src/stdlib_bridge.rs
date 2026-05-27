@@ -178,6 +178,7 @@ pub fn install(global: &Env) {
     define_native(global, "std::log::warn", Some(1), bridge_log_warn);
     define_native(global, "std::log::error", Some(1), bridge_log_error);
     define_native(global, "std::log::debug", Some(1), bridge_log_debug);
+    define_native(global, "std::log::to_file", Some(3), bridge_log_to_file);
 
     define_native(global, "memory::working", Some(1), bridge_memory_working);
     define_native(global, "memory::episodic", Some(1), bridge_memory_episodic);
@@ -1068,6 +1069,17 @@ fn bridge_log_debug(args: Vec<Value>) -> Result<Value, RuntimeError> {
     Ok(Value::str(garnet_stdlib::log::debug(message)))
 }
 
+// ── S24: std::log file sink (cap: fs) ──
+
+fn bridge_log_to_file(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    let path = expect_str("std::log::to_file", &args, 0)?.to_string();
+    let level = expect_str("std::log::to_file", &args, 1)?.to_string();
+    let message = expect_str("std::log::to_file", &args, 2)?;
+    garnet_stdlib::log::to_file(&path, &level, message)
+        .map(Value::str)
+        .map_err(|e| lift_std_error("std::log::to_file", e))
+}
+
 // ── S22: memory:: constructors (live Mnemos handles) ──
 
 fn memory_store(kind: MemoryKind, name: String) -> Value {
@@ -1813,5 +1825,40 @@ mod tests {
             }
             Ok(v) => panic!("expected argv type error, got Ok({v:?})"),
         }
+    }
+
+    // ── S24: std::log file sink ──
+
+    #[test]
+    fn s24_log_to_file_bound_and_writes_line() {
+        let env = make_env();
+        assert!(
+            env.get("std::log::to_file").is_some(),
+            "S24 prim `std::log::to_file` not bound"
+        );
+
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let path = std::env::temp_dir().join(format!("garnet_s24_bridge_{nanos}.log"));
+        let p = path.to_str().unwrap();
+
+        let line = call(
+            &env,
+            "std::log::to_file",
+            vec![Value::str(p), Value::str("INFO"), Value::str("bridge")],
+        )
+        .unwrap();
+        match line {
+            Value::Str(s) => assert_eq!(s.as_str(), "[INFO] bridge"),
+            other => panic!("expected formatted line String, got {other:?}"),
+        }
+        assert_eq!(
+            std::fs::read_to_string(&path).unwrap(),
+            "[INFO] bridge\n",
+            "to_file should have appended the formatted line"
+        );
+        std::fs::remove_file(&path).ok();
     }
 }
