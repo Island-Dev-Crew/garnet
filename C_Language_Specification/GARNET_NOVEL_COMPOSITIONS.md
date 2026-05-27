@@ -112,6 +112,35 @@ identity, log records, and recall handles compose without leaving the language.
 
 ---
 
+## novel_06 — Observability + provenance pipeline (S25 capstone)
+
+**Fuses:** `std::log::to_file` (durable file sink, S24) · `memory::episodic`
+(S22) · `std::json` (S22) · `crypto::blake3` provenance.
+
+This capstone threads the runtime surfaces completed across S22–S24 into one
+`@caps(fs)` pipeline that none of novel_01..05 fuse: a structured JSON event is
+emitted, each stage is appended to a **durable log file** under the gitignored
+`.garnet-cache/`, an episodic Mnemos handle keeps a live trace of exactly what
+was logged, and a `crypto::blake3` fingerprint is bound to the structured event.
+The asserted output is derived from the formatter return values and a blake3 over
+a fixed JSON string, so it is byte-stable (`provenance:
+791c7dcc2c4b11a669af74c23d74d6e0bdd5127f7bf1bc00fe490eec13822f96`).
+
+The *full* host-effect stack — `std::process::output` (S23) feeding the file sink,
+memory, read-back, and provenance — is proven end-to-end in the cfg-guarded
+`garnet-interp-v0.3/tests/host_effect_composition.rs` (the process step is
+host-variable, so it lives in the integration test rather than the deterministic
+example).
+
+**Novel discovery:** a managed Garnet program can now emit **durable,
+capability-checked observability** for an agent pipeline and bind
+content-addressed provenance to the data it processed — closing the loop from
+S23's process-output capture to S24's file sink, all gated by `@caps`. This is
+the practical shape of an auditable agent run: what it did is on disk, and what
+it processed is fingerprinted.
+
+---
+
 ## Why this matters (the story)
 
 Single-feature demos answer "does the feature work?" Compositions answer the
@@ -126,9 +155,10 @@ but the composition is the point.
 ## Reproduce
 
 ```bash
-python3 scripts/smoke_garnet_novel_compositions.py   # 5/5 check + deterministic run
+python3 scripts/smoke_garnet_novel_compositions.py   # 6/6 check + deterministic run
 python3 -m unittest scripts.test_garnet_novel_compositions
+cargo test -p garnet-interp --test host_effect_composition   # S25 full-stack proof
 # or individually:
 garnet check examples/novel_01_capability_budgeted_memory_agent.garnet
-garnet run   examples/novel_05_s22_stdlib_memory_pipeline.garnet
+garnet run   examples/novel_06_observability_provenance_pipeline.garnet
 ```

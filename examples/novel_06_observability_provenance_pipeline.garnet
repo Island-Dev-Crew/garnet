@@ -1,0 +1,46 @@
+# novel_06_observability_provenance_pipeline.garnet
+#
+# S25 CAPSTONE: composes the runtime surfaces completed across S22-S24 into one
+# capability-checked agent pipeline that none of novel_01..05 fuse:
+#   - std::json            (structured event — S22)
+#   - std::log::to_file    (DURABLE file-sink observability under @caps(fs) — S24)
+#   - memory::episodic     (live Mnemos trace of the emitted log lines — S22)
+#   - crypto::blake3        (signed provenance over the structured event)
+#
+# Novel discovery: a managed Garnet program can now emit DURABLE, capability-
+# checked observability (logs persisted to disk) for an agent pipeline AND bind
+# a content-addressed provenance fingerprint to the data it processed — the
+# loop from S23's process-output capture to S24's file sink, all gated by @caps.
+#
+# Deterministic + cross-platform: the asserted output is derived from the
+# formatter return values and a blake3 over a fixed JSON string, not from host
+# state, so it is byte-stable. The file write (a real side effect) lands under
+# the gitignored `.garnet-cache/`; the end-to-end write->read-back is proven in
+# `garnet-interp-v0.3/tests/host_effect_composition.rs`.
+
+@caps(fs)
+def main() {
+  # Stage 1 — a structured event (std::json).
+  let event = std::json::parse("{\"stage\":\"ingest\",\"tokens\":3}")
+  let stage = std::json::get(event, "stage")
+  let compact = std::json::stringify(event)
+
+  # Stage 2 — durable observability: append leveled log lines to a file sink.
+  let log_path = ".garnet-cache/novel_06_pipeline.log"
+  let opened = std::log::to_file(log_path, "INFO", "pipeline start")
+  let logged = std::log::to_file(log_path, "INFO", stage)
+
+  # Stage 3 — episodic Mnemos trace of exactly what was logged.
+  let trace = memory::episodic("novel_06-trace")
+  trace.append(opened)
+  trace.append(logged)
+  let recent = trace.recent(2)
+
+  # Stage 4 — signed provenance bound to the structured event.
+  let provenance = crypto::blake3(compact)
+
+  println("novel_06 stage:", stage)
+  println("novel_06 logged:", recent.len())
+  println("novel_06 provenance:", provenance)
+  provenance
+}

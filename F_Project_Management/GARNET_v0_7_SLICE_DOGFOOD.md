@@ -737,6 +737,49 @@ python3 scripts/smoke_garnet_novel_compositions.py
 
 ---
 
+### S25 — Host-effect composition capstone
+
+**Slot:** win-opus · **Type:** post-S24 (Jon-directed; capstone of the S22–S24 arc) · **PR count:** 1
+
+**Goal:** Prove the S22–S24 runtime surfaces compose end-to-end from Garnet source
+into one capability-checked agent pipeline, and tell the story. Additive only — no
+new language/stdlib surface.
+
+**New surfaces:**
+- `garnet-interp-v0.3/tests/host_effect_composition.rs` — `@caps(proc, fs)` program:
+  `std::process::output` (S23) → `std::log::to_file` (S24) → `memory::episodic` (S22)
+  → `read_file` → `crypto::blake3`, asserting token/recall/contents/exit-code/
+  fingerprint (cfg command + unique temp path → deterministic).
+- `examples/novel_06_observability_provenance_pipeline.garnet` — deterministic,
+  cross-platform `@caps(fs)` composition (json + file-sink + episodic memory +
+  blake3); novel harness now 6/6.
+- `GARNET_NOVEL_COMPOSITIONS.md` novel_06 section; `host_effect_composition`
+  readiness lane; baseline surgically extended.
+
+**Dogfood block:**
+
+```bash
+cargo build -p garnet-cli
+cargo test -p garnet-interp --test host_effect_composition --no-fail-fast
+garnet run examples/novel_06_observability_provenance_pipeline.garnet  # provenance 791c7dcc…
+python3 scripts/smoke_garnet_novel_compositions.py            # 6/6
+python3 -m unittest scripts.test_garnet_novel_compositions
+cargo fmt --all -- --check ; cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace --no-fail-fast
+RUSTDOCFLAGS='-D warnings' cargo doc --workspace --no-deps
+python3 scripts/garnet_mit_readiness_status.py --check-no-regression
+```
+
+**Honest partial labels available:**
+- "The deterministic novel example omits the platform-variable process step; the
+  process leg is proven in the cfg-guarded integration test."
+- "Execution is synchronous managed-mode; no async actor / OS-thread runtime claim."
+
+**State:** dogfood-passing locally (`host_effect_composition` 2/2, novel harness
+6/6, readiness **84.3% / 37 lanes**).
+
+---
+
 ## v0.7.0 Release Gate
 
 Tag v0.7.0 only when all of:

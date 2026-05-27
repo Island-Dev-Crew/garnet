@@ -11,6 +11,25 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S25 (host-effect composition capstone):** proves the runtime surfaces
+  completed across S22–S24 compose end-to-end from Garnet source.
+  `garnet-interp-v0.3/tests/host_effect_composition.rs` runs a `@caps(proc, fs)`
+  program that captures a host command's stdout (`std::process::output`, S23),
+  appends a leveled line to a file (`std::log::to_file`, S24), keeps an episodic
+  Mnemos trace (`memory::episodic`, S22), reads the sink back (`read_file`), and
+  binds `crypto::blake3` provenance — asserting the composed token, recall count,
+  file contents, exit code, and fingerprint (cfg-selected command + unique temp
+  path → deterministic on every host). The deterministic, cross-platform
+  `examples/novel_06_observability_provenance_pipeline.garnet` composes the
+  side-effect-free subset (json + file-sink + episodic memory + blake3) and joins
+  the novel-composition harness (now **6/6**); the story is in
+  `C_Language_Specification/GARNET_NOVEL_COMPOSITIONS.md`. New
+  `host_effect_composition` readiness lane is `verified`; MIT readiness moves
+  **83.9% -> 84.3%** (37 lanes; baseline surgically extended). Additive only — a
+  new example + a new test + docs/scripts; no parser/CST or owned-crate source
+  change. **Honest scope:** the deterministic example omits the platform-variable
+  process step (proven in the cfg-guarded integration test); execution is still
+  synchronous managed-mode (no async actor/OS-thread claim).
 - **S24 (`std::log` file sink with `@caps(fs)`):** closes the S22/S23-deferred
   `std::log` file-sink line (also named in the S17 lane's deferred list).
   `garnet-stdlib`'s `log` module adds `to_file(path, level, message)`, which
