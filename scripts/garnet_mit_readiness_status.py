@@ -498,6 +498,10 @@ def read_status() -> MitReadinessStatus:
         and "std::process::spawn_args" in bridge_text
         and "std::process::output" in bridge_text
     )
+    log_file_sink_present = (
+        (ROOT / "garnet-interp-v0.3/tests/stdlib_s24_dispatch.rs").exists()
+        and "std::log::to_file" in bridge_text
+    )
     wls_clean_vm_verified = any(
         gate.id == "windows_unsigned_nsis" and gate.status == "clean-vm-proof-verified"
         for gate in wls.packaging_gates
@@ -1465,6 +1469,34 @@ def read_status() -> MitReadinessStatus:
                 "`std::log` file sinks requiring `@caps(fs)` remain the next deferred line (S24)",
             ]
             if process_runtime_present
+            else [],
+        ),
+        ObjectiveLane(
+            id="log_file_sink_runtime",
+            label="std::log file sink with @caps(fs) (S24)",
+            status="verified" if log_file_sink_present else "planned",
+            completion_percent=100.0 if log_file_sink_present else 0.0,
+            evidence=(
+                "S24 closes the S22/S23-deferred `std::log` file-sink line. "
+                "`garnet-stdlib/src/log.rs` adds `to_file(path, level, message)`, which formats "
+                "the same `[LEVEL] message` line and appends it (create-if-missing) to a file, so "
+                "it requires `@caps(fs)`; the formatting helpers are unchanged. `registry.rs` tags "
+                "`std::log::to_file` Layer 1 / cap `fs` / experimental, and `stdlib_bridge.rs` "
+                "dispatches it. `garnet-interp-v0.3/tests/stdlib_s24_dispatch.rs` writes two lines "
+                "from a `@caps(fs)` Garnet `main` and reads them back via `read_file`, asserting "
+                "ordered contents; the stdlib unit tests prove append-not-truncate and the IO "
+                "error path."
+            )
+            if log_file_sink_present
+            else "No S24 std::log file-sink proof present yet.",
+            blocked_by=[],
+            deferred=[
+                "Line-append text sink only (create-if-missing); no log rotation, "
+                "structured/JSON sinks, or async writers",
+                "Capability enforcement remains the checker's job; the registry tags "
+                "`std::log::to_file` `@caps(fs)`",
+            ]
+            if log_file_sink_present
             else [],
         ),
     ]

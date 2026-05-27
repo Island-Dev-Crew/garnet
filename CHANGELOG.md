@@ -11,6 +11,22 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S24 (`std::log` file sink with `@caps(fs)`):** closes the S22/S23-deferred
+  `std::log` file-sink line (also named in the S17 lane's deferred list).
+  `garnet-stdlib`'s `log` module adds `to_file(path, level, message)`, which
+  formats the same `[LEVEL] message` line as `info`/`warn`/`error`/`debug` and
+  **appends** it (plus a newline, create-if-missing) to a file — so unlike the
+  pure formatters it requires `@caps(fs)` — and returns the formatted line so a
+  caller can both persist and use it. `registry.rs` tags `std::log::to_file`
+  Layer 1 / cap `fs` / `@stability(experimental)`; `stdlib_bridge.rs` dispatches
+  it (arity 3). Proof is source-level: `garnet-interp-v0.3/tests/stdlib_s24_dispatch.rs`
+  has a `@caps(fs)` Garnet `main` write two lines via `std::log::to_file` then read
+  them back with `read_file`, asserting ordered contents; the stdlib unit tests
+  prove append-not-truncate and the IO error path. New `log_file_sink_runtime`
+  readiness lane is `verified`; MIT readiness moves **83.4% -> 83.9%** (36 lanes;
+  baseline surgically extended). **Honest scope:** line-append text sink only
+  (no rotation, structured/JSON sinks, or async writers); capability enforcement
+  remains the checker's job (registry-tagged `@caps(fs)`).
 - **S23 (`std::process` structured argv + output capture):** closes the
   S22-deferred process line. `garnet-stdlib`'s `process` module adds
   `spawn_args(program, [args])` — the program and each argument are handed to the

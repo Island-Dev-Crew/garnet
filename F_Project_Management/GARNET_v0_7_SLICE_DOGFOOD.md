@@ -696,6 +696,47 @@ python3 scripts/smoke_garnet_novel_compositions.py
 
 ---
 
+### S24 — `std::log` file sink (`@caps(fs)`)
+
+**Slot:** win-opus · **Type:** post-S23 (Jon-directed; closes the S22/S23/S17 deferred line) · **PR count:** 1
+
+**Goal:** Give `std::log` a real file sink so a managed Garnet program can persist
+structured log lines to disk under an `@caps(fs)` authority — the loop from S23's
+process-output capture to durable, capability-checked observability.
+
+**New surfaces:**
+- `garnet-stdlib` `log`: `to_file(path, level, message)` — formats the same
+  `[LEVEL] message` line and **appends** it (create-if-missing) to `path`; returns
+  the formatted line. Requires `@caps(fs)`. Formatting helpers unchanged.
+- `registry.rs`: `std::log::to_file` (Layer 1, cap `fs`, `@stability(experimental)`).
+- `stdlib_bridge.rs`: qualified dispatch (arity 3).
+- `garnet-interp-v0.3/tests/stdlib_s24_dispatch.rs` source-level write→read-back proof.
+- `log_file_sink_runtime` readiness lane; baseline surgically extended.
+
+**Dogfood block:**
+
+```bash
+cargo build -p garnet-cli
+cargo test -p garnet-stdlib log --no-fail-fast
+cargo test -p garnet-interp --test stdlib_s24_dispatch --no-fail-fast
+cargo test -p garnet-interp stdlib_bridge --no-fail-fast
+cargo fmt --all -- --check ; cargo clippy --workspace --all-targets -- -D warnings
+RUSTDOCFLAGS='-D warnings' cargo doc --workspace --no-deps
+python3 scripts/garnet_mit_readiness_status.py --check-no-regression
+python3 scripts/smoke_garnet_novel_compositions.py
+```
+
+**Honest partial labels available:**
+- "Line-append text sink only (create-if-missing); no rotation, structured/JSON
+  sinks, or async writers."
+- "Capability enforcement remains the checker's job; the registry tags
+  `std::log::to_file` `@caps(fs)`."
+
+**State:** dogfood-passing locally (`stdlib_s24_dispatch` 2/2, `garnet-stdlib`
+`log` 6/6, `stdlib_bridge` 35 tests, readiness **83.9% / 36 lanes**).
+
+---
+
 ## v0.7.0 Release Gate
 
 Tag v0.7.0 only when all of:

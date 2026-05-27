@@ -1,7 +1,7 @@
 {
   "source": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s22-stdlib-memory",
   "overall_status": "active-partial",
-  "completion_percent": 83.4,
+  "completion_percent": 83.9,
   "current_truth": [
     "tracked implementation plan is complete",
     "goal remains active",
@@ -522,6 +522,18 @@
         "Process stdout/stderr are host-dependent (line endings, locale); the deterministic proof asserts substring + exit-code, not byte-exact full output",
         "Still synchronous managed-mode execution; no async/OS-thread or streaming-stdout claim",
         "`std::log` file sinks requiring `@caps(fs)` remain the next deferred line (S24)"
+      ]
+    },
+    {
+      "id": "log_file_sink_runtime",
+      "label": "std::log file sink with @caps(fs) (S24)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "S24 closes the S22/S23-deferred `std::log` file-sink line. `garnet-stdlib/src/log.rs` adds `to_file(path, level, message)`, which formats the same `[LEVEL] message` line and appends it (create-if-missing) to a file, so it requires `@caps(fs)`; the formatting helpers are unchanged. `registry.rs` tags `std::log::to_file` Layer 1 / cap `fs` / experimental, and `stdlib_bridge.rs` dispatches it. `garnet-interp-v0.3/tests/stdlib_s24_dispatch.rs` writes two lines from a `@caps(fs)` Garnet `main` and reads them back via `read_file`, asserting ordered contents; the stdlib unit tests prove append-not-truncate and the IO error path.",
+      "blocked_by": [],
+      "deferred": [
+        "Line-append text sink only (create-if-missing); no log rotation, structured/JSON sinks, or async writers",
+        "Capability enforcement remains the checker's job; the registry tags `std::log::to_file` `@caps(fs)`"
       ]
     }
   ]
