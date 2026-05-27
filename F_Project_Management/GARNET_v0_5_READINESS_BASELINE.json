@@ -1,7 +1,7 @@
 {
   "source": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s22-stdlib-memory",
   "overall_status": "active-partial",
-  "completion_percent": 84.3,
+  "completion_percent": 84.7,
   "current_truth": [
     "tracked implementation plan is complete",
     "goal remains active",
@@ -546,6 +546,18 @@
       "deferred": [
         "Process step in the deterministic novel example is omitted (host command + output are platform-variable); it is proven instead in the cfg-guarded integration test",
         "Still synchronous managed-mode; no async actor/OS-thread runtime claim"
+      ]
+    },
+    {
+      "id": "core_result_dispatch",
+      "label": "core::result combinator dispatch (S26)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "S26 makes the registered `core::result` combinators runnable from Garnet source, continuing the S21/S22 registry-to-runtime arc. `stdlib_bridge.rs` dispatches `core::result::{ok,err,map,and_then,or_else,unwrap_or}` at the Value layer over `Result` Variants (Ok/Err) identical to the prelude builders; `map`/`and_then`/`or_else` are higher-order via `call_value`. Bound under their qualified names so `core::result::map` does not collide with the bare `map` (Map constructor) on the last-segment fallback. `garnet-interp-v0.3/tests/core_result_dispatch.rs` proves a railway-oriented pipeline from source (map over Ok, Err pass-through, and_then chain + short-circuit, or_else recovery, unwrap_or default \u2192 [10,7,6,8,0,5,99]); bridge unit tests cover each combinator plus the non-Result type error.",
+      "blocked_by": [],
+      "deferred": [
+        "`and_then`/`or_else` trust the callee to return a Result (dynamic typing); no static Result-shape check",
+        "Ergonomic method syntax (`result.map(..)`) is a later follow-on; S26 ships the qualified-function form"
       ]
     }
   ]

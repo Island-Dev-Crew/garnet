@@ -21,12 +21,19 @@ fn expect_string(value: &Value) -> String {
 }
 
 fn unique_temp_path() -> std::path::PathBuf {
+    // A monotonic per-call counter — NOT just nanos — guarantees a distinct path
+    // for every call within this process. The two tests below run in parallel, and
+    // on hosts with coarse clock granularity (observed on macOS CI) two nanos reads
+    // can be equal; a shared path then lets one test's cleanup delete/recreate the
+    // file mid-run and the read-back loses a line. The counter makes that impossible.
+    static COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let n = COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     let nanos = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_nanos();
     std::env::temp_dir().join(format!(
-        "garnet_s24_dispatch_{}_{nanos}.log",
+        "garnet_s24_dispatch_{}_{nanos}_{n}.log",
         std::process::id()
     ))
 }
