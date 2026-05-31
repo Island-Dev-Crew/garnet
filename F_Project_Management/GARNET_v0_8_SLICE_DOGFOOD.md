@@ -1164,6 +1164,29 @@ comments); it neither replaces nor bootstraps the Rust parser. Full self-hosting
 
 ---
 
+### S73 — VM / interpreter parity campaign
+
+**Goal:** Garnet has two execution backends (interpreter `--interp`, bytecode VM
+`--vm`); parity is a real correctness concern. Make it a gated, reproducible
+differential campaign on the validation runway.
+
+**Dogfood block:** `scripts/garnet_vm_interp_parity.py` (+ `--gate`, 7 tests) runs
+every `examples/*.garnet` through both backends and asserts agreement —
+**33/33 parity, 0 divergences** today. Parity is compared on the deterministic
+surface (**stdout + exit code**); stderr is ignored (the VM adds a cosmetic
+`vm error:` prefix; the episodic cache emits run-to-run stderr notes — stdout is
+deterministic). CI: canonical-examples runs the binary-backed campaign;
+agent-contracts runs the static gate. Doc
+`F_Project_Management/GARNET_VM_INTERP_PARITY.md`.
+
+**State:** dogfood-passing (S73 PR). 7 unit tests; full ladder green; no Rust changed.
+**Honest scope (do not soften):** **corpus-based** parity over the shipped
+examples, **not** a proof of total backend equivalence; divergences are reported,
+not hidden; the stderr wrapper-prefix is a documented cosmetic difference. Flips
+to `merged` on squash; the `s73 → merged(5)` advance rides with the S74 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.

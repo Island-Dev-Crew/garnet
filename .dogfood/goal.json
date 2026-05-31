@@ -332,9 +332,9 @@
     },
     {
       "id": "s72",
-      "merge_confidence": null,
-      "merged_at": null,
-      "status": "pending",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T19:11:34+00:00",
+      "status": "merged",
       "title": "self-hosted-parser",
       "weight": 1.0
     },
