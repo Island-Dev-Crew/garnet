@@ -1233,6 +1233,33 @@ Assessment, not implemented behavior. Flips to `merged` on squash; the
 
 ---
 
+### S76 — stdlib promotion wave
+
+**Goal:** Promote the foundational stdlib primitives out of the Experimental tier
+(the first Rust-touching runway slice), resolving the core-only example stability
+warnings honestly.
+
+**Dogfood block:** the whole **`core::*` layer** (30 primitives —
+iter/result/option/cmp/math) goes Experimental → **Stable** (stdlib distribution
+27/59 → 57/29). Criteria: core layer (no host authority) + frozen semantics +
+test-covered. The **`std::*`** host-authority + evolving-API utilities are
+**kept Experimental** (their warnings are correct). Effect: `novel_07` (core-only)
+now checks 0 diagnostics; `novel_04–06` still warn (they use `std::*`).
+`scripts/garnet_stdlib_promotion_status.py` (+ `--gate`, 5 tests) enforces the wave
+stayed **scoped** (core::* Stable AND std::* still Experimental). Spec
+`C_Language_Specification/GARNET_STDLIB_PROMOTION.md`. Rust touched: the registry
+`@stability` tier + two checker tests repointed to a still-experimental `std::*`
+primitive.
+
+**State:** dogfood-passing (S76 PR). 5 unit tests; full workspace test green
+(after repointing the 2 checker tests); fmt/diff clean.
+**Honest scope (do not soften):** a **stability judgement, not warning-suppression**.
+Only the genuinely foundational `core::*` layer was promoted; every `std::*`
+utility stays Experimental until its API is settled. Flips to `merged` on squash;
+the `s76 → merged(5)` advance rides with the S77 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.

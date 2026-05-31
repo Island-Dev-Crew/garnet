@@ -915,12 +915,13 @@ mod tests {
     #[test]
     fn stability_advice_is_non_fatal() {
         // Calling an experimental primitive emits a StabilityAdvice but must
-        // NOT flip ok() to false (warnings, not errors).
+        // NOT flip ok() to false (warnings, not errors). `std::json::parse`
+        // stays experimental after the S76 `core::*` promotion wave.
         let m = parse(
             r#"
             @caps()
             def main() {
-                core::iter::map(xs, f)
+                std::json::parse(s)
             }
             "#,
         );

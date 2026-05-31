@@ -325,12 +325,14 @@ mod tests {
 
     #[test]
     fn calling_experimental_prim_warns_via_registry() {
-        // `core::iter::map` ships @stability(experimental) in v0.7.
+        // `std::json::parse` stays @stability(experimental) after the S76
+        // promotion wave (which promoted the `core::*` layer to Stable but kept
+        // `std::*` utilities experimental).
         let m = parse(
             r#"
             @caps()
             def main() {
-                core::iter::map(xs, f)
+                std::json::parse(s)
             }
             "#,
         );
@@ -338,9 +340,9 @@ mod tests {
         let ms = msgs(&out);
         assert!(
             ms.iter().any(|m| m.contains("experimental")
-                && m.contains("core::iter::map")
+                && m.contains("std::json::parse")
                 && m.contains("warning")),
-            "expected experimental warning for core::iter::map, got {ms:?}"
+            "expected experimental warning for std::json::parse, got {ms:?}"
         );
     }
 
