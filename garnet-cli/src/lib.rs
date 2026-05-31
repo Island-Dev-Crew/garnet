@@ -3,6 +3,7 @@
 
 pub mod audit_deps;
 pub mod cache;
+pub mod cap_manifest;
 pub mod cmd;
 pub mod convert_cmd;
 pub mod diagnostics;
@@ -102,6 +103,9 @@ pub fn print_help() {
     println!("    check  [--suggest] [--format human|json] <file.garnet>");
     println!(
         "                                     Safe-mode checker (CapCaps); --format json emits structured diagnostics"
+    );
+    println!(
+        "    caps   <path>                    Emit the capability manifest (JSON) for a file or package"
     );
     println!("    run    <file.garnet>             Parse, load, and invoke `main` if it exists");
     println!(

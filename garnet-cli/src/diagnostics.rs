@@ -137,7 +137,7 @@ pub fn to_json(diagnostics: &[Diagnostic]) -> String {
 }
 
 /// Escape a string for embedding in a JSON double-quoted value.
-fn json_escape(s: &str) -> String {
+pub(crate) fn json_escape(s: &str) -> String {
     let mut out = String::with_capacity(s.len() + 2);
     for c in s.chars() {
         match c {

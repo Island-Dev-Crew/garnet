@@ -18,6 +18,22 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S36 (capability manifest — derived from annotations):** adds
+  `garnet_cli::cap_manifest::CapabilityManifest` (schema
+  `garnet-capability-manifest-v1` wrapping the S35 `CapabilitySurface`) and the
+  `garnet caps <path>` command. Emits **deterministic JSON** (`{schema,
+  aggregate, functions:[{name,caps}], wildcard}`, reusing
+  `diagnostics::json_escape`) for a single file (per-program) or every `.garnet`
+  under a directory (per-package, via `merge_surfaces` — union aggregate,
+  sorted+deduped `(name,caps)`, OR-ed wildcard). Distinct from the build
+  `Manifest` (which carries source/AST hashes but no caps). This is the artifact
+  S37 `diff-caps` compares across revisions and S38 `seal` embeds. 4 unit + 3
+  integration tests (binary via `CARGO_BIN_EXE`). **Honest scope:** captures the
+  **declared** surface (S35) — it does not prove the absence of undeclared
+  authority (that is the sandbox job, S46) and does not enforce the project
+  `[caps]` budget; per-package same-name functions across files both appear
+  (honest surface, not a resolver). No new readiness lane (mandated at S37/S38).
+
 - **S35 (source annotations — the canonical capability surface):** the
   `@caps(...)` annotation *syntax* already existed (v3.4 CapCaps —
   `Annotation::Caps`, the `Capability` enum, parsing, transitive propagation), so
