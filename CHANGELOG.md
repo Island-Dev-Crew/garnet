@@ -18,6 +18,15 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S58 (benchmark campaign):** `scripts/garnet_benchmark_campaign.py` inventories
+  the full Criterion benchmark campaign — all 6 harnesses (parser `parse`, CST
+  `parse_cst_vs_ast`, interp `eval`, VM `parse_compile_execute`, memory `vector`
+  + `eviction`) with what each measures and the per-bench run command — and
+  `--gate` (CI) fails if a declared bench file or its Cargo `[[bench]]` entry
+  disappears. Complements `garnet_benchmark_no_run.py` (compile evidence). 5 unit
+  tests. **Honest scope:** inventories + verifies the harnesses **exist**; it does
+  **not** run them and reports **no measurements** (Criterion numbers are
+  environment-specific, recorded by an explicit campaign run, not fabricated here).
 - **S57 (idiomatic open corpus):** a small, open corpus showing *what good Garnet
   looks like* — `examples/idiomatic/typed_errors.garnet` (typed `rescue e: T`, the
   S42 policy, never a catch-all) and `examples/idiomatic/state_machine.garnet`
