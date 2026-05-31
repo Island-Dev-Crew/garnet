@@ -18,6 +18,18 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S75 (formal-verification feasibility study):**
+  `C_Language_Specification/GARNET_FORMAL_VERIFICATION_FEASIBILITY.md` assesses
+  whether Garnet can offer a *provable* termination / `@caps`-soundness story over
+  a safe subset (the eBPF-verifier path). Verdict: a verified bounded-loop checker
+  for the safe subset (eBPF-style, building on `explosive.rs`) is the feasible
+  first provable increment; `@caps` soundness is feasible only atop the S74
+  linear-capability mode; whole-language verification is **not feasible** (halting
+  problem + ambient authority + FFI). `scripts/garnet_formal_verification_feasibility.py`
+  (+ `--gate`, 5 unit tests, agent-contracts) is a static anti-overclaim gate
+  grounding the study in real source. **Honest scope:** a feasibility **study
+  only** — no verifier, no termination proof, no SMT/proof-assistant integration,
+  no soundness theorem ships. No Rust changed.
 - **S74 (safe-subset spec + linear/effect-typed mode graft):**
   `C_Language_Specification/GARNET_SAFE_SUBSET.md` specifies (1) the safe subset
   **as implemented today** — the typed, ownership-disciplined `fn` mode
