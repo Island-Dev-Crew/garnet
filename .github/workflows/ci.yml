@@ -41,6 +41,7 @@ jobs:
       - run: python3 scripts/test_garnet_proof_matrix.py
       - run: python3 scripts/test_garnet_pr_review_wedge.py
       - run: python3 scripts/test_garnet_v0_8_beta_gate.py
+      - run: python3 scripts/test_garnet_signed_release_lanes.py
       - run: python3 scripts/check_determinism_no_llm.py
       - run: python3 scripts/check-agent-contracts.py
       # S47: gate cross-OS build coverage — fails if ci.yml stops testing all
@@ -52,6 +53,9 @@ jobs:
       # S50: v0.8 beta gate — fails unless the S41-S49 hardening band is merged
       # and the band's sub-gates still hold. A checkpoint, not a release.
       - run: python3 scripts/garnet_v0_8_beta_gate.py --gate
+      # S51: signed-release-lanes — fails if the ACTIVE lane (program-manifest
+      # signing) is no longer wired in CI. Lanes 2/3 are deferred/partial by design.
+      - run: python3 scripts/garnet_signed_release_lanes.py --gate
 
   # ───────────────────────────────────────────────────────────────────
   # Format check — fast, runs once on Linux. A failure here is the

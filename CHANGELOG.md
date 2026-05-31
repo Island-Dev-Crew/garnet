@@ -18,6 +18,19 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S51 (signed release lanes):** makes Garnet's three signing lanes explicit and
+  gates the active one. **`garnet seal --out <path>`** now writes the in-toto
+  predicate to a file (was print-only) so it feeds straight into `cosign attest
+  --predicate <path>`; the cosign hint names the written path. New
+  `scripts/garnet_signed_release_lanes.py` inventories the lanes —
+  (1) program-manifest signing (`garnet build --sign`, **active**, CI-gated),
+  (2) release-artifact `SHA256SUMS` signature (**deferred**, GPG/minisign),
+  (3) supply-chain attestation (`garnet seal` → cosign, **partial**) — and its
+  `--gate` (CI) protects lane 1 from silent regression. 3 Rust seal tests
+  (incl. `--out`) + 6 reporter unit tests; doc
+  `F_Project_Management/GARNET_SIGNED_RELEASE_LANES.md`. **Honest scope:** Garnet
+  does not sign its own supply chain or bundle cosign/GPG/minisign; lanes 2–3 are
+  deferred/partial by design and reported truthfully.
 - **S50 (v0.8 beta gate):** closes the S41–S50 hardening band.
   `scripts/garnet_v0_8_beta_gate.py` is a band-completion **checkpoint** (not a
   release): it verifies the nine hardening slices S41–S49 are merged at

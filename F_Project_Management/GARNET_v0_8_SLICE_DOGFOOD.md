@@ -632,6 +632,31 @@ decision for Jon**. The v0.8.0 tag remains planned later in the roadmap. Flips t
 
 ---
 
+## Slice Contracts — S51+ (v0.8 adoption / release; detailed as approached)
+
+### S51 — signed release lanes
+
+**Goal:** Make Garnet's signing posture explicit (it is three lanes, not one) and
+gate the lane Garnet actually owns (reconciliation §154: signed release lanes).
+
+**Dogfood block:** **`garnet seal --out <path>`** writes the in-toto predicate to
+a file (was print-only) so it feeds `cosign attest --predicate <path>`; the
+cosign hint names the path. `scripts/garnet_signed_release_lanes.py` inventories
+the three lanes — (1) program-manifest signing (`garnet build --sign`,
+**active**, CI round-trip to `signature valid`), (2) release `SHA256SUMS`
+signature (**deferred**, GPG/minisign TODO), (3) supply-chain attestation
+(`garnet seal` → cosign, **partial**) — and `--gate` (CI) protects lane 1.
+
+**State:** dogfood-passing (S51 PR). 3 Rust seal tests (incl. `--out`) + 6
+reporter unit tests. Full ladder green. No new readiness lane (not mandated).
+**Honest scope (do not soften):** Garnet does **not** sign its own supply chain
+and does **not** bundle cosign/GPG/minisign; lanes 2–3 are deferred/partial **by
+design** (external tools absent in this environment) and reported truthfully —
+only lane 1 (owned end-to-end) is gated. Flips to `merged` on squash; the
+`s51 → merged(5)` advance rides with the S52 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.
