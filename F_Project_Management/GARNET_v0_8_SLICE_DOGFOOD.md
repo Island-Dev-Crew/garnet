@@ -896,6 +896,27 @@ toolchain / wasm runtime is absent. Flips to `merged` on squash; the
 
 ---
 
+### S62 — Rust FFI proof
+
+**Goal:** Prove a Garnet↔Rust `extern "C"` binding is a first-class, attested
+authority under the S61 model (reconciliation §163-164).
+
+**Dogfood block:** `examples/ffi/rust_extern.garnet` (a `@caps(ffi)` Rust-wrapper)
+checks clean + runs; `garnet seal` emits an in-toto predicate
+(`predicateType …/seal/v1`) whose embedded capability manifest **attests `ffi`**
+— so a Rust-FFI binding is diffable (S37), reviewable (S49), signable (S51).
+Spec: `C_Language_Specification/GARNET_RUST_FFI.md`; cross-OS proof
+`garnet-cli/tests/rust_ffi_proof.rs` (2 tests).
+
+**State:** dogfood-passing (S62 PR). 2 Rust tests; full ladder green. No new
+readiness lane.
+**Honest scope (do not soften):** proves the **authority + attestation** half;
+Garnet has **no FFI runtime** — the value↔C-ABI marshalling layer and a linked
+Rust `cdylib` are **deferred**, not added here. Flips to `merged` on squash; the
+`s62 → merged(5)` advance rides with the S63 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.

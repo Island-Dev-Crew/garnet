@@ -244,9 +244,9 @@
     },
     {
       "id": "s61",
-      "merge_confidence": null,
-      "merged_at": null,
-      "status": "pending",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T15:48:50+00:00",
+      "status": "merged",
       "title": "ffi-authority",
       "weight": 1.0
     },
