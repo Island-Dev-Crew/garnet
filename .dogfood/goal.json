@@ -284,9 +284,9 @@
     },
     {
       "id": "s66",
-      "merge_confidence": null,
-      "merged_at": null,
-      "status": "pending",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T16:48:42+00:00",
+      "status": "merged",
       "title": "attestation",
       "weight": 1.0
     },

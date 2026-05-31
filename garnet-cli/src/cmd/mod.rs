@@ -23,6 +23,7 @@ pub mod doctest;
 pub mod eval;
 pub mod fmt;
 pub mod keygen;
+pub mod mcp_caps;
 pub mod new;
 pub mod parse;
 pub mod repl;
