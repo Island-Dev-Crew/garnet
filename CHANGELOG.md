@@ -18,6 +18,18 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S77 (external package pilot):** `garnet-registry-stub/tests/external_package_pilot.rs`
+  drives the external-package flow end-to-end against the filesystem registry stub
+  — publish → `resolve` by name+version → BLAKE3 content-address `verify_package`
+  (tamper detection) → refuse a nonexistent dependency (`NotFound`) → `slopguard`
+  flags a hallucinated near-miss (separator-confusable + edit-distance), answering
+  the trajectory research's #1 supply-chain threat (slopsquatting). Runs in the
+  `cargo test --workspace` matrix on every OS. `scripts/garnet_external_package_pilot_status.py`
+  (+ `--gate`, 5 tests, agent-contracts) is the static gate; spec
+  `C_Language_Specification/GARNET_EXTERNAL_PACKAGE_PILOT.md`. **Honest scope:** a
+  **LOCAL filesystem registry-stub pilot, NOT a live public ecosystem** (no HTTP /
+  publish / auth / SemVer / signatures); the slopguard is a heuristic, not a
+  security guarantee. Rust touched: a new integration test only (no production code).
 - **S76 (stdlib promotion wave):** the foundational **`core::*` layer** (30
   primitives — `core::iter/result/option/cmp/math`) is promoted from Experimental
   to **Stable**; the stdlib distribution moves 27/59 → **57 Stable / 29

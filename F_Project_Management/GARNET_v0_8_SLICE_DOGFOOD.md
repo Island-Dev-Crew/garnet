@@ -1260,6 +1260,31 @@ the `s76 → merged(5)` advance rides with the S77 PR.
 
 ---
 
+### S77 — external package pilot
+
+**Goal:** Ecosystem maturation — pilot the external-package flow end-to-end with
+the slopsquatting guard in the loop.
+
+**Dogfood block:** `garnet-registry-stub/tests/external_package_pilot.rs` drives
+publish → `resolve` → BLAKE3 `verify_package` (tamper detection) → refuse a
+nonexistent dependency → `slopguard::nearest` flags a hallucinated near-miss
+(separator-confusable + edit-distance) — the trajectory research's #1 supply-chain
+threat. Runs in the `cargo test --workspace` matrix (every OS).
+`scripts/garnet_external_package_pilot_status.py` (+ `--gate`, 5 tests,
+agent-contracts) is the static gate. Spec
+`C_Language_Specification/GARNET_EXTERNAL_PACKAGE_PILOT.md`.
+
+**State:** dogfood-passing (S77 PR). 4 Rust pilot tests + 5 unit tests; full
+workspace test green; fmt/diff clean. Rust touched: a new integration test only.
+**Honest scope (do not soften):** a **LOCAL filesystem registry-stub pilot, NOT a
+live public ecosystem** — no HTTP / publish / auth / SemVer ranges / signatures;
+the slopguard is a deterministic heuristic ("prompt to verify"), not a security
+guarantee; `garnet add` vendors local paths only and doesn't yet load deps into
+`garnet run`. Flips to `merged` on squash; the `s77 → merged(5)` advance rides
+with the S78 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.
