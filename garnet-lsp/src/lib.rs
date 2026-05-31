@@ -467,6 +467,7 @@ fn annotation_span(annotation: &Annotation) -> Option<Span> {
         | Annotation::Dynamic(span)
         | Annotation::Caps(_, span)
         | Annotation::Mailbox(_, span)
+        | Annotation::Bounded(_, span)
         | Annotation::NonSendable(span) => Some(*span),
     }
 }

@@ -189,6 +189,7 @@ fn lower_annotation(attr: &SyntaxNode) -> Option<Annotation> {
         "safe" => Annotation::Safe(span),
         "dynamic" => Annotation::Dynamic(span),
         "mailbox" => Annotation::Mailbox(int_arg(), span),
+        "bounded" => Annotation::Bounded(int_arg(), span),
         "nonsendable" => Annotation::NonSendable(span),
         "caps" => {
             let caps = attr

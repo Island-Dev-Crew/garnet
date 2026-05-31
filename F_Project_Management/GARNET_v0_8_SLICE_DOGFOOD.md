@@ -325,7 +325,17 @@ Flips to `merged` on squash; the `s38 → merged(5)` advance rides with the S39 
 wrap-don't-rebuild:** lower to **Wasmtime fuel** metering (revisit only if WASM
 overhead exceeds ~2–3×).
 
-**State:** not-started.
+**State:** dogfood-passing (S39 PR). `@bounded(N)` (CPU/fuel budget of N
+Wasmtime-fuel units) threaded through all 5 `Annotation` sites (AST, grammar, the
+rowan CST converter, checker validation, doc-span). `garnet_check::bounded_functions`
+extracts declared budgets; `garnet bounds <file>` reports them. Checker rejects
+`@bounded(0)`; negative literals are parse errors (consistent with @mailbox /
+@max_depth). 6 unit + 2 integration tests; CLI smoke verified. No new readiness
+lane (not mandated for S39). Honest scope (wrap-don't-rebuild): budget declared +
+reported; ENFORCEMENT lowers to Wasmtime fuel — wasmtime/wasm-tools ABSENT here,
+so declared not runtime-enforced (no fuel meter faked). Mem bounds + unified
+resource syntax are follow-ups. Flips to `merged` on squash; the
+`s39 → merged(5)` advance rides with the S40 PR.
 
 ---
 

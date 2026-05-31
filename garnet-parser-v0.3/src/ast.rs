@@ -173,6 +173,9 @@ pub enum Annotation {
     /// Mailbox capacity for an actor (v3.4 BoundedMail).
     /// `@mailbox(N)` overrides the default 1024-message cap on send.
     Mailbox(i64, Span),
+    /// CPU / fuel budget (S39). `@bounded(N)` declares N Wasmtime-fuel units;
+    /// enforcement lowers to Wasmtime fuel metering (the wrap).
+    Bounded(i64, Span),
     /// Mark a type as not transferable across actor boundaries
     /// (v3.4 Sendable / Mini-Spec v1.0 §9.4.3).
     NonSendable(Span),

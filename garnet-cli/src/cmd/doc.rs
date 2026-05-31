@@ -173,6 +173,7 @@ fn annotation_span(annotation: &Annotation) -> Option<garnet_parser::token::Span
         | Annotation::Dynamic(span)
         | Annotation::Caps(_, span)
         | Annotation::Mailbox(_, span)
+        | Annotation::Bounded(_, span)
         | Annotation::NonSendable(span) => Some(*span),
     }
 }
