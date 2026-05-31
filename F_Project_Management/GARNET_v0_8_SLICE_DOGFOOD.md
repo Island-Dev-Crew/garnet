@@ -1035,6 +1035,29 @@ advance rides with the S68 PR.
 
 ---
 
+### S68 — capability transparency log stub
+
+**Goal:** Give a program's authority an auditable *history* + seed a
+cross-language capability-manifest standard (reconciliation §167, GRAFT).
+
+**Dogfood block:** `garnet caps-log <file> --log <path>` appends an append-only,
+BLAKE3-chained entry (`index`, `program`, `caps`, `caps_blake3`, `prev_blake3`);
+`--verify` recomputes the chain — tampering with any earlier entry breaks it at
+the next (exit 1). The language-agnostic entry schema is the standard seed. Spec
+`C_Language_Specification/GARNET_CAPABILITY_TRANSPARENCY.md`; cross-OS proof
+`garnet-cli/tests/caps_log.rs` (2 tests).
+
+**State:** dogfood-passing (S68 PR). 2 Rust tests (intact chain verifies; tamper
+detected); full ladder green. No new readiness lane.
+**Honest scope (do not soften):** a **local, hash-chained STUB** — **not** a
+distributed/witnessed transparency log (no public log server, signed tree head,
+witness/gossip, or external inclusion proof). It gives tamper-evidence for a
+*local* append-only file, **not** Rekor; a real witnessed Merkle log is out of
+scope. Flips to `merged` on squash; the `s68 → merged(5)` advance rides with the
+S69 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.
