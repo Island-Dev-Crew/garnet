@@ -54,6 +54,7 @@ jobs:
       - run: python3 scripts/test_garnet_llm_suggest_readiness.py
       - run: python3 scripts/test_garnet_version_map_check.py
       - run: python3 scripts/test_garnet_paper_vi_exp3_status.py
+      - run: python3 scripts/test_garnet_self_hosted_parser_seed_status.py
       - run: python3 scripts/check_determinism_no_llm.py
       - run: python3 scripts/check-agent-contracts.py
       # S47: gate cross-OS build coverage — fails if ci.yml stops testing all
@@ -101,6 +102,10 @@ jobs:
       # S71: Paper VI Exp 3 — gates the harness ships + runs provider-free; the
       # provider-backed h₃a re-run is pending-infra and is NOT gated.
       - run: python3 scripts/garnet_paper_vi_exp3_status.py --gate
+      # S72: self-hosted parser seed — static well-formedness gate here (this job
+      # builds no compiler); the binary-backed check+run proof is in the
+      # canonical-examples job below.
+      - run: python3 scripts/garnet_self_hosted_parser_seed_status.py --gate --no-run
 
   # ───────────────────────────────────────────────────────────────────
   # Format check — fast, runs once on Linux. A failure here is the
@@ -216,6 +221,16 @@ jobs:
             fi
             echo "::endgroup::"
           done
+      - name: Self-hosted parser seed — check + run proof (S72)
+        shell: bash
+        run: |
+          set -euo pipefail
+          target/debug/garnet parse examples/self_hosted_parser_seed.garnet
+          target/debug/garnet check examples/self_hosted_parser_seed.garnet
+          target/debug/garnet run examples/self_hosted_parser_seed.garnet > /tmp/seed.out
+          cat /tmp/seed.out
+          grep -q "parsed defs: 3 managed: 1" /tmp/seed.out
+          python3 scripts/garnet_self_hosted_parser_seed_status.py --gate
       - name: Run dogfood and conformance phase gates
         run: |
           cargo test -p garnet-cli --test conformance_skeleton
