@@ -1141,6 +1141,29 @@ rides with the S72 PR.
 
 ---
 
+### S72 — self-hosted parser seed
+
+**Goal:** Ship the self-hosting **seed** — a Garnet program that parses a subset
+of Garnet's own surface syntax — a maturity milestone on the validation runway.
+
+**Dogfood block:** `examples/self_hosted_parser_seed.garnet` parses
+`def name(params) { ... }` declarations from an embedded Garnet source string
+(name + arity + `@caps` managed flag) using only Stable, no-caps `str::`
+primitives — checks with 0 diagnostics, runs to `parsed defs: 3 managed: 1`.
+`scripts/garnet_self_hosted_parser_seed_status.py` (+ `--gate`, 5 tests) reports
+it: the **canonical-examples** CI job runs the binary-backed check+run proof; the
+**agent-contracts** job runs the static well-formedness gate (`--no-run`). Spec
+`C_Language_Specification/GARNET_SELF_HOSTED_PARSER.md`.
+
+**State:** dogfood-passing (S72 PR). 5 unit tests; full ladder green; no Rust changed.
+**Honest scope (do not soften):** a **SEED**, **not** the production parser
+(`garnet-parser-v0.3`) — no full AST/grammar (nested braces, expressions, types,
+comments); it neither replaces nor bootstraps the Rust parser. Full self-hosting
+(porting the parser to Garnet) remains roadmap. Flips to `merged` on squash; the
+`s72 → merged(5)` advance rides with the S73 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.

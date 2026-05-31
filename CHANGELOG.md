@@ -18,6 +18,18 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S72 (self-hosted parser seed):** `examples/self_hosted_parser_seed.garnet` —
+  a Garnet program that parses a subset of Garnet's **own** surface syntax
+  (`def name(params) { ... }` declarations from an embedded source string),
+  reporting each declaration's name, arity, and `@caps` managed status using only
+  Stable, no-caps `str::` primitives (checks with 0 diagnostics; runs to
+  `parsed defs: 3 managed: 1`). `scripts/garnet_self_hosted_parser_seed_status.py`
+  (+ `--gate`, 5 unit tests) reports/gates it: the canonical-examples CI job runs
+  the binary-backed check+run proof, the agent-contracts job runs the static
+  well-formedness gate. Spec `C_Language_Specification/GARNET_SELF_HOSTED_PARSER.md`.
+  **Honest scope:** a **SEED**, **not** the production parser (`garnet-parser-v0.3`)
+  — no full AST/grammar (nested braces, expressions, types, comments); it neither
+  replaces nor bootstraps the Rust parser. Full self-hosting remains roadmap.
 - **S71 (Paper VI Exp 3 — actual run, honest):** `scripts/garnet_paper_vi_exp3_status.py`
   (+ `--gate`, wired into CI's agent-contracts job) inventories the
   compiler-as-agent time-to-fix harness (`benchmarks/paper_vi_exp3_compiler_as_agent/`:

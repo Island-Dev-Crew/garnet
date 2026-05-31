@@ -1,0 +1,61 @@
+# self_hosted_parser_seed.garnet
+#
+# S72 — self-hosted parser SEED. A Garnet program that parses a subset of
+# Garnet's OWN surface syntax: `def name(params) { ... }` declarations from an
+# embedded source string, counting arity and detecting the `@caps(...)`
+# annotation that marks a managed function.
+#
+# Honest scope: this is a SEED toward self-hosting, NOT the production parser
+# (garnet-parser-v0.3). It recognizes def headers + @caps lines using only the
+# Stable, no-caps `str::` primitives (split / trim / replace / contains /
+# starts_with). It does NOT build a full AST, handle nested braces, expressions,
+# types, comments, or the whole grammar. Full self-hosting remains roadmap work.
+
+# Extract the function name from a def header line "def name(...) {".
+def parse_name(line) {
+  let nm = str::split(line, "(")
+  str::trim(str::replace(nm[0], "def ", ""))
+}
+
+# Count the parameters declared in a def header line.
+def parse_arity(line) {
+  if str::contains(line, "()") {
+    0
+  } else {
+    let inside = str::split(line, "(")
+    let argpart = str::split(inside[1], ")")
+    let args = str::trim(argpart[0])
+    str::split(args, ",").len()
+  }
+}
+
+@caps()
+def main() {
+  # The Garnet source the seed parses (Garnet parsing Garnet).
+  let src = "@caps()\ndef main() {\n  greet(\"world\")\n}\ndef add(a, b) {\n  a + b\n}\ndef greet(name) {\n  name\n}\n"
+  let lines = str::split(src, "\n")
+  let total = 0
+  let managed = 0
+  let caps_pending = false
+  for line in lines {
+    let t = str::trim(line)
+    if str::starts_with(t, "@caps") {
+      caps_pending = true
+    } else {
+      if str::starts_with(t, "def ") {
+        let name = parse_name(t)
+        let arity = parse_arity(t)
+        if caps_pending {
+          managed = managed + 1
+          println("def", name, "arity", arity, "caps yes")
+        } else {
+          println("def", name, "arity", arity, "caps no")
+        }
+        total = total + 1
+        caps_pending = false
+      }
+    }
+  }
+  println("parsed defs:", total, "managed:", managed)
+  total
+}
