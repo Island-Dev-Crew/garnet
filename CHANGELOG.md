@@ -18,6 +18,19 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S46 (caps-to-sandbox policy):** `garnet sandbox <file>` translates a module's
+  declared `@caps` surface (S35) into three concrete sandbox policy artifacts — a
+  seccomp profile (OCI-style default-deny syscall allowlist), a WASI capability
+  set (preopens / sockets / clocks / env), and an egress rule
+  (deny-all / loopback-only / allow). Pure mapper `garnet_cli::sandbox` +
+  deterministic JSON (`schema garnet.sandbox/v1`); `--format human|json`. `ffi`
+  and `proc` emit explicit escape-hatch warnings; `*` is permissive-with-warning.
+  8 unit + 4 integration tests; mapping documented in
+  `C_Language_Specification/GARNET_SANDBOX_POLICY.md`. **Honest scope: policy
+  generation, not enforcement** — every artifact is marked `"enforced": false`;
+  nothing runs under `wasmtime`, applies seccomp to a live process, or installs a
+  firewall (runtime enforcement needs wasmtime/a Linux seccomp host, both out of
+  scope and absent here).
 - **S45 (slopsquatting guard):** `garnet add --registry` now flags an unknown
   package name that closely resembles a known one before anything is trusted —
   the live slopsquatting threat (hallucinated names attackers pre-register).

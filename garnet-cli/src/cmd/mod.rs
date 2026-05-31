@@ -27,6 +27,7 @@ pub mod new;
 pub mod parse;
 pub mod repl;
 pub mod run;
+pub mod sandbox;
 pub mod seal;
 pub mod test;
 pub mod trust_report;

@@ -260,6 +260,7 @@ fn main() -> ExitCode {
         "fmt" => cmd::fmt::run(&args[1..]),
         "doc" => cmd::doc::run(&args[1..]),
         "doctest" => cmd::doctest::run(&args[1..]),
+        "sandbox" => cmd::sandbox::run(&args[1..]),
         other => {
             eprintln!("unknown subcommand: {other}");
             print_help();
