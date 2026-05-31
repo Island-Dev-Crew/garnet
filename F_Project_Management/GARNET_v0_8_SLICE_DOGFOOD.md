@@ -1,0 +1,388 @@
+# GARNET v0.8 SLICE DOGFOOD CONTRACTS
+
+Date: 2026-05-30
+Purpose: Single source of truth for every v0.8 PR (S31–S80). Read by Claude
+Code, Codex Desktop, Greptile/PR-Agent, the `dogfood-readiness` skill, and Jon.
+Update this file in the same commit as the work it tracks.
+
+The v0.7 successor of `F_Project_Management/GARNET_v0_7_SLICE_DOGFOOD.md`
+(S15–S19 closed; the repo carried through S30). This file governs PRs titled
+`S31:`–`S80:` and any later v0.8 slice added under § Slice Contracts.
+
+**Map vs. contracts.** The strategic spine — why each slice exists, the
+seam-by-seam Opus×Codex reconciliation, and the load-bearing bets — lives in
+`F_Project_Management/SLICE_PLAN_RECONCILED_OPUS_X_CODEX.md`. **That document is
+the map; this file is the per-slice acceptance contract.** Where they ever
+disagree, the map states intent and this file states the merge bar.
+
+---
+
+## How v0.8 is built (differs from v0.7's fixed 4-slot split)
+
+v0.7 used a fixed four-agent slot table. v0.8 is a **long-running goal-mode run**
+governed by the upgraded `dogfood-readiness` skill (`Navigata1/dogfood-readiness`):
+
+- **One slice per PR**, title `S<N>: <short>`, branched fresh from `origin/main`.
+- **Merge confidence is fused and gated.** Each PR earns a 1–5 band from the
+  falsification ledger, fused (`min`) with an external reviewer (Greptile, and —
+  once S37 lands — the `diff-caps` capability signal). **Merge only at fused
+  5/5, or a recorded human deferral.**
+- **The goal ledger** (`.dogfood/goal.json`) tracks objective completion across
+  the whole S31→S80 run — "slice k of N merged," not a hand-typed percentage.
+  Slice readiness and overall objective completion are **kept as separate
+  numbers** and never blended.
+- **Resolution decreases past S60.** S31–S60 are planned in detail; S61–S80 are
+  bets, re-sliced as reality arrives. Detailed contracts are authored as each
+  band approaches.
+
+---
+
+## Version-tag bands (no 1.0 in the S31–S80 window)
+
+| Band | Slices | Tag |
+|---|---|---|
+| v0.8 foundation | S31–S40 | (in flight) |
+| v0.8 hardening | S41–S50 | v0.8 beta gate @ S50 |
+| v0.8 adoption / release | S51–S60 | **v0.8.0 @ S60** |
+| v0.8.1 (resolution ↓) | S61–S70 | **v0.8.1 @ S70** |
+| v0.8.2 runway (resolution ↓) | S71–S80 | **v0.8.2 readiness decision @ S80** |
+
+**1.0 is held past S80** until the bet stages validate. Both source plans agree.
+
+---
+
+## Slice State Machine
+
+  not-started → planned → in-progress → review-ready → dogfood-passing → merged
+
+| Transition | Required artifact |
+|---|---|
+| not-started → planned | Plan file at `.agent/plans/S<N>-plan.md` referencing this contract + the map by section |
+| planned → in-progress | Draft PR open, title `S<N>: <short>`; goal ledger created/known |
+| in-progress → review-ready | CI green · PR body uses the dogfood-readiness headings · dogfood block run locally with output attached |
+| review-ready → dogfood-passing | Falsification audit run; fused merge confidence computed; grep loop driven toward 5/5 |
+| dogfood-passing → merged | Fused **5/5** (or recorded human deferral) · squash-merged · CHANGELOG `[Unreleased]` updated · readiness baseline regenerated if a lane was added · goal ledger advanced |
+
+Backward moves are allowed and require a one-line "regression note" in the PR body.
+
+---
+
+## Common Verification Primitives
+
+Every slice's CI run executes these on top of its own block (inherited from v0.5–v0.7):
+
+```bash
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace --no-fail-fast
+cargo deny check
+python3 scripts/garnet_mit_readiness_status.py --check-no-regression
+python3 scripts/garnet_conformance_matrix_check.py
+python3 -m unittest discover scripts/ -p 'test_*.py'
+```
+
+---
+
+## Cross-Slice Gates (every PR)
+
+| Gate | Where enforced | Failure mode |
+|---|---|---|
+| `@caps` declared on new authority | `garnet check` in CI | Hard fail |
+| Determinism preserved (committed-truth identical on every machine) | S9 cross-machine matrix + S31 reporter split | Hard fail |
+| Determinism job never spawned with `--llm` | S19 CI guard | Hard fail |
+| No new ambient `unsafe` | `cargo clippy` + audit | Hard fail |
+| Honest voice in docs | Jon review | Block until corrected |
+| Dogfood-readiness headings present | `.github/workflows/dogfood-readiness.yml` greps PR body | Hard fail |
+| Fused merge confidence = 5/5 (or recorded human deferral) | `dogfood-readiness` skill grep loop | Block merge |
+| `cargo deny check` clean | CI | Hard fail |
+| Node-24 action minimums | `scripts/test_github_actions_node24_readiness.py` | Hard fail |
+| MIT-readiness baseline regenerated if a lane was added | S0 `--check-no-regression` | Hard fail |
+| Capability/authority change reviewed (diff-caps once S37 lands) | S37 `diff-caps` → fused band | Block 5/5 |
+
+---
+
+## Slice Contracts — S31–S40 (v0.8 foundation, detailed)
+
+### S31 — v0.8 release truth + slice ledger + readiness contract
+
+**PR count:** 2 (PR-1 foundation/doctrine; PR-2 deterministic-reporter fix).
+
+**Goal:** Stand up the v0.8 map, this contracts file, and the **readiness
+contract** the whole run is graded against — and **adopt** the upgraded
+`dogfood-readiness` toolkit (fusion + grep-loop-to-5/5 + goal-mode ledger)
+rather than rebuilding readiness machinery.
+
+**PR-1 (this PR) — foundation & doctrine (docs + gate reconciliation):**
+- `F_Project_Management/SLICE_PLAN_RECONCILED_OPUS_X_CODEX.md` — the merged spine (map).
+- `F_Project_Management/GARNET_v0_8_SLICE_DOGFOOD.md` — this file.
+- **Adopt the toolkit:** reconcile `scripts/check_dogfood_pr_body.py` so the new
+  skill's PR-body shape (`### Evidence bundle`, `### Merge confidence`, `### Goal
+  progress`) passes the existing garnet CI gate *and* the legacy `### Desktop
+  dogfood bundle` heading still validates (accept either as the evidence
+  section). Update `scripts/test_check_dogfood_pr_body.py` to lock both.
+- `.dogfood/goal.json` — the persisted goal ledger for the S31→S80 objective
+  (committed so every session/machine reads the same "slice k of N").
+- `CHANGELOG.md` `[Unreleased]` header corrected to current release truth
+  (was `v0.6.0 in flight`; the repo is past that — relabel to `v0.8.0 in flight`).
+
+**PR-2 — deterministic-reporter fix (substantive, separate PR):**
+- The readiness reporter's machine-dependence (observed 85.2 vs 80.6 across
+  machines) is a **bug that gates the cross-machine hand-off**, not just
+  doctrine. Split **committed-truth** (the % that must be byte-identical on every
+  machine) from **local-evidence** (machine-specific observations reported
+  separately). Add the `reporter_determinism` lane + baseline regeneration here.
+
+**Dogfood block (PR-1):**
+
+```bash
+# Toolkit is green and usable:
+( cd /tmp/dogfood-readiness && python3 -m unittest discover -s tests )   # 32 ok
+# The garnet PR-body gate accepts the new skill's headings:
+python3 scripts/check_dogfood_pr_body.py --base origin/main --head HEAD --body-file <pr-body>
+python3 -m unittest scripts.test_check_dogfood_pr_body
+# Goal ledger initialized and queryable:
+PYTHONPATH=/tmp/dogfood-readiness python3 -m dogfood_readiness --goal-action status --goal-file .dogfood/goal.json
+```
+
+**Honest partial labels available:**
+- "S31 PR-1 is doctrine + ledger + gate-reconciliation only; no runtime behavior changes and no new readiness lane — the reporter-determinism fix and its lane land in S31-PR2."
+- "The goal ledger tracks the *planned* spine; slices past S60 are bets and may be re-sliced (resolution decreases by design)."
+- "v0.8 version-tag mapping (v0.8.0@S60 …) is a plan, not a shipped tag."
+
+**State:** in-progress (this PR).
+
+---
+
+### S32 — edition / compatibility model (two-layer)
+
+**Goal:** Install the compatibility evolution mechanism *before* users exist to
+break — the earliest load-bearing slice (both source plans independently placed
+compatibility first).
+
+**[GRAFT] Two layers:** editions (parse-time, opt-in syntax/semantics shifts)
+**+** GODEBUG-style runtime settings (semantic-time). Enforce a
+**skin-deep / one-canonical-IR** invariant so **capability semantics are
+edition-invariant** — an edition may change surface syntax but never what
+authority a program holds.
+
+**Dogfood block (target):** a program pinned to edition N and one to edition N+1
+produce the **same capability manifest**; a GODEBUG-style toggle changes a
+runtime default without changing the manifest.
+
+**Honest partial labels available:** "Editions cover parse-time evolution;
+runtime-settings layer may land staged." "Edition migration tooling is minimal in v0.8."
+
+**State:** not-started.
+
+---
+
+### S33 — one-command `garnet verify`
+
+**Goal:** A single acceptance gate a user/agent runs locally and CI runs
+remotely. **[GRAFT]** Build it to accept a **pluggable capability signal**
+(diff-caps wires in at S37) and to **fuse** the internal readiness band with an
+external reviewer (Greptile) via `min`; drive the grep loop to 5/5.
+
+**Dogfood block (target):** `garnet verify` exits non-zero on a planted
+regression; exits zero on a clean tree; emits the fused merge-confidence band.
+
+**Honest partial labels available:** "Until S37, the capability signal slot is a
+stub — the fused band uses the external reviewer + internal ledger only."
+
+**State:** not-started.
+
+---
+
+### S34 — structured diagnostics (machine + human)
+
+**Goal:** Diagnostics with both a human-readable and a machine-parseable form,
+an authoritative exit code, and the foundation for serving over MCP.
+
+**State:** not-started.
+
+---
+
+### S35 — source annotations (`@caps` syntax)
+
+**Goal:** The annotation syntax itself — the surface from which the capability
+manifest is later derived. (Decomposition correction from the reconciliation:
+annotations → manifest → diff, as three slices, not one assumed-existing syntax.)
+
+**State:** not-started.
+
+---
+
+### S36 — capability manifest (derived from annotations)
+
+**Goal:** Derive a per-program/per-package capability manifest from S35's
+annotations. The manifest is the artifact `diff-caps` (S37) and `seal` (S38)
+both consume.
+
+**State:** not-started.
+
+---
+
+### S37 — `diff-caps` (capability-surface diff as acceptance gate)
+
+**Goal:** The headline novelty: diff the capability surface between two revisions
+and gate on authority changes. **[GRAFT]** feeds the **same fused 1–5 band** as
+Greptile in S33's `garnet verify` (`min` governs the gate).
+
+**Honest partial labels available:** "diff-caps reads the declared capability
+surface; it does not prove the absence of undeclared authority (that is the
+sandbox-policy job, S46)."
+
+**State:** not-started.
+
+---
+
+### S38 — `seal` (signed reproducible bundle)
+
+**Goal:** A signed, reproducible build bundle. **[GRAFT] wrap-don't-rebuild:**
+express the attestation as an **in-toto predicate**, verify via **cosign**, emit
+a **CycloneDX/SPDX SBOM**; the capability manifest is the no-SBOM-equivalent
+extension. Do not rebuild signing or metering primitives.
+
+**Honest partial labels available:** "seal wraps in-toto/Sigstore/cosign; Garnet
+does not implement its own signing." 
+
+**State:** not-started.
+
+---
+
+### S39 — `@bounded`
+
+**Goal:** Bounded-resource annotation (CPU/mem/mailbox). **[GRAFT]
+wrap-don't-rebuild:** lower to **Wasmtime fuel** metering (revisit only if WASM
+overhead exceeds ~2–3×).
+
+**State:** not-started.
+
+---
+
+### S40 — explosive-operation / default-ceiling analysis
+
+**Goal:** Static identification of unbounded/explosive operations and enforced
+default ceilings, closing the foundation band.
+
+**State:** not-started.
+
+---
+
+## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
+
+> Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.
+> Each slice still earns its own contract block + fused 5/5 before merge.
+
+**S41–S50 · v0.8 hardening**
+- **S41** async/concurrency contract · **S42** typed Result / error policy ·
+  **S43** docs-as-tests · **S44** LSP safe-mode / cross-package precision
+  (distinct from tree-sitter) · **S45** package resolver / slopsquatting guard ·
+  **S46** caps-to-sandbox policy (WASI/seccomp/egress) · **S47** Win/Linux/macOS
+  build proof **[GRAFT: + Windows-propriety audit lane]** · **S48** 12-domain /
+  7-novel proof matrix · **S49** **[GRAFT] AI-PR-review-collapse wedge demo**
+  (the launch narrative; measured review-time collapse) · **S50** v0.8 beta gate.
+
+**S51–S60 · v0.8 adoption / release**
+- **S51** signed release lanes · **S52** one-line install / readme check ·
+  **S53** tree-sitter · **S54** VS Code / OpenVSX / Marketplace · **S55** WASM
+  hello-world · **S56** playground MVP · **S57** idiomatic open corpus ·
+  **S58** benchmark campaign · **S59** fuzz campaign · **S60 — v0.8.0 tag.**
+
+> ## ⚠ RESOLUTION DECREASES BELOW THIS LINE (bets; both plans agree)
+
+**S61–S70 · v0.8.1** — native-interop boundary + provenance
+- **S61** FFI authority model · **S62** Rust FFI proof · **S63** C ABI proof ·
+  **S64** WASI interop · **S65** AI-authorship provenance · **S66** model/prompt/
+  tool attestation in `seal` · **S67** MCP/tool capability declarations ·
+  **S68** capability transparency log stub **[GRAFT: seed cross-language
+  capability-manifest standard]** · **S69** LLM suggest v0.2 / Paper VI prep ·
+  **S70 — v0.8.1 tag.**
+
+**S71–S80 · v0.8.2 runway (not rushed)**
+- **S71** Paper VI Exp 3 actual run · **S72** self-hosted parser seed ·
+  **S73** VM/interpreter parity campaign · **S74** safe-subset spec **[GRAFT:
+  optional linear/effect-typed safe mode]** · **S75** formal-verification
+  feasibility · **S76** stdlib promotion wave · **S77** external package pilots ·
+  **S78** governance / RFC process **[GRAFT: RFC + edition process over BDFL;
+  donate capability-manifest standard to OWASP/LF]** · **S79** website / deck
+  reframing · **S80** v0.8.2 readiness decision.
+
+**1.0** — held past S80 until the bet stages validate.
+
+---
+
+## PR Body Template (hybrid: satisfies the new skill AND garnet CI)
+
+```markdown
+## Summary
+- What changed. Why it is narrow. What is deliberately not claimed.
+
+## Dogfood Readiness
+
+### Current truth
+- [x] Base/head refs, dirty state, changed files recorded.
+
+### Local verification
+- [x] <command + observed result>
+
+### Remote verification
+- [x] <CI matrix / checks>
+
+### Merge confidence
+- [ ] Internal band (1–5; 5 == score ≥ 95) recorded.
+- [ ] External reviewer score + source (e.g. Greptile 4/5) or marked not-run.
+- [ ] Fused merge confidence **5/5** via grep loop, or recorded human deferral.
+
+### Goal progress
+- [ ] Overall completion is `goal-tracked` from `.dogfood/goal.json` (slice k of N).
+
+### Desktop dogfood bundle / Evidence bundle
+- [x] Evidence artifacts attached or copied to a durable project folder.
+
+### Deferred / out of scope
+- This PR does not claim production readiness.
+```
+
+> Note: the `### Desktop dogfood bundle / Evidence bundle` heading carries both
+> labels so the legacy garnet CI gate and the new skill template both pass —
+> this is the S31 gate-reconciliation in practice.
+
+---
+
+## Integration with Existing Scripts (readiness lanes)
+
+New lanes land **with the slice that earns them**, not before:
+
+| Slice | Lane added |
+|---|---|
+| S31-PR2 | `reporter_determinism` (committed-truth split) |
+| S32 | `edition_compatibility` |
+| S33 | `garnet_verify_gate` |
+| S37 | `capability_diff_caps` |
+| S38 | `seal_attestation` |
+| (later bands) | authored as each slice approaches |
+
+S31-PR1 (this PR) adds **no** lane and regenerates **no** baseline — it is
+doctrine + ledger + gate reconciliation only.
+
+---
+
+## Honesty Anchors (carry forward from v0.5–v0.7, plus v0.8 additions)
+
+Carried forward (stay verbatim — brand equity):
+- "research-grade prototype (v0.x.x) — not production-complete"
+- "tracked-slice ledger is complete, but that is not full MIT/productization completion"
+- Paper VI scorecard: "4 supported, 2 partial (downgraded honestly), 0 refuted, 1 pending-infra"
+- "human/aesthetic acceptance remains open"
+- "registry stub serves a static index; no central registry, no auth, no publish flow"
+
+New for v0.8:
+- "compatibility is two-layer; capability semantics are edition-invariant by construction"
+- "seal/@bounded WRAP in-toto/cosign/Wasmtime — Garnet does not reimplement signing or metering"
+- "diff-caps reads the declared capability surface; sandbox enforcement of undeclared authority is S46"
+- "merge confidence is the FUSED (min) internal+external band; a confident reviewer alone cannot satisfy 5/5"
+- "slices past S60 are bets; the goal ledger tracks the planned spine, not a guarantee"
+- "no 1.0 claim is implied anywhere in the S31–S80 window"
+
+If a slice would let one of these soften, the slice's PR body says so explicitly and Jon decides.

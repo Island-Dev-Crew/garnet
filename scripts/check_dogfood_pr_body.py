@@ -33,8 +33,14 @@ REQUIRED_HEADINGS = (
     "### Current truth",
     "### Local verification",
     "### Remote verification",
-    "### Desktop dogfood bundle",
     "### Deferred / out of scope",
+)
+# The evidence section may be titled either way: the legacy garnet heading or the
+# `dogfood-readiness` skill's heading. At least one must be present, and whichever
+# is present must carry a checked evidence item. (S31 gate reconciliation.)
+EVIDENCE_HEADINGS = (
+    "### Desktop dogfood bundle",
+    "### Evidence bundle",
 )
 NEGATED_ARC_PATTERNS = (
     r"\bnot\s+production\s+ARC\s+complete\b",
@@ -60,8 +66,25 @@ def is_readiness_sensitive(paths: list[str]) -> bool:
     return any(is_sensitive_path(path) for path in paths)
 
 
+def heading_line_pos(body: str, heading: str) -> int:
+    """Index of `heading` only where it begins a line (a real Markdown heading),
+    not where it is merely mentioned in prose or inline code. Returns -1 if absent."""
+    match = re.search(r"(?m)^[ \t]*" + re.escape(heading), body)
+    return match.start() if match else -1
+
+
 def missing_headings(body: str) -> list[str]:
-    return [heading for heading in REQUIRED_HEADINGS if heading not in body]
+    missing = [heading for heading in REQUIRED_HEADINGS if heading_line_pos(body, heading) == -1]
+    if present_evidence_heading(body) is None:
+        missing.append("### Evidence bundle (or ### Desktop dogfood bundle)")
+    return missing
+
+
+def present_evidence_heading(body: str) -> str | None:
+    for heading in EVIDENCE_HEADINGS:
+        if heading_line_pos(body, heading) != -1:
+            return heading
+    return None
 
 
 def has_unqualified_production_arc_claim(body: str) -> bool:
@@ -71,7 +94,7 @@ def has_unqualified_production_arc_claim(body: str) -> bool:
 
 
 def has_checked_evidence(body: str, section_heading: str) -> bool:
-    start = body.find(section_heading)
+    start = heading_line_pos(body, section_heading)
     if start == -1:
         return False
     next_heading = body.find("\n### ", start + len(section_heading))
@@ -93,8 +116,9 @@ def validate_body(body: str, changed_paths: list[str]) -> ValidationResult:
     if "### Remote verification" in body and not has_checked_evidence(body, "### Remote verification"):
         errors.append("remote verification section must include at least one checked evidence item")
 
-    if "### Desktop dogfood bundle" in body and not has_checked_evidence(body, "### Desktop dogfood bundle"):
-        errors.append("desktop dogfood bundle section must include at least one checked evidence item")
+    evidence_heading = present_evidence_heading(body)
+    if evidence_heading is not None and not has_checked_evidence(body, evidence_heading):
+        errors.append("evidence bundle section must include at least one checked evidence item")
 
     if has_unqualified_production_arc_claim(body):
         errors.append("unqualified production ARC completion claim")

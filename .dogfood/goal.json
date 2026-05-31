@@ -1,0 +1,407 @@
+{
+  "created_at": "2026-05-31T04:22:02+00:00",
+  "goal_id": "v0_8",
+  "slices": [
+    {
+      "id": "s31",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "release-truth",
+      "weight": 1.0
+    },
+    {
+      "id": "s32",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "editions",
+      "weight": 1.0
+    },
+    {
+      "id": "s33",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "garnet-verify",
+      "weight": 1.0
+    },
+    {
+      "id": "s34",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "diagnostics",
+      "weight": 1.0
+    },
+    {
+      "id": "s35",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "annotations",
+      "weight": 1.0
+    },
+    {
+      "id": "s36",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "capability-manifest",
+      "weight": 1.0
+    },
+    {
+      "id": "s37",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "diff-caps",
+      "weight": 1.0
+    },
+    {
+      "id": "s38",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "seal",
+      "weight": 1.0
+    },
+    {
+      "id": "s39",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "bounded",
+      "weight": 1.0
+    },
+    {
+      "id": "s40",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "explosive-ops",
+      "weight": 1.0
+    },
+    {
+      "id": "s41",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "async-contract",
+      "weight": 1.0
+    },
+    {
+      "id": "s42",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "error-policy",
+      "weight": 1.0
+    },
+    {
+      "id": "s43",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "docs-as-tests",
+      "weight": 1.0
+    },
+    {
+      "id": "s44",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "lsp-precision",
+      "weight": 1.0
+    },
+    {
+      "id": "s45",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "slopsquatting-guard",
+      "weight": 1.0
+    },
+    {
+      "id": "s46",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "caps-sandbox",
+      "weight": 1.0
+    },
+    {
+      "id": "s47",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "cross-platform-proof",
+      "weight": 1.0
+    },
+    {
+      "id": "s48",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "proof-matrix",
+      "weight": 1.0
+    },
+    {
+      "id": "s49",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "wedge-demo",
+      "weight": 1.0
+    },
+    {
+      "id": "s50",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "beta-gate",
+      "weight": 1.0
+    },
+    {
+      "id": "s51",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "signed-release",
+      "weight": 1.0
+    },
+    {
+      "id": "s52",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "install-check",
+      "weight": 1.0
+    },
+    {
+      "id": "s53",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "tree-sitter",
+      "weight": 1.0
+    },
+    {
+      "id": "s54",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "vscode-marketplace",
+      "weight": 1.0
+    },
+    {
+      "id": "s55",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "wasm-hello",
+      "weight": 1.0
+    },
+    {
+      "id": "s56",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "playground",
+      "weight": 1.0
+    },
+    {
+      "id": "s57",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "corpus",
+      "weight": 1.0
+    },
+    {
+      "id": "s58",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "benchmarks",
+      "weight": 1.0
+    },
+    {
+      "id": "s59",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "fuzz",
+      "weight": 1.0
+    },
+    {
+      "id": "s60",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "v0.8.0-tag",
+      "weight": 1.0
+    },
+    {
+      "id": "s61",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "ffi-authority",
+      "weight": 1.0
+    },
+    {
+      "id": "s62",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "rust-ffi",
+      "weight": 1.0
+    },
+    {
+      "id": "s63",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "c-abi",
+      "weight": 1.0
+    },
+    {
+      "id": "s64",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "wasi-interop",
+      "weight": 1.0
+    },
+    {
+      "id": "s65",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "ai-provenance",
+      "weight": 1.0
+    },
+    {
+      "id": "s66",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "attestation",
+      "weight": 1.0
+    },
+    {
+      "id": "s67",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "mcp-caps",
+      "weight": 1.0
+    },
+    {
+      "id": "s68",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "transparency-log",
+      "weight": 1.0
+    },
+    {
+      "id": "s69",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "llm-suggest-v2",
+      "weight": 1.0
+    },
+    {
+      "id": "s70",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "v0.8.1-tag",
+      "weight": 1.0
+    },
+    {
+      "id": "s71",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "paper-vi-exp3",
+      "weight": 1.0
+    },
+    {
+      "id": "s72",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "self-hosted-parser",
+      "weight": 1.0
+    },
+    {
+      "id": "s73",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "vm-parity",
+      "weight": 1.0
+    },
+    {
+      "id": "s74",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "safe-subset",
+      "weight": 1.0
+    },
+    {
+      "id": "s75",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "formal-verification",
+      "weight": 1.0
+    },
+    {
+      "id": "s76",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "stdlib-promotion",
+      "weight": 1.0
+    },
+    {
+      "id": "s77",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "external-packages",
+      "weight": 1.0
+    },
+    {
+      "id": "s78",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "governance-rfc",
+      "weight": 1.0
+    },
+    {
+      "id": "s79",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "website-reframe",
+      "weight": 1.0
+    },
+    {
+      "id": "s80",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "v0.8.2-decision",
+      "weight": 1.0
+    }
+  ],
+  "title": "Garnet v0.8 (S31-S80)"
+}
