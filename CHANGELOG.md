@@ -18,6 +18,21 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S40 (explosive-op / default-ceiling analysis — closes the v0.8 foundation
+  band):** adds `garnet_check::explosive_ops` — a **compiler-exhaustive** AST
+  visitor (every `Stmt`/`Expr` variant matched + recursed, so nested sites are
+  never missed) that flags two unbounded constructs: an unconditional `loop`
+  (static termination is undecidable, so every `loop` is flagged) and `spawn`
+  (fan-out). Per function it reports the ops + whether each is governed by a
+  declared bound (`@bounded` for loops, `@fan_out` for spawn) or the
+  **default-ceiling policy** (`DEFAULT_LOOP_CEILING`, `DEFAULT_SPAWN_FANOUT`
+  constants). `garnet ceilings <file>` reports it. 5 unit + 2 integration tests.
+  **Closes Phase A (S31–S40).** **Honest scope:** static IDENTIFICATION +
+  default-ceiling POLICY only — runtime enforcement lowers to the S39 `@bounded`
+  / Wasmtime-fuel path and is deferred (wasmtime absent); no ceiling is faked.
+  Explosive set = `loop` + `spawn` (recursion is already addressed by `@max_depth`
+  + the caps call graph; unbounded collection growth is a follow-up).
+
 - **S39 (@bounded — declared resource budgets; wrap-don't-rebuild):** adds the
   `@bounded(N)` annotation — a CPU/fuel budget of N Wasmtime-fuel units —
   threaded through all five `Annotation` sites (parser AST + grammar, the rowan

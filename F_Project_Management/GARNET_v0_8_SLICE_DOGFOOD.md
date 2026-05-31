@@ -344,7 +344,19 @@ resource syntax are follow-ups. Flips to `merged` on squash; the
 **Goal:** Static identification of unbounded/explosive operations and enforced
 default ceilings, closing the foundation band.
 
-**State:** not-started.
+**State:** dogfood-passing (S40 PR) — **closes Phase A (S31–S40)**.
+`garnet_check::explosive_ops` is a compiler-exhaustive AST visitor flagging
+unconditional `loop` (every loop — static termination is undecidable) and `spawn`
+(fan-out), reporting per function whether each is governed by a declared bound
+(`@bounded` / `@fan_out`) or the default-ceiling policy (`DEFAULT_LOOP_CEILING` /
+`DEFAULT_SPAWN_FANOUT`). `garnet ceilings <file>` reports it. 5 unit + 2
+integration tests; CLI smoke verified. No new readiness lane (not mandated).
+Honest scope: static identification + default-ceiling POLICY; runtime ENFORCEMENT
+lowers to the S39 `@bounded` / Wasmtime-fuel path — deferred (wasmtime absent),
+no ceiling faked. Explosive set = loop + spawn (recursion is already governed by
+`@max_depth` + the caps call graph; unbounded collection growth is a follow-up).
+Flips to `merged` on squash; the `s40 → merged(5)` advance (completing the phaseA
+ledger) rides with the S41 PR (first hardening-band slice).
 
 ---
 
