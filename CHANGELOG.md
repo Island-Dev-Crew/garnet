@@ -7,9 +7,32 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated-honesty record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
-## [Unreleased] — v0.6.0 in flight
+## [Unreleased] — v0.8.0 in flight
+
+> Release-truth note (S31): only `v0.4.2` and `v0.5.0` are tagged. The `v0.6.0`
+> and `v0.7.0` "in flight" labels were planning targets that never cut a tag;
+> their slices (S11–S30) folded forward and ship under the next tag, **v0.8.0**
+> (planned @ S60 per `GARNET_v0_8_SLICE_DOGFOOD.md`). A full CHANGELOG
+> restructure + any retroactive tagging is a deferred S31 release-truth decision
+> for Jon — not done in this PR.
 
 ### Added
+
+- **S31 PR-1 (v0.8 release truth + slice ledger + readiness contract):** lands
+  the v0.8 map (`F_Project_Management/SLICE_PLAN_RECONCILED_OPUS_X_CODEX.md`) and
+  the per-slice acceptance contracts (`F_Project_Management/GARNET_v0_8_SLICE_DOGFOOD.md`,
+  S31–S40 detailed, S41–S80 banded; v0.8.0@S60 / v0.8.1@S70 / v0.8.2@S80; **1.0
+  held past S80**). **Adopts** the upgraded `dogfood-readiness` skill
+  (`Navigata1/dogfood-readiness`: internal×external merge-confidence fusion via
+  `min`, grep-loop-to-5/5, persisted goal-mode ledger) rather than rebuilding
+  readiness machinery, and **reconciles** the garnet PR-body gate
+  (`scripts/check_dogfood_pr_body.py`) to accept either `### Desktop dogfood
+  bundle` (legacy) or `### Evidence bundle` (skill) — backward-compatible, locked
+  by 4 new/updated unit tests. Initializes the S31→S80 goal ledger at
+  `.dogfood/goal.json`. **Honest scope:** doctrine + ledger + gate reconciliation
+  only — no runtime behavior changes and **no new readiness lane**; the
+  deterministic-reporter fix (committed-truth split, machine-independent %) and
+  its `reporter_determinism` lane land in **S31-PR2**.
 
 - **S30 (functional-core composition capstone):** with the full functional `core::`
   surface now interpreter-dispatched (S26 result, S27 option, S28 iter), proves they
