@@ -1727,6 +1727,39 @@ def read_status() -> MitReadinessStatus:
                 "(S31-PR2 splits at the aggregation layer only)",
             ],
         ),
+        ObjectiveLane(
+            id="edition_compatibility",
+            evidence_class="committed",
+            label="Edition / compatibility model (S32)",
+            status="verified",
+            completion_percent=100.0,
+            evidence=(
+                "S32 installs the two-layer compatibility mechanism. Layer 1 (editions, "
+                "parse-time): a `garnet_parser::Edition` registry (`v1.0` default + a "
+                "registered `v2.0` that exists only to prove the mechanism), read from "
+                "`[project].edition` in Garnet.toml (legacy `[package]` / `garnet-0.3` "
+                "accepted as a deprecated alias with a one-line warning; an unknown edition "
+                "is a hard error). The single edition-gated surface difference is the "
+                "reserved word `async` (a free identifier under v1.0, rejected at lex time "
+                "under v2.0), confined to the lexer so the grammar and AST are untouched. "
+                "The one-canonical-IR invariant is proven: source valid in both editions "
+                "parses to a byte-identical AST and an identical capability manifest "
+                "(`Manifest::build` ast_hash). Layer 2 (runtime settings, GODEBUG-style): "
+                "`GARNET_DEBUG=k=v` flips a CLI default (`diagnostics=verbose`) without "
+                "changing the manifest; unknown keys warn, never error. Wired into "
+                "`garnet check` and `garnet run --interp`; proven end-to-end (a v1.0 program "
+                "passes, the identical v2.0 program fails on the reserved word) and by 22 "
+                "unit/integration tests across garnet-parser and garnet-cli."
+            ),
+            blocked_by=[],
+            deferred=[
+                "Mechanism + invariant only: no per-edition syntax-migration catalog (future)",
+                "`garnet run --vm` uses the default edition; the VM has a separate load path "
+                "(harmonized in a later slice, per the S12/S14 split)",
+                "No manifest `[runtime]` table yet — the GODEBUG layer is the env var only; a "
+                "`[runtime]` table would be a spec change deferred to a future Handoff",
+            ],
+        ),
     ]
 
     # Committed-truth headline: only machine-independent lanes feed the score, so the

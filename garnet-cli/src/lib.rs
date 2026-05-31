@@ -5,11 +5,13 @@ pub mod audit_deps;
 pub mod cache;
 pub mod cmd;
 pub mod convert_cmd;
+pub mod edition_manifest;
 pub mod knowledge;
 pub mod machine_key;
 pub mod manifest;
 pub mod new_cmd;
 pub mod provenance;
+pub mod runtime_settings;
 pub mod strategies;
 
 use std::fs;

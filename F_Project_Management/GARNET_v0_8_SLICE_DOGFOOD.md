@@ -172,7 +172,19 @@ runtime default without changing the manifest.
 **Honest partial labels available:** "Editions cover parse-time evolution;
 runtime-settings layer may land staged." "Edition migration tooling is minimal in v0.8."
 
-**State:** not-started.
+**State:** dogfood-passing (S32 PR). Two-layer mechanism shipped:
+`garnet_parser::Edition` (`v1.0` default + a registered `v2.0` that exists only to
+prove the mechanism), `[project].edition` resolution with legacy
+`[package]`/`garnet-0.3` alias warning and unknown-edition hard error, the
+lexer-only `async` edition-gated reserved word, the one-canonical-IR
+AST/manifest-invariance invariant, and the `GARNET_DEBUG` GODEBUG layer
+(`diagnostics` toggle; unknown keys warn). 22 unit/integration tests; proven
+end-to-end through `garnet check` / `run --interp`. Lane `edition_compatibility`
+added; baseline regenerated. Flips to `merged` on squash; the ledger
+`s32 → merged(5)` advance rides with the S33 PR (keeps main honest). Honest
+scope: mechanism + invariant only — no per-edition migration catalog, `--vm` on
+the default edition, no manifest `[runtime]` table, no Mini-Spec edit (§16.3
+already specifies the canonical form).
 
 ---
 

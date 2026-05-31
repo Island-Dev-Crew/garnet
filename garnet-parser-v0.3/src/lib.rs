@@ -16,6 +16,7 @@
 pub mod ast;
 pub mod budget;
 pub mod cst;
+pub mod edition;
 pub mod error;
 pub mod grammar;
 pub mod lexer;
@@ -24,6 +25,7 @@ pub mod token;
 
 use ast::Module;
 pub use budget::ParseBudget;
+pub use edition::{Edition, EditionError};
 use error::ParseError;
 use lexer::Lexer;
 use parser::Parser;
@@ -39,8 +41,25 @@ pub fn parse_source_cst_with_budget(
     src: &str,
     budget: ParseBudget,
 ) -> Result<(Module, cst::CstNode), ParseError> {
+    parse_source_cst_with_budget_and_edition(src, budget, Edition::default())
+}
+
+/// Lex and parse into AST + CST under an explicit [`Edition`] (default budget).
+pub fn parse_source_cst_with_edition(
+    src: &str,
+    edition: Edition,
+) -> Result<(Module, cst::CstNode), ParseError> {
+    parse_source_cst_with_budget_and_edition(src, ParseBudget::default(), edition)
+}
+
+/// Lex and parse into AST + CST with a caller-supplied budget and [`Edition`].
+pub fn parse_source_cst_with_budget_and_edition(
+    src: &str,
+    budget: ParseBudget,
+    edition: Edition,
+) -> Result<(Module, cst::CstNode), ParseError> {
     budget.check_source_bytes(src.len())?;
-    let tokens = lex_source_with_budget(src, budget)?;
+    let tokens = lex_source_with_budget_and_edition(src, budget, edition)?;
     check_token_nesting(&tokens, budget)?;
     let filtered_tokens: Vec<Token> = tokens
         .iter()
@@ -64,8 +83,25 @@ pub fn parse_source(src: &str) -> Result<Module, ParseError> {
 
 /// Lex and parse a Garnet source string with a caller-supplied budget.
 pub fn parse_source_with_budget(src: &str, budget: ParseBudget) -> Result<Module, ParseError> {
+    parse_source_with_budget_and_edition(src, budget, Edition::default())
+}
+
+/// Lex and parse a Garnet source string under an explicit [`Edition`] (default
+/// budget). Source valid in two editions yields a byte-identical `Module` (the
+/// one-canonical-IR invariant); editions gate only the lexical surface.
+pub fn parse_source_with_edition(src: &str, edition: Edition) -> Result<Module, ParseError> {
+    parse_source_with_budget_and_edition(src, ParseBudget::default(), edition)
+}
+
+/// Lex and parse a Garnet source string with a caller-supplied budget and
+/// [`Edition`].
+pub fn parse_source_with_budget_and_edition(
+    src: &str,
+    budget: ParseBudget,
+    edition: Edition,
+) -> Result<Module, ParseError> {
     budget.check_source_bytes(src.len())?;
-    let tokens = lex_source_with_budget(src, budget)?;
+    let tokens = lex_source_with_budget_and_edition(src, budget, edition)?;
     check_token_nesting(&tokens, budget)?;
     let filtered_tokens: Vec<Token> = tokens
         .iter()
@@ -102,7 +138,17 @@ pub fn lex_source(src: &str) -> Result<Vec<Token>, ParseError> {
 
 /// Lex with a caller-supplied budget.
 pub fn lex_source_with_budget(src: &str, budget: ParseBudget) -> Result<Vec<Token>, ParseError> {
+    lex_source_with_budget_and_edition(src, budget, Edition::default())
+}
+
+/// Lex with a caller-supplied budget under an explicit [`Edition`]. The edition
+/// governs only edition-gated reserved words (see [`Edition::is_reserved_ident`]).
+pub fn lex_source_with_budget_and_edition(
+    src: &str,
+    budget: ParseBudget,
+    edition: Edition,
+) -> Result<Vec<Token>, ParseError> {
     budget.check_source_bytes(src.len())?;
-    let mut lexer = Lexer::with_budget(src, budget);
+    let mut lexer = Lexer::with_budget_and_edition(src, budget, edition);
     lexer.lex()
 }

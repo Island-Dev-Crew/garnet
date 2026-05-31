@@ -251,7 +251,8 @@ fn parse_error_span(error: &ParseError) -> Span {
         | ParseError::InvalidFloat { span }
         | ParseError::UnexpectedToken { span, .. }
         | ParseError::UnexpectedEof { span, .. }
-        | ParseError::BudgetExceeded { span, .. } => *span,
+        | ParseError::BudgetExceeded { span, .. }
+        | ParseError::ReservedWord { span, .. } => *span,
     }
 }
 
