@@ -18,6 +18,18 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S67 (MCP tool-capability declarations):** brings the `@caps` lens to MCP/agent
+  tools, addressing the documented MCP "absence of capability attestation". A
+  `.mcpcaps` manifest names each tool's required caps (`tool: cap1, cap2`); new
+  `garnet mcp-caps <file>` reports the per-tool + **aggregate** authority surface,
+  flags **high-authority** tools (`ffi`/`proc`/`*`), and lists unknown caps.
+  `--format json` (`schema garnet.mcp_caps/v1`, `"enforced":false`) makes a
+  tool-set's authority diffable (a tool-set gaining `proc`/`ffi` is as visible as
+  a program gaining a capability). `examples/mcp/agent_toolset.mcpcaps` + spec
+  `C_Language_Specification/GARNET_MCP_CAPS.md` + cross-OS proof
+  `garnet-cli/tests/mcp_caps.rs` (2 tests). **Honest scope:** **self-declared,
+  not MCP-host enforced** — Garnet is not an MCP host and does not intercept tool
+  calls; enforcing/verifying the declaration at the boundary is out of scope.
 - **S66 (model/prompt/tool attestation):** extends the S65 seal authorship with a
   structured **attestation block**. `garnet seal <file> --attest <key>=<value>`
   (repeatable) records a deterministic (sorted) `"attestation"` object —

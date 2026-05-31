@@ -1012,6 +1012,29 @@ S67 PR.
 
 ---
 
+### S67 — MCP/tool capability declarations
+
+**Goal:** Close the documented MCP "absence of capability attestation"
+(reconciliation §165-166) by bringing the `@caps` lens to agent tools.
+
+**Dogfood block:** a `.mcpcaps` manifest (`tool: cap1, cap2`) declares each
+tool's required caps; `garnet mcp-caps <file>` reports per-tool + **aggregate**
+authority, flags **high-authority** tools (`ffi`/`proc`/`*`) and unknown caps.
+`--format json` (`garnet.mcp_caps/v1`, `"enforced":false`) makes the surface
+diffable. `examples/mcp/agent_toolset.mcpcaps`; spec
+`C_Language_Specification/GARNET_MCP_CAPS.md`; cross-OS proof
+`garnet-cli/tests/mcp_caps.rs` (2 tests).
+
+**State:** dogfood-passing (S67 PR). 2 Rust tests; full ladder green. No new
+readiness lane.
+**Honest scope (do not soften):** **self-declared, not MCP-host enforced** —
+Garnet is not an MCP host and does not intercept tool calls; enforcing/verifying
+the declaration at the boundary is out of scope (the `@caps`/attestation posture:
+declared, not inferred). Flips to `merged` on squash; the `s67 → merged(5)`
+advance rides with the S68 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.

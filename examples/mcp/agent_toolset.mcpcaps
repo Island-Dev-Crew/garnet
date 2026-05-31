@@ -1,0 +1,8 @@
+# MCP tool-capability declarations (S67) — each tool names the @caps authority it
+# requires, so an agent's tool-set has a reviewable, diffable capability surface.
+# Format: `tool: cap1, cap2`  (# comments, blank lines ignored).
+filesystem: fs
+fetch: net
+clock: time
+shell: proc, ffi
+search: net_internal

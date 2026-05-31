@@ -157,6 +157,7 @@ pub fn print_help() {
     println!("    doc    [--stdout|--out P] <file> Extract /// doc comments to a markdown summary");
     println!("    doctest [--format human|json] <file> Run ```garnet examples in /// doc comments");
     println!("    sandbox [--format human|json] <file> seccomp/WASI/egress policy from @caps");
+    println!("    mcp-caps [--format human|json] <file> Capability surface of an MCP tool-set");
     println!("    version                          Print toolchain versions + wordmark");
     println!("    help                             This message");
 }
