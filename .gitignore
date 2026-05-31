@@ -52,3 +52,7 @@ dist/
 
 # target from builds
 target/
+
+# Local dogfood evidence bundles — durable copies live in ~/Desktop/dogfood
+# (per CLAUDE.md); the in-repo dir is local-only working evidence, never committed.
+dogfood/
