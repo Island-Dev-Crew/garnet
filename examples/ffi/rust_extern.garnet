@@ -1,0 +1,16 @@
+# rust_extern.garnet — a Garnet function that (would) bind a Rust `extern "C"`
+# symbol. The binding RUNTIME is not yet implemented; what IS enforced today is
+# the AUTHORITY: wrapping native code requires @caps(ffi), and `garnet seal`
+# attests that capability in the in-toto predicate (so a Rust-FFI binding can be
+# diffed, reviewed, and signed like any other authority).
+@caps(ffi)
+def rust_blake3(data) {
+  # Stand-in for a future `extern "C" fn garnet_rust_blake3(ptr, len) -> ...`.
+  data
+}
+
+@caps()
+def main() {
+  println(rust_blake3("payload"))
+  0
+}

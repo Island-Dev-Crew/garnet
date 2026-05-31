@@ -18,6 +18,16 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S62 (Rust FFI proof):** proves a Garnet↔Rust `extern "C"` binding is a
+  first-class, **attested** authority. `examples/ffi/rust_extern.garnet` (a
+  `@caps(ffi)` Rust-wrapper) checks clean, runs, and `garnet seal` emits an
+  in-toto predicate whose embedded capability manifest **attests `ffi`** — so a
+  Rust-FFI binding is diffable (S37), reviewable (S49), and signable (S51) like
+  any authority. Spec `C_Language_Specification/GARNET_RUST_FFI.md` + cross-OS
+  proof `garnet-cli/tests/rust_ffi_proof.rs` (2 tests). **Honest scope:** proves
+  the **authority + attestation** half; Garnet has **no FFI runtime** — the
+  value↔C-ABI marshalling layer and a linked Rust `cdylib` are **deferred**, not
+  added here.
 - **S61 (FFI authority model):** codifies how foreign-function calls are
   governed — FFI is an **explicit, declared, diff-gated, sealed** authority, not
   an implicit escape hatch. A function wrapping a native call must declare
