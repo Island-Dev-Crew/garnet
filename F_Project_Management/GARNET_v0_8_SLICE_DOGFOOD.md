@@ -1058,6 +1058,28 @@ S69 PR.
 
 ---
 
+### S69 — LLM-suggest v0.2 / Paper VI Exp 1 prep
+
+**Goal:** Ready the compiler-as-agent advisory's LLM tier + prep Paper VI
+Experiment 1 (reconciliation §168), honestly — the LLM tier is pending-infra.
+
+**Dogfood block:** `scripts/garnet_llm_suggest_readiness.py` inventories the two
+tiers — rules tier (S10 ACTIVE: the 3 rule IDs, verified present in `suggest.rs`)
+and the LLM tier (pending-infra) — records the Exp 1 prep protocol, and quotes
+the Paper VI scorecard verbatim. `--gate` gates the rules tier's presence; the
+LLM tier is **not** gated. Spec `C_Language_Specification/GARNET_LLM_SUGGEST.md`.
+
+**State:** dogfood-passing (S69 PR). 5 unit tests; full ladder green. No new
+readiness lane.
+**Honest scope (do not soften):** the LLM tier is **pending-infra** — no model is
+wired or called, and **no new firing advisory is added** (a new rule could break
+corpus/count assertions; the rules tier is unchanged). The rules tier is the
+active baseline; this is the readiness/experiment-prep layer. Paper VI scorecard
+("…1 pending-infra") surfaced verbatim. Flips to `merged` on squash; the
+`s69 → merged(5)` advance rides with the S70 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.

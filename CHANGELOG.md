@@ -18,6 +18,16 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S69 (LLM-suggest v0.2 / Paper VI Exp 1 prep):** `scripts/garnet_llm_suggest_readiness.py`
+  inventories the compiler-as-agent advisory's two tiers — the **rules tier** (S10,
+  ACTIVE: `managed-fn-missing-caps`, `long-parameter-list`, `empty-function-body`,
+  verified present in `suggest.rs`) and the **LLM tier** (pending-infra) — records
+  the Paper VI Experiment 1 prep protocol, and quotes the scorecard verbatim.
+  `--gate` (CI) gates the rules tier's presence; the LLM tier is **not** gated.
+  Spec `C_Language_Specification/GARNET_LLM_SUGGEST.md`; 5 unit tests. **Honest
+  scope:** the LLM tier is **pending-infra** — no model is wired or called and **no
+  new firing advisory is added**; the rules tier is the active baseline. (Paper VI
+  scorecard quoted verbatim, not softened.)
 - **S68 (capability transparency log):** `garnet caps-log <file> --log <path>`
   appends an append-only, **BLAKE3-chained** capability entry (`index`, `program`,
   `caps`, `caps_blake3`, `prev_blake3`); `garnet caps-log --verify <path>`
