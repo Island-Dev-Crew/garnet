@@ -64,6 +64,12 @@ class ObjectiveLane:
     evidence: str
     blocked_by: list[str]
     deferred: list[str]
+    # "committed" lanes are scored from committed repo evidence and are byte-identical
+    # on every machine — they feed the headline % and the no-regression gate.
+    # "local" lanes derive from machine-specific live probes (~/Desktop bundles, local
+    # render/build artifacts, env/certs); they are reported as evidence but NEVER feed
+    # the headline % or the gate. (S31-PR2 deterministic-reporter split.)
+    evidence_class: str = "committed"
 
 
 @dataclass(frozen=True)
@@ -655,6 +661,7 @@ def read_status() -> MitReadinessStatus:
         ),
         ObjectiveLane(
             id="windows_linux_distribution",
+            evidence_class="local",
             label="Windows/Linux distribution",
             status="active-partial",
             completion_percent=wls_completion_percent,
@@ -668,6 +675,7 @@ def read_status() -> MitReadinessStatus:
         ),
         ObjectiveLane(
             id="windows_linux_domain_proof_matrix",
+            evidence_class="local",
             label="Windows/Linux domain proof matrix",
             status=(
                 "verified"
@@ -781,6 +789,7 @@ def read_status() -> MitReadinessStatus:
         ),
         ObjectiveLane(
             id="promo_video",
+            evidence_class="local",
             label="Promo video",
             status=promo.status,
             completion_percent=promo.completion_percent,
@@ -1698,9 +1707,33 @@ def read_status() -> MitReadinessStatus:
             if functional_core_present
             else [],
         ),
+        ObjectiveLane(
+            id="reporter_determinism",
+            evidence_class="committed",
+            label="Readiness reporter determinism",
+            status="verified",
+            completion_percent=100.0,
+            evidence=(
+                "S31-PR2 split the readiness reporter into committed-truth lanes "
+                "(scored from committed repo evidence; byte-identical on every machine) "
+                "and local-evidence lanes (machine-specific live probes: Windows/Linux "
+                "distribution build gates, the ~/Desktop domain-proof bundle, and promo "
+                "render). The headline % and `--check-no-regression` now read committed-truth "
+                "lanes only; local-evidence lanes are reported but never scored or gated."
+            ),
+            blocked_by=[],
+            deferred=[
+                "Per-lane committed-vs-live decomposition inside the wls/promo sub-reporters "
+                "(S31-PR2 splits at the aggregation layer only)",
+            ],
+        ),
     ]
 
-    percent = round(sum(_lane_score(lane) for lane in lanes) / len(lanes) * 100.0, 1)
+    # Committed-truth headline: only machine-independent lanes feed the score, so the
+    # number is byte-identical on every machine (S31-PR2). Local-evidence lanes are
+    # reported separately and never scored.
+    committed = [lane for lane in lanes if lane.evidence_class == "committed"]
+    percent = round(sum(_lane_score(lane) for lane in committed) / len(committed) * 100.0, 1)
     return MitReadinessStatus(
         source=str(ROOT),
         overall_status="verified" if percent == 100.0 else "active-partial",
@@ -1729,16 +1762,41 @@ def render_markdown(status: MitReadinessStatus) -> str:
             "not full MIT/productization completion."
         ),
         "",
+        "## Committed truth (scored, gated — byte-identical on every machine)",
+        "",
         "| Lane | Status | Percent | Evidence | Blocked / deferred |",
         "|---|---|---:|---|---|",
     ]
-    for lane in status.lanes:
+
+    def _row(lane: ObjectiveLane) -> str:
         blockers = _dedupe(lane.blocked_by + lane.deferred)
         blocked_text = "<br>".join(blockers) if blockers else "None"
-        lines.append(
+        return (
             f"| {lane.label} | `{lane.status}` | {lane.completion_percent:.1f}% | "
             f"{lane.evidence} | {blocked_text} |"
         )
+
+    committed = [lane for lane in status.lanes if lane.evidence_class == "committed"]
+    local = [lane for lane in status.lanes if lane.evidence_class != "committed"]
+    for lane in committed:
+        lines.append(_row(lane))
+    if local:
+        lines += [
+            "",
+            "## Local evidence (machine-specific; NOT scored, NOT gated)",
+            "",
+            (
+                "These lanes derive from live machine probes (Windows/Linux build "
+                "artifacts, the `~/Desktop` domain-proof bundle, local promo render). "
+                "Their percentages vary by machine and are excluded from the headline "
+                "% and the `--check-no-regression` gate."
+            ),
+            "",
+            "| Lane | Status | Percent (local) | Evidence | Blocked / deferred |",
+            "|---|---|---:|---|---|",
+        ]
+        for lane in local:
+            lines.append(_row(lane))
     return "\n".join(lines) + "\n"
 
 
@@ -1765,6 +1823,11 @@ def check_no_regression(
     A regression is a lane whose live percent dropped below the baseline.
     A missing_lane is a lane present in baseline but absent from live output
     (a slice was deleted or renamed without updating the baseline).
+
+    Only committed-truth lanes are gated. Local-evidence lanes (machine-specific
+    live probes) are excluded so the gate is byte-identical on every machine
+    (S31-PR2): a Mac without Windows build artifacts must not be flagged as a
+    regression against a baseline captured on a Windows-capable machine.
     """
     if not baseline_path.exists():
         return (
@@ -1773,11 +1836,19 @@ def check_no_regression(
         )
     baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
     baseline_pct = _baseline_lanes(baseline)
-    live_pct = {lane.id: lane.completion_percent for lane in status.lanes}
+    live_committed_ids = {lane.id for lane in status.lanes if lane.evidence_class == "committed"}
+    live_local_ids = {lane.id for lane in status.lanes if lane.evidence_class != "committed"}
+    live_pct = {lane.id: lane.completion_percent for lane in status.lanes if lane.id in live_committed_ids}
     regressions: list[str] = []
     missing: list[str] = []
     for lane_id, baseline_value in baseline_pct.items():
-        if lane_id not in live_pct:
+        if lane_id in live_local_ids:
+            # Present in live but classified local-evidence (or reclassified from
+            # committed): machine-variable, so never gated.
+            continue
+        if lane_id not in live_committed_ids:
+            # Absent from live entirely (and not a live local lane): a slice was
+            # deleted or renamed without updating the baseline.
             missing.append(lane_id)
             continue
         if live_pct[lane_id] + 1e-9 < baseline_value:

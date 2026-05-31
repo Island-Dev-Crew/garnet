@@ -18,6 +18,25 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S31 PR-2 (deterministic readiness reporter — committed-truth / local-evidence split):**
+  `scripts/garnet_mit_readiness_status.py` no longer mixes machine-independent
+  committed evidence with machine-variable live probes. Each lane is tagged
+  `evidence_class`: **committed** lanes (scored from committed repo state;
+  byte-identical on every machine) feed the headline % and the
+  `--check-no-regression` gate; **local** lanes (`windows_linux_distribution`,
+  `windows_linux_domain_proof_matrix`, `promo_video` — live Windows/Linux build
+  gates, the `~/Desktop` domain-proof bundle, local promo render) are reported in
+  a separate "Local evidence (not scored, not gated)" section. This fixes the
+  cross-machine false regression (`windows_linux_distribution` 60% on a Mac vs a
+  70% baseline captured on a Windows-capable machine) that broke the hand-off
+  gate, and makes the headline **byte-identical on every machine** (committed-truth
+  **88.0%**). Adds the `reporter_determinism` lane, regenerates the committed
+  baseline (43 lanes, `evidence_class`-tagged), and advances the goal ledger
+  `s31 → merged`. **Honest scope:** the split is at the aggregation layer; per-lane
+  committed-vs-live decomposition inside the wls/promo sub-reporters is future
+  work, and the committed docs-site `78.0%` snapshot vs the live `88.0%` is a
+  separate release-truth sync, not done here.
+
 - **S31 PR-1 (v0.8 release truth + slice ledger + readiness contract):** lands
   the v0.8 map (`F_Project_Management/SLICE_PLAN_RECONCILED_OPUS_X_CODEX.md`) and
   the per-slice acceptance contracts (`F_Project_Management/GARNET_v0_8_SLICE_DOGFOOD.md`,
