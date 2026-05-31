@@ -1117,6 +1117,30 @@ the S71 PR.
 
 ---
 
+### S71 — Paper VI Exp 3 actual run (honest)
+
+**Goal:** Open the v0.8 validation runway (S71–S80) by actually running Paper VI
+Experiment 3 (compiler-as-agent time-to-fix) — honestly, within the determinism +
+no-faked-measurement doctrine.
+
+**Dogfood block:** `scripts/garnet_paper_vi_exp3_status.py` (+ `--gate`)
+inventories the harness (`benchmarks/paper_vi_exp3_compiler_as_agent/`: 10
+snapshots × stateless/history-aware lanes) and **runs its provider-free mode**
+(both lanes harness-only + `aggregate.py` → the honest "harness-only" shape). It
+records the pre-registered H₃ and the v4.0 outcome verbatim (h₃a partial 6.5%,
+CI [3.1%, 9.8%], below 10%; h₃b/h₃c pass), citing
+`GARNET_v4_0_PAPER_VI_EXECUTION.md`. Doc `F_Project_Management/GARNET_PAPER_VI_EXP3.md`.
+
+**State:** dogfood-passing (S71 PR). 6 unit tests; full ladder green; no Rust changed.
+**Honest scope (do not soften):** h₃a's timing speedup is **machine-dependent and
+NOT re-measured here**; **no LLM is called**; the provider-backed re-run is
+**pending-infra** (same boundary as Exp 1). The recorded **6.5% partial** stands
+and the 10% claim is downgraded honestly per pre-registration; the verbatim §C3
+anchor is surfaced. Flips to `merged` on squash; the `s71 → merged(5)` advance
+rides with the S72 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.

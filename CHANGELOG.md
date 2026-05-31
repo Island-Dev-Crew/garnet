@@ -18,6 +18,18 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S71 (Paper VI Exp 3 — actual run, honest):** `scripts/garnet_paper_vi_exp3_status.py`
+  (+ `--gate`, wired into CI's agent-contracts job) inventories the
+  compiler-as-agent time-to-fix harness (`benchmarks/paper_vi_exp3_compiler_as_agent/`:
+  10 evolving snapshots × stateless/history-aware lanes) and **actually runs its
+  provider-free mode** (both lanes harness-only + `aggregate.py`, which emit the
+  honest "harness-only / no results invented" shape). It records the pre-registered
+  H₃ and the v4.0 outcome verbatim — **h₃a partial (6.5% speedup, CI [3.1%, 9.8%],
+  below the 10% threshold); h₃b and h₃c pass** — citing `GARNET_v4_0_PAPER_VI_EXECUTION.md`.
+  Doc `F_Project_Management/GARNET_PAPER_VI_EXP3.md`; 6 unit tests. **Honest scope:**
+  h₃a's timing speedup is machine-dependent and is **not re-measured** here, **no LLM
+  is called**, and the provider-backed re-run is **pending-infra** (same boundary as
+  Exp 1); the recorded 6.5% partial stands and the 10% claim is downgraded honestly.
 - **S70 (version-map source-of-truth correction):** new authoritative
   `F_Project_Management/GARNET_v0_8_VERSION_MAP.md` records the corrected v0.8 tag
   mapping — **the whole S30–S80 run is cut as one `v0.8.0` tag at the end of S80;

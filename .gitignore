@@ -47,6 +47,9 @@ dist/*.tar.gz
 .codex/
 garnet-cli/.garnet-cache/
 
+# Paper VI Exp 3 harness run output (ephemeral; the harness ships shape, not results)
+benchmarks/paper_vi_exp3_compiler_as_agent/out/
+
 # Old dist artifacts (we ship via releases, not repo)
 dist/
 
