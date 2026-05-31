@@ -987,6 +987,31 @@ squash; the `s65 → merged(5)` advance rides with the S66 PR.
 
 ---
 
+### S66 — model/prompt/tool attestation in seal
+
+**Goal:** Extend S65 from a flat authorship string to a structured attestation
+block — the AI pipeline behind a build (reconciliation §165-166).
+
+**Dogfood block:** `garnet seal <file> --attest <key>=<value>` (repeatable)
+records a deterministic (sorted) `"attestation"` object — conventionally
+`model`, `prompt_sha256`, `tool` (`mcp:filesystem`) — in the in-toto predicate,
+composing with `--authored-by`. So the predicate now carries *who* (authorship),
+*what pipeline* (attestation), and *what authority* (capability_manifest). Spec
+`C_Language_Specification/GARNET_ATTESTATION.md`; cross-OS proof
+`garnet-cli/tests/seal_attestation_block.rs` (4 tests); S65/S38 seal tests
+unchanged.
+
+**State:** dogfood-passing (S66 PR). 4 new tests; full ladder green. No new
+readiness lane.
+**Honest scope (do not soften):** every field is **self-declared, not verified**
+(the `@caps` posture) — Garnet does not introspect the model, hash the live
+prompt, or enumerate the tools actually invoked; absent `--attest` records **no**
+block (default shape unchanged); auditing the declaration's accuracy is out of
+scope. Flips to `merged` on squash; the `s66 → merged(5)` advance rides with the
+S67 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.

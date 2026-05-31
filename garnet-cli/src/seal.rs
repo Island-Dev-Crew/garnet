@@ -55,6 +55,23 @@ pub fn statement_json_with_authorship(
     cosign: bool,
     authorship: Option<&str>,
 ) -> String {
+    statement_json_full(program, build, caps, cosign, authorship, &[])
+}
+
+/// As [`statement_json_with_authorship`], but also records a structured
+/// **attestation** block (S66) — model / prompt / tool declarations — in the
+/// predicate. `attestation` is a list of `(key, value)` pairs (sorted, rendered
+/// as a JSON object; omitted when empty). Like authorship, these are
+/// *self-declared* (e.g. `model=claude-opus-4-8`, `prompt_sha256=…`,
+/// `tool=mcp:filesystem`), not verified.
+pub fn statement_json_full(
+    program: &str,
+    build: &Manifest,
+    caps: &CapabilityManifest,
+    cosign: bool,
+    authorship: Option<&str>,
+    attestation: &[(String, String)],
+) -> String {
     let cosign_note = if cosign {
         "available — sign with: cosign attest --predicate <file> --type custom"
     } else {
@@ -65,6 +82,17 @@ pub fn statement_json_with_authorship(
         Some(a) => format!(",\"authorship\":\"{}\"", json_escape(a)),
         None => String::new(),
     };
+    let attestation_field = if attestation.is_empty() {
+        String::new()
+    } else {
+        let mut pairs: Vec<(String, String)> = attestation.to_vec();
+        pairs.sort_by(|a, b| a.0.cmp(&b.0));
+        let inner: Vec<String> = pairs
+            .iter()
+            .map(|(k, v)| format!("\"{}\":\"{}\"", json_escape(k), json_escape(v)))
+            .collect();
+        format!(",\"attestation\":{{{}}}", inner.join(","))
+    };
     format!(
         "{{\"_type\":\"{stmt}\",\
          \"subject\":[{{\"name\":\"{name}\",\"digest\":{{\"blake3\":\"{ast}\"}}}}],\
@@ -73,7 +101,7 @@ pub fn statement_json_with_authorship(
          \"source_blake3\":\"{src}\",\
          \"build_manifest\":{build_json},\
          \"capability_manifest\":{caps_json},\
-         \"tooling\":{{\"cosign\":\"{cosign_note}\",\"sbom\":\"{sbom}\"}}{authorship_field}\
+         \"tooling\":{{\"cosign\":\"{cosign_note}\",\"sbom\":\"{sbom}\"}}{authorship_field}{attestation_field}\
          }}}}",
         stmt = json_escape(STATEMENT_TYPE),
         name = json_escape(program),
