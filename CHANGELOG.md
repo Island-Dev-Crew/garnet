@@ -18,6 +18,18 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S74 (safe-subset spec + linear/effect-typed mode graft):**
+  `C_Language_Specification/GARNET_SAFE_SUBSET.md` specifies (1) the safe subset
+  **as implemented today** — the typed, ownership-disciplined `fn` mode
+  (`FnMode::Safe`) plus the fn↔def boundary audit (`audit.rs`) that closes the
+  "hidden safe→managed escalation" threat class — and (2) a **proposed** optional
+  linear/effect-typed rigor mode (Austral linear capabilities / Koka effects) for
+  high-assurance components. `scripts/garnet_safe_subset_status.py` (+ `--gate`,
+  5 unit tests, wired into agent-contracts) is a static anti-overclaim gate: it
+  verifies the spec's "implemented today" claims are grounded in real source.
+  **Honest scope:** the linear/effect mode is a **PROPOSAL — NOT IMPLEMENTED** (no
+  linear type system, effect rows, or soundness proof ship here); this is a
+  specification slice. No Rust changed.
 - **S73 (VM / interpreter parity campaign):** `scripts/garnet_vm_interp_parity.py`
   (+ `--gate`, 7 unit tests) runs every `examples/*.garnet` program through **both**
   execution backends (`garnet run --interp` and `--vm`) and asserts they agree —
