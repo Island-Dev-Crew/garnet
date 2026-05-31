@@ -28,9 +28,10 @@ class ReleaseReadinessTests(unittest.TestCase):
         r = rel.read_readiness()
         self.assertIn("does NOT cut a tag", r.tag_note)
         self.assertIn("release-truth decision for Jon", r.tag_note)
-        # v0.8.0 must NOT already be tagged by this slice.
+        # v0.8.0 must NOT be tagged by this slice. (We assert absence, not the
+        # presence of v0.5.0 — CI checkouts do not fetch tags, so existing_tags
+        # is legitimately empty there; the gate's verdict never depends on it.)
         self.assertNotIn("v0.8.0", r.existing_tags)
-        self.assertIn("v0.5.0", r.existing_tags)
 
     def test_honest_deferrals_and_anchors(self) -> None:
         r = rel.read_readiness()
