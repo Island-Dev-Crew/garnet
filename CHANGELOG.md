@@ -18,6 +18,18 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S65 (AI-authorship provenance):** makes "who/what wrote this?" a first-class,
+  attestable declaration. `garnet seal <file> --authored-by <provenance>` records
+  an `"authorship"` field in the in-toto predicate (e.g. `ai:claude-opus-4-8`,
+  `ai-assisted:…`, `human:jon`) — diffable, reviewable, and signable alongside the
+  capability surface. Omitting it records **no** authorship claim (default
+  predicate shape unchanged). Spec
+  `C_Language_Specification/GARNET_AI_PROVENANCE.md` + cross-OS proof
+  `garnet-cli/tests/ai_provenance.rs` (2 tests); existing `seal` tests unchanged.
+  **Honest scope:** a **self-declared** fact, **not AI-detection** — Garnet records
+  what the toolchain declares (the `@caps` posture: declared, not inferred);
+  silence is honest, not an implicit "human"; verifying the declaration's accuracy
+  is out of scope.
 - **S64 (WASI interop):** closes the native-interop band by making the
   `@caps` → WASI capability mapping explicit — `fs`→preopens, `net`→wasi-sockets,
   `time`→clocks, `env`→environ (the S46 sandbox `wasi` policy *is* the mapping).

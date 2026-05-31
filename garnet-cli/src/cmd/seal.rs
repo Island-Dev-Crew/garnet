@@ -12,7 +12,7 @@
 
 use crate::cap_manifest::CapabilityManifest;
 use crate::manifest::Manifest;
-use crate::seal::{cosign_available, statement_json};
+use crate::seal::{cosign_available, statement_json_with_authorship};
 use crate::{edition_manifest, read_file};
 use garnet_check::capability_surface;
 use std::path::PathBuf;
@@ -21,6 +21,7 @@ use std::process::ExitCode;
 pub fn run(args: &[String]) -> ExitCode {
     let mut path: Option<PathBuf> = None;
     let mut out: Option<PathBuf> = None;
+    let mut authored_by: Option<String> = None;
     let mut i = 0;
     while i < args.len() {
         match args[i].as_str() {
@@ -32,8 +33,21 @@ pub fn run(args: &[String]) -> ExitCode {
                 out = Some(PathBuf::from(value));
                 i += 2;
             }
+            "--authored-by" => {
+                // S65: record an AI-authorship provenance declaration in the
+                // predicate, e.g. `ai:claude-opus-4-8`, `ai-assisted:...`,
+                // `human:jon`. Self-declared, not detected.
+                let Some(value) = args.get(i + 1) else {
+                    eprintln!("garnet seal: --authored-by requires a <provenance> (e.g. ai:model)");
+                    return ExitCode::from(2);
+                };
+                authored_by = Some(value.clone());
+                i += 2;
+            }
             "--help" | "-h" => {
-                println!("usage: garnet seal <file.garnet> [--out <path>]");
+                println!(
+                    "usage: garnet seal <file.garnet> [--out <path>] [--authored-by <provenance>]"
+                );
                 return ExitCode::SUCCESS;
             }
             other if !other.starts_with("--") => {
@@ -47,7 +61,7 @@ pub fn run(args: &[String]) -> ExitCode {
         }
     }
     let Some(path) = path else {
-        eprintln!("usage: garnet seal <file.garnet> [--out <path>]");
+        eprintln!("usage: garnet seal <file.garnet> [--out <path>] [--authored-by <provenance>]");
         return ExitCode::from(2);
     };
 
@@ -85,7 +99,8 @@ pub fn run(args: &[String]) -> ExitCode {
         .and_then(|s| s.to_str())
         .unwrap_or("program");
     let cosign = cosign_available();
-    let statement = statement_json(program, &build, &caps, cosign);
+    let statement =
+        statement_json_with_authorship(program, &build, &caps, cosign, authored_by.as_deref());
 
     let predicate_ref = if let Some(out_path) = &out {
         if let Err(e) = std::fs::write(out_path, &statement) {
