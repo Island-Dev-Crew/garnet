@@ -18,6 +18,21 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S76 (stdlib promotion wave):** the foundational **`core::*` layer** (30
+  primitives — `core::iter/result/option/cmp/math`) is promoted from Experimental
+  to **Stable**; the stdlib distribution moves 27/59 → **57 Stable / 29
+  Experimental**. Promotion criteria: core layer (no host authority) + frozen
+  semantics + test-covered. The **`std::*`** host-authority + evolving-API
+  utilities (`env/process/json/regex/uuid/base64/log`) are **deliberately kept
+  Experimental** — their warnings are correct. Effect: `novel_07` (core-only) now
+  checks **0 diagnostics**; `novel_04–06` still warn (they use `std::*`).
+  `scripts/garnet_stdlib_promotion_status.py` (+ `--gate`, 5 tests, agent-contracts)
+  enforces the wave stayed **scoped** (all `core::*` Stable AND `std::*` still
+  Experimental), so a future blanket flip can't pass silently. Spec
+  `C_Language_Specification/GARNET_STDLIB_PROMOTION.md`. The Rust change is the
+  `@stability` tier in the `garnet-stdlib` registry (the only Rust touched; two
+  checker tests were repointed to a still-experimental `std::*` primitive).
+  **Honest scope:** a stability judgement, not warning-suppression.
 - **S75 (formal-verification feasibility study):**
   `C_Language_Specification/GARNET_FORMAL_VERIFICATION_FEASIBILITY.md` assesses
   whether Garnet can offer a *provable* termination / `@caps`-soundness story over

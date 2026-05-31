@@ -58,6 +58,7 @@ jobs:
       - run: python3 scripts/test_garnet_vm_interp_parity.py
       - run: python3 scripts/test_garnet_safe_subset_status.py
       - run: python3 scripts/test_garnet_formal_verification_feasibility.py
+      - run: python3 scripts/test_garnet_stdlib_promotion_status.py
       - run: python3 scripts/check_determinism_no_llm.py
       - run: python3 scripts/check-agent-contracts.py
       # S47: gate cross-OS build coverage — fails if ci.yml stops testing all
@@ -119,6 +120,9 @@ jobs:
       # S75: formal-verification feasibility — static gate (study present +
       # cited foundation real). No verification is run or implied; a study only.
       - run: python3 scripts/garnet_formal_verification_feasibility.py --gate
+      # S76: stdlib promotion wave — gate that the core::* layer is Stable AND
+      # std::* stays Experimental (proof the promotion was scoped, not blanket).
+      - run: python3 scripts/garnet_stdlib_promotion_status.py --gate
 
   # ───────────────────────────────────────────────────────────────────
   # Format check — fast, runs once on Linux. A failure here is the

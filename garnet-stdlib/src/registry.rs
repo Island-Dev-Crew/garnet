@@ -426,7 +426,7 @@ fn build_prims() -> Vec<PrimMeta> {
             2,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Apply a function to each element, returning a new sequence.",
         ),
         p(
@@ -435,7 +435,7 @@ fn build_prims() -> Vec<PrimMeta> {
             2,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Keep elements for which the predicate returns true.",
         ),
         p(
@@ -444,7 +444,7 @@ fn build_prims() -> Vec<PrimMeta> {
             3,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Reduce a sequence to a single value with an accumulator.",
         ),
         p(
@@ -453,7 +453,7 @@ fn build_prims() -> Vec<PrimMeta> {
             2,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Pair up elements of two sequences, truncating to the shorter.",
         ),
         p(
@@ -462,7 +462,7 @@ fn build_prims() -> Vec<PrimMeta> {
             2,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Take the first N elements.",
         ),
         p(
@@ -471,7 +471,7 @@ fn build_prims() -> Vec<PrimMeta> {
             2,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Skip the first N elements, returning the rest.",
         ),
         p(
@@ -480,7 +480,7 @@ fn build_prims() -> Vec<PrimMeta> {
             1,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Materialize a sequence into an owned Array.",
         ),
         p(
@@ -489,7 +489,7 @@ fn build_prims() -> Vec<PrimMeta> {
             2,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Concatenate two sequences end to end.",
         ),
         p(
@@ -498,7 +498,7 @@ fn build_prims() -> Vec<PrimMeta> {
             1,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Pair each element with its zero-based index.",
         ),
         // ── core::result ──
@@ -508,7 +508,7 @@ fn build_prims() -> Vec<PrimMeta> {
             1,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Wrap a value as Result::Ok.",
         ),
         p(
@@ -517,7 +517,7 @@ fn build_prims() -> Vec<PrimMeta> {
             1,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Wrap a value as Result::Err.",
         ),
         p(
@@ -526,7 +526,7 @@ fn build_prims() -> Vec<PrimMeta> {
             2,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Transform the Ok value, leaving Err untouched.",
         ),
         p(
@@ -535,7 +535,7 @@ fn build_prims() -> Vec<PrimMeta> {
             2,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Chain a Result-returning function on the Ok value.",
         ),
         p(
@@ -544,7 +544,7 @@ fn build_prims() -> Vec<PrimMeta> {
             2,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Recover from an Err with a Result-returning function.",
         ),
         p(
@@ -553,7 +553,7 @@ fn build_prims() -> Vec<PrimMeta> {
             2,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Return the Ok value or a supplied default.",
         ),
         // ── core::option ──
@@ -563,7 +563,7 @@ fn build_prims() -> Vec<PrimMeta> {
             1,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Wrap a value as Option::Some.",
         ),
         p(
@@ -572,7 +572,7 @@ fn build_prims() -> Vec<PrimMeta> {
             0,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "The Option::None value.",
         ),
         p(
@@ -581,7 +581,7 @@ fn build_prims() -> Vec<PrimMeta> {
             2,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Transform the Some value, leaving None untouched.",
         ),
         p(
@@ -590,7 +590,7 @@ fn build_prims() -> Vec<PrimMeta> {
             2,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Chain an Option-returning function on the Some value.",
         ),
         p(
@@ -599,7 +599,7 @@ fn build_prims() -> Vec<PrimMeta> {
             2,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Return the Some value or a supplied default.",
         ),
         // ── core::cmp ──
@@ -609,7 +609,7 @@ fn build_prims() -> Vec<PrimMeta> {
             2,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "The lesser of two values.",
         ),
         p(
@@ -618,7 +618,7 @@ fn build_prims() -> Vec<PrimMeta> {
             2,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "The greater of two values.",
         ),
         p(
@@ -627,7 +627,7 @@ fn build_prims() -> Vec<PrimMeta> {
             2,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Three-way compare: -1 if a<b, 0 if equal, 1 if a>b.",
         ),
         p(
@@ -636,7 +636,7 @@ fn build_prims() -> Vec<PrimMeta> {
             3,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Clamp a value into the inclusive [lo, hi] range.",
         ),
         // ── core::math ──
@@ -646,7 +646,7 @@ fn build_prims() -> Vec<PrimMeta> {
             1,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Absolute value.",
         ),
         p(
@@ -655,7 +655,7 @@ fn build_prims() -> Vec<PrimMeta> {
             1,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Square root (errors on negative input).",
         ),
         p(
@@ -664,7 +664,7 @@ fn build_prims() -> Vec<PrimMeta> {
             2,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Raise a base to an exponent.",
         ),
         p(
@@ -673,7 +673,7 @@ fn build_prims() -> Vec<PrimMeta> {
             1,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Largest integer not greater than the input.",
         ),
         p(
@@ -682,7 +682,7 @@ fn build_prims() -> Vec<PrimMeta> {
             1,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Smallest integer not less than the input.",
         ),
         p(
@@ -691,7 +691,7 @@ fn build_prims() -> Vec<PrimMeta> {
             1,
             RequiredCaps::none(),
             Layer::Core,
-            Stability::Experimental,
+            Stability::Stable,
             "Round half away from zero to the nearest integer.",
         ),
         // ════════════════════════════════════════════════════════════
@@ -1051,8 +1051,10 @@ mod tests {
         // Shipped-since-v0.4 primitives are Stable.
         assert_eq!(t["fs::read_file"].stability, Stability::Stable);
         assert_eq!(t["str::split"].stability, Stability::Stable);
-        // S17 additions are Experimental for v0.7.
-        assert_eq!(t["core::iter::map"].stability, Stability::Experimental);
+        // S76 promotion wave: the foundational `core::*` layer (iter/result/
+        // option/cmp/math — frozen semantics, no host authority) is now Stable.
+        assert_eq!(t["core::iter::map"].stability, Stability::Stable);
+        // `std::*` host-authority + evolving-API utilities stay Experimental.
         assert_eq!(t["std::json::parse"].stability, Stability::Experimental);
     }
 }
