@@ -531,6 +531,36 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertEqual("", completed.stderr)
         self.assertEqual(0, completed.returncode)
 
+    def test_committed_truth_split_quarantines_local_evidence(self) -> None:
+        # S31-PR2: machine-variable lanes are tagged local; the determinism lane is committed.
+        status = status_mod.read_status()
+        lanes = {lane.id: lane for lane in status.lanes}
+        for local_id in (
+            "windows_linux_distribution",
+            "windows_linux_domain_proof_matrix",
+            "promo_video",
+        ):
+            self.assertEqual("local", lanes[local_id].evidence_class, local_id)
+        self.assertIn("reporter_determinism", lanes)
+        self.assertEqual("committed", lanes["reporter_determinism"].evidence_class)
+        self.assertEqual("verified", lanes["reporter_determinism"].status)
+
+    def test_no_regression_gate_ignores_local_lanes(self) -> None:
+        # S31-PR2: a local lane pinned ABOVE the live value must not trip the gate
+        # (this is the cross-machine false-regression the fix removes).
+        status = status_mod.read_status()
+        with tempfile.TemporaryDirectory() as tmp:
+            baseline_path = Path(tmp) / "baseline.json"
+            baseline_path.write_text(
+                json.dumps(
+                    {"lanes": [{"id": "windows_linux_distribution", "completion_percent": 99.0}]}
+                ),
+                encoding="utf-8",
+            )
+            regressions, missing = status_mod.check_no_regression(status, baseline_path)
+        self.assertEqual([], regressions)
+        self.assertEqual([], missing)
+
     def test_public_site_surfaces_objective_accounting_without_overclaiming(self) -> None:
         docs_dir = Path(__file__).resolve().parents[1] / "docs"
         site = (docs_dir / "index.html").read_text(
