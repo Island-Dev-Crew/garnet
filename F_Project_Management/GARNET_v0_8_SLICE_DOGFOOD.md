@@ -556,6 +556,31 @@ readiness lane (not mandated). Flips to `merged` on squash; the
 
 ---
 
+### S48 — 12-domain / 7-novel proof matrix
+
+**Goal:** Rigor evidence for a skeptical reviewer (reconciliation §44, §150): a
+falsifiable inventory of the 12 demonstration domains and the 7 novel Paper VI
+contributions.
+
+**Dogfood block:** `scripts/garnet_proof_matrix.py` reuses the `CORE_12_CASES`
+single source of truth (12 domains) and lists the 7 contributions **by title**,
+anchoring each to in-repo evidence whose existence is checked. `--format md|json`;
+`--gate` (wired into the `agent-contracts` CI job) fails if a domain example or a
+contribution anchor disappears. Doc: `F_Project_Management/GARNET_PROOF_MATRIX.md`.
+
+**State:** dogfood-passing (S48 PR). 12/12 domains present; all 7 contributions
+exercised by existing evidence. 7 unit tests. Full ladder green.
+**Honest scope (do not soften — Paper VI anchors):** an evidence **inventory**,
+not empirical proof — no measurement, mechanized-proof, or external-study claim.
+It does **not** re-adjudicate per-contribution verdicts; two contribution-
+numbering schemes exist across docs, so contributions are listed by title and
+Paper VI's aggregate scorecard ("4 supported, 2 partial (downgraded honestly),
+0 refuted, 1 pending-infra") is quoted **verbatim**. No new readiness lane (not
+mandated). Flips to `merged` on squash; the `s48 → merged(5)` advance rides with
+the S49 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.

@@ -38,11 +38,15 @@ jobs:
       - run: python3 scripts/test_garnet_windows_linux_studio_shell.py
       - run: python3 scripts/test_check_determinism_no_llm.py
       - run: python3 scripts/test_garnet_build_proof.py
+      - run: python3 scripts/test_garnet_proof_matrix.py
       - run: python3 scripts/check_determinism_no_llm.py
       - run: python3 scripts/check-agent-contracts.py
       # S47: gate cross-OS build coverage — fails if ci.yml stops testing all
       # three target OSes (Windows/Linux/macOS) with `cargo test --workspace`.
       - run: python3 scripts/garnet_build_proof.py --gate
+      # S48: gate the 12-domain / 7-novel evidence matrix — fails if a domain
+      # example or a contribution evidence anchor disappears.
+      - run: python3 scripts/garnet_proof_matrix.py --gate
 
   # ───────────────────────────────────────────────────────────────────
   # Format check — fast, runs once on Linux. A failure here is the

@@ -18,6 +18,17 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S48 (12-domain / 7-novel proof matrix):** `scripts/garnet_proof_matrix.py`
+  inventories the 12 application domains Garnet is demonstrated across (reusing
+  the `CORE_12_CASES` single source of truth) and the 7 novel Paper VI
+  contributions (by title), anchoring each contribution to in-repo evidence whose
+  existence is checked. `--gate` (wired into CI) fails if a domain example or a
+  contribution anchor disappears; `--format md|json`; 7 unit tests; doc
+  `F_Project_Management/GARNET_PROOF_MATRIX.md`. **Honest scope:** an evidence
+  *inventory*, not empirical proof — no measurement, mechanized-proof, or
+  external-study claim. It does **not** re-adjudicate per-contribution verdicts;
+  Paper VI's aggregate scorecard ("4 supported, 2 partial (downgraded honestly),
+  0 refuted, 1 pending-infra") is quoted **verbatim** as an honesty anchor.
 - **S47 (Windows/Linux/macOS build proof):** `scripts/garnet_build_proof.py`
   reports and **gates** cross-OS coverage from the CI matrix, distinguishing
   *behaves* (the OS is in the `cargo test --workspace` matrix in `ci.yml`) from
