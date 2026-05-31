@@ -18,6 +18,15 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S52 (one-line install / readme check):** a consistency gate for the curl|sh
+  install path. `scripts/garnet_install_readme_check.py` extracts the one-line
+  `curl … install.sh | sh` command from `README.md` and from
+  `installer/sh.garnet-lang.org/install.sh`'s own header, and fails (`--gate`, in
+  CI) if they drift or the canonical install URL is missing from either —
+  closing the #1 adoption footgun (a README that documents an install command the
+  installer no longer matches). 6 unit tests. **Honest scope:** a doc-consistency
+  check, not a live network install test; `install.sh` remains separately
+  shellcheck-gated (this does not duplicate that).
 - **S51 (signed release lanes):** makes Garnet's three signing lanes explicit and
   gates the active one. **`garnet seal --out <path>`** now writes the in-toto
   predicate to a file (was print-only) so it feeds straight into `cosign attest
