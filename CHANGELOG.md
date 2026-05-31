@@ -18,6 +18,19 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S44 (LSP safe-mode precision):** the checker now owns a single source of
+  truth for diagnostic presentation — `garnet_check::Severity` plus
+  `CheckError::severity()` / `CheckError::code()`. `garnet check` (S34
+  structured diagnostics) and the LSP both consume it, so they cannot drift.
+  The LSP previously mapped every non-`BoundaryNote` finding to a red `ERROR`;
+  now safe-mode/capability violations are `ERROR`, boundary notes are `WARNING`,
+  and advisories (over-catch S42, stability-advice) surface as `INFORMATION`
+  with their canonical `check.*` code on `Diagnostic.code`. New tests: a
+  garnet-check parity/invariant pair (severity↔code, and Error-severity ⇔ fatal)
+  + two LSP tests (over-catch → INFORMATION, safe-mode → ERROR, both code-tagged).
+  **Honest scope:** this is the *safe-mode precision* half of the slice;
+  *cross-package* precision needs a module/package resolver (S45) and is
+  deferred to ride with it — no cross-file resolution is claimed here.
 - **S43 (docs-as-tests):** `garnet doctest <file>` makes documented examples
   executable — the "evidence not courtesy" discipline. It reuses `garnet doc`'s
   `///` extraction, lifts ` ```garnet ` fences (`garnet_cli::doctest::garnet_fences`),

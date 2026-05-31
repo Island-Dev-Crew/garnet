@@ -105,6 +105,49 @@ pub enum CheckError {
     OverCatch(String),
 }
 
+/// Presentation severity of a [`CheckError`] — the single source of truth shared
+/// by the CLI structured diagnostics (S34) and the LSP (S44). Severity is a
+/// distinct axis from *fatal-ness*: whether a finding changes the exit code is
+/// decided by [`CheckReport::ok`], whereas severity governs how the finding is
+/// surfaced (e.g. a red error vs. an editor hint). An advisory such as
+/// [`CheckError::OverCatch`] is `Info` here yet still non-fatal in `ok`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Severity {
+    Error,
+    Warning,
+    Info,
+}
+
+impl CheckError {
+    /// The presentation severity of this diagnostic. Consumed by both the CLI
+    /// (`garnet check --format json`) and the LSP, so an editor and the CLI
+    /// agree on how each finding is surfaced.
+    pub fn severity(&self) -> Severity {
+        match self {
+            CheckError::SafeModeViolation(_)
+            | CheckError::AnnotationError(_)
+            | CheckError::CapsCoverage { .. }
+            | CheckError::StabilityError(_) => Severity::Error,
+            CheckError::BoundaryNote(_) => Severity::Warning,
+            CheckError::StabilityAdvice(_) | CheckError::OverCatch(_) => Severity::Info,
+        }
+    }
+
+    /// The stable machine-readable code (`check.*`) for this diagnostic, shared
+    /// by the CLI's structured diagnostics and the LSP `Diagnostic.code`.
+    pub fn code(&self) -> &'static str {
+        match self {
+            CheckError::SafeModeViolation(_) => "check.safe_mode_violation",
+            CheckError::BoundaryNote(_) => "check.boundary_note",
+            CheckError::AnnotationError(_) => "check.annotation_error",
+            CheckError::CapsCoverage { .. } => "check.caps_coverage",
+            CheckError::StabilityAdvice(_) => "check.stability_advice",
+            CheckError::StabilityError(_) => "check.stability_error",
+            CheckError::OverCatch(_) => "check.over_catch",
+        }
+    }
+}
+
 /// The checker's result set: a list of diagnostics and metadata about each
 /// function's mode.
 #[derive(Debug, Default)]
@@ -634,6 +677,93 @@ mod tests {
         let m = parse(r#"def greet(name) { "hello" }"#);
         let r = check_module(&m);
         assert!(r.ok(), "expected no errors, got {:?}", r.errors);
+    }
+
+    #[test]
+    fn severity_and_code_are_canonical() {
+        // S44: this mapping is the single source of truth for the CLI structured
+        // diagnostics and the LSP. If a variant changes severity/code, update it
+        // here once and both consumers follow.
+        use CheckError::*;
+        let cases: Vec<(CheckError, Severity, &str)> = vec![
+            (
+                SafeModeViolation("x".into()),
+                Severity::Error,
+                "check.safe_mode_violation",
+            ),
+            (
+                BoundaryNote("x".into()),
+                Severity::Warning,
+                "check.boundary_note",
+            ),
+            (
+                AnnotationError("x".into()),
+                Severity::Error,
+                "check.annotation_error",
+            ),
+            (
+                CapsCoverage {
+                    fn_name: "f".into(),
+                    missing: "fs".into(),
+                    via: "g".into(),
+                },
+                Severity::Error,
+                "check.caps_coverage",
+            ),
+            (
+                StabilityAdvice("x".into()),
+                Severity::Info,
+                "check.stability_advice",
+            ),
+            (
+                StabilityError("x".into()),
+                Severity::Error,
+                "check.stability_error",
+            ),
+            (OverCatch("x".into()), Severity::Info, "check.over_catch"),
+        ];
+        for (err, sev, code) in cases {
+            assert_eq!(err.severity(), sev, "severity for {err:?}");
+            assert_eq!(err.code(), code, "code for {err:?}");
+        }
+    }
+
+    #[test]
+    fn error_severity_agrees_with_fatal_set() {
+        // The two axes must stay aligned: an Error-severity finding is fatal
+        // (flips `ok`), and the intentional advisories are non-Error + non-fatal.
+        use CheckError::*;
+        let fatal: Vec<CheckError> = vec![
+            SafeModeViolation("x".into()),
+            AnnotationError("x".into()),
+            CapsCoverage {
+                fn_name: "f".into(),
+                missing: "m".into(),
+                via: "v".into(),
+            },
+            StabilityError("x".into()),
+        ];
+        for e in fatal {
+            assert_eq!(e.severity(), Severity::Error);
+            let r = CheckReport {
+                errors: vec![e],
+                ..Default::default()
+            };
+            assert!(!r.ok());
+        }
+        let advisory: Vec<CheckError> = vec![
+            BoundaryNote("x".into()),
+            StabilityAdvice("x".into()),
+            OverCatch("x".into()),
+        ];
+        for e in advisory {
+            assert_ne!(e.severity(), Severity::Error);
+            let r = CheckReport {
+                errors: vec![e],
+                ..Default::default()
+            };
+            assert!(r.ok(), "advisory must not be fatal");
+        }
     }
 
     #[test]
