@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Garnet Deep Gap Analysis Deck - 2026-05-26</title>
+  <style>
+    :root {
+      --bg: #07080c;
+      --panel: #11131a;
+      --panel-2: #171a23;
+      --ink: #f7f4ef;
+      --soft: #c8cbd4;
+      --muted: #858da3;
+      --garnet: #b53644;
+      --garnet-2: #f05268;
+      --gold: #e8c36d;
+      --cyan: #35d0e8;
+      --green: #65d18a;
+      --rule: rgba(255,255,255,.14);
+      --mono: "SF Mono", Menlo, Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+      --serif: Georgia, "Times New Roman", serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at 12% 10%, rgba(181,54,68,.18), transparent 30%),
+        radial-gradient(circle at 90% 30%, rgba(53,208,232,.10), transparent 28%),
+        var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      letter-spacing: 0;
+    }
+    .deck { width: 100%; }
+    .slide {
+      min-height: 100vh;
+      padding: 76px 86px;
+      border-bottom: 1px solid var(--rule);
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 34px;
+    }
+    .eyebrow {
+      color: var(--gold);
+      font-family: var(--mono);
+      text-transform: uppercase;
+      font-size: 13px;
+      letter-spacing: .12em;
+    }
+    h1, h2 {
+      margin: 0;
+      font-family: var(--serif);
+      line-height: 1.02;
+      letter-spacing: 0;
+    }
+    h1 { font-size: clamp(54px, 8vw, 118px); max-width: 1100px; }
+    h2 { font-size: clamp(42px, 6vw, 76px); max-width: 1160px; }
+    p { color: var(--soft); font-size: 24px; line-height: 1.45; max-width: 1050px; }
+    .accent { color: var(--garnet-2); }
+    .cyan { color: var(--cyan); }
+    .gold { color: var(--gold); }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; align-self: center; }
+    .grid.two { grid-template-columns: repeat(2, 1fr); }
+    .grid.four { grid-template-columns: repeat(4, 1fr); }
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.025));
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      padding: 24px;
+      min-height: 150px;
+    }
+    .card strong {
+      display: block;
+      color: var(--ink);
+      font-size: 25px;
+      margin-bottom: 10px;
+    }
+    .card span, li { color: var(--soft); font-size: 19px; line-height: 1.42; }
+    .metric { font-family: var(--mono); font-size: 48px; color: var(--ink); }
+    .rail {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 12px;
+      margin-top: 30px;
+    }
+    .rail div {
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      padding: 18px;
+      background: rgba(255,255,255,.04);
+      min-height: 130px;
+    }
+    code {
+      font-family: var(--mono);
+      color: var(--gold);
+      background: rgba(0,0,0,.28);
+      border: 1px solid rgba(232,195,109,.18);
+      border-radius: 5px;
+      padding: 2px 6px;
+      white-space: normal;
+      word-break: break-word;
+    }
+    table { width: 100%; border-collapse: collapse; background: rgba(255,255,255,.035); border: 1px solid var(--rule); }
+    th, td { border-bottom: 1px solid var(--rule); padding: 14px 16px; text-align: left; vertical-align: top; font-size: 18px; color: var(--soft); }
+    th { color: var(--gold); font-family: var(--mono); text-transform: uppercase; font-size: 12px; letter-spacing: .1em; }
+    .footer { color: var(--muted); font-family: var(--mono); font-size: 13px; display: flex; justify-content: space-between; gap: 18px; }
+    .hero-mark {
+      width: 140px;
+      height: 140px;
+      border-radius: 32px;
+      background: conic-gradient(from 220deg, var(--garnet), var(--gold), #47171f, var(--cyan), var(--garnet));
+      box-shadow: 0 0 70px rgba(240,82,104,.32);
+      margin-bottom: 30px;
+    }
+    ul { margin: 0; padding-left: 22px; display: grid; gap: 12px; }
+    .quote {
+      border-left: 3px solid var(--garnet-2);
+      padding-left: 22px;
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: 36px;
+      line-height: 1.25;
+      max-width: 1120px;
+    }
+    @media (max-width: 900px) {
+      .slide { padding: 44px 24px; }
+      .grid, .grid.two, .grid.four, .rail { grid-template-columns: 1fr; }
+      p { font-size: 20px; }
+    }
+  </style>
+</head>
+<body>
+<main class="deck">
+  <section class="slide">
+    <div>
+      <div class="hero-mark"></div>
+      <div class="eyebrow">Garnet deep gap analysis - May 26, 2026</div>
+      <h1>The evidence-native language workbench for <span class="accent">agentic systems</span>.</h1>
+      <p>Authority, memory, mode boundaries, sandbox status, and provenance become program structure instead of scattered docs, comments, and release folklore.</p>
+    </div>
+    <div></div>
+    <div class="footer"><span>Prepared from local repo reporters, site review, and language-site comparisons</span><span>v0.x research-grade prototype</span></div>
+  </section>
+
+  <section class="slide">
+    <div>
+      <div class="eyebrow">Current truth</div>
+      <h2>Strong foundation. Uneven surfaces.</h2>
+    </div>
+    <div class="grid four">
+      <div class="card"><div class="metric">87/87</div><span>Tracked implementation slices verified.</span></div>
+      <div class="card"><div class="metric">80.6%</div><span>MIT/productization objective from the local reporter after promo evidence sync.</span></div>
+      <div class="card"><div class="metric">24</div><span>Capability-tagged stdlib registry primitives.</span></div>
+      <div class="card"><div class="metric">95%</div><span>Promo reporter status after render, QA, export, and public-site sync.</span></div>
+    </div>
+    <div class="footer"><span>Reporters: adoption, MIT readiness, promo readiness</span><span>Do not hand-maintain numbers without checks</span></div>
+  </section>
+
+  <section class="slide">
+    <div>
+      <div class="eyebrow">Website vs repo</div>
+      <h2>The website reads like a product. The repo reads like a brilliant archive.</h2>
+    </div>
+    <div class="grid two">
+      <div class="card"><strong>Website</strong><span>Clean, elegant, convincing. The caveat split between landing page and status page is the right pattern.</span></div>
+      <div class="card"><strong>Repository</strong><span>Deeply evidenced, but the reading path crosses specs, handoffs, research files, status pages, scripts, and historical ledgers too quickly.</span></div>
+    </div>
+    <div class="rail">
+      <div><strong>Fix first</strong><br><span>Reporter-driven current truth.</span></div>
+      <div><strong>Then</strong><br><span>Research-folder index and rename plan.</span></div>
+      <div><strong>Then</strong><br><span>Stdlib examples and package story.</span></div>
+      <div><strong>Then</strong><br><span>Public ecosystem loop.</span></div>
+    </div>
+    <div class="footer"><span>The repo has the proof. It needs a cleaner front door to that proof.</span><span></span></div>
+  </section>
+
+  <section class="slide">
+    <div>
+      <div class="eyebrow">Comparative analysis</div>
+      <h2>Borrow the mature patterns. Do not borrow the identity.</h2>
+    </div>
+    <table>
+      <thead><tr><th>Language</th><th>What it teaches Garnet</th><th>Garnet response</th></tr></thead>
+      <tbody>
+        <tr><td>Rust</td><td>Clear promise, tooling, std docs, domain guides, governance.</td><td>Keep evidence discipline; make library and current-state docs easier.</td></tr>
+        <tr><td>Ruby</td><td>Human voice, beauty, community, documentation and library culture.</td><td>Keep managed-mode warmth without implying dynamic-language looseness everywhere.</td></tr>
+        <tr><td>Zig</td><td>Dense language reference, stdlib docs, build system, C interop, testing story.</td><td>Make Garnet's spec and stdlib equally navigable.</td></tr>
+        <tr><td>Gleam</td><td>Friendly typed identity plus package index.</td><td>Build the Layer-2 package story before broad ecosystem claims.</td></tr>
+      </tbody>
+    </table>
+    <div class="footer"><span>Comparators are explanation tools, not the main hook.</span><span></span></div>
+  </section>
+
+  <section class="slide">
+    <div>
+      <div class="eyebrow">Positioning</div>
+      <h2>Move from comparator-led to <span class="cyan">evidence-led</span>.</h2>
+    </div>
+    <div class="grid two">
+      <div class="card"><strong>Keep as bridge</strong><span>"Rust rigor. Ruby velocity." It is understandable and useful after the thesis is framed.</span></div>
+      <div class="card"><strong>Lead with</strong><span>"Evidence-native language workbench for agentic systems." This is unique to Garnet.</span></div>
+    </div>
+    <p class="quote">Garnet's unique move is not that it blends two familiar vibes. It makes what agents must prove - authority, memory, trust boundaries, and lineage - visible in the language surface.</p>
+    <div class="footer"><span>Replacement confidence: hero direction 72%; keep-plus-add 88%.</span><span></span></div>
+  </section>
+
+  <section class="slide">
+    <div>
+      <div class="eyebrow">Library story</div>
+      <h2>Real foundation. Not a mature ecosystem yet.</h2>
+    </div>
+    <div class="grid three">
+      <div class="card"><strong>What is real</strong><span>24 primitives, CapCaps metadata, interpreter bridge, sandbox/net policy, 74 stdlib tests.</span></div>
+      <div class="card"><strong>What is missing</strong><span>JSON, HTTP, regex, datetime, UUID, config, logging, CLI args, test helpers, package docs.</span></div>
+      <div class="card"><strong>First principle</strong><span>A Garnet library carries capability, memory, stability, provenance, sandbox, and evidence together.</span></div>
+    </div>
+    <div class="footer"><span>Library maturity score: 42/100 adoption, 76/100 honesty.</span><span></span></div>
+  </section>
+
+  <section class="slide">
+    <div>
+      <div class="eyebrow">Five solvable problems</div>
+      <h2>Garnet is strongest where ordinary languages leave audit trails outside the code.</h2>
+    </div>
+    <div class="grid">
+      <div class="card"><strong>Authority drift</strong><span><code>@caps(...)</code> makes OS authority explicit.</span></div>
+      <div class="card"><strong>Memory ambiguity</strong><span><code>memory episodic</code> and peers make state role explicit.</span></div>
+      <div class="card"><strong>Unsafe language seams</strong><span>Managed and safe modes share one file with audited crossings.</span></div>
+      <div class="card"><strong>AI migration trust</strong><span>Sandbox, lineage, migrate_todo, and human unquarantine.</span></div>
+      <div class="card"><strong>Readiness overclaims</strong><span>Dogfood gates, manifests, status reporters, conformance matrix.</span></div>
+      <div class="card"><strong>Build target</strong><span>Turn each problem into a demo program with evidence output.</span></div>
+    </div>
+    <div class="footer"><span>These become examples, tutorials, and package tests.</span><span></span></div>
+  </section>
+
+  <section class="slide">
+    <div>
+      <div class="eyebrow">C++ interview filter</div>
+      <h2>Problem first. Foundation before features.</h2>
+    </div>
+    <ul>
+      <li>Do not start with "we built a language"; start with the problem existing languages cannot make explicit enough.</li>
+      <li>Keep high-level orchestration and low-level/native boundaries in one architecture, without pretending one mode owns every job.</li>
+      <li>Do not add a second gun deck without reinforcing the hull: stdlib growth needs CapCaps, stability, tests, docs, and dogfood.</li>
+      <li>Use standards discipline early: governance, RFC shape, and compatibility promises prevent dialect drift.</li>
+      <li>Claim zero/negative overhead only where the VM/native backend can prove it.</li>
+    </ul>
+    <div class="footer"><span>Bjarne's lesson maps cleanly to Garnet: solve the real problem and keep the proof honest.</span><span></span></div>
+  </section>
+
+  <section class="slide">
+    <div>
+      <div class="eyebrow">PRD</div>
+      <h2>One clean truth surface across site and repo.</h2>
+    </div>
+    <div class="grid two">
+      <div class="card"><strong>Acceptance</strong><span>Reporter outputs agree with README, status page, landing page, deck, promo status, and stdlib claims.</span></div>
+      <div class="card"><strong>Non-goals</strong><span>No broad conversion claim. No mature stdlib claim. No notarization/mobile/native backend overclaim.</span></div>
+    </div>
+    <div class="rail">
+      <div><strong>Sync</strong><br><span>Numbers from scripts.</span></div>
+      <div><strong>Index</strong><br><span>Research corpus.</span></div>
+      <div><strong>Position</strong><br><span>Evidence-native hook.</span></div>
+      <div><strong>Prove</strong><br><span>Promo and examples.</span></div>
+    </div>
+    <div class="footer"><span>Detailed PRD lives in F_Project_Management.</span><span></span></div>
+  </section>
+
+  <section class="slide">
+    <div>
+      <div class="eyebrow">Six agents</div>
+      <h2>Parallelize by ownership, not by vibes.</h2>
+    </div>
+    <table>
+      <thead><tr><th>Agent</th><th>Owns</th><th>Gate</th></tr></thead>
+      <tbody>
+        <tr><td>Mac Opus</td><td>Positioning and copy architecture.</td><td>Adoption reporter plus link scan.</td></tr>
+        <tr><td>Mac Codex</td><td>Website/source-truth sync.</td><td>PWA and Pages smokes.</td></tr>
+        <tr><td>Windows Opus</td><td>Stdlib layer policy and `@stability`.</td><td>Stdlib/check tests plus layer gate.</td></tr>
+        <tr><td>Windows Codex</td><td>Stdlib examples and docs.</td><td>Examples test and docs smoke.</td></tr>
+        <tr><td>Mac Opus 2</td><td>Research corpus normalization plan.</td><td>Dead-link report.</td></tr>
+        <tr><td>Mac Codex 2</td><td>Promo/deck production.</td><td>Render, QA, export, sync, screenshots.</td></tr>
+      </tbody>
+    </table>
+    <div class="footer"><span>Run `scripts/garnet_phase_id.py` before assigning phase IDs.</span><span></span></div>
+  </section>
+
+  <section class="slide">
+    <div>
+      <div class="eyebrow">Next PR sequence</div>
+      <h2>The cleanest path from here.</h2>
+    </div>
+    <div class="grid">
+      <div class="card"><strong>1. Truth sync</strong><span>Numbers, promo state, copy boundary.</span></div>
+      <div class="card"><strong>2. Docs index</strong><span>Research reading path and future rename plan.</span></div>
+      <div class="card"><strong>3. Promo evidence</strong><span>Better composition, render, QA, website sync.</span></div>
+      <div class="card"><strong>4. Stdlib layer policy</strong><span>`core::`, `std::`, official packages, community packages.</span></div>
+      <div class="card"><strong>5. Library examples</strong><span>Recipe docs and demos for real problems.</span></div>
+      <div class="card"><strong>6. Package seed</strong><span>First five official Layer-2 packages.</span></div>
+    </div>
+    <div class="footer"><span>Finish narrow, verify loudly.</span><span></span></div>
+  </section>
+
+  <section class="slide">
+    <div>
+      <div class="eyebrow">Close</div>
+      <h2>Garnet should be judged by what it can make <span class="gold">provable</span>.</h2>
+      <p>That is the distinctive claim. Not another friendly systems language. Not another AI coding surface. A language workbench where agents and humans can see what code is allowed to do, what memory it is touching, where trust changes mode, and what evidence proves the build.</p>
+    </div>
+    <div></div>
+    <div class="footer"><span>Ready for Gamma import as a self-contained HTML deck.</span><span>2026-05-26</span></div>
+  </section>
+</main>
+</body>
+</html>
