@@ -69,6 +69,7 @@ pub fn from_check_error(err: &CheckError) -> Diagnostic {
         CheckError::StabilityError(_) => (Severity::Error, "check.stability_error"),
         CheckError::BoundaryNote(_) => (Severity::Warning, "check.boundary_note"),
         CheckError::StabilityAdvice(_) => (Severity::Info, "check.stability_advice"),
+        CheckError::OverCatch(_) => (Severity::Info, "check.over_catch"),
     };
     Diagnostic {
         severity,

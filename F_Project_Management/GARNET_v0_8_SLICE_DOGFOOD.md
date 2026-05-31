@@ -388,6 +388,28 @@ advance rides with the S42 PR.
 
 ---
 
+### S42 — typed Result / error policy
+
+**Goal:** Codify the typed-`Result`-first error policy and enforce a piece of it.
+`core::result` combinators (S26) and `try`/`rescue`/`ensure`/`raise` (Mini-Spec
+§7) already exist. The reconciliation flagged Ronacher's insight — *"agents
+over-catch exceptions"* — so the enforceable rule is the **over-catch** guard.
+
+**Dogfood block:** `C_Language_Specification/GARNET_ERROR_POLICY.md` codifies the
+two error channels (typed `Result` preferred; exceptions for the exceptional) and
+the over-catch anti-pattern. `garnet_check::overcatch_sites` flags catch-all
+`rescue` clauses (no exception type); `garnet check` emits a **non-fatal advisory**
+`check.over_catch` (human + JSON) — never changes the exit code (excluded from
+`CheckReport::ok`). A typed rescue (`rescue e: T`) is not flagged.
+
+**State:** dogfood-passing (S42 PR). 3 unit + 3 integration tests; CLI + JSON
+smoke verified. No new readiness lane (not mandated). Honest scope: the over-catch
+check is **advisory only** (no exit-code change, no auto-rewrite, no ban); no
+typed-exception hierarchy or checked-exceptions are introduced. Flips to `merged`
+on squash; the `s42 → merged(5)` advance rides with the S43 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.

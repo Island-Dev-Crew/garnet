@@ -18,6 +18,19 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S42 (typed Result / error policy):** codifies the typed-`Result`-first error
+  policy and enforces a piece of it. `core::result` combinators (S26) and
+  `try`/`rescue`/`ensure`/`raise` already exist; this slice adds
+  `C_Language_Specification/GARNET_ERROR_POLICY.md` (two error channels; the
+  over-catch anti-pattern — Ronacher's "agents over-catch exceptions") and the
+  **over-catch advisory**: `garnet_check::overcatch_sites` flags catch-all
+  `rescue` clauses (no exception type) and `garnet check` emits a **non-fatal**
+  `check.over_catch` advisory (human + JSON) that never changes the exit code
+  (excluded from `CheckReport::ok`). A typed rescue (`rescue e: T`) is not
+  flagged. 3 unit + 3 integration tests. **Honest scope:** advisory only — no
+  exit-code change, no auto-rewrite, no ban; no typed-exception hierarchy or
+  checked-exceptions are introduced.
+
 - **S41 (async/concurrency contract — first v0.8 hardening slice):** codifies
   Garnet's concurrency model as a canonical contract. The model is **actors**
   (not async/await — `async` is reserved for a future edition, S32), already
