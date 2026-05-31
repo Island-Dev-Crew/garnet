@@ -1,0 +1,14 @@
+# wasi_clock.garnet — a Garnet program whose declared @caps map to WASI host
+# capabilities. Under WASI, `time` -> wasi clocks, `fs` -> preopens, `net` ->
+# wasi-sockets. The S46 sandbox policy IS that mapping; this program declares the
+# WASI capabilities it would request from a wasm host.
+@caps(time, fs)
+def timestamped_read(path) {
+  path
+}
+
+@caps()
+def main() {
+  println(timestamped_read("log.txt"))
+  0
+}

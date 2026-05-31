@@ -938,6 +938,31 @@ compound-authority proof; **no FFI runtime** — the marshalling layer and a lin
 
 ---
 
+### S64 — WASI interop
+
+**Goal:** Close the native-interop band (S61–S64) by making the `@caps` → WASI
+capability mapping explicit — the wasm-side counterpart to the C ABI
+(reconciliation §163-164).
+
+**Dogfood block:** a program's declared `@caps` are exactly the WASI host
+capabilities it requests (`fs`→preopens, `net`→wasi-sockets, `time`→clocks,
+`env`→environ — the S46 `wasi` policy IS the mapping).
+`examples/ffi/wasi_clock.garnet` (`@caps(time, fs)`) checks clean and its sandbox
+WASI policy is `clocks:true`, `preopens:true`, `sockets:false`. Spec
+`C_Language_Specification/GARNET_WASI_INTEROP.md`; cross-OS proof
+`garnet-cli/tests/wasi_interop.rs` (2 tests).
+
+**State:** dogfood-passing (S64 PR). 2 Rust tests; full ladder green. No new
+readiness lane.
+**Honest scope (do not soften):** the WASI **authority mapping**, not a WASI
+**runtime** — Garnet does not compile to wasm or run under a WASI host
+(wasm32/wasm-pack/wasmtime absent, S55); the build + host execution are
+**deferred**. Closes the native-interop *authority* band: each of S62/S63/S64
+ships the authority/attestation half, none ship a native/wasm runtime. Flips to
+`merged` on squash; the `s64 → merged(5)` advance rides with the S65 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.
