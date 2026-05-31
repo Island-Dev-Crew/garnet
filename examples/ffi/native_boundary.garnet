@@ -1,0 +1,6 @@
+# A function that wraps a native (extern "C") call must declare @caps(ffi):
+# FFI is an explicit, declared authority — never implicit.
+@caps(ffi)
+def native_double(x) { x * 2 }
+@caps()
+def main() { println(native_double(21)) 0 }

@@ -862,8 +862,37 @@ hardening 10/10, adoption 9/9, sub-gates 11/11. 5 unit tests. Full ladder green.
 Only `v0.4.2`/`v0.5.0` are tagged; cutting `v0.8.0` is a **release-truth/strategy
 decision for Jon** — irreversible, reserved by the honesty anchors — and is
 **escalated**, not made autonomously. The gate's "READY TO TAG" is evidence-backed
-advice, not the act of tagging. The `s60 → merged` advance and the tag itself
-both wait on Jon's decision; this PR ships the readiness gate only.
+advice, not the act of tagging. **Decision (2026-05-31): Jon chose to defer the
+`v0.8.0` tag and continue to S61+** — so the readiness gate is the slice
+deliverable (`s60 → merged(5)`) and the tag stays uncut, cuttable on Jon's
+authorization anytime. The `s60` advance rides with the S61 PR.
+
+---
+
+### S61 — FFI authority model
+
+**Goal:** Govern the sharpest capability edge — foreign-function calls — as an
+explicit, declared authority (reconciliation §163-164: the native-interop
+boundary; "wrap Python/Mojo/CUDA with @caps/@bounded/seal").
+
+**Dogfood block:** the FFI authority model — a function wrapping a native call
+must declare `@caps(ffi)` (`Capability::Ffi`), which flows through the trust
+kernel: surface (S35) → manifest (S36) → `diff-caps GAINED ffi` (S37) → seal
+(S38) → `garnet sandbox` escape-hatch warning (S46). `examples/ffi/{no_native,
+native_boundary}.garnet` + `garnet-cli/tests/ffi_authority.rs` (3 cross-OS tests:
+both check clean, sandbox flags ffi, diff-caps flags gaining it). Spec:
+`C_Language_Specification/GARNET_FFI_AUTHORITY.md`.
+
+**State:** dogfood-passing (S61 PR). 3 Rust tests; full ladder green. No new
+readiness lane.
+**Honest scope (do not soften):** Garnet has **no FFI runtime** — the
+interpreter does not execute `extern "C"` calls and this slice adds none. S61
+ships the *authority model* (declaration → surface → diff → seal → sandbox-flag),
+**not** native-call execution; its value is transparency + review, not
+containment (the sandbox cannot constrain FFI). Rust/C ABI execution (S62/S63)
+and WASI interop (S64) build on this and stay honest-partial where the native
+toolchain / wasm runtime is absent. Flips to `merged` on squash; the
+`s61 → merged(5)` advance rides with the S62 PR.
 
 ---
 

@@ -18,6 +18,19 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S61 (FFI authority model):** codifies how foreign-function calls are
+  governed — FFI is an **explicit, declared, diff-gated, sealed** authority, not
+  an implicit escape hatch. A function wrapping a native call must declare
+  `@caps(ffi)`, which then flows through the whole trust kernel: capability
+  surface (S35), manifest (S36), `diff-caps` `GAINED ffi` (S37), seal (S38), and
+  the `garnet sandbox` escape-hatch warning (S46). Ships
+  `C_Language_Specification/GARNET_FFI_AUTHORITY.md`, the
+  `examples/ffi/{no_native,native_boundary}.garnet` pair, and a cross-OS proof
+  (`garnet-cli/tests/ffi_authority.rs`, 3 tests). **Honest scope:** Garnet has
+  **no FFI runtime** — the interpreter does not execute `extern "C"` calls and
+  this slice adds none; it ships the *authority model* (declaration → surface →
+  diff → seal → sandbox-flag), not native-call execution. The model's value is
+  transparency + review, not containment (the sandbox cannot constrain FFI).
 - **S60 (v0.8.0 release readiness):** `scripts/garnet_v0_8_0_release_readiness.py`
   aggregates the whole v0.8 train into one verdict — both bands merged
   (hardening S41–S50 10/10, adoption S51–S59 9/9) and all 11 anti-rot sub-gates
