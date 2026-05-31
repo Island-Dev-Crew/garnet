@@ -45,6 +45,7 @@ jobs:
       - run: python3 scripts/test_garnet_install_readme_check.py
       - run: python3 scripts/test_garnet_tree_sitter_check.py
       - run: python3 scripts/test_garnet_vscode_publish_readiness.py
+      - run: python3 scripts/test_garnet_wasm_readiness.py
       - run: python3 scripts/check_determinism_no_llm.py
       - run: python3 scripts/check-agent-contracts.py
       # S47: gate cross-OS build coverage — fails if ci.yml stops testing all
@@ -68,6 +69,9 @@ jobs:
       # S54: VS Code publish readiness — fails if the extension manifest loses a
       # marketplace-required field/file. The credentialed publish stays deferred.
       - run: python3 scripts/garnet_vscode_publish_readiness.py --gate
+      # S55: wasm hello-world readiness — guards the owned bits (hello example +
+      # target doc); the absent wasm toolchain is an honest deferral, not gated.
+      - run: python3 scripts/garnet_wasm_readiness.py --gate
 
   # ───────────────────────────────────────────────────────────────────
   # Format check — fast, runs once on Linux. A failure here is the

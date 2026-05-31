@@ -728,6 +728,30 @@ advance rides with the S55 PR.
 
 ---
 
+### S55 — WASM hello-world
+
+**Goal:** Open the in-browser story (adoption driver + S56 playground enabler)
+honestly: ship the hello-world + the wasm path, naming what blocks the build
+rather than faking one (reconciliation §77, §156).
+
+**Dogfood block:** `examples/hello.garnet` (canonical hello-world; checks clean,
+runs). `scripts/garnet_wasm_readiness.py` inventories the path — the interpreter
+compiled to wasm is the in-browser model (Garnet has **no** wasm backend) — and
+names the blockers: no `wasm32` target, `wasm-pack`/`wasmtime` absent, and
+`garnet-interp`'s `miette` `fancy` feature. `F_Project_Management/GARNET_WASM_TARGET.md`
+documents the build path. `--gate` guards only the owned bits (example + doc).
+
+**State:** dogfood-passing (S55 PR). Owned bits ready; 5 unit tests. Full ladder
+green. No new readiness lane.
+**Honest scope (do not soften):** **no wasm artifact is built and no browser run
+is claimed.** The `wasm32` target, `wasm-pack`, and `wasmtime` are **absent** in
+this environment, and the interpreter needs a portability fix (feature-gate
+`miette` `fancy` off) first — so the wasm build is **deferred**; the absent
+toolchain is an honest deferral, not a gated failure. Flips to `merged` on
+squash; the `s55 → merged(5)` advance rides with the S56 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.

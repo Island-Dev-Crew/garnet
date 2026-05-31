@@ -18,6 +18,17 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S55 (WASM hello-world):** ships the canonical `examples/hello.garnet` and a
+  WASM-readiness reporter for the in-browser path. `scripts/garnet_wasm_readiness.py`
+  inventories the path (the interpreter compiled to wasm is the in-browser
+  execution model — Garnet has no wasm backend) and **names the concrete
+  blockers**: no `wasm32` target, `wasm-pack`/`wasmtime` absent, and
+  `garnet-interp` pulling `miette`'s `fancy` (terminal/backtrace) feature. Doc
+  `F_Project_Management/GARNET_WASM_TARGET.md` records the build path. `--gate`
+  guards only the owned bits (the example + the doc); 5 unit tests. **Honest
+  scope:** **no wasm is built and no browser run is claimed** — the wasm build is
+  deferred until the named blockers are resolved; the absent toolchain is an
+  honest deferral, not a gated failure.
 - **S54 (VS Code / OpenVSX / Marketplace path):** makes the VS Code extension
   marketplace-ready and documents the publish path. Added `keywords` to
   `editors/vscode/package.json` (discoverability); new
