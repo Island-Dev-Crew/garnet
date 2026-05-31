@@ -917,6 +917,27 @@ Rust `cdylib` are **deferred**, not added here. Flips to `merged` on squash; the
 
 ---
 
+### S63 — C ABI proof
+
+**Goal:** Establish the C ABI as the canonical FFI contract and prove **compound
+native authority** under the S61 model (reconciliation §163-164).
+
+**Dogfood block:** `examples/ffi/c_stat.garnet` binds a C `stat`-like symbol that
+touches the filesystem — needing **both** `@caps(ffi)` and `@caps(fs)`. The model
+surfaces both: `check` clean; `garnet sandbox` raises the ffi escape-hatch
+warning **and** enables fs WASI preopens; `garnet seal` attests `["ffi","fs"]`.
+Spec `C_Language_Specification/GARNET_C_ABI.md` (incl. the value↔C-type
+marshalling table); cross-OS proof `garnet-cli/tests/c_abi_proof.rs` (3 tests).
+
+**State:** dogfood-passing (S63 PR). 3 Rust tests; full ladder green. No new
+readiness lane.
+**Honest scope (do not soften):** ships the C ABI *contract* + the
+compound-authority proof; **no FFI runtime** — the marshalling layer and a linked
+`.so`/`.dylib` are **deferred**. Flips to `merged` on squash; the
+`s63 → merged(5)` advance rides with the S64 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.
