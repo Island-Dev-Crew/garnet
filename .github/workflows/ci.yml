@@ -57,6 +57,7 @@ jobs:
       - run: python3 scripts/test_garnet_self_hosted_parser_seed_status.py
       - run: python3 scripts/test_garnet_vm_interp_parity.py
       - run: python3 scripts/test_garnet_safe_subset_status.py
+      - run: python3 scripts/test_garnet_formal_verification_feasibility.py
       - run: python3 scripts/check_determinism_no_llm.py
       - run: python3 scripts/check-agent-contracts.py
       # S47: gate cross-OS build coverage — fails if ci.yml stops testing all
@@ -115,6 +116,9 @@ jobs:
       # "implemented today" claims grounded in source; proposed linear/effect
       # mode is NOT gated, it is explicitly not implemented).
       - run: python3 scripts/garnet_safe_subset_status.py --gate
+      # S75: formal-verification feasibility — static gate (study present +
+      # cited foundation real). No verification is run or implied; a study only.
+      - run: python3 scripts/garnet_formal_verification_feasibility.py --gate
 
   # ───────────────────────────────────────────────────────────────────
   # Format check — fast, runs once on Linux. A failure here is the

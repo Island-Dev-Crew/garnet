@@ -1210,6 +1210,29 @@ advance rides with the S75 PR.
 
 ---
 
+### S75 — formal-verification feasibility
+
+**Goal:** Assess (don't build) whether Garnet can offer a *provable* termination /
+`@caps`-soundness story over a safe subset — the eBPF-verifier-path bet from the
+trajectory research.
+
+**Dogfood block:** `C_Language_Specification/GARNET_FORMAL_VERIFICATION_FEASIBILITY.md`
+gives the verdict: a verified bounded-loop checker for the safe subset (eBPF-style,
+building on `explosive.rs`) is the feasible first provable increment; `@caps`
+soundness is feasible only atop the S74 linear-capability mode; whole-language
+verification is **not feasible** (halting problem + ambient authority + FFI).
+`scripts/garnet_formal_verification_feasibility.py` (+ `--gate`, 5 tests,
+agent-contracts) is a static anti-overclaim gate grounding the study in real
+source (`explosive.rs`'s undecidability stance; the S74 safe-subset spec).
+
+**State:** dogfood-passing (S75 PR). 5 unit tests; full ladder green; no Rust changed.
+**Honest scope (do not soften):** a feasibility **study only** — no verifier, no
+termination proof, no SMT/proof-assistant integration, no soundness theorem ships.
+Assessment, not implemented behavior. Flips to `merged` on squash; the
+`s75 → merged(5)` advance rides with the S76 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.
