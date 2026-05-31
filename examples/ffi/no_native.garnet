@@ -1,0 +1,4 @@
+@caps()
+def compute(x) { x * 2 }
+@caps()
+def main() { println(compute(21)) 0 }

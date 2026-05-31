@@ -40,6 +40,14 @@ each shipped one-PR, CI-green, dogfooded, with an honest contract block.
 - "Paper VI scorecard: 4 supported, 2 partial (downgraded honestly), 0 refuted, 1 pending-infra"
 - "human/aesthetic acceptance remains open"
 
+## Decision (2026-05-31)
+
+**Jon chose to defer the `v0.8.0` tag and continue the slice train (S61+).** The
+readiness gate stays OPEN; the tag remains uncut (only `v0.4.2`/`v0.5.0` are
+tagged) and can be cut on Jon's authorization whenever he chooses. Per the
+roadmap's 0.8.x arc, tagging is not on the critical path for continuing
+development.
+
 ## The tag decision (escalated)
 
 Cutting and pushing the `v0.8.0` git tag is **Jon's call** — it is irreversible,
