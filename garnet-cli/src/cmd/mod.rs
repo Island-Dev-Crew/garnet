@@ -24,6 +24,7 @@ pub mod run;
 pub mod test;
 pub mod trust_report;
 pub mod verify;
+pub mod verify_gate;
 
 use crate::cache::{self, Episode};
 use crate::{knowledge, machine_key, provenance, strategies};

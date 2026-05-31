@@ -201,7 +201,16 @@ regression; exits zero on a clean tree; emits the fused merge-confidence band.
 **Honest partial labels available:** "Until S37, the capability signal slot is a
 stub — the fused band uses the external reviewer + internal ledger only."
 
-**State:** not-started.
+**State:** dogfood-passing (S33 PR). `garnet verify <path>` acceptance gate added
+(`garnet-cli/src/verify_gate.rs` band+`min`-fusion logic + `cmd/verify_gate.rs`
+CLI; routed by positional-arg count vs the 2-arg manifest verify): edition-aware
+parse + safe-mode check over a file/dir, fused merge-confidence band (internal
+`min` external `min` capability-signal), exit 0 on a clean tree / non-zero on a
+planted regression. 6 unit + 4 integration tests + end-to-end CLI smoke
+(clean→0/band5, planted→1, `--external-band` caps via `min`, dir walk, 2-arg
+manifest verify preserved). Lane `garnet_verify_gate` added; baseline regenerated
+(88.3%→88.6%). Capability-signal slot is a STUB until S37 `diff-caps`. Flips to
+`merged` on squash; the `s33 → merged(5)` ledger advance rides with the S34 PR.
 
 ---
 

@@ -13,6 +13,7 @@ pub mod new_cmd;
 pub mod provenance;
 pub mod runtime_settings;
 pub mod strategies;
+pub mod verify_gate;
 
 use std::fs;
 use std::io::IsTerminal;
@@ -112,6 +113,11 @@ pub fn print_help() {
     println!(
         "                                     Emit a (deterministic, optionally signed) manifest"
     );
+    println!(
+        "    verify <path>                    Acceptance gate: edition-aware parse + safe-mode"
+    );
+    println!("           [--external-band <1-5>]   check; emits a fused merge-confidence band");
+    println!("                                     (nonzero exit on any fatal diagnostic)");
     println!("    verify <file> <manifest.json>    Verify the manifest matches the source");
     println!("           [--signature]             Require a valid Ed25519 signature");
     println!("    keygen <keyfile>                 Generate an Ed25519 signing keypair");

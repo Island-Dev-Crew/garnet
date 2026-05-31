@@ -1760,6 +1760,36 @@ def read_status() -> MitReadinessStatus:
                 "`[runtime]` table would be a spec change deferred to a future Handoff",
             ],
         ),
+        ObjectiveLane(
+            id="garnet_verify_gate",
+            evidence_class="committed",
+            label="One-command `garnet verify` acceptance gate (S33)",
+            status="verified",
+            completion_percent=100.0,
+            evidence=(
+                "S33 adds `garnet verify <path>` — a single acceptance gate (distinct from the "
+                "2-arg `garnet verify <file> <manifest.json>` manifest verify; routed by "
+                "positional-arg count). It runs edition-aware parse + safe-mode check over a file "
+                "or every .garnet under a directory, and emits a fused merge-confidence band: the "
+                "internal local band (5 clean / 4 advisory / 1 fatal) fused by `min` with an "
+                "optional external-reviewer band (`--external-band`, Greptile at PR time) and a "
+                "pluggable capability signal. Exits 0 on a clean tree, non-zero on a planted "
+                "regression. Proven by 6 unit tests (band clamp, internal-band mapping, min-fusion "
+                "incl. a weak signal capping a confident one, pending-capability no-op) + 4 "
+                "integration tests + end-to-end CLI smoke (clean->0/band5, planted->1, "
+                "--external-band caps via min, directory walk, 2-arg manifest verify preserved)."
+            ),
+            blocked_by=[],
+            deferred=[
+                "Capability-signal slot is a STUB until S37 diff-caps wires it in (it never "
+                "lowers the fuse while pending)",
+                "The gate's internal band is the LOCAL acceptance signal; the full PR "
+                "falsification ledger + Greptile fusion is the dogfood-readiness skill's job, "
+                "which this gate feeds — `garnet verify` does not itself run cargo/CI",
+                "Test execution (`garnet test`) is not folded into the gate in S33; parse + "
+                "safe-mode check is the acceptance signal",
+            ],
+        ),
     ]
 
     # Committed-truth headline: only machine-independent lanes feed the score, so the
