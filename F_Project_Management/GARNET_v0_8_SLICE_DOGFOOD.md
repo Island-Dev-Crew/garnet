@@ -1187,6 +1187,29 @@ to `merged` on squash; the `s73 → merged(5)` advance rides with the S74 PR.
 
 ---
 
+### S74 — safe-subset spec (+ linear/effect-typed mode graft)
+
+**Goal:** Specify Garnet's safe subset — the `fn` (safe) mode — and fold in the
+Opus graft (reconciliation §172): an optional linear/effect-typed rigor mode for
+high-assurance components, per the compass report's recommendation.
+
+**Dogfood block:** `C_Language_Specification/GARNET_SAFE_SUBSET.md` specifies (1)
+the safe subset **as implemented today** — typed, ownership-disciplined `fn`
+(`FnMode::Safe`) + the fn↔def boundary audit (`audit.rs`) that closes the "hidden
+safe→managed escalation" threat class — and (2) a **proposed** optional
+linear/effect-typed mode (Austral linear capabilities / Koka effects).
+`scripts/garnet_safe_subset_status.py` (+ `--gate`, 5 tests, agent-contracts) is a
+static anti-overclaim gate grounding the spec's "implemented today" claims in
+real source (`FnMode::Safe` in the AST; the boundary audit in the checker).
+
+**State:** dogfood-passing (S74 PR). 5 unit tests; full ladder green; no Rust changed.
+**Honest scope (do not soften):** the linear/effect mode is a **PROPOSAL — NOT
+IMPLEMENTED** (no linear type system, effect rows, or soundness proof ship here);
+this is a specification slice. Flips to `merged` on squash; the `s74 → merged(5)`
+advance rides with the S75 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.
