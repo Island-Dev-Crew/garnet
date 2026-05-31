@@ -132,7 +132,7 @@ def safe_read(path) {
   try {
     let contents = read_file(path)?
     contents.body
-  } rescue e {
+  } rescue e: Result {
     "(error: " + describe_result_error(e) + ")"
   }
 }
@@ -141,7 +141,7 @@ def safe_size(path) {
   try {
     let meta = stat(path)?
     meta.size
-  } rescue e {
+  } rescue e: Result {
     -1
   }
 }

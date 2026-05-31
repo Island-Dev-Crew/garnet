@@ -39,6 +39,7 @@ pub mod coherence;
 pub mod concurrency;
 pub mod explosive;
 pub mod match_coverage;
+pub mod overcatch;
 pub mod stability;
 pub mod suggest;
 
@@ -49,6 +50,7 @@ pub use caps_diff::{diff_caps, CapsDiff};
 pub use caps_graph::{CapsReport, CapsViolation};
 pub use concurrency::{concurrency_surface, ActorContract, ProtocolSig};
 pub use explosive::{explosive_ops, ExplosiveKind, ExplosiveOp, FnExplosiveReport};
+pub use overcatch::{overcatch_sites, OverCatchSite};
 
 use garnet_parser::ast::{
     ActorDef, ActorItem, Annotation, Block, FnDef, FnMode, Item, Module, Ownership, Param, Stmt,
@@ -95,6 +97,12 @@ pub enum CheckError {
     /// via [`CheckError::StabilityAdvice`].
     #[error("{0}")]
     StabilityError(String),
+    /// S42 — over-catch advisory. NON-FATAL (excluded from [`CheckReport::ok`]):
+    /// a catch-all `rescue` (no exception type) swallows every exception; the
+    /// advisory steers toward typed `Result` / typed rescues. See
+    /// `C_Language_Specification/GARNET_ERROR_POLICY.md`.
+    #[error("{0}")]
+    OverCatch(String),
 }
 
 /// The checker's result set: a list of diagnostics and metadata about each
@@ -127,6 +135,17 @@ impl CheckReport {
 /// Run all checks on a parsed module. This is the single public entry point.
 pub fn check_module(module: &Module) -> CheckReport {
     let mut report = CheckReport::default();
+    // S42: over-catch advisory (non-fatal) — a catch-all `rescue` swallows every
+    // exception; steer toward typed Result / typed rescues. Never changes the
+    // exit code (excluded from `CheckReport::ok`).
+    for site in crate::overcatch::overcatch_sites(module) {
+        report.errors.push(CheckError::OverCatch(format!(
+            "catch-all rescue at {}..{} swallows every exception; prefer a typed Result or \
+             name the rescue type (advisory)",
+            site.span.start,
+            site.span.start + site.span.len
+        )));
+    }
     let module_safe = module.safe;
     let nonsendable_types = collect_nonsendable_types(module);
 
