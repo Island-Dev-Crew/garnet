@@ -18,6 +18,19 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S45 (slopsquatting guard):** `garnet add --registry` now flags an unknown
+  package name that closely resembles a known one before anything is trusted —
+  the live slopsquatting threat (hallucinated names attackers pre-register).
+  New pure module `garnet_registry_stub::slopguard`: Damerau–Levenshtein (OSA)
+  distance + separator-confusable (`foo-bar` vs `foo_bar`) detection, returning
+  deterministically ordered near-misses; `RegistryIndex::known_names()` feeds it.
+  When `resolve` reports an unknown **name** (not a missing version), the error
+  is enriched — *"`reqests` is not in this registry — did you mean `requests`?
+  … a slopsquatting risk; verify the source before adding."* 6 guard unit tests
+  + 2 CLI integration tests (near-miss warns; version-miss stays quiet).
+  **Honest scope:** the registry is a filesystem stub, so "known names" are the
+  local index, not a global ecosystem feed; the guard is a prompt-to-verify
+  heuristic, not a security guarantee. Resolver behavior/exit codes unchanged.
 - **S44 (LSP safe-mode precision):** the checker now owns a single source of
   truth for diagnostic presentation — `garnet_check::Severity` plus
   `CheckError::severity()` / `CheckError::code()`. `garnet check` (S34

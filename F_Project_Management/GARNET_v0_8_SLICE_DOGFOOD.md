@@ -468,6 +468,36 @@ Flips to `merged` on squash; the `s44 → merged(5)` advance rides with the S45 
 
 ---
 
+### S45 — package resolver / slopsquatting guard
+
+**Goal:** Harden the resolver against slopsquatting — the live threat
+(reconciliation §146, §202-208: hallucinated package names attackers
+pre-register). When a requested name is unknown but closely resembles a known
+one, warn before anything is trusted.
+
+**Dogfood block:** pure `garnet_registry_stub::slopguard` — Damerau–Levenshtein
+(optimal string alignment) distance + separator-confusable detection
+(`foo-bar` vs `foo_bar`), returning deterministically ordered near-misses (a
+length-relative threshold suppresses unrelated short-name noise).
+`RegistryIndex::known_names()` supplies the corpus. `garnet add --registry`
+runs the guard **only** when `resolve` reports an unknown *name* (a missing
+version is not a near-miss), enriching the error with *"did you mean `…`? …
+a slopsquatting risk; verify the source before adding."* Exit code unchanged
+(the add already fails on `NotFound`).
+
+**State:** dogfood-passing (S45 PR). 6 guard unit tests
+(`osa_handles_transposition_and_edits`, `flags_a_single_typo`,
+`flags_separator_confusable_first`, `exact_match_is_not_a_near_miss`,
+`distant_and_tiny_names_are_not_flagged`, `ordering_is_deterministic_best_first`)
++ 2 CLI integration tests (near-miss warns; version-miss stays quiet). Full
+ladder green. No new readiness lane (not mandated).
+**Honest scope:** the registry is a filesystem stub, so "known names" are the
+local index — **not** a global ecosystem feed; the guard is a prompt-to-verify
+heuristic, **not** a security guarantee. Flips to `merged` on squash; the
+`s45 → merged(5)` advance rides with the S46 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.

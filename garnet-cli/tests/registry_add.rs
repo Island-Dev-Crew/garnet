@@ -176,3 +176,65 @@ fn garnet_add_registry_rejects_missing_version() {
         "nothing should be vendored on a failed resolve"
     );
 }
+
+#[test]
+fn garnet_add_registry_warns_on_slopsquatting_near_miss() {
+    // S45: an unknown name that closely resembles a known one (here a single
+    // adjacent transposition of `hello_lib`) must still fail to resolve, but the
+    // error is enriched with a slopsquatting near-miss hint.
+    ensure_binary_built();
+    let tmp = TempDir::new().expect("temp dir");
+    let registry = build_registry(&tmp); // contains hello_lib@0.1.0
+    let project = build_project(&tmp);
+
+    let output = Command::new(garnet_binary())
+        .arg("add")
+        .arg("--registry")
+        .arg(&registry)
+        .arg("hello_lbi@0.1.0") // transposition of hello_lib
+        .current_dir(&project)
+        .output()
+        .expect("running garnet add --registry");
+    assert!(
+        !output.status.success(),
+        "an unknown package must fail to resolve"
+    );
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("did you mean") && stderr.contains("hello_lib"),
+        "expected a near-miss hint naming hello_lib, got:\n{stderr}"
+    );
+    assert!(
+        stderr.contains("slopsquatting"),
+        "expected the slopsquatting label:\n{stderr}"
+    );
+    assert!(
+        !project.join(".garnet/vendor").exists(),
+        "nothing should be vendored on a failed resolve"
+    );
+}
+
+#[test]
+fn garnet_add_registry_missing_version_has_no_slop_warning() {
+    // A version miss on a *known* name is not slopsquatting — the guard must
+    // stay quiet so the signal isn't diluted.
+    ensure_binary_built();
+    let tmp = TempDir::new().expect("temp dir");
+    let registry = build_registry(&tmp);
+    let project = build_project(&tmp);
+
+    let output = Command::new(garnet_binary())
+        .arg("add")
+        .arg("--registry")
+        .arg(&registry)
+        .arg("hello_lib@9.9.9") // name known, version absent
+        .current_dir(&project)
+        .output()
+        .expect("running garnet add --registry");
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        !stderr.contains("slopsquatting"),
+        "a version miss on a known name must not trigger the slop guard:\n{stderr}"
+    );
+}
