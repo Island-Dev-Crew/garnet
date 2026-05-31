@@ -609,6 +609,29 @@ unchanged is out of this gate's reach). Flips to `merged` on squash; the
 
 ---
 
+### S50 — v0.8 beta gate (closes the S41–S50 hardening band)
+
+**Goal:** The hardening-band milestone — a band-completion checkpoint that the
+v0.8 hardening work (S41–S49) is done and its gates hold. **Not** a release.
+
+**Dogfood block:** `scripts/garnet_v0_8_beta_gate.py` verifies the nine slices
+S41–S49 are `merged` at confidence 5 in `.dogfood/goal.json` and re-runs the
+band's anti-rot sub-gates (build-proof S47, proof-matrix S48); the gate is OPEN
+only when both hold. It inventories what the band shipped and what is explicitly
+deferred for beta, and surfaces the verbatim honesty anchors. `--format md|json`;
+`--gate` (wired into the `agent-contracts` CI job) exits non-zero unless OPEN.
+Doc: `F_Project_Management/GARNET_v0_8_BETA_GATE.md`.
+
+**State:** dogfood-passing (S50 PR). Beta gate **OPEN** (band complete; sub-gates
+pass). 8 unit tests. Full ladder green. No new readiness lane (not mandated).
+**Honest scope (do not soften):** the gate does **not** cut a tag and does **not**
+claim production readiness — Garnet remains a *research-grade prototype (v0.x.x),
+not production-complete*; cutting `v0.8.0-beta` (or any tag) is a **release-truth
+decision for Jon**. The v0.8.0 tag remains planned later in the roadmap. Flips to
+`merged` on squash; the `s50 → merged(5)` advance rides with the S51 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.
