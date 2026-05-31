@@ -92,6 +92,26 @@ pub fn parse_annotations(p: &mut Parser) -> Result<Vec<Annotation>, ParseError> 
                 p.expect(&TokenKind::RParen, "annotation")?;
                 Annotation::Mailbox(n, start.join(p.prev_span()))
             }
+            "bounded" => {
+                p.expect(&TokenKind::LParen, "annotation")?;
+                let tok = p.peek().clone();
+                let n = match &tok.kind {
+                    TokenKind::Int(v) => {
+                        let v = *v;
+                        p.bump();
+                        v
+                    }
+                    _ => {
+                        return Err(ParseError::unexpected_token(
+                            "integer",
+                            &format!("{:?}", tok.kind),
+                            tok.span,
+                        ))
+                    }
+                };
+                p.expect(&TokenKind::RParen, "annotation")?;
+                Annotation::Bounded(n, start.join(p.prev_span()))
+            }
             "nonsendable" => Annotation::NonSendable(start.join(p.prev_span())),
             _ => return Err(ParseError::unexpected_token(
                 "known annotation (max_depth, fan_out, require_metadata, safe, dynamic, caps, mailbox, nonsendable)",

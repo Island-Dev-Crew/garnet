@@ -31,6 +31,7 @@
 
 pub mod audit;
 pub mod borrow;
+pub mod bounds;
 pub mod capability_surface;
 pub mod caps_diff;
 pub mod caps_graph;
@@ -40,6 +41,7 @@ pub mod stability;
 pub mod suggest;
 
 pub use audit::{AuditLog, BoundaryCall, BoundaryDirection};
+pub use bounds::bounded_functions;
 pub use capability_surface::{capability_surface, CapabilitySurface};
 pub use caps_diff::{diff_caps, CapsDiff};
 pub use caps_graph::{CapsReport, CapsViolation};
@@ -379,6 +381,12 @@ fn check_fn(f: &FnDef, module_safe: bool, report: &mut CheckReport) {
             Annotation::Mailbox(n, _) if *n <= 0 || *n > 1_048_576 => {
                 report.errors.push(CheckError::AnnotationError(format!(
                     "@mailbox on '{}' must be in 1..=1048576, got {}",
+                    f.name, n
+                )));
+            }
+            Annotation::Bounded(n, _) if *n <= 0 => {
+                report.errors.push(CheckError::AnnotationError(format!(
+                    "@bounded on '{}' must declare a positive fuel budget, got {}",
                     f.name, n
                 )));
             }

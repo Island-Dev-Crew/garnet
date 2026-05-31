@@ -18,6 +18,20 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S39 (@bounded — declared resource budgets; wrap-don't-rebuild):** adds the
+  `@bounded(N)` annotation — a CPU/fuel budget of N Wasmtime-fuel units —
+  threaded through all five `Annotation` sites (parser AST + grammar, the rowan
+  CST converter, the checker's validation, the doc-span match).
+  `garnet_check::bounded_functions(module)` extracts declared budgets (sorted by
+  name) and `garnet bounds <file>` reports them. The checker rejects `@bounded(0)`
+  (positive budget required); a negative literal is rejected at parse (a
+  leading-minus token, consistent with `@mailbox` / `@max_depth`). 6 unit + 2
+  integration tests. **Honest scope (wrap-don't-rebuild):** `@bounded(N)` declares
+  and reports the budget; **enforcement lowers to Wasmtime fuel metering** (the
+  lowering target). `wasmtime` / `wasm-tools` are absent in this environment, so
+  budgets are declared, **not yet runtime fuel-enforced** (no fuel meter is
+  faked). Mem bounds and a unified resource-bound syntax are follow-ups.
+
 - **S38 (seal — in-toto build attestation; wrap-don't-rebuild):** adds
   `garnet seal <file>` — a deterministic **in-toto Statement (v1)** whose subject
   is the program's BLAKE3 AST digest and whose predicate embeds the deterministic

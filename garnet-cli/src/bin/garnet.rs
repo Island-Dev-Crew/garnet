@@ -75,6 +75,13 @@ fn main() -> ExitCode {
             }
             cmd::caps::run(PathBuf::from(&args[1]))
         }
+        "bounds" => {
+            if args.len() < 2 {
+                eprintln!("usage: garnet bounds <file.garnet>");
+                return ExitCode::from(2);
+            }
+            cmd::bounds::run(PathBuf::from(&args[1]))
+        }
         "run" => {
             if args.len() < 2 {
                 eprintln!("usage: garnet run [--interp|--vm] <file.garnet>");

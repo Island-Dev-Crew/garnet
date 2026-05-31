@@ -114,6 +114,9 @@ pub fn print_help() {
     println!(
         "    seal   <file.garnet>             Emit an in-toto seal attestation (cosign-signable; SBOM-equivalent)"
     );
+    println!(
+        "    bounds <file.garnet>             Report declared @bounded(N) fuel budgets (Wasmtime-fuel target)"
+    );
     println!("    run    <file.garnet>             Parse, load, and invoke `main` if it exists");
     println!(
         "    test   [<dir>]                   Discover + run test_* functions in tests/*.garnet"
