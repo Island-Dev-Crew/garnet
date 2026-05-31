@@ -16,6 +16,13 @@
   "categories": [
     "Programming Languages"
   ],
+  "keywords": [
+    "garnet",
+    "lsp",
+    "capabilities",
+    "actors",
+    "agentic"
+  ],
   "activationEvents": [
     "onLanguage:garnet"
   ],

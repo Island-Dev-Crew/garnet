@@ -704,6 +704,30 @@ Flips to `merged` on squash; the `s53 → merged(5)` advance rides with the S54 
 
 ---
 
+### S54 — VS Code / OpenVSX / Marketplace path
+
+**Goal:** Make the VS Code extension marketplace-ready and document the publish
+path (reconciliation §156), while honestly deferring the credentialed publish.
+
+**Dogfood block:** added `keywords` to `editors/vscode/package.json`;
+`scripts/garnet_vscode_publish_readiness.py` asserts every marketplace-required
+field (`name`/`version`/`publisher`/`engines.vscode`/`repository`/`license`) +
+recommended field + the README/LICENSE files are present, and `--gate` (CI) fails
+on a regression. It reports the path: build VSIX (`vscode-extension.yml`) → GitHub
+release asset on tag → OpenVSX (`ovsx publish`) / Marketplace (`vsce publish`).
+
+**State:** dogfood-passing (S54 PR). Extension is marketplace-ready (no missing
+required fields/files); 5 unit tests. Full ladder green. No new readiness lane.
+**Honest scope (do not soften):** the actual OpenVSX/Marketplace **publish** needs
+`OVSX_TOKEN`/`VSCE_PAT` credentials — **credential/account territory, deferred to
+a human** (like the v0.8.0 tag). This slice makes the extension publish-*ready*
+and documents the path; it publishes nothing and bundles no credentials. (The
+extension `version` stays `0.7.0` pending the v0.8 release-versioning decision —
+not bumped autonomously.) Flips to `merged` on squash; the `s54 → merged(5)`
+advance rides with the S55 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.

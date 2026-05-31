@@ -18,6 +18,18 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S54 (VS Code / OpenVSX / Marketplace path):** makes the VS Code extension
+  marketplace-ready and documents the publish path. Added `keywords` to
+  `editors/vscode/package.json` (discoverability); new
+  `scripts/garnet_vscode_publish_readiness.py` asserts every marketplace-required
+  field (`name`/`version`/`publisher`/`engines.vscode`/`repository`/`license`) +
+  recommended field + the README/LICENSE files are present, and `--gate` (CI)
+  fails on a regression. It reports the path: build VSIX ✅ → GitHub release asset
+  on tag ✅ → OpenVSX (`ovsx publish`) / Marketplace (`vsce publish`) **deferred**.
+  5 unit tests. **Honest scope:** the actual OpenVSX/Marketplace publish needs
+  `OVSX_TOKEN`/`VSCE_PAT` credentials — credential/account territory, **deferred
+  to a human**; this slice makes the extension publish-*ready*, it does not
+  publish and bundles no credentials.
 - **S53 (tree-sitter grammar):** adoption infrastructure for editors. New
   `tree-sitter-garnet/grammar.js` defines the core Garnet syntax (functions +
   `@`-annotations, struct/enum/impl, actors + `memory` kinds, control flow,
