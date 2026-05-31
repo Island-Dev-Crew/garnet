@@ -1,0 +1,28 @@
+# wedge_pr_review/after.garnet — the same program after an AI-suggested PR.
+#
+# The PR's stated intent is innocuous ("add usage telemetry"). The diff reads
+# plausibly, so a human skimming an AI-authored change is liable to wave it
+# through. But the entry point's authority silently widened to `@caps(fs, net)`:
+# a filesystem program that can also reach the network is an exfiltration path.
+# `garnet diff-caps` catches the GAINED `net` capability in one command, no
+# matter how large the surrounding diff is.
+#
+# This is the wedge: machine capability-review is O(1) in diff size; human review
+# is not. (The "human review collapses under AI volume" claim is the motivating
+# thesis — see GARNET_PR_REVIEW_WEDGE.md — not a measurement made here.)
+#
+# Run:   garnet run examples/wedge_pr_review/after.garnet
+
+def load_config(name) {
+  name
+}
+
+def render(name) {
+  "config: " + load_config(name)
+}
+
+@caps(fs, net)
+def main() {
+  println(render("app.toml"))
+  0
+}

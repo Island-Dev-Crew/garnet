@@ -581,6 +581,34 @@ the S49 PR.
 
 ---
 
+### S49 — AI-PR-review-collapse wedge demo
+
+**Goal:** The launch narrative (reconciliation §97/§151, GRAFT): make
+machine-checkable capability review the answer to human PR review collapsing
+under AI-generated volume — runnable, not a slogan.
+
+**Dogfood block:** `examples/wedge_pr_review/{before,after}.garnet` simulate an
+AI-suggested PR that silently widens `@caps(fs)` → `@caps(fs, net)`. Both versions
+`garnet check` clean (the escalation is an authority change, invisible to the
+checker), yet `garnet diff-caps` (S37) flags `caps GAINED: net` / `AUTHORITY
+EXPANDED` (exit 1) and `garnet sandbox` (S46) shows egress `deny-all` → `allow`.
+`garnet-cli/tests/pr_review_wedge.rs` (3 tests) is the cross-OS CI-gated proof via
+the `cargo test --workspace` matrix; `scripts/smoke_garnet_pr_review_wedge.py`
+generates the narrative report (`--format md|json`, 4 tests). Doc:
+`F_Project_Management/GARNET_PR_REVIEW_WEDGE.md`.
+
+**State:** dogfood-passing (S49 PR). The wedge fires as designed; full ladder
+green. No new readiness lane (not mandated).
+**Honest scope (do not soften):** the "human PR review collapses under AI volume"
+claim is the **motivating thesis**, **not** a measurement made here — no
+human-review-time numbers are fabricated. This is a **narrative composition** of
+existing gates (S37/S42/S45/S46), not a new enforcement mechanism and not a
+guarantee against all AI-PR risks (a PR that keeps its capability surface
+unchanged is out of this gate's reach). Flips to `merged` on squash; the
+`s49 → merged(5)` advance rides with the S50 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.
