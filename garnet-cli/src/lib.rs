@@ -14,6 +14,7 @@ pub mod manifest;
 pub mod new_cmd;
 pub mod provenance;
 pub mod runtime_settings;
+pub mod seal;
 pub mod strategies;
 pub mod verify_gate;
 
@@ -109,6 +110,9 @@ pub fn print_help() {
     );
     println!(
         "    diff-caps <old> <new>            Diff the capability surface; nonzero exit if authority expanded"
+    );
+    println!(
+        "    seal   <file.garnet>             Emit an in-toto seal attestation (cosign-signable; SBOM-equivalent)"
     );
     println!("    run    <file.garnet>             Parse, load, and invoke `main` if it exists");
     println!(

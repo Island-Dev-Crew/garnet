@@ -18,6 +18,20 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S38 (seal — in-toto build attestation; wrap-don't-rebuild):** adds
+  `garnet seal <file>` — a deterministic **in-toto Statement (v1)** whose subject
+  is the program's BLAKE3 AST digest and whose predicate embeds the deterministic
+  build manifest (`manifest.rs`) and the S36 capability manifest (Garnet's native
+  SBOM-equivalent extension). `garnet_cli::seal` builds the predicate; `cosign`
+  signs it (detected, never required). Adds the `seal_attestation` readiness lane
+  (committed-truth; headline 88.8% → 89.1%). 3 unit + 2 integration tests; output
+  validated as JSON. **Honest scope (contract anchor):** "seal wraps
+  in-toto/Sigstore/cosign — Garnet does not implement its own signing." `cosign`
+  is **absent in this environment**, so the predicate is emitted **unsigned** and
+  the wrapper prints the `cosign attest` command (it does not auto-sign);
+  syft/cyclonedx are absent so the capability manifest is the SBOM-equivalent;
+  per-file seal (per-package is a follow-up).
+
 - **S37 (diff-caps — capability-surface diff gate; the headline novelty):** adds
   `garnet_check::diff_caps` (→ `CapsDiff`: aggregate added/removed, functions
   added/removed/expanded, wildcard-introduced) and `authority_expanded()` (a NEW

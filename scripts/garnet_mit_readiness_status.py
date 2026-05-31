@@ -1821,6 +1821,33 @@ def read_status() -> MitReadinessStatus:
                 "drive git",
             ],
         ),
+        ObjectiveLane(
+            id="seal_attestation",
+            evidence_class="committed",
+            label="seal — in-toto attestation predicate (S38)",
+            status="verified",
+            completion_percent=100.0,
+            evidence=(
+                "S38 ships `garnet seal <file>` (wrap-don't-rebuild): it emits a deterministic "
+                "in-toto Statement (v1) whose subject is the program's BLAKE3 AST digest and "
+                "whose predicate embeds the deterministic build manifest (`manifest.rs`) and the "
+                "S36 capability manifest (the native SBOM-equivalent extension). The predicate is "
+                "fully produced and validated as JSON; `garnet seal` detects `cosign` and prints "
+                "the `cosign attest` command to sign it. Proven by 3 `seal` unit tests + 2 "
+                "integration tests (binary emits a valid in-toto Statement with both embedded "
+                "manifests; the cosign-availability note is present)."
+            ),
+            blocked_by=[],
+            deferred=[
+                "Garnet does NOT implement its own supply-chain signing (contract anchor): "
+                "`cosign attest` signs the predicate. `cosign` is ABSENT in this environment, so "
+                "the predicate is emitted UNSIGNED and the wrapper prints the sign command — it "
+                "does not auto-sign",
+                "External SBOM tools (syft/cyclonedx) are absent; the capability manifest is the "
+                "native SBOM-equivalent until they are wired",
+                "Per-file seal (per `garnet build`); per-package seal is a follow-up",
+            ],
+        ),
     ]
 
     # Committed-truth headline: only machine-independent lanes feed the score, so the

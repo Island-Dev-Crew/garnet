@@ -1,7 +1,7 @@
 {
   "source": "/Users/IDC2.5/Desktop/Garnet",
   "overall_status": "active-partial",
-  "completion_percent": 88.8,
+  "completion_percent": 89.1,
   "current_truth": [
     "tracked implementation plan is complete",
     "goal remains active",
@@ -704,6 +704,20 @@
         "diff-caps reads the DECLARED capability surface; it does not prove the absence of undeclared authority (that is the sandbox-policy job, S46)",
         "`garnet verify --caps-baseline` flags authority expansion via a low fused band (review signal); it does not hard-fail the gate on expansion \u2014 `garnet diff-caps` is the hard gate",
         "\"Two revisions\" are two source paths the caller supplies; S37 does not itself drive git"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "seal_attestation",
+      "label": "seal \u2014 in-toto attestation predicate (S38)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "S38 ships `garnet seal <file>` (wrap-don't-rebuild): it emits a deterministic in-toto Statement (v1) whose subject is the program's BLAKE3 AST digest and whose predicate embeds the deterministic build manifest (`manifest.rs`) and the S36 capability manifest (the native SBOM-equivalent extension). The predicate is fully produced and validated as JSON; `garnet seal` detects `cosign` and prints the `cosign attest` command to sign it. Proven by 3 `seal` unit tests + 2 integration tests (binary emits a valid in-toto Statement with both embedded manifests; the cosign-availability note is present).",
+      "blocked_by": [],
+      "deferred": [
+        "Garnet does NOT implement its own supply-chain signing (contract anchor): `cosign attest` signs the predicate. `cosign` is ABSENT in this environment, so the predicate is emitted UNSIGNED and the wrapper prints the sign command \u2014 it does not auto-sign",
+        "External SBOM tools (syft/cyclonedx) are absent; the capability manifest is the native SBOM-equivalent until they are wired",
+        "Per-file seal (per `garnet build`); per-package seal is a follow-up"
       ],
       "evidence_class": "committed"
     }
