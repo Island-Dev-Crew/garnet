@@ -14,6 +14,7 @@ pub mod build;
 pub mod caps;
 pub mod check;
 pub mod convert;
+pub mod diff_caps;
 pub mod doc;
 pub mod eval;
 pub mod fmt;

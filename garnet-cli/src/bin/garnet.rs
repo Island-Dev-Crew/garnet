@@ -155,6 +155,7 @@ fn main() -> ExitCode {
             let mut positionals: Vec<String> = Vec::new();
             let mut require_sig = false;
             let mut external_band: Option<u8> = None;
+            let mut caps_baseline: Option<PathBuf> = None;
             let mut i = 1;
             while i < args.len() {
                 match args[i].as_str() {
@@ -167,6 +168,16 @@ fn main() -> ExitCode {
                             Some(n) if (1..=5).contains(&n) => external_band = Some(n),
                             _ => {
                                 eprintln!("--external-band requires an integer 1-5");
+                                return ExitCode::from(2);
+                            }
+                        }
+                        i += 2;
+                    }
+                    "--caps-baseline" => {
+                        match args.get(i + 1) {
+                            Some(p) => caps_baseline = Some(PathBuf::from(p)),
+                            None => {
+                                eprintln!("--caps-baseline requires a path");
                                 return ExitCode::from(2);
                             }
                         }
@@ -186,6 +197,7 @@ fn main() -> ExitCode {
                 1 => cmd::verify_gate::run(cmd::verify_gate::GateArgs {
                     path: PathBuf::from(&positionals[0]),
                     external_band,
+                    caps_baseline,
                 }),
                 2 => cmd::verify::run(
                     PathBuf::from(&positionals[0]),
@@ -200,6 +212,13 @@ fn main() -> ExitCode {
                     ExitCode::from(2)
                 }
             }
+        }
+        "diff-caps" => {
+            if args.len() < 3 {
+                eprintln!("usage: garnet diff-caps <old-path> <new-path>");
+                return ExitCode::from(2);
+            }
+            cmd::diff_caps::run(PathBuf::from(&args[1]), PathBuf::from(&args[2]))
         }
         "trust-report" => {
             if args.len() < 2 {
