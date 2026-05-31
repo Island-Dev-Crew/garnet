@@ -219,7 +219,17 @@ manifest verify preserved). Lane `garnet_verify_gate` added; baseline regenerate
 **Goal:** Diagnostics with both a human-readable and a machine-parseable form,
 an authoritative exit code, and the foundation for serving over MCP.
 
-**State:** not-started.
+**State:** dogfood-passing (S34 PR). `garnet_cli::diagnostics` (Severity +
+Diagnostic { severity, code, message, span }) + `garnet check --format
+human|json`. json = deterministic hand-rolled JSON (a `diagnostics` array with
+stable per-variant codes + a `summary`), no serde. Authoritative exit code
+documented (0 clean / 1 fatal-or-parse-or-IO / 2 usage). 5 unit + 4 integration
+tests (binary via `CARGO_BIN_EXE`). Honest scope: machine form on `garnet check`
+only (parse/verify JSON + the MCP transport are follow-ups); check diagnostics
+are span-less today (the `CheckError` variants are message-only), parse ones
+carry spans. No new readiness lane (not mandated for S34 by the contract lane
+table). Flips to `merged` on squash; the `s34 → merged(5)` advance rides with
+the S35 PR.
 
 ---
 
