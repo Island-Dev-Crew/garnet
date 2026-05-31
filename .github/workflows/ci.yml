@@ -52,6 +52,7 @@ jobs:
       - run: python3 scripts/test_garnet_fuzz_campaign.py
       - run: python3 scripts/test_garnet_v0_8_0_release_readiness.py
       - run: python3 scripts/test_garnet_llm_suggest_readiness.py
+      - run: python3 scripts/test_garnet_version_map_check.py
       - run: python3 scripts/check_determinism_no_llm.py
       - run: python3 scripts/check-agent-contracts.py
       # S47: gate cross-OS build coverage — fails if ci.yml stops testing all
@@ -93,6 +94,9 @@ jobs:
       # S69: llm-suggest readiness — gates the rules tier (S10) is present; the
       # LLM tier is pending-infra and is NOT gated.
       - run: python3 scripts/garnet_llm_suggest_readiness.py --gate
+      # S70: version-map source of truth — whole S30–S80 run = one v0.8.0 tag @
+      # S80; S60/S70 are checkpoints. Guards docs only; cuts no tag.
+      - run: python3 scripts/garnet_version_map_check.py --gate
 
   # ───────────────────────────────────────────────────────────────────
   # Format check — fast, runs once on Linux. A failure here is the

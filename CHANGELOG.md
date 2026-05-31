@@ -18,6 +18,18 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S70 (version-map source-of-truth correction):** new authoritative
+  `F_Project_Management/GARNET_v0_8_VERSION_MAP.md` records the corrected v0.8 tag
+  mapping — **the whole S30–S80 run is cut as one `v0.8.0` tag at the end of S80;
+  S60 and S70 are readiness checkpoints, not cuts; S81+ is the runway to v0.8.1;
+  1.0 is held much further out (~a year), gated on validation.** The operative
+  contract's band table + forward bands are corrected to match; historical
+  artifacts (the reconciled slice plan, the S60 release doc, the beta gate) carry
+  dated correction banners. `scripts/garnet_version_map_check.py` (+ 5 unit tests,
+  wired into CI's agent-contracts job) locks the source of truth and fails if a
+  doc drifts back to the superseded mapping. **Honest scope:** docs + a
+  docs-consistency gate only — **no tag is cut, pushed, or authorized** (tagging
+  stays a human release-truth decision); no Rust changed.
 - **S69 (LLM-suggest v0.2 / Paper VI Exp 1 prep):** `scripts/garnet_llm_suggest_readiness.py`
   inventories the compiler-as-agent advisory's two tiers — the **rules tier** (S10,
   ACTIVE: `managed-fn-missing-caps`, `long-parameter-list`, `empty-function-body`,
