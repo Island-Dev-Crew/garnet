@@ -1,0 +1,12 @@
+# hello.garnet — the canonical Garnet hello-world.
+#
+# `@caps()` declares the program needs no OS authority (pure compute + stdout).
+#
+# Run:   garnet run examples/hello.garnet
+# Check: garnet check examples/hello.garnet
+
+@caps()
+def main() {
+  println("Hello from Garnet!")
+  0
+}
