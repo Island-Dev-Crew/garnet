@@ -1329,6 +1329,29 @@ prototype (v0.x). The pillars are conceded as **well-precedented**. Flips to
 
 ---
 
+### S80 — v0.8.0 cut decision (the single tag for the whole run)
+
+**Goal:** Bring the entire S30–S80 completion run to its **v0.8.0 cut decision**
+(per `GARNET_v0_8_VERSION_MAP.md`). The automatable, honest part — the
+**cut-readiness gate** — ships here; the **tag cut itself is escalated to Jon**.
+
+**Dogfood block:** `scripts/garnet_v0_8_0_cut_readiness.py` aggregates the whole
+run into one verdict: ledger S31–S79 all merged, the S60 release-readiness gate
+(S41–S59 + 11 sub-gates) passes, and all 11 runway gates (S69–S79) pass — current
+verdict **READY TO CUT (pending Jon)**. Doc `F_Project_Management/GARNET_v0_8_0_CUT.md`.
+
+**State:** dogfood-passing (S80 PR). 5 unit tests; full ladder green; no Rust changed.
+**CRITICAL honest scope (do not soften):** this slice **does NOT cut, push, or
+authorize any tag.** Only `v0.4.2`/`v0.5.0` are tagged; cutting `v0.8.0` is a
+**release-truth/strategy decision for Jon** — the release of the whole completion
+run, irreversible, reserved by the honesty anchors — and is **escalated**, not
+made autonomously. v0.8.0 is a **research-grade-prototype milestone**, not a
+production/1.0 claim; the deferred-for-v0.8.0 list stands. Flips to `merged` on
+squash; the `s80 → merged(5)` advance is recorded on merge. **After S80, S81+ is
+the runway to v0.8.1 (the solutions-oriented real-world-proofs arc).**
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.

@@ -18,6 +18,17 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S80 (v0.8.0 cut readiness — the whole S30–S80 run):**
+  `scripts/garnet_v0_8_0_cut_readiness.py` (+ `--gate`, 5 tests, agent-contracts)
+  aggregates the entire completion run into one **READY / NOT-READY-TO-CUT**
+  verdict: the ledger has every slice **S31..S79 merged**, the S60
+  release-readiness gate passes (band gates + 11 anti-rot sub-gates), and all
+  **11 runway gates (S69..S79) pass** — current verdict **READY TO CUT (pending
+  Jon)**. Doc `F_Project_Management/GARNET_v0_8_0_CUT.md`. **This does NOT cut,
+  push, or authorize any tag** — cutting `v0.8.0` is a release-truth decision
+  reserved for Jon (escalated); only `v0.4.2`/`v0.5.0` are tagged today.
+  **Honest scope:** v0.8.0 is a **research-grade-prototype milestone**, not a
+  production/1.0 claim; the deferred-for-v0.8.0 list stands. No Rust changed.
 - **S79 (website/deck positioning reframe):** `F_Project_Management/GARNET_POSITIONING.md`
   is the canonical messaging — lead with the **integration + agent-code thesis**
   ("Garnet's bet is the integration, not the parts"), make **diff-caps** the
