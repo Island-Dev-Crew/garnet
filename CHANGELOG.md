@@ -18,6 +18,16 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S64 (WASI interop):** closes the native-interop band by making the
+  `@caps` → WASI capability mapping explicit — `fs`→preopens, `net`→wasi-sockets,
+  `time`→clocks, `env`→environ (the S46 sandbox `wasi` policy *is* the mapping).
+  `examples/ffi/wasi_clock.garnet` (`@caps(time, fs)`) checks clean and its
+  sandbox WASI policy reflects the caps (`clocks:true`, `preopens:true`,
+  `sockets:false`). Spec `C_Language_Specification/GARNET_WASI_INTEROP.md` +
+  cross-OS proof `garnet-cli/tests/wasi_interop.rs` (2 tests). **Honest scope:**
+  the WASI **authority mapping**, not a WASI **runtime** — Garnet does not compile
+  to wasm or run under a WASI host (wasm32/wasm-pack/wasmtime absent, S55); the
+  build + host execution are **deferred**.
 - **S63 (C ABI proof):** establishes the C ABI as the canonical FFI contract and
   proves **compound native authority**. `examples/ffi/c_stat.garnet` binds a C
   `stat`-like symbol that touches the filesystem — needing **both** `@caps(ffi)`
