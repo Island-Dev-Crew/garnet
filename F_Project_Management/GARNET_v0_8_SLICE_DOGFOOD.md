@@ -305,7 +305,17 @@ extension. Do not rebuild signing or metering primitives.
 **Honest partial labels available:** "seal wraps in-toto/Sigstore/cosign; Garnet
 does not implement its own signing." 
 
-**State:** not-started.
+**State:** dogfood-passing (S38 PR). `garnet seal <file>` emits a deterministic
+in-toto Statement v1 (subject = BLAKE3 AST digest; predicate embeds the build
+manifest + the S36 capability manifest = native SBOM-equivalent). `garnet_cli::seal`
+builds the predicate; `cosign` signs it (detected, never required). 3 unit + 2
+integration tests; output validated as JSON. Lane `seal_attestation` added;
+baseline regenerated (88.8%→89.1%). Honest scope (contract anchor): seal wraps
+in-toto/Sigstore/cosign — Garnet does not sign supply-chain itself. cosign /
+syft / cyclonedx are ABSENT in this environment → predicate emitted UNSIGNED (the
+wrapper prints the `cosign attest` command, does not auto-sign), capability
+manifest is the SBOM-equivalent. Per-file seal (per-package is a follow-up).
+Flips to `merged` on squash; the `s38 → merged(5)` advance rides with the S39 PR.
 
 ---
 
