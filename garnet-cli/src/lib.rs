@@ -15,6 +15,7 @@ pub mod manifest;
 pub mod new_cmd;
 pub mod provenance;
 pub mod runtime_settings;
+pub mod sandbox;
 pub mod seal;
 pub mod strategies;
 pub mod verify_gate;
@@ -155,6 +156,7 @@ pub fn print_help() {
     println!("    fmt    [--check|--stdout] <file> Whitespace-normalize a Garnet source file");
     println!("    doc    [--stdout|--out P] <file> Extract /// doc comments to a markdown summary");
     println!("    doctest [--format human|json] <file> Run ```garnet examples in /// doc comments");
+    println!("    sandbox [--format human|json] <file> seccomp/WASI/egress policy from @caps");
     println!("    version                          Print toolchain versions + wordmark");
     println!("    help                             This message");
 }

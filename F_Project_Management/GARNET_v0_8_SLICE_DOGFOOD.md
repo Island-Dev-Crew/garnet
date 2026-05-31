@@ -498,6 +498,35 @@ heuristic, **not** a security guarantee. Flips to `merged` on squash; the
 
 ---
 
+### S46 — caps-to-sandbox policy (WASI / seccomp / egress)
+
+**Goal:** Make `@caps` actionable — turn the declared capability surface into a
+concrete, reviewable sandbox configuration (reconciliation §147: declared @caps
+→ enforceable WASI/seccomp/egress policy).
+
+**Dogfood block:** `garnet sandbox <file>` derives the capability surface (S35)
+and emits three artifacts via the pure `garnet_cli::sandbox` mapper:
+a **seccomp** profile (default `SCMP_ACT_ERRNO`; a baseline syscall set +
+cap-gated groups for fs/net/time/proc), a **WASI** capability set
+(preopens/sockets/clocks/env, stdio always), and an **egress** rule
+(deny-all / loopback-only / allow). Deterministic JSON (`schema
+garnet.sandbox/v1`) + human summary; `ffi`/`proc`/`*`/unknown caps emit explicit
+warnings. Mapping table: `C_Language_Specification/GARNET_SANDBOX_POLICY.md`.
+
+**State:** dogfood-passing (S46 PR). 8 unit tests (per-cap mapping + determinism
++ warnings) + 4 CLI integration tests. Full ladder green.
+**Honest scope (do not soften):** **policy generation, not enforcement.** Every
+artifact is marked `"enforced": false`; nothing runs under `wasmtime`, applies
+seccomp to a live process, or installs a firewall. Runtime enforcement needs
+`wasmtime` (WASI) or a Linux seccomp host — out of scope here and absent from the
+build environment. The seccomp shape mirrors the OCI default-deny structure but
+is not kernel-validated; the egress allowlist is a structural placeholder.
+**No new readiness lane** — generation-only must not be mistaken for an
+enforcement-readiness claim. Flips to `merged` on squash; the
+`s46 → merged(5)` advance rides with the S47 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.
