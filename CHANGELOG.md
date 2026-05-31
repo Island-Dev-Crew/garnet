@@ -18,6 +18,21 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S34 (structured diagnostics — machine + human):** adds the reusable
+  `garnet_cli::diagnostics` module (`Severity`, `Diagnostic { severity, code,
+  message, span }`) and `garnet check [--format human|json]`. `human` (default)
+  is unchanged miette/Display output; `json` emits **deterministic, hand-rolled
+  JSON** (no `serde`, per the `manifest.rs` determinism stance): a `diagnostics`
+  array with stable per-variant `code`s (`check.caps_coverage`,
+  `parse.reserved_word`, …), lowercase `severity`, an escaped `message`, and an
+  optional `{start,len}` span, plus a `summary`. Documents the **authoritative
+  exit code** (0 clean / 1 fatal-diagnostic-or-parse-or-IO / 2 usage). 5 unit + 4
+  integration tests (binary run via `CARGO_BIN_EXE`). **Honest scope:** the
+  machine form is wired into `garnet check` only — `parse`/`verify` JSON and the
+  MCP transport are follow-ups (S34 ships the structured type + its first
+  consumer); check diagnostics have no spans yet (the `CheckError` variants are
+  message-only), parse diagnostics do.
+
 - **S33 (one-command `garnet verify` — acceptance gate):** adds
   `garnet verify <path>` — a single acceptance gate, distinct from the existing
   2-arg `garnet verify <file> <manifest.json>` deterministic-manifest verify (the

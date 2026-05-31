@@ -31,27 +31,42 @@ fn main() -> ExitCode {
         "add" => cmd::add::run(&args[1..]),
         "parse" => cmd::parse::run(&args[1..]),
         "check" => {
-            if args.len() < 2 {
-                eprintln!("usage: garnet check [--suggest] <file.garnet>");
-                return ExitCode::from(2);
-            }
             let mut suggest = false;
+            let mut format = cmd::check::CheckFormat::Human;
             let mut file_arg: Option<&String> = None;
-            for arg in &args[1..] {
-                if arg == "--suggest" {
-                    suggest = true;
-                } else if file_arg.is_none() {
-                    file_arg = Some(arg);
-                } else {
-                    eprintln!("garnet check: unexpected extra argument: {arg}");
-                    return ExitCode::from(2);
+            let mut i = 1;
+            while i < args.len() {
+                match args[i].as_str() {
+                    "--suggest" => {
+                        suggest = true;
+                        i += 1;
+                    }
+                    "--format" => {
+                        match args.get(i + 1).map(String::as_str) {
+                            Some("human") => format = cmd::check::CheckFormat::Human,
+                            Some("json") => format = cmd::check::CheckFormat::Json,
+                            _ => {
+                                eprintln!("--format requires 'human' or 'json'");
+                                return ExitCode::from(2);
+                            }
+                        }
+                        i += 2;
+                    }
+                    arg if !arg.starts_with("--") && file_arg.is_none() => {
+                        file_arg = Some(&args[i]);
+                        i += 1;
+                    }
+                    other => {
+                        eprintln!("garnet check: unexpected argument: {other}");
+                        return ExitCode::from(2);
+                    }
                 }
             }
             let Some(file) = file_arg else {
-                eprintln!("usage: garnet check [--suggest] <file.garnet>");
+                eprintln!("usage: garnet check [--suggest] [--format human|json] <file.garnet>");
                 return ExitCode::from(2);
             };
-            cmd::check::run(PathBuf::from(file), suggest)
+            cmd::check::run(PathBuf::from(file), suggest, format)
         }
         "run" => {
             if args.len() < 2 {

@@ -5,6 +5,7 @@ pub mod audit_deps;
 pub mod cache;
 pub mod cmd;
 pub mod convert_cmd;
+pub mod diagnostics;
 pub mod edition_manifest;
 pub mod knowledge;
 pub mod machine_key;
@@ -98,8 +99,9 @@ pub fn print_help() {
     println!("SUBCOMMANDS:");
     println!("    new    --template <T> <dir>      Scaffold a new project (T=cli|web-api|agent-orchestrator)");
     println!("    parse  [--mode ast|cst] <file>   Parse a file and print a structural summary");
+    println!("    check  [--suggest] [--format human|json] <file.garnet>");
     println!(
-        "    check  <file.garnet>             Run the safe-mode checker (incl. CapCaps propagator)"
+        "                                     Safe-mode checker (CapCaps); --format json emits structured diagnostics"
     );
     println!("    run    <file.garnet>             Parse, load, and invoke `main` if it exists");
     println!(
