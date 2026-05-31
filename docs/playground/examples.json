@@ -1,0 +1,26 @@
+{
+  "schema": "garnet.playground/v1",
+  "examples": [
+    {
+      "name": "hello",
+      "title": "Hello, Garnet",
+      "description": "The canonical hello-world (`@caps()`, pure compute + stdout).",
+      "source": "# hello.garnet \u2014 the canonical Garnet hello-world.\n#\n# `@caps()` declares the program needs no OS authority (pure compute + stdout).\n#\n# Run:   garnet run examples/hello.garnet\n# Check: garnet check examples/hello.garnet\n\n@caps()\ndef main() {\n  println(\"Hello from Garnet!\")\n  0\n}\n",
+      "output": "Hello from Garnet!\n=> 0"
+    },
+    {
+      "name": "documented_math",
+      "title": "Docs-as-tests",
+      "description": "Documented functions whose `///` examples `garnet doctest` runs (S43).",
+      "source": "# documented_math.garnet \u2014 a docs-as-tests demonstrator (S43).\n#\n# Each `def` below carries a `///` doc comment with an executable\n# ```garnet example. `garnet doctest` extracts those fences, loads this\n# file's definitions, runs each example, and checks the `# => value`\n# assertion against the tail expression.\n#\n# Run:   garnet doctest examples/documented_math.garnet\n# Also:  garnet run examples/documented_math.garnet\n\n/// Double a number.\n///\n/// # Examples\n///\n/// ```garnet\n/// double(21)\n/// # => 42\n/// ```\ndef double(x) {\n  x * 2\n}\n\n/// The `n`-th triangular number: the sum of the integers in `0..n`.\n///\n/// # Examples\n///\n/// ```garnet\n/// triangular(10)\n/// # => 45\n/// ```\ndef triangular(n) {\n  let total = 0\n  let i = 0\n  while i < n {\n    total = total + i\n    i = i + 1\n  }\n  total\n}\n\n/// Clamp `x` into the inclusive range `[lo, hi]`.\n///\n/// # Examples\n///\n/// ```garnet\n/// clamp(12, 0, 9)\n/// # => 9\n/// ```\ndef clamp(x, lo, hi) {\n  if x < lo {\n    lo\n  } elsif x > hi {\n    hi\n  } else {\n    x\n  }\n}\n\ndef main() {\n  println(\"double(21)      =\", double(21))\n  println(\"triangular(10)  =\", triangular(10))\n  println(\"clamp(12, 0, 9) =\", clamp(12, 0, 9))\n}\n",
+      "output": "double(21)      = 42\ntriangular(10)  = 45\nclamp(12, 0, 9) = 9\n=> nil"
+    },
+    {
+      "name": "mvp_05_web_app",
+      "title": "Web route dispatch",
+      "description": "Route-dispatch scoring \u2014 one of the 12 proof-matrix domains (S48).",
+      "source": "# mvp_05_web_app.garnet\n#\n# Canonical runnable MVP smoke: pure route dispatch for a tiny web app. Network\n# binding is release/runtime work; this smoke proves the request-routing logic\n# runs today.\n\ndef route_weight(path) {\n  if path == \"/\" {\n    10\n  } elsif path == \"/health\" {\n    20\n  } elsif path == \"/users\" {\n    30\n  } else {\n    1\n  }\n}\n\ndef dispatch_score(paths) {\n  let mut total = 0\n  for path in paths {\n    total += route_weight(path)\n  }\n  total\n}\n\n@caps()\ndef main() {\n  let score = dispatch_score([\"/\", \"/health\", \"/users\", \"/missing\"])\n  println(\"mvp_05_web_app routes:\", score)\n  score\n}\n",
+      "output": "mvp_05_web_app routes: 61\n=> 61"
+    }
+  ]
+}
