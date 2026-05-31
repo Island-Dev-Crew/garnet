@@ -127,16 +127,57 @@ fn main() -> ExitCode {
             cmd::keygen::run(PathBuf::from(&args[1]))
         }
         "verify" => {
-            if args.len() < 3 {
-                eprintln!("usage: garnet verify <file.garnet> <manifest.json> [--signature]");
-                return ExitCode::from(2);
+            // Routed by positional-arg count:
+            //   garnet verify <path>                  -> S33 acceptance gate
+            //   garnet verify <file> <manifest.json>  -> deterministic-manifest verify
+            let mut positionals: Vec<String> = Vec::new();
+            let mut require_sig = false;
+            let mut external_band: Option<u8> = None;
+            let mut i = 1;
+            while i < args.len() {
+                match args[i].as_str() {
+                    "--signature" => {
+                        require_sig = true;
+                        i += 1;
+                    }
+                    "--external-band" => {
+                        match args.get(i + 1).and_then(|v| v.parse::<u8>().ok()) {
+                            Some(n) if (1..=5).contains(&n) => external_band = Some(n),
+                            _ => {
+                                eprintln!("--external-band requires an integer 1-5");
+                                return ExitCode::from(2);
+                            }
+                        }
+                        i += 2;
+                    }
+                    other if other.starts_with("--") => {
+                        eprintln!("unknown verify flag: {other}");
+                        return ExitCode::from(2);
+                    }
+                    _ => {
+                        positionals.push(args[i].clone());
+                        i += 1;
+                    }
+                }
             }
-            let require_sig = args.iter().any(|a| a == "--signature");
-            cmd::verify::run(
-                PathBuf::from(&args[1]),
-                PathBuf::from(&args[2]),
-                require_sig,
-            )
+            match positionals.len() {
+                1 => cmd::verify_gate::run(cmd::verify_gate::GateArgs {
+                    path: PathBuf::from(&positionals[0]),
+                    external_band,
+                }),
+                2 => cmd::verify::run(
+                    PathBuf::from(&positionals[0]),
+                    PathBuf::from(&positionals[1]),
+                    require_sig,
+                ),
+                _ => {
+                    eprintln!(
+                        "usage: garnet verify <path>                          (acceptance gate)"
+                    );
+                    eprintln!("       garnet verify <file> <manifest.json> [--signature]  (manifest verify)");
+                    ExitCode::from(2)
+                }
+            }
         }
         "trust-report" => {
             if args.len() < 2 {

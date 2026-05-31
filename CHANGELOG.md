@@ -18,6 +18,23 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S33 (one-command `garnet verify` — acceptance gate):** adds
+  `garnet verify <path>` — a single acceptance gate, distinct from the existing
+  2-arg `garnet verify <file> <manifest.json>` deterministic-manifest verify (the
+  dispatcher routes on positional-arg count). It runs **edition-aware parse +
+  safe-mode check** over a `.garnet` file or every `.garnet` under a directory and
+  emits a **fused merge-confidence band**: the internal local band (5 clean / 4
+  advisory / 1 fatal) fused by `min` with an optional external-reviewer band
+  (`--external-band`, Greptile at PR time) and a **pluggable capability signal**.
+  Exits 0 on a clean tree, non-zero on a planted regression. Adds the
+  `garnet_verify_gate` readiness lane (committed-truth; headline 88.3% → 88.6%);
+  baseline regenerated. **Honest scope:** the capability-signal slot is a **stub
+  until S37 `diff-caps`** (it never lowers the fuse while pending); the gate's
+  internal band is the LOCAL acceptance signal that feeds the `dogfood-readiness`
+  skill's PR-level falsification-ledger + Greptile fusion — `garnet verify` does
+  not itself run cargo/CI; `garnet test` execution is not folded into the gate in
+  S33.
+
 - **S32 (edition / compatibility model — two-layer mechanism):** installs the
   compatibility-evolution mechanism before users exist to break.
   **Layer 1 (editions, parse-time):** a `garnet_parser::Edition` registry
