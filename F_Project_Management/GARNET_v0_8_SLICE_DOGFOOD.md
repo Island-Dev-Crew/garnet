@@ -844,6 +844,29 @@ to `merged` on squash; the `s59 → merged(5)` advance rides with the S60 PR.
 
 ---
 
+### S60 — v0.8.0 tag (release-readiness gate + escalation)
+
+**Goal:** Bring the whole v0.8 train to a tag decision (reconciliation §158:
+"v0.8.0 tag"). The automatable, honest part — the **release-readiness gate** —
+ships here; the **tag cut itself is escalated to Jon**.
+
+**Dogfood block:** `scripts/garnet_v0_8_0_release_readiness.py` aggregates both
+bands (hardening S41–S50, adoption S51–S59) + all 11 anti-rot sub-gates into a
+single READY/NOT-READY verdict, with the in/deferred inventory + verbatim honesty
+anchors. `--gate` (CI) fails unless both bands are merged and every sub-gate
+passes. Doc: `F_Project_Management/GARNET_v0_8_0_RELEASE.md`.
+
+**State:** dogfood-passing (S60 PR). Verdict **READY TO TAG (pending Jon)**:
+hardening 10/10, adoption 9/9, sub-gates 11/11. 5 unit tests. Full ladder green.
+**CRITICAL honest scope (do not soften):** this slice **does NOT cut a tag**.
+Only `v0.4.2`/`v0.5.0` are tagged; cutting `v0.8.0` is a **release-truth/strategy
+decision for Jon** — irreversible, reserved by the honesty anchors — and is
+**escalated**, not made autonomously. The gate's "READY TO TAG" is evidence-backed
+advice, not the act of tagging. The `s60 → merged` advance and the tag itself
+both wait on Jon's decision; this PR ships the readiness gate only.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.
