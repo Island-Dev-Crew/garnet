@@ -1,0 +1,22 @@
+# wedge_pr_review/before.garnet — the program as it stands before an AI PR.
+#
+# A small config helper. The entry point declares its authority: `@caps(fs)` —
+# filesystem only. There is no network capability anywhere in the surface.
+#
+# Run:   garnet run examples/wedge_pr_review/before.garnet
+# Caps:  garnet diff-caps examples/wedge_pr_review/before.garnet \
+#                         examples/wedge_pr_review/after.garnet
+
+def load_config(name) {
+  name
+}
+
+def render(name) {
+  "config: " + load_config(name)
+}
+
+@caps(fs)
+def main() {
+  println(render("app.toml"))
+  0
+}

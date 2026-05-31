@@ -18,6 +18,19 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S49 (AI-PR-review-collapse wedge demo):** the launch narrative, runnable.
+  `examples/wedge_pr_review/{before,after}.garnet` simulate an AI-suggested PR
+  that silently widens authority `@caps(fs)` → `@caps(fs, net)` (an exfiltration
+  path). Both versions `garnet check` **clean** — the escalation is invisible to
+  the checker — yet `garnet diff-caps` (S37) flags `caps GAINED: net` /
+  `AUTHORITY EXPANDED` and exits non-zero, and `garnet sandbox` (S46) shows egress
+  flip `deny-all` → `allow`. `garnet-cli/tests/pr_review_wedge.rs` (3 tests) is
+  the cross-OS CI-gated proof; `scripts/smoke_garnet_pr_review_wedge.py`
+  (`--format md|json`) generates the narrative report (4 tests). Doc:
+  `F_Project_Management/GARNET_PR_REVIEW_WEDGE.md`. **Honest scope:** the "human
+  review collapses under AI volume" claim is the motivating thesis, **not** a
+  measurement made here; this is a narrative composition of existing gates, not a
+  new enforcement mechanism or a guarantee against all AI-PR risks.
 - **S48 (12-domain / 7-novel proof matrix):** `scripts/garnet_proof_matrix.py`
   inventories the 12 application domains Garnet is demonstrated across (reusing
   the `CORE_12_CASES` single source of truth) and the 7 novel Paper VI
