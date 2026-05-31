@@ -59,6 +59,7 @@ jobs:
       - run: python3 scripts/test_garnet_safe_subset_status.py
       - run: python3 scripts/test_garnet_formal_verification_feasibility.py
       - run: python3 scripts/test_garnet_stdlib_promotion_status.py
+      - run: python3 scripts/test_garnet_external_package_pilot_status.py
       - run: python3 scripts/check_determinism_no_llm.py
       - run: python3 scripts/check-agent-contracts.py
       # S47: gate cross-OS build coverage — fails if ci.yml stops testing all
@@ -123,6 +124,10 @@ jobs:
       # S76: stdlib promotion wave — gate that the core::* layer is Stable AND
       # std::* stays Experimental (proof the promotion was scoped, not blanket).
       - run: python3 scripts/garnet_stdlib_promotion_status.py --gate
+      # S77: external package pilot — static gate (pilot test + registry infra +
+      # slopguard + doc present). The binary-backed run is the cargo test matrix
+      # (garnet-registry-stub/tests/external_package_pilot.rs).
+      - run: python3 scripts/garnet_external_package_pilot_status.py --gate
 
   # ───────────────────────────────────────────────────────────────────
   # Format check — fast, runs once on Linux. A failure here is the
