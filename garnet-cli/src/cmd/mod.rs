@@ -11,6 +11,7 @@
 
 pub mod add;
 pub mod build;
+pub mod caps;
 pub mod check;
 pub mod convert;
 pub mod doc;

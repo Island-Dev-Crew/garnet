@@ -259,7 +259,15 @@ builds the manifest from this surface. Flips to `merged` on squash; the
 annotations. The manifest is the artifact `diff-caps` (S37) and `seal` (S38)
 both consume.
 
-**State:** not-started.
+**State:** dogfood-passing (S36 PR). `garnet_cli::cap_manifest::CapabilityManifest`
+(schema `garnet-capability-manifest-v1` + the S35 `CapabilitySurface`) + the
+`garnet caps <path>` command: deterministic JSON (`{schema, aggregate, functions,
+wildcard}`) for a file (per-program) or a dir (per-package via `merge_surfaces`).
+Distinct from the build `Manifest` (no caps). 4 unit + 3 integration tests; CLI
+smoke verified. The artifact S37 `diff-caps` compares + S38 `seal` embeds. Honest
+scope: declared surface only (not an undeclared-authority proof — S46; no
+`[caps]`-budget enforcement). No new readiness lane (mandated at S37/S38). Flips
+to `merged` on squash; the `s36 → merged(5)` advance rides with the S37 PR.
 
 ---
 

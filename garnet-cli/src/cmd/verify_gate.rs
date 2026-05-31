@@ -142,8 +142,8 @@ pub fn gate_tally(path: &Path) -> Result<GateTally, String> {
 
 /// Resolve the target list: a single `.garnet` file, or every `.garnet` file
 /// under a directory (skipping build/vendor dirs). Returned sorted for
-/// deterministic output.
-fn collect_targets(path: &Path) -> std::io::Result<Vec<PathBuf>> {
+/// deterministic output. `pub(crate)` so `garnet caps` (S36) reuses the walk.
+pub(crate) fn collect_targets(path: &Path) -> std::io::Result<Vec<PathBuf>> {
     if path.is_file() {
         return Ok(vec![path.to_path_buf()]);
     }
