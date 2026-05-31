@@ -657,6 +657,29 @@ only lane 1 (owned end-to-end) is gated. Flips to `merged` on squash; the
 
 ---
 
+### S52 — one-line install / readme check
+
+**Goal:** The curl|sh ethos (Kelley): the one-line install must just work and its
+docs must stay accurate (reconciliation §155).
+
+**Dogfood block:** `scripts/garnet_install_readme_check.py` extracts the one-line
+`curl … install.sh | sh` command from `README.md` and from the
+`installer/sh.garnet-lang.org/install.sh` header, normalizes (strips the comment
+marker, collapses whitespace), and asserts they are identical and that the
+canonical install URL appears in both. `--gate` (CI) fails on drift; `--format
+md|json`.
+
+**State:** dogfood-passing (S52 PR). README ↔ installer install command is
+byte-identical; gate passes. 6 unit tests. Full ladder green. No new readiness
+lane (not mandated).
+**Honest scope (do not soften):** a **doc-consistency** check, not a live network
+install test (the installer pulls GitHub Releases). `install.sh` is separately
+shellcheck-gated (the `shellcheck-installer` job); this slice does not duplicate
+that and claims nothing about a real install succeeding. Flips to `merged` on
+squash; the `s52 → merged(5)` advance rides with the S53 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.
