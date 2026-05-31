@@ -300,9 +300,9 @@
     },
     {
       "id": "s68",
-      "merge_confidence": null,
-      "merged_at": null,
-      "status": "pending",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T17:16:12+00:00",
+      "status": "merged",
       "title": "transparency-log",
       "weight": 1.0
     },
