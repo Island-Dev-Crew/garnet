@@ -18,6 +18,18 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S50 (v0.8 beta gate):** closes the S41–S50 hardening band.
+  `scripts/garnet_v0_8_beta_gate.py` is a band-completion **checkpoint** (not a
+  release): it verifies the nine hardening slices S41–S49 are merged at
+  confidence 5 in the goal ledger and that the band's anti-rot sub-gates
+  (build-proof S47, proof-matrix S48) still pass, then reports what the band
+  shipped and what is explicitly deferred for beta. `--gate` (wired into CI)
+  fails unless the gate is OPEN; `--format md|json`; 8 unit tests; doc
+  `F_Project_Management/GARNET_v0_8_BETA_GATE.md`. **Honest scope:** it does
+  **not** cut a tag and does **not** claim production readiness — Garnet remains a
+  *research-grade prototype (v0.x.x), not production-complete*; cutting
+  `v0.8.0-beta` is a release-truth decision for Jon. The verbatim honesty anchors
+  (incl. the Paper VI scorecard) are surfaced, not changed.
 - **S49 (AI-PR-review-collapse wedge demo):** the launch narrative, runnable.
   `examples/wedge_pr_review/{before,after}.garnet` simulate an AI-suggested PR
   that silently widens authority `@caps(fs)` → `@caps(fs, net)` (an exfiltration
