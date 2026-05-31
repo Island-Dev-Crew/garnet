@@ -60,6 +60,7 @@ jobs:
       - run: python3 scripts/test_garnet_formal_verification_feasibility.py
       - run: python3 scripts/test_garnet_stdlib_promotion_status.py
       - run: python3 scripts/test_garnet_external_package_pilot_status.py
+      - run: python3 scripts/test_garnet_governance_status.py
       - run: python3 scripts/check_determinism_no_llm.py
       - run: python3 scripts/check-agent-contracts.py
       # S47: gate cross-OS build coverage — fails if ci.yml stops testing all
@@ -128,6 +129,10 @@ jobs:
       # slopguard + doc present). The binary-backed run is the cargo test matrix
       # (garnet-registry-stub/tests/external_package_pilot.rs).
       - run: python3 scripts/garnet_external_package_pilot_status.py --gate
+      # S78: governance + RFC process — gate that GOVERNANCE.md + the RFC process
+      # + RFC-0001 are present and RFC-0001 marks the OWASP/LF donation as
+      # intent/draft (no foundation has adopted anything).
+      - run: python3 scripts/garnet_governance_status.py --gate
 
   # ───────────────────────────────────────────────────────────────────
   # Format check — fast, runs once on Linux. A failure here is the

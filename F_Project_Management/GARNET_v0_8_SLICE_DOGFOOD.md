@@ -1285,6 +1285,28 @@ with the S78 PR.
 
 ---
 
+### S78 — governance / RFC process (+ donate cap-manifest standard)
+
+**Goal:** Formalize how changes land via an RFC + edition process over BDFL, and
+record the capability-manifest standard donation intent (reconciliation §174 graft).
+
+**Dogfood block:** `GOVERNANCE.md` (RFC + edition process; honest single-maintainer
+status), `rfcs/README.md` (the process), `rfcs/0000-template.md`, and **RFC-0001**
+(*Draft* — cross-language capability-manifest standard + OWASP/LF donation intent).
+`scripts/garnet_governance_status.py` (+ `--gate`, 6 tests, agent-contracts)
+verifies the docs exist and that RFC-0001 marks the donation as intent/draft (no
+foundation has adopted anything). RFC-0001 references the real cap-manifest
+standard (`GARNET_CAPABILITY_TRANSPARENCY.md`, S68).
+
+**State:** dogfood-passing (S78 PR). 6 unit tests; full ladder green; no Rust changed.
+**Honest scope (do not soften):** **single-maintainer governance for a
+research-grade prototype** — no steering committee, no foundation, no adopted
+standard (preserves the existing honest `docs/governance.html` framing); the
+OWASP/LF donation is **intent + a draft**, not accomplished. Flips to `merged` on
+squash; the `s78 → merged(5)` advance rides with the S79 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.
