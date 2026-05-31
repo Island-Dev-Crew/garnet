@@ -1,0 +1,21 @@
+# Idiomatic Garnet — name the rescue type (S42 error policy), never a catch-all.
+enum AppError { NotFound, Invalid }
+
+@caps()
+def lookup(key) {
+  try {
+    if key == "x" {
+      raise AppError::NotFound
+    }
+    "found: " + key
+  } rescue e: AppError {
+    "handled"
+  }
+}
+
+@caps()
+def main() {
+  println(lookup("x"))
+  println(lookup("y"))
+  0
+}

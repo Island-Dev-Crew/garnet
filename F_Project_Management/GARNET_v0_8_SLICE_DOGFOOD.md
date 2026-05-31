@@ -776,6 +776,28 @@ Flips to `merged` on squash; the `s56 → merged(5)` advance rides with the S57 
 
 ---
 
+### S57 — idiomatic open corpus
+
+**Goal:** Show *what good Garnet looks like* (Lattner; reconciliation §157) — an
+open corpus of idiomatic programs that dogfood the hardening-band policies.
+
+**Dogfood block:** `examples/idiomatic/typed_errors.garnet` (typed `rescue e: T`,
+S42 policy — never a catch-all) and `examples/idiomatic/state_machine.garnet`
+(exhaustive `match` over a finite enum, named `@caps`). `scripts/garnet_idiomatic_corpus.py`
+holds them to a high bar: each must `garnet check` to **0 diagnostics** (fully
+clean — not even a non-fatal advisory) and `garnet run` to its recorded output.
+`examples/idiomatic/README.md` names the idioms.
+
+**State:** dogfood-passing (S57 PR). 2/2 idiomatic programs clean + running; 5
+tests (pure-logic + skip-unless-built live). Full ladder green. No new readiness
+lane.
+**Honest scope (do not soften):** a **style/discipline** corpus, not a
+performance or coverage claim. "Idiomatic" means clean checker output + the
+hardening-band idioms, proven deterministically. Flips to `merged` on squash;
+the `s57 → merged(5)` advance rides with the S58 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.
