@@ -820,6 +820,30 @@ here (the no-measurement stance of `garnet_proof_benchmark_status.py`). Flips to
 
 ---
 
+### S59 — fuzz campaign
+
+**Goal:** Strengthen + inventory the parser fuzz campaign + gate against
+harness-rot (reconciliation §157).
+
+**Dogfood block:** 5 new corpus seeds (`seed_hello`, `seed_typed_errors`,
+`seed_state_machine`, `seed_documented_math`, `seed_safe_io_layer`) extend the
+parser fuzz corpus to cover the S42–S57 grammar (typed rescue, `@caps`, enum +
+exhaustive `match`, doctest fences, cross-boundary `Result`).
+`scripts/garnet_fuzz_campaign.py` inventories the campaign (target `parse_input`,
+crate `garnet-parser-v0.3`, nightly `cargo fuzz run` ≥ 1h, seed count) and
+`--gate`s that the target file + Cargo `[[bin]]` + `fuzz-nightly.yml` wiring +
+non-empty seed corpus all remain.
+
+**State:** dogfood-passing (S59 PR). Harness wired + 13 seeds; 5 unit tests. Full
+ladder green. No new readiness lane.
+**Honest scope (do not soften):** verifies the harness **exists and is wired**;
+it does **not** run the fuzzer and makes **no** bug-found (or bug-free) claim —
+crashes surface in the nightly `cargo fuzz run` job; `cargo-fuzz` is absent in
+this environment so the harness is verified structurally, not built here. Flips
+to `merged` on squash; the `s59 → merged(5)` advance rides with the S60 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.

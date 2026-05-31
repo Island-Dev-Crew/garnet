@@ -1,0 +1,63 @@
+# documented_math.garnet — a docs-as-tests demonstrator (S43).
+#
+# Each `def` below carries a `///` doc comment with an executable
+# ```garnet example. `garnet doctest` extracts those fences, loads this
+# file's definitions, runs each example, and checks the `# => value`
+# assertion against the tail expression.
+#
+# Run:   garnet doctest examples/documented_math.garnet
+# Also:  garnet run examples/documented_math.garnet
+
+/// Double a number.
+///
+/// # Examples
+///
+/// ```garnet
+/// double(21)
+/// # => 42
+/// ```
+def double(x) {
+  x * 2
+}
+
+/// The `n`-th triangular number: the sum of the integers in `0..n`.
+///
+/// # Examples
+///
+/// ```garnet
+/// triangular(10)
+/// # => 45
+/// ```
+def triangular(n) {
+  let total = 0
+  let i = 0
+  while i < n {
+    total = total + i
+    i = i + 1
+  }
+  total
+}
+
+/// Clamp `x` into the inclusive range `[lo, hi]`.
+///
+/// # Examples
+///
+/// ```garnet
+/// clamp(12, 0, 9)
+/// # => 9
+/// ```
+def clamp(x, lo, hi) {
+  if x < lo {
+    lo
+  } elsif x > hi {
+    hi
+  } else {
+    x
+  }
+}
+
+def main() {
+  println("double(21)      =", double(21))
+  println("triangular(10)  =", triangular(10))
+  println("clamp(12, 0, 9) =", clamp(12, 0, 9))
+}

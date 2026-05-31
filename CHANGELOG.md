@@ -18,6 +18,16 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S59 (fuzz campaign):** grows the parser fuzz corpus with 5 newer-construct
+  seeds (typed rescue, `@caps`, enum + exhaustive `match`, doctest fences,
+  cross-boundary `Result`) — better coverage of the S42–S57 grammar — and adds
+  `scripts/garnet_fuzz_campaign.py`, which inventories the campaign (target,
+  crate, nightly run protocol, seed count) and `--gate`s that the harness stays
+  wired (target file + Cargo `[[bin]]` + `fuzz-nightly.yml` reference + non-empty
+  seed corpus). 5 unit tests. **Honest scope:** verifies the harness **exists and
+  is wired**; it does **not** run the fuzzer and makes **no** bug-found (or
+  bug-free) claim — crashes surface in the nightly `cargo fuzz run` job, and
+  `cargo-fuzz` is absent in this environment.
 - **S58 (benchmark campaign):** `scripts/garnet_benchmark_campaign.py` inventories
   the full Criterion benchmark campaign — all 6 harnesses (parser `parse`, CST
   `parse_cst_vs_ast`, interp `eval`, VM `parse_compile_execute`, memory `vector`

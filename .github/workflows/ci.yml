@@ -49,6 +49,7 @@ jobs:
       - run: python3 scripts/test_garnet_playground_readiness.py
       - run: python3 scripts/test_garnet_idiomatic_corpus.py
       - run: python3 scripts/test_garnet_benchmark_campaign.py
+      - run: python3 scripts/test_garnet_fuzz_campaign.py
       - run: python3 scripts/check_determinism_no_llm.py
       - run: python3 scripts/check-agent-contracts.py
       # S47: gate cross-OS build coverage — fails if ci.yml stops testing all
@@ -81,6 +82,9 @@ jobs:
       # S58: benchmark campaign — fails if a declared Criterion bench file or its
       # Cargo [[bench]] entry disappears. No measurements are run.
       - run: python3 scripts/garnet_benchmark_campaign.py --gate
+      # S59: fuzz campaign — fails if the parser fuzz target, its Cargo [[bin]],
+      # the nightly workflow wiring, or the seed corpus disappears. Fuzzer not run.
+      - run: python3 scripts/garnet_fuzz_campaign.py --gate
 
   # ───────────────────────────────────────────────────────────────────
   # Format check — fast, runs once on Linux. A failure here is the
