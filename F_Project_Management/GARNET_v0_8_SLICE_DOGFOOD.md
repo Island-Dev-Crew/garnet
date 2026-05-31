@@ -39,15 +39,22 @@ governed by the upgraded `dogfood-readiness` skill (`Navigata1/dogfood-readiness
 
 ## Version-tag bands (no 1.0 in the S31–S80 window)
 
-| Band | Slices | Tag |
-|---|---|---|
-| v0.8 foundation | S31–S40 | (in flight) |
-| v0.8 hardening | S41–S50 | v0.8 beta gate @ S50 |
-| v0.8 adoption / release | S51–S60 | **v0.8.0 @ S60** |
-| v0.8.1 (resolution ↓) | S61–S70 | **v0.8.1 @ S70** |
-| v0.8.2 runway (resolution ↓) | S71–S80 | **v0.8.2 readiness decision @ S80** |
+> **Source of truth: [`GARNET_v0_8_VERSION_MAP.md`](GARNET_v0_8_VERSION_MAP.md)
+> (corrected 2026-05-31).** The whole S30–S80 run is cut as **one** tag —
+> `v0.8.0` — at the *end* of S80. S60 and S70 are readiness **checkpoints**, not
+> cuts (both were deferred; no tag was ever pushed). S81+ is the runway to
+> v0.8.1; 1.0 is held much further out (~a year), gated on validation.
 
-**1.0 is held past S80** until the bet stages validate. Both source plans agree.
+| Band | Slices | Tag semantics |
+|---|---|---|
+| v0.8 foundation | S31–S40 | (in flight — no tag) |
+| v0.8 hardening | S41–S50 | beta readiness gate @ S50 (no tag) |
+| v0.8 adoption / release | S51–S60 | **v0.8.0 readiness checkpoint @ S60** (deferred — not a cut) |
+| native-interop + provenance | S61–S70 | **source-of-truth checkpoint @ S70** (no tag) |
+| v0.8 validation runway | S71–S80 | **v0.8.0 CUT DECISION @ S80** (the single tag for the whole run) |
+
+**1.0 is held past S80** until the bet stages validate — plausibly ~a year out,
+gated on real testing/validation, never on slice count.
 
 ---
 
@@ -147,7 +154,7 @@ PYTHONPATH=/tmp/dogfood-readiness python3 -m dogfood_readiness --goal-action sta
 **Honest partial labels available:**
 - "S31 PR-1 is doctrine + ledger + gate-reconciliation only; no runtime behavior changes and no new readiness lane — the reporter-determinism fix and its lane land in S31-PR2."
 - "The goal ledger tracks the *planned* spine; slices past S60 are bets and may be re-sliced (resolution decreases by design)."
-- "v0.8 version-tag mapping (v0.8.0@S60 …) is a plan, not a shipped tag."
+- "The whole S30–S80 run is cut as one `v0.8.0` tag at the end of S80; S60/S70 are checkpoints, not cuts — no tag is shipped before then (see `GARNET_v0_8_VERSION_MAP.md`)."
 
 **State:** in-progress (this PR).
 
@@ -867,6 +874,11 @@ advice, not the act of tagging. **Decision (2026-05-31): Jon chose to defer the
 deliverable (`s60 → merged(5)`) and the tag stays uncut, cuttable on Jon's
 authorization anytime. The `s60` advance rides with the S61 PR.
 
+**Version-map correction (S70, 2026-05-31):** S60 is now recorded as the *first*
+v0.8.0 **readiness checkpoint**, not a tag slice. The single `v0.8.0` cut for the
+whole S30–S80 run happens at the **S80 cut decision**; S60 and S70 are checkpoints
+only. See [`GARNET_v0_8_VERSION_MAP.md`](GARNET_v0_8_VERSION_MAP.md).
+
 ---
 
 ### S61 — FFI authority model
@@ -1080,6 +1092,31 @@ active baseline; this is the readiness/experiment-prep layer. Paper VI scorecard
 
 ---
 
+### S70 — version-map source-of-truth correction (no tag)
+
+**Goal:** Reframed from "v0.8.1 tag" by Jon's 2026-05-31 decision at the S70
+checkpoint. Make the S30–S80 run a coherent, defensible **single v0.8.0**
+milestone (academic-review bar: CMU/MIT/Rice/UC Berkeley) and correct the docs to
+one source of truth — no tag is cut.
+
+**Dogfood block:** new authoritative `GARNET_v0_8_VERSION_MAP.md` states the
+corrected mapping (whole run → one `v0.8.0` tag @ the S80 cut decision; S60/S70 =
+checkpoints; S81+ = v0.8.1 runway; 1.0 ~a year out). The contract band table +
+forward bands are corrected; historical artifacts (reconciled plan, S60 release
+doc, beta gate) carry dated correction banners; ledger s70/s80 retitled.
+`scripts/garnet_version_map_check.py --gate` (CI) locks it — fails if the source
+of truth is missing or a doc reintroduces a superseded **bold** band cell. 5 unit
+tests.
+
+**State:** dogfood-passing (S70 PR). Full ladder green; no Rust changed.
+**Honest scope (do not soften):** docs + a docs-consistency gate **only** — this
+slice **does NOT cut, push, or authorize any tag**; tagging stays a human
+release-truth decision reserved for Jon. The single `v0.8.0` cut is the **S80**
+decision. Flips to `merged` on squash; the `s70 → merged(5)` advance rides with
+the S71 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.
@@ -1098,28 +1135,37 @@ active baseline; this is the readiness/experiment-prep layer. Paper VI scorecard
 - **S51** signed release lanes · **S52** one-line install / readme check ·
   **S53** tree-sitter · **S54** VS Code / OpenVSX / Marketplace · **S55** WASM
   hello-world · **S56** playground MVP · **S57** idiomatic open corpus ·
-  **S58** benchmark campaign · **S59** fuzz campaign · **S60 — v0.8.0 tag.**
+  **S58** benchmark campaign · **S59** fuzz campaign ·
+  **S60 — v0.8.0 readiness checkpoint** (deferred; not a cut).
 
 > ## ⚠ RESOLUTION DECREASES BELOW THIS LINE (bets; both plans agree)
+>
+> **Version-tag correction (2026-05-31):** the band labels below originally read
+> "v0.8.1 @ S70 / v0.8.2 decision @ S80". The corrected mapping
+> ([`GARNET_v0_8_VERSION_MAP.md`](GARNET_v0_8_VERSION_MAP.md)) cuts the whole
+> S30–S80 run as **one `v0.8.0` tag at the end of S80**; S70 is a checkpoint, not
+> a tag; S81+ is the v0.8.1 runway.
 
-**S61–S70 · v0.8.1** — native-interop boundary + provenance
+**S61–S70 · native-interop boundary + provenance** (part of the single v0.8.0 run)
 - **S61** FFI authority model · **S62** Rust FFI proof · **S63** C ABI proof ·
   **S64** WASI interop · **S65** AI-authorship provenance · **S66** model/prompt/
   tool attestation in `seal` · **S67** MCP/tool capability declarations ·
   **S68** capability transparency log stub **[GRAFT: seed cross-language
   capability-manifest standard]** · **S69** LLM suggest v0.2 / Paper VI prep ·
-  **S70 — v0.8.1 tag.**
+  **S70 — source-of-truth checkpoint** (version-mapping correction; no tag).
 
-**S71–S80 · v0.8.2 runway (not rushed)**
+**S71–S80 · v0.8 validation runway (not rushed)**
 - **S71** Paper VI Exp 3 actual run · **S72** self-hosted parser seed ·
   **S73** VM/interpreter parity campaign · **S74** safe-subset spec **[GRAFT:
   optional linear/effect-typed safe mode]** · **S75** formal-verification
   feasibility · **S76** stdlib promotion wave · **S77** external package pilots ·
   **S78** governance / RFC process **[GRAFT: RFC + edition process over BDFL;
   donate capability-manifest standard to OWASP/LF]** · **S79** website / deck
-  reframing · **S80** v0.8.2 readiness decision.
+  reframing · **S80 — v0.8.0 cut decision** (the single tag for the whole run).
 
-**1.0** — held past S80 until the bet stages validate.
+**S81+** — runway to **v0.8.1** (solutions-oriented real-world proofs; planned
+with the finished v0.8.0 in hand). **1.0** — held much further out (~a year) until
+the validation stages land.
 
 ---
 

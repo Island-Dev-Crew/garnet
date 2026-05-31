@@ -1,6 +1,13 @@
 # Garnet v0.8.0 release readiness (S60)
 
-This is the evidence for a `v0.8.0` tag decision. The live verdict is
+> **Version-map correction (2026-05-31, S70).** This document is the **first
+> v0.8.0 readiness *checkpoint*** (S60), not a tag slice. Per the corrected
+> source of truth ([`GARNET_v0_8_VERSION_MAP.md`](GARNET_v0_8_VERSION_MAP.md)),
+> the single `v0.8.0` tag for the whole S30–S80 run is cut at the **S80 cut
+> decision** — S60 and S70 are checkpoints, and no tag is shipped before S80. The
+> evidence below still stands as the S60-band readiness snapshot.
+
+This is the evidence for the S60 `v0.8.0` readiness checkpoint. The live verdict is
 `scripts/garnet_v0_8_0_release_readiness.py --format md`; `--gate` runs in CI.
 
 > **This document and its gate do NOT cut a tag.** Only `v0.4.2` and `v0.5.0` are

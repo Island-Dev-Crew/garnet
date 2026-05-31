@@ -1,6 +1,14 @@
 # Garnet Slice Plan — Reconciliation: Opus 4.8 Standard × Codex Reassessment
 ## Merged spine s31 → s80
 
+> **⚠ Version-tag mapping superseded (2026-05-31).** This is a historical
+> reconciliation artifact. Its version-tag granularity (§1 and §5: "v0.8.0@S60,
+> v0.8.1@S70, v0.8.2 decision@S80") was **corrected** at the S70 checkpoint: the
+> whole S30–S80 run is cut as **one `v0.8.0` tag at the end of S80**; S60 and S70
+> are readiness checkpoints, not cuts; S81+ is the runway to v0.8.1. The authority
+> is [`GARNET_v0_8_VERSION_MAP.md`](GARNET_v0_8_VERSION_MAP.md). The slice
+> *structure* below is unchanged and still governs; only the tag labels moved.
+
 **Method:** I produced an independent s31–s80 standard from the two research reports without seeing
 Codex's plan (the diff-caps discipline applied to planning: two uncontaminated surfaces, then reason
 about the delta). This document is the reconciliation.

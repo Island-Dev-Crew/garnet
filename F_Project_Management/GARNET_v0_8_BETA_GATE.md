@@ -55,7 +55,9 @@ The beta gate is **OPEN** only when both are true.
 This gate does **not** cut a tag and does **not** claim production readiness.
 Only `v0.4.2` and `v0.5.0` are tagged (S31 release-truth); cutting
 `v0.8.0-beta` — or any tag — is a **release-truth decision for Jon**, not made by
-this slice. The v0.8.0 tag remains planned later in the roadmap.
+this slice. The single `v0.8.0` tag for the whole S30–S80 run is cut at the **S80
+cut decision** (see [`GARNET_v0_8_VERSION_MAP.md`](GARNET_v0_8_VERSION_MAP.md));
+S50/S60/S70 are readiness gates/checkpoints, not cuts.
 
 ```sh
 python3 scripts/garnet_v0_8_beta_gate.py --format md   # this status (live)
