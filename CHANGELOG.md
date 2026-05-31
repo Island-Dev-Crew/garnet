@@ -18,6 +18,17 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S78 (governance + RFC process):** `GOVERNANCE.md` formalizes how changes land
+  through an **RFC + edition process** over ad-hoc BDFL fiat; `rfcs/` adds the
+  process (`README.md`), a template (`0000-template.md`), and **RFC-0001** —
+  *Draft* — proposing a cross-language **capability-manifest standard** and the
+  intent to donate it to OWASP / the Linux Foundation. `scripts/garnet_governance_status.py`
+  (+ `--gate`, 6 tests, agent-contracts) verifies the governance docs exist and
+  that RFC-0001 marks the donation as **intent/draft, not an accepted standard**.
+  **Honest scope:** **single-maintainer governance for a research-grade prototype**
+  — no steering committee, no foundation, no adopted standard (the existing honest
+  `docs/governance.html` framing is preserved); the donation is intent + a draft.
+  No Rust changed.
 - **S77 (external package pilot):** `garnet-registry-stub/tests/external_package_pilot.rs`
   drives the external-package flow end-to-end against the filesystem registry stub
   — publish → `resolve` by name+version → BLAKE3 content-address `verify_package`
