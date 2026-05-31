@@ -680,6 +680,30 @@ squash; the `s52 → merged(5)` advance rides with the S53 PR.
 
 ---
 
+### S53 — tree-sitter grammar
+
+**Goal:** Editor adoption infrastructure (highlighting/folding) via a tree-sitter
+*syntax* grammar — distinct from the LSP *semantic* service (reconciliation
+§33-37, §155: tree-sitter belongs in the adoption band, not the hardening band).
+
+**Dogfood block:** `tree-sitter-garnet/grammar.js` defines the core Garnet syntax
+(functions + `@`-annotations, struct/enum/impl, actors + `memory` kinds, control
+flow, `match`, `try/rescue/ensure`, expressions incl. `|>`, `#`/`///` comments).
+`scripts/garnet_tree_sitter_check.py` loads it with Node (a `grammar()` shim, so
+rule thunks never run), asserts the grammar name + every expected core rule, and
+`--gate` (CI) fails on a dropped rule. `tree-sitter-garnet/README.md` documents
+`tree-sitter generate`/`test` for users with the CLI.
+
+**State:** dogfood-passing (S53 PR). grammar loads (name `garnet`, 50 rules, no
+missing core rules); 5 unit tests. Full ladder green. No new readiness lane.
+**Honest scope (do not soften):** a **CORE** grammar (headline constructs, not
+exhaustive), **structurally validated, not compiled** — `tree-sitter generate` +
+corpus tests need the tree-sitter CLI, which is **absent** in this environment;
+the hand-written `garnet-parser` remains the canonical grammar / source of truth.
+Flips to `merged` on squash; the `s53 → merged(5)` advance rides with the S54 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.

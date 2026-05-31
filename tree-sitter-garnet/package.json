@@ -1,0 +1,19 @@
+{
+  "name": "tree-sitter-garnet",
+  "version": "0.8.0",
+  "description": "Tree-sitter grammar for the Garnet language (syntax highlighting / editor support)",
+  "main": "bindings/node",
+  "keywords": ["parser", "tree-sitter", "garnet"],
+  "license": "MIT",
+  "scripts": {
+    "generate": "tree-sitter generate",
+    "test": "tree-sitter test"
+  },
+  "tree-sitter": [
+    {
+      "scope": "source.garnet",
+      "file-types": ["garnet"],
+      "injection-regex": "garnet"
+    }
+  ]
+}
