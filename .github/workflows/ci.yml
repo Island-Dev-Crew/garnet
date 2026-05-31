@@ -62,6 +62,7 @@ jobs:
       - run: python3 scripts/test_garnet_external_package_pilot_status.py
       - run: python3 scripts/test_garnet_governance_status.py
       - run: python3 scripts/test_garnet_positioning_status.py
+      - run: python3 scripts/test_garnet_v0_8_0_cut_readiness.py
       - run: python3 scripts/check_determinism_no_llm.py
       - run: python3 scripts/check-agent-contracts.py
       # S47: gate cross-OS build coverage — fails if ci.yml stops testing all
@@ -138,6 +139,10 @@ jobs:
       # page both carry the integration thesis + diff-caps headline + precedent
       # concession (so messaging can't drift back to pillar-first marketing).
       - run: python3 scripts/garnet_positioning_status.py --gate
+      # S80: v0.8.0 CUT readiness — aggregates the whole S30–S80 run (ledger
+      # S31–S79 merged + release gate + 11 runway gates). Does NOT cut a tag;
+      # cutting v0.8.0 is a release-truth decision reserved for Jon.
+      - run: python3 scripts/garnet_v0_8_0_cut_readiness.py --gate
 
   # ───────────────────────────────────────────────────────────────────
   # Format check — fast, runs once on Linux. A failure here is the
