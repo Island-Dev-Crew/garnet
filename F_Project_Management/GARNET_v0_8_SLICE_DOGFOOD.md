@@ -527,6 +527,35 @@ enforcement-readiness claim. Flips to `merged` on squash; the
 
 ---
 
+### S47 — Windows / Linux / macOS build proof (+ Windows-propriety audit)
+
+**Goal:** Answer the reconciliation's Windows-propriety question (§148-149) —
+*does every attribute behave cross-platform, or is it just packaging?* — from the
+CI matrix, and gate against silent cross-OS regression.
+
+**Dogfood block:** `scripts/garnet_build_proof.py` classifies each target OS on
+two axes: **behaves** (in the `cargo test --workspace` matrix of `ci.yml`:
+`os: [ubuntu-latest, windows-latest, macos-latest]`) and **distributes**
+(`linux-packages.yml`: deb/rpm + `macos-cli-tarballs`). `--format md|json`;
+`--gate` exits non-zero if any of the three loses the *behaves* proof — wired into
+the `agent-contracts` CI job alongside `test_garnet_build_proof.py` (7 unit
+tests). `F_Project_Management/GARNET_BUILD_PROOF.md` carries the status table +
+the per-surface propriety audit (pure logic CI-gated; determinism CI-gated; S46
+seccomp policy a documented Linux-shaped gap; Windows CLI distribution deferred).
+
+**State:** dogfood-passing (S47 PR). All three OSes *behave* (CI runs the full
+suite on each); Linux + macOS *distribute*, Windows CLI packaging is an honest
+reported gap. Full ladder green.
+**Honest scope (do not soften):** **CI-attested, not locally re-run.** This is a
+single-OS checkout; the gate verifies the CI matrix *covers* Windows/Linux/macOS
+— it does not itself execute Windows or Linux. "Build proof" = compiles +
+`cargo test --workspace` passes per OS in CI; it is not a claim of exhaustive
+feature parity (the audit lists known platform-sensitive surfaces). No new
+readiness lane (not mandated). Flips to `merged` on squash; the
+`s47 → merged(5)` advance rides with the S48 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.

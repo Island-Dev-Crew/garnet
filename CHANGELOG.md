@@ -18,6 +18,18 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S47 (Windows/Linux/macOS build proof):** `scripts/garnet_build_proof.py`
+  reports and **gates** cross-OS coverage from the CI matrix, distinguishing
+  *behaves* (the OS is in the `cargo test --workspace` matrix in `ci.yml`) from
+  *distributes* (deb/rpm + macos-cli-tarballs packaging). `--gate` runs in CI and
+  fails if any of the three target OSes is dropped from the test matrix —
+  silent cross-OS regression can't slip through. `--format md|json`; 7 unit
+  tests. `F_Project_Management/GARNET_BUILD_PROOF.md` documents the status table
+  plus the **Windows-propriety audit** (per-surface cross-platform status: pure
+  logic CI-gated; determinism CI-gated; the S46 seccomp policy is a documented
+  Linux-shaped gap; Windows CLI distribution deferred). **Honest scope:**
+  CI-attested, **not** locally re-run (single-OS checkout) — the gate verifies the
+  matrix covers all three OSes; it does not itself execute Windows/Linux.
 - **S46 (caps-to-sandbox policy):** `garnet sandbox <file>` translates a module's
   declared `@caps` surface (S35) into three concrete sandbox policy artifacts — a
   seccomp profile (OCI-style default-deny syscall allowlist), a WASI capability
