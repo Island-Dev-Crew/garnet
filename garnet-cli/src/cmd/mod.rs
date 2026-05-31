@@ -19,6 +19,7 @@ pub mod concurrency;
 pub mod convert;
 pub mod diff_caps;
 pub mod doc;
+pub mod doctest;
 pub mod eval;
 pub mod fmt;
 pub mod keygen;

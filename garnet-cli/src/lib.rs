@@ -7,6 +7,7 @@ pub mod cap_manifest;
 pub mod cmd;
 pub mod convert_cmd;
 pub mod diagnostics;
+pub mod doctest;
 pub mod edition_manifest;
 pub mod knowledge;
 pub mod machine_key;
@@ -153,6 +154,7 @@ pub fn print_help() {
     );
     println!("    fmt    [--check|--stdout] <file> Whitespace-normalize a Garnet source file");
     println!("    doc    [--stdout|--out P] <file> Extract /// doc comments to a markdown summary");
+    println!("    doctest [--format human|json] <file> Run ```garnet examples in /// doc comments");
     println!("    version                          Print toolchain versions + wordmark");
     println!("    help                             This message");
 }

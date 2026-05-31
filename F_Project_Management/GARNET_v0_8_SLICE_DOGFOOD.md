@@ -410,6 +410,33 @@ on squash; the `s42 → merged(5)` advance rides with the S43 PR.
 
 ---
 
+### S43 — docs-as-tests
+
+**Goal:** Make documented examples executable so docs cannot rot — the "evidence
+not courtesy" discipline the reconciliation flagged (Codex S43). `garnet doc`
+(v0.4.2) already extracts `///` blocks; S43 turns the ` ```garnet ` fences inside
+them into runnable, value-asserted tests.
+
+**Dogfood block:** `garnet doctest <file>` — `garnet_cli::doctest::garnet_fences`
+(pure fence extractor) lifts ` ```garnet ` blocks from each item's reused
+`extract_doc_comments_before` doc block; the runner `cmd::doctest` loads the
+file's definitions once (`Interpreter::load_source`) and evaluates each fence
+(`eval_expr_src`) so an example can call the function it documents. Pass = runs
+without error; an optional `# => value` marker asserts the displayed tail value.
+Human + `--format json`; exit 1 iff any fence fails. Demonstrator
+`examples/documented_math.garnet` (3 passing examples) is itself dogfooded and
+CI-gated by the `garnet-cli` integration test `advertised_demonstrator_passes`
+(runs the built binary on the demonstrator and asserts 3 passed).
+
+**State:** dogfood-passing (S43 PR). 6 unit + 3 runner-unit + 5 integration
+tests; CLI human + JSON smoke verified. No new readiness lane (not mandated).
+Honest scope: examples run on the interpreter (not the VM backend); fences see
+only the file's own definitions + stdlib (no cross-file imports, matching
+`garnet doc`); a doc-rot guard, not a replacement for the test suite. Flips to
+`merged` on squash; the `s43 → merged(5)` advance rides with the S44 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.

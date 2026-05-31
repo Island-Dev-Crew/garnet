@@ -83,7 +83,8 @@ runtime claim.
 |---|---|---|
 | [`multi_agent_builder.garnet`](multi_agent_builder.garnet) | ~210 | Three-actor build pipeline (Planner / Compiler / Tester) with `episodic` memory recording every task outcome. Exercises `actor`, `protocol`, `on`, `spawn`, `memory episodic`, enum patterns with payloads, multi-line `if`/`elsif` branches. |
 | [`agentic_log_analyzer.garnet`](agentic_log_analyzer.garnet) | ~225 | Log-stream analyzer using `semantic` memory (vector index of patterns), `episodic` memory (incident log), pattern-match with guards, recursion bounded by `@max_depth(8)` + `@fan_out(64)`, the pipeline operator `|>` for functional data flow. |
-| [`safe_io_layer.garnet`](safe_io_layer.garnet) | ~200 | A `@safe`-mode IO API surface returning `Result<T, E>` consumed by managed-mode orchestration via `try`/`?`/`rescue`. Demonstrates Paper VI Contribution 5 (cross-boundary error bridging) with realistic shapes: stat / read / write / delete / retry. |
+| [`safe_io_layer.garnet`](safe_io_layer.garnet) | ~200 | A `@safe`-mode IO API surface returning `Result<T, E>` consumed by managed-mode orchestration via `try`/`?`/`rescue`. Demonstrates Paper VI Contribution 5 (cross-boundary error bridging) with realistic shapes: stat / read / write / delete / retry. Rescues name their type (`rescue e: Result`) per the S42 over-catch policy. |
+| [`documented_math.garnet`](documented_math.garnet) | ~65 | Docs-as-tests (S43): each `def` carries a `///` doc comment with an executable ```` ```garnet ```` example and a `# => value` assertion. `garnet doctest` runs them against the file's own definitions. |
 
 ## Checking the design drafts
 
@@ -101,6 +102,9 @@ garnet run examples/agentic_log_analyzer.garnet
 garnet parse examples/safe_io_layer.garnet
 garnet check examples/safe_io_layer.garnet
 garnet run examples/safe_io_layer.garnet
+
+garnet doctest examples/documented_math.garnet
+garnet run examples/documented_math.garnet
 ```
 
 For the repo-owned bundle, run:
