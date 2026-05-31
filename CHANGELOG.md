@@ -18,6 +18,18 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S73 (VM / interpreter parity campaign):** `scripts/garnet_vm_interp_parity.py`
+  (+ `--gate`, 7 unit tests) runs every `examples/*.garnet` program through **both**
+  execution backends (`garnet run --interp` and `--vm`) and asserts they agree —
+  **33/33 parity, 0 divergences** today. Parity is compared on the deterministic
+  surface (**stdout + exit code**); stderr is ignored by design because the VM adds
+  a cosmetic `vm error:` wrapper prefix and the episodic cache emits run-to-run
+  stderr notes. CI: the canonical-examples job runs the binary-backed differential
+  campaign; agent-contracts runs the static gate. Doc
+  `F_Project_Management/GARNET_VM_INTERP_PARITY.md`. **Honest scope:** corpus-based
+  parity over the shipped examples, **not** a proof of total backend equivalence;
+  divergences are reported, not hidden; the stderr prefix is a documented cosmetic
+  difference. No Rust changed.
 - **S72 (self-hosted parser seed):** `examples/self_hosted_parser_seed.garnet` —
   a Garnet program that parses a subset of Garnet's **own** surface syntax
   (`def name(params) { ... }` declarations from an embedded source string),
