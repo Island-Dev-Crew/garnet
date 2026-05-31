@@ -24,8 +24,10 @@ blocks and executes them, so a documented example is a checked claim, not decor.
 
 ## Dogfood
 - `garnet doctest examples/documented_math.garnet` → 3 passed, exit 0; JSON
-  `"ok":true`. Wrong `# =>` → exit 1 with `expected/got`. New agentic-matrix
-  probe gates the demonstrator at 3 passed.
+  `"ok":true`. Wrong `# =>` → exit 1 with `expected/got`. The integration test
+  `advertised_demonstrator_passes` CI-gates the demonstrator at 3 passed (runs
+  the built binary). (No agentic-matrix probe — kept the slice narrow; a probe
+  would force a lockstep promo-video probe-count bump.)
 
 ## End-state / gates
 - No new readiness lane (not mandated). Full ladder green; CHANGELOG + contract

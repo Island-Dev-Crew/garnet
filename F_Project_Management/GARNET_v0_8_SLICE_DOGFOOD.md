@@ -425,7 +425,8 @@ file's definitions once (`Interpreter::load_source`) and evaluates each fence
 without error; an optional `# => value` marker asserts the displayed tail value.
 Human + `--format json`; exit 1 iff any fence fails. Demonstrator
 `examples/documented_math.garnet` (3 passing examples) is itself dogfooded and
-gated by a new agentic-matrix probe.
+CI-gated by the `garnet-cli` integration test `advertised_demonstrator_passes`
+(runs the built binary on the demonstrator and asserts 3 passed).
 
 **State:** dogfood-passing (S43 PR). 6 unit + 3 runner-unit + 5 integration
 tests; CLI human + JSON smoke verified. No new readiness lane (not mandated).

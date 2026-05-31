@@ -2059,14 +2059,6 @@ def probe_set(
             security_domain="filesystem",
         ),
         Probe(
-            "doctest-documented-example",
-            "developer tooling",
-            "advertised documented_math example should pass its own doc examples",
-            [str(garnet), "doctest", str(examples / "documented_math.garnet")],
-            True,
-            ("3 passed, 0 failed",),
-        ),
-        Probe(
             "convert-python-route",
             "migration assistant",
             "Python source should convert with lineage, metrics, and migrate checklist",
