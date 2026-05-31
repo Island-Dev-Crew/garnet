@@ -1,0 +1,27 @@
+# Idiomatic Garnet — exhaustive match over a finite enum (no catch-all arm).
+enum Light { Red, Yellow, Green }
+
+@caps()
+def advance(light) {
+  match light {
+    Light::Red => Light::Green,
+    Light::Green => Light::Yellow,
+    Light::Yellow => Light::Red,
+  }
+}
+
+@caps()
+def name(light) {
+  match light {
+    Light::Red => "red",
+    Light::Green => "green",
+    Light::Yellow => "yellow",
+  }
+}
+
+@caps()
+def main() {
+  let upcoming = advance(Light::Red)
+  println("after red:", name(upcoming))
+  0
+}

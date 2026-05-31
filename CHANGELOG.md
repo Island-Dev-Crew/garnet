@@ -18,6 +18,15 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S57 (idiomatic open corpus):** a small, open corpus showing *what good Garnet
+  looks like* — `examples/idiomatic/typed_errors.garnet` (typed `rescue e: T`, the
+  S42 policy, never a catch-all) and `examples/idiomatic/state_machine.garnet`
+  (exhaustive `match` over a finite enum, named `@caps`). The bar is high: each
+  `garnet check`s to **0 diagnostics** (fully clean, not even a non-fatal
+  advisory) and runs deterministically, proven by
+  `scripts/garnet_idiomatic_corpus.py` (+ `examples/idiomatic/README.md`). 5
+  tests. **Honest scope:** a style/discipline corpus, not a performance or
+  coverage claim.
 - **S56 (playground MVP):** upgrades `docs/playground.html` from an honest
   "planned" placeholder into a **static example gallery** — pick a real Garnet
   program, see its source and its recorded `garnet run` output (from

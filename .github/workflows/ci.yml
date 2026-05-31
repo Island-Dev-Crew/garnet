@@ -47,6 +47,7 @@ jobs:
       - run: python3 scripts/test_garnet_vscode_publish_readiness.py
       - run: python3 scripts/test_garnet_wasm_readiness.py
       - run: python3 scripts/test_garnet_playground_readiness.py
+      - run: python3 scripts/test_garnet_idiomatic_corpus.py
       - run: python3 scripts/check_determinism_no_llm.py
       - run: python3 scripts/check-agent-contracts.py
       # S47: gate cross-OS build coverage — fails if ci.yml stops testing all
