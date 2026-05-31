@@ -215,6 +215,26 @@ fn run_registry_add(args: &[String]) -> ExitCode {
         Ok(entry) => entry,
         Err(e) => {
             eprintln!("garnet add: {e}");
+            // S45 slopsquatting guard: only when the *name* is unknown (a missing
+            // version is not a near-miss). Surface resembling known names so an
+            // unknown package that mimics a real one is questioned before trust.
+            if !index.packages.contains_key(&name) {
+                let suspicions =
+                    garnet_registry_stub::slopguard::nearest(&name, index.known_names(), 2);
+                if !suspicions.is_empty() {
+                    let hints: Vec<String> = suspicions
+                        .iter()
+                        .take(3)
+                        .map(|s| format!("`{}`", s.candidate))
+                        .collect();
+                    eprintln!(
+                        "garnet add: `{name}` is not in this registry — did you mean {}? \
+                         Unknown names that closely resemble known packages are a slopsquatting \
+                         risk; verify the source before adding.",
+                        hints.join(" or ")
+                    );
+                }
+            }
             return ExitCode::from(1);
         }
     };

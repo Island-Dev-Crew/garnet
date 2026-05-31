@@ -15,6 +15,8 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+pub mod slopguard;
+
 /// The on-disk `index.json` schema (v0.1).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RegistryIndex {
@@ -22,6 +24,14 @@ pub struct RegistryIndex {
     pub registry_version: String,
     /// `name -> { versions: { version -> entry } }`, deterministically ordered.
     pub packages: BTreeMap<String, PackageEntry>,
+}
+
+impl RegistryIndex {
+    /// Every package name known to this index, in deterministic order. Used by
+    /// the slopsquatting guard (S45) to find near-misses of an unknown request.
+    pub fn known_names(&self) -> Vec<&str> {
+        self.packages.keys().map(String::as_str).collect()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
