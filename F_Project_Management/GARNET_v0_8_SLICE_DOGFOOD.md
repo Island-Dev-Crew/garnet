@@ -1307,6 +1307,28 @@ squash; the `s78 → merged(5)` advance rides with the S79 PR.
 
 ---
 
+### S79 — website / deck reframing
+
+**Goal:** Reframe the public messaging to the integration + agent-code thesis
+(compass positioning recommendations) — lead with the integration, headline
+diff-caps, concede precedent honestly.
+
+**Dogfood block:** `F_Project_Management/GARNET_POSITIONING.md` is the canonical
+messaging; `docs/index.html` gains a matching reframed thesis section ("Garnet's
+bet is the integration, not the parts"; diff-caps headline; "well-precedented"
+concession; agent-authored-code target). `scripts/garnet_positioning_status.py`
+(+ `--gate`, 5 tests, agent-contracts) is a static anti-drift gate requiring both
+surfaces to carry the integration thesis + diff-caps headline + precedent
+concession.
+
+**State:** dogfood-passing (S79 PR). 5 unit tests; full ladder green; no Rust changed.
+**Honest scope (do not soften):** a **positioning** claim about novelty and fit,
+**not** a production-readiness or 1.0 claim; Garnet remains a research-grade
+prototype (v0.x). The pillars are conceded as **well-precedented**. Flips to
+`merged` on squash; the `s79 → merged(5)` advance rides with the S80 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.

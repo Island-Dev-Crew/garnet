@@ -18,6 +18,17 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S79 (website/deck positioning reframe):** `F_Project_Management/GARNET_POSITIONING.md`
+  is the canonical messaging — lead with the **integration + agent-code thesis**
+  ("Garnet's bet is the integration, not the parts"), make **diff-caps** the
+  headline, and **concede precedent honestly** (capability security / bounded
+  execution / signed provenance are well-precedented). The landing page
+  (`docs/index.html`) gains a matching reframed thesis section.
+  `scripts/garnet_positioning_status.py` (+ `--gate`, 5 tests, agent-contracts) is
+  a static anti-drift gate: both the doc and the landing page must carry the
+  integration thesis + diff-caps headline + precedent concession.
+  **Honest scope:** a positioning claim about novelty and fit, **not** a
+  production-readiness or 1.0 claim. No Rust changed.
 - **S78 (governance + RFC process):** `GOVERNANCE.md` formalizes how changes land
   through an **RFC + edition process** over ad-hoc BDFL fiat; `rfcs/` adds the
   process (`README.md`), a template (`0000-template.md`), and **RFC-0001** —
