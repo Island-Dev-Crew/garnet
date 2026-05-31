@@ -18,6 +18,15 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S60 (v0.8.0 release readiness):** `scripts/garnet_v0_8_0_release_readiness.py`
+  aggregates the whole v0.8 train into one verdict — both bands merged
+  (hardening S41–S50 10/10, adoption S51–S59 9/9) and all 11 anti-rot sub-gates
+  passing — rendering **READY TO TAG (pending Jon)** with the honest in/deferred
+  inventory + verbatim honesty anchors. `--gate` (CI) fails unless the bands are
+  merged and every sub-gate passes. 5 unit tests; `F_Project_Management/GARNET_v0_8_0_RELEASE.md`.
+  **CRITICAL honest scope:** this **does not cut a tag**. Only `v0.4.2`/`v0.5.0`
+  are tagged; cutting `v0.8.0` is a **release-truth decision for Jon**, escalated,
+  not made autonomously. "READY TO TAG" is evidence-backed advice, not the act.
 - **S59 (fuzz campaign):** grows the parser fuzz corpus with 5 newer-construct
   seeds (typed rescue, `@caps`, enum + exhaustive `match`, doctest fences,
   cross-boundary `Result`) — better coverage of the S42–S57 grammar — and adds
