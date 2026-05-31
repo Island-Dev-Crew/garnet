@@ -117,6 +117,9 @@ pub fn print_help() {
     println!(
         "    bounds <file.garnet>             Report declared @bounded(N) fuel budgets (Wasmtime-fuel target)"
     );
+    println!(
+        "    ceilings <file.garnet>           Identify explosive ops (loop/spawn) + default-ceiling policy"
+    );
     println!("    run    <file.garnet>             Parse, load, and invoke `main` if it exists");
     println!(
         "    test   [<dir>]                   Discover + run test_* functions in tests/*.garnet"

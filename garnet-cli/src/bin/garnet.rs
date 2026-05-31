@@ -82,6 +82,13 @@ fn main() -> ExitCode {
             }
             cmd::bounds::run(PathBuf::from(&args[1]))
         }
+        "ceilings" => {
+            if args.len() < 2 {
+                eprintln!("usage: garnet ceilings <file.garnet>");
+                return ExitCode::from(2);
+            }
+            cmd::ceilings::run(PathBuf::from(&args[1]))
+        }
         "run" => {
             if args.len() < 2 {
                 eprintln!("usage: garnet run [--interp|--vm] <file.garnet>");

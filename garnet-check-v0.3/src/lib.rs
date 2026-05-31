@@ -36,6 +36,7 @@ pub mod capability_surface;
 pub mod caps_diff;
 pub mod caps_graph;
 pub mod coherence;
+pub mod explosive;
 pub mod match_coverage;
 pub mod stability;
 pub mod suggest;
@@ -45,6 +46,7 @@ pub use bounds::bounded_functions;
 pub use capability_surface::{capability_surface, CapabilitySurface};
 pub use caps_diff::{diff_caps, CapsDiff};
 pub use caps_graph::{CapsReport, CapsViolation};
+pub use explosive::{explosive_ops, ExplosiveKind, ExplosiveOp, FnExplosiveReport};
 
 use garnet_parser::ast::{
     ActorDef, ActorItem, Annotation, Block, FnDef, FnMode, Item, Module, Ownership, Param, Stmt,
