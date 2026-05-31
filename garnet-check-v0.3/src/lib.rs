@@ -31,6 +31,7 @@
 
 pub mod audit;
 pub mod borrow;
+pub mod capability_surface;
 pub mod caps_graph;
 pub mod coherence;
 pub mod match_coverage;
@@ -38,6 +39,7 @@ pub mod stability;
 pub mod suggest;
 
 pub use audit::{AuditLog, BoundaryCall, BoundaryDirection};
+pub use capability_surface::{capability_surface, CapabilitySurface};
 pub use caps_graph::{CapsReport, CapsViolation};
 
 use garnet_parser::ast::{

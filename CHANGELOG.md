@@ -18,6 +18,22 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S35 (source annotations — the canonical capability surface):** the
+  `@caps(...)` annotation *syntax* already existed (v3.4 CapCaps —
+  `Annotation::Caps`, the `Capability` enum, parsing, transitive propagation), so
+  per the contract's actual words this slice adds **the surface the manifest is
+  derived from**: a first-class, deterministic `garnet_check::CapabilitySurface`
+  (`aggregate`, `per_function`, `has_wildcard`) via `capability_surface(module)`,
+  normalized through the canonical `Capability::as_str()` (sorted + deduplicated).
+  Consolidates and **fixes** `garnet trust-report`, which built its caps surface
+  via `format!("{c:?}").to_lowercase()` — mislabeling `net_internal` / `Other(_)`
+  / wildcard caps — so the checker and trust-report now share one normalization.
+  7 unit tests; the existing trust-report tests stay green. **Honest scope:** S35
+  adds the surface artifact + a consolidation/bug-fix, **not** new syntax; it
+  covers top-level functions' declared caps (the diff-caps surface) — actor
+  methods, transitive/effective caps, and `[caps]`-budget enforcement are out of
+  scope; S36 builds the per-program/package manifest artifact from this surface.
+
 - **S34 (structured diagnostics — machine + human):** adds the reusable
   `garnet_cli::diagnostics` module (`Severity`, `Diagnostic { severity, code,
   message, span }`) and `garnet check [--format human|json]`. `human` (default)

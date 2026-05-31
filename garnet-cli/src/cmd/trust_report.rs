@@ -33,7 +33,7 @@ use crate::read_file;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use garnet_parser::ast::{Annotation, Item, Module};
+use garnet_parser::ast::{Item, Module};
 
 #[derive(Debug, Default)]
 struct TrustCounts {
@@ -45,30 +45,24 @@ struct TrustCounts {
 }
 
 fn collect(module: &Module) -> TrustCounts {
-    let mut out = TrustCounts::default();
+    // S35: the canonical, deduped, sorted capability surface — replaces the
+    // prior per-call-site `format!("{c:?}").to_lowercase()`, which mislabeled
+    // `net_internal` / `Other(_)` / wildcard caps. The checker and trust-report
+    // now share one normalization.
+    let surface = garnet_check::capability_surface(module);
+    let mut out = TrustCounts {
+        caps_seen: surface.aggregate.iter().cloned().collect(),
+        fns_with_caps: surface.per_function.len(),
+        ..TrustCounts::default()
+    };
     for item in &module.items {
         match item {
             Item::Actor(a) => out.actors.push(a.name.clone()),
-            Item::Fn(f) => {
-                out.fn_count += 1;
-                let mut has_caps = false;
-                for ann in &f.annotations {
-                    if let Annotation::Caps(caps, _) = ann {
-                        has_caps = true;
-                        for c in caps {
-                            out.caps_seen.insert(format!("{c:?}").to_lowercase());
-                        }
-                    }
-                }
-                if has_caps {
-                    out.fns_with_caps += 1;
-                } else {
-                    out.fns_without_caps += 1;
-                }
-            }
+            Item::Fn(_) => out.fn_count += 1,
             _ => {}
         }
     }
+    out.fns_without_caps = out.fn_count - out.fns_with_caps;
     out
 }
 
