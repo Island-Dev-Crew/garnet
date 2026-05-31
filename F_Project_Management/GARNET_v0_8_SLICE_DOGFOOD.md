@@ -963,6 +963,30 @@ ships the authority/attestation half, none ship a native/wasm runtime. Flips to
 
 ---
 
+### S65 — AI-authorship provenance
+
+**Goal:** Open the MCP/AI-attestation band (reconciliation §165-166) by making
+AI-authorship a first-class, attestable declaration — the same posture as
+capabilities.
+
+**Dogfood block:** `garnet seal <file> --authored-by <provenance>` records an
+`"authorship"` field in the in-toto predicate (`ai:<model>`, `ai-assisted:…`,
+`human:…`) — diffable, reviewable, signable alongside the capability manifest.
+Omitting it records **no** authorship claim (default shape unchanged). Spec
+`C_Language_Specification/GARNET_AI_PROVENANCE.md`; cross-OS proof
+`garnet-cli/tests/ai_provenance.rs` (2 tests); existing `seal` tests unchanged.
+
+**State:** dogfood-passing (S65 PR). 2 new + 3 unchanged seal tests; full ladder
+green. No new readiness lane.
+**Honest scope (do not soften):** a **self-declared** fact, **not AI-detection** —
+Garnet records what the toolchain *declares* (declared, not inferred); silence is
+honest, not an implicit "human"; verifying the declaration's accuracy is out of
+scope (a process/social question, not a tool guarantee). S66 extends this seal
+field; S67 brings the capability lens to agent tools. Flips to `merged` on
+squash; the `s65 → merged(5)` advance rides with the S66 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.

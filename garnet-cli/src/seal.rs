@@ -40,12 +40,31 @@ pub fn statement_json(
     caps: &CapabilityManifest,
     cosign: bool,
 ) -> String {
+    statement_json_with_authorship(program, build, caps, cosign, None)
+}
+
+/// As [`statement_json`], but optionally records an **AI-authorship provenance**
+/// declaration (S65) in the predicate. `authorship` is a free-form, self-declared
+/// provenance string (e.g. `"ai:claude-opus-4-8"`, `"ai-assisted:..."`,
+/// `"human:jon"`) — it is a *declared* fact, not AI-detection. Omitted entirely
+/// when `None`, so the default predicate shape is unchanged.
+pub fn statement_json_with_authorship(
+    program: &str,
+    build: &Manifest,
+    caps: &CapabilityManifest,
+    cosign: bool,
+    authorship: Option<&str>,
+) -> String {
     let cosign_note = if cosign {
         "available — sign with: cosign attest --predicate <file> --type custom"
     } else {
         "not installed — predicate emitted UNSIGNED; install cosign to attest"
     };
     let sbom_note = "garnet-capability-manifest (native SBOM-equivalent; CycloneDX/SPDX via syft/cyclonedx when present)";
+    let authorship_field = match authorship {
+        Some(a) => format!(",\"authorship\":\"{}\"", json_escape(a)),
+        None => String::new(),
+    };
     format!(
         "{{\"_type\":\"{stmt}\",\
          \"subject\":[{{\"name\":\"{name}\",\"digest\":{{\"blake3\":\"{ast}\"}}}}],\
@@ -54,7 +73,7 @@ pub fn statement_json(
          \"source_blake3\":\"{src}\",\
          \"build_manifest\":{build_json},\
          \"capability_manifest\":{caps_json},\
-         \"tooling\":{{\"cosign\":\"{cosign_note}\",\"sbom\":\"{sbom}\"}}\
+         \"tooling\":{{\"cosign\":\"{cosign_note}\",\"sbom\":\"{sbom}\"}}{authorship_field}\
          }}}}",
         stmt = json_escape(STATEMENT_TYPE),
         name = json_escape(program),
