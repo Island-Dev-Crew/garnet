@@ -360,6 +360,34 @@ ledger) rides with the S41 PR (first hardening-band slice).
 
 ---
 
+## Slice Contracts — S41+ (v0.8 hardening; detailed as each is approached)
+
+### S41 — async/concurrency contract
+
+**Goal:** Codify Garnet's concurrency model as a canonical contract. The model is
+**actors** (not async/await — `async` is reserved for a future edition, S32),
+already built in `garnet-actor-runtime` (OS-thread + bounded mpsc mailbox;
+`@mailbox` override; Result-returning `ask`; hot reload) and Mini-Spec §9. This
+slice documents what is built + adds a checkable surface — it introduces no new
+semantics.
+
+**Dogfood block:** `C_Language_Specification/GARNET_CONCURRENCY_CONTRACT.md`
+codifies actors / bounded mailboxes / ask-vs-tell / spawn-`@fan_out` /
+`@bounded` / `@nonsendable` / hot reload, with an explicit deferred-scope
+section. `garnet_check::concurrency_surface` classifies each actor's protocols
+(ask if it returns a value, else tell) + handler count; `garnet concurrency
+<file>` reports it.
+
+**State:** dogfood-passing (S41 PR). 2 unit + 2 integration tests; CLI smoke
+verified. No new readiness lane (not mandated). Honest scope: documents the
+EXISTING model; no async/await; `@nonsendable` cross-boundary enforcement and
+`@bounded` fuel enforcement are deferred (declared/reported, not enforced — no
+faking); structured concurrency / cancellation beyond actor lifecycle + the
+Result-`ask` is future work. Flips to `merged` on squash; the `s41 → merged(5)`
+advance rides with the S42 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.

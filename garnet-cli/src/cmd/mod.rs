@@ -15,6 +15,7 @@ pub mod build;
 pub mod caps;
 pub mod ceilings;
 pub mod check;
+pub mod concurrency;
 pub mod convert;
 pub mod diff_caps;
 pub mod doc;
