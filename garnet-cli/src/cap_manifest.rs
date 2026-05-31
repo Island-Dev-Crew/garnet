@@ -8,9 +8,12 @@
 //! build [`crate::manifest::Manifest`], which carries source/AST hashes but no
 //! capability surface.
 
+use crate::cmd::verify_gate::collect_targets;
 use crate::diagnostics::json_escape;
-use garnet_check::CapabilitySurface;
+use crate::{edition_manifest, read_file};
+use garnet_check::{capability_surface, CapabilitySurface};
 use std::collections::BTreeSet;
+use std::path::Path;
 
 /// Schema identifier baked into every capability manifest. Bump when the shape
 /// changes; older consumers reject manifests they do not recognize.
@@ -78,6 +81,38 @@ pub fn merge_surfaces(surfaces: Vec<CapabilitySurface>) -> CapabilitySurface {
         per_function: functions.into_iter().collect(),
         has_wildcard,
     }
+}
+
+/// Build the merged capability surface for a path — a `.garnet` file or every
+/// `.garnet` under a directory — edition-aware (S32). The shared entry used by
+/// `garnet caps`, `garnet diff-caps`, and `garnet verify --caps-baseline`.
+/// Returns a usage / parse / IO error message on failure.
+pub fn surface_for_path(path: &Path) -> Result<CapabilitySurface, String> {
+    let targets = collect_targets(path).map_err(|e| e.to_string())?;
+    if targets.is_empty() {
+        return Err(format!("no .garnet files found under {}", path.display()));
+    }
+    let mut surfaces = Vec::with_capacity(targets.len());
+    for target in &targets {
+        let src = read_file(target)?;
+        let edition = match edition_manifest::resolve_edition_for(target) {
+            Ok(resolved) => {
+                if let Some(warning) = resolved.warning {
+                    eprintln!("{warning}");
+                }
+                resolved.edition
+            }
+            Err(message) => return Err(message),
+        };
+        let module = garnet_parser::parse_source_with_edition(&src, edition)
+            .map_err(|e| format!("parse error in {}: {e}", target.display()))?;
+        surfaces.push(capability_surface(&module));
+    }
+    Ok(if surfaces.len() == 1 {
+        surfaces.pop().expect("one surface")
+    } else {
+        merge_surfaces(surfaces)
+    })
 }
 
 /// Render a slice of strings as a JSON array of escaped strings.

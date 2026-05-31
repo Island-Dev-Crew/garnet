@@ -281,7 +281,17 @@ Greptile in S33's `garnet verify` (`min` governs the gate).
 surface; it does not prove the absence of undeclared authority (that is the
 sandbox-policy job, S46)."
 
-**State:** not-started.
+**State:** dogfood-passing (S37 PR). `garnet_check::diff_caps` (→ `CapsDiff` +
+`authority_expanded()`: new aggregate cap or introduced `@caps(*)`). `garnet
+diff-caps <old> <new>` exits non-zero iff authority expanded. **Completes the S33
+graft:** `garnet verify --caps-baseline <old>` feeds the diff into the fused band
+via `capability_band` (5 / 2; `min` governs), replacing the stubbed signal.
+Shared `surface_for_path` consolidated across caps/diff-caps/verify. 6 unit + 4
+integration tests; smoke verified (expansion→exit1/band2, reduction→exit0/band5,
+verify --caps-baseline caps fused at 2/5). Lane `capability_diff_caps` added;
+baseline regenerated (88.6%→88.8%). Honest scope: declared surface only (not an
+undeclared-authority proof — S46); verify flags via band, diff-caps is the hard
+gate. Flips to `merged` on squash; the `s37 → merged(5)` advance rides with S38.
 
 ---
 

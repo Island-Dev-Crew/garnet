@@ -107,6 +107,9 @@ pub fn print_help() {
     println!(
         "    caps   <path>                    Emit the capability manifest (JSON) for a file or package"
     );
+    println!(
+        "    diff-caps <old> <new>            Diff the capability surface; nonzero exit if authority expanded"
+    );
     println!("    run    <file.garnet>             Parse, load, and invoke `main` if it exists");
     println!(
         "    test   [<dir>]                   Discover + run test_* functions in tests/*.garnet"
@@ -122,8 +125,10 @@ pub fn print_help() {
     println!(
         "    verify <path>                    Acceptance gate: edition-aware parse + safe-mode"
     );
-    println!("           [--external-band <1-5>]   check; emits a fused merge-confidence band");
-    println!("                                     (nonzero exit on any fatal diagnostic)");
+    println!(
+        "           [--external-band <1-5>]   check; emits a fused merge-confidence band (min of"
+    );
+    println!("           [--caps-baseline <old>]   internal/external/diff-caps; nonzero on fatal)");
     println!("    verify <file> <manifest.json>    Verify the manifest matches the source");
     println!("           [--signature]             Require a valid Ed25519 signature");
     println!("    keygen <keyfile>                 Generate an Ed25519 signing keypair");

@@ -1790,6 +1790,37 @@ def read_status() -> MitReadinessStatus:
                 "safe-mode check is the acceptance signal",
             ],
         ),
+        ObjectiveLane(
+            id="capability_diff_caps",
+            evidence_class="committed",
+            label="diff-caps — capability-surface diff gate (S37)",
+            status="verified",
+            completion_percent=100.0,
+            evidence=(
+                "S37 ships the headline novelty. `garnet-check::diff_caps` diffs two S35 "
+                "`CapabilitySurface`s into a `CapsDiff` (aggregate added/removed, functions "
+                "added/removed/expanded, wildcard introduced) and answers `authority_expanded()` "
+                "(a NEW aggregate capability or an introduced `@caps(*)` — a function re-declaring "
+                "a cap already in the aggregate is NOT new program authority). `garnet diff-caps "
+                "<old> <new>` exits non-zero iff authority expanded; `garnet verify "
+                "--caps-baseline <old>` wires the diff into the S33 fused band via "
+                "`capability_band` (5 if no expansion, 2 if expanded), completing the "
+                "previously-stubbed capability-signal slot (`min` governs). Proven by 6 `caps_diff` "
+                "unit tests + 4 integration tests (binary: expansion->exit1, reduction->exit0, "
+                "identical->no-changes, verify --caps-baseline caps the fused band at 2/5) + the "
+                "shared `surface_for_path` consolidation across caps/diff-caps/verify."
+            ),
+            blocked_by=[],
+            deferred=[
+                "diff-caps reads the DECLARED capability surface; it does not prove the absence "
+                "of undeclared authority (that is the sandbox-policy job, S46)",
+                "`garnet verify --caps-baseline` flags authority expansion via a low fused band "
+                "(review signal); it does not hard-fail the gate on expansion — `garnet diff-caps` "
+                "is the hard gate",
+                "\"Two revisions\" are two source paths the caller supplies; S37 does not itself "
+                "drive git",
+            ],
+        ),
     ]
 
     # Committed-truth headline: only machine-independent lanes feed the score, so the

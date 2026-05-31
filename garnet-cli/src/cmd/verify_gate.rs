@@ -16,6 +16,9 @@ pub struct GateArgs {
     pub path: PathBuf,
     /// Optional external-reviewer band (1..=5); in CI/PR this is Greptile.
     pub external_band: Option<u8>,
+    /// Optional baseline path (an older revision of the same tree) for the S37
+    /// capability signal: `diff-caps(baseline, current)` feeds the fuse.
+    pub caps_baseline: Option<PathBuf>,
 }
 
 pub fn run(args: GateArgs) -> ExitCode {
@@ -29,7 +32,7 @@ pub fn run(args: GateArgs) -> ExitCode {
 
     let internal = tally.internal_band();
     let external = args.external_band.map(Band::new);
-    let capability = CapabilitySignal::pending_until_s37();
+    let capability = resolve_capability_signal(&args);
     let fused = fuse(internal, external, capability);
 
     println!();
@@ -46,7 +49,14 @@ pub fn run(args: GateArgs) -> ExitCode {
         Some(b) => println!("  external reviewer: {}/5", b.get()),
         None => println!("  external reviewer: not supplied (Greptile wires in at PR time)"),
     }
-    println!("  capability signal: stub (pending S37 diff-caps)");
+    match capability {
+        CapabilitySignal::Surface(b) => {
+            println!("  capability signal (diff-caps vs baseline): {}/5", b.get())
+        }
+        CapabilitySignal::Pending => {
+            println!("  capability signal: pending (pass --caps-baseline <old> for diff-caps)")
+        }
+    }
     println!("  fusion rule: min of the present signals");
 
     if tally.passes() {
@@ -58,6 +68,42 @@ pub fn run(args: GateArgs) -> ExitCode {
             tally.failing
         );
         ExitCode::from(1)
+    }
+}
+
+/// Compute the S37 capability signal. With a `--caps-baseline`, run
+/// `diff-caps(baseline, current)` and map an authority change to a band;
+/// otherwise the slot stays pending (back-compat with S33).
+fn resolve_capability_signal(args: &GateArgs) -> CapabilitySignal {
+    let Some(baseline) = &args.caps_baseline else {
+        return CapabilitySignal::Pending;
+    };
+    match (
+        crate::cap_manifest::surface_for_path(baseline),
+        crate::cap_manifest::surface_for_path(&args.path),
+    ) {
+        (Ok(base), Ok(current)) => {
+            let diff = garnet_check::diff_caps(&base, &current);
+            CapabilitySignal::Surface(capability_band(&diff))
+        }
+        _ => {
+            eprintln!(
+                "garnet verify: could not build capability surfaces for --caps-baseline; \
+                 capability signal left pending"
+            );
+            CapabilitySignal::Pending
+        }
+    }
+}
+
+/// Map a capability diff to the capability signal band: `5` when the program did
+/// not gain authority, `2` when it did (so the fused `min` flags the change for
+/// review).
+pub fn capability_band(diff: &garnet_check::CapsDiff) -> Band {
+    if diff.authority_expanded() {
+        Band::new(2)
+    } else {
+        Band::new(5)
     }
 }
 

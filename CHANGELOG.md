@@ -18,6 +18,23 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S37 (diff-caps — capability-surface diff gate; the headline novelty):** adds
+  `garnet_check::diff_caps` (→ `CapsDiff`: aggregate added/removed, functions
+  added/removed/expanded, wildcard-introduced) and `authority_expanded()` (a NEW
+  aggregate capability or an introduced `@caps(*)`; a function re-declaring a cap
+  already in the aggregate is NOT new program authority). `garnet diff-caps <old>
+  <new>` exits non-zero iff authority expanded. **Completes the S33 graft:**
+  `garnet verify --caps-baseline <old>` wires the diff into the fused band via
+  `capability_band` (5 if no expansion, 2 if expanded; `min` governs), replacing
+  the previously-stubbed capability signal. Adds the `capability_diff_caps`
+  readiness lane (committed-truth; headline 88.6% → 88.8%) and consolidates a
+  shared `surface_for_path` across `caps` / `diff-caps` / `verify`. 6 unit + 4
+  integration tests. **Honest scope:** diff-caps reads the **declared** surface —
+  it does not prove the absence of undeclared authority (the sandbox job, S46);
+  `verify --caps-baseline` flags expansion via a low band (review signal),
+  `diff-caps` is the hard gate; "two revisions" = two source paths the caller
+  supplies (S37 does not itself drive git).
+
 - **S36 (capability manifest — derived from annotations):** adds
   `garnet_cli::cap_manifest::CapabilityManifest` (schema
   `garnet-capability-manifest-v1` wrapping the S35 `CapabilitySurface`) and the
