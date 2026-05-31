@@ -12,7 +12,7 @@
 
 use crate::cap_manifest::CapabilityManifest;
 use crate::manifest::Manifest;
-use crate::seal::{cosign_available, statement_json_with_authorship};
+use crate::seal::{cosign_available, statement_json_full};
 use crate::{edition_manifest, read_file};
 use garnet_check::capability_surface;
 use std::path::PathBuf;
@@ -22,6 +22,7 @@ pub fn run(args: &[String]) -> ExitCode {
     let mut path: Option<PathBuf> = None;
     let mut out: Option<PathBuf> = None;
     let mut authored_by: Option<String> = None;
+    let mut attestation: Vec<(String, String)> = Vec::new();
     let mut i = 0;
     while i < args.len() {
         match args[i].as_str() {
@@ -44,9 +45,23 @@ pub fn run(args: &[String]) -> ExitCode {
                 authored_by = Some(value.clone());
                 i += 2;
             }
+            "--attest" => {
+                // S66: structured model/prompt/tool attestation, repeatable:
+                // `--attest model=claude-opus-4-8 --attest tool=mcp:filesystem`.
+                let Some(value) = args.get(i + 1) else {
+                    eprintln!("garnet seal: --attest requires a <key>=<value>");
+                    return ExitCode::from(2);
+                };
+                let Some((k, v)) = value.split_once('=') else {
+                    eprintln!("garnet seal: --attest expects <key>=<value>, got `{value}`");
+                    return ExitCode::from(2);
+                };
+                attestation.push((k.to_string(), v.to_string()));
+                i += 2;
+            }
             "--help" | "-h" => {
                 println!(
-                    "usage: garnet seal <file.garnet> [--out <path>] [--authored-by <provenance>]"
+                    "usage: garnet seal <file.garnet> [--out <path>] [--authored-by <provenance>] [--attest <key>=<value>]..."
                 );
                 return ExitCode::SUCCESS;
             }
@@ -99,8 +114,14 @@ pub fn run(args: &[String]) -> ExitCode {
         .and_then(|s| s.to_str())
         .unwrap_or("program");
     let cosign = cosign_available();
-    let statement =
-        statement_json_with_authorship(program, &build, &caps, cosign, authored_by.as_deref());
+    let statement = statement_json_full(
+        program,
+        &build,
+        &caps,
+        cosign,
+        authored_by.as_deref(),
+        &attestation,
+    );
 
     let predicate_ref = if let Some(out_path) = &out {
         if let Err(e) = std::fs::write(out_path, &statement) {

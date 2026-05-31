@@ -18,6 +18,18 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S66 (model/prompt/tool attestation):** extends the S65 seal authorship with a
+  structured **attestation block**. `garnet seal <file> --attest <key>=<value>`
+  (repeatable) records a deterministic (sorted) `"attestation"` object —
+  conventionally `model`, `prompt_sha256`, `tool` (e.g. `mcp:filesystem`) — in the
+  in-toto predicate, composing with `--authored-by`. Together: *who*
+  (`authorship`), *what pipeline* (`attestation`), *what authority*
+  (`capability_manifest`). Spec `C_Language_Specification/GARNET_ATTESTATION.md`
+  + cross-OS proof `garnet-cli/tests/seal_attestation_block.rs` (4 tests); S65/S38
+  seal tests unchanged. **Honest scope:** every field is **self-declared, not
+  verified** (the `@caps` posture) — Garnet does not introspect the model, hash
+  the live prompt, or enumerate the tools actually invoked; absent `--attest`
+  records no block; auditing accuracy is out of scope.
 - **S65 (AI-authorship provenance):** makes "who/what wrote this?" a first-class,
   attestable declaration. `garnet seal <file> --authored-by <provenance>` records
   an `"authorship"` field in the in-toto predicate (e.g. `ai:claude-opus-4-8`,
