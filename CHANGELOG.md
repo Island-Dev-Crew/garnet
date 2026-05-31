@@ -18,6 +18,17 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S53 (tree-sitter grammar):** adoption infrastructure for editors. New
+  `tree-sitter-garnet/grammar.js` defines the core Garnet syntax (functions +
+  `@`-annotations, struct/enum/impl, actors + `memory` kinds, control flow,
+  `match`, `try/rescue/ensure`, expressions incl. the `|>` pipe, `#`/`///`
+  comments) — the *syntax* grammar, distinct from the LSP *semantic* service
+  (S44). `scripts/garnet_tree_sitter_check.py` structurally validates it (loads
+  `grammar.js` with Node, asserts the grammar name + core rules) and `--gate`
+  (CI) fails on a dropped rule. 5 unit tests; `tree-sitter-garnet/README.md`.
+  **Honest scope:** a CORE grammar (not exhaustive), **structurally validated,
+  not compiled** — `tree-sitter generate` + corpus tests need the tree-sitter
+  CLI (absent here); the hand-written `garnet-parser` remains the source of truth.
 - **S52 (one-line install / readme check):** a consistency gate for the curl|sh
   install path. `scripts/garnet_install_readme_check.py` extracts the one-line
   `curl … install.sh | sh` command from `README.md` and from

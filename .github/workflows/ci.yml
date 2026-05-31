@@ -43,6 +43,7 @@ jobs:
       - run: python3 scripts/test_garnet_v0_8_beta_gate.py
       - run: python3 scripts/test_garnet_signed_release_lanes.py
       - run: python3 scripts/test_garnet_install_readme_check.py
+      - run: python3 scripts/test_garnet_tree_sitter_check.py
       - run: python3 scripts/check_determinism_no_llm.py
       - run: python3 scripts/check-agent-contracts.py
       # S47: gate cross-OS build coverage — fails if ci.yml stops testing all
@@ -60,6 +61,9 @@ jobs:
       # S52: install/readme consistency — fails if the README one-line install
       # command or URL drifts from installer/sh.garnet-lang.org/install.sh.
       - run: python3 scripts/garnet_install_readme_check.py --gate
+      # S53: tree-sitter grammar structural check — fails if grammar.js loses a
+      # core rule (when node is available; structural only, not compiled).
+      - run: python3 scripts/garnet_tree_sitter_check.py --gate
 
   # ───────────────────────────────────────────────────────────────────
   # Format check — fast, runs once on Linux. A failure here is the
