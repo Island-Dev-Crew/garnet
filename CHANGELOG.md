@@ -18,6 +18,18 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S43 (docs-as-tests):** `garnet doctest <file>` makes documented examples
+  executable — the "evidence not courtesy" discipline. It reuses `garnet doc`'s
+  `///` extraction, lifts ` ```garnet ` fences (`garnet_cli::doctest::garnet_fences`),
+  loads the file's own definitions, and runs each fence on the interpreter so an
+  example can call the very function it documents. A fence passes if it evaluates
+  without error; a `# => value` marker additionally asserts the displayed tail
+  value. Human and `--format json` output; exit 1 iff any example fails. Ships a
+  dogfooded demonstrator (`examples/documented_math.garnet`, 3 passing examples).
+  6 unit + 3 runner-unit + 5 integration tests. **Honest scope:** runs on the
+  interpreter (not the VM backend); fences see only the file's own definitions
+  plus the stdlib (no cross-file imports, matching `garnet doc`); a doc-rot guard,
+  not a replacement for the test suite.
 - **S42 (typed Result / error policy):** codifies the typed-`Result`-first error
   policy and enforces a piece of it. `core::result` combinators (S26) and
   `try`/`rescue`/`ensure`/`raise` already exist; this slice adds

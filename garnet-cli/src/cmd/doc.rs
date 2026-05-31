@@ -140,8 +140,9 @@ fn render_module_md(
 }
 
 /// Return the source span of an item's leading token. Used to locate
-/// where to scan backwards for `///` lines.
-fn item_span(item: &garnet_parser::ast::Item) -> garnet_parser::token::Span {
+/// where to scan backwards for `///` lines. Shared with `garnet doctest`
+/// (`cmd::doctest`), which reuses this doc-extraction foundation.
+pub(crate) fn item_span(item: &garnet_parser::ast::Item) -> garnet_parser::token::Span {
     use garnet_parser::ast::Item;
     match item {
         Item::Fn(f) => f
@@ -181,8 +182,8 @@ fn annotation_span(annotation: &Annotation) -> Option<garnet_parser::token::Span
 /// Walk backwards from `byte_offset` over consecutive `///` lines (any
 /// amount of leading whitespace). Returns a single block of markdown:
 /// each `///` stripped, lines preserved in order. Empty if the item
-/// has no preceding doc block.
-fn extract_doc_comments_before(src: &str, byte_offset: usize) -> String {
+/// has no preceding doc block. Shared with `garnet doctest`.
+pub(crate) fn extract_doc_comments_before(src: &str, byte_offset: usize) -> String {
     // Clamp into bounds so a synthetic span past EOF cannot panic.
     let cutoff = byte_offset.min(src.len());
     let head = &src[..cutoff];
