@@ -239,7 +239,17 @@ the S35 PR.
 manifest is later derived. (Decomposition correction from the reconciliation:
 annotations → manifest → diff, as three slices, not one assumed-existing syntax.)
 
-**State:** not-started.
+**State:** dogfood-passing (S35 PR). NOTE: the `@caps` syntax already existed
+(v3.4 CapCaps — `Annotation::Caps`, `Capability`, parsing, propagation); per the
+goal's actual words this slice adds **the surface the manifest is derived from**:
+`garnet_check::CapabilitySurface` + `capability_surface(module)` (aggregate /
+per_function / has_wildcard; canonical `Capability::as_str()` normalization,
+sorted + deduped). Consolidates + fixes `garnet trust-report` (was using
+Debug-rendered caps, mislabeling net_internal / Other / wildcard). 7 unit tests;
+trust-report tests stay green. No new readiness lane (not mandated). Honest scope:
+surface artifact + bug-fix, not new syntax; top-level declared caps only; S36
+builds the manifest from this surface. Flips to `merged` on squash; the
+`s35 → merged(5)` advance rides with the S36 PR.
 
 ---
 
