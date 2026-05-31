@@ -252,9 +252,9 @@
     },
     {
       "id": "s62",
-      "merge_confidence": null,
-      "merged_at": null,
-      "status": "pending",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T16:00:10+00:00",
+      "status": "merged",
       "title": "rust-ffi",
       "weight": 1.0
     },

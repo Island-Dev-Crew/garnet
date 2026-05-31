@@ -18,6 +18,16 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S63 (C ABI proof):** establishes the C ABI as the canonical FFI contract and
+  proves **compound native authority**. `examples/ffi/c_stat.garnet` binds a C
+  `stat`-like symbol that touches the filesystem — needing **both** `@caps(ffi)`
+  (native) and `@caps(fs)`. The model surfaces both: `garnet check` clean,
+  `garnet sandbox` raises the ffi escape-hatch warning **and** enables fs WASI
+  preopens, `garnet seal` attests `["ffi","fs"]`. Spec
+  `C_Language_Specification/GARNET_C_ABI.md` (incl. the value↔C-type marshalling
+  table) + cross-OS proof `garnet-cli/tests/c_abi_proof.rs` (3 tests). **Honest
+  scope:** ships the C ABI *contract* + the compound-authority proof; **no FFI
+  runtime** — the marshalling layer and a linked `.so`/`.dylib` are deferred.
 - **S62 (Rust FFI proof):** proves a Garnet↔Rust `extern "C"` binding is a
   first-class, **attested** authority. `examples/ffi/rust_extern.garnet` (a
   `@caps(ffi)` Rust-wrapper) checks clean, runs, and `garnet seal` emits an

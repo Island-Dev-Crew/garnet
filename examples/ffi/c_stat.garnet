@@ -1,0 +1,14 @@
+# c_stat.garnet — binds a C `extern "C"` symbol that touches the filesystem.
+# Native code that does IO needs BOTH @caps(ffi) (it is native) AND @caps(fs)
+# (it touches the filesystem): compound native authority, fully surfaced.
+@caps(ffi, fs)
+def c_file_size(path) {
+  # Stand-in for `extern "C" fn garnet_c_stat_size(path: *const c_char) -> i64`.
+  0
+}
+
+@caps()
+def main() {
+  println(c_file_size("app.toml"))
+  0
+}
