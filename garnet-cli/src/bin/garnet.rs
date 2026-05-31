@@ -89,6 +89,13 @@ fn main() -> ExitCode {
             }
             cmd::ceilings::run(PathBuf::from(&args[1]))
         }
+        "concurrency" => {
+            if args.len() < 2 {
+                eprintln!("usage: garnet concurrency <file.garnet>");
+                return ExitCode::from(2);
+            }
+            cmd::concurrency::run(PathBuf::from(&args[1]))
+        }
         "run" => {
             if args.len() < 2 {
                 eprintln!("usage: garnet run [--interp|--vm] <file.garnet>");

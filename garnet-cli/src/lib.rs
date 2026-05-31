@@ -120,6 +120,9 @@ pub fn print_help() {
     println!(
         "    ceilings <file.garnet>           Identify explosive ops (loop/spawn) + default-ceiling policy"
     );
+    println!(
+        "    concurrency <file.garnet>        Report the actor concurrency contract (ask/tell protocols)"
+    );
     println!("    run    <file.garnet>             Parse, load, and invoke `main` if it exists");
     println!(
         "    test   [<dir>]                   Discover + run test_* functions in tests/*.garnet"

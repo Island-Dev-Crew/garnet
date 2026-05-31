@@ -18,6 +18,21 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S41 (async/concurrency contract — first v0.8 hardening slice):** codifies
+  Garnet's concurrency model as a canonical contract. The model is **actors**
+  (not async/await — `async` is reserved for a future edition, S32), already
+  built in `garnet-actor-runtime` (OS-thread + **bounded** mpsc mailbox closing
+  the unbounded-mailbox DoS class; `@mailbox` override; Result-returning `ask`;
+  hot reload). Adds `C_Language_Specification/GARNET_CONCURRENCY_CONTRACT.md` (the
+  canonical contract, with an explicit deferred-scope section),
+  `garnet_check::concurrency_surface` (per-actor protocols classified ask vs tell
+  + handler count), and `garnet concurrency <file>`. 2 unit + 2 integration
+  tests. **Honest scope:** documents what is BUILT — no new semantics; no
+  async/await; `@nonsendable` cross-boundary enforcement and `@bounded` fuel
+  enforcement are deferred (declared/reported, not enforced — no faking);
+  structured concurrency / cancellation beyond actor lifecycle + the Result-`ask`
+  is future work.
+
 - **S40 (explosive-op / default-ceiling analysis — closes the v0.8 foundation
   band):** adds `garnet_check::explosive_ops` — a **compiler-exhaustive** AST
   visitor (every `Stmt`/`Expr` variant matched + recursed, so nested sites are
