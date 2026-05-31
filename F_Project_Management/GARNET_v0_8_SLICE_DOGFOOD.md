@@ -437,6 +437,37 @@ only the file's own definitions + stdlib (no cross-file imports, matching
 
 ---
 
+### S44 — LSP safe-mode / cross-package precision
+
+**Goal:** Make the LSP's safe-mode/capability diagnostics precise and consistent
+with `garnet check`. The reconciliation (§145) flagged the LSP as a semantic
+service on the compiler frontend (distinct from tree-sitter).
+
+**Problem:** `garnet-lsp::check_diagnostics` mapped every `CheckError` except
+`BoundaryNote` to a red `ERROR`, and set no machine code. So the S42 over-catch
+advisory and stability-advice showed as errors in the editor, and the editor's
+codes diverged from `garnet check --format json`.
+
+**Dogfood block:** the checker owns the single source of truth —
+`garnet_check::Severity` + `CheckError::severity()` / `CheckError::code()`
+(both compiler-exhaustive). `garnet-cli/diagnostics.rs` (S34) delegates to them
+(via `From<garnet_check::Severity>`); the LSP maps `severity()` →
+`DiagnosticSeverity` (Error/Warning/Information) and sets
+`Diagnostic.code = code()`. Over-catch + stability-advice now surface as
+`INFORMATION`; safe-mode/caps/annotation/stability-error as `ERROR`; boundary
+notes as `WARNING` — editor and CLI in lockstep.
+
+**State:** dogfood-passing (S44 PR). New: garnet-check `severity_and_code_are_canonical`
++ `error_severity_agrees_with_fatal_set`; LSP `over_catch_advisory_surfaces_as_information_with_code`
++ `safe_mode_violation_surfaces_as_error_with_code`. S34 CLI diagnostics output
+unchanged. Full ladder green. No new readiness lane (not mandated).
+**Honest scope:** this delivers the *safe-mode precision* half. *Cross-package*
+precision requires a module/package resolver (S45) — the LSP has none today, so
+that half is **deferred to ride with S45**; no cross-file resolution is claimed.
+Flips to `merged` on squash; the `s44 → merged(5)` advance rides with the S45 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.

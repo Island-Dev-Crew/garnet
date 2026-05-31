@@ -47,6 +47,18 @@ impl Severity {
     }
 }
 
+impl From<garnet_check::Severity> for Severity {
+    /// Adopt the checker's canonical severity (S44: single source of truth in
+    /// `garnet-check`, shared by this CLI and the LSP).
+    fn from(s: garnet_check::Severity) -> Self {
+        match s {
+            garnet_check::Severity::Error => Severity::Error,
+            garnet_check::Severity::Warning => Severity::Warning,
+            garnet_check::Severity::Info => Severity::Info,
+        }
+    }
+}
+
 /// A single structured diagnostic.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Diagnostic {
@@ -60,20 +72,13 @@ pub struct Diagnostic {
     pub span: Option<(usize, usize)>,
 }
 
-/// Map a single checker diagnostic to its structured form.
+/// Map a single checker diagnostic to its structured form. Severity and code
+/// come from `garnet-check`'s canonical accessors (S44), so the CLI, the JSON
+/// wire form, and the LSP cannot drift apart.
 pub fn from_check_error(err: &CheckError) -> Diagnostic {
-    let (severity, code) = match err {
-        CheckError::SafeModeViolation(_) => (Severity::Error, "check.safe_mode_violation"),
-        CheckError::AnnotationError(_) => (Severity::Error, "check.annotation_error"),
-        CheckError::CapsCoverage { .. } => (Severity::Error, "check.caps_coverage"),
-        CheckError::StabilityError(_) => (Severity::Error, "check.stability_error"),
-        CheckError::BoundaryNote(_) => (Severity::Warning, "check.boundary_note"),
-        CheckError::StabilityAdvice(_) => (Severity::Info, "check.stability_advice"),
-        CheckError::OverCatch(_) => (Severity::Info, "check.over_catch"),
-    };
     Diagnostic {
-        severity,
-        code,
+        severity: err.severity().into(),
+        code: err.code(),
         message: err.to_string(),
         span: None,
     }

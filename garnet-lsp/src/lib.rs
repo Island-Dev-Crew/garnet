@@ -4,7 +4,7 @@
 //! code action quick-fixes (rules-based S10), and semantic tokens on top of the CST.
 
 use garnet_check::suggest::Rule;
-use garnet_check::{CheckError, CheckReport};
+use garnet_check::{CheckReport, Severity};
 use garnet_cst::{cst_to_ast, identifier_spans, parse_cst, token_infos, SyntaxNode, TokenInfo};
 use garnet_parser::ast::{
     ActorDef, Annotation, ConstDecl, Expr, FnDef, FnMode, Item, LetDecl, MemoryDecl, Module,
@@ -261,13 +261,18 @@ fn check_diagnostics(report: CheckReport, line_index: &LineIndex) -> Vec<Diagnos
         .errors
         .into_iter()
         .map(|error| {
-            let severity = match error {
-                CheckError::BoundaryNote(_) => DiagnosticSeverity::WARNING,
-                _ => DiagnosticSeverity::ERROR,
+            // S44: severity + code come from `garnet-check`'s canonical accessors,
+            // so the editor matches `garnet check`. Advisories (over-catch,
+            // stability-advice) now surface as INFORMATION rather than red errors.
+            let severity = match error.severity() {
+                Severity::Error => DiagnosticSeverity::ERROR,
+                Severity::Warning => DiagnosticSeverity::WARNING,
+                Severity::Info => DiagnosticSeverity::INFORMATION,
             };
             Diagnostic {
                 range: line_index.document_range(),
                 severity: Some(severity),
+                code: Some(NumberOrString::String(error.code().to_string())),
                 source: Some("garnet-check".to_string()),
                 message: error.to_string(),
                 ..Diagnostic::default()
@@ -1499,6 +1504,32 @@ mod tests {
         assert_eq!(spans.len(), 2);
         assert_eq!(&source[spans[0].start..spans[0].end()], "greet");
         assert_eq!(&source[spans[1].start..spans[1].end()], "greet");
+    }
+
+    fn diagnostic_with_code<'a>(analysis: &'a Analysis, code: &str) -> &'a Diagnostic {
+        analysis
+            .diagnostics()
+            .iter()
+            .find(|d| d.code == Some(NumberOrString::String(code.to_string())))
+            .unwrap_or_else(|| panic!("expected a diagnostic with code {code}"))
+    }
+
+    #[test]
+    fn over_catch_advisory_surfaces_as_information_with_code() {
+        // S44: an advisory must reach the editor as INFORMATION (not a red ERROR)
+        // and carry the canonical `garnet-check` code — parity with `garnet check`.
+        let source = "@caps()\ndef main() { try { 1 } rescue e { 0 } }\n";
+        let analysis = analyze_source(source);
+        let diag = diagnostic_with_code(&analysis, "check.over_catch");
+        assert_eq!(diag.severity, Some(DiagnosticSeverity::INFORMATION));
+    }
+
+    #[test]
+    fn safe_mode_violation_surfaces_as_error_with_code() {
+        let source = "@safe\ndef bad() {\n  var x = 42\n  x\n}\n";
+        let analysis = analyze_source(source);
+        let diag = diagnostic_with_code(&analysis, "check.safe_mode_violation");
+        assert_eq!(diag.severity, Some(DiagnosticSeverity::ERROR));
     }
 
     #[test]
