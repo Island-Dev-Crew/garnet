@@ -48,12 +48,24 @@ impl Interpreter {
         Self { global }
     }
 
-    /// Load a Garnet source string. Parses then registers every top-level item
-    /// into the global environment. Raises a `RuntimeError` on parse failure or
-    /// evaluation failure at the top level (e.g. evaluating a `let` rhs).
+    /// Load a Garnet source string under the default edition (v1.0). Parses then
+    /// registers every top-level item into the global environment. Raises a
+    /// `RuntimeError` on parse failure or top-level evaluation failure (e.g.
+    /// evaluating a `let` rhs).
     pub fn load_source(&mut self, src: &str) -> Result<(), RuntimeError> {
-        let module =
-            garnet_parser::parse_source(src).map_err(|e| RuntimeError::Parse(format!("{e:?}")))?;
+        self.load_source_with_edition(src, garnet_parser::Edition::default())
+    }
+
+    /// Load a Garnet source string under an explicit [`garnet_parser::Edition`].
+    /// Editions gate only the lexical surface, so for source valid in the
+    /// default edition the registered items are identical to [`Self::load_source`].
+    pub fn load_source_with_edition(
+        &mut self,
+        src: &str,
+        edition: garnet_parser::Edition,
+    ) -> Result<(), RuntimeError> {
+        let module = garnet_parser::parse_source_with_edition(src, edition)
+            .map_err(|e| RuntimeError::Parse(format!("{e:?}")))?;
         self.load_module(module)
     }
 

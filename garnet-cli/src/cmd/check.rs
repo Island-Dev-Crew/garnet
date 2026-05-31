@@ -17,7 +17,28 @@ pub fn run(path: PathBuf, suggest: bool) -> ExitCode {
     };
     let file_label = cache_file_label(&path);
     surface_prior(&src);
-    let module = match garnet_parser::parse_source(&src) {
+    let edition = match crate::edition_manifest::resolve_edition_for(&path) {
+        Ok(resolved) => {
+            if let Some(warning) = resolved.warning {
+                eprintln!("{warning}");
+            }
+            resolved.edition
+        }
+        Err(message) => {
+            eprintln!("{message}");
+            record(
+                "check",
+                &file_label,
+                &src,
+                "parse_err",
+                Some("bad_edition".to_string()),
+                started,
+                1,
+            );
+            return ExitCode::from(1);
+        }
+    };
+    let module = match garnet_parser::parse_source_with_edition(&src, edition) {
         Ok(m) => m,
         Err(e) => {
             let report = miette::Report::new(e).with_source_code(src.clone());
@@ -44,6 +65,18 @@ pub fn run(path: PathBuf, suggest: bool) -> ExitCode {
         report.boundary_call_sites,
         report.errors.len()
     );
+    // Layer 2: GODEBUG-style runtime settings. `GARNET_DEBUG=diagnostics=verbose`
+    // flips a CLI default without touching the program, AST, or capability set.
+    let settings = crate::runtime_settings::RuntimeSettings::from_env();
+    if let Some(warning) = settings.unknown_key_warning() {
+        eprintln!("{warning}");
+    }
+    if settings.verbose_diagnostics {
+        println!("\n[GARNET_DEBUG diagnostics=verbose] per-function capability sets:");
+        for (name, caps) in &report.fn_caps {
+            println!("  {name}: [{}]", caps.join(", "));
+        }
+    }
     if suggest {
         let suggestions = garnet_check::suggest::suggest_for_module(&module);
         println!(

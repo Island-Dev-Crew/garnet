@@ -61,6 +61,19 @@ pub enum ParseError {
         #[label("budget exceeded here")]
         span: Span,
     },
+
+    #[error("`{word}` is a reserved word in edition {edition}")]
+    #[diagnostic(help(
+        "this identifier is reserved under the named edition. rename it, or pin an \
+         earlier edition in Garnet.toml (e.g. `[project]` `edition = \"v1.0\"`) where \
+         it is a free identifier."
+    ))]
+    ReservedWord {
+        word: String,
+        edition: &'static str,
+        #[label("reserved here")]
+        span: Span,
+    },
 }
 
 impl ParseError {
@@ -84,6 +97,14 @@ impl ParseError {
             axis,
             limit,
             actual,
+            span,
+        }
+    }
+
+    pub fn reserved_word(word: &str, edition: &'static str, span: Span) -> Self {
+        ParseError::ReservedWord {
+            word: word.to_string(),
+            edition,
             span,
         }
     }

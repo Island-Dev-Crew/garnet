@@ -1,0 +1,87 @@
+{
+  "created_at": "2026-05-31T07:44:15+00:00",
+  "goal_id": "garnet-phaseA",
+  "slices": [
+    {
+      "id": "s31",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T07:44:27+00:00",
+      "status": "merged",
+      "title": "release-truth+reporter-fix",
+      "weight": 1.0
+    },
+    {
+      "id": "s32",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "edition-model",
+      "weight": 1.0
+    },
+    {
+      "id": "s33",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "garnet-verify",
+      "weight": 1.0
+    },
+    {
+      "id": "s34",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "diagnostics",
+      "weight": 1.0
+    },
+    {
+      "id": "s35",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "annotations",
+      "weight": 1.0
+    },
+    {
+      "id": "s36",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "capability-manifest",
+      "weight": 1.0
+    },
+    {
+      "id": "s37",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "diff-caps",
+      "weight": 1.0
+    },
+    {
+      "id": "s38",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "seal",
+      "weight": 1.0
+    },
+    {
+      "id": "s39",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "bounded",
+      "weight": 1.0
+    },
+    {
+      "id": "s40",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "ceiling-analysis",
+      "weight": 1.0
+    }
+  ],
+  "title": "v0.8 foundation"
+}

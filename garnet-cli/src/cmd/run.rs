@@ -107,11 +107,32 @@ fn parse_args(args: &[String]) -> Result<RunArgs, String> {
 }
 
 fn run_interpreter(file_label: &str, src: &str, path: &Path, started: Instant) -> ExitCode {
+    let edition = match crate::edition_manifest::resolve_edition_for(path) {
+        Ok(resolved) => {
+            if let Some(warning) = resolved.warning {
+                eprintln!("{warning}");
+            }
+            resolved.edition
+        }
+        Err(message) => {
+            eprintln!("{message}");
+            record(
+                "run",
+                file_label,
+                src,
+                "parse_err",
+                Some("bad_edition".to_string()),
+                started,
+                1,
+            );
+            return ExitCode::from(1);
+        }
+    };
     let mut interp = Interpreter::new();
     if let Some(project_root) = find_project_root_for(path) {
         preload_dependencies(&mut interp, &project_root);
     }
-    if let Err(e) = interp.load_source(src) {
+    if let Err(e) = interp.load_source_with_edition(src, edition) {
         eprintln!("load error: {e}");
         record(
             "run",

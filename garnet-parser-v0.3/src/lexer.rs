@@ -6,6 +6,7 @@
 //! fast with `ParseError::BudgetExceeded` instead of pinning CPU/RAM.
 
 use crate::budget::ParseBudget;
+use crate::edition::Edition;
 use crate::error::ParseError;
 use crate::token::*;
 
@@ -13,6 +14,7 @@ pub struct Lexer<'a> {
     src: &'a [u8],
     pos: usize,
     budget: ParseBudget,
+    edition: Edition,
 }
 
 impl<'a> Lexer<'a> {
@@ -21,10 +23,18 @@ impl<'a> Lexer<'a> {
     }
 
     pub fn with_budget(src: &'a str, budget: ParseBudget) -> Self {
+        Self::with_budget_and_edition(src, budget, Edition::default())
+    }
+
+    /// Construct a lexer pinned to an explicit [`Edition`]. The edition governs
+    /// only edition-gated reserved words; every other lexing decision is
+    /// identical across editions.
+    pub fn with_budget_and_edition(src: &'a str, budget: ParseBudget, edition: Edition) -> Self {
         Self {
             src: src.as_bytes(),
             pos: 0,
             budget,
+            edition,
         }
     }
 
@@ -427,6 +437,12 @@ impl<'a> Lexer<'a> {
         let span = Span::new(start, self.pos - start);
         if let Some(kw) = keyword_lookup(&owned) {
             Ok(Token { kind: kw, span })
+        } else if self.edition.is_reserved_ident(&owned) {
+            // Edition-gated reserved word: free as an identifier under v1.0,
+            // rejected at lex time under a later edition. (S32 Layer 1 — the one
+            // demonstrable parse-time surface difference, confined to the keyword
+            // layer so the grammar and AST stay untouched.)
+            Err(ParseError::reserved_word(&owned, self.edition.name(), span))
         } else {
             Ok(Token {
                 kind: TokenKind::Ident(owned),

@@ -18,6 +18,31 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S32 (edition / compatibility model — two-layer mechanism):** installs the
+  compatibility-evolution mechanism before users exist to break.
+  **Layer 1 (editions, parse-time):** a `garnet_parser::Edition` registry
+  (`v1.0` default + a registered `v2.0` that exists *only* to prove the
+  mechanism — not a shipped language version), resolved from `[project].edition`
+  in `Garnet.toml` (the legacy `[package]` table and `edition = "garnet-0.3"`
+  value are accepted as **deprecated aliases** with a one-line warning; an
+  unknown edition is a hard error). The single edition-gated surface difference
+  is the reserved word `async` (a free identifier under `v1.0`, rejected at lex
+  time under `v2.0`), confined to the lexer so the grammar and AST are untouched.
+  **One-canonical-IR invariant proven:** source valid in both editions parses to
+  a byte-identical AST and an identical capability manifest (`Manifest::build`
+  ast_hash). **Layer 2 (runtime settings, GODEBUG-style):** `GARNET_DEBUG=k=v`
+  flips a CLI default (`diagnostics=verbose`) without changing the manifest;
+  unknown keys warn, never error. Wired into `garnet check` and
+  `garnet run --interp`; the three shipped `garnet new` templates move to the
+  canonical `[project]` / `edition = "v1.0"` form. Adds the
+  `edition_compatibility` readiness lane (committed-truth; headline 88.0% →
+  88.3%) and regenerates the baseline. **Honest scope (mechanism + invariant
+  only):** no per-edition syntax-migration catalog; `garnet run --vm` uses the
+  default edition (the VM has a separate load path, per the S12/S14 split); no
+  manifest `[runtime]` table yet (env var only — a `[runtime]` table would be a
+  spec change, deferred to a future Handoff); no Mini-Spec edit (§16.3 already
+  specifies the canonical edition form).
+
 - **S31 PR-2 (deterministic readiness reporter — committed-truth / local-evidence split):**
   `scripts/garnet_mit_readiness_status.py` no longer mixes machine-independent
   committed evidence with machine-variable live probes. Each lane is tagged

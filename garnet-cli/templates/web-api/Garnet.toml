@@ -1,7 +1,7 @@
-[package]
+[project]
 name = "{{name}}"
 version = "0.1.0"
-edition = "garnet-0.3"
+edition = "v1.0"
 description = "A Garnet HTTP/1.1 API service"
 
 [build]
