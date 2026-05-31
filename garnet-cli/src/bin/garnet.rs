@@ -256,6 +256,7 @@ fn main() -> ExitCode {
         "doctest" => cmd::doctest::run(&args[1..]),
         "sandbox" => cmd::sandbox::run(&args[1..]),
         "mcp-caps" => cmd::mcp_caps::run(&args[1..]),
+        "caps-log" => cmd::caps_log::run(&args[1..]),
         other => {
             eprintln!("unknown subcommand: {other}");
             print_help();

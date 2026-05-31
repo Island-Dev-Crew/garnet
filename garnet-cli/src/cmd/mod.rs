@@ -13,6 +13,7 @@ pub mod add;
 pub mod bounds;
 pub mod build;
 pub mod caps;
+pub mod caps_log;
 pub mod ceilings;
 pub mod check;
 pub mod concurrency;

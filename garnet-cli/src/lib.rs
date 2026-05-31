@@ -158,6 +158,9 @@ pub fn print_help() {
     println!("    doctest [--format human|json] <file> Run ```garnet examples in /// doc comments");
     println!("    sandbox [--format human|json] <file> seccomp/WASI/egress policy from @caps");
     println!("    mcp-caps [--format human|json] <file> Capability surface of an MCP tool-set");
+    println!(
+        "    caps-log <file> [--log P] | --verify <log> Append-only capability transparency log"
+    );
     println!("    version                          Print toolchain versions + wordmark");
     println!("    help                             This message");
 }

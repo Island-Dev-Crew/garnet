@@ -18,6 +18,16 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S68 (capability transparency log):** `garnet caps-log <file> --log <path>`
+  appends an append-only, **BLAKE3-chained** capability entry (`index`, `program`,
+  `caps`, `caps_blake3`, `prev_blake3`); `garnet caps-log --verify <path>`
+  recomputes the chain — tampering with any earlier entry breaks the chain at the
+  next (exit 1). The language-agnostic entry schema **seeds a cross-language
+  capability-manifest standard** (the GRAFT). `C_Language_Specification/GARNET_CAPABILITY_TRANSPARENCY.md`
+  + cross-OS proof `garnet-cli/tests/caps_log.rs` (2 tests). **Honest scope:** a
+  **local, hash-chained STUB** — **not** a distributed/witnessed transparency log
+  (no public log server, no signed tree head, no witness/gossip, no external
+  inclusion proof); it gives tamper-evidence for a *local* file, not Rekor.
 - **S67 (MCP tool-capability declarations):** brings the `@caps` lens to MCP/agent
   tools, addressing the documented MCP "absence of capability attestation". A
   `.mcpcaps` manifest names each tool's required caps (`tool: cap1, cap2`); new
