@@ -1,8 +1,14 @@
-//! `garnet seal <file.garnet>` — emit an in-toto seal attestation (S38).
+//! `garnet seal <file.garnet> [--out <path>]` — emit an in-toto seal
+//! attestation (S38; `--out` added S51).
 //!
 //! Wrap, don't rebuild: produces the in-toto predicate over the deterministic
 //! build manifest + the capability manifest; `cosign` signs it (detected, not
 //! required). The capability manifest is the native SBOM-equivalent.
+//!
+//! `--out <path>` writes the predicate to a file so it can be fed straight to
+//! `cosign attest --predicate <path>` (S51 signed-release lanes): without it the
+//! predicate was print-only, and the `cosign attest --predicate <output>` hint
+//! had no output path to point at.
 
 use crate::cap_manifest::CapabilityManifest;
 use crate::manifest::Manifest;
@@ -12,7 +18,39 @@ use garnet_check::capability_surface;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-pub fn run(path: PathBuf) -> ExitCode {
+pub fn run(args: &[String]) -> ExitCode {
+    let mut path: Option<PathBuf> = None;
+    let mut out: Option<PathBuf> = None;
+    let mut i = 0;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--out" => {
+                let Some(value) = args.get(i + 1) else {
+                    eprintln!("garnet seal: --out requires a <path>");
+                    return ExitCode::from(2);
+                };
+                out = Some(PathBuf::from(value));
+                i += 2;
+            }
+            "--help" | "-h" => {
+                println!("usage: garnet seal <file.garnet> [--out <path>]");
+                return ExitCode::SUCCESS;
+            }
+            other if !other.starts_with("--") => {
+                path = Some(PathBuf::from(other));
+                i += 1;
+            }
+            other => {
+                eprintln!("garnet seal: unknown flag: {other}");
+                return ExitCode::from(2);
+            }
+        }
+    }
+    let Some(path) = path else {
+        eprintln!("usage: garnet seal <file.garnet> [--out <path>]");
+        return ExitCode::from(2);
+    };
+
     let src = match read_file(&path) {
         Ok(s) => s,
         Err(e) => {
@@ -47,12 +85,24 @@ pub fn run(path: PathBuf) -> ExitCode {
         .and_then(|s| s.to_str())
         .unwrap_or("program");
     let cosign = cosign_available();
+    let statement = statement_json(program, &build, &caps, cosign);
 
-    println!("{}", statement_json(program, &build, &caps, cosign));
+    let predicate_ref = if let Some(out_path) = &out {
+        if let Err(e) = std::fs::write(out_path, &statement) {
+            eprintln!("garnet seal: failed to write {}: {e}", out_path.display());
+            return ExitCode::from(1);
+        }
+        eprintln!("garnet seal: predicate written to {}", out_path.display());
+        out_path.display().to_string()
+    } else {
+        println!("{statement}");
+        "<output>".to_string()
+    };
+
     if cosign {
         eprintln!(
             "garnet seal: cosign available — sign this predicate with: \
-             cosign attest --predicate <output> --type custom"
+             cosign attest --predicate {predicate_ref} --type custom"
         );
     } else {
         eprintln!(

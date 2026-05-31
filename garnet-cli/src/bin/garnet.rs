@@ -241,13 +241,7 @@ fn main() -> ExitCode {
             }
             cmd::diff_caps::run(PathBuf::from(&args[1]), PathBuf::from(&args[2]))
         }
-        "seal" => {
-            if args.len() < 2 {
-                eprintln!("usage: garnet seal <file.garnet>");
-                return ExitCode::from(2);
-            }
-            cmd::seal::run(PathBuf::from(&args[1]))
-        }
+        "seal" => cmd::seal::run(&args[1..]),
         "trust-report" => {
             if args.len() < 2 {
                 eprintln!("usage: garnet trust-report <file.garnet>");

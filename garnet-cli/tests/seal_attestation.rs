@@ -44,6 +44,37 @@ fn seal_emits_an_in_toto_statement() {
 }
 
 #[test]
+fn seal_out_writes_the_predicate_to_a_file() {
+    // S51: --out writes the predicate so it can feed `cosign attest --predicate`.
+    let dir = fresh("seal_out");
+    let p = write(
+        dir.as_path(),
+        "app.garnet",
+        "@caps(net)\ndef main() { 1 }\n",
+    );
+    let out_path = dir.join("predicate.json");
+    let out = garnet()
+        .arg("seal")
+        .arg(&p)
+        .arg("--out")
+        .arg(&out_path)
+        .output()
+        .unwrap();
+    assert!(out.status.success());
+    // Nothing on stdout (the predicate went to the file, not the console).
+    assert!(String::from_utf8(out.stdout).unwrap().trim().is_empty());
+    let written = std::fs::read_to_string(&out_path).expect("predicate file written");
+    assert!(
+        written.contains(r#""_type":"https://in-toto.io/Statement/v1""#),
+        "{written}"
+    );
+    assert!(written.contains(r#""aggregate":["net"]"#), "{written}");
+    // The cosign hint now points at the real path.
+    let err = String::from_utf8(out.stderr).unwrap();
+    assert!(err.contains("predicate written to"), "{err}");
+}
+
+#[test]
 fn seal_reports_cosign_availability_on_stderr() {
     // The seal wrapper always notes cosign's presence/absence (honest either way).
     let dir = fresh("seal_cosign");
