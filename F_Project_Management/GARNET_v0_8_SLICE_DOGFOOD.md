@@ -798,6 +798,28 @@ the `s57 → merged(5)` advance rides with the S58 PR.
 
 ---
 
+### S58 — benchmark campaign
+
+**Goal:** A consolidated view of the Criterion benchmark campaign + a gate
+against bench-rot (reconciliation §157), complementing the existing compile-only
+evidence (`garnet_benchmark_no_run.py`).
+
+**Dogfood block:** `scripts/garnet_benchmark_campaign.py` inventories all 6
+harnesses (parser `parse`, CST `parse_cst_vs_ast`, interp `eval`, VM
+`parse_compile_execute`, memory `vector` + `eviction`) — crate, what each
+measures, the per-bench run command — and `--gate` (CI) fails if a declared bench
+file or its Cargo `[[bench]]` entry disappears.
+
+**State:** dogfood-passing (S58 PR). All 6 benches present + declared; 5 unit
+tests. Full ladder green. No new readiness lane.
+**Honest scope (do not soften):** inventories + verifies the harnesses **exist**;
+it does **not** run them and reports **no measurements** — Criterion numbers are
+environment-specific, recorded by an explicit campaign run, **not** fabricated
+here (the no-measurement stance of `garnet_proof_benchmark_status.py`). Flips to
+`merged` on squash; the `s58 → merged(5)` advance rides with the S59 PR.
+
+---
+
 ## Slice Bands — S41–S80 (forward; detailed contracts authored as each band approaches)
 
 > Resolution intentionally decreases. S41–S60 are planned; S61–S80 are bets.
