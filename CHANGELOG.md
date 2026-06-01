@@ -80,6 +80,17 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   500-task corpus remains pending infrastructure, and real LLM execution stays
   behind explicit provider credentials plus `--execute-provider`.
 
+- **S95 (v0.8.1 substrate - Paper VI Exp 3 5K-LOC rerun harness):** adds a
+  deterministic 5K-LOC corpus generator and 5K rerun lane under
+  `benchmarks/paper_vi_exp3_compiler_as_agent/`, with provider-free
+  stateless/history-aware JSONL rows, aggregation, cautious Markdown analysis,
+  and `scripts/garnet_paper_vi_exp3_5k_status.py` as the machine-checkable gate.
+  The gate proves ten generated snapshots (each at least 5,000 LOC), twenty
+  provider-free rerun rows, aggregate/analyze output, and the MIT readiness
+  reporter's committed-truth S95 lane. **Honest scope:** no new 5K h3a timing
+  measurement is claimed; the recorded v4.0 6.5% partial stands until
+  provider-backed 5K runtime rows exist and are reviewed.
+
 - **S86 (Windows audit binary-strict S80 cut-readiness):** adds
   `--binary-strict` to `scripts/garnet_v0_8_0_cut_readiness.py` plus
   `--windows-audit` as a named alias for the Windows burn-down lane. Default
