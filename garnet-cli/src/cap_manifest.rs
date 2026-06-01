@@ -19,6 +19,11 @@ use std::path::Path;
 /// changes; older consumers reject manifests they do not recognize.
 pub const SCHEMA: &str = "garnet-capability-manifest-v1";
 
+/// Language-neutral draft profile seeded by S98 for RFC-0001. This does not
+/// replace Garnet's S36 schema; it is an export/profile that other toolchains
+/// can implement against while the standard remains a draft.
+pub const STANDARD_SCHEMA: &str = "capability-manifest/v1";
+
 /// The declared capability surface of a program or package, as a versioned
 /// manifest.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -59,6 +64,44 @@ impl CapabilityManifest {
             aggregate,
             functions,
             self.surface.has_wildcard
+        )
+    }
+
+    /// Deterministic language-neutral draft profile for RFC-0001.
+    ///
+    /// The profile intentionally exports only the declared capability surface
+    /// available today. `source_span` is `null` until the CST/span migration can
+    /// provide stable source coordinates without inventing precision.
+    pub fn to_standard_profile_json(&self) -> String {
+        let aggregate = json_str_array(&self.surface.aggregate);
+        let entries = self
+            .surface
+            .per_function
+            .iter()
+            .map(|(name, caps)| {
+                format!(
+                    "{{\"kind\":\"function\",\"name\":\"{}\",\"capabilities\":{},\"source_span\":null}}",
+                    json_escape(name),
+                    json_str_array(caps)
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(",");
+        let limitations = json_str_array(&[
+            "declared-surface only; does not prove absence of undeclared authority".to_string(),
+            "draft/reference seed; no OWASP/LF adoption claimed".to_string(),
+        ]);
+        format!(
+            "{{\"schema\":\"{}\",\"status\":\"draft-reference-seed\",\
+             \"producer\":{{\"name\":\"garnet\",\"manifest_schema\":\"{}\"}},\
+             \"surface\":{{\"aggregate\":{},\"entries\":[{}],\"wildcard\":{}}},\
+             \"limitations\":{}}}",
+            json_escape(STANDARD_SCHEMA),
+            json_escape(&self.schema),
+            aggregate,
+            entries,
+            self.surface.has_wildcard,
+            limitations
         )
     }
 }
@@ -189,5 +232,16 @@ mod tests {
         // A user-defined Capability::Other could carry odd characters.
         let m = CapabilityManifest::from_surface(surface(&["wei\"rd"], &[], false));
         assert!(m.to_json().contains(r#"\"rd"#), "{}", m.to_json());
+    }
+
+    #[test]
+    fn standard_profile_keeps_draft_scope_and_declared_surface() {
+        let m = CapabilityManifest::from_surface(surface(&["fs"], &[("main", &["fs"])], false));
+        let json = m.to_standard_profile_json();
+        assert!(json.contains(r#""schema":"capability-manifest/v1""#));
+        assert!(json.contains(r#""status":"draft-reference-seed""#));
+        assert!(json.contains(r#""manifest_schema":"garnet-capability-manifest-v1""#));
+        assert!(json.contains(r#""source_span":null"#));
+        assert!(json.contains("does not prove absence of undeclared authority"));
     }
 }

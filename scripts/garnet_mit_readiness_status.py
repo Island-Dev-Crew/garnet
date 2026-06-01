@@ -49,6 +49,7 @@ from garnet_reporter_io import configure_utf8_stdout  # noqa: E402
 configure_utf8_stdout()
 
 import garnet_converter_status  # noqa: E402
+import garnet_cap_manifest_standard_status  # noqa: E402
 import garnet_linear_effect_status  # noqa: E402
 import garnet_paper_vi_exp1_status  # noqa: E402
 import garnet_paper_vi_exp3_5k_status  # noqa: E402
@@ -544,6 +545,7 @@ def read_status() -> MitReadinessStatus:
     paper_vi_exp3_5k = garnet_paper_vi_exp3_5k_status.read_status()
     linear_effect = garnet_linear_effect_status.read_status()
     provenance_chain = garnet_provenance_seal_chain_status.read_status()
+    cap_manifest_standard = garnet_cap_manifest_standard_status.read_status()
     proof = garnet_proof_benchmark_status.read_status()
     vm_scaffold_present = _vm_scaffold_present(proof)
     wls = garnet_windows_linux_studio_status.read_status()
@@ -1061,6 +1063,27 @@ def read_status() -> MitReadinessStatus:
                 "No claim that the named agent actually produced the artifact",
                 "No proof that the declared tool list is complete",
                 "Supply-chain signing still depends on external cosign/Sigstore",
+            ],
+        ),
+        ObjectiveLane(
+            id="capability_manifest_standard_seed",
+            label="Capability-manifest standard seed (S98)",
+            status="verified" if cap_manifest_standard.ok else "planned",
+            completion_percent=100.0 if cap_manifest_standard.ok else 0.0,
+            evidence=(
+                "`garnet caps --standard-profile` emits the S98 "
+                "`capability-manifest/v1` draft/reference profile over the "
+                "same declared capability surface used by S36-S38. "
+                "`scripts/garnet_cap_manifest_standard_status.py --gate` "
+                "checks the schema doc, RFC alignment, test vectors, and "
+                "focused CLI proof."
+            ),
+            blocked_by=[],
+            deferred=[
+                "Draft/reference seed only: no OWASP/LF adoption is claimed",
+                "No multi-language ecosystem or conformance suite is claimed",
+                "Declared surface only: no proof of undeclared-authority absence",
+                "No VM/runtime capability enforcement is claimed",
             ],
         ),
         ObjectiveLane(

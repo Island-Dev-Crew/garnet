@@ -9,10 +9,21 @@ use crate::cap_manifest::{surface_for_path, CapabilityManifest};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-pub fn run(path: PathBuf) -> ExitCode {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CapsFormat {
+    Internal,
+    StandardProfile,
+}
+
+pub fn run(path: PathBuf, format: CapsFormat) -> ExitCode {
     match surface_for_path(&path) {
         Ok(surface) => {
-            println!("{}", CapabilityManifest::from_surface(surface).to_json());
+            let manifest = CapabilityManifest::from_surface(surface);
+            let json = match format {
+                CapsFormat::Internal => manifest.to_json(),
+                CapsFormat::StandardProfile => manifest.to_standard_profile_json(),
+            };
+            println!("{json}");
             ExitCode::SUCCESS
         }
         Err(message) => {

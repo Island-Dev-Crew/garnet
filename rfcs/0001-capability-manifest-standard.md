@@ -24,13 +24,17 @@ unclaimed standards territory worth seeding and donating.
 
 ## Design
 
-- **Canonical schema.** Promote the manifest schema in
-  `C_Language_Specification/GARNET_CAPABILITY_TRANSPARENCY.md` (and the S36
-  manifest / S37 diff-caps surface) to a versioned, language-neutral spec
-  (`capability-manifest/v1`): a list of `{tool/function, capabilities[], source
-  span}` entries plus an aggregate authority set.
-- **Reference implementation.** Garnet's `garnet caps`, `garnet diff-caps`,
-  `garnet caps-log`, and `garnet mcp-caps` serve as the reference implementation.
+- **Canonical schema seed.**
+  `C_Language_Specification/GARNET_CAPABILITY_MANIFEST_STANDARD.md` defines the
+  current draft profile (`capability-manifest/v1`): a deterministic producer
+  record, aggregate authority set, and sorted entry list
+  `{kind, name, capabilities[], source_span}`. `source_span` is `null` in the
+  Garnet seed until CST/span precision is stable. The transparency-log companion
+  remains documented in `C_Language_Specification/GARNET_CAPABILITY_TRANSPARENCY.md`.
+- **Reference implementation.** Garnet's `garnet caps --standard-profile`,
+  `garnet diff-caps`, `garnet caps-log`, and `garnet mcp-caps` are the reference
+  implementation seed. `garnet caps <path>` remains the S36 Garnet-native
+  envelope for backward compatibility.
 - **Donation path.** Package the schema + reference implementation + test vectors
   as an OWASP project proposal or an LF sandbox project. Governance of the donated
   standard would move to the receiving body.

@@ -28,6 +28,16 @@ The entry schema is deliberately **language-agnostic** — `program`, `caps`,
 surface can append to (and verify) the same log shape; this is the seed of a
 **cross-language capability-manifest standard** (the GRAFT in the reconciliation).
 
+S98 adds the explicit draft/reference profile in
+`GARNET_CAPABILITY_MANIFEST_STANDARD.md` and exposes it through:
+
+```text
+garnet caps --standard-profile <file-or-package>
+```
+
+That profile is still a seed over the declared capability surface. It is not an
+accepted standard and it does not prove absence of undeclared authority.
+
 ## Honest scope (do not soften)
 
 This is a **local, hash-chained STUB**, **not** a distributed or witnessed

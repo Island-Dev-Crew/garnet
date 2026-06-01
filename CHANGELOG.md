@@ -115,6 +115,20 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   the prompt, that the named agent produced the file, that the declared tool list
   is complete, or that the predicate is supply-chain signed.
 
+- **S98 (v0.8.1 substrate - capability-manifest standard seed):** adds
+  `garnet caps --standard-profile <path>`, a deterministic
+  `capability-manifest/v1` draft/reference profile over the same declared
+  capability surface used by the S36 Garnet-native manifest, S37 `diff-caps`, and
+  S38 seal embedding. Adds
+  `C_Language_Specification/GARNET_CAPABILITY_MANIFEST_STANDARD.md`, RFC-0001
+  alignment, JSON test vectors, focused CLI tests, and
+  `scripts/garnet_cap_manifest_standard_status.py --gate`; the MIT readiness
+  reporter gets a committed-truth S98 lane. **Honest scope:** this is intent plus
+  reference implementation seed only; no OWASP/LF or other standards body has
+  adopted it, no multi-language ecosystem is claimed, and declared-surface
+  manifests do not prove absence of undeclared authority or close the VM
+  enforcement gap.
+
 - **S86 (Windows audit binary-strict S80 cut-readiness):** adds
   `--binary-strict` to `scripts/garnet_v0_8_0_cut_readiness.py` plus
   `--windows-audit` as a named alias for the Windows burn-down lane. Default
