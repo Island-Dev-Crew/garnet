@@ -68,6 +68,7 @@ jobs:
       - run: python3 scripts/test_garnet_seal_determinism_status.py
       - run: python3 scripts/test_garnet_interp_stack_status.py
       - run: python3 scripts/test_garnet_bounded_enforcement_status.py
+      - run: python3 scripts/test_garnet_caps_enforcement_status.py
       - run: python3 scripts/check_determinism_no_llm.py
       - run: python3 scripts/check-agent-contracts.py
       # S47: gate cross-OS build coverage — fails if ci.yml stops testing all
@@ -163,6 +164,9 @@ jobs:
       # S89: @max_depth runtime enforcement — the interpreter traps deterministically
       # when a @max_depth(N) function recurses past N (the ONE enforced ceiling).
       - run: python3 scripts/garnet_bounded_enforcement_status.py --gate
+      # S90: @caps host-authority enforcement — the interpreter traps when a managed
+      # fn invokes a std::env/process/fs/log-to-file primitive whose cap is undeclared.
+      - run: python3 scripts/garnet_caps_enforcement_status.py --gate
 
   # ───────────────────────────────────────────────────────────────────
   # Format check — fast, runs once on Linux. A failure here is the
