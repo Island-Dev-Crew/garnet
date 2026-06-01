@@ -80,6 +80,16 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   exits 1 after discovering uppercase `BAD.GARNET` while reporting lowercase
   `main.garnet` clean. **Honest scope:** proof/accounting only; no collector
   logic changes and no S82/S84/S85/S89/S90 proof claim.
+- **S82 Windows proof (seal `source_blake3` LF/CRLF):** records the Windows
+  lane proof for the already-merged Mac-authored S82 seal determinism fix in
+  `F_Project_Management/WINDOWS_AUDIT_S1_S80.md`. `python -B
+  scripts\test_garnet_seal_determinism_status.py` runs 5/5 OK, `python -B
+  scripts\garnet_seal_determinism_status.py --gate --format json` exits 0, and
+  fresh Windows LF/CRLF seal outputs both exit 0 with identical
+  `predicate.source_blake3`:
+  `096cb946361fbf2d821452449578fd8f5af3f2a70c3546e763e43d4374d168ad`.
+  **Honest scope:** proof/accounting only; no manifest logic changes and no
+  S81/S84/S85/S89/S90 proof claim.
 
 - **S85 (v0.8.1 runway — interpreter deep-recursion robustness):** the tree-walking
   interpreter (`garnet run --interp`) stack-overflowed on Windows (~1 MiB default
