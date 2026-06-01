@@ -1,6 +1,6 @@
 # Garnet v0.8.1 Plan - Substrate Execution + Real-World Proof Runway
 
-Status: reconciled on 2026-06-01 after S97 merged in #321; S98 is active.
+Status: reconciled on 2026-06-01 after S98 merged in #322; S91-S98 is complete.
 
 This file is the repo-visible v0.8.1 runway map. It preserves the Windows audit
 burn-down context from S81-S90, reflects that S91-S97 are already merged, and keeps
@@ -16,7 +16,7 @@ dogfood block records that exact evidence.
 - Active ledger: `.dogfood/goal.json` (`v0_8_1`, S91-S110).
 - Archived v0.8.0 ledger: `.dogfood/v0_8_goal.json` (S31-S80, including Jon's
   `v0.8.0` cut record).
-- S91-S98 are the active substrate lane.
+- S91-S98 are the completed substrate lane.
 - S99-S110 are reserved for the real-world proof finale and must not start until
   Jon explicitly opens that lane.
 
@@ -121,7 +121,7 @@ named agent produced the artifact, or that the declared tool list is complete.
 | S95 | paper-vi-exp3-5k-loc | Merged in #319: deterministic 5K-LOC Exp 3 rerun harness with provider-free stateless/history-aware rows and cautious aggregate/analyze output. | No new h3a timing measurement is claimed; recorded 6.5% partial stands until provider-backed 5K runtime rows exist and are reviewed. |
 | S96 | linear-effect-safe-mode | Merged in #320: seed linear/effect typed safe-mode analysis toward provable `@caps` soundness by tying authority-bearing safe helper functions to explicit ownership-qualified parameter boundaries. | First static increment only; not whole-language verification, not runtime/VM enforcement, and not a proof that every capability path is sealed. |
 | S97 | provenance-seal-chain | Merged in #321: binds and verifies self-declared agent/model/prompt metadata against the current seal source/artifact digests. | Binding verification only; no independent model-run, agent-origin, or complete tool-history proof. |
-| S98 | cap-manifest-standard | Active: advances the capability-manifest schema and reference implementation seed through `garnet caps --standard-profile`, docs, vectors, and a status gate. | Intent plus reference implementation only; no standards body has adopted it; declared-surface manifests do not prove absence of undeclared authority. |
+| S98 | cap-manifest-standard | Merged in #322: advances the capability-manifest schema and reference implementation seed through `garnet caps --standard-profile`, docs, vectors, and a status gate. | Intent plus reference implementation only; no standards body has adopted it; declared-surface manifests do not prove absence of undeclared authority. |
 
 ## Reserved S99-S110 Finale
 
@@ -156,5 +156,6 @@ repo evidence.
 
 ## Stop Rule
 
-After S98, report which substrate gaps are closed and proven, which remain
-named-deferred, and hold for explicit instruction before S99+.
+S91-S98 is closed as of #322. Report which substrate gaps are closed and
+proven, which remain named-deferred, and hold for explicit instruction before
+S99+.
