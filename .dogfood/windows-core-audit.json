@@ -1,0 +1,341 @@
+{
+    "schema":  "garnet-windows-core-audit-v1",
+    "created_at":  "2026-05-31T18:53:18.2957991Z",
+    "updated_at":  "2026-05-31T22:05:17.8871112Z",
+    "repo":  "C:\\Users\\IslandDevCrew\\Desktop\\Garnet Opus 4.7 final\\garnet",
+    "branch":  "main",
+    "head":  "cc165e8eaa8b2118f5da8d5e7bb80baa93a02fc5",
+    "phase":  "phase-3-complete",
+    "slices":  [
+                   {
+                       "id":  "s1",
+                       "title":  "LSP MVP",
+                       "merged_on_main":  true,
+                       "merge_commit":  "5cc0cb1e476e0d7a91c0c97fd7683922a889c300",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s2",
+                       "title":  "Bytecode VM scaffold",
+                       "merged_on_main":  true,
+                       "merge_commit":  "69fcdcbb54ced4cd3af269ee068ca4cf40df9ded",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s3",
+                       "title":  "garnet add plus Manifest v0.1",
+                       "merged_on_main":  true,
+                       "merge_commit":  "e43d378afc3e64f46b91d39f781cb1fa11e4b501",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s4",
+                       "title":  "Formatter idempotent baseline",
+                       "merged_on_main":  true,
+                       "merge_commit":  "787f50e5b444843bef9a779c184d7cbaa268154d",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s5",
+                       "title":  "Parser fuzz harness",
+                       "merged_on_main":  true,
+                       "merge_commit":  "d12b4ad3a6de46c1aa348fae1b7bc073894d2520",
+                       "audit_status":  "verified-with-tooling-caveat",
+                       "audit_confidence":  4,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s6",
+                       "title":  "Memory eviction policy benchmarks",
+                       "merged_on_main":  true,
+                       "merge_commit":  "0cb4c22a0ca467a439aef56789b42245d4bda65d",
+                       "audit_status":  "partial-with-finding",
+                       "audit_confidence":  4,
+                       "findings":  [
+                                        "WIN-S6-001"
+                                    ]
+                   },
+                   {
+                       "id":  "s7",
+                       "title":  "Actor OS-thread bridge trust-report",
+                       "merged_on_main":  true,
+                       "merge_commit":  "0540b091703e7ad0b6e0205232fbe2ea9e0253d6",
+                       "audit_status":  "verified-structural",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s8",
+                       "title":  "Signed hot-reload BLAKE3 demo",
+                       "merged_on_main":  true,
+                       "merge_commit":  "6f78b540c260e155451f098d1f9b1cc2afeaa7ae",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s9",
+                       "title":  "Determinism CI cross-machine",
+                       "merged_on_main":  true,
+                       "merge_commit":  "6c40ee2106bcd383ce8ced095779c2dd592d5170",
+                       "audit_status":  "verified-ci-attested",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s10",
+                       "title":  "Compiler advisory mode rules tier",
+                       "merged_on_main":  true,
+                       "merge_commit":  "15be143ff26a3cdde73c55bd09fffafab4b99fef",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s11",
+                       "title":  "v0.6 slice contract scaffold and readiness refresh",
+                       "merged_on_main":  true,
+                       "merge_commit":  "2d830b4c9451f0eb0e6beaa066336b1e8be7bf18",
+                       "audit_status":  "verified-with-advisory",
+                       "audit_confidence":  4,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s12",
+                       "title":  "Package-manager resolver contract",
+                       "merged_on_main":  true,
+                       "merge_commit":  "1f57070c5c5da8a2bf6852d5e2391a738b2c2721",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s13",
+                       "title":  "Registry stub v0.1",
+                       "merged_on_main":  true,
+                       "merge_commit":  "b508069630c15642322885231102bf025c42bbb5",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s14",
+                       "title":  "Bytecode VM v0.2 function-call lowering",
+                       "merged_on_main":  true,
+                       "merge_commit":  "2b57ca5a4b743b9553a3cf3de5adcc7980038a53",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s15",
+                       "title":  "Trivia-preserving CST via rowan",
+                       "merged_on_main":  true,
+                       "merge_commit":  "3e45625e7d31d2c65e6be1caca2c54e729da7937",
+                       "audit_status":  "verified-cst",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s16",
+                       "title":  "Rowan-backed LSP precision",
+                       "merged_on_main":  true,
+                       "merge_commit":  "d539192be659b237403ede364fe13c97d45b7cb3",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s17",
+                       "title":  "Stdlib expansion and layer policy",
+                       "merged_on_main":  true,
+                       "merge_commit":  "7bbca422c5947ac6e0da8d80250e3686769dc126",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s18",
+                       "title":  "Layer-2 garnet-lang package seed",
+                       "merged_on_main":  true,
+                       "merge_commit":  "05968d8a5ac935f01e7bddfa61f0a827c359c44c",
+                       "audit_status":  "verified-local-registry-source-ready",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s19",
+                       "title":  "Compiler-as-agent LLM tier scaffold",
+                       "merged_on_main":  true,
+                       "merge_commit":  "10e75621636869a13708cde45d066a0004af4d64",
+                       "audit_status":  "verified-feature-gated-source-ready",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s20",
+                       "title":  "Novel-composition dogfood and execution discovery",
+                       "merged_on_main":  true,
+                       "merge_commit":  "0970a4cd5ff6ad9071d4b21fe1e96e2beb1c093b",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s21",
+                       "title":  "Interpreter dispatch for Layer-0/1 stdlib plus Mnemos",
+                       "merged_on_main":  true,
+                       "merge_commit":  "edba6f3e25078cdb5adad62e3904e6192a2d7e04",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s22",
+                       "title":  "Stdlib and memory runtime completion",
+                       "merged_on_main":  true,
+                       "merge_commit":  "7f27f911bce9cc1b2d5aab3c64f91065e130316c",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s23",
+                       "title":  "std::process structured argv and output capture",
+                       "merged_on_main":  true,
+                       "merge_commit":  "cc69b602b571f94ace465f32a0b092ffd5693cb9",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s24",
+                       "title":  "std::log file sink with @caps(fs)",
+                       "merged_on_main":  true,
+                       "merge_commit":  "3015ace9f433190a2b436805034a74bff12c0050",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s25",
+                       "title":  "Host-effect composition capstone",
+                       "merged_on_main":  true,
+                       "merge_commit":  "0f2b8f4d0edfb002570aea8aca5ea1d3ef4ba22e",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s26",
+                       "title":  "core::result combinator dispatch",
+                       "merged_on_main":  true,
+                       "merge_commit":  "ef382fca6b4621959f5e2c3335a221beebe4dbaf",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s27",
+                       "title":  "core::option combinator dispatch",
+                       "merged_on_main":  true,
+                       "merge_commit":  "ce1d4b3b51f9f6a251dd11da53dacff7ba1fcc0c",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s28",
+                       "title":  "core::iter completion",
+                       "merged_on_main":  true,
+                       "merge_commit":  "980c65b44f665f43aedea87adad580723c367d09",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s29",
+                       "title":  "@stability error-level enforcement opt-in",
+                       "merged_on_main":  true,
+                       "merge_commit":  "d301bed5dc9049cd59393cec956146000be2ac9f",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s30",
+                       "title":  "Functional-core composition capstone",
+                       "merged_on_main":  true,
+                       "merge_commit":  "efa4c1dac0623084537144af9506d11e99160652",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   }
+               ]
+}

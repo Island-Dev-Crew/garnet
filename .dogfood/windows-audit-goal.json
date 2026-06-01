@@ -1,0 +1,722 @@
+{
+    "schema":  "garnet-windows-audit-goal-v1",
+    "created_at":  "2026-05-31T18:53:18.2957991Z",
+    "updated_at":  "2026-05-31T22:05:17.8820987Z",
+    "role":  "windows-propriety-audit-lane",
+    "repo":  "C:\\Users\\IslandDevCrew\\Desktop\\Garnet Opus 4.7 final\\garnet",
+    "branch":  "main",
+    "head":  "cc165e8eaa8b2118f5da8d5e7bb80baa93a02fc5",
+    "version_truth":  "F_Project_Management/GARNET_v0_8_VERSION_MAP.md",
+    "source_rule":  "read-only audit; findings for build lead; write only audit-windows and .dogfood/windows-*.json",
+    "horizon":  "live .dogfood/goal.json through S80; S81+ excluded until authored/planned",
+    "audit_order":  [
+                        "s31",
+                        "s38",
+                        "s36",
+                        "s37",
+                        "s39",
+                        "s46",
+                        "s35",
+                        "s32",
+                        "s33",
+                        "s34",
+                        "s70",
+                        "s40",
+                        "s41",
+                        "s42",
+                        "s43",
+                        "s44",
+                        "s45",
+                        "s47",
+                        "s48",
+                        "s49",
+                        "s50",
+                        "s51",
+                        "s52",
+                        "s53",
+                        "s54",
+                        "s55",
+                        "s56",
+                        "s57",
+                        "s58",
+                        "s59",
+                        "s60",
+                        "s61",
+                        "s62",
+                        "s63",
+                        "s64",
+                        "s65",
+                        "s66",
+                        "s67",
+                        "s68",
+                        "s69",
+                        "s71",
+                        "s72",
+                        "s73",
+                        "s74",
+                        "s75",
+                        "s76",
+                        "s77",
+                        "s78",
+                        "s79",
+                        "s80"
+                    ],
+    "slices":  [
+                   {
+                       "id":  "s31",
+                       "title":  "release-truth",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "3cc51747c5e4532937ab8abdd36bba899e6cec1d",
+                       "audit_status":  "partial-with-finding",
+                       "audit_confidence":  3,
+                       "findings":  [
+                                        "WIN-S31-001",
+                                        "WIN-S31-002"
+                                    ]
+                   },
+                   {
+                       "id":  "s32",
+                       "title":  "editions",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "383e4cf964d7e5052e53ae670bbb339e33f2b09c",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s33",
+                       "title":  "garnet-verify",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "97453f528c8dcf8feb367f98ecf65468356d5aae",
+                       "audit_status":  "partial-with-finding",
+                       "audit_confidence":  3,
+                       "findings":  [
+                                        "WIN-S33-001"
+                                    ]
+                   },
+                   {
+                       "id":  "s34",
+                       "title":  "diagnostics",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "0e52b69ab0ca57af5575e02ce4d94c7edef0fa69",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s35",
+                       "title":  "annotations",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "7ebd3d7c4e0d256de54e8d71a74328a78ebff93e",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s36",
+                       "title":  "capability-manifest",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "1cb9893a6d0a70b4277c9efeb63487adbde92c21",
+                       "audit_status":  "partial-with-finding",
+                       "audit_confidence":  3,
+                       "findings":  [
+                                        "WIN-S36-001"
+                                    ]
+                   },
+                   {
+                       "id":  "s37",
+                       "title":  "diff-caps",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "006f212f11cf77f2ea49de66e4bff96e33d4a0df",
+                       "audit_status":  "partial-with-finding",
+                       "audit_confidence":  3,
+                       "findings":  [
+                                        "WIN-S37-001"
+                                    ]
+                   },
+                   {
+                       "id":  "s38",
+                       "title":  "seal",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "ded0c7bcac5da3c16cf5669f2d63848f7ab06384",
+                       "audit_status":  "partial-with-finding",
+                       "audit_confidence":  3,
+                       "findings":  [
+                                        "WIN-S38-001",
+                                        "WIN-S38-002"
+                                    ]
+                   },
+                   {
+                       "id":  "s39",
+                       "title":  "bounded",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "ca56dfa8735594172da1ed2da44be293baa1c514",
+                       "audit_status":  "honest-partial-runtime-deferred",
+                       "audit_confidence":  4,
+                       "findings":  [
+                                        "WIN-S39-001"
+                                    ]
+                   },
+                   {
+                       "id":  "s40",
+                       "title":  "explosive-ops",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "eef2738995f809a30f56e1a36c7c469f5f6a3359",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s41",
+                       "title":  "async-contract",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "02d6affb0bce89f21cc23d295343aed799d6ff25",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s42",
+                       "title":  "error-policy",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "6e9dd3ecbb61068256a8feda32602686cbb83027",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s43",
+                       "title":  "docs-as-tests",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "c063cc8a61dfe24109a56e447ca984db54e0d21c",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s44",
+                       "title":  "lsp-precision",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "ceb86494d891cf3c3ffaa0a0854b2fac737fd00e",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s45",
+                       "title":  "slopsquatting-guard",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "62de5afcf49a9dbbe3eb3e2b8a995c79eeef14db",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s46",
+                       "title":  "caps-sandbox",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "088f97dc202c76debed68146c8aeac43a40070c2",
+                       "audit_status":  "partial-with-inherited-finding",
+                       "audit_confidence":  3,
+                       "findings":  [
+                                        "WIN-S46-001"
+                                    ]
+                   },
+                   {
+                       "id":  "s47",
+                       "title":  "cross-platform-proof",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "db674697357395c9e7833f37f6af359b9afe9618",
+                       "audit_status":  "verified-ci-attested",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s48",
+                       "title":  "proof-matrix",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "49f0c90504276078371d69e22ddd5eab0df0daee",
+                       "audit_status":  "verified-plus-domain-execution",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s49",
+                       "title":  "wedge-demo",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "75237c31e6060014f367e9c8edccf55ff0f8ffe6",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s50",
+                       "title":  "beta-gate",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "2065d01250e4c46bb10c53ba853577555868ca79",
+                       "audit_status":  "verified-checkpoint",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s51",
+                       "title":  "signed-release",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "65dc73340ec72d43f694c87c9567ef21dff47485",
+                       "audit_status":  "verified-active-lane-only",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s52",
+                       "title":  "install-check",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "e41491d2c2b5017b521452e757d1921fa3a3fca6",
+                       "audit_status":  "verified-doc-consistency",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s53",
+                       "title":  "tree-sitter",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "6ef4ad40afc86c7d7d85adc107490069e6e8bd2c",
+                       "audit_status":  "verified-core-structural",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s54",
+                       "title":  "vscode-marketplace",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "706b5a0397d2075bf013864ba10c2e4dce6d2dfd",
+                       "audit_status":  "verified-publish-ready",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s55",
+                       "title":  "wasm-hello",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "0b5ab98d632b8e94d59a260f5b722efbb2626e71",
+                       "audit_status":  "verified-owned-bits-runtime-deferred",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s56",
+                       "title":  "playground",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "5c0fe5120b91b280494a0ca4daa00b06462dd010",
+                       "audit_status":  "verified-static-gallery",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s57",
+                       "title":  "corpus",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "0db508921796e6b719081a923fb0c566df94d923",
+                       "audit_status":  "verified-execution",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s58",
+                       "title":  "benchmarks",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "86d4cd20427b3ac073525715cd09347d7ddd7e7b",
+                       "audit_status":  "verified-inventory-only",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s59",
+                       "title":  "fuzz",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "26838a42bfadb6669438c961337b912dadb351d0",
+                       "audit_status":  "verified-structural",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s60",
+                       "title":  "v0.8.0-tag",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "6ef081e576b68f16ea9e8fe9b252c4c2422df962",
+                       "audit_status":  "verified-checkpoint-tag-deferred",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s61",
+                       "title":  "ffi-authority",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "f319ee1f925faef79bc265752f47c66e8729a4ba",
+                       "audit_status":  "verified-declared-scope",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s62",
+                       "title":  "rust-ffi",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "f6bcf5afa09fb88521216bc987501117b77b38a8",
+                       "audit_status":  "verified-declared-scope",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s63",
+                       "title":  "c-abi",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "2231045dbfe12bd563d83991e0b5c2c73627b51b",
+                       "audit_status":  "verified-declared-scope",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s64",
+                       "title":  "wasi-interop",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "6d72ac1c89781b4d53e703bdd8f3004d4f59cab5",
+                       "audit_status":  "verified-declared-scope",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s65",
+                       "title":  "ai-provenance",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "a8873f178ebb3c2154c17916b24b44b325be792c",
+                       "audit_status":  "verified-declared-scope",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s66",
+                       "title":  "attestation",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "29d7e529801e7bd0d930fdb72f6ca24803b6ff55",
+                       "audit_status":  "verified-declared-scope",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s67",
+                       "title":  "mcp-caps",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "4c48a2e7b3ecbbe8ef563b055cc7ae40899386be",
+                       "audit_status":  "verified-declared-scope",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s68",
+                       "title":  "transparency-log",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "00122893c5eec8aa27595318662daa8629d37ce7",
+                       "audit_status":  "verified-declared-scope",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s69",
+                       "title":  "llm-suggest-v2",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "4870a9c6b009445314ae95910f0fe18b02e6bd56",
+                       "audit_status":  "verified-honest-pending-infra",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s70",
+                       "title":  "source-of-truth-checkpoint",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "34e455b9ed527e4bcd9a326b6da2334c5b489eb7",
+                       "audit_status":  "verified-resolved-on-current-main",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s71",
+                       "title":  "paper-vi-exp3",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "8aa332d8d18bc47a74cfee00577b4b4b41e2adbd",
+                       "audit_status":  "partial-with-finding",
+                       "audit_confidence":  3,
+                       "findings":  [
+                                        "WIN-S71-001"
+                                    ]
+                   },
+                   {
+                       "id":  "s72",
+                       "title":  "self-hosted-parser",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "6481822bc108cf2b2670d297edbec483fff3cbd4",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s73",
+                       "title":  "vm-parity",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "8aa4baf9abb3223c8f58a5ac87db74dc66103594",
+                       "audit_status":  "partial-with-finding",
+                       "audit_confidence":  2,
+                       "findings":  [
+                                        "WIN-S73-001"
+                                    ]
+                   },
+                   {
+                       "id":  "s74",
+                       "title":  "safe-subset",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "e46622c2d47722e1d03fc3479fc2bca56e23f743",
+                       "audit_status":  "verified-static-spec",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s75",
+                       "title":  "formal-verification",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "072a29cf4a91886e69bd72a1db78c60b2c1f8725",
+                       "audit_status":  "verified-study",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s76",
+                       "title":  "stdlib-promotion",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "daf97f17a83e70c6ac46a15f98d436eef0cf69f4",
+                       "audit_status":  "verified",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s77",
+                       "title":  "external-packages",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "ebd65cfc2e1403f1c039fd8fd422d373b625e06b",
+                       "audit_status":  "verified-local-pilot",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s78",
+                       "title":  "governance-rfc",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "e62236e14ec44100ddcd134cbfb07639a2f5ad8a",
+                       "audit_status":  "verified-doc-governance",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s79",
+                       "title":  "website-reframe",
+                       "source_goal_status":  "merged",
+                       "source_goal_merge_confidence":  5,
+                       "merged_on_main":  true,
+                       "merge_commit":  "c8a6fd3134f0fe26a54fcc9ab60b23da565c10ac",
+                       "audit_status":  "verified-positioning",
+                       "audit_confidence":  5,
+                       "findings":  [
+
+                                    ]
+                   },
+                   {
+                       "id":  "s80",
+                       "title":  "v0.8.0-cut-decision",
+                       "source_goal_status":  "pending",
+                       "source_goal_merge_confidence":  null,
+                       "merged_on_main":  true,
+                       "merge_commit":  "cc165e8eaa8b2118f5da8d5e7bb80baa93a02fc5",
+                       "audit_status":  "partial-with-finding",
+                       "audit_confidence":  3,
+                       "findings":  [
+                                        "WIN-S80-001",
+                                        "WIN-S80-002"
+                                    ]
+                   }
+               ],
+    "global_findings":  [
+
+                        ]
+}
