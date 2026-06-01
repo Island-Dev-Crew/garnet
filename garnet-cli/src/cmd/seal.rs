@@ -12,7 +12,7 @@
 
 use crate::cap_manifest::CapabilityManifest;
 use crate::manifest::Manifest;
-use crate::seal::{cosign_available, statement_json_full};
+use crate::seal::{build_provenance_chain, cosign_available, statement_json_with_chain};
 use crate::{edition_manifest, read_file};
 use garnet_check::capability_surface;
 use std::path::PathBuf;
@@ -23,6 +23,7 @@ pub fn run(args: &[String]) -> ExitCode {
     let mut out: Option<PathBuf> = None;
     let mut authored_by: Option<String> = None;
     let mut attestation: Vec<(String, String)> = Vec::new();
+    let mut provenance_chain = false;
     let mut i = 0;
     while i < args.len() {
         match args[i].as_str() {
@@ -59,9 +60,13 @@ pub fn run(args: &[String]) -> ExitCode {
                 attestation.push((k.to_string(), v.to_string()));
                 i += 2;
             }
+            "--provenance-chain" => {
+                provenance_chain = true;
+                i += 1;
+            }
             "--help" | "-h" => {
                 println!(
-                    "usage: garnet seal <file.garnet> [--out <path>] [--authored-by <provenance>] [--attest <key>=<value>]..."
+                    "usage: garnet seal <file.garnet> [--out <path>] [--authored-by <provenance>] [--attest <key>=<value>]... [--provenance-chain]"
                 );
                 return ExitCode::SUCCESS;
             }
@@ -76,7 +81,7 @@ pub fn run(args: &[String]) -> ExitCode {
         }
     }
     let Some(path) = path else {
-        eprintln!("usage: garnet seal <file.garnet> [--out <path>] [--authored-by <provenance>]");
+        eprintln!("usage: garnet seal <file.garnet> [--out <path>] [--authored-by <provenance>] [--attest <key>=<value>]... [--provenance-chain]");
         return ExitCode::from(2);
     };
 
@@ -114,13 +119,25 @@ pub fn run(args: &[String]) -> ExitCode {
         .and_then(|s| s.to_str())
         .unwrap_or("program");
     let cosign = cosign_available();
-    let statement = statement_json_full(
+    let chain = if provenance_chain {
+        match build_provenance_chain(&build, authored_by.as_deref(), &attestation) {
+            Ok(chain) => Some(chain),
+            Err(message) => {
+                eprintln!("garnet seal: provenance-chain: {message}");
+                return ExitCode::from(2);
+            }
+        }
+    } else {
+        None
+    };
+    let statement = statement_json_with_chain(
         program,
         &build,
         &caps,
         cosign,
         authored_by.as_deref(),
         &attestation,
+        chain.as_ref(),
     );
 
     let predicate_ref = if let Some(out_path) = &out {

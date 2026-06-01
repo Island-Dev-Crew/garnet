@@ -103,6 +103,18 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   OS sandbox enforcement. Method-call effect resolution remains limited by the
   current cap graph.
 
+- **S97 (v0.8.1 substrate - provenance seal chain):** extends `garnet seal` with
+  `--provenance-chain`, a deterministic S97 block that validates self-declared
+  `agent`, `model`, and canonical `prompt_sha256` attestation keys, binds them
+  to the current seal's `source_blake3` and subject `artifact_blake3`, and
+  records a `chain_blake3` over the canonical declared chain. Adds focused CLI
+  tests, a machine-checkable `scripts/garnet_provenance_seal_chain_status.py
+  --gate`, S97 attestation-spec text, and a committed-truth MIT readiness lane
+  moving readiness to **90.0%**. **Honest scope:** this verifies binding to the
+  sealed artifact only; it does not independently prove that the model executed
+  the prompt, that the named agent produced the file, that the declared tool list
+  is complete, or that the predicate is supply-chain signed.
+
 - **S86 (Windows audit binary-strict S80 cut-readiness):** adds
   `--binary-strict` to `scripts/garnet_v0_8_0_cut_readiness.py` plus
   `--windows-audit` as a named alias for the Windows burn-down lane. Default
