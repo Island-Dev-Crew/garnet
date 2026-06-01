@@ -63,5 +63,5 @@ open `WIN-*` finding maps to the slice that closes (or honestly defers) it.
 | S82 | fresh Windows checkout → `garnet seal <file>` `source_blake3` matches Mac | **Mac fix landed** (LF-normalized source hash + `.gitattributes` pin + LF/CRLF unit test); Windows-proof-pending |
 | S84 | `python scripts/test_garnet_paper_vi_exp3_status.py` → 6/6 on Windows | pending |
 | S85 | `garnet.exe run --interp examples/mvp_function_call_demo.garnet` → exit 0 `=> 7105`; parity 33/33 | **Mac fix landed** (interpreter on a 256 MiB thread + cross-OS integration tests); Windows-proof-pending |
-| S89 | over-ceiling `@bounded` fixture traps deterministically on Windows | pending |
+| S89 | over-ceiling `@max_depth` fixture traps deterministically on Windows | **Mac fix landed** (interpreter `@max_depth(N)` enforcement + cross-OS trap tests); Windows-proof-pending |
 | S90 | undeclared-`@caps` fixture traps identically on Windows | pending |

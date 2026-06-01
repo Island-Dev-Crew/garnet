@@ -58,7 +58,11 @@ def total_with_validation(items) {
 # Contribution 6: Annotation system for guardrails
 # ════════════════════════════════════════════════════════════════════
 
-@max_depth(8)
+# @max_depth sized for the fib(10) call below: its longest self-call chain is
+# fib(10)→…→fib(0) = depth 11, so the ceiling must be ≥ 11 (S89 now *enforces*
+# @max_depth at runtime; the prior @max_depth(8) was under-specified and only ran
+# because the annotation was unenforced).
+@max_depth(16)
 def fib(n) {
   if n < 2 { n } else { fib(n - 1) + fib(n - 2) }
 }

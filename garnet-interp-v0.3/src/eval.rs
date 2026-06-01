@@ -9,7 +9,7 @@ use crate::value::{
     ActorMessage, FnValue, MemoryBackend, TypeValue, Value,
 };
 use garnet_parser::ast::{
-    ActorDef, ActorItem, BinOp, ClosureBody, Expr, StringLit, TypeExpr, UnOp,
+    ActorDef, ActorItem, Annotation, BinOp, ClosureBody, Expr, StringLit, TypeExpr, UnOp,
 };
 use garnet_parser::token::StrPart;
 use std::cell::RefCell;
@@ -478,7 +478,74 @@ pub fn call_value(callee: &Value, args: Vec<Value>) -> Result<Value, RuntimeErro
     }
 }
 
+thread_local! {
+    /// Per-function recursion depth for `@max_depth(N)` runtime enforcement
+    /// (S89). Only functions that declare `@max_depth` are tracked — every other
+    /// call is untouched. Keyed by function name (recursion is self-by-name); the
+    /// counter unwinds via `MaxDepthGuard` on every return/error path, and lives
+    /// on the per-run `garnet-interp` thread (S85), so it starts clean each run.
+    static MAX_DEPTH_DEPTHS: RefCell<BTreeMap<String, u64>> = const { RefCell::new(BTreeMap::new()) };
+}
+
+/// The `@max_depth(N)` ceiling declared on a function, if any.
+fn max_depth_ceiling(annotations: &[Annotation]) -> Option<i64> {
+    annotations.iter().find_map(|a| match a {
+        Annotation::MaxDepth(n, _) => Some(*n),
+        _ => None,
+    })
+}
+
+/// RAII guard for a `@max_depth` function's recursion counter: increments on
+/// `enter`, decrements on drop, so the count is correct even when a call returns
+/// an error (including the trap itself, whose guard drops as it unwinds).
+struct MaxDepthGuard {
+    name: String,
+    depth: u64,
+}
+
+impl MaxDepthGuard {
+    fn enter(name: String) -> Self {
+        let depth = MAX_DEPTH_DEPTHS.with(|m| {
+            let mut m = m.borrow_mut();
+            let c = m.entry(name.clone()).or_insert(0);
+            *c += 1;
+            *c
+        });
+        MaxDepthGuard { name, depth }
+    }
+}
+
+impl Drop for MaxDepthGuard {
+    fn drop(&mut self) {
+        MAX_DEPTH_DEPTHS.with(|m| {
+            if let Some(c) = m.borrow_mut().get_mut(&self.name) {
+                *c = c.saturating_sub(1);
+            }
+        });
+    }
+}
+
 fn call_fn(f: &FnValue, mut args: Vec<Value>) -> Result<Value, RuntimeError> {
+    // `@max_depth(N)` runtime enforcement (S89): a function that declares
+    // `@max_depth` traps deterministically when its recursion depth exceeds N —
+    // real enforcement (the interpreter refuses to recurse further), distinct
+    // from the S85 host-stack raise. Honest scope: this is the ONE enforced
+    // ceiling; `@bounded` (Wasmtime fuel), memory, time, and mailbox remain
+    // declared-not-enforced. The guard lives for the body's execution and
+    // unwinds the counter on drop.
+    let _depth_guard = match max_depth_ceiling(&f.def.annotations) {
+        Some(n) => {
+            let guard = MaxDepthGuard::enter(f.def.name.clone());
+            if guard.depth > n.max(0) as u64 {
+                return Err(RuntimeError::msg(format!(
+                    "bounded: @max_depth({n}) exceeded for `{}` (recursion depth {})",
+                    f.def.name, guard.depth
+                )));
+            }
+            Some(guard)
+        }
+        None => None,
+    };
     let active_block = if args.len() == f.def.params.len() + 1 {
         match args.last() {
             Some(Value::Fn(block)) if block.is_block => {
