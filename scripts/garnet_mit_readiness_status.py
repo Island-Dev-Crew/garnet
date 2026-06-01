@@ -49,6 +49,7 @@ from garnet_reporter_io import configure_utf8_stdout  # noqa: E402
 configure_utf8_stdout()
 
 import garnet_converter_status  # noqa: E402
+import garnet_linear_effect_status  # noqa: E402
 import garnet_paper_vi_exp1_status  # noqa: E402
 import garnet_paper_vi_exp3_5k_status  # noqa: E402
 import garnet_proof_benchmark_status  # noqa: E402
@@ -540,6 +541,7 @@ def read_status() -> MitReadinessStatus:
     promo, promo_probe_note = _read_promo_status()
     paper_vi_exp1 = garnet_paper_vi_exp1_status.read_status()
     paper_vi_exp3_5k = garnet_paper_vi_exp3_5k_status.read_status()
+    linear_effect = garnet_linear_effect_status.read_status()
     proof = garnet_proof_benchmark_status.read_status()
     vm_scaffold_present = _vm_scaffold_present(proof)
     wls = garnet_windows_linux_studio_status.read_status()
@@ -1014,6 +1016,28 @@ def read_status() -> MitReadinessStatus:
                 "The recorded v4.0 h3a 6.5% partial stands until that rerun exists",
                 "h3b/h3c revalidation at 5K scale remains future measured-study work",
                 "Provider cost/budget approval remains out of scope for the committed gate",
+            ],
+        ),
+        ObjectiveLane(
+            id="linear_effect_safe_mode_seed",
+            label="Linear/effect safe-mode seed (S96)",
+            status="verified" if linear_effect.ok else "planned",
+            completion_percent=100.0 if linear_effect.ok else 0.0,
+            evidence=(
+                "`garnet-check-v0.3/src/effects.rs` adds the S96 static "
+                "linear/effect safe-mode seed. It reuses the CapCaps transitive "
+                "surface and rejects non-entry safe helper functions that perform "
+                "authority effects without any explicit ownership-qualified "
+                "parameter boundary (`own`, `borrow`, `ref`, or `mut`). "
+                "`scripts/garnet_linear_effect_status.py --gate` runs the focused "
+                "checker proof."
+            ),
+            blocked_by=[],
+            deferred=[
+                "First static increment only: not whole-language linear typing",
+                "No VM/runtime capability enforcement is claimed",
+                "No OS sandbox enforcement is claimed",
+                "Method-call effect resolution remains limited by the current cap graph",
             ],
         ),
         ObjectiveLane(

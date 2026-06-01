@@ -1,9 +1,9 @@
 # Garnet v0.8.1 Plan - Substrate Execution + Real-World Proof Runway
 
-Status: reconciled on 2026-06-01 after S94 merged in #318; S95 is active.
+Status: reconciled on 2026-06-01 after S95 merged in #319; S96 is active.
 
 This file is the repo-visible v0.8.1 runway map. It preserves the Windows audit
-burn-down context from S81-S90, reflects that S91-S94 are already merged, and keeps
+burn-down context from S81-S90, reflects that S91-S95 are already merged, and keeps
 the remaining work calibrated: v0.8.1 is a research-grade prototype lane, not a
 production or 1.0 claim.
 
@@ -82,6 +82,16 @@ including provider-free and fixture proof paths.
 Honest scope: no provider-backed pass@1 measurement, full 500-task corpus,
 hidden-test scorer, or statistical result is claimed.
 
+## S95 Merged
+
+S95 merged in #319. It adds the deterministic Paper VI Exp 3 5K-LOC rerun
+harness, ten generated 5K-LOC snapshots, provider-free stateless/history-aware
+rows, and cautious aggregate/analyze/status reporting.
+
+Honest scope: no new provider-backed 5K h3a timing measurement is claimed. The
+recorded v4.0 6.5% partial result stands until provider-backed 5K runtime rows
+exist and are reviewed.
+
 ## S92-S98 Substrate Lane
 
 | Slice | Title | Goal | Honest Scope |
@@ -89,8 +99,8 @@ hidden-test scorer, or statistical result is claimed.
 | S92 | spawn-ffi-authority | Merged in #316: process-launch bridges require `@caps(proc)` on both the live call chain and the program entry point, while executable FFI enforcement stays named-deferred. | Process launch bridges only; direct host/test calls outside a program-entry frame remain allowed; Linux seccomp/OS-policy application remains infra-deferred on Windows; no VM caps claim. |
 | S93 | bounded-loop-verifier | Merged in #317: static bounded-loop verifier for the safe subset accepts literal range/array bounds, literal counter `while` loops, and immediate-exit loop bodies while rejecting uncheckable loops in safe / `@bounded` scope. | Static verifier only; no Wasmtime fuel, runtime loop, VM, or OS sandbox enforcement claim. |
 | S94 | paper-vi-exp1-llm-pass1 | Merged in #318: Paper VI Exp 1 LLM pass@1 harness behind a provider flag, with provider-free and fixture proof. | Harness wired only; provider-backed pass@1 measurement, full 500-task corpus, hidden-test scorer, and statistical run remain pending infrastructure. |
-| S95 | paper-vi-exp3-5k-loc | Active: deterministic 5K-LOC Exp 3 rerun harness with provider-free stateless/history-aware rows and cautious aggregate/analyze output. | No new h3a timing measurement is claimed; recorded 6.5% partial stands until provider-backed 5K runtime rows exist and are reviewed. |
-| S96 | linear-effect-safe-mode | Seed linear/effect typed safe-mode analysis toward provable `@caps` soundness. | First increment only; not whole-language verification. |
+| S95 | paper-vi-exp3-5k-loc | Merged in #319: deterministic 5K-LOC Exp 3 rerun harness with provider-free stateless/history-aware rows and cautious aggregate/analyze output. | No new h3a timing measurement is claimed; recorded 6.5% partial stands until provider-backed 5K runtime rows exist and are reviewed. |
+| S96 | linear-effect-safe-mode | Active: seed linear/effect typed safe-mode analysis toward provable `@caps` soundness by tying authority-bearing safe helper functions to explicit ownership-qualified parameter boundaries. | First static increment only; not whole-language verification, not runtime/VM enforcement, and not a proof that every capability path is sealed. |
 | S97 | provenance-seal-chain | Bind and verify the agent/model/prompt-to-artifact chain in seal. | Self-declared provenance unless independently verified. |
 | S98 | cap-manifest-standard | Advance the capability-manifest schema and reference implementation seed. | Intent plus reference implementation only; no standards body has adopted it. |
 
