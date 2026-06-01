@@ -177,7 +177,7 @@ fn run_interpreter_inner(file_label: &str, src: &str, path: &Path, started: Inst
     }
     // If a `main` function exists, call it; otherwise just exit success.
     if interp.global.get("main").is_some() {
-        match interp.call("main", vec![]) {
+        match interp.call_entry("main", vec![]) {
             Ok(v) => {
                 println!("=> {}", v.display());
                 record("run", file_label, src, "ok", None, started, 0);

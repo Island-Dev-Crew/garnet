@@ -198,6 +198,20 @@ impl Interpreter {
             .ok_or_else(|| RuntimeError::Message(format!("unknown function '{name}'")))?;
         eval::call_value(&callee, args)
     }
+
+    /// Call a named global function as the program entry point.
+    ///
+    /// Unlike embedded `call`, this installs a capability frame from the entry
+    /// function's `@caps(...)` annotations before dispatch. That keeps
+    /// `garnet run --interp` authority-checked even when `main` is safe-mode
+    /// (`fn`) and would not otherwise push a managed frame.
+    pub fn call_entry(&self, name: &str, args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let callee = self
+            .global
+            .get(name)
+            .ok_or_else(|| RuntimeError::Message(format!("unknown function '{name}'")))?;
+        eval::call_value_with_entry_caps(&callee, args)
+    }
 }
 
 fn named_type_name(ty: &TypeExpr) -> Option<&str> {

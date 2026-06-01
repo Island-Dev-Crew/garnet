@@ -27,7 +27,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CUT_DOC = ROOT / "F_Project_Management" / "GARNET_v0_8_0_CUT.md"
 CHANGELOG = ROOT / "CHANGELOG.md"
-LEDGER = ROOT / ".dogfood" / "goal.json"
+# S91 re-initializes the active goal ledger for S91-S110. The finished v0.8.0
+# release-truth gates read the archived S31-S80 ledger so their evidence remains
+# reproducible after the active ledger advances to v0.8.1 work.
+LEDGER = ROOT / ".dogfood" / "v0_8_goal.json"
 EXPECTED_COMMIT = "cc165e8eaa8b2118f5da8d5e7bb80baa93a02fc5"
 
 
