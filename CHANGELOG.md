@@ -95,6 +95,17 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   enforce `@max_depth` (the parity corpus has no over-ceiling program, so parity
   stays 33/33). Mac-authored + Mac-tested; the Windows trap re-proves via the
   cross-OS matrix (Windows-proof-pending).
+- **S89 Windows proof (`@max_depth` runtime trap):** records the Windows lane
+  proof for the already-merged Mac-authored S89 enforcement seed in
+  `F_Project_Management/WINDOWS_AUDIT_S1_S80.md`. `python -B
+  scripts\test_garnet_bounded_enforcement_status.py` runs 5/5 OK,
+  `python -B scripts\garnet_bounded_enforcement_status.py --gate --format json`
+  exits 0 with `ok=true`, `cargo test -p garnet-cli --test bounded_enforcement`
+  runs 4/4 OK, and a direct over-ceiling fixture exits 1 with
+  `runtime error: bounded: @max_depth(4) exceeded for deep (recursion depth 5)`.
+  **Honest scope:** proof/accounting only; no interpreter/kernel logic changes,
+  no VM `@max_depth` claim, and no Wasmtime-fuel, memory, time, mailbox, or
+  undeclared-capability trap claim.
 - **S81 Windows proof (uppercase `.GARNET` discovery):** records the Windows
   lane proof for the already-merged Mac-authored S81 collector fix in
   `F_Project_Management/WINDOWS_AUDIT_S1_S80.md`. `python -B
