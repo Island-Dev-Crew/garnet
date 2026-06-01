@@ -34,6 +34,14 @@ fn traps_with(program: &str, needs: &str) {
     );
 }
 
+fn process_output_program() -> (&'static str, &'static str) {
+    if cfg!(windows) {
+        ("cmd", r#"["/c", "exit", "0"]"#)
+    } else {
+        ("true", "[]")
+    }
+}
+
 #[test]
 fn undeclared_env_traps() {
     traps_with(
@@ -59,6 +67,60 @@ fn undeclared_proc_traps_before_spawning() {
         "@caps()\ndef main() {\n  std::process::spawn(\"echo\")\n}\n",
         "proc",
     );
+}
+
+#[test]
+fn proc_helper_laundering_traps_when_entry_lacks_proc() {
+    let (program, argv) = process_output_program();
+    let out = run_interp(&format!(
+        r#"
+        @caps(proc)
+        def helper() {{
+          let result = std::process::output("{program}", {argv})
+          result.get("code")
+        }}
+
+        @caps()
+        def main() {{
+          helper()
+        }}
+        "#
+    ));
+    assert!(
+        !out.status.success(),
+        "entry without @caps(proc) must not launder subprocess authority through a helper"
+    );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("requires program entry @caps(proc)"),
+        "expected program-entry proc trap, got: {stderr}"
+    );
+}
+
+#[test]
+fn proc_helper_runs_when_entry_declares_proc() {
+    let (program, argv) = process_output_program();
+    let out = run_interp(&format!(
+        r#"
+        @caps(proc)
+        def helper() {{
+          let result = std::process::output("{program}", {argv})
+          result.get("code")
+        }}
+
+        @caps(proc)
+        def main() {{
+          helper()
+        }}
+        "#
+    ));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        out.status.success(),
+        "entry @caps(proc) must allow helper subprocess authority: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(stdout.contains("=> 0"), "got {stdout}");
 }
 
 #[test]

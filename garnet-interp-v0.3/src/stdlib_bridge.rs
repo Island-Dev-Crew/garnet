@@ -6,11 +6,12 @@
 //!   2. Invokes the stdlib primitive.
 //!   3. Converts the result (or `StdError`) back to `Value` / `RuntimeError`.
 //!
-//! Capability enforcement is the CHECKER's job (consults
-//! `garnet_stdlib::registry::all_prims()` for required caps at source-layer
-//! time, per Mini-Spec v1.0 §11.2 + Security V2 spec §1.6). The interpreter
-//! trusts the checker and performs no runtime cap validation in these
-//! trampolines.
+//! Capability enforcement is checker-first, with an interpreter runtime backstop
+//! for host-authority trampolines. `garnet run` can execute without first running
+//! `garnet check`, so env/process/fs/net/log-to-file bridges reject undeclared
+//! authority from the active call chain; S92 additionally requires process launch
+//! bridges to see `@caps(proc)` on the program entry point. Honest scope: this
+//! is interpreter-scoped and does not imply VM `@caps` enforcement.
 //!
 //! ## Sequencing
 //!
@@ -1245,6 +1246,7 @@ fn validate_env_value(prim: &str, value: &str) -> Result<(), RuntimeError> {
 
 fn bridge_process_spawn(args: Vec<Value>) -> Result<Value, RuntimeError> {
     crate::eval::require_capability("proc", "std::process::spawn")?;
+    crate::eval::require_entry_capability("proc", "std::process::spawn")?;
     let cmdline = expect_str("std::process::spawn", &args, 0)?;
     garnet_stdlib::process::spawn(cmdline)
         .map(|proc| Value::Process(Rc::new(RefCell::new(Some(proc)))))
@@ -1311,6 +1313,7 @@ fn expect_string_array(
 
 fn bridge_process_spawn_args(args: Vec<Value>) -> Result<Value, RuntimeError> {
     crate::eval::require_capability("proc", "std::process::spawn_args")?;
+    crate::eval::require_entry_capability("proc", "std::process::spawn_args")?;
     let program = expect_str("std::process::spawn_args", &args, 0)?.to_string();
     let argv = expect_string_array("std::process::spawn_args", &args, 1)?;
     garnet_stdlib::process::spawn_args(&program, &argv)
@@ -1320,6 +1323,7 @@ fn bridge_process_spawn_args(args: Vec<Value>) -> Result<Value, RuntimeError> {
 
 fn bridge_process_output(args: Vec<Value>) -> Result<Value, RuntimeError> {
     crate::eval::require_capability("proc", "std::process::output")?;
+    crate::eval::require_entry_capability("proc", "std::process::output")?;
     let program = expect_str("std::process::output", &args, 0)?.to_string();
     let argv = expect_string_array("std::process::output", &args, 1)?;
     let out = garnet_stdlib::process::output(&program, &argv)

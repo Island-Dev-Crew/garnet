@@ -564,33 +564,53 @@ fn declared_caps(annotations: &[Annotation]) -> Vec<String> {
 struct CapsContext {
     active_frames: u32,
     counts: BTreeMap<String, u32>,
+    entry_frames: u32,
+    entry_counts: BTreeMap<String, u32>,
 }
 
 thread_local! {
     static ACTIVE_CAPS: RefCell<CapsContext> =
-        const { RefCell::new(CapsContext { active_frames: 0, counts: BTreeMap::new() }) };
+        const {
+            RefCell::new(CapsContext {
+                active_frames: 0,
+                counts: BTreeMap::new(),
+                entry_frames: 0,
+                entry_counts: BTreeMap::new(),
+            })
+        };
 }
 
 /// RAII guard: records a program/managed frame + declared caps; unwinds both on
 /// drop (every return/error path, including a trap).
 struct CapsGuard {
     idents: Vec<String>,
+    entry: bool,
 }
 
 impl CapsGuard {
     fn enter(annotations: &[Annotation]) -> Self {
-        Self::enter_caps(declared_caps(annotations))
+        Self::enter_caps(declared_caps(annotations), false)
     }
 
-    fn enter_caps(idents: Vec<String>) -> Self {
+    fn enter_entry(annotations: &[Annotation]) -> Self {
+        Self::enter_caps(declared_caps(annotations), true)
+    }
+
+    fn enter_caps(idents: Vec<String>, entry: bool) -> Self {
         ACTIVE_CAPS.with(|c| {
             let mut c = c.borrow_mut();
             c.active_frames += 1;
+            if entry {
+                c.entry_frames += 1;
+            }
             for id in &idents {
                 *c.counts.entry(id.clone()).or_insert(0) += 1;
+                if entry {
+                    *c.entry_counts.entry(id.clone()).or_insert(0) += 1;
+                }
             }
         });
-        CapsGuard { idents }
+        CapsGuard { idents, entry }
     }
 }
 
@@ -599,9 +619,17 @@ impl Drop for CapsGuard {
         ACTIVE_CAPS.with(|c| {
             let mut c = c.borrow_mut();
             c.active_frames = c.active_frames.saturating_sub(1);
+            if self.entry {
+                c.entry_frames = c.entry_frames.saturating_sub(1);
+            }
             for id in &self.idents {
                 if let Some(n) = c.counts.get_mut(id) {
                     *n = n.saturating_sub(1);
+                }
+                if self.entry {
+                    if let Some(n) = c.entry_counts.get_mut(id) {
+                        *n = n.saturating_sub(1);
+                    }
                 }
             }
         });
@@ -630,6 +658,28 @@ pub(crate) fn require_capability(needed: &str, fn_name: &str) -> Result<(), Runt
     })
 }
 
+/// Enforce that a host-authority primitive's required capability was declared by
+/// the program entry point itself. S92 uses this for subprocess launch surfaces
+/// so `main @caps()` cannot launder process authority through a helper that
+/// declares `@caps(proc)`. Direct host/test calls outside a program entry frame
+/// remain allowed because there is no source-level entry declaration to inspect.
+pub(crate) fn require_entry_capability(needed: &str, fn_name: &str) -> Result<(), RuntimeError> {
+    ACTIVE_CAPS.with(|c| {
+        let c = c.borrow();
+        if c.entry_frames == 0 {
+            return Ok(());
+        }
+        let has = |k: &str| c.entry_counts.get(k).copied().unwrap_or(0) > 0;
+        if has("*") || has(needed) {
+            Ok(())
+        } else {
+            Err(RuntimeError::msg(format!(
+                "capability: `{fn_name}` requires program entry @caps({needed}), not declared by the entry point"
+            )))
+        }
+    })
+}
+
 /// Call a value as the program entry point, installing an `@caps` frame from the
 /// entry function before dispatch. This closes the safe/direct-entry gap where a
 /// safe-mode `fn main` could reach host authority with no managed frame active.
@@ -638,7 +688,7 @@ pub(crate) fn call_value_with_entry_caps(
     args: Vec<Value>,
 ) -> Result<Value, RuntimeError> {
     let _entry_caps_guard = match callee {
-        Value::Fn(f) => Some(CapsGuard::enter(&f.def.annotations)),
+        Value::Fn(f) => Some(CapsGuard::enter_entry(&f.def.annotations)),
         _ => None,
     };
     call_value(callee, args)

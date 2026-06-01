@@ -58,7 +58,7 @@ enforce user-function `@caps`.
 
 | Slice | Title | Goal | Honest Scope |
 |---|---|---|---|
-| S92 | spawn-ffi-authority | Close interpreter-visible subprocess authority laundering for `std::process` launch surfaces, and record that executable FFI runtime enforcement is not present yet. | Linux seccomp/OS-policy application remains infra-deferred on Windows; no VM caps claim. |
+| S92 | spawn-ffi-authority | Close interpreter-visible subprocess authority laundering by requiring process-launch bridges to see `@caps(proc)` on both the live call chain and the program entry point, and record that executable FFI runtime enforcement is not present yet. | Process launch bridges only; direct host/test calls outside a program-entry frame remain allowed; Linux seccomp/OS-policy application remains infra-deferred on Windows; no VM caps claim. |
 | S93 | bounded-loop-verifier | Add a static bounded-loop verifier for the safe subset; accept statically derivable bounds and reject uncheckable loops. | No Wasmtime fuel claim. |
 | S94 | paper-vi-exp1-llm-pass1 | Wire Paper VI Exp 1 LLM pass@1 harness behind a provider flag. | Account/credential gated; if credentials are absent, record honest pending with harness wired. |
 | S95 | paper-vi-exp3-5k-loc | Re-run Paper VI Exp 3 at 5K LOC scale and resolve the h3a 6.5% to 10% question honestly. | Provider/runtime evidence only; no invented measurement. |

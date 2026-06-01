@@ -43,6 +43,20 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   remain allowed; the VM backend still does not enforce `@caps`; S99-S110 are
   ledger-reserved only and not started here.
 
+- **S92 (v0.8.1 substrate - subprocess entry authority guard):** closes the
+  interpreter-visible subprocess authority laundering gap. `std::process::spawn`,
+  `std::process::spawn_args`, and `std::process::output` now require both a live
+  call-chain `@caps(proc)` frame and a program-entry `@caps(proc)` frame, so
+  `main @caps()` cannot route through a helper `@caps(proc)` to launch a child
+  process. Adds two cross-OS CLI tests for the trap/control pair and
+  `scripts/garnet_spawn_ffi_authority_status.py` (+ tests) so the guard and the
+  FFI honesty boundary are machine-checkable. **Honest scope:** process launch
+  bridges only; `wait`/`exit_code` still require call-chain `proc` but do not
+  launch new authority; direct host/test calls outside a program-entry frame
+  remain allowed; executable FFI runtime enforcement is deferred because no FFI
+  bridge exists yet; Linux seccomp/OS-policy application and VM `@caps`
+  enforcement remain unclaimed.
+
 - **S86 (Windows audit binary-strict S80 cut-readiness):** adds
   `--binary-strict` to `scripts/garnet_v0_8_0_cut_readiness.py` plus
   `--windows-audit` as a named alias for the Windows burn-down lane. Default
