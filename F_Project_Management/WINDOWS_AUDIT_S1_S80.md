@@ -59,7 +59,7 @@ open `WIN-*` finding maps to the slice that closes (or honestly defers) it.
 
 | Slice | Windows proof command | Status |
 |---|---|---|
-| S81 | `garnet verify <dir: clean main.garnet + parse-broken BAD.GARNET>` → exit 1 | **Mac fix landed** (case-insensitive shared collector + unit test); Windows-proof-pending |
+| S81 | `garnet verify <dir: clean main.garnet + parse-broken BAD.GARNET>` → exit 1 | passed on Windows in S81 proof: `python -B scripts\test_garnet_garnet_ext_discovery_status.py` ran 5/5 OK; `python -B scripts\garnet_garnet_ext_discovery_status.py --gate --format json` exited 0; `cargo run -q -p garnet-cli --bin garnet -- verify <temp-dir>` exited 1 after discovering uppercase `BAD.GARNET` and reporting lowercase `main.garnet` clean |
 | S82 | fresh Windows checkout → `garnet seal <file>` `source_blake3` matches Mac | **Mac fix landed** (LF-normalized source hash + `.gitattributes` pin + LF/CRLF unit test); Windows-proof-pending |
 | S84 | `python scripts/test_garnet_paper_vi_exp3_status.py` → 6/6 on Windows | passed on Windows in S84: `python -B scripts\test_garnet_paper_vi_exp3_status.py` ran 6/6 OK; `python -B scripts\garnet_paper_vi_exp3_status.py --gate --format json` exited 0 with `provider_free_run_ok=true` |
 | S85 | `garnet.exe run --interp examples/mvp_function_call_demo.garnet` → exit 0 `=> 7105`; parity 33/33 | **Mac fix landed** (interpreter on a 256 MiB thread + cross-OS integration tests); Windows-proof-pending |
