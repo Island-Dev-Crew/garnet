@@ -50,6 +50,7 @@ configure_utf8_stdout()
 
 import garnet_converter_status  # noqa: E402
 import garnet_paper_vi_exp1_status  # noqa: E402
+import garnet_paper_vi_exp3_5k_status  # noqa: E402
 import garnet_proof_benchmark_status  # noqa: E402
 import garnet_promo_video_status  # noqa: E402
 import garnet_readiness_status  # noqa: E402
@@ -186,6 +187,8 @@ def _lane_score(lane: ObjectiveLane) -> float:
     if lane.status == "feature-gated-source-ready":
         return 0.85
     if lane.status == "provider-gated-harness":
+        return 1.0
+    if lane.status == "provider-gated-5k-harness":
         return 1.0
     return 0.0
 
@@ -536,6 +539,7 @@ def read_status() -> MitReadinessStatus:
     contract = converter.intelligent_assist_contract
     promo, promo_probe_note = _read_promo_status()
     paper_vi_exp1 = garnet_paper_vi_exp1_status.read_status()
+    paper_vi_exp3_5k = garnet_paper_vi_exp3_5k_status.read_status()
     proof = garnet_proof_benchmark_status.read_status()
     vm_scaffold_present = _vm_scaffold_present(proof)
     wls = garnet_windows_linux_studio_status.read_status()
@@ -985,6 +989,31 @@ def read_status() -> MitReadinessStatus:
                 "Full 500-task corpus remains pending infrastructure",
                 "Hidden-test scorer and statistical significance run remain future work",
                 "Fine-tuned model comparison remains unclaimed",
+            ],
+        ),
+        ObjectiveLane(
+            id="paper_vi_exp3_5k_rerun_harness",
+            label="Paper VI Exp 3 5K-LOC rerun harness (S95)",
+            status="provider-gated-5k-harness" if paper_vi_exp3_5k.ok else "planned",
+            completion_percent=100.0 if paper_vi_exp3_5k.ok else 0.0,
+            evidence=(
+                "`benchmarks/paper_vi_exp3_compiler_as_agent/` now contains the "
+                "S95 5K-LOC rerun harness. "
+                "`scripts/garnet_paper_vi_exp3_5k_status.py --gate` generates "
+                f"{paper_vi_exp3_5k.snapshot_count} deterministic snapshots "
+                f"(minimum {paper_vi_exp3_5k.min_snapshot_loc} LOC, total "
+                f"{paper_vi_exp3_5k.total_generated_loc} LOC), writes "
+                f"{paper_vi_exp3_5k.stateless_rows} stateless and "
+                f"{paper_vi_exp3_5k.history_aware_rows} history-aware provider-free "
+                "rows, aggregates/analyzes them, and keeps h3a at "
+                f"`{paper_vi_exp3_5k.h3a_status}` with no new 5K measurement claim."
+            ),
+            blocked_by=[],
+            deferred=[
+                "Provider-backed 5K runtime rows require credentials and reviewed execution",
+                "The recorded v4.0 h3a 6.5% partial stands until that rerun exists",
+                "h3b/h3c revalidation at 5K scale remains future measured-study work",
+                "Provider cost/budget approval remains out of scope for the committed gate",
             ],
         ),
         ObjectiveLane(
