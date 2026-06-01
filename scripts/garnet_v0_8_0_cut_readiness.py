@@ -10,6 +10,10 @@ whole run into a single READY / NOT-READY-TO-CUT verdict:
      (which itself re-runs the band gates + 11 anti-rot sub-gates).
   3. **Runway gates (S69..S79)** — each slice gate passes.
 
+S86 keeps the default mode lenient for Python-only CI, but adds
+`--binary-strict` / `--windows-audit` to run S71/S72/S73 direct proofs without
+`--no-run`. That mode is the Windows-audit proof for WIN-S80-001.
+
 > **This does NOT cut, push, or authorize any tag.** Cutting `v0.8.0` is a
 > release-truth decision reserved for Jon. "READY TO CUT" is evidence-backed
 > advice, not the act of tagging. Only `v0.4.2` / `v0.5.0` are tagged today.
@@ -37,21 +41,22 @@ REQUIRED_MERGED = [f"s{n}" for n in range(31, 80)]  # s31..s79
 # The S60 release-readiness gate (covers S41..S59 bands + 11 anti-rot sub-gates).
 RELEASE_GATE = "garnet_v0_8_0_release_readiness.py"
 
-# Runway slice gates (S69..S79). Binary-dependent ones use --no-run so this
-# aggregator is deterministic regardless of compiler presence (the binary-backed
-# proofs are gated independently in the canonical-examples + cargo matrix jobs).
+# Runway slice gates (S69..S79). Binary-backed gates keep --no-run in the
+# default mode so python-only CI remains deterministic without a built compiler.
+# S86 adds an explicit binary-strict / Windows-audit mode that removes --no-run
+# for those direct runtime proofs and treats failures as blocking.
 RUNWAY_GATES = [
-    ("llm-suggest (S69)", ["garnet_llm_suggest_readiness.py", "--gate"]),
-    ("version-map (S70)", ["garnet_version_map_check.py", "--gate"]),
-    ("paper-vi-exp3 (S71)", ["garnet_paper_vi_exp3_status.py", "--gate", "--no-run"]),
-    ("self-hosted-parser (S72)", ["garnet_self_hosted_parser_seed_status.py", "--gate", "--no-run"]),
-    ("vm-interp-parity (S73)", ["garnet_vm_interp_parity.py", "--gate", "--no-run"]),
-    ("safe-subset (S74)", ["garnet_safe_subset_status.py", "--gate"]),
-    ("formal-verification (S75)", ["garnet_formal_verification_feasibility.py", "--gate"]),
-    ("stdlib-promotion (S76)", ["garnet_stdlib_promotion_status.py", "--gate"]),
-    ("external-package (S77)", ["garnet_external_package_pilot_status.py", "--gate"]),
-    ("governance (S78)", ["garnet_governance_status.py", "--gate"]),
-    ("positioning (S79)", ["garnet_positioning_status.py", "--gate"]),
+    ("llm-suggest (S69)", ["garnet_llm_suggest_readiness.py", "--gate"], False),
+    ("version-map (S70)", ["garnet_version_map_check.py", "--gate"], False),
+    ("paper-vi-exp3 (S71)", ["garnet_paper_vi_exp3_status.py", "--gate", "--no-run"], True),
+    ("self-hosted-parser (S72)", ["garnet_self_hosted_parser_seed_status.py", "--gate", "--no-run"], True),
+    ("vm-interp-parity (S73)", ["garnet_vm_interp_parity.py", "--gate", "--no-run"], True),
+    ("safe-subset (S74)", ["garnet_safe_subset_status.py", "--gate"], False),
+    ("formal-verification (S75)", ["garnet_formal_verification_feasibility.py", "--gate"], False),
+    ("stdlib-promotion (S76)", ["garnet_stdlib_promotion_status.py", "--gate"], False),
+    ("external-package (S77)", ["garnet_external_package_pilot_status.py", "--gate"], False),
+    ("governance (S78)", ["garnet_governance_status.py", "--gate"], False),
+    ("positioning (S79)", ["garnet_positioning_status.py", "--gate"], False),
 ]
 
 HONESTY_ANCHORS = [
@@ -77,6 +82,8 @@ class CutReadiness:
     runway_gates: list[SubGate]
     runway_pass: bool
     cut_ready: bool
+    mode: str = "lenient"
+    binary_strict: bool = False
     honesty_anchors: list[str] = field(default_factory=lambda: list(HONESTY_ANCHORS))
 
 
@@ -92,7 +99,17 @@ def _run_gate(argv: list[str]) -> int:
         return 1
 
 
-def read_readiness() -> CutReadiness:
+def runway_gate_specs(binary_strict: bool = False) -> list[tuple[str, list[str]]]:
+    specs: list[tuple[str, list[str]]] = []
+    for name, argv, binary_backed in RUNWAY_GATES:
+        gate_argv = list(argv)
+        if binary_strict and binary_backed:
+            gate_argv = [arg for arg in gate_argv if arg != "--no-run"]
+        specs.append((name, gate_argv))
+    return specs
+
+
+def read_readiness(binary_strict: bool = False) -> CutReadiness:
     ledger = json.loads(LEDGER.read_text(encoding="utf-8")) if LEDGER.is_file() else {"slices": []}
     status = {s["id"]: s.get("status") for s in ledger.get("slices", [])}
     missing = [i for i in REQUIRED_MERGED if status.get(i) != "merged"]
@@ -102,7 +119,7 @@ def read_readiness() -> CutReadiness:
     release = SubGate(name="release-readiness (S41–S59)", passed=rc == 0, exit_code=rc)
 
     runway = []
-    for name, argv in RUNWAY_GATES:
+    for name, argv in runway_gate_specs(binary_strict=binary_strict):
         grc = _run_gate(argv)
         runway.append(SubGate(name=name, passed=grc == 0, exit_code=grc))
     runway_pass = all(g.passed for g in runway)
@@ -116,6 +133,8 @@ def read_readiness() -> CutReadiness:
         runway_gates=runway,
         runway_pass=runway_pass,
         cut_ready=cut_ready,
+        mode="binary-strict" if binary_strict else "lenient",
+        binary_strict=binary_strict,
     )
 
 
@@ -124,6 +143,7 @@ def render_markdown(r: CutReadiness) -> str:
         "# Garnet v0.8.0 CUT readiness — whole S30–S80 run (S80)",
         "",
         f"_Schema {r.schema}._",
+        f"_Mode {r.mode}._",
         "",
         f"**Verdict: {'READY TO CUT (pending Jon) ✅' if r.cut_ready else 'NOT READY ❌'}**",
         "",
@@ -153,9 +173,22 @@ def main(argv: list[str] | None = None) -> int:
         help="exit non-zero unless the whole run is cut-ready (ledger complete + "
         "release gate + all runway gates). Does NOT cut or authorize any tag.",
     )
+    parser.add_argument(
+        "--binary-strict",
+        action="store_true",
+        help="run S71/S72/S73 direct binary/provider-free gates instead of the "
+        "default --no-run inventory mode; failures are blocking.",
+    )
+    parser.add_argument(
+        "--windows-audit",
+        action="store_true",
+        help="alias for --binary-strict, named for the Windows audit lane that "
+        "proved WIN-S80-001.",
+    )
     args = parser.parse_args(list(argv) if argv is not None else None)
 
-    r = read_readiness()
+    binary_strict = args.binary_strict or args.windows_audit
+    r = read_readiness(binary_strict=binary_strict)
     if args.format == "md":
         print(render_markdown(r))
     else:
@@ -164,6 +197,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.gate and not r.cut_ready:
         print(
             "v0.8.0-cut-readiness gate FAILED: "
+            f"mode={r.mode} "
             f"ledger_complete={r.ledger_complete} missing={r.missing_merged} "
             f"release={r.release_gate.passed} runway_pass={r.runway_pass}",
             file=sys.stderr,
