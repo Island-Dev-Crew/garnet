@@ -18,6 +18,20 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S82 (v0.8.1 runway — seal source-hash determinism LF/CRLF):** the seal
+  predicate's `source_blake3` hashed raw source bytes, so an LF (Mac/Linux) and a
+  CRLF (Windows `core.autocrlf`) checkout of the *same logical source* produced
+  different predicates (WIN-S38-001). Two-layer fix: (1) `Manifest::build` now
+  hashes **LF-normalized** source (`normalize_source_eol`, idempotent on LF — so
+  existing LF seals are unchanged); (2) `.gitattributes` pins `*.garnet text eol=lf`
+  as defense-in-depth. The canonicalization contract is documented in
+  `C_Language_Specification/GARNET_ATTESTATION.md`. Adds Rust regressions (LF↔CRLF
+  same `source_hash`+`ast_hash`; LF hash unchanged vs raw blake3) and
+  `scripts/garnet_seal_determinism_status.py` (+ `--gate`, 5 tests, agent-contracts).
+  **Honest scope:** only line endings are canonicalized (other whitespace still
+  changes `source_blake3` by design); Mac-authored + Mac-unit-tested — the
+  end-to-end Windows proof (fresh Windows checkout → matching `source_blake3`) is
+  **Windows-proof-pending** in `WINDOWS_AUDIT_S1_S80.md`.
 - **S81 (v0.8.1 runway — case-insensitive `.GARNET` discovery):** the shared target
   collector (`garnet-cli/src/cmd/verify_gate.rs`, `collect_targets`→`walk`) matched
   the extension case-sensitively, so Windows' case-insensitive filesystem silently
