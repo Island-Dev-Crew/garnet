@@ -249,7 +249,8 @@ jobs:
           esac
 
           if [ "${host_target}" = "${target}" ]; then
-            "target/${target}/release/garnet" --version | grep -q "garnet ${version}"
+            version_output="$("target/${target}/release/garnet" --version)"
+            grep -q "garnet ${version}" <<<"${version_output}"
           else
             echo "Built ${target}; native execution skipped on ${host_target}."
           fi
