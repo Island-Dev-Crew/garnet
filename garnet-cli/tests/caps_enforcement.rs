@@ -69,6 +69,36 @@ fn undeclared_fs_traps() {
     );
 }
 
+#[test]
+fn undeclared_net_traps_before_connect_policy() {
+    // S91: the net bridge must reject undeclared authority before the host
+    // network policy evaluates the address.
+    traps_with(
+        "@caps()\ndef main() {\n  tcp_connect(\"127.0.0.1\", 1)\n}\n",
+        "net",
+    );
+}
+
+#[test]
+fn program_entry_frame_traps_safe_main_env_without_caps() {
+    // S91: safe-mode `fn main` does not push a managed frame, so the program
+    // entry frame must provide the runtime caps context.
+    traps_with(
+        "@caps()\nfn main() -> String {\n  std::env::get(\"HOME\")\n}\n",
+        "env",
+    );
+}
+
+#[test]
+fn program_entry_frame_allows_safe_main_declared_env() {
+    let out = run_interp("@caps(env)\nfn main() -> String {\n  std::env::get(\"HOME\")\n}\n");
+    assert!(
+        out.status.success(),
+        "program-entry @caps(env) frame must allow safe main env read: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+}
+
 /// Pure computation declaring no caps is completely unaffected by the enforcement.
 #[test]
 fn pure_computation_is_unaffected() {

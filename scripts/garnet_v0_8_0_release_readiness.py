@@ -7,8 +7,8 @@ their anti-rot sub-gates still pass? It renders a READY / NOT-READY verdict and
 the honest in/deferred inventory for a `v0.8.0` release.
 
 ## CRITICAL honesty scope (do not soften)
-This gate does **NOT** cut a tag. Only `v0.4.2` and `v0.5.0` are tagged; cutting
-`v0.8.0` is a **release-truth decision for Jon**, not made here. "READY TO TAG"
+This gate does **NOT** cut a tag. Since S83, `v0.8.0` may already appear in
+`existing_tags` because Jon cut it as a separate release-truth act. "READY TO TAG"
 means the evidence supports the decision — it is a recommendation, not the act.
 Garnet remains a *research-grade prototype (v0.x.x), not production-complete*; the
 verbatim honesty anchors are surfaced, not changed.
@@ -23,7 +23,9 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-GOAL_FILE = ROOT / ".dogfood" / "goal.json"
+# The release gate is historical v0.8 evidence. The active goal ledger moves to
+# S91-S110 in v0.8.1, so v0.8 gates read the archived S31-S80 ledger.
+GOAL_FILE = ROOT / ".dogfood" / "v0_8_goal.json"
 
 HARDENING_BAND = [f"s4{i}" for i in range(1, 10)] + ["s50"]  # s41..s50
 ADOPTION_BAND = [f"s5{i}" for i in range(1, 10)]  # s51..s59
@@ -136,9 +138,9 @@ def read_readiness() -> ReleaseReadiness:
         deferred_for_v0_8_0=DEFERRED_FOR_V0_8_0,
         honesty_anchors=HONESTY_ANCHORS,
         tag_note=(
-            "This gate does NOT cut a tag. Only v0.4.2 and v0.5.0 are tagged; "
-            "cutting v0.8.0 is a release-truth decision for Jon. 'READY TO TAG' is "
-            "a recommendation backed by evidence, not the act of tagging."
+            "This gate does NOT cut a tag. v0.8.0, when present in existing_tags, "
+            "was cut by Jon as a separate release-truth decision. 'READY TO TAG' "
+            "is a recommendation backed by evidence, not the act of tagging."
         ),
     )
 

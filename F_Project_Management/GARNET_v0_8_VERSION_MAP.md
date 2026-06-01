@@ -31,6 +31,10 @@ mapping (which survives, banner-corrected, only in historical artifacts).
   **solutions-oriented real-world-proofs** theme — agents that run real-world
   builds, tests, solutions, and simulations — and the public "what only Garnet
   does" positioning, to be planned with the finished v0.8.0 in hand.
+- **S91 plan note:** `F_Project_Management/GARNET_v0_8_1_PLAN.md` now seeds the
+  active v0.8.1 S91-S110 plan. `.dogfood/goal.json` is the active S91-S110
+  ledger; `.dogfood/v0_8_goal.json` archives the finished S31-S80 ledger so
+  v0.8.0 release gates remain reproducible while v0.8.1 advances.
 - **1.0 is held much further out — plausibly ~a year** — and is gated on real
   testing, validation, and maturity, never on slice count.
 

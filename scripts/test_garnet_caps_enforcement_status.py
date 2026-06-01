@@ -22,7 +22,10 @@ class CapsEnforcementTests(unittest.TestCase):
     def test_env_proc_fs_bridges_gated(self) -> None:
         r = ce.read_status()
         self.assertEqual(r.missing_gates, [], f"missing: {r.missing_gates}")
-        self.assertEqual(sorted(r.bridges_gated), ["env", "fs", "proc"])
+        self.assertEqual(sorted(r.bridges_gated), ["env", "fs", "net", "proc"])
+
+    def test_program_entry_frame_present(self) -> None:
+        self.assertTrue(ce.read_status().program_entry_frame_present)
 
     def test_enforcement_tests_present(self) -> None:
         self.assertTrue(ce.read_status().enforcement_tests_present)
@@ -34,6 +37,7 @@ class CapsEnforcementTests(unittest.TestCase):
         md = ce.render_markdown(ce.read_status())
         self.assertIn("Host-authority surfaces only", md)
         self.assertIn("pure computation", md)
+        self.assertIn("VM backend does not yet enforce @caps", md)
 
 
 if __name__ == "__main__":

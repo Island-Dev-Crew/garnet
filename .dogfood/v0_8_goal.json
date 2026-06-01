@@ -1,0 +1,414 @@
+{
+  "created_at": "2026-05-31T04:22:02+00:00",
+  "goal_id": "v0_8",
+  "slices": [
+    {
+      "id": "s31",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T05:22:49+00:00",
+      "status": "merged",
+      "title": "release-truth",
+      "weight": 1.0
+    },
+    {
+      "id": "s32",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T08:18:47+00:00",
+      "status": "merged",
+      "title": "editions",
+      "weight": 1.0
+    },
+    {
+      "id": "s33",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T08:38:44+00:00",
+      "status": "merged",
+      "title": "garnet-verify",
+      "weight": 1.0
+    },
+    {
+      "id": "s34",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T08:56:11+00:00",
+      "status": "merged",
+      "title": "diagnostics",
+      "weight": 1.0
+    },
+    {
+      "id": "s35",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T09:10:33+00:00",
+      "status": "merged",
+      "title": "annotations",
+      "weight": 1.0
+    },
+    {
+      "id": "s36",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T09:22:43+00:00",
+      "status": "merged",
+      "title": "capability-manifest",
+      "weight": 1.0
+    },
+    {
+      "id": "s37",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T09:40:51+00:00",
+      "status": "merged",
+      "title": "diff-caps",
+      "weight": 1.0
+    },
+    {
+      "id": "s38",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T09:55:09+00:00",
+      "status": "merged",
+      "title": "seal",
+      "weight": 1.0
+    },
+    {
+      "id": "s39",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T10:24:23+00:00",
+      "status": "merged",
+      "title": "bounded",
+      "weight": 1.0
+    },
+    {
+      "id": "s40",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T10:36:49+00:00",
+      "status": "merged",
+      "title": "explosive-ops",
+      "weight": 1.0
+    },
+    {
+      "id": "s41",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T10:51:49+00:00",
+      "status": "merged",
+      "title": "async-contract",
+      "weight": 1.0
+    },
+    {
+      "id": "s42",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T11:23:18+00:00",
+      "status": "merged",
+      "title": "error-policy",
+      "weight": 1.0
+    },
+    {
+      "id": "s43",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T11:53:16+00:00",
+      "status": "merged",
+      "title": "docs-as-tests",
+      "weight": 1.0
+    },
+    {
+      "id": "s44",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T12:07:00+00:00",
+      "status": "merged",
+      "title": "lsp-precision",
+      "weight": 1.0
+    },
+    {
+      "id": "s45",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T12:22:15+00:00",
+      "status": "merged",
+      "title": "slopsquatting-guard",
+      "weight": 1.0
+    },
+    {
+      "id": "s46",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T12:34:20+00:00",
+      "status": "merged",
+      "title": "caps-sandbox",
+      "weight": 1.0
+    },
+    {
+      "id": "s47",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T12:47:27+00:00",
+      "status": "merged",
+      "title": "cross-platform-proof",
+      "weight": 1.0
+    },
+    {
+      "id": "s48",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T13:01:55+00:00",
+      "status": "merged",
+      "title": "proof-matrix",
+      "weight": 1.0
+    },
+    {
+      "id": "s49",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T13:10:22+00:00",
+      "status": "merged",
+      "title": "wedge-demo",
+      "weight": 1.0
+    },
+    {
+      "id": "s50",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T13:26:58+00:00",
+      "status": "merged",
+      "title": "beta-gate",
+      "weight": 1.0
+    },
+    {
+      "id": "s51",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T13:37:16+00:00",
+      "status": "merged",
+      "title": "signed-release",
+      "weight": 1.0
+    },
+    {
+      "id": "s52",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T13:49:03+00:00",
+      "status": "merged",
+      "title": "install-check",
+      "weight": 1.0
+    },
+    {
+      "id": "s53",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T13:59:27+00:00",
+      "status": "merged",
+      "title": "tree-sitter",
+      "weight": 1.0
+    },
+    {
+      "id": "s54",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T14:10:28+00:00",
+      "status": "merged",
+      "title": "vscode-marketplace",
+      "weight": 1.0
+    },
+    {
+      "id": "s55",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T14:23:16+00:00",
+      "status": "merged",
+      "title": "wasm-hello",
+      "weight": 1.0
+    },
+    {
+      "id": "s56",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T14:34:07+00:00",
+      "status": "merged",
+      "title": "playground",
+      "weight": 1.0
+    },
+    {
+      "id": "s57",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T14:43:35+00:00",
+      "status": "merged",
+      "title": "corpus",
+      "weight": 1.0
+    },
+    {
+      "id": "s58",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T14:54:46+00:00",
+      "status": "merged",
+      "title": "benchmarks",
+      "weight": 1.0
+    },
+    {
+      "id": "s59",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T15:03:07+00:00",
+      "status": "merged",
+      "title": "fuzz",
+      "weight": 1.0
+    },
+    {
+      "id": "s60",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T15:36:10+00:00",
+      "status": "merged",
+      "title": "v0.8.0-tag",
+      "weight": 1.0
+    },
+    {
+      "id": "s61",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T15:48:50+00:00",
+      "status": "merged",
+      "title": "ffi-authority",
+      "weight": 1.0
+    },
+    {
+      "id": "s62",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T16:00:10+00:00",
+      "status": "merged",
+      "title": "rust-ffi",
+      "weight": 1.0
+    },
+    {
+      "id": "s63",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T16:09:35+00:00",
+      "status": "merged",
+      "title": "c-abi",
+      "weight": 1.0
+    },
+    {
+      "id": "s64",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T16:21:42+00:00",
+      "status": "merged",
+      "title": "wasi-interop",
+      "weight": 1.0
+    },
+    {
+      "id": "s65",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T16:35:08+00:00",
+      "status": "merged",
+      "title": "ai-provenance",
+      "weight": 1.0
+    },
+    {
+      "id": "s66",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T16:48:42+00:00",
+      "status": "merged",
+      "title": "attestation",
+      "weight": 1.0
+    },
+    {
+      "id": "s67",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T17:01:44+00:00",
+      "status": "merged",
+      "title": "mcp-caps",
+      "weight": 1.0
+    },
+    {
+      "id": "s68",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T17:16:12+00:00",
+      "status": "merged",
+      "title": "transparency-log",
+      "weight": 1.0
+    },
+    {
+      "id": "s69",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T18:27:15+00:00",
+      "status": "merged",
+      "title": "llm-suggest-v2",
+      "weight": 1.0
+    },
+    {
+      "id": "s70",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T18:43:20+00:00",
+      "status": "merged",
+      "title": "source-of-truth-checkpoint",
+      "weight": 1.0
+    },
+    {
+      "id": "s71",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T18:50:44+00:00",
+      "status": "merged",
+      "title": "paper-vi-exp3",
+      "weight": 1.0
+    },
+    {
+      "id": "s72",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T19:11:34+00:00",
+      "status": "merged",
+      "title": "self-hosted-parser",
+      "weight": 1.0
+    },
+    {
+      "id": "s73",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T19:23:13+00:00",
+      "status": "merged",
+      "title": "vm-parity",
+      "weight": 1.0
+    },
+    {
+      "id": "s74",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T19:34:35+00:00",
+      "status": "merged",
+      "title": "safe-subset",
+      "weight": 1.0
+    },
+    {
+      "id": "s75",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T19:52:30+00:00",
+      "status": "merged",
+      "title": "formal-verification",
+      "weight": 1.0
+    },
+    {
+      "id": "s76",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T20:04:22+00:00",
+      "status": "merged",
+      "title": "stdlib-promotion",
+      "weight": 1.0
+    },
+    {
+      "id": "s77",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T20:17:51+00:00",
+      "status": "merged",
+      "title": "external-packages",
+      "weight": 1.0
+    },
+    {
+      "id": "s78",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T20:29:22+00:00",
+      "status": "merged",
+      "title": "governance-rfc",
+      "weight": 1.0
+    },
+    {
+      "id": "s79",
+      "merge_confidence": 5,
+      "merged_at": "2026-05-31T20:41:00+00:00",
+      "status": "merged",
+      "title": "website-reframe",
+      "weight": 1.0
+    },
+    {
+      "id": "s80",
+      "merge_confidence": 5,
+      "merged_at": "2026-06-01T02:18:18+00:00",
+      "status": "merged",
+      "title": "v0.8.0-cut-decision",
+      "weight": 1.0,
+      "cut_record": {
+        "tag": "v0.8.0",
+        "commit": "cc165e8eaa8b2118f5da8d5e7bb80baa93a02fc5",
+        "tagger": "Jon Isaac",
+        "date": "2026-05-31",
+        "note": "Tag cut by Jon (the release-truth decision); the S80 PR produced cut-readiness evidence only."
+      }
+    }
+  ],
+  "title": "Garnet v0.8 (S31-S80)"
+}
