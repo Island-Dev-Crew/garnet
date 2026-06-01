@@ -18,6 +18,23 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S89 (v0.8.1 runway — `@max_depth` runtime enforcement seed):** the first slice
+  that makes the trust kernel **enforce** at runtime. A function declaring
+  `@max_depth(N)` now **traps deterministically** when its recursion depth exceeds
+  `N` — the interpreter (`garnet-interp-v0.3/src/eval.rs`, `call_fn`) tracks
+  per-function recursion depth (thread-local, RAII-unwound on every return/error
+  path) and returns `bounded: @max_depth(N) exceeded for ...`. Real enforcement
+  (the interpreter refuses to recurse further), distinct from the S85 host-stack
+  raise. Adds `garnet-cli/tests/bounded_enforcement.rs` (4 cross-OS tests: trap /
+  within-ceiling / deterministic / unannotated-not-capped),
+  `scripts/garnet_bounded_enforcement_status.py` (+ `--gate`, 5 tests,
+  agent-contracts), and spec `C_Language_Specification/GARNET_BOUNDED_ENFORCEMENT.md`.
+  **Honest scope:** this is the **ONE enforced ceiling** — `@bounded` (Wasmtime
+  fuel), memory, time, and mailbox remain **declared-not-enforced**; unannotated
+  functions are not capped (host stack, S85); the **VM** backend does not yet
+  enforce `@max_depth` (the parity corpus has no over-ceiling program, so parity
+  stays 33/33). Mac-authored + Mac-tested; the Windows trap re-proves via the
+  cross-OS matrix (Windows-proof-pending).
 - **S85 (v0.8.1 runway — interpreter deep-recursion robustness):** the tree-walking
   interpreter (`garnet run --interp`) stack-overflowed on Windows (~1 MiB default
   thread stack) for `mvp_function_call_demo.garnet` while the VM succeeded, so the
