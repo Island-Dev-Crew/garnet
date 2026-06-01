@@ -106,7 +106,37 @@ fn parse_args(args: &[String]) -> Result<RunArgs, String> {
     .ok_or_else(|| USAGE.to_string())
 }
 
+/// Run the tree-walking interpreter for `path`. The evaluation runs on a thread
+/// with a large explicit stack so deep (but finite) recursion does not overflow
+/// the default OS thread stack — notably ~1 MiB on Windows, where the VM lane
+/// succeeded but `--interp` aborted with a stack overflow (WIN-S73-001). Inputs
+/// are owned-cloned across the boundary and the `Interpreter` is created *inside*
+/// the thread, so nothing non-`Send` crosses it. (A truly *unbounded* recursion
+/// still exhausts even this stack — that is the `@bounded` enforcement story, S89,
+/// not a stack-size question.)
 fn run_interpreter(file_label: &str, src: &str, path: &Path, started: Instant) -> ExitCode {
+    // 256 MiB is virtual reservation (not committed until touched); it covers the
+    // deep-but-finite recursion fixtures the VM ran while the default stack did not.
+    const INTERP_STACK_BYTES: usize = 256 * 1024 * 1024;
+    let file_label = file_label.to_string();
+    let src = src.to_string();
+    let path = path.to_path_buf();
+    let code = std::thread::Builder::new()
+        .name("garnet-interp".to_string())
+        .stack_size(INTERP_STACK_BYTES)
+        .spawn(move || run_interpreter_inner(&file_label, &src, &path, started))
+        .expect("spawn garnet-interp thread")
+        .join()
+        .unwrap_or_else(|_| {
+            eprintln!("runtime error: interpreter thread panicked");
+            1
+        });
+    ExitCode::from(code)
+}
+
+/// The interpreter body. Returns a process exit code (`0` = success). Runs on the
+/// large-stack `garnet-interp` thread spawned by [`run_interpreter`].
+fn run_interpreter_inner(file_label: &str, src: &str, path: &Path, started: Instant) -> u8 {
     let edition = match crate::edition_manifest::resolve_edition_for(path) {
         Ok(resolved) => {
             if let Some(warning) = resolved.warning {
@@ -125,7 +155,7 @@ fn run_interpreter(file_label: &str, src: &str, path: &Path, started: Instant) -
                 started,
                 1,
             );
-            return ExitCode::from(1);
+            return 1;
         }
     };
     let mut interp = Interpreter::new();
@@ -143,7 +173,7 @@ fn run_interpreter(file_label: &str, src: &str, path: &Path, started: Instant) -
             started,
             1,
         );
-        return ExitCode::from(1);
+        return 1;
     }
     // If a `main` function exists, call it; otherwise just exit success.
     if interp.global.get("main").is_some() {
@@ -151,7 +181,7 @@ fn run_interpreter(file_label: &str, src: &str, path: &Path, started: Instant) -
             Ok(v) => {
                 println!("=> {}", v.display());
                 record("run", file_label, src, "ok", None, started, 0);
-                ExitCode::SUCCESS
+                0
             }
             Err(e) => {
                 eprintln!("runtime error: {e}");
@@ -164,12 +194,12 @@ fn run_interpreter(file_label: &str, src: &str, path: &Path, started: Instant) -
                     started,
                     1,
                 );
-                ExitCode::from(1)
+                1
             }
         }
     } else {
         record("run", file_label, src, "ok", None, started, 0);
-        ExitCode::SUCCESS
+        0
     }
 }
 

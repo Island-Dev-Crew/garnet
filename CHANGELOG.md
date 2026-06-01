@@ -18,6 +18,22 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S85 (v0.8.1 runway — interpreter deep-recursion robustness):** the tree-walking
+  interpreter (`garnet run --interp`) stack-overflowed on Windows (~1 MiB default
+  thread stack) for `mvp_function_call_demo.garnet` while the VM succeeded, so the
+  VM/interpreter parity campaign diverged on Windows (WIN-S73-001). The interpreter
+  evaluation now runs on a thread with a **256 MiB explicit stack**
+  (`std::thread::Builder::stack_size`, the `Interpreter` created inside so nothing
+  non-`Send` crosses) on every platform — a robustness fix, not a Windows patch.
+  Adds two cross-OS integration tests (`garnet-cli/tests/interp_deep_recursion.rs`:
+  the audit fixture runs `=> 7105`; a 5000-deep recursion that overflows the default
+  stack runs on the large one) + `scripts/garnet_interp_stack_status.py` (+ `--gate`,
+  5 tests, agent-contracts). **Honest scope:** raises the recursion ceiling by
+  hundreds× (closes WIN-S73-001 for deep-but-finite recursion) — it is **not** an
+  unbounded guarantee; recursion past the large stack still overflows, which is the
+  `@bounded` **enforcement** story (S89). Mac-authored + Mac-tested; the original
+  Windows fixture re-proves via the cross-OS `cargo test` matrix (end-to-end check
+  Windows-proof-pending in `WINDOWS_AUDIT_S1_S80.md`).
 - **S82 (v0.8.1 runway — seal source-hash determinism LF/CRLF):** the seal
   predicate's `source_blake3` hashed raw source bytes, so an LF (Mac/Linux) and a
   CRLF (Windows `core.autocrlf`) checkout of the *same logical source* produced
