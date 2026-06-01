@@ -1,2 +1,6 @@
 /.gitattributes text eol=lf
 *.sh text eol=lf
+# Seal source-hash determinism (S82 / WIN-S38-001): pin Garnet source to LF so a
+# Windows (core.autocrlf) checkout produces the same seal predicate as Mac/Linux.
+# The manifest source hash is also LF-normalized in code as defense-in-depth.
+*.garnet text eol=lf

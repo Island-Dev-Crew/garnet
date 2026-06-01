@@ -61,7 +61,11 @@ impl Manifest {
     pub fn build(source: &str, module: &Module) -> Manifest {
         Manifest {
             schema: Self::SCHEMA.to_string(),
-            source_hash: hash_str(source),
+            // Hash over LF-normalized source so the seal predicate is stable
+            // across LF/CRLF checkouts (WIN-S38-001). Idempotent for LF content,
+            // so existing LF seals are unchanged; `.gitattributes` pins
+            // `*.garnet text eol=lf` as defense-in-depth.
+            source_hash: hash_str(&normalize_source_eol(source)),
             ast_hash: hash_str(&stable_ast_repr(module)),
             parser_version: env!("CARGO_PKG_VERSION").to_string(),
             interp_version: env!("CARGO_PKG_VERSION").to_string(),
@@ -370,6 +374,13 @@ fn unquote(s: &str) -> String {
 
 fn hash_str(s: &str) -> String {
     blake3::hash(s.as_bytes()).to_hex().to_string()
+}
+
+/// Normalize line endings to LF before hashing source for the seal predicate, so
+/// a CRLF (Windows `core.autocrlf`) checkout hashes the same as an LF checkout for
+/// the same logical source (WIN-S38-001). Idempotent on LF input.
+fn normalize_source_eol(s: &str) -> String {
+    s.replace("\r\n", "\n")
 }
 
 /// Hash the prelude's actual content (prepended with the version tag for
@@ -710,6 +721,33 @@ mod tests {
             mfa.ast_hash, mfb.ast_hash,
             "AST hashes must match — same shape"
         );
+    }
+
+    #[test]
+    fn crlf_and_lf_source_produce_the_same_seal_hashes() {
+        // WIN-S38-001: a CRLF (Windows) checkout must seal identically to an LF
+        // checkout for the same logical source. The seal source hash is over
+        // LF-normalized bytes, so source_hash + ast_hash both match.
+        let lf = "@caps()\ndef main() {\n  1\n}\n";
+        let crlf = lf.replace('\n', "\r\n");
+        let m_lf = parse_source(lf).unwrap();
+        let m_crlf = parse_source(&crlf).unwrap();
+        let mfa = Manifest::build(lf, &m_lf);
+        let mfb = Manifest::build(&crlf, &m_crlf);
+        assert_eq!(
+            mfa.source_hash, mfb.source_hash,
+            "source_hash must be LF/CRLF stable"
+        );
+        assert_eq!(mfa.ast_hash, mfb.ast_hash, "ast_hash must match");
+    }
+
+    #[test]
+    fn lf_source_hash_is_unchanged_by_normalization() {
+        // Backward-compat: LF content hashes exactly as a raw blake3 of its bytes
+        // (normalization is idempotent on LF), so existing LF seals do not move.
+        let lf = "@caps()\ndef main() {\n  1\n}\n";
+        let m = parse_source(lf).unwrap();
+        assert_eq!(Manifest::build(lf, &m).source_hash, super::hash_str(lf));
     }
 
     #[test]

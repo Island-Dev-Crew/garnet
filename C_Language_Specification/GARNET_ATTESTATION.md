@@ -42,3 +42,25 @@ or enumerate the tools an agent actually invoked; it records what the toolchain
 unchanged). The value is a truthful, attestable, signable channel for the
 declaration; auditing the declaration's accuracy is a process question, out of
 scope for the tool. Bringing the *capability* lens to those declared tools is S67.
+
+## Source-hash determinism — the canonicalization contract (S82)
+
+The seal predicate's `source_blake3` is the **BLAKE3 of the source bytes after
+line-ending normalization to LF** (`\r\n` → `\n`). This is the canonicalization
+contract:
+
+- **Why.** Hashing raw bytes made the full predicate diverge between an LF
+  (Mac/Linux) checkout and a CRLF (Windows `core.autocrlf`) checkout of the *same
+  logical source* (WIN-S38-001): the AST subject stayed identical, but
+  `source_blake3` — and therefore the predicate digest — changed.
+- **The fix (two layers).** (1) `Manifest::build` hashes `normalize_source_eol(source)`
+  so the hash is LF/CRLF-stable; normalization is **idempotent on LF**, so existing
+  LF seals are unchanged. (2) `.gitattributes` pins `*.garnet text eol=lf` as
+  defense-in-depth, so checkouts are LF regardless.
+- **Scope.** Only line endings are canonicalized. Other whitespace (indentation,
+  trailing spaces) still changes `source_blake3` by design — the AST hash
+  (`ast_hash`) is the shape-stable digest; `source_blake3` is the exact-source
+  digest modulo line endings.
+
+`scripts/garnet_seal_determinism_status.py --gate` enforces the pin + the
+in-code normalization + this documented contract.
