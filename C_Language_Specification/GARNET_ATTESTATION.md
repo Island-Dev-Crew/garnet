@@ -33,6 +33,38 @@ the capability manifest and the authorship string, and is therefore diffable
 *what pipeline* (`attestation`, S66), and *what authority* (`capability_manifest`,
 S35–S38).
 
+## Provenance seal chain (S97)
+
+`garnet seal <file> --provenance-chain` validates the conventional attestation
+keys `agent`, `model`, and `prompt_sha256`, then binds them to the current seal's
+`source_blake3` and subject `artifact_blake3` (`build_manifest.ast_hash`). The
+predicate gains a deterministic `"provenance_chain"` object:
+
+```sh
+garnet seal app.garnet \
+  --authored-by "ai-assisted:gpt-5" \
+  --attest agent=win-codex \
+  --attest model=gpt-5 \
+  --attest prompt_sha256=sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef \
+  --provenance-chain
+```
+
+The chain records:
+
+- `schema: "garnet-provenance-chain-v1"`,
+- `agent`, `model`, and canonical `prompt_sha256`,
+- `artifact_blake3` and `source_blake3` from the live seal,
+- `chain_blake3`, a deterministic BLAKE3 over the declared chain plus sorted
+  attestation pairs,
+- `binding_verified: true`,
+- `independent_origin_verified: false`.
+
+This is a verification of **binding**, not a claim of independent origin proof.
+It proves that the declared agent/model/prompt metadata is present, canonical,
+and tied to the artifact currently being sealed. It does not prove that a model
+actually executed that prompt, that the named agent produced the file, or that
+the declared tool list is complete.
+
 ## Honest scope (do not soften)
 
 Every field is **self-declared**, **not verified** — the same posture as `@caps`

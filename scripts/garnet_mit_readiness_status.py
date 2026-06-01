@@ -53,6 +53,7 @@ import garnet_linear_effect_status  # noqa: E402
 import garnet_paper_vi_exp1_status  # noqa: E402
 import garnet_paper_vi_exp3_5k_status  # noqa: E402
 import garnet_proof_benchmark_status  # noqa: E402
+import garnet_provenance_seal_chain_status  # noqa: E402
 import garnet_promo_video_status  # noqa: E402
 import garnet_readiness_status  # noqa: E402
 import garnet_stdlib_layer_gate  # noqa: E402
@@ -542,6 +543,7 @@ def read_status() -> MitReadinessStatus:
     paper_vi_exp1 = garnet_paper_vi_exp1_status.read_status()
     paper_vi_exp3_5k = garnet_paper_vi_exp3_5k_status.read_status()
     linear_effect = garnet_linear_effect_status.read_status()
+    provenance_chain = garnet_provenance_seal_chain_status.read_status()
     proof = garnet_proof_benchmark_status.read_status()
     vm_scaffold_present = _vm_scaffold_present(proof)
     wls = garnet_windows_linux_studio_status.read_status()
@@ -1038,6 +1040,27 @@ def read_status() -> MitReadinessStatus:
                 "No VM/runtime capability enforcement is claimed",
                 "No OS sandbox enforcement is claimed",
                 "Method-call effect resolution remains limited by the current cap graph",
+            ],
+        ),
+        ObjectiveLane(
+            id="provenance_seal_chain",
+            label="Provenance seal chain (S97)",
+            status="verified" if provenance_chain.ok else "planned",
+            completion_percent=100.0 if provenance_chain.ok else 0.0,
+            evidence=(
+                "`garnet seal --provenance-chain` validates the conventional "
+                "`agent`, `model`, and `prompt_sha256` attestation keys, then "
+                "emits a deterministic `provenance_chain` block bound to the "
+                "current seal's source and subject digests. "
+                "`scripts/garnet_provenance_seal_chain_status.py --gate` runs "
+                "the focused proof."
+            ),
+            blocked_by=[],
+            deferred=[
+                "Self-declared provenance only: no independent model-run proof",
+                "No claim that the named agent actually produced the artifact",
+                "No proof that the declared tool list is complete",
+                "Supply-chain signing still depends on external cosign/Sigstore",
             ],
         ),
         ObjectiveLane(

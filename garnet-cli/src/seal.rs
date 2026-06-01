@@ -21,6 +21,18 @@ use std::process::Command;
 pub const STATEMENT_TYPE: &str = "https://in-toto.io/Statement/v1";
 /// Garnet's seal predicate type.
 pub const PREDICATE_TYPE: &str = "https://garnet-lang.org/attestation/seal/v1";
+/// Garnet's self-declared provenance-chain block schema.
+pub const PROVENANCE_CHAIN_SCHEMA: &str = "garnet-provenance-chain-v1";
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SealProvenanceChain {
+    pub agent: String,
+    pub model: String,
+    pub prompt_sha256: String,
+    pub artifact_blake3: String,
+    pub source_blake3: String,
+    pub chain_blake3: String,
+}
 
 /// Whether `cosign` is available on `PATH` — the supply-chain signer this seal
 /// predicate is meant to be attested with. Detected, never required.
@@ -72,6 +84,21 @@ pub fn statement_json_full(
     authorship: Option<&str>,
     attestation: &[(String, String)],
 ) -> String {
+    statement_json_with_chain(program, build, caps, cosign, authorship, attestation, None)
+}
+
+/// As [`statement_json_full`], but also records an S97 provenance chain. The
+/// chain only verifies deterministic binding of self-declared fields to this
+/// seal's current subject/source hashes; it does not independently prove origin.
+pub fn statement_json_with_chain(
+    program: &str,
+    build: &Manifest,
+    caps: &CapabilityManifest,
+    cosign: bool,
+    authorship: Option<&str>,
+    attestation: &[(String, String)],
+    provenance_chain: Option<&SealProvenanceChain>,
+) -> String {
     let cosign_note = if cosign {
         "available — sign with: cosign attest --predicate <file> --type custom"
     } else {
@@ -93,6 +120,10 @@ pub fn statement_json_full(
             .collect();
         format!(",\"attestation\":{{{}}}", inner.join(","))
     };
+    let provenance_chain_field = match provenance_chain {
+        Some(chain) => format!(",\"provenance_chain\":{}", chain.to_json()),
+        None => String::new(),
+    };
     format!(
         "{{\"_type\":\"{stmt}\",\
          \"subject\":[{{\"name\":\"{name}\",\"digest\":{{\"blake3\":\"{ast}\"}}}}],\
@@ -101,7 +132,7 @@ pub fn statement_json_full(
          \"source_blake3\":\"{src}\",\
          \"build_manifest\":{build_json},\
          \"capability_manifest\":{caps_json},\
-         \"tooling\":{{\"cosign\":\"{cosign_note}\",\"sbom\":\"{sbom}\"}}{authorship_field}{attestation_field}\
+         \"tooling\":{{\"cosign\":\"{cosign_note}\",\"sbom\":\"{sbom}\"}}{authorship_field}{attestation_field}{provenance_chain_field}\
          }}}}",
         stmt = json_escape(STATEMENT_TYPE),
         name = json_escape(program),
@@ -113,6 +144,111 @@ pub fn statement_json_full(
         cosign_note = json_escape(cosign_note),
         sbom = json_escape(sbom_note),
     )
+}
+
+/// Build and verify the S97 chain from the existing self-declared attestation
+/// pairs. Verification here means: required fields exist, the prompt hash is
+/// canonical, and the chain binds to the live seal's source/artifact digests.
+pub fn build_provenance_chain(
+    build: &Manifest,
+    authorship: Option<&str>,
+    attestation: &[(String, String)],
+) -> Result<SealProvenanceChain, String> {
+    let agent = required_unique_attestation(attestation, "agent")?;
+    let model = required_unique_attestation(attestation, "model")?;
+    let prompt_sha256 = required_unique_attestation(attestation, "prompt_sha256")?;
+    validate_prompt_sha256(&prompt_sha256)?;
+
+    let mut pairs = attestation.to_vec();
+    pairs.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)));
+    let mut payload = String::new();
+    payload.push_str(PROVENANCE_CHAIN_SCHEMA);
+    payload.push('\n');
+    payload.push_str("agent=");
+    payload.push_str(&agent);
+    payload.push('\n');
+    payload.push_str("model=");
+    payload.push_str(&model);
+    payload.push('\n');
+    payload.push_str("prompt_sha256=");
+    payload.push_str(&prompt_sha256);
+    payload.push('\n');
+    payload.push_str("source_blake3=");
+    payload.push_str(&build.source_hash);
+    payload.push('\n');
+    payload.push_str("artifact_blake3=");
+    payload.push_str(&build.ast_hash);
+    payload.push('\n');
+    payload.push_str("authorship=");
+    payload.push_str(authorship.unwrap_or(""));
+    payload.push('\n');
+    for (key, value) in &pairs {
+        payload.push_str("attest.");
+        payload.push_str(key);
+        payload.push('=');
+        payload.push_str(value);
+        payload.push('\n');
+    }
+
+    Ok(SealProvenanceChain {
+        agent,
+        model,
+        prompt_sha256,
+        artifact_blake3: build.ast_hash.clone(),
+        source_blake3: build.source_hash.clone(),
+        chain_blake3: blake3::hash(payload.as_bytes()).to_hex().to_string(),
+    })
+}
+
+impl SealProvenanceChain {
+    fn to_json(&self) -> String {
+        format!(
+            "{{\"schema\":\"{schema}\",\
+             \"agent\":\"{agent}\",\
+             \"model\":\"{model}\",\
+             \"prompt_sha256\":\"{prompt}\",\
+             \"artifact_blake3\":\"{artifact}\",\
+             \"source_blake3\":\"{source}\",\
+             \"chain_blake3\":\"{chain}\",\
+             \"binding_verified\":true,\
+             \"independent_origin_verified\":false,\
+             \"verification_scope\":\"self-declared provenance fields bound to this seal subject/source\",\
+             \"limitations\":[\"does not prove the model executed the prompt\",\"does not prove the declared tool list is complete\"]}}",
+            schema = json_escape(PROVENANCE_CHAIN_SCHEMA),
+            agent = json_escape(&self.agent),
+            model = json_escape(&self.model),
+            prompt = json_escape(&self.prompt_sha256),
+            artifact = json_escape(&self.artifact_blake3),
+            source = json_escape(&self.source_blake3),
+            chain = json_escape(&self.chain_blake3),
+        )
+    }
+}
+
+fn required_unique_attestation(
+    attestation: &[(String, String)],
+    key: &str,
+) -> Result<String, String> {
+    let values: Vec<&String> = attestation
+        .iter()
+        .filter_map(|(k, v)| (k == key).then_some(v))
+        .collect();
+    match values.as_slice() {
+        [] => Err(format!("missing required attestation key `{key}`")),
+        [value] if value.trim().is_empty() => Err(format!("attestation key `{key}` is empty")),
+        [value] => Ok((*value).clone()),
+        _ => Err(format!("attestation key `{key}` must appear exactly once")),
+    }
+}
+
+fn validate_prompt_sha256(value: &str) -> Result<(), String> {
+    let Some(hex) = value.strip_prefix("sha256:") else {
+        return Err("prompt_sha256 must be sha256:<64 lowercase hex>".to_string());
+    };
+    if hex.len() != 64 || !hex.chars().all(|c| matches!(c, '0'..='9' | 'a'..='f')) {
+        return Err("prompt_sha256 must be sha256:<64 lowercase hex>".to_string());
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -162,5 +298,29 @@ mod tests {
             statement_json("d", &build, &caps, false),
             statement_json("d", &build, &caps, false)
         );
+    }
+
+    #[test]
+    fn provenance_chain_validates_and_binds_manifest_hashes() {
+        let (build, _) = build_for("@caps()\ndef main() { 1 }\n");
+        let chain = build_provenance_chain(
+            &build,
+            Some("ai-assisted:gpt-5"),
+            &[
+                ("model".to_string(), "gpt-5".to_string()),
+                (
+                    "prompt_sha256".to_string(),
+                    "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+                        .to_string(),
+                ),
+                ("agent".to_string(), "win-codex".to_string()),
+            ],
+        )
+        .expect("valid chain");
+        assert_eq!(chain.agent, "win-codex");
+        assert_eq!(chain.model, "gpt-5");
+        assert_eq!(chain.artifact_blake3, build.ast_hash);
+        assert_eq!(chain.source_blake3, build.source_hash);
+        assert_eq!(chain.chain_blake3.len(), 64);
     }
 }

@@ -1,9 +1,9 @@
 # Garnet v0.8.1 Plan - Substrate Execution + Real-World Proof Runway
 
-Status: reconciled on 2026-06-01 after S95 merged in #319; S96 is active.
+Status: reconciled on 2026-06-01 after S96 merged in #320; S97 is active.
 
 This file is the repo-visible v0.8.1 runway map. It preserves the Windows audit
-burn-down context from S81-S90, reflects that S91-S95 are already merged, and keeps
+burn-down context from S81-S90, reflects that S91-S96 are already merged, and keeps
 the remaining work calibrated: v0.8.1 is a research-grade prototype lane, not a
 production or 1.0 claim.
 
@@ -92,6 +92,25 @@ Honest scope: no new provider-backed 5K h3a timing measurement is claimed. The
 recorded v4.0 6.5% partial result stands until provider-backed 5K runtime rows
 exist and are reviewed.
 
+## S96 Merged
+
+S96 merged in #320. It adds a narrow static linear/effect safe-mode seed that
+rejects authority-bearing safe helper functions unless they expose an explicit
+ownership-qualified parameter boundary.
+
+Honest scope: first static increment only. It is not whole-language linear
+typing, not VM/runtime capability enforcement, and not OS sandbox enforcement.
+
+## S97 Active
+
+S97 adds a provenance seal-chain block to `garnet seal` that validates
+self-declared `agent`, `model`, and `prompt_sha256` attestation keys, then binds
+them to the current seal's source and subject digests.
+
+Honest scope: the binding is machine-checkable, but the origin remains
+self-declared. S97 does not prove the named model executed the prompt, that the
+named agent produced the artifact, or that the declared tool list is complete.
+
 ## S92-S98 Substrate Lane
 
 | Slice | Title | Goal | Honest Scope |
@@ -100,8 +119,8 @@ exist and are reviewed.
 | S93 | bounded-loop-verifier | Merged in #317: static bounded-loop verifier for the safe subset accepts literal range/array bounds, literal counter `while` loops, and immediate-exit loop bodies while rejecting uncheckable loops in safe / `@bounded` scope. | Static verifier only; no Wasmtime fuel, runtime loop, VM, or OS sandbox enforcement claim. |
 | S94 | paper-vi-exp1-llm-pass1 | Merged in #318: Paper VI Exp 1 LLM pass@1 harness behind a provider flag, with provider-free and fixture proof. | Harness wired only; provider-backed pass@1 measurement, full 500-task corpus, hidden-test scorer, and statistical run remain pending infrastructure. |
 | S95 | paper-vi-exp3-5k-loc | Merged in #319: deterministic 5K-LOC Exp 3 rerun harness with provider-free stateless/history-aware rows and cautious aggregate/analyze output. | No new h3a timing measurement is claimed; recorded 6.5% partial stands until provider-backed 5K runtime rows exist and are reviewed. |
-| S96 | linear-effect-safe-mode | Active: seed linear/effect typed safe-mode analysis toward provable `@caps` soundness by tying authority-bearing safe helper functions to explicit ownership-qualified parameter boundaries. | First static increment only; not whole-language verification, not runtime/VM enforcement, and not a proof that every capability path is sealed. |
-| S97 | provenance-seal-chain | Bind and verify the agent/model/prompt-to-artifact chain in seal. | Self-declared provenance unless independently verified. |
+| S96 | linear-effect-safe-mode | Merged in #320: seed linear/effect typed safe-mode analysis toward provable `@caps` soundness by tying authority-bearing safe helper functions to explicit ownership-qualified parameter boundaries. | First static increment only; not whole-language verification, not runtime/VM enforcement, and not a proof that every capability path is sealed. |
+| S97 | provenance-seal-chain | Active: bind and verify self-declared agent/model/prompt metadata against the current seal source/artifact digests. | Binding verification only; no independent model-run, agent-origin, or complete tool-history proof. |
 | S98 | cap-manifest-standard | Advance the capability-manifest schema and reference implementation seed. | Intent plus reference implementation only; no standards body has adopted it. |
 
 ## Reserved S99-S110 Finale
