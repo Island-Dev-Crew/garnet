@@ -18,6 +18,16 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **P0 (v0.8.1 runway — Windows audit as tracked truth):** imports the Codex
+  Windows audit of S1–S80 as committed evidence — `F_Project_Management/WINDOWS_AUDIT_S1_S80.md`
+  (summary + the **14 open `WIN-*` findings** mapped to owning burn-down slices
+  S81–S88 + the resolved `WIN-S70-001`), plus the machine ledgers
+  `.dogfood/windows-core-audit.json` and `.dogfood/windows-audit-goal.json`
+  committed verbatim. `scripts/garnet_windows_audit_status.py` (+ `--gate`, 5
+  tests, agent-contracts) enforces that every open finding has an owning slice and
+  the ledgers pin HEAD `cc165e8`. **Honest scope:** a tracking gate over imported
+  audit evidence — it does not re-run the audit or claim any finding fixed; Windows
+  proofs are recorded back into the doc by the Windows lane. No Rust changed.
 - **S80 (v0.8.0 cut readiness — the whole S30–S80 run):**
   `scripts/garnet_v0_8_0_cut_readiness.py` (+ `--gate`, 5 tests, agent-contracts)
   aggregates the entire completion run into one **READY / NOT-READY-TO-CUT**
