@@ -396,11 +396,18 @@
     },
     {
       "id": "s80",
-      "merge_confidence": null,
-      "merged_at": null,
-      "status": "pending",
+      "merge_confidence": 5,
+      "merged_at": "2026-06-01T02:18:18+00:00",
+      "status": "merged",
       "title": "v0.8.0-cut-decision",
-      "weight": 1.0
+      "weight": 1.0,
+      "cut_record": {
+        "tag": "v0.8.0",
+        "commit": "cc165e8eaa8b2118f5da8d5e7bb80baa93a02fc5",
+        "tagger": "Jon Isaac",
+        "date": "2026-05-31",
+        "note": "Tag cut by Jon (the release-truth decision); the S80 PR produced cut-readiness evidence only."
+      }
     }
   ],
   "title": "Garnet v0.8 (S31-S80)"
