@@ -1131,8 +1131,10 @@ fn bool_code(cond: Bool) -> Int {
     let while_assignment_invalidation_src = r#"
 fn bool_code(cond: Bool) -> Int {
   let mut flag = true
-  while cond {
+  let mut i = 0
+  while i < 1 {
     flag = 1
+    i += 1
   }
   match flag {
     true => 1

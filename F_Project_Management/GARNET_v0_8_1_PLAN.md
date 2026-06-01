@@ -1,9 +1,9 @@
 # Garnet v0.8.1 Plan - Substrate Execution + Real-World Proof Runway
 
-Status: reconciled on 2026-06-01 after S91 merged in #315.
+Status: reconciled on 2026-06-01 after S92 merged in #316.
 
 This file is the repo-visible v0.8.1 runway map. It preserves the Windows audit
-burn-down context from S81-S90, reflects that S91 is already merged, and keeps
+burn-down context from S81-S90, reflects that S91-S92 are already merged, and keeps
 the remaining work calibrated: v0.8.1 is a research-grade prototype lane, not a
 production or 1.0 claim.
 
@@ -54,12 +54,23 @@ Honest scope: the proof is interpreter-scoped. Direct host/test calls outside a
 program frame remain allowed for embedded testing, and the VM still does not
 enforce user-function `@caps`.
 
+## S92 Merged
+
+S92 merged in #316. It closes the interpreter-visible subprocess authority
+laundering gap for `std::process::{spawn, spawn_args, output}` by requiring
+both the live call chain and the program entry point to declare `@caps(proc)`.
+
+Honest scope: process launch bridges only. Executable FFI runtime enforcement is
+still deferred because no executable FFI bridge exists yet; Linux seccomp /
+OS-policy application remains infra-deferred on Windows; the VM still does not
+enforce user-function `@caps`.
+
 ## S92-S98 Substrate Lane
 
 | Slice | Title | Goal | Honest Scope |
 |---|---|---|---|
-| S92 | spawn-ffi-authority | Close interpreter-visible subprocess authority laundering by requiring process-launch bridges to see `@caps(proc)` on both the live call chain and the program entry point, and record that executable FFI runtime enforcement is not present yet. | Process launch bridges only; direct host/test calls outside a program-entry frame remain allowed; Linux seccomp/OS-policy application remains infra-deferred on Windows; no VM caps claim. |
-| S93 | bounded-loop-verifier | Add a static bounded-loop verifier for the safe subset; accept statically derivable bounds and reject uncheckable loops. | No Wasmtime fuel claim. |
+| S92 | spawn-ffi-authority | Merged in #316: process-launch bridges require `@caps(proc)` on both the live call chain and the program entry point, while executable FFI enforcement stays named-deferred. | Process launch bridges only; direct host/test calls outside a program-entry frame remain allowed; Linux seccomp/OS-policy application remains infra-deferred on Windows; no VM caps claim. |
+| S93 | bounded-loop-verifier | Add a static bounded-loop verifier for the safe subset; accept literal range/array bounds, literal counter `while` loops, and immediate-exit loop bodies while rejecting uncheckable loops in safe / `@bounded` scope. | Static verifier only; no Wasmtime fuel, runtime loop, VM, or OS sandbox enforcement claim. |
 | S94 | paper-vi-exp1-llm-pass1 | Wire Paper VI Exp 1 LLM pass@1 harness behind a provider flag. | Account/credential gated; if credentials are absent, record honest pending with harness wired. |
 | S95 | paper-vi-exp3-5k-loc | Re-run Paper VI Exp 3 at 5K LOC scale and resolve the h3a 6.5% to 10% question honestly. | Provider/runtime evidence only; no invented measurement. |
 | S96 | linear-effect-safe-mode | Seed linear/effect typed safe-mode analysis toward provable `@caps` soundness. | First increment only; not whole-language verification. |
