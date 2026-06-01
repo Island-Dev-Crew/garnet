@@ -90,6 +90,15 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   `096cb946361fbf2d821452449578fd8f5af3f2a70c3546e763e43d4374d168ad`.
   **Honest scope:** proof/accounting only; no manifest logic changes and no
   S81/S84/S85/S89/S90 proof claim.
+- **S85 Windows proof (interpreter stack + VM parity):** records the Windows lane
+  proof for the already-merged Mac-authored S85 interpreter large-stack fix in
+  `F_Project_Management/WINDOWS_AUDIT_S1_S80.md`. `cargo run -q -p garnet-cli
+  --bin garnet -- run --interp .\examples\mvp_function_call_demo.garnet` exits 0
+  and prints `=> 7105`; `python -B scripts\garnet_interp_stack_status.py --gate
+  --format json` exits 0; and `python -B scripts\garnet_vm_interp_parity.py
+  --gate --format json` exits 0 with `binary_available=true`, `parity_ok=33`,
+  `corpus_size=33`, and `divergent=[]`. **Honest scope:** proof/accounting only;
+  no interpreter or VM logic changes and no unbounded recursion claim.
 
 - **S85 (v0.8.1 runway — interpreter deep-recursion robustness):** the tree-walking
   interpreter (`garnet run --interp`) stack-overflowed on Windows (~1 MiB default
