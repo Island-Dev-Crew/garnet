@@ -56,4 +56,4 @@
 - [x] Run `cargo test --workspace --no-fail-fast`.
 - [x] Run `cargo clippy --workspace --all-targets -- -D warnings`.
 - [x] Build a dogfood-readiness bundle for S92.
-- [ ] Open PR titled `S92: guard subprocess authority at program entry`.
+- [x] Open PR titled `S92: guard subprocess authority at program entry` (#316).
