@@ -67,6 +67,17 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   managed-program frame (direct host/test call) is **allowed** (no `@caps` context);
   the **VM** backend does not yet enforce `@caps`. Mac-authored + Mac-tested; the
   Windows trap re-proves via the cross-OS matrix (Windows-proof-pending).
+- **S90 Windows proof (`@caps` runtime trap):** records the Windows lane proof for
+  the already-merged Mac-authored S90 host-authority enforcement seed in
+  `F_Project_Management/WINDOWS_AUDIT_S1_S80.md`. `python -B
+  scripts\test_garnet_caps_enforcement_status.py` ran 5/5 OK,
+  `python -B scripts\garnet_caps_enforcement_status.py --gate --format json`
+  exited 0 with `ok=true`, and `cargo test -p garnet-cli --test caps_enforcement
+  -- --nocapture` ran 5/5 OK. A direct Windows `garnet run --interp` fixture whose
+  `@caps()` function calls `std::env::get("HOME")` exited 1 with
+  `runtime error: capability: std::env::get requires @caps(env), not declared in
+  the calling chain`. Honest scope unchanged: interpreter host-authority surfaces
+  only; the VM backend still does not enforce `@caps`.
 - **S89 (v0.8.1 runway — `@max_depth` runtime enforcement seed):** the first slice
   that makes the trust kernel **enforce** at runtime. A function declaring
   `@max_depth(N)` now **traps deterministically** when its recursion depth exceeds
