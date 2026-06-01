@@ -25,6 +25,19 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S86 (Windows audit binary-strict S80 cut-readiness):** adds
+  `--binary-strict` to `scripts/garnet_v0_8_0_cut_readiness.py` plus
+  `--windows-audit` as a named alias for the Windows burn-down lane. Default
+  mode remains lenient and keeps `--no-run` for the S71/S72/S73 binary-backed
+  gates so Python-only CI stays deterministic; strict mode removes `--no-run`
+  for those three direct proofs and treats any failure as blocking. The JSON/MD
+  output now records `mode` / `binary_strict`. Windows proof:
+  `python -B scripts\garnet_v0_8_0_cut_readiness.py --gate --binary-strict
+  --format json` exits 0 after S84 and S85 landed, closing WIN-S80-001 without
+  cutting or authorizing any tag. **Honest scope:** this hardens the advisory
+  S80 evidence gate; it does not change the historical `v0.8.0` tag truth and
+  does not claim production readiness.
+
 - **S83 (v0.8.1 runway — post-tag release-truth reconciliation):** reconciles the
   split truth the Windows audit flagged (WIN-S80-002) — `v0.8.0` is cut (Jon, `cc165e8`,
   2026-05-31), yet `GARNET_v0_8_0_CUT.md` still read "READY TO CUT (pending Jon)",

@@ -33,7 +33,7 @@ open `WIN-*` finding maps to the slice that closes (or honestly defers) it.
 | WIN-S80-002 | medium | S80 | **S83** ✅ closed | Post-tag release truth split: `v0.8.0` tagged on HEAD, but S80 docs/ledger still read pre-tag/pending. (S83: reconciled in docs + CHANGELOG + ledger `cut_record`; pure-docs, no Windows proof needed.) |
 | WIN-S71-001 | high | S71 | **S84** | Paper VI Exp 3 reporter passes Windows absolute paths to WSL bash (exit 127). |
 | WIN-S73-001 | high | S73 | **S85** | VM/interpreter parity diverges on Windows: interpreter stack-overflows on `mvp_function_call_demo.garnet` (VM succeeds). |
-| WIN-S80-001 | high | S80 | **S86** | S80 cut-readiness reports READY while direct Windows binary dogfood for S71/S73 fails (`--no-run`). |
+| WIN-S80-001 | high | S80 | **S86** ✅ closed | S80 cut-readiness reported READY while direct Windows binary dogfood for S71/S73 failed (`--no-run`). S86 adds `--binary-strict` / `--windows-audit`; after S84+S85 landed, the strict Windows gate exits 0 and blocks future direct binary failures. |
 | WIN-S6-001 | medium | S6 | **S87** | Memory-eviction reporter Markdown can fail on default Windows cp1252 stdout. |
 | WIN-S31-001 | high | S31 | **S87** | MIT readiness reporter aborts when temp fixtures hit a denied Windows temp dir. |
 | WIN-S31-002 | advisory | S31 | **S87** | Full readiness JSON/MD is machine-specific; cross-machine byte comparison needs a committed-only surface. |
@@ -44,6 +44,11 @@ open `WIN-*` finding maps to the slice that closes (or honestly defers) it.
 
 - **WIN-S70-001** — prior ledger-drift finding; resolved on current `main` (the S70
   version-map correction landed).
+- **WIN-S80-001** — S86 adds `--binary-strict` / `--windows-audit` to the S80
+  cut-readiness aggregate. Windows proof: `python -B
+  scripts\garnet_v0_8_0_cut_readiness.py --gate --binary-strict --format json`
+  exits 0 with mode `binary-strict`, after directly running S71/S72/S73 rather
+  than hiding them behind `--no-run`.
 
 ## Burn-down rules
 
@@ -63,5 +68,6 @@ open `WIN-*` finding maps to the slice that closes (or honestly defers) it.
 | S82 | fresh Windows checkout → `garnet seal <file>` `source_blake3` matches Mac | passed on Windows in S82 proof: `python -B scripts\test_garnet_seal_determinism_status.py` ran 5/5 OK; `python -B scripts\garnet_seal_determinism_status.py --gate --format json` exited 0; LF and CRLF `garnet seal --out` runs both exited 0 and emitted matching `predicate.source_blake3` `096cb946361fbf2d821452449578fd8f5af3f2a70c3546e763e43d4374d168ad` |
 | S84 | `python scripts/test_garnet_paper_vi_exp3_status.py` → 6/6 on Windows | passed on Windows in S84: `python -B scripts\test_garnet_paper_vi_exp3_status.py` ran 6/6 OK; `python -B scripts\garnet_paper_vi_exp3_status.py --gate --format json` exited 0 with `provider_free_run_ok=true` |
 | S85 | `garnet.exe run --interp examples/mvp_function_call_demo.garnet` → exit 0 `=> 7105`; parity 33/33 | passed on Windows in S85 proof: `cargo run -q -p garnet-cli --bin garnet -- run --interp .\examples\mvp_function_call_demo.garnet` exited 0 and printed `=> 7105`; `python -B scripts\garnet_interp_stack_status.py --gate --format json` exited 0; `python -B scripts\garnet_vm_interp_parity.py --gate --format json` exited 0 with `binary_available=true`, `parity_ok=33`, `corpus_size=33`, `divergent=[]` |
+| S86 | `python scripts/garnet_v0_8_0_cut_readiness.py --gate --binary-strict --format json` on Windows | passed on Windows in S86: strict mode removes `--no-run` from S71/S72/S73, reports `mode="binary-strict"`, and exited 0 after all runway gates passed directly |
 | S89 | over-ceiling `@max_depth` fixture traps deterministically on Windows | **Mac fix landed** (interpreter `@max_depth(N)` enforcement + cross-OS trap tests); Windows-proof-pending |
 | S90 | undeclared-`@caps` fixture traps identically on Windows | **Mac fix landed** (interpreter `@caps` env/proc/fs enforcement + cross-OS trap tests); Windows-proof-pending |

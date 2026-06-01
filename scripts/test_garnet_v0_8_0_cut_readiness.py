@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib.util
 import sys
 import unittest
+from unittest import mock
 from pathlib import Path
 
 SCRIPT = Path(__file__).with_name("garnet_v0_8_0_cut_readiness.py")
@@ -16,10 +17,40 @@ SPEC.loader.exec_module(cr)
 
 
 class CutReadinessTests(unittest.TestCase):
+    BINARY_BACKED_GATES = {
+        "paper-vi-exp3 (S71)",
+        "self-hosted-parser (S72)",
+        "vm-interp-parity (S73)",
+    }
+
     def test_required_merged_covers_s31_to_s79(self) -> None:
         self.assertIn("s31", cr.REQUIRED_MERGED)
         self.assertIn("s79", cr.REQUIRED_MERGED)
         self.assertNotIn("s80", cr.REQUIRED_MERGED)
+
+    def test_default_runway_keeps_no_run_for_binary_backed_gates(self) -> None:
+        specs = dict(cr.runway_gate_specs(binary_strict=False))
+        for name in self.BINARY_BACKED_GATES:
+            self.assertIn("--no-run", specs[name])
+
+    def test_binary_strict_runway_drops_no_run_for_binary_backed_gates(self) -> None:
+        specs = dict(cr.runway_gate_specs(binary_strict=True))
+        for name in self.BINARY_BACKED_GATES:
+            self.assertNotIn("--no-run", specs[name])
+
+    def test_windows_audit_alias_uses_binary_strict_mode(self) -> None:
+        ready = cr.CutReadiness(
+            schema="test",
+            missing_merged=[],
+            ledger_complete=True,
+            release_gate=cr.SubGate(name="release", passed=True, exit_code=0),
+            runway_gates=[],
+            runway_pass=True,
+            cut_ready=True,
+        )
+        with mock.patch.object(cr, "read_readiness", return_value=ready) as mocked:
+            self.assertEqual(cr.main(["--windows-audit", "--format", "json"]), 0)
+        mocked.assert_called_once_with(binary_strict=True)
 
     def test_run_is_cut_ready(self) -> None:
         r = cr.read_readiness()
