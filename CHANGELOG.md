@@ -18,6 +18,23 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S90 (v0.8.1 runway — `@caps` host-authority runtime enforcement seed):** extends
+  runtime enforcement (S89) from `@max_depth` to **capabilities**. The interpreter
+  (`garnet-interp-v0.3/src/eval.rs` `require_capability` + `CapsGuard`, wired into the
+  `std::env`/`std::process`/`fs::`/`std::log::to_file` bridges in `stdlib_bridge.rs`)
+  **traps** when a managed function invokes a host-authority primitive whose required
+  capability no frame in the call chain declared — `garnet run` skips the static
+  checker, so this is the runtime backstop. A managed fn pushes its declared `@caps`
+  onto a per-run thread-local context (RAII-unwound); a primitive is permitted iff the
+  **union** of active frames' caps contains the requirement (or `@caps(*)`). Adds
+  `garnet-cli/tests/caps_enforcement.rs` (5 cross-OS tests: env/proc/fs traps,
+  declared-runs, pure-computation-unaffected), `scripts/garnet_caps_enforcement_status.py`
+  (+ `--gate`, 5 tests, agent-contracts), and a `@caps` section in
+  `GARNET_BOUNDED_ENFORCEMENT.md`. **Honest scope:** host-authority surfaces only
+  (env/proc/fs/log-to-file); pure computation unaffected; a call outside any
+  managed-program frame (direct host/test call) is **allowed** (no `@caps` context);
+  the **VM** backend does not yet enforce `@caps`. Mac-authored + Mac-tested; the
+  Windows trap re-proves via the cross-OS matrix (Windows-proof-pending).
 - **S89 (v0.8.1 runway — `@max_depth` runtime enforcement seed):** the first slice
   that makes the trust kernel **enforce** at runtime. A function declaring
   `@max_depth(N)` now **traps deterministically** when its recursion depth exceeds

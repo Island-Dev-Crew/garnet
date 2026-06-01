@@ -56,3 +56,44 @@ gate.
 - This is a **seed**: one enforced ceiling. Mac-authored + Mac-tested; the Windows
   trap re-proves via the cross-OS `cargo test` matrix (recorded
   Windows-proof-pending in `WINDOWS_AUDIT_S1_S80.md`).
+
+---
+
+## `@caps` host-authority enforcement (S90)
+
+S90 extends runtime enforcement from `@max_depth` to **capabilities**. The
+interpreter now traps when a managed function invokes a **host-authority
+primitive** whose required capability no frame in the call chain declared:
+
+| Primitive(s) | Required cap |
+|---|---|
+| `std::env::get` / `set` / `vars` | `env` |
+| `std::process::spawn` / `spawn_args` / `output` / `wait` / `exit_code` | `proc` |
+| `fs::read_file` / `write_file` / `read_bytes` / `write_bytes` / `list_dir` | `fs` |
+| `std::log::to_file` | `fs` |
+
+```
+$ garnet run --interp env.garnet      # @caps() main calls std::env::get
+runtime error: capability: `std::env::get` requires @caps(env), not declared in the calling chain
+```
+
+`garnet run` does **not** run the static checker, so this is the **runtime
+backstop**: a program that the checker would reject (a managed fn using authority
+it did not declare) is caught at execution. Each managed function pushes its
+declared `@caps` onto a per-run thread-local context (`eval.rs` `CapsGuard`,
+RAII-unwound); a primitive is permitted iff the **union** of the active frames'
+caps contains the requirement (or a `@caps(*)` wildcard). The static caps-graph
+propagates caps up every managed frame, so a *checked* program always carries the
+cap — only under-declared programs trap.
+
+### Scope notes (do not soften)
+
+- **Host-authority surfaces only** — env / process / fs / log-to-file. Pure
+  computation is unaffected.
+- **No managed-program frame ⇒ allowed.** A direct host/test call (no managed
+  function on the stack) has no `@caps` context to enforce against, so it runs —
+  this keeps the Rust stdlib-bridge tests valid.
+- The **VM** backend does not yet enforce `@caps` (the interpreter does). VM
+  enforcement is future work.
+- Mac-authored + Mac-tested; the Windows trap re-proves via the cross-OS `cargo
+  test` matrix (recorded Windows-proof-pending in `WINDOWS_AUDIT_S1_S80.md`).

@@ -9,7 +9,8 @@ use crate::value::{
     ActorMessage, FnValue, MemoryBackend, TypeValue, Value,
 };
 use garnet_parser::ast::{
-    ActorDef, ActorItem, Annotation, BinOp, ClosureBody, Expr, StringLit, TypeExpr, UnOp,
+    ActorDef, ActorItem, Annotation, BinOp, Capability, ClosureBody, Expr, FnMode, StringLit,
+    TypeExpr, UnOp,
 };
 use garnet_parser::token::StrPart;
 use std::cell::RefCell;
@@ -525,7 +526,114 @@ impl Drop for MaxDepthGuard {
     }
 }
 
+// ── @caps host-authority runtime enforcement (S90) ────────────────────────────
+
+/// The capability's `@caps(...)` identifier (matches `Capability::from_ident`).
+fn cap_ident(c: &Capability) -> String {
+    match c {
+        Capability::Fs => "fs".to_string(),
+        Capability::Net => "net".to_string(),
+        Capability::NetInternal => "net_internal".to_string(),
+        Capability::Time => "time".to_string(),
+        Capability::Proc => "proc".to_string(),
+        Capability::Ffi => "ffi".to_string(),
+        Capability::Wildcard => "*".to_string(),
+        Capability::Other(s) => s.clone(),
+    }
+}
+
+/// The capabilities declared by a managed function's `@caps(...)` annotation(s).
+fn declared_caps(annotations: &[Annotation]) -> Vec<String> {
+    annotations
+        .iter()
+        .filter_map(|a| match a {
+            Annotation::Caps(caps, _) => Some(caps.iter().map(cap_ident).collect::<Vec<_>>()),
+            _ => None,
+        })
+        .flatten()
+        .collect()
+}
+
+/// The active capability context on the per-run `garnet-interp` thread:
+/// `managed_frames` counts the managed functions currently on the stack, and
+/// `counts` is the multiset union of every `@caps` they declared. A host-authority
+/// primitive is permitted iff some managed frame in the call chain declared the
+/// required capability (the static caps-graph propagates caps up every frame, so
+/// a *checked* program always carries it — only under-declared programs trap).
+struct CapsContext {
+    managed_frames: u32,
+    counts: BTreeMap<String, u32>,
+}
+
+thread_local! {
+    static ACTIVE_CAPS: RefCell<CapsContext> =
+        const { RefCell::new(CapsContext { managed_frames: 0, counts: BTreeMap::new() }) };
+}
+
+/// RAII guard: on a managed function's entry, records its frame + declared caps;
+/// unwinds both on drop (every return/error path, including a trap).
+struct CapsGuard {
+    idents: Vec<String>,
+}
+
+impl CapsGuard {
+    fn enter(annotations: &[Annotation]) -> Self {
+        let idents = declared_caps(annotations);
+        ACTIVE_CAPS.with(|c| {
+            let mut c = c.borrow_mut();
+            c.managed_frames += 1;
+            for id in &idents {
+                *c.counts.entry(id.clone()).or_insert(0) += 1;
+            }
+        });
+        CapsGuard { idents }
+    }
+}
+
+impl Drop for CapsGuard {
+    fn drop(&mut self) {
+        ACTIVE_CAPS.with(|c| {
+            let mut c = c.borrow_mut();
+            c.managed_frames = c.managed_frames.saturating_sub(1);
+            for id in &self.idents {
+                if let Some(n) = c.counts.get_mut(id) {
+                    *n = n.saturating_sub(1);
+                }
+            }
+        });
+    }
+}
+
+/// Enforce that a host-authority primitive's required capability was declared in
+/// the calling chain (S90). Outside any managed-program frame (e.g. a direct
+/// host/test call) there is no `@caps` context to enforce, so the call is allowed.
+pub(crate) fn require_capability(needed: &str, fn_name: &str) -> Result<(), RuntimeError> {
+    ACTIVE_CAPS.with(|c| {
+        let c = c.borrow();
+        if c.managed_frames == 0 {
+            return Ok(());
+        }
+        let has = |k: &str| c.counts.get(k).copied().unwrap_or(0) > 0;
+        if has("*") || has(needed) {
+            Ok(())
+        } else {
+            Err(RuntimeError::msg(format!(
+                "capability: `{fn_name}` requires @caps({needed}), not declared in the calling chain"
+            )))
+        }
+    })
+}
+
 fn call_fn(f: &FnValue, mut args: Vec<Value>) -> Result<Value, RuntimeError> {
+    // `@caps` host-authority enforcement (S90): a managed function pushes its
+    // declared `@caps` onto the active-capability context for the duration of its
+    // body, so a host-authority primitive (`std::env`/`std::process`/`fs::`/
+    // `std::log::to_file`) traps if no frame in the call chain declared its cap.
+    let _caps_guard = if matches!(f.def.mode, FnMode::Managed) {
+        Some(CapsGuard::enter(&f.def.annotations))
+    } else {
+        None
+    };
     // `@max_depth(N)` runtime enforcement (S89): a function that declares
     // `@max_depth` traps deterministically when its recursion depth exceeds N —
     // real enforcement (the interpreter refuses to recurse further), distinct

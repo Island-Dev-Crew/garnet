@@ -505,6 +505,7 @@ fn bridge_array_sort(args: Vec<Value>) -> Result<Value, RuntimeError> {
 // ── Filesystem primitives ──
 
 fn bridge_fs_read_file(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    crate::eval::require_capability("fs", "fs::read_file")?;
     let path = expect_str("read_file", &args, 0)?;
     garnet_stdlib::fs::read_file(path)
         .map(Value::str)
@@ -512,6 +513,7 @@ fn bridge_fs_read_file(args: Vec<Value>) -> Result<Value, RuntimeError> {
 }
 
 fn bridge_fs_write_file(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    crate::eval::require_capability("fs", "fs::write_file")?;
     let path = expect_str("write_file", &args, 0)?;
     let contents = expect_str("write_file", &args, 1)?;
     garnet_stdlib::fs::write_file(path, contents)
@@ -520,6 +522,7 @@ fn bridge_fs_write_file(args: Vec<Value>) -> Result<Value, RuntimeError> {
 }
 
 fn bridge_fs_read_bytes(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    crate::eval::require_capability("fs", "fs::read_bytes")?;
     let path = expect_str("read_bytes", &args, 0)?;
     garnet_stdlib::fs::read_bytes(path)
         .map(bytes_to_value)
@@ -527,6 +530,7 @@ fn bridge_fs_read_bytes(args: Vec<Value>) -> Result<Value, RuntimeError> {
 }
 
 fn bridge_fs_write_bytes(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    crate::eval::require_capability("fs", "fs::write_bytes")?;
     let path = expect_str("write_bytes", &args, 0)?;
     let data = expect_byte_array("write_bytes", &args, 1)?;
     garnet_stdlib::fs::write_bytes(path, &data)
@@ -535,6 +539,7 @@ fn bridge_fs_write_bytes(args: Vec<Value>) -> Result<Value, RuntimeError> {
 }
 
 fn bridge_fs_list_dir(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    crate::eval::require_capability("fs", "fs::list_dir")?;
     let path = expect_str("list_dir", &args, 0)?;
     garnet_stdlib::fs::list_dir(path)
         .map(|entries| Value::array(entries.into_iter().map(Value::str).collect()))
@@ -1179,6 +1184,7 @@ fn bridge_uuid_new_v7(_args: Vec<Value>) -> Result<Value, RuntimeError> {
 // ── S22: std::env and std::process ──
 
 fn bridge_env_get(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    crate::eval::require_capability("env", "std::env::get")?;
     let key = expect_str("std::env::get", &args, 0)?;
     validate_env_key("std::env::get", key)?;
     match std::env::var_os(key) {
@@ -1191,6 +1197,7 @@ fn bridge_env_get(args: Vec<Value>) -> Result<Value, RuntimeError> {
 }
 
 fn bridge_env_set(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    crate::eval::require_capability("env", "std::env::set")?;
     let key = expect_str("std::env::set", &args, 0)?;
     let value = expect_str("std::env::set", &args, 1)?;
     validate_env_key("std::env::set", key)?;
@@ -1200,6 +1207,7 @@ fn bridge_env_set(args: Vec<Value>) -> Result<Value, RuntimeError> {
 }
 
 fn bridge_env_vars(_args: Vec<Value>) -> Result<Value, RuntimeError> {
+    crate::eval::require_capability("env", "std::env::vars")?;
     let mut vars = Vec::new();
     for (key, value) in std::env::vars_os() {
         let key = key
@@ -1235,6 +1243,7 @@ fn validate_env_value(prim: &str, value: &str) -> Result<(), RuntimeError> {
 }
 
 fn bridge_process_spawn(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    crate::eval::require_capability("proc", "std::process::spawn")?;
     let cmdline = expect_str("std::process::spawn", &args, 0)?;
     garnet_stdlib::process::spawn(cmdline)
         .map(|proc| Value::Process(Rc::new(RefCell::new(Some(proc)))))
@@ -1242,6 +1251,7 @@ fn bridge_process_spawn(args: Vec<Value>) -> Result<Value, RuntimeError> {
 }
 
 fn bridge_process_wait(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    crate::eval::require_capability("proc", "std::process::wait")?;
     let process = match args.first() {
         Some(Value::Process(process)) => Rc::clone(process),
         Some(other) => {
@@ -1262,6 +1272,7 @@ fn bridge_process_wait(args: Vec<Value>) -> Result<Value, RuntimeError> {
 }
 
 fn bridge_process_exit_code(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    crate::eval::require_capability("proc", "std::process::exit_code")?;
     match args.first() {
         Some(Value::ProcessStatus(status)) => Ok(garnet_stdlib::process::exit_code(status)
             .map(|code| Value::Int(code as i64))
@@ -1298,6 +1309,7 @@ fn expect_string_array(
 }
 
 fn bridge_process_spawn_args(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    crate::eval::require_capability("proc", "std::process::spawn_args")?;
     let program = expect_str("std::process::spawn_args", &args, 0)?.to_string();
     let argv = expect_string_array("std::process::spawn_args", &args, 1)?;
     garnet_stdlib::process::spawn_args(&program, &argv)
@@ -1306,6 +1318,7 @@ fn bridge_process_spawn_args(args: Vec<Value>) -> Result<Value, RuntimeError> {
 }
 
 fn bridge_process_output(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    crate::eval::require_capability("proc", "std::process::output")?;
     let program = expect_str("std::process::output", &args, 0)?.to_string();
     let argv = expect_string_array("std::process::output", &args, 1)?;
     let out = garnet_stdlib::process::output(&program, &argv)
@@ -1346,6 +1359,7 @@ fn bridge_log_debug(args: Vec<Value>) -> Result<Value, RuntimeError> {
 // ── S24: std::log file sink (cap: fs) ──
 
 fn bridge_log_to_file(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    crate::eval::require_capability("fs", "std::log::to_file")?;
     let path = expect_str("std::log::to_file", &args, 0)?.to_string();
     let level = expect_str("std::log::to_file", &args, 1)?.to_string();
     let message = expect_str("std::log::to_file", &args, 2)?;
