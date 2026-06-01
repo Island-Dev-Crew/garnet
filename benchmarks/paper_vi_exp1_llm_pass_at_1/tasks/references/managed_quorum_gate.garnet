@@ -1,0 +1,10 @@
+def main()
+  approvals = ["APPROVED", "PENDING", "APPROVED", "REJECTED", "APPROVED", "APPROVED"]
+  count = 0
+  for state in approvals
+    if state == "APPROVED"
+      count = count + 1
+    end
+  end
+  print("approved: " + count)
+end

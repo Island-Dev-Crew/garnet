@@ -69,6 +69,17 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   OS sandbox enforcement. Managed functions outside safe / `@bounded` scope are
   intentionally out of scope for this slice.
 
+- **S94 (v0.8.1 substrate - Paper VI Exp 1 provider-gated harness):** adds
+  `benchmarks/paper_vi_exp1_llm_pass_at_1/` with a seed-only task manifest,
+  provider-free mode, deterministic fixture mode, JSONL result writing,
+  aggregation, and cautious analysis output. The new
+  `scripts/garnet_paper_vi_exp1_status.py` gate proves three seed tasks, a
+  provider-free `pending-infra` run, and fixture-only scoring without a network
+  call; the MIT readiness reporter now has a committed-truth S94 lane.
+  **Honest scope:** no provider-backed pass@1 measurement is claimed, the full
+  500-task corpus remains pending infrastructure, and real LLM execution stays
+  behind explicit provider credentials plus `--execute-provider`.
+
 - **S86 (Windows audit binary-strict S80 cut-readiness):** adds
   `--binary-strict` to `scripts/garnet_v0_8_0_cut_readiness.py` plus
   `--windows-audit` as a named alias for the Windows burn-down lane. Default

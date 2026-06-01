@@ -49,6 +49,7 @@ from garnet_reporter_io import configure_utf8_stdout  # noqa: E402
 configure_utf8_stdout()
 
 import garnet_converter_status  # noqa: E402
+import garnet_paper_vi_exp1_status  # noqa: E402
 import garnet_proof_benchmark_status  # noqa: E402
 import garnet_promo_video_status  # noqa: E402
 import garnet_readiness_status  # noqa: E402
@@ -184,6 +185,8 @@ def _lane_score(lane: ObjectiveLane) -> float:
         return 0.85
     if lane.status == "feature-gated-source-ready":
         return 0.85
+    if lane.status == "provider-gated-harness":
+        return 1.0
     return 0.0
 
 
@@ -532,6 +535,7 @@ def read_status() -> MitReadinessStatus:
     converter = garnet_converter_status.read_status()
     contract = converter.intelligent_assist_contract
     promo, promo_probe_note = _read_promo_status()
+    paper_vi_exp1 = garnet_paper_vi_exp1_status.read_status()
     proof = garnet_proof_benchmark_status.read_status()
     vm_scaffold_present = _vm_scaffold_present(proof)
     wls = garnet_windows_linux_studio_status.read_status()
@@ -958,6 +962,30 @@ def read_status() -> MitReadinessStatus:
             ]
             if _compiler_agent_llm_tier_present()
             else [],
+        ),
+        ObjectiveLane(
+            id="paper_vi_exp1_provider_gated_harness",
+            label="Paper VI Exp 1 LLM pass@1 harness (S94)",
+            status="provider-gated-harness" if paper_vi_exp1.ok else "planned",
+            completion_percent=100.0 if paper_vi_exp1.ok else 0.0,
+            evidence=(
+                "`benchmarks/paper_vi_exp1_llm_pass_at_1/` now contains the "
+                "S94 provider-gated harness for the registered pass@1 task "
+                "shape. `scripts/garnet_paper_vi_exp1_status.py --gate` proves "
+                f"{paper_vi_exp1.seed_task_count} seed tasks, provider-free "
+                f"`{paper_vi_exp1.provider_free_status}` rows, and fixture-only "
+                f"scoring ({paper_vi_exp1.fixture_pass_rows}/"
+                f"{paper_vi_exp1.fixture_measured_rows} pass rows) without a "
+                "network call. Real providers remain behind the explicit "
+                "`--provider` / `--execute-provider` gate."
+            ),
+            blocked_by=[],
+            deferred=[
+                "Provider-backed pass@1 measurement requires credentials and reviewed execution",
+                "Full 500-task corpus remains pending infrastructure",
+                "Hidden-test scorer and statistical significance run remain future work",
+                "Fine-tuned model comparison remains unclaimed",
+            ],
         ),
         ObjectiveLane(
             id="broad_converter_frontends",
