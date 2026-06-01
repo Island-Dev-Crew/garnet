@@ -1,0 +1,66 @@
+{
+  "schema": "garnet.paper_vi_exp1_tasks/v1",
+  "status": "seed-only",
+  "target_task_count": 500,
+  "registered_distribution": {
+    "managed_mode": 200,
+    "safe_mode": 200,
+    "mixed_mode": 100,
+    "easy_percent": 40,
+    "medium_percent": 40,
+    "hard_percent": 20
+  },
+  "seed_tasks": [
+    {
+      "id": "managed_quorum_gate",
+      "mode": "managed",
+      "difficulty": "easy",
+      "prompt_file": "prompts/managed_quorum_gate.md",
+      "public_spec_file": "specs/managed_quorum_gate.md",
+      "languages": {
+        "garnet": {
+          "reference_file": "references/managed_quorum_gate.garnet",
+          "expected_stdout": "approved: 4"
+        },
+        "rust": {
+          "reference_file": "references/managed_quorum_gate.rs",
+          "expected_stdout": "approved: 4"
+        }
+      }
+    },
+    {
+      "id": "safe_capability_manifest",
+      "mode": "safe",
+      "difficulty": "medium",
+      "prompt_file": "prompts/safe_capability_manifest.md",
+      "public_spec_file": "specs/safe_capability_manifest.md",
+      "languages": {
+        "garnet": {
+          "reference_file": "references/safe_capability_manifest.garnet",
+          "expected_stdout": "caps: fs,net"
+        },
+        "rust": {
+          "reference_file": "references/safe_capability_manifest.rs",
+          "expected_stdout": "caps: fs,net"
+        }
+      }
+    },
+    {
+      "id": "mixed_memory_trace",
+      "mode": "mixed",
+      "difficulty": "medium",
+      "prompt_file": "prompts/mixed_memory_trace.md",
+      "public_spec_file": "specs/mixed_memory_trace.md",
+      "languages": {
+        "garnet": {
+          "reference_file": "references/mixed_memory_trace.garnet",
+          "expected_stdout": "trace: 3"
+        },
+        "rust": {
+          "reference_file": "references/mixed_memory_trace.rs",
+          "expected_stdout": "trace: 3"
+        }
+      }
+    }
+  ]
+}

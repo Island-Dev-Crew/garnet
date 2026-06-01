@@ -1,9 +1,9 @@
 # Garnet v0.8.1 Plan - Substrate Execution + Real-World Proof Runway
 
-Status: reconciled on 2026-06-01 after S92 merged in #316.
+Status: reconciled on 2026-06-01 after S93 merged in #317; S94 is active.
 
 This file is the repo-visible v0.8.1 runway map. It preserves the Windows audit
-burn-down context from S81-S90, reflects that S91-S92 are already merged, and keeps
+burn-down context from S81-S90, reflects that S91-S93 are already merged, and keeps
 the remaining work calibrated: v0.8.1 is a research-grade prototype lane, not a
 production or 1.0 claim.
 
@@ -65,13 +65,22 @@ still deferred because no executable FFI bridge exists yet; Linux seccomp /
 OS-policy application remains infra-deferred on Windows; the VM still does not
 enforce user-function `@caps`.
 
+## S93 Merged
+
+S93 merged in #317. It adds a static bounded-loop verifier for safe /
+`@bounded` code and rejects loops the checker cannot prove bounded in that
+subset.
+
+Honest scope: static verifier only. No Wasmtime fuel, runtime loop metering, VM
+loop enforcement, or OS sandbox enforcement is claimed.
+
 ## S92-S98 Substrate Lane
 
 | Slice | Title | Goal | Honest Scope |
 |---|---|---|---|
 | S92 | spawn-ffi-authority | Merged in #316: process-launch bridges require `@caps(proc)` on both the live call chain and the program entry point, while executable FFI enforcement stays named-deferred. | Process launch bridges only; direct host/test calls outside a program-entry frame remain allowed; Linux seccomp/OS-policy application remains infra-deferred on Windows; no VM caps claim. |
-| S93 | bounded-loop-verifier | Add a static bounded-loop verifier for the safe subset; accept literal range/array bounds, literal counter `while` loops, and immediate-exit loop bodies while rejecting uncheckable loops in safe / `@bounded` scope. | Static verifier only; no Wasmtime fuel, runtime loop, VM, or OS sandbox enforcement claim. |
-| S94 | paper-vi-exp1-llm-pass1 | Wire Paper VI Exp 1 LLM pass@1 harness behind a provider flag. | Account/credential gated; if credentials are absent, record honest pending with harness wired. |
+| S93 | bounded-loop-verifier | Merged in #317: static bounded-loop verifier for the safe subset accepts literal range/array bounds, literal counter `while` loops, and immediate-exit loop bodies while rejecting uncheckable loops in safe / `@bounded` scope. | Static verifier only; no Wasmtime fuel, runtime loop, VM, or OS sandbox enforcement claim. |
+| S94 | paper-vi-exp1-llm-pass1 | Wire Paper VI Exp 1 LLM pass@1 harness behind a provider flag, with provider-free and fixture proof. | Harness wired only; provider-backed pass@1 measurement, full 500-task corpus, hidden-test scorer, and statistical run remain pending infrastructure. |
 | S95 | paper-vi-exp3-5k-loc | Re-run Paper VI Exp 3 at 5K LOC scale and resolve the h3a 6.5% to 10% question honestly. | Provider/runtime evidence only; no invented measurement. |
 | S96 | linear-effect-safe-mode | Seed linear/effect typed safe-mode analysis toward provable `@caps` soundness. | First increment only; not whole-language verification. |
 | S97 | provenance-seal-chain | Bind and verify the agent/model/prompt-to-artifact chain in seal. | Self-declared provenance unless independently verified. |

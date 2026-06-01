@@ -1,0 +1,4 @@
+def main()
+  trace = ["read", "decide", "write"]
+  print("trace: " + trace.length)
+end

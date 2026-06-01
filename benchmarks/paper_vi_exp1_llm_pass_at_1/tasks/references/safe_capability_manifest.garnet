@@ -1,0 +1,5 @@
+def main()
+  caps = ["net", "fs", "net"]
+  unique = ["fs", "net"]
+  print("caps: " + unique[0] + "," + unique[1])
+end
