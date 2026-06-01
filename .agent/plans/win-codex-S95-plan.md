@@ -65,8 +65,8 @@
 **Files:**
 - Desktop bundle under `C:\Users\IslandDevCrew\Desktop\dogfood\garnet-s95-paper-vi-exp3-5k-loc-*`
 
-- [ ] Run focused S95 tests/status gate.
-- [ ] Run workspace tests and clippy.
-- [ ] Seal a Desktop dogfood bundle.
-- [ ] Open PR `S95: add Paper VI Exp 3 5K-LOC rerun harness`.
+- [x] Run focused S95 tests/status gate.
+- [x] Run workspace tests and clippy.
+- [x] Seal a Desktop dogfood bundle.
+- [x] Open PR `S95: add Paper VI Exp 3 5K-LOC rerun harness`.
 - [ ] Merge only after PR body gate and remote checks are green.
