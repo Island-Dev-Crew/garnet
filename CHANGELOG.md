@@ -91,6 +91,18 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   measurement is claimed; the recorded v4.0 6.5% partial stands until
   provider-backed 5K runtime rows exist and are reviewed.
 
+- **S96 (v0.8.1 substrate - linear/effect safe-mode seed):** adds the first
+  static linear/effect checker increment in `garnet-check-v0.3`. The new pass
+  reuses the CapCaps transitive surface and rejects non-entry safe helper
+  functions that perform authority effects without an explicit
+  ownership-qualified parameter boundary (`own`, `borrow`, `ref`, or `mut`).
+  Adds focused checker tests, a machine-checkable
+  `scripts/garnet_linear_effect_status.py --gate`, and a committed-truth MIT
+  readiness lane. **Honest scope:** first static seed only; this is not
+  whole-language linear typing, not VM/runtime capability enforcement, and not
+  OS sandbox enforcement. Method-call effect resolution remains limited by the
+  current cap graph.
+
 - **S86 (Windows audit binary-strict S80 cut-readiness):** adds
   `--binary-strict` to `scripts/garnet_v0_8_0_cut_readiness.py` plus
   `--windows-audit` as a named alias for the Windows burn-down lane. Default

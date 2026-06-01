@@ -37,6 +37,7 @@ pub mod caps_diff;
 pub mod caps_graph;
 pub mod coherence;
 pub mod concurrency;
+pub mod effects;
 pub mod explosive;
 pub mod match_coverage;
 pub mod overcatch;
@@ -49,6 +50,9 @@ pub use capability_surface::{capability_surface, CapabilitySurface};
 pub use caps_diff::{diff_caps, CapsDiff};
 pub use caps_graph::{CapsReport, CapsViolation};
 pub use concurrency::{concurrency_surface, ActorContract, ProtocolSig};
+pub use effects::{
+    linear_effect_report, FnEffectSummary, LinearEffectReport, LinearEffectViolation, LinearParam,
+};
 pub use explosive::{explosive_ops, ExplosiveKind, ExplosiveOp, FnExplosiveReport};
 pub use overcatch::{overcatch_sites, OverCatchSite};
 
@@ -108,6 +112,11 @@ pub enum CheckError {
     /// or Wasmtime claim.
     #[error("{0}")]
     BoundedLoop(String),
+    /// S96 - linear/effect safe-mode seed. Fatal only for the narrow static
+    /// subset where a non-entry safe helper performs authority effects without
+    /// any ownership-qualified parameter boundary.
+    #[error("{0}")]
+    LinearEffect(String),
 }
 
 /// Presentation severity of a [`CheckError`] — the single source of truth shared
@@ -133,7 +142,8 @@ impl CheckError {
             | CheckError::AnnotationError(_)
             | CheckError::CapsCoverage { .. }
             | CheckError::StabilityError(_)
-            | CheckError::BoundedLoop(_) => Severity::Error,
+            | CheckError::BoundedLoop(_)
+            | CheckError::LinearEffect(_) => Severity::Error,
             CheckError::BoundaryNote(_) => Severity::Warning,
             CheckError::StabilityAdvice(_) | CheckError::OverCatch(_) => Severity::Info,
         }
@@ -151,6 +161,7 @@ impl CheckError {
             CheckError::StabilityError(_) => "check.stability_error",
             CheckError::OverCatch(_) => "check.over_catch",
             CheckError::BoundedLoop(_) => "check.bounded_loop",
+            CheckError::LinearEffect(_) => "check.linear_effect",
         }
     }
 }
@@ -178,6 +189,7 @@ impl CheckReport {
                     | CheckError::CapsCoverage { .. }
                     | CheckError::StabilityError(_)
                     | CheckError::BoundedLoop(_)
+                    | CheckError::LinearEffect(_)
             )
         })
     }
@@ -232,6 +244,11 @@ pub fn check_module(module: &Module) -> CheckReport {
     }
 
     let caps_report = caps_graph::check_caps_coverage(module);
+    for violation in effects::linear_effect_report(module, &caps_report).violations {
+        report
+            .errors
+            .push(CheckError::LinearEffect(violation.message()));
+    }
     for v in caps_report.violations {
         report.errors.push(CheckError::CapsCoverage {
             fn_name: v.fn_name,
@@ -740,6 +757,11 @@ mod tests {
                 Severity::Error,
                 "check.bounded_loop",
             ),
+            (
+                LinearEffect("x".into()),
+                Severity::Error,
+                "check.linear_effect",
+            ),
         ];
         for (err, sev, code) in cases {
             assert_eq!(err.severity(), sev, "severity for {err:?}");
@@ -762,6 +784,7 @@ mod tests {
             },
             StabilityError("x".into()),
             BoundedLoop("x".into()),
+            LinearEffect("x".into()),
         ];
         for e in fatal {
             assert_eq!(e.severity(), Severity::Error);
