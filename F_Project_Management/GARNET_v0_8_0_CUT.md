@@ -1,12 +1,28 @@
 # Garnet v0.8.0 cut readiness — the whole S30–S80 run (S80)
 
+> ## ✅ Post-cut release truth (2026-05-31, S83 / closes WIN-S80-002)
+>
+> **`v0.8.0` IS cut.** Jon Isaac tagged annotated `v0.8.0` → commit `cc165e8`
+> (the S80 merge) and pushed it to `Island-Dev-Crew/garnet`. Tags on origin are
+> now `v0.4.2`, `v0.5.0`, **`v0.8.0`**. **Both of these are true, in one place:**
+> 1. **The tag was cut by Jon** — the release-truth decision was made and acted on.
+> 2. **The S80 PR itself only produced cut-readiness *evidence*** — the
+>    `garnet_v0_8_0_cut_readiness.py` gate is advisory; it did not (and still does
+>    not) cut, push, or authorize a tag. The cut was a separate, human act.
+>
+> v0.8.0 remains a **research-grade-prototype milestone**, not a production/1.0
+> release. The verdict below is the original S80 readiness evidence; it is
+> preserved as-authored (the gate language about "not cutting a tag" describes the
+> *gate*, which is still true).
+
 This is the evidence for the **single `v0.8.0` tag** that cuts the entire S30–S80
 completion run (per `GARNET_v0_8_VERSION_MAP.md`). The live verdict is
 `scripts/garnet_v0_8_0_cut_readiness.py --format md`; `--gate` runs in CI.
 
-> **This document and its gate do NOT cut a tag.** Cutting `v0.8.0` is a
-> **release-truth decision for Jon**, not made by this slice. Only `v0.4.2` and
-> `v0.5.0` are tagged today. "READY TO CUT" is evidence-backed advice — not the act.
+> **This document's gate does NOT cut a tag.** Cutting `v0.8.0` was a
+> **release-truth decision for Jon** (done 2026-05-31, see the post-cut note
+> above), not made by the gate. "READY TO CUT" was evidence-backed advice — the
+> cut itself was Jon's separate act.
 
 ## Verdict: READY TO CUT (pending Jon)
 

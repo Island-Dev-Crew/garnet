@@ -30,7 +30,7 @@ open `WIN-*` finding maps to the slice that closes (or honestly defers) it.
 | WIN-S37-001 | high | S37 | **S81** | `diff-caps` misses authority expansion from uppercase `.GARNET`. |
 | WIN-S46-001 | high | S46 | **S81** | Sandbox-policy generation inherits the uppercase `.GARNET` discovery miss. |
 | WIN-S38-001 | high | S38 | **S82** | Seal full predicate changes LF↔CRLF because `source_blake3` hashes raw bytes (no `*.garnet` eol pin). |
-| WIN-S80-002 | medium | S80 | **S83** | Post-tag release truth split: `v0.8.0` tagged on HEAD, but S80 docs/ledger still read pre-tag/pending. |
+| WIN-S80-002 | medium | S80 | **S83** ✅ closed | Post-tag release truth split: `v0.8.0` tagged on HEAD, but S80 docs/ledger still read pre-tag/pending. (S83: reconciled in docs + CHANGELOG + ledger `cut_record`; pure-docs, no Windows proof needed.) |
 | WIN-S71-001 | high | S71 | **S84** | Paper VI Exp 3 reporter passes Windows absolute paths to WSL bash (exit 127). |
 | WIN-S73-001 | high | S73 | **S85** | VM/interpreter parity diverges on Windows: interpreter stack-overflows on `mvp_function_call_demo.garnet` (VM succeeds). |
 | WIN-S80-001 | high | S80 | **S86** | S80 cut-readiness reports READY while direct Windows binary dogfood for S71/S73 fails (`--no-run`). |

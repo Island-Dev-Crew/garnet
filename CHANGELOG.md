@@ -7,17 +7,36 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated-honesty record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
-## [Unreleased] — v0.8.0 in flight
+## [Unreleased] — v0.8.1 runway
 
-> Release-truth note (S31): only `v0.4.2` and `v0.5.0` are tagged. The `v0.6.0`
-> and `v0.7.0` "in flight" labels were planning targets that never cut a tag;
-> their slices (S11–S30) folded forward and ship under the next tag, **v0.8.0**
-> (planned @ S60 per `GARNET_v0_8_SLICE_DOGFOOD.md`). A full CHANGELOG
-> restructure + any retroactive tagging is a deferred S31 release-truth decision
-> for Jon — not done in this PR.
+> **Post-cut release truth (2026-05-31, S83):** **`v0.8.0` is cut** — Jon Isaac
+> tagged annotated `v0.8.0` → `cc165e8` (the S80 merge) and pushed it to
+> `Island-Dev-Crew/garnet`; tags on origin are now `v0.4.2`, `v0.5.0`, **`v0.8.0`**.
+> The entries from **S31–S80** shipped under that `v0.8.0` tag (a research-grade
+> milestone, not production/1.0); entries from **P0 / S81+** are the **v0.8.1
+> runway** (the Windows-audit burn-down + runtime-enforcement seeds). A full
+> Keep-a-Changelog restructure into a dated `[v0.8.0]` section + any retroactive
+> `v0.6.0`/`v0.7.0` tagging remains a deferred release-truth decision for Jon — not
+> done here; this note records the cut truth in one place (closes WIN-S80-002).
+>
+> Earlier S31 note (preserved): only `v0.4.2`/`v0.5.0` were tagged before the
+> v0.8.0 cut; the `v0.6.0`/`v0.7.0` "in flight" labels were planning targets that
+> never cut a tag, and their slices (S11–S30) folded forward under `v0.8.0`.
 
 ### Added
 
+- **S83 (v0.8.1 runway — post-tag release-truth reconciliation):** reconciles the
+  split truth the Windows audit flagged (WIN-S80-002) — `v0.8.0` is cut (Jon, `cc165e8`,
+  2026-05-31), yet `GARNET_v0_8_0_CUT.md` still read "READY TO CUT (pending Jon)",
+  the CHANGELOG header read "v0.8.0 in flight", and `.dogfood/goal.json` kept `s80`
+  pending. Now recorded **in one place**: a post-cut note in `GARNET_v0_8_0_CUT.md`
+  + the CHANGELOG `[Unreleased]` header (→ v0.8.1 runway) state that *both* are true
+  — the tag was cut by Jon **and** the S80 PR produced cut-readiness evidence only.
+  The ledger advances `s80 → merged(5)` with a `cut_record` (goal now **50/50**).
+  `scripts/garnet_release_truth_status.py` (+ `--gate`, 5 tests, agent-contracts)
+  enforces the two truths coexist. **Honest scope:** pure docs/ledger reconciliation
+  — no code, no new tag (the full Keep-a-Changelog restructure stays a deferred
+  decision for Jon); no Rust changed.
 - **S90 (v0.8.1 runway — `@caps` host-authority runtime enforcement seed):** extends
   runtime enforcement (S89) from `@max_depth` to **capabilities**. The interpreter
   (`garnet-interp-v0.3/src/eval.rs` `require_capability` + `CapsGuard`, wired into the
