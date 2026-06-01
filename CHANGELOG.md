@@ -71,6 +71,16 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   enforce `@max_depth` (the parity corpus has no over-ceiling program, so parity
   stays 33/33). Mac-authored + Mac-tested; the Windows trap re-proves via the
   cross-OS matrix (Windows-proof-pending).
+- **S81 Windows proof (uppercase `.GARNET` discovery):** records the Windows
+  lane proof for the already-merged Mac-authored S81 collector fix in
+  `F_Project_Management/WINDOWS_AUDIT_S1_S80.md`. `python -B
+  scripts\test_garnet_garnet_ext_discovery_status.py` runs 5/5 OK,
+  `python -B scripts\garnet_garnet_ext_discovery_status.py --gate --format json`
+  exits 0, and `cargo run -q -p garnet-cli --bin garnet -- verify <temp-dir>`
+  exits 1 after discovering uppercase `BAD.GARNET` while reporting lowercase
+  `main.garnet` clean. **Honest scope:** proof/accounting only; no collector
+  logic changes and no S82/S84/S85/S89/S90 proof claim.
+
 - **S85 (v0.8.1 runway — interpreter deep-recursion robustness):** the tree-walking
   interpreter (`garnet run --interp`) stack-overflowed on Windows (~1 MiB default
   thread stack) for `mvp_function_call_demo.garnet` while the VM succeeded, so the
