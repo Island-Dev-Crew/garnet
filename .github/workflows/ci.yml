@@ -64,6 +64,7 @@ jobs:
       - run: python3 scripts/test_garnet_positioning_status.py
       - run: python3 scripts/test_garnet_v0_8_0_cut_readiness.py
       - run: python3 scripts/test_garnet_windows_audit_status.py
+      - run: python3 scripts/test_garnet_garnet_ext_discovery_status.py
       - run: python3 scripts/check_determinism_no_llm.py
       - run: python3 scripts/check-agent-contracts.py
       # S47: gate cross-OS build coverage — fails if ci.yml stops testing all
@@ -147,6 +148,9 @@ jobs:
       # P0 (v0.8.1 runway): Windows audit burn-down — every open WIN-* finding
       # has an owning slice; the committed machine ledgers pin HEAD cc165e8.
       - run: python3 scripts/garnet_windows_audit_status.py --gate
+      # S81: .GARNET discovery — the shared collector stays case-insensitive and
+      # the capability surfaces route through it (closes WIN-S33/36/37/46).
+      - run: python3 scripts/garnet_garnet_ext_discovery_status.py --gate
 
   # ───────────────────────────────────────────────────────────────────
   # Format check — fast, runs once on Linux. A failure here is the

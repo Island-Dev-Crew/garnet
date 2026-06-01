@@ -215,9 +215,60 @@ fn walk(dir: &Path, out: &mut Vec<PathBuf>) -> std::io::Result<()> {
                 continue;
             }
             walk(&path, out)?;
-        } else if path.extension().is_some_and(|e| e == "garnet") {
+        } else if path
+            .extension()
+            .is_some_and(|e| e.eq_ignore_ascii_case("garnet"))
+        {
+            // Case-insensitive so Windows' case-insensitive filesystem does not
+            // silently skip an uppercase `.GARNET` file (WIN-S33/36/37/46). This
+            // shared collector is reused by `cap_manifest::surface_for_path`, so
+            // the one fix covers verify / caps / diff-caps / sandbox-policy walks.
             out.push(path);
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::collect_targets;
+    use std::fs;
+    use tempfile::TempDir;
+
+    /// The shared collector must discover an uppercase `.GARNET` file. macOS
+    /// preserves filename case, so this reproduces the Windows-only *skip*
+    /// (WIN-S33/36/37/46) on Mac: pre-fix the case-sensitive `== "garnet"`
+    /// dropped `BAD.GARNET`; post-fix the case-insensitive compare keeps it.
+    #[test]
+    fn collect_targets_discovers_uppercase_garnet_extension() {
+        let tmp = TempDir::new().unwrap();
+        fs::write(
+            tmp.path().join("main.garnet"),
+            "@caps()\ndef main() { 1 }\n",
+        )
+        .unwrap();
+        fs::write(tmp.path().join("BAD.GARNET"), "def main( { 1 }\n").unwrap();
+
+        let found = collect_targets(tmp.path()).unwrap();
+        let names: Vec<String> = found
+            .iter()
+            .map(|p| p.file_name().unwrap().to_string_lossy().to_string())
+            .collect();
+        assert!(
+            names.iter().any(|n| n == "BAD.GARNET"),
+            "uppercase .GARNET must be discovered, got {names:?}"
+        );
+        assert!(names.iter().any(|n| n == "main.garnet"), "got {names:?}");
+        assert_eq!(found.len(), 2, "both targets discovered, got {names:?}");
+    }
+
+    /// A single uppercase `.GARNET` *file* target also resolves (the file-path
+    /// branch is already case-agnostic; this pins it against regressions).
+    #[test]
+    fn collect_targets_accepts_single_uppercase_file() {
+        let tmp = TempDir::new().unwrap();
+        let f = tmp.path().join("LIB.GARNET");
+        fs::write(&f, "def f() { 1 }\n").unwrap();
+        assert_eq!(collect_targets(&f).unwrap(), vec![f]);
+    }
 }
