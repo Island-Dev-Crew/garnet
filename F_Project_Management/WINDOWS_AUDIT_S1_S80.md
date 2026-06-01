@@ -59,7 +59,7 @@ open `WIN-*` finding maps to the slice that closes (or honestly defers) it.
 
 | Slice | Windows proof command | Status |
 |---|---|---|
-| S81 | `garnet verify <dir: clean main.garnet + parse-broken BAD.GARNET>` → exit 1 | pending |
+| S81 | `garnet verify <dir: clean main.garnet + parse-broken BAD.GARNET>` → exit 1 | **Mac fix landed** (case-insensitive shared collector + unit test); Windows-proof-pending |
 | S82 | fresh Windows checkout → `garnet seal <file>` `source_blake3` matches Mac | pending |
 | S84 | `python scripts/test_garnet_paper_vi_exp3_status.py` → 6/6 on Windows | pending |
 | S85 | `garnet.exe run --interp examples/mvp_function_call_demo.garnet` → exit 0 `=> 7105`; parity 33/33 | pending |

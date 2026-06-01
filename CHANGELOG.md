@@ -18,6 +18,20 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S81 (v0.8.1 runway — case-insensitive `.GARNET` discovery):** the shared target
+  collector (`garnet-cli/src/cmd/verify_gate.rs`, `collect_targets`→`walk`) matched
+  the extension case-sensitively, so Windows' case-insensitive filesystem silently
+  skipped uppercase `.GARNET` files — a trust hole spanning `garnet verify`
+  (WIN-S33-001), capability manifests (WIN-S36-001), `diff-caps` (WIN-S37-001), and
+  sandbox-policy generation (WIN-S46-001). **One fix** — `eq_ignore_ascii_case` in
+  the shared collector — closes all four, because `cap_manifest::surface_for_path`
+  reuses the same collector. Adds two Rust unit tests (a `BAD.GARNET` directory
+  fixture is discovered; an uppercase file target resolves) and
+  `scripts/garnet_garnet_ext_discovery_status.py` (+ `--gate`, 5 tests,
+  agent-contracts) as an anti-regression gate. **Honest scope:** Mac-authored +
+  Mac-unit-tested (macOS preserves filename case, reproducing the skip); the
+  end-to-end Windows proof (`garnet verify <dir with BAD.GARNET>` → exit 1) is
+  recorded in `WINDOWS_AUDIT_S1_S80.md` as **Windows-proof-pending** for the Windows lane.
 - **P0 (v0.8.1 runway — Windows audit as tracked truth):** imports the Codex
   Windows audit of S1–S80 as committed evidence — `F_Project_Management/WINDOWS_AUDIT_S1_S80.md`
   (summary + the **14 open `WIN-*` findings** mapped to owning burn-down slices
