@@ -115,6 +115,15 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   Mac-unit-tested (macOS preserves filename case, reproducing the skip); the
   end-to-end Windows proof (`garnet verify <dir with BAD.GARNET>` → exit 1) is
   recorded in `WINDOWS_AUDIT_S1_S80.md` as **Windows-proof-pending** for the Windows lane.
+- **S84 (Exp 3 Windows WSL/bash path proof):** `scripts/garnet_paper_vi_exp3_status.py`
+  now invokes the provider-free lane scripts by relative name from the harness
+  cwd on Windows, so WSL `bash` no longer receives `C:\...` script paths it
+  cannot resolve. `F_Project_Management/WINDOWS_AUDIT_S1_S80.md` records the
+  Windows proof: `python -B scripts\test_garnet_paper_vi_exp3_status.py` runs
+  6/6 OK and `python -B scripts\garnet_paper_vi_exp3_status.py --gate --format json`
+  exits 0 with `provider_free_run_ok=true`. **Honest scope:** provider-backed
+  H3A re-run remains pending-infra; no LLM provider is called.
+
 - **P0 (v0.8.1 runway — Windows audit as tracked truth):** imports the Codex
   Windows audit of S1–S80 as committed evidence — `F_Project_Management/WINDOWS_AUDIT_S1_S80.md`
   (summary + the **14 open `WIN-*` findings** mapped to owning burn-down slices

@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from dataclasses import asdict, dataclass, field
@@ -87,9 +88,14 @@ def _provider_free_run_ok() -> bool:
     """Run both lanes harness-only + aggregate; all must exit 0."""
     if not HARNESS.is_dir():
         return False
-    stateless = _run(["bash", str(HARNESS / "run_stateless.sh")])
-    history = _run(["bash", str(HARNESS / "run_history_aware.sh")])
-    agg = _run(["python3", str(HARNESS / "aggregate.py"), str(HARNESS / "out")])
+    if os.name == "nt":
+        stateless = _run(["bash", "run_stateless.sh"])
+        history = _run(["bash", "run_history_aware.sh"])
+        agg = _run(["python3", "aggregate.py", "out"])
+    else:
+        stateless = _run(["bash", str(HARNESS / "run_stateless.sh")])
+        history = _run(["bash", str(HARNESS / "run_history_aware.sh")])
+        agg = _run(["python3", str(HARNESS / "aggregate.py"), str(HARNESS / "out")])
     return stateless == 0 and history == 0 and agg == 0
 
 
