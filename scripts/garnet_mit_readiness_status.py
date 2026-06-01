@@ -44,8 +44,9 @@ DOMAIN_MATRIX_CASES = {
 }
 sys.path.insert(0, str(ROOT / "scripts"))
 
-if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8")
+from garnet_reporter_io import configure_utf8_stdout  # noqa: E402
+
+configure_utf8_stdout()
 
 import garnet_converter_status  # noqa: E402
 import garnet_proof_benchmark_status  # noqa: E402
@@ -53,6 +54,75 @@ import garnet_promo_video_status  # noqa: E402
 import garnet_readiness_status  # noqa: E402
 import garnet_stdlib_layer_gate  # noqa: E402
 import garnet_windows_linux_studio_status  # noqa: E402
+
+
+def _promo_probe_skipped_status(exc: BaseException) -> garnet_promo_video_status.PromoVideoStatus:
+    reason = f"local promo probe skipped: {exc.__class__.__name__}: {exc}"
+    return garnet_promo_video_status.PromoVideoStatus(
+        source=str(ROOT),
+        status="planned-contract",
+        completion_percent=25.0,
+        target_duration_seconds=30,
+        rendered_video_present=False,
+        visual_qa_present=False,
+        website_export_present=False,
+        public_site_embed_present=False,
+        composition_source_present=False,
+        visual_identity_locked=False,
+        source_surfaces_locked=False,
+        current_truth=[
+            reason,
+            "No local promo artifact completion is claimed from this degraded probe.",
+        ],
+        required_gates=[
+            "visual identity lock",
+            "30-second storyboard and shot list",
+            "HyperFrames or Remotion composition",
+            "rendered MP4 or WebM artifact",
+            "visual QA verdict",
+            "website-ready export",
+            "Desktop dogfood evidence bundle",
+            "repo/site copy check for overclaims",
+            "human/aesthetic acceptance",
+        ],
+        completed_gates=[],
+        open_gates=[
+            "local promo evidence probe",
+            "rendered MP4 or WebM artifact",
+            "visual QA verdict",
+            "website-ready export",
+        ],
+        locked_assets=[],
+        source_surfaces=[],
+        composition_source={
+            "path": "",
+            "design_contract_path": "",
+            "tool": "probe-skipped",
+            "exists": False,
+            "design_contract_exists": False,
+            "composition_id": "promo-probe-skipped",
+            "duration_seconds": 30,
+        },
+        storyboard_beats=[],
+        production_rules=[
+            "Do not claim local promo readiness when the local evidence probe is unavailable."
+        ],
+        forbidden_claims=[
+            "Do not claim a rendered promo video exists from a skipped local probe.",
+            "Do not claim full MIT/productization completion.",
+        ],
+        next_steps=[
+            "Run the promo readiness probe again on a machine with writable local temp fixtures."
+        ],
+    )
+
+
+def _read_promo_status() -> tuple[garnet_promo_video_status.PromoVideoStatus, str]:
+    try:
+        return garnet_promo_video_status.read_status(), ""
+    except OSError as exc:
+        skipped = _promo_probe_skipped_status(exc)
+        return skipped, skipped.current_truth[0]
 
 
 @dataclass(frozen=True)
@@ -461,7 +531,7 @@ def read_status() -> MitReadinessStatus:
     )
     converter = garnet_converter_status.read_status()
     contract = converter.intelligent_assist_contract
-    promo = garnet_promo_video_status.read_status()
+    promo, promo_probe_note = _read_promo_status()
     proof = garnet_proof_benchmark_status.read_status()
     vm_scaffold_present = _vm_scaffold_present(proof)
     wls = garnet_windows_linux_studio_status.read_status()
@@ -575,6 +645,11 @@ def read_status() -> MitReadinessStatus:
         promo_evidence_tail = "records local rendered MP4/WebM evidence, and keeps visual QA plus website export open."
     else:
         promo_evidence_tail = "preserves that no verified rendered artifact exists."
+    if promo_probe_note:
+        promo_evidence_tail = (
+            f"{promo_probe_note}; no local promo artifact completion is claimed "
+            "from this run."
+        )
     promo_blockers = ["website-ready export"]
     if promo.public_site_embed_present:
         promo_blockers = ["human/aesthetic acceptance review"]
@@ -1921,6 +1996,26 @@ def render_markdown(status: MitReadinessStatus) -> str:
     return "\n".join(lines) + "\n"
 
 
+def committed_only_status(status: MitReadinessStatus) -> MitReadinessStatus:
+    """Return the machine-independent readiness surface.
+
+    Full MIT readiness includes local evidence lanes such as Windows installer
+    bundles and Desktop promo artifacts. This view is intentionally smaller:
+    only committed evidence remains, and the absolute checkout path is replaced
+    so JSON/Markdown comparisons are meaningful across machines.
+    """
+    return MitReadinessStatus(
+        source="committed-truth",
+        overall_status=status.overall_status,
+        completion_percent=status.completion_percent,
+        current_truth=[
+            *status.current_truth,
+            "committed-only surface excludes local machine evidence",
+        ],
+        lanes=[lane for lane in status.lanes if lane.evidence_class == "committed"],
+    )
+
+
 DEFAULT_BASELINE = (
     ROOT / "F_Project_Management" / "GARNET_v0_5_READINESS_BASELINE.json"
 )
@@ -1988,6 +2083,14 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         help="output format",
     )
     parser.add_argument(
+        "--committed-only",
+        action="store_true",
+        help=(
+            "Emit only committed-truth lanes and normalize the source field. "
+            "Use this for byte-comparable cross-machine readiness snapshots."
+        ),
+    )
+    parser.add_argument(
         "--check-no-regression",
         action="store_true",
         help=(
@@ -2010,6 +2113,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
     status = read_status()
+    if args.committed_only:
+        status = committed_only_status(status)
     if args.format == "json":
         print(json.dumps(asdict(status), indent=2))
     else:

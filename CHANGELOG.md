@@ -95,6 +95,19 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   enforce `@max_depth` (the parity corpus has no over-ceiling program, so parity
   stays 33/33). Mac-authored + Mac-tested; the Windows trap re-proves via the
   cross-OS matrix (Windows-proof-pending).
+- **S87 (v0.8.1 runway — Windows reporter hardening):** hardens the Windows
+  proof/reporting lane without changing language semantics. Adds shared
+  `scripts/garnet_reporter_io.py` UTF-8 stdout setup and wires it into the S6
+  memory-eviction and MIT-readiness reporters so Markdown output survives
+  cp1252-style Windows consoles. `scripts/garnet_mit_readiness_status.py` now
+  quarantines local promo/temp probe failures as local evidence instead of
+  aborting committed-truth readiness, and adds `--committed-only` to emit a
+  machine-independent readiness subset. Windows proof: both reporters run in
+  cp1252 mode; denied local promo probe degrades to a skipped local lane; two
+  committed-only JSON snapshots under different local-evidence roots match SHA256
+  `E4B06AAE505DBEC64E9F88FB0B9AC1325106A5CEEB91CF28C4DADEE1FB7C074A`.
+  **Honest scope:** this proves the Windows side of the byte-stable surface; a
+  Mac runtime comparison should use the same `--committed-only` command.
 - **S89 Windows proof (`@max_depth` runtime trap):** records the Windows lane
   proof for the already-merged Mac-authored S89 enforcement seed in
   `F_Project_Management/WINDOWS_AUDIT_S1_S80.md`. `python -B

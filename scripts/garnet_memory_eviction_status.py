@@ -21,6 +21,12 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+from garnet_reporter_io import configure_utf8_stdout  # noqa: E402
+
+configure_utf8_stdout()
+
 BENCH_FILE = ROOT / "garnet-memory-v0.3" / "benches" / "eviction.rs"
 CARGO_TOML = ROOT / "garnet-memory-v0.3" / "Cargo.toml"
 

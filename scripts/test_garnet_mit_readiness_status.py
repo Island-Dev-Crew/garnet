@@ -518,6 +518,58 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("LLM assist", rendered)
         self.assertIn("Broad converter frontends", rendered)
 
+    def test_markdown_survives_cp1252_stdout(self) -> None:
+        cp = subprocess.run(
+            [sys.executable, str(SCRIPT), "--format", "markdown"],
+            env={
+                **os.environ,
+                "GARNET_PROMO_VIDEO_DESKTOP_DIR": TEST_DOGFOOD_DIR.name,
+                "PYTHONIOENCODING": "cp1252",
+            },
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(0, cp.returncode, cp.stderr)
+        self.assertIn("Garnet MIT Readiness Objective Status", cp.stdout)
+
+    def test_local_temp_probe_failure_is_quarantined(self) -> None:
+        def denied_probe():
+            raise PermissionError("denied temp fixture")
+
+        with mock.patch.object(
+            status_mod.garnet_promo_video_status, "read_status", denied_probe
+        ):
+            status = status_mod.read_status()
+
+        lanes = {lane.id: lane for lane in status.lanes}
+        self.assertEqual("local", lanes["promo_video"].evidence_class)
+        self.assertEqual("planned-contract", lanes["promo_video"].status)
+        self.assertIn("local promo probe skipped", lanes["promo_video"].evidence)
+        self.assertEqual("active-partial", status.overall_status)
+
+    def test_committed_only_json_excludes_local_lanes_and_source_paths(self) -> None:
+        first = subprocess.check_output(
+            [sys.executable, str(SCRIPT), "--format", "json", "--committed-only"],
+            env={**os.environ, "GARNET_PROMO_VIDEO_DESKTOP_DIR": TEST_DOGFOOD_DIR.name},
+            text=True,
+        )
+        second = subprocess.check_output(
+            [sys.executable, str(SCRIPT), "--format", "json", "--committed-only"],
+            env={
+                **os.environ,
+                "GARNET_PROMO_VIDEO_DESKTOP_DIR": TEST_CLEAN_VM_ROOT.name,
+                "GARNET_STUDIO_DOMAIN_MATRIX_ROOT": TEST_CLEAN_VM_ROOT.name,
+            },
+            text=True,
+        )
+        self.assertEqual(first, second)
+        data = json.loads(first)
+        self.assertEqual("committed-truth", data["source"])
+        self.assertTrue(data["lanes"])
+        self.assertTrue(all(lane["evidence_class"] == "committed" for lane in data["lanes"]))
+        self.assertNotIn(str(Path.home()), first)
+        self.assertNotIn("windows_linux_distribution", {lane["id"] for lane in data["lanes"]})
+
     def test_no_regression_gate_passes_source_only_floor(self) -> None:
         completed = subprocess.run(
             [sys.executable, str(SCRIPT), "--check-no-regression"],

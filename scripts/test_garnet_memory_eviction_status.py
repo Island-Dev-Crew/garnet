@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import subprocess
 import sys
 import unittest
@@ -49,6 +50,16 @@ class GarnetMemoryEvictionStatusTests(unittest.TestCase):
         )
         for kind in ("working", "episodic", "semantic", "procedural"):
             self.assertIn(kind, cp.stdout)
+
+    def test_cli_markdown_survives_cp1252_stdout(self) -> None:
+        cp = subprocess.run(
+            [sys.executable, str(SCRIPT), "--format", "markdown"],
+            capture_output=True,
+            env={**os.environ, "PYTHONIOENCODING": "cp1252"},
+            text=True,
+        )
+        self.assertEqual(0, cp.returncode, cp.stderr)
+        self.assertIn("Memory Eviction Benchmark Status", cp.stdout)
 
     def test_cli_json_round_trip(self) -> None:
         import json
