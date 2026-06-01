@@ -46,4 +46,4 @@
 - [x] Mark S95 merged in `.dogfood/goal.json` and the v0.8.1 plan.
 - [x] Append the S96 `CHANGELOG.md` entry with calibrated scope.
 - [x] Build a desktop evidence bundle with status JSON/MD, focused tests, workspace tests, clippy, readiness, diff-check, and manifest.
-- [ ] Open PR `S96: add linear/effect safe-mode seed`, run the PR body dogfood check, then merge only after CI is green.
+- [x] Open PR `S96: add linear/effect safe-mode seed`, run the PR body dogfood check, then merge only after CI is green.
