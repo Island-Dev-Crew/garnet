@@ -108,7 +108,7 @@ pub fn print_help() {
         "                                     Safe-mode checker (CapCaps); --format json emits structured diagnostics"
     );
     println!(
-        "    caps   <path>                    Emit the capability manifest (JSON) for a file or package"
+        "    caps   [--standard-profile] <path> Emit the capability manifest or S98 draft standard profile"
     );
     println!(
         "    diff-caps <old> <new>            Diff the capability surface; nonzero exit if authority expanded"

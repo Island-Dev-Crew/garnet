@@ -69,11 +69,35 @@ fn main() -> ExitCode {
             cmd::check::run(PathBuf::from(file), suggest, format)
         }
         "caps" => {
-            if args.len() < 2 {
-                eprintln!("usage: garnet caps <path>");
-                return ExitCode::from(2);
+            let mut standard_profile = false;
+            let mut path_arg: Option<&String> = None;
+            let mut i = 1;
+            while i < args.len() {
+                match args[i].as_str() {
+                    "--standard-profile" => {
+                        standard_profile = true;
+                        i += 1;
+                    }
+                    arg if !arg.starts_with("--") && path_arg.is_none() => {
+                        path_arg = Some(&args[i]);
+                        i += 1;
+                    }
+                    other => {
+                        eprintln!("garnet caps: unexpected argument: {other}");
+                        return ExitCode::from(2);
+                    }
+                }
             }
-            cmd::caps::run(PathBuf::from(&args[1]))
+            let Some(path) = path_arg else {
+                eprintln!("usage: garnet caps [--standard-profile] <path>");
+                return ExitCode::from(2);
+            };
+            let format = if standard_profile {
+                cmd::caps::CapsFormat::StandardProfile
+            } else {
+                cmd::caps::CapsFormat::Internal
+            };
+            cmd::caps::run(PathBuf::from(path), format)
         }
         "bounds" => {
             if args.len() < 2 {
