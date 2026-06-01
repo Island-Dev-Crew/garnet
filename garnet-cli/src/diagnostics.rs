@@ -14,8 +14,9 @@
 //!
 //! Severity is independent of `code`; only `Error`-severity diagnostics are
 //! fatal (they mirror `CheckReport::ok()` — `SafeModeViolation`,
-//! `AnnotationError`, `CapsCoverage`, `StabilityError`). `BoundaryNote` and
-//! `StabilityAdvice` are advisory and never change the exit code.
+//! `AnnotationError`, `CapsCoverage`, `StabilityError`, `BoundedLoop`).
+//! `BoundaryNote` and `StabilityAdvice` are advisory and never change the exit
+//! code.
 
 use garnet_check::{CheckError, CheckReport};
 use garnet_parser::error::ParseError;

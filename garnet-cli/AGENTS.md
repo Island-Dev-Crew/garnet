@@ -9,6 +9,10 @@ Owns the `garnet` binary, subcommand routing, template embedding, deterministic 
 - CLI output must be truthful about release readiness and installer availability.
 - Templates are embedded with `include_str!`; adding a template file requires adding it to `new_cmd.rs` or it will not ship.
 - Public commands should fail clearly with actionable errors.
+- `garnet check` is allowed to fail safe / `@bounded` programs with
+  `check.bounded_loop` when loop bounds are not statically derivable. The
+  message must preserve the static-only boundary and must not imply Wasmtime
+  fuel or runtime loop enforcement.
 - `garnet parse` defaults to AST mode. `garnet parse --mode cst <file>` routes
   to the canonical rowan `garnet-cst` parser and must report round-trip truth
   and recorded CST errors honestly.

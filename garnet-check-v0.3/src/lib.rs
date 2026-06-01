@@ -44,7 +44,7 @@ pub mod stability;
 pub mod suggest;
 
 pub use audit::{AuditLog, BoundaryCall, BoundaryDirection};
-pub use bounds::bounded_functions;
+pub use bounds::{bounded_functions, bounded_loop_report, BoundedLoopReport, UncheckableLoop};
 pub use capability_surface::{capability_surface, CapabilitySurface};
 pub use caps_diff::{diff_caps, CapsDiff};
 pub use caps_graph::{CapsReport, CapsViolation};
@@ -103,6 +103,11 @@ pub enum CheckError {
     /// `C_Language_Specification/GARNET_ERROR_POLICY.md`.
     #[error("{0}")]
     OverCatch(String),
+    /// S93 - static bounded-loop verifier. Fatal in safe / `@bounded` scope:
+    /// uncheckable loops are rejected rather than papered over with a fake fuel
+    /// or Wasmtime claim.
+    #[error("{0}")]
+    BoundedLoop(String),
 }
 
 /// Presentation severity of a [`CheckError`] — the single source of truth shared
@@ -127,7 +132,8 @@ impl CheckError {
             CheckError::SafeModeViolation(_)
             | CheckError::AnnotationError(_)
             | CheckError::CapsCoverage { .. }
-            | CheckError::StabilityError(_) => Severity::Error,
+            | CheckError::StabilityError(_)
+            | CheckError::BoundedLoop(_) => Severity::Error,
             CheckError::BoundaryNote(_) => Severity::Warning,
             CheckError::StabilityAdvice(_) | CheckError::OverCatch(_) => Severity::Info,
         }
@@ -144,6 +150,7 @@ impl CheckError {
             CheckError::StabilityAdvice(_) => "check.stability_advice",
             CheckError::StabilityError(_) => "check.stability_error",
             CheckError::OverCatch(_) => "check.over_catch",
+            CheckError::BoundedLoop(_) => "check.bounded_loop",
         }
     }
 }
@@ -170,6 +177,7 @@ impl CheckReport {
                     | CheckError::AnnotationError(_)
                     | CheckError::CapsCoverage { .. }
                     | CheckError::StabilityError(_)
+                    | CheckError::BoundedLoop(_)
             )
         })
     }
@@ -217,6 +225,12 @@ pub fn check_module(module: &Module) -> CheckReport {
     // v3.4.1 Day 2 — CapCaps call-graph propagator. Reads primitive caps
     // from `garnet_stdlib::registry` at check time and verifies every
     // function's `@caps(...)` covers its transitive requirements.
+    for uncheckable in bounds::bounded_loop_report(module).uncheckable_loops {
+        report
+            .errors
+            .push(CheckError::BoundedLoop(uncheckable.message));
+    }
+
     let caps_report = caps_graph::check_caps_coverage(module);
     for v in caps_report.violations {
         report.errors.push(CheckError::CapsCoverage {
@@ -721,6 +735,11 @@ mod tests {
                 "check.stability_error",
             ),
             (OverCatch("x".into()), Severity::Info, "check.over_catch"),
+            (
+                BoundedLoop("x".into()),
+                Severity::Error,
+                "check.bounded_loop",
+            ),
         ];
         for (err, sev, code) in cases {
             assert_eq!(err.severity(), sev, "severity for {err:?}");
@@ -742,6 +761,7 @@ mod tests {
                 via: "v".into(),
             },
             StabilityError("x".into()),
+            BoundedLoop("x".into()),
         ];
         for e in fatal {
             assert_eq!(e.severity(), Severity::Error);

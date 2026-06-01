@@ -57,6 +57,18 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   bridge exists yet; Linux seccomp/OS-policy application and VM `@caps`
   enforcement remain unclaimed.
 
+- **S93 (v0.8.1 substrate - static bounded-loop verifier):** adds a
+  checker-visible static loop proof seed for the safe subset. `garnet check`
+  now rejects uncheckable loops in `fn`, `@safe`, and `@bounded(...)` functions
+  with `check.bounded_loop`, while accepting literal finite `for` loops over
+  integer ranges/arrays, literal counter `while` loops, and loop bodies that
+  exit before a second turn. Adds checker tests, CLI pass/reject tests, and
+  `scripts/garnet_bounded_loop_verifier_status.py` (+ tests) so the static
+  verifier is machine-checkable. **Honest scope:** static verifier only; this
+  does not claim Wasmtime fuel, runtime loop metering, VM loop enforcement, or
+  OS sandbox enforcement. Managed functions outside safe / `@bounded` scope are
+  intentionally out of scope for this slice.
+
 - **S86 (Windows audit binary-strict S80 cut-readiness):** adds
   `--binary-strict` to `scripts/garnet_v0_8_0_cut_readiness.py` plus
   `--windows-audit` as a named alias for the Windows burn-down lane. Default
