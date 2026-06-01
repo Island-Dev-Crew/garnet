@@ -20,18 +20,19 @@ class ReleaseReadinessTests(unittest.TestCase):
         r = rel.read_readiness()
         self.assertEqual(len(r.hardening_band), 10)  # s41..s50
         self.assertEqual(len(r.adoption_band), 9)  # s51..s59
-        self.assertTrue(r.bands_complete, "S41–S59 + S50 must be merged at conf 5")
+        self.assertTrue(r.bands_complete, "S41-S59 + S50 must be merged at conf 5")
         self.assertTrue(r.sub_gates_pass, "all anti-rot sub-gates must pass")
         self.assertTrue(r.release_ready)
 
     def test_does_not_cut_a_tag(self) -> None:
         r = rel.read_readiness()
         self.assertIn("does NOT cut a tag", r.tag_note)
-        self.assertIn("release-truth decision for Jon", r.tag_note)
-        # v0.8.0 must NOT be tagged by this slice. (We assert absence, not the
-        # presence of v0.5.0 — CI checkouts do not fetch tags, so existing_tags
-        # is legitimately empty there; the gate's verdict never depends on it.)
-        self.assertNotIn("v0.8.0", r.existing_tags)
+        self.assertIn("release-truth decision", r.tag_note)
+        self.assertIn("not the act of tagging", r.tag_note)
+        # S83 records that Jon cut v0.8.0 separately. This gate can report that
+        # tag in existing_tags, but its verdict must not depend on tag presence.
+        without_tags = rel.ReleaseReadiness(**{**r.__dict__, "existing_tags": []})
+        self.assertEqual(without_tags.release_ready, r.release_ready)
 
     def test_honest_deferrals_and_anchors(self) -> None:
         r = rel.read_readiness()
@@ -39,7 +40,8 @@ class ReleaseReadinessTests(unittest.TestCase):
         self.assertIn("does not enforce", joined)  # S46
         self.assertIn("OVSX_TOKEN", joined)  # S54
         self.assertIn(
-            "research-grade prototype (v0.x.x) — not production-complete", r.honesty_anchors
+            "research-grade prototype (v0.x.x) - not production-complete",
+            [a.replace("\u2014", "-") for a in r.honesty_anchors],
         )
 
     def test_gate_passes(self) -> None:

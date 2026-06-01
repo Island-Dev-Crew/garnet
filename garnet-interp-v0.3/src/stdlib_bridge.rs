@@ -559,6 +559,7 @@ fn bridge_fs_list_dir(args: Vec<Value>) -> Result<Value, RuntimeError> {
 /// read/write bidirectional handles awaits a `Value::Handle<T>` variant
 /// which lands alongside the actor-runtime integration in a later rung.
 fn bridge_net_tcp_connect(args: Vec<Value>) -> Result<Value, RuntimeError> {
+    crate::eval::require_capability("net", "net::tcp_connect")?;
     let host = expect_str("tcp_connect", &args, 0)?;
     let port_i = expect_int("tcp_connect", &args, 1)?;
     if !(0..=65_535).contains(&port_i) {

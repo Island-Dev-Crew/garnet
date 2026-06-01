@@ -25,6 +25,24 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S91 (v0.8.1 substrate - net bridge + program-entry `@caps` frame):** closes
+  two named interpreter-scoped enforcement gaps from S90. The `net::tcp_connect`
+  bridge now calls `require_capability("net", ...)` before host network policy
+  runs, so undeclared network authority traps deterministically with
+  `requires @caps(net)` instead of falling through to NetDefaults. `garnet run
+  --interp` now invokes `main` through `Interpreter::call_entry`, which installs
+  a program-entry capability frame from `main`'s `@caps(...)` annotations before
+  dispatch; this covers safe-mode `fn main` entry points that do not push a
+  managed frame themselves. Adds three Rust behavior tests (net trap before
+  connect policy, safe-entry trap without `@caps(env)`, safe-entry allow with
+  `@caps(env)`) and expands `scripts/garnet_caps_enforcement_status.py` to gate
+  net + program-entry evidence. Also reinitializes the active dogfood ledger for
+  S91-S110 while archiving the finished S31-S80 ledger at `.dogfood/v0_8_goal.json`
+  so v0.8.0 release gates stay reproducible. **Honest scope:** interpreter
+  host-authority surfaces only; direct host/test calls outside a program frame
+  remain allowed; the VM backend still does not enforce `@caps`; S99-S110 are
+  ledger-reserved only and not started here.
+
 - **S86 (Windows audit binary-strict S80 cut-readiness):** adds
   `--binary-strict` to `scripts/garnet_v0_8_0_cut_readiness.py` plus
   `--windows-audit` as a named alias for the Windows burn-down lane. Default

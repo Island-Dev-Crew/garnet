@@ -23,7 +23,9 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-GOAL_FILE = ROOT / ".dogfood" / "goal.json"
+# The beta gate is historical v0.8 evidence. The active goal ledger moves to
+# S91-S110 in v0.8.1, so v0.8 gates read the archived S31-S80 ledger.
+GOAL_FILE = ROOT / ".dogfood" / "v0_8_goal.json"
 
 # The v0.8 hardening band's implemented slices. S50 is this gate itself.
 HARDENING_BAND = [f"s4{i}" for i in range(1, 10)]  # s41..s49

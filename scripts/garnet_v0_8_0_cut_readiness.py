@@ -33,7 +33,9 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-LEDGER = ROOT / ".dogfood" / "goal.json"
+# S91 makes .dogfood/goal.json the active v0.8.1 ledger. The v0.8.0 cut gate is
+# historical release evidence, so it reads the archived S31-S80 ledger.
+LEDGER = ROOT / ".dogfood" / "v0_8_goal.json"
 
 # Every slice that must be merged before the run can be cut (S80 is the decision).
 REQUIRED_MERGED = [f"s{n}" for n in range(31, 80)]  # s31..s79

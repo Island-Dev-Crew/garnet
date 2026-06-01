@@ -554,34 +554,38 @@ fn declared_caps(annotations: &[Annotation]) -> Vec<String> {
         .collect()
 }
 
-/// The active capability context on the per-run `garnet-interp` thread:
-/// `managed_frames` counts the managed functions currently on the stack, and
-/// `counts` is the multiset union of every `@caps` they declared. A host-authority
-/// primitive is permitted iff some managed frame in the call chain declared the
-/// required capability (the static caps-graph propagates caps up every frame, so
-/// a *checked* program always carries it — only under-declared programs trap).
+/// The active capability context on the per-run `garnet-interp` thread.
+/// `active_frames` counts program-entry frames plus managed functions currently
+/// on the stack, and `counts` is the multiset union of every `@caps` they
+/// declared. A host-authority primitive is permitted iff some active program
+/// frame in the call chain declared the required capability (the static
+/// caps-graph propagates caps up every frame, so a *checked* program always
+/// carries it — only under-declared programs trap).
 struct CapsContext {
-    managed_frames: u32,
+    active_frames: u32,
     counts: BTreeMap<String, u32>,
 }
 
 thread_local! {
     static ACTIVE_CAPS: RefCell<CapsContext> =
-        const { RefCell::new(CapsContext { managed_frames: 0, counts: BTreeMap::new() }) };
+        const { RefCell::new(CapsContext { active_frames: 0, counts: BTreeMap::new() }) };
 }
 
-/// RAII guard: on a managed function's entry, records its frame + declared caps;
-/// unwinds both on drop (every return/error path, including a trap).
+/// RAII guard: records a program/managed frame + declared caps; unwinds both on
+/// drop (every return/error path, including a trap).
 struct CapsGuard {
     idents: Vec<String>,
 }
 
 impl CapsGuard {
     fn enter(annotations: &[Annotation]) -> Self {
-        let idents = declared_caps(annotations);
+        Self::enter_caps(declared_caps(annotations))
+    }
+
+    fn enter_caps(idents: Vec<String>) -> Self {
         ACTIVE_CAPS.with(|c| {
             let mut c = c.borrow_mut();
-            c.managed_frames += 1;
+            c.active_frames += 1;
             for id in &idents {
                 *c.counts.entry(id.clone()).or_insert(0) += 1;
             }
@@ -594,7 +598,7 @@ impl Drop for CapsGuard {
     fn drop(&mut self) {
         ACTIVE_CAPS.with(|c| {
             let mut c = c.borrow_mut();
-            c.managed_frames = c.managed_frames.saturating_sub(1);
+            c.active_frames = c.active_frames.saturating_sub(1);
             for id in &self.idents {
                 if let Some(n) = c.counts.get_mut(id) {
                     *n = n.saturating_sub(1);
@@ -605,12 +609,14 @@ impl Drop for CapsGuard {
 }
 
 /// Enforce that a host-authority primitive's required capability was declared in
-/// the calling chain (S90). Outside any managed-program frame (e.g. a direct
-/// host/test call) there is no `@caps` context to enforce, so the call is allowed.
+/// the calling chain. S91 adds a program-entry frame for `garnet run --interp`
+/// so safe-mode entry points are covered too. Outside any program frame (e.g. a
+/// direct host/test call) there is no `@caps` context to enforce, so the call is
+/// allowed.
 pub(crate) fn require_capability(needed: &str, fn_name: &str) -> Result<(), RuntimeError> {
     ACTIVE_CAPS.with(|c| {
         let c = c.borrow();
-        if c.managed_frames == 0 {
+        if c.active_frames == 0 {
             return Ok(());
         }
         let has = |k: &str| c.counts.get(k).copied().unwrap_or(0) > 0;
@@ -622,6 +628,20 @@ pub(crate) fn require_capability(needed: &str, fn_name: &str) -> Result<(), Runt
             )))
         }
     })
+}
+
+/// Call a value as the program entry point, installing an `@caps` frame from the
+/// entry function before dispatch. This closes the safe/direct-entry gap where a
+/// safe-mode `fn main` could reach host authority with no managed frame active.
+pub(crate) fn call_value_with_entry_caps(
+    callee: &Value,
+    args: Vec<Value>,
+) -> Result<Value, RuntimeError> {
+    let _entry_caps_guard = match callee {
+        Value::Fn(f) => Some(CapsGuard::enter(&f.def.annotations)),
+        _ => None,
+    };
+    call_value(callee, args)
 }
 
 fn call_fn(f: &FnValue, mut args: Vec<Value>) -> Result<Value, RuntimeError> {
