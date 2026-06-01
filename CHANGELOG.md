@@ -108,6 +108,18 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   `E4B06AAE505DBEC64E9F88FB0B9AC1325106A5CEEB91CF28C4DADEE1FB7C074A`.
   **Honest scope:** this proves the Windows side of the byte-stable surface; a
   Mac runtime comparison should use the same `--committed-only` command.
+- **S88 (v0.8.1 runway — Windows release-tooling status):** adds
+  `scripts/garnet_release_tooling_status.py` (+ `--gate`, 7 tests) to detect and
+  honestly exercise the external tools that were absent during the Windows audit:
+  `cosign`, `syft`, `cyclonedx`, and `wasmtime`. On this Windows machine, S88
+  provisioned those tools through WinGet, then proved: local `cosign sign-blob` +
+  `verify-blob` with an offline temp key (transparency-log verification explicitly
+  disabled and named), `syft scan` emitting CycloneDX JSON, `cyclonedx validate`
+  accepting a minimal CycloneDX 1.6 BOM, and `wasmtime` running a tiny WAT module
+  with both `fuel=1000` and `epoch-interruption=y`/`timeout=1s`. **Honest scope:**
+  this verifies local tool availability/runnability only; it does not sign a
+  Garnet release artifact, publish an SBOM, or wire Wasmtime fuel/epoch metering
+  into Garnet runtime.
 - **S89 Windows proof (`@max_depth` runtime trap):** records the Windows lane
   proof for the already-merged Mac-authored S89 enforcement seed in
   `F_Project_Management/WINDOWS_AUDIT_S1_S80.md`. `python -B
