@@ -35,6 +35,9 @@ struct Args {
     authored_by: String,
     /// `key=value` attestation entries threaded into the seal predicate (S66).
     attest: Vec<String>,
+    /// S103: if set, write the full trust dossier (the 4 trust artifacts on accept,
+    /// or the refusal record on reject) + an honest `decision.md` into this dir.
+    record_dir: Option<PathBuf>,
 }
 
 fn need<'a>(args: &'a [String], i: usize, flag: &str) -> Result<&'a String, ExitCode> {
@@ -52,6 +55,7 @@ fn parse(args: &[String]) -> Result<Args, ExitCode> {
     let mut authored_by: Option<String> = None;
     let mut attest: Vec<String> = Vec::new();
     let mut gate_version: Option<String> = None;
+    let mut record_dir: Option<PathBuf> = None;
 
     let mut i = 0;
     while i < args.len() {
@@ -96,11 +100,15 @@ fn parse(args: &[String]) -> Result<Args, ExitCode> {
                 gate_version = Some(need(args, i, "--gate-version")?.clone());
                 i += 2;
             }
+            "--record-dir" => {
+                record_dir = Some(PathBuf::from(need(args, i, "--record-dir")?));
+                i += 2;
+            }
             "--help" | "-h" => {
                 println!(
                     "usage: garnet agent-loop --baseline <old.garnet> --proposal <new.garnet> \
                      [--backend interp|vm] [--seal-out <path>] [--authored-by <prov>] \
-                     [--attest <k>=<v>]... [--gate-version <id>]"
+                     [--attest <k>=<v>]... [--gate-version <id>] [--record-dir <dir>]"
                 );
                 return Err(ExitCode::SUCCESS);
             }
@@ -144,6 +152,7 @@ fn parse(args: &[String]) -> Result<Args, ExitCode> {
         seal_out,
         authored_by,
         attest: full_attest,
+        record_dir,
     })
 }
 
@@ -162,6 +171,97 @@ fn garnet_exe() -> Result<PathBuf, ExitCode> {
         eprintln!("garnet agent-loop: cannot locate the garnet binary: {e}");
         ExitCode::from(2)
     })
+}
+
+/// The loop's verdict on a proposal, used to write the S103 dossier.
+enum Outcome<'a> {
+    Accepted {
+        value: &'a str,
+        run_stdout: &'a [u8],
+    },
+    RejectedDiffCaps,
+    RejectedRun {
+        run_stderr: &'a [u8],
+    },
+}
+
+/// S103: write the trust dossier into `--record-dir`. On ACCEPT this is the **4
+/// trust artifacts** — capability_manifest.json (S36), diff_caps.txt (S37),
+/// seal.json (S38), transparency_log.jsonl (S68) — plus an honest `decision.md`.
+/// On REJECT it records the refusal (the negative proof): no seal is ever written.
+fn write_record(a: &Args, exe: &std::path::Path, diff_stdout: &[u8], outcome: &Outcome) {
+    let Some(dir) = a.record_dir.as_deref() else {
+        return;
+    };
+    if let Err(e) = std::fs::create_dir_all(dir) {
+        eprintln!(
+            "garnet agent-loop: cannot create --record-dir `{}`: {e}",
+            dir.display()
+        );
+        return;
+    }
+    // Artifact 2 — the diff-caps capability-surface decision (always captured).
+    let _ = std::fs::write(dir.join("diff_caps.txt"), diff_stdout);
+
+    let decision = match outcome {
+        Outcome::Accepted { value, .. } => format!(
+            "# Agent-loop decision: ACCEPTED\n\n\
+             Proposal `{}` (vs baseline `{}`) was ACCEPTED on capability+depth evidence.\n\n\
+             - diff-caps: no authority expansion — the declared capability surface did not widen.\n\
+             - enforced kernel ({}): ran without tripping an enforced ceiling ({value}).\n\
+             - sealed: attested in `seal.json` with autonomous-acceptance provenance.\n\n\
+             The 4 trust artifacts: `capability_manifest.json` (S36), `diff_caps.txt` (S37), \
+             `seal.json` (S38), `transparency_log.jsonl` (S68).\n\n\
+             Honest scope: accepted on capability + depth evidence ONLY — `@caps` and \
+             `@max_depth` are enforced. `@bounded`/memory/time/`@mailbox`/OS-sandbox remain \
+             declared-not-enforced; this is NOT a claim of full boundedness or safety.\n",
+            a.proposal.display(),
+            a.baseline.display(),
+            a.backend,
+        ),
+        Outcome::RejectedDiffCaps => format!(
+            "# Agent-loop decision: REJECTED (capability widening)\n\n\
+             Proposal `{}` (vs baseline `{}`) was REFUSED at the diff-caps gate: it WIDENED the \
+             declared capability surface (see `diff_caps.txt`). It never ran and was never sealed \
+             — the negative proof. A widening is a true gate FAILURE (Rule 2), not a warning.\n",
+            a.proposal.display(),
+            a.baseline.display(),
+        ),
+        Outcome::RejectedRun { .. } => format!(
+            "# Agent-loop decision: REJECTED (enforced-ceiling trap)\n\n\
+             Proposal `{}` (vs baseline `{}`) passed diff-caps (no widening) but the enforced \
+             kernel ({}) TRAPPED it (see `run_trap.txt`) — an `@max_depth` or `@caps` ceiling was \
+             exceeded. It was not sealed. Acceptance rests on the enforced run, not only the static \
+             capability gate.\n",
+            a.proposal.display(),
+            a.baseline.display(),
+            a.backend,
+        ),
+    };
+    let _ = std::fs::write(dir.join("decision.md"), decision);
+
+    match outcome {
+        Outcome::Accepted { run_stdout, .. } => {
+            // Artifact 1 — the capability manifest (S36).
+            if let Ok(o) = Command::new(exe).arg("caps").arg(&a.proposal).output() {
+                let _ = std::fs::write(dir.join("capability_manifest.json"), o.stdout);
+            }
+            // Artifact 3 — the in-toto seal (S38), copied from `--seal-out`.
+            let _ = std::fs::copy(&a.seal_out, dir.join("seal.json"));
+            // Artifact 4 — the transparency-log entry (S68), appended + chain-verifiable.
+            let _ = Command::new(exe)
+                .arg("caps-log")
+                .arg(&a.proposal)
+                .arg("--log")
+                .arg(dir.join("transparency_log.jsonl"))
+                .output();
+            let _ = std::fs::write(dir.join("run_output.txt"), run_stdout);
+        }
+        Outcome::RejectedRun { run_stderr } => {
+            let _ = std::fs::write(dir.join("run_trap.txt"), run_stderr);
+        }
+        Outcome::RejectedDiffCaps => {}
+    }
 }
 
 pub fn run(args: &[String]) -> ExitCode {
@@ -208,6 +308,7 @@ pub fn run(args: &[String]) -> ExitCode {
             echo("  | ", &diff.stderr);
             return ExitCode::from(2);
         }
+        write_record(&a, &exe, &diff.stdout, &Outcome::RejectedDiffCaps);
         return ExitCode::from(1);
     }
     println!("agent-loop: stage diff-caps -> PASS (no authority expansion, band 5/5)");
@@ -235,6 +336,14 @@ pub fn run(args: &[String]) -> ExitCode {
         println!(
             "agent-loop: REJECTED at stage run (an enforced ceiling — @max_depth or @caps — \
              trapped; the proposal is not sealed)"
+        );
+        write_record(
+            &a,
+            &exe,
+            &diff.stdout,
+            &Outcome::RejectedRun {
+                run_stderr: &kernel.stderr,
+            },
         );
         return ExitCode::from(1);
     }
@@ -274,6 +383,15 @@ pub fn run(args: &[String]) -> ExitCode {
     println!(
         "agent-loop: stage seal -> SEALED ({}) (unsigned unless cosign present)",
         a.seal_out.display()
+    );
+    write_record(
+        &a,
+        &exe,
+        &diff.stdout,
+        &Outcome::Accepted {
+            value: &value,
+            run_stdout: &kernel.stdout,
+        },
     );
     println!("agent-loop: ACCEPTED on capability+depth evidence");
     ExitCode::SUCCESS

@@ -1,0 +1,13 @@
+# Agent proposal A (ACCEPTED): a safe refactor — folds a larger window. The
+# declared capability surface stays {fs}; recursion stays within @max_depth(16).
+# diff-caps: no widening. Enforced kernel: runs. -> accepted + sealed.
+@caps(fs)
+@max_depth(16)
+def digest(n) {
+  if n <= 0 { 0 } else { n + digest(n - 1) }
+}
+
+@caps(fs)
+def main() {
+  digest(12)
+}

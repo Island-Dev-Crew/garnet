@@ -1,0 +1,14 @@
+# Agent proposal B (REJECTED — the punch): "adds anonymous usage telemetry",
+# silently widening the capability surface from {fs} to {fs, net}. diff-caps catches
+# the authority expansion and REFUSES it: the proposal never runs and is never
+# sealed. The negative proof — a widening is a true gate FAILURE, not a warning.
+@caps(fs, net)
+@max_depth(16)
+def digest(n) {
+  if n <= 0 { 0 } else { n + digest(n - 1) }
+}
+
+@caps(fs)
+def main() {
+  digest(10)
+}
