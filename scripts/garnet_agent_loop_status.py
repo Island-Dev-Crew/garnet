@@ -35,6 +35,8 @@ ROOT = Path(__file__).resolve().parents[1]
 HARNESS = ROOT / "garnet-cli" / "src" / "cmd" / "agent_loop.rs"
 DISPATCH = ROOT / "garnet-cli" / "src" / "bin" / "garnet.rs"
 TEST = ROOT / "garnet-cli" / "tests" / "agent_loop.rs"
+DEMO_DIR = ROOT / "garnet-cli" / "tests" / "fixtures" / "ultrapunch"
+DEMO_TEST = ROOT / "garnet-cli" / "tests" / "ultrapunch_demo.rs"
 
 
 @dataclass
@@ -45,6 +47,7 @@ class AgentLoopStatus:
     rule2_widening_refused: bool
     rule3_provenance_recorded: bool
     honesty_anchor_present: bool
+    four_artifact_dossier: bool
     dispatched: bool
     accept_reject_tests_present: bool
     ok: bool = False
@@ -58,6 +61,7 @@ def read_status() -> AgentLoopStatus:
     h = _read(HARNESS)
     d = _read(DISPATCH)
     t = _read(TEST)
+    demo_t = _read(DEMO_TEST)
     harness_present = bool(h)
     # The three gated stages, orchestrating the real subcommands.
     three_stage = (
@@ -72,6 +76,18 @@ def read_status() -> AgentLoopStatus:
         and "gate_version" in h
     )
     honesty = "ACCEPTED on capability+depth evidence" in h and "declared-not-enforced" in h
+    # S103: an accept emits the 4 trust artifacts into --record-dir; the demo +
+    # its test (accept + the widening-refusal punch) exist.
+    four_artifact = (
+        "record_dir" in h
+        and "capability_manifest.json" in h
+        and "transparency_log.jsonl" in h
+        and "diff_caps.txt" in h
+        and (DEMO_DIR / "baseline.garnet").is_file()
+        and (DEMO_DIR / "reject_widen.garnet").is_file()
+        and "accept_records_the_four_trust_artifacts" in demo_t
+        and "widening_proposal_is_refused_and_never_sealed" in demo_t
+    )
     dispatched = '"agent-loop" => cmd::agent_loop::run' in d
     tests_present = (
         "accept_path_passes_gate_runs_and_seals" in t
@@ -84,16 +100,18 @@ def read_status() -> AgentLoopStatus:
         and rule2
         and rule3
         and honesty
+        and four_artifact
         and dispatched
         and tests_present
     )
     return AgentLoopStatus(
-        schema="garnet.agent_loop/v1",
+        schema="garnet.agent_loop/v2",
         harness_present=harness_present,
         three_stage_gate=three_stage,
         rule2_widening_refused=rule2,
         rule3_provenance_recorded=rule3,
         honesty_anchor_present=honesty,
+        four_artifact_dossier=four_artifact,
         dispatched=dispatched,
         accept_reject_tests_present=tests_present,
         ok=ok,
@@ -102,7 +120,7 @@ def read_status() -> AgentLoopStatus:
 
 def render_markdown(r: AgentLoopStatus) -> str:
     return "\n".join([
-        "# Garnet agent-acceptance loop status (S102)",
+        "# Garnet agent-acceptance loop status (S102 loop + S103 dossier)",
         "",
         f"_Schema {r.schema}._",
         "",
@@ -113,6 +131,8 @@ def render_markdown(r: AgentLoopStatus) -> str:
         f"{'yes' if r.rule2_widening_refused else 'NO'}",
         f"- Rule 3 — autonomous acceptance + gate version recorded in the seal: "
         f"{'yes' if r.rule3_provenance_recorded else 'NO'}",
+        f"- S103 — accept emits the 4 trust artifacts + demo (accept & widen-refusal): "
+        f"{'yes' if r.four_artifact_dossier else 'NO'}",
         f"- honesty anchor (\"accepted on capability+depth evidence\"): "
         f"{'yes' if r.honesty_anchor_present else 'NO'}",
         f"- dispatched + accept/reject/trap tests present: "

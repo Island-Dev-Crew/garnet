@@ -1,0 +1,13 @@
+# Ultrapunch demo — baseline: a capability-bounded report tool. It declares
+# @caps(fs) (it reads report files) and computes a bounded digest over its input.
+# The DECLARED capability surface is {fs}; diff-caps gates any change to it.
+@caps(fs)
+@max_depth(16)
+def digest(n) {
+  if n <= 0 { 0 } else { n + digest(n - 1) }
+}
+
+@caps(fs)
+def main() {
+  digest(10)
+}

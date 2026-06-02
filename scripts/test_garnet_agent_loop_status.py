@@ -28,6 +28,10 @@ class AgentLoopStatusTests(unittest.TestCase):
     def test_honesty_anchor_present(self) -> None:
         self.assertTrue(al.read_status().honesty_anchor_present)
 
+    def test_four_artifact_dossier(self) -> None:
+        # S103: an accept emits the 4 trust artifacts + the demo (accept & punch).
+        self.assertTrue(al.read_status().four_artifact_dossier)
+
     def test_gate_passes_on_real_repo(self) -> None:
         self.assertEqual(al.main(["--gate", "--format", "json"]), 0)
 

@@ -1,0 +1,13 @@
+# Agent proposal C (REJECTED at run): keeps {fs} (passes diff-caps) but unwinds the
+# recursion bound — @max_depth(4) with digest(20). The enforced kernel (S99) traps
+# it: acceptance rests on the enforced RUN, not only the static capability gate.
+@caps(fs)
+@max_depth(4)
+def digest(n) {
+  if n <= 0 { 0 } else { n + digest(n - 1) }
+}
+
+@caps(fs)
+def main() {
+  digest(20)
+}
