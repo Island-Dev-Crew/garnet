@@ -703,7 +703,7 @@ pub struct EntryCapsScope(#[allow(dead_code)] CapsGuard);
 
 /// Install a program-entry `@caps` frame for `callee` if it is a function value,
 /// returning the scope to hold for the run (S100). Mirrors the entry-frame install
-/// in [`call_value_with_entry_caps`] but returns the live guard instead of running
+/// in `call_value_with_entry_caps` but returns the live guard instead of running
 /// the body, so the VM can hold it across native + fallback dispatch.
 pub fn enter_entry_caps_for(callee: &Value) -> Option<EntryCapsScope> {
     match callee {
