@@ -117,6 +117,9 @@ pub fn print_help() {
         "    seal   <file.garnet>             Emit an in-toto seal attestation (cosign-signable; SBOM-equivalent)"
     );
     println!(
+        "    agent-loop --baseline <o> --proposal <n>  Accept agent-authored code ONLY on diff-caps + enforced-kernel evidence, then seal (S102)"
+    );
+    println!(
         "    bounds <file.garnet>             Report declared @bounded(N) fuel budgets (Wasmtime-fuel target)"
     );
     println!(

@@ -29,6 +29,7 @@ fn main() -> ExitCode {
         }
         "new" => cmd::new::run(&args[1..]),
         "add" => cmd::add::run(&args[1..]),
+        "agent-loop" => cmd::agent_loop::run(&args[1..]),
         "parse" => cmd::parse::run(&args[1..]),
         "check" => {
             let mut suggest = false;
