@@ -1,22 +1,24 @@
 #!/usr/bin/env python3
-"""`@max_depth` runtime enforcement status (S89).
+"""`@max_depth` runtime enforcement status (S89 interpreter + S99 VM parity).
 
-S89 is the first slice that makes the trust kernel *enforce* at runtime: the
-interpreter now traps deterministically when a function declaring `@max_depth(N)`
-recurses past its ceiling (`garnet-interp-v0.3/src/eval.rs`, `call_fn`). This is
-real enforcement — the interpreter refuses to recurse further — distinct from the
-S85 host-stack raise.
+S89 made the interpreter *enforce* `@max_depth(N)`: it traps deterministically
+when a function recurses past its ceiling (`garnet-interp-v0.3/src/eval.rs`,
+`call_fn`). S99 closes the VM-enforcement seam: the bytecode VM's native path now
+traps at the **same** recursion depth with the **identical** message
+(`garnet-vm/src/vm.rs`, `VmDepthGuard` / `enter_depth_guard`), so an over-ceiling
+program no longer diverges between `--interp` and `--vm`.
 
 This static anti-regression gate asserts the enforcement and its honest-scope
-boundary stay in place: the `@max_depth` ceiling lookup + the trapping path live
-in the interpreter, and the trap/within/unannotated integration tests exist.
+boundary stay in place: the `@max_depth` ceiling lookup + the trapping path live in
+BOTH the interpreter and the VM, and the trap/within/unannotated + VM trap-parity
+integration tests exist.
 
 ## Honest scope (do not soften)
 This is the ONE enforced ceiling. `@bounded` (Wasmtime fuel — S39/S88), memory,
 time, and mailbox ceilings remain **declared-not-enforced**. Functions without
-`@max_depth` are not capped (they recurse up to the host stack, S85). Mac-authored
-+ Mac-tested; the Windows trap re-proves via the cross-OS `cargo test` matrix
-(recorded Windows-proof-pending in `WINDOWS_AUDIT_S1_S80.md`).
+`@max_depth` are not capped (they recurse up to the host/VM frame stack, S85).
+Mac-authored + Mac-tested; the Windows trap re-proves via the cross-OS `cargo test`
+matrix (recorded Windows-proof-pending in `WINDOWS_AUDIT_S1_S80.md`).
 """
 from __future__ import annotations
 
@@ -28,6 +30,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 EVAL = ROOT / "garnet-interp-v0.3" / "src" / "eval.rs"
+VM = ROOT / "garnet-vm" / "src" / "vm.rs"
 TEST = ROOT / "garnet-cli" / "tests" / "bounded_enforcement.rs"
 
 
@@ -36,6 +39,7 @@ class BoundedEnforcementStatus:
     schema: str
     interp_reads_max_depth: bool
     interp_traps_on_exceed: bool
+    vm_traps_on_exceed: bool
     enforcement_tests_present: bool
     ok: bool = False
 
@@ -46,19 +50,30 @@ def _read(p: Path) -> str:
 
 def read_status() -> BoundedEnforcementStatus:
     ev = _read(EVAL)
+    vm = _read(VM)
     test = _read(TEST)
     reads = "max_depth_ceiling" in ev and "Annotation::MaxDepth" in ev
     traps = "@max_depth(" in ev and "exceeded for" in ev and "MaxDepthGuard" in ev
+    # S99: the VM's native path enforces the same ceiling with the same message.
+    vm_traps = (
+        "max_depth_ceiling" in vm
+        and "exceeded for" in vm
+        and "VmDepthGuard" in vm
+    )
     tests_present = (
         "over_ceiling_recursion_traps_deterministically" in test
         and "within_ceiling_recursion_runs" in test
         and "unannotated_recursion_is_not_capped" in test
+        # S99 VM trap-parity tests.
+        and "vm_over_ceiling_recursion_traps_deterministically" in test
+        and "vm_and_interp_traps_are_identical" in test
     )
-    ok = reads and traps and tests_present
+    ok = reads and traps and vm_traps and tests_present
     return BoundedEnforcementStatus(
-        schema="garnet.bounded_enforcement/v1",
+        schema="garnet.bounded_enforcement/v2",
         interp_reads_max_depth=reads,
         interp_traps_on_exceed=traps,
+        vm_traps_on_exceed=vm_traps,
         enforcement_tests_present=tests_present,
         ok=ok,
     )
@@ -66,7 +81,7 @@ def read_status() -> BoundedEnforcementStatus:
 
 def render_markdown(r: BoundedEnforcementStatus) -> str:
     return "\n".join([
-        "# Garnet @max_depth runtime enforcement status (S89)",
+        "# Garnet @max_depth runtime enforcement status (S89 interp + S99 VM parity)",
         "",
         f"_Schema {r.schema}._",
         "",
@@ -74,13 +89,16 @@ def render_markdown(r: BoundedEnforcementStatus) -> str:
         f"{'yes' if r.interp_reads_max_depth else 'NO'}",
         f"- interpreter traps deterministically on exceed: "
         f"{'yes' if r.interp_traps_on_exceed else 'NO'}",
-        f"- trap / within / unannotated tests present: "
+        f"- VM traps with the identical message (S99 trap-parity): "
+        f"{'yes' if r.vm_traps_on_exceed else 'NO'}",
+        f"- trap / within / unannotated + VM trap-parity tests present: "
         f"{'yes' if r.enforcement_tests_present else 'NO'}",
         "",
-        "The ONE enforced ceiling: `@max_depth(N)` recursion. `@bounded` (Wasmtime "
-        "fuel), memory, time, and mailbox remain declared-not-enforced. Unannotated "
-        "functions are not capped (host stack, S85). Windows trap re-proves via the "
-        "cross-OS matrix (Windows-proof-pending).",
+        "The ONE enforced ceiling: `@max_depth(N)` recursion, now enforced on BOTH "
+        "the interpreter and the VM with the identical trap (S99). `@bounded` "
+        "(Wasmtime fuel), memory, time, and mailbox remain declared-not-enforced. "
+        "Unannotated functions are not capped (host/VM frame stack, S85). Windows "
+        "trap re-proves via the cross-OS matrix (Windows-proof-pending).",
         "",
     ])
 

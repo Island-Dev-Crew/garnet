@@ -3,7 +3,8 @@ use crate::bytecode::{
 };
 use crate::VmError;
 use garnet_parser::ast::{
-    AssignOp, BinOp, Block, ClosureBody, Expr, FnDef, Item, Module, Stmt, StringLit, UnOp,
+    Annotation, AssignOp, BinOp, Block, ClosureBody, Expr, FnDef, Item, Module, Stmt, StringLit,
+    UnOp,
 };
 use garnet_parser::token::StrPart;
 use std::collections::BTreeMap;
@@ -88,9 +89,13 @@ impl ModuleCompiler {
     }
 
     fn compile_function(&mut self, function: FnDef) -> BytecodeFunction {
+        // S99: capture the `@max_depth(N)` ceiling before consuming `function`,
+        // so both the native and fallback bytecode carry it (the VM enforces the
+        // same ceiling the interpreter does; mirrors interp `eval::max_depth_ceiling`).
+        let ceiling = max_depth_ceiling(&function.annotations);
         let mut compiler = FunctionCompiler::new(&mut self.constants, &function);
         match compiler.compile_body(&function.body) {
-            Ok(()) => compiler.finish_native(function.name),
+            Ok(()) => compiler.finish_native(function.name, ceiling),
             Err(reason) => BytecodeFunction {
                 name: function.name,
                 params: function
@@ -102,9 +107,20 @@ impl ModuleCompiler {
                 instructions: Vec::new(),
                 native: false,
                 fallback_reason: Some(reason),
+                max_depth_ceiling: ceiling,
             },
         }
     }
+}
+
+/// The `@max_depth(N)` ceiling declared on a function, if any — mirrors the
+/// interpreter's `eval::max_depth_ceiling` so the VM and interpreter agree on the
+/// declared ceiling (S99 trap-parity).
+fn max_depth_ceiling(annotations: &[Annotation]) -> Option<i64> {
+    annotations.iter().find_map(|a| match a {
+        Annotation::MaxDepth(n, _) => Some(*n),
+        _ => None,
+    })
 }
 
 struct FunctionCompiler<'a> {
@@ -143,7 +159,7 @@ impl<'a> FunctionCompiler<'a> {
         Ok(())
     }
 
-    fn finish_native(self, name: String) -> BytecodeFunction {
+    fn finish_native(self, name: String, max_depth_ceiling: Option<i64>) -> BytecodeFunction {
         BytecodeFunction {
             name,
             params: self.params,
@@ -151,6 +167,7 @@ impl<'a> FunctionCompiler<'a> {
             instructions: self.instructions,
             native: true,
             fallback_reason: None,
+            max_depth_ceiling,
         }
     }
 
