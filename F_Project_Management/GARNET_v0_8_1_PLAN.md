@@ -1,10 +1,12 @@
 # Garnet v0.8.1 Plan - Substrate Execution + Real-World Proof Runway
 
-Status: reconciled on 2026-06-01 after S98 merged in #322; S91-S98 is complete.
+Status: reconciled on 2026-06-02 — Jon opened lane A (the S99-S120 critical chain);
+the S81-S90 burn-down and the S91-S98 substrate are merged on `origin/main`.
 
-This file is the repo-visible v0.8.1 runway map. It preserves the Windows audit
-burn-down context from S81-S90, reflects that S91-S97 are already merged, and keeps
-the remaining work calibrated: v0.8.1 is a research-grade prototype lane, not a
+This file is the repo-visible v0.8.1 runway map and the spec the surge/repro lanes
+read. It preserves the Windows audit burn-down context from S81-S90, records that
+S91-S98 are merged, and lays out the S99-S120 five-stage proof runway. It keeps the
+remaining work calibrated: v0.8.1 is a research-grade prototype lane, not a
 production or 1.0 claim.
 
 Do not claim VM-backed capability enforcement, OS sandbox enforcement, provider
@@ -13,12 +15,16 @@ dogfood block records that exact evidence.
 
 ## Active Goal Ledger
 
-- Active ledger: `.dogfood/goal.json` (`v0_8_1`, S91-S110).
+- Active ledger: `.dogfood/goal.json` (`v0_8_1`, S91-S120).
 - Archived v0.8.0 ledger: `.dogfood/v0_8_goal.json` (S31-S80, including Jon's
   `v0.8.0` cut record).
-- S91-S98 are the completed substrate lane.
-- S99-S110 are reserved for the real-world proof finale and must not start until
-  Jon explicitly opens that lane.
+- S91-S98 are the completed substrate lane (merged).
+- S99-S120 is the real-world proof runway, opened by Jon as lane A (2026-06-02),
+  across five stages: V (S99-S101) closes the VM-enforcement seam, U (S102-S104)
+  runs the ultrapunch for real, S105 selects domains, X (S106-S109) + R (S110-S113)
+  prove + reproduce cross-OS on the surge/repro lanes, and P (S114-S120) positions
+  and escalates the cut. Mac #1 authors V / U / S105 / P; the surge + repro lanes
+  own X / R.
 
 ## S81-S90 Windows Audit Burn-Down
 
@@ -123,26 +129,78 @@ named agent produced the artifact, or that the declared tool list is complete.
 | S97 | provenance-seal-chain | Merged in #321: binds and verifies self-declared agent/model/prompt metadata against the current seal source/artifact digests. | Binding verification only; no independent model-run, agent-origin, or complete tool-history proof. |
 | S98 | cap-manifest-standard | Merged in #322: advances the capability-manifest schema and reference implementation seed through `garnet caps --standard-profile`, docs, vectors, and a status gate. | Intent plus reference implementation only; no standards body has adopted it; declared-surface manifests do not prove absence of undeclared authority. |
 
-## Reserved S99-S110 Finale
+## S99-S120 Real-World Proof Runway (opened 2026-06-02, lane A)
 
-These slices are represented in the active ledger for progress continuity only.
-Their detailed PRDs are reserved until S91-S98 merge and Jon explicitly opens the
-finale.
+Jon opened the finale. It is renumbered/extended from the old S99-S110 reserve to
+**S99-S120 across five stages**. **Mac #1 (build lead)** authors the
+correctness-critical spine (Stage V, Stage U, S105, Stage P); the cross-OS **surge
+lanes** and **repro lanes** PROVE and reproduce (Stage X, Stage R) and MUST NOT
+author on the build-lead branches. Calibrated honesty governs every slice: no
+"enforced" without a deterministic trap proven by test; no cross-OS-complete claim
+from one machine; no tag pushed; v0.8.1 stays a research-grade prototype.
 
-| Slice | Reserved Title | Status |
+Order: **P0 → V (S99-S101) → U (S102-S104) → S105 → [hold while Stage X + R run on
+other machines] → P (S114-S120)**. Stop + report after V, after U, and before S120.
+
+### Stage V — close the VM-enforcement seam (the gate) · build lead · all 3 OSes prove
+The substrate correctly NAMED-DEFERRED VM enforcement (S90/S91/S92 are
+interpreter-scoped — "the VM enforces nothing"). Stage V closes that seam; the
+ultrapunch cannot be honest until the VM traps too.
+
+| Slice | Title | Goal | Honest scope / gate |
+|---|---|---|---|
+| S99 | vm-max-depth-trap-parity | The VM traps on the same `@max_depth` recursion ceiling the interpreter does — extend the S73/S85 result-parity campaign to **TRAP-parity**. | Deterministic trap proven by test on both backends; not a Wasmtime-fuel claim. |
+| S100 | vm-caps-trap-parity | The VM traps on undeclared `@caps` at the same env/proc/fs boundary the interpreter gates (S90/S91/S92 → VM). | Host-authority bridges only; OS-sandbox/seccomp application stays infra-deferred. |
+| S101 | vm-interp-enforcement-parity-gate | A reporter + `--gate` proving every enforcement trap fires identically on both backends; the "VM enforces nothing" gap is CLOSED. | Parity of the traps that exist; surfaces remaining named-deferred gaps explicitly. |
+
+**STOP + report after S101:** which traps reach VM/interp parity, which stay named-deferred.
+
+### Stage U — the ultrapunch, run for REAL once on the enforced kernel · canonical run = Mac #1
+| Slice | Title | Goal | Honest scope |
+|---|---|---|---|
+| S102 | agent-build-test-loop-real | A REAL (not mock) agent-driven loop: an agent proposes real Garnet code → `diff-caps` gates the capability delta → the ENFORCED kernel runs it in bounds → `seal` attests it. | The proposer is a real agent on the canonical run; the loop is the gated primitive. |
+| S103 | ultrapunch-accept-reject-demo | Capability-bounded ACCEPTANCE of agent-authored code end-to-end, for real — INCLUDING a rejection case (an agent widening the capability surface is caught + refused). The negative proof is the punch. Capture the 4 trust artifacts + an honest accept/reject decision on capability evidence. | Evidence, not assertion; the reject case must actually be refused by the gate, proven by test. |
+| S104 | ultrapunch-evidence-bundle | Full reproducible record: commands, outputs, accept AND reject, the 4 trust artifacts. | A reproducible bundle; reproduction is Stage R's job, not claimed here. |
+
+**STOP + report after S104:** ultrapunch proven (accept + reject), evidence bundle sealed.
+
+### S105 — core-domain-selection · build lead (unblocks the parallel Stage X)
+Select the 5-10 real demonstrator domains and, for EACH, the specific trust-artifact
+delta a non-Garnet build cannot produce. Authoring this is the handoff: it gives the
+surge lanes their specs.
+
+**HANDOFF after S105:** the cross-OS lanes (Windows-Codex, Mac-Codex, Linux) run
+Stage X in parallel; the repro lanes run Stage R. Mac #1 HOLDS the spine and does
+NOT author S106-S113 — it provides their specs only.
+
+### Stage X — cross-OS enforcement + ultrapunch proof · surge lanes (NOT build-lead branches)
+| Slice | Title | Goal | Proof discipline |
+|---|---|---|---|
+| S106 | windows-cross-os-enforcement-proof | Windows-Codex: run the S101 enforcement-parity gate on Windows and reproduce the S103 accept/reject; record every trap fires identically. | Recorded in repo evidence; Windows-only proof command named. |
+| S107 | mac-codex-cross-os-enforcement-proof | Mac-Codex (independent of Mac #1): same proof on a second macOS environment. | Independent machine; not the canonical run. |
+| S108 | linux-cross-os-enforcement-proof | Linux lane: same proof on Linux; additionally, where seccomp is present, attempt the S92 named-deferred OS-policy application as a real Linux-only datapoint (never faked). | seccomp result is honest-partial if tooling absent. |
+| S109 | cross-os-trap-parity-matrix | Consolidate S106-S108 into a Win×Mac×Linux × {max_depth, caps, diff-caps-reject} trap-parity matrix + gate. | A trap is cross-OS-complete only when all three machines recorded it. |
+
+### Stage R — independent reproduction · repro lanes
+| Slice | Title | Goal |
 |---|---|---|
-| S99 | real-world-proofs-lane-gate | Reserved; do not implement in S91-S98. |
-| S100 | core-12-domain-selection | Reserved; do not implement in S91-S98. |
-| S101 | windows-domain-execution | Reserved; do not implement in S91-S98. |
-| S102 | linux-domain-execution | Reserved; do not implement in S91-S98. |
-| S103 | mac-domain-execution | Reserved; do not implement in S91-S98. |
-| S104 | cross-os-smoke-matrix | Reserved; do not implement in S91-S98. |
-| S105 | studio-ui-control-proof | Reserved; do not implement in S91-S98. |
-| S106 | package-pipeline-proof | Reserved; do not implement in S91-S98. |
-| S107 | agent-workflow-proof | Reserved; do not implement in S91-S98. |
-| S108 | failure-mode-red-team | Reserved; do not implement in S91-S98. |
-| S109 | presentation-evidence-bundle | Reserved; do not implement in S91-S98. |
-| S110 | v0.8.1-readiness-decision | Reserved; do not implement in S91-S98. |
+| S110 | ultrapunch-evidence-repro | A fresh-checkout lane replays S104's commands and byte-compares the 4 artifacts + the accept/reject decision; reproducibility verdict. |
+| S111 | domain-proof-repro | Independently reproduce the S105-selected domain trust-artifact deltas. |
+| S112 | cross-os-repro-consolidation | Aggregate Stage X + Stage R evidence into one reproducibility ledger feeding Stage P. |
+| S113 | evidence-integrity-gate | A final integrity gate (seal-verify + manifest hash-chain over the whole evidence corpus) before positioning. |
+
+### Stage P — positioning + cut · build lead (after Stage X + R report back)
+| Slice | Title | Goal | Honest scope |
+|---|---|---|---|
+| S114 | failure-mode-red-team | Build lead coordinates (surge attackers help): actively try to defeat the kernel — laundering, VM-bypass, seal forgery. Record what you COULDN'T break AND any hole found. | Both outcomes recorded; a found hole is a finding, not a thing to hide. |
+| S115 | ultrapunch-dossier | Evidence SUPPORTING the #1 claim — capability-bounded acceptance, enforced, cross-OS — NOT asserted; + ranked runners-up. | Every pillar precedented; the integration + diff-gating discipline is the novelty. |
+| S116 | use-case-domain-proof-artifacts | The 5-10 use-case domains as evidenced proof artifacts (built / run / sealed). | Proof artifacts, not marketing. |
+| S117 | package-pipeline-proof | Signed / SBOM where tooling present (S88 honest-partial → real where possible; named-deferred otherwise). | No signed/SBOM stamp without the tool present. |
+| S118 | academic-evidence-package | CMU/MIT/Rice/UC-Berkeley package — every claim sourced to a slice, test, or sealed artifact. | The honest dossier, including what we refuse to claim. |
+| S119 | v0_8_1-release-readiness-gate | Whole-runway aggregator, binary-strict by default (the S86 lesson). | READY must carry real binary + cross-OS results. |
+| S120 | v0_8_1-cut-decision | Ship the cut-readiness verdict; ESCALATE the tag to Jon (NEVER autonomous) + honest 1.0 horizon (~1yr, validation-gated). | The tag is Jon's; no autonomous tag. |
+
+**STOP + report before S120:** the cut is Jon's decision.
 
 ## Verification Expectations
 
@@ -156,6 +214,11 @@ repo evidence.
 
 ## Stop Rule
 
-S91-S98 is closed as of #322. Report which substrate gaps are closed and
-proven, which remain named-deferred, and hold for explicit instruction before
-S99+.
+S91-S98 is closed as of #322; lane A (S99-S120) is open. Mac #1 drives the spine
+and STOPS to report at three checkpoints: after Stage V (S101 — is the VM seam
+closed, which traps reach parity, which stay named-deferred), after Stage U (S104 —
+ultrapunch proven with both accept and reject, bundle sealed), and before S120 (the
+v0.8.1 cut is Jon's decision — escalate the tag, never push it). After S105, Mac #1
+HOLDS the spine while the surge lanes (Stage X) and repro lanes (Stage R) run on
+other machines; it does not author S106-S113. No "enforced" claim without a
+deterministic trap proven by test; no cross-OS-complete claim from one machine.

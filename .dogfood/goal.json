@@ -71,7 +71,7 @@
       "merge_confidence": null,
       "merged_at": null,
       "status": "pending",
-      "title": "real-world-proofs-lane-gate",
+      "title": "vm-max-depth-trap-parity",
       "weight": 1.0
     },
     {
@@ -79,7 +79,7 @@
       "merge_confidence": null,
       "merged_at": null,
       "status": "pending",
-      "title": "core-12-domain-selection",
+      "title": "vm-caps-trap-parity",
       "weight": 1.0
     },
     {
@@ -87,7 +87,7 @@
       "merge_confidence": null,
       "merged_at": null,
       "status": "pending",
-      "title": "windows-domain-execution",
+      "title": "vm-interp-enforcement-parity-gate",
       "weight": 1.0
     },
     {
@@ -95,7 +95,7 @@
       "merge_confidence": null,
       "merged_at": null,
       "status": "pending",
-      "title": "linux-domain-execution",
+      "title": "agent-build-test-loop-real",
       "weight": 1.0
     },
     {
@@ -103,7 +103,7 @@
       "merge_confidence": null,
       "merged_at": null,
       "status": "pending",
-      "title": "mac-domain-execution",
+      "title": "ultrapunch-accept-reject-demo",
       "weight": 1.0
     },
     {
@@ -111,7 +111,7 @@
       "merge_confidence": null,
       "merged_at": null,
       "status": "pending",
-      "title": "cross-os-smoke-matrix",
+      "title": "ultrapunch-evidence-bundle",
       "weight": 1.0
     },
     {
@@ -119,7 +119,7 @@
       "merge_confidence": null,
       "merged_at": null,
       "status": "pending",
-      "title": "studio-ui-control-proof",
+      "title": "core-domain-selection",
       "weight": 1.0
     },
     {
@@ -127,7 +127,7 @@
       "merge_confidence": null,
       "merged_at": null,
       "status": "pending",
-      "title": "package-pipeline-proof",
+      "title": "windows-cross-os-enforcement-proof",
       "weight": 1.0
     },
     {
@@ -135,7 +135,7 @@
       "merge_confidence": null,
       "merged_at": null,
       "status": "pending",
-      "title": "agent-workflow-proof",
+      "title": "mac-codex-cross-os-enforcement-proof",
       "weight": 1.0
     },
     {
@@ -143,7 +143,7 @@
       "merge_confidence": null,
       "merged_at": null,
       "status": "pending",
-      "title": "failure-mode-red-team",
+      "title": "linux-cross-os-enforcement-proof",
       "weight": 1.0
     },
     {
@@ -151,7 +151,7 @@
       "merge_confidence": null,
       "merged_at": null,
       "status": "pending",
-      "title": "presentation-evidence-bundle",
+      "title": "cross-os-trap-parity-matrix",
       "weight": 1.0
     },
     {
@@ -159,9 +159,89 @@
       "merge_confidence": null,
       "merged_at": null,
       "status": "pending",
-      "title": "v0.8.1-readiness-decision",
+      "title": "ultrapunch-evidence-repro",
+      "weight": 1.0
+    },
+    {
+      "id": "s111",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "domain-proof-repro",
+      "weight": 1.0
+    },
+    {
+      "id": "s112",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "cross-os-repro-consolidation",
+      "weight": 1.0
+    },
+    {
+      "id": "s113",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "evidence-integrity-gate",
+      "weight": 1.0
+    },
+    {
+      "id": "s114",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "failure-mode-red-team",
+      "weight": 1.0
+    },
+    {
+      "id": "s115",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "ultrapunch-dossier",
+      "weight": 1.0
+    },
+    {
+      "id": "s116",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "use-case-domain-proof-artifacts",
+      "weight": 1.0
+    },
+    {
+      "id": "s117",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "package-pipeline-proof",
+      "weight": 1.0
+    },
+    {
+      "id": "s118",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "academic-evidence-package",
+      "weight": 1.0
+    },
+    {
+      "id": "s119",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "v0_8_1-release-readiness-gate",
+      "weight": 1.0
+    },
+    {
+      "id": "s120",
+      "merge_confidence": null,
+      "merged_at": null,
+      "status": "pending",
+      "title": "v0_8_1-cut-decision",
       "weight": 1.0
     }
   ],
-  "title": "Garnet v0.8.1 substrate and proof runway (S91-S110)"
+  "title": "Garnet v0.8.1 substrate and proof runway (S91-S120)"
 }
