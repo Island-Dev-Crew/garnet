@@ -27,6 +27,10 @@ class CapsEnforcementTests(unittest.TestCase):
     def test_program_entry_frame_present(self) -> None:
         self.assertTrue(ce.read_status().program_entry_frame_present)
 
+    def test_vm_entry_caps_frame_present(self) -> None:
+        # S100: the VM installs the same program-entry caps frame (no --vm laundering).
+        self.assertTrue(ce.read_status().vm_entry_caps_frame_present)
+
     def test_enforcement_tests_present(self) -> None:
         self.assertTrue(ce.read_status().enforcement_tests_present)
 
@@ -37,7 +41,9 @@ class CapsEnforcementTests(unittest.TestCase):
         md = ce.render_markdown(ce.read_status())
         self.assertIn("Host-authority surfaces only", md)
         self.assertIn("pure computation", md)
-        self.assertIn("VM backend does not yet enforce @caps", md)
+        # S100 retired the "VM does not yet enforce" claim: both backends now enforce.
+        self.assertNotIn("does not yet enforce", md)
+        self.assertIn("the VM (S100) enforce", md)
 
 
 if __name__ == "__main__":

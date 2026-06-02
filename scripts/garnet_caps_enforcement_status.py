@@ -12,14 +12,22 @@ S91 extends that runtime backstop: `net::tcp_connect` is now bridge-gated, and
 `garnet run --interp` calls `main` through a program-entry frame so safe-mode
 entry points cannot bypass caps just because no managed frame is active.
 
+S100 closes the VM `@caps`-laundering seam: `garnet run --vm` installs the same
+program-entry frame (`garnet-vm/src/vm.rs` holds `Interpreter::enter_entry_caps_frame`
+across its run), so the S92 program-entry capability gate fires on the VM too —
+before S100, undeclared subprocess authority laundered through a helper that
+declared `@caps(proc)` trapped under `--interp` but RAN under `--vm`.
+
 This static anti-regression gate asserts the enforcement + its bridge wiring stay
-in place.
+in place, on both backends.
 
 ## Honest scope (do not soften)
 Host-authority surfaces only (env / process / fs / net / log-to-file); pure
 computation is unaffected, and outside any program-entry/direct function frame
 (direct host/test calls) there is no `@caps` context to enforce, so such calls
-are allowed. The **VM** backend does not yet enforce `@caps`.
+are allowed. Both the interpreter (S90/S91/S92) and the VM (S100) now enforce
+`@caps` with the identical trap; net is gated at the bridge call, not the
+connection layer (S91 scope, unchanged).
 """
 from __future__ import annotations
 
@@ -34,6 +42,7 @@ EVAL = ROOT / "garnet-interp-v0.3" / "src" / "eval.rs"
 INTERP = ROOT / "garnet-interp-v0.3" / "src" / "lib.rs"
 RUN = ROOT / "garnet-cli" / "src" / "cmd" / "run.rs"
 BRIDGE = ROOT / "garnet-interp-v0.3" / "src" / "stdlib_bridge.rs"
+VM = ROOT / "garnet-vm" / "src" / "vm.rs"
 TEST = ROOT / "garnet-cli" / "tests" / "caps_enforcement.rs"
 
 # Each host-authority cap must be gated at its bridge(s).
@@ -50,6 +59,7 @@ class CapsEnforcementStatus:
     schema: str
     interp_has_require_capability: bool
     program_entry_frame_present: bool
+    vm_entry_caps_frame_present: bool
     bridges_gated: list[str]
     missing_gates: list[str]
     enforcement_tests_present: bool
@@ -65,6 +75,7 @@ def read_status() -> CapsEnforcementStatus:
     interp = _read(INTERP)
     run = _read(RUN)
     bridge = _read(BRIDGE)
+    vm = _read(VM)
     test = _read(TEST)
     has_require = (
         "pub(crate) fn require_capability" in ev
@@ -77,6 +88,14 @@ def read_status() -> CapsEnforcementStatus:
         and 'interp.call_entry("main"' in run
         and "managed_frames == 0" not in ev
     )
+    # S100: the VM installs the same program-entry caps frame across its run, so the
+    # S92 entry gate fires on --vm and undeclared authority cannot launder through it.
+    vm_entry_frame = (
+        "EntryCapsScope" in ev
+        and "enter_entry_caps_for" in ev
+        and "pub fn enter_entry_caps_frame" in interp
+        and "enter_entry_caps_frame" in vm
+    )
     gated = [cap for (needle, cap) in REQUIRED_GATES if needle in bridge]
     missing = [cap for (needle, cap) in REQUIRED_GATES if needle not in bridge]
     tests_present = (
@@ -87,12 +106,18 @@ def read_status() -> CapsEnforcementStatus:
         and "program_entry_frame_traps_safe_main_env_without_caps" in test
         and "program_entry_frame_allows_safe_main_declared_env" in test
         and "pure_computation_is_unaffected" in test
+        # S100 VM trap-parity tests (incl. the entry-gate laundering test).
+        and "vm_undeclared_env_traps_identically" in test
+        and "vm_entry_caps_not_launderable_through_helper" in test
     )
-    ok = has_require and entry_frame and not missing and tests_present
+    ok = (
+        has_require and entry_frame and vm_entry_frame and not missing and tests_present
+    )
     return CapsEnforcementStatus(
-        schema="garnet.caps_enforcement/v1",
+        schema="garnet.caps_enforcement/v2",
         interp_has_require_capability=has_require,
         program_entry_frame_present=entry_frame,
+        vm_entry_caps_frame_present=vm_entry_frame,
         bridges_gated=gated,
         missing_gates=missing,
         enforcement_tests_present=tests_present,
@@ -102,7 +127,7 @@ def read_status() -> CapsEnforcementStatus:
 
 def render_markdown(r: CapsEnforcementStatus) -> str:
     return "\n".join([
-        "# Garnet @caps host-authority runtime enforcement status (S91)",
+        "# Garnet @caps host-authority runtime enforcement status (S91 interp + S100 VM parity)",
         "",
         f"_Schema {r.schema}._",
         "",
@@ -110,14 +135,18 @@ def render_markdown(r: CapsEnforcementStatus) -> str:
         f"{'yes' if r.interp_has_require_capability else 'NO'}",
         f"- program-entry caps frame wired into `garnet run --interp`: "
         f"{'yes' if r.program_entry_frame_present else 'NO'}",
+        f"- VM installs the same program-entry caps frame (S100, no --vm laundering): "
+        f"{'yes' if r.vm_entry_caps_frame_present else 'NO'}",
         f"- bridges gated: {r.bridges_gated or 'none'}"
         + (f" (missing: {r.missing_gates})" if r.missing_gates else ""),
-        f"- env/proc/fs/net/program-entry/pure enforcement tests present: "
+        f"- env/proc/fs/net/program-entry/pure + VM trap-parity tests present: "
         f"{'yes' if r.enforcement_tests_present else 'NO'}",
         "",
         "Host-authority surfaces only (env/process/fs/net/log-to-file); pure "
         "computation unaffected; calls outside a program-entry/direct function frame "
-        "are allowed. The VM backend does not yet enforce @caps.",
+        "are allowed. Both the interpreter (S90/S91/S92) and the VM (S100) enforce "
+        "@caps with the identical trap; net is gated at the bridge call, not the "
+        "connection layer.",
         "",
     ])
 

@@ -694,6 +694,24 @@ pub(crate) fn call_value_with_entry_caps(
     call_value(callee, args)
 }
 
+/// A program-entry `@caps` scope owned by an out-of-interpreter caller (the
+/// bytecode VM, S100). It holds the entry `CapsGuard`, so dropping it unwinds the
+/// entry frame. The VM holds one across an entire run, making its fallback path
+/// enforce the S92 program-entry capability gate identically to `--interp`'s
+/// `call_entry` — closing the VM `@caps`-laundering seam.
+pub struct EntryCapsScope(#[allow(dead_code)] CapsGuard);
+
+/// Install a program-entry `@caps` frame for `callee` if it is a function value,
+/// returning the scope to hold for the run (S100). Mirrors the entry-frame install
+/// in `call_value_with_entry_caps` but returns the live guard instead of running
+/// the body, so the VM can hold it across native + fallback dispatch.
+pub fn enter_entry_caps_for(callee: &Value) -> Option<EntryCapsScope> {
+    match callee {
+        Value::Fn(f) => Some(EntryCapsScope(CapsGuard::enter_entry(&f.def.annotations))),
+        _ => None,
+    }
+}
+
 fn call_fn(f: &FnValue, mut args: Vec<Value>) -> Result<Value, RuntimeError> {
     // `@caps` host-authority enforcement (S90): a managed function pushes its
     // declared `@caps` onto the active-capability context for the duration of its
