@@ -10,6 +10,7 @@
 //! AST item summaries).
 
 pub mod add;
+pub mod agent_loop;
 pub mod bounds;
 pub mod build;
 pub mod caps;
