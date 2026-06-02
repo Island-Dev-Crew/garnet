@@ -231,6 +231,15 @@ impl<'a> VmEngine<'a> {
     }
 
     fn call_function(&mut self, name: &str, args: Vec<Value>) -> Result<Value, VmError> {
+        // S100: install the program-entry `@caps` frame for the whole run, mirroring
+        // `--interp`'s `call_entry`. Without it the VM's fallback path runs with no
+        // entry frame, so the S92 program-entry capability gate is bypassed — an
+        // undeclared subprocess capability laundered through a helper that declares
+        // `@caps(proc)` would trap under `--interp` but be allowed under `--vm`. The
+        // scope is owned (it registers in the interpreter's thread-local caps
+        // context, shared because the VM and its fallback run on the same thread)
+        // and unwinds the entry frame when this call returns or traps.
+        let _entry_caps = self.fallback.enter_entry_caps_frame(name);
         let Some(idx) = self.program.functions.iter().position(|f| f.name == name) else {
             return self.call_fallback(name, args, "function not present in VM program");
         };

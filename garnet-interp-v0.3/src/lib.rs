@@ -212,6 +212,18 @@ impl Interpreter {
             .ok_or_else(|| RuntimeError::Message(format!("unknown function '{name}'")))?;
         eval::call_value_with_entry_caps(&callee, args)
     }
+
+    /// Install the program-entry `@caps` frame for `name` **without** running the
+    /// body (S100), returning an RAII scope the caller holds for the duration of
+    /// the run. The bytecode VM uses this so its fallback path enforces the S92
+    /// program-entry capability gate identically to `call_entry` on `--interp`;
+    /// without it, undeclared subprocess authority laundered through a helper
+    /// traps under `--interp` but is allowed under `--vm`. Returns `None` if
+    /// `name` is not a bound function value (no entry annotations to install).
+    pub fn enter_entry_caps_frame(&self, name: &str) -> Option<eval::EntryCapsScope> {
+        let callee = self.global.get(name)?;
+        eval::enter_entry_caps_for(&callee)
+    }
 }
 
 fn named_type_name(ty: &TypeExpr) -> Option<&str> {

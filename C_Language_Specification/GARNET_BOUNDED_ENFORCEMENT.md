@@ -45,8 +45,8 @@ $ echo $?
 BOTH backends and asserts the same exit code and the same depth-5 message — the
 S73/S85 result-parity campaign extended to **trap-parity**. The fallback path is
 unchanged (a function that falls back to the tree-walk interpreter already inherits
-the interpreter's trap). Honest scope: this is `@max_depth` recursion only; the VM
-still does not enforce `@caps` (that is S100) and `@bounded`/Wasmtime fuel stays
+the interpreter's trap). Honest scope: this is `@max_depth` recursion only; VM
+`@caps` trap-parity landed in S100 (see below) and `@bounded`/Wasmtime fuel stays
 deferred.
 
 ## What is NOT enforced (honest)
@@ -79,9 +79,9 @@ gate (now also asserting the VM enforcement).
 
 - **Both** the **interpreter** (S89) and the **VM** (S99) now enforce `@max_depth`
   with the identical deterministic trap — the "VM enforces nothing" seam is closed
-  for this ceiling. The VM still does **not** enforce `@caps` (S100) or `@bounded`
-  fuel (deferred); no claim of total backend equivalence (this is `@max_depth`
-  trap-parity, not whole-language equivalence).
+  for this ceiling. VM `@caps` trap-parity landed in **S100** (below); `@bounded`
+  fuel stays deferred. No claim of total backend equivalence (this is `@max_depth` /
+  `@caps` trap-parity, not whole-language equivalence).
 - This is a **seed**: one enforced ceiling. Mac-authored + Mac-tested; the Windows
   trap re-proves via the cross-OS `cargo test` matrix (recorded
   Windows-proof-pending in `WINDOWS_AUDIT_S1_S80.md`).
@@ -115,14 +115,39 @@ caps contains the requirement (or a `@caps(*)` wildcard). The static caps-graph
 propagates caps up every managed frame, so a *checked* program always carries the
 cap — only under-declared programs trap.
 
+### VM trap-parity (S100)
+
+Basic `@caps` was already enforced under `garnet run --vm` (the VM falls back to the
+tree-walk interpreter for host-authority calls, whose managed frame pushes the
+declared caps). But the **S92 program-entry gate was bypassed**: the VM never
+installed a program-*entry* frame, so `entry_frames` stayed 0 and undeclared
+subprocess authority laundered through a helper that declared `@caps(proc)` **ran**
+under `--vm` while it **trapped** under `--interp`:
+
+```
+$ garnet run --vm launder.garnet     # @caps() main -> @caps(proc) helper -> std::process::output
+vm error: runtime error: capability: `std::process::output` requires program entry @caps(proc), not declared by the entry point
+$ echo $?
+1
+```
+
+S100 closes the seam: `VmEngine::call_function` holds
+`Interpreter::enter_entry_caps_frame(entry)` for the whole run — the **same**
+`CapsGuard::enter_entry` the interpreter installs via `call_entry` — so every
+`@caps` trap, including the entry gate, fires identically on both backends.
+`garnet-cli/tests/caps_enforcement.rs::vm_entry_caps_not_launderable_through_helper`
+runs both backends and asserts the identical trap + exit code.
+
 ### Scope notes (do not soften)
 
-- **Host-authority surfaces only** — env / process / fs / log-to-file. Pure
+- **Host-authority surfaces only** — env / process / fs / net / log-to-file. Pure
   computation is unaffected.
 - **No managed-program frame ⇒ allowed.** A direct host/test call (no managed
   function on the stack) has no `@caps` context to enforce against, so it runs —
   this keeps the Rust stdlib-bridge tests valid.
-- The **VM** backend does not yet enforce `@caps` (the interpreter does). VM
-  enforcement is future work.
+- **Both** the interpreter (S90/S91/S92) and the **VM** (S100) now enforce `@caps`
+  with the identical trap — the VM `@caps`-laundering seam is closed. Net is gated
+  at the bridge call, not the connection layer (S91 scope, unchanged); no claim of
+  total backend equivalence.
 - Mac-authored + Mac-tested; the Windows trap re-proves via the cross-OS `cargo
   test` matrix (recorded Windows-proof-pending in `WINDOWS_AUDIT_S1_S80.md`).
