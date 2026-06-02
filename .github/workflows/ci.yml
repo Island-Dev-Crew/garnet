@@ -69,6 +69,7 @@ jobs:
       - run: python3 scripts/test_garnet_interp_stack_status.py
       - run: python3 scripts/test_garnet_bounded_enforcement_status.py
       - run: python3 scripts/test_garnet_caps_enforcement_status.py
+      - run: python3 scripts/test_garnet_vm_interp_enforcement_parity_status.py
       - run: python3 scripts/test_garnet_release_truth_status.py
       - run: python3 scripts/check_determinism_no_llm.py
       - run: python3 scripts/check-agent-contracts.py
@@ -168,6 +169,10 @@ jobs:
       # S90: @caps host-authority enforcement — the interpreter traps when a managed
       # fn invokes a std::env/process/fs/log-to-file primitive whose cap is undeclared.
       - run: python3 scripts/garnet_caps_enforcement_status.py --gate
+      # S101 (Stage V closeout): VM/interp enforcement-parity — the VM traps on
+      # @max_depth (S99) and @caps (S100) identically to the interpreter; the
+      # "VM enforces nothing" seam is closed for these two ceilings.
+      - run: python3 scripts/garnet_vm_interp_enforcement_parity_status.py --gate
       # S83: post-tag release truth — v0.8.0 cut-by-Jon AND S80-PR-readiness-only
       # truths coexist (doc + CHANGELOG + ledger cut_record); closes WIN-S80-002.
       - run: python3 scripts/garnet_release_truth_status.py --gate

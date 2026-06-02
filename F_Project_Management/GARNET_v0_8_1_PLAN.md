@@ -155,6 +155,18 @@ ultrapunch cannot be honest until the VM traps too.
 
 **STOP + report after S101:** which traps reach VM/interp parity, which stay named-deferred.
 
+> **Stage V CLOSED (2026-06-02).** S99 (#325, `5d36219`) — VM `@max_depth`
+> trap-parity (ABI `GARNVM03`, `VmDepthGuard`). S100 (#326, `e630337`) — VM `@caps`
+> trap-parity; closed a real authority-laundering hole (the S92 program-entry gate
+> was bypassed under `--vm`, so undeclared subprocess authority laundered through
+> an `@caps(proc)` helper ran). S101 (this slice) — the consolidated
+> enforcement-parity reporter + `--gate`. **Reached VM/interp TRAP-parity:**
+> `@max_depth` + `@caps` (env/proc/fs/net + the S92 entry gate), proven by
+> both-backends tests on the cross-OS matrix. **Still named-deferred on BOTH
+> backends (never faked):** `@bounded` (Wasmtime fuel — wasmtime absent), memory,
+> time, `@mailbox`, and OS-level sandbox application. This is trap-parity for the
+> enforced ceilings, not total backend equivalence.
+
 ### Stage U — the ultrapunch, run for REAL once on the enforced kernel · canonical run = Mac #1
 | Slice | Title | Goal | Honest scope |
 |---|---|---|---|
