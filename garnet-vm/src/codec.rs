@@ -3,12 +3,14 @@ use crate::bytecode::{
 };
 use crate::VmError;
 
-// ABI v0.2 (S14): the magic is version-bumped from `GARNVM01` and each
-// function now carries an explicit `arity` field ahead of its parameter
-// vector so a reader can validate arity without trusting the vector length.
-// This is a tightened, more self-describing schema — still NOT a stable
-// cross-version external ABI promise.
-const MAGIC: &[u8; 8] = b"GARNVM02";
+// ABI v0.3 (S99): the magic is version-bumped from `GARNVM02`. Each function now
+// carries its `@max_depth(N)` ceiling (a tagged optional i64) after the
+// fallback-reason field, so a deserialized-from-disk program enforces the same
+// recursion ceiling the VM enforces in-memory (S99 VM/interp trap-parity). ABI
+// v0.2 added an explicit `arity` field ahead of the parameter vector. This is a
+// tightened, self-describing schema — still NOT a stable cross-version external
+// ABI promise.
+const MAGIC: &[u8; 8] = b"GARNVM03";
 
 pub fn serialize_program(program: &BytecodeProgram) -> Vec<u8> {
     let mut out = Vec::new();
@@ -35,6 +37,14 @@ pub fn serialize_program(program: &BytecodeProgram) -> Vec<u8> {
             Some(reason) => {
                 out.push(1);
                 write_string(&mut out, reason);
+            }
+            None => out.push(0),
+        }
+        // ABI v0.3 (S99): tagged optional `@max_depth(N)` ceiling.
+        match function.max_depth_ceiling {
+            Some(n) => {
+                out.push(1);
+                out.extend_from_slice(&n.to_le_bytes());
             }
             None => out.push(0),
         }
@@ -81,6 +91,19 @@ pub fn deserialize_program(bytes: &[u8]) -> Result<BytecodeProgram, VmError> {
                 )))
             }
         };
+        // ABI v0.3 (S99): tagged optional `@max_depth(N)` ceiling.
+        let max_depth_ceiling = match reader.read_u8()? {
+            0 => None,
+            1 => {
+                let bytes = reader.read_exact(8)?;
+                Some(i64::from_le_bytes(bytes.try_into().expect("8-byte i64")))
+            }
+            other => {
+                return Err(VmError::Codec(format!(
+                    "invalid max-depth-ceiling marker {other}"
+                )))
+            }
+        };
         let instruction_count = reader.read_u32()? as usize;
         let mut instructions = Vec::with_capacity(instruction_count);
         for _ in 0..instruction_count {
@@ -93,6 +116,7 @@ pub fn deserialize_program(bytes: &[u8]) -> Result<BytecodeProgram, VmError> {
             instructions,
             native,
             fallback_reason,
+            max_depth_ceiling,
         });
     }
     Ok(BytecodeProgram {

@@ -90,6 +90,11 @@ pub struct BytecodeFunction {
     pub instructions: Vec<Instruction>,
     pub native: bool,
     pub fallback_reason: Option<String>,
+    /// The `@max_depth(N)` recursion ceiling declared on this function, if any
+    /// (S99). Carried through compile + codec so the VM enforces the same
+    /// ceiling the interpreter does. `None` means uncapped (recurses up to the
+    /// VM frame stack); `Some(n)` traps at recursion depth `n + 1`.
+    pub max_depth_ceiling: Option<i64>,
 }
 
 #[derive(Debug, Clone, PartialEq)]

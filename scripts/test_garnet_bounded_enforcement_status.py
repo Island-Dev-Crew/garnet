@@ -22,6 +22,10 @@ class BoundedEnforcementTests(unittest.TestCase):
     def test_interpreter_traps_on_exceed(self) -> None:
         self.assertTrue(be.read_status().interp_traps_on_exceed)
 
+    def test_vm_traps_on_exceed(self) -> None:
+        # S99: the VM enforces the same @max_depth ceiling with the same message.
+        self.assertTrue(be.read_status().vm_traps_on_exceed)
+
     def test_enforcement_tests_present(self) -> None:
         self.assertTrue(be.read_status().enforcement_tests_present)
 

@@ -25,6 +25,30 @@ generated artifact and not the S85 host-stack raise (which only moved the
 overflow ceiling). A function within its ceiling runs unchanged; a function with
 **no** `@max_depth` is **not** capped (it recurses up to the host stack).
 
+## VM trap-parity (S99)
+
+The bytecode VM (`garnet run --vm`) now enforces the **same** ceiling. Before S99
+the VM's native path discarded annotations, so an over-ceiling program *diverged*
+(`--interp` trapped; `--vm` ran to completion, exit 0). S99 threads the
+`@max_depth` ceiling through compile + codec (ABI `GARNVM03`) and adds a VM-local
+recursion guard (`garnet-vm/src/vm.rs`, `VmDepthGuard` / `enter_depth_guard`), so
+the VM traps at the identical recursion depth with the identical message:
+
+```
+$ garnet run --vm deep.garnet
+vm error: runtime error: bounded: @max_depth(4) exceeded for `deep` (recursion depth 5)
+$ echo $?
+1
+```
+
+`garnet-cli/tests/bounded_enforcement.rs::vm_and_interp_traps_are_identical` runs
+BOTH backends and asserts the same exit code and the same depth-5 message — the
+S73/S85 result-parity campaign extended to **trap-parity**. The fallback path is
+unchanged (a function that falls back to the tree-walk interpreter already inherits
+the interpreter's trap). Honest scope: this is `@max_depth` recursion only; the VM
+still does not enforce `@caps` (that is S100) and `@bounded`/Wasmtime fuel stays
+deferred.
+
 ## What is NOT enforced (honest)
 
 The kernel is honest about the boundary; only `@max_depth` recursion is enforced
@@ -44,15 +68,20 @@ No ceiling is *faked*: a bound is either backed by a *trapping test* (only
 `garnet-cli/tests/bounded_enforcement.rs` (cross-OS matrix): over-ceiling recursion
 traps deterministically; within-ceiling runs; the trap is deterministic across
 runs (comparing exit code + the trap message, not raw stderr — which carries the
-documented episodic-cache notes); unannotated recursion is not capped.
+documented episodic-cache notes); unannotated recursion is not capped. **S99 adds
+the VM trap-parity tests** (`vm_over_ceiling_recursion_traps_deterministically`,
+`vm_and_interp_traps_are_identical`, `vm_within_ceiling_recursion_runs`,
+`vm_unannotated_recursion_is_not_capped`, `vm_trap_is_deterministic_across_runs`).
 `scripts/garnet_bounded_enforcement_status.py --gate` is the static anti-regression
-gate.
+gate (now also asserting the VM enforcement).
 
 ## Scope notes (do not soften)
 
-- The **interpreter** enforces `@max_depth`; the **VM** backend does not yet — the
-  parity corpus contains no `@max_depth`-over-ceiling program, so VM/interpreter
-  parity stays 33/33. VM enforcement is future work.
+- **Both** the **interpreter** (S89) and the **VM** (S99) now enforce `@max_depth`
+  with the identical deterministic trap — the "VM enforces nothing" seam is closed
+  for this ceiling. The VM still does **not** enforce `@caps` (S100) or `@bounded`
+  fuel (deferred); no claim of total backend equivalence (this is `@max_depth`
+  trap-parity, not whole-language equivalence).
 - This is a **seed**: one enforced ceiling. Mac-authored + Mac-tested; the Windows
   trap re-proves via the cross-OS `cargo test` matrix (recorded
   Windows-proof-pending in `WINDOWS_AUDIT_S1_S80.md`).

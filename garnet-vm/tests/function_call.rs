@@ -102,15 +102,40 @@ fn nested_calls_return_values_through_frames() {
 }
 
 #[test]
-fn abi_v0_2_round_trips_and_is_versioned() {
+fn abi_v0_3_round_trips_and_is_versioned() {
     let artifact = compile_source("def add(a, b) { a + b }\ndef main() { add(1, 2) }").unwrap();
     let bytes = serialize_program(&artifact.program);
-    // Magic header is the v0.2 marker.
-    assert_eq!(&bytes[0..8], b"GARNVM02");
+    // Magic header is the v0.3 marker (S99 added the `@max_depth` ceiling field).
+    assert_eq!(&bytes[0..8], b"GARNVM03");
     // Deterministic + lossless round trip.
     assert_eq!(bytes, serialize_program(&artifact.program));
     let decoded = deserialize_program(&bytes).unwrap();
     assert_eq!(artifact.program, decoded);
+}
+
+#[test]
+fn max_depth_ceiling_survives_round_trip() {
+    // S99: the `@max_depth(N)` ceiling must survive serialize+deserialize, else a
+    // deserialized-from-disk program would silently stop enforcing the ceiling.
+    let artifact = compile_source(
+        "@max_depth(4)\ndef deep(n) { if n <= 0 { 0 } else { 1 + deep(n - 1) } }\ndef main() { deep(1) }",
+    )
+    .unwrap();
+    assert_eq!(
+        artifact.program.function("deep").unwrap().max_depth_ceiling,
+        Some(4)
+    );
+    let decoded = deserialize_program(&serialize_program(&artifact.program)).unwrap();
+    assert_eq!(
+        decoded.function("deep").unwrap().max_depth_ceiling,
+        Some(4),
+        "the @max_depth ceiling must round-trip through the codec"
+    );
+    assert_eq!(
+        decoded.function("main").unwrap().max_depth_ceiling,
+        None,
+        "an unannotated function stays uncapped"
+    );
 }
 
 #[test]

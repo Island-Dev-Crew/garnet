@@ -4,6 +4,70 @@ use crate::bytecode::{
 use crate::compiler::{compile_source, VmArtifact};
 use crate::VmError;
 use garnet_interp::{Interpreter, Value};
+use std::cell::RefCell;
+use std::collections::BTreeMap;
+
+thread_local! {
+    /// Per-function active recursion depth for `@max_depth` enforcement on the
+    /// VM's native path (S99). VM-local — deliberately NOT shared with the
+    /// interpreter's counter (a native frame that itself falls back would
+    /// otherwise be double-counted). The counter unwinds via `VmDepthGuard` on
+    /// every frame drop / error path, so it starts clean each run.
+    static VM_MAX_DEPTH_DEPTHS: RefCell<BTreeMap<String, u64>> = const { RefCell::new(BTreeMap::new()) };
+}
+
+/// RAII guard mirroring the interpreter's `MaxDepthGuard` (`eval.rs`): increments
+/// the per-function counter on `enter`, decrements on drop. Because the VM uses an
+/// explicit heap frame stack rather than host recursion, the guard is stored on
+/// the owning `Frame` so the `Vec<Frame>` drop unwinds every live counter on any
+/// return or early-error (trap) path.
+struct VmDepthGuard {
+    name: String,
+    depth: u64,
+}
+
+impl VmDepthGuard {
+    fn enter(name: String) -> Self {
+        let depth = VM_MAX_DEPTH_DEPTHS.with(|m| {
+            let mut m = m.borrow_mut();
+            let c = m.entry(name.clone()).or_insert(0);
+            *c += 1;
+            *c
+        });
+        VmDepthGuard { name, depth }
+    }
+}
+
+impl Drop for VmDepthGuard {
+    fn drop(&mut self) {
+        VM_MAX_DEPTH_DEPTHS.with(|m| {
+            if let Some(c) = m.borrow_mut().get_mut(&self.name) {
+                *c = c.saturating_sub(1);
+            }
+        });
+    }
+}
+
+/// Enter the `@max_depth(N)` guard for `function` if it declares a ceiling,
+/// trapping with the exact interpreter message when the recursion depth exceeds
+/// `N` (S99 trap-parity). Returns `Ok(None)` for uncapped functions. On a trap the
+/// freshly-entered guard drops here (rolling back its own increment); the caller's
+/// already-pushed frames unwind their guards as the `Vec<Frame>` drops.
+fn enter_depth_guard(function: &BytecodeFunction) -> Result<Option<VmDepthGuard>, VmError> {
+    match function.max_depth_ceiling {
+        Some(n) => {
+            let guard = VmDepthGuard::enter(function.name.clone());
+            if guard.depth > n.max(0) as u64 {
+                return Err(VmError::Runtime(format!(
+                    "bounded: @max_depth({n}) exceeded for `{}` (recursion depth {})",
+                    function.name, guard.depth
+                )));
+            }
+            Ok(Some(guard))
+        }
+        None => Ok(None),
+    }
+}
 
 #[derive(Debug, Clone, Copy)]
 pub struct RunOptions {
@@ -120,6 +184,10 @@ struct Frame {
     locals: Vec<Slot>,
     stack: Vec<Slot>,
     ip: usize,
+    /// The `@max_depth` recursion guard owned by this activation (S99). Its `Drop`
+    /// decrements the per-function depth counter when the frame is popped or the
+    /// whole frame stack unwinds on a trap. `None` for uncapped functions.
+    depth_guard: Option<VmDepthGuard>,
 }
 
 impl Frame {
@@ -145,6 +213,7 @@ impl Frame {
             locals,
             stack: Vec::new(),
             ip: 0,
+            depth_guard: None,
         })
     }
 }
@@ -200,8 +269,13 @@ impl<'a> VmEngine<'a> {
         // Copy the shared program reference into a local so indexing it does
         // not entangle the `&mut self` borrows used for summary/fallback.
         let program = self.program;
-        let mut frames: Vec<Frame> =
-            vec![Frame::new(entry_idx, &program.functions[entry_idx], args)?];
+        // S99: guard the entry activation when the entry function itself declares
+        // `@max_depth` (e.g. the annotated function is run directly as the entry).
+        let entry_function = &program.functions[entry_idx];
+        let entry_guard = enter_depth_guard(entry_function)?;
+        let mut entry_frame = Frame::new(entry_idx, entry_function, args)?;
+        entry_frame.depth_guard = entry_guard;
+        let mut frames: Vec<Frame> = vec![entry_frame];
 
         loop {
             let top = frames.len() - 1;
@@ -240,9 +314,16 @@ impl<'a> VmEngine<'a> {
                         .iter()
                         .position(|f| f.name == callee && f.native)
                     {
+                        // S99: enforce the callee's `@max_depth` ceiling before
+                        // pushing its frame. A trap returns `Err` here (the callee
+                        // frame is never pushed), and the in-flight `Vec<Frame>`
+                        // unwinds every live depth guard as it drops — exactly as
+                        // the interpreter traps at recursion depth `N + 1`.
+                        let callee_function = &program.functions[callee_idx];
+                        let guard = enter_depth_guard(callee_function)?;
                         self.summary.native_function_calls += 1;
-                        let frame =
-                            Frame::new(callee_idx, &program.functions[callee_idx], call_args)?;
+                        let mut frame = Frame::new(callee_idx, callee_function, call_args)?;
+                        frame.depth_guard = guard;
                         frames.push(frame);
                         continue;
                     }
