@@ -1,0 +1,5 @@
+golden ok / total:  4  /  4
+adversarial ok / total:  2  /  7
+total golden size: 4096
+retry result: (error: timeout)
+=> 402

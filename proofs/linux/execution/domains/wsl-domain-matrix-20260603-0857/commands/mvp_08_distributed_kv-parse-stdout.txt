@@ -1,0 +1,4 @@
+parsed /mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/examples/mvp_08_distributed_kv.garnet (3 items, safe=false)
+  - fn/def max_int (2 args)
+  - fn/def merge_clock (3 args)
+  - fn/def main (0 args)

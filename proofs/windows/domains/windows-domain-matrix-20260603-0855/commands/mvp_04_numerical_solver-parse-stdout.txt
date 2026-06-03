@@ -1,0 +1,4 @@
+parsed C:\Users\IslandDevCrew\.config\superpowers\worktrees\garnet\agent-win-codex-s106-windows-cross-os-proof-phase1\examples\mvp_04_numerical_solver.garnet (3 items, safe=false)
+  - fn/def abs_int (1 args)
+  - fn/def converge (3 args)
+  - fn/def main (0 args)

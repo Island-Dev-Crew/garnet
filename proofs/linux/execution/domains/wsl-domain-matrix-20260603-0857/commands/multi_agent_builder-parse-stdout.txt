@@ -1,0 +1,19 @@
+parsed /mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/examples/multi_agent_builder.garnet (18 items, safe=false)
+  - enum TaskKind
+  - enum Severity
+  - struct Task
+  - struct TaskResult
+  - struct BuildSpec
+  - struct BuildPlan
+  - struct BuildSummary
+  - actor Planner (5 items)
+  - fn/def make_task (4 args)
+  - actor Compiler (7 items)
+  - fn/def simulate_task (1 args)
+  - fn/def base_duration (1 args)
+  - fn/def has_marker (2 args)
+  - actor Tester (7 items)
+  - fn/def orchestrate (1 args)
+  - fn/def stratified_sources (0 args)
+  - fn/def red_sources (0 args)
+  - fn/def main (0 args)

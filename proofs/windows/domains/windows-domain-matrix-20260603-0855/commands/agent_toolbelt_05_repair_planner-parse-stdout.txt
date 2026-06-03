@@ -1,0 +1,5 @@
+parsed C:\Users\IslandDevCrew\.config\superpowers\worktrees\garnet\agent-win-codex-s106-windows-cross-os-proof-phase1\examples\agent_toolbelt_05_repair_planner.garnet (4 items, safe=false)
+  - fn/def severity_points (1 args)
+  - fn/def regression_bonus (1 args)
+  - fn/def repair_points (3 args)
+  - fn/def main (0 args)

@@ -1,0 +1,3 @@
+parsed C:\Users\IslandDevCrew\.config\superpowers\worktrees\garnet\agent-win-codex-s106-windows-cross-os-proof-phase1\examples\mvp_01_os_simulator.garnet (2 items, safe=false)
+  - fn/def run_scheduler (1 args)
+  - fn/def main (0 args)

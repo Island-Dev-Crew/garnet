@@ -1,0 +1,2 @@
+agent toolbelt capability score: 61
+=> 61

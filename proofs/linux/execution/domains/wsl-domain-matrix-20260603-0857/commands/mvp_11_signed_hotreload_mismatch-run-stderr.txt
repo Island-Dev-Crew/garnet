@@ -1,0 +1,3 @@
+note: ignored 60 untrusted cache record(s) in .garnet-cache/episodes.log
+note: ignored 19 untrusted strategy record(s) in .garnet-cache/strategies.db
+runtime error: exception: BLAKE3 fingerprint mismatch

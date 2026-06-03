@@ -1,0 +1,7 @@
+ingested incidents: 7
+total lines:     12
+errors:          4
+warnings:        3
+unique traces:   9
+patterns:        12
+=> 43
