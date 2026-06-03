@@ -193,7 +193,7 @@ Verification status at current `main`:
 - ✅ Canonical MVP examples parse, check, and run under the current CLI
 - ✅ 24 stdlib registry primitives bridged through the interpreter
 - ✅ The universal curl installer verifies v0.5.0 release assets when present and uses source fallback only for unsupported or missing package targets
-- ✅ MIT/productization reporter now tracks 61 lanes and reports 92.0% on the current evidence set; this is separate from the 87/87 tracked-slice ledger, and the Windows/Linux distribution sub-lane remains active-partial at 81.0%
+- ✅ MIT/productization reporter now tracks 62 lanes and reports 92.1% on the current evidence set; this is separate from the 87/87 tracked-slice ledger, and the Windows/Linux distribution sub-lane remains active-partial at 82.0%
 - ⏳ macOS `.pkg` and Windows `.msi` release signing/notarization remain credential-gated release steps
 
 ## Research

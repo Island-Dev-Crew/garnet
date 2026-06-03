@@ -30,6 +30,7 @@ import smoke_garnet_studio_linux_wsl_xvfb  # noqa: E402
 import smoke_garnet_studio_linux_wsl_xvfb_window  # noqa: E402
 import smoke_garnet_studio_linux_wslg_install_launch  # noqa: E402
 import smoke_garnet_studio_domain_shell  # noqa: E402
+import smoke_garnet_studio_release_readiness_shell  # noqa: E402
 
 ACTIVE_CONVERSION = ["Rust", "Ruby", "Python", "Go"]
 ADVISORY_PLANNING = [
@@ -665,6 +666,7 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
     linux_xvfb_window = smoke_garnet_studio_linux_wsl_xvfb_window.read_committed_evidence(ROOT)
     linux_wslg_install = smoke_garnet_studio_linux_wslg_install_launch.read_committed_evidence(ROOT)
     domain_shell = smoke_garnet_studio_domain_shell.read_committed_evidence(ROOT)
+    release_readiness_shell = smoke_garnet_studio_release_readiness_shell.read_committed_evidence(ROOT)
     any_linux_package_evidence = (
         linux_deb.verified
         or linux_deb_install.verified
@@ -742,6 +744,10 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
     if domain_shell.verified:
         linux_package_truth.append(
             "Studio Domain Proof Matrix shell output is verified by `scripts/smoke_garnet_studio_domain_shell.py`; the Windows row exercises the Tauri command wrapper and the WSL row is execution/portability only, not Linux seccomp, OS-sandbox enforcement, or clean/non-WSL Linux desktop proof",
+        )
+    if release_readiness_shell.verified:
+        linux_package_truth.append(
+            "Release / Readiness shell reporter output is verified by `scripts/smoke_garnet_studio_release_readiness_shell.py`; the Windows row exercises Tauri command wrappers for repo-native status reporters and the WSL row is execution/portability only, not Linux seccomp, OS-sandbox enforcement, or clean/non-WSL Linux desktop proof",
         )
     if not linux_package_truth:
         linux_package_truth.append(
@@ -838,6 +844,17 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
             item
             for item in open_vm_next
             if item != "Domain Proof Matrix screenshots/output from the Windows shell and WSL/Linux shell"
+        ]
+    release_shell_gap = "Release / Readiness panel screenshot and reporter-output evidence from the Windows shell"
+    release_screenshot_gap = "Release / Readiness panel screenshot from the live Windows GUI shell"
+    if release_readiness_shell.verified:
+        clean_vm_next = [
+            release_screenshot_gap if item == release_shell_gap else item
+            for item in clean_vm_next
+        ]
+        open_vm_next = [
+            release_screenshot_gap if item == release_shell_gap else item
+            for item in open_vm_next
         ]
     next_slices = clean_vm_next if clean_vm_verified else open_vm_next
     clean_vm_assistance = (

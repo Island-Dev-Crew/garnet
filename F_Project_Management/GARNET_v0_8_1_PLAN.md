@@ -342,6 +342,22 @@ Windows/Linux status reporter and moves the Windows/Linux distribution lane to
 GUI install/launch, Linux seccomp or OS-sandbox enforcement, signed/SBOM release
 artifacts, winget, Windows ARM64, production, and v1.0 remain unclaimed.
 
+**S117 Windows/WSL Studio Release / Readiness shell increment (recorded
+2026-06-03):** the Windows lane records the next status-contract proof under
+`proofs/windows/studio-release-readiness-shell/` and
+`proofs/linux/execution/studio-release-readiness-shell/`. The proof builds the
+Windows Studio release binary, runs
+`garnet-studio.exe --studio-release-readiness-smoke`, verifies the Tauri command
+wrappers behind the Release / Readiness reporters
+(`windows_linux_studio_status`, objective pulse, converter status, and Windows
+clean-VM installer status), copies the Studio payload into the proof bundle, and
+repeats the same command path inside WSL as execution/portability evidence. This
+narrows the Release / Readiness status gap to a live GUI screenshot only and
+moves the Windows/Linux distribution lane to 82.0%, but it still does **not**
+close full S117: live GUI screenshot proof, clean/non-WSL Linux desktop GUI
+install/launch, Linux seccomp or OS-sandbox enforcement, signed/SBOM release
+artifacts, winget, Windows ARM64, production, and v1.0 remain unclaimed.
+
 **STOP + report before S120:** the cut is Jon's decision.
 
 ## Verification Expectations

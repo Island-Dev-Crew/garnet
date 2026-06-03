@@ -53,6 +53,21 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             ),
         )
 
+    def _verified_release_readiness_shell_evidence(self) -> object:
+        return status_mod.smoke_garnet_studio_release_readiness_shell.ReleaseReadinessShellEvidence(
+            verified=True,
+            windows_summary=Path(
+                "proofs/windows/studio-release-readiness-shell/windows-release-readiness-shell-test/garnet-studio-release-readiness-shell-proof.json"
+            ),
+            wsl_summary=Path(
+                "proofs/linux/execution/studio-release-readiness-shell/wsl-release-readiness-shell-test/garnet-studio-release-readiness-shell-proof.json"
+            ),
+            reason=(
+                "Committed Windows Studio Release / Readiness shell proof and WSL execution/portability "
+                "proof verified; WSL is not Linux enforcement."
+            ),
+        )
+
     def test_taxonomy_matches_handoff_copy_truth(self) -> None:
         status = status_mod.read_status()
         self.assertEqual(["Rust", "Ruby", "Python", "Go"], status.taxonomy.active_conversion)
@@ -721,6 +736,33 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
         self.assertIn("not Linux seccomp", truth)
         self.assertNotIn(
             "Domain Proof Matrix screenshots/output from the Windows shell and WSL/Linux shell",
+            status.next_slices,
+        )
+        self.assertIn("Active converter end-to-end screenshots from the shell", status.next_slices)
+        self.assertIn("Linux VM/container", " ".join(status.user_assistance_needed))
+
+    def test_release_readiness_shell_proof_removes_reporter_gap_but_keeps_gui_screenshot_open(self) -> None:
+        with mock.patch.object(
+            status_mod.smoke_garnet_studio_domain_shell,
+            "read_committed_evidence",
+            return_value=self._verified_domain_shell_evidence(),
+        ), mock.patch.object(
+            status_mod.smoke_garnet_studio_release_readiness_shell,
+            "read_committed_evidence",
+            return_value=self._verified_release_readiness_shell_evidence(),
+        ):
+            status = status_mod.read_status()
+
+        truth = " ".join(status.current_truth)
+        self.assertIn("Release / Readiness shell reporter output is verified", truth)
+        self.assertIn("WSL row is execution/portability only", truth)
+        self.assertIn("not Linux seccomp", truth)
+        self.assertNotIn(
+            "Release / Readiness panel screenshot and reporter-output evidence from the Windows shell",
+            status.next_slices,
+        )
+        self.assertIn(
+            "Release / Readiness panel screenshot from the live Windows GUI shell",
             status.next_slices,
         )
         self.assertIn("Active converter end-to-end screenshots from the shell", status.next_slices)

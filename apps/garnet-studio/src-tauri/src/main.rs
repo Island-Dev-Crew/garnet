@@ -28,6 +28,19 @@ fn main() {
             }
         }
     }
+    if std::env::args().any(|arg| arg == "--studio-release-readiness-smoke") {
+        match garnet_studio_lib::run_release_readiness_smoke() {
+            Ok(path) => {
+                println!("Garnet Studio release/readiness smoke passed");
+                println!("evidence={path}");
+                return;
+            }
+            Err(err) => {
+                eprintln!("Garnet Studio release/readiness smoke failed: {err}");
+                std::process::exit(1);
+            }
+        }
+    }
 
     garnet_studio_lib::run()
 }

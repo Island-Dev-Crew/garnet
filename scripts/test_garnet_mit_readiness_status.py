@@ -789,7 +789,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertEqual(
             "active-partial", lanes["windows_linux_distribution"].status
         )
-        self.assertEqual(69.0, lanes["windows_linux_distribution"].completion_percent)
+        self.assertEqual(70.0, lanes["windows_linux_distribution"].completion_percent)
         self.assertLess(
             lanes["windows_linux_distribution"].completion_percent, 100.0
         )
@@ -802,6 +802,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("linux_wsl_studio_xvfb_runtime", lanes)
         self.assertIn("linux_wsl_studio_xvfb_window_capture", lanes)
         self.assertIn("linux_wsl_studio_wslg_system_install_launch", lanes)
+        self.assertIn("windows_wsl_studio_release_readiness_shell_proof", lanes)
         self.assertEqual("verified", lanes["windows_wsl_studio_smoke"].status)
         self.assertIn("Committed Windows Studio smoke bundle", lanes["windows_wsl_studio_smoke"].evidence)
         self.assertIn("not Linux seccomp", lanes["windows_wsl_studio_smoke"].evidence)
@@ -1125,7 +1126,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         distribution = lanes["windows_linux_distribution"]
         self.assertEqual("active-partial", distribution.status)
-        self.assertEqual(69.0, distribution.completion_percent)
+        self.assertEqual(70.0, distribution.completion_percent)
         self.assertIn("committed WSL Linux Xvfb virtual-display window-capture evidence", distribution.evidence)
         self.assertIn("committed WSLg system package install/launch evidence", distribution.evidence)
         self.assertIn("Linux VM/container", " ".join(distribution.blocked_by))
@@ -1144,7 +1145,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         distribution = lanes["windows_linux_distribution"]
         self.assertEqual("active-partial", distribution.status)
-        self.assertEqual(69.0, distribution.completion_percent)
+        self.assertEqual(70.0, distribution.completion_percent)
         self.assertIn("committed WSLg system package install/launch evidence", distribution.evidence)
         self.assertIn("Linux VM/container", " ".join(distribution.blocked_by))
 
@@ -1180,8 +1181,44 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         distribution = lanes["windows_linux_distribution"]
         self.assertEqual("active-partial", distribution.status)
-        self.assertEqual(69.0, distribution.completion_percent)
+        self.assertEqual(70.0, distribution.completion_percent)
         self.assertIn("committed Studio domain-shell proof evidence", distribution.evidence)
+        self.assertIn("Linux VM/container", " ".join(distribution.blocked_by))
+
+    def test_release_readiness_shell_lane_lifts_distribution_without_linux_enforcement_overclaim(self) -> None:
+        release_shell = status_mod.smoke_garnet_studio_release_readiness_shell.ReleaseReadinessShellEvidence(
+            verified=True,
+            windows_summary=Path(
+                "proofs/windows/studio-release-readiness-shell/windows-release-readiness-shell-test/garnet-studio-release-readiness-shell-proof.json"
+            ),
+            wsl_summary=Path(
+                "proofs/linux/execution/studio-release-readiness-shell/wsl-release-readiness-shell-test/garnet-studio-release-readiness-shell-proof.json"
+            ),
+            reason=(
+                "Committed Windows Studio Release / Readiness shell proof and WSL execution/portability "
+                "proof verified; WSL is not Linux enforcement."
+            ),
+        )
+        with mock.patch.object(
+            status_mod.smoke_garnet_studio_release_readiness_shell,
+            "read_committed_evidence",
+            return_value=release_shell,
+        ):
+            status = status_mod.read_status()
+
+        lanes = {lane.id: lane for lane in status.lanes}
+        self.assertIn("windows_wsl_studio_release_readiness_shell_proof", lanes)
+        lane = lanes["windows_wsl_studio_release_readiness_shell_proof"]
+        self.assertEqual("verified", lane.status)
+        self.assertEqual(100.0, lane.completion_percent)
+        self.assertIn("Release / Readiness", lane.evidence)
+        self.assertIn("WSL is execution/portability only", " ".join(lane.deferred))
+        self.assertIn("not clean/non-WSL Linux desktop GUI proof", " ".join(lane.deferred))
+
+        distribution = lanes["windows_linux_distribution"]
+        self.assertEqual("active-partial", distribution.status)
+        self.assertEqual(70.0, distribution.completion_percent)
+        self.assertIn("committed Release / Readiness shell proof evidence", distribution.evidence)
         self.assertIn("Linux VM/container", " ".join(distribution.blocked_by))
 
     def test_domain_matrix_verifier_rejects_fake_manifest_hashes(self) -> None:
@@ -1285,7 +1322,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         lane = {lane.id: lane for lane in status.lanes}["windows_linux_distribution"]
         self.assertEqual("active-partial", lane.status)
-        self.assertEqual(81.0, lane.completion_percent)
+        self.assertEqual(82.0, lane.completion_percent)
         self.assertIn("verified x64 clean-VM installer proof", lane.evidence)
         self.assertIn("committed WSL Linux `.deb` package-build/command-smoke evidence", lane.evidence)
         self.assertIn("committed WSL Linux `.deb` extract/command-smoke evidence", lane.evidence)
@@ -1293,6 +1330,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("committed WSL Linux Xvfb runtime-start evidence", lane.evidence)
         self.assertIn("committed WSL Linux Xvfb virtual-display window-capture evidence", lane.evidence)
         self.assertIn("committed WSLg system package install/launch evidence", lane.evidence)
+        self.assertIn("committed Release / Readiness shell proof evidence", lane.evidence)
         self.assertNotIn("clean Windows VM", " ".join(lane.blocked_by))
         self.assertIn("Linux VM/container", " ".join(lane.blocked_by))
         self.assertIn("Windows ARM64 target build/smoke", " ".join(lane.deferred))
@@ -1528,12 +1566,12 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         self.assertIn("Objective accounting", site)
         self.assertIn("MIT/productization objective", site)
-        self.assertIn("92.0%", site)
+        self.assertIn("92.1%", site)
         self.assertNotIn("58.1%", site)
         self.assertNotIn("55.8%", site)
         self.assertNotIn("57.9%", site)
         self.assertNotIn("58.6%", site)
-        self.assertIn("92.0%", status_site)
+        self.assertIn("92.1%", status_site)
         self.assertNotIn("58.1%", status_site)
         self.assertNotIn("55.8%", status_site)
         self.assertNotIn("57.9%", status_site)
@@ -1549,6 +1587,8 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("verified x64 clean-VM installer proof", status_site)
         self.assertIn("Studio Domain Proof Matrix shell output", site)
         self.assertIn("Studio Domain Proof Matrix shell output", status_site)
+        self.assertIn("Release / Readiness shell reporter output", site)
+        self.assertIn("Release / Readiness shell reporter output", status_site)
 
     # S0: --check-no-regression flag.
 

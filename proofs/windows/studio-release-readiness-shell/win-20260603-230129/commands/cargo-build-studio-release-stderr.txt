@@ -1,0 +1,2 @@
+   Compiling garnet-studio v0.1.0 (C:\Users\IslandDevCrew\.config\superpowers\worktrees\garnet\agent-win-codex-s106-windows-cross-os-proof-phase1\apps\garnet-studio\src-tauri)
+    Finished `release` profile [optimized] target(s) in 57.25s
