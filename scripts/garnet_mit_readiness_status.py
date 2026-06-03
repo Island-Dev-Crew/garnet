@@ -77,6 +77,7 @@ import garnet_windows_linux_studio_status  # noqa: E402
 import smoke_garnet_studio_linux_wsl_deb  # noqa: E402
 import smoke_garnet_studio_linux_wsl_deb_install  # noqa: E402
 import smoke_garnet_studio_linux_wsl_rpm  # noqa: E402
+import smoke_garnet_studio_linux_wsl_xvfb  # noqa: E402
 import smoke_garnet_studio_windows_wsl  # noqa: E402
 
 
@@ -732,6 +733,7 @@ def read_status() -> MitReadinessStatus:
     linux_deb_package = smoke_garnet_studio_linux_wsl_deb.read_committed_evidence(ROOT)
     linux_deb_install = smoke_garnet_studio_linux_wsl_deb_install.read_committed_evidence(ROOT)
     linux_rpm_package = smoke_garnet_studio_linux_wsl_rpm.read_committed_evidence(ROOT)
+    linux_xvfb_runtime = smoke_garnet_studio_linux_wsl_xvfb.read_committed_evidence(ROOT)
     stdlib = garnet_stdlib_layer_gate.read_status()
     novel_compositions_present = all(
         (ROOT / p).exists()
@@ -813,7 +815,14 @@ def read_status() -> MitReadinessStatus:
     lsp_precision_present = _lsp_precision_present()
     if wls_clean_vm_verified:
         wls_completion_percent = (
-            77.0
+            78.0
+            if (
+                domain_matrix.verified
+                and linux_deb_install.verified
+                and linux_rpm_package.verified
+                and linux_xvfb_runtime.verified
+            )
+            else 77.0
             if domain_matrix.verified and linux_deb_install.verified and linux_rpm_package.verified
             else 76.0
             if domain_matrix.verified and linux_deb_package.verified and linux_rpm_package.verified
@@ -840,7 +849,14 @@ def read_status() -> MitReadinessStatus:
         )
     else:
         wls_completion_percent = (
-            65.0
+            66.0
+            if (
+                domain_matrix.verified
+                and linux_deb_install.verified
+                and linux_rpm_package.verified
+                and linux_xvfb_runtime.verified
+            )
+            else 65.0
             if domain_matrix.verified and linux_deb_install.verified and linux_rpm_package.verified
             else 64.0
             if domain_matrix.verified and linux_deb_package.verified and linux_rpm_package.verified
@@ -992,6 +1008,7 @@ def read_status() -> MitReadinessStatus:
                 f"{'committed WSL Linux `.deb` package-build/command-smoke evidence, ' if linux_deb_package.verified else ''}"
                 f"{'committed WSL Linux `.deb` extract/command-smoke evidence, ' if linux_deb_install.verified else ''}"
                 f"{'committed WSL Linux `.rpm` extract/command-smoke evidence, ' if linux_rpm_package.verified else ''}"
+                f"{'committed WSL Linux Xvfb runtime-start evidence, ' if linux_xvfb_runtime.verified else ''}"
                 f"v0.5 {wls_evidence_tail}"
             ),
             blocked_by=list(wls.user_assistance_needed),
@@ -1075,6 +1092,29 @@ def read_status() -> MitReadinessStatus:
                 else linux_rpm_package.reason
             ),
             blocked_by=[] if linux_rpm_package.verified else ["committed WSL Linux `.rpm` extract proof bundle"],
+            deferred=[
+                "not Linux desktop GUI launch proof",
+                "not Linux seccomp or OS-sandbox enforcement",
+                "not clean Linux install proof",
+                "not privileged system package install proof",
+                "not signed, production, or v1.0 readiness",
+            ],
+        ),
+        ObjectiveLane(
+            id="linux_wsl_studio_xvfb_runtime",
+            evidence_class="committed",
+            label="Linux WSL Studio Xvfb runtime-start proof (S117 increment)",
+            status="verified" if linux_xvfb_runtime.verified else "planned",
+            completion_percent=100.0 if linux_xvfb_runtime.verified else 0.0,
+            evidence=(
+                "`scripts/smoke_garnet_studio_linux_wsl_xvfb.py --record` records "
+                "the extracted Linux Tauri Studio binary starting under WSL `xvfb-run` "
+                "and staying alive until the harness timeout. "
+                f"{linux_xvfb_runtime.reason}"
+                if linux_xvfb_runtime.verified
+                else linux_xvfb_runtime.reason
+            ),
+            blocked_by=[] if linux_xvfb_runtime.verified else ["committed WSL Linux Xvfb runtime-start proof bundle"],
             deferred=[
                 "not Linux desktop GUI launch proof",
                 "not Linux seccomp or OS-sandbox enforcement",

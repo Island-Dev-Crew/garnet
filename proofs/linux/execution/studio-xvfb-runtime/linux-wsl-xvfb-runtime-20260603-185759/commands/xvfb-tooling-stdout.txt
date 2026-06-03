@@ -1,0 +1,5 @@
+xvfb-run=/usr/bin/xvfb-run
+timeout=/usr/bin/timeout
+DISPLAY=:0
+WAYLAND_DISPLAY=wayland-0
+XDG_RUNTIME_DIR=/run/user/0/
