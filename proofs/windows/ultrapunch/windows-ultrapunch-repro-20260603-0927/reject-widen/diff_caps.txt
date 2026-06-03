@@ -1,0 +1,5 @@
+garnet diff-caps: C:\Users\IslandDevCrew\.config\superpowers\worktrees\garnet\agent-win-codex-s106-windows-cross-os-proof-phase1\garnet-cli\tests\fixtures\ultrapunch\baseline.garnet -> C:\Users\IslandDevCrew\.config\superpowers\worktrees\garnet\agent-win-codex-s106-windows-cross-os-proof-phase1\garnet-cli\tests\fixtures\ultrapunch\reject_widen.garnet
+  + caps GAINED:  net
+  ~ digest gained: net
+
+diff-caps: AUTHORITY EXPANDED — review required (capability band 2/5)

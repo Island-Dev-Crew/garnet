@@ -20,6 +20,20 @@ ROOT = Path(__file__).resolve().parents[1]
 DOMAIN_MATRIX_ROOT_ENV = "GARNET_STUDIO_DOMAIN_MATRIX_ROOT"
 DOMAIN_MATRIX_SCHEMA = "garnet.studio.domain_matrix.v1"
 DOMAIN_MATRIX_MISMATCH_MARKER = "BLAKE3 fingerprint mismatch"
+ULTRAPUNCH_REPRO_SCHEMA = "garnet.ultrapunch.repro.v1"
+ULTRAPUNCH_ACCEPT_ARTIFACTS = [
+    "capability_manifest.json",
+    "diff_caps.txt",
+    "seal.json",
+    "transparency_log.jsonl",
+    "decision.md",
+]
+ULTRAPUNCH_REPRO_FIXTURES = {
+    "baseline.garnet": "garnet-cli/tests/fixtures/ultrapunch/baseline.garnet",
+    "accept_proposal.garnet": "garnet-cli/tests/fixtures/ultrapunch/accept_proposal.garnet",
+    "reject_widen.garnet": "garnet-cli/tests/fixtures/ultrapunch/reject_widen.garnet",
+    "reject_overdepth.garnet": "garnet-cli/tests/fixtures/ultrapunch/reject_overdepth.garnet",
+}
 DOMAIN_MATRIX_CASES = {
     "mvp_01_os_simulator": "examples/mvp_01_os_simulator.garnet",
     "mvp_02_relational_db": "examples/mvp_02_relational_db.garnet",
@@ -164,6 +178,14 @@ class DomainMatrixEvidence:
     bundle_json: Path | None
     reason: str
     committed: bool = False
+
+
+@dataclass(frozen=True)
+class UltrapunchReproEvidence:
+    verified: bool
+    windows_bundle_json: Path | None
+    wsl_bundle_json: Path | None
+    reason: str
 
 
 def _lane_score(lane: ObjectiveLane) -> float:
@@ -572,6 +594,120 @@ def _domain_matrix_evidence() -> DomainMatrixEvidence:
     )
 
 
+def _ultrapunch_source_digests_match(source_files: object) -> bool:
+    if not isinstance(source_files, list):
+        return False
+    by_path = {
+        item.get("path"): item.get("sha256")
+        for item in source_files
+        if isinstance(item, dict)
+    }
+    for relative in ULTRAPUNCH_REPRO_FIXTURES.values():
+        source = ROOT / relative
+        if not source.is_file() or by_path.get(relative) != _sha256(source):
+            return False
+    return True
+
+
+def _ultrapunch_repro_summary_verified(path: Path) -> bool:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+
+    bundle_dir = path.parent
+    manifest_entries = _verify_manifest(bundle_dir)
+    if manifest_entries is None:
+        return False
+    required_files = {
+        "garnet-ultrapunch-repro.json",
+        "garnet-ultrapunch-repro.md",
+        *{f"accept/{artifact}" for artifact in ULTRAPUNCH_ACCEPT_ARTIFACTS},
+    }
+    if not required_files.issubset(manifest_entries):
+        return False
+
+    commands = data.get("commands", [])
+    if not isinstance(commands, list) or len(commands) != 4:
+        return False
+    command_ids = {command.get("id") for command in commands if isinstance(command, dict)}
+    if command_ids != {
+        "accept-agent-loop",
+        "accept-caps-log-verify",
+        "reject-widen-agent-loop",
+        "reject-overdepth-agent-loop",
+    }:
+        return False
+    for command in commands:
+        if not isinstance(command, dict) or command.get("status") != "passed":
+            return False
+        stdout_file = command.get("stdout_file")
+        stderr_file = command.get("stderr_file")
+        if not isinstance(stdout_file, str) or not isinstance(stderr_file, str):
+            return False
+        if stdout_file not in manifest_entries or stderr_file not in manifest_entries:
+            return False
+
+    accept = data.get("accept", {})
+    reject_widen = data.get("reject_widen", {})
+    reject_overdepth = data.get("reject_overdepth", {})
+    honest_scope = " ".join(data.get("honest_scope", []))
+    markdown = _manifested_text(bundle_dir, manifest_entries, "garnet-ultrapunch-repro.md")
+    return (
+        data.get("schema") == ULTRAPUNCH_REPRO_SCHEMA
+        and data.get("status") == "passed"
+        and data.get("source_included") is False
+        and data.get("provider_api_called") is False
+        and data.get("command_count") == 4
+        and data.get("passed_commands") == 4
+        and data.get("failed_commands") == 0
+        and _ultrapunch_source_digests_match(data.get("source_files"))
+        and sorted(accept.get("artifacts", [])) == sorted(ULTRAPUNCH_ACCEPT_ARTIFACTS)
+        and accept.get("chain_verified") is True
+        and accept.get("sealed") is True
+        and reject_widen.get("refused") is True
+        and reject_widen.get("sealed") is False
+        and reject_widen.get("expected_stage") == "diff-caps"
+        and reject_overdepth.get("refused") is True
+        and reject_overdepth.get("sealed") is False
+        and reject_overdepth.get("expected_stage") == "enforced-kernel"
+        and "not seccomp proof" in honest_scope
+        and "not OS-sandbox proof" in honest_scope
+        and markdown is not None
+    )
+
+
+def _verified_ultrapunch_repro_under(root: Path) -> Path | None:
+    if root.exists():
+        candidates = sorted(
+            root.rglob("garnet-ultrapunch-repro.json"),
+            key=lambda path: path.stat().st_mtime,
+            reverse=True,
+        )
+        for candidate in candidates:
+            if _ultrapunch_repro_summary_verified(candidate):
+                return candidate
+    return None
+
+
+def _committed_ultrapunch_repro_evidence() -> UltrapunchReproEvidence | None:
+    windows = _verified_ultrapunch_repro_under(ROOT / "proofs" / "windows" / "ultrapunch")
+    wsl = _verified_ultrapunch_repro_under(ROOT / "proofs" / "linux" / "repro")
+    if windows is None or wsl is None:
+        return None
+    return UltrapunchReproEvidence(
+        True,
+        windows,
+        wsl,
+        (
+            f"Committed Windows ultrapunch bundle: `{_repo_relative_display(windows)}`. "
+            f"Committed WSL portability-repro bundle: `{_repo_relative_display(wsl)}`. "
+            "The WSL row replays S104 accept/reject decisions as execution/portability "
+            "evidence only, not Linux seccomp, OS-sandbox enforcement, or Wasmtime fuel proof."
+        ),
+    )
+
+
 def read_status() -> MitReadinessStatus:
     plan = garnet_readiness_status.read_status(
         ROOT / "F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md"
@@ -665,6 +801,7 @@ def read_status() -> MitReadinessStatus:
         for gate in wls.packaging_gates
     )
     domain_matrix = _domain_matrix_evidence()
+    ultrapunch_repro = _committed_ultrapunch_repro_evidence()
     lsp_precision_present = _lsp_precision_present()
     if wls_clean_vm_verified:
         wls_completion_percent = (
@@ -824,6 +961,32 @@ def read_status() -> MitReadinessStatus:
             deferred=[
                 "Studio screenshot evidence from Windows and WSL/Linux shells",
                 "Future native backend and package-format permutations",
+            ],
+        ),
+        ObjectiveLane(
+            id="windows_wsl_ultrapunch_repro",
+            evidence_class="committed",
+            label="Windows/WSL ultrapunch reproduction (S110)",
+            status="verified" if ultrapunch_repro else "planned",
+            completion_percent=100.0 if ultrapunch_repro else 0.0,
+            evidence=(
+                "`scripts/smoke_garnet_ultrapunch_repro.py` records the S104 "
+                "accept/reject loop as committed evidence: ACCEPT keeps the four "
+                "trust artifacts and verifies the transparency-log chain; REJECT "
+                "covers both diff-caps widening refusal and an over-depth enforced-kernel "
+                f"trap. {ultrapunch_repro.reason}"
+                if ultrapunch_repro
+                else (
+                    "No committed Windows + WSL S110 ultrapunch reproduction bundles "
+                    "exist yet. Expected paths: `proofs/windows/ultrapunch/` and "
+                    "`proofs/linux/repro/`."
+                )
+            ),
+            blocked_by=[] if ultrapunch_repro else ["committed Windows + WSL S110 repro bundles"],
+            deferred=[
+                "WSL is portability-repro only, not Linux seccomp or OS-sandbox enforcement",
+                "No Wasmtime fuel, production, or v1.0 claim",
+                "Cross-OS consolidation waits for S107-S109/S112 evidence",
             ],
         ),
         ObjectiveLane(

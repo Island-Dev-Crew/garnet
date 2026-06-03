@@ -219,6 +219,16 @@ they are not claimed by the Phase 1 evidence bundle.
 | S112 | cross-os-repro-consolidation | Aggregate Stage X + Stage R evidence into one reproducibility ledger feeding Stage P. |
 | S113 | evidence-integrity-gate | A final integrity gate (seal-verify + manifest hash-chain over the whole evidence corpus) before positioning. |
 
+**S110 Windows/WSL reproduction split (recorded 2026-06-03):** the Windows repro
+lane records the S104 ultrapunch accept/reject replay as committed evidence under
+`proofs/windows/ultrapunch/` and `proofs/linux/repro/`. Both rows retain the
+ACCEPT trust artifacts (`capability_manifest.json`, `diff_caps.txt`, `seal.json`,
+`transparency_log.jsonl`, `decision.md`), verify the transparency-log chain, and
+prove both refusal modes: capability widening is refused by diff-caps and an
+over-depth proposal is refused by the enforced-kernel trap. WSL remains
+portability-repro only: it is not Linux seccomp, OS-sandbox enforcement,
+Wasmtime fuel, or Linux desktop/Tauri GUI launch proof.
+
 **S111 Windows/WSL reproduction split (recorded 2026-06-03):** the Windows
 repro lane records the Studio domain-matrix execution proof as committed evidence
 under `proofs/windows/domains/` and `proofs/linux/execution/domains/`. Both rows

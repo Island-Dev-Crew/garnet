@@ -1,0 +1,144 @@
+{
+  "schema": "garnet.ultrapunch.repro.v1",
+  "generated_at": "2026-06-03T14:28:37+00:00",
+  "platform": "windows",
+  "evidence_tier": "windows-local-repro",
+  "status": "passed",
+  "source_included": false,
+  "provider_api_called": false,
+  "source_files": [
+    {
+      "path": "garnet-cli/tests/fixtures/ultrapunch/baseline.garnet",
+      "sha256": "9eb0314382bd055a3c38a6e91674cb70ae40343bd3699c16a1104f1b1ede8fba"
+    },
+    {
+      "path": "garnet-cli/tests/fixtures/ultrapunch/accept_proposal.garnet",
+      "sha256": "bf8fc7404b390ca29b76b806a9a501a067b05cb6eeffc976e6d359d2a569a8e1"
+    },
+    {
+      "path": "garnet-cli/tests/fixtures/ultrapunch/reject_widen.garnet",
+      "sha256": "51767c187facd3d80bfc689f5375ff5dc9b611d2dc89e249517bfc5713ab1afe"
+    },
+    {
+      "path": "garnet-cli/tests/fixtures/ultrapunch/reject_overdepth.garnet",
+      "sha256": "dfe9ab9746c5a73e909eb4efa3fcd6f68d1d89fe73aa73a32dc6466cbbeb4e15"
+    }
+  ],
+  "command_count": 4,
+  "passed_commands": 4,
+  "failed_commands": 0,
+  "accept": {
+    "proposal": "accept_proposal.garnet",
+    "artifacts": [
+      "capability_manifest.json",
+      "diff_caps.txt",
+      "seal.json",
+      "transparency_log.jsonl",
+      "decision.md"
+    ],
+    "chain_verified": true,
+    "sealed": true
+  },
+  "reject_widen": {
+    "proposal": "reject_widen.garnet",
+    "refused": true,
+    "sealed": false,
+    "expected_stage": "diff-caps"
+  },
+  "reject_overdepth": {
+    "proposal": "reject_overdepth.garnet",
+    "refused": true,
+    "sealed": false,
+    "expected_stage": "enforced-kernel"
+  },
+  "commands": [
+    {
+      "id": "accept-agent-loop",
+      "display_args": [
+        "garnet.exe",
+        "agent-loop",
+        "--baseline",
+        "garnet-cli/tests/fixtures/ultrapunch/baseline.garnet",
+        "--proposal",
+        "garnet-cli/tests/fixtures/ultrapunch/accept_proposal.garnet",
+        "--seal-out",
+        "accept-seal.json",
+        "--record-dir",
+        "accept",
+        "--attest",
+        "agent=scripted-agent-v1",
+        "--attest",
+        "model=simulated",
+        "--gate-version",
+        "dogfood-gate-v1"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/accept-agent-loop-stdout.txt",
+      "stderr_file": "commands/accept-agent-loop-stderr.txt",
+      "expected_failure": false,
+      "status": "passed"
+    },
+    {
+      "id": "accept-caps-log-verify",
+      "display_args": [
+        "garnet.exe",
+        "caps-log",
+        "--verify",
+        "accept/transparency_log.jsonl"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/accept-caps-log-verify-stdout.txt",
+      "stderr_file": "commands/accept-caps-log-verify-stderr.txt",
+      "expected_failure": false,
+      "status": "passed"
+    },
+    {
+      "id": "reject-widen-agent-loop",
+      "display_args": [
+        "garnet.exe",
+        "agent-loop",
+        "--baseline",
+        "garnet-cli/tests/fixtures/ultrapunch/baseline.garnet",
+        "--proposal",
+        "garnet-cli/tests/fixtures/ultrapunch/reject_widen.garnet",
+        "--seal-out",
+        "reject-widen-seal.json",
+        "--record-dir",
+        "reject-widen"
+      ],
+      "exit_code": 1,
+      "stdout_file": "commands/reject-widen-agent-loop-stdout.txt",
+      "stderr_file": "commands/reject-widen-agent-loop-stderr.txt",
+      "expected_failure": true,
+      "status": "passed"
+    },
+    {
+      "id": "reject-overdepth-agent-loop",
+      "display_args": [
+        "garnet.exe",
+        "agent-loop",
+        "--baseline",
+        "garnet-cli/tests/fixtures/ultrapunch/baseline.garnet",
+        "--proposal",
+        "garnet-cli/tests/fixtures/ultrapunch/reject_overdepth.garnet",
+        "--seal-out",
+        "reject-overdepth-seal.json",
+        "--record-dir",
+        "reject-overdepth"
+      ],
+      "exit_code": 1,
+      "stdout_file": "commands/reject-overdepth-agent-loop-stdout.txt",
+      "stderr_file": "commands/reject-overdepth-agent-loop-stderr.txt",
+      "expected_failure": true,
+      "status": "passed"
+    }
+  ],
+  "honest_scope": [
+    "accepted on capability + depth evidence only",
+    "WSL/Linux rows are portability-repro evidence unless separately paired with real-kernel enforcement",
+    "not seccomp proof",
+    "not OS-sandbox proof",
+    "not Wasmtime fuel proof",
+    "not production or v1.0 readiness"
+  ]
+}

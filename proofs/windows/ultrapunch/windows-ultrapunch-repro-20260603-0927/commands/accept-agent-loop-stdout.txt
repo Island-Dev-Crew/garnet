@@ -1,0 +1,5 @@
+agent-loop: proposal `C:\Users\IslandDevCrew\.config\superpowers\worktrees\garnet\agent-win-codex-s106-windows-cross-os-proof-phase1\garnet-cli\tests\fixtures\ultrapunch\accept_proposal.garnet` vs baseline `C:\Users\IslandDevCrew\.config\superpowers\worktrees\garnet\agent-win-codex-s106-windows-cross-os-proof-phase1\garnet-cli\tests\fixtures\ultrapunch\baseline.garnet` (backend --interp)
+agent-loop: stage diff-caps -> PASS (no authority expansion, band 5/5)
+agent-loop: stage run(--interp) -> PASS (=> 78)
+agent-loop: stage seal -> SEALED (proofs\windows\ultrapunch\windows-ultrapunch-repro-20260603-0927\accept-seal.json) (unsigned unless cosign present)
+agent-loop: ACCEPTED on capability+depth evidence

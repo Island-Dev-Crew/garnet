@@ -1,0 +1,3 @@
+# Agent-loop decision: REJECTED (capability widening)
+
+Proposal `C:\Users\IslandDevCrew\.config\superpowers\worktrees\garnet\agent-win-codex-s106-windows-cross-os-proof-phase1\garnet-cli\tests\fixtures\ultrapunch\reject_widen.garnet` (vs baseline `C:\Users\IslandDevCrew\.config\superpowers\worktrees\garnet\agent-win-codex-s106-windows-cross-os-proof-phase1\garnet-cli\tests\fixtures\ultrapunch\baseline.garnet`) was REFUSED at the diff-caps gate: it WIDENED the declared capability surface (see `diff_caps.txt`). It never ran and was never sealed — the negative proof. A widening is a true gate FAILURE (Rule 2), not a warning.

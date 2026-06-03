@@ -1,0 +1,23 @@
+{"_type":"https://in-toto.io/Statement/v1","subject":[{"name":"accept_proposal","digest":{"blake3":"a9cd3ea78b22bc24161389178f1560d8b5e7bef696032b3d590086ac79cbd565"}}],"predicateType":"https://garnet-lang.org/attestation/seal/v1","predicate":{"source_blake3":"89c6f66784fa58597d98c9e09e891031fc49c9e5081170d9a21a902fad8ed460","build_manifest":{
+  "ast_hash": "a9cd3ea78b22bc24161389178f1560d8b5e7bef696032b3d590086ac79cbd565"
+,
+  "deterministic_flags": ["lto=on", "codegen-units=1", "strip=symbols"]
+,
+  "interp_version": "0.5.0"
+,
+  "parser_version": "0.5.0"
+,
+  "prelude_hash": "2bec154d4509ed32953b3c9a9e5b13b14a8ae9376527938558bfa3a80cc7e4b8"
+,
+  "schema": "garnet-manifest-v1"
+,
+  "signature": ""
+,
+  "signer_pubkey": ""
+,
+  "source_hash": "89c6f66784fa58597d98c9e09e891031fc49c9e5081170d9a21a902fad8ed460"
+,
+  "target_triple": "unknown-target"
+
+}
+,"capability_manifest":{"schema":"garnet-capability-manifest-v1","aggregate":["fs"],"functions":[{"name":"digest","caps":["fs"]},{"name":"main","caps":["fs"]}],"wildcard":false},"tooling":{"cosign":"not installed — predicate emitted UNSIGNED; install cosign to attest","sbom":"garnet-capability-manifest (native SBOM-equivalent; CycloneDX/SPDX via syft/cyclonedx when present)"},"authorship":"sim:scripted-agent","attestation":{"agent":"scripted-agent-v1","autonomous":"true","decision":"accepted-on-capability+depth-evidence","gate_version":"dogfood-gate-v1","model":"simulated","tool":"garnet-agent-loop"}}}
