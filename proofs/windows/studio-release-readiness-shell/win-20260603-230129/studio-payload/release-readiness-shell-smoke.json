@@ -1,0 +1,72 @@
+{
+  "honest_scope": [
+    "Studio release/readiness smoke exercises the Tauri command wrappers behind the Release / Readiness panel.",
+    "WSL rows are execution/portability evidence only, not Linux seccomp or OS-sandbox enforcement.",
+    "This is not clean/non-WSL Linux desktop GUI install/launch proof.",
+    "No signed MSI, winget, Windows ARM64, production, or v1.0 claim is made."
+  ],
+  "linux_desktop_gui_claimed": false,
+  "linux_enforcement_claimed": false,
+  "mode": "studio-release-readiness-smoke",
+  "non_wsl_linux_desktop_claimed": false,
+  "provider_api_called": false,
+  "release_readiness_commands": [
+    {
+      "command": [
+        "python",
+        "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\scripts\\garnet_windows_linux_studio_status.py",
+        "--format",
+        "markdown"
+      ],
+      "evidence_path": "C:\\Users\\IslandDevCrew\\Desktop\\dogfood\\garnet-studio-windows-linux\\garnet-studio-windows-linux-windows-linux-studio-status-20260603-180229",
+      "exit_code": 0,
+      "id": "windows-linux-studio-status",
+      "stdout_has_expected_heading": true,
+      "success": true
+    },
+    {
+      "command": [
+        "python",
+        "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\scripts\\garnet_mit_readiness_status.py",
+        "--format",
+        "markdown"
+      ],
+      "evidence_path": "C:\\Users\\IslandDevCrew\\Desktop\\dogfood\\garnet-studio-windows-linux\\garnet-studio-windows-linux-objective-pulse-20260603-180230",
+      "exit_code": 0,
+      "id": "objective-pulse",
+      "stdout_has_expected_heading": true,
+      "success": true
+    },
+    {
+      "command": [
+        "python",
+        "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\scripts\\garnet_converter_status.py",
+        "--format",
+        "markdown"
+      ],
+      "evidence_path": "C:\\Users\\IslandDevCrew\\Desktop\\dogfood\\garnet-studio-windows-linux\\garnet-studio-windows-linux-converter-status-20260603-180235",
+      "exit_code": 0,
+      "id": "converter-status",
+      "stdout_has_expected_heading": true,
+      "success": true
+    },
+    {
+      "command": [
+        "python",
+        "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\scripts\\garnet_windows_clean_vm_installer_status.py",
+        "--format",
+        "markdown"
+      ],
+      "evidence_path": "C:\\Users\\IslandDevCrew\\Desktop\\dogfood\\garnet-studio-windows-linux\\garnet-studio-windows-linux-windows-vm-installer-status-20260603-180236",
+      "exit_code": 0,
+      "id": "windows-vm-installer-status",
+      "stdout_has_expected_heading": true,
+      "success": true
+    }
+  ],
+  "signed_msi_claimed": false,
+  "source_included": false,
+  "status": "passed",
+  "windows_arm64_claimed": false,
+  "winget_claimed": false
+}

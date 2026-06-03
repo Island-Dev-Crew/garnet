@@ -1,0 +1,9 @@
+{
+  "command": [
+    "garnet-studio",
+    "--studio-release-readiness-smoke"
+  ],
+  "exit_code": 0,
+  "provider_api_called": false,
+  "source_included": false
+}

@@ -140,8 +140,11 @@ class GarnetWindowsLinuxStudioShellTests(unittest.TestCase):
         self.assertIn('"provider_api_called": false', lib)
         self.assertIn("--studio-smoke", main)
         self.assertIn("--studio-domain-proof-smoke", main)
+        self.assertIn("--studio-release-readiness-smoke", main)
         self.assertIn("run_domain_proof_smoke", lib)
+        self.assertIn("run_release_readiness_smoke", lib)
         self.assertIn("domain-proof-shell-smoke", lib)
+        self.assertIn("release-readiness-shell-smoke", lib)
         self.assertIn("non_wsl_linux_desktop_claimed", lib)
         self.assertIn("not Linux seccomp or OS-sandbox enforcement", lib)
 

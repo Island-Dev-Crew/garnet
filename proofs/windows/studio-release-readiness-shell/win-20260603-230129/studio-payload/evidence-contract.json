@@ -1,0 +1,11 @@
+{
+  "action": "release-readiness-shell-smoke",
+  "advisory_output_marked_safe": false,
+  "arch": "x86_64",
+  "bundle_version": "1.0.0",
+  "created_at": "20260603-180229",
+  "include_source": false,
+  "no_provider_api_calls": true,
+  "platform": "windows",
+  "source_included": false
+}

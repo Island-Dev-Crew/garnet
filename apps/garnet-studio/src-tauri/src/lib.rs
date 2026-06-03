@@ -128,3 +128,109 @@ pub fn run_domain_proof_smoke() -> Result<String, String> {
         ))
     }
 }
+
+pub fn run_release_readiness_smoke() -> Result<String, String> {
+    let bundle = evidence::create_named_bundle("release-readiness-shell-smoke")?;
+    let bundle_path = PathBuf::from(&bundle.path);
+    let checks = vec![
+        (
+            "windows-linux-studio-status",
+            commands::windows_linux_studio_status(),
+            "Garnet Windows/Linux Studio Status",
+        ),
+        (
+            "objective-pulse",
+            commands::objective_pulse(),
+            "Garnet MIT Readiness Objective Status",
+        ),
+        (
+            "converter-status",
+            commands::converter_status(),
+            "Garnet Converter Adoption Status",
+        ),
+        (
+            "windows-vm-installer-status",
+            commands::windows_vm_installer_status(),
+            "Garnet Windows Studio Clean-VM Installer Status",
+        ),
+    ];
+    let command_summaries: Vec<_> = checks
+        .iter()
+        .map(|(id, result, heading)| {
+            serde_json::json!({
+                "id": id,
+                "success": result.success,
+                "exit_code": result.exit_code,
+                "command": result.command,
+                "evidence_path": result.evidence_path,
+                "stdout_has_expected_heading": result.stdout.contains(heading),
+            })
+        })
+        .collect();
+    let all_passed = checks
+        .iter()
+        .all(|(_, result, heading)| result.success && result.stdout.contains(heading));
+    let status = if all_passed { "passed" } else { "failed" };
+    let payload = serde_json::json!({
+        "status": status,
+        "mode": "studio-release-readiness-smoke",
+        "release_readiness_commands": command_summaries,
+        "source_included": false,
+        "provider_api_called": false,
+        "linux_enforcement_claimed": false,
+        "linux_desktop_gui_claimed": false,
+        "non_wsl_linux_desktop_claimed": false,
+        "signed_msi_claimed": false,
+        "winget_claimed": false,
+        "windows_arm64_claimed": false,
+        "honest_scope": [
+            "Studio release/readiness smoke exercises the Tauri command wrappers behind the Release / Readiness panel.",
+            "WSL rows are execution/portability evidence only, not Linux seccomp or OS-sandbox enforcement.",
+            "This is not clean/non-WSL Linux desktop GUI install/launch proof.",
+            "No signed MSI, winget, Windows ARM64, production, or v1.0 claim is made."
+        ]
+    });
+    fs::write(
+        bundle_path.join("release-readiness-shell-smoke.json"),
+        serde_json::to_string_pretty(&payload)
+            .map_err(|err| format!("failed to serialize release/readiness payload: {err}"))?
+            + "\n",
+    )
+    .map_err(|err| format!("failed to write release/readiness payload: {err}"))?;
+    let stdout = checks
+        .iter()
+        .map(|(id, result, heading)| {
+            format!(
+                "{id}: success={} exit_code={} stdout_has_expected_heading={}\n",
+                result.success,
+                result.exit_code,
+                result.stdout.contains(heading)
+            )
+        })
+        .collect::<String>();
+    let stderr = checks
+        .iter()
+        .filter(|(_, result, _)| !result.stderr.trim().is_empty())
+        .map(|(id, result, _)| format!("{id}: {}\n", result.stderr.trim()))
+        .collect::<String>();
+    evidence::write_command_evidence(
+        &bundle_path,
+        "release-readiness-shell-smoke",
+        &[
+            "garnet-studio".to_string(),
+            "--studio-release-readiness-smoke".to_string(),
+        ],
+        &stdout,
+        &stderr,
+        if all_passed { 0 } else { 1 },
+    )?;
+
+    if all_passed {
+        Ok(bundle.path)
+    } else {
+        Err(format!(
+            "release/readiness reporter command failed or missed an expected heading; evidence={}",
+            bundle.path
+        ))
+    }
+}

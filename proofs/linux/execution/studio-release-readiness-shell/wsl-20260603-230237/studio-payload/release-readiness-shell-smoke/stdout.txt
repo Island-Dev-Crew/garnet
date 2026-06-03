@@ -1,0 +1,4 @@
+windows-linux-studio-status: success=true exit_code=0 stdout_has_expected_heading=true
+objective-pulse: success=true exit_code=0 stdout_has_expected_heading=true
+converter-status: success=true exit_code=0 stdout_has_expected_heading=true
+windows-vm-installer-status: success=true exit_code=0 stdout_has_expected_heading=true

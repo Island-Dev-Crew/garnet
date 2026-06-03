@@ -1,0 +1,2 @@
+Garnet Studio release/readiness smoke passed
+evidence=C:\Users\IslandDevCrew\Desktop\dogfood\garnet-studio-windows-linux\garnet-studio-windows-linux-release-readiness-shell-smoke-20260603-180229

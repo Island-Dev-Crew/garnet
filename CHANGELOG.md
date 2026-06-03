@@ -25,6 +25,28 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S117 increment (v0.8.1 runway - Windows/WSL Studio Release / Readiness
+  shell proof):** adds `scripts/smoke_garnet_studio_release_readiness_shell.py`,
+  a manifest-backed recorder/gate for the Studio binary's
+  `--studio-release-readiness-smoke` path on Windows and WSL. The command routes
+  through the Tauri command wrappers behind the Release / Readiness status
+  reporters (`windows_linux_studio_status`, objective pulse, converter status,
+  and Windows clean-VM installer status), records copied Studio payloads, command
+  logs, manifests, and honest-scope flags under
+  `proofs/windows/studio-release-readiness-shell/` and
+  `proofs/linux/execution/studio-release-readiness-shell/`. The MIT readiness
+  reporter now exposes this as
+  `windows_wsl_studio_release_readiness_shell_proof`, moving overall readiness to
+  **92.1%** and the Windows/Linux distribution lane to **82.0%** when the
+  Windows clean-VM, domain, Studio-smoke, WSL `.deb`, WSL `.rpm`, Xvfb
+  runtime-start/window-capture, WSLg system install/launch, domain-shell, and
+  Release / Readiness shell bundles all verify. **Honest scope:** the Windows row
+  proves the local Studio command wrappers for repo-native status reporters; the
+  WSL row is execution/portability evidence only. This does not prove a live GUI
+  screenshot, clean/non-WSL Linux desktop GUI install/launch, Linux seccomp,
+  OS-sandbox enforcement, signed/SBOM release artifacts, winget, Windows ARM64,
+  production readiness, or v1.0 readiness.
+
 - **S117 increment (v0.8.1 runway - Windows/WSL Studio domain-shell proof):**
   adds `scripts/smoke_garnet_studio_domain_shell.py`, a manifest-backed
   recorder/gate for the Studio binary's `--studio-domain-proof-smoke` path on

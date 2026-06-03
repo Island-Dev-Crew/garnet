@@ -1,0 +1,2 @@
+Garnet Studio release/readiness smoke passed
+evidence=/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/target/wsl-release-readiness-shell-home-20260603-230237/Desktop/dogfood/garnet-studio-windows-linux/garnet-studio-windows-linux-release-readiness-shell-smoke-20260603-180329
