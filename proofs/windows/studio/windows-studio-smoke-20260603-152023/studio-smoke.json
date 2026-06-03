@@ -1,0 +1,65 @@
+{
+  "health": {
+    "arch": "x86_64",
+    "cli_found": true,
+    "cli_path": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\target\\debug\\garnet.exe",
+    "cli_version": "####   ###  ####  #   # ####### ##### ######   \n  #    # #   # #   # ##  # #         #     #      \n  #      ##### ####  # # # #####     #     #      \n  #  ### #   # #  #  #  ## #         #     #      \n  #    # #   # #   # #   # #         #     #      \n   ####  #   # #   # #   # #######   #     #      \n  Rust Rigor. Ruby Velocity. One Coherent Language.\n\ngarnet 0.5.0 (Top-level garnet(1) CLI — parse / check / run / test / new / keygen / build --sign / verify / convert (v0.5.0).)\n  parser    garnet-parser 0.3.0 (Mini-Spec v1.0)\n  interp    garnet-interp 0.3.0 (tree-walk, Rung 3)\n  check     garnet-check  0.3.0 (safe-mode + borrow + CapCaps v3.4.1, Rung 4)\n  memory    garnet-memory 0.3.0 (Mnemos — Memory Core reference impl; production roadmap in MEMORY_CORE_ROADMAP.md, Rung 5)\n  actor-rt  garnet-actor-runtime 0.4.0 (Result-returning ask, hot-reloadable + signed reload, Rung 6)\n  stdlib    garnet-stdlib 0.4.0 (22 bridged primitives)\n  convert   garnet-convert 0.4.0 (migration assistant: Rust / Ruby / Python / Go → Garnet)",
+    "evidence_dir": "C:\\Users\\IslandDevCrew\\Desktop\\dogfood\\garnet-studio-windows-linux",
+    "platform": "windows",
+    "python_found": true,
+    "python_version": "Python 3.12.10",
+    "repo_found": true,
+    "repo_path": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1"
+  },
+  "mode": "studio-smoke",
+  "provider_api_called": false,
+  "source_included": false,
+  "status": "passed",
+  "taxonomy": [
+    {
+      "languages": [
+        "Rust",
+        "Ruby",
+        "Python",
+        "Go"
+      ],
+      "name": "Active conversion"
+    },
+    {
+      "languages": [
+        "JavaScript",
+        "TypeScript",
+        "Swift",
+        "Java",
+        "C",
+        "C++",
+        "C#",
+        "Perl",
+        "Kotlin",
+        "Shell",
+        "SQL",
+        "Other"
+      ],
+      "name": "Advisory planning"
+    },
+    {
+      "languages": [
+        "C",
+        "C++",
+        "Objective-C",
+        "Assembly",
+        "CUDA",
+        "platform-specific code"
+      ],
+      "name": "Native boundary recommended"
+    },
+    {
+      "languages": [
+        "Wasm",
+        "LLVM-style native targets",
+        "native package toolchains"
+      ],
+      "name": "Future backend lowering"
+    }
+  ]
+}

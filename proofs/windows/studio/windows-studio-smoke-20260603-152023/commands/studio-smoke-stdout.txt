@@ -1,0 +1,2 @@
+Garnet Studio smoke passed
+evidence=C:\Users\IslandDevCrew\Desktop\dogfood\garnet-studio-windows-linux\garnet-studio-windows-linux-smoke-20260603-102107

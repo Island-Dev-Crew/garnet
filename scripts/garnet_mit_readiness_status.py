@@ -74,6 +74,7 @@ import garnet_readiness_status  # noqa: E402
 import garnet_stdlib_layer_gate  # noqa: E402
 import garnet_windows_cross_os_enforcement_proof  # noqa: E402
 import garnet_windows_linux_studio_status  # noqa: E402
+import smoke_garnet_studio_windows_wsl  # noqa: E402
 
 
 def _promo_probe_skipped_status(exc: BaseException) -> garnet_promo_video_status.PromoVideoStatus:
@@ -724,6 +725,7 @@ def read_status() -> MitReadinessStatus:
     proof = garnet_proof_benchmark_status.read_status()
     vm_scaffold_present = _vm_scaffold_present(proof)
     wls = garnet_windows_linux_studio_status.read_status()
+    studio_smoke = smoke_garnet_studio_windows_wsl.read_committed_evidence(ROOT)
     stdlib = garnet_stdlib_layer_gate.read_status()
     novel_compositions_present = all(
         (ROOT / p).exists()
@@ -933,10 +935,32 @@ def read_status() -> MitReadinessStatus:
             evidence=(
                 "`scripts/garnet_windows_linux_studio_status.py` now reports the "
                 "Tauri v2 shell scaffold in `apps/garnet-studio`, minimal webview "
-                f"permissions, Windows local release build/smoke evidence, v0.5 {wls_evidence_tail}"
+                "permissions, Windows local release build/smoke evidence, "
+                f"{'committed Windows/WSL Studio smoke evidence, ' if studio_smoke.verified else ''}"
+                f"v0.5 {wls_evidence_tail}"
             ),
             blocked_by=list(wls.user_assistance_needed),
             deferred=list(wls.next_slices),
+        ),
+        ObjectiveLane(
+            id="windows_wsl_studio_smoke",
+            evidence_class="committed",
+            label="Windows/WSL Studio smoke proof (S117 increment)",
+            status="verified" if studio_smoke.verified else "planned",
+            completion_percent=100.0 if studio_smoke.verified else 0.0,
+            evidence=(
+                "`scripts/smoke_garnet_studio_windows_wsl.py --record` records "
+                "manifest-backed Windows Tauri `--studio-smoke` evidence plus a "
+                f"WSL command-contract replay. {studio_smoke.reason}"
+                if studio_smoke.verified
+                else studio_smoke.reason
+            ),
+            blocked_by=[] if studio_smoke.verified else ["committed Windows + WSL Studio smoke evidence"],
+            deferred=[
+                "WSL is execution/portability only, not Linux seccomp or OS-sandbox enforcement",
+                "Linux desktop GUI launch and native Linux package proof remain open",
+                "Signed MSI, winget, Windows ARM64, production, and v1.0 remain unclaimed",
+            ],
         ),
         ObjectiveLane(
             id="windows_linux_domain_proof_matrix",

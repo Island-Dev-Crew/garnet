@@ -1,0 +1,8 @@
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  commands/wsl-studio-status-json-stderr.txt
+43e1f9276cd8f521ed10cc67af19eb49959cfafe81cc3f1ce61d9d80b546e4ec  commands/wsl-studio-status-json-stdout.txt
+7c020e811a52468f34b128f4f88543a7260870381c36a7291108027af5e742e2  commands/wsl-studio-status-tests-stderr.txt
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  commands/wsl-studio-status-tests-stdout.txt
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  commands/wsl-uname-stderr.txt
+bf4d66cc47723164a80c7a68b8dc1aa5fddf31240742304b65d321a2125e5e29  commands/wsl-uname-stdout.txt
+e5f8ee30d2e65d09785710672dbb8489dfa93bdb4855ee45ea09dd3942231b46  garnet-studio-windows-wsl-smoke.json
+3e4f8ea75e37f31f7199220c75c7a6ad4d43cb47d907e7d6f4cb9725a43df8ff  garnet-studio-windows-wsl-smoke.md
