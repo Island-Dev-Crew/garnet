@@ -292,6 +292,18 @@ clean Linux install, privileged system package install, Linux seccomp or
 OS-sandbox enforcement, signed/SBOM release artifacts, winget, Windows ARM64,
 production, and v1.0 remain unclaimed.
 
+**S117 WSL Linux Xvfb runtime-start increment (recorded 2026-06-03):** the
+Windows lane further records a WSL virtual-display proof under
+`proofs/linux/execution/studio-xvfb-runtime/`. The proof reuses a verified
+extracted Linux Studio binary, verifies `xvfb-run`/`timeout` tooling, starts the
+binary under `xvfb-run`, and treats timeout exit `124` as the pass signal that
+the process stayed alive until the harness stopped it. This moves the package
+gate to `wsl-deb-rpm-xvfb-runtime-start-verified`, but it still does **not**
+close full S117: Linux desktop GUI install/launch, clean Linux install,
+privileged system package install, Linux seccomp or OS-sandbox enforcement,
+signed/SBOM release artifacts, winget, Windows ARM64, production, and v1.0
+remain unclaimed.
+
 **STOP + report before S120:** the cut is Jon's decision.
 
 ## Verification Expectations

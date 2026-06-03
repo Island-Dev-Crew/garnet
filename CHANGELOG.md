@@ -25,6 +25,23 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S117 increment (v0.8.1 runway - WSL Linux Studio Xvfb runtime-start proof):**
+  adds `scripts/smoke_garnet_studio_linux_wsl_xvfb.py`, a manifest-backed
+  recorder/gate for starting the extracted Linux Tauri Studio binary under WSL
+  `xvfb-run` and requiring timeout exit `124` as the pass signal. The committed
+  bundle under `proofs/linux/execution/studio-xvfb-runtime/` records WSL
+  `uname`, `xvfb-run`/`timeout` tooling, display variables, stdout/stderr, the
+  source package proof, extracted-binary hash, timeout duration, and the runtime
+  command exit code. The MIT readiness reporter now exposes this as
+  `linux_wsl_studio_xvfb_runtime`, moving overall readiness to **91.6%** and the
+  Windows/Linux distribution lane to **78.0%** when the Windows clean-VM, domain,
+  Studio-smoke, WSL `.deb`, WSL `.rpm`, and Xvfb runtime-start bundles all
+  verify. **Honest scope:** this is WSL Xvfb runtime-start evidence only; it
+  does not prove Linux desktop GUI install/launch, Linux seccomp, OS-sandbox
+  enforcement, clean Linux install, privileged system package install,
+  signed/SBOM release artifacts, winget, Windows ARM64, production readiness, or
+  v1.0 readiness.
+
 - **S117 increment (v0.8.1 runway - WSL Linux Studio `.rpm` package proof):**
   adds `scripts/smoke_garnet_studio_linux_wsl_rpm.py`, a manifest-backed
   recorder/gate for a WSL-driven Tauri Linux `.rpm` package build, RPM

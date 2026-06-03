@@ -639,6 +639,101 @@ def _write_committed_linux_wsl_rpm_bundle(repo_root: Path) -> Path:
     return summary
 
 
+def _write_committed_linux_wsl_xvfb_bundle(repo_root: Path) -> Path:
+    bundle = (
+        repo_root
+        / "proofs"
+        / "linux"
+        / "execution"
+        / "studio-xvfb-runtime"
+        / "linux-wsl-xvfb-test"
+    )
+    bundle.mkdir(parents=True, exist_ok=True)
+    commands_dir = bundle / "commands"
+    commands_dir.mkdir()
+    for command_id in status_mod.smoke_garnet_studio_linux_wsl_xvfb.REQUIRED_COMMANDS:
+        (commands_dir / f"{command_id}-stdout.txt").write_text(
+            f"{command_id} ok\n",
+            encoding="utf-8",
+        )
+        (commands_dir / f"{command_id}-stderr.txt").write_text("", encoding="utf-8")
+    (bundle / "runtime").mkdir()
+    (bundle / "runtime" / "xvfb-runtime-start-stdout.txt").write_text("", encoding="utf-8")
+    (bundle / "runtime" / "xvfb-runtime-start-stderr.txt").write_text(
+        "libEGL warning: DRI2 failed\n",
+        encoding="utf-8",
+    )
+    data = {
+        "schema": status_mod.smoke_garnet_studio_linux_wsl_xvfb.SCHEMA,
+        "generated_at": "2026-06-03T00:00:00+00:00",
+        "status": "passed",
+        "platform": "linux",
+        "evidence_tier": "wsl-linux-xvfb-runtime-start-smoke",
+        "wsl_is_enforcement": False,
+        "source_included": False,
+        "provider_api_called": False,
+        "linux_enforcement_proven": False,
+        "desktop_gui_launch_proven": False,
+        "linux_desktop_gui_launch_proven": False,
+        "clean_linux_install_proven": False,
+        "privileged_system_install_proven": False,
+        "xvfb_runtime_start_proven": True,
+        "expected_timeout_exit_code": 124,
+        "timeout_seconds": 8,
+        "runtime_seconds": 8.2,
+        "source_package_proof": {
+            "format": "rpm",
+            "bundle": "proofs/linux/execution/studio-rpm-package/linux-wsl-rpm-test",
+            "summary": "proofs/linux/execution/studio-rpm-package/linux-wsl-rpm-test/garnet-studio-linux-wsl-rpm.json",
+        },
+        "extracted_binary": {
+            "path": "target/linux-wsl-rpm-stage-20260603-120000/usr/bin/garnet-studio",
+            "sha256": "a" * 64,
+        },
+        "xvfb_tooling": {
+            "xvfb-run": "/usr/bin/xvfb-run",
+            "timeout": "/usr/bin/timeout",
+            "DISPLAY": "",
+            "WAYLAND_DISPLAY": "",
+            "XDG_RUNTIME_DIR": "",
+        },
+        "runtime_start": {
+            "exit_code": 124,
+            "expected_exit_code": 124,
+            "status": "passed",
+            "stdout_file": "runtime/xvfb-runtime-start-stdout.txt",
+            "stderr_file": "runtime/xvfb-runtime-start-stderr.txt",
+        },
+        "commands": [
+            {
+                "id": command_id,
+                "display_args": [command_id],
+                "exit_code": 124 if command_id == "xvfb-runtime-start" else 0,
+                "stdout_file": f"commands/{command_id}-stdout.txt",
+                "stderr_file": f"commands/{command_id}-stderr.txt",
+                "status": "passed",
+            }
+            for command_id in status_mod.smoke_garnet_studio_linux_wsl_xvfb.REQUIRED_COMMANDS
+        ],
+        "honest_scope": [
+            "WSL Xvfb runtime-start evidence only",
+            "not Linux desktop GUI launch proof",
+            "not Linux seccomp or OS-sandbox enforcement",
+            "not clean Linux install proof",
+            "not privileged system package install proof",
+            "not signed, production, or v1.0 readiness",
+        ],
+    }
+    summary = bundle / status_mod.smoke_garnet_studio_linux_wsl_xvfb.SUMMARY_NAME
+    summary.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    (bundle / status_mod.smoke_garnet_studio_linux_wsl_xvfb.MARKDOWN_NAME).write_text(
+        status_mod.smoke_garnet_studio_linux_wsl_xvfb.render_markdown(data),
+        encoding="utf-8",
+    )
+    _write_manifest(bundle)
+    return summary
+
+
 class GarnetMitReadinessStatusTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -694,7 +789,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertEqual(
             "active-partial", lanes["windows_linux_distribution"].status
         )
-        self.assertEqual(65.0, lanes["windows_linux_distribution"].completion_percent)
+        self.assertEqual(66.0, lanes["windows_linux_distribution"].completion_percent)
         self.assertLess(
             lanes["windows_linux_distribution"].completion_percent, 100.0
         )
@@ -704,6 +799,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("linux_wsl_studio_deb_package", lanes)
         self.assertIn("linux_wsl_studio_deb_install", lanes)
         self.assertIn("linux_wsl_studio_rpm_package", lanes)
+        self.assertIn("linux_wsl_studio_xvfb_runtime", lanes)
         self.assertEqual("verified", lanes["windows_wsl_studio_smoke"].status)
         self.assertIn("Committed Windows Studio smoke bundle", lanes["windows_wsl_studio_smoke"].evidence)
         self.assertIn("not Linux seccomp", lanes["windows_wsl_studio_smoke"].evidence)
@@ -725,6 +821,12 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn(
             "not privileged system package install proof",
             " ".join(lanes["linux_wsl_studio_rpm_package"].deferred),
+        )
+        self.assertEqual("verified", lanes["linux_wsl_studio_xvfb_runtime"].status)
+        self.assertIn("Xvfb runtime-start", lanes["linux_wsl_studio_xvfb_runtime"].evidence)
+        self.assertIn(
+            "not Linux desktop GUI launch proof",
+            " ".join(lanes["linux_wsl_studio_xvfb_runtime"].deferred),
         )
         self.assertEqual("verified", lanes["windows_linux_domain_proof_matrix"].status)
         self.assertEqual(100.0, lanes["windows_linux_domain_proof_matrix"].completion_percent)
@@ -996,6 +1098,18 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn(".rpm", evidence.reason)
         self.assertIn("not privileged system package install proof", " ".join(evidence.deferred))
 
+    def test_linux_wsl_xvfb_evidence_accepts_committed_runtime_bundle(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            repo_root = Path(temp)
+            _write_committed_linux_wsl_xvfb_bundle(repo_root)
+
+            evidence = status_mod.smoke_garnet_studio_linux_wsl_xvfb.read_committed_evidence(repo_root)
+
+        self.assertTrue(evidence.verified)
+        self.assertIn("Xvfb runtime-start", evidence.reason)
+        self.assertIn("exit 124", evidence.reason)
+        self.assertIn("not Linux desktop GUI launch proof", " ".join(evidence.deferred))
+
     def test_domain_matrix_verifier_rejects_fake_manifest_hashes(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -1097,11 +1211,12 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         lane = {lane.id: lane for lane in status.lanes}["windows_linux_distribution"]
         self.assertEqual("active-partial", lane.status)
-        self.assertEqual(77.0, lane.completion_percent)
+        self.assertEqual(78.0, lane.completion_percent)
         self.assertIn("verified x64 clean-VM installer proof", lane.evidence)
         self.assertIn("committed WSL Linux `.deb` package-build/command-smoke evidence", lane.evidence)
         self.assertIn("committed WSL Linux `.deb` extract/command-smoke evidence", lane.evidence)
         self.assertIn("committed WSL Linux `.rpm` extract/command-smoke evidence", lane.evidence)
+        self.assertIn("committed WSL Linux Xvfb runtime-start evidence", lane.evidence)
         self.assertNotIn("clean Windows VM", " ".join(lane.blocked_by))
         self.assertIn("Linux VM/container", " ".join(lane.blocked_by))
         self.assertIn("Windows ARM64 target build/smoke", " ".join(lane.deferred))
