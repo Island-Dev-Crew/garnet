@@ -100,7 +100,7 @@ Fresh results on 2026-06-03:
 - `cargo clippy --workspace --all-targets -- -D warnings` PASS.
 - `cargo fmt --all -- --check` PASS.
 - `git diff --check` PASS.
-- Overclaim grep returned no matching added lines.
+- Overclaim grep returned intended matches only: negative/honest-scope lines (`not seccomp`, `not OS-sandbox`, `not production`, `not v1.0`) and narrow fixture/report language for the S104 `enforced-kernel` rejection.
 
 - [ ] **Step 4: PR, dogfood, and merge**
 
