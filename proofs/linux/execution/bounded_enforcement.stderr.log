@@ -1,0 +1,107 @@
+ Downloading crates ...
+  Downloaded tempfile v3.27.0
+   Compiling cfg-if v1.0.4
+   Compiling version_check v0.9.5
+   Compiling proc-macro2 v1.0.106
+   Compiling quote v1.0.45
+   Compiling libc v0.2.185
+   Compiling unicode-ident v1.0.24
+   Compiling find-msvc-tools v0.1.9
+   Compiling zerocopy v0.8.48
+   Compiling shlex v1.3.0
+   Compiling memchr v2.8.0
+   Compiling typenum v1.19.0
+   Compiling generic-array v0.14.7
+   Compiling cc v1.2.60
+   Compiling object v0.37.3
+   Compiling rustix v1.1.4
+   Compiling bitflags v2.11.1
+   Compiling subtle v2.6.1
+   Compiling blake3 v1.8.4
+   Compiling syn v2.0.117
+   Compiling serde_core v1.0.228
+   Compiling adler2 v2.0.1
+   Compiling linux-raw-sys v0.12.1
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling gimli v0.32.3
+   Compiling digest v0.10.7
+   Compiling miniz_oxide v0.8.9
+   Compiling getrandom v0.2.17
+   Compiling zmij v1.0.21
+   Compiling rustc-demangle v0.1.27
+   Compiling owo-colors v4.3.0
+   Compiling cpufeatures v0.3.0
+   Compiling arrayvec v0.7.6
+   Compiling constant_time_eq v0.4.2
+   Compiling arrayref v0.3.9
+   Compiling addr2line v0.25.1
+   Compiling cpufeatures v0.2.17
+   Compiling rand_core v0.6.4
+   Compiling ahash v0.8.12
+   Compiling unicode-width v0.2.2
+   Compiling once_cell v1.21.4
+   Compiling is_ci v1.2.0
+   Compiling unicode-linebreak v0.1.5
+   Compiling thiserror v2.0.18
+   Compiling serde_json v1.0.149
+   Compiling supports-color v3.0.2
+   Compiling thiserror-impl v2.0.18
+   Compiling miette-derive v7.6.0
+   Compiling textwrap v0.16.2
+   Compiling backtrace v0.3.76
+   Compiling ppv-lite86 v0.2.21
+   Compiling backtrace-ext v0.2.1
+   Compiling terminal_size v0.4.4
+   Compiling aho-corasick v1.1.4
+   Compiling regex-syntax v0.8.10
+   Compiling supports-unicode v3.0.0
+   Compiling itoa v1.0.18
+   Compiling supports-hyperlinks v3.2.0
+   Compiling unicode-width v0.1.14
+   Compiling rand_chacha v0.3.1
+   Compiling miette v7.6.0
+   Compiling sha2 v0.10.9
+   Compiling semver v1.0.28
+   Compiling hashbrown v0.14.5
+   Compiling rustc_version v0.4.1
+   Compiling rand v0.8.6
+   Compiling sha1 v0.10.6
+   Compiling regex-automata v0.4.14
+   Compiling garnet-parser v0.3.0 (/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/garnet-parser-v0.3)
+   Compiling hmac v0.12.1
+   Compiling pkg-config v0.3.33
+   Compiling vcpkg v0.2.15
+   Compiling curve25519-dalek v4.1.3
+   Compiling serde v1.0.228
+   Compiling curve25519-dalek-derive v0.1.1
+   Compiling serde_derive v1.0.228
+   Compiling libsqlite3-sys v0.30.1
+   Compiling garnet-memory v0.3.0 (/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/garnet-memory-v0.3)
+   Compiling signature v2.2.0
+   Compiling regex v1.12.3
+   Compiling countme v3.0.1
+   Compiling rustc-hash v1.1.0
+   Compiling garnet-stdlib v0.4.0 (/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/garnet-stdlib)
+   Compiling text-size v1.1.1
+   Compiling zeroize v1.8.2
+   Compiling rowan v0.16.1
+   Compiling garnet-interp v0.3.0 (/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/garnet-interp-v0.3)
+   Compiling ed25519 v2.2.3
+   Compiling hashlink v0.9.1
+   Compiling fallible-iterator v0.3.0
+   Compiling getrandom v0.4.2
+   Compiling fallible-streaming-iterator v0.1.9
+   Compiling smallvec v1.15.1
+   Compiling ed25519-dalek v2.2.0
+   Compiling garnet-check v0.3.0 (/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/garnet-check-v0.3)
+   Compiling garnet-cst v0.1.0 (/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/garnet-cst)
+   Compiling garnet-convert v0.4.0 (/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/garnet-convert)
+   Compiling garnet-registry-stub v0.5.0 (/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/garnet-registry-stub)
+   Compiling fastrand v2.4.1
+   Compiling tempfile v3.27.0
+   Compiling garnet-vm v0.5.0 (/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/garnet-vm)
+   Compiling rusqlite v0.32.1
+   Compiling garnet-cli v0.5.0 (/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/garnet-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 45.76s
+     Running tests/bounded_enforcement.rs (target/debug/deps/bounded_enforcement-3a5e6cf408199db3)

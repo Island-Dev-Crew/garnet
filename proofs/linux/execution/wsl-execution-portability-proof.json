@@ -1,0 +1,78 @@
+{
+  "schema": "garnet.windows_cross_os_enforcement_proof/v1",
+  "platform": "wsl",
+  "tier": "execution-portability",
+  "honesty_scope": "WSL execution/portability, not enforcement",
+  "required_traps": [
+    "@max_depth",
+    "@caps(env)",
+    "@caps(proc)",
+    "@caps(fs)",
+    "@caps(net)",
+    "S92 program-entry @caps(proc)"
+  ],
+  "commands": [
+    {
+      "name": "s101_gate",
+      "argv": [
+        "python3",
+        "scripts/garnet_vm_interp_enforcement_parity_status.py",
+        "--gate",
+        "--format",
+        "json"
+      ],
+      "exit_code": 0,
+      "stdout_log": "s101_gate.stdout.log",
+      "stderr_log": "s101_gate.stderr.log",
+      "stdout_sha256": "01d82c7d4c2bad81715900f674dd01f580e32376c5b8d5fa16e8d191625619de",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "bounded_enforcement",
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "garnet-cli",
+        "--test",
+        "bounded_enforcement",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "stdout_log": "bounded_enforcement.stdout.log",
+      "stderr_log": "bounded_enforcement.stderr.log",
+      "stdout_sha256": "edd2faa801f0c1c44b6dfc9dd8cf44846eb11a0dc6035f0cff346e656c22f0c0",
+      "stderr_sha256": "173a6601ce891b1839d3c93566eaecd44967669ffee59ea15527627b9643dda4"
+    },
+    {
+      "name": "caps_enforcement",
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "garnet-cli",
+        "--test",
+        "caps_enforcement",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "stdout_log": "caps_enforcement.stdout.log",
+      "stderr_log": "caps_enforcement.stderr.log",
+      "stdout_sha256": "9956d4bf8edafe664b9541e8497a8690902f285385835eec1b2729e75fb5b9cd",
+      "stderr_sha256": "f7c97bb53a74c813b7f95356d67cc6d8a386c19cf9e882ad4002a8317ab5f8d1"
+    }
+  ],
+  "ok": true,
+  "generated_at": "2026-06-03T08:06:52.533007+00:00",
+  "git_head": "f18da44fa22410f2c0b60779e0f7e0a5405e3265",
+  "git_status_short": "M F_Project_Management/AGENT_COORDINATION_LEDGER.md\n?? .agent/plans/win-codex-S106-phase1-plan.md\n?? proofs/\n?? scripts/garnet_windows_cross_os_enforcement_proof.py\n?? scripts/test_garnet_windows_cross_os_enforcement_proof.py",
+  "named_deferred": [
+    "WSL is not Linux seccomp enforcement",
+    "WSL is not OS-sandbox enforcement",
+    "Wasmtime fuel / @bounded runtime enforcement remains out of scope",
+    "memory/time/@mailbox runtime ceilings remain out of scope"
+  ],
+  "notes": []
+}

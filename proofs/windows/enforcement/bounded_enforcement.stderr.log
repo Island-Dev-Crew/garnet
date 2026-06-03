@@ -1,0 +1,18 @@
+   Compiling windows-sys v0.61.2
+   Compiling once_cell v1.21.4
+   Compiling ahash v0.8.12
+   Compiling hashbrown v0.14.5
+   Compiling rowan v0.16.1
+   Compiling hashlink v0.9.1
+   Compiling terminal_size v0.4.4
+   Compiling tempfile v3.27.0
+   Compiling miette v7.6.0
+   Compiling rusqlite v0.32.1
+   Compiling garnet-parser v0.3.0 (C:\Users\IslandDevCrew\.config\superpowers\worktrees\garnet\agent-win-codex-s106-windows-cross-os-proof-phase1\garnet-parser-v0.3)
+   Compiling garnet-interp v0.3.0 (C:\Users\IslandDevCrew\.config\superpowers\worktrees\garnet\agent-win-codex-s106-windows-cross-os-proof-phase1\garnet-interp-v0.3)
+   Compiling garnet-cst v0.1.0 (C:\Users\IslandDevCrew\.config\superpowers\worktrees\garnet\agent-win-codex-s106-windows-cross-os-proof-phase1\garnet-cst)
+   Compiling garnet-check v0.3.0 (C:\Users\IslandDevCrew\.config\superpowers\worktrees\garnet\agent-win-codex-s106-windows-cross-os-proof-phase1\garnet-check-v0.3)
+   Compiling garnet-vm v0.5.0 (C:\Users\IslandDevCrew\.config\superpowers\worktrees\garnet\agent-win-codex-s106-windows-cross-os-proof-phase1\garnet-vm)
+   Compiling garnet-cli v0.5.0 (C:\Users\IslandDevCrew\.config\superpowers\worktrees\garnet\agent-win-codex-s106-windows-cross-os-proof-phase1\garnet-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.62s
+     Running tests\bounded_enforcement.rs (target\debug\deps\bounded_enforcement-6acb711fa598f056.exe)

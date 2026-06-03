@@ -203,6 +203,14 @@ NOT author S106-S113 — it provides their specs only.
 | S108 | linux-cross-os-enforcement-proof | Linux lane: same proof on Linux; additionally, where seccomp is present, attempt the S92 named-deferred OS-policy application as a real Linux-only datapoint (never faked). | seccomp result is honest-partial if tooling absent. |
 | S109 | cross-os-trap-parity-matrix | Consolidate S106-S108 into a Win×Mac×Linux × {max_depth, caps, diff-caps-reject} trap-parity matrix + gate. | A trap is cross-OS-complete only when all three machines recorded it. |
 
+**S106 Windows-lane split (recorded 2026-06-03):** the first Windows PR records
+the Stage V trap re-proof only: S101 `@max_depth` parity, `@caps(env/proc/fs/net)`
+host-authority traps, and the S92 program-entry `@caps(proc)` trap on Windows,
+plus a WSL execution/portability rerun. WSL is not Linux seccomp, Wasmtime, or
+OS-sandbox enforcement proof. The S103 ultrapunch accept/reject reproduction and
+S105 domain execution stay in the later Phase 2 Windows lane after the hold gate;
+they are not claimed by the Phase 1 evidence bundle.
+
 ### Stage R — independent reproduction · repro lanes
 | Slice | Title | Goal |
 |---|---|---|
