@@ -1,0 +1,3 @@
+   Compiling garnet-cli v0.5.0 (C:\Users\IslandDevCrew\.config\superpowers\worktrees\garnet\agent-win-codex-s106-windows-cross-os-proof-phase1\garnet-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.57s
+     Running tests\caps_enforcement.rs (target\debug\deps\caps_enforcement-7b38715dacbe3414.exe)

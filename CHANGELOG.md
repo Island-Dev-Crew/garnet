@@ -25,6 +25,19 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S106 Phase 1 (v0.8.1 runway - Windows cross-OS enforcement proof):** adds a
+  committed Windows proof lane for the already-merged Stage V traps. The new
+  `scripts/garnet_windows_cross_os_enforcement_proof.py` recorder/gate captures
+  Windows evidence under `proofs/windows/enforcement/` and WSL evidence under
+  `proofs/linux/execution/`, proving that the S101 `@max_depth` parity gate,
+  `@caps(env/proc/fs/net)` host-authority traps, and the S92 program-entry
+  `@caps(proc)` trap all rerun cleanly on this Windows box. The MIT readiness
+  reporter now exposes the lane as committed evidence. **Honest scope:** WSL is
+  execution/portability, not Linux seccomp or OS-sandbox enforcement; S103
+  ultrapunch accept/reject reproduction and S105 domain execution remain Phase 2;
+  Wasmtime fuel, memory/time ceilings, and `@mailbox` runtime ceilings remain
+  named-deferred.
+
 - **S91 (v0.8.1 substrate - net bridge + program-entry `@caps` frame):** closes
   two named interpreter-scoped enforcement gaps from S90. The `net::tcp_connect`
   bridge now calls `require_capability("net", ...)` before host network policy

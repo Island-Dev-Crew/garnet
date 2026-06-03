@@ -58,6 +58,7 @@ import garnet_provenance_seal_chain_status  # noqa: E402
 import garnet_promo_video_status  # noqa: E402
 import garnet_readiness_status  # noqa: E402
 import garnet_stdlib_layer_gate  # noqa: E402
+import garnet_windows_cross_os_enforcement_proof  # noqa: E402
 import garnet_windows_linux_studio_status  # noqa: E402
 
 
@@ -546,6 +547,7 @@ def read_status() -> MitReadinessStatus:
     linear_effect = garnet_linear_effect_status.read_status()
     provenance_chain = garnet_provenance_seal_chain_status.read_status()
     cap_manifest_standard = garnet_cap_manifest_standard_status.read_status()
+    windows_cross_os = garnet_windows_cross_os_enforcement_proof.read_status()
     proof = garnet_proof_benchmark_status.read_status()
     vm_scaffold_present = _vm_scaffold_present(proof)
     wls = garnet_windows_linux_studio_status.read_status()
@@ -1084,6 +1086,29 @@ def read_status() -> MitReadinessStatus:
                 "No multi-language ecosystem or conformance suite is claimed",
                 "Declared surface only: no proof of undeclared-authority absence",
                 "No VM/runtime capability enforcement is claimed",
+            ],
+        ),
+        ObjectiveLane(
+            id="windows_cross_os_enforcement_phase1",
+            label="Windows cross-OS enforcement proof (S106 Phase 1)",
+            status="verified" if windows_cross_os.ok else "planned",
+            completion_percent=100.0 if windows_cross_os.ok else 0.0,
+            evidence=(
+                "`scripts/garnet_windows_cross_os_enforcement_proof.py --gate` "
+                "checks committed proof records for the S101 Stage V trap gate on "
+                "Windows and a WSL execution/portability rerun. The Windows row "
+                "records `@max_depth`, `@caps(env)`, `@caps(proc)`, `@caps(fs)`, "
+                "`@caps(net)`, and the S92 program-entry `@caps(proc)` trap; the "
+                "WSL row is labeled `execution/portability, not enforcement`."
+            ),
+            blocked_by=[] if windows_cross_os.ok else ["S106 Windows/WSL proof gate"],
+            deferred=[
+                "WSL is not Linux seccomp enforcement",
+                "WSL is not OS-sandbox enforcement",
+                "S103 ultrapunch accept/reject reproduction is Phase 2",
+                "S105 domain execution is Phase 2",
+                "Wasmtime fuel / @bounded runtime enforcement remains out of scope",
+                "memory/time/@mailbox runtime ceilings remain out of scope",
             ],
         ),
         ObjectiveLane(

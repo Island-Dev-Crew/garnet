@@ -1,0 +1,22 @@
+
+running 17 tests
+test pure_computation_is_unaffected ... ok
+test program_entry_frame_traps_safe_main_env_without_caps ... ok
+test proc_helper_runs_when_entry_declares_proc ... ok
+test program_entry_frame_allows_safe_main_declared_env ... ok
+test proc_helper_laundering_traps_when_entry_lacks_proc ... ok
+test undeclared_env_traps ... ok
+test undeclared_fs_traps ... ok
+test undeclared_net_traps_before_connect_policy ... ok
+test declared_env_runs ... ok
+test vm_pure_computation_is_unaffected ... ok
+test vm_declared_env_runs ... ok
+test undeclared_proc_traps_before_spawning ... ok
+test vm_entry_caps_not_launderable_through_helper ... ok
+test vm_undeclared_net_traps_identically ... ok
+test vm_undeclared_env_traps_identically ... ok
+test vm_undeclared_fs_traps_identically ... ok
+test vm_undeclared_proc_traps_identically ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.96s
+

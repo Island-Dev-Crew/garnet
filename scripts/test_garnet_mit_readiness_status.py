@@ -144,6 +144,26 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
             "local-registry-source-ready", lanes["official_packages_seed"].status
         )
         self.assertEqual(85.0, lanes["official_packages_seed"].completion_percent)
+        self.assertIn("windows_cross_os_enforcement_phase1", lanes)
+        self.assertEqual(
+            "verified", lanes["windows_cross_os_enforcement_phase1"].status
+        )
+        self.assertEqual(
+            100.0,
+            lanes["windows_cross_os_enforcement_phase1"].completion_percent,
+        )
+        self.assertIn(
+            "S101 Stage V trap gate",
+            lanes["windows_cross_os_enforcement_phase1"].evidence,
+        )
+        self.assertIn(
+            "execution/portability, not enforcement",
+            lanes["windows_cross_os_enforcement_phase1"].evidence,
+        )
+        s106_deferred = " ".join(lanes["windows_cross_os_enforcement_phase1"].deferred)
+        self.assertIn("not Linux seccomp", s106_deferred)
+        self.assertIn("not OS-sandbox enforcement", s106_deferred)
+        self.assertIn("Phase 2", s106_deferred)
         self.assertEqual("planned", lanes["broad_converter_frontends"].status)
         self.assertIn("windows_linux_distribution", lanes)
         self.assertEqual(
@@ -234,6 +254,18 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn(
             "github.com/garnet-lang",
             " ".join(lanes["official_packages_seed"]["deferred"]),
+        )
+        self.assertIn("windows_cross_os_enforcement_phase1", lanes)
+        self.assertEqual(
+            "verified", lanes["windows_cross_os_enforcement_phase1"]["status"]
+        )
+        self.assertIn(
+            "WSL row is labeled `execution/portability, not enforcement`",
+            lanes["windows_cross_os_enforcement_phase1"]["evidence"],
+        )
+        self.assertIn(
+            "S103 ultrapunch accept/reject reproduction is Phase 2",
+            " ".join(lanes["windows_cross_os_enforcement_phase1"]["deferred"]),
         )
         self.assertIn("compiler_agent_llm_tier", lanes)
         self.assertEqual(

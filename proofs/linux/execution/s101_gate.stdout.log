@@ -1,0 +1,17 @@
+{
+  "schema": "garnet.vm_interp_enforcement_parity/v1",
+  "max_depth_trap_parity": true,
+  "caps_trap_parity": true,
+  "enforced_ceilings": [
+    "@max_depth",
+    "@caps"
+  ],
+  "named_deferred": [
+    "@bounded (Wasmtime fuel)",
+    "memory",
+    "time",
+    "@mailbox",
+    "OS-level sandbox application"
+  ],
+  "ok": true
+}
