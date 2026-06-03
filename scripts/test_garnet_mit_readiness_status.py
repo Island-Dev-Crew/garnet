@@ -190,6 +190,110 @@ def _write_committed_domain_matrix_bundle(repo_root: Path, bundle: Path, platfor
     _write_manifest(bundle)
 
 
+def _write_committed_ultrapunch_repro_bundle(
+    repo_root: Path, bundle: Path, platform: str, evidence_tier: str
+) -> None:
+    bundle.mkdir(parents=True, exist_ok=True)
+    commands_dir = bundle / "commands"
+    commands_dir.mkdir()
+    accept_dir = bundle / "accept"
+    accept_dir.mkdir()
+    for name in status_mod.ULTRAPUNCH_ACCEPT_ARTIFACTS:
+        (accept_dir / name).write_text(f"{platform} {name}\n", encoding="utf-8")
+    for command_id in (
+        "accept-agent-loop",
+        "accept-caps-log-verify",
+        "reject-widen-agent-loop",
+        "reject-overdepth-agent-loop",
+    ):
+        (commands_dir / f"{command_id}-stdout.txt").write_text(f"{command_id} ok\n", encoding="utf-8")
+        (commands_dir / f"{command_id}-stderr.txt").write_text("", encoding="utf-8")
+
+    fixture_root = repo_root / "garnet-cli" / "tests" / "fixtures" / "ultrapunch"
+    fixture_root.mkdir(parents=True, exist_ok=True)
+    source_files = []
+    for name in (
+        "baseline.garnet",
+        "accept_proposal.garnet",
+        "reject_widen.garnet",
+        "reject_overdepth.garnet",
+    ):
+        source = fixture_root / name
+        source.write_text(f"fn main() -> Int {{ {len(name)} }}\n", encoding="utf-8")
+        source_files.append(
+            {
+                "path": source.relative_to(repo_root).as_posix(),
+                "sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+            }
+        )
+
+    summary = {
+        "schema": status_mod.ULTRAPUNCH_REPRO_SCHEMA,
+        "generated_at": "2026-06-03T00:00:00+00:00",
+        "platform": platform,
+        "evidence_tier": evidence_tier,
+        "status": "passed",
+        "source_included": False,
+        "provider_api_called": False,
+        "source_files": source_files,
+        "command_count": 4,
+        "passed_commands": 4,
+        "failed_commands": 0,
+        "accept": {
+            "proposal": "accept_proposal.garnet",
+            "artifacts": list(status_mod.ULTRAPUNCH_ACCEPT_ARTIFACTS),
+            "chain_verified": True,
+            "sealed": True,
+        },
+        "reject_widen": {
+            "proposal": "reject_widen.garnet",
+            "refused": True,
+            "sealed": False,
+            "expected_stage": "diff-caps",
+        },
+        "reject_overdepth": {
+            "proposal": "reject_overdepth.garnet",
+            "refused": True,
+            "sealed": False,
+            "expected_stage": "enforced-kernel",
+        },
+        "commands": [
+            {
+                "id": command_id,
+                "display_args": ["garnet", command_id],
+                "exit_code": 1 if "reject" in command_id else 0,
+                "stdout_file": f"commands/{command_id}-stdout.txt",
+                "stderr_file": f"commands/{command_id}-stderr.txt",
+                "expected_failure": "reject" in command_id,
+                "status": "passed",
+            }
+            for command_id in (
+                "accept-agent-loop",
+                "accept-caps-log-verify",
+                "reject-widen-agent-loop",
+                "reject-overdepth-agent-loop",
+            )
+        ],
+        "honest_scope": [
+            "accepted on capability + depth evidence only",
+            "WSL/Linux rows are portability-repro evidence unless separately paired with real-kernel enforcement",
+            "not seccomp proof",
+            "not OS-sandbox proof",
+            "not Wasmtime fuel proof",
+            "not production or v1.0 readiness",
+        ],
+    }
+    (bundle / "garnet-ultrapunch-repro.json").write_text(
+        json.dumps(summary, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    (bundle / "garnet-ultrapunch-repro.md").write_text(
+        f"# {platform} ultrapunch repro\n\nnot OS-sandbox proof\n",
+        encoding="utf-8",
+    )
+    _write_manifest(bundle)
+
+
 class GarnetMitReadinessStatusTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -434,6 +538,32 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertTrue(evidence.verified)
         self.assertIn("Committed Windows bundle", evidence.reason)
         self.assertIn("Committed WSL portability bundle", evidence.reason)
+
+    def test_ultrapunch_repro_evidence_accepts_committed_windows_and_wsl_bundles(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            repo_root = Path(temp)
+            _write_committed_ultrapunch_repro_bundle(
+                repo_root,
+                repo_root / "proofs" / "windows" / "ultrapunch" / "windows-ultrapunch-test",
+                "windows",
+                "windows-local-repro",
+            )
+            _write_committed_ultrapunch_repro_bundle(
+                repo_root,
+                repo_root / "proofs" / "linux" / "repro" / "wsl-ultrapunch-test",
+                "linux",
+                "portability-repro",
+            )
+
+            with mock.patch.object(status_mod, "ROOT", repo_root):
+                evidence = status_mod._committed_ultrapunch_repro_evidence()
+
+        self.assertIsNotNone(evidence)
+        assert evidence is not None
+        self.assertTrue(evidence.verified)
+        self.assertIn("Committed Windows ultrapunch bundle", evidence.reason)
+        self.assertIn("Committed WSL portability-repro bundle", evidence.reason)
+        self.assertIn("not Linux seccomp", evidence.reason)
 
     def test_domain_matrix_verifier_rejects_fake_manifest_hashes(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

@@ -1,0 +1,3 @@
+# Agent-loop decision: REJECTED (enforced-ceiling trap)
+
+Proposal `C:\Users\IslandDevCrew\.config\superpowers\worktrees\garnet\agent-win-codex-s106-windows-cross-os-proof-phase1\garnet-cli\tests\fixtures\ultrapunch\reject_overdepth.garnet` (vs baseline `C:\Users\IslandDevCrew\.config\superpowers\worktrees\garnet\agent-win-codex-s106-windows-cross-os-proof-phase1\garnet-cli\tests\fixtures\ultrapunch\baseline.garnet`) passed diff-caps (no widening) but the enforced kernel (--interp) TRAPPED it (see `run_trap.txt`) — an `@max_depth` or `@caps` ceiling was exceeded. It was not sealed. Acceptance rests on the enforced run, not only the static capability gate.

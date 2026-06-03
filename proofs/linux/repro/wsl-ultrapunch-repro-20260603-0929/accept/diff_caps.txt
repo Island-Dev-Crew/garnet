@@ -1,0 +1,4 @@
+garnet diff-caps: /mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/garnet-cli/tests/fixtures/ultrapunch/baseline.garnet -> /mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/garnet-cli/tests/fixtures/ultrapunch/accept_proposal.garnet
+  no capability changes.
+
+diff-caps: no authority expansion (capability band 5/5)

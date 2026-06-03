@@ -25,6 +25,19 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S110 (v0.8.1 runway - Windows/WSL ultrapunch reproduction):** adds
+  `scripts/smoke_garnet_ultrapunch_repro.py`, a manifest-backed recorder for the
+  S104 ultrapunch replay. The committed Windows bundle under
+  `proofs/windows/ultrapunch/` and WSL bundle under `proofs/linux/repro/` both
+  replay ACCEPT (four trust artifacts retained plus transparency-log verification)
+  and REJECT (capability widening refused by diff-caps, over-depth proposal refused
+  by the enforced-kernel trap, no reject seal written). The MIT readiness reporter
+  now exposes this as `windows_wsl_ultrapunch_repro`, moving committed readiness to
+  **90.8%** when both bundles verify. **Honest scope:** the WSL row is
+  portability-repro only; it does not prove Linux seccomp, OS-sandbox enforcement,
+  Wasmtime fuel, Linux desktop/Tauri GUI launch, production readiness, or v1.0
+  readiness.
+
 - **S111 (v0.8.1 runway - Windows/WSL domain proof reproduction):** records
   committed Garnet Studio domain-matrix proof bundles for Windows and WSL under
   `proofs/windows/domains/` and `proofs/linux/execution/domains/`. Both bundles
