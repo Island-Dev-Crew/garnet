@@ -123,6 +123,14 @@
       "weight": 1.0
     },
     {
+      "id": "s105b",
+      "merge_confidence": 5,
+      "merged_at": "2026-06-03T08:10:17+00:00",
+      "status": "merged",
+      "title": "os-sandbox-apply-utm-seccomp",
+      "weight": 1.0
+    },
+    {
       "id": "s106",
       "merge_confidence": null,
       "merged_at": null,
