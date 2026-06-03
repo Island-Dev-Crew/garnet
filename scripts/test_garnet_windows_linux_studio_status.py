@@ -233,13 +233,13 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             status = status_mod.read_status(clean_vm_evidence_root=root)
 
         self.assertEqual(
-            "tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-verified-wsl-deb-install-verified-linux-gui-open",
+            "tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-verified-wsl-deb-rpm-extract-verified-linux-gui-still-open",
             status.status,
         )
         gate = next(gate for gate in status.packaging_gates if gate.id == "windows_unsigned_nsis")
         self.assertEqual("clean-vm-proof-verified", gate.status)
         linux_gate = next(gate for gate in status.packaging_gates if gate.id == "linux_package_choice")
-        self.assertEqual("wsl-deb-extract-command-smoke-verified", linux_gate.status)
+        self.assertEqual("wsl-deb-rpm-extract-command-smoke-verified", linux_gate.status)
         self.assertIn("real Linux desktop", linux_gate.next_evidence)
         self.assertIn("Linux desktop GUI package install/launch", linux_gate.forbidden_claim)
         self.assertNotIn(
@@ -269,6 +269,13 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
                 "not clean Linux install proof",
             ],
         )
+        rpm_missing = status_mod.smoke_garnet_studio_linux_wsl_rpm.LinuxWslRpmEvidence(
+            status="missing",
+            verified=False,
+            reason="No committed WSL Linux Tauri .rpm package proof bundle verified.",
+            bundle=None,
+            deferred=["record WSL Linux `.rpm` proof bundle"],
+        )
         with mock.patch.object(
             status_mod.smoke_garnet_studio_linux_wsl_deb,
             "read_committed_evidence",
@@ -277,6 +284,10 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             status_mod.smoke_garnet_studio_linux_wsl_deb_install,
             "read_committed_evidence",
             return_value=install_evidence,
+        ), mock.patch.object(
+            status_mod.smoke_garnet_studio_linux_wsl_rpm,
+            "read_committed_evidence",
+            return_value=rpm_missing,
         ):
             status = status_mod.read_status()
 
@@ -288,6 +299,54 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
         self.assertIn("Linux desktop GUI", " ".join(status.next_slices))
         self.assertIn("Linux VM/container", " ".join(status.user_assistance_needed))
 
+    def test_linux_wsl_rpm_package_gate_marks_extract_not_gui_completion(self) -> None:
+        evidence = status_mod.smoke_garnet_studio_linux_wsl_deb.LinuxWslDebEvidence(
+            status="verified",
+            verified=True,
+            reason="WSL Linux Tauri .deb package build and non-GUI studio-smoke verified.",
+            bundle="proofs/linux/execution/studio-package/linux-wsl-deb-test",
+            deferred=["not Linux desktop GUI launch proof"],
+        )
+        install_evidence = status_mod.smoke_garnet_studio_linux_wsl_deb_install.LinuxWslDebInstallEvidence(
+            status="verified",
+            verified=True,
+            reason="WSL Linux Tauri .deb extract and extracted-binary non-GUI studio-smoke verified.",
+            bundle="proofs/linux/execution/studio-package-install/linux-wsl-deb-install-test",
+            deferred=["not Linux desktop GUI launch proof"],
+        )
+        rpm_evidence = status_mod.smoke_garnet_studio_linux_wsl_rpm.LinuxWslRpmEvidence(
+            status="verified",
+            verified=True,
+            reason="WSL Linux Tauri .rpm extract and extracted-binary non-GUI studio-smoke verified.",
+            bundle="proofs/linux/execution/studio-rpm-package/linux-wsl-rpm-test",
+            deferred=[
+                "not Linux desktop GUI launch proof",
+                "not clean Linux install proof",
+            ],
+        )
+        with mock.patch.object(
+            status_mod.smoke_garnet_studio_linux_wsl_deb,
+            "read_committed_evidence",
+            return_value=evidence,
+        ), mock.patch.object(
+            status_mod.smoke_garnet_studio_linux_wsl_deb_install,
+            "read_committed_evidence",
+            return_value=install_evidence,
+        ), mock.patch.object(
+            status_mod.smoke_garnet_studio_linux_wsl_rpm,
+            "read_committed_evidence",
+            return_value=rpm_evidence,
+        ):
+            status = status_mod.read_status()
+
+        linux_gate = next(gate for gate in status.packaging_gates if gate.id == "linux_package_choice")
+        self.assertEqual("wsl-deb-rpm-extract-command-smoke-verified", linux_gate.status)
+        self.assertIn("real Linux desktop", linux_gate.next_evidence)
+        self.assertIn("Linux desktop GUI", linux_gate.forbidden_claim)
+        truth = " ".join(status.current_truth)
+        self.assertIn("WSL Linux `.rpm` package extract", truth)
+        self.assertIn("not complete", truth)
+
     def test_json_and_markdown_preserve_not_completed_boundary(self) -> None:
         output = subprocess.check_output(
             [sys.executable, str(SCRIPT), "--format", "json"],
@@ -295,7 +354,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
         )
         data = json.loads(output)
         self.assertEqual(
-            "tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-contract-open-wsl-deb-install-verified-linux-gui-open",
+            "tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-contract-open-wsl-deb-rpm-extract-verified-linux-gui-still-open",
             data["status"],
         )
         truth = " ".join(data["current_truth"])
@@ -304,6 +363,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
         self.assertIn("repo-owned evidence contract", truth)
         self.assertIn("WSL Linux `.deb` package build", truth)
         self.assertIn("WSL Linux `.deb` package extract", truth)
+        self.assertIn("WSL Linux `.rpm` package extract", truth)
         self.assertIn("Windows ARM64 follows after x64 proof", truth)
         self.assertIn("Domain Proof Matrix", truth)
         self.assertIn("Linux runtime proof is not complete", " ".join(data["current_truth"]))

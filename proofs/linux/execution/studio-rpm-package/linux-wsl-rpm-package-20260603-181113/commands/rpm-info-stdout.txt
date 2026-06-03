@@ -1,0 +1,16 @@
+Name        : garnet-studio
+Epoch       : 0
+Version     : 0.1.0
+Release     : 1
+Architecture: x86_64
+Install Date: (not installed)
+Group       : Unspecified
+Size        : 9807502
+License     : MIT OR Apache-2.0
+Signature   : (none)
+Source RPM  : (none)
+Build Date  : Wed Jun  3 13:12:15 2026
+Build Host  : (none)
+Summary     : Garnet Studio cross-platform thin desktop shell for the Garnet CLI and advisory pipeline.
+Description :
+Garnet Studio cross-platform thin desktop shell for the Garnet CLI and advisory pipeline.

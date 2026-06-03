@@ -1,0 +1,5 @@
+/usr/bin/garnet-studio
+/usr/share/applications/Garnet Studio.desktop
+/usr/share/icons/hicolor/128x128/apps/garnet-studio.png
+/usr/share/icons/hicolor/256x256@2/apps/garnet-studio.png
+/usr/share/icons/hicolor/32x32/apps/garnet-studio.png
