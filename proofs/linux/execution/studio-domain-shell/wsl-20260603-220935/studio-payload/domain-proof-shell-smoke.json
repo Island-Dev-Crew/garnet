@@ -1,0 +1,32 @@
+{
+  "domain_matrix_command": [
+    "python3",
+    "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/scripts/smoke_garnet_studio_domain_matrix.py",
+    "--output-dir",
+    "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/target/wsl-domain-shell-matrix-20260603-220940/garnet-studio-domain-matrix-20260603-171028",
+    "--format",
+    "markdown",
+    "--garnet",
+    "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/target/release/garnet"
+  ],
+  "domain_matrix_command_success": true,
+  "domain_matrix_evidence_path": "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/target/wsl-domain-shell-matrix-20260603-220940/garnet-studio-domain-matrix-20260603-171028",
+  "domain_matrix_exit_code": 0,
+  "honest_scope": [
+    "Studio domain proof smoke exercises the Tauri command wrapper around the repo domain matrix.",
+    "WSL rows are execution/portability evidence only, not Linux seccomp or OS-sandbox enforcement.",
+    "This is not clean/non-WSL Linux desktop GUI install/launch proof.",
+    "No signed MSI, winget, Windows ARM64, production, or v1.0 claim is made."
+  ],
+  "linux_desktop_gui_claimed": false,
+  "linux_enforcement_claimed": false,
+  "mode": "studio-domain-proof-smoke",
+  "non_wsl_linux_desktop_claimed": false,
+  "provider_api_called": false,
+  "signed_msi_claimed": false,
+  "source_included": false,
+  "status": "passed",
+  "stdout_has_domain_matrix": true,
+  "windows_arm64_claimed": false,
+  "winget_claimed": false
+}

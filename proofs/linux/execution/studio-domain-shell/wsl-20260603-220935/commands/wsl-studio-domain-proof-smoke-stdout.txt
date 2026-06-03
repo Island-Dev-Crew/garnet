@@ -1,0 +1,2 @@
+Garnet Studio domain proof smoke passed
+evidence=/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/target/wsl-domain-shell-home-20260603-220940/Desktop/dogfood/garnet-studio-windows-linux/garnet-studio-windows-linux-domain-proof-shell-smoke-20260603-171028

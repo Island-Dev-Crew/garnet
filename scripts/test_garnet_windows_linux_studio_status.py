@@ -38,6 +38,21 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             deferred=["record WSLg system install/launch proof bundle"],
         )
 
+    def _verified_domain_shell_evidence(self) -> object:
+        return status_mod.smoke_garnet_studio_domain_shell.DomainShellEvidence(
+            verified=True,
+            windows_summary=Path(
+                "proofs/windows/studio-domain-shell/windows-domain-shell-test/garnet-studio-domain-shell-proof.json"
+            ),
+            wsl_summary=Path(
+                "proofs/linux/execution/studio-domain-shell/wsl-domain-shell-test/garnet-studio-domain-shell-proof.json"
+            ),
+            reason=(
+                "Committed Windows Studio domain-shell proof and WSL execution/portability "
+                "proof verified; WSL is not Linux enforcement."
+            ),
+        )
+
     def test_taxonomy_matches_handoff_copy_truth(self) -> None:
         status = status_mod.read_status()
         self.assertEqual(["Rust", "Ruby", "Python", "Go"], status.taxonomy.active_conversion)
@@ -674,6 +689,41 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
         truth = " ".join(status.current_truth)
         self.assertIn("WSLg system package install", truth)
         self.assertIn("not clean Linux install proof", truth)
+        self.assertIn("Linux VM/container", " ".join(status.user_assistance_needed))
+
+    def test_domain_shell_proof_removes_only_domain_matrix_shell_gap(self) -> None:
+        wslg_evidence = (
+            status_mod.smoke_garnet_studio_linux_wslg_install_launch.LinuxWslgInstallLaunchEvidence(
+                status="verified",
+                verified=True,
+                reason="WSLg system package install and installed-binary GUI launch verified.",
+                bundle="proofs/linux/execution/studio-wslg-system-install/linux-wslg-system-install-test",
+                deferred=[
+                    "not Linux desktop GUI proof outside WSLg",
+                    "not clean Linux install proof",
+                ],
+            )
+        )
+        with mock.patch.object(
+            status_mod.smoke_garnet_studio_linux_wslg_install_launch,
+            "read_committed_evidence",
+            return_value=wslg_evidence,
+        ), mock.patch.object(
+            status_mod.smoke_garnet_studio_domain_shell,
+            "read_committed_evidence",
+            return_value=self._verified_domain_shell_evidence(),
+        ):
+            status = status_mod.read_status()
+
+        truth = " ".join(status.current_truth)
+        self.assertIn("Studio Domain Proof Matrix shell output is verified", truth)
+        self.assertIn("WSL row is execution/portability only", truth)
+        self.assertIn("not Linux seccomp", truth)
+        self.assertNotIn(
+            "Domain Proof Matrix screenshots/output from the Windows shell and WSL/Linux shell",
+            status.next_slices,
+        )
+        self.assertIn("Active converter end-to-end screenshots from the shell", status.next_slices)
         self.assertIn("Linux VM/container", " ".join(status.user_assistance_needed))
 
     def test_json_and_markdown_preserve_not_completed_boundary(self) -> None:

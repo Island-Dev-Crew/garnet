@@ -1,0 +1,89 @@
+{
+  "binary": "target/release/garnet-studio.exe",
+  "binary_sha256": "c00e95cc8dd3303e4acb1ff4d4b1e20eb7c9c226d1b0095287497f0dc881c2f4",
+  "clean_linux_install_proven": false,
+  "commands": [
+    {
+      "display_args": [
+        "cargo",
+        "build",
+        "-p",
+        "garnet-cli",
+        "--release"
+      ],
+      "exit_code": 0,
+      "id": "cargo-build-garnet-cli",
+      "status": "passed",
+      "stderr_file": "commands/cargo-build-garnet-cli-stderr.txt",
+      "stdout_file": "commands/cargo-build-garnet-cli-stdout.txt"
+    },
+    {
+      "display_args": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "id": "npm-build",
+      "status": "passed",
+      "stderr_file": "commands/npm-build-stderr.txt",
+      "stdout_file": "commands/npm-build-stdout.txt"
+    },
+    {
+      "display_args": [
+        "cargo",
+        "build",
+        "--manifest-path",
+        "apps/garnet-studio/src-tauri/Cargo.toml",
+        "--release"
+      ],
+      "exit_code": 0,
+      "id": "cargo-build-studio-release",
+      "status": "passed",
+      "stderr_file": "commands/cargo-build-studio-release-stderr.txt",
+      "stdout_file": "commands/cargo-build-studio-release-stdout.txt"
+    },
+    {
+      "display_args": [
+        "target/release/garnet-studio.exe",
+        "--studio-domain-proof-smoke"
+      ],
+      "exit_code": 0,
+      "id": "studio-domain-proof-smoke",
+      "status": "passed",
+      "stderr_file": "commands/studio-domain-proof-smoke-stderr.txt",
+      "stdout_file": "commands/studio-domain-proof-smoke-stdout.txt"
+    }
+  ],
+  "created_at": "2026-06-03T22:09:35.785285+00:00",
+  "domain_matrix_shell_proven": true,
+  "honest_scope": [
+    "Studio domain shell proof exercises the Tauri command wrapper around the repo domain matrix.",
+    "WSL rows are execution/portability evidence only, not Linux seccomp or OS-sandbox enforcement.",
+    "This is not clean/non-WSL Linux desktop GUI install/launch proof.",
+    "No signed MSI, winget, Windows ARM64, production, or v1.0 claim is made.",
+    "Source is not included in the evidence bundle and no provider API is called."
+  ],
+  "linux_desktop_gui_claimed": false,
+  "linux_enforcement_proven": false,
+  "non_wsl_linux_desktop_proven": false,
+  "platform_tier": "windows-local-tauri-domain-shell-proof",
+  "provider_api_called": false,
+  "schema": "garnet.studio.domain_shell_proof.v1",
+  "signed_msi_claimed": false,
+  "source_included": false,
+  "status": "passed",
+  "studio_command_path_proven": true,
+  "studio_payload": {
+    "copied": true,
+    "payload_dir": "studio-payload",
+    "payload_json": "studio-payload/domain-proof-shell-smoke.json",
+    "payload_mode": "studio-domain-proof-smoke",
+    "payload_status": "passed"
+  },
+  "target_platform": "windows",
+  "windows_arm64_claimed": false,
+  "winget_claimed": false,
+  "wsl_execution_portability_claimed": false,
+  "wsl_is_enforcement": false
+}

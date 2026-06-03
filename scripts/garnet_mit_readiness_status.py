@@ -80,6 +80,7 @@ import smoke_garnet_studio_linux_wsl_rpm  # noqa: E402
 import smoke_garnet_studio_linux_wsl_xvfb  # noqa: E402
 import smoke_garnet_studio_linux_wsl_xvfb_window  # noqa: E402
 import smoke_garnet_studio_linux_wslg_install_launch  # noqa: E402
+import smoke_garnet_studio_domain_shell  # noqa: E402
 import smoke_garnet_studio_windows_wsl  # noqa: E402
 
 
@@ -740,6 +741,7 @@ def read_status() -> MitReadinessStatus:
         smoke_garnet_studio_linux_wsl_xvfb_window.read_committed_evidence(ROOT)
     )
     linux_wslg_install_launch = smoke_garnet_studio_linux_wslg_install_launch.read_committed_evidence(ROOT)
+    studio_domain_shell = smoke_garnet_studio_domain_shell.read_committed_evidence(ROOT)
     stdlib = garnet_stdlib_layer_gate.read_status()
     novel_compositions_present = all(
         (ROOT / p).exists()
@@ -821,7 +823,7 @@ def read_status() -> MitReadinessStatus:
     lsp_precision_present = _lsp_precision_present()
     if wls_clean_vm_verified:
         wls_completion_percent = (
-            80.0
+            81.0
             if (
                 domain_matrix.verified
                 and linux_deb_install.verified
@@ -829,6 +831,25 @@ def read_status() -> MitReadinessStatus:
                 and linux_xvfb_runtime.verified
                 and linux_xvfb_window_capture.verified
                 and linux_wslg_install_launch.verified
+                and studio_domain_shell.verified
+            )
+            else 80.0
+            if (
+                domain_matrix.verified
+                and linux_deb_install.verified
+                and linux_rpm_package.verified
+                and linux_xvfb_runtime.verified
+                and linux_xvfb_window_capture.verified
+                and linux_wslg_install_launch.verified
+            )
+            else 79.5
+            if (
+                domain_matrix.verified
+                and linux_deb_install.verified
+                and linux_rpm_package.verified
+                and linux_xvfb_runtime.verified
+                and linux_xvfb_window_capture.verified
+                and studio_domain_shell.verified
             )
             else 79.0
             if (
@@ -872,7 +893,7 @@ def read_status() -> MitReadinessStatus:
         )
     else:
         wls_completion_percent = (
-            68.0
+            69.0
             if (
                 domain_matrix.verified
                 and linux_deb_install.verified
@@ -880,6 +901,25 @@ def read_status() -> MitReadinessStatus:
                 and linux_xvfb_runtime.verified
                 and linux_xvfb_window_capture.verified
                 and linux_wslg_install_launch.verified
+                and studio_domain_shell.verified
+            )
+            else 68.0
+            if (
+                domain_matrix.verified
+                and linux_deb_install.verified
+                and linux_rpm_package.verified
+                and linux_xvfb_runtime.verified
+                and linux_xvfb_window_capture.verified
+                and linux_wslg_install_launch.verified
+            )
+            else 67.5
+            if (
+                domain_matrix.verified
+                and linux_deb_install.verified
+                and linux_rpm_package.verified
+                and linux_xvfb_runtime.verified
+                and linux_xvfb_window_capture.verified
+                and studio_domain_shell.verified
             )
             else 67.0
             if (
@@ -1051,6 +1091,7 @@ def read_status() -> MitReadinessStatus:
                 f"{'committed WSL Linux Xvfb runtime-start evidence, ' if linux_xvfb_runtime.verified else ''}"
                 f"{'committed WSL Linux Xvfb virtual-display window-capture evidence, ' if linux_xvfb_window_capture.verified else ''}"
                 f"{'committed WSLg system package install/launch evidence, ' if linux_wslg_install_launch.verified else ''}"
+                f"{'committed Studio domain-shell proof evidence, ' if studio_domain_shell.verified else ''}"
                 f"v0.5 {wls_evidence_tail}"
             ),
             blocked_by=list(wls.user_assistance_needed),
@@ -1208,6 +1249,27 @@ def read_status() -> MitReadinessStatus:
                 "not Linux seccomp or OS-sandbox enforcement",
                 "not clean Linux install proof",
                 "not signed, production, or v1.0 readiness",
+            ],
+        ),
+        ObjectiveLane(
+            id="windows_wsl_studio_domain_shell_proof",
+            evidence_class="committed",
+            label="Windows/WSL Studio domain-shell proof (S117 increment)",
+            status="verified" if studio_domain_shell.verified else "planned",
+            completion_percent=100.0 if studio_domain_shell.verified else 0.0,
+            evidence=(
+                "`scripts/smoke_garnet_studio_domain_shell.py --record` records "
+                "the Studio binary's `--studio-domain-proof-smoke` path on Windows "
+                "and WSL, exercising the Tauri command wrapper around the repo "
+                f"Domain Proof Matrix. {studio_domain_shell.reason}"
+                if studio_domain_shell.verified
+                else studio_domain_shell.reason
+            ),
+            blocked_by=[] if studio_domain_shell.verified else ["committed Windows + WSL Studio domain-shell proof bundles"],
+            deferred=[
+                "WSL is execution/portability only, not Linux seccomp or OS-sandbox enforcement",
+                "not clean/non-WSL Linux desktop GUI proof",
+                "Signed MSI, winget, Windows ARM64, production, and v1.0 remain unclaimed",
             ],
         ),
         ObjectiveLane(

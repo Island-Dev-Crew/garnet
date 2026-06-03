@@ -1,0 +1,2 @@
+
+Evidence: C:\Users\IslandDevCrew\.config\superpowers\worktrees\garnet\agent-win-codex-s106-windows-cross-os-proof-phase1\target\domain-shell-matrix-20260603-220832\garnet-studio-domain-matrix-20260603-170930

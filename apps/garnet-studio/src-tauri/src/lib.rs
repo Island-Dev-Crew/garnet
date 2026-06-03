@@ -69,3 +69,62 @@ pub fn run_smoke() -> Result<String, String> {
     )?;
     Ok(bundle.path)
 }
+
+pub fn run_domain_proof_smoke() -> Result<String, String> {
+    let bundle = evidence::create_named_bundle("domain-proof-shell-smoke")?;
+    let bundle_path = PathBuf::from(&bundle.path);
+    let result = commands::domain_proof_matrix();
+    let stdout_has_matrix = result.stdout.contains("Garnet Studio Domain Proof Matrix");
+    let status = if result.success && stdout_has_matrix {
+        "passed"
+    } else {
+        "failed"
+    };
+    let payload = serde_json::json!({
+        "status": status,
+        "mode": "studio-domain-proof-smoke",
+        "domain_matrix_command_success": result.success,
+        "domain_matrix_exit_code": result.exit_code,
+        "domain_matrix_command": result.command,
+        "domain_matrix_evidence_path": result.evidence_path,
+        "stdout_has_domain_matrix": stdout_has_matrix,
+        "source_included": false,
+        "provider_api_called": false,
+        "linux_enforcement_claimed": false,
+        "linux_desktop_gui_claimed": false,
+        "non_wsl_linux_desktop_claimed": false,
+        "signed_msi_claimed": false,
+        "winget_claimed": false,
+        "windows_arm64_claimed": false,
+        "honest_scope": [
+            "Studio domain proof smoke exercises the Tauri command wrapper around the repo domain matrix.",
+            "WSL rows are execution/portability evidence only, not Linux seccomp or OS-sandbox enforcement.",
+            "This is not clean/non-WSL Linux desktop GUI install/launch proof.",
+            "No signed MSI, winget, Windows ARM64, production, or v1.0 claim is made."
+        ]
+    });
+    fs::write(
+        bundle_path.join("domain-proof-shell-smoke.json"),
+        serde_json::to_string_pretty(&payload)
+            .map_err(|err| format!("failed to serialize domain proof payload: {err}"))?
+            + "\n",
+    )
+    .map_err(|err| format!("failed to write domain proof payload: {err}"))?;
+    evidence::write_command_evidence(
+        &bundle_path,
+        "domain-proof-shell-smoke",
+        &["garnet-studio".to_string(), "--studio-domain-proof-smoke".to_string()],
+        &result.stdout,
+        &result.stderr,
+        result.exit_code,
+    )?;
+
+    if status == "passed" {
+        Ok(bundle.path)
+    } else {
+        Err(format!(
+            "domain proof matrix command failed or did not emit matrix markdown; evidence={}",
+            bundle.path
+        ))
+    }
+}

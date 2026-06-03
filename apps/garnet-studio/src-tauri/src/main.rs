@@ -15,6 +15,19 @@ fn main() {
             }
         }
     }
+    if std::env::args().any(|arg| arg == "--studio-domain-proof-smoke") {
+        match garnet_studio_lib::run_domain_proof_smoke() {
+            Ok(path) => {
+                println!("Garnet Studio domain proof smoke passed");
+                println!("evidence={path}");
+                return;
+            }
+            Err(err) => {
+                eprintln!("Garnet Studio domain proof smoke failed: {err}");
+                std::process::exit(1);
+            }
+        }
+    }
 
     garnet_studio_lib::run()
 }

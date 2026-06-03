@@ -29,6 +29,7 @@ import smoke_garnet_studio_linux_wsl_rpm  # noqa: E402
 import smoke_garnet_studio_linux_wsl_xvfb  # noqa: E402
 import smoke_garnet_studio_linux_wsl_xvfb_window  # noqa: E402
 import smoke_garnet_studio_linux_wslg_install_launch  # noqa: E402
+import smoke_garnet_studio_domain_shell  # noqa: E402
 
 ACTIVE_CONVERSION = ["Rust", "Ruby", "Python", "Go"]
 ADVISORY_PLANNING = [
@@ -663,6 +664,7 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
     linux_xvfb = smoke_garnet_studio_linux_wsl_xvfb.read_committed_evidence(ROOT)
     linux_xvfb_window = smoke_garnet_studio_linux_wsl_xvfb_window.read_committed_evidence(ROOT)
     linux_wslg_install = smoke_garnet_studio_linux_wslg_install_launch.read_committed_evidence(ROOT)
+    domain_shell = smoke_garnet_studio_domain_shell.read_committed_evidence(ROOT)
     any_linux_package_evidence = (
         linux_deb.verified
         or linux_deb_install.verified
@@ -737,6 +739,10 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
         linux_package_truth.append(
             "WSLg system package install and installed-binary GUI launch are verified by `scripts/smoke_garnet_studio_linux_wslg_install_launch.py`; this proves a privileged WSL `.deb` install plus WSLg window observation, but it is not clean Linux install proof, non-WSL Linux desktop proof, Linux seccomp, or OS-sandbox enforcement",
         )
+    if domain_shell.verified:
+        linux_package_truth.append(
+            "Studio Domain Proof Matrix shell output is verified by `scripts/smoke_garnet_studio_domain_shell.py`; the Windows row exercises the Tauri command wrapper and the WSL row is execution/portability only, not Linux seccomp, OS-sandbox enforcement, or clean/non-WSL Linux desktop proof",
+        )
     if not linux_package_truth:
         linux_package_truth.append(
             "WSL Linux `.deb` package build proof remains open until `scripts/smoke_garnet_studio_linux_wsl_deb.py --record` verifies the bundle",
@@ -802,8 +808,7 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
         if any_linux_package_evidence
         else "Linux desktop launch proof and first package-format decision"
     )
-    next_slices = (
-        [
+    clean_vm_next = [
             linux_runtime_next,
             "Windows ARM64 target build/smoke after x64 clean-VM proof",
             "Domain Proof Matrix screenshots/output from the Windows shell and WSL/Linux shell",
@@ -812,9 +817,8 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
             "Release / Readiness panel screenshot and reporter-output evidence from the Windows shell",
             "Signed Windows MSI/AuthentiCode plan after verified unsigned VM smoke",
             "Website/status copy sync after target smoke evidence",
-        ]
-        if clean_vm_verified
-        else [
+    ]
+    open_vm_next = [
             "Windows clean-machine NSIS install and CLI smoke evidence",
             linux_runtime_next,
             "Domain Proof Matrix screenshots/output from the Windows shell and WSL/Linux shell",
@@ -823,8 +827,19 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
             "Release / Readiness panel screenshot and reporter-output evidence from the Windows shell",
             "Unsigned-to-signed Windows MSI/AuthentiCode plan after VM smoke",
             "Website/status copy sync after target smoke evidence",
+    ]
+    if domain_shell.verified:
+        clean_vm_next = [
+            item
+            for item in clean_vm_next
+            if item != "Domain Proof Matrix screenshots/output from the Windows shell and WSL/Linux shell"
         ]
-    )
+        open_vm_next = [
+            item
+            for item in open_vm_next
+            if item != "Domain Proof Matrix screenshots/output from the Windows shell and WSL/Linux shell"
+        ]
+    next_slices = clean_vm_next if clean_vm_verified else open_vm_next
     clean_vm_assistance = (
         []
         if clean_vm_verified
