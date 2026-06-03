@@ -1,5 +1,11 @@
 /.gitattributes text eol=lf
 *.sh text eol=lf
+# Proof bundles carry MANIFEST.sha256 byte hashes; keep evidence text stable on
+# Windows checkouts so local proof gates hash the same content as CI.
+proofs/**/*.json text eol=lf
+proofs/**/*.md text eol=lf
+proofs/**/*.txt text eol=lf
+proofs/**/MANIFEST.sha256 text eol=lf
 # Seal source-hash determinism (S82 / WIN-S38-001): pin Garnet source to LF so a
 # Windows (core.autocrlf) checkout produces the same seal predicate as Mac/Linux.
 # The manifest source hash is also LF-normalized in code as defense-in-depth.

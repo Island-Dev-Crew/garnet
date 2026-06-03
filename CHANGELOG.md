@@ -25,6 +25,23 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S117 increment (v0.8.1 runway - Windows/WSL Studio smoke proof):** adds
+  `scripts/smoke_garnet_studio_windows_wsl.py`, a manifest-backed recorder for
+  the Windows Tauri Studio `--studio-smoke` path plus a WSL command-contract
+  replay. The committed Windows bundle under `proofs/windows/studio/` records
+  frontend dependency install/build when needed, `npm run build`, the Tauri
+  release build, the `--studio-smoke` invocation, and the generated
+  `studio-smoke.json` with `source_included=false` and `provider_api_called=false`.
+  The committed WSL bundle under `proofs/linux/execution/studio/` records WSL
+  `uname`, the Windows/Linux Studio status JSON, and the status regression tests.
+  The MIT readiness reporter now exposes this as `windows_wsl_studio_smoke`,
+  moving committed readiness to **90.9%** when both bundles verify. **Honest
+  scope:** this is a package-pipeline proof increment, not full S117 completion;
+  WSL is execution/portability only and does not prove Linux seccomp,
+  OS-sandbox enforcement, Wasmtime fuel, Linux desktop GUI launch, native Linux
+  packages, signed MSI, winget, Windows ARM64, production readiness, or v1.0
+  readiness.
+
 - **S110 (v0.8.1 runway - Windows/WSL ultrapunch reproduction):** adds
   `scripts/smoke_garnet_ultrapunch_repro.py`, a manifest-backed recorder for the
   S104 ultrapunch replay. The committed Windows bundle under

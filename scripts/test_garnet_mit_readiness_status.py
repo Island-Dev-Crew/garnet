@@ -294,6 +294,91 @@ def _write_committed_ultrapunch_repro_bundle(
     _write_manifest(bundle)
 
 
+def _write_committed_studio_smoke_bundle(repo_root: Path, bundle: Path, target_platform: str) -> None:
+    bundle.mkdir(parents=True, exist_ok=True)
+    commands_dir = bundle / "commands"
+    commands_dir.mkdir()
+    command_id = "studio-smoke" if target_platform == "windows" else "wsl-studio-status-json"
+    stdout = commands_dir / f"{command_id}-stdout.txt"
+    stderr = commands_dir / f"{command_id}-stderr.txt"
+    stdout.write_text("ok\n", encoding="utf-8")
+    stderr.write_text("", encoding="utf-8")
+    data = {
+        "schema": status_mod.smoke_garnet_studio_windows_wsl.SCHEMA,
+        "status": "passed",
+        "created_at": "2026-06-03T00:00:00+00:00",
+        "target_platform": target_platform,
+        "platform_tier": (
+            "windows-local-tauri-studio-smoke"
+            if target_platform == "windows"
+            else "execution/portability, not enforcement"
+        ),
+        "source_included": False,
+        "provider_api_called": False,
+        "windows_studio_smoke_claimed": target_platform == "windows",
+        "wsl_execution_portability_claimed": target_platform == "wsl",
+        "linux_enforcement_claimed": False,
+        "linux_desktop_gui_claimed": False,
+        "signed_msi_claimed": False,
+        "winget_claimed": False,
+        "windows_arm64_claimed": False,
+        "commands": [
+            {
+                "id": command_id,
+                "display_args": (
+                    ["target/release/garnet-studio.exe", "--studio-smoke"]
+                    if target_platform == "windows"
+                    else [
+                        "wsl.exe",
+                        "-e",
+                        "bash",
+                        "-lc",
+                        "cd <repo> && python3 scripts/garnet_windows_linux_studio_status.py --format json",
+                    ]
+                ),
+                "exit_code": 0,
+                "stdout_file": stdout.relative_to(bundle).as_posix(),
+                "stderr_file": stderr.relative_to(bundle).as_posix(),
+                "status": "passed",
+            }
+        ],
+        "honest_scope": [
+            "Windows `--studio-smoke` is Tauri backend smoke evidence, not signed/package-manager proof",
+            "WSL rows are execution/portability evidence only, not Linux seccomp or OS-sandbox enforcement",
+            "No Linux desktop GUI launch, AppImage/deb/rpm package, Wasmtime fuel, production, or v1.0 claim is made",
+            "Source is not included in the evidence bundle and no provider API is called",
+        ],
+    }
+    if target_platform == "windows":
+        smoke = bundle / "studio-smoke.json"
+        smoke.write_text(
+            json.dumps(
+                {
+                    "status": "passed",
+                    "source_included": False,
+                    "provider_api_called": False,
+                }
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        data["studio_smoke"] = {
+            "bundle_path": str(repo_root / "fake-smoke"),
+            "bundle_found": True,
+            "studio_smoke_json": "studio-smoke.json",
+            "studio_smoke_sha256": hashlib.sha256(smoke.read_bytes()).hexdigest(),
+        }
+    (bundle / "garnet-studio-windows-wsl-smoke.json").write_text(
+        json.dumps(data, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    (bundle / "garnet-studio-windows-wsl-smoke.md").write_text(
+        f"# {target_platform} Studio smoke\n",
+        encoding="utf-8",
+    )
+    _write_manifest(bundle)
+
+
 class GarnetMitReadinessStatusTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -355,6 +440,11 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         )
         self.assertTrue(lanes["windows_linux_distribution"].blocked_by)
         self.assertIn("windows_linux_domain_proof_matrix", lanes)
+        self.assertIn("windows_wsl_studio_smoke", lanes)
+        self.assertEqual("verified", lanes["windows_wsl_studio_smoke"].status)
+        self.assertIn("Committed Windows Studio smoke bundle", lanes["windows_wsl_studio_smoke"].evidence)
+        self.assertIn("not Linux seccomp", lanes["windows_wsl_studio_smoke"].evidence)
+        self.assertIn("Linux desktop GUI launch", " ".join(lanes["windows_wsl_studio_smoke"].deferred))
         self.assertEqual("verified", lanes["windows_linux_domain_proof_matrix"].status)
         self.assertEqual(100.0, lanes["windows_linux_domain_proof_matrix"].completion_percent)
         self.assertIn("20 current examples", lanes["windows_linux_domain_proof_matrix"].evidence)
@@ -564,6 +654,33 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("Committed Windows ultrapunch bundle", evidence.reason)
         self.assertIn("Committed WSL portability-repro bundle", evidence.reason)
         self.assertIn("not Linux seccomp", evidence.reason)
+
+    def test_studio_smoke_evidence_accepts_committed_windows_and_wsl_bundles(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            repo_root = Path(temp)
+            _write_committed_studio_smoke_bundle(
+                repo_root,
+                repo_root / "proofs" / "windows" / "studio" / "windows-studio-smoke-test",
+                "windows",
+            )
+            _write_committed_studio_smoke_bundle(
+                repo_root,
+                repo_root
+                / "proofs"
+                / "linux"
+                / "execution"
+                / "studio"
+                / "wsl-studio-command-contract-test",
+                "wsl",
+            )
+
+            evidence = status_mod.smoke_garnet_studio_windows_wsl.read_committed_evidence(repo_root)
+
+        self.assertTrue(evidence.verified)
+        self.assertIn("Committed Windows Studio smoke bundle", evidence.reason)
+        self.assertIn("Committed WSL command-contract portability bundle", evidence.reason)
+        self.assertIn("not Linux seccomp", evidence.reason)
+        self.assertIn("Linux desktop GUI", evidence.reason)
 
     def test_domain_matrix_verifier_rejects_fake_manifest_hashes(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

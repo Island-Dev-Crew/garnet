@@ -1,0 +1,68 @@
+{
+  "commands": [
+    {
+      "display_args": [
+        "wsl.exe",
+        "-e",
+        "bash",
+        "-lc",
+        "uname -a"
+      ],
+      "exit_code": 0,
+      "id": "wsl-uname",
+      "status": "passed",
+      "stderr_file": "commands/wsl-uname-stderr.txt",
+      "stdout_file": "commands/wsl-uname-stdout.txt"
+    },
+    {
+      "display_args": [
+        "wsl.exe",
+        "-e",
+        "bash",
+        "-lc",
+        "cd <repo> && python3 scripts/garnet_windows_linux_studio_status.py --format json"
+      ],
+      "exit_code": 0,
+      "id": "wsl-studio-status-json",
+      "status": "passed",
+      "stderr_file": "commands/wsl-studio-status-json-stderr.txt",
+      "stdout_file": "commands/wsl-studio-status-json-stdout.txt"
+    },
+    {
+      "display_args": [
+        "wsl.exe",
+        "-e",
+        "bash",
+        "-lc",
+        "cd <repo> && python3 scripts/test_garnet_windows_linux_studio_status.py"
+      ],
+      "exit_code": 0,
+      "id": "wsl-studio-status-tests",
+      "status": "passed",
+      "stderr_file": "commands/wsl-studio-status-tests-stderr.txt",
+      "stdout_file": "commands/wsl-studio-status-tests-stdout.txt"
+    }
+  ],
+  "created_at": "2026-06-03T15:21:16.266261+00:00",
+  "honest_scope": [
+    "Windows `--studio-smoke` is Tauri backend smoke evidence, not signed/package-manager proof",
+    "WSL rows are execution/portability evidence only, not Linux seccomp or OS-sandbox enforcement",
+    "No Linux desktop GUI launch, AppImage/deb/rpm package, Wasmtime fuel, production, or v1.0 claim is made",
+    "Source is not included in the evidence bundle and no provider API is called"
+  ],
+  "host_platform": "Windows-11-10.0.26200-SP0",
+  "linux_desktop_gui_claimed": false,
+  "linux_enforcement_claimed": false,
+  "platform_tier": "execution/portability, not enforcement",
+  "provider_api_called": false,
+  "schema": "garnet.studio.windows_wsl_smoke.v1",
+  "signed_msi_claimed": false,
+  "source_included": false,
+  "status": "passed",
+  "target_platform": "wsl",
+  "windows_arm64_claimed": false,
+  "windows_studio_smoke_claimed": false,
+  "winget_claimed": false,
+  "wsl_execution_portability_claimed": true,
+  "wsl_repo_root": "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1"
+}

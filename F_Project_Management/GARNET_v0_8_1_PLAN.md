@@ -248,6 +248,17 @@ Wasmtime fuel, or Linux desktop/Tauri GUI launch proof.
 | S119 | v0_8_1-release-readiness-gate | Whole-runway aggregator, binary-strict by default (the S86 lesson). | READY must carry real binary + cross-OS results. |
 | S120 | v0_8_1-cut-decision | Ship the cut-readiness verdict; ESCALATE the tag to Jon (NEVER autonomous) + honest 1.0 horizon (~1yr, validation-gated). | The tag is Jon's; no autonomous tag. |
 
+**S117 Windows/WSL Studio smoke increment (recorded 2026-06-03):** the Windows
+lane records a package-pipeline proof increment under `proofs/windows/studio/`
+and `proofs/linux/execution/studio/`. The Windows row builds the Tauri Studio
+surface and runs `garnet-studio --studio-smoke`, copying the generated
+`studio-smoke.json` into a manifest-backed proof bundle. The WSL row replays the
+Studio status command contract and status regression tests. This does **not**
+close full S117 package-pipeline readiness: WSL is execution/portability only,
+not Linux seccomp or OS-sandbox enforcement, and Linux desktop GUI launch, native
+Linux packages, signed MSI, winget, Windows ARM64, production, and v1.0 remain
+unclaimed.
+
 **STOP + report before S120:** the cut is Jon's decision.
 
 ## Verification Expectations

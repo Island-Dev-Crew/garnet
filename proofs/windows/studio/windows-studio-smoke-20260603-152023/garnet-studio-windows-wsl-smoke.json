@@ -1,0 +1,69 @@
+{
+  "binary": "target/release/garnet-studio.exe",
+  "binary_sha256": "92362f18338f6f502fede85502f7705b269495f08de07082e4bd1cba556b659c",
+  "commands": [
+    {
+      "display_args": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "id": "npm-build",
+      "status": "passed",
+      "stderr_file": "commands/npm-build-stderr.txt",
+      "stdout_file": "commands/npm-build-stdout.txt"
+    },
+    {
+      "display_args": [
+        "cargo",
+        "build",
+        "--manifest-path",
+        "apps/garnet-studio/src-tauri/Cargo.toml",
+        "--release"
+      ],
+      "exit_code": 0,
+      "id": "cargo-build-studio-release",
+      "status": "passed",
+      "stderr_file": "commands/cargo-build-studio-release-stderr.txt",
+      "stdout_file": "commands/cargo-build-studio-release-stdout.txt"
+    },
+    {
+      "display_args": [
+        "target/release/garnet-studio.exe",
+        "--studio-smoke"
+      ],
+      "exit_code": 0,
+      "id": "studio-smoke",
+      "status": "passed",
+      "stderr_file": "commands/studio-smoke-stderr.txt",
+      "stdout_file": "commands/studio-smoke-stdout.txt"
+    }
+  ],
+  "created_at": "2026-06-03T15:21:09.131809+00:00",
+  "honest_scope": [
+    "Windows `--studio-smoke` is Tauri backend smoke evidence, not signed/package-manager proof",
+    "WSL rows are execution/portability evidence only, not Linux seccomp or OS-sandbox enforcement",
+    "No Linux desktop GUI launch, AppImage/deb/rpm package, Wasmtime fuel, production, or v1.0 claim is made",
+    "Source is not included in the evidence bundle and no provider API is called"
+  ],
+  "linux_desktop_gui_claimed": false,
+  "linux_enforcement_claimed": false,
+  "platform_tier": "windows-local-tauri-studio-smoke",
+  "provider_api_called": false,
+  "schema": "garnet.studio.windows_wsl_smoke.v1",
+  "signed_msi_claimed": false,
+  "source_included": false,
+  "status": "passed",
+  "studio_smoke": {
+    "bundle_found": true,
+    "bundle_path": "C:\\Users\\IslandDevCrew\\Desktop\\dogfood\\garnet-studio-windows-linux\\garnet-studio-windows-linux-smoke-20260603-102107",
+    "studio_smoke_json": "studio-smoke.json",
+    "studio_smoke_sha256": "70fd43c289aaaa4c461b0021c1bf115fb8e50196a2ba0ecea5971c7e59d2f414"
+  },
+  "target_platform": "windows",
+  "windows_arm64_claimed": false,
+  "windows_studio_smoke_claimed": true,
+  "winget_claimed": false,
+  "wsl_execution_portability_claimed": false
+}

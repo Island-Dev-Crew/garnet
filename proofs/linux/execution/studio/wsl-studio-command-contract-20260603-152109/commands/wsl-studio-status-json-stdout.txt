@@ -1,0 +1,527 @@
+{
+  "source": "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1",
+  "status": "tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-contract-open-linux-open",
+  "current_truth": [
+    "origin/main is newer than PR #140; live main remains the source of truth",
+    "macOS SwiftUI Studio remains the native Apple reference app",
+    "Tauri v2 is now adopted for the first Windows/Linux shell scaffold in `apps/garnet-studio`",
+    "Windows local source-build proof exists for the Tauri frontend, backend tests, release executable, unsigned NSIS bundle, and `--studio-smoke` evidence",
+    "Windows clean-VM installer proof now has a repo-owned evidence contract and status reporter; it is not verified until a fresh VM bundle is recorded",
+    "Windows clean-machine installer proof remains open until the unsigned NSIS artifact is exercised in a fresh VM",
+    "Linux runtime proof is not complete until the shell launches in a Linux desktop environment",
+    "the shell wraps existing CLI, docs/PWA, advisory scripts, and dogfood gates without duplicating converter logic",
+    "CLI Health maps to the existing `garnet version` probe unless a real health subcommand is added",
+    "the Domain Proof Matrix runs the current canonical MVP and agentic examples through `garnet parse`, `garnet check`, and `garnet run`, writing manifest-backed evidence without source inclusion",
+    "the Release / Readiness panel now exposes the repo-native v0.5 reporters used by the broader MIT/productization story",
+    "provider options remain advisory-only; provider-backed conversion is not active",
+    "benchmark no-run evidence is compile/status evidence only and does not claim performance measurements",
+    "notarization status is a Mac-side preflight boundary, not a Windows completion claim",
+    "Windows x64 is the first clean-VM Studio installer target; Windows ARM64 follows after x64 proof; 32-bit Windows is deferred until demand justifies the QA surface"
+  ],
+  "least_new_dependency_decision": "Tauri v2 is accepted for the first shell scaffold. The scaffold keeps webview permissions minimal (`core:default` only), removes the Tauri shell plugin, and delegates privileged execution to typed Rust commands.",
+  "taxonomy": {
+    "active_conversion": [
+      "Rust",
+      "Ruby",
+      "Python",
+      "Go"
+    ],
+    "advisory_planning": [
+      "JavaScript",
+      "TypeScript",
+      "Swift",
+      "Java",
+      "C",
+      "C++",
+      "C#",
+      "Perl",
+      "Kotlin",
+      "Shell",
+      "SQL",
+      "Other"
+    ],
+    "native_boundary_recommended": [
+      "C",
+      "C++",
+      "Objective-C",
+      "Assembly",
+      "CUDA",
+      "platform-specific code"
+    ],
+    "future_backend_lowering": [
+      "Wasm",
+      "LLVM-style native targets",
+      "native package toolchains"
+    ]
+  },
+  "safety_contract": {
+    "calls_provider_apis_by_default": false,
+    "executes_source_code": false,
+    "includes_source_by_default": false,
+    "marks_advisory_output_safe": false,
+    "required_handoff_gates": [
+      "lineage",
+      "@sandbox",
+      "migrate_todo",
+      "garnet check",
+      "dogfood evidence",
+      "human audit"
+    ],
+    "forbidden_claims": [
+      "Windows/Linux Studio runtime completion",
+      "signed Windows MSI for Studio",
+      "Linux Studio package completion",
+      "provider-backed conversion is active",
+      "advisory output is safe",
+      "broad deterministic planned-language frontends are active"
+    ]
+  },
+  "evidence_contract": {
+    "default_root": "/root/Desktop/dogfood/garnet-studio-windows-linux",
+    "bundle_prefix": "garnet-studio-windows-linux-",
+    "created_by_default": true,
+    "source_included_by_default": false,
+    "required_files": [
+      "garnet-windows-linux-studio-evidence-contract.json",
+      "MANIFEST.sha256",
+      "command stdout/stderr logs for invoked actions",
+      "domain proof matrix JSON/Markdown plus per-command stdout/stderr logs when invoked",
+      "screenshots once a shell exists",
+      "readiness reporter stdout/stderr logs for invoked release actions"
+    ]
+  },
+  "actions": [
+    {
+      "id": "cli_health",
+      "label": "CLI Health",
+      "group": "runtime",
+      "implementation_surface": "garnet CLI version probe",
+      "current_command": [
+        "garnet",
+        "version"
+      ],
+      "evidence_required": false,
+      "source_included_by_default": false,
+      "status": "tauri-v2-command-wired"
+    },
+    {
+      "id": "parse",
+      "label": "Parse",
+      "group": "active CLI",
+      "implementation_surface": "garnet parse",
+      "current_command": [
+        "garnet",
+        "parse",
+        "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/examples/mvp_01_os_simulator.garnet"
+      ],
+      "evidence_required": false,
+      "source_included_by_default": false,
+      "status": "tauri-v2-command-wired"
+    },
+    {
+      "id": "check",
+      "label": "Check",
+      "group": "active CLI",
+      "implementation_surface": "garnet check",
+      "current_command": [
+        "garnet",
+        "check",
+        "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/examples/mvp_01_os_simulator.garnet"
+      ],
+      "evidence_required": false,
+      "source_included_by_default": false,
+      "status": "tauri-v2-command-wired"
+    },
+    {
+      "id": "run",
+      "label": "Run",
+      "group": "active CLI",
+      "implementation_surface": "garnet run",
+      "current_command": [
+        "garnet",
+        "run",
+        "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/examples/mvp_01_os_simulator.garnet"
+      ],
+      "evidence_required": false,
+      "source_included_by_default": false,
+      "status": "tauri-v2-command-wired"
+    },
+    {
+      "id": "convert",
+      "label": "Convert",
+      "group": "active conversion",
+      "implementation_surface": "garnet convert for Rust/Ruby/Python/Go only",
+      "current_command": [
+        "garnet",
+        "convert",
+        "python",
+        "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/tmp/sample.py",
+        "--out",
+        "/root/Desktop/dogfood/garnet-studio-windows-linux/sample"
+      ],
+      "evidence_required": true,
+      "source_included_by_default": false,
+      "status": "tauri-v2-command-wired"
+    },
+    {
+      "id": "assist_plan",
+      "label": "Assist Plan",
+      "group": "advisory planning",
+      "implementation_surface": "scripts/garnet_converter_assist_plan.py",
+      "current_command": [
+        "/usr/bin/python3",
+        "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/scripts/garnet_converter_assist_plan.py",
+        "--language",
+        "typescript",
+        "--source",
+        "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/tmp/sample.py",
+        "--output-dir",
+        "/root/Desktop/dogfood/garnet-studio-windows-linux/sample"
+      ],
+      "evidence_required": true,
+      "source_included_by_default": false,
+      "status": "tauri-v2-command-wired"
+    },
+    {
+      "id": "advisory_bundle",
+      "label": "Advisory Bundle",
+      "group": "advisory planning",
+      "implementation_surface": "scripts/garnet_converter_advisory_bundle.py",
+      "current_command": [
+        "/usr/bin/python3",
+        "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/scripts/garnet_converter_advisory_bundle.py",
+        "--language",
+        "typescript",
+        "--source",
+        "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/tmp/sample.py",
+        "--output-dir",
+        "/root/Desktop/dogfood/garnet-studio-windows-linux/sample"
+      ],
+      "evidence_required": true,
+      "source_included_by_default": false,
+      "status": "tauri-v2-command-wired"
+    },
+    {
+      "id": "advisory_review",
+      "label": "Advisory Review",
+      "group": "advisory planning",
+      "implementation_surface": "scripts/garnet_converter_advisory_review.py",
+      "current_command": [
+        "/usr/bin/python3",
+        "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/scripts/garnet_converter_advisory_review.py",
+        "--bundle-dir",
+        "/root/Desktop/dogfood/garnet-studio-windows-linux/sample/bundle",
+        "--output-dir",
+        "/root/Desktop/dogfood/garnet-studio-windows-linux/sample"
+      ],
+      "evidence_required": true,
+      "source_included_by_default": false,
+      "status": "tauri-v2-command-wired"
+    },
+    {
+      "id": "advisory_handoff",
+      "label": "Advisory Handoff",
+      "group": "advisory planning",
+      "implementation_surface": "scripts/garnet_converter_advisory_handoff.py",
+      "current_command": [
+        "/usr/bin/python3",
+        "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/scripts/garnet_converter_advisory_handoff.py",
+        "--bundle-dir",
+        "/root/Desktop/dogfood/garnet-studio-windows-linux/sample/bundle",
+        "--review-dir",
+        "/root/Desktop/dogfood/garnet-studio-windows-linux/sample/review",
+        "--output-dir",
+        "/root/Desktop/dogfood/garnet-studio-windows-linux/sample"
+      ],
+      "evidence_required": true,
+      "source_included_by_default": false,
+      "status": "tauri-v2-command-wired"
+    },
+    {
+      "id": "objective_pulse",
+      "label": "Objective Pulse",
+      "group": "release evidence",
+      "implementation_surface": "scripts/garnet_mit_readiness_status.py",
+      "current_command": [
+        "/usr/bin/python3",
+        "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/scripts/garnet_mit_readiness_status.py"
+      ],
+      "evidence_required": true,
+      "source_included_by_default": false,
+      "status": "tauri-v2-command-wired"
+    },
+    {
+      "id": "agentic_dogfood_matrix",
+      "label": "Agentic Dogfood Matrix",
+      "group": "dogfood evidence",
+      "implementation_surface": "scripts/run_agentic_dogfood_matrix.py",
+      "current_command": [
+        "/usr/bin/python3",
+        "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/scripts/run_agentic_dogfood_matrix.py",
+        "--copy-to-desktop",
+        "--strict"
+      ],
+      "evidence_required": true,
+      "source_included_by_default": false,
+      "status": "tauri-v2-command-wired"
+    },
+    {
+      "id": "domain_proof_matrix",
+      "label": "Domain Proof Matrix",
+      "group": "runtime evidence",
+      "implementation_surface": "scripts/smoke_garnet_studio_domain_matrix.py",
+      "current_command": [
+        "/usr/bin/python3",
+        "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/scripts/smoke_garnet_studio_domain_matrix.py",
+        "--output-dir",
+        "/root/Desktop/dogfood/garnet-studio-windows-linux/sample",
+        "--format",
+        "markdown"
+      ],
+      "evidence_required": true,
+      "source_included_by_default": false,
+      "status": "tauri-v2-command-wired"
+    },
+    {
+      "id": "windows_linux_studio_status",
+      "label": "Windows/Linux Studio Status",
+      "group": "release evidence",
+      "implementation_surface": "scripts/garnet_windows_linux_studio_status.py",
+      "current_command": [
+        "/usr/bin/python3",
+        "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/scripts/garnet_windows_linux_studio_status.py",
+        "--format",
+        "markdown"
+      ],
+      "evidence_required": true,
+      "source_included_by_default": false,
+      "status": "tauri-v2-command-wired"
+    },
+    {
+      "id": "converter_status",
+      "label": "Converter Fit Matrix",
+      "group": "converter evidence",
+      "implementation_surface": "scripts/garnet_converter_status.py",
+      "current_command": [
+        "/usr/bin/python3",
+        "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/scripts/garnet_converter_status.py",
+        "--format",
+        "markdown"
+      ],
+      "evidence_required": true,
+      "source_included_by_default": false,
+      "status": "tauri-v2-command-wired"
+    },
+    {
+      "id": "provider_options",
+      "label": "Provider Options",
+      "group": "advisory planning",
+      "implementation_surface": "scripts/garnet_converter_llm_feasibility.py",
+      "current_command": [
+        "/usr/bin/python3",
+        "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/scripts/garnet_converter_llm_feasibility.py",
+        "--output-dir",
+        "/root/Desktop/dogfood/garnet-studio-windows-linux/sample",
+        "--format",
+        "markdown"
+      ],
+      "evidence_required": true,
+      "source_included_by_default": false,
+      "status": "tauri-v2-command-wired"
+    },
+    {
+      "id": "mit_demo_route",
+      "label": "MIT Demo Route",
+      "group": "MIT evidence",
+      "implementation_surface": "scripts/garnet_mit_demo_route.py",
+      "current_command": [
+        "/usr/bin/python3",
+        "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/scripts/garnet_mit_demo_route.py",
+        "--output-dir",
+        "/root/Desktop/dogfood/garnet-studio-windows-linux/sample",
+        "--format",
+        "markdown"
+      ],
+      "evidence_required": true,
+      "source_included_by_default": false,
+      "status": "tauri-v2-command-wired"
+    },
+    {
+      "id": "mit_deck_outline",
+      "label": "MIT Deck Outline",
+      "group": "MIT evidence",
+      "implementation_surface": "scripts/garnet_mit_deck_outline.py",
+      "current_command": [
+        "/usr/bin/python3",
+        "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/scripts/garnet_mit_deck_outline.py",
+        "--output-dir",
+        "/root/Desktop/dogfood/garnet-studio-windows-linux/sample",
+        "--format",
+        "markdown"
+      ],
+      "evidence_required": true,
+      "source_included_by_default": false,
+      "status": "tauri-v2-command-wired"
+    },
+    {
+      "id": "mit_deck_preview",
+      "label": "MIT Deck Preview",
+      "group": "MIT evidence",
+      "implementation_surface": "scripts/garnet_mit_deck_preview.py",
+      "current_command": [
+        "/usr/bin/python3",
+        "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/scripts/garnet_mit_deck_preview.py",
+        "--output-dir",
+        "/root/Desktop/dogfood/garnet-studio-windows-linux/sample",
+        "--format",
+        "html"
+      ],
+      "evidence_required": true,
+      "source_included_by_default": false,
+      "status": "tauri-v2-command-wired"
+    },
+    {
+      "id": "mac_continuation_pulse",
+      "label": "Mac Continuation Pulse",
+      "group": "platform boundary",
+      "implementation_surface": "scripts/garnet_mac_side_continuation_status.py",
+      "current_command": [
+        "/usr/bin/python3",
+        "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/scripts/garnet_mac_side_continuation_status.py",
+        "--format",
+        "markdown"
+      ],
+      "evidence_required": true,
+      "source_included_by_default": false,
+      "status": "tauri-v2-command-wired"
+    },
+    {
+      "id": "proof_benchmark_status",
+      "label": "Proof / Benchmark Status",
+      "group": "proof evidence",
+      "implementation_surface": "scripts/garnet_proof_benchmark_status.py",
+      "current_command": [
+        "/usr/bin/python3",
+        "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/scripts/garnet_proof_benchmark_status.py",
+        "--output-dir",
+        "/root/Desktop/dogfood/garnet-studio-windows-linux/sample",
+        "--format",
+        "markdown"
+      ],
+      "evidence_required": true,
+      "source_included_by_default": false,
+      "status": "tauri-v2-command-wired"
+    },
+    {
+      "id": "benchmark_no_run",
+      "label": "Benchmark No-Run",
+      "group": "proof evidence",
+      "implementation_surface": "scripts/garnet_benchmark_no_run.py",
+      "current_command": [
+        "/usr/bin/python3",
+        "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/scripts/garnet_benchmark_no_run.py",
+        "--output-dir",
+        "/root/Desktop/dogfood/garnet-studio-windows-linux/sample",
+        "--format",
+        "markdown"
+      ],
+      "evidence_required": true,
+      "source_included_by_default": false,
+      "status": "tauri-v2-command-wired"
+    },
+    {
+      "id": "notarization_status",
+      "label": "Notarization Status",
+      "group": "platform boundary",
+      "implementation_surface": "scripts/garnet_studio_notarization_status.py",
+      "current_command": [
+        "/usr/bin/python3",
+        "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/scripts/garnet_studio_notarization_status.py",
+        "--format",
+        "markdown"
+      ],
+      "evidence_required": true,
+      "source_included_by_default": false,
+      "status": "tauri-v2-command-wired"
+    },
+    {
+      "id": "windows_vm_installer_status",
+      "label": "Windows VM Installer Status",
+      "group": "release evidence",
+      "implementation_surface": "scripts/garnet_windows_clean_vm_installer_status.py",
+      "current_command": [
+        "/usr/bin/python3",
+        "/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/scripts/garnet_windows_clean_vm_installer_status.py",
+        "--format",
+        "markdown"
+      ],
+      "evidence_required": true,
+      "source_included_by_default": false,
+      "status": "tauri-v2-command-wired"
+    }
+  ],
+  "packaging_gates": [
+    {
+      "id": "windows_msvc_build",
+      "platform": "Windows",
+      "status": "local-pass",
+      "next_evidence": "Preserve PR evidence for cargo build --release, Tauri release executable, and Studio smoke bundle",
+      "forbidden_claim": "Windows packaged Studio build is complete"
+    },
+    {
+      "id": "windows_unsigned_nsis",
+      "platform": "Windows",
+      "status": "contract-ready-clean-vm-open",
+      "next_evidence": "Record a clean Windows VM proof bundle with `scripts/garnet_windows_clean_vm_installer_status.py --record-proof --mode clean-vm ...`",
+      "forbidden_claim": "signed or clean-machine Windows installer is verified"
+    },
+    {
+      "id": "windows_target_architecture_matrix",
+      "platform": "Windows",
+      "status": "documented-first-target",
+      "next_evidence": "x64 clean-VM proof first, then ARM64 target build/smoke; 32-bit remains deferred until demand",
+      "forbidden_claim": "all Windows architectures are packaged and verified"
+    },
+    {
+      "id": "windows_msi_signing",
+      "platform": "Windows",
+      "status": "open",
+      "next_evidence": "MSI plan, Authenticode signing, signtool verification, and clean-machine smoke",
+      "forbidden_claim": "signed MSI is available before certificate and smoke evidence exist"
+    },
+    {
+      "id": "windows_winget",
+      "platform": "Windows",
+      "status": "open",
+      "next_evidence": "winget manifest after a signed public release artifact exists",
+      "forbidden_claim": "winget install path is verified"
+    },
+    {
+      "id": "linux_package_choice",
+      "platform": "Linux",
+      "status": "open",
+      "next_evidence": "choose AppImage-first, .deb/.rpm, Flatpak, or source/PWA shell after target smoke",
+      "forbidden_claim": "Linux Studio package is verified"
+    }
+  ],
+  "next_slices": [
+    "Windows clean-machine NSIS install and CLI smoke evidence",
+    "Linux desktop launch proof and first package-format decision",
+    "Domain Proof Matrix screenshots/output from the Windows shell and WSL/Linux shell",
+    "Active converter end-to-end screenshots from the shell",
+    "Advisory bundle/review/handoff evidence walkthrough without source inclusion",
+    "Release / Readiness panel screenshot and reporter-output evidence from the Windows shell",
+    "Unsigned-to-signed Windows MSI/AuthentiCode plan after VM smoke",
+    "Website/status copy sync after target smoke evidence"
+  ],
+  "user_assistance_needed": [
+    "clean Windows VM guest identity",
+    "unsigned NSIS installer artifact digest",
+    "installer run log from inside the guest",
+    "installed Studio --studio-smoke JSON",
+    "installed app launch screenshot",
+    "Run the unsigned NSIS installer in a clean Windows VM for installer/runtime launch evidence",
+    "Provide a Linux VM/container with GUI or AppImage-capable desktop session for runtime launch evidence",
+    "Provide signing credentials only when ready to verify signed MSI claims"
+  ]
+}
