@@ -1,0 +1,2 @@
+Garnet Studio domain proof smoke passed
+evidence=C:\Users\IslandDevCrew\Desktop\dogfood\garnet-studio-windows-linux\garnet-studio-windows-linux-domain-proof-shell-smoke-20260603-170930

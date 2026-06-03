@@ -328,6 +328,20 @@ S117: clean/non-WSL Linux desktop GUI install/launch, Linux seccomp or
 OS-sandbox enforcement, signed/SBOM release artifacts, winget, Windows ARM64,
 production, and v1.0 remain unclaimed.
 
+**S117 Windows/WSL Studio domain-shell increment (recorded 2026-06-03):** the
+Windows lane records the next status-contract proof under
+`proofs/windows/studio-domain-shell/` and
+`proofs/linux/execution/studio-domain-shell/`. The proof builds the Windows
+Studio release binary, runs `garnet-studio.exe --studio-domain-proof-smoke`,
+verifies the command wrapper around the repo Domain Proof Matrix, copies the
+Studio payload into the proof bundle, and repeats the same command path inside
+WSL as execution/portability evidence. This removes the "Domain Proof Matrix
+screenshots/output from the Windows shell and WSL/Linux shell" gap from the
+Windows/Linux status reporter and moves the Windows/Linux distribution lane to
+81.0%, but it still does **not** close full S117: clean/non-WSL Linux desktop
+GUI install/launch, Linux seccomp or OS-sandbox enforcement, signed/SBOM release
+artifacts, winget, Windows ARM64, production, and v1.0 remain unclaimed.
+
 **STOP + report before S120:** the cut is Jon's decision.
 
 ## Verification Expectations

@@ -25,6 +25,25 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S117 increment (v0.8.1 runway - Windows/WSL Studio domain-shell proof):**
+  adds `scripts/smoke_garnet_studio_domain_shell.py`, a manifest-backed
+  recorder/gate for the Studio binary's `--studio-domain-proof-smoke` path on
+  Windows and WSL. The command routes through the Tauri command wrapper around
+  the repo Domain Proof Matrix, records the Studio payload, command logs,
+  manifests, and copied domain-matrix evidence under
+  `proofs/windows/studio-domain-shell/` and
+  `proofs/linux/execution/studio-domain-shell/`. The MIT readiness reporter now
+  exposes this as `windows_wsl_studio_domain_shell_proof`, moving overall
+  readiness to **92.0%** and the Windows/Linux distribution lane to **81.0%**
+  when the Windows clean-VM, domain, Studio-smoke, WSL `.deb`, WSL `.rpm`,
+  Xvfb runtime-start/window-capture, WSLg system install/launch, and
+  domain-shell bundles all verify. **Honest scope:** the Windows row proves the
+  local Studio command wrapper around the Domain Proof Matrix; the WSL row is
+  execution/portability evidence only. This does not prove clean/non-WSL Linux
+  desktop GUI install/launch, Linux seccomp, OS-sandbox enforcement,
+  signed/SBOM release artifacts, winget, Windows ARM64, production readiness,
+  or v1.0 readiness.
+
 - **S117 increment (v0.8.1 runway - WSLg Linux Studio system package
   install/launch proof):** adds
   `scripts/smoke_garnet_studio_linux_wslg_install_launch.py`, a
