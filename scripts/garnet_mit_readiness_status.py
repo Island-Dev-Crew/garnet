@@ -78,6 +78,7 @@ import smoke_garnet_studio_linux_wsl_deb  # noqa: E402
 import smoke_garnet_studio_linux_wsl_deb_install  # noqa: E402
 import smoke_garnet_studio_linux_wsl_rpm  # noqa: E402
 import smoke_garnet_studio_linux_wsl_xvfb  # noqa: E402
+import smoke_garnet_studio_linux_wsl_xvfb_window  # noqa: E402
 import smoke_garnet_studio_windows_wsl  # noqa: E402
 
 
@@ -734,6 +735,9 @@ def read_status() -> MitReadinessStatus:
     linux_deb_install = smoke_garnet_studio_linux_wsl_deb_install.read_committed_evidence(ROOT)
     linux_rpm_package = smoke_garnet_studio_linux_wsl_rpm.read_committed_evidence(ROOT)
     linux_xvfb_runtime = smoke_garnet_studio_linux_wsl_xvfb.read_committed_evidence(ROOT)
+    linux_xvfb_window_capture = (
+        smoke_garnet_studio_linux_wsl_xvfb_window.read_committed_evidence(ROOT)
+    )
     stdlib = garnet_stdlib_layer_gate.read_status()
     novel_compositions_present = all(
         (ROOT / p).exists()
@@ -815,7 +819,15 @@ def read_status() -> MitReadinessStatus:
     lsp_precision_present = _lsp_precision_present()
     if wls_clean_vm_verified:
         wls_completion_percent = (
-            78.0
+            79.0
+            if (
+                domain_matrix.verified
+                and linux_deb_install.verified
+                and linux_rpm_package.verified
+                and linux_xvfb_runtime.verified
+                and linux_xvfb_window_capture.verified
+            )
+            else 78.0
             if (
                 domain_matrix.verified
                 and linux_deb_install.verified
@@ -849,7 +861,15 @@ def read_status() -> MitReadinessStatus:
         )
     else:
         wls_completion_percent = (
-            66.0
+            67.0
+            if (
+                domain_matrix.verified
+                and linux_deb_install.verified
+                and linux_rpm_package.verified
+                and linux_xvfb_runtime.verified
+                and linux_xvfb_window_capture.verified
+            )
+            else 66.0
             if (
                 domain_matrix.verified
                 and linux_deb_install.verified
@@ -1009,6 +1029,7 @@ def read_status() -> MitReadinessStatus:
                 f"{'committed WSL Linux `.deb` extract/command-smoke evidence, ' if linux_deb_install.verified else ''}"
                 f"{'committed WSL Linux `.rpm` extract/command-smoke evidence, ' if linux_rpm_package.verified else ''}"
                 f"{'committed WSL Linux Xvfb runtime-start evidence, ' if linux_xvfb_runtime.verified else ''}"
+                f"{'committed WSL Linux Xvfb virtual-display window-capture evidence, ' if linux_xvfb_window_capture.verified else ''}"
                 f"v0.5 {wls_evidence_tail}"
             ),
             blocked_by=list(wls.user_assistance_needed),
@@ -1115,6 +1136,29 @@ def read_status() -> MitReadinessStatus:
                 else linux_xvfb_runtime.reason
             ),
             blocked_by=[] if linux_xvfb_runtime.verified else ["committed WSL Linux Xvfb runtime-start proof bundle"],
+            deferred=[
+                "not Linux desktop GUI launch proof",
+                "not Linux seccomp or OS-sandbox enforcement",
+                "not clean Linux install proof",
+                "not privileged system package install proof",
+                "not signed, production, or v1.0 readiness",
+            ],
+        ),
+        ObjectiveLane(
+            id="linux_wsl_studio_xvfb_window_capture",
+            evidence_class="committed",
+            label="Linux WSL Studio Xvfb virtual-display window capture proof (S117 increment)",
+            status="verified" if linux_xvfb_window_capture.verified else "planned",
+            completion_percent=100.0 if linux_xvfb_window_capture.verified else 0.0,
+            evidence=(
+                "`scripts/smoke_garnet_studio_linux_wsl_xvfb_window.py --record` "
+                "records the extracted Linux Tauri Studio binary under WSL `xvfb-run`, "
+                "an X11 window tree containing Garnet Studio, and a virtual-display "
+                f"screenshot artifact. {linux_xvfb_window_capture.reason}"
+                if linux_xvfb_window_capture.verified
+                else linux_xvfb_window_capture.reason
+            ),
+            blocked_by=[] if linux_xvfb_window_capture.verified else ["committed WSL Linux Xvfb virtual-display window-capture proof bundle"],
             deferred=[
                 "not Linux desktop GUI launch proof",
                 "not Linux seccomp or OS-sandbox enforcement",

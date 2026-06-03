@@ -304,6 +304,18 @@ privileged system package install, Linux seccomp or OS-sandbox enforcement,
 signed/SBOM release artifacts, winget, Windows ARM64, production, and v1.0
 remain unclaimed.
 
+**S117 WSL Linux Xvfb virtual-display window-capture increment (recorded
+2026-06-03):** the Windows lane further records a WSL virtual-display capture
+proof under `proofs/linux/execution/studio-xvfb-window-capture/`. The proof
+reuses a verified extracted Linux Studio binary, verifies X11 capture tooling,
+starts the binary under `xvfb-run`, confirms the X11 window tree contains
+`Garnet Studio`, and captures a screenshot artifact from the virtual display.
+This moves the package gate to `wsl-deb-rpm-xvfb-window-capture-verified`, but
+it still does **not** close full S117: Linux desktop GUI install/launch, clean
+Linux install, privileged system package install, Linux seccomp or OS-sandbox
+enforcement, signed/SBOM release artifacts, winget, Windows ARM64, production,
+and v1.0 remain unclaimed.
+
 **STOP + report before S120:** the cut is Jon's decision.
 
 ## Verification Expectations

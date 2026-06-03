@@ -1,0 +1,95 @@
+{
+  "schema": "garnet.studio.linux_wsl_xvfb_window_capture.v1",
+  "generated_at": "2026-06-03T19:58:01+00:00",
+  "status": "passed",
+  "platform": "linux",
+  "evidence_tier": "wsl-linux-xvfb-virtual-display-window-capture",
+  "wsl_is_enforcement": false,
+  "source_included": false,
+  "provider_api_called": false,
+  "linux_enforcement_proven": false,
+  "desktop_gui_launch_proven": false,
+  "linux_desktop_gui_launch_proven": false,
+  "clean_linux_install_proven": false,
+  "privileged_system_install_proven": false,
+  "virtual_display_window_capture_proven": true,
+  "source_runtime_proof": {
+    "summary": "C:/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/proofs/linux/execution/studio-xvfb-runtime/linux-wsl-xvfb-runtime-20260603-185759/garnet-studio-linux-wsl-xvfb-runtime.json"
+  },
+  "source_package_proof": {
+    "format": "deb",
+    "summary": "C:/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/proofs/linux/execution/studio-package-install/linux-wsl-deb-install-20260603-1200/garnet-studio-linux-wsl-deb-install.json"
+  },
+  "extracted_binary": {
+    "path": "target/linux-wsl-deb-install-stage-20260603-170305/usr/bin/garnet-studio",
+    "sha256": "2de52135e8c9d19594d89fe1b225e8e4b26196bb25e49e05c74ec540d69591c6"
+  },
+  "x11_tooling": {
+    "xvfb-run": "/usr/bin/xvfb-run",
+    "xwininfo": "/usr/bin/xwininfo",
+    "xdpyinfo": "/usr/bin/xdpyinfo",
+    "xwd": "/usr/bin/xwd",
+    "convert": "/usr/bin/convert",
+    "identify": "/usr/bin/identify"
+  },
+  "window_capture": {
+    "status": "passed",
+    "window_tree_file": "capture/xwininfo.txt",
+    "display_info_file": "capture/xdpyinfo.txt",
+    "screenshot_file": "capture/screenshot.png",
+    "screenshot_sha256": "5ad37eef50a2e0c82b99aef016b9a5336953ebd86563624f04d1f4e53068af6c",
+    "screenshot_bytes": 340,
+    "identify_file": "capture/identify.txt"
+  },
+  "commands": [
+    {
+      "id": "wsl-uname",
+      "display_args": [
+        "wsl.exe",
+        "-e",
+        "uname",
+        "-a"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/wsl-uname-stdout.txt",
+      "stderr_file": "commands/wsl-uname-stderr.txt",
+      "status": "passed",
+      "runtime_seconds": 0.094
+    },
+    {
+      "id": "x11-capture-tooling",
+      "display_args": [
+        "sh",
+        "-lc",
+        "verify xvfb-run xwininfo xdpyinfo xwd convert identify"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/x11-capture-tooling-stdout.txt",
+      "stderr_file": "commands/x11-capture-tooling-stderr.txt",
+      "status": "passed",
+      "runtime_seconds": 0.094
+    },
+    {
+      "id": "xvfb-window-capture",
+      "display_args": [
+        "xvfb-run",
+        "-a",
+        "./target/linux-wsl-deb-install-stage-20260603-170305/usr/bin/garnet-studio",
+        "capture-x11-window-tree-and-screenshot"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/xvfb-window-capture-stdout.txt",
+      "stderr_file": "commands/xvfb-window-capture-stderr.txt",
+      "status": "passed",
+      "runtime_seconds": 1.907
+    }
+  ],
+  "honest_scope": [
+    "WSL Xvfb virtual-display window-capture evidence only",
+    "not Linux desktop GUI launch proof",
+    "not Linux seccomp or OS-sandbox enforcement",
+    "not clean Linux install proof",
+    "not privileged system package install proof",
+    "not signed, production, or v1.0 readiness"
+  ]
+}
