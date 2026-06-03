@@ -1,0 +1,5 @@
+installed_by_recorder=0
+rpmbuild=/usr/bin/rpmbuild
+rpm=/usr/bin/rpm
+rpm2cpio=/usr/bin/rpm2cpio
+cpio=/usr/bin/cpio

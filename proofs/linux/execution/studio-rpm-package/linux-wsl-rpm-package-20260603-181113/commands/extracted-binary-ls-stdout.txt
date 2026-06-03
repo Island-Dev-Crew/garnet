@@ -1,0 +1,1 @@
+-rwxrwxrwx 1 root root 9795760 Dec 31  1969 ./target/linux-wsl-rpm-stage-20260603-181113/usr/bin/garnet-studio

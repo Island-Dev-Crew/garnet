@@ -25,6 +25,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import garnet_windows_clean_vm_installer_status  # noqa: E402
 import smoke_garnet_studio_linux_wsl_deb  # noqa: E402
 import smoke_garnet_studio_linux_wsl_deb_install  # noqa: E402
+import smoke_garnet_studio_linux_wsl_rpm  # noqa: E402
 
 ACTIVE_CONVERSION = ["Rust", "Ruby", "Python", "Go"]
 ADVISORY_PLANNING = [
@@ -655,10 +656,16 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
     clean_vm_verified = clean_vm.clean_vm_verified
     linux_deb = smoke_garnet_studio_linux_wsl_deb.read_committed_evidence(ROOT)
     linux_deb_install = smoke_garnet_studio_linux_wsl_deb_install.read_committed_evidence(ROOT)
+    linux_rpm = smoke_garnet_studio_linux_wsl_rpm.read_committed_evidence(ROOT)
+    any_linux_package_evidence = linux_deb.verified or linux_deb_install.verified or linux_rpm.verified
     linux_status_suffix = (
-        "wsl-deb-install-verified-linux-gui-open"
+        "wsl-deb-rpm-extract-verified-linux-gui-still-open"
+        if linux_deb_install.verified and linux_rpm.verified
+        else "wsl-rpm-extract-verified-linux-gui-still-open"
+        if linux_rpm.verified
+        else "wsl-deb-install-verified-linux-gui-still-open"
         if linux_deb_install.verified
-        else "wsl-deb-package-verified-linux-gui-open"
+        else "wsl-deb-package-verified-linux-gui-still-open"
         if linux_deb.verified
         else "linux-open"
     )
@@ -678,38 +685,45 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
             "Windows clean-machine installer proof remains open until the unsigned NSIS artifact is exercised in a fresh VM",
         ]
     )
-    linux_package_truth = (
-        [
+    linux_package_truth = []
+    if linux_deb.verified:
+        linux_package_truth.append(
             "WSL Linux `.deb` package build and non-GUI `--studio-smoke` are verified by `scripts/smoke_garnet_studio_linux_wsl_deb.py`; Linux desktop GUI install/launch remains open",
+        )
+    if linux_deb_install.verified:
+        linux_package_truth.append(
             "WSL Linux `.deb` package extract and extracted-binary non-GUI `--studio-smoke` are verified by `scripts/smoke_garnet_studio_linux_wsl_deb_install.py`; clean Linux install and desktop GUI launch remain open",
-        ]
-        if linux_deb_install.verified
-        else [
-            "WSL Linux `.deb` package build and non-GUI `--studio-smoke` are verified by `scripts/smoke_garnet_studio_linux_wsl_deb.py`; Linux desktop GUI install/launch remains open",
-        ]
-        if linux_deb.verified
-        else [
+        )
+    if linux_rpm.verified:
+        linux_package_truth.append(
+            "WSL Linux `.rpm` package extract and extracted-binary non-GUI `--studio-smoke` are verified by `scripts/smoke_garnet_studio_linux_wsl_rpm.py`; clean Linux install, privileged system package install, and desktop GUI launch remain open",
+        )
+    if not linux_package_truth:
+        linux_package_truth.append(
             "WSL Linux `.deb` package build proof remains open until `scripts/smoke_garnet_studio_linux_wsl_deb.py --record` verifies the bundle",
-        ]
-    )
+        )
     linux_package_gate = PackagingGate(
         id="linux_package_choice",
         platform="Linux",
         status=(
-            "wsl-deb-extract-command-smoke-verified"
+            "wsl-deb-rpm-extract-command-smoke-verified"
+            if linux_deb_install.verified and linux_rpm.verified
+            else "wsl-rpm-extract-command-smoke-verified"
+            if linux_rpm.verified
+            else "wsl-deb-extract-command-smoke-verified"
             if linux_deb_install.verified
             else "wsl-deb-package-build-smoke-verified"
             if linux_deb.verified
             else "open"
         ),
         next_evidence=(
-            "Run/install the WSL-built .deb in a real Linux desktop session and capture GUI launch evidence"
-            if linux_deb_install.verified or linux_deb.verified
+            "Run/install the WSL-built .deb/.rpm in a real Linux desktop session and capture GUI launch evidence"
+            if any_linux_package_evidence
             else "choose AppImage-first, .deb/.rpm, Flatpak, or source/PWA shell after target smoke"
         ),
         forbidden_claim=(
             "Linux desktop GUI package install/launch is verified"
-            if linux_deb_install.verified or linux_deb.verified
+            if any_linux_package_evidence
             else "Linux Studio package is verified"
         ),
     )
@@ -731,8 +745,8 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
     next_slices = (
         [
             (
-                "Linux desktop GUI install/launch proof for the WSL-built .deb or chosen target package"
-                if linux_deb_install.verified or linux_deb.verified
+                "Linux desktop GUI install/launch proof for the WSL-built .deb/.rpm or chosen target package"
+                if any_linux_package_evidence
                 else "Linux desktop launch proof and first package-format decision"
             ),
             "Windows ARM64 target build/smoke after x64 clean-VM proof",
@@ -747,8 +761,8 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
         else [
             "Windows clean-machine NSIS install and CLI smoke evidence",
             (
-                "Linux desktop GUI install/launch proof for the WSL-built .deb or chosen target package"
-                if linux_deb_install.verified or linux_deb.verified
+                "Linux desktop GUI install/launch proof for the WSL-built .deb/.rpm or chosen target package"
+                if any_linux_package_evidence
                 else "Linux desktop launch proof and first package-format decision"
             ),
             "Domain Proof Matrix screenshots/output from the Windows shell and WSL/Linux shell",

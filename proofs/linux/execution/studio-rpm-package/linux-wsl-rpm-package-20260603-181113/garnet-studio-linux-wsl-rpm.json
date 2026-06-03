@@ -1,0 +1,173 @@
+{
+  "schema": "garnet.studio.linux_wsl_rpm.v1",
+  "generated_at": "2026-06-03T18:12:18+00:00",
+  "status": "passed",
+  "platform": "linux",
+  "evidence_tier": "wsl-linux-rpm-package-extract-command-smoke",
+  "wsl_is_enforcement": false,
+  "source_included": false,
+  "provider_api_called": false,
+  "desktop_gui_launch_proven": false,
+  "clean_linux_install_proven": false,
+  "privileged_system_install_proven": false,
+  "package_extract_proven": true,
+  "installed_or_extracted_binary_smoke_proven": true,
+  "rpm_tooling": {
+    "installed_by_recorder": false,
+    "rpmbuild": "/usr/bin/rpmbuild",
+    "rpm": "/usr/bin/rpm",
+    "rpm2cpio": "/usr/bin/rpm2cpio",
+    "cpio": "/usr/bin/cpio"
+  },
+  "package": {
+    "format": "rpm",
+    "path": "target/release/bundle/rpm/Garnet Studio-0.1.0-1.x86_64.rpm",
+    "sha256": "2bcab818f9e038cf76a676dec28bd96c84ab68568e7bcf5440979198841d5ad6",
+    "size_bytes": 3023437,
+    "architecture": "x86_64",
+    "contains_binary": true,
+    "contains_desktop_file": true
+  },
+  "extracted_binary": {
+    "path": "target/linux-wsl-rpm-stage-20260603-181113/usr/bin/garnet-studio",
+    "sha256": "117ff368ba44a2449fca0f732c975d2de5bc62a7c1a5460bf2948d2e450b6d3f",
+    "studio_smoke_status": "passed",
+    "studio_smoke_file": "extracted/studio-smoke.json"
+  },
+  "commands": [
+    {
+      "id": "wsl-uname",
+      "display_args": [
+        "wsl.exe",
+        "-e",
+        "uname",
+        "-a"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/wsl-uname-stdout.txt",
+      "stderr_file": "commands/wsl-uname-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "rpm-tooling",
+      "display_args": [
+        "sh",
+        "-lc",
+        "ensure rpmbuild rpm rpm2cpio cpio"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/rpm-tooling-stdout.txt",
+      "stderr_file": "commands/rpm-tooling-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "npm-install",
+      "display_args": [
+        "npm",
+        "install",
+        "--include=optional"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/npm-install-stdout.txt",
+      "stderr_file": "commands/npm-install-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "npm-build",
+      "display_args": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/npm-build-stdout.txt",
+      "stderr_file": "commands/npm-build-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "tauri-build-rpm",
+      "display_args": [
+        "npm",
+        "exec",
+        "--",
+        "tauri",
+        "build",
+        "--bundles",
+        "rpm"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/tauri-build-rpm-stdout.txt",
+      "stderr_file": "commands/tauri-build-rpm-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "rpm-info",
+      "display_args": [
+        "rpm",
+        "-qip",
+        "target/release/bundle/rpm/*.rpm"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/rpm-info-stdout.txt",
+      "stderr_file": "commands/rpm-info-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "rpm-contents",
+      "display_args": [
+        "rpm",
+        "-qlp",
+        "target/release/bundle/rpm/*.rpm"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/rpm-contents-stdout.txt",
+      "stderr_file": "commands/rpm-contents-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "rpm-extract",
+      "display_args": [
+        "rpm2cpio",
+        "target/release/bundle/rpm/*.rpm",
+        "|",
+        "cpio",
+        "-idmv"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/rpm-extract-stdout.txt",
+      "stderr_file": "commands/rpm-extract-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "extracted-binary-ls",
+      "display_args": [
+        "ls",
+        "-l",
+        "target/linux-wsl-rpm-stage-20260603-181113/usr/bin/garnet-studio"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/extracted-binary-ls-stdout.txt",
+      "stderr_file": "commands/extracted-binary-ls-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "extracted-studio-smoke",
+      "display_args": [
+        "target/linux-wsl-rpm-stage-20260603-181113/usr/bin/garnet-studio",
+        "--studio-smoke"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/extracted-studio-smoke-stdout.txt",
+      "stderr_file": "commands/extracted-studio-smoke-stderr.txt",
+      "status": "passed"
+    }
+  ],
+  "honest_scope": [
+    "WSL is Linux RPM package extract and command-smoke evidence only",
+    "not Linux desktop GUI launch proof",
+    "not Linux seccomp or OS-sandbox enforcement",
+    "not clean Linux install proof",
+    "not privileged system package install proof",
+    "not signed, production, or v1.0 readiness"
+  ]
+}
