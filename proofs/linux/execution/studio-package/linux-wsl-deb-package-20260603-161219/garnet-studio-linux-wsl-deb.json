@@ -1,0 +1,123 @@
+{
+  "schema": "garnet.studio.linux_wsl_deb.v1",
+  "generated_at": "2026-06-03T16:14:57+00:00",
+  "status": "passed",
+  "platform": "linux",
+  "evidence_tier": "wsl-linux-package-build-command-smoke",
+  "wsl_is_enforcement": false,
+  "source_included": false,
+  "provider_api_called": false,
+  "desktop_gui_launch_proven": false,
+  "package_install_proven": false,
+  "package": {
+    "format": "deb",
+    "path": "target/release/bundle/deb/Garnet Studio_0.1.0_amd64.deb",
+    "sha256": "cfb91f972ce6f6531329751d52fc653a565e537c892869c523ee92036c62c727",
+    "size_bytes": 3022068,
+    "architecture": "amd64",
+    "contains_binary": true,
+    "contains_desktop_file": true
+  },
+  "binary": {
+    "path": "target/release/garnet-studio",
+    "sha256": "4efdb4f01ebfd6321717b12a9410784ed57dc029d7ea21c4ad4d5f6eeb554864",
+    "studio_smoke_status": "passed"
+  },
+  "commands": [
+    {
+      "id": "wsl-uname",
+      "display_args": [
+        "wsl.exe",
+        "-e",
+        "uname",
+        "-a"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/wsl-uname-stdout.txt",
+      "stderr_file": "commands/wsl-uname-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "npm-install",
+      "display_args": [
+        "npm",
+        "install",
+        "--include=optional"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/npm-install-stdout.txt",
+      "stderr_file": "commands/npm-install-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "npm-build",
+      "display_args": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/npm-build-stdout.txt",
+      "stderr_file": "commands/npm-build-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "tauri-build-deb",
+      "display_args": [
+        "npm",
+        "exec",
+        "--",
+        "tauri",
+        "build",
+        "--bundles",
+        "deb"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/tauri-build-deb-stdout.txt",
+      "stderr_file": "commands/tauri-build-deb-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "studio-smoke",
+      "display_args": [
+        "target/release/garnet-studio",
+        "--studio-smoke"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/studio-smoke-stdout.txt",
+      "stderr_file": "commands/studio-smoke-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "dpkg-info",
+      "display_args": [
+        "dpkg-deb",
+        "--info",
+        "target/release/bundle/deb/*.deb"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/dpkg-info-stdout.txt",
+      "stderr_file": "commands/dpkg-info-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "dpkg-contents",
+      "display_args": [
+        "dpkg-deb",
+        "--contents",
+        "target/release/bundle/deb/*.deb"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/dpkg-contents-stdout.txt",
+      "stderr_file": "commands/dpkg-contents-stderr.txt",
+      "status": "passed"
+    }
+  ],
+  "honest_scope": [
+    "WSL is Linux package build and command-smoke evidence only",
+    "not Linux desktop GUI launch proof",
+    "not Linux seccomp or OS-sandbox enforcement",
+    "not clean Linux install proof",
+    "not signed, production, or v1.0 readiness"
+  ]
+}

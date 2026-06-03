@@ -74,6 +74,7 @@ import garnet_readiness_status  # noqa: E402
 import garnet_stdlib_layer_gate  # noqa: E402
 import garnet_windows_cross_os_enforcement_proof  # noqa: E402
 import garnet_windows_linux_studio_status  # noqa: E402
+import smoke_garnet_studio_linux_wsl_deb  # noqa: E402
 import smoke_garnet_studio_windows_wsl  # noqa: E402
 
 
@@ -726,6 +727,7 @@ def read_status() -> MitReadinessStatus:
     vm_scaffold_present = _vm_scaffold_present(proof)
     wls = garnet_windows_linux_studio_status.read_status()
     studio_smoke = smoke_garnet_studio_windows_wsl.read_committed_evidence(ROOT)
+    linux_deb_package = smoke_garnet_studio_linux_wsl_deb.read_committed_evidence(ROOT)
     stdlib = garnet_stdlib_layer_gate.read_status()
     novel_compositions_present = all(
         (ROOT / p).exists()
@@ -807,11 +809,31 @@ def read_status() -> MitReadinessStatus:
     lsp_precision_present = _lsp_precision_present()
     if wls_clean_vm_verified:
         wls_completion_percent = (
-            70.0 if domain_matrix.verified else 67.0 if domain_matrix.source_present else 65.0
+            75.0
+            if domain_matrix.verified and linux_deb_package.verified
+            else 70.0
+            if domain_matrix.verified
+            else 72.0
+            if domain_matrix.source_present and linux_deb_package.verified
+            else 67.0
+            if domain_matrix.source_present
+            else 68.0
+            if linux_deb_package.verified
+            else 65.0
         )
     else:
         wls_completion_percent = (
-            60.0 if domain_matrix.verified else 58.0 if domain_matrix.source_present else 55.0
+            63.0
+            if domain_matrix.verified and linux_deb_package.verified
+            else 60.0
+            if domain_matrix.verified
+            else 61.0
+            if domain_matrix.source_present and linux_deb_package.verified
+            else 58.0
+            if domain_matrix.source_present
+            else 58.0
+            if linux_deb_package.verified
+            else 55.0
         )
     domain_matrix_tail = (
         "a repo-owned Domain Proof Matrix for the canonical MVP plus agentic examples, "
@@ -937,6 +959,7 @@ def read_status() -> MitReadinessStatus:
                 "Tauri v2 shell scaffold in `apps/garnet-studio`, minimal webview "
                 "permissions, Windows local release build/smoke evidence, "
                 f"{'committed Windows/WSL Studio smoke evidence, ' if studio_smoke.verified else ''}"
+                f"{'committed WSL Linux `.deb` package-build/command-smoke evidence, ' if linux_deb_package.verified else ''}"
                 f"v0.5 {wls_evidence_tail}"
             ),
             blocked_by=list(wls.user_assistance_needed),
@@ -960,6 +983,27 @@ def read_status() -> MitReadinessStatus:
                 "WSL is execution/portability only, not Linux seccomp or OS-sandbox enforcement",
                 "Linux desktop GUI launch and native Linux package proof remain open",
                 "Signed MSI, winget, Windows ARM64, production, and v1.0 remain unclaimed",
+            ],
+        ),
+        ObjectiveLane(
+            id="linux_wsl_studio_deb_package",
+            evidence_class="committed",
+            label="Linux WSL Studio DEB package proof (S117 increment)",
+            status="verified" if linux_deb_package.verified else "planned",
+            completion_percent=100.0 if linux_deb_package.verified else 0.0,
+            evidence=(
+                "`scripts/smoke_garnet_studio_linux_wsl_deb.py --record` records "
+                "a WSL-driven Tauri Linux `.deb` build, `dpkg-deb` inspection, and "
+                f"non-GUI `--studio-smoke` command evidence. {linux_deb_package.reason}"
+                if linux_deb_package.verified
+                else linux_deb_package.reason
+            ),
+            blocked_by=[] if linux_deb_package.verified else ["committed WSL Linux `.deb` proof bundle"],
+            deferred=[
+                "not Linux desktop GUI launch proof",
+                "not Linux seccomp or OS-sandbox enforcement",
+                "not clean Linux install proof",
+                "not signed, production, or v1.0 readiness",
             ],
         ),
         ObjectiveLane(

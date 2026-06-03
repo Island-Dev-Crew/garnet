@@ -259,6 +259,16 @@ not Linux seccomp or OS-sandbox enforcement, and Linux desktop GUI launch, nativ
 Linux packages, signed MSI, winget, Windows ARM64, production, and v1.0 remain
 unclaimed.
 
+**S117 WSL Linux `.deb` package increment (recorded 2026-06-03):** the Windows
+lane also records a WSL-driven Linux package-build proof under
+`proofs/linux/execution/studio-package/`. The proof builds the Tauri Linux
+`.deb`, inspects it with `dpkg-deb`, and runs the Linux binary's non-GUI
+`--studio-smoke`. This moves the package-format decision from pure-open to
+`wsl-deb-package-build-smoke-verified`, but it still does **not** close full S117:
+Linux desktop GUI install/launch, clean Linux install evidence, Linux seccomp or
+OS-sandbox enforcement, signed/SBOM release artifacts, winget, Windows ARM64,
+production, and v1.0 remain unclaimed.
+
 **STOP + report before S120:** the cut is Jon's decision.
 
 ## Verification Expectations

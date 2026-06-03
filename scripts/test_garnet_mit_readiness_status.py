@@ -379,6 +379,79 @@ def _write_committed_studio_smoke_bundle(repo_root: Path, bundle: Path, target_p
     _write_manifest(bundle)
 
 
+def _write_committed_linux_wsl_deb_bundle(repo_root: Path) -> Path:
+    bundle = repo_root / "proofs" / "linux" / "execution" / "studio-package" / "linux-wsl-deb-test"
+    bundle.mkdir(parents=True, exist_ok=True)
+    commands_dir = bundle / "commands"
+    commands_dir.mkdir()
+    for command_id in status_mod.smoke_garnet_studio_linux_wsl_deb.REQUIRED_COMMANDS:
+        (commands_dir / f"{command_id}-stdout.txt").write_text(
+            f"{command_id} ok\n",
+            encoding="utf-8",
+        )
+        (commands_dir / f"{command_id}-stderr.txt").write_text("", encoding="utf-8")
+    (bundle / "package").mkdir()
+    (bundle / "package" / "dpkg-info.txt").write_text(
+        "Package: garnet-studio\nArchitecture: amd64\n",
+        encoding="utf-8",
+    )
+    (bundle / "package" / "dpkg-contents.txt").write_text(
+        "./usr/bin/garnet-studio\n./usr/share/applications/Garnet Studio.desktop\n",
+        encoding="utf-8",
+    )
+    data = {
+        "schema": status_mod.smoke_garnet_studio_linux_wsl_deb.SCHEMA,
+        "status": "passed",
+        "platform": "linux",
+        "evidence_tier": "wsl-linux-package-build-command-smoke",
+        "wsl_is_enforcement": False,
+        "source_included": False,
+        "provider_api_called": False,
+        "desktop_gui_launch_proven": False,
+        "package_install_proven": False,
+        "package": {
+            "format": "deb",
+            "path": "target/release/bundle/deb/Garnet Studio_0.1.0_amd64.deb",
+            "sha256": "d" * 64,
+            "size_bytes": 3022068,
+            "architecture": "amd64",
+            "contains_binary": True,
+            "contains_desktop_file": True,
+        },
+        "binary": {
+            "path": "target/release/garnet-studio",
+            "sha256": "b" * 64,
+            "studio_smoke_status": "passed",
+        },
+        "commands": [
+            {
+                "id": command_id,
+                "display_args": [command_id],
+                "exit_code": 0,
+                "stdout_file": f"commands/{command_id}-stdout.txt",
+                "stderr_file": f"commands/{command_id}-stderr.txt",
+                "status": "passed",
+            }
+            for command_id in status_mod.smoke_garnet_studio_linux_wsl_deb.REQUIRED_COMMANDS
+        ],
+        "honest_scope": [
+            "WSL is Linux package build and command-smoke evidence only",
+            "not Linux desktop GUI launch proof",
+            "not Linux seccomp or OS-sandbox enforcement",
+            "not clean Linux install proof",
+            "not signed, production, or v1.0 readiness",
+        ],
+    }
+    summary = bundle / status_mod.smoke_garnet_studio_linux_wsl_deb.SUMMARY_NAME
+    summary.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    (bundle / status_mod.smoke_garnet_studio_linux_wsl_deb.MARKDOWN_NAME).write_text(
+        status_mod.smoke_garnet_studio_linux_wsl_deb.render_markdown(data),
+        encoding="utf-8",
+    )
+    _write_manifest(bundle)
+    return summary
+
+
 class GarnetMitReadinessStatusTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -434,17 +507,24 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertEqual(
             "active-partial", lanes["windows_linux_distribution"].status
         )
-        self.assertEqual(60.0, lanes["windows_linux_distribution"].completion_percent)
+        self.assertEqual(63.0, lanes["windows_linux_distribution"].completion_percent)
         self.assertLess(
             lanes["windows_linux_distribution"].completion_percent, 100.0
         )
         self.assertTrue(lanes["windows_linux_distribution"].blocked_by)
         self.assertIn("windows_linux_domain_proof_matrix", lanes)
         self.assertIn("windows_wsl_studio_smoke", lanes)
+        self.assertIn("linux_wsl_studio_deb_package", lanes)
         self.assertEqual("verified", lanes["windows_wsl_studio_smoke"].status)
         self.assertIn("Committed Windows Studio smoke bundle", lanes["windows_wsl_studio_smoke"].evidence)
         self.assertIn("not Linux seccomp", lanes["windows_wsl_studio_smoke"].evidence)
         self.assertIn("Linux desktop GUI launch", " ".join(lanes["windows_wsl_studio_smoke"].deferred))
+        self.assertEqual("verified", lanes["linux_wsl_studio_deb_package"].status)
+        self.assertIn(".deb", lanes["linux_wsl_studio_deb_package"].evidence)
+        self.assertIn(
+            "not Linux desktop GUI launch proof",
+            " ".join(lanes["linux_wsl_studio_deb_package"].deferred),
+        )
         self.assertEqual("verified", lanes["windows_linux_domain_proof_matrix"].status)
         self.assertEqual(100.0, lanes["windows_linux_domain_proof_matrix"].completion_percent)
         self.assertIn("20 current examples", lanes["windows_linux_domain_proof_matrix"].evidence)
@@ -682,6 +762,17 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("not Linux seccomp", evidence.reason)
         self.assertIn("Linux desktop GUI", evidence.reason)
 
+    def test_linux_wsl_deb_evidence_accepts_committed_package_bundle(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            repo_root = Path(temp)
+            _write_committed_linux_wsl_deb_bundle(repo_root)
+
+            evidence = status_mod.smoke_garnet_studio_linux_wsl_deb.read_committed_evidence(repo_root)
+
+        self.assertTrue(evidence.verified)
+        self.assertIn(".deb", evidence.reason)
+        self.assertIn("not Linux seccomp", " ".join(evidence.deferred))
+
     def test_domain_matrix_verifier_rejects_fake_manifest_hashes(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -783,8 +874,9 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         lane = {lane.id: lane for lane in status.lanes}["windows_linux_distribution"]
         self.assertEqual("active-partial", lane.status)
-        self.assertEqual(70.0, lane.completion_percent)
+        self.assertEqual(75.0, lane.completion_percent)
         self.assertIn("verified x64 clean-VM installer proof", lane.evidence)
+        self.assertIn("committed WSL Linux `.deb` package-build/command-smoke evidence", lane.evidence)
         self.assertNotIn("clean Windows VM", " ".join(lane.blocked_by))
         self.assertIn("Linux VM/container", " ".join(lane.blocked_by))
         self.assertIn("Windows ARM64 target build/smoke", " ".join(lane.deferred))
