@@ -28,6 +28,7 @@ import smoke_garnet_studio_linux_wsl_deb_install  # noqa: E402
 import smoke_garnet_studio_linux_wsl_rpm  # noqa: E402
 import smoke_garnet_studio_linux_wsl_xvfb  # noqa: E402
 import smoke_garnet_studio_linux_wsl_xvfb_window  # noqa: E402
+import smoke_garnet_studio_linux_wslg_install_launch  # noqa: E402
 
 ACTIVE_CONVERSION = ["Rust", "Ruby", "Python", "Go"]
 ADVISORY_PLANNING = [
@@ -661,15 +662,19 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
     linux_rpm = smoke_garnet_studio_linux_wsl_rpm.read_committed_evidence(ROOT)
     linux_xvfb = smoke_garnet_studio_linux_wsl_xvfb.read_committed_evidence(ROOT)
     linux_xvfb_window = smoke_garnet_studio_linux_wsl_xvfb_window.read_committed_evidence(ROOT)
+    linux_wslg_install = smoke_garnet_studio_linux_wslg_install_launch.read_committed_evidence(ROOT)
     any_linux_package_evidence = (
         linux_deb.verified
         or linux_deb_install.verified
         or linux_rpm.verified
         or linux_xvfb.verified
         or linux_xvfb_window.verified
+        or linux_wslg_install.verified
     )
     linux_status_suffix = (
-        "wsl-deb-rpm-xvfb-window-capture-verified-linux-desktop-still-open"
+        "wslg-system-install-launch-verified-linux-desktop-still-open"
+        if linux_wslg_install.verified
+        else "wsl-deb-rpm-xvfb-window-capture-verified-linux-desktop-still-open"
         if linux_xvfb_window.verified and linux_xvfb.verified and linux_deb_install.verified and linux_rpm.verified
         else "wsl-xvfb-window-capture-verified-linux-desktop-still-open"
         if linux_xvfb_window.verified
@@ -728,6 +733,10 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
         linux_package_truth.append(
             "WSL Linux Xvfb virtual-display window capture is verified by `scripts/smoke_garnet_studio_linux_wsl_xvfb_window.py`; this proves the extracted Linux Studio process creates an observable `Garnet Studio` X11 window tree and screenshot artifact under Xvfb, but it is not Linux desktop GUI launch proof, clean Linux install proof, privileged package install proof, Linux seccomp, or OS-sandbox enforcement",
         )
+    if linux_wslg_install.verified:
+        linux_package_truth.append(
+            "WSLg system package install and installed-binary GUI launch are verified by `scripts/smoke_garnet_studio_linux_wslg_install_launch.py`; this proves a privileged WSL `.deb` install plus WSLg window observation, but it is not clean Linux install proof, non-WSL Linux desktop proof, Linux seccomp, or OS-sandbox enforcement",
+        )
     if not linux_package_truth:
         linux_package_truth.append(
             "WSL Linux `.deb` package build proof remains open until `scripts/smoke_garnet_studio_linux_wsl_deb.py --record` verifies the bundle",
@@ -736,7 +745,9 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
         id="linux_package_choice",
         platform="Linux",
         status=(
-            "wsl-deb-rpm-xvfb-window-capture-verified"
+            "wslg-system-install-launch-verified"
+            if linux_wslg_install.verified
+            else "wsl-deb-rpm-xvfb-window-capture-verified"
             if linux_xvfb_window.verified and linux_xvfb.verified and linux_deb_install.verified and linux_rpm.verified
             else "wsl-xvfb-window-capture-verified"
             if linux_xvfb_window.verified
@@ -757,12 +768,16 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
             else "open"
         ),
         next_evidence=(
-            "Run/install the WSL-built .deb/.rpm in a real Linux desktop session and capture GUI launch evidence"
+            "Run/install the package in a non-WSL real Linux desktop session and capture clean GUI launch evidence"
+            if linux_wslg_install.verified
+            else "Run/install the WSL-built .deb/.rpm in a real Linux desktop session and capture GUI launch evidence"
             if any_linux_package_evidence
             else "choose AppImage-first, .deb/.rpm, Flatpak, or source/PWA shell after target smoke"
         ),
         forbidden_claim=(
-            "Linux desktop GUI package install/launch is verified"
+            "clean Linux or non-WSL Linux desktop GUI package install/launch is verified"
+            if linux_wslg_install.verified
+            else "Linux desktop GUI package install/launch is verified"
             if any_linux_package_evidence
             else "Linux Studio package is verified"
         ),

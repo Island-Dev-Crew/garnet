@@ -79,6 +79,7 @@ import smoke_garnet_studio_linux_wsl_deb_install  # noqa: E402
 import smoke_garnet_studio_linux_wsl_rpm  # noqa: E402
 import smoke_garnet_studio_linux_wsl_xvfb  # noqa: E402
 import smoke_garnet_studio_linux_wsl_xvfb_window  # noqa: E402
+import smoke_garnet_studio_linux_wslg_install_launch  # noqa: E402
 import smoke_garnet_studio_windows_wsl  # noqa: E402
 
 
@@ -738,6 +739,7 @@ def read_status() -> MitReadinessStatus:
     linux_xvfb_window_capture = (
         smoke_garnet_studio_linux_wsl_xvfb_window.read_committed_evidence(ROOT)
     )
+    linux_wslg_install_launch = smoke_garnet_studio_linux_wslg_install_launch.read_committed_evidence(ROOT)
     stdlib = garnet_stdlib_layer_gate.read_status()
     novel_compositions_present = all(
         (ROOT / p).exists()
@@ -819,7 +821,16 @@ def read_status() -> MitReadinessStatus:
     lsp_precision_present = _lsp_precision_present()
     if wls_clean_vm_verified:
         wls_completion_percent = (
-            79.0
+            80.0
+            if (
+                domain_matrix.verified
+                and linux_deb_install.verified
+                and linux_rpm_package.verified
+                and linux_xvfb_runtime.verified
+                and linux_xvfb_window_capture.verified
+                and linux_wslg_install_launch.verified
+            )
+            else 79.0
             if (
                 domain_matrix.verified
                 and linux_deb_install.verified
@@ -861,7 +872,16 @@ def read_status() -> MitReadinessStatus:
         )
     else:
         wls_completion_percent = (
-            67.0
+            68.0
+            if (
+                domain_matrix.verified
+                and linux_deb_install.verified
+                and linux_rpm_package.verified
+                and linux_xvfb_runtime.verified
+                and linux_xvfb_window_capture.verified
+                and linux_wslg_install_launch.verified
+            )
+            else 67.0
             if (
                 domain_matrix.verified
                 and linux_deb_install.verified
@@ -1030,6 +1050,7 @@ def read_status() -> MitReadinessStatus:
                 f"{'committed WSL Linux `.rpm` extract/command-smoke evidence, ' if linux_rpm_package.verified else ''}"
                 f"{'committed WSL Linux Xvfb runtime-start evidence, ' if linux_xvfb_runtime.verified else ''}"
                 f"{'committed WSL Linux Xvfb virtual-display window-capture evidence, ' if linux_xvfb_window_capture.verified else ''}"
+                f"{'committed WSLg system package install/launch evidence, ' if linux_wslg_install_launch.verified else ''}"
                 f"v0.5 {wls_evidence_tail}"
             ),
             blocked_by=list(wls.user_assistance_needed),
@@ -1164,6 +1185,28 @@ def read_status() -> MitReadinessStatus:
                 "not Linux seccomp or OS-sandbox enforcement",
                 "not clean Linux install proof",
                 "not privileged system package install proof",
+                "not signed, production, or v1.0 readiness",
+            ],
+        ),
+        ObjectiveLane(
+            id="linux_wsl_studio_wslg_system_install_launch",
+            evidence_class="committed",
+            label="Linux WSLg Studio system install/launch proof (S117 increment)",
+            status="verified" if linux_wslg_install_launch.verified else "planned",
+            completion_percent=100.0 if linux_wslg_install_launch.verified else 0.0,
+            evidence=(
+                "`scripts/smoke_garnet_studio_linux_wslg_install_launch.py --record` "
+                "records a privileged WSL `.deb` system install, installed-binary "
+                "`--studio-smoke`, and a WSLg/X11 window observation for the installed "
+                f"Linux Studio binary. {linux_wslg_install_launch.reason}"
+                if linux_wslg_install_launch.verified
+                else linux_wslg_install_launch.reason
+            ),
+            blocked_by=[] if linux_wslg_install_launch.verified else ["committed WSLg system install/launch proof bundle"],
+            deferred=[
+                "not Linux desktop GUI proof outside WSLg",
+                "not Linux seccomp or OS-sandbox enforcement",
+                "not clean Linux install proof",
                 "not signed, production, or v1.0 readiness",
             ],
         ),

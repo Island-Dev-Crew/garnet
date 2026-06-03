@@ -1,0 +1,2 @@
+dpkg-query: package 'garnet-studio' is not installed and no information is available
+Use dpkg --info (= dpkg-deb --info) to examine archive files.

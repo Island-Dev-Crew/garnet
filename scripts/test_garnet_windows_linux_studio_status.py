@@ -29,6 +29,15 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
     def tearDownClass(cls) -> None:
         TEST_CLEAN_VM_ROOT.cleanup()
 
+    def _missing_wslg_evidence(self) -> object:
+        return status_mod.smoke_garnet_studio_linux_wslg_install_launch.LinuxWslgInstallLaunchEvidence(
+            status="missing",
+            verified=False,
+            reason="No committed WSLg system install/launch proof bundle verified.",
+            bundle=None,
+            deferred=["record WSLg system install/launch proof bundle"],
+        )
+
     def test_taxonomy_matches_handoff_copy_truth(self) -> None:
         status = status_mod.read_status()
         self.assertEqual(["Rust", "Ruby", "Python", "Go"], status.taxonomy.active_conversion)
@@ -245,6 +254,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
                     deferred=["record WSL Linux Xvfb window-capture proof bundle"],
                 )
             )
+            wslg_missing = self._missing_wslg_evidence()
 
             with mock.patch.object(
                 status_mod.smoke_garnet_studio_linux_wsl_xvfb,
@@ -254,6 +264,10 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
                 status_mod.smoke_garnet_studio_linux_wsl_xvfb_window,
                 "read_committed_evidence",
                 return_value=linux_xvfb_window_missing,
+            ), mock.patch.object(
+                status_mod.smoke_garnet_studio_linux_wslg_install_launch,
+                "read_committed_evidence",
+                return_value=wslg_missing,
             ):
                 status = status_mod.read_status(clean_vm_evidence_root=root)
 
@@ -315,6 +329,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             bundle=None,
             deferred=["record WSL Linux Xvfb window-capture proof bundle"],
         )
+        wslg_missing = self._missing_wslg_evidence()
         with mock.patch.object(
             status_mod.smoke_garnet_studio_linux_wsl_deb,
             "read_committed_evidence",
@@ -335,6 +350,10 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             status_mod.smoke_garnet_studio_linux_wsl_xvfb_window,
             "read_committed_evidence",
             return_value=xvfb_window_missing,
+        ), mock.patch.object(
+            status_mod.smoke_garnet_studio_linux_wslg_install_launch,
+            "read_committed_evidence",
+            return_value=wslg_missing,
         ):
             status = status_mod.read_status()
 
@@ -385,6 +404,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             bundle=None,
             deferred=["record WSL Linux Xvfb window-capture proof bundle"],
         )
+        wslg_missing = self._missing_wslg_evidence()
         with mock.patch.object(
             status_mod.smoke_garnet_studio_linux_wsl_deb,
             "read_committed_evidence",
@@ -405,6 +425,10 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             status_mod.smoke_garnet_studio_linux_wsl_xvfb_window,
             "read_committed_evidence",
             return_value=xvfb_window_missing,
+        ), mock.patch.object(
+            status_mod.smoke_garnet_studio_linux_wslg_install_launch,
+            "read_committed_evidence",
+            return_value=wslg_missing,
         ):
             status = status_mod.read_status()
 
@@ -455,6 +479,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             bundle=None,
             deferred=["record WSL Linux Xvfb window-capture proof bundle"],
         )
+        wslg_missing = self._missing_wslg_evidence()
         with mock.patch.object(
             status_mod.smoke_garnet_studio_linux_wsl_deb,
             "read_committed_evidence",
@@ -475,6 +500,10 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             status_mod.smoke_garnet_studio_linux_wsl_xvfb_window,
             "read_committed_evidence",
             return_value=xvfb_window_missing,
+        ), mock.patch.object(
+            status_mod.smoke_garnet_studio_linux_wslg_install_launch,
+            "read_committed_evidence",
+            return_value=wslg_missing,
         ):
             status = status_mod.read_status()
 
@@ -526,6 +555,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
                 "not Linux seccomp or OS-sandbox enforcement",
             ],
         )
+        wslg_missing = self._missing_wslg_evidence()
         with mock.patch.object(
             status_mod.smoke_garnet_studio_linux_wsl_deb,
             "read_committed_evidence",
@@ -546,6 +576,10 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             status_mod.smoke_garnet_studio_linux_wsl_xvfb_window,
             "read_committed_evidence",
             return_value=window_evidence,
+        ), mock.patch.object(
+            status_mod.smoke_garnet_studio_linux_wslg_install_launch,
+            "read_committed_evidence",
+            return_value=wslg_missing,
         ):
             status = status_mod.read_status()
 
@@ -558,6 +592,90 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
         self.assertIn("not Linux desktop GUI launch proof", truth)
         self.assertIn("Linux VM/container", " ".join(status.user_assistance_needed))
 
+    def test_linux_wslg_system_install_launch_gate_marks_wslg_not_clean_linux_completion(self) -> None:
+        evidence = status_mod.smoke_garnet_studio_linux_wsl_deb.LinuxWslDebEvidence(
+            status="verified",
+            verified=True,
+            reason="WSL Linux Tauri .deb package build and non-GUI studio-smoke verified.",
+            bundle="proofs/linux/execution/studio-package/linux-wsl-deb-test",
+            deferred=["not Linux desktop GUI launch proof"],
+        )
+        install_evidence = status_mod.smoke_garnet_studio_linux_wsl_deb_install.LinuxWslDebInstallEvidence(
+            status="verified",
+            verified=True,
+            reason="WSL Linux Tauri .deb extract and extracted-binary non-GUI studio-smoke verified.",
+            bundle="proofs/linux/execution/studio-package-install/linux-wsl-deb-install-test",
+            deferred=["not Linux desktop GUI launch proof"],
+        )
+        rpm_evidence = status_mod.smoke_garnet_studio_linux_wsl_rpm.LinuxWslRpmEvidence(
+            status="verified",
+            verified=True,
+            reason="WSL Linux Tauri .rpm extract and extracted-binary non-GUI studio-smoke verified.",
+            bundle="proofs/linux/execution/studio-rpm-package/linux-wsl-rpm-test",
+            deferred=["not Linux desktop GUI launch proof"],
+        )
+        xvfb_evidence = status_mod.smoke_garnet_studio_linux_wsl_xvfb.LinuxWslXvfbEvidence(
+            status="verified",
+            verified=True,
+            reason="WSL Xvfb runtime-start verified with timeout exit 124.",
+            bundle="proofs/linux/execution/studio-xvfb-runtime/linux-wsl-xvfb-test",
+            deferred=["not Linux desktop GUI launch proof"],
+        )
+        window_evidence = status_mod.smoke_garnet_studio_linux_wsl_xvfb_window.LinuxWslXvfbWindowEvidence(
+            status="verified",
+            verified=True,
+            reason="WSL Xvfb virtual-display window capture verified with screenshot and xwininfo.",
+            bundle="proofs/linux/execution/studio-xvfb-window-capture/linux-wsl-xvfb-window-test",
+            deferred=["not Linux desktop GUI launch proof"],
+        )
+        wslg_evidence = (
+            status_mod.smoke_garnet_studio_linux_wslg_install_launch.LinuxWslgInstallLaunchEvidence(
+                status="verified",
+                verified=True,
+                reason="WSLg system package install and installed-binary GUI launch verified.",
+                bundle="proofs/linux/execution/studio-wslg-system-install/linux-wslg-system-install-test",
+                deferred=[
+                    "not Linux desktop GUI proof outside WSLg",
+                    "not clean Linux install proof",
+                ],
+            )
+        )
+        with mock.patch.object(
+            status_mod.smoke_garnet_studio_linux_wsl_deb,
+            "read_committed_evidence",
+            return_value=evidence,
+        ), mock.patch.object(
+            status_mod.smoke_garnet_studio_linux_wsl_deb_install,
+            "read_committed_evidence",
+            return_value=install_evidence,
+        ), mock.patch.object(
+            status_mod.smoke_garnet_studio_linux_wsl_rpm,
+            "read_committed_evidence",
+            return_value=rpm_evidence,
+        ), mock.patch.object(
+            status_mod.smoke_garnet_studio_linux_wsl_xvfb,
+            "read_committed_evidence",
+            return_value=xvfb_evidence,
+        ), mock.patch.object(
+            status_mod.smoke_garnet_studio_linux_wsl_xvfb_window,
+            "read_committed_evidence",
+            return_value=window_evidence,
+        ), mock.patch.object(
+            status_mod.smoke_garnet_studio_linux_wslg_install_launch,
+            "read_committed_evidence",
+            return_value=wslg_evidence,
+        ):
+            status = status_mod.read_status()
+
+        linux_gate = next(gate for gate in status.packaging_gates if gate.id == "linux_package_choice")
+        self.assertEqual("wslg-system-install-launch-verified", linux_gate.status)
+        self.assertIn("real Linux desktop", linux_gate.next_evidence)
+        self.assertIn("clean Linux", linux_gate.forbidden_claim)
+        truth = " ".join(status.current_truth)
+        self.assertIn("WSLg system package install", truth)
+        self.assertIn("not clean Linux install proof", truth)
+        self.assertIn("Linux VM/container", " ".join(status.user_assistance_needed))
+
     def test_json_and_markdown_preserve_not_completed_boundary(self) -> None:
         output = subprocess.check_output(
             [sys.executable, str(SCRIPT), "--format", "json"],
@@ -565,7 +683,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
         )
         data = json.loads(output)
         self.assertEqual(
-            "tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-contract-open-wsl-deb-rpm-xvfb-window-capture-verified-linux-desktop-still-open",
+            "tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-contract-open-wslg-system-install-launch-verified-linux-desktop-still-open",
             data["status"],
         )
         truth = " ".join(data["current_truth"])
@@ -577,6 +695,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
         self.assertIn("WSL Linux `.rpm` package extract", truth)
         self.assertIn("WSL Linux Xvfb runtime-start", truth)
         self.assertIn("WSL Linux Xvfb virtual-display window capture", truth)
+        self.assertIn("WSLg system package install", truth)
         self.assertIn("Windows ARM64 follows after x64 proof", truth)
         self.assertIn("Domain Proof Matrix", truth)
         self.assertIn("Linux runtime proof is not complete", " ".join(data["current_truth"]))

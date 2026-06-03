@@ -1,0 +1,212 @@
+{
+  "schema": "garnet.studio.linux_wslg_system_install_launch.v1",
+  "recorded_at": "2026-06-03T20:58:09.829561+00:00",
+  "status": "passed",
+  "platform": "linux",
+  "evidence_tier": "wslg-system-package-install-launch",
+  "wsl_is_enforcement": false,
+  "source_included": false,
+  "provider_api_called": false,
+  "desktop_gui_launch_proven": false,
+  "wslg_gui_launch_proven": true,
+  "clean_linux_install_proven": false,
+  "privileged_system_install_proven": true,
+  "linux_enforcement_proven": false,
+  "package": {
+    "format": "deb",
+    "path": "target/release/bundle/deb/Garnet Studio_0.1.0_amd64.deb",
+    "sha256": "438784f23e83c5af705f25aeb76392f1862514b88e76ff9d8a55293e3380f9cf",
+    "size_bytes": 3022072,
+    "package_name": "garnet-studio",
+    "architecture": "amd64"
+  },
+  "install": {
+    "method": "dpkg -i",
+    "installed_binary": "/usr/bin/garnet-studio",
+    "package_absent_before_record": true,
+    "package_status_before_file": "package/dpkg-status-before.txt",
+    "package_status_after_install_file": "package/dpkg-status-after-install.txt",
+    "package_removed_after_record": true,
+    "package_status_after_remove_file": "package/dpkg-status-after-remove.txt"
+  },
+  "wslg": {
+    "display": ":0",
+    "wayland_display": "wayland-0",
+    "xdg_runtime_dir": "/run/user/0/",
+    "launch_status": "passed",
+    "process_observed": true,
+    "window_observed": true,
+    "launch_stdout_file": "launch/wslg-launch-stdout.txt",
+    "launch_stderr_file": "launch/wslg-launch-stderr.txt",
+    "process_file": "launch/process.txt",
+    "window_file": "launch/xwininfo.txt"
+  },
+  "commands": [
+    {
+      "id": "wsl-uname",
+      "display_args": [
+        "wsl.exe",
+        "-e",
+        "uname",
+        "-a"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/wsl-uname-stdout.txt",
+      "stderr_file": "commands/wsl-uname-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "wslg-env",
+      "display_args": [
+        "env",
+        "DISPLAY/WAYLAND_DISPLAY",
+        "command -v xwininfo"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/wslg-env-stdout.txt",
+      "stderr_file": "commands/wslg-env-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "npm-install",
+      "display_args": [
+        "npm",
+        "install",
+        "--include=optional"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/npm-install-stdout.txt",
+      "stderr_file": "commands/npm-install-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "npm-build",
+      "display_args": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/npm-build-stdout.txt",
+      "stderr_file": "commands/npm-build-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "tauri-build-deb",
+      "display_args": [
+        "npm",
+        "exec",
+        "--",
+        "tauri",
+        "build",
+        "--bundles",
+        "deb"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/tauri-build-deb-stdout.txt",
+      "stderr_file": "commands/tauri-build-deb-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "dpkg-status-before",
+      "display_args": [
+        "dpkg",
+        "-s",
+        "garnet-studio"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/dpkg-status-before-stdout.txt",
+      "stderr_file": "commands/dpkg-status-before-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "dpkg-install",
+      "display_args": [
+        "dpkg",
+        "-i",
+        "target/release/bundle/deb/*.deb"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/dpkg-install-stdout.txt",
+      "stderr_file": "commands/dpkg-install-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "dpkg-status-after-install",
+      "display_args": [
+        "dpkg",
+        "-s",
+        "garnet-studio"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/dpkg-status-after-install-stdout.txt",
+      "stderr_file": "commands/dpkg-status-after-install-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "installed-binary-ls",
+      "display_args": [
+        "ls",
+        "-l",
+        "/usr/bin/garnet-studio"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/installed-binary-ls-stdout.txt",
+      "stderr_file": "commands/installed-binary-ls-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "installed-studio-smoke",
+      "display_args": [
+        "/usr/bin/garnet-studio",
+        "--studio-smoke"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/installed-studio-smoke-stdout.txt",
+      "stderr_file": "commands/installed-studio-smoke-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "wslg-launch",
+      "display_args": [
+        "/usr/bin/garnet-studio",
+        "(WSLg launch probe)"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/wslg-launch-stdout.txt",
+      "stderr_file": "commands/wslg-launch-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "dpkg-remove",
+      "display_args": [
+        "dpkg",
+        "-r",
+        "garnet-studio"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/dpkg-remove-stdout.txt",
+      "stderr_file": "commands/dpkg-remove-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "dpkg-status-after-remove",
+      "display_args": [
+        "dpkg",
+        "-s",
+        "garnet-studio"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/dpkg-status-after-remove-stdout.txt",
+      "stderr_file": "commands/dpkg-status-after-remove-stderr.txt",
+      "status": "passed"
+    }
+  ],
+  "honest_scope": [
+    "WSLg is WSL package install and GUI-launch evidence only",
+    "not Linux desktop GUI proof outside WSLg",
+    "not Linux seccomp or OS-sandbox enforcement",
+    "not clean Linux install proof",
+    "not signed, production, or v1.0 readiness"
+  ]
+}

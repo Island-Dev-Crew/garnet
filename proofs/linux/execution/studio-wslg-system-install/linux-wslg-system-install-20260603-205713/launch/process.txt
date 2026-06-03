@@ -1,0 +1,1 @@
+    863 garnet-studio   /usr/bin/garnet-studio

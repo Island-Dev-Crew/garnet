@@ -1,0 +1,9 @@
+        Info Looking up installed tauri packages to check mismatched versions...
+     Running beforeBuildCommand `npm run build`
+   Compiling garnet-studio v0.1.0 (/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/apps/garnet-studio/src-tauri)
+    Finished `release` profile [optimized] target(s) in 37.61s
+       Built application at: /mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/target/release/garnet-studio
+        Info Patching /mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/target/release/garnet-studio with bundle type information: deb
+    Bundling Garnet Studio_0.1.0_amd64.deb (/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/target/release/bundle/deb/Garnet Studio_0.1.0_amd64.deb)
+    Finished 1 bundle at:
+        /mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/target/release/bundle/deb/Garnet Studio_0.1.0_amd64.deb
