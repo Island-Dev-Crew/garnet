@@ -25,6 +25,27 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S117 increment (v0.8.1 runway - WSLg Linux Studio system package
+  install/launch proof):** adds
+  `scripts/smoke_garnet_studio_linux_wslg_install_launch.py`, a
+  manifest-backed recorder/gate for building the Linux Tauri `.deb`, installing
+  it inside WSL with `dpkg -i`, verifying `/usr/bin/garnet-studio
+  --studio-smoke`, launching the installed binary through WSLg/X11, capturing
+  the `Garnet Studio` window tree with `xwininfo`, and removing the package
+  after the proof. The committed bundle under
+  `proofs/linux/execution/studio-wslg-system-install/` records WSL `uname`,
+  WSLg display variables, npm/Tauri build logs, `dpkg` before/install/remove
+  status, installed binary metadata, smoke output, WSLg launch/window evidence,
+  cleanup proof, and command logs. The MIT readiness reporter now exposes this
+  as `linux_wsl_studio_wslg_system_install_launch`, moving overall readiness to
+  **91.9%** and the Windows/Linux distribution lane to **80.0%** when the
+  Windows clean-VM, domain, Studio-smoke, WSL `.deb`, WSL `.rpm`, Xvfb
+  runtime-start/window-capture, and WSLg system install/launch bundles all
+  verify. **Honest scope:** this is WSLg system-package install/launch
+  portability evidence only; it does not prove clean/non-WSL Linux desktop GUI
+  install/launch, Linux seccomp, OS-sandbox enforcement, signed/SBOM release
+  artifacts, winget, Windows ARM64, production readiness, or v1.0 readiness.
+
 - **S117 increment (v0.8.1 runway - WSL Linux Studio Xvfb virtual-display
   window-capture proof):** adds
   `scripts/smoke_garnet_studio_linux_wsl_xvfb_window.py`, a manifest-backed

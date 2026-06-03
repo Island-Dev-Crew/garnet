@@ -1,0 +1,1 @@
+-rwxr-xr-x 1 root root 9795760 Jun  3 15:58 /usr/bin/garnet-studio

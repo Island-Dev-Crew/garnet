@@ -316,6 +316,18 @@ Linux install, privileged system package install, Linux seccomp or OS-sandbox
 enforcement, signed/SBOM release artifacts, winget, Windows ARM64, production,
 and v1.0 remain unclaimed.
 
+**S117 WSLg Linux system package install/launch increment (recorded
+2026-06-03):** the Windows lane further records a WSLg system-package proof
+under `proofs/linux/execution/studio-wslg-system-install/`. The proof builds the
+Linux Tauri `.deb`, installs it with `dpkg -i`, verifies
+`/usr/bin/garnet-studio --studio-smoke`, launches the installed binary through
+WSLg/X11, records the `Garnet Studio` window tree, and removes the package
+afterward. This moves the package gate to
+`wslg-system-install-launch-verified`, but it still does **not** close full
+S117: clean/non-WSL Linux desktop GUI install/launch, Linux seccomp or
+OS-sandbox enforcement, signed/SBOM release artifacts, winget, Windows ARM64,
+production, and v1.0 remain unclaimed.
+
 **STOP + report before S120:** the cut is Jon's decision.
 
 ## Verification Expectations

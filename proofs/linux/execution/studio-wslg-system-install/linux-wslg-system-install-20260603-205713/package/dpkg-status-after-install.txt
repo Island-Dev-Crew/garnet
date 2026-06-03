@@ -1,0 +1,10 @@
+Package: garnet-studio
+Status: install ok installed
+Priority: optional
+Installed-Size: 9629
+Maintainer: Island Development Crew
+Architecture: amd64
+Version: 0.1.0
+Depends: libwebkit2gtk-4.1-0, libgtk-3-0
+Description: Garnet Studio cross-platform thin desktop shell for the Garnet CLI and advisory pipeline.
+ (none)
