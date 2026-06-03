@@ -157,6 +157,18 @@ class LinuxWslDebProofTests(unittest.TestCase):
         self.assertIn("not Linux desktop GUI launch proof", markdown)
         self.assertIn("not Linux seccomp or OS-sandbox enforcement", markdown)
 
+    def test_manifest_uses_posix_paths_for_linux_verification(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            bundle = Path(temp)
+            _write(bundle / "commands" / "studio-smoke-stdout.txt", "ok\n")
+
+            linux_deb._write_manifest(bundle)
+
+            manifest = (bundle / linux_deb.MANIFEST_NAME).read_text(encoding="utf-8")
+
+        self.assertIn("commands/studio-smoke-stdout.txt", manifest)
+        self.assertNotIn("\\", manifest)
+
 
 if __name__ == "__main__":
     unittest.main()
