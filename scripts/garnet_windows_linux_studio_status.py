@@ -23,6 +23,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import garnet_windows_clean_vm_installer_status  # noqa: E402
+import smoke_garnet_studio_linux_wsl_deb  # noqa: E402
 
 ACTIVE_CONVERSION = ["Rust", "Ruby", "Python", "Go"]
 ADVISORY_PLANNING = [
@@ -651,10 +652,16 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
     clean_vm_root = clean_vm_evidence_root or _clean_vm_evidence_root_from_env()
     clean_vm = garnet_windows_clean_vm_installer_status.read_status(clean_vm_root)
     clean_vm_verified = clean_vm.clean_vm_verified
+    linux_deb = smoke_garnet_studio_linux_wsl_deb.read_committed_evidence(ROOT)
+    linux_status_suffix = (
+        "wsl-deb-package-verified-linux-gui-open"
+        if linux_deb.verified
+        else "linux-open"
+    )
     status = (
-        "tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-verified-linux-open"
+        f"tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-verified-{linux_status_suffix}"
         if clean_vm_verified
-        else "tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-contract-open-linux-open"
+        else f"tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-contract-open-{linux_status_suffix}"
     )
     clean_vm_truth = (
         [
@@ -666,6 +673,30 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
             "Windows clean-VM installer proof now has a repo-owned evidence contract and status reporter; it is not verified until a fresh VM bundle is recorded",
             "Windows clean-machine installer proof remains open until the unsigned NSIS artifact is exercised in a fresh VM",
         ]
+    )
+    linux_package_truth = (
+        [
+            "WSL Linux `.deb` package build and non-GUI `--studio-smoke` are verified by `scripts/smoke_garnet_studio_linux_wsl_deb.py`; Linux desktop GUI install/launch remains open",
+        ]
+        if linux_deb.verified
+        else [
+            "WSL Linux `.deb` package build proof remains open until `scripts/smoke_garnet_studio_linux_wsl_deb.py --record` verifies the bundle",
+        ]
+    )
+    linux_package_gate = PackagingGate(
+        id="linux_package_choice",
+        platform="Linux",
+        status="wsl-deb-package-build-smoke-verified" if linux_deb.verified else "open",
+        next_evidence=(
+            "Run/install the WSL-built .deb in a real Linux desktop session and capture GUI launch evidence"
+            if linux_deb.verified
+            else "choose AppImage-first, .deb/.rpm, Flatpak, or source/PWA shell after target smoke"
+        ),
+        forbidden_claim=(
+            "Linux desktop GUI package install/launch is verified"
+            if linux_deb.verified
+            else "Linux Studio package is verified"
+        ),
     )
     unsigned_nsis_gate = PackagingGate(
         id="windows_unsigned_nsis",
@@ -684,7 +715,11 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
     )
     next_slices = (
         [
-            "Linux desktop launch proof and first package-format decision",
+            (
+                "Linux desktop GUI install/launch proof for the WSL-built .deb or chosen target package"
+                if linux_deb.verified
+                else "Linux desktop launch proof and first package-format decision"
+            ),
             "Windows ARM64 target build/smoke after x64 clean-VM proof",
             "Domain Proof Matrix screenshots/output from the Windows shell and WSL/Linux shell",
             "Active converter end-to-end screenshots from the shell",
@@ -696,7 +731,11 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
         if clean_vm_verified
         else [
             "Windows clean-machine NSIS install and CLI smoke evidence",
-            "Linux desktop launch proof and first package-format decision",
+            (
+                "Linux desktop GUI install/launch proof for the WSL-built .deb or chosen target package"
+                if linux_deb.verified
+                else "Linux desktop launch proof and first package-format decision"
+            ),
             "Domain Proof Matrix screenshots/output from the Windows shell and WSL/Linux shell",
             "Active converter end-to-end screenshots from the shell",
             "Advisory bundle/review/handoff evidence walkthrough without source inclusion",
@@ -722,6 +761,7 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
             "Tauri v2 is now adopted for the first Windows/Linux shell scaffold in `apps/garnet-studio`",
             "Windows local source-build proof exists for the Tauri frontend, backend tests, release executable, unsigned NSIS bundle, and `--studio-smoke` evidence",
             *clean_vm_truth,
+            *linux_package_truth,
             "Linux runtime proof is not complete until the shell launches in a Linux desktop environment",
             "the shell wraps existing CLI, docs/PWA, advisory scripts, and dogfood gates without duplicating converter logic",
             "CLI Health maps to the existing `garnet version` probe unless a real health subcommand is added",
@@ -810,11 +850,11 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
                 forbidden_claim="winget install path is verified",
             ),
             PackagingGate(
-                id="linux_package_choice",
-                platform="Linux",
-                status="open",
-                next_evidence="choose AppImage-first, .deb/.rpm, Flatpak, or source/PWA shell after target smoke",
-                forbidden_claim="Linux Studio package is verified",
+                id=linux_package_gate.id,
+                platform=linux_package_gate.platform,
+                status=linux_package_gate.status,
+                next_evidence=linux_package_gate.next_evidence,
+                forbidden_claim=linux_package_gate.forbidden_claim,
             ),
         ],
         next_slices=next_slices,
