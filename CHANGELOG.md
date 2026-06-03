@@ -25,6 +25,25 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S117 increment (v0.8.1 runway - WSL Linux Studio Xvfb virtual-display
+  window-capture proof):** adds
+  `scripts/smoke_garnet_studio_linux_wsl_xvfb_window.py`, a manifest-backed
+  recorder/gate for launching the extracted Linux Tauri Studio binary under WSL
+  `xvfb-run`, verifying an X11 window tree that contains `Garnet Studio`, and
+  capturing a virtual-display screenshot artifact. The committed bundle under
+  `proofs/linux/execution/studio-xvfb-window-capture/` records WSL `uname`,
+  X11/Xvfb capture tooling (`xwininfo`, `xdpyinfo`, `xwd`, ImageMagick
+  `convert`/`identify`), the source package proof, extracted-binary hash, window
+  tree, screenshot hash/size, and command logs. The MIT readiness reporter now
+  exposes this as `linux_wsl_studio_xvfb_window_capture`, moving overall
+  readiness to **91.7%** and the Windows/Linux distribution lane to **79.0%**
+  when the Windows clean-VM, domain, Studio-smoke, WSL `.deb`, WSL `.rpm`, Xvfb
+  runtime-start, and Xvfb window-capture bundles all verify. **Honest scope:**
+  this is WSL Xvfb virtual-display window-capture evidence only; it does not
+  prove Linux desktop GUI install/launch, Linux seccomp, OS-sandbox enforcement,
+  clean Linux install, privileged system package install, signed/SBOM release
+  artifacts, winget, Windows ARM64, production readiness, or v1.0 readiness.
+
 - **S117 increment (v0.8.1 runway - WSL Linux Studio Xvfb runtime-start proof):**
   adds `scripts/smoke_garnet_studio_linux_wsl_xvfb.py`, a manifest-backed
   recorder/gate for starting the extracted Linux Tauri Studio binary under WSL

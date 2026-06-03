@@ -1,0 +1,6 @@
+xvfb-run=/usr/bin/xvfb-run
+xwininfo=/usr/bin/xwininfo
+xdpyinfo=/usr/bin/xdpyinfo
+xwd=/usr/bin/xwd
+convert=/usr/bin/convert
+identify=/usr/bin/identify

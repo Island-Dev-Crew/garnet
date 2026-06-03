@@ -1,0 +1,11 @@
+
+xwininfo: Window id: 0x21f (the root window) (has no name)
+
+  Root window id: 0x21f (the root window) (has no name)
+  Parent window id: 0x0 (none)
+     3 children:
+     0x200009 (has no name): ()  1x1+-1+-1  +-1+-1
+     0x200003 "Garnet Studio": ("garnet-studio" "Garnet-studio")  1200x800+40+112  +40+112
+        1 child:
+        0x200004 (has no name): ()  1x1+-1+-1  +39+111
+     0x200001 "garnet-studio": ("garnet-studio" "Garnet-studio")  10x10+10+10  +10+10

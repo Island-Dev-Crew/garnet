@@ -1,0 +1,1 @@
+/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/proofs/linux/execution/studio-xvfb-window-capture/linux-wsl-xvfb-window-capture-20260603-194237/capture/screenshot.png PNG 1280x1024 1280x1024+0+0 8-bit Grayscale Gray 2c 340B 0.000u 0:00.002
