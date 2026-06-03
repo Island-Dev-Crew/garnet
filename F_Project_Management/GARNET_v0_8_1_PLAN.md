@@ -219,6 +219,14 @@ they are not claimed by the Phase 1 evidence bundle.
 | S112 | cross-os-repro-consolidation | Aggregate Stage X + Stage R evidence into one reproducibility ledger feeding Stage P. |
 | S113 | evidence-integrity-gate | A final integrity gate (seal-verify + manifest hash-chain over the whole evidence corpus) before positioning. |
 
+**S111 Windows/WSL reproduction split (recorded 2026-06-03):** the Windows
+repro lane records the Studio domain-matrix execution proof as committed evidence
+under `proofs/windows/domains/` and `proofs/linux/execution/domains/`. Both rows
+run the current 20-example `--suite all` matrix through parse/check/run (60/60
+commands) and include the expected BLAKE3 mismatch rejection. WSL remains
+execution/portability only: it is not Linux seccomp, OS-sandbox enforcement,
+Wasmtime fuel, or Linux desktop/Tauri GUI launch proof.
+
 ### Stage P — positioning + cut · build lead (after Stage X + R report back)
 | Slice | Title | Goal | Honest scope |
 |---|---|---|---|

@@ -1,0 +1,4 @@
+parsed C:\Users\IslandDevCrew\.config\superpowers\worktrees\garnet\agent-win-codex-s106-windows-cross-os-proof-phase1\examples\mvp_02_relational_db.garnet (3 items, safe=false)
+  - fn/def active_rows (1 args)
+  - fn/def query_score (1 args)
+  - fn/def main (0 args)

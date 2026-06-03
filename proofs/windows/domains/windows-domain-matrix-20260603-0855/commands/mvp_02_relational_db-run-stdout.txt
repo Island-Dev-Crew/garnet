@@ -1,0 +1,2 @@
+mvp_02_relational_db score: 46
+=> 46

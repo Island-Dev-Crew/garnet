@@ -1,0 +1,2 @@
+mvp_03_compiler_bootstrap result: 40
+=> 40

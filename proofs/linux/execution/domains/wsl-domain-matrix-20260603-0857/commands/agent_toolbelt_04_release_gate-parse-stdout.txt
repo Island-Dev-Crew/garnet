@@ -1,0 +1,4 @@
+parsed /mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/examples/agent_toolbelt_04_release_gate.garnet (3 items, safe=false)
+  - fn/def gate_points (1 args)
+  - fn/def release_score (1 args)
+  - fn/def main (0 args)

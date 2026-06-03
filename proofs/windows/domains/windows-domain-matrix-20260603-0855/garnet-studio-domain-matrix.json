@@ -1,0 +1,1084 @@
+{
+  "schema": "garnet.studio.domain_matrix.v1",
+  "created_at": "2026-06-03T13:55:45.886058+00:00",
+  "source": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1",
+  "suite": "all",
+  "status": "passed",
+  "platform": "windows",
+  "arch": "AMD64",
+  "garnet_command": [
+    "target/debug/garnet.exe"
+  ],
+  "case_count": 20,
+  "passed_cases": 20,
+  "failed_cases": 0,
+  "command_count": 60,
+  "passed_commands": 60,
+  "failed_commands": 0,
+  "source_included": false,
+  "provider_api_called": false,
+  "core12_case_count": 12,
+  "agentic_case_count": 8,
+  "cases": [
+    {
+      "id": "mvp_01_os_simulator",
+      "label": "Cooperative scheduler simulation",
+      "group": "core-mvp",
+      "file": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_01_os_simulator.garnet",
+      "repo_relative_file": "examples/mvp_01_os_simulator.garnet",
+      "source_sha256": "43e661d1f9ddf7eb4fd6a4b9f50d0d534c0e8fc7a78e1d30b03f145af7057493",
+      "status": "passed",
+      "commands": [
+        {
+          "step": "parse",
+          "argv": [
+            "target/debug/garnet.exe",
+            "parse",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_01_os_simulator.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_01_os_simulator-parse-stdout.txt",
+          "stderr_file": "commands/mvp_01_os_simulator-parse-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "check",
+          "argv": [
+            "target/debug/garnet.exe",
+            "check",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_01_os_simulator.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_01_os_simulator-check-stdout.txt",
+          "stderr_file": "commands/mvp_01_os_simulator-check-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "run",
+          "argv": [
+            "target/debug/garnet.exe",
+            "run",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_01_os_simulator.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_01_os_simulator-run-stdout.txt",
+          "stderr_file": "commands/mvp_01_os_simulator-run-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        }
+      ]
+    },
+    {
+      "id": "mvp_02_relational_db",
+      "label": "In-memory relational query score",
+      "group": "core-mvp",
+      "file": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_02_relational_db.garnet",
+      "repo_relative_file": "examples/mvp_02_relational_db.garnet",
+      "source_sha256": "62ad26fde691139c1e8b62882b018f5cea2e541f2e27a59d78bd448a95eaa4c5",
+      "status": "passed",
+      "commands": [
+        {
+          "step": "parse",
+          "argv": [
+            "target/debug/garnet.exe",
+            "parse",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_02_relational_db.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_02_relational_db-parse-stdout.txt",
+          "stderr_file": "commands/mvp_02_relational_db-parse-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "check",
+          "argv": [
+            "target/debug/garnet.exe",
+            "check",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_02_relational_db.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_02_relational_db-check-stdout.txt",
+          "stderr_file": "commands/mvp_02_relational_db-check-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "run",
+          "argv": [
+            "target/debug/garnet.exe",
+            "run",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_02_relational_db.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_02_relational_db-run-stdout.txt",
+          "stderr_file": "commands/mvp_02_relational_db-run-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        }
+      ]
+    },
+    {
+      "id": "mvp_03_compiler_bootstrap",
+      "label": "Mini expression evaluator",
+      "group": "core-mvp",
+      "file": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_03_compiler_bootstrap.garnet",
+      "repo_relative_file": "examples/mvp_03_compiler_bootstrap.garnet",
+      "source_sha256": "873f96aa4b3ad246111b8fd39918ccba9d2e267e13d7ad9ebea80348e3609da2",
+      "status": "passed",
+      "commands": [
+        {
+          "step": "parse",
+          "argv": [
+            "target/debug/garnet.exe",
+            "parse",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_03_compiler_bootstrap.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_03_compiler_bootstrap-parse-stdout.txt",
+          "stderr_file": "commands/mvp_03_compiler_bootstrap-parse-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "check",
+          "argv": [
+            "target/debug/garnet.exe",
+            "check",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_03_compiler_bootstrap.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_03_compiler_bootstrap-check-stdout.txt",
+          "stderr_file": "commands/mvp_03_compiler_bootstrap-check-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "run",
+          "argv": [
+            "target/debug/garnet.exe",
+            "run",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_03_compiler_bootstrap.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_03_compiler_bootstrap-run-stdout.txt",
+          "stderr_file": "commands/mvp_03_compiler_bootstrap-run-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        }
+      ]
+    },
+    {
+      "id": "mvp_04_numerical_solver",
+      "label": "Iterative convergence solver",
+      "group": "core-mvp",
+      "file": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_04_numerical_solver.garnet",
+      "repo_relative_file": "examples/mvp_04_numerical_solver.garnet",
+      "source_sha256": "6738b13d332a409c91315765acf1737ea888075fbedc06c06c5e435ee71193de",
+      "status": "passed",
+      "commands": [
+        {
+          "step": "parse",
+          "argv": [
+            "target/debug/garnet.exe",
+            "parse",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_04_numerical_solver.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_04_numerical_solver-parse-stdout.txt",
+          "stderr_file": "commands/mvp_04_numerical_solver-parse-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "check",
+          "argv": [
+            "target/debug/garnet.exe",
+            "check",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_04_numerical_solver.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_04_numerical_solver-check-stdout.txt",
+          "stderr_file": "commands/mvp_04_numerical_solver-check-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "run",
+          "argv": [
+            "target/debug/garnet.exe",
+            "run",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_04_numerical_solver.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_04_numerical_solver-run-stdout.txt",
+          "stderr_file": "commands/mvp_04_numerical_solver-run-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        }
+      ]
+    },
+    {
+      "id": "mvp_05_web_app",
+      "label": "Route dispatch logic",
+      "group": "core-mvp",
+      "file": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_05_web_app.garnet",
+      "repo_relative_file": "examples/mvp_05_web_app.garnet",
+      "source_sha256": "ed8c0a9400060ce59246466656fd80e547e75529c17bcb81a0ac30803c81e54a",
+      "status": "passed",
+      "commands": [
+        {
+          "step": "parse",
+          "argv": [
+            "target/debug/garnet.exe",
+            "parse",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_05_web_app.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_05_web_app-parse-stdout.txt",
+          "stderr_file": "commands/mvp_05_web_app-parse-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "check",
+          "argv": [
+            "target/debug/garnet.exe",
+            "check",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_05_web_app.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_05_web_app-check-stdout.txt",
+          "stderr_file": "commands/mvp_05_web_app-check-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "run",
+          "argv": [
+            "target/debug/garnet.exe",
+            "run",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_05_web_app.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_05_web_app-run-stdout.txt",
+          "stderr_file": "commands/mvp_05_web_app-run-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        }
+      ]
+    },
+    {
+      "id": "mvp_06_multi_agent",
+      "label": "Deterministic researcher pipeline",
+      "group": "core-mvp",
+      "file": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_06_multi_agent.garnet",
+      "repo_relative_file": "examples/mvp_06_multi_agent.garnet",
+      "source_sha256": "e4f2654c578c90f639295007cb7330bfd1dd8d01b2deeb7f4b87159fbed61178",
+      "status": "passed",
+      "commands": [
+        {
+          "step": "parse",
+          "argv": [
+            "target/debug/garnet.exe",
+            "parse",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_06_multi_agent.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_06_multi_agent-parse-stdout.txt",
+          "stderr_file": "commands/mvp_06_multi_agent-parse-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "check",
+          "argv": [
+            "target/debug/garnet.exe",
+            "check",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_06_multi_agent.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_06_multi_agent-check-stdout.txt",
+          "stderr_file": "commands/mvp_06_multi_agent-check-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "run",
+          "argv": [
+            "target/debug/garnet.exe",
+            "run",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_06_multi_agent.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_06_multi_agent-run-stdout.txt",
+          "stderr_file": "commands/mvp_06_multi_agent-run-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        }
+      ]
+    },
+    {
+      "id": "mvp_07_game_server",
+      "label": "Game tick simulation",
+      "group": "core-mvp",
+      "file": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_07_game_server.garnet",
+      "repo_relative_file": "examples/mvp_07_game_server.garnet",
+      "source_sha256": "7281a66d0955b5d10ea79e81187f45d254cc741c62f258df433bb59e73e7d2ad",
+      "status": "passed",
+      "commands": [
+        {
+          "step": "parse",
+          "argv": [
+            "target/debug/garnet.exe",
+            "parse",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_07_game_server.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_07_game_server-parse-stdout.txt",
+          "stderr_file": "commands/mvp_07_game_server-parse-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "check",
+          "argv": [
+            "target/debug/garnet.exe",
+            "check",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_07_game_server.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_07_game_server-check-stdout.txt",
+          "stderr_file": "commands/mvp_07_game_server-check-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "run",
+          "argv": [
+            "target/debug/garnet.exe",
+            "run",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_07_game_server.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_07_game_server-run-stdout.txt",
+          "stderr_file": "commands/mvp_07_game_server-run-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        }
+      ]
+    },
+    {
+      "id": "mvp_08_distributed_kv",
+      "label": "Vector-clock merge scoring",
+      "group": "core-mvp",
+      "file": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_08_distributed_kv.garnet",
+      "repo_relative_file": "examples/mvp_08_distributed_kv.garnet",
+      "source_sha256": "89ae6df1e66cb1c2e248e299a4cd4c4c83661f0f29eb3aaa7f9c941f4a96e3e4",
+      "status": "passed",
+      "commands": [
+        {
+          "step": "parse",
+          "argv": [
+            "target/debug/garnet.exe",
+            "parse",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_08_distributed_kv.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_08_distributed_kv-parse-stdout.txt",
+          "stderr_file": "commands/mvp_08_distributed_kv-parse-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "check",
+          "argv": [
+            "target/debug/garnet.exe",
+            "check",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_08_distributed_kv.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_08_distributed_kv-check-stdout.txt",
+          "stderr_file": "commands/mvp_08_distributed_kv-check-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "run",
+          "argv": [
+            "target/debug/garnet.exe",
+            "run",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_08_distributed_kv.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_08_distributed_kv-run-stdout.txt",
+          "stderr_file": "commands/mvp_08_distributed_kv-run-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        }
+      ]
+    },
+    {
+      "id": "mvp_09_graph_db",
+      "label": "Graph traversal score",
+      "group": "core-mvp",
+      "file": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_09_graph_db.garnet",
+      "repo_relative_file": "examples/mvp_09_graph_db.garnet",
+      "source_sha256": "a420d28915a6759d2542c6bf056234ff204308f103762111ac9efc414d4229d0",
+      "status": "passed",
+      "commands": [
+        {
+          "step": "parse",
+          "argv": [
+            "target/debug/garnet.exe",
+            "parse",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_09_graph_db.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_09_graph_db-parse-stdout.txt",
+          "stderr_file": "commands/mvp_09_graph_db-parse-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "check",
+          "argv": [
+            "target/debug/garnet.exe",
+            "check",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_09_graph_db.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_09_graph_db-check-stdout.txt",
+          "stderr_file": "commands/mvp_09_graph_db-check-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "run",
+          "argv": [
+            "target/debug/garnet.exe",
+            "run",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_09_graph_db.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_09_graph_db-run-stdout.txt",
+          "stderr_file": "commands/mvp_09_graph_db-run-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        }
+      ]
+    },
+    {
+      "id": "mvp_10_terminal_ui",
+      "label": "Terminal widget layout score",
+      "group": "core-mvp",
+      "file": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_10_terminal_ui.garnet",
+      "repo_relative_file": "examples/mvp_10_terminal_ui.garnet",
+      "source_sha256": "9361c41308bb30dc1d8a5060de7e87217cd04d6a0b9cdc9488a54b55f0bd542e",
+      "status": "passed",
+      "commands": [
+        {
+          "step": "parse",
+          "argv": [
+            "target/debug/garnet.exe",
+            "parse",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_10_terminal_ui.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_10_terminal_ui-parse-stdout.txt",
+          "stderr_file": "commands/mvp_10_terminal_ui-parse-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "check",
+          "argv": [
+            "target/debug/garnet.exe",
+            "check",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_10_terminal_ui.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_10_terminal_ui-check-stdout.txt",
+          "stderr_file": "commands/mvp_10_terminal_ui-check-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "run",
+          "argv": [
+            "target/debug/garnet.exe",
+            "run",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_10_terminal_ui.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_10_terminal_ui-run-stdout.txt",
+          "stderr_file": "commands/mvp_10_terminal_ui-run-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        }
+      ]
+    },
+    {
+      "id": "mvp_11_signed_hotreload",
+      "label": "Signed hot-reload success path",
+      "group": "trust-boundary",
+      "file": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_11_signed_hotreload.garnet",
+      "repo_relative_file": "examples/mvp_11_signed_hotreload.garnet",
+      "source_sha256": "1104839a2d0306a5008e0af9fecb70a1918da707777342e4e6faafd4dc87712e",
+      "status": "passed",
+      "commands": [
+        {
+          "step": "parse",
+          "argv": [
+            "target/debug/garnet.exe",
+            "parse",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_11_signed_hotreload.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_11_signed_hotreload-parse-stdout.txt",
+          "stderr_file": "commands/mvp_11_signed_hotreload-parse-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "check",
+          "argv": [
+            "target/debug/garnet.exe",
+            "check",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_11_signed_hotreload.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_11_signed_hotreload-check-stdout.txt",
+          "stderr_file": "commands/mvp_11_signed_hotreload-check-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "run",
+          "argv": [
+            "target/debug/garnet.exe",
+            "run",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_11_signed_hotreload.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_11_signed_hotreload-run-stdout.txt",
+          "stderr_file": "commands/mvp_11_signed_hotreload-run-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        }
+      ]
+    },
+    {
+      "id": "mvp_11_signed_hotreload_mismatch",
+      "label": "Signed hot-reload mismatch rejection",
+      "group": "trust-boundary",
+      "file": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_11_signed_hotreload_mismatch.garnet",
+      "repo_relative_file": "examples/mvp_11_signed_hotreload_mismatch.garnet",
+      "source_sha256": "79df4162544f0257180b1faf3ebd2800fb0e3837c763038c5a65434d9f194228",
+      "status": "passed",
+      "commands": [
+        {
+          "step": "parse",
+          "argv": [
+            "target/debug/garnet.exe",
+            "parse",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_11_signed_hotreload_mismatch.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_11_signed_hotreload_mismatch-parse-stdout.txt",
+          "stderr_file": "commands/mvp_11_signed_hotreload_mismatch-parse-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "check",
+          "argv": [
+            "target/debug/garnet.exe",
+            "check",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_11_signed_hotreload_mismatch.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/mvp_11_signed_hotreload_mismatch-check-stdout.txt",
+          "stderr_file": "commands/mvp_11_signed_hotreload_mismatch-check-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "run",
+          "argv": [
+            "target/debug/garnet.exe",
+            "run",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\mvp_11_signed_hotreload_mismatch.garnet"
+          ],
+          "exit_code": 1,
+          "status": "passed",
+          "stdout_file": "commands/mvp_11_signed_hotreload_mismatch-run-stdout.txt",
+          "stderr_file": "commands/mvp_11_signed_hotreload_mismatch-run-stderr.txt",
+          "expected_failure": true,
+          "expectation": "nonzero exit with `BLAKE3 fingerprint mismatch`"
+        }
+      ]
+    },
+    {
+      "id": "agent_toolbelt_01_triage_router",
+      "label": "Agent triage routing",
+      "group": "agent-toolbelt",
+      "file": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\agent_toolbelt_01_triage_router.garnet",
+      "repo_relative_file": "examples/agent_toolbelt_01_triage_router.garnet",
+      "source_sha256": "d5e5e405e4498e9bfb3696deb617c7ceb415499cf41364d6be6106187333496f",
+      "status": "passed",
+      "commands": [
+        {
+          "step": "parse",
+          "argv": [
+            "target/debug/garnet.exe",
+            "parse",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\agent_toolbelt_01_triage_router.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/agent_toolbelt_01_triage_router-parse-stdout.txt",
+          "stderr_file": "commands/agent_toolbelt_01_triage_router-parse-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "check",
+          "argv": [
+            "target/debug/garnet.exe",
+            "check",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\agent_toolbelt_01_triage_router.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/agent_toolbelt_01_triage_router-check-stdout.txt",
+          "stderr_file": "commands/agent_toolbelt_01_triage_router-check-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "run",
+          "argv": [
+            "target/debug/garnet.exe",
+            "run",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\agent_toolbelt_01_triage_router.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/agent_toolbelt_01_triage_router-run-stdout.txt",
+          "stderr_file": "commands/agent_toolbelt_01_triage_router-run-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        }
+      ]
+    },
+    {
+      "id": "agent_toolbelt_02_capability_budget",
+      "label": "Capability budget scoring",
+      "group": "agent-toolbelt",
+      "file": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\agent_toolbelt_02_capability_budget.garnet",
+      "repo_relative_file": "examples/agent_toolbelt_02_capability_budget.garnet",
+      "source_sha256": "771db494b9cf90434e7ffc8cc9a8b1feec48b123f7e67e6eb3c20c9580653017",
+      "status": "passed",
+      "commands": [
+        {
+          "step": "parse",
+          "argv": [
+            "target/debug/garnet.exe",
+            "parse",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\agent_toolbelt_02_capability_budget.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/agent_toolbelt_02_capability_budget-parse-stdout.txt",
+          "stderr_file": "commands/agent_toolbelt_02_capability_budget-parse-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "check",
+          "argv": [
+            "target/debug/garnet.exe",
+            "check",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\agent_toolbelt_02_capability_budget.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/agent_toolbelt_02_capability_budget-check-stdout.txt",
+          "stderr_file": "commands/agent_toolbelt_02_capability_budget-check-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "run",
+          "argv": [
+            "target/debug/garnet.exe",
+            "run",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\agent_toolbelt_02_capability_budget.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/agent_toolbelt_02_capability_budget-run-stdout.txt",
+          "stderr_file": "commands/agent_toolbelt_02_capability_budget-run-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        }
+      ]
+    },
+    {
+      "id": "agent_toolbelt_03_memory_recall",
+      "label": "Memory recall ranking",
+      "group": "agent-toolbelt",
+      "file": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\agent_toolbelt_03_memory_recall.garnet",
+      "repo_relative_file": "examples/agent_toolbelt_03_memory_recall.garnet",
+      "source_sha256": "4b7e3b29651aac50ff40f54950b99ba0f015550d41e10992405459a6b257a152",
+      "status": "passed",
+      "commands": [
+        {
+          "step": "parse",
+          "argv": [
+            "target/debug/garnet.exe",
+            "parse",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\agent_toolbelt_03_memory_recall.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/agent_toolbelt_03_memory_recall-parse-stdout.txt",
+          "stderr_file": "commands/agent_toolbelt_03_memory_recall-parse-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "check",
+          "argv": [
+            "target/debug/garnet.exe",
+            "check",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\agent_toolbelt_03_memory_recall.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/agent_toolbelt_03_memory_recall-check-stdout.txt",
+          "stderr_file": "commands/agent_toolbelt_03_memory_recall-check-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "run",
+          "argv": [
+            "target/debug/garnet.exe",
+            "run",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\agent_toolbelt_03_memory_recall.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/agent_toolbelt_03_memory_recall-run-stdout.txt",
+          "stderr_file": "commands/agent_toolbelt_03_memory_recall-run-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        }
+      ]
+    },
+    {
+      "id": "agent_toolbelt_04_release_gate",
+      "label": "Release evidence gate",
+      "group": "agent-toolbelt",
+      "file": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\agent_toolbelt_04_release_gate.garnet",
+      "repo_relative_file": "examples/agent_toolbelt_04_release_gate.garnet",
+      "source_sha256": "367938e1c9b7b380cc9e448fe281c5f16d9f50b7c890b30a16747d8f98df31eb",
+      "status": "passed",
+      "commands": [
+        {
+          "step": "parse",
+          "argv": [
+            "target/debug/garnet.exe",
+            "parse",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\agent_toolbelt_04_release_gate.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/agent_toolbelt_04_release_gate-parse-stdout.txt",
+          "stderr_file": "commands/agent_toolbelt_04_release_gate-parse-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "check",
+          "argv": [
+            "target/debug/garnet.exe",
+            "check",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\agent_toolbelt_04_release_gate.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/agent_toolbelt_04_release_gate-check-stdout.txt",
+          "stderr_file": "commands/agent_toolbelt_04_release_gate-check-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "run",
+          "argv": [
+            "target/debug/garnet.exe",
+            "run",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\agent_toolbelt_04_release_gate.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/agent_toolbelt_04_release_gate-run-stdout.txt",
+          "stderr_file": "commands/agent_toolbelt_04_release_gate-run-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        }
+      ]
+    },
+    {
+      "id": "agent_toolbelt_05_repair_planner",
+      "label": "Repair planner prioritization",
+      "group": "agent-toolbelt",
+      "file": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\agent_toolbelt_05_repair_planner.garnet",
+      "repo_relative_file": "examples/agent_toolbelt_05_repair_planner.garnet",
+      "source_sha256": "ca5276a69cef46d9dea1d2bc53365e808ba27ed8783a78ad92c2eb59340e7edc",
+      "status": "passed",
+      "commands": [
+        {
+          "step": "parse",
+          "argv": [
+            "target/debug/garnet.exe",
+            "parse",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\agent_toolbelt_05_repair_planner.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/agent_toolbelt_05_repair_planner-parse-stdout.txt",
+          "stderr_file": "commands/agent_toolbelt_05_repair_planner-parse-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "check",
+          "argv": [
+            "target/debug/garnet.exe",
+            "check",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\agent_toolbelt_05_repair_planner.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/agent_toolbelt_05_repair_planner-check-stdout.txt",
+          "stderr_file": "commands/agent_toolbelt_05_repair_planner-check-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "run",
+          "argv": [
+            "target/debug/garnet.exe",
+            "run",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\agent_toolbelt_05_repair_planner.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/agent_toolbelt_05_repair_planner-run-stdout.txt",
+          "stderr_file": "commands/agent_toolbelt_05_repair_planner-run-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        }
+      ]
+    },
+    {
+      "id": "multi_agent_builder",
+      "label": "Multi-agent build pipeline",
+      "group": "agentic-design",
+      "file": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\multi_agent_builder.garnet",
+      "repo_relative_file": "examples/multi_agent_builder.garnet",
+      "source_sha256": "e2a440c12a8e22ffd7b49e9e1621a5f9f1cecf809340102694d4c6894875035a",
+      "status": "passed",
+      "commands": [
+        {
+          "step": "parse",
+          "argv": [
+            "target/debug/garnet.exe",
+            "parse",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\multi_agent_builder.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/multi_agent_builder-parse-stdout.txt",
+          "stderr_file": "commands/multi_agent_builder-parse-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "check",
+          "argv": [
+            "target/debug/garnet.exe",
+            "check",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\multi_agent_builder.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/multi_agent_builder-check-stdout.txt",
+          "stderr_file": "commands/multi_agent_builder-check-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "run",
+          "argv": [
+            "target/debug/garnet.exe",
+            "run",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\multi_agent_builder.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/multi_agent_builder-run-stdout.txt",
+          "stderr_file": "commands/multi_agent_builder-run-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        }
+      ]
+    },
+    {
+      "id": "agentic_log_analyzer",
+      "label": "Agentic log analyzer",
+      "group": "agentic-design",
+      "file": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\agentic_log_analyzer.garnet",
+      "repo_relative_file": "examples/agentic_log_analyzer.garnet",
+      "source_sha256": "45732d2cad45e34ccf77d566305334927ac1d950f1122ede1240b7ee8c546d9d",
+      "status": "passed",
+      "commands": [
+        {
+          "step": "parse",
+          "argv": [
+            "target/debug/garnet.exe",
+            "parse",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\agentic_log_analyzer.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/agentic_log_analyzer-parse-stdout.txt",
+          "stderr_file": "commands/agentic_log_analyzer-parse-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "check",
+          "argv": [
+            "target/debug/garnet.exe",
+            "check",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\agentic_log_analyzer.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/agentic_log_analyzer-check-stdout.txt",
+          "stderr_file": "commands/agentic_log_analyzer-check-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "run",
+          "argv": [
+            "target/debug/garnet.exe",
+            "run",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\agentic_log_analyzer.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/agentic_log_analyzer-run-stdout.txt",
+          "stderr_file": "commands/agentic_log_analyzer-run-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        }
+      ]
+    },
+    {
+      "id": "safe_io_layer",
+      "label": "Safe IO boundary layer",
+      "group": "agentic-design",
+      "file": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\safe_io_layer.garnet",
+      "repo_relative_file": "examples/safe_io_layer.garnet",
+      "source_sha256": "ad58b7093969841c5992386530c5628e950d823630a994b1e3462232f9f1f6b3",
+      "status": "passed",
+      "commands": [
+        {
+          "step": "parse",
+          "argv": [
+            "target/debug/garnet.exe",
+            "parse",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\safe_io_layer.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/safe_io_layer-parse-stdout.txt",
+          "stderr_file": "commands/safe_io_layer-parse-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "check",
+          "argv": [
+            "target/debug/garnet.exe",
+            "check",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\safe_io_layer.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/safe_io_layer-check-stdout.txt",
+          "stderr_file": "commands/safe_io_layer-check-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        },
+        {
+          "step": "run",
+          "argv": [
+            "target/debug/garnet.exe",
+            "run",
+            "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\examples\\safe_io_layer.garnet"
+          ],
+          "exit_code": 0,
+          "status": "passed",
+          "stdout_file": "commands/safe_io_layer-run-stdout.txt",
+          "stderr_file": "commands/safe_io_layer-run-stderr.txt",
+          "expected_failure": false,
+          "expectation": "exit 0"
+        }
+      ]
+    }
+  ]
+}

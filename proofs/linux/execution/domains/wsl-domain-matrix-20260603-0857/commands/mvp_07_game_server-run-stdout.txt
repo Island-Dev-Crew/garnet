@@ -1,0 +1,2 @@
+mvp_07_game_server remaining_hp: 2
+=> 2

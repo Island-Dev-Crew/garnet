@@ -163,6 +163,7 @@ class DomainMatrixEvidence:
     verified: bool
     bundle_json: Path | None
     reason: str
+    committed: bool = False
 
 
 def _lane_score(lane: ObjectiveLane) -> float:
@@ -500,12 +501,7 @@ def _domain_matrix_summary_verified(path: Path) -> bool:
     )
 
 
-def _domain_matrix_evidence() -> DomainMatrixEvidence:
-    source_present = (ROOT / "scripts" / "smoke_garnet_studio_domain_matrix.py").is_file()
-    if not source_present:
-        return DomainMatrixEvidence(False, False, None, "No repo-owned domain matrix script exists yet.")
-
-    root = _domain_matrix_root()
+def _verified_domain_matrix_under(root: Path) -> Path | None:
     if root.exists():
         candidates = sorted(
             root.rglob("garnet-studio-domain-matrix.json"),
@@ -514,12 +510,53 @@ def _domain_matrix_evidence() -> DomainMatrixEvidence:
         )
         for candidate in candidates:
             if _domain_matrix_summary_verified(candidate):
-                return DomainMatrixEvidence(
-                    True,
-                    True,
-                    candidate,
-                    f"Verified bundle: `{candidate}`.",
-                )
+                return candidate
+    return None
+
+
+def _repo_relative_display(path: Path) -> str:
+    try:
+        return path.relative_to(ROOT).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def _committed_domain_matrix_evidence() -> DomainMatrixEvidence | None:
+    windows = _verified_domain_matrix_under(ROOT / "proofs" / "windows" / "domains")
+    wsl = _verified_domain_matrix_under(ROOT / "proofs" / "linux" / "execution" / "domains")
+    if windows is None or wsl is None:
+        return None
+    return DomainMatrixEvidence(
+        True,
+        True,
+        windows,
+        (
+            f"Committed Windows bundle: `{_repo_relative_display(windows)}`. "
+            f"Committed WSL portability bundle: `{_repo_relative_display(wsl)}`. "
+            "The WSL row is execution/portability evidence only, not Linux seccomp "
+            "or OS-sandbox enforcement."
+        ),
+        committed=True,
+    )
+
+
+def _domain_matrix_evidence() -> DomainMatrixEvidence:
+    source_present = (ROOT / "scripts" / "smoke_garnet_studio_domain_matrix.py").is_file()
+    if not source_present:
+        return DomainMatrixEvidence(False, False, None, "No repo-owned domain matrix script exists yet.")
+
+    committed = _committed_domain_matrix_evidence()
+    if committed is not None:
+        return committed
+
+    candidate = _verified_domain_matrix_under(_domain_matrix_root())
+    if candidate is not None:
+        return DomainMatrixEvidence(
+            True,
+            True,
+            candidate,
+            f"Verified bundle: `{candidate}`.",
+        )
 
     return DomainMatrixEvidence(
         True,
@@ -766,7 +803,7 @@ def read_status() -> MitReadinessStatus:
         ),
         ObjectiveLane(
             id="windows_linux_domain_proof_matrix",
-            evidence_class="local",
+            evidence_class="committed" if domain_matrix.committed else "local",
             label="Windows/Linux domain proof matrix",
             status=(
                 "verified"

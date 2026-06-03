@@ -1,0 +1,4 @@
+parsed C:\Users\IslandDevCrew\.config\superpowers\worktrees\garnet\agent-win-codex-s106-windows-cross-os-proof-phase1\examples\mvp_07_game_server.garnet (3 items, safe=false)
+  - fn/def apply_tick (2 args)
+  - fn/def simulate (0 args)
+  - fn/def main (0 args)

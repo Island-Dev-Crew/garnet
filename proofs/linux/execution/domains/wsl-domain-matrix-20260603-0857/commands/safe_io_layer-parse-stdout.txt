@@ -1,0 +1,23 @@
+parsed /mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/examples/safe_io_layer.garnet (22 items, safe=false)
+  - enum IoError
+  - enum FsKind
+  - struct FileMeta
+  - struct FileContents
+  - struct OperationLog
+  - fn/def stat (1 args)
+  - fn/def read_file (1 args)
+  - fn/def write_file (2 args)
+  - fn/def delete_path (1 args)
+  - fn/def simulated_size (1 args)
+  - fn/def simulated_body (1 args)
+  - fn/def safe_read (1 args)
+  - fn/def safe_size (1 args)
+  - fn/def describe_result_error (1 args)
+  - fn/def describe_error (1 args)
+  - fn/def batch_read (1 args)
+  - fn/def batch_size (1 args)
+  - fn/def with_retry (2 args)
+  - fn/def golden_paths (0 args)
+  - fn/def adversarial_paths (0 args)
+  - fn/def main (0 args)
+  - fn/def count_ok (1 args)

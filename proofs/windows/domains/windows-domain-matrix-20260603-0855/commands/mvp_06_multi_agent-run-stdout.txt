@@ -1,0 +1,2 @@
+mvp_06_multi_agent accepted: 16
+=> 16

@@ -1,0 +1,4 @@
+parsed C:\Users\IslandDevCrew\.config\superpowers\worktrees\garnet\agent-win-codex-s106-windows-cross-os-proof-phase1\examples\agent_toolbelt_01_triage_router.garnet (3 items, safe=false)
+  - fn/def lane_weight (1 args)
+  - fn/def route_score (1 args)
+  - fn/def main (0 args)

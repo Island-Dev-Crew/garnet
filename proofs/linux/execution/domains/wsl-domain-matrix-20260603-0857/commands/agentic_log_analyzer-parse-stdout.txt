@@ -1,0 +1,33 @@
+parsed /mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/examples/agentic_log_analyzer.garnet (32 items, safe=false)
+  - memory Semantic spec_index
+  - memory Episodic incidents
+  - memory Procedural playbooks
+  - enum Severity
+  - enum Source
+  - struct LogLine
+  - struct LogPattern
+  - struct Incident
+  - struct Playbook
+  - struct AnalysisReport
+  - fn/def classify (1 args)
+  - fn/def has_keyword (2 args)
+  - fn/def severity_to_int (1 args)
+  - fn/def severity_to_string (1 args)
+  - fn/def source_to_string (1 args)
+  - fn/def extract_pattern (1 args)
+  - fn/def first_word (1 args)
+  - fn/def ingest (1 args)
+  - fn/def is_notable (1 args)
+  - fn/def pattern_to_vector (1 args)
+  - fn/def to_f (1 args)
+  - fn/def count_vowels (1 args)
+  - fn/def count_digits (1 args)
+  - fn/def count_bangs (1 args)
+  - fn/def aggregate (1 args)
+  - fn/def count_severe (1 args)
+  - fn/def count_warning (1 args)
+  - fn/def distinct_trace_count (1 args)
+  - fn/def seen_contains (2 args)
+  - fn/def make_line (5 args)
+  - fn/def synthetic_log (0 args)
+  - fn/def main (0 args)

@@ -25,6 +25,18 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S111 (v0.8.1 runway - Windows/WSL domain proof reproduction):** records
+  committed Garnet Studio domain-matrix proof bundles for Windows and WSL under
+  `proofs/windows/domains/` and `proofs/linux/execution/domains/`. Both bundles
+  run the current 20-example `--suite all` matrix through parse/check/run
+  (60/60 commands), preserve source omission and provider-free execution, and
+  include the expected signed-hot-reload BLAKE3 mismatch rejection. The MIT
+  readiness reporter now accepts this committed proof pair before falling back
+  to Desktop-local evidence, so the domain-matrix lane can become committed
+  evidence when both bundles verify. **Honest scope:** the WSL bundle is
+  execution/portability evidence only; it does not prove Linux seccomp,
+  OS-sandbox enforcement, Wasmtime fuel, or Linux desktop/Tauri GUI launch.
+
 - **S106 Phase 1 (v0.8.1 runway - Windows cross-OS enforcement proof):** adds a
   committed Windows proof lane for the already-merged Stage V traps. The new
   `scripts/garnet_windows_cross_os_enforcement_proof.py` recorder/gate captures

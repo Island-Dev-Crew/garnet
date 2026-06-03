@@ -1,0 +1,5 @@
+parsed C:\Users\IslandDevCrew\.config\superpowers\worktrees\garnet\agent-win-codex-s106-windows-cross-os-proof-phase1\examples\mvp_03_compiler_bootstrap.garnet (4 items, safe=false)
+  - fn/def eval_add (2 args)
+  - fn/def eval_mul (2 args)
+  - fn/def eval_program (0 args)
+  - fn/def main (0 args)

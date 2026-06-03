@@ -1,0 +1,5 @@
+parsed C:\Users\IslandDevCrew\.config\superpowers\worktrees\garnet\agent-win-codex-s106-windows-cross-os-proof-phase1\examples\agent_toolbelt_02_capability_budget.garnet (4 items, safe=false)
+  - fn/def capability_cost (1 args)
+  - fn/def within_budget (2 args)
+  - fn/def approval_score (2 args)
+  - fn/def main (0 args)

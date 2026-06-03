@@ -114,6 +114,82 @@ def _write_manifest(bundle: Path) -> None:
     (bundle / "MANIFEST.sha256").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+def _write_committed_domain_matrix_bundle(repo_root: Path, bundle: Path, platform: str) -> None:
+    bundle.mkdir(parents=True, exist_ok=True)
+    commands_dir = bundle / "commands"
+    commands_dir.mkdir()
+    cases = []
+    for case_id, relative_file in status_mod.DOMAIN_MATRIX_CASES.items():
+        source = repo_root / relative_file
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text(f"fn main() -> Int {{ {len(case_id)} }}\n", encoding="utf-8")
+        commands = []
+        for step in ("parse", "check", "run"):
+            stdout = commands_dir / f"{case_id}-{step}-stdout.txt"
+            stderr = commands_dir / f"{case_id}-{step}-stderr.txt"
+            stdout.write_text(f"{platform} {step} ok\n", encoding="utf-8")
+            stderr.write_text(
+                "BLAKE3 fingerprint mismatch\n"
+                if case_id == "mvp_11_signed_hotreload_mismatch" and step == "run"
+                else "",
+                encoding="utf-8",
+            )
+            commands.append(
+                {
+                    "step": step,
+                    "argv": ["garnet", step, relative_file],
+                    "exit_code": 1 if case_id == "mvp_11_signed_hotreload_mismatch" and step == "run" else 0,
+                    "status": "passed",
+                    "stdout_file": stdout.relative_to(bundle).as_posix(),
+                    "stderr_file": stderr.relative_to(bundle).as_posix(),
+                    "expected_failure": case_id == "mvp_11_signed_hotreload_mismatch" and step == "run",
+                    "expectation": "nonzero exit with `BLAKE3 fingerprint mismatch`"
+                    if case_id == "mvp_11_signed_hotreload_mismatch" and step == "run"
+                    else "exit 0",
+                }
+            )
+        cases.append(
+            {
+                "id": case_id,
+                "label": case_id,
+                "group": "test",
+                "file": str(source),
+                "repo_relative_file": relative_file,
+                "source_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+                "status": "passed",
+                "commands": commands,
+            }
+        )
+    summary = {
+        "schema": "garnet.studio.domain_matrix.v1",
+        "created_at": "2026-06-03T00:00:00+00:00",
+        "source": str(repo_root),
+        "suite": "all",
+        "status": "passed",
+        "platform": platform,
+        "arch": "x86_64",
+        "garnet_command": ["garnet"],
+        "case_count": len(status_mod.DOMAIN_MATRIX_CASES),
+        "passed_cases": len(status_mod.DOMAIN_MATRIX_CASES),
+        "failed_cases": 0,
+        "command_count": len(status_mod.DOMAIN_MATRIX_CASES) * 3,
+        "passed_commands": len(status_mod.DOMAIN_MATRIX_CASES) * 3,
+        "failed_commands": 0,
+        "source_included": False,
+        "provider_api_called": False,
+        "cases": cases,
+    }
+    (bundle / "garnet-studio-domain-matrix.json").write_text(
+        json.dumps(summary, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    (bundle / "garnet-studio-domain-matrix.md").write_text(
+        f"# {platform} domain matrix\n",
+        encoding="utf-8",
+    )
+    _write_manifest(bundle)
+
+
 class GarnetMitReadinessStatusTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -178,7 +254,11 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertEqual("verified", lanes["windows_linux_domain_proof_matrix"].status)
         self.assertEqual(100.0, lanes["windows_linux_domain_proof_matrix"].completion_percent)
         self.assertIn("20 current examples", lanes["windows_linux_domain_proof_matrix"].evidence)
-        self.assertIn("Verified bundle", lanes["windows_linux_domain_proof_matrix"].evidence)
+        self.assertIn("Committed Windows bundle", lanes["windows_linux_domain_proof_matrix"].evidence)
+        self.assertIn(
+            "Committed WSL portability bundle",
+            lanes["windows_linux_domain_proof_matrix"].evidence,
+        )
         self.assertEqual("verified", lanes["editor_lsp_adoption"].status)
         self.assertEqual(100.0, lanes["editor_lsp_adoption"].completion_percent)
         # S9: Determinism CI cross-machine lane
@@ -309,16 +389,51 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertEqual([], lanes["editor_lsp_adoption"]["deferred"])
 
     def test_domain_matrix_lane_is_source_present_without_verified_bundle(self) -> None:
-        with tempfile.TemporaryDirectory() as temp:
-            with mock.patch.dict(os.environ, {"GARNET_STUDIO_DOMAIN_MATRIX_ROOT": temp}):
-                status = status_mod.read_status()
+        with tempfile.TemporaryDirectory() as repo, tempfile.TemporaryDirectory() as local:
+            repo_root = Path(repo)
+            (repo_root / "scripts").mkdir()
+            (repo_root / "scripts" / "smoke_garnet_studio_domain_matrix.py").write_text(
+                "# domain matrix script present\n",
+                encoding="utf-8",
+            )
+            with mock.patch.object(status_mod, "ROOT", repo_root), mock.patch.dict(
+                os.environ,
+                {"GARNET_STUDIO_DOMAIN_MATRIX_ROOT": local},
+            ):
+                evidence = status_mod._domain_matrix_evidence()
 
-        lanes = {lane.id: lane for lane in status.lanes}
-        lane = lanes["windows_linux_domain_proof_matrix"]
-        self.assertEqual("source-present", lane.status)
-        self.assertEqual(60.0, lane.completion_percent)
-        self.assertIn("no verified", lane.evidence)
-        self.assertIn("verified Windows/Linux domain matrix evidence bundle", lane.blocked_by)
+        self.assertTrue(evidence.source_present)
+        self.assertFalse(evidence.verified)
+        self.assertIn("no verified", evidence.reason)
+
+    def test_domain_matrix_evidence_accepts_committed_windows_and_wsl_bundles(self) -> None:
+        with tempfile.TemporaryDirectory() as temp, tempfile.TemporaryDirectory() as local:
+            repo_root = Path(temp)
+            (repo_root / "scripts").mkdir()
+            (repo_root / "scripts" / "smoke_garnet_studio_domain_matrix.py").write_text(
+                "# domain matrix script present\n",
+                encoding="utf-8",
+            )
+            _write_committed_domain_matrix_bundle(
+                repo_root,
+                repo_root / "proofs" / "windows" / "domains" / "windows-domain-matrix-test",
+                "windows",
+            )
+            _write_committed_domain_matrix_bundle(
+                repo_root,
+                repo_root / "proofs" / "linux" / "execution" / "domains" / "wsl-domain-matrix-test",
+                "linux-wsl",
+            )
+
+            with mock.patch.object(status_mod, "ROOT", repo_root), mock.patch.dict(
+                os.environ,
+                {"GARNET_STUDIO_DOMAIN_MATRIX_ROOT": local},
+            ):
+                evidence = status_mod._domain_matrix_evidence()
+
+        self.assertTrue(evidence.verified)
+        self.assertIn("Committed Windows bundle", evidence.reason)
+        self.assertIn("Committed WSL portability bundle", evidence.reason)
 
     def test_domain_matrix_verifier_rejects_fake_manifest_hashes(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -621,10 +736,14 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         lanes = {lane.id: lane for lane in status.lanes}
         for local_id in (
             "windows_linux_distribution",
-            "windows_linux_domain_proof_matrix",
             "promo_video",
         ):
             self.assertEqual("local", lanes[local_id].evidence_class, local_id)
+        domain_lane = lanes["windows_linux_domain_proof_matrix"]
+        if "Committed Windows bundle" in domain_lane.evidence:
+            self.assertEqual("committed", domain_lane.evidence_class)
+        else:
+            self.assertEqual("local", domain_lane.evidence_class)
         self.assertIn("reporter_determinism", lanes)
         self.assertEqual("committed", lanes["reporter_determinism"].evidence_class)
         self.assertEqual("verified", lanes["reporter_determinism"].status)
