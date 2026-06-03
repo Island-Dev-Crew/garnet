@@ -23,6 +23,15 @@ filter. The deliverable is the *mapping*: it makes `@caps` annotations
 actionable, reviewable, and diff-able alongside the capability manifest (S36)
 and capability-surface diff gate (S37).
 
+> **Update — the seccomp profile is now proven enforceable on a real kernel.**
+> `garnet sandbox`'s `enforced: false` (generation) flag stays honest, but the
+> *generated* seccomp profile has been **applied and deterministically trapped** on
+> a real Linux kernel (the Mac's UTM Debian-12 ARM64 guest): under `@caps(fs)`,
+> `socket()` is denied with `EPERM`; under `@caps(fs, net)` it is allowed
+> (policy-driven). See `C_Language_Specification/GARNET_SECCOMP_APPLY.md` and the
+> reference apply harness `tools/seccomp-apply/`. WASI/`wasmtime` fuel and egress
+> enforcement remain deferred; macOS/Windows OS sandboxing remain named-deferred.
+
 ## The mapping
 
 The policy is derived from the **aggregate** capability surface (the union of

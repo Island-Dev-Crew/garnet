@@ -185,6 +185,16 @@ surge lanes their specs.
 Stage X in parallel; the repro lanes run Stage R. Mac #1 HOLDS the spine and does
 NOT author S106-S113 — it provides their specs only.
 
+> **Hold-window build-lead slice — `s105b` os-sandbox-apply (UTM, 2026-06-03).**
+> Closes S46's one genuinely-deferred enforcement piece: the *generated* seccomp
+> policy is now **applied + deterministically trapped on a real Linux kernel** (the
+> Mac's UTM Debian-12 ARM64 guest, Linux 6.1). `@caps(fs)` denies `socket` (EPERM,
+> 3/3 runs); `@caps(fs, net)` allows it (policy-driven). Reference harness
+> `tools/seccomp-apply/`; record `C_Language_Specification/GARNET_SECCOMP_APPLY.md`.
+> Honest scope: Linux seccomp only (macOS/Windows named-deferred); proves the
+> generated policy is enforceable, not program safety; a `garnet`-native apply path
+> + applying to a spawned subprocess (S92 `[LINUX-INFRA]`) are follow-ups.
+
 ### Stage X — cross-OS enforcement + ultrapunch proof · surge lanes (NOT build-lead branches)
 | Slice | Title | Goal | Proof discipline |
 |---|---|---|---|

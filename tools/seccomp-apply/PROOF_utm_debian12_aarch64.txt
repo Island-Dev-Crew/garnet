@@ -1,0 +1,28 @@
+# Garnet seccomp-apply — proof recorded on the UTM Debian-12 ARM64 kernel
+# kernel: Linux 6.1.0-13-arm64 aarch64 | libseccomp 2.5.4 | CONFIG_SECCOMP=y
+# recorded 2026-06-03 by Mac #1 build lead over SSH to the UTM guest 192.168.64.4
+# harness: tools/seccomp-apply/seccomp_apply.c (cc -O2 ... -lseccomp); policy: garnet sandbox --format json
+
+## @caps(fs): socket DENIED (the trap), deterministic over 3 runs:
+seccomp-apply: applied 27 allowed syscalls (default ERRNO); 0 names unresolved on this arch
+seccomp-apply: allowed getpid() -> OK (pid=49744)
+seccomp-apply: socket(AF_INET) -> BLOCKED (trap) (ret=-1 errno=1/Operation not permitted); expected DENIED
+seccomp-apply: PROVEN -- the generated policy is APPLIED and TRAPS a denied syscall on this kernel.
+  [run 1 exit=0]
+seccomp-apply: applied 27 allowed syscalls (default ERRNO); 0 names unresolved on this arch
+seccomp-apply: allowed getpid() -> OK (pid=49745)
+seccomp-apply: socket(AF_INET) -> BLOCKED (trap) (ret=-1 errno=1/Operation not permitted); expected DENIED
+seccomp-apply: PROVEN -- the generated policy is APPLIED and TRAPS a denied syscall on this kernel.
+  [run 2 exit=0]
+seccomp-apply: applied 27 allowed syscalls (default ERRNO); 0 names unresolved on this arch
+seccomp-apply: allowed getpid() -> OK (pid=49746)
+seccomp-apply: socket(AF_INET) -> BLOCKED (trap) (ret=-1 errno=1/Operation not permitted); expected DENIED
+seccomp-apply: PROVEN -- the generated policy is APPLIED and TRAPS a denied syscall on this kernel.
+  [run 3 exit=0]
+
+## @caps(fs, net): socket ALLOWED (same harness — policy-driven, not blanket-deny):
+seccomp-apply: applied 41 allowed syscalls (default ERRNO); 0 names unresolved on this arch
+seccomp-apply: allowed getpid() -> OK (pid=49782)
+seccomp-apply: socket(AF_INET) -> ALLOWED (ret=3 errno=0/Success); expected ALLOWED
+seccomp-apply: PROVEN -- the generated policy is APPLIED and ALLOWS the declared syscall (policy-driven, not blanket-deny).
+  [exit=0]
