@@ -269,6 +269,17 @@ Linux desktop GUI install/launch, clean Linux install evidence, Linux seccomp or
 OS-sandbox enforcement, signed/SBOM release artifacts, winget, Windows ARM64,
 production, and v1.0 remain unclaimed.
 
+**S117 WSL Linux `.deb` install/extract increment (recorded 2026-06-03):** the
+Windows lane further records a WSL package-extract proof under
+`proofs/linux/execution/studio-package-install/`. The proof rebuilds the Tauri
+Linux `.deb`, inspects it with `dpkg-deb --info` / `--contents`, extracts the
+payload with `dpkg-deb --extract`, lists the extracted binary, and runs the
+extracted binary's non-GUI `--studio-smoke`. This moves the package gate to
+`wsl-deb-extract-command-smoke-verified`, but it still does **not** close full
+S117: Linux desktop GUI install/launch, clean Linux install, privileged system
+package install, Linux seccomp or OS-sandbox enforcement, signed/SBOM release
+artifacts, winget, Windows ARM64, production, and v1.0 remain unclaimed.
+
 **STOP + report before S120:** the cut is Jon's decision.
 
 ## Verification Expectations

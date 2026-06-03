@@ -1,0 +1,93 @@
+        Info Looking up installed tauri packages to check mismatched versions...
+     Running beforeBuildCommand `npm run build`
+   Compiling serde_core v1.0.228
+   Compiling web_atoms v0.2.4
+   Compiling serde v1.0.228
+   Compiling semver v1.0.28
+   Compiling serde_spanned v1.1.1
+   Compiling serde_json v1.0.149
+   Compiling uuid v1.23.1
+   Compiling bitflags v2.11.1
+   Compiling rustc_version v0.4.1
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling toml_datetime v0.6.3
+   Compiling serde_spanned v0.6.9
+   Compiling url v2.5.8
+   Compiling field-offset v0.3.6
+   Compiling toml_edit v0.20.2
+   Compiling toml v1.1.2+spec-1.1.0
+   Compiling toml_edit v0.19.15
+   Compiling jsonptr v0.6.3
+   Compiling cargo-platform v0.1.9
+   Compiling indexmap v1.9.3
+   Compiling cfb v0.7.3
+   Compiling camino v1.2.2
+   Compiling erased-serde v0.4.10
+   Compiling schemars v0.8.22
+   Compiling infer v0.19.0
+   Compiling serde-untagged v0.1.9
+   Compiling cargo_metadata v0.19.2
+   Compiling proc-macro-crate v1.3.1
+   Compiling toml v0.8.2
+   Compiling proc-macro-crate v2.0.2
+   Compiling urlpattern v0.3.0
+   Compiling system-deps v6.2.2
+   Compiling json-patch v3.0.1
+   Compiling plist v1.9.0
+   Compiling glib-macros v0.18.5
+   Compiling serde_with v3.20.0
+   Compiling gtk3-macros v0.18.2
+   Compiling toml_datetime v0.7.5+spec-1.1.0
+   Compiling glib-sys v0.18.1
+   Compiling gobject-sys v0.18.0
+   Compiling gio-sys v0.18.1
+   Compiling gdk-sys v0.18.2
+   Compiling gdk-pixbuf-sys v0.18.0
+   Compiling cairo-sys-rs v0.18.2
+   Compiling pango-sys v0.18.0
+   Compiling atk-sys v0.18.2
+   Compiling gtk-sys v0.18.2
+   Compiling soup3-sys v0.5.0
+   Compiling javascriptcore-rs-sys v1.1.1
+   Compiling gtk v0.18.2
+   Compiling webkit2gtk-sys v2.0.2
+   Compiling glib v0.18.5
+   Compiling toml v0.9.12+spec-1.1.0
+   Compiling gdkx11-sys v0.18.2
+   Compiling embed-resource v3.0.9
+   Compiling tauri-winres v0.3.6
+   Compiling cargo_toml v0.22.3
+   Compiling dpi v0.1.2
+   Compiling wry v0.55.1
+   Compiling gdkwayland-sys v0.18.2
+   Compiling keyboard-types v0.7.0
+   Compiling gio v0.18.4
+   Compiling cairo-rs v0.18.5
+   Compiling atk v0.18.2
+   Compiling markup5ever v0.38.0
+   Compiling html5ever v0.38.0
+   Compiling javascriptcore-rs v1.1.2
+   Compiling tauri-utils v2.9.2
+   Compiling serialize-to-javascript v0.1.2
+   Compiling dom_query v0.27.0
+   Compiling tauri-build v2.6.2
+   Compiling tauri-codegen v2.6.2
+   Compiling pango v0.18.3
+   Compiling gdk-pixbuf v0.18.5
+   Compiling soup3 v0.5.0
+   Compiling tauri v2.11.2
+   Compiling gdk v0.18.2
+   Compiling garnet-studio v0.1.0 (/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/apps/garnet-studio/src-tauri)
+   Compiling tauri-macros v2.6.2
+   Compiling gdkx11 v0.18.2
+   Compiling webkit2gtk v2.0.2
+   Compiling tao v0.35.2
+   Compiling muda v0.19.1
+   Compiling tauri-runtime v2.11.2
+   Compiling tauri-runtime-wry v2.11.2
+    Finished `release` profile [optimized] target(s) in 2m 00s
+       Built application at: /mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/target/release/garnet-studio
+        Info Patching /mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/target/release/garnet-studio with bundle type information: deb
+    Bundling Garnet Studio_0.1.0_amd64.deb (/mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/target/release/bundle/deb/Garnet Studio_0.1.0_amd64.deb)
+    Finished 1 bundle at:
+        /mnt/c/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/target/release/bundle/deb/Garnet Studio_0.1.0_amd64.deb

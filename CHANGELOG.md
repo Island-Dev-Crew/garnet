@@ -25,6 +25,24 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S117 increment (v0.8.1 runway - WSL Linux Studio `.deb` install/extract proof):**
+  adds `scripts/smoke_garnet_studio_linux_wsl_deb_install.py`, a
+  manifest-backed recorder/gate for WSL `.deb` extraction and extracted-binary
+  command smoke. The committed bundle under
+  `proofs/linux/execution/studio-package-install/` records WSL `uname`,
+  Linux-side `npm install --include=optional`, frontend build, `tauri build
+  --bundles deb`, `dpkg-deb --info`, `dpkg-deb --contents`,
+  `dpkg-deb --extract`, extracted binary listing, and the extracted Linux
+  binary's non-GUI `--studio-smoke`. The MIT readiness reporter now exposes this
+  as `linux_wsl_studio_deb_install`, moving overall committed readiness to
+  **91.3%** and the Windows/Linux distribution lane to **76.0%** when the
+  Windows clean-VM, domain, Studio-smoke, WSL package-build, and WSL
+  install/extract bundles all verify. **Honest scope:** this is WSL
+  package-extract and command-smoke evidence only; it does not prove Linux
+  desktop GUI install/launch, Linux seccomp, OS-sandbox enforcement, clean Linux
+  install, privileged system package install, signed/SBOM release artifacts,
+  winget, Windows ARM64, production readiness, or v1.0 readiness.
+
 - **S117 increment (v0.8.1 runway - WSL Linux Studio `.deb` package proof):**
   adds `scripts/smoke_garnet_studio_linux_wsl_deb.py`, a manifest-backed
   recorder/gate for a WSL-driven Tauri Linux `.deb` package build. The committed
