@@ -24,6 +24,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 import garnet_windows_clean_vm_installer_status  # noqa: E402
 import smoke_garnet_studio_linux_wsl_deb  # noqa: E402
+import smoke_garnet_studio_linux_wsl_deb_install  # noqa: E402
 
 ACTIVE_CONVERSION = ["Rust", "Ruby", "Python", "Go"]
 ADVISORY_PLANNING = [
@@ -653,8 +654,11 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
     clean_vm = garnet_windows_clean_vm_installer_status.read_status(clean_vm_root)
     clean_vm_verified = clean_vm.clean_vm_verified
     linux_deb = smoke_garnet_studio_linux_wsl_deb.read_committed_evidence(ROOT)
+    linux_deb_install = smoke_garnet_studio_linux_wsl_deb_install.read_committed_evidence(ROOT)
     linux_status_suffix = (
-        "wsl-deb-package-verified-linux-gui-open"
+        "wsl-deb-install-verified-linux-gui-open"
+        if linux_deb_install.verified
+        else "wsl-deb-package-verified-linux-gui-open"
         if linux_deb.verified
         else "linux-open"
     )
@@ -677,6 +681,11 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
     linux_package_truth = (
         [
             "WSL Linux `.deb` package build and non-GUI `--studio-smoke` are verified by `scripts/smoke_garnet_studio_linux_wsl_deb.py`; Linux desktop GUI install/launch remains open",
+            "WSL Linux `.deb` package extract and extracted-binary non-GUI `--studio-smoke` are verified by `scripts/smoke_garnet_studio_linux_wsl_deb_install.py`; clean Linux install and desktop GUI launch remain open",
+        ]
+        if linux_deb_install.verified
+        else [
+            "WSL Linux `.deb` package build and non-GUI `--studio-smoke` are verified by `scripts/smoke_garnet_studio_linux_wsl_deb.py`; Linux desktop GUI install/launch remains open",
         ]
         if linux_deb.verified
         else [
@@ -686,15 +695,21 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
     linux_package_gate = PackagingGate(
         id="linux_package_choice",
         platform="Linux",
-        status="wsl-deb-package-build-smoke-verified" if linux_deb.verified else "open",
+        status=(
+            "wsl-deb-extract-command-smoke-verified"
+            if linux_deb_install.verified
+            else "wsl-deb-package-build-smoke-verified"
+            if linux_deb.verified
+            else "open"
+        ),
         next_evidence=(
             "Run/install the WSL-built .deb in a real Linux desktop session and capture GUI launch evidence"
-            if linux_deb.verified
+            if linux_deb_install.verified or linux_deb.verified
             else "choose AppImage-first, .deb/.rpm, Flatpak, or source/PWA shell after target smoke"
         ),
         forbidden_claim=(
             "Linux desktop GUI package install/launch is verified"
-            if linux_deb.verified
+            if linux_deb_install.verified or linux_deb.verified
             else "Linux Studio package is verified"
         ),
     )
@@ -717,7 +732,7 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
         [
             (
                 "Linux desktop GUI install/launch proof for the WSL-built .deb or chosen target package"
-                if linux_deb.verified
+                if linux_deb_install.verified or linux_deb.verified
                 else "Linux desktop launch proof and first package-format decision"
             ),
             "Windows ARM64 target build/smoke after x64 clean-VM proof",
@@ -733,7 +748,7 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
             "Windows clean-machine NSIS install and CLI smoke evidence",
             (
                 "Linux desktop GUI install/launch proof for the WSL-built .deb or chosen target package"
-                if linux_deb.verified
+                if linux_deb_install.verified or linux_deb.verified
                 else "Linux desktop launch proof and first package-format decision"
             ),
             "Domain Proof Matrix screenshots/output from the Windows shell and WSL/Linux shell",

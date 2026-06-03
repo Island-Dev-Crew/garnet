@@ -233,13 +233,13 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             status = status_mod.read_status(clean_vm_evidence_root=root)
 
         self.assertEqual(
-            "tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-verified-wsl-deb-package-verified-linux-gui-open",
+            "tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-verified-wsl-deb-install-verified-linux-gui-open",
             status.status,
         )
         gate = next(gate for gate in status.packaging_gates if gate.id == "windows_unsigned_nsis")
         self.assertEqual("clean-vm-proof-verified", gate.status)
         linux_gate = next(gate for gate in status.packaging_gates if gate.id == "linux_package_choice")
-        self.assertEqual("wsl-deb-package-build-smoke-verified", linux_gate.status)
+        self.assertEqual("wsl-deb-extract-command-smoke-verified", linux_gate.status)
         self.assertIn("real Linux desktop", linux_gate.next_evidence)
         self.assertIn("Linux desktop GUI package install/launch", linux_gate.forbidden_claim)
         self.assertNotIn(
@@ -259,17 +259,32 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
                 "not Linux seccomp or OS-sandbox enforcement",
             ],
         )
+        install_evidence = status_mod.smoke_garnet_studio_linux_wsl_deb_install.LinuxWslDebInstallEvidence(
+            status="verified",
+            verified=True,
+            reason="WSL Linux Tauri .deb extract and extracted-binary non-GUI studio-smoke verified.",
+            bundle="proofs/linux/execution/studio-package-install/linux-wsl-deb-install-test",
+            deferred=[
+                "not Linux desktop GUI launch proof",
+                "not clean Linux install proof",
+            ],
+        )
         with mock.patch.object(
             status_mod.smoke_garnet_studio_linux_wsl_deb,
             "read_committed_evidence",
             return_value=evidence,
+        ), mock.patch.object(
+            status_mod.smoke_garnet_studio_linux_wsl_deb_install,
+            "read_committed_evidence",
+            return_value=install_evidence,
         ):
             status = status_mod.read_status()
 
         linux_gate = next(gate for gate in status.packaging_gates if gate.id == "linux_package_choice")
-        self.assertEqual("wsl-deb-package-build-smoke-verified", linux_gate.status)
+        self.assertEqual("wsl-deb-extract-command-smoke-verified", linux_gate.status)
         self.assertIn("Linux desktop GUI", linux_gate.forbidden_claim)
         self.assertIn("WSL Linux `.deb` package build", " ".join(status.current_truth))
+        self.assertIn("WSL Linux `.deb` package extract", " ".join(status.current_truth))
         self.assertIn("Linux desktop GUI", " ".join(status.next_slices))
         self.assertIn("Linux VM/container", " ".join(status.user_assistance_needed))
 
@@ -280,7 +295,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
         )
         data = json.loads(output)
         self.assertEqual(
-            "tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-contract-open-wsl-deb-package-verified-linux-gui-open",
+            "tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-contract-open-wsl-deb-install-verified-linux-gui-open",
             data["status"],
         )
         truth = " ".join(data["current_truth"])
@@ -288,6 +303,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
         self.assertIn("v0.5 reporters", truth)
         self.assertIn("repo-owned evidence contract", truth)
         self.assertIn("WSL Linux `.deb` package build", truth)
+        self.assertIn("WSL Linux `.deb` package extract", truth)
         self.assertIn("Windows ARM64 follows after x64 proof", truth)
         self.assertIn("Domain Proof Matrix", truth)
         self.assertIn("Linux runtime proof is not complete", " ".join(data["current_truth"]))

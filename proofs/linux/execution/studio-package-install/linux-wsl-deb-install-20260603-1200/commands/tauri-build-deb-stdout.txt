@@ -1,0 +1,13 @@
+
+> garnet-studio@0.1.0 build
+> tsc && vite build
+
+vite v6.4.2 building for production...
+transforming...
+✓ 6 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                 12.12 kB │ gzip: 2.57 kB
+dist/assets/index-BHAMk0rl.css   5.00 kB │ gzip: 1.72 kB
+dist/assets/index-DAtwh4Dp.js    6.76 kB │ gzip: 2.26 kB
+✓ built in 181ms

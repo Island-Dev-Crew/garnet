@@ -1,0 +1,1 @@
+-rwxrwxrwx 1 root root 9795760 Jun  3 12:05 ./target/linux-wsl-deb-install-stage-20260603-170305/usr/bin/garnet-studio

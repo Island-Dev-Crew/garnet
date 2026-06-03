@@ -75,6 +75,7 @@ import garnet_stdlib_layer_gate  # noqa: E402
 import garnet_windows_cross_os_enforcement_proof  # noqa: E402
 import garnet_windows_linux_studio_status  # noqa: E402
 import smoke_garnet_studio_linux_wsl_deb  # noqa: E402
+import smoke_garnet_studio_linux_wsl_deb_install  # noqa: E402
 import smoke_garnet_studio_windows_wsl  # noqa: E402
 
 
@@ -728,6 +729,7 @@ def read_status() -> MitReadinessStatus:
     wls = garnet_windows_linux_studio_status.read_status()
     studio_smoke = smoke_garnet_studio_windows_wsl.read_committed_evidence(ROOT)
     linux_deb_package = smoke_garnet_studio_linux_wsl_deb.read_committed_evidence(ROOT)
+    linux_deb_install = smoke_garnet_studio_linux_wsl_deb_install.read_committed_evidence(ROOT)
     stdlib = garnet_stdlib_layer_gate.read_status()
     novel_compositions_present = all(
         (ROOT / p).exists()
@@ -809,7 +811,9 @@ def read_status() -> MitReadinessStatus:
     lsp_precision_present = _lsp_precision_present()
     if wls_clean_vm_verified:
         wls_completion_percent = (
-            75.0
+            76.0
+            if domain_matrix.verified and linux_deb_install.verified
+            else 75.0
             if domain_matrix.verified and linux_deb_package.verified
             else 70.0
             if domain_matrix.verified
@@ -823,7 +827,9 @@ def read_status() -> MitReadinessStatus:
         )
     else:
         wls_completion_percent = (
-            63.0
+            64.0
+            if domain_matrix.verified and linux_deb_install.verified
+            else 63.0
             if domain_matrix.verified and linux_deb_package.verified
             else 60.0
             if domain_matrix.verified
@@ -960,6 +966,7 @@ def read_status() -> MitReadinessStatus:
                 "permissions, Windows local release build/smoke evidence, "
                 f"{'committed Windows/WSL Studio smoke evidence, ' if studio_smoke.verified else ''}"
                 f"{'committed WSL Linux `.deb` package-build/command-smoke evidence, ' if linux_deb_package.verified else ''}"
+                f"{'committed WSL Linux `.deb` extract/command-smoke evidence, ' if linux_deb_install.verified else ''}"
                 f"v0.5 {wls_evidence_tail}"
             ),
             blocked_by=list(wls.user_assistance_needed),
@@ -1003,6 +1010,28 @@ def read_status() -> MitReadinessStatus:
                 "not Linux desktop GUI launch proof",
                 "not Linux seccomp or OS-sandbox enforcement",
                 "not clean Linux install proof",
+                "not signed, production, or v1.0 readiness",
+            ],
+        ),
+        ObjectiveLane(
+            id="linux_wsl_studio_deb_install",
+            evidence_class="committed",
+            label="Linux WSL Studio DEB install/extract proof (S117 increment)",
+            status="verified" if linux_deb_install.verified else "planned",
+            completion_percent=100.0 if linux_deb_install.verified else 0.0,
+            evidence=(
+                "`scripts/smoke_garnet_studio_linux_wsl_deb_install.py --record` records "
+                "a WSL-driven Tauri Linux `.deb` build, `dpkg-deb --extract`, and "
+                f"extracted-binary non-GUI `--studio-smoke` command evidence. {linux_deb_install.reason}"
+                if linux_deb_install.verified
+                else linux_deb_install.reason
+            ),
+            blocked_by=[] if linux_deb_install.verified else ["committed WSL Linux `.deb` install/extract proof bundle"],
+            deferred=[
+                "not Linux desktop GUI launch proof",
+                "not Linux seccomp or OS-sandbox enforcement",
+                "not clean Linux install proof",
+                "not privileged system package install proof",
                 "not signed, production, or v1.0 readiness",
             ],
         ),
