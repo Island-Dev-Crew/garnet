@@ -76,9 +76,22 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   reporter now exposes `macos_cross_os_matrix_row` as committed evidence.
   **Honest scope:** this is the Mac row for S109 consolidation, not full S109
   completion. The independent Linux S108 row was absent when this Mac-row bundle
-  was recorded; full S109 still requires a separate consolidation gate update,
-  WSL remains execution/portability only rather than Linux seccomp or
-  OS-sandbox enforcement, and this is not a production/v1.0 claim.
+  was recorded; WSL remains execution/portability only rather than Linux seccomp
+  or OS-sandbox enforcement, and this is not a production/v1.0 claim.
+
+- **S109 full matrix (v0.8.1 runway - cross-OS trap parity consolidation):**
+  adds `scripts/garnet_cross_os_trap_parity_matrix.py`, a manifest-backed
+  recorder/gate for the post-S108 Win×Mac×Linux trap matrix. The committed proof
+  under `proofs/cross-os/matrix/` verifies the Windows S106 proof, the Mac S109
+  row, and the Linux S108 UTM proof, then records a Linux UTM `diff-caps`
+  rejection datapoint from Debian at `origin/main` `29f12e0`. The MIT readiness
+  reporter now exposes `cross_os_trap_parity_matrix` as committed evidence.
+  **Honest scope:** `cross_os_complete=true` applies only to the three named
+  S109 traps (`@max_depth`, `@caps`, diff-caps rejection). WSL remains
+  execution/portability evidence and is explicitly excluded from Linux
+  enforcement; Linux seccomp is Linux-only evidence, not a Windows/macOS
+  OS-sandbox claim; this is not Wasmtime fuel, production, release/tag, S120, or
+  v1.0 readiness.
 
 - **S117 consolidation (v0.8.1 runway - Linux/Tauri gate replay proof):**
   adds `scripts/smoke_garnet_studio_linux_gate_replay.py`, a manifest-backed

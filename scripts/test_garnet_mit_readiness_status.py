@@ -523,6 +523,70 @@ def _write_committed_mac_cross_os_matrix_bundle(bundle: Path) -> None:
     _write_manifest(bundle)
 
 
+def _write_committed_cross_os_trap_parity_bundle(bundle: Path) -> None:
+    bundle.mkdir(parents=True, exist_ok=True)
+    commands_dir = bundle / "commands"
+    commands_dir.mkdir()
+    (commands_dir / "linux-diff-caps-reject-stdout.txt").write_text(
+        "git_head=test\n"
+        "garnet diff-caps: baseline -> reject_widen\n"
+        "diff-caps: AUTHORITY EXPANDED — review required (capability band 2/5)\n",
+        encoding="utf-8",
+    )
+    (commands_dir / "linux-diff-caps-reject-stderr.txt").write_text("", encoding="utf-8")
+    rows = [
+        {
+            "trap": trap,
+            "status": "passed",
+            "windows": {"status": True, "tier": "enforcement"},
+            "mac": {"status": True, "tier": "enforcement"},
+            "linux": {"status": True, "tier": "enforcement"},
+            "wsl": {
+                "status": True,
+                "tier": "execution-portability",
+                "excluded_from_linux_enforcement": True,
+            },
+        }
+        for trap in ("max_depth", "caps", "diff_caps_reject")
+    ]
+    summary = {
+        "schema": "garnet.cross_os_trap_parity_matrix.v1",
+        "status": "passed",
+        "cross_os_complete": True,
+        "commands": [
+            {
+                "id": "linux-diff-caps-reject",
+                "display_args": ["test"],
+                "expected_exit_code": 1,
+                "exit_code": 1,
+                "status": "passed",
+                "stdout_file": "commands/linux-diff-caps-reject-stdout.txt",
+                "stderr_file": "commands/linux-diff-caps-reject-stderr.txt",
+            }
+        ],
+        "trap_rows": rows,
+        "byte_comparisons": [
+            {"id": "accept_capability_manifest", "expected_os_independent": True, "byte_equal": True},
+            {"id": "accept_transparency_log", "expected_os_independent": True, "byte_equal": True},
+        ],
+        "honest_scope": [
+            "Full S109 cross-OS trap parity requires committed Windows, Mac, and Linux rows.",
+            "WSL remains execution/portability evidence and is excluded from Linux enforcement.",
+            "Linux seccomp is Linux-only evidence, not Windows/macOS OS-sandbox enforcement.",
+            "No Wasmtime fuel, production, release, tag, S120, or v1.0 claim is made.",
+        ],
+    }
+    (bundle / "garnet-cross-os-trap-parity-matrix.json").write_text(
+        json.dumps(summary, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    (bundle / "garnet-cross-os-trap-parity-matrix.md").write_text(
+        status_mod.garnet_cross_os_trap_parity_matrix.render_markdown(summary),
+        encoding="utf-8",
+    )
+    _write_manifest(bundle)
+
+
 def _write_committed_studio_smoke_bundle(repo_root: Path, bundle: Path, target_platform: str) -> None:
     bundle.mkdir(parents=True, exist_ok=True)
     commands_dir = bundle / "commands"
@@ -1022,6 +1086,15 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         s108_deferred = " ".join(lanes["linux_cross_os_enforcement_proof"].deferred)
         self.assertIn("not Windows/macOS OS-sandbox enforcement", s108_deferred)
         self.assertIn("not full S109 completion", s108_deferred)
+        self.assertIn("cross_os_trap_parity_matrix", lanes)
+        self.assertEqual("verified", lanes["cross_os_trap_parity_matrix"].status)
+        self.assertIn(
+            "full S109 matrix",
+            lanes["cross_os_trap_parity_matrix"].evidence,
+        )
+        s109_deferred = " ".join(lanes["cross_os_trap_parity_matrix"].deferred)
+        self.assertIn("excluded from Linux enforcement", s109_deferred)
+        self.assertIn("not Windows/macOS OS-sandbox enforcement", s109_deferred)
         self.assertEqual("planned", lanes["broad_converter_frontends"].status)
         self.assertIn("windows_linux_distribution", lanes)
         self.assertEqual(
@@ -1324,7 +1397,27 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         assert evidence is not None
         self.assertTrue(evidence.verified)
         self.assertIn("Committed Mac S109 matrix row", evidence.reason)
-        self.assertIn("independent Linux S108", evidence.reason)
+        self.assertIn("separate cross-OS trap parity lane", evidence.reason)
+
+    def test_cross_os_trap_parity_evidence_accepts_committed_bundle(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            repo_root = Path(temp)
+            _write_committed_cross_os_trap_parity_bundle(
+                repo_root
+                / "proofs"
+                / "cross-os"
+                / "matrix"
+                / "cross-os-trap-parity-test"
+            )
+
+            with mock.patch.object(status_mod, "ROOT", repo_root):
+                evidence = status_mod._committed_cross_os_trap_parity_evidence()
+
+        self.assertIsNotNone(evidence)
+        assert evidence is not None
+        self.assertTrue(evidence.verified)
+        self.assertIn("Committed full S109 cross-OS trap parity matrix", evidence.reason)
+        self.assertIn("excludes WSL portability from Linux enforcement", evidence.reason)
 
     def test_studio_smoke_evidence_accepts_committed_windows_and_wsl_bundles(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

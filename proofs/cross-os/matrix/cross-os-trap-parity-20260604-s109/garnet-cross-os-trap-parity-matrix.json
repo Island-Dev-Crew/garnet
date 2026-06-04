@@ -1,0 +1,149 @@
+{
+  "byte_comparisons": [
+    {
+      "byte_equal": true,
+      "delta": "Must be byte-identical; declared surface is OS-independent.",
+      "expected_os_independent": true,
+      "id": "accept_capability_manifest",
+      "mac_path": "proofs/mac/domains/mac-domain-proofs-20260604-064412/domains/accept_provenance_dossier/record/capability_manifest.json",
+      "windows_path": "proofs/windows/ultrapunch/windows-ultrapunch-repro-20260603-0927/accept/capability_manifest.json"
+    },
+    {
+      "byte_equal": true,
+      "delta": "Must be byte-identical for a one-entry local chain over the same accepted proposal.",
+      "expected_os_independent": true,
+      "id": "accept_transparency_log",
+      "mac_path": "proofs/mac/domains/mac-domain-proofs-20260604-064412/domains/accept_provenance_dossier/record/transparency_log.jsonl",
+      "windows_path": "proofs/windows/ultrapunch/windows-ultrapunch-repro-20260603-0927/accept/transparency_log.jsonl"
+    },
+    {
+      "byte_equal": false,
+      "delta": "Full text includes absolute OS paths; the path-independent verdict body must match.",
+      "expected_os_independent": false,
+      "id": "accept_diff_caps",
+      "mac_path": "proofs/mac/domains/mac-domain-proofs-20260604-064412/domains/accept_provenance_dossier/record/diff_caps.txt",
+      "normalized_body_equal": true,
+      "windows_path": "proofs/windows/ultrapunch/windows-ultrapunch-repro-20260603-0927/accept/diff_caps.txt"
+    },
+    {
+      "delta": "Full seal JSON differs because the prelude_hash field differs across the older Windows baseline checkout and the current Mac proof; the OS-independent subject, AST, capability manifest, and attestation fields match.",
+      "expected_os_independent": false,
+      "field_equal": {
+        "ast_hash": true,
+        "attestation": true,
+        "capability_manifest": true,
+        "source_blake3": true,
+        "source_hash": true
+      },
+      "full_json_byte_equal": false,
+      "id": "accept_seal",
+      "mac_path": "proofs/mac/domains/mac-domain-proofs-20260604-064412/domains/accept_provenance_dossier/record/seal.json",
+      "mac_prelude_hash": "67029a18ae8fbd17be7b292ff0e981387a75bf1409d046779c975b61d67991ce",
+      "status": "passed",
+      "windows_path": "proofs/windows/ultrapunch/windows-ultrapunch-repro-20260603-0927/accept/seal.json",
+      "windows_prelude_hash": "2bec154d4509ed32953b3c9a9e5b13b14a8ae9376527938558bfa3a80cc7e4b8"
+    }
+  ],
+  "commands": [
+    {
+      "display_args": [
+        "sh",
+        "-lc",
+        "ssh -o BatchMode=yes debian@192.168.64.4 'cd /home/debian/garnet-s108 && echo git_head=29f12e06417e5e2ba82944141f02987b22b7740d && ./target/debug/garnet diff-caps garnet-cli/tests/fixtures/ultrapunch/baseline.garnet garnet-cli/tests/fixtures/ultrapunch/reject_widen.garnet'"
+      ],
+      "exit_code": 1,
+      "expected_exit_code": 1,
+      "id": "linux-diff-caps-reject",
+      "status": "passed",
+      "stderr_file": "commands/linux-diff-caps-reject-stderr.txt",
+      "stdout_file": "commands/linux-diff-caps-reject-stdout.txt"
+    }
+  ],
+  "created_at": "2026-06-04T21:26:36+00:00",
+  "cross_os_complete": true,
+  "honest_scope": [
+    "Full S109 cross-OS trap parity requires committed Windows, Mac, and Linux rows.",
+    "WSL remains execution/portability evidence and is excluded from Linux enforcement.",
+    "Linux seccomp is Linux-only evidence, not Windows/macOS OS-sandbox enforcement.",
+    "No Wasmtime fuel, production, release, tag, S120, or v1.0 claim is made."
+  ],
+  "linux_enforcement_baseline": "proofs/linux/enforcement/utm-linux-enforcement-20260604-s108/garnet-linux-cross-os-enforcement-proof.json",
+  "mac_matrix_baseline": "proofs/mac/matrix/mac-cross-os-matrix-20260604-201153/garnet-mac-cross-os-matrix.json",
+  "schema": "garnet.cross_os_trap_parity_matrix.v1",
+  "status": "passed",
+  "trap_rows": [
+    {
+      "linux": {
+        "evidence": "proofs/linux/enforcement/utm-linux-enforcement-20260604-s108/garnet-linux-cross-os-enforcement-proof.json",
+        "status": true,
+        "tier": "enforcement"
+      },
+      "mac": {
+        "evidence": "proofs/mac/domains/mac-domain-proofs-20260604-064412/garnet-mac-domain-proofs.json",
+        "status": true,
+        "tier": "enforcement"
+      },
+      "status": "passed",
+      "trap": "max_depth",
+      "windows": {
+        "evidence": "proofs/windows/enforcement/bounded_enforcement.stdout.log",
+        "status": true,
+        "tier": "enforcement"
+      },
+      "wsl": {
+        "excluded_from_linux_enforcement": true,
+        "status": true,
+        "tier": "execution-portability"
+      }
+    },
+    {
+      "linux": {
+        "evidence": "proofs/linux/enforcement/utm-linux-enforcement-20260604-s108/garnet-linux-cross-os-enforcement-proof.json",
+        "status": true,
+        "tier": "enforcement+linux-seccomp"
+      },
+      "mac": {
+        "evidence": "proofs/mac/domains/mac-domain-proofs-20260604-064412/garnet-mac-domain-proofs.json",
+        "status": true,
+        "tier": "enforcement"
+      },
+      "status": "passed",
+      "trap": "caps",
+      "windows": {
+        "evidence": "proofs/windows/enforcement/caps_enforcement.stdout.log",
+        "status": true,
+        "tier": "enforcement"
+      },
+      "wsl": {
+        "excluded_from_linux_enforcement": true,
+        "status": true,
+        "tier": "execution-portability"
+      }
+    },
+    {
+      "linux": {
+        "evidence": "commands/linux-diff-caps-reject-stdout.txt",
+        "status": true,
+        "tier": "enforcement"
+      },
+      "mac": {
+        "evidence": "proofs/mac/domains/mac-domain-proofs-20260604-064412/garnet-mac-domain-proofs.json",
+        "status": true,
+        "tier": "enforcement"
+      },
+      "status": "passed",
+      "trap": "diff_caps_reject",
+      "windows": {
+        "evidence": "proofs/windows/ultrapunch",
+        "status": true,
+        "tier": "enforcement"
+      },
+      "wsl": {
+        "excluded_from_linux_enforcement": true,
+        "status": true,
+        "tier": "execution-portability"
+      }
+    }
+  ],
+  "windows_baseline": "proofs/windows/enforcement/windows-enforcement-proof.json"
+}
