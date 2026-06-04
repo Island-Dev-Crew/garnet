@@ -1,0 +1,13 @@
+{
+  "status": "verified",
+  "verified": true,
+  "reason": "WSL Linux Tauri .rpm package extract and extracted-binary non-GUI studio-smoke verified at `C:/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/proofs/linux/execution/studio-rpm-package/linux-wsl-rpm-package-20260603-181113/garnet-studio-linux-wsl-rpm.json` (target/release/bundle/rpm/Garnet Studio-0.1.0-1.x86_64.rpm, package sha256 2bcab818f9e038cf76a676dec28bd96c84ab68568e7bcf5440979198841d5ad6, extracted binary target/linux-wsl-rpm-stage-20260603-181113/usr/bin/garnet-studio).",
+  "bundle": "C:/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/proofs/linux/execution/studio-rpm-package/linux-wsl-rpm-package-20260603-181113",
+  "deferred": [
+    "not Linux desktop GUI launch proof",
+    "not Linux seccomp or OS-sandbox enforcement",
+    "not clean Linux install proof",
+    "not privileged system package install proof",
+    "not signed, production, or v1.0 readiness"
+  ]
+}

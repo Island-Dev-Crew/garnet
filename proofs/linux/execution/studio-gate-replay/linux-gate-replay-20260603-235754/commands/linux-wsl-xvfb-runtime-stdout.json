@@ -1,0 +1,13 @@
+{
+  "status": "verified",
+  "verified": true,
+  "reason": "WSL Xvfb runtime-start verified at `C:/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/proofs/linux/execution/studio-xvfb-runtime/linux-wsl-xvfb-runtime-20260603-185759/garnet-studio-linux-wsl-xvfb-runtime.json` (source deb proof C:/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/proofs/linux/execution/studio-package-install/linux-wsl-deb-install-20260603-1200/garnet-studio-linux-wsl-deb-install.json, extracted binary target/linux-wsl-deb-install-stage-20260603-170305/usr/bin/garnet-studio, timeout exit 124).",
+  "bundle": "C:/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/proofs/linux/execution/studio-xvfb-runtime/linux-wsl-xvfb-runtime-20260603-185759",
+  "deferred": [
+    "not Linux desktop GUI launch proof",
+    "not Linux seccomp or OS-sandbox enforcement",
+    "not clean Linux install proof",
+    "not privileged system package install proof",
+    "not signed, production, or v1.0 readiness"
+  ]
+}

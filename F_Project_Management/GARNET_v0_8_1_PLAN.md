@@ -358,6 +358,17 @@ close full S117: live GUI screenshot proof, clean/non-WSL Linux desktop GUI
 install/launch, Linux seccomp or OS-sandbox enforcement, signed/SBOM release
 artifacts, winget, Windows ARM64, production, and v1.0 remain unclaimed.
 
+**S117 Linux/Tauri gate replay consolidation (recorded 2026-06-03):** the
+Windows lane records a single replay proof under
+`proofs/linux/execution/studio-gate-replay/` by running the current WSL/WSLg
+package, runtime, display, domain-shell, and Release / Readiness shell gates in
+`--gate` mode and preserving each child gate's stdout/stderr in one manifest.
+This moves overall MIT/productization readiness to 92.3% and the Windows/Linux
+distribution lane to 83.0%, but it still does **not** close full S117:
+clean/non-WSL Linux desktop GUI install/launch, Linux seccomp or OS-sandbox
+enforcement, signed/SBOM release artifacts, winget, Windows ARM64, production,
+and v1.0 remain unclaimed.
+
 **STOP + report before S120:** the cut is Jon's decision.
 
 ## Verification Expectations

@@ -789,7 +789,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertEqual(
             "active-partial", lanes["windows_linux_distribution"].status
         )
-        self.assertEqual(70.0, lanes["windows_linux_distribution"].completion_percent)
+        self.assertEqual(71.0, lanes["windows_linux_distribution"].completion_percent)
         self.assertLess(
             lanes["windows_linux_distribution"].completion_percent, 100.0
         )
@@ -803,6 +803,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("linux_wsl_studio_xvfb_window_capture", lanes)
         self.assertIn("linux_wsl_studio_wslg_system_install_launch", lanes)
         self.assertIn("windows_wsl_studio_release_readiness_shell_proof", lanes)
+        self.assertIn("linux_tauri_gate_replay", lanes)
         self.assertEqual("verified", lanes["windows_wsl_studio_smoke"].status)
         self.assertIn("Committed Windows Studio smoke bundle", lanes["windows_wsl_studio_smoke"].evidence)
         self.assertIn("not Linux seccomp", lanes["windows_wsl_studio_smoke"].evidence)
@@ -1126,7 +1127,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         distribution = lanes["windows_linux_distribution"]
         self.assertEqual("active-partial", distribution.status)
-        self.assertEqual(70.0, distribution.completion_percent)
+        self.assertEqual(71.0, distribution.completion_percent)
         self.assertIn("committed WSL Linux Xvfb virtual-display window-capture evidence", distribution.evidence)
         self.assertIn("committed WSLg system package install/launch evidence", distribution.evidence)
         self.assertIn("Linux VM/container", " ".join(distribution.blocked_by))
@@ -1145,8 +1146,27 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         distribution = lanes["windows_linux_distribution"]
         self.assertEqual("active-partial", distribution.status)
-        self.assertEqual(70.0, distribution.completion_percent)
+        self.assertEqual(71.0, distribution.completion_percent)
         self.assertIn("committed WSLg system package install/launch evidence", distribution.evidence)
+        self.assertIn("Linux VM/container", " ".join(distribution.blocked_by))
+
+    def test_linux_tauri_gate_replay_lane_is_verified_without_linux_enforcement_overclaim(self) -> None:
+        status = status_mod.read_status()
+        lanes = {lane.id: lane for lane in status.lanes}
+
+        self.assertIn("linux_tauri_gate_replay", lanes)
+        lane = lanes["linux_tauri_gate_replay"]
+        self.assertEqual("verified", lane.status)
+        self.assertEqual(100.0, lane.completion_percent)
+        self.assertIn("Linux/Tauri", lane.evidence)
+        self.assertIn("all current Linux/Tauri gates", lane.evidence)
+        self.assertIn("execution/portability only", " ".join(lane.deferred))
+        self.assertIn("not clean/non-WSL Linux desktop proof", " ".join(lane.deferred))
+
+        distribution = lanes["windows_linux_distribution"]
+        self.assertEqual("active-partial", distribution.status)
+        self.assertEqual(71.0, distribution.completion_percent)
+        self.assertIn("committed consolidated Linux/Tauri gate replay evidence", distribution.evidence)
         self.assertIn("Linux VM/container", " ".join(distribution.blocked_by))
 
     def test_studio_domain_shell_lane_lifts_distribution_without_linux_enforcement_overclaim(self) -> None:
@@ -1181,7 +1201,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         distribution = lanes["windows_linux_distribution"]
         self.assertEqual("active-partial", distribution.status)
-        self.assertEqual(70.0, distribution.completion_percent)
+        self.assertEqual(71.0, distribution.completion_percent)
         self.assertIn("committed Studio domain-shell proof evidence", distribution.evidence)
         self.assertIn("Linux VM/container", " ".join(distribution.blocked_by))
 
@@ -1217,7 +1237,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         distribution = lanes["windows_linux_distribution"]
         self.assertEqual("active-partial", distribution.status)
-        self.assertEqual(70.0, distribution.completion_percent)
+        self.assertEqual(71.0, distribution.completion_percent)
         self.assertIn("committed Release / Readiness shell proof evidence", distribution.evidence)
         self.assertIn("Linux VM/container", " ".join(distribution.blocked_by))
 
@@ -1322,7 +1342,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         lane = {lane.id: lane for lane in status.lanes}["windows_linux_distribution"]
         self.assertEqual("active-partial", lane.status)
-        self.assertEqual(82.0, lane.completion_percent)
+        self.assertEqual(83.0, lane.completion_percent)
         self.assertIn("verified x64 clean-VM installer proof", lane.evidence)
         self.assertIn("committed WSL Linux `.deb` package-build/command-smoke evidence", lane.evidence)
         self.assertIn("committed WSL Linux `.deb` extract/command-smoke evidence", lane.evidence)
@@ -1330,6 +1350,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("committed WSL Linux Xvfb runtime-start evidence", lane.evidence)
         self.assertIn("committed WSL Linux Xvfb virtual-display window-capture evidence", lane.evidence)
         self.assertIn("committed WSLg system package install/launch evidence", lane.evidence)
+        self.assertIn("committed consolidated Linux/Tauri gate replay evidence", lane.evidence)
         self.assertIn("committed Release / Readiness shell proof evidence", lane.evidence)
         self.assertNotIn("clean Windows VM", " ".join(lane.blocked_by))
         self.assertIn("Linux VM/container", " ".join(lane.blocked_by))
@@ -1566,12 +1587,12 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         self.assertIn("Objective accounting", site)
         self.assertIn("MIT/productization objective", site)
-        self.assertIn("92.1%", site)
+        self.assertIn("92.3%", site)
         self.assertNotIn("58.1%", site)
         self.assertNotIn("55.8%", site)
         self.assertNotIn("57.9%", site)
         self.assertNotIn("58.6%", site)
-        self.assertIn("92.1%", status_site)
+        self.assertIn("92.3%", status_site)
         self.assertNotIn("58.1%", status_site)
         self.assertNotIn("55.8%", status_site)
         self.assertNotIn("57.9%", status_site)
