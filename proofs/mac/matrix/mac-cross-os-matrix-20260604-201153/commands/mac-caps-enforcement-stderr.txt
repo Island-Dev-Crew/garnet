@@ -1,0 +1,2 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running tests/caps_enforcement.rs (target/debug/deps/caps_enforcement-07eca5427436fd1b)
