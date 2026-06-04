@@ -1,0 +1,36 @@
+== deterministic seccomp run 1/3 ==
+== @caps(fs): socket must be DENIED (the trap) ==
+seccomp-apply: applied 27 allowed syscalls (default ERRNO); 0 names unresolved on this arch
+seccomp-apply: allowed getpid() -> OK (pid=8360)
+seccomp-apply: socket(AF_INET) -> BLOCKED (trap) (ret=-1 errno=1/Operation not permitted); expected DENIED
+seccomp-apply: PROVEN -- the generated policy is APPLIED and TRAPS a denied syscall on this kernel.
+== @caps(fs, net): socket must be ALLOWED (policy-driven) ==
+seccomp-apply: applied 41 allowed syscalls (default ERRNO); 0 names unresolved on this arch
+seccomp-apply: allowed getpid() -> OK (pid=8361)
+seccomp-apply: socket(AF_INET) -> ALLOWED (ret=3 errno=0/Success); expected ALLOWED
+seccomp-apply: PROVEN -- the generated policy is APPLIED and ALLOWS the declared syscall (policy-driven, not blanket-deny).
+OK: Garnet's generated seccomp policy is APPLIED and TRAPS on this Linux kernel.
+== deterministic seccomp run 2/3 ==
+== @caps(fs): socket must be DENIED (the trap) ==
+seccomp-apply: applied 27 allowed syscalls (default ERRNO); 0 names unresolved on this arch
+seccomp-apply: allowed getpid() -> OK (pid=8377)
+seccomp-apply: socket(AF_INET) -> BLOCKED (trap) (ret=-1 errno=1/Operation not permitted); expected DENIED
+seccomp-apply: PROVEN -- the generated policy is APPLIED and TRAPS a denied syscall on this kernel.
+== @caps(fs, net): socket must be ALLOWED (policy-driven) ==
+seccomp-apply: applied 41 allowed syscalls (default ERRNO); 0 names unresolved on this arch
+seccomp-apply: allowed getpid() -> OK (pid=8378)
+seccomp-apply: socket(AF_INET) -> ALLOWED (ret=3 errno=0/Success); expected ALLOWED
+seccomp-apply: PROVEN -- the generated policy is APPLIED and ALLOWS the declared syscall (policy-driven, not blanket-deny).
+OK: Garnet's generated seccomp policy is APPLIED and TRAPS on this Linux kernel.
+== deterministic seccomp run 3/3 ==
+== @caps(fs): socket must be DENIED (the trap) ==
+seccomp-apply: applied 27 allowed syscalls (default ERRNO); 0 names unresolved on this arch
+seccomp-apply: allowed getpid() -> OK (pid=8394)
+seccomp-apply: socket(AF_INET) -> BLOCKED (trap) (ret=-1 errno=1/Operation not permitted); expected DENIED
+seccomp-apply: PROVEN -- the generated policy is APPLIED and TRAPS a denied syscall on this kernel.
+== @caps(fs, net): socket must be ALLOWED (policy-driven) ==
+seccomp-apply: applied 41 allowed syscalls (default ERRNO); 0 names unresolved on this arch
+seccomp-apply: allowed getpid() -> OK (pid=8395)
+seccomp-apply: socket(AF_INET) -> ALLOWED (ret=3 errno=0/Success); expected ALLOWED
+seccomp-apply: PROVEN -- the generated policy is APPLIED and ALLOWS the declared syscall (policy-driven, not blanket-deny).
+OK: Garnet's generated seccomp policy is APPLIED and TRAPS on this Linux kernel.

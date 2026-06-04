@@ -1,0 +1,105 @@
+{
+  "schema": "garnet.linux_cross_os_enforcement_proof.v1",
+  "platform": "linux",
+  "cross_os_role": "S108 Linux row for S109 consolidation",
+  "status": "passed",
+  "tier": "linux-enforcement-proof",
+  "generated_at": "2026-06-04T21:02:30.079691+00:00",
+  "environment": {
+    "kind": "utm-debian-12-arm64",
+    "ssh_target": "debian@192.168.64.4",
+    "remote_root": "/home/debian/garnet-s108",
+    "kernel": "Linux debian 6.1.0-13-arm64 #1 SMP Debian 6.1.55-1 (2023-09-29) aarch64 GNU/Linux",
+    "git_head": "55f0353a558672da62008bf7c40d45b4ee5cb9ee",
+    "git_status_short": "## main...origin/main"
+  },
+  "stage_v_traps": [
+    {
+      "trap": "max_depth",
+      "status": "passed"
+    },
+    {
+      "trap": "caps",
+      "status": "passed"
+    },
+    {
+      "trap": "s92_program_entry_proc",
+      "status": "passed"
+    }
+  ],
+  "seccomp": {
+    "attempted": true,
+    "status": "proven",
+    "denied_socket_trapped": true,
+    "allowed_socket_policy_driven": true,
+    "deterministic_denied_runs": 3
+  },
+  "commands": [
+    {
+      "id": "linux-s101-gate",
+      "display_args": [
+        "python3",
+        "scripts/garnet_vm_interp_enforcement_parity_status.py",
+        "--gate",
+        "--format",
+        "json"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/linux-s101-gate-stdout.txt",
+      "stderr_file": "commands/linux-s101-gate-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "linux-bounded-enforcement",
+      "display_args": [
+        "cargo",
+        "test",
+        "-p",
+        "garnet-cli",
+        "--test",
+        "bounded_enforcement",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/linux-bounded-enforcement-stdout.txt",
+      "stderr_file": "commands/linux-bounded-enforcement-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "linux-caps-enforcement",
+      "display_args": [
+        "cargo",
+        "test",
+        "-p",
+        "garnet-cli",
+        "--test",
+        "caps_enforcement",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/linux-caps-enforcement-stdout.txt",
+      "stderr_file": "commands/linux-caps-enforcement-stderr.txt",
+      "status": "passed"
+    },
+    {
+      "id": "linux-seccomp-apply",
+      "display_args": [
+        "bash",
+        "-lc",
+        "for run in 1 2 3; do echo \"== deterministic seccomp run $run/3 ==\"; env GARNET=target/debug/garnet tools/seccomp-apply/prove.sh || exit $?; done"
+      ],
+      "exit_code": 0,
+      "stdout_file": "commands/linux-seccomp-apply-stdout.txt",
+      "stderr_file": "commands/linux-seccomp-apply-stderr.txt",
+      "status": "passed"
+    }
+  ],
+  "honest_scope": [
+    "This is the independent Linux S108 enforcement row for S109 consolidation.",
+    "Linux seccomp is Linux-only evidence, not Windows/macOS OS-sandbox enforcement.",
+    "This is not full S109 completion; S109 still needs a separate consolidation gate update.",
+    "No Wasmtime fuel, production, or v1.0 claim is made."
+  ]
+}
