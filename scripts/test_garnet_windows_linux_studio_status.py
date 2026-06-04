@@ -82,6 +82,15 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             ],
         )
 
+    def _missing_linux_gate_replay_evidence(self) -> object:
+        return status_mod.smoke_garnet_studio_linux_gate_replay.LinuxGateReplayEvidence(
+            status="missing",
+            verified=False,
+            reason="No committed consolidated Linux/Tauri gate replay bundle verified.",
+            bundle=None,
+            deferred=["record consolidated replay"],
+        )
+
     def test_taxonomy_matches_handoff_copy_truth(self) -> None:
         status = status_mod.read_status()
         self.assertEqual(["Rust", "Ruby", "Python", "Go"], status.taxonomy.active_conversion)
@@ -312,6 +321,10 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
                 status_mod.smoke_garnet_studio_linux_wslg_install_launch,
                 "read_committed_evidence",
                 return_value=wslg_missing,
+            ), mock.patch.object(
+                status_mod.smoke_garnet_studio_linux_gate_replay,
+                "read_committed_evidence",
+                return_value=self._missing_linux_gate_replay_evidence(),
             ):
                 status = status_mod.read_status(clean_vm_evidence_root=root)
 
@@ -394,12 +407,16 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             status_mod.smoke_garnet_studio_linux_wsl_xvfb_window,
             "read_committed_evidence",
             return_value=xvfb_window_missing,
-        ), mock.patch.object(
-            status_mod.smoke_garnet_studio_linux_wslg_install_launch,
-            "read_committed_evidence",
-            return_value=wslg_missing,
-        ):
-            status = status_mod.read_status()
+            ), mock.patch.object(
+                status_mod.smoke_garnet_studio_linux_wslg_install_launch,
+                "read_committed_evidence",
+                return_value=wslg_missing,
+            ), mock.patch.object(
+                status_mod.smoke_garnet_studio_linux_gate_replay,
+                "read_committed_evidence",
+                return_value=self._missing_linux_gate_replay_evidence(),
+            ):
+                status = status_mod.read_status()
 
         linux_gate = next(gate for gate in status.packaging_gates if gate.id == "linux_package_choice")
         self.assertEqual("wsl-deb-extract-command-smoke-verified", linux_gate.status)
@@ -469,12 +486,16 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             status_mod.smoke_garnet_studio_linux_wsl_xvfb_window,
             "read_committed_evidence",
             return_value=xvfb_window_missing,
-        ), mock.patch.object(
-            status_mod.smoke_garnet_studio_linux_wslg_install_launch,
-            "read_committed_evidence",
-            return_value=wslg_missing,
-        ):
-            status = status_mod.read_status()
+            ), mock.patch.object(
+                status_mod.smoke_garnet_studio_linux_wslg_install_launch,
+                "read_committed_evidence",
+                return_value=wslg_missing,
+            ), mock.patch.object(
+                status_mod.smoke_garnet_studio_linux_gate_replay,
+                "read_committed_evidence",
+                return_value=self._missing_linux_gate_replay_evidence(),
+            ):
+                status = status_mod.read_status()
 
         linux_gate = next(gate for gate in status.packaging_gates if gate.id == "linux_package_choice")
         self.assertEqual("wsl-deb-rpm-extract-command-smoke-verified", linux_gate.status)
@@ -544,12 +565,16 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             status_mod.smoke_garnet_studio_linux_wsl_xvfb_window,
             "read_committed_evidence",
             return_value=xvfb_window_missing,
-        ), mock.patch.object(
-            status_mod.smoke_garnet_studio_linux_wslg_install_launch,
-            "read_committed_evidence",
-            return_value=wslg_missing,
-        ):
-            status = status_mod.read_status()
+            ), mock.patch.object(
+                status_mod.smoke_garnet_studio_linux_wslg_install_launch,
+                "read_committed_evidence",
+                return_value=wslg_missing,
+            ), mock.patch.object(
+                status_mod.smoke_garnet_studio_linux_gate_replay,
+                "read_committed_evidence",
+                return_value=self._missing_linux_gate_replay_evidence(),
+            ):
+                status = status_mod.read_status()
 
         linux_gate = next(gate for gate in status.packaging_gates if gate.id == "linux_package_choice")
         self.assertEqual("wsl-deb-rpm-xvfb-runtime-start-verified", linux_gate.status)
@@ -620,12 +645,16 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             status_mod.smoke_garnet_studio_linux_wsl_xvfb_window,
             "read_committed_evidence",
             return_value=window_evidence,
-        ), mock.patch.object(
-            status_mod.smoke_garnet_studio_linux_wslg_install_launch,
-            "read_committed_evidence",
-            return_value=wslg_missing,
-        ):
-            status = status_mod.read_status()
+            ), mock.patch.object(
+                status_mod.smoke_garnet_studio_linux_wslg_install_launch,
+                "read_committed_evidence",
+                return_value=wslg_missing,
+            ), mock.patch.object(
+                status_mod.smoke_garnet_studio_linux_gate_replay,
+                "read_committed_evidence",
+                return_value=self._missing_linux_gate_replay_evidence(),
+            ):
+                status = status_mod.read_status()
 
         linux_gate = next(gate for gate in status.packaging_gates if gate.id == "linux_package_choice")
         self.assertEqual("wsl-deb-rpm-xvfb-window-capture-verified", linux_gate.status)
