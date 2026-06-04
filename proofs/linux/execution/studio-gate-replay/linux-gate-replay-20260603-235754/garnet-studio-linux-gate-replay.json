@@ -1,0 +1,164 @@
+{
+  "schema": "garnet.studio.linux_gate_replay.v1",
+  "generated_at": "2026-06-03T23:57:55.814417+00:00",
+  "status": "passed",
+  "platform_tier": "WSL/WSLg execution-portability only, not enforcement",
+  "source_included": false,
+  "provider_api_called": false,
+  "all_current_linux_gates_replayed": true,
+  "wsl_is_enforcement": false,
+  "linux_enforcement_proven": false,
+  "linux_seccomp_proven": false,
+  "os_sandbox_enforcement_proven": false,
+  "clean_linux_desktop_proven": false,
+  "non_wsl_linux_desktop_proven": false,
+  "signed_release_proven": false,
+  "production_readiness_claimed": false,
+  "v1_readiness_claimed": false,
+  "gate_count": 8,
+  "passed_gate_count": 8,
+  "gates": [
+    {
+      "id": "linux-wsl-deb-package",
+      "label": "WSL .deb package build and command smoke",
+      "script": "smoke_garnet_studio_linux_wsl_deb.py",
+      "display_args": [
+        "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\scripts\\smoke_garnet_studio_linux_wsl_deb.py",
+        "--gate",
+        "--format",
+        "json"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "verified": true,
+      "stdout_file": "commands/linux-wsl-deb-package-stdout.json",
+      "stderr_file": "commands/linux-wsl-deb-package-stderr.txt"
+    },
+    {
+      "id": "linux-wsl-deb-install",
+      "label": "WSL .deb extract and installed-tree command smoke",
+      "script": "smoke_garnet_studio_linux_wsl_deb_install.py",
+      "display_args": [
+        "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\scripts\\smoke_garnet_studio_linux_wsl_deb_install.py",
+        "--gate",
+        "--format",
+        "json"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "verified": true,
+      "stdout_file": "commands/linux-wsl-deb-install-stdout.json",
+      "stderr_file": "commands/linux-wsl-deb-install-stderr.txt"
+    },
+    {
+      "id": "linux-wsl-rpm-package",
+      "label": "WSL .rpm extract and command smoke",
+      "script": "smoke_garnet_studio_linux_wsl_rpm.py",
+      "display_args": [
+        "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\scripts\\smoke_garnet_studio_linux_wsl_rpm.py",
+        "--gate",
+        "--format",
+        "json"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "verified": true,
+      "stdout_file": "commands/linux-wsl-rpm-package-stdout.json",
+      "stderr_file": "commands/linux-wsl-rpm-package-stderr.txt"
+    },
+    {
+      "id": "linux-wsl-xvfb-runtime",
+      "label": "WSL Xvfb runtime-start proof",
+      "script": "smoke_garnet_studio_linux_wsl_xvfb.py",
+      "display_args": [
+        "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\scripts\\smoke_garnet_studio_linux_wsl_xvfb.py",
+        "--gate",
+        "--format",
+        "json"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "verified": true,
+      "stdout_file": "commands/linux-wsl-xvfb-runtime-stdout.json",
+      "stderr_file": "commands/linux-wsl-xvfb-runtime-stderr.txt"
+    },
+    {
+      "id": "linux-wsl-xvfb-window",
+      "label": "WSL Xvfb virtual-display window capture",
+      "script": "smoke_garnet_studio_linux_wsl_xvfb_window.py",
+      "display_args": [
+        "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\scripts\\smoke_garnet_studio_linux_wsl_xvfb_window.py",
+        "--gate",
+        "--format",
+        "json"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "verified": true,
+      "stdout_file": "commands/linux-wsl-xvfb-window-stdout.json",
+      "stderr_file": "commands/linux-wsl-xvfb-window-stderr.txt"
+    },
+    {
+      "id": "linux-wslg-system-install",
+      "label": "WSLg system install and launch observation",
+      "script": "smoke_garnet_studio_linux_wslg_install_launch.py",
+      "display_args": [
+        "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\scripts\\smoke_garnet_studio_linux_wslg_install_launch.py",
+        "--gate",
+        "--format",
+        "json"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "verified": true,
+      "stdout_file": "commands/linux-wslg-system-install-stdout.json",
+      "stderr_file": "commands/linux-wslg-system-install-stderr.txt"
+    },
+    {
+      "id": "windows-wsl-domain-shell",
+      "label": "Windows/WSL Studio domain-shell proof",
+      "script": "smoke_garnet_studio_domain_shell.py",
+      "display_args": [
+        "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\scripts\\smoke_garnet_studio_domain_shell.py",
+        "--gate",
+        "--format",
+        "json"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "verified": true,
+      "stdout_file": "commands/windows-wsl-domain-shell-stdout.json",
+      "stderr_file": "commands/windows-wsl-domain-shell-stderr.txt"
+    },
+    {
+      "id": "windows-wsl-release-readiness-shell",
+      "label": "Windows/WSL Studio release/readiness shell proof",
+      "script": "smoke_garnet_studio_release_readiness_shell.py",
+      "display_args": [
+        "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\scripts\\smoke_garnet_studio_release_readiness_shell.py",
+        "--gate",
+        "--format",
+        "json"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "verified": true,
+      "stdout_file": "commands/windows-wsl-release-readiness-shell-stdout.json",
+      "stderr_file": "commands/windows-wsl-release-readiness-shell-stderr.txt"
+    }
+  ],
+  "honest_scope": [
+    "WSL/WSLg execution/portability only",
+    "not clean/non-WSL Linux desktop proof",
+    "not Linux seccomp or OS-sandbox enforcement",
+    "not signed, production, or v1.0 readiness"
+  ]
+}

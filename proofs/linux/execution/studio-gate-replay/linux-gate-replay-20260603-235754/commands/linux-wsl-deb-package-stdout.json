@@ -1,0 +1,12 @@
+{
+  "status": "verified",
+  "verified": true,
+  "reason": "WSL Linux Tauri .deb package build and non-GUI studio-smoke verified at `C:/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/proofs/linux/execution/studio-package/linux-wsl-deb-package-20260603-161219/garnet-studio-linux-wsl-deb.json` (target/release/bundle/deb/Garnet Studio_0.1.0_amd64.deb, sha256 cfb91f972ce6f6531329751d52fc653a565e537c892869c523ee92036c62c727).",
+  "bundle": "C:/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/proofs/linux/execution/studio-package/linux-wsl-deb-package-20260603-161219",
+  "deferred": [
+    "not Linux desktop GUI launch proof",
+    "not Linux seccomp or OS-sandbox enforcement",
+    "not clean Linux install proof",
+    "not signed, production, or v1.0 readiness"
+  ]
+}

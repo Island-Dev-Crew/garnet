@@ -1,0 +1,12 @@
+{
+  "status": "verified",
+  "verified": true,
+  "reason": "WSLg system package install and installed-binary GUI launch verified at `C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\proofs\\linux\\execution\\studio-wslg-system-install\\linux-wslg-system-install-20260603-205713\\garnet-studio-linux-wslg-system-install-launch.json` (garnet-studio amd64, display :0, wayland wayland-0).",
+  "bundle": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\proofs\\linux\\execution\\studio-wslg-system-install\\linux-wslg-system-install-20260603-205713\\garnet-studio-linux-wslg-system-install-launch.json",
+  "deferred": [
+    "not Linux desktop GUI proof outside WSLg",
+    "not clean Linux install proof",
+    "not Linux seccomp or OS-sandbox enforcement",
+    "not signed, production, or v1.0 readiness"
+  ]
+}

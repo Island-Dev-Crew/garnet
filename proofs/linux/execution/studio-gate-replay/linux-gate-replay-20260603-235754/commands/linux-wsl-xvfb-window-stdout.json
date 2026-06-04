@@ -1,0 +1,13 @@
+{
+  "status": "verified",
+  "verified": true,
+  "reason": "WSL Xvfb virtual-display window capture verified at `C:/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/proofs/linux/execution/studio-xvfb-window-capture/linux-wsl-xvfb-window-capture-20260603-194237/garnet-studio-linux-wsl-xvfb-window-capture.json` (screenshot capture/screenshot.png, 340 bytes).",
+  "bundle": "C:/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/proofs/linux/execution/studio-xvfb-window-capture/linux-wsl-xvfb-window-capture-20260603-194237",
+  "deferred": [
+    "not Linux desktop GUI launch proof",
+    "not Linux seccomp or OS-sandbox enforcement",
+    "not clean Linux install proof",
+    "not privileged system package install proof",
+    "not signed, production, or v1.0 readiness"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "ok": true,
+  "recorded": [],
+  "windows_summary": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\proofs\\windows\\studio-domain-shell\\win-20260603-220832\\garnet-studio-domain-shell-proof.json",
+  "wsl_summary": "C:\\Users\\IslandDevCrew\\.config\\superpowers\\worktrees\\garnet\\agent-win-codex-s106-windows-cross-os-proof-phase1\\proofs\\linux\\execution\\studio-domain-shell\\wsl-20260603-220935\\garnet-studio-domain-shell-proof.json",
+  "reason": "Committed Windows Studio domain-shell proof: `proofs/windows/studio-domain-shell/win-20260603-220832/garnet-studio-domain-shell-proof.json`. Committed WSL Studio domain-shell portability proof: `proofs/linux/execution/studio-domain-shell/wsl-20260603-220935/garnet-studio-domain-shell-proof.json`. The WSL row is execution/portability evidence only, not Linux seccomp, OS-sandbox enforcement, clean/non-WSL Linux desktop GUI proof, production, or v1.0 readiness."
+}

@@ -25,6 +25,22 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S117 consolidation (v0.8.1 runway - Linux/Tauri gate replay proof):**
+  adds `scripts/smoke_garnet_studio_linux_gate_replay.py`, a manifest-backed
+  recorder/gate that replays the current committed WSL/WSLg package, runtime,
+  display, domain-shell, and Release / Readiness shell gates from one
+  repo-owned command. The proof is committed under
+  `proofs/linux/execution/studio-gate-replay/` with stdout/stderr from each
+  child gate and a `MANIFEST.sha256`. The MIT readiness reporter now exposes
+  `linux_tauri_gate_replay`, moving overall readiness to **92.3%** and the
+  Windows/Linux distribution lane to **83.0%** when the existing Windows clean-VM,
+  package, runtime, WSLg, domain-shell, Release / Readiness, and replay bundles
+  all verify. **Honest scope:** this is a consolidation replay of WSL/WSLg
+  execution/portability evidence only. It does not prove clean/non-WSL Linux
+  desktop GUI install/launch, Linux seccomp, OS-sandbox enforcement, signed/SBOM
+  release artifacts, winget, Windows ARM64, production readiness, or v1.0
+  readiness.
+
 - **S117 increment (v0.8.1 runway - Windows/WSL Studio Release / Readiness
   shell proof):** adds `scripts/smoke_garnet_studio_release_readiness_shell.py`,
   a manifest-backed recorder/gate for the Studio binary's

@@ -29,6 +29,7 @@ import smoke_garnet_studio_linux_wsl_rpm  # noqa: E402
 import smoke_garnet_studio_linux_wsl_xvfb  # noqa: E402
 import smoke_garnet_studio_linux_wsl_xvfb_window  # noqa: E402
 import smoke_garnet_studio_linux_wslg_install_launch  # noqa: E402
+import smoke_garnet_studio_linux_gate_replay  # noqa: E402
 import smoke_garnet_studio_domain_shell  # noqa: E402
 import smoke_garnet_studio_release_readiness_shell  # noqa: E402
 
@@ -665,6 +666,7 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
     linux_xvfb = smoke_garnet_studio_linux_wsl_xvfb.read_committed_evidence(ROOT)
     linux_xvfb_window = smoke_garnet_studio_linux_wsl_xvfb_window.read_committed_evidence(ROOT)
     linux_wslg_install = smoke_garnet_studio_linux_wslg_install_launch.read_committed_evidence(ROOT)
+    linux_gate_replay = smoke_garnet_studio_linux_gate_replay.read_committed_evidence(ROOT)
     domain_shell = smoke_garnet_studio_domain_shell.read_committed_evidence(ROOT)
     release_readiness_shell = smoke_garnet_studio_release_readiness_shell.read_committed_evidence(ROOT)
     any_linux_package_evidence = (
@@ -675,8 +677,21 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
         or linux_xvfb_window.verified
         or linux_wslg_install.verified
     )
+    linux_gate_replay_verified = (
+        linux_gate_replay.verified
+        and linux_deb.verified
+        and linux_deb_install.verified
+        and linux_rpm.verified
+        and linux_xvfb.verified
+        and linux_xvfb_window.verified
+        and linux_wslg_install.verified
+        and domain_shell.verified
+        and release_readiness_shell.verified
+    )
     linux_status_suffix = (
-        "wslg-system-install-launch-verified-linux-desktop-still-open"
+        "linux-gate-replay-verified-linux-desktop-still-open"
+        if linux_gate_replay_verified
+        else "wslg-system-install-launch-verified-linux-desktop-still-open"
         if linux_wslg_install.verified
         else "wsl-deb-rpm-xvfb-window-capture-verified-linux-desktop-still-open"
         if linux_xvfb_window.verified and linux_xvfb.verified and linux_deb_install.verified and linux_rpm.verified
@@ -741,6 +756,10 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
         linux_package_truth.append(
             "WSLg system package install and installed-binary GUI launch are verified by `scripts/smoke_garnet_studio_linux_wslg_install_launch.py`; this proves a privileged WSL `.deb` install plus WSLg window observation, but it is not clean Linux install proof, non-WSL Linux desktop proof, Linux seccomp, or OS-sandbox enforcement",
         )
+    if linux_gate_replay_verified:
+        linux_package_truth.append(
+            "Consolidated Linux/Tauri gate replay is verified by `scripts/smoke_garnet_studio_linux_gate_replay.py`; it replays the current WSL/WSLg package, runtime, display, domain-shell, and release-shell gates while remaining execution/portability only, not clean/non-WSL Linux desktop proof, Linux seccomp, or OS-sandbox enforcement",
+        )
     if domain_shell.verified:
         linux_package_truth.append(
             "Studio Domain Proof Matrix shell output is verified by `scripts/smoke_garnet_studio_domain_shell.py`; the Windows row exercises the Tauri command wrapper and the WSL row is execution/portability only, not Linux seccomp, OS-sandbox enforcement, or clean/non-WSL Linux desktop proof",
@@ -757,7 +776,9 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
         id="linux_package_choice",
         platform="Linux",
         status=(
-            "wslg-system-install-launch-verified"
+            "linux-gate-replay-verified"
+            if linux_gate_replay_verified
+            else "wslg-system-install-launch-verified"
             if linux_wslg_install.verified
             else "wsl-deb-rpm-xvfb-window-capture-verified"
             if linux_xvfb_window.verified and linux_xvfb.verified and linux_deb_install.verified and linux_rpm.verified

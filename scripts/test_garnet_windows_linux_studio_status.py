@@ -68,6 +68,20 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             ),
         )
 
+    def _verified_linux_gate_replay_evidence(self) -> object:
+        return status_mod.smoke_garnet_studio_linux_gate_replay.LinuxGateReplayEvidence(
+            status="verified",
+            verified=True,
+            reason="Consolidated replay of all current Linux/Tauri gates verified at `proofs/linux/execution/studio-gate-replay/test/garnet-studio-linux-gate-replay.json` (8 gates).",
+            bundle="proofs/linux/execution/studio-gate-replay/test",
+            deferred=[
+                "WSL/WSLg is execution/portability only",
+                "not clean/non-WSL Linux desktop proof",
+                "not Linux seccomp or OS-sandbox enforcement",
+                "not signed, production, or v1.0 readiness",
+            ],
+        )
+
     def test_taxonomy_matches_handoff_copy_truth(self) -> None:
         status = status_mod.read_status()
         self.assertEqual(["Rust", "Ruby", "Python", "Go"], status.taxonomy.active_conversion)
@@ -694,6 +708,16 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             status_mod.smoke_garnet_studio_linux_wslg_install_launch,
             "read_committed_evidence",
             return_value=wslg_evidence,
+        ), mock.patch.object(
+            status_mod.smoke_garnet_studio_linux_gate_replay,
+            "read_committed_evidence",
+            return_value=status_mod.smoke_garnet_studio_linux_gate_replay.LinuxGateReplayEvidence(
+                status="missing",
+                verified=False,
+                reason="No committed consolidated Linux/Tauri gate replay bundle verified.",
+                bundle=None,
+                deferred=["record consolidated replay"],
+            ),
         ):
             status = status_mod.read_status()
 
@@ -768,6 +792,23 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
         self.assertIn("Active converter end-to-end screenshots from the shell", status.next_slices)
         self.assertIn("Linux VM/container", " ".join(status.user_assistance_needed))
 
+    def test_linux_gate_replay_marks_consolidated_replay_without_linux_enforcement_claim(self) -> None:
+        with mock.patch.object(
+            status_mod.smoke_garnet_studio_linux_gate_replay,
+            "read_committed_evidence",
+            return_value=self._verified_linux_gate_replay_evidence(),
+        ):
+            status = status_mod.read_status()
+
+        truth = " ".join(status.current_truth)
+        linux_gate = next(gate for gate in status.packaging_gates if gate.id == "linux_package_choice")
+        self.assertEqual("linux-gate-replay-verified", linux_gate.status)
+        self.assertIn("Consolidated Linux/Tauri gate replay is verified", truth)
+        self.assertIn("execution/portability only", truth)
+        self.assertIn("not clean/non-WSL Linux desktop proof", truth)
+        self.assertIn("not Linux seccomp", truth)
+        self.assertIn("Linux desktop GUI install/launch proof", " ".join(status.next_slices))
+
     def test_json_and_markdown_preserve_not_completed_boundary(self) -> None:
         output = subprocess.check_output(
             [sys.executable, str(SCRIPT), "--format", "json"],
@@ -775,7 +816,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
         )
         data = json.loads(output)
         self.assertEqual(
-            "tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-contract-open-wslg-system-install-launch-verified-linux-desktop-still-open",
+            "tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-contract-open-linux-gate-replay-verified-linux-desktop-still-open",
             data["status"],
         )
         truth = " ".join(data["current_truth"])
@@ -788,6 +829,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
         self.assertIn("WSL Linux Xvfb runtime-start", truth)
         self.assertIn("WSL Linux Xvfb virtual-display window capture", truth)
         self.assertIn("WSLg system package install", truth)
+        self.assertIn("Consolidated Linux/Tauri gate replay", truth)
         self.assertIn("Windows ARM64 follows after x64 proof", truth)
         self.assertIn("Domain Proof Matrix", truth)
         self.assertIn("Linux runtime proof is not complete", " ".join(data["current_truth"]))
