@@ -1,0 +1,62 @@
+{
+  "schema": "garnet.mac.domain_reattestation.v1",
+  "created_at": "2026-06-04T22:13:17Z",
+  "platform": "macos",
+  "scope": "remedial-re-attestation-only",
+  "slice": "S107 Mac-native domain execution",
+  "source_pr": {
+    "number": 356,
+    "url": "https://github.com/Island-Dev-Crew/garnet/pull/356",
+    "title": "S107: record Mac domain and Studio UI proofs",
+    "merge_commit": "981c14bce97eb5aa556479282b0cedeca8e159fb",
+    "merged_at": "2026-06-04T07:28:10Z"
+  },
+  "reattestation_base": {
+    "main_commit": "b2ba06892b46c2d3c66905af8352bf7d1e429f33",
+    "branch": "codex/s107-mac-domain-reattest"
+  },
+  "verified_bundle": {
+    "summary": "proofs/mac/domains/mac-domain-proofs-20260604-064412/garnet-mac-domain-proofs.json",
+    "summary_sha256": "15dcaed38bd360bce81424770a001a70fb8e7f2afa8c5ba3a114f54504a66ff3",
+    "manifest": "proofs/mac/domains/mac-domain-proofs-20260604-064412/MANIFEST.sha256",
+    "manifest_sha256": "becc530d0c22430043b6482251693c8eb107ca87d7d8ec7d3021fff8714e5e10"
+  },
+  "fresh_verification": [
+    {
+      "command": "python3 scripts/smoke_garnet_mac_domain_proofs.py --garnet target/release/garnet --verify proofs/mac/domains/mac-domain-proofs-20260604-064412/garnet-mac-domain-proofs.json",
+      "exit_code": 0,
+      "stdout": "mac-domain-proofs: verified"
+    },
+    {
+      "command": "python3 scripts/test_smoke_garnet_mac_domain_proofs.py",
+      "exit_code": 0,
+      "stdout_summary": "Ran 1 test in 0.370s; OK"
+    },
+    {
+      "command": "python3 scripts/garnet_mit_readiness_status.py --check-no-regression",
+      "exit_code": 0,
+      "stdout_summary": "active-partial 91.2%; Mac-Codex domain execution proof verified"
+    }
+  ],
+  "domain_set": [
+    "data_pipeline_net_egress",
+    "supply_chain_proc_escalation",
+    "config_processor_depth_trap",
+    "accept_provenance_dossier",
+    "pr_review_collapse",
+    "mcp_tool_authority_creep"
+  ],
+  "attestation": {
+    "agent": "Codex on Mac #2",
+    "model": "GPT-5",
+    "gate": "dogfood-gate-v0.8.1",
+    "remedial_reason": "PR #356 bundled Mac-native domain execution and Studio UI proof. This record re-attests only the Mac-native domain execution slice as a separate one-PR boundary."
+  },
+  "honest_scope": [
+    "This re-attestation covers Mac-native S105 domain execution only.",
+    "It does not re-attest the Studio UI proof.",
+    "It does not claim Windows or Linux completion.",
+    "It does not claim macOS OS-sandbox enforcement, seccomp, Wasmtime fuel, production readiness, v1.0 readiness, release readiness, S114 red-team completion, S115 dossier completion, S118 academic-evidence completion, S119 readiness, S120 cut, or a release tag."
+  ],
+  "status": "verified"
+}
