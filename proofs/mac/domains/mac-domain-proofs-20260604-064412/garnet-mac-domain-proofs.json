@@ -1,0 +1,418 @@
+{
+  "arch": "arm64",
+  "commands_recorded": 15,
+  "created_at": "2026-06-04T06:44:12+00:00",
+  "cross_os_role": "S107 Mac-Codex row for S109 consolidation",
+  "domain_count": 6,
+  "domains": [
+    {
+      "artifacts": [
+        "decision.md",
+        "diff_caps.txt"
+      ],
+      "commands": [
+        {
+          "display_args": [
+            "garnet",
+            "caps",
+            "garnet-cli/tests/fixtures/ultrapunch/reject_widen.garnet"
+          ],
+          "exit_code": 0,
+          "expected_failure": false,
+          "id": "data_pipeline_net_egress-caps",
+          "status": "passed",
+          "stderr_file": "commands/data_pipeline_net_egress-caps-stderr.txt",
+          "stdout_file": "commands/data_pipeline_net_egress-caps-stdout.txt"
+        },
+        {
+          "display_args": [
+            "garnet",
+            "agent-loop",
+            "--baseline",
+            "garnet-cli/tests/fixtures/ultrapunch/baseline.garnet",
+            "--proposal",
+            "garnet-cli/tests/fixtures/ultrapunch/reject_widen.garnet",
+            "--seal-out",
+            "domains/data_pipeline_net_egress/seal-out.json",
+            "--record-dir",
+            "domains/data_pipeline_net_egress/record"
+          ],
+          "exit_code": 1,
+          "expected_failure": true,
+          "id": "data_pipeline_net_egress-agent-loop",
+          "status": "passed",
+          "stderr_file": "commands/data_pipeline_net_egress-agent-loop-stderr.txt",
+          "stdout_file": "commands/data_pipeline_net_egress-agent-loop-stdout.txt"
+        }
+      ],
+      "honest_scope": [
+        "accepted on capability + depth evidence only when explicitly accepted",
+        "refusal/report domains must not be sealed",
+        "not seccomp proof",
+        "not OS-sandbox proof",
+        "not Wasmtime fuel proof",
+        "not production or v1.0 readiness"
+      ],
+      "id": "data_pipeline_net_egress",
+      "label": "Data-pipeline net-egress widening",
+      "proposal": "garnet-cli/tests/fixtures/ultrapunch/reject_widen.garnet",
+      "provider_api_called": false,
+      "seal_expected": false,
+      "sealed": false,
+      "source_included": false,
+      "status": "passed",
+      "verdict": "capability widening refused at diff-caps; no seal"
+    },
+    {
+      "artifacts": [
+        "capability_manifest.json",
+        "decision.md",
+        "diff_caps.txt"
+      ],
+      "commands": [
+        {
+          "display_args": [
+            "garnet",
+            "caps",
+            "garnet-cli/tests/fixtures/ultrapunch/supply_chain_proc_escalation.garnet"
+          ],
+          "exit_code": 0,
+          "expected_failure": false,
+          "id": "supply_chain_proc_escalation-caps",
+          "status": "passed",
+          "stderr_file": "commands/supply_chain_proc_escalation-caps-stderr.txt",
+          "stdout_file": "commands/supply_chain_proc_escalation-caps-stdout.txt"
+        },
+        {
+          "display_args": [
+            "garnet",
+            "diff-caps",
+            "garnet-cli/tests/fixtures/ultrapunch/supply_chain_base.garnet",
+            "garnet-cli/tests/fixtures/ultrapunch/supply_chain_proc_escalation.garnet"
+          ],
+          "exit_code": 1,
+          "expected_failure": true,
+          "id": "supply_chain_proc_escalation-diff-caps",
+          "status": "passed",
+          "stderr_file": "commands/supply_chain_proc_escalation-diff-caps-stderr.txt",
+          "stdout_file": "commands/supply_chain_proc_escalation-diff-caps-stdout.txt"
+        }
+      ],
+      "honest_scope": [
+        "accepted on capability + depth evidence only when explicitly accepted",
+        "refusal/report domains must not be sealed",
+        "not seccomp proof",
+        "not OS-sandbox proof",
+        "not Wasmtime fuel proof",
+        "not production or v1.0 readiness"
+      ],
+      "id": "supply_chain_proc_escalation",
+      "label": "Supply-chain installer proc-escalation",
+      "new": "garnet-cli/tests/fixtures/ultrapunch/supply_chain_proc_escalation.garnet",
+      "old": "garnet-cli/tests/fixtures/ultrapunch/supply_chain_base.garnet",
+      "provider_api_called": false,
+      "seal_expected": false,
+      "sealed": false,
+      "source_included": false,
+      "status": "passed",
+      "verdict": "declared subprocess authority addition refused by diff-caps; no seal"
+    },
+    {
+      "artifacts": [
+        "decision.md",
+        "diff_caps.txt",
+        "run_trap.txt"
+      ],
+      "commands": [
+        {
+          "display_args": [
+            "garnet",
+            "caps",
+            "garnet-cli/tests/fixtures/ultrapunch/reject_overdepth.garnet"
+          ],
+          "exit_code": 0,
+          "expected_failure": false,
+          "id": "config_processor_depth_trap-caps",
+          "status": "passed",
+          "stderr_file": "commands/config_processor_depth_trap-caps-stderr.txt",
+          "stdout_file": "commands/config_processor_depth_trap-caps-stdout.txt"
+        },
+        {
+          "display_args": [
+            "garnet",
+            "agent-loop",
+            "--baseline",
+            "garnet-cli/tests/fixtures/ultrapunch/baseline.garnet",
+            "--proposal",
+            "garnet-cli/tests/fixtures/ultrapunch/reject_overdepth.garnet",
+            "--seal-out",
+            "domains/config_processor_depth_trap/seal-out.json",
+            "--record-dir",
+            "domains/config_processor_depth_trap/record"
+          ],
+          "exit_code": 1,
+          "expected_failure": true,
+          "id": "config_processor_depth_trap-agent-loop",
+          "status": "passed",
+          "stderr_file": "commands/config_processor_depth_trap-agent-loop-stderr.txt",
+          "stdout_file": "commands/config_processor_depth_trap-agent-loop-stdout.txt"
+        }
+      ],
+      "honest_scope": [
+        "accepted on capability + depth evidence only when explicitly accepted",
+        "refusal/report domains must not be sealed",
+        "not seccomp proof",
+        "not OS-sandbox proof",
+        "not Wasmtime fuel proof",
+        "not production or v1.0 readiness"
+      ],
+      "id": "config_processor_depth_trap",
+      "label": "Config processor recursion-depth trap",
+      "proposal": "garnet-cli/tests/fixtures/ultrapunch/reject_overdepth.garnet",
+      "provider_api_called": false,
+      "seal_expected": false,
+      "sealed": false,
+      "source_included": false,
+      "status": "passed",
+      "verdict": "capability-clean proposal refused by enforced @max_depth trap; no seal"
+    },
+    {
+      "artifacts": [
+        "capability_manifest.json",
+        "decision.md",
+        "diff_caps.txt",
+        "run_output.txt",
+        "seal.json",
+        "transparency_log.jsonl"
+      ],
+      "commands": [
+        {
+          "display_args": [
+            "garnet",
+            "caps",
+            "garnet-cli/tests/fixtures/ultrapunch/accept_proposal.garnet"
+          ],
+          "exit_code": 0,
+          "expected_failure": false,
+          "id": "accept_provenance_dossier-caps",
+          "status": "passed",
+          "stderr_file": "commands/accept_provenance_dossier-caps-stderr.txt",
+          "stdout_file": "commands/accept_provenance_dossier-caps-stdout.txt"
+        },
+        {
+          "display_args": [
+            "garnet",
+            "agent-loop",
+            "--baseline",
+            "garnet-cli/tests/fixtures/ultrapunch/baseline.garnet",
+            "--proposal",
+            "garnet-cli/tests/fixtures/ultrapunch/accept_proposal.garnet",
+            "--seal-out",
+            "domains/accept_provenance_dossier/seal-out.json",
+            "--record-dir",
+            "domains/accept_provenance_dossier/record",
+            "--attest",
+            "agent=scripted-agent-v1",
+            "--attest",
+            "model=simulated",
+            "--gate-version",
+            "dogfood-gate-v1"
+          ],
+          "exit_code": 0,
+          "expected_failure": false,
+          "id": "accept_provenance_dossier-agent-loop",
+          "status": "passed",
+          "stderr_file": "commands/accept_provenance_dossier-agent-loop-stderr.txt",
+          "stdout_file": "commands/accept_provenance_dossier-agent-loop-stdout.txt"
+        },
+        {
+          "display_args": [
+            "garnet",
+            "caps-log",
+            "--verify",
+            "domains/accept_provenance_dossier/record/transparency_log.jsonl"
+          ],
+          "exit_code": 0,
+          "expected_failure": false,
+          "id": "accept_provenance_dossier-caps-log-verify",
+          "status": "passed",
+          "stderr_file": "commands/accept_provenance_dossier-caps-log-verify-stderr.txt",
+          "stdout_file": "commands/accept_provenance_dossier-caps-log-verify-stdout.txt"
+        }
+      ],
+      "honest_scope": [
+        "accepted on capability + depth evidence only when explicitly accepted",
+        "refusal/report domains must not be sealed",
+        "not seccomp proof",
+        "not OS-sandbox proof",
+        "not Wasmtime fuel proof",
+        "not production or v1.0 readiness"
+      ],
+      "id": "accept_provenance_dossier",
+      "label": "Accept-path provenance dossier",
+      "proposal": "garnet-cli/tests/fixtures/ultrapunch/accept_proposal.garnet",
+      "provider_api_called": false,
+      "seal_expected": true,
+      "sealed": true,
+      "source_included": false,
+      "status": "passed",
+      "verdict": "accepted on capability + depth evidence; four trust artifacts plus decision emitted"
+    },
+    {
+      "artifacts": [
+        "capability_manifest.json",
+        "decision.md",
+        "diff_caps.txt"
+      ],
+      "commands": [
+        {
+          "display_args": [
+            "garnet",
+            "check",
+            "examples/wedge_pr_review/before.garnet"
+          ],
+          "exit_code": 0,
+          "expected_failure": false,
+          "id": "pr-review-check-before",
+          "status": "passed",
+          "stderr_file": "commands/pr-review-check-before-stderr.txt",
+          "stdout_file": "commands/pr-review-check-before-stdout.txt"
+        },
+        {
+          "display_args": [
+            "garnet",
+            "check",
+            "examples/wedge_pr_review/after.garnet"
+          ],
+          "exit_code": 0,
+          "expected_failure": false,
+          "id": "pr-review-check-after",
+          "status": "passed",
+          "stderr_file": "commands/pr-review-check-after-stderr.txt",
+          "stdout_file": "commands/pr-review-check-after-stdout.txt"
+        },
+        {
+          "display_args": [
+            "garnet",
+            "caps",
+            "examples/wedge_pr_review/after.garnet"
+          ],
+          "exit_code": 0,
+          "expected_failure": false,
+          "id": "pr-review-caps-after",
+          "status": "passed",
+          "stderr_file": "commands/pr-review-caps-after-stderr.txt",
+          "stdout_file": "commands/pr-review-caps-after-stdout.txt"
+        },
+        {
+          "display_args": [
+            "garnet",
+            "diff-caps",
+            "examples/wedge_pr_review/before.garnet",
+            "examples/wedge_pr_review/after.garnet"
+          ],
+          "exit_code": 1,
+          "expected_failure": true,
+          "id": "pr-review-diff-caps",
+          "status": "passed",
+          "stderr_file": "commands/pr-review-diff-caps-stderr.txt",
+          "stdout_file": "commands/pr-review-diff-caps-stdout.txt"
+        }
+      ],
+      "honest_scope": [
+        "accepted on capability + depth evidence only when explicitly accepted",
+        "refusal/report domains must not be sealed",
+        "not seccomp proof",
+        "not OS-sandbox proof",
+        "not Wasmtime fuel proof",
+        "not production or v1.0 readiness"
+      ],
+      "id": "pr_review_collapse",
+      "label": "Agent-authored PR-review collapse",
+      "new": "examples/wedge_pr_review/after.garnet",
+      "old": "examples/wedge_pr_review/before.garnet",
+      "provider_api_called": false,
+      "seal_expected": false,
+      "sealed": false,
+      "source_included": false,
+      "status": "passed",
+      "verdict": "diff-caps hard-fails the authority-widening merge gate"
+    },
+    {
+      "artifacts": [
+        "decision.md",
+        "mcp_caps.json",
+        "mcp_caps.txt"
+      ],
+      "commands": [
+        {
+          "display_args": [
+            "garnet",
+            "mcp-caps",
+            "examples/mcp/agent_toolset.mcpcaps"
+          ],
+          "exit_code": 0,
+          "expected_failure": false,
+          "id": "mcp-caps-human",
+          "status": "passed",
+          "stderr_file": "commands/mcp-caps-human-stderr.txt",
+          "stdout_file": "commands/mcp-caps-human-stdout.txt"
+        },
+        {
+          "display_args": [
+            "garnet",
+            "mcp-caps",
+            "--format",
+            "json",
+            "examples/mcp/agent_toolset.mcpcaps"
+          ],
+          "exit_code": 0,
+          "expected_failure": false,
+          "id": "mcp-caps-json",
+          "status": "passed",
+          "stderr_file": "commands/mcp-caps-json-stderr.txt",
+          "stdout_file": "commands/mcp-caps-json-stdout.txt"
+        }
+      ],
+      "enforced": false,
+      "honest_scope": [
+        "accepted on capability + depth evidence only when explicitly accepted",
+        "refusal/report domains must not be sealed",
+        "not seccomp proof",
+        "not OS-sandbox proof",
+        "not Wasmtime fuel proof",
+        "not production or v1.0 readiness"
+      ],
+      "id": "mcp_tool_authority_creep",
+      "label": "MCP tool-set authority-creep lens",
+      "provider_api_called": false,
+      "seal_expected": false,
+      "sealed": false,
+      "source": "examples/mcp/agent_toolset.mcpcaps",
+      "source_included": false,
+      "status": "passed",
+      "verdict": "`mcp-caps` reports high-authority tool declarations; this is a report, not an enforcement trap"
+    }
+  ],
+  "evidence_tier": "macos-native-domain-execution",
+  "failed_domains": 0,
+  "garnet_command": [
+    "/Users/IDC2.5/Desktop/Garnet/target/release/garnet"
+  ],
+  "honest_scope": [
+    "macOS-native execution proof only; not Windows or Linux completion",
+    "negative proofs intentionally have no seal",
+    "mcp-caps is a static report, not an MCP-host-enforced gate",
+    "not seccomp proof",
+    "not OS-sandbox proof on macOS",
+    "not Wasmtime fuel proof",
+    "not production or v1.0 readiness"
+  ],
+  "host_platform": "macOS-26.5-arm64-arm-64bit-Mach-O",
+  "passed_domains": 6,
+  "platform": "macos",
+  "provider_api_called": false,
+  "schema": "garnet.mac_domain_proofs.v1",
+  "source_included": false,
+  "status": "passed"
+}

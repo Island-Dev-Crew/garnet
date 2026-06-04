@@ -1,0 +1,5 @@
+agent-loop: proposal `/Users/IDC2.5/Desktop/Garnet/garnet-cli/tests/fixtures/ultrapunch/reject_overdepth.garnet` vs baseline `/Users/IDC2.5/Desktop/Garnet/garnet-cli/tests/fixtures/ultrapunch/baseline.garnet` (backend --interp)
+agent-loop: stage diff-caps -> PASS (no authority expansion, band 5/5)
+agent-loop: stage run(--interp) -> REJECT (the enforced kernel trapped)
+  | runtime error: bounded: @max_depth(4) exceeded for `digest` (recursion depth 5)
+agent-loop: REJECTED at stage run (an enforced ceiling — @max_depth or @caps — trapped; the proposal is not sealed)

@@ -1,0 +1,4 @@
+garnet diff-caps: /Users/IDC2.5/Desktop/Garnet/garnet-cli/tests/fixtures/ultrapunch/baseline.garnet -> /Users/IDC2.5/Desktop/Garnet/garnet-cli/tests/fixtures/ultrapunch/accept_proposal.garnet
+  no capability changes.
+
+diff-caps: no authority expansion (capability band 5/5)

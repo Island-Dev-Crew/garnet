@@ -230,6 +230,45 @@ pub fn domain_proof_matrix() -> CommandResult {
 }
 
 #[tauri::command]
+pub fn mac_domain_proofs() -> CommandResult {
+    let cli = match paths::find_garnet_cli() {
+        Some(path) => path,
+        None => {
+            return contract_error("garnet CLI not found. Set GARNET_CLI or add garnet to PATH.")
+        }
+    };
+    let repo = match paths::find_repo_root() {
+        Some(path) => path,
+        None => return contract_error("Garnet repository root not found. Set GARNET_REPO."),
+    };
+    let bundle = repo
+        .join("target")
+        .join("mac-studio-domain-proofs")
+        .join(format!(
+            "garnet-mac-domain-proofs-{}",
+            evidence::timestamp()
+        ));
+    if let Err(err) = fs::create_dir_all(&bundle) {
+        return contract_error(format!(
+            "failed to create Mac domain proof evidence directory: {err}"
+        ));
+    }
+    run_python_script_with_bundle(
+        "mac-domain-proofs",
+        "smoke_garnet_mac_domain_proofs.py",
+        vec![
+            "--garnet".to_string(),
+            display_path(&cli),
+            "--output-dir".to_string(),
+            display_path(&bundle),
+            "--format".to_string(),
+            "md".to_string(),
+        ],
+        bundle,
+    )
+}
+
+#[tauri::command]
 pub fn windows_linux_studio_status() -> CommandResult {
     run_python_script(
         "windows-linux-studio-status",

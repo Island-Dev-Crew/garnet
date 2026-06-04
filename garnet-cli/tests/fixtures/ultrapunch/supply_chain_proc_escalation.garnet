@@ -1,0 +1,5 @@
+# Supply-chain installer escalation: silently adds subprocess authority.
+@caps(fs, net, proc)
+def main() {
+  1
+}

@@ -1,0 +1,1 @@
+garnet caps-log: chain intact — 1 entry verified (append-only)

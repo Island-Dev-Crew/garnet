@@ -25,6 +25,31 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ### Added
 
+- **S107 (v0.8.1 runway - Mac-Codex domain execution proof):** adds
+  `scripts/smoke_garnet_mac_domain_proofs.py`, a manifest-backed recorder/gate
+  for the independent macOS S105 domain row. The committed proof under
+  `proofs/mac/domains/` runs the release `garnet` binary across all six S105
+  domains: net-egress widening refusal, supply-chain `proc` escalation refusal,
+  enforced `@max_depth` trap, accept-path provenance dossier, PR-review
+  diff-caps wedge, and static `mcp-caps` authority-creep report. The accept path
+  emits the four trust artifacts plus `decision.md` and verifies the
+  transparency-log chain; negative/report domains are intentionally unsealed.
+  The MIT readiness reporter now exposes `macos_domain_execution_proof` as the
+  committed Mac row for S109 consolidation. **Honest scope:** this is macOS
+  domain execution evidence only, not Windows/Linux completion, not macOS
+  OS-sandbox enforcement, not Wasmtime fuel, not production readiness, and not a
+  v1.0 claim.
+- **Mac Studio UI proof (v0.8.1 runway - Mac-Codex Studio lane):** the packaged
+  macOS Tauri app now exposes `Release / Readiness -> Mac Domain Proofs`, which
+  invokes the same six-domain Mac proof recorder through the UI. The committed
+  proof under `proofs/mac/studio-ui/` includes a window screenshot, the
+  Computer Use click sequence, a rebuilt `.app` command log, and a copied
+  verified target evidence bundle. The MIT readiness reporter now exposes
+  `macos_studio_ui_domain_proof` as committed evidence. **Honest scope:** this
+  is UI-wrapper evidence for the Mac proof recorder; it does not individually
+  open every source file through a native picker, does not claim Windows/Linux
+  ownership, and does not claim production/v1.0 enforcement.
+
 - **S117 consolidation (v0.8.1 runway - Linux/Tauri gate replay proof):**
   adds `scripts/smoke_garnet_studio_linux_gate_replay.py`, a manifest-backed
   recorder/gate that replays the current committed WSL/WSLg package, runtime,

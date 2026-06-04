@@ -22,6 +22,7 @@ pub fn run() {
             objective_pulse,
             agentic_dogfood_matrix,
             domain_proof_matrix,
+            mac_domain_proofs,
             windows_linux_studio_status,
             converter_status,
             provider_options,
@@ -113,7 +114,10 @@ pub fn run_domain_proof_smoke() -> Result<String, String> {
     evidence::write_command_evidence(
         &bundle_path,
         "domain-proof-shell-smoke",
-        &["garnet-studio".to_string(), "--studio-domain-proof-smoke".to_string()],
+        &[
+            "garnet-studio".to_string(),
+            "--studio-domain-proof-smoke".to_string(),
+        ],
         &result.stdout,
         &result.stderr,
         result.exit_code,

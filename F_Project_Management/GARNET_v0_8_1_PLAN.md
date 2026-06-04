@@ -211,6 +211,26 @@ OS-sandbox enforcement proof. The S103 ultrapunch accept/reject reproduction and
 S105 domain execution stay in the later Phase 2 Windows lane after the hold gate;
 they are not claimed by the Phase 1 evidence bundle.
 
+**S107 Mac-Codex domain proof row (recorded 2026-06-04):** the independent Mac
+lane records all six S105 domain proofs under `proofs/mac/domains/` via
+`scripts/smoke_garnet_mac_domain_proofs.py`. The release `garnet` binary runs 15
+commands on macOS: diff-caps refusals for net/proc widening, an enforced
+`@max_depth` trap, the accept-path dossier with the four trust artifacts plus
+`decision.md` and a verified transparency-log chain, the PR-review wedge, and the
+static `mcp-caps` report. Negative/report domains are intentionally unsealed.
+Honest scope: this is the Mac row for S109 consolidation; it is not Windows/Linux
+completion, not macOS OS-sandbox enforcement, not Wasmtime fuel, and not a
+production/v1.0 claim.
+
+**Mac Studio UI proof row (recorded 2026-06-04):** the packaged macOS Tauri app
+now has a Release / Readiness `Mac Domain Proofs` action that runs the same
+six-domain Mac recorder through Studio's UI. The committed proof under
+`proofs/mac/studio-ui/` includes the app-window screenshot, Computer Use click
+sequence, `.app` build command evidence, and copied verified six-domain target
+evidence. Honest scope: this proves a human-visible Studio wrapper around the
+Mac proof recorder; it does not claim native file-picker-per-domain execution,
+Windows/Linux ownership, OS sandbox enforcement, production, or v1.0.
+
 ### Stage R — independent reproduction · repro lanes
 | Slice | Title | Goal |
 |---|---|---|

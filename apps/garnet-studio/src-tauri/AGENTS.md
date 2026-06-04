@@ -31,6 +31,10 @@ checker, parser, or macOS SwiftUI Studio implementation.
   installer proof status, and notarization preflight status. They must not
   upgrade platform, package, provider, proof, or notarization claims without
   separate target-system evidence.
+- `mac_domain_proofs` is the macOS Studio UI wrapper for
+  `scripts/smoke_garnet_mac_domain_proofs.py`. It may record local Mac S105
+  domain evidence under `target/mac-studio-domain-proofs/`, but it must not
+  claim Windows/Linux proof ownership, production enforcement, or v1.0 status.
 
 ## Required Checks
 

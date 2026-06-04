@@ -1,0 +1,5 @@
+garnet diff-caps: /Users/IDC2.5/Desktop/Garnet/garnet-cli/tests/fixtures/ultrapunch/baseline.garnet -> /Users/IDC2.5/Desktop/Garnet/garnet-cli/tests/fixtures/ultrapunch/reject_widen.garnet
+  + caps GAINED:  net
+  ~ digest gained: net
+
+diff-caps: AUTHORITY EXPANDED — review required (capability band 2/5)

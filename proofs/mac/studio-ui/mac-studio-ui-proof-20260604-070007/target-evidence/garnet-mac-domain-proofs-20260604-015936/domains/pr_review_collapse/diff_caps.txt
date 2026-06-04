@@ -1,0 +1,5 @@
+garnet diff-caps: /Users/IDC2.5/Desktop/Garnet/examples/wedge_pr_review/before.garnet -> /Users/IDC2.5/Desktop/Garnet/examples/wedge_pr_review/after.garnet
+  + caps GAINED:  net
+  ~ main gained: net
+
+diff-caps: AUTHORITY EXPANDED — review required (capability band 2/5)

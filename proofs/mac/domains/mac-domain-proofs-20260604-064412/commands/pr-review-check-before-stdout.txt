@@ -1,0 +1,2 @@
+
+3 functions checked, 3 boundary call sites, 0 diagnostics

@@ -1,0 +1,4 @@
+Command: Computer Use clicked Release / Readiness, then Mac Domain Proofs in target/release/bundle/macos/Garnet Studio.app
+Observed command: python3 /Users/IDC2.5/Desktop/Garnet/scripts/smoke_garnet_mac_domain_proofs.py --garnet /Users/IDC2.5/Desktop/Garnet/target/release/garnet --output-dir /Users/IDC2.5/Desktop/Garnet/target/mac-studio-domain-proofs/garnet-mac-domain-proofs-20260604-015936 --format md
+Observed status: passed
+Observed evidence: /Users/IDC2.5/Desktop/Garnet/target/mac-studio-domain-proofs/garnet-mac-domain-proofs-20260604-015936

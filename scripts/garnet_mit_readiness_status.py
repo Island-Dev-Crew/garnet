@@ -84,6 +84,7 @@ import smoke_garnet_studio_linux_gate_replay  # noqa: E402
 import smoke_garnet_studio_domain_shell  # noqa: E402
 import smoke_garnet_studio_release_readiness_shell  # noqa: E402
 import smoke_garnet_studio_windows_wsl  # noqa: E402
+import smoke_garnet_mac_domain_proofs  # noqa: E402
 
 
 def _promo_probe_skipped_status(exc: BaseException) -> garnet_promo_video_status.PromoVideoStatus:
@@ -195,6 +196,20 @@ class UltrapunchReproEvidence:
     verified: bool
     windows_bundle_json: Path | None
     wsl_bundle_json: Path | None
+    reason: str
+
+
+@dataclass(frozen=True)
+class MacDomainProofEvidence:
+    verified: bool
+    bundle_json: Path | None
+    reason: str
+
+
+@dataclass(frozen=True)
+class MacStudioUiProofEvidence:
+    verified: bool
+    bundle_json: Path | None
     reason: str
 
 
@@ -718,6 +733,109 @@ def _committed_ultrapunch_repro_evidence() -> UltrapunchReproEvidence | None:
     )
 
 
+def _verified_mac_domain_proofs_under(root: Path) -> Path | None:
+    if not root.exists():
+        return None
+    candidates = sorted(
+        root.rglob(smoke_garnet_mac_domain_proofs.SUMMARY_NAME),
+        key=lambda path: path.stat().st_mtime,
+        reverse=True,
+    )
+    for candidate in candidates:
+        if smoke_garnet_mac_domain_proofs.verify_bundle(candidate):
+            return candidate
+    return None
+
+
+def _committed_mac_domain_proof_evidence() -> MacDomainProofEvidence | None:
+    mac = _verified_mac_domain_proofs_under(ROOT / "proofs" / "mac" / "domains")
+    if mac is None:
+        return None
+    return MacDomainProofEvidence(
+        True,
+        mac,
+        (
+            f"Committed Mac S107 domain bundle: `{_repo_relative_display(mac)}`. "
+            "It records all six S105 domains on macOS, with accept sealed and "
+            "negative/report domains intentionally unsealed. This is the Mac row "
+            "for S109 consolidation, not Windows/Linux completion."
+        ),
+    )
+
+
+def _mac_studio_ui_summary_verified(path: Path) -> bool:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+
+    bundle_dir = path.parent
+    manifest_entries = _verify_manifest(bundle_dir)
+    if manifest_entries is None:
+        return False
+
+    screenshot = data.get("screenshot")
+    target_evidence = data.get("target_evidence")
+    if not isinstance(screenshot, str) or not isinstance(target_evidence, str):
+        return False
+    if screenshot not in manifest_entries or target_evidence not in manifest_entries:
+        return False
+    screenshot_path = bundle_dir / screenshot
+    target_summary = bundle_dir / target_evidence
+    if not screenshot_path.is_file() or not target_summary.is_file():
+        return False
+    try:
+        if not screenshot_path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n"):
+            return False
+    except OSError:
+        return False
+    if not smoke_garnet_mac_domain_proofs.verify_bundle(target_summary):
+        return False
+
+    return (
+        data.get("schema") == "garnet.mac.studio_ui_proof.v1"
+        and data.get("status") == "passed"
+        and data.get("platform") == "macos"
+        and data.get("source_included") is False
+        and data.get("provider_api_called") is False
+        and data.get("domain_count") == 6
+        and data.get("passed_domains") == 6
+        and data.get("failed_domains") == 0
+        and "Mac Domain Proofs" in data.get("ui_path", [])
+    )
+
+
+def _verified_mac_studio_ui_proof_under(root: Path) -> Path | None:
+    if not root.exists():
+        return None
+    candidates = sorted(
+        root.rglob("garnet-mac-studio-ui-proof.json"),
+        key=lambda path: path.stat().st_mtime,
+        reverse=True,
+    )
+    for candidate in candidates:
+        if _mac_studio_ui_summary_verified(candidate):
+            return candidate
+    return None
+
+
+def _committed_mac_studio_ui_proof_evidence() -> MacStudioUiProofEvidence | None:
+    proof = _verified_mac_studio_ui_proof_under(ROOT / "proofs" / "mac" / "studio-ui")
+    if proof is None:
+        return None
+    return MacStudioUiProofEvidence(
+        True,
+        proof,
+        (
+            f"Committed Mac Studio UI proof: `{_repo_relative_display(proof)}`. "
+            "Computer Use drove the packaged macOS Tauri app through Release / "
+            "Readiness -> Mac Domain Proofs, captured a window screenshot, and "
+            "copied a verified six-domain Mac proof bundle. The UI wrapper does "
+            "not claim Windows/Linux ownership or production enforcement."
+        ),
+    )
+
+
 def read_status() -> MitReadinessStatus:
     plan = garnet_readiness_status.read_status(
         ROOT / "F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md"
@@ -824,6 +942,8 @@ def read_status() -> MitReadinessStatus:
     )
     domain_matrix = _domain_matrix_evidence()
     ultrapunch_repro = _committed_ultrapunch_repro_evidence()
+    mac_domain_proof = _committed_mac_domain_proof_evidence()
+    mac_studio_ui_proof = _committed_mac_studio_ui_proof_evidence()
     lsp_precision_present = _lsp_precision_present()
     if wls_clean_vm_verified:
         wls_completion_percent = (
@@ -1421,6 +1541,54 @@ def read_status() -> MitReadinessStatus:
                 "WSL is portability-repro only, not Linux seccomp or OS-sandbox enforcement",
                 "No Wasmtime fuel, production, or v1.0 claim",
                 "Cross-OS consolidation waits for S107-S109/S112 evidence",
+            ],
+        ),
+        ObjectiveLane(
+            id="macos_domain_execution_proof",
+            evidence_class="committed",
+            label="Mac-Codex domain execution proof (S107)",
+            status="verified" if mac_domain_proof else "planned",
+            completion_percent=100.0 if mac_domain_proof else 0.0,
+            evidence=(
+                "`scripts/smoke_garnet_mac_domain_proofs.py` records the S105 "
+                "domain proof set as committed macOS evidence: six domains, 15 "
+                "commands, accept sealed with the four trust artifacts plus "
+                f"`decision.md`, and negative/report domains unsealed. {mac_domain_proof.reason}"
+                if mac_domain_proof
+                else (
+                    "No committed Mac S107 domain proof bundle exists yet. "
+                    "Expected path: `proofs/mac/domains/`."
+                )
+            ),
+            blocked_by=[] if mac_domain_proof else ["committed Mac S107 domain proof bundle"],
+            deferred=[
+                "S109 cross-OS matrix waits for Windows/Mac/Linux row consolidation",
+                "No macOS OS-sandbox enforcement, Wasmtime fuel, production, or v1.0 claim",
+                "MCP tool-set domain is static report evidence, not MCP-host enforcement",
+            ],
+        ),
+        ObjectiveLane(
+            id="macos_studio_ui_domain_proof",
+            evidence_class="committed",
+            label="Mac Studio UI domain proof (S110)",
+            status="verified" if mac_studio_ui_proof else "planned",
+            completion_percent=100.0 if mac_studio_ui_proof else 0.0,
+            evidence=(
+                "`apps/garnet-studio` exposes a Release / Readiness -> Mac "
+                "Domain Proofs button that runs the S105 Mac proof recorder "
+                "through the packaged Tauri UI. The committed bundle includes a "
+                f"window screenshot plus copied verified target evidence. {mac_studio_ui_proof.reason}"
+                if mac_studio_ui_proof
+                else (
+                    "No committed Mac Studio UI proof bundle exists yet. "
+                    "Expected path: `proofs/mac/studio-ui/`."
+                )
+            ),
+            blocked_by=[] if mac_studio_ui_proof else ["committed Mac Studio UI proof bundle"],
+            deferred=[
+                "The UI button wraps the six-domain recorder; it does not individually open each source file through a native file picker",
+                "No Windows/Linux ownership, OS sandbox enforcement, production, or v1.0 claim",
+                "MCP tool-set domain is static report evidence, not MCP-host enforcement",
             ],
         ),
         ObjectiveLane(
@@ -2790,6 +2958,26 @@ def committed_only_status(status: MitReadinessStatus) -> MitReadinessStatus:
     only committed evidence remains, and the absolute checkout path is replaced
     so JSON/Markdown comparisons are meaningful across machines.
     """
+    def sanitize_text(value: str) -> str:
+        sanitized = value.replace(str(ROOT), "<repo>")
+        sanitized = sanitized.replace(str(Path.home()), "~")
+        return sanitized
+
+    def sanitize_list(values: list[str]) -> list[str]:
+        return [sanitize_text(value) for value in values]
+
+    def sanitize_lane(lane: ObjectiveLane) -> ObjectiveLane:
+        return ObjectiveLane(
+            id=lane.id,
+            label=lane.label,
+            status=lane.status,
+            completion_percent=lane.completion_percent,
+            evidence=sanitize_text(lane.evidence),
+            blocked_by=sanitize_list(lane.blocked_by),
+            deferred=sanitize_list(lane.deferred),
+            evidence_class=lane.evidence_class,
+        )
+
     return MitReadinessStatus(
         source="committed-truth",
         overall_status=status.overall_status,
@@ -2798,7 +2986,11 @@ def committed_only_status(status: MitReadinessStatus) -> MitReadinessStatus:
             *status.current_truth,
             "committed-only surface excludes local machine evidence",
         ],
-        lanes=[lane for lane in status.lanes if lane.evidence_class == "committed"],
+        lanes=[
+            sanitize_lane(lane)
+            for lane in status.lanes
+            if lane.evidence_class == "committed"
+        ],
     )
 
 

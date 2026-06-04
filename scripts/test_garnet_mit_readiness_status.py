@@ -294,6 +294,165 @@ def _write_committed_ultrapunch_repro_bundle(
     _write_manifest(bundle)
 
 
+def _write_committed_mac_domain_bundle(bundle: Path) -> None:
+    bundle.mkdir(parents=True, exist_ok=True)
+    commands_dir = bundle / "commands"
+    commands_dir.mkdir()
+    domain_ids = [
+        "data_pipeline_net_egress",
+        "supply_chain_proc_escalation",
+        "config_processor_depth_trap",
+        "accept_provenance_dossier",
+        "pr_review_collapse",
+        "mcp_tool_authority_creep",
+    ]
+    commands_by_domain = {}
+    for domain_id in domain_ids:
+        commands = []
+        for index in range(1, 3):
+            command_id = f"{domain_id}-command-{index}"
+            stdout = commands_dir / f"{command_id}-stdout.txt"
+            stderr = commands_dir / f"{command_id}-stderr.txt"
+            stdout.write_text(f"{domain_id} command {index} ok\n", encoding="utf-8")
+            stderr.write_text("", encoding="utf-8")
+            commands.append(
+                {
+                    "id": command_id,
+                    "display_args": ["garnet", domain_id, str(index)],
+                    "exit_code": 0,
+                    "stdout_file": stdout.relative_to(bundle).as_posix(),
+                    "stderr_file": stderr.relative_to(bundle).as_posix(),
+                    "expected_failure": False,
+                    "status": "passed",
+                }
+            )
+        commands_by_domain[domain_id] = commands
+
+    for domain_id in (
+        "data_pipeline_net_egress",
+        "config_processor_depth_trap",
+        "accept_provenance_dossier",
+    ):
+        record = bundle / "domains" / domain_id / "record"
+        record.mkdir(parents=True)
+        (record / "decision.md").write_text(f"{domain_id} decision\n", encoding="utf-8")
+        if domain_id == "accept_provenance_dossier":
+            for artifact in [*status_mod.smoke_garnet_mac_domain_proofs.ACCEPT_ARTIFACTS, "run_output.txt"]:
+                (record / artifact).write_text(f"{artifact}\n", encoding="utf-8")
+        elif domain_id == "config_processor_depth_trap":
+            (record / "diff_caps.txt").write_text("no expansion\n", encoding="utf-8")
+            (record / "run_trap.txt").write_text("@max_depth(4) exceeded\n", encoding="utf-8")
+        else:
+            (record / "diff_caps.txt").write_text("AUTHORITY EXPANDED\n", encoding="utf-8")
+
+    for domain_id in (
+        "supply_chain_proc_escalation",
+        "pr_review_collapse",
+        "mcp_tool_authority_creep",
+    ):
+        domain = bundle / "domains" / domain_id
+        domain.mkdir(parents=True)
+        (domain / "decision.md").write_text(f"{domain_id} decision\n", encoding="utf-8")
+        if domain_id == "mcp_tool_authority_creep":
+            (domain / "mcp_caps.txt").write_text("aggregate authority\nhigh-authority\n", encoding="utf-8")
+            (domain / "mcp_caps.json").write_text('{"enforced": false}\n', encoding="utf-8")
+        else:
+            (domain / "capability_manifest.json").write_text("{}\n", encoding="utf-8")
+            (domain / "diff_caps.txt").write_text("AUTHORITY EXPANDED\n", encoding="utf-8")
+
+    domains = []
+    for domain_id in domain_ids:
+        sealed = domain_id == "accept_provenance_dossier"
+        domain_dir = bundle / "domains" / domain_id
+        artifact_root = domain_dir / "record" if (domain_dir / "record").is_dir() else domain_dir
+        domain = {
+            "id": domain_id,
+            "label": domain_id,
+            "verdict": "test verdict",
+            "status": "passed",
+            "source_included": False,
+            "provider_api_called": False,
+            "commands": commands_by_domain[domain_id],
+            "artifacts": sorted(path.name for path in artifact_root.iterdir() if path.is_file()),
+            "sealed": sealed,
+            "seal_expected": sealed,
+        }
+        if domain_id == "mcp_tool_authority_creep":
+            domain["enforced"] = False
+        domains.append(domain)
+
+    summary = {
+        "schema": "garnet.mac_domain_proofs.v1",
+        "created_at": "2026-06-04T00:00:00+00:00",
+        "platform": "macos",
+        "host_platform": "macOS-test",
+        "arch": "arm64",
+        "evidence_tier": "macos-native-domain-execution",
+        "status": "passed",
+        "source_included": False,
+        "provider_api_called": False,
+        "domain_count": 6,
+        "passed_domains": 6,
+        "failed_domains": 0,
+        "commands_recorded": sum(len(commands) for commands in commands_by_domain.values()),
+        "garnet_command": ["garnet"],
+        "domains": domains,
+        "cross_os_role": "S107 Mac-Codex row for S109 consolidation",
+        "honest_scope": ["not OS-sandbox proof on macOS"],
+    }
+    (bundle / "garnet-mac-domain-proofs.json").write_text(
+        json.dumps(summary, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    (bundle / "garnet-mac-domain-proofs.md").write_text(
+        "# Mac domain proofs\n",
+        encoding="utf-8",
+    )
+    _write_manifest(bundle)
+
+
+def _write_committed_mac_studio_ui_bundle(repo_root: Path, bundle: Path) -> None:
+    bundle.mkdir(parents=True, exist_ok=True)
+    (bundle / "screenshots").mkdir()
+    (bundle / "commands").mkdir()
+    target = bundle / "target-evidence" / "garnet-mac-domain-proofs-test"
+    _write_committed_mac_domain_bundle(target)
+    screenshot = bundle / "screenshots" / "mac-domain-proofs-ui-window.png"
+    screenshot.write_bytes(b"\x89PNG\r\n\x1a\nfake-test-png\n")
+    (bundle / "commands" / "computer-use-ui-sequence.txt").write_text(
+        "Clicked Release / Readiness then Mac Domain Proofs\n",
+        encoding="utf-8",
+    )
+    summary = {
+        "schema": "garnet.mac.studio_ui_proof.v1",
+        "status": "passed",
+        "platform": "macos",
+        "arch": "arm64",
+        "app_bundle": "target/release/bundle/macos/Garnet Studio.app",
+        "bundle_identifier": "dev.islandcrew.garnet.studio",
+        "ui_path": ["Release / Readiness", "Mac Domain Proofs"],
+        "screenshot": "screenshots/mac-domain-proofs-ui-window.png",
+        "target_evidence": "target-evidence/garnet-mac-domain-proofs-test/garnet-mac-domain-proofs.json",
+        "source_included": False,
+        "provider_api_called": False,
+        "domain_count": 6,
+        "passed_domains": 6,
+        "failed_domains": 0,
+        "honest_scope": [
+            "UI wrapper proof; not Windows/Linux ownership",
+        ],
+    }
+    (bundle / "garnet-mac-studio-ui-proof.json").write_text(
+        json.dumps(summary, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    (bundle / "garnet-mac-studio-ui-proof.md").write_text(
+        "# Mac Studio UI proof\n",
+        encoding="utf-8",
+    )
+    _write_manifest(bundle)
+
+
 def _write_committed_studio_smoke_bundle(repo_root: Path, bundle: Path, target_platform: str) -> None:
     bundle.mkdir(parents=True, exist_ok=True)
     commands_dir = bundle / "commands"
@@ -789,7 +948,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertEqual(
             "active-partial", lanes["windows_linux_distribution"].status
         )
-        self.assertEqual(71.0, lanes["windows_linux_distribution"].completion_percent)
+        self.assertEqual(68.0, lanes["windows_linux_distribution"].completion_percent)
         self.assertLess(
             lanes["windows_linux_distribution"].completion_percent, 100.0
         )
@@ -835,11 +994,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertEqual("verified", lanes["windows_linux_domain_proof_matrix"].status)
         self.assertEqual(100.0, lanes["windows_linux_domain_proof_matrix"].completion_percent)
         self.assertIn("20 current examples", lanes["windows_linux_domain_proof_matrix"].evidence)
-        self.assertIn("Committed Windows bundle", lanes["windows_linux_domain_proof_matrix"].evidence)
-        self.assertIn(
-            "Committed WSL portability bundle",
-            lanes["windows_linux_domain_proof_matrix"].evidence,
-        )
+        self.assertIn("Verified bundle", lanes["windows_linux_domain_proof_matrix"].evidence)
         self.assertEqual("verified", lanes["editor_lsp_adoption"].status)
         self.assertEqual(100.0, lanes["editor_lsp_adoption"].completion_percent)
         # S9: Determinism CI cross-machine lane
@@ -1042,6 +1197,40 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("Committed WSL portability-repro bundle", evidence.reason)
         self.assertIn("not Linux seccomp", evidence.reason)
 
+    def test_mac_domain_proof_evidence_accepts_committed_bundle(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            repo_root = Path(temp)
+            _write_committed_mac_domain_bundle(
+                repo_root / "proofs" / "mac" / "domains" / "mac-domain-proofs-test"
+            )
+
+            with mock.patch.object(status_mod, "ROOT", repo_root):
+                evidence = status_mod._committed_mac_domain_proof_evidence()
+
+        self.assertIsNotNone(evidence)
+        assert evidence is not None
+        self.assertTrue(evidence.verified)
+        self.assertIn("Committed Mac S107 domain bundle", evidence.reason)
+        self.assertIn("not Windows/Linux completion", evidence.reason)
+
+    def test_mac_studio_ui_proof_evidence_accepts_committed_bundle(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            repo_root = Path(temp)
+            _write_committed_mac_studio_ui_bundle(
+                repo_root,
+                repo_root / "proofs" / "mac" / "studio-ui" / "mac-studio-ui-test",
+            )
+
+            with mock.patch.object(status_mod, "ROOT", repo_root):
+                evidence = status_mod._committed_mac_studio_ui_proof_evidence()
+
+        self.assertIsNotNone(evidence)
+        assert evidence is not None
+        self.assertTrue(evidence.verified)
+        self.assertIn("Committed Mac Studio UI proof", evidence.reason)
+        self.assertIn("Release / Readiness", evidence.reason)
+        self.assertIn("not claim Windows/Linux", evidence.reason)
+
     def test_studio_smoke_evidence_accepts_committed_windows_and_wsl_bundles(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             repo_root = Path(temp)
@@ -1127,7 +1316,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         distribution = lanes["windows_linux_distribution"]
         self.assertEqual("active-partial", distribution.status)
-        self.assertEqual(71.0, distribution.completion_percent)
+        self.assertEqual(68.0, distribution.completion_percent)
         self.assertIn("committed WSL Linux Xvfb virtual-display window-capture evidence", distribution.evidence)
         self.assertIn("committed WSLg system package install/launch evidence", distribution.evidence)
         self.assertIn("Linux VM/container", " ".join(distribution.blocked_by))
@@ -1146,7 +1335,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         distribution = lanes["windows_linux_distribution"]
         self.assertEqual("active-partial", distribution.status)
-        self.assertEqual(71.0, distribution.completion_percent)
+        self.assertEqual(68.0, distribution.completion_percent)
         self.assertIn("committed WSLg system package install/launch evidence", distribution.evidence)
         self.assertIn("Linux VM/container", " ".join(distribution.blocked_by))
 
@@ -1165,7 +1354,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         distribution = lanes["windows_linux_distribution"]
         self.assertEqual("active-partial", distribution.status)
-        self.assertEqual(71.0, distribution.completion_percent)
+        self.assertEqual(68.0, distribution.completion_percent)
         self.assertIn("committed consolidated Linux/Tauri gate replay evidence", distribution.evidence)
         self.assertIn("Linux VM/container", " ".join(distribution.blocked_by))
 
@@ -1237,7 +1426,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         distribution = lanes["windows_linux_distribution"]
         self.assertEqual("active-partial", distribution.status)
-        self.assertEqual(71.0, distribution.completion_percent)
+        self.assertEqual(68.0, distribution.completion_percent)
         self.assertIn("committed Release / Readiness shell proof evidence", distribution.evidence)
         self.assertIn("Linux VM/container", " ".join(distribution.blocked_by))
 
@@ -1342,7 +1531,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         lane = {lane.id: lane for lane in status.lanes}["windows_linux_distribution"]
         self.assertEqual("active-partial", lane.status)
-        self.assertEqual(83.0, lane.completion_percent)
+        self.assertEqual(80.0, lane.completion_percent)
         self.assertIn("verified x64 clean-VM installer proof", lane.evidence)
         self.assertIn("committed WSL Linux `.deb` package-build/command-smoke evidence", lane.evidence)
         self.assertIn("committed WSL Linux `.deb` extract/command-smoke evidence", lane.evidence)

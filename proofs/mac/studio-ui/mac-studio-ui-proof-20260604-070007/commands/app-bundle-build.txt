@@ -1,0 +1,3 @@
+Command: npm run tauri -- build --bundles app
+Working directory: /Users/IDC2.5/Desktop/Garnet/apps/garnet-studio
+Exit: 0
