@@ -1,0 +1,80 @@
+{
+  "schema": "garnet.mac.studio_ui_reattestation.v1",
+  "created_at": "2026-06-04T22:27:22Z",
+  "platform": "macos",
+  "scope": "remedial-re-attestation-only",
+  "slice": "S107 Mac Studio UI proof",
+  "source_pr": {
+    "number": 356,
+    "url": "https://github.com/Island-Dev-Crew/garnet/pull/356",
+    "title": "S107: record Mac domain and Studio UI proofs",
+    "merge_commit": "981c14bce97eb5aa556479282b0cedeca8e159fb",
+    "merged_at": "2026-06-04T07:28:10Z"
+  },
+  "prior_remedial_pr": {
+    "number": 362,
+    "url": "https://github.com/Island-Dev-Crew/garnet/pull/362",
+    "title": "S107: re-attest Mac domain proof slice",
+    "merge_commit": "00ddfae9e698f0fa8f4d77966a4e7b9c815cff21",
+    "merged_at": "2026-06-04T22:26:46Z"
+  },
+  "reattestation_base": {
+    "main_commit": "00ddfae9e698f0fa8f4d77966a4e7b9c815cff21",
+    "branch": "codex/s107-mac-studio-ui-reattest"
+  },
+  "verified_bundle": {
+    "summary": "proofs/mac/studio-ui/mac-studio-ui-proof-20260604-070007/garnet-mac-studio-ui-proof.json",
+    "summary_sha256": "6311dad8eaf926710a9e3c9e3c69d3de1f1221d76d06d205bb45b3ae00f049d6",
+    "manifest": "proofs/mac/studio-ui/mac-studio-ui-proof-20260604-070007/MANIFEST.sha256",
+    "manifest_sha256": "97a961d6dddb2f700961cd3ffab811723b9c3a7399485daf042914224f08f94b",
+    "screenshot": "proofs/mac/studio-ui/mac-studio-ui-proof-20260604-070007/screenshots/mac-domain-proofs-ui-window.png",
+    "screenshot_sha256": "c7271a23ba046db2b2c060c6e546e76146984307c938c0f2e819e46f943aa255"
+  },
+  "fresh_verification": [
+    {
+      "command": "python3 - <<'PY'\nfrom pathlib import Path\nfrom scripts import garnet_mit_readiness_status as status\nroot = Path('proofs/mac/studio-ui')\nproof = status._verified_mac_studio_ui_proof_under(root)\nif proof is None:\n    raise SystemExit('mac-studio-ui-proof: verification FAILED')\nprint('mac-studio-ui-proof: verified')\nprint(proof.as_posix())\nPY",
+      "exit_code": 0,
+      "stdout": "mac-studio-ui-proof: verified; proofs/mac/studio-ui/mac-studio-ui-proof-20260604-070007/garnet-mac-studio-ui-proof.json"
+    },
+    {
+      "command": "python3 - <<'PY'\nfrom scripts import garnet_mit_readiness_status as status\nproof = status._committed_mac_studio_ui_proof_evidence()\nif proof is None or not proof.verified:\n    raise SystemExit('committed-mac-studio-ui-evidence: verification FAILED')\nprint('committed-mac-studio-ui-evidence: verified')\nprint(proof.bundle_json.as_posix() if proof.bundle_json else '')\nprint(proof.reason)\nPY",
+      "exit_code": 0,
+      "stdout_summary": "committed-mac-studio-ui-evidence: verified; committed Mac Studio UI proof points to proofs/mac/studio-ui/mac-studio-ui-proof-20260604-070007/garnet-mac-studio-ui-proof.json"
+    },
+    {
+      "command": "python3 scripts/garnet_mit_readiness_status.py --check-no-regression",
+      "exit_code": 0,
+      "stdout_summary": "active-partial 91.2%; Mac Studio UI proof verified"
+    },
+    {
+      "command": "python3 scripts/test_garnet_mit_readiness_status.py",
+      "exit_code": 0,
+      "stdout_summary": "Ran 40 tests; OK"
+    }
+  ],
+  "ui_path": [
+    "Release / Readiness",
+    "Mac Domain Proofs"
+  ],
+  "domain_set": [
+    "data_pipeline_net_egress",
+    "supply_chain_proc_escalation",
+    "config_processor_depth_trap",
+    "accept_provenance_dossier",
+    "pr_review_collapse",
+    "mcp_tool_authority_creep"
+  ],
+  "attestation": {
+    "agent": "Codex on Mac #2",
+    "model": "GPT-5",
+    "gate": "dogfood-gate-v0.8.1",
+    "remedial_reason": "PR #356 bundled Mac-native domain execution and Studio UI proof. PR #362 separately re-attested the Mac-native domain execution slice; this record re-attests only the Mac Studio UI proof slice as its own one-PR boundary."
+  },
+  "honest_scope": [
+    "This re-attestation covers the committed macOS Garnet Studio UI wrapper proof only.",
+    "It does not re-attest Mac-native domain execution; PR #362 carries that remedial slice.",
+    "It does not claim Windows or Linux ownership.",
+    "It does not claim macOS OS-sandbox enforcement, seccomp, Wasmtime fuel, production readiness, v1.0 readiness, release readiness, S114 red-team completion, S115 dossier completion, S118 academic-evidence completion, S119 readiness, S120 cut, or a release tag."
+  ],
+  "status": "verified"
+}
