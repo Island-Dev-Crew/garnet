@@ -1,0 +1,6 @@
+git_head=29f12e06417e5e2ba82944141f02987b22b7740d
+garnet diff-caps: garnet-cli/tests/fixtures/ultrapunch/baseline.garnet -> garnet-cli/tests/fixtures/ultrapunch/reject_widen.garnet
+  + caps GAINED:  net
+  ~ digest gained: net
+
+diff-caps: AUTHORITY EXPANDED — review required (capability band 2/5)

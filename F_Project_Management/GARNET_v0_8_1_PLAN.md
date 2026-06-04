@@ -252,10 +252,19 @@ contains absolute OS paths while the path-independent verdict body matches, and
 the full accept seal JSON differs on `prelude_hash` while the subject, AST,
 capability-manifest, and attestation fields match. This is a Mac-row proof only:
 the committed bundle keeps `cross_os_complete=false` because the independent
-Linux S108 row was not yet present when it was recorded. After the S108 UTM row
-lands, full S109 still requires a separate consolidation gate update; WSL
-remains execution/portability rather than Linux seccomp or OS-sandbox
-enforcement.
+Linux S108 row was not yet present when it was recorded. WSL remains
+execution/portability rather than Linux seccomp or OS-sandbox enforcement.
+
+**S109 full cross-OS trap parity matrix (recorded 2026-06-04):**
+`scripts/garnet_cross_os_trap_parity_matrix.py` verifies the post-S108
+Win×Mac×Linux matrix under `proofs/cross-os/matrix/`. The bundle consumes the
+committed Windows S106 proof, Mac S109 row, and Linux S108 UTM proof, then
+records the missing Linux UTM `diff-caps` rejection datapoint from the Debian
+guest at `origin/main` `29f12e0`. The matrix marks `cross_os_complete=true`
+only for the three named S109 traps: `@max_depth`, `@caps`, and diff-caps
+rejection. Honest scope: WSL is explicitly excluded from Linux enforcement;
+Linux seccomp is Linux-only evidence and not a Windows/macOS OS-sandbox claim;
+no Wasmtime fuel, production, release tag, S120, or v1.0 claim is made.
 
 ### Stage R — independent reproduction · repro lanes
 | Slice | Title | Goal |

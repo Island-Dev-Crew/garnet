@@ -141,16 +141,16 @@
     {
       "id": "s107",
       "merge_confidence": null,
-      "merged_at": null,
-      "status": "pending",
+      "merged_at": "2026-06-04T07:28:10+00:00",
+      "status": "merged",
       "title": "mac-codex-cross-os-enforcement-proof",
       "weight": 1.0
     },
     {
       "id": "s108",
-      "merge_confidence": null,
-      "merged_at": null,
-      "status": "pending",
+      "merge_confidence": 5,
+      "merged_at": "2026-06-04T21:19:44+00:00",
+      "status": "merged",
       "title": "linux-cross-os-enforcement-proof",
       "weight": 1.0
     },

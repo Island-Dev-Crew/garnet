@@ -72,6 +72,7 @@ import garnet_provenance_seal_chain_status  # noqa: E402
 import garnet_promo_video_status  # noqa: E402
 import garnet_readiness_status  # noqa: E402
 import garnet_stdlib_layer_gate  # noqa: E402
+import garnet_cross_os_trap_parity_matrix  # noqa: E402
 import garnet_linux_cross_os_enforcement_proof  # noqa: E402
 import garnet_windows_cross_os_enforcement_proof  # noqa: E402
 import garnet_windows_linux_studio_status  # noqa: E402
@@ -217,6 +218,13 @@ class MacStudioUiProofEvidence:
 
 @dataclass(frozen=True)
 class MacCrossOsMatrixEvidence:
+    verified: bool
+    bundle_json: Path | None
+    reason: str
+
+
+@dataclass(frozen=True)
+class CrossOsTrapParityEvidence:
     verified: bool
     bundle_json: Path | None
     reason: str
@@ -870,8 +878,25 @@ def _committed_mac_cross_os_matrix_evidence() -> MacCrossOsMatrixEvidence | None
             f"Committed Mac S109 matrix row: `{_repo_relative_display(proof)}`. "
             "It records the Mac rows for max-depth, caps, and diff-caps-reject, "
             "keeps OS-independent accept artifacts byte-identical against the "
-            "Windows baseline, and explicitly leaves full cross-OS completion "
-            "blocked on an independent Linux S108 enforcement row."
+            "Windows baseline, and remains a historical Mac-row bundle; full "
+            "S109 completion is tracked by the separate cross-OS trap parity lane."
+        ),
+    )
+
+
+def _committed_cross_os_trap_parity_evidence() -> CrossOsTrapParityEvidence | None:
+    proof = garnet_cross_os_trap_parity_matrix.read_committed_evidence(ROOT)
+    if proof is None:
+        return None
+    return CrossOsTrapParityEvidence(
+        True,
+        proof,
+        (
+            f"Committed full S109 cross-OS trap parity matrix: `{_repo_relative_display(proof)}`. "
+            "It verifies committed Windows, Mac, and Linux rows for max-depth, caps, "
+            "and diff-caps-reject; records a Linux UTM diff-caps rejection datapoint; "
+            "keeps required OS-independent accept artifacts byte-identical; and "
+            "excludes WSL portability from Linux enforcement."
         ),
     )
 
@@ -889,6 +914,7 @@ def read_status() -> MitReadinessStatus:
     provenance_chain = garnet_provenance_seal_chain_status.read_status()
     cap_manifest_standard = garnet_cap_manifest_standard_status.read_status()
     linux_cross_os = garnet_linux_cross_os_enforcement_proof.read_committed_evidence(ROOT)
+    cross_os_trap_parity = _committed_cross_os_trap_parity_evidence()
     windows_cross_os = garnet_windows_cross_os_enforcement_proof.read_status()
     proof = garnet_proof_benchmark_status.read_status()
     vm_scaffold_present = _vm_scaffold_present(proof)
@@ -1653,9 +1679,33 @@ def read_status() -> MitReadinessStatus:
             ),
             blocked_by=[] if mac_cross_os_matrix else ["committed Mac S109 matrix row"],
             deferred=[
-                "Full S109 cross-OS completion still waits for independent Linux S108 enforcement evidence",
+                "This lane remains the Mac row; full S109 completion is tracked by `cross_os_trap_parity_matrix`",
                 "WSL is execution/portability only, not Linux seccomp or OS-sandbox enforcement",
                 "No macOS OS-sandbox enforcement, Wasmtime fuel, production, or v1.0 claim",
+            ],
+        ),
+        ObjectiveLane(
+            id="cross_os_trap_parity_matrix",
+            evidence_class="committed",
+            label="Full cross-OS trap parity matrix (S109)",
+            status="verified" if cross_os_trap_parity else "planned",
+            completion_percent=100.0 if cross_os_trap_parity else 0.0,
+            evidence=(
+                "`scripts/garnet_cross_os_trap_parity_matrix.py --gate` checks "
+                "the committed full S109 matrix across Windows, Mac, and Linux "
+                "for max-depth, caps, and diff-caps-reject. "
+                f"{cross_os_trap_parity.reason}"
+                if cross_os_trap_parity
+                else (
+                    "No committed full S109 cross-OS trap parity matrix exists yet. "
+                    "Expected path: `proofs/cross-os/matrix/`."
+                )
+            ),
+            blocked_by=[] if cross_os_trap_parity else ["committed full S109 matrix bundle"],
+            deferred=[
+                "WSL remains execution/portability evidence and is excluded from Linux enforcement",
+                "Linux seccomp is Linux-only evidence, not Windows/macOS OS-sandbox enforcement",
+                "No Wasmtime fuel, production, release tag, S120, or v1.0 claim",
             ],
         ),
         ObjectiveLane(
