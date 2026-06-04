@@ -231,6 +231,17 @@ evidence. Honest scope: this proves a human-visible Studio wrapper around the
 Mac proof recorder; it does not claim native file-picker-per-domain execution,
 Windows/Linux ownership, OS sandbox enforcement, production, or v1.0.
 
+**S108 Linux UTM enforcement row (recorded 2026-06-04):**
+`scripts/garnet_linux_cross_os_enforcement_proof.py` records and verifies the
+independent Linux row under `proofs/linux/enforcement/`. The Mac #2 UTM Debian
+12 ARM64 guest reran the S101 Stage-V gate and the bounded/capability
+integration traps on Linux, then applied the generated seccomp policy through
+`tools/seccomp-apply/prove.sh` for three deterministic denied-syscall trap runs
+plus a policy-driven allowed `@caps(fs, net)` socket case. Honest scope: this is
+Linux S108 evidence for S109 consolidation only. It is not Windows/macOS
+OS-sandbox enforcement, not full S109 completion, not Wasmtime fuel, and not a
+production/v1.0 claim.
+
 **S109 Mac cross-OS matrix row (recorded 2026-06-04):**
 `scripts/smoke_garnet_mac_cross_os_matrix.py` records the Mac rows of the S109
 trap matrix under `proofs/mac/matrix/`. The proof reruns the Mac Stage-V
@@ -240,9 +251,11 @@ artifacts as byte-identical. Honest deltas are named: full `diff_caps.txt` text
 contains absolute OS paths while the path-independent verdict body matches, and
 the full accept seal JSON differs on `prelude_hash` while the subject, AST,
 capability-manifest, and attestation fields match. This is a Mac-row proof only:
-`cross_os_complete=false` until the independent Linux S108 enforcement row
-exists, and WSL remains execution/portability rather than Linux seccomp or
-OS-sandbox enforcement.
+the committed bundle keeps `cross_os_complete=false` because the independent
+Linux S108 row was not yet present when it was recorded. After the S108 UTM row
+lands, full S109 still requires a separate consolidation gate update; WSL
+remains execution/portability rather than Linux seccomp or OS-sandbox
+enforcement.
 
 ### Stage R — independent reproduction · repro lanes
 | Slice | Title | Goal |

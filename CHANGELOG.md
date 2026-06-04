@@ -50,6 +50,19 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   open every source file through a native picker, does not claim Windows/Linux
   ownership, and does not claim production/v1.0 enforcement.
 
+- **S108 Linux row (v0.8.1 runway - UTM enforcement proof):** adds
+  `scripts/garnet_linux_cross_os_enforcement_proof.py`, a manifest-backed
+  recorder/gate for the independent Linux S108 row. The committed proof under
+  `proofs/linux/enforcement/` reruns the S101 Stage-V gate and the bounded/caps
+  integration traps on the Mac #2 UTM Debian 12 ARM64 guest, then applies the
+  generated seccomp policy with `tools/seccomp-apply/prove.sh` for three
+  deterministic denied-syscall trap runs plus a policy-driven allowed
+  `@caps(fs, net)` socket case. The MIT readiness reporter now exposes
+  `linux_cross_os_enforcement_proof` as committed S108 evidence. **Honest
+  scope:** this is Linux S108 evidence for S109 consolidation only, not
+  Windows/macOS OS-sandbox enforcement, not full S109 completion, not Wasmtime
+  fuel, and not production/v1.0 readiness.
+
 - **S109 Mac row (v0.8.1 runway - Mac-Codex cross-OS matrix row):** adds
   `scripts/smoke_garnet_mac_cross_os_matrix.py`, a manifest-backed recorder/gate
   for the Mac rows of the S109 trap matrix. The committed proof under
@@ -62,9 +75,10 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   OS paths and has a matching path-independent verdict body. The MIT readiness
   reporter now exposes `macos_cross_os_matrix_row` as committed evidence.
   **Honest scope:** this is the Mac row for S109 consolidation, not full S109
-  completion. The independent Linux S108 enforcement row is still absent; WSL is
-  execution/portability only, not Linux seccomp or OS-sandbox enforcement, and
-  this is not a production/v1.0 claim.
+  completion. The independent Linux S108 row was absent when this Mac-row bundle
+  was recorded; full S109 still requires a separate consolidation gate update,
+  WSL remains execution/portability only rather than Linux seccomp or
+  OS-sandbox enforcement, and this is not a production/v1.0 claim.
 
 - **S117 consolidation (v0.8.1 runway - Linux/Tauri gate replay proof):**
   adds `scripts/smoke_garnet_studio_linux_gate_replay.py`, a manifest-backed

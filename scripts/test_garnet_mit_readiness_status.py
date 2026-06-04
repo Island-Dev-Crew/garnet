@@ -1013,6 +1013,15 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("not Linux seccomp", s106_deferred)
         self.assertIn("not OS-sandbox enforcement", s106_deferred)
         self.assertIn("Phase 2", s106_deferred)
+        self.assertIn("linux_cross_os_enforcement_proof", lanes)
+        self.assertEqual("verified", lanes["linux_cross_os_enforcement_proof"].status)
+        self.assertIn(
+            "S108 Linux enforcement proof",
+            lanes["linux_cross_os_enforcement_proof"].evidence,
+        )
+        s108_deferred = " ".join(lanes["linux_cross_os_enforcement_proof"].deferred)
+        self.assertIn("not Windows/macOS OS-sandbox enforcement", s108_deferred)
+        self.assertIn("not full S109 completion", s108_deferred)
         self.assertEqual("planned", lanes["broad_converter_frontends"].status)
         self.assertIn("windows_linux_distribution", lanes)
         self.assertEqual(

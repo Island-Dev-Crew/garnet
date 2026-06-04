@@ -72,6 +72,7 @@ import garnet_provenance_seal_chain_status  # noqa: E402
 import garnet_promo_video_status  # noqa: E402
 import garnet_readiness_status  # noqa: E402
 import garnet_stdlib_layer_gate  # noqa: E402
+import garnet_linux_cross_os_enforcement_proof  # noqa: E402
 import garnet_windows_cross_os_enforcement_proof  # noqa: E402
 import garnet_windows_linux_studio_status  # noqa: E402
 import smoke_garnet_studio_linux_wsl_deb  # noqa: E402
@@ -887,6 +888,7 @@ def read_status() -> MitReadinessStatus:
     linear_effect = garnet_linear_effect_status.read_status()
     provenance_chain = garnet_provenance_seal_chain_status.read_status()
     cap_manifest_standard = garnet_cap_manifest_standard_status.read_status()
+    linux_cross_os = garnet_linux_cross_os_enforcement_proof.read_committed_evidence(ROOT)
     windows_cross_os = garnet_windows_cross_os_enforcement_proof.read_status()
     proof = garnet_proof_benchmark_status.read_status()
     vm_scaffold_present = _vm_scaffold_present(proof)
@@ -1954,6 +1956,19 @@ def read_status() -> MitReadinessStatus:
                 "Declared surface only: no proof of undeclared-authority absence",
                 "No VM/runtime capability enforcement is claimed",
             ],
+        ),
+        ObjectiveLane(
+            id="linux_cross_os_enforcement_proof",
+            label="Linux cross-OS enforcement proof (S108)",
+            status="verified" if linux_cross_os.verified else "planned",
+            completion_percent=100.0 if linux_cross_os.verified else 0.0,
+            evidence=(
+                "`scripts/garnet_linux_cross_os_enforcement_proof.py --gate` "
+                "checks committed proof records for the S101 Stage V trap gate on "
+                f"Linux and the S46/S92 seccomp apply datapoint. {linux_cross_os.reason}"
+            ),
+            blocked_by=[] if linux_cross_os.verified else ["committed S108 Linux proof bundle"],
+            deferred=linux_cross_os.deferred,
         ),
         ObjectiveLane(
             id="windows_cross_os_enforcement_phase1",
