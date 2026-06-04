@@ -1,0 +1,8 @@
+        Info Looking up installed tauri packages to check mismatched versions...
+     Running beforeBuildCommand `npm run build`
+   Compiling garnet-studio v0.1.0 (/Users/IDC2.5/Desktop/Garnet/apps/garnet-studio/src-tauri)
+    Finished `release` profile [optimized] target(s) in 10.02s
+       Built application at: /Users/IDC2.5/Desktop/Garnet/target/release/garnet-studio
+    Bundling Garnet Studio.app (/Users/IDC2.5/Desktop/Garnet/target/release/bundle/macos/Garnet Studio.app)
+    Finished 1 bundle at:
+        /Users/IDC2.5/Desktop/Garnet/target/release/bundle/macos/Garnet Studio.app

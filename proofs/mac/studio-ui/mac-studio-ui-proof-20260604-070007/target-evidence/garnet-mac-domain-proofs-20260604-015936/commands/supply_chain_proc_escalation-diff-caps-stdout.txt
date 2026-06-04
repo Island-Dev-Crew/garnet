@@ -1,0 +1,5 @@
+garnet diff-caps: /Users/IDC2.5/Desktop/Garnet/garnet-cli/tests/fixtures/ultrapunch/supply_chain_base.garnet -> /Users/IDC2.5/Desktop/Garnet/garnet-cli/tests/fixtures/ultrapunch/supply_chain_proc_escalation.garnet
+  + caps GAINED:  proc
+  ~ main gained: proc
+
+diff-caps: AUTHORITY EXPANDED — review required (capability band 2/5)

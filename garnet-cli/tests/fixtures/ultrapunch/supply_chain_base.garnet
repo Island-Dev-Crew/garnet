@@ -1,0 +1,5 @@
+# Supply-chain installer baseline: checksum work with declared fs+net authority.
+@caps(fs, net)
+def main() {
+  1
+}

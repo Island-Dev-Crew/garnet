@@ -1,0 +1,5 @@
+agent-loop: proposal `/Users/IDC2.5/Desktop/Garnet/garnet-cli/tests/fixtures/ultrapunch/accept_proposal.garnet` vs baseline `/Users/IDC2.5/Desktop/Garnet/garnet-cli/tests/fixtures/ultrapunch/baseline.garnet` (backend --interp)
+agent-loop: stage diff-caps -> PASS (no authority expansion, band 5/5)
+agent-loop: stage run(--interp) -> PASS (=> 78)
+agent-loop: stage seal -> SEALED (/Users/IDC2.5/Desktop/Garnet/proofs/mac/domains/mac-domain-proofs-20260604-064412/domains/accept_provenance_dossier/seal-out.json) (unsigned unless cosign present)
+agent-loop: ACCEPTED on capability+depth evidence

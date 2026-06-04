@@ -1,0 +1,10 @@
+MCP tool-capability surface (5 tools):
+  clock -> time
+  fetch -> net
+  filesystem -> fs
+  search -> net_internal
+  shell -> ffi, proc
+aggregate authority: ffi, fs, net, net_internal, proc, time
+  ! high-authority: `shell` declares `ffi` — review
+  ! high-authority: `shell` declares `proc` — review
+note: self-declared tool capabilities — reviewable/diffable, NOT MCP-host enforced.

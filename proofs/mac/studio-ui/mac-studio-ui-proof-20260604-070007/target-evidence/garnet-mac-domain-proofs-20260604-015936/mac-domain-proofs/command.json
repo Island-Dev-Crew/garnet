@@ -1,0 +1,15 @@
+{
+  "command": [
+    "python3",
+    "/Users/IDC2.5/Desktop/Garnet/scripts/smoke_garnet_mac_domain_proofs.py",
+    "--garnet",
+    "/Users/IDC2.5/Desktop/Garnet/target/release/garnet",
+    "--output-dir",
+    "/Users/IDC2.5/Desktop/Garnet/target/mac-studio-domain-proofs/garnet-mac-domain-proofs-20260604-015936",
+    "--format",
+    "md"
+  ],
+  "exit_code": 0,
+  "provider_api_called": false,
+  "source_included": false
+}

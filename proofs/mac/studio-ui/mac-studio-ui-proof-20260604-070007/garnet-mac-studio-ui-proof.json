@@ -1,0 +1,96 @@
+{
+  "app_bundle": "target/release/bundle/macos/Garnet Studio.app",
+  "arch": "arm64",
+  "bundle_identifier": "dev.islandcrew.garnet.studio",
+  "commands_recorded": 15,
+  "created_at": "2026-06-04T07:00:07Z",
+  "domain_count": 6,
+  "domain_verdicts": [
+    {
+      "artifacts": [
+        "decision.md",
+        "diff_caps.txt"
+      ],
+      "id": "data_pipeline_net_egress",
+      "sealed": false,
+      "status": "passed"
+    },
+    {
+      "artifacts": [
+        "capability_manifest.json",
+        "decision.md",
+        "diff_caps.txt"
+      ],
+      "id": "supply_chain_proc_escalation",
+      "sealed": false,
+      "status": "passed"
+    },
+    {
+      "artifacts": [
+        "decision.md",
+        "diff_caps.txt",
+        "run_trap.txt"
+      ],
+      "id": "config_processor_depth_trap",
+      "sealed": false,
+      "status": "passed"
+    },
+    {
+      "artifacts": [
+        "capability_manifest.json",
+        "decision.md",
+        "diff_caps.txt",
+        "run_output.txt",
+        "seal.json",
+        "transparency_log.jsonl"
+      ],
+      "id": "accept_provenance_dossier",
+      "sealed": true,
+      "status": "passed"
+    },
+    {
+      "artifacts": [
+        "capability_manifest.json",
+        "decision.md",
+        "diff_caps.txt"
+      ],
+      "id": "pr_review_collapse",
+      "sealed": false,
+      "status": "passed"
+    },
+    {
+      "artifacts": [
+        "decision.md",
+        "mcp_caps.json",
+        "mcp_caps.txt"
+      ],
+      "id": "mcp_tool_authority_creep",
+      "sealed": false,
+      "status": "passed"
+    }
+  ],
+  "failed_domains": 0,
+  "garnet_cli": "target/release/garnet",
+  "honest_scope": [
+    "This is a macOS Tauri UI proof: Computer Use clicked the Release / Readiness panel and the Mac Domain Proofs button in the packaged app bundle.",
+    "The button runs the six-domain S105 Mac proof recorder through the Tauri backend; it does not individually open each source file through a native file picker.",
+    "Only accept_provenance_dossier is sealed; refusal/report domains are intentionally unsealed and preserve negative evidence instead of fake seals.",
+    "mcp_tool_authority_creep is a static report surface with enforced=false, not a runtime hard trap.",
+    "No Windows/Linux ownership, OS sandbox enforcement, production, or v1.0 claim is made."
+  ],
+  "host_platform": "macOS-26.5-arm64-arm-64bit-Mach-O",
+  "passed_domains": 6,
+  "platform": "macos",
+  "provider_api_called": false,
+  "schema": "garnet.mac.studio_ui_proof.v1",
+  "screenshot": "screenshots/mac-domain-proofs-ui-window.png",
+  "source_included": false,
+  "status": "passed",
+  "target_evidence": "target-evidence/garnet-mac-domain-proofs-20260604-015936/garnet-mac-domain-proofs.json",
+  "target_evidence_markdown": "target-evidence/garnet-mac-domain-proofs-20260604-015936/garnet-mac-domain-proofs.md",
+  "ui_command": "python3 /Users/IDC2.5/Desktop/Garnet/scripts/smoke_garnet_mac_domain_proofs.py --garnet /Users/IDC2.5/Desktop/Garnet/target/release/garnet --output-dir /Users/IDC2.5/Desktop/Garnet/target/mac-studio-domain-proofs/garnet-mac-domain-proofs-20260604-015936 --format md",
+  "ui_path": [
+    "Release / Readiness",
+    "Mac Domain Proofs"
+  ]
+}
