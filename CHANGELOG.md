@@ -50,6 +50,22 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   open every source file through a native picker, does not claim Windows/Linux
   ownership, and does not claim production/v1.0 enforcement.
 
+- **S109 Mac row (v0.8.1 runway - Mac-Codex cross-OS matrix row):** adds
+  `scripts/smoke_garnet_mac_cross_os_matrix.py`, a manifest-backed recorder/gate
+  for the Mac rows of the S109 trap matrix. The committed proof under
+  `proofs/mac/matrix/` reruns the Mac Stage-V trap gates for `@max_depth`,
+  `@caps`, and diff-caps rejection, compares against the committed Windows/WSL
+  baselines, and records OS-independent accept artifacts as byte-identical where
+  required. The accept seal is field-identical for the OS-independent subject,
+  AST, capability-manifest, and attestation fields while the full JSON differs
+  honestly on `prelude_hash`; `diff_caps.txt` full text differs only on absolute
+  OS paths and has a matching path-independent verdict body. The MIT readiness
+  reporter now exposes `macos_cross_os_matrix_row` as committed evidence.
+  **Honest scope:** this is the Mac row for S109 consolidation, not full S109
+  completion. The independent Linux S108 enforcement row is still absent; WSL is
+  execution/portability only, not Linux seccomp or OS-sandbox enforcement, and
+  this is not a production/v1.0 claim.
+
 - **S117 consolidation (v0.8.1 runway - Linux/Tauri gate replay proof):**
   adds `scripts/smoke_garnet_studio_linux_gate_replay.py`, a manifest-backed
   recorder/gate that replays the current committed WSL/WSLg package, runtime,

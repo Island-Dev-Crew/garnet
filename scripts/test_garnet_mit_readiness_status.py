@@ -453,6 +453,76 @@ def _write_committed_mac_studio_ui_bundle(repo_root: Path, bundle: Path) -> None
     _write_manifest(bundle)
 
 
+def _write_committed_mac_cross_os_matrix_bundle(bundle: Path) -> None:
+    bundle.mkdir(parents=True, exist_ok=True)
+    commands = []
+    (bundle / "commands").mkdir()
+    for command_id in ("mac-s101-gate", "mac-bounded-enforcement", "mac-caps-enforcement"):
+        stdout = bundle / "commands" / f"{command_id}-stdout.txt"
+        stderr = bundle / "commands" / f"{command_id}-stderr.txt"
+        stdout.write_text(f"{command_id} ok\n", encoding="utf-8")
+        stderr.write_text("", encoding="utf-8")
+        commands.append(
+            {
+                "id": command_id,
+                "display_args": ["test", command_id],
+                "exit_code": 0,
+                "stdout_file": stdout.relative_to(bundle).as_posix(),
+                "stderr_file": stderr.relative_to(bundle).as_posix(),
+                "status": "passed",
+            }
+        )
+    summary = {
+        "schema": "garnet.mac_cross_os_matrix.v1",
+        "platform": "macos",
+        "status": "passed",
+        "mac_rows_complete": True,
+        "cross_os_complete": False,
+        "cross_os_complete_reason": "Independent Linux S108 enforcement row is not present.",
+        "commands": commands,
+        "trap_rows": [
+            {
+                "trap": trap,
+                "status": "passed",
+                "windows": {"status": True},
+                "mac": {"status": True},
+                "wsl": {"status": True, "tier": "execution-portability"},
+            }
+            for trap in ("max_depth", "caps", "diff_caps_reject")
+        ],
+        "byte_comparisons": [
+            {"id": "accept_capability_manifest", "expected_os_independent": True, "byte_equal": True},
+            {"id": "accept_transparency_log", "expected_os_independent": True, "byte_equal": True},
+            {
+                "id": "accept_diff_caps",
+                "expected_os_independent": False,
+                "byte_equal": False,
+                "normalized_body_equal": True,
+            },
+            {
+                "id": "accept_seal",
+                "expected_os_independent": False,
+                "status": "passed",
+                "full_json_byte_equal": False,
+                "delta": "Full seal JSON differs because the prelude_hash field differs.",
+            },
+        ],
+        "honest_scope": [
+            "This is the Mac row for S109 consolidation, not full S109 completion.",
+            "WSL remains execution/portability evidence only, not Linux seccomp enforcement.",
+        ],
+    }
+    (bundle / "garnet-mac-cross-os-matrix.json").write_text(
+        json.dumps(summary, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    (bundle / "garnet-mac-cross-os-matrix.md").write_text(
+        "# Mac cross-OS matrix row\n",
+        encoding="utf-8",
+    )
+    _write_manifest(bundle)
+
+
 def _write_committed_studio_smoke_bundle(repo_root: Path, bundle: Path, target_platform: str) -> None:
     bundle.mkdir(parents=True, exist_ok=True)
     commands_dir = bundle / "commands"
@@ -1230,6 +1300,22 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("Committed Mac Studio UI proof", evidence.reason)
         self.assertIn("Release / Readiness", evidence.reason)
         self.assertIn("not claim Windows/Linux", evidence.reason)
+
+    def test_mac_cross_os_matrix_evidence_accepts_committed_bundle(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            repo_root = Path(temp)
+            _write_committed_mac_cross_os_matrix_bundle(
+                repo_root / "proofs" / "mac" / "matrix" / "mac-cross-os-matrix-test"
+            )
+
+            with mock.patch.object(status_mod, "ROOT", repo_root):
+                evidence = status_mod._committed_mac_cross_os_matrix_evidence()
+
+        self.assertIsNotNone(evidence)
+        assert evidence is not None
+        self.assertTrue(evidence.verified)
+        self.assertIn("Committed Mac S109 matrix row", evidence.reason)
+        self.assertIn("independent Linux S108", evidence.reason)
 
     def test_studio_smoke_evidence_accepts_committed_windows_and_wsl_bundles(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

@@ -231,6 +231,19 @@ evidence. Honest scope: this proves a human-visible Studio wrapper around the
 Mac proof recorder; it does not claim native file-picker-per-domain execution,
 Windows/Linux ownership, OS sandbox enforcement, production, or v1.0.
 
+**S109 Mac cross-OS matrix row (recorded 2026-06-04):**
+`scripts/smoke_garnet_mac_cross_os_matrix.py` records the Mac rows of the S109
+trap matrix under `proofs/mac/matrix/`. The proof reruns the Mac Stage-V
+`@max_depth`, `@caps`, and diff-caps-reject gates, compares against the
+committed Windows/WSL baselines, and records required OS-independent accept
+artifacts as byte-identical. Honest deltas are named: full `diff_caps.txt` text
+contains absolute OS paths while the path-independent verdict body matches, and
+the full accept seal JSON differs on `prelude_hash` while the subject, AST,
+capability-manifest, and attestation fields match. This is a Mac-row proof only:
+`cross_os_complete=false` until the independent Linux S108 enforcement row
+exists, and WSL remains execution/portability rather than Linux seccomp or
+OS-sandbox enforcement.
+
 ### Stage R — independent reproduction · repro lanes
 | Slice | Title | Goal |
 |---|---|---|

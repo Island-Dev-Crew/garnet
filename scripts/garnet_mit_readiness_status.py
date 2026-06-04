@@ -84,6 +84,7 @@ import smoke_garnet_studio_linux_gate_replay  # noqa: E402
 import smoke_garnet_studio_domain_shell  # noqa: E402
 import smoke_garnet_studio_release_readiness_shell  # noqa: E402
 import smoke_garnet_studio_windows_wsl  # noqa: E402
+import smoke_garnet_mac_cross_os_matrix  # noqa: E402
 import smoke_garnet_mac_domain_proofs  # noqa: E402
 
 
@@ -208,6 +209,13 @@ class MacDomainProofEvidence:
 
 @dataclass(frozen=True)
 class MacStudioUiProofEvidence:
+    verified: bool
+    bundle_json: Path | None
+    reason: str
+
+
+@dataclass(frozen=True)
+class MacCrossOsMatrixEvidence:
     verified: bool
     bundle_json: Path | None
     reason: str
@@ -836,6 +844,37 @@ def _committed_mac_studio_ui_proof_evidence() -> MacStudioUiProofEvidence | None
     )
 
 
+def _verified_mac_cross_os_matrix_under(root: Path) -> Path | None:
+    if not root.exists():
+        return None
+    candidates = sorted(
+        root.rglob(smoke_garnet_mac_cross_os_matrix.SUMMARY_NAME),
+        key=lambda path: path.stat().st_mtime,
+        reverse=True,
+    )
+    for candidate in candidates:
+        if smoke_garnet_mac_cross_os_matrix.verify_bundle(candidate):
+            return candidate
+    return None
+
+
+def _committed_mac_cross_os_matrix_evidence() -> MacCrossOsMatrixEvidence | None:
+    proof = _verified_mac_cross_os_matrix_under(ROOT / "proofs" / "mac" / "matrix")
+    if proof is None:
+        return None
+    return MacCrossOsMatrixEvidence(
+        True,
+        proof,
+        (
+            f"Committed Mac S109 matrix row: `{_repo_relative_display(proof)}`. "
+            "It records the Mac rows for max-depth, caps, and diff-caps-reject, "
+            "keeps OS-independent accept artifacts byte-identical against the "
+            "Windows baseline, and explicitly leaves full cross-OS completion "
+            "blocked on an independent Linux S108 enforcement row."
+        ),
+    )
+
+
 def read_status() -> MitReadinessStatus:
     plan = garnet_readiness_status.read_status(
         ROOT / "F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md"
@@ -944,6 +983,7 @@ def read_status() -> MitReadinessStatus:
     ultrapunch_repro = _committed_ultrapunch_repro_evidence()
     mac_domain_proof = _committed_mac_domain_proof_evidence()
     mac_studio_ui_proof = _committed_mac_studio_ui_proof_evidence()
+    mac_cross_os_matrix = _committed_mac_cross_os_matrix_evidence()
     lsp_precision_present = _lsp_precision_present()
     if wls_clean_vm_verified:
         wls_completion_percent = (
@@ -1589,6 +1629,31 @@ def read_status() -> MitReadinessStatus:
                 "The UI button wraps the six-domain recorder; it does not individually open each source file through a native file picker",
                 "No Windows/Linux ownership, OS sandbox enforcement, production, or v1.0 claim",
                 "MCP tool-set domain is static report evidence, not MCP-host enforcement",
+            ],
+        ),
+        ObjectiveLane(
+            id="macos_cross_os_matrix_row",
+            evidence_class="committed",
+            label="Mac cross-OS trap matrix row (S109)",
+            status="verified" if mac_cross_os_matrix else "planned",
+            completion_percent=100.0 if mac_cross_os_matrix else 0.0,
+            evidence=(
+                "`scripts/smoke_garnet_mac_cross_os_matrix.py` records the Mac "
+                "rows for the S109 trap matrix: max-depth, caps, and "
+                "diff-caps-reject all pass against committed Windows/WSL baselines; "
+                "OS-independent accept artifacts are byte-identical where required. "
+                f"{mac_cross_os_matrix.reason}"
+                if mac_cross_os_matrix
+                else (
+                    "No committed Mac S109 matrix row exists yet. Expected path: "
+                    "`proofs/mac/matrix/`."
+                )
+            ),
+            blocked_by=[] if mac_cross_os_matrix else ["committed Mac S109 matrix row"],
+            deferred=[
+                "Full S109 cross-OS completion still waits for independent Linux S108 enforcement evidence",
+                "WSL is execution/portability only, not Linux seccomp or OS-sandbox enforcement",
+                "No macOS OS-sandbox enforcement, Wasmtime fuel, production, or v1.0 claim",
             ],
         ),
         ObjectiveLane(

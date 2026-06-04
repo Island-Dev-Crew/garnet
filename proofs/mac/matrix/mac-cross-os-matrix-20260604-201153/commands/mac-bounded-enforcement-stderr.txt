@@ -1,0 +1,2 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.28s
+     Running tests/bounded_enforcement.rs (target/debug/deps/bounded_enforcement-8e752b40718089f2)
