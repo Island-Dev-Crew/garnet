@@ -196,9 +196,9 @@
     },
     {
       "id": "s114",
-      "merge_confidence": null,
-      "merged_at": null,
-      "status": "pending",
+      "merge_confidence": 5,
+      "merged_at": "2026-06-05T06:16:58+00:00",
+      "status": "merged",
       "title": "failure-mode-red-team",
       "weight": 1.0
     },
