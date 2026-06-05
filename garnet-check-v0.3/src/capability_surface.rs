@@ -5,14 +5,46 @@
 //! declared-capability artifact the S36 capability manifest is built on, and that
 //! S37 `diff-caps` compares across revisions.
 //!
-//! It is purely syntactic: it reads each top-level function's declared
-//! `@caps(...)` and normalizes via the canonical [`Capability::as_str`] (so
+//! It is purely syntactic: it reads each function's declared `@caps(...)` —
+//! top-level functions, **impl-block methods**, and functions in nested modules
+//! (S114 closed a hole where impl-method caps were enforced but invisible here) —
+//! and normalizes via the canonical [`Capability::as_str`] (so
 //! `NetInternal` → `"net_internal"`, `Other("x")` → `"x"`, `Wildcard` → `"*"` —
 //! NOT the `Debug` rendering some call sites used). Every list is sorted and
 //! deduplicated, so the surface is byte-stable across runs and machines.
 
-use garnet_parser::ast::{Annotation, Capability, Item, Module};
+use garnet_parser::ast::{Annotation, Capability, FnDef, Item, Module, TypeExpr};
 use std::collections::BTreeSet;
+
+/// A short label for an impl block's owning type, for per-function names.
+fn type_label(ty: &TypeExpr) -> String {
+    match ty {
+        TypeExpr::Named { path, .. } => path.last().cloned().unwrap_or_else(|| "impl".to_string()),
+        _ => "impl".to_string(),
+    }
+}
+
+/// Collect every capability-bearing function in the module tree — top-level
+/// functions, **impl-block methods**, and functions in nested modules — as
+/// `(display_name, &FnDef)`. S114 closed a hole where impl-method `@caps` was
+/// enforced at runtime (the interpreter installs the guard for any managed `FnDef`)
+/// but invisible here, so a file-/net-reading impl method reported an empty surface
+/// and slipped past `diff-caps`, the seal manifest, and the agent-loop gate.
+fn collect_cap_fns<'a>(items: &'a [Item], out: &mut Vec<(String, &'a FnDef)>) {
+    for item in items {
+        match item {
+            Item::Fn(f) => out.push((f.name.clone(), f)),
+            Item::Impl(block) => {
+                let owner = type_label(&block.target);
+                for m in &block.methods {
+                    out.push((format!("{owner}::{}", m.name), m));
+                }
+            }
+            Item::Module(m) => collect_cap_fns(&m.items, out),
+            _ => {}
+        }
+    }
+}
 
 /// A program's declared capability surface — the canonical input to the S36
 /// capability manifest. Deterministic: every list is sorted and deduplicated.
@@ -33,8 +65,10 @@ pub fn capability_surface(module: &Module) -> CapabilitySurface {
     let mut per_function: Vec<(String, Vec<String>)> = Vec::new();
     let mut has_wildcard = false;
 
-    for item in &module.items {
-        let Item::Fn(f) = item else { continue };
+    let mut fns: Vec<(String, &FnDef)> = Vec::new();
+    collect_cap_fns(&module.items, &mut fns);
+
+    for (name, f) in fns {
         let mut declared = false;
         let mut fn_caps: BTreeSet<String> = BTreeSet::new();
         for ann in &f.annotations {
@@ -51,7 +85,7 @@ pub fn capability_surface(module: &Module) -> CapabilitySurface {
             }
         }
         if declared {
-            per_function.push((f.name.clone(), fn_caps.into_iter().collect()));
+            per_function.push((name, fn_caps.into_iter().collect()));
         }
     }
     per_function.sort_by(|a, b| a.0.cmp(&b.0));
@@ -76,6 +110,35 @@ mod tests {
     fn aggregate_is_sorted_and_deduped_across_functions() {
         let s = surface("@caps(net, fs)\ndef a() { 1 }\n@caps(fs)\ndef b() { 1 }\n");
         assert_eq!(s.aggregate, vec!["fs", "net"]);
+    }
+
+    #[test]
+    fn impl_method_caps_are_in_the_surface() {
+        // S114 red-team hole: `@caps` on an impl method is enforced at runtime but
+        // was invisible to the surface, so an impl-method file-read slipped past
+        // diff-caps / the seal manifest / the agent-loop. The surface must now
+        // include impl-method (and nested-module) capabilities.
+        let s = surface(
+            "struct Reader {}\nimpl Reader {\n  @caps(fs)\n  def read(self) -> int { 0 }\n}\n@caps()\ndef main() -> int { 0 }\n",
+        );
+        assert_eq!(
+            s.aggregate,
+            vec!["fs"],
+            "impl-method @caps(fs) must be in the aggregate"
+        );
+        assert!(
+            s.per_function
+                .iter()
+                .any(|(n, c)| n == "Reader::read" && c == &["fs"]),
+            "impl method must appear in per_function: {:?}",
+            s.per_function
+        );
+    }
+
+    #[test]
+    fn nested_module_fn_caps_are_in_the_surface() {
+        let s = surface("module m {\n  @caps(net)\n  def f() -> int { 0 }\n}\n");
+        assert_eq!(s.aggregate, vec!["net"]);
     }
 
     #[test]
