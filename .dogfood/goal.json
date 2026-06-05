@@ -228,9 +228,9 @@
     },
     {
       "id": "s118",
-      "merge_confidence": null,
-      "merged_at": null,
-      "status": "pending",
+      "merge_confidence": 5,
+      "merged_at": "2026-06-05T07:05:31+00:00",
+      "status": "merged",
       "title": "academic-evidence-package",
       "weight": 1.0
     },
