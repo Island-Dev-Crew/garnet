@@ -10,3 +10,6 @@ proofs/**/MANIFEST.sha256 text eol=lf
 # Windows (core.autocrlf) checkout produces the same seal predicate as Mac/Linux.
 # The manifest source hash is also LF-normalized in code as defense-in-depth.
 *.garnet text eol=lf
+
+# Proof bundles are byte-exact evidence — never normalize line endings (cross-OS seal integrity).
+proofs/** -text

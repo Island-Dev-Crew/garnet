@@ -180,17 +180,17 @@
     },
     {
       "id": "s112",
-      "merge_confidence": null,
-      "merged_at": null,
-      "status": "pending",
+      "merge_confidence": 5,
+      "merged_at": "2026-06-05T05:42:13+00:00",
+      "status": "merged",
       "title": "cross-os-repro-consolidation",
       "weight": 1.0
     },
     {
       "id": "s113",
-      "merge_confidence": null,
-      "merged_at": null,
-      "status": "pending",
+      "merge_confidence": 5,
+      "merged_at": "2026-06-05T05:42:13+00:00",
+      "status": "merged",
       "title": "evidence-integrity-gate",
       "weight": 1.0
     },
@@ -220,9 +220,9 @@
     },
     {
       "id": "s117",
-      "merge_confidence": null,
-      "merged_at": null,
-      "status": "pending",
+      "merge_confidence": 5,
+      "merged_at": "2026-06-05T05:42:13+00:00",
+      "status": "merged",
       "title": "package-pipeline-proof",
       "weight": 1.0
     },
