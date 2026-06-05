@@ -5,7 +5,9 @@ enforced evidence, and REFUSE a silent authority expansion** — and the refusal
 true gate failure, not a warning. Every pillar is precedented (capability
 annotations, capability diffing, in-toto attestation, transparency logs); the
 **novelty is the integration + the diff-gating discipline applied to agent-authored
-code**. This document is the reproducible evidence record for that claim.
+code**. This document is the reproducible evidence record for that claim; the
+reviewer-facing positioning (the #1 claim + ranked runners-up, every line resolving
+to a proof) lives in `F_Project_Management/GARNET_ULTRAPUNCH_DOSSIER.md` (S115).
 
 > **Honest framing (load-bearing).** Acceptance rests ONLY on the two **enforced**
 > ceilings — `@caps` host-authority and `@max_depth` recursion (Stage V closed VM
