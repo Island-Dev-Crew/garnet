@@ -49,10 +49,14 @@ Single `garnet` CLI. Deterministic signed manifests. Dependency-graph audit buil
 curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 ```
 
-The universal installer is v0.5.0-first and source-fallback:
+The universal installer fetches the published CLI binaries, which are the
+**`v0.5.0`** build. (The latest *tag* is **`v0.8.1`**, a research-grade
+milestone whose GitHub Release ships the `garnet-0.5.0-*` binaries — there is
+no `0.8.1` binary yet; the v0.8.x trust-kernel work is source-level. See
+[Project status](#project-status).) It is release-first, source-fallback:
 
-- If `v0.5.0` release assets exist, it downloads the native package and
-  verifies it against `SHA256SUMS`.
+- If the `garnet-0.5.0-*` release assets exist, it downloads the native package
+  and verifies it against `SHA256SUMS`.
 - If no matching asset exists for your OS/arch, auto mode falls back to a
   source install. The source path tries the requested tag first.
 

@@ -2,44 +2,44 @@
 
 Claude Code must treat this file as a bridge into Garnet's live project truth,
 not as the primary source of truth. Git state, current docs, and fresh
-verification output outrank every historical handoff.
+verification output outrank every historical handoff. If this file disagrees
+with `git` or a current reporter, trust `git`/the reporter and fix this file.
 
 ## First Read
 
 Before editing, read:
 
-1. `F_Project_Management/GARNET_CLAUDE_CODE_RESUME_PACKAGE_2026_05_10.md`
-2. `F_Project_Management/GARNET_AGENT_HANDOFF_2026_05_09.md`
-3. `F_Project_Management/GARNET_VERTICAL_SLICE_TOOLING_GUIDE.md`
-4. `F_Project_Management/GARNET_LANGUAGE_COMPLETION_IMPLEMENTATION_PLAN.md`
-5. `CURRENT_STATE.md`
-6. `F_Project_Management/ROADMAPS/GARNET_v0_5_LANGUAGE_COMPLETION_ROADMAP.md`
-7. `F_Project_Management/DOGFOOD/GARNET_v0_5_DOGFOOD_READINESS_PHASE_LOG.md`
-8. `C_Language_Specification/GARNET_v0_4_2_Conformance_Suite.md`
-9. Root `AGENTS.md` and the nearest subsystem `AGENTS.md` before edits.
+1. `F_Project_Management/GARNET_POST_0_8_1_SYSTEM_HANDOFF.md` — the current
+   post-cut operating brief and non-negotiable boundaries.
+2. `F_Project_Management/GARNET_v0_8_1_PLAN.md` — the active runway/plan.
+3. `F_Project_Management/AGENT_COORDINATION_LEDGER.md` — the live multi-agent
+   ledger (most recent entries = current frontier).
+4. `CURRENT_STATE.md` — reviewer/contributor orientation.
+5. `CHANGELOG.md` — the canonical, same-PR release ledger.
+6. Root `AGENTS.md` and the nearest subsystem `AGENTS.md` before edits.
 
 ## Current Repository Truth
 
-As of this helper refresh, `origin/main` contains:
+Verify with `git` before relying on any line here.
 
-- PR #68: Phase 4BD / Memory Core 6Q allocator-root lifecycle evidence.
-- PR #70: Phase 4BE / Memory Core 6R buffered edge-removal collection evidence.
-
-Current verified main tip:
-
-```text
-4e6a0df Merge pull request #70 from Navigata1/codex/phase4be-buffered-edge-removal-collection
-```
-
-PR #69 is a documentation/tooling helper slice only. It must not be used as a
-runtime readiness claim.
+- **Latest tagged release: `v0.8.1`** (annotated tag → commit `ca13bb2`, cut by
+  Jon 2026-06-05). `v0.8.0` (`cc165e8`) and `v0.4.2`/`v0.5.0` precede it.
+- **Honest binary caveat:** the `v0.8.0`/`v0.8.1` tags are research-grade
+  **milestone tags**; their published GitHub Release CLI binaries are still the
+  **`garnet-0.5.0-*`** build (the in-tree `version` is `0.5.0`). The S91–S120
+  trust-kernel / capability-bounded-acceptance work exists at **source** but is
+  not yet shipped in a downloadable `0.8.x` binary. Do not claim a `0.8.x`
+  binary exists.
+- **Remotes:** `origin` = `Island-Dev-Crew/garnet` (main); `fork` =
+  `Navigata1/garnet` (PRs open from the fork → origin).
+- Garnet is a **research-grade prototype (v0.x.x), not production / 1.0.**
 
 ## Boot Verification
 
 Run this before any edit:
 
 ```sh
-cd /private/tmp/garnet-phase2-block-yield-runtime || cd "/Users/idc2.0/Desktop/GARNET Opus 4.7 Final"
+cd /Users/IDC2.5/Desktop/Garnet
 git fetch --prune origin
 git fetch --prune fork
 git status --short --branch
@@ -52,41 +52,53 @@ For any dogfood archive you depend on, verify its manifest before citing it.
 
 ## Work Selection
 
-Do not hardcode the next implementation slice from this file. Choose the next
-slice from the live implementation plan, roadmap, dogfood log, conformance
-suite, and open PR state after the boot verification above.
-
-Memory Core Phase 6Q and 6R are active partial passes. They prove allocator
-wrapper evidence only. Production allocator-integrated ARC, interpreter-tied
-runtime finalizer invocation, and native backend ARC lowering remain deferred
-unless current source and tests prove otherwise.
+Do not hardcode the next slice from this file. Choose it from the live plan
+(`GARNET_v0_8_1_PLAN.md`), the post-cut handoff, the coordination ledger, the
+goal ledger (`.dogfood/goal.json`), and open PR state after the boot
+verification above. The cut act and release tags are **Jon-owned** — never push
+a tag autonomously.
 
 ## Mandatory Discipline
 
 - Verify git state and manifests before edits.
-- Allocate phase ids with `python3 scripts/garnet_phase_id.py` (never hand-pick;
-  see AGENTS.md "Phase ID Allocation").
-- Red tests before behavior changes.
-- Keep each PR narrow and evidence-backed.
-- Preserve safe affine exclusion from ARC cycle collection.
-- Update docs/conformance/dogfood ledgers when readiness changes.
-- Run focused tests before full verification.
-- Do not leave evidence only in `/tmp`; copy durable evidence to
-  `/Users/idc2.0/Desktop/dogfood` and reseal manifests when a dogfood bundle is
-  part of the deliverable.
+- One slice per PR; narrow and evidence-backed. Branch from fresh `origin/main`.
+- Red tests before behavior changes; run focused tests before full verification.
+- **"Enforced" only means a deterministic trap proven by test.** Never call a
+  generated policy "enforced"; never call the S114 red-team "independent."
+- Preserve the named-deferred fences: `@bounded` (Wasmtime fuel), memory, time,
+  `@mailbox`, and macOS/Windows OS-sandbox application remain
+  declared-not-enforced; only `@caps` + `@max_depth` are enforced (both
+  backends), with seccomp applied on **Linux only**.
+- **Four integrity rules:** (1) a PR may not modify the gate it merges under
+  (CI / dogfood skill / diff-caps thresholds / capability-manifest standard
+  changes are **human-merge-only**); (2) a capability-surface widening must fail
+  the gate and block merge; (3) every autonomous merge records agent / model /
+  gate-version; (4) the release **tag stays Jon's**.
+- Update docs / conformance / dogfood / CHANGELOG ledgers when readiness changes.
+- Copy durable evidence to `/Users/IDC2.5/Desktop/dogfood/` and reseal manifests
+  when a dogfood bundle is part of the deliverable; do not leave it only in
+  `/tmp`.
 - If anything fails, report the command, failure, and last known good state.
 
 ## Standard Verification Ladder
 
-Focused:
+Focused (per slice):
 
 ```sh
 cargo fmt --all -- --check
 git diff --check
-cargo test -p garnet-memory --test cycle -- --nocapture
-cargo test -p garnet-memory --test properties cycle_aware -- --nocapture
-cargo test -p garnet-cli --test conformance_skeleton deferred_arc_cycle_detection -- --nocapture
-cargo test -p garnet-cli --test conformance_phase_gates -- --nocapture
+cargo test --workspace --no-fail-fast        # or the crates the slice touches
+python3 scripts/garnet_v0_8_1_release_readiness.py --gate
+```
+
+Trust-kernel anti-rot gates (when the slice touches the trust spine or evidence):
+
+```sh
+python3 scripts/garnet_red_team_status.py --gate
+python3 scripts/garnet_evidence_integrity_status.py --gate
+python3 scripts/garnet_ultrapunch_dossier_status.py --gate
+python3 scripts/garnet_domain_proof_artifacts_status.py --gate
+python3 scripts/garnet_academic_evidence_status.py --gate
 ```
 
 Full:

@@ -1,6 +1,6 @@
 # Garnet — Frequently Asked Questions
 
-Last updated: 2026-05-20 · v0.5.0
+Last updated: 2026-06-06 · latest tag v0.8.1 (research-grade milestone; published CLI binaries remain the v0.5.0 build — no v0.8.1 binary yet)
 
 ---
 
