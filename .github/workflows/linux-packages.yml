@@ -40,6 +40,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      # On a release tag, the in-tree version MUST match the tag — otherwise the
+      # build ships a stale binary under a new tag (the v0.8.1/0.5.0 drift the
+      # S121–S130 truth-sync surfaced). Only fires on tag pushes; main/PR builds
+      # are unaffected.
+      - name: Guard — release tag must match Cargo version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          cargo_version="$(awk -F'"' '/^version =/ { print $2; exit }' Cargo.toml)"
+          tag="${GITHUB_REF_NAME}"
+          echo "Cargo version: ${cargo_version} · release tag: ${tag}"
+          if [ "v${cargo_version}" != "${tag}" ]; then
+            echo "::error::release tag ${tag} does not match Cargo version v${cargo_version} — bump the workspace version before tagging."
+            exit 1
+          fi
+          echo "tag matches Cargo version — OK"
+
       - name: Install Rust toolchain (stable)
         uses: dtolnay/rust-toolchain@stable
 
@@ -205,6 +221,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
+      # See build-packages: on a release tag, the in-tree version must match the
+      # tag so the macOS tarballs are not stale-versioned. Tag pushes only.
+      - name: Guard — release tag must match Cargo version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          cargo_version="$(awk -F'"' '/^version =/ { print $2; exit }' Cargo.toml)"
+          tag="${GITHUB_REF_NAME}"
+          echo "Cargo version: ${cargo_version} · release tag: ${tag}"
+          if [ "v${cargo_version}" != "${tag}" ]; then
+            echo "::error::release tag ${tag} does not match Cargo version v${cargo_version} — bump the workspace version before tagging."
+            exit 1
+          fi
+          echo "tag matches Cargo version — OK"
 
       - name: Install Rust toolchain (stable)
         uses: dtolnay/rust-toolchain@stable
