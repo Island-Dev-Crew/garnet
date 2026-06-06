@@ -1,11 +1,25 @@
 # Garnet Current State and Reviewer Guide
 
-Date: 2026-05-09
+Date: 2026-06-06
 Status: research-grade language/toolchain prototype
 
 This is the first file a fresh MIT reviewer, contributor, or agent should read
 after `README.md`. It separates current executable truth from historical proof,
 research corpus material, generated artifacts, and local scratch.
+
+> **v0.8.1 milestone truth (2026-06-05).** The latest tag is **`v0.8.1`**
+> (annotated → commit `ca13bb2`), a research-grade milestone covering the
+> S91–S120 trust-kernel / capability-bounded-acceptance runway (enforced
+> `@caps` + `@max_depth` on both interpreter and VM backends; cross-OS
+> trap-parity; the `agent-loop` accept/reject + seal "ultrapunch"; Linux-only
+> seccomp application; sealed provenance + transparency log; a self-found and
+> self-fixed HIGH red-team finding — not independently verified). **Binary
+> caveat:** the in-tree `version` is still `0.5.0`, so the published Release CLI
+> binaries remain the `garnet-0.5.0-*` build — this work is **source-level**, not
+> yet in a downloadable `0.8.1` binary. Not production / 1.0. The narrative below
+> still carries v0.5-era detail; for the v0.8.x record see `CHANGELOG.md`,
+> `F_Project_Management/GARNET_POST_0_8_1_SYSTEM_HANDOFF.md`, and
+> `F_Project_Management/AGENT_COORDINATION_LEDGER.md`.
 
 ## Current Truth
 

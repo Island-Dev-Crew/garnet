@@ -7,7 +7,23 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated-honesty record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
-## [Unreleased] — v0.8.1 runway
+## [Unreleased]
+
+_Post-cut work (S121+) lands here. Currently: the S121–S130 Truth Sync Gate and
+post-cut doc modernization (truth-only; no runtime/kernel change)._
+
+## [0.8.1] — 2026-06-05
+
+> **Cut truth (S120):** **`v0.8.1` is cut** — Jon Isaac tagged annotated
+> `v0.8.1` → `ca13bb2` (the S119 merge) and pushed it to `Island-Dev-Crew/garnet`
+> on 2026-06-05 under an explicit two-gate human confirmation. Tags on origin are
+> now `v0.4.2`, `v0.5.0`, `v0.8.0`, **`v0.8.1`**. v0.8.1 is a **research-grade
+> milestone, not production/1.0**. **Binary caveat:** the published GitHub Release
+> CLI binaries remain the **`garnet-0.5.0-*`** build — the in-tree `version` is
+> still `0.5.0`, so the S91–S120 trust-kernel / capability-bounded-acceptance work
+> exists at **source** but is **not** shipped in any downloadable `0.8.1` binary.
+> The S81–S120 entries below shipped under the `v0.8.0`/`v0.8.1` milestone tags.
+> A real `0.8.1` binary requires a version bump + re-cut (a Jon-owned release act).
 
 > **Post-cut release truth (2026-05-31, S83):** **`v0.8.0` is cut** — Jon Isaac
 > tagged annotated `v0.8.0` → `cc165e8` (the S80 merge) and pushed it to
