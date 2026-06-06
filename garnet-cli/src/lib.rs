@@ -81,6 +81,9 @@ pub fn print_version() {
     );
     println!("  parser    garnet-parser 0.3.0 (Mini-Spec v1.0)");
     println!("  interp    garnet-interp 0.3.0 (tree-walk, Rung 3)");
+    println!(
+        "  vm        garnet-vm     0.5.0 (bytecode VM; @max_depth + @caps trap-parity with interp, S99–S101)"
+    );
     println!("  check     garnet-check  0.3.0 (safe-mode + borrow + CapCaps v3.4.1, Rung 4)");
     println!(
         "  memory    garnet-memory 0.3.0 (Mnemos — Memory Core reference impl; production roadmap in MEMORY_CORE_ROADMAP.md, Rung 5)"
@@ -102,6 +105,9 @@ pub fn print_help() {
     println!("    garnet <SUBCOMMAND> [ARGS]\n");
     println!("SUBCOMMANDS:");
     println!("    new    --template <T> <dir>      Scaffold a new project (T=cli|web-api|agent-orchestrator)");
+    println!(
+        "    add    <path> [--name <id>]      Vendor a local Garnet dir into .garnet/vendor (not a registry)"
+    );
     println!("    parse  [--mode ast|cst] <file>   Parse a file and print a structural summary");
     println!("    check  [--suggest] [--format human|json] <file.garnet>");
     println!(
@@ -127,6 +133,9 @@ pub fn print_help() {
     );
     println!(
         "    concurrency <file.garnet>        Report the actor concurrency contract (ask/tell protocols)"
+    );
+    println!(
+        "    trust-report <file.garnet>       Structural trust report (actor/thread count + capability surface)"
     );
     println!("    run    <file.garnet>             Parse, load, and invoke `main` if it exists");
     println!(
