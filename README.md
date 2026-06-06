@@ -179,8 +179,12 @@ inherit it via a caller that does. Known capabilities: `fs`, `net`,
 ## Project status
 
 **Current `main` is post-v0.5.0 source; the latest tagged release is
-v0.5.0.** Garnet is a research-grade prototype (v0.x.x), not
-production-complete. See
+v0.8.1.** Garnet is a research-grade prototype (v0.x.x), not
+production-complete. The `v0.8.0` and `v0.8.1` tags are research-grade
+**milestone tags** marking the trust-kernel and capability-bounded-acceptance
+work since v0.5.0; their published CLI binaries remain the **v0.5.0** build
+(that work is source-level — no re-versioned platform binary is published at
+v0.8.x). See
 [FAQ.md §"Is Garnet production-ready?"](FAQ.md#is-garnet-production-ready) for
 the honest scorecard.
 
