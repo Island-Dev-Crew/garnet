@@ -1,8 +1,8 @@
 [package]
 name = "garnet-cli"
-version = "0.5.0"
+version.workspace = true
 edition = "2021"
-description = "Top-level garnet(1) CLI — parse / check / run / test / new / keygen / build --sign / verify / convert (v0.5.0)."
+description = "Top-level garnet(1) CLI — parse / check / run / test / new / keygen / build --sign / verify / convert + the trust spine (caps / diff-caps / seal / sandbox / caps-log / agent-loop) (v0.8.1)."
 license = "MIT OR Apache-2.0"
 
 [[bin]]
