@@ -88,6 +88,14 @@ for the original hosting, artifact, integrity, and release-pipeline contract. Se
 [`GARNET_v0_4_2_RELEASE_PUBLICATION_RUNBOOK.md`](F_Project_Management/GARNET_v0_4_2_RELEASE_PUBLICATION_RUNBOOK.md)
 for the maintainer release-publication steps and credential gates.
 
+### Verify the download
+
+Every release ships a `SHA256SUMS` (integrity) and, **when maintainer signing is
+configured**, a `SHA256SUMS.asc` GPG signature plus the published public key. See
+[`docs/release-signing.md`](docs/release-signing.md) for the exact `sha256sum --check`
+and `gpg --verify` steps. A release without a `.asc` is unsigned (research-grade
+default), not tampered.
+
 ## Quickstart
 
 Create a project, run it, test it:
