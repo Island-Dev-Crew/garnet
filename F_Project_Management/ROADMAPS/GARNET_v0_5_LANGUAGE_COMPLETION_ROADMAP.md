@@ -1,5 +1,8 @@
 # Garnet v0.5 Language Completion Implementation Plan
 
+> **⚠️ SUPERSEDED (post-v0.8.1).** This document governed an earlier version's slice cycle. The current operating brief is `CLAUDE.md` + `F_Project_Management/GARNET_POST_0_8_1_SYSTEM_HANDOFF.md`; the latest tag is v0.8.1. Kept for historical context — not the current single source of truth.
+
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Move Garnet from a research-grade prototype toward the original dual-mode, agent-native language/toolchain ambition with executable conformance, dogfood, and release gates.

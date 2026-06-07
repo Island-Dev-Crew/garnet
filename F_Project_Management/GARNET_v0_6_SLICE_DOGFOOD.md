@@ -1,5 +1,8 @@
 # GARNET v0.6 SLICE DOGFOOD CONTRACTS
 
+> **⚠️ SUPERSEDED (post-v0.8.1).** This document governed an earlier version's slice cycle. The current operating brief is `CLAUDE.md` + `F_Project_Management/GARNET_POST_0_8_1_SYSTEM_HANDOFF.md`; the latest tag is v0.8.1. Kept for historical context — not the current single source of truth.
+
+
 Date: 2026-05-20
 Purpose: Single source of truth for every v0.6 PR. Read by Claude Code,
 Codex Desktop, Antigravity 2.0, Greptile/PR-Agent, and Jon. Update this
