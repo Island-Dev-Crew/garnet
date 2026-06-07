@@ -1,6 +1,6 @@
 # Garnet — Frequently Asked Questions
 
-Last updated: 2026-06-06 · latest tag v0.8.1 (research-grade milestone; published CLI binaries remain the v0.5.0 build — no v0.8.1 binary yet)
+Last updated: 2026-06-07 · latest tag v0.8.1 (research-grade milestone; the Release ships signed garnet-0.8.1-* CLI binaries + SBOM, re-cut 2026-06-07)
 
 ---
 
@@ -88,7 +88,7 @@ Yes — the dual MIT / Apache-2.0 license explicitly permits commercial use, mod
 
 ## Do I need the Rust toolchain to use Garnet?
 
-Not on platforms with a matching published release asset. The universal installer prefers the v0.5.0 release asset, verifies it against `SHA256SUMS`, and uses source fallback only when no matching package exists or when you force `GARNET_INSTALL_MODE=source`. Source fallback requires Rust 1.75+.
+Not on platforms with a matching published release asset. The universal installer prefers the signed `garnet-0.8.1-*` release asset, verifies it against `SHA256SUMS` (GPG-signed — see [`docs/release-signing.md`](docs/release-signing.md)), and uses source fallback only when no matching package exists or when you force `GARNET_INSTALL_MODE=source`. Source fallback requires Rust 1.75+.
 
 ## How do deterministic signed builds work?
 

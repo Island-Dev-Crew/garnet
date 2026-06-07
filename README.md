@@ -49,13 +49,13 @@ Single `garnet` CLI. Deterministic signed manifests. Dependency-graph audit buil
 curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 ```
 
-The universal installer fetches the published CLI binaries, which are the
-**`v0.5.0`** build. (The latest *tag* is **`v0.8.1`**, a research-grade
-milestone whose GitHub Release ships the `garnet-0.5.0-*` binaries — there is
-no `0.8.1` binary yet; the v0.8.x trust-kernel work is source-level. See
-[Project status](#project-status).) It is release-first, source-fallback:
+The universal installer fetches the published **`garnet-0.8.1-*`** CLI binaries.
+(The `v0.8.1` GitHub Release — a research-grade milestone — was re-cut 2026-06-07
+to ship signed `garnet-0.8.1-*` assets carrying the S91–S120 trust-kernel work;
+`SHA256SUMS` is GPG-signed, verify per [`docs/release-signing.md`](docs/release-signing.md).
+See [Project status](#project-status).) It is release-first, source-fallback:
 
-- If the `garnet-0.5.0-*` release assets exist, it downloads the native package
+- If the `garnet-0.8.1-*` release assets exist, it downloads the native package
   and verifies it against `SHA256SUMS`.
 - If no matching asset exists for your OS/arch, auto mode falls back to a
   source install. The source path tries the requested tag first.
@@ -72,9 +72,9 @@ Use `GARNET_INSTALL_MODE=release` to require a native release package, or
 
 | Platform      | Installer                                   | Integrity / release requirement   |
 |---------------|---------------------------------------------|-----------------------------------|
-| Linux (.deb)  | `garnet_0.5.0-1_amd64.deb`                  | SHA-256 checksummed               |
-| Linux (.rpm)  | `garnet-0.5.0-1.x86_64.rpm`                 | SHA-256 checksummed               |
-| macOS CLI tarball | `garnet-0.5.0-aarch64-apple-darwin.tar.gz` / `garnet-0.5.0-x86_64-apple-darwin.tar.gz` | SHA-256 checksummed |
+| Linux (.deb)  | `garnet_0.8.1-1_amd64.deb`                  | SHA-256 checksummed + GPG-signed `SHA256SUMS` |
+| Linux (.rpm)  | `garnet-0.8.1-1.x86_64.rpm`                 | SHA-256 checksummed + GPG-signed `SHA256SUMS` |
+| macOS CLI tarball | `garnet-0.8.1-aarch64-apple-darwin.tar.gz` / `garnet-0.8.1-x86_64-apple-darwin.tar.gz` | SHA-256 checksummed + GPG-signed |
 | Windows source install | `cargo install --path garnet-cli --locked` | verified source fallback    |
 | Future signed packages | `.pkg` / `.msi`                         | credential-gated release lane     |
 
@@ -194,9 +194,11 @@ inherit it via a caller that does. Known capabilities: `fs`, `net`,
 v0.8.1.** Garnet is a research-grade prototype (v0.x.x), not
 production-complete. The `v0.8.0` and `v0.8.1` tags are research-grade
 **milestone tags** marking the trust-kernel and capability-bounded-acceptance
-work since v0.5.0; their published CLI binaries remain the **v0.5.0** build
-(that work is source-level — no re-versioned platform binary is published at
-v0.8.x). See
+work since v0.5.0. The **`v0.8.1` Release ships signed `garnet-0.8.1-*` CLI
+binaries** (re-cut 2026-06-07; the S91–S120 trust-kernel work is now in the
+published binary, `SHA256SUMS` GPG-signed — verify per
+[`docs/release-signing.md`](docs/release-signing.md)); the earlier `v0.8.0` tag
+predates the version bump and carries the older 0.5.0 build. See
 [FAQ.md §"Is Garnet production-ready?"](FAQ.md#is-garnet-production-ready) for
 the honest scorecard.
 
@@ -208,7 +210,7 @@ Verification status at current `main`:
   `CURRENT_STATE.md` rather than historical handoff test totals
 - ✅ Canonical MVP examples parse, check, and run under the current CLI
 - ✅ 24 stdlib registry primitives bridged through the interpreter
-- ✅ The universal curl installer verifies v0.5.0 release assets when present and uses source fallback only for unsupported or missing package targets
+- ✅ The universal curl installer verifies the signed `garnet-0.8.1-*` release assets when present and uses source fallback only for unsupported or missing package targets
 - ✅ MIT/productization reporter now tracks 63 lanes and reports 92.3% on the current evidence set; this is separate from the 87/87 tracked-slice ledger, and the Windows/Linux distribution sub-lane remains active-partial at 83.0%
 - ⏳ macOS `.pkg` and Windows `.msi` release signing/notarization remain credential-gated release steps
 

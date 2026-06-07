@@ -22,14 +22,14 @@ Before editing, read:
 
 Verify with `git` before relying on any line here.
 
-- **Latest tagged release: `v0.8.1`** (annotated tag → commit `ca13bb2`, cut by
-  Jon 2026-06-05). `v0.8.0` (`cc165e8`) and `v0.4.2`/`v0.5.0` precede it.
-- **Honest binary caveat:** the `v0.8.0`/`v0.8.1` tags are research-grade
-  **milestone tags**; their published GitHub Release CLI binaries are still the
-  **`garnet-0.5.0-*`** build (the in-tree `version` is `0.5.0`). The S91–S120
-  trust-kernel / capability-bounded-acceptance work exists at **source** but is
-  not yet shipped in a downloadable `0.8.x` binary. Do not claim a `0.8.x`
-  binary exists.
+- **Latest tagged release: `v0.8.1`** (annotated tag → commit `8107c01`,
+  re-cut signed 2026-06-07). `v0.8.0` (`cc165e8`) and `v0.4.2`/`v0.5.0` precede it.
+- **Binary status:** the `v0.8.1` Release ships **signed `garnet-0.8.1-*` CLI
+  binaries** (`.deb`/`.rpm`/darwin tarballs) + a CycloneDX SBOM + a GPG-signed
+  `SHA256SUMS.asc` (public key in `docs/garnet-release-signing.pub.asc`, fpr
+  `04D5…6ED1`; verify per `docs/release-signing.md`). The S91–S120 trust-kernel
+  work is in the published 0.8.1 binary. The older `v0.8.0` tag still carries the
+  `garnet-0.5.0-*` build. Still research-grade, not production/1.0.
 - **Remotes:** `origin` = `Island-Dev-Crew/garnet` (main); `fork` =
   `Navigata1/garnet` (PRs open from the fork → origin).
 - Garnet is a **research-grade prototype (v0.x.x), not production / 1.0.**
