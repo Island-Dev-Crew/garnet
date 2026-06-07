@@ -1183,7 +1183,7 @@
   <div class="container reveal">
     <h3>Get Garnet</h3>
     <h2>Install with one curl command.</h2>
-    <p class="lead">The universal installer now targets the <strong>v0.5.0 release path</strong>. It pulls release packages when they exist, verifies them against <code>SHA256SUMS</code>, and falls back to a source install through <code>cargo install --locked</code> only when no matching release asset exists. The v0.5.0 GitHub Release now has Mac-side installer and editor-extension evidence; detailed productization gates live on the <a href="status.html">readiness status page</a>.</p>
+    <p class="lead">The universal installer now targets the <strong>v0.8.1 release path</strong>. It pulls release packages when they exist, verifies them against <code>SHA256SUMS</code>, and falls back to a source install through <code>cargo install --locked</code> only when no matching release asset exists. The v0.8.1 GitHub Release ships signed garnet-0.8.1-* CLI binaries + a CycloneDX SBOM; detailed productization gates live on the <a href="status.html">readiness status page</a>.</p>
 
     <div id="os-detect" hidden style="display:none;align-items:center;gap:12px;margin:0 0 18px;padding:12px 16px;border:1px solid var(--rule);border-radius:10px;background:var(--bg-soft);font-size:14px;color:var(--ink-soft);">
       <span id="os-detect-msg"></span>
@@ -1201,9 +1201,9 @@
         var plat=(uad&&uad.platform)?uad.platform:(navigator.platform||'');
         var s=(plat+' '+(navigator.userAgent||'')).toLowerCase();
         var t='';
-        if(s.indexOf('mac')>-1) t='Detected: macOS — the universal installer uses v0.5.0 release assets when available, otherwise source fallback. Apple Silicon and Intel CLI tarballs are published; signed .pkg remains credential-gated.';
-        else if(s.indexOf('win')>-1) t='Detected: Windows — no v0.5.0 Windows package is claimed yet; use the source install (needs Rust 1.75+).';
-        else if(s.indexOf('linux')>-1||s.indexOf('android')>-1) t='Detected: Linux — the universal installer uses checksum-verified v0.5.0 x86_64 packages when available; other targets fall back to source.';
+        if(s.indexOf('mac')>-1) t='Detected: macOS — the universal installer uses signed v0.8.1 release assets when available, otherwise source fallback. Apple Silicon and Intel CLI tarballs are published; signed .pkg remains credential-gated.';
+        else if(s.indexOf('win')>-1) t='Detected: Windows — no v0.8.1 Windows package is claimed yet; use the source install (needs Rust 1.75+).';
+        else if(s.indexOf('linux')>-1||s.indexOf('android')>-1) t='Detected: Linux — the universal installer uses checksum-verified v0.8.1 x86_64 packages when available; other targets fall back to source.';
         if(!t)return; // unknown platform → no banner, silent
         msg.textContent=t;
         el.hidden=false; el.style.display='flex';
@@ -1213,12 +1213,12 @@
     </script>
 
     <div class="install-note" style="margin:8px 0 26px;padding:16px 18px;border:1px solid var(--rule);border-radius:10px;background:var(--bg-soft);font-size:14.5px;color:var(--ink-soft);">
-      <strong style="color:var(--ink);">Before you install.</strong> Prebuilt release packages need <em>no toolchain</em>. The <em>source</em> install needs <strong>Rust 1.75+</strong>. The latest tagged release is <strong>v0.8.1</strong>, a research-grade milestone; its published CLI binaries remain the <strong>v0.5.0</strong> build shown below (the v0.8.x trust-kernel work is source-level), and v0.4.2 remains an older release if you need to pin older behavior:
+      <strong style="color:var(--ink);">Before you install.</strong> Prebuilt release packages need <em>no toolchain</em>. The <em>source</em> install needs <strong>Rust 1.75+</strong>. The latest tagged release is <strong>v0.8.1</strong>, a research-grade milestone; it ships signed <strong>garnet-0.8.1-*</strong> binaries shown below (re-cut 2026-06-07; SHA256SUMS GPG-signed, verify per docs/release-signing.md), and v0.4.2 remains an older release if you need to pin older behavior:
       <table style="border-collapse:collapse;margin:12px 0 4px;font-size:13.5px;width:100%;">
-        <tr style="color:var(--ink);"><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">Platform</th><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">v0.5.0 asset</th><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">Current path</th></tr>
-        <tr><td style="padding:4px 10px;">macOS · Apple Silicon</td><td style="padding:4px 10px;"><code>garnet-0.5.0-aarch64-apple-darwin.tar.gz</code></td><td style="padding:4px 10px;">release tarball; signed .pkg not claimed</td></tr>
-        <tr><td style="padding:4px 10px;">macOS · Intel</td><td style="padding:4px 10px;"><code>garnet-0.5.0-x86_64-apple-darwin.tar.gz</code></td><td style="padding:4px 10px;">release tarball; signed .pkg not claimed</td></tr>
-        <tr><td style="padding:4px 10px;">Linux x86_64</td><td style="padding:4px 10px;"><code>garnet_0.5.0-1_amd64.deb</code> · <code>garnet-0.5.0-1.x86_64.rpm</code></td><td style="padding:4px 10px;">release package</td></tr>
+        <tr style="color:var(--ink);"><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">Platform</th><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">v0.8.1 asset</th><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">Current path</th></tr>
+        <tr><td style="padding:4px 10px;">macOS · Apple Silicon</td><td style="padding:4px 10px;"><code>garnet-0.8.1-aarch64-apple-darwin.tar.gz</code></td><td style="padding:4px 10px;">release tarball; signed .pkg not claimed</td></tr>
+        <tr><td style="padding:4px 10px;">macOS · Intel</td><td style="padding:4px 10px;"><code>garnet-0.8.1-x86_64-apple-darwin.tar.gz</code></td><td style="padding:4px 10px;">release tarball; signed .pkg not claimed</td></tr>
+        <tr><td style="padding:4px 10px;">Linux x86_64</td><td style="padding:4px 10px;"><code>garnet_0.8.1-1_amd64.deb</code> · <code>garnet-0.8.1-1.x86_64.rpm</code></td><td style="padding:4px 10px;">release package</td></tr>
         <tr><td style="padding:4px 10px;">Linux aarch64</td><td style="padding:4px 10px;">— no package claimed —</td><td style="padding:4px 10px;">source install</td></tr>
         <tr><td style="padding:4px 10px;">Windows</td><td style="padding:4px 10px;">— no package claimed —</td><td style="padding:4px 10px;">source install</td></tr>
       </table>
@@ -1251,7 +1251,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | GARNET
         <div class="install-wrap">
           <button class="copy" data-copy="curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh">Copy</button>
 <pre># Recommended — universal installer:
-# uses v0.5.0 CLI tarballs when available and otherwise falls back
+# uses v0.8.1 CLI tarballs when available and otherwise falls back
 # to source install. Signed .pkg/notarization is not claimed yet.
 curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 
@@ -1267,14 +1267,14 @@ git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && c
 <pre># Recommended — universal installer (SHA256SUMS-verified):
 curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 
-# Published v0.5.0 release assets:
-#   https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.5.0
+# Published v0.8.1 release assets:
+#   https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.8.1
 
 # Debian/Ubuntu:
-sudo apt install ./garnet_0.5.0-1_amd64.deb
+sudo apt install ./garnet_0.8.1-1_amd64.deb
 
 # Fedora/RHEL:
-sudo dnf install ./garnet-0.5.0-1.x86_64.rpm
+sudo dnf install ./garnet-0.8.1-1.x86_64.rpm
 
 # Source install (any arch, needs a Rust toolchain):
 git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && cargo install --path .</pre>
@@ -1553,7 +1553,7 @@ dist/Garnet Studio.app</pre>
       © 2026 Island Development Crew · Dual-licensed MIT OR Apache-2.0 · garnet-lang.org
     </div>
     <div class="copyright" style="margin-top:6px;opacity:.7;font-size:12px;">
-      Site updated 2026-06-05 · latest tag Garnet v0.8.1 (research-grade milestone; published CLI binaries remain the v0.5.0 build) with calibrated productization boundaries
+      Site updated 2026-06-07 · latest tag Garnet v0.8.1 (research-grade milestone; Release ships signed garnet-0.8.1-* binaries + SBOM) with calibrated productization boundaries
     </div>
     <div class="copyright" style="margin-top:6px;opacity:.7;font-size:12px;">
       No social accounts yet — follow development by watching the <a href="https://github.com/Island-Dev-Crew/garnet" target="_blank" rel="noopener noreferrer">repository</a>.

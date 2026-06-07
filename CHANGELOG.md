@@ -9,21 +9,26 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
-_Post-cut work (S121+) lands here. Currently: the S121–S130 Truth Sync Gate and
-post-cut doc modernization (truth-only; no runtime/kernel change)._
+_Post-cut work (S121+) lands here. S121–S130 delivered: the Truth Sync Gate, doc
+modernization, the v0.8.1 version bump + release guard + SBOM/signing wiring, the
+signed re-cut, and this post-re-cut truth-sync._
 
-## [0.8.1] — 2026-06-05
+## [0.8.1] — 2026-06-05 (re-cut signed 2026-06-07)
 
 > **Cut truth (S120):** **`v0.8.1` is cut** — Jon Isaac tagged annotated
-> `v0.8.1` → `ca13bb2` (the S119 merge) and pushed it to `Island-Dev-Crew/garnet`
-> on 2026-06-05 under an explicit two-gate human confirmation. Tags on origin are
+> `v0.8.1` (the S119 merge) and pushed it to `Island-Dev-Crew/garnet` on
+> 2026-06-05 under an explicit two-gate human confirmation. Tags on origin are
 > now `v0.4.2`, `v0.5.0`, `v0.8.0`, **`v0.8.1`**. v0.8.1 is a **research-grade
-> milestone, not production/1.0**. **Binary caveat:** the published GitHub Release
-> CLI binaries remain the **`garnet-0.5.0-*`** build — the in-tree `version` is
-> still `0.5.0`, so the S91–S120 trust-kernel / capability-bounded-acceptance work
-> exists at **source** but is **not** shipped in any downloadable `0.8.1` binary.
-> The S81–S120 entries below shipped under the `v0.8.0`/`v0.8.1` milestone tags.
-> A real `0.8.1` binary requires a version bump + re-cut (a Jon-owned release act).
+> milestone, not production/1.0**.
+>
+> **Binary note (re-cut 2026-06-07, S130):** after the in-tree `version` was
+> bumped 0.5.0→0.8.1 (S123) and the release pipeline gained a tag==version guard
+> (S124) + SBOM/signing (S125), the `v0.8.1` Release was **re-cut from `8107c01`**
+> and now ships **signed `garnet-0.8.1-*` CLI binaries** (`.deb`/`.rpm`/darwin
+> tarballs) + a CycloneDX SBOM + a GPG-signed `SHA256SUMS.asc` (verify per
+> `docs/release-signing.md`). The S91–S120 trust-kernel work is now in the
+> published binary. (The original 2026-06-05 cut shipped the older
+> `garnet-0.5.0-*` build; the `v0.8.0` tag still does.)
 
 > **Post-cut release truth (2026-05-31, S83):** **`v0.8.0` is cut** — Jon Isaac
 > tagged annotated `v0.8.0` → `cc165e8` (the S80 merge) and pushed it to

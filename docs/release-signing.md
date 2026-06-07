@@ -7,11 +7,11 @@ downloaded Garnet release.
 > (integrity). **The release signing key is now configured** (`GPG_SIGNING_KEY` is
 > set), and the public key is published at
 > [`docs/garnet-release-signing.pub.asc`](garnet-release-signing.pub.asc) with
-> fingerprint **`04D5 6F91 F038 17DD FFEB  C62A C14D F6E7 1395 6ED1`**. Releases
-> **cut from 2026-06-07 onward** carry a `SHA256SUMS.asc` signature. **Earlier
-> releases — including the current published `v0.8.1` until it is re-cut — are
-> unsigned** (research-grade default), **not** tampered. Garnet is a research-grade
-> prototype, not production/1.0.
+> fingerprint **`04D5 6F91 F038 17DD FFEB  C62A C14D F6E7 1395 6ED1`**. The
+> **`v0.8.1` Release (re-cut 2026-06-07) is signed** — it carries
+> `SHA256SUMS.asc`. Earlier releases (e.g. `v0.8.0`, `v0.5.0`) predate signing and
+> are **unsigned** (research-grade default), **not** tampered. Garnet is a
+> research-grade prototype, not production/1.0.
 
 ## 1. Integrity — always available
 
