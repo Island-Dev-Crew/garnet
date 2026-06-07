@@ -49,6 +49,28 @@ The repository is organized as a Rust Cargo workspace:
 
 Total: ~22K LOC Rust, 857+ passing tests, zero clippy warnings with `-D warnings`.
 
+### Versioning policy
+
+Garnet uses **one public release version, plus honest independent crate semver**:
+
+- The **public release version** is `garnet-cli`, which inherits
+  `[workspace.package].version` (currently **0.8.1**) via `version.workspace = true`.
+  This is what `garnet --version`, the git tag, and the release assets carry.
+- The **internal library crates** (`garnet-parser`, `garnet-check`, `garnet-interp`,
+  `garnet-memory`, `garnet-vm`, `garnet-stdlib`, `garnet-convert`, …) carry their
+  **own** `[package] version` reflecting their actual API evolution (e.g. the parser
+  at `0.3.x`). They are **not** force-bumped to match the release — that would
+  overstate their maturity. Each inter-crate path dependency keeps an explicit
+  `version = "x.y.z"` pin matching that crate's real version: this is **required**,
+  because the workspace's `cargo deny` config bans wildcard (`*`) dependencies, and a
+  path dep with no version resolves to a wildcard. So the pins are intentional, not
+  redundant — they encode the honest per-crate version.
+
+This keeps the user-facing version coherent while keeping per-crate versions honest.
+If a future decision treats the workspace as a single-version monorepo, that is a
+deliberate policy change (set every crate to `version.workspace = true` and pin
+inter-crate deps to the shared version), not drift.
+
 ### The Language Spec
 
 The normative specification is `spec/GARNET_v1_0_Mini_Spec.md`. This is the source of truth for the grammar, semantics, mode boundaries, actor protocols, and type system. All crates implement against this spec.
