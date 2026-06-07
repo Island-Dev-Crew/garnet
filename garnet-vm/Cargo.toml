@@ -8,8 +8,8 @@ repository = "https://github.com/Island-Dev-Crew/garnet"
 description = "Bytecode VM scaffold for Garnet v0.5 MVP execution."
 
 [dependencies]
-garnet-interp = { path = "../garnet-interp-v0.3" }
-garnet-parser = { path = "../garnet-parser-v0.3" }
+garnet-interp = { version = "0.3.0", path = "../garnet-interp-v0.3" }
+garnet-parser = { version = "0.3.0", path = "../garnet-parser-v0.3" }
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }

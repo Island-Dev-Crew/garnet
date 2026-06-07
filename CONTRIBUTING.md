@@ -60,13 +60,16 @@ Garnet uses **one public release version, plus honest independent crate semver**
   `garnet-memory`, `garnet-vm`, `garnet-stdlib`, `garnet-convert`, …) carry their
   **own** `[package] version` reflecting their actual API evolution (e.g. the parser
   at `0.3.x`). They are **not** force-bumped to match the release — that would
-  overstate their maturity. They are workspace-internal (not published to crates.io
-  independently), so they are referenced by **path only** (no version pin), which is
-  why a release bump touches one field, not twenty.
+  overstate their maturity. Each inter-crate path dependency keeps an explicit
+  `version = "x.y.z"` pin matching that crate's real version: this is **required**,
+  because the workspace's `cargo deny` config bans wildcard (`*`) dependencies, and a
+  path dep with no version resolves to a wildcard. So the pins are intentional, not
+  redundant — they encode the honest per-crate version.
 
 This keeps the user-facing version coherent while keeping per-crate versions honest.
 If a future decision treats the workspace as a single-version monorepo, that is a
-deliberate policy change (set every crate to `version.workspace = true`), not drift.
+deliberate policy change (set every crate to `version.workspace = true` and pin
+inter-crate deps to the shared version), not drift.
 
 ### The Language Spec
 
