@@ -4,12 +4,14 @@ How to verify the integrity — and, when signing is enabled, the authenticity �
 downloaded Garnet release.
 
 > **Honest status (2026-06-07).** Every release ships a `SHA256SUMS` manifest
-> (integrity). **GPG signing of that manifest is wired in CI and activates only when
-> the maintainer configures a signing key** (`GPG_SIGNING_KEY`). Until a release is
-> cut with that key present, `SHA256SUMS.asc` and the public key below may be absent —
-> a release without them is **unsigned** (research-grade default), not tampered. This
-> page describes how verification works once signing is active. Garnet is a
-> research-grade prototype, not production/1.0.
+> (integrity). **The release signing key is now configured** (`GPG_SIGNING_KEY` is
+> set), and the public key is published at
+> [`docs/garnet-release-signing.pub.asc`](garnet-release-signing.pub.asc) with
+> fingerprint **`04D5 6F91 F038 17DD FFEB  C62A C14D F6E7 1395 6ED1`**. Releases
+> **cut from 2026-06-07 onward** carry a `SHA256SUMS.asc` signature. **Earlier
+> releases — including the current published `v0.8.1` until it is re-cut — are
+> unsigned** (research-grade default), **not** tampered. Garnet is a research-grade
+> prototype, not production/1.0.
 
 ## 1. Integrity — always available
 
@@ -31,6 +33,10 @@ When the maintainer's signing key is configured, the release also attaches
 ```sh
 # one-time: import the published public key
 gpg --import garnet-release-signing.pub.asc
+
+# confirm you imported the right key — the fingerprint MUST be:
+#   04D5 6F91 F038 17DD FFEB  C62A C14D F6E7 1395 6ED1
+gpg --fingerprint jon-isaac@islanddevcrew.com
 
 # verify the signature over the checksum manifest
 gpg --verify SHA256SUMS.asc SHA256SUMS
