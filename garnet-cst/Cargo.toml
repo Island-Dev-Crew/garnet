@@ -9,7 +9,7 @@ repository = "https://github.com/Island-Dev-Crew/garnet"
 
 [dependencies]
 rowan = "0.16"
-garnet-parser = { version = "0.3.0", path = "../garnet-parser-v0.3" }
+garnet-parser = { path = "../garnet-parser-v0.3" }
 
 [dev-dependencies]
 proptest = "1"

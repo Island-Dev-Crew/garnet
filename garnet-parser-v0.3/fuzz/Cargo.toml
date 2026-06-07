@@ -10,7 +10,7 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
-garnet-parser = { path = "..", version = "0.3.0" }
+garnet-parser = { path = ".." }
 
 [[bin]]
 name = "parse_input"
