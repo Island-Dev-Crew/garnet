@@ -46,6 +46,9 @@ dist/*.tar.gz
 .garnet-cache/
 .codex/
 garnet-cli/.garnet-cache/
+# Per-slice scratch plans — the ~104 already committed stay for history, but stop
+# tracking NEW ones (S126 cleanup; they are working notes, not project truth).
+.agent/plans/
 
 # Paper VI Exp 3 harness run output (ephemeral; the harness ships shape, not results)
 benchmarks/paper_vi_exp3_compiler_as_agent/out/

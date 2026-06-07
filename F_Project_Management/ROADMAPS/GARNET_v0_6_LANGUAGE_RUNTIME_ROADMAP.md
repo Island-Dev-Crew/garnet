@@ -1,5 +1,8 @@
 # Garnet v0.6 Language Runtime Roadmap
 
+> **⚠️ SUPERSEDED (post-v0.8.1).** This document governed an earlier version's slice cycle. The current operating brief is `CLAUDE.md` + `F_Project_Management/GARNET_POST_0_8_1_SYSTEM_HANDOFF.md`; the latest tag is v0.8.1. Kept for historical context — not the current single source of truth.
+
+
 Date: 2026-05-20 (post v0.5.0 + v0.5.1 close)
 Successor of `F_Project_Management/ROADMAPS/GARNET_v0_5_LANGUAGE_COMPLETION_ROADMAP.md`.
 
