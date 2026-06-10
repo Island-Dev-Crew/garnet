@@ -1,0 +1,160 @@
+<p align="center">
+  <img src="docs/assets/garnet-logo.png" alt="Garnet" width="120">
+</p>
+
+<h1 align="center">Garnet</h1>
+
+<p align="center"><strong>Rust rigor. Ruby velocity. One coherent language —<br>
+built for the code agents write and humans accept.</strong></p>
+
+<p align="center">
+  <a href="https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.8.1">Release v0.8.1 · signed</a> ·
+  <a href="LICENSE">MIT OR Apache-2.0</a> ·
+  <a href="https://garnet-lang.org">garnet-lang.org</a> ·
+  <a href="docs/status.html">Honest status</a> ·
+  <a href="C_Language_Specification/GARNET_v1_0_Mini_Spec.md">Mini-Spec v1.0</a> ·
+  <a href="FAQ.md">FAQ</a>
+</p>
+
+---
+
+## Why Garnet
+
+Every ambitious team makes the same bargain: **Rust for the hot path, Ruby for the
+orchestration, and a painful FFI between them** — or one language and its weakness swallowed
+whole. Garnet refuses the bargain. Managed mode (`def` + ARC + exceptions) feels like Ruby.
+Safe mode (`@safe fn` + ownership + `Result`) feels like Rust. The mode boundary auto-bridges
+errors and ownership, and every crossing is logged. One grammar, two registers, no FFI.
+
+And in 2026 there's a second bargain nobody should accept. AI agents now write the code;
+**human review is the bottleneck**, and signatures alone can't tell you what a change is
+*allowed to do* — the supply chain has already produced validly-signed malware. Garnet doesn't
+ask you to trust that the model understood. **It makes acceptance a decision on capability
+evidence the model cannot fake**: every function declares its authority budget, the compiler
+enforces it transitively, and `diff-caps` answers *"what new authority am I granting?"* in one
+screen.
+
+Safe by default. Fast when needed. Joyful always.
+
+## Sixty seconds of Garnet
+
+```garnet
+# Managed mode — Ruby feel, zero ceremony
+@caps(fs)
+def read_config(path) {
+  try { TOML.parse(fs::read_file(path)) }
+  rescue e: FileNotFound { nil }
+}
+
+# Safe mode — Rust rigor where it earns its keep
+@safe
+fn checksum(borrow data: String) -> Result<String, HashError> {
+  crypto::blake3(data)
+}
+
+# Agent-native: memory and actors are language, not libraries
+actor Researcher {
+  memory episodic events  : EpisodeStore<Event>
+  memory semantic  facts  : VectorIndex<Fact>
+  protocol recall(q: String) -> Array<Fact>
+}
+
+# And the compiler holds the line:
+@caps()
+def sneaky() { fs::read_file("/etc/passwd") }
+# error: caps coverage — `sneaky` does not declare `fs`
+# but transitively calls `read_file`, which requires it
+```
+
+## What no other language gives you
+
+The pillars are individually precedented — Pony and Austral, Wasmtime and eBPF, Sigstore and
+SLSA each do a piece well. **Garnet's bet is the integration**, enforced at the language layer
+and aimed at agent-authored code:
+
+- **`diff-caps`** — the capability-surface diff as an acceptance gate. When a dependency or an
+  agent's PR changes what the code *can do*, you review the authority delta, not every line.
+- **`@caps(...)`** — every function declares its OS-authority budget; the CapCaps propagator
+  enforces it transitively at compile time. No ambient authority, ever.
+- **An enforced kernel** — `@caps` and `@max_depth` trap identically on both execution backends,
+  with cross-OS trap parity recorded as evidence, not asserted.
+- **The seal** — `garnet build --deterministic --sign` emits a byte-identical manifest plus an
+  Ed25519 signature; releases ship a CycloneDX SBOM and GPG-signed checksums.
+- **Agent-native memory** — `memory working|episodic|semantic|procedural` as language keywords,
+  so the runtime knows which kind it's allocating.
+- **Typed actors** — bounded mailboxes, compiler-checked protocols, Ed25519-signed hot-reload
+  with BLAKE3 schema fingerprints.
+
+## Install
+
+```sh
+curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
+```
+
+Release-first, source-fallback. v0.8.1 ships signed `.deb` / `.rpm` / macOS tarballs with a
+GPG-signed `SHA256SUMS` — verify per [docs/release-signing.md](docs/release-signing.md).
+No matching package for your platform? The installer builds from source
+(`Rust 1.75+`), or:
+
+```sh
+git clone https://github.com/Island-Dev-Crew/garnet
+cd garnet/garnet-cli && cargo install --path . --locked
+```
+
+## Quickstart
+
+```sh
+garnet new --template cli my_app    # also: web-api, agent-orchestrator
+cd my_app
+garnet test                         # starter tests pass green
+garnet run src/main.garnet
+
+# produce a reproducible, signed build:
+garnet keygen my.key
+garnet build --deterministic --sign my.key src/main.garnet
+garnet verify src/main.garnet src/main.garnet.manifest.json --signature
+```
+
+## Honest status
+
+Garnet is a **research-grade prototype (v0.8.1), not production-complete** — and this README
+will never tell you otherwise.
+
+| Verified today | Still open |
+|---|---|
+| Signed v0.8.1 release: `.deb`, `.rpm`, macOS tarballs, SBOM, GPG-signed sums | macOS `.pkg` notarization, Windows `.msi` (credential-gated) |
+| `@caps` + `@max_depth` enforced on interpreter **and** VM; cross-OS trap parity recorded | OS-sandbox enforcement beyond Linux seccomp |
+| Capability-bounded acceptance demo: agent code accepted *and refused* on evidence, sealed | Independent verification of the self-found red-team fix |
+| <!-- truth:primitive_count -->80<!-- /truth --> capability- and stability-tagged stdlib primitives | Production VM performance (unbenchmarked, unclaimed) |
+| LSP + VS Code extension (local VSIX), trivia-preserving CST, formatter baseline | Marketplace/OpenVSX publication; incremental parsing |
+| Rust / Ruby / Python / Go migration assistant with lineage + `@sandbox` audit gate | Browser playground; package registry beyond stub |
+
+The full ledger lives in [CURRENT_STATE.md](CURRENT_STATE.md); the readiness detail lives on
+[the status page](https://garnet-lang.org/status.html). The honest scorecard for the research
+claims: 4 supported, 2 partial, 0 refuted, 1 pending-infra
+([seven papers](A_Research_Papers/)).
+
+## Learn more
+
+[Getting started](https://garnet-lang.org/getting-started.html) ·
+[Mini-Spec v1.0](C_Language_Specification/GARNET_v1_0_Mini_Spec.md) ·
+[Conformance matrix](C_Language_Specification/GARNET_v0_4_2_Conformance_Matrix.md) ·
+[Capability model](FAQ.md#whats-the-capability-model) ·
+[Research papers](A_Research_Papers/) ·
+[Blog](https://garnet-lang.org/blog/)
+
+## Community
+
+Questions → [FAQ](FAQ.md), then [Discussions](https://github.com/Island-Dev-Crew/garnet/discussions) ·
+Bugs → [Issues](https://github.com/Island-Dev-Crew/garnet/issues) ·
+Security → [SECURITY.md](SECURITY.md) (private advisories, please) ·
+Contributing → [CONTRIBUTING.md](CONTRIBUTING.md) + [Code of Conduct](CODE_OF_CONDUCT.md)
+
+## License
+
+Dual-licensed **MIT OR Apache-2.0** — your choice. Either is fine for commercial use.
+
+---
+
+<p align="center"><em>"Where there is no vision, the people perish." — Proverbs 29:18</em><br>
+<sub>A project by Island Development Crew · Huntsville, AL</sub></p>
