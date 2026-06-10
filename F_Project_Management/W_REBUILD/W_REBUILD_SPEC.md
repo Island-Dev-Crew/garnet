@@ -1,0 +1,311 @@
+# GARNET W-REBUILD — Foundation Rebuild Workstream
+**Spec + paste-ready goal mode · prepared 2026-06-10 · slots into `GARNET_S129_S200_ECC_DOGFOOD_COMMAND_CENTER.md`**
+**Doctrine:** *Rebuild where Garnet's semantics are the product. Integrate where the world already audited the hard part.*
+
+---
+
+## §0 · Where this slots (and what it does NOT claim)
+
+W-REBUILD is one workstream, one lead lane (MacBook Pro · Claude Code Fable 5 · ultracode),
+executed **after** the S131–S134 fleet consolidation merges. It claims two territories:
+
+1. **The front-door band (S135–S140)** — Codex's gate map already reserves this for
+   "README, repo front door, docs/site truth cleanup." W-REBUILD's RB-0 slices *are* that band,
+   executed with the prepared artifacts (`README_PROPOSED.md`, `GARNET_TRUTH_DRIFT_PUNCHLIST.md`).
+2. **A new Foundation workstream (RB-1…RB-7)** — registered in the runway between the
+   front-door band and the playground band (S151–S165). It does not take S-numbers; the P0
+   docs PR records it in the command center so every lane can see it.
+
+**Runs in parallel, untouched:** the trust band (S141–S150 — independent S114 re-verification,
+SLSA/Sigstore planning) proceeds on the MacBook Air / Windows NUC / independent-reviewer lanes.
+Surfaces don't collide: trust-band work lives in CI plans, release evidence, and reviewer
+packages; W-REBUILD lives in `garnet-check`, `garnet-interp`, `garnet-stdlib`, `garnet-parser`,
+`garnet-cst`, `xtask`. Any CI/gate change the trust band wants is Jon-gated anyway.
+
+**Explicitly NOT claimed by W-REBUILD** (stays with its band/lane): the docs/site learner IA
+(first-PR #3), the playground prototype (#4), the independent S114 package (#5), Marketplace
+publication, packaging, localization, launch anything.
+
+**Why the rebuild precedes the playground band:** the playground wants a wasm32 interpreter —
+build it once, on the post-rebuild interpreter; the caps bitset makes the playground's live
+diff-caps demo a one-instruction diff; and a public playground running a binary with 71 unwraps
+and 40 panics in the runtime is a first impression you don't get back.
+
+---
+
+## §1 · Pre-flight: the freeze (deploy gate)
+
+W-REBUILD touches wide surfaces. Unmerged local work on any machine becomes unmergeable the
+moment the bridge, checker, and parser internals move. Therefore, hard gate — the goal mode
+**STOPS** unless all three hold:
+
+1. Core fleet reports exist in `F_Project_Management/FLEET_REPORTS/` per `TEMPLATE.md`
+   (macbook-pro × claude+codex, windows-nuc × claude+codex; air/surface as available).
+2. The S131–S134 **source-of-truth consolidation PR is merged** — every local artifact has a
+   verdict (commit / archive / ignore) and main is the single truth.
+3. The lead machine's working tree is clean on current `origin/main`.
+
+This is the answer to the noise-and-scatter concern: **consolidate → freeze → rebuild.** After
+the freeze, anything not in a fleet report doesn't exist (corpus-search-miss ≠ absence — flag it,
+never fabricate it), and everything that does exist has already been deprecated or integrated
+*before* the foundations move under it.
+
+**Kickoff prep (Jon, two minutes):** copy this file plus `README_PROPOSED.md` and
+`GARNET_TRUTH_DRIFT_PUNCHLIST.md` into `F_Project_Management/W_REBUILD/` in the lead checkout,
+then paste the §2 prompt. The session's P0 PR commits the pack so every lane reads the same spec.
+
+---
+
+## §2 · Paste-ready goal mode (Claude Code · Fable 5 · ultracode · MacBook Pro)
+
+```text
+ROLE: Claude Code (Fable 5, ultracode) on MacBook Pro — Garnet W-REBUILD lead:
+front-door band (S135–S140) + Foundation rebuild workstream (RB-1..RB-7),
+post-consolidation. Doctrine: rebuild where Garnet's semantics are the product;
+integrate where the world already audited the hard part.
+
+SOURCE OF TRUTH: /AGENTS.md + the closest child AGENTS.md for EVERY subsystem
+touched; F_Project_Management/GARNET_S129_S200_ECC_DOGFOOD_COMMAND_CENTER.md;
+F_Project_Management/W_REBUILD/ (W_REBUILD_SPEC.md = per-slice acceptance
+criteria, README_PROPOSED.md, GARNET_TRUTH_DRIFT_PUNCHLIST.md);
+F_Project_Management/FLEET_REPORTS/; live repo + GitHub truth.
+
+RECON (every session start): git fetch origin main --tags --prune; record
+status/HEAD/origin-main/open PRs/v0.8.1 release truth; run
+scripts/garnet_readiness_status.py + garnet_mit_readiness_status.py (json).
+Never assume another lane's result without checking repo/GitHub truth.
+
+DEPLOY GATE (verify first; STOP+report if unmet): (1) core fleet reports exist
+in FLEET_REPORTS/; (2) the S131–S134 source-of-truth consolidation PR is
+MERGED; (3) clean working tree on current origin/main. If unmet: write or
+refresh THIS machine's fleet report per TEMPLATE.md, then stop.
+
+P0 (docs PR, no code): commit the W_REBUILD pack; register the workstream in
+the command center runway (RB-0 = front-door band S135–S140; RB-1..RB-7 =
+Foundation workstream before the playground band; trust band S141–S150 runs
+parallel on other lanes). One PR, stop after merge.
+
+SLICES (one per PR; full acceptance criteria in W_REBUILD_SPEC.md §3):
+RB-0a xtask truth: truth.json generator + marker stamping + `--check` guard;
+  prove the guard fails on a planted mismatch before landing.
+RB-0b README replacement from README_PROPOSED.md — verify EVERY link, path,
+  and number against repo truth first; relocate the six script walkthroughs to
+  docs/internals/; <=180 lines; truth markers stamped.
+RB-0c version-narrative fixes (punchlist A2): rg stale strings = 0 on public
+  surfaces (24-prims / post-v0.5.0 / v0.5.0-research-grade / S1-LSP).
+RB-0d site stats read truth.json; 0.8.1 VSIX re-pack PREPARED with checksums
+  (release asset swap = Jon); @caps blog post DRAFTED (posting/dating = Jon).
+RB-1 caps bitset: CapSet(u16), Copy; propagation = OR; diff-caps delta = XOR;
+  differential property tests vs the old set impl BEFORE deleting it.
+RB-2 crash-surface sweep: deny(clippy::unwrap_used,expect_used) on
+  user-facing crates with allowlisted internal invariants; reachable aborts
+  become miette diagnostics; malformed-input fuzz smoke, zero aborts.
+RB-3 registry-derived dispatch: new garnet-prim-macros crate;
+  #[garnet_primitive(...)] emits PrimMeta + registration + arity/caps guards
+  from one declaration; stdlib_bridge hand-written arms deleted; differential
+  tests across ALL primitives; truth primitive_count becomes macro-derived.
+RB-4a rowan unification: migrate remaining consumers to garnet-cst; DELETE
+  legacy garnet-parser src/cst.rs; byte-identical round-trip corpus green.
+RB-4b AST as typed views over the green tree. (Error-recovery + incremental
+  parsing: QUEUED post-workstream, feeds the playground band.)
+RB-5 env rebuild: string interner + (depth,slot) resolution pass in
+  garnet-check; Env frames replace string-keyed HashMap chain; criterion
+  before/after committed as machine-local evidence; ZERO semantic change.
+RB-6 backend decision MEMO only: post-RB-5 measured numbers + wasm32
+  feasibility spike + fuel/WASI/playground synergy; escalate the
+  one-lowering decision to Jon. NO backend code merged.
+RB-7 REPL on reedline: completion + ?doc + :caps live authority budget from
+  PrimMeta; recorded demo evidence; cross-OS proof handed to the NUC lane.
+
+CONSTRAINTS: calibrated honesty above all; evidence, never claims; no
+"enforced" without a deterministic trap; RB-1..RB-5 change ZERO language
+semantics — workspace tests + the enforcement-parity gate stay green on every
+slice, and ANY semantic delta = STOP+report, never patch around it; never push
+a tag; never cut/re-cut a release; never touch CI, gates, diff-caps
+thresholds, capability standards, or release policy without Jon; never install
+ECC hooks; S114 stays labeled self-verified; crate de-suffixing and root
+restructuring are OUT of scope unless Jon explicitly green-lights RB-8.
+
+VERIFICATION LADDER (every slice): focused tests first -> cargo test
+--workspace --no-fail-fast (0 failed) -> cargo clippy --workspace
+--all-targets -- -D warnings -> cargo fmt --all -- --check ->
+dogfood-readiness fused 5/5 -> python3 scripts/check-agent-contracts.py ->
+PR to Navigata1 -> CI green -> merge IslandDevCrew -> switch back.
+
+ORDER: P0 -> RB-0a..0d -> RB-1 -> RB-2 -> RB-3 -> RB-4a -> RB-4b -> RB-5 ->
+RB-6 memo -> RB-7. STOP+REPORT: after the RB-0 band (front door truthful);
+after RB-3 (dispatch rebuilt, drift class dead); after RB-5 (numbers in hand);
+at RB-6 (the decision is Jon's); final workstream report with measured
+results, machine-local evidence labeled as such.
+```
+
+---
+
+## §3 · Per-slice spec & acceptance criteria
+
+Common to all: one coherent slice per PR; the §2 verification ladder green; PR body records
+exact commands + outputs + honest verdict; claim boundaries stated.
+
+### RB-0a — `cargo xtask truth` (Punchlist Part C)
+Extend the existing `xtask` crate with a `truth` command.
+- Emits `docs/truth.json`: `version` (workspace Cargo.toml), `primitive_count` +
+  `primitives_by_layer` (from `all_prims()`), `workspace_test_count` / `security_test_count`
+  (from the test-list or CI summary source the repo already trusts), `tracked_slices`,
+  `readiness_pct` (from the readiness reporters), `latest_tag`.
+- Stamps values between `<!-- truth:KEY -->…<!-- /truth -->` markers in README.md and FAQ.md;
+  `docs/index.html` "By the Numbers" reads `truth.json` (or is stamped, pick one and document it).
+- `xtask truth --check` exits non-zero on any mismatch between machine truth and public surfaces.
+**Accept when:** the guard demonstrably FAILS on a deliberately planted mismatch (include the
+proof run in the PR body), then passes clean; agent-contract and docs checks green. *Wiring
+`--check` into CI is a gate change → propose it in the PR body, Jon approves the CI hook.*
+
+### RB-0b — README replacement
+Land `README_PROPOSED.md` as `README.md` — **verify, then land**: every link and path resolves
+in-repo (logo path, docs/release-signing.md, spec/matrix paths), every number passes
+`xtask truth --check`, every claim matches CURRENT_STATE/status-page boundaries. Relocate the
+six `python3 scripts/garnet_*` walkthroughs to `docs/internals/` (link from README's Learn-more
+line if useful). Purge internal vocabulary (Objective/Continuation Pulse, bare S-numbers,
+"manifested dogfood bundle") from README only — internal docs keep their language.
+**Accept when:** ≤180 lines; zero dead links (`lychee` or a scripted check); truth markers
+stamped; the calibrated-honesty table reads exactly as bounded as before or tighter.
+
+### RB-0c — Version-narrative fixes (Punchlist A2)
+README:193 post-v0.5.0 → v0.8.1 narrative; FAQ:55/57/49 v0.5.0-era claims re-anchored; S1-LSP →
+S16 surface description. **Accept when:**
+`rg -n "post-v0.5.0|24 stdlib|24 registry|24 bridged|v0.5.0 is research-grade|S1 LSP"` returns
+zero hits on public surfaces (README, FAQ, docs/), and the *boundary language itself*
+("production VM performance is not claimed") survives verbatim.
+
+### RB-0d — Site stats, VSIX prep, blog draft
+Site By-the-Numbers reads `truth.json` (A5). Build a 0.8.1-versioned VSIX from the release
+toolchain + regenerated `SHA256SUMS(.asc)` and stage it (A3) — **the asset swap on the published
+release is escalated to Jon, never autonomous**. Draft the @caps blog post (A4) in the blog's
+existing voice; posting and dating are Jon's. **Accept when:** artifacts staged with checksums,
+draft committed under a drafts path, escalation note filed, CURRENT_STATE VSIX row updated to
+match whichever decision Jon makes.
+
+### RB-1 — Caps lattice → bitset (verdict R3)
+`CapSet(u16)` bitflags over the closed set (fs, net, net_internal, time, proc, ffi, env, star,
++ documented reserve bits); `Copy`; propagation = bitwise OR over the call graph; subset =
+`a & !b == 0`; **diff-caps delta = XOR**. Keep the old set-based impl during the slice and run
+differential property tests (proptest: random cap-sets and call-graphs → identical propagation,
+coverage errors, and diffs); delete the old impl in the same PR once green.
+**Accept when:** all existing caps/diff-caps/coverage tests pass unchanged; differential suite
+green; `.clone()` count in `garnet-check/src` drops from 201 to <40; an honest perf note records
+only what was measured.
+
+### RB-2 — Crash-surface sweep (verdict R6)
+`#![deny(clippy::unwrap_used, clippy::expect_used)]` on `garnet-cli`, `garnet-interp`,
+`garnet-stdlib` (user-facing paths), with a single documented allowlist pattern
+(`#[allow] // INVARIANT: <why this cannot fail>`) for true internal invariants. Reachable aborts
+become miette diagnostics with spans (miette is already wired). Run the existing parser fuzz
+harness plus an interp smoke pass over malformed corpus inputs.
+**Accept when:** deny lints active and clippy green; unwrap counts in user paths at/near zero
+with every allowlisted invariant justified in-line; fuzz/malformed-input smoke (state minutes
+run) produces zero aborts — scoped claim: "no abort on the corpus + N fuzz minutes," never
+"never panics."
+
+### RB-3 — Registry-derived dispatch (verdict R1) · the keystone
+New `garnet-prim-macros` crate. One attribute per native:
+`#[garnet_primitive(module="std::json", name="parse", caps(fs), arity=1, layer=Std,
+stability=Experimental, doc="…")]` — the macro emits the `PrimMeta` row, the `NativeFn`
+registration, the arity/argument guards, and the caps requirement from one declaration, behind
+**one fallible bridge signature** (no unwraps across the bridge — composes with RB-2).
+`all_prims()` and the interpreter's `install()` become derived; `stdlib_bridge.rs` hand-written
+arms are deleted down to a thin shim.
+**Accept when:** all (80 at audit) primitives registered via attribute with zero behavior
+change — differential test drives every primitive through old and new dispatch on a shared
+fixture corpus before the old path is deleted; `truth.json` `primitive_count` now derives from
+the macro registry; net LOC drops by roughly two thousand lines; prim doc strings survive into
+PrimMeta (RB-7 depends on them).
+
+### RB-4a / RB-4b — One syntax substrate (verdict R2)
+**4a:** migrate the remaining LSP/formatter/consumer paths to `garnet-cst` (rowan); **delete**
+`garnet-parser-v0.3/src/cst.rs` (the self-described "temporary legacy oracle").
+**Accept when:** the legacy file is gone, LSP test suite green, byte-identical round-trip corpus
+green, no consumer imports the legacy module.
+**4b:** AST node types become typed views over the rowan green tree (rust-analyzer
+architecture) rather than a parallel structure. **Accept when:** parser + interp + check suites
+green with zero behavior change; spans/diagnostics quality preserved or improved.
+**Queued (not required for workstream completion):** error-recovery + incremental reparsing on
+the unified substrate — schedule into the playground band where it pays first.
+
+### RB-5 — Environment rebuild (verdict R4)
+String interner (e.g. `lasso`, or a small owned interner — integrate-grade either way) +
+a resolution pass in `garnet-check` assigning `(depth, slot)` to every binding; interpreter
+`Env` becomes indexed frames instead of the `Rc<RefCell<HashMap<String,Value>>>` parent chain.
+**Accept when:** ZERO semantic change — full workspace + enforcement-parity gates green;
+criterion before/after on the existing bench harness committed as machine-local evidence with
+exact hardware noted; the honest sentence is "measured Nx on these benches on this machine,"
+nothing broader.
+
+### RB-6 — Backend decision memo (verdict R5) · Jon-gated, no code
+A decision document, not a slice: post-RB-5 tree-walk numbers; a wasm32 build feasibility spike
+(does the interpreter compile to wasm32-unknown / wasm32-wasi today, and what blocks it);
+the synergy ledger (one lowering buys @bounded→Wasmtime fuel + @caps→WASI sandbox + the
+playground + embed-everywhere); the parity cost of keeping the custom VM as a third path; a
+recommendation. **Accept when:** memo + spike evidence committed; decision escalated to Jon;
+nothing merged into a backend.
+
+### RB-7 — The REPL joy slice (verdict R7)
+Rebuild `repl.rs` (125 lines today) on `reedline`: history, multiline, tab-completion fed by
+the macro-derived registry + live environment; `?std::json::parse` prints doc + caps + arity
+from PrimMeta; `:caps` shows the session's live authority budget; pretty-printed values.
+**Accept when:** recorded demo evidence (asciinema or equivalent) committed; doc page added;
+Mac proof recorded, cross-OS proof handed to the NUC lane — never marked cross-OS-complete from
+one machine.
+
+### RB-8 — OPTIONAL, Jon-gated: de-suffix crates + root flatten
+`garnet-parser-v0.3` → `garnet-parser` etc., research corpus to `research/` with history
+preserved. **Deliberately last and gated:** ~229 scripts plus CI reference current paths; the
+command center flags this as do-not-rush. If green-lit: full reference sweep, one PR, every
+reporter re-run. If not green-lit: it waits, and nothing else in W-REBUILD depends on it.
+
+---
+
+## §4 · Stop points & escalation matrix
+
+| Moment | Action |
+|---|---|
+| After RB-0 band | STOP + report: front door truthful, guard live |
+| After RB-3 | STOP + report: dispatch rebuilt, drift class structurally dead |
+| After RB-5 | STOP + report: measured numbers in hand |
+| RB-6 | Jon decides the backend; lane prepares evidence only |
+| VSIX asset swap, blog posting/dating, CI hook for `truth --check`, RB-8 | Jon, always |
+| Any semantic delta in RB-1..RB-5 | STOP + report immediately — never patch around it |
+
+---
+
+## §5 · Transition guidance
+
+**Before (the freeze):** fleet reports per `TEMPLATE.md` on every active machine (read-only,
+parallel, ~30 min each) → MacBook Pro assembles the docs-only consolidation PR → every local
+artifact gets its verdict (commit / archive / ignore). This is precisely the scatter-management
+you flagged: the deprecate-or-integrate decision happens **once, before** the foundations move,
+against a single visible truth — instead of repeatedly, afterward, against a moving one.
+
+**During:** W-REBUILD runs on the lead lane. Parallel-safe for other lanes: trust-band evidence
+packaging (Air), Windows/Linux/Tauri smoke + packaging plans (NUC), public-story audit (Air).
+Not parallel-safe while RB-1..RB-5 are in flight: anything that edits `garnet-check`,
+`garnet-interp`, `garnet-stdlib`, `garnet-parser`, `garnet-cst` — those surfaces are frozen to
+the lead lane until the workstream report.
+
+**After (the synthesis session, per Codex's suggestion — together):** with foundations solid,
+synthesize the remaining goal modes as a set, each inheriting the W-REBUILD pattern (deploy
+gate → slices → ladder → stop points): **W-PLAY** (playground band, S151–S165 — consumes the
+RB-6 decision and the queued error-recovery work), **W-TRUST** (independent S114 + SLSA/Sigstore,
+S141–S150 — independent lane, never self-graded), **W-SHIP** (distribution, S166–S178 — NUC-led),
+**W-REACH/W-LAUNCH** (S179–S200 — drafts prepared, the public moment Jon-owned). The
+synthesis input is three documents: the W-REBUILD final report, the consolidated fleet truth,
+and the command center — nothing else should be needed, which is itself the test that the
+foundation held.
+
+---
+
+**Kickoff invocation (Jon's pattern):**
+> "Continuing Garnet. Read `F_Project_Management/W_REBUILD/W_REBUILD_SPEC.md` and
+> `F_Project_Management/GARNET_S129_S200_ECC_DOGFOOD_COMMAND_CENTER.md`. Verify the deploy
+> gate, then execute W-REBUILD per the §2 goal mode. Proceed decisively."
+
+*"Where there is no vision, the people perish." — Proverbs 29:18*
+*One PR per slice. Evidence, never claims. The tag is Jon's. Roll Tide.*
