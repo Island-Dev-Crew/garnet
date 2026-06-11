@@ -1,3 +1,8 @@
+<!-- Status: LANDED as the root README.md by RB-0b (2026-06-11) with the
+verify-then-land fixes recorded in the RB-0b PR body (logo path, signed-binaries
+wording, runnable sixty-seconds sample, scoped authority claims, truth markers,
+MSRV anchor). This file remains the historical draft; the root README.md is
+authoritative. -->
 <p align="center">
   <img src="docs/assets/garnet-logo.png" alt="Garnet" width="120">
 </p>
