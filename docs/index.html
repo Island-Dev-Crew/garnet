@@ -636,7 +636,7 @@
     overflow: hidden;
   }
   .objective-meter .fill {
-    width: 92.3%;
+    width: 0; /* set from the stamped readiness percent by the inline script (RB-0d) */
     height: 100%;
     background: var(--garnet);
   }
@@ -1446,25 +1446,38 @@ dist/Garnet Studio.app</pre>
   <div class="container reveal">
     <h3>By the Numbers</h3>
     <h2>Substance behind the surface.</h2>
+    <!-- Values between truth markers are stamped from docs/truth.json by
+         `cargo run -p xtask -- truth` and guarded by `truth --check` (RB-0d).
+         The former "security tests" card is retired: that figure had no
+         trusted derivation (see docs/truth.json `omissions`). Unmarked cards
+         are stable or explicitly dated facts. -->
     <div class="numbers">
-      <div class="number"><div class="big">1193</div><div class="small">Workspace tests</div></div>
-      <div class="number"><div class="big">136</div><div class="small">Security tests</div></div>
-      <div class="number"><div class="big">24</div><div class="small">Stdlib registry primitives</div></div>
+      <div class="number"><div class="big"><!-- truth:workspace_test_count -->1952<!-- /truth --></div><div class="small">Workspace tests (measured)</div></div>
+      <div class="number"><div class="big"><!-- truth:tracked_slices -->87/87<!-- /truth --></div><div class="small">Tracked implementation slices</div></div>
+      <div class="number"><div class="big"><!-- truth:primitive_count -->80<!-- /truth --></div><div class="small">Stdlib registry primitives</div></div>
       <div class="number"><div class="big">10</div><div class="small">MVP drafts</div></div>
       <div class="number"><div class="big">7</div><div class="small">Research papers</div></div>
-      <div class="number"><div class="big">0.93×</div><div class="small">Expressiveness ratio</div></div>
+      <div class="number"><div class="big">0.93×</div><div class="small">Expressiveness ratio (v0.5.0 benchmark)</div></div>
     </div>
     <div class="objective-pulse" aria-label="MIT/productization objective progress pulse">
       <div class="objective-meter">
         <div class="label">MIT/productization objective</div>
-        <div class="percent">92.3%</div>
-        <div class="meter" aria-hidden="true"><div class="fill"></div></div>
-        <p class="evidence-note">Latest local dogfood pulse from <code>scripts/garnet_mit_readiness_status.py</code>. This is not the same as tracked implementation completion.</p>
+        <div class="percent" id="readiness-pct"><!-- truth:readiness_pct -->92.8<!-- /truth -->%</div>
+        <div class="meter" aria-hidden="true"><div class="fill" id="readiness-fill"></div></div>
+        <script>
+          // Meter width follows the stamped percent (one source of truth);
+          // without JS the number is still correct, only the bar stays empty.
+          (function () {
+            var p = parseFloat(document.getElementById("readiness-pct").textContent);
+            if (!isNaN(p)) { document.getElementById("readiness-fill").style.width = p + "%"; }
+          })();
+        </script>
+        <p class="evidence-note">Latest local dogfood pulse from <code>scripts/garnet_mit_readiness_status.py</code>, stamped via <code>docs/truth.json</code>. This is not the same as tracked implementation completion.</p>
       </div>
       <div class="objective-list">
         <div class="label">Current pulse</div>
         <ul>
-          <li><strong>87/87 tracked slices</strong> are verified, but that is not full MIT/productization completion.</li>
+          <li><strong><!-- truth:tracked_slices -->87/87<!-- /truth --> tracked slices</strong> are verified, but that is not full MIT/productization completion.</li>
           <li>S15 adds a trivia-preserving CST with byte-identical example round trips; incremental/error-recovery parsing remains future work.</li>
           <li>Windows now has a Tauri v2 Studio scaffold with local release build, unsigned NSIS bundle, smoke evidence, verified x64 clean-VM installer proof, WSL `.deb` / `.rpm` / Xvfb / WSLg system-install evidence, Studio Domain Proof Matrix shell output, and Release / Readiness shell reporter output; clean/non-WSL Linux desktop GUI launch, live Release / Readiness GUI screenshot proof, signing, winget, and Windows ARM64 proof remain open.</li>
           <li>Promo video is public-site embedded at 95.0%; human/aesthetic acceptance remains open.</li>

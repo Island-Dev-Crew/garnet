@@ -17,9 +17,11 @@ Owns repository automation that is too project-specific for ordinary cargo comma
 - `truth` (RB-0a) — regenerates `docs/truth.json` from machine-derivable
   sources only (workspace `Cargo.toml` version, `all_prims()` counts, the
   readiness reporters, `git tag`, a measured `cargo test --workspace` run)
-  and stamps `<!-- truth:KEY -->VALUE<!-- /truth -->` markers in `README.md`
-  and `FAQ.md`. `--skip-tests` carries the previous test measurement forward
-  with its provenance.
+  and stamps `<!-- truth:KEY -->VALUE<!-- /truth -->` markers in `README.md`,
+  `FAQ.md`, `docs/index.html`, and `docs/status.html` (RB-0d: the site's
+  By-the-Numbers/readiness cards are stamped, not fetched — documented
+  decision; one mechanism, no client-side failure mode). `--skip-tests`
+  carries the previous test measurement forward with its provenance.
 - `truth --check` — non-zero exit on any mismatch between live machine truth,
   `docs/truth.json`, and the stamped surfaces (`--with-tests` re-measures the
   suite). Invariants: every truth.json field is derived, never hand-entered;

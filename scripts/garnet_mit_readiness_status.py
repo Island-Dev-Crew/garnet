@@ -321,11 +321,21 @@ def _lsp_precision_present() -> bool:
     lib_text = lib.read_text(encoding="utf-8")
     package_text = package.read_text(encoding="utf-8")
     smoke_text = smoke.read_text(encoding="utf-8")
+    # The expected VSIX name derives from the extension's own version so the
+    # evidence check can never go stale against a version bump (RB-0d: the
+    # previous hardcoded "garnet-0.7.0-..." pin silently failed the lane the
+    # moment the extension re-synced to the release line).
+    try:
+        package_version = json.loads(package_text).get("version", "")
+    except ValueError:
+        return False
+    expected_vsix = f"garnet-{package_version}-lsp-precision.vsix"
     return (
         "garnet_cst" in lib_text
         and "identifier_spans" in lib_text
         and "capability" in lib_text
-        and "garnet-0.7.0-lsp-precision.vsix" in package_text
+        and package_version != ""
+        and expected_vsix in package_text
         and "Refactor long parameter list" in smoke_text
         and "Add return type `Int`" in smoke_text
     )
@@ -1771,7 +1781,7 @@ def read_status() -> MitReadinessStatus:
                 "cross-file function rename, scoped parameter rename, three code actions, and the S16 "
                 "semantic-token categories (`capability`, `attribute`, `parameter`) over stdio. "
                 "`editors/vscode` exposes the three Garnet quick-fix commands and packages "
-                "`garnet-0.7.0-lsp-precision.vsix`."
+                "the version-synced `garnet-<version>-lsp-precision.vsix` local package."
             )
             if lsp_precision_present
             else (
