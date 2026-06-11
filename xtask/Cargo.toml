@@ -7,3 +7,8 @@ description = "Workspace task runner — 7\u00d7 consistency harness, etc. Not p
 publish = false
 
 [dependencies]
+# RB-0a truth generator: primitive_count/primitives_by_layer come straight
+# from all_prims() — machine truth, not a re-typed number. Version pin is
+# policy-required (cargo-deny bans wildcard internal path deps).
+garnet-stdlib = { path = "../garnet-stdlib", version = "0.4.0" }
+serde_json = "1"

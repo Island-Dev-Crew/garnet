@@ -142,7 +142,7 @@ Developer ID notarization.
 | `garnet-check`  | Safe-mode validator + CapCaps call-graph propagator |
 | `garnet-memory` | **Mnemos** — reference implementation of Garnet's **Memory Core** (four cognitively-inspired kinds: working / episodic / semantic / procedural). Production allocator path tracked in [`MEMORY_CORE_ROADMAP.md`](C_Language_Specification/MEMORY_CORE_ROADMAP.md) |
 | `garnet-actor-runtime` | Bounded-mailbox actors + Ed25519 signed hot-reload |
-| `garnet-stdlib` | 24 registry primitives with capability metadata |
+| `garnet-stdlib` | <!-- truth:primitive_count -->80<!-- /truth --> registry primitives with capability metadata |
 | `garnet-cli`    | Top-level `garnet` binary |
 | `garnet-convert` | Rust / Ruby / Python / Go -> Garnet **migration assistant** (stylized parsers, sandbox-on output, emits a `migrate_todo.md` checklist - not a full transpiler). `python3 scripts/garnet_converter_status.py` reports the active lanes, advisory planning languages, native-boundary languages, future Wasm/LLVM-style lowering posture, and the planned Garnet-aware assist contract for future LLM/agentic guidance. |
 | `garnet-lsp` | S16 Language Server Protocol surface for diagnostics, hover, go-to-definition, document/workspace symbols, CST-precise rename, rules-based quick fixes, and semantic tokens. VSCode source lives in `editors/vscode/`; incremental/error-recovery parsing remains future work. |
@@ -191,7 +191,7 @@ inherit it via a caller that does. Known capabilities: `fs`, `net`,
 ## Project status
 
 **Current `main` is post-v0.5.0 source; the latest tagged release is
-v0.8.1.** Garnet is a research-grade prototype (v0.x.x), not
+<!-- truth:latest_tag -->v0.8.1<!-- /truth -->.** Garnet is a research-grade prototype (v0.x.x), not
 production-complete. The `v0.8.0` and `v0.8.1` tags are research-grade
 **milestone tags** marking the trust-kernel and capability-bounded-acceptance
 work since v0.5.0. The **`v0.8.1` Release ships signed `garnet-0.8.1-*` CLI
@@ -209,7 +209,7 @@ Verification status at current `main`:
 - ✅ Workspace test/lint/doc/security gates are CI-enforced; use live CI and
   `CURRENT_STATE.md` rather than historical handoff test totals
 - ✅ Canonical MVP examples parse, check, and run under the current CLI
-- ✅ 24 stdlib registry primitives bridged through the interpreter
+- ✅ <!-- truth:primitive_count -->80<!-- /truth --> stdlib registry primitives bridged through the interpreter
 - ✅ The universal curl installer verifies the signed `garnet-0.8.1-*` release assets when present and uses source fallback only for unsupported or missing package targets
 - ✅ MIT/productization reporter now tracks 63 lanes and reports 92.3% on the current evidence set; this is separate from the 87/87 tracked-slice ledger, and the Windows/Linux distribution sub-lane remains active-partial at 83.0%
 - ⏳ macOS `.pkg` and Windows `.msi` release signing/notarization remain credential-gated release steps
