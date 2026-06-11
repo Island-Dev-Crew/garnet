@@ -7,6 +7,8 @@
 <p align="center"><strong>Rust rigor. Ruby velocity. One coherent language —<br>
 built for the code agents write and humans accept.</strong></p>
 
+<p align="center"><em>No authority without evidence. Acceptance is a decision made on evidence the author cannot fake.</em></p>
+
 <p align="center">
   <a href="https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.8.1">Release v0.8.1 · signed</a> ·
   <a href="LICENSE">MIT OR Apache-2.0</a> ·
