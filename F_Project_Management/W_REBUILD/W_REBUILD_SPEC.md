@@ -1,6 +1,7 @@
 # GARNET W-REBUILD — Foundation Rebuild Workstream
 **Spec + paste-ready goal mode · prepared 2026-06-10 · slots into `GARNET_S129_S200_ECC_DOGFOOD_COMMAND_CENTER.md`**
 **Doctrine:** *Rebuild where Garnet's semantics are the product. Integrate where the world already audited the hard part.*
+**Principle:** *No authority without evidence. Acceptance is a decision made on evidence the author cannot fake.* Everything else — syntax, modes, stdlib — is negotiable; this is not. *(Reassessment 2026-06-11, Directive 6; amendments below marked "[2026-06-11 infusion]" source from its §5/§7.)*
 
 ---
 
@@ -158,6 +159,11 @@ Extend the existing `xtask` crate with a `truth` command.
 **Accept when:** the guard demonstrably FAILS on a deliberately planted mismatch (include the
 proof run in the PR body), then passes clean; agent-contract and docs checks green. *Wiring
 `--check` into CI is a gate change → propose it in the PR body, Jon approves the CI hook.*
+**Design note [2026-06-11 infusion, queued — NOT required for RB-0a acceptance]:** the
+truth-guard family extends from numbers to *semantic claims* via caps-claims-as-doctests
+(Directive 10): every `@caps`/`@bounded` claim in documentation becomes a compiled,
+trap-tested example, so docs-vs-enforcement drift becomes a build failure. Mechanism queued
+post-RB-0a; RB-0a ships the numeric guard only.
 
 ### RB-0b — README replacement
 Land `README_PROPOSED.md` as `README.md` — **verify, then land**: every link and path resolves
@@ -192,7 +198,10 @@ differential property tests (proptest: random cap-sets and call-graphs → ident
 coverage errors, and diffs); delete the old impl in the same PR once green.
 **Accept when:** all existing caps/diff-caps/coverage tests pass unchanged; differential suite
 green; `.clone()` count in `garnet-check/src` drops from 201 to <40; an honest perf note records
-only what was measured.
+only what was measured; **[2026-06-11 infusion] diff-caps emits a structured machine verdict
+(`--machine` JSON: verdict, gained/dropped caps, bounds deltas) as a day-one criterion alongside
+the human one-glance artifact** (Directive 15 — the reviewer on the other side of the gate is
+increasingly an agent; the XOR delta is the natural payload).
 
 ### RB-2 — Crash-surface sweep (verdict R6)
 `#![deny(clippy::unwrap_used, clippy::expect_used)]` on `garnet-cli`, `garnet-interp`,
@@ -218,6 +227,12 @@ change — differential test drives every primitive through old and new dispatch
 fixture corpus before the old path is deleted; `truth.json` `primitive_count` now derives from
 the macro registry; net LOC drops by roughly two thousand lines; prim doc strings survive into
 PrimMeta (RB-7 depends on them).
+**Downstream consumer, named [2026-06-11 infusion]:** the **Core Ring** — the curated, sealed
+binding set (reassessment §6: ~20–30 audited bindings, every function's authority declared and
+verified) — consumes this slice's `#[garnet_primitive]` binding factory: registry-derived
+dispatch makes adding an audited binding a declarative act instead of a bridge-file edit. The
+Ring itself is a **post-RB-3 W-SHIP workstream** (Ring Tier 1 + the MCP/tool-server library are
+a W-LAUNCH gate condition), not part of RB-3's acceptance.
 
 ### RB-4a / RB-4b — One syntax substrate (verdict R2)
 **4a:** migrate the remaining LSP/formatter/consumer paths to `garnet-cst` (rowan); **delete**
@@ -227,6 +242,20 @@ green, no consumer imports the legacy module.
 **4b:** AST node types become typed views over the rowan green tree (rust-analyzer
 architecture) rather than a parallel structure. **Accept when:** parser + interp + check suites
 green with zero behavior change; spans/diagnostics quality preserved or improved.
+**Additional RB-4 criterion [2026-06-11 infusion] — the GHC-Core pattern (Directive 7):** the
+typed core IR **carries capabilities in its type system**, and the caps invariant is
+**RE-CHECKED AFTER EVERY LOWERING PASS** — a pass that launders authority is caught at the pass
+that introduced it, not as a downstream surprise; "the seal attests what the core proves" stays
+mechanically true through the whole pipeline, and no future backend can silently widen
+authority during codegen. (GHC re-typechecks Core after every optimizer pass; SPJ: "I know of
+no other production compiler that has this property." Garnet's version checks the caps lattice.)
+**Design note [2026-06-11 infusion] — editions as the surface-collapse vehicle (Directive 9):**
+the graduated-syntax collapse ships as a **new edition** with per-module opt-in and
+mix-and-match interop — old-surface modules compile forever, no flag-day, never a Python-3
+decade. Note the convergence: the repo's edition mechanism (S32) + GOVERNANCE.md already declare
+editions RFC-gated with capability semantics edition-invariant; this note binds the collapse to
+that existing vehicle rather than inventing a new one. Mechanism work lands with RB-4; the
+design note costs nothing now.
 **Queued (not required for workstream completion):** error-recovery + incremental reparsing on
 the unified substrate — schedule into the playground band where it pays first.
 
@@ -246,6 +275,17 @@ the synergy ledger (one lowering buys @bounded→Wasmtime fuel + @caps→WASI sa
 playground + embed-everywhere); the parity cost of keeping the custom VM as a third path; a
 recommendation. **Accept when:** memo + spike evidence committed; decision escalated to Jon;
 nothing merged into a backend.
+**Memo template additions [2026-06-11 infusion]:** the memo additionally carries —
+1. **The Stroustrup linker doctrine** (Directive 12) as the stated frame for
+   integrate-vs-rebuild: *"we can have Dennis's mistakes, which we know, or my mistakes, which
+   we don't know yet"* — Cranelift/Wasmtime is Garnet's "C."
+2. **The per-pass caps re-check (RB-4 criterion) as a HARD CONSTRAINT on ANY backend
+   candidate:** a backend that cannot re-verify the caps invariant per lowering pass is
+   disqualified regardless of its performance numbers.
+3. **The integrate-lean recommendation with its reopen threshold stated:** lean integrate
+   (per the doctrine line and the research convergence in the Gap-6 appendix); revisit a
+   custom lowering only if the integrated path measures **~2–3× overhead on representative
+   workloads** — measured, machine-named, never assumed. The decision itself remains Jon's.
 
 ### RB-7 — The REPL joy slice (verdict R7)
 Rebuild `repl.rs` (125 lines today) on `reedline`: history, multiline, tab-completion fed by

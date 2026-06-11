@@ -242,6 +242,37 @@ landed on main in #380):
   watch. Misses are recorded as search-coverage statements, never as proof of
   absence.
 
+### Synthesis Queue (reassessment infusion, 2026-06-11)
+
+Inputs pre-routed into the post-W-REBUILD synthesis session (sourced from
+`RESEARCH/GARNET_REASSESSMENT_2026-06-11.md` §5/§7; the synthesis itself
+happens with the W-REBUILD final report + the consolidated fleet truth + this
+command center on the table, per `W_REBUILD_SPEC.md` §5):
+
+- **→ W-TRUST (S141-S150): OQ-9 loop-benchmark pre-registration.** Measure
+  agent iterations-to-green and capability-widening-diff rate, Garnet vs Rust
+  vs Python on matched tasks. Pre-register like Paper VI BEFORE running — the
+  result either powers the launch or redirects it, and a pre-registered miss
+  is calibrated honesty working, not a failure.
+- **→ W-SHIP (S166-S178): the Core Ring.** Ring Tier 1 (serialization, HTTP
+  client/server, regex, time, fs, proc, crypto/hashing) consumes the RB-3
+  `#[garnet_primitive]` binding factory; **Ring Tier 1 + the MCP/tool-server
+  library are a W-LAUNCH gate condition** — no public launch wave on an empty
+  shelf (Directive 14; Stroustrup's "saved by luck" regret is the cautionary
+  precedent).
+- **→ W-LAUNCH (S179-S200) positioning:** the regulatory `--evidence` framing
+  (CRA Art. 14 applies from 2026-09-11 — the seal/SBOM/manifest pipeline as a
+  compliance asset, documentation-first, mechanism already exists) + the
+  three unrealized-use-case briefs from reassessment §3: delta-certification
+  envelope mode, the insurer/underwriting brief, the metered-delegation
+  budget lattice. All three are post-v0.8.2 skins over the existing kernel;
+  zero engineering before then.
+- **Marquee discipline (Gap 4):** memory primitives + typed actors STAY in
+  the language and EXIT launch headlines pending their own prior-art pass —
+  the trust kernel leads; unvetted novelty claims beside vetted ones cheapen
+  both. This demotes a founding pillar from the marquee and was argued, not
+  assumed (reassessment §5 "Remove/Demote/Decline" carries the reasoning).
+
 ## Presentation-First Priorities
 
 For tomorrow's presentation, prioritize what makes the project coherent and

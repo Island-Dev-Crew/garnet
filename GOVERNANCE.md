@@ -32,6 +32,19 @@ Withdrawn`. The RFC process makes the *reasoning* a durable artifact and is the
 mechanism by which decision-making broadens **as real contributors arrive — the
 document changes with reality, not ahead of it.**
 
+## Final comment period (FCP)
+
+*Added 2026-06-11 (reassessment Directive 11 — pre-registered before the first
+external contributor arrives, not after).* When an RFC's discussion converges,
+the maintainer (or a future team) proposes **FCP with a disposition** (merge /
+close / postpone): **10 calendar days**, announced on the RFC's tracking PR.
+Any substantial new argument raised during FCP cancels it and returns the RFC
+to Discussion; a clean FCP executes the disposition. Until external
+contributors exist, FCP is the maintainer's self-imposed cooling-off period —
+the process is real even while the parties are few, and **this section does
+not move any authority**: releases, tags, and the four integrity rules remain
+outside RFC scope per the rest of this document.
+
 ## Editions (compatibility evolution)
 
 Language evolution uses **editions** (parse-time) plus runtime settings

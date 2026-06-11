@@ -14,10 +14,18 @@ One paragraph: what this proposes and why.
 What problem does this solve? Who is affected? What is the cost of doing nothing?
 Cite prior art and precedent honestly.
 
-## Design
+## Guide-level explanation
 
-The concrete change: grammar, semantics, capability-model, or process. Include
-examples. State what is in scope and what is explicitly out of scope.
+How a user or agent experiences the change, taught as if it already existed:
+examples first, new vocabulary introduced in use. If a newcomer (human or
+agent) would learn this from a docs page, write that page here.
+
+## Reference-level explanation
+
+The precise change: grammar, semantics, capability-model, or process — exact
+rules, interactions, and edge cases. For language changes, state
+caps/bounds/trap behavior explicitly (no authority without evidence). State
+what is in scope and what is explicitly out of scope.
 
 ## Compatibility & editions
 
