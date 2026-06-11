@@ -54,7 +54,7 @@ Memory: Paper VI Experiment 4 measured 21% peak RSS reduction on the multi-agent
 
 **v0.5.0 is research-grade and not production-complete.** Specifically:
 
-- **Ready**: scaffolding (`garnet new`), the four-language converter (`garnet convert`), deterministic + signed builds (`garnet build --deterministic --sign`), CapCaps enforcement, scaffolded `garnet test`, the 24 bridged stdlib registry primitives, parser fuzz harness, rules-based compiler advisory mode, S1 LSP source surfaces, release-backed VSIX assets, v0.5.0 Linux/macOS CLI release assets, and deterministic cross-machine CI.
+- **Ready**: scaffolding (`garnet new`), the four-language converter (`garnet convert`), deterministic + signed builds (`garnet build --deterministic --sign`), CapCaps enforcement, scaffolded `garnet test`, the <!-- truth:primitive_count -->80<!-- /truth --> bridged stdlib registry primitives, parser fuzz harness, rules-based compiler advisory mode, S1 LSP source surfaces, release-backed VSIX assets, v0.5.0 Linux/macOS CLI release assets, and deterministic cross-machine CI.
 - **Active-partial**: macOS Studio packaging without Developer ID notarization, Windows/Linux Studio target proof, bytecode VM performance path, LSP hover/go-to-def screenshot hardening, promo video human/aesthetic acceptance, proof/benchmark measurements, and provider-neutral advisory handoffs.
 - **Pending**: Apple Developer ID notarization, signed `.pkg`, Windows `.msi`, Linux desktop package/runtime proof, Marketplace/OpenVSX publication, provider-backed LLM assist, mechanized proof, external empirical study data, and native backend lowering.
 
