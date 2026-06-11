@@ -1,6 +1,6 @@
 # Garnet — Frequently Asked Questions
 
-Last updated: 2026-06-07 · latest tag v0.8.1 (research-grade milestone; the Release ships signed garnet-0.8.1-* CLI binaries + SBOM, re-cut 2026-06-07)
+Last updated: 2026-06-11 · latest tag <!-- truth:latest_tag -->v0.8.1<!-- /truth --> (research-grade milestone; the Release ships signed garnet-0.8.1-* CLI binaries + SBOM, re-cut 2026-06-07)
 
 ---
 
@@ -46,15 +46,15 @@ Swift and Kotlin do interop between two paradigms in one language; Garnet's pitc
 
 ## What's the performance story?
 
-For pure-computational workloads the tree-walk interpreter remains the conservative runtime path. v0.5.0 adds the S2 bytecode VM scaffold and benchmark harness, but production VM performance is not claimed yet. The proof/benchmark reporter still labels fresh measured benchmark runs, mechanized proof, and empirical study data as open gates. See [Paper VII — Implementation Ladder and Tooling](A_Research_Papers/Paper_VII_Implementation_Ladder_and_Tooling.md) for the staged roadmap.
+For pure-computational workloads the tree-walk interpreter remains the conservative runtime path. v0.5.0 added the S2 bytecode VM scaffold and benchmark harness, and the v0.8 line brought the VM to enforcement parity (`@caps` + `@max_depth` trap identically on both backends), but production VM performance is not claimed yet. The proof/benchmark reporter still labels fresh measured benchmark runs, mechanized proof, and empirical study data as open gates. See [Paper VII — Implementation Ladder and Tooling](A_Research_Papers/Paper_VII_Implementation_Ladder_and_Tooling.md) for the staged roadmap.
 
 Memory: Paper VI Experiment 4 measured 21% peak RSS reduction on the multi-agent MVP workload by using kind-aware allocation (`memory working|episodic|semantic|procedural` keywords) compared to a force-malloc control.
 
 ## Is Garnet production-ready?
 
-**v0.5.0 is research-grade and not production-complete.** Specifically:
+**<!-- truth:latest_tag -->v0.8.1<!-- /truth --> is research-grade and not production-complete.** Specifically:
 
-- **Ready**: scaffolding (`garnet new`), the four-language converter (`garnet convert`), deterministic + signed builds (`garnet build --deterministic --sign`), CapCaps enforcement, scaffolded `garnet test`, the <!-- truth:primitive_count -->80<!-- /truth --> bridged stdlib registry primitives, parser fuzz harness, rules-based compiler advisory mode, S1 LSP source surfaces, release-backed VSIX assets, v0.5.0 Linux/macOS CLI release assets, and deterministic cross-machine CI.
+- **Ready**: scaffolding (`garnet new`), the four-language converter (`garnet convert`), deterministic + signed builds (`garnet build --deterministic --sign`), CapCaps enforcement, scaffolded `garnet test`, the <!-- truth:primitive_count -->80<!-- /truth --> bridged stdlib registry primitives, parser fuzz harness, rules-based compiler advisory mode, the S16 LSP surface (diagnostics, hover, go-to-definition, document/workspace symbols, CST-precise rename), release-backed VSIX assets, signed v0.8.1 Linux/macOS CLI release assets, and deterministic cross-machine CI.
 - **Active-partial**: macOS Studio packaging without Developer ID notarization, Windows/Linux Studio target proof, bytecode VM performance path, LSP hover/go-to-def screenshot hardening, promo video human/aesthetic acceptance, proof/benchmark measurements, and provider-neutral advisory handoffs.
 - **Pending**: Apple Developer ID notarization, signed `.pkg`, Windows `.msi`, Linux desktop package/runtime proof, Marketplace/OpenVSX publication, provider-backed LLM assist, mechanized proof, external empirical study data, and native backend lowering.
 
@@ -130,13 +130,15 @@ Signing is opt-in. Without `--sign`, the build still produces a deterministic ma
 
 The full corpus in this repository: seven research papers plus four addenda, the canonical Mini-Spec v1.0, the engineering workspace, current examples, v0.5 slice ledger, release evidence, public site/blog artifacts, and stage handoff documents. Start with [CURRENT_STATE.md](CURRENT_STATE.md), [F_Project_Management/GARNET_CURRENT_VS_HISTORICAL_LEDGER.md](F_Project_Management/GARNET_CURRENT_VS_HISTORICAL_LEDGER.md), and [F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md](F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md) before relying on older v4.2 handoffs.
 
-## What's coming after v0.5.0?
+## What's coming after v0.8.1?
 
-- v0.5.1-acceptable slices: `garnet add` plus manifest spec, semantic formatter expansion, memory eviction benchmarks, and the Actor OS-thread bridge.
-- Product gates: Apple Developer ID notarization, Windows/Linux target runtime proof, Marketplace/OpenVSX publication, and fuller clean-machine reproduction evidence.
-- Adoption surfaces: stdlib reference depth, tutorial depth, package-registry RFC, blog cadence, and GitHub Discussions community loops.
+- Front door + truth guard: machine-generated public numbers (`docs/truth.json`), README/site truth wiring, and version-narrative cleanup — the W-REBUILD RB-0 band.
+- Foundation rebuild (zero language-semantics change): caps bitset, crash-surface sweep, registry-derived stdlib dispatch, parser-substrate unification, environment rebuild — then a Jon-gated backend-decision memo.
+- Trust hardening (parallel lanes): independent re-verification of the self-found red-team fix, SLSA/Sigstore planning.
+- Product gates: Apple Developer ID notarization, Windows installer/`.msi`, Linux desktop GUI proof, Marketplace/OpenVSX publication, and fuller clean-machine reproduction evidence.
+- Try-it path before any public launch wave: browser playground, package registry beyond stub.
 
-See [F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md](F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md) for the current slice contract and [CURRENT_STATE.md](CURRENT_STATE.md) for the source map.
+See [F_Project_Management/GARNET_S129_S200_ECC_DOGFOOD_COMMAND_CENTER.md](F_Project_Management/GARNET_S129_S200_ECC_DOGFOOD_COMMAND_CENTER.md) for the runway, [F_Project_Management/W_REBUILD/W_REBUILD_SPEC.md](F_Project_Management/W_REBUILD/W_REBUILD_SPEC.md) for the rebuild workstream, and [CURRENT_STATE.md](CURRENT_STATE.md) for the source map.
 
 ## Who built this?
 

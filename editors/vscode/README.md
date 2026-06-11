@@ -1,15 +1,14 @@
 # Garnet VSCode Extension
 
-This is the S1 LSP MVP extension for Garnet.
+This is the VS Code extension for Garnet's S16 LSP surface.
 
-It launches `garnet-lsp` and enables diagnostics, hover, and basic go-to-definition for `.garnet` files. The extension first checks `garnet.lsp.path`, then `GARNET_LSP`, then the bundled `server/garnet-lsp` inside the installed extension, then `target/release/garnet-lsp` inside the open workspace, then `garnet-lsp` on `PATH`.
+It launches `garnet-lsp` and enables diagnostics, hover, go-to-definition, document/workspace symbols, CST-precise rename, rules-based quick fixes, and semantic tokens for `.garnet` files (the S16 surface; see `docs/status.html` Editor/LSP Adoption for the evidence table). The extension first checks `garnet.lsp.path`, then `GARNET_LSP`, then the bundled `server/garnet-lsp` inside the installed extension, then `target/release/garnet-lsp` inside the open workspace, then `garnet-lsp` on `PATH`.
 
-Honest MVP boundaries:
+Honest boundaries (current):
 
-- safe-mode hover is not in this MVP
-- workspace symbols are deferred to S1.1
-- rename is deferred
-- CST-grade incremental precision is deferred
+- incremental/error-recovery parsing is deferred (queued post-W-REBUILD, feeds the playground band)
+- Marketplace/OpenVSX publication remains open — the VSIX is locally packaged
+- the extension is a thin launcher; feature truth lives in `garnet-lsp` and its tests
 
 Package locally from this directory:
 
