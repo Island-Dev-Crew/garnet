@@ -77,7 +77,7 @@
   <div class="container">
     <h1>Readiness Status</h1>
     <p class="lead">This page keeps the public landing page clean while preserving the exact current truth for reviewers, agents, and release work. Latest tagged release: v0.8.1 (signed binaries, re-cut 2026-06-07). Garnet can be tried today; distribution, provider-backed assist, and backend claims remain evidence-gated.</p>
-    <p class="lead" style="font-size:0.85em">Snapshot note: the numeric cards below are a dated snapshot pending the truth.json wiring (W-REBUILD RB-0d); the repo-native reporters (<code>scripts/garnet_readiness_status.py</code>, <code>scripts/garnet_mit_readiness_status.py</code>) are authoritative for current values.</p>
+    <p class="lead" style="font-size:0.85em">Truth wiring (RB-0d): the numeric cards below are stamped from <code>docs/truth.json</code> by <code>cargo run -p xtask -- truth</code> and guarded by <code>truth --check</code>; the repo-native reporters (<code>scripts/garnet_readiness_status.py</code>, <code>scripts/garnet_mit_readiness_status.py</code>) remain the authoritative source the stamps derive from.</p>
   </div>
 </header>
 
@@ -85,12 +85,12 @@
   <div class="container grid">
     <div class="card">
       <div class="label">Tracked implementation</div>
-      <div class="big">87/87</div>
+      <div class="big"><!-- truth:tracked_slices -->87/87<!-- /truth --></div>
       <p class="muted">Current implementation-plan slices are verified in the tracked ledger.</p>
     </div>
     <div class="card">
       <div class="label">MIT/productization</div>
-      <div class="big">92.3%</div>
+      <div class="big"><!-- truth:readiness_pct -->92.8<!-- /truth -->%</div>
       <p class="muted">Broader productization remains active-partial and separate from tracked slice completion.</p>
     </div>
     <div class="card">

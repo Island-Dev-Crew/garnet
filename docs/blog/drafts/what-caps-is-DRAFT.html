@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>DRAFT — What @caps is, and why every function should declare its authority — Garnet</title>
+<meta name="description" content="The pain that made me write a new language — a Rust hot path, a Ruby orchestrator, and a binding layer that ate the weekend. v0.5.0 ships today.">
+<meta name="theme-color" content="#9C2B2E">
+<link rel="canonical" href="https://garnet-lang.org/blog/posts/2026-05-20-why-garnet-exists.html">
+<meta property="og:title" content="Why Garnet exists: the FFI tax I refused to keep paying">
+<meta property="og:description" content="The pain that made me write a new language. v0.5.0 ships today.">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2026-05-20T18:00:00-05:00">
+<style>
+  :root{--bg:#0A0A0F;--bg-soft:#121218;--bg-code:#18181B;--garnet:#9C2B2E;--garnet-2:#B0303A;--gold:#E5C07B;--ink:#E8E8E8;--ink-soft:#C8C8D0;--ink-muted:#6272A4;--rule:#3A3A45;--code-fg:#F8F8F2;--serif:'Georgia','Source Serif Pro',serif;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,system-ui,sans-serif;--mono:'SF Mono','Menlo','Consolas',monospace;--maxw:760px;}
+  *,*::before,*::after{box-sizing:border-box;}html,body{margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.78;-webkit-font-smoothing:antialiased;}
+  a{color:var(--gold);text-decoration:none;}a:hover{color:var(--garnet-2);}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:60px 24px 96px;}
+  .top{font-family:var(--mono);font-size:12px;letter-spacing:.07em;color:var(--ink-muted);margin-bottom:34px;}
+  .top a{color:var(--ink-muted);}.top a:hover{color:var(--gold);}
+  .meta{font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--gold);margin-bottom:10px;}
+  h1{font-family:var(--serif);font-size:40px;line-height:1.16;margin:0 0 22px;}
+  h2{font-family:var(--serif);font-size:23px;margin:46px 0 10px;}
+  p{color:var(--ink-soft);}
+  strong{color:var(--ink);}
+  code{background:var(--bg-code);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:.88em;color:var(--code-fg);}
+  pre{background:var(--bg-code);border:1px solid var(--rule);border-radius:8px;padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.65;color:var(--code-fg);}
+  blockquote{margin:24px 0;padding:10px 0 10px 18px;border-left:2px solid var(--garnet);color:var(--ink);font-family:var(--serif);font-size:18px;line-height:1.55;}
+  .foot{border-top:1px solid var(--rule);margin-top:60px;padding-top:22px;color:var(--ink-muted);font-size:13px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><a href="/index.html">← garnet-lang.org</a> &nbsp;·&nbsp; <a href="/blog/">Blog</a> &nbsp;·&nbsp; <a href="https://github.com/Island-Dev-Crew/garnet" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div>
+
+  <article>
+  <div class="meta">DRAFT — posting and dating are the maintainer's decision · not yet published or linked</div>
+  <h1>What <code>@caps</code> is, and why every function should declare its authority</h1>
+
+  <p>Start with the bug class. Nearly every supply-chain incident of the last few years — the
+  typosquatted package, the hijacked maintainer account, the post-install script that phones
+  home — works because of one default: <strong>code can do anything the process can do.</strong>
+  A left-pad-sized utility has the same authority as your deploy script. Signatures don't fix
+  this; the industry has already shipped validly-signed malware. A signature tells you who
+  published the code. It says nothing about what the code is <em>allowed to do</em>.</p>
+
+  <p>That default has a name — ambient authority — and <code>@caps</code> is Garnet's refusal of it.</p>
+
+  <h2>Before and after</h2>
+
+  <p>Here is a function that declares a network budget and then quietly reaches for the
+  filesystem — the shape of every "the update added a little something extra" incident:</p>
+
+  <pre><code>@caps(net)
+def sneaky() {
+  fs::read_file("/etc/passwd")
+}</code></pre>
+
+  <p>And here is the compiler refusing it — this is real output, not a mock-up:</p>
+
+  <pre><code>$ garnet check
+caps coverage: function `sneaky` does not declare `fs`
+but transitively calls `fs::read_file` which requires it</code></pre>
+
+  <p>The check is transitive across the call graph: if <code>main</code> calls
+  <code>helper</code> calls <code>fs::read_file</code>, somebody on that chain has to have
+  declared <code>fs</code>, and the entry point must declare its own budget. The propagator
+  runs at compile time. At run time, capability primitives trap if the calling chain never
+  declared the authority — on both execution backends, with cross-OS trap parity recorded as
+  evidence rather than asserted.</p>
+
+  <h2>Why this matters more now</h2>
+
+  <p>AI agents write more of the code every month, and the honest bottleneck has moved to
+  review. A reviewer staring at a 4,000-line agent-authored diff cannot hold every line in
+  their head — but they can hold one question: <em>did this change grow what the code is
+  allowed to do?</em> Because every function carries its budget, Garnet's
+  <code>diff-caps</code> answers that mechanically: the authority delta of a change, on one
+  screen. Same-or-narrower authority is a fundamentally different review than
+  "now also wants the network."</p>
+
+  <h2>Isn't this just sandboxing?</h2>
+
+  <p>Closest prior art, credited gladly: the Wasm Component Model and WASI scope imports at
+  module boundaries; OS sandboxes (seccomp, pledge) scope the process; object-capability
+  research worked out the theory decades ago. <code>@caps</code> differs in granularity and
+  address: it lives <em>inside</em> the language, per function, where the review happens —
+  so the unit of "what can this do" matches the unit of "what did the agent just change."
+  The boundary technologies compose with it; a future backend lowering can hand
+  <code>@caps</code> straight to WASI scopes and engine fuel. That synergy is one reason the
+  backend decision leans integrate-don't-rebuild.</p>
+
+  <h2>The honest boundaries</h2>
+
+  <p>Garnet is a research-grade prototype, and this post claims exactly what the gates prove:
+  <code>@caps</code> and <code>@max_depth</code> trap deterministically on both backends;
+  seccomp application is Linux-only; macOS/Windows OS-sandbox enforcement, Wasmtime fuel for
+  <code>@bounded</code>, and memory/time/mailbox ceilings remain declared-not-enforced; and
+  the one HIGH red-team finding against the kernel was self-found and self-fixed — independent
+  re-verification is queued, and until it lands we say "self-verified," not "audited."
+  No production claims. That discipline is the same idea as <code>@caps</code> itself:
+  no authority without evidence.</p>
+
+  <p class="foot-note"><em>Numbers and feature states in this draft are pinned by
+  <code>docs/truth.json</code> at publication time; the diagnostic above was captured from a
+  real <code>garnet check</code> run.</em></p>
+</article>
+
+  <div class="foot">© 2026 Island Development Crew · Garnet is dual-licensed MIT OR Apache-2.0 · <a href="https://garnet-lang.org">garnet-lang.org</a> · <a href="/blog/">More posts</a></div>
+</div>
+</body>
+</html>

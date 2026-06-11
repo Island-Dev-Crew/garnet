@@ -38,7 +38,7 @@ use std::collections::BTreeMap;
 use std::process::Command;
 
 pub const TRUTH_JSON_PATH: &str = "docs/truth.json";
-pub const STAMPED_FILES: &[&str] = &["README.md", "FAQ.md"];
+pub const STAMPED_FILES: &[&str] = &["README.md", "FAQ.md", "docs/index.html", "docs/status.html"];
 
 const MARKER_OPEN: &str = "<!-- truth:";
 const MARKER_OPEN_END: &str = " -->";
@@ -425,7 +425,12 @@ fn marker_values(t: &Truth) -> BTreeMap<String, String> {
     m.insert("version".into(), t.version.clone());
     m.insert("primitive_count".into(), t.primitive_count.to_string());
     m.insert("tracked_slices".into(), t.tracked_slices.clone());
-    m.insert("readiness_pct".into(), format!("{}", t.readiness_pct));
+    // Format via serde_json::Number so generate and --check agree on
+    // integral floats (93.0 must stamp as "93.0", matching the JSON).
+    m.insert(
+        "readiness_pct".into(),
+        serde_json::Value::from(t.readiness_pct).to_string(),
+    );
     m.insert("latest_tag".into(), t.latest_tag.clone());
     if let Some(wt) = &t.workspace_tests {
         m.insert("workspace_test_count".into(), wt.passed.to_string());
@@ -696,6 +701,13 @@ mod tests {
     fn workspace_version_ignores_other_sections() {
         let toml = "[package]\nversion = \"9.9.9\"\n";
         assert!(parse_workspace_version(toml).is_err());
+    }
+
+    #[test]
+    fn readiness_pct_formats_like_json_for_integral_floats() {
+        // generate and --check must agree: 93.0 stamps as "93.0", not "93".
+        assert_eq!(serde_json::Value::from(93.0_f64).to_string(), "93.0");
+        assert_eq!(serde_json::Value::from(92.8_f64).to_string(), "92.8");
     }
 
     #[test]

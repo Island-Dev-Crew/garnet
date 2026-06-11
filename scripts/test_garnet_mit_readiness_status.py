@@ -1964,17 +1964,32 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         self.assertIn("Objective accounting", site)
         self.assertIn("MIT/productization objective", site)
-        self.assertIn("92.3%", site)
+        # RB-0d: the site percent is stamped from docs/truth.json between
+        # truth markers and guarded by `xtask truth --check`. Assert the
+        # stamped value matches the LIVE reporter instead of pinning a
+        # literal — the old hardcoded "92.3%" pin is exactly the drift class
+        # the stamp removes. (The retired-snapshot assertNotIn pins below
+        # stay: those values must never reappear.)
+        live_stamp = (
+            f"<!-- truth:readiness_pct -->{status_mod.read_status().completion_percent}"
+            "<!-- /truth -->%"
+        )
+        self.assertIn(live_stamp, site)
         self.assertNotIn("58.1%", site)
         self.assertNotIn("55.8%", site)
         self.assertNotIn("57.9%", site)
         self.assertNotIn("58.6%", site)
-        self.assertIn("92.3%", status_site)
+        self.assertIn(live_stamp, status_site)
         self.assertNotIn("58.1%", status_site)
         self.assertNotIn("55.8%", status_site)
         self.assertNotIn("57.9%", status_site)
         self.assertNotIn("58.6%", status_site)
-        self.assertIn("87/87 tracked slices", site)
+        # The tracked-slices figure in the pulse list is marker-stamped too
+        # (RB-0d); assert against the live reporter-derived stamp.
+        tracked_stamp = (
+            "<!-- truth:tracked_slices -->87/87<!-- /truth --> tracked slices"
+        )
+        self.assertIn(tracked_stamp, site)
         self.assertIn("tracked implementation plan is complete", site)
         self.assertIn("not full MIT/productization completion", site)
         self.assertIn("notarization", site)
