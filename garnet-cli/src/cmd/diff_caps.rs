@@ -11,7 +11,9 @@
 //! single-line JSON for agent reviewers — the reviewer on the other side of
 //! the gate is increasingly an agent. Exit codes are identical in both
 //! modes; the human text output is byte-for-byte unchanged when `--machine`
-//! is absent.
+//! is absent. On usage/parse errors (exit 2) NO machine JSON is emitted:
+//! stdout stays empty and the human-format error goes to stderr in both
+//! modes — an agent consumer must treat exit 2 + empty stdout as fatal.
 //!
 //! Honest scope (both modes): diff-caps reads the DECLARED surface; it does
 //! not prove the absence of undeclared authority (that is the sandbox-policy

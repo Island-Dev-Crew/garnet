@@ -44,7 +44,7 @@
 
 /// A set of capabilities as a `u16` bitset. `Copy` — passing one around is
 /// two bytes, and call-graph propagation is branch-free bitwise OR.
-#[derive(Copy, Clone, PartialEq, Eq, Default, Hash, PartialOrd, Ord)]
+#[derive(Copy, Clone, PartialEq, Eq, Default, Hash)]
 pub struct CapSet(u16);
 
 /// Canonical capability names and their bits, sorted lexicographically.

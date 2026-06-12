@@ -260,9 +260,18 @@ fn main() -> ExitCode {
             }
         }
         "diff-caps" => {
-            let machine = args.iter().any(|a| a == "--machine");
-            let positionals: Vec<&String> =
-                args.iter().skip(1).filter(|a| *a != "--machine").collect();
+            let mut machine = false;
+            let mut positionals: Vec<&String> = Vec::new();
+            for arg in args.iter().skip(1) {
+                if arg == "--machine" {
+                    machine = true;
+                } else if arg.starts_with("--") {
+                    eprintln!("unknown diff-caps flag: {arg}");
+                    return ExitCode::from(2);
+                } else {
+                    positionals.push(arg);
+                }
+            }
             if positionals.len() < 2 {
                 eprintln!("usage: garnet diff-caps [--machine] <old-path> <new-path>");
                 return ExitCode::from(2);

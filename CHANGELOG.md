@@ -33,9 +33,17 @@ signed re-cut, and this post-re-cut truth-sync._
   single-line JSON verdict (`garnet.diff-caps.machine/1`: verdict, band,
   exit code, gained/removed caps, per-function expansions, wildcard flag)
   for agent reviewers. Purely additive: human text output is byte-stable
-  (pinned by test) and exit codes are unchanged. Scope is the declared
-  surface only — no bounds-delta claim (bound annotations are not part of
-  the caps surface).
+  (golden-pinned by test below the path-bearing header line) and exit codes
+  are unchanged; exit 2 (usage/parse error) emits no JSON — stdout empty,
+  error on stderr.
+- **Honest partial (Directive-15 "bounds deltas"):** the RB-1 accept-when
+  names "bounds deltas" in the machine payload. Bound annotations
+  (`@bounded`/`@max_depth`/`@mailbox`) are not part of the declared-caps
+  surface diff-caps reads, so that field is **deliberately absent** — the
+  JSON `scope` field says so explicitly. Recorded as a spec deviation, not
+  silently narrowed: closing it needs a caps-surface/manifest extension
+  (human-merge-only territory) or an accept-when amendment — escalated to
+  Jon in the RB-band stop report.
 - **Honest partial (clone criterion):** the spec's "`.clone()` 201 → <40 in
   `garnet-check/src`" is recorded as measured-partial. Measured baseline at
   `f03d414` was 188 (not 201); capability-**set** clones were 7 of those and

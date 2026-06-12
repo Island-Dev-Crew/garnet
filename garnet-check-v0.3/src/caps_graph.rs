@@ -519,7 +519,7 @@ impl CapsGraph {
     /// because purely computational" (covered by `declared.contains_key`)
     /// from "didn't annotate at all" (not yet covered).
     fn has_caps_annotation(&self, fn_name: &str) -> bool {
-        // `declared` contains an entry for every fn (with empty CapsSet if
+        // `declared` contains an entry for every fn (with an empty CapSet if
         // no @caps). To distinguish "declared nothing" from "declared @caps()",
         // we look at the original AST — but rather than re-walking, we treat
         // wildcard-OR-nonempty-OR-main-annotated as "has annotation". A fn

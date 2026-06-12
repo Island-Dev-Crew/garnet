@@ -22,7 +22,8 @@ Owns the `garnet` binary, subcommand routing, template embedding, deterministic 
   `--machine` (RB-1, Directive 15) is purely additive: a deterministic
   single-line JSON verdict (`garnet.diff-caps.machine/1`) with identical
   exit codes, scoped to the declared surface only (no bounds-delta claim;
-  bound annotations are not part of the caps surface).
+  bound annotations are not part of the caps surface). On exit 2
+  (usage/parse error) no JSON is emitted — stdout empty, error on stderr.
 - Deterministic build/verify behavior must stay reproducible.
 - New agent-documentation tooling should start as opt-in or checking behavior before becoming a language requirement.
 

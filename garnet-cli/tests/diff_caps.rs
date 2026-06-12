@@ -198,7 +198,8 @@ fn machine_output_is_deterministic_and_single_line() {
 #[test]
 fn human_output_is_unchanged_without_machine_flag() {
     // The CI gate scripts parse the human text; --machine must be purely
-    // additive. Pin the exact verdict lines.
+    // additive. Golden assertion: everything below the path-bearing header
+    // line is pinned byte-for-byte.
     let dir = fresh("human_stable");
     let old = write(dir.as_path(), "old.garnet", "@caps(fs)\ndef main() { 1 }\n");
     let new = write(
@@ -213,9 +214,30 @@ fn human_output_is_unchanged_without_machine_flag() {
         .output()
         .unwrap();
     let s = String::from_utf8(out.stdout).unwrap();
-    assert!(
-        s.contains("diff-caps: AUTHORITY EXPANDED — review required (capability band 2/5)"),
-        "{s}"
+    let (header, rest) = s.split_once('\n').expect("multi-line output");
+    assert!(header.starts_with("garnet diff-caps: "), "{s}");
+    assert_eq!(
+        rest,
+        "  + caps GAINED:  net\n\
+         \x20 ~ main gained: net\n\
+         \n\
+         diff-caps: AUTHORITY EXPANDED — review required (capability band 2/5)\n",
+        "human output below the header must be byte-stable"
     );
-    assert!(s.contains("  + caps GAINED:  net"), "{s}");
+}
+
+#[test]
+fn unknown_diff_caps_flag_is_rejected() {
+    // A typo'd flag must not be silently treated as a path (mirrors the
+    // adjacent `verify` arm's explicit unknown-flag rejection).
+    let out = garnet()
+        .arg("diff-caps")
+        .arg("--machin")
+        .arg("a.garnet")
+        .arg("b.garnet")
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(2));
+    let err = String::from_utf8(out.stderr).unwrap();
+    assert!(err.contains("unknown diff-caps flag: --machin"), "{err}");
 }
