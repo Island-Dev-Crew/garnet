@@ -61,9 +61,6 @@ const NAMED: [(&str, u16); 8] = [
     ("time", 1 << 7),
 ];
 
-/// Mask of every named (canonical) capability bit.
-const NAMED_MASK: u16 = (1 << 8) - 1;
-
 impl CapSet {
     /// The empty capability set.
     pub const EMPTY: CapSet = CapSet(0);
@@ -199,6 +196,9 @@ mod tests {
     use super::*;
     use proptest::prelude::*;
     use std::collections::BTreeSet;
+
+    /// Mask of every named (canonical) capability bit — bits 0..=7.
+    const NAMED_MASK: u16 = (1 << 8) - 1;
 
     const ALL_NAMES: [&str; 8] = [
         "*",

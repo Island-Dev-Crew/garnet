@@ -13,6 +13,41 @@ _Post-cut work (S121+) lands here. S121–S130 delivered: the Truth Sync Gate, d
 modernization, the v0.8.1 version bump + release guard + SBOM/signing wiring, the
 signed re-cut, and this post-re-cut truth-sync._
 
+### RB-1 — caps lattice → `CapSet(u16)` bitset (W-REBUILD Foundation)
+
+- **Changed:** the CapCaps propagator's capability representation is now
+  `garnet_check::CapSet` — a `Copy` `u16` bitset over the closed capability
+  set (fs, net, net_internal, time, proc, ffi, env, `*`; bits 9–15 reserved,
+  bit 8 = unknown-declared presence marker). Propagation = bitwise OR over
+  the call graph; subset = `required & !declared == 0`; diff-caps delta =
+  XOR. **Zero language-semantics change**: a proptest differential suite ran
+  random cap-sets over random call graphs (cycles, wildcard, unknown names,
+  qualified/bare prims) through the old `BTreeSet<String>` impl and the new
+  bitset impl and required identical violations (content + order) and
+  transitive sets before the old impl was deleted (same PR; evidence in the
+  PR's first commit and the dogfood bundle). Permanent property coverage:
+  the `CapSet`-vs-`BTreeSet` model suite (`capset.rs`) and the diff-caps
+  reference-oracle suite (`caps_diff.rs`). A registry-drift trap test fails
+  closed if a registry capability ever lacks a `CapSet` bit.
+- **Added:** `garnet diff-caps --machine` (Directive 15) — deterministic
+  single-line JSON verdict (`garnet.diff-caps.machine/1`: verdict, band,
+  exit code, gained/removed caps, per-function expansions, wildcard flag)
+  for agent reviewers. Purely additive: human text output is byte-stable
+  (pinned by test) and exit codes are unchanged. Scope is the declared
+  surface only — no bounds-delta claim (bound annotations are not part of
+  the caps surface).
+- **Honest partial (clone criterion):** the spec's "`.clone()` 201 → <40 in
+  `garnet-check/src`" is recorded as measured-partial. Measured baseline at
+  `f03d414` was 188 (not 201); capability-**set** clones were 7 of those and
+  are now **0** (the R3 verdict's subject). Total now 185: the remaining
+  mass is branch-state dataflow snapshots (match_coverage 115, borrow 23)
+  and owned `String` map keys — the RB-5 env/interner rebuild is the
+  designated vehicle; rewriting those passes here would have widened the
+  slice and risked semantic drift for no caps benefit.
+- **Perf note (machine-local, this Mac only):** 120-fn chain × 200
+  propagations (release): old set-based ≈ 59 ms, new `CapSet` ≈ 33 ms.
+  Nothing broader is claimed.
+
 ## [0.8.1] — 2026-06-05 (re-cut signed 2026-06-07)
 
 > **Cut truth (S120):** **`v0.8.1` is cut** — Jon Isaac tagged annotated

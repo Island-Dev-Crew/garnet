@@ -51,7 +51,7 @@ impl CapsDiff {
 /// full string fidelity for unknown names — a gained *unknown* capability
 /// must still gate as authority expansion — so the bitset carries the
 /// closed set and the remainder rides alongside as strings.
-fn split_caps<'a>(caps: &'a [String]) -> (CapSet, Vec<&'a String>) {
+fn split_caps(caps: &[String]) -> (CapSet, Vec<&String>) {
     let mut known = CapSet::EMPTY;
     let mut unknown: Vec<&String> = Vec::new();
     for c in caps {

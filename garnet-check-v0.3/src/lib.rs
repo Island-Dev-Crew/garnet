@@ -34,15 +34,7 @@ pub mod borrow;
 pub mod bounds;
 pub mod capability_surface;
 pub mod caps_diff;
-/// RB-1 differential suite (new vs old propagator) — test-only, deleted
-/// with `caps_graph_set` in the same PR once green.
-#[cfg(test)]
-mod caps_differential;
 pub mod caps_graph;
-/// RB-1 differential reference (old set-based propagator) — test-only,
-/// deleted in the same PR once the differential suite is green.
-#[cfg(test)]
-mod caps_graph_set;
 pub mod capset;
 pub mod coherence;
 pub mod concurrency;
