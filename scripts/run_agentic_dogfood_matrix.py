@@ -3116,7 +3116,12 @@ def probe_set(
                 (
                     "from pathlib import Path\n"
                     f"source = Path({str(studio_source)!r}).read_text()\n"
-                    "required = ['Tracked plan', '87/87 slices complete', 'MIT objective', "
+                    # Coherence with the PR #391 row-6 standard: the Studio
+                    # must NOT hand-write release stats ('87/87 slices
+                    # complete' is now forbidden by both shells' contract
+                    # tests); the tracked-plan row must defer to the live
+                    # truth surface instead. Same five-marker strictness.
+                    "required = ['Tracked plan', 'truth surface', 'MIT objective', "
                     "'repo-native percentage', 'provider-backed LLM conversion']\n"
                     "missing = [item for item in required if item not in source]\n"
                     "assert not missing, missing\n"
