@@ -49,10 +49,13 @@ fn fuzz_seed_dir() -> PathBuf {
 }
 
 fn garnet_files(dir: &Path) -> Vec<PathBuf> {
+    // Only `.garnet` files: those are the TRACKED corpus (the fuzz dir's
+    // .gitignore keeps `*.garnet` seeds and ignores generated fuzz units,
+    // which accumulate locally by the thousands after a fuzz run).
     let mut files: Vec<PathBuf> = std::fs::read_dir(dir)
         .unwrap_or_else(|e| panic!("corpus dir {} must exist: {e}", dir.display()))
         .filter_map(|entry| entry.ok().map(|e| e.path()))
-        .filter(|p| p.is_file())
+        .filter(|p| p.is_file() && p.extension().is_some_and(|e| e == "garnet"))
         .collect();
     files.sort();
     assert!(
