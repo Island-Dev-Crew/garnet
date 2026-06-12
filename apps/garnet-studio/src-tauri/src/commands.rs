@@ -1,9 +1,13 @@
 use crate::evidence;
 use crate::paths;
+use crate::settings;
 use serde::Serialize;
 use std::fs;
+use std::io::Read;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
+use std::thread;
+use std::time::{Duration, Instant};
 
 const ACTIVE_CONVERSION: &[&str] = &["rust", "ruby", "python", "go"];
 const ADVISORY_LANGUAGES: &[&str] = &[
@@ -21,6 +25,23 @@ const ADVISORY_LANGUAGES: &[&str] = &[
     "other",
 ];
 
+/// Hard cap on stdout/stderr returned to the webview. The full, untruncated
+/// streams are always written to the evidence bundle first; this cap only
+/// protects the UI payload and DOM from multi-megabyte reporter output.
+const PAYLOAD_STREAM_CAP: usize = 256 * 1024;
+const PAYLOAD_TRUNCATION_MARKER: &str =
+    "\n…[output truncated for display — the full output is in the evidence bundle]";
+/// Cap for in-app evidence file reads.
+const EVIDENCE_READ_CAP: usize = 512 * 1024;
+/// Cap for evidence directory listings.
+const EVIDENCE_LIST_CAP: usize = 500;
+/// Categories that may legitimately run for a long time (full matrices).
+const LONG_RUNNING_CATEGORIES: &[&str] = &[
+    "agentic-dogfood",
+    "domain-proof-matrix",
+    "mac-domain-proofs",
+];
+
 #[derive(Debug, Serialize)]
 pub struct CommandResult {
     pub success: bool,
@@ -29,6 +50,9 @@ pub struct CommandResult {
     pub exit_code: i32,
     pub command: Vec<String>,
     pub evidence_path: Option<String>,
+    pub timed_out: bool,
+    pub duration_ms: u64,
+    pub truncated: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -51,8 +75,66 @@ pub struct LanguageGroup {
     pub languages: Vec<String>,
 }
 
-#[tauri::command]
-pub fn cli_health() -> HealthStatus {
+#[derive(Debug, Serialize)]
+pub struct AppInfo {
+    pub app_version: String,
+    pub tauri_version: String,
+    pub platform: String,
+    pub arch: String,
+    pub settings_path: String,
+}
+
+/// Live values from the repo's RB-0a truth surface (`docs/truth.json`).
+/// Every field is optional: a missing repo or missing file degrades to
+/// `found = false` and the UI states that truth is unavailable rather than
+/// showing stale hardcoded numbers.
+#[derive(Debug, Default, Serialize)]
+pub struct TruthSummary {
+    pub found: bool,
+    pub path: String,
+    pub version: Option<String>,
+    pub latest_tag: Option<String>,
+    pub generated_at_commit: Option<String>,
+    pub readiness_pct: Option<f64>,
+    pub tracked_slices: Option<String>,
+    pub primitive_count: Option<u64>,
+    pub workspace_tests_passed: Option<u64>,
+    pub workspace_tests_failed: Option<u64>,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct EvidenceFileInfo {
+    pub relative_path: String,
+    pub size: u64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct EvidenceListing {
+    pub root: String,
+    pub files: Vec<EvidenceFileInfo>,
+    pub truncated: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub struct EvidenceText {
+    pub path: String,
+    pub content: String,
+    pub size: u64,
+    pub truncated: bool,
+}
+
+async fn run_blocking<T, F>(task: F) -> Result<T, String>
+where
+    T: Send + 'static,
+    F: FnOnce() -> T + Send + 'static,
+{
+    tauri::async_runtime::spawn_blocking(task)
+        .await
+        .map_err(|err| format!("studio task failed to complete: {err}"))
+}
+
+pub(crate) fn cli_health_impl() -> HealthStatus {
     let (cli_found, cli_path, cli_version) = match paths::find_garnet_cli() {
         Some(path) => {
             let version = Command::new(&path)
@@ -98,22 +180,26 @@ pub fn cli_health() -> HealthStatus {
 }
 
 #[tauri::command]
-pub fn cli_parse(file_path: String) -> CommandResult {
-    run_garnet("parse", &["parse".to_string(), file_path], false)
+pub async fn cli_health() -> Result<HealthStatus, String> {
+    run_blocking(cli_health_impl).await
 }
 
 #[tauri::command]
-pub fn cli_check(file_path: String) -> CommandResult {
-    run_garnet("check", &["check".to_string(), file_path], false)
+pub async fn cli_parse(file_path: String) -> Result<CommandResult, String> {
+    run_blocking(move || run_garnet("parse", &["parse".to_string(), file_path], false)).await
 }
 
 #[tauri::command]
-pub fn cli_run(file_path: String) -> CommandResult {
-    run_garnet("run", &["run".to_string(), file_path], true)
+pub async fn cli_check(file_path: String) -> Result<CommandResult, String> {
+    run_blocking(move || run_garnet("check", &["check".to_string(), file_path], false)).await
 }
 
 #[tauri::command]
-pub fn cli_convert(source_file: String, source_lang: String) -> CommandResult {
+pub async fn cli_run(file_path: String) -> Result<CommandResult, String> {
+    run_blocking(move || run_garnet("run", &["run".to_string(), file_path], true)).await
+}
+
+pub(crate) fn cli_convert_impl(source_file: String, source_lang: String) -> CommandResult {
     let language = match normalize_language(&source_lang, ACTIVE_CONVERSION) {
         Ok(language) => language,
         Err(err) => return contract_error(err),
@@ -137,7 +223,14 @@ pub fn cli_convert(source_file: String, source_lang: String) -> CommandResult {
 }
 
 #[tauri::command]
-pub fn advisory_assist_plan(source_file: String, language: String) -> CommandResult {
+pub async fn cli_convert(
+    source_file: String,
+    source_lang: String,
+) -> Result<CommandResult, String> {
+    run_blocking(move || cli_convert_impl(source_file, source_lang)).await
+}
+
+pub(crate) fn advisory_assist_plan_impl(source_file: String, language: String) -> CommandResult {
     let language = match normalize_language(&language, ADVISORY_LANGUAGES) {
         Ok(language) => language,
         Err(err) => return contract_error(err),
@@ -155,48 +248,70 @@ pub fn advisory_assist_plan(source_file: String, language: String) -> CommandRes
 }
 
 #[tauri::command]
-pub fn advisory_bundle(source_file: String, language: String) -> CommandResult {
-    let language = match normalize_language(&language, ADVISORY_LANGUAGES) {
-        Ok(language) => language,
-        Err(err) => return contract_error(err),
-    };
-    run_advisory_script(
-        "advisory-bundle",
-        "garnet_converter_advisory_bundle.py",
-        vec![
-            "--language".to_string(),
-            language,
-            "--source".to_string(),
-            source_file,
-        ],
-    )
+pub async fn advisory_assist_plan(
+    source_file: String,
+    language: String,
+) -> Result<CommandResult, String> {
+    run_blocking(move || advisory_assist_plan_impl(source_file, language)).await
 }
 
 #[tauri::command]
-pub fn advisory_review(bundle_dir: String) -> CommandResult {
-    run_advisory_script(
-        "advisory-review",
-        "garnet_converter_advisory_review.py",
-        vec!["--bundle-dir".to_string(), bundle_dir],
-    )
+pub async fn advisory_bundle(
+    source_file: String,
+    language: String,
+) -> Result<CommandResult, String> {
+    run_blocking(move || {
+        let language = match normalize_language(&language, ADVISORY_LANGUAGES) {
+            Ok(language) => language,
+            Err(err) => return contract_error(err),
+        };
+        run_advisory_script(
+            "advisory-bundle",
+            "garnet_converter_advisory_bundle.py",
+            vec![
+                "--language".to_string(),
+                language,
+                "--source".to_string(),
+                source_file,
+            ],
+        )
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn advisory_handoff(bundle_dir: String, review_dir: String) -> CommandResult {
-    run_advisory_script(
-        "advisory-handoff",
-        "garnet_converter_advisory_handoff.py",
-        vec![
-            "--bundle-dir".to_string(),
-            bundle_dir,
-            "--review-dir".to_string(),
-            review_dir,
-        ],
-    )
+pub async fn advisory_review(bundle_dir: String) -> Result<CommandResult, String> {
+    run_blocking(move || {
+        run_advisory_script(
+            "advisory-review",
+            "garnet_converter_advisory_review.py",
+            vec!["--bundle-dir".to_string(), bundle_dir],
+        )
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn objective_pulse() -> CommandResult {
+pub async fn advisory_handoff(
+    bundle_dir: String,
+    review_dir: String,
+) -> Result<CommandResult, String> {
+    run_blocking(move || {
+        run_advisory_script(
+            "advisory-handoff",
+            "garnet_converter_advisory_handoff.py",
+            vec![
+                "--bundle-dir".to_string(),
+                bundle_dir,
+                "--review-dir".to_string(),
+                review_dir,
+            ],
+        )
+    })
+    .await
+}
+
+pub(crate) fn objective_pulse_impl() -> CommandResult {
     run_python_script(
         "objective-pulse",
         "garnet_mit_readiness_status.py",
@@ -205,16 +320,23 @@ pub fn objective_pulse() -> CommandResult {
 }
 
 #[tauri::command]
-pub fn agentic_dogfood_matrix() -> CommandResult {
-    run_python_script(
-        "agentic-dogfood",
-        "run_agentic_dogfood_matrix.py",
-        vec!["--copy-to-desktop".to_string(), "--strict".to_string()],
-    )
+pub async fn objective_pulse() -> Result<CommandResult, String> {
+    run_blocking(objective_pulse_impl).await
 }
 
 #[tauri::command]
-pub fn domain_proof_matrix() -> CommandResult {
+pub async fn agentic_dogfood_matrix() -> Result<CommandResult, String> {
+    run_blocking(|| {
+        run_python_script(
+            "agentic-dogfood",
+            "run_agentic_dogfood_matrix.py",
+            vec!["--copy-to-desktop".to_string(), "--strict".to_string()],
+        )
+    })
+    .await
+}
+
+pub(crate) fn domain_proof_matrix_impl() -> CommandResult {
     let cli = match paths::find_garnet_cli() {
         Some(path) => path,
         None => {
@@ -230,7 +352,11 @@ pub fn domain_proof_matrix() -> CommandResult {
 }
 
 #[tauri::command]
-pub fn mac_domain_proofs() -> CommandResult {
+pub async fn domain_proof_matrix() -> Result<CommandResult, String> {
+    run_blocking(domain_proof_matrix_impl).await
+}
+
+pub(crate) fn mac_domain_proofs_impl() -> CommandResult {
     let cli = match paths::find_garnet_cli() {
         Some(path) => path,
         None => {
@@ -269,7 +395,11 @@ pub fn mac_domain_proofs() -> CommandResult {
 }
 
 #[tauri::command]
-pub fn windows_linux_studio_status() -> CommandResult {
+pub async fn mac_domain_proofs() -> Result<CommandResult, String> {
+    run_blocking(mac_domain_proofs_impl).await
+}
+
+pub(crate) fn windows_linux_studio_status_impl() -> CommandResult {
     run_python_script(
         "windows-linux-studio-status",
         "garnet_windows_linux_studio_status.py",
@@ -278,7 +408,11 @@ pub fn windows_linux_studio_status() -> CommandResult {
 }
 
 #[tauri::command]
-pub fn converter_status() -> CommandResult {
+pub async fn windows_linux_studio_status() -> Result<CommandResult, String> {
+    run_blocking(windows_linux_studio_status_impl).await
+}
+
+pub(crate) fn converter_status_impl() -> CommandResult {
     run_python_script(
         "converter-status",
         "garnet_converter_status.py",
@@ -287,63 +421,99 @@ pub fn converter_status() -> CommandResult {
 }
 
 #[tauri::command]
-pub fn provider_options() -> CommandResult {
-    run_report_script_with_output_dir(
-        "provider-options",
-        "garnet_converter_llm_feasibility.py",
-        "markdown",
-    )
+pub async fn converter_status() -> Result<CommandResult, String> {
+    run_blocking(converter_status_impl).await
 }
 
 #[tauri::command]
-pub fn mit_demo_route() -> CommandResult {
-    run_report_script_with_output_dir("mit-demo-route", "garnet_mit_demo_route.py", "markdown")
+pub async fn provider_options() -> Result<CommandResult, String> {
+    run_blocking(|| {
+        run_report_script_with_output_dir(
+            "provider-options",
+            "garnet_converter_llm_feasibility.py",
+            "markdown",
+        )
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn mit_deck_outline() -> CommandResult {
-    run_report_script_with_output_dir("mit-deck-outline", "garnet_mit_deck_outline.py", "markdown")
+pub async fn mit_demo_route() -> Result<CommandResult, String> {
+    run_blocking(|| {
+        run_report_script_with_output_dir("mit-demo-route", "garnet_mit_demo_route.py", "markdown")
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn mit_deck_preview() -> CommandResult {
-    run_report_script_with_output_dir("mit-deck-preview", "garnet_mit_deck_preview.py", "html")
+pub async fn mit_deck_outline() -> Result<CommandResult, String> {
+    run_blocking(|| {
+        run_report_script_with_output_dir(
+            "mit-deck-outline",
+            "garnet_mit_deck_outline.py",
+            "markdown",
+        )
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn mac_continuation_pulse() -> CommandResult {
-    run_python_script(
-        "mac-continuation-pulse",
-        "garnet_mac_side_continuation_status.py",
-        vec!["--format".to_string(), "markdown".to_string()],
-    )
+pub async fn mit_deck_preview() -> Result<CommandResult, String> {
+    run_blocking(|| {
+        run_report_script_with_output_dir("mit-deck-preview", "garnet_mit_deck_preview.py", "html")
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn proof_benchmark_status() -> CommandResult {
-    run_report_script_with_output_dir(
-        "proof-benchmark-status",
-        "garnet_proof_benchmark_status.py",
-        "markdown",
-    )
+pub async fn mac_continuation_pulse() -> Result<CommandResult, String> {
+    run_blocking(|| {
+        run_python_script(
+            "mac-continuation-pulse",
+            "garnet_mac_side_continuation_status.py",
+            vec!["--format".to_string(), "markdown".to_string()],
+        )
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn benchmark_no_run() -> CommandResult {
-    run_report_script_with_output_dir("benchmark-no-run", "garnet_benchmark_no_run.py", "markdown")
+pub async fn proof_benchmark_status() -> Result<CommandResult, String> {
+    run_blocking(|| {
+        run_report_script_with_output_dir(
+            "proof-benchmark-status",
+            "garnet_proof_benchmark_status.py",
+            "markdown",
+        )
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn notarization_status() -> CommandResult {
-    run_python_script(
-        "notarization-status",
-        "garnet_studio_notarization_status.py",
-        vec!["--format".to_string(), "markdown".to_string()],
-    )
+pub async fn benchmark_no_run() -> Result<CommandResult, String> {
+    run_blocking(|| {
+        run_report_script_with_output_dir(
+            "benchmark-no-run",
+            "garnet_benchmark_no_run.py",
+            "markdown",
+        )
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn windows_vm_installer_status() -> CommandResult {
+pub async fn notarization_status() -> Result<CommandResult, String> {
+    run_blocking(|| {
+        run_python_script(
+            "notarization-status",
+            "garnet_studio_notarization_status.py",
+            vec!["--format".to_string(), "markdown".to_string()],
+        )
+    })
+    .await
+}
+
+pub(crate) fn windows_vm_installer_status_impl() -> CommandResult {
     run_python_script(
         "windows-vm-installer-status",
         "garnet_windows_clean_vm_installer_status.py",
@@ -352,13 +522,167 @@ pub fn windows_vm_installer_status() -> CommandResult {
 }
 
 #[tauri::command]
-pub fn create_evidence_bundle() -> Result<evidence::EvidenceBundle, String> {
-    evidence::create_bundle()
+pub async fn windows_vm_installer_status() -> Result<CommandResult, String> {
+    run_blocking(windows_vm_installer_status_impl).await
+}
+
+#[tauri::command]
+pub async fn create_evidence_bundle() -> Result<evidence::EvidenceBundle, String> {
+    match run_blocking(evidence::create_bundle).await {
+        Ok(inner) => inner,
+        Err(err) => Err(err),
+    }
 }
 
 #[tauri::command]
 pub fn get_evidence_dir() -> String {
     display_path(&paths::evidence_base_dir())
+}
+
+#[tauri::command]
+pub fn get_app_info() -> AppInfo {
+    AppInfo {
+        app_version: env!("CARGO_PKG_VERSION").to_string(),
+        tauri_version: tauri::VERSION.to_string(),
+        platform: std::env::consts::OS.to_string(),
+        arch: std::env::consts::ARCH.to_string(),
+        settings_path: display_path(&settings::settings_path()),
+    }
+}
+
+#[tauri::command]
+pub fn studio_get_settings() -> settings::StudioSettings {
+    settings::load()
+}
+
+#[tauri::command]
+pub fn studio_set_settings(
+    settings: settings::StudioSettings,
+) -> Result<settings::StudioSettings, String> {
+    settings::save(settings)
+}
+
+pub(crate) fn get_truth_summary_impl() -> TruthSummary {
+    let Some(repo) = paths::find_repo_root() else {
+        return TruthSummary {
+            error: Some("Garnet repository root not found. Set GARNET_REPO.".to_string()),
+            ..TruthSummary::default()
+        };
+    };
+    let path = repo.join("docs").join("truth.json");
+    let display = display_path(&path);
+    let raw = match fs::read_to_string(&path) {
+        Ok(raw) => raw,
+        Err(err) => {
+            return TruthSummary {
+                path: display,
+                error: Some(format!("failed to read docs/truth.json: {err}")),
+                ..TruthSummary::default()
+            }
+        }
+    };
+    let value: serde_json::Value = match serde_json::from_str(&raw) {
+        Ok(value) => value,
+        Err(err) => {
+            return TruthSummary {
+                path: display,
+                error: Some(format!("failed to parse docs/truth.json: {err}")),
+                ..TruthSummary::default()
+            }
+        }
+    };
+    TruthSummary {
+        found: true,
+        path: display,
+        version: value
+            .get("version")
+            .and_then(|v| v.as_str())
+            .map(str::to_string),
+        latest_tag: value
+            .get("latest_tag")
+            .and_then(|v| v.as_str())
+            .map(str::to_string),
+        generated_at_commit: value
+            .get("generated_at_commit")
+            .and_then(|v| v.as_str())
+            .map(str::to_string),
+        readiness_pct: value.get("readiness_pct").and_then(|v| v.as_f64()),
+        tracked_slices: value
+            .get("tracked_slices")
+            .and_then(|v| v.as_str())
+            .map(str::to_string),
+        primitive_count: value.get("primitive_count").and_then(|v| v.as_u64()),
+        workspace_tests_passed: value
+            .get("workspace_tests")
+            .and_then(|tests| tests.get("passed"))
+            .and_then(|v| v.as_u64()),
+        workspace_tests_failed: value
+            .get("workspace_tests")
+            .and_then(|tests| tests.get("failed"))
+            .and_then(|v| v.as_u64()),
+        error: None,
+    }
+}
+
+#[tauri::command]
+pub async fn get_truth_summary() -> Result<TruthSummary, String> {
+    run_blocking(get_truth_summary_impl).await
+}
+
+pub(crate) fn list_evidence_files_impl(dir: String) -> Result<EvidenceListing, String> {
+    let root = resolve_within_evidence_roots(&dir)?;
+    if !root.is_dir() {
+        return Err("evidence path is not a directory".to_string());
+    }
+    let mut files = Vec::new();
+    let mut truncated = false;
+    collect_evidence_files(&root, &root, &mut files, &mut truncated)?;
+    files.sort_by(|a, b| a.relative_path.cmp(&b.relative_path));
+    Ok(EvidenceListing {
+        root: display_path(&root),
+        files,
+        truncated,
+    })
+}
+
+#[tauri::command]
+pub async fn list_evidence_files(dir: String) -> Result<EvidenceListing, String> {
+    match run_blocking(move || list_evidence_files_impl(dir)).await {
+        Ok(inner) => inner,
+        Err(err) => Err(err),
+    }
+}
+
+pub(crate) fn read_evidence_text_impl(path: String) -> Result<EvidenceText, String> {
+    let resolved = resolve_within_evidence_roots(&path)?;
+    if !resolved.is_file() {
+        return Err("evidence path is not a file".to_string());
+    }
+    let metadata =
+        fs::metadata(&resolved).map_err(|err| format!("failed to stat evidence file: {err}"))?;
+    let size = metadata.len();
+    let bytes =
+        fs::read(&resolved).map_err(|err| format!("failed to read evidence file: {err}"))?;
+    let truncated = bytes.len() > EVIDENCE_READ_CAP;
+    let slice = if truncated {
+        &bytes[..EVIDENCE_READ_CAP]
+    } else {
+        &bytes[..]
+    };
+    Ok(EvidenceText {
+        path: display_path(&resolved),
+        content: String::from_utf8_lossy(slice).to_string(),
+        size,
+        truncated,
+    })
+}
+
+#[tauri::command]
+pub async fn read_evidence_text(path: String) -> Result<EvidenceText, String> {
+    match run_blocking(move || read_evidence_text_impl(path)).await {
+        Ok(inner) => inner,
+        Err(err) => Err(err),
+    }
 }
 
 #[tauri::command]
@@ -405,6 +729,68 @@ pub fn get_language_taxonomy() -> Vec<LanguageGroup> {
             ]),
         },
     ]
+}
+
+fn allowed_evidence_roots() -> Vec<PathBuf> {
+    vec![
+        paths::evidence_base_dir(),
+        paths::domain_matrix_evidence_base_dir(),
+    ]
+}
+
+/// Resolve a caller-supplied path and require it to live under one of the
+/// Studio evidence roots. Canonicalization (which also resolves symlinks)
+/// happens on both sides, so `..` traversal and link escapes cannot reach
+/// outside the evidence trees. This keeps the in-app evidence reader from
+/// becoming a general filesystem read primitive.
+fn resolve_within_evidence_roots(raw: &str) -> Result<PathBuf, String> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return Err("evidence path is empty".to_string());
+    }
+    let canonical = PathBuf::from(trimmed)
+        .canonicalize()
+        .map_err(|err| format!("evidence path is not readable: {err}"))?;
+    for root in allowed_evidence_roots() {
+        if let Ok(root_canonical) = root.canonicalize() {
+            if canonical.starts_with(&root_canonical) {
+                return Ok(canonical);
+            }
+        }
+    }
+    Err("path is outside the Studio evidence roots; refusing to read it".to_string())
+}
+
+fn collect_evidence_files(
+    root: &Path,
+    directory: &Path,
+    files: &mut Vec<EvidenceFileInfo>,
+    truncated: &mut bool,
+) -> Result<(), String> {
+    let entries =
+        fs::read_dir(directory).map_err(|err| format!("failed to read evidence dir: {err}"))?;
+    for entry in entries {
+        if files.len() >= EVIDENCE_LIST_CAP {
+            *truncated = true;
+            return Ok(());
+        }
+        let entry = entry.map_err(|err| format!("failed to read evidence entry: {err}"))?;
+        let path = entry.path();
+        if path.is_dir() {
+            collect_evidence_files(root, &path, files, truncated)?;
+            continue;
+        }
+        let size = entry.metadata().map(|meta| meta.len()).unwrap_or(0);
+        let relative = path
+            .strip_prefix(root)
+            .map(|relative| relative.to_string_lossy().replace('\\', "/"))
+            .unwrap_or_else(|_| display_path(&path));
+        files.push(EvidenceFileInfo {
+            relative_path: relative,
+            size,
+        });
+    }
+    Ok(())
 }
 
 fn run_garnet(category: &str, args: &[String], _executes_source: bool) -> CommandResult {
@@ -563,6 +949,44 @@ fn args_for_script(script: &Path, args: &[String]) -> Vec<String> {
     all
 }
 
+fn timeout_for_category(category: &str) -> Duration {
+    let settings = settings::load();
+    let secs = if LONG_RUNNING_CATEGORIES.contains(&category) {
+        settings.matrix_timeout_secs
+    } else {
+        settings.command_timeout_secs
+    };
+    Duration::from_secs(secs)
+}
+
+fn spawn_reader<R: Read + Send + 'static>(mut reader: R) -> thread::JoinHandle<Vec<u8>> {
+    thread::spawn(move || {
+        let mut buffer = Vec::new();
+        let _ = reader.read_to_end(&mut buffer);
+        buffer
+    })
+}
+
+fn join_reader(handle: Option<thread::JoinHandle<Vec<u8>>>) -> String {
+    let bytes = handle
+        .and_then(|handle| handle.join().ok())
+        .unwrap_or_default();
+    String::from_utf8_lossy(&bytes).to_string()
+}
+
+fn truncate_for_payload(text: String) -> (String, bool) {
+    if text.len() <= PAYLOAD_STREAM_CAP {
+        return (text, false);
+    }
+    let mut cut = PAYLOAD_STREAM_CAP;
+    while cut > 0 && !text.is_char_boundary(cut) {
+        cut -= 1;
+    }
+    let mut truncated = text[..cut].to_string();
+    truncated.push_str(PAYLOAD_TRUNCATION_MARKER);
+    (truncated, true)
+}
+
 fn run_process(
     category: &str,
     program: PathBuf,
@@ -571,39 +995,120 @@ fn run_process(
     command: Vec<String>,
     bundle: Option<PathBuf>,
 ) -> CommandResult {
+    run_process_with_timeout(
+        category,
+        program,
+        args,
+        working_dir,
+        command,
+        bundle,
+        timeout_for_category(category),
+    )
+}
+
+/// Spawn the child with piped output, drain both pipes on reader threads (so a
+/// full pipe can never deadlock the child), and poll for exit until the
+/// deadline. On timeout the child is killed, the partial output is preserved,
+/// and the result is marked `timed_out` — a hung reporter can no longer wedge
+/// a Studio action forever. Full output is written to the evidence bundle
+/// before the UI payload is capped.
+#[allow(clippy::too_many_arguments)]
+fn run_process_with_timeout(
+    category: &str,
+    program: PathBuf,
+    args: &[String],
+    working_dir: Option<PathBuf>,
+    command: Vec<String>,
+    bundle: Option<PathBuf>,
+    timeout: Duration,
+) -> CommandResult {
+    let started = Instant::now();
     let mut process = Command::new(&program);
-    process.args(args);
+    process
+        .args(args)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
     if let Some(dir) = &working_dir {
         process.current_dir(dir);
     }
 
-    match process.output() {
-        Ok(output) => {
-            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-            let exit_code = output.status.code().unwrap_or(-1);
-            if let Some(path) = &bundle {
-                let _ = evidence::write_command_evidence(
-                    path, category, &command, &stdout, &stderr, exit_code,
-                );
-            }
-            CommandResult {
-                success: output.status.success(),
-                stdout,
-                stderr,
-                exit_code,
+    let mut child = match process.spawn() {
+        Ok(child) => child,
+        Err(err) => {
+            return CommandResult {
+                success: false,
+                stdout: String::new(),
+                stderr: format!("failed to execute command: {err}"),
+                exit_code: -1,
                 command,
                 evidence_path: bundle.map(|path| display_path(&path)),
+                timed_out: false,
+                duration_ms: started.elapsed().as_millis() as u64,
+                truncated: false,
             }
         }
-        Err(err) => CommandResult {
-            success: false,
-            stdout: String::new(),
-            stderr: format!("failed to execute command: {err}"),
-            exit_code: -1,
-            command,
-            evidence_path: bundle.map(|path| display_path(&path)),
-        },
+    };
+
+    let stdout_reader = child.stdout.take().map(spawn_reader);
+    let stderr_reader = child.stderr.take().map(spawn_reader);
+
+    let deadline = started + timeout;
+    let mut timed_out = false;
+    let status = loop {
+        match child.try_wait() {
+            Ok(Some(status)) => break Some(status),
+            Ok(None) => {
+                if Instant::now() >= deadline {
+                    timed_out = true;
+                    let _ = child.kill();
+                    break child.wait().ok();
+                }
+                thread::sleep(Duration::from_millis(50));
+            }
+            Err(_) => break None,
+        }
+    };
+
+    let stdout_full = join_reader(stdout_reader);
+    let mut stderr_full = join_reader(stderr_reader);
+    if timed_out {
+        if !stderr_full.is_empty() && !stderr_full.ends_with('\n') {
+            stderr_full.push('\n');
+        }
+        stderr_full.push_str(&format!(
+            "studio: command timed out after {}s and was terminated",
+            timeout.as_secs()
+        ));
+    }
+
+    let exit_code = status.and_then(|status| status.code()).unwrap_or(-1);
+    let success = !timed_out && status.map(|status| status.success()).unwrap_or(false);
+
+    if let Some(path) = &bundle {
+        let _ = evidence::write_command_evidence(
+            path,
+            category,
+            &command,
+            &stdout_full,
+            &stderr_full,
+            exit_code,
+        );
+    }
+
+    let (stdout, stdout_truncated) = truncate_for_payload(stdout_full);
+    let (stderr, stderr_truncated) = truncate_for_payload(stderr_full);
+
+    CommandResult {
+        success,
+        stdout,
+        stderr,
+        exit_code,
+        command,
+        evidence_path: bundle.map(|path| display_path(&path)),
+        timed_out,
+        duration_ms: started.elapsed().as_millis() as u64,
+        truncated: stdout_truncated || stderr_truncated,
     }
 }
 
@@ -615,6 +1120,9 @@ fn contract_error(message: impl Into<String>) -> CommandResult {
         exit_code: -1,
         command: Vec::new(),
         evidence_path: None,
+        timed_out: false,
+        duration_ms: 0,
+        truncated: false,
     }
 }
 
@@ -649,14 +1157,14 @@ mod tests {
 
     #[test]
     fn convert_rejects_advisory_languages() {
-        let result = cli_convert("sample.ts".to_string(), "TypeScript".to_string());
+        let result = cli_convert_impl("sample.ts".to_string(), "TypeScript".to_string());
         assert!(!result.success);
         assert!(result.stderr.contains("not available"));
     }
 
     #[test]
     fn advisory_plan_rejects_active_conversion_languages() {
-        let result = advisory_assist_plan("sample.rs".to_string(), "Rust".to_string());
+        let result = advisory_assist_plan_impl("sample.rs".to_string(), "Rust".to_string());
         assert!(!result.success);
         assert!(result.stderr.contains("not available"));
     }
@@ -701,5 +1209,98 @@ mod tests {
             .replace('\\', "/");
 
         assert!(root.ends_with("Desktop/dogfood/garnet-studio-domain-matrix"));
+    }
+
+    #[test]
+    fn payload_truncation_caps_oversized_output_and_marks_it() {
+        let oversized = "g".repeat(PAYLOAD_STREAM_CAP + 64);
+        let (text, truncated) = truncate_for_payload(oversized);
+        assert!(truncated);
+        assert!(text.ends_with(PAYLOAD_TRUNCATION_MARKER));
+        assert!(text.len() <= PAYLOAD_STREAM_CAP + PAYLOAD_TRUNCATION_MARKER.len());
+
+        let small = "ok".to_string();
+        let (text, truncated) = truncate_for_payload(small.clone());
+        assert!(!truncated);
+        assert_eq!(text, small);
+    }
+
+    #[test]
+    fn run_process_kills_a_hung_command_on_timeout() {
+        let python = paths::python_cmd();
+        let args = vec!["-c".to_string(), "import time; time.sleep(30)".to_string()];
+        let result = run_process_with_timeout(
+            "timeout-test",
+            PathBuf::from(python),
+            &args,
+            None,
+            vec![python.to_string()],
+            None,
+            Duration::from_secs(1),
+        );
+        if result.stderr.contains("failed to execute command") {
+            // Python not installed on this machine; the timeout path cannot be
+            // exercised here. The contract is still covered on CI.
+            return;
+        }
+        assert!(result.timed_out);
+        assert!(!result.success);
+        assert!(result.stderr.contains("timed out after 1s"));
+        assert!(result.duration_ms >= 1000);
+    }
+
+    #[test]
+    fn evidence_reader_rejects_paths_outside_evidence_roots() {
+        let manifest = Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
+        let err = resolve_within_evidence_roots(&manifest.to_string_lossy())
+            .expect_err("a path outside the evidence roots must be rejected");
+        assert!(err.contains("outside the Studio evidence roots"));
+
+        let err = resolve_within_evidence_roots("  ").expect_err("an empty path must be rejected");
+        assert!(err.contains("empty"));
+    }
+
+    #[test]
+    fn truth_summary_defaults_to_not_found_shape() {
+        let summary = TruthSummary::default();
+        assert!(!summary.found);
+        assert!(summary.version.is_none());
+        assert!(summary.error.is_none());
+    }
+
+    #[test]
+    fn crate_version_matches_workspace_release_version() {
+        let root_manifest = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../Cargo.toml");
+        let contents = fs::read_to_string(&root_manifest)
+            .expect("workspace root Cargo.toml must be readable from the studio crate");
+        let workspace_version = contents
+            .split("[workspace.package]")
+            .nth(1)
+            .and_then(|section| {
+                section.lines().find_map(|line| {
+                    let line = line.trim();
+                    line.strip_prefix("version = \"")
+                        .and_then(|rest| rest.strip_suffix('"'))
+                })
+            })
+            .expect("workspace.package version must be present in the root manifest");
+        assert_eq!(
+            env!("CARGO_PKG_VERSION"),
+            workspace_version,
+            "garnet-studio version must track the workspace release version \
+             (it is excluded from the workspace, so this guard is the sync gate)"
+        );
+    }
+
+    #[test]
+    fn tauri_conf_does_not_hardcode_a_second_version_stamp() {
+        let conf_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("tauri.conf.json");
+        let raw = fs::read_to_string(conf_path).expect("tauri.conf.json must be readable");
+        let value: serde_json::Value =
+            serde_json::from_str(&raw).expect("tauri.conf.json must parse");
+        assert!(
+            value.get("version").is_none(),
+            "tauri.conf.json must not duplicate the version; Cargo.toml is the single stamp"
+        );
     }
 }

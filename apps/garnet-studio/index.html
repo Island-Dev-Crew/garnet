@@ -12,298 +12,421 @@
     <title>Garnet Studio</title>
   </head>
 
-  <body>
-    <aside class="sidebar" aria-label="Studio navigation">
-      <div class="brand">
-        <span class="brand-mark" aria-hidden="true"></span>
-        <div>
-          <h1>Garnet Studio</h1>
-          <p>Windows/Linux MVP</p>
-        </div>
+  <body data-mode="simple" data-theme="dark">
+    <div id="splash" class="splash" role="status" aria-live="polite">
+      <div class="splash-inner">
+        <span class="brand-mark splash-mark" aria-hidden="true"></span>
+        <h1>Garnet Studio</h1>
+        <p class="splash-tagline">Rust Rigor. Ruby Velocity. One Coherent Language.</p>
+        <p id="splash-status" class="splash-status">Starting the shell…</p>
+        <span id="splash-version" class="splash-version"></span>
       </div>
+    </div>
 
-      <nav class="nav">
-        <button class="active" data-panel="health">CLI Health</button>
-        <button data-panel="garnet">Parse / Check / Run</button>
-        <button data-panel="convert">Active Conversion</button>
-        <button data-panel="advisory">Advisory Pipeline</button>
-        <button data-panel="evidence">Evidence</button>
-        <button data-panel="release">Release / Readiness</button>
-        <button data-panel="taxonomy">Taxonomy</button>
-      </nav>
-
-      <div class="contract">
-        <strong>Safety contract</strong>
-          <span>No provider APIs</span>
-          <span>Source omitted by default</span>
-          <span>Advisory output is never marked safe</span>
-      </div>
-    </aside>
-
-    <main class="workspace">
-      <section id="panel-health" class="panel active">
-        <header class="panel-header">
-          <p class="eyebrow">Runtime</p>
-          <h2>CLI Health</h2>
-          <p>
-            Locate the Garnet CLI, source checkout, Python interpreter, and
-            Desktop dogfood evidence root.
-          </p>
-        </header>
-        <button id="btn-health" class="primary">Run Health Check</button>
-        <div id="health-result" class="result-area"></div>
-      </section>
-
-      <section id="panel-garnet" class="panel">
-        <header class="panel-header">
-          <p class="eyebrow">Garnet source</p>
-          <h2>Parse, Check, Run</h2>
-          <p>
-            These actions operate on local Garnet files only. Run is an explicit
-            local CLI action, separate from advisory source inspection.
-          </p>
-        </header>
-
-        <label class="field">
-          <span>Garnet file path</span>
-          <input id="garnet-file" type="text" spellcheck="false" />
-        </label>
-
-        <div class="button-row">
-          <button id="btn-parse" class="primary">Parse</button>
-          <button id="btn-check" class="primary">Check</button>
-          <button id="btn-run" class="secondary">Run</button>
+    <div class="shell">
+      <aside class="sidebar" aria-label="Studio navigation">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <div>
+            <h1>Garnet Studio</h1>
+            <p id="brand-subtitle">Windows/Linux MVP</p>
+          </div>
         </div>
 
-        <div id="garnet-result" class="result-area"></div>
-      </section>
+        <nav class="nav" role="tablist" aria-label="Studio panels">
+          <button class="active" data-panel="health" role="tab"
+            data-tip="Locate the Garnet CLI, repo checkout, and Python; verify the shell can do real work.">CLI Health</button>
+          <button data-panel="garnet" role="tab"
+            data-tip="Parse, check, or run a local .garnet file with the Garnet CLI.">Parse / Check / Run</button>
+          <button data-panel="convert" role="tab"
+            data-tip="Deterministic source-to-Garnet conversion for the four active languages.">Active Conversion</button>
+          <button data-panel="advisory" role="tab" data-power-only
+            data-tip="Advisory planning for non-active languages. Output is planning evidence, never marked safe.">Advisory Pipeline</button>
+          <button data-panel="evidence" role="tab" data-power-only
+            data-tip="Create dogfood evidence bundles and run the objective pulse or full agentic matrix.">Evidence</button>
+          <button data-panel="release" role="tab" data-power-only
+            data-tip="Run the repo's readiness reporters. Wrappers only — they never upgrade platform or proof claims.">Release / Readiness</button>
+          <button data-panel="taxonomy" role="tab" data-power-only
+            data-tip="The language taxonomy contract: active, advisory, native-boundary, and future-backend labels.">Taxonomy</button>
+          <button data-panel="settings" role="tab"
+            data-tip="Switch between Simple and Power mode, set the theme, and tune command timeouts.">Settings</button>
+        </nav>
 
-      <section id="panel-convert" class="panel">
-        <header class="panel-header">
-          <p class="eyebrow">Active conversion</p>
-          <h2>Rust/Ruby/Python/Go to Garnet</h2>
-          <p>
-            The deterministic converter lifts only the active source languages
-            into sandboxed Garnet output with lineage and migration evidence.
-          </p>
-        </header>
+        <div class="contract" data-tip="These boundaries are enforced by the shell's command contract and its tests.">
+          <strong>Safety contract</strong>
+            <span>No provider APIs</span>
+            <span>Source omitted by default</span>
+            <span>Advisory output is never marked safe</span>
+        </div>
+      </aside>
 
-        <div class="form-grid">
+      <main class="workspace">
+        <section id="panel-health" class="panel active" role="tabpanel">
+          <header class="panel-header">
+            <p class="eyebrow">Runtime</p>
+            <h2>CLI Health</h2>
+            <p>
+              Locate the Garnet CLI, source checkout, Python interpreter, and
+              Desktop dogfood evidence root.
+            </p>
+          </header>
+          <button id="btn-health" class="primary"
+            data-tip="Re-run discovery for the CLI, repo, and Python. Runs automatically at startup.">Run Health Check</button>
+          <div id="health-result" class="result-area" aria-live="polite"></div>
+        </section>
+
+        <section id="panel-garnet" class="panel" role="tabpanel">
+          <header class="panel-header">
+            <p class="eyebrow">Garnet source</p>
+            <h2>Parse, Check, Run</h2>
+            <p>
+              These actions operate on local Garnet files only. Run is an explicit
+              local CLI action, separate from advisory source inspection.
+            </p>
+          </header>
+
           <label class="field">
-            <span>Source file path</span>
-            <input id="convert-source" type="text" spellcheck="false" />
+            <span>Garnet file path</span>
+            <input id="garnet-file" type="text" spellcheck="false"
+              data-tip="Absolute path, or a path relative to the repo root (the CLI runs from the repo)." />
           </label>
 
-          <label class="field compact">
-            <span>Source language</span>
-            <select id="convert-lang">
-              <option value="rust">Rust</option>
-              <option value="ruby">Ruby</option>
-              <option value="python" selected>Python</option>
-              <option value="go">Go</option>
-            </select>
-          </label>
-        </div>
+          <div class="button-row">
+            <button id="btn-parse" class="primary"
+              data-tip="Syntax only: build the syntax tree and report parse errors. Does not execute anything.">Parse</button>
+            <button id="btn-check" class="primary"
+              data-tip="Full static check: safe-mode, borrows, and capability boundaries. Does not execute anything.">Check</button>
+            <button id="btn-run" class="secondary"
+              data-tip="Executes the program locally with the Garnet CLI. This runs code — separate from advisory inspection.">Run</button>
+          </div>
 
-        <button id="btn-convert" class="primary">Convert to Garnet</button>
-        <div id="convert-result" class="result-area"></div>
-      </section>
+          <div id="garnet-result" class="result-area" aria-live="polite"></div>
+        </section>
 
-      <section id="panel-advisory" class="panel">
-        <header class="panel-header">
-          <p class="eyebrow">Advisory planning</p>
-          <h2>Assist, Bundle, Review, Handoff</h2>
-          <p>
-            Advisory actions produce local planning and handoff evidence. Source
-            text is omitted from provider-facing packets by default.
-          </p>
-        </header>
+        <section id="panel-convert" class="panel" role="tabpanel">
+          <header class="panel-header">
+            <p class="eyebrow">Active conversion</p>
+            <h2>Rust/Ruby/Python/Go to Garnet</h2>
+            <p>
+              The deterministic converter lifts only the active source languages
+              into sandboxed Garnet output with lineage and migration evidence.
+            </p>
+          </header>
 
-        <div class="tool-block">
-          <h3>Assist Plan</h3>
           <div class="form-grid">
             <label class="field">
               <span>Source file path</span>
-              <input id="assist-source" type="text" spellcheck="false" />
+              <input id="convert-source" type="text" spellcheck="false"
+                data-tip="Path to the Rust, Ruby, Python, or Go source file to convert." />
             </label>
+
             <label class="field compact">
-              <span>Language</span>
-              <select id="assist-lang">
-                <option>JavaScript</option>
-                <option selected>TypeScript</option>
-                <option>Swift</option>
-                <option>Java</option>
-                <option>C</option>
-                <option>C++</option>
-                <option>C#</option>
-                <option>Perl</option>
-                <option>Kotlin</option>
-                <option>Shell</option>
-                <option>SQL</option>
-                <option>Other</option>
+              <span>Source language</span>
+              <select id="convert-lang"
+                data-tip="Active conversion covers exactly these four languages. Everything else is advisory-only.">
+                <option value="rust">Rust</option>
+                <option value="ruby">Ruby</option>
+                <option value="python" selected>Python</option>
+                <option value="go">Go</option>
               </select>
             </label>
           </div>
-          <button id="btn-assist" class="secondary">Generate Assist Plan</button>
-          <div id="assist-result" class="result-area"></div>
-        </div>
 
-        <div class="tool-block">
-          <h3>Advisory Bundle</h3>
-          <div class="form-grid">
-            <label class="field">
-              <span>Source file path</span>
-              <input id="bundle-source" type="text" spellcheck="false" />
-            </label>
-            <label class="field compact">
-              <span>Language</span>
-              <select id="bundle-lang">
-                <option>JavaScript</option>
-                <option selected>TypeScript</option>
-                <option>Swift</option>
-                <option>Java</option>
-                <option>C</option>
-                <option>C++</option>
-                <option>C#</option>
-                <option>Perl</option>
-                <option>Kotlin</option>
-                <option>Shell</option>
-                <option>SQL</option>
-                <option>Other</option>
-              </select>
-            </label>
+          <button id="btn-convert" class="primary"
+            data-tip="Run the deterministic converter. Output and lineage land in a fresh evidence bundle, previewed below.">Convert to Garnet</button>
+          <div id="convert-result" class="result-area" aria-live="polite"></div>
+          <div id="convert-preview" class="preview-area"></div>
+        </section>
+
+        <section id="panel-advisory" class="panel" role="tabpanel">
+          <header class="panel-header">
+            <p class="eyebrow">Advisory planning</p>
+            <h2>Assist, Bundle, Review, Handoff</h2>
+            <p>
+              Advisory actions produce local planning and handoff evidence. Source
+              text is omitted from provider-facing packets by default.
+            </p>
+          </header>
+
+          <div class="tool-block">
+            <h3>Assist Plan</h3>
+            <div class="form-grid">
+              <label class="field">
+                <span>Source file path</span>
+                <input id="assist-source" type="text" spellcheck="false"
+                  data-tip="The file the assist plan describes. Its text stays local by default." />
+              </label>
+              <label class="field compact">
+                <span>Language</span>
+                <select id="assist-lang" data-tip="Advisory languages only — the active four are handled by Active Conversion.">
+                  <option>JavaScript</option>
+                  <option selected>TypeScript</option>
+                  <option>Swift</option>
+                  <option>Java</option>
+                  <option>C</option>
+                  <option>C++</option>
+                  <option>C#</option>
+                  <option>Perl</option>
+                  <option>Kotlin</option>
+                  <option>Shell</option>
+                  <option>SQL</option>
+                  <option>Other</option>
+                </select>
+              </label>
+            </div>
+            <button id="btn-assist" class="secondary"
+              data-tip="Generate a migration assist plan as local planning evidence.">Generate Assist Plan</button>
+            <div id="assist-result" class="result-area" aria-live="polite"></div>
           </div>
-          <button id="btn-bundle" class="secondary">Create Advisory Bundle</button>
-          <div id="bundle-result" class="result-area"></div>
-        </div>
 
-        <div class="tool-block">
-          <h3>Review and Handoff</h3>
-          <label class="field">
-            <span>Bundle directory</span>
-            <input id="review-bundle" type="text" spellcheck="false" />
-          </label>
-          <button id="btn-review" class="secondary">Run Advisory Review</button>
-          <div id="review-result" class="result-area"></div>
+          <div class="tool-block">
+            <h3>Advisory Bundle</h3>
+            <div class="form-grid">
+              <label class="field">
+                <span>Source file path</span>
+                <input id="bundle-source" type="text" spellcheck="false"
+                  data-tip="The file the advisory bundle is built around. Source is omitted from packets by default." />
+              </label>
+              <label class="field compact">
+                <span>Language</span>
+                <select id="bundle-lang" data-tip="Advisory languages only — the active four are handled by Active Conversion.">
+                  <option>JavaScript</option>
+                  <option selected>TypeScript</option>
+                  <option>Swift</option>
+                  <option>Java</option>
+                  <option>C</option>
+                  <option>C++</option>
+                  <option>C#</option>
+                  <option>Perl</option>
+                  <option>Kotlin</option>
+                  <option>Shell</option>
+                  <option>SQL</option>
+                  <option>Other</option>
+                </select>
+              </label>
+            </div>
+            <button id="btn-bundle" class="secondary"
+              data-tip="Create an advisory bundle directory with planning artifacts and an evidence manifest.">Create Advisory Bundle</button>
+            <div id="bundle-result" class="result-area" aria-live="polite"></div>
+          </div>
 
-          <div class="form-grid spacer">
+          <div class="tool-block">
+            <h3>Review and Handoff</h3>
             <label class="field">
               <span>Bundle directory</span>
-              <input id="handoff-bundle" type="text" spellcheck="false" />
+              <input id="review-bundle" type="text" spellcheck="false"
+                data-tip="Path to an advisory bundle directory produced above." />
             </label>
-            <label class="field">
-              <span>Review directory</span>
-              <input id="handoff-review" type="text" spellcheck="false" />
-            </label>
+            <button id="btn-review" class="secondary"
+              data-tip="Run the advisory review over a bundle. Review output is evidence, never a safety mark.">Run Advisory Review</button>
+            <div id="review-result" class="result-area" aria-live="polite"></div>
+
+            <div class="form-grid spacer">
+              <label class="field">
+                <span>Bundle directory</span>
+                <input id="handoff-bundle" type="text" spellcheck="false"
+                  data-tip="The advisory bundle to hand off." />
+              </label>
+              <label class="field">
+                <span>Review directory</span>
+                <input id="handoff-review" type="text" spellcheck="false"
+                  data-tip="The review directory produced by Run Advisory Review." />
+              </label>
+            </div>
+            <button id="btn-handoff" class="secondary"
+              data-tip="Assemble the handoff packet from a bundle plus its review. Source text is omitted by default.">Create Advisory Handoff</button>
+            <div id="handoff-result" class="result-area" aria-live="polite"></div>
           </div>
-          <button id="btn-handoff" class="secondary">Create Advisory Handoff</button>
-          <div id="handoff-result" class="result-area"></div>
-        </div>
-      </section>
+        </section>
 
-      <section id="panel-evidence" class="panel">
-        <header class="panel-header">
-          <p class="eyebrow">Dogfood evidence</p>
-          <h2>Objective Pulse and Matrix</h2>
-          <p>
-            Evidence is written below the Windows/Linux Studio dogfood root.
-          </p>
-        </header>
+        <section id="panel-evidence" class="panel" role="tabpanel">
+          <header class="panel-header">
+            <p class="eyebrow">Dogfood evidence</p>
+            <h2>Objective Pulse and Matrix</h2>
+            <p>
+              Evidence is written below the Windows/Linux Studio dogfood root.
+            </p>
+          </header>
 
-        <div class="evidence-root">
-          <span>Evidence root</span>
-          <code id="evidence-root"></code>
-        </div>
+          <div class="evidence-root" data-tip="Every Studio action writes its command, output, and a SHA-256 manifest under this root.">
+            <span>Evidence root</span>
+            <code id="evidence-root"></code>
+          </div>
 
-        <div class="button-row">
-          <button id="btn-evidence" class="primary">Create Evidence Bundle</button>
-          <button id="btn-pulse" class="secondary">Objective Pulse</button>
-          <button id="btn-dogfood" class="secondary">Agentic Dogfood Matrix</button>
-        </div>
+          <div class="button-row">
+            <button id="btn-evidence" class="primary"
+              data-tip="Create an empty, manifest-sealed evidence bundle for manual artifacts.">Create Evidence Bundle</button>
+            <button id="btn-pulse" class="secondary"
+              data-tip="Run the MIT readiness objective reporter (markdown). A status reporter, not a gate.">Objective Pulse</button>
+            <button id="btn-dogfood" class="secondary"
+              data-tip="Run the full agentic dogfood matrix with --strict. This is the long one — see Settings for its timeout.">Agentic Dogfood Matrix</button>
+          </div>
 
-        <div id="evidence-result" class="result-area"></div>
-        <div id="pulse-result" class="result-area"></div>
-        <div id="dogfood-result" class="result-area"></div>
-      </section>
+          <div id="evidence-result" class="result-area" aria-live="polite"></div>
+          <div id="pulse-result" class="result-area" aria-live="polite"></div>
+          <div id="dogfood-result" class="result-area" aria-live="polite"></div>
+        </section>
 
-      <section id="panel-release" class="panel">
-        <header class="panel-header">
-          <p class="eyebrow">v0.5 readiness</p>
-          <h2>Release Evidence</h2>
-          <p>
-            Current repo-native reporters for Windows/Linux parity, MIT review,
-            converter advisory truth, proof boundaries, and platform gates.
-          </p>
-        </header>
+        <section id="panel-release" class="panel" role="tabpanel">
+          <header class="panel-header">
+            <p class="eyebrow">Readiness reporters</p>
+            <h2>Release Evidence</h2>
+            <p>
+              Current repo-native reporters for Windows/Linux parity, MIT review,
+              converter advisory truth, proof boundaries, and platform gates.
+            </p>
+          </header>
 
-        <div class="release-grid">
-          <button id="btn-windows-status" class="primary">Windows/Linux Status</button>
-          <button id="btn-domain-proof" class="secondary">Domain Proof Matrix</button>
-          <button id="btn-mac-domain-proofs" class="secondary">Mac Domain Proofs</button>
-          <button id="btn-converter-status" class="secondary">Converter Fit Matrix</button>
-          <button id="btn-provider-options" class="secondary">Provider Options</button>
-          <button id="btn-mit-demo" class="secondary">Demo Route</button>
-          <button id="btn-deck-outline" class="secondary">Deck Outline</button>
-          <button id="btn-deck-preview" class="secondary">Deck Preview</button>
-          <button id="btn-mac-continuation" class="secondary">Continuation Pulse</button>
-          <button id="btn-proof-status" class="secondary">Proof / Benchmark Status</button>
-          <button id="btn-benchmark-no-run" class="secondary">Benchmark No-Run</button>
-          <button id="btn-notarization" class="secondary">Notarization Status</button>
-          <button id="btn-windows-vm-installer" class="secondary">Windows VM Installer</button>
-        </div>
+          <div id="truth-tiles" class="status-grid"
+            data-tip="Stamped by the repo's xtask truth generator (docs/truth.json), not hand-written copy."></div>
 
-        <div class="status-grid release-lines">
-          <div class="status-tile">
-            <span class="dot ok"></span>
-            <div>
-              <strong>Tracked plan</strong>
-              <span>87/87 slices complete on current main.</span>
+          <div class="release-grid">
+            <button id="btn-windows-status" class="primary"
+              data-tip="Windows/Linux Studio parity status reporter.">Windows/Linux Status</button>
+            <button id="btn-domain-proof" class="secondary"
+              data-tip="Run the 20-case domain matrix (parse/check/run per case) against the local CLI.">Domain Proof Matrix</button>
+            <button id="btn-mac-domain-proofs" class="secondary"
+              data-tip="macOS Studio domain evidence wrapper. Records Mac-lane evidence only — claims nothing for this machine.">Mac Domain Proofs</button>
+            <button id="btn-converter-status" class="secondary"
+              data-tip="Converter adoption and fit-matrix truth reporter.">Converter Fit Matrix</button>
+            <button id="btn-provider-options" class="secondary"
+              data-tip="LLM feasibility reporter for converter assist. Reporting only — no provider API is called.">Provider Options</button>
+            <button id="btn-mit-demo" class="secondary"
+              data-tip="MIT demo route status reporter.">Demo Route</button>
+            <button id="btn-deck-outline" class="secondary"
+              data-tip="MIT deck outline evidence reporter.">Deck Outline</button>
+            <button id="btn-deck-preview" class="secondary"
+              data-tip="MIT deck preview (HTML) evidence reporter.">Deck Preview</button>
+            <button id="btn-mac-continuation" class="secondary"
+              data-tip="Mac-side continuation boundary reporter.">Continuation Pulse</button>
+            <button id="btn-proof-status" class="secondary"
+              data-tip="Proof and benchmark claim-boundary status reporter.">Proof / Benchmark Status</button>
+            <button id="btn-benchmark-no-run" class="secondary"
+              data-tip="Benchmark no-run compile evidence (builds benches without running them).">Benchmark No-Run</button>
+            <button id="btn-notarization" class="secondary"
+              data-tip="macOS notarization preflight status reporter.">Notarization Status</button>
+            <button id="btn-windows-vm-installer" class="secondary"
+              data-tip="Windows clean-VM installer proof status reporter.">Windows VM Installer</button>
+          </div>
+
+          <div class="status-grid release-lines">
+            <div class="status-tile">
+              <span class="dot ok"></span>
+              <div>
+                <strong>Windows source build</strong>
+                <span>Tauri v2 shell, typed commands, unsigned NSIS, and smoke evidence.</span>
+              </div>
+            </div>
+            <div class="status-tile">
+              <span class="dot ok"></span>
+              <div>
+                <strong>Domain proof</strong>
+                <span>Repo matrix records parse/check/run evidence for MVP and agentic examples.</span>
+              </div>
+            </div>
+            <div class="status-tile">
+              <span class="dot fail"></span>
+              <div>
+                <strong>Open gates</strong>
+                <span>Clean Windows VM proof bundle, Linux launch, signing, MSI, winget, and notarization.</span>
+              </div>
+            </div>
+            <div class="status-tile">
+              <span class="dot warn"></span>
+              <div>
+                <strong>Windows target order</strong>
+                <span>x64 clean-VM proof first; ARM64 follows; 32-bit waits for demand.</span>
+              </div>
             </div>
           </div>
-          <div class="status-tile">
-            <span class="dot ok"></span>
-            <div>
-              <strong>Windows source build</strong>
-              <span>Tauri v2 shell, typed commands, unsigned NSIS, and smoke evidence.</span>
-            </div>
-          </div>
-          <div class="status-tile">
-            <span class="dot ok"></span>
-            <div>
-              <strong>Domain proof</strong>
-              <span>Repo matrix records parse/check/run evidence for MVP and agentic examples.</span>
-            </div>
-          </div>
-          <div class="status-tile">
-            <span class="dot fail"></span>
-            <div>
-              <strong>Open gates</strong>
-              <span>Clean Windows VM proof bundle, Linux launch, signing, MSI, winget, and notarization.</span>
-            </div>
-          </div>
-          <div class="status-tile">
-            <span class="dot warn"></span>
-            <div>
-              <strong>Windows target order</strong>
-              <span>x64 clean-VM proof first; ARM64 follows; 32-bit waits for demand.</span>
-            </div>
-          </div>
-        </div>
 
-        <div id="release-result" class="result-area"></div>
-      </section>
+          <div id="release-result" class="result-area" aria-live="polite"></div>
+        </section>
 
-      <section id="panel-taxonomy" class="panel">
-        <header class="panel-header">
-          <p class="eyebrow">Copy truth</p>
-          <h2>Language Taxonomy</h2>
-          <p>
-            The shell preserves the active, advisory, native-boundary, and
-            future-backend labels from the handoff contract.
-          </p>
-        </header>
-        <div id="taxonomy" class="taxonomy"></div>
-      </section>
-    </main>
+        <section id="panel-taxonomy" class="panel" role="tabpanel">
+          <header class="panel-header">
+            <p class="eyebrow">Copy truth</p>
+            <h2>Language Taxonomy</h2>
+            <p>
+              The shell preserves the active, advisory, native-boundary, and
+              future-backend labels from the handoff contract.
+            </p>
+          </header>
+          <div id="taxonomy" class="taxonomy"></div>
+        </section>
+
+        <section id="panel-settings" class="panel" role="tabpanel">
+          <header class="panel-header">
+            <p class="eyebrow">Preferences</p>
+            <h2>Settings</h2>
+            <p>
+              Simple mode keeps the everyday surface: health, parse/check/run, and
+              conversion. Power mode adds the advisory pipeline, evidence tooling,
+              readiness reporters, and the taxonomy contract.
+            </p>
+          </header>
+
+          <div class="settings-grid">
+            <fieldset class="setting">
+              <legend>Interface mode</legend>
+              <label data-tip="A clean, focused surface: CLI Health, Parse/Check/Run, Active Conversion.">
+                <input type="radio" name="set-mode" value="simple" /> Simple — clean and focused
+              </label>
+              <label data-tip="The full cockpit: advisory pipeline, evidence bundles, and every readiness reporter.">
+                <input type="radio" name="set-mode" value="power" /> Power — every surface, every reporter
+              </label>
+            </fieldset>
+
+            <fieldset class="setting">
+              <legend>Theme</legend>
+              <label data-tip="The default Garnet dark theme."><input type="radio" name="set-theme" value="dark" /> Dark</label>
+              <label data-tip="A light theme with the same structure and contrast goals."><input type="radio" name="set-theme" value="light" /> Light</label>
+              <label data-tip="Follow the operating system's light/dark preference."><input type="radio" name="set-theme" value="system" /> System</label>
+            </fieldset>
+
+            <fieldset class="setting">
+              <legend>Timeouts</legend>
+              <label class="field">
+                <span>Command timeout (seconds)</span>
+                <input id="set-timeout" type="number" min="30" max="14400" step="30"
+                  data-tip="Most actions are killed and reported if they exceed this. 30–14400 seconds." />
+              </label>
+              <label class="field">
+                <span>Matrix timeout (seconds)</span>
+                <input id="set-matrix-timeout" type="number" min="60" max="21600" step="60"
+                  data-tip="Used for the long matrix runs (agentic dogfood, domain proofs). 60–21600 seconds." />
+              </label>
+            </fieldset>
+          </div>
+
+          <div class="button-row">
+            <button id="btn-save-settings" class="primary"
+              data-tip="Validate and persist these preferences to the settings file shown below.">Save Settings</button>
+          </div>
+
+          <div class="evidence-root settings-meta">
+            <span>Settings file</span>
+            <code id="settings-path"></code>
+          </div>
+          <div id="settings-result" class="result-area" aria-live="polite"></div>
+
+          <div class="tool-block">
+            <h3>Keyboard shortcuts</h3>
+            <div class="shortcuts" id="shortcuts-list">
+              <div><kbd>Ctrl</kbd>+<kbd>1</kbd>…<kbd>8</kbd><span>Switch panels (visible panels in order)</span></div>
+              <div><kbd>Ctrl</kbd>+<kbd>Enter</kbd><span>Run the active panel's primary action</span></div>
+              <div><kbd>Esc</kbd><span>Return focus to the active panel</span></div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer class="statusbar" aria-label="Studio status">
+      <span class="sb-item" id="sb-app" data-tip="Garnet Studio shell version (stamped from the crate, which tracks the workspace release).">Studio —</span>
+      <span class="sb-item" id="sb-cli" data-tip="The Garnet CLI the shell found, and the version it reports.">CLI: locating…</span>
+      <span class="sb-item" id="sb-mode" data-tip="Current interface mode. Change it in Settings.">mode: —</span>
+      <button class="sb-item sb-evidence" id="sb-evidence" data-tip="Dogfood evidence root. Click to copy the path.">evidence: —</button>
+    </footer>
   </body>
 </html>

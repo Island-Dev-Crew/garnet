@@ -1,6 +1,7 @@
 pub mod commands;
 pub mod evidence;
 pub mod paths;
+pub mod settings;
 
 use commands::*;
 use std::fs;
@@ -37,6 +38,12 @@ pub fn run() {
             create_evidence_bundle,
             get_evidence_dir,
             get_language_taxonomy,
+            get_app_info,
+            get_truth_summary,
+            studio_get_settings,
+            studio_set_settings,
+            list_evidence_files,
+            read_evidence_text,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Garnet Studio");
@@ -48,8 +55,9 @@ pub fn run_smoke() -> Result<String, String> {
     let payload = serde_json::json!({
         "status": "passed",
         "mode": "studio-smoke",
-        "health": commands::cli_health(),
+        "health": commands::cli_health_impl(),
         "taxonomy": commands::get_language_taxonomy(),
+        "app_version": env!("CARGO_PKG_VERSION"),
         "source_included": false,
         "provider_api_called": false
     });
@@ -74,7 +82,7 @@ pub fn run_smoke() -> Result<String, String> {
 pub fn run_domain_proof_smoke() -> Result<String, String> {
     let bundle = evidence::create_named_bundle("domain-proof-shell-smoke")?;
     let bundle_path = PathBuf::from(&bundle.path);
-    let result = commands::domain_proof_matrix();
+    let result = commands::domain_proof_matrix_impl();
     let stdout_has_matrix = result.stdout.contains("Garnet Studio Domain Proof Matrix");
     let status = if result.success && stdout_has_matrix {
         "passed"
@@ -136,25 +144,25 @@ pub fn run_domain_proof_smoke() -> Result<String, String> {
 pub fn run_release_readiness_smoke() -> Result<String, String> {
     let bundle = evidence::create_named_bundle("release-readiness-shell-smoke")?;
     let bundle_path = PathBuf::from(&bundle.path);
-    let checks = vec![
+    let checks = [
         (
             "windows-linux-studio-status",
-            commands::windows_linux_studio_status(),
+            commands::windows_linux_studio_status_impl(),
             "Garnet Windows/Linux Studio Status",
         ),
         (
             "objective-pulse",
-            commands::objective_pulse(),
+            commands::objective_pulse_impl(),
             "Garnet MIT Readiness Objective Status",
         ),
         (
             "converter-status",
-            commands::converter_status(),
+            commands::converter_status_impl(),
             "Garnet Converter Adoption Status",
         ),
         (
             "windows-vm-installer-status",
-            commands::windows_vm_installer_status(),
+            commands::windows_vm_installer_status_impl(),
             "Garnet Windows Studio Clean-VM Installer Status",
         ),
     ];

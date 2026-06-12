@@ -7,6 +7,9 @@ interface CommandResult {
   exit_code: number;
   command: string[];
   evidence_path: string | null;
+  timed_out: boolean;
+  duration_ms: number;
+  truncated: boolean;
 }
 
 interface HealthStatus {
@@ -33,6 +36,58 @@ interface LanguageGroup {
   languages: string[];
 }
 
+interface AppInfo {
+  app_version: string;
+  tauri_version: string;
+  platform: string;
+  arch: string;
+  settings_path: string;
+}
+
+interface StudioSettings {
+  mode: string;
+  theme: string;
+  command_timeout_secs: number;
+  matrix_timeout_secs: number;
+}
+
+interface TruthSummary {
+  found: boolean;
+  path: string;
+  version: string | null;
+  latest_tag: string | null;
+  generated_at_commit: string | null;
+  readiness_pct: number | null;
+  tracked_slices: string | null;
+  primitive_count: number | null;
+  workspace_tests_passed: number | null;
+  workspace_tests_failed: number | null;
+  error: string | null;
+}
+
+interface EvidenceListing {
+  root: string;
+  files: { relative_path: string; size: number }[];
+  truncated: boolean;
+}
+
+interface EvidenceText {
+  path: string;
+  content: string;
+  size: number;
+  truncated: boolean;
+}
+
+const DEFAULT_SETTINGS: StudioSettings = {
+  mode: "simple",
+  theme: "dark",
+  command_timeout_secs: 900,
+  matrix_timeout_secs: 5400,
+};
+
+let currentSettings: StudioSettings = { ...DEFAULT_SETTINGS };
+let truthLoaded = false;
+
 function getInput(id: string): string {
   const el = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null;
   return el?.value.trim() ?? "";
@@ -45,6 +100,13 @@ function setInput(id: string, value: string): void {
   }
 }
 
+function setText(id: string, value: string): void {
+  const el = document.getElementById(id);
+  if (el) {
+    el.textContent = value;
+  }
+}
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -52,6 +114,51 @@ function escapeHtml(value: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function formatDuration(ms: number): string {
+  if (!ms || ms < 0) return "";
+  if (ms < 1000) return `${ms}ms`;
+  const seconds = ms / 1000;
+  if (seconds < 90) return `${seconds.toFixed(1)}s`;
+  const minutes = Math.floor(seconds / 60);
+  const rest = Math.round(seconds % 60);
+  return `${minutes}m ${rest}s`;
+}
+
+async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      const area = document.createElement("textarea");
+      area.value = text;
+      area.style.position = "fixed";
+      area.style.opacity = "0";
+      document.body.appendChild(area);
+      area.select();
+      const ok = document.execCommand("copy");
+      area.remove();
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+}
+
+function wireCopyButtons(scope: HTMLElement): void {
+  scope.querySelectorAll<HTMLButtonElement>("button[data-copy]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const payload = button.dataset.copy ?? "";
+      const ok = await copyText(payload);
+      const original = button.textContent ?? "Copy";
+      button.textContent = ok ? "Copied" : "Copy failed";
+      setTimeout(() => {
+        button.textContent = original;
+      }, 1500);
+    });
+  });
 }
 
 function renderOutput(targetId: string, result: CommandResult): void {
@@ -67,16 +174,37 @@ function renderOutput(targetId: string, result: CommandResult): void {
     stdout ? `stdout:\n${stdout}` : "",
     stderr ? `stderr:\n${stderr}` : "",
   ].filter(Boolean);
+  const body = sections.join("\n\n") || "(no output)";
+  const headline = result.success
+    ? "Passed"
+    : result.timed_out
+      ? "Timed out"
+      : `Failed (${result.exit_code})`;
+  const badges = [
+    result.duration_ms ? `<span class="badge">${formatDuration(result.duration_ms)}</span>` : "",
+    result.truncated
+      ? `<span class="badge warn" title="Display output was capped; the evidence bundle holds the full streams.">truncated</span>`
+      : "",
+  ].join("");
+  const collapse = body.split("\n").length > 60;
 
   target.innerHTML = `
     <article class="result ${statusClass}">
       <header>
-        <span>${result.success ? "Passed" : `Failed (${result.exit_code})`}</span>
-        <time>${new Date().toLocaleTimeString()}</time>
+        <span>${headline}${badges}</span>
+        <span class="result-tools">
+          <button class="mini" data-copy="${escapeHtml(body)}">Copy</button>
+          <time>${new Date().toLocaleTimeString()}</time>
+        </span>
       </header>
-      <pre>${escapeHtml(sections.join("\n\n") || "(no output)")}</pre>
+      ${
+        collapse
+          ? `<details open><summary>output (${body.split("\n").length} lines)</summary><pre>${escapeHtml(body)}</pre></details>`
+          : `<pre>${escapeHtml(body)}</pre>`
+      }
     </article>
   `;
+  wireCopyButtons(target as HTMLElement);
 }
 
 function renderError(targetId: string, error: unknown): void {
@@ -99,19 +227,34 @@ function renderHealth(targetId: string, health: HealthStatus): void {
 
   target.innerHTML = `
     <div class="status-grid">
-      ${healthTile("Garnet CLI", health.cli_found, health.cli_found ? health.cli_version : "Not found")}
+      ${healthTile("Garnet CLI", health.cli_found, health.cli_found ? health.cli_version.split("\n")[0] : "Not found")}
       ${healthTile("Repository", health.repo_found, health.repo_found ? health.repo_path : "Not found")}
       ${healthTile("Python", health.python_found, health.python_found ? health.python_version : "Not found")}
       ${healthTile("Host", true, `${health.platform} / ${health.arch}`)}
     </div>
     <article class="result ok">
-      <pre>${escapeHtml([
-        `cli: ${health.cli_path || "(not found)"}`,
-        `repo: ${health.repo_path || "(not found)"}`,
-        `dogfood: ${health.evidence_dir}`,
-      ].join("\n"))}</pre>
+      <pre>${escapeHtml(
+        [
+          `cli: ${health.cli_path || "(not found)"}`,
+          `repo: ${health.repo_path || "(not found)"}`,
+          `dogfood: ${health.evidence_dir}`,
+        ].join("\n"),
+      )}</pre>
     </article>
   `;
+
+  const cliLabel = health.cli_found
+    ? `CLI: ${firstVersionLine(health.cli_version)}`
+    : "CLI: not found — set GARNET_CLI";
+  setText("sb-cli", cliLabel);
+}
+
+function firstVersionLine(banner: string): string {
+  const line = banner
+    .split("\n")
+    .map((entry) => entry.trim())
+    .find((entry) => entry.toLowerCase().startsWith("garnet "));
+  return line ?? banner.split("\n")[0] ?? "unknown";
 }
 
 function healthTile(label: string, ok: boolean, value: string): string {
@@ -145,9 +288,11 @@ function setBusy(button: HTMLButtonElement, busy: boolean): void {
     button.disabled = true;
     button.dataset.originalText = button.textContent ?? "";
     button.textContent = "Running";
+    button.classList.add("busy");
   } else {
     button.disabled = false;
     button.textContent = button.dataset.originalText ?? button.textContent ?? "";
+    button.classList.remove("busy");
   }
 }
 
@@ -173,26 +318,331 @@ function requireValue(id: string, label: string): string {
   return value;
 }
 
-async function runCommand(targetId: string, command: string, args: Record<string, unknown>): Promise<void> {
+async function runCommand(
+  targetId: string,
+  command: string,
+  args: Record<string, unknown>,
+): Promise<CommandResult | null> {
   try {
     const result = await invoke<CommandResult>(command, args);
     renderOutput(targetId, result);
+    return result;
   } catch (error) {
     renderError(targetId, error);
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Panels, modes, themes
+// ---------------------------------------------------------------------------
+
+function visiblePanelButtons(): HTMLButtonElement[] {
+  return Array.from(document.querySelectorAll<HTMLButtonElement>("[data-panel]")).filter(
+    (button) => button.offsetParent !== null,
+  );
+}
+
+function activatePanel(name: string): void {
+  const nav = document.querySelectorAll<HTMLButtonElement>("[data-panel]");
+  const panels = document.querySelectorAll<HTMLElement>(".panel");
+  nav.forEach((item) => item.classList.toggle("active", item.dataset.panel === name));
+  panels.forEach((item) => item.classList.toggle("active", item.id === `panel-${name}`));
+  if (name === "release") {
+    void loadTruthTiles();
   }
 }
 
 function setupTabs(): void {
-  const nav = document.querySelectorAll<HTMLButtonElement>("[data-panel]");
-  const panels = document.querySelectorAll<HTMLElement>(".panel");
-
-  nav.forEach((button) => {
+  document.querySelectorAll<HTMLButtonElement>("[data-panel]").forEach((button) => {
     button.addEventListener("click", () => {
       const panel = button.dataset.panel;
-      nav.forEach((item) => item.classList.toggle("active", item === button));
-      panels.forEach((item) => item.classList.toggle("active", item.id === `panel-${panel}`));
+      if (panel) activatePanel(panel);
     });
   });
+}
+
+function applyMode(mode: string): void {
+  document.body.dataset.mode = mode;
+  setText("sb-mode", `mode: ${mode}`);
+  setText("brand-subtitle", mode === "power" ? "Power mode" : "Simple mode");
+  const active = document.querySelector<HTMLButtonElement>("[data-panel].active");
+  if (mode === "simple" && active?.hasAttribute("data-power-only")) {
+    activatePanel("health");
+  }
+}
+
+function applyTheme(theme: string): void {
+  if (theme === "system") {
+    const prefersLight = window.matchMedia?.("(prefers-color-scheme: light)").matches;
+    document.body.dataset.theme = prefersLight ? "light" : "dark";
+  } else {
+    document.body.dataset.theme = theme;
+  }
+}
+
+function applySettings(settings: StudioSettings): void {
+  currentSettings = settings;
+  applyMode(settings.mode);
+  applyTheme(settings.theme);
+  const modeRadio = document.querySelector<HTMLInputElement>(
+    `input[name="set-mode"][value="${settings.mode}"]`,
+  );
+  if (modeRadio) modeRadio.checked = true;
+  const themeRadio = document.querySelector<HTMLInputElement>(
+    `input[name="set-theme"][value="${settings.theme}"]`,
+  );
+  if (themeRadio) themeRadio.checked = true;
+  setInput("set-timeout", String(settings.command_timeout_secs));
+  setInput("set-matrix-timeout", String(settings.matrix_timeout_secs));
+}
+
+function readSettingsForm(): StudioSettings {
+  const mode =
+    document.querySelector<HTMLInputElement>('input[name="set-mode"]:checked')?.value ??
+    currentSettings.mode;
+  const theme =
+    document.querySelector<HTMLInputElement>('input[name="set-theme"]:checked')?.value ??
+    currentSettings.theme;
+  const commandTimeout = Number.parseInt(getInput("set-timeout"), 10);
+  const matrixTimeout = Number.parseInt(getInput("set-matrix-timeout"), 10);
+  return {
+    mode,
+    theme,
+    command_timeout_secs: Number.isFinite(commandTimeout)
+      ? commandTimeout
+      : currentSettings.command_timeout_secs,
+    matrix_timeout_secs: Number.isFinite(matrixTimeout)
+      ? matrixTimeout
+      : currentSettings.matrix_timeout_secs,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Truth tiles (Release panel)
+// ---------------------------------------------------------------------------
+
+async function loadTruthTiles(): Promise<void> {
+  if (truthLoaded) return;
+  const target = document.getElementById("truth-tiles");
+  if (!target) return;
+  truthLoaded = true;
+  try {
+    const truth = await invoke<TruthSummary>("get_truth_summary");
+    if (!truth.found) {
+      target.innerHTML = `
+        <div class="status-tile">
+          <span class="dot warn"></span>
+          <div>
+            <strong>Truth surface unavailable</strong>
+            <span>${escapeHtml(truth.error ?? "docs/truth.json was not found; live stats are hidden rather than guessed.")}</span>
+          </div>
+        </div>
+      `;
+      return;
+    }
+    const tests =
+      truth.workspace_tests_passed != null
+        ? `${truth.workspace_tests_passed} passed / ${truth.workspace_tests_failed ?? 0} failed`
+        : "unavailable";
+    target.innerHTML = `
+      ${truthTile("Version", truth.version ?? "?", `latest tag ${truth.latest_tag ?? "?"}`)}
+      ${truthTile("Tracked slices", truth.tracked_slices ?? "?", `readiness ${truth.readiness_pct ?? "?"}%`)}
+      ${truthTile("Primitives", String(truth.primitive_count ?? "?"), "core + std layers")}
+      ${truthTile("Workspace tests", tests, `stamped at ${truth.generated_at_commit ?? "unknown commit"}`)}
+    `;
+  } catch (error) {
+    truthLoaded = false;
+    target.innerHTML = `
+      <div class="status-tile">
+        <span class="dot warn"></span>
+        <div>
+          <strong>Truth surface unavailable</strong>
+          <span>${escapeHtml(String(error))}</span>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function truthTile(label: string, value: string, detail: string): string {
+  return `
+    <div class="status-tile">
+      <span class="dot ok"></span>
+      <div>
+        <strong>${escapeHtml(label)}</strong>
+        <span>${escapeHtml(value)} — ${escapeHtml(detail)}</span>
+      </div>
+    </div>
+  `;
+}
+
+// ---------------------------------------------------------------------------
+// Converter preview
+// ---------------------------------------------------------------------------
+
+async function renderConvertPreview(result: CommandResult): Promise<void> {
+  const target = document.getElementById("convert-preview");
+  if (!target) return;
+  target.innerHTML = "";
+  if (!result.success || !result.evidence_path) return;
+
+  try {
+    const listing = await invoke<EvidenceListing>("list_evidence_files", {
+      dir: result.evidence_path,
+    });
+    const garnetFiles = listing.files.filter((file) => file.relative_path.endsWith(".garnet"));
+    if (garnetFiles.length === 0) {
+      target.innerHTML = `
+        <article class="result ok">
+          <header><span>Converted bundle</span></header>
+          <pre>${escapeHtml(
+            `No .garnet output found in the bundle root.\nBundle files:\n${listing.files
+              .map((file) => `  ${file.relative_path} (${file.size} bytes)`)
+              .join("\n")}`,
+          )}</pre>
+        </article>
+      `;
+      return;
+    }
+    const first = garnetFiles[0];
+    const text = await invoke<EvidenceText>("read_evidence_text", {
+      path: `${result.evidence_path}/${first.relative_path}`,
+    });
+    const others = garnetFiles.slice(1);
+    target.innerHTML = `
+      <article class="result ok">
+        <header>
+          <span>Converted output — ${escapeHtml(first.relative_path)}${
+            text.truncated ? ' <span class="badge warn">preview truncated</span>' : ""
+          }</span>
+          <span class="result-tools">
+            <button class="mini" data-copy="${escapeHtml(text.content)}">Copy</button>
+          </span>
+        </header>
+        <pre>${escapeHtml(text.content)}</pre>
+        ${
+          others.length
+            ? `<footer class="result-footer">Also produced: ${others
+                .map((file) => escapeHtml(file.relative_path))
+                .join(", ")}</footer>`
+            : ""
+        }
+      </article>
+    `;
+    wireCopyButtons(target as HTMLElement);
+  } catch (error) {
+    target.innerHTML = `
+      <article class="result fail">
+        <header><span>Preview unavailable</span></header>
+        <pre>${escapeHtml(String(error))}</pre>
+      </article>
+    `;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Keyboard shortcuts
+// ---------------------------------------------------------------------------
+
+const PRIMARY_ACTION_BY_PANEL: Record<string, string> = {
+  health: "btn-health",
+  garnet: "btn-check",
+  convert: "btn-convert",
+  advisory: "btn-assist",
+  evidence: "btn-evidence",
+  release: "btn-windows-status",
+  settings: "btn-save-settings",
+};
+
+function setupShortcuts(): void {
+  document.addEventListener("keydown", (event) => {
+    if (event.ctrlKey && !event.altKey && !event.shiftKey) {
+      const digit = Number.parseInt(event.key, 10);
+      if (Number.isInteger(digit) && digit >= 1 && digit <= 9) {
+        const buttons = visiblePanelButtons();
+        const button = buttons[digit - 1];
+        if (button?.dataset.panel) {
+          event.preventDefault();
+          activatePanel(button.dataset.panel);
+          button.focus();
+        }
+        return;
+      }
+      if (event.key === "Enter") {
+        const active = document.querySelector<HTMLButtonElement>("[data-panel].active");
+        const panel = active?.dataset.panel;
+        const actionId = panel ? PRIMARY_ACTION_BY_PANEL[panel] : undefined;
+        if (actionId) {
+          event.preventDefault();
+          (document.getElementById(actionId) as HTMLButtonElement | null)?.click();
+        }
+      }
+    }
+    if (event.key === "Escape") {
+      const active = document.querySelector<HTMLElement>(".panel.active");
+      active?.focus();
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Splash + boot
+// ---------------------------------------------------------------------------
+
+const SPLASH_MINIMUM_MS = 700;
+
+function setSplashStatus(message: string): void {
+  setText("splash-status", message);
+}
+
+function dismissSplash(): void {
+  const splash = document.getElementById("splash");
+  if (!splash) return;
+  const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  if (reduceMotion) {
+    splash.remove();
+    return;
+  }
+  splash.classList.add("splash-leaving");
+  splash.addEventListener("transitionend", () => splash.remove(), { once: true });
+  // Safety net: never let a missed transition event strand the splash.
+  setTimeout(() => splash.remove(), 1200);
+}
+
+async function boot(): Promise<void> {
+  const bootStarted = performance.now();
+
+  setSplashStatus("Loading preferences…");
+  try {
+    const [info, settings] = await Promise.all([
+      invoke<AppInfo>("get_app_info"),
+      invoke<StudioSettings>("studio_get_settings"),
+    ]);
+    setText("splash-version", `v${info.app_version}`);
+    setText("sb-app", `Studio v${info.app_version}`);
+    setText("settings-path", info.settings_path);
+    applySettings(settings);
+  } catch {
+    // Outside the Tauri shell (plain vite preview) the invokes reject; the UI
+    // still renders with defaults so the layout can be inspected.
+    applySettings({ ...DEFAULT_SETTINGS });
+    setText("sb-app", "Studio (browser preview — Tauri shell required for actions)");
+  }
+
+  setSplashStatus("Checking CLI health…");
+  try {
+    const health = await invoke<HealthStatus>("cli_health");
+    renderHealth("health-result", health);
+    setSplashStatus(health.cli_found ? "Garnet CLI found" : "Garnet CLI not found");
+  } catch (error) {
+    renderError("health-result", error);
+    setSplashStatus("Health check unavailable");
+  }
+
+  const elapsed = performance.now() - bootStarted;
+  const remaining = Math.max(0, SPLASH_MINIMUM_MS - elapsed);
+  setTimeout(dismissSplash, remaining);
 }
 
 async function loadTaxonomy(): Promise<void> {
@@ -220,7 +670,9 @@ async function loadTaxonomy(): Promise<void> {
 
 window.addEventListener("DOMContentLoaded", () => {
   setupTabs();
+  setupShortcuts();
   loadTaxonomy();
+  void boot();
 
   setInput("garnet-file", "examples/mvp_01_os_simulator.garnet");
   setInput("convert-source", "");
@@ -231,6 +683,15 @@ window.addEventListener("DOMContentLoaded", () => {
     .then((dir) => {
       const target = document.getElementById("evidence-root");
       if (target) target.textContent = dir;
+      const sb = document.getElementById("sb-evidence");
+      if (sb) {
+        sb.textContent = `evidence: ${dir}`;
+        sb.addEventListener("click", async () => {
+          const ok = await copyText(dir);
+          sb.textContent = ok ? "evidence: copied to clipboard" : `evidence: ${dir}`;
+          if (ok) setTimeout(() => (sb.textContent = `evidence: ${dir}`), 1500);
+        });
+      }
     })
     .catch(() => {});
 
@@ -243,73 +704,104 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  wireButton("btn-parse", () =>
-    runCommand("garnet-result", "cli_parse", { filePath: requireValue("garnet-file", "Garnet file") }),
-  );
-  wireButton("btn-check", () =>
-    runCommand("garnet-result", "cli_check", { filePath: requireValue("garnet-file", "Garnet file") }),
-  );
-  wireButton("btn-run", () =>
-    runCommand("garnet-result", "cli_run", { filePath: requireValue("garnet-file", "Garnet file") }),
-  );
+  wireButton("btn-parse", async () => {
+    await runCommand("garnet-result", "cli_parse", {
+      filePath: requireValue("garnet-file", "Garnet file"),
+    });
+  });
+  wireButton("btn-check", async () => {
+    await runCommand("garnet-result", "cli_check", {
+      filePath: requireValue("garnet-file", "Garnet file"),
+    });
+  });
+  wireButton("btn-run", async () => {
+    await runCommand("garnet-result", "cli_run", {
+      filePath: requireValue("garnet-file", "Garnet file"),
+    });
+  });
 
-  wireButton("btn-convert", () =>
-    runCommand("convert-result", "cli_convert", {
+  wireButton("btn-convert", async () => {
+    const result = await runCommand("convert-result", "cli_convert", {
       sourceFile: requireValue("convert-source", "Source file"),
       sourceLang: requireValue("convert-lang", "Source language"),
-    }),
-  );
+    });
+    if (result) {
+      await renderConvertPreview(result);
+    }
+  });
 
-  wireButton("btn-assist", () =>
-    runCommand("assist-result", "advisory_assist_plan", {
+  wireButton("btn-assist", async () => {
+    await runCommand("assist-result", "advisory_assist_plan", {
       sourceFile: requireValue("assist-source", "Source file"),
       language: requireValue("assist-lang", "Language"),
-    }),
-  );
+    });
+  });
 
-  wireButton("btn-bundle", () =>
-    runCommand("bundle-result", "advisory_bundle", {
+  wireButton("btn-bundle", async () => {
+    await runCommand("bundle-result", "advisory_bundle", {
       sourceFile: requireValue("bundle-source", "Source file"),
       language: requireValue("bundle-lang", "Language"),
-    }),
-  );
+    });
+  });
 
-  wireButton("btn-review", () =>
-    runCommand("review-result", "advisory_review", {
+  wireButton("btn-review", async () => {
+    await runCommand("review-result", "advisory_review", {
       bundleDir: requireValue("review-bundle", "Bundle directory"),
-    }),
-  );
+    });
+  });
 
-  wireButton("btn-handoff", () =>
-    runCommand("handoff-result", "advisory_handoff", {
+  wireButton("btn-handoff", async () => {
+    await runCommand("handoff-result", "advisory_handoff", {
       bundleDir: requireValue("handoff-bundle", "Bundle directory"),
       reviewDir: requireValue("handoff-review", "Review directory"),
-    }),
-  );
+    });
+  });
 
-  wireButton("btn-pulse", () => runCommand("pulse-result", "objective_pulse", {}));
-  wireButton("btn-dogfood", () => runCommand("dogfood-result", "agentic_dogfood_matrix", {}));
-  wireButton("btn-windows-status", () =>
-    runCommand("release-result", "windows_linux_studio_status", {}),
-  );
-  wireButton("btn-domain-proof", () => runCommand("release-result", "domain_proof_matrix", {}));
-  wireButton("btn-mac-domain-proofs", () =>
-    runCommand("release-result", "mac_domain_proofs", {}),
-  );
-  wireButton("btn-converter-status", () => runCommand("release-result", "converter_status", {}));
-  wireButton("btn-provider-options", () => runCommand("release-result", "provider_options", {}));
-  wireButton("btn-mit-demo", () => runCommand("release-result", "mit_demo_route", {}));
-  wireButton("btn-deck-outline", () => runCommand("release-result", "mit_deck_outline", {}));
-  wireButton("btn-deck-preview", () => runCommand("release-result", "mit_deck_preview", {}));
-  wireButton("btn-mac-continuation", () =>
-    runCommand("release-result", "mac_continuation_pulse", {}),
-  );
-  wireButton("btn-proof-status", () => runCommand("release-result", "proof_benchmark_status", {}));
-  wireButton("btn-benchmark-no-run", () => runCommand("release-result", "benchmark_no_run", {}));
-  wireButton("btn-notarization", () => runCommand("release-result", "notarization_status", {}));
-  wireButton("btn-windows-vm-installer", () =>
-    runCommand("release-result", "windows_vm_installer_status", {}),
-  );
+  wireButton("btn-pulse", async () => {
+    await runCommand("pulse-result", "objective_pulse", {});
+  });
+  wireButton("btn-dogfood", async () => {
+    await runCommand("dogfood-result", "agentic_dogfood_matrix", {});
+  });
+  wireButton("btn-windows-status", async () => {
+    await runCommand("release-result", "windows_linux_studio_status", {});
+  });
+  wireButton("btn-domain-proof", async () => {
+    await runCommand("release-result", "domain_proof_matrix", {});
+  });
+  wireButton("btn-mac-domain-proofs", async () => {
+    await runCommand("release-result", "mac_domain_proofs", {});
+  });
+  wireButton("btn-converter-status", async () => {
+    await runCommand("release-result", "converter_status", {});
+  });
+  wireButton("btn-provider-options", async () => {
+    await runCommand("release-result", "provider_options", {});
+  });
+  wireButton("btn-mit-demo", async () => {
+    await runCommand("release-result", "mit_demo_route", {});
+  });
+  wireButton("btn-deck-outline", async () => {
+    await runCommand("release-result", "mit_deck_outline", {});
+  });
+  wireButton("btn-deck-preview", async () => {
+    await runCommand("release-result", "mit_deck_preview", {});
+  });
+  wireButton("btn-mac-continuation", async () => {
+    await runCommand("release-result", "mac_continuation_pulse", {});
+  });
+  wireButton("btn-proof-status", async () => {
+    await runCommand("release-result", "proof_benchmark_status", {});
+  });
+  wireButton("btn-benchmark-no-run", async () => {
+    await runCommand("release-result", "benchmark_no_run", {});
+  });
+  wireButton("btn-notarization", async () => {
+    await runCommand("release-result", "notarization_status", {});
+  });
+  wireButton("btn-windows-vm-installer", async () => {
+    await runCommand("release-result", "windows_vm_installer_status", {});
+  });
 
   wireButton("btn-evidence", async () => {
     try {
@@ -320,6 +812,29 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  const healthButton = document.getElementById("btn-health") as HTMLButtonElement | null;
-  healthButton?.click();
+  wireButton("btn-save-settings", async () => {
+    try {
+      const saved = await invoke<StudioSettings>("studio_set_settings", {
+        settings: readSettingsForm(),
+      });
+      applySettings(saved);
+      const target = document.getElementById("settings-result");
+      if (target) {
+        target.innerHTML = `
+          <article class="result ok">
+            <header><span>Settings saved</span><time>${new Date().toLocaleTimeString()}</time></header>
+            <pre>${escapeHtml(JSON.stringify(saved, null, 2))}</pre>
+          </article>
+        `;
+      }
+    } catch (error) {
+      renderError("settings-result", error);
+    }
+  });
+
+  window
+    .matchMedia?.("(prefers-color-scheme: light)")
+    .addEventListener?.("change", () => {
+      if (currentSettings.theme === "system") applyTheme("system");
+    });
 });

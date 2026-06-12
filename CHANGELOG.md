@@ -13,6 +13,51 @@ _Post-cut work (S121+) lands here. S121–S130 delivered: the Truth Sync Gate, d
 modernization, the v0.8.1 version bump + release guard + SBOM/signing wiring, the
 signed re-cut, and this post-re-cut truth-sync._
 
+### Studio suite UX overhaul — Windows/Linux Tauri shell (parallel-safe with W-REBUILD)
+
+- **Fixed (version truth):** the Windows/Linux Studio shell no longer stamps
+  `0.1.0` — `tauri.conf.json` drops its duplicate `version` field (Cargo.toml is
+  the single stamp, set to the workspace release version), so the NSIS artifact
+  is now `Garnet Studio_0.8.1_x64-setup.exe`. Drift is gated twice: a crate test
+  compares the stamp against `[workspace.package].version` (the crate is
+  workspace-excluded, so inheritance can't do it), and the shell contract test
+  re-checks it from Python.
+- **Added (boot experience):** a real launch splash (brand, tagline, live boot
+  status, version) that holds ≥700 ms and fades once preferences + CLI health
+  resolve; the window background color matches the theme so launch no longer
+  white-flashes. Honest note: the prior Tauri shell had **no** splash — earlier
+  splash memories trace to the retired Electron-era app.
+- **Added (modes + settings):** Simple/Power interface modes (power-only panels
+  stay in the DOM, hidden not removed, so contract copy is intact) with a
+  Settings panel persisting mode/theme/timeouts to a per-user JSON file;
+  values are validated and clamped on the Rust side.
+- **Added (robustness):** every spawned command now runs with piped,
+  thread-drained output, a per-category timeout (separate, larger budget for
+  the matrix runs), kill-on-timeout with a `timed_out` result, duration
+  reporting, and a 256 KiB-per-stream UI payload cap — the full streams are
+  written to the evidence bundle before capping. A hung reporter can no longer
+  wedge a Studio action forever.
+- **Added (truth surface):** the Release panel's hand-written stats tiles are
+  replaced by live `docs/truth.json` values (version, tag, tracked slices,
+  readiness, primitives, workspace tests) with the stamping commit shown, and
+  an explicit "truth surface unavailable" state instead of guessed numbers.
+- **Added (converter UX):** successful conversions render an in-app preview of
+  the produced `.garnet` output via new read-only commands
+  (`list_evidence_files`, `read_evidence_text`) that canonicalize and reject
+  any path outside the Studio evidence roots (traversal/symlink-escape safe,
+  size-capped).
+- **Added (UX polish):** hover help (`data-tip`) across all controls, keyboard
+  shortcuts (Ctrl+1…8 panels, Ctrl+Enter primary action), a status bar (shell
+  version, CLI version, mode, copyable evidence root), copy buttons and
+  collapsible long output on results, dark/light/system themes, focus-visible
+  rings, and reduced-motion support.
+- **Boundaries unchanged:** no provider APIs, no new Tauri permissions
+  (`core:default` only), no new frontend dependencies, active-vs-advisory
+  language split intact, evidence contract (`MANIFEST.sha256`,
+  `source_included=false`) intact, and no platform/proof claim upgrades — the
+  open-gates copy (clean-VM re-proof at the new stamp, Linux launch, signing,
+  MSI, winget, notarization) still reads as open.
+
 ### RB-2 follow-up — interp `%= 0` is now "division by zero" (cross-backend parity)
 
 - **Fixed (observable error-string change, interp only):** `a %= 0` in the
