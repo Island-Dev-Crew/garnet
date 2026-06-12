@@ -1,8 +1,14 @@
 //! Primitive registry — maps Garnet-surface names to
 //! (required_capability, layer, stability, invocation-metadata) tuples.
 //!
-//! The interpreter calls `all_prims()` at startup to populate its
-//! prelude. The CapCaps checker (Rung 4 / v3.4 Security Layer 2)
+//! RB-3: the interpreter DERIVES its native installation from
+//! `all_prims()` at startup — binding mode, arity, and the runtime
+//! capability-backstop class all come from the `Binding`/`Guard` columns
+//! here, joined against the `#[garnet_primitive]` adapter table in
+//! `garnet-interp`'s `stdlib_bridge`. (Before RB-3 this comment claimed
+//! that derivation while the two lists were in fact hand-synced — that
+//! drift class is what RB-3 retired.) The CapCaps checker (Rung 4 / v3.4
+//! Security Layer 2)
 //! consults the `RequiredCaps` tag on each primitive at every call
 //! site to verify the calling function's `@caps(...)` annotation
 //! covers the required capability. The `@stability` checker (S17)

@@ -9,6 +9,14 @@ Owns managed-mode tree-walk execution, expression evaluation, stdlib bridging, a
 - Keep interpreter behavior aligned with parsed AST and Mini-Spec semantics.
 - Do not bypass capability metadata when invoking stdlib or OS-facing operations.
 - Prefer explicit errors over silent no-ops for unsupported language features.
+- Registry-derived dispatch (RB-3): `stdlib_bridge::install()` is ONE loop
+  joining `garnet_stdlib::registry::all_prims()` (Binding/Guard/arity
+  columns) against the `#[garnet_primitive]` adapter table — never add a
+  hand-written registration row. Adapter bodies keep the literal
+  `require_capability` backstops as grep-able source text (gate scripts
+  parse this file). The four `memory::*` natives live in `BRIDGE_ONLY`;
+  the registry-join trap tests + `guard_column_matches_runtime_backstop_behavior`
+  make any registry/adapter drift a red test.
 - Crash surface (RB-2): the crate carries
   `#![deny(clippy::unwrap_used, clippy::expect_used)]` (tests exempt via
   `cfg_attr`). Sanctioned escapes are in-line `// INVARIANT:` allows only.

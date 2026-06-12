@@ -106,443 +106,6 @@ fn leak_key(qualified: String) -> &'static str {
     leaked
 }
 
-/// RB-3 differential reference — the old hand-written registration list,
-/// kept verbatim (adapter paths adjusted) for the duration of the slice
-/// ONLY and deleted in the same PR once the differential test is green.
-#[cfg(test)]
-pub(crate) fn install_legacy(global: &Env) {
-    // ── strings (cap: none) ──
-    define_native(global, "split", Some(2), adapters::bridge_str_split);
-    define_native(global, "replace", Some(3), adapters::bridge_str_replace);
-    define_native(global, "trim", Some(1), adapters::bridge_str_trim);
-    define_native(global, "to_lower", Some(1), adapters::bridge_str_to_lower);
-    define_native(global, "to_upper", Some(1), adapters::bridge_str_to_upper);
-    define_native(
-        global,
-        "starts_with",
-        Some(2),
-        adapters::bridge_str_starts_with,
-    );
-    define_native(global, "contains", Some(2), adapters::bridge_str_contains);
-
-    // ── time (cap: time — CapCaps-gated) ──
-    define_native(global, "now_ms", Some(0), adapters::bridge_time_now_ms);
-    define_native(
-        global,
-        "wall_clock_ms",
-        Some(0),
-        adapters::bridge_time_wall_clock_ms,
-    );
-    define_native(global, "sleep", Some(1), adapters::bridge_time_sleep);
-
-    // ── crypto (cap: none — pure compute) ──
-    define_native(global, "blake3", Some(1), adapters::bridge_crypto_blake3);
-    define_native(global, "sha256", Some(1), adapters::bridge_crypto_sha256);
-    define_native(
-        global,
-        "hmac_sha256",
-        Some(2),
-        adapters::bridge_crypto_hmac_sha256,
-    );
-
-    // ── array (cap: none — pure compute; backed by stdlib::collections) ──
-    define_native(global, "insert", Some(3), adapters::bridge_array_insert);
-    define_native(global, "remove", Some(2), adapters::bridge_array_remove);
-    define_native(global, "sort", Some(1), adapters::bridge_array_sort);
-
-    // ── fs (cap: fs — CapCaps-gated) ──
-    define_native(global, "read_file", Some(1), adapters::bridge_fs_read_file);
-    define_native(
-        global,
-        "write_file",
-        Some(2),
-        adapters::bridge_fs_write_file,
-    );
-    define_native(
-        global,
-        "read_bytes",
-        Some(1),
-        adapters::bridge_fs_read_bytes,
-    );
-    define_native(
-        global,
-        "write_bytes",
-        Some(2),
-        adapters::bridge_fs_write_bytes,
-    );
-    define_native(global, "list_dir", Some(1), adapters::bridge_fs_list_dir);
-
-    // ── net (cap: net — CapCaps-gated + NetDefaults-gated) ──
-    //
-    // v3.4.1 Day 2 bridges `tcp_connect` only — it's the sole net primitive
-    // with a concrete stdlib implementation at this release. `tcp_listen`
-    // and `udp_bind` are registered in the stdlib `registry` for the
-    // CapCaps propagator's sake but lack concrete implementations; they
-    // are deliberately left unbridged until the stdlib's `net` module
-    // grows them. Attempting to call either at source layer resolves
-    // through the path fallback to `nil` at runtime; the propagator still
-    // requires `@caps(net)` because the registry metadata is authoritative.
-    define_native(
-        global,
-        "tcp_connect",
-        Some(2),
-        adapters::bridge_net_tcp_connect,
-    );
-
-    // ════════════════════════════════════════════════════════════════
-    // S21 — Layer-0/1 qualified dispatch (S17 registry → runnable).
-    //
-    // Bound under their FULLY-QUALIFIED names so `eval_path`'s qualified-first
-    // resolution finds them without colliding with bare prelude builtins that
-    // share a last segment (`map` = Map ctor, `ok`/`err` = Result builders).
-    // `core::math` / `std::base64` / `std::json` dispatch the `garnet_stdlib`
-    // host functions directly; `core::iter` / `core::cmp` are bridged at the
-    // Value layer (Garnet's dynamic `Value` can't be passed as the stdlib's
-    // monomorphic generic `T`) with the stdlib generics as the Rust reference.
-    // ════════════════════════════════════════════════════════════════
-
-    // ── core::math (cap: none — total numeric, dispatches garnet_stdlib::math) ──
-    define_native(
-        global,
-        "core::math::abs",
-        Some(1),
-        adapters::bridge_math_abs,
-    );
-    define_native(
-        global,
-        "core::math::sqrt",
-        Some(1),
-        adapters::bridge_math_sqrt,
-    );
-    define_native(
-        global,
-        "core::math::pow",
-        Some(2),
-        adapters::bridge_math_pow,
-    );
-    define_native(
-        global,
-        "core::math::floor",
-        Some(1),
-        adapters::bridge_math_floor,
-    );
-    define_native(
-        global,
-        "core::math::ceil",
-        Some(1),
-        adapters::bridge_math_ceil,
-    );
-    define_native(
-        global,
-        "core::math::round",
-        Some(1),
-        adapters::bridge_math_round,
-    );
-
-    // ── core::cmp (cap: none — Value-level ordering) ──
-    define_native(global, "core::cmp::min", Some(2), adapters::bridge_cmp_min);
-    define_native(global, "core::cmp::max", Some(2), adapters::bridge_cmp_max);
-    define_native(
-        global,
-        "core::cmp::clamp",
-        Some(3),
-        adapters::bridge_cmp_clamp,
-    );
-    define_native(
-        global,
-        "core::cmp::ordering",
-        Some(2),
-        adapters::bridge_cmp_ordering,
-    );
-
-    // ── core::iter (cap: none — higher-order via call_value; Value-level) ──
-    define_native(
-        global,
-        "core::iter::map",
-        Some(2),
-        adapters::bridge_iter_map,
-    );
-    define_native(
-        global,
-        "core::iter::filter",
-        Some(2),
-        adapters::bridge_iter_filter,
-    );
-    define_native(
-        global,
-        "core::iter::fold",
-        Some(3),
-        adapters::bridge_iter_fold,
-    );
-    define_native(
-        global,
-        "core::iter::take",
-        Some(2),
-        adapters::bridge_iter_take,
-    );
-    define_native(
-        global,
-        "core::iter::drop",
-        Some(2),
-        adapters::bridge_iter_drop,
-    );
-    define_native(
-        global,
-        "core::iter::enumerate",
-        Some(1),
-        adapters::bridge_iter_enumerate,
-    );
-    // S28: the last three registered core::iter combinators (Value-level, not
-    // higher-order). `zip`/`chain` pair/concat two arrays; `collect` materializes
-    // a sequence (a `Range`, or an array passed through) into an owned Array.
-    define_native(
-        global,
-        "core::iter::zip",
-        Some(2),
-        adapters::bridge_iter_zip,
-    );
-    define_native(
-        global,
-        "core::iter::collect",
-        Some(1),
-        adapters::bridge_iter_collect,
-    );
-    define_native(
-        global,
-        "core::iter::chain",
-        Some(2),
-        adapters::bridge_iter_chain,
-    );
-
-    // ── core::result (cap: none — Value-level; map/and_then/or_else higher-order
-    //    via call_value). Bound qualified so `core::result::map` does not collide
-    //    with the bare `map` (Map constructor) on the last-segment fallback. ──
-    define_native(
-        global,
-        "core::result::ok",
-        Some(1),
-        adapters::bridge_result_ok,
-    );
-    define_native(
-        global,
-        "core::result::err",
-        Some(1),
-        adapters::bridge_result_err,
-    );
-    define_native(
-        global,
-        "core::result::map",
-        Some(2),
-        adapters::bridge_result_map,
-    );
-    define_native(
-        global,
-        "core::result::and_then",
-        Some(2),
-        adapters::bridge_result_and_then,
-    );
-    define_native(
-        global,
-        "core::result::or_else",
-        Some(2),
-        adapters::bridge_result_or_else,
-    );
-    define_native(
-        global,
-        "core::result::unwrap_or",
-        Some(2),
-        adapters::bridge_result_unwrap_or,
-    );
-
-    // ── core::option (cap: none — Value-level; map/and_then higher-order via
-    //    call_value). Same qualified-binding rationale as core::result. ──
-    define_native(
-        global,
-        "core::option::some",
-        Some(1),
-        adapters::bridge_option_some,
-    );
-    define_native(
-        global,
-        "core::option::none",
-        Some(0),
-        adapters::bridge_option_none,
-    );
-    define_native(
-        global,
-        "core::option::map",
-        Some(2),
-        adapters::bridge_option_map,
-    );
-    define_native(
-        global,
-        "core::option::and_then",
-        Some(2),
-        adapters::bridge_option_and_then,
-    );
-    define_native(
-        global,
-        "core::option::unwrap_or",
-        Some(2),
-        adapters::bridge_option_unwrap_or,
-    );
-
-    // ── std::base64 (cap: none — dispatches garnet_stdlib::base64) ──
-    define_native(
-        global,
-        "std::base64::encode",
-        Some(1),
-        adapters::bridge_base64_encode,
-    );
-    define_native(
-        global,
-        "std::base64::decode",
-        Some(1),
-        adapters::bridge_base64_decode,
-    );
-
-    // ── S22: remaining S17 Layer-1 runtime dispatch ──
-    define_native(
-        global,
-        "std::json::parse",
-        Some(1),
-        adapters::bridge_json_parse,
-    );
-    define_native(
-        global,
-        "std::json::stringify",
-        Some(1),
-        adapters::bridge_json_stringify,
-    );
-    define_native(global, "std::json::get", Some(2), adapters::bridge_json_get);
-    define_native(global, "std::json::set", Some(3), adapters::bridge_json_set);
-
-    define_native(
-        global,
-        "std::regex::compile",
-        Some(1),
-        adapters::bridge_regex_compile,
-    );
-    define_native(
-        global,
-        "std::regex::match",
-        Some(2),
-        adapters::bridge_regex_match,
-    );
-    define_native(
-        global,
-        "std::regex::find_all",
-        Some(2),
-        adapters::bridge_regex_find_all,
-    );
-    define_native(
-        global,
-        "std::regex::replace",
-        Some(3),
-        adapters::bridge_regex_replace,
-    );
-
-    define_native(
-        global,
-        "std::uuid::new_v4",
-        Some(0),
-        adapters::bridge_uuid_new_v4,
-    );
-    define_native(
-        global,
-        "std::uuid::new_v5",
-        Some(2),
-        adapters::bridge_uuid_new_v5,
-    );
-    define_native(
-        global,
-        "std::uuid::new_v7",
-        Some(0),
-        adapters::bridge_uuid_new_v7,
-    );
-
-    define_native(global, "std::env::get", Some(1), adapters::bridge_env_get);
-    define_native(global, "std::env::set", Some(2), adapters::bridge_env_set);
-    define_native(global, "std::env::vars", Some(0), adapters::bridge_env_vars);
-
-    define_native(
-        global,
-        "std::process::spawn",
-        Some(1),
-        adapters::bridge_process_spawn,
-    );
-    define_native(
-        global,
-        "std::process::spawn_args",
-        Some(2),
-        adapters::bridge_process_spawn_args,
-    );
-    define_native(
-        global,
-        "std::process::output",
-        Some(2),
-        adapters::bridge_process_output,
-    );
-    define_native(
-        global,
-        "std::process::wait",
-        Some(1),
-        adapters::bridge_process_wait,
-    );
-    define_native(
-        global,
-        "std::process::exit_code",
-        Some(1),
-        adapters::bridge_process_exit_code,
-    );
-
-    define_native(global, "std::log::info", Some(1), adapters::bridge_log_info);
-    define_native(global, "std::log::warn", Some(1), adapters::bridge_log_warn);
-    define_native(
-        global,
-        "std::log::error",
-        Some(1),
-        adapters::bridge_log_error,
-    );
-    define_native(
-        global,
-        "std::log::debug",
-        Some(1),
-        adapters::bridge_log_debug,
-    );
-    define_native(
-        global,
-        "std::log::to_file",
-        Some(3),
-        adapters::bridge_log_to_file,
-    );
-
-    define_native(
-        global,
-        "memory::working",
-        Some(1),
-        adapters::bridge_memory_working,
-    );
-    define_native(
-        global,
-        "memory::episodic",
-        Some(1),
-        adapters::bridge_memory_episodic,
-    );
-    define_native(
-        global,
-        "memory::semantic",
-        Some(1),
-        adapters::bridge_memory_semantic,
-    );
-    define_native(
-        global,
-        "memory::procedural",
-        Some(1),
-        adapters::bridge_memory_procedural,
-    );
-}
-
 fn define_native(env: &Env, name: &'static str, arity: Option<usize>, ptr: crate::value::NativeFn) {
     env.define(
         name,
@@ -1843,28 +1406,46 @@ mod rb3_registry_join {
             .collect()
     }
 
-    /// The differential: the registry-derived install produces a table
-    /// IDENTICAL to the old hand-written list — same bound names, same
-    /// display names, same arities, same adapter fn pointers. Pointer
-    /// equality makes behavioral equivalence structural, not sampled.
+    /// Permanent surface pin (the old-vs-new differential ran against the
+    /// verbatim legacy list before its same-PR deletion — evidence in the
+    /// PR's prior commit and the dogfood bundle): the derived install
+    /// binds exactly the audited surface with registry-sourced arities.
     #[test]
-    fn derived_install_is_table_identical_to_legacy() {
-        let new = native_table(install);
-        let old = native_table(install_legacy);
-        let new_keys: Vec<&String> = new.keys().collect();
-        let old_keys: Vec<&String> = old.keys().collect();
-        assert_eq!(new_keys, old_keys, "bound-name sets diverged");
-        for (bound, old_entry) in &old {
-            assert_eq!(
-                &new[bound], old_entry,
-                "native `{bound}` diverged (name/arity/ptr)"
-            );
-        }
+    fn derived_install_binds_the_full_audited_surface() {
+        let table = native_table(install);
         assert_eq!(
-            new.len(),
+            table.len(),
             82,
             "22 bare + 56 qualified + 4 bridge-only memory natives"
         );
+        for (qualified, meta) in all_prims() {
+            let bound = match meta.binding {
+                Binding::Unbridged => {
+                    assert!(
+                        !table.contains_key(&qualified),
+                        "{qualified} must stay unbridged"
+                    );
+                    continue;
+                }
+                Binding::Bare => meta.name.to_string(),
+                Binding::Qualified => qualified.clone(),
+            };
+            let Some((_, arity, _)) = table.get(&bound) else {
+                panic!("registry row {qualified} not bound as `{bound}`");
+            };
+            assert_eq!(
+                *arity,
+                Some(meta.arity),
+                "{bound}: arity must come from the registry"
+            );
+        }
+        for (key, arity) in BRIDGE_ONLY {
+            assert_eq!(
+                table.get(*key).map(|(_, a, _)| *a),
+                Some(Some(*arity)),
+                "bridge-only native {key} must be bound with its documented arity"
+            );
+        }
     }
 
     /// Every non-Unbridged registry row has an adapter; every adapter key

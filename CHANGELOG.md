@@ -32,6 +32,48 @@ signed re-cut, and this post-re-cut truth-sync._
   `%= 0` changes to "division by zero" — now identical to `/= 0` and
   expression-path `% 0`.
 
+### RB-3 — registry-derived dispatch (W-REBUILD Foundation · keystone)
+
+- **Changed:** the interpreter's native installation is now DERIVED — one
+  loop joining `garnet_stdlib::registry::all_prims()` against the
+  `#[garnet_primitive]` adapter table (new `garnet-prim-macros` proc-macro
+  crate: per-adapter attribute + per-module `entries()` collector; zero new
+  external deps — proc-macro2/quote/syn were already locked). The 82
+  hand-written `define_native` registrations are deleted; binding mode
+  (22 bare / 56 qualified / 2 unbridged), arity, and the runtime
+  caps-backstop class now live in two new `PrimMeta` columns
+  (`Binding`, `Guard`) — the registry row is the single dispatch
+  declaration. The registry's old header claim ("the interpreter calls
+  `all_prims()` at startup") was FALSE before this slice — the two lists
+  were hand-synced; that drift class is retired, and the claim is now true.
+- **Differential proof:** before deletion, the derived table was proven
+  IDENTICAL to the verbatim legacy list — same 82 bound names, display
+  names, arities, and adapter fn POINTERS (structural behavioral
+  equivalence; evidence in the PR's prior commit + bundle). Permanent
+  trap tests: registry-join totality (both directions), `BRIDGE_ONLY`
+  exactness (the 4 caps-invisible `memory::*` natives, documented), and
+  `guard_column_matches_runtime_backstop_behavior` — every bridged prim is
+  driven from a `@caps()` frame and Gate/GateEntry rows must caps-trap
+  while Declared rows must not, binding the Guard column to adapter
+  behavior. Zero behavior change otherwise; all textual gate scripts
+  (promotion, layer, caps-enforcement, ffi-authority) verified PASS
+  against the rewired sources; mit-readiness unchanged (92.8).
+- **truth.json:** `primitive_count`/`primitives_by_layer` still derive via
+  `all_prims()` — which is now genuinely the dispatch source, so the
+  truth-marker chain (README/FAQ/site) sits on the real registry. The
+  stale `--version` banner ("22 bridged primitives") is now
+  registry-derived.
+- **Honest partial (LOC criterion — spec deviation):** the spec expected
+  "net LOC drops by roughly two thousand lines" via arm deletion. Measured
+  reality: net ≈ +600 LOC. Adapter BODIES could not be deleted — the
+  caps-enforcement gate greps this file's literal `require_capability`
+  text and the `Value`-conversion logic is real code, not boilerplate; what
+  was deleted is the registration list and its drift class. Recorded as a
+  deviation with the architecture rationale, flagged for the RB-band stop
+  report.
+- **Doc strings:** already present on all 80 rows and now load-bearing in
+  the row contract (RB-7 `?doc` consumes PrimMeta.doc).
+
 ### RB-2 — crash-surface sweep (W-REBUILD Foundation)
 
 - **Changed (abort → diagnostic, both backends):** `i64::MIN / -1` and

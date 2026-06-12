@@ -98,7 +98,10 @@ pub fn print_version() {
     println!(
         "  actor-rt  garnet-actor-runtime 0.4.0 (Result-returning ask, hot-reloadable + signed reload, Rung 6)"
     );
-    println!("  stdlib    garnet-stdlib 0.4.0 (22 bridged primitives)");
+    println!(
+        "  stdlib    garnet-stdlib 0.4.0 ({} registry primitives, dispatch derived from the registry)",
+        garnet_stdlib::registry::all_prims().len()
+    );
     println!(
         "  convert   garnet-convert 0.4.0 (migration assistant: Rust / Ruby / Python / Go → Garnet)"
     );
