@@ -8,8 +8,10 @@
 //! lexer's stream re-threaded through AST spans, so comparing
 //! `token_infos` directly against `garnet_parser::lex_source` checks the
 //! same consumer-facing surface (token payload + source span) without the
-//! middleman — and covers lexable-but-unparseable sources the old
-//! differential skipped.
+//! middleman. Unlike the old differential, this one does not REQUIRE parse
+//! success — the corpus is fully parseable today (verified: the old test
+//! skipped zero files), so the no-parse-needed path is exercised by the
+//! explicit lexable-but-unparseable cases below, not by corpus accident.
 
 use garnet_cst::{identifier_spans, parse_cst, token_infos, TokenInfo};
 use garnet_parser::lex_source;
@@ -46,11 +48,14 @@ fn rowan_token_infos_match_the_lexer_on_corpus() {
     let files = corpus();
     assert!(!files.is_empty(), "example corpus should be non-empty");
 
+    let mut compared = 0usize;
+    let total = files.len();
     for file in files {
         let src = fs::read_to_string(&file).expect("read example");
         let Ok(lexed) = lex_source(&src) else {
             continue;
         };
+        compared += 1;
         let lexer_tokens: Vec<(TokenKind, Span)> = lexed
             .into_iter()
             .filter(|t| !matches!(t.kind, TokenKind::Eof))
@@ -68,6 +73,40 @@ fn rowan_token_infos_match_the_lexer_on_corpus() {
             "rowan token view diverged from the lexer for {}",
             file.display()
         );
+    }
+    // Non-vacuous by construction: the corpus is fully lexable today; a
+    // future deliberately-unlexable fixture must update this assertion
+    // explicitly rather than silently shrinking coverage.
+    assert_eq!(compared, total, "every corpus file must be compared");
+}
+
+#[test]
+fn token_view_matches_the_lexer_on_lexable_but_unparseable_sources() {
+    // The path the old oracle differential could not take (it required
+    // parse success): grammatically invalid but lexable inputs still get
+    // an exact token-view parity check, because parse_cst is
+    // error-recovering while the token stream is pure lexer truth.
+    for src in [
+        "def f( {
+",
+        "def f() { 1 +++ }
+",
+        ")))
+",
+        "@caps(
+",
+    ] {
+        let lexed = lex_source(src).expect("snippet must lex");
+        let lexer_tokens: Vec<(TokenKind, Span)> = lexed
+            .into_iter()
+            .filter(|t| !matches!(t.kind, TokenKind::Eof))
+            .map(|t| (t.kind, t.span))
+            .collect();
+        let rowan_tokens: Vec<(TokenKind, Span)> = token_infos(parse_cst(src).syntax())
+            .into_iter()
+            .map(|TokenInfo { kind, span, .. }| (kind, span))
+            .collect();
+        assert_eq!(rowan_tokens, lexer_tokens, "diverged on {src:?}");
     }
 }
 

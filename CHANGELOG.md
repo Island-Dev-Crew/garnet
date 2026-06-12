@@ -91,20 +91,28 @@ signed re-cut, and this post-re-cut truth-sync._
 - **Removed:** `garnet-parser-v0.3/src/cst.rs` — #221's post-hoc parser CST,
   the self-described "temporary legacy migration oracle" — plus its four
   `parse_source_cst*` wrappers and `tests/cst_round_trip.rs`. The recorded
-  deletion precondition (Jon, 2026-05-24 ledger: rowan-backed LSP
-  rename/semantic-token coverage green) was verified met before deletion:
+  deletion precondition (2026-05-24 coordination-ledger entry: rowan-backed
+  LSP rename/semantic-token coverage green) was verified met before deletion:
   the LSP has been fully rowan-backed since S16 (zero legacy-CST imports
   anywhere in the workspace — the "remaining consumer paths" the spec
   anticipated turned out to be already migrated; this slice's real work was
   the oracle retirement and its truth surfaces). `garnet-cst` (rowan) is
-  the ONE syntax substrate.
+  the one CST substrate (the AST remains a parallel structure until
+  RB-4b's typed views; `tree-sitter-garnet/` is a separate editor-tooling
+  grammar).
 - **Changed (test architecture):** the S15-Compare reconciliation
   differential (`parser_cst_token_parity.rs`, rowan-vs-legacy token view)
   retired WITH its oracle and is succeeded by
   `garnet-cst/tests/token_view_parity.rs` — rowan's token view compared
   **directly against `garnet_parser::lex_source`** (the shared surface the
-  legacy CST re-threaded). Strictly broader: also covers
-  lexable-but-unparseable sources the old differential skipped.
+  legacy CST re-threaded). Broader admission criterion, stated precisely:
+  the successor does not require parse success (the old differential did) —
+  measured truth is the old test skipped ZERO corpus files (all 39 parse),
+  so the no-parse-needed path is exercised by explicit
+  lexable-but-unparseable inline cases, and a `compared == corpus` guard
+  makes the corpus sweep non-vacuous. The all-corpus parse-success gate the
+  legacy test incidentally provided is restored as
+  `garnet-parser-v0.3/tests/examples_parse.rs` (review finding).
   Byte-identical round-trip coverage continues on the same corpus via the
   pre-existing `garnet-cst/tests/examples_roundtrip.rs` (+ proptest).
 - **Truth surfaces:** the mit-readiness `parser_cst_layer` lane now cites

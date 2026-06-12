@@ -2476,7 +2476,7 @@ def read_status() -> MitReadinessStatus:
                 "`garnet-cst/tests/examples_roundtrip.rs` asserts 100% byte-identical reconstruction of all "
                 "parser-crate and workspace examples; `garnet-cst/tests/token_view_parity.rs` proves the token "
                 "view against the shared lexer (RB-4a retired the #221 legacy oracle in `cst.rs`/`cst_round_trip.rs`)."
-            ) if _cst_layer_present() else "No committed CST or cst_round_trip test source is present yet.",
+            ) if _cst_layer_present() else "No committed rowan CST source (garnet-cst lib/examples_roundtrip/token_view_parity) is present.",
             blocked_by=[] if _cst_layer_present() else ["S15 CST implementation"],
             deferred=[
                 "incremental syntax parsing",

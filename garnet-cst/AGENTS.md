@@ -47,8 +47,10 @@ extends #221's CST.
   token text. `tests/token_view_parity.rs` must keep proving that this token
   view matches `garnet_parser::lex_source` (the shared lexer surface) on the
   example corpus, excluding the zero-width EOF sentinel — the RB-4a successor
-  to the retired legacy-oracle differential, strictly broader (covers
-  lexable-but-unparseable sources the old comparison skipped).
+  to the retired legacy-oracle differential. Broader admission criterion
+  (no parse-success requirement), exercised by explicit
+  lexable-but-unparseable inline cases and guarded non-vacuous
+  (`compared == corpus`).
 - `u16` <-> `SyntaxKind` conversion is safe (no `mem::transmute`); this crate
   introduces no ambient `unsafe`.
 - No OS authority: pure parsing, declares no `@caps`.
