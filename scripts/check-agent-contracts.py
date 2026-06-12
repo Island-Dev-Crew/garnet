@@ -83,6 +83,9 @@ CONTRACT_RULES = {
     "garnet-cst/AGENTS.md": {
         "phrases": ["rowan", "trivia-preserving", "Concrete Syntax Tree", "round-trip"],
     },
+    "garnet-prim-macros/AGENTS.md": {
+        "phrases": ["registration only", "registry-join", "garnet_primitive"],
+    },
     "garnet-lsp/AGENTS.md": {
         "phrases": [
             "Language Server Protocol",

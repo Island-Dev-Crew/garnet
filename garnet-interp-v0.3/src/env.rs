@@ -35,6 +35,25 @@ impl Env {
         }
     }
 
+    /// RB-3 test support: snapshot every `Value::NativeFn` binding in THIS
+    /// scope (no parent walk) as `(bound_name, native)` pairs, sorted by
+    /// bound name. Used by the registry-derived-dispatch differential test
+    /// to compare installation tables structurally.
+    #[cfg(test)]
+    pub(crate) fn native_fn_snapshot(&self) -> Vec<(String, Rc<crate::value::NativeFnValue>)> {
+        let mut out: Vec<(String, Rc<crate::value::NativeFnValue>)> = self
+            .vars
+            .borrow()
+            .iter()
+            .filter_map(|(k, v)| match v {
+                Value::NativeFn(n) => Some((k.clone(), Rc::clone(n))),
+                _ => None,
+            })
+            .collect();
+        out.sort_by(|a, b| a.0.cmp(&b.0));
+        out
+    }
+
     /// Create a nested scope with `parent` as the enclosing lexical scope.
     pub fn new_child(parent: &Rc<Env>) -> Rc<Env> {
         Rc::new(Self {

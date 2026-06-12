@@ -42,6 +42,7 @@ Every path below is part of the current contract surface and must remain present
 - `/garnet-cli/templates/AGENTS.md`
 - `/garnet-convert/AGENTS.md`
 - `/garnet-cst/AGENTS.md`
+- `/garnet-prim-macros/AGENTS.md`
 - `/garnet-lsp/AGENTS.md`
 - `/garnet-suggest-llm/AGENTS.md`
 - `/garnet-vm/AGENTS.md`

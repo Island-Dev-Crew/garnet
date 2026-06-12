@@ -653,6 +653,7 @@ dependencies = [
  "garnet-memory",
  "garnet-parser",
  "garnet-registry-stub",
+ "garnet-stdlib",
  "garnet-vm",
  "getrandom 0.2.17",
  "miette",
@@ -685,6 +686,7 @@ dependencies = [
  "criterion",
  "garnet-memory",
  "garnet-parser",
+ "garnet-prim-macros",
  "garnet-stdlib",
  "miette",
  "proptest",
@@ -720,6 +722,15 @@ dependencies = [
  "miette",
  "proptest",
  "thiserror",
+]
+
+[[package]]
+name = "garnet-prim-macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

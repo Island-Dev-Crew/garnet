@@ -9,6 +9,8 @@ license = "MIT OR Apache-2.0"
 garnet-parser = { version = "0.3.0", path = "../garnet-parser-v0.3" }
 garnet-memory = { version = "0.3.0", path = "../garnet-memory-v0.3" }
 garnet-stdlib = { version = "0.4.0", path = "../garnet-stdlib" }
+# RB-3: registry-derived dispatch macros (version pin is policy-required).
+garnet-prim-macros = { version = "0.1.0", path = "../garnet-prim-macros" }
 miette = { version = "7.6", features = ["fancy"] }
 serde_json = "1.0"
 thiserror = "2.0"
