@@ -1,0 +1,16 @@
+[package]
+name = "garnet-prim-macros"
+# Independent semver per the workspace versioning policy (the version pin on
+# consumers is policy-required: cargo-deny bans wildcard internal path deps).
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "RB-3 registry-derived dispatch macros: #[garnet_primitive] adapters collected per-module into the interpreter's native table."
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1"
+quote = "1"
+syn = { version = "2", features = ["full"] }
