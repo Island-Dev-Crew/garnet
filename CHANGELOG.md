@@ -7,6 +7,25 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated-honesty record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
+## Unreleased — Studio macOS parity + judged enhancement set (2026-06-12)
+
+- Studio macOS now meets the PR #391 shell standard rows 1–9 (ported the
+  standard, not the Tauri code): single version stamp gated by the new
+  `scripts/test_garnet_macos_studio_shell.py`; splash with 700ms/25s bounds;
+  @AppStorage simple/power modes; validated+clamped settings (corrupt file
+  never blocks boot) with a native Settings scene; ALL 14 process spawns
+  through `StudioProcessRunner` (thread-drained pipes, timeouts, best-effort
+  tree SIGKILL, timed_out/duration, 64KiB UI cap with honest marker); live
+  truth tiles from docs/truth.json replacing hand-written stats; 33+ native
+  hover-help tags; root-constrained evidence reader + in-app preview; ⌘1–5 /
+  ⌘↩ keyboard, status bar, dark/light/system themes, reduce-motion a11y.
+- 19-agent judge/audit workflow over every Studio feature; built the audited
+  set (truth-decoder live-bug fix, stale 0.4.2 stamps, evidence preview, mode
+  coherence, working light theme, ⌘O/drag-drop file open). Audit record:
+  `F_Project_Management/STUDIO_MAC_FEATURE_JUDGE_AUDIT_2026_06_12.md`; async
+  run path + locator dedup queued as the next slices.
+- New contract: `apps/garnet-studio-macos/AGENTS.md` (+ checker registration).
+
 ## [Unreleased]
 
 _Post-cut work (S121+) lands here. S121–S130 delivered: the Truth Sync Gate, doc
