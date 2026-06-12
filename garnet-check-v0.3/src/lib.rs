@@ -34,7 +34,16 @@ pub mod borrow;
 pub mod bounds;
 pub mod capability_surface;
 pub mod caps_diff;
+/// RB-1 differential suite (new vs old propagator) — test-only, deleted
+/// with `caps_graph_set` in the same PR once green.
+#[cfg(test)]
+mod caps_differential;
 pub mod caps_graph;
+/// RB-1 differential reference (old set-based propagator) — test-only,
+/// deleted in the same PR once the differential suite is green.
+#[cfg(test)]
+mod caps_graph_set;
+pub mod capset;
 pub mod coherence;
 pub mod concurrency;
 pub mod effects;
@@ -49,6 +58,7 @@ pub use bounds::{bounded_functions, bounded_loop_report, BoundedLoopReport, Unch
 pub use capability_surface::{capability_surface, CapabilitySurface};
 pub use caps_diff::{diff_caps, CapsDiff};
 pub use caps_graph::{CapsReport, CapsViolation};
+pub use capset::CapSet;
 pub use concurrency::{concurrency_surface, ActorContract, ProtocolSig};
 pub use effects::{
     linear_effect_report, FnEffectSummary, LinearEffectReport, LinearEffectViolation, LinearParam,

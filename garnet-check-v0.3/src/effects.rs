@@ -5,9 +5,9 @@
 //! helper functions must expose an explicit ownership-qualified parameter
 //! boundary (`own`, `borrow`, `ref`, or `mut`).
 
-use crate::caps_graph::{CapsReport, CapsSet};
+use crate::caps_graph::CapsReport;
+use crate::capset::CapSet;
 use garnet_parser::ast::{FnDef, FnMode, Item, Module, Ownership};
-use std::collections::BTreeSet;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LinearParam {
@@ -19,24 +19,19 @@ pub struct LinearParam {
 pub struct FnEffectSummary {
     pub fn_name: String,
     pub safe: bool,
-    pub required_caps: CapsSet,
+    pub required_caps: CapSet,
     pub linear_params: Vec<LinearParam>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LinearEffectViolation {
     pub fn_name: String,
-    pub required_caps: CapsSet,
+    pub required_caps: CapSet,
 }
 
 impl LinearEffectViolation {
     pub fn message(&self) -> String {
-        let caps = self
-            .required_caps
-            .iter()
-            .cloned()
-            .collect::<Vec<_>>()
-            .join(", ");
+        let caps = self.required_caps.names().join(", ");
         format!(
             "linear/effect violation: safe function `{}` performs authority effects [{}] without an explicit ownership-qualified parameter boundary (own/borrow/ref/mut). S96 is a static seed only; no VM or OS sandbox enforcement is claimed.",
             self.fn_name, caps
@@ -108,20 +103,21 @@ fn collect_function(
     let required_caps = caps_report
         .transitive
         .get(&function.name)
-        .cloned()
+        .copied()
         .unwrap_or_default();
     let linear_params = linear_params(function);
+    let has_linear_params = !linear_params.is_empty();
     functions.push(FnEffectSummary {
         fn_name: function.name.clone(),
         safe,
-        required_caps: required_caps.clone(),
-        linear_params: linear_params.clone(),
+        required_caps,
+        linear_params,
     });
 
-    if function.name != "main" && !required_caps.is_empty() && linear_params.is_empty() {
+    if function.name != "main" && !required_caps.is_empty() && !has_linear_params {
         violations.push(LinearEffectViolation {
             fn_name: function.name.clone(),
-            required_caps: sorted_caps(required_caps),
+            required_caps,
         });
     }
 }
@@ -137,8 +133,4 @@ fn linear_params(function: &FnDef) -> Vec<LinearParam> {
             })
         })
         .collect()
-}
-
-fn sorted_caps(caps: BTreeSet<String>) -> BTreeSet<String> {
-    caps
 }

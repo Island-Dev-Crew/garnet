@@ -260,11 +260,18 @@ fn main() -> ExitCode {
             }
         }
         "diff-caps" => {
-            if args.len() < 3 {
-                eprintln!("usage: garnet diff-caps <old-path> <new-path>");
+            let machine = args.iter().any(|a| a == "--machine");
+            let positionals: Vec<&String> =
+                args.iter().skip(1).filter(|a| *a != "--machine").collect();
+            if positionals.len() < 2 {
+                eprintln!("usage: garnet diff-caps [--machine] <old-path> <new-path>");
                 return ExitCode::from(2);
             }
-            cmd::diff_caps::run(PathBuf::from(&args[1]), PathBuf::from(&args[2]))
+            cmd::diff_caps::run(
+                PathBuf::from(positionals[0]),
+                PathBuf::from(positionals[1]),
+                machine,
+            )
         }
         "seal" => cmd::seal::run(&args[1..]),
         "trust-report" => {

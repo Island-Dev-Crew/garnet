@@ -159,7 +159,7 @@ pub fn surface_for_path(path: &Path) -> Result<CapabilitySurface, String> {
 }
 
 /// Render a slice of strings as a JSON array of escaped strings.
-fn json_str_array(items: &[String]) -> String {
+pub(crate) fn json_str_array(items: &[String]) -> String {
     let inner = items
         .iter()
         .map(|s| format!("\"{}\"", json_escape(s)))

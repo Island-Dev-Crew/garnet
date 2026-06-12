@@ -1,3 +1,14 @@
+//! RB-1 DIFFERENTIAL REFERENCE — the old `BTreeSet<String>` CapCaps
+//! propagator, kept verbatim (tests stripped) for the duration of the RB-1
+//! slice ONLY. `caps_differential.rs` runs proptest-generated modules
+//! through this implementation and the `CapSet`-based `caps_graph` and
+//! asserts identical propagation, coverage violations, and transitive sets.
+//! This module is `#[cfg(test)]`-gated (never in a shipping binary) and is
+//! DELETED in the same PR once the differential suite is green, per
+//! `W_REBUILD_SPEC.md` §3 RB-1.
+//!
+//! Original module documentation follows.
+//!
 //! CapCaps call-graph propagator (v3.4.1 — Day 2).
 //!
 //! The v3.4 spec shipped the `@caps(...)` annotation surface and single-
@@ -56,9 +67,13 @@
 //! leaves safe-mode wildcard functions OUT of its coverage check (the
 //! audit.rs error is enough), and permits managed-mode wildcard use to pass.
 
-use crate::capset::CapSet;
 use garnet_parser::ast::{Capability, Expr, FnDef, FnMode, Item, Module, Stmt};
 use std::collections::{BTreeMap, BTreeSet};
+
+/// A capability label, e.g., "fs", "net", "time". Kept as `String` so we
+/// can round-trip the stdlib registry's `&'static str` caps AND the parser's
+/// `Capability::Other` fallback.
+pub type CapsSet = BTreeSet<String>;
 
 /// A propagated-caps violation: a function invokes a primitive/callee
 /// transitively requiring a capability its `@caps(...)` does not cover.
@@ -79,9 +94,7 @@ pub struct CapsViolation {
 pub struct CapsReport {
     pub violations: Vec<CapsViolation>,
     /// Per-function transitive caps (for introspection / later tooling).
-    /// RB-1: a `Copy` [`CapSet`] bitset; canonical names are recoverable via
-    /// [`CapSet::names`] in the same order the old `BTreeSet<String>` gave.
-    pub transitive: BTreeMap<String, CapSet>,
+    pub transitive: BTreeMap<String, CapsSet>,
 }
 
 /// Entry point: build the call graph from `module`, propagate caps, verify
@@ -97,10 +110,8 @@ struct CapsGraph {
     /// fn name → set of callee names (user fns + primitives by their
     /// registry key, bare or qualified).
     callees: BTreeMap<String, BTreeSet<CalleeRef>>,
-    /// fn name → declared `@caps(...)` set. Unknown (user-defined) names
-    /// set [`CapSet::OTHER`] so annotation *presence* survives — see the
-    /// claim boundary in `capset.rs`.
-    declared: BTreeMap<String, CapSet>,
+    /// fn name → declared `@caps(...)` set.
+    declared: BTreeMap<String, CapsSet>,
     /// fn name → whether `@caps(*)` wildcard was used.
     wildcard: BTreeMap<String, bool>,
     /// fn name → mode (safe vs managed). Used to skip safe-mode wildcard
@@ -108,12 +119,10 @@ struct CapsGraph {
     modes: BTreeMap<String, FnMode>,
     /// Primitive name → required caps, from stdlib registry. Indexed by
     /// BOTH the qualified name ("fs::read_file") AND the bare last segment
-    /// ("read_file"), so both call shapes resolve. Registry cap strings are
-    /// all canonical (`capset.rs` registry-drift trap), so these bitsets
-    /// never carry `OTHER`.
-    prim_caps: BTreeMap<String, CapSet>,
+    /// ("read_file"), so both call shapes resolve.
+    prim_caps: BTreeMap<String, CapsSet>,
     /// Memoized transitive caps per fn (black-colored nodes).
-    memo: BTreeMap<String, CapSet>,
+    memo: BTreeMap<String, CapsSet>,
     /// DFS stack color. True = currently computing (gray); absence = white.
     in_progress: BTreeSet<String>,
 }
@@ -136,28 +145,28 @@ impl CapsGraph {
         // "module::name" (registry key) AND the bare "name" (matches the
         // bridge's unqualified prelude binding).
         let registry = garnet_stdlib::registry::all_prims();
-        let mut prim_caps: BTreeMap<String, CapSet> = BTreeMap::new();
-        for (qualified, meta) in registry {
-            let caps = meta
+        let mut prim_caps: BTreeMap<String, CapsSet> = BTreeMap::new();
+        for (qualified, meta) in &registry {
+            let caps: CapsSet = meta
                 .required_caps
                 .0
                 .iter()
-                .fold(CapSet::EMPTY, |acc, s| acc | CapSet::from_name_or_other(s));
+                .map(|s| (*s).to_string())
+                .collect();
+            prim_caps.insert(qualified.clone(), caps.clone());
             // Bare-name index: e.g., "fs::read_file" also indexed as "read_file".
             // `&str` `Split` isn't DoubleEndedIterator, so iterate by last-wins.
-            // Indexed before `qualified` moves into the map below; bare names
-            // never collide with qualified keys (those contain "::").
-            if let Some(bare) = qualified.split("::").last() {
+            let bare_opt = qualified.split("::").last();
+            if let Some(bare) = bare_opt {
                 // Multiple qualified prims could share a bare name (e.g.,
                 // `array::contains` vs. `str::contains`). If a collision
                 // occurs, union the caps — a conservative stance that never
                 // under-requires capabilities at the source layer.
                 prim_caps
                     .entry(bare.to_string())
-                    .and_modify(|existing| *existing |= caps)
-                    .or_insert(caps);
+                    .and_modify(|existing| existing.extend(caps.iter().cloned()))
+                    .or_insert(caps.clone());
             }
-            prim_caps.insert(qualified, caps);
         }
 
         let mut graph = CapsGraph {
@@ -203,14 +212,16 @@ impl CapsGraph {
     }
 
     fn record_fn_decl(&mut self, f: &FnDef, module_safe: bool) {
-        let mut caps = CapSet::EMPTY;
+        let mut caps: CapsSet = BTreeSet::new();
         let mut has_wildcard = false;
         for ann in &f.annotations {
             if let garnet_parser::ast::Annotation::Caps(items, _) = ann {
                 for c in items {
                     match c {
                         Capability::Wildcard => has_wildcard = true,
-                        _ => caps |= CapSet::from_name_or_other(c.as_str()),
+                        _ => {
+                            caps.insert(c.as_str().to_string());
+                        }
                     }
                 }
             }
@@ -441,35 +452,36 @@ impl CapsGraph {
     /// Compute the transitive caps set for `fn_name`. Colored-DFS: gray
     /// nodes encountered mid-recursion contribute empty (avoiding infinite
     /// loops in cyclic SCCs).
-    fn transitive_caps(&mut self, fn_name: &str) -> CapSet {
-        if let Some(&cached) = self.memo.get(fn_name) {
-            return cached;
+    fn transitive_caps(&mut self, fn_name: &str) -> CapsSet {
+        if let Some(cached) = self.memo.get(fn_name) {
+            return cached.clone();
         }
         if self.in_progress.contains(fn_name) {
             // Cycle — the caller will fold in its own direct caps separately.
-            return CapSet::EMPTY;
+            return BTreeSet::new();
         }
         self.in_progress.insert(fn_name.to_string());
 
-        let mut caps = CapSet::EMPTY;
+        let mut caps: CapsSet = BTreeSet::new();
         // Clone the callee list so we don't hold a borrow on self while
         // recursing into transitive_caps(callee).
         let callees = self.callees.get(fn_name).cloned().unwrap_or_default();
         for callee in callees {
             match callee {
                 CalleeRef::Primitive(key) => {
-                    if let Some(&pc) = self.prim_caps.get(&key) {
-                        caps |= pc;
+                    if let Some(pc) = self.prim_caps.get(&key) {
+                        caps.extend(pc.iter().cloned());
                     }
                 }
                 CalleeRef::UserFn(name) => {
-                    caps |= self.transitive_caps(&name);
+                    let child = self.transitive_caps(&name);
+                    caps.extend(child);
                 }
             }
         }
 
         self.in_progress.remove(fn_name);
-        self.memo.insert(fn_name.to_string(), caps);
+        self.memo.insert(fn_name.to_string(), caps.clone());
         caps
     }
 
@@ -481,7 +493,7 @@ impl CapsGraph {
         let fn_names: Vec<String> = self.declared.keys().cloned().collect();
         for fn_name in fn_names {
             let required = self.transitive_caps(&fn_name);
-            report.transitive.insert(fn_name.clone(), required);
+            report.transitive.insert(fn_name.clone(), required.clone());
 
             // Skip coverage check for wildcard functions. If safe-mode
             // wildcard, audit.rs already emitted a hard error.
@@ -498,15 +510,15 @@ impl CapsGraph {
             if !self.has_caps_annotation(&fn_name) {
                 continue;
             }
-            let declared = self.declared.get(&fn_name).copied().unwrap_or_default();
-            for missing in required.difference(declared).iter_names() {
+            let declared = self.declared.get(&fn_name).cloned().unwrap_or_default();
+            for missing in required.difference(&declared) {
                 // Find one representative callee requiring this cap for the
                 // diagnostic "via" field. Deterministic: first callee in
                 // BTreeSet order whose transitive caps contain `missing`.
                 let via = self.find_cap_source(&fn_name, missing);
                 report.violations.push(CapsViolation {
                     fn_name: fn_name.clone(),
-                    missing: missing.to_string(),
+                    missing: missing.clone(),
                     via,
                 });
             }
@@ -546,7 +558,7 @@ impl CapsGraph {
         for callee in callees {
             match callee {
                 CalleeRef::Primitive(ref key) => {
-                    if let Some(&pc) = self.prim_caps.get(key) {
+                    if let Some(pc) = self.prim_caps.get(key) {
                         if pc.contains(missing) {
                             return key.clone();
                         }
@@ -561,228 +573,5 @@ impl CapsGraph {
             }
         }
         "<unknown>".to_string()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn parse(src: &str) -> Module {
-        garnet_parser::parse_source(src).expect("parse failed")
-    }
-
-    #[test]
-    fn fn_calling_fs_prim_without_caps_flagged() {
-        // main() calls `read_file` which requires `fs`; main declares only @caps().
-        let m = parse(
-            r#"
-            @caps()
-            def main() {
-                read_file("path.txt")
-            }
-            "#,
-        );
-        let r = check_caps_coverage(&m);
-        assert!(
-            r.violations
-                .iter()
-                .any(|v| v.fn_name == "main" && v.missing == "fs"),
-            "expected fs violation on main, got {:?}",
-            r.violations
-        );
-    }
-
-    #[test]
-    fn fn_with_matching_caps_passes() {
-        let m = parse(
-            r#"
-            @caps(fs)
-            def main() {
-                read_file("path.txt")
-            }
-            "#,
-        );
-        let r = check_caps_coverage(&m);
-        assert!(
-            r.violations.is_empty(),
-            "expected no violations, got {:?}",
-            r.violations
-        );
-    }
-
-    #[test]
-    fn wildcard_fn_skips_coverage_check() {
-        let m = parse(
-            r#"
-            @caps(*)
-            def main() {
-                read_file("path.txt")
-            }
-            "#,
-        );
-        let r = check_caps_coverage(&m);
-        // audit.rs emits its own safe-mode-wildcard error; this pass does
-        // not add a caps violation because @caps(*) is the explicit trust
-        // declaration.
-        assert!(
-            r.violations.is_empty(),
-            "wildcard should skip coverage check, got {:?}",
-            r.violations
-        );
-    }
-
-    #[test]
-    fn transitive_caps_flow_through_user_fn() {
-        // helper() uses fs; main calls helper but declares only @caps(); should fail.
-        let m = parse(
-            r#"
-            def helper(p) {
-                read_file(p)
-            }
-            @caps()
-            def main() {
-                helper("x")
-            }
-            "#,
-        );
-        let r = check_caps_coverage(&m);
-        assert!(
-            r.violations
-                .iter()
-                .any(|v| v.fn_name == "main" && v.missing == "fs"),
-            "expected transitive fs violation on main, got {:?}",
-            r.violations
-        );
-    }
-
-    #[test]
-    fn self_recursion_does_not_hang() {
-        // Classic pathological case: fn calls itself. The propagator must
-        // terminate.
-        let m = parse(
-            r#"
-            @caps(fs)
-            def main() {
-                read_file("a")
-                main()
-            }
-            "#,
-        );
-        let r = check_caps_coverage(&m);
-        assert!(r.violations.is_empty());
-        // And the transitive set of main is {fs}.
-        let caps = r.transitive.get("main").cloned().unwrap_or_default();
-        assert!(caps.contains("fs"));
-    }
-
-    #[test]
-    fn mutual_recursion_does_not_hang() {
-        let m = parse(
-            r#"
-            def ping(n) {
-                read_file("ping")
-                pong(n)
-            }
-            def pong(n) {
-                write_file("pong", "x")
-                ping(n)
-            }
-            @caps(fs)
-            def main() {
-                ping(0)
-            }
-            "#,
-        );
-        let r = check_caps_coverage(&m);
-        assert!(r.violations.is_empty());
-        assert!(r.transitive.get("main").unwrap().contains("fs"));
-    }
-
-    #[test]
-    fn time_and_net_separate() {
-        // A fn using `now_ms` needs `time`; a fn using `read_file` needs `fs`.
-        // Declaring only `fs` on the time-user should fail.
-        let m = parse(
-            r#"
-            @caps(fs)
-            def main() {
-                now_ms()
-            }
-            "#,
-        );
-        let r = check_caps_coverage(&m);
-        assert!(
-            r.violations
-                .iter()
-                .any(|v| v.fn_name == "main" && v.missing == "time"),
-            "expected time violation on main, got {:?}",
-            r.violations
-        );
-    }
-
-    #[test]
-    fn qualified_path_resolves_to_prim() {
-        // Using `fs::read_file(...)` (qualified) should resolve to the same
-        // stdlib primitive as the bare `read_file(...)` call.
-        let m = parse(
-            r#"
-            @caps()
-            def main() {
-                fs::read_file("path")
-            }
-            "#,
-        );
-        let r = check_caps_coverage(&m);
-        assert!(
-            r.violations
-                .iter()
-                .any(|v| v.fn_name == "main" && v.missing == "fs"),
-            "expected fs violation on qualified call, got {:?}",
-            r.violations
-        );
-    }
-
-    #[test]
-    fn pure_fn_needs_no_caps() {
-        let m = parse(
-            r#"
-            @caps()
-            def main() {
-                trim("  hi  ")
-            }
-            "#,
-        );
-        let r = check_caps_coverage(&m);
-        assert!(
-            r.violations.is_empty(),
-            "pure trim call should need no caps, got {:?}",
-            r.violations
-        );
-    }
-
-    #[test]
-    fn violation_carries_representative_via() {
-        let m = parse(
-            r#"
-            @caps()
-            def main() {
-                read_file("a.txt")
-            }
-            "#,
-        );
-        let r = check_caps_coverage(&m);
-        let v = r
-            .violations
-            .iter()
-            .find(|v| v.fn_name == "main")
-            .expect("violation present");
-        // The "via" should name a prim requiring fs — either the bare or
-        // qualified form, depending on how the bare-name bridge resolved.
-        assert!(
-            v.via.contains("read_file"),
-            "expected via to mention read_file, got '{}'",
-            v.via
-        );
     }
 }
