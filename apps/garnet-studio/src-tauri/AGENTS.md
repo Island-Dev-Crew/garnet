@@ -35,6 +35,38 @@ checker, parser, or macOS SwiftUI Studio implementation.
   `scripts/smoke_garnet_mac_domain_proofs.py`. It may record local Mac S105
   domain evidence under `target/mac-studio-domain-proofs/`, but it must not
   claim Windows/Linux proof ownership, production enforcement, or v1.0 status.
+- **Version stamp:** `Cargo.toml` is the single version stamp (tauri.conf.json
+  must not carry a duplicate `version` field) and it must equal
+  `[workspace.package].version` in the root manifest. The crate is excluded
+  from the workspace, so inheritance cannot enforce this — the CI gate is the
+  shell contract test (agent-contracts job, repo-wide); the crate test
+  `crate_version_matches_workspace_release_version` covers the local ladder
+  (`cargo test --workspace` skips this crate). Consequence for release-prep:
+  a workspace version bump must bump `Cargo.toml` + `package.json` here (with
+  their lockfiles) in the same PR. Never reintroduce a hand-stamped second
+  version.
+- **Process discipline:** every spawned command runs through
+  `run_process_with_timeout`: piped + thread-drained output (no pipe
+  deadlocks), per-category timeout from settings (matrix categories get the
+  larger budget), kill-on-timeout reported via `timed_out`, and a per-stream
+  UI payload cap. Full output is written to the evidence bundle **before**
+  capping. New commands must go through this path, not raw
+  `Command::output()`.
+- **Settings:** `settings.rs` persists `{mode, theme, command_timeout_secs,
+  matrix_timeout_secs}` as JSON under the per-user config dir. Every write is
+  validated/clamped in `StudioSettings::normalized`; a corrupt or missing file
+  must never block startup (defaults win).
+- **Evidence readers:** `list_evidence_files` / `read_evidence_text` are
+  read-only and must stay constrained by `resolve_within_evidence_roots`
+  (canonicalize both sides; reject anything outside the Studio evidence
+  roots; size/entry caps). Do not widen them into a general filesystem read
+  primitive.
+- `get_truth_summary` reads `docs/truth.json` (the RB-0a truth surface) and
+  must degrade to an explicit "not found" rather than inventing values. The
+  frontend must not reintroduce hand-written release statistics.
+- The simple/power interface modes hide power-only panels with CSS only; the
+  panels (and their honest-copy strings) stay in the DOM so the shell
+  contract test keeps asserting them.
 
 ## Required Checks
 
@@ -45,6 +77,7 @@ cargo fmt --manifest-path apps/garnet-studio/src-tauri/Cargo.toml -- --check
 cargo test --manifest-path apps/garnet-studio/src-tauri/Cargo.toml
 python scripts/test_garnet_windows_linux_studio_shell.py
 python scripts/test_garnet_windows_linux_studio_status.py
+npm --prefix apps/garnet-studio run build
 ```
 
 For release-impacting changes, also run the frontend build, `--studio-smoke`,

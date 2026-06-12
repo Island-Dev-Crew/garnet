@@ -132,6 +132,96 @@ class GarnetWindowsLinuxStudioShellTests(unittest.TestCase):
         self.assertIn("advisory_plan_rejects_active_conversion_languages", backend)
         self.assertIn("normalize_language(&language, ADVISORY_LANGUAGES)", backend)
 
+    def test_suite_overhaul_surfaces_are_present_and_honest(self) -> None:
+        frontend = (APP / "index.html").read_text(encoding="utf-8")
+        main = (APP / "src" / "main.ts").read_text(encoding="utf-8")
+        backend = (APP / "src-tauri" / "src" / "commands.rs").read_text(encoding="utf-8")
+        lib = (APP / "src-tauri" / "src" / "lib.rs").read_text(encoding="utf-8")
+        settings = (APP / "src-tauri" / "src" / "settings.rs").read_text(encoding="utf-8")
+
+        # Splash holds during launch and is dismissed by the frontend after boot.
+        self.assertIn('id="splash"', frontend)
+        self.assertIn("Rust Rigor. Ruby Velocity. One Coherent Language.", frontend)
+        self.assertIn("dismissSplash", main)
+        self.assertIn("SPLASH_MINIMUM_MS", main)
+
+        # Simple/Power mode: power-only panels stay in the DOM (contract copy
+        # intact) and are hidden by mode, never removed.
+        self.assertIn("data-power-only", frontend)
+        self.assertIn('data-mode="simple"', frontend)
+        for command in [
+            "studio_get_settings",
+            "studio_set_settings",
+            "get_truth_summary",
+            "get_app_info",
+            "list_evidence_files",
+            "read_evidence_text",
+        ]:
+            self.assertIn(command, backend)
+            self.assertIn(command, lib)
+            self.assertIn(command, main)
+
+        # Settings are validated/clamped on the Rust side.
+        self.assertIn('"simple"', settings)
+        self.assertIn('"power"', settings)
+        self.assertIn("normalized", settings)
+
+        # Hover help exists across the surface.
+        self.assertGreaterEqual(frontend.count("data-tip"), 30)
+
+        # Runaway processes are killed and reported; UI payloads are capped
+        # while full output still lands in the evidence bundle.
+        self.assertIn("timed_out", backend)
+        self.assertIn("PAYLOAD_STREAM_CAP", backend)
+        self.assertIn("resolve_within_evidence_roots", backend)
+        self.assertIn("outside the Studio evidence roots", backend)
+
+        # Live truth tiles replace hand-written release stats.
+        self.assertIn("truth-tiles", frontend)
+        self.assertIn("docs/truth.json", frontend + backend)
+        self.assertNotIn("87/87 slices complete", frontend)
+
+    def test_version_stamp_is_single_sourced_and_tracks_the_workspace(self) -> None:
+        config_raw = (APP / "src-tauri" / "tauri.conf.json").read_text(encoding="utf-8")
+        config = json.loads(config_raw)
+        self.assertNotIn(
+            "version",
+            config,
+            "tauri.conf.json must not duplicate the version; Cargo.toml is the single stamp",
+        )
+
+        cargo = (APP / "src-tauri" / "Cargo.toml").read_text(encoding="utf-8")
+        crate_version = None
+        for line in cargo.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("version = \""):
+                crate_version = stripped.split('"')[1]
+                break
+        self.assertIsNotNone(crate_version, "src-tauri Cargo.toml must declare a version")
+        self.assertNotEqual("0.1.0", crate_version, "the 0.1.0 stamp drift must not return")
+
+        package = json.loads((APP / "package.json").read_text(encoding="utf-8"))
+        self.assertEqual(crate_version, package["version"])
+
+        workspace = (ROOT / "Cargo.toml").read_text(encoding="utf-8")
+        workspace_version = None
+        in_section = False
+        for line in workspace.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("["):
+                in_section = stripped == "[workspace.package]"
+                continue
+            if in_section and stripped.startswith("version = \""):
+                workspace_version = stripped.split('"')[1]
+                break
+        self.assertIsNotNone(workspace_version, "workspace.package version must exist")
+        self.assertEqual(
+            workspace_version,
+            crate_version,
+            "garnet-studio is excluded from the workspace, so this assertion is the "
+            "version-sync gate between the Studio stamp and the release version",
+        )
+
     def test_evidence_and_smoke_contracts_are_windows_linux_specific(self) -> None:
         paths = (APP / "src-tauri" / "src" / "paths.rs").read_text(encoding="utf-8")
         evidence = (APP / "src-tauri" / "src" / "evidence.rs").read_text(encoding="utf-8")

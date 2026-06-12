@@ -1,6 +1,10 @@
+# NOTE: this crate is excluded from the workspace (see root Cargo.toml), so it
+# cannot inherit version.workspace. The version below MUST track the workspace
+# release version; commands::tests::crate_version_matches_workspace_release_version
+# is the drift gate that fails the ladder on mismatch.
 [package]
 name = "garnet-studio"
-version = "0.1.0"
+version = "0.8.1"
 description = "Garnet Studio cross-platform thin desktop shell for the Garnet CLI and advisory pipeline."
 authors = ["Island Development Crew"]
 edition = "2021"
