@@ -1190,8 +1190,9 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("parser_cst_layer", lanes)
         self.assertEqual("verified", lanes["parser_cst_layer"].status)
         self.assertEqual(100.0, lanes["parser_cst_layer"].completion_percent)
-        self.assertIn("cst.rs", lanes["parser_cst_layer"].evidence)
-        self.assertIn("cst_round_trip.rs", lanes["parser_cst_layer"].evidence)
+        self.assertIn("garnet-cst", lanes["parser_cst_layer"].evidence)
+        self.assertIn("examples_roundtrip.rs", lanes["parser_cst_layer"].evidence)
+        self.assertIn("token_view_parity.rs", lanes["parser_cst_layer"].evidence)
         self.assertIn("incremental syntax parsing", lanes["parser_cst_layer"].deferred)
 
     def test_json_exposes_evidence_and_deferred_boundaries(self) -> None:

@@ -8,9 +8,11 @@
 //! ## Independence contract
 //!
 //! This crate was built without reference to the in-parser CST merged in #221
-//! (`garnet-parser-v0.3/src/cst.rs`), which is preserved as a temporary legacy
-//! migration oracle after S15-Compare. The only surfaces shared with the parser
-//! are the
+//! (`garnet-parser-v0.3/src/cst.rs`), which served as a temporary legacy
+//! migration oracle after S15-Compare and was RETIRED at RB-4a once its
+//! recorded deletion precondition (rowan-backed LSP coverage green) was met
+//! — this crate is the ONE syntax substrate. The only surfaces shared with
+//! the parser are the
 //! trivia-preserving lexer (`garnet_parser::lex_source`) and the AST type
 //! (`garnet_parser::ast::Module`, the target of `cst_to_ast`).
 //!

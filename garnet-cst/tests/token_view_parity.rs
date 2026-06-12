@@ -1,12 +1,18 @@
-//! Reconciliation test for #221's parser CST and the canonical rowan CST.
+//! Token-view parity: the rowan CST's consumer-facing token surface must
+//! match the shared lexer exactly.
 //!
-//! The parser CST's strongest ergonomic surface is token payload + source span
-//! access. The rowan CST remains canonical, but it should preserve that
-//! consumer-facing token view exactly.
+//! RB-4a retired #221's parser CST (the "temporary legacy migration
+//! oracle") after its recorded deletion precondition — rowan-backed LSP
+//! coverage green — was met. The reconciliation invariant it anchored
+//! survives here in a STRONGER form: the legacy CST's token stream was the
+//! lexer's stream re-threaded through AST spans, so comparing
+//! `token_infos` directly against `garnet_parser::lex_source` checks the
+//! same consumer-facing surface (token payload + source span) without the
+//! middleman — and covers lexable-but-unparseable sources the old
+//! differential skipped.
 
 use garnet_cst::{identifier_spans, parse_cst, token_infos, TokenInfo};
-use garnet_parser::cst::{CstElement, CstNode};
-use garnet_parser::parse_source_cst;
+use garnet_parser::lex_source;
 use garnet_parser::token::{Span, TokenKind};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -35,32 +41,21 @@ fn corpus() -> Vec<PathBuf> {
     files
 }
 
-fn flatten_parser_tokens(node: &CstNode, out: &mut Vec<(TokenKind, Span)>) {
-    for child in &node.children {
-        match child {
-            CstElement::Node(node) => flatten_parser_tokens(node, out),
-            CstElement::Token(token) => {
-                if !matches!(token.kind, TokenKind::Eof) {
-                    out.push((token.kind.clone(), token.span));
-                }
-            }
-        }
-    }
-}
-
 #[test]
-fn rowan_token_infos_match_parser_cst_tokens_on_corpus() {
+fn rowan_token_infos_match_the_lexer_on_corpus() {
     let files = corpus();
     assert!(!files.is_empty(), "example corpus should be non-empty");
 
     for file in files {
         let src = fs::read_to_string(&file).expect("read example");
-        let Ok((_, parser_cst)) = parse_source_cst(&src) else {
+        let Ok(lexed) = lex_source(&src) else {
             continue;
         };
-
-        let mut parser_tokens = Vec::new();
-        flatten_parser_tokens(&parser_cst, &mut parser_tokens);
+        let lexer_tokens: Vec<(TokenKind, Span)> = lexed
+            .into_iter()
+            .filter(|t| !matches!(t.kind, TokenKind::Eof))
+            .map(|t| (t.kind, t.span))
+            .collect();
 
         let rowan_tokens: Vec<(TokenKind, Span)> = token_infos(parse_cst(&src).syntax())
             .into_iter()
@@ -69,15 +64,15 @@ fn rowan_token_infos_match_parser_cst_tokens_on_corpus() {
 
         assert_eq!(
             rowan_tokens,
-            parser_tokens,
-            "rowan token view diverged from parser CST for {}",
+            lexer_tokens,
+            "rowan token view diverged from the lexer for {}",
             file.display()
         );
     }
 }
 
 #[test]
-fn identifier_spans_preserve_legacy_cst_rename_surface() {
+fn identifier_spans_preserve_the_rename_surface() {
     let src = "def greet(name) { greet(name) }\n";
     let parse = parse_cst(src);
     let spans = identifier_spans(parse.syntax(), "greet");

@@ -284,9 +284,13 @@ def _lsp_source_present() -> bool:
 
 
 def _cst_layer_present() -> bool:
+    # RB-4a: the S15 trivia-preserving CST lane is carried by the canonical
+    # rowan crate (the #221 legacy oracle was retired after its recorded
+    # deletion precondition — rowan-backed LSP green — was met).
     required = [
-        ROOT / "garnet-parser-v0.3" / "src" / "cst.rs",
-        ROOT / "garnet-parser-v0.3" / "tests" / "cst_round_trip.rs",
+        ROOT / "garnet-cst" / "src" / "lib.rs",
+        ROOT / "garnet-cst" / "tests" / "examples_roundtrip.rs",
+        ROOT / "garnet-cst" / "tests" / "token_view_parity.rs",
     ]
     return all(path.exists() for path in required)
 
@@ -2468,9 +2472,10 @@ def read_status() -> MitReadinessStatus:
             status="verified" if _cst_layer_present() else "planned",
             completion_percent=100.0 if _cst_layer_present() else 0.0,
             evidence=(
-                "Trivia-preserving Concrete Syntax Tree (CST) helper in `cst.rs` is fully integrated with the parser. "
-                "CST round-trip integration tests in `tests/cst_round_trip.rs` assert 100% byte-identical "
-                "reconstruction of all parser-crate and workspace examples under the examples directories."
+                "Trivia-preserving Concrete Syntax Tree (CST): the canonical rowan `garnet-cst` crate. "
+                "`garnet-cst/tests/examples_roundtrip.rs` asserts 100% byte-identical reconstruction of all "
+                "parser-crate and workspace examples; `garnet-cst/tests/token_view_parity.rs` proves the token "
+                "view against the shared lexer (RB-4a retired the #221 legacy oracle in `cst.rs`/`cst_round_trip.rs`)."
             ) if _cst_layer_present() else "No committed CST or cst_round_trip test source is present yet.",
             blocked_by=[] if _cst_layer_present() else ["S15 CST implementation"],
             deferred=[
