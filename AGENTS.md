@@ -48,6 +48,7 @@ Every path below is part of the current contract surface and must remain present
 - `/garnet-vm/AGENTS.md`
 - `/garnet-registry-stub/AGENTS.md`
 - `/apps/garnet-studio/src-tauri/AGENTS.md`
+- `/apps/garnet-studio-macos/AGENTS.md`
 - `/examples/AGENTS.md`
 - `/xtask/AGENTS.md`
 
