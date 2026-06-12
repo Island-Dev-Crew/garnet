@@ -15,7 +15,6 @@
 
 pub mod ast;
 pub mod budget;
-pub mod cst;
 pub mod edition;
 pub mod error;
 pub mod grammar;
@@ -30,49 +29,6 @@ use error::ParseError;
 use lexer::Lexer;
 use parser::Parser;
 use token::{Span, Token, TokenKind};
-
-/// Lex and parse a Garnet source string into both a Module AST and a CST root.
-pub fn parse_source_cst(src: &str) -> Result<(Module, cst::CstNode), ParseError> {
-    parse_source_cst_with_budget(src, ParseBudget::default())
-}
-
-/// Lex and parse a Garnet source string into both AST and CST with a caller-supplied budget.
-pub fn parse_source_cst_with_budget(
-    src: &str,
-    budget: ParseBudget,
-) -> Result<(Module, cst::CstNode), ParseError> {
-    parse_source_cst_with_budget_and_edition(src, budget, Edition::default())
-}
-
-/// Lex and parse into AST + CST under an explicit [`Edition`] (default budget).
-pub fn parse_source_cst_with_edition(
-    src: &str,
-    edition: Edition,
-) -> Result<(Module, cst::CstNode), ParseError> {
-    parse_source_cst_with_budget_and_edition(src, ParseBudget::default(), edition)
-}
-
-/// Lex and parse into AST + CST with a caller-supplied budget and [`Edition`].
-pub fn parse_source_cst_with_budget_and_edition(
-    src: &str,
-    budget: ParseBudget,
-    edition: Edition,
-) -> Result<(Module, cst::CstNode), ParseError> {
-    budget.check_source_bytes(src.len())?;
-    let tokens = lex_source_with_budget_and_edition(src, budget, edition)?;
-    check_token_nesting(&tokens, budget)?;
-    let filtered_tokens: Vec<Token> = tokens
-        .iter()
-        .filter(|t| !matches!(t.kind, TokenKind::Whitespace(_) | TokenKind::Comment(_)))
-        .cloned()
-        .collect();
-    let mut p = Parser::with_budget(filtered_tokens, budget);
-    let (safe, items) = grammar::parse_items(&mut p)?;
-    let span = Span::new(0, src.len());
-    let module = Module { safe, items, span };
-    let cst_root = cst::CstNode::from_ast_and_tokens(&module, tokens);
-    Ok((module, cst_root))
-}
 
 /// Lex and parse a Garnet source string into a Module AST using the
 /// default `ParseBudget`. For bespoke budgets (e.g., in fuzz harnesses),

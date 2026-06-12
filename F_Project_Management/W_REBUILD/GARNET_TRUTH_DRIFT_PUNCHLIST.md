@@ -83,7 +83,7 @@ Counts are from non-test `src/` only, `main` @ `5161e64`. ~53,400 LOC of Rust ac
 | `garnet-memory-v0.3` | 0 | 43 | 0 | 10 | expect-style invariants; acceptable |
 
 Structural findings (the rebuild evidence):
-1. **Two CSTs coexist.** `garnet-parser-v0.3/src/cst.rs` (510 lines) is self-described as a
+1. **Two CSTs coexist.** *(RESOLVED at RB-4a, 2026-06-12: the legacy oracle was deleted; `garnet-cst` is the one CST substrate.)* `garnet-parser-v0.3/src/cst.rs` (510 lines) is self-described as a
    "temporary legacy oracle" pending the S16 rowan migration; `garnet-cst/` (3,369 LOC) is the
    canonical trivia-preserving substrate. Finish the migration, delete the legacy.
 2. **The stdlib bridge is a hand-maintained monolith.** `garnet-interp-v0.3/src/stdlib_bridge.rs`

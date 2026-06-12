@@ -13,8 +13,8 @@ LSP-facing token/span helpers (`tokens.rs`, `TokenInfo`, `token_infos`,
 Built **cold** for the v0.7 build-both-then-compare A/B (slice S15),
 independently of the in-parser CST merged in #221
 (`garnet-parser-v0.3/src/cst.rs`). The S15-Compare checkpoint chose this rowan
-crate as the canonical CST; #221's parser CST remains a temporary legacy
-migration oracle until S16's LSP work is rowan-backed and green. This crate
+crate as the canonical CST; #221's parser CST served as the temporary legacy
+migration oracle and was retired at RB-4a (LSP rowan-backed and green). This crate
 shares only two surfaces with the parser — the
 trivia-preserving lexer (`garnet_parser::lex_source`) and the AST type
 (`garnet_parser::ast::Module`, the target of `cst_to_ast`). It never reads or
@@ -44,9 +44,13 @@ extends #221's CST.
   added additively in later PRs without breaking the trait surface.
 - `tokens.rs` preserves #221's useful editor-facing token ergonomics on top of
   rowan: `TokenInfo` recovers `TokenKind` payloads, byte `Span`s, and exact
-  token text. `tests/parser_cst_token_parity.rs` must keep proving that this
-  token view matches the legacy parser CST on the example corpus, excluding the
-  parser's zero-width EOF sentinel.
+  token text. `tests/token_view_parity.rs` must keep proving that this token
+  view matches `garnet_parser::lex_source` (the shared lexer surface) on the
+  example corpus, excluding the zero-width EOF sentinel — the RB-4a successor
+  to the retired legacy-oracle differential. Broader admission criterion
+  (no parse-success requirement), exercised by explicit
+  lexable-but-unparseable inline cases and guarded non-vacuous
+  (`compared == corpus`).
 - `u16` <-> `SyntaxKind` conversion is safe (no `mem::transmute`); this crate
   introduces no ambient `unsafe`.
 - No OS authority: pure parsing, declares no `@caps`.
@@ -68,10 +72,11 @@ maintainer's hand:
 > v0.7 adds a trivia-preserving CST as a first-class layer above the AST. The
 > AST remains the semantic reference; the CST is a lossless syntactic
 > projection used by editor tooling (rename, code actions, formatting). The
-> S15-Compare checkpoint chose the rowan `garnet-cst` crate as canonical.
-> #221's in-parser CST remains a temporary legacy oracle until rowan-backed LSP
-> migration is green. Round-trip is source-preserving for inputs that lex;
-> recovery from malformed input is best-effort and may diverge.
+> S15-Compare checkpoint chose the rowan `garnet-cst` crate as canonical;
+> #221's in-parser legacy oracle was deleted at RB-4a after its recorded
+> precondition (rowan-backed LSP coverage green) was met. Round-trip is
+> source-preserving for inputs that lex; recovery from malformed input is
+> best-effort and may diverge.
 
 ## Required Checks
 

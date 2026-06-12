@@ -1,9 +1,9 @@
 //! Direct recursive-descent CST builder over the trivia-preserving token stream.
 //!
 //! Built cold from Mini-Spec v1.0 §2–§11 for the v0.7 build-both-then-compare
-//! A/B (S15). This is architecturally distinct from #221's in-parser CST, which
-//! projects an already-built AST + tokens into a tree; here we parse the token
-//! stream directly into a rowan green tree.
+//! A/B (S15). This is architecturally distinct from #221's in-parser CST
+//! (retired at RB-4a), which projected an already-built AST + tokens into a
+//! tree; here we parse the token stream directly into a rowan green tree.
 //!
 //! ## Round-trip invariant (guaranteed by construction)
 //!

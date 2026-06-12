@@ -1,5 +1,7 @@
 # PRD A — S15: Trivia-Preserving CST Migration
 
+> **SUPERSEDED NOTE (RB-4a, 2026-06-12):** the legacy oracle this PRD ordered preserved (`garnet-parser-v0.3/src/cst.rs`) was retired at RB-4a after its recorded deletion precondition (rowan-backed LSP coverage green) was met. The do-not-delete instructions below are S15-era history, no longer live.
+
 | Field | Value |
 |---|---|
 | **Slot** | mac-opus (Claude Code Opus 4.7 1M Max, macOS) |

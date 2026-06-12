@@ -1,9 +1,9 @@
 //! Token/span helpers for rowan CST consumers.
 //!
-//! The legacy in-parser CST (#221) exposed `CstToken { kind, span }`, which is
-//! convenient for LSP rename and semantic-token logic. Rowan stores token text
-//! and text ranges instead. This module preserves that useful ergonomic surface
-//! without making the parser CST canonical.
+//! The legacy in-parser CST (#221, retired at RB-4a) exposed
+//! `CstToken { kind, span }`, which was convenient for LSP rename and
+//! semantic-token logic. Rowan stores token text and text ranges instead.
+//! This module preserves that useful ergonomic surface on the rowan tree.
 
 use crate::syntax_kind::{SyntaxNode, SyntaxToken};
 use garnet_parser::lexer::Lexer;

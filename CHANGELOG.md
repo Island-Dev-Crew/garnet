@@ -105,6 +105,50 @@ signed re-cut, and this post-re-cut truth-sync._
   `%= 0` changes to "division by zero" — now identical to `/= 0` and
   expression-path `% 0`.
 
+### RB-4a — rowan unification (W-REBUILD Foundation)
+
+- **Removed:** `garnet-parser-v0.3/src/cst.rs` — #221's post-hoc parser CST,
+  the self-described "temporary legacy migration oracle" — plus its four
+  `parse_source_cst*` wrappers and `tests/cst_round_trip.rs`. The recorded
+  deletion precondition (2026-05-24 coordination-ledger entry: rowan-backed
+  LSP rename/semantic-token coverage green) was verified met before deletion:
+  the LSP has been fully rowan-backed since S16 (zero legacy-CST imports
+  anywhere in the workspace — the "remaining consumer paths" the spec
+  anticipated turned out to be already migrated; this slice's real work was
+  the oracle retirement and its truth surfaces). `garnet-cst` (rowan) is
+  the one CST substrate (the AST remains a parallel structure until
+  RB-4b's typed views; `tree-sitter-garnet/` is a separate editor-tooling
+  grammar).
+- **Changed (test architecture):** the S15-Compare reconciliation
+  differential (`parser_cst_token_parity.rs`, rowan-vs-legacy token view)
+  retired WITH its oracle and is succeeded by
+  `garnet-cst/tests/token_view_parity.rs` — rowan's token view compared
+  **directly against `garnet_parser::lex_source`** (the shared surface the
+  legacy CST re-threaded). Broader admission criterion, stated precisely:
+  the successor does not require parse success (the old differential did) —
+  measured truth is the old test skipped ZERO corpus files (all 39 parse),
+  so the no-parse-needed path is exercised by explicit
+  lexable-but-unparseable inline cases, and a `compared == corpus` guard
+  makes the corpus sweep non-vacuous. The all-corpus parse-success gate the
+  legacy test incidentally provided is restored as
+  `garnet-parser-v0.3/tests/examples_parse.rs` (review finding).
+  Byte-identical round-trip coverage continues on the same corpus via the
+  pre-existing `garnet-cst/tests/examples_roundtrip.rs` (+ proptest).
+- **Truth surfaces:** the mit-readiness `parser_cst_layer` lane now cites
+  the rowan substrate as its evidence (status/percent unchanged:
+  verified/100; readiness stays 92.8, `--check-no-regression` PASS,
+  `truth --check` ok) — the lane's intent (trivia-preserving CST with
+  byte-identical proof) was already carried by `garnet-cst`.
+  `CURRENT_STATE.md` + `garnet-cst` crate docs/AGENTS.md updated from
+  "remains a temporary oracle" to the completed retirement.
+- **Honest boundary:** error-recovery + incremental reparsing on the
+  unified substrate stay queued for the playground band (unchanged); RB-4b
+  (typed AST views + the per-pass caps re-check criterion) is the next
+  slice, not this one. Pre-existing on main and NOT addressed here: 6
+  machine-local `test_garnet_mit_readiness_status.py` failures from
+  Desktop-evidence drift vs pinned distribution-lane percentages
+  (identical failure set on clean `06fa88b`; flagged as a follow-up).
+
 ### RB-3 — registry-derived dispatch (W-REBUILD Foundation · keystone)
 
 - **Changed:** the interpreter's native installation is now DERIVED — one

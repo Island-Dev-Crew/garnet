@@ -144,7 +144,8 @@ reference; existing consumers (interp, check, vm) keep working unchanged via a
 **Build-both-then-compare (READ FIRST).** #221 already merged a hand-rolled
 in-parser CST at `garnet-parser-v0.3/src/cst.rs`. Build this rowan crate
 **independently and additively** — cold from the Mini-Spec, as if no CST
-existed. **Do not modify or delete `garnet-parser-v0.3/src/cst.rs`** (#221) — it
+existed. *(Superseded at RB-4a, 2026-06-12: the oracle was retired once
+rowan-backed LSP coverage was green.)* **Do not modify or delete `garnet-parser-v0.3/src/cst.rs`** (#221) — it
 is preserved as the **S15-Compare** baseline. Reconciliation is the S15-Compare
 checkpoint below, not part of S15. See `PRD_A_S15_CST_MIGRATION.md`.
 
