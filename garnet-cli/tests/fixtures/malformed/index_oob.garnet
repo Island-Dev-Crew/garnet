@@ -1,0 +1,5 @@
+@caps()
+def main() {
+  var a = [1]
+  a[99]
+}

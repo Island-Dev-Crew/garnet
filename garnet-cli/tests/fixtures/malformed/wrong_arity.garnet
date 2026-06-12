@@ -1,0 +1,2 @@
+@caps()
+def main() { trim(1, 2, 3) }

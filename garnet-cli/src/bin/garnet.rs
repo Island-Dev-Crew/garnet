@@ -7,6 +7,13 @@
 //! a `pub fn run(...)`, then add an arm to the `match` in `main()`
 //! below.
 
+// RB-2 crash-surface sweep: user-facing crates must not unwrap/expect on
+// reachable paths. Sanctioned escapes are in-line `// INVARIANT:` allows
+// (provably-cannot-fail) and the one documented `// FAIL-CLOSED:` abort
+// (machine_key). Test code is exempt via the cfg_attr below.
+#![deny(clippy::unwrap_used, clippy::expect_used)]
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
+
 use garnet_cli::cmd;
 use garnet_cli::{print_help, print_version};
 use std::path::PathBuf;

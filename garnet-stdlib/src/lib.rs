@@ -37,6 +37,13 @@
 //! `garnet-interp` can register this table at startup to expose all
 //! primitives to user programs.
 
+// RB-2 crash-surface sweep: user-facing crates must not unwrap/expect on
+// reachable paths. Sanctioned escapes are in-line `// INVARIANT:` allows
+// (provably-cannot-fail) and the one documented `// FAIL-CLOSED:` abort
+// (machine_key). Test code is exempt via the cfg_attr below.
+#![deny(clippy::unwrap_used, clippy::expect_used)]
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
+
 pub mod base64;
 pub mod cmp;
 pub mod collections;

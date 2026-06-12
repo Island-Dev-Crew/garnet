@@ -6,13 +6,23 @@
 //! ## Usage
 //!
 //! ```no_run
-//! use garnet_interp::{Interpreter, Value};
-//! let src = r#"def main() { 1 + 2 }"#;
-//! let mut interp = Interpreter::new();
-//! interp.load_source(src).unwrap();
-//! let result = interp.call("main", vec![]).unwrap();
-//! assert!(matches!(result, Value::Int(3)));
+//! use garnet_interp::{Interpreter, RuntimeError, Value};
+//! fn demo() -> Result<(), RuntimeError> {
+//!     let src = r#"def main() { 1 + 2 }"#;
+//!     let mut interp = Interpreter::new();
+//!     interp.load_source(src)?;
+//!     let result = interp.call("main", vec![])?;
+//!     assert!(matches!(result, Value::Int(3)));
+//!     Ok(())
+//! }
 //! ```
+
+// RB-2 crash-surface sweep: user-facing crates must not unwrap/expect on
+// reachable paths. Sanctioned escapes are in-line `// INVARIANT:` allows
+// (provably-cannot-fail) and the one documented `// FAIL-CLOSED:` abort
+// (machine_key). Test code is exempt via the cfg_attr below.
+#![deny(clippy::unwrap_used, clippy::expect_used)]
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 
 pub mod control;
 pub mod env;

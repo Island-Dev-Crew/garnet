@@ -527,7 +527,7 @@ fn upsert_dependency(text: &str, name: &str, new_line: &str) -> String {
             break;
         }
     }
-    if deps_start.is_none() {
+    let Some(start) = deps_start else {
         let mut out = text.to_string();
         if !out.ends_with('\n') {
             out.push('\n');
@@ -536,8 +536,7 @@ fn upsert_dependency(text: &str, name: &str, new_line: &str) -> String {
         out.push_str(new_line);
         out.push('\n');
         return out;
-    }
-    let start = deps_start.unwrap();
+    };
     let end = section_end.unwrap_or(lines.len());
     let prefix = format!("{name} = ");
     let mut new_lines: Vec<String> = Vec::with_capacity(lines.len() + 1);

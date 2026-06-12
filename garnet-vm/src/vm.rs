@@ -603,7 +603,13 @@ fn apply_binary(op: BinaryOpcode, lhs: Value, rhs: Value) -> Result<Value, VmErr
                 return Err(VmError::Runtime("division by zero".to_string()));
             }
             match (&lhs, &rhs) {
-                (Int(a), Int(b)) => Ok(Int(a / b)),
+                // checked_div: zero pre-guarded above; None is the
+                // i64::MIN / -1 overflow. Same message as the interpreter so
+                // the two backends stay diagnostically identical (RB-2).
+                (Int(a), Int(b)) => a
+                    .checked_div(*b)
+                    .map(Int)
+                    .ok_or_else(|| VmError::Runtime(format!("integer overflow: {a} / {b}"))),
                 (Float(a), Float(b)) => Ok(Float(a / b)),
                 (Int(a), Float(b)) => Ok(Float(*a as f64 / b)),
                 (Float(a), Int(b)) => Ok(Float(a / *b as f64)),
@@ -611,7 +617,11 @@ fn apply_binary(op: BinaryOpcode, lhs: Value, rhs: Value) -> Result<Value, VmErr
             }
         }
         Mod => match (&lhs, &rhs) {
-            (Int(a), Int(b)) if *b != 0 => Ok(Int(a % b)),
+            // None = i64::MIN % -1 overflow — same message as the interpreter (RB-2).
+            (Int(a), Int(b)) if *b != 0 => a
+                .checked_rem(*b)
+                .map(Int)
+                .ok_or_else(|| VmError::Runtime(format!("integer overflow: {a} % {b}"))),
             (Int(_), Int(0)) => Err(VmError::Runtime("division by zero".to_string())),
             (Float(a), Float(b)) => Ok(Float(a % b)),
             _ => Err(VmError::Runtime("Mod expects numeric pair".to_string())),
