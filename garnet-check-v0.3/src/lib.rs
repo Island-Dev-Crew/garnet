@@ -35,6 +35,7 @@ pub mod bounds;
 pub mod capability_surface;
 pub mod caps_diff;
 pub mod caps_graph;
+pub mod capset;
 pub mod coherence;
 pub mod concurrency;
 pub mod effects;
@@ -49,6 +50,7 @@ pub use bounds::{bounded_functions, bounded_loop_report, BoundedLoopReport, Unch
 pub use capability_surface::{capability_surface, CapabilitySurface};
 pub use caps_diff::{diff_caps, CapsDiff};
 pub use caps_graph::{CapsReport, CapsViolation};
+pub use capset::CapSet;
 pub use concurrency::{concurrency_surface, ActorContract, ProtocolSig};
 pub use effects::{
     linear_effect_report, FnEffectSummary, LinearEffectReport, LinearEffectViolation, LinearParam,

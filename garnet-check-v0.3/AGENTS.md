@@ -8,6 +8,18 @@ Owns safe-mode validation, CapCaps propagation, borrow/safety checks, and depend
 
 - Safe mode must fail closed.
 - CapCaps propagation must remain transitive: callers inherit or declare authority needed by callees.
+- The propagator's capability representation is `capset::CapSet` — a `Copy`
+  `u16` bitset over the closed cap set (RB-1). Propagation is bitwise OR,
+  subset is `required & !declared == 0`, the diff-caps delta is XOR. Bit
+  order is lexicographic-by-name so diagnostics keep `BTreeSet` iteration
+  order. Unknown declared cap names survive only as the `OTHER` presence
+  bit; their identity stays at the surface/audit layers (string-typed).
+  Adding a capability name to the stdlib registry requires a matching
+  `CapSet` bit — the `registry_caps_all_canonical` trap test fails closed
+  otherwise.
+- `capability_surface`/`caps_diff` keep full string fidelity (including
+  unknown and wildcard names): a gained unknown capability must still gate
+  as authority expansion in diff-caps.
 - Static bounded-loop verification is conservative: in `fn`, `@safe`, or
   `@bounded(...)` functions, uncheckable loops fail closed; only explicitly
   proven literal finite loops, literal counter `while` loops, and

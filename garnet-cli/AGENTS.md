@@ -16,6 +16,14 @@ Owns the `garnet` binary, subcommand routing, template embedding, deterministic 
 - `garnet parse` defaults to AST mode. `garnet parse --mode cst <file>` routes
   to the canonical rowan `garnet-cst` parser and must report round-trip truth
   and recorded CST errors honestly.
+- `garnet diff-caps` human text output and exit codes (0 = no expansion,
+  1 = authority expanded, 2 = usage/parse error) are load-bearing for CI
+  scripts and integration tests — byte-stable, never reworded casually.
+  `--machine` (RB-1, Directive 15) is purely additive: a deterministic
+  single-line JSON verdict (`garnet.diff-caps.machine/1`) with identical
+  exit codes, scoped to the declared surface only (no bounds-delta claim;
+  bound annotations are not part of the caps surface). On exit 2
+  (usage/parse error) no JSON is emitted — stdout empty, error on stderr.
 - Deterministic build/verify behavior must stay reproducible.
 - New agent-documentation tooling should start as opt-in or checking behavior before becoming a language requirement.
 

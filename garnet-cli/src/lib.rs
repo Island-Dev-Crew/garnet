@@ -117,7 +117,10 @@ pub fn print_help() {
         "    caps   [--standard-profile] <path> Emit the capability manifest or S98 draft standard profile"
     );
     println!(
-        "    diff-caps <old> <new>            Diff the capability surface; nonzero exit if authority expanded"
+        "    diff-caps [--machine] <old> <new>  Diff the capability surface; nonzero exit if authority expanded"
+    );
+    println!(
+        "                                     (--machine: deterministic single-line JSON verdict for agent reviewers)"
     );
     println!(
         "    seal   <file.garnet>             Emit an in-toto seal attestation (cosign-signable; SBOM-equivalent)"
