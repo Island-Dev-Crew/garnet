@@ -131,7 +131,47 @@ pub struct PrimMeta {
     pub required_caps: RequiredCaps,
     pub layer: Layer,
     pub stability: Stability,
+    /// RB-3 — how the interpreter binds this primitive. The 22 legacy
+    /// prims are bound by BARE name (callable as `read_file` or
+    /// `fs::read_file` via the path fallback); the S17 `core::`/`std::`
+    /// prims are bound by QUALIFIED name only (their bare names would
+    /// collide with prelude builtins like `map`/`ok`/`err`). `Unbridged`
+    /// rows exist for the CapCaps propagator only (no runtime binding).
+    pub binding: Binding,
+    /// RB-3 — the runtime capability backstop this primitive's bridge
+    /// adapter performs. `Declared` = checker-only (no runtime gate —
+    /// e.g. `time::*`); `Gate` = `require_capability` on entry;
+    /// `GateEntry` = `require_capability` + the S92 entry-frame check.
+    /// Bound to the adapters behaviorally by the caps-trap parity test in
+    /// `garnet-interp` — a declaration/adapter mismatch is a red test.
+    pub guard: Guard,
     pub doc: &'static str,
+}
+
+/// RB-3 — interpreter binding mode for a primitive (see [`PrimMeta::binding`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Binding {
+    /// Bound under the bare name (legacy surface; qualified also resolves
+    /// via the interpreter's path fallback).
+    Bare,
+    /// Bound under the fully-qualified `module::name` only.
+    Qualified,
+    /// Registry row only — no interpreter binding exists (e.g.
+    /// `net::tcp_listen`/`net::udp_bind`, declared for the CapCaps
+    /// propagator ahead of an implementation).
+    Unbridged,
+}
+
+/// RB-3 — runtime capability-backstop class (see [`PrimMeta::guard`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Guard {
+    /// Checker-declared only; the bridge adapter performs no runtime gate.
+    Declared,
+    /// The adapter calls `require_capability(<cap>, ...)` before work.
+    Gate,
+    /// The adapter calls `require_capability` AND the S92
+    /// `require_entry_capability` entry-frame check.
+    GateEntry,
 }
 
 /// The full primitive table. Produced by `all_prims()`. The interpreter
@@ -165,6 +205,7 @@ use std::sync::OnceLock;
 static PRIMS: OnceLock<Vec<PrimMeta>> = OnceLock::new();
 
 /// Compact constructor used by `build_prims`.
+#[allow(clippy::too_many_arguments)] // the one row constructor; every arg is a column
 fn p(
     module: &'static str,
     name: &'static str,
@@ -172,6 +213,8 @@ fn p(
     required_caps: RequiredCaps,
     layer: Layer,
     stability: Stability,
+    binding: Binding,
+    guard: Guard,
     doc: &'static str,
 ) -> PrimMeta {
     PrimMeta {
@@ -181,6 +224,8 @@ fn p(
         required_caps,
         layer,
         stability,
+        binding,
+        guard,
         doc,
     }
 }
@@ -201,6 +246,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::time(),
             Layer::Std,
             Stability::Stable,
+            Binding::Bare,
+            Guard::Declared,
             "Monotonic clock in milliseconds since process start.",
         ),
         p(
@@ -210,6 +257,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::time(),
             Layer::Std,
             Stability::Stable,
+            Binding::Bare,
+            Guard::Declared,
             "Wall clock in milliseconds since UNIX epoch.",
         ),
         p(
@@ -219,6 +268,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::time(),
             Layer::Std,
             Stability::Stable,
+            Binding::Bare,
+            Guard::Declared,
             "Sleep the current thread for N milliseconds.",
         ),
         // ── str (Layer 0 core, no caps) ──
@@ -229,6 +280,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Bare,
+            Guard::Declared,
             "Split a string on a delimiter; returns an Array<String>.",
         ),
         p(
@@ -238,6 +291,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Bare,
+            Guard::Declared,
             "Replace all occurrences of `old` with `new`.",
         ),
         p(
@@ -247,6 +302,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Bare,
+            Guard::Declared,
             "Lowercase a string (Unicode-aware).",
         ),
         p(
@@ -256,6 +313,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Bare,
+            Guard::Declared,
             "Uppercase a string (Unicode-aware).",
         ),
         p(
@@ -265,6 +324,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Bare,
+            Guard::Declared,
             "Trim whitespace from both ends.",
         ),
         p(
@@ -274,6 +335,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Bare,
+            Guard::Declared,
             "Returns true if the string starts with the given prefix.",
         ),
         p(
@@ -283,6 +346,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Bare,
+            Guard::Declared,
             "Returns true if the string contains the given substring.",
         ),
         // ── array (Layer 0 core, no caps) ──
@@ -293,6 +358,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Bare,
+            Guard::Declared,
             "Insert `value` at index; shifts following elements right.",
         ),
         p(
@@ -302,6 +369,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Bare,
+            Guard::Declared,
             "Remove and return the element at index.",
         ),
         p(
@@ -311,6 +380,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Bare,
+            Guard::Declared,
             "Sort the array in-place (stable, ascending).",
         ),
         // ── crypto (Layer 1 std, no caps — pure compute, tracks external specs) ──
@@ -321,6 +392,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Std,
             Stability::Stable,
+            Binding::Bare,
+            Guard::Declared,
             "BLAKE3 hash of a byte sequence (32 bytes).",
         ),
         p(
@@ -330,6 +403,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Std,
             Stability::Stable,
+            Binding::Bare,
+            Guard::Declared,
             "SHA-256 hash of a byte sequence (32 bytes).",
         ),
         p(
@@ -339,6 +414,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Std,
             Stability::Stable,
+            Binding::Bare,
+            Guard::Declared,
             "HMAC-SHA-256 of a byte sequence with a given key.",
         ),
         // ── fs (Layer 1 std, cap: fs) ──
@@ -349,6 +426,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::fs(),
             Layer::Std,
             Stability::Stable,
+            Binding::Bare,
+            Guard::Gate,
             "Read a UTF-8 file as String.",
         ),
         p(
@@ -358,6 +437,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::fs(),
             Layer::Std,
             Stability::Stable,
+            Binding::Bare,
+            Guard::Gate,
             "Write a String to a file, creating or truncating.",
         ),
         p(
@@ -367,6 +448,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::fs(),
             Layer::Std,
             Stability::Stable,
+            Binding::Bare,
+            Guard::Gate,
             "Read a file as Bytes.",
         ),
         p(
@@ -376,6 +459,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::fs(),
             Layer::Std,
             Stability::Stable,
+            Binding::Bare,
+            Guard::Gate,
             "Write Bytes to a file, creating or truncating.",
         ),
         p(
@@ -385,6 +470,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::fs(),
             Layer::Std,
             Stability::Stable,
+            Binding::Bare,
+            Guard::Gate,
             "List entries in a directory.",
         ),
         // ── net (Layer 1 std, cap: net) ──
@@ -395,6 +482,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::net(),
             Layer::Std,
             Stability::Stable,
+            Binding::Bare,
+            Guard::Gate,
             "Open an outbound TCP connection (NetDefaults-gated).",
         ),
         p(
@@ -404,6 +493,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::net(),
             Layer::Std,
             Stability::Stable,
+            Binding::Unbridged,
+            Guard::Declared,
             "Open a TCP listener on a local port.",
         ),
         p(
@@ -413,6 +504,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::net(),
             Layer::Std,
             Stability::Stable,
+            Binding::Unbridged,
+            Guard::Declared,
             "Bind a UDP socket on a local port.",
         ),
         // ════════════════════════════════════════════════════════════
@@ -427,6 +520,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Apply a function to each element, returning a new sequence.",
         ),
         p(
@@ -436,6 +531,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Keep elements for which the predicate returns true.",
         ),
         p(
@@ -445,6 +542,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Reduce a sequence to a single value with an accumulator.",
         ),
         p(
@@ -454,6 +553,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Pair up elements of two sequences, truncating to the shorter.",
         ),
         p(
@@ -463,6 +564,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Take the first N elements.",
         ),
         p(
@@ -472,6 +575,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Skip the first N elements, returning the rest.",
         ),
         p(
@@ -481,6 +586,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Materialize a sequence into an owned Array.",
         ),
         p(
@@ -490,6 +597,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Concatenate two sequences end to end.",
         ),
         p(
@@ -499,6 +608,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Pair each element with its zero-based index.",
         ),
         // ── core::result ──
@@ -509,6 +620,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Wrap a value as Result::Ok.",
         ),
         p(
@@ -518,6 +631,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Wrap a value as Result::Err.",
         ),
         p(
@@ -527,6 +642,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Transform the Ok value, leaving Err untouched.",
         ),
         p(
@@ -536,6 +653,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Chain a Result-returning function on the Ok value.",
         ),
         p(
@@ -545,6 +664,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Recover from an Err with a Result-returning function.",
         ),
         p(
@@ -554,6 +675,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Return the Ok value or a supplied default.",
         ),
         // ── core::option ──
@@ -564,6 +687,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Wrap a value as Option::Some.",
         ),
         p(
@@ -573,6 +698,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "The Option::None value.",
         ),
         p(
@@ -582,6 +709,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Transform the Some value, leaving None untouched.",
         ),
         p(
@@ -591,6 +720,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Chain an Option-returning function on the Some value.",
         ),
         p(
@@ -600,6 +731,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Return the Some value or a supplied default.",
         ),
         // ── core::cmp ──
@@ -610,6 +743,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "The lesser of two values.",
         ),
         p(
@@ -619,6 +754,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "The greater of two values.",
         ),
         p(
@@ -628,6 +765,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Three-way compare: -1 if a<b, 0 if equal, 1 if a>b.",
         ),
         p(
@@ -637,6 +776,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Clamp a value into the inclusive [lo, hi] range.",
         ),
         // ── core::math ──
@@ -647,6 +788,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Absolute value.",
         ),
         p(
@@ -656,6 +799,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Square root (errors on negative input).",
         ),
         p(
@@ -665,6 +810,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Raise a base to an exponent.",
         ),
         p(
@@ -674,6 +821,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Largest integer not greater than the input.",
         ),
         p(
@@ -683,6 +832,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Smallest integer not less than the input.",
         ),
         p(
@@ -692,6 +843,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Core,
             Stability::Stable,
+            Binding::Qualified,
+            Guard::Declared,
             "Round half away from zero to the nearest integer.",
         ),
         // ════════════════════════════════════════════════════════════
@@ -705,6 +858,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::env(),
             Layer::Std,
             Stability::Experimental,
+            Binding::Qualified,
+            Guard::Gate,
             "Read a process environment variable; None if unset.",
         ),
         p(
@@ -714,6 +869,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::env(),
             Layer::Std,
             Stability::Experimental,
+            Binding::Qualified,
+            Guard::Gate,
             "Set a process environment variable for this process.",
         ),
         p(
@@ -723,6 +880,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::env(),
             Layer::Std,
             Stability::Experimental,
+            Binding::Qualified,
+            Guard::Gate,
             "Snapshot all environment variables as (key, value) pairs.",
         ),
         // ── std::process (cap: proc) ──
@@ -733,6 +892,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::proc(),
             Layer::Std,
             Stability::Experimental,
+            Binding::Qualified,
+            Guard::GateEntry,
             "Spawn a child process from a command line; returns a handle.",
         ),
         p(
@@ -742,6 +903,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::proc(),
             Layer::Std,
             Stability::Experimental,
+            Binding::Qualified,
+            Guard::Gate,
             "Wait for a spawned child to exit; returns its exit status.",
         ),
         p(
@@ -751,6 +914,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::proc(),
             Layer::Std,
             Stability::Experimental,
+            Binding::Qualified,
+            Guard::Gate,
             "Extract the integer exit code from a finished child status.",
         ),
         p(
@@ -760,6 +925,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::proc(),
             Layer::Std,
             Stability::Experimental,
+            Binding::Qualified,
+            Guard::GateEntry,
             "Spawn a child from a program plus an explicit argv array (no shell \
              splitting, so arguments containing spaces survive); returns a handle.",
         ),
@@ -770,6 +937,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::proc(),
             Layer::Std,
             Stability::Experimental,
+            Binding::Qualified,
+            Guard::GateEntry,
             "Run a program with an explicit argv array to completion, capturing \
              stdout, stderr, and the exit code as a map.",
         ),
@@ -781,6 +950,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Std,
             Stability::Experimental,
+            Binding::Qualified,
+            Guard::Declared,
             "Parse a JSON string into a JSON value (errors on malformed input).",
         ),
         p(
@@ -790,6 +961,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Std,
             Stability::Experimental,
+            Binding::Qualified,
+            Guard::Declared,
             "Serialize a JSON value to a compact string.",
         ),
         p(
@@ -799,6 +972,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Std,
             Stability::Experimental,
+            Binding::Qualified,
+            Guard::Declared,
             "Look up a key (object) or index (array) in a JSON value.",
         ),
         p(
@@ -808,6 +983,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Std,
             Stability::Experimental,
+            Binding::Qualified,
+            Guard::Declared,
             "Return a copy of a JSON object with `key` set to `value`.",
         ),
         // ── std::regex (no caps — pure) ──
@@ -818,6 +995,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Std,
             Stability::Experimental,
+            Binding::Qualified,
+            Guard::Declared,
             "Validate/compile a regular expression (errors on bad syntax).",
         ),
         p(
@@ -827,6 +1006,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Std,
             Stability::Experimental,
+            Binding::Qualified,
+            Guard::Declared,
             "Return true if the pattern matches anywhere in the input.",
         ),
         p(
@@ -836,6 +1017,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Std,
             Stability::Experimental,
+            Binding::Qualified,
+            Guard::Declared,
             "Return all non-overlapping matches of the pattern.",
         ),
         p(
@@ -845,6 +1028,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Std,
             Stability::Experimental,
+            Binding::Qualified,
+            Guard::Declared,
             "Replace all matches of the pattern with a replacement string.",
         ),
         // ── std::uuid (cap: time for v4/v7 clock-seeding; none for v5) ──
@@ -855,6 +1040,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::time(),
             Layer::Std,
             Stability::Experimental,
+            Binding::Qualified,
+            Guard::Declared,
             "Random UUIDv4 (128 bits of randomness; version+variant tagged).",
         ),
         p(
@@ -864,6 +1051,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Std,
             Stability::Experimental,
+            Binding::Qualified,
+            Guard::Declared,
             "Name-based UUIDv5: SHA-1 of (namespace, name). Deterministic.",
         ),
         p(
@@ -873,6 +1062,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::time(),
             Layer::Std,
             Stability::Experimental,
+            Binding::Qualified,
+            Guard::Declared,
             "Time-ordered UUIDv7 (48-bit unix-ms prefix + randomness).",
         ),
         // ── std::base64 (no caps — pure; tracks RFC 4648) ──
@@ -883,6 +1074,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Std,
             Stability::Experimental,
+            Binding::Qualified,
+            Guard::Declared,
             "Encode bytes to a standard RFC 4648 base64 string (with padding).",
         ),
         p(
@@ -892,6 +1085,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Std,
             Stability::Experimental,
+            Binding::Qualified,
+            Guard::Declared,
             "Decode a standard RFC 4648 base64 string to bytes (errors on bad input).",
         ),
         // ── std::log (formatting needs no caps; the to_file sink needs fs) ──
@@ -902,6 +1097,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Std,
             Stability::Experimental,
+            Binding::Qualified,
+            Guard::Declared,
             "Format an INFO-level log line (level + message).",
         ),
         p(
@@ -911,6 +1108,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Std,
             Stability::Experimental,
+            Binding::Qualified,
+            Guard::Declared,
             "Format a WARN-level log line.",
         ),
         p(
@@ -920,6 +1119,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Std,
             Stability::Experimental,
+            Binding::Qualified,
+            Guard::Declared,
             "Format an ERROR-level log line.",
         ),
         p(
@@ -929,6 +1130,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::none(),
             Layer::Std,
             Stability::Experimental,
+            Binding::Qualified,
+            Guard::Declared,
             "Format a DEBUG-level log line.",
         ),
         p(
@@ -938,6 +1141,8 @@ fn build_prims() -> Vec<PrimMeta> {
             RequiredCaps::fs(),
             Layer::Std,
             Stability::Experimental,
+            Binding::Qualified,
+            Guard::Gate,
             "Append a formatted `[level] message` log line to a file (creating it \
              if missing); requires the fs capability.",
         ),
@@ -1056,5 +1261,83 @@ mod tests {
         assert_eq!(t["core::iter::map"].stability, Stability::Stable);
         // `std::*` host-authority + evolving-API utilities stay Experimental.
         assert_eq!(t["std::json::parse"].stability, Stability::Experimental);
+    }
+
+    // ── RB-3: Binding/Guard invariants ──────────────────────────────
+
+    #[test]
+    fn unbridged_rows_are_exactly_the_two_net_stubs() {
+        let unbridged: Vec<String> = static_prims()
+            .iter()
+            .filter(|m| m.binding == Binding::Unbridged)
+            .map(|m| format!("{}::{}", m.module, m.name))
+            .collect();
+        assert_eq!(unbridged, vec!["net::tcp_listen", "net::udp_bind"]);
+    }
+
+    #[test]
+    fn bare_bindings_are_exactly_the_22_legacy_prims() {
+        let bare = static_prims()
+            .iter()
+            .filter(|m| m.binding == Binding::Bare)
+            .count();
+        assert_eq!(bare, 22, "the legacy bare-bound surface is closed");
+        // Every bare binding lives in a legacy (non-:: ) module.
+        for m in static_prims() {
+            if m.binding == Binding::Bare {
+                assert!(
+                    !m.module.contains("::"),
+                    "bare binding {}::{} must be a legacy module",
+                    m.module,
+                    m.name
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn runtime_gates_imply_declared_caps() {
+        for m in static_prims() {
+            if m.guard != Guard::Declared {
+                assert!(
+                    !m.required_caps.0.is_empty(),
+                    "{}::{} has a runtime guard but declares no capability",
+                    m.module,
+                    m.name
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn entry_gates_are_exactly_the_three_process_spawn_surfaces() {
+        let mut entry: Vec<String> = static_prims()
+            .iter()
+            .filter(|m| m.guard == Guard::GateEntry)
+            .map(|m| format!("{}::{}", m.module, m.name))
+            .collect();
+        entry.sort();
+        assert_eq!(
+            entry,
+            vec![
+                "std::process::output",
+                "std::process::spawn",
+                "std::process::spawn_args",
+            ]
+        );
+    }
+
+    #[test]
+    fn gate_count_matches_the_audited_runtime_backstop() {
+        // 12 Gate + 3 GateEntry — the S90/S92 runtime backstop surface.
+        let gate = static_prims()
+            .iter()
+            .filter(|m| m.guard == Guard::Gate)
+            .count();
+        let entry = static_prims()
+            .iter()
+            .filter(|m| m.guard == Guard::GateEntry)
+            .count();
+        assert_eq!((gate, entry), (12, 3));
     }
 }
