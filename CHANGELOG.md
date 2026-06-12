@@ -16,35 +16,60 @@ signed re-cut, and this post-re-cut truth-sync._
 ### RB-2 — crash-surface sweep (W-REBUILD Foundation)
 
 - **Changed (abort → diagnostic, both backends):** `i64::MIN / -1` and
-  `i64::MIN % -1` were process aborts in the interpreter (expression AND
-  compound-assign paths) and the VM. Now checked division/remainder yields
+  `i64::MIN % -1` were uncontrolled aborts in the interpreter (expression
+  AND compound-assign paths) and the VM — surfacing as an unwind exit-101
+  on the VM/eval lanes and as the generic "interpreter thread panicked"
+  firewall line on the `run --interp` lane. Now checked division/remainder yields
   `RuntimeError::Overflow` / `VmError::Runtime` with the **identical**
   message (`integer overflow: <lhs> <op> <rhs>`) on both backends, proven
   red→green (`garnet-interp tests/overflow_guards.rs`) and by a
   trap-parity-style cross-backend test
-  (`garnet-cli/tests/overflow_parity.rs`). Honest boundary: add/sub/mul
-  overflow (wraps in release, aborts in debug) is an open language-policy
-  decision — named-deferred, escalated to Jon, not silently changed.
+  (`garnet-cli/tests/overflow_parity.rs`). The new `Overflow` error is not
+  `rescue`-able (the abort it replaces was not either); making it rescuable
+  is a language decision. Honest boundary: add/sub/mul overflow (wraps in
+  release, aborts in debug) is an open language-policy decision —
+  named-deferred, flagged for Jon's decision via the RB-band stop report,
+  not silently changed.
 - **Added (deny lints):** `#![deny(clippy::unwrap_used, clippy::expect_used)]`
   on `garnet-cli` (lib + bin targets), `garnet-interp`, `garnet-stdlib`
-  (tests exempt via `cfg_attr`). Production unwrap/expect sites: 8 found, 8
-  resolved — 4 refactored away (let-else / pop-then-match / spawn-failure
+  (tests exempt via `cfg_attr`; integration tests/benches are separate
+  crates outside the deny — the scope is the lib + bin targets). Production
+  unwrap/expect sites: 8 found (9 raw occurrences — the doc example spans
+  two lines), 8 resolved — 4 refactored away (let-else / pop-then-match / spawn-failure
   path), 2 allowlisted `// INVARIANT:` (len==1-guarded pop; Hmac
   any-key-length), 1 allowlisted `// FAIL-CLOSED:` (`machine_key` — cache
   integrity must not fail open; **a second sanctioned comment form beyond
   the spec's single INVARIANT pattern, recorded as a deviation** because
-  calling it an invariant would be false), 1 doc-example rewritten to `?`.
+  calling it an invariant would be false), 1 doc-example rewritten to `?`
+  (rewrite-only: clippy does not lint doctests, so the deny guards the 7
+  code sites).
   Deny proven live by a planted-unwrap check (fires → removed → clean).
 - **Added (malformed-input smoke):** `garnet-cli/tests/malformed_corpus_smoke.rs`
   drives `garnet check` + `run --interp` + `run --vm` over a 12-file
   malformed fixture corpus (+ non-UTF8 input, + the 13 parser fuzz seeds
   via `check`), asserting controlled 0/1/2 exits — no aborts, no panic
-  exits. **Scoped claim: no abort on this corpus + the stated fuzz minutes
-  — never "never panics."** Unbounded un-annotated recursion is excluded
-  by design (S99 opt-in-ceiling boundary).
-- **Honest boundary (miette spans):** parse-layer diagnostics already carry
-  miette spans end-to-end; runtime errors (`RuntimeError`) remain span-less
-  — threading spans through eval is out of RB-2 scope and named-deferred.
+  exits. Fuzz: `cargo +nightly fuzz run parse_input -- -max_total_time=600`
+  → **18,178,935 executions in 601 s, zero crashes** (machine-local,
+  2026-06-12, this MacBook Pro; full stats in the RB-2 dogfood bundle
+  log). **Scoped claim: no abort on this corpus + those 10 fuzz minutes on
+  that machine — never "never panics."** Unbounded un-annotated recursion
+  is excluded by design (S99 opt-in-ceiling boundary). Named-deferred: the
+  `eval`/`repl`/`test` CLI lanes run the interpreter in-process with NO
+  panic firewall (only `garnet run` has the thread join) — a runtime panic
+  there is still an uncontrolled exit; firewalling those lanes is a
+  follow-up slice.
+- **Honest partial (miette spans — spec deviation):** the RB-2 spec text
+  orders "miette diagnostics with spans"; parse-layer diagnostics already
+  carry spans end-to-end, but the converted runtime aborts surface as
+  span-less `RuntimeError`/`VmError` messages — threading spans through
+  eval is deferred. **Recorded as a deviation from the spec accept-when
+  (same treatment as the FAIL-CLOSED comment form), not re-scoped away**;
+  flagged for the RB-band stop report.
+- **Known pre-existing cross-backend divergence (unchanged by RB-2):**
+  interp `%= 0` falls to the compound-assign catch-all ("compound
+  assignment on unsupported types") while the VM reports "division by
+  zero". Fixing it changes an observable error string — deferred to its
+  own slice.
 
 ### RB-1 — caps lattice → `CapSet(u16)` bitset (W-REBUILD Foundation)
 
