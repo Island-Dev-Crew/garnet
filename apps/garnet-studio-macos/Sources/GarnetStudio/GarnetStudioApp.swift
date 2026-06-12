@@ -160,25 +160,14 @@ struct GarnetCLI {
     let executablePath: String
 
     func run(arguments: [String], workingDirectory: URL? = nil) -> GarnetCommandResult {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: executablePath)
-        process.arguments = arguments
-        process.currentDirectoryURL = workingDirectory
-
-        let outputPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = outputPipe
-
-        let command = ([executablePath] + arguments).joined(separator: " ")
-        do {
-            try process.run()
-            process.waitUntilExit()
-            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8) ?? ""
-            return GarnetCommandResult(command: command, exitCode: process.terminationStatus, output: output)
-        } catch {
-            return GarnetCommandResult(command: command, exitCode: 127, output: error.localizedDescription)
-        }
+        // Row 5: disciplined spawn — timeout, tree-kill, drained pipes, capped UI payload.
+        let bridged = StudioProcessRunner.runBridged(
+            executable: executablePath,
+            arguments: arguments,
+            workingDirectory: workingDirectory,
+            category: .command
+        )
+        return GarnetCommandResult(command: bridged.command, exitCode: bridged.exitCode, output: bridged.output)
     }
 }
 
@@ -1163,25 +1152,14 @@ struct ConverterAssistPlanRunner {
     }
 
     func run() -> GarnetCommandResult {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = commandArguments()
-        process.currentDirectoryURL = location.repoRootURL
-
-        let outputPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = outputPipe
-
-        let command = (["/usr/bin/env"] + (process.arguments ?? [])).joined(separator: " ")
-        do {
-            try process.run()
-            process.waitUntilExit()
-            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8) ?? ""
-            return GarnetCommandResult(command: command, exitCode: process.terminationStatus, output: output)
-        } catch {
-            return GarnetCommandResult(command: command, exitCode: 127, output: error.localizedDescription)
-        }
+        // Row 5: disciplined spawn — timeout, tree-kill, drained pipes, capped UI payload.
+        let bridged = StudioProcessRunner.runBridged(
+            executable: "/usr/bin/env",
+            arguments: commandArguments(),
+            workingDirectory: location.repoRootURL,
+            category: .command
+        )
+        return GarnetCommandResult(command: bridged.command, exitCode: bridged.exitCode, output: bridged.output)
     }
 }
 
@@ -1209,25 +1187,14 @@ struct ConverterAdvisoryBundleRunner {
     }
 
     func run() -> GarnetCommandResult {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = commandArguments()
-        process.currentDirectoryURL = location.repoRootURL
-
-        let outputPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = outputPipe
-
-        let command = (["/usr/bin/env"] + (process.arguments ?? [])).joined(separator: " ")
-        do {
-            try process.run()
-            process.waitUntilExit()
-            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8) ?? ""
-            return GarnetCommandResult(command: command, exitCode: process.terminationStatus, output: output)
-        } catch {
-            return GarnetCommandResult(command: command, exitCode: 127, output: error.localizedDescription)
-        }
+        // Row 5: disciplined spawn — timeout, tree-kill, drained pipes, capped UI payload.
+        let bridged = StudioProcessRunner.runBridged(
+            executable: "/usr/bin/env",
+            arguments: commandArguments(),
+            workingDirectory: location.repoRootURL,
+            category: .command
+        )
+        return GarnetCommandResult(command: bridged.command, exitCode: bridged.exitCode, output: bridged.output)
     }
 }
 
@@ -1250,25 +1217,14 @@ struct ConverterAdvisoryReviewRunner {
     }
 
     func run() -> GarnetCommandResult {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = commandArguments()
-        process.currentDirectoryURL = location.repoRootURL
-
-        let outputPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = outputPipe
-
-        let command = (["/usr/bin/env"] + (process.arguments ?? [])).joined(separator: " ")
-        do {
-            try process.run()
-            process.waitUntilExit()
-            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8) ?? ""
-            return GarnetCommandResult(command: command, exitCode: process.terminationStatus, output: output)
-        } catch {
-            return GarnetCommandResult(command: command, exitCode: 127, output: error.localizedDescription)
-        }
+        // Row 5: disciplined spawn — timeout, tree-kill, drained pipes, capped UI payload.
+        let bridged = StudioProcessRunner.runBridged(
+            executable: "/usr/bin/env",
+            arguments: commandArguments(),
+            workingDirectory: location.repoRootURL,
+            category: .command
+        )
+        return GarnetCommandResult(command: bridged.command, exitCode: bridged.exitCode, output: bridged.output)
     }
 }
 
@@ -1294,25 +1250,14 @@ struct ConverterAdvisoryHandoffRunner {
     }
 
     func run() -> GarnetCommandResult {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = commandArguments()
-        process.currentDirectoryURL = location.repoRootURL
-
-        let outputPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = outputPipe
-
-        let command = (["/usr/bin/env"] + (process.arguments ?? [])).joined(separator: " ")
-        do {
-            try process.run()
-            process.waitUntilExit()
-            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8) ?? ""
-            return GarnetCommandResult(command: command, exitCode: process.terminationStatus, output: output)
-        } catch {
-            return GarnetCommandResult(command: command, exitCode: 127, output: error.localizedDescription)
-        }
+        // Row 5: disciplined spawn — timeout, tree-kill, drained pipes, capped UI payload.
+        let bridged = StudioProcessRunner.runBridged(
+            executable: "/usr/bin/env",
+            arguments: commandArguments(),
+            workingDirectory: location.repoRootURL,
+            category: .command
+        )
+        return GarnetCommandResult(command: bridged.command, exitCode: bridged.exitCode, output: bridged.output)
     }
 }
 
@@ -1331,25 +1276,14 @@ struct MitReadinessRunner {
     }
 
     func run() -> GarnetCommandResult {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = commandArguments()
-        process.currentDirectoryURL = location.repoRootURL
-
-        let outputPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = outputPipe
-
-        let command = (["/usr/bin/env"] + (process.arguments ?? [])).joined(separator: " ")
-        do {
-            try process.run()
-            process.waitUntilExit()
-            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8) ?? ""
-            return GarnetCommandResult(command: command, exitCode: process.terminationStatus, output: output)
-        } catch {
-            return GarnetCommandResult(command: command, exitCode: 127, output: error.localizedDescription)
-        }
+        // Row 5: disciplined spawn — timeout, tree-kill, drained pipes, capped UI payload.
+        let bridged = StudioProcessRunner.runBridged(
+            executable: "/usr/bin/env",
+            arguments: commandArguments(),
+            workingDirectory: location.repoRootURL,
+            category: .command
+        )
+        return GarnetCommandResult(command: bridged.command, exitCode: bridged.exitCode, output: bridged.output)
     }
 }
 
@@ -1371,25 +1305,14 @@ struct MitDemoRouteRunner {
     }
 
     func run() -> GarnetCommandResult {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = commandArguments()
-        process.currentDirectoryURL = location.repoRootURL
-
-        let outputPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = outputPipe
-
-        let command = (["/usr/bin/env"] + (process.arguments ?? [])).joined(separator: " ")
-        do {
-            try process.run()
-            process.waitUntilExit()
-            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8) ?? ""
-            return GarnetCommandResult(command: command, exitCode: process.terminationStatus, output: output)
-        } catch {
-            return GarnetCommandResult(command: command, exitCode: 127, output: error.localizedDescription)
-        }
+        // Row 5: disciplined spawn — timeout, tree-kill, drained pipes, capped UI payload.
+        let bridged = StudioProcessRunner.runBridged(
+            executable: "/usr/bin/env",
+            arguments: commandArguments(),
+            workingDirectory: location.repoRootURL,
+            category: .command
+        )
+        return GarnetCommandResult(command: bridged.command, exitCode: bridged.exitCode, output: bridged.output)
     }
 }
 
@@ -1411,25 +1334,14 @@ struct MitDeckOutlineRunner {
     }
 
     func run() -> GarnetCommandResult {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = commandArguments()
-        process.currentDirectoryURL = location.repoRootURL
-
-        let outputPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = outputPipe
-
-        let command = (["/usr/bin/env"] + (process.arguments ?? [])).joined(separator: " ")
-        do {
-            try process.run()
-            process.waitUntilExit()
-            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8) ?? ""
-            return GarnetCommandResult(command: command, exitCode: process.terminationStatus, output: output)
-        } catch {
-            return GarnetCommandResult(command: command, exitCode: 127, output: error.localizedDescription)
-        }
+        // Row 5: disciplined spawn — timeout, tree-kill, drained pipes, capped UI payload.
+        let bridged = StudioProcessRunner.runBridged(
+            executable: "/usr/bin/env",
+            arguments: commandArguments(),
+            workingDirectory: location.repoRootURL,
+            category: .command
+        )
+        return GarnetCommandResult(command: bridged.command, exitCode: bridged.exitCode, output: bridged.output)
     }
 }
 
@@ -1451,25 +1363,14 @@ struct MitDeckPreviewRunner {
     }
 
     func run() -> GarnetCommandResult {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = commandArguments()
-        process.currentDirectoryURL = location.repoRootURL
-
-        let outputPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = outputPipe
-
-        let command = (["/usr/bin/env"] + (process.arguments ?? [])).joined(separator: " ")
-        do {
-            try process.run()
-            process.waitUntilExit()
-            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8) ?? ""
-            return GarnetCommandResult(command: command, exitCode: process.terminationStatus, output: output)
-        } catch {
-            return GarnetCommandResult(command: command, exitCode: 127, output: error.localizedDescription)
-        }
+        // Row 5: disciplined spawn — timeout, tree-kill, drained pipes, capped UI payload.
+        let bridged = StudioProcessRunner.runBridged(
+            executable: "/usr/bin/env",
+            arguments: commandArguments(),
+            workingDirectory: location.repoRootURL,
+            category: .command
+        )
+        return GarnetCommandResult(command: bridged.command, exitCode: bridged.exitCode, output: bridged.output)
     }
 }
 
@@ -1488,25 +1389,14 @@ struct MacContinuationRunner {
     }
 
     func run() -> GarnetCommandResult {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = commandArguments()
-        process.currentDirectoryURL = location.repoRootURL
-
-        let outputPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = outputPipe
-
-        let command = (["/usr/bin/env"] + (process.arguments ?? [])).joined(separator: " ")
-        do {
-            try process.run()
-            process.waitUntilExit()
-            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8) ?? ""
-            return GarnetCommandResult(command: command, exitCode: process.terminationStatus, output: output)
-        } catch {
-            return GarnetCommandResult(command: command, exitCode: 127, output: error.localizedDescription)
-        }
+        // Row 5: disciplined spawn — timeout, tree-kill, drained pipes, capped UI payload.
+        let bridged = StudioProcessRunner.runBridged(
+            executable: "/usr/bin/env",
+            arguments: commandArguments(),
+            workingDirectory: location.repoRootURL,
+            category: .command
+        )
+        return GarnetCommandResult(command: bridged.command, exitCode: bridged.exitCode, output: bridged.output)
     }
 }
 
@@ -1528,25 +1418,14 @@ struct ConverterProviderOptionsRunner {
     }
 
     func run() -> GarnetCommandResult {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = commandArguments()
-        process.currentDirectoryURL = location.repoRootURL
-
-        let outputPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = outputPipe
-
-        let command = (["/usr/bin/env"] + (process.arguments ?? [])).joined(separator: " ")
-        do {
-            try process.run()
-            process.waitUntilExit()
-            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8) ?? ""
-            return GarnetCommandResult(command: command, exitCode: process.terminationStatus, output: output)
-        } catch {
-            return GarnetCommandResult(command: command, exitCode: 127, output: error.localizedDescription)
-        }
+        // Row 5: disciplined spawn — timeout, tree-kill, drained pipes, capped UI payload.
+        let bridged = StudioProcessRunner.runBridged(
+            executable: "/usr/bin/env",
+            arguments: commandArguments(),
+            workingDirectory: location.repoRootURL,
+            category: .command
+        )
+        return GarnetCommandResult(command: bridged.command, exitCode: bridged.exitCode, output: bridged.output)
     }
 }
 
@@ -1565,25 +1444,14 @@ struct ConverterStatusRunner {
     }
 
     func run() -> GarnetCommandResult {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = commandArguments()
-        process.currentDirectoryURL = location.repoRootURL
-
-        let outputPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = outputPipe
-
-        let command = (["/usr/bin/env"] + (process.arguments ?? [])).joined(separator: " ")
-        do {
-            try process.run()
-            process.waitUntilExit()
-            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8) ?? ""
-            return GarnetCommandResult(command: command, exitCode: process.terminationStatus, output: output)
-        } catch {
-            return GarnetCommandResult(command: command, exitCode: 127, output: error.localizedDescription)
-        }
+        // Row 5: disciplined spawn — timeout, tree-kill, drained pipes, capped UI payload.
+        let bridged = StudioProcessRunner.runBridged(
+            executable: "/usr/bin/env",
+            arguments: commandArguments(),
+            workingDirectory: location.repoRootURL,
+            category: .command
+        )
+        return GarnetCommandResult(command: bridged.command, exitCode: bridged.exitCode, output: bridged.output)
     }
 }
 
@@ -1737,25 +1605,14 @@ struct AgenticDogfoodRunner {
     }
 
     func run(copyToDesktop: Bool = true, strict: Bool = true) -> GarnetCommandResult {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = commandArguments(copyToDesktop: copyToDesktop, strict: strict)
-        process.currentDirectoryURL = location.repoRootURL
-
-        let outputPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = outputPipe
-
-        let command = (["/usr/bin/env"] + (process.arguments ?? [])).joined(separator: " ")
-        do {
-            try process.run()
-            process.waitUntilExit()
-            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8) ?? ""
-            return GarnetCommandResult(command: command, exitCode: process.terminationStatus, output: output)
-        } catch {
-            return GarnetCommandResult(command: command, exitCode: 127, output: error.localizedDescription)
-        }
+        // Row 5: disciplined spawn — timeout, tree-kill, drained pipes, capped UI payload.
+        let bridged = StudioProcessRunner.runBridged(
+            executable: "/usr/bin/env",
+            arguments: commandArguments(copyToDesktop: copyToDesktop, strict: strict),
+            workingDirectory: location.repoRootURL,
+            category: .matrix
+        )
+        return GarnetCommandResult(command: bridged.command, exitCode: bridged.exitCode, output: bridged.output)
     }
 }
 
@@ -1882,6 +1739,26 @@ final class GarnetStudioViewModel: ObservableObject {
         }
         let ext = fileExtension(for: converterLanguage)
         runSource(arguments: ["convert", converterLanguage], filename: "studio-input.\(ext)")
+    }
+
+    /// Row 8: read-only, evidence-root-constrained preview of the newest
+    /// Desktop dogfood entries. Never widens into a general filesystem read.
+    func previewEvidenceRoot() {
+        let reader = StudioEvidenceReader()
+        guard let root = reader.roots.first else {
+            output = "No evidence root configured."
+            lastStatus = .failure
+            return
+        }
+        switch reader.listEvidenceFiles(under: root) {
+        case .failure(let error):
+            output = "Evidence preview refused: \(error) — readers stay inside the Studio evidence roots."
+            lastStatus = .failure
+        case .success(let names):
+            let newest = names.suffix(20).reversed().joined(separator: "\n")
+            output = "Evidence root: \(root.path)\nNewest entries (capped):\n\(newest)"
+            lastStatus = .success
+        }
     }
 
     func runConverterStatus() {
@@ -2261,29 +2138,72 @@ enum StudioSection: String, CaseIterable, Identifiable {
 }
 
 struct GarnetStudioRootView: View {
-    @StateObject private var model = GarnetStudioViewModel()
+    @ObservedObject var model: GarnetStudioViewModel
+    @ObservedObject var boot: StudioBootModel
+    // Row 3: simple/power interface modes are @AppStorage-backed (native
+    // affordance). Power-only sections stay compiled in; mode only hides them.
+    @AppStorage("studio.interfaceMode") private var interfaceMode = "simple"
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Sections visible in the current mode. The power-only sections
+    /// (Agentic Tests, Release) remain in `StudioSection.allCases` and in the
+    /// compiled UI — simple mode hides them, never removes them.
+    private var visibleSections: [StudioSection] {
+        if interfaceMode == "power" { return StudioSection.allCases }
+        return StudioSection.allCases.filter { $0 != .agentic && $0 != .release } // power-only
+    }
 
     var body: some View {
-        NavigationSplitView {
-            List(StudioSection.allCases, selection: $model.selectedSection) { section in
-                Text(section.rawValue).tag(section)
+        ZStack {
+            NavigationSplitView {
+                List(visibleSections, selection: $model.selectedSection) { section in
+                    Text(section.rawValue)
+                        .tag(section)
+                        .help(sectionHelp(section))
+                }
+                .navigationTitle("Garnet Studio")
+            } detail: {
+                VStack(spacing: 0) {
+                    header
+                    Divider()
+                    content
+                    Divider()
+                    StudioStatusBar(
+                        interfaceMode: interfaceMode,
+                        truth: boot.truth,
+                        cliLocated: boot.cliLocated
+                    )
+                }
+                .background(Color(red: 0.05, green: 0.05, blue: 0.06))
             }
-            .navigationTitle("Garnet Studio")
-        } detail: {
-            VStack(spacing: 0) {
-                header
-                Divider()
-                content
+            .frame(minWidth: 1080, minHeight: 720)
+
+            // Row 2: splash holds during boot (700 ms minimum, 25 s ceiling).
+            if boot.splashVisible {
+                SplashView(status: boot.statusMessage, reduceMotion: reduceMotion)
+                    .transition(reduceMotion ? .identity : .opacity)
+                    .zIndex(1)
             }
-            .background(Color(red: 0.05, green: 0.05, blue: 0.06))
         }
-        .frame(minWidth: 1080, minHeight: 720)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: boot.splashVisible)
+        .onAppear { boot.beginBoot() }
+    }
+
+    private func sectionHelp(_ section: StudioSection) -> String {
+        switch section {
+        case .overview: return "Workbench overview: health, workflows, and onboarding."
+        case .examples: return "Runnable Garnet samples: parse, check, and run real programs."
+        case .converter: return "Migration assistant: active conversion for Rust/Ruby/Python/Go; advisory planning for broader languages."
+        case .agentic: return "Power mode: run the agentic dogfood stress matrix with evidence bundles."
+        case .release: return "Power mode: repo-native release and readiness reporters with the live truth surface."
+        }
     }
 
     private var header: some View {
         HStack(spacing: 16) {
             LogoView()
                 .frame(width: 54, height: 54)
+                .help("Garnet — research-grade prototype, not production / 1.0.")
             VStack(alignment: .leading, spacing: 4) {
                 Text("Garnet Studio")
                     .font(.system(size: 28, weight: .bold, design: .rounded))
@@ -2291,9 +2211,19 @@ struct GarnetStudioRootView: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
+            Picker("Interface", selection: $interfaceMode) {
+                Text("Simple").tag("simple")
+                Text("Power").tag("power")
+            }
+            .pickerStyle(.segmented)
+            .frame(width: 170)
+            .help("Simple keeps the core workbench; Power reveals the full cockpit (Agentic Tests, Release reporters). Persisted across launches.")
             StatusPill(status: model.lastStatus)
+                .help("Status of the most recent command: green on exit 0, red otherwise.")
             Button("Health Check") { model.runHealthCheck() }
                 .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.return, modifiers: .command)
+                .help("Run `garnet version` through the disciplined process path (⌘↩). Confirms the CLI is reachable.")
         }
         .padding(22)
     }
@@ -2381,6 +2311,7 @@ struct GarnetStudioRootView: View {
                         Text("Other").tag("other")
                     }
                     .pickerStyle(.menu)
+                    .help("Active conversion: Rust, Ruby, Python, Go. Every other language is advisory planning only — provider-backed conversion is not active.")
                     Text("The converter is a migration assistant. Active conversion is limited to Rust, Ruby, Python, and Go; advisory planning covers broader languages, while native-boundary code should stay behind FFI or native modules until explicit backend evidence lands. Advisory bundles omit source by default. Provider options are advisory-only; provider-backed conversion is not active.")
                         .font(.callout)
                         .foregroundStyle(.secondary)
@@ -2394,6 +2325,14 @@ struct GarnetStudioRootView: View {
                     ("Converter Fit Matrix", model.runConverterStatus),
                     ("Provider Options", model.runConverterProviderOptions),
                 ])
+                Panel(title: "Evidence Preview") {
+                    Text("Converter and reporter output lands in manifested bundles under the evidence root. The reader is read-only and constrained to that root.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                    Button("List Latest Evidence", action: model.previewEvidenceRoot)
+                        .buttonStyle(.bordered)
+                        .help("List the newest entries under ~/Desktop/dogfood through the canonicalized, symlink-skipping, size-capped evidence reader.")
+                }
             }
         } trailing: {
             ConsoleView(output: model.output)
@@ -2403,27 +2342,34 @@ struct GarnetStudioRootView: View {
     private var release: some View {
         WorkbenchLayout {
             VStack(alignment: .leading, spacing: 16) {
+                // Row 6: live truth tiles replace hand-written release stats.
+                TruthTilesPanel(truth: boot.truth)
                 Panel(title: "Release Evidence") {
-                    ReleaseLine(label: "Tracked plan", value: "87/87 slices complete on current main")
+                    ReleaseLine(label: "Tracked plan", value: "Reported live by the truth surface above and the repo-native reporters below")
                     ReleaseLine(label: "MIT objective", value: "Run Objective Pulse for the current repo-native percentage")
                     ReleaseLine(label: "MIT demo route", value: "Run Demo Route to create a manifested seven-minute walkthrough bundle")
                     ReleaseLine(label: "MIT deck outline", value: "Run Deck Outline to create a manifested reviewer-safe slide plan")
                     ReleaseLine(label: "MIT deck preview", value: "Run Deck Preview to create a browser-smokeable HTML review bundle")
                     ReleaseLine(label: "Mac continuation", value: "Run Continuation Pulse for actionable Mac-side lanes and blocked/delegated gates")
-                    ReleaseLine(label: "Org release", value: "v0.4.2 published with deb, rpm, macOS tarball, and SHA256SUMS")
+                    ReleaseLine(label: "Org release", value: "See the Latest tag truth tile; release assets and signatures are verified per docs/release-signing.md")
                     ReleaseLine(label: "macOS app", value: "Local .app/.dmg packaging active in this slice")
-                    ReleaseLine(label: "Deferred", value: "Developer ID signing, notarization, App Store, iOS, Android, Windows/Linux Studio, broad converter frontends, and provider-backed LLM conversion")
+                    ReleaseLine(label: "Deferred", value: "Developer ID signing, notarization, App Store, iOS, Android, broad converter frontends, and provider-backed LLM conversion")
                     HStack {
                         Button("Objective Pulse", action: model.runMitReadinessPulse)
                             .buttonStyle(.borderedProminent)
+                            .help("Run the repo-native MIT/productization readiness reporter; the percentage comes from the script, never the UI.")
                         Button("Demo Route", action: model.runMitDemoRoute)
                             .buttonStyle(.bordered)
+                            .help("Create a manifested seven-minute demo walkthrough bundle under the evidence root.")
                         Button("Deck Outline", action: model.runMitDeckOutline)
                             .buttonStyle(.bordered)
+                            .help("Create a manifested, reviewer-safe deck outline bundle.")
                         Button("Deck Preview", action: model.runMitDeckPreview)
                             .buttonStyle(.bordered)
+                            .help("Create a browser-smokeable HTML deck preview bundle.")
                         Button("Continuation Pulse", action: model.runMacContinuationPulse)
                             .buttonStyle(.bordered)
+                            .help("Report actionable Mac-side lanes plus blocked and delegated gates.")
                     }
                 }
                 Panel(title: "Install Philosophy") {
@@ -2449,6 +2395,7 @@ struct GarnetStudioRootView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .disabled(model.agenticMatrixPath == nil)
+                    .help("Run the agentic dogfood matrix under the larger matrix timeout; writes a manifested evidence bundle to ~/Desktop/dogfood.")
                 }
                 Panel(title: "Readiness Boundary") {
                     Text("A passing matrix proves the audited agent-facing workflows in this checkout. Production ARC, native backend, mechanized proof, empirical validation, notarized distribution, real-browser web/PWA, mobile, and promo-video lanes still need their own gates.")
@@ -2461,9 +2408,27 @@ struct GarnetStudioRootView: View {
         }
     }
 
+    static func actionHelp(for title: String) -> String {
+        switch title {
+        case "Parse": return "Parse the source buffer with the garnet CLI; surfaces syntax diagnostics."
+        case "Check": return "Run safe-mode and capability checks; @caps coverage failures appear here."
+        case "Run": return "Execute the buffer through the managed interpreter under the command timeout."
+        case "Run Selected": return "Run the selected sample end to end."
+        case "Convert": return "Active conversion (Rust/Ruby/Python/Go to Garnet) with sandboxed output and a migration checklist."
+        case "Assist Plan": return "Deterministic migration-risk plan for advisory languages; no source leaves the machine."
+        case "Advisory Bundle": return "Manifested local handoff package; omits source by default."
+        case "Advisory Review": return "Verify a bundle manifest and emit the human-review checklist."
+        case "Advisory Handoff": return "Package reviewed, no-source context into the provider-neutral packet; calls no provider."
+        case "Converter Fit Matrix": return "Report active vs advisory vs native-boundary language lanes from repo truth."
+        case "Provider Options": return "Write the provider-option registry evidence; provider-backed conversion is not active."
+        default: return "Runs through the disciplined process path with timeout and evidence-honest output."
+        }
+    }
+
     private func editor(actions: [(String, () -> Void)]) -> some View {
         Panel(title: "Source") {
             TextEditor(text: $model.sourceText)
+                .help("Garnet source under test. Parse, Check, and Run all execute the real CLI against this buffer.")
                 .font(.system(.body, design: .monospaced))
                 .frame(minHeight: 260)
                 .scrollContentBackground(.hidden)
@@ -2473,6 +2438,7 @@ struct GarnetStudioRootView: View {
                 ForEach(actions, id: \.0) { title, action in
                     Button(title, action: action)
                         .buttonStyle(.borderedProminent)
+                        .help(Self.actionHelp(for: title))
                 }
                 Spacer()
             }
@@ -2630,6 +2596,7 @@ struct WorkflowButton: View {
                 .frame(maxWidth: .infinity, minHeight: 44)
         }
         .buttonStyle(.bordered)
+        .help("Jump to \(title.lowercased()) — every workflow runs the real CLI or repo reporters, never canned output.")
     }
 }
 
@@ -2658,6 +2625,7 @@ struct SampleRow: View {
             .clipShape(RoundedRectangle(cornerRadius: 8))
         }
         .buttonStyle(.plain)
+        .help("Load this sample into the editor; Run Selected executes it end to end through the real CLI.")
     }
 }
 
@@ -2675,6 +2643,7 @@ struct ConsoleView: View {
                     .textSelection(.enabled)
                     .padding(14)
             }
+            .help("Command output, capped for display with an honest marker; full output lands in the evidence bundle when one exists.")
             .background(Color.black.opacity(0.45))
             .clipShape(RoundedRectangle(cornerRadius: 8))
         }
@@ -2902,25 +2871,14 @@ enum GarnetStudioSelfTest {
     }
 
     static func runDeckPreviewManifestCheck(outputDirectoryURL: URL) -> GarnetCommandResult {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = ["shasum", "-a", "256", "-c", "MANIFEST.sha256"]
-        process.currentDirectoryURL = outputDirectoryURL
-
-        let outputPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = outputPipe
-
-        let command = (["/usr/bin/env"] + (process.arguments ?? [])).joined(separator: " ")
-        do {
-            try process.run()
-            process.waitUntilExit()
-            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8) ?? ""
-            return GarnetCommandResult(command: command, exitCode: process.terminationStatus, output: output)
-        } catch {
-            return GarnetCommandResult(command: command, exitCode: 127, output: error.localizedDescription)
-        }
+        // Row 5: disciplined spawn — timeout, tree-kill, drained pipes, capped UI payload.
+        let bridged = StudioProcessRunner.runBridged(
+            executable: "/usr/bin/env",
+            arguments: ["shasum", "-a", "256", "-c", "MANIFEST.sha256"],
+            workingDirectory: outputDirectoryURL,
+            category: .command
+        )
+        return GarnetCommandResult(command: bridged.command, exitCode: bridged.exitCode, output: bridged.output)
     }
 }
 
@@ -2941,11 +2899,103 @@ struct GarnetStudioApp: App {
         }
     }
 
+    @StateObject private var model = GarnetStudioViewModel()
+    @StateObject private var boot = StudioBootModel()
+    // Row 9: theme is user-selectable (dark/light/system) and persisted.
+    @AppStorage("studio.theme") private var themeSetting = "system"
+
+    private var colorScheme: ColorScheme? {
+        switch themeSetting {
+        case "dark": return .dark
+        case "light": return .light
+        default: return nil // follow the system
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
-            GarnetStudioRootView()
-                .preferredColorScheme(.dark)
+            GarnetStudioRootView(model: model, boot: boot)
+                .preferredColorScheme(colorScheme)
         }
         .windowStyle(.titleBar)
+        .commands {
+            // Row 9: keyboard-first section navigation (⌘1…⌘5).
+            CommandMenu("Go") {
+                Button("Overview") { model.selectedSection = .overview }
+                    .keyboardShortcut("1", modifiers: .command)
+                Button("Examples") { model.selectedSection = .examples }
+                    .keyboardShortcut("2", modifiers: .command)
+                Button("Converter") { model.selectedSection = .converter }
+                    .keyboardShortcut("3", modifiers: .command)
+                Button("Agentic Tests") { model.selectedSection = .agentic }
+                    .keyboardShortcut("4", modifiers: .command)
+                Button("Release") { model.selectedSection = .release }
+                    .keyboardShortcut("5", modifiers: .command)
+            }
+        }
+
+        // Native Settings scene (⌘,) — the macOS-exceeding affordance for the
+        // validated settings store (row 4).
+        Settings {
+            StudioSettingsView()
+        }
+    }
+}
+
+/// Native Settings pane backed by the validated `StudioSettingsStore` (row 4):
+/// every write goes through `normalized()` clamping; mode/theme also mirror to
+/// `@AppStorage` so the live UI follows immediately.
+struct StudioSettingsView: View {
+    @AppStorage("studio.interfaceMode") private var interfaceMode = "simple"
+    @AppStorage("studio.theme") private var themeSetting = "system"
+    @State private var settings = StudioSettingsStore().load().normalized()
+
+    var body: some View {
+        Form {
+            Picker("Interface mode", selection: $interfaceMode) {
+                Text("Simple").tag("simple")
+                Text("Power").tag("power")
+            }
+            .help("Simple keeps the core workbench; Power reveals the full cockpit. Persisted across launches.")
+            Picker("Theme", selection: $themeSetting) {
+                Text("System").tag("system")
+                Text("Dark").tag("dark")
+                Text("Light").tag("light")
+            }
+            .help("Appearance follows the system by default; dark and light are explicit overrides.")
+            Stepper(
+                "Command timeout: \(settings.commandTimeoutSecs)s",
+                value: $settings.commandTimeoutSecs,
+                in: StudioSettings.commandTimeoutRange
+            )
+            .help("Hard ceiling for ordinary CLI and reporter runs. Expired processes are tree-killed and reported as timed_out.")
+            Stepper(
+                "Matrix timeout: \(settings.matrixTimeoutSecs)s",
+                value: $settings.matrixTimeoutSecs,
+                in: StudioSettings.matrixTimeoutRange
+            )
+            .help("Larger ceiling for the agentic stress matrix. Same tree-kill discipline on expiry.")
+            Text("Values are clamped on save; a corrupt settings file never blocks startup — defaults win.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(20)
+        .frame(width: 420)
+        .onChange(of: settings) { _, newValue in
+            var toSave = newValue
+            toSave.mode = StudioInterfaceMode(rawValue: interfaceMode) ?? .simple
+            toSave.theme = StudioTheme(rawValue: themeSetting) ?? .system
+            StudioSettingsStore().save(toSave)
+        }
+        .onChange(of: interfaceMode) { _, newValue in
+            var toSave = settings
+            toSave.mode = StudioInterfaceMode(rawValue: newValue) ?? .simple
+            StudioSettingsStore().save(toSave)
+        }
+        .onChange(of: themeSetting) { _, newValue in
+            var toSave = settings
+            toSave.theme = StudioTheme(rawValue: newValue) ?? .system
+            StudioSettingsStore().save(toSave)
+        }
     }
 }

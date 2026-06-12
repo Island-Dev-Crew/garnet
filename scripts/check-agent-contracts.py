@@ -130,6 +130,15 @@ CONTRACT_RULES = {
             "advisory",
         ],
     },
+    "apps/garnet-studio-macos/AGENTS.md": {
+        "phrases": [
+            "SwiftUI Studio",
+            "StudioVersion.release",
+            "StudioProcessRunner",
+            "provider API",
+            "evidence roots",
+        ],
+    },
     "examples/AGENTS.md": {
         "phrases": ["MVP demonstration", "production readiness", "parser/interpreter/checker"],
     },
