@@ -260,7 +260,9 @@ fn validate_project_name(name: &str) -> Result<(), NewProjectError> {
         return Err(err("name exceeds 64 characters"));
     }
     let mut chars = name.chars();
-    let first = chars.next().unwrap();
+    let Some(first) = chars.next() else {
+        return Err(err("name is empty"));
+    };
     if !first.is_ascii_alphabetic() {
         return Err(err("name must start with an ASCII letter"));
     }

@@ -112,6 +112,11 @@ fn generate_and_save(path: &Path) -> io::Result<[u8; KEY_LEN]> {
 /// fail-hard choice: if we can't establish a machine key, we cannot
 /// honour the cache integrity contract and running with an uninitialised
 /// key would silently fail-open.
+#[allow(clippy::expect_used)] // FAIL-CLOSED: not an invariant — disk IO can
+                              // genuinely fail. Aborting here is the documented cache-integrity contract:
+                              // running with an uninitialised machine key would silently fail-open (see
+                              // the doc comment above). Recorded as the one sanctioned fail-closed abort
+                              // in the RB-2 crash-surface sweep.
 pub fn machine_key() -> &'static [u8; KEY_LEN] {
     static KEY: OnceLock<[u8; KEY_LEN]> = OnceLock::new();
     KEY.get_or_init(|| {

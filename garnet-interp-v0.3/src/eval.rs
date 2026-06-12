@@ -303,7 +303,13 @@ fn eval_binary(op: BinOp, lhs: &Expr, rhs: &Expr, env: &Rc<Env>) -> Result<Value
                 return Err(RuntimeError::DivByZero);
             }
             match (&l, &r) {
-                (Int(a), Int(b)) => Ok(Int(a / b)),
+                // checked_div: zero is pre-guarded above, so None here is
+                // exactly the i64::MIN / -1 overflow — a diagnostic, not an
+                // abort (RB-2).
+                (Int(a), Int(b)) => a
+                    .checked_div(*b)
+                    .map(Int)
+                    .ok_or_else(|| RuntimeError::Overflow(format!("{a} / {b}"))),
                 (Float(a), Float(b)) => Ok(Float(a / b)),
                 (Int(a), Float(b)) => Ok(Float(*a as f64 / b)),
                 (Float(a), Int(b)) => Ok(Float(a / *b as f64)),
@@ -315,7 +321,10 @@ fn eval_binary(op: BinOp, lhs: &Expr, rhs: &Expr, env: &Rc<Env>) -> Result<Value
                 if *b == 0 {
                     Err(RuntimeError::DivByZero)
                 } else {
-                    Ok(Int(a % b))
+                    // None = i64::MIN % -1 overflow — diagnostic, not abort (RB-2).
+                    a.checked_rem(*b)
+                        .map(Int)
+                        .ok_or_else(|| RuntimeError::Overflow(format!("{a} % {b}")))
                 }
             }
             (Float(a), Float(b)) => Ok(Float(a % b)),
@@ -743,13 +752,14 @@ fn call_fn(f: &FnValue, mut args: Vec<Value>) -> Result<Value, RuntimeError> {
         None => None,
     };
     let active_block = if args.len() == f.def.params.len() + 1 {
+        // Pop-then-match keeps this abort-free (RB-2): the popped value IS
+        // the element `last()` just matched, so the non-block arms simply
+        // fall through to "no trailing block".
         match args.last() {
-            Some(Value::Fn(block)) if block.is_block => {
-                match args.pop().expect("trailing block arg exists") {
-                    Value::Fn(block) => Some(block),
-                    _ => unreachable!(),
-                }
-            }
+            Some(Value::Fn(block)) if block.is_block => match args.pop() {
+                Some(Value::Fn(block)) => Some(block),
+                _ => None,
+            },
             _ => None,
         }
     } else {

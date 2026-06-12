@@ -26,6 +26,12 @@ pub enum RuntimeError {
     #[error("division by zero")]
     DivByZero,
 
+    /// RB-2 — checked integer division/remainder overflow (`i64::MIN / -1`).
+    /// Previously a process abort on both backends; now a runtime
+    /// diagnostic. Carries the offending expression for the message.
+    #[error("integer overflow: {0}")]
+    Overflow(String),
+
     /// Index out of bounds.
     #[error("index out of bounds: {idx}")]
     IndexOOB { idx: i64 },

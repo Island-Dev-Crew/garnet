@@ -13,6 +13,39 @@ _Post-cut work (S121+) lands here. S121–S130 delivered: the Truth Sync Gate, d
 modernization, the v0.8.1 version bump + release guard + SBOM/signing wiring, the
 signed re-cut, and this post-re-cut truth-sync._
 
+### RB-2 — crash-surface sweep (W-REBUILD Foundation)
+
+- **Changed (abort → diagnostic, both backends):** `i64::MIN / -1` and
+  `i64::MIN % -1` were process aborts in the interpreter (expression AND
+  compound-assign paths) and the VM. Now checked division/remainder yields
+  `RuntimeError::Overflow` / `VmError::Runtime` with the **identical**
+  message (`integer overflow: <lhs> <op> <rhs>`) on both backends, proven
+  red→green (`garnet-interp tests/overflow_guards.rs`) and by a
+  trap-parity-style cross-backend test
+  (`garnet-cli/tests/overflow_parity.rs`). Honest boundary: add/sub/mul
+  overflow (wraps in release, aborts in debug) is an open language-policy
+  decision — named-deferred, escalated to Jon, not silently changed.
+- **Added (deny lints):** `#![deny(clippy::unwrap_used, clippy::expect_used)]`
+  on `garnet-cli` (lib + bin targets), `garnet-interp`, `garnet-stdlib`
+  (tests exempt via `cfg_attr`). Production unwrap/expect sites: 8 found, 8
+  resolved — 4 refactored away (let-else / pop-then-match / spawn-failure
+  path), 2 allowlisted `// INVARIANT:` (len==1-guarded pop; Hmac
+  any-key-length), 1 allowlisted `// FAIL-CLOSED:` (`machine_key` — cache
+  integrity must not fail open; **a second sanctioned comment form beyond
+  the spec's single INVARIANT pattern, recorded as a deviation** because
+  calling it an invariant would be false), 1 doc-example rewritten to `?`.
+  Deny proven live by a planted-unwrap check (fires → removed → clean).
+- **Added (malformed-input smoke):** `garnet-cli/tests/malformed_corpus_smoke.rs`
+  drives `garnet check` + `run --interp` + `run --vm` over a 12-file
+  malformed fixture corpus (+ non-UTF8 input, + the 13 parser fuzz seeds
+  via `check`), asserting controlled 0/1/2 exits — no aborts, no panic
+  exits. **Scoped claim: no abort on this corpus + the stated fuzz minutes
+  — never "never panics."** Unbounded un-annotated recursion is excluded
+  by design (S99 opt-in-ceiling boundary).
+- **Honest boundary (miette spans):** parse-layer diagnostics already carry
+  miette spans end-to-end; runtime errors (`RuntimeError`) remain span-less
+  — threading spans through eval is out of RB-2 scope and named-deferred.
+
 ### RB-1 — caps lattice → `CapSet(u16)` bitset (W-REBUILD Foundation)
 
 - **Changed:** the CapCaps propagator's capability representation is now

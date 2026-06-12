@@ -6,6 +6,11 @@ Owns the Garnet bytecode VM scaffold, deterministic bytecode serialization, and 
 
 ## Stable Contracts
 
+- Checked integer division/remainder overflow (`i64::MIN / -1`, `% -1`) is a
+  `VmError::Runtime("integer overflow: ...")` diagnostic with the SAME
+  message as the interpreter (RB-2 cross-backend parity;
+  `garnet-cli/tests/overflow_parity.rs`) — never a process abort.
+
 - Bytecode VM claims must stay narrower than the tree-walk interpreter until each opcode family is dogfooded.
 - Unsupported language forms must fall back explicitly and report fallback counts.
 - Serializer and loader output must be deterministic across platforms.

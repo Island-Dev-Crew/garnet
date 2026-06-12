@@ -151,11 +151,14 @@ pub fn surface_for_path(path: &Path) -> Result<CapabilitySurface, String> {
             .map_err(|e| format!("parse error in {}: {e}", target.display()))?;
         surfaces.push(capability_surface(&module));
     }
-    Ok(if surfaces.len() == 1 {
-        surfaces.pop().expect("one surface")
-    } else {
-        merge_surfaces(surfaces)
-    })
+    if surfaces.len() == 1 {
+        #[allow(clippy::expect_used)]
+        // INVARIANT: guarded by the len() == 1 check on the previous line —
+        // pop() on a one-element Vec cannot return None.
+        let only = surfaces.pop().expect("one surface");
+        return Ok(only);
+    }
+    Ok(merge_surfaces(surfaces))
 }
 
 /// Render a slice of strings as a JSON array of escaped strings.

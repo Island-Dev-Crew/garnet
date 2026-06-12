@@ -121,16 +121,22 @@ fn run_interpreter(file_label: &str, src: &str, path: &Path, started: Instant) -
     let file_label = file_label.to_string();
     let src = src.to_string();
     let path = path.to_path_buf();
-    let code = std::thread::Builder::new()
+    let spawned = std::thread::Builder::new()
         .name("garnet-interp".to_string())
         .stack_size(INTERP_STACK_BYTES)
-        .spawn(move || run_interpreter_inner(&file_label, &src, &path, started))
-        .expect("spawn garnet-interp thread")
-        .join()
-        .unwrap_or_else(|_| {
+        .spawn(move || run_interpreter_inner(&file_label, &src, &path, started));
+    let code = match spawned {
+        Ok(handle) => handle.join().unwrap_or_else(|_| {
             eprintln!("runtime error: interpreter thread panicked");
             1
-        });
+        }),
+        // Resource exhaustion (RLIMIT/low memory), not malformed input —
+        // degrade to the same graceful exit-1 path as a thread panic (RB-2).
+        Err(e) => {
+            eprintln!("runtime error: failed to spawn interpreter thread: {e}");
+            1
+        }
+    };
     ExitCode::from(code)
 }
 

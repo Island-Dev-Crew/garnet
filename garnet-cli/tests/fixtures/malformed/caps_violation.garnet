@@ -1,0 +1,2 @@
+@caps()
+def main() { read_file("nope.txt") }
