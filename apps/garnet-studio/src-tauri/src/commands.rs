@@ -25,12 +25,16 @@ const ADVISORY_LANGUAGES: &[&str] = &[
     "other",
 ];
 
-/// Hard cap on stdout/stderr returned to the webview. The full, untruncated
-/// streams are always written to the evidence bundle first; this cap only
-/// protects the UI payload and DOM from multi-megabyte reporter output.
+/// Hard cap on stdout/stderr returned to the webview. When an evidence bundle
+/// exists, the full untruncated streams are written there before the cap is
+/// applied; the cap only protects the UI payload and DOM from multi-megabyte
+/// reporter output. The truncation marker is honest about whether a bundle
+/// holds the full streams.
 const PAYLOAD_STREAM_CAP: usize = 256 * 1024;
-const PAYLOAD_TRUNCATION_MARKER: &str =
+const PAYLOAD_TRUNCATION_MARKER_WITH_BUNDLE: &str =
     "\n…[output truncated for display — the full output is in the evidence bundle]";
+const PAYLOAD_TRUNCATION_MARKER_NO_BUNDLE: &str =
+    "\n…[output truncated for display — no evidence bundle was created for this run]";
 /// Cap for in-app evidence file reads.
 const EVIDENCE_READ_CAP: usize = 512 * 1024;
 /// Cap for evidence directory listings.
@@ -100,6 +104,11 @@ pub struct TruthSummary {
     pub primitive_count: Option<u64>,
     pub workspace_tests_passed: Option<u64>,
     pub workspace_tests_failed: Option<u64>,
+    /// `workspace_tests.measured_at_commit` — distinct from
+    /// `generated_at_commit`, because `xtask truth --skip-tests` carries old
+    /// test counts forward while the overall stamp advances. The tests tile
+    /// must attribute counts to THIS commit, never the newer stamp.
+    pub workspace_tests_measured_at_commit: Option<String>,
     pub error: Option<String>,
 }
 
@@ -134,16 +143,36 @@ where
         .map_err(|err| format!("studio task failed to complete: {err}"))
 }
 
+/// Short, hard budget for the health version probes. They run on the boot
+/// path (the splash waits on them), so they must never hang the shell.
+const HEALTH_PROBE_TIMEOUT_SECS: u64 = 10;
+
+fn run_version_probe(program: &Path, arg: &str) -> CommandResult {
+    run_process_with_timeout(
+        "health-probe",
+        program.to_path_buf(),
+        &[arg.to_string()],
+        None,
+        vec![display_path(program), arg.to_string()],
+        None,
+        Duration::from_secs(HEALTH_PROBE_TIMEOUT_SECS),
+    )
+}
+
 pub(crate) fn cli_health_impl() -> HealthStatus {
     let (cli_found, cli_path, cli_version) = match paths::find_garnet_cli() {
         Some(path) => {
-            let version = Command::new(&path)
-                .arg("version")
-                .output()
-                .ok()
-                .map(|output| String::from_utf8_lossy(&output.stdout).trim().to_string())
-                .filter(|version| !version.is_empty())
-                .unwrap_or_else(|| "unknown".to_string());
+            let probe = run_version_probe(&path, "version");
+            let version = if probe.timed_out {
+                format!("unknown (version probe timed out after {HEALTH_PROBE_TIMEOUT_SECS}s)")
+            } else {
+                let trimmed = probe.stdout.trim();
+                if trimmed.is_empty() {
+                    "unknown".to_string()
+                } else {
+                    trimmed.to_string()
+                }
+            };
             (true, display_path(&path), version)
         }
         None => (false, String::new(), String::new()),
@@ -154,16 +183,13 @@ pub(crate) fn cli_health_impl() -> HealthStatus {
         None => (false, String::new()),
     };
 
-    let (python_found, python_version) =
-        match Command::new(paths::python_cmd()).arg("--version").output() {
-            Ok(output) => {
-                let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
-                let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-                let version = if stdout.is_empty() { stderr } else { stdout };
-                (output.status.success(), version)
-            }
-            Err(_) => (false, String::new()),
-        };
+    let (python_found, python_version) = {
+        let probe = run_version_probe(Path::new(paths::python_cmd()), "--version");
+        let stdout = probe.stdout.trim().to_string();
+        let stderr = probe.stderr.trim().to_string();
+        let version = if stdout.is_empty() { stderr } else { stdout };
+        (probe.success, version)
+    };
 
     HealthStatus {
         cli_found,
@@ -620,6 +646,11 @@ pub(crate) fn get_truth_summary_impl() -> TruthSummary {
             .get("workspace_tests")
             .and_then(|tests| tests.get("failed"))
             .and_then(|v| v.as_u64()),
+        workspace_tests_measured_at_commit: value
+            .get("workspace_tests")
+            .and_then(|tests| tests.get("measured_at_commit"))
+            .and_then(|v| v.as_str())
+            .map(str::to_string),
         error: None,
     }
 }
@@ -661,8 +692,14 @@ pub(crate) fn read_evidence_text_impl(path: String) -> Result<EvidenceText, Stri
     let metadata =
         fs::metadata(&resolved).map_err(|err| format!("failed to stat evidence file: {err}"))?;
     let size = metadata.len();
-    let bytes =
-        fs::read(&resolved).map_err(|err| format!("failed to read evidence file: {err}"))?;
+    // Bounded read: never allocate more than the cap + 1 sentinel byte, even
+    // for the multi-hundred-MB stdout captures a matrix run can leave behind.
+    let file =
+        fs::File::open(&resolved).map_err(|err| format!("failed to open evidence file: {err}"))?;
+    let mut bytes = Vec::with_capacity(EVIDENCE_READ_CAP.min(size as usize) + 1);
+    file.take(EVIDENCE_READ_CAP as u64 + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|err| format!("failed to read evidence file: {err}"))?;
     let truncated = bytes.len() > EVIDENCE_READ_CAP;
     let slice = if truncated {
         &bytes[..EVIDENCE_READ_CAP]
@@ -776,7 +813,17 @@ fn collect_evidence_files(
         }
         let entry = entry.map_err(|err| format!("failed to read evidence entry: {err}"))?;
         let path = entry.path();
-        if path.is_dir() {
+        // file_type() does NOT follow links: skip symlinks/junctions entirely
+        // so a link planted inside a bundle can never widen the listing
+        // outside the evidence roots (reads are independently canonicalized,
+        // but enumeration must hold the same boundary).
+        let file_type = entry
+            .file_type()
+            .map_err(|err| format!("failed to read evidence entry type: {err}"))?;
+        if file_type.is_symlink() {
+            continue;
+        }
+        if file_type.is_dir() {
             collect_evidence_files(root, &path, files, truncated)?;
             continue;
         }
@@ -974,7 +1021,7 @@ fn join_reader(handle: Option<thread::JoinHandle<Vec<u8>>>) -> String {
     String::from_utf8_lossy(&bytes).to_string()
 }
 
-fn truncate_for_payload(text: String) -> (String, bool) {
+fn truncate_for_payload(text: String, has_bundle: bool) -> (String, bool) {
     if text.len() <= PAYLOAD_STREAM_CAP {
         return (text, false);
     }
@@ -983,7 +1030,11 @@ fn truncate_for_payload(text: String) -> (String, bool) {
         cut -= 1;
     }
     let mut truncated = text[..cut].to_string();
-    truncated.push_str(PAYLOAD_TRUNCATION_MARKER);
+    truncated.push_str(if has_bundle {
+        PAYLOAD_TRUNCATION_MARKER_WITH_BUNDLE
+    } else {
+        PAYLOAD_TRUNCATION_MARKER_NO_BUNDLE
+    });
     (truncated, true)
 }
 
@@ -1006,12 +1057,42 @@ fn run_process(
     )
 }
 
+/// Best-effort kill of the child's whole process tree, then the child itself.
+/// The Studio's long actions are Python wrappers that spawn grandchildren
+/// (the garnet CLI, matrix probes); killing only the direct child would leave
+/// those running after a timeout. Windows uses `taskkill /T`; Unix children
+/// are spawned in their own process group (see the spawn site) so the group
+/// can be signalled. The direct `child.kill()` remains as the fallback if the
+/// platform tool is unavailable.
+fn kill_process_tree(child: &mut std::process::Child) {
+    let pid = child.id();
+    #[cfg(windows)]
+    {
+        let _ = Command::new("taskkill")
+            .args(["/T", "/F", "/PID", &pid.to_string()])
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status();
+    }
+    #[cfg(unix)]
+    {
+        let _ = Command::new("kill")
+            .args(["-KILL".to_string(), format!("-{pid}")])
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status();
+    }
+    let _ = child.kill();
+}
+
 /// Spawn the child with piped output, drain both pipes on reader threads (so a
 /// full pipe can never deadlock the child), and poll for exit until the
-/// deadline. On timeout the child is killed, the partial output is preserved,
-/// and the result is marked `timed_out` — a hung reporter can no longer wedge
-/// a Studio action forever. Full output is written to the evidence bundle
-/// before the UI payload is capped.
+/// deadline. On timeout the child's process tree is killed (best-effort — see
+/// `kill_process_tree`), the partial output is preserved, and the result is
+/// marked `timed_out`. When an evidence bundle exists, full output is written
+/// to it before the UI payload is capped.
 #[allow(clippy::too_many_arguments)]
 fn run_process_with_timeout(
     category: &str,
@@ -1029,6 +1110,12 @@ fn run_process_with_timeout(
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        // Own process group so kill_process_tree can signal the whole tree.
+        process.process_group(0);
+    }
     if let Some(dir) = &working_dir {
         process.current_dir(dir);
     }
@@ -1055,31 +1142,43 @@ fn run_process_with_timeout(
 
     let deadline = started + timeout;
     let mut timed_out = false;
+    let mut monitor_failed = false;
     let status = loop {
         match child.try_wait() {
             Ok(Some(status)) => break Some(status),
             Ok(None) => {
                 if Instant::now() >= deadline {
                     timed_out = true;
-                    let _ = child.kill();
+                    kill_process_tree(&mut child);
                     break child.wait().ok();
                 }
                 thread::sleep(Duration::from_millis(50));
             }
-            Err(_) => break None,
+            Err(_) => {
+                // Monitoring failed; never leave the child running with the
+                // deadline silently abandoned.
+                monitor_failed = true;
+                kill_process_tree(&mut child);
+                break child.wait().ok();
+            }
         }
     };
 
     let stdout_full = join_reader(stdout_reader);
     let mut stderr_full = join_reader(stderr_reader);
-    if timed_out {
+    if timed_out || monitor_failed {
         if !stderr_full.is_empty() && !stderr_full.ends_with('\n') {
             stderr_full.push('\n');
         }
-        stderr_full.push_str(&format!(
-            "studio: command timed out after {}s and was terminated",
-            timeout.as_secs()
-        ));
+        if timed_out {
+            stderr_full.push_str(&format!(
+                "studio: command timed out after {}s and its process tree was terminated",
+                timeout.as_secs()
+            ));
+        } else {
+            stderr_full
+                .push_str("studio: failed to monitor the command; its process tree was terminated");
+        }
     }
 
     let exit_code = status.and_then(|status| status.code()).unwrap_or(-1);
@@ -1096,8 +1195,9 @@ fn run_process_with_timeout(
         );
     }
 
-    let (stdout, stdout_truncated) = truncate_for_payload(stdout_full);
-    let (stderr, stderr_truncated) = truncate_for_payload(stderr_full);
+    let has_bundle = bundle.is_some();
+    let (stdout, stdout_truncated) = truncate_for_payload(stdout_full, has_bundle);
+    let (stderr, stderr_truncated) = truncate_for_payload(stderr_full, has_bundle);
 
     CommandResult {
         success,
@@ -1212,15 +1312,21 @@ mod tests {
     }
 
     #[test]
-    fn payload_truncation_caps_oversized_output_and_marks_it() {
+    fn payload_truncation_caps_oversized_output_and_marks_it_honestly() {
         let oversized = "g".repeat(PAYLOAD_STREAM_CAP + 64);
-        let (text, truncated) = truncate_for_payload(oversized);
+        let (text, truncated) = truncate_for_payload(oversized.clone(), true);
         assert!(truncated);
-        assert!(text.ends_with(PAYLOAD_TRUNCATION_MARKER));
-        assert!(text.len() <= PAYLOAD_STREAM_CAP + PAYLOAD_TRUNCATION_MARKER.len());
+        assert!(text.ends_with(PAYLOAD_TRUNCATION_MARKER_WITH_BUNDLE));
+        assert!(text.len() <= PAYLOAD_STREAM_CAP + PAYLOAD_TRUNCATION_MARKER_WITH_BUNDLE.len());
+
+        // Without a bundle the marker must not claim the evidence bundle
+        // holds the full streams — there is no bundle.
+        let (text, truncated) = truncate_for_payload(oversized, false);
+        assert!(truncated);
+        assert!(text.ends_with(PAYLOAD_TRUNCATION_MARKER_NO_BUNDLE));
 
         let small = "ok".to_string();
-        let (text, truncated) = truncate_for_payload(small.clone());
+        let (text, truncated) = truncate_for_payload(small.clone(), true);
         assert!(!truncated);
         assert_eq!(text, small);
     }
@@ -1246,7 +1352,21 @@ mod tests {
         assert!(result.timed_out);
         assert!(!result.success);
         assert!(result.stderr.contains("timed out after 1s"));
+        assert!(result.stderr.contains("process tree was terminated"));
         assert!(result.duration_ms >= 1000);
+    }
+
+    #[test]
+    fn health_version_probe_is_time_bounded() {
+        // The probes run on the boot path (the splash waits on them); this
+        // pins that they go through the timeout machinery rather than a raw
+        // blocking Command::output().
+        let probe = run_version_probe(Path::new(paths::python_cmd()), "--version");
+        if probe.stderr.contains("failed to execute command") {
+            return; // python missing on this machine; covered on CI.
+        }
+        assert!(!probe.timed_out);
+        assert!(probe.duration_ms < HEALTH_PROBE_TIMEOUT_SECS * 1000);
     }
 
     #[test]

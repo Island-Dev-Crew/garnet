@@ -61,7 +61,7 @@
       </aside>
 
       <main class="workspace">
-        <section id="panel-health" class="panel active" role="tabpanel">
+        <section id="panel-health" class="panel active" role="tabpanel" tabindex="-1">
           <header class="panel-header">
             <p class="eyebrow">Runtime</p>
             <h2>CLI Health</h2>
@@ -75,7 +75,7 @@
           <div id="health-result" class="result-area" aria-live="polite"></div>
         </section>
 
-        <section id="panel-garnet" class="panel" role="tabpanel">
+        <section id="panel-garnet" class="panel" role="tabpanel" tabindex="-1">
           <header class="panel-header">
             <p class="eyebrow">Garnet source</p>
             <h2>Parse, Check, Run</h2>
@@ -103,7 +103,7 @@
           <div id="garnet-result" class="result-area" aria-live="polite"></div>
         </section>
 
-        <section id="panel-convert" class="panel" role="tabpanel">
+        <section id="panel-convert" class="panel" role="tabpanel" tabindex="-1">
           <header class="panel-header">
             <p class="eyebrow">Active conversion</p>
             <h2>Rust/Ruby/Python/Go to Garnet</h2>
@@ -138,7 +138,7 @@
           <div id="convert-preview" class="preview-area"></div>
         </section>
 
-        <section id="panel-advisory" class="panel" role="tabpanel">
+        <section id="panel-advisory" class="panel" role="tabpanel" tabindex="-1">
           <header class="panel-header">
             <p class="eyebrow">Advisory planning</p>
             <h2>Assist, Bundle, Review, Handoff</h2>
@@ -239,7 +239,7 @@
           </div>
         </section>
 
-        <section id="panel-evidence" class="panel" role="tabpanel">
+        <section id="panel-evidence" class="panel" role="tabpanel" tabindex="-1">
           <header class="panel-header">
             <p class="eyebrow">Dogfood evidence</p>
             <h2>Objective Pulse and Matrix</h2>
@@ -248,7 +248,7 @@
             </p>
           </header>
 
-          <div class="evidence-root" data-tip="Every Studio action writes its command, output, and a SHA-256 manifest under this root.">
+          <div class="evidence-root" data-tip="Most Studio actions seal their command, output, and a SHA-256 manifest under this root; the domain and Mac proof matrices use their own evidence roots, and the health check writes none.">
             <span>Evidence root</span>
             <code id="evidence-root"></code>
           </div>
@@ -267,7 +267,7 @@
           <div id="dogfood-result" class="result-area" aria-live="polite"></div>
         </section>
 
-        <section id="panel-release" class="panel" role="tabpanel">
+        <section id="panel-release" class="panel" role="tabpanel" tabindex="-1">
           <header class="panel-header">
             <p class="eyebrow">Readiness reporters</p>
             <h2>Release Evidence</h2>
@@ -343,7 +343,7 @@
           <div id="release-result" class="result-area" aria-live="polite"></div>
         </section>
 
-        <section id="panel-taxonomy" class="panel" role="tabpanel">
+        <section id="panel-taxonomy" class="panel" role="tabpanel" tabindex="-1">
           <header class="panel-header">
             <p class="eyebrow">Copy truth</p>
             <h2>Language Taxonomy</h2>
@@ -355,7 +355,7 @@
           <div id="taxonomy" class="taxonomy"></div>
         </section>
 
-        <section id="panel-settings" class="panel" role="tabpanel">
+        <section id="panel-settings" class="panel" role="tabpanel" tabindex="-1">
           <header class="panel-header">
             <p class="eyebrow">Preferences</p>
             <h2>Settings</h2>

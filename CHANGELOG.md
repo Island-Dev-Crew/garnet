@@ -18,25 +18,34 @@ signed re-cut, and this post-re-cut truth-sync._
 - **Fixed (version truth):** the Windows/Linux Studio shell no longer stamps
   `0.1.0` — `tauri.conf.json` drops its duplicate `version` field (Cargo.toml is
   the single stamp, set to the workspace release version), so the NSIS artifact
-  is now `Garnet Studio_0.8.1_x64-setup.exe`. Drift is gated twice: a crate test
-  compares the stamp against `[workspace.package].version` (the crate is
-  workspace-excluded, so inheritance can't do it), and the shell contract test
-  re-checks it from Python.
+  is now `Garnet Studio_0.8.1_x64-setup.exe`. Drift is gated in CI by the shell
+  contract test (which runs repo-wide in the agent-contracts job) and locally
+  by a crate test against `[workspace.package].version` (the crate is
+  workspace-excluded, so `cargo test --workspace` skips it — the crate half is
+  local-ladder only). Operational consequence, on purpose: a future workspace
+  version bump must bump the two Studio stamps (`src-tauri/Cargo.toml` +
+  `package.json`, with their lockfiles) in the same PR or the agent-contracts
+  job fails loudly.
 - **Added (boot experience):** a real launch splash (brand, tagline, live boot
   status, version) that holds ≥700 ms and fades once preferences + CLI health
-  resolve; the window background color matches the theme so launch no longer
-  white-flashes. Honest note: the prior Tauri shell had **no** splash — earlier
-  splash memories trace to the retired Electron-era app.
+  resolve, with a hard 25 s ceiling so the splash always lifts; the window
+  background color matches the default dark theme so launch no longer
+  white-flashes (a persisted light theme briefly shows a dark frame before CSS
+  applies — known cosmetic). Honest note: the prior Tauri shell had **no**
+  splash — earlier splash memories trace to the retired Electron-era app.
 - **Added (modes + settings):** Simple/Power interface modes (power-only panels
   stay in the DOM, hidden not removed, so contract copy is intact) with a
   Settings panel persisting mode/theme/timeouts to a per-user JSON file;
   values are validated and clamped on the Rust side.
-- **Added (robustness):** every spawned command now runs with piped,
-  thread-drained output, a per-category timeout (separate, larger budget for
-  the matrix runs), kill-on-timeout with a `timed_out` result, duration
-  reporting, and a 256 KiB-per-stream UI payload cap — the full streams are
-  written to the evidence bundle before capping. A hung reporter can no longer
-  wedge a Studio action forever.
+- **Added (robustness):** every spawned command — including the boot-path CLI
+  health probes (10 s budget) — runs with piped, thread-drained output, a
+  per-category timeout (separate, larger budget for the matrix runs),
+  best-effort **process-tree** kill on timeout (`taskkill /T` on Windows, own
+  process group on Unix, so a wrapper's grandchildren don't survive), a
+  `timed_out` result, duration reporting, and a 256 KiB-per-stream UI payload
+  cap. When an evidence bundle exists the full streams are written to it
+  before capping; when bundle creation failed, the truncation marker says so
+  instead of pointing at a bundle that doesn't exist.
 - **Added (truth surface):** the Release panel's hand-written stats tiles are
   replaced by live `docs/truth.json` values (version, tag, tracked slices,
   readiness, primitives, workspace tests) with the stamping commit shown, and

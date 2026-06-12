@@ -62,6 +62,7 @@ interface TruthSummary {
   primitive_count: number | null;
   workspace_tests_passed: number | null;
   workspace_tests_failed: number | null;
+  workspace_tests_measured_at_commit: string | null;
   error: string | null;
 }
 
@@ -121,9 +122,8 @@ function formatDuration(ms: number): string {
   if (ms < 1000) return `${ms}ms`;
   const seconds = ms / 1000;
   if (seconds < 90) return `${seconds.toFixed(1)}s`;
-  const minutes = Math.floor(seconds / 60);
-  const rest = Math.round(seconds % 60);
-  return `${minutes}m ${rest}s`;
+  const total = Math.round(seconds);
+  return `${Math.floor(total / 60)}m ${total % 60}s`;
 }
 
 async function copyText(text: string): Promise<boolean> {
@@ -180,10 +180,13 @@ function renderOutput(targetId: string, result: CommandResult): void {
     : result.timed_out
       ? "Timed out"
       : `Failed (${result.exit_code})`;
+  const truncatedTitle = result.evidence_path
+    ? "Display output was capped; the evidence bundle holds the full streams."
+    : "Display output was capped; no evidence bundle was created for this run.";
   const badges = [
     result.duration_ms ? `<span class="badge">${formatDuration(result.duration_ms)}</span>` : "",
     result.truncated
-      ? `<span class="badge warn" title="Display output was capped; the evidence bundle holds the full streams.">truncated</span>`
+      ? `<span class="badge warn" title="${truncatedTitle}">truncated</span>`
       : "",
   ].join("");
   const collapse = body.split("\n").length > 60;
@@ -430,6 +433,9 @@ async function loadTruthTiles(): Promise<void> {
   try {
     const truth = await invoke<TruthSummary>("get_truth_summary");
     if (!truth.found) {
+      // Not latched: retry on the next panel activation once the cause
+      // (missing repo / regenerating truth.json) is fixed.
+      truthLoaded = false;
       target.innerHTML = `
         <div class="status-tile">
           <span class="dot warn"></span>
@@ -445,11 +451,13 @@ async function loadTruthTiles(): Promise<void> {
       truth.workspace_tests_passed != null
         ? `${truth.workspace_tests_passed} passed / ${truth.workspace_tests_failed ?? 0} failed`
         : "unavailable";
+    const testsCommit =
+      truth.workspace_tests_measured_at_commit ?? truth.generated_at_commit ?? "unknown commit";
     target.innerHTML = `
       ${truthTile("Version", truth.version ?? "?", `latest tag ${truth.latest_tag ?? "?"}`)}
       ${truthTile("Tracked slices", truth.tracked_slices ?? "?", `readiness ${truth.readiness_pct ?? "?"}%`)}
       ${truthTile("Primitives", String(truth.primitive_count ?? "?"), "core + std layers")}
-      ${truthTile("Workspace tests", tests, `stamped at ${truth.generated_at_commit ?? "unknown commit"}`)}
+      ${truthTile("Workspace tests", tests, `measured at ${testsCommit}`)}
     `;
   } catch (error) {
     truthLoaded = false;
@@ -591,6 +599,8 @@ function setupShortcuts(): void {
 // ---------------------------------------------------------------------------
 
 const SPLASH_MINIMUM_MS = 700;
+// Upper bound on how long the splash may wait for the health check.
+const SPLASH_HEALTH_BUDGET_MS = 25_000;
 
 function setSplashStatus(message: string): void {
   setText("splash-status", message);
@@ -632,9 +642,18 @@ async function boot(): Promise<void> {
 
   setSplashStatus("Checking CLI health…");
   try {
-    const health = await invoke<HealthStatus>("cli_health");
-    renderHealth("health-result", health);
-    setSplashStatus(health.cli_found ? "Garnet CLI found" : "Garnet CLI not found");
+    // The backend bounds the health probes (10s each), so this settles; the
+    // race is defense-in-depth — the splash must lift no matter what.
+    const health = await Promise.race([
+      invoke<HealthStatus>("cli_health"),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), SPLASH_HEALTH_BUDGET_MS)),
+    ]);
+    if (health) {
+      renderHealth("health-result", health);
+      setSplashStatus(health.cli_found ? "Garnet CLI found" : "Garnet CLI not found");
+    } else {
+      setSplashStatus("Health check still running — opening the shell");
+    }
   } catch (error) {
     renderError("health-result", error);
     setSplashStatus("Health check unavailable");

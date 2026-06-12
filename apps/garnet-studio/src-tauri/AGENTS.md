@@ -38,9 +38,13 @@ checker, parser, or macOS SwiftUI Studio implementation.
 - **Version stamp:** `Cargo.toml` is the single version stamp (tauri.conf.json
   must not carry a duplicate `version` field) and it must equal
   `[workspace.package].version` in the root manifest. The crate is excluded
-  from the workspace, so inheritance cannot enforce this — the crate test
-  `crate_version_matches_workspace_release_version` and the shell contract
-  test are the sync gates. Never reintroduce a hand-stamped second version.
+  from the workspace, so inheritance cannot enforce this — the CI gate is the
+  shell contract test (agent-contracts job, repo-wide); the crate test
+  `crate_version_matches_workspace_release_version` covers the local ladder
+  (`cargo test --workspace` skips this crate). Consequence for release-prep:
+  a workspace version bump must bump `Cargo.toml` + `package.json` here (with
+  their lockfiles) in the same PR. Never reintroduce a hand-stamped second
+  version.
 - **Process discipline:** every spawned command runs through
   `run_process_with_timeout`: piped + thread-drained output (no pipe
   deadlocks), per-category timeout from settings (matrix categories get the

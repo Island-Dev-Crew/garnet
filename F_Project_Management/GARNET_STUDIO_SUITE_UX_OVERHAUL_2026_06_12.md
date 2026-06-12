@@ -31,9 +31,11 @@ audit explicitly noted stale Electron popup evidence pointing at a different
 package). The NSIS *installer* likewise has no custom splash/sidebar branding.
 As of this pass the app **has** a real splash: brand mark, tagline, live boot
 status ("Loading preferences… / Checking CLI health…"), and the shell version;
-it holds a minimum 700 ms, dismisses only after settings + health resolve, has
-a reduced-motion path and a strand-proof removal fallback, and the window
-background color now matches the theme so launch cannot white-flash.
+it holds a minimum 700 ms, dismisses after settings + health resolve with a
+hard 25 s ceiling (and the health probes themselves are 10 s-bounded through
+the timeout machinery), has a reduced-motion path, and the window background
+color matches the default dark theme so launch cannot white-flash (a persisted
+light theme briefly shows a dark frame before CSS applies — known cosmetic).
 Installer-side branding (NSIS sidebar/header imagery) is a deferred cosmetic
 follow-up — it needs designed assets, not code.
 
@@ -41,11 +43,11 @@ follow-up — it needs designed assets, not code.
 
 | Area | Change |
 |---|---|
-| Version truth | Single stamp in `Cargo.toml` at the workspace release version; `tauri.conf.json` duplicate removed; NSIS artifact becomes `Garnet Studio_0.8.1_x64-setup.exe`; double drift-gate (crate test + shell contract test) |
-| Boot | Splash (above) + `backgroundColor` no-flash |
+| Version truth | Single stamp in `Cargo.toml` at the workspace release version; `tauri.conf.json` duplicate removed; NSIS artifact becomes `Garnet Studio_0.8.1_x64-setup.exe`; drift-gated in CI by the shell contract test + locally by a crate test (the crate is workspace-excluded, so the crate half is ladder-only). **Release-bump coupling, on purpose:** a workspace version bump must bump the two Studio stamps in the same PR or agent-contracts CI fails |
+| Boot | Splash (above) + `backgroundColor` no-flash (dark default; light theme shows a brief dark frame — known cosmetic) |
 | Modes | Simple (health, parse/check/run, convert, settings) vs Power (everything); persisted; power-only panels hidden, never removed |
 | Settings | Per-user JSON (config dir), Rust-side validation/clamping, theme (dark/light/system), command + matrix timeouts |
-| Robustness | Timeout + kill for every spawned process (separate matrix budget), `timed_out`/`duration_ms` in results, pipe-deadlock-proof readers, 256 KiB/stream UI cap with full output in evidence |
+| Robustness | Timeout + best-effort process-**tree** kill for every spawned process including the boot health probes (separate matrix budget), `timed_out`/`duration_ms` in results, pipe-deadlock-proof readers, 256 KiB/stream UI cap with full output in evidence when a bundle exists (and an honest marker when one doesn't) |
 | Truth tiles | Live `docs/truth.json` values with stamping commit; explicit unavailable state; hand-written "87/87" tile removed |
 | Converter UX | In-app `.garnet` output preview via evidence-root-constrained `list_evidence_files`/`read_evidence_text` (canonicalized, capped, traversal-safe) |
 | Polish | Tooltips on every control, Ctrl+1…8 / Ctrl+Enter, status bar (versions, mode, copyable evidence root), copy buttons, collapsible long output, focus rings, reduced motion |
