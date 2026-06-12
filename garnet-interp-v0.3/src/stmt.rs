@@ -169,11 +169,11 @@ fn compound_apply(op: AssignOp, old: Value, new: Value) -> Result<Value, Runtime
         (Int(a), Int(b), B::Mul) => Ok(Int(a * b)),
         // checked_div/_rem: the `*b != 0` guards exclude zero from these
         // arms, so None is exactly the i64::MIN / -1 overflow — a
-        // diagnostic, not an abort (RB-2). NOTE (pre-existing, unchanged):
-        // `%=` by zero has no DivByZero arm here — it falls through to the
-        // catch-all "unsupported types" error, diverging from the VM's
-        // "division by zero"; fixing that changes an observable error
-        // string and is deferred to its own slice.
+        // diagnostic, not an abort (RB-2). Both `/=` and `%=` by zero are
+        // DivByZero, matching the VM's "division by zero" on the lowered
+        // Div/Mod opcodes (the `%=` arm was missing until the RB-2
+        // follow-up; it used to fall through to the catch-all
+        // "unsupported types" error).
         (Int(a), Int(b), B::Div) if *b != 0 => a
             .checked_div(*b)
             .map(Int)
@@ -183,6 +183,7 @@ fn compound_apply(op: AssignOp, old: Value, new: Value) -> Result<Value, Runtime
             .checked_rem(*b)
             .map(Int)
             .ok_or_else(|| RuntimeError::Overflow(format!("{a} % {b}"))),
+        (Int(_), Int(0), B::Mod) => Err(RuntimeError::DivByZero),
         (Float(a), Float(b), B::Add) => Ok(Float(a + b)),
         (Float(a), Float(b), B::Sub) => Ok(Float(a - b)),
         (Float(a), Float(b), B::Mul) => Ok(Float(a * b)),

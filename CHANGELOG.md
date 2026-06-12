@@ -13,6 +13,25 @@ _Post-cut work (S121+) lands here. S121–S130 delivered: the Truth Sync Gate, d
 modernization, the v0.8.1 version bump + release guard + SBOM/signing wiring, the
 signed re-cut, and this post-re-cut truth-sync._
 
+### RB-2 follow-up — interp `%= 0` is now "division by zero" (cross-backend parity)
+
+- **Fixed (observable error-string change, interp only):** `a %= 0` in the
+  interpreter's compound-assign path (`garnet-interp-v0.3/src/stmt.rs`,
+  `compound_apply`) now returns `RuntimeError::DivByZero` ("division by
+  zero") instead of falling through to the catch-all "compound assignment
+  on unsupported types" — closing the pre-existing cross-backend divergence
+  recorded in the RB-2 entry below (the VM lowers `%=` to the `Mod` opcode
+  and already reported "division by zero"). One match arm added, mirroring
+  the existing `/=`-by-zero arm. Proven red→green by a cross-backend parity
+  test (`garnet-cli/tests/mod_zero_parity.rs`, `overflow_parity.rs` style:
+  same exit code, same diagnostic line on both backends); `/= 0` is pinned
+  alongside as a regression guard. No test or gate asserted the old string
+  (verified by repo-wide grep before the change). Rescue-observable too:
+  both the old `Message` catch-all and `DivByZero` are catchable by an
+  untyped `rescue`, but the exception payload an interp `rescue` sees for
+  `%= 0` changes to "division by zero" — now identical to `/= 0` and
+  expression-path `% 0`.
+
 ### RB-2 — crash-surface sweep (W-REBUILD Foundation)
 
 - **Changed (abort → diagnostic, both backends):** `i64::MIN / -1` and
@@ -69,7 +88,7 @@ signed re-cut, and this post-re-cut truth-sync._
   interp `%= 0` falls to the compound-assign catch-all ("compound
   assignment on unsupported types") while the VM reports "division by
   zero". Fixing it changes an observable error string — deferred to its
-  own slice.
+  own slice (closed by the RB-2 follow-up entry above).
 
 ### RB-1 — caps lattice → `CapSet(u16)` bitset (W-REBUILD Foundation)
 
