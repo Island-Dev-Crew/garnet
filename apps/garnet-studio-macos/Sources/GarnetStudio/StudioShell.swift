@@ -314,19 +314,35 @@ public enum StudioTruthSummary: Equatable, Sendable {
     case loaded(TruthFields)
     case unavailable(reason: String)
 
+    public struct WorkspaceTests: Codable, Equatable, Sendable {
+        public let passed: Int?
+        public let failed: Int?
+        public let measuredAtCommit: String?
+
+        enum CodingKeys: String, CodingKey {
+            case passed
+            case failed
+            case measuredAtCommit = "measured_at_commit"
+        }
+    }
+
+    /// Mirrors the real shape emitted by `cargo xtask truth`. Note:
+    /// `security_test_count` is deliberately absent — truth.json's omissions
+    /// block refuses to stamp an unverifiable figure, and rendering one here
+    /// would reintroduce exactly the drift the truth surface exists to kill.
     public struct TruthFields: Codable, Equatable, Sendable {
         public let version: String?
         public let primitiveCount: Int?
-        public let workspaceTestCount: Int?
-        public let securityTestCount: Int?
+        public let workspaceTests: WorkspaceTests?
         public let latestTag: String?
+        public let generatedAtCommit: String?
 
         enum CodingKeys: String, CodingKey {
             case version
             case primitiveCount = "primitive_count"
-            case workspaceTestCount = "workspace_test_count"
-            case securityTestCount = "security_test_count"
+            case workspaceTests = "workspace_tests"
             case latestTag = "latest_tag"
+            case generatedAtCommit = "generated_at_commit"
         }
     }
 
@@ -429,6 +445,31 @@ public struct StudioEvidenceReader {
                 return .failure(.unreadable)
             }
             return .success(Array(names.sorted().prefix(Self.maxEntries)))
+        }
+    }
+
+    /// Newest entries under a root by modification date (constrained, capped).
+    /// Fixes the lexical-sort miscalibration: past `maxEntries` items a
+    /// name-sorted prefix silently drops the newest bundles.
+    public func newestEntries(under directory: URL, limit: Int = 20) -> Result<[String], EvidenceError> {
+        switch resolveWithinEvidenceRoots(directory) {
+        case .failure(let error):
+            return .failure(error)
+        case .success(let canonical):
+            let fm = FileManager.default
+            guard let urls = try? fm.contentsOfDirectory(
+                at: canonical,
+                includingPropertiesForKeys: [.contentModificationDateKey],
+                options: [.skipsHiddenFiles]
+            ) else {
+                return .failure(.unreadable)
+            }
+            let dated = urls.map { url -> (String, Date) in
+                let date = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate ?? .distantPast
+                return (url.lastPathComponent, date)
+            }
+            let newest = dated.sorted { $0.1 > $1.1 }.prefix(min(limit, Self.maxEntries)).map(\.0)
+            return .success(Array(newest))
         }
     }
 

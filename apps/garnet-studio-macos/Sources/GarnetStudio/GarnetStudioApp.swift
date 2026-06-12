@@ -1741,6 +1741,39 @@ final class GarnetStudioViewModel: ObservableObject {
         runSource(arguments: ["convert", converterLanguage], filename: "studio-input.\(ext)")
     }
 
+    @Published var requestFileImport = false
+
+    /// Action 8 (judge-audited): load a user-chosen source file into the
+    /// editor. User-initiated open-panel/drop authority — deliberately NOT
+    /// routed through StudioEvidenceReader, whose roots must not widen.
+    func loadSourceFile(from url: URL) {
+        let knownLanguages: [String: String] = [
+            "garnet": "", "py": "python", "rb": "ruby", "rs": "rust", "go": "go",
+            "ts": "typescript", "js": "javascript", "swift": "swift", "java": "java",
+            "c": "c", "cpp": "cpp", "cs": "csharp", "pl": "perl", "kt": "kotlin",
+            "sh": "shell", "sql": "sql",
+        ]
+        let maxBytes = 512 * 1024
+        guard let handle = try? FileHandle(forReadingFrom: url),
+              let data = try? handle.read(upToCount: maxBytes),
+              let text = String(data: data, encoding: .utf8) else {
+            output = "Could not read \(url.lastPathComponent) as UTF-8 text (512 KiB cap)."
+            lastStatus = .failure
+            return
+        }
+        try? handle.close()
+        sourceText = text
+        let ext = url.pathExtension.lowercased()
+        if let language = knownLanguages[ext], !language.isEmpty {
+            converterLanguage = language
+        }
+        output = "Loaded \(url.lastPathComponent) (\(data.count) bytes) into the editor."
+        lastStatus = .success
+        if selectedSection != .examples && selectedSection != .converter {
+            selectedSection = ext == "garnet" ? .examples : .converter
+        }
+    }
+
     /// Row 8: read-only, evidence-root-constrained preview of the newest
     /// Desktop dogfood entries. Never widens into a general filesystem read.
     func previewEvidenceRoot() {
@@ -1750,13 +1783,26 @@ final class GarnetStudioViewModel: ObservableObject {
             lastStatus = .failure
             return
         }
-        switch reader.listEvidenceFiles(under: root) {
+        switch reader.newestEntries(under: root, limit: 20) {
         case .failure(let error):
             output = "Evidence preview refused: \(error) — readers stay inside the Studio evidence roots."
             lastStatus = .failure
         case .success(let names):
-            let newest = names.suffix(20).reversed().joined(separator: "\n")
-            output = "Evidence root: \(root.path)\nNewest entries (capped):\n\(newest)"
+            var text = "Evidence root: \(root.path)\nNewest entries (by modification date, capped):\n" + names.joined(separator: "\n")
+            // Wire the read-only reader into the preview: show the newest
+            // bundle's primary text artifact in-app instead of sending the
+            // user to Finder.
+            if let newestBundle = names.first {
+                let bundleURL = root.appendingPathComponent(newestBundle, isDirectory: true)
+                if case .success(let inner) = reader.newestEntries(under: bundleURL, limit: 50),
+                   let artifact = inner.first(where: { name in
+                       name.hasSuffix(".md") || name.hasSuffix(".json") || name.hasSuffix(".txt")
+                   }),
+                   case .success(let body) = reader.readEvidenceText(at: bundleURL.appendingPathComponent(artifact)) {
+                    text += "\n\n— preview of \(newestBundle)/\(artifact) —\n" + body
+                }
+            }
+            output = text
             lastStatus = .success
         }
     }
@@ -2174,7 +2220,7 @@ struct GarnetStudioRootView: View {
                         cliLocated: boot.cliLocated
                     )
                 }
-                .background(Color(red: 0.05, green: 0.05, blue: 0.06))
+                .background(Color(nsColor: .windowBackgroundColor))
             }
             .frame(minWidth: 1080, minHeight: 720)
 
@@ -2187,6 +2233,27 @@ struct GarnetStudioRootView: View {
         }
         .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: boot.splashVisible)
         .onAppear { boot.beginBoot() }
+        .fileImporter(
+            isPresented: $model.requestFileImport,
+            allowedContentTypes: [.item],
+            allowsMultipleSelection: false
+        ) { result in
+            if case .success(let urls) = result, let url = urls.first {
+                model.loadSourceFile(from: url)
+            }
+        }
+        .onChange(of: interfaceMode) { _, newMode in
+            // Row 3 parity: entering simple mode with a power-only section
+            // selected falls back to Overview (mirrors the Windows applyMode
+            // fallback) and the mode write-through keeps settings.json in
+            // sync with @AppStorage so the two stores cannot diverge.
+            if newMode == "simple", model.selectedSection == .agentic || model.selectedSection == .release {
+                model.selectedSection = .overview
+            }
+            var settings = StudioSettingsStore().load()
+            settings.mode = StudioInterfaceMode(rawValue: newMode) ?? .simple
+            StudioSettingsStore().save(settings)
+        }
     }
 
     private func sectionHelp(_ section: StudioSection) -> String {
@@ -2219,7 +2286,7 @@ struct GarnetStudioRootView: View {
             .frame(width: 170)
             .help("Simple keeps the core workbench; Power reveals the full cockpit (Agentic Tests, Release reporters). Persisted across launches.")
             StatusPill(status: model.lastStatus)
-                .help("Status of the most recent command: green on exit 0, red otherwise.")
+                .help("Status of the most recent command: green on exit 0, orange otherwise.")
             Button("Health Check") { model.runHealthCheck() }
                 .buttonStyle(.borderedProminent)
                 .keyboardShortcut(.return, modifiers: .command)
@@ -2428,11 +2495,18 @@ struct GarnetStudioRootView: View {
     private func editor(actions: [(String, () -> Void)]) -> some View {
         Panel(title: "Source") {
             TextEditor(text: $model.sourceText)
-                .help("Garnet source under test. Parse, Check, and Run all execute the real CLI against this buffer.")
+                .help("Garnet source under test. Parse, Check, and Run all execute the real CLI against this buffer. Open a file with ⌘O or drop one here.")
+                .onDrop(of: [.fileURL], isTargeted: nil) { providers in
+                    guard let provider = providers.first else { return false }
+                    _ = provider.loadObject(ofClass: URL.self) { url, _ in
+                        if let url { Task { @MainActor in model.loadSourceFile(from: url) } }
+                    }
+                    return true
+                }
                 .font(.system(.body, design: .monospaced))
                 .frame(minHeight: 260)
                 .scrollContentBackground(.hidden)
-                .background(Color.black.opacity(0.18))
+                .background(Color(nsColor: .textBackgroundColor))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             HStack {
                 ForEach(actions, id: \.0) { title, action in
@@ -2526,6 +2600,8 @@ struct StatusPill: View {
 }
 
 struct WorkflowGrid: View {
+    @AppStorage("studio.interfaceMode") private var interfaceMode = "simple"
+    private var isPowerMode: Bool { interfaceMode == "power" }
     @ObservedObject var model: GarnetStudioViewModel
 
     var body: some View {
@@ -2544,11 +2620,13 @@ struct WorkflowGrid: View {
                     model.select(sample: sample)
                 }
             }
-            WorkflowButton(title: "Agentic tests", systemImage: "checklist.checked") {
-                model.selectedSection = .agentic
-            }
-            WorkflowButton(title: "Release status", systemImage: "shippingbox") {
-                model.selectedSection = .release
+            if isPowerMode {
+                WorkflowButton(title: "Agentic tests", systemImage: "checklist.checked") {
+                    model.selectedSection = .agentic
+                }
+                WorkflowButton(title: "Release status", systemImage: "shippingbox") {
+                    model.selectedSection = .release
+                }
             }
         }
     }
@@ -2556,7 +2634,7 @@ struct WorkflowGrid: View {
 
 struct OnboardingChecklist: View {
     private let items = [
-        ("1", "Verify the bundled CLI", "Run Health Check and confirm the console reports `garnet 0.4.2`."),
+        ("1", "Verify the bundled CLI", "Run Health Check and confirm the console reports `garnet \(StudioVersion.release)`."),
         ("2", "Run a real Garnet example", "Open Examples, run the scheduler MVP, and inspect the returned value."),
         ("3", "Try code conversion", "Open Converter, convert the Python route sample, and review the migration checklist."),
         ("4", "Run agentic stress tests", "Open Agentic Tests and generate a Desktop dogfood bundle from the matrix."),
@@ -2644,11 +2722,11 @@ struct ConsoleView: View {
                     .padding(14)
             }
             .help("Command output, capped for display with an honest marker; full output lands in the evidence bundle when one exists.")
-            .background(Color.black.opacity(0.45))
+            .background(Color(nsColor: .textBackgroundColor))
             .clipShape(RoundedRectangle(cornerRadius: 8))
         }
         .padding(22)
-        .background(Color.black.opacity(0.18))
+        .background(Color(nsColor: .textBackgroundColor))
     }
 }
 
@@ -2726,7 +2804,7 @@ enum GarnetStudioSelfTest {
             failures.append("mac continuation locator did not prefer GARNET_REPO_ROOT")
         }
 
-        let success = GarnetCommandResult(command: "garnet version", exitCode: 0, output: "garnet 0.4.2")
+        let success = GarnetCommandResult(command: "garnet version", exitCode: 0, output: "garnet \(StudioVersion.release)")
         let failure = GarnetCommandResult(command: "garnet check broken.garnet", exitCode: 1, output: "diagnostic")
         if success.status != .success {
             failures.append("zero exit was not classified as success")
@@ -2754,7 +2832,7 @@ enum GarnetStudioSelfTest {
 
         let cli = GarnetCLI(executablePath: cliPath)
         let version = cli.run(arguments: ["version"])
-        guard version.status == .success, version.output.contains("garnet 0.4.2") else {
+        guard version.status == .success, version.output.contains("garnet \(StudioVersion.release)") else {
             fputs("GarnetStudio smoke failed during version:\n\(version.output)\n", stderr)
             return 3
         }
@@ -2901,6 +2979,7 @@ struct GarnetStudioApp: App {
 
     @StateObject private var model = GarnetStudioViewModel()
     @StateObject private var boot = StudioBootModel()
+    @AppStorage("studio.interfaceMode") private var goMenuMode = "simple"
     // Row 9: theme is user-selectable (dark/light/system) and persisted.
     @AppStorage("studio.theme") private var themeSetting = "system"
 
@@ -2920,6 +2999,10 @@ struct GarnetStudioApp: App {
         .windowStyle(.titleBar)
         .commands {
             // Row 9: keyboard-first section navigation (⌘1…⌘5).
+            CommandGroup(after: .newItem) {
+                Button("Open Source File…") { model.requestFileImport = true }
+                    .keyboardShortcut("o", modifiers: .command)
+            }
             CommandMenu("Go") {
                 Button("Overview") { model.selectedSection = .overview }
                     .keyboardShortcut("1", modifiers: .command)
@@ -2929,8 +3012,10 @@ struct GarnetStudioApp: App {
                     .keyboardShortcut("3", modifiers: .command)
                 Button("Agentic Tests") { model.selectedSection = .agentic }
                     .keyboardShortcut("4", modifiers: .command)
+                    .disabled(goMenuMode != "power") // power-only
                 Button("Release") { model.selectedSection = .release }
                     .keyboardShortcut("5", modifiers: .command)
+                    .disabled(goMenuMode != "power") // power-only
             }
         }
 

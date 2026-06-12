@@ -123,10 +123,10 @@ struct TruthTilesPanel: View {
                         .help("Latest release tag recorded in docs/truth.json.")
                     TruthTile(label: "Primitives", value: fields.primitiveCount.map(String.init) ?? "—")
                         .help("Stdlib registry primitive count, generated from the registry itself.")
-                    TruthTile(label: "Workspace tests", value: fields.workspaceTestCount.map(String.init) ?? "—")
-                        .help("Workspace test count from the truth surface; an absent value renders as a dash, never a guess.")
+                    TruthTile(label: "Tests passed", value: fields.workspaceTests?.passed.map(String.init) ?? "—")
+                        .help("Workspace tests passed, measured at \(fields.workspaceTests?.measuredAtCommit ?? "an unrecorded commit") during truth generation; an absent value renders as a dash, never a guess.")
                 }
-                Text("Values are read live from docs/truth.json; Studio never hand-writes release statistics.")
+                Text("Values are read live from docs/truth.json (generated at \(fields.generatedAtCommit ?? "unknown commit")); Studio never hand-writes release statistics.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -149,7 +149,7 @@ struct TruthTile: View {
         .frame(minWidth: 110)
         .padding(.vertical, 10)
         .padding(.horizontal, 8)
-        .background(Color.white.opacity(0.06))
+        .background(Color.primary.opacity(0.06))
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(label): \(value)")
@@ -162,6 +162,16 @@ struct StudioStatusBar: View {
     let interfaceMode: String
     let truth: StudioTruthSummary
     let cliLocated: Bool
+
+    /// Derived from the reader's actual roots so this copy can never drift
+    /// from the code (the reader permits two roots, not one).
+    private var evidenceRootsLabel: String {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        let names = StudioEvidenceReader().roots.map { root in
+            root.path.hasPrefix(home) ? "~" + root.path.dropFirst(home.count) : root.path
+        }
+        return "evidence roots: " + names.joined(separator: " · ")
+    }
 
     private var truthBadge: String {
         if case .loaded = truth { return "truth: live" }
@@ -182,13 +192,13 @@ struct StudioStatusBar: View {
             Text(cliLocated ? "garnet CLI: located" : "garnet CLI: not found")
                 .help("Whether a garnet binary was found on the standard lookup paths at launch.")
             Spacer()
-            Text("evidence root: ~/Desktop/dogfood")
-                .help("Studio evidence readers are constrained to the Desktop dogfood root; nothing outside it is readable from the app.")
+            Text(evidenceRootsLabel)
+                .help("Studio evidence readers are constrained to these roots; nothing outside them is readable from the app.")
         }
         .font(.caption)
         .foregroundStyle(.secondary)
         .padding(.horizontal, 14)
         .padding(.vertical, 6)
-        .background(.black.opacity(0.25))
+        .background(Color.primary.opacity(0.05))
     }
 }

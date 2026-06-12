@@ -112,7 +112,7 @@ final class StudioShellTests: XCTestCase {
         )
         try Data("[workspace.package]\nversion = \"9.9.9\"\n".utf8)
             .write(to: dir.appendingPathComponent("Cargo.toml"))
-        try Data(#"{"version":"9.9.9","primitive_count":82,"latest_tag":"v9.9.9"}"#.utf8)
+        try Data(#"{"version":"9.9.9","primitive_count":82,"latest_tag":"v9.9.9","generated_at_commit":"abc1234","workspace_tests":{"passed":1952,"failed":0,"measured_at_commit":"abc1234"}}"#.utf8)
             .write(to: dir.appendingPathComponent("docs/truth.json"))
 
         guard case .loaded(let fields) = StudioTruthSummary.load(repoRoot: dir) else {
@@ -121,6 +121,8 @@ final class StudioShellTests: XCTestCase {
         XCTAssertEqual(fields.version, "9.9.9")
         XCTAssertEqual(fields.primitiveCount, 82)
         XCTAssertEqual(fields.latestTag, "v9.9.9")
+        XCTAssertEqual(fields.workspaceTests?.passed, 1952, "workspace tests are NESTED in real truth.json — a flat decoder renders a dash forever")
+        XCTAssertEqual(fields.generatedAtCommit, "abc1234")
 
         guard case .unavailable(let reason) = StudioTruthSummary.load(repoRoot: nil) else {
             return XCTFail("expected unavailable without a repo root")
