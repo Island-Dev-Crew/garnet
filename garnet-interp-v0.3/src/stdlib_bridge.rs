@@ -38,37 +38,139 @@ use std::rc::Rc;
 /// as UNQUALIFIED top-level identifiers; the parser's path-segment
 /// fallback (`eval_path` last-segment resolve) lets source code call
 /// them as either `read_file(...)` or `fs::read_file(...)`.
+/// RB-3 — registry-derived installation: one loop joining
+/// `garnet_stdlib::registry::all_prims()` (binding mode + arity) against
+/// the macro-collected adapter table. No hand-written rows: a registry row
+/// without an adapter (or vice versa) is caught by the registry-join trap
+/// tests; in a tree where those are green this loop cannot skip a binding.
+/// The four `memory::*` natives are bridged-but-unregistered by design
+/// (caps-invisible memory scaffold) — they live in `BRIDGE_ONLY` with
+/// their arities until they earn registry rows.
 pub fn install(global: &Env) {
+    use std::collections::BTreeMap;
+    let adapters: BTreeMap<&'static str, crate::value::NativeFn> =
+        adapters::entries().into_iter().collect();
+    for (qualified, meta) in garnet_stdlib::registry::all_prims() {
+        if meta.binding == garnet_stdlib::registry::Binding::Unbridged {
+            continue;
+        }
+        let Some(&ptr) = adapters.get(qualified.as_str()) else {
+            // Unreachable in a tree where `registry_join_is_total` is
+            // green; an unbound name would surface as a visible
+            // "not callable" runtime error, never silent authority.
+            debug_assert!(false, "no adapter for registry row {qualified}");
+            continue;
+        };
+        let bound: &'static str = match meta.binding {
+            garnet_stdlib::registry::Binding::Bare => meta.name,
+            _ => leak_key(qualified),
+        };
+        define_native(global, bound, Some(meta.arity), ptr);
+    }
+    for (key, arity) in BRIDGE_ONLY {
+        let Some(&ptr) = adapters.get(key) else {
+            debug_assert!(false, "no adapter for bridge-only native {key}");
+            continue;
+        };
+        define_native(global, key, Some(*arity), ptr);
+    }
+}
+
+/// The bridged-but-unregistered natives (see `install`). Kept in lockstep
+/// with the `bridge_only_list_is_exact` trap test.
+pub(crate) const BRIDGE_ONLY: &[(&str, usize)] = &[
+    ("memory::working", 1),
+    ("memory::episodic", 1),
+    ("memory::semantic", 1),
+    ("memory::procedural", 1),
+];
+
+/// Qualified registry keys become `&'static str` bound names. The registry
+/// is a fixed 80-row table built once per process, so this interning map
+/// leaks a bounded, constant amount.
+fn leak_key(qualified: String) -> &'static str {
+    use std::collections::BTreeMap;
+    use std::sync::{Mutex, OnceLock};
+    static INTERNED: OnceLock<Mutex<BTreeMap<String, &'static str>>> = OnceLock::new();
+    let interned = INTERNED.get_or_init(|| Mutex::new(BTreeMap::new()));
+    let Ok(mut map) = interned.lock() else {
+        // Lock poisoning is unreachable (no panics while the lock is
+        // held); fall back to a direct bounded leak rather than aborting.
+        return Box::leak(qualified.into_boxed_str());
+    };
+    if let Some(&s) = map.get(&qualified) {
+        return s;
+    }
+    let leaked: &'static str = Box::leak(qualified.clone().into_boxed_str());
+    map.insert(qualified, leaked);
+    leaked
+}
+
+/// RB-3 differential reference — the old hand-written registration list,
+/// kept verbatim (adapter paths adjusted) for the duration of the slice
+/// ONLY and deleted in the same PR once the differential test is green.
+#[cfg(test)]
+pub(crate) fn install_legacy(global: &Env) {
     // ── strings (cap: none) ──
-    define_native(global, "split", Some(2), bridge_str_split);
-    define_native(global, "replace", Some(3), bridge_str_replace);
-    define_native(global, "trim", Some(1), bridge_str_trim);
-    define_native(global, "to_lower", Some(1), bridge_str_to_lower);
-    define_native(global, "to_upper", Some(1), bridge_str_to_upper);
-    define_native(global, "starts_with", Some(2), bridge_str_starts_with);
-    define_native(global, "contains", Some(2), bridge_str_contains);
+    define_native(global, "split", Some(2), adapters::bridge_str_split);
+    define_native(global, "replace", Some(3), adapters::bridge_str_replace);
+    define_native(global, "trim", Some(1), adapters::bridge_str_trim);
+    define_native(global, "to_lower", Some(1), adapters::bridge_str_to_lower);
+    define_native(global, "to_upper", Some(1), adapters::bridge_str_to_upper);
+    define_native(
+        global,
+        "starts_with",
+        Some(2),
+        adapters::bridge_str_starts_with,
+    );
+    define_native(global, "contains", Some(2), adapters::bridge_str_contains);
 
     // ── time (cap: time — CapCaps-gated) ──
-    define_native(global, "now_ms", Some(0), bridge_time_now_ms);
-    define_native(global, "wall_clock_ms", Some(0), bridge_time_wall_clock_ms);
-    define_native(global, "sleep", Some(1), bridge_time_sleep);
+    define_native(global, "now_ms", Some(0), adapters::bridge_time_now_ms);
+    define_native(
+        global,
+        "wall_clock_ms",
+        Some(0),
+        adapters::bridge_time_wall_clock_ms,
+    );
+    define_native(global, "sleep", Some(1), adapters::bridge_time_sleep);
 
     // ── crypto (cap: none — pure compute) ──
-    define_native(global, "blake3", Some(1), bridge_crypto_blake3);
-    define_native(global, "sha256", Some(1), bridge_crypto_sha256);
-    define_native(global, "hmac_sha256", Some(2), bridge_crypto_hmac_sha256);
+    define_native(global, "blake3", Some(1), adapters::bridge_crypto_blake3);
+    define_native(global, "sha256", Some(1), adapters::bridge_crypto_sha256);
+    define_native(
+        global,
+        "hmac_sha256",
+        Some(2),
+        adapters::bridge_crypto_hmac_sha256,
+    );
 
     // ── array (cap: none — pure compute; backed by stdlib::collections) ──
-    define_native(global, "insert", Some(3), bridge_array_insert);
-    define_native(global, "remove", Some(2), bridge_array_remove);
-    define_native(global, "sort", Some(1), bridge_array_sort);
+    define_native(global, "insert", Some(3), adapters::bridge_array_insert);
+    define_native(global, "remove", Some(2), adapters::bridge_array_remove);
+    define_native(global, "sort", Some(1), adapters::bridge_array_sort);
 
     // ── fs (cap: fs — CapCaps-gated) ──
-    define_native(global, "read_file", Some(1), bridge_fs_read_file);
-    define_native(global, "write_file", Some(2), bridge_fs_write_file);
-    define_native(global, "read_bytes", Some(1), bridge_fs_read_bytes);
-    define_native(global, "write_bytes", Some(2), bridge_fs_write_bytes);
-    define_native(global, "list_dir", Some(1), bridge_fs_list_dir);
+    define_native(global, "read_file", Some(1), adapters::bridge_fs_read_file);
+    define_native(
+        global,
+        "write_file",
+        Some(2),
+        adapters::bridge_fs_write_file,
+    );
+    define_native(
+        global,
+        "read_bytes",
+        Some(1),
+        adapters::bridge_fs_read_bytes,
+    );
+    define_native(
+        global,
+        "write_bytes",
+        Some(2),
+        adapters::bridge_fs_write_bytes,
+    );
+    define_native(global, "list_dir", Some(1), adapters::bridge_fs_list_dir);
 
     // ── net (cap: net — CapCaps-gated + NetDefaults-gated) ──
     //
@@ -80,7 +182,12 @@ pub fn install(global: &Env) {
     // grows them. Attempting to call either at source layer resolves
     // through the path fallback to `nil` at runtime; the propagator still
     // requires `@caps(net)` because the registry metadata is authoritative.
-    define_native(global, "tcp_connect", Some(2), bridge_net_tcp_connect);
+    define_native(
+        global,
+        "tcp_connect",
+        Some(2),
+        adapters::bridge_net_tcp_connect,
+    );
 
     // ════════════════════════════════════════════════════════════════
     // S21 — Layer-0/1 qualified dispatch (S17 registry → runnable).
@@ -95,149 +202,344 @@ pub fn install(global: &Env) {
     // ════════════════════════════════════════════════════════════════
 
     // ── core::math (cap: none — total numeric, dispatches garnet_stdlib::math) ──
-    define_native(global, "core::math::abs", Some(1), bridge_math_abs);
-    define_native(global, "core::math::sqrt", Some(1), bridge_math_sqrt);
-    define_native(global, "core::math::pow", Some(2), bridge_math_pow);
-    define_native(global, "core::math::floor", Some(1), bridge_math_floor);
-    define_native(global, "core::math::ceil", Some(1), bridge_math_ceil);
-    define_native(global, "core::math::round", Some(1), bridge_math_round);
+    define_native(
+        global,
+        "core::math::abs",
+        Some(1),
+        adapters::bridge_math_abs,
+    );
+    define_native(
+        global,
+        "core::math::sqrt",
+        Some(1),
+        adapters::bridge_math_sqrt,
+    );
+    define_native(
+        global,
+        "core::math::pow",
+        Some(2),
+        adapters::bridge_math_pow,
+    );
+    define_native(
+        global,
+        "core::math::floor",
+        Some(1),
+        adapters::bridge_math_floor,
+    );
+    define_native(
+        global,
+        "core::math::ceil",
+        Some(1),
+        adapters::bridge_math_ceil,
+    );
+    define_native(
+        global,
+        "core::math::round",
+        Some(1),
+        adapters::bridge_math_round,
+    );
 
     // ── core::cmp (cap: none — Value-level ordering) ──
-    define_native(global, "core::cmp::min", Some(2), bridge_cmp_min);
-    define_native(global, "core::cmp::max", Some(2), bridge_cmp_max);
-    define_native(global, "core::cmp::clamp", Some(3), bridge_cmp_clamp);
-    define_native(global, "core::cmp::ordering", Some(2), bridge_cmp_ordering);
+    define_native(global, "core::cmp::min", Some(2), adapters::bridge_cmp_min);
+    define_native(global, "core::cmp::max", Some(2), adapters::bridge_cmp_max);
+    define_native(
+        global,
+        "core::cmp::clamp",
+        Some(3),
+        adapters::bridge_cmp_clamp,
+    );
+    define_native(
+        global,
+        "core::cmp::ordering",
+        Some(2),
+        adapters::bridge_cmp_ordering,
+    );
 
     // ── core::iter (cap: none — higher-order via call_value; Value-level) ──
-    define_native(global, "core::iter::map", Some(2), bridge_iter_map);
-    define_native(global, "core::iter::filter", Some(2), bridge_iter_filter);
-    define_native(global, "core::iter::fold", Some(3), bridge_iter_fold);
-    define_native(global, "core::iter::take", Some(2), bridge_iter_take);
-    define_native(global, "core::iter::drop", Some(2), bridge_iter_drop);
+    define_native(
+        global,
+        "core::iter::map",
+        Some(2),
+        adapters::bridge_iter_map,
+    );
+    define_native(
+        global,
+        "core::iter::filter",
+        Some(2),
+        adapters::bridge_iter_filter,
+    );
+    define_native(
+        global,
+        "core::iter::fold",
+        Some(3),
+        adapters::bridge_iter_fold,
+    );
+    define_native(
+        global,
+        "core::iter::take",
+        Some(2),
+        adapters::bridge_iter_take,
+    );
+    define_native(
+        global,
+        "core::iter::drop",
+        Some(2),
+        adapters::bridge_iter_drop,
+    );
     define_native(
         global,
         "core::iter::enumerate",
         Some(1),
-        bridge_iter_enumerate,
+        adapters::bridge_iter_enumerate,
     );
     // S28: the last three registered core::iter combinators (Value-level, not
     // higher-order). `zip`/`chain` pair/concat two arrays; `collect` materializes
     // a sequence (a `Range`, or an array passed through) into an owned Array.
-    define_native(global, "core::iter::zip", Some(2), bridge_iter_zip);
-    define_native(global, "core::iter::collect", Some(1), bridge_iter_collect);
-    define_native(global, "core::iter::chain", Some(2), bridge_iter_chain);
+    define_native(
+        global,
+        "core::iter::zip",
+        Some(2),
+        adapters::bridge_iter_zip,
+    );
+    define_native(
+        global,
+        "core::iter::collect",
+        Some(1),
+        adapters::bridge_iter_collect,
+    );
+    define_native(
+        global,
+        "core::iter::chain",
+        Some(2),
+        adapters::bridge_iter_chain,
+    );
 
     // ── core::result (cap: none — Value-level; map/and_then/or_else higher-order
     //    via call_value). Bound qualified so `core::result::map` does not collide
     //    with the bare `map` (Map constructor) on the last-segment fallback. ──
-    define_native(global, "core::result::ok", Some(1), bridge_result_ok);
-    define_native(global, "core::result::err", Some(1), bridge_result_err);
-    define_native(global, "core::result::map", Some(2), bridge_result_map);
+    define_native(
+        global,
+        "core::result::ok",
+        Some(1),
+        adapters::bridge_result_ok,
+    );
+    define_native(
+        global,
+        "core::result::err",
+        Some(1),
+        adapters::bridge_result_err,
+    );
+    define_native(
+        global,
+        "core::result::map",
+        Some(2),
+        adapters::bridge_result_map,
+    );
     define_native(
         global,
         "core::result::and_then",
         Some(2),
-        bridge_result_and_then,
+        adapters::bridge_result_and_then,
     );
     define_native(
         global,
         "core::result::or_else",
         Some(2),
-        bridge_result_or_else,
+        adapters::bridge_result_or_else,
     );
     define_native(
         global,
         "core::result::unwrap_or",
         Some(2),
-        bridge_result_unwrap_or,
+        adapters::bridge_result_unwrap_or,
     );
 
     // ── core::option (cap: none — Value-level; map/and_then higher-order via
     //    call_value). Same qualified-binding rationale as core::result. ──
-    define_native(global, "core::option::some", Some(1), bridge_option_some);
-    define_native(global, "core::option::none", Some(0), bridge_option_none);
-    define_native(global, "core::option::map", Some(2), bridge_option_map);
+    define_native(
+        global,
+        "core::option::some",
+        Some(1),
+        adapters::bridge_option_some,
+    );
+    define_native(
+        global,
+        "core::option::none",
+        Some(0),
+        adapters::bridge_option_none,
+    );
+    define_native(
+        global,
+        "core::option::map",
+        Some(2),
+        adapters::bridge_option_map,
+    );
     define_native(
         global,
         "core::option::and_then",
         Some(2),
-        bridge_option_and_then,
+        adapters::bridge_option_and_then,
     );
     define_native(
         global,
         "core::option::unwrap_or",
         Some(2),
-        bridge_option_unwrap_or,
+        adapters::bridge_option_unwrap_or,
     );
 
     // ── std::base64 (cap: none — dispatches garnet_stdlib::base64) ──
-    define_native(global, "std::base64::encode", Some(1), bridge_base64_encode);
-    define_native(global, "std::base64::decode", Some(1), bridge_base64_decode);
+    define_native(
+        global,
+        "std::base64::encode",
+        Some(1),
+        adapters::bridge_base64_encode,
+    );
+    define_native(
+        global,
+        "std::base64::decode",
+        Some(1),
+        adapters::bridge_base64_decode,
+    );
 
     // ── S22: remaining S17 Layer-1 runtime dispatch ──
-    define_native(global, "std::json::parse", Some(1), bridge_json_parse);
+    define_native(
+        global,
+        "std::json::parse",
+        Some(1),
+        adapters::bridge_json_parse,
+    );
     define_native(
         global,
         "std::json::stringify",
         Some(1),
-        bridge_json_stringify,
+        adapters::bridge_json_stringify,
     );
-    define_native(global, "std::json::get", Some(2), bridge_json_get);
-    define_native(global, "std::json::set", Some(3), bridge_json_set);
+    define_native(global, "std::json::get", Some(2), adapters::bridge_json_get);
+    define_native(global, "std::json::set", Some(3), adapters::bridge_json_set);
 
-    define_native(global, "std::regex::compile", Some(1), bridge_regex_compile);
-    define_native(global, "std::regex::match", Some(2), bridge_regex_match);
+    define_native(
+        global,
+        "std::regex::compile",
+        Some(1),
+        adapters::bridge_regex_compile,
+    );
+    define_native(
+        global,
+        "std::regex::match",
+        Some(2),
+        adapters::bridge_regex_match,
+    );
     define_native(
         global,
         "std::regex::find_all",
         Some(2),
-        bridge_regex_find_all,
+        adapters::bridge_regex_find_all,
     );
-    define_native(global, "std::regex::replace", Some(3), bridge_regex_replace);
+    define_native(
+        global,
+        "std::regex::replace",
+        Some(3),
+        adapters::bridge_regex_replace,
+    );
 
-    define_native(global, "std::uuid::new_v4", Some(0), bridge_uuid_new_v4);
-    define_native(global, "std::uuid::new_v5", Some(2), bridge_uuid_new_v5);
-    define_native(global, "std::uuid::new_v7", Some(0), bridge_uuid_new_v7);
+    define_native(
+        global,
+        "std::uuid::new_v4",
+        Some(0),
+        adapters::bridge_uuid_new_v4,
+    );
+    define_native(
+        global,
+        "std::uuid::new_v5",
+        Some(2),
+        adapters::bridge_uuid_new_v5,
+    );
+    define_native(
+        global,
+        "std::uuid::new_v7",
+        Some(0),
+        adapters::bridge_uuid_new_v7,
+    );
 
-    define_native(global, "std::env::get", Some(1), bridge_env_get);
-    define_native(global, "std::env::set", Some(2), bridge_env_set);
-    define_native(global, "std::env::vars", Some(0), bridge_env_vars);
+    define_native(global, "std::env::get", Some(1), adapters::bridge_env_get);
+    define_native(global, "std::env::set", Some(2), adapters::bridge_env_set);
+    define_native(global, "std::env::vars", Some(0), adapters::bridge_env_vars);
 
-    define_native(global, "std::process::spawn", Some(1), bridge_process_spawn);
+    define_native(
+        global,
+        "std::process::spawn",
+        Some(1),
+        adapters::bridge_process_spawn,
+    );
     define_native(
         global,
         "std::process::spawn_args",
         Some(2),
-        bridge_process_spawn_args,
+        adapters::bridge_process_spawn_args,
     );
     define_native(
         global,
         "std::process::output",
         Some(2),
-        bridge_process_output,
+        adapters::bridge_process_output,
     );
-    define_native(global, "std::process::wait", Some(1), bridge_process_wait);
+    define_native(
+        global,
+        "std::process::wait",
+        Some(1),
+        adapters::bridge_process_wait,
+    );
     define_native(
         global,
         "std::process::exit_code",
         Some(1),
-        bridge_process_exit_code,
+        adapters::bridge_process_exit_code,
     );
 
-    define_native(global, "std::log::info", Some(1), bridge_log_info);
-    define_native(global, "std::log::warn", Some(1), bridge_log_warn);
-    define_native(global, "std::log::error", Some(1), bridge_log_error);
-    define_native(global, "std::log::debug", Some(1), bridge_log_debug);
-    define_native(global, "std::log::to_file", Some(3), bridge_log_to_file);
+    define_native(global, "std::log::info", Some(1), adapters::bridge_log_info);
+    define_native(global, "std::log::warn", Some(1), adapters::bridge_log_warn);
+    define_native(
+        global,
+        "std::log::error",
+        Some(1),
+        adapters::bridge_log_error,
+    );
+    define_native(
+        global,
+        "std::log::debug",
+        Some(1),
+        adapters::bridge_log_debug,
+    );
+    define_native(
+        global,
+        "std::log::to_file",
+        Some(3),
+        adapters::bridge_log_to_file,
+    );
 
-    define_native(global, "memory::working", Some(1), bridge_memory_working);
-    define_native(global, "memory::episodic", Some(1), bridge_memory_episodic);
-    define_native(global, "memory::semantic", Some(1), bridge_memory_semantic);
+    define_native(
+        global,
+        "memory::working",
+        Some(1),
+        adapters::bridge_memory_working,
+    );
+    define_native(
+        global,
+        "memory::episodic",
+        Some(1),
+        adapters::bridge_memory_episodic,
+    );
+    define_native(
+        global,
+        "memory::semantic",
+        Some(1),
+        adapters::bridge_memory_semantic,
+    );
     define_native(
         global,
         "memory::procedural",
         Some(1),
-        bridge_memory_procedural,
+        adapters::bridge_memory_procedural,
     );
 }
 
@@ -248,1168 +550,1409 @@ fn define_native(env: &Env, name: &'static str, arity: Option<usize>, ptr: crate
     );
 }
 
-// ── StdError → RuntimeError conversion ──
+/// RB-3 — every native adapter, collected by the
+/// `#[garnet_primitive_module]` macro into `entries()`. Bodies are
+/// ordinary source text: `Value` conversions and the literal
+/// `require_capability` capability backstops stay grep-able here.
+#[garnet_prim_macros::garnet_primitive_module]
+pub(crate) mod adapters {
+    use super::*;
+    use garnet_prim_macros::garnet_primitive;
 
-fn lift_std_error(prim: &str, e: StdError) -> RuntimeError {
-    // Mini-Spec v1.0 §7.4 — stdlib errors surface as managed-mode raised
-    // exceptions carrying a descriptive string. A later revision may
-    // introduce structured exception types; for the scaffold, a rendered
-    // message keeps the error channel working end-to-end.
-    RuntimeError::Raised(Value::str(format!("{prim}: {e}")))
-}
+    // ── StdError → RuntimeError conversion ──
 
-// ── Arg unpackers ──
-
-fn expect_str<'a>(prim: &str, args: &'a [Value], idx: usize) -> Result<&'a str, RuntimeError> {
-    match args.get(idx) {
-        Some(Value::Str(s)) => Ok(s.as_str()),
-        Some(other) => Err(RuntimeError::type_err(
-            &format!("{prim}: String arg at position {idx}"),
-            other,
-        )),
-        None => Err(RuntimeError::msg(format!(
-            "{prim}: missing argument at position {idx}"
-        ))),
+    pub(crate) fn lift_std_error(prim: &str, e: StdError) -> RuntimeError {
+        // Mini-Spec v1.0 §7.4 — stdlib errors surface as managed-mode raised
+        // exceptions carrying a descriptive string. A later revision may
+        // introduce structured exception types; for the scaffold, a rendered
+        // message keeps the error channel working end-to-end.
+        RuntimeError::Raised(Value::str(format!("{prim}: {e}")))
     }
-}
 
-fn expect_int(prim: &str, args: &[Value], idx: usize) -> Result<i64, RuntimeError> {
-    match args.get(idx) {
-        Some(Value::Int(i)) => Ok(*i),
-        Some(other) => Err(RuntimeError::type_err(
-            &format!("{prim}: Int arg at position {idx}"),
-            other,
-        )),
-        None => Err(RuntimeError::msg(format!(
-            "{prim}: missing argument at position {idx}"
-        ))),
+    // ── Arg unpackers ──
+
+    fn expect_str<'a>(prim: &str, args: &'a [Value], idx: usize) -> Result<&'a str, RuntimeError> {
+        match args.get(idx) {
+            Some(Value::Str(s)) => Ok(s.as_str()),
+            Some(other) => Err(RuntimeError::type_err(
+                &format!("{prim}: String arg at position {idx}"),
+                other,
+            )),
+            None => Err(RuntimeError::msg(format!(
+                "{prim}: missing argument at position {idx}"
+            ))),
+        }
     }
-}
 
-fn expect_usize(prim: &str, args: &[Value], idx: usize) -> Result<usize, RuntimeError> {
-    let i = expect_int(prim, args, idx)?;
-    if i < 0 {
-        return Err(RuntimeError::msg(format!(
-            "{prim}: index at position {idx} must be non-negative, got {i}"
-        )));
+    pub(crate) fn expect_int(prim: &str, args: &[Value], idx: usize) -> Result<i64, RuntimeError> {
+        match args.get(idx) {
+            Some(Value::Int(i)) => Ok(*i),
+            Some(other) => Err(RuntimeError::type_err(
+                &format!("{prim}: Int arg at position {idx}"),
+                other,
+            )),
+            None => Err(RuntimeError::msg(format!(
+                "{prim}: missing argument at position {idx}"
+            ))),
+        }
     }
-    Ok(i as usize)
-}
 
-/// Unpack `Value::Array(...)` as an owned clone of its underlying Vec<Value>.
-fn expect_array_clone(prim: &str, args: &[Value], idx: usize) -> Result<Vec<Value>, RuntimeError> {
-    match args.get(idx) {
-        Some(Value::Array(a)) => Ok(a.borrow().clone()),
-        Some(other) => Err(RuntimeError::type_err(
-            &format!("{prim}: Array arg at position {idx}"),
-            other,
-        )),
-        None => Err(RuntimeError::msg(format!(
-            "{prim}: missing argument at position {idx}"
-        ))),
+    pub(crate) fn expect_usize(
+        prim: &str,
+        args: &[Value],
+        idx: usize,
+    ) -> Result<usize, RuntimeError> {
+        let i = expect_int(prim, args, idx)?;
+        if i < 0 {
+            return Err(RuntimeError::msg(format!(
+                "{prim}: index at position {idx} must be non-negative, got {i}"
+            )));
+        }
+        Ok(i as usize)
     }
-}
 
-/// Unpack a `Value::Array` of `Value::Int` into a `Vec<u8>`. Each element must
-/// be an `Int` in `0..=255`; any violation surfaces as a typed runtime error.
-/// Used by `write_bytes` + friends to accept a Garnet-side byte sequence.
-fn expect_byte_array(prim: &str, args: &[Value], idx: usize) -> Result<Vec<u8>, RuntimeError> {
-    let items = expect_array_clone(prim, args, idx)?;
-    let mut out = Vec::with_capacity(items.len());
-    for (i, v) in items.iter().enumerate() {
-        match v {
-            Value::Int(n) if (0..=255).contains(n) => out.push(*n as u8),
-            Value::Int(n) => {
-                return Err(RuntimeError::msg(format!(
-                    "{prim}: byte at index {i} out of 0..=255, got {n}"
-                )))
+    /// Unpack `Value::Array(...)` as an owned clone of its underlying Vec<Value>.
+    pub(crate) fn expect_array_clone(
+        prim: &str,
+        args: &[Value],
+        idx: usize,
+    ) -> Result<Vec<Value>, RuntimeError> {
+        match args.get(idx) {
+            Some(Value::Array(a)) => Ok(a.borrow().clone()),
+            Some(other) => Err(RuntimeError::type_err(
+                &format!("{prim}: Array arg at position {idx}"),
+                other,
+            )),
+            None => Err(RuntimeError::msg(format!(
+                "{prim}: missing argument at position {idx}"
+            ))),
+        }
+    }
+
+    /// Unpack a `Value::Array` of `Value::Int` into a `Vec<u8>`. Each element must
+    /// be an `Int` in `0..=255`; any violation surfaces as a typed runtime error.
+    /// Used by `write_bytes` + friends to accept a Garnet-side byte sequence.
+    pub(crate) fn expect_byte_array(
+        prim: &str,
+        args: &[Value],
+        idx: usize,
+    ) -> Result<Vec<u8>, RuntimeError> {
+        let items = expect_array_clone(prim, args, idx)?;
+        let mut out = Vec::with_capacity(items.len());
+        for (i, v) in items.iter().enumerate() {
+            match v {
+                Value::Int(n) if (0..=255).contains(n) => out.push(*n as u8),
+                Value::Int(n) => {
+                    return Err(RuntimeError::msg(format!(
+                        "{prim}: byte at index {i} out of 0..=255, got {n}"
+                    )))
+                }
+                other => {
+                    return Err(RuntimeError::type_err(
+                        &format!("{prim}: Int (byte 0..=255) at index {i}"),
+                        other,
+                    ))
+                }
             }
-            other => {
+        }
+        Ok(out)
+    }
+
+    /// Pack a `Vec<u8>` as a `Value::Array` of `Value::Int`. Inverse of
+    /// `expect_byte_array`. Until the interpreter gains a dedicated `Bytes`
+    /// variant, this mapping is the canonical carrier for binary payloads.
+    pub(crate) fn bytes_to_value(bytes: Vec<u8>) -> Value {
+        Value::array(bytes.into_iter().map(|b| Value::Int(b as i64)).collect())
+    }
+
+    /// Hex-encode a 32-byte digest as lowercase hex. Output is 64 ASCII bytes.
+    pub(crate) fn digest_to_hex(digest: &[u8; 32]) -> String {
+        let mut hex = String::with_capacity(64);
+        for byte in digest {
+            hex.push_str(&format!("{byte:02x}"));
+        }
+        hex
+    }
+
+    // ── String primitives ──
+
+    #[garnet_primitive("str::split")]
+    pub(crate) fn bridge_str_split(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let s = expect_str("split", &args, 0)?;
+        let delim = expect_str("split", &args, 1)?;
+        let parts = garnet_stdlib::strings::split(s, delim);
+        Ok(Value::array(parts.into_iter().map(Value::str).collect()))
+    }
+
+    #[garnet_primitive("str::trim")]
+    pub(crate) fn bridge_str_trim(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let s = expect_str("trim", &args, 0)?;
+        Ok(Value::str(garnet_stdlib::strings::trim(s)))
+    }
+
+    #[garnet_primitive("str::to_lower")]
+    pub(crate) fn bridge_str_to_lower(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let s = expect_str("to_lower", &args, 0)?;
+        Ok(Value::str(garnet_stdlib::strings::to_lower(s)))
+    }
+
+    #[garnet_primitive("str::to_upper")]
+    pub(crate) fn bridge_str_to_upper(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let s = expect_str("to_upper", &args, 0)?;
+        Ok(Value::str(garnet_stdlib::strings::to_upper(s)))
+    }
+
+    #[garnet_primitive("str::replace")]
+    pub(crate) fn bridge_str_replace(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let s = expect_str("replace", &args, 0)?;
+        let old = expect_str("replace", &args, 1)?;
+        let new = expect_str("replace", &args, 2)?;
+        garnet_stdlib::strings::replace(s, old, new)
+            .map(Value::str)
+            .map_err(|e| lift_std_error("replace", e))
+    }
+
+    #[garnet_primitive("str::starts_with")]
+    pub(crate) fn bridge_str_starts_with(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let s = expect_str("starts_with", &args, 0)?;
+        let prefix = expect_str("starts_with", &args, 1)?;
+        Ok(Value::Bool(garnet_stdlib::strings::starts_with(s, prefix)))
+    }
+
+    #[garnet_primitive("str::contains")]
+    pub(crate) fn bridge_str_contains(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        // NB: at the Garnet source layer, `contains` is also a natural method name
+        // for Array/Map. The prelude's bare-name binding here covers the String
+        // case; a future `method_dispatch` patch will route `.contains(...)` on
+        // Array/Map to the appropriate handler separately.
+        let s = expect_str("contains", &args, 0)?;
+        let needle = expect_str("contains", &args, 1)?;
+        Ok(Value::Bool(garnet_stdlib::strings::contains(s, needle)))
+    }
+
+    // ── Time primitives ──
+
+    #[garnet_primitive("time::now_ms")]
+    pub(crate) fn bridge_time_now_ms(_args: Vec<Value>) -> Result<Value, RuntimeError> {
+        Ok(Value::Int(garnet_stdlib::time::now_ms()))
+    }
+
+    #[garnet_primitive("time::wall_clock_ms")]
+    pub(crate) fn bridge_time_wall_clock_ms(_args: Vec<Value>) -> Result<Value, RuntimeError> {
+        garnet_stdlib::time::wall_clock_ms()
+            .map(Value::Int)
+            .map_err(|e| lift_std_error("wall_clock_ms", e))
+    }
+
+    #[garnet_primitive("time::sleep")]
+    pub(crate) fn bridge_time_sleep(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let ms = expect_int("sleep", &args, 0)?;
+        garnet_stdlib::time::sleep(ms)
+            .map(|_| Value::Nil)
+            .map_err(|e| lift_std_error("sleep", e))
+    }
+
+    // ── Crypto primitives ──
+
+    #[garnet_primitive("crypto::blake3")]
+    pub(crate) fn bridge_crypto_blake3(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let s = expect_str("blake3", &args, 0)?;
+        let digest = garnet_stdlib::crypto::blake3_hash(s.as_bytes());
+        // Render as lowercase hex — matches the presentation Paper VII §2.4 expects.
+        Ok(Value::str(digest_to_hex(&digest)))
+    }
+
+    #[garnet_primitive("crypto::sha256")]
+    pub(crate) fn bridge_crypto_sha256(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let s = expect_str("sha256", &args, 0)?;
+        let digest = garnet_stdlib::crypto::sha256_hash(s.as_bytes());
+        Ok(Value::str(digest_to_hex(&digest)))
+    }
+
+    #[garnet_primitive("crypto::hmac_sha256")]
+    pub(crate) fn bridge_crypto_hmac_sha256(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let key = expect_str("hmac_sha256", &args, 0)?;
+        let msg = expect_str("hmac_sha256", &args, 1)?;
+        let digest = garnet_stdlib::crypto::hmac_sha256(key.as_bytes(), msg.as_bytes());
+        Ok(Value::str(digest_to_hex(&digest)))
+    }
+
+    // ── Array primitives (backed by `garnet_stdlib::collections`) ──
+    //
+    // The stdlib generic collection functions operate on `&mut Vec<T>` with
+    // appropriate bounds; here we unpack the Garnet `Value::Array`, clone out the
+    // inner `Vec<Value>`, delegate to stdlib, and re-wrap the result as a fresh
+    // `Value::Array`. Aliasing semantics match Ruby's `Array#insert` / `#sort` —
+    // returning a new array rather than mutating the caller's binding — which is
+    // the simpler and more predictable contract for managed mode. A `_in_place`
+    // suffix family can be introduced separately if mutation-preserving semantics
+    // are ever needed.
+
+    #[garnet_primitive("array::insert")]
+    pub(crate) fn bridge_array_insert(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let mut items = expect_array_clone("insert", &args, 0)?;
+        let idx = expect_usize("insert", &args, 1)?;
+        let value = args
+            .get(2)
+            .cloned()
+            .ok_or_else(|| RuntimeError::msg("insert: missing value argument".to_string()))?;
+        garnet_stdlib::collections::array_insert(&mut items, idx, value)
+            .map_err(|e| lift_std_error("insert", e))?;
+        Ok(Value::array(items))
+    }
+
+    #[garnet_primitive("array::remove")]
+    pub(crate) fn bridge_array_remove(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let mut items = expect_array_clone("remove", &args, 0)?;
+        let idx = expect_usize("remove", &args, 1)?;
+        let removed = garnet_stdlib::collections::array_remove(&mut items, idx)
+            .map_err(|e| lift_std_error("remove", e))?;
+        // Return the REMOVED element (matches Ruby `Array#delete_at`). The
+        // post-remove array is available to the caller via a follow-up bind if
+        // they want both; this trampoline keeps the signature 1-out.
+        Ok(removed)
+    }
+
+    #[garnet_primitive("array::sort")]
+    pub(crate) fn bridge_array_sort(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let mut items = expect_array_clone("sort", &args, 0)?;
+        // `Value` does not implement `Ord` (floats break total ordering; cross-
+        // type comparisons are intentionally partial). Use the value's own
+        // `partial_compare` and escalate any incomparable pair to a runtime error.
+        let mut err: Option<RuntimeError> = None;
+        items.sort_by(|a, b| {
+            if err.is_some() {
+                return std::cmp::Ordering::Equal;
+            }
+            match a.partial_compare(b) {
+                Some(ord) => ord,
+                None => {
+                    err = Some(RuntimeError::msg(format!(
+                        "sort: values not comparable ({} vs {})",
+                        a.type_name(),
+                        b.type_name()
+                    )));
+                    std::cmp::Ordering::Equal
+                }
+            }
+        });
+        if let Some(e) = err {
+            return Err(e);
+        }
+        Ok(Value::array(items))
+    }
+
+    // ── Filesystem primitives ──
+
+    #[garnet_primitive("fs::read_file")]
+    pub(crate) fn bridge_fs_read_file(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        crate::eval::require_capability("fs", "fs::read_file")?;
+        let path = expect_str("read_file", &args, 0)?;
+        garnet_stdlib::fs::read_file(path)
+            .map(Value::str)
+            .map_err(|e| lift_std_error("read_file", e))
+    }
+
+    #[garnet_primitive("fs::write_file")]
+    pub(crate) fn bridge_fs_write_file(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        crate::eval::require_capability("fs", "fs::write_file")?;
+        let path = expect_str("write_file", &args, 0)?;
+        let contents = expect_str("write_file", &args, 1)?;
+        garnet_stdlib::fs::write_file(path, contents)
+            .map(|_| Value::Nil)
+            .map_err(|e| lift_std_error("write_file", e))
+    }
+
+    #[garnet_primitive("fs::read_bytes")]
+    pub(crate) fn bridge_fs_read_bytes(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        crate::eval::require_capability("fs", "fs::read_bytes")?;
+        let path = expect_str("read_bytes", &args, 0)?;
+        garnet_stdlib::fs::read_bytes(path)
+            .map(bytes_to_value)
+            .map_err(|e| lift_std_error("read_bytes", e))
+    }
+
+    #[garnet_primitive("fs::write_bytes")]
+    pub(crate) fn bridge_fs_write_bytes(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        crate::eval::require_capability("fs", "fs::write_bytes")?;
+        let path = expect_str("write_bytes", &args, 0)?;
+        let data = expect_byte_array("write_bytes", &args, 1)?;
+        garnet_stdlib::fs::write_bytes(path, &data)
+            .map(|_| Value::Nil)
+            .map_err(|e| lift_std_error("write_bytes", e))
+    }
+
+    #[garnet_primitive("fs::list_dir")]
+    pub(crate) fn bridge_fs_list_dir(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        crate::eval::require_capability("fs", "fs::list_dir")?;
+        let path = expect_str("list_dir", &args, 0)?;
+        garnet_stdlib::fs::list_dir(path)
+            .map(|entries| Value::array(entries.into_iter().map(Value::str).collect()))
+            .map_err(|e| lift_std_error("list_dir", e))
+    }
+
+    // ── Net primitives ──
+
+    /// `tcp_connect(host, port)` — opens an outbound TCP connection, returns
+    /// `Value::Bool(true)` on success, raises on denial or failure. The connect
+    /// is performed with `NetPolicy::default()` (strict — RFC1918 / loopback /
+    /// link-local denied). A future `tcp_connect_internal(host, port)` variant
+    /// can lift the strict policy for `@caps(net_internal)` callers.
+    ///
+    /// The opened stream is immediately closed; this bridge is a smoke/health
+    /// primitive rather than a full socket API. The full socket API with
+    /// read/write bidirectional handles awaits a `Value::Handle<T>` variant
+    /// which lands alongside the actor-runtime integration in a later rung.
+    #[garnet_primitive("net::tcp_connect")]
+    pub(crate) fn bridge_net_tcp_connect(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        crate::eval::require_capability("net", "net::tcp_connect")?;
+        let host = expect_str("tcp_connect", &args, 0)?;
+        let port_i = expect_int("tcp_connect", &args, 1)?;
+        if !(0..=65_535).contains(&port_i) {
+            return Err(RuntimeError::msg(format!(
+                "tcp_connect: port out of 0..=65535, got {port_i}"
+            )));
+        }
+        let policy = garnet_stdlib::net::NetPolicy::default();
+        match garnet_stdlib::net::tcp_connect(host, port_i as u16, policy) {
+            Ok(_stream) => Ok(Value::Bool(true)),
+            Err(e) => Err(lift_std_error("tcp_connect", e)),
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // S21 — Layer-0/1 qualified-dispatch trampolines.
+    // ════════════════════════════════════════════════════════════════════
+
+    /// Accept an `Int` or `Float` argument as an `f64` (numbers widen to float).
+    pub(crate) fn expect_f64(prim: &str, args: &[Value], idx: usize) -> Result<f64, RuntimeError> {
+        match args.get(idx) {
+            Some(Value::Float(f)) => Ok(*f),
+            Some(Value::Int(i)) => Ok(*i as f64),
+            Some(other) => Err(RuntimeError::type_err(
+                &format!("{prim}: number (Int|Float) arg at position {idx}"),
+                other,
+            )),
+            None => Err(RuntimeError::msg(format!(
+                "{prim}: missing argument at position {idx}"
+            ))),
+        }
+    }
+
+    /// Clone the arg at `idx`, or a missing-argument error.
+    pub(crate) fn expect_value(
+        prim: &str,
+        args: &[Value],
+        idx: usize,
+    ) -> Result<Value, RuntimeError> {
+        args.get(idx)
+            .cloned()
+            .ok_or_else(|| RuntimeError::msg(format!("{prim}: missing argument at position {idx}")))
+    }
+
+    // ── core::math (dispatches garnet_stdlib::math) ──
+
+    #[garnet_primitive("core::math::abs")]
+    pub(crate) fn bridge_math_abs(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        Ok(Value::Float(garnet_stdlib::math::abs(expect_f64(
+            "core::math::abs",
+            &args,
+            0,
+        )?)))
+    }
+
+    #[garnet_primitive("core::math::sqrt")]
+    pub(crate) fn bridge_math_sqrt(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let x = expect_f64("core::math::sqrt", &args, 0)?;
+        garnet_stdlib::math::sqrt(x)
+            .map(Value::Float)
+            .map_err(|e| lift_std_error("core::math::sqrt", e))
+    }
+
+    #[garnet_primitive("core::math::pow")]
+    pub(crate) fn bridge_math_pow(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let base = expect_f64("core::math::pow", &args, 0)?;
+        let exp = expect_f64("core::math::pow", &args, 1)?;
+        Ok(Value::Float(garnet_stdlib::math::pow(base, exp)))
+    }
+
+    #[garnet_primitive("core::math::floor")]
+    pub(crate) fn bridge_math_floor(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        Ok(Value::Float(garnet_stdlib::math::floor(expect_f64(
+            "core::math::floor",
+            &args,
+            0,
+        )?)))
+    }
+
+    #[garnet_primitive("core::math::ceil")]
+    pub(crate) fn bridge_math_ceil(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        Ok(Value::Float(garnet_stdlib::math::ceil(expect_f64(
+            "core::math::ceil",
+            &args,
+            0,
+        )?)))
+    }
+
+    #[garnet_primitive("core::math::round")]
+    pub(crate) fn bridge_math_round(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        Ok(Value::Float(garnet_stdlib::math::round(expect_f64(
+            "core::math::round",
+            &args,
+            0,
+        )?)))
+    }
+
+    // ── core::cmp (Value-level; garnet_stdlib::cmp is the Rust reference) ──
+
+    pub(crate) fn cmp_pair(
+        prim: &str,
+        args: &[Value],
+    ) -> Result<(Value, Value, std::cmp::Ordering), RuntimeError> {
+        let a = expect_value(prim, args, 0)?;
+        let b = expect_value(prim, args, 1)?;
+        match a.partial_compare(&b) {
+            Some(ord) => Ok((a, b, ord)),
+            None => Err(RuntimeError::msg(format!(
+                "{prim}: values not comparable ({} vs {})",
+                a.type_name(),
+                b.type_name()
+            ))),
+        }
+    }
+
+    #[garnet_primitive("core::cmp::min")]
+    pub(crate) fn bridge_cmp_min(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let (a, b, ord) = cmp_pair("core::cmp::min", &args)?;
+        Ok(if ord == std::cmp::Ordering::Greater {
+            b
+        } else {
+            a
+        })
+    }
+
+    #[garnet_primitive("core::cmp::max")]
+    pub(crate) fn bridge_cmp_max(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let (a, b, ord) = cmp_pair("core::cmp::max", &args)?;
+        Ok(if ord == std::cmp::Ordering::Less {
+            b
+        } else {
+            a
+        })
+    }
+
+    #[garnet_primitive("core::cmp::ordering")]
+    pub(crate) fn bridge_cmp_ordering(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let (_, _, ord) = cmp_pair("core::cmp::ordering", &args)?;
+        Ok(Value::Int(match ord {
+            std::cmp::Ordering::Less => -1,
+            std::cmp::Ordering::Equal => 0,
+            std::cmp::Ordering::Greater => 1,
+        }))
+    }
+
+    #[garnet_primitive("core::cmp::clamp")]
+    pub(crate) fn bridge_cmp_clamp(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let v = expect_value("core::cmp::clamp", &args, 0)?;
+        let lo = expect_value("core::cmp::clamp", &args, 1)?;
+        let hi = expect_value("core::cmp::clamp", &args, 2)?;
+        let below = v.partial_compare(&lo).ok_or_else(|| {
+            RuntimeError::msg("core::cmp::clamp: value and lower bound not comparable".to_string())
+        })?;
+        if below == std::cmp::Ordering::Less {
+            return Ok(lo);
+        }
+        let above = v.partial_compare(&hi).ok_or_else(|| {
+            RuntimeError::msg("core::cmp::clamp: value and upper bound not comparable".to_string())
+        })?;
+        if above == std::cmp::Ordering::Greater {
+            return Ok(hi);
+        }
+        Ok(v)
+    }
+
+    // ── core::iter (Value-level; higher-order via call_value) ──
+
+    #[garnet_primitive("core::iter::map")]
+    pub(crate) fn bridge_iter_map(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let items = expect_array_clone("core::iter::map", &args, 0)?;
+        let f = expect_value("core::iter::map", &args, 1)?;
+        let mut out = Vec::with_capacity(items.len());
+        for item in items {
+            out.push(crate::eval::call_value(&f, vec![item])?);
+        }
+        Ok(Value::array(out))
+    }
+
+    #[garnet_primitive("core::iter::filter")]
+    pub(crate) fn bridge_iter_filter(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let items = expect_array_clone("core::iter::filter", &args, 0)?;
+        let pred = expect_value("core::iter::filter", &args, 1)?;
+        let mut out = Vec::new();
+        for item in items {
+            if crate::eval::call_value(&pred, vec![item.clone()])?.truthy() {
+                out.push(item);
+            }
+        }
+        Ok(Value::array(out))
+    }
+
+    #[garnet_primitive("core::iter::fold")]
+    pub(crate) fn bridge_iter_fold(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let items = expect_array_clone("core::iter::fold", &args, 0)?;
+        let mut acc = expect_value("core::iter::fold", &args, 1)?;
+        let f = expect_value("core::iter::fold", &args, 2)?;
+        for item in items {
+            acc = crate::eval::call_value(&f, vec![acc, item])?;
+        }
+        Ok(acc)
+    }
+
+    #[garnet_primitive("core::iter::take")]
+    pub(crate) fn bridge_iter_take(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let items = expect_array_clone("core::iter::take", &args, 0)?;
+        let n = expect_usize("core::iter::take", &args, 1)?;
+        Ok(Value::array(items.into_iter().take(n).collect()))
+    }
+
+    #[garnet_primitive("core::iter::drop")]
+    pub(crate) fn bridge_iter_drop(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let items = expect_array_clone("core::iter::drop", &args, 0)?;
+        let n = expect_usize("core::iter::drop", &args, 1)?;
+        Ok(Value::array(items.into_iter().skip(n).collect()))
+    }
+
+    #[garnet_primitive("core::iter::enumerate")]
+    pub(crate) fn bridge_iter_enumerate(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let items = expect_array_clone("core::iter::enumerate", &args, 0)?;
+        Ok(Value::array(
+            items
+                .into_iter()
+                .enumerate()
+                .map(|(i, v)| Value::array(vec![Value::Int(i as i64), v]))
+                .collect(),
+        ))
+    }
+
+    #[garnet_primitive("core::iter::zip")]
+    pub(crate) fn bridge_iter_zip(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let a = expect_array_clone("core::iter::zip", &args, 0)?;
+        let b = expect_array_clone("core::iter::zip", &args, 1)?;
+        // `zip` stops at the shorter sequence; each element is a 2-element pair array.
+        Ok(Value::array(
+            a.into_iter()
+                .zip(b)
+                .map(|(x, y)| Value::array(vec![x, y]))
+                .collect(),
+        ))
+    }
+
+    #[garnet_primitive("core::iter::chain")]
+    pub(crate) fn bridge_iter_chain(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let mut a = expect_array_clone("core::iter::chain", &args, 0)?;
+        let b = expect_array_clone("core::iter::chain", &args, 1)?;
+        a.extend(b);
+        Ok(Value::array(a))
+    }
+
+    #[garnet_primitive("core::iter::collect")]
+    pub(crate) fn bridge_iter_collect(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        // Materialize a sequence into an owned Array. A `Range` is expanded to its
+        // integers (exclusive or inclusive); an Array is materialized (cloned). Other
+        // values are a type error — there is no other lazy sequence in managed mode.
+        match args.first() {
+            Some(Value::Array(items)) => Ok(Value::array(items.borrow().clone())),
+            Some(Value::Range {
+                start,
+                end,
+                inclusive,
+            }) => {
+                let out: Vec<Value> = if *inclusive {
+                    (*start..=*end).map(Value::Int).collect()
+                } else {
+                    (*start..*end).map(Value::Int).collect()
+                };
+                Ok(Value::array(out))
+            }
+            Some(other) => Err(RuntimeError::type_err(
+                "core::iter::collect: Array or Range arg at position 0",
+                other,
+            )),
+            None => Err(RuntimeError::msg("core::iter::collect: missing argument")),
+        }
+    }
+
+    // ── core::result (Value-level; Ok/Err are `Value::Variant` with path ["Result"],
+    //    matching the prelude's `ok`/`err` builders so pattern-matching and `?` agree) ──
+
+    /// Build a `Result::Ok(value)` Variant identical to the prelude `ok` builder.
+    pub(crate) fn result_ok(value: Value) -> Value {
+        Value::Variant {
+            path: Rc::new(vec!["Result".to_string()]),
+            variant: Rc::new("Ok".to_string()),
+            fields: Rc::new(vec![value]),
+        }
+    }
+
+    /// Build a `Result::Err(value)` Variant identical to the prelude `err` builder.
+    pub(crate) fn result_err(value: Value) -> Value {
+        Value::Variant {
+            path: Rc::new(vec!["Result".to_string()]),
+            variant: Rc::new("Err".to_string()),
+            fields: Rc::new(vec![value]),
+        }
+    }
+
+    pub(crate) enum ResultView {
+        Ok(Value),
+        Err(Value),
+    }
+
+    /// Classify the argument at `idx` as a `Result` Variant, or raise a type error.
+    pub(crate) fn expect_result(
+        prim: &str,
+        args: &[Value],
+        idx: usize,
+    ) -> Result<ResultView, RuntimeError> {
+        match args.get(idx) {
+            Some(Value::Variant {
+                path,
+                variant,
+                fields,
+            }) if path.len() == 1 && path[0] == "Result" => {
+                let inner = fields.first().cloned().unwrap_or(Value::Nil);
+                match variant.as_str() {
+                    "Ok" => Ok(ResultView::Ok(inner)),
+                    "Err" => Ok(ResultView::Err(inner)),
+                    other => Err(RuntimeError::msg(format!(
+                        "{prim}: unknown Result variant `{other}`"
+                    ))),
+                }
+            }
+            Some(other) => Err(RuntimeError::type_err(
+                &format!("{prim}: Result arg at position {idx}"),
+                other,
+            )),
+            None => Err(RuntimeError::msg(format!(
+                "{prim}: missing Result argument"
+            ))),
+        }
+    }
+
+    #[garnet_primitive("core::result::ok")]
+    pub(crate) fn bridge_result_ok(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        Ok(result_ok(args.into_iter().next().unwrap_or(Value::Nil)))
+    }
+
+    #[garnet_primitive("core::result::err")]
+    pub(crate) fn bridge_result_err(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        Ok(result_err(args.into_iter().next().unwrap_or(Value::Nil)))
+    }
+
+    #[garnet_primitive("core::result::map")]
+    pub(crate) fn bridge_result_map(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let f = expect_value("core::result::map", &args, 1)?;
+        match expect_result("core::result::map", &args, 0)? {
+            ResultView::Ok(v) => Ok(result_ok(crate::eval::call_value(&f, vec![v])?)),
+            ResultView::Err(e) => Ok(result_err(e)),
+        }
+    }
+
+    #[garnet_primitive("core::result::and_then")]
+    pub(crate) fn bridge_result_and_then(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let f = expect_value("core::result::and_then", &args, 1)?;
+        match expect_result("core::result::and_then", &args, 0)? {
+            // `f` is expected to return a Result; pass its value through unchanged
+            // (Garnet is dynamically typed, so we trust the callee like Rust's `?`).
+            ResultView::Ok(v) => crate::eval::call_value(&f, vec![v]),
+            ResultView::Err(e) => Ok(result_err(e)),
+        }
+    }
+
+    #[garnet_primitive("core::result::or_else")]
+    pub(crate) fn bridge_result_or_else(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let f = expect_value("core::result::or_else", &args, 1)?;
+        match expect_result("core::result::or_else", &args, 0)? {
+            ResultView::Ok(v) => Ok(result_ok(v)),
+            ResultView::Err(e) => crate::eval::call_value(&f, vec![e]),
+        }
+    }
+
+    #[garnet_primitive("core::result::unwrap_or")]
+    pub(crate) fn bridge_result_unwrap_or(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let default = expect_value("core::result::unwrap_or", &args, 1)?;
+        match expect_result("core::result::unwrap_or", &args, 0)? {
+            ResultView::Ok(v) => Ok(v),
+            ResultView::Err(_) => Ok(default),
+        }
+    }
+
+    // ── core::option (Value-level; Some/None are `Value::Variant` with path
+    //    ["Option"], matching the prelude's `some`/`none` builders) ──
+
+    /// Build an `Option::Some(value)` Variant identical to the prelude `some` builder.
+    pub(crate) fn option_some(value: Value) -> Value {
+        Value::Variant {
+            path: Rc::new(vec!["Option".to_string()]),
+            variant: Rc::new("Some".to_string()),
+            fields: Rc::new(vec![value]),
+        }
+    }
+
+    /// Build the `Option::None` Variant identical to the prelude `none` builder.
+    pub(crate) fn option_none() -> Value {
+        Value::Variant {
+            path: Rc::new(vec!["Option".to_string()]),
+            variant: Rc::new("None".to_string()),
+            fields: Rc::new(vec![]),
+        }
+    }
+
+    pub(crate) enum OptionView {
+        Some(Value),
+        None,
+    }
+
+    /// Classify the argument at `idx` as an `Option` Variant, or raise a type error.
+    pub(crate) fn expect_option(
+        prim: &str,
+        args: &[Value],
+        idx: usize,
+    ) -> Result<OptionView, RuntimeError> {
+        match args.get(idx) {
+            Some(Value::Variant {
+                path,
+                variant,
+                fields,
+            }) if path.len() == 1 && path[0] == "Option" => match variant.as_str() {
+                "Some" => Ok(OptionView::Some(
+                    fields.first().cloned().unwrap_or(Value::Nil),
+                )),
+                "None" => Ok(OptionView::None),
+                other => Err(RuntimeError::msg(format!(
+                    "{prim}: unknown Option variant `{other}`"
+                ))),
+            },
+            Some(other) => Err(RuntimeError::type_err(
+                &format!("{prim}: Option arg at position {idx}"),
+                other,
+            )),
+            None => Err(RuntimeError::msg(format!(
+                "{prim}: missing Option argument"
+            ))),
+        }
+    }
+
+    #[garnet_primitive("core::option::some")]
+    pub(crate) fn bridge_option_some(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        Ok(option_some(args.into_iter().next().unwrap_or(Value::Nil)))
+    }
+
+    #[garnet_primitive("core::option::none")]
+    pub(crate) fn bridge_option_none(_args: Vec<Value>) -> Result<Value, RuntimeError> {
+        Ok(option_none())
+    }
+
+    #[garnet_primitive("core::option::map")]
+    pub(crate) fn bridge_option_map(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let f = expect_value("core::option::map", &args, 1)?;
+        match expect_option("core::option::map", &args, 0)? {
+            OptionView::Some(v) => Ok(option_some(crate::eval::call_value(&f, vec![v])?)),
+            OptionView::None => Ok(option_none()),
+        }
+    }
+
+    #[garnet_primitive("core::option::and_then")]
+    pub(crate) fn bridge_option_and_then(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let f = expect_value("core::option::and_then", &args, 1)?;
+        match expect_option("core::option::and_then", &args, 0)? {
+            // `f` is expected to return an Option; pass it through unchanged.
+            OptionView::Some(v) => crate::eval::call_value(&f, vec![v]),
+            OptionView::None => Ok(option_none()),
+        }
+    }
+
+    #[garnet_primitive("core::option::unwrap_or")]
+    pub(crate) fn bridge_option_unwrap_or(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let default = expect_value("core::option::unwrap_or", &args, 1)?;
+        match expect_option("core::option::unwrap_or", &args, 0)? {
+            OptionView::Some(v) => Ok(v),
+            OptionView::None => Ok(default),
+        }
+    }
+
+    // ── std::base64 (dispatches garnet_stdlib::base64) ──
+
+    #[garnet_primitive("std::base64::encode")]
+    pub(crate) fn bridge_base64_encode(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        // Encode the UTF-8 bytes of a string into a standard base64 string.
+        let s = expect_str("std::base64::encode", &args, 0)?;
+        Ok(Value::str(garnet_stdlib::base64::encode(s.as_bytes())))
+    }
+
+    #[garnet_primitive("std::base64::decode")]
+    pub(crate) fn bridge_base64_decode(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        // Decode a base64 string into a byte array (Array of Int 0..=255).
+        let s = expect_str("std::base64::decode", &args, 0)?;
+        garnet_stdlib::base64::decode(s)
+            .map(bytes_to_value)
+            .map_err(|e| lift_std_error("std::base64::decode", e))
+    }
+
+    // ── S22: std::json (serde_json <-> managed Value) ──
+
+    pub(crate) fn json_to_value(value: JsonValue) -> Result<Value, RuntimeError> {
+        match value {
+            JsonValue::Null => Ok(Value::Nil),
+            JsonValue::Bool(b) => Ok(Value::Bool(b)),
+            JsonValue::Number(n) => {
+                if let Some(i) = n.as_i64() {
+                    Ok(Value::Int(i))
+                } else if let Some(u) = n.as_u64() {
+                    if let Ok(i) = i64::try_from(u) {
+                        Ok(Value::Int(i))
+                    } else {
+                        Ok(Value::Float(u as f64))
+                    }
+                } else if let Some(f) = n.as_f64() {
+                    Ok(Value::Float(f))
+                } else {
+                    Err(RuntimeError::msg("std::json: unsupported number"))
+                }
+            }
+            JsonValue::String(s) => Ok(Value::str(s)),
+            JsonValue::Array(items) => Ok(Value::array(
+                items
+                    .into_iter()
+                    .map(json_to_value)
+                    .collect::<Result<Vec<_>, _>>()?,
+            )),
+            JsonValue::Object(map) => Ok(Value::map(
+                map.into_iter()
+                    .map(|(k, v)| json_to_value(v).map(|v| (k, v)))
+                    .collect::<Result<Vec<_>, _>>()?,
+            )),
+        }
+    }
+
+    pub(crate) fn value_to_json(value: &Value) -> Result<JsonValue, RuntimeError> {
+        match value {
+            Value::Nil => Ok(JsonValue::Null),
+            Value::Bool(b) => Ok(JsonValue::Bool(*b)),
+            Value::Int(i) => Ok(JsonValue::Number((*i).into())),
+            Value::Float(f) => serde_json::Number::from_f64(*f)
+                .map(JsonValue::Number)
+                .ok_or_else(|| RuntimeError::msg("std::json: float must be finite")),
+            Value::Str(s) => Ok(JsonValue::String(s.to_string())),
+            Value::Array(items) => Ok(JsonValue::Array(
+                items
+                    .borrow()
+                    .iter()
+                    .map(value_to_json)
+                    .collect::<Result<Vec<_>, _>>()?,
+            )),
+            Value::Tuple(items) => Ok(JsonValue::Array(
+                items
+                    .iter()
+                    .map(value_to_json)
+                    .collect::<Result<Vec<_>, _>>()?,
+            )),
+            Value::Map(map) => {
+                let mut out = serde_json::Map::new();
+                for (key, value) in map.borrow().iter() {
+                    out.insert(key.clone(), value_to_json(value)?);
+                }
+                Ok(JsonValue::Object(out))
+            }
+            other => Err(RuntimeError::msg(format!(
+                "std::json: cannot serialize {}",
+                other.type_name()
+            ))),
+        }
+    }
+
+    #[garnet_primitive("std::json::parse")]
+    pub(crate) fn bridge_json_parse(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let input = expect_str("std::json::parse", &args, 0)?;
+        garnet_stdlib::json::parse(input)
+            .map_err(|e| lift_std_error("std::json::parse", e))
+            .and_then(json_to_value)
+    }
+
+    #[garnet_primitive("std::json::stringify")]
+    pub(crate) fn bridge_json_stringify(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let value = expect_value("std::json::stringify", &args, 0)?;
+        let json = value_to_json(&value)?;
+        Ok(Value::str(garnet_stdlib::json::stringify(&json)))
+    }
+
+    #[garnet_primitive("std::json::get")]
+    pub(crate) fn bridge_json_get(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let value = expect_value("std::json::get", &args, 0)?;
+        let key = expect_str("std::json::get", &args, 1)?;
+        let json = value_to_json(&value)?;
+        match garnet_stdlib::json::get(&json, key) {
+            Some(child) => json_to_value(child),
+            None => Ok(Value::Nil),
+        }
+    }
+
+    #[garnet_primitive("std::json::set")]
+    pub(crate) fn bridge_json_set(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let target = expect_value("std::json::set", &args, 0)?;
+        let key = expect_str("std::json::set", &args, 1)?;
+        let value = expect_value("std::json::set", &args, 2)?;
+        let target = value_to_json(&target)?;
+        let value = value_to_json(&value)?;
+        garnet_stdlib::json::set(&target, key, value)
+            .map_err(|e| lift_std_error("std::json::set", e))
+            .and_then(json_to_value)
+    }
+
+    // ── S22: std::regex ──
+
+    #[garnet_primitive("std::regex::compile")]
+    pub(crate) fn bridge_regex_compile(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let pattern = expect_str("std::regex::compile", &args, 0)?;
+        garnet_stdlib::regex::compile(pattern)
+            .map(|_| Value::Nil)
+            .map_err(|e| lift_std_error("std::regex::compile", e))
+    }
+
+    #[garnet_primitive("std::regex::match")]
+    pub(crate) fn bridge_regex_match(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let pattern = expect_str("std::regex::match", &args, 0)?;
+        let input = expect_str("std::regex::match", &args, 1)?;
+        garnet_stdlib::regex::is_match(pattern, input)
+            .map(Value::Bool)
+            .map_err(|e| lift_std_error("std::regex::match", e))
+    }
+
+    #[garnet_primitive("std::regex::find_all")]
+    pub(crate) fn bridge_regex_find_all(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let pattern = expect_str("std::regex::find_all", &args, 0)?;
+        let input = expect_str("std::regex::find_all", &args, 1)?;
+        garnet_stdlib::regex::find_all(pattern, input)
+            .map(|items| Value::array(items.into_iter().map(Value::str).collect()))
+            .map_err(|e| lift_std_error("std::regex::find_all", e))
+    }
+
+    #[garnet_primitive("std::regex::replace")]
+    pub(crate) fn bridge_regex_replace(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let pattern = expect_str("std::regex::replace", &args, 0)?;
+        let input = expect_str("std::regex::replace", &args, 1)?;
+        let replacement = expect_str("std::regex::replace", &args, 2)?;
+        garnet_stdlib::regex::replace(pattern, input, replacement)
+            .map(Value::str)
+            .map_err(|e| lift_std_error("std::regex::replace", e))
+    }
+
+    // ── S22: std::uuid ──
+
+    pub(crate) fn parse_uuid_namespace(input: &str) -> Result<[u8; 16], RuntimeError> {
+        let compact: String = input.chars().filter(|c| *c != '-').collect();
+        if compact.len() != 32 || !compact.chars().all(|c| c.is_ascii_hexdigit()) {
+            return Err(RuntimeError::msg(format!(
+                "std::uuid::new_v5: namespace must be 32 hex chars or canonical UUID, got {input:?}"
+            )));
+        }
+        let mut bytes = [0u8; 16];
+        for (idx, byte) in bytes.iter_mut().enumerate() {
+            let start = idx * 2;
+            *byte = u8::from_str_radix(&compact[start..start + 2], 16).map_err(|e| {
+                RuntimeError::msg(format!("std::uuid::new_v5: invalid namespace byte: {e}"))
+            })?;
+        }
+        Ok(bytes)
+    }
+
+    #[garnet_primitive("std::uuid::new_v4")]
+    pub(crate) fn bridge_uuid_new_v4(_args: Vec<Value>) -> Result<Value, RuntimeError> {
+        Ok(Value::str(garnet_stdlib::uuid::new_v4()))
+    }
+
+    #[garnet_primitive("std::uuid::new_v5")]
+    pub(crate) fn bridge_uuid_new_v5(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let namespace = parse_uuid_namespace(expect_str("std::uuid::new_v5", &args, 0)?)?;
+        let name = expect_str("std::uuid::new_v5", &args, 1)?;
+        Ok(Value::str(garnet_stdlib::uuid::new_v5(&namespace, name)))
+    }
+
+    #[garnet_primitive("std::uuid::new_v7")]
+    pub(crate) fn bridge_uuid_new_v7(_args: Vec<Value>) -> Result<Value, RuntimeError> {
+        Ok(Value::str(garnet_stdlib::uuid::new_v7()))
+    }
+
+    // ── S22: std::env and std::process ──
+
+    #[garnet_primitive("std::env::get")]
+    pub(crate) fn bridge_env_get(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        crate::eval::require_capability("env", "std::env::get")?;
+        let key = expect_str("std::env::get", &args, 0)?;
+        validate_env_key("std::env::get", key)?;
+        match std::env::var_os(key) {
+            Some(value) => value
+                .into_string()
+                .map(Value::str)
+                .map_err(|_| RuntimeError::msg("std::env::get: value is not valid Unicode")),
+            None => Ok(Value::Nil),
+        }
+    }
+
+    #[garnet_primitive("std::env::set")]
+    pub(crate) fn bridge_env_set(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        crate::eval::require_capability("env", "std::env::set")?;
+        let key = expect_str("std::env::set", &args, 0)?;
+        let value = expect_str("std::env::set", &args, 1)?;
+        validate_env_key("std::env::set", key)?;
+        validate_env_value("std::env::set", value)?;
+        garnet_stdlib::env::set(key, value);
+        Ok(Value::Nil)
+    }
+
+    #[garnet_primitive("std::env::vars")]
+    pub(crate) fn bridge_env_vars(_args: Vec<Value>) -> Result<Value, RuntimeError> {
+        crate::eval::require_capability("env", "std::env::vars")?;
+        let mut vars = Vec::new();
+        for (key, value) in std::env::vars_os() {
+            let key = key
+                .into_string()
+                .map_err(|_| RuntimeError::msg("std::env::vars: key is not valid Unicode"))?;
+            let value = value
+                .into_string()
+                .map_err(|_| RuntimeError::msg("std::env::vars: value is not valid Unicode"))?;
+            vars.push(Value::array(vec![Value::str(key), Value::str(value)]));
+        }
+        Ok(Value::array(vars))
+    }
+
+    pub(crate) fn validate_env_key(prim: &str, key: &str) -> Result<(), RuntimeError> {
+        if key.is_empty() {
+            return Err(RuntimeError::msg(format!("{prim}: key must not be empty")));
+        }
+        if key.bytes().any(|b| b == b'=' || b == 0) {
+            return Err(RuntimeError::msg(format!(
+                "{prim}: key must not contain '=' or NUL"
+            )));
+        }
+        Ok(())
+    }
+
+    pub(crate) fn validate_env_value(prim: &str, value: &str) -> Result<(), RuntimeError> {
+        if value.bytes().any(|b| b == 0) {
+            return Err(RuntimeError::msg(format!(
+                "{prim}: value must not contain NUL"
+            )));
+        }
+        Ok(())
+    }
+
+    #[garnet_primitive("std::process::spawn")]
+    pub(crate) fn bridge_process_spawn(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        crate::eval::require_capability("proc", "std::process::spawn")?;
+        crate::eval::require_entry_capability("proc", "std::process::spawn")?;
+        let cmdline = expect_str("std::process::spawn", &args, 0)?;
+        garnet_stdlib::process::spawn(cmdline)
+            .map(|proc| Value::Process(Rc::new(RefCell::new(Some(proc)))))
+            .map_err(|e| lift_std_error("std::process::spawn", e))
+    }
+
+    #[garnet_primitive("std::process::wait")]
+    pub(crate) fn bridge_process_wait(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        crate::eval::require_capability("proc", "std::process::wait")?;
+        let process = match args.first() {
+            Some(Value::Process(process)) => Rc::clone(process),
+            Some(other) => {
                 return Err(RuntimeError::type_err(
-                    &format!("{prim}: Int (byte 0..=255) at index {i}"),
+                    "std::process::wait: Process arg at position 0",
                     other,
                 ))
             }
+            None => return Err(RuntimeError::msg("std::process::wait: missing process")),
+        };
+        let proc = process
+            .borrow_mut()
+            .take()
+            .ok_or_else(|| RuntimeError::msg("std::process::wait: process already waited"))?;
+        garnet_stdlib::process::wait(proc)
+            .map(Value::ProcessStatus)
+            .map_err(|e| lift_std_error("std::process::wait", e))
+    }
+
+    #[garnet_primitive("std::process::exit_code")]
+    pub(crate) fn bridge_process_exit_code(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        crate::eval::require_capability("proc", "std::process::exit_code")?;
+        match args.first() {
+            Some(Value::ProcessStatus(status)) => Ok(garnet_stdlib::process::exit_code(status)
+                .map(|code| Value::Int(code as i64))
+                .unwrap_or(Value::Nil)),
+            Some(other) => Err(RuntimeError::type_err(
+                "std::process::exit_code: ProcessStatus arg at position 0",
+                other,
+            )),
+            None => Err(RuntimeError::msg(
+                "std::process::exit_code: missing process status",
+            )),
         }
     }
-    Ok(out)
-}
 
-/// Pack a `Vec<u8>` as a `Value::Array` of `Value::Int`. Inverse of
-/// `expect_byte_array`. Until the interpreter gains a dedicated `Bytes`
-/// variant, this mapping is the canonical carrier for binary payloads.
-fn bytes_to_value(bytes: Vec<u8>) -> Value {
-    Value::array(bytes.into_iter().map(|b| Value::Int(b as i64)).collect())
-}
-
-/// Hex-encode a 32-byte digest as lowercase hex. Output is 64 ASCII bytes.
-fn digest_to_hex(digest: &[u8; 32]) -> String {
-    let mut hex = String::with_capacity(64);
-    for byte in digest {
-        hex.push_str(&format!("{byte:02x}"));
-    }
-    hex
-}
-
-// ── String primitives ──
-
-fn bridge_str_split(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let s = expect_str("split", &args, 0)?;
-    let delim = expect_str("split", &args, 1)?;
-    let parts = garnet_stdlib::strings::split(s, delim);
-    Ok(Value::array(parts.into_iter().map(Value::str).collect()))
-}
-
-fn bridge_str_trim(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let s = expect_str("trim", &args, 0)?;
-    Ok(Value::str(garnet_stdlib::strings::trim(s)))
-}
-
-fn bridge_str_to_lower(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let s = expect_str("to_lower", &args, 0)?;
-    Ok(Value::str(garnet_stdlib::strings::to_lower(s)))
-}
-
-fn bridge_str_to_upper(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let s = expect_str("to_upper", &args, 0)?;
-    Ok(Value::str(garnet_stdlib::strings::to_upper(s)))
-}
-
-fn bridge_str_replace(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let s = expect_str("replace", &args, 0)?;
-    let old = expect_str("replace", &args, 1)?;
-    let new = expect_str("replace", &args, 2)?;
-    garnet_stdlib::strings::replace(s, old, new)
-        .map(Value::str)
-        .map_err(|e| lift_std_error("replace", e))
-}
-
-fn bridge_str_starts_with(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let s = expect_str("starts_with", &args, 0)?;
-    let prefix = expect_str("starts_with", &args, 1)?;
-    Ok(Value::Bool(garnet_stdlib::strings::starts_with(s, prefix)))
-}
-
-fn bridge_str_contains(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    // NB: at the Garnet source layer, `contains` is also a natural method name
-    // for Array/Map. The prelude's bare-name binding here covers the String
-    // case; a future `method_dispatch` patch will route `.contains(...)` on
-    // Array/Map to the appropriate handler separately.
-    let s = expect_str("contains", &args, 0)?;
-    let needle = expect_str("contains", &args, 1)?;
-    Ok(Value::Bool(garnet_stdlib::strings::contains(s, needle)))
-}
-
-// ── Time primitives ──
-
-fn bridge_time_now_ms(_args: Vec<Value>) -> Result<Value, RuntimeError> {
-    Ok(Value::Int(garnet_stdlib::time::now_ms()))
-}
-
-fn bridge_time_wall_clock_ms(_args: Vec<Value>) -> Result<Value, RuntimeError> {
-    garnet_stdlib::time::wall_clock_ms()
-        .map(Value::Int)
-        .map_err(|e| lift_std_error("wall_clock_ms", e))
-}
-
-fn bridge_time_sleep(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let ms = expect_int("sleep", &args, 0)?;
-    garnet_stdlib::time::sleep(ms)
-        .map(|_| Value::Nil)
-        .map_err(|e| lift_std_error("sleep", e))
-}
-
-// ── Crypto primitives ──
-
-fn bridge_crypto_blake3(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let s = expect_str("blake3", &args, 0)?;
-    let digest = garnet_stdlib::crypto::blake3_hash(s.as_bytes());
-    // Render as lowercase hex — matches the presentation Paper VII §2.4 expects.
-    Ok(Value::str(digest_to_hex(&digest)))
-}
-
-fn bridge_crypto_sha256(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let s = expect_str("sha256", &args, 0)?;
-    let digest = garnet_stdlib::crypto::sha256_hash(s.as_bytes());
-    Ok(Value::str(digest_to_hex(&digest)))
-}
-
-fn bridge_crypto_hmac_sha256(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let key = expect_str("hmac_sha256", &args, 0)?;
-    let msg = expect_str("hmac_sha256", &args, 1)?;
-    let digest = garnet_stdlib::crypto::hmac_sha256(key.as_bytes(), msg.as_bytes());
-    Ok(Value::str(digest_to_hex(&digest)))
-}
-
-// ── Array primitives (backed by `garnet_stdlib::collections`) ──
-//
-// The stdlib generic collection functions operate on `&mut Vec<T>` with
-// appropriate bounds; here we unpack the Garnet `Value::Array`, clone out the
-// inner `Vec<Value>`, delegate to stdlib, and re-wrap the result as a fresh
-// `Value::Array`. Aliasing semantics match Ruby's `Array#insert` / `#sort` —
-// returning a new array rather than mutating the caller's binding — which is
-// the simpler and more predictable contract for managed mode. A `_in_place`
-// suffix family can be introduced separately if mutation-preserving semantics
-// are ever needed.
-
-fn bridge_array_insert(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let mut items = expect_array_clone("insert", &args, 0)?;
-    let idx = expect_usize("insert", &args, 1)?;
-    let value = args
-        .get(2)
-        .cloned()
-        .ok_or_else(|| RuntimeError::msg("insert: missing value argument".to_string()))?;
-    garnet_stdlib::collections::array_insert(&mut items, idx, value)
-        .map_err(|e| lift_std_error("insert", e))?;
-    Ok(Value::array(items))
-}
-
-fn bridge_array_remove(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let mut items = expect_array_clone("remove", &args, 0)?;
-    let idx = expect_usize("remove", &args, 1)?;
-    let removed = garnet_stdlib::collections::array_remove(&mut items, idx)
-        .map_err(|e| lift_std_error("remove", e))?;
-    // Return the REMOVED element (matches Ruby `Array#delete_at`). The
-    // post-remove array is available to the caller via a follow-up bind if
-    // they want both; this trampoline keeps the signature 1-out.
-    Ok(removed)
-}
-
-fn bridge_array_sort(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let mut items = expect_array_clone("sort", &args, 0)?;
-    // `Value` does not implement `Ord` (floats break total ordering; cross-
-    // type comparisons are intentionally partial). Use the value's own
-    // `partial_compare` and escalate any incomparable pair to a runtime error.
-    let mut err: Option<RuntimeError> = None;
-    items.sort_by(|a, b| {
-        if err.is_some() {
-            return std::cmp::Ordering::Equal;
-        }
-        match a.partial_compare(b) {
-            Some(ord) => ord,
-            None => {
-                err = Some(RuntimeError::msg(format!(
-                    "sort: values not comparable ({} vs {})",
-                    a.type_name(),
-                    b.type_name()
-                )));
-                std::cmp::Ordering::Equal
-            }
-        }
-    });
-    if let Some(e) = err {
-        return Err(e);
-    }
-    Ok(Value::array(items))
-}
-
-// ── Filesystem primitives ──
-
-fn bridge_fs_read_file(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    crate::eval::require_capability("fs", "fs::read_file")?;
-    let path = expect_str("read_file", &args, 0)?;
-    garnet_stdlib::fs::read_file(path)
-        .map(Value::str)
-        .map_err(|e| lift_std_error("read_file", e))
-}
-
-fn bridge_fs_write_file(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    crate::eval::require_capability("fs", "fs::write_file")?;
-    let path = expect_str("write_file", &args, 0)?;
-    let contents = expect_str("write_file", &args, 1)?;
-    garnet_stdlib::fs::write_file(path, contents)
-        .map(|_| Value::Nil)
-        .map_err(|e| lift_std_error("write_file", e))
-}
-
-fn bridge_fs_read_bytes(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    crate::eval::require_capability("fs", "fs::read_bytes")?;
-    let path = expect_str("read_bytes", &args, 0)?;
-    garnet_stdlib::fs::read_bytes(path)
-        .map(bytes_to_value)
-        .map_err(|e| lift_std_error("read_bytes", e))
-}
-
-fn bridge_fs_write_bytes(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    crate::eval::require_capability("fs", "fs::write_bytes")?;
-    let path = expect_str("write_bytes", &args, 0)?;
-    let data = expect_byte_array("write_bytes", &args, 1)?;
-    garnet_stdlib::fs::write_bytes(path, &data)
-        .map(|_| Value::Nil)
-        .map_err(|e| lift_std_error("write_bytes", e))
-}
-
-fn bridge_fs_list_dir(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    crate::eval::require_capability("fs", "fs::list_dir")?;
-    let path = expect_str("list_dir", &args, 0)?;
-    garnet_stdlib::fs::list_dir(path)
-        .map(|entries| Value::array(entries.into_iter().map(Value::str).collect()))
-        .map_err(|e| lift_std_error("list_dir", e))
-}
-
-// ── Net primitives ──
-
-/// `tcp_connect(host, port)` — opens an outbound TCP connection, returns
-/// `Value::Bool(true)` on success, raises on denial or failure. The connect
-/// is performed with `NetPolicy::default()` (strict — RFC1918 / loopback /
-/// link-local denied). A future `tcp_connect_internal(host, port)` variant
-/// can lift the strict policy for `@caps(net_internal)` callers.
-///
-/// The opened stream is immediately closed; this bridge is a smoke/health
-/// primitive rather than a full socket API. The full socket API with
-/// read/write bidirectional handles awaits a `Value::Handle<T>` variant
-/// which lands alongside the actor-runtime integration in a later rung.
-fn bridge_net_tcp_connect(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    crate::eval::require_capability("net", "net::tcp_connect")?;
-    let host = expect_str("tcp_connect", &args, 0)?;
-    let port_i = expect_int("tcp_connect", &args, 1)?;
-    if !(0..=65_535).contains(&port_i) {
-        return Err(RuntimeError::msg(format!(
-            "tcp_connect: port out of 0..=65535, got {port_i}"
-        )));
-    }
-    let policy = garnet_stdlib::net::NetPolicy::default();
-    match garnet_stdlib::net::tcp_connect(host, port_i as u16, policy) {
-        Ok(_stream) => Ok(Value::Bool(true)),
-        Err(e) => Err(lift_std_error("tcp_connect", e)),
-    }
-}
-
-// ════════════════════════════════════════════════════════════════════
-// S21 — Layer-0/1 qualified-dispatch trampolines.
-// ════════════════════════════════════════════════════════════════════
-
-/// Accept an `Int` or `Float` argument as an `f64` (numbers widen to float).
-fn expect_f64(prim: &str, args: &[Value], idx: usize) -> Result<f64, RuntimeError> {
-    match args.get(idx) {
-        Some(Value::Float(f)) => Ok(*f),
-        Some(Value::Int(i)) => Ok(*i as f64),
-        Some(other) => Err(RuntimeError::type_err(
-            &format!("{prim}: number (Int|Float) arg at position {idx}"),
-            other,
-        )),
-        None => Err(RuntimeError::msg(format!(
-            "{prim}: missing argument at position {idx}"
-        ))),
-    }
-}
-
-/// Clone the arg at `idx`, or a missing-argument error.
-fn expect_value(prim: &str, args: &[Value], idx: usize) -> Result<Value, RuntimeError> {
-    args.get(idx)
-        .cloned()
-        .ok_or_else(|| RuntimeError::msg(format!("{prim}: missing argument at position {idx}")))
-}
-
-// ── core::math (dispatches garnet_stdlib::math) ──
-
-fn bridge_math_abs(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    Ok(Value::Float(garnet_stdlib::math::abs(expect_f64(
-        "core::math::abs",
-        &args,
-        0,
-    )?)))
-}
-
-fn bridge_math_sqrt(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let x = expect_f64("core::math::sqrt", &args, 0)?;
-    garnet_stdlib::math::sqrt(x)
-        .map(Value::Float)
-        .map_err(|e| lift_std_error("core::math::sqrt", e))
-}
-
-fn bridge_math_pow(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let base = expect_f64("core::math::pow", &args, 0)?;
-    let exp = expect_f64("core::math::pow", &args, 1)?;
-    Ok(Value::Float(garnet_stdlib::math::pow(base, exp)))
-}
-
-fn bridge_math_floor(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    Ok(Value::Float(garnet_stdlib::math::floor(expect_f64(
-        "core::math::floor",
-        &args,
-        0,
-    )?)))
-}
-
-fn bridge_math_ceil(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    Ok(Value::Float(garnet_stdlib::math::ceil(expect_f64(
-        "core::math::ceil",
-        &args,
-        0,
-    )?)))
-}
-
-fn bridge_math_round(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    Ok(Value::Float(garnet_stdlib::math::round(expect_f64(
-        "core::math::round",
-        &args,
-        0,
-    )?)))
-}
-
-// ── core::cmp (Value-level; garnet_stdlib::cmp is the Rust reference) ──
-
-fn cmp_pair(
-    prim: &str,
-    args: &[Value],
-) -> Result<(Value, Value, std::cmp::Ordering), RuntimeError> {
-    let a = expect_value(prim, args, 0)?;
-    let b = expect_value(prim, args, 1)?;
-    match a.partial_compare(&b) {
-        Some(ord) => Ok((a, b, ord)),
-        None => Err(RuntimeError::msg(format!(
-            "{prim}: values not comparable ({} vs {})",
-            a.type_name(),
-            b.type_name()
-        ))),
-    }
-}
-
-fn bridge_cmp_min(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let (a, b, ord) = cmp_pair("core::cmp::min", &args)?;
-    Ok(if ord == std::cmp::Ordering::Greater {
-        b
-    } else {
-        a
-    })
-}
-
-fn bridge_cmp_max(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let (a, b, ord) = cmp_pair("core::cmp::max", &args)?;
-    Ok(if ord == std::cmp::Ordering::Less {
-        b
-    } else {
-        a
-    })
-}
-
-fn bridge_cmp_ordering(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let (_, _, ord) = cmp_pair("core::cmp::ordering", &args)?;
-    Ok(Value::Int(match ord {
-        std::cmp::Ordering::Less => -1,
-        std::cmp::Ordering::Equal => 0,
-        std::cmp::Ordering::Greater => 1,
-    }))
-}
-
-fn bridge_cmp_clamp(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let v = expect_value("core::cmp::clamp", &args, 0)?;
-    let lo = expect_value("core::cmp::clamp", &args, 1)?;
-    let hi = expect_value("core::cmp::clamp", &args, 2)?;
-    let below = v.partial_compare(&lo).ok_or_else(|| {
-        RuntimeError::msg("core::cmp::clamp: value and lower bound not comparable".to_string())
-    })?;
-    if below == std::cmp::Ordering::Less {
-        return Ok(lo);
-    }
-    let above = v.partial_compare(&hi).ok_or_else(|| {
-        RuntimeError::msg("core::cmp::clamp: value and upper bound not comparable".to_string())
-    })?;
-    if above == std::cmp::Ordering::Greater {
-        return Ok(hi);
-    }
-    Ok(v)
-}
-
-// ── core::iter (Value-level; higher-order via call_value) ──
-
-fn bridge_iter_map(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let items = expect_array_clone("core::iter::map", &args, 0)?;
-    let f = expect_value("core::iter::map", &args, 1)?;
-    let mut out = Vec::with_capacity(items.len());
-    for item in items {
-        out.push(crate::eval::call_value(&f, vec![item])?);
-    }
-    Ok(Value::array(out))
-}
-
-fn bridge_iter_filter(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let items = expect_array_clone("core::iter::filter", &args, 0)?;
-    let pred = expect_value("core::iter::filter", &args, 1)?;
-    let mut out = Vec::new();
-    for item in items {
-        if crate::eval::call_value(&pred, vec![item.clone()])?.truthy() {
-            out.push(item);
-        }
-    }
-    Ok(Value::array(out))
-}
-
-fn bridge_iter_fold(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let items = expect_array_clone("core::iter::fold", &args, 0)?;
-    let mut acc = expect_value("core::iter::fold", &args, 1)?;
-    let f = expect_value("core::iter::fold", &args, 2)?;
-    for item in items {
-        acc = crate::eval::call_value(&f, vec![acc, item])?;
-    }
-    Ok(acc)
-}
-
-fn bridge_iter_take(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let items = expect_array_clone("core::iter::take", &args, 0)?;
-    let n = expect_usize("core::iter::take", &args, 1)?;
-    Ok(Value::array(items.into_iter().take(n).collect()))
-}
-
-fn bridge_iter_drop(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let items = expect_array_clone("core::iter::drop", &args, 0)?;
-    let n = expect_usize("core::iter::drop", &args, 1)?;
-    Ok(Value::array(items.into_iter().skip(n).collect()))
-}
-
-fn bridge_iter_enumerate(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let items = expect_array_clone("core::iter::enumerate", &args, 0)?;
-    Ok(Value::array(
+    /// Unpack a `Value::Array` of `Value::Str` into an owned `Vec<String>` for an
+    /// explicit argv. Every element must be a String.
+    pub(crate) fn expect_string_array(
+        prim: &str,
+        args: &[Value],
+        idx: usize,
+    ) -> Result<Vec<String>, RuntimeError> {
+        let items = expect_array_clone(prim, args, idx)?;
         items
             .into_iter()
             .enumerate()
-            .map(|(i, v)| Value::array(vec![Value::Int(i as i64), v]))
-            .collect(),
-    ))
-}
-
-fn bridge_iter_zip(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let a = expect_array_clone("core::iter::zip", &args, 0)?;
-    let b = expect_array_clone("core::iter::zip", &args, 1)?;
-    // `zip` stops at the shorter sequence; each element is a 2-element pair array.
-    Ok(Value::array(
-        a.into_iter()
-            .zip(b)
-            .map(|(x, y)| Value::array(vec![x, y]))
-            .collect(),
-    ))
-}
-
-fn bridge_iter_chain(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let mut a = expect_array_clone("core::iter::chain", &args, 0)?;
-    let b = expect_array_clone("core::iter::chain", &args, 1)?;
-    a.extend(b);
-    Ok(Value::array(a))
-}
-
-fn bridge_iter_collect(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    // Materialize a sequence into an owned Array. A `Range` is expanded to its
-    // integers (exclusive or inclusive); an Array is materialized (cloned). Other
-    // values are a type error — there is no other lazy sequence in managed mode.
-    match args.first() {
-        Some(Value::Array(items)) => Ok(Value::array(items.borrow().clone())),
-        Some(Value::Range {
-            start,
-            end,
-            inclusive,
-        }) => {
-            let out: Vec<Value> = if *inclusive {
-                (*start..=*end).map(Value::Int).collect()
-            } else {
-                (*start..*end).map(Value::Int).collect()
-            };
-            Ok(Value::array(out))
-        }
-        Some(other) => Err(RuntimeError::type_err(
-            "core::iter::collect: Array or Range arg at position 0",
-            other,
-        )),
-        None => Err(RuntimeError::msg("core::iter::collect: missing argument")),
+            .map(|(i, value)| match value {
+                Value::Str(s) => Ok((*s).clone()),
+                other => Err(RuntimeError::type_err(
+                    &format!("{prim}: argv element {i} must be a String"),
+                    &other,
+                )),
+            })
+            .collect()
     }
-}
 
-// ── core::result (Value-level; Ok/Err are `Value::Variant` with path ["Result"],
-//    matching the prelude's `ok`/`err` builders so pattern-matching and `?` agree) ──
-
-/// Build a `Result::Ok(value)` Variant identical to the prelude `ok` builder.
-fn result_ok(value: Value) -> Value {
-    Value::Variant {
-        path: Rc::new(vec!["Result".to_string()]),
-        variant: Rc::new("Ok".to_string()),
-        fields: Rc::new(vec![value]),
+    #[garnet_primitive("std::process::spawn_args")]
+    pub(crate) fn bridge_process_spawn_args(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        crate::eval::require_capability("proc", "std::process::spawn_args")?;
+        crate::eval::require_entry_capability("proc", "std::process::spawn_args")?;
+        let program = expect_str("std::process::spawn_args", &args, 0)?.to_string();
+        let argv = expect_string_array("std::process::spawn_args", &args, 1)?;
+        garnet_stdlib::process::spawn_args(&program, &argv)
+            .map(|proc| Value::Process(Rc::new(RefCell::new(Some(proc)))))
+            .map_err(|e| lift_std_error("std::process::spawn_args", e))
     }
-}
 
-/// Build a `Result::Err(value)` Variant identical to the prelude `err` builder.
-fn result_err(value: Value) -> Value {
-    Value::Variant {
-        path: Rc::new(vec!["Result".to_string()]),
-        variant: Rc::new("Err".to_string()),
-        fields: Rc::new(vec![value]),
+    #[garnet_primitive("std::process::output")]
+    pub(crate) fn bridge_process_output(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        crate::eval::require_capability("proc", "std::process::output")?;
+        crate::eval::require_entry_capability("proc", "std::process::output")?;
+        let program = expect_str("std::process::output", &args, 0)?.to_string();
+        let argv = expect_string_array("std::process::output", &args, 1)?;
+        let out = garnet_stdlib::process::output(&program, &argv)
+            .map_err(|e| lift_std_error("std::process::output", e))?;
+        let code = out
+            .code()
+            .map(|c| Value::Int(c as i64))
+            .unwrap_or(Value::Nil);
+        Ok(Value::map(vec![
+            ("code".to_string(), code),
+            ("stdout".to_string(), Value::str(out.stdout())),
+            ("stderr".to_string(), Value::str(out.stderr())),
+        ]))
     }
-}
 
-enum ResultView {
-    Ok(Value),
-    Err(Value),
-}
+    // ── S22: std::log formatting ──
 
-/// Classify the argument at `idx` as a `Result` Variant, or raise a type error.
-fn expect_result(prim: &str, args: &[Value], idx: usize) -> Result<ResultView, RuntimeError> {
-    match args.get(idx) {
-        Some(Value::Variant {
-            path,
-            variant,
-            fields,
-        }) if path.len() == 1 && path[0] == "Result" => {
-            let inner = fields.first().cloned().unwrap_or(Value::Nil);
-            match variant.as_str() {
-                "Ok" => Ok(ResultView::Ok(inner)),
-                "Err" => Ok(ResultView::Err(inner)),
-                other => Err(RuntimeError::msg(format!(
-                    "{prim}: unknown Result variant `{other}`"
-                ))),
-            }
-        }
-        Some(other) => Err(RuntimeError::type_err(
-            &format!("{prim}: Result arg at position {idx}"),
-            other,
-        )),
-        None => Err(RuntimeError::msg(format!(
-            "{prim}: missing Result argument"
-        ))),
+    #[garnet_primitive("std::log::info")]
+    pub(crate) fn bridge_log_info(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let message = expect_str("std::log::info", &args, 0)?;
+        Ok(Value::str(garnet_stdlib::log::info(message)))
     }
-}
 
-fn bridge_result_ok(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    Ok(result_ok(args.into_iter().next().unwrap_or(Value::Nil)))
-}
-
-fn bridge_result_err(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    Ok(result_err(args.into_iter().next().unwrap_or(Value::Nil)))
-}
-
-fn bridge_result_map(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let f = expect_value("core::result::map", &args, 1)?;
-    match expect_result("core::result::map", &args, 0)? {
-        ResultView::Ok(v) => Ok(result_ok(crate::eval::call_value(&f, vec![v])?)),
-        ResultView::Err(e) => Ok(result_err(e)),
+    #[garnet_primitive("std::log::warn")]
+    pub(crate) fn bridge_log_warn(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let message = expect_str("std::log::warn", &args, 0)?;
+        Ok(Value::str(garnet_stdlib::log::warn(message)))
     }
-}
 
-fn bridge_result_and_then(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let f = expect_value("core::result::and_then", &args, 1)?;
-    match expect_result("core::result::and_then", &args, 0)? {
-        // `f` is expected to return a Result; pass its value through unchanged
-        // (Garnet is dynamically typed, so we trust the callee like Rust's `?`).
-        ResultView::Ok(v) => crate::eval::call_value(&f, vec![v]),
-        ResultView::Err(e) => Ok(result_err(e)),
+    #[garnet_primitive("std::log::error")]
+    pub(crate) fn bridge_log_error(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let message = expect_str("std::log::error", &args, 0)?;
+        Ok(Value::str(garnet_stdlib::log::error(message)))
     }
-}
 
-fn bridge_result_or_else(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let f = expect_value("core::result::or_else", &args, 1)?;
-    match expect_result("core::result::or_else", &args, 0)? {
-        ResultView::Ok(v) => Ok(result_ok(v)),
-        ResultView::Err(e) => crate::eval::call_value(&f, vec![e]),
+    #[garnet_primitive("std::log::debug")]
+    pub(crate) fn bridge_log_debug(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        let message = expect_str("std::log::debug", &args, 0)?;
+        Ok(Value::str(garnet_stdlib::log::debug(message)))
     }
-}
 
-fn bridge_result_unwrap_or(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let default = expect_value("core::result::unwrap_or", &args, 1)?;
-    match expect_result("core::result::unwrap_or", &args, 0)? {
-        ResultView::Ok(v) => Ok(v),
-        ResultView::Err(_) => Ok(default),
-    }
-}
+    // ── S24: std::log file sink (cap: fs) ──
 
-// ── core::option (Value-level; Some/None are `Value::Variant` with path
-//    ["Option"], matching the prelude's `some`/`none` builders) ──
-
-/// Build an `Option::Some(value)` Variant identical to the prelude `some` builder.
-fn option_some(value: Value) -> Value {
-    Value::Variant {
-        path: Rc::new(vec!["Option".to_string()]),
-        variant: Rc::new("Some".to_string()),
-        fields: Rc::new(vec![value]),
-    }
-}
-
-/// Build the `Option::None` Variant identical to the prelude `none` builder.
-fn option_none() -> Value {
-    Value::Variant {
-        path: Rc::new(vec!["Option".to_string()]),
-        variant: Rc::new("None".to_string()),
-        fields: Rc::new(vec![]),
-    }
-}
-
-enum OptionView {
-    Some(Value),
-    None,
-}
-
-/// Classify the argument at `idx` as an `Option` Variant, or raise a type error.
-fn expect_option(prim: &str, args: &[Value], idx: usize) -> Result<OptionView, RuntimeError> {
-    match args.get(idx) {
-        Some(Value::Variant {
-            path,
-            variant,
-            fields,
-        }) if path.len() == 1 && path[0] == "Option" => match variant.as_str() {
-            "Some" => Ok(OptionView::Some(
-                fields.first().cloned().unwrap_or(Value::Nil),
-            )),
-            "None" => Ok(OptionView::None),
-            other => Err(RuntimeError::msg(format!(
-                "{prim}: unknown Option variant `{other}`"
-            ))),
-        },
-        Some(other) => Err(RuntimeError::type_err(
-            &format!("{prim}: Option arg at position {idx}"),
-            other,
-        )),
-        None => Err(RuntimeError::msg(format!(
-            "{prim}: missing Option argument"
-        ))),
-    }
-}
-
-fn bridge_option_some(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    Ok(option_some(args.into_iter().next().unwrap_or(Value::Nil)))
-}
-
-fn bridge_option_none(_args: Vec<Value>) -> Result<Value, RuntimeError> {
-    Ok(option_none())
-}
-
-fn bridge_option_map(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let f = expect_value("core::option::map", &args, 1)?;
-    match expect_option("core::option::map", &args, 0)? {
-        OptionView::Some(v) => Ok(option_some(crate::eval::call_value(&f, vec![v])?)),
-        OptionView::None => Ok(option_none()),
-    }
-}
-
-fn bridge_option_and_then(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let f = expect_value("core::option::and_then", &args, 1)?;
-    match expect_option("core::option::and_then", &args, 0)? {
-        // `f` is expected to return an Option; pass it through unchanged.
-        OptionView::Some(v) => crate::eval::call_value(&f, vec![v]),
-        OptionView::None => Ok(option_none()),
-    }
-}
-
-fn bridge_option_unwrap_or(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let default = expect_value("core::option::unwrap_or", &args, 1)?;
-    match expect_option("core::option::unwrap_or", &args, 0)? {
-        OptionView::Some(v) => Ok(v),
-        OptionView::None => Ok(default),
-    }
-}
-
-// ── std::base64 (dispatches garnet_stdlib::base64) ──
-
-fn bridge_base64_encode(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    // Encode the UTF-8 bytes of a string into a standard base64 string.
-    let s = expect_str("std::base64::encode", &args, 0)?;
-    Ok(Value::str(garnet_stdlib::base64::encode(s.as_bytes())))
-}
-
-fn bridge_base64_decode(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    // Decode a base64 string into a byte array (Array of Int 0..=255).
-    let s = expect_str("std::base64::decode", &args, 0)?;
-    garnet_stdlib::base64::decode(s)
-        .map(bytes_to_value)
-        .map_err(|e| lift_std_error("std::base64::decode", e))
-}
-
-// ── S22: std::json (serde_json <-> managed Value) ──
-
-fn json_to_value(value: JsonValue) -> Result<Value, RuntimeError> {
-    match value {
-        JsonValue::Null => Ok(Value::Nil),
-        JsonValue::Bool(b) => Ok(Value::Bool(b)),
-        JsonValue::Number(n) => {
-            if let Some(i) = n.as_i64() {
-                Ok(Value::Int(i))
-            } else if let Some(u) = n.as_u64() {
-                if let Ok(i) = i64::try_from(u) {
-                    Ok(Value::Int(i))
-                } else {
-                    Ok(Value::Float(u as f64))
-                }
-            } else if let Some(f) = n.as_f64() {
-                Ok(Value::Float(f))
-            } else {
-                Err(RuntimeError::msg("std::json: unsupported number"))
-            }
-        }
-        JsonValue::String(s) => Ok(Value::str(s)),
-        JsonValue::Array(items) => Ok(Value::array(
-            items
-                .into_iter()
-                .map(json_to_value)
-                .collect::<Result<Vec<_>, _>>()?,
-        )),
-        JsonValue::Object(map) => Ok(Value::map(
-            map.into_iter()
-                .map(|(k, v)| json_to_value(v).map(|v| (k, v)))
-                .collect::<Result<Vec<_>, _>>()?,
-        )),
-    }
-}
-
-fn value_to_json(value: &Value) -> Result<JsonValue, RuntimeError> {
-    match value {
-        Value::Nil => Ok(JsonValue::Null),
-        Value::Bool(b) => Ok(JsonValue::Bool(*b)),
-        Value::Int(i) => Ok(JsonValue::Number((*i).into())),
-        Value::Float(f) => serde_json::Number::from_f64(*f)
-            .map(JsonValue::Number)
-            .ok_or_else(|| RuntimeError::msg("std::json: float must be finite")),
-        Value::Str(s) => Ok(JsonValue::String(s.to_string())),
-        Value::Array(items) => Ok(JsonValue::Array(
-            items
-                .borrow()
-                .iter()
-                .map(value_to_json)
-                .collect::<Result<Vec<_>, _>>()?,
-        )),
-        Value::Tuple(items) => Ok(JsonValue::Array(
-            items
-                .iter()
-                .map(value_to_json)
-                .collect::<Result<Vec<_>, _>>()?,
-        )),
-        Value::Map(map) => {
-            let mut out = serde_json::Map::new();
-            for (key, value) in map.borrow().iter() {
-                out.insert(key.clone(), value_to_json(value)?);
-            }
-            Ok(JsonValue::Object(out))
-        }
-        other => Err(RuntimeError::msg(format!(
-            "std::json: cannot serialize {}",
-            other.type_name()
-        ))),
-    }
-}
-
-fn bridge_json_parse(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let input = expect_str("std::json::parse", &args, 0)?;
-    garnet_stdlib::json::parse(input)
-        .map_err(|e| lift_std_error("std::json::parse", e))
-        .and_then(json_to_value)
-}
-
-fn bridge_json_stringify(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let value = expect_value("std::json::stringify", &args, 0)?;
-    let json = value_to_json(&value)?;
-    Ok(Value::str(garnet_stdlib::json::stringify(&json)))
-}
-
-fn bridge_json_get(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let value = expect_value("std::json::get", &args, 0)?;
-    let key = expect_str("std::json::get", &args, 1)?;
-    let json = value_to_json(&value)?;
-    match garnet_stdlib::json::get(&json, key) {
-        Some(child) => json_to_value(child),
-        None => Ok(Value::Nil),
-    }
-}
-
-fn bridge_json_set(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let target = expect_value("std::json::set", &args, 0)?;
-    let key = expect_str("std::json::set", &args, 1)?;
-    let value = expect_value("std::json::set", &args, 2)?;
-    let target = value_to_json(&target)?;
-    let value = value_to_json(&value)?;
-    garnet_stdlib::json::set(&target, key, value)
-        .map_err(|e| lift_std_error("std::json::set", e))
-        .and_then(json_to_value)
-}
-
-// ── S22: std::regex ──
-
-fn bridge_regex_compile(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let pattern = expect_str("std::regex::compile", &args, 0)?;
-    garnet_stdlib::regex::compile(pattern)
-        .map(|_| Value::Nil)
-        .map_err(|e| lift_std_error("std::regex::compile", e))
-}
-
-fn bridge_regex_match(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let pattern = expect_str("std::regex::match", &args, 0)?;
-    let input = expect_str("std::regex::match", &args, 1)?;
-    garnet_stdlib::regex::is_match(pattern, input)
-        .map(Value::Bool)
-        .map_err(|e| lift_std_error("std::regex::match", e))
-}
-
-fn bridge_regex_find_all(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let pattern = expect_str("std::regex::find_all", &args, 0)?;
-    let input = expect_str("std::regex::find_all", &args, 1)?;
-    garnet_stdlib::regex::find_all(pattern, input)
-        .map(|items| Value::array(items.into_iter().map(Value::str).collect()))
-        .map_err(|e| lift_std_error("std::regex::find_all", e))
-}
-
-fn bridge_regex_replace(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let pattern = expect_str("std::regex::replace", &args, 0)?;
-    let input = expect_str("std::regex::replace", &args, 1)?;
-    let replacement = expect_str("std::regex::replace", &args, 2)?;
-    garnet_stdlib::regex::replace(pattern, input, replacement)
-        .map(Value::str)
-        .map_err(|e| lift_std_error("std::regex::replace", e))
-}
-
-// ── S22: std::uuid ──
-
-fn parse_uuid_namespace(input: &str) -> Result<[u8; 16], RuntimeError> {
-    let compact: String = input.chars().filter(|c| *c != '-').collect();
-    if compact.len() != 32 || !compact.chars().all(|c| c.is_ascii_hexdigit()) {
-        return Err(RuntimeError::msg(format!(
-            "std::uuid::new_v5: namespace must be 32 hex chars or canonical UUID, got {input:?}"
-        )));
-    }
-    let mut bytes = [0u8; 16];
-    for (idx, byte) in bytes.iter_mut().enumerate() {
-        let start = idx * 2;
-        *byte = u8::from_str_radix(&compact[start..start + 2], 16).map_err(|e| {
-            RuntimeError::msg(format!("std::uuid::new_v5: invalid namespace byte: {e}"))
-        })?;
-    }
-    Ok(bytes)
-}
-
-fn bridge_uuid_new_v4(_args: Vec<Value>) -> Result<Value, RuntimeError> {
-    Ok(Value::str(garnet_stdlib::uuid::new_v4()))
-}
-
-fn bridge_uuid_new_v5(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let namespace = parse_uuid_namespace(expect_str("std::uuid::new_v5", &args, 0)?)?;
-    let name = expect_str("std::uuid::new_v5", &args, 1)?;
-    Ok(Value::str(garnet_stdlib::uuid::new_v5(&namespace, name)))
-}
-
-fn bridge_uuid_new_v7(_args: Vec<Value>) -> Result<Value, RuntimeError> {
-    Ok(Value::str(garnet_stdlib::uuid::new_v7()))
-}
-
-// ── S22: std::env and std::process ──
-
-fn bridge_env_get(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    crate::eval::require_capability("env", "std::env::get")?;
-    let key = expect_str("std::env::get", &args, 0)?;
-    validate_env_key("std::env::get", key)?;
-    match std::env::var_os(key) {
-        Some(value) => value
-            .into_string()
+    #[garnet_primitive("std::log::to_file")]
+    pub(crate) fn bridge_log_to_file(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        crate::eval::require_capability("fs", "std::log::to_file")?;
+        let path = expect_str("std::log::to_file", &args, 0)?.to_string();
+        let level = expect_str("std::log::to_file", &args, 1)?.to_string();
+        let message = expect_str("std::log::to_file", &args, 2)?;
+        garnet_stdlib::log::to_file(&path, &level, message)
             .map(Value::str)
-            .map_err(|_| RuntimeError::msg("std::env::get: value is not valid Unicode")),
-        None => Ok(Value::Nil),
+            .map_err(|e| lift_std_error("std::log::to_file", e))
     }
-}
 
-fn bridge_env_set(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    crate::eval::require_capability("env", "std::env::set")?;
-    let key = expect_str("std::env::set", &args, 0)?;
-    let value = expect_str("std::env::set", &args, 1)?;
-    validate_env_key("std::env::set", key)?;
-    validate_env_value("std::env::set", value)?;
-    garnet_stdlib::env::set(key, value);
-    Ok(Value::Nil)
-}
+    // ── S22: memory:: constructors (live Mnemos handles) ──
 
-fn bridge_env_vars(_args: Vec<Value>) -> Result<Value, RuntimeError> {
-    crate::eval::require_capability("env", "std::env::vars")?;
-    let mut vars = Vec::new();
-    for (key, value) in std::env::vars_os() {
-        let key = key
-            .into_string()
-            .map_err(|_| RuntimeError::msg("std::env::vars: key is not valid Unicode"))?;
-        let value = value
-            .into_string()
-            .map_err(|_| RuntimeError::msg("std::env::vars: value is not valid Unicode"))?;
-        vars.push(Value::array(vec![Value::str(key), Value::str(value)]));
-    }
-    Ok(Value::array(vars))
-}
-
-fn validate_env_key(prim: &str, key: &str) -> Result<(), RuntimeError> {
-    if key.is_empty() {
-        return Err(RuntimeError::msg(format!("{prim}: key must not be empty")));
-    }
-    if key.bytes().any(|b| b == b'=' || b == 0) {
-        return Err(RuntimeError::msg(format!(
-            "{prim}: key must not contain '=' or NUL"
-        )));
-    }
-    Ok(())
-}
-
-fn validate_env_value(prim: &str, value: &str) -> Result<(), RuntimeError> {
-    if value.bytes().any(|b| b == 0) {
-        return Err(RuntimeError::msg(format!(
-            "{prim}: value must not contain NUL"
-        )));
-    }
-    Ok(())
-}
-
-fn bridge_process_spawn(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    crate::eval::require_capability("proc", "std::process::spawn")?;
-    crate::eval::require_entry_capability("proc", "std::process::spawn")?;
-    let cmdline = expect_str("std::process::spawn", &args, 0)?;
-    garnet_stdlib::process::spawn(cmdline)
-        .map(|proc| Value::Process(Rc::new(RefCell::new(Some(proc)))))
-        .map_err(|e| lift_std_error("std::process::spawn", e))
-}
-
-fn bridge_process_wait(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    crate::eval::require_capability("proc", "std::process::wait")?;
-    let process = match args.first() {
-        Some(Value::Process(process)) => Rc::clone(process),
-        Some(other) => {
-            return Err(RuntimeError::type_err(
-                "std::process::wait: Process arg at position 0",
-                other,
-            ))
+    pub(crate) fn memory_store(kind: MemoryKind, name: String) -> Value {
+        Value::MemoryStore {
+            kind,
+            name,
+            backend: MemoryBackend::for_kind(kind),
         }
-        None => return Err(RuntimeError::msg("std::process::wait: missing process")),
-    };
-    let proc = process
-        .borrow_mut()
-        .take()
-        .ok_or_else(|| RuntimeError::msg("std::process::wait: process already waited"))?;
-    garnet_stdlib::process::wait(proc)
-        .map(Value::ProcessStatus)
-        .map_err(|e| lift_std_error("std::process::wait", e))
-}
+    }
 
-fn bridge_process_exit_code(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    crate::eval::require_capability("proc", "std::process::exit_code")?;
-    match args.first() {
-        Some(Value::ProcessStatus(status)) => Ok(garnet_stdlib::process::exit_code(status)
-            .map(|code| Value::Int(code as i64))
-            .unwrap_or(Value::Nil)),
-        Some(other) => Err(RuntimeError::type_err(
-            "std::process::exit_code: ProcessStatus arg at position 0",
-            other,
-        )),
-        None => Err(RuntimeError::msg(
-            "std::process::exit_code: missing process status",
-        )),
+    pub(crate) fn bridge_memory_kind(
+        prim: &str,
+        kind: MemoryKind,
+        args: Vec<Value>,
+    ) -> Result<Value, RuntimeError> {
+        let name = expect_str(prim, &args, 0)?;
+        Ok(memory_store(kind, name.to_string()))
+    }
+
+    #[garnet_primitive("memory::working")]
+    pub(crate) fn bridge_memory_working(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        bridge_memory_kind("memory::working", MemoryKind::Working, args)
+    }
+
+    #[garnet_primitive("memory::episodic")]
+    pub(crate) fn bridge_memory_episodic(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        bridge_memory_kind("memory::episodic", MemoryKind::Episodic, args)
+    }
+
+    #[garnet_primitive("memory::semantic")]
+    pub(crate) fn bridge_memory_semantic(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        bridge_memory_kind("memory::semantic", MemoryKind::Semantic, args)
+    }
+
+    #[garnet_primitive("memory::procedural")]
+    pub(crate) fn bridge_memory_procedural(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        bridge_memory_kind("memory::procedural", MemoryKind::Procedural, args)
     }
 }
 
-/// Unpack a `Value::Array` of `Value::Str` into an owned `Vec<String>` for an
-/// explicit argv. Every element must be a String.
-fn expect_string_array(
-    prim: &str,
-    args: &[Value],
-    idx: usize,
-) -> Result<Vec<String>, RuntimeError> {
-    let items = expect_array_clone(prim, args, idx)?;
-    items
-        .into_iter()
-        .enumerate()
-        .map(|(i, value)| match value {
-            Value::Str(s) => Ok((*s).clone()),
-            other => Err(RuntimeError::type_err(
-                &format!("{prim}: argv element {i} must be a String"),
-                &other,
-            )),
-        })
-        .collect()
-}
+#[cfg(test)]
+mod rb3_registry_join {
+    //! RB-3 — registry-derived dispatch: differential + join trap tests.
+    use super::*;
+    use garnet_stdlib::registry::{all_prims, Binding, Guard};
 
-fn bridge_process_spawn_args(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    crate::eval::require_capability("proc", "std::process::spawn_args")?;
-    crate::eval::require_entry_capability("proc", "std::process::spawn_args")?;
-    let program = expect_str("std::process::spawn_args", &args, 0)?.to_string();
-    let argv = expect_string_array("std::process::spawn_args", &args, 1)?;
-    garnet_stdlib::process::spawn_args(&program, &argv)
-        .map(|proc| Value::Process(Rc::new(RefCell::new(Some(proc)))))
-        .map_err(|e| lift_std_error("std::process::spawn_args", e))
-}
-
-fn bridge_process_output(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    crate::eval::require_capability("proc", "std::process::output")?;
-    crate::eval::require_entry_capability("proc", "std::process::output")?;
-    let program = expect_str("std::process::output", &args, 0)?.to_string();
-    let argv = expect_string_array("std::process::output", &args, 1)?;
-    let out = garnet_stdlib::process::output(&program, &argv)
-        .map_err(|e| lift_std_error("std::process::output", e))?;
-    let code = out
-        .code()
-        .map(|c| Value::Int(c as i64))
-        .unwrap_or(Value::Nil);
-    Ok(Value::map(vec![
-        ("code".to_string(), code),
-        ("stdout".to_string(), Value::str(out.stdout())),
-        ("stderr".to_string(), Value::str(out.stderr())),
-    ]))
-}
-
-// ── S22: std::log formatting ──
-
-fn bridge_log_info(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let message = expect_str("std::log::info", &args, 0)?;
-    Ok(Value::str(garnet_stdlib::log::info(message)))
-}
-
-fn bridge_log_warn(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let message = expect_str("std::log::warn", &args, 0)?;
-    Ok(Value::str(garnet_stdlib::log::warn(message)))
-}
-
-fn bridge_log_error(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let message = expect_str("std::log::error", &args, 0)?;
-    Ok(Value::str(garnet_stdlib::log::error(message)))
-}
-
-fn bridge_log_debug(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    let message = expect_str("std::log::debug", &args, 0)?;
-    Ok(Value::str(garnet_stdlib::log::debug(message)))
-}
-
-// ── S24: std::log file sink (cap: fs) ──
-
-fn bridge_log_to_file(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    crate::eval::require_capability("fs", "std::log::to_file")?;
-    let path = expect_str("std::log::to_file", &args, 0)?.to_string();
-    let level = expect_str("std::log::to_file", &args, 1)?.to_string();
-    let message = expect_str("std::log::to_file", &args, 2)?;
-    garnet_stdlib::log::to_file(&path, &level, message)
-        .map(Value::str)
-        .map_err(|e| lift_std_error("std::log::to_file", e))
-}
-
-// ── S22: memory:: constructors (live Mnemos handles) ──
-
-fn memory_store(kind: MemoryKind, name: String) -> Value {
-    Value::MemoryStore {
-        kind,
-        name,
-        backend: MemoryBackend::for_kind(kind),
+    fn native_table(
+        installer: fn(&Env),
+    ) -> std::collections::BTreeMap<String, (String, Option<usize>, usize)> {
+        let env = Env::new_root();
+        installer(&env);
+        env.native_fn_snapshot()
+            .into_iter()
+            .map(|(bound, n)| (bound, (n.name.to_string(), n.arity, n.ptr as usize)))
+            .collect()
     }
-}
 
-fn bridge_memory_kind(
-    prim: &str,
-    kind: MemoryKind,
-    args: Vec<Value>,
-) -> Result<Value, RuntimeError> {
-    let name = expect_str(prim, &args, 0)?;
-    Ok(memory_store(kind, name.to_string()))
-}
+    /// The differential: the registry-derived install produces a table
+    /// IDENTICAL to the old hand-written list — same bound names, same
+    /// display names, same arities, same adapter fn pointers. Pointer
+    /// equality makes behavioral equivalence structural, not sampled.
+    #[test]
+    fn derived_install_is_table_identical_to_legacy() {
+        let new = native_table(install);
+        let old = native_table(install_legacy);
+        let new_keys: Vec<&String> = new.keys().collect();
+        let old_keys: Vec<&String> = old.keys().collect();
+        assert_eq!(new_keys, old_keys, "bound-name sets diverged");
+        for (bound, old_entry) in &old {
+            assert_eq!(
+                &new[bound], old_entry,
+                "native `{bound}` diverged (name/arity/ptr)"
+            );
+        }
+        assert_eq!(
+            new.len(),
+            82,
+            "22 bare + 56 qualified + 4 bridge-only memory natives"
+        );
+    }
 
-fn bridge_memory_working(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    bridge_memory_kind("memory::working", MemoryKind::Working, args)
-}
+    /// Every non-Unbridged registry row has an adapter; every adapter key
+    /// is a registry row or an explicit BRIDGE_ONLY entry. Drift in either
+    /// direction is a deterministic failure.
+    #[test]
+    fn registry_join_is_total() {
+        let adapters: std::collections::BTreeMap<&'static str, crate::value::NativeFn> =
+            adapters::entries().into_iter().collect();
+        for (qualified, meta) in all_prims() {
+            if meta.binding == Binding::Unbridged {
+                assert!(
+                    !adapters.contains_key(qualified.as_str()),
+                    "{qualified} is Unbridged but has an adapter — promote its registry row"
+                );
+                continue;
+            }
+            assert!(
+                adapters.contains_key(qualified.as_str()),
+                "registry row {qualified} has no #[garnet_primitive] adapter"
+            );
+        }
+        let registry = all_prims();
+        for (key, _) in adapters::entries() {
+            let in_registry = registry.contains_key(key);
+            let in_bridge_only = BRIDGE_ONLY.iter().any(|(k, _)| *k == key);
+            assert!(
+                in_registry || in_bridge_only,
+                "adapter `{key}` is neither a registry row nor a documented BRIDGE_ONLY native"
+            );
+        }
+    }
 
-fn bridge_memory_episodic(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    bridge_memory_kind("memory::episodic", MemoryKind::Episodic, args)
-}
+    #[test]
+    fn bridge_only_list_is_exact() {
+        let registry = all_prims();
+        assert_eq!(BRIDGE_ONLY.len(), 4);
+        for (key, _) in BRIDGE_ONLY {
+            assert!(
+                !registry.contains_key(*key),
+                "{key} gained a registry row — remove it from BRIDGE_ONLY"
+            );
+        }
+    }
 
-fn bridge_memory_semantic(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    bridge_memory_kind("memory::semantic", MemoryKind::Semantic, args)
-}
-
-fn bridge_memory_procedural(args: Vec<Value>) -> Result<Value, RuntimeError> {
-    bridge_memory_kind("memory::procedural", MemoryKind::Procedural, args)
+    /// Guard column ↔ adapter behavior: every Gate/GateEntry prim traps
+    /// with the caps message when called from a managed frame that
+    /// declares no capabilities; Declared-with-caps prims (time::*,
+    /// uuid v4/v7) must NOT caps-trap (checker-only by design — S90 scope).
+    #[test]
+    fn guard_column_matches_runtime_backstop_behavior() {
+        for (qualified, meta) in all_prims() {
+            if meta.binding == Binding::Unbridged {
+                continue;
+            }
+            let call_name = match meta.binding {
+                Binding::Bare => meta.name.to_string(),
+                _ => qualified.clone(),
+            };
+            let args = vec!["\"x\""; meta.arity].join(", ");
+            let src = format!("@caps()\ndef main() {{\n  {call_name}({args})\n}}\n");
+            let mut interp = crate::Interpreter::new();
+            interp
+                .load_source(&src)
+                .unwrap_or_else(|e| panic!("{qualified}: load failed: {e}"));
+            let result = interp.call_entry("main", vec![]);
+            let caps_trapped = matches!(
+                &result,
+                Err(e) if e.to_string().contains("requires @caps(")
+            );
+            match meta.guard {
+                Guard::Gate | Guard::GateEntry => assert!(
+                    caps_trapped,
+                    "{qualified} is Guard::{:?} but did not caps-trap: {result:?}",
+                    meta.guard
+                ),
+                Guard::Declared => assert!(
+                    !caps_trapped,
+                    "{qualified} is Guard::Declared but caps-trapped — registry/adapter drift"
+                ),
+            }
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::adapters::{option_some, result_ok};
     use super::*;
 
     fn make_env() -> Rc<Env> {

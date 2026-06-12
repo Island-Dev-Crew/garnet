@@ -685,6 +685,7 @@ dependencies = [
  "criterion",
  "garnet-memory",
  "garnet-parser",
+ "garnet-prim-macros",
  "garnet-stdlib",
  "miette",
  "proptest",
