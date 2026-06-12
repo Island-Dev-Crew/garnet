@@ -1453,8 +1453,18 @@ mod rb3_registry_join {
     /// direction is a deterministic failure.
     #[test]
     fn registry_join_is_total() {
+        // Global key uniqueness FIRST: the macro rejects duplicates within
+        // a module; this guards the cross-module case (a second collected
+        // module re-registering a key would otherwise last-wins silently
+        // in the BTreeMap collect below).
+        let raw = adapters::entries();
         let adapters: std::collections::BTreeMap<&'static str, crate::value::NativeFn> =
-            adapters::entries().into_iter().collect();
+            raw.iter().copied().collect();
+        assert_eq!(
+            raw.len(),
+            adapters.len(),
+            "duplicate adapter keys across collected modules"
+        );
         for (qualified, meta) in all_prims() {
             if meta.binding == Binding::Unbridged {
                 assert!(

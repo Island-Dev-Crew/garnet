@@ -12,7 +12,7 @@ Owns Garnet stdlib primitives and their capability metadata.
   drive the interpreter's derived `install()`; rows keep the textual
   `p("module", "name", arity, caps, Layer::X, Stability::Y, ...)` shape the
   layer-gate and promotion-gate scripts regex-parse. Doc strings are part
-  of the row contract (RB-7 `?doc` consumes them).
+  of the row contract (RB-7 `?doc` will be their first consumer).
 - Do not add file, network, process, or time authority without updating CapCaps expectations and tests.
 - Keep primitives small and predictable; richer behavior belongs in higher-level libraries or examples.
 - Crash surface (RB-2): the crate carries

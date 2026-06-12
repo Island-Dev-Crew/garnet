@@ -39,11 +39,12 @@ signed re-cut, and this post-re-cut truth-sync._
   `#[garnet_primitive]` adapter table (new `garnet-prim-macros` proc-macro
   crate: per-adapter attribute + per-module `entries()` collector; zero new
   external deps — proc-macro2/quote/syn were already locked). The 82
-  hand-written `define_native` registrations are deleted; binding mode
-  (22 bare / 56 qualified / 2 unbridged), arity, and the runtime
-  caps-backstop class now live in two new `PrimMeta` columns
-  (`Binding`, `Guard`) — the registry row is the single dispatch
-  declaration. The registry's old header claim ("the interpreter calls
+  hand-written `define_native` registrations are deleted; binding mode and
+  the runtime caps-backstop class now live in two new `PrimMeta` columns
+  (`Binding`: 22 bare / 56 qualified / 2 unbridged; `Guard`: 12 gate /
+  3 gate+entry / 65 declared), and the bridge stopped hand-duplicating
+  arity (it reads the registry's existing arity column) — the registry row
+  is the single dispatch declaration. The registry's old header claim ("the interpreter calls
   `all_prims()` at startup") was FALSE before this slice — the two lists
   were hand-synced; that drift class is retired, and the claim is now true.
 - **Differential proof:** before deletion, the derived table was proven
@@ -63,16 +64,37 @@ signed re-cut, and this post-re-cut truth-sync._
   truth-marker chain (README/FAQ/site) sits on the real registry. The
   stale `--version` banner ("22 bridged primitives") is now
   registry-derived.
+- **Recorded deviations (method + mechanism):** (a) the spec's
+  differential asks for "a shared fixture corpus through old and new
+  dispatch"; what shipped is STRONGER-OR-EQUAL but different in method —
+  table identity down to adapter **fn pointers** (the same machine code
+  runs for every primitive, subsuming corpus execution) plus the
+  guard-behavior sweep driving every bridged prim through the new
+  dispatch. (b) "all_prims() and install() become derived": install() is
+  derived; `all_prims()` itself remains the hand-written static table
+  (now carrying the dispatch columns) — it IS the declaration, the gates
+  parse it as text. (c) The spec's attribute shape carries metadata
+  (module=/caps()/arity=/layer=/stability=/doc=) in the attribute; the
+  implemented attribute carries only the key, metadata stays in the
+  registry row — one declaration per primitive either way; this placement
+  keeps the textual gates green and the checker/xtask dependency
+  direction intact. (d) "all (80 at audit) primitives registered via
+  attribute" reconciles as 78 adapter-registered + 2 deliberately
+  Unbridged registry rows (pre-existing) + 4 attribute-registered
+  BRIDGE_ONLY natives outside the registry. All four flagged for the
+  RB-band stop report.
 - **Honest partial (LOC criterion — spec deviation):** the spec expected
   "net LOC drops by roughly two thousand lines" via arm deletion. Measured
-  reality: net ≈ +600 LOC. Adapter BODIES could not be deleted — the
+  reality: net **+752** lines (`git diff --stat`: +1954/−1202 across 16
+  files, incl. the new macro crate, tests, and ledgers). Adapter BODIES could not be deleted — the
   caps-enforcement gate greps this file's literal `require_capability`
   text and the `Value`-conversion logic is real code, not boilerplate; what
   was deleted is the registration list and its drift class. Recorded as a
   deviation with the architecture rationale, flagged for the RB-band stop
   report.
-- **Doc strings:** already present on all 80 rows and now load-bearing in
-  the row contract (RB-7 `?doc` consumes PrimMeta.doc).
+- **Doc strings:** already present on all 80 rows; the row contract now
+  names them load-bearing-to-be (RB-7 `?doc` WILL be their first consumer
+  — nothing reads `PrimMeta.doc` yet).
 
 ### RB-2 — crash-surface sweep (W-REBUILD Foundation)
 

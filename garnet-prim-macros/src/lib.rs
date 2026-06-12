@@ -75,11 +75,22 @@ fn validate_adapter(key: &syn::LitStr, func: &syn::ItemFn) -> syn::Result<()> {
     if func.sig.inputs.len() != 1 {
         return Err(syn::Error::new(
             func.sig.span(),
-            "garnet_primitive: adapter must have the bridge signature \
-             fn(Vec<Value>) -> Result<Value, RuntimeError>",
+            "garnet_primitive: adapter must take exactly one argument (the \
+             bridge signature is fn(Vec<Value>) -> Result<Value, RuntimeError>; \
+             full type enforcement happens at the generated NativeFn cast)",
         ));
     }
     Ok(())
+}
+
+/// Whether an attribute is `garnet_primitive`, in bare OR qualified path
+/// form (`#[garnet_prim_macros::garnet_primitive]`) — a qualified form must
+/// never be silently skipped by the collector.
+fn is_garnet_primitive_attr(attr: &syn::Attribute) -> bool {
+    attr.path()
+        .segments
+        .last()
+        .is_some_and(|seg| seg.ident == "garnet_primitive")
 }
 
 fn expand_module(mut module: syn::ItemMod) -> syn::Result<proc_macro2::TokenStream> {
@@ -94,11 +105,28 @@ fn expand_module(mut module: syn::ItemMod) -> syn::Result<proc_macro2::TokenStre
     let mut entries: Vec<(String, syn::Ident)> = Vec::new();
     for item in items.iter() {
         if let syn::Item::Fn(func) = item {
+            let mut fn_keys = 0usize;
             for attr in &func.attrs {
-                if attr.path().is_ident("garnet_primitive") {
+                if is_garnet_primitive_attr(attr) {
                     let key: syn::LitStr = attr.parse_args()?;
                     entries.push((key.value(), func.sig.ident.clone()));
+                    fn_keys += 1;
                 }
+            }
+            // Fail closed on one-fn-many-keys: a copy-paste slip that
+            // moves a second attribute onto the wrong adapter would
+            // silently alias one body under two primitives (found by an
+            // adversarial dual-key probe during review) — every key gets
+            // exactly one adapter fn.
+            if fn_keys > 1 {
+                return Err(syn::Error::new(
+                    func.sig.span(),
+                    format!(
+                        "garnet_primitive_module: fn `{}` carries {fn_keys} \
+                         #[garnet_primitive] keys; one adapter binds exactly one key",
+                        func.sig.ident
+                    ),
+                ));
             }
         }
     }
@@ -183,6 +211,38 @@ mod tests {
         )
         .unwrap();
         assert!(expand_module(dup).is_err());
+    }
+
+    #[test]
+    fn one_fn_carrying_two_keys_is_rejected() {
+        // The adversarial dual-key probe: one adapter, two distinct keys —
+        // would silently alias dispatch; must fail closed.
+        let m: syn::ItemMod = syn::parse_str(
+            r#"mod d {
+                #[garnet_primitive("str::to_lower")]
+                #[garnet_primitive("str::to_upper")]
+                fn bridge_str_to_upper(_args: Vec<Value>) -> Result<Value, RuntimeError> { todo!() }
+            }"#,
+        )
+        .unwrap();
+        let err = expand_module(m).unwrap_err().to_string();
+        assert!(err.contains("one adapter binds exactly one key"), "{err}");
+    }
+
+    #[test]
+    fn qualified_attribute_path_is_collected_not_skipped() {
+        let m: syn::ItemMod = syn::parse_str(
+            r#"mod d {
+                #[garnet_prim_macros::garnet_primitive("time::now_ms")]
+                fn bridge_now(_args: Vec<Value>) -> Result<Value, RuntimeError> { todo!() }
+            }"#,
+        )
+        .unwrap();
+        let out = expand_module(m).unwrap().to_string();
+        assert!(
+            out.contains("time::now_ms"),
+            "qualified form must be collected: {out}"
+        );
     }
 
     #[test]

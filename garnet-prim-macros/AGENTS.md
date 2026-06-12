@@ -22,7 +22,14 @@ per-module collector that emits `entries()` for the interpreter's derived
   registry-join tests deterministically — never silently bind or skip.
 - Duplicate keys inside a module are a compile error.
 - No new external dependencies beyond the already-locked proc-macro stack
-  (proc-macro2/quote/syn).
+  (proc-macro2/quote/syn). Consequence, recorded honestly: compile-error
+  paths through the proc-macro entry points are reasoned + helper-tested,
+  not trybuild-exercised (adding trybuild = a new external dep — weigh it
+  in a future slice if macro complexity grows).
+- One adapter binds exactly ONE key: a fn carrying multiple
+  `#[garnet_primitive]` attributes is a compile error (fail closed — a
+  dual-key adapter would silently alias dispatch; found by adversarial
+  probe). Qualified attribute paths are collected, never skipped.
 
 ## Required Checks
 
