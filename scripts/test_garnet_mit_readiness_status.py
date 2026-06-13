@@ -1100,7 +1100,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertEqual(
             "active-partial", lanes["windows_linux_distribution"].status
         )
-        self.assertEqual(68.0, lanes["windows_linux_distribution"].completion_percent)
+        self.assertEqual(71.0, lanes["windows_linux_distribution"].completion_percent)
         self.assertLess(
             lanes["windows_linux_distribution"].completion_percent, 100.0
         )
@@ -1146,7 +1146,8 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertEqual("verified", lanes["windows_linux_domain_proof_matrix"].status)
         self.assertEqual(100.0, lanes["windows_linux_domain_proof_matrix"].completion_percent)
         self.assertIn("20 current examples", lanes["windows_linux_domain_proof_matrix"].evidence)
-        self.assertIn("Verified bundle", lanes["windows_linux_domain_proof_matrix"].evidence)
+        self.assertIn("Committed Windows bundle", lanes["windows_linux_domain_proof_matrix"].evidence)
+        self.assertIn("Committed WSL portability bundle", lanes["windows_linux_domain_proof_matrix"].evidence)
         self.assertEqual("verified", lanes["editor_lsp_adoption"].status)
         self.assertEqual(100.0, lanes["editor_lsp_adoption"].completion_percent)
         # S9: Determinism CI cross-machine lane
@@ -1509,7 +1510,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         distribution = lanes["windows_linux_distribution"]
         self.assertEqual("active-partial", distribution.status)
-        self.assertEqual(68.0, distribution.completion_percent)
+        self.assertEqual(71.0, distribution.completion_percent)
         self.assertIn("committed WSL Linux Xvfb virtual-display window-capture evidence", distribution.evidence)
         self.assertIn("committed WSLg system package install/launch evidence", distribution.evidence)
         self.assertIn("Linux VM/container", " ".join(distribution.blocked_by))
@@ -1528,7 +1529,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         distribution = lanes["windows_linux_distribution"]
         self.assertEqual("active-partial", distribution.status)
-        self.assertEqual(68.0, distribution.completion_percent)
+        self.assertEqual(71.0, distribution.completion_percent)
         self.assertIn("committed WSLg system package install/launch evidence", distribution.evidence)
         self.assertIn("Linux VM/container", " ".join(distribution.blocked_by))
 
@@ -1547,7 +1548,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         distribution = lanes["windows_linux_distribution"]
         self.assertEqual("active-partial", distribution.status)
-        self.assertEqual(68.0, distribution.completion_percent)
+        self.assertEqual(71.0, distribution.completion_percent)
         self.assertIn("committed consolidated Linux/Tauri gate replay evidence", distribution.evidence)
         self.assertIn("Linux VM/container", " ".join(distribution.blocked_by))
 
@@ -1619,7 +1620,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         distribution = lanes["windows_linux_distribution"]
         self.assertEqual("active-partial", distribution.status)
-        self.assertEqual(68.0, distribution.completion_percent)
+        self.assertEqual(71.0, distribution.completion_percent)
         self.assertIn("committed Release / Readiness shell proof evidence", distribution.evidence)
         self.assertIn("Linux VM/container", " ".join(distribution.blocked_by))
 
@@ -1724,7 +1725,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
         lane = {lane.id: lane for lane in status.lanes}["windows_linux_distribution"]
         self.assertEqual("active-partial", lane.status)
-        self.assertEqual(80.0, lane.completion_percent)
+        self.assertEqual(83.0, lane.completion_percent)
         self.assertIn("verified x64 clean-VM installer proof", lane.evidence)
         self.assertIn("committed WSL Linux `.deb` package-build/command-smoke evidence", lane.evidence)
         self.assertIn("committed WSL Linux `.deb` extract/command-smoke evidence", lane.evidence)
