@@ -32,7 +32,22 @@ _Post-cut work (S121+) lands here. S121–S130 delivered: the Truth Sync Gate, d
 modernization, the v0.8.1 version bump + release guard + SBOM/signing wiring, the
 signed re-cut, and this post-re-cut truth-sync._
 
-### Studio suite UX overhaul — Windows/Linux Tauri shell (parallel-safe with W-REBUILD)
+### MIT readiness test pins re-anchored to post-#364 re-sealed committed evidence
+
+- **Fixed (test truth, no reporter change):** six stale pins in
+  `scripts/test_garnet_mit_readiness_status.py` for the
+  `windows_linux_distribution` lane (68.0 → 71.0 ×5, 80.0 → 83.0 ×1) plus one
+  stale evidence-phrasing assertion (`Verified bundle` → the committed
+  `Committed Windows bundle` / `Committed WSL portability bundle` pair). The
+  pins were honest when S107 (PR #356) wrote them — the committed domain-shell
+  bundle was failing its manifest due to git CRLF→LF normalization after
+  sealing — but PR #364 re-sealed those manifests against committed bytes,
+  which legitimately restored `studio_domain_shell` verification and lifted
+  the lane on every clean checkout. Desktop/machine-local evidence is NOT
+  involved: all lifting evidence is committed under `proofs/**`. Honest gap
+  left open: CI does not run this test file (it is absent from `ci.yml`'s
+  script-test list), which is why the drift went unnoticed — adding it is a
+  CI-gate change and stays human-merge-only per the integrity rules.
 
 - **Fixed (version truth):** the Windows/Linux Studio shell no longer stamps
   `0.1.0` — `tauri.conf.json` drops its duplicate `version` field (Cargo.toml is
