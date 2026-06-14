@@ -5,6 +5,7 @@
 //! tree-walk interpreter for unsupported language forms.
 
 pub mod bytecode;
+pub mod caps_recheck;
 pub mod codec;
 pub mod compiler;
 pub mod vm;
@@ -12,6 +13,7 @@ pub mod vm;
 pub use bytecode::{
     BinaryOpcode, BytecodeFunction, BytecodeProgram, Constant, Instruction, UnaryOpcode,
 };
+pub use caps_recheck::{compile_source_rechecked, recheck_artifact, recheck_caps, CapsLaundering};
 pub use codec::{deserialize_program, serialize_program};
 pub use compiler::{compile_source, CompileSummary, VmArtifact};
 pub use vm::{

@@ -10,6 +10,11 @@ description = "Bytecode VM scaffold for Garnet v0.5 MVP execution."
 [dependencies]
 garnet-interp = { version = "0.3.0", path = "../garnet-interp-v0.3" }
 garnet-parser = { version = "0.3.0", path = "../garnet-parser-v0.3" }
+# RB-4b.3: the Directive-7 per-pass caps re-check reads the checker's
+# per-function transitive verdict (CapSet) and the stdlib registry's prim
+# caps. Acyclic: garnet-check/garnet-stdlib do not depend on garnet-vm.
+garnet-check = { version = "0.3.0", path = "../garnet-check-v0.3" }
+garnet-stdlib = { version = "0.4.0", path = "../garnet-stdlib" }
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
