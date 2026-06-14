@@ -48,6 +48,28 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   planted trap proves. Workspace 2013/0; enforcement-parity + all trust-kernel
   gates unchanged.
 
+### RB-6 — backend/IR decision memo (DRAFT) + RB-5 sequencing decision (W-REBUILD Foundation · docs-only)
+
+- **Recorded** Jon's **RB-5 sequencing decision (Option C, 2026-06-14):** RB-5 is
+  sequenced with RB-6, not rejected — the RB-5 baseline is RB-6's before-number;
+  `(depth,slot)` + interner land in whichever execution representation RB-6
+  chooses; no standalone AST name-representation change unless RB-6 keeps the AST
+  as the execution substrate; preserve the just-stabilized substrate. Stamped in
+  `W_REBUILD_SPEC.md` (RB-5 RESOLVED block) and the RB-5 STOP+REPORT §9.
+- **Added** `F_Project_Management/W_REBUILD/RB6_BACKEND_IR_DECISION_MEMO.md` — the
+  RB-6 decision memo (DRAFT; the decision is Jon's, escalated in §10). Carries the
+  tree-walk before-number; a **wasm32 feasibility spike** (`wasm32-wasip1`
+  **compiles today** (cargo `Finished` + 16 MB rlib), no source change; `wasm32-unknown-unknown`
+  has ONE blocker — `getrandom/js` — trivial; host-authority touches concentrate
+  in the `@caps` primitives = the WASI import boundary); IR options A–D + the
+  custom-VM-as-third-path parity cost; the synergy ledger; the Stroustrup-linker
+  doctrine; the **per-pass caps re-check HARD CONSTRAINT** (RB-4b.3 landed the
+  mechanism, so Option C inherits it); and an **integrate-lean recommendation**
+  (Option C — reuse `garnet-vm` bytecode as the resolved IR — now; Wasmtime/WASI
+  as the strategic back-half) with a measured ~2–3× reopen threshold. No backend
+  merged, no `.wasm` executed, no code/AST/`Value`/gate touched; feasibility-compile
+  + memo only.
+
 ### RB-5 — environment rebuild · STOP+REPORT (W-REBUILD Foundation · docs-only)
 
 - **Added** `F_Project_Management/W_REBUILD/RB5_ENV_REBUILD_STOP_REPORT_2026-06-14.md`
