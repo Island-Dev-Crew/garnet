@@ -306,6 +306,20 @@ design note costs nothing now.
 **Queued (not required for workstream completion):** error-recovery + incremental reparsing on
 the unified substrate — schedule into the playground band where it pays first.
 
+> **RB-4b decomposition + 4b.2 re-scope (Jon, 2026-06-12).** RB-4b ships as
+> 4b.1 substrate-fidelity ([#400](https://github.com/Island-Dev-Crew/garnet/pull/400),
+> merged: `cst_to_ast` span-exact + error-verdict-equal) · 4b.2 · 4b.3
+> Directive-7 caps re-check on VM lowering (planted authority-laundering trap)
+> · 4b.4 editions note + spec reconciliation. **4b.2 was re-scoped** from
+> "typed views + LSP single-parse" to **`SyntaxError` spans + the single-parse
+> finding**: dropping `parse_source` from the LSP would DEGRADE diagnostics
+> (`parse_cst`'s error recovery cascades — 9 errors for `@@@ def` vs one
+> fail-fast), which the accept-when forbids, and the typed views have no
+> adopter yet (extending them now = speculative). `SyntaxError` now carries a
+> token-range span (foundation); **true single-parse is deferred until parser
+> error-recovery is de-noised** (a follow-up, gated on diagnostic-quality
+> parity). The typed-view layer extension waits for a real adopter.
+
 ### RB-5 — Environment rebuild (verdict R4)
 String interner (e.g. `lasso`, or a small owned interner — integrate-grade either way) +
 a resolution pass in `garnet-check` assigning `(depth, slot)` to every binding; interpreter

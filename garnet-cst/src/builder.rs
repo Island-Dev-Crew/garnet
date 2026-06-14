@@ -51,16 +51,16 @@ pub(crate) fn parse_with_budget_and_edition(
     let mut budget_errors: Vec<SyntaxError> = Vec::new();
     if let Err(err) = budget.check_source_bytes(src.len()) {
         budget_errors.push(SyntaxError {
+            span: err.span(),
             message: format!("budget error: {err}"),
-            offset: 0,
         });
     }
     match lex_source_with_budget_and_edition(src, budget, edition) {
         Ok(tokens) => {
             if let Err(err) = check_token_nesting(&tokens, budget) {
                 budget_errors.push(SyntaxError {
+                    span: err.span(),
                     message: format!("budget error: {err}"),
-                    offset: 0,
                 });
             }
             let mut b = Builder::new(src, tokens);
@@ -82,8 +82,8 @@ pub(crate) fn parse_with_budget_and_edition(
             }
             gb.finish_node();
             budget_errors.push(SyntaxError {
+                span: err.span(),
                 message: format!("lex error: {err}"),
-                offset: 0,
             });
             Parse {
                 root: SyntaxNode::new_root(gb.finish()),
@@ -210,14 +210,19 @@ impl<'a> Builder<'a> {
     }
 
     fn error(&mut self, what: &str) {
-        let offset = self
-            .tokens
-            .get(self.pos)
-            .map(|t| t.span.start)
-            .unwrap_or_else(|| self.src.len());
+        // RB-4b.2: anchor at the next SIGNIFICANT token's full span (skipping
+        // leading whitespace/comment trivia, as `nth`/the AST parser do), so
+        // the diagnostic highlights the offending token — a range — rather
+        // than the whitespace before it or just a start offset. Past EOF, a
+        // zero-width span at end-of-source.
+        let span = self.tokens[self.pos.min(self.tokens.len())..]
+            .iter()
+            .find(|t| !is_trivia(&t.kind))
+            .map(|t| t.span)
+            .unwrap_or_else(|| Span::new(self.src.len(), 0));
         self.errors.push(SyntaxError {
             message: format!("expected {what}"),
-            offset,
+            span,
         });
     }
 

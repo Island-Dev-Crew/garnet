@@ -9,6 +9,34 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## Unreleased — Studio macOS parity + judged enhancement set (2026-06-12)
 
+### RB-4b.2 — `SyntaxError` spans + the LSP single-parse finding (W-REBUILD Foundation)
+
+- **Re-scoped from "typed views + LSP single-parse" (Jon, 2026-06-12)** after a
+  measured blocker surfaced: dropping `parse_source` from the LSP would
+  **degrade diagnostics** — `parse_cst`'s error recovery produces cascades
+  (3 errors for `def broken( {`, **9** for `@@@ def` — three duplicate
+  "expected annotation name" — vs `parse_source`'s single fail-fast error),
+  which the RB-4b accept-when ("diagnostics preserved or improved") forbids.
+  The typed-view layer also has zero adopters, so extending it now would be
+  speculative. So the LSP **keeps `parse_source`** for its authoritative
+  diagnostics; true single-parse is deferred until parser error-recovery is
+  improved (recorded as a follow-up).
+- **Changed:** `garnet_cst::SyntaxError` now carries a **`span`** (a range over
+  the offending token) instead of a bare `offset` (an `offset()` accessor is
+  retained). The builder anchors recovery errors at the next SIGNIFICANT
+  token's full span — skipping the whitespace the error used to point at,
+  matching `parse_source`'s anchoring — and the budget/lex error paths use the
+  parser error's own span. This is the foundation a future single-parse needs
+  to render range diagnostics.
+- **Added:** `ParseError::span()` — the canonical span accessor on the parser's
+  error type; the LSP's duplicate `parse_error_span` logic now calls it (DRY),
+  and the CST builder reuses it for budget/lex error spans.
+- **Improved:** `garnet parse --mode cst` reports errors as `line:col`
+  (computed from the span) instead of a raw `byte N`.
+- Proven by `garnet-cst/tests/syntax_error_spans.rs` (grammar / budget / lex
+  error spans). No tree-shape change; no consumer behavior change beyond the
+  CLI `line:col` improvement; workspace green.
+
 ### W-REBUILD stop-report rulings (docs) — Jon's nine J-queue decisions
 
 - The nine RB-band stop-report decisions are **resolved** and recorded inline
