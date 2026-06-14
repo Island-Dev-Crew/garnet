@@ -775,8 +775,10 @@ name = "garnet-vm"
 version = "0.5.0"
 dependencies = [
  "criterion",
+ "garnet-check",
  "garnet-interp",
  "garnet-parser",
+ "garnet-stdlib",
 ]
 
 [[package]]

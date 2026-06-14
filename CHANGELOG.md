@@ -9,6 +9,45 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## Unreleased — Studio macOS parity + judged enhancement set (2026-06-12)
 
+### RB-4b.3 — per-pass caps re-check on VM lowering (W-REBUILD Foundation · Directive 7)
+
+- **Added** `garnet_vm::caps_recheck` — the GHC-Core "re-check the invariant
+  after every lowering pass" pattern applied to the AST→bytecode lowering.
+  The VM compiler is capability-BLIND (it drops `@caps` entirely); this
+  re-establishes the invariant on the lowered artifact: **no native
+  function's bytecode may require more host authority** (the union of registry
+  caps of the primitives it `Call`s) **than the checker's per-function
+  transitive verdict** (`garnet_check::caps_graph::check_caps_coverage`,
+  RB-1's `CapSet`) **grants.** A lowering or future optimization pass that
+  launders authority is caught at the pass that introduced it.
+- **Deterministic trap (the proof it is real, not aspirational):**
+  `planted_laundering_call_is_trapped` injects a `Call` to the fs-requiring
+  `read_file` into a function whose source declared no fs, and the re-check
+  rejects it (`widened == ["fs"]`). The check is SATISFIED on every real
+  program (`caps_recheck_corpus` over the example corpus) — its value is the
+  guard against future passes, not a finding on today's faithful lowering.
+- **Shadow-correct resolution (adversarial-review fix, before merge):** call
+  resolution mirrors `caps_graph::resolve_callee` — a bare `Call` naming a
+  user function declared in the module resolves to that user fn FIRST, even
+  when it is named like a cap-bearing primitive (`read_file`, `get`, `now_ms`,
+  …). Without this, a user function shadowing a primitive name produced a
+  FALSE laundering positive that rejected valid code; the regression test
+  `user_function_shadowing_a_primitive_name_is_not_laundering` is red before
+  the fix and green after.
+- **Wiring:** `compile_source_rechecked` is the on-path entry (compile +
+  re-check; a laundering becomes `VmError::Compile`); plain `compile_source`
+  is unchanged (behavior-identical). `garnet-vm` gains acyclic `garnet-check`
+  + `garnet-stdlib` deps.
+- **Honest scope (no overclaim):** a STATIC cross-IR **caps-containment** check
+  (one-directional: lowered ⊆ declared) with a trap — **NOT** runtime
+  enforcement (the interp S90 `require_capability` / VM S92 entry frame own
+  that) and **NOT** a backend (RB-6 decides that). Fallback (non-native)
+  functions are skipped — they execute under interp S90 guards, so a re-check
+  there is vacuous (disclosed). Embedding the verdict into the seal predicate
+  is **RFC-gated (Jon)**, out of scope. No "enforced" claim beyond what the
+  planted trap proves. Workspace 2013/0; enforcement-parity + all trust-kernel
+  gates unchanged.
+
 ### RB-4b.2 — `SyntaxError` spans + the LSP single-parse finding (W-REBUILD Foundation)
 
 - **Re-scoped from "typed views + LSP single-parse" (Jon, 2026-06-12)** after a
