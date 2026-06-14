@@ -32,11 +32,15 @@ extends #221's CST.
   with `parse_source`** (RB-4b.1): `tests/substrate_fidelity.rs` proves the
   projected AST equals the parser's AST byte-for-byte INCLUDING spans across
   the corpus, and that `parse_cst` agrees with `parse_source` on the
-  error-verdict (which inputs are rejected/over-budget). `span_of` trims trivia
-  and skips item annotation/`pub` prefixes to match the parser's token-joined
-  spans; the CST tree shape is unchanged (round-trip + token-parity gate it).
-  The older `tests/cst_to_ast_parity.rs` compares span-normalized and is now
-  subsumed on spans. Existing AST consumers (interp, check, vm) keep using
+  error-verdict (which inputs are rejected/over-budget). `span_of` trims trivia,
+  skips item annotation/`pub` prefixes, and sees through transparent wrappers
+  the parser strips from spans (`ParenExpr` → inner expr, `dyn` → keyword-
+  excluded inner trait, parenthesized types → lowered-type end) to match the
+  parser's token-joined spans; the CST tree shape is unchanged (round-trip +
+  token-parity gate it). `cst_to_ast` is stack-safe to the default budget
+  depth (256); a generous-`max_depth` caller must bound depth itself (known
+  limitation). The older `tests/cst_to_ast_parity.rs` compares span-normalized
+  and is now subsumed on spans. Existing AST consumers (interp, check, vm) keep using
   `parse_source` and are untouched; CST-first migration is the rest of RB-4b.
 - `parse_cst_with_budget_and_edition` (RB-4b.1) applies the parser's fail-fast
   fences (source-bytes, token-nesting depth) error-TOLERANTLY — it records

@@ -133,6 +133,23 @@ signed re-cut, and this post-re-cut truth-sync._
   (the parser includes it there), and fixes the Module span to the raw full
   source range. **No CST tree-shape change** — round-trip, token-parity, and
   `cst_to_ast_parity` stay green.
+- **Span correctness beyond the corpus (adversarial review):** the review
+  found three transparent-wrapper constructs the parser strips from spans
+  but the CST keeps as tokens — parenthesized sub-expressions (`(1+2)*3`),
+  `dyn Trait` (inner-trait span excludes `dyn`), and parenthesized types
+  (`x: (Int)`). All three are now span-exact: `span_of` sees through
+  `ParenExpr` to its inner expr (iteratively — no added stack frames), the
+  `dyn` inner trait span trims the keyword, and param spans derive their end
+  from the lowered type rather than trailing grouping `)` tokens. Locked in
+  by `span_exact_on_transparent_wrapper_constructs` (14 cases) so they
+  cannot silently regress. Corpus span-exact test unaffected.
+- **Known boundary (deep nesting):** the span projection recurses with the
+  AST lowering, so `cst_to_ast` is stack-safe at the default budget's max
+  nesting depth (256 — every default-path caller lives under it; proven by
+  `cst_to_ast_is_safe_at_the_default_budget_depth`) but a caller that raises
+  `max_depth` far past the default and then lowers a pathologically deep
+  tree must bound depth itself. Recorded as a known limitation, not a
+  default-path guarantee; a follow-up may make the span walk fully iterative.
 - **Added:** `garnet_cst::parse_cst_with_budget_and_edition` and a public
   `garnet_parser::check_token_nesting`. The rowan path now applies the
   parser's fail-fast budget fences (source-bytes, token-nesting depth)
@@ -145,10 +162,13 @@ signed re-cut, and this post-re-cut truth-sync._
 - **Why:** this makes the green tree a faithful substrate for the AST —
   groundwork for RB-4b.2 (typed views + LSP single-parse) and an eventual
   `parse_source` reroute, where span drift would silently move doc-comment
-  extraction and miette caret positions. **Zero consumer behavior change**
-  in this slice (the LSP still uses `parse_source` for fail-fast errors;
-  `parse_cst`'s new error recording does not alter diagnostics). Workspace
-  2002/0.
+  extraction and miette caret positions. **No consumer behavior change on any
+  well-formed input (or any input `parse_source` already accepts).** The one
+  observable change is the intended convergence: `garnet parse --mode cst`
+  now reports the budget violation in its `errors=N` summary count for
+  over-budget input the parser already rejects (exit codes unchanged; the LSP
+  is unaffected — it takes fail-fast errors from `parse_source`, not from
+  `parse_cst`). Workspace 2004/0.
 
 ### RB-4a — rowan unification (W-REBUILD Foundation)
 

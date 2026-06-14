@@ -68,8 +68,21 @@ fn is_span_trivia(kind: SyntaxKind) -> bool {
 ///
 /// The CST keeps annotations + `pub` inside the item node (byte-identical
 /// round-trip depends on that); only the projected AST span trims them.
+///
+/// `ParenExpr` is **transparent** in the AST: the parser strips grouping
+/// parens and never counts them in a span (a parenthesized sub-expression
+/// contributes only its inner expr's span to an enclosing node). We see
+/// through any leading paren wrapping ITERATIVELY (a loop, not recursion,
+/// so deeply-parenthesized input adds no stack frames) before trimming.
 fn span_of(node: &SyntaxNode) -> Span {
-    span_trimmed(node, true)
+    let mut n = node.clone();
+    while n.kind() == ParenExpr {
+        match n.children().find(|c| is_expr_kind(c.kind())) {
+            Some(inner) => n = inner,
+            None => break,
+        }
+    }
+    span_trimmed(&n, true)
 }
 
 /// Like [`span_of`] but KEEPS a leading `pub`. Struct fields (`pub name:
@@ -116,6 +129,25 @@ fn span_trimmed(node: &SyntaxNode, skip_item_prefix: bool) -> Span {
             Span::new(usize::from(r.start()), usize::from(r.len()))
         }
     }
+}
+
+/// Span of `node` starting AFTER its first token of kind `skip` (e.g. the
+/// `dyn` keyword), ending where `full` ends. Used where the parser excludes
+/// a leading keyword from an inner span. Falls back to `full` if absent.
+fn span_after_token(node: &SyntaxNode, skip: SyntaxKind, full: Span) -> Span {
+    let mut seen = false;
+    for el in node.children_with_tokens() {
+        if !seen {
+            seen = el.kind() == skip;
+            continue;
+        }
+        if is_span_trivia(el.kind()) {
+            continue;
+        }
+        let start = usize::from(el.text_range().start());
+        return Span::new(start, full.end().saturating_sub(start));
+    }
+    full
 }
 
 fn child(node: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
@@ -564,11 +596,22 @@ fn lower_params(node: &SyntaxNode) -> Vec<Param> {
             } else {
                 None
             };
+            // Parser param span = first-token-start .. type-end (or
+            // name-end). The CST can carry trailing grouping `)` tokens (a
+            // parenthesized type `(Int)` the parser strips), so derive the
+            // end from the lowered type's span, not the raw last token.
+            let ty = first_type(&p);
+            let bounds = span_trimmed(&p, false);
+            let end = ty
+                .as_ref()
+                .map(|t| t.span().end())
+                .or_else(|| child(&p, Name).map(|n| span_of(&n).end()))
+                .unwrap_or_else(|| bounds.end());
             Param {
                 ownership,
                 name: child_name(&p),
-                ty: first_type(&p),
-                span: span_of(&p),
+                ty,
+                span: Span::new(bounds.start, end.saturating_sub(bounds.start)),
             }
         })
         .collect()
@@ -641,8 +684,11 @@ fn lower_type(node: &SyntaxNode) -> TypeExpr {
                     span,
                 }
             } else if has_token(node, DynKw) {
+                // Parser: `Dyn` span = `dyn`.join(trait.span); the OUTER span
+                // keeps `dyn` (matches `span`), but the inner trait's span
+                // EXCLUDES the keyword (grammar/types.rs:70-76).
                 TypeExpr::Dyn {
-                    trait_ty: Box::new(named_from_ref(node, span)),
+                    trait_ty: Box::new(named_from_ref(node, span_after_token(node, DynKw, span))),
                     span,
                 }
             } else {
