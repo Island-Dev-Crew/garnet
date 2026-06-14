@@ -108,4 +108,21 @@ impl ParseError {
             span,
         }
     }
+
+    /// The source span this error is anchored to. Every variant carries a
+    /// labeled span; this is the canonical accessor (RB-4b.2 — shared by the
+    /// LSP diagnostic renderer and the CST builder's error recording so the
+    /// span-extraction logic lives in exactly one place).
+    pub fn span(&self) -> Span {
+        match self {
+            ParseError::UnexpectedChar { span, .. }
+            | ParseError::UnterminatedString { span }
+            | ParseError::InvalidInt { span }
+            | ParseError::InvalidFloat { span }
+            | ParseError::UnexpectedToken { span, .. }
+            | ParseError::UnexpectedEof { span, .. }
+            | ParseError::BudgetExceeded { span, .. }
+            | ParseError::ReservedWord { span, .. } => *span,
+        }
+    }
 }

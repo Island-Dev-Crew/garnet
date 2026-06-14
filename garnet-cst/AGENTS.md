@@ -48,6 +48,14 @@ extends #221's CST.
   never silently accepts an input `parse_source` rejects. `parse_cst` is the
   default-budget+edition wrapper. Keep both fences in lockstep with
   `parse_source`; a new budget axis added to the parser must be mirrored here.
+- `SyntaxError` carries a `span` (a range over the offending token), not just a
+  start offset (RB-4b.2). Recovery errors anchor at the next SIGNIFICANT token
+  (skip trivia), matching `parse_source`'s anchoring; budget/lex errors use
+  `ParseError::span()`. This is the foundation for a future LSP single-parse —
+  DEFERRED: `parse_cst`'s error recovery cascades (many errors per malformed
+  input vs `parse_source`'s one), so the LSP keeps `parse_source` for
+  diagnostics until recovery is de-noised. Do not drop `parse_source` from the
+  LSP without first proving diagnostic quality is preserved-or-improved.
 - Performance: the `parse_cst_vs_ast` Criterion bench keeps the CST path within
   1.5× the AST path (currently ≈1×). If a change pushes it over, document the
   ratio in `CHANGELOG.md` rather than blocking the slice.

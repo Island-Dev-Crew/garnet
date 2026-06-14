@@ -244,16 +244,8 @@ fn parse_diagnostic(error: ParseError, line_index: &LineIndex) -> Diagnostic {
 }
 
 fn parse_error_span(error: &ParseError) -> Span {
-    match error {
-        ParseError::UnexpectedChar { span, .. }
-        | ParseError::UnterminatedString { span }
-        | ParseError::InvalidInt { span }
-        | ParseError::InvalidFloat { span }
-        | ParseError::UnexpectedToken { span, .. }
-        | ParseError::UnexpectedEof { span, .. }
-        | ParseError::BudgetExceeded { span, .. }
-        | ParseError::ReservedWord { span, .. } => *span,
-    }
+    // RB-4b.2: the canonical span accessor lives on `ParseError` now.
+    error.span()
 }
 
 fn check_diagnostics(report: CheckReport, line_index: &LineIndex) -> Vec<Diagnostic> {

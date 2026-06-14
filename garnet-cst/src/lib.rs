@@ -56,8 +56,19 @@ pub use tokens::{all_tokens, identifier_spans, token_infos, token_kind, token_sp
 pub struct SyntaxError {
     /// Human-readable description of the problem.
     pub message: String,
-    /// Byte offset into the source where the error was detected.
-    pub offset: usize,
+    /// Source span the error is anchored to (RB-4b.2). Covers the offending
+    /// token (a range), not just its start byte — so a consumer can render a
+    /// range diagnostic, matching `parse_source`'s labeled-span quality.
+    pub span: garnet_parser::token::Span,
+}
+
+impl SyntaxError {
+    /// Byte offset where the error was detected (the span's start). Retained
+    /// for callers that only need a point; prefer [`SyntaxError::span`].
+    #[must_use]
+    pub fn offset(&self) -> usize {
+        self.span.start
+    }
 }
 
 /// The result of a CST parse: a typed root plus any recorded errors.

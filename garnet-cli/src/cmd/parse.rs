@@ -170,7 +170,8 @@ fn run_cst(path: PathBuf) -> ExitCode {
     if !parse.ok() {
         eprintln!("cst parse recorded {} error(s)", parse.errors.len());
         for error in &parse.errors {
-            eprintln!("  byte {}: {}", error.offset, error.message);
+            let (line, col) = line_col(&src, error.span.start);
+            eprintln!("  {line}:{col}: {}", error.message);
         }
         record(
             "parse",
@@ -186,4 +187,15 @@ fn run_cst(path: PathBuf) -> ExitCode {
 
     record("parse", &file_label, &src, "ok", None, started, 0);
     ExitCode::SUCCESS
+}
+
+/// 1-based (line, column) for a byte offset, for human-readable diagnostics
+/// (RB-4b.2 — `parse --mode cst` reports `line:col` instead of a raw byte).
+/// Column counts Unicode scalar values on the line, not bytes.
+fn line_col(src: &str, offset: usize) -> (usize, usize) {
+    let offset = offset.min(src.len());
+    let line = src[..offset].bytes().filter(|&b| b == b'\n').count() + 1;
+    let line_start = src[..offset].rfind('\n').map_or(0, |i| i + 1);
+    let col = src[line_start..offset].chars().count() + 1;
+    (line, col)
 }
