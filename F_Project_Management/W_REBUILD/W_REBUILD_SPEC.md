@@ -296,6 +296,26 @@ that introduced it, not as a downstream surprise; "the seal attests what the cor
 mechanically true through the whole pipeline, and no future backend can silently widen
 authority during codegen. (GHC re-typechecks Core after every optimizer pass; SPJ: "I know of
 no other production compiler that has this property." Garnet's version checks the caps lattice.)
+
+> **RESOLVED-PARTIAL by RB-4b.3 ([#403](https://github.com/Island-Dev-Crew/garnet/pull/403)
+> → `012021a2`, 2026-06-14).** The criterion above states the *full* Directive-7
+> vision — a typed core IR that **carries capabilities in its type system**,
+> re-checked **after every lowering pass**. RB-4b.3 realizes the **first,
+> concrete instance** of that vision and nothing more, stated honestly:
+> `garnet_vm::caps_recheck` is a **static cross-IR caps-containment check**
+> (lowered ⊆ declared) on the **one** lowering pass that exists today
+> (AST→bytecode), with a **deterministic planted-laundering trap**. It is NOT a
+> typed-caps core IR (caps are re-derived from the lowered bytecode's `Call`
+> instructions × the stdlib registry, not encoded in a type), NOT "every pass"
+> (there is one pass), NOT runtime enforcement (interp S90 / VM S92 own that),
+> and NOT a backend (RB-6). Fallback (non-native) functions are skipped (they
+> run under S90 guards); embedding the verdict into the seal predicate is
+> RFC-gated. So "the seal attests what the core proves" is mechanically true
+> **through this lowering**, and the trap guards against a **future** pass
+> widening authority — but the typed-caps core IR and the multi-pass property
+> remain the aspirational target a future typed-core / backend slice would
+> complete. Do not read the criterion above as fully delivered.
+
 **Design note [2026-06-11 infusion] — editions as the surface-collapse vehicle (Directive 9):**
 the graduated-syntax collapse ships as a **new edition** with per-module opt-in and
 mix-and-match interop — old-surface modules compile forever, no flag-day, never a Python-3
@@ -303,22 +323,47 @@ decade. Note the convergence: the repo's edition mechanism (S32) + GOVERNANCE.md
 editions RFC-gated with capability semantics edition-invariant; this note binds the collapse to
 that existing vehicle rather than inventing a new one. Mechanism work lands with RB-4; the
 design note costs nothing now.
+
+> **RESOLVED by RB-4b.4 (2026-06-14).** The editions note is now **parked in
+> `garnet-parser-v0.3/AGENTS.md` ("Editions (spec note)")**, following the
+> `garnet-cst/AGENTS.md` precedent so `GARNET_v1_0_Mini_Spec.md` stays under the
+> maintainer's hand. It records the landed mechanism (`Edition::{V1_0, Next}`,
+> `async` reserved under `v2.0`, the one-canonical-IR invariant, `Garnet.toml`
+> pinning) as FACT and the Directive-9 surface-collapse as design intent bound
+> to the existing RFC-gated vehicle — explicitly *not yet built*. A parser
+> Stable-Contract bullet now also locks "editions gate lexing only; caps
+> edition-invariant; new edition = RFC-gated."
 **Queued (not required for workstream completion):** error-recovery + incremental reparsing on
 the unified substrate — schedule into the playground band where it pays first.
 
-> **RB-4b decomposition + 4b.2 re-scope (Jon, 2026-06-12).** RB-4b ships as
-> 4b.1 substrate-fidelity ([#400](https://github.com/Island-Dev-Crew/garnet/pull/400),
-> merged: `cst_to_ast` span-exact + error-verdict-equal) · 4b.2 · 4b.3
-> Directive-7 caps re-check on VM lowering (planted authority-laundering trap)
-> · 4b.4 editions note + spec reconciliation. **4b.2 was re-scoped** from
-> "typed views + LSP single-parse" to **`SyntaxError` spans + the single-parse
-> finding**: dropping `parse_source` from the LSP would DEGRADE diagnostics
-> (`parse_cst`'s error recovery cascades — 8 errors for `@@@ def` vs one
-> fail-fast), which the accept-when forbids, and the typed views have no
-> adopter yet (extending them now = speculative). `SyntaxError` now carries a
-> token-range span (foundation); **true single-parse is deferred until parser
-> error-recovery is de-noised** (a follow-up, gated on diagnostic-quality
-> parity). The typed-view layer extension waits for a real adopter.
+> **RB-4b decomposition + 4b.2 re-scope (Jon, 2026-06-12); landing status as of 2026-06-14.**
+> RB-4b shipped as four sub-slices, all merged:
+> · **4b.1 substrate-fidelity** ([#400](https://github.com/Island-Dev-Crew/garnet/pull/400)
+> → `2cb832d`): `cst_to_ast` span-exact + error-verdict-equal.
+> · **4b.2 `SyntaxError` spans + single-parse finding**
+> ([#402](https://github.com/Island-Dev-Crew/garnet/pull/402) → `cf65e51`).
+> · **4b.3 Directive-7 caps re-check on VM lowering** + planted
+> authority-laundering trap ([#403](https://github.com/Island-Dev-Crew/garnet/pull/403)
+> → `012021a2`); see the RESOLVED-PARTIAL note above for its honest scope.
+> · **4b.4 editions note + spec reconciliation** (this block + the parser
+> AGENTS.md editions note).
+> **4b.2 was re-scoped** from "typed views + LSP single-parse" to `SyntaxError`
+> spans + the single-parse finding: dropping `parse_source` from the LSP would
+> DEGRADE diagnostics (`parse_cst`'s error recovery cascades — 8 errors for
+> `@@@ def` vs one fail-fast), which the accept-when forbids, and the typed
+> views have no adopter yet (extending them now = speculative). `SyntaxError`
+> now carries a token-range span (foundation); **true single-parse is deferred
+> until parser error-recovery is de-noised** (a follow-up, gated on
+> diagnostic-quality parity).
+>
+> **The "4b" accept-when ("AST node types become typed views over the rowan
+> green tree") is DEFERRED, not delivered.** RB-4b.1 made `cst_to_ast` a
+> span-exact *projection* (the CST and AST remain parallel structures); the
+> rust-analyzer-style typed-view collapse waits for a real adopter, per the
+> 4b.2 finding. Do not read RB-4b as having unified AST and CST into one typed
+> structure — it unified the *substrate* (one rowan CST, RB-4a) and proved the
+> projection faithful, while the AST stays a parallel structure downstream
+> consumers still use via `parse_source`.
 
 ### RB-5 — Environment rebuild (verdict R4)
 String interner (e.g. `lasso`, or a small owned interner — integrate-grade either way) +

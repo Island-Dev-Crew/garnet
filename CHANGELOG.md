@@ -48,6 +48,31 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   planted trap proves. Workspace 2013/0; enforcement-parity + all trust-kernel
   gates unchanged.
 
+### RB-4b.4 — editions note + spec reconciliation (W-REBUILD Foundation · docs-only)
+
+- **Added** the **editions spec note** to `garnet-parser-v0.3/AGENTS.md`
+  (parked there, not in the maintainer-owned `GARNET_v1_0_Mini_Spec.md`,
+  following the `garnet-cst/AGENTS.md` CST-note precedent). It records the
+  landed S32 mechanism as fact — `Edition::{V1_0 default, Next=v2.0}`, `async`
+  reserved only under `v2.0`, the **one-canonical-IR invariant** (editions gate
+  lexing only; AST/checker/interp/caps manifest edition-invariant by
+  construction), and `Garnet.toml` `[project] edition = "…"` pinning — and the
+  Directive-9 surface-collapse as design intent **bound to the existing
+  RFC-gated edition vehicle, explicitly not yet built**. A new parser
+  Stable-Contract bullet locks "editions gate lexing only; caps
+  edition-invariant; new edition = RFC-gated."
+- **Reconciled** `W_REBUILD_SPEC.md` §3 RB-4a/RB-4b against the landed reality:
+  (1) the Directive-7 criterion (typed core IR carrying caps, re-checked *after
+  every lowering pass*) marked **RESOLVED-PARTIAL** — RB-4b.3 delivered a static
+  cross-IR containment check on the *one* AST→bytecode pass with a trap, NOT a
+  typed-caps core IR and NOT a multi-pass property (those stay aspirational);
+  (2) the Directive-9 editions design note marked **RESOLVED** (note now lives
+  in the parser AGENTS.md); (3) the RB-4b decomposition block updated with all
+  four sub-slices' merge commits; (4) the "4b" typed-views-over-green-tree
+  accept-when marked **DEFERRED** (RB-4b.1 delivered a span-exact projection;
+  AST and CST remain parallel, awaiting an adopter). No code or spec-semantics
+  change; docs-only.
+
 ### RB-4b.2 — `SyntaxError` spans + the LSP single-parse finding (W-REBUILD Foundation)
 
 - **Re-scoped from "typed views + LSP single-parse" (Jon, 2026-06-12)** after a
