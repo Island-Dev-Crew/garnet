@@ -48,6 +48,23 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   planted trap proves. Workspace 2013/0; enforcement-parity + all trust-kernel
   gates unchanged.
 
+### RB-5 — environment rebuild · STOP+REPORT (W-REBUILD Foundation · docs-only)
+
+- **Added** `F_Project_Management/W_REBUILD/RB5_ENV_REBUILD_STOP_REPORT_2026-06-14.md`
+  — the scheduled STOP+REPORT after RB-5, with measured numbers, before the RB-6
+  memo. RB-5 (string interner + `garnet-check` `(depth,slot)` resolution pass +
+  indexed-frame `Env`) is **STOPPED at the design gate**: the measured baseline is
+  captured (`eval_fib_15` 394.97 µs · `eval_array_1000_map_reduce` 262.56 µs ·
+  `eval_expr_arithmetic` 1.475 µs on Apple M5 Pro / rustc 1.95.0), and the
+  `(depth,slot)` indexed-frame rewrite is blocked on a substrate/IR decision that
+  is Jon's: the AST has no node identity to attach resolution results to, the REPL
+  accretes bindings incrementally (vs static whole-program resolution), and the
+  `Env` is five chains with capture-by-reference closures. All three reduce to a
+  name-representation change in the shared AST or a **resolved IR** — the very
+  question RB-6 settles. Recommendation: **sequence `(depth,slot)` + interner with
+  the RB-6 IR decision** (Option C); decision A/B/C/D escalated to Jon. No code,
+  AST, gate, or `Value` touched.
+
 ### RB-4b.4 — editions note + spec reconciliation (W-REBUILD Foundation · docs-only)
 
 - **Added** the **editions spec note** to `garnet-parser-v0.3/AGENTS.md`
