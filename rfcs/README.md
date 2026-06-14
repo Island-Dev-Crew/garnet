@@ -37,3 +37,7 @@ implementation, and acceptance is not a readiness or production-claim.
 - `0001-capability-manifest-standard.md` — *Draft.* Standardize Garnet's
   capability-manifest format as a cross-language standard and offer it to a
   neutral body (OWASP / Linux Foundation). **Intent + draft, not accepted.**
+- `0002-integer-overflow-policy.md` — *Accepted.* Integer arithmetic is
+  checked-by-default (runtime diagnostic, not silent wrap or abort), with
+  explicit wrapping operations where wanted. Design ruling (W-REBUILD J5);
+  implementation is a separate slice.

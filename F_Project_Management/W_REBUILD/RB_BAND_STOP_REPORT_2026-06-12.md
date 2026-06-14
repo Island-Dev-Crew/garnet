@@ -15,6 +15,24 @@
 
 **Verification state at the band stop:** workspace 1999/0; clippy/fmt/doc/deny clean; contracts 22/22; all 11 trust/readiness gates PASS; `truth --check` ok (4 stamped surfaces); mit-readiness 92.8 unchanged. Every slice carried a sealed, manifest-verified Desktop dogfood bundle + a multi-agent adversarial review (22/27/24 agents; every finding verified or refuted; review probes caught one real macro defect pre-merge — the dual-key alias — now failed closed).
 
+## Decisions RESOLVED by Jon (2026-06-12)
+
+All nine landed in `W_REBUILD_SPEC.md` (inline `RESOLVED` blocks on the RB-1/RB-2/RB-3/RB-4b accept-when) + `rfcs/0002-integer-overflow-policy.md`:
+
+1. **Clone criterion** → accept RB-5 as the vehicle; original "201→<40" amended honestly (measured 188 baseline, cap-set 7→0, total 185). RB-5 re-measures.
+2. **Directive-15 bounds deltas** → amend the accept-when now (bounds not part of the declared-caps surface); a bounds-bearing attestation is a later human-approved manifest-standard/gate extension.
+3. **FAIL-CLOSED comment form** → blessed as the second sanctioned allow-comment form (cite the documented contract).
+4. **Runtime spans** → scheduled as a follow-up before public playground work; does not block RB-4b.
+5. **add/sub/mul overflow** → checked-error by default + explicit wrapping ops; recorded in `rfcs/0002-integer-overflow-policy.md`; own slice.
+6. **RB-3 LOC** → accept the architecture rationale; the win was killing dispatch drift, not LOC (measured +752).
+7. **RB-3 mechanism** → ratified as the gate-compatible R1 realization: 78 adapter-registered + 2 deliberately Unbridged + 4 BRIDGE_ONLY.
+8. **eval/repl/test panic firewall** → scheduled as a small follow-up slice.
+9. **trybuild** → yes, add before Core Ring work begins.
+
+Sequencing (Jon): RB-4b proceeds (4b.1 merged); after RB-4b → RB-5 → STOP+REPORT with measured numbers before the RB-6 memo (RB-6 memo-only, Jon-owned).
+
+---
+
 ## Decisions needed from Jon (J-queue candidates)
 
 1. **RB-1 clone criterion** — spec said "201 → <40". Measured: baseline was 188 (201 not reproducible); capability-SET clones (the R3 subject) went 7 → 0; total now 185. The remaining mass is match_coverage/borrow branch-state snapshots + String map keys — **RB-5's interner is the designed vehicle**. → Accept RB-5 as the vehicle, or amend the criterion?

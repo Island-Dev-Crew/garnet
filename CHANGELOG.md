@@ -9,6 +9,26 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## Unreleased — Studio macOS parity + judged enhancement set (2026-06-12)
 
+### W-REBUILD stop-report rulings (docs) — Jon's nine J-queue decisions
+
+- The nine RB-band stop-report decisions are **resolved** and recorded inline
+  in `W_REBUILD_SPEC.md` (RESOLVED blocks on the RB-1/RB-2/RB-3/RB-4b
+  accept-when) and in `RB_BAND_STOP_REPORT_2026-06-12.md`. Highlights: RB-1
+  clone criterion amended honestly with **RB-5 as the accepted vehicle**;
+  Directive-15 bounds-delta dropped from the day-one `--machine` payload
+  (later RFC-gated manifest extension); the **`// FAIL-CLOSED:` allow-comment
+  form blessed** as the second sanctioned pattern; RB-3 **LOC criterion
+  retired** (the win was killing dispatch drift, +752 measured) and its
+  **mechanism ratified** (78 adapter + 2 Unbridged + 4 BRIDGE_ONLY); runtime
+  miette spans, the eval/repl/test panic firewall, and `trybuild` UI tests
+  **scheduled as follow-ups**.
+- **Added:** `rfcs/0002-integer-overflow-policy.md` — **integer arithmetic is
+  checked-by-default** (runtime diagnostic, never a profile-dependent silent
+  wrap or abort), with explicit wrapping operations where wanted. Design
+  ruling (J5); extends the already-shipped `i64::MIN / -1` and `% 0`
+  checked-diagnostic precedent to `+`/`-`/`*`; implementation is its own slice.
+- Docs-only: no code, CI, gate, or release change.
+
 - Studio macOS now meets the PR #391 shell standard rows 1–9 (ported the
   standard, not the Tauri code): single version stamp gated by the new
   `scripts/test_garnet_macos_studio_shell.py`; splash with 700ms/25s bounds;
