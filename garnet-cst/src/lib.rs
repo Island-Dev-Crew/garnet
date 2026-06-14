@@ -123,3 +123,22 @@ pub fn cst_to_source(node: &SyntaxNode) -> String {
 pub fn parse_cst(input: &str) -> Parse<SyntaxNode> {
     builder::parse(input)
 }
+
+/// Parse with an explicit `garnet_parser::ParseBudget` and
+/// `garnet_parser::Edition` (RB-4b.1).
+///
+/// `parse_cst` is this with `ParseBudget::default()` + `Edition::default()`.
+/// The budget fences the recursive-descent parser enforces fail-fast
+/// (source-byte, token-count, literal-byte, and bracket-nesting depth) are
+/// applied here too and recorded in `errors`, so the rowan path agrees with
+/// `parse_source` about which inputs are over-budget while still always
+/// producing a round-trippable tree. The edition gates the lexical surface
+/// exactly as `parse_source_with_edition` does.
+#[must_use]
+pub fn parse_cst_with_budget_and_edition(
+    input: &str,
+    budget: garnet_parser::ParseBudget,
+    edition: garnet_parser::Edition,
+) -> Parse<SyntaxNode> {
+    builder::parse_with_budget_and_edition(input, budget, edition)
+}

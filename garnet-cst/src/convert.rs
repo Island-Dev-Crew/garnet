@@ -4,9 +4,11 @@
 //! Lossy on trivia, structural on the rest: walks the CST and rebuilds the same
 //! `Module` the AST parser produces. Leaf literal *values* are recovered by
 //! re-lexing the leaf's source text, so `Int`/`Float`/`Str`/`Symbol` payloads
-//! match the lexer exactly. Spans are derived from each node's text range;
-//! validation (`tests/cst_to_ast_parity.rs`) compares span-normalized, so span
-//! values are not load-bearing.
+//! match the lexer exactly. Spans are SPAN-EXACT with `parse_source` (RB-4b.1):
+//! [`span_of`] trims trivia and skips item annotation/`pub` prefixes to match
+//! the parser's token-joined spans byte-for-byte, proven by
+//! `tests/substrate_fidelity.rs` (the older `tests/cst_to_ast_parity.rs`
+//! compares span-normalized and is now subsumed on spans).
 //!
 //! This is the AST projection of the CST; existing AST consumers (interp,
 //! check, vm) keep using `garnet_parser::parse_source` and are untouched. The
@@ -33,18 +35,87 @@ pub fn cst_to_ast(root: &SyntaxNode) -> Module {
         .children()
         .any(|n| n.kind() == Attr && node_has_ident(&n, "safe"));
     let items = root.children().filter_map(lower_item).collect();
+    // The parser fixes the Module span to the whole source (`Span::new(0,
+    // src.len())`, lib.rs), so the Root uses its RAW full range — including
+    // leading comments and trailing newlines — not the trivia-trimmed span.
+    let r = root.text_range();
     Module {
         safe,
         items,
-        span: span_of(root),
+        span: Span::new(usize::from(r.start()), usize::from(r.len())),
     }
 }
 
 // ── span / token helpers ────────────────────────────────────────────────
 
+/// RB-4b.1 — tokens the parser does not count toward a node's span. The
+/// recursive-descent parser filters whitespace/comments and skips newline
+/// separators before a construct, so a node's span runs from its first
+/// real token to its last real token, never over surrounding trivia.
+fn is_span_trivia(kind: SyntaxKind) -> bool {
+    kind.is_trivia() || matches!(kind, SyntaxKind::Newline)
+}
+
+/// Span-exact projection of a CST node onto the parser's token-joined span
+/// (RB-4b.1). Two corrections over the raw `text_range()`:
+///
+/// 1. leading/trailing trivia + newline tokens are trimmed — the parser's
+///    spans are joins of real token spans, never of surrounding whitespace;
+/// 2. a leading `AttrList` node and `PubKw` token are skipped for the START,
+///    because item spans in the parser begin at the item keyword
+///    (`def`/`fn`/`struct`/…): annotations are parsed, and `pub` eaten,
+///    *before* the span start is taken (grammar/functions.rs:134,146).
+///
+/// The CST keeps annotations + `pub` inside the item node (byte-identical
+/// round-trip depends on that); only the projected AST span trims them.
 fn span_of(node: &SyntaxNode) -> Span {
-    let r = node.text_range();
-    Span::new(usize::from(r.start()), usize::from(r.len()))
+    span_trimmed(node, true)
+}
+
+/// Like [`span_of`] but KEEPS a leading `pub`. Struct fields (`pub name:
+/// type`) carry `pub` inside their span (grammar/user_types.rs), where
+/// top-level items begin at their keyword — so fields cannot use the
+/// item-prefix skip.
+fn span_with_pub(node: &SyntaxNode) -> Span {
+    span_trimmed(node, false)
+}
+
+fn span_trimmed(node: &SyntaxNode, skip_item_prefix: bool) -> Span {
+    let mut start: Option<usize> = None;
+    let mut end: Option<usize> = None;
+    for child in node.children_with_tokens() {
+        if is_span_trivia(child.kind()) {
+            continue;
+        }
+        let is_prefix =
+            skip_item_prefix && matches!(child.kind(), SyntaxKind::AttrList | SyntaxKind::PubKw);
+        let (child_start, child_end) = match child.as_node() {
+            // Recurse so a child node's own leading/trailing trivia is also
+            // trimmed (the builder attaches leading whitespace inside expr
+            // nodes, so a raw child range would over-count on the left).
+            Some(n) => {
+                let sp = span_of(n);
+                (sp.start, sp.end())
+            }
+            None => {
+                let r = child.text_range();
+                (usize::from(r.start()), usize::from(r.end()))
+            }
+        };
+        if start.is_none() && !is_prefix {
+            start = Some(child_start);
+        }
+        end = Some(child_end);
+    }
+    match (start, end) {
+        (Some(s), Some(e)) if e >= s => Span::new(s, e - s),
+        _ => {
+            // All-trivia or empty node: fall back to the raw range so the
+            // span is at least well-formed.
+            let r = node.text_range();
+            Span::new(usize::from(r.start()), usize::from(r.len()))
+        }
+    }
 }
 
 fn child(node: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
@@ -326,7 +397,7 @@ fn lower_struct(node: &SyntaxNode) -> StructDef {
                 .children()
                 .find(|n| is_expr_kind(n.kind()))
                 .map(|n| lower_expr(&n)),
-            span: span_of(&f),
+            span: span_with_pub(&f),
         })
         .collect();
     StructDef {
@@ -625,8 +696,54 @@ fn lower_block(node: &SyntaxNode) -> Block {
     Block {
         stmts,
         tail_expr,
-        span: span_of(node),
+        span: block_span(node),
     }
+}
+
+/// Span of a brace `Block` node, matching the parser's brace-to-brace span
+/// (`start.join(prev_span)` over `{`..`}`, grammar/stmts.rs:11-42). The CST
+/// builder emits the `{`/`}` as SIBLINGS of the `Block` node, not children
+/// (builder.rs parse_block: `expect('{'); start(Block); …; wrap; expect('}')`),
+/// so the trimmed inner span excludes the braces — extend it out to the
+/// bracketing delimiter tokens. (do/end bodies use a `BlockArg` node that
+/// owns its `do`/`end` tokens, so those need no extension.)
+fn block_span(node: &SyntaxNode) -> Span {
+    let inner = span_of(node);
+    let start = preceding_delimiter(node, SyntaxKind::LBrace).unwrap_or(inner.start);
+    let end = following_delimiter(node, SyntaxKind::RBrace).unwrap_or(inner.end());
+    if end >= start {
+        Span::new(start, end - start)
+    } else {
+        inner
+    }
+}
+
+/// Byte offset where the nearest preceding non-trivia sibling token starts,
+/// but only when it has `kind` (the block's opening delimiter).
+fn preceding_delimiter(node: &SyntaxNode, kind: SyntaxKind) -> Option<usize> {
+    let mut el = node.prev_sibling_or_token();
+    while let Some(e) = el {
+        if is_span_trivia(e.kind()) {
+            el = e.prev_sibling_or_token();
+            continue;
+        }
+        return (e.kind() == kind).then(|| usize::from(e.text_range().start()));
+    }
+    None
+}
+
+/// Byte offset where the nearest following non-trivia sibling token ends,
+/// but only when it has `kind` (the block's closing delimiter).
+fn following_delimiter(node: &SyntaxNode, kind: SyntaxKind) -> Option<usize> {
+    let mut el = node.next_sibling_or_token();
+    while let Some(e) = el {
+        if is_span_trivia(e.kind()) {
+            el = e.next_sibling_or_token();
+            continue;
+        }
+        return (e.kind() == kind).then(|| usize::from(e.text_range().end()));
+    }
+    None
 }
 
 fn is_stmt_node(k: SyntaxKind) -> bool {

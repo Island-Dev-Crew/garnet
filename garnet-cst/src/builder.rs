@@ -23,19 +23,53 @@
 
 use crate::syntax_kind::{GarnetLanguage, SyntaxKind, SyntaxNode};
 use crate::{Parse, SyntaxError};
-use garnet_parser::lex_source;
 use garnet_parser::token::{Span, Token, TokenKind};
+use garnet_parser::{
+    check_token_nesting, lex_source_with_budget_and_edition, Edition, ParseBudget,
+};
 use rowan::{Checkpoint, GreenNodeBuilder, Language};
 
 use SyntaxKind::*;
 
-/// Parse a source string into a CST. Entry point behind `crate::parse_cst`.
+/// Parse a source string into a CST under the default budget + edition.
+/// Entry point behind `crate::parse_cst`.
 pub(crate) fn parse(src: &str) -> Parse<SyntaxNode> {
-    match lex_source(src) {
+    parse_with_budget_and_edition(src, ParseBudget::default(), Edition::default())
+}
+
+/// Parse with an explicit budget + edition (RB-4b.1). The rowan path is
+/// error-TOLERANT, so the budget fences the recursive-descent parser applies
+/// fail-fast (`check_source_bytes`, `check_token_nesting`) are recorded as
+/// `SyntaxError`s here while the tree is still built — keeping the
+/// error-verdict in lockstep with `parse_source` (which rejects these
+/// inputs) without ever failing to produce a round-trippable tree.
+pub(crate) fn parse_with_budget_and_edition(
+    src: &str,
+    budget: ParseBudget,
+    edition: Edition,
+) -> Parse<SyntaxNode> {
+    let mut budget_errors: Vec<SyntaxError> = Vec::new();
+    if let Err(err) = budget.check_source_bytes(src.len()) {
+        budget_errors.push(SyntaxError {
+            message: format!("budget error: {err}"),
+            offset: 0,
+        });
+    }
+    match lex_source_with_budget_and_edition(src, budget, edition) {
         Ok(tokens) => {
+            if let Err(err) = check_token_nesting(&tokens, budget) {
+                budget_errors.push(SyntaxError {
+                    message: format!("budget error: {err}"),
+                    offset: 0,
+                });
+            }
             let mut b = Builder::new(src, tokens);
             b.parse_root();
-            b.finish()
+            let mut parse = b.finish();
+            // Budget violations come "before" any grammar-recovery error.
+            budget_errors.append(&mut parse.errors);
+            parse.errors = budget_errors;
+            parse
         }
         Err(err) => {
             // Lexing failed: we cannot tile the source from tokens, so emit the
@@ -47,12 +81,13 @@ pub(crate) fn parse(src: &str) -> Parse<SyntaxNode> {
                 gb.token(raw(Error), src);
             }
             gb.finish_node();
+            budget_errors.push(SyntaxError {
+                message: format!("lex error: {err}"),
+                offset: 0,
+            });
             Parse {
                 root: SyntaxNode::new_root(gb.finish()),
-                errors: vec![SyntaxError {
-                    message: format!("lex error: {err}"),
-                    offset: 0,
-                }],
+                errors: budget_errors,
             }
         }
     }

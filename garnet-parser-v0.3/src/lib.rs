@@ -70,7 +70,10 @@ pub fn parse_source_with_budget_and_edition(
     Ok(Module { safe, items, span })
 }
 
-fn check_token_nesting(tokens: &[Token], budget: ParseBudget) -> Result<(), ParseError> {
+/// Verify bracket/brace/paren nesting depth against `budget` (RB-4b.1: made
+/// `pub` so the rowan CST path can apply the SAME depth fence as the
+/// recursive-descent parser). Pure check over the token stream; no mutation.
+pub fn check_token_nesting(tokens: &[Token], budget: ParseBudget) -> Result<(), ParseError> {
     let mut depth = 0usize;
     for tok in tokens {
         match tok.kind {
