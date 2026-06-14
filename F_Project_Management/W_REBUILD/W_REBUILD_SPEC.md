@@ -203,6 +203,19 @@ only what was measured; **[2026-06-11 infusion] diff-caps emits a structured mac
 the human one-glance artifact** (Directive 15 — the reviewer on the other side of the gate is
 increasingly an agent; the XOR delta is the natural payload).
 
+> **RESOLVED 2026-06-12 (Jon, J1 + J2).** (J1, clone criterion) The "201 → <40"
+> figure was not reproducible: measured baseline at the slice commit was 188,
+> the capability-SET clones (the R3 subject) went **7 → 0**, total now 185.
+> **RB-5's interner is the accepted vehicle** for the remaining String-key /
+> dataflow-snapshot clones; the original number is amended honestly and RB-5
+> re-measures. RB-1 ACCEPTED ([#388](https://github.com/Island-Dev-Crew/garnet/pull/388)).
+> (J2, Directive-15 bounds deltas) `--machine` ships verdict + gained/dropped
+> caps + band; **bounds deltas are NOT part of the declared-caps surface
+> diff-caps reads** (the JSON `scope` field says so). The accept-when is amended
+> to drop bounds from the day-one payload; a bounds-bearing attestation is a
+> later **human-approved caps-surface / manifest-standard extension** (RFC-gated),
+> not an RB-1 criterion.
+
 ### RB-2 — Crash-surface sweep (verdict R6)
 `#![deny(clippy::unwrap_used, clippy::expect_used)]` on `garnet-cli`, `garnet-interp`,
 `garnet-stdlib` (user-facing paths), with a single documented allowlist pattern
@@ -213,6 +226,19 @@ harness plus an interp smoke pass over malformed corpus inputs.
 with every allowlisted invariant justified in-line; fuzz/malformed-input smoke (state minutes
 run) produces zero aborts — scoped claim: "no abort on the corpus + N fuzz minutes," never
 "never panics."
+
+> **RESOLVED 2026-06-12 (Jon, J3 + J5 + J8).** (J3) A **second sanctioned
+> allow-comment form is blessed** beyond `// INVARIANT: <why this cannot fail>`:
+> `// FAIL-CLOSED: <why aborting is the contract>` for sites that genuinely
+> CAN fail where aborting is the documented safety posture (e.g.
+> `machine_key` — cache integrity must not fail open). It must cite the
+> documented contract; calling such a site an "invariant" would be false.
+> (J5, add/sub/mul integer overflow) Ruling: **checked-error by default**,
+> with explicit wrapping operations where wrapping is wanted — a
+> language-semantics decision recorded in `rfcs/0002-integer-overflow-policy.md`;
+> implemented as its own slice, not folded into RB-2. (J8) The
+> `eval`/`repl`/`test` lanes lack the `garnet run` interpreter panic firewall —
+> **scheduled as a small follow-up slice.** RB-2 ACCEPTED ([#389](https://github.com/Island-Dev-Crew/garnet/pull/389)/[#390](https://github.com/Island-Dev-Crew/garnet/pull/390)).
 
 ### RB-3 — Registry-derived dispatch (verdict R1) · the keystone
 New `garnet-prim-macros` crate. One attribute per native:
@@ -227,6 +253,21 @@ change — differential test drives every primitive through old and new dispatch
 fixture corpus before the old path is deleted; `truth.json` `primitive_count` now derives from
 the macro registry; net LOC drops by roughly two thousand lines; prim doc strings survive into
 PrimMeta (RB-7 depends on them).
+
+> **RESOLVED 2026-06-12 (Jon, J6 + J7 + J9).** (J6, LOC) The "~−2000 lines"
+> expectation is **amended — accept the architecture rationale.** Adapter
+> bodies cannot be deleted (the caps-enforcement gate greps their literal
+> `require_capability` text; the `Value`-conversion logic is real code), so
+> measured net is **+752**. The real win was **killing the hand-synced-lists
+> dispatch-drift class**, not LOC reduction; LOC is no longer an accept-when.
+> (J7, mechanism) **Ratified as the gate-compatible R1 realization:** the
+> registry row (not the attribute) carries metadata so the textual gates keep
+> parsing; the differential ran as table/fn-pointer identity (subsumes
+> fixture-corpus execution); `all_prims()` stays the hand-written declaration
+> table; "all 80 via attribute" reconciles as **78 adapter-registered + 2
+> deliberately Unbridged registry rows + 4 BRIDGE_ONLY natives.** (J9) **Add
+> `trybuild` UI tests before Core Ring work begins** (the Ring extends the
+> macro surface). RB-3 ACCEPTED ([#393](https://github.com/Island-Dev-Crew/garnet/pull/393)).
 **Downstream consumer, named [2026-06-11 infusion]:** the **Core Ring** — the curated, sealed
 binding set (reassessment §6: ~20–30 audited bindings, every function's authority declared and
 verified) — consumes this slice's `#[garnet_primitive]` binding factory: registry-derived
@@ -242,6 +283,12 @@ green, no consumer imports the legacy module.
 **4b:** AST node types become typed views over the rowan green tree (rust-analyzer
 architecture) rather than a parallel structure. **Accept when:** parser + interp + check suites
 green with zero behavior change; spans/diagnostics quality preserved or improved.
+
+> **RESOLVED 2026-06-12 (Jon, J4).** Threading miette spans through RUNTIME
+> diagnostics (the RB-2 deferral — runtime aborts surface span-less) is
+> **scheduled as a follow-up before public playground work** and does NOT
+> block the current RB-4b sub-slices. Parse-layer diagnostics already carry
+> spans.
 **Additional RB-4 criterion [2026-06-11 infusion] — the GHC-Core pattern (Directive 7):** the
 typed core IR **carries capabilities in its type system**, and the caps invariant is
 **RE-CHECKED AFTER EVERY LOWERING PASS** — a pass that launders authority is caught at the pass
