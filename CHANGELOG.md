@@ -120,6 +120,36 @@ signed re-cut, and this post-re-cut truth-sync._
   `%= 0` changes to "division by zero" — now identical to `/= 0` and
   expression-path `% 0`.
 
+### RB-4b.1 — substrate fidelity (W-REBUILD Foundation)
+
+- **Changed:** `garnet_cst::cst_to_ast` is now **span-exact** with
+  `parse_source` — the projected AST equals the recursive-descent parser's
+  AST byte-for-byte *including spans* across the corpus (it was previously
+  validated only span-NORMALIZED). `span_of` trims leading/trailing trivia +
+  newlines, skips a leading `AttrList`/`pub` for item spans (parser items
+  begin at their keyword; the CST keeps annotations + `pub` inside the node
+  for round-trip, only the projected span trims them), extends brace `Block`
+  spans to the bracketing `{`/`}` siblings, keeps `pub` for struct fields
+  (the parser includes it there), and fixes the Module span to the raw full
+  source range. **No CST tree-shape change** — round-trip, token-parity, and
+  `cst_to_ast_parity` stay green.
+- **Added:** `garnet_cst::parse_cst_with_budget_and_edition` and a public
+  `garnet_parser::check_token_nesting`. The rowan path now applies the
+  parser's fail-fast budget fences (source-bytes, token-nesting depth)
+  **error-tolerantly** — recording `SyntaxError`s while still building a
+  round-trippable tree — so `parse_cst` agrees with `parse_source` about
+  which inputs are over-budget (closing the one error-verdict disagreement:
+  deeply-nested input the parser rejected but the CST silently accepted).
+  `parse_cst` is the default-budget+edition wrapper; both APIs proven via
+  `tests/substrate_fidelity.rs` (red→green: 2 failing → 3 passing).
+- **Why:** this makes the green tree a faithful substrate for the AST —
+  groundwork for RB-4b.2 (typed views + LSP single-parse) and an eventual
+  `parse_source` reroute, where span drift would silently move doc-comment
+  extraction and miette caret positions. **Zero consumer behavior change**
+  in this slice (the LSP still uses `parse_source` for fail-fast errors;
+  `parse_cst`'s new error recording does not alter diagnostics). Workspace
+  2002/0.
+
 ### RB-4a — rowan unification (W-REBUILD Foundation)
 
 - **Removed:** `garnet-parser-v0.3/src/cst.rs` — #221's post-hoc parser CST,

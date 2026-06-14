@@ -28,11 +28,22 @@ extends #221's CST.
   byte-identical round-trip for inputs that lex. The builder also flushes any
   unconsumed tokens, so the round-trip holds even for grammatically invalid
   input (error recovery is best-effort on *structure*, never on round-trip).
-- `cst_to_ast` projects the CST onto `garnet_parser::ast::Module`. It is
-  validated by span-normalized structural parity against `parse_source` across
-  the canonical example corpus (`tests/cst_to_ast_parity.rs`). Existing AST
-  consumers (interp, check, vm) keep using `parse_source` and are untouched;
-  CST-first migration is v0.8.
+- `cst_to_ast` projects the CST onto `garnet_parser::ast::Module`, **span-exact
+  with `parse_source`** (RB-4b.1): `tests/substrate_fidelity.rs` proves the
+  projected AST equals the parser's AST byte-for-byte INCLUDING spans across
+  the corpus, and that `parse_cst` agrees with `parse_source` on the
+  error-verdict (which inputs are rejected/over-budget). `span_of` trims trivia
+  and skips item annotation/`pub` prefixes to match the parser's token-joined
+  spans; the CST tree shape is unchanged (round-trip + token-parity gate it).
+  The older `tests/cst_to_ast_parity.rs` compares span-normalized and is now
+  subsumed on spans. Existing AST consumers (interp, check, vm) keep using
+  `parse_source` and are untouched; CST-first migration is the rest of RB-4b.
+- `parse_cst_with_budget_and_edition` (RB-4b.1) applies the parser's fail-fast
+  fences (source-bytes, token-nesting depth) error-TOLERANTLY — it records
+  `SyntaxError`s but always builds a round-trippable tree, so the rowan path
+  never silently accepts an input `parse_source` rejects. `parse_cst` is the
+  default-budget+edition wrapper. Keep both fences in lockstep with
+  `parse_source`; a new budget axis added to the parser must be mirrored here.
 - Performance: the `parse_cst_vs_ast` Criterion bench keeps the CST path within
   1.5× the AST path (currently ≈1×). If a change pushes it over, document the
   ratio in `CHANGELOG.md` rather than blocking the slice.
