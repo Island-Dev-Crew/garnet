@@ -374,7 +374,38 @@ criterion before/after on the existing bench harness committed as machine-local 
 exact hardware noted; the honest sentence is "measured Nx on these benches on this machine,"
 nothing broader.
 
+> **STOP+REPORT landed + SEQUENCING DECISION (Jon, J·Option-C, 2026-06-14).**
+> RB-5 stopped at the design gate — the `(depth,slot)` indexed-frame rewrite is
+> not a safe single slice (no AST node identity; REPL incremental binding;
+> five-chain `Env` + capture-by-reference closures; all reduce to a
+> name-representation change in the shared AST or a resolved IR). Report:
+> `RB5_ENV_REBUILD_STOP_REPORT_2026-06-14.md`
+> ([#405](https://github.com/Island-Dev-Crew/garnet/pull/405) → `04be4974`),
+> measured baseline `eval_fib_15` 394.97 µs / `eval_array_1000` 262.56 µs /
+> `eval_expr` 1.475 µs (M5 Pro). **Jon's ruling: Option C — sequence RB-5 with
+> RB-6, NOT a rejection.** RB-6 decides the durable IR/execution shape; THEN RB-5
+> lands `(depth,slot)`+interner against that representation with
+> build-both-compare and zero semantic drift. Guardrails: (1) preserve the
+> just-stabilized parser/CST/AST substrate; (2) **no** standalone AST
+> name-representation change **unless RB-6 explicitly keeps the AST as the
+> execution substrate**; (3) RB-7 may run only if it does not collide with
+> RB-6/RB-5 surfaces. The RB-5 baseline is RB-6's before-number.
+
 ### RB-6 — Backend decision memo (verdict R5) · Jon-gated, no code
+
+> **MEMO DRAFTED + spike evidence prepared (2026-06-14); DECISION is Jon's.**
+> `RB6_BACKEND_IR_DECISION_MEMO.md` carries: the §0 mandate (the Option-C
+> sequencing decision above), the §2 tree-walk before-number, the **§3 wasm32
+> feasibility spike** (`wasm32-wasip1` **compiles today** (cargo `Finished` + 16 MB rlib);
+> `wasm32-unknown-unknown` has ONE blocker, `getrandom/js`; the host-authority
+> surface is concentrated in the `@caps` primitives = the WASI import boundary),
+> the §4 IR options A–D + the custom-VM-as-third-path parity cost, the §5 synergy
+> ledger, the §6 Stroustrup doctrine, the §7 per-pass caps re-check HARD
+> CONSTRAINT (RB-4b.3 already landed the mechanism — Option C inherits it), and
+> the §8 integrate-lean recommendation (Option C now as the `(depth,slot)`+
+> interner target; Wasmtime/WASI as the strategic back-half) with the measured
+> ~2–3× reopen threshold. **§10 escalates the decision to Jon.** No backend
+> merged; no `.wasm` executed; feasibility-compile only.
 A decision document, not a slice: post-RB-5 tree-walk numbers; a wasm32 build feasibility spike
 (does the interpreter compile to wasm32-unknown / wasm32-wasi today, and what blocks it);
 the synergy ledger (one lowering buys @bounded→Wasmtime fuel + @caps→WASI sandbox + the

@@ -190,3 +190,19 @@ interning may touch the shared AST `FnDef`/`Ident` representation.
   `a3bbc254`; the only artifact is this report.
 - The baseline is **single-run, this machine**; no Nx claim is made because there
   is no "after" — by design, that is the decision being escalated.
+
+---
+
+## §9 · RESOLVED — Jon's decision (2026-06-14)
+
+**Option C — sequence RB-5 with RB-6 (a sequencing decision, NOT a rejection of
+RB-5).** Treat this report's baseline as the **before-number** for the RB-6
+IR/backend memo; land `(depth,slot)` resolution + interner in **whichever
+execution representation RB-6 chooses**. Do **not** do the full indexed-frame
+rewrite now, and **do not** do a standalone AST name-representation change
+**unless RB-6 explicitly keeps the AST as the execution substrate**. Priority:
+(1) preserve the just-stabilized parser/CST/AST substrate; (2) RB-6 decides the
+durable IR/backend shape; (3) then implement RB-5 against the chosen
+representation with build-both-compare and zero semantic drift; (4) RB-7 may
+proceed only if it does not collide with RB-6/RB-5 surfaces. The RB-6 memo
+(`RB6_BACKEND_IR_DECISION_MEMO.md`) acts on this decision.
