@@ -2,7 +2,7 @@
 //! token), not just a start offset. This is the foundation a future LSP
 //! single-parse needs to render range diagnostics matching `parse_source`'s
 //! labeled-span quality. (The single-parse cutover itself is deferred:
-//! `parse_cst`'s error recovery produces cascades — e.g. 9 errors for
+//! `parse_cst`'s error recovery produces cascades — e.g. 8 errors for
 //! `@@@ def` vs `parse_source`'s 1 — so dropping `parse_source` from the LSP
 //! would degrade diagnostics until parser error-recovery is improved.)
 

@@ -313,7 +313,7 @@ the unified substrate — schedule into the playground band where it pays first.
 > · 4b.4 editions note + spec reconciliation. **4b.2 was re-scoped** from
 > "typed views + LSP single-parse" to **`SyntaxError` spans + the single-parse
 > finding**: dropping `parse_source` from the LSP would DEGRADE diagnostics
-> (`parse_cst`'s error recovery cascades — 9 errors for `@@@ def` vs one
+> (`parse_cst`'s error recovery cascades — 8 errors for `@@@ def` vs one
 > fail-fast), which the accept-when forbids, and the typed views have no
 > adopter yet (extending them now = speculative). `SyntaxError` now carries a
 > token-range span (foundation); **true single-parse is deferred until parser

@@ -14,7 +14,7 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 - **Re-scoped from "typed views + LSP single-parse" (Jon, 2026-06-12)** after a
   measured blocker surfaced: dropping `parse_source` from the LSP would
   **degrade diagnostics** — `parse_cst`'s error recovery produces cascades
-  (3 errors for `def broken( {`, **9** for `@@@ def` — three duplicate
+  (3 errors for `def broken( {`, **8** for `@@@ def` — three duplicate
   "expected annotation name" — vs `parse_source`'s single fail-fast error),
   which the RB-4b accept-when ("diagnostics preserved or improved") forbids.
   The typed-view layer also has zero adopters, so extending it now would be
@@ -34,8 +34,12 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 - **Improved:** `garnet parse --mode cst` reports errors as `line:col`
   (computed from the span) instead of a raw `byte N`.
 - Proven by `garnet-cst/tests/syntax_error_spans.rs` (grammar / budget / lex
-  error spans). No tree-shape change; no consumer behavior change beyond the
-  CLI `line:col` improvement; workspace green.
+  error spans). No CST tree-shape change; LSP diagnostics unchanged (it keeps
+  `parse_source`). The one behavior change is intended and an improvement: the
+  CST `SyntaxError` anchor POSITION moves from the whitespace before the
+  offending token to the token itself (matching `parse_source`'s anchoring),
+  surfaced via the CLI `line:col` output (the only `SyntaxError`-span
+  consumer). Workspace green.
 
 ### W-REBUILD stop-report rulings (docs) — Jon's nine J-queue decisions
 
