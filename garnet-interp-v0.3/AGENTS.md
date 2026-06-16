@@ -26,6 +26,12 @@ Owns managed-mode tree-walk execution, expression evaluation, stdlib bridging, a
   aborts in debug) is an open language decision, named-deferred — do not
   silently change it.
 - Maintain compatibility with `garnet run`, `garnet eval`, and `garnet test` expectations.
+- REPL introspection (RB-7): `Interpreter::live_binding_names` / `lookup_binding`
+  and `Env::local_names` are **additive, read-only** accessors the CLI REPL uses
+  for completion + `?doc`/`:caps`. They must stay read-only (no eval side
+  effects) and pull no terminal/line-editor dependency — this crate must keep
+  compiling to `wasm32-wasip1` (RB-6). Keep `repl.rs` here minimal and
+  `std::io`-only; the rich REPL lives in `garnet-cli`.
 
 ## Required Checks
 

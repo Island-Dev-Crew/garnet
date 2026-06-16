@@ -115,7 +115,7 @@ RB-5 env rebuild: string interner + (depth,slot) resolution pass in
 RB-6 backend decision MEMO only: post-RB-5 measured numbers + wasm32
   feasibility spike + fuel/WASI/playground synergy; escalate the
   one-lowering decision to Jon. NO backend code merged.
-RB-7 REPL on reedline: completion + ?doc + :caps live authority budget from
+RB-7 REPL on reedline: completion + ?doc + :caps DECLARED authority surface from
   PrimMeta; recorded demo evidence; cross-OS proof handed to the NUC lane.
 
 CONSTRAINTS: calibrated honesty above all; evidence, never claims; no
@@ -424,10 +424,33 @@ nothing merged into a backend.
    custom lowering only if the integrated path measures **~2–3× overhead on representative
    workloads** — measured, machine-named, never assumed. The decision itself remains Jon's.
 
+> **RESOLVED — Jon's §10 decision (2026-06-16).** (1) **Resolved-IR shape =
+> Option C:** the existing `garnet-vm` bytecode/lowering path is the near-term
+> resolved-IR target for the *future* RB-5; the tree-walk interpreter remains the
+> zero-drift oracle; Option D / Wasmtime-WASI is the strategic back-half, not the
+> immediate foundation rewrite. (2) **wasm playground = yes, but NOT in RB-7** —
+> the `getrandom/js` unblock is a separate **W-PLAY** playground spike after the
+> W-REBUILD foundation closeout; no wasm/browser dependency changes in RB-7.
+> (3) **RB-7 approved to proceed now as the REPL joy slice ONLY** — NO RB-5 in
+> the same PR/work unit, NO indexed-frame rewrite now; RB-5 implementation
+> against Option C gets its own later prompt after RB-7 lands and after the final
+> W-REBUILD closeout review.
+
 ### RB-7 — The REPL joy slice (verdict R7)
+> **DELIVERED (2026-06-16).** Built in `garnet-cli/src/cmd/repl.rs` on `reedline`
+> (CLI-only, so `garnet-interp` stays `wasm32-wasip1`-clean — RB-6 portability
+> preserved); pure unit-tested dispatch + a non-TTY plain fallback. `?doc`
+> reads `PrimMeta` (doc/caps/arity); `:caps` shows the **declared/available**
+> authority surface (honestly labeled NOT an enforced budget — `@caps` is
+> enforced per-function at S90); multiline (incl. dangling-annotation), history,
+> Tab completion (commands + prims + live bindings), pretty-printed values.
+> Demo `docs/demos/repl-session.txt`; doc page `docs/internals/repl.md`; Mac
+> proof only, cross-OS handed to the NUC lane (`RB7_NUC_HANDOFF.md`) — NOT marked
+> cross-OS-complete.
+
 Rebuild `repl.rs` (125 lines today) on `reedline`: history, multiline, tab-completion fed by
 the macro-derived registry + live environment; `?std::json::parse` prints doc + caps + arity
-from PrimMeta; `:caps` shows the session's live authority budget; pretty-printed values.
+from PrimMeta; `:caps` shows the session's DECLARED authority surface (NOT an enforced budget); pretty-printed values.
 **Accept when:** recorded demo evidence (asciinema or equivalent) committed; doc page added;
 Mac proof recorded, cross-OS proof handed to the NUC lane — never marked cross-OS-complete from
 one machine.

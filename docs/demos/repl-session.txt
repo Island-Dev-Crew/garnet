@@ -1,0 +1,51 @@
+# Garnet REPL (RB-7) — recorded session
+# machine: Apple M5 Pro · macOS 26.5 · rustc 1.95.0 · garnet repl (plain/non-TTY mode)
+# input script piped to: garnet repl
+# (interactive history / live Tab-completion / in-editor multiline are reedline-backed,
+#  TTY-only; their logic is unit-tested in cmd::repl::tests. This transcript shows the
+#  command dispatch, ?doc, :caps, multiline accumulation, and pretty-printing.)
+# ----------------------------------------------------------------------------------
+
+Garnet REPL — RB-7. :help for commands, :quit to exit.
+garnet> REPL commands:
+  <expr>            evaluate and print a value
+  def name(..) {..} register a top-level item (def/struct/enum/impl/...)
+  ?doc <name>       show a primitive's doc, arity, and required caps
+  ?<name>           shorthand for ?doc <name>
+  :caps             show the session's declared + available authority
+  :help  :h         this help
+  :quit  :q         leave the REPL  (Ctrl-D also exits)
+
+Editing: history (Up/Down), multiline (open `{`/`(`/`[` continues the
+input), and Tab completion over commands, primitives, and live bindings.
+garnet> => 7
+garnet> => nil
+garnet> => [1, 2, 3]  : Array
+garnet>    ...>    ...> ok
+garnet> => 144
+garnet> fs::read_file  (1-arg primitive)
+  caps: fs
+  layer: Std · stability: Stable
+  Read a UTF-8 file as String.
+garnet> time::now_ms  (0-arg primitive)
+  caps: time
+  layer: Std · stability: Stable
+  Monotonic clock in milliseconds since process start.
+garnet>    ...>    ...>    ...> ok
+garnet> fetch_and_save  (1-arg user function)
+  declared caps: fs, net
+  (defined in this session)
+garnet> capability surface (declared + available — NOT an enforced budget;
+@caps is enforced per-function at entry, S90):
+
+  session-declared (by loaded @caps functions):
+    fs: fetch_and_save
+    net: fetch_and_save
+
+  available primitives by capability:
+    env: std::env::get, std::env::set, std::env::vars
+    fs: fs::list_dir, fs::read_bytes, fs::read_file, fs::write_bytes, fs::write_file, std::log::to_file
+    net: net::tcp_connect, net::tcp_listen, net::udp_bind
+    proc: std::process::exit_code, std::process::output, std::process::spawn, std::process::spawn_args, std::process::wait
+    time: std::uuid::new_v4, std::uuid::new_v7, time::now_ms, time::sleep, time::wall_clock_ms
+garnet> 

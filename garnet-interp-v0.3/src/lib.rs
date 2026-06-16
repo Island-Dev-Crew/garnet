@@ -209,6 +209,23 @@ impl Interpreter {
         eval::call_value(&callee, args)
     }
 
+    /// The names bound in the global environment (prelude builtins + every
+    /// top-level item loaded so far). Read-only introspection used by the CLI
+    /// REPL (RB-7) to feed tab-completion from the live session. No semantic
+    /// effect; the bytecode/VM paths are unaffected.
+    #[must_use]
+    pub fn live_binding_names(&self) -> Vec<String> {
+        self.global.local_names()
+    }
+
+    /// The function value bound to `name` in the global environment, if any.
+    /// Lets the REPL's `?doc` read a user function's arity + `@caps` surface
+    /// off the loaded definition. Read-only.
+    #[must_use]
+    pub fn lookup_binding(&self, name: &str) -> Option<Value> {
+        self.global.get(name)
+    }
+
     /// Call a named global function as the program entry point.
     ///
     /// Unlike embedded `call`, this installs a capability frame from the entry

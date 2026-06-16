@@ -99,6 +99,14 @@ impl Env {
         self.parent.as_ref().and_then(|p| p.get(name))
     }
 
+    /// The names bound directly in THIS scope (not walking outward). Used by
+    /// the CLI REPL (RB-7) to feed tab-completion from the live environment.
+    /// Read-only introspection — no semantic effect, no new dependency.
+    #[must_use]
+    pub fn local_names(&self) -> Vec<String> {
+        self.vars.borrow().keys().cloned().collect()
+    }
+
     pub fn get_protocol(&self, name: &str) -> Option<ProtocolDef> {
         if let Some(protocol) = self.protocols.borrow().get(name) {
             return Some(protocol.clone());

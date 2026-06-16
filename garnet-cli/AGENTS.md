@@ -16,6 +16,15 @@ Owns the `garnet` binary, subcommand routing, template embedding, deterministic 
 - `garnet parse` defaults to AST mode. `garnet parse --mode cst <file>` routes
   to the canonical rowan `garnet-cst` parser and must report round-trip truth
   and recorded CST errors honestly.
+- `garnet repl` (RB-7) hosts the `reedline` line editor and the REPL ergonomics
+  (`?doc`, `:caps`, completion, multiline). **`reedline` stays a `garnet-cli`
+  dependency ONLY** — never add a terminal line editor to `garnet-interp`, which
+  must keep compiling to `wasm32-wasip1` (RB-6). The command dispatch is a pure,
+  unit-tested core with a non-TTY plain fallback; keep it that way so behaviour
+  is testable without a terminal. `:caps` reports a **declared/available**
+  authority surface and must stay labeled NOT an enforced budget — `@caps` is
+  enforced per-function at entry (S90), and a bare prompt call holds no
+  capability frame; never let `:caps` imply a live runtime grant.
 - `garnet diff-caps` human text output and exit codes (0 = no expansion,
   1 = authority expanded, 2 = usage/parse error) are load-bearing for CI
   scripts and integration tests — byte-stable, never reworded casually.
