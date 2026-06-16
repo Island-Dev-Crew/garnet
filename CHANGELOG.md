@@ -48,6 +48,38 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   planted trap proves. Workspace 2013/0; enforcement-parity + all trust-kernel
   gates unchanged.
 
+### RB-7 — the REPL joy slice (W-REBUILD Foundation)
+
+- **Rebuilt** `garnet repl` as the "joy" REPL in `garnet-cli/src/cmd/repl.rs` on
+  [`reedline`](https://crates.io/crates/reedline) (v0.48): history, multiline
+  input (brace/paren/bracket *and* dangling-annotation aware), Tab completion
+  over REPL commands + every stdlib primitive (bare and qualified) + the live
+  session bindings, and pretty-printed values (composite values carry a `: Type`
+  tag).
+- **`?doc <name>`** (and the `?<name>` shorthand) reads the live registry
+  `PrimMeta` — module-qualified name, arity, required `@caps`, layer, stability,
+  doc — and a user function's arity + declared caps.
+- **`:caps`** shows the session's authority surface in two honest sections: what
+  the loaded `@caps` functions *declare*, and the available primitives grouped by
+  required capability. **Labeled NOT an enforced budget** — `@caps` is enforced
+  per-function at entry (S90); a bare call at the prompt holds no capability
+  frame. No "enforced" claim.
+- **Architecture:** reedline + the ergonomics live in `garnet-cli` ONLY, so
+  `garnet-interp` stays terminal-dependency-free and **still compiles to
+  `wasm32-wasip1`** (the RB-6 portability is preserved). Command dispatch is a
+  pure, unit-tested core (19 REPL tests) with a non-TTY plain fallback for pipes
+  / CI / recorded demos. Two additive read-only interp introspection methods
+  (`Interpreter::live_binding_names` / `lookup_binding`, `Env::local_names`) feed
+  completion + `?doc`/`:caps`; no semantic change, VM/bytecode paths untouched.
+- **Evidence:** recorded session `docs/demos/repl-session.txt` + doc page
+  `docs/internals/repl.md`; Mac proof only — cross-OS verification handed to the
+  NUC lane (`RB7_NUC_HANDOFF.md`), **not marked cross-OS-complete from one
+  machine**. Workspace 2030/0.
+- **Recorded** Jon's RB-6 §10 decision (2026-06-16): resolved-IR shape = Option C
+  (`garnet-vm` bytecode as the future RB-5 target; tree-walk = oracle; D = back-
+  half); wasm playground deferred to a separate W-PLAY spike (not in RB-7); RB-7
+  proceeds now as the REPL slice only (no RB-5 / no indexed-frame rewrite).
+
 ### RB-6 — backend/IR decision memo (DRAFT) + RB-5 sequencing decision (W-REBUILD Foundation · docs-only)
 
 - **Recorded** Jon's **RB-5 sequencing decision (Option C, 2026-06-14):** RB-5 is
