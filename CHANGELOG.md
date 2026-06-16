@@ -48,6 +48,19 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   planted trap proves. Workspace 2013/0; enforcement-parity + all trust-kernel
   gates unchanged.
 
+### W-REBUILD — final workstream report (Foundation band closeout · docs-only)
+
+- **Added** `F_Project_Management/W_REBUILD/W_REBUILD_FINAL_REPORT.md` — the
+  closeout report for the Foundation rebuild band (RB-0 … RB-7, all merged to
+  `main` @ `ed75c59`). Carries the full slice ledger (PR → commit per slice), the
+  invariants the workstream established (caps bitset, registry-derived dispatch,
+  one CST substrate, the per-pass caps-recheck mechanism, edition-invariant caps,
+  wasm/WASI portability, the declared-not-enforced `:caps` surface), the deferred
+  Jon-owned next steps (RB-5 impl against Option C; the W-PLAY playground spike;
+  optional RB-8; NUC cross-OS REPL verification), and the honest boundaries (not
+  production, no backend built, the full Directive-7 vision not delivered, no
+  release). Docs-only; no code/gate change.
+
 ### RB-7 — the REPL joy slice (W-REBUILD Foundation)
 
 - **Rebuilt** `garnet repl` as the "joy" REPL in `garnet-cli/src/cmd/repl.rs` on
