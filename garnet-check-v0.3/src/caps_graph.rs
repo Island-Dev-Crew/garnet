@@ -32,7 +32,8 @@
 //!   no receiver-type information, so it cannot perform precise type-directed
 //!   dispatch. Instead it resolves `receiver.m(..)` to the UNION of declared
 //!   caps of every impl method named `m`, across all types
-//!   ([`CalleeRef::MethodByName`]). This is a sound OVER-approximation: it
+//!   (via the `CalleeRef::MethodByName` callee ref). This is a sound
+//!   OVER-approximation: it
 //!   never under-attributes authority (so it cannot let a cap-requiring method
 //!   call slip past coverage), but it may over-attribute when two types share
 //!   a method name. Precise, type-directed method resolution is a future
@@ -43,7 +44,7 @@
 //!
 //! Impl methods are keyed `Owner::name` (the impl block's target type's last
 //! path segment, e.g. `A::go`), exactly mirroring the S114 capability surface
-//! ([`crate::capability_surface`]) so the graph and the surface AGREE on every
+//! (the `capability_surface` module) so the graph and the surface AGREE on every
 //! impl-method name. Free (non-impl) functions keep their bare name. Without
 //! this, `impl A { def go() }` and `impl B { def go() }` collided under the
 //! bare key `"go"` and the second overwrote the first — authority was
