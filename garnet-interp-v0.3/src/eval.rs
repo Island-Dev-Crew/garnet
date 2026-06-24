@@ -274,7 +274,14 @@ fn eval_binary(op: BinOp, lhs: &Expr, rhs: &Expr, env: &Rc<Env>) -> Result<Value
     use Value::*;
     match op {
         Add => match (&l, &r) {
-            (Int(a), Int(b)) => Ok(Int(a + b)),
+            // checked_add: i64 overflow is a diagnostic, not a host panic —
+            // the same RB-2 doctrine already applied to Div/Mod, now extended
+            // to the +/-/* operators so integer overflow can never abort the
+            // interpreter (it panicked here in debug builds before).
+            (Int(a), Int(b)) => a
+                .checked_add(*b)
+                .map(Int)
+                .ok_or_else(|| RuntimeError::Overflow(format!("{a} + {b}"))),
             (Float(a), Float(b)) => Ok(Float(a + b)),
             (Int(a), Float(b)) => Ok(Float(*a as f64 + b)),
             (Float(a), Int(b)) => Ok(Float(a + *b as f64)),
@@ -282,14 +289,20 @@ fn eval_binary(op: BinOp, lhs: &Expr, rhs: &Expr, env: &Rc<Env>) -> Result<Value
             _ => Err(RuntimeError::type_err("numeric or string pair", &l)),
         },
         Sub => match (&l, &r) {
-            (Int(a), Int(b)) => Ok(Int(a - b)),
+            (Int(a), Int(b)) => a
+                .checked_sub(*b)
+                .map(Int)
+                .ok_or_else(|| RuntimeError::Overflow(format!("{a} - {b}"))),
             (Float(a), Float(b)) => Ok(Float(a - b)),
             (Int(a), Float(b)) => Ok(Float(*a as f64 - b)),
             (Float(a), Int(b)) => Ok(Float(a - *b as f64)),
             _ => Err(RuntimeError::type_err("numeric pair", &l)),
         },
         Mul => match (&l, &r) {
-            (Int(a), Int(b)) => Ok(Int(a * b)),
+            (Int(a), Int(b)) => a
+                .checked_mul(*b)
+                .map(Int)
+                .ok_or_else(|| RuntimeError::Overflow(format!("{a} * {b}"))),
             (Float(a), Float(b)) => Ok(Float(a * b)),
             (Int(a), Float(b)) => Ok(Float(*a as f64 * b)),
             (Float(a), Int(b)) => Ok(Float(a * *b as f64)),
@@ -400,7 +413,12 @@ fn eval_unary(op: UnOp, inner: &Expr, env: &Rc<Env>) -> Result<Value, RuntimeErr
     let v = eval_expr(inner, env)?;
     match op {
         UnOp::Neg => match v {
-            Value::Int(i) => Ok(Value::Int(-i)),
+            // checked_neg: -i64::MIN overflows; a diagnostic, not a host panic
+            // (RB-2 doctrine, extended to unary negation).
+            Value::Int(i) => i
+                .checked_neg()
+                .map(Value::Int)
+                .ok_or_else(|| RuntimeError::Overflow(format!("-{i}"))),
             Value::Float(f) => Ok(Value::Float(-f)),
             other => Err(RuntimeError::type_err("numeric", &other)),
         },

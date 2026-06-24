@@ -164,9 +164,21 @@ fn compound_apply(op: AssignOp, old: Value, new: Value) -> Result<Value, Runtime
     // be overkill. Do the arithmetic inline for primitive types.
     use garnet_parser::ast::BinOp as B;
     match (&old, &new, bop) {
-        (Int(a), Int(b), B::Add) => Ok(Int(a + b)),
-        (Int(a), Int(b), B::Sub) => Ok(Int(a - b)),
-        (Int(a), Int(b), B::Mul) => Ok(Int(a * b)),
+        // checked_add/_sub/_mul: i64 overflow is a diagnostic, not a host
+        // panic — same RB-2 doctrine as the `/=`/`%=` arms below and the
+        // eval.rs binary operators.
+        (Int(a), Int(b), B::Add) => a
+            .checked_add(*b)
+            .map(Int)
+            .ok_or_else(|| RuntimeError::Overflow(format!("{a} + {b}"))),
+        (Int(a), Int(b), B::Sub) => a
+            .checked_sub(*b)
+            .map(Int)
+            .ok_or_else(|| RuntimeError::Overflow(format!("{a} - {b}"))),
+        (Int(a), Int(b), B::Mul) => a
+            .checked_mul(*b)
+            .map(Int)
+            .ok_or_else(|| RuntimeError::Overflow(format!("{a} * {b}"))),
         // checked_div/_rem: the `*b != 0` guards exclude zero from these
         // arms, so None is exactly the i64::MIN / -1 overflow — a
         // diagnostic, not an abort (RB-2). Both `/=` and `%=` by zero are
