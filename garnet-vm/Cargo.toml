@@ -18,6 +18,11 @@ garnet-stdlib = { version = "0.4.0", path = "../garnet-stdlib" }
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
+# RB-4: property-based backstop for the VM⇄interp block-local-shadowing parity
+# fix. Generates random nested-block `let`-rebinding programs and asserts the VM
+# and the tree-walk interpreter agree on every one. Same major version the rest
+# of the workspace pins (garnet-check / garnet-cst).
+proptest = "1"
 
 [[bench]]
 name = "parse_compile_execute"
