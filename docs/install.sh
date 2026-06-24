@@ -306,7 +306,11 @@ source_install() {
     if [ -n "$GARNET_SOURCE_REF" ]; then
         _candidate_refs="$GARNET_SOURCE_REF"
     else
-        _candidate_refs="$GARNET_TAG main"
+        # Fail-closed: build ONLY the pinned release tag, never silently fall back
+        # to the moving `main` branch — a user who asked for a pinned version must
+        # not end up with unverified main. To build main deliberately, set
+        # GARNET_SOURCE_REF=main explicitly. [Jon-gated: installer-security policy.]
+        _candidate_refs="$GARNET_TAG"
     fi
 
     say "install  = source via cargo install --locked"
