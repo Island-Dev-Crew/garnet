@@ -384,9 +384,20 @@ jobs:
           fi
           echo "signed → SHA256SUMS.asc"
 
-      - name: Note unsigned release (no GPG key present)
+      # Fail-closed: a TAGGED release must ship a SIGNED SHA256SUMS. Previously a
+      # missing GPG_SIGNING_KEY silently published an UNSIGNED release; now an
+      # unsigned tagged release is BLOCKED unless it is a deliberate, recorded act
+      # (repo variable ALLOW_UNSIGNED_RELEASE=true), so shipping unsigned is a
+      # decision, never an accident. [Jon-gated: this is a release-POLICY change.]
+      - name: Require signed SHA256SUMS (fail-closed)
         if: env.HAS_GPG != 'true'
-        run: echo "::notice::GPG_SIGNING_KEY secret not set — publishing UNSIGNED SHA256SUMS (honest research-grade default). Add GPG_SIGNING_KEY (+ optional GPG_PASSPHRASE) to enable signed releases."
+        run: |
+          if [ "${{ vars.ALLOW_UNSIGNED_RELEASE }}" = "true" ]; then
+            echo "::warning::GPG_SIGNING_KEY absent and ALLOW_UNSIGNED_RELEASE=true — publishing a DELIBERATELY UNSIGNED research-grade release."
+          else
+            echo "::error::Tagged release requires a signed SHA256SUMS, but GPG_SIGNING_KEY is not set. Provide GPG_SIGNING_KEY (+ optional GPG_PASSPHRASE), or set repository variable ALLOW_UNSIGNED_RELEASE=true to deliberately ship unsigned."
+            exit 1
+          fi
 
       - name: Publish release
         uses: softprops/action-gh-release@v2
