@@ -225,32 +225,76 @@ impl Value {
         !matches!(self, Value::Nil | Value::Bool(false))
     }
 
+    /// Maximum nesting depth rendered before truncating with `...`. A backstop
+    /// for pathologically deep (but finite) values; cyclic values are caught
+    /// earlier by the Rc-pointer cycle check in [`Value::render`].
+    const MAX_RENDER_DEPTH: usize = 128;
+
     /// Human-friendly rendering for `to_s` and `println`.
     pub fn display(&self) -> String {
+        self.render(false, 0, &mut Vec::new())
+    }
+
+    /// Debug rendering — like `display` but quotes strings.
+    pub fn debug(&self) -> String {
+        self.render(true, 0, &mut Vec::new())
+    }
+
+    /// Shared renderer for [`Value::display`]/[`Value::debug`] with a recursion
+    /// depth cap AND Rc-pointer cycle detection, so a self-referential value
+    /// (`let a = [1]  a.push(a)`) renders as `[1, [...]]` instead of overflowing
+    /// the stack — a non-unwinding abort the CLI panic firewall cannot catch.
+    ///
+    /// `quote_str` selects debug (quoted) vs display (raw) rendering for a
+    /// string AT THIS position; nested children always render with debug
+    /// semantics, exactly as the previous `display`/`debug` pair did (`display`
+    /// of a container mapped children through `debug`). `visited` holds the
+    /// pointers of the mutable containers (`Array`/`Map`/`Struct`, the only
+    /// `Rc<RefCell<_>>` shapes) currently on the render path; every cycle must
+    /// pass through one of these, so tracking them alone breaks every cycle.
+    /// `Tuple`/`Variant` are immutable `Rc<Vec<_>>` and cannot self-reference,
+    /// so they need only the depth backstop.
+    fn render(&self, quote_str: bool, depth: usize, visited: &mut Vec<*const ()>) -> String {
         match self {
             Value::Nil => "nil".to_string(),
             Value::Bool(b) => b.to_string(),
             Value::Int(i) => i.to_string(),
             Value::Float(f) => format!("{f}"),
-            Value::Str(s) => (**s).clone(),
+            Value::Str(s) => {
+                if quote_str {
+                    format!("{:?}", s.as_str())
+                } else {
+                    (**s).clone()
+                }
+            }
             Value::Symbol(s) => format!(":{}", s),
             Value::Array(a) => {
-                let inner = a
-                    .borrow()
-                    .iter()
-                    .map(|v| v.debug())
-                    .collect::<Vec<_>>()
-                    .join(", ");
-                format!("[{inner}]")
+                let ptr = Rc::as_ptr(a) as *const ();
+                if depth >= Self::MAX_RENDER_DEPTH || visited.contains(&ptr) {
+                    return "[...]".to_string();
+                }
+                visited.push(ptr);
+                let snapshot = a.borrow().clone();
+                let mut parts = Vec::with_capacity(snapshot.len());
+                for v in &snapshot {
+                    parts.push(v.render(true, depth + 1, visited));
+                }
+                visited.pop();
+                format!("[{}]", parts.join(", "))
             }
             Value::Map(m) => {
-                let inner = m
-                    .borrow()
-                    .iter()
-                    .map(|(k, v)| format!("{k:?} => {}", v.debug()))
-                    .collect::<Vec<_>>()
-                    .join(", ");
-                format!("{{{inner}}}")
+                let ptr = Rc::as_ptr(m) as *const ();
+                if depth >= Self::MAX_RENDER_DEPTH || visited.contains(&ptr) {
+                    return "{...}".to_string();
+                }
+                visited.push(ptr);
+                let snapshot = m.borrow().clone();
+                let mut parts = Vec::with_capacity(snapshot.len());
+                for (k, v) in &snapshot {
+                    parts.push(format!("{k:?} => {}", v.render(true, depth + 1, visited)));
+                }
+                visited.pop();
+                format!("{{{}}}", parts.join(", "))
             }
             Value::Range {
                 start,
@@ -272,13 +316,18 @@ impl Value {
             Value::ActorType(actor) => format!("<actor {}>", actor.name),
             Value::ActorAddress(handle) => format!("<actor address {}>", handle.actor.name),
             Value::Struct { name, fields, .. } => {
-                let inner = fields
-                    .borrow()
-                    .iter()
-                    .map(|(k, v)| format!("{k}: {}", v.debug()))
-                    .collect::<Vec<_>>()
-                    .join(", ");
-                format!("{} {{ {} }}", name, inner)
+                let ptr = Rc::as_ptr(fields) as *const ();
+                if depth >= Self::MAX_RENDER_DEPTH || visited.contains(&ptr) {
+                    return format!("{name} {{ ... }}");
+                }
+                visited.push(ptr);
+                let snapshot = fields.borrow().clone();
+                let mut parts = Vec::with_capacity(snapshot.len());
+                for (k, v) in &snapshot {
+                    parts.push(format!("{k}: {}", v.render(true, depth + 1, visited)));
+                }
+                visited.pop();
+                format!("{} {{ {} }}", name, parts.join(", "))
             }
             Value::Variant {
                 path,
@@ -288,13 +337,14 @@ impl Value {
                 let prefix = path.join("::");
                 if fields.is_empty() {
                     format!("{prefix}::{variant}")
+                } else if depth >= Self::MAX_RENDER_DEPTH {
+                    format!("{prefix}::{variant}(...)")
                 } else {
-                    let inner = fields
-                        .iter()
-                        .map(|v| v.debug())
-                        .collect::<Vec<_>>()
-                        .join(", ");
-                    format!("{prefix}::{variant}({inner})")
+                    let mut parts = Vec::with_capacity(fields.len());
+                    for v in fields.iter() {
+                        parts.push(v.render(true, depth + 1, visited));
+                    }
+                    format!("{prefix}::{variant}({})", parts.join(", "))
                 }
             }
             Value::MemoryStore { kind, name, .. } => {
@@ -312,21 +362,15 @@ impl Value {
                 None => "<process-status signal>".to_string(),
             },
             Value::Tuple(items) => {
-                let inner = items
-                    .iter()
-                    .map(|v| v.debug())
-                    .collect::<Vec<_>>()
-                    .join(", ");
-                format!("({inner})")
+                if depth >= Self::MAX_RENDER_DEPTH {
+                    return "(...)".to_string();
+                }
+                let mut parts = Vec::with_capacity(items.len());
+                for v in items.iter() {
+                    parts.push(v.render(true, depth + 1, visited));
+                }
+                format!("({})", parts.join(", "))
             }
-        }
-    }
-
-    /// Debug rendering — like `display` but quotes strings.
-    pub fn debug(&self) -> String {
-        match self {
-            Value::Str(s) => format!("{:?}", s.as_str()),
-            _ => self.display(),
         }
     }
 
@@ -1023,5 +1067,76 @@ fn type_expr_compatible(expected: &TypeExpr, actual: &TypeExpr) -> bool {
             },
         ) => type_expr_compatible(expected_trait, actual_trait),
         _ => false,
+    }
+}
+
+#[cfg(test)]
+mod render_cycle_tests {
+    //! Foundation HARDEN follow-up — `Value::display`/`debug` must not overflow
+    //! the stack on a self-referential value. Before the cycle/depth guard these
+    //! tests aborted the test binary (`stack overflow, aborting`, a non-unwinding
+    //! `SIGABRT` the CLI panic firewall cannot catch).
+    use super::*;
+
+    #[test]
+    fn self_referential_array_renders_with_a_cycle_marker() {
+        // `let a = [1]  a.push(a)` — the array contains itself.
+        let backing = Rc::new(RefCell::new(vec![Value::Int(1)]));
+        let arr = Value::Array(Rc::clone(&backing));
+        backing.borrow_mut().push(arr.clone());
+        assert_eq!(arr.display(), "[1, [...]]");
+        // Breaking the cycle lets the leak-free Rc drop (avoids a leaked cycle).
+        backing.borrow_mut().clear();
+    }
+
+    #[test]
+    fn self_referential_map_renders_with_a_cycle_marker() {
+        let backing = Rc::new(RefCell::new(BTreeMap::new()));
+        let map = Value::Map(Rc::clone(&backing));
+        backing.borrow_mut().insert("self".to_string(), map.clone());
+        assert_eq!(map.display(), "{\"self\" => {...}}");
+        backing.borrow_mut().clear();
+    }
+
+    #[test]
+    fn mutually_referential_arrays_terminate() {
+        // a -> b -> a. The cycle is broken at the first revisited container.
+        let a = Rc::new(RefCell::new(vec![]));
+        let b = Rc::new(RefCell::new(vec![Value::Array(Rc::clone(&a))]));
+        a.borrow_mut().push(Value::Array(Rc::clone(&b)));
+        let rendered = Value::Array(Rc::clone(&a)).display();
+        assert!(
+            rendered.contains("[...]"),
+            "an indirect cycle must terminate with a marker, got: {rendered}"
+        );
+        a.borrow_mut().clear();
+        b.borrow_mut().clear();
+    }
+
+    #[test]
+    fn deeply_nested_finite_value_is_depth_capped_not_overflowed() {
+        // 300 > MAX_RENDER_DEPTH (128): a finite-but-deep value must truncate,
+        // not overflow.
+        let mut v = Value::Int(0);
+        for _ in 0..300 {
+            v = Value::Array(Rc::new(RefCell::new(vec![v])));
+        }
+        let rendered = v.display();
+        assert!(
+            rendered.contains("[...]"),
+            "deep nesting must be depth-capped"
+        );
+    }
+
+    #[test]
+    fn ordinary_nested_value_renders_unchanged() {
+        // The guard must not alter normal (acyclic, shallow) rendering.
+        let inner = Value::Array(Rc::new(RefCell::new(vec![Value::Int(2), Value::Int(3)])));
+        let v = Value::Array(Rc::new(RefCell::new(vec![
+            Value::Int(1),
+            inner,
+            Value::str("x"),
+        ])));
+        assert_eq!(v.display(), "[1, [2, 3], \"x\"]");
     }
 }

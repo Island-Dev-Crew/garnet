@@ -9,6 +9,39 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## Unreleased — Studio macOS parity + judged enhancement set (2026-06-12)
 
+### Foundation HARDEN — cyclic-value render guard (`Value::display`/`debug`)
+
+- **Fixed (stack-overflow abort → bounded render):** `Value::display()`/`debug()`
+  recursed through container values with **no cycle or depth guard**, so a
+  self-referential value — `let a = [1]  a.push(a)` (an array containing
+  itself; `push` shares the backing `Rc`) — drove infinite recursion into a
+  **stack overflow** (a non-unwinding `SIGABRT`, exit `134`). That abort killed
+  the `repl` session / `test` / `doctest` run *on render*, and crucially the
+  panic firewall **cannot** catch it (`catch_unwind` only recovers unwinding
+  panics). This is the named follow-up from the J8 firewall slice — closing the
+  cause the firewall could not.
+- **The guard:** `display`/`debug` now delegate to a shared
+  `Value::render(quote, depth, visited)` that (1) tracks the `Rc` pointers of
+  the **mutable** containers on the render path (`Array`/`Map`/`Struct`, the
+  only `Rc<RefCell<_>>` shapes — every cycle must pass through one, so tracking
+  those alone breaks every cycle) and renders a revisited container as `[...]` /
+  `{...}` / `Name { ... }`; and (2) caps depth at 128 as a backstop for deep
+  finite values (`Tuple`/`Variant` are immutable `Rc<Vec<_>>` and cannot
+  self-reference, so they need only the cap). A self-cycle now renders
+  `[1, [...]]`; the public `display`/`debug` signatures are unchanged.
+- **Red→green:** `garnet-interp` `render_cycle_tests` (self-referential array →
+  `[1, [...]]`, self-referential map → `{"self" => {...}}`, mutual a↔b cycle
+  terminates, 300-deep finite value is depth-capped, ordinary nested value
+  renders unchanged) + `garnet-cli/tests/cyclic_value_render.rs` (the REPL
+  builds a cycle, renders it, and **keeps evaluating** — exit `0`, not `134`).
+  Without the guard the REPL e2e test aborts with `signal 6` / "stack overflow,
+  aborting".
+- **Honest scope:** this stops the *render* from crashing; a self-referential
+  value is still an `Rc` **reference cycle** that leaks (never reclaimed) — that
+  is inherent to `Rc` and out of scope here (the fix is "don't abort on
+  rendering," not "collect cycles"). No behavior change for acyclic values.
+  Workspace 2085/0; clippy `--all-targets -D warnings` clean; no gate modified.
+
 ### Foundation HARDEN — process-abort firewall on the `eval`/`repl`/`test`/`doctest` lanes (J8)
 
 - **Added** `garnet-cli/src/panic_firewall.rs` — a `catch_unwind`-based firewall
