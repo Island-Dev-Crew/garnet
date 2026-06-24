@@ -334,3 +334,29 @@ jobs:
           key: ${{ runner.os }}-doc-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-doc-
       - run: cargo doc --workspace --no-deps
+
+  # ───────────────────────────────────────────────────────────────────
+  # Machine-truth drift guard — `xtask truth --check` verifies docs/truth.json
+  # and the <!-- truth:KEY --> stamped surfaces still match live repo state,
+  # including the PR-1 fail-closed latest-tag certification against origin.
+  # `fetch-depth: 0` so the local tags exist for that certification; the default
+  # `--check` does NOT run the test suite (the `test` job owns that), so this is
+  # a fast (~1s) drift gate. [Routine verification wiring — Foundation Tier-1.]
+  # ───────────────────────────────────────────────────────────────────
+  truth-check:
+    name: machine-truth drift guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-truth-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-truth-
+      - run: cargo run -p xtask -- truth --check

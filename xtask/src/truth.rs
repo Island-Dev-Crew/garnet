@@ -33,8 +33,11 @@
 //! Tracked in `F_Project_Management/W_REBUILD/W_REBUILD_SPEC.md` (RB-0a
 //! design note).
 //!
-//! Wiring `truth --check` into CI is a gate change and stays Jon-gated; this
-//! module only provides the command.
+//! Wiring `truth --check` into CI was a gate change (Jon-gated, prepared +
+//! human-merged): the `machine-truth drift guard` job in `.github/workflows/
+//! ci.yml` runs the default `--check` (fast, no test suite) on every push/PR,
+//! with `fetch-depth: 0` so the fail-closed latest-tag certification has the
+//! local tags.
 
 use std::collections::BTreeMap;
 use std::process::Command;
