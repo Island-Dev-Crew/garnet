@@ -7,7 +7,27 @@
 
 use crate::caps_graph::CapsReport;
 use crate::capset::CapSet;
-use garnet_parser::ast::{FnDef, FnMode, Item, Module, Ownership};
+use garnet_parser::ast::{FnDef, FnMode, Item, Module, Ownership, TypeExpr};
+
+/// Owner label for an impl block — the last path segment of the target type.
+/// Mirrors `capability_surface::type_label` and `caps_graph::type_label` so
+/// the effect pass looks up the SAME `Owner::name` transitive-caps key the
+/// graph stores for impl methods.
+fn type_label(ty: &TypeExpr) -> String {
+    match ty {
+        TypeExpr::Named { path, .. } => path.last().cloned().unwrap_or_else(|| "impl".to_string()),
+        _ => "impl".to_string(),
+    }
+}
+
+/// The transitive-caps map key for a function: bare name for free fns,
+/// `Owner::name` for impl methods. MUST match `caps_graph::fn_key`.
+fn caps_key(owner: Option<&str>, name: &str) -> String {
+    match owner {
+        Some(owner) => format!("{owner}::{name}"),
+        None => name.to_string(),
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LinearParam {
@@ -67,7 +87,14 @@ fn collect_items(
     for item in items {
         match item {
             Item::Fn(function) => {
-                collect_function(function, module_safe, caps_report, functions, violations);
+                collect_function(
+                    function,
+                    /*owner=*/ None,
+                    module_safe,
+                    caps_report,
+                    functions,
+                    violations,
+                );
             }
             Item::Module(module) => {
                 collect_items(
@@ -79,8 +106,16 @@ fn collect_items(
                 );
             }
             Item::Impl(impl_block) => {
+                let owner = type_label(&impl_block.target);
                 for method in &impl_block.methods {
-                    collect_function(method, module_safe, caps_report, functions, violations);
+                    collect_function(
+                        method,
+                        Some(&owner),
+                        module_safe,
+                        caps_report,
+                        functions,
+                        violations,
+                    );
                 }
             }
             _ => {}
@@ -90,6 +125,7 @@ fn collect_items(
 
 fn collect_function(
     function: &FnDef,
+    owner: Option<&str>,
     module_safe: bool,
     caps_report: &CapsReport,
     functions: &mut Vec<FnEffectSummary>,
@@ -100,15 +136,20 @@ fn collect_function(
         return;
     }
 
+    // Look up the transitive caps under the SAME key the caps graph stores —
+    // `Owner::name` for impl methods, bare name for free fns. Before the
+    // S-slice that type-qualified impl-method graph keys, this bare-name
+    // lookup quietly missed impl-method caps.
+    let fn_name = caps_key(owner, &function.name);
     let required_caps = caps_report
         .transitive
-        .get(&function.name)
+        .get(&fn_name)
         .copied()
         .unwrap_or_default();
     let linear_params = linear_params(function);
     let has_linear_params = !linear_params.is_empty();
     functions.push(FnEffectSummary {
-        fn_name: function.name.clone(),
+        fn_name: fn_name.clone(),
         safe,
         required_caps,
         linear_params,
@@ -116,7 +157,7 @@ fn collect_function(
 
     if function.name != "main" && !required_caps.is_empty() && !has_linear_params {
         violations.push(LinearEffectViolation {
-            fn_name: function.name.clone(),
+            fn_name,
             required_caps,
         });
     }
