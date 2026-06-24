@@ -28,11 +28,26 @@
 //! - `Expr::Call { callee: Path(segs), .. }` — qualified call. Resolve the
 //!   full `segs.join("::")` against the stdlib registry first (e.g.
 //!   `fs::read_file`), fall back to the last segment as a user fn.
-//! - `Expr::Method { receiver, method, .. }` — method dispatch. Deferred;
-//!   method dispatch needs type information to resolve, and Day 2 scope is
-//!   the free-function propagator. Method calls are counted in
-//!   `boundary_call_sites` by `audit.rs` but do not contribute to the caps
-//!   transitive set in this pass.
+//! - `Expr::Method { receiver, method, .. }` — method dispatch. The pass has
+//!   no receiver-type information, so it cannot perform precise type-directed
+//!   dispatch. Instead it resolves `receiver.m(..)` to the UNION of declared
+//!   caps of every impl method named `m`, across all types
+//!   ([`CalleeRef::MethodByName`]). This is a sound OVER-approximation: it
+//!   never under-attributes authority (so it cannot let a cap-requiring method
+//!   call slip past coverage), but it may over-attribute when two types share
+//!   a method name. Precise, type-directed method resolution is a future
+//!   slice. (Previously this edge was fully deferred — method calls
+//!   contributed ZERO caps, which under-attributed authority.)
+//!
+//! ## Impl-method identity
+//!
+//! Impl methods are keyed `Owner::name` (the impl block's target type's last
+//! path segment, e.g. `A::go`), exactly mirroring the S114 capability surface
+//! ([`crate::capability_surface`]) so the graph and the surface AGREE on every
+//! impl-method name. Free (non-impl) functions keep their bare name. Without
+//! this, `impl A { def go() }` and `impl B { def go() }` collided under the
+//! bare key `"go"` and the second overwrote the first — authority was
+//! mis-attributed.
 //!
 //! ## Cycle handling
 //!
@@ -57,8 +72,29 @@
 //! audit.rs error is enough), and permits managed-mode wildcard use to pass.
 
 use crate::capset::CapSet;
-use garnet_parser::ast::{Capability, Expr, FnDef, FnMode, Item, Module, Stmt};
+use garnet_parser::ast::{Capability, Expr, FnDef, FnMode, Item, Module, Stmt, TypeExpr};
 use std::collections::{BTreeMap, BTreeSet};
+
+/// The graph key for a function. Free functions key on their bare name; impl
+/// methods key on `Owner::name`. This MUST match the `Owner::method` naming
+/// the S114 capability surface uses ([`crate::capability_surface`]) so the
+/// graph and the surface agree on impl-method identity.
+fn fn_key(owner: Option<&str>, name: &str) -> String {
+    match owner {
+        Some(owner) => format!("{owner}::{name}"),
+        None => name.to_string(),
+    }
+}
+
+/// A short label for an impl block's owning type — the last path segment of
+/// the target type. Mirrors `capability_surface::type_label` exactly so the
+/// graph and the surface derive identical owner labels.
+fn type_label(ty: &TypeExpr) -> String {
+    match ty {
+        TypeExpr::Named { path, .. } => path.last().cloned().unwrap_or_else(|| "impl".to_string()),
+        _ => "impl".to_string(),
+    }
+}
 
 /// A propagated-caps violation: a function invokes a primitive/callee
 /// transitively requiring a capability its `@caps(...)` does not cover.
@@ -94,18 +130,30 @@ pub fn check_caps_coverage(module: &Module) -> CapsReport {
 // ── Internal state ─────────────────────────────────────────────────
 
 struct CapsGraph {
-    /// fn name → set of callee names (user fns + primitives by their
-    /// registry key, bare or qualified).
+    /// fn key → set of callee names (user fns + primitives by their
+    /// registry key, bare or qualified). Keyed by [`fn_key`]: free fns by bare
+    /// name, impl methods by `Owner::name`.
     callees: BTreeMap<String, BTreeSet<CalleeRef>>,
-    /// fn name → declared `@caps(...)` set. Unknown (user-defined) names
+    /// fn key → declared `@caps(...)` set. Unknown (user-defined) names
     /// set [`CapSet::OTHER`] so annotation *presence* survives — see the
-    /// claim boundary in `capset.rs`.
+    /// claim boundary in `capset.rs`. Keyed by [`fn_key`].
     declared: BTreeMap<String, CapSet>,
-    /// fn name → whether `@caps(*)` wildcard was used.
+    /// fn key → whether `@caps(*)` wildcard was used.
     wildcard: BTreeMap<String, bool>,
-    /// fn name → mode (safe vs managed). Used to skip safe-mode wildcard
+    /// fn key → mode (safe vs managed). Used to skip safe-mode wildcard
     /// functions (audit.rs already flags them).
     modes: BTreeMap<String, FnMode>,
+    /// fn keys that carried ANY `@caps(...)` annotation — including the empty
+    /// `@caps()` form. This distinguishes "declared `@caps()` explicitly"
+    /// (a deliberate empty grant) from "no `@caps` annotation at all"; the
+    /// `declared` bitset is empty in both cases, so presence cannot be read
+    /// off it. Keyed by [`fn_key`].
+    declares_caps: BTreeSet<String>,
+    /// Bare method-name → set of impl-method keys (`Owner::name`) declaring
+    /// that name, across every type. Built during decl collection and used to
+    /// resolve [`CalleeRef::MethodByName`] to the union of all matching impl
+    /// methods (the sound name-based over-approximation for method dispatch).
+    method_index: BTreeMap<String, BTreeSet<String>>,
     /// Primitive name → required caps, from stdlib registry. Indexed by
     /// BOTH the qualified name ("fs::read_file") AND the bare last segment
     /// ("read_file"), so both call shapes resolve. Registry cap strings are
@@ -126,8 +174,16 @@ enum CalleeRef {
     /// A stdlib primitive. Holds the registry key (qualified name, e.g.
     /// "fs::read_file"). Caps are looked up from `prim_caps`.
     Primitive(String),
-    /// A user-defined function in this module.
+    /// A user-defined function in this module. Holds the graph key — a bare
+    /// name for a free fn, or `Owner::name` for an impl method.
     UserFn(String),
+    /// A method call `receiver.m(..)` resolved by NAME only (no receiver-type
+    /// info). At propagation time this resolves to the UNION of declared caps
+    /// of every impl method named `m`. Holds the bare method name `m`. This is
+    /// a sound over-approximation: it never under-attributes authority, but
+    /// may over-attribute when a method name collides across types — precise
+    /// type-directed dispatch is a future slice.
+    MethodByName(String),
 }
 
 impl CapsGraph {
@@ -165,13 +221,16 @@ impl CapsGraph {
             declared: BTreeMap::new(),
             wildcard: BTreeMap::new(),
             modes: BTreeMap::new(),
+            declares_caps: BTreeSet::new(),
+            method_index: BTreeMap::new(),
             prim_caps,
             memo: BTreeMap::new(),
             in_progress: BTreeSet::new(),
         };
 
-        // First pass: record every user fn and its declared caps, so the
-        // second pass can resolve user-fn callees by name lookup.
+        // First pass: record every user fn and its declared caps (and build
+        // the method-name index over impl methods), so the second pass can
+        // resolve user-fn callees by key and method calls by name.
         for item in &module.items {
             graph.collect_fn_decls(item, /*module_safe=*/ module.safe);
         }
@@ -186,7 +245,7 @@ impl CapsGraph {
 
     fn collect_fn_decls(&mut self, item: &Item, module_safe: bool) {
         match item {
-            Item::Fn(f) => self.record_fn_decl(f, module_safe),
+            Item::Fn(f) => self.record_fn_decl(f, /*owner=*/ None, module_safe),
             Item::Module(m) => {
                 let merged = module_safe || m.safe;
                 for inner in &m.items {
@@ -194,19 +253,27 @@ impl CapsGraph {
                 }
             }
             Item::Impl(impl_block) => {
+                let owner = type_label(&impl_block.target);
                 for method in &impl_block.methods {
-                    self.record_fn_decl(method, module_safe);
+                    self.record_fn_decl(method, Some(&owner), module_safe);
                 }
             }
             _ => {}
         }
     }
 
-    fn record_fn_decl(&mut self, f: &FnDef, module_safe: bool) {
+    fn record_fn_decl(&mut self, f: &FnDef, owner: Option<&str>, module_safe: bool) {
+        let key = fn_key(owner, &f.name);
         let mut caps = CapSet::EMPTY;
         let mut has_wildcard = false;
+        let mut has_caps_annotation = false;
         for ann in &f.annotations {
             if let garnet_parser::ast::Annotation::Caps(items, _) = ann {
+                // Presence of ANY `@caps(...)` — even empty `@caps()` — marks
+                // the fn as explicitly annotated. Tracked separately because
+                // the `declared` bitset is empty both for `@caps()` and for
+                // no annotation at all.
+                has_caps_annotation = true;
                 for c in items {
                     match c {
                         Capability::Wildcard => has_wildcard = true,
@@ -215,38 +282,51 @@ impl CapsGraph {
                 }
             }
         }
-        self.declared.insert(f.name.clone(), caps);
-        self.wildcard.insert(f.name.clone(), has_wildcard);
+        self.declared.insert(key.clone(), caps);
+        self.wildcard.insert(key.clone(), has_wildcard);
+        if has_caps_annotation {
+            self.declares_caps.insert(key.clone());
+        }
         // Effective mode: safe if the module is safe OR the fn declares @safe.
         let effective_mode = if module_safe || f.mode == FnMode::Safe {
             FnMode::Safe
         } else {
             FnMode::Managed
         };
-        self.modes.insert(f.name.clone(), effective_mode);
+        self.modes.insert(key.clone(), effective_mode);
+        // Index impl methods by their bare name so name-based method dispatch
+        // can resolve `receiver.m()` to every impl method named `m`.
+        if owner.is_some() {
+            self.method_index
+                .entry(f.name.clone())
+                .or_default()
+                .insert(key.clone());
+        }
         // Initialize an empty callee-set so every declared fn appears in the
         // map even if its body is empty.
-        self.callees.entry(f.name.clone()).or_default();
+        self.callees.entry(key).or_default();
     }
 
     fn collect_fn_callees(&mut self, item: &Item) {
         match item {
-            Item::Fn(f) => self.record_fn_callees(f),
+            Item::Fn(f) => self.record_fn_callees(f, /*owner=*/ None),
             Item::Module(m) => {
                 for inner in &m.items {
                     self.collect_fn_callees(inner);
                 }
             }
             Item::Impl(impl_block) => {
+                let owner = type_label(&impl_block.target);
                 for method in &impl_block.methods {
-                    self.record_fn_callees(method);
+                    self.record_fn_callees(method, Some(&owner));
                 }
             }
             _ => {}
         }
     }
 
-    fn record_fn_callees(&mut self, f: &FnDef) {
+    fn record_fn_callees(&mut self, f: &FnDef, owner: Option<&str>) {
+        let key = fn_key(owner, &f.name);
         let mut callees: BTreeSet<CalleeRef> = BTreeSet::new();
         for s in &f.body.stmts {
             self.walk_stmt_for_callees(s, &mut callees);
@@ -254,7 +334,7 @@ impl CapsGraph {
         if let Some(tail) = &f.body.tail_expr {
             self.walk_expr_for_callees(tail, &mut callees);
         }
-        self.callees.insert(f.name.clone(), callees);
+        self.callees.insert(key, callees);
     }
 
     fn walk_stmt_for_callees(&self, s: &Stmt, out: &mut BTreeSet<CalleeRef>) {
@@ -308,10 +388,20 @@ impl CapsGraph {
                     self.walk_expr_for_callees(a, out);
                 }
             }
-            Expr::Method { receiver, args, .. } => {
-                // Method dispatch requires type info — deferred to a future
-                // pass. Walk children so nested free-function calls are
-                // still captured.
+            Expr::Method {
+                receiver,
+                method,
+                args,
+                ..
+            } => {
+                // No receiver-type info here, so we cannot do precise type-
+                // directed dispatch. Emit a name-based reference; the
+                // propagator resolves it to the UNION of declared caps of all
+                // impl methods named `method` (sound over-approximation — see
+                // the module docs and `CalleeRef::MethodByName`). Keep
+                // recursing into receiver + args so nested free-function calls
+                // are still captured.
+                out.insert(CalleeRef::MethodByName(method.clone()));
                 self.walk_expr_for_callees(receiver, out);
                 for a in args {
                     self.walk_expr_for_callees(a, out);
@@ -465,6 +555,17 @@ impl CapsGraph {
                 CalleeRef::UserFn(name) => {
                     caps |= self.transitive_caps(&name);
                 }
+                CalleeRef::MethodByName(method) => {
+                    // Sound over-approximation: union the transitive caps of
+                    // EVERY impl method named `method`. No receiver-type info
+                    // is available, so we cannot pick the one true target;
+                    // unioning never under-attributes authority (precise
+                    // type-directed dispatch is a future slice).
+                    let targets = self.method_index.get(&method).cloned().unwrap_or_default();
+                    for target in targets {
+                        caps |= self.transitive_caps(&target);
+                    }
+                }
             }
         }
 
@@ -515,25 +616,16 @@ impl CapsGraph {
     }
 
     /// Whether the fn has ANY `@caps(...)` annotation at all — including an
-    /// empty one like `@caps()`. Used to distinguish "declared nothing
-    /// because purely computational" (covered by `declared.contains_key`)
-    /// from "didn't annotate at all" (not yet covered).
+    /// empty one like `@caps()`. Used to distinguish "declared `@caps()`
+    /// explicitly" (a deliberate empty grant) from "didn't annotate at all".
+    /// `fn_name` is the graph key (bare name, or `Owner::name` for impl
+    /// methods).
     fn has_caps_annotation(&self, fn_name: &str) -> bool {
-        // `declared` contains an entry for every fn (with an empty CapSet if
-        // no @caps). To distinguish "declared nothing" from "declared @caps()",
-        // we look at the original AST — but rather than re-walking, we treat
-        // wildcard-OR-nonempty-OR-main-annotated as "has annotation". A fn
-        // with `@caps()` will have an empty set but wildcard=false and isn't
-        // `main`, so it would skip here — acceptable for v3.4.1 Day 2. A
-        // later refinement can track the presence of the annotation
-        // explicitly.
-        if self.wildcard.get(fn_name).copied().unwrap_or(false) {
+        // `declares_caps` records the presence of the annotation directly
+        // (set during decl collection), so an explicit empty `@caps()` is now
+        // correctly recognized as "annotated" rather than treated as unknown.
+        if self.declares_caps.contains(fn_name) {
             return true;
-        }
-        if let Some(caps) = self.declared.get(fn_name) {
-            if !caps.is_empty() {
-                return true;
-            }
         }
         // Special case: `main` is required to annotate per audit.rs, so treat
         // it as annotated (the audit check already failed if it wasn't).
@@ -556,6 +648,16 @@ impl CapsGraph {
                     let child_caps = self.transitive_caps(name);
                     if child_caps.contains(missing) {
                         return format!("(via {name})");
+                    }
+                }
+                CalleeRef::MethodByName(ref method) => {
+                    // Report the first impl method named `method` (in key
+                    // order) whose transitive caps include `missing`.
+                    let targets = self.method_index.get(method).cloned().unwrap_or_default();
+                    for target in targets {
+                        if self.transitive_caps(&target).contains(missing) {
+                            return format!("(via .{method}() → {target})");
+                        }
                     }
                 }
             }
