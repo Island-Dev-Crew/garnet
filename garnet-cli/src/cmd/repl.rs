@@ -37,10 +37,18 @@ pub fn run(preload: Option<PathBuf>) -> ExitCode {
     let mut interp = Interpreter::new();
     if let Some(p) = preload {
         match read_file(&p) {
-            Ok(src) => match interp.load_source(&src) {
-                Ok(()) => println!("preloaded {}", p.display()),
-                Err(e) => {
+            // Firewalled: the preload file's top-level `let`/`const` initializers
+            // are evaluated during `load_source`, so a load-time panic (e.g.
+            // `const X = i64::MIN.abs()`) degrades to a controlled exit-1 rather
+            // than aborting before the session ever starts.
+            Ok(src) => match crate::panic_firewall::firewalled(|| interp.load_source(&src)) {
+                Ok(Ok(())) => println!("preloaded {}", p.display()),
+                Ok(Err(e)) => {
                     eprintln!("preload error: {e}");
+                    return ExitCode::from(1);
+                }
+                Err(panic_msg) => {
+                    eprintln!("preload error: runtime panic: {panic_msg}");
                     return ExitCode::from(1);
                 }
             },
@@ -107,15 +115,20 @@ pub(crate) fn dispatch(interp: &mut Interpreter, input: &str) -> Outcome {
     if let Some(rest) = line.strip_prefix('?') {
         return Outcome::Print(doc_text(interp, rest.trim()));
     }
+    // Firewalled: a panic in `load_source`/`eval_expr_src` (e.g. the
+    // `i64::MIN.abs()` overflow) becomes a printed error so the REPL session
+    // survives — one bad expression must not kill the whole session.
     if looks_like_item(line) {
-        return match interp.load_source(line) {
-            Ok(()) => Outcome::Loaded("ok".into()),
-            Err(e) => Outcome::Print(format!("error: {e}")),
+        return match crate::panic_firewall::firewalled(|| interp.load_source(line)) {
+            Ok(Ok(())) => Outcome::Loaded("ok".into()),
+            Ok(Err(e)) => Outcome::Print(format!("error: {e}")),
+            Err(panic_msg) => Outcome::Print(format!("error: runtime panic: {panic_msg}")),
         };
     }
-    match interp.eval_expr_src(line) {
-        Ok(v) => Outcome::Print(pretty(&v)),
-        Err(e) => Outcome::Print(format!("error: {e}")),
+    match crate::panic_firewall::firewalled(|| interp.eval_expr_src(line)) {
+        Ok(Ok(v)) => Outcome::Print(pretty(&v)),
+        Ok(Err(e)) => Outcome::Print(format!("error: {e}")),
+        Err(panic_msg) => Outcome::Print(format!("error: runtime panic: {panic_msg}")),
     }
 }
 
@@ -687,6 +700,23 @@ mod tests {
     fn evaluates_an_expression_and_pretty_prints() {
         let mut i = interp();
         assert_eq!(dispatch(&mut i, "1 + 2 * 3"), Outcome::Print("=> 7".into()));
+    }
+
+    #[test]
+    fn a_panicking_expression_is_reported_and_the_session_survives() {
+        let mut i = interp();
+        // i64::MIN.abs() overflows → a Rust panic in the interpreter. Before the
+        // firewall this aborted the whole REPL process; now `dispatch` returns a
+        // printed error (no panic) and the SAME interpreter keeps working.
+        match dispatch(&mut i, "(0 - 9223372036854775807 - 1).abs()") {
+            Outcome::Print(s) => assert!(
+                s.contains("runtime panic") && s.contains("overflow"),
+                "expected a runtime-panic report, got: {s}"
+            ),
+            other => panic!("expected Print (session survives), got {other:?}"),
+        }
+        // The session is still usable after the panic.
+        assert_eq!(dispatch(&mut i, "40 + 2"), Outcome::Print("=> 42".into()));
     }
 
     #[test]

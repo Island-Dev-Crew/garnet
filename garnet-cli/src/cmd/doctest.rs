@@ -127,8 +127,14 @@ pub fn run(args: &[String]) -> ExitCode {
 
     // Load the file's definitions once so fences can call documented functions.
     // A load failure dooms every fence rather than silently reporting none.
+    // Firewalled: top-level `let`/`const` initializers are evaluated during
+    // `load_source`, so a load-time panic (e.g. `const X = i64::MIN.abs()`)
+    // must doom the fences as failures, not abort the whole doctest process.
     let mut interp = Interpreter::new();
-    let load_err = interp.load_source(&src).err().map(|e| e.to_string());
+    let load_err = match crate::panic_firewall::firewalled(|| interp.load_source(&src)) {
+        Ok(result) => result.err().map(|e| e.to_string()),
+        Err(panic_msg) => Some(format!("panicked: {panic_msg}")),
+    };
 
     let mut cases: Vec<Case> = Vec::with_capacity(pending.len());
     for (item, fence, line) in pending {
@@ -165,9 +171,14 @@ pub fn run(args: &[String]) -> ExitCode {
 /// Evaluate one fence against the loaded interpreter, applying the optional
 /// `# =>` value assertion.
 fn run_fence(interp: &Interpreter, fence: &Fence) -> Outcome {
-    match interp.eval_expr_src(&fence.code) {
-        Err(e) => Outcome::Fail(format!("{e}")),
-        Ok(value) => match &fence.expect {
+    // Firewalled: a panicking fence (e.g. an `i64::MIN.abs()` overflow) fails
+    // that one fence and lets the doctest run continue, rather than aborting the
+    // whole process mid-suite.
+    let evaluated = crate::panic_firewall::firewalled(|| interp.eval_expr_src(&fence.code));
+    match evaluated {
+        Err(panic_msg) => Outcome::Fail(format!("panicked: {panic_msg}")),
+        Ok(Err(e)) => Outcome::Fail(format!("{e}")),
+        Ok(Ok(value)) => match &fence.expect {
             None => Outcome::Pass,
             Some(expected) => {
                 let got = value.display();
@@ -272,6 +283,21 @@ mod tests {
             eval(src, "double(21)", Some("43")),
             Outcome::Fail(_)
         ));
+    }
+
+    #[test]
+    fn panicking_fence_fails_instead_of_aborting() {
+        // A fence whose evaluation PANICS (i64::MIN.abs() overflow) must fail
+        // that fence — not abort the whole doctest process. Before the firewall
+        // this test panicked the test binary.
+        let outcome = eval("", "(0 - 9223372036854775807 - 1).abs()", None);
+        match outcome {
+            Outcome::Fail(msg) => assert!(
+                msg.contains("panicked") && msg.contains("overflow"),
+                "expected a panicked-overflow failure, got: {msg}"
+            ),
+            Outcome::Pass => panic!("expected Fail (panicked fence), got Pass"),
+        }
     }
 
     #[test]
