@@ -889,6 +889,7 @@ dependencies = [
  "garnet-interp",
  "garnet-parser",
  "garnet-stdlib",
+ "proptest",
 ]
 
 [[package]]
