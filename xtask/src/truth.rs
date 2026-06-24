@@ -13,7 +13,9 @@
 //! - `primitive_count` / `primitives_by_layer` — `garnet_stdlib::registry::all_prims()`.
 //! - `tracked_slices` / `readiness_pct` — the readiness reporters
 //!   (`scripts/garnet_readiness_status.py`, `scripts/garnet_mit_readiness_status.py`).
-//! - `latest_tag` — `git tag --list 'v*' --sort=-v:refname`, first entry.
+//! - `latest_tag` — the highest local `v*` tag, certified against `origin`'s
+//!   published tags (fail-closed: a local-only/foreign tag is a hygiene error,
+//!   never silently adopted). See `derive_latest_tag`.
 //! - `workspace_tests` — measured by actually running
 //!   `cargo test --workspace --no-fail-fast` (the same source CI trusts),
 //!   recorded with the commit it was measured at. `--skip-tests` carries the
@@ -278,12 +280,7 @@ fn derive_truth(tests: TestCounts) -> Result<Truth, String> {
         .and_then(|v| v.as_f64())
         .ok_or("mit readiness: no completion_percent")?;
 
-    let latest_tag = run_capture("git", &["tag", "--list", "v*", "--sort=-v:refname"])?
-        .lines()
-        .next()
-        .ok_or("no v* tags found")?
-        .trim()
-        .to_string();
+    let latest_tag = derive_latest_tag()?;
 
     let commit = current_commit()?;
     let workspace_tests = match tests {
@@ -545,6 +542,56 @@ pub fn check_text(
 // process helpers
 // ---------------------------------------------------------------------------
 
+/// Derive the latest **published** release tag, fail-closed against workstation
+/// tag pollution.
+///
+/// The candidate is the highest local `v*` tag (git's version sort), but it is
+/// certified ONLY if it is also published on `origin` — the trusted release
+/// metadata. A local-only or foreign tag (e.g. a stray `git tag v9.9.9` on a
+/// dev box), or an unreachable origin, yields a specific *latest_tag hygiene*
+/// error so `truth --check` can never silently drift on a polluted workstation.
+fn derive_latest_tag() -> Result<String, String> {
+    let candidate = run_capture("git", &["tag", "--list", "v*", "--sort=-v:refname"])?
+        .lines()
+        .next()
+        .ok_or("no v* tags found")?
+        .trim()
+        .to_string();
+    // Trusted release metadata: the v* tags published on origin. `--refs` drops
+    // the dereferenced `^{}` peel lines so only the tag refs themselves appear.
+    let published = run_capture("git", &["ls-remote", "--tags", "--refs", "origin", "v*"])
+        .map_err(|e| {
+            format!(
+                "latest_tag hygiene: cannot verify `{candidate}` against origin \
+                 (origin unreachable: {e}). truth --check refuses to certify \
+                 latest_tag offline — re-run with network or from a trusted checkout."
+            )
+        })?;
+    certify_latest_tag(&candidate, &published)
+}
+
+/// Pure, network-free certification core (so the hygiene trap is a deterministic
+/// unit test, not a flaky git/network integration test): the candidate is
+/// returned only if it appears in the `origin` `ls-remote --tags` listing; any
+/// other (local-only / foreign) tag is rejected with a specific hygiene error.
+fn certify_latest_tag(candidate: &str, origin_ls_remote: &str) -> Result<String, String> {
+    let is_published = origin_ls_remote
+        .lines()
+        .filter_map(|line| line.rsplit("refs/tags/").next())
+        .map(str::trim)
+        .any(|tag| tag == candidate);
+    if is_published {
+        Ok(candidate.to_string())
+    } else {
+        Err(format!(
+            "latest_tag hygiene: local tag `{candidate}` is NOT published on origin \
+             (Island-Dev-Crew/garnet) — it is a local-only or foreign tag. Clean it \
+             (`git tag -d {candidate}`) or run truth from a trusted checkout. \
+             truth --check refuses to certify a workstation-polluted tag."
+        ))
+    }
+}
+
 fn run_capture(prog: &str, args: &[&str]) -> Result<String, String> {
     let out = Command::new(prog)
         .args(args)
@@ -620,6 +667,29 @@ mod tests {
             .iter()
             .map(|(k, v)| (k.to_string(), v.to_string()))
             .collect()
+    }
+
+    // A realistic `git ls-remote --tags --refs origin v*` listing.
+    const ORIGIN_TAGS: &str = "\
+abc123\trefs/tags/v0.4.2
+def456\trefs/tags/v0.5.0
+0d3c217\trefs/tags/v0.8.0
+8107c01\trefs/tags/v0.8.1";
+
+    #[test]
+    fn latest_tag_certifies_a_published_origin_tag() {
+        assert_eq!(certify_latest_tag("v0.8.1", ORIGIN_TAGS).unwrap(), "v0.8.1");
+    }
+
+    #[test]
+    fn latest_tag_rejects_workstation_tag_pollution_fail_closed() {
+        // PR-1 deterministic trap: a stray local tag that sorts above the real
+        // latest (`git tag v9.9.9-localpollution`) must NOT be silently adopted;
+        // it is not on origin, so truth --check fails closed with a hygiene error.
+        let err = certify_latest_tag("v9.9.9-localpollution", ORIGIN_TAGS).unwrap_err();
+        assert!(err.contains("latest_tag hygiene"), "err: {err}");
+        assert!(err.contains("v9.9.9-localpollution"), "err: {err}");
+        assert!(err.contains("NOT published on origin"), "err: {err}");
     }
 
     #[test]
