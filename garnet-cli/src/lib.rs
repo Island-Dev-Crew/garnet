@@ -20,6 +20,7 @@ pub mod knowledge;
 pub mod machine_key;
 pub mod manifest;
 pub mod new_cmd;
+pub mod panic_firewall;
 pub mod provenance;
 pub mod runtime_settings;
 pub mod sandbox;

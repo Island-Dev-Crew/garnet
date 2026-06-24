@@ -9,6 +9,52 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## Unreleased — Studio macOS parity + judged enhancement set (2026-06-12)
 
+### Foundation HARDEN — process-abort firewall on the `eval`/`repl`/`test`/`doctest` lanes (J8)
+
+- **Added** `garnet-cli/src/panic_firewall.rs` — a `catch_unwind`-based firewall
+  giving the four interpreter-invoking lanes that ran the interpreter on the
+  **main thread** the abort-protection the `run` lane already had (spawn a
+  large-stack thread + `join`). Before this, an interpreter panic aborted the
+  process (`eval`/`test`/`doctest` exit `101`) or killed the whole interactive
+  session (`repl`). The interpreter is `!Send` (`Rc`-based `Env`), so it cannot
+  be moved onto a spawned thread the way the run lane does — `catch_unwind`
+  recovers the unwind **in place**, the only option for a `!Send`, main-thread
+  interpreter. A custom panic hook, gated by a **thread-local** active flag,
+  suppresses the default backtrace noise only on a firewalled thread, so other
+  tests in the crate's test binary (and `#[should_panic]`) still report normally.
+- **Wired** every interpreter entry on these lanes — both the EXECUTE path
+  (`eval_expr_src`/`call_entry`) **and the LOAD path** (`load_source`). The load
+  path matters because Garnet evaluates top-level `let`/`const`/`memory`
+  initializers *during* `load_source` (`register_item`), so a poison
+  initializer (`const X = (i64::MIN).abs()`) panics on load exactly like a test
+  body does. Per-lane semantics: `eval` → controlled exit 1; `repl` → printed
+  error, **session survives**; `test` → that test/file FAILED, **run continues**
+  + summary; `doctest` → that fence/file fails, suite continues.
+- **Fixed (same lane, found by adversarial review):** `garnet test`'s summary
+  computed `passed = total_run - total_failed` (`usize`), which **underflowed
+  and aborted with exit 101** when file-level parse/load failures outnumbered
+  run tests (e.g. a single malformed test file). Now passes are counted
+  directly (`total_passed`), so no subtraction can underflow.
+- **Deterministic trap (red→green):** the reachable trigger is `i64::MIN.abs()`
+  (`(0 - 9223372036854775807 - 1).abs()`), which overflows and panics.
+  `garnet-cli/tests/panic_firewall_lanes.rs` (subprocess: `eval`/`test`/`doctest`/
+  `repl`, execute + load + the underflow case) and unit tests in
+  `cmd::repl::tests` / `cmd::doctest::tests` / `panic_firewall::tests` all panic
+  the lane (exit `101`) without the wiring and degrade to a controlled exit `1`
+  with it. **Two adversarial review rounds** (5 lenses then 2) drove this: round 1
+  found the load-path gap (CRITICAL) and the underflow (HIGH) plus dupes; round 2
+  confirmed all closed with zero new holes and a full grep proving no
+  unfirewalled main-thread interpreter entry remains in `garnet-cli`.
+- **Honest scope / named follow-up:** `catch_unwind` catches **unwinding**
+  panics; it does **not** catch a **stack overflow** (a non-unwinding
+  `SIGABRT`). A self-referential value (`let a = [1]  a.push(a)`) makes
+  `Value::display()` recurse without a cycle/depth guard → exit `134`, still
+  killing the lane on render. That is a distinct **interpreter** crack (a
+  `Value::display`/`debug` recursion guard, `garnet-interp-v0.3/src/value.rs`),
+  pre-dating this slice, and is a named follow-up — not closeable by the
+  firewall. No "enforced/abort-proof" claim beyond what the trap tests prove.
+  Workspace 2079/0; clippy `--all-targets -D warnings` clean; no gate modified.
+
 ### Foundation HARDEN — checked `+`/`-`/`*`/unary-`-` integer overflow (RFC-0002 implementation)
 
 - **Changed (abort/wrap → diagnostic, both backends):** `i64` `+`, `-`, `*`,

@@ -89,7 +89,12 @@ pub fn run(args: &[String]) -> ExitCode {
     // Aggregate test_* functions across every file. We load each file into a
     // FRESH interpreter so tests in one file can't leak state into another;
     // matches Cargo's per-file isolation.
-    let mut total_run = 0usize;
+    // Count passes directly rather than deriving `passed = run - failed`: a
+    // parse/load failure increments `total_failed` for a file without a
+    // matching per-test run, so the subtraction could underflow (`usize`) and
+    // panic the summary — an exit-101 abort OUTSIDE the firewall. A direct
+    // pass tally cannot underflow.
+    let mut total_passed = 0usize;
     let mut total_failed = 0usize;
     let mut failed_names: Vec<String> = Vec::new();
 
@@ -131,18 +136,45 @@ pub fn run(args: &[String]) -> ExitCode {
         // calling `timestamp()` from src/main.garnet) resolve correctly.
         // Skip when the file BEING tested IS main.garnet itself.
         let is_main_file = file == &main_path;
+        // Firewalled: top-level `let`/`const`/`memory` initializers are EVALUATED
+        // during `load_source` (the interpreter's `register_item`), so a load can
+        // panic exactly like a test body can (e.g. `const X = i64::MIN.abs()`).
+        // A helper-preload panic taints this file's interpreter; fail the file's
+        // tests and move on rather than aborting the whole run.
         if let Some(helper_src) = main_src.as_ref() {
             if !is_main_file {
-                if let Err(e) = interp.load_source(helper_src) {
-                    eprintln!(
-                        "garnet test: failed to preload src/main.garnet for {}: {e}",
-                        file.display()
-                    );
+                match crate::panic_firewall::firewalled(|| interp.load_source(helper_src)) {
+                    Ok(Ok(())) => {}
+                    Ok(Err(e)) => {
+                        eprintln!(
+                            "garnet test: failed to preload src/main.garnet for {}: {e}",
+                            file.display()
+                        );
+                    }
+                    Err(panic_msg) => {
+                        eprintln!(
+                            "garnet test: src/main.garnet preload panicked for {}: {panic_msg}",
+                            file.display()
+                        );
+                        total_failed += test_names.len();
+                        for n in &test_names {
+                            failed_names.push(format!("{}::{}", file.display(), n));
+                        }
+                        continue;
+                    }
                 }
             }
         }
-        if let Err(e) = interp.load_source(&src) {
-            eprintln!("garnet test: load error in {}: {e}", file.display());
+        // Firewalled: a load-time panic in the test file fails that file's tests
+        // and continues to the next file — never an exit-101 process abort.
+        let load_result = crate::panic_firewall::firewalled(|| interp.load_source(&src));
+        let load_failure = match load_result {
+            Ok(Ok(())) => None,
+            Ok(Err(e)) => Some(format!("load error in {}: {e}", file.display())),
+            Err(panic_msg) => Some(format!("load panicked in {}: {panic_msg}", file.display())),
+        };
+        if let Some(reason) = load_failure {
+            eprintln!("garnet test: {reason}");
             total_failed += test_names.len();
             for n in &test_names {
                 failed_names.push(format!("{}::{}", file.display(), n));
@@ -152,23 +184,33 @@ pub fn run(args: &[String]) -> ExitCode {
 
         println!("running {} test(s) in {}", test_names.len(), file.display());
         for name in &test_names {
-            total_run += 1;
             // PR-2: each test is its own program entry — route through `call_entry`
             // so the test's `@caps(...)` is installed as the entry-authority frame
             // and host-authority is checked exactly as `garnet run` checks `main`.
             // (Previously `interp.call` skipped the entry frame, so a `@caps()` test
             // could exercise undeclared authority that `garnet run` would reject.)
-            match interp.call_entry(name, vec![]) {
-                Ok(Value::Nil) | Ok(_) => {
+            // Firewalled: a panicking test (e.g. an `i64::MIN.abs()` overflow)
+            // is recorded as a FAILED case and the run continues to the next
+            // test + prints the summary — a single panic must not abort the
+            // whole `garnet test` invocation (matching how a real test harness
+            // isolates each test).
+            match crate::panic_firewall::firewalled(|| interp.call_entry(name, vec![])) {
+                Ok(Ok(Value::Nil) | Ok(_)) => {
                     println!("  test {name} ... ok");
+                    total_passed += 1;
                 }
-                Err(RuntimeError::Raised(v)) => {
+                Ok(Err(RuntimeError::Raised(v))) => {
                     println!("  test {name} ... FAILED: {}", v.display());
                     failed_names.push(format!("{}::{}", file.display(), name));
                     total_failed += 1;
                 }
-                Err(e) => {
+                Ok(Err(e)) => {
                     println!("  test {name} ... FAILED: {e}");
+                    failed_names.push(format!("{}::{}", file.display(), name));
+                    total_failed += 1;
+                }
+                Err(panic_msg) => {
+                    println!("  test {name} ... FAILED (panicked): {panic_msg}");
                     failed_names.push(format!("{}::{}", file.display(), name));
                     total_failed += 1;
                 }
@@ -177,7 +219,7 @@ pub fn run(args: &[String]) -> ExitCode {
     }
 
     println!();
-    let passed = total_run - total_failed;
+    let passed = total_passed;
     if total_failed == 0 {
         println!(
             "test result: ok. {passed} passed; 0 failed; in {} file(s)",
