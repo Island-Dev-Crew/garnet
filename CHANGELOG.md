@@ -9,6 +9,52 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## Unreleased — Studio macOS parity + judged enhancement set (2026-06-12)
 
+### Foundation HARDEN — checked `+`/`-`/`*`/unary-`-` integer overflow (RFC-0002 implementation)
+
+- **Changed (abort/wrap → diagnostic, both backends):** `i64` `+`, `-`, `*`,
+  and unary `-` overflow was the worst-of-both-worlds the trust kernel can't
+  attest — a **silent wrap in release** (wrong answer, no signal) and a **host
+  panic in debug** (`attempt to {add,subtract,multiply,negate} with overflow`),
+  so arithmetic semantics differed by build profile. Now `checked_add` /
+  `checked_sub` / `checked_mul` / `checked_neg` yield a **deterministic
+  `integer overflow: <lhs> <op> <rhs>` diagnostic** (`RuntimeError::Overflow`
+  on the interpreter, the byte-identical `VmError::Runtime` on the VM) — the
+  same RB-2 doctrine already shipped for `/` and `%`, now extended to the
+  remaining operators per **RFC-0002 ("integer arithmetic is checked by
+  default", Accepted by Jon 2026-06-12, verbatim: "extends the same discipline
+  to `+`/`-`/`*`").** Profile-independent, loud, never an abort.
+- **Sites sealed:** interpreter expression path (`eval.rs`, binary + unary),
+  interpreter compound-assign path (`stmt.rs`, `+=`/`-=`/`*=`), and the VM
+  (`vm.rs`, `apply_binary` + `apply_unary`). All five previously used bare
+  `a + b` / `-i`.
+- **Deterministic trap (red→green, the proof it is real):**
+  `garnet-interp tests/overflow_guards.rs` gains add/sub/mul/neg + compound
+  cases — **7 of them panic at the exact pre-fix lines** (`eval.rs:277/285/292`,
+  `stmt.rs:167/168/169`) without the change and return the diagnostic with it.
+  `garnet-cli tests/overflow_parity.rs` proves the user-facing guarantee:
+  each overflowing operator **exits `1`** (controlled diagnostic, not exit-101
+  abort) with the **byte-identical** `integer overflow: …` line on `--interp`
+  and `--vm`. This also closes the latent flake where the
+  `prop_vm_matches_interp_on_random_shadowing_programs` proptest (RB-4/PR-3,
+  now on `main`) could panic on a generated `*`-overflowing program at
+  `eval.rs:292` instead of reaching its `(Err, Err)` parity arm; 8000 random
+  programs across two runs now pass with zero panics.
+- **Perf note (per RFC-0002):** each checked op adds one overflow-check branch,
+  perfectly predicted in the (overwhelmingly common) non-overflow case. Both
+  backends already pay tree-walk enum dispatch (interp) / bytecode opcode
+  dispatch + `Value` match (VM) per operation, so the relative cost of one
+  predicted branch is negligible; full-suite wall-time was unchanged within
+  noise. No dedicated arithmetic microbenchmark exists in-repo, so **no
+  speedup/slowdown number is claimed** — only "no observed regression."
+- **Honest boundary (named-deferred):** the **explicit wrapping escape-hatch**
+  the RFC reserves for intentional modular arithmetic (a `wrapping_*` intrinsic
+  or `@wrapping` block, surface TBD) is **NOT** in this slice — checked-by-
+  default is shipped; the opt-in wrap surface is a follow-up. The pre-existing
+  silent-release-wrap was a profile accident, not a sanctioned wrapping path,
+  so nothing legitimate is removed. No "enforced" claim beyond the trap tests.
+  Workspace 2062/0; `cargo clippy --workspace --all-targets -D warnings` clean;
+  trust-kernel gates unchanged (no gate modified by this slice).
+
 ### RB-4b.3 — per-pass caps re-check on VM lowering (W-REBUILD Foundation · Directive 7)
 
 - **Added** `garnet_vm::caps_recheck` — the GHC-Core "re-check the invariant

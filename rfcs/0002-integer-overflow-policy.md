@@ -1,6 +1,6 @@
 # RFC-0002: Integer Overflow Policy — Checked by Default
 
-- **Status:** Accepted <!-- design ruling (Jon, 2026-06-12); implementation is a separate W-REBUILD slice, not yet scheduled -->
+- **Status:** Accepted · **Implemented** for `+`/`-`/`*`/unary-`-` <!-- design ruling (Jon, 2026-06-12); the checked `+`/`-`/`*`/unary-`-` slice landed in the Foundation integer-overflow HARDEN slice (2026-06-24) — see CHANGELOG. The explicit *wrapping* escape-hatch surface (a `wrapping_*` intrinsic or `@wrapping` block) remains deferred. -->
 - **Author(s):** Jon Isaac (ruling) · Claude Code (drafting)
 - **Created:** 2026-06-12
 - **Tracking PR:** the J-queue rulings docs PR (RB-band stop-report decision J5)

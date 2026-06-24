@@ -574,7 +574,14 @@ fn apply_binary(op: BinaryOpcode, lhs: Value, rhs: Value) -> Result<Value, VmErr
     use Value::*;
     match op {
         Add => match (&lhs, &rhs) {
-            (Int(a), Int(b)) => Ok(Int(a + b)),
+            // checked_add: i64 overflow is a diagnostic, not a host panic, with
+            // the SAME "integer overflow: a + b" message the interpreter raises,
+            // so the two backends stay diagnostically identical (RB-2 doctrine,
+            // extended from Div/Mod to +/-/*).
+            (Int(a), Int(b)) => a
+                .checked_add(*b)
+                .map(Int)
+                .ok_or_else(|| VmError::Runtime(format!("integer overflow: {a} + {b}"))),
             (Float(a), Float(b)) => Ok(Float(a + b)),
             (Int(a), Float(b)) => Ok(Float(*a as f64 + b)),
             (Float(a), Int(b)) => Ok(Float(a + *b as f64)),
@@ -584,14 +591,20 @@ fn apply_binary(op: BinaryOpcode, lhs: Value, rhs: Value) -> Result<Value, VmErr
             )),
         },
         Sub => match (&lhs, &rhs) {
-            (Int(a), Int(b)) => Ok(Int(a - b)),
+            (Int(a), Int(b)) => a
+                .checked_sub(*b)
+                .map(Int)
+                .ok_or_else(|| VmError::Runtime(format!("integer overflow: {a} - {b}"))),
             (Float(a), Float(b)) => Ok(Float(a - b)),
             (Int(a), Float(b)) => Ok(Float(*a as f64 - b)),
             (Float(a), Int(b)) => Ok(Float(a - *b as f64)),
             _ => Err(VmError::Runtime("Sub expects numeric pair".to_string())),
         },
         Mul => match (&lhs, &rhs) {
-            (Int(a), Int(b)) => Ok(Int(a * b)),
+            (Int(a), Int(b)) => a
+                .checked_mul(*b)
+                .map(Int)
+                .ok_or_else(|| VmError::Runtime(format!("integer overflow: {a} * {b}"))),
             (Float(a), Float(b)) => Ok(Float(a * b)),
             (Int(a), Float(b)) => Ok(Float(*a as f64 * b)),
             (Float(a), Int(b)) => Ok(Float(a * *b as f64)),
@@ -646,7 +659,12 @@ fn apply_binary(op: BinaryOpcode, lhs: Value, rhs: Value) -> Result<Value, VmErr
 fn apply_unary(op: UnaryOpcode, value: Value) -> Result<Value, VmError> {
     match op {
         UnaryOpcode::Neg => match value {
-            Value::Int(value) => Ok(Value::Int(-value)),
+            // checked_neg: -i64::MIN overflows; a diagnostic, not a host panic,
+            // matching the interpreter's "integer overflow: -i" (RB-2 doctrine).
+            Value::Int(value) => value
+                .checked_neg()
+                .map(Value::Int)
+                .ok_or_else(|| VmError::Runtime(format!("integer overflow: -{value}"))),
             Value::Float(value) => Ok(Value::Float(-value)),
             _ => Err(VmError::Runtime("Neg expects numeric value".to_string())),
         },
