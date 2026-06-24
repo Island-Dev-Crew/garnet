@@ -153,7 +153,12 @@ pub fn run(args: &[String]) -> ExitCode {
         println!("running {} test(s) in {}", test_names.len(), file.display());
         for name in &test_names {
             total_run += 1;
-            match interp.call(name, vec![]) {
+            // PR-2: each test is its own program entry — route through `call_entry`
+            // so the test's `@caps(...)` is installed as the entry-authority frame
+            // and host-authority is checked exactly as `garnet run` checks `main`.
+            // (Previously `interp.call` skipped the entry frame, so a `@caps()` test
+            // could exercise undeclared authority that `garnet run` would reject.)
+            match interp.call_entry(name, vec![]) {
                 Ok(Value::Nil) | Ok(_) => {
                     println!("  test {name} ... ok");
                 }
