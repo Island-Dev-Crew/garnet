@@ -19,6 +19,7 @@ use std::rc::Rc;
 
 const DEFAULT_MANAGED_ACTOR_MAILBOX_CAPACITY: usize = 1024;
 const MAX_MANAGED_ACTOR_MAILBOX_CAPACITY: usize = 1_048_576;
+const MAX_DEPTH_CEILING_LIMIT: i64 = 64;
 
 /// Evaluate an expression in the given environment.
 pub fn eval_expr(expr: &Expr, env: &Rc<Env>) -> Result<Value, RuntimeError> {
@@ -516,11 +517,22 @@ thread_local! {
 }
 
 /// The `@max_depth(N)` ceiling declared on a function, if any.
-fn max_depth_ceiling(annotations: &[Annotation]) -> Option<i64> {
-    annotations.iter().find_map(|a| match a {
+fn max_depth_ceiling(
+    annotations: &[Annotation],
+    function_name: &str,
+) -> Result<Option<i64>, RuntimeError> {
+    let Some(n) = annotations.iter().find_map(|a| match a {
         Annotation::MaxDepth(n, _) => Some(*n),
         _ => None,
-    })
+    }) else {
+        return Ok(None);
+    };
+    if !(1..=MAX_DEPTH_CEILING_LIMIT).contains(&n) {
+        return Err(RuntimeError::msg(format!(
+            "annotation error: @max_depth on `{function_name}` must be in 1..=64 (got {n})"
+        )));
+    }
+    Ok(Some(n))
 }
 
 /// RAII guard for a `@max_depth` function's recursion counter: increments on
@@ -739,6 +751,14 @@ pub fn enter_entry_caps_for(callee: &Value) -> Option<EntryCapsScope> {
     }
 }
 
+/// Install a program-entry `@caps` frame from parsed annotations without needing
+/// the entry function to be bound yet. `garnet run` uses this while loading the
+/// source so top-level `let`/`const` initializers cannot exercise host authority
+/// before `main`'s declared capability frame exists.
+pub fn enter_entry_caps_for_annotations(annotations: &[Annotation]) -> EntryCapsScope {
+    EntryCapsScope(CapsGuard::enter_entry(annotations))
+}
+
 fn call_fn(f: &FnValue, mut args: Vec<Value>) -> Result<Value, RuntimeError> {
     // `@caps` host-authority enforcement (S90): a managed function pushes its
     // declared `@caps` onto the active-capability context for the duration of its
@@ -756,10 +776,10 @@ fn call_fn(f: &FnValue, mut args: Vec<Value>) -> Result<Value, RuntimeError> {
     // ceiling; `@bounded` (Wasmtime fuel), memory, time, and mailbox remain
     // declared-not-enforced. The guard lives for the body's execution and
     // unwinds the counter on drop.
-    let _depth_guard = match max_depth_ceiling(&f.def.annotations) {
+    let _depth_guard = match max_depth_ceiling(&f.def.annotations, &f.def.name)? {
         Some(n) => {
             let guard = MaxDepthGuard::enter(f.def.name.clone());
-            if guard.depth > n.max(0) as u64 {
+            if guard.depth > n as u64 {
                 return Err(RuntimeError::msg(format!(
                     "bounded: @max_depth({n}) exceeded for `{}` (recursion depth {})",
                     f.def.name, guard.depth

@@ -7,6 +7,8 @@ use garnet_interp::{Interpreter, Value};
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 
+const MAX_DEPTH_CEILING_LIMIT: i64 = 64;
+
 thread_local! {
     /// Per-function active recursion depth for `@max_depth` enforcement on the
     /// VM's native path (S99). VM-local — deliberately NOT shared with the
@@ -56,8 +58,14 @@ impl Drop for VmDepthGuard {
 fn enter_depth_guard(function: &BytecodeFunction) -> Result<Option<VmDepthGuard>, VmError> {
     match function.max_depth_ceiling {
         Some(n) => {
+            if !(1..=MAX_DEPTH_CEILING_LIMIT).contains(&n) {
+                return Err(VmError::Runtime(format!(
+                    "annotation error: @max_depth on `{}` must be in 1..=64 (got {n})",
+                    function.name
+                )));
+            }
             let guard = VmDepthGuard::enter(function.name.clone());
-            if guard.depth > n.max(0) as u64 {
+            if guard.depth > n as u64 {
                 return Err(VmError::Runtime(format!(
                     "bounded: @max_depth({n}) exceeded for `{}` (recursion depth {})",
                     function.name, guard.depth
@@ -146,7 +154,7 @@ fn run_function_artifact(
     args: Vec<Value>,
     options: RunOptions,
 ) -> Result<VmRunResult, VmError> {
-    let mut engine = VmEngine::new(artifact, options)?;
+    let mut engine = VmEngine::new_for_entry(artifact, options, name)?;
     let value = engine.call_function(name, args)?;
     Ok(VmRunResult {
         value,
@@ -220,8 +228,28 @@ impl Frame {
 
 impl<'a> VmEngine<'a> {
     fn new(artifact: &'a VmArtifact, options: RunOptions) -> Result<Self, VmError> {
+        Self::new_with_entry(artifact, options, None)
+    }
+
+    fn new_for_entry(
+        artifact: &'a VmArtifact,
+        options: RunOptions,
+        entry: &str,
+    ) -> Result<Self, VmError> {
+        Self::new_with_entry(artifact, options, Some(entry))
+    }
+
+    fn new_with_entry(
+        artifact: &'a VmArtifact,
+        options: RunOptions,
+        entry: Option<&str>,
+    ) -> Result<Self, VmError> {
         let mut fallback = Interpreter::new();
-        fallback.load_source(&artifact.source)?;
+        if let Some(entry) = entry {
+            fallback.load_source_with_entry_caps(&artifact.source, entry)?;
+        } else {
+            fallback.load_source(&artifact.source)?;
+        }
         Ok(Self {
             program: &artifact.program,
             fallback,

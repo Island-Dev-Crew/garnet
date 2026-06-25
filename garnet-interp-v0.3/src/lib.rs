@@ -79,12 +79,57 @@ impl Interpreter {
         self.load_module(module)
     }
 
+    /// Load source while holding the named program entry's `@caps` frame.
+    ///
+    /// Top-level `let`/`const` initializers execute during module registration,
+    /// before `call_entry` can install `main`'s capability frame. This method
+    /// parses first, extracts the entry annotations, then loads the module under
+    /// that frame so load-time host authority is checked against the same entry
+    /// declaration as body-time authority.
+    pub fn load_source_with_entry_caps(
+        &mut self,
+        src: &str,
+        entry: &str,
+    ) -> Result<(), RuntimeError> {
+        self.load_source_with_edition_entry_caps(src, garnet_parser::Edition::default(), entry)
+    }
+
+    /// Edition-aware variant of [`Self::load_source_with_entry_caps`].
+    pub fn load_source_with_edition_entry_caps(
+        &mut self,
+        src: &str,
+        edition: garnet_parser::Edition,
+        entry: &str,
+    ) -> Result<(), RuntimeError> {
+        let module = garnet_parser::parse_source_with_edition(src, edition)
+            .map_err(|e| RuntimeError::Parse(format!("{e:?}")))?;
+        self.load_module_with_entry_caps(module, entry)
+    }
+
     /// Register a parsed module into the global environment.
     pub fn load_module(&mut self, module: Module) -> Result<(), RuntimeError> {
         for item in module.items {
             self.register_item(item)?;
         }
         Ok(())
+    }
+
+    /// Register a parsed module under a program-entry capability frame.
+    pub fn load_module_with_entry_caps(
+        &mut self,
+        module: Module,
+        entry: &str,
+    ) -> Result<(), RuntimeError> {
+        let entry_annotations = module
+            .items
+            .iter()
+            .find_map(|item| match item {
+                Item::Fn(fn_def) if fn_def.name == entry => Some(fn_def.annotations.clone()),
+                _ => None,
+            })
+            .unwrap_or_default();
+        let _entry_caps = eval::enter_entry_caps_for_annotations(&entry_annotations);
+        self.load_module(module)
     }
 
     fn register_item(&mut self, item: Item) -> Result<(), RuntimeError> {

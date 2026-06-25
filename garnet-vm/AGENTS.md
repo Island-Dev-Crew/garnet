@@ -29,6 +29,13 @@ Owns the Garnet bytecode VM scaffold, deterministic bytecode serialization, and 
   verdict is RFC-gated (Jon), out of scope here.
 - Bytecode VM claims must stay narrower than the tree-walk interpreter until each opcode family is dogfooded.
 - Unsupported language forms must fall back explicitly and report fallback counts.
+- VM fallback execution for a selected entry must load source under that entry's
+  `@caps` frame, matching the interpreter path. Top-level `let`/`const`
+  initializers may execute host calls during load, so the fallback loader cannot
+  evaluate them outside the entry capability gate.
+- `@max_depth(N)` accepts only `1..=64`. The VM runtime guard must reject
+  invalid ceilings with the interpreter-equivalent diagnostic instead of
+  treating oversized annotations as executable recursion budgets.
 - Serializer and loader output must be deterministic across platforms.
 - Benchmark evidence must separate harness presence from fresh measurement claims.
 

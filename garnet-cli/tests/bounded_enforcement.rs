@@ -36,6 +36,10 @@ const WITHIN: &str =
     "@max_depth(8)\ndef deep(n) {\n  if n <= 0 { 0 } else { 1 + deep(n - 1) }\n}\n\
                       @caps()\ndef main() {\n  deep(3)\n}\n";
 
+const INVALID_CEILING: &str =
+    "@max_depth(9999)\ndef deep(n) {\n  if n <= 0 { 0 } else { deep(n - 1) }\n}\n\
+                      @caps()\ndef main() {\n  deep(100)\n}\n";
+
 #[test]
 fn over_ceiling_recursion_traps_deterministically() {
     let out = run_interp(OVER);
@@ -59,6 +63,24 @@ fn within_ceiling_recursion_runs() {
         "within-ceiling recursion must run: {stdout}"
     );
     assert!(stdout.contains("=> 3"), "got {stdout}");
+}
+
+#[test]
+fn invalid_max_depth_is_rejected_by_both_run_backends() {
+    for (backend, out) in [
+        ("--interp", run_interp(INVALID_CEILING)),
+        ("--vm", run_vm(INVALID_CEILING)),
+    ] {
+        assert!(
+            !out.status.success(),
+            "{backend} must reject invalid @max_depth bounds"
+        );
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert!(
+            stderr.contains("must be in 1..=64"),
+            "{backend} stderr was: {stderr}"
+        );
+    }
 }
 
 #[test]

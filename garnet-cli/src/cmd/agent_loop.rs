@@ -1,13 +1,15 @@
 //! `garnet agent-loop --baseline <old> --proposal <new>` — S102 (Stage U): the
 //! real agent-acceptance loop. A (simulated) agent proposes a Garnet change; the
-//! loop ACCEPTS it ONLY on ENFORCED evidence, in three gated stages:
+//! loop ACCEPTS it ONLY on ENFORCED evidence, in four gated stages:
 //!
-//!   1. **diff-caps** (S37) — the declared capability surface must NOT widen. A
+//!   1. **check** — the proposal must pass the static language/checker gate before
+//!      later gates can run or seal it.
+//!   2. **diff-caps** (S37) — the declared capability surface must NOT widen. A
 //!      widening proposal is a true gate **failure** (Rule 2): it is REFUSED and
 //!      never reaches the kernel or the seal.
-//!   2. **the enforced kernel** (S99 `@max_depth` + S100 `@caps` traps) — the
+//!   3. **the enforced kernel** (S99 `@max_depth` + S100 `@caps` traps) — the
 //!      proposal must run without tripping an enforced ceiling.
-//!   3. **seal** (S38) — an accepted proposal is attested, recording the autonomous
+//!   4. **seal** (S38) — an accepted proposal is attested, recording the autonomous
 //!      acceptance + agent/model/gate-version provenance (S65/S66).
 //!
 //! Honest scope: acceptance rests ONLY on the two ENFORCED ceilings — `@caps`
@@ -20,7 +22,7 @@
 //! the attested `model` should be `simulated`.
 //!
 //! Wrap, don't rebuild: the loop orchestrates the real `garnet` subcommands
-//! (`diff-caps`, `run`, `seal`) as subprocesses of the running binary — it
+//! (`check`, `diff-caps`, `run`, `seal`) as subprocesses of the running binary — it
 //! reimplements no gate, so it cannot drift from the gates it accepts under.
 
 use std::path::PathBuf;
@@ -179,6 +181,10 @@ enum Outcome<'a> {
         value: &'a str,
         run_stdout: &'a [u8],
     },
+    RejectedCheck {
+        check_stdout: &'a [u8],
+        check_stderr: &'a [u8],
+    },
     RejectedDiffCaps,
     RejectedRun {
         run_stderr: &'a [u8],
@@ -219,6 +225,13 @@ fn write_record(a: &Args, exe: &std::path::Path, diff_stdout: &[u8], outcome: &O
             a.baseline.display(),
             a.backend,
         ),
+        Outcome::RejectedCheck { .. } => format!(
+            "# Agent-loop decision: REJECTED (proposal failed check)\n\n\
+             Proposal `{}` (vs baseline `{}`) was REFUSED at the check gate before diff-caps, \
+             run, or seal. See `check.txt` for the checker diagnostics. It was not sealed.\n",
+            a.proposal.display(),
+            a.baseline.display(),
+        ),
         Outcome::RejectedDiffCaps => format!(
             "# Agent-loop decision: REJECTED (capability widening)\n\n\
              Proposal `{}` (vs baseline `{}`) was REFUSED at the diff-caps gate: it WIDENED the \
@@ -257,6 +270,15 @@ fn write_record(a: &Args, exe: &std::path::Path, diff_stdout: &[u8], outcome: &O
                 .output();
             let _ = std::fs::write(dir.join("run_output.txt"), run_stdout);
         }
+        Outcome::RejectedCheck {
+            check_stdout,
+            check_stderr,
+        } => {
+            let mut check = Vec::with_capacity(check_stdout.len() + check_stderr.len());
+            check.extend_from_slice(check_stdout);
+            check.extend_from_slice(check_stderr);
+            let _ = std::fs::write(dir.join("check.txt"), check);
+        }
         Outcome::RejectedRun { run_stderr } => {
             let _ = std::fs::write(dir.join("run_trap.txt"), run_stderr);
         }
@@ -281,7 +303,35 @@ pub fn run(args: &[String]) -> ExitCode {
         a.backend
     );
 
-    // STAGE 1 — diff-caps (Rule 2 hard gate): a capability widening is REFUSED and
+    // STAGE 1 — check: malformed or checker-rejected proposals fail closed before
+    // diff-caps, run, or seal. This keeps invalid annotations from being treated
+    // as oversized runtime ceilings by the later acceptance stages.
+    let check = match Command::new(&exe).arg("check").arg(&a.proposal).output() {
+        Ok(o) => o,
+        Err(e) => {
+            eprintln!("garnet agent-loop: check failed to launch: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    if !check.status.success() {
+        println!("agent-loop: stage check -> REJECT (proposal failed garnet check)");
+        echo("  | ", &check.stdout);
+        echo("  | ", &check.stderr);
+        println!("agent-loop: REJECTED at stage check (the proposal is not run and is not sealed)");
+        write_record(
+            &a,
+            &exe,
+            &[],
+            &Outcome::RejectedCheck {
+                check_stdout: &check.stdout,
+                check_stderr: &check.stderr,
+            },
+        );
+        return ExitCode::from(1);
+    }
+    println!("agent-loop: stage check -> PASS");
+
+    // STAGE 2 — diff-caps (Rule 2 hard gate): a capability widening is REFUSED and
     // never reaches the kernel or the seal.
     let diff = match Command::new(&exe)
         .arg("diff-caps")
@@ -313,7 +363,7 @@ pub fn run(args: &[String]) -> ExitCode {
     }
     println!("agent-loop: stage diff-caps -> PASS (no authority expansion, band 5/5)");
 
-    // STAGE 2 — the ENFORCED kernel (S99 @max_depth + S100 @caps). A proposal that
+    // STAGE 3 — the ENFORCED kernel (S99 @max_depth + S100 @caps). A proposal that
     // trips an enforced ceiling is REFUSED even though diff-caps passed.
     let kernel = match Command::new(&exe)
         .arg("run")
@@ -355,7 +405,7 @@ pub fn run(args: &[String]) -> ExitCode {
         .to_string();
     println!("agent-loop: stage run({}) -> PASS ({value})", a.backend);
 
-    // STAGE 3 — seal (S38): attest the accepted proposal, recording the autonomous
+    // STAGE 4 — seal (S38): attest the accepted proposal, recording the autonomous
     // acceptance + agent/model/gate-version provenance (Rule 3). cosign signs it
     // when present; absent cosign, the predicate is emitted UNSIGNED.
     let mut seal = Command::new(&exe);

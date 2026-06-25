@@ -47,6 +47,69 @@ fn run_rejects_undeclared_fs_at_entry() {
     assert!(err.contains(FS_TRAP), "stderr was: {err}");
 }
 
+fn escaped_path(path: &std::path::Path) -> String {
+    path.to_string_lossy().replace('\\', "\\\\")
+}
+
+fn run_file(program: &str, backend: &str) -> std::process::Output {
+    let dir = tempfile::TempDir::new().unwrap();
+    let path = dir.path().join("prog.garnet");
+    std::fs::write(&path, program).unwrap();
+    garnet().args(["run", backend]).arg(&path).output().unwrap()
+}
+
+fn load_time_secret_program(prefix: &str, main_caps: &str, dir: &tempfile::TempDir) -> String {
+    let secret = dir.path().join("secret.txt");
+    std::fs::write(&secret, "codex-s114-secret").unwrap();
+    let secret = escaped_path(&secret);
+    format!("{prefix} leaked = read_file(\"{secret}\")\n@caps({main_caps})\ndef main() {{ 0 }}\n")
+}
+
+#[test]
+fn run_rejects_top_level_let_initializer_fs_before_main_on_both_backends() {
+    let secret_dir = tempfile::TempDir::new().unwrap();
+    let src = load_time_secret_program("let", "", &secret_dir);
+    for backend in ["--interp", "--vm"] {
+        let out = run_file(&src, backend);
+        assert!(
+            !out.status.success(),
+            "{backend} must reject load-time fs authority under @caps()"
+        );
+        let err = String::from_utf8_lossy(&out.stderr);
+        assert!(err.contains(FS_TRAP), "{backend} stderr was: {err}");
+    }
+}
+
+#[test]
+fn run_rejects_top_level_const_initializer_fs_before_main_on_both_backends() {
+    let secret_dir = tempfile::TempDir::new().unwrap();
+    let src = load_time_secret_program("const", "", &secret_dir);
+    for backend in ["--interp", "--vm"] {
+        let out = run_file(&src, backend);
+        assert!(
+            !out.status.success(),
+            "{backend} must reject load-time fs authority under @caps()"
+        );
+        let err = String::from_utf8_lossy(&out.stderr);
+        assert!(err.contains(FS_TRAP), "{backend} stderr was: {err}");
+    }
+}
+
+#[test]
+fn run_allows_declared_entry_caps_for_load_time_initializer() {
+    let secret_dir = tempfile::TempDir::new().unwrap();
+    let src = load_time_secret_program("let", "fs", &secret_dir);
+    for backend in ["--interp", "--vm"] {
+        let out = run_file(&src, backend);
+        assert!(
+            out.status.success(),
+            "{backend} should allow load-time fs authority when main declares fs: {}{}",
+            String::from_utf8_lossy(&out.stdout),
+            String::from_utf8_lossy(&out.stderr)
+        );
+    }
+}
+
 /// PR-2 trap: `garnet test` must FAIL a `@caps()` test that exercises undeclared
 /// fs, with the SAME capability trap — not silently pass it.
 #[test]

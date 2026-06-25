@@ -25,6 +25,13 @@ Owns the `garnet` binary, subcommand routing, template embedding, deterministic 
   authority surface and must stay labeled NOT an enforced budget — `@caps` is
   enforced per-function at entry (S90), and a bare prompt call holds no
   capability frame; never let `:caps` imply a live runtime grant.
+- `garnet run` must load user source under the selected program entry's
+  `@caps` frame before evaluating top-level `let`/`const` initializers. A
+  load-time host call in an initializer is still authority-bearing runtime
+  behavior and must not run outside the entry capability gate on either backend.
+- `garnet agent-loop` is a four-stage gate: `check` -> `diff-caps` -> `run` ->
+  `seal`. A proposal that fails `garnet check` is rejected before runtime or
+  sealing, and the seal-out path must remain absent on that rejection path.
 - `garnet diff-caps` human text output and exit codes (0 = no expansion,
   1 = authority expanded, 2 = usage/parse error) are load-bearing for CI
   scripts and integration tests — byte-stable, never reworded casually.
