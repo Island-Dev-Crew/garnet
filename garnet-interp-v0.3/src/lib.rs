@@ -108,6 +108,13 @@ impl Interpreter {
 
     /// Register a parsed module into the global environment.
     pub fn load_module(&mut self, module: Module) -> Result<(), RuntimeError> {
+        // S114-FIX-2: validate every `@max_depth(N)` annotation's range BEFORE
+        // registering anything — top-level fns, impl methods, and nested-module
+        // fns alike — so `garnet run` refuses an out-of-range bound anywhere
+        // `garnet check` does, on both backends, even when the function is never
+        // called. A pre-pass means a bad bound fails the load cleanly with
+        // nothing partially registered.
+        validate_module_max_depth(&module.items)?;
         for item in module.items {
             self.register_item(item)?;
         }
@@ -135,12 +142,6 @@ impl Interpreter {
     fn register_item(&mut self, item: Item) -> Result<(), RuntimeError> {
         match item {
             Item::Fn(fn_def) => {
-                // S114-FIX-2: validate the `@max_depth(N)` range at registration so
-                // an out-of-range bound is refused even when the function is never
-                // called — matching `garnet check` and closing the prior
-                // `run`-accepts/`check`-rejects split on the run lane (both backends
-                // load via this path).
-                eval::validate_max_depth_annotation(&fn_def.annotations, &fn_def.name)?;
                 let name = fn_def.name.clone();
                 let closure = Value::Fn(Rc::new(value::FnValue {
                     def: fn_def,
@@ -302,6 +303,29 @@ impl Interpreter {
         let callee = self.global.get(name)?;
         eval::enter_entry_caps_for(&callee)
     }
+}
+
+/// Recursively validate the `@max_depth(N)` range on every function the module
+/// hosts — top-level `Item::Fn`, `Item::Impl` methods, and functions inside
+/// nested `Item::Module`s — mirroring `garnet check`'s coverage so an invalid
+/// bound is refused at load regardless of where it is declared or whether the
+/// function is ever called (S114-FIX-2). Without the recursion, an out-of-range
+/// `@max_depth` on an impl method or a nested-module function passed `garnet run`
+/// while `garnet check` rejected it.
+fn validate_module_max_depth(items: &[Item]) -> Result<(), RuntimeError> {
+    for item in items {
+        match item {
+            Item::Fn(f) => eval::validate_max_depth_annotation(&f.annotations, &f.name)?,
+            Item::Impl(block) => {
+                for m in &block.methods {
+                    eval::validate_max_depth_annotation(&m.annotations, &m.name)?;
+                }
+            }
+            Item::Module(m) => validate_module_max_depth(&m.items)?,
+            _ => {}
+        }
+    }
+    Ok(())
 }
 
 fn named_type_name(ty: &TypeExpr) -> Option<&str> {
