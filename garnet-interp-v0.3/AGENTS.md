@@ -8,6 +8,10 @@ Owns managed-mode tree-walk execution, expression evaluation, stdlib bridging, a
 
 - Keep interpreter behavior aligned with parsed AST and Mini-Spec semantics.
 - Do not bypass capability metadata when invoking stdlib or OS-facing operations.
+- Source loaded for `garnet run` must register top-level `let`/`const`
+  initializers under the selected program entry's `@caps` frame, before
+  `main` is called. Load-time host authority is not allowed to execute outside
+  a capability frame.
 - Prefer explicit errors over silent no-ops for unsupported language features.
 - Registry-derived dispatch (RB-3): `stdlib_bridge::install()` is ONE loop
   joining `garnet_stdlib::registry::all_prims()` (Binding/Guard/arity
@@ -25,6 +29,9 @@ Owns managed-mode tree-walk execution, expression evaluation, stdlib bridging, a
   never a process abort. Add/sub/mul overflow policy (wraps in release,
   aborts in debug) is an open language decision, named-deferred — do not
   silently change it.
+- `@max_depth(N)` is valid only for `1..=64`; the interpreter must reject
+  invalid bounds at runtime too, not treat a checker failure as an oversized
+  executable ceiling.
 - Maintain compatibility with `garnet run`, `garnet eval`, and `garnet test` expectations.
 - REPL introspection (RB-7): `Interpreter::live_binding_names` / `lookup_binding`
   and `Env::local_names` are **additive, read-only** accessors the CLI REPL uses

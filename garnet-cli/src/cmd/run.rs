@@ -168,7 +168,7 @@ fn run_interpreter_inner(file_label: &str, src: &str, path: &Path, started: Inst
     if let Some(project_root) = find_project_root_for(path) {
         preload_dependencies(&mut interp, &project_root);
     }
-    if let Err(e) = interp.load_source_with_edition(src, edition) {
+    if let Err(e) = interp.load_source_with_edition_entry_caps(src, edition, "main") {
         eprintln!("load error: {e}");
         record(
             "run",

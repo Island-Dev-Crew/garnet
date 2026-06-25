@@ -24,6 +24,10 @@ const WIDEN: &str = "@caps(fs, net)\n@max_depth(8)\ndef deep(n) { if n <= 0 { 0 
 // traps it (`@max_depth(4)` with `deep(20)`) — acceptance rests on the run, not
 // only the static cap gate.
 const OVERDEPTH: &str = "@caps(fs)\n@max_depth(4)\ndef deep(n) { if n <= 0 { 0 } else { 1 + deep(n - 1) } }\n@caps(fs)\ndef main() { deep(20) }\n";
+// Invalid annotation proposal: `garnet check` rejects this as outside the
+// documented 1..=64 ceiling range. The agent-loop must fail closed before run
+// or seal can treat the invalid bound as a huge effective ceiling.
+const INVALID_MAX_DEPTH: &str = "@max_depth(9999)\ndef deep(n) { if n <= 0 { 0 } else { deep(n - 1) } }\n@caps()\ndef main() { deep(100) }\n";
 
 fn write(dir: &Path, name: &str, src: &str) -> PathBuf {
     let path = dir.join(name);
@@ -133,6 +137,31 @@ fn enforced_kernel_traps_overceiling_proposal() {
         "the enforced @max_depth trap must surface: out={stdout} err={stderr}"
     );
     assert!(!seal.is_file(), "a trapped proposal must NOT be sealed");
+}
+
+#[test]
+fn invalid_max_depth_is_refused_before_run_or_seal() {
+    for backend in ["interp", "vm"] {
+        let (out, seal, _dir) = run_loop(INVALID_MAX_DEPTH, backend, "invalid.seal.json");
+        let stdout = String::from_utf8_lossy(&out.stdout);
+        assert_eq!(
+            out.status.code(),
+            Some(1),
+            "invalid @max_depth must be refused (backend {backend}): {stdout}"
+        );
+        assert!(
+            stdout.contains("stage check -> REJECT"),
+            "agent-loop must fail closed at check stage, got: {stdout}"
+        );
+        assert!(
+            stdout.contains("must be in 1..=64"),
+            "check diagnostic must be surfaced, got: {stdout}"
+        );
+        assert!(
+            !seal.is_file(),
+            "an invalid-bound proposal must never be sealed"
+        );
+    }
 }
 
 #[test]
