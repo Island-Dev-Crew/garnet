@@ -9,6 +9,36 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## Unreleased — Studio macOS parity + judged enhancement set (2026-06-12)
 
+### Security — S114-FIX-2: deny-by-default capability mediation (close residual fail-open lanes)
+
+- **Context:** the 2026-06-25 **independent, cross-lineage** re-verification (OpenAI
+  Codex) of the S114 capability-enforcement claim found two HIGHs the Claude fleet
+  missed — (1) top-level `let`/`const` initializers exercised `@caps` host authority
+  with no active frame, accepted+sealed; (2) an invalid `@max_depth(9999)` was
+  accepted+sealed at runtime. Both were fixed for the `run`/VM/`agent-loop` lanes in
+  commit `4994867`. The Opus final review then **dynamically confirmed** that fix was
+  incomplete: `require_capability` remained **fail-open** at `active_frames==0`, so the
+  same load/eval-time host-authority bypass survived on `garnet eval`, `garnet test`,
+  `garnet doctest`, `garnet repl`, and the `garnet run` vendored-dependency preload.
+- **Fixed (deny-by-default / complete mediation):** the `garnet` binary now refuses a
+  host-authority primitive reached with **no active `@caps` frame** on every lane
+  (`garnet_interp::eval::set_strict_no_frame`, set in `main`; a process-global so it
+  covers the stack-sized worker thread `garnet run` spawns). `test`/`doctest` loads are
+  additionally framed under the file's `main` entry (parity with `garnet run`).
+  Library/embedder callers (no Garnet program context) keep the permissive direct-call
+  default, so the change is binary-scoped.
+- **Fixed (annotation-range parity):** `@max_depth(N)` range (`1..=64`) is now validated
+  at **registration** (`register_item`), so `garnet run` refuses an out-of-range bound on
+  an *uncalled* function on both backends — closing a `run`-accepts/`check`-rejects split.
+- **Red→green:** `garnet-cli/tests/s114_residual_lanes.rs` — `eval`/`test`/`doctest`/
+  vendored-dep-preload all trap a top-level/eval-time undeclared `fs` read (verified via a
+  nonexistent-path discriminator), and `run` rejects an uncalled invalid `@max_depth` on
+  both backends. Full workspace suite green.
+- **Honest scope:** enforced scope is unchanged — only `@caps` + `@max_depth`, both
+  backends; seccomp Linux-only (unverified on darwin); `@bounded`/memory/time/`@mailbox`/
+  OS-sandbox remain declared-not-enforced. S114 is independently-re-verified-with-fixes
+  **pending Jon's acceptance**, not self-attested-closed; the relabel and tag stay Jon's.
+
 ### Foundation HARDEN — cyclic-value render guard (`Value::display`/`debug`)
 
 - **Fixed (stack-overflow abort → bounded render):** `Value::display()`/`debug()`

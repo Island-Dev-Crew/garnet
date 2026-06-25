@@ -2,9 +2,18 @@
 
 An adversarial red-team that **actively tried to defeat** the enforced trust kernel,
 ran the attacks on the real binary, and recorded both what held **and the holes
-found** — one of which was a genuine HIGH-severity break, now **fixed**. Finding and
-fixing a real hole is the honest outcome the academic bar (CMU/MIT/Rice/Berkeley)
-rewards; this is not a "nothing broke" claim.
+found**. The original S114 (Claude fleet) found one HIGH (impl-method surface
+blindness). The 2026-06-25 **independent, cross-lineage** re-verification (OpenAI
+Codex) then found two more HIGHs — a load-time `let`/`const` `@caps` bypass and an
+invalid-`@max_depth` seal — and the Opus final review found the first remediation
+(`4994867`) closed them only on the `run`/VM/`agent-loop` lanes, leaving the **same
+bypass open** on `eval`/`test`/`doctest`/`repl`/dependency-preload (a fail-open
+`require_capability` at `active_frames==0`). All are now fixed: `4994867` for the
+wired lanes, and **S114-FIX-2** closes the residual via deny-by-default mediation.
+Finding and fixing real holes is the honest outcome the academic bar
+(CMU/MIT/Rice/Berkeley) rewards; this is not a "nothing broke" claim. S114 is
+independently-re-verified-with-fixes **pending Jon's acceptance**, not
+self-attested-closed.
 
 ## Method
 
@@ -84,15 +93,23 @@ blind — the defect was solely in the surface derivation.)
 - `time`/`@bounded` fuel/memory/`@mailbox` under-declaration: `time` is honestly
   named-deferred at runtime; `check` flags top-level under-declaration; diff-caps's
   *widening* contract is not violated when the declared surface is unchanged.
-- The no-managed-frame allow (direct host/test calls, `active_frames==0`) and the
-  `@caps(*)` wildcard baseline are documented and out of scope.
+- The `@caps(*)` wildcard baseline is documented and out of scope.
+- **(S114-FIX-2 — was the residual HIGH, now closed.)** The no-managed-frame allow
+  (`active_frames==0`) is no longer "out of scope": the independent re-verification
+  showed it let `eval`/`test`/`doctest`/`repl`/dependency-preload execute load/eval-time
+  host authority unenforced. The `garnet` binary is now **deny-by-default** at
+  `active_frames==0` (complete mediation / fail-safe default); only library/embedder
+  direct calls (no Garnet program context) keep the permissive default.
 
 ## Honest scope
 
 The enforced ceilings in scope are: the diff-caps widening gate, the agent-loop
 acceptance gate, the runtime `@caps` host-authority trap (fs/net/env/proc), the
 `@max_depth` per-function-name recursion trap, the static `check` caps-coverage, and
-(Linux) the applied seccomp policy. The one HIGH break is fixed; two LOW stub-scoped
-findings are recorded for follow-up. `@bounded` fuel, memory, time, `@mailbox`, and
-macOS/Windows OS-sandbox remain named-deferred. v0.8.1 is research-grade; no
-production / 1.0 claim.
+(Linux) the applied seccomp policy. The original impl-method HIGH and the two
+independent-re-verification HIGHs (load-time `let`/`const` `@caps` bypass;
+invalid-`@max_depth` seal) are fixed, and the deny-by-default residual closure
+(S114-FIX-2) covers the `eval`/`test`/`doctest`/`repl`/dependency-preload lanes; two
+LOW stub-scoped findings remain recorded for follow-up. `@bounded` fuel, memory, time,
+`@mailbox`, and macOS/Windows OS-sandbox remain named-deferred. v0.8.1 is
+research-grade; no production / 1.0 claim.
