@@ -420,7 +420,7 @@ HARD CONSTRAINTS: never present your pass as &quot;independent verification&quot
 </section>
 
 <footer>
-  <p><b>Calibrated-honesty boundary.</b> Enforced = <code>@caps</code> + <code>@max_depth</code> only, both backends; seccomp Linux-only (unverified on darwin). <code>@bounded</code> / memory / time / <code>@mailbox</code> / macOS-Windows OS-sandbox are declared-not-enforced. Garnet is research-grade (v0.x), not production / 1.0.</p>
+  <p><b>Calibrated-honesty boundary.</b> Enforced = <code>@caps</code> + <code>@max_depth</code> only, both backends; seccomp Linux-only (unverified on darwin). <code>@bounded</code> / memory / time / <code>@mailbox</code> / macOS-Windows OS-sandbox are declared-not-enforced. Garnet is research-grade (v0.x), not production / 1.0. The report's three verbatim honesty anchors — <code>named-deferred</code>, <code>production / 1.0 claim</code>, and <code>not a "nothing broke" claim</code> — must stay literally present; <code>garnet_red_team_status.py</code> statically asserts all three, so any independent verdict that survives keeps them.</p>
   <p><b>This dossier does not verify anything.</b> It is the handoff. Codex performs the model-lineage-independent verification; Opus performs the highest-rigor final review; <b>only Jon</b> relabels self-attested → independently-verified, and the release tag stays Jon's. A same-lineage cross-check is never independence.</p>
   <p>Garnet · S114 Independent Verification Dossier · base a7f946d · June 25, 2026</p>
 </footer>
