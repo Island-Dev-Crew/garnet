@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S114 — Independent Verification Dossier · Garnet</title>
+<style>
+:root{
+  --ink: oklch(15% 0.02 280);
+  --ink-2: oklch(19% 0.022 280);
+  --panel: oklch(21% 0.024 281);
+  --panel-2: oklch(24% 0.026 281);
+  --hair: oklch(34% 0.02 281);
+  --hair-soft: oklch(28% 0.018 281);
+  --text: oklch(93% 0.012 70);
+  --text-dim: oklch(74% 0.014 75);
+  --text-faint: oklch(60% 0.014 80);
+  --garnet: oklch(63% 0.19 18);
+  --garnet-bright: oklch(70% 0.2 20);
+  --garnet-deep: oklch(44% 0.16 16);
+  --indep: oklch(76% 0.12 200);      /* Codex / independent — cool, trustworthy */
+  --review: oklch(74% 0.07 285);     /* Opus / final review — deliberately NOT green */
+  --amber: oklch(80% 0.13 76);       /* at-risk / declared-not-enforced */
+  --jon: oklch(82% 0.1 145);         /* human authority */
+  --mono: "SF Mono","JetBrains Mono","Fira Code",ui-monospace,Menlo,monospace;
+  --serif: "Iowan Old Style","Palatino Linotype",Palatino,"Times New Roman",serif;
+  --sans: -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --maxw: 74ch;
+  --ease: cubic-bezier(.2,.7,.2,1);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:
+    radial-gradient(1200px 700px at 78% -8%, oklch(24% 0.06 18 / .5), transparent 60%),
+    radial-gradient(900px 600px at -5% 12%, oklch(22% 0.05 280 / .55), transparent 55%),
+    var(--ink);
+  color:var(--text);font-family:var(--sans);font-size:17px;line-height:1.62;
+  -webkit-font-smoothing:antialiased;letter-spacing:.005em;
+}
+.wrap{max-width:1040px;margin:0 auto;padding:0 28px 120px}
+a{color:var(--indep);text-decoration:none;border-bottom:1px solid oklch(76% 0.12 200 / .35)}
+code{font-family:var(--mono);font-size:.86em;background:oklch(28% 0.02 281 / .8);
+  padding:.12em .42em;border-radius:5px;border:1px solid var(--hair-soft);color:oklch(88% 0.04 70)}
+
+/* ---- masthead ---- */
+header.cover{padding:84px 0 40px;border-bottom:1px solid var(--hair)}
+.kicker{font-family:var(--mono);font-size:12px;letter-spacing:.32em;text-transform:uppercase;
+  color:var(--garnet-bright);margin:0 0 22px;display:flex;align-items:center;gap:14px}
+.kicker::before{content:"";width:34px;height:1px;background:var(--garnet)}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(2.6rem,1.2rem+5.4vw,5rem);
+  line-height:1.02;letter-spacing:-.02em;margin:0 0 6px}
+h1 .sub{display:block;font-size:clamp(1rem,.7rem+1.1vw,1.5rem);font-style:italic;
+  color:var(--text-dim);font-weight:400;letter-spacing:0;margin-top:18px}
+.dek{max-width:60ch;color:var(--text-dim);font-size:1.12rem;margin:26px 0 0}
+.meta-strip{display:flex;flex-wrap:wrap;gap:10px 22px;margin-top:34px;
+  font-family:var(--mono);font-size:12.5px;color:var(--text-faint)}
+.meta-strip b{color:var(--text-dim);font-weight:500}
+.meta-strip .tag{border:1px solid var(--hair);border-radius:100px;padding:5px 13px}
+
+/* ---- sections ---- */
+section{padding:64px 0 8px;border-top:1px solid var(--hair-soft)}
+section:first-of-type{border-top:0}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.26em;text-transform:uppercase;
+  color:var(--garnet-bright);margin:0 0 14px}
+h2{font-family:var(--serif);font-weight:600;font-size:clamp(1.8rem,1.1rem+2.2vw,2.9rem);
+  line-height:1.08;letter-spacing:-.015em;margin:0 0 26px}
+h3{font-size:1.18rem;letter-spacing:-.01em;margin:34px 0 12px;color:var(--text)}
+p{max-width:var(--maxw)}
+.prose p{margin:0 0 18px;color:var(--text-dim)}
+.prose p strong, .prose b{color:var(--text)}
+ul.spaced{max-width:var(--maxw);padding-left:0;list-style:none}
+ul.spaced li{position:relative;padding:14px 0 14px 30px;border-bottom:1px solid var(--hair-soft);color:var(--text-dim)}
+ul.spaced li::before{content:"";position:absolute;left:2px;top:23px;width:9px;height:9px;
+  border-radius:2px;background:var(--garnet);transform:rotate(45deg)}
+ul.check li::before{background:var(--indep)}
+ul.risk li::before{background:var(--amber);border-radius:50%}
+
+/* ---- trust-chain diagram ---- */
+.chain{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:stretch;gap:14px;margin:8px 0 30px}
+.node{background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:20px 18px;position:relative;overflow:hidden}
+.node::before{content:"";position:absolute;inset:0 0 auto 0;height:3px}
+.node.codex::before{background:linear-gradient(90deg,var(--indep),transparent)}
+.node.opus::before{background:linear-gradient(90deg,var(--review),transparent)}
+.node.jon::before{background:linear-gradient(90deg,var(--jon),transparent)}
+.node .who{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-faint)}
+.node .lineage{font-size:1.22rem;font-weight:600;margin:6px 0 8px;font-family:var(--serif)}
+.node.codex .lineage{color:var(--indep)} .node.opus .lineage{color:var(--review)} .node.jon .lineage{color:var(--jon)}
+.node .role{font-size:.93rem;color:var(--text-dim);line-height:1.45}
+.node .stamp{margin-top:12px;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.04em;padding:4px 10px;border-radius:6px;display:inline-block}
+.node.codex .stamp{background:oklch(76% 0.12 200 / .14);color:var(--indep);border:1px solid oklch(76% 0.12 200 / .4)}
+.node.opus .stamp{background:oklch(74% 0.07 285 / .12);color:var(--review);border:1px solid oklch(74% 0.07 285 / .4)}
+.node.jon .stamp{background:oklch(82% 0.1 145 / .12);color:var(--jon);border:1px solid oklch(82% 0.1 145 / .4)}
+.arrow{align-self:center;color:var(--text-faint);font-size:1.5rem;font-family:var(--mono)}
+.chain-note{font-size:.92rem;color:var(--text-faint);max-width:var(--maxw);margin-top:4px;border-left:2px solid var(--review);padding-left:14px}
+
+/* ---- callouts ---- */
+.callout{border:1px solid var(--hair);border-left:4px solid var(--garnet);background:var(--panel);
+  border-radius:0 14px 14px 0;padding:22px 26px;margin:26px 0;max-width:var(--maxw)}
+.callout.lead{border-left-color:var(--amber);background:linear-gradient(180deg,oklch(26% 0.05 70 / .35),var(--panel))}
+.callout.honesty{border-left-color:var(--review)}
+.callout .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--amber);margin:0 0 10px;font-weight:600}
+.callout.honesty .lbl{color:var(--review)}
+.callout p{margin:0 0 12px;color:var(--text-dim)}
+.callout p:last-child{margin:0}
+
+/* ---- prompt panels ---- */
+.prompt{background:var(--ink-2);border:1px solid var(--hair);border-radius:16px;overflow:hidden;margin:24px 0 8px;
+  box-shadow:0 24px 60px -30px oklch(0% 0 0 / .8)}
+.prompt-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 20px;
+  background:var(--panel-2);border-bottom:1px solid var(--hair)}
+.prompt-bar .id{display:flex;align-items:center;gap:12px;font-family:var(--mono);font-size:12.5px;letter-spacing:.08em}
+.prompt-bar .dot{width:10px;height:10px;border-radius:50%}
+.prompt.codex .dot{background:var(--indep);box-shadow:0 0 12px var(--indep)}
+.prompt.opus .dot{background:var(--review);box-shadow:0 0 12px var(--review)}
+.prompt-bar .id b{color:var(--text);letter-spacing:.04em}
+.prompt-bar .id .meta{color:var(--text-faint)}
+.copy{font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--text-dim);
+  background:oklch(30% 0.02 281);border:1px solid var(--hair);border-radius:8px;padding:8px 15px;cursor:pointer;
+  transition:all .18s var(--ease)}
+.copy:hover{color:var(--text);border-color:var(--garnet);background:oklch(34% 0.04 20 / .6)}
+.copy:active{transform:translateY(1px)}
+.copy.done{color:var(--jon);border-color:var(--jon)}
+pre{margin:0;padding:24px 24px 28px;overflow-x:auto;max-height:30000px}
+pre code{display:block;background:none;border:0;padding:0;font-family:var(--mono);font-size:13px;
+  line-height:1.66;color:oklch(88% 0.02 75);white-space:pre-wrap;word-break:break-word}
+
+/* ---- protocol two-col ---- */
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:6px 0 10px}
+.duo .card{background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:20px 22px}
+.duo .card h4{margin:0 0 10px;font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase}
+.duo .card.c-codex h4{color:var(--indep)} .duo .card.c-opus h4{color:var(--review)}
+.duo .card p{font-size:.95rem;color:var(--text-dim);max-width:none;margin:0}
+
+/* ---- audit table ---- */
+.tablewrap{overflow-x:auto;border:1px solid var(--hair);border-radius:14px;margin:18px 0}
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:720px}
+th,td{text-align:left;padding:12px 16px;border-bottom:1px solid var(--hair-soft);vertical-align:top}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);
+  background:var(--panel-2);position:sticky;top:0}
+td{color:var(--text-dim)}
+td.fix{color:var(--text-faint)}
+.mono-sm{font-family:var(--mono);font-size:11.5px;color:var(--text-dim);white-space:nowrap}
+.pill{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  padding:3px 9px;border-radius:6px;display:inline-block}
+.pill.crit{background:oklch(63% 0.19 18 / .18);color:var(--garnet-bright);border:1px solid oklch(63% 0.19 18 / .5)}
+.pill.high{background:oklch(80% 0.13 76 / .15);color:var(--amber);border:1px solid oklch(80% 0.13 76 / .45)}
+.pill.med{background:oklch(74% 0.07 285 / .14);color:var(--review);border:1px solid oklch(74% 0.07 285 / .4)}
+.pill.low{background:oklch(60% 0.014 80 / .14);color:var(--text-faint);border:1px solid var(--hair)}
+
+footer{margin-top:70px;padding-top:30px;border-top:1px solid var(--hair);color:var(--text-faint);
+  font-size:13px;font-family:var(--mono);line-height:1.7}
+footer b{color:var(--text-dim)}
+
+@media(max-width:760px){
+  body{font-size:16px}
+  .chain{grid-template-columns:1fr}
+  .arrow{transform:rotate(90deg);justify-self:center}
+  .duo{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="cover">
+  <p class="kicker">Garnet · Trust Kernel · Classified Engineering Handoff</p>
+  <h1>S114 Independent Verification
+    <span class="sub">Converting “we red-teamed it” into “a party with no shared state could not break it.”</span>
+  </h1>
+  <p class="dek">A precision handoff for the independent re-verification of Garnet's enforced capability kernel — the single claim the entire language stakes its credibility on. The two operator prompts below were engineered, not improvised: 13 adversarial findings against three independent designs were resolved before a word reached this page.</p>
+  <div class="meta-strip">
+    <span class="tag"><b>Base commit</b> &nbsp;a7f946d</span>
+    <span class="tag"><b>Engineered via</b> &nbsp;10-agent judge/auditor workflow</span>
+    <span class="tag"><b>Independent lane</b> &nbsp;Codex (OpenAI)</span>
+    <span class="tag"><b>Final review</b> &nbsp;Opus (Claude) · not independent</span>
+    <span class="tag"><b>Relabel authority</b> &nbsp;Jon only</span>
+    <span class="tag">June 25, 2026</span>
+  </div>
+</header>
+
+<section>
+  <p class="eyebrow">I · Why this is existential</p>
+  <h2>The one sentence Garnet is staked on</h2>
+  <div class="prose"><p>Garnet stakes its entire existence on ONE sentence: &quot;a project can autonomously ACCEPT an agent-authored change and REFUSE a silent authority expansion — the refusal a TRUE gate failure (exit 1), enforced by the runtime kernel.&quot; Every individual pillar Garnet uses is precedented elsewhere — capability annotations (Austral/E/Koka), attestation (in-toto/Sigstore), sandboxing (Wasmtime/seccomp). The ONLY defensible novelty is the integration: a sealed capability-diff acceptance gate wrapped around an autonomous agent loop, applied to UNTRUSTED agent-authored code, that dogfoods itself. That novelty claim is empty without independent confirmation, because the threat model IS adversarial code authorship and the S114 red-team was authored end-to-end by a Claude fleet — the same lineage that wrote the kernel it attacks shares blind spots by construction. Rust memory safety is believed not because Mozilla asserted it but because of an independent dynamic oracle (Miri), a machine-checked model (RustBelt), a decade of adversarial ecosystem pressure, and an honestly-policed boundary (unsafe). Garnet has the deterministic traps + regression tests (elements 3-5 at prototype grade) and a partial equivalence trap (element 6 one-directional), but it has NOT cleared the independence bar (element 1) or full surface=enforcement equivalence. S114-independent is the step that converts &quot;we red-teamed it&quot; (marketing) into &quot;a party with no shared state, motivated to break it, re-derived the attack surface and could not silently widen authority&quot; (credible). For a language whose whole value proposition is accepting code you cannot read, self-attested enforcement is security theater. Getting S114 right — genuinely independent, non-circular, honestly scoped — is the difference between Garnet being citable beside Rust and being unfalsifiable vendor assertion. It is existential, not nice-to-have, because Garnet has no other moat.</p></div>
+</section>
+
+<section>
+  <p class="eyebrow">II · The non-circularity model</p>
+  <h2>Who may claim what — and why Claude cannot grade Claude</h2>
+  <div class="chain">
+    <div class="node codex"><div class="who">OpenAI · cross-lineage</div><div class="lineage">Codex</div>
+      <div class="role">Re-derives the threat model and writes fresh attacks against the live binary. Shares no state with the fleet that built S114.</div>
+      <div class="stamp">INDEPENDENT VERIFIER</div></div>
+    <div class="arrow">→</div>
+    <div class="node opus"><div class="who">Claude · same family as S114 fleet</div><div class="lineage">Opus / MBP</div>
+      <div class="role">Highest-rigor review of Codex's verdict: structural-completeness argument, academic benchmark, decision synthesis.</div>
+      <div class="stamp">FINAL REVIEW · ≠ INDEPENDENT</div></div>
+    <div class="arrow">→</div>
+    <div class="node jon"><div class="who">Human · sole authority</div><div class="lineage">Jon</div>
+      <div class="role">Reads both, optionally runs the cloud gate, and is the only party who relabels and owns the release tag.</div>
+      <div class="stamp">RELABELS · OWNS TAG</div></div>
+  </div>
+  <p class="chain-note">Evidence-weight rule, enforced in both prompts: a same-lineage Claude cross-check that <em>agrees</em> with Codex adds zero independent assurance — it carries signal only on disagreement, and is never rendered as a second confirming checkmark.</p>
+  <div class="callout honesty">
+    <p class="lbl">Independence — honest framing (verbatim in every artifact)</p>
+    <div class="prose"><p>The S114 red-team was produced END-TO-END by a CLAUDE fleet: it authored the six attackers, the skeptical referee, the HIGH fix (impl-method surface recursion in capability_surface.rs), and the static gate (garnet_red_team_status.py). This governs who may claim what, verbatim, in every prompt/artifact/HTML with no circularity:</p>
+<p>- CODEX (OpenAI) is a DIFFERENT model lineage with no shared state. Its pass is the GENUINELY model-lineage-INDEPENDENT verification — but ONLY IF it RE-DERIVES the threat model and attacks from the binary + spec and observes real CLI exit codes, rather than re-running the fleet&#x27;s saved artifacts or treating the static gate as the verdict. Re-running Claude&#x27;s artifacts inherits Claude&#x27;s blind spots and is NOT independent.</p>
+<p>- OPUS-on-MBP is CLAUDE — the SAME family as the S114 fleet. Its pass CANNOT honestly be called &quot;independent verification&quot;; calling it that would be exactly the Claude-verifies-Claude circularity the discipline forbids (CLAUDE.md: &quot;never call the S114 red-team &#x27;independent&#x27;&quot;). Opus&#x27;s legitimate role is the HIGHEST-RIGOR FINAL REVIEW of Codex&#x27;s independent verdict — a structural-completeness argument the example probes cannot give, an academic benchmark, a skeptical kernel audit, and a decision-grade synthesis for Jon — explicitly framed as &quot;Claude reviewing an independent Codex verdict,&quot; never as the independence it cannot supply.</p>
+<p>- A same-lineage Claude attacker fleet that Opus may run is a CROSS-CHECK only. Evidence-weight rule (must appear in the memo and forbid any HTML from rendering it as a second confirming checkmark): an agreeing same-lineage cross-check adds ZERO independent assurance and carries signal only on DISAGREEMENT.</p>
+<p>- Only JON relabels self-attested → independently-verified, and the release tag stays Jon-owned. Neither AI lane may self-grade, relabel, edit the gate it merges under, or push a tag.</p></div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">III · The bar &amp; the field</p>
+  <h2>What “getting it right” means against Rust, E, Austral, WASI</h2>
+  <div class="prose"><p>PURPOSE: Garnet is a research-grade capability-secure language built for one thesis — capability-bounded acceptance of agent-authored code, ENFORCED (&quot;Rust Rigor, Ruby Velocity&quot;). LLM/agent code is untrusted by construction; you cannot read every diff a fleet produces. Garnet&#x27;s answer is a machine-checkable, sealed capability-diff GATE wired into an autonomous accept/reject loop (`agent-loop`) that wraps the real subcommands (wrap-don&#x27;t-rebuild), so the gate cannot drift from what it accepts under. The enforced scope is honestly NARROW: only `@caps` (fs/net/env/proc) and `@max_depth` are enforced, on BOTH the interpreter (`garnet-interp-v0.3/src/eval.rs` require_capability/require_entry_capability at each host primitive in `stdlib_bridge.rs`) and the VM (entry-frame gating + `garnet-vm/src/caps_recheck.rs` cross-IR laundering trap); seccomp is Linux-only; `@bounded` (Wasmtime fuel), memory, time, `@mailbox`, and macOS/Windows OS-sandbox are DECLARED-NOT-ENFORCED. The value is precisely the boundary between what it enforces (small, proven by deterministic traps + tests) and what it merely declares — and the discipline of never blurring the two.</p>
+<p>VS OTHER LANGUAGES: RUST memory safety is the credibility model Garnet must emulate — credible via an independent dynamic oracle (Miri), a machine-checked model (RustBelt/Coq), a decade of adversarial ecosystem pressure, and an honestly-policed boundary (`unsafe`). But safe Rust says nothing about AUTHORITY: `std` is ambient — safe code can open every file, spawn processes, exfiltrate over the network. Garnet targets exactly that gap. OBJECT-CAPABILITY LANGUAGES (E, Austral, Pony) are closest in spirit — authority only via unforgeable references, often with cleaner type-theoretic discipline (Austral&#x27;s linear capabilities, Pony&#x27;s reference capabilities) than Garnet&#x27;s annotation-plus-runtime-trap approach — but they are languages, not ACCEPTANCE PIPELINES: none ships a sealed capability-DIFF gate answering &quot;what NEW authority does this agent change grant?&quot; failing CI on a widening, nor an autonomous loop wrapping the real toolchain. WASI/WASMTIME is the deployment-time peer: a real, independently-audited, runtime-enforced deny-by-default sandbox — but it bounds a MODULE at its host boundary at run time; it does not give a source-level, per-function declared-capability SURFACE a reviewer/gate can DIFF between two revisions of agent-authored source before acceptance. Garnet honestly does NOT claim Wasmtime-grade sandboxing (`@bounded` is declared-not-enforced). NET: each comparator owns a piece (memory discipline / ocap theory / runtime sandbox); Garnet&#x27;s bet is the agent-acceptance integration — weaker on language-theoretic purity, uniquely targeting the diff/acceptance/agent surface.</p></div>
+  <h3>The gold-standard bar for a security kernel</h3>
+  <div class="prose"><p>The gold-standard bar for verifying a security kernel — the bar Garnet must clear to sit beside Rust memory safety — has six elements; Garnet meets them only partially today (honestly noted):</p>
+<p>1. INDEPENDENT ADVERSARIAL AUDIT — verification by a party with NO shared state and NO conflict of interest, motivated to break the kernel. Garnet: S114 was Claude-internal; the Codex pass is the FIRST genuinely model-lineage-independent attempt. THIS is the gap S114-independent closes.<br>2. EXPLICIT THREAT MODEL — written down and RE-DERIVED, not inherited: adversary = an agent authoring untrusted source the autonomous loop may accept; controls source, annotations, file layout, impl/module/actor nesting; kernel must guarantee no undeclared authority is exercised and no silent widening is sealed.<br>3. ATTACK-SURFACE ENUMERATION — systematic, not ad-hoc: the diff-caps widening gate, the agent-loop acceptance gate, the runtime `@caps` trap (fs/net/env/proc) on BOTH backends, the `@max_depth` trap on both backends, the static `check` caps-coverage, the seal/manifest, the caps-log, and (Linux) seccomp. CRITICAL CORRECTION TO THE S114 TEMPLATE: the surface derivation `collect_cap_fns` (capability_surface.rs:36-43) has exactly THREE descent arms — `Item::Fn`, `Item::Impl(block.methods)`, `Item::Module` — while the parser&#x27;s `Item` enum (garnet-parser-v0.3/src/ast.rs) has TWELVE variants (Use, Module, Memory, Actor, Struct, Enum, Trait, Protocol, Impl, Fn, Const, Let). A catch-all swallows the other 9. Enumeration must be over the 12 variants vs the 3 arms, judging per-variant whether the interpreter can enforce `@caps` from a function it hosts.<br>4. REGRESSION TRAPS FOR EVERY FOUND HOLE — met: the HIGH impl-method fix has `impl_method_caps_are_in_the_surface` + `nested_module_fn_caps_are_in_the_surface`; the VM laundering trap has `planted_laundering_call_is_trapped`; `garnet_red_team_status.py` statically asserts the fix substrings + test names + honesty anchors stay present.<br>5. SKEPTICAL REFEREE WITH NO CONFLICT OF INTEREST — re-classifies every claim HELD / HOLE / DECLARED-NOT-ENFORCED and rejects over-claims. S114 had such a referee, but it was Claude; the independent bar requires the Codex referee (no shared state), with Opus&#x27;s pass labeled review-of-the-independent-verdict, not the referee.<br>6. FORMAL/SEMI-FORMAL REASONING ABOUT THE CORE INVARIANT — a rigorous argument that the capability SURFACE the gate consumes EQUALS the authority the runtime ENFORCES (surface ⊇ enforced: no enforced-but-invisible function). The S114 HIGH was exactly a violation (impl-method `@caps` enforced yet invisible). caps_recheck.rs is a step toward it (a one-directional lowered ⊆ declared containment trap), NOT a full equivalence proof. This is the most important and least complete element. Garnet clears 3-5 at prototype grade, has a partial 6, and the Codex pass supplies the missing 1.</p></div>
+</section>
+
+<section>
+  <p class="eyebrow">IV · Priority lead</p>
+  <h2>The live residual suspect: <code>Item::Actor</code> handlers</h2>
+  <div class="callout lead">
+    <p class="lbl">⚠ Unconfirmed — must be attacked dynamically, not assumed</p>
+    <p>The capability surface (<code>collect_cap_fns</code>) descends only <b>3 of the parser's 12 <code>Item</code> variants</b> — <code>Item::Fn</code>, <code>Item::Impl</code>, <code>Item::Module</code> — with a catch-all swallowing the other nine. Yet the interpreter's <code>call_actor_handler</code> <b>executes Actor handler bodies</b>, so an <code>@caps</code>-annotated handler that calls a host primitive would be enforced at runtime while remaining <b>invisible to the surface diff-caps / seal / agent-loop consume</b> — the exact shape of the original S114 HIGH.</p>
+    <p>This is the prime independence-defining test. It is <b>not</b> a confirmed hole: whether a <code>HandlerDecl</code> carries an <code>@caps</code> annotation the interpreter installs as a frame must be <b>observed against the binary, not reasoned</b>. If it reproduces, S114 is not closed and a new HIGH + regression trap is required before any relabel. The Codex prompt forces enumeration of all 12 variants; the Opus prompt cross-checks it with a proposed mechanical reachability test.</p>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">V · Setup — run before either lane</p>
+  <h2>Preconditions &amp; environment</h2>
+  <ul class="spaced"><li>SECURITY-DOMAIN INSTALL (one-time, shared read-only step; required before either operator can use red-team/code-audit/vuln-research method): cp -r /Users/IDC2.5/.npm-global/lib/node_modules/ccg-workflow/templates/skills/domains/security/ /Users/IDC2.5/.claude/skills/ccg/domains/security/ — confirmed NOT currently installed; npm pkg ships red-team.md, code-audit.md, pentest.md, vuln-research.md, threat-intel.md, blue-team.md, SKILL.md. After install, Opus auto-routes on keyword; Codex READS the markdown directly (it cannot auto-route). Treat as install-once-then-read-only; do not let both operators race a write into this namespace.</li><li>VERIFY INSTALL: ls /Users/IDC2.5/.claude/skills/ccg/domains/security/ should list the six .md files + SKILL.md.</li><li>TOOLCHAIN PATH (cargo/rustc are NOT on PATH on this machine): export PATH=&quot;$HOME/.rustup/toolchains/stable-aarch64-apple-darwin/bin:$PATH&quot; then cd /Users/IDC2.5/Desktop/Garnet &amp;&amp; cargo build -p garnet-cli --bin garnet → target/debug/garnet.</li><li>CLEAN, OPERATOR-NAMESPACED WORKTREE IS MANDATORY (the shared checkout is dirty — a session hook flagged 38 modified files at HEAD a7f946d). Each operator adds its OWN uniquely-named worktree off pristine origin/main and records the path + SHA in its addendum: Codex → git worktree add /private/tmp/garnet-s114-codex-$(date +%Y%m%d) origin/main; Opus → its own /private/tmp/garnet-s114-opus-* worktree, READING Codex&#x27;s branch into it, NEVER writing Codex&#x27;s branch. Do NOT hardcode one shared worktree path; do NOT verify against the mutated shared tree.</li><li>FILE EXTENSION: Garnet source files use .garnet (confirmed; the repo contains NO .grn files). All attack programs must be *.garnet.</li><li>OPUS MCP SETUP: MCP tools are deferred — load via ToolSearch before first use, batching per call: select:mcp__plugin_ecc_sequential-thinking__sequentialthinking,mcp__plugin_ecc_exa__web_search_exa,mcp__plugin_ecc_exa__web_fetch_exa,mcp__plugin_ecc_github__search_code,mcp__plugin_ecc_github__search_issues</li><li>PRIOR ART (execute, do not re-author): F_Project_Management/W_TRUST/S114_INDEPENDENT_REVERIFICATION_PACKAGE_2026-06-14.md is a Codex-authored runbook explicitly self-labeled &#x27;report-only runbook; not an independent re-verification result&#x27;, with branches codex/s114-reverification-package and claude/s114-independent-lane-checklist. This work RUNS that runbook and produces the actual signed result it deliberately withholds — Codex treats it as a target list it must judge sufficient and EXTEND, not copy.</li><li>INDEPENDENCE LEDGER (so Jon&#x27;s relabel rests on auditable evidence): the deliverable must include, committed, the NEW attack-program source files (distinct from the S114 fleet fixtures), a read-vs-rerun statement with target ZERO reruns of fleet artifacts, the clean-worktree SHA (a7f946d), and a one-line Opus independence-integrity check confirming Codex&#x27;s fixtures are distinct from the fleet&#x27;s.</li></ul>
+</section>
+
+<section>
+  <p class="eyebrow">VI · Tool protocol</p>
+  <h2>Who invokes what</h2>
+  <div class="duo">
+    <div class="card c-codex"><h4>Codex — reads, never invokes /ccg:</h4><p>Local shell + git + cargo + <code>target/debug/garnet</code>. Reads the security-domain markdown for method. Writes its independent verdict on a fresh <code>codex/</code> branch. Cannot run Claude Code slash commands.</p></div>
+    <div class="card c-opus"><h4>Opus — invokes the /ccg: arsenal natively</h4><p><code>/ccg:verify-security · audit · critique</code>, the multi-agent cross-check (labelled, zero-weight on agreement), ToolSearch-loaded sequential-thinking / exa / github. Recommends — cannot self-launch — <code>/code-review ultra</code>.</p></div>
+  </div>
+  <div class="prose"><p>WHO INVOKES WHAT (precise; no circularity):</p>
+<p>CODEX (OpenAI, local shell operator — the independent lane). CAN: bash/git/gh, cargo, target/debug/garnet (check, run --interp/--vm, caps, diff-caps [--machine], seal, verify, caps-log [--log]/--verify, agent-loop --baseline --proposal [--backend interp|vm] [--seal-out]), python3 scripts/garnet_red_team_status.py --gate, cargo test by name. READS (for method, CANNOT invoke the /ccg: skills): red-team.md, code-audit.md, vuln-research.md, plus GARNET_RED_TEAM.md, capability_surface.rs, garnet-parser-v0.3/src/ast.rs (the Item enum), caps_recheck.rs, the ultrapunch dossier, CLAUDE.md. WRITES: its independent verdict addendum + new *.garnet fixtures + raw evidence on a fresh codex/ branch; commits + pushes. PRECONDITION: Codex runs as a local shell operator on this machine; if it has no local shell, it must STOP and report rather than simulate. MUST NOT: invoke any /ccg: slash command, edit kernel source or any gate/threshold during review, relabel S114, or push a tag.</p>
+<p>OPUS-on-MBP (Claude, same family as the S114 fleet — the final-review lane, NOT independent). GATE: does not begin until Codex&#x27;s addendum is committed + pushed AND content-gates pass (signature line present; populated per-attack exit-code table; environment.json with SHA a7f946d; explicit answer to &#x27;could you silently widen authority?&#x27;). A branch-name grep alone is insufficient — a stub branch must NOT pass. CAN natively invoke: /ccg:verify-security, /ccg:audit, /ccg:critique on the trust spine + Codex addendum; the ccg multi-agent orchestration skill (Scout + 6 Workers + skeptical-referee Soldier) as a SAME-LINEAGE CROSS-CHECK only; team-reviewer/team-qa/team-architect Task agents. LOADS via ToolSearch then invokes: sequential-thinking (structural-completeness invariant over all 12 Item variants), exa + github (academic benchmark: Rust/RustBelt/Miri, E, Austral, Pony, WASI; AST-enumeration-completeness bug classes), context7 (library/AST-visitor docs if needed). RECOMMENDS (cannot self-launch): Jon run /code-review ultra on the Codex branch/PR as the billed external cloud gate. WRITES: the decision memo + ledger updates (GARNET_RED_TEAM.md, CURRENT_STATE.md, CHANGELOG, W_TRUST) into its own worktree, with the no-circularity disclaimer baked into prose and any HTML. MUST NOT: call its own pass independent, render an agreeing same-lineage cross-check as a confirming checkmark, edit kernel source or any merge gate, claim macOS/Windows OS-sandbox or Wasmtime-fuel enforcement, claim seccomp on darwin, relabel S114, or push a tag.</p>
+<p>JON (human, sole authority): reads the memo, optionally runs /code-review ultra, ALONE relabels self → independently-verified iff the Codex verdict + Opus review support it, and owns the release tag.</p></div>
+</section>
+
+<section>
+  <p class="eyebrow">VII · The independent lane</p>
+  <h2>Codex prompt — copy verbatim</h2>
+  <p style="max-width:var(--maxw);color:var(--text-dim)">The load-bearing artifact. It hands Codex the claim and the binary — no answer key — and forces re-derivation, a 12-variant surface-completeness attack, a forcing-function double-review, and a signed, committed verdict with an independence ledger.</p>
+  <div class="prompt codex">
+    <div class="prompt-bar"><div class="id"><span class="dot"></span><b>CODEX&nbsp;PROMPT</b><span class="meta">· independent verifier · paste into a local-shell Codex session</span></div>
+      <button class="copy" data-target="codexp">Copy</button></div>
+    <pre><code id="codexp">You are CODEX (OpenAI). You are the GENUINELY MODEL-LINEAGE-INDEPENDENT security verifier of Garnet&#x27;s S114 capability-enforcement claim. You share NO state with the Claude fleet that built S114. Adversarial-first: assume there IS a hole and hunt it; default every claim to REFUTED/HOLE until the live binary proves it HELD.
+
+PRECONDITION: you must run as a LOCAL SHELL OPERATOR on this machine (you need bash, git, cargo, and target/debug/garnet). If you cannot execute local shell commands, STOP and report that — do NOT simulate or reason about expected output in place of running the binary.
+
+GOVERNING FACT — READ TWICE. Garnet&#x27;s S114 red-team was authored END-TO-END by a Claude fleet: the six attacker programs, the skeptical referee, the HIGH fix, and the static gate scripts/garnet_red_team_status.py. Because you are a DIFFERENT model lineage with no shared state, YOUR pass is the only genuinely model-lineage-independent verification in this engagement — BUT ONLY IF you RE-DERIVE the attack surface and WRITE FRESH attack programs and observe the REAL binary&#x27;s exit codes. If you re-run the fleet&#x27;s saved artifacts, or treat the gate&#x27;s green as the verification, you inherit Claude&#x27;s blind spots and your pass is worthless. The gate is a STATIC string-presence check: it stays GREEN even if collect_cap_fns is gutted (the three required substrings still present as comments), the regression tests are renamed-present-but #[ignore]&#x27;d, the binary will not build, or the runtime @caps/@max_depth traps are deleted entirely. Trust nothing but binary behavior you cause yourself.
+
+CLAIM UNDER AUDIT (vendor self-attestation; treat as SUSPECT until you reproduce it): &quot;A managed function cannot exercise an undeclared @caps host authority (fs/net/env/proc) or exceed @max_depth on EITHER backend (interp + vm); the declared capability SURFACE that diff-caps / the seal capability_manifest / caps-log / sandbox consume EQUALS the authority the runtime enforces; so a revision that silently widens authority is REFUSED as a HARD gate failure (exit 1), never sealed.&quot; ENFORCED SCOPE IS NARROW: only @caps + @max_depth are enforced; seccomp is Linux-ONLY and you are on macOS (darwin), so treat OS-sandbox/seccomp as declared-only here and do not claim or refute it. @bounded (Wasmtime fuel), memory, time, @mailbox, and macOS/Windows OS-sandbox are DECLARED-NOT-ENFORCED. Reporting ANY named-deferred fence as enforced, or any LOW tamper-evidence stub as an enforced-ceiling break, is itself an audit failure. Classify every result as exactly one of: HELD / HOLE (real enforced-ceiling break) / DECLARED-NOT-ENFORCED.
+
+NO ANSWER KEY. You are given the CLAIM and the BINARY, not the expected outputs. Treat any expectation you infer from the spec or report as a CLAIM TO FALSIFY, never a target to match. Do not stop at the first exit code that looks &#x27;right&#x27; — probe whether a SIBLING path differs.
+
+=== STEP 0 — SETUP (run exactly) ===
+Security-method install (read-only expertise; you cannot auto-route, you read the markdown):
+  cp -r /Users/IDC2.5/.npm-global/lib/node_modules/ccg-workflow/templates/skills/domains/security/ /Users/IDC2.5/.claude/skills/ccg/domains/security/
+  ls /Users/IDC2.5/.claude/skills/ccg/domains/security/   # expect red-team.md code-audit.md pentest.md vuln-research.md threat-intel.md blue-team.md SKILL.md
+Toolchain (cargo/rustc are NOT on PATH):
+  export PATH=&quot;$HOME/.rustup/toolchains/stable-aarch64-apple-darwin/bin:$PATH&quot;
+
+=== STEP 1 — RECON + OPERATOR-NAMESPACED CLEAN WORKTREE (never verify against the shared dirty tree) ===
+  cd /Users/IDC2.5/Desktop/Garnet
+  git fetch origin main --tags --prune
+  git status --short --branch ; git rev-parse HEAD origin/main   # both MUST equal a7f946dc405612e43580e4d983e40a049dab04b8
+  gh pr list --repo Island-Dev-Crew/garnet --state open --json number,title,headRefName,url --limit 50
+  git worktree add /private/tmp/garnet-s114-codex-$(date +%Y%m%d) origin/main
+  cd /private/tmp/garnet-s114-codex-*   # ALL work happens here; record this path + SHA in your addendum
+
+=== STEP 2 — METHOD-LOAD (read for METHOD; do NOT copy any proof-of-concept program) ===
+  /Users/IDC2.5/.claude/skills/ccg/domains/security/red-team.md   (kill-chain; supply-chain source-&gt;build-&gt;artifact-&gt;distribute maps onto surface-&gt;diff-caps-&gt;seal-&gt;agent-loop)
+  .../code-audit.md   (Source-&gt;propagation-&gt;Sink taint: Source = an attacker-authored @caps annotation on a function the interpreter hosts; Sink = capability_surface() collect_cap_fns that diff-caps/seal/agent-loop consume — the exact taint path the HIGH exploited)
+  .../vuln-research.md   (re-derive the invariant from OBSERVED binary behavior, not report prose)
+  C_Language_Specification/GARNET_RED_TEAM.md (the claims you must independently re-test — read to know what to attack, NOT to copy fixtures)
+  garnet-check-v0.3/src/capability_surface.rs (collect_cap_fns — the fix region; its descent arms are ONLY Item::Fn, Item::Impl(block.methods), Item::Module — verified at lines 36-43)
+  garnet-parser-v0.3/src/ast.rs (THE Item ENUM — read it in full; it has TWELVE variants: Use, Module, Memory, Actor, Struct, Enum, Trait, Protocol, Impl, Fn, Const, Let. collect_cap_fns descends only THREE of them.)
+  garnet-interp-v0.3/src/eval.rs and stdlib_bridge.rs (where require_capability/require_entry_capability are installed and which AST shapes the interpreter EXECUTES with a caps frame — note call_actor_handler executes handler bodies)
+  garnet-vm/src/caps_recheck.rs ; F_Project_Management/GARNET_ULTRAPUNCH_DOSSIER.md ; CLAUDE.md (enforced-vs-declared boundary) ; F_Project_Management/W_TRUST/S114_INDEPENDENT_REVERIFICATION_PACKAGE_2026-06-14.md (a TARGET LIST you must judge sufficient and EXTEND — it is report-only; if it looks tailored to pass, attack harder)
+
+=== STEP 3 — BUILD ===
+  cargo build -p garnet-cli --bin garnet
+  ./target/debug/garnet check &lt;a trivial 3-line .garnet program&gt;   # sanity
+Verified CLI (use EXACTLY this syntax; source files end in .garnet, NOT .grn):
+  garnet check &lt;f.garnet&gt; | garnet run [--interp|--vm] &lt;f.garnet&gt; | garnet caps &lt;f.garnet&gt; | garnet diff-caps [--machine] &lt;old&gt; &lt;new&gt;
+  garnet seal &lt;f.garnet&gt; | garnet verify &lt;f&gt; &lt;manifest.json&gt; [--signature] | garnet caps-log &lt;f&gt; [--log &lt;path&gt;] | garnet caps-log --verify &lt;log&gt;
+  garnet agent-loop --baseline &lt;old&gt; --proposal &lt;new&gt; [--backend interp|vm] [--seal-out &lt;path&gt;]
+
+=== STEP 4 — RE-DERIVE THE THREAT MODEL IN YOUR OWN WORDS (write it into your addendum before attacking) ===
+Adversary = an agent authoring untrusted source the autonomous loop may accept; controls source text, @caps/@max_depth annotations, file layout, and impl/module/ACTOR nesting; the kernel must guarantee it cannot exercise undeclared authority and cannot get a widened proposal sealed.
+
+=== STEP 5 — THE SURFACE-COMPLETENESS ATTACK (the load-bearing, independence-defining step) ===
+The S114 HIGH was an enforced-but-invisible function: an impl-method @caps the interpreter enforced yet capability_surface() did not see. collect_cap_fns descends ONLY Item::Fn, Item::Impl, Item::Module — 3 of the 12 Item variants. DO NOT limit yourself to trait-impl/closure/macro placements (the prior designs named these — note trait/protocol methods and closures may have NO standalone @caps-bearing body and can be dead ends; if so, RECORD that as a refutation, do not call it HELD by omission). Instead, FROM THE Item ENUM, for EACH of the 12 variants ask: can the interpreter EXECUTE an @caps-annotated function hosted by this variant such that require_capability fires? The prime live suspect is Item::Actor — ActorDef.items contains ActorItem::Handler(HandlerDecl) and the interpreter call_actor_handler (eval.rs ~1158) EXECUTES the handler body via exec_block_value, so a handler that calls a host primitive hits require_capability — yet collect_cap_fns has NO Item::Actor arm. Also probe Item::Const / Item::Let initializer expressions (can an initializer contain an @caps-bearing fn or a host call?) and Item::Memory. For EVERY variant where the interpreter enforces @caps on a function the surface does NOT see, you have found a NEW enforced-but-invisible HOLE of the same class as the S114 HIGH — file it HIGH. Construct a fresh .garnet program per enforceable variant, run garnet caps (does aggregate/per-fn carry the cap?), garnet run --interp AND --vm (does require_capability trap?), and garnet diff-caps base vs proposal (AUTHORITY EXPANDED exit 1?). A cap the runtime enforces but caps reports EMPTY is the red-positive.
+
+=== STEP 6 — RE-DERIVE &amp; ATTACK THE OTHER AXES BY HAND (new programs; capture raw stdout+stderr+EXIT CODE per command into raw/) ===
+(A) CAPS-LAUNDERING re-confirm (fixed arms): impl-method @caps(fs) reader calling read_file(&quot;/etc/hostname&quot;) vs an @caps() baseline; nested-module @caps(net) fn vs @caps() baseline. EXPECT to FALSIFY: caps aggregate should carry fs/net + per-fn; diff-caps AUTHORITY EXPANDED exit 1; agent-loop REJECT at stage diff-caps, NO seal file (run both --backend interp and --backend vm). Reason about the REVERT direction: state precisely what a reverted fix would produce (caps aggregate [], per-fn absent, diff-caps exit 0, agent-loop ACCEPTS+SEALS a [] manifest on a real fs grant) so your verdict captures the failure mode, not just the green.
+(B) @caps RUNTIME TRAP: @caps() def main(){ let _=read_file(&quot;/etc/hostname&quot;); 0 } MUST trap &#x27;requires @caps(fs)&#x27; on BOTH --interp and --vm, no file read.
+(C) proc DOUBLE-GATE — and PROBE BOTH SPAWN SURFACES (do NOT pre-dismiss the bare-spawn path). eval.rs has TWO distinct things named spawn: std::process::spawn (a qualified primitive, double-gated by require_capability + require_entry_capability in stdlib_bridge.rs) AND a method==&quot;spawn&quot; actor-spawn dispatch (eval.rs ~1104) that spawns an ACTOR, not a process. (1) @caps(proc) def helper(){ let _=std::process::spawn(&quot;echo hi&quot;); 0 } @caps() def main(){ helper() } MUST trap &#x27;requires program entry @caps(proc), not declared by the entry point&#x27; on both backends with NO subprocess spawned; the @caps(proc)-on-main variant MUST run. (2) Independently VERIFY the bare-spawn / actor-spawn surface: confirm it reaches the actor-spawn path and NOT a process launch. If bare spawn EVER reaches a process launch without the proc entry-cap gate, that is a HIGH — do not assume it is benign because a prior note said so.
+(D) @max_depth: (a) @max_depth(3) def rec(n){ if n&lt;=0 {0} else {rec(n-1)} } called rec(10) -&gt; trap at depth 4 on BOTH backends; (b) mutual recursion through the annotated name -&gt; traps; (c) @max_depth(9999) -&gt; rejected at check (valid 1..=64); (d) CONTROL: an @max_depth(N) fn delegating deep recursion to an UNANNOTATED helper is NOT a ceiling break -&gt; classify DECLARED-NOT-ENFORCED.
+(E) DIFF-CAPS EVASION: wildcard @caps(*), mis-cased @caps(FS), unknown @caps(gpu) — confirm each is conservatively treated as a GAIN (exit 1) where it widens; a silently-dropped gain is a HOLE.
+(F) SEAL/LOG FORGERY (TOCTOU): caps-log — append &gt;=2 entries, rewrite the TAIL entry&#x27;s caps + a bogus caps_blake3, caps-log --verify STILL exits 0 (LOW #1 present); then edit a NON-tail entry -&gt; CHAIN BROKEN exit 1 (the honest boundary). seal — seal two programs differing ONLY in @caps (@caps(fs) vs @caps(fs,net,proc)); subject[0].digest.blake3 IDENTICAL (LOW #2 present) while predicate source_blake3 + capability_manifest DIFFER (mitigation present). signed-manifest reattach — seal A, reattach its signed manifest to a different source B, verify MUST FAIL on source_hash mismatch. The two LOWs are tamper-evidence stubs, NOT enforced ceilings — classify HELD-as-recorded LOW, never HIGH, UNLESS you can show one defeats a currently-enforced gate or enables acceptance/sealing contrary to current contracts.
+(G) BOUNDARY CONFIRM (must be DECLARED-NOT-ENFORCED, never HOLE): @bounded(100) iterating 100000 deep does NOT hit a fuel trap (any abort is host-stack overflow, a backend-robustness artifact); no enforced memory/time/@mailbox runtime trap; seccomp Linux-only and UNVERIFIED on darwin — say so.
+
+=== STEP 7 — GATE/TEST CROSS-CHECK (a cross-check, NEVER your verdict) ===
+  python3 scripts/garnet_red_team_status.py --gate
+  cargo test -p garnet-check impl_method_caps_are_in_the_surface nested_module_fn_caps_are_in_the_surface
+  cargo test -p garnet-vm    # caps_recheck: planted_laundering_call_is_trapped, user_function_shadowing_a_primitive_name_is_not_laundering
+  plus the interp @caps/@max_depth suites
+JUDGE EXPLICITLY IN WRITING: do the gate&#x27;s static string-presence assertions actually match the binary behavior you observed in Steps 5-6? State that a green gate is NECESSARY-not-sufficient (it would stay green even if collect_cap_fns were gutted or the runtime traps deleted), so YOUR dynamic evidence — not the gate — is the verification.
+
+=== STEP 8 — MANDATORY DOUBLE-REVIEW WITH AN EXTERNAL FORCING FUNCTION (not honor-system) ===
+Re-attack your own draft verdict as a hostile referee. This pass is INVALID unless you produce, with captured exit codes: (1) at least TWO NEW attack programs targeting Item variants you had NOT yet covered in Step 5 (e.g. an actor handler if not already done, a const/let initializer, Item::Memory); (2) a ONE-DIFFERENT-METHOD re-derivation of one HELD verdict (e.g. confirm the impl-method surface fix via garnet caps AND via the cargo regression test AND via agent-loop rejection — all three must agree); (3) an explicit check of each classification: did you call any DECLARED-NOT-ENFORCED fence a HOLE, any LOW stub an enforced break, or make a seccomp claim on darwin? Record the second-pass deltas. Note: this self-review cannot substitute for independence — Opus&#x27;s reconciliation is the external adversarial check; your job is to make your first pass falsifiable, not to grade yourself clean.
+
+=== STEP 9 — WRITE THE INDEPENDENT VERDICT ADDENDUM (commit + push) ===
+On a fresh branch codex/s114-independent-verdict-$(date +%Y%m%d), write F_Project_Management/W_TRUST/S114_CODEX_INDEPENDENT_VERDICT_&lt;date&gt;.md with a sibling proofs/ dir containing your fixtures and raw evidence. It MUST contain:
+  1. Reviewer-identity / independence line, VERBATIM: &quot;Independent reviewer (OpenAI Codex, model lineage distinct from the Claude fleet that authored S114). I did not author, review-fix, or merge the S114 attackers, referee, HIGH fix, gate, or this runbook. I re-derived all attack programs from the binary + Item enum; I did not re-run the fleet&#x27;s artifacts.&quot;
+  2. environment.json: host_os (darwin), host_arch, git_head (a7f946d), origin_main, worktree_path, branch, rustc, cargo, garnet_binary, timestamps.
+  3. proofs/: every command&#x27;s stdout/stderr/exit-code; fixtures/ with your NEW .garnet programs (keep parse-failures too as evidence); MANIFEST.sha256 over the bundle.
+  4. A per-attack table: Attack | Item variant (for Step 5) | New program path | Command(s) | Observed exit + one-line evidence quote | Classification (HELD / HOLE / DECLARED-NOT-ENFORCED). One row per attack including Step-8 additions.
+  5. A 12-variant completeness table: each Item variant | can the interpreter enforce @caps on a fn it hosts? (Y/N + why) | does collect_cap_fns descend it? (Y/N) | result (HELD / NEW HOLE / N/A). Any Y/N mismatch (enforceable but not descended) is a NEW HIGH.
+  6. The explicit answer to the core question: &quot;Could you silently widen authority on this fresh build (accept+seal a proposal that gains real host authority)?&quot; YES -&gt; describe the HOLE with severity; NO -&gt; state the invariant HELD against your re-derived attacks AND name exactly what you did NOT cover (so Opus can extend it).
+  7. Independence ledger: list of new program source paths, a read-vs-rerun statement (target: zero reruns of fleet fixtures), the clean-worktree SHA.
+  8. Honesty footer: seccomp UNVERIFIED on darwin (Linux-only); two LOW stubs reproduced-as-recorded; @bounded/memory/time/@mailbox confirmed DECLARED-NOT-ENFORCED; you do NOT relabel S114 &#x27;independently verified&#x27; (Jon&#x27;s call); release tag stays Jon&#x27;s.
+Commit (Co-Authored-By trailer per repo convention) and push so Opus and Jon can read it.
+
+HARD CONSTRAINTS: do NOT edit garnet-check / garnet-interp / garnet-parser / garnet-vm / garnet-stdlib or any CI/dogfood/diff-caps threshold/gate during the review (editing the thing under test disqualifies the verdict). Do NOT accept screenshots, summaries, or prior dogfood bundles in place of rerunning commands. Do NOT call any DECLARED-NOT-ENFORCED fence a HOLE or any LOW stub an enforced break. Do NOT mark S114 &#x27;independently verified&#x27; or push a tag. If anything fails, report the command, the failure, and the last known good state — do not repair the repo before classifying.</code></pre>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">VIII · The final-review lane</p>
+  <h2>Opus-on-MBP prompt — copy verbatim</h2>
+  <p style="max-width:var(--maxw);color:var(--text-dim)">Runs only after Codex's verdict is committed and <b>content-gated</b> (signature line, populated exit-code table, 12-variant table, environment SHA, silent-widening answer). It is the highest-rigor close — explicitly the review of an independent verdict, never the independence itself.</p>
+  <div class="prompt opus">
+    <div class="prompt-bar"><div class="id"><span class="dot"></span><b>OPUS&nbsp;PROMPT</b><span class="meta">· final review (≠ independent) · paste into Opus on the MacBook Pro</span></div>
+      <button class="copy" data-target="opusp">Copy</button></div>
+    <pre><code id="opusp">You are OPUS-on-MBP (Claude). You are the HIGHEST-RIGOR FINAL REVIEWER in the S114 engagement — NOT the independent verifier.
+
+GOVERNING HONESTY FACT — STATE IT VERBATIM IN EVERY ARTIFACT, MEMO, AND ANY HTML YOU PRODUCE. You are Claude, the SAME model family as the fleet that authored the entire S114 red-team (the six attackers, the skeptical referee, the HIGH fix, and the static gate). Therefore your pass CANNOT honestly be called &quot;independent verification&quot; — labeling it so would be exactly the Claude-verifies-Claude circularity CLAUDE.md forbids (&quot;never call the S114 red-team &#x27;independent&#x27;&quot;). The genuinely model-lineage-independent verification is CODEX&#x27;s (OpenAI). Your legitimate role: (1) highest-rigor FINAL REVIEW of Codex&#x27;s independent verdict; (2) a structural-completeness invariant argument the example probes cannot give; (3) an academic benchmark; (4) a decision-grade synthesis for Jon. Jon alone relabels self-attested -&gt; independently-verified and owns the release tag.
+
+=== STEP A — CONTENT-GATE ON CODEX (not a branch-name grep) ===
+  cd /Users/IDC2.5/Desktop/Garnet &amp;&amp; git fetch origin --prune
+  Locate the codex/s114-independent-verdict-* branch and READ its addendum (F_Project_Management/W_TRUST/S114_CODEX_INDEPENDENT_VERDICT_*.md).
+You may BEGIN only if ALL of these are present in Codex&#x27;s addendum: the verbatim reviewer-identity/independence signature line; a POPULATED per-attack table with observed EXIT CODES; the 12-variant completeness table; environment.json showing git_head a7f946dc405612e43580e4d983e40a049dab04b8; and the explicit answer to &quot;could you silently widen authority?&quot;. If any is missing or the verdict is a stub, STOP and report that Opus&#x27;s review cannot precede a real independent verdict — a hollow branch must not pass.
+
+=== STEP B — SETUP (own worktree; never write Codex&#x27;s branch) ===
+  Ensure security domain installed (so keyword auto-routing works): cp -r /Users/IDC2.5/.npm-global/lib/node_modules/ccg-workflow/templates/skills/domains/security/ /Users/IDC2.5/.claude/skills/ccg/domains/security/ 2&gt;/dev/null; ls /Users/IDC2.5/.claude/skills/ccg/domains/security/
+  export PATH=&quot;$HOME/.rustup/toolchains/stable-aarch64-apple-darwin/bin:$PATH&quot;
+  git worktree add /private/tmp/garnet-s114-opus-$(date +%Y%m%d) origin/main   # your own worktree off pristine a7f946d; read Codex&#x27;s branch into it read-only, never write it.
+Read Codex&#x27;s evidence + the trust spine: Codex&#x27;s addendum + proofs/; garnet-check-v0.3/src/capability_surface.rs (collect_cap_fns, the 3 arms); garnet-parser-v0.3/src/ast.rs (the 12-variant Item enum); the interp caps guard in garnet-interp-v0.3/src/eval.rs (require_capability / require_entry_capability, call_actor_handler) + stdlib_bridge.rs host primitives; garnet-vm/src/caps_recheck.rs; C_Language_Specification/GARNET_RED_TEAM.md; CLAUDE.md (enforced-vs-declared boundary). Note every place Codex&#x27;s verdict could be over- or under-claimed, ESPECIALLY whether Codex actually attacked the Item::Actor handler arm (the live residual suspect) or only the dead-end trait/closure placements.
+
+=== STEP C — STRUCTURAL-COMPLETENESS INVARIANT (a coverage ARGUMENT cross-checked by a mechanical test, NOT a proof) ===
+  ToolSearch query: &quot;select:mcp__plugin_ecc_sequential-thinking__sequentialthinking&quot;
+Then run sequentialthinking on INV-CORE: &quot;for EVERY managed FnDef the interpreter installs a @caps guard on, that function appears in capability_surface() with caps superset-or-equal to what the runtime enforces — no enforced-but-invisible function.&quot; Enumerate ALL 12 Item variants (Use, Module, Memory, Actor, Struct, Enum, Trait, Protocol, Impl, Fn, Const, Let) and, for each, decide whether the interpreter can EXECUTE an @caps-bearing function it hosts and whether collect_cap_fns (arms: Item::Fn, Item::Impl(block.methods), Item::Module) reaches it. The Item::Actor -&gt; ActorItem::Handler arm is executed by call_actor_handler yet has NO descent arm — treat it as the prime AT-RISK path and confirm against Codex&#x27;s finding. Produce a per-variant REACHED / NOT-REACHED / N/A table with reasoning. CROSS-CHECK this hand walk with a MECHANICAL test: propose (do not merge) a unit test asserting that every interpreter-enforceable Item variant is reachable by collect_cap_fns — because a hand AST walk is the SAME class of artifact that produced the original bug. DOWN-RANK your output from &quot;proof&quot; to &quot;coverage argument&quot;: state plainly that gold-bar element 6 (full surface=enforcement equivalence) remains PARTIAL — caps_recheck.rs gives only a one-directional lowered ⊆ declared containment trap, not the equivalence.
+
+=== STEP D — EXTERNAL ACADEMIC BENCHMARK ===
+  ToolSearch query: &quot;select:mcp__plugin_ecc_exa__web_search_exa,mcp__plugin_ecc_exa__web_fetch_exa,mcp__plugin_ecc_github__search_code,mcp__plugin_ecc_github__search_issues&quot;
+Research how Rust (RustBelt Coq soundness + Miri dynamic oracle), the E language (ocap), Austral (linear capabilities), Pony (reference capabilities), and WASI/Wasmtime (runtime deny-by-default sandbox) earn trust in their CORE guarantee; and via github, how comparable capability/effect checkers enumerate ALL annotated functions (AST-visitor completeness) and known classes of &quot;enforced-but-invisible&quot; / missed-AST-arm bugs. Benchmark Garnet&#x27;s surface=enforcement completeness argument against that bar; name precisely where it falls short of Rust-memory-safety-grade credibility (it has elements 1-5 at prototype grade once Codex supplies #1, plus a partial #6) and where Garnet is honestly weaker (its @bounded is declared-not-enforced vs WASI fuel).
+
+=== STEP E — CCG RIGOR PASSES (you invoke these natively; Codex cannot) ===
+  /ccg:verify-security on garnet-check-v0.3/src/capability_surface.rs and the interp caps path (require_capability / require_entry_capability in eval.rs).
+  /ccg:audit over the trust-spine diff: capability_surface.rs + eval.rs caps guard + garnet-vm/src/caps_recheck.rs.
+  /ccg:critique on the Codex addendum + GARNET_RED_TEAM.md — adversarially check whether any wording over-claims &quot;enforced&quot; (for a named-deferred fence) or &quot;independent&quot; (for a same-lineage pass), and whether Codex&#x27;s HELD/HOLE/DECLARED-NOT-ENFORCED classifications are honest and whether it covered the Item::Actor arm.
+
+=== STEP F — SAME-LINEAGE CROSS-CHECK ONLY (label it; weight it correctly) ===
+  Skill: ccg -&gt; orchestration/multi-agent. Fan out Scout + 6 Workers (one per vector: caps-laundering incl. the Item::Actor handler arm, max_depth-bypass, diff-caps-evasion, seal-forgery, agent-loop-bypass, seccomp-audit-as-declared-only-on-darwin) + a skeptical-referee Soldier, re-attacking the kernel. EVIDENCE-WEIGHT RULE you MUST state and obey: this is a SAME-MODEL-FAMILY cross-check that shares the S114 fleet&#x27;s blind spots by construction; an AGREEING cross-check adds ZERO independent assurance and has signal ONLY on DISAGREEMENT. Do NOT render it anywhere (memo or HTML) as a second confirming checkmark next to Codex. If it finds something Codex missed, that is a NEW finding requiring its own permanent regression trap — not a closure. Optionally use team-reviewer / team-qa / team-architect Task agents to pressure-test the invariant argument from three role perspectives.
+
+=== STEP G — RECONCILE (you are the external adversarial check Codex&#x27;s self-review structurally cannot be) ===
+Build a reconciliation table: each attack/invariant — Codex verdict vs your invariant coverage argument vs the same-lineage cross-check. Adjudicate EVERY disagreement with evidence. If you find a hole Codex missed (esp. an unattacked enforceable Item variant) -&gt; NEW finding, file it, demand a named regression trap, and S114 is NOT yet closed. If you over-turn a Codex HOLE -&gt; justify with reproduced evidence. If Codex&#x27;s independence is weak anywhere (it reused a fleet fixture, or pattern-matched an answer key, or skipped the Item::Actor arm) -&gt; FLAG it, because that weakens the only independent leg. Run an independence-integrity check: confirm Codex&#x27;s committed fixtures are textually distinct from the S114 fleet&#x27;s six attackers.
+
+=== STEP H — RECOMMEND THE EXTERNAL CLOUD GATE (you cannot self-launch it) ===
+Recommend Jon run /code-review ultra on the Codex branch / the S114 PR as the billed, user-triggered multi-agent cloud review — the final external gate beyond your local passes.
+
+=== STEP I — DECISION-GRADE SYNTHESIS FOR JON (the deliverable) ===
+One memo stitching: (1) Codex&#x27;s model-INDEPENDENT per-attack verdict (the load-bearing one); (2) your structural-completeness COVERAGE argument + the proposed mechanical test; (3) the academic benchmark; (4) the same-lineage cross-check + reconciliation (with its zero-independent-weight caveat). Lead with ONE recommendation: independently-verified-HELD / HOLE-FOUND(severity) / DECLARED-NOT-ENFORCED-ONLY. Include VERBATIM and prominently: &quot;This final review was performed by Opus (Claude), the same model family as the S114 fleet; it is the highest-rigor review of an independent Codex verdict and is NOT itself the independent verification. The genuinely model-lineage-independent verification is Codex&#x27;s. An agreeing same-lineage cross-check adds no independent assurance. Only Jon relabels self-attested -&gt; independently-verified, and the release tag stays Jon&#x27;s.&quot; State the EXACT residual gaps: gold-bar element 6 (surface=enforcement) only partial / one-directional; seccomp Linux-only and UNVERIFIED on darwin; the two LOW stubs open-and-recorded; @bounded/memory/time/@mailbox declared-not-enforced. Give Jon a crisp bottom line: does the enforced-ceiling claim HOLD under independent + final review, what is AT-RISK (esp. the Item::Actor arm verdict), and what is honestly declared-not-enforced.
+
+=== STEP J — RECORD (without crossing Jon&#x27;s line) ===
+Prepare ledger updates for C_Language_Specification/GARNET_RED_TEAM.md (status), CURRENT_STATE.md (the &quot;not independently verified&quot; line -&gt; &quot;Codex-independently-verified pending Jon&#x27;s acceptance, Opus-final-reviewed&quot; ONLY if the evidence supports it), CHANGELOG, and the W_TRUST package — with the no-circularity disclaimer baked into EVERY prose block and any HTML. Keep all enforced-vs-declared boundaries verbatim; never widen &quot;enforced&quot; beyond @caps + @max_depth on both backends (seccomp Linux-only). Do NOT yourself flip the final self-&gt;independent label, do NOT modify any gate you would merge under, do NOT touch frozen W-REBUILD crates, and do NOT push a tag — those are Jon&#x27;s acts.
+
+HARD CONSTRAINTS: never present your pass as &quot;independent verification&quot;; never let an HTML/dossier render Claude&#x27;s review or a same-lineage cross-check as the independence it cannot supply; treat re-running garnet_red_team_status.py --gate as a necessary tripwire only, never as verification; do not edit kernel source or any merge gate; do not claim macOS/Windows OS-sandbox or Wasmtime-fuel enforcement, seccomp on darwin, or production/1.0. If Codex&#x27;s verdict is missing, hollow, or its independence is compromised, say so and decline to synthesize a &quot;verified&quot; close. Batch independent ToolSearch loads and independent tool calls in single turns where there are no data dependencies.</code></pre>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">IX · Acceptance</p>
+  <h2>What “done right” must satisfy</h2>
+  <ul class="spaced check"><li>INDEPENDENCE IS REAL, NOT JUST LABELED: Codex&#x27;s addendum carries the verbatim reviewer-identity/independence line, an independence ledger (new fixture paths, read-vs-rerun statement with zero fleet-artifact reruns, clean-worktree SHA a7f946d), and Opus&#x27;s reconciliation includes a confirmed independence-integrity check that Codex&#x27;s fixtures are textually distinct from the S114 fleet&#x27;s six attackers.</li><li>SURFACE COMPLETENESS IS ENUMERATED OVER ALL 12 Item VARIANTS, NOT 3: Codex&#x27;s 12-variant completeness table and Opus&#x27;s structural-completeness argument both judge every Item variant (Use, Module, Memory, Actor, Struct, Enum, Trait, Protocol, Impl, Fn, Const, Let) against the 3 collect_cap_fns arms, with the Item::Actor handler arm explicitly attacked dynamically (caps + run --interp/--vm + diff-caps) — not assumed HELD by omission, and not limited to the dead-end trait/closure placements.</li><li>EVERY ATTACK VERDICT IS GROUNDED IN AN OBSERVED EXIT CODE Codex produced on a fresh build at a7f946d, classified exactly HELD / HOLE / DECLARED-NOT-ENFORCED, with raw stdout/stderr/exit captured in proofs/ and a MANIFEST.sha256.</li><li>NO ANSWER KEY, NO PRE-DISMISSAL: the Codex prompt hands the CLAIM + binary but no expected outputs; the spawn note is framed as a probe of BOTH spawn surfaces (qualified primitive double-gate AND the method==spawn actor path) where a bare spawn reaching a process launch without the proc entry-cap gate is a HIGH.</li><li>DOUBLE-REVIEW HAS AN EXTERNAL FORCING FUNCTION: Codex&#x27;s Step 8 produced &gt;=2 new attack programs on previously-uncovered Item variants with captured exit codes plus a one-different-method re-derivation of one HELD verdict; the prompt states this self-review does not substitute for independence and that Opus&#x27;s reconciliation is the external check.</li><li>OPUS GATE IS CONTENT-BASED: Opus did not begin until Codex&#x27;s addendum had the signature line, a populated exit-code table, the 12-variant table, environment.json with SHA a7f946d, and the silent-widening answer — a branch-name grep alone is rejected; Opus read Codex&#x27;s branch into its OWN worktree and never wrote it.</li><li>NON-CIRCULARITY VERBATIM EVERYWHERE: every prompt, the memo, and any HTML states that Codex is the independent verifier and Opus is the highest-rigor FINAL REVIEW (not independent); the same-lineage cross-check carries the zero-independent-assurance / signal-only-on-disagreement caveat and is never rendered as a confirming checkmark; only Jon relabels and owns the tag.</li><li>HONEST SCOPE HELD: enforced = only @caps + @max_depth on both backends; seccomp Linux-only and unverified on darwin; @bounded/memory/time/@mailbox/macOS-Windows-sandbox confirmed declared-not-enforced; the two LOW stubs reproduced-as-recorded LOW, neither reported as an enforced break nor silently widened; gold-bar element 6 explicitly stated PARTIAL.</li><li>TOOL OWNERSHIP CORRECT: Codex only READS the security-domain markdown (never invokes /ccg:); Opus invokes /ccg:verify-security|audit|critique + the multi-agent fleet + ToolSearch-loaded sequential-thinking/exa/github natively and only RECOMMENDS /code-review ultra; the security-domain cp install and rustup PATH are run; source files are *.garnet not *.grn.</li><li>GATE-IS-NOT-PROOF ENCODED: both prompts treat garnet_red_team_status.py --gate as necessary-but-never-sufficient (a string-presence check that stays green even if collect_cap_fns is gutted or the runtime traps deleted), and Codex explicitly judges whether the gate&#x27;s static assertions match observed binary behavior.</li><li>NEITHER LANE EDITS THE KERNEL OR ANY MERGE GATE during review; an Opus- or fleet-found hole Codex missed is a NEW finding requiring its own regression trap, not a silent edit or a closure; the release tag stays Jon-owned.</li></ul>
+</section>
+
+<section>
+  <p class="eyebrow">X · Open risks</p>
+  <h2>What could still go wrong</h2>
+  <ul class="spaced risk"><li>LIVE RESIDUAL HOLE IS THE PRIME UNKNOWN: collect_cap_fns descends only 3 of 12 Item variants, and the interpreter&#x27;s call_actor_handler (eval.rs ~1158) executes Actor handler bodies — so an @caps-annotated Actor handler that calls a host primitive may be enforced-but-INVISIBLE to the surface, the exact S114 HIGH class. This is unconfirmed until Codex attacks it dynamically; whether HandlerDecl carries an @caps annotation the interpreter installs as a frame must be observed, not assumed. If it reproduces, S114 is NOT closed and a new HIGH + regression trap is required before any relabel.</li><li>CODEX MAY LACK A LOCAL SHELL: the entire independent lane assumes Codex runs as a local-shell operator on this Mac with bash/cargo/garnet. If Codex is a non-shell environment it must STOP — a simulated/reasoned verdict would be worthless and falsely independent. This precondition is stated but cannot be enforced by the prompt alone.</li><li>INDEPENDENCE CAN STILL DEGRADE TO CONFIRMATION: even with the answer-key stripped, a lazy Codex could pattern-match the spec&#x27;s described behavior, skip the hard Item::Actor/Const/Let/Memory variants, and report HELD by omission. The independence ledger + Opus&#x27;s fixture-distinctness check mitigate but do not eliminate this; Jon should weight a verdict that did NOT attack the Actor arm as incomplete.</li><li>OPUS&#x27;S STRUCTURAL ARGUMENT IS A MACHINE-UNVERIFIED CLAUDE AST WALK — the same class of artifact that produced the original bug. It is down-ranked to a coverage argument and cross-checked by a proposed mechanical reachability test, but until that test is actually written and run (a follow-up slice, kernel-touching, hence Jon-gated), element 6 stays partial and the completeness claim is argument-grade only.</li><li>SHARED FILESYSTEM CONTENTION: both operators write into the same ~/.claude/skills and the same repo; the worktrees are operator-namespaced and the security install is read-only-after-first-write, but a race or a stale dirty worktree could still cause one lane to verify against mutated state. The clean-worktree SHA in each addendum is the audit anchor.</li><li>SECCOMP IS UNVERIFIABLE ON THIS HOST: the OS-sandbox enforcement layer is Linux-only and both operators run on darwin, so the seccomp/EPERM claim (INV-10) is taken on faith here. A complete gold-bar pass needs a separate Linux run; the memo must not let a darwin verdict imply seccomp was confirmed.</li><li>GATE/STANDARD IMMUTABILITY UNDER REVIEW: the four integrity rules forbid a PR modifying the gate it merges under. Neither AI lane may edit garnet_red_team_status.py, diff-caps thresholds, or capability standards during the review — but the prompts rely on discipline; an accidental edit would silently invalidate the verdict, so the no-edit constraint must be checked at reconcile time.</li><li>JON-RELABEL DEPENDS ON HUMAN JUDGMENT OF &#x27;INDEPENDENT&#x27;: the process produces auditable evidence, but the final epistemic call — whether Codex&#x27;s cross-lineage pass truly clears gold-bar element 1 for a skeptical academic reviewer (CMU/MIT/Rice/Berkeley) — is Jon&#x27;s alone. One cross-lineage pass is a floor, not the decade of adversarial ecosystem pressure Rust had; the memo must frame it as &#x27;first independent attempt cleared&#x27;, not &#x27;independence bar fully met&#x27;.</li></ul>
+</section>
+
+<section>
+  <p class="eyebrow">XI · Provenance</p>
+  <h2>How these prompts were engineered — 13 findings resolved</h2>
+  <p style="max-width:var(--maxw);color:var(--text-dim)">Three independent designs (security-auditor, language-designer, red-team-operator lenses) were each adversarially audited for independence-circularity, tool-call precision, and attack-surface completeness, then synthesized. The findings below were resolved <em>before</em> publication — the critical one reshaped the entire surface-completeness attack.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Severity</th><th>Target</th><th>Finding</th><th>Resolution</th></tr></thead>
+    <tbody><tr><td><span class="pill crit">critical</span></td><td class="mono-sm">Codex attack enumeration in all three designs</td><td>collect_cap_fns covers only Item Fn, Impl methods, and Module while a catch-all swallows 9 of 12 Item variants. The interpreter enforces caps from any called fn annotations. Item Actor Handler carries annotations and a body and is dispatched yet skipped by collect_cap_fns, the exact S114 HIGH shape. All three prompts name only trait-impl, closure, and macro placements, but trait methods have no body so are a safe dead end. A literal Codex attacks the named safe arms, finds nothing, and falsely reports HELD.</td><td class="fix">Require Codex to read the Item enum, enumerate all 12 variants, judge per variant whether the interpreter can enforce an annotated fn there (Item Actor handlers, Item Const and Item Let initializer closures, Item Memory), and attack every enforceable variant collect_cap_fns has no descent arm for. Any gap is a HIGH.</td></tr><tr><td><span class="pill high">high</span></td><td class="mono-sm">Codex double-review in security-auditor and red-team-operator</td><td>The double-review is Codex re-reviewing Codex, the same model grading its own first pass, a fractal of the circularity the engagement exists to avoid. All three rely on honor-system self-attack with no external forcing function; a lazy agent satisfies it with a paragraph.</td><td class="fix">Require two new programs targeting uncovered variants with captured exit codes plus a one-different-method re-derivation of one HELD verdict; position Opus reconciliation as the external adversarial check the self-review structurally cannot be.</td></tr><tr><td><span class="pill high">high</span></td><td class="mono-sm">Opus same-lineage cross-check in all three</td><td>Opus is correctly forbidden from claiming independence but runs a same-lineage Claude attacker fleet folded into the memo. The risk is mis-weighting: a Claude cross-check that agrees with Codex adds zero independent evidence yet reads as corroboration when shown side by side.</td><td class="fix">Mandate an evidence-weight statement: an agreeing same-lineage cross-check adds no independent assurance and has signal only on disagreement; forbid any HTML from rendering it as a second confirming checkmark next to Codex.</td></tr><tr><td><span class="pill high">high</span></td><td class="mono-sm">Shared filesystem state and Opus existence-gate in all three</td><td>Both operators copy the security skills into the same dot-claude namespace and operate on the same shared checkout (security-auditor hardcodes one worktree path), and Opus gates on a branch-name grep so a stub branch passes and it reviews a hollow verdict.</td><td class="fix">Make the install a shared read-only step; give Codex a unique operator-namespaced worktree recorded with path and SHA; Opus reads Codex&#x27;s branch into its own worktree and never writes it; content-gate Opus on the signature line, a populated exit-code table, environment.json with SHA a7f946d, and the silent-widening answer.</td></tr><tr><td><span class="pill high">high</span></td><td class="mono-sm">design 1 grn extension</td><td>attack programs use grn but repo uses garnet</td><td class="fix">replace grn with garnet</td></tr><tr><td><span class="pill high">high</span></td><td class="mono-sm">completeness step in all three</td><td>three of twelve Item arms covered, Actor and Trait unhandled</td><td class="fix">enumerate all twelve Item variants from the parser ast file</td></tr><tr><td><span class="pill high">high</span></td><td class="mono-sm">closure probes</td><td>Closure and TraitItem cannot carry caps</td><td class="fix">reframe as refutation</td></tr><tr><td><span class="pill med">medium</span></td><td class="mono-sm">Pre-stated expected outputs in all three Codex prompts</td><td>Handing Codex pre-computed expected outputs degrades re-derivation toward confirmation; Codex builds programs to match and stops at the expected exit code instead of probing whether a sibling path differs.</td><td class="fix">Strip pre-stated expected outputs; give Codex the claim and the binary not the answer key, and instruct it to treat any pre-stated expectation as a claim to falsify.</td></tr><tr><td><span class="pill med">medium</span></td><td class="mono-sm">The spawn gotcha note in all three Codex prompts</td><td>All three tell Codex a bare spawn is a non-bypass to ignore, but eval.rs has a method-equals-spawn dispatch path separate from the double-gated qualified primitive; pre-dismissing it could mask a real laundering hole.</td><td class="fix">Reword as a probe: verify both spawn surfaces; if bare spawn reaches a process launch without the proc entry-cap gate that is a HIGH; never pre-instruct the verifier to disregard unobserved behavior.</td></tr><tr><td><span class="pill med">medium</span></td><td class="mono-sm">Opus structural-completeness as gold-bar element six proof</td><td>The Opus AST enumeration is positioned as the proof closing element six but is a machine-unverified Claude reasoning artifact, the same class of hand AST walk that produced the original bug.</td><td class="fix">Down-rank from proof to coverage argument and cross-check it with a mechanical test that every interpreter-enforceable Item variant is reachable by collect_cap_fns; state element six remains partial.</td></tr><tr><td><span class="pill med">medium</span></td><td class="mono-sm">all Codex prompts</td><td>assume local shell but never state it</td><td class="fix">add local-operator precondition or STOP</td></tr><tr><td><span class="pill med">medium</span></td><td class="mono-sm">gate and candidate one</td><td>gate is substring only</td><td class="fix">adopt the core invariant</td></tr><tr><td><span class="pill low">low</span></td><td class="mono-sm">Jon relabel without auditable independence proof in all three</td><td>Jon gets the memo without a checkable independence attestation; the process can complete mechanically while the independent leg quietly re-ran a fleet fixture or pattern-matched the answer key.</td><td class="fix">Require an independence ledger: committed new program source files, a read-versus-rerun statement with target zero rerun, the clean-worktree SHA, and a one-line Opus independence-integrity check that Codex fixtures are distinct from the S114 fleet&#x27;s.</td></tr></tbody>
+  </table></div>
+</section>
+
+<footer>
+  <p><b>Calibrated-honesty boundary.</b> Enforced = <code>@caps</code> + <code>@max_depth</code> only, both backends; seccomp Linux-only (unverified on darwin). <code>@bounded</code> / memory / time / <code>@mailbox</code> / macOS-Windows OS-sandbox are declared-not-enforced. Garnet is research-grade (v0.x), not production / 1.0.</p>
+  <p><b>This dossier does not verify anything.</b> It is the handoff. Codex performs the model-lineage-independent verification; Opus performs the highest-rigor final review; <b>only Jon</b> relabels self-attested → independently-verified, and the release tag stays Jon's. A same-lineage cross-check is never independence.</p>
+  <p>Garnet · S114 Independent Verification Dossier · base a7f946d · June 25, 2026</p>
+</footer>
+
+</div>
+<script>
+document.querySelectorAll('.copy').forEach(function(b){
+  b.addEventListener('click', function(){
+    var el = document.getElementById(b.dataset.target);
+    var t = el.innerText;
+    navigator.clipboard.writeText(t).then(function(){
+      var o = b.textContent; b.textContent = 'Copied ✓'; b.classList.add('done');
+      setTimeout(function(){ b.textContent = o; b.classList.remove('done'); }, 1800);
+    });
+  });
+});
+</script>
+</body>
+</html>
