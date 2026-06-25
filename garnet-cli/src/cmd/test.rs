@@ -143,7 +143,9 @@ pub fn run(args: &[String]) -> ExitCode {
         // tests and move on rather than aborting the whole run.
         if let Some(helper_src) = main_src.as_ref() {
             if !is_main_file {
-                match crate::panic_firewall::firewalled(|| interp.load_source(helper_src)) {
+                match crate::panic_firewall::firewalled(|| {
+                    interp.load_source_with_entry_caps(helper_src, "main")
+                }) {
                     Ok(Ok(())) => {}
                     Ok(Err(e)) => {
                         eprintln!(
@@ -167,7 +169,12 @@ pub fn run(args: &[String]) -> ExitCode {
         }
         // Firewalled: a load-time panic in the test file fails that file's tests
         // and continues to the next file — never an exit-101 process abort.
-        let load_result = crate::panic_firewall::firewalled(|| interp.load_source(&src));
+        // S114-FIX-2: frame the test-file load under the file's `main` entry so a
+        // top-level `let`/`const` initializer is checked against declared `@caps`
+        // (parity with `garnet run`); the prior unframed `load_source` let a
+        // top-level host read execute fail-open at test-load time.
+        let load_result =
+            crate::panic_firewall::firewalled(|| interp.load_source_with_entry_caps(&src, "main"));
         let load_failure = match load_result {
             Ok(Ok(())) => None,
             Ok(Err(e)) => Some(format!("load error in {}: {e}", file.display())),

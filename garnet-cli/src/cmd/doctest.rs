@@ -131,7 +131,12 @@ pub fn run(args: &[String]) -> ExitCode {
     // `load_source`, so a load-time panic (e.g. `const X = i64::MIN.abs()`)
     // must doom the fences as failures, not abort the whole doctest process.
     let mut interp = Interpreter::new();
-    let load_err = match crate::panic_firewall::firewalled(|| interp.load_source(&src)) {
+    // S114-FIX-2: frame the load under the file's `main` entry so a top-level
+    // `let`/`const` initializer is checked against declared `@caps` (parity with
+    // `garnet run`) instead of executing fail-open at doctest-load time.
+    let load_err = match crate::panic_firewall::firewalled(|| {
+        interp.load_source_with_entry_caps(&src, "main")
+    }) {
         Ok(result) => result.err().map(|e| e.to_string()),
         Err(panic_msg) => Some(format!("panicked: {panic_msg}")),
     };

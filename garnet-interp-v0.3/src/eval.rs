@@ -16,6 +16,7 @@ use garnet_parser::token::StrPart;
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::rc::Rc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 const DEFAULT_MANAGED_ACTOR_MAILBOX_CAPACITY: usize = 1024;
 const MAX_MANAGED_ACTOR_MAILBOX_CAPACITY: usize = 1_048_576;
@@ -535,6 +536,18 @@ fn max_depth_ceiling(
     Ok(Some(n))
 }
 
+/// Validate an `@max_depth(N)` annotation's range at *registration* time, so an
+/// out-of-range bound is refused even when its function is never invoked
+/// (S114-FIX-2). Before this, the `1..=64` check fired only on the call path, so
+/// `garnet run` accepted an invalid bound on an uncalled function that
+/// `garnet check` rejected — a `run`-accepts/`check`-rejects soundness split.
+pub(crate) fn validate_max_depth_annotation(
+    annotations: &[Annotation],
+    function_name: &str,
+) -> Result<(), RuntimeError> {
+    max_depth_ceiling(annotations, function_name).map(|_| ())
+}
+
 /// RAII guard for a `@max_depth` function's recursion counter: increments on
 /// `enter`, decrements on drop, so the count is correct even when a call returns
 /// an error (including the trap itself, whose guard drops as it unwinds).
@@ -675,15 +688,47 @@ impl Drop for CapsGuard {
     }
 }
 
+/// Deny-by-default switch for the *no-active-frame* case (S114-FIX-2).
+///
+/// `require_capability`/`require_entry_capability` historically ALLOWED a
+/// host-authority primitive reached with no `@caps` frame on the stack
+/// ("direct host/test call"). That fail-open default (CWE-636/638) let the
+/// `eval`, `test`, `doctest`, `repl`, and dependency-preload lanes execute
+/// load/eval-time host authority unenforced, because they reach a host primitive
+/// before any program-entry frame is installed. The `garnet` binary sets this
+/// `true` so the *binary* is deny-by-default (complete mediation / fail-safe
+/// default) on every lane — including the stack-sized worker thread `garnet run`
+/// spawns, which is why this is a process-global, not a thread-local. Library and
+/// embedder callers (which never run the binary's `main`) leave it `false`,
+/// preserving the documented direct-call behavior for code with no Garnet program
+/// context (Rust unit tests, benches, internal loads).
+static STRICT_NO_FRAME: AtomicBool = AtomicBool::new(false);
+
+/// Enable deny-by-default capability mediation for this process: a host-authority
+/// primitive reached with NO active `@caps` frame is refused rather than allowed.
+/// Set by the `garnet` binary at startup (S114-FIX-2).
+pub fn set_strict_no_frame(on: bool) {
+    STRICT_NO_FRAME.store(on, Ordering::Relaxed);
+}
+
+fn strict_no_frame() -> bool {
+    STRICT_NO_FRAME.load(Ordering::Relaxed)
+}
+
 /// Enforce that a host-authority primitive's required capability was declared in
 /// the calling chain. S91 adds a program-entry frame for `garnet run --interp`
-/// so safe-mode entry points are covered too. Outside any program frame (e.g. a
-/// direct host/test call) there is no `@caps` context to enforce, so the call is
-/// allowed.
+/// so safe-mode entry points are covered too. Outside any program frame, the
+/// call is refused under deny-by-default (the `garnet` binary; S114-FIX-2) and
+/// allowed only for library/embedder callers that have opted out of strict mode.
 pub(crate) fn require_capability(needed: &str, fn_name: &str) -> Result<(), RuntimeError> {
     ACTIVE_CAPS.with(|c| {
         let c = c.borrow();
         if c.active_frames == 0 {
+            if strict_no_frame() {
+                return Err(RuntimeError::msg(format!(
+                    "capability: `{fn_name}` requires @caps({needed}), not declared in the calling chain"
+                )));
+            }
             return Ok(());
         }
         let has = |k: &str| c.counts.get(k).copied().unwrap_or(0) > 0;
@@ -706,6 +751,11 @@ pub(crate) fn require_entry_capability(needed: &str, fn_name: &str) -> Result<()
     ACTIVE_CAPS.with(|c| {
         let c = c.borrow();
         if c.entry_frames == 0 {
+            if strict_no_frame() {
+                return Err(RuntimeError::msg(format!(
+                    "capability: `{fn_name}` requires program entry @caps({needed}), not declared by the entry point"
+                )));
+            }
             return Ok(());
         }
         let has = |k: &str| c.entry_counts.get(k).copied().unwrap_or(0) > 0;

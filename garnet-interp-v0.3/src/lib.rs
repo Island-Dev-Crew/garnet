@@ -135,6 +135,12 @@ impl Interpreter {
     fn register_item(&mut self, item: Item) -> Result<(), RuntimeError> {
         match item {
             Item::Fn(fn_def) => {
+                // S114-FIX-2: validate the `@max_depth(N)` range at registration so
+                // an out-of-range bound is refused even when the function is never
+                // called — matching `garnet check` and closing the prior
+                // `run`-accepts/`check`-rejects split on the run lane (both backends
+                // load via this path).
+                eval::validate_max_depth_annotation(&fn_def.annotations, &fn_def.name)?;
                 let name = fn_def.name.clone();
                 let closure = Value::Fn(Rc::new(value::FnValue {
                     def: fn_def,
