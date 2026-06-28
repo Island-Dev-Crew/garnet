@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { diffCapsCardHtml, type DiffCapsReport } from "./diff-caps";
 
 interface CommandResult {
   success: boolean;
@@ -237,6 +238,14 @@ function renderError(targetId: string, error: unknown): void {
       <pre>${escapeHtml(String(error))}</pre>
     </article>
   `;
+}
+
+function renderDiffCaps(targetId: string, report: DiffCapsReport): void {
+  const target = document.getElementById(targetId);
+  if (!target) return;
+  // All rendering lives in the pure, unit-tested diffCapsCardHtml — the band and
+  // verdict are the CLI's, rendered verbatim and never recomputed here.
+  target.innerHTML = diffCapsCardHtml(report, new Date().toLocaleTimeString());
 }
 
 function renderHealth(targetId: string, health: HealthStatus): void {
@@ -875,6 +884,18 @@ window.addEventListener("DOMContentLoaded", () => {
   });
   wireButton("btn-windows-vm-installer", async () => {
     await runCommand("release-result", "windows_vm_installer_status", {});
+  });
+
+  wireButton("btn-diff-caps", async () => {
+    try {
+      const report = await invoke<DiffCapsReport>("studio_diff_caps", {
+        oldPath: requireValue("diff-caps-old", "Old revision path"),
+        newPath: requireValue("diff-caps-new", "New revision path"),
+      });
+      renderDiffCaps("diff-caps-result", report);
+    } catch (error) {
+      renderError("diff-caps-result", error);
+    }
   });
 
   wireButton("btn-evidence", async () => {

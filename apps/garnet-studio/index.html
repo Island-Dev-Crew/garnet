@@ -46,6 +46,8 @@
             data-tip="Create dogfood evidence bundles and run the objective pulse or full agentic matrix.">Evidence</button>
           <button data-panel="release" role="tab" data-power-only
             data-tip="Run the repo's readiness reporters. Wrappers only — they never upgrade platform or proof claims.">Release / Readiness</button>
+          <button data-panel="diff-caps" role="tab" data-power-only
+            data-tip="Compare the declared capability surfaces of two revisions. The CLI decides the verdict and band; this renders them verbatim.">Diff-Caps Review</button>
           <button data-panel="settings" role="tab"
             data-tip="Switch between Simple and Power mode, set the theme, and tune command timeouts.">Settings</button>
         </nav>
@@ -386,6 +388,34 @@
           </div>
 
           <div id="release-result" class="result-area" aria-live="polite"></div>
+        </section>
+
+        <section id="panel-diff-caps" class="panel" role="tabpanel" tabindex="-1" data-power-only>
+          <header class="panel-header">
+            <p class="eyebrow">Capability audit</p>
+            <h2>Diff-Caps Review Gate</h2>
+            <p>
+              Compare the declared <code>@caps</code> surfaces of two revisions
+              (old vs new). <code>garnet diff-caps --machine</code> decides the
+              verdict and the capability band — this panel renders that decision
+              verbatim and never recomputes it.
+            </p>
+          </header>
+          <div class="form-grid">
+            <label class="field">
+              <span>Old revision path</span>
+              <input id="diff-caps-old" type="text" spellcheck="false"
+                data-tip="Path to the OLD .garnet file or directory (the baseline)." />
+            </label>
+            <label class="field">
+              <span>New revision path</span>
+              <input id="diff-caps-new" type="text" spellcheck="false"
+                data-tip="Path to the NEW .garnet file or directory (the proposal)." />
+            </label>
+          </div>
+          <button id="btn-diff-caps" class="primary"
+            data-tip="Run garnet diff-caps --machine on the two paths and render the capability-diff verdict.">Review capability diff</button>
+          <div id="diff-caps-result" class="result-area" aria-live="polite"></div>
         </section>
 
         <section id="panel-settings" class="panel" role="tabpanel" tabindex="-1">
