@@ -362,20 +362,14 @@ pub(crate) fn studio_bootstrap_write_scripts_impl() -> CommandResult {
         Ok(plan_json) => plan_json + "\n",
         Err(err) => return contract_error(format!("failed to serialize bootstrap plan: {err}")),
     };
-    let files = [
+    // The four step scripts come from the same `BootstrapStep`-derived source
+    // the run path uses (see `bootstrap_step_files`), so Write and Run cannot
+    // drift; the two non-step artifacts (plan JSON + README) are added here.
+    let mut files: Vec<(&'static str, String)> = vec![
         ("bootstrap-plan.json", plan_json),
         ("README.md", bootstrap_readme(&health, &plan)),
-        ("install-python-winget.ps1", install_python_winget_script()),
-        (
-            "build-garnet-cli-from-repo.ps1",
-            build_garnet_cli_script(&health),
-        ),
-        (
-            "configure-garnet-env.ps1",
-            configure_garnet_env_script(&health),
-        ),
-        ("run-bootstrap-preflight.ps1", bootstrap_preflight_script()),
     ];
+    files.extend(bootstrap_step_files(&health));
     let mut written = Vec::new();
     for (name, contents) in files {
         let path = bootstrap_dir.join(name);
@@ -416,6 +410,222 @@ pub(crate) fn studio_bootstrap_write_scripts_impl() -> CommandResult {
 #[tauri::command]
 pub async fn studio_bootstrap_write_scripts() -> Result<CommandResult, String> {
     run_blocking(studio_bootstrap_write_scripts_impl).await
+}
+
+/// The only bootstrap steps Studio will execute. Anything outside this typed
+/// allowlist is refused before any process is spawned — Studio never runs an
+/// arbitrary shell string, only these four repo-generated PowerShell scripts,
+/// each through the same `run_process_with_timeout` path the rest of the app
+/// uses. There is deliberately no generic "run this command" surface.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum BootstrapStep {
+    Preflight,
+    InstallPython,
+    BuildCli,
+    ConfigureEnv,
+}
+
+impl BootstrapStep {
+    const ALL: [BootstrapStep; 4] = [
+        BootstrapStep::Preflight,
+        BootstrapStep::InstallPython,
+        BootstrapStep::BuildCli,
+        BootstrapStep::ConfigureEnv,
+    ];
+
+    fn id(self) -> &'static str {
+        match self {
+            BootstrapStep::Preflight => "preflight",
+            BootstrapStep::InstallPython => "install-python",
+            BootstrapStep::BuildCli => "build-cli",
+            BootstrapStep::ConfigureEnv => "configure-env",
+        }
+    }
+
+    fn parse(raw: &str) -> Result<BootstrapStep, String> {
+        let id = raw.trim();
+        BootstrapStep::ALL
+            .into_iter()
+            .find(|step| step.id() == id)
+            .ok_or_else(|| {
+                let allowed = BootstrapStep::ALL
+                    .iter()
+                    .map(|step| step.id())
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                format!("unknown bootstrap step {id:?}; allowed steps: {allowed}")
+            })
+    }
+
+    /// `build-cli` and `configure-env` operate on the Garnet checkout, so they
+    /// require a validated repo root; `preflight` and `install-python` do not.
+    fn needs_repo(self) -> bool {
+        matches!(self, BootstrapStep::BuildCli | BootstrapStep::ConfigureEnv)
+    }
+
+    /// `cargo build --release` is the only step that legitimately runs for
+    /// minutes; it gets the matrix budget, the rest the normal command budget.
+    fn is_long_running(self) -> bool {
+        matches!(self, BootstrapStep::BuildCli)
+    }
+
+    fn script_name(self) -> &'static str {
+        match self {
+            BootstrapStep::Preflight => "run-bootstrap-preflight.ps1",
+            BootstrapStep::InstallPython => "install-python-winget.ps1",
+            BootstrapStep::BuildCli => "build-garnet-cli-from-repo.ps1",
+            BootstrapStep::ConfigureEnv => "configure-garnet-env.ps1",
+        }
+    }
+
+    /// The exact script body that runs — identical to what
+    /// `studio_bootstrap_write_scripts` emits, so "Run" and "Write scripts"
+    /// can never diverge.
+    fn script_contents(self, health: &HealthStatus) -> String {
+        match self {
+            BootstrapStep::Preflight => bootstrap_preflight_script(),
+            BootstrapStep::InstallPython => install_python_winget_script(),
+            BootstrapStep::BuildCli => build_garnet_cli_script(health),
+            BootstrapStep::ConfigureEnv => configure_garnet_env_script(health),
+        }
+    }
+}
+
+/// The `(filename, body)` pairs for the four typed steps, derived from
+/// `BootstrapStep::ALL`. Both the run path (`studio_bootstrap_run_step`) and the
+/// write path (`studio_bootstrap_write_scripts`) build their script set from
+/// this one source, so a "Run" step and its written-out script can never drift.
+fn bootstrap_step_files(health: &HealthStatus) -> Vec<(&'static str, String)> {
+    BootstrapStep::ALL
+        .iter()
+        .map(|step| (step.script_name(), step.script_contents(health)))
+        .collect()
+}
+
+/// Repo gate, kept pure for testability: steps that touch the checkout require a
+/// validated repo root; the others pass the (optional) root through unchanged.
+fn bootstrap_repo_gate(
+    step: BootstrapStep,
+    repo_root: Option<PathBuf>,
+) -> Result<Option<PathBuf>, String> {
+    if step.needs_repo() && repo_root.is_none() {
+        return Err(format!(
+            "bootstrap step '{}' needs a Garnet repo checkout, but none was found. \
+             Set GARNET_REPO to a valid Garnet repository (or run the generated script manually).",
+            step.id()
+        ));
+    }
+    Ok(repo_root)
+}
+
+/// Locate a PowerShell host. Windows ships `powershell.exe` (Windows
+/// PowerShell 5.1); `pwsh` (PowerShell 7+) is the fallback. The generated
+/// scripts use Windows idioms (winget, User-scope env, LOCALAPPDATA), so this
+/// is a Windows-shaped feature — on a host with no PowerShell it refuses
+/// honestly rather than claiming a run happened.
+fn bootstrap_powershell() -> Option<PathBuf> {
+    paths::find_executable("powershell").or_else(|| paths::find_executable("pwsh"))
+}
+
+pub(crate) fn studio_bootstrap_run_step_impl(step: String) -> CommandResult {
+    // Allowlist first: refuse anything that is not one of the four typed steps,
+    // before any repo lookup, filesystem write, or process spawn.
+    let step = match BootstrapStep::parse(&step) {
+        Ok(step) => step,
+        Err(err) => return contract_error(err),
+    };
+    studio_bootstrap_run_step_resolved(step, paths::find_repo_root())
+}
+
+/// Inner runner with the repo root injected, so the refusal branches (repo
+/// gate, OS gate) are unit-testable without depending on the test host's
+/// checkout (`find_repo_root` otherwise walks up to the real repo in tests).
+fn studio_bootstrap_run_step_resolved(
+    step: BootstrapStep,
+    repo_root: Option<PathBuf>,
+) -> CommandResult {
+    // Repo gate: build-cli / configure-env require a validated checkout. It runs
+    // before the OS gate so the "needs a repo" refusal is reproducible on any
+    // platform (the test host always has the checkout).
+    let repo_root = match bootstrap_repo_gate(step, repo_root) {
+        Ok(repo_root) => repo_root,
+        Err(err) => return contract_error(err),
+    };
+
+    // Windows-only: the generated scripts use winget, User-scope environment
+    // variables, and LOCALAPPDATA, and `[Environment]::SetEnvironmentVariable(
+    // ..., 'User')` is a silent no-op off Windows. Refuse honestly rather than
+    // run a Windows-shaped script under pwsh and report a hollow "Passed".
+    if !cfg!(windows) {
+        return contract_error(
+            "Garnet Studio bootstrap steps configure a Windows machine (winget, User-scope \
+             environment variables, LOCALAPPDATA) and only run on Windows. Use \"Generate Setup \
+             Scripts\" to inspect them, or run your platform's setup manually.",
+        );
+    }
+
+    // Resolve the PowerShell host (no Tauri shell plugin is used; this goes
+    // through the same typed Command path as every other Studio command).
+    let powershell =
+        match bootstrap_powershell() {
+            Some(program) => program,
+            None => return contract_error(
+                "Garnet Studio bootstrap steps run Windows PowerShell scripts, but no PowerShell \
+                 host (powershell or pwsh) was found on this machine.",
+            ),
+        };
+
+    // Write the exact script into a bootstrap-run evidence bundle, then run it.
+    // The script that executed is preserved alongside its output.
+    let health = cli_health_impl();
+    let bundle = match evidence::create_named_bundle("bootstrap-run") {
+        Ok(bundle) => bundle,
+        Err(err) => return contract_error(err),
+    };
+    let bundle_path = PathBuf::from(&bundle.path);
+    let run_dir = bundle_path.join("bootstrap-run");
+    if let Err(err) = fs::create_dir_all(&run_dir) {
+        return contract_error(format!("failed to create bootstrap-run directory: {err}"));
+    }
+    let script_path = run_dir.join(step.script_name());
+    if let Err(err) = fs::write(&script_path, step.script_contents(&health)) {
+        return contract_error(format!("failed to write {}: {err}", step.script_name()));
+    }
+
+    let args = vec![
+        "-NoProfile".to_string(),
+        "-NonInteractive".to_string(),
+        "-ExecutionPolicy".to_string(),
+        "Bypass".to_string(),
+        "-File".to_string(),
+        display_path(&script_path),
+    ];
+    let command = vec![
+        "garnet-studio".to_string(),
+        "bootstrap-run".to_string(),
+        step.id().to_string(),
+    ];
+    let settings = settings::load();
+    let timeout = Duration::from_secs(if step.is_long_running() {
+        settings.matrix_timeout_secs
+    } else {
+        settings.command_timeout_secs
+    });
+
+    run_process_with_timeout(
+        "bootstrap-run",
+        powershell,
+        &args,
+        repo_root,
+        command,
+        Some(bundle_path),
+        timeout,
+    )
+}
+
+#[tauri::command]
+pub async fn studio_bootstrap_run_step(step: String) -> Result<CommandResult, String> {
+    run_blocking(move || studio_bootstrap_run_step_impl(step)).await
 }
 
 #[tauri::command]
@@ -1534,12 +1744,12 @@ fn build_garnet_cli_script(health: &HealthStatus) -> String {
         "$env:GARNET_REPO".to_string()
     };
     format!(
-        r#"$ErrorActionPreference = 'Stop'
-
-param(
+        r#"param(
   [string]$Repo = {repo_default},
   [string]$InstallDir = (Join-Path $env:LOCALAPPDATA 'Garnet\bin')
 )
+
+$ErrorActionPreference = 'Stop'
 
 if ([string]::IsNullOrWhiteSpace($Repo) -or -not (Test-Path $Repo)) {{
   throw 'Garnet repo not found. Pass -Repo <path-to-garnet> or set GARNET_REPO first.'
@@ -1589,12 +1799,12 @@ fn configure_garnet_env_script(health: &HealthStatus) -> String {
         "(Join-Path $env:LOCALAPPDATA 'Garnet\\bin\\garnet.exe')".to_string()
     };
     format!(
-        r#"$ErrorActionPreference = 'Stop'
-
-param(
+        r#"param(
   [string]$Repo = {repo_default},
   [string]$Cli = {cli_default}
 )
+
+$ErrorActionPreference = 'Stop'
 
 if ([string]::IsNullOrWhiteSpace($Repo) -or -not (Test-Path $Repo)) {{
   throw 'GARNET_REPO target does not exist. Pass -Repo <path-to-garnet>.'
@@ -1656,6 +1866,184 @@ mod tests {
         let result = cli_convert_impl("sample.ts".to_string(), "TypeScript".to_string());
         assert!(!result.success);
         assert!(result.stderr.contains("not available"));
+    }
+
+    #[test]
+    fn bootstrap_step_parse_rejects_anything_off_the_allowlist() {
+        // Studio must never run an arbitrary string as a bootstrap step.
+        for bad in [
+            "rm -rf /",
+            "install-everything",
+            "build",
+            "",
+            "preflight; calc",
+        ] {
+            let err = BootstrapStep::parse(bad).unwrap_err();
+            assert!(err.contains("unknown bootstrap step"), "got: {err}");
+            assert!(
+                err.contains("preflight"),
+                "error must list allowed steps: {err}"
+            );
+        }
+    }
+
+    #[test]
+    fn bootstrap_step_parse_accepts_exactly_the_four_typed_ids() {
+        assert_eq!(
+            BootstrapStep::parse("preflight"),
+            Ok(BootstrapStep::Preflight)
+        );
+        assert_eq!(
+            BootstrapStep::parse("install-python"),
+            Ok(BootstrapStep::InstallPython)
+        );
+        // surrounding whitespace is trimmed, not an injection vector
+        assert_eq!(
+            BootstrapStep::parse("  build-cli  "),
+            Ok(BootstrapStep::BuildCli)
+        );
+        assert_eq!(
+            BootstrapStep::parse("configure-env"),
+            Ok(BootstrapStep::ConfigureEnv)
+        );
+    }
+
+    #[test]
+    fn bootstrap_repo_gate_blocks_repo_steps_when_no_checkout_is_found() {
+        for step in [BootstrapStep::BuildCli, BootstrapStep::ConfigureEnv] {
+            let err = bootstrap_repo_gate(step, None).unwrap_err();
+            assert!(err.contains(step.id()), "error must name the step: {err}");
+            assert!(
+                err.contains("Garnet repo"),
+                "error must explain the cause: {err}"
+            );
+        }
+    }
+
+    #[test]
+    fn bootstrap_repo_gate_lets_repoless_steps_run_and_passes_a_repo_through() {
+        assert_eq!(
+            bootstrap_repo_gate(BootstrapStep::Preflight, None),
+            Ok(None)
+        );
+        assert_eq!(
+            bootstrap_repo_gate(BootstrapStep::InstallPython, None),
+            Ok(None)
+        );
+        let repo = Some(PathBuf::from("/some/garnet"));
+        assert_eq!(
+            bootstrap_repo_gate(BootstrapStep::BuildCli, repo.clone()),
+            Ok(repo)
+        );
+    }
+
+    #[test]
+    fn bootstrap_step_intent_mapping_is_stable() {
+        assert!(BootstrapStep::BuildCli.needs_repo());
+        assert!(BootstrapStep::ConfigureEnv.needs_repo());
+        assert!(!BootstrapStep::Preflight.needs_repo());
+        assert!(!BootstrapStep::InstallPython.needs_repo());
+        // Only the cargo build legitimately runs for minutes.
+        assert!(BootstrapStep::BuildCli.is_long_running());
+        assert!(!BootstrapStep::Preflight.is_long_running());
+        assert!(!BootstrapStep::ConfigureEnv.is_long_running());
+    }
+
+    #[test]
+    fn bootstrap_run_step_impl_refuses_unknown_step_before_spawning_anything() {
+        let result = studio_bootstrap_run_step_impl("install-everything".to_string());
+        assert!(!result.success);
+        assert!(result.stderr.contains("unknown bootstrap step"));
+        // Refused at the allowlist — no process spawned, no evidence bundle.
+        assert!(result.evidence_path.is_none());
+        assert_eq!(result.exit_code, -1);
+    }
+
+    fn sample_health() -> HealthStatus {
+        HealthStatus {
+            cli_found: true,
+            cli_path: "C:/Garnet/bin/garnet.exe".to_string(),
+            cli_version: "garnet 0.8.1".to_string(),
+            repo_found: true,
+            repo_path: "C:/Garnet".to_string(),
+            python_found: true,
+            python_version: "Python 3.12.0".to_string(),
+            evidence_dir: "C:/dogfood/garnet-studio-windows-linux".to_string(),
+            platform: "windows".to_string(),
+            arch: "x86_64".to_string(),
+        }
+    }
+
+    #[test]
+    fn bootstrap_run_step_resolved_refuses_a_repo_step_without_a_checkout() {
+        // The repo gate must refuse through the WIRED impl path (before any
+        // bundle is created or process spawned), not only as a pure function.
+        for step in [BootstrapStep::BuildCli, BootstrapStep::ConfigureEnv] {
+            let result = studio_bootstrap_run_step_resolved(step, None);
+            assert!(!result.success, "{} should be refused", step.id());
+            assert!(result.stderr.contains("needs a Garnet repo"));
+            assert!(
+                result.evidence_path.is_none(),
+                "no bundle may be created for a refused step"
+            );
+            assert_eq!(result.exit_code, -1);
+        }
+    }
+
+    #[cfg(not(windows))]
+    #[test]
+    fn bootstrap_run_step_resolved_refuses_off_windows_instead_of_faking_success() {
+        // preflight needs no repo, so it clears the repo gate and hits the OS
+        // gate; off Windows it must refuse rather than run a Windows-shaped
+        // script under pwsh and report a hollow "Passed".
+        let result = studio_bootstrap_run_step_resolved(BootstrapStep::Preflight, None);
+        assert!(!result.success);
+        assert!(result.stderr.contains("only run on Windows"));
+        assert!(result.evidence_path.is_none());
+    }
+
+    #[test]
+    fn repo_scripts_declare_the_param_block_first() {
+        // PowerShell requires param() to be the first statement; a regression
+        // that puts $ErrorActionPreference (or anything) before it makes the
+        // build-cli / configure-env scripts a parse error at runtime.
+        let health = sample_health();
+        for step in [BootstrapStep::BuildCli, BootstrapStep::ConfigureEnv] {
+            let body = step.script_contents(&health);
+            let first = body
+                .lines()
+                .map(str::trim)
+                .find(|line| !line.is_empty() && !line.starts_with('#'))
+                .unwrap_or("");
+            assert!(
+                first.starts_with("param("),
+                "{} must open with param(): got {first:?}",
+                step.id()
+            );
+            let param_at = body.find("param(").unwrap();
+            let eap_at = body.find("$ErrorActionPreference").unwrap();
+            assert!(
+                param_at < eap_at,
+                "{}: param() must precede $ErrorActionPreference",
+                step.id()
+            );
+        }
+    }
+
+    #[test]
+    fn bootstrap_step_files_are_the_single_source_for_write_and_run() {
+        let health = sample_health();
+        let files = bootstrap_step_files(&health);
+        let names: Vec<_> = files.iter().map(|(name, _)| *name).collect();
+        let expected: Vec<_> = BootstrapStep::ALL.iter().map(|s| s.script_name()).collect();
+        assert_eq!(
+            names, expected,
+            "the write path must emit exactly the enum's scripts"
+        );
+        // Each written body is byte-identical to what the run path executes.
+        for (step, (_, body)) in BootstrapStep::ALL.iter().zip(files.iter()) {
+            assert_eq!(*body, step.script_contents(&health));
+        }
     }
 
     #[test]

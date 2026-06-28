@@ -77,9 +77,10 @@
           <div class="tool-block setup-assistant">
             <h3>Setup Assistant</h3>
             <p>
-              When CLI Health reports a missing runtime, generate local
-              operator-run scripts that bootstrap the minimum Windows setup
-              without widening the Studio permission surface.
+              When CLI Health reports a missing runtime, generate local setup
+              scripts — inspect and run them yourself, or run them from here.
+              Studio executes them through one typed command, adding no shell or
+              filesystem plugin.
             </p>
             <div class="setup-prereqs" aria-label="Setup prerequisites">
               <span>Install Garnet CLI</span>
@@ -92,6 +93,28 @@
                 data-tip="Refresh the actionable setup plan without writing files.">Refresh Setup Plan</button>
               <button id="btn-bootstrap-scripts" class="primary"
                 data-tip="Write PowerShell setup scripts and bootstrap-plan.json to the dogfood evidence root.">Generate Setup Scripts</button>
+            </div>
+            <div class="setup-run">
+              <p class="setup-run-copy">
+                Or run a step locally now (Windows only). Each runs the same
+                generated PowerShell through Studio's typed command path — no shell
+                plugin, every run recorded to a <code>bootstrap-run</code> evidence
+                bundle. <strong>These can change this machine:</strong> Install
+                Python and Build CLI install software; Build CLI and Configure Env
+                set user environment variables and PATH, which take effect only
+                after you restart Studio. Build CLI and Configure Env need a Garnet
+                checkout — set <code>GARNET_REPO</code> first.
+              </p>
+              <div class="button-row">
+                <button id="btn-bootstrap-run-preflight" class="secondary"
+                  data-tip="Local, read-only: report host, arch, GARNET_REPO/CLI, and whether python/cargo/garnet/winget are on PATH. Changes nothing.">Run Preflight</button>
+                <button id="btn-bootstrap-run-install-python" class="secondary"
+                  data-tip="Local: if Python is absent, install it via winget (Python 3.12). This installs software on this machine.">Install Python</button>
+                <button id="btn-bootstrap-run-build-cli" class="secondary"
+                  data-tip="Local: build the Garnet CLI from your GARNET_REPO checkout (cargo build --release) and set GARNET_CLI. Needs a valid repo; runs for minutes.">Build CLI</button>
+                <button id="btn-bootstrap-run-configure-env" class="secondary"
+                  data-tip="Local: set GARNET_REPO and GARNET_CLI user environment variables from the detected paths. Needs a valid repo.">Configure Env</button>
+              </div>
             </div>
             <div id="bootstrap-result" class="result-area" aria-live="polite"></div>
           </div>

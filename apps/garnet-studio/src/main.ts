@@ -793,6 +793,29 @@ window.addEventListener("DOMContentLoaded", () => {
     await refreshBootstrapPlan();
   });
 
+  const bootstrapSteps: ReadonlyArray<readonly [string, string]> = [
+    ["btn-bootstrap-run-preflight", "preflight"],
+    ["btn-bootstrap-run-install-python", "install-python"],
+    ["btn-bootstrap-run-build-cli", "build-cli"],
+    ["btn-bootstrap-run-configure-env", "configure-env"],
+  ];
+  for (const [id, step] of bootstrapSteps) {
+    wireButton(id, async () => {
+      await runCommand("bootstrap-result", "studio_bootstrap_run_step", { step });
+      // Re-check health + the setup plan so they reflect what THIS running
+      // process can already see. winget / User-scope env changes only land
+      // after a Studio restart, so an install step may still read "missing"
+      // here until then — the step's own output says to restart.
+      try {
+        const health = await invoke<HealthStatus>("cli_health");
+        renderHealth("health-result", health);
+      } catch (error) {
+        renderError("health-result", error);
+      }
+      await refreshBootstrapPlan();
+    });
+  }
+
   wireButton("btn-parse", async () => {
     await runCommand("garnet-result", "cli_parse", {
       filePath: requireValue("garnet-file", "Garnet file"),
