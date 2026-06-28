@@ -7,8 +7,13 @@ import { defineConfig, devices } from "@playwright/test";
 // Tauri shell the `invoke()` calls reject by design and main.ts boot() degrades
 // to a "browser preview" — so this is structure/behaviour proof, NOT a CLI
 // round-trip. Driving the real desktop shell (Run -> CommandResult, evidence
-// bundle, persisted mode toggle) needs tauri-driver/WebDriver and is a flagged
-// follow-up recorded in the WV-4 fleet section.
+// bundle, persisted mode toggle) needs tauri-driver/WebDriver and is out of
+// scope here — see this PR's "Deferred" section for the follow-up.
+//
+// Run: `npm run test:e2e` (the pretest hook fetches the pinned Chromium first).
+// The preview server uses a strict, env-overridable port; it must be free.
+const PORT = process.env.STUDIO_E2E_PORT ?? "4317";
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
@@ -16,14 +21,16 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "github" : "list",
   use: {
-    baseURL: "http://localhost:4317",
+    baseURL: `http://localhost:${PORT}`,
     trace: "on-first-retry",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: "npm run build && npm run preview -- --port 4317 --strictPort",
-    url: "http://localhost:4317",
-    reuseExistingServer: !process.env.CI,
+    command: `npm run build && npm run preview -- --port ${PORT} --strictPort`,
+    url: `http://localhost:${PORT}`,
+    // Always build + serve fresh: never let a stale server squatting the port
+    // silently serve the suite without a rebuild.
+    reuseExistingServer: false,
     timeout: 180000,
   },
 });
