@@ -12,6 +12,8 @@ pub fn run() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             cli_health,
+            studio_bootstrap_plan,
+            studio_bootstrap_write_scripts,
             cli_parse,
             cli_check,
             cli_run,

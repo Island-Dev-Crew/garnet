@@ -58,9 +58,48 @@ class GarnetWindowsLinuxStudioShellTests(unittest.TestCase):
             "benchmark_no_run",
             "notarization_status",
             "windows_vm_installer_status",
+            "studio_bootstrap_plan",
+            "studio_bootstrap_write_scripts",
             "create_evidence_bundle",
         ]:
             self.assertIn(command, backend + lib)
+
+        self.assertNotIn("tauri-plugin-shell", cargo)
+        self.assertEqual(["core:default"], capability["permissions"])
+
+    def test_cli_health_bootstrap_assistant_is_actionable_without_permission_widening(self) -> None:
+        frontend = (APP / "index.html").read_text(encoding="utf-8")
+        main = (APP / "src" / "main.ts").read_text(encoding="utf-8")
+        styles = (APP / "src" / "styles.css").read_text(encoding="utf-8")
+        backend = (APP / "src-tauri" / "src" / "commands.rs").read_text(encoding="utf-8")
+        lib = (APP / "src-tauri" / "src" / "lib.rs").read_text(encoding="utf-8")
+        cargo = (APP / "src-tauri" / "Cargo.toml").read_text(encoding="utf-8")
+        capability = json.loads(
+            (APP / "src-tauri" / "capabilities" / "default.json").read_text(encoding="utf-8")
+        )
+
+        for copy in [
+            "Setup Assistant",
+            "Generate Setup Scripts",
+            "Install Garnet CLI",
+            "Install Python",
+            "Set GARNET_REPO",
+            "bootstrap-result",
+            "btn-bootstrap-scripts",
+        ]:
+            self.assertIn(copy, frontend + main + styles)
+
+        for command in [
+            "studio_bootstrap_plan",
+            "studio_bootstrap_write_scripts",
+            "BootstrapRequirement",
+            "bootstrap-setup",
+            "install-python-winget.ps1",
+            "build-garnet-cli-from-repo.ps1",
+            "configure-garnet-env.ps1",
+            "No provider APIs are called",
+        ]:
+            self.assertIn(command, backend + lib + main)
 
         self.assertNotIn("tauri-plugin-shell", cargo)
         self.assertEqual(["core:default"], capability["permissions"])

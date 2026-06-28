@@ -34,6 +34,7 @@ pub fn create_named_bundle(action: &str) -> Result<EvidenceBundle, String> {
         "check",
         "run",
         "convert",
+        "bootstrap",
         "advisory",
         "dogfood",
     ] {

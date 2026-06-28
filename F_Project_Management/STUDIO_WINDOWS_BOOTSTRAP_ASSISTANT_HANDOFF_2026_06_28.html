@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Garnet Studio Windows Bootstrap Assistant Handoff</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #101418;
+        --panel: #161d25;
+        --line: #2e3a49;
+        --text: #eef3f8;
+        --muted: #a6b1c0;
+        --accent: #c7353f;
+        --ok: #47c07a;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 15px/1.55 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      main {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 34px 22px 60px;
+      }
+      h1,
+      h2,
+      h3 {
+        line-height: 1.2;
+      }
+      h1 {
+        margin: 0 0 10px;
+        font-size: 32px;
+      }
+      h2 {
+        margin-top: 30px;
+        border-top: 1px solid var(--line);
+        padding-top: 22px;
+      }
+      p,
+      li {
+        color: var(--muted);
+      }
+      code {
+        color: var(--text);
+        font-family: "Cascadia Code", Consolas, monospace;
+      }
+      .summary,
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        padding: 16px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 12px;
+      }
+      .tag {
+        display: inline-block;
+        margin: 0 6px 8px 0;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 4px 9px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .ok {
+        color: var(--ok);
+      }
+      .warn {
+        color: #e0a943;
+      }
+      .accent {
+        color: var(--accent);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+      }
+      th,
+      td {
+        border: 1px solid var(--line);
+        padding: 9px;
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        color: var(--text);
+      }
+      pre {
+        overflow: auto;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #0c1117;
+        padding: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="tag">Windows Studio</p>
+      <p class="tag">Bootstrap Assistant</p>
+      <p class="tag">Calibrated Honesty</p>
+      <h1>Garnet Studio Windows Bootstrap Assistant Handoff</h1>
+      <section class="summary">
+        <p>
+          This artifact documents the Windows-side Studio change that turns CLI Health from a passive
+          "not found" panel into an actionable bootstrap assistant. The implementation generates local,
+          operator-run PowerShell scripts into the dogfood evidence root. It does not run installers
+          silently, call provider APIs, include source by default, or widen the Tauri permission surface.
+        </p>
+      </section>
+
+      <h2>Problem</h2>
+      <p>
+        Clean Windows installs could launch Garnet Studio, but the first useful screen often reported:
+        Garnet CLI not found, repository not found, and Python not found. That was honest, but not
+        operational. A user needed an in-app path from missing prerequisites to a reproducible local
+        setup without pretending the GUI had completed work it had not performed.
+      </p>
+
+      <h2>Implemented Surface</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>Health Model</h3>
+          <p>
+            Added <code>BootstrapPlan</code> and <code>BootstrapRequirement</code> so the backend maps
+            current CLI Health into machine-readable setup steps.
+          </p>
+        </article>
+        <article class="card">
+          <h3>Evidence Writer</h3>
+          <p>
+            Added <code>studio_bootstrap_write_scripts</code>, which writes a timestamped
+            <code>bootstrap-setup</code> evidence bundle with a manifest, plan JSON, README, and scripts.
+          </p>
+        </article>
+        <article class="card">
+          <h3>GUI Assistant</h3>
+          <p>
+            Added a CLI Health "Setup Assistant" with prerequisite chips, a refreshed plan, and a
+            "Generate Setup Scripts" action.
+          </p>
+        </article>
+      </div>
+
+      <h2>Generated Files</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>File</th>
+            <th>Purpose</th>
+            <th>Honesty Boundary</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>bootstrap-plan.json</code></td>
+            <td>Machine-readable copy of the detected prerequisites and setup actions.</td>
+            <td>Reflects current host detection only; not a completion claim.</td>
+          </tr>
+          <tr>
+            <td><code>README.md</code></td>
+            <td>Operator sequence for Python, repo, CLI build, env vars, and recheck.</td>
+            <td>Explicitly says scripts must be inspected and run by the operator.</td>
+          </tr>
+          <tr>
+            <td><code>install-python-winget.ps1</code></td>
+            <td>Installs Python with winget if Python is missing.</td>
+            <td>Generated only; Studio does not execute winget.</td>
+          </tr>
+          <tr>
+            <td><code>build-garnet-cli-from-repo.ps1</code></td>
+            <td>Builds <code>garnet-cli</code>, stages <code>garnet.exe</code>, and sets <code>GARNET_CLI</code>.</td>
+            <td>Requires a local checkout and Cargo; no network clone is attempted.</td>
+          </tr>
+          <tr>
+            <td><code>configure-garnet-env.ps1</code></td>
+            <td>Sets user-scoped <code>GARNET_REPO</code>, <code>GARNET_CLI</code>, and PATH.</td>
+            <td>Fails if paths do not exist.</td>
+          </tr>
+          <tr>
+            <td><code>run-bootstrap-preflight.ps1</code></td>
+            <td>Prints detected Python, Cargo, Garnet, winget, env vars, host, and arch.</td>
+            <td>Observation only.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Seven-Pass Review Loop</h2>
+      <ol>
+        <li><strong>Contract pass:</strong> Confirm no shell plugin, opener plugin, provider path, or Tauri capability broadening.</li>
+        <li><strong>Health pass:</strong> Confirm missing CLI/repo/Python become actionable requirements, not vague errors.</li>
+        <li><strong>Windows pass:</strong> Confirm PowerShell scripts use user-scoped env vars and fail on missing paths/tools.</li>
+        <li><strong>Evidence pass:</strong> Confirm generated scripts land under <code>Desktop/dogfood/garnet-studio-windows-linux</code> with <code>MANIFEST.sha256</code>.</li>
+        <li><strong>UI/UX pass:</strong> Confirm the assistant is visible from CLI Health and does not crowd core parse/check/run controls.</li>
+        <li><strong>Test pass:</strong> Run Studio Rust tests, Python contract tests, status tests, and frontend build.</li>
+        <li><strong>Mac continuation pass:</strong> Reproduce the same UX semantics on macOS without changing Windows evidence claims.</li>
+      </ol>
+
+      <h2>Verification Commands</h2>
+      <pre><code>cargo fmt --manifest-path apps/garnet-studio/src-tauri/Cargo.toml -- --check
+cargo test --manifest-path apps/garnet-studio/src-tauri/Cargo.toml
+python scripts/test_garnet_windows_linux_studio_shell.py
+python scripts/test_garnet_windows_linux_studio_status.py
+npm --prefix apps/garnet-studio run build</code></pre>
+
+      <h2>Mac Studio Continuation Notes</h2>
+      <p>
+        The Mac-side follow-up should keep the same assistant semantics: render a prerequisite plan,
+        write local setup evidence, and keep generated bootstrap commands separate from actual execution.
+        macOS-specific install scripts can be added later, but any claim of "installed" must come from a
+        reproduced launch/check proof, not from script generation.
+      </p>
+      <p>
+        Recommended next check: launch Studio from this branch on Windows, press "Generate Setup Scripts",
+        inspect the generated bundle, then run CLI Health again after any operator-executed setup steps.
+      </p>
+    </main>
+  </body>
+</html>

@@ -73,6 +73,28 @@
           <button id="btn-health" class="primary"
             data-tip="Re-run discovery for the CLI, repo, and Python. Runs automatically at startup.">Run Health Check</button>
           <div id="health-result" class="result-area" aria-live="polite"></div>
+
+          <div class="tool-block setup-assistant">
+            <h3>Setup Assistant</h3>
+            <p>
+              When CLI Health reports a missing runtime, generate local
+              operator-run scripts that bootstrap the minimum Windows setup
+              without widening the Studio permission surface.
+            </p>
+            <div class="setup-prereqs" aria-label="Setup prerequisites">
+              <span>Install Garnet CLI</span>
+              <span>Install Python</span>
+              <span>Set GARNET_REPO</span>
+            </div>
+            <div id="bootstrap-plan" class="bootstrap-plan" aria-live="polite"></div>
+            <div class="button-row">
+              <button id="btn-bootstrap-plan" class="secondary"
+                data-tip="Refresh the actionable setup plan without writing files.">Refresh Setup Plan</button>
+              <button id="btn-bootstrap-scripts" class="primary"
+                data-tip="Write PowerShell setup scripts and bootstrap-plan.json to the dogfood evidence root.">Generate Setup Scripts</button>
+            </div>
+            <div id="bootstrap-result" class="result-area" aria-live="polite"></div>
+          </div>
         </section>
 
         <section id="panel-garnet" class="panel" role="tabpanel" tabindex="-1">
