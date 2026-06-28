@@ -565,6 +565,111 @@ pre {
   overflow-wrap: anywhere;
 }
 
+.setup-assistant p {
+  max-width: 780px;
+  margin: 0 0 14px;
+  color: var(--muted);
+}
+
+.setup-prereqs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.setup-prereqs span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--muted);
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+.bootstrap-plan {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.setup-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 12px 14px;
+}
+
+.setup-summary.ok {
+  border-color: rgba(71, 192, 122, 0.55);
+}
+
+.setup-summary.fail {
+  border-color: rgba(199, 53, 63, 0.55);
+}
+
+.setup-summary span {
+  color: var(--muted);
+  font: 12px var(--mono);
+  white-space: nowrap;
+}
+
+.setup-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.setup-step {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 13px;
+}
+
+.setup-step.ok {
+  border-color: rgba(71, 192, 122, 0.45);
+}
+
+.setup-step.fail {
+  border-color: rgba(199, 53, 63, 0.45);
+}
+
+.setup-step header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.setup-step p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.setup-step code {
+  display: block;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--input-bg);
+  padding: 8px;
+  font-size: 11px;
+}
+
+.setup-step small {
+  color: var(--quiet);
+}
+
+.setup-copy {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+}
+
 .dot {
   width: 10px;
   height: 10px;

@@ -25,6 +25,26 @@ interface HealthStatus {
   arch: string;
 }
 
+interface BootstrapRequirement {
+  id: string;
+  label: string;
+  found: boolean;
+  detected: string;
+  action: string;
+  command: string;
+  evidence_note: string;
+}
+
+interface BootstrapPlan {
+  ready: boolean;
+  ready_count: number;
+  total_count: number;
+  evidence_dir: string;
+  summary: string;
+  requirements: BootstrapRequirement[];
+  safety_notes: string[];
+}
+
 interface EvidenceBundle {
   path: string;
   timestamp: string;
@@ -250,6 +270,48 @@ function renderHealth(targetId: string, health: HealthStatus): void {
     ? `CLI: ${firstVersionLine(health.cli_version)}`
     : "CLI: not found — set GARNET_CLI";
   setText("sb-cli", cliLabel);
+}
+
+function renderBootstrapPlan(plan: BootstrapPlan): void {
+  const target = document.getElementById("bootstrap-plan");
+  if (!target) return;
+
+  const requirements = plan.requirements
+    .map(
+      (requirement) => `
+        <article class="setup-step ${requirement.found ? "ok" : "fail"}">
+          <header>
+            <span class="dot ${requirement.found ? "ok" : "fail"}"></span>
+            <strong>${escapeHtml(requirement.label)}</strong>
+          </header>
+          <p>${escapeHtml(requirement.action)}</p>
+          <code>${escapeHtml(requirement.command)}</code>
+          <small>${escapeHtml(requirement.evidence_note)}</small>
+        </article>
+      `,
+    )
+    .join("");
+  const notes = plan.safety_notes
+    .map((note) => `<li>${escapeHtml(note)}</li>`)
+    .join("");
+
+  target.innerHTML = `
+    <article class="setup-summary ${plan.ready ? "ok" : "fail"}">
+      <strong>${escapeHtml(plan.summary)}</strong>
+      <span>${plan.ready_count}/${plan.total_count} ready</span>
+    </article>
+    <div class="setup-grid">${requirements}</div>
+    <ul class="setup-copy">${notes}</ul>
+  `;
+}
+
+async function refreshBootstrapPlan(): Promise<void> {
+  try {
+    const plan = await invoke<BootstrapPlan>("studio_bootstrap_plan");
+    renderBootstrapPlan(plan);
+  } catch (error) {
+    renderError("bootstrap-plan", error);
+  }
 }
 
 function firstVersionLine(banner: string): string {
@@ -650,6 +712,7 @@ async function boot(): Promise<void> {
     ]);
     if (health) {
       renderHealth("health-result", health);
+      await refreshBootstrapPlan();
       setSplashStatus(health.cli_found ? "Garnet CLI found" : "Garnet CLI not found");
     } else {
       setSplashStatus("Health check still running — opening the shell");
@@ -718,9 +781,16 @@ window.addEventListener("DOMContentLoaded", () => {
     try {
       const health = await invoke<HealthStatus>("cli_health");
       renderHealth("health-result", health);
+      await refreshBootstrapPlan();
     } catch (error) {
       renderError("health-result", error);
     }
+  });
+
+  wireButton("btn-bootstrap-plan", refreshBootstrapPlan);
+  wireButton("btn-bootstrap-scripts", async () => {
+    await runCommand("bootstrap-result", "studio_bootstrap_write_scripts", {});
+    await refreshBootstrapPlan();
   });
 
   wireButton("btn-parse", async () => {

@@ -54,6 +54,16 @@ test.describe("Garnet Studio UI (built dist in a browser)", () => {
     await expect(c).toContainText("Advisory output is never marked safe");
   });
 
+  test("CLI Health exposes the setup assistant controls", async ({ page }) => {
+    await page.goto("/");
+    const assistant = page.locator(".setup-assistant");
+    await expect(assistant).toContainText("Setup Assistant");
+    await expect(assistant).toContainText("Install Garnet CLI");
+    await expect(assistant).toContainText("Install Python");
+    await expect(assistant).toContainText("Set GARNET_REPO");
+    await expect(page.locator("#btn-bootstrap-scripts")).toHaveText("Generate Setup Scripts");
+  });
+
   test("hover help is present across the surface", async ({ page }) => {
     await page.goto("/");
     const tips = await page.locator("[data-tip]").count();

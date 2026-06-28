@@ -74,6 +74,28 @@ pub struct HealthStatus {
 }
 
 #[derive(Debug, Serialize)]
+pub struct BootstrapRequirement {
+    pub id: String,
+    pub label: String,
+    pub found: bool,
+    pub detected: String,
+    pub action: String,
+    pub command: String,
+    pub evidence_note: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct BootstrapPlan {
+    pub ready: bool,
+    pub ready_count: usize,
+    pub total_count: usize,
+    pub evidence_dir: String,
+    pub summary: String,
+    pub requirements: Vec<BootstrapRequirement>,
+    pub safety_notes: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
 pub struct LanguageGroup {
     pub name: String,
     pub languages: Vec<String>,
@@ -208,6 +230,192 @@ pub(crate) fn cli_health_impl() -> HealthStatus {
 #[tauri::command]
 pub async fn cli_health() -> Result<HealthStatus, String> {
     run_blocking(cli_health_impl).await
+}
+
+pub(crate) fn studio_bootstrap_plan_from_health(health: &HealthStatus) -> BootstrapPlan {
+    let requirements = vec![
+        BootstrapRequirement {
+            id: "garnet-cli".to_string(),
+            label: "Garnet CLI".to_string(),
+            found: health.cli_found,
+            detected: if health.cli_found {
+                health.cli_path.clone()
+            } else {
+                "not found".to_string()
+            },
+            action: if health.cli_found {
+                "Keep this CLI on PATH or in GARNET_CLI.".to_string()
+            } else {
+                "Install Garnet CLI from the repo build, then set GARNET_CLI.".to_string()
+            },
+            command: if health.cli_found {
+                format!("{} version", health.cli_path)
+            } else {
+                "cargo build --release -p garnet-cli".to_string()
+            },
+            evidence_note:
+                "Required before Parse / Check / Run and domain proof actions can execute."
+                    .to_string(),
+        },
+        BootstrapRequirement {
+            id: "repo".to_string(),
+            label: "Repository checkout".to_string(),
+            found: health.repo_found,
+            detected: if health.repo_found {
+                health.repo_path.clone()
+            } else {
+                "not found".to_string()
+            },
+            action: if health.repo_found {
+                "Keep this checkout in GARNET_REPO.".to_string()
+            } else {
+                "Set GARNET_REPO to the local Garnet checkout before running repo reporters."
+                    .to_string()
+            },
+            command: if health.repo_found {
+                format!("$env:GARNET_REPO = {}", ps_quote(&health.repo_path))
+            } else {
+                "[Environment]::SetEnvironmentVariable('GARNET_REPO', '<path-to-garnet>', 'User')"
+                    .to_string()
+            },
+            evidence_note:
+                "Required for readiness reporters, Studio evidence readers, and build-from-repo CLI setup."
+                    .to_string(),
+        },
+        BootstrapRequirement {
+            id: "python".to_string(),
+            label: "Python interpreter".to_string(),
+            found: health.python_found,
+            detected: if health.python_found {
+                health.python_version.clone()
+            } else {
+                "not found".to_string()
+            },
+            action: if health.python_found {
+                "Keep Python available on PATH.".to_string()
+            } else {
+                "Install Python with winget or another operator-approved installer.".to_string()
+            },
+            command: if health.python_found {
+                "python --version".to_string()
+            } else {
+                "winget install --id Python.Python.3.12 -e --source winget".to_string()
+            },
+            evidence_note:
+                "Required for the repo-owned readiness, converter, and handoff scripts.".to_string(),
+        },
+    ];
+    let ready_count = requirements
+        .iter()
+        .filter(|requirement| requirement.found)
+        .count();
+    let total_count = requirements.len();
+    let ready = ready_count == total_count;
+    BootstrapPlan {
+        ready,
+        ready_count,
+        total_count,
+        evidence_dir: health.evidence_dir.clone(),
+        summary: if ready {
+            "All local prerequisites are detected. Studio can run CLI-backed actions on this machine."
+                .to_string()
+        } else {
+            format!(
+                "{ready_count} of {total_count} prerequisites are detected. Generate Setup Scripts for local, operator-run bootstrap commands."
+            )
+        },
+        requirements,
+        safety_notes: vec![
+            "No provider APIs are called.".to_string(),
+            "No source files are bundled by default.".to_string(),
+            "Generated scripts are written to dogfood evidence and must be run explicitly by the operator."
+                .to_string(),
+            "The Tauri shell/plugin permission surface is unchanged.".to_string(),
+        ],
+    }
+}
+
+pub(crate) fn studio_bootstrap_plan_impl() -> BootstrapPlan {
+    studio_bootstrap_plan_from_health(&cli_health_impl())
+}
+
+#[tauri::command]
+pub async fn studio_bootstrap_plan() -> Result<BootstrapPlan, String> {
+    run_blocking(studio_bootstrap_plan_impl).await
+}
+
+pub(crate) fn studio_bootstrap_write_scripts_impl() -> CommandResult {
+    let started = Instant::now();
+    let health = cli_health_impl();
+    let plan = studio_bootstrap_plan_from_health(&health);
+    let bundle = match evidence::create_named_bundle("bootstrap-setup") {
+        Ok(bundle) => bundle,
+        Err(err) => return contract_error(err),
+    };
+    let bundle_path = PathBuf::from(&bundle.path);
+    let bootstrap_dir = bundle_path.join("bootstrap");
+    if let Err(err) = fs::create_dir_all(&bootstrap_dir) {
+        return contract_error(format!("failed to create bootstrap directory: {err}"));
+    }
+
+    let plan_json = match serde_json::to_string_pretty(&plan) {
+        Ok(plan_json) => plan_json + "\n",
+        Err(err) => return contract_error(format!("failed to serialize bootstrap plan: {err}")),
+    };
+    let files = [
+        ("bootstrap-plan.json", plan_json),
+        ("README.md", bootstrap_readme(&health, &plan)),
+        ("install-python-winget.ps1", install_python_winget_script()),
+        (
+            "build-garnet-cli-from-repo.ps1",
+            build_garnet_cli_script(&health),
+        ),
+        (
+            "configure-garnet-env.ps1",
+            configure_garnet_env_script(&health),
+        ),
+        ("run-bootstrap-preflight.ps1", bootstrap_preflight_script()),
+    ];
+    let mut written = Vec::new();
+    for (name, contents) in files {
+        let path = bootstrap_dir.join(name);
+        if let Err(err) = fs::write(&path, contents) {
+            return contract_error(format!("failed to write {name}: {err}"));
+        }
+        written.push(display_path(&path));
+    }
+
+    let stdout = format!(
+        "Generated Garnet Studio bootstrap scripts.\n\n{}\n\nNext: open PowerShell, inspect README.md, run only the scripts you approve, then restart Studio and Run Health Check.\n",
+        written.join("\n")
+    );
+    let command = vec![
+        "garnet-studio".to_string(),
+        "bootstrap-setup".to_string(),
+        "write-scripts".to_string(),
+    ];
+    if let Err(err) =
+        evidence::write_command_evidence(&bundle_path, "bootstrap", &command, &stdout, "", 0)
+    {
+        return contract_error(err);
+    }
+
+    CommandResult {
+        success: true,
+        stdout,
+        stderr: String::new(),
+        exit_code: 0,
+        command,
+        evidence_path: Some(display_path(&bundle_path)),
+        timed_out: false,
+        duration_ms: started.elapsed().as_millis() as u64,
+        truncated: false,
+    }
+}
+
+#[tauri::command]
+pub async fn studio_bootstrap_write_scripts() -> Result<CommandResult, String> {
+    run_blocking(studio_bootstrap_write_scripts_impl).await
 }
 
 #[tauri::command]
@@ -1247,6 +1455,194 @@ fn display_path(path: &Path) -> String {
     path.to_string_lossy().to_string()
 }
 
+fn ps_quote(value: &str) -> String {
+    format!("'{}'", value.replace('\'', "''"))
+}
+
+fn bootstrap_readme(health: &HealthStatus, plan: &BootstrapPlan) -> String {
+    let mut requirements = String::new();
+    for requirement in &plan.requirements {
+        requirements.push_str(&format!(
+            "- {}: {}. Action: {}. Command: `{}`.\n",
+            requirement.label, requirement.detected, requirement.action, requirement.command
+        ));
+    }
+    format!(
+        r#"# Garnet Studio Windows Bootstrap Setup
+
+Generated by Garnet Studio from the CLI Health panel.
+
+Status: {ready_count}/{total_count} prerequisites detected.
+Evidence root: {evidence_dir}
+Host: {platform} / {arch}
+
+## Requirements
+{requirements}
+## Files
+- `install-python-winget.ps1` installs Python through winget when Python is missing.
+- `build-garnet-cli-from-repo.ps1` builds `garnet-cli` from a local checkout and stages `garnet.exe`.
+- `configure-garnet-env.ps1` writes user-scoped `GARNET_REPO`, `GARNET_CLI`, and PATH entries.
+- `run-bootstrap-preflight.ps1` records what the machine can see before and after setup.
+- `bootstrap-plan.json` is the machine-readable plan that Studio displayed.
+
+## Operator Sequence
+1. Inspect every script in this directory.
+2. If Python is missing, run `.\install-python-winget.ps1`.
+3. If the repo is missing, clone or copy the Garnet checkout locally, then run `.\configure-garnet-env.ps1 -Repo <path-to-garnet>`.
+4. Run `.\build-garnet-cli-from-repo.ps1 -Repo <path-to-garnet>`.
+5. Restart Garnet Studio and run CLI Health again.
+
+## Safety Contract
+- No provider APIs are called.
+- No source files are bundled by default.
+- No shell/plugin permission is added to the Tauri app.
+- These scripts are generated evidence and do not run until an operator executes them.
+"#,
+        ready_count = plan.ready_count,
+        total_count = plan.total_count,
+        evidence_dir = health.evidence_dir,
+        platform = health.platform,
+        arch = health.arch,
+        requirements = requirements,
+    )
+}
+
+fn install_python_winget_script() -> String {
+    r#"$ErrorActionPreference = 'Stop'
+
+Write-Host 'Garnet Studio Python bootstrap'
+if (Get-Command python -ErrorAction SilentlyContinue) {
+  python --version
+  Write-Host 'Python is already available on PATH.'
+  exit 0
+}
+
+if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+  throw 'winget was not found. Install Python manually from python.org or enable App Installer, then rerun CLI Health.'
+}
+
+winget install --id Python.Python.3.12 -e --source winget
+Write-Host 'Restart the terminal or Studio, then run: python --version'
+"#
+    .to_string()
+}
+
+fn build_garnet_cli_script(health: &HealthStatus) -> String {
+    let repo_default = if health.repo_found {
+        ps_quote(&health.repo_path)
+    } else {
+        "$env:GARNET_REPO".to_string()
+    };
+    format!(
+        r#"$ErrorActionPreference = 'Stop'
+
+param(
+  [string]$Repo = {repo_default},
+  [string]$InstallDir = (Join-Path $env:LOCALAPPDATA 'Garnet\bin')
+)
+
+if ([string]::IsNullOrWhiteSpace($Repo) -or -not (Test-Path $Repo)) {{
+  throw 'Garnet repo not found. Pass -Repo <path-to-garnet> or set GARNET_REPO first.'
+}}
+
+if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {{
+  throw 'Rust cargo was not found. Install Rust with rustup, then rerun this script.'
+}}
+
+Push-Location $Repo
+try {{
+  cargo build --release -p garnet-cli
+}} finally {{
+  Pop-Location
+}}
+
+$BuiltCli = Join-Path $Repo 'target\release\garnet.exe'
+if (-not (Test-Path $BuiltCli)) {{
+  throw "Expected CLI was not produced at $BuiltCli"
+}}
+
+New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
+$InstalledCli = Join-Path $InstallDir 'garnet.exe'
+Copy-Item -LiteralPath $BuiltCli -Destination $InstalledCli -Force
+[Environment]::SetEnvironmentVariable('GARNET_CLI', $InstalledCli, 'User')
+
+$UserPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+if (-not (($UserPath -split ';') -contains $InstallDir)) {{
+  [Environment]::SetEnvironmentVariable('Path', "$UserPath;$InstallDir", 'User')
+}}
+
+& $InstalledCli version
+Write-Host "GARNET_CLI set to $InstalledCli"
+"#
+    )
+}
+
+fn configure_garnet_env_script(health: &HealthStatus) -> String {
+    let repo_default = if health.repo_found {
+        ps_quote(&health.repo_path)
+    } else {
+        "$env:GARNET_REPO".to_string()
+    };
+    let cli_default = if health.cli_found {
+        ps_quote(&health.cli_path)
+    } else {
+        "(Join-Path $env:LOCALAPPDATA 'Garnet\\bin\\garnet.exe')".to_string()
+    };
+    format!(
+        r#"$ErrorActionPreference = 'Stop'
+
+param(
+  [string]$Repo = {repo_default},
+  [string]$Cli = {cli_default}
+)
+
+if ([string]::IsNullOrWhiteSpace($Repo) -or -not (Test-Path $Repo)) {{
+  throw 'GARNET_REPO target does not exist. Pass -Repo <path-to-garnet>.'
+}}
+if ([string]::IsNullOrWhiteSpace($Cli) -or -not (Test-Path $Cli)) {{
+  throw 'GARNET_CLI target does not exist. Build the CLI first or pass -Cli <path-to-garnet.exe>.'
+}}
+
+[Environment]::SetEnvironmentVariable('GARNET_REPO', $Repo, 'User')
+[Environment]::SetEnvironmentVariable('GARNET_CLI', $Cli, 'User')
+
+$CliDir = Split-Path -Parent $Cli
+$UserPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+if (-not (($UserPath -split ';') -contains $CliDir)) {{
+  [Environment]::SetEnvironmentVariable('Path', "$UserPath;$CliDir", 'User')
+}}
+
+Write-Host "GARNET_REPO set to $Repo"
+Write-Host "GARNET_CLI set to $Cli"
+Write-Host 'Restart Garnet Studio and run CLI Health again.'
+"#
+    )
+}
+
+fn bootstrap_preflight_script() -> String {
+    r#"$ErrorActionPreference = 'Continue'
+
+Write-Host 'Garnet Studio bootstrap preflight'
+Write-Host "Host: $([System.Environment]::OSVersion.VersionString)"
+Write-Host "Arch: $env:PROCESSOR_ARCHITECTURE"
+Write-Host "GARNET_REPO=$env:GARNET_REPO"
+Write-Host "GARNET_CLI=$env:GARNET_CLI"
+
+foreach ($Name in @('python', 'cargo', 'garnet', 'winget')) {
+  $Command = Get-Command $Name -ErrorAction SilentlyContinue
+  if ($Command) {
+    Write-Host "$Name=$($Command.Source)"
+    if ($Name -eq 'python') { python --version }
+    if ($Name -eq 'cargo') { cargo --version }
+    if ($Name -eq 'garnet') { garnet version }
+  } else {
+    Write-Host "$Name=(not found)"
+  }
+}
+"#
+    .to_string()
+}
+
 fn list(values: &[&str]) -> Vec<String> {
     values.iter().map(|value| (*value).to_string()).collect()
 }
@@ -1309,6 +1705,43 @@ mod tests {
             .replace('\\', "/");
 
         assert!(root.ends_with("Desktop/dogfood/garnet-studio-domain-matrix"));
+    }
+
+    #[test]
+    fn bootstrap_plan_turns_missing_health_into_actionable_setup_steps() {
+        let health = HealthStatus {
+            cli_found: false,
+            cli_path: String::new(),
+            cli_version: String::new(),
+            repo_found: false,
+            repo_path: String::new(),
+            python_found: false,
+            python_version: String::new(),
+            evidence_dir: "C:/dogfood/garnet-studio-windows-linux".to_string(),
+            platform: "windows".to_string(),
+            arch: "x86_64".to_string(),
+        };
+
+        let plan = studio_bootstrap_plan_from_health(&health);
+        assert!(!plan.ready);
+        assert_eq!(0, plan.ready_count);
+        assert_eq!(3, plan.total_count);
+        assert!(plan
+            .requirements
+            .iter()
+            .any(|step| step.id == "garnet-cli" && step.action.contains("Install Garnet CLI")));
+        assert!(plan
+            .requirements
+            .iter()
+            .any(|step| step.id == "repo" && step.action.contains("Set GARNET_REPO")));
+        assert!(plan
+            .requirements
+            .iter()
+            .any(|step| step.id == "python" && step.action.contains("Install Python")));
+        assert!(plan
+            .safety_notes
+            .iter()
+            .any(|note| note.contains("No provider APIs are called")));
     }
 
     #[test]
