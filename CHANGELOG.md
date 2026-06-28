@@ -7,6 +7,31 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated-honesty record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
+## Unreleased — Studio dead-weight cleanup (Phase 1) (2026-06-28)
+
+### Studio — dead-weight removal (`apps/garnet-studio`)
+
+- **Removed the Taxonomy UI panel** (nav button + section + its frontend loader and the
+  orphaned `.taxonomy`/`.pills` CSS). It was a static mirror of a Rust constant. The
+  backend `get_language_taxonomy` command is **kept** — it feeds `--studio-smoke` and the
+  `taxonomy_preserves_copy_truth` test — so the contract is preserved and still asserted;
+  only the redundant UI is gone (8 → 7 panels).
+- **Removed the redundant status-bar evidence-copy button** (and its `button.sb-item`
+  CSS). The evidence root is already shown in the Evidence panel and CLI Health output.
+- **Relabeled the Advisory panel "local advisory evidence."** It now states plainly that
+  the actions run repo Python scripts and write bundles to disk, that nothing is sent
+  anywhere, and that no provider API is called — closing the "implies a backend/delivery"
+  gap the design dossier flagged.
+- **Tests.** e2e updated (7 panels + a positive dead-weight assertion: taxonomy panel
+  gone, `#sb-evidence` gone, advisory = local-evidence). Reviewed via a 7-pass
+  Judge+Auditor pass. Local ladder green on `NUCBOX_M2PRO_S`: studio crate 29/29, e2e
+  10/10, shell + status contracts 8 + 17, build green. Research-grade prototype (v0.x.x).
+- **Deferred — human-merge-only (integrity).** Removing the hard-coded, stale-by-design
+  Release status tiles (the dossier's top honesty cleanup) requires editing the
+  agentic-dogfood-matrix CI probe, which pins a tile string — and a PR may not modify the
+  gate it merges under. That removal is prepared as a separate Jon-merge slice. Also
+  deferred: the theme switcher and the CLI Health demotion.
+
 ## Unreleased — Studio Windows bootstrap runner (Phase 0) (2026-06-28)
 
 ### Studio — typed GUI bootstrap runner (`apps/garnet-studio`)
