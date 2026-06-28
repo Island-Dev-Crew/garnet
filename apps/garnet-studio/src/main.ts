@@ -51,11 +51,6 @@ interface EvidenceBundle {
   manifest_path: string;
 }
 
-interface LanguageGroup {
-  name: string;
-  languages: string[];
-}
-
 interface AppInfo {
   app_version: string;
   tauri_version: string;
@@ -727,33 +722,9 @@ async function boot(): Promise<void> {
   setTimeout(dismissSplash, remaining);
 }
 
-async function loadTaxonomy(): Promise<void> {
-  const target = document.getElementById("taxonomy");
-  if (!target) return;
-
-  try {
-    const groups = await invoke<LanguageGroup[]>("get_language_taxonomy");
-    target.innerHTML = groups
-      .map(
-        (group) => `
-          <section>
-            <h3>${escapeHtml(group.name)}</h3>
-            <div class="pills">
-              ${group.languages.map((language) => `<span>${escapeHtml(language)}</span>`).join("")}
-            </div>
-          </section>
-        `,
-      )
-      .join("");
-  } catch {
-    target.textContent = "Taxonomy is available inside the Tauri shell.";
-  }
-}
-
 window.addEventListener("DOMContentLoaded", () => {
   setupTabs();
   setupShortcuts();
-  loadTaxonomy();
   void boot();
 
   setInput("garnet-file", "examples/mvp_01_os_simulator.garnet");
@@ -765,15 +736,6 @@ window.addEventListener("DOMContentLoaded", () => {
     .then((dir) => {
       const target = document.getElementById("evidence-root");
       if (target) target.textContent = dir;
-      const sb = document.getElementById("sb-evidence");
-      if (sb) {
-        sb.textContent = `evidence: ${dir}`;
-        sb.addEventListener("click", async () => {
-          const ok = await copyText(dir);
-          sb.textContent = ok ? "evidence: copied to clipboard" : `evidence: ${dir}`;
-          if (ok) setTimeout(() => (sb.textContent = `evidence: ${dir}`), 1500);
-        });
-      }
     })
     .catch(() => {});
 

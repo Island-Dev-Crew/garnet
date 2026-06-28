@@ -46,8 +46,6 @@
             data-tip="Create dogfood evidence bundles and run the objective pulse or full agentic matrix.">Evidence</button>
           <button data-panel="release" role="tab" data-power-only
             data-tip="Run the repo's readiness reporters. Wrappers only — they never upgrade platform or proof claims.">Release / Readiness</button>
-          <button data-panel="taxonomy" role="tab" data-power-only
-            data-tip="The language taxonomy contract: active, advisory, native-boundary, and future-backend labels.">Taxonomy</button>
           <button data-panel="settings" role="tab"
             data-tip="Switch between Simple and Power mode, set the theme, and tune command timeouts.">Settings</button>
         </nav>
@@ -185,11 +183,13 @@
 
         <section id="panel-advisory" class="panel" role="tabpanel" tabindex="-1">
           <header class="panel-header">
-            <p class="eyebrow">Advisory planning</p>
+            <p class="eyebrow">Local advisory evidence</p>
             <h2>Assist, Bundle, Review, Handoff</h2>
             <p>
-              Advisory actions produce local planning and handoff evidence. Source
-              text is omitted from provider-facing packets by default.
+              Advisory actions produce <strong>local evidence only</strong> — they run
+              repo Python scripts and write planning/handoff bundles to disk. Nothing is
+              sent anywhere: no provider API is called, and source text is omitted from
+              provider-facing packets by default.
             </p>
           </header>
 
@@ -388,26 +388,14 @@
           <div id="release-result" class="result-area" aria-live="polite"></div>
         </section>
 
-        <section id="panel-taxonomy" class="panel" role="tabpanel" tabindex="-1">
-          <header class="panel-header">
-            <p class="eyebrow">Copy truth</p>
-            <h2>Language Taxonomy</h2>
-            <p>
-              The shell preserves the active, advisory, native-boundary, and
-              future-backend labels from the handoff contract.
-            </p>
-          </header>
-          <div id="taxonomy" class="taxonomy"></div>
-        </section>
-
         <section id="panel-settings" class="panel" role="tabpanel" tabindex="-1">
           <header class="panel-header">
             <p class="eyebrow">Preferences</p>
             <h2>Settings</h2>
             <p>
               Simple mode keeps the everyday surface: health, parse/check/run, and
-              conversion. Power mode adds the advisory pipeline, evidence tooling,
-              readiness reporters, and the taxonomy contract.
+              conversion. Power mode adds the local advisory evidence pipeline,
+              evidence tooling, and readiness reporters.
             </p>
           </header>
 
@@ -471,7 +459,6 @@
       <span class="sb-item" id="sb-app" data-tip="Garnet Studio shell version (stamped from the crate, which tracks the workspace release).">Studio —</span>
       <span class="sb-item" id="sb-cli" data-tip="The Garnet CLI the shell found, and the version it reports.">CLI: locating…</span>
       <span class="sb-item" id="sb-mode" data-tip="Current interface mode. Change it in Settings.">mode: —</span>
-      <button class="sb-item sb-evidence" id="sb-evidence" data-tip="Dogfood evidence root. Click to copy the path.">evidence: —</button>
     </footer>
   </body>
 </html>
