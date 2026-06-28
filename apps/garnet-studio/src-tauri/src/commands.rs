@@ -1,7 +1,7 @@
 use crate::evidence;
 use crate::paths;
 use crate::settings;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -641,6 +641,119 @@ pub async fn cli_check(file_path: String) -> Result<CommandResult, String> {
 #[tauri::command]
 pub async fn cli_run(file_path: String) -> Result<CommandResult, String> {
     run_blocking(move || run_garnet("run", &["run".to_string(), file_path], true)).await
+}
+
+/// The `garnet.diff-caps.machine/1` verdict, deserialized verbatim from the CLI.
+/// The Studio NEVER recomputes the band or verdict — they are authoritative from
+/// `garnet diff-caps --machine`; this only carries what the CLI decided.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct DiffCapsVerdict {
+    pub schema: String,
+    pub verdict: String,
+    pub authority_expanded: bool,
+    pub capability_band: String,
+    pub exit_code: i32,
+    #[serde(default)]
+    pub aggregate_gained: Vec<String>,
+    #[serde(default)]
+    pub aggregate_removed: Vec<String>,
+    #[serde(default)]
+    pub wildcard_introduced: bool,
+    #[serde(default)]
+    pub functions_added: Vec<String>,
+    #[serde(default)]
+    pub functions_removed: Vec<String>,
+    #[serde(default)]
+    pub functions_caps_expanded: Vec<DiffCapsFnExpansion>,
+    #[serde(default)]
+    pub scope: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct DiffCapsFnExpansion {
+    pub name: String,
+    #[serde(default)]
+    pub gained: Vec<String>,
+}
+
+/// What the Diff-Caps panel receives: the parsed verdict (when the gate ran and
+/// emitted machine JSON on exit 0/1) plus the evidence trail. On a usage error
+/// (exit 2, no JSON) `verdict` is None and `stderr` carries the reason.
+#[derive(Debug, Serialize)]
+pub struct DiffCapsReport {
+    pub ran: bool,
+    pub verdict: Option<DiffCapsVerdict>,
+    pub exit_code: i32,
+    pub stderr: String,
+    pub evidence_path: Option<String>,
+    pub command: Vec<String>,
+}
+
+/// Build the panel report from a raw diff-caps run. Exit 0 (no expansion) and
+/// exit 1 (authority expanded) are BOTH valid verdicts — the gate working, not a
+/// failure — so we parse the machine JSON for either; only a usage error (exit 2
+/// / no JSON) or unparseable output yields `ran = false`.
+fn diff_caps_report_from(result: CommandResult) -> DiffCapsReport {
+    let verdict = if matches!(result.exit_code, 0 | 1) {
+        serde_json::from_str::<DiffCapsVerdict>(result.stdout.trim()).ok()
+    } else {
+        None
+    };
+    let stderr = if verdict.is_some() {
+        result.stderr
+    } else if matches!(result.exit_code, 0 | 1) && result.truncated {
+        // The gate ran and emitted a verdict, but its machine JSON was truncated
+        // at the display cap — NEVER claim the paths were invalid; point at the
+        // sealed full output instead (fail-safe: do not downgrade a real
+        // authority-expansion to "could not run").
+        match result.evidence_path.as_deref() {
+            Some(path) => format!(
+                "diff-caps emitted a verdict (exit {}) but its machine JSON was truncated at the display cap; the full verdict is in the evidence bundle at {path}.",
+                result.exit_code
+            ),
+            None => format!(
+                "diff-caps emitted a verdict (exit {}) but its machine JSON was truncated at the display cap.",
+                result.exit_code
+            ),
+        }
+    } else if result.stderr.trim().is_empty() {
+        format!(
+            "diff-caps did not emit a verdict (exit {}); check that both paths are valid .garnet files or directories.",
+            result.exit_code
+        )
+    } else {
+        result.stderr
+    };
+    DiffCapsReport {
+        ran: verdict.is_some(),
+        verdict,
+        exit_code: result.exit_code,
+        stderr,
+        evidence_path: result.evidence_path,
+        command: result.command,
+    }
+}
+
+pub(crate) fn studio_diff_caps_impl(old_path: String, new_path: String) -> DiffCapsReport {
+    let result = run_garnet(
+        "diff-caps",
+        &[
+            "diff-caps".to_string(),
+            "--machine".to_string(),
+            old_path,
+            new_path,
+        ],
+        false,
+    );
+    diff_caps_report_from(result)
+}
+
+#[tauri::command]
+pub async fn studio_diff_caps(
+    old_path: String,
+    new_path: String,
+) -> Result<DiffCapsReport, String> {
+    run_blocking(move || studio_diff_caps_impl(old_path, new_path)).await
 }
 
 pub(crate) fn cli_convert_impl(source_file: String, source_lang: String) -> CommandResult {
@@ -1866,6 +1979,128 @@ mod tests {
         let result = cli_convert_impl("sample.ts".to_string(), "TypeScript".to_string());
         assert!(!result.success);
         assert!(result.stderr.contains("not available"));
+    }
+
+    fn diff_caps_command_result(stdout: &str, stderr: &str, exit_code: i32) -> CommandResult {
+        CommandResult {
+            success: exit_code == 0,
+            stdout: stdout.to_string(),
+            stderr: stderr.to_string(),
+            exit_code,
+            command: vec![
+                "garnet".to_string(),
+                "diff-caps".to_string(),
+                "--machine".to_string(),
+            ],
+            evidence_path: Some("C:/dogfood/diff-caps-20260628".to_string()),
+            timed_out: false,
+            duration_ms: 7,
+            truncated: false,
+        }
+    }
+
+    // The EXACT three-clause scope string the CLI emits
+    // (garnet-cli/src/cmd/diff_caps.rs). Pinned verbatim so a future CLI wording
+    // drift fails this suite instead of silently shipping.
+    const DIFF_CAPS_SCOPE: &str = "declared-surface-only; does not prove absence of undeclared authority; bound annotations are not part of this surface";
+
+    const DIFF_CAPS_EXPANDED: &str = r#"{"schema":"garnet.diff-caps.machine/1","verdict":"authority-expanded","authority_expanded":true,"capability_band":"2/5","exit_code":1,"aggregate_gained":["net","proc"],"aggregate_removed":[],"wildcard_introduced":false,"functions_added":[],"functions_removed":[],"functions_caps_expanded":[{"name":"handle_request","gained":["net"]}],"scope":"declared-surface-only; does not prove absence of undeclared authority; bound annotations are not part of this surface"}"#;
+
+    #[test]
+    fn diff_caps_treats_exit_1_expansion_as_a_valid_verdict_not_a_failure() {
+        // exit 1 means "authority expanded" — the gate WORKING, not an error.
+        let report = diff_caps_report_from(diff_caps_command_result(DIFF_CAPS_EXPANDED, "", 1));
+        assert!(report.ran, "exit 1 must parse a verdict");
+        let v = report.verdict.expect("verdict present");
+        assert_eq!(v.capability_band, "2/5");
+        assert_eq!(v.verdict, "authority-expanded");
+        assert!(v.authority_expanded);
+        assert_eq!(
+            v.aggregate_gained,
+            vec!["net".to_string(), "proc".to_string()]
+        );
+        assert_eq!(v.functions_caps_expanded[0].name, "handle_request");
+        assert_eq!(v.functions_caps_expanded[0].gained, vec!["net".to_string()]);
+        // the evidence trail is preserved
+        assert_eq!(
+            report.evidence_path.as_deref(),
+            Some("C:/dogfood/diff-caps-20260628")
+        );
+    }
+
+    #[test]
+    fn diff_caps_parses_clean_verdict_from_exit_0() {
+        let json = r#"{"schema":"garnet.diff-caps.machine/1","verdict":"no-authority-expansion","authority_expanded":false,"capability_band":"5/5","exit_code":0,"aggregate_gained":[],"aggregate_removed":[],"wildcard_introduced":false,"functions_added":[],"functions_removed":[],"functions_caps_expanded":[],"scope":"declared-surface-only; does not prove absence of undeclared authority; bound annotations are not part of this surface"}"#;
+        let report = diff_caps_report_from(diff_caps_command_result(json, "", 0));
+        assert!(report.ran);
+        let v = report.verdict.unwrap();
+        assert_eq!(v.capability_band, "5/5");
+        assert_eq!(v.verdict, "no-authority-expansion");
+        assert!(!v.authority_expanded);
+        // The scope caveat must be present on the CLEAN (5/5) path too — green is
+        // "no declared widening", NOT "safe".
+        assert_eq!(v.scope, DIFF_CAPS_SCOPE);
+    }
+
+    #[test]
+    fn diff_caps_reports_usage_error_without_a_verdict() {
+        // exit 2 = usage error, no machine JSON; the panel must NOT invent a verdict.
+        let report = diff_caps_report_from(diff_caps_command_result("", "path not found", 2));
+        assert!(!report.ran);
+        assert!(report.verdict.is_none());
+        assert_eq!(report.exit_code, 2);
+        assert!(report.stderr.contains("path not found"));
+    }
+
+    #[test]
+    fn diff_caps_surfaces_the_cli_band_verbatim_never_recomputed() {
+        // The band/verdict are carried straight from the CLI JSON — the Studio
+        // deserializes, it never derives the band from the gained/removed sets.
+        let report = diff_caps_report_from(diff_caps_command_result(DIFF_CAPS_EXPANDED, "", 1));
+        let v = report.verdict.unwrap();
+        // The full three-clause caveat is carried verbatim, matching the CLI.
+        assert_eq!(v.scope, DIFF_CAPS_SCOPE);
+        assert_eq!(v.schema, "garnet.diff-caps.machine/1");
+    }
+
+    #[test]
+    fn diff_caps_truncated_machine_json_does_not_blame_the_paths() {
+        // A real exit-1 expansion whose JSON was truncated at the display cap must
+        // NOT be downgraded to "check that both paths are valid" — that inverts the
+        // gate. It must name the truncation and point at the evidence bundle.
+        let mut result = diff_caps_command_result("{\"schema\":\"garnet.dif…[truncated]", "", 1);
+        result.truncated = true;
+        let report = diff_caps_report_from(result);
+        assert!(!report.ran);
+        assert!(report.stderr.contains("truncated"));
+        assert!(report.stderr.contains("evidence bundle"));
+        assert!(!report.stderr.contains("check that both paths"));
+    }
+
+    #[test]
+    fn diff_caps_unparseable_success_output_degrades_to_no_verdict() {
+        // exit 0/1 but stdout is not valid machine JSON (stray banner, schema/2,
+        // partial pipe): a no-verdict error, never a half-rendered card.
+        for exit in [0, 1] {
+            let report =
+                diff_caps_report_from(diff_caps_command_result("not json at all", "", exit));
+            assert!(!report.ran, "exit {exit} garbage stdout must not parse");
+            assert!(report.verdict.is_none());
+            assert!(report.stderr.contains("did not emit a verdict"));
+        }
+        // A present-but-incompatible payload (missing the required `verdict` field).
+        let partial = r#"{"schema":"garnet.diff-caps.machine/1","capability_band":"2/5"}"#;
+        let report = diff_caps_report_from(diff_caps_command_result(partial, "", 1));
+        assert!(!report.ran);
+    }
+
+    #[test]
+    fn diff_caps_synthetic_message_fires_on_empty_streams() {
+        // exit 2 with EMPTY stderr must still give actionable guidance with the
+        // real exit interpolated — the message is otherwise dead in coverage.
+        let report = diff_caps_report_from(diff_caps_command_result("", "", 2));
+        assert!(report.stderr.contains("did not emit a verdict"));
+        assert!(report.stderr.contains("exit 2"));
     }
 
     #[test]

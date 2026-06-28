@@ -18,6 +18,7 @@ pub fn run() {
             cli_parse,
             cli_check,
             cli_run,
+            studio_diff_caps,
             cli_convert,
             advisory_assist_plan,
             advisory_bundle,

@@ -7,6 +7,35 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated-honesty record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
+## Unreleased — Studio Diff-Caps Review Gate (Phase 2) (2026-06-28)
+
+### Studio — Diff-Caps Review Gate (`apps/garnet-studio`)
+
+- **Added** `studio_diff_caps(old_path, new_path)` + a power-only **Diff-Caps Review**
+  panel that renders `garnet diff-caps --machine`'s `garnet.diff-caps.machine/1` verdict.
+  The backend deserializes the machine JSON into a typed `DiffCapsReport`; the frontend
+  renders it. The CLI is the single source of truth — **the band and verdict are rendered
+  verbatim, never recomputed** — and the declared-surface-only **scope caveat is shown so
+  a green 5/5 is not read as "safe."**
+- **Honest verdict semantics.** Exit 1 ("authority expanded") is a **valid verdict** (the
+  gate working), rendered as band 2/5 **"review required"** — not a generic failure and
+  not "merge REFUSED" (diff-caps flags for review; the merge block is a separate CI rule,
+  not something the CLI or this read-only panel performs). Exit 2 / unparseable output
+  surfaces an honest error and never invents a verdict; a truncated machine JSON points at
+  the evidence bundle rather than blaming the input paths.
+- **All six diff dimensions rendered** (gained/removed caps, added/removed functions,
+  per-function expansions, wildcard) — a function-only change is never mislabeled "no
+  declared capability changes."
+- **Tests.** 7 Rust parse-contract tests (exit 0/1/2, expansion-is-a-verdict,
+  band-verbatim vs the exact three-clause CLI scope, unparseable-success degrades,
+  truncation does-not-blame-paths) + 8 Playwright unit tests for the extracted pure
+  renderer (`src/diff-caps.ts`). Reviewed via a 7-pass Judge+Auditor pass (which caught
+  the "merge REFUSED" overclaim, the dropped function dimensions, and the truncation
+  inversion — all fixed). Local ladder green on `NUCBOX_M2PRO_S`: studio crate 36/36, e2e
+  19/19, clippy clean, shell + status contracts 8 + 17, build + smoke. Scope:
+  `apps/garnet-studio` (non-frozen) — no scripts/CI/gate change, no frozen crate, no
+  capability widening (`core:default`). Research-grade prototype (v0.x.x).
+
 ## Unreleased — Studio dead-weight cleanup (Phase 1) (2026-06-28)
 
 ### Studio — dead-weight removal (`apps/garnet-studio`)

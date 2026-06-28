@@ -6,7 +6,7 @@ import { test, expect } from "@playwright/test";
 // Tauri runtime — the surface the ~20 Python shell-contract + xvfb-window smokes
 // never actually render in a browser.
 
-const POWER_ONLY = ["Advisory Pipeline", "Evidence", "Release / Readiness"];
+const POWER_ONLY = ["Advisory Pipeline", "Evidence", "Release / Readiness", "Diff-Caps Review"];
 const SIMPLE = ["CLI Health", "Parse / Check / Run", "Active Conversion", "Settings"];
 
 test.describe("Garnet Studio UI (built dist in a browser)", () => {
@@ -19,12 +19,23 @@ test.describe("Garnet Studio UI (built dist in a browser)", () => {
     await expect(page.locator("footer.statusbar")).toBeVisible();
   });
 
-  test("all seven panels are present in the nav", async ({ page }) => {
+  test("all eight panels are present in the nav", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("nav.nav button[data-panel]")).toHaveCount(7);
+    await expect(page.locator("nav.nav button[data-panel]")).toHaveCount(8);
     for (const label of [...SIMPLE, ...POWER_ONLY]) {
       await expect(page.locator("nav.nav button[data-panel]", { hasText: label })).toHaveCount(1);
     }
+  });
+
+  test("Diff-Caps Review panel exposes the two-path capability-diff gate", async ({ page }) => {
+    await page.goto("/");
+    const panel = page.locator("#panel-diff-caps");
+    await expect(panel.locator("h2")).toHaveText("Diff-Caps Review Gate");
+    await expect(panel.locator("#diff-caps-old")).toHaveCount(1);
+    await expect(panel.locator("#diff-caps-new")).toHaveCount(1);
+    await expect(panel.locator("#btn-diff-caps")).toHaveText("Review capability diff");
+    // The honesty rail is in the panel copy: the CLI owns the verdict/band.
+    await expect(panel).toContainText("renders that decision");
   });
 
   test("Phase 1 honesty cleanup: dead-weight surfaces are gone", async ({ page }) => {
