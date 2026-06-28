@@ -7,6 +7,39 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated-honesty record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
+## Unreleased — Studio Velocity Editor (Phase 3) (2026-06-28)
+
+### Studio — Velocity Editor live check (`apps/garnet-studio`)
+
+- **Added** a Velocity Editor to the Parse / Check / Run panel: a source buffer plus a
+  debounced (200 ms) `studio_velocity_check` that runs `garnet check --format json` on the
+  buffer and renders the language's own diagnostics (capability coverage, bounds, parse
+  errors) live as you type. The backend deserializes the diagnostics JSON into a typed
+  `VelocityCheckReport`; the pure renderer `src/velocity.ts` draws the list. The CLI's
+  severity / code / message are rendered verbatim — never reclassified in the UI.
+- **Ephemeral, no seal per keystroke.** A live check writes the buffer to an ephemeral
+  scratch temp file (best-effort removed) and runs check with **no evidence bundle** — only
+  the explicit Check / Run buttons seal. It runs **check only, never run** — no auto-execution.
+- **Honest source locations.** Parse diagnostics carry a byte span → a precise, byte-accurate
+  line (newline bytes counted in the UTF-8 encoding, so multibyte source is not mislocated);
+  check diagnostics are message-only today → rendered as "whole buffer," never a faked line.
+- **Fail-safe parsing (review fixes).** `CheckJson` requires both the `diagnostics` and
+  `summary` keys, so a stale / wrong binary's bare `{}` or `[]` is **not** read as a clean run;
+  the green "no diagnostics" line is gated on `summary.ok && errors == 0`, so a ran-but-not-ok
+  result with no per-item diagnostics renders an honest "check reported a problem," never a
+  pass; a non-JSON / no-CLI / timeout output degrades to an explicit "did not run." A
+  `latestOnly` guard drops a stale out-of-order check result so a slow earlier run cannot
+  overwrite a newer one's diagnostics.
+- **Tests.** 9 Rust parse-contract tests (check-no-span, parse-with-span object, clean run,
+  exit-1-is-still-a-result, non-JSON → ran=false, bare-object rejected, no-CLI refusal writes
+  no temp file) + 8 Playwright unit tests for the pure renderer and the `latestOnly` race
+  guard (incl. the false-green and out-of-order cases). Reviewed via a 7-pass Judge+Auditor
+  loop, which caught the false-green, the lax JSON acceptance, and the untested race guard —
+  all fixed and test-pinned. Local ladder green on `NUCBOX_M2PRO_S`: studio crate 44/44,
+  e2e 28/28, clippy clean, shell + status contracts, build + `--studio-smoke`. Scope:
+  `apps/garnet-studio` (non-frozen) — no scripts / CI / gate change, no frozen crate, no
+  capability widening (`core:default`), no new crate dependency. Research-grade prototype (v0.x.x).
+
 ## Unreleased — Studio Diff-Caps Review Gate (Phase 2) (2026-06-28)
 
 ### Studio — Diff-Caps Review Gate (`apps/garnet-studio`)

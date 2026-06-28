@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { diffCapsCardHtml, type DiffCapsReport } from "./diff-caps";
+import { velocityDiagnosticsHtml, latestOnly, type VelocityCheckReport } from "./velocity";
 
 interface CommandResult {
   success: boolean;
@@ -246,6 +247,52 @@ function renderDiffCaps(targetId: string, report: DiffCapsReport): void {
   // All rendering lives in the pure, unit-tested diffCapsCardHtml — the band and
   // verdict are the CLI's, rendered verbatim and never recomputed here.
   target.innerHTML = diffCapsCardHtml(report, new Date().toLocaleTimeString());
+}
+
+function setupVelocityEditor(): void {
+  const buffer = document.getElementById("velocity-buffer") as HTMLTextAreaElement | null;
+  const out = document.getElementById("velocity-diagnostics");
+  if (!buffer || !out) return;
+
+  // latestOnly routes EVERY update (including the empty-buffer hint) through one
+  // sequence guard, so a slow earlier check can never overwrite a newer result.
+  const update = latestOnly<string, string>(
+    async (source) => {
+      if (source.trim().length === 0) {
+        return `<p class="diagnostics-ok">Type Garnet source to check it live.</p>`;
+      }
+      try {
+        const report = await invoke<VelocityCheckReport>("studio_velocity_check", { source });
+        return velocityDiagnosticsHtml(report, source);
+      } catch (error) {
+        // Render the rejection through the same honest "did not run" path.
+        return velocityDiagnosticsHtml(
+          {
+            ran: false,
+            diagnostics: [],
+            errors: 0,
+            warnings: 0,
+            infos: 0,
+            ok: false,
+            exit_code: -1,
+            stderr: String(error),
+          },
+          source,
+        );
+      }
+    },
+    (html) => {
+      out.innerHTML = html;
+    },
+  );
+
+  // Debounce: live-check 200ms after typing stops. The backend writes an
+  // ephemeral temp file only — no evidence bundle is sealed per keystroke.
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  buffer.addEventListener("input", () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => void update(buffer.value), 200);
+  });
 }
 
 function renderHealth(targetId: string, health: HealthStatus): void {
@@ -734,6 +781,7 @@ async function boot(): Promise<void> {
 window.addEventListener("DOMContentLoaded", () => {
   setupTabs();
   setupShortcuts();
+  setupVelocityEditor();
   void boot();
 
   setInput("garnet-file", "examples/mvp_01_os_simulator.garnet");

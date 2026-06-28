@@ -146,6 +146,24 @@
           </div>
 
           <div id="garnet-result" class="result-area" aria-live="polite"></div>
+
+          <div class="tool-block velocity-editor">
+            <h3>Velocity Editor — live check</h3>
+            <p>
+              Type or paste Garnet source. After you stop typing, Studio runs
+              <code>garnet check --format json</code> on the buffer (no execution)
+              and renders the language's own diagnostics — capability coverage,
+              bounds, parse errors. The buffer is ephemeral: nothing is sealed
+              until you click Check or Run above.
+            </p>
+            <label class="field">
+              <span>Garnet source buffer</span>
+              <textarea id="velocity-buffer" class="code-buffer" spellcheck="false"
+                rows="10"
+                data-tip="Live check runs ~200ms after you stop typing. No code is executed and no evidence is sealed."></textarea>
+            </label>
+            <div id="velocity-diagnostics" class="diagnostics" aria-live="polite"></div>
+          </div>
         </section>
 
         <section id="panel-convert" class="panel" role="tabpanel" tabindex="-1">

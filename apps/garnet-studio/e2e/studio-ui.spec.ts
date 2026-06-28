@@ -38,6 +38,16 @@ test.describe("Garnet Studio UI (built dist in a browser)", () => {
     await expect(panel).toContainText("renders that decision");
   });
 
+  test("Parse/Check/Run panel hosts the Velocity Editor live-check buffer", async ({ page }) => {
+    await page.goto("/");
+    const panel = page.locator("#panel-garnet");
+    await expect(panel.locator("#velocity-buffer")).toHaveCount(1);
+    await expect(panel.locator("#velocity-diagnostics")).toHaveCount(1);
+    await expect(panel.locator(".velocity-editor")).toContainText("garnet check --format json");
+    // The Parse / Check / Run controls remain (the shell-contract gate relies on them).
+    await expect(panel.locator("#btn-check")).toHaveText("Check");
+  });
+
   test("Phase 1 honesty cleanup: dead-weight surfaces are gone", async ({ page }) => {
     await page.goto("/");
     // Taxonomy panel removed from the UI (its backend command still feeds --studio-smoke).
