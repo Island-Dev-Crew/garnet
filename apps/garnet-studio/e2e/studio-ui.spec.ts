@@ -1,0 +1,70 @@
+import { test, expect } from "@playwright/test";
+
+// Garnet Studio is a Tauri shell. Outside Tauri the `invoke()` calls reject and
+// main.ts boot() renders with defaults (the status bar reads "browser preview").
+// These specs assert the UI STRUCTURE and pure-frontend behaviour that needs no
+// Tauri runtime — the surface the ~20 Python shell-contract + xvfb-window smokes
+// never actually render in a browser.
+
+const POWER_ONLY = ["Advisory Pipeline", "Evidence", "Release / Readiness", "Taxonomy"];
+const SIMPLE = ["CLI Health", "Parse / Check / Run", "Active Conversion", "Settings"];
+
+test.describe("Garnet Studio UI (built dist in a browser)", () => {
+  test("the launch splash holds, then dismisses, and the shell renders", async ({ page }) => {
+    await page.goto("/");
+    // The splash overlay exists in the DOM on first paint, then main.ts removes
+    // it after boot (>= the 700ms minimum hold, well under the 25s ceiling).
+    await expect(page.locator("#splash")).toHaveCount(0, { timeout: 30000 });
+    await expect(page.locator(".sidebar .brand h1")).toHaveText("Garnet Studio");
+    await expect(page.locator("footer.statusbar")).toBeVisible();
+  });
+
+  test("all eight panels are present in the nav", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("nav.nav button[data-panel]")).toHaveCount(8);
+    for (const label of [...SIMPLE, ...POWER_ONLY]) {
+      await expect(page.locator("nav.nav button[data-panel]", { hasText: label })).toHaveCount(1);
+    }
+  });
+
+  test("simple mode (default) hides the power-only panels and shows the simple ones", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("body")).toHaveAttribute("data-mode", "simple");
+    for (const label of SIMPLE) {
+      await expect(page.locator("nav.nav button[data-panel]", { hasText: label })).toBeVisible();
+    }
+    for (const label of POWER_ONLY) {
+      await expect(page.locator("nav.nav button[data-panel]", { hasText: label })).toBeHidden();
+    }
+  });
+
+  test("panel switching works (pure-frontend tab toggle)", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("#panel-health")).toHaveClass(/active/);
+    await page.locator("nav.nav button[data-panel]", { hasText: "Parse / Check / Run" }).click();
+    await expect(page.locator("#panel-garnet")).toHaveClass(/active/);
+    await expect(page.locator("#panel-health")).not.toHaveClass(/active/);
+  });
+
+  test("the safety-contract copy renders", async ({ page }) => {
+    await page.goto("/");
+    const c = page.locator(".contract");
+    await expect(c).toContainText("No provider APIs");
+    await expect(c).toContainText("Source omitted by default");
+    await expect(c).toContainText("Advisory output is never marked safe");
+  });
+
+  test("hover help is present across the surface", async ({ page }) => {
+    await page.goto("/");
+    const tips = await page.locator("[data-tip]").count();
+    expect(tips).toBeGreaterThanOrEqual(30);
+  });
+
+  test("the status bar reports a build version and mode", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("#sb-mode")).toContainText("mode:");
+    // Outside Tauri get_app_info rejects, so the version line degrades to the
+    // browser-preview notice — assert one of the two honest states renders.
+    await expect(page.locator("#sb-app")).toContainText(/Studio/);
+  });
+});
