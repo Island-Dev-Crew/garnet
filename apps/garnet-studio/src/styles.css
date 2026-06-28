@@ -1196,3 +1196,227 @@ kbd {
   font: 12px var(--mono);
   color: var(--blue);
 }
+
+/* ----------------------------------------------------------------------- */
+/* Agent-Loop Console (Phase 5)                                             */
+/* ----------------------------------------------------------------------- */
+
+.agent-loop-console {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.agent-loop-console .al-stamp {
+  color: var(--quiet);
+  font: 11px var(--mono);
+}
+
+.al-headline {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.al-verdict {
+  font: 700 18px var(--sans);
+  letter-spacing: 0.03em;
+  padding: 2px 12px;
+  border-radius: 6px;
+  border: 1px solid currentColor;
+}
+
+.al-verdict.accepted {
+  color: var(--green);
+}
+
+.al-verdict.rejected {
+  color: var(--garnet-strong);
+}
+
+.al-verdict-note {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.al-intro {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.gate-pipeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gate-step {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  border: 1px solid var(--line);
+  border-left-width: 3px;
+  border-radius: 8px;
+  background: var(--panel-soft);
+  padding: 10px 14px;
+}
+
+.gate-step.pass {
+  border-left-color: var(--green);
+}
+
+.gate-step.reject {
+  border-left-color: var(--garnet-strong);
+}
+
+.gate-step.not-reached {
+  border-left-color: var(--line-strong);
+  opacity: 0.72;
+}
+
+.gate-glyph {
+  font: 700 16px var(--mono);
+  line-height: 1.4;
+}
+
+.gate-step.pass .gate-glyph {
+  color: var(--green);
+}
+
+.gate-step.reject .gate-glyph {
+  color: var(--garnet-strong);
+}
+
+.gate-step.not-reached .gate-glyph {
+  color: var(--quiet);
+}
+
+.gate-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gate-name {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.gate-name code {
+  font: 14px var(--mono);
+  color: var(--text);
+}
+
+.gate-status {
+  color: var(--quiet);
+  font: 11px var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.gate-detail {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.gate-detail.quiet,
+.agent-loop-console .quiet {
+  color: var(--quiet);
+}
+
+.al-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-soft);
+  padding: 12px 14px;
+}
+
+.al-card h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.al-quiet,
+.al-schema {
+  color: var(--quiet);
+  font: 11px var(--mono);
+  font-weight: 400;
+}
+
+.al-card.seal {
+  border-left: 3px solid var(--blue);
+}
+
+.al-fns,
+.al-log {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12.5px;
+}
+
+.al-fns code,
+.al-log code,
+.al-kv .al-v {
+  font: 12px var(--mono);
+}
+
+.cap {
+  color: var(--amber);
+  font: 12px var(--mono);
+}
+
+.al-warn {
+  color: var(--amber);
+  font-size: 12.5px;
+  margin: 6px 0 0;
+}
+
+.al-kv {
+  display: flex;
+  gap: 10px;
+  padding: 2px 0;
+}
+
+.al-k {
+  color: var(--quiet);
+  font-size: 12px;
+  min-width: 96px;
+}
+
+.al-v {
+  color: var(--text);
+}
+
+.al-idx,
+.al-hash {
+  color: var(--quiet);
+  font: 11px var(--mono);
+}
+
+.al-pre {
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  font: 12px var(--mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 280px;
+  overflow: auto;
+}

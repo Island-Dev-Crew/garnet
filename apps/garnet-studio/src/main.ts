@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { diffCapsCardHtml, type DiffCapsReport } from "./diff-caps";
 import { velocityDiagnosticsHtml, latestOnly, type VelocityCheckReport } from "./velocity";
 import { enforcementLegendHtml, type EnforcementLegend } from "./enforcement-legend";
+import { agentLoopConsoleHtml, type AgentLoopDossier } from "./agent-loop";
 
 interface CommandResult {
   success: boolean;
@@ -263,6 +264,15 @@ function renderEnforcementLegend(targetId: string, legend: EnforcementLegend): v
 async function refreshEnforcementLegend(): Promise<void> {
   const legend = await invoke<EnforcementLegend>("studio_enforcement_legend");
   renderEnforcementLegend("legend-result", legend);
+}
+
+function renderAgentLoop(targetId: string, dossier: AgentLoopDossier): void {
+  const target = document.getElementById(targetId);
+  if (!target) return;
+  // All rendering lives in the pure, unit-tested agentLoopConsoleHtml — the
+  // four-gate verdict comes from the CLI's record-dir (decision.md + artifacts),
+  // never recomputed here.
+  target.innerHTML = agentLoopConsoleHtml(dossier, new Date().toLocaleTimeString());
 }
 
 // Lazily populate the legend the first time its panel is opened — the probe
@@ -707,6 +717,7 @@ const PRIMARY_ACTION_BY_PANEL: Record<string, string> = {
   advisory: "btn-assist",
   evidence: "btn-evidence",
   release: "btn-windows-status",
+  "agent-loop": "btn-agent-loop",
   settings: "btn-save-settings",
 };
 
@@ -714,9 +725,12 @@ function setupShortcuts(): void {
   document.addEventListener("keydown", (event) => {
     if (event.ctrlKey && !event.altKey && !event.shiftKey) {
       const digit = Number.parseInt(event.key, 10);
-      if (Number.isInteger(digit) && digit >= 1 && digit <= 9) {
+      if (Number.isInteger(digit) && digit >= 0 && digit <= 9) {
         const buttons = visiblePanelButtons();
-        const button = buttons[digit - 1];
+        // Ctrl+1..9 select the first nine visible panels; Ctrl+0 selects the
+        // tenth, so every visible power-mode panel has a digit.
+        const index = digit === 0 ? 9 : digit - 1;
+        const button = buttons[index];
         if (button?.dataset.panel) {
           event.preventDefault();
           activatePanel(button.dataset.panel);
@@ -974,6 +988,17 @@ window.addEventListener("DOMContentLoaded", () => {
       await refreshEnforcementLegend();
     } catch (error) {
       renderError("legend-result", error);
+    }
+  });
+
+  wireButton("btn-agent-loop", async () => {
+    try {
+      const dossier = await invoke<AgentLoopDossier>("studio_agent_loop_dossier", {
+        recordDir: requireValue("agent-loop-dir", "Record directory"),
+      });
+      renderAgentLoop("agent-loop-result", dossier);
+    } catch (error) {
+      renderError("agent-loop-result", error);
     }
   });
 

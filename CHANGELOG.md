@@ -7,6 +7,52 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated-honesty record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
+## Unreleased — Studio Agent-Loop Console (Phase 5) (2026-06-28)
+
+### Studio — Agent-Loop Console (`apps/garnet-studio`)
+
+- **Added** a power-only "Agent-Loop Console" panel that renders an existing
+  `garnet agent-loop --record-dir` dossier as a **four-gate pipeline** —
+  `check → diff-caps → run → seal`. It **reads** a record directory from disk and
+  renders the CLI's own verdict (`decision.md` + the trust artifacts) **verbatim**;
+  it does **not** run agent-loop (which would execute the proposal) and never
+  recomputes the decision.
+- **Verdict read, never recomputed.** `studio_agent_loop_dossier` parses the
+  verdict from `decision.md`'s heading (ACCEPTED / REJECTED-at-gate) and derives
+  each gate's pass / reject / not-reached status from that verdict — not from which
+  artifacts happen to exist. A contradiction test (ACCEPTED heading with no seal,
+  and a REJECTED heading with a stray seal) pins the heading as the sole authority.
+- **Honest seal surface.** The Seal gate reads "sealed (seal.json)" only when a seal
+  was actually parsed; an accepted-but-seal-missing dossier shows the gate as
+  not-reached and the seal panel says "seal.json missing or unparseable" rather than
+  falsely claiming a seal or mis-stating the verdict. On a genuine reject, no seal is
+  shown — the negative proof.
+- **Structured dossier views, kept separate.** The authority (diff-caps) gate is a
+  distinct drill-down (the verbatim `diff_caps.txt` band line + the
+  `garnet-capability-manifest-v1` capability manifest); the transparency-log
+  (caps-log) chain and the seal **provenance** are their own panels. The seal panel is
+  labeled *autonomous acceptance — not a human approval*, keeping approval, widening,
+  and seal provenance visibly separate. Note: the record-dir persists no
+  `diff-caps --machine` JSON, so the authority drill-down renders the record-dir's
+  verbatim banner (and re-running diff-caps is forbidden by the read-only contract)
+  rather than re-using the Phase-2 machine-JSON card.
+- **Honest scope.** `decision.md` is rendered verbatim, carrying the CLI's disclaimer:
+  acceptance is "on capability + depth evidence" only (`@caps` + `@max_depth` are the
+  enforced ceilings) — never a claim of full boundedness or safety; the agent is
+  `simulated`, not a live LLM. The Studio never adds a "safe"/"bounded" claim of its own.
+- **Tests.** 10 Rust tests (accept all-pass + every artifact parsed; reject-widen stops
+  at diff-caps with no seal; reject-overdepth stops at run and surfaces the
+  `@max_depth` trap; check-reject first-gate-only; unknown-rejection overstates no gate;
+  missing decision.md → not a dossier; malformed seal / log / manifest degrade without
+  panic; verdict-driven-by-decision contradiction; and disk-gated reads of the real
+  `accept`, `reject-widen`, and `reject-overdepth` fixtures) + 9 Playwright renderer
+  tests (verdict, gate order, reject pipelines, accepted-but-no-seal copy, wildcard
+  widening warning, escaping). Reviewed via a 7-pass Judge+Auditor loop. Local ladder
+  green on `NUCBOX_M2PRO_S`: studio crate 60/60, e2e 47/47, clippy clean, shell + status
+  contracts, build + `--studio-smoke`. Scope: `apps/garnet-studio` (non-frozen),
+  read-only fs — no scripts / CI / gate change, no frozen crate, no capability widening
+  (`core:default`), no new crate dependency. Research-grade prototype (v0.x.x).
+
 ## Unreleased — Studio Enforced / Declared Legend (Phase 4) (2026-06-28)
 
 ### Studio — Enforced / Declared Legend (`apps/garnet-studio`)

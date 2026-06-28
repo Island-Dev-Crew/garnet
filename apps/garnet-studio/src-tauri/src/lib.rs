@@ -21,6 +21,7 @@ pub fn run() {
             studio_diff_caps,
             studio_velocity_check,
             studio_enforcement_legend,
+            studio_agent_loop_dossier,
             cli_convert,
             advisory_assist_plan,
             advisory_bundle,

@@ -12,6 +12,7 @@ const POWER_ONLY = [
   "Release / Readiness",
   "Diff-Caps Review",
   "Enforcement Legend",
+  "Agent-Loop Console",
 ];
 const SIMPLE = ["CLI Health", "Parse / Check / Run", "Active Conversion", "Settings"];
 
@@ -25,9 +26,9 @@ test.describe("Garnet Studio UI (built dist in a browser)", () => {
     await expect(page.locator("footer.statusbar")).toBeVisible();
   });
 
-  test("all nine panels are present in the nav", async ({ page }) => {
+  test("all ten panels are present in the nav", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("nav.nav button[data-panel]")).toHaveCount(9);
+    await expect(page.locator("nav.nav button[data-panel]")).toHaveCount(10);
     for (const label of [...SIMPLE, ...POWER_ONLY]) {
       await expect(page.locator("nav.nav button[data-panel]", { hasText: label })).toHaveCount(1);
     }
@@ -56,6 +57,22 @@ test.describe("Garnet Studio UI (built dist in a browser)", () => {
     // trap is attested (not re-run here) — never hand-written.
     await expect(panel).toContainText("never hand-written");
     await expect(panel).toContainText("attested");
+  });
+
+  test("Agent-Loop Console panel renders an existing dossier, verbatim, without re-running", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const panel = page.locator("#panel-agent-loop");
+    await expect(panel.locator("h2")).toHaveText("Agent-Loop Console");
+    await expect(panel.locator("#agent-loop-dir")).toHaveCount(1);
+    await expect(panel.locator("#btn-agent-loop")).toHaveText("Load dossier");
+    await expect(panel.locator("#agent-loop-result")).toHaveCount(1);
+    // The four gates are named in the panel copy, and the honesty rail is explicit:
+    // it reads a record dir, does not re-run the loop, and does not overclaim safety.
+    await expect(panel).toContainText("check → diff-caps → run → seal");
+    await expect(panel).toContainText("does not re-run");
+    await expect(panel).toContainText("never a claim of full");
   });
 
   test("Parse/Check/Run panel hosts the Velocity Editor live-check buffer", async ({ page }) => {
