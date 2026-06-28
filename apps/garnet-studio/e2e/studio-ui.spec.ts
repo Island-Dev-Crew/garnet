@@ -6,7 +6,13 @@ import { test, expect } from "@playwright/test";
 // Tauri runtime — the surface the ~20 Python shell-contract + xvfb-window smokes
 // never actually render in a browser.
 
-const POWER_ONLY = ["Advisory Pipeline", "Evidence", "Release / Readiness", "Diff-Caps Review"];
+const POWER_ONLY = [
+  "Advisory Pipeline",
+  "Evidence",
+  "Release / Readiness",
+  "Diff-Caps Review",
+  "Enforcement Legend",
+];
 const SIMPLE = ["CLI Health", "Parse / Check / Run", "Active Conversion", "Settings"];
 
 test.describe("Garnet Studio UI (built dist in a browser)", () => {
@@ -19,9 +25,9 @@ test.describe("Garnet Studio UI (built dist in a browser)", () => {
     await expect(page.locator("footer.statusbar")).toBeVisible();
   });
 
-  test("all eight panels are present in the nav", async ({ page }) => {
+  test("all nine panels are present in the nav", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("nav.nav button[data-panel]")).toHaveCount(8);
+    await expect(page.locator("nav.nav button[data-panel]")).toHaveCount(9);
     for (const label of [...SIMPLE, ...POWER_ONLY]) {
       await expect(page.locator("nav.nav button[data-panel]", { hasText: label })).toHaveCount(1);
     }
@@ -36,6 +42,20 @@ test.describe("Garnet Studio UI (built dist in a browser)", () => {
     await expect(panel.locator("#btn-diff-caps")).toHaveText("Review capability diff");
     // The honesty rail is in the panel copy: the CLI owns the verdict/band.
     await expect(panel).toContainText("renders that decision");
+  });
+
+  test("Enforcement Legend panel states it is generated from CLI truth, not hand-written", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const panel = page.locator("#panel-legend");
+    await expect(panel.locator("h2")).toHaveText("Enforced / Declared Legend");
+    await expect(panel.locator("#btn-legend")).toHaveText("Generate from CLI truth");
+    await expect(panel.locator("#legend-result")).toHaveCount(1);
+    // The honesty rail: status is generated from a live probe, and the runtime
+    // trap is attested (not re-run here) — never hand-written.
+    await expect(panel).toContainText("never hand-written");
+    await expect(panel).toContainText("attested");
   });
 
   test("Parse/Check/Run panel hosts the Velocity Editor live-check buffer", async ({ page }) => {

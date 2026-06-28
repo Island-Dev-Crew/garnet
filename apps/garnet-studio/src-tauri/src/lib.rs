@@ -20,6 +20,7 @@ pub fn run() {
             cli_run,
             studio_diff_caps,
             studio_velocity_check,
+            studio_enforcement_legend,
             cli_convert,
             advisory_assist_plan,
             advisory_bundle,
