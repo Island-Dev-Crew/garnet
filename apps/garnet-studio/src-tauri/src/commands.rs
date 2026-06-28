@@ -6,6 +6,7 @@ use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -754,6 +755,166 @@ pub async fn studio_diff_caps(
     new_path: String,
 ) -> Result<DiffCapsReport, String> {
     run_blocking(move || studio_diff_caps_impl(old_path, new_path)).await
+}
+
+/// A `(start, len)` byte span, matching the object form `garnet check --format
+/// json` emits (`{"start":N,"len":M}`). Parse diagnostics carry one; check
+/// diagnostics are message-only (`span: null`) today.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct DiagSpan {
+    pub start: usize,
+    pub len: usize,
+}
+
+/// One diagnostic from the check JSON. severity/code/message/span are the CLI's
+/// own (S44 single source of truth) — the Studio never reclassifies them.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct VelocityDiagnostic {
+    pub severity: String,
+    pub code: String,
+    pub message: String,
+    #[serde(default)]
+    pub span: Option<DiagSpan>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+pub struct VelocitySummary {
+    #[serde(default)]
+    pub errors: usize,
+    #[serde(default)]
+    pub warnings: usize,
+    #[serde(default)]
+    pub infos: usize,
+    #[serde(default)]
+    pub ok: bool,
+}
+
+/// The exact wire form of `garnet check --format json`. Both keys are REQUIRED:
+/// a bare `{}` / `[]` / `{"x":1}` (a stale or wrong binary printing some other
+/// JSON) must NOT deserialize as a clean check report — that would read as a
+/// false green.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+struct CheckJson {
+    diagnostics: Vec<VelocityDiagnostic>,
+    summary: VelocitySummary,
+}
+
+/// What the velocity editor receives. `ran` is true when the CLI emitted
+/// parseable diagnostics JSON (exit 0 OR 1 — diagnostics present is the check
+/// working, not a failure). `ran = false` means the gate could not run (no CLI /
+/// timeout / no JSON).
+#[derive(Debug, Serialize)]
+pub struct VelocityCheckReport {
+    pub ran: bool,
+    pub diagnostics: Vec<VelocityDiagnostic>,
+    pub errors: usize,
+    pub warnings: usize,
+    pub infos: usize,
+    pub ok: bool,
+    pub exit_code: i32,
+    pub stderr: String,
+}
+
+fn velocity_error(message: impl Into<String>, exit_code: i32) -> VelocityCheckReport {
+    VelocityCheckReport {
+        ran: false,
+        diagnostics: Vec::new(),
+        errors: 0,
+        warnings: 0,
+        infos: 0,
+        ok: false,
+        exit_code,
+        stderr: message.into(),
+    }
+}
+
+/// Build the report from a raw `check --format json` run. Parses the JSON for any
+/// exit (diagnostics-present is exit 1, still a valid result); non-JSON output
+/// (CLI missing, timeout, usage error) degrades to `ran = false` with the stderr.
+fn velocity_report_from(result: CommandResult) -> VelocityCheckReport {
+    match serde_json::from_str::<CheckJson>(result.stdout.trim()) {
+        Ok(parsed) => VelocityCheckReport {
+            ran: true,
+            errors: parsed.summary.errors,
+            warnings: parsed.summary.warnings,
+            infos: parsed.summary.infos,
+            ok: parsed.summary.ok,
+            diagnostics: parsed.diagnostics,
+            exit_code: result.exit_code,
+            stderr: result.stderr,
+        },
+        Err(_) => {
+            let stderr = if result.stderr.trim().is_empty() {
+                format!(
+                    "garnet check produced no diagnostics JSON (exit {}); the CLI may be missing or the check timed out.",
+                    result.exit_code
+                )
+            } else {
+                result.stderr
+            };
+            velocity_error(stderr, result.exit_code)
+        }
+    }
+}
+
+/// Sequence counter so concurrent debounced checks never collide on a temp path.
+static VELOCITY_SEQ: AtomicU64 = AtomicU64::new(0);
+
+pub(crate) fn studio_velocity_check_impl(source: String) -> VelocityCheckReport {
+    studio_velocity_check_with_cli(source, paths::find_garnet_cli())
+}
+
+/// Inner runner with the CLI path injected, so the no-CLI refusal (and the
+/// "no temp file is written before that refusal" invariant) is unit-testable.
+fn studio_velocity_check_with_cli(source: String, cli: Option<PathBuf>) -> VelocityCheckReport {
+    let cli = match cli {
+        Some(path) => path,
+        None => {
+            return velocity_error(
+                "Garnet CLI not found. Set GARNET_CLI or add garnet to PATH.",
+                -1,
+            )
+        }
+    };
+
+    // Ephemeral scratch file — NOT an evidence bundle. Live checks must never
+    // seal a bundle per keystroke; only the explicit Check/Run buttons do that.
+    let scratch = paths::evidence_base_dir().join("garnet-studio-velocity-scratch");
+    if let Err(err) = fs::create_dir_all(&scratch) {
+        return velocity_error(format!("failed to create scratch directory: {err}"), -1);
+    }
+    let seq = VELOCITY_SEQ.fetch_add(1, Ordering::Relaxed);
+    let temp = scratch.join(format!("buffer-{}-{seq}.garnet", evidence::timestamp()));
+    if let Err(err) = fs::write(&temp, &source) {
+        return velocity_error(format!("failed to write buffer: {err}"), -1);
+    }
+
+    let args = vec![
+        "check".to_string(),
+        "--format".to_string(),
+        "json".to_string(),
+        display_path(&temp),
+    ];
+    let command = command_vector(&cli, &args);
+    // No bundle (None) → ephemeral; short timeout → never stall the editor.
+    let result = run_process_with_timeout(
+        "velocity-check",
+        cli,
+        &args,
+        paths::find_repo_root(),
+        command,
+        None,
+        Duration::from_secs(10),
+    );
+
+    let _ = fs::remove_file(&temp); // best-effort cleanup; never a sealed artifact
+
+    velocity_report_from(result)
+}
+
+#[tauri::command]
+pub async fn studio_velocity_check(source: String) -> Result<VelocityCheckReport, String> {
+    run_blocking(move || studio_velocity_check_impl(source)).await
 }
 
 pub(crate) fn cli_convert_impl(source_file: String, source_lang: String) -> CommandResult {
@@ -2101,6 +2262,114 @@ mod tests {
         let report = diff_caps_report_from(diff_caps_command_result("", "", 2));
         assert!(report.stderr.contains("did not emit a verdict"));
         assert!(report.stderr.contains("exit 2"));
+    }
+
+    fn velocity_cmd_result(stdout: &str, stderr: &str, exit_code: i32) -> CommandResult {
+        CommandResult {
+            success: exit_code == 0,
+            stdout: stdout.to_string(),
+            stderr: stderr.to_string(),
+            exit_code,
+            command: vec![
+                "garnet".to_string(),
+                "check".to_string(),
+                "--format".to_string(),
+                "json".to_string(),
+            ],
+            evidence_path: None,
+            timed_out: false,
+            duration_ms: 5,
+            truncated: false,
+        }
+    }
+
+    #[test]
+    fn velocity_parses_a_check_diagnostic_with_no_span() {
+        let json = r#"{"diagnostics":[{"severity":"error","code":"check.caps_coverage","message":"fs::read_file requires @caps(fs)","span":null}],"summary":{"errors":1,"warnings":0,"infos":0,"ok":false}}"#;
+        let report = velocity_report_from(velocity_cmd_result(json, "", 1));
+        assert!(report.ran);
+        assert_eq!(report.errors, 1);
+        assert!(!report.ok);
+        let d = &report.diagnostics[0];
+        assert_eq!(d.severity, "error");
+        assert_eq!(d.code, "check.caps_coverage");
+        assert!(d.span.is_none(), "check diagnostics are message-only today");
+    }
+
+    #[test]
+    fn velocity_parses_a_parse_diagnostic_with_a_byte_span() {
+        // span is the object {start,len} the CLI emits — proves the DiagSpan
+        // struct matches the wire form (a (usize,usize) tuple would mis-parse).
+        let json = r#"{"diagnostics":[{"severity":"error","code":"parse.reserved_word","message":"reserved word","span":{"start":12,"len":3}}],"summary":{"errors":1,"warnings":0,"infos":0,"ok":false}}"#;
+        let report = velocity_report_from(velocity_cmd_result(json, "", 1));
+        assert!(report.ran);
+        let span = report.diagnostics[0]
+            .span
+            .as_ref()
+            .expect("parse span present");
+        assert_eq!(span.start, 12);
+        assert_eq!(span.len, 3);
+    }
+
+    #[test]
+    fn velocity_clean_buffer_is_ok_with_no_diagnostics() {
+        let json = r#"{"diagnostics":[],"summary":{"errors":0,"warnings":0,"infos":0,"ok":true}}"#;
+        let report = velocity_report_from(velocity_cmd_result(json, "", 0));
+        assert!(report.ran);
+        assert!(report.ok);
+        assert!(report.diagnostics.is_empty());
+    }
+
+    #[test]
+    fn velocity_exit_1_diagnostics_is_a_result_not_a_failure() {
+        let json = r#"{"diagnostics":[{"severity":"warning","code":"check.boundary_note","message":"note","span":null}],"summary":{"errors":0,"warnings":1,"infos":0,"ok":true}}"#;
+        let report = velocity_report_from(velocity_cmd_result(json, "", 1));
+        assert!(
+            report.ran,
+            "diagnostics present (exit 1) is the check working"
+        );
+        assert_eq!(report.warnings, 1);
+    }
+
+    #[test]
+    fn velocity_non_json_output_degrades_to_ran_false() {
+        let report =
+            velocity_report_from(velocity_cmd_result("garnet: command not found", "boom", -1));
+        assert!(!report.ran);
+        assert!(report.diagnostics.is_empty());
+        assert_eq!(report.stderr, "boom");
+    }
+
+    #[test]
+    fn velocity_empty_streams_get_actionable_guidance() {
+        let report = velocity_report_from(velocity_cmd_result("", "", 2));
+        assert!(!report.ran);
+        assert!(report.stderr.contains("no diagnostics JSON"));
+        assert!(report.stderr.contains("exit 2"));
+    }
+
+    #[test]
+    fn velocity_rejects_a_bare_json_object_as_not_a_check_report() {
+        // A stale/wrong CLI printing some other JSON must NOT read as a clean run —
+        // both `diagnostics` and `summary` keys are required to count as "ran".
+        for junk in [
+            "{}",
+            "[]",
+            r#"{"hello":"world"}"#,
+            r#"{"summary":{"ok":true}}"#,
+        ] {
+            let report = velocity_report_from(velocity_cmd_result(junk, "", 0));
+            assert!(!report.ran, "{junk:?} must not parse as a check report");
+        }
+    }
+
+    #[test]
+    fn velocity_check_refuses_without_a_cli_and_writes_no_temp_file() {
+        // The CLI-not-found refusal happens before any scratch temp file is written.
+        let report = studio_velocity_check_with_cli("let x = 1".to_string(), None);
+        assert!(!report.ran);
+        assert_eq!(report.exit_code, -1);
+        assert!(report.stderr.contains("Garnet CLI not found"));
     }
 
     #[test]

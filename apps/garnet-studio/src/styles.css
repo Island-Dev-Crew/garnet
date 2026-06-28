@@ -754,6 +754,127 @@ pre {
   overflow-wrap: anywhere;
 }
 
+.code-buffer {
+  width: 100%;
+  min-height: 200px;
+  resize: vertical;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--input-bg);
+  color: var(--text);
+  tab-size: 2;
+}
+
+.diagnostics {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.diagnostics-ok {
+  margin: 0;
+  color: var(--green);
+  font-size: 13px;
+}
+
+.diagnostics-summary {
+  display: flex;
+  gap: 14px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.diagnostics-summary .count-error {
+  color: var(--garnet-strong);
+}
+
+.diagnostics-summary .count-warning {
+  color: var(--amber);
+}
+
+.diagnostics-summary .count-info {
+  color: var(--blue);
+}
+
+.diagnostics-items {
+  display: grid;
+  gap: 8px;
+}
+
+.diagnostic-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-left-width: 3px;
+  border-radius: 8px;
+  background: var(--panel-soft);
+}
+
+.diagnostic-item.error {
+  border-left-color: var(--garnet-strong);
+}
+
+.diagnostic-item.warning {
+  border-left-color: var(--amber);
+}
+
+.diagnostic-item.info {
+  border-left-color: var(--blue);
+}
+
+.diagnostic-badge {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: #fff;
+}
+
+.diagnostic-badge.error {
+  background: var(--garnet-strong);
+}
+
+.diagnostic-badge.warning {
+  background: var(--amber);
+}
+
+.diagnostic-badge.info {
+  background: var(--blue);
+}
+
+.diagnostic-content {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.diagnostic-code {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.diagnostic-message {
+  font-size: 13px;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.diagnostic-loc {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--quiet);
+}
+
 .evidence-root {
   display: grid;
   gap: 5px;
