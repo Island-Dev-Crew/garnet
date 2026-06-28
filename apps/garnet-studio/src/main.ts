@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { diffCapsCardHtml, type DiffCapsReport } from "./diff-caps";
 import { velocityDiagnosticsHtml, latestOnly, type VelocityCheckReport } from "./velocity";
+import { enforcementLegendHtml, type EnforcementLegend } from "./enforcement-legend";
 
 interface CommandResult {
   success: boolean;
@@ -105,6 +106,7 @@ const DEFAULT_SETTINGS: StudioSettings = {
 
 let currentSettings: StudioSettings = { ...DEFAULT_SETTINGS };
 let truthLoaded = false;
+let legendLoaded = false;
 
 function getInput(id: string): string {
   const el = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null;
@@ -247,6 +249,35 @@ function renderDiffCaps(targetId: string, report: DiffCapsReport): void {
   // All rendering lives in the pure, unit-tested diffCapsCardHtml — the band and
   // verdict are the CLI's, rendered verbatim and never recomputed here.
   target.innerHTML = diffCapsCardHtml(report, new Date().toLocaleTimeString());
+}
+
+function renderEnforcementLegend(targetId: string, legend: EnforcementLegend): void {
+  const target = document.getElementById(targetId);
+  if (!target) return;
+  // All rendering lives in the pure, unit-tested enforcementLegendHtml — the
+  // enforced/declared/deferred status and the live-probe confirmation come from
+  // the backend payload, never recomputed or hand-written here.
+  target.innerHTML = enforcementLegendHtml(legend, new Date().toLocaleTimeString());
+}
+
+async function refreshEnforcementLegend(): Promise<void> {
+  const legend = await invoke<EnforcementLegend>("studio_enforcement_legend");
+  renderEnforcementLegend("legend-result", legend);
+}
+
+// Lazily populate the legend the first time its panel is opened — the probe
+// spawns two `garnet check` subprocesses, so it must not run at boot (the panel
+// is power-only and hidden in simple mode). On failure (e.g. browser preview
+// where invoke rejects) the guard is released so a later activation retries and
+// the static fallback copy stays visible.
+async function loadEnforcementLegend(): Promise<void> {
+  if (legendLoaded) return;
+  legendLoaded = true;
+  try {
+    await refreshEnforcementLegend();
+  } catch {
+    legendLoaded = false;
+  }
 }
 
 function setupVelocityEditor(): void {
@@ -466,6 +497,9 @@ function activatePanel(name: string): void {
   panels.forEach((item) => item.classList.toggle("active", item.id === `panel-${name}`));
   if (name === "release") {
     void loadTruthTiles();
+  }
+  if (name === "legend") {
+    void loadEnforcementLegend();
   }
 }
 
@@ -932,6 +966,15 @@ window.addEventListener("DOMContentLoaded", () => {
   });
   wireButton("btn-windows-vm-installer", async () => {
     await runCommand("release-result", "windows_vm_installer_status", {});
+  });
+
+  wireButton("btn-legend", async () => {
+    try {
+      legendLoaded = true; // an explicit refresh also satisfies the lazy guard
+      await refreshEnforcementLegend();
+    } catch (error) {
+      renderError("legend-result", error);
+    }
   });
 
   wireButton("btn-diff-caps", async () => {

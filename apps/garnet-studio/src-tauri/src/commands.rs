@@ -917,6 +917,237 @@ pub async fn studio_velocity_check(source: String) -> Result<VelocityCheckReport
     run_blocking(move || studio_velocity_check_impl(source)).await
 }
 
+// ── Phase 4: Enforced / Declared Legend ─────────────────────────────────────
+//
+// Calibrated honesty made visible: which fences are runtime-ENFORCED, which are
+// merely DECLARED, and which are platform-DEFERRED. The catalog below is the
+// single source of truth (it mirrors the parser's `Annotation` set + the
+// named-deferred fence list in CLAUDE.md / GARNET_RED_TEAM.md); the renderer
+// GENERATES the panel from it — no status is hand-written into HTML.
+//
+// For the two enforced fences we go further than asserting: a live `garnet
+// check` PROBE re-confirms, this run, that the STATIC gate still fires (caps
+// under-declaration → `check.caps_coverage`; an out-of-range `@max_depth` →
+// `check.annotation_error`). The probe confirms the static gate ONLY; the
+// RUNTIME trap (`require_capability`; the recursion trap at N+1) is attested by
+// S99/S100/red-team and is reported as attested, never as "confirmed here".
+
+/// Whether a fence is runtime-enforced, merely declared, or platform-deferred.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum FenceStatus {
+    Enforced,
+    Declared,
+    Deferred,
+}
+
+/// One row of the enforcement legend. A pure data record — the frontend renders
+/// it; the status is never spelled into markup.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct EnforcementFence {
+    /// Display name, e.g. `@caps`, `@max_depth`, `@bounded`, `memory`.
+    pub name: String,
+    pub status: FenceStatus,
+    /// Where it bites, e.g. "VM + interpreter", "Wasmtime fuel only", "—".
+    pub backends: String,
+    /// One-line basis: the trap that enforces it, or why it is deferred.
+    pub basis: String,
+    /// For ENFORCED fences: how the runtime trap is attested (NOT re-run by the
+    /// live probe). Empty for declared / deferred rows.
+    pub runtime_attested_by: String,
+    /// For ENFORCED fences: the `garnet check` diagnostic code whose presence the
+    /// live probe re-confirms. Empty when there is no static-gate probe.
+    pub probe_code: String,
+}
+
+/// The result of one live static-gate probe for an enforced fence.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct EnforcementProbe {
+    /// The fence this probe backs (`@caps` / `@max_depth`).
+    pub fence: String,
+    /// The check diagnostic code the fixture is expected to provoke.
+    pub expected_code: String,
+    /// True iff the live `garnet check` emitted `expected_code`. False is an
+    /// honest "not confirmed here" — never silently treated as a pass.
+    pub confirmed: bool,
+    /// True iff the check actually ran (CLI present, JSON parsed). When false the
+    /// probe is INCONCLUSIVE, not a confirmation.
+    pub ran: bool,
+    pub exit_code: i32,
+    /// Every diagnostic code the fixture actually produced, verbatim.
+    pub observed_codes: Vec<String>,
+}
+
+/// The whole legend payload the frontend renders.
+#[derive(Debug, Serialize)]
+pub struct EnforcementLegend {
+    pub fences: Vec<EnforcementFence>,
+    pub probes: Vec<EnforcementProbe>,
+    /// True iff a Garnet CLI was found to run the probes. When false the enforced
+    /// rows still render, but as claimed-not-confirmed-here (honest).
+    pub cli_available: bool,
+}
+
+/// Probe fixture: a `@caps()` function that transitively calls the `read_file`
+/// primitive (which requires `fs`). `garnet check` must flag `check.caps_coverage`.
+const CAPS_PROBE_SRC: &str =
+    "@caps()\ndef caller() -> String {\n  read_file(\"/tmp/garnet-studio-legend-probe\")\n}\n";
+
+/// Probe fixture: `@max_depth(100)` is outside the enforced `1..=64` range, so
+/// `garnet check` must flag `check.annotation_error`.
+const DEPTH_PROBE_SRC: &str = "@max_depth(100)\n@caps()\ndef f() -> Bool { true }\n";
+
+/// The fence catalog — the single source of truth, drawn from the parser's
+/// `Annotation` set and the named-deferred fence list (CLAUDE.md / red-team).
+fn enforcement_catalog() -> Vec<EnforcementFence> {
+    vec![
+        EnforcementFence {
+            name: "@caps".to_string(),
+            status: FenceStatus::Enforced,
+            backends: "VM + interpreter".to_string(),
+            basis: "Deny-by-default host authority: an undeclared fs/net/env/proc \
+                    primitive traps at the boundary. The static caps-coverage gate \
+                    flags a function that transitively requires a capability it does \
+                    not declare."
+                .to_string(),
+            runtime_attested_by:
+                "S100 require_capability trap (VM + interp); S114-FIX-2 deny-by-default at \
+                 active_frames == 0; red-team"
+                    .to_string(),
+            probe_code: "check.caps_coverage".to_string(),
+        },
+        EnforcementFence {
+            name: "@max_depth".to_string(),
+            status: FenceStatus::Enforced,
+            backends: "VM + interpreter".to_string(),
+            basis: "Per-function recursion ceiling, trapped at depth N+1. The static \
+                    gate enforces the 1..=64 range at check time."
+                .to_string(),
+            runtime_attested_by: "S99 recursion-depth trap (VM + interp); red-team".to_string(),
+            probe_code: "check.annotation_error".to_string(),
+        },
+        EnforcementFence {
+            name: "@bounded".to_string(),
+            status: FenceStatus::Declared,
+            backends: "Wasmtime fuel only".to_string(),
+            basis: "Lowers to Wasmtime fuel metering on the VM path (S39); not enforced \
+                    on the interpreter. Declared, not a cross-backend trap."
+                .to_string(),
+            runtime_attested_by: String::new(),
+            probe_code: String::new(),
+        },
+        EnforcementFence {
+            name: "@mailbox".to_string(),
+            status: FenceStatus::Declared,
+            backends: "actor runtime".to_string(),
+            basis: "Overrides the default 1024-message inbox cap for an actor; not \
+                    enforced at the host-authority boundary."
+                .to_string(),
+            runtime_attested_by: String::new(),
+            probe_code: String::new(),
+        },
+        EnforcementFence {
+            name: "memory".to_string(),
+            status: FenceStatus::Declared,
+            backends: "—".to_string(),
+            basis: "Named-deferred resource ceiling: declared in source, no runtime trap."
+                .to_string(),
+            runtime_attested_by: String::new(),
+            probe_code: String::new(),
+        },
+        EnforcementFence {
+            name: "time".to_string(),
+            status: FenceStatus::Declared,
+            backends: "—".to_string(),
+            basis: "Named-deferred resource ceiling: `check` flags top-level \
+                    under-declaration, but there is no runtime trap."
+                .to_string(),
+            runtime_attested_by: String::new(),
+            probe_code: String::new(),
+        },
+        EnforcementFence {
+            name: "OS sandbox (macOS / Windows)".to_string(),
+            status: FenceStatus::Deferred,
+            backends: "Linux seccomp only".to_string(),
+            basis: "Platform OS-sandbox application is deferred off Linux. Linux applies a \
+                    seccomp policy; macOS and Windows do not apply an OS sandbox."
+                .to_string(),
+            runtime_attested_by: String::new(),
+            probe_code: String::new(),
+        },
+    ]
+}
+
+/// Interpret a check report into a probe verdict. Pure (no CLI) so the
+/// confirm/inconclusive logic is unit-testable. A probe confirms ONLY when the
+/// check ran AND emitted the expected code; a stale/missing CLI (`ran = false`)
+/// is inconclusive, never a confirmation.
+fn probe_from_report(
+    fence: &str,
+    expected_code: &str,
+    report: &VelocityCheckReport,
+) -> EnforcementProbe {
+    let observed_codes: Vec<String> = report.diagnostics.iter().map(|d| d.code.clone()).collect();
+    let confirmed = report.ran && observed_codes.iter().any(|c| c == expected_code);
+    EnforcementProbe {
+        fence: fence.to_string(),
+        expected_code: expected_code.to_string(),
+        confirmed,
+        ran: report.ran,
+        exit_code: report.exit_code,
+        observed_codes,
+    }
+}
+
+/// Run one live static-gate probe through the velocity check plumbing (ephemeral
+/// temp file, no seal, check-only — never executes the fixture).
+fn run_enforcement_probe(
+    fence: &str,
+    expected_code: &str,
+    src: &str,
+    cli: Option<PathBuf>,
+) -> EnforcementProbe {
+    let report = studio_velocity_check_with_cli(src.to_string(), cli);
+    probe_from_report(fence, expected_code, &report)
+}
+
+pub(crate) fn studio_enforcement_legend_impl() -> EnforcementLegend {
+    studio_enforcement_legend_with_cli(paths::find_garnet_cli())
+}
+
+/// Pairs each enforced fence with the fixture whose `garnet check` run must
+/// reproduce that fence's catalog `probe_code`. The EXPECTED code is read from
+/// the catalog, never duplicated here — one source of truth for the code.
+const PROBE_FIXTURES: [(&str, &str); 2] =
+    [("@caps", CAPS_PROBE_SRC), ("@max_depth", DEPTH_PROBE_SRC)];
+
+/// Inner builder with the CLI path injected, so the no-CLI (probes inconclusive)
+/// path is unit-testable.
+fn studio_enforcement_legend_with_cli(cli: Option<PathBuf>) -> EnforcementLegend {
+    let fences = enforcement_catalog();
+    let cli_available = cli.is_some();
+    // Each probe's expected code comes from the matching catalog row's
+    // `probe_code`, so the code the UI displays and the code the probe
+    // re-confirms can never silently diverge.
+    let probes = PROBE_FIXTURES
+        .iter()
+        .filter_map(|(name, src)| {
+            let code = fences.iter().find(|f| &f.name == name)?.probe_code.clone();
+            Some(run_enforcement_probe(name, &code, src, cli.clone()))
+        })
+        .collect();
+    EnforcementLegend {
+        fences,
+        probes,
+        cli_available,
+    }
+}
+
+#[tauri::command]
+pub async fn studio_enforcement_legend() -> Result<EnforcementLegend, String> {
+    run_blocking(studio_enforcement_legend_impl).await
+}
+
 pub(crate) fn cli_convert_impl(source_file: String, source_lang: String) -> CommandResult {
     let language = match normalize_language(&source_lang, ACTIVE_CONVERSION) {
         Ok(language) => language,
@@ -2370,6 +2601,206 @@ mod tests {
         assert!(!report.ran);
         assert_eq!(report.exit_code, -1);
         assert!(report.stderr.contains("Garnet CLI not found"));
+    }
+
+    // ── Phase 4: Enforced / Declared Legend ──────────────────────────────
+
+    fn legend_report(ran: bool, codes: &[&str]) -> VelocityCheckReport {
+        VelocityCheckReport {
+            ran,
+            diagnostics: codes
+                .iter()
+                .map(|c| VelocityDiagnostic {
+                    severity: "error".to_string(),
+                    code: (*c).to_string(),
+                    message: "x".to_string(),
+                    span: None,
+                })
+                .collect(),
+            errors: codes.len(),
+            warnings: 0,
+            infos: 0,
+            ok: false,
+            exit_code: if codes.is_empty() { 0 } else { 1 },
+            stderr: String::new(),
+        }
+    }
+
+    #[test]
+    fn enforcement_catalog_covers_every_fence_with_an_honest_status() {
+        let fences = enforcement_catalog();
+        let names: Vec<&str> = fences.iter().map(|f| f.name.as_str()).collect();
+        for expected in [
+            "@caps",
+            "@max_depth",
+            "@bounded",
+            "@mailbox",
+            "memory",
+            "time",
+            "OS sandbox (macOS / Windows)",
+        ] {
+            assert!(names.contains(&expected), "missing fence: {expected}");
+        }
+
+        for f in &fences {
+            match f.status {
+                FenceStatus::Enforced => {
+                    // Enforced rows MUST carry a static-gate probe code and a
+                    // runtime-trap attestation — never a bare "enforced" claim.
+                    assert!(!f.probe_code.is_empty(), "{} needs a probe code", f.name);
+                    assert!(
+                        !f.runtime_attested_by.is_empty(),
+                        "{} needs a runtime attestation",
+                        f.name
+                    );
+                }
+                FenceStatus::Declared | FenceStatus::Deferred => {
+                    // A declared/deferred fence must NOT advertise a probe or a
+                    // runtime trap — that would overclaim enforcement.
+                    assert!(
+                        f.probe_code.is_empty(),
+                        "{} is not enforced; it must not carry a probe code",
+                        f.name
+                    );
+                    assert!(
+                        f.runtime_attested_by.is_empty(),
+                        "{} is not enforced; it must not claim a runtime trap",
+                        f.name
+                    );
+                }
+            }
+        }
+
+        let enforced: Vec<&str> = fences
+            .iter()
+            .filter(|f| f.status == FenceStatus::Enforced)
+            .map(|f| f.name.as_str())
+            .collect();
+        assert_eq!(
+            enforced,
+            vec!["@caps", "@max_depth"],
+            "only @caps and @max_depth are enforced"
+        );
+    }
+
+    #[test]
+    fn enforcement_probe_confirms_only_on_the_expected_code_from_a_run_that_ran() {
+        // Confirmed: the check ran and emitted the expected code.
+        let hit = probe_from_report(
+            "@caps",
+            "check.caps_coverage",
+            &legend_report(true, &["check.caps_coverage"]),
+        );
+        assert!(hit.confirmed);
+        assert!(hit.ran);
+        assert_eq!(hit.observed_codes, vec!["check.caps_coverage".to_string()]);
+
+        // Ran, but a different code → not confirmed (no false enforcement claim).
+        let miss = probe_from_report(
+            "@caps",
+            "check.caps_coverage",
+            &legend_report(true, &["parse.reserved_word"]),
+        );
+        assert!(!miss.confirmed);
+
+        // Did not run (no CLI / no JSON) → inconclusive, even if a code is present.
+        let stale = probe_from_report(
+            "@caps",
+            "check.caps_coverage",
+            &legend_report(false, &["check.caps_coverage"]),
+        );
+        assert!(!stale.confirmed, "a check that did not run cannot confirm");
+        assert!(!stale.ran);
+    }
+
+    #[test]
+    fn enforcement_legend_without_a_cli_renders_but_marks_probes_inconclusive() {
+        // No CLI: the legend still lists every fence (honesty must render even
+        // offline), but the enforced rows are NOT confirmed here.
+        let legend = studio_enforcement_legend_with_cli(None);
+        assert!(!legend.cli_available);
+        assert_eq!(legend.fences.len(), 7);
+        assert_eq!(legend.probes.len(), 2);
+        for p in &legend.probes {
+            assert!(!p.ran, "{} probe cannot run without a CLI", p.fence);
+            assert!(!p.confirmed, "{} probe must not be confirmed", p.fence);
+        }
+    }
+
+    #[test]
+    fn enforcement_probe_expected_code_is_sourced_from_the_catalog() {
+        // The code each probe re-confirms must be the SAME code the catalog row
+        // displays for that fence — one source of truth, so the UI can never show
+        // a code the probe did not actually check.
+        let legend = studio_enforcement_legend_with_cli(None);
+        for probe in &legend.probes {
+            let fence = legend
+                .fences
+                .iter()
+                .find(|f| f.name == probe.fence)
+                .expect("every probe's fence is in the catalog");
+            assert_eq!(
+                probe.expected_code, fence.probe_code,
+                "{}: probe expected_code must equal the catalog probe_code",
+                probe.fence
+            );
+            assert!(
+                !probe.expected_code.is_empty(),
+                "{}: empty code",
+                probe.fence
+            );
+        }
+    }
+
+    #[test]
+    fn enforcement_probe_confirms_amid_noise_but_not_on_an_empty_run() {
+        // A confirm is valid when the expected code is present ALONGSIDE others.
+        let noisy = probe_from_report(
+            "@caps",
+            "check.caps_coverage",
+            &legend_report(true, &["check.caps_coverage", "check.boundary_note"]),
+        );
+        assert!(
+            noisy.confirmed,
+            "expected code present among others must confirm"
+        );
+
+        // A check that ran but produced NO diagnostics is not a confirmation.
+        let empty = probe_from_report("@caps", "check.caps_coverage", &legend_report(true, &[]));
+        assert!(!empty.confirmed, "a run with no diagnostics cannot confirm");
+        assert!(empty.ran);
+    }
+
+    #[test]
+    fn enforcement_legend_with_a_real_cli_confirms_both_static_gates() {
+        // Live coverage of the confirm path: wherever a Garnet CLI is found
+        // (locally, and on CI where the release binary is built), the two
+        // static-gate probes must actually reproduce their expected diagnostic —
+        // this is what pins "confirmed live this run" against fixture or
+        // diagnostic-code drift. With no CLI we SKIP loudly, never pass vacuously.
+        let Some(cli) = paths::find_garnet_cli() else {
+            eprintln!(
+                "SKIP enforcement_legend_with_a_real_cli_confirms_both_static_gates: \
+                 no Garnet CLI found (set GARNET_CLI or add garnet to PATH)."
+            );
+            return;
+        };
+        let legend = studio_enforcement_legend_with_cli(Some(cli));
+        assert!(legend.cli_available);
+        assert_eq!(legend.probes.len(), 2);
+        for probe in &legend.probes {
+            assert!(probe.ran, "{} probe must run with a real CLI", probe.fence);
+            assert!(
+                probe.confirmed,
+                "{} probe must confirm: expected `{}` in {:?} (exit {})",
+                probe.fence, probe.expected_code, probe.observed_codes, probe.exit_code
+            );
+            assert!(
+                probe.observed_codes.contains(&probe.expected_code),
+                "{} observed_codes must include the expected code",
+                probe.fence
+            );
+        }
     }
 
     #[test]

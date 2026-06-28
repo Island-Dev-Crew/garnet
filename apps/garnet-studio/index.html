@@ -48,6 +48,8 @@
             data-tip="Run the repo's readiness reporters. Wrappers only — they never upgrade platform or proof claims.">Release / Readiness</button>
           <button data-panel="diff-caps" role="tab" data-power-only
             data-tip="Compare the declared capability surfaces of two revisions. The CLI decides the verdict and band; this renders them verbatim.">Diff-Caps Review</button>
+          <button data-panel="legend" role="tab" data-power-only
+            data-tip="Which fences the runtime enforces vs only declares. Status is generated from the source/CLI catalog and a live garnet check probe, not hand-written.">Enforcement Legend</button>
           <button data-panel="settings" role="tab"
             data-tip="Switch between Simple and Power mode, set the theme, and tune command timeouts.">Settings</button>
         </nav>
@@ -436,6 +438,27 @@
           <div id="diff-caps-result" class="result-area" aria-live="polite"></div>
         </section>
 
+        <section id="panel-legend" class="panel" role="tabpanel" tabindex="-1" data-power-only>
+          <header class="panel-header">
+            <p class="eyebrow">Calibrated honesty</p>
+            <h2>Enforced / Declared Legend</h2>
+            <p>
+              Which fences the runtime actually <strong>enforces</strong>, which are
+              only <strong>declared</strong>, and which are platform-<strong>deferred</strong>.
+              The status is generated from the source/CLI catalog and a live
+              <code>garnet check</code> probe — never hand-written. <code>@caps</code>
+              and <code>@max_depth</code> are shown enforced only where the trap
+              evidence holds; the runtime trap itself is attested (S99 / S100), not
+              re-run here.
+            </p>
+          </header>
+          <button id="btn-legend" class="primary"
+            data-tip="Re-run the live garnet check probes and regenerate the legend from CLI truth.">Generate from CLI truth</button>
+          <div id="legend-result" class="result-area" aria-live="polite">
+            <p class="legend-intro">Press “Generate from CLI truth” to run the live static-gate probes.</p>
+          </div>
+        </section>
+
         <section id="panel-settings" class="panel" role="tabpanel" tabindex="-1">
           <header class="panel-header">
             <p class="eyebrow">Preferences</p>
@@ -494,7 +517,7 @@
           <div class="tool-block">
             <h3>Keyboard shortcuts</h3>
             <div class="shortcuts" id="shortcuts-list">
-              <div><kbd>Ctrl</kbd>+<kbd>1</kbd>…<kbd>8</kbd><span>Switch panels (visible panels in order)</span></div>
+              <div><kbd>Ctrl</kbd>+<kbd>1</kbd>…<kbd>9</kbd><span>Switch panels (visible panels in order)</span></div>
               <div><kbd>Ctrl</kbd>+<kbd>Enter</kbd><span>Run the active panel's primary action</span></div>
               <div><kbd>Esc</kbd><span>Return focus to the active panel</span></div>
             </div>

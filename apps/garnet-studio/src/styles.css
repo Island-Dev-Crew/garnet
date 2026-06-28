@@ -1063,3 +1063,136 @@ kbd {
     grid-template-columns: 1fr;
   }
 }
+
+/* ----------------------------------------------------------------------- */
+/* Enforced / Declared Legend (Phase 4)                                     */
+/* ----------------------------------------------------------------------- */
+
+.enforcement-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.enforcement-legend .legend-stamp {
+  color: var(--quiet);
+  font: 11px var(--mono);
+}
+
+.enforcement-legend .legend-intro {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.legend-banner.warn {
+  border: 1px solid var(--amber);
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: color-mix(in srgb, var(--amber) 12%, transparent);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.legend-fences {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.legend-fence {
+  border: 1px solid var(--line);
+  border-left-width: 3px;
+  border-radius: 8px;
+  background: var(--panel-soft);
+  padding: 10px 14px;
+}
+
+.legend-fence.enforced {
+  border-left-color: var(--green);
+}
+
+.legend-fence.declared {
+  border-left-color: var(--amber);
+}
+
+.legend-fence.deferred {
+  border-left-color: var(--quiet);
+}
+
+.legend-fence-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.legend-badge {
+  font: 11px var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+}
+
+.legend-badge.enforced {
+  color: var(--green);
+}
+
+.legend-badge.declared {
+  color: var(--amber);
+}
+
+.legend-badge.deferred {
+  color: var(--quiet);
+}
+
+.legend-name {
+  font: 14px var(--mono);
+  color: var(--text);
+}
+
+.legend-backends {
+  margin-left: auto;
+  color: var(--quiet);
+  font: 12px var(--mono);
+}
+
+.legend-basis {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 6px 0 0;
+}
+
+.legend-probe {
+  font-size: 12.5px;
+  margin: 6px 0 0;
+}
+
+.legend-probe.confirmed {
+  color: var(--green);
+}
+
+.legend-probe.unconfirmed {
+  color: var(--amber);
+}
+
+.legend-runtime {
+  color: var(--muted);
+  font-size: 12.5px;
+  margin: 4px 0 0;
+}
+
+.legend-quiet {
+  color: var(--quiet);
+}
+
+.legend-probe code,
+.legend-runtime code,
+.legend-intro code {
+  font: 12px var(--mono);
+  color: var(--blue);
+}

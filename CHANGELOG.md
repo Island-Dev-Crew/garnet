@@ -7,6 +7,46 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated-honesty record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
+## Unreleased — Studio Enforced / Declared Legend (Phase 4) (2026-06-28)
+
+### Studio — Enforced / Declared Legend (`apps/garnet-studio`)
+
+- **Added** a power-only "Enforced / Declared Legend" panel that makes Garnet's
+  calibrated honesty visible: which capability fences the runtime actually
+  **enforces** (`@caps`, `@max_depth`), which are only **declared** (`@bounded`
+  Wasmtime-fuel-only, `@mailbox`, `memory`, `time`), and which are platform-**deferred**
+  (macOS/Windows OS-sandbox; seccomp is Linux-only).
+- **Generated from source/CLI truth, not hand-written.** The status comes from a typed
+  Rust fence catalog (the single source of truth — it mirrors the parser `Annotation`
+  set and the named-deferred fence list) rendered by the pure `src/enforcement-legend.ts`;
+  no enforced/declared status is spelled into markup.
+- **Enforced only where the trap evidence holds.** For the two enforced fences a live
+  `studio_enforcement_legend` runs a `garnet check --format json` **probe** (reusing the
+  velocity plumbing — check-only, ephemeral, no seal) that re-confirms, this run, that the
+  static gate still fires: an undeclared-`fs` call → `check.caps_coverage`; an
+  out-of-range `@max_depth(100)` → `check.annotation_error`. The green "confirmed live
+  this run" badge renders **only** when the probe actually ran AND reproduced the code;
+  a ran-but-unconfirmed or no-CLI probe renders an honest "NOT confirmed" / "not probed",
+  never a faked confirmation (the Phase-3 false-green discipline). Each probe's expected
+  code is read **from** the catalog row, so the displayed code and the re-confirmed code
+  cannot diverge.
+- **Runtime trap labeled as attested, not re-run.** The probe confirms the *static* gate
+  only; the runtime trap (`require_capability` host-authority denial; the recursion trap
+  at N+1) is shown as **attested** (S99 / S100 / red-team) and explicitly *not re-run by
+  this probe* — the two are never conflated.
+- **Lazy, not eager.** The probe runs on first activation of the (power-only) panel, not
+  at boot, so simple-mode startup never spawns the two `garnet check` subprocesses.
+- **Tests.** 6 Rust tests (catalog completeness + honest status per fence; probe
+  confirm/inconclusive; confirm-amid-noise vs empty-run; expected-code-from-catalog; a
+  CLI-gated live test that asserts both probes actually confirm where a Garnet CLI is
+  present, skipping loudly otherwise) + 8 Playwright renderer unit tests (confirmed only
+  on a real confirm, false-green and no-CLI guards pinned on the structural class,
+  declared/deferred rows carry no trap claim, ordering, escaping). Reviewed via a 7-pass
+  Judge+Auditor loop. Local ladder green on `NUCBOX_M2PRO_S`: studio crate 50/50, e2e
+  37/37, clippy clean, shell + status contracts, build + `--studio-smoke`. Scope:
+  `apps/garnet-studio` (non-frozen) — no scripts / CI / gate change, no frozen crate, no
+  capability widening (`core:default`), no new crate dependency. Research-grade prototype (v0.x.x).
+
 ## Unreleased — Studio Velocity Editor (Phase 3) (2026-06-28)
 
 ### Studio — Velocity Editor live check (`apps/garnet-studio`)
