@@ -12,8 +12,13 @@ research corpus material, generated artifacts, and local scratch.
 > S91–S120 trust-kernel / capability-bounded-acceptance runway (enforced
 > `@caps` + `@max_depth` on both interpreter and VM backends; cross-OS
 > trap-parity; the `agent-loop` accept/reject + seal "ultrapunch"; Linux-only
-> seccomp application; sealed provenance + transparency log; a self-found and
-> self-fixed HIGH red-team finding — not independently verified). The `v0.8.1`
+> seccomp application; sealed provenance + transparency log; a HIGH red-team
+> finding plus — under **independent, cross-lineage re-verification** (OpenAI
+> Codex) — two further HIGHs (load-time `@caps` bypass + invalid-`@max_depth`
+> seal), all fixed (`4994867`, #421/#424) with deny-by-default mediation closing
+> the residual fail-open lanes, Opus-final-reviewed and `/code-review ultra`-gated:
+> **independently-re-verified-with-fixes, pending Jon's acceptance** — not
+> self-attested-closed). The `v0.8.1`
 > Release ships **signed `garnet-0.8.1-*` CLI binaries** (`.deb`/`.rpm`/darwin
 > tarballs) + a CycloneDX SBOM + a GPG-signed `SHA256SUMS.asc` — the S91–S120
 > work is now in the published binary (verify per `docs/release-signing.md`).
