@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en" data-immersive="on">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Garnet Studio — macOS Parity &amp; Beyond — Plan of Attack — 2026-06-28</title>
+<style>
+  :root{
+    color-scheme: dark;
+    /* DNA-derived (Iron Canvas v4.3 palette protocol): bold+serious+digital → dark dramatic base, garnet signature, single gold accent. Hue ~18-22. */
+    --bg:           oklch(0.13 0.020 20);
+    --bg-deep:      oklch(0.10 0.016 20);
+    --surface:      oklch(0.17 0.024 20);
+    --surface-2:    oklch(0.20 0.028 20);
+    --glass:        oklch(0.20 0.030 20 / 0.55);
+    --line:         oklch(0.32 0.040 20 / 0.7);
+    --line-2:       oklch(0.42 0.055 20 / 0.8);
+    --ink:          oklch(0.95 0.012 60);
+    --muted:        oklch(0.74 0.030 40);
+    --quiet:        oklch(0.58 0.030 35);
+    --garnet:       oklch(0.58 0.200 18);
+    --garnet-bright:oklch(0.68 0.215 16);
+    --gold:         oklch(0.82 0.130 82);
+    --amber:        oklch(0.74 0.140 60);
+    --green:        oklch(0.74 0.150 152);
+    --blue:         oklch(0.72 0.110 235);
+    --garnet-glow:  oklch(0.58 0.220 18 / 0.40);
+    --mono: ui-monospace,"SF Mono","Cascadia Code",Consolas,monospace;
+    --sans: -apple-system,BlinkMacSystemFont,"Inter","Segoe UI",system-ui,sans-serif;
+    --maxw: 1180px;
+    --radius: 14px;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; }
+  body{
+    background: var(--bg-deep);
+    color: var(--ink);
+    font: 16px/1.65 var(--sans);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* ── System 1: gradient mesh atmosphere (garnet + gold orbs) ── */
+  .mesh{
+    position: fixed; inset:0; z-index:-2; pointer-events:none;
+    background:
+      radial-gradient(ellipse 70% 55% at 18% 12%, oklch(0.40 0.20 20 / 0.55) 0%, transparent 62%),
+      radial-gradient(ellipse 55% 70% at 84% 28%, oklch(0.34 0.14 30 / 0.40) 0%, transparent 60%),
+      radial-gradient(ellipse 90% 50% at 50% 108%, oklch(0.50 0.16 75 / 0.22) 0%, transparent 60%),
+      var(--bg-deep);
+    animation: drift 26s ease-in-out infinite alternate;
+  }
+  @keyframes drift{ from{ transform: translate3d(0,0,0) scale(1.0);} to{ transform: translate3d(0,-2.2%,0) scale(1.06);} }
+  /* ── grain overlay (premium texture; felt not seen) ── */
+  .grain{
+    position: fixed; inset:0; z-index:-1; pointer-events:none; opacity:0.05; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  /* ── System 4: restrained ember particles (canvas, JS-guarded) ── */
+  #embers{ position: fixed; inset:0; z-index:-1; pointer-events:none; }
+  a{ color: var(--garnet-bright); text-decoration:none; }
+  a:hover{ color: var(--gold); }
+  code,.mono{ font-family: var(--mono); font-size:0.88em; }
+  .wrap{ width: min(var(--maxw), calc(100vw - 44px)); margin-inline:auto; }
+
+  /* ── kill switch + nav ── */
+  nav{ position: sticky; top:0; z-index:20; backdrop-filter: blur(14px) saturate(1.1);
+       background: oklch(0.11 0.016 20 / 0.78); border-bottom:1px solid var(--line); }
+  nav .wrap{ min-height:56px; display:flex; align-items:center; gap:18px; }
+  .brand{ display:flex; align-items:center; gap:10px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; font-size:0.78rem; }
+  .brand .gem{ width:13px; height:13px; rotate:45deg; border-radius:2px;
+    background: linear-gradient(135deg, var(--garnet-bright), var(--garnet)); box-shadow:0 0 16px var(--garnet-glow); }
+  .navlinks{ margin-left:auto; display:flex; gap:4px; flex-wrap:wrap; }
+  .navlinks a{ color:var(--muted); font:600 0.72rem var(--mono); letter-spacing:0.05em; text-transform:uppercase; padding:6px 9px; border-radius:7px; }
+  .navlinks a:hover{ color:var(--ink); background: oklch(0.24 0.03 20 / 0.6); }
+  .kill{ font:600 0.68rem var(--mono); color:var(--quiet); border:1px solid var(--line-2); background:transparent;
+    padding:5px 9px; border-radius:999px; cursor:pointer; letter-spacing:0.04em; }
+  .kill:hover{ color:var(--ink); border-color:var(--garnet); }
+
+  /* ── hero (the one signature immersive moment) ── */
+  header.hero{ position:relative; padding: clamp(64px,11vh,128px) 0 56px; border-bottom:1px solid var(--line); }
+  .eyebrow{ color: var(--garnet-bright); font:700 0.76rem var(--mono); letter-spacing:0.26em; text-transform:uppercase; margin-bottom:20px; }
+  h1{ margin:0 0 20px; font-size: clamp(2.3rem, 6.4vw, 4.6rem); line-height:1.02; letter-spacing:-0.035em; font-weight:700;
+    background: linear-gradient(180deg, var(--ink) 30%, oklch(0.78 0.10 40)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .lede{ max-width: 940px; color: oklch(0.86 0.02 50); font-size: clamp(1.05rem,2.2vw,1.28rem); margin:0; }
+  .stamps{ display:flex; flex-wrap:wrap; gap:9px; margin-top:30px; }
+  .stamp{ font:600 0.72rem var(--mono); color:var(--muted); background: var(--glass); border:1px solid var(--line-2);
+    padding:7px 12px; border-radius:999px; backdrop-filter: blur(6px); }
+  .stamp b{ color: var(--ink); }
+  .stamp.warn{ color:var(--gold); border-color: oklch(0.5 0.09 80); }
+
+  /* ── kinetic reveal ── */
+  .reveal{ opacity:0; transform: translateY(22px); transition: opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1); }
+  .reveal.in{ opacity:1; transform:none; }
+
+  section{ padding: 58px 0; border-bottom:1px solid var(--line); }
+  .kicker{ color: var(--gold); font:700 0.74rem var(--mono); letter-spacing:0.2em; text-transform:uppercase; margin:0 0 14px; }
+  h2{ margin:0 0 12px; font-size: clamp(1.6rem,3.3vw,2.3rem); letter-spacing:-0.025em; font-weight:700; }
+  h2 + .sub{ margin:0 0 30px; color:var(--muted); max-width: 880px; font-size:1.05rem; }
+  h3{ margin:0; font-size:1.1rem; font-weight:700; }
+  p{ margin:0 0 12px; }
+  strong{ color: var(--ink); font-weight:700; }
+  .em{ color: var(--gold); }
+
+  /* ── glass cards ── */
+  .card{ background: var(--glass); backdrop-filter: blur(12px) saturate(1.05);
+    border:1px solid var(--line); border-radius: var(--radius); padding:20px 22px;
+    box-shadow: 0 16px 50px oklch(0.06 0.04 20 / 0.5), inset 0 1px 0 oklch(0.5 0.06 30 / 0.18); }
+  .grid{ display:grid; gap:14px; }
+  .g2{ grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); }
+  .g3{ grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); }
+  .g4{ grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); }
+
+  /* delta columns */
+  .delta{ display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
+  @media(max-width:760px){ .delta{ grid-template-columns:1fr; } }
+  .col h3{ display:flex; align-items:center; gap:9px; margin-bottom:10px; }
+  .dot{ width:9px;height:9px;border-radius:2px;rotate:45deg; flex:0 0 auto; }
+  .dot.win{ background: var(--garnet); } .dot.mac{ background: var(--blue); }
+  ul.tight{ margin:0; padding-left:18px; color:var(--muted); }
+  ul.tight li{ margin-bottom:6px; }
+  ul.tight li b{ color: var(--ink); }
+
+  /* metric tiles */
+  .tile{ background: var(--surface); border-radius: 10px; padding:16px 16px; border:1px solid var(--line); }
+  .tile .v{ font:800 1.5rem var(--mono); letter-spacing:-0.02em; }
+  .tile .k{ color:var(--muted); font-size:0.82rem; margin-top:3px; }
+  .v.garnet{ color:var(--garnet-bright);} .v.gold{color:var(--gold);} .v.green{color:var(--green);} .v.blue{color:var(--blue);}
+
+  /* loop steps */
+  .loop{ display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:10px; }
+  .step{ background: var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 15px; position:relative; }
+  .step .n{ font:700 0.7rem var(--mono); color: var(--garnet-bright); letter-spacing:0.1em; }
+  .step h4{ margin:7px 0 5px; font-size:0.96rem; }
+  .step p{ margin:0; color:var(--muted); font-size:0.84rem; line-height:1.5; }
+
+  /* phase cards (border luminance on hover) */
+  .phase{ display:grid; grid-template-columns: 78px 1fr; gap:20px; padding:24px; position:relative; overflow:hidden;
+    transition: border-color .3s, box-shadow .3s; }
+  .phase::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
+    background: linear-gradient(180deg, var(--garnet-bright), var(--garnet)); }
+  .phase:hover{ border-color: var(--line-2); box-shadow: 0 0 0 1px var(--garnet-glow), 0 24px 60px oklch(0.06 0.04 20 / 0.55); }
+  .phase .num{ font:800 2rem var(--mono); color: var(--garnet-bright); line-height:1; opacity:0.92; }
+  .phase .num small{ display:block; font:700 0.62rem var(--mono); color:var(--quiet); letter-spacing:0.08em; margin-top:6px; text-transform:uppercase; }
+  .phase h3{ margin:0 0 6px; font-size:1.18rem; }
+  .phase .what{ color: oklch(0.85 0.02 50); margin:0 0 12px; }
+  .phase ul.tight{ margin-bottom:12px; }
+  @media(max-width:620px){ .phase{ grid-template-columns:1fr; gap:12px; } }
+
+  /* tags */
+  .tags{ display:flex; flex-wrap:wrap; gap:7px; align-items:center; }
+  .tag{ font:600 0.7rem var(--mono); padding:5px 9px; border-radius:7px; border:1px solid var(--line-2); color:var(--muted); }
+  .tag.auto{ color:var(--green); border-color: oklch(0.4 0.08 152); }
+  .tag.human{ color:var(--gold); border-color: oklch(0.5 0.09 80); }
+  .tag.dep{ color:var(--blue); border-color: oklch(0.42 0.07 235); }
+  .tag.fix{ color: var(--garnet-bright); border-color: oklch(0.45 0.12 20); }
+
+  /* callouts */
+  .callout{ border-left:3px solid var(--gold); border-radius:0 var(--radius) var(--radius) 0; padding:18px 22px;
+    background: oklch(0.18 0.03 60 / 0.4); }
+  .callout.danger{ border-left-color: var(--garnet-bright); background: oklch(0.18 0.04 20 / 0.45); }
+  .callout p:last-child{ margin-bottom:0; }
+  .callout b{ color: var(--ink); }
+
+  /* code block */
+  pre{ margin:0; background: var(--bg-deep); border:1px solid var(--line); border-radius:10px; padding:14px 16px;
+    overflow-x:auto; font:0.82rem/1.6 var(--mono); color: oklch(0.86 0.02 50); }
+  pre .c{ color: var(--quiet); }
+  pre .g{ color: var(--garnet-bright); }
+
+  /* honesty rows */
+  .hrow{ display:grid; grid-template-columns: 130px 1fr; gap:14px; padding:11px 0; border-bottom:1px solid var(--line); }
+  .hrow:last-child{ border-bottom:none; }
+  .hrow .badge{ font:700 0.72rem var(--mono); text-transform:uppercase; letter-spacing:0.05em; align-self:start; padding-top:2px; }
+  .badge.enf{ color:var(--green);} .badge.dec{ color:var(--amber);} .badge.def{ color:var(--quiet);} .badge.risk{color:var(--garnet-bright);}
+  .hrow .body{ color:var(--muted); font-size:0.92rem; }
+  .hrow .body b{ color:var(--ink); }
+
+  footer{ padding:48px 0 96px; color:var(--quiet); font-size:0.86rem; }
+  footer .wrap{ display:grid; gap:9px; }
+  footer b{ color:var(--muted); }
+
+  /* reduced-motion + kill switch: mandatory static fallback */
+  html[data-immersive="off"] .mesh{ animation:none; }
+  html[data-immersive="off"] #embers{ display:none; }
+  html[data-immersive="off"] .reveal{ opacity:1; transform:none; transition:none; }
+  @media (prefers-reduced-motion: reduce){
+    .mesh{ animation:none; }
+    #embers{ display:none; }
+    .reveal{ opacity:1; transform:none; transition:none; }
+    .phase, .kill{ transition:none; }
+  }
+</style>
+</head>
+<body>
+<div class="mesh" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+<canvas id="embers" aria-hidden="true"></canvas>
+
+<h2 style="position:absolute;left:-9999px">Garnet Studio macOS parity and beyond — a 7-pass-audited plan of attack and state-of-the-union dossier, in Iron Canvas immersive mode.</h2>
+
+<nav><div class="wrap">
+  <span class="brand"><span class="gem"></span> Garnet Studio · macOS</span>
+  <div class="navlinks">
+    <a href="#union">State of the union</a>
+    <a href="#loop">The loop</a>
+    <a href="#boot">Boot &amp; ladder</a>
+    <a href="#phases">Phases</a>
+    <a href="#honesty">Honesty</a>
+    <a href="#fixtures">Fixtures</a>
+  </div>
+  <button class="kill" id="killswitch" aria-pressed="false" title="Toggle the immersive layer (motion + particles)">immersive: on</button>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <div class="eyebrow reveal">Plan of attack · state of the union · 7-pass audited</div>
+  <h1 class="reveal">Garnet Studio<br>macOS Parity &amp; Beyond</h1>
+  <p class="lede reveal">Windows just shipped five trust-cockpit surfaces the native SwiftUI Mac Studio doesn't have yet. This dossier brings the Mac app up to — and past — that standard by <strong>porting the <em>standard</em>, not the code</strong>: each cockpit panel rebuilt natively in SwiftUI, through the same loop that shipped Windows (TDD → 7-pass Judge+Auditor → verification ladder → focused PR → green CI → merge). The plan below has already been run through that 7-pass review against the real <code>apps/garnet-studio-macos</code> code — <strong>3 blockers and 18 majors</strong> are folded in. Drop this onto the MBP and hand it to Opus.</p>
+  <div class="stamps reveal">
+    <span class="stamp"><b>Target</b> apps/garnet-studio-macos · SwiftUI</span>
+    <span class="stamp"><b>Phases</b> M0a → M8</span>
+    <span class="stamp"><b>Run on</b> MacBook Pro · Opus</span>
+    <span class="stamp"><b>Repo</b> /Users/IDC2.5/Desktop/Garnet</span>
+    <span class="stamp warn"><b>Plan review</b> 3 blockers · 18 majors folded in</span>
+  </div>
+</div></header>
+
+<!-- ───────────────────────── STATE OF THE UNION ───────────────────────── -->
+<section id="union"><div class="wrap reveal">
+  <p class="kicker">Understanding</p>
+  <h2>State of the union</h2>
+  <p class="sub">Two distinct Studio apps share one trust spine. Windows is far ahead on the cockpit; the Mac is ahead on native craft and as the canonical proof host. The job is to close the cockpit gap without regressing the Mac's strengths or blurring a single enforcement claim.</p>
+
+  <div class="delta">
+    <div class="card col">
+      <h3><span class="dot win"></span> Windows / Linux — Tauri (<code>apps/garnet-studio</code>)</h3>
+      <p style="color:var(--muted);font-size:0.92rem">Just shipped Phases 0–5 (#427–#432, merged on IDC). 10 panels, crate 60/60 + e2e 47/47.</p>
+      <ul class="tight">
+        <li><b>Diff-Caps Review Gate</b> — renders <code>garnet diff-caps --machine</code></li>
+        <li><b>Velocity Editor</b> — live <code>garnet check --format json</code></li>
+        <li><b>Enforced/Declared Legend</b> — fence catalog + live probe</li>
+        <li><b>Agent-Loop Console</b> — <code>agent-loop --record-dir</code> as a 4-gate pipeline</li>
+        <li><b>GUI bootstrap runner</b> — Windows-only PowerShell</li>
+      </ul>
+    </div>
+    <div class="card col">
+      <h3><span class="dot mac"></span> macOS — native SwiftUI (<code>apps/garnet-studio-macos</code>)</h3>
+      <p style="color:var(--muted);font-size:0.92rem">SPM, macOS 14+. 3 sources, ~55 XCTest methods (117 assertions) + a Python contract gate. All 10 "Studio Suite" rows green.</p>
+      <ul class="tight">
+        <li><b>Ahead of Windows:</b> native <code>NSWindow</code> sequencing, system Settings scene, <code>@AppStorage</code>, native help tags, menu bar (⌘1–5)</li>
+        <li><b>Canonical:</b> ultrapunch accept/reject host + 6/6 S105 domain proofs — Windows/Linux only replay</li>
+        <li><b>Largest live surface:</b> the Converter / advisory lane (7 actions) + the MIT cluster (4) + Continuation Pulse</li>
+        <li><b>Lacks:</b> all 5 of the Windows cockpit surfaces above</li>
+        <li><b>Gap is narrow:</b> typed JSON decode exists for settings + truth.json; only <em>CLI-output</em> decoders are missing</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="grid g4" style="margin-top:16px">
+    <div class="tile reveal"><div class="v garnet">5</div><div class="k">cockpit surfaces to port</div></div>
+    <div class="tile reveal"><div class="v blue">6/6</div><div class="k">S105 domain proofs (Mac-canonical)</div></div>
+    <div class="tile reveal"><div class="v gold">3</div><div class="k">human-merge-only lanes (CI, signing, gate)</div></div>
+    <div class="tile reveal"><div class="v green">10/10</div><div class="k">Studio-suite rows already green</div></div>
+  </div>
+</div></section>
+
+<!-- ───────────────────────── THE LOOP ───────────────────────── -->
+<section id="loop"><div class="wrap reveal">
+  <p class="kicker">Methodology</p>
+  <h2>The loop, and the loops within it</h2>
+  <p class="sub">Every slice is a single, narrow, evidence-backed change confined to <code>apps/garnet-studio-macos</code> (+ its repo-root <code>scripts/</code> contract). The outer loop iterates phases M0→M8; the inner loop per phase is the same six steps; the 7-pass review is itself a fan-out of seven dimensions × (Judge + Auditor).</p>
+  <div class="loop">
+    <div class="step reveal"><div class="n">01</div><h4>Red tests first</h4><p>XCTest cases that fail until the slice lands; contract-gate <em>additions</em> ride along.</p></div>
+    <div class="step reveal"><div class="n">02</div><h4>Implement</h4><p>A typed <code>Codable</code> decoder + a <strong>pure projection function</strong> a thin SwiftUI <code>View</code> only lays out.</p></div>
+    <div class="step reveal"><div class="n">03</div><h4>7-pass review</h4><p>External orchestration: 7 dimensions × Judge+Auditor, adversarially verified against the code.</p></div>
+    <div class="step reveal"><div class="n">04</div><h4>Fix + ladder</h4><p><code>swift build</code> · <code>swift test</code> · the two python gates · the <code>--self-test</code> smoke.</p></div>
+    <div class="step reveal"><div class="n">05</div><h4>Focused PR</h4><p>Branch from fresh <code>origin/main</code> → push to <code>fork</code> → PR fork → origin, dogfood body.</p></div>
+    <div class="step reveal"><div class="n">06</div><h4>Green CI → merge</h4><p>Autonomous merge on IDC <em>only</em> once the new macOS CI job is green-and-required; else Jon-merge.</p></div>
+  </div>
+  <div class="callout reveal" style="margin-top:18px">
+    <p><b>The 7 review dimensions</b> (run by the external orchestration workflow, not self-run by the slice agent): <span class="em">correctness</span> · <span class="em">honesty / overclaim</span> · <span class="em">completeness</span> · <span class="em">sequencing / feasibility</span> · <span class="em">scope / integrity</span> · <span class="em">executability</span> · <span class="em">hidden risk</span>. Each is Judged then independently Audited; the Auditor refutes false positives (this very plan had one — see the diff-caps note in M2).</p>
+  </div>
+</div></section>
+
+<!-- ───────────────────────── BOOT + LADDER ───────────────────────── -->
+<section id="boot"><div class="wrap reveal">
+  <p class="kicker">Cold-start contract</p>
+  <h2>Boot verification &amp; the per-slice ladder</h2>
+  <p class="sub">A fresh Opus agent on the MBP runs these first — verbatim, no re-derivation. Remotes: <code>origin = Island-Dev-Crew/garnet</code>, <code>fork = Navigata1/garnet</code>. PRs open <strong>from the fork into origin</strong>. The release <strong>tag stays Jon's</strong>.</p>
+  <div class="grid g2">
+    <div class="card reveal">
+      <h3 style="margin-bottom:10px">Boot verification</h3>
+<pre><span class="c"># Mac dev machine</span>
+cd /Users/IDC2.5/Desktop/Garnet
+git fetch --prune origin
+git fetch --prune fork
+git status --short --branch
+git remote -v
+gh pr list --repo Island-Dev-Crew/garnet \
+   --state open --json number,title,headRefName</pre>
+    </div>
+    <div class="card reveal">
+      <h3 style="margin-bottom:10px">Per-slice verification ladder</h3>
+<pre><span class="g">swift build</span> --package-path apps/garnet-studio-macos
+<span class="g">swift test</span>  --package-path apps/garnet-studio-macos
+python3 scripts/test_garnet_macos_studio_shell.py
+python3 scripts/check-agent-contracts.py
+<span class="c"># headless smoke (already exists — extend, don't reinvent)</span>
+swift run --package-path apps/garnet-studio-macos \
+   GarnetStudio --self-test</pre>
+    </div>
+  </div>
+  <div class="callout danger reveal" style="margin-top:16px">
+    <p><b>Gate reality (the plan-review's #1 finding).</b> Today the macOS gates run <em>nowhere in CI</em>: <code>test_garnet_macos_studio_shell.py</code> is in no workflow; the only macOS-touching workflow runs <code>--skip-app-workbench</code>; <code>ci.yml</code>'s <code>macos-latest</code> runs only <code>cargo test</code>. So "green CI → autonomous merge" is <strong>hollow for Swift changes</strong> until <span class="em">M0a</span> lands a real macOS CI job. Until then, macOS slices are <strong>Jon-merge-only</strong>.</p>
+  </div>
+</div></section>
+
+<!-- ───────────────────────── PHASES ───────────────────────── -->
+<section id="phases"><div class="wrap">
+  <p class="kicker reveal">Plan of attack</p>
+  <h2 class="reveal">Phases — M0a through M8</h2>
+  <p class="sub reveal">Each phase is a slice through the loop. Tags: <span class="tag auto">autonomous-merge</span> <span class="tag human">human-merge-only</span> <span class="tag dep">depends on M0</span> <span class="tag fix">review-hardened</span>. The acceptance criteria are pinned to real file:line ground truth.</p>
+
+  <div class="grid" style="gap:16px">
+
+    <div class="card phase reveal">
+      <div class="num">M0a<small>CI enable</small></div>
+      <div>
+        <h3>macOS CI job — the enabling, human-merged prerequisite</h3>
+        <p class="what">There is no green gate to merge under. Land a <code>macos-latest</code> CI job (on <code>push</code> + <code>pull_request</code>, paths <code>apps/garnet-studio-macos/**</code> + the contract script) running <code>swift build</code> · <code>swift test</code> · <code>test_garnet_macos_studio_shell.py</code> — either by dropping <code>--skip-app-workbench</code> or a dedicated job. Wire <code>package_garnet_studio_macos.sh:7</code> <code>VERSION</code> to the workspace stamp (it hardcodes <code>0.5.0</code>).</p>
+        <ul class="tight"><li>Acceptance: a Swift-only PR is built, unit-tested, and contract-checked on a Mac runner before merge.</li><li>It is the gate later slices merge under → lands as its <b>own human-merged PR</b> (Integrity Rule 1).</li></ul>
+        <div class="tags"><span class="tag human">human-merge-only</span> <span class="tag fix">fixes B1</span></div>
+      </div>
+    </div>
+
+    <div class="card phase reveal">
+      <div class="num">M0b<small>foundation</small></div>
+      <div>
+        <h3>Render bridge + headless smoke</h3>
+        <p class="what"><strong>Reuse</strong> the existing <code>JSONDecoder</code>/<code>Codable</code>/<code>CodingKeys</code>/tolerant-degrade patterns (<code>StudioShell.swift:103-114, 333-361</code>) — do not reinvent. Add CLI-output decoders mirroring <code>apps/garnet-studio/src/{diff-caps,velocity,enforcement-legend,agent-loop}.ts</code>. The agent-loop dossier is <strong>mixed</strong>: <code>Codable</code> for <code>capability_manifest.json</code> + <code>transparency_log.jsonl</code>; <strong>text-parse</strong> <code>decision.md</code> (verdict in its H1) + <code>diff_caps.txt</code> (verbatim).</p>
+        <ul class="tight">
+          <li>Harness: <strong>extend</strong> the existing <code>--self-test</code>/<code>--smoke-test</code> entrypoint (<code>GarnetStudioApp.swift:2966-2976</code>) + the python contract — <strong>not XCUITest</strong> (unbuildable under this SPM package).</li>
+          <li>Testability: add <strong>ViewInspector</strong> as an SPM dep, <em>or</em> make each panel's text a <strong>pure projection function</strong> (e.g. <code>DiffCapsCard.rows(from:) -&gt; [Row]</code>) the View only lays out. <code>swift test</code> covers logic/decoders, not rendered Views.</li>
+        </ul>
+        <div class="tags"><span class="tag auto">autonomous-merge</span> <span class="tag fix">fixes B2 · B3 · S1 · S2 · S14</span></div>
+      </div>
+    </div>
+
+    <div class="card phase reveal">
+      <div class="num">M1<small>honesty</small></div>
+      <div>
+        <h3>Honesty-cleanup parity</h3>
+        <p class="what">Carry the five Windows reviews' learnings into the SwiftUI copy. Relabel the one surviving overclaim — <code>GarnetStudioApp.swift:2484</code> <code>"sandboxed output"</code> (the converter writes plain files to <code>~/Desktop/dogfood</code> with no OS sandbox) — and add a negative contract assertion: no panel copy contains <code>"sandbox"</code> outside the M4 deferred-row label.</p>
+        <ul class="tight">
+          <li>Enumerate <b>do-not-regress</b> surfaces with gate guards: the 7 Converter/advisory actions + their honesty rail (<code>:2381-2382</code> "provider-backed conversion is not active"), the 4 MIT buttons, Continuation Pulse.</li>
+          <li>Drift fixes: <code>⌘1–8</code>→<code>⌘1–5</code>; the count is <code>~55 XCTest methods</code>; <code>core:default</code> → the AGENTS.md boundary set; "Rows 1–9 + Boundaries (Row 10) block".</li>
+        </ul>
+        <div class="tags"><span class="tag auto">autonomous-merge</span> <span class="tag fix">fixes S3 · S6 · S7 · S11 · S12 · N4 · N5</span></div>
+      </div>
+    </div>
+
+    <div class="card phase reveal">
+      <div class="num">M2<small>cockpit</small></div>
+      <div>
+        <h3>Diff-Caps Review Gate</h3>
+        <p class="what">Render <code>garnet diff-caps --machine OLD NEW</code> verbatim. Pin the <strong>exact</strong> wire keys from <code>diff_caps.rs:50-64</code> / the integration test — note the asymmetry: the added side serializes as <code>aggregate_gained</code> (not <code>aggregate_added</code>). "review required", never "merge REFUSED".</p>
+        <ul class="tight"><li>Keys: <code>schema</code>, <code>verdict</code>, <code>authority_expanded</code>, <code>capability_band</code> (2/5|5/5), <code>exit_code</code>, <code>aggregate_gained[]</code>, <code>aggregate_removed[]</code>, <code>wildcard_introduced</code>, <code>functions_added/removed[]</code>, <code>functions_caps_expanded[{name,gained[]}]</code>, <code>scope</code> (3-clause caveat).</li><li>Attach as a power-only <code>StudioSection</code>; pure projection tested from fixtures.</li></ul>
+        <div class="tags"><span class="tag auto">autonomous-merge</span> <span class="tag dep">depends on M0</span> <span class="tag fix">fixes M-a · S13</span></div>
+      </div>
+    </div>
+
+    <div class="card phase reveal">
+      <div class="num">M3a<small>cockpit</small></div>
+      <div>
+        <h3>Check decoder + diagnostics render + false-green gate</h3>
+        <p class="what">Fixture-only, no process. <code>CheckJson {diagnostics, summary}</code>; each diagnostic <code>{severity, code, message, span}</code> where <code>span</code> is <strong>nullable</strong> <code>{start,len}?</code> (most check diagnostics emit <code>span:null</code> — byte offsets, not line/col). Green "no diagnostics" gated on <code>summary.ok &amp;&amp; errors==0</code> (the Phase-3 false-green lesson). Strict decode rejects bare <code>{}</code>/<code>[]</code>.</p>
+        <div class="tags"><span class="tag auto">autonomous-merge</span> <span class="tag dep">depends on M0</span> <span class="tag fix">fixes N1 · B3</span></div>
+      </div>
+    </div>
+
+    <div class="card phase reveal">
+      <div class="num">M3b<small>cockpit</small></div>
+      <div>
+        <h3>Velocity Editor — live buffer</h3>
+        <p class="what">The only async / process-per-keystroke slice (split from M3a deliberately). Debounced (200 ms) <code>garnet check --format json</code> over a <strong>per-invocation UUID scratch path in Application Support</strong> (<code>StudioShell.swift:127</code>) — <em>not</em> the shared <code>runSource</code> dir (race). Latest-wins drops stale results.</p>
+        <ul class="tight"><li>Side-effect honesty: <code>check --format json</code> writes the on-disk <code>.garnet-cache</code> on every call — run it against a throwaway cwd to isolate, or accept it explicitly.</li><li><b>Architectural note:</b> enabling the macOS App Sandbox would break the external-CLI spawn <em>and</em> the scratch pattern — a deliberate exclusion, not a deferred toggle.</li></ul>
+        <div class="tags"><span class="tag auto">autonomous-merge</span> <span class="tag dep">depends on M0</span> <span class="tag fix">fixes M-h</span></div>
+      </div>
+    </div>
+
+    <div class="card phase reveal">
+      <div class="num">M4<small>cockpit</small></div>
+      <div>
+        <h3>Enforced / Declared Legend</h3>
+        <p class="what">A typed fence catalog = the single source of truth. <strong>Enforced</strong> = {<code>@caps</code>, <code>@max_depth</code>} (both backends, seccomp Linux-only), confirmed by a live <code>garnet check</code> probe (confirmed-only badge). <strong>Declared/deferred</strong> MUST include the full set: <code>@bounded</code>, memory, time, <code>@mailbox</code>, and macOS <em>and</em> Windows OS-sandbox.</p>
+        <ul class="tight"><li>Basis line mirrors the source: "only native-Linux seccomp (s105b) is applied + trapped; macOS sandbox-exec and Windows AppContainer are both named-deferred; WSL is portability-only."</li></ul>
+        <div class="tags"><span class="tag auto">autonomous-merge</span> <span class="tag dep">depends on M0</span> <span class="tag fix">fixes S5 · N2</span></div>
+      </div>
+    </div>
+
+    <div class="card phase reveal">
+      <div class="num">M5<small>cockpit</small></div>
+      <div>
+        <h3>Agent-Loop Console</h3>
+        <p class="what">Read an existing <code>agent-loop --record-dir</code> dossier; render the 4-gate pipeline <code>check → diff-caps → run → seal</code>. <strong>Verdict from <code>decision.md</code>'s H1 + seal-presence</strong> (seal.json is copied only on Accept) — never recomputed, never from a JSON field. The honest-scope fence (<code>agent_loop.rs:221-223</code>) is rendered <strong>byte-for-byte</strong> from <code>decision.md</code>; a contradiction test asserts the OS-sandbox-deferred clause survives. Reads, never runs.</p>
+        <div class="tags"><span class="tag auto">autonomous-merge</span> <span class="tag dep">depends on M0</span> <span class="tag fix">fixes S2 · S4 · S8</span></div>
+      </div>
+    </div>
+
+    <div class="card phase reveal">
+      <div class="num">M6<small>setup</small></div>
+      <div>
+        <h3>Bootstrap runner — descoped to generate-scripts-only</h3>
+        <p class="what">The Windows runner refuses off-Windows; a Mac one is genuinely useful — but <strong>generate allowlisted bash/zsh to the evidence bundle for operator-run only</strong> (Windows precedent: <code>studio_bootstrap_write_scripts_impl</code>). <strong>No</strong> installer spawn, <strong>no</strong> <code>/etc/paths.d</code>, <strong>no</strong> sudo — those exceed both the AGENTS.md scope and the Windows USER-scope precedent, and would need a Jon-approved AGENTS.md amendment in the same PR.</p>
+        <div class="tags"><span class="tag auto">autonomous-merge</span> <span class="tag fix">fixes M-f</span></div>
+      </div>
+    </div>
+
+    <div class="card phase reveal">
+      <div class="num">M7<small>distribution</small></div>
+      <div>
+        <h3>macOS distribution &amp; contract — reporter, not gate</h3>
+        <p class="what"><strong>Reuse</strong> <code>garnet_studio_notarization_status.py</code> + extend its existing test — do not build a second reporter. Surface signed/notarized state truthfully and <strong>disambiguate three artifacts</strong>: GPG-signed CLI darwin tarballs (real), CycloneDX/cosign SBOM (named-deferred), and the <code>.app</code> codesign/notarytool — pinned <strong>adhoc / not Developer-ID / not notarized</strong>. Do not make it a hard merge gate while identity is blocked-external.</p>
+        <ul class="tight">
+          <li><b>Packaged-app context (the silent killer):</b> a Hardened-Runtime <code>.app</code> launched from <code>/Applications</code> gets <code>cwd=/</code> + a sanitized PATH → CLI / repo-root / reporter discovery breaks. Acceptance: bundle the CLI + <code>scripts/</code> into <code>Resources/</code> or require <code>GARNET_REPO_ROOT</code>; the self-test must pass against the <strong>packaged</strong> binary, not just <code>swift run</code>.</li>
+          <li>A cross-OS proof-table row may be added <b>only</b> with a sealed bundle that passes <code>garnet_evidence_integrity_status.py --gate</code>, read adhoc/not-notarized.</li>
+        </ul>
+        <div class="tags"><span class="tag human">human-merge-only</span> <span class="tag fix">fixes M-c · M-d · M-e · M-g</span></div>
+      </div>
+    </div>
+
+    <div class="card phase reveal">
+      <div class="num">M8<small>capstone</small></div>
+      <div>
+        <h3>Mac completion dossier (iron-canvas)</h3>
+        <p class="what">The capstone, mirroring the Windows completion dossier: record M0–M7 with their PRs/merge SHAs and 7-pass catches, the green ladder, the preserved canonical proofs, and the deferred lanes — in this same immersive house style.</p>
+        <div class="tags"><span class="tag auto">autonomous-merge</span></div>
+      </div>
+    </div>
+
+  </div>
+</div></section>
+
+<!-- ───────────────────────── HONESTY ───────────────────────── -->
+<section id="honesty"><div class="wrap reveal">
+  <p class="kicker">The spine</p>
+  <h2>Calibrated honesty — the rails that don't bend</h2>
+  <p class="sub">"Evidence beats adjectives; premium is a score, not a vibe." The Mac plan renders the CLI's verdict verbatim and never invents capability. These are the sharpest overclaim risks the dossier guards.</p>
+  <div class="card">
+    <div class="hrow"><div class="badge enf">Enforced</div><div class="body"><b>@caps + @max_depth</b> — deterministic traps proven by test, both backends. seccomp applied on <b>Linux only</b>.</div></div>
+    <div class="hrow"><div class="badge dec">Declared</div><div class="body"><b>@bounded, memory, time, @mailbox</b> — named-deferred; declared in source, no runtime trap.</div></div>
+    <div class="hrow"><div class="badge def">Deferred</div><div class="body"><b>macOS App Sandbox / sandbox-exec + Windows AppContainer</b> — named-deferred. macOS sandbox is <b>architecturally exclusive</b> with the spawn-the-CLI design (it would block every <code>StudioProcessRunner</code> spawn and the Velocity scratch write) — not a flippable toggle.</div></div>
+    <div class="hrow"><div class="badge risk">Sharpest risk</div><div class="body">Never blur <b>language/runtime-trap parity</b> (Win/Mac/Linux) with <b>OS-sandbox enforcement</b>. Only native-Linux seccomp is applied; macOS + Windows are deferred. The Agent-Loop Console renders the <code>decision.md</code> scope fence byte-for-byte to preserve this.</div></div>
+    <div class="hrow"><div class="badge risk">Signing</div><div class="body">Three distinct artifacts must never be conflated: GPG-signed CLI tarballs (real) · CycloneDX SBOM (deferred) · the Studio <code>.app</code> (<b>adhoc, not Developer-ID, not notarized</b> — blocked-external on identity).</div></div>
+  </div>
+
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card reveal">
+      <h3 style="margin-bottom:10px">Preserve — do not regress</h3>
+      <ul class="tight">
+        <li>Canonical ultrapunch accept/reject host + 6/6 S105 domain proofs</li>
+        <li>Native affordances: NSWindow sequencing, Settings scene, @AppStorage, help tags, ⌘1–5</li>
+        <li>The Converter/advisory lane (7 actions) + MIT cluster (4) + Continuation Pulse</li>
+        <li>All 10 Studio-suite rows (Rows 1–9 + the Boundaries block)</li>
+      </ul>
+    </div>
+    <div class="card reveal">
+      <h3 style="margin-bottom:10px">Deferred / Jon-owned — named, not built</h3>
+      <ul class="tight">
+        <li>macOS App-Sandbox <b>enforcement</b> (sandbox-exec / seatbelt)</li>
+        <li>Developer-ID signing + real notarytool submission (blocked-external)</li>
+        <li>cotypist / LSP Studio surface (post-RB-3/RB-7; AGENTS.md amendment + security review)</li>
+        <li>Studio MCP server / agent-legibility workstream (post-RB-3)</li>
+        <li>The release <b>tag stays Jon's</b> — no autonomous tag</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout reveal" style="margin-top:16px">
+    <p><b>Loop ⇄ Integrity-Rule-1, resolved once.</b> A slice may <em>add</em> contract-test assertions that only tighten coverage in its own PR — but any <strong>gate-version bump, loosening, CI-workflow change, signing/secrets change, or cross-OS-ledger edit is a separate human-merged PR that lands first</strong>. Integrity Rule 1 explicitly names <code>scripts/test_garnet_macos_studio_shell.py</code> and <code>GARNET_CROSS_OS_REPRODUCIBILITY.md</code> as human-merge-only. Autonomous merge is the repo-wide discipline (handoff §Branching &amp; Merge Discipline + CLAUDE.md's four integrity rules) under those carve-outs — not a borrowed Windows grant.</p>
+  </div>
+</div></section>
+
+<!-- ───────────────────────── FIXTURES ───────────────────────── -->
+<section id="fixtures"><div class="wrap reveal">
+  <p class="kicker">Appendix</p>
+  <h2>Fixtures &amp; the path trap</h2>
+  <p class="sub">M2–M5 need real CLI-output fixtures. A real Mac record-dir dossier already exists — but its layout is non-uniform, which has bitten naive readers.</p>
+  <div class="grid g2">
+    <div class="card reveal">
+      <h3 style="margin-bottom:10px">Agent-loop dossier (M5)</h3>
+<pre><span class="c"># ACCEPT — note the extra record/ level</span>
+proofs/mac/domains/mac-domain-proofs-20260604-064412/
+  domains/accept_provenance_dossier/<span class="g">record/</span>
+    decision.md  capability_manifest.json
+    diff_caps.txt  seal.json  transparency_log.jsonl
+
+<span class="c"># REJECT — decision.md at the domain top level</span>
+  domains/&lt;reject_domain&gt;/decision.md</pre>
+      <p style="color:var(--muted);font-size:0.88rem;margin-top:10px"><code>&lt;domain&gt;/decision.md</code> works for reject, <strong>fails for accept</strong> (it lives under <code>record/</code>). Pin the contradiction test against both.</p>
+    </div>
+    <div class="card reveal">
+      <h3 style="margin-bottom:10px">Diff-caps / check JSON (M2, M3a)</h3>
+<pre><span class="c"># Pick ONE method, state it:</span>
+<span class="c"># (a) build the CLI once + capture real output</span>
+cargo build -p garnet-cli
+garnet diff-caps --machine A B \
+  &gt; Tests/.../Fixtures/diffcaps_widen.json
+garnet check --format json F \
+  &gt; Tests/.../Fixtures/check_caps.json
+
+<span class="c"># (b) mirror the Windows inline-literal factories</span>
+<span class="c"># apps/garnet-studio/e2e/diff-caps-render.spec.ts</span></pre>
+      <p style="color:var(--muted);font-size:0.88rem;margin-top:10px">Captured real-CLI fixtures must be <strong>re-verified, never invented</strong>. The labeled "ultrapunch" repros live under <code>proofs/windows/</code> + <code>proofs/linux/</code>, not mac.</p>
+    </div>
+  </div>
+</div></section>
+
+<footer><div class="wrap reveal">
+  <div><b>Provenance.</b> This plan was authored against the live repo, then run through a 14-agent (7 dimensions × Judge+Auditor) review against the real <code>apps/garnet-studio-macos</code> code. Net: 3 blockers, 18 majors, 20 minors, 6 nits — <span class="em">all folded into the phases above</span>. The Auditor reversed one wrong Judge fix (the <code>aggregate_gained</code> wire-key), preserved here.</div>
+  <div><b>Immersion gate.</b> This document is Iron Canvas IMMERSIVE (v4.3): DNA-derived garnet/gold palette, gradient mesh + grain, glass depth, kinetic reveals, restrained embers. It honors <code>prefers-reduced-motion</code>, ships a static fallback, and the <b>immersive: on/off</b> kill switch (top-right) — self-contained, no external assets.</div>
+  <div><b>Boundaries.</b> Garnet is a research-grade prototype (v0.x.x), not production / 1.0. macOS App-Sandbox enforcement, Developer-ID notarization, and cotypist/LSP remain named-deferred / Jon-owned. The release tag stays Jon's.</div>
+</div></footer>
+
+<script>
+(function(){
+  var root = document.documentElement;
+  var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
+  /* ── kill switch ── */
+  var btn = document.getElementById('killswitch');
+  function setMode(on){
+    root.setAttribute('data-immersive', on ? 'on' : 'off');
+    btn.textContent = 'immersive: ' + (on ? 'on' : 'off');
+    btn.setAttribute('aria-pressed', String(!on));
+    if(on && !prefersReduced){ startEmbers(); } else { stopEmbers(); }
+  }
+  btn.addEventListener('click', function(){ setMode(root.getAttribute('data-immersive') !== 'on'); });
+
+  /* ── scroll reveal (static if reduced) ── */
+  var reveals = [].slice.call(document.querySelectorAll('.reveal'));
+  if(prefersReduced || !('IntersectionObserver' in window)){
+    reveals.forEach(function(el){ el.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+    reveals.forEach(function(el){ io.observe(el); });
+  }
+
+  /* ── System 4: restrained ember field (canvas, progressive enhancement) ── */
+  var cv = document.getElementById('embers'), ctx = null, raf = 0, parts = [], W=0, H=0;
+  function resize(){ if(!cv) return; W = cv.width = window.innerWidth; H = cv.height = window.innerHeight; }
+  function seed(){
+    parts = [];
+    var n = Math.min(26, Math.round(window.innerWidth/52)); /* serious restraint: capped low */
+    for(var i=0;i<n;i++){
+      parts.push({ x: Math.random()*W, y: Math.random()*H,
+        r: 0.6 + Math.random()*1.6, vy: -(0.08 + Math.random()*0.22), vx: (Math.random()-0.5)*0.12,
+        a: 0.10 + Math.random()*0.28, hue: Math.random()<0.7 ? 18 : 80 });
+    }
+  }
+  function frame(){
+    if(!ctx) return;
+    ctx.clearRect(0,0,W,H);
+    for(var i=0;i<parts.length;i++){
+      var p = parts[i]; p.y += p.vy; p.x += p.vx;
+      if(p.y < -4){ p.y = H+4; p.x = Math.random()*W; }
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.2832);
+      ctx.fillStyle = p.hue===18 ? 'oklch(0.62 0.20 18 / '+p.a+')' : 'oklch(0.82 0.13 82 / '+p.a+')';
+      ctx.fill();
+    }
+    raf = requestAnimationFrame(frame);
+  }
+  function startEmbers(){
+    if(prefersReduced || isTouch || !cv) return;     /* static fallback on reduced-motion / touch */
+    if(!ctx){ ctx = cv.getContext('2d'); }
+    resize(); seed(); cancelAnimationFrame(raf); raf = requestAnimationFrame(frame);
+  }
+  function stopEmbers(){ cancelAnimationFrame(raf); if(ctx){ ctx.clearRect(0,0,W,H); } }
+  window.addEventListener('resize', function(){ resize(); seed(); });
+
+  /* boot */
+  setMode(!prefersReduced);
+})();
+</script>
+</body>
+</html>
