@@ -707,8 +707,17 @@ static STRICT_NO_FRAME: AtomicBool = AtomicBool::new(false);
 /// Enable deny-by-default capability mediation for this process: a host-authority
 /// primitive reached with NO active `@caps` frame is refused rather than allowed.
 /// Set by the `garnet` binary at startup (S114-FIX-2).
+///
+/// A5 — this is a ONE-WAY LATCH. Passing `true` enables strict mode permanently for
+/// the process; passing `false` is a deliberate NO-OP. Once a process has declared
+/// deny-by-default, nothing — embedder code, a stray test, or a future call site —
+/// can silently re-open the gate. The fail-safe default is intentionally
+/// irreversible at runtime rather than merely discouraged.
 pub fn set_strict_no_frame(on: bool) {
-    STRICT_NO_FRAME.store(on, Ordering::Relaxed);
+    if on {
+        STRICT_NO_FRAME.store(true, Ordering::Relaxed);
+    }
+    // `on == false` is a no-op: the latch never re-opens.
 }
 
 fn strict_no_frame() -> bool {
