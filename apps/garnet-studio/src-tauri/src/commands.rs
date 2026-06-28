@@ -1148,6 +1148,374 @@ pub async fn studio_enforcement_legend() -> Result<EnforcementLegend, String> {
     run_blocking(studio_enforcement_legend_impl).await
 }
 
+// ── Phase 5: Agent-Loop Console ─────────────────────────────────────────────
+//
+// Renders an EXISTING `garnet agent-loop --record-dir` dossier as a four-gate
+// pipeline (check → diff-caps → run → seal). It READS the record-dir from disk
+// and renders the CLI's own verdict (`decision.md`) verbatim — it never runs
+// agent-loop (which would execute the proposal) and never recomputes the verdict.
+// Human approval, the widening (diff-caps) gate, and seal provenance stay
+// visibly separate fields (the 4th dossier requirement).
+
+/// One of the four agent-loop gates, in pipeline order.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub enum AgentLoopGate {
+    Check,
+    DiffCaps,
+    Run,
+    Seal,
+}
+
+/// Status of one gate in a rendered dossier.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub enum GateStatus {
+    Pass,
+    Reject,
+    NotReached,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct AgentLoopGateRow {
+    pub gate: AgentLoopGate,
+    pub status: GateStatus,
+    pub detail: String,
+}
+
+/// The terminal outcome the CLI recorded.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum AgentLoopOutcome {
+    Accepted,
+    Rejected,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ManifestFunction {
+    pub name: String,
+    #[serde(default)]
+    pub caps: Vec<String>,
+}
+
+/// `garnet-capability-manifest-v1`, deserialized verbatim from `capability_manifest.json`.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct CapabilityManifest {
+    pub schema: String,
+    #[serde(default)]
+    pub aggregate: Vec<String>,
+    #[serde(default)]
+    pub functions: Vec<ManifestFunction>,
+    #[serde(default)]
+    pub wildcard: bool,
+}
+
+/// The seal attestation provenance — rendered as its OWN panel, kept visibly
+/// separate from the widening gate and from any human approval.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct SealAttestation {
+    #[serde(default)]
+    pub agent: String,
+    #[serde(default)]
+    pub autonomous: String,
+    #[serde(default)]
+    pub decision: String,
+    #[serde(default)]
+    pub gate_version: String,
+    #[serde(default)]
+    pub model: String,
+    #[serde(default)]
+    pub tool: String,
+}
+
+/// One transparency-log (caps-log) chain entry from `transparency_log.jsonl`.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct TransparencyLogEntry {
+    #[serde(default)]
+    pub index: i64,
+    #[serde(default)]
+    pub program: String,
+    #[serde(default)]
+    pub caps: Vec<String>,
+    #[serde(default)]
+    pub caps_blake3: String,
+    #[serde(default)]
+    pub prev_blake3: String,
+}
+
+/// The whole dossier read from a `--record-dir`.
+#[derive(Debug, Serialize)]
+pub struct AgentLoopDossier {
+    /// false when the directory is missing / not a dossier (no `decision.md`).
+    pub ran: bool,
+    pub record_dir: String,
+    pub outcome: AgentLoopOutcome,
+    /// Which gate rejected, when `outcome == Rejected`.
+    pub rejected_at: Option<AgentLoopGate>,
+    pub gates: Vec<AgentLoopGateRow>,
+    /// `decision.md`, verbatim — carries the CLI's honest scope disclaimer.
+    pub decision_md: String,
+    /// `diff_caps.txt`, verbatim.
+    pub diff_caps_text: String,
+    pub capability_manifest: Option<CapabilityManifest>,
+    pub seal_authorship: String,
+    pub seal_attestation: Option<SealAttestation>,
+    pub transparency_log: Vec<TransparencyLogEntry>,
+    /// Set when `ran == false`.
+    pub error: String,
+}
+
+/// The raw text of the record-dir artifacts. Kept separate from disk I/O so the
+/// parser is a pure function and unit-testable without a directory.
+struct RecordDirFiles {
+    decision_md: Option<String>,
+    diff_caps_txt: Option<String>,
+    capability_manifest_json: Option<String>,
+    seal_json: Option<String>,
+    transparency_log_jsonl: Option<String>,
+    run_trap_txt: Option<String>,
+}
+
+fn agent_loop_error(record_dir: &str, message: impl Into<String>) -> AgentLoopDossier {
+    AgentLoopDossier {
+        ran: false,
+        record_dir: record_dir.to_string(),
+        outcome: AgentLoopOutcome::Rejected,
+        rejected_at: None,
+        gates: Vec::new(),
+        decision_md: String::new(),
+        diff_caps_text: String::new(),
+        capability_manifest: None,
+        seal_authorship: String::new(),
+        seal_attestation: None,
+        transparency_log: Vec::new(),
+        error: message.into(),
+    }
+}
+
+fn gate_index(gate: AgentLoopGate) -> usize {
+    match gate {
+        AgentLoopGate::Check => 0,
+        AgentLoopGate::DiffCaps => 1,
+        AgentLoopGate::Run => 2,
+        AgentLoopGate::Seal => 3,
+    }
+}
+
+/// The verdict is READ from `decision.md`'s heading — never recomputed. The three
+/// rejection reasons map to the gate that refused.
+fn parse_outcome(decision_md: &str) -> (AgentLoopOutcome, Option<AgentLoopGate>) {
+    let head = decision_md.lines().next().unwrap_or("").to_lowercase();
+    if head.contains("accepted") {
+        (AgentLoopOutcome::Accepted, None)
+    } else if head.contains("widening") {
+        (AgentLoopOutcome::Rejected, Some(AgentLoopGate::DiffCaps))
+    } else if head.contains("trap") || head.contains("ceiling") {
+        (AgentLoopOutcome::Rejected, Some(AgentLoopGate::Run))
+    } else if head.contains("check") {
+        (AgentLoopOutcome::Rejected, Some(AgentLoopGate::Check))
+    } else {
+        (AgentLoopOutcome::Rejected, None)
+    }
+}
+
+/// The CLI's own one-line diff-caps verdict (e.g. "diff-caps: no authority
+/// expansion (capability band 5/5)") — rendered verbatim, never recomputed.
+fn diff_caps_verdict_line(text: &str) -> String {
+    text.lines()
+        .map(str::trim)
+        .rfind(|l| l.starts_with("diff-caps:"))
+        .unwrap_or("")
+        .to_string()
+}
+
+/// The runtime-error line from `run_trap.txt`, verbatim.
+fn run_trap_line(trap: Option<&str>) -> String {
+    let Some(trap) = trap else {
+        return String::new();
+    };
+    trap.lines()
+        .map(str::trim)
+        .rfind(|l| l.contains("runtime error"))
+        .or_else(|| trap.lines().map(str::trim).rfind(|l| !l.is_empty()))
+        .unwrap_or("")
+        .to_string()
+}
+
+fn gate_detail(
+    gate: AgentLoopGate,
+    status: GateStatus,
+    diff_caps_text: &str,
+    run_trap: Option<&str>,
+) -> String {
+    match (gate, status) {
+        (_, GateStatus::NotReached) => String::new(),
+        (AgentLoopGate::Check, GateStatus::Pass) => {
+            "parsed and checked — fails closed before diff-caps, run, or seal".to_string()
+        }
+        (AgentLoopGate::Check, GateStatus::Reject) => "proposal failed `garnet check`".to_string(),
+        (AgentLoopGate::DiffCaps, _) => diff_caps_verdict_line(diff_caps_text),
+        (AgentLoopGate::Run, GateStatus::Pass) => {
+            "ran without tripping the enforced kernel (@caps + @max_depth)".to_string()
+        }
+        (AgentLoopGate::Run, GateStatus::Reject) => run_trap_line(run_trap),
+        (AgentLoopGate::Seal, GateStatus::Pass) => {
+            "sealed — attested with autonomous-acceptance provenance (seal.json)".to_string()
+        }
+        (AgentLoopGate::Seal, GateStatus::Reject) => "seal step errored".to_string(),
+    }
+}
+
+fn build_gates(
+    outcome: AgentLoopOutcome,
+    rejected_at: Option<AgentLoopGate>,
+    diff_caps_text: &str,
+    run_trap: Option<&str>,
+    seal_present: bool,
+) -> Vec<AgentLoopGateRow> {
+    [
+        AgentLoopGate::Check,
+        AgentLoopGate::DiffCaps,
+        AgentLoopGate::Run,
+        AgentLoopGate::Seal,
+    ]
+    .into_iter()
+    .map(|gate| {
+        let status = match (outcome, rejected_at) {
+            // The verdict (Accepted/Rejected + rejected_at) is read from
+            // decision.md and never recomputed. The one artifact-aware exception
+            // is the Seal gate: it may only read Pass when a seal was actually
+            // parsed, so the gate never claims "sealed (seal.json)" from the
+            // heading alone.
+            (AgentLoopOutcome::Accepted, _) => {
+                if gate == AgentLoopGate::Seal && !seal_present {
+                    GateStatus::NotReached
+                } else {
+                    GateStatus::Pass
+                }
+            }
+            (AgentLoopOutcome::Rejected, Some(rg)) => {
+                if gate == rg {
+                    GateStatus::Reject
+                } else if gate_index(gate) < gate_index(rg) {
+                    GateStatus::Pass
+                } else {
+                    GateStatus::NotReached
+                }
+            }
+            // Unknown rejection: claim no gate passed rather than overstate.
+            (AgentLoopOutcome::Rejected, None) => GateStatus::NotReached,
+        };
+        let detail = gate_detail(gate, status, diff_caps_text, run_trap);
+        AgentLoopGateRow {
+            gate,
+            status,
+            detail,
+        }
+    })
+    .collect()
+}
+
+fn parse_seal(seal_json: Option<&str>) -> (String, Option<SealAttestation>) {
+    let Some(seal) = seal_json else {
+        return (String::new(), None);
+    };
+    let Ok(value) = serde_json::from_str::<serde_json::Value>(seal.trim()) else {
+        return (String::new(), None);
+    };
+    let predicate = value.get("predicate").unwrap_or(&value);
+    let authorship = predicate
+        .get("authorship")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    let attestation = predicate
+        .get("attestation")
+        .and_then(|a| serde_json::from_value::<SealAttestation>(a.clone()).ok());
+    (authorship, attestation)
+}
+
+fn parse_transparency_log(jsonl: Option<&str>) -> Vec<TransparencyLogEntry> {
+    jsonl
+        .map(|text| {
+            text.lines()
+                .filter(|line| !line.trim().is_empty())
+                .filter_map(|line| serde_json::from_str::<TransparencyLogEntry>(line).ok())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// Pure parser over the record-dir artifact contents — no disk I/O, so the verdict
+/// mapping and gate derivation are unit-testable directly.
+fn agent_loop_dossier_from(record_dir: &str, files: RecordDirFiles) -> AgentLoopDossier {
+    let Some(decision_md) = files.decision_md else {
+        return agent_loop_error(
+            record_dir,
+            "no decision.md in the directory — not an agent-loop --record-dir dossier.",
+        );
+    };
+
+    let (outcome, rejected_at) = parse_outcome(&decision_md);
+    let diff_caps_text = files.diff_caps_txt.unwrap_or_default();
+    let capability_manifest = files
+        .capability_manifest_json
+        .as_deref()
+        .and_then(|s| serde_json::from_str::<CapabilityManifest>(s.trim()).ok());
+    let (seal_authorship, seal_attestation) = parse_seal(files.seal_json.as_deref());
+    let transparency_log = parse_transparency_log(files.transparency_log_jsonl.as_deref());
+    let gates = build_gates(
+        outcome,
+        rejected_at,
+        &diff_caps_text,
+        files.run_trap_txt.as_deref(),
+        seal_attestation.is_some(),
+    );
+
+    AgentLoopDossier {
+        ran: true,
+        record_dir: record_dir.to_string(),
+        outcome,
+        rejected_at,
+        gates,
+        decision_md,
+        diff_caps_text,
+        capability_manifest,
+        seal_authorship,
+        seal_attestation,
+        transparency_log,
+        error: String::new(),
+    }
+}
+
+fn read_record_dir(dir: &Path) -> RecordDirFiles {
+    let read = |name: &str| fs::read_to_string(dir.join(name)).ok();
+    RecordDirFiles {
+        decision_md: read("decision.md"),
+        diff_caps_txt: read("diff_caps.txt"),
+        capability_manifest_json: read("capability_manifest.json"),
+        seal_json: read("seal.json"),
+        transparency_log_jsonl: read("transparency_log.jsonl"),
+        run_trap_txt: read("run_trap.txt"),
+    }
+}
+
+pub(crate) fn studio_agent_loop_dossier_impl(record_dir: String) -> AgentLoopDossier {
+    let dir = PathBuf::from(&record_dir);
+    if !dir.is_dir() {
+        return agent_loop_error(
+            &record_dir,
+            "record directory not found, or it is not a directory.",
+        );
+    }
+    agent_loop_dossier_from(&record_dir, read_record_dir(&dir))
+}
+
+#[tauri::command]
+pub async fn studio_agent_loop_dossier(record_dir: String) -> Result<AgentLoopDossier, String> {
+    run_blocking(move || studio_agent_loop_dossier_impl(record_dir)).await
+}
+
 pub(crate) fn cli_convert_impl(source_file: String, source_lang: String) -> CommandResult {
     let language = match normalize_language(&source_lang, ACTIVE_CONVERSION) {
         Ok(language) => language,
@@ -2801,6 +3169,365 @@ mod tests {
                 probe.fence
             );
         }
+    }
+
+    // ── Phase 5: Agent-Loop Console ──────────────────────────────────────
+
+    const ACCEPT_DECISION: &str = "# Agent-loop decision: ACCEPTED\n\nProposal was ACCEPTED on capability+depth evidence.\n\nHonest scope: accepted on capability + depth evidence ONLY — `@caps` and `@max_depth` are enforced. `@bounded`/memory/time/`@mailbox`/OS-sandbox remain declared-not-enforced; this is NOT a claim of full boundedness or safety.\n";
+    const ACCEPT_DIFF_CAPS: &str = "garnet diff-caps: baseline -> proposal\n  no capability changes.\n\ndiff-caps: no authority expansion (capability band 5/5)\n";
+    const ACCEPT_MANIFEST: &str = r#"{"schema":"garnet-capability-manifest-v1","aggregate":["fs"],"functions":[{"name":"digest","caps":["fs"]},{"name":"main","caps":["fs"]}],"wildcard":false}"#;
+    const ACCEPT_SEAL: &str = r#"{"_type":"https://in-toto.io/Statement/v1","predicateType":"https://garnet-lang.org/attestation/seal/v1","predicate":{"authorship":"sim:scripted-agent","attestation":{"agent":"scripted-agent-v1","autonomous":"true","decision":"accepted-on-capability+depth-evidence","gate_version":"dogfood-gate-v1","model":"simulated","tool":"garnet-agent-loop"}}}"#;
+    const ACCEPT_LOG: &str = r#"{"index":0,"program":"accept_proposal","caps":["fs"],"caps_blake3":"cda46a92","prev_blake3":"genesis"}"#;
+    const WIDEN_DECISION: &str = "# Agent-loop decision: REJECTED (capability widening)\n\nREFUSED at the diff-caps gate: it WIDENED the declared capability surface. It never ran and was never sealed.\n";
+    const WIDEN_DIFF_CAPS: &str = "garnet diff-caps: baseline -> proposal\n  + caps GAINED:  net\n  ~ digest gained: net\n\ndiff-caps: AUTHORITY EXPANDED — review required (capability band 2/5)\n";
+    const OVERDEPTH_DECISION: &str = "# Agent-loop decision: REJECTED (enforced-ceiling trap)\n\npassed diff-caps but the enforced kernel TRAPPED it. It was not sealed.\n";
+    const OVERDEPTH_TRAP: &str = "note: ignored 62 untrusted cache record(s)\nruntime error: bounded: @max_depth(4) exceeded for `digest` (recursion depth 5)\n";
+
+    fn record_files(
+        decision: Option<&str>,
+        diff: Option<&str>,
+        manifest: Option<&str>,
+        seal: Option<&str>,
+        log: Option<&str>,
+        trap: Option<&str>,
+    ) -> RecordDirFiles {
+        RecordDirFiles {
+            decision_md: decision.map(str::to_string),
+            diff_caps_txt: diff.map(str::to_string),
+            capability_manifest_json: manifest.map(str::to_string),
+            seal_json: seal.map(str::to_string),
+            transparency_log_jsonl: log.map(str::to_string),
+            run_trap_txt: trap.map(str::to_string),
+        }
+    }
+
+    fn gate_row(dossier: &AgentLoopDossier, gate: AgentLoopGate) -> &AgentLoopGateRow {
+        dossier
+            .gates
+            .iter()
+            .find(|r| r.gate == gate)
+            .expect("gate present in the pipeline")
+    }
+
+    #[test]
+    fn agent_loop_accept_dossier_passes_all_four_gates_and_parses_every_artifact() {
+        let d = agent_loop_dossier_from(
+            "rec",
+            record_files(
+                Some(ACCEPT_DECISION),
+                Some(ACCEPT_DIFF_CAPS),
+                Some(ACCEPT_MANIFEST),
+                Some(ACCEPT_SEAL),
+                Some(ACCEPT_LOG),
+                None,
+            ),
+        );
+        assert!(d.ran);
+        assert_eq!(d.outcome, AgentLoopOutcome::Accepted);
+        assert_eq!(d.rejected_at, None);
+        assert_eq!(d.gates.len(), 4);
+        for gate in [
+            AgentLoopGate::Check,
+            AgentLoopGate::DiffCaps,
+            AgentLoopGate::Run,
+            AgentLoopGate::Seal,
+        ] {
+            assert_eq!(gate_row(&d, gate).status, GateStatus::Pass, "{gate:?}");
+        }
+        // diff-caps detail is the CLI's verdict line, verbatim.
+        assert!(gate_row(&d, AgentLoopGate::DiffCaps)
+            .detail
+            .contains("capability band 5/5"));
+        // Artifacts parsed.
+        let manifest = d.capability_manifest.as_ref().expect("manifest");
+        assert_eq!(manifest.schema, "garnet-capability-manifest-v1");
+        assert_eq!(manifest.aggregate, vec!["fs".to_string()]);
+        let seal = d.seal_attestation.as_ref().expect("seal attestation");
+        assert_eq!(seal.decision, "accepted-on-capability+depth-evidence");
+        assert_eq!(seal.model, "simulated");
+        assert_eq!(d.seal_authorship, "sim:scripted-agent");
+        assert_eq!(d.transparency_log.len(), 1);
+        assert_eq!(d.transparency_log[0].program, "accept_proposal");
+        // decision.md rendered verbatim — the honest scope disclaimer survives.
+        assert!(d
+            .decision_md
+            .contains("NOT a claim of full boundedness or safety"));
+    }
+
+    #[test]
+    fn agent_loop_reject_widen_stops_at_diff_caps_with_no_seal() {
+        let d = agent_loop_dossier_from(
+            "rec",
+            record_files(
+                Some(WIDEN_DECISION),
+                Some(WIDEN_DIFF_CAPS),
+                None,
+                None,
+                None,
+                None,
+            ),
+        );
+        assert_eq!(d.outcome, AgentLoopOutcome::Rejected);
+        assert_eq!(d.rejected_at, Some(AgentLoopGate::DiffCaps));
+        assert_eq!(gate_row(&d, AgentLoopGate::Check).status, GateStatus::Pass);
+        assert_eq!(
+            gate_row(&d, AgentLoopGate::DiffCaps).status,
+            GateStatus::Reject
+        );
+        assert_eq!(
+            gate_row(&d, AgentLoopGate::Run).status,
+            GateStatus::NotReached
+        );
+        assert_eq!(
+            gate_row(&d, AgentLoopGate::Seal).status,
+            GateStatus::NotReached
+        );
+        assert!(gate_row(&d, AgentLoopGate::DiffCaps)
+            .detail
+            .contains("AUTHORITY EXPANDED"));
+        // No seal was written on a rejected proposal.
+        assert!(d.seal_attestation.is_none());
+    }
+
+    #[test]
+    fn agent_loop_reject_overdepth_stops_at_run_and_shows_the_trap() {
+        let d = agent_loop_dossier_from(
+            "rec",
+            record_files(
+                Some(OVERDEPTH_DECISION),
+                Some(ACCEPT_DIFF_CAPS),
+                None,
+                None,
+                None,
+                Some(OVERDEPTH_TRAP),
+            ),
+        );
+        assert_eq!(d.rejected_at, Some(AgentLoopGate::Run));
+        assert_eq!(gate_row(&d, AgentLoopGate::Check).status, GateStatus::Pass);
+        assert_eq!(
+            gate_row(&d, AgentLoopGate::DiffCaps).status,
+            GateStatus::Pass
+        );
+        assert_eq!(gate_row(&d, AgentLoopGate::Run).status, GateStatus::Reject);
+        assert_eq!(
+            gate_row(&d, AgentLoopGate::Seal).status,
+            GateStatus::NotReached
+        );
+        // The run detail is the enforced-kernel trap line, verbatim.
+        assert!(gate_row(&d, AgentLoopGate::Run)
+            .detail
+            .contains("@max_depth(4) exceeded"));
+    }
+
+    #[test]
+    fn agent_loop_check_reject_fails_the_first_gate_only() {
+        let d = agent_loop_dossier_from(
+            "rec",
+            record_files(
+                Some("# Agent-loop decision: REJECTED (proposal failed check)\n"),
+                None,
+                None,
+                None,
+                None,
+                None,
+            ),
+        );
+        assert_eq!(d.rejected_at, Some(AgentLoopGate::Check));
+        assert_eq!(
+            gate_row(&d, AgentLoopGate::Check).status,
+            GateStatus::Reject
+        );
+        for gate in [
+            AgentLoopGate::DiffCaps,
+            AgentLoopGate::Run,
+            AgentLoopGate::Seal,
+        ] {
+            assert_eq!(
+                gate_row(&d, gate).status,
+                GateStatus::NotReached,
+                "{gate:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn agent_loop_without_a_decision_md_is_not_a_dossier() {
+        let d = agent_loop_dossier_from(
+            "rec",
+            record_files(None, Some(ACCEPT_DIFF_CAPS), None, None, None, None),
+        );
+        assert!(!d.ran);
+        assert!(d.error.contains("decision.md"));
+        assert!(d.gates.is_empty());
+    }
+
+    #[test]
+    fn agent_loop_reads_the_real_record_dir_fixture_from_disk() {
+        // Disk + real-artifact fidelity: parse the committed accept fixture through
+        // the on-disk reader. Skips loudly if the fixture has moved rather than
+        // passing vacuously.
+        let fixture = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../proofs/linux/repro/wsl-ultrapunch-repro-20260603-0929/accept");
+        if !fixture.is_dir() {
+            eprintln!(
+                "SKIP agent_loop_reads_the_real_record_dir_fixture_from_disk: fixture not at {}",
+                fixture.display()
+            );
+            return;
+        }
+        let d = studio_agent_loop_dossier_impl(fixture.to_string_lossy().to_string());
+        assert!(d.ran, "real fixture must parse: {}", d.error);
+        assert_eq!(d.outcome, AgentLoopOutcome::Accepted);
+        assert!(d.gates.iter().all(|g| g.status == GateStatus::Pass));
+        assert_eq!(
+            d.capability_manifest.as_ref().map(|m| m.schema.as_str()),
+            Some("garnet-capability-manifest-v1")
+        );
+        assert!(d.seal_attestation.is_some());
+        assert_eq!(d.transparency_log.len(), 1);
+        assert!(d.decision_md.contains("ACCEPTED"));
+    }
+
+    #[test]
+    fn agent_loop_verdict_is_driven_by_decision_md_not_artifact_presence() {
+        // The core invariant: the verdict is READ from decision.md, never inferred
+        // from which artifacts exist. An ACCEPTED heading with NO seal/manifest must
+        // still read Accepted with check/diff-caps/run Pass (proving the heading, not
+        // seal-presence, drives the verdict) — and the Seal gate must NOT claim a
+        // seal that is absent.
+        let d = agent_loop_dossier_from(
+            "rec",
+            record_files(
+                Some(ACCEPT_DECISION),
+                Some(ACCEPT_DIFF_CAPS),
+                None,
+                None,
+                None,
+                None,
+            ),
+        );
+        assert_eq!(d.outcome, AgentLoopOutcome::Accepted);
+        assert_eq!(d.rejected_at, None);
+        assert_eq!(gate_row(&d, AgentLoopGate::Check).status, GateStatus::Pass);
+        assert_eq!(
+            gate_row(&d, AgentLoopGate::DiffCaps).status,
+            GateStatus::Pass
+        );
+        assert_eq!(gate_row(&d, AgentLoopGate::Run).status, GateStatus::Pass);
+        // Seal absent → the gate does not falsely read "sealed".
+        assert_eq!(
+            gate_row(&d, AgentLoopGate::Seal).status,
+            GateStatus::NotReached
+        );
+        assert!(!gate_row(&d, AgentLoopGate::Seal).detail.contains("sealed"));
+        assert!(d.seal_attestation.is_none());
+
+        // Symmetric: a REJECTED heading with a STRAY accept-seal on disk must NOT
+        // be flipped to Accepted by the seal's presence.
+        let d2 = agent_loop_dossier_from(
+            "rec",
+            record_files(
+                Some(WIDEN_DECISION),
+                Some(WIDEN_DIFF_CAPS),
+                None,
+                Some(ACCEPT_SEAL),
+                None,
+                None,
+            ),
+        );
+        assert_eq!(d2.outcome, AgentLoopOutcome::Rejected);
+        assert_eq!(d2.rejected_at, Some(AgentLoopGate::DiffCaps));
+        assert_eq!(
+            gate_row(&d2, AgentLoopGate::Run).status,
+            GateStatus::NotReached
+        );
+        assert_eq!(
+            gate_row(&d2, AgentLoopGate::Seal).status,
+            GateStatus::NotReached
+        );
+    }
+
+    #[test]
+    fn agent_loop_unknown_rejection_reason_overstates_no_gate() {
+        // A REJECTED heading whose reason matches none of the known gates must claim
+        // no gate passed, rather than guessing.
+        let d = agent_loop_dossier_from(
+            "rec",
+            record_files(
+                Some("# Agent-loop decision: REJECTED (some new reason)\n"),
+                None,
+                None,
+                None,
+                None,
+                None,
+            ),
+        );
+        assert_eq!(d.outcome, AgentLoopOutcome::Rejected);
+        assert_eq!(d.rejected_at, None);
+        for gate in [
+            AgentLoopGate::Check,
+            AgentLoopGate::DiffCaps,
+            AgentLoopGate::Run,
+            AgentLoopGate::Seal,
+        ] {
+            assert_eq!(
+                gate_row(&d, gate).status,
+                GateStatus::NotReached,
+                "{gate:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn agent_loop_parsers_degrade_on_malformed_artifacts() {
+        // Corrupt seal → no authorship/attestation, never a panic.
+        assert_eq!(parse_seal(Some("{not json")), (String::new(), None));
+        // Present-but-empty attestation object → Some with all-empty fields (the
+        // serde(default) edge), NOT None.
+        let (_, att) = parse_seal(Some(r#"{"predicate":{"attestation":{}}}"#));
+        let att = att.expect("empty attestation object still deserializes");
+        assert_eq!(att.agent, "");
+        assert_eq!(att.model, "");
+        // A junk line between valid log lines is dropped; the valid lines survive.
+        let log = parse_transparency_log(Some(
+            "{\"index\":0,\"program\":\"a\"}\nnot-json\n{\"index\":1,\"program\":\"b\"}",
+        ));
+        assert_eq!(log.len(), 2);
+        assert_eq!(log[1].program, "b");
+        // A bare {} manifest fails the schema-required deser → None (no false green).
+        let d = agent_loop_dossier_from(
+            "rec",
+            record_files(Some(ACCEPT_DECISION), None, Some("{}"), None, None, None),
+        );
+        assert!(d.capability_manifest.is_none());
+    }
+
+    #[test]
+    fn agent_loop_reads_the_real_reject_fixtures_from_disk() {
+        // Disk fidelity for the reject paths the const-string tests can't prove:
+        // reject-widen ships no seal/manifest; reject-overdepth ships run_trap.txt
+        // (the accept dir's run file is run_output.txt, so this is the only test of
+        // the run_trap.txt filename mapping).
+        let base = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../proofs/linux/repro/wsl-ultrapunch-repro-20260603-0929");
+        if !base.is_dir() {
+            eprintln!("SKIP agent_loop_reads_the_real_reject_fixtures_from_disk: fixtures absent");
+            return;
+        }
+        let widen =
+            studio_agent_loop_dossier_impl(base.join("reject-widen").to_string_lossy().to_string());
+        assert!(widen.ran, "{}", widen.error);
+        assert_eq!(widen.rejected_at, Some(AgentLoopGate::DiffCaps));
+        assert!(widen.seal_attestation.is_none());
+
+        let overdepth = studio_agent_loop_dossier_impl(
+            base.join("reject-overdepth").to_string_lossy().to_string(),
+        );
+        assert!(overdepth.ran, "{}", overdepth.error);
+        assert_eq!(overdepth.rejected_at, Some(AgentLoopGate::Run));
+        assert!(gate_row(&overdepth, AgentLoopGate::Run)
+            .detail
+            .contains("@max_depth(4) exceeded"));
     }
 
     #[test]

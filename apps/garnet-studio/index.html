@@ -50,6 +50,8 @@
             data-tip="Compare the declared capability surfaces of two revisions. The CLI decides the verdict and band; this renders them verbatim.">Diff-Caps Review</button>
           <button data-panel="legend" role="tab" data-power-only
             data-tip="Which fences the runtime enforces vs only declares. Status is generated from the source/CLI catalog and a live garnet check probe, not hand-written.">Enforcement Legend</button>
+          <button data-panel="agent-loop" role="tab" data-power-only
+            data-tip="Render an existing agent-loop --record-dir dossier as a four-gate pipeline (check → diff-caps → run → seal). The CLI's verdict is read verbatim; the dossier is not re-run.">Agent-Loop Console</button>
           <button data-panel="settings" role="tab"
             data-tip="Switch between Simple and Power mode, set the theme, and tune command timeouts.">Settings</button>
         </nav>
@@ -459,6 +461,32 @@
           </div>
         </section>
 
+        <section id="panel-agent-loop" class="panel" role="tabpanel" tabindex="-1" data-power-only>
+          <header class="panel-header">
+            <p class="eyebrow">Agent supervision</p>
+            <h2>Agent-Loop Console</h2>
+            <p>
+              Render an existing <code>garnet agent-loop --record-dir</code> dossier
+              as a four-gate pipeline: <code>check → diff-caps → run → seal</code>.
+              This <strong>reads</strong> a record directory and renders the CLI's own
+              verdict (<code>decision.md</code> + the trust artifacts) verbatim — it
+              does not re-run the loop or recompute the decision. <code>@caps</code>
+              and <code>@max_depth</code> are the enforced ceilings; acceptance is
+              "on capability + depth evidence" only, never a claim of full
+              boundedness or safety. The widening (diff-caps) gate and the seal
+              provenance are kept in separate sections.
+            </p>
+          </header>
+          <label class="field">
+            <span>Record directory</span>
+            <input id="agent-loop-dir" type="text" spellcheck="false"
+              data-tip="Path to an agent-loop --record-dir output directory (must contain decision.md)." />
+          </label>
+          <button id="btn-agent-loop" class="primary"
+            data-tip="Read the record directory and render its four-gate dossier verbatim.">Load dossier</button>
+          <div id="agent-loop-result" class="result-area" aria-live="polite"></div>
+        </section>
+
         <section id="panel-settings" class="panel" role="tabpanel" tabindex="-1">
           <header class="panel-header">
             <p class="eyebrow">Preferences</p>
@@ -517,7 +545,7 @@
           <div class="tool-block">
             <h3>Keyboard shortcuts</h3>
             <div class="shortcuts" id="shortcuts-list">
-              <div><kbd>Ctrl</kbd>+<kbd>1</kbd>…<kbd>9</kbd><span>Switch panels (visible panels in order)</span></div>
+              <div><kbd>Ctrl</kbd>+<kbd>1</kbd>…<kbd>9</kbd>,<kbd>0</kbd><span>Switch panels (visible panels in order; 0 = tenth)</span></div>
               <div><kbd>Ctrl</kbd>+<kbd>Enter</kbd><span>Run the active panel's primary action</span></div>
               <div><kbd>Esc</kbd><span>Return focus to the active panel</span></div>
             </div>
