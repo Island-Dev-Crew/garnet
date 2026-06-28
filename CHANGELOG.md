@@ -7,6 +7,41 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated-honesty record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
+## Unreleased — WV-4 Studio Playwright ledger record (2026-06-27)
+
+### WV-4 — Playwright Studio-UI harness (`apps/garnet-studio`)
+
+- **Recorded** the WV-4 Playwright Studio-UI harness in this ledger. The harness
+  itself landed in **#422** (squash `952b3be`), but that PR touched zero docs; this
+  docs-only follow-up adds the canonical CHANGELOG entry and repoints the
+  `apps/garnet-studio/playwright.config.ts` header at it (it previously cited "this
+  PR's Deferred section", a GitHub-side reference rather than an in-repo record).
+  The harness drives the **built Vite `dist`** in a headless Chromium and asserts the
+  Studio overhaul's UI structure + pure-frontend behaviour: the launch splash holds
+  then dismisses, all panels render, simple-mode hides the power-only panels, panel
+  switching works, the safety-contract copy renders, tooltips are present, and the
+  status bar reports version + mode.
+- **Honest scope — structure/behaviour proof, NOT a CLI round-trip.** Outside the
+  Tauri shell the `invoke()` calls reject by design and `main.ts boot()` degrades to a
+  "browser preview", so the harness proves UI structure and pure-frontend behaviour
+  only. Scope is `apps/garnet-studio` (non-frozen): no Rust, no frozen crate, no CI
+  workflow, and no gate threshold touched — here or in #422.
+- **Deferred — Tauri desktop-drive follow-up (the durable record the config header
+  now cites).** Driving the **real desktop shell** — Run → `CommandResult`
+  (stdout/exit_code), evidence-bundle → manifest path, and the **persisted**
+  simple/power mode toggle — is NOT covered: those paths go through `invoke()` and
+  reject in a plain browser. Exercising them needs `tauri-driver`/WebDriver and is
+  flagged as the WV-4 desktop-drive follow-up (the Codex computer-use lane is the path
+  for the live desktop GUI). Also deferred: a skippable **CI e2e job** — wiring a new
+  CI job is a gate change and is human-merge-only per the integrity rules.
+- **Local evidence (as reported on #422, not re-run in this docs slice):**
+  `npm run test:e2e` → 7/7 on the Windows NUC (`NUCBOX_M2PRO_S`, Windows
+  10.0.26200.8457), headless Chromium over the built dist; the Studio shell-contract
+  gate (`scripts/test_garnet_windows_linux_studio_shell.py`) stays 7/7. The e2e suite
+  does **not** run in CI (see the deferred CI e2e job), so no runner is reddened.
+  Garnet remains a research-grade prototype (v0.x.x), not production/1.0; this changes
+  nothing about that.
+
 ## Unreleased — Studio macOS parity + judged enhancement set (2026-06-12)
 
 ### Security — S114-FIX-2: deny-by-default capability mediation (close residual fail-open lanes)

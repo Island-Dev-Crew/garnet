@@ -8,7 +8,8 @@ import { defineConfig, devices } from "@playwright/test";
 // to a "browser preview" — so this is structure/behaviour proof, NOT a CLI
 // round-trip. Driving the real desktop shell (Run -> CommandResult, evidence
 // bundle, persisted mode toggle) needs tauri-driver/WebDriver and is out of
-// scope here — see this PR's "Deferred" section for the follow-up.
+// scope here — recorded as the deferred desktop-drive follow-up in CHANGELOG.md
+// (the "WV-4 — Playwright Studio-UI harness" entry).
 //
 // Run: `npm run test:e2e` (the pretest hook fetches the pinned Chromium first).
 // The preview server uses a strict, env-overridable port; it must be free.
