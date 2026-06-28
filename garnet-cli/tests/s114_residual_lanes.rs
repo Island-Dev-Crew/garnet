@@ -155,8 +155,41 @@ fn run_rejects_uncalled_invalid_max_depth_on_both_backends() {
         "@max_depth(9999)\ndef dead(n) { if n <= 0 { 0 } else { dead(n - 1) } }\n@caps()\ndef main() { 0 }\n",
     )
     .unwrap();
+    assert_run_rejects_invalid_max_depth(&path);
+}
+
+/// The same range validation must reach functions the registration walk does not
+/// register eagerly: an `@max_depth(9999)` on an **impl method** or a
+/// **nested-module function** that is never called must still be refused by
+/// `garnet run` on both backends (the validation is a recursive load-time
+/// pre-pass, matching `garnet check`).
+#[test]
+fn run_rejects_uncalled_invalid_max_depth_in_impl_method() {
+    let dir = tempfile::TempDir::new().unwrap();
+    let path = dir.path().join("impl.garnet");
+    std::fs::write(
+        &path,
+        "struct S {}\nimpl S {\n  @max_depth(9999)\n  def m(self) { 0 }\n}\n@caps()\ndef main() { 0 }\n",
+    )
+    .unwrap();
+    assert_run_rejects_invalid_max_depth(&path);
+}
+
+#[test]
+fn run_rejects_uncalled_invalid_max_depth_in_nested_module() {
+    let dir = tempfile::TempDir::new().unwrap();
+    let path = dir.path().join("mod.garnet");
+    std::fs::write(
+        &path,
+        "module m {\n  @max_depth(9999)\n  def dead(n) { if n <= 0 { 0 } else { dead(n - 1) } }\n}\n@caps()\ndef main() { 0 }\n",
+    )
+    .unwrap();
+    assert_run_rejects_invalid_max_depth(&path);
+}
+
+fn assert_run_rejects_invalid_max_depth(path: &std::path::Path) {
     for backend in ["--interp", "--vm"] {
-        let out = garnet().args(["run", backend]).arg(&path).output().unwrap();
+        let out = garnet().args(["run", backend]).arg(path).output().unwrap();
         let combined = format!(
             "{}{}",
             String::from_utf8_lossy(&out.stdout),

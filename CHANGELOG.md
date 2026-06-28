@@ -63,8 +63,12 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   Library/embedder callers (no Garnet program context) keep the permissive direct-call
   default, so the change is binary-scoped.
 - **Fixed (annotation-range parity):** `@max_depth(N)` range (`1..=64`) is now validated
-  at **registration** (`register_item`), so `garnet run` refuses an out-of-range bound on
-  an *uncalled* function on both backends — closing a `run`-accepts/`check`-rejects split.
+  at **load time** via a recursive pre-pass (`validate_module_max_depth`) covering top-level
+  functions, **impl methods, and nested-module functions**, so `garnet run` refuses an
+  out-of-range bound on an *uncalled* function anywhere `garnet check` does, on both backends
+  — closing a `run`-accepts/`check`-rejects split. (The first cut validated only top-level
+  `Item::Fn`; the `/code-review` self-pass caught that impl/nested-module bounds still slipped
+  through, fixed here with regression tests for both.)
 - **Red→green:** `garnet-cli/tests/s114_residual_lanes.rs` — `eval`/`test`/`doctest`/
   vendored-dep-preload all trap a top-level/eval-time undeclared `fs` read (verified via a
   nonexistent-path discriminator), and `run` rejects an uncalled invalid `@max_depth` on
