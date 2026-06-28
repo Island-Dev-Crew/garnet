@@ -14,6 +14,7 @@ pub fn run() {
             cli_health,
             studio_bootstrap_plan,
             studio_bootstrap_write_scripts,
+            studio_bootstrap_run_step,
             cli_parse,
             cli_check,
             cli_run,

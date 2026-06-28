@@ -64,6 +64,22 @@ test.describe("Garnet Studio UI (built dist in a browser)", () => {
     await expect(page.locator("#btn-bootstrap-scripts")).toHaveText("Generate Setup Scripts");
   });
 
+  test("CLI Health exposes the typed bootstrap run-step controls", async ({ page }) => {
+    await page.goto("/");
+    const assistant = page.locator(".setup-assistant");
+    await expect(assistant.locator("#btn-bootstrap-run-preflight")).toHaveText("Run Preflight");
+    await expect(assistant.locator("#btn-bootstrap-run-install-python")).toHaveText(
+      "Install Python",
+    );
+    await expect(assistant.locator("#btn-bootstrap-run-build-cli")).toHaveText("Build CLI");
+    await expect(assistant.locator("#btn-bootstrap-run-configure-env")).toHaveText(
+      "Configure Env",
+    );
+    // The run controls state plainly that they execute locally and record
+    // every run to an evidence bundle — no overselling install success.
+    await expect(assistant.locator(".setup-run-copy")).toContainText("bootstrap-run");
+  });
+
   test("hover help is present across the surface", async ({ page }) => {
     await page.goto("/");
     const tips = await page.locator("[data-tip]").count();

@@ -7,6 +7,48 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated-honesty record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
+## Unreleased — Studio Windows bootstrap runner (Phase 0) (2026-06-28)
+
+### Studio — typed GUI bootstrap runner (`apps/garnet-studio`)
+
+- **Added** `studio_bootstrap_run_step` — a typed, allowlisted Tauri command that runs
+  one of four named Windows setup steps (`preflight`, `install-python`, `build-cli`,
+  `configure-env`) from the CLI Health Setup Assistant. Each runs the **same**
+  repo-generated PowerShell that `studio_bootstrap_write_scripts` emits — both now build
+  their script set from one `BootstrapStep`-derived source, so Run and Write cannot
+  drift — executed through the existing `run_process_with_timeout` path. **No Tauri
+  shell/open/fs plugin** is added; the capability surface stays `core:default`. Anything
+  off the four-step allowlist is refused **before** any process spawns or evidence bundle
+  is created.
+- **Repo-gated + Windows-gated.** `build-cli`/`configure-env` require a validated repo
+  root (`GARNET_REPO`); `preflight`/`install-python` do not. The run path is
+  **Windows-only** (the scripts use winget / User-scope env / LOCALAPPDATA): off Windows
+  it refuses honestly rather than run under `pwsh` and report a hollow "Passed".
+  `build-cli` (`cargo build --release`) gets the matrix timeout budget.
+- **Evidence.** Every run writes the executed script + full stdout/stderr + a command
+  manifest to a `bootstrap-run` evidence bundle before the UI payload is capped.
+- **Honest UI copy.** The Setup Assistant states plainly that the steps run locally
+  (Windows only), **can change the machine** (install software / set user env + PATH),
+  that env/PATH changes take effect **only after restarting Studio**, and that
+  build-cli/configure-env need a `GARNET_REPO` checkout. No "installed successfully",
+  parity, or OS-sandbox claim. Scope is `apps/garnet-studio` (non-frozen): no workspace
+  crate, no frozen crate, no CI workflow, no gate threshold touched. macOS/Linux runners
+  are out of scope for this slice (no parity claimed).
+- **Fixed (found by review).** A pre-existing #426 defect — `build-garnet-cli-from-repo.ps1`
+  and `configure-garnet-env.ps1` emitted `$ErrorActionPreference` **before** their
+  `param()` block, a PowerShell parse error — is corrected (param first). This slice is
+  the first surface to *execute* those scripts, so the fix lands here with a regression
+  test pinning param-first ordering. Verified with the PowerShell parser: the old form is
+  1 parse error, the fixed form is 0.
+- **Tests.** TDD red→green plus a 7-pass Judge+Auditor review (which caught and
+  reproduced the param blocker): a focused unit-test set (allowlist refuses off-list input
+  with no spawn/bundle; repo gate blocks/permits through the wired impl path; off-Windows
+  refusal; param-first regression guard; Write/Run single-source equality; step intent
+  mapping) + a Playwright e2e for the four run controls and the local-action copy. Local
+  ladder green on `NUCBOX_M2PRO_S` (Windows 10.0.26200): studio crate 29/29, clippy clean,
+  build, e2e 9/9, shell + status contracts 8 + 17, `--studio-smoke` passed. Research-grade
+  prototype (v0.x.x), not production/1.0.
+
 ## Unreleased — WV-4 Studio Playwright ledger record (2026-06-27)
 
 ### WV-4 — Playwright Studio-UI harness (`apps/garnet-studio`)

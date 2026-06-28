@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Garnet Studio Windows Plan Of Attack - 2026-06-28</title>
+  <style>
+    :root {
+      --bg: #0b080a;
+      --panel: #151014;
+      --panel-2: #1b1419;
+      --ink: #f2edf0;
+      --muted: #b8abb4;
+      --quiet: #80747d;
+      --line: #32252e;
+      --line-2: #4b3440;
+      --garnet: #d62246;
+      --garnet-2: #ff5574;
+      --gold: #e0a943;
+      --green: #47c07a;
+      --blue: #65a8ff;
+      --red: #ff5f63;
+      --mono: ui-monospace, "Cascadia Code", Consolas, monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        linear-gradient(180deg, #0b080a 0%, #100a0e 42%, #0b080a 100%);
+      color: var(--ink);
+      font: 15px/1.62 var(--sans);
+    }
+    a { color: var(--garnet-2); }
+    code, .mono {
+      font-family: var(--mono);
+      font-size: 0.92em;
+    }
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: rgba(11, 8, 10, 0.88);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(10px);
+    }
+    .wrap {
+      width: min(1160px, calc(100vw - 44px));
+      margin: 0 auto;
+    }
+    nav .wrap {
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .brand {
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-size: 0.84rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand::before {
+      content: "";
+      width: 13px;
+      height: 13px;
+      transform: rotate(45deg);
+      background: linear-gradient(135deg, var(--garnet-2), var(--garnet));
+      border-radius: 2px;
+      box-shadow: 0 0 18px rgba(214, 34, 70, 0.7);
+    }
+    .links {
+      margin-left: auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 6px 9px;
+      border-radius: 6px;
+    }
+    .links a:hover {
+      color: var(--ink);
+      background: #251620;
+    }
+    header {
+      padding: 74px 0 44px;
+      border-bottom: 1px solid var(--line);
+    }
+    .eyebrow {
+      color: var(--garnet-2);
+      font: 700 0.78rem var(--mono);
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+    h1 {
+      margin: 0 0 18px;
+      font-size: clamp(2.4rem, 6vw, 4.3rem);
+      line-height: 1.04;
+      letter-spacing: -0.03em;
+    }
+    .lede {
+      margin: 0;
+      max-width: 860px;
+      color: #d7cbd2;
+      font-size: 1.18rem;
+    }
+    .stamps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 26px;
+    }
+    .stamp {
+      border: 1px solid var(--line-2);
+      border-radius: 999px;
+      background: #130d12;
+      color: var(--muted);
+      padding: 6px 12px;
+      font: 0.78rem var(--mono);
+    }
+    section {
+      padding: 52px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    h2 {
+      margin: 0 0 10px;
+      font-size: clamp(1.55rem, 3vw, 2.25rem);
+      letter-spacing: -0.02em;
+    }
+    h3 {
+      margin: 0 0 8px;
+      font-size: 1.12rem;
+    }
+    .sub {
+      max-width: 840px;
+      color: var(--muted);
+      margin: 0 0 24px;
+    }
+    .grid {
+      display: grid;
+      gap: 14px;
+    }
+    .two { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+    .three { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+      padding: 18px;
+    }
+    .card strong { color: #fff; }
+    .card p { margin: 0; color: var(--muted); }
+    .verdict {
+      border-left: 4px solid var(--garnet);
+      background: linear-gradient(135deg, #1e0f16, #120c10);
+    }
+    .ok { border-color: rgba(71, 192, 122, 0.55); }
+    .warn { border-color: rgba(224, 169, 67, 0.6); }
+    .stop { border-color: rgba(255, 95, 99, 0.58); }
+    .pill {
+      display: inline-block;
+      border: 1px solid var(--line-2);
+      border-radius: 999px;
+      padding: 2px 8px;
+      margin: 2px 4px 2px 0;
+      color: var(--muted);
+      background: #100b0f;
+      font: 0.75rem var(--mono);
+    }
+    .phase {
+      display: grid;
+      grid-template-columns: 58px 1fr;
+      gap: 16px;
+      align-items: start;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+      padding: 18px;
+      margin: 12px 0;
+    }
+    .num {
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--garnet-2), var(--garnet));
+      display: grid;
+      place-items: center;
+      font: 800 1rem var(--mono);
+    }
+    .phase:nth-child(2n) .num { background: linear-gradient(135deg, var(--gold), #8b5618); }
+    .phase:nth-child(3n) .num { background: linear-gradient(135deg, var(--blue), #25518f); }
+    ul {
+      margin: 10px 0 0;
+      padding-left: 20px;
+      color: var(--muted);
+    }
+    li { margin: 5px 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 10px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+    }
+    th, td {
+      text-align: left;
+      vertical-align: top;
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+    th {
+      color: #fff;
+      background: #1d141a;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    td { color: var(--muted); }
+    tr:last-child td { border-bottom: 0; }
+    .command {
+      background: #0e0a0d;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px 16px;
+      overflow-x: auto;
+      color: #f5dbe2;
+      font: 0.86rem/1.6 var(--mono);
+      white-space: pre;
+    }
+    footer {
+      padding: 34px 0 48px;
+      color: var(--quiet);
+      font: 0.82rem var(--mono);
+    }
+    @media (max-width: 760px) {
+      .links { display: none; }
+      .phase { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="wrap">
+      <div class="brand">Garnet Studio Plan</div>
+      <div class="links">
+        <a href="#assessment">Assessment</a>
+        <a href="#dossier">Dossier</a>
+        <a href="#attack">Plan</a>
+        <a href="#passes">7 Passes</a>
+        <a href="#verification">Verification</a>
+        <a href="#approval">Approval</a>
+      </div>
+    </div>
+  </nav>
+
+  <header>
+    <div class="wrap">
+      <div class="eyebrow">Windows NUC lane - approval plan before next PR</div>
+      <h1>From setup scripts to a real Studio trust cockpit.</h1>
+      <p class="lede">
+        This plan integrates the merged Windows Setup Assistant work with the June 28 Garnet Studio Design Dossier.
+        The immediate next implementation is a controlled GUI bootstrap runner. The larger direction is to reshape
+        Studio around structured Garnet trust contracts: diff-caps, check JSON, caps-log, seal, and agent-loop dossiers.
+      </p>
+      <div class="stamps">
+        <span class="stamp">Base: origin/main at PR #426 merge</span>
+        <span class="stamp">Merged commit: a0a93b4</span>
+        <span class="stamp">Dossier source: Downloads/GARNET_STUDIO_DESIGN_DOSSIER_2026-06-28.html</span>
+        <span class="stamp">Status: plan awaiting approval</span>
+      </div>
+    </div>
+  </header>
+
+  <section id="assessment">
+    <div class="wrap">
+      <h2>Merger Assessment</h2>
+      <p class="sub">
+        PR #426 was the correct first move. It made a downloaded Studio more useful by turning CLI Health failures
+        into concrete local setup artifacts. It did not yet satisfy the full user goal because the GUI still cannot
+        run those setup steps in a controlled way.
+      </p>
+      <div class="grid three">
+        <div class="card ok">
+          <h3>What #426 proves</h3>
+          <p>Studio can detect CLI, repo, Python, and host state, then generate auditable PowerShell setup scripts into dogfood evidence without adding broad Tauri plugin permissions.</p>
+        </div>
+        <div class="card warn">
+          <h3>What remains open</h3>
+          <p>The GUI cannot yet run preflight, Python install, CLI build, or env configuration. The next slice must add typed, allowlisted execution from Studio.</p>
+        </div>
+        <div class="card stop">
+          <h3>What must not happen</h3>
+          <p>Do not add a generic shell plugin, provider API path, default source inclusion, or false enforcement claim. Every bootstrap action must be explicit, local, and evidence-recorded.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="dossier">
+    <div class="wrap">
+      <h2>Dossier Integration</h2>
+      <p class="sub">
+        The dossier's core finding is that the current Studio is broad but shallow: many panels run real commands,
+        but too often dump stdout instead of rendering structured Garnet contracts. The next design arc must correct that.
+      </p>
+      <div class="card verdict">
+        <h3>Operating principle</h3>
+        <p>
+          Render the contracts, do not dump stdout. The CLI owns the verdicts. The webview renders structured data and
+          must not recompute trust bands, safety claims, or enforcement status.
+        </p>
+      </div>
+      <div style="margin-top:14px" class="grid two">
+        <div class="card">
+          <h3>Dossier says build first</h3>
+          <p><span class="pill">Diff-Caps Review Gate</span><span class="pill">Velocity Editor</span><span class="pill">Enforced/Declared Legend</span></p>
+        </div>
+        <div class="card">
+          <h3>Dossier says cut or demote</h3>
+          <p><span class="pill">static taxonomy</span><span class="pill">hard-coded status tiles</span><span class="pill">theme as priority</span><span class="pill">raw stdout centers</span></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="attack">
+    <div class="wrap">
+      <h2>Plan Of Attack</h2>
+      <p class="sub">
+        The work should be sliced so each PR is reviewable and independently dogfoodable. Phase 0 remains the next
+        practical Windows slice. Phases 1-5 are the dossier-driven Studio redesign sequence.
+      </p>
+
+      <div class="phase">
+        <div class="num">0</div>
+        <div>
+          <h3>GUI Bootstrap Runner</h3>
+          <p>Turn generated setup scripts into typed, allowlisted GUI actions.</p>
+          <ul>
+            <li>Add `studio_bootstrap_run_step` with `preflight`, `install-python`, `build-cli`, and `configure-env` only.</li>
+            <li>Run PowerShell through `run_process_with_timeout`; no Tauri shell plugin.</li>
+            <li>Create `bootstrap-run` evidence bundles with full stdout/stderr and command manifest.</li>
+            <li>Add repo path validation for build/configure steps.</li>
+            <li>Add frontend buttons and clear local-action copy.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="num">1</div>
+        <div>
+          <h3>Dead-Weight And Honesty Cleanup</h3>
+          <p>Apply the dossier's cleanup without breaking existing command coverage.</p>
+          <ul>
+            <li>Remove or demote static surfaces only after tests assert replacements.</li>
+            <li>Replace stale hard-coded status tiles with live truth data or remove them.</li>
+            <li>Relabel advisory flows as local evidence only.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="num">2</div>
+        <div>
+          <h3>Diff-Caps Review Gate</h3>
+          <p>Make the unique Garnet trust surface visible in one screen.</p>
+          <ul>
+            <li>Wrap `garnet diff-caps --machine` and render its schema directly.</li>
+            <li>Show gained caps, lost caps, band, verdict, and refusal reasons.</li>
+            <li>Display the caveat: no declared widening does not prove absence of undeclared authority.</li>
+            <li>Never compute the band in TypeScript.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="num">3</div>
+        <div>
+          <h3>Velocity Editor</h3>
+          <p>Give Studio a daily-use loop without pretending to be a full IDE.</p>
+          <ul>
+            <li>Add a buffer and debounced `garnet check --format json` path.</li>
+            <li>Render diagnostics from JSON with honest span precision.</li>
+            <li>Add capability gutter hints derived only from CLI diagnostics.</li>
+            <li>Do not seal or dogfood every keystroke by default.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="num">4</div>
+        <div>
+          <h3>Enforced/Declared Legend</h3>
+          <p>Make calibrated honesty visible across every Studio panel.</p>
+          <ul>
+            <li>Generate status from source or CLI-reported truth, not hand-written HTML.</li>
+            <li>Show `@caps` and `@max_depth` as enforced only where trap evidence exists.</li>
+            <li>Show declared-only bounds and platform sandbox claims as declared or deferred.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="num">5</div>
+        <div>
+          <h3>Agent-Loop Console</h3>
+          <p>Compose the trust cockpit into the agent-supervision surface.</p>
+          <ul>
+            <li>Render an `agent-loop --record-dir` dossier as a four-gate pipeline.</li>
+            <li>Reuse the diff-caps card as the authority gate drill-down.</li>
+            <li>Add caps-log and seal panels as structured dossier views.</li>
+            <li>Keep human approval, widening, and seal provenance visibly separate.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="passes">
+    <div class="wrap">
+      <h2>Seven-Pass Workflow Loop</h2>
+      <p class="sub">
+        The next implementation should use this review loop before PR creation. "Judge" checks whether the feature
+        advances the product. "Auditor" checks whether the evidence and honesty boundaries are defensible.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Pass</th>
+            <th>Judge</th>
+            <th>Auditor</th>
+            <th>Required evidence</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1. Product fit</td>
+            <td>Does this make a downloaded Studio meaningfully more usable?</td>
+            <td>Does the copy avoid overselling install success?</td>
+            <td>UI screenshot or e2e selectors plus health-plan behavior.</td>
+          </tr>
+          <tr>
+            <td>2. Security</td>
+            <td>Is the action explicit and understandable?</td>
+            <td>No generic shell/open/fs plugin; only typed Rust command execution.</td>
+            <td>Capability JSON still `core:default`; Cargo lacks shell plugin.</td>
+          </tr>
+          <tr>
+            <td>3. Command contract</td>
+            <td>Does the API map to user intent?</td>
+            <td>Step IDs are allowlisted; repo paths are validated.</td>
+            <td>Rust unit tests for allowlist and repo validation.</td>
+          </tr>
+          <tr>
+            <td>4. Evidence</td>
+            <td>Can the operator see what happened?</td>
+            <td>Full streams are saved before UI truncation.</td>
+            <td>`bootstrap-run` evidence bundle with manifest and command output.</td>
+          </tr>
+          <tr>
+            <td>5. Windows UX</td>
+            <td>Can a Windows user recover from missing CLI/Python/repo?</td>
+            <td>Failures explain next action without claiming completion.</td>
+            <td>Playwright e2e and local Studio smoke.</td>
+          </tr>
+          <tr>
+            <td>6. Test proportion</td>
+            <td>Is code substance covered by meaningful tests?</td>
+            <td>Tests cover behavior, not only strings.</td>
+            <td>Python contract, Rust unit, npm build, e2e, Studio smoke.</td>
+          </tr>
+          <tr>
+            <td>7. Mac handoff</td>
+            <td>Is the macOS continuation clear?</td>
+            <td>Does not claim Mac parity until Mac runner is tested.</td>
+            <td>HTML handoff with explicit Mac continuation tasks.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="verification">
+    <div class="wrap">
+      <h2>Verification Ladder</h2>
+      <p class="sub">These commands are the minimum ladder for the Phase 0 implementation PR after approval.</p>
+      <div class="command">cargo fmt --manifest-path apps/garnet-studio/src-tauri/Cargo.toml -- --check
+cargo test --manifest-path apps/garnet-studio/src-tauri/Cargo.toml
+python scripts/test_garnet_windows_linux_studio_shell.py
+python scripts/test_garnet_windows_linux_studio_status.py
+npm --prefix apps/garnet-studio run build
+npm --prefix apps/garnet-studio run test:e2e
+python scripts/garnet_mit_readiness_status.py
+cargo run --manifest-path apps/garnet-studio/src-tauri/Cargo.toml -- --studio-smoke
+cargo test --workspace --no-fail-fast
+cargo clippy --workspace --all-targets -- -D warnings</div>
+    </div>
+  </section>
+
+  <section id="approval">
+    <div class="wrap">
+      <h2>Approval Gate</h2>
+      <div class="grid two">
+        <div class="card warn">
+          <h3>Paused before implementation</h3>
+          <p>This branch is a plan branch until the merger assessment and the integrated design direction are approved. No new implementation PR should be opened from this plan alone.</p>
+        </div>
+        <div class="card ok">
+          <h3>Resume point</h3>
+          <p>After approval, resume at Phase 0 with TDD red tests for `studio_bootstrap_run_step`, then implement the runner and open one focused PR.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      Plan artifact generated from the merged #426 state plus the June 28 design dossier. Calibrated honesty applies:
+      no production claim, no v1.0 claim, no OS-sandbox enforcement claim without deterministic trap evidence.
+    </div>
+  </footer>
+</body>
+</html>

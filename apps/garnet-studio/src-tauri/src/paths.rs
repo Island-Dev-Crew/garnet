@@ -81,6 +81,12 @@ pub fn python_cmd() -> &'static str {
     }
 }
 
+/// Find an executable by base name on PATH, adding the platform extension
+/// (`.exe` on Windows). Used to locate a PowerShell host for bootstrap steps.
+pub fn find_executable(base: &str) -> Option<PathBuf> {
+    find_on_path(executable_name(base))
+}
+
 fn executable_name(base: &str) -> String {
     if cfg!(windows) {
         format!("{base}.exe")
