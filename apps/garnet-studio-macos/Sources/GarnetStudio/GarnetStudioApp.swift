@@ -2303,6 +2303,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
     case velocity = "Velocity Editor"
     case legend = "Enforced / Declared"
     case agentLoop = "Agent-Loop Console"
+    case bootstrap = "Bootstrap"
 
     var id: String { rawValue }
 }
@@ -2320,7 +2321,7 @@ struct GarnetStudioRootView: View {
     /// compiled UI — simple mode hides them, never removes them.
     private var visibleSections: [StudioSection] {
         if interfaceMode == "power" { return StudioSection.allCases }
-        return StudioSection.allCases.filter { $0 != .agentic && $0 != .release && $0 != .diffCaps && $0 != .velocity && $0 != .legend && $0 != .agentLoop } // power-only
+        return StudioSection.allCases.filter { $0 != .agentic && $0 != .release && $0 != .diffCaps && $0 != .velocity && $0 != .legend && $0 != .agentLoop && $0 != .bootstrap } // power-only
     }
 
     var body: some View {
@@ -2391,6 +2392,7 @@ struct GarnetStudioRootView: View {
         case .velocity: return "Power mode: live `garnet check --format json` over an editor buffer; the .garnet-cache side-effect is isolated to a throwaway directory."
         case .legend: return "Power mode: the enforced-vs-declared fence catalog with a live static-gate probe; the boundary is never widened (seccomp Linux-only)."
         case .agentLoop: return "Power mode: render an existing agent-loop --record-dir as a 4-gate pipeline; the decision.md verdict is shown verbatim, acceptance is on capability + depth evidence only."
+        case .bootstrap: return "Power mode: generate allowlisted bash/zsh setup scripts for operator-run only — the Studio never runs them, no sudo, no profile edits."
         }
     }
 
@@ -2444,6 +2446,8 @@ struct GarnetStudioRootView: View {
             enforcementLegend
         case .agentLoop:
             agentLoopConsole
+        case .bootstrap:
+            bootstrap
         }
     }
 
@@ -2480,6 +2484,14 @@ struct GarnetStudioRootView: View {
     private var agentLoopConsole: some View {
         WorkbenchLayout {
             AgentLoopConsoleSection()
+        } trailing: {
+            EmptyView()
+        }
+    }
+
+    private var bootstrap: some View {
+        WorkbenchLayout {
+            BootstrapSection(cliPath: model.cliPath)
         } trailing: {
             EmptyView()
         }
