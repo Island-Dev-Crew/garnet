@@ -87,4 +87,23 @@ final class DiffCapsBridgeTests: XCTestCase {
         let card = DiffCapsCard.render(report(#"{"schema":"garnet.diff-caps.machine/1"}"#))
         XCTAssertTrue(card.isError)
     }
+
+    // ── M2: the command runner's JSON extraction (the stdout/stderr-merge gotcha) ──
+
+    func testExtractJSONObjectStripsMergedStderrNoise() {
+        let mixed =
+            "note: this source has 1 prior failure(s) recorded in .garnet-cache/episodes.log\n"
+            + #"{"schema":"garnet.diff-caps.machine/1","verdict":"AUTHORITY EXPANDED","authority_expanded":true,"capability_band":"2/5","aggregate_gained":["fs"]}"#
+            + "\n"
+        let data = DiffCapsCommand.extractJSONObject(from: mixed)
+        XCTAssertNotNil(data, "must slice the JSON object out of merged stdout+stderr")
+        let card = DiffCapsCard.render(
+            DiffCapsReport.decode(stdout: data!, exitCode: 1, stderr: mixed))
+        XCTAssertFalse(card.isError, "the verdict must decode despite the stderr note prefix")
+        XCTAssertEqual(card.headline, "Authority expanded — band 2/5, review required")
+    }
+
+    func testExtractJSONObjectReturnsNilWhenThereIsNoObject() {
+        XCTAssertNil(DiffCapsCommand.extractJSONObject(from: "note: no json here\n"))
+    }
 }
