@@ -213,6 +213,12 @@ class GarnetMacosStudioShellTests(unittest.TestCase):
         self.assertIn("diff-caps", cmd)
         self.assertIn("--machine", cmd, "must use the machine verdict, not human output")
         self.assertIn("never recomputed", cmd, "the band/verdict must be rendered verbatim, not recomputed")
+        # The stdout/stderr-merge gotcha fix: the runner must slice the JSON object
+        # out of the merged stream (episodic `note:` lines on stderr would otherwise
+        # break the decode). Behavior is exercised by the M0b decoder tests; this
+        # pins the slicing logic stays present.
+        self.assertIn("extractJSONObject", cmd)
+        self.assertIn('firstIndex(of: "{")', cmd, "must slice from the first JSON brace")
 
     def test_converter_help_makes_no_os_sandbox_overclaim(self) -> None:
         # M1 honesty-cleanup: the Convert action help once claimed "sandboxed
