@@ -4,7 +4,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_NAME="Garnet Studio"
 EXECUTABLE_NAME="GarnetStudio"
-VERSION="${GARNET_VERSION:-0.5.0}"
+# M0a: derive the version from the workspace stamp (root Cargo.toml
+# [workspace.package] version) instead of a hardcoded 0.5.0, so packaged Studio
+# artifacts track the real release line. Override with GARNET_VERSION if needed.
+VERSION="${GARNET_VERSION:-$(awk -F'"' '/^version = /{print $2; exit}' "${ROOT}/Cargo.toml")}"
 APP_DIR="${ROOT}/target/macos/${APP_NAME}.app"
 DMG_PATH="${ROOT}/target/macos/GarnetStudio.dmg"
 PACKAGE_PATH="${ROOT}/apps/garnet-studio-macos"
