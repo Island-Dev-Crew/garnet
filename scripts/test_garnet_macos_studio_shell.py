@@ -202,6 +202,17 @@ class GarnetMacosStudioShellTests(unittest.TestCase):
         self.assertIn("research-grade prototype", main)
         self.assertNotIn("production-ready", main)
 
+    def test_converter_help_makes_no_os_sandbox_overclaim(self) -> None:
+        # M1 honesty-cleanup: the Convert action help once claimed "sandboxed
+        # output" while the converter writes plain files to the local evidence
+        # dir with NO OS sandbox. The overclaim must not return. (A future M4
+        # "declared-not-enforced" deferred-row label is a different surface; this
+        # negative contract targets the "sandboxed"/"sandbox" overclaim wording.)
+        main = read(MAIN)
+        self.assertNotIn("sandboxed", main, "the 'sandboxed output' converter overclaim must not return")
+        self.assertNotIn("sandbox", main, "no Studio copy may claim an OS sandbox the converter does not provide")
+        self.assertIn("Active conversion", main, "Convert help must still describe active conversion honestly")
+
 
 if __name__ == "__main__":
     unittest.main()

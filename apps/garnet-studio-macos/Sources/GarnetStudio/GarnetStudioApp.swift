@@ -2481,7 +2481,7 @@ struct GarnetStudioRootView: View {
         case "Check": return "Run safe-mode and capability checks; @caps coverage failures appear here."
         case "Run": return "Execute the buffer through the managed interpreter under the command timeout."
         case "Run Selected": return "Run the selected sample end to end."
-        case "Convert": return "Active conversion (Rust/Ruby/Python/Go to Garnet) with sandboxed output and a migration checklist."
+        case "Convert": return "Active conversion (Rust/Ruby/Python/Go to Garnet); writes plain output files to the local evidence directory with a migration checklist."
         case "Assist Plan": return "Deterministic migration-risk plan for advisory languages; no source leaves the machine."
         case "Advisory Bundle": return "Manifested local handoff package; omits source by default."
         case "Advisory Review": return "Verify a bundle manifest and emit the human-review checklist."
