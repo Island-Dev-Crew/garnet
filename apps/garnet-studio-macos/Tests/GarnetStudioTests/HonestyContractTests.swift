@@ -6,11 +6,8 @@ import XCTest
 /// honesty rails carried over from the five Windows reviews. The converter writes
 /// plain files to ~/Desktop/dogfood with NO OS sandbox, so no action help may
 /// claim "sandbox"; and every action's help must be real copy, never empty.
-///
-/// `@MainActor`: `GarnetStudioRootView.actionHelp(for:)` is main-actor-isolated
-/// (it lives on a SwiftUI `View`), so the tests that call it must be too — Swift 6
-/// strict concurrency rejects the cross-actor call otherwise.
-@MainActor
+/// `actionHelp(for:)` is `nonisolated`, so these synchronous tests call it
+/// directly (no `@MainActor` test class — which the CI dual runner dislikes).
 final class HonestyContractTests: XCTestCase {
 
     /// The action titles whose help copy is the user-facing honesty surface.
