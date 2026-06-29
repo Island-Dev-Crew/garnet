@@ -1,5 +1,5 @@
 import XCTest
-@testable import GarnetStudioKit
+@testable import GarnetStudio
 
 /// Behavior tests for the macOS port of the PR #391 shell standard.
 /// Static/source-level parity is gated by scripts/test_garnet_macos_studio_shell.py;

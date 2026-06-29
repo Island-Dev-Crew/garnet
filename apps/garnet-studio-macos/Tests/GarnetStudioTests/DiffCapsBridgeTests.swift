@@ -1,6 +1,6 @@
 import XCTest
 
-@testable import GarnetStudioKit
+@testable import GarnetStudio
 
 /// M0b — render-bridge tests for the diff-caps surface. These cover the decoder
 /// (tolerant Codable) and the pure projection (`DiffCapsCard.render`) — the logic

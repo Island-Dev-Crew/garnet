@@ -18,13 +18,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "apps" / "garnet-studio-macos"
-# UI/logic sources live in the GarnetStudioKit LIBRARY target (the executable is
-# a thin main.swift that calls runGarnetStudio()); tests stay under Tests/.
-SHELL = APP / "Sources" / "GarnetStudioKit" / "StudioShell.swift"
-CHROME = APP / "Sources" / "GarnetStudioKit" / "StudioChrome.swift"
-MAIN = APP / "Sources" / "GarnetStudioKit" / "GarnetStudioApp.swift"
+SHELL = APP / "Sources" / "GarnetStudio" / "StudioShell.swift"
+CHROME = APP / "Sources" / "GarnetStudio" / "StudioChrome.swift"
+MAIN = APP / "Sources" / "GarnetStudio" / "GarnetStudioApp.swift"
 TESTS = APP / "Tests" / "GarnetStudioTests" / "StudioShellTests.swift"
-DIFFCAPS_CMD = APP / "Sources" / "GarnetStudioKit" / "DiffCapsCommand.swift"
+DIFFCAPS_CMD = APP / "Sources" / "GarnetStudio" / "DiffCapsCommand.swift"
 
 
 def read(path: Path) -> str:
