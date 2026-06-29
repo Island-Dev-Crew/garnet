@@ -2475,12 +2475,7 @@ struct GarnetStudioRootView: View {
         }
     }
 
-    // `nonisolated`: action help is a pure title->string projection with no View
-    // state, so it need not inherit the View's @MainActor isolation. Keeping it
-    // nonisolated lets the honesty-contract unit tests call it directly under
-    // Swift 6 strict concurrency without a @MainActor test class (which interacts
-    // badly with the package's swift-testing + XCTest dual runner on CI). M1.
-    nonisolated static func actionHelp(for title: String) -> String {
+    static func actionHelp(for title: String) -> String {
         switch title {
         case "Parse": return "Parse the source buffer with the garnet CLI; surfaces syntax diagnostics."
         case "Check": return "Run safe-mode and capability checks; @caps coverage failures appear here."
