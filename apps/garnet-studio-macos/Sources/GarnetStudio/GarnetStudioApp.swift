@@ -2304,6 +2304,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
     case legend = "Enforced / Declared"
     case agentLoop = "Agent-Loop Console"
     case bootstrap = "Bootstrap"
+    case distribution = "Distribution"
 
     var id: String { rawValue }
 }
@@ -2321,7 +2322,7 @@ struct GarnetStudioRootView: View {
     /// compiled UI — simple mode hides them, never removes them.
     private var visibleSections: [StudioSection] {
         if interfaceMode == "power" { return StudioSection.allCases }
-        return StudioSection.allCases.filter { $0 != .agentic && $0 != .release && $0 != .diffCaps && $0 != .velocity && $0 != .legend && $0 != .agentLoop && $0 != .bootstrap } // power-only
+        return StudioSection.allCases.filter { $0 != .agentic && $0 != .release && $0 != .diffCaps && $0 != .velocity && $0 != .legend && $0 != .agentLoop && $0 != .bootstrap && $0 != .distribution } // power-only
     }
 
     var body: some View {
@@ -2393,6 +2394,7 @@ struct GarnetStudioRootView: View {
         case .legend: return "Power mode: the enforced-vs-declared fence catalog with a live static-gate probe; the boundary is never widened (seccomp Linux-only)."
         case .agentLoop: return "Power mode: render an existing agent-loop --record-dir as a 4-gate pipeline; the decision.md verdict is shown verbatim, acceptance is on capability + depth evidence only."
         case .bootstrap: return "Power mode: generate allowlisted bash/zsh setup scripts for operator-run only — the Studio never runs them, no sudo, no profile edits."
+        case .distribution: return "Power mode: macOS packaging/notarization status — the .app is unsigned and un-notarized (research-grade, local run only)."
         }
     }
 
@@ -2448,6 +2450,8 @@ struct GarnetStudioRootView: View {
             agentLoopConsole
         case .bootstrap:
             bootstrap
+        case .distribution:
+            distribution
         }
     }
 
@@ -2492,6 +2496,14 @@ struct GarnetStudioRootView: View {
     private var bootstrap: some View {
         WorkbenchLayout {
             BootstrapSection(cliPath: model.cliPath)
+        } trailing: {
+            EmptyView()
+        }
+    }
+
+    private var distribution: some View {
+        WorkbenchLayout {
+            DistributionSection()
         } trailing: {
             EmptyView()
         }
