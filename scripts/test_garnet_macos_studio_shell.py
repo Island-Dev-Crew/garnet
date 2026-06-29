@@ -24,6 +24,7 @@ MAIN = APP / "Sources" / "GarnetStudio" / "GarnetStudioApp.swift"
 TESTS = APP / "Tests" / "GarnetStudioTests" / "StudioShellTests.swift"
 DIFFCAPS_CMD = APP / "Sources" / "GarnetStudio" / "DiffCapsCommand.swift"
 VELOCITY_CMD = APP / "Sources" / "GarnetStudio" / "VelocityCheckCommand.swift"
+LEGEND_BRIDGE = APP / "Sources" / "GarnetStudio" / "EnforcementLegendBridge.swift"
 
 
 def read(path: Path) -> str:
@@ -241,6 +242,33 @@ class GarnetMacosStudioShellTests(unittest.TestCase):
         # The JSON-slicing gotcha (merged stdout+stderr) must be present.
         self.assertIn("extractJSONObject", cmd)
         self.assertIn('firstIndex(of: "{")', cmd, "must slice from the first JSON brace")
+
+    def test_enforced_declared_legend_boundary_is_not_widened(self) -> None:
+        # M4: the legend is a load-bearing honesty surface. Pin the
+        # enforced-vs-declared boundary so a future edit cannot silently widen it:
+        # ONLY @caps + @max_depth are enforced; @bounded/@mailbox/memory/time are
+        # declared; the OS sandbox is deferred and seccomp is Linux-only.
+        main = read(MAIN)
+        self.assertIn('case legend = "Enforced / Declared"', main, "legend section must be wired")
+        self.assertIn("$0 != .legend", main, "legend must be a power-only section")
+        bridge = read(LEGEND_BRIDGE)
+        # The two enforced fences each carry status .enforced.
+        for enforced in ('name: "@caps"', 'name: "@max_depth"'):
+            self.assertIn(enforced, bridge)
+        self.assertEqual(
+            bridge.count("status: .enforced"),
+            2,
+            "exactly two fences may be .enforced (@caps + @max_depth) — boundary not widened",
+        )
+        # The named-deferred fences stay declared, never enforced.
+        for declared in ('name: "@bounded"', 'name: "@mailbox"', 'name: "memory"', 'name: "time"'):
+            self.assertIn(declared, bridge)
+        # The OS sandbox is deferred and seccomp is Linux-only.
+        self.assertIn("status: .deferred", bridge)
+        self.assertIn("Linux seccomp only", bridge)
+        self.assertIn("do not apply an OS sandbox", bridge)
+        # Confirmed-live only when the probe reproduced (no faked green).
+        self.assertIn("confirmed live this run", bridge)
 
     def test_converter_help_makes_no_os_sandbox_overclaim(self) -> None:
         # M1 honesty-cleanup: the Convert action help once claimed "sandboxed
