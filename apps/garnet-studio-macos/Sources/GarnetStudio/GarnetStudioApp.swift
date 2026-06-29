@@ -2302,6 +2302,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
     case diffCaps = "Diff-Caps Review"
     case velocity = "Velocity Editor"
     case legend = "Enforced / Declared"
+    case agentLoop = "Agent-Loop Console"
 
     var id: String { rawValue }
 }
@@ -2319,7 +2320,7 @@ struct GarnetStudioRootView: View {
     /// compiled UI — simple mode hides them, never removes them.
     private var visibleSections: [StudioSection] {
         if interfaceMode == "power" { return StudioSection.allCases }
-        return StudioSection.allCases.filter { $0 != .agentic && $0 != .release && $0 != .diffCaps && $0 != .velocity && $0 != .legend } // power-only
+        return StudioSection.allCases.filter { $0 != .agentic && $0 != .release && $0 != .diffCaps && $0 != .velocity && $0 != .legend && $0 != .agentLoop } // power-only
     }
 
     var body: some View {
@@ -2389,6 +2390,7 @@ struct GarnetStudioRootView: View {
         case .diffCaps: return "Power mode: render garnet diff-caps --machine verdicts verbatim for capability-widening review."
         case .velocity: return "Power mode: live `garnet check --format json` over an editor buffer; the .garnet-cache side-effect is isolated to a throwaway directory."
         case .legend: return "Power mode: the enforced-vs-declared fence catalog with a live static-gate probe; the boundary is never widened (seccomp Linux-only)."
+        case .agentLoop: return "Power mode: render an existing agent-loop --record-dir as a 4-gate pipeline; the decision.md verdict is shown verbatim, acceptance is on capability + depth evidence only."
         }
     }
 
@@ -2440,6 +2442,8 @@ struct GarnetStudioRootView: View {
             velocityEditor
         case .legend:
             enforcementLegend
+        case .agentLoop:
+            agentLoopConsole
         }
     }
 
@@ -2468,6 +2472,14 @@ struct GarnetStudioRootView: View {
             EnforcementLegendSection(
                 cliPath: model.cliPath,
                 commandTimeoutSecs: StudioSettings.defaults.commandTimeoutSecs)
+        } trailing: {
+            EmptyView()
+        }
+    }
+
+    private var agentLoopConsole: some View {
+        WorkbenchLayout {
+            AgentLoopConsoleSection()
         } trailing: {
             EmptyView()
         }
