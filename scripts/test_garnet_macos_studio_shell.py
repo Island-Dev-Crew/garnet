@@ -23,6 +23,7 @@ CHROME = APP / "Sources" / "GarnetStudio" / "StudioChrome.swift"
 MAIN = APP / "Sources" / "GarnetStudio" / "GarnetStudioApp.swift"
 TESTS = APP / "Tests" / "GarnetStudioTests" / "StudioShellTests.swift"
 DIFFCAPS_CMD = APP / "Sources" / "GarnetStudio" / "DiffCapsCommand.swift"
+VELOCITY_CMD = APP / "Sources" / "GarnetStudio" / "VelocityCheckCommand.swift"
 
 
 def read(path: Path) -> str:
@@ -217,6 +218,27 @@ class GarnetMacosStudioShellTests(unittest.TestCase):
         # out of the merged stream (episodic `note:` lines on stderr would otherwise
         # break the decode). Behavior is exercised by the M0b decoder tests; this
         # pins the slicing logic stays present.
+        self.assertIn("extractJSONObject", cmd)
+        self.assertIn('firstIndex(of: "{")', cmd, "must slice from the first JSON brace")
+
+    def test_velocity_editor_panel_is_wired_power_only_and_cwd_isolated(self) -> None:
+        # M3: the Velocity Editor is a power-only section that runs
+        # `garnet check --format json` over the live buffer and isolates the
+        # checker's .garnet-cache side-effect to a throwaway working directory.
+        main = read(MAIN)
+        self.assertIn('case velocity = "Velocity Editor"', main, "velocity section must be wired")
+        self.assertIn("$0 != .velocity", main, "velocity must be a power-only section")
+        cmd = read(VELOCITY_CMD)
+        self.assertIn("check", cmd)
+        self.assertIn("--format", cmd)
+        self.assertIn("json", cmd, "must use the machine JSON diagnostics, not human output")
+        # The .garnet-cache isolation: a unique temp dir is created and passed as
+        # the process working directory, then removed.
+        self.assertIn("workingDirectory", cmd, "the check must run in an isolated cwd")
+        self.assertIn("temporaryDirectory", cmd)
+        self.assertIn("removeItem", cmd, "the throwaway dir must be cleaned up")
+        self.assertIn(".garnet-cache", cmd, "the cwd-isolation rationale must be documented")
+        # The JSON-slicing gotcha (merged stdout+stderr) must be present.
         self.assertIn("extractJSONObject", cmd)
         self.assertIn('firstIndex(of: "{")', cmd, "must slice from the first JSON brace")
 

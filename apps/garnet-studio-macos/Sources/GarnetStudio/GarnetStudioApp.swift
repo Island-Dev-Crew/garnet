@@ -2300,6 +2300,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
     case agentic = "Agentic Tests"
     case release = "Release"
     case diffCaps = "Diff-Caps Review"
+    case velocity = "Velocity Editor"
 
     var id: String { rawValue }
 }
@@ -2317,7 +2318,7 @@ struct GarnetStudioRootView: View {
     /// compiled UI — simple mode hides them, never removes them.
     private var visibleSections: [StudioSection] {
         if interfaceMode == "power" { return StudioSection.allCases }
-        return StudioSection.allCases.filter { $0 != .agentic && $0 != .release && $0 != .diffCaps } // power-only
+        return StudioSection.allCases.filter { $0 != .agentic && $0 != .release && $0 != .diffCaps && $0 != .velocity } // power-only
     }
 
     var body: some View {
@@ -2385,6 +2386,7 @@ struct GarnetStudioRootView: View {
         case .agentic: return "Power mode: run the agentic dogfood stress matrix with evidence bundles."
         case .release: return "Power mode: repo-native release and readiness reporters with the live truth surface."
         case .diffCaps: return "Power mode: render garnet diff-caps --machine verdicts verbatim for capability-widening review."
+        case .velocity: return "Power mode: live `garnet check --format json` over an editor buffer; the .garnet-cache side-effect is isolated to a throwaway directory."
         }
     }
 
@@ -2432,12 +2434,24 @@ struct GarnetStudioRootView: View {
             release
         case .diffCaps:
             diffCapsReview
+        case .velocity:
+            velocityEditor
         }
     }
 
     private var diffCapsReview: some View {
         WorkbenchLayout {
             DiffCapsReviewSection(
+                cliPath: model.cliPath,
+                commandTimeoutSecs: StudioSettings.defaults.commandTimeoutSecs)
+        } trailing: {
+            EmptyView()
+        }
+    }
+
+    private var velocityEditor: some View {
+        WorkbenchLayout {
+            VelocityEditorSection(
                 cliPath: model.cliPath,
                 commandTimeoutSecs: StudioSettings.defaults.commandTimeoutSecs)
         } trailing: {
