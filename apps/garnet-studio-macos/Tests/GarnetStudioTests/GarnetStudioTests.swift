@@ -61,6 +61,32 @@ final class GarnetStudioTests: XCTestCase {
         XCTAssertEqual(first?.scriptURL.path, "/Applications/Garnet Studio.app/Contents/Resources/scripts/run_agentic_dogfood_matrix.py")
     }
 
+    func testAncestorWalkTerminatesAtRootAndStaysBounded() {
+        // Regression: the ancestor walk (ancestorRoots) once looped forever on
+        // Foundation versions where `URL("/").deletingLastPathComponent()` keeps
+        // prepending "../" instead of converging (macOS 15 / Darwin 24). On the
+        // CI runner that spun to a 26GB footprint and was OOM-killed; locally
+        // (macOS 26) it converged, so it passed. The walk must now terminate,
+        // reach the filesystem root, stay bounded, and never emit a "../" root.
+        let locator = AgenticDogfoodScriptLocator(
+            bundleResourceURL: nil,
+            environmentRepoRoot: nil,
+            currentDirectoryURL: URL(fileURLWithPath: "/a/b/c/d/e/f/g", isDirectory: true)
+        )
+
+        let locations = locator.candidateLocations()
+
+        XCTAssertFalse(locations.isEmpty)
+        XCTAssertLessThan(locations.count, 64, "the ancestor walk must be bounded")
+        XCTAssertTrue(
+            locations.contains { $0.repoRootURL.path == "/" }, "the walk must reach the root")
+        for location in locations {
+            XCTAssertFalse(
+                location.repoRootURL.path.contains(".."),
+                "a non-converging '../' root must never appear")
+        }
+    }
+
     func testConverterAssistPlanLocatorPrefersBundledScriptBeforeAmbientCheckout() {
         let locator = ConverterAssistPlanScriptLocator(
             bundleResourceURL: URL(fileURLWithPath: "/Applications/Garnet Studio.app/Contents/Resources", isDirectory: true),

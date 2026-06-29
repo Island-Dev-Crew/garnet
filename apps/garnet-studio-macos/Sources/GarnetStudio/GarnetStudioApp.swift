@@ -294,10 +294,20 @@ struct ConverterAssistPlanScriptLocator {
     private func ancestorRoots(from start: URL) -> [URL] {
         var roots: [URL] = []
         var cursor = start.standardizedFileURL
-        while true {
+        // Walk up to the filesystem root. The guard must tolerate Foundation
+        // versions where `URL("/").deletingLastPathComponent()` does NOT reach a
+        // fixed point but keeps prepending "../" (observed on macOS 15 / Darwin
+        // 24; macOS 26 converges). We stop at root, at a fixed point, or as soon
+        // as the parent stops getting strictly shorter — with a hard depth cap so
+        // a pathological URL can never spin into an unbounded loop / OOM.
+        let maxDepth = 64
+        while roots.count < maxDepth {
             roots.append(cursor)
+            if cursor.path == "/" {
+                break
+            }
             let parent = cursor.deletingLastPathComponent()
-            if parent.path == cursor.path {
+            if parent.path == cursor.path || parent.path.count >= cursor.path.count {
                 break
             }
             cursor = parent
@@ -369,10 +379,20 @@ struct ConverterAdvisoryBundleScriptLocator {
     private func ancestorRoots(from start: URL) -> [URL] {
         var roots: [URL] = []
         var cursor = start.standardizedFileURL
-        while true {
+        // Walk up to the filesystem root. The guard must tolerate Foundation
+        // versions where `URL("/").deletingLastPathComponent()` does NOT reach a
+        // fixed point but keeps prepending "../" (observed on macOS 15 / Darwin
+        // 24; macOS 26 converges). We stop at root, at a fixed point, or as soon
+        // as the parent stops getting strictly shorter — with a hard depth cap so
+        // a pathological URL can never spin into an unbounded loop / OOM.
+        let maxDepth = 64
+        while roots.count < maxDepth {
             roots.append(cursor)
+            if cursor.path == "/" {
+                break
+            }
             let parent = cursor.deletingLastPathComponent()
-            if parent.path == cursor.path {
+            if parent.path == cursor.path || parent.path.count >= cursor.path.count {
                 break
             }
             cursor = parent
@@ -444,10 +464,20 @@ struct ConverterAdvisoryReviewScriptLocator {
     private func ancestorRoots(from start: URL) -> [URL] {
         var roots: [URL] = []
         var cursor = start.standardizedFileURL
-        while true {
+        // Walk up to the filesystem root. The guard must tolerate Foundation
+        // versions where `URL("/").deletingLastPathComponent()` does NOT reach a
+        // fixed point but keeps prepending "../" (observed on macOS 15 / Darwin
+        // 24; macOS 26 converges). We stop at root, at a fixed point, or as soon
+        // as the parent stops getting strictly shorter — with a hard depth cap so
+        // a pathological URL can never spin into an unbounded loop / OOM.
+        let maxDepth = 64
+        while roots.count < maxDepth {
             roots.append(cursor)
+            if cursor.path == "/" {
+                break
+            }
             let parent = cursor.deletingLastPathComponent()
-            if parent.path == cursor.path {
+            if parent.path == cursor.path || parent.path.count >= cursor.path.count {
                 break
             }
             cursor = parent
@@ -519,10 +549,20 @@ struct ConverterAdvisoryHandoffScriptLocator {
     private func ancestorRoots(from start: URL) -> [URL] {
         var roots: [URL] = []
         var cursor = start.standardizedFileURL
-        while true {
+        // Walk up to the filesystem root. The guard must tolerate Foundation
+        // versions where `URL("/").deletingLastPathComponent()` does NOT reach a
+        // fixed point but keeps prepending "../" (observed on macOS 15 / Darwin
+        // 24; macOS 26 converges). We stop at root, at a fixed point, or as soon
+        // as the parent stops getting strictly shorter — with a hard depth cap so
+        // a pathological URL can never spin into an unbounded loop / OOM.
+        let maxDepth = 64
+        while roots.count < maxDepth {
             roots.append(cursor)
+            if cursor.path == "/" {
+                break
+            }
             let parent = cursor.deletingLastPathComponent()
-            if parent.path == cursor.path {
+            if parent.path == cursor.path || parent.path.count >= cursor.path.count {
                 break
             }
             cursor = parent
@@ -594,10 +634,20 @@ struct ConverterProviderOptionsScriptLocator {
     private func ancestorRoots(from start: URL) -> [URL] {
         var roots: [URL] = []
         var cursor = start.standardizedFileURL
-        while true {
+        // Walk up to the filesystem root. The guard must tolerate Foundation
+        // versions where `URL("/").deletingLastPathComponent()` does NOT reach a
+        // fixed point but keeps prepending "../" (observed on macOS 15 / Darwin
+        // 24; macOS 26 converges). We stop at root, at a fixed point, or as soon
+        // as the parent stops getting strictly shorter — with a hard depth cap so
+        // a pathological URL can never spin into an unbounded loop / OOM.
+        let maxDepth = 64
+        while roots.count < maxDepth {
             roots.append(cursor)
+            if cursor.path == "/" {
+                break
+            }
             let parent = cursor.deletingLastPathComponent()
-            if parent.path == cursor.path {
+            if parent.path == cursor.path || parent.path.count >= cursor.path.count {
                 break
             }
             cursor = parent
@@ -669,10 +719,20 @@ struct ConverterStatusScriptLocator {
     private func ancestorRoots(from start: URL) -> [URL] {
         var roots: [URL] = []
         var cursor = start.standardizedFileURL
-        while true {
+        // Walk up to the filesystem root. The guard must tolerate Foundation
+        // versions where `URL("/").deletingLastPathComponent()` does NOT reach a
+        // fixed point but keeps prepending "../" (observed on macOS 15 / Darwin
+        // 24; macOS 26 converges). We stop at root, at a fixed point, or as soon
+        // as the parent stops getting strictly shorter — with a hard depth cap so
+        // a pathological URL can never spin into an unbounded loop / OOM.
+        let maxDepth = 64
+        while roots.count < maxDepth {
             roots.append(cursor)
+            if cursor.path == "/" {
+                break
+            }
             let parent = cursor.deletingLastPathComponent()
-            if parent.path == cursor.path {
+            if parent.path == cursor.path || parent.path.count >= cursor.path.count {
                 break
             }
             cursor = parent
@@ -744,10 +804,20 @@ struct MitReadinessScriptLocator {
     private func ancestorRoots(from start: URL) -> [URL] {
         var roots: [URL] = []
         var cursor = start.standardizedFileURL
-        while true {
+        // Walk up to the filesystem root. The guard must tolerate Foundation
+        // versions where `URL("/").deletingLastPathComponent()` does NOT reach a
+        // fixed point but keeps prepending "../" (observed on macOS 15 / Darwin
+        // 24; macOS 26 converges). We stop at root, at a fixed point, or as soon
+        // as the parent stops getting strictly shorter — with a hard depth cap so
+        // a pathological URL can never spin into an unbounded loop / OOM.
+        let maxDepth = 64
+        while roots.count < maxDepth {
             roots.append(cursor)
+            if cursor.path == "/" {
+                break
+            }
             let parent = cursor.deletingLastPathComponent()
-            if parent.path == cursor.path {
+            if parent.path == cursor.path || parent.path.count >= cursor.path.count {
                 break
             }
             cursor = parent
@@ -819,10 +889,20 @@ struct MitDemoRouteScriptLocator {
     private func ancestorRoots(from start: URL) -> [URL] {
         var roots: [URL] = []
         var cursor = start.standardizedFileURL
-        while true {
+        // Walk up to the filesystem root. The guard must tolerate Foundation
+        // versions where `URL("/").deletingLastPathComponent()` does NOT reach a
+        // fixed point but keeps prepending "../" (observed on macOS 15 / Darwin
+        // 24; macOS 26 converges). We stop at root, at a fixed point, or as soon
+        // as the parent stops getting strictly shorter — with a hard depth cap so
+        // a pathological URL can never spin into an unbounded loop / OOM.
+        let maxDepth = 64
+        while roots.count < maxDepth {
             roots.append(cursor)
+            if cursor.path == "/" {
+                break
+            }
             let parent = cursor.deletingLastPathComponent()
-            if parent.path == cursor.path {
+            if parent.path == cursor.path || parent.path.count >= cursor.path.count {
                 break
             }
             cursor = parent
@@ -894,10 +974,20 @@ struct MitDeckOutlineScriptLocator {
     private func ancestorRoots(from start: URL) -> [URL] {
         var roots: [URL] = []
         var cursor = start.standardizedFileURL
-        while true {
+        // Walk up to the filesystem root. The guard must tolerate Foundation
+        // versions where `URL("/").deletingLastPathComponent()` does NOT reach a
+        // fixed point but keeps prepending "../" (observed on macOS 15 / Darwin
+        // 24; macOS 26 converges). We stop at root, at a fixed point, or as soon
+        // as the parent stops getting strictly shorter — with a hard depth cap so
+        // a pathological URL can never spin into an unbounded loop / OOM.
+        let maxDepth = 64
+        while roots.count < maxDepth {
             roots.append(cursor)
+            if cursor.path == "/" {
+                break
+            }
             let parent = cursor.deletingLastPathComponent()
-            if parent.path == cursor.path {
+            if parent.path == cursor.path || parent.path.count >= cursor.path.count {
                 break
             }
             cursor = parent
@@ -969,10 +1059,20 @@ struct MitDeckPreviewScriptLocator {
     private func ancestorRoots(from start: URL) -> [URL] {
         var roots: [URL] = []
         var cursor = start.standardizedFileURL
-        while true {
+        // Walk up to the filesystem root. The guard must tolerate Foundation
+        // versions where `URL("/").deletingLastPathComponent()` does NOT reach a
+        // fixed point but keeps prepending "../" (observed on macOS 15 / Darwin
+        // 24; macOS 26 converges). We stop at root, at a fixed point, or as soon
+        // as the parent stops getting strictly shorter — with a hard depth cap so
+        // a pathological URL can never spin into an unbounded loop / OOM.
+        let maxDepth = 64
+        while roots.count < maxDepth {
             roots.append(cursor)
+            if cursor.path == "/" {
+                break
+            }
             let parent = cursor.deletingLastPathComponent()
-            if parent.path == cursor.path {
+            if parent.path == cursor.path || parent.path.count >= cursor.path.count {
                 break
             }
             cursor = parent
@@ -1044,10 +1144,20 @@ struct MacContinuationScriptLocator {
     private func ancestorRoots(from start: URL) -> [URL] {
         var roots: [URL] = []
         var cursor = start.standardizedFileURL
-        while true {
+        // Walk up to the filesystem root. The guard must tolerate Foundation
+        // versions where `URL("/").deletingLastPathComponent()` does NOT reach a
+        // fixed point but keeps prepending "../" (observed on macOS 15 / Darwin
+        // 24; macOS 26 converges). We stop at root, at a fixed point, or as soon
+        // as the parent stops getting strictly shorter — with a hard depth cap so
+        // a pathological URL can never spin into an unbounded loop / OOM.
+        let maxDepth = 64
+        while roots.count < maxDepth {
             roots.append(cursor)
+            if cursor.path == "/" {
+                break
+            }
             let parent = cursor.deletingLastPathComponent()
-            if parent.path == cursor.path {
+            if parent.path == cursor.path || parent.path.count >= cursor.path.count {
                 break
             }
             cursor = parent
@@ -1119,10 +1229,20 @@ struct AgenticDogfoodScriptLocator {
     private func ancestorRoots(from start: URL) -> [URL] {
         var roots: [URL] = []
         var cursor = start.standardizedFileURL
-        while true {
+        // Walk up to the filesystem root. The guard must tolerate Foundation
+        // versions where `URL("/").deletingLastPathComponent()` does NOT reach a
+        // fixed point but keeps prepending "../" (observed on macOS 15 / Darwin
+        // 24; macOS 26 converges). We stop at root, at a fixed point, or as soon
+        // as the parent stops getting strictly shorter — with a hard depth cap so
+        // a pathological URL can never spin into an unbounded loop / OOM.
+        let maxDepth = 64
+        while roots.count < maxDepth {
             roots.append(cursor)
+            if cursor.path == "/" {
+                break
+            }
             let parent = cursor.deletingLastPathComponent()
-            if parent.path == cursor.path {
+            if parent.path == cursor.path || parent.path.count >= cursor.path.count {
                 break
             }
             cursor = parent
@@ -2179,6 +2299,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
     case converter = "Converter"
     case agentic = "Agentic Tests"
     case release = "Release"
+    case diffCaps = "Diff-Caps Review"
 
     var id: String { rawValue }
 }
@@ -2196,7 +2317,7 @@ struct GarnetStudioRootView: View {
     /// compiled UI — simple mode hides them, never removes them.
     private var visibleSections: [StudioSection] {
         if interfaceMode == "power" { return StudioSection.allCases }
-        return StudioSection.allCases.filter { $0 != .agentic && $0 != .release } // power-only
+        return StudioSection.allCases.filter { $0 != .agentic && $0 != .release && $0 != .diffCaps } // power-only
     }
 
     var body: some View {
@@ -2263,6 +2384,7 @@ struct GarnetStudioRootView: View {
         case .converter: return "Migration assistant: active conversion for Rust/Ruby/Python/Go; advisory planning for broader languages."
         case .agentic: return "Power mode: run the agentic dogfood stress matrix with evidence bundles."
         case .release: return "Power mode: repo-native release and readiness reporters with the live truth surface."
+        case .diffCaps: return "Power mode: render garnet diff-caps --machine verdicts verbatim for capability-widening review."
         }
     }
 
@@ -2308,6 +2430,18 @@ struct GarnetStudioRootView: View {
             agenticTests
         case .release:
             release
+        case .diffCaps:
+            diffCapsReview
+        }
+    }
+
+    private var diffCapsReview: some View {
+        WorkbenchLayout {
+            DiffCapsReviewSection(
+                cliPath: model.cliPath,
+                commandTimeoutSecs: StudioSettings.defaults.commandTimeoutSecs)
+        } trailing: {
+            EmptyView()
         }
     }
 

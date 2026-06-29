@@ -22,6 +22,7 @@ SHELL = APP / "Sources" / "GarnetStudio" / "StudioShell.swift"
 CHROME = APP / "Sources" / "GarnetStudio" / "StudioChrome.swift"
 MAIN = APP / "Sources" / "GarnetStudio" / "GarnetStudioApp.swift"
 TESTS = APP / "Tests" / "GarnetStudioTests" / "StudioShellTests.swift"
+DIFFCAPS_CMD = APP / "Sources" / "GarnetStudio" / "DiffCapsCommand.swift"
 
 
 def read(path: Path) -> str:
@@ -201,6 +202,23 @@ class GarnetMacosStudioShellTests(unittest.TestCase):
         self.assertIn("Deferred", main)
         self.assertIn("research-grade prototype", main)
         self.assertNotIn("production-ready", main)
+
+    def test_diff_caps_review_panel_is_wired_power_only_and_verbatim(self) -> None:
+        # M2: the Diff-Caps Review Gate is a power-only section that renders the
+        # CLI's machine verdict verbatim (never recomputes the band).
+        main = read(MAIN)
+        self.assertIn('case diffCaps = "Diff-Caps Review"', main, "diff-caps section must be wired")
+        self.assertIn("$0 != .diffCaps", main, "diff-caps must be a power-only section")
+        cmd = read(DIFFCAPS_CMD)
+        self.assertIn("diff-caps", cmd)
+        self.assertIn("--machine", cmd, "must use the machine verdict, not human output")
+        self.assertIn("never recomputed", cmd, "the band/verdict must be rendered verbatim, not recomputed")
+        # The stdout/stderr-merge gotcha fix: the runner must slice the JSON object
+        # out of the merged stream (episodic `note:` lines on stderr would otherwise
+        # break the decode). Behavior is exercised by the M0b decoder tests; this
+        # pins the slicing logic stays present.
+        self.assertIn("extractJSONObject", cmd)
+        self.assertIn('firstIndex(of: "{")', cmd, "must slice from the first JSON brace")
 
     def test_converter_help_makes_no_os_sandbox_overclaim(self) -> None:
         # M1 honesty-cleanup: the Convert action help once claimed "sandboxed

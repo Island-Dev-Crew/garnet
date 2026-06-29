@@ -51,9 +51,19 @@ jobs:
       # integration smokes OUT of the fast unit gate so it is deterministic; their
       # reporter/manifest determinism is a separate follow-up. All deck-preview
       # *logic* unit tests (locator, command builder) still run.
+      # `--disable-swift-testing`: this package uses XCTest exclusively (zero `@Test`
+      # functions). The bundled swift-testing runner co-executing with XCTest
+      # deterministically aborts the XCTest process at the GarnetStudioTests suite
+      # on CI macos-latest (the `✔ Test run with 0 tests passed` line at the crash;
+      # unreproducible locally). Running XCTest alone removes that dual-runner.
+      # `NSUnbufferedIO=YES`: XCTest otherwise buffers its stdout when not a tty,
+      # so on a hang/kill the log truncates mid-buffer and hides the real failure
+      # point. Unbuffered output flushes per test event, making any CI-only hang
+      # land on an exact test name.
       - name: swift test
         run: |
-          swift test --package-path apps/garnet-studio-macos \
+          NSUnbufferedIO=YES swift test --package-path apps/garnet-studio-macos \
+            --disable-swift-testing \
             --skip testDeckPreviewSmokeRunsReporterAndRequiresManifestedOutputs \
             --skip testDeckPreviewSmokeRejectsStaleManifest
       # The shell/contract gate — the action inventory + safe-command vectors.
