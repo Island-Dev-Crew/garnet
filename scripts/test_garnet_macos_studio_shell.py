@@ -25,6 +25,8 @@ TESTS = APP / "Tests" / "GarnetStudioTests" / "StudioShellTests.swift"
 DIFFCAPS_CMD = APP / "Sources" / "GarnetStudio" / "DiffCapsCommand.swift"
 VELOCITY_CMD = APP / "Sources" / "GarnetStudio" / "VelocityCheckCommand.swift"
 LEGEND_BRIDGE = APP / "Sources" / "GarnetStudio" / "EnforcementLegendBridge.swift"
+AGENTLOOP_BRIDGE = APP / "Sources" / "GarnetStudio" / "AgentLoopBridge.swift"
+AGENTLOOP_CMD = APP / "Sources" / "GarnetStudio" / "AgentLoopCommand.swift"
 
 
 def read(path: Path) -> str:
@@ -269,6 +271,29 @@ class GarnetMacosStudioShellTests(unittest.TestCase):
         self.assertIn("do not apply an OS sandbox", bridge)
         # Confirmed-live only when the probe reproduced (no faked green).
         self.assertIn("confirmed live this run", bridge)
+
+    def test_agent_loop_console_is_wired_power_only_and_verdict_verbatim(self) -> None:
+        # M5: the agent-loop console renders an existing --record-dir as a 4-gate
+        # pipeline. The verdict is read verbatim from decision.md (never recomputed);
+        # acceptance is "on capability + depth evidence" only; seal provenance is
+        # autonomous acceptance, NOT a human approval.
+        main = read(MAIN)
+        self.assertIn('case agentLoop = "Agent-Loop Console"', main, "agent-loop section must be wired")
+        self.assertIn("$0 != .agentLoop", main, "agent-loop must be a power-only section")
+        bridge = read(AGENTLOOP_BRIDGE)
+        cmd = read(AGENTLOOP_CMD)
+        # The reader pulls the record-dir artifacts (the 4-gate pipeline inputs).
+        for artifact in ("decision.md", "diff_caps.txt", "capability_manifest.json",
+                         "seal.json", "transparency_log.jsonl", "run_trap.txt"):
+            self.assertIn(artifact, cmd, f"the console must read {artifact}")
+        # The four gates, in order.
+        for gate in ('case check', 'case diffCaps', 'case run', 'case seal'):
+            self.assertIn(gate, bridge)
+        # Honesty anchors: verdict from decision.md, capability+depth only, seal != approval.
+        self.assertIn("never recomputed", bridge.lower(), "the verdict-verbatim rule must be documented")
+        self.assertIn("@caps + @max_depth", bridge, "the enforced kernel pair must be named")
+        # The seal gate must only pass when a seal was actually parsed.
+        self.assertIn("sealPresent", bridge)
 
     def test_converter_help_makes_no_os_sandbox_overclaim(self) -> None:
         # M1 honesty-cleanup: the Convert action help once claimed "sandboxed
