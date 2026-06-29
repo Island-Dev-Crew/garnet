@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Garnet — Foundation + macOS Studio Parity Completion Dossier (M0–M8)</title>
+    <style>
+      :root {
+        --bg: oklch(17% 0.02 265);
+        --panel: oklch(22% 0.03 265);
+        --panel-2: oklch(26% 0.035 265);
+        --ink: oklch(95% 0.01 265);
+        --faint: oklch(72% 0.02 265);
+        --line: oklch(38% 0.03 265);
+        --ok: oklch(78% 0.17 150);
+        --warn: oklch(80% 0.15 75);
+        --defer: oklch(75% 0.04 265);
+        --accent: oklch(72% 0.18 265);
+        --mono: ui-monospace, "SF Mono", Menlo, monospace;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background:
+          radial-gradient(900px 500px at 85% -8%, oklch(28% 0.07 285 / 0.5), transparent 60%),
+          var(--bg);
+        color: var(--ink);
+        font: 15px/1.6 system-ui, -apple-system, Segoe UI, sans-serif;
+        padding: clamp(1.2rem, 1rem + 3vw, 4rem);
+      }
+      .wrap { max-width: 1040px; margin: 0 auto; }
+      header.hero {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 2rem 2.2rem;
+        background: linear-gradient(160deg, var(--panel-2), var(--panel));
+        box-shadow: 0 24px 60px -30px oklch(0% 0 0 / 0.7);
+      }
+      .kicker { color: var(--accent); font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; font-size: 12px; }
+      h1 { font-size: clamp(1.7rem, 1.1rem + 2.4vw, 2.8rem); margin: 0.3em 0 0.2em; line-height: 1.08; }
+      .sub { color: var(--faint); max-width: 70ch; }
+      .stamp { color: var(--faint); font-family: var(--mono); font-size: 12px; margin-top: 0.8rem; }
+      .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin: 1.6rem 0; }
+      .stat { border: 1px solid var(--line); border-radius: 12px; padding: 1rem 1.1rem; background: var(--panel); }
+      .stat b { display: block; font-size: 1.8rem; line-height: 1; }
+      .stat span { color: var(--faint); font-size: 12px; }
+      section { margin-top: 2.4rem; }
+      h2 { font-size: 1.25rem; border-left: 3px solid var(--accent); padding-left: 0.6rem; }
+      table { width: 100%; border-collapse: collapse; margin-top: 0.8rem; font-size: 14px; }
+      th, td { text-align: left; padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+      th { color: var(--faint); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+      td.mono, .mono { font-family: var(--mono); font-size: 12.5px; }
+      .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+      .pill.ok { background: oklch(78% 0.17 150 / 0.18); color: var(--ok); }
+      .pill.warn { background: oklch(80% 0.15 75 / 0.18); color: var(--warn); }
+      .pill.defer { background: oklch(75% 0.04 265 / 0.22); color: var(--defer); }
+      .catch { border: 1px solid var(--line); border-radius: 12px; padding: 1rem 1.2rem; background: var(--panel); margin-bottom: 12px; }
+      .catch h3 { margin: 0 0 0.3rem; font-size: 1rem; }
+      .catch p { margin: 0.2rem 0; color: var(--faint); }
+      .catch .fix { color: var(--ok); }
+      ul.ladder { list-style: none; padding: 0; }
+      ul.ladder li { padding: 0.35rem 0; border-bottom: 1px solid var(--line); }
+      ul.ladder li::before { content: "✓ "; color: var(--ok); font-weight: 700; }
+      .note { border-left: 3px solid var(--warn); padding: 0.4rem 0.9rem; color: var(--faint); background: var(--panel); border-radius: 6px; }
+      footer { margin-top: 3rem; color: var(--faint); font-size: 12px; border-top: 1px solid var(--line); padding-top: 1rem; }
+      code { font-family: var(--mono); background: var(--panel-2); padding: 0.05em 0.35em; border-radius: 4px; font-size: 0.9em; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="hero">
+        <div class="kicker">Completion Dossier · iron-canvas capstone</div>
+        <h1>Foundation Hardening + macOS Studio Parity</h1>
+        <p class="sub">
+          The M0–M8 arc: the S114 deny-by-default foundation slices plus the nine-phase
+          macOS SwiftUI Studio trust-cockpit, ported to byte-for-byte honesty parity with the
+          Windows shell. Every slice landed as its own evidence-backed PR under a real CI gate,
+          squash-merged with agent/model/gate-version provenance. Garnet remains a
+          <strong>research-grade prototype (v0.x), not production / 1.0</strong>.
+        </p>
+        <p class="stamp">Compiled 2026-06-28 · branch main · merged via IslandDevCrew (owner, Jon-authorized autonomous merges) · release tag remains Jon-owned</p>
+      </header>
+
+      <div class="grid">
+        <div class="stat"><b>13</b><span>slices merged (4 foundation + 9 Studio)</span></div>
+        <div class="stat"><b>7</b><span>multi-pass catches resolved</span></div>
+        <div class="stat"><b>101</b><span>macOS Studio XCTest, 0 failures</span></div>
+        <div class="stat"><b>18</b><span>shell-contract drift guards</span></div>
+      </div>
+
+      <section>
+        <h2>Merged slices — PRs &amp; squash SHAs</h2>
+        <table>
+          <thead><tr><th>Slice</th><th>What</th><th>PR</th><th>SHA</th></tr></thead>
+          <tbody>
+            <tr><td>A1</td><td>element-6 capability-surface mechanical invariant + frame enforcement tests</td><td class="mono">#435</td><td class="mono">d73f636</td></tr>
+            <tr><td>A2</td><td>wire the S114 trust-kernel anti-rot gates into CI</td><td class="mono">#436</td><td class="mono">e5a3a3b</td></tr>
+            <tr><td>A5</td><td>deny-by-default <code>set_strict_no_frame</code> made a one-way latch</td><td class="mono">#437</td><td class="mono">5141b7e</td></tr>
+            <tr><td>A6</td><td>CURRENT_STATE relabel → independently-re-verified-with-fixes</td><td class="mono">#438</td><td class="mono">36c99f0</td></tr>
+            <tr><td>M0a</td><td>real macOS Studio CI gate (swift build/test + shell contract + packager)</td><td class="mono">#439</td><td class="mono">d87821a</td></tr>
+            <tr><td>M0b</td><td>diff-caps render bridge (tolerant decoder + pure projection) + gate stabilization</td><td class="mono">#440</td><td class="mono">bea613a</td></tr>
+            <tr><td>M1</td><td>honesty-cleanup parity (converter overclaim relabel + python-contract guard)</td><td class="mono">#441</td><td class="mono">834efbe</td></tr>
+            <tr><td>M2</td><td>Diff-Caps Review Gate panel + bounded ancestor walk (the CI OOM fix)</td><td class="mono">#442</td><td class="mono">30f687f</td></tr>
+            <tr><td>M3</td><td>Velocity Editor (live <code>check --format json</code>, cwd-isolated)</td><td class="mono">#443</td><td class="mono">8b046bf</td></tr>
+            <tr><td>M4</td><td>Enforced/Declared Legend (catalog + live static-gate probe)</td><td class="mono">#444</td><td class="mono">f5f69df</td></tr>
+            <tr><td>M5</td><td>Agent-Loop Console (4-gate pipeline, verdict verbatim)</td><td class="mono">#445</td><td class="mono">2654f2d</td></tr>
+            <tr><td>M6</td><td>Bootstrap (generate allowlisted scripts only; no spawn)</td><td class="mono">#446</td><td class="mono">61adaef</td></tr>
+            <tr><td>M7</td><td>Distribution Reporter (honest macOS packaging/notarization)</td><td class="mono">#447</td><td class="mono">daa105c</td></tr>
+            <tr><td>M8</td><td>this completion dossier (capstone)</td><td class="mono">#448</td><td class="mono">(this PR)</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>The seven multi-pass catches</h2>
+        <p class="sub">Bugs and wrong turns caught and resolved across the arc — the value of the gate + the build-then-verify discipline.</p>
+
+        <div class="catch">
+          <h3>1 · The CI "mystery crash" was an unbounded loop → OOM <span class="pill ok">root-caused</span></h3>
+          <p>M2's macOS Studio gate hung ~4.6 min then was OOM-killed (26.6 GB footprint). macOS <code>sample</code> of the live xctest pid pinned it to <code>AgenticDogfoodScriptLocator.ancestorRoots()</code> spinning in <code>URL.deletingLastPathComponent()</code>.</p>
+          <p>Cause: the walk broke only on a fixed point; on <strong>macOS 15 / Darwin 24 (the CI runner)</strong> <code>URL("/").deletingLastPathComponent()</code> never converges — it prepends <code>../</code> forever. <strong>Local macOS 26 converges</strong>, so it passed locally.</p>
+          <p class="fix">Fix: bounded the loop (stop at root / fixed point / parent-not-shorter + hard cap) across all 12 identical locator copies + a regression test.</p>
+        </div>
+
+        <div class="catch">
+          <h3>2 · Wrong hypothesis: the executable-test-host <span class="pill warn">reverted</span></h3>
+          <p>Before the OOM was found, M2 split the app into a library + thin <code>@main</code> executable on the theory that <code>@testable import</code> of an executable hosted <code>@main</code> in the test process. It compiled clean but did not fix the hang.</p>
+          <p class="fix">Reverted: the source move broke 35 hardcoded <code>Sources/GarnetStudio/</code> path references across packaging contracts, promo-video probes, and docs (caught by the agentic dogfood matrix). The real fix was independent.</p>
+        </div>
+
+        <div class="catch">
+          <h3>3 · Swift-6 main-actor isolation, enforced harder on CI <span class="pill ok">fixed</span></h3>
+          <p>The library-split launcher called <code>App.main()</code> (main-actor-isolated) from a nonisolated function. Local 6.3.2 inferred it; the CI toolchain rejected it. (Subsumed by the revert, but the lesson stands: build with <code>-strict-concurrency=complete</code> locally.)</p>
+        </div>
+
+        <div class="catch">
+          <h3>4 · M1 swift-testing + XCTest dual-runner crash <span class="pill ok">fixed</span></h3>
+          <p>A Swift test referencing a <code>@MainActor</code> View entangled the package's dual test runners and aborted the process on CI.</p>
+          <p class="fix">Fix: keep Swift tests over PURE nonisolated projection types only; guard View wiring via the python source-contract. Adopted as the rule for M2–M7.</p>
+        </div>
+
+        <div class="catch">
+          <h3>5 · Buffered CI logs hid the hang point <span class="pill ok">tooling</span></h3>
+          <p><code>NSUnbufferedIO</code> did not help — the pipe to the GitHub log is block-buffered and flushes only at process exit, so the last-flushed line ≠ the hang point.</p>
+          <p class="fix">Fix: a sleep-then-<code>sample</code> watchdog on the live pid is the way to locate a CI-only hang. (Used to crack catch #1.)</p>
+        </div>
+
+        <div class="catch">
+          <h3>6 · M5 contract pointed at the wrong file <span class="pill ok">fixed</span></h3>
+          <p>The agent-loop contract asserted the record-dir artifact filenames against the pure bridge, but those literals live in the disk reader (<code>AgentLoopCommand</code>).</p>
+          <p class="fix">Fix: split the assertions — gates/honesty on the bridge, artifact filenames on the command.</p>
+        </div>
+
+        <div class="catch">
+          <h3>7 · A contract that contradicted its own honest copy <span class="pill ok">fixed</span></h3>
+          <p>M7's contract forbade the substring <code>distribution-ready</code> — but the Gatekeeper row honestly says "Not distribution-ready."</p>
+          <p class="fix">Fix: dropped the crude substring guard; the headline test already proves no readiness over-claim.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Green ladder</h2>
+        <ul class="ladder">
+          <li>macOS Studio build + test (macos-latest): <code>swift build</code> + 101 XCTest, 0 failures</li>
+          <li>macOS Studio shell contract: 18 behavioral-parity / honesty drift guards</li>
+          <li>agentic dogfood matrix: green on every Track-B PR</li>
+          <li>S114 trust-kernel anti-rot gates wired into CI (A2): red_team / evidence / ultrapunch / domain / academic</li>
+          <li>cargo test (ubuntu) · clippy -D warnings · rustfmt · cargo-deny · CodeQL · SBOM — green</li>
+          <li>PR dogfood evidence advisory gate satisfied on every slice</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Preserved canonical proofs &amp; honesty anchors</h2>
+        <p class="sub">The boundaries each Studio surface renders — never widened by this work:</p>
+        <table>
+          <thead><tr><th>Surface</th><th>Anchor</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Enforced/Declared Legend (M4)</td><td>Exactly <code>@caps</code> + <code>@max_depth</code> enforced (both backends); seccomp Linux-only</td><td><span class="pill ok">pinned by contract</span></td></tr>
+            <tr><td>Enforced/Declared Legend (M4)</td><td><code>@bounded</code> / <code>@mailbox</code> / memory / time stay declared-not-enforced</td><td><span class="pill defer">declared</span></td></tr>
+            <tr><td>Diff-Caps Review (M2)</td><td>diff-caps FLAGS a widening for review; never refuses a merge (separate CI rule)</td><td><span class="pill ok">verbatim</span></td></tr>
+            <tr><td>Agent-Loop Console (M5)</td><td>Verdict read verbatim from decision.md; acceptance "on capability + depth evidence" only</td><td><span class="pill ok">verbatim</span></td></tr>
+            <tr><td>Bootstrap (M6)</td><td>Generate-only; no spawn / sudo / profile edit (installer-spawn needs a Jon-approved AGENTS.md amendment)</td><td><span class="pill defer">descoped</span></td></tr>
+            <tr><td>Distribution (M7)</td><td>The .app is unsigned + un-notarized — local run only, not Gatekeeper-distributable</td><td><span class="pill defer">deferred</span></td></tr>
+          </tbody>
+        </table>
+        <p class="note">Four integrity rules upheld: no PR modified the gate it merged under; capability-surface widenings would fail the gate; every autonomous merge recorded agent/model/gate-version; the release tag stays Jon's.</p>
+      </section>
+
+      <footer>
+        Garnet — research-grade prototype (v0.x.x), not production / 1.0. macOS Studio is unsigned/un-notarized, for local run.
+        Foundation: S114 deny-by-default remediation. Studio: Track B M0–M8 macOS SwiftUI parity with the Windows trust cockpit.
+        This dossier is the M8 capstone; its claims are pinned by <code>scripts/test_garnet_studio_track_b_completion.py</code>.
+      </footer>
+    </div>
+  </body>
+</html>
