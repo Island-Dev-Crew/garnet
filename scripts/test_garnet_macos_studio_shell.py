@@ -29,6 +29,7 @@ AGENTLOOP_BRIDGE = APP / "Sources" / "GarnetStudio" / "AgentLoopBridge.swift"
 AGENTLOOP_CMD = APP / "Sources" / "GarnetStudio" / "AgentLoopCommand.swift"
 BOOTSTRAP_BRIDGE = APP / "Sources" / "GarnetStudio" / "BootstrapBridge.swift"
 BOOTSTRAP_CMD = APP / "Sources" / "GarnetStudio" / "BootstrapCommand.swift"
+DISTRIBUTION_BRIDGE = APP / "Sources" / "GarnetStudio" / "DistributionBridge.swift"
 
 
 def read(path: Path) -> str:
@@ -321,6 +322,24 @@ class GarnetMacosStudioShellTests(unittest.TestCase):
         self.assertIn("never runs them", section)
         self.assertIn("never uses sudo", section)
         self.assertIn("generation only", section)
+
+    def test_distribution_reporter_does_not_overclaim_signing_or_notarization(self) -> None:
+        # M7: the macOS .app is unsigned + un-notarized. The reporter must say so;
+        # signing and notarization stay deferred and the headline never claims
+        # distribution-readiness.
+        main = read(MAIN)
+        self.assertIn('case distribution = "Distribution"', main, "distribution section must be wired")
+        self.assertIn("$0 != .distribution", main, "distribution must be a power-only section")
+        bridge = read(DISTRIBUTION_BRIDGE)
+        self.assertIn("unsigned and un-notarized", bridge, "the honest posture must be stated")
+        self.assertIn("Notarization (Apple notary)", bridge)
+        self.assertIn("Code signing (Developer ID)", bridge)
+        self.assertIn("Gatekeeper", bridge)
+        # Signing/notarization/gatekeeper rows are catalog .deferred (never ready).
+        self.assertGreaterEqual(
+            bridge.count("catalog: .deferred"), 3,
+            "signing + notarization + gatekeeper must be deferred, not ready",
+        )
 
     def test_converter_help_makes_no_os_sandbox_overclaim(self) -> None:
         # M1 honesty-cleanup: the Convert action help once claimed "sandboxed
