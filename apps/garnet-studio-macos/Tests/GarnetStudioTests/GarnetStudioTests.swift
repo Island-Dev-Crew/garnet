@@ -1,5 +1,5 @@
 import XCTest
-@testable import GarnetStudio
+@testable import GarnetStudioKit
 
 final class GarnetStudioTests: XCTestCase {
     func testCliLocatorPrefersBundledExecutable() {

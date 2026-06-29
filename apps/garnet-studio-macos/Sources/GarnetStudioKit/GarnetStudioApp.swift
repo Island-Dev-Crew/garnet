@@ -2974,7 +2974,6 @@ enum GarnetStudioSelfTest {
     }
 }
 
-@main
 struct GarnetStudioApp: App {
     init() {
         if CommandLine.arguments.contains("--self-test") {
