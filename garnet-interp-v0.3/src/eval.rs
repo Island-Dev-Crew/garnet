@@ -1526,3 +1526,60 @@ fn access_index(recv: &Value, idx: &Value) -> Result<Value, RuntimeError> {
         ))),
     }
 }
+
+#[cfg(test)]
+mod element6_enforcement_tests {
+    //! A1 (element 6, enforcement side): the host-authority gate `require_capability`
+    //! enforces against the active `@caps` frame — a frame declaring the needed cap
+    //! permits; one that does not, or an empty frame, denies. These use the
+    //! THREAD-LOCAL frame API (`enter_entry_caps_for_annotations`), so they are
+    //! race-free under the parallel test harness. The complementary deny-by-default
+    //! "no frame at all → denied under strict mode" behaviour (the process-global
+    //! `set_strict_no_frame` path) is verified PER-PROCESS in
+    //! `garnet-cli/tests/s114_residual_lanes.rs`, deliberately kept there to avoid a
+    //! shared-global race in the in-crate unit-test process (see A5: enable-only latch).
+    use super::*;
+
+    fn annotations_of(src: &str) -> Vec<Annotation> {
+        let module = garnet_parser::parse_source(src).expect("parses");
+        for item in module.items {
+            if let garnet_parser::ast::Item::Fn(f) = item {
+                return f.annotations;
+            }
+        }
+        panic!("no fn in source");
+    }
+
+    #[test]
+    fn active_frame_permits_declared_and_denies_undeclared() {
+        let _frame =
+            enter_entry_caps_for_annotations(&annotations_of("@caps(fs)\ndef f() { 0 }\n"));
+        assert!(
+            require_capability("fs", "fs::read_file").is_ok(),
+            "a frame declaring fs must permit fs"
+        );
+        let err = require_capability("net", "net::connect").unwrap_err();
+        assert!(
+            format!("{err}").contains("requires @caps(net)"),
+            "a frame without net must deny net: {err}"
+        );
+    }
+
+    #[test]
+    fn empty_active_frame_denies_all_host_authority() {
+        let _frame = enter_entry_caps_for_annotations(&annotations_of("@caps()\ndef f() { 0 }\n"));
+        let err = require_capability("fs", "fs::read_file").unwrap_err();
+        assert!(
+            format!("{err}").contains("requires @caps(fs)"),
+            "an empty @caps() frame must deny fs: {err}"
+        );
+    }
+
+    #[test]
+    fn wildcard_frame_permits_any_host_authority() {
+        let _frame = enter_entry_caps_for_annotations(&annotations_of("@caps(*)\ndef f() { 0 }\n"));
+        assert!(require_capability("fs", "fs::read_file").is_ok());
+        assert!(require_capability("net", "net::connect").is_ok());
+        assert!(require_capability("proc", "std::process::spawn").is_ok());
+    }
+}

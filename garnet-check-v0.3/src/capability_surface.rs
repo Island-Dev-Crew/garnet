@@ -185,4 +185,76 @@ mod tests {
         let src = "@caps(net, fs)\ndef a() { 1 }\n@caps(time)\ndef b() { 1 }\n";
         assert_eq!(surface(src), surface(src));
     }
+
+    // ── A1 (element 6, surface side): surface == the enforceable-by-declaration set ──
+
+    /// `collect_cap_fns` must descend EXACTLY the `Item` variants that can host a
+    /// declarable-`@caps`, executable function — the "no enforced-but-invisible
+    /// function" invariant in test form. The exhaustive match below lists all 12
+    /// `Item` variants, so adding a 13th variant — or giving a currently
+    /// signature-only / non-`@caps` variant an annotated executable body — fails to
+    /// COMPILE here until the descender (`collect_cap_fns`) and this classification
+    /// are revisited together. The behavioural assertions bind the classification to
+    /// the real `capability_surface` output so the two cannot silently drift.
+    #[test]
+    fn collect_cap_fns_descends_exactly_the_caps_bearing_variants() {
+        // Single, exhaustive source of truth for "does the surface descend this?".
+        fn descended(item: &Item) -> bool {
+            match item {
+                // Host a declarable-`@caps`, executable function:
+                Item::Fn(_) | Item::Impl(_) | Item::Module(_) => true,
+                // Cannot host a declarable-`@caps` executable function:
+                Item::Use(_)        // import only, no body
+                | Item::Memory(_)   // store declaration, no fn
+                | Item::Actor(_)    // handlers carry no `@caps` annotation (HandlerDecl)
+                | Item::Struct(_)   // `@caps` is on the type; methods live in `Impl`
+                | Item::Enum(_)     // type data, no body
+                | Item::Trait(_)    // signatures only, no executable body
+                | Item::Protocol(_) // signatures only, no executable body
+                | Item::Const(_)    // initializer expression; defended by the load-time
+                | Item::Let(_) => false, // entry frame + deny-by-default, NOT the surface
+            }
+        }
+        // Behavioural binding: a real `@caps` fn in each descended position IS surfaced.
+        assert_eq!(
+            surface("@caps(fs)\ndef f() -> int { 1 }\n").aggregate,
+            vec!["fs"]
+        );
+        assert_eq!(
+            surface("struct R {}\nimpl R {\n  @caps(net)\n  def m(self) -> int { 0 }\n}\n")
+                .aggregate,
+            vec!["net"]
+        );
+        assert_eq!(
+            surface("module m {\n  @caps(env)\n  def f() -> int { 0 }\n}\n").aggregate,
+            vec!["env"]
+        );
+        // And the classifier agrees with the parsed shape of each descended kind.
+        let parsed = parse_source(
+            "@caps(fs)\ndef f() -> int { 1 }\nstruct R {}\nimpl R {\n  def m(self) -> int { 0 }\n}\nmodule n {}\n",
+        )
+        .expect("parses");
+        let kinds: Vec<bool> = parsed.items.iter().map(descended).collect();
+        assert_eq!(
+            kinds,
+            vec![true, false, true, true],
+            "Fn, Struct, Impl, Module"
+        );
+    }
+
+    /// Element-6 honesty pin: top-level `let`/`const` initializers declare no
+    /// `@caps`, so they are NOT in the static surface. Their host authority is gated
+    /// at runtime by the load-time entry frame + deny-by-default mediation
+    /// (S114-FIX-2), verified per-process in `garnet-cli/tests/s114_residual_lanes.rs`
+    /// — NOT by this surface. This test exists so no future reader mistakes the
+    /// 3-arm surface for total enforcement coverage.
+    #[test]
+    fn top_level_let_const_initializers_are_not_a_surface_concern() {
+        let s = surface("let x = 1\nconst Y = 2\n@caps()\ndef main() -> int { 0 }\n");
+        assert!(
+            s.aggregate.is_empty(),
+            "let/const declare no caps: {:?}",
+            s.aggregate
+        );
+    }
 }
