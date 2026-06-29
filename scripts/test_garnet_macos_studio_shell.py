@@ -27,6 +27,8 @@ VELOCITY_CMD = APP / "Sources" / "GarnetStudio" / "VelocityCheckCommand.swift"
 LEGEND_BRIDGE = APP / "Sources" / "GarnetStudio" / "EnforcementLegendBridge.swift"
 AGENTLOOP_BRIDGE = APP / "Sources" / "GarnetStudio" / "AgentLoopBridge.swift"
 AGENTLOOP_CMD = APP / "Sources" / "GarnetStudio" / "AgentLoopCommand.swift"
+BOOTSTRAP_BRIDGE = APP / "Sources" / "GarnetStudio" / "BootstrapBridge.swift"
+BOOTSTRAP_CMD = APP / "Sources" / "GarnetStudio" / "BootstrapCommand.swift"
 
 
 def read(path: Path) -> str:
@@ -294,6 +296,31 @@ class GarnetMacosStudioShellTests(unittest.TestCase):
         self.assertIn("@caps + @max_depth", bridge, "the enforced kernel pair must be named")
         # The seal gate must only pass when a seal was actually parsed.
         self.assertIn("sealPresent", bridge)
+
+    def test_bootstrap_is_generate_only_never_spawns_and_is_allowlisted(self) -> None:
+        # M6 (descoped): the macOS bootstrap GENERATES allowlisted bash/zsh scripts
+        # for operator-run only. It must never spawn/execute, never use sudo, and
+        # never edit a shell profile.
+        main = read(MAIN)
+        self.assertIn('case bootstrap = "Bootstrap"', main, "bootstrap section must be wired")
+        self.assertIn("$0 != .bootstrap", main, "bootstrap must be a power-only section")
+        cmd = read(BOOTSTRAP_CMD)
+        # The writer must NOT spawn or execute anything.
+        for spawn in ("Process(", "StudioProcessRunner", "waitUntilExit", "/bin/sh", "execv"):
+            self.assertNotIn(spawn, cmd, f"the bootstrap writer must not {spawn} — generate only")
+        bridge = read(BOOTSTRAP_BRIDGE)
+        # The allowlist guard must forbid privileged tokens (and not be empty).
+        # (That every GENERATED script is actually clean is proved by the Swift
+        # unit test testEveryGeneratedScriptIsAllowlistClean.)
+        self.assertIn("forbiddenTokens", bridge)
+        self.assertIn('"sudo"', bridge, "the allowlist must forbid sudo")
+        self.assertIn("| sh", bridge, "the allowlist must forbid remote-pipe execution")
+        self.assertIn("rm -rf", bridge, "the allowlist must forbid destructive removals")
+        # The honesty copy: generate-only, never runs, no sudo, no profile edit.
+        section = read(APP / "Sources" / "GarnetStudio" / "BootstrapSection.swift")
+        self.assertIn("never runs them", section)
+        self.assertIn("never uses sudo", section)
+        self.assertIn("generation only", section)
 
     def test_converter_help_makes_no_os_sandbox_overclaim(self) -> None:
         # M1 honesty-cleanup: the Convert action help once claimed "sandboxed
