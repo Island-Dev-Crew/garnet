@@ -1,0 +1,55 @@
+# Garnet — macOS Studio (SwiftUI) CI.
+#
+# M0a (Track B enabling gate): before this, the native macOS Studio's
+# `swift build` / `swift test` and the shell contract ran in NO workflow — the
+# only macOS-touching Studio job (agentic-dogfood-matrix.yml) runs with
+# `--skip-app-workbench`, so "green CI -> merge" was hollow for Swift changes.
+# This job makes the macOS Studio build + unit tests + shell contract a real,
+# paths-scoped gate that subsequent Track-B slices (M0b..M8) merge under.
+name: macOS Studio
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/garnet-studio-macos/**'
+      - 'scripts/test_garnet_macos_studio_shell.py'
+      - 'scripts/package_garnet_studio_macos.sh'
+      - '.github/workflows/macos-studio.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/garnet-studio-macos/**'
+      - 'scripts/test_garnet_macos_studio_shell.py'
+      - 'scripts/package_garnet_studio_macos.sh'
+      - '.github/workflows/macos-studio.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-studio-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  macos-studio:
+    name: macOS Studio build + test
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+      # The native SwiftUI app must compile and its unit/decoder tests must pass.
+      - name: swift build
+        run: swift build --package-path apps/garnet-studio-macos
+      - name: swift test
+        run: swift test --package-path apps/garnet-studio-macos
+      # The shell/contract gate — the action inventory + safe-command vectors.
+      - name: macOS Studio shell contract
+        run: python3 scripts/test_garnet_macos_studio_shell.py
+      # The packager must stay shell-valid and must not reintroduce a hardcoded
+      # version (M0a wired its VERSION to the workspace stamp).
+      - name: package script is shell-valid
+        run: bash -n scripts/package_garnet_studio_macos.sh
