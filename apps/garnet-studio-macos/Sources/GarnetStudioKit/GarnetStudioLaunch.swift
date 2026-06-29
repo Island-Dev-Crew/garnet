@@ -11,6 +11,12 @@ import SwiftUI
 /// `GarnetStudioTests` suite on the CI macos-latest runner (it did —
 /// unreproducible on a local GUI session). Testing a *library* removes that
 /// hazard entirely. The executable's `main.swift` calls this; nothing else does.
+///
+/// `@MainActor`: SwiftUI's `App.main()` is main-actor-isolated, so the launcher
+/// must be too (the CI Swift toolchain enforces this isolation strictly even
+/// where a local toolchain inferred it). `main.swift`'s top-level code runs on
+/// the main actor, so the call from there is valid.
+@MainActor
 public func runGarnetStudio() {
     GarnetStudioApp.main()
 }
