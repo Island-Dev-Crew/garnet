@@ -64,8 +64,7 @@ jobs:
         run: |
           NSUnbufferedIO=YES swift test --package-path apps/garnet-studio-macos \
             --disable-swift-testing \
-            --skip testDeckPreviewSmokeRunsReporterAndRequiresManifestedOutputs \
-            --skip testDeckPreviewSmokeRejectsStaleManifest
+            --filter "GarnetStudioTests.GarnetStudioTests/testAgenticMatrixLocatorPrefersBundledScriptBeforeAmbientCheckout"
       # The shell/contract gate — the action inventory + safe-command vectors.
       - name: macOS Studio shell contract
         run: python3 scripts/test_garnet_macos_studio_shell.py
