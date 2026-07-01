@@ -1,0 +1,31 @@
+{
+  "schema": "garnet.cli.native_debian_install.v1",
+  "evidence_tier": "native-arm64-debian-clean-install-smoke",
+  "recorded_utc": "2026-07-01T06:07:07Z",
+  "recorded_by": "autonomous Linux lane over SSH to the UTM Debian-12 ARM64 guest",
+  "commit": "245a49f112f912ac915335c8d15d45f0f6e29f81",
+  "host": {
+    "kernel": "Linux 6.1.0-13-arm64 aarch64",
+    "distro": "Debian 12 (UTM ARM64 guest)",
+    "toolchain": "rustc 1.96.1 (31fca3adb 2026-06-26)"
+  },
+  "package": {
+    "name": "garnet",
+    "version": "0.8.1-1",
+    "arch": "arm64",
+    "file": "garnet_0.8.1-1_arm64.deb",
+    "built_with": "cargo deb --no-build -p garnet-cli",
+    "installed_via": "sudo dpkg -i",
+    "installed_path": "/usr/bin/garnet",
+    "dpkg_status": "install ok installed"
+  },
+  "smokes": [
+    {"id": "version", "exit": 0, "asserts": "reports garnet 0.8.1", "observed": "garnet 0.8.1"},
+    {"id": "check_clean", "exit": 0, "asserts": "clean @caps() program passes check"},
+    {"id": "run_clean", "exit": 0, "asserts": "clean program runs", "observed": "hello=> nil"},
+    {"id": "check_violate", "exit": 1, "asserts": "undeclared fs use flagged at check time", "code": "check.caps_coverage"},
+    {"id": "run_violate", "exit": 1, "asserts": "undeclared fs use TRAPS at runtime (enforced @caps kernel)", "trap": "capability: `fs::read_file` requires @caps(fs), not declared in the calling chain"}
+  ],
+  "honesty": "Native (non-WSL) desktop Linux .deb clean-install proof on ARM64. The @caps kernel is enforced IN-PROCESS on the installed binary (deny-by-default require_capability trap at runtime; also flagged statically by check.caps_coverage). This is NOT a signed/notarized package, and NOT a seccomp OS-sandbox proof (see tools/seccomp-apply for the separate generated-policy-applied-on-a-real-kernel proof). Garnet is a research-grade prototype (v0.x), not production / 1.0.",
+  "verdict": "PASS"
+}

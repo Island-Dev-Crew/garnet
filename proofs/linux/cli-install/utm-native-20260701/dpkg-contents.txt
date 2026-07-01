@@ -1,0 +1,16 @@
+/usr
+/usr/share
+/usr/share/doc
+/usr/share/doc/garnet
+/usr/share/doc/garnet/LICENSE
+/usr/share/doc/garnet/README.md
+/usr/lib
+/usr/lib/systemd
+/usr/lib/systemd/system
+/usr/lib/systemd/system/garnet-actor.service
+/usr/share/man
+/usr/share/man/man1
+/usr/share/man/man1/garnet.1.gz
+/usr/share/doc/garnet/copyright
+/usr/bin
+/usr/bin/garnet

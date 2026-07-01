@@ -1,0 +1,18 @@
+                                                  
+   ####   ###  ####  #   # ####### ##### ######   
+  #    # #   # #   # ##  # #         #     #      
+  #      ##### ####  # # # #####     #     #      
+  #  ### #   # #  #  #  ## #         #     #      
+  #    # #   # #   # #   # #         #     #      
+   ####  #   # #   # #   # #######   #     #      
+  Rust Rigor. Ruby Velocity. One Coherent Language.
+
+garnet 0.8.1 (Top-level garnet(1) CLI — parse / check / run / test / new / keygen / build --sign / verify / convert + the trust spine (caps / diff-caps / seal / sandbox / caps-log / agent-loop) (v0.8.1).)
+  parser    garnet-parser 0.3.0 (Mini-Spec v1.0)
+  interp    garnet-interp 0.3.0 (tree-walk, Rung 3)
+  vm        garnet-vm     0.5.0 (bytecode VM; @max_depth + @caps trap-parity with interp, S99–S101)
+  check     garnet-check  0.3.0 (safe-mode + borrow + CapCaps v3.4.1, Rung 4)
+  memory    garnet-memory 0.3.0 (Mnemos — Memory Core reference impl; production roadmap in MEMORY_CORE_ROADMAP.md, Rung 5)
+  actor-rt  garnet-actor-runtime 0.4.0 (Result-returning ask, hot-reloadable + signed reload, Rung 6)
+  stdlib    garnet-stdlib 0.4.0 (80 registry primitives, dispatch derived from the registry)
+  convert   garnet-convert 0.4.0 (migration assistant: Rust / Ruby / Python / Go → Garnet)
