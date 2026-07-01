@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Garnet — Native Linux Lane Completion Dossier (L1–L4)</title>
+    <style>
+      :root {
+        --bg: oklch(17% 0.02 265);
+        --panel: oklch(22% 0.03 265);
+        --panel-2: oklch(26% 0.035 265);
+        --ink: oklch(95% 0.01 265);
+        --faint: oklch(72% 0.02 265);
+        --line: oklch(38% 0.03 265);
+        --ok: oklch(78% 0.17 150);
+        --warn: oklch(80% 0.15 75);
+        --defer: oklch(75% 0.04 265);
+        --accent: oklch(70% 0.16 155);
+        --mono: ui-monospace, "SF Mono", Menlo, monospace;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background:
+          radial-gradient(900px 500px at 85% -8%, oklch(28% 0.07 165 / 0.5), transparent 60%),
+          var(--bg);
+        color: var(--ink);
+        font: 15px/1.6 system-ui, -apple-system, Segoe UI, sans-serif;
+        padding: clamp(1.2rem, 1rem + 3vw, 4rem);
+      }
+      .wrap { max-width: 1040px; margin: 0 auto; }
+      header.hero {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 2rem 2.2rem;
+        background: linear-gradient(160deg, var(--panel-2), var(--panel));
+        box-shadow: 0 24px 60px -30px oklch(0% 0 0 / 0.7);
+      }
+      .kicker { color: var(--accent); font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; font-size: 12px; }
+      h1 { font-size: clamp(1.7rem, 1.1rem + 2.4vw, 2.8rem); margin: 0.3em 0 0.2em; line-height: 1.08; }
+      .sub { color: var(--faint); max-width: 72ch; }
+      .stamp { color: var(--faint); font-family: var(--mono); font-size: 12px; margin-top: 0.8rem; }
+      .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin: 1.6rem 0; }
+      .stat { border: 1px solid var(--line); border-radius: 12px; padding: 1rem 1.1rem; background: var(--panel); }
+      .stat b { display: block; font-size: 1.7rem; line-height: 1; }
+      .stat span { color: var(--faint); font-size: 12px; }
+      section { margin-top: 2.4rem; }
+      h2 { font-size: 1.25rem; border-left: 3px solid var(--accent); padding-left: 0.6rem; }
+      table { width: 100%; border-collapse: collapse; margin-top: 0.8rem; font-size: 14px; }
+      th, td { text-align: left; padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+      th { color: var(--faint); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+      td.mono, .mono { font-family: var(--mono); font-size: 12.5px; }
+      .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+      .pill.ok { background: oklch(78% 0.17 150 / 0.18); color: var(--ok); }
+      .pill.defer { background: oklch(75% 0.04 265 / 0.22); color: var(--defer); }
+      .card { border: 1px solid var(--line); border-radius: 12px; padding: 1rem 1.2rem; background: var(--panel); margin-bottom: 12px; }
+      .card h3 { margin: 0 0 0.3rem; font-size: 1rem; }
+      .card p { margin: 0.2rem 0; color: var(--faint); }
+      .card .win { color: var(--ok); }
+      ul.env { list-style: none; padding: 0; font-family: var(--mono); font-size: 12.5px; }
+      ul.env li { padding: 0.2rem 0; border-bottom: 1px solid var(--line); }
+      .note { border-left: 3px solid var(--warn); padding: 0.4rem 0.9rem; color: var(--faint); background: var(--panel); border-radius: 6px; }
+      footer { margin-top: 3rem; color: var(--faint); font-size: 12px; border-top: 1px solid var(--line); padding-top: 1rem; }
+      code { font-family: var(--mono); background: var(--panel-2); padding: 0.05em 0.35em; border-radius: 4px; font-size: 0.9em; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="hero">
+        <div class="kicker">Completion Dossier · iron-canvas capstone</div>
+        <h1>Native Linux Lane — build, run &amp; smoke on real Debian</h1>
+        <p class="sub">
+          Garnet's trust spine, CLI, and Studio, proven on a NATIVE (non-WSL) desktop-Linux
+          ARM64 host — the UTM Debian-12 guest on this Mac, driven over SSH. The pre-existing
+          Linux proofs were WSL/WSLg and explicitly disclaimed being non-WSL desktop proofs;
+          this lane closes exactly that gap. Every slice is its own evidence-backed PR,
+          squash-merged with agent/model/gate-version provenance. Garnet remains a
+          <strong>research-grade prototype (v0.x), not production / 1.0</strong>.
+        </p>
+        <p class="stamp">Compiled 2026-07-01 · branch main · merged via IslandDevCrew (owner, Jon-authorized autonomous merges) · release tag remains Jon-owned</p>
+      </header>
+
+      <div class="grid">
+        <div class="stat"><b>4</b><span>slices merged (L1–L4)</span></div>
+        <div class="stat"><b>3</b><span>native-ARM64 status gates, green</span></div>
+        <div class="stat"><b>1st</b><span>non-WSL desktop-Linux proofs</span></div>
+        <div class="stat"><b>ARM64</b><span>Debian 12 · kernel 6.1.0-13</span></div>
+      </div>
+
+      <section>
+        <h2>Merged slices — PRs &amp; squash SHAs</h2>
+        <table>
+          <thead><tr><th>Slice</th><th>What</th><th>PR</th><th>SHA</th></tr></thead>
+          <tbody>
+            <tr><td>L1</td><td>seccomp-apply re-verified on native ARM64 vs current main (3 deterministic runs)</td><td class="mono">#449</td><td class="mono">3f3570b</td></tr>
+            <tr><td>L2</td><td>native ARM64 Debian <code>.deb</code> clean-install + enforced-kernel smoke</td><td class="mono">#450</td><td class="mono">11afa50</td></tr>
+            <tr><td>L3</td><td>native ARM64 Tauri Studio build + install + headless launch</td><td class="mono">#451</td><td class="mono">ecc852e</td></tr>
+            <tr><td>L4</td><td>this native Linux lane completion dossier (capstone)</td><td class="mono">#452</td><td class="mono">(this PR)</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Environment (the real host)</h2>
+        <ul class="env">
+          <li>host: UTM Debian-12 ARM64 guest (native GNOME desktop, NOT WSL) · driven over SSH from the Mac</li>
+          <li>kernel: Linux 6.1.0-13-arm64 aarch64 · CONFIG_SECCOMP=y · libseccomp 2.5.4-1+deb12u1</li>
+          <li>toolchain: rustc 1.96.1 (built fresh from main 245a49f) · node/npm · Tauri v2</li>
+          <li>resources: 6 vCPU · 3.8 GiB RAM + 4 GiB swap (added for the webkit link)</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>The three native proofs</h2>
+
+        <div class="card">
+          <h3>L1 · seccomp generated-policy applied + trapped <span class="pill ok">PROVEN</span></h3>
+          <p><code>tools/seccomp-apply/prove.sh</code> re-run against a fresh build of current main. <span class="win">@caps(fs) → socket() BLOCKED (EPERM), deterministic over 3 runs; @caps(fs,net) → socket() ALLOWED (policy-driven).</span> <code>garnet sandbox</code> stays generation-only (<code>enforced:false</code>); this proves the GENERATED policy is applied + traps on a real kernel via the reference harness. Gate: <code>garnet_seccomp_apply_status.py --gate</code>.</p>
+        </div>
+
+        <div class="card">
+          <h3>L2 · CLI native .deb clean-install <span class="pill ok">PASS</span></h3>
+          <p><code>cargo deb</code> → <code>garnet_0.8.1-1_arm64.deb</code> → <code>dpkg -i</code> → <code>/usr/bin/garnet</code>. The installed binary: version 0.8.1; clean program check+run exit 0; <span class="win">undeclared <code>fs</code> use flagged at check time (<code>check.caps_coverage</code>) AND trapped at runtime (<code>capability: fs::read_file requires @caps(fs)</code>)</span> — the enforced @caps kernel on a natively-installed system package. Gate: <code>garnet_native_debian_cli_install_status.py --gate</code>.</p>
+        </div>
+
+        <div class="card">
+          <h3>L3 · Tauri Studio native build + install + launch <span class="pill ok">PASS</span></h3>
+          <p><code>tauri build --bundles deb</code> (Tauri v2) → <code>Garnet Studio_0.8.1_arm64.deb</code> → <code>dpkg -i</code> → <code>/usr/bin/garnet-studio</code> (+ a <code>.desktop</code> entry). <span class="win"><code>--studio-smoke</code> passes (status=passed, platform=linux, cli_found=/usr/bin/garnet, provider_api_called=false); the GUI launches headless under xvfb and runs 20s without crashing (exit 124 = timeout).</span> Closes the gap the WSL/WSLg smokes disclaim. Gate: <code>garnet_native_linux_studio_status.py --gate</code>.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Honesty anchors &amp; boundaries (not widened)</h2>
+        <table>
+          <thead><tr><th>Claim</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>@caps + @max_depth enforced in-process (both backends), cross-platform</td><td><span class="pill ok">enforced</span></td></tr>
+            <tr><td>seccomp policy: generated (<code>enforced:false</code>), proven applicable+trapping on a real kernel via the reference harness — <code>garnet run</code> does not auto-install it</td><td><span class="pill ok">generation + apply-proof</span></td></tr>
+            <tr><td>the <code>.deb</code> packages (CLI + Studio) are UNSIGNED / un-notarized</td><td><span class="pill defer">unsigned</span></td></tr>
+            <tr><td>headless Studio launch used xvfb software rendering (no GPU) — a launch proof, not a GPU-render proof</td><td><span class="pill defer">software-render</span></td></tr>
+            <tr><td>promoting <code>deb</code> to a committed <code>tauri.conf.json</code> bundle target (built here via <code>--bundles</code> CLI override)</td><td><span class="pill defer">Jon-gated follow-up</span></td></tr>
+            <tr><td>WASI/wasmtime fuel + egress + macOS/Windows OS-sandbox</td><td><span class="pill defer">named-deferred</span></td></tr>
+          </tbody>
+        </table>
+        <p class="note">Integrity rules upheld: no PR modified the gate it merges under — the L3 config change that would have tripped the studio shell contract + the agentic-matrix probe was reverted and left as a Jon-gated follow-up; the proof used the <code>--bundles deb</code> CLI override instead. Every autonomous merge recorded agent/model/gate-version. The release tag stays Jon's. GitHub CI cannot drive the UTM VM, so each native proof is a status gate over recorded evidence (the same idiom as the seccomp-apply + WSL smokes).</p>
+      </section>
+
+      <footer>
+        Garnet — research-grade prototype (v0.x.x), not production / 1.0. Native Linux lane: L1 seccomp re-proof · L2 CLI clean-install · L3 Tauri Studio build/install/launch · L4 this capstone.
+        All proven on the UTM Debian-12 ARM64 guest. This dossier's claims are pinned by <code>scripts/test_garnet_linux_lane_completion.py</code>.
+      </footer>
+    </div>
+  </body>
+</html>
