@@ -1,0 +1,48 @@
+{
+  "schema": "garnet.studio.native_linux.v1",
+  "evidence_tier": "native-arm64-debian-tauri-build-install-launch",
+  "recorded_utc": "2026-07-01T06:22:00Z",
+  "recorded_by": "autonomous Linux lane over SSH to the UTM Debian-12 ARM64 guest",
+  "commit": "245a49f112f912ac915335c8d15d45f0f6e29f81",
+  "host": {
+    "kernel": "Linux 6.1.0-13-arm64 aarch64",
+    "distro": "Debian 12 (UTM ARM64 guest, native desktop — NOT WSL)",
+    "toolchain": "rustc 1.96.1; node/npm; Tauri v2 (@tauri-apps/cli ^2)"
+  },
+  "build": {
+    "tool": "npm run tauri build -- --bundles deb",
+    "target_source": "the deb bundle was produced by the `--bundles deb` CLI override; the committed tauri.conf.json bundle.targets stays [\"nsis\"]. Promoting deb to a committed target touches the studio shell contract + the agentic-matrix probe (both assert nsis-only), so that config change is left as a Jon-gated follow-up — this proof only needs the override.",
+    "tauri_rc": 0,
+    "built_binary": "target/release/garnet-studio",
+    "deb": "Garnet Studio_0.8.1_arm64.deb"
+  },
+  "install": {
+    "via": "sudo dpkg -i",
+    "package": "garnet-studio",
+    "version": "0.8.1",
+    "arch": "arm64",
+    "dpkg_status": "install ok installed",
+    "installed_bin": "/usr/bin/garnet-studio",
+    "desktop_entry": "/usr/share/applications/Garnet Studio.desktop"
+  },
+  "smoke": {
+    "cmd": "garnet-studio --studio-smoke",
+    "exit": 0,
+    "status": "passed",
+    "app_version": "0.8.1",
+    "platform": "linux",
+    "arch": "aarch64",
+    "cli_found": true,
+    "cli_path": "/usr/bin/garnet",
+    "provider_api_called": false,
+    "source_included": false
+  },
+  "gui_launch": {
+    "headless": "xvfb-run -a timeout 20 /usr/bin/garnet-studio",
+    "exit": 124,
+    "interpretation": "the app initialized GTK/WebKit and ran for 20s without crashing; exit 124 == killed by timeout (a successful launch, not a crash)",
+    "note": "under headless xvfb GTK fell back to software rendering (\"Unable to create a GL context\") — expected with no GPU; this is a launch proof, not a GPU-accelerated-render proof"
+  },
+  "honesty": "First NATIVE (non-WSL) desktop-Linux ARM64 build + system-install + launch proof of the Tauri Garnet Studio. The pre-existing Linux Studio smokes are WSL/WSLg and explicitly disclaim being a non-WSL desktop Linux proof; this closes exactly that gap. The headless launch used xvfb with software rendering (no GPU); the .deb is NOT signed or notarized. Garnet is a research-grade prototype (v0.x), not production / 1.0.",
+  "verdict": "PASS"
+}

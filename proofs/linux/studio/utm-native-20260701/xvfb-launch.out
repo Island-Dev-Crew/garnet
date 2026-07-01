@@ -1,0 +1,2 @@
+
+** (garnet-studio:20891): WARNING **: 23:20:33.902: Disabled hardware acceleration because GTK failed to initialize GL: Unable to create a GL context.
