@@ -1,0 +1,12 @@
+   Compiling tokio v1.52.3
+   Compiling serde_repr v0.1.20
+   Compiling iana-time-zone v0.1.65
+   Compiling mime v0.3.17
+   Compiling chrono v0.4.44
+    Finished `release` profile [optimized] target(s) in 58.11s
+       Built application at: /home/debian/garnet/target/release/garnet-studio
+        Info Patching /home/debian/garnet/target/release/garnet-studio with bundle type information: deb
+    Bundling Garnet Studio_0.8.1_arm64.deb (/home/debian/garnet/target/release/bundle/deb/Garnet Studio_0.8.1_arm64.deb)
+    Finished 1 bundle at:
+        /home/debian/garnet/target/release/bundle/deb/Garnet Studio_0.8.1_arm64.deb
+
