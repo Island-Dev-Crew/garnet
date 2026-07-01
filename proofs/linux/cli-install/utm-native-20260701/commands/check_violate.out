@@ -1,0 +1,1 @@
+{"diagnostics":[{"severity":"error","code":"check.caps_coverage","message":"caps coverage: function `main` does not declare `fs` but transitively calls `read_file` which requires it","span":null}],"summary":{"errors":1,"warnings":0,"infos":0,"ok":false}}

@@ -1,0 +1,19 @@
+Package: garnet
+Status: install ok installed
+Priority: optional
+Section: devel
+Installed-Size: 6253
+Maintainer: Jon <jon@island-dev-crew.example>
+Architecture: arm64
+Version: 0.8.1-1
+Depends: ca-certificates, libc6 (>= 2.34)
+Description: Top-level garnet(1) CLI — parse / check / run / test / new / keygen / build
+ --sign / verify / convert + the trust spine (caps / diff-caps / seal / sandbox
+ / caps-log / agent-loop) (v0.8.1).
+ Garnet is a dual-mode agent-native language platform. Managed mode
+ (def + ARC + exceptions) feels Ruby-like. Safe mode (@safe + fn + ownership
+ + Result) feels Rust-like. The mode boundary auto-bridges errors and
+ ARC-affine semantics. First-class memory primitives for agent cores,
+ typed actors with bounded mailboxes + Ed25519 signed hot-reload,
+ deterministic signed manifests, and a 136-test security surface across
+ four hardening layers.
