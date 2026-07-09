@@ -90,6 +90,8 @@ check, then merge through `IslandDevCrew`. Do not tag.
 - Modify: `scripts/test_garnet_mit_readiness_status.py`
 - Modify: `scripts/garnet_mac_side_continuation_status.py`
 - Modify: `scripts/test_garnet_mac_side_continuation_status.py`
+- Modify: `F_Project_Management/GARNET_v0_5_READINESS_BASELINE.json`
+- Modify: `CURRENT_STATE.md` (native Linux truth only)
 
 **Interfaces:**
 - Consumes: `garnet_seccomp_apply_status.read_status()`, `garnet_native_debian_cli_install_status.evaluate()`, and `garnet_native_linux_studio_status.evaluate()`.
@@ -109,6 +111,10 @@ def test_native_linux_evidence_closes_non_wsl_blocker(self) -> None:
     self.assertNotIn("Linux VM/container", blocked)
     self.assertNotIn("non-WSL Linux desktop", deferred)
     self.assertIn("signed Linux distribution", deferred)
+    self.assertEqual(
+        "native-arm64-build-install-launch-verified",
+        status.packaging_gates["linux_package_choice"].status,
+    )
 ```
 
 Run `python3 scripts/test_garnet_windows_linux_studio_status.py`.
@@ -196,7 +202,21 @@ ObjectiveLane(
 The CLI lane defers signed/universal Linux packaging. The Studio lane defers
 signing, non-ARM64 breadth, and production distribution.
 
-- [ ] **Step 6: Repair the Mac continuation reporter**
+- [ ] **Step 6: Refresh the committed readiness baseline**
+
+Regenerate the baseline after adding the three committed lane IDs, then run the
+regression gate:
+
+```sh
+python3 scripts/garnet_mit_readiness_status.py --format json \
+  > F_Project_Management/GARNET_v0_5_READINESS_BASELINE.json
+python3 scripts/garnet_mit_readiness_status.py --check-no-regression
+```
+
+Expected: the baseline contains all three native Linux lane IDs and the
+regression check exits `0`. Do not hand-edit computed percentages.
+
+- [ ] **Step 7: Repair the Mac continuation reporter**
 
 Replace the stale target-system sentence with:
 
@@ -207,7 +227,14 @@ Replace the stale target-system sentence with:
 Keep the lane non-Mac-actionable but remove `Linux runtime execution` from its
 blockers. Add a test for the sentence and blocker absence.
 
-- [ ] **Step 7: Run focused reporter verification**
+- [ ] **Step 8: Reconcile current-state Linux truth**
+
+Update only the native Linux status paragraphs in `CURRENT_STATE.md`: cite the
+committed ARM64 Debian CLI, seccomp-application, and Tauri Studio proof; remove
+the closed clean/non-WSL Linux runtime blocker; retain unsigned, non-ARM64,
+broader-distro, production, and macOS/Windows sandbox boundaries.
+
+- [ ] **Step 9: Run focused reporter verification**
 
 ```sh
 python3 scripts/test_garnet_windows_linux_studio_status.py
@@ -216,12 +243,13 @@ python3 scripts/test_garnet_mac_side_continuation_status.py
 python3 scripts/garnet_seccomp_apply_status.py --gate
 python3 scripts/garnet_native_debian_cli_install_status.py --gate
 python3 scripts/garnet_native_linux_studio_status.py --gate
+python3 scripts/garnet_mit_readiness_status.py --check-no-regression
 python3 scripts/garnet_mit_readiness_status.py --format json > /tmp/mit-after-native-linux.json
 ```
 
 Expected: all commands exit `0`; JSON contains all three committed native lanes.
 
-- [ ] **Step 8: Run the full slice ladder and commit**
+- [ ] **Step 10: Run the full slice ladder and commit**
 
 ```sh
 cargo test --workspace --no-fail-fast
@@ -235,11 +263,13 @@ git add scripts/garnet_windows_linux_studio_status.py \
   scripts/garnet_mit_readiness_status.py \
   scripts/test_garnet_mit_readiness_status.py \
   scripts/garnet_mac_side_continuation_status.py \
-  scripts/test_garnet_mac_side_continuation_status.py
+  scripts/test_garnet_mac_side_continuation_status.py \
+  F_Project_Management/GARNET_v0_5_READINESS_BASELINE.json \
+  CURRENT_STATE.md
 git commit -m "fix(readiness): consume native Linux completion proof"
 ```
 
-Expected: zero failures and one reporter-only commit. Build dogfood evidence,
+Expected: zero failures and one readiness-truth commit. Build dogfood evidence,
 open a PR, wait for full CI, and merge before Task 3.
 
 ---
