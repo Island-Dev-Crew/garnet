@@ -5,7 +5,8 @@ This is the target-platform counterpart to the Mac-side continuation pulse. It
 records the current Windows/Linux Studio source truth: the original command and
 evidence contract, the Tauri v2 shell scaffold, and the v0.5 readiness reporter
 parity surface. It still does not claim signed Windows distribution, winget,
-Linux runtime proof, or a completed cross-platform release.
+signed Linux distribution, non-ARM64 Linux breadth, broader distro coverage, or
+a completed cross-platform release.
 """
 from __future__ import annotations
 
@@ -731,7 +732,7 @@ def read_status(
     clean_vm_truth = (
         [
             "Windows clean-VM installer proof is verified for the unsigned x64 NSIS artifact under `scripts/garnet_windows_clean_vm_installer_status.py`",
-            "Windows unsigned x64 clean-machine proof exists; signed MSI, winget, Windows ARM64, and Linux runtime proof remain separate gates",
+            "Windows unsigned x64 clean-machine proof exists; signed MSI, winget, Windows ARM64, signed Linux distribution, non-ARM64 Linux breadth, and broader distro/package coverage remain separate gates",
         ]
         if clean_vm_verified
         else [

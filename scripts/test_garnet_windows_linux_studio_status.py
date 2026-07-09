@@ -330,6 +330,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
                     clean_vm_evidence_root=root,
                     native_linux_evidence_enabled=False,
                 )
+                native_status = status_mod.read_status(clean_vm_evidence_root=root)
 
         self.assertEqual(
             "tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-verified-wsl-deb-rpm-extract-verified-linux-gui-still-open",
@@ -346,6 +347,10 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             status.user_assistance_needed,
         )
         self.assertIn("Linux VM/container", " ".join(status.user_assistance_needed))
+        native_truth = " ".join(native_status.current_truth)
+        self.assertIn("Native ARM64 non-WSL Linux runtime proof is committed", native_truth)
+        self.assertIn("signed Linux distribution", native_truth)
+        self.assertNotIn("Linux runtime proof remain separate", native_truth)
 
     def test_linux_wsl_deb_package_gate_marks_package_build_not_gui_completion(self) -> None:
         evidence = status_mod.smoke_garnet_studio_linux_wsl_deb.LinuxWslDebEvidence(
