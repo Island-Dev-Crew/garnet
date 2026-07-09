@@ -3,8 +3,8 @@
 
 This reporter is intentionally narrower than `garnet_mit_readiness_status.py`.
 It answers: what can an agent keep doing from this macOS checkout while Apple
-Developer ID identity verification and Windows/Linux runtime work are blocked
-or delegated elsewhere?
+Developer ID identity verification is blocked and remaining Windows signing,
+Windows ARM64, and broader Linux distribution work is delegated elsewhere?
 """
 from __future__ import annotations
 

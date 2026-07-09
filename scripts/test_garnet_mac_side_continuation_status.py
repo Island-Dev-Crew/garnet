@@ -54,6 +54,8 @@ class GarnetMacSideContinuationStatusTests(unittest.TestCase):
         lanes = {lane.id: lane for lane in status.lanes}
         lane = lanes["windows_linux_studio"]
 
+        self.assertNotIn("Windows/Linux runtime work are blocked", status_mod.__doc__ or "")
+        self.assertIn("broader Linux distribution work is delegated", status_mod.__doc__ or "")
         self.assertFalse(lane.mac_actionable)
         self.assertIn(
             "Native ARM64 Linux CLI, seccomp, and Studio proof is committed; remaining target-system work is Windows signing/ARM64 and broader Linux distribution",
