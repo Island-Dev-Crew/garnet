@@ -1,8 +1,8 @@
 # Garnet Launch-Convergence Execution Index
 
-**Design:** `F_Project_Management/GARNET_LAUNCH_CONVERGENCE_DESIGN_2026_07_09.md`  
-**Baseline:** `9c9ca9e3538e4dd226e9cea356cf7ecd1ba92297`  
-**Execution model:** one focused PR per slice; Garnet dogfood and full remote CI before merge  
+**Design:** `F_Project_Management/GARNET_LAUNCH_CONVERGENCE_DESIGN_2026_07_09.md`
+**Baseline:** `9c9ca9e3538e4dd226e9cea356cf7ecd1ba92297`
+**Execution model:** one focused PR per slice; Garnet dogfood and full remote CI before merge
 **Hard stop:** Jon alone chooses FIRE/HOLD, tags, releases, and public posting
 
 ## Ordered Workstreams

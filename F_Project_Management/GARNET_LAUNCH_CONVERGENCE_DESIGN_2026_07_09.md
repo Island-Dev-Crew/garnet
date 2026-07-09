@@ -1,9 +1,9 @@
 # Garnet Launch-Convergence Design
 
-**Date:** 2026-07-09  
-**Status:** Approved direction; design ready for Jon review  
-**Baseline:** `origin/main` at `9c9ca9e3538e4dd226e9cea356cf7ecd1ba92297`  
-**Release posture:** research-grade v0.x; not production or 1.0  
+**Date:** 2026-07-09
+**Status:** Approved direction; design ready for Jon review
+**Baseline:** `origin/main` at `9c9ca9e3538e4dd226e9cea356cf7ecd1ba92297`
+**Release posture:** research-grade v0.x; not production or 1.0
 **Launch authority:** Jon only
 
 ## 1. Objective
