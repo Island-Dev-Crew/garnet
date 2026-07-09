@@ -32,6 +32,9 @@ import smoke_garnet_studio_linux_wslg_install_launch  # noqa: E402
 import smoke_garnet_studio_linux_gate_replay  # noqa: E402
 import smoke_garnet_studio_domain_shell  # noqa: E402
 import smoke_garnet_studio_release_readiness_shell  # noqa: E402
+import garnet_native_debian_cli_install_status  # noqa: E402
+import garnet_native_linux_studio_status  # noqa: E402
+import garnet_seccomp_apply_status  # noqa: E402
 
 ACTIVE_CONVERSION = ["Rust", "Ruby", "Python", "Go"]
 ADVISORY_PLANNING = [
@@ -656,7 +659,17 @@ def _sample_actions() -> list[StudioAction]:
     ]
 
 
-def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudioStatus:
+def read_status(
+    clean_vm_evidence_root: Path | None = None,
+    *,
+    native_linux_evidence_enabled: bool = True,
+) -> WindowsLinuxStudioStatus:
+    native_cli = garnet_native_debian_cli_install_status.evaluate()
+    native_studio = garnet_native_linux_studio_status.evaluate()
+    seccomp = garnet_seccomp_apply_status.read_status()
+    native_linux_verified = (
+        native_linux_evidence_enabled and native_cli.ok and native_studio.ok and seccomp.ok
+    )
     clean_vm_root = clean_vm_evidence_root or _clean_vm_evidence_root_from_env()
     clean_vm = garnet_windows_clean_vm_installer_status.read_status(clean_vm_root)
     clean_vm_verified = clean_vm.clean_vm_verified
@@ -682,7 +695,9 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
     # child proof readers may be host-sensitive when replayed on non-Windows CI.
     linux_gate_replay_verified = linux_gate_replay.verified
     linux_status_suffix = (
-        "linux-gate-replay-verified-linux-desktop-still-open"
+        "native-arm64-build-install-launch-verified"
+        if native_linux_verified
+        else "linux-gate-replay-verified-linux-desktop-still-open"
         if linux_gate_replay_verified
         else "wslg-system-install-launch-verified-linux-desktop-still-open"
         if linux_wslg_install.verified
@@ -725,6 +740,14 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
         ]
     )
     linux_package_truth = []
+    if native_linux_verified:
+        linux_package_truth.extend(
+            [
+                "native ARM64 Debian CLI clean-install proof is committed by `scripts/garnet_native_debian_cli_install_status.py`; the installed `/usr/bin/garnet` binary enforces the @caps kernel on a native non-WSL Debian ARM64 host",
+                "native ARM64 Debian Tauri Studio proof is committed by `scripts/garnet_native_linux_studio_status.py`; the `.deb` builds, installs as `garnet-studio`, passes `--studio-smoke`, and launches under Xvfb on a native non-WSL Debian ARM64 desktop session",
+                "Linux-only seccomp application proof is committed by `scripts/garnet_seccomp_apply_status.py`; the generated policy is applied on a real Linux kernel and traps a denied socket syscall, while macOS and Windows OS-sandbox application remain unverified",
+            ]
+        )
     if linux_deb.verified:
         linux_package_truth.append(
             "WSL Linux `.deb` package build and non-GUI `--studio-smoke` are verified by `scripts/smoke_garnet_studio_linux_wsl_deb.py`; Linux desktop GUI install/launch remains open",
@@ -769,7 +792,9 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
         id="linux_package_choice",
         platform="Linux",
         status=(
-            "linux-gate-replay-verified"
+            "native-arm64-build-install-launch-verified"
+            if native_linux_verified
+            else "linux-gate-replay-verified"
             if linux_gate_replay_verified
             else "wslg-system-install-launch-verified"
             if linux_wslg_install.verified
@@ -794,14 +819,18 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
             else "open"
         ),
         next_evidence=(
-            "Run/install the package in a non-WSL real Linux desktop session and capture clean GUI launch evidence"
+            "Move from native ARM64 Debian proof to signed Linux distribution, x86_64 Linux breadth, broader distro/package coverage, and production release evidence"
+            if native_linux_verified
+            else "Run/install the package in a non-WSL real Linux desktop session and capture clean GUI launch evidence"
             if linux_wslg_install.verified
             else "Run/install the WSL-built .deb/.rpm in a real Linux desktop session and capture GUI launch evidence"
             if any_linux_package_evidence
             else "choose AppImage-first, .deb/.rpm, Flatpak, or source/PWA shell after target smoke"
         ),
         forbidden_claim=(
-            "clean Linux or non-WSL Linux desktop GUI package install/launch is verified"
+            "signed Linux distribution, x86_64 Linux breadth, broader distro coverage, or production Linux release is verified"
+            if native_linux_verified
+            else "clean Linux or non-WSL Linux desktop GUI package install/launch is verified"
             if linux_wslg_install.verified
             else "Linux desktop GUI package install/launch is verified"
             if any_linux_package_evidence
@@ -824,7 +853,9 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
         ),
     )
     linux_runtime_next = (
-        "Linux desktop GUI install/launch proof for the WSL-built .deb/.rpm or chosen target package"
+        "signed Linux distribution, x86_64 Linux breadth, broader distro/package coverage, and production Linux release evidence"
+        if native_linux_verified
+        else "Linux desktop GUI install/launch proof for the WSL-built .deb/.rpm or chosen target package"
         if any_linux_package_evidence
         else "Linux desktop launch proof and first package-format decision"
     )
@@ -889,7 +920,11 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
             "Windows local source-build proof exists for the Tauri frontend, backend tests, release executable, unsigned NSIS bundle, and `--studio-smoke` evidence",
             *clean_vm_truth,
             *linux_package_truth,
-            "Linux runtime proof is not complete until the shell launches in a Linux desktop environment",
+            (
+                "Native ARM64 non-WSL Linux runtime proof is committed; unsigned packages, non-ARM64 Linux breadth, broader distro coverage, production distribution, and macOS/Windows OS-sandbox application remain open"
+                if native_linux_verified
+                else "Linux runtime proof is not complete until the shell launches in a Linux desktop environment"
+            ),
             "the shell wraps existing CLI, docs/PWA, advisory scripts, and dogfood gates without duplicating converter logic",
             "CLI Health maps to the existing `garnet version` probe unless a real health subcommand is added",
             "the Domain Proof Matrix runs the current canonical MVP and agentic examples through `garnet parse`, `garnet check`, and `garnet run`, writing manifest-backed evidence without source inclusion",
@@ -987,7 +1022,13 @@ def read_status(clean_vm_evidence_root: Path | None = None) -> WindowsLinuxStudi
         next_slices=next_slices,
         user_assistance_needed=[
             *clean_vm_assistance,
-            "Provide a Linux VM/container with GUI or AppImage-capable desktop session for runtime launch evidence",
+            *(
+                []
+                if native_linux_verified
+                else [
+                    "Provide a Linux VM/container with GUI or AppImage-capable desktop session for runtime launch evidence"
+                ]
+            ),
             "Provide signing credentials only when ready to verify signed MSI claims",
         ],
     )

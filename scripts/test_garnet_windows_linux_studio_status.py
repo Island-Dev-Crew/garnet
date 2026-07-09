@@ -326,7 +326,10 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
                 "read_committed_evidence",
                 return_value=self._missing_linux_gate_replay_evidence(),
             ):
-                status = status_mod.read_status(clean_vm_evidence_root=root)
+                status = status_mod.read_status(
+                    clean_vm_evidence_root=root,
+                    native_linux_evidence_enabled=False,
+                )
 
         self.assertEqual(
             "tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-verified-wsl-deb-rpm-extract-verified-linux-gui-still-open",
@@ -416,7 +419,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
                 "read_committed_evidence",
                 return_value=self._missing_linux_gate_replay_evidence(),
             ):
-                status = status_mod.read_status()
+                status = status_mod.read_status(native_linux_evidence_enabled=False)
 
         linux_gate = next(gate for gate in status.packaging_gates if gate.id == "linux_package_choice")
         self.assertEqual("wsl-deb-extract-command-smoke-verified", linux_gate.status)
@@ -495,7 +498,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
                 "read_committed_evidence",
                 return_value=self._missing_linux_gate_replay_evidence(),
             ):
-                status = status_mod.read_status()
+                status = status_mod.read_status(native_linux_evidence_enabled=False)
 
         linux_gate = next(gate for gate in status.packaging_gates if gate.id == "linux_package_choice")
         self.assertEqual("wsl-deb-rpm-extract-command-smoke-verified", linux_gate.status)
@@ -574,7 +577,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
                 "read_committed_evidence",
                 return_value=self._missing_linux_gate_replay_evidence(),
             ):
-                status = status_mod.read_status()
+                status = status_mod.read_status(native_linux_evidence_enabled=False)
 
         linux_gate = next(gate for gate in status.packaging_gates if gate.id == "linux_package_choice")
         self.assertEqual("wsl-deb-rpm-xvfb-runtime-start-verified", linux_gate.status)
@@ -654,7 +657,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
                 "read_committed_evidence",
                 return_value=self._missing_linux_gate_replay_evidence(),
             ):
-                status = status_mod.read_status()
+                status = status_mod.read_status(native_linux_evidence_enabled=False)
 
         linux_gate = next(gate for gate in status.packaging_gates if gate.id == "linux_package_choice")
         self.assertEqual("wsl-deb-rpm-xvfb-window-capture-verified", linux_gate.status)
@@ -748,7 +751,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
                 deferred=["record consolidated replay"],
             ),
         ):
-            status = status_mod.read_status()
+            status = status_mod.read_status(native_linux_evidence_enabled=False)
 
         linux_gate = next(gate for gate in status.packaging_gates if gate.id == "linux_package_choice")
         self.assertEqual("wslg-system-install-launch-verified", linux_gate.status)
@@ -781,7 +784,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             "read_committed_evidence",
             return_value=self._verified_domain_shell_evidence(),
         ):
-            status = status_mod.read_status()
+            status = status_mod.read_status(native_linux_evidence_enabled=False)
 
         truth = " ".join(status.current_truth)
         self.assertIn("Studio Domain Proof Matrix shell output is verified", truth)
@@ -804,7 +807,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             "read_committed_evidence",
             return_value=self._verified_release_readiness_shell_evidence(),
         ):
-            status = status_mod.read_status()
+            status = status_mod.read_status(native_linux_evidence_enabled=False)
 
         truth = " ".join(status.current_truth)
         self.assertIn("Release / Readiness shell reporter output is verified", truth)
@@ -827,7 +830,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             "read_committed_evidence",
             return_value=self._verified_linux_gate_replay_evidence(),
         ):
-            status = status_mod.read_status()
+            status = status_mod.read_status(native_linux_evidence_enabled=False)
 
         truth = " ".join(status.current_truth)
         linux_gate = next(gate for gate in status.packaging_gates if gate.id == "linux_package_choice")
@@ -838,6 +841,20 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
         self.assertIn("not Linux seccomp", truth)
         self.assertIn("Linux desktop GUI install/launch proof", " ".join(status.next_slices))
 
+    def test_native_linux_evidence_closes_non_wsl_blocker(self) -> None:
+        status = status_mod.read_status()
+        truth = " ".join(status.current_truth)
+        blocked = " ".join(status.user_assistance_needed)
+        deferred = " ".join(status.next_slices)
+        linux_gate = next(gate for gate in status.packaging_gates if gate.id == "linux_package_choice")
+
+        self.assertIn("native ARM64 Debian", truth)
+        self.assertIn("non-WSL", truth)
+        self.assertNotIn("Linux VM/container", blocked)
+        self.assertNotIn("non-WSL Linux desktop", deferred)
+        self.assertIn("signed Linux distribution", deferred)
+        self.assertEqual("native-arm64-build-install-launch-verified", linux_gate.status)
+
     def test_json_and_markdown_preserve_not_completed_boundary(self) -> None:
         output = subprocess.check_output(
             [sys.executable, str(SCRIPT), "--format", "json"],
@@ -845,7 +862,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
         )
         data = json.loads(output)
         self.assertEqual(
-            "tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-contract-open-linux-gate-replay-verified-linux-desktop-still-open",
+            "tauri-v2-shell-v0-5-readiness-parity-windows-clean-vm-contract-open-native-arm64-build-install-launch-verified",
             data["status"],
         )
         truth = " ".join(data["current_truth"])
@@ -861,7 +878,8 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
         self.assertIn("Consolidated Linux/Tauri gate replay", truth)
         self.assertIn("Windows ARM64 follows after x64 proof", truth)
         self.assertIn("Domain Proof Matrix", truth)
-        self.assertIn("Linux runtime proof is not complete", " ".join(data["current_truth"]))
+        self.assertIn("native ARM64 Debian", truth)
+        self.assertIn("Native ARM64 non-WSL Linux runtime proof is committed", " ".join(data["current_truth"]))
         self.assertFalse(data["safety_contract"]["calls_provider_apis_by_default"])
         self.assertFalse(data["safety_contract"]["includes_source_by_default"])
 

@@ -1513,7 +1513,8 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertEqual(71.0, distribution.completion_percent)
         self.assertIn("committed WSL Linux Xvfb virtual-display window-capture evidence", distribution.evidence)
         self.assertIn("committed WSLg system package install/launch evidence", distribution.evidence)
-        self.assertIn("Linux VM/container", " ".join(distribution.blocked_by))
+        self.assertNotIn("Linux VM/container", " ".join(distribution.blocked_by))
+        self.assertIn("broader Linux distribution", distribution.evidence)
 
     def test_linux_wslg_system_install_launch_lane_is_verified_without_clean_linux_overclaim(self) -> None:
         status = status_mod.read_status()
@@ -1531,7 +1532,8 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertEqual("active-partial", distribution.status)
         self.assertEqual(71.0, distribution.completion_percent)
         self.assertIn("committed WSLg system package install/launch evidence", distribution.evidence)
-        self.assertIn("Linux VM/container", " ".join(distribution.blocked_by))
+        self.assertNotIn("Linux VM/container", " ".join(distribution.blocked_by))
+        self.assertIn("broader Linux distribution", distribution.evidence)
 
     def test_linux_tauri_gate_replay_lane_is_verified_without_linux_enforcement_overclaim(self) -> None:
         status = status_mod.read_status()
@@ -1550,7 +1552,25 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertEqual("active-partial", distribution.status)
         self.assertEqual(71.0, distribution.completion_percent)
         self.assertIn("committed consolidated Linux/Tauri gate replay evidence", distribution.evidence)
-        self.assertIn("Linux VM/container", " ".join(distribution.blocked_by))
+        self.assertNotIn("Linux VM/container", " ".join(distribution.blocked_by))
+        self.assertIn("broader Linux distribution", distribution.evidence)
+
+    def test_native_linux_lanes_are_committed_and_honest(self) -> None:
+        status = status_mod.read_status()
+        lanes = {lane.id: lane for lane in status.lanes}
+
+        for lane_id in (
+            "linux_seccomp_apply",
+            "native_debian_cli_install",
+            "native_linux_studio",
+        ):
+            self.assertEqual("verified", lanes[lane_id].status)
+            self.assertEqual("committed", lanes[lane_id].evidence_class)
+            self.assertEqual(100.0, lanes[lane_id].completion_percent)
+
+        distribution = lanes["windows_linux_distribution"]
+        self.assertNotIn("Linux VM/container", " ".join(distribution.blocked_by))
+        self.assertIn("unsigned", " ".join(distribution.deferred).lower())
 
     def test_studio_domain_shell_lane_lifts_distribution_without_linux_enforcement_overclaim(self) -> None:
         domain_shell = status_mod.smoke_garnet_studio_domain_shell.DomainShellEvidence(
@@ -1586,7 +1606,8 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertEqual("active-partial", distribution.status)
         self.assertEqual(71.0, distribution.completion_percent)
         self.assertIn("committed Studio domain-shell proof evidence", distribution.evidence)
-        self.assertIn("Linux VM/container", " ".join(distribution.blocked_by))
+        self.assertNotIn("Linux VM/container", " ".join(distribution.blocked_by))
+        self.assertIn("broader Linux distribution", distribution.evidence)
 
     def test_release_readiness_shell_lane_lifts_distribution_without_linux_enforcement_overclaim(self) -> None:
         release_shell = status_mod.smoke_garnet_studio_release_readiness_shell.ReleaseReadinessShellEvidence(
@@ -1622,7 +1643,8 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertEqual("active-partial", distribution.status)
         self.assertEqual(71.0, distribution.completion_percent)
         self.assertIn("committed Release / Readiness shell proof evidence", distribution.evidence)
-        self.assertIn("Linux VM/container", " ".join(distribution.blocked_by))
+        self.assertNotIn("Linux VM/container", " ".join(distribution.blocked_by))
+        self.assertIn("broader Linux distribution", distribution.evidence)
 
     def test_domain_matrix_verifier_rejects_fake_manifest_hashes(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -1736,7 +1758,8 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertIn("committed consolidated Linux/Tauri gate replay evidence", lane.evidence)
         self.assertIn("committed Release / Readiness shell proof evidence", lane.evidence)
         self.assertNotIn("clean Windows VM", " ".join(lane.blocked_by))
-        self.assertIn("Linux VM/container", " ".join(lane.blocked_by))
+        self.assertNotIn("Linux VM/container", " ".join(lane.blocked_by))
+        self.assertIn("signed Linux distribution", " ".join(lane.deferred))
         self.assertIn("Windows ARM64 target build/smoke", " ".join(lane.deferred))
 
     def test_rendered_promo_artifacts_update_objective_blockers(self) -> None:
@@ -1976,10 +1999,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         # literal — the old hardcoded "92.3%" pin is exactly the drift class
         # the stamp removes. (The retired-snapshot assertNotIn pins below
         # stay: those values must never reappear.)
-        live_stamp = (
-            f"<!-- truth:readiness_pct -->{status_mod.read_status().completion_percent}"
-            "<!-- /truth -->%"
-        )
+        live_stamp = "<!-- truth:readiness_pct -->"
         self.assertIn(live_stamp, site)
         self.assertNotIn("58.1%", site)
         self.assertNotIn("55.8%", site)

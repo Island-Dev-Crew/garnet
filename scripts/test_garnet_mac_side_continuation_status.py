@@ -49,6 +49,19 @@ class GarnetMacSideContinuationStatusTests(unittest.TestCase):
         self.assertIn("without calling providers", lanes["converter_advisory"]["next_slice"])
         self.assertIn("garnet_proof_benchmark_status.py", lanes["proof_benchmark_empirics"]["evidence"])
 
+    def test_native_linux_completion_updates_target_system_boundary(self) -> None:
+        status = status_mod.read_status()
+        lanes = {lane.id: lane for lane in status.lanes}
+        lane = lanes["windows_linux_studio"]
+
+        self.assertFalse(lane.mac_actionable)
+        self.assertIn(
+            "Native ARM64 Linux CLI, seccomp, and Studio proof is committed; remaining target-system work is Windows signing/ARM64 and broader Linux distribution",
+            status.current_truth,
+        )
+        self.assertNotIn("Linux runtime execution", lane.blocked_by)
+        self.assertIn("Windows runtime execution", lane.blocked_by)
+
     def test_markdown_is_a_goal_prompt_friendly_pulse(self) -> None:
         rendered = subprocess.check_output([sys.executable, str(SCRIPT)], text=True)
 

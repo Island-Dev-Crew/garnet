@@ -74,6 +74,9 @@ import garnet_readiness_status  # noqa: E402
 import garnet_stdlib_layer_gate  # noqa: E402
 import garnet_cross_os_trap_parity_matrix  # noqa: E402
 import garnet_linux_cross_os_enforcement_proof  # noqa: E402
+import garnet_native_debian_cli_install_status  # noqa: E402
+import garnet_native_linux_studio_status  # noqa: E402
+import garnet_seccomp_apply_status  # noqa: E402
 import garnet_windows_cross_os_enforcement_proof  # noqa: E402
 import garnet_windows_linux_studio_status  # noqa: E402
 import smoke_garnet_studio_linux_wsl_deb  # noqa: E402
@@ -928,6 +931,10 @@ def read_status() -> MitReadinessStatus:
     provenance_chain = garnet_provenance_seal_chain_status.read_status()
     cap_manifest_standard = garnet_cap_manifest_standard_status.read_status()
     linux_cross_os = garnet_linux_cross_os_enforcement_proof.read_committed_evidence(ROOT)
+    native_cli = garnet_native_debian_cli_install_status.evaluate()
+    native_studio = garnet_native_linux_studio_status.evaluate()
+    seccomp = garnet_seccomp_apply_status.read_status()
+    native_linux_verified = native_cli.ok and native_studio.ok and seccomp.ok
     cross_os_trap_parity = _committed_cross_os_trap_parity_evidence()
     windows_cross_os = garnet_windows_cross_os_enforcement_proof.read_status()
     proof = garnet_proof_benchmark_status.read_status()
@@ -1223,6 +1230,12 @@ def read_status() -> MitReadinessStatus:
         else ""
     )
     wls_evidence_tail = (
+        f"readiness reporter parity actions, {domain_matrix_tail}a Windows clean-VM installer proof contract, native ARM64 Debian CLI/seccomp/Studio proof, and open signing, Windows ARM64, broader Linux distribution, and clean-machine package gates."
+        if native_linux_verified and not wls_clean_vm_verified
+        else
+        f"readiness reporter parity actions, {domain_matrix_tail}native ARM64 Debian CLI/seccomp/Studio proof, a verified x64 clean-VM installer proof, and open signing, Windows ARM64, and broader Linux distribution gates."
+        if native_linux_verified and wls_clean_vm_verified
+        else
         f"readiness reporter parity actions, {domain_matrix_tail}a verified x64 clean-VM installer "
         "proof, and open Linux plus signing, winget, and Windows ARM64 package gates."
         if wls_clean_vm_verified
@@ -1573,6 +1586,47 @@ def read_status() -> MitReadinessStatus:
                 "not clean/non-WSL Linux desktop proof",
                 "Signed MSI, winget, Windows ARM64, production, and v1.0 remain unclaimed",
             ],
+        ),
+        ObjectiveLane(
+            id="linux_seccomp_apply",
+            label="Native Linux seccomp application",
+            status="verified" if seccomp.ok else "planned",
+            completion_percent=100.0 if seccomp.ok else 0.0,
+            evidence="Recorded UTM Debian ARM64 proof applies the generated policy and traps a denied socket syscall.",
+            blocked_by=[] if seccomp.ok else ["recorded deterministic seccomp application proof"],
+            deferred=["macOS/Windows OS-sandbox application remains unverified"],
+            evidence_class="committed",
+        ),
+        ObjectiveLane(
+            id="native_debian_cli_install",
+            label="Native ARM64 Debian CLI install",
+            status="verified" if native_cli.ok else "planned",
+            completion_percent=100.0 if native_cli.ok else 0.0,
+            evidence=(
+                "Recorded native non-WSL Debian ARM64 proof installs the Garnet `.deb` as `/usr/bin/garnet`, "
+                "runs clean CLI smoke, and verifies static plus runtime @caps traps from the installed binary."
+            ),
+            blocked_by=[] if native_cli.ok else ["recorded native ARM64 Debian CLI install proof"],
+            deferred=["signed/universal Linux packaging remains unverified"],
+            evidence_class="committed",
+        ),
+        ObjectiveLane(
+            id="native_linux_studio",
+            label="Native ARM64 Linux Studio",
+            status="verified" if native_studio.ok else "planned",
+            completion_percent=100.0 if native_studio.ok else 0.0,
+            evidence=(
+                "Recorded native non-WSL Debian ARM64 proof builds the Tauri Studio `.deb`, installs "
+                "`garnet-studio`, passes `--studio-smoke`, and launches under Xvfb without claiming signing or production distribution."
+            ),
+            blocked_by=[] if native_studio.ok else ["recorded native ARM64 Linux Studio build/install/launch proof"],
+            deferred=[
+                "signed Linux distribution remains unverified",
+                "non-ARM64 Linux breadth remains unverified",
+                "broader distro/package coverage remains unverified",
+                "production distribution remains unverified",
+            ],
+            evidence_class="committed",
         ),
         ObjectiveLane(
             id="windows_linux_domain_proof_matrix",

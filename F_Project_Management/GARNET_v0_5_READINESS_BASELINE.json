@@ -1,7 +1,7 @@
 {
-  "source": "/Users/IDC2.5/Desktop/Garnet",
+  "source": "/private/tmp/garnet-truth-lock-native-linux",
   "overall_status": "active-partial",
-  "completion_percent": 89.1,
+  "completion_percent": 93.1,
   "current_truth": [
     "tracked implementation plan is complete",
     "goal remains active",
@@ -80,8 +80,8 @@
       "id": "windows_linux_distribution",
       "label": "Windows/Linux distribution",
       "status": "active-partial",
-      "completion_percent": 58.0,
-      "evidence": "`scripts/garnet_windows_linux_studio_status.py` now reports the Tauri v2 shell scaffold in `apps/garnet-studio`, minimal webview permissions, Windows local release build/smoke evidence, v0.5 readiness reporter parity actions, a repo-owned Domain Proof Matrix for the canonical MVP plus agentic examples, a Windows clean-VM installer proof contract, and open Linux plus clean-machine package gates.",
+      "completion_percent": 71.0,
+      "evidence": "`scripts/garnet_windows_linux_studio_status.py` now reports the Tauri v2 shell scaffold in `apps/garnet-studio`, minimal webview permissions, Windows local release build/smoke evidence, committed Windows/WSL Studio smoke evidence, committed WSL Linux `.deb` package-build/command-smoke evidence, committed WSL Linux `.deb` extract/command-smoke evidence, committed WSL Linux `.rpm` extract/command-smoke evidence, committed WSL Linux Xvfb runtime-start evidence, committed WSL Linux Xvfb virtual-display window-capture evidence, committed WSLg system package install/launch evidence, committed consolidated Linux/Tauri gate replay evidence, committed Studio domain-shell proof evidence, committed Release / Readiness shell proof evidence, v0.5 readiness reporter parity actions, a repo-owned Domain Proof Matrix for the canonical MVP plus agentic examples, a Windows clean-VM installer proof contract, native ARM64 Debian CLI/seccomp/Studio proof, and open signing, Windows ARM64, broader Linux distribution, and clean-machine package gates.",
       "blocked_by": [
         "clean Windows VM guest identity",
         "unsigned NSIS installer artifact digest",
@@ -89,35 +89,291 @@
         "installed Studio --studio-smoke JSON",
         "installed app launch screenshot",
         "Run the unsigned NSIS installer in a clean Windows VM for installer/runtime launch evidence",
-        "Provide a Linux VM/container with GUI or AppImage-capable desktop session for runtime launch evidence",
         "Provide signing credentials only when ready to verify signed MSI claims"
       ],
       "deferred": [
         "Windows clean-machine NSIS install and CLI smoke evidence",
-        "Linux desktop launch proof and first package-format decision",
-        "Domain Proof Matrix screenshots/output from the Windows shell and WSL/Linux shell",
+        "signed Linux distribution, x86_64 Linux breadth, broader distro/package coverage, and production Linux release evidence",
         "Active converter end-to-end screenshots from the shell",
         "Advisory bundle/review/handoff evidence walkthrough without source inclusion",
-        "Release / Readiness panel screenshot and reporter-output evidence from the Windows shell",
+        "Release / Readiness panel screenshot from the live Windows GUI shell",
         "Unsigned-to-signed Windows MSI/AuthentiCode plan after VM smoke",
         "Website/status copy sync after target smoke evidence"
       ],
       "evidence_class": "local"
     },
     {
+      "id": "windows_wsl_studio_smoke",
+      "label": "Windows/WSL Studio smoke proof (S117 increment)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_studio_windows_wsl.py --record` records manifest-backed Windows Tauri `--studio-smoke` evidence plus a WSL command-contract replay. Committed Windows Studio smoke bundle: `proofs/windows/studio/windows-studio-smoke-20260603-152023/garnet-studio-windows-wsl-smoke.json`. Committed WSL command-contract portability bundle: `proofs/linux/execution/studio/wsl-studio-command-contract-20260603-152109/garnet-studio-windows-wsl-smoke.json`. The WSL row is execution/portability evidence only, not Linux seccomp, OS-sandbox enforcement, Wasmtime fuel, Linux desktop GUI, or native Linux package proof.",
+      "blocked_by": [],
+      "deferred": [
+        "WSL is execution/portability only, not Linux seccomp or OS-sandbox enforcement",
+        "Linux desktop GUI launch and native Linux package proof remain open",
+        "Signed MSI, winget, Windows ARM64, production, and v1.0 remain unclaimed"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "linux_wsl_studio_deb_package",
+      "label": "Linux WSL Studio DEB package proof (S117 increment)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_studio_linux_wsl_deb.py --record` records a WSL-driven Tauri Linux `.deb` build, `dpkg-deb` inspection, and non-GUI `--studio-smoke` command evidence. WSL Linux Tauri .deb package build and non-GUI studio-smoke verified at `/private/tmp/garnet-truth-lock-native-linux/proofs/linux/execution/studio-package/linux-wsl-deb-package-20260603-161219/garnet-studio-linux-wsl-deb.json` (target/release/bundle/deb/Garnet Studio_0.1.0_amd64.deb, sha256 cfb91f972ce6f6531329751d52fc653a565e537c892869c523ee92036c62c727).",
+      "blocked_by": [],
+      "deferred": [
+        "not Linux desktop GUI launch proof",
+        "not Linux seccomp or OS-sandbox enforcement",
+        "not clean Linux install proof",
+        "not signed, production, or v1.0 readiness"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "linux_wsl_studio_deb_install",
+      "label": "Linux WSL Studio DEB install/extract proof (S117 increment)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_studio_linux_wsl_deb_install.py --record` records a WSL-driven Tauri Linux `.deb` build, `dpkg-deb --extract`, and extracted-binary non-GUI `--studio-smoke` command evidence. WSL Linux Tauri .deb extract and extracted-binary non-GUI studio-smoke verified at `/private/tmp/garnet-truth-lock-native-linux/proofs/linux/execution/studio-package-install/linux-wsl-deb-install-20260603-1200/garnet-studio-linux-wsl-deb-install.json` (target/release/bundle/deb/Garnet Studio_0.1.0_amd64.deb, package sha256 96fde7fdc3f9b4a8632d98d5e815ef54d4e86fb49cd6ad60e8661e84b3e1b33f, extracted binary target/linux-wsl-deb-install-stage-20260603-170305/usr/bin/garnet-studio).",
+      "blocked_by": [],
+      "deferred": [
+        "not Linux desktop GUI launch proof",
+        "not Linux seccomp or OS-sandbox enforcement",
+        "not clean Linux install proof",
+        "not privileged system package install proof",
+        "not signed, production, or v1.0 readiness"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "linux_wsl_studio_rpm_package",
+      "label": "Linux WSL Studio RPM package proof (S117 increment)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_studio_linux_wsl_rpm.py --record` records a WSL-driven Tauri Linux `.rpm` build, RPM metadata/content inspection, payload extraction, and extracted-binary non-GUI `--studio-smoke` command evidence. WSL Linux Tauri .rpm package extract and extracted-binary non-GUI studio-smoke verified at `/private/tmp/garnet-truth-lock-native-linux/proofs/linux/execution/studio-rpm-package/linux-wsl-rpm-package-20260603-181113/garnet-studio-linux-wsl-rpm.json` (target/release/bundle/rpm/Garnet Studio-0.1.0-1.x86_64.rpm, package sha256 2bcab818f9e038cf76a676dec28bd96c84ab68568e7bcf5440979198841d5ad6, extracted binary target/linux-wsl-rpm-stage-20260603-181113/usr/bin/garnet-studio).",
+      "blocked_by": [],
+      "deferred": [
+        "not Linux desktop GUI launch proof",
+        "not Linux seccomp or OS-sandbox enforcement",
+        "not clean Linux install proof",
+        "not privileged system package install proof",
+        "not signed, production, or v1.0 readiness"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "linux_wsl_studio_xvfb_runtime",
+      "label": "Linux WSL Studio Xvfb runtime-start proof (S117 increment)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_studio_linux_wsl_xvfb.py --record` records the extracted Linux Tauri Studio binary starting under WSL `xvfb-run` and staying alive until the harness timeout. WSL Xvfb runtime-start verified at `/private/tmp/garnet-truth-lock-native-linux/proofs/linux/execution/studio-xvfb-runtime/linux-wsl-xvfb-runtime-20260603-185759/garnet-studio-linux-wsl-xvfb-runtime.json` (source deb proof C:/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/proofs/linux/execution/studio-package-install/linux-wsl-deb-install-20260603-1200/garnet-studio-linux-wsl-deb-install.json, extracted binary target/linux-wsl-deb-install-stage-20260603-170305/usr/bin/garnet-studio, timeout exit 124).",
+      "blocked_by": [],
+      "deferred": [
+        "not Linux desktop GUI launch proof",
+        "not Linux seccomp or OS-sandbox enforcement",
+        "not clean Linux install proof",
+        "not privileged system package install proof",
+        "not signed, production, or v1.0 readiness"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "linux_wsl_studio_xvfb_window_capture",
+      "label": "Linux WSL Studio Xvfb virtual-display window capture proof (S117 increment)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_studio_linux_wsl_xvfb_window.py --record` records the extracted Linux Tauri Studio binary under WSL `xvfb-run`, an X11 window tree containing Garnet Studio, and a virtual-display screenshot artifact. WSL Xvfb virtual-display window capture verified at `/private/tmp/garnet-truth-lock-native-linux/proofs/linux/execution/studio-xvfb-window-capture/linux-wsl-xvfb-window-capture-20260603-194237/garnet-studio-linux-wsl-xvfb-window-capture.json` (screenshot capture/screenshot.png, 340 bytes).",
+      "blocked_by": [],
+      "deferred": [
+        "not Linux desktop GUI launch proof",
+        "not Linux seccomp or OS-sandbox enforcement",
+        "not clean Linux install proof",
+        "not privileged system package install proof",
+        "not signed, production, or v1.0 readiness"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "linux_wsl_studio_wslg_system_install_launch",
+      "label": "Linux WSLg Studio system install/launch proof (S117 increment)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_studio_linux_wslg_install_launch.py --record` records a privileged WSL `.deb` system install, installed-binary `--studio-smoke`, and a WSLg/X11 window observation for the installed Linux Studio binary. WSLg system package install and installed-binary GUI launch verified at `/private/tmp/garnet-truth-lock-native-linux/proofs/linux/execution/studio-wslg-system-install/linux-wslg-system-install-20260603-205713/garnet-studio-linux-wslg-system-install-launch.json` (garnet-studio amd64, display :0, wayland wayland-0).",
+      "blocked_by": [],
+      "deferred": [
+        "not Linux desktop GUI proof outside WSLg",
+        "not Linux seccomp or OS-sandbox enforcement",
+        "not clean Linux install proof",
+        "not signed, production, or v1.0 readiness"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "windows_wsl_studio_domain_shell_proof",
+      "label": "Windows/WSL Studio domain-shell proof (S117 increment)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_studio_domain_shell.py --record` records the Studio binary's `--studio-domain-proof-smoke` path on Windows and WSL, exercising the Tauri command wrapper around the repo Domain Proof Matrix. Committed Windows Studio domain-shell proof: `proofs/windows/studio-domain-shell/win-20260603-220832/garnet-studio-domain-shell-proof.json`. Committed WSL Studio domain-shell portability proof: `proofs/linux/execution/studio-domain-shell/wsl-20260603-220935/garnet-studio-domain-shell-proof.json`. The WSL row is execution/portability evidence only, not Linux seccomp, OS-sandbox enforcement, clean/non-WSL Linux desktop GUI proof, production, or v1.0 readiness.",
+      "blocked_by": [],
+      "deferred": [
+        "WSL is execution/portability only, not Linux seccomp or OS-sandbox enforcement",
+        "not clean/non-WSL Linux desktop GUI proof",
+        "Signed MSI, winget, Windows ARM64, production, and v1.0 remain unclaimed"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "windows_wsl_studio_release_readiness_shell_proof",
+      "label": "Windows/WSL Studio Release / Readiness shell proof (S117 increment)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_studio_release_readiness_shell.py --record` records the Studio binary's `--studio-release-readiness-smoke` path on Windows and WSL, exercising the Tauri command wrappers behind the Release / Readiness status reporters. Committed Windows Studio Release / Readiness shell proof: `proofs/windows/studio-release-readiness-shell/win-20260603-230129/garnet-studio-release-readiness-shell-proof.json`. Committed WSL Studio Release / Readiness portability proof: `proofs/linux/execution/studio-release-readiness-shell/wsl-20260603-230237/garnet-studio-release-readiness-shell-proof.json`. The WSL row is execution/portability evidence only, not Linux seccomp, OS-sandbox enforcement, clean/non-WSL Linux desktop GUI proof, production, or v1.0 readiness.",
+      "blocked_by": [],
+      "deferred": [
+        "WSL is execution/portability only, not Linux seccomp or OS-sandbox enforcement",
+        "not clean/non-WSL Linux desktop GUI proof",
+        "Release / Readiness live GUI screenshot remains a separate visual proof if not captured in this bundle",
+        "Signed MSI, winget, Windows ARM64, production, and v1.0 remain unclaimed"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "linux_tauri_gate_replay",
+      "label": "Linux/Tauri gate replay proof (S117 consolidation)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_studio_linux_gate_replay.py --record` replays the current committed WSL/WSLg package, runtime, display, domain-shell, and release-shell gates from one manifest-backed bundle. Consolidated replay of all current Linux/Tauri gates verified at `/private/tmp/garnet-truth-lock-native-linux/proofs/linux/execution/studio-gate-replay/linux-gate-replay-20260603-235754/garnet-studio-linux-gate-replay.json` (8 gates).",
+      "blocked_by": [],
+      "deferred": [
+        "WSL/WSLg is execution/portability only, not Linux seccomp or OS-sandbox enforcement",
+        "not clean/non-WSL Linux desktop proof",
+        "Signed MSI, winget, Windows ARM64, production, and v1.0 remain unclaimed"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "linux_seccomp_apply",
+      "label": "Native Linux seccomp application",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "Recorded UTM Debian ARM64 proof applies the generated policy and traps a denied socket syscall.",
+      "blocked_by": [],
+      "deferred": [
+        "macOS/Windows OS-sandbox application remains unverified"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "native_debian_cli_install",
+      "label": "Native ARM64 Debian CLI install",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "Recorded native non-WSL Debian ARM64 proof installs the Garnet `.deb` as `/usr/bin/garnet`, runs clean CLI smoke, and verifies static plus runtime @caps traps from the installed binary.",
+      "blocked_by": [],
+      "deferred": [
+        "signed/universal Linux packaging remains unverified"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "native_linux_studio",
+      "label": "Native ARM64 Linux Studio",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "Recorded native non-WSL Debian ARM64 proof builds the Tauri Studio `.deb`, installs `garnet-studio`, passes `--studio-smoke`, and launches under Xvfb without claiming signing or production distribution.",
+      "blocked_by": [],
+      "deferred": [
+        "signed Linux distribution remains unverified",
+        "non-ARM64 Linux breadth remains unverified",
+        "broader distro/package coverage remains unverified",
+        "production distribution remains unverified"
+      ],
+      "evidence_class": "committed"
+    },
+    {
       "id": "windows_linux_domain_proof_matrix",
       "label": "Windows/Linux domain proof matrix",
-      "status": "source-present",
-      "completion_percent": 60.0,
-      "evidence": "Script present, but no verified `--suite all` bundle was found in the configured domain-matrix evidence root (`GARNET_STUDIO_DOMAIN_MATRIX_ROOT` or `~/Desktop/dogfood/garnet-studio-domain-matrix`). Run `scripts/smoke_garnet_studio_domain_matrix.py --suite all` and keep the JSON/Markdown plus `MANIFEST.sha256` evidence bundle.",
-      "blocked_by": [
-        "verified Windows/Linux domain matrix evidence bundle"
-      ],
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_studio_domain_matrix.py --suite all` has a verified manifest-backed parse/check/run bundle for 20 current examples: 10 canonical MVP domains, signed hot-reload success, expected BLAKE3 mismatch rejection, five agent toolbelt programs, and three agentic design programs. Committed Windows bundle: `proofs/windows/domains/windows-domain-matrix-20260603-0855/garnet-studio-domain-matrix.json`. Committed WSL portability bundle: `proofs/linux/execution/domains/wsl-domain-matrix-20260603-0857/garnet-studio-domain-matrix.json`. The WSL row is execution/portability evidence only, not Linux seccomp or OS-sandbox enforcement.",
+      "blocked_by": [],
       "deferred": [
         "Studio screenshot evidence from Windows and WSL/Linux shells",
         "Future native backend and package-format permutations"
       ],
-      "evidence_class": "local"
+      "evidence_class": "committed"
+    },
+    {
+      "id": "windows_wsl_ultrapunch_repro",
+      "label": "Windows/WSL ultrapunch reproduction (S110)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_ultrapunch_repro.py` records the S104 accept/reject loop as committed evidence: ACCEPT keeps the four trust artifacts and verifies the transparency-log chain; REJECT covers both diff-caps widening refusal and an over-depth enforced-kernel trap. Committed Windows ultrapunch bundle: `proofs/windows/ultrapunch/windows-ultrapunch-repro-20260603-0927/garnet-ultrapunch-repro.json`. Committed WSL portability-repro bundle: `proofs/linux/repro/wsl-ultrapunch-repro-20260603-0929/garnet-ultrapunch-repro.json`. The WSL row replays S104 accept/reject decisions as execution/portability evidence only, not Linux seccomp, OS-sandbox enforcement, or Wasmtime fuel proof.",
+      "blocked_by": [],
+      "deferred": [
+        "WSL is portability-repro only, not Linux seccomp or OS-sandbox enforcement",
+        "No Wasmtime fuel, production, or v1.0 claim",
+        "Cross-OS consolidation waits for S107-S109/S112 evidence"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "macos_domain_execution_proof",
+      "label": "Mac-Codex domain execution proof (S107)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_mac_domain_proofs.py` records the S105 domain proof set as committed macOS evidence: six domains, 15 commands, accept sealed with the four trust artifacts plus `decision.md`, and negative/report domains unsealed. Committed Mac S107 domain bundle: `proofs/mac/domains/mac-domain-proofs-20260604-064412/garnet-mac-domain-proofs.json`. It records all six S105 domains on macOS, with accept sealed and negative/report domains intentionally unsealed. This is the Mac row for S109 consolidation, not Windows/Linux completion.",
+      "blocked_by": [],
+      "deferred": [
+        "S109 cross-OS matrix waits for Windows/Mac/Linux row consolidation",
+        "No macOS OS-sandbox enforcement, Wasmtime fuel, production, or v1.0 claim",
+        "MCP tool-set domain is static report evidence, not MCP-host enforcement"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "macos_studio_ui_domain_proof",
+      "label": "Mac Studio UI domain proof (S110)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`apps/garnet-studio` exposes a Release / Readiness -> Mac Domain Proofs button that runs the S105 Mac proof recorder through the packaged Tauri UI. The committed bundle includes a window screenshot plus copied verified target evidence. Committed Mac Studio UI proof: `proofs/mac/studio-ui/mac-studio-ui-proof-20260604-070007/garnet-mac-studio-ui-proof.json`. Computer Use drove the packaged macOS Tauri app through Release / Readiness -> Mac Domain Proofs, captured a window screenshot, and copied a verified six-domain Mac proof bundle. The UI wrapper does not claim Windows/Linux ownership or production enforcement.",
+      "blocked_by": [],
+      "deferred": [
+        "The UI button wraps the six-domain recorder; it does not individually open each source file through a native file picker",
+        "No Windows/Linux ownership, OS sandbox enforcement, production, or v1.0 claim",
+        "MCP tool-set domain is static report evidence, not MCP-host enforcement"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "macos_cross_os_matrix_row",
+      "label": "Mac cross-OS trap matrix row (S109)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_mac_cross_os_matrix.py` records the Mac rows for the S109 trap matrix: max-depth, caps, and diff-caps-reject all pass against committed Windows/WSL baselines; OS-independent accept artifacts are byte-identical where required. Committed Mac S109 matrix row: `proofs/mac/matrix/mac-cross-os-matrix-20260604-201153/garnet-mac-cross-os-matrix.json`. It records the Mac rows for max-depth, caps, and diff-caps-reject, keeps OS-independent accept artifacts byte-identical against the Windows baseline, and remains a historical Mac-row bundle; full S109 completion is tracked by the separate cross-OS trap parity lane.",
+      "blocked_by": [],
+      "deferred": [
+        "This lane remains the Mac row; full S109 completion is tracked by `cross_os_trap_parity_matrix`",
+        "WSL is execution/portability only, not Linux seccomp or OS-sandbox enforcement",
+        "No macOS OS-sandbox enforcement, Wasmtime fuel, production, or v1.0 claim"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "cross_os_trap_parity_matrix",
+      "label": "Full cross-OS trap parity matrix (S109)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/garnet_cross_os_trap_parity_matrix.py --gate` checks the committed full S109 matrix across Windows, Mac, and Linux for max-depth, caps, and diff-caps-reject. Committed full S109 cross-OS trap parity matrix: `proofs/cross-os/matrix/cross-os-trap-parity-20260604-s109/garnet-cross-os-trap-parity-matrix.json`. It verifies committed Windows, Mac, and Linux rows for max-depth, caps, and diff-caps-reject; records a Linux UTM diff-caps rejection datapoint; keeps required OS-independent accept artifacts byte-identical; and excludes WSL portability from Linux enforcement.",
+      "blocked_by": [],
+      "deferred": [
+        "WSL remains execution/portability evidence and is excluded from Linux enforcement",
+        "Linux seccomp is Linux-only evidence, not Windows/macOS OS-sandbox enforcement",
+        "No Wasmtime fuel, production, release tag, S120, or v1.0 claim"
+      ],
+      "evidence_class": "committed"
     },
     {
       "id": "web_pwa",
@@ -146,7 +402,7 @@
       "label": "Editor/LSP precision (S16)",
       "status": "verified",
       "completion_percent": 100.0,
-      "evidence": "`garnet-lsp/` now consumes the canonical rowan `garnet-cst` token/span surface for rename and semantic tokens while preserving parser/check diagnostics. `scripts/smoke_garnet_lsp_precision.py` proves document symbols, workspace symbols, cross-file function rename, scoped parameter rename, three code actions, and the S16 semantic-token categories (`capability`, `attribute`, `parameter`) over stdio. `editors/vscode` exposes the three Garnet quick-fix commands and packages `garnet-0.7.0-lsp-precision.vsix`.",
+      "evidence": "`garnet-lsp/` now consumes the canonical rowan `garnet-cst` token/span surface for rename and semantic tokens while preserving parser/check diagnostics. `scripts/smoke_garnet_lsp_precision.py` proves document symbols, workspace symbols, cross-file function rename, scoped parameter rename, three code actions, and the S16 semantic-token categories (`capability`, `attribute`, `parameter`) over stdio. `editors/vscode` exposes the three Garnet quick-fix commands and packages the version-synced `garnet-<version>-lsp-precision.vsix` local package.",
       "blocked_by": [],
       "deferred": [
         "safe-mode precision",
@@ -242,6 +498,112 @@
         "Shared `garnet-lang/llm` package trait waits on S18 after S17 merges",
         "Streaming, tool/function calling, vision, and provider-specific edge features are v0.8+",
         "Running Paper VI Exp 3 to produce h3a/h3b/h3c results is v0.7.1"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "paper_vi_exp1_provider_gated_harness",
+      "label": "Paper VI Exp 1 LLM pass@1 harness (S94)",
+      "status": "provider-gated-harness",
+      "completion_percent": 100.0,
+      "evidence": "`benchmarks/paper_vi_exp1_llm_pass_at_1/` now contains the S94 provider-gated harness for the registered pass@1 task shape. `scripts/garnet_paper_vi_exp1_status.py --gate` proves 3 seed tasks, provider-free `pending-infra` rows, and fixture-only scoring (3/6 pass rows) without a network call. Real providers remain behind the explicit `--provider` / `--execute-provider` gate.",
+      "blocked_by": [],
+      "deferred": [
+        "Provider-backed pass@1 measurement requires credentials and reviewed execution",
+        "Full 500-task corpus remains pending infrastructure",
+        "Hidden-test scorer and statistical significance run remain future work",
+        "Fine-tuned model comparison remains unclaimed"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "paper_vi_exp3_5k_rerun_harness",
+      "label": "Paper VI Exp 3 5K-LOC rerun harness (S95)",
+      "status": "provider-gated-5k-harness",
+      "completion_percent": 100.0,
+      "evidence": "`benchmarks/paper_vi_exp3_compiler_as_agent/` now contains the S95 5K-LOC rerun harness. `scripts/garnet_paper_vi_exp3_5k_status.py --gate` generates 10 deterministic snapshots (minimum 5012 LOC, total 50120 LOC), writes 10 stateless and 10 history-aware provider-free rows, aggregates/analyzes them, and keeps h3a at `pending-provider-rerun` with no new 5K measurement claim.",
+      "blocked_by": [],
+      "deferred": [
+        "Provider-backed 5K runtime rows require credentials and reviewed execution",
+        "The recorded v4.0 h3a 6.5% partial stands until that rerun exists",
+        "h3b/h3c revalidation at 5K scale remains future measured-study work",
+        "Provider cost/budget approval remains out of scope for the committed gate"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "linear_effect_safe_mode_seed",
+      "label": "Linear/effect safe-mode seed (S96)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`garnet-check-v0.3/src/effects.rs` adds the S96 static linear/effect safe-mode seed. It reuses the CapCaps transitive surface and rejects non-entry safe helper functions that perform authority effects without any explicit ownership-qualified parameter boundary (`own`, `borrow`, `ref`, or `mut`). `scripts/garnet_linear_effect_status.py --gate` runs the focused checker proof.",
+      "blocked_by": [],
+      "deferred": [
+        "First static increment only: not whole-language linear typing",
+        "No VM/runtime capability enforcement is claimed",
+        "No OS sandbox enforcement is claimed",
+        "Method-call effect resolution remains limited by the current cap graph"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "provenance_seal_chain",
+      "label": "Provenance seal chain (S97)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`garnet seal --provenance-chain` validates the conventional `agent`, `model`, and `prompt_sha256` attestation keys, then emits a deterministic `provenance_chain` block bound to the current seal's source and subject digests. `scripts/garnet_provenance_seal_chain_status.py --gate` runs the focused proof.",
+      "blocked_by": [],
+      "deferred": [
+        "Self-declared provenance only: no independent model-run proof",
+        "No claim that the named agent actually produced the artifact",
+        "No proof that the declared tool list is complete",
+        "Supply-chain signing still depends on external cosign/Sigstore"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "capability_manifest_standard_seed",
+      "label": "Capability-manifest standard seed (S98)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`garnet caps --standard-profile` emits the S98 `capability-manifest/v1` draft/reference profile over the same declared capability surface used by S36-S38. `scripts/garnet_cap_manifest_standard_status.py --gate` checks the schema doc, RFC alignment, test vectors, and focused CLI proof.",
+      "blocked_by": [],
+      "deferred": [
+        "Draft/reference seed only: no OWASP/LF adoption is claimed",
+        "No multi-language ecosystem or conformance suite is claimed",
+        "Declared surface only: no proof of undeclared-authority absence",
+        "No VM/runtime capability enforcement is claimed"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "linux_cross_os_enforcement_proof",
+      "label": "Linux cross-OS enforcement proof (S108)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/garnet_linux_cross_os_enforcement_proof.py --gate` checks committed proof records for the S101 Stage V trap gate on Linux and the S46/S92 seccomp apply datapoint. S108 Linux enforcement proof verified at `proofs/linux/enforcement/utm-linux-enforcement-20260604-s108/garnet-linux-cross-os-enforcement-proof.json`. It records Stage-V max-depth/caps traps on Linux plus a deterministic Linux-only seccomp apply datapoint.",
+      "blocked_by": [],
+      "deferred": [
+        "not Windows/macOS OS-sandbox enforcement",
+        "not full S109 completion",
+        "No Wasmtime fuel, production, or v1.0 claim"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "windows_cross_os_enforcement_phase1",
+      "label": "Windows cross-OS enforcement proof (S106 Phase 1)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/garnet_windows_cross_os_enforcement_proof.py --gate` checks committed proof records for the S101 Stage V trap gate on Windows and a WSL execution/portability rerun. The Windows row records `@max_depth`, `@caps(env)`, `@caps(proc)`, `@caps(fs)`, `@caps(net)`, and the S92 program-entry `@caps(proc)` trap; the WSL row is labeled `execution/portability, not enforcement`.",
+      "blocked_by": [],
+      "deferred": [
+        "WSL is not Linux seccomp enforcement",
+        "WSL is not OS-sandbox enforcement",
+        "S103 ultrapunch accept/reject reproduction is Phase 2",
+        "S105 domain execution is Phase 2",
+        "Wasmtime fuel / @bounded runtime enforcement remains out of scope",
+        "memory/time/@mailbox runtime ceilings remain out of scope"
       ],
       "evidence_class": "committed"
     },
@@ -473,7 +835,7 @@
       "label": "Trivia-preserving CST (S15)",
       "status": "verified",
       "completion_percent": 100.0,
-      "evidence": "Trivia-preserving Concrete Syntax Tree (CST) helper in `cst.rs` is fully integrated with the parser. CST round-trip integration tests in `tests/cst_round_trip.rs` assert 100% byte-identical reconstruction of all parser-crate and workspace examples under the examples directories.",
+      "evidence": "Trivia-preserving Concrete Syntax Tree (CST): the canonical rowan `garnet-cst` crate. `garnet-cst/tests/examples_roundtrip.rs` asserts 100% byte-identical reconstruction of all parser-crate and workspace examples; `garnet-cst/tests/token_view_parity.rs` proves the token view against the shared lexer (RB-4a retired the #221 legacy oracle in `cst.rs`/`cst_round_trip.rs`).",
       "blocked_by": [],
       "deferred": [
         "incremental syntax parsing",
