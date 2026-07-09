@@ -292,14 +292,15 @@ open a PR, wait for full CI, and merge before Task 3.
 - [ ] **Step 1: Write the failing reporter tests**
 
 ```python
-def test_current_launch_state_is_hold_with_foundation_green(self) -> None:
+def test_current_launch_state_is_hold_with_unmeasured_foundation(self) -> None:
     status = status_mod.read_status()
     gates = {gate.id: gate for gate in status.gates}
-    self.assertEqual("pass", gates["foundation_integrity"].state)
-    self.assertEqual("done-pending-jon", gates["s114_acceptance"].state)
+    self.assertEqual("blocked", gates["foundation_integrity"].state)
+    self.assertEqual("external-pending", gates["s114_acceptance"].state)
     self.assertEqual("remaining", gates["live_wasm_playground"].state)
-    self.assertEqual("remaining", gates["minimum_sealed_shelf"].state)
+    self.assertEqual("manual-deferred", gates["minimum_sealed_shelf"].state)
     self.assertEqual("jon-only", gates["launch_fire"].state)
+    self.assertEqual("unmeasured", status.evidence_base_status)
     self.assertFalse(status.launch_ready)
     self.assertEqual("HOLD", status.recommendation)
 
@@ -332,6 +333,7 @@ class LaunchReadinessStatus:
     schema: str
     source: str
     evidence_base: str
+    evidence_base_status: str
     release_grade: str
     recommendation: str
     launch_ready: bool
@@ -341,15 +343,21 @@ class LaunchReadinessStatus:
 ```
 
 Use schema `garnet.launch_readiness/v1`. Resolve `evidence_base` from
-`docs/truth.json.workspace_tests.measured_at_commit`. This records the commit
-whose full workspace measurement backs the ledger without creating a
-self-referential commit-SHA problem.
+`docs/truth.json.workspace_tests.measured_at_commit`. The existing truth
+generator intentionally records `git rev-parse --short HEAD`, so accept 7-40
+hex characters only when `git rev-parse <value>^{commit}` resolves and that
+commit is reachable from `HEAD`; reject any `-dirty` suffix. Otherwise emit
+`evidence_base_status="unmeasured"`, retain the literal value for diagnosis,
+and block `foundation_integrity` on a fresh `xtask truth --with-tests`
+measurement. A dirty, malformed, missing, or unreachable value must never be
+presented as the canonical launch evidence base.
 
 - [ ] **Step 3: Derive the current gates from structured APIs**
 
 ```python
 release = garnet_v0_8_1_release_readiness.read_readiness(binary_strict=True)
 red_team = garnet_red_team_status.read_status()
+integrity = garnet_evidence_integrity_status.read_status()
 seccomp = garnet_seccomp_apply_status.read_status()
 native_cli = garnet_native_debian_cli_install_status.evaluate()
 native_studio = garnet_native_linux_studio_status.evaluate()
@@ -360,10 +368,23 @@ promo = garnet_promo_video_status.read_status()
 mit = garnet_mit_readiness_status.read_status()
 ```
 
-Foundation is `pass` only when release readiness, red team, and evidence
-integrity pass. Native Linux requires all three native gates. S114 remains
-`done-pending-jon`. Static playground is `partial`. Live WASM and shelf remain
-`remaining`. Promo is `pending-human`. Launch fire is always `jon-only`.
+Foundation is `pass` only when release readiness, red team, evidence integrity,
+and the measured-evidence-base validator pass. Native Linux requires all three
+native gates. The red-team API proves its static contract only; S114 acceptance
+is an explicit external gate with state `external-pending` until Jon records a
+decision outside this reporter. Static playground is `partial`. Live WASM stays
+`remaining`. The shelf has no reporter in Truth Lock, so represent it as the
+explicit manual/deferred fence `manual-deferred`, never as reporter-derived
+machine truth. Promo is `pending-human`. Launch fire is always the external
+`jon-only` gate.
+
+Add mocked dependency tests that exercise every consumed reporter and at least
+one failure path per launch gate. Tests must prove that release, red-team,
+evidence-integrity, native CLI, native Studio, seccomp, playground, WASM,
+stdlib, promo, and MIT inputs are invoked and that a failed dependency changes
+the corresponding gate or blocker. Add explicit tests for dirty, malformed,
+missing, and unreachable evidence-base values, plus a clean reachable short SHA
+control matching the truth generator's current contract.
 
 - [ ] **Step 4: Render JSON, human, and Markdown**
 
@@ -390,7 +411,9 @@ python3 scripts/garnet_launch_readiness_status.py --format markdown \
 Add a test comparing renderer output byte-for-byte with the tracked file after
 normalizing only the repository root. The measured evidence base stays literal.
 Update `F_Project_Management/AGENTS.md`
-to name the reporter as machine authority and Markdown as rendered state.
+to name the reporter as machine authority only for reporter-derived inputs and
+the evidence-base validator. S114 acceptance, the not-yet-reported shelf, and
+launch fire remain external/manual gates. Markdown is rendered state.
 
 - [ ] **Step 6: Verify the expected red launch gate**
 
@@ -512,6 +535,7 @@ and merge.
 **Files:**
 - Modify: `docs/truth.json`
 - Modify: generated markers in `README.md`, `FAQ.md`, `docs/index.html`, and `docs/status.html`
+- Modify: `F_Project_Management/LAUNCH/LAUNCH_READINESS.md`
 - Modify: any additional path explicitly reported by `xtask truth`
 
 **Interfaces:**
@@ -536,6 +560,16 @@ cargo run -p xtask -- truth --with-tests
 
 Expected: workspace tests report zero failures; `docs/truth.json` records the
 current commit rather than `c4b9e28-dirty`; generated markers update.
+
+Regenerate the launch ledger from that measured truth:
+
+```sh
+python3 scripts/garnet_launch_readiness_status.py --format markdown \
+  > F_Project_Management/LAUNCH/LAUNCH_READINESS.md
+```
+
+Expected: `evidence_base_status` renders as measured and the tracked ledger
+contains the same literal measured commit as `docs/truth.json`.
 
 - [ ] **Step 3: Prove generated state is stable**
 
@@ -564,7 +598,8 @@ Expected: every command exits `0`; only the explicit launch `--gate` remains red
 - [ ] **Step 5: Commit, gate, and merge generated truth**
 
 ```sh
-git add docs/truth.json README.md FAQ.md docs/index.html docs/status.html
+git add docs/truth.json README.md FAQ.md docs/index.html docs/status.html \
+  F_Project_Management/LAUNCH/LAUNCH_READINESS.md
 git add -u
 git commit -m "docs(truth): refresh launch baseline measurement"
 ```
