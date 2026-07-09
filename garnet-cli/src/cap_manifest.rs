@@ -138,15 +138,11 @@ pub fn surface_for_path(path: &Path) -> Result<CapabilitySurface, String> {
     let mut surfaces = Vec::with_capacity(targets.len());
     for target in &targets {
         let src = read_file(target)?;
-        let edition = match edition_manifest::resolve_edition_for(target) {
-            Ok(resolved) => {
-                if let Some(warning) = resolved.warning {
-                    eprintln!("{warning}");
-                }
-                resolved.edition
-            }
-            Err(message) => return Err(message),
-        };
+        let resolved = edition_manifest::resolve_edition_for(target)?;
+        if let Some(warning) = resolved.warning {
+            eprintln!("{warning}");
+        }
+        let edition = resolved.edition;
         let module = garnet_parser::parse_source_with_edition(&src, edition)
             .map_err(|e| format!("parse error in {}: {e}", target.display()))?;
         surfaces.push(capability_surface(&module));
