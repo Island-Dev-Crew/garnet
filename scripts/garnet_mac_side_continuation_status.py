@@ -3,8 +3,8 @@
 
 This reporter is intentionally narrower than `garnet_mit_readiness_status.py`.
 It answers: what can an agent keep doing from this macOS checkout while Apple
-Developer ID identity verification and Windows/Linux runtime work are blocked
-or delegated elsewhere?
+Developer ID identity verification is blocked and remaining Windows signing,
+Windows ARM64, and broader Linux distribution work is delegated elsewhere?
 """
 from __future__ import annotations
 
@@ -150,10 +150,10 @@ def read_status() -> MacContinuationStatus:
             category="delegated platform",
             mac_actionable=False,
             evidence=(
-                "A Windows/Linux Studio handoff packet exists; runtime proof belongs on those target systems."
+                "Native ARM64 Linux CLI, seccomp, and Studio proof is committed; remaining target-system work is Windows signing/ARM64 and broader Linux distribution."
             ),
             next_slice="Keep Mac-side docs aligned, but do not claim Windows/Linux runtime completion from macOS.",
-            blocked_by=["Windows runtime execution", "Linux runtime execution"],
+            blocked_by=["Windows runtime execution"],
         ),
     ]
 
@@ -163,7 +163,7 @@ def read_status() -> MacContinuationStatus:
         current_truth=[
             "Mac-side work can continue without Apple Developer ID credentials",
             "Developer ID notarization is externally blocked and must not be claimed",
-            "Windows/Linux Studio runtime proof remains delegated to target systems",
+            "Native ARM64 Linux CLI, seccomp, and Studio proof is committed; remaining target-system work is Windows signing/ARM64 and broader Linux distribution",
             "provider-backed LLM conversion and native backend lowering remain unimplemented",
         ],
         lanes=lanes,
