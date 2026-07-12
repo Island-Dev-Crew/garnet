@@ -7,7 +7,7 @@ evidence-base validator only; S114 acceptance, the minimum shelf,
 and launch fire are external/manual gates.
 
 - Schema: `garnet.launch_readiness/v1`
-- Evidence-base commit: `c4b9e28-dirty` (unmeasured)
+- Evidence-base commit: `c0190a4` (measured)
 - Release grade: research-grade v0.x prototype; release_ready=True (binary-strict)
 - Launch ready: **False**
 - Recommendation: **HOLD**
@@ -16,16 +16,14 @@ and launch fire are external/manual gates.
 
 ### `foundation_integrity` — Foundation integrity (release + red-team + evidence + measured base)
 
-State: **blocked**
+State: **pass**
 
 Evidence:
 - v0.8.1 release readiness reporter green (binary-strict)
 - red-team static contract green (report, HIGH fix, regressions)
 - evidence-integrity bundles ok (31/31)
+- workspace tests measured at reachable commit `c0190a4`
 - MIT productization lane active-partial (93.1%)
-
-Blockers:
-- evidence base `c4b9e28-dirty` is unmeasured; re-measure with `cargo run -p xtask -- truth --with-tests` on a clean tree
 
 ### `native_linux` — Native Linux lane (CLI install + Studio + seccomp)
 
@@ -66,9 +64,6 @@ Evidence:
 
 Blockers:
 - live in-browser execution not built (W-PLAY workstream)
-- rustup wasm32 target not installed (`rustup target add wasm32-unknown-unknown`)
-- wasm-pack absent (needed to bundle the interp for the browser)
-- wasmtime absent (needed for a non-browser wasm run)
 - garnet-interp pulls miette `fancy` (terminal/backtrace) — feature-gate it off for wasm
 
 ### `minimum_sealed_shelf` — Minimum sealed shelf (Core Ring Tier 1 + MCP library)

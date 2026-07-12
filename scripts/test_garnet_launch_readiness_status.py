@@ -34,15 +34,18 @@ def _gates_by_id(status):
 class CurrentTreeTests(unittest.TestCase):
     """Assertions against the real repository state (no mocks)."""
 
-    def test_current_launch_state_is_hold_with_unmeasured_foundation(self) -> None:
+    def test_current_launch_state_is_hold_with_measured_foundation(self) -> None:
+        # Truth Lock Task 5 re-measured machine truth on a pristine tree:
+        # the evidence base is a clean reachable short SHA, so foundation
+        # passes — while launch stays honestly HOLD on the remaining gates.
         status = status_mod.read_status()
         gates = _gates_by_id(status)
-        self.assertEqual("blocked", gates["foundation_integrity"].state)
+        self.assertEqual("pass", gates["foundation_integrity"].state)
         self.assertEqual("external-pending", gates["s114_acceptance"].state)
         self.assertEqual("remaining", gates["live_wasm_playground"].state)
         self.assertEqual("manual-deferred", gates["minimum_sealed_shelf"].state)
         self.assertEqual("jon-only", gates["launch_fire"].state)
-        self.assertEqual("unmeasured", status.evidence_base_status)
+        self.assertEqual("measured", status.evidence_base_status)
         self.assertFalse(status.launch_ready)
         self.assertEqual("HOLD", status.recommendation)
 
