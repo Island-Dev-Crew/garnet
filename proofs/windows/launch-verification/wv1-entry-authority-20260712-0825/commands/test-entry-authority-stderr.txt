@@ -1,0 +1,3 @@
+   Compiling garnet-cli v0.8.1 (C:\garnet\garnet-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.41s
+     Running tests\test_entry_authority.rs (target\debug\deps\test_entry_authority-751ae13bfe381b07.exe)

@@ -4,10 +4,10 @@ The consolidated, **integrity-verified** status of the surge lanes' cross-OS
 evidence (Stage X + R). This is the floor Stage P (S114–S119) rests on: nothing is
 presented as cross-OS-verified unless its proof bundle hash-verifies here.
 
-## Integrity floor — 31/31 bundles verify
+## Integrity floor — 32/32 bundles verify
 
 `scripts/garnet_evidence_integrity_status.py --gate` verifies **every**
-`proofs/**/MANIFEST.sha256` against the committed bytes: **31/31 bundles pass**.
+`proofs/**/MANIFEST.sha256` against the committed bytes: **32/32 bundles pass**.
 
 > **Defect found + closed (transparency).** Five Windows/WSL bundles initially
 > failed their own manifests — not tampering or missing evidence, but **git EOL
@@ -34,6 +34,19 @@ The cross-OS trap-parity matrix
 (`proofs/cross-os/matrix/cross-os-trap-parity-20260604-s109/garnet-cross-os-trap-parity-matrix.json`,
 `cross_os_complete=true`) consolidates the enforcement rows with its own
 `honest_scope` block, preserved verbatim.
+
+## Stage-1 Foundation probes (Gate 1) — Windows confirmation
+
+Gate 1 (Road to Launch): *all five Codex HIGH probes reproduce GREEN; the
+Windows lane confirms cross-OS.* Windows rows below are proof-bundle-backed
+(fresh clean clone at `79290e5`, `C:\garnet`, outside any OneDrive tree,
+`NUCBOX_M2PRo_S`, Windows 11 10.0.26200). The macOS column reflects the
+canonical dev-machine PR ladder (#409–#412 commit records) — no sealed
+`proofs/mac` bundle exists for these probes; sealing one is the lead's call.
+
+| Probe | Windows | Mac | Linux | Evidence |
+|---|---|---|---|---|
+| test-runner entry authority (PR #410) | ✅ 7 tests | **canonical** (PR ladder; no sealed bundle) | — | `proofs/windows/launch-verification/wv1-entry-authority-20260712-0825/` |
 
 ## The honest fences (named-deferred — carried into EVERY Stage P artifact)
 
