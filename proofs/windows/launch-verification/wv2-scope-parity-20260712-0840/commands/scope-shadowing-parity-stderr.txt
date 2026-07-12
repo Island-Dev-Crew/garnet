@@ -1,0 +1,2 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+     Running tests\scope_shadowing_parity.rs (target\debug\deps\scope_shadowing_parity-924ae477f1c5c425.exe)

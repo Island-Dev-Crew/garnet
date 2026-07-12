@@ -1,0 +1,10 @@
+
+running 5 tests
+test probe_program_matches_interpreter ... ok
+test same_scope_rebind_stays_native_and_matches ... ok
+test non_shadowing_program_stays_native_and_matches ... ok
+test generator_coverage::generator_produces_both_shadowing_and_native ... ok
+test prop_vm_matches_interp_on_random_shadowing_programs ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.28s
+
