@@ -4,10 +4,10 @@ The consolidated, **integrity-verified** status of the surge lanes' cross-OS
 evidence (Stage X + R). This is the floor Stage P (S114–S119) rests on: nothing is
 presented as cross-OS-verified unless its proof bundle hash-verifies here.
 
-## Integrity floor — 33/33 bundles verify
+## Integrity floor — 34/34 bundles verify
 
 `scripts/garnet_evidence_integrity_status.py --gate` verifies **every**
-`proofs/**/MANIFEST.sha256` against the committed bytes: **33/33 bundles pass**.
+`proofs/**/MANIFEST.sha256` against the committed bytes: **34/34 bundles pass**.
 
 > **Defect found + closed (transparency).** Five Windows/WSL bundles initially
 > failed their own manifests — not tampering or missing evidence, but **git EOL
@@ -48,6 +48,7 @@ canonical dev-machine PR ladder (#409–#412 commit records) — no sealed
 |---|---|---|---|---|
 | test-runner entry authority (PR #410) | ✅ 7 tests | **canonical** (PR ladder; no sealed bundle) | — | `proofs/windows/launch-verification/wv1-entry-authority-20260712-0825/` |
 | VM⇄interp scope parity incl. proptest (PR #411) | ✅ 5 tests | **canonical** (PR ladder; no sealed bundle) | — | `proofs/windows/launch-verification/wv2-scope-parity-20260712-0840/` |
+| truth-gate green + fail-closed; `verify examples` (PR #409) | ✅ 13 tests + `--check` ok + drift trap + 54/0 + broken-source trap | **canonical** (PR ladder; no sealed bundle) | — | `proofs/windows/launch-verification/wv3-truth-verify-20260712-0854/` |
 
 ## The honest fences (named-deferred — carried into EVERY Stage P artifact)
 

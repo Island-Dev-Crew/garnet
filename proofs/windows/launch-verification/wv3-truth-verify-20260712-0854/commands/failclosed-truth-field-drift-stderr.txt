@@ -1,0 +1,5 @@
+truth --check: 4 mismatch(es):
+  docs/truth.json: truth:primitive_count expected `80`, found `81`
+  README.md: truth:primitive_count expected `81`, found `80`
+  FAQ.md: truth:primitive_count expected `81`, found `80`
+  docs/index.html: truth:primitive_count expected `81`, found `80`

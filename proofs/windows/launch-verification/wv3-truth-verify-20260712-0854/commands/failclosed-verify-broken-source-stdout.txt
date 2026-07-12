@@ -1,0 +1,11 @@
+garnet verify: acceptance gate over 1 target(s)
+  ✗ C:/Users/ISLAND~1/AppData/Local/Temp/tmp.9ePk7CDnWH\bad.garnet : parse error: expected identifier in parameter name, found '{'
+
+Verified 1 target(s): 1 failing, 0 advisory diagnostic(s).
+Merge confidence (fused): 1/5
+  internal (local parse + safe-mode check): 1/5
+  external reviewer: not supplied (Greptile wires in at PR time)
+  capability signal: pending (pass --caps-baseline <old> for diff-caps)
+  fusion rule: min of the present signals
+
+gate: FAIL (1 target(s) with fatal diagnostics)

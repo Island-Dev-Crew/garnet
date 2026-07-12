@@ -1,0 +1,64 @@
+garnet verify: acceptance gate over 54 target(s)
+  ✓ examples\agent_orchestrator_3thread.garnet : clean
+  ✓ examples\agent_toolbelt_01_triage_router.garnet : clean
+  ✓ examples\agent_toolbelt_02_capability_budget.garnet : clean
+  ✓ examples\agent_toolbelt_03_memory_recall.garnet : clean
+  ✓ examples\agent_toolbelt_04_release_gate.garnet : clean
+  ✓ examples\agent_toolbelt_05_repair_planner.garnet : clean
+  ✓ examples\agentic_log_analyzer.garnet : clean
+  ✓ examples\det_fixture_01.garnet : clean
+  ✓ examples\documented_math.garnet : clean
+  ✓ examples\ffi\c_stat.garnet : clean
+  ✓ examples\ffi\native_boundary.garnet : clean
+  ✓ examples\ffi\no_native.garnet : clean
+  ✓ examples\ffi\rust_extern.garnet : clean
+  ✓ examples\ffi\wasi_clock.garnet : clean
+  ✓ examples\garnet_lang_registry_seed\cli\0.1.0\lib.garnet : clean
+  ✓ examples\garnet_lang_registry_seed\cli\0.1.0\tests\smoke.garnet : clean
+  ✓ examples\garnet_lang_registry_seed\http-client\0.1.0\lib.garnet : clean
+  ✓ examples\garnet_lang_registry_seed\http-client\0.1.0\tests\smoke.garnet : clean
+  ✓ examples\garnet_lang_registry_seed\llm\0.1.0\lib.garnet : clean
+  ✓ examples\garnet_lang_registry_seed\llm\0.1.0\tests\smoke.garnet : clean
+  ✓ examples\garnet_lang_registry_seed\log\0.1.0\lib.garnet : clean
+  ✓ examples\garnet_lang_registry_seed\log\0.1.0\tests\smoke.garnet : clean
+  ✓ examples\garnet_lang_registry_seed\test-property\0.1.0\lib.garnet : clean
+  ✓ examples\garnet_lang_registry_seed\test-property\0.1.0\tests\smoke.garnet : clean
+  ✓ examples\hello.garnet : clean
+  ✓ examples\idiomatic\state_machine.garnet : clean
+  ✓ examples\idiomatic\typed_errors.garnet : clean
+  ✓ examples\multi_agent_builder.garnet : clean
+  ✓ examples\mvp_01_os_simulator.garnet : clean
+  ✓ examples\mvp_02_relational_db.garnet : clean
+  ✓ examples\mvp_03_compiler_bootstrap.garnet : clean
+  ✓ examples\mvp_04_numerical_solver.garnet : clean
+  ✓ examples\mvp_05_web_app.garnet : clean
+  ✓ examples\mvp_06_multi_agent.garnet : clean
+  ✓ examples\mvp_07_game_server.garnet : clean
+  ✓ examples\mvp_08_distributed_kv.garnet : clean
+  ✓ examples\mvp_09_graph_db.garnet : clean
+  ✓ examples\mvp_10_terminal_ui.garnet : clean
+  ✓ examples\mvp_11_signed_hotreload.garnet : clean
+  ✓ examples\mvp_11_signed_hotreload_mismatch.garnet : clean
+  ✓ examples\mvp_18_all_official_packages\src\main.garnet : clean
+  ✓ examples\mvp_function_call_demo.garnet : clean
+  ✓ examples\novel_01_capability_budgeted_memory_agent.garnet : clean
+  ✓ examples\novel_02_signed_provenance_pipeline.garnet : clean
+  ✓ examples\novel_03_release_gate_quorum.garnet : clean
+  ~ examples\novel_04_dispatched_stdlib_pipeline.garnet : ok (1 advisory)
+  ~ examples\novel_05_s22_stdlib_memory_pipeline.garnet : ok (7 advisories)
+  ~ examples\novel_06_observability_provenance_pipeline.garnet : ok (4 advisories)
+  ✓ examples\novel_07_functional_core_pipeline.garnet : clean
+  ✓ examples\registry_stub_fixture\hello_lib\0.1.0\lib.garnet : clean
+  ✓ examples\safe_io_layer.garnet : clean
+  ✓ examples\self_hosted_parser_seed.garnet : clean
+  ✓ examples\wedge_pr_review\after.garnet : clean
+  ✓ examples\wedge_pr_review\before.garnet : clean
+
+Verified 54 target(s): 0 failing, 12 advisory diagnostic(s).
+Merge confidence (fused): 4/5
+  internal (local parse + safe-mode check): 4/5
+  external reviewer: not supplied (Greptile wires in at PR time)
+  capability signal: pending (pass --caps-baseline <old> for diff-caps)
+  fusion rule: min of the present signals
+
+gate: PASS
