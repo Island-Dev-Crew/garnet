@@ -24,11 +24,12 @@ Owns managed-mode tree-walk execution, expression evaluation, stdlib bridging, a
 - Crash surface (RB-2): the crate carries
   `#![deny(clippy::unwrap_used, clippy::expect_used)]` (tests exempt via
   `cfg_attr`). Sanctioned escapes are in-line `// INVARIANT:` allows only.
-  Checked integer division/remainder overflow (`i64::MIN / -1`, `% -1`) is a
-  `RuntimeError::Overflow` diagnostic with the SAME message as the VM —
-  never a process abort. Add/sub/mul overflow policy (wraps in release,
-  aborts in debug) is an open language decision, named-deferred — do not
-  silently change it.
+  Integer arithmetic is checked by default for division, remainder,
+  addition, subtraction, multiplication, and unary negation on interpreter
+  and VM paths (RFC-0002). Overflow produces the byte-identical controlled
+  diagnostic proven by `overflow_guards.rs` and `overflow_parity.rs` —
+  never a process abort. Explicit wrapping operations remain deferred and
+  must not be implied.
 - `@max_depth(N)` is valid only for `1..=64`; the interpreter must reject
   invalid bounds at runtime too, not treat a checker failure as an oversized
   executable ceiling.
