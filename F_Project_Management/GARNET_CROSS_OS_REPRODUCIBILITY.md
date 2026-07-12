@@ -4,10 +4,10 @@ The consolidated, **integrity-verified** status of the surge lanes' cross-OS
 evidence (Stage X + R). This is the floor Stage P (S114–S119) rests on: nothing is
 presented as cross-OS-verified unless its proof bundle hash-verifies here.
 
-## Integrity floor — 35/35 bundles verify
+## Integrity floor — 36/36 bundles verify
 
 `scripts/garnet_evidence_integrity_status.py --gate` verifies **every**
-`proofs/**/MANIFEST.sha256` against the committed bytes: **35/35 bundles pass**.
+`proofs/**/MANIFEST.sha256` against the committed bytes: **36/36 bundles pass**.
 
 > **Defect found + closed (transparency).** Five Windows/WSL bundles initially
 > failed their own manifests — not tampering or missing evidence, but **git EOL
@@ -58,6 +58,20 @@ disclosure with no test lane, the **Windows leg of Gate 1 — "the Windows lane
 confirms cross-OS" — is confirmed by sealed-bundle evidence** at `79290e5`.
 macOS remains PR-ladder-canonical (no sealed mac bundle for these probes);
 Linux rows are open.
+
+## W-PLAY wasm lane (WV-5) — Windows confirmation
+
+The #464 wasm lane builds and executes from a clean Windows checkout:
+`garnet-wasm` native tests 6/6 + interp `output_capture` 4/4;
+`wasm32-unknown-unknown` build ok; `wasm-pack` web + nodejs builds ok
+(sequential — shared wasm-bindgen cache); the Node smoke executes the
+canonical hello in **real wasm** (`{"exit_class":"ok","stdout":"Hello from
+Garnet!\n"}`, schema `garnet.wasm.run/1`) and undeclared `proc` authority
+**fails closed** (`runtime_error`, diagnostic present). The Node smoke proves
+wasm *execution*, not the browser page — the "runs in your browser" claim
+waits for the Playwright trap in the W-PLAY page slice. wasm-opt disabled by
+crate metadata (recorded, expected).
+Evidence: `proofs/windows/launch-verification/wv5-wasm-lane-20260712-0915/`.
 
 ## The honest fences (named-deferred — carried into EVERY Stage P artifact)
 

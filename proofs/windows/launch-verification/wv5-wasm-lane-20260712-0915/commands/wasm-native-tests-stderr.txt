@@ -1,0 +1,5 @@
+   Compiling garnet-wasm v0.1.0 (C:\garnet\garnet-wasm)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.29s
+     Running unittests src\lib.rs (target\debug\deps\garnet_wasm-abea9e91e27781f5.exe)
+     Running tests\run_source.rs (target\debug\deps\run_source-d64a2239cf619500.exe)
+   Doc-tests garnet_wasm

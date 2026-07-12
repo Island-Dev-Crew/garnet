@@ -1,0 +1,24 @@
+[INFO]: Checking for the Wasm target...
+[INFO]: Compiling to Wasm...
+warning: function `write_cache_lock_header` is never used
+    --> garnet-memory-v0.3\src\episodic.rs:1193:4
+     |
+1193 | fn write_cache_lock_header(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+
+warning: function `new_lock_marker` is never used
+    --> garnet-memory-v0.3\src\episodic.rs:1210:4
+     |
+1210 | fn new_lock_marker() -> String {
+     |    ^^^^^^^^^^^^^^^
+
+
+    Finished `release` profile [optimized] target(s) in 0.12s
+[INFO]: Installing wasm-bindgen...
+[INFO]: Optional field missing from Cargo.toml: 'repository'. This is not necessary, but recommended
+[INFO]: License key is set in Cargo.toml but no LICENSE file(s) were found; Please add the LICENSE file(s) to your project directory
+[INFO]: :-) Done in 0.47s
+[INFO]: :-) Your wasm pkg is ready to publish at garnet-wasm\pkg-node.

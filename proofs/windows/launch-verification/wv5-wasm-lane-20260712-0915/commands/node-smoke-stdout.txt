@@ -1,0 +1,3 @@
+NODE_SMOKE hello: {"exit_class":"ok","stdout":"Hello from Garnet!\n"}
+NODE_SMOKE authority-fail-closed: runtime_error
+NODE_SMOKE: PASS
