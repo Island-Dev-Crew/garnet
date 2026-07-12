@@ -1,0 +1,345 @@
+#!/usr/bin/env python3
+"""Regression tests for the canonical launch-readiness ledger reporter.
+
+Truth Lock Task 3: every consumed reporter is exercised, every launch gate
+has at least one failure path, and the evidence-base validator is proven
+against dirty, malformed, missing, unreachable, and clean-reachable values.
+"""
+from __future__ import annotations
+
+import importlib.util
+import json
+import subprocess
+import sys
+import unittest
+from dataclasses import replace
+from pathlib import Path
+from unittest import mock
+
+SCRIPT = Path(__file__).with_name("garnet_launch_readiness_status.py")
+SPEC = importlib.util.spec_from_file_location("garnet_launch_readiness_status", SCRIPT)
+assert SPEC is not None
+status_mod = importlib.util.module_from_spec(SPEC)
+assert SPEC.loader is not None
+sys.modules["garnet_launch_readiness_status"] = status_mod
+SPEC.loader.exec_module(status_mod)
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _gates_by_id(status):
+    return {gate.id: gate for gate in status.gates}
+
+
+class CurrentTreeTests(unittest.TestCase):
+    """Assertions against the real repository state (no mocks)."""
+
+    def test_current_launch_state_is_hold_with_unmeasured_foundation(self) -> None:
+        status = status_mod.read_status()
+        gates = _gates_by_id(status)
+        self.assertEqual("blocked", gates["foundation_integrity"].state)
+        self.assertEqual("external-pending", gates["s114_acceptance"].state)
+        self.assertEqual("remaining", gates["live_wasm_playground"].state)
+        self.assertEqual("manual-deferred", gates["minimum_sealed_shelf"].state)
+        self.assertEqual("jon-only", gates["launch_fire"].state)
+        self.assertEqual("unmeasured", status.evidence_base_status)
+        self.assertFalse(status.launch_ready)
+        self.assertEqual("HOLD", status.recommendation)
+
+    def test_schema_and_source_are_stamped(self) -> None:
+        status = status_mod.read_status()
+        self.assertEqual("garnet.launch_readiness/v1", status.schema)
+        self.assertTrue(status.source.endswith("garnet_launch_readiness_status.py"))
+
+    def test_static_playground_is_partial_never_pass(self) -> None:
+        status = status_mod.read_status()
+        gates = _gates_by_id(status)
+        self.assertEqual("partial", gates["static_playground"].state)
+
+    def test_shelf_gate_is_never_reporter_derived(self) -> None:
+        status = status_mod.read_status()
+        gates = _gates_by_id(status)
+        shelf = gates["minimum_sealed_shelf"]
+        self.assertEqual("manual-deferred", shelf.state)
+        self.assertTrue(
+            any("no reporter" in b or "manual" in b for b in shelf.blockers),
+            shelf.blockers,
+        )
+
+    def test_jon_only_actions_listed(self) -> None:
+        status = status_mod.read_status()
+        joined = " ".join(status.jon_only).lower()
+        for expected in ("tag", "launch", "s114"):
+            self.assertIn(expected, joined)
+
+
+class GateSubprocessTests(unittest.TestCase):
+    def test_gate_fails_while_playground_and_shelf_are_remaining(self) -> None:
+        proc = subprocess.run(
+            [sys.executable, str(SCRIPT), "--gate", "--format", "json"],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(1, proc.returncode)
+        self.assertFalse(json.loads(proc.stdout)["launch_ready"])
+
+    def test_json_and_markdown_render(self) -> None:
+        for fmt in ("json", "human", "markdown"):
+            proc = subprocess.run(
+                [sys.executable, str(SCRIPT), "--format", fmt],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(0, proc.returncode, proc.stderr)
+            self.assertTrue(proc.stdout.strip())
+        payload = json.loads(
+            subprocess.run(
+                [sys.executable, str(SCRIPT), "--format", "json"],
+                capture_output=True,
+                text=True,
+            ).stdout
+        )
+        self.assertEqual("garnet.launch_readiness/v1", payload["schema"])
+
+    def test_markdown_preserves_json_gate_order(self) -> None:
+        json_proc = subprocess.run(
+            [sys.executable, str(SCRIPT), "--format", "json"],
+            capture_output=True,
+            text=True,
+        )
+        md_proc = subprocess.run(
+            [sys.executable, str(SCRIPT), "--format", "markdown"],
+            capture_output=True,
+            text=True,
+        )
+        gate_ids = [g["id"] for g in json.loads(json_proc.stdout)["gates"]]
+        md = md_proc.stdout
+        positions = [md.index(f"`{gid}`") for gid in gate_ids]
+        self.assertEqual(positions, sorted(positions))
+        for required in ("commit", "release grade", "recommendation", "Deferred", "Jon-only"):
+            self.assertIn(required.lower(), md.lower())
+
+
+class LedgerPinTests(unittest.TestCase):
+    def test_tracked_ledger_matches_renderer_byte_for_byte(self) -> None:
+        ledger = REPO_ROOT / "F_Project_Management" / "LAUNCH" / "LAUNCH_READINESS.md"
+        self.assertTrue(ledger.is_file(), "canonical ledger missing")
+        proc = subprocess.run(
+            [sys.executable, str(SCRIPT), "--format", "markdown"],
+            capture_output=True,
+            text=True,
+        )
+        rendered = proc.stdout.replace(str(REPO_ROOT), "<repo>")
+        tracked = ledger.read_text(encoding="utf-8").replace(str(REPO_ROOT), "<repo>")
+        self.assertEqual(tracked, rendered)
+
+
+class EvidenceBaseValidatorTests(unittest.TestCase):
+    def test_dirty_suffix_is_unmeasured(self) -> None:
+        value, state = status_mod.validate_evidence_base("c4b9e28-dirty")
+        self.assertEqual("c4b9e28-dirty", value)
+        self.assertEqual("unmeasured", state)
+
+    def test_malformed_value_is_unmeasured(self) -> None:
+        for bad in ("", "zzzzzzz", "12345", "not a sha", "c4b9e28 "):
+            _, state = status_mod.validate_evidence_base(bad)
+            self.assertEqual("unmeasured", state, bad)
+
+    def test_missing_value_is_unmeasured(self) -> None:
+        _, state = status_mod.validate_evidence_base(None)
+        self.assertEqual("unmeasured", state)
+
+    def test_unreachable_commit_is_unmeasured(self) -> None:
+        # Well-formed hex that does not resolve to a commit in this repo.
+        _, state = status_mod.validate_evidence_base("deadbeefcafe4242deadbeefcafe4242deadbeef")
+        self.assertEqual("unmeasured", state)
+
+    def test_clean_reachable_short_sha_is_measured(self) -> None:
+        head_short = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            capture_output=True,
+            text=True,
+            cwd=REPO_ROOT,
+        ).stdout.strip()
+        value, state = status_mod.validate_evidence_base(head_short)
+        self.assertEqual(head_short, value)
+        self.assertEqual("measured", state)
+
+
+class MockedDependencyTests(unittest.TestCase):
+    """Prove every consumed reporter is invoked and can flip its gate."""
+
+    def _deps(self, **overrides):
+        deps = status_mod.collect_dependencies()
+        return replace(deps, **overrides)
+
+    def test_all_dependencies_are_invoked(self) -> None:
+        with mock.patch.object(
+            status_mod.garnet_v0_8_1_release_readiness,
+            "read_readiness",
+            wraps=status_mod.garnet_v0_8_1_release_readiness.read_readiness,
+        ) as release, mock.patch.object(
+            status_mod.garnet_red_team_status,
+            "read_status",
+            wraps=status_mod.garnet_red_team_status.read_status,
+        ) as red_team, mock.patch.object(
+            status_mod.garnet_evidence_integrity_status,
+            "read_status",
+            wraps=status_mod.garnet_evidence_integrity_status.read_status,
+        ) as integrity, mock.patch.object(
+            status_mod.garnet_seccomp_apply_status,
+            "read_status",
+            wraps=status_mod.garnet_seccomp_apply_status.read_status,
+        ) as seccomp, mock.patch.object(
+            status_mod.garnet_native_debian_cli_install_status,
+            "evaluate",
+            wraps=status_mod.garnet_native_debian_cli_install_status.evaluate,
+        ) as native_cli, mock.patch.object(
+            status_mod.garnet_native_linux_studio_status,
+            "evaluate",
+            wraps=status_mod.garnet_native_linux_studio_status.evaluate,
+        ) as native_studio, mock.patch.object(
+            status_mod.garnet_playground_readiness,
+            "read_readiness",
+            wraps=status_mod.garnet_playground_readiness.read_readiness,
+        ) as playground, mock.patch.object(
+            status_mod.garnet_wasm_readiness,
+            "read_readiness",
+            wraps=status_mod.garnet_wasm_readiness.read_readiness,
+        ) as wasm, mock.patch.object(
+            status_mod.garnet_stdlib_layer_gate,
+            "read_status",
+            wraps=status_mod.garnet_stdlib_layer_gate.read_status,
+        ) as stdlib, mock.patch.object(
+            status_mod.garnet_promo_video_status,
+            "read_status",
+            wraps=status_mod.garnet_promo_video_status.read_status,
+        ) as promo, mock.patch.object(
+            status_mod.garnet_mit_readiness_status,
+            "read_status",
+            wraps=status_mod.garnet_mit_readiness_status.read_status,
+        ) as mit:
+            status_mod.read_status()
+        # Some reporters cross-call others internally (e.g. MIT consumes
+        # sibling statuses), so assert invocation, not exact call counts.
+        for m in (
+            release,
+            red_team,
+            integrity,
+            seccomp,
+            native_cli,
+            native_studio,
+            playground,
+            wasm,
+            stdlib,
+            promo,
+            mit,
+        ):
+            m.assert_called()
+
+    def test_failed_release_readiness_blocks_foundation(self) -> None:
+        deps = self._deps()
+        deps = replace(deps, release=replace(deps.release, release_ready=False))
+        status = status_mod.build_status(deps)
+        gate = _gates_by_id(status)["foundation_integrity"]
+        self.assertEqual("blocked", gate.state)
+        self.assertTrue(any("release readiness" in b for b in gate.blockers))
+
+    def test_failed_red_team_blocks_foundation(self) -> None:
+        deps = self._deps()
+        deps = replace(deps, red_team=replace(deps.red_team, ok=False))
+        status = status_mod.build_status(deps)
+        gate = _gates_by_id(status)["foundation_integrity"]
+        self.assertEqual("blocked", gate.state)
+        self.assertTrue(any("red-team" in b for b in gate.blockers))
+
+    def test_failed_evidence_integrity_blocks_foundation(self) -> None:
+        deps = self._deps()
+        deps = replace(deps, integrity=replace(deps.integrity, ok=False))
+        status = status_mod.build_status(deps)
+        gate = _gates_by_id(status)["foundation_integrity"]
+        self.assertEqual("blocked", gate.state)
+        self.assertTrue(any("evidence-integrity" in b for b in gate.blockers))
+
+    def test_measured_base_with_green_inputs_passes_foundation(self) -> None:
+        deps = self._deps()
+        deps = replace(
+            deps,
+            release=replace(deps.release, release_ready=True),
+            red_team=replace(deps.red_team, ok=True),
+            integrity=replace(deps.integrity, ok=True),
+            evidence_base="0000000",
+            evidence_base_status="measured",
+        )
+        status = status_mod.build_status(deps)
+        gate = _gates_by_id(status)["foundation_integrity"]
+        self.assertEqual("pass", gate.state)
+
+    def test_failed_native_cli_blocks_native_linux(self) -> None:
+        deps = self._deps()
+        deps = replace(deps, native_cli=replace(deps.native_cli, ok=False))
+        status = status_mod.build_status(deps)
+        gate = _gates_by_id(status)["native_linux"]
+        self.assertEqual("blocked", gate.state)
+        self.assertTrue(any("native Debian CLI" in b for b in gate.blockers))
+
+    def test_failed_native_studio_blocks_native_linux(self) -> None:
+        deps = self._deps()
+        deps = replace(deps, native_studio=replace(deps.native_studio, ok=False))
+        status = status_mod.build_status(deps)
+        self.assertEqual("blocked", _gates_by_id(status)["native_linux"].state)
+
+    def test_failed_seccomp_blocks_native_linux(self) -> None:
+        deps = self._deps()
+        deps = replace(deps, seccomp=replace(deps.seccomp, ok=False))
+        status = status_mod.build_status(deps)
+        self.assertEqual("blocked", _gates_by_id(status)["native_linux"].state)
+
+    def test_failed_playground_degrades_static_playground(self) -> None:
+        deps = self._deps()
+        deps = replace(deps, playground=replace(deps.playground, ok=False))
+        status = status_mod.build_status(deps)
+        gate = _gates_by_id(status)["static_playground"]
+        self.assertEqual("blocked", gate.state)
+
+    def test_wasm_blockers_surface_on_live_playground(self) -> None:
+        deps = self._deps()
+        deps = replace(
+            deps,
+            wasm=replace(deps.wasm, blockers=["synthetic wasm blocker"]),
+        )
+        status = status_mod.build_status(deps)
+        gate = _gates_by_id(status)["live_wasm_playground"]
+        self.assertEqual("remaining", gate.state)
+        self.assertIn("synthetic wasm blocker", gate.blockers)
+
+    def test_stdlib_gate_failure_surfaces_as_shelf_blocker(self) -> None:
+        deps = self._deps()
+        deps = replace(deps, stdlib_meets_count_gate=False)
+        status = status_mod.build_status(deps)
+        gate = _gates_by_id(status)["minimum_sealed_shelf"]
+        self.assertEqual("manual-deferred", gate.state)
+        self.assertTrue(any("stdlib layer gate" in b for b in gate.blockers))
+
+    def test_promo_stays_pending_human_even_when_reporter_completes(self) -> None:
+        deps = self._deps()
+        deps = replace(deps, promo=replace(deps.promo, status="complete"))
+        status = status_mod.build_status(deps)
+        self.assertEqual("pending-human", _gates_by_id(status)["promo_video"].state)
+
+    def test_mit_failure_surfaces_as_foundation_evidence_regression(self) -> None:
+        deps = self._deps()
+        deps = replace(deps, mit_overall_status="regressed", mit_completion_percent=0.0)
+        status = status_mod.build_status(deps)
+        gate = _gates_by_id(status)["foundation_integrity"]
+        self.assertTrue(any("MIT" in b for b in gate.blockers))
+
+    def test_launch_ready_requires_every_critical_gate(self) -> None:
+        deps = self._deps()
+        status = status_mod.build_status(deps)
+        self.assertFalse(status.launch_ready)
+        self.assertEqual("HOLD", status.recommendation)
+
+
+if __name__ == "__main__":
+    unittest.main()
