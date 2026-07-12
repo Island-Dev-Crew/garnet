@@ -3,6 +3,7 @@ name = "garnet-wasm"
 version = "0.1.0"
 edition = "2021"
 publish = false
+license = "MIT OR Apache-2.0"
 description = "Browser-facing Garnet interpreter surface (W-PLAY): run Garnet source in wasm and return real captured output"
 
 [lib]
@@ -15,7 +16,7 @@ crate-type = ["cdylib", "rlib"]
 wasm-opt = false
 
 [dependencies]
-garnet-interp = { path = "../garnet-interp-v0.3" }
+garnet-interp = { version = "0.3.0", path = "../garnet-interp-v0.3" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
