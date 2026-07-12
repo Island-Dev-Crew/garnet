@@ -1,0 +1,131 @@
+{
+  "schema": "garnet.windows_launch_verification_proof/v1",
+  "item": "WV-3",
+  "title": "WV-3: truth-gate + verify examples, green AND fail-closed (Stage-1 HIGH probe 1, PR #409)",
+  "platform": "windows",
+  "os": "Windows-11-10.0.26200-SP0",
+  "host": "NUCBOX_M2PRo_S",
+  "path": "C:\\garnet",
+  "git_head": "08dea0c2a9ceb8e0aaa5cabfdf00c56f8d4a2375",
+  "workdir_porcelain_dirty_at_start": false,
+  "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+  "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)",
+  "extra_tools": {},
+  "timestamp_utc": "2026-07-12T08:54:09Z",
+  "tier": "cross-os-verification",
+  "honesty_scope": [
+    "language/runtime-trap parity evidence only - NOT OS-sandbox enforcement",
+    "Windows AppContainer application remains named-deferred; seccomp applies on Linux only",
+    "@bounded (Wasmtime fuel), memory limits, time limits, @mailbox remain declared-not-enforced",
+    "MANIFEST.sha256 is a plain SHA-256 integrity seal, not a cryptographic signature",
+    "research-grade v0.x prototype; no production or 1.0 claim; tags/releases are Jon-only",
+    "xtask truth --check is porcelain-insensitive by design: the -dirty suffix applies to the measurement commit recorded when stamping, not to the 6 compared fields; fail-closed for --check means field drift, proven below",
+    "fail-closed probes run via the full Git Bash path (C:\\Program Files\\Git\\usr\\bin\\bash.exe): bare 'bash' resolves to the System32 WSL wrapper on Windows, which did not faithfully propagate 'exit $rc' chains (recorded NUC-lane finding)"
+  ],
+  "commands": [
+    {
+      "name": "xtask-unit-tests",
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "xtask"
+      ],
+      "cwd": "C:\\garnet",
+      "exit_code": 0,
+      "expected_exit": "0",
+      "ok": true,
+      "stdout_log": "commands/xtask-unit-tests-stdout.txt",
+      "stderr_log": "commands/xtask-unit-tests-stderr.txt",
+      "stdout_sha256": "5349a6a5e36e64cc2c92f6474773a5957ad23d844a379721270cd81859bc2db7",
+      "stderr_sha256": "a3425ed366edfaf56edcfe669f125eca3055349591851bbaa9ea7b197ec8ac39"
+    },
+    {
+      "name": "truth-check-clean",
+      "argv": [
+        "cargo",
+        "run",
+        "-q",
+        "-p",
+        "xtask",
+        "--",
+        "truth",
+        "--check"
+      ],
+      "cwd": "C:\\garnet",
+      "exit_code": 0,
+      "expected_exit": "0",
+      "ok": true,
+      "stdout_log": "commands/truth-check-clean-stdout.txt",
+      "stderr_log": "commands/truth-check-clean-stderr.txt",
+      "stdout_sha256": "9f34f0d81d6158bd8f74e594323973d3bb3aa28580cf6d94906774709bff5bf0",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "build-garnet-cli",
+      "argv": [
+        "cargo",
+        "build",
+        "-p",
+        "garnet-cli"
+      ],
+      "cwd": "C:\\garnet",
+      "exit_code": 0,
+      "expected_exit": "0",
+      "ok": true,
+      "stdout_log": "commands/build-garnet-cli-stdout.txt",
+      "stderr_log": "commands/build-garnet-cli-stderr.txt",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "2b34696728dc82b03cbf6311d7e3a6a41658bbde097834c3010a78bc82842c1a"
+    },
+    {
+      "name": "verify-examples",
+      "argv": [
+        "C:\\garnet\\target\\debug\\garnet.exe",
+        "verify",
+        "examples"
+      ],
+      "cwd": "C:\\garnet",
+      "exit_code": 0,
+      "expected_exit": "0",
+      "ok": true,
+      "stdout_log": "commands/verify-examples-stdout.txt",
+      "stderr_log": "commands/verify-examples-stderr.txt",
+      "stdout_sha256": "5c2ea2a52bbb6761495a39dff144a548e5d9ea87786033634845b77a58851785",
+      "stderr_sha256": "01e743cff5133c9a56536fb16a0c83da663d5bb650cf9b1b8c88ef00119c5b57"
+    },
+    {
+      "name": "failclosed-truth-field-drift",
+      "argv": [
+        "C:\\Program Files\\Git\\usr\\bin\\bash.exe",
+        "-c",
+        "sed -i 's/\"primitive_count\": 80/\"primitive_count\": 81/' docs/truth.json && cargo run -q -p xtask -- truth --check; rc=$?; git checkout -- docs/truth.json; exit $rc"
+      ],
+      "cwd": "C:\\garnet",
+      "exit_code": 1,
+      "expected_exit": "nonzero",
+      "ok": true,
+      "stdout_log": "commands/failclosed-truth-field-drift-stdout.txt",
+      "stderr_log": "commands/failclosed-truth-field-drift-stderr.txt",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "7fded22e50f773eddf256fb0f93a36815d364e47c1578eac46089a932c2877e5"
+    },
+    {
+      "name": "failclosed-verify-broken-source",
+      "argv": [
+        "C:\\Program Files\\Git\\usr\\bin\\bash.exe",
+        "-c",
+        "d=$(mktemp -d) && printf 'def broken( {{{\\n' > \"$d/bad.garnet\" && target/debug/garnet.exe verify \"$d\"; rc=$?; rm -rf \"$d\"; exit $rc"
+      ],
+      "cwd": "C:\\garnet",
+      "exit_code": 1,
+      "expected_exit": "nonzero",
+      "ok": true,
+      "stdout_log": "commands/failclosed-verify-broken-source-stdout.txt",
+      "stderr_log": "commands/failclosed-verify-broken-source-stderr.txt",
+      "stdout_sha256": "21452a0b13c92506eeb81849ad5e2b4cc39b12feecdc008ea0e1fd36bb708bcc",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "verdict": "pass"
+}

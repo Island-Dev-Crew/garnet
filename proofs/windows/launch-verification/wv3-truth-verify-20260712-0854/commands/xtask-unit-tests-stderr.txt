@@ -1,0 +1,2 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running unittests src\main.rs (target\debug\deps\xtask-b0b6985c482a1add.exe)

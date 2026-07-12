@@ -1,0 +1,18 @@
+
+running 13 tests
+test truth::tests::parse_counts_sums_multiple_result_lines ... ok
+test truth::tests::check_passes_on_current_text ... ok
+test truth::tests::check_detects_planted_mismatch ... ok
+test truth::tests::readiness_pct_formats_like_json_for_integral_floats ... ok
+test truth::tests::latest_tag_rejects_workstation_tag_pollution_fail_closed ... ok
+test truth::tests::stamp_is_idempotent ... ok
+test truth::tests::latest_tag_certifies_a_published_origin_tag ... ok
+test truth::tests::stamp_handles_multiple_markers_in_order ... ok
+test truth::tests::stamp_rejects_unknown_key ... ok
+test truth::tests::stamp_rejects_unterminated_marker ... ok
+test truth::tests::stamp_replaces_stale_value_and_preserves_surroundings ... ok
+test truth::tests::workspace_version_ignores_other_sections ... ok
+test truth::tests::workspace_version_parses_from_workspace_package_section ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

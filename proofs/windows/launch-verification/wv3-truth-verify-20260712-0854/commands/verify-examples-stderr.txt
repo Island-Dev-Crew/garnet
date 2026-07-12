@@ -1,0 +1,11 @@
+Garnet.toml: edition "garnet-0.3" is a deprecated alias for "v1.0"; update to a `[project]` table with `edition = "v1.0"` (Mini-Spec §16.3).
+Garnet.toml: edition "garnet-0.3" is a deprecated alias for "v1.0"; update to a `[project]` table with `edition = "v1.0"` (Mini-Spec §16.3).
+Garnet.toml: edition "garnet-0.3" is a deprecated alias for "v1.0"; update to a `[project]` table with `edition = "v1.0"` (Mini-Spec §16.3).
+Garnet.toml: edition "garnet-0.3" is a deprecated alias for "v1.0"; update to a `[project]` table with `edition = "v1.0"` (Mini-Spec §16.3).
+Garnet.toml: edition "garnet-0.3" is a deprecated alias for "v1.0"; update to a `[project]` table with `edition = "v1.0"` (Mini-Spec §16.3).
+Garnet.toml: edition "garnet-0.3" is a deprecated alias for "v1.0"; update to a `[project]` table with `edition = "v1.0"` (Mini-Spec §16.3).
+Garnet.toml: edition "garnet-0.3" is a deprecated alias for "v1.0"; update to a `[project]` table with `edition = "v1.0"` (Mini-Spec §16.3).
+Garnet.toml: edition "garnet-0.3" is a deprecated alias for "v1.0"; update to a `[project]` table with `edition = "v1.0"` (Mini-Spec §16.3).
+Garnet.toml: edition "garnet-0.3" is a deprecated alias for "v1.0"; update to a `[project]` table with `edition = "v1.0"` (Mini-Spec §16.3).
+Garnet.toml: edition "garnet-0.3" is a deprecated alias for "v1.0"; update to a `[project]` table with `edition = "v1.0"` (Mini-Spec §16.3).
+Garnet.toml: edition "garnet-0.3" is a deprecated alias for "v1.0"; update to a `[project]` table with `edition = "v1.0"` (Mini-Spec §16.3).
