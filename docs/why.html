@@ -3,26 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Why Garnet · July 2026 — Enforcement by construction</title>
-<meta name="description" content="The agent tooling stack enforces policy by convention. A capability-typed language enforces it by construction. Ten reasons Garnet needs to exist in July 2026 — and an honest account of its limits.">
+<title>Why Garnet — Enforcement by construction</title>
+<link rel="canonical" href="https://garnet-lang.org/why">
+<meta name="description" content="The agent tooling stack enforces policy by convention. A capability-typed language enforces it by construction. Ten reasons Garnet needs to exist in the agent era — and an honest account of its limits.">
+<meta property="og:site_name" content="Garnet Language">
 <meta property="og:title" content="Why Garnet — Enforcement by construction">
 <meta property="og:description" content="A skill can be skipped. A type cannot. Ten reasons a capability-typed language matters in the agent era.">
 <meta property="og:type" content="article">
-<meta property="og:url" content="https://garnet-lang.org/why.html">
-<meta property="og:site_name" content="Garnet Language">
+<meta property="og:url" content="https://garnet-lang.org/why">
 <meta property="og:image" content="https://garnet-lang.org/assets/garnet-og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Garnet — Enforcement by construction">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Why Garnet — Enforcement by construction">
-<meta name="twitter:description" content="A skill can be skipped. A type cannot. Ten reasons a capability-typed language matters in the agent era.">
+<meta name="twitter:description" content="A skill can be skipped. A type cannot.">
 <meta name="twitter:image" content="https://garnet-lang.org/assets/garnet-og.png">
-<link rel="canonical" href="https://garnet-lang.org/why.html">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icons/garnet-192.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icons/garnet-192.png">
-<meta name="theme-color" content="#0a0a0f">
+<meta name="theme-color" content="#9C2B2E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -127,19 +123,43 @@
     .sig-anim{animation:rise 1s ease both}@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
     .leak{stroke-dasharray:5 5;animation:flow 1.3s linear infinite}@keyframes flow{to{stroke-dashoffset:-20}}
   }
+  /* site nav */
+  .nav{position:sticky;top:0;z-index:50;background:rgba(10,10,15,.82);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .nav-in{max-width:1080px;margin:0 auto;display:flex;align-items:center;gap:18px;padding:11px 22px}
+  .brand{font-family:"Instrument Serif",serif;font-size:21px;letter-spacing:.06em;color:var(--bone);text-decoration:none;margin-right:4px}
+  .brand .dot{color:var(--garnet)}
+  .nav-links{display:flex;gap:2px;flex-wrap:wrap;margin-left:auto;align-items:center}
+  .nav-links a{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--ash);padding:6px 10px;border-radius:7px;text-decoration:none;letter-spacing:.02em}
+  .nav-links a:hover{color:var(--bone);background:#1a1a24;text-decoration:none}
+  .nav-links a.here{color:var(--gold-soft);background:var(--gold-soft-bg)}
+  .nav-links a.gh{border:1px solid var(--line-2);color:var(--bone-dim)}
+  @media (max-width:640px){.nav-links a{padding:6px 7px;font-size:11px}.brand{font-size:18px}}
+  /* site footer */
+  .sitefoot{border-top:1px solid var(--line);margin-top:0;background:#0c0c12}
+  .sitefoot-in{max-width:1080px;margin:0 auto;padding:26px 22px;display:flex;gap:18px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+  .sitefoot a{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--ash);text-decoration:none}
+  .sitefoot a:hover{color:var(--bone-dim)}
+  .sitefoot .sf-links{display:flex;gap:16px;flex-wrap:wrap}
+  .sitefoot .sf-brand{font-family:"Instrument Serif",serif;font-size:16px;color:var(--bone-dim)}
 </style>
 </head>
 <body>
+<nav class="nav" aria-label="Site">
+  <div class="nav-in">
+    <a class="brand" href="https://garnet-lang.org/">GARNET<span class="dot">.</span></a>
+    <div class="nav-links">
+      <a class="here" href="https://garnet-lang.org/why" aria-current="page">Why</a>
+      <a href="https://garnet-lang.org/#code">Code</a>
+      <a href="https://garnet-lang.org/#caps">Capabilities</a>
+      <a href="https://garnet-lang.org/#install">Install</a>
+      <a href="https://garnet-lang.org/#studio">Studio</a>
+      <a href="https://garnet-lang.org/#docs">Docs</a>
+      <a href="https://garnet-lang.org/status.html">Status</a>
+      <a class="gh" href="https://github.com/Island-Dev-Crew/garnet">GitHub ↗</a>
+    </div>
+  </div>
+</nav>
 <article class="wrap">
-
-  <nav aria-label="Site" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;font-family:'JetBrains Mono',monospace;font-size:12px">
-    <a href="index.html" style="color:var(--bone);letter-spacing:.14em;font-weight:600;text-transform:uppercase">G<span style="color:var(--garnet)">A</span>RNET</a>
-    <span style="display:flex;gap:16px">
-      <a href="playground.html" style="color:var(--ash)">Playground</a>
-      <a href="status.html" style="color:var(--ash)">Status</a>
-      <a href="index.html" style="color:var(--gold-soft)">&larr; Site</a>
-    </span>
-  </nav>
 
   <header class="hero">
     <div class="kick">
@@ -197,8 +217,9 @@
     <div class="h2-eyebrow">Steelman first</div>
     <h2>Where the skeptic wins</h2>
     <hr class="hr-gem">
-    <p>If Garnet is pitched as <em>"a nicer general&#8209;purpose language humans adopt by choice,"</em> the skeptic beats it, and it's worth saying so plainly. Every skill in the modern agent stack — <code>ai-first-engineering</code>, <code>agentic-engineering</code>, model routers, eval harnesses — operates <em>on</em> an existing language; the value looks like it lives in the agent, not the target language. Models are most fluent in the incumbents, so a new language starts behind on the axis that now dominates: the training distribution. Capability <em>enforcement</em> already exists at the runtime and OS layer — WASI permissions, <code>--allow-net</code>, seccomp, the sandbox behind every "bypass permissions" button. Attestation — SBOM, SLSA, Sigstore — is language&#8209;agnostic tooling. And a young project reaching escape velocity against platform&#8209;scale tooling that the labs give away for free is brutal math.</p>
+    <p>If Garnet is pitched as <em>"a nicer general&#8209;purpose language humans adopt by choice,"</em> the skeptic beats it, and it's worth saying so plainly. Every skill in the modern agent stack — <code>ai-first-engineering</code>, <code>agentic-engineering</code>, model routers, eval harnesses — operates <em>on</em> an existing language; the value looks like it lives in the agent, not the target language. Models are most fluent in the incumbents, so a new language starts behind on the axis that now dominates: the training distribution. Capability <em>enforcement</em> already exists at the runtime and OS layer — WASI permissions, <code>--allow-net</code>, seccomp, the sandbox behind every "bypass permissions" button — and an agent&#8209;native language with capability&#8209;declared effects now exists too (see below). Attestation — SBOM, SLSA, Sigstore — is language&#8209;agnostic tooling. And a young project reaching escape velocity against platform&#8209;scale tooling that the labs give away for free is brutal math.</p>
     <div class="panel skeptic"><h3>The concession, stated once</h3><p style="margin:0;color:var(--bone-dim)">On the "better general&#8209;purpose language for humans" framing, the skeptic is right. Garnet's case does not live there. It lives one layer down — and the tooling explosion doesn't shrink that layer, it enlarges it.</p></div>
+    <div class="panel" style="border-left:4px solid var(--gold);background:var(--gold-soft-bg)"><h3 style="color:var(--gold-soft);font-size:20px;margin:0 0 8px">The nearest neighbor: Vercel Zero</h3><p style="margin:0 0 10px;color:var(--bone-dim)">In May 2026, Vercel Labs released <b style="color:var(--bone)">Zero</b> — an experimental agent&#8209;native systems language with capability&#8209;based I/O: effects are declared in function signatures via an explicit <code>World</code> parameter, and the compiler emits JSON diagnostics with typed repair plans so agents can fix code without parsing prose. It crossed 900 GitHub stars in a day. It is the closest thing to this territory that exists, and it deserves to be named rather than discovered by a skeptic mid&#8209;argument.</p><p style="margin:0;color:var(--bone-dim)">Here is the difference, stated fairly. <b style="color:var(--bone)">Zero makes effects legible to the agent writing the code. Garnet makes authority provable to the human and host accepting it.</b> Zero has no sealed artifact, no compiler&#8209;derived capability manifest, no authority&#8209;diff as the review primitive, no attestation a host can verify before granting, no acceptance gate, no evidence layer. Declaration is the floor; attestation is the product. A platform company entering this category validates the need — and the layer they didn't build is the one this whole page argues for.</p></div>
   </section>
 
   <!-- THE TURN -->
@@ -223,7 +244,7 @@
       <div class="reason"><div class="rn">1</div><div><p class="rh">Construction beats convention</p><p class="rb">A skill can be skipped, mis&#8209;prompted, or forgotten; a type cannot. When authority is a property of the artifact, the gap between "told to be careful" and "structurally unable to overstep" closes — and nothing outside the code can close it.</p></div></div>
       <div class="reason"><div class="rn">2</div><div><p class="rh">Acceptance the model can't fake</p><p class="rb">An LLM&#8209;as&#8209;judge produces a <b>probabilistic</b> verdict from the same class of system that wrote the code. Garnet's acceptance is a deterministic trap — the compiler proves the claim or fails the build. Verification that doesn't depend on a model's judgment is rare, and getting rarer.</p></div></div>
       <div class="reason"><div class="rn">3</div><div><p class="rh">The guarantee travels with the artifact</p><p class="rb">Your operating model, your CI, your reviewer's diligence live in the <em>environment</em> that produced the code. Ship it elsewhere and those evaporate. Garnet's seal moves <b>with</b> the binary — the seal attests what the core proves — which matters the moment agent code crosses boundaries. It now does, constantly.</p></div></div>
-      <div class="reason"><div class="rn">4</div><div><p class="rh">The connector explosion is the threat, not its refutation</p><p class="rb">Hallucinated dependencies, a critical MCP CVE, worm&#8209;style supply&#8209;chain attacks shipping malware with <b>valid signatures</b> — all authority&#8209;management failures. More agents × more connectors = a larger ungoverned&#8209;authority surface. Garnet addresses the problem the tooling growth is making worse.</p></div></div>
+      <div class="reason"><div class="rn">4</div><div><p class="rh">The connector explosion is the threat, not its refutation</p><p class="rb">MCP now runs in ~80% of observed cloud environments; 38% of scanned servers have <b>no authentication</b>; a CVSS&#8209;9.4 CVE proved unauthenticated RCE; supply&#8209;chain attacks ship malware under <b>valid signatures</b>. All authority&#8209;management failures. More agents × more connectors = a larger ungoverned&#8209;authority surface — the problem the tooling growth is making worse.</p></div></div>
       <div class="reason"><div class="rn">5</div><div><p class="rh">Diff&#8209;caps keeps a human in control at agent volume</p><p class="rb">When one senior can't read everything ten agents ship, review has to move <em>into</em> the artifact: accept a huge PR by reading one thing — <b>did its authority envelope change?</b> No skill provides that; it's a property of the type system.</p></div></div>
       <div class="reason"><div class="rn">6</div><div><p class="rh">Incumbent fluency ships incumbent footguns</p><p class="rb">An agent writes fluent Python <em>and</em> Python's ambient&#8209;authority footguns, because the language predates capability thinking and bolts safety on coarsely, after the fact. A language built for capability from the type system up makes the safe thing the <b>only expressible</b> thing.</p></div></div>
       <div class="reason"><div class="rn">7</div><div><p class="rh">Garnet is the substrate under the tooling, not a rival to it</p><p class="rb">An MCP tool server <em>written in Garnet</em> declares its authority in its types, so the host verifies the envelope before granting it. "The only standard library where every function's authority is declared and verified" isn't competing with the connector economy — it's the trust layer that economy is missing.</p></div></div>
@@ -261,10 +282,10 @@
     <hr class="hr-gem">
     <p>The strongest signal isn't the argument above — it's that the demand is arriving from four directions at once, none of them aware Garnet exists.</p>
     <div class="conv">
-      <div class="cv reg"><h3>Regulation, ~10 weeks out</h3><p>The EU Cyber Resilience Act's reporting obligations apply this September; FDA predetermined&#8209;change&#8209;control plans, automotive OTA (R156), and avionics change&#8209;impact analysis all encode the same envelope test. Today it's performed by humans reading documents — the exact process that collapses when AI&#8209;velocity change meets human&#8209;document validation.</p></div>
-      <div class="cv ins"><h3>An insurance market with nothing to price</h3><p>Agent&#8209;liability insurance is forming now, and it underwrites point&#8209;in&#8209;time red&#8209;team snapshots — because there is nothing <em>attestable</em> to underwrite against. A capability envelope is the missing actuarial instrument: a continuous, verifiable statement of what the insured system can do.</p></div>
-      <div class="cv threat"><h3>A threat landscape making the timing argument for us</h3><p>Measurable hallucinated&#8209;dependency rates in agent code; a critical CVE in the MCP ecosystem; a supply&#8209;chain worm that shipped malware with valid signatures. Every one is an authority&#8209;management failure. Nobody is hearing the timing argument yet.</p></div>
-      <div class="cv build"><h3>Language leaders describing the problem — unprompted</h3><p>In recent public talks, figures who built the languages we use are describing this exact problem as their field's unsolved one: when an AI writes the change, you no longer know where it changed, and senior engineers are retiring rather than validate the churn. That's the diff&#8209;caps problem, stated by people who've never heard of Garnet.</p></div>
+      <div class="cv reg"><h3>Regulation, on a verified clock</h3><p>On <b>September 11, 2026</b>, the EU Cyber Resilience Act's Article 14 reporting obligations go live: actively exploited vulnerabilities must be reported within 24 hours, with full notification in 72 — retroactively covering products already on the market, with penalties up to €15M or 2.5% of global turnover. Full conformity (the envelope/SBOM regime) follows December 11, 2027. FDA predetermined&#8209;change&#8209;control plans, automotive OTA, and avionics change&#8209;impact analysis encode the same envelope test — today performed by humans reading documents, the exact process that collapses when AI&#8209;velocity change meets human&#8209;document validation.</p><span class="src">verified · European Commission, digital-strategy.ec.europa.eu (CRA, Reg. EU 2024/2847)</span></div>
+      <div class="cv ins"><h3>An insurance market with nothing to price</h3><p>Agent&#8209;liability insurance is forming now, and it underwrites point&#8209;in&#8209;time red&#8209;team snapshots — because there is nothing <em>attestable</em> to underwrite against. A capability envelope is the missing actuarial instrument: a continuous, verifiable statement of what the insured system can do.</p><span class="src">verify carrier references before publishing</span></div>
+      <div class="cv threat"><h3>A threat landscape making the timing argument for us</h3><p>Independent testing of 100+ models found <b>45% of AI&#8209;generated code contains security flaws — a rate essentially unchanged over time</b>, even as the same models dramatically improved at producing working code. MCP servers now run in ~80% of observed cloud environments, yet a scan of 500+ found <b>38% with no authentication at all</b>; a critical MCP CVE (CVSS 9.4) demonstrated unauthenticated remote command execution; and supply&#8209;chain incidents have shipped malicious updates under <b>valid signatures</b>. Every one is an authority&#8209;management failure — and the flat 45% line means the fix will not come from better models or more review. It has to come from construction.</p><span class="src">verified · eBuilder Security 2026 risk review · Wiz State of AI in the Cloud 2026 · CVE&#8209;2025&#8209;49596 — link primary sources in the published page</span></div>
+      <div class="cv build"><h3>Language leaders describing the problem — unprompted</h3><p>In recent public talks, figures who built the languages we use are describing this exact problem as their field's unsolved one: when an AI writes the change, you no longer know where it changed, and senior engineers are retiring rather than validate the churn. That's the diff&#8209;caps problem, stated by people who've never heard of Garnet.</p><span class="src">attribute + link exact quotes to their source talks before naming anyone publicly</span></div>
     </div>
   </section>
 
@@ -297,10 +318,21 @@
   </section>
 
   <div class="foot">
-    Garnet · "Enforcement by construction" · July 2026 · a pre&#8209;launch working note. External facts (regulatory dates, threat&#8209;landscape references, insurance and industry observations) are drawn from the project research corpus and are directional signals, not legal, security, or actuarial advice. No production, verified, or regulatory&#8209;ready claim is made here.
+    Garnet · "Enforcement by construction" · July 2026 · a pre&#8209;launch working note. External facts (regulatory dates, CVE identifiers, insurance and quotation references) are drawn from the project research corpus and must be source&#8209;verified before public posting. No production, verified, or regulatory&#8209;ready claim is made here.
     <div class="scrip">"Where there is no vision, the people perish." — Proverbs 29:18 · No authority without evidence. 💎</div>
   </div>
 
 </article>
+<footer class="sitefoot">
+  <div class="sitefoot-in">
+    <span class="sf-brand">Garnet — Rust Rigor. Ruby Velocity.</span>
+    <div class="sf-links">
+      <a href="https://garnet-lang.org/">Home</a>
+      <a href="https://garnet-lang.org/minispec.html">Mini-Spec</a>
+      <a href="https://garnet-lang.org/status.html">Status</a>
+      <a href="https://github.com/Island-Dev-Crew/garnet">GitHub ↗</a>
+    </div>
+  </div>
+</footer>
 </body>
 </html>
