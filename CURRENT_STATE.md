@@ -29,6 +29,24 @@ research corpus material, generated artifacts, and local scratch.
 
 ## Current Truth
 
+> **Truth Lock current-truth note (2026-07-11).** Four launch-critical
+> procedural facts, each with its proving artifact:
+> integer arithmetic is **checked by default** for `/`, `%`, `+`, `-`, `*`,
+> and unary `-` on both backends per RFC-0002
+> (`rfcs/0002-integer-overflow-policy.md`; proven by
+> `garnet-interp-v0.3/tests/overflow_guards.rs` and
+> `garnet-cli/tests/overflow_parity.rs` — explicit wrapping operations remain
+> deferred); the `eval`/`repl`/`test`/`doctest` CLI lanes run behind the
+> unwinding **panic firewall** (`garnet-cli/src/panic_firewall.rs`,
+> `tests/panic_firewall_lanes.rs`) with aborting faults handled by structural
+> guards (`tests/cyclic_value_render.rs`); the **native Linux lane L1–L4** is
+> proof-recorded (`proofs/linux/`, consumed by readiness reporters per
+> `F_Project_Management/GARNET_LINUX_LANE_COMPLETION_DOSSIER_2026_07_01.html`);
+> and the canonical **launch-readiness ledger** is
+> `F_Project_Management/LAUNCH/LAUNCH_READINESS.md`, rendered state from
+> `scripts/garnet_launch_readiness_status.py` (machine authority for
+> reporter-derived rows and the evidence-base validator only).
+
 - **Repository root:** this directory, not the older `Garnet_Final/` bundle.
 - **Active implementation:** Rust workspace crates at the repository root.
 - **Current language status:** research-grade prototype, not a complete

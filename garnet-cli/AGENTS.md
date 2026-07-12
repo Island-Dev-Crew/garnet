@@ -50,6 +50,16 @@ Owns the `garnet` binary, subcommand routing, template embedding, deterministic 
   `tests/fixtures/malformed/`) asserts controlled 0/1/2 exits over check +
   both backends; keep it green and terminating (no unbounded recursion in
   the corpus — that is the S99 opt-in-ceiling boundary).
+- Panic containment: `garnet eval`, `garnet repl`, `garnet test`, and
+  `garnet doctest` invoke the interpreter on the main thread behind the
+  unwinding panic firewall (`src/panic_firewall.rs`) — an interpreter panic
+  becomes a controlled diagnostic exit, never a raw process abort or a
+  killed REPL session. The `run` lane instead uses spawn-and-join on a
+  large-stack thread. Stack overflow and other aborting faults are outside
+  `catch_unwind` and require structural guards (e.g. the cyclic-value
+  render guard); do not claim the firewall contains them. A new
+  interpreter-invoking lane must route through the firewall or a
+  structural guard (`tests/panic_firewall_lanes.rs` proves the lanes).
 - New agent-documentation tooling should start as opt-in or checking behavior before becoming a language requirement.
 
 ## Required Checks

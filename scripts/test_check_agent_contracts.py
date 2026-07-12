@@ -115,6 +115,28 @@ class AgentContractCheckerTests(unittest.TestCase):
 
         self.with_tree(case)
 
+    def test_launch_critical_contracts_are_current(self) -> None:
+        """Truth Lock Task 4: launch-critical procedural truth is not stale.
+
+        RFC-0002 made integer arithmetic checked by default (interp + VM),
+        the CLI grew an unwinding panic firewall for its main-thread lanes,
+        and the prim-macros trybuild gap must stay named until closed.
+        """
+        root = checker.ROOT
+        interp = (root / "garnet-interp-v0.3" / "AGENTS.md").read_text(
+            encoding="utf-8"
+        )
+        cli = (root / "garnet-cli" / "AGENTS.md").read_text(encoding="utf-8")
+        macros = (root / "garnet-prim-macros" / "AGENTS.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertNotIn("Add/sub/mul overflow policy (wraps in release", interp)
+        self.assertIn("checked by default", interp)
+        self.assertIn("panic firewall", cli)
+        self.assertIn("trybuild", macros)
+        self.assertIn("not yet trybuild-exercised", macros)
+
 
 if __name__ == "__main__":
     unittest.main()

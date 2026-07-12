@@ -24,8 +24,10 @@ per-module collector that emits `entries()` for the interpreter's derived
 - No new external dependencies beyond the already-locked proc-macro stack
   (proc-macro2/quote/syn). Consequence, recorded honestly: compile-error
   paths through the proc-macro entry points are reasoned + helper-tested,
-  not trybuild-exercised (adding trybuild = a new external dep — weigh it
-  in a future slice if macro complexity grows).
+  not yet trybuild-exercised (adding trybuild = a new external dep). A
+  trybuild compile-fail suite is required before materially widening the
+  Core Ring macro surface — do not grow the macro grammar on
+  reasoned-only compile-error coverage.
 - One adapter binds exactly ONE key: a fn carrying multiple
   `#[garnet_primitive]` attributes is a compile error (fail closed — a
   dual-key adapter would silently alias dispatch; found by adversarial
