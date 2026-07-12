@@ -1,0 +1,12 @@
+
+running 7 tests
+test test_runner_passes_pure_computational_test ... ok
+test test_runner_enforces_entry_authority_like_run ... ok
+test test_runner_allows_declared_caps ... ok
+test run_rejects_undeclared_fs_at_entry ... ok
+test run_rejects_top_level_let_initializer_fs_before_main_on_both_backends ... ok
+test run_rejects_top_level_const_initializer_fs_before_main_on_both_backends ... ok
+test run_allows_declared_entry_caps_for_load_time_initializer ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.89s
+
