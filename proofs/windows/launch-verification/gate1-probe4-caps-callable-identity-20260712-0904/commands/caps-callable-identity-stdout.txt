@@ -1,0 +1,9 @@
+
+running 4 tests
+test method_call_propagates_union_of_all_same_named_methods ... ok
+test explicit_empty_caps_is_treated_as_declared_not_unknown ... ok
+test impl_method_collision_resolves_to_distinct_entries ... ok
+test previously_misattributed_authority_now_resolves ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

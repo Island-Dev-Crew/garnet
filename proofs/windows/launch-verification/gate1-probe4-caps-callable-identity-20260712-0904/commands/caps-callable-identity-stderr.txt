@@ -1,0 +1,2 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+     Running tests\caps_callable_identity.rs (target\debug\deps\caps_callable_identity-210f63d58620fe5d.exe)
