@@ -1,0 +1,28 @@
+[package]
+name = "garnet-wasm"
+version = "0.1.0"
+edition = "2021"
+publish = false
+license = "MIT OR Apache-2.0"
+description = "Browser-facing Garnet interpreter surface (W-PLAY): run Garnet source in wasm and return real captured output"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+# wasm-opt 's local install races/fails on this toolchain; ship the
+# unoptimized wasm-bindgen output for now. Size optimization is revisited in
+# the playground page slice — recorded honestly, not silently.
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
+
+[dependencies]
+garnet-interp = { version = "0.3.0", path = "../garnet-interp-v0.3" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
+# The dependency tree pulls getrandom 0.2 transitively; its wasm32-unknown-unknown
+# build requires the `js` feature (browser crypto.getRandomValues). Scoped to the
+# wasm target only — native builds are untouched.
+getrandom = { version = "0.2", features = ["js"] }

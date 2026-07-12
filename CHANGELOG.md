@@ -7,6 +7,30 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated-honesty record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
+## Unreleased — W-PLAY Task 1: Garnet runs in WebAssembly (2026-07-11)
+
+### `garnet-wasm` (new crate) + `garnet-interp` additive output capture
+
+- **Added** the `garnet-wasm` crate: `run_source(src)` loads Garnet source
+  under `main`'s `@caps` entry frame (the CLI run lane's authority gate),
+  invokes `main`, and returns a `garnet.wasm.run/1` JSON result carrying the
+  REAL captured program output and diagnostic — never a synthesized result.
+  Builds green for `wasm32-unknown-unknown`; `wasm-pack` produces the
+  browser module; proven end-to-end by a Node smoke executing the canonical
+  hello in actual wasm (`Hello from Garnet!` captured) and by an
+  authority-failure path (`proc::run` under `@caps()` fails closed — the
+  proc/fs/net natives are absent from the wasm interpreter environment).
+- **Added** `garnet_interp::output` — a thread-local output-capture sink for
+  `print`/`println` (RB-7-style additive API): when no capture is active the
+  natives keep their byte-identical stdout path, proven by the untouched
+  workspace suite; a browser cannot observe process stdout, so without this
+  the playground could not show real output.
+- **Honest boundaries:** no live playground page yet (that is the next
+  W-PLAY slice, with a Playwright trap before any "runs in your browser"
+  claim); `wasm-opt` is disabled (unoptimized module, size revisited in the
+  page slice); the wasm surface exposes `run_source` only — check/diff-caps
+  surfaces land with the diff-caps demo slice.
+
 ## Unreleased — Studio Agent-Loop Console (Phase 5) (2026-06-28)
 
 ### Studio — Agent-Loop Console (`apps/garnet-studio`)

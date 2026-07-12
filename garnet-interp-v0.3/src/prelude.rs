@@ -71,13 +71,13 @@ fn define_native(env: &Env, name: &'static str, arity: Option<usize>, ptr: crate
 
 fn prim_print(args: Vec<Value>) -> Result<Value, RuntimeError> {
     let rendered: Vec<String> = args.iter().map(|v| v.display()).collect();
-    print!("{}", rendered.join(" "));
+    crate::output::emit(&rendered.join(" "), false);
     Ok(Value::Nil)
 }
 
 fn prim_println(args: Vec<Value>) -> Result<Value, RuntimeError> {
     let rendered: Vec<String> = args.iter().map(|v| v.display()).collect();
-    println!("{}", rendered.join(" "));
+    crate::output::emit(&rendered.join(" "), true);
     Ok(Value::Nil)
 }
 

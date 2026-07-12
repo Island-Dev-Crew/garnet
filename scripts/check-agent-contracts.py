@@ -110,6 +110,14 @@ CONTRACT_RULES = {
             "Benchmark evidence",
         ],
     },
+    "garnet-wasm/AGENTS.md": {
+        "phrases": [
+            "garnet.wasm.run/1",
+            "REAL captured program output",
+            "fails closed",
+            "Playwright trap",
+        ],
+    },
     "garnet-registry-stub/AGENTS.md": {
         "phrases": [
             "filesystem-backed",
