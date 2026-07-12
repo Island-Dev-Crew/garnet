@@ -21,7 +21,7 @@ State: **pass**
 Evidence:
 - v0.8.1 release readiness reporter green (binary-strict)
 - red-team static contract green (report, HIGH fix, regressions)
-- evidence-integrity bundles ok (34/34)
+- evidence-integrity bundles ok (35/35)
 - workspace tests measured at reachable commit `c0190a4`
 - MIT productization lane active-partial (93.1%)
 

@@ -4,10 +4,10 @@ The consolidated, **integrity-verified** status of the surge lanes' cross-OS
 evidence (Stage X + R). This is the floor Stage P (S114–S119) rests on: nothing is
 presented as cross-OS-verified unless its proof bundle hash-verifies here.
 
-## Integrity floor — 34/34 bundles verify
+## Integrity floor — 35/35 bundles verify
 
 `scripts/garnet_evidence_integrity_status.py --gate` verifies **every**
-`proofs/**/MANIFEST.sha256` against the committed bytes: **34/34 bundles pass**.
+`proofs/**/MANIFEST.sha256` against the committed bytes: **35/35 bundles pass**.
 
 > **Defect found + closed (transparency).** Five Windows/WSL bundles initially
 > failed their own manifests — not tampering or missing evidence, but **git EOL
@@ -49,6 +49,15 @@ canonical dev-machine PR ladder (#409–#412 commit records) — no sealed
 | test-runner entry authority (PR #410) | ✅ 7 tests | **canonical** (PR ladder; no sealed bundle) | — | `proofs/windows/launch-verification/wv1-entry-authority-20260712-0825/` |
 | VM⇄interp scope parity incl. proptest (PR #411) | ✅ 5 tests | **canonical** (PR ladder; no sealed bundle) | — | `proofs/windows/launch-verification/wv2-scope-parity-20260712-0840/` |
 | truth-gate green + fail-closed; `verify examples` (PR #409) | ✅ 13 tests + `--check` ok + drift trap + 54/0 + broken-source trap | **canonical** (PR ladder; no sealed bundle) | — | `proofs/windows/launch-verification/wv3-truth-verify-20260712-0854/` |
+| capability callable-identity (PR #412) | ✅ 4 tests | **canonical** (PR ladder; no sealed bundle) | — | `proofs/windows/launch-verification/gate1-probe4-caps-callable-identity-20260712-0904/` |
+| RB-1 capability-bitset disclosure | status disclosure (implemented/partial/deferred) — no test lane | same | same | `F_Project_Management/W_REBUILD/W_REBUILD_SPEC.md` RB-1 (PR #388) |
+
+With the four test probes green on native Windows (rows above; full workspace
+suite also green, 167 ok-suites / 0 failures) and RB-1 being a status
+disclosure with no test lane, the **Windows leg of Gate 1 — "the Windows lane
+confirms cross-OS" — is confirmed by sealed-bundle evidence** at `79290e5`.
+macOS remains PR-ladder-canonical (no sealed mac bundle for these probes);
+Linux rows are open.
 
 ## The honest fences (named-deferred — carried into EVERY Stage P artifact)
 

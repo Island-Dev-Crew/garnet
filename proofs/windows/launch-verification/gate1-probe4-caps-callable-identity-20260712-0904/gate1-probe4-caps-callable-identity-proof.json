@@ -1,0 +1,45 @@
+{
+  "schema": "garnet.windows_launch_verification_proof/v1",
+  "item": "Gate-1 probe 4",
+  "title": "Gate-1 probe 4: capability callable-identity (PR #412) on Windows",
+  "platform": "windows",
+  "os": "Windows-11-10.0.26200-SP0",
+  "host": "NUCBOX_M2PRo_S",
+  "path": "C:\\garnet",
+  "git_head": "58d9aeb102c77920ef8577c33935d16850fa99bc",
+  "workdir_porcelain_dirty_at_start": false,
+  "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+  "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)",
+  "extra_tools": {},
+  "timestamp_utc": "2026-07-12T09:04:20Z",
+  "tier": "cross-os-verification",
+  "honesty_scope": [
+    "language/runtime-trap parity evidence only - NOT OS-sandbox enforcement",
+    "Windows AppContainer application remains named-deferred; seccomp applies on Linux only",
+    "@bounded (Wasmtime fuel), memory limits, time limits, @mailbox remain declared-not-enforced",
+    "MANIFEST.sha256 is a plain SHA-256 integrity seal, not a cryptographic signature",
+    "research-grade v0.x prototype; no production or 1.0 claim; tags/releases are Jon-only"
+  ],
+  "commands": [
+    {
+      "name": "caps-callable-identity",
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "garnet-check",
+        "--test",
+        "caps_callable_identity"
+      ],
+      "cwd": "C:\\garnet",
+      "exit_code": 0,
+      "expected_exit": "0",
+      "ok": true,
+      "stdout_log": "commands/caps-callable-identity-stdout.txt",
+      "stderr_log": "commands/caps-callable-identity-stderr.txt",
+      "stdout_sha256": "8db04cf0271effd1ef0e2336a0f63dc6b58a2226c1f0cedc34cf7460b4b8e8ab",
+      "stderr_sha256": "1377e2362ce0e65bb3b72c6f37ebcad77d5d9699652d79f457d7a1b0c0437a1b"
+    }
+  ],
+  "verdict": "pass"
+}
