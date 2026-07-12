@@ -13,6 +13,7 @@ members = [
     "garnet-cst",
     "garnet-lsp",
     "garnet-vm",
+    "garnet-wasm",
     "garnet-registry-stub",
     "garnet-prim-macros",
     "xtask",

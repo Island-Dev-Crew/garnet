@@ -28,6 +28,7 @@ pub mod control;
 pub mod env;
 pub mod error;
 pub mod eval;
+pub mod output;
 pub mod pattern;
 pub mod prelude;
 pub mod repl;
