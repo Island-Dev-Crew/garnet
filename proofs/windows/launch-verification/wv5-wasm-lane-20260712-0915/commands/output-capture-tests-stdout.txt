@@ -1,0 +1,9 @@
+
+running 4 tests
+test take_without_start_is_none ... ok
+test capture_is_reset_after_take ... ok
+test capture_collects_print_without_newline ... ok
+test capture_collects_println_output ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

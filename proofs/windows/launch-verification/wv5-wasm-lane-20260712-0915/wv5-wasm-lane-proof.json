@@ -1,0 +1,142 @@
+{
+  "schema": "garnet.windows_launch_verification_proof/v1",
+  "item": "WV-5",
+  "title": "WV-5: wasm lane build + Node smoke from clean Windows checkout (W-PLAY Task 1, PR #464)",
+  "platform": "windows",
+  "os": "Windows-11-10.0.26200-SP0",
+  "host": "NUCBOX_M2PRo_S",
+  "path": "C:\\garnet",
+  "git_head": "098260e48f5625c409d53646889f27922e08c1e9",
+  "workdir_porcelain_dirty_at_start": false,
+  "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+  "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)",
+  "extra_tools": {
+    "wasm_pack": "wasm-pack 0.15.0",
+    "node": "v22.22.2"
+  },
+  "timestamp_utc": "2026-07-12T09:15:39Z",
+  "tier": "cross-os-verification",
+  "honesty_scope": [
+    "language/runtime-trap parity evidence only - NOT OS-sandbox enforcement",
+    "Windows AppContainer application remains named-deferred; seccomp applies on Linux only",
+    "@bounded (Wasmtime fuel), memory limits, time limits, @mailbox remain declared-not-enforced",
+    "MANIFEST.sha256 is a plain SHA-256 integrity seal, not a cryptographic signature",
+    "research-grade v0.x prototype; no production or 1.0 claim; tags/releases are Jon-only",
+    "Node smoke proves wasm execution, not the browser page; the 'runs in your browser' claim waits for the Playwright trap in the W-PLAY page slice",
+    "wasm-opt is disabled by Cargo.toml metadata - an unoptimized module is the recorded, expected outcome",
+    "wasm-pack builds run sequentially (shared wasm-bindgen cache race avoided)"
+  ],
+  "commands": [
+    {
+      "name": "wasm-native-tests",
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "garnet-wasm"
+      ],
+      "cwd": "C:\\garnet",
+      "exit_code": 0,
+      "expected_exit": "0",
+      "ok": true,
+      "stdout_log": "commands/wasm-native-tests-stdout.txt",
+      "stderr_log": "commands/wasm-native-tests-stderr.txt",
+      "stdout_sha256": "97771179cbdcfe3773cf028d46268cea0026d147ab5df2141f5147dd56950b69",
+      "stderr_sha256": "262290194f3689e8826ddbc074c215feb46109d7033e403820c93fd3d312ca29"
+    },
+    {
+      "name": "output-capture-tests",
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "garnet-interp",
+        "--test",
+        "output_capture"
+      ],
+      "cwd": "C:\\garnet",
+      "exit_code": 0,
+      "expected_exit": "0",
+      "ok": true,
+      "stdout_log": "commands/output-capture-tests-stdout.txt",
+      "stderr_log": "commands/output-capture-tests-stderr.txt",
+      "stdout_sha256": "8d986291143e29073a1590425c9f5f6340f722c9403bd0ccf811777165205a11",
+      "stderr_sha256": "5b19407b22ae5cbe3dabd9ac682b453b506ed14d0d75559733096691bda99a0a"
+    },
+    {
+      "name": "wasm32-build",
+      "argv": [
+        "cargo",
+        "build",
+        "-p",
+        "garnet-wasm",
+        "--target",
+        "wasm32-unknown-unknown"
+      ],
+      "cwd": "C:\\garnet",
+      "exit_code": 0,
+      "expected_exit": "0",
+      "ok": true,
+      "stdout_log": "commands/wasm32-build-stdout.txt",
+      "stderr_log": "commands/wasm32-build-stderr.txt",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "fafb8a68401aac80e835e6324ad264964686a5f50c5f7183f368f6acff356058"
+    },
+    {
+      "name": "wasm-pack-web",
+      "argv": [
+        "wasm-pack",
+        "build",
+        "garnet-wasm",
+        "--target",
+        "web",
+        "--out-dir",
+        "pkg-web"
+      ],
+      "cwd": "C:\\garnet",
+      "exit_code": 0,
+      "expected_exit": "0",
+      "ok": true,
+      "stdout_log": "commands/wasm-pack-web-stdout.txt",
+      "stderr_log": "commands/wasm-pack-web-stderr.txt",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "3ce25a515d32d1f8512499f8e6d422c4bf4dbd33eded6056f451eb2d071a0a5b"
+    },
+    {
+      "name": "wasm-pack-nodejs",
+      "argv": [
+        "wasm-pack",
+        "build",
+        "garnet-wasm",
+        "--target",
+        "nodejs",
+        "--out-dir",
+        "pkg-node"
+      ],
+      "cwd": "C:\\garnet",
+      "exit_code": 0,
+      "expected_exit": "0",
+      "ok": true,
+      "stdout_log": "commands/wasm-pack-nodejs-stdout.txt",
+      "stderr_log": "commands/wasm-pack-nodejs-stderr.txt",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "3b4ff43b5e989e603303fa3c288f9db5e6b034f40e5e955e89e018db2653ab36"
+    },
+    {
+      "name": "node-smoke",
+      "argv": [
+        "node",
+        "C:\\Users\\ISLAND~1\\AppData\\Local\\Temp\\claude\\C--Users-IslandDevCrew-Desktop-Garnet-Opus-4-7-final\\eee5f370-e621-4d7f-8220-180220100e8b\\scratchpad\\wv5_node_smoke.js"
+      ],
+      "cwd": "C:\\garnet",
+      "exit_code": 0,
+      "expected_exit": "0",
+      "ok": true,
+      "stdout_log": "commands/node-smoke-stdout.txt",
+      "stderr_log": "commands/node-smoke-stderr.txt",
+      "stdout_sha256": "1f945e7647ffd842a3b46da8e9fc5d0063bf69005855b25e30ac7884b57db20b",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "verdict": "pass"
+}

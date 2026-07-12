@@ -1,0 +1,16 @@
+warning: function `write_cache_lock_header` is never used
+    --> garnet-memory-v0.3\src\episodic.rs:1193:4
+     |
+1193 | fn write_cache_lock_header(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `new_lock_marker` is never used
+    --> garnet-memory-v0.3\src\episodic.rs:1210:4
+     |
+1210 | fn new_lock_marker() -> String {
+     |    ^^^^^^^^^^^^^^^
+
+warning: `garnet-memory` (lib) generated 2 warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.16s

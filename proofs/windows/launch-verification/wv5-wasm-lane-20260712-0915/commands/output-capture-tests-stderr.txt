@@ -1,0 +1,2 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+     Running tests\output_capture.rs (target\debug\deps\output_capture-6b46fb1f88361e5c.exe)
