@@ -8,9 +8,9 @@
     "defaultBranch": "main",
     "planDoc": "C:/Users/IslandDevCrew/Desktop/Garnet-S114-Plan-of-Attack-v1-2026-07-12.html",
     "northStar": "S114 accepted at its true scope (first-party CLI/Wasm trust-kernel baseline) with durable evidence, mechanically bounded claims, fail-closed CLI lanes, and a rolling review control. Never overclaim.",
-    "status": "active",
+    "status": "complete",
     "started": "2026-07-12",
-    "updated": "2026-07-13T04:50:00Z",
+    "updated": "2026-07-13T05:05:00Z",
     "sessionCount": 1
   },
   "policies": {
@@ -255,7 +255,7 @@
       "id": "P4",
       "title": "Rolling S114",
       "goal": "S114 becomes a recurring control: a machine-readable trust-kernel file set, a rolling-review policy, and a status gate — CI wiring parked for Jon.",
-      "status": "in_progress",
+      "status": "done",
       "sessionsEstimate": "1",
       "gates": [
         {
@@ -280,10 +280,10 @@
         {
           "id": "P4-T2",
           "title": "CI wiring PR for the new gates (P2 claim fixture + P4 rolling check): open, do NOT merge — Jon-only per CLAUDE.md integrity rule 1",
-          "status": "pending",
+          "status": "blocked",
           "dependsOn": ["P4-T1"],
-          "pr": null,
-          "notes": "Parked in resume.blockers on open."
+          "pr": { "number": 479, "url": "https://github.com/Island-Dev-Crew/garnet/pull/479", "mergedAt": null },
+          "notes": "Deliverable done: PR #479 opened and PARKED for Jon (edits .github/workflows/ci.yml = human-merge-only, integrity rule 1). Wires test_garnet_capability_scope_status + test_garnet_trust_kernel_review_status + both --gate checks + fetch-depth:0. NOT self-merged; merge is Jon's decision. Tracked in resume.blockers."
         }
       ]
     }
@@ -415,16 +415,39 @@
       "url": "https://github.com/Island-Dev-Crew/garnet/pull/476",
       "phase": "P3",
       "mergedAt": "2026-07-12"
+    },
+    {
+      "number": 477,
+      "title": "P3b: embedder strict-by-default with explicit permissive opt-out",
+      "url": "https://github.com/Island-Dev-Crew/garnet/pull/477",
+      "phase": "P3",
+      "mergedAt": "2026-07-13"
+    },
+    {
+      "number": 478,
+      "title": "P4-T1: rolling S114 trust-kernel review control (machine-readable)",
+      "url": "https://github.com/Island-Dev-Crew/garnet/pull/478",
+      "phase": "P4",
+      "mergedAt": "2026-07-13"
+    },
+    {
+      "number": 479,
+      "title": "P4-T2 [Jon-gated]: wire S114 capability-scope + trust-kernel review gates into CI",
+      "url": "https://github.com/Island-Dev-Crew/garnet/pull/479",
+      "phase": "P4",
+      "mergedAt": null
     }
   ],
   "resume": {
     "activePhase": "P4",
     "nextActions": [
-      "P4-T1 is DONE and merging (mission/p4-rolling-s114). Next: P4-T2 CI-wiring PR — JON-ONLY, PARK IT.",
-      "P4-T2 (CI wiring — JON-ONLY): open ONE PR adding CI jobs to .github/workflows/ci.yml running `python scripts/garnet_capability_scope_status.py --gate` + its test (P2) AND `python scripts/garnet_trust_kernel_review_status.py --gate` + its test (P4). This touches .github/workflows/ = CLAUDE.md integrity rule 1 (human-merge-only). Do NOT self-merge; open it and record in resume.blockers as 'PR #NNN awaiting Jon'.",
-      "Then mission complete: set mission.status=complete, run the full closing gate suite, render, commit, deliver the closing summary."
+      "MISSION COMPLETE. All five phases (P0-P4) done and merged (#472, #473, #474, #475, #476, #477, #478). Every autonomously-completable task is landed on main and CI-verified.",
+      "ONE follow-up remains, by design, for Jon: merge PR #479 (P4-T2) to enable the S114 capability-scope + rolling trust-kernel review gates in CI. It edits .github/workflows/ci.yml, which is human-merge-only (CLAUDE.md integrity rule 1). Its CI is green (the new gates already pass on the agent-contracts job). Merging turns on enforcement.",
+      "Jon-only decisions untouched by this mission: relabelling S114 independence (verdict language unchanged), release tags, launch fire."
     ],
-    "blockers": [],
+    "blockers": [
+      "PR #479 (P4-T2) awaiting Jon: CI-wiring for the P2 capability-scope gate + P4 trust-kernel review gate. Human-merge-only per integrity rule 1. Green CI; parked, not self-merged."
+    ],
     "conventions": [
       "One task-cluster = one branch (mission/<phaseId>-<slug>) = one PR; squash-merge with the 'Autonomous merge — agent: Claude Code (Fable 5); gates: ...' trailer after full CI green",
       "PRs touching workflow files / dogfood gate / diff-caps / capability-manifest standard: open and park for Jon, never self-merge",
