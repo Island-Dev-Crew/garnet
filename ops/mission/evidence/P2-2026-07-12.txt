@@ -1,0 +1,6 @@
+P2 gates — 2026-07-13T03:53Z
+[P2-G1] cargo run -p xtask -- truth --check: ok (6 fields, 4 stamped surfaces)
+[P2-G2] python scripts/garnet_caps_enforcement_status.py --gate: exit 0
+[P2-G3] python scripts/garnet_capability_scope_status.py --gate: exit 0 (2/2 enforced claims, 0 forbidden hits, 0 anchors missing)
+[P2-G3] test_garnet_capability_scope_status.py: Ran 6 tests OK
+[web-pwa] smoke --strict: blockers=0 warnings=0; test_smoke_garnet_pages_pwa.py: OK (SW cache garnet-web-v1 -> v2)

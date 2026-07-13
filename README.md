@@ -84,8 +84,11 @@ and aimed at agent-authored code:
 - **`diff-caps`** — the capability-surface diff as an acceptance gate. When a dependency or an
   agent's PR changes what the code *can do*, you review the authority delta, not every line.
 - **`@caps(...)`** — functions declare their OS-authority budget; the CapCaps propagator checks
-  declared budgets transitively at check time, and the entry point must declare its budget. At
-  run time, capability primitives trap unless the calling chain declares the authority.
+  declared budgets transitively at check time, and the entry point must declare its budget. Under
+  the `garnet` CLI, the gated host-authority primitives (fs, net, proc, env, log-to-file — 12
+  runtime-gated + 3 entry-gated) additionally trap at run time unless the calling chain declares
+  the authority; `time`/`uuid` and pure computation are checker-only. See the
+  [capability enforcement scope table](C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md).
 - **An enforced kernel** — `@caps` and `@max_depth` trap identically on both execution backends,
   with cross-OS trap parity recorded as evidence, not asserted.
 - **The seal** — `garnet build --deterministic --sign` emits a byte-identical manifest plus an
