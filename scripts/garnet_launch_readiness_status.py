@@ -13,9 +13,18 @@ States:
   partial          — honest middle state (static playground only)
   remaining        — work not yet built (live WASM playground / W-PLAY)
   manual-deferred  — no reporter exists; explicit manual fence (shelf)
-  external-pending — a human decision outside this reporter (S114)
+  external-pending — a human decision outside this reporter, not yet recorded (S114)
+  accepted-scoped  — a human decision recorded in an external acceptance
+                     artifact and read (never graded) here (S114)
   pending-human    — human-produced artifact not yet delivered (promo)
   jon-only         — never autonomous (launch fire)
+
+S114 acceptance is read from F_Project_Management/LAUNCH/S114_ACCEPTANCE.json
+when present and valid; absent or malformed, the S114 gate stays
+external-pending. The promo ledger line is read from the committed snapshot
+F_Project_Management/LAUNCH/PROMO_EVIDENCE_SNAPSHOT.json so regeneration is
+machine-independent (the live promo probe is still invoked; the snapshot only
+pins the rendered value).
 
 `--gate` exits 1 until every launch-critical gate passes. It is
 intentionally NOT wired into CI in the Truth Lock slice.
@@ -27,7 +36,7 @@ import json
 import re
 import subprocess
 import sys
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -47,6 +56,12 @@ import garnet_wasm_readiness  # noqa: E402
 SCHEMA = "garnet.launch_readiness/v1"
 REPO_ROOT = Path(__file__).resolve().parents[1]
 TRUTH_JSON = REPO_ROOT / "docs" / "truth.json"
+S114_ACCEPTANCE_JSON = (
+    REPO_ROOT / "F_Project_Management" / "LAUNCH" / "S114_ACCEPTANCE.json"
+)
+PROMO_SNAPSHOT_JSON = (
+    REPO_ROOT / "F_Project_Management" / "LAUNCH" / "PROMO_EVIDENCE_SNAPSHOT.json"
+)
 
 LAUNCH_CRITICAL_GATES = (
     "foundation_integrity",
@@ -162,6 +177,57 @@ def _read_truth_evidence_base() -> tuple[str, str]:
     return validate_evidence_base(value)
 
 
+def read_s114_acceptance() -> dict | None:
+    """Read Jon's recorded S114 acceptance decision, if present and valid.
+
+    The reporter never grades S114: acceptance is a human decision recorded
+    outside this script. When a valid acceptance artifact is present the S114
+    gate reflects it as `accepted-scoped`; otherwise the gate stays
+    `external-pending`. A missing, malformed, wrong-schema, wrong-state, or
+    scopeless artifact is treated as absent (fail-closed to external-pending)
+    so a broken file can never silently accept S114.
+    """
+    try:
+        data = json.loads(S114_ACCEPTANCE_JSON.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    if data.get("schema") != "garnet.s114_acceptance/v1":
+        return None
+    if data.get("state") != "accepted-scoped":
+        return None
+    if not str(data.get("scope", "")).strip():
+        return None
+    return data
+
+
+def read_promo_snapshot() -> tuple[str, float] | None:
+    """Read the committed canonical promo snapshot, if present and valid.
+
+    Returns (status, completion_percent). The live promo probe reads the
+    machine-local ~/Desktop/dogfood evidence tree, which is only complete on
+    the evidence machine; reading a committed snapshot for the ledger line
+    keeps regeneration machine-independent. A missing or malformed snapshot
+    returns None and the reporter falls back to the live probe value.
+    """
+    try:
+        data = json.loads(PROMO_SNAPSHOT_JSON.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    if data.get("schema") != "garnet.promo_evidence_snapshot/v1":
+        return None
+    status = data.get("status")
+    percent = data.get("completion_percent")
+    if not isinstance(status, str) or not status.strip():
+        return None
+    if not isinstance(percent, (int, float)) or isinstance(percent, bool):
+        return None
+    return status, float(percent)
+
+
 def collect_dependencies() -> Dependencies:
     release = garnet_v0_8_1_release_readiness.read_readiness(binary_strict=True)
     red_team = garnet_red_team_status.read_status()
@@ -173,6 +239,15 @@ def collect_dependencies() -> Dependencies:
     wasm = garnet_wasm_readiness.read_readiness()
     stdlib = garnet_stdlib_layer_gate.read_status()
     promo = garnet_promo_video_status.read_status()
+    # The live promo probe reads the machine-local ~/Desktop/dogfood tree.
+    # Pin the rendered ledger line to the committed canonical snapshot so
+    # regeneration is machine-independent; the live probe is still invoked
+    # above (kept as the evidence-machine source of truth).
+    promo_snapshot = read_promo_snapshot()
+    if promo_snapshot is not None:
+        promo = replace(
+            promo, status=promo_snapshot[0], completion_percent=promo_snapshot[1]
+        )
     mit = garnet_mit_readiness_status.read_status()
     evidence_base, evidence_base_status = _read_truth_evidence_base()
     return Dependencies(
@@ -268,18 +343,43 @@ def _native_linux_gate(deps: Dependencies) -> LaunchGate:
 
 def _s114_gate(deps: Dependencies) -> LaunchGate:
     del deps
+    acceptance = read_s114_acceptance()
+    if acceptance is None:
+        return LaunchGate(
+            id="s114_acceptance",
+            label="S114 independent re-verification acceptance",
+            state="external-pending",
+            evidence=[
+                "F_Project_Management/GARNET_S114_INDEPENDENT_VERIFICATION_DOSSIER.html",
+                "F_Project_Management/W_TRUST/S114_INDEPENDENT_REVERIFICATION_PACKAGE_2026-06-14.md",
+            ],
+            blockers=[
+                "Jon has not recorded an S114 acceptance decision; "
+                "this reporter proves the static contract only and cannot grade acceptance"
+            ],
+        )
+    scope = str(acceptance["scope"]).strip()
+    decided_by = str(acceptance.get("decided_by", "unknown")).strip()
+    decision_date = str(acceptance.get("decision_date", "unknown")).strip()
+    # accepted-scoped: the gate is satisfied. Scope limits are surfaced as
+    # evidence (tracked hardening debt), never as blockers — an accepted gate
+    # is not a blocked gate. Independence is NOT relabelled here.
+    evidence = [
+        f"S114 accepted (scoped) by {decided_by} on {decision_date}: {scope}",
+        "recorded in F_Project_Management/LAUNCH/S114_ACCEPTANCE.json "
+        "(read, not graded, by this reporter)",
+        "not an independence relabel: S114 verdict language is unchanged "
+        "(independently-re-verified-with-fixes)",
+    ]
+    evidence.extend(
+        f"scope limit (tracked): {item}" for item in acceptance.get("out_of_scope", [])
+    )
     return LaunchGate(
         id="s114_acceptance",
         label="S114 independent re-verification acceptance",
-        state="external-pending",
-        evidence=[
-            "F_Project_Management/GARNET_S114_INDEPENDENT_VERIFICATION_DOSSIER.html",
-            "F_Project_Management/W_TRUST/S114_INDEPENDENT_REVERIFICATION_PACKAGE_2026-06-14.md",
-        ],
-        blockers=[
-            "Jon has not recorded an S114 acceptance decision; "
-            "this reporter proves the static contract only and cannot grade acceptance"
-        ],
+        state="accepted-scoped",
+        evidence=evidence,
+        blockers=[],
     )
 
 
@@ -375,8 +475,14 @@ def build_status(deps: Dependencies) -> LaunchReadinessStatus:
         _launch_fire_gate(deps),
     ]
     by_id = {gate.id: gate for gate in gates}
+    # A gate satisfies launch readiness when its state is "pass", except the
+    # S114 governance gate, which is satisfied by a recorded scoped acceptance.
+    # (This does not by itself flip launch_ready: the playground, live-WASM,
+    # and shelf gates remain open.)
+    satisfactory_states = {"s114_acceptance": ("pass", "accepted-scoped")}
     launch_ready = all(
-        by_id[gate_id].state == "pass" for gate_id in LAUNCH_CRITICAL_GATES
+        by_id[gate_id].state in satisfactory_states.get(gate_id, ("pass",))
+        for gate_id in LAUNCH_CRITICAL_GATES
     )
     recommendation = "HELD-AT-LOCK" if launch_ready else "HOLD"
     release_grade = (

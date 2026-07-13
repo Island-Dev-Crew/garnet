@@ -41,11 +41,15 @@ class CurrentTreeTests(unittest.TestCase):
         status = status_mod.read_status()
         gates = _gates_by_id(status)
         self.assertEqual("pass", gates["foundation_integrity"].state)
-        self.assertEqual("external-pending", gates["s114_acceptance"].state)
+        # S114 is accepted-scoped: Jon's decision is recorded in the external
+        # acceptance artifact and read (not graded) by the reporter.
+        self.assertEqual("accepted-scoped", gates["s114_acceptance"].state)
+        self.assertEqual([], gates["s114_acceptance"].blockers)
         self.assertEqual("remaining", gates["live_wasm_playground"].state)
         self.assertEqual("manual-deferred", gates["minimum_sealed_shelf"].state)
         self.assertEqual("jon-only", gates["launch_fire"].state)
         self.assertEqual("measured", status.evidence_base_status)
+        # Accepting S114 does NOT flip launch readiness: other gates are open.
         self.assertFalse(status.launch_ready)
         self.assertEqual("HOLD", status.recommendation)
 
@@ -342,6 +346,119 @@ class MockedDependencyTests(unittest.TestCase):
         status = status_mod.build_status(deps)
         self.assertFalse(status.launch_ready)
         self.assertEqual("HOLD", status.recommendation)
+
+
+class S114AcceptanceGateTests(unittest.TestCase):
+    """The S114 gate reflects, never grades, the external acceptance artifact."""
+
+    def test_accepted_scoped_when_artifact_present(self) -> None:
+        status = status_mod.read_status()
+        gate = _gates_by_id(status)["s114_acceptance"]
+        self.assertEqual("accepted-scoped", gate.state)
+        self.assertEqual([], gate.blockers)
+        self.assertTrue(any("accepted (scoped)" in e for e in gate.evidence))
+        self.assertTrue(
+            any("not an independence relabel" in e for e in gate.evidence),
+            gate.evidence,
+        )
+        self.assertTrue(any("scope limit (tracked)" in e for e in gate.evidence))
+
+    def test_external_pending_without_artifact(self) -> None:
+        with mock.patch.object(status_mod, "read_s114_acceptance", return_value=None):
+            status = status_mod.read_status()
+        gate = _gates_by_id(status)["s114_acceptance"]
+        self.assertEqual("external-pending", gate.state)
+        self.assertTrue(gate.blockers)
+
+    def test_real_committed_artifact_validates(self) -> None:
+        data = status_mod.read_s114_acceptance()
+        self.assertIsNotNone(data)
+        self.assertEqual("accepted-scoped", data["state"])
+        self.assertTrue(str(data["scope"]).strip())
+
+    def test_reader_rejects_wrong_state_or_scopeless(self) -> None:
+        import os
+        import tempfile
+
+        for payload in (
+            {"schema": "garnet.s114_acceptance/v1", "state": "rejected", "scope": "x"},
+            {"schema": "garnet.s114_acceptance/v1", "state": "accepted-scoped", "scope": "  "},
+            {"schema": "wrong/v1", "state": "accepted-scoped", "scope": "x"},
+            ["not", "a", "dict"],
+        ):
+            with tempfile.NamedTemporaryFile(
+                "w", suffix=".json", delete=False, encoding="utf-8"
+            ) as fh:
+                json.dump(payload, fh)
+                tmp = fh.name
+            try:
+                with mock.patch.object(status_mod, "S114_ACCEPTANCE_JSON", Path(tmp)):
+                    self.assertIsNone(status_mod.read_s114_acceptance(), payload)
+            finally:
+                os.unlink(tmp)
+
+    def test_reader_returns_none_when_file_missing(self) -> None:
+        with mock.patch.object(
+            status_mod, "S114_ACCEPTANCE_JSON", Path("/nonexistent/s114.json")
+        ):
+            self.assertIsNone(status_mod.read_s114_acceptance())
+
+    def test_accepted_s114_is_not_a_launch_blocker(self) -> None:
+        # Accepting S114 removes it from the set of open launch-critical gates;
+        # launch stays HOLD only because of the remaining (playground/wasm/shelf)
+        # gates, never because of S114.
+        status = status_mod.read_status()
+        by_id = _gates_by_id(status)
+        self.assertIn(by_id["s114_acceptance"].state, ("pass", "accepted-scoped"))
+        satisfying = ("pass", "accepted-scoped")
+        open_critical = [
+            gid
+            for gid in status_mod.LAUNCH_CRITICAL_GATES
+            if by_id[gid].state not in satisfying
+        ]
+        self.assertNotIn("s114_acceptance", open_critical)
+        self.assertTrue(open_critical, "some non-S114 critical gate must still be open")
+        self.assertFalse(status.launch_ready)
+
+
+class PromoSnapshotTests(unittest.TestCase):
+    """The promo ledger line is pinned to the committed snapshot."""
+
+    def test_ledger_line_uses_canonical_snapshot(self) -> None:
+        snap = status_mod.read_promo_snapshot()
+        self.assertIsNotNone(snap)
+        status = status_mod.read_status()
+        gate = _gates_by_id(status)["promo_video"]
+        self.assertTrue(
+            any(snap[0] in e and f"{snap[1]:.1f}%" in e for e in gate.evidence),
+            gate.evidence,
+        )
+
+    def test_falls_back_to_live_probe_without_snapshot(self) -> None:
+        with mock.patch.object(status_mod, "read_promo_snapshot", return_value=None):
+            deps = status_mod.collect_dependencies()
+        self.assertIsInstance(deps.promo.completion_percent, float)
+
+    def test_reader_rejects_malformed_snapshot(self) -> None:
+        import os
+        import tempfile
+
+        for payload in (
+            {"schema": "wrong/v1", "status": "x", "completion_percent": 1.0},
+            {"schema": "garnet.promo_evidence_snapshot/v1", "status": "", "completion_percent": 1.0},
+            {"schema": "garnet.promo_evidence_snapshot/v1", "status": "x", "completion_percent": "nope"},
+            {"schema": "garnet.promo_evidence_snapshot/v1", "status": "x", "completion_percent": True},
+        ):
+            with tempfile.NamedTemporaryFile(
+                "w", suffix=".json", delete=False, encoding="utf-8"
+            ) as fh:
+                json.dump(payload, fh)
+                tmp = fh.name
+            try:
+                with mock.patch.object(status_mod, "PROMO_SNAPSHOT_JSON", Path(tmp)):
+                    self.assertIsNone(status_mod.read_promo_snapshot(), payload)
+            finally:
+                os.unlink(tmp)
 
 
 if __name__ == "__main__":

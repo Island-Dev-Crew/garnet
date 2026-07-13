@@ -1,0 +1,4 @@
+P0-G1 launch-readiness reporter suite — 2026-07-13T03:19Z
+cmd: PYTHONUTF8=1 python scripts/test_garnet_launch_readiness_status.py
+(PYTHONUTF8=1 required on Windows: the pin test captures the child reporter's stdout; without UTF-8 mode the parent decodes em-dashes with cp1252 and the byte-compare fails on locale, not content.)
+result: Ran 37 tests OK

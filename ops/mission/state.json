@@ -10,7 +10,7 @@
     "northStar": "S114 accepted at its true scope (first-party CLI/Wasm trust-kernel baseline) with durable evidence, mechanically bounded claims, fail-closed CLI lanes, and a rolling review control. Never overclaim.",
     "status": "active",
     "started": "2026-07-12",
-    "updated": "2026-07-12T21:30:00Z",
+    "updated": "2026-07-13T03:20:00Z",
     "sessionCount": 1
   },
   "policies": {
@@ -24,44 +24,44 @@
       "id": "P0",
       "title": "Acceptance Record",
       "goal": "Close the S114 governance row as accepted-scoped without expanding public claims; make ledger regeneration machine-independent.",
-      "status": "in_progress",
+      "status": "done",
       "sessionsEstimate": "1",
       "gates": [
         {
           "id": "P0-G1",
-          "title": "Launch-readiness reporter test suite green (includes byte-for-byte ledger pin; slow — runs live sibling reporters, allow 10+ min)",
+          "title": "Launch-readiness reporter test suite green (includes byte-for-byte ledger pin; slow — runs live sibling reporters, ~5 min)",
           "command": "python scripts/test_garnet_launch_readiness_status.py",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": "On this machine use python, not python3. Test asserts the live-tree S114 state — must be updated in the same PR that changes the state."
+          "status": "passed",
+          "evidence": "ops/mission/evidence/P0-G1-2026-07-12.txt",
+          "lastRun": "2026-07-13T03:15:00Z",
+          "notes": "37 tests OK. On Windows run with PYTHONUTF8=1 (env prefix): the pin test captures the child reporter's stdout and without UTF-8 mode the parent decodes em-dashes as cp1252 — a locale artifact, not a content mismatch. Not wired into CI. Use python, not python3, on this machine."
         },
         {
           "id": "P0-G2",
           "title": "Evidence integrity gate stays N/N ok",
           "command": "python scripts/garnet_evidence_integrity_status.py --gate",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": "36/36 at baseline d0d4f7c."
+          "status": "passed",
+          "evidence": "ops/mission/evidence/P0-G2-2026-07-12.txt",
+          "lastRun": "2026-07-13T03:19:00Z",
+          "notes": "36/36 ok (unchanged; P0 adds no proof bundles — that is P1)."
         }
       ],
       "tasks": [
         {
           "id": "P0-T1",
           "title": "Author the S114 acceptance artifact: machine-readable F_Project_Management/LAUNCH/S114_ACCEPTANCE.json + human record F_Project_Management/W_TRUST/S114_ACCEPTANCE_RECORD_2026-07-12.md with the five plan conditions, first-party CLI/Wasm scope, and provenance (decided by Jon; recorded via his 2026-07-12 written directive to execute the S114 Plan of Attack end to end; drafted by Claude Code)",
-          "status": "pending",
+          "status": "done",
           "dependsOn": [],
           "pr": null,
-          "notes": "No acceptance-artifact precedent exists in the repo ('accepted-scoped' appears nowhere). Cite: dossier F_Project_Management/GARNET_S114_INDEPENDENT_VERIFICATION_DOSSIER.html, package W_TRUST/S114_INDEPENDENT_REVERIFICATION_PACKAGE_2026-06-14.md, PR trail #365/#399/#419/#420/#421/#424/#435-#438, reviewed SHA 2e2fe84, fix SHAs 4994867 + 47a7ba7, evidence bundles restored in P1."
+          "notes": "Done. Artifact schema garnet.s114_acceptance/v1; state accepted-scoped; scope 'first-party CLI/Wasm trust-kernel baseline'; independence_relabel=false (verdict language untouched). Cites dossier, package, PR trail, reviewed SHA 2e2fe84, fix SHAs 4994867+47a7ba7; the five conditions map to mission phases P1/P2/P3; out_of_scope + tracked_debt recorded."
         },
         {
           "id": "P0-T2",
-          "title": "Reporter: _s114_gate() (scripts/garnet_launch_readiness_status.py:269-283) reads the acceptance artifact -> 'accepted-scoped' state (absent artifact => external-pending unchanged); add state to docstring table (lines 10-18); extend launch_ready membership check (lines 378-380) so s114_acceptance passes on accepted-scoped; promo canonical snapshot (F_Project_Management/LAUNCH/PROMO_EVIDENCE_SNAPSHOT.json) replaces the machine-dependent live probe in the ledger line with explicit provenance; update scripts/test_garnet_launch_readiness_status.py (line 44 external-pending assertion + pin + mocked-dependency tests); regenerate the ledger",
-          "status": "pending",
+          "title": "Reporter: _s114_gate() reads the acceptance artifact -> 'accepted-scoped' state (absent/malformed artifact => external-pending unchanged); docstring state table; launch_ready membership accepts accepted-scoped for s114; promo canonical snapshot replaces the machine-dependent live probe in the ledger line; update test suite (current-tree assertion + new S114/promo tests); regenerate the ledger",
+          "status": "done",
           "dependsOn": ["P0-T1"],
           "pr": null,
-          "notes": "This machine probes promo at composition-ready (50.0%) vs committed canonical public-site-embedded (95.0%) — the snapshot design fixes the machine-dependence flagged in PR #466. Ships in one PR with P0-T1 (the ledger pin forces atomicity)."
+          "notes": "Done. read_s114_acceptance() + read_promo_snapshot() fail-closed to external-pending / live-probe on missing/malformed input. launch_ready stays False (playground/wasm/shelf still open) — accepting S114 makes no launch claim. Ledger diff was exactly the S114 section; promo line held at public-site-embedded (95.0%) proving machine-independence. 37/37 reporter tests OK."
         }
       ]
     },
@@ -69,7 +69,7 @@
       "id": "P1",
       "title": "Evidence Durability",
       "goal": "The independent S114 evidence (Codex verdict + Windows lane-2 review bundle) lands in tracked history where gc cannot erase it and the integrity gate enforces it.",
-      "status": "pending",
+      "status": "in_progress",
       "sessionsEstimate": "1",
       "gates": [
         {
@@ -292,7 +292,7 @@
     {
       "label": "S114 governance state",
       "baseline": "external-pending",
-      "current": "external-pending",
+      "current": "accepted-scoped",
       "target": "accepted-scoped",
       "direction": "up"
     },
@@ -307,7 +307,7 @@
       "label": "Evidence integrity gate",
       "baseline": "36/36 ok",
       "current": "36/36 ok",
-      "target": "38/38 ok",
+      "target": ">=38/>=38 ok",
       "direction": "up"
     },
     {
@@ -327,7 +327,7 @@
     {
       "label": "Ledger regeneration machine-independent",
       "baseline": "no (promo probe)",
-      "current": "no (promo probe)",
+      "current": "yes (canonical snapshot)",
       "target": "yes (canonical snapshot)",
       "direction": "up"
     },
@@ -341,9 +341,9 @@
   ],
   "risks": [
     {
-      "title": "Ledger regeneration is machine-dependent until the promo snapshot lands",
-      "severity": "high",
-      "note": "This machine probes composition-ready (50.0%) vs committed public-site-embedded (95.0%). P0-T2's snapshot design removes the dependence; until then never regenerate-and-commit the ledger without checking line 84."
+      "title": "Ledger regeneration machine-dependence — RESOLVED in P0",
+      "severity": "low",
+      "note": "The promo ledger line now reads the committed PROMO_EVIDENCE_SNAPSHOT.json (public-site-embedded 95.0%); the live ~/Desktop/dogfood probe is still invoked but no longer determines the rendered value. Update the snapshot from the evidence machine when promo evidence materially changes."
     },
     {
       "title": "No GitHub branch protection on main",
@@ -368,11 +368,12 @@
   ],
   "prLog": [],
   "resume": {
-    "activePhase": "P0",
+    "activePhase": "P1",
     "nextActions": [
-      "P0-T1: write F_Project_Management/LAUNCH/S114_ACCEPTANCE.json (schema garnet.s114_acceptance/v1) + F_Project_Management/W_TRUST/S114_ACCEPTANCE_RECORD_2026-07-12.md — five conditions from the plan, scope 'first-party CLI/Wasm trust-kernel baseline', provenance: decided by Jon, recorded via his 2026-07-12 execute-end-to-end directive, drafted by Claude Code (Fable 5)",
-      "P0-T2: rework _s114_gate() at scripts/garnet_launch_readiness_status.py:269-283 to read the artifact (accepted-scoped when present+valid, external-pending otherwise); docstring state table lines 10-18; launch_ready check lines 378-380 accepts accepted-scoped for s114_acceptance; add PROMO_EVIDENCE_SNAPSHOT.json canonical promo source; update scripts/test_garnet_launch_readiness_status.py (line 44 + LedgerPinTests + MockedDependencyTests); regenerate F_Project_Management/LAUNCH/LAUNCH_READINESS.md via the reporter (never hand-edit)",
-      "Ship P0-T1+T2 as one PR (ledger pin forces atomicity) with full dogfood body headings (F_Project_Management is a sensitive path); pre-validate with python scripts/check_dogfood_pr_body.py"
+      "P1-T2: land the recovered S114 evidence durably. Protective refs already exist in C:/garnet (s114/recovered-lane2-review -> 6153726, s114/recovered-codex-verdict -> 61cfbae). Extract the Codex verdict bundle (W_TRUST/S114_CODEX_INDEPENDENT_VERDICT_2026_06_25.md + its sealed proofs dir with MANIFEST.sha256) from 61cfbae and the Windows lane-2 review bundle (proofs/validation/s114-review/windows-20260628-lane2/, 160-file manifest) + VALIDATION_REPORTS report from 6153726",
+      "Place any manifest-sealed bundle UNDER proofs/ so scripts/garnet_evidence_integrity_status.py rglob sweeps it; W_TRUST is not swept. Decide placement: proofs/independent/s114/ (package-prescribed) vs proofs/validation/s114-review/ (as-run). Verify each MANIFEST.sha256 hash-matches committed bytes BEFORE push (CRLF hazard — .gitattributes proofs/** -text covers it, but re-verify with the gate locally)",
+      "Add a recovery-provenance note recording original commit SHAs (6153726, 61cfbae), reviewed SHA 2e2fe84 (predates the #421 fixes — frame it as 'reviewed commit', not current HEAD), and branch lineage. Run python scripts/garnet_evidence_integrity_status.py --gate and confirm bundles_total rose and bundles_failed==0",
+      "Then advance to P2 (language hardening): GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md + bound overbroad copy + claim fixture"
     ],
     "blockers": [],
     "conventions": [
