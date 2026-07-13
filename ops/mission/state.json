@@ -8,9 +8,9 @@
     "defaultBranch": "main",
     "planDoc": "C:/Users/IslandDevCrew/Desktop/Garnet-S114-Plan-of-Attack-v1-2026-07-12.html",
     "northStar": "S114 accepted at its true scope (first-party CLI/Wasm trust-kernel baseline) with durable evidence, mechanically bounded claims, fail-closed CLI lanes, and a rolling review control. Never overclaim.",
-    "status": "active",
+    "status": "complete",
     "started": "2026-07-12",
-    "updated": "2026-07-13T16:25:00Z",
+    "updated": "2026-07-13T18:10:00Z",
     "sessionCount": 2
   },
   "policies": {
@@ -306,7 +306,7 @@
       "id": "P5",
       "title": "Foundation Hygiene",
       "goal": "Close the four hygiene gaps from the 2026-07-13 foundation-refresh research (Rust 1.97/Ruby 4.0 sweep): supply-chain scan coverage, FAQ MSRV truth, wasm >=1.96 verification, converter dialect honesty. No foundational changes — the adversarial sweep confirmed the formalized pathway stands.",
-      "status": "in_progress",
+      "status": "done",
       "sessionsEstimate": "1",
       "gates": [
         {
@@ -332,13 +332,14 @@
         {
           "id": "P5-T1",
           "title": "Extend supply-chain scans to the workspace-excluded lockfiles: cargo-audit on apps/garnet-studio/src-tauri/Cargo.lock (435 pkgs, wry/tao webview stack) + garnet-parser-v0.3/fuzz/Cargo.lock; cargo-deny advisory-only pass + CycloneDX SBOM for the Studio app",
-          "status": "blocked",
+          "status": "done",
           "dependsOn": [],
           "pr": {
             "number": 481,
-            "url": "https://github.com/Island-Dev-Crew/garnet/pull/481"
+            "url": "https://github.com/Island-Dev-Crew/garnet/pull/481",
+            "mergedAt": "2026-07-13"
           },
-          "notes": "PR #481 opened + PARKED for Jon (security.yml gate file => human-merge-only, integrity rule 1). VALIDATION PAID OFF IMMEDIATELY: the first run found two live quick-xml 0.39.4 advisories in the previously-unscanned Studio lock (RUSTSEC-2026-0194 quadratic dup-attr check; RUSTSEC-2026-0195 NsReader namespace-allocation DoS) — patched in-PR via plist 1.9.0 -> 1.10.0 (quick-xml -> 0.41.0). Also fixed cargo-deny mechanics (no global --config; root deny.toml staged beside the Studio manifest at run time). GTK3 unmaintained warnings visible, non-blocking. Jon merges once the re-run is green."
+          "notes": "PR #481 opened + PARKED for Jon (security.yml gate file => human-merge-only, integrity rule 1). VALIDATION PAID OFF IMMEDIATELY: the first run found two live quick-xml 0.39.4 advisories in the previously-unscanned Studio lock (RUSTSEC-2026-0194 quadratic dup-attr check; RUSTSEC-2026-0195 NsReader namespace-allocation DoS) — patched in-PR via plist 1.9.0 -> 1.10.0 (quick-xml -> 0.41.0). Also fixed cargo-deny mechanics (no global --config; root deny.toml staged beside the Studio manifest at run time). GTK3 unmaintained warnings visible, non-blocking. MERGED by Jon 2026-07-13 (2be1c3a). All three lockfiles now advisory-scanned; the scan found+patched 2 live quick-xml CVEs before merge."
         },
         {
           "id": "P5-T2",
@@ -378,7 +379,7 @@
       "id": "P6",
       "title": "Why Page Upgrade",
       "goal": "Complete the /why page's two placeholder cards and the threat-card TODO from verified primary sources, per the reconciliation rules — without touching the two bounded enforced claims.",
-      "status": "in_progress",
+      "status": "done",
       "sessionsEstimate": "1",
       "gates": [
         {
@@ -488,7 +489,7 @@
     {
       "label": "Lockfiles under advisory scanning",
       "baseline": "1 of 3 (root only)",
-      "current": "1 of 3 (PR #481 parked; 2 live CVEs already found+patched in-PR)",
+      "current": "3 of 3",
       "target": "3 of 3",
       "direction": "up"
     },
@@ -590,18 +591,52 @@
       "url": "https://github.com/Island-Dev-Crew/garnet/pull/480",
       "phase": "P4",
       "mergedAt": "2026-07-13"
+    },
+    {
+      "number": 481,
+      "title": "P5-T1 [Jon-gated]: extend supply-chain scans to Studio + fuzz lockfiles",
+      "url": "https://github.com/Island-Dev-Crew/garnet/pull/481",
+      "phase": "P5",
+      "mergedAt": "2026-07-13"
+    },
+    {
+      "number": 482,
+      "title": "P5: foundation hygiene — FAQ MSRV truth, converter dialect note, wasm 1.97 verification",
+      "url": "https://github.com/Island-Dev-Crew/garnet/pull/482",
+      "phase": "P5",
+      "mergedAt": "2026-07-13"
+    },
+    {
+      "number": 483,
+      "title": "gate fix [Jon-gated]: dogfood PR-body checker skipped .github/ paths (parallel session)",
+      "url": "https://github.com/Island-Dev-Crew/garnet/pull/483",
+      "phase": "P5",
+      "mergedAt": "2026-07-13"
+    },
+    {
+      "number": 484,
+      "title": "P5-T5: /why reconciliation — audited upgrade never shipped; corpus-of-record corrections",
+      "url": "https://github.com/Island-Dev-Crew/garnet/pull/484",
+      "phase": "P5",
+      "mergedAt": "2026-07-13"
+    },
+    {
+      "number": 485,
+      "title": "P6: /why upgrade — placeholder cards completed from verified primary sources",
+      "url": "https://github.com/Island-Dev-Crew/garnet/pull/485",
+      "phase": "P6",
+      "mergedAt": "2026-07-13"
     }
   ],
   "resume": {
     "activePhase": "P6",
     "nextActions": [
-      "Jon's queue: merge PR #481 (supply-chain scan coverage) and PR #483 (dogfood-gate lstrip fix) — both green, both gate files, human-merge-only.",
-      "After the /why upgrade PR merges: the page is live at garnet-lang.org/why immediately (not SW-precached). Optional follow-ups recorded: blog post 2026-05-20 v0.5-era claims re-anchor; /why persuasive prose lines 231/250 (not runtime overclaims; deliberately left).",
-      "Deferred (post-launch): edition 2021->2024 migration; benchmark Ruby-framing refresh; optional CI wasm32 job."
+      "MISSION COMPLETE. Nothing is parked; all gates green on main. This block is the post-mission pointer set.",
+      "Launch lane (outside this mission): WV-4 (Studio Playwright pass, harness from #422), WV-7 (winget/scoop dry-run, devcontainer/Docker, installer happy-path), WV-6 (after Core Ring Tier 1 + MCP library ship). launch_ready remains honestly HOLD on playground/live-wasm/shelf gates.",
+      "Optional (Jon flagged in #483): retro-audit of past workflow-only PRs that skipped the dogfood body requirement under the lstrip bug.",
+      "Deferred (post-launch, recorded): edition 2021->2024 migration; benchmark 'Ruby 3.4 + YJIT' framing refresh at next re-run; optional CI wasm32 build job; blog 2026-05-20 re-anchor; /why persuasive prose lines 231/250 (not runtime overclaims)."
     ],
-    "blockers": [
-      "PR #481 (P5-T1) awaiting Jon: supply-chain scan coverage for Studio + fuzz lockfiles. security.yml is a CI gate file => human-merge-only per integrity rule 1. Verify its Security workflow run is green, then Jon merges."
-    ],
+    "blockers": [],
     "conventions": [
       "One task-cluster = one branch (mission/<phaseId>-<slug>) = one PR; squash-merge with the 'Autonomous merge — agent: Claude Code (Fable 5); gates: ...' trailer after full CI green",
       "PRs touching workflow files / dogfood gate / diff-caps / capability-manifest standard: open and park for Jon, never self-merge",
