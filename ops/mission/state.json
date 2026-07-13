@@ -10,7 +10,7 @@
     "northStar": "S114 accepted at its true scope (first-party CLI/Wasm trust-kernel baseline) with durable evidence, mechanically bounded claims, fail-closed CLI lanes, and a rolling review control. Never overclaim.",
     "status": "active",
     "started": "2026-07-12",
-    "updated": "2026-07-13T08:40:00Z",
+    "updated": "2026-07-13T10:10:00Z",
     "sessionCount": 2
   },
   "policies": {
@@ -363,6 +363,14 @@
           "dependsOn": [],
           "pr": null,
           "notes": "Done in this PR. Grounded in garnet-convert/Cargo.toml:7 'stylized subset... not a full transpiler'. ruby-prism Rust crate (v1.9.0) noted as the upgrade path if the converter should track Ruby 4.0. Benchmark 'Ruby 3.4 + YJIT' framing stays true as written (dated 'as of April 2026'); refresh at next benchmark re-run."
+        },
+        {
+          "id": "P5-T5",
+          "title": "/why reconciliation: ingest Jon's 2026-07-13 re-verification report, map its checklist to in-repo reality, record the corpus-of-record corrections (Ronacher two-posts verified against primary sources; FDA phrasing = McDermott's; Megalodon 'days later' not 'successor'; Veracode additive; CISA-corroborated figures)",
+          "status": "done",
+          "dependsOn": [],
+          "pr": null,
+          "notes": "Headline determination: the audited /why upgrade NEVER merged into this repo — cowork 'PR 479' is not repo #479; live page is the pre-upgrade #471-fenced state, so Flags 1-3 have no live target and the in-repo corpus was already clean (reassessment sources already attribute the FDA phrasing to McDermott/Ballard Spahr). Zero shelf-scope commits in the July 8-11 crisis window — nothing to re-ratify in-repo. Both Ronacher quotes re-verified directly against lucumr.pocoo.org (June 12 2025 permission-checks quote incl. 'amost' typo; Feb 9 2026 needs{time,rng} sketch; permission quote absent from the Feb post). Record: F_Project_Management/RESEARCH/WHY_PAGE_RECONCILIATION_2026-07-13.md."
         }
       ]
     }
@@ -534,13 +542,13 @@
   "resume": {
     "activePhase": "P5",
     "nextActions": [
-      "P5-T1: watch PR #481 (parked, Jon-gated) — its own Security workflow run validates the new scan steps; if the Studio cargo-deny advisories pass or Studio SBOM step fails on runner specifics, fix on the branch before Jon merges",
-      "FROZEN: docs/why.html and all /why claim surfaces — Jon is bringing a reprocessed claims/attribution report (the cowork file that built /why flagged attribution issues that turned out NOT to be off; Jon reprocessed what was actually right vs wrong). Make NO /why changes until that report lands and is reconciled. The claim fixture (garnet_capability_scope_status.py) currently pins exactly 2 'enforced:' claims — if Jon's report changes the claim set, the fixture + scope doc + ledger regeneration must move in the same PR.",
-      "Deferred (post-launch, recorded): edition 2021->2024 migration (~18 crates, mechanical, mildly strengthens capability posture via unsafe env::set_var); benchmark 'Ruby 3.4 + YJIT' framing refresh at next re-run; optional CI wasm32 build job (gate-file change, bundle with a future Jon-gated CI PR)"
+      "Jon's queue: merge PR #481 (supply-chain scan coverage; green; found+patched 2 quick-xml CVEs) and PR #483 (dogfood-gate lstrip char-set fix from the parallel session; green). Both gate files => human-merge-only.",
+      "/why UNFROZEN: the audited upgrade never shipped here — the live page is the #471-fenced pre-upgrade state and needs no correction. If Jon wants the upgraded page (Shai-Hulud/Megalodon headline, Veracode additive, insurance card, two-post Ronacher card, FDA indirect speech, vocab swap), build it from primary sources per the rules in F_Project_Management/RESEARCH/WHY_PAGE_RECONCILIATION_2026-07-13.md — the claim fixture holds the 2-enforced-claims boundary and the trust-kernel gate requires a review companion.",
+      "Known live-page blemish queued with that upgrade: docs/why.html:287 src line ends with the shipped editorial TODO 'link primary sources in the published page'.",
+      "Deferred (post-launch, recorded): edition 2021->2024 migration; benchmark 'Ruby 3.4 + YJIT' framing refresh at next re-run; optional CI wasm32 job (bundle with a future Jon-gated CI PR)."
     ],
     "blockers": [
-      "PR #481 (P5-T1) awaiting Jon: supply-chain scan coverage for Studio + fuzz lockfiles. security.yml is a CI gate file => human-merge-only per integrity rule 1. Verify its Security workflow run is green, then Jon merges.",
-      "/why claims-attribution report from Jon pending — /why surfaces frozen until it arrives (see nextActions)."
+      "PR #481 (P5-T1) awaiting Jon: supply-chain scan coverage for Studio + fuzz lockfiles. security.yml is a CI gate file => human-merge-only per integrity rule 1. Verify its Security workflow run is green, then Jon merges."
     ],
     "conventions": [
       "One task-cluster = one branch (mission/<phaseId>-<slug>) = one PR; squash-merge with the 'Autonomous merge — agent: Claude Code (Fable 5); gates: ...' trailer after full CI green",
