@@ -6,6 +6,15 @@
 # even when no code is moving — a quiet repo with a known-vulnerable dep
 # is the exact failure mode this catches.
 #
+# Coverage note (P5 hygiene): the root workspace lock is NOT the whole
+# dependency surface. Two lockfiles live outside the workspace and are
+# scanned explicitly below: the Tauri Studio app
+# (apps/garnet-studio/src-tauri/Cargo.lock — the wry/tao webview stack,
+# the highest-CVE-velocity shipped surface) and the parser fuzz crate
+# (garnet-parser-v0.3/fuzz/Cargo.lock). Advisory scans cover all three
+# locks; license/bans/sources policy and the canonical SBOM stay scoped
+# to the root workspace (the shipped garnet binary).
+#
 # This is additive to `ci.yml` (build/test) and `linux-packages.yml`
 # (.deb/.rpm release path); the three workflows are independent.
 
@@ -47,8 +56,12 @@ jobs:
           restore-keys: ${{ runner.os }}-audit-
       - name: Install cargo-audit
         run: cargo install cargo-audit --locked --force
-      - name: Run cargo audit
+      - name: Run cargo audit (root workspace)
         run: cargo audit
+      - name: Run cargo audit (Tauri Studio lock)
+        run: cargo audit --file apps/garnet-studio/src-tauri/Cargo.lock
+      - name: Run cargo audit (parser fuzz lock)
+        run: cargo audit --file garnet-parser-v0.3/fuzz/Cargo.lock
 
   # ───────────────────────────────────────────────────────────────────
   # cargo-deny: enforces deny.toml across the whole graph.
@@ -62,6 +75,15 @@ jobs:
         with:
           command: check
           arguments: --all-features
+      # Advisory-only pass over the workspace-excluded Tauri Studio graph.
+      # Policy: the COMMITTED apps/garnet-studio/src-tauri/deny.toml —
+      # vulnerabilities deny; the documented unmaintained-structural-to-Tauri
+      # ignore list lives there with per-advisory reasons. Licenses/bans/
+      # sources stay root-scoped (Studio is not the shipped garnet binary).
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check advisories
+          manifest-path: apps/garnet-studio/src-tauri/Cargo.toml
 
   # ───────────────────────────────────────────────────────────────────
   # CycloneDX SBOM — uploaded as a workflow artifact for every run.
@@ -87,6 +109,8 @@ jobs:
         run: cargo install cargo-cyclonedx --locked --force
       - name: Generate SBOM (workspace)
         run: cargo cyclonedx --all --format json
+      - name: Generate SBOM (Tauri Studio app)
+        run: cargo cyclonedx --manifest-path apps/garnet-studio/src-tauri/Cargo.toml --format json
       - name: Collect SBOMs
         run: |
           mkdir -p sbom

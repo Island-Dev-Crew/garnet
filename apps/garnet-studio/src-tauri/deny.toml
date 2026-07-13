@@ -1,0 +1,43 @@
+# Garnet Studio (Tauri app) — advisory policy for the workspace-excluded
+# src-tauri dependency graph. Scanned by security.yml's cargo-deny
+# `check advisories` pass (P5-T1); licenses/bans/sources policy and the
+# canonical SBOM remain scoped to the ROOT workspace (the shipped `garnet`
+# binary) via the root deny.toml.
+#
+# RULES FOR THIS IGNORE LIST (do not soften):
+# - `unmaintained`/`unsound` advisories that are STRUCTURAL to the Tauri 2.x
+#   stack (no upgrade path exists) may be ignored here, each with a reason.
+# - Actual VULNERABILITIES must NEVER be added to this list — fix the dep.
+#   Precedent: quick-xml RUSTSEC-2026-0194/0195 were patched via
+#   plist 1.9.0 -> 1.10.0 in the same PR that added this scan.
+# - Re-check this list when Tauri/wry/tao major-bump (GTK3 exit removes the
+#   RUSTSEC-2024-041x family; urlpattern replacing rust-unic removes the
+#   RUSTSEC-2025-00xx family).
+
+[advisories]
+version = 2
+db-urls = ["https://github.com/rustsec/advisory-db"]
+yanked = "deny"
+ignore = [
+    # gtk-rs GTK3 bindings — no longer maintained (wry/tao on Linux still
+    # bind GTK3 until the Tauri stack completes its GTK4/webkit move).
+    { id = "RUSTSEC-2024-0411", reason = "GTK3 bindings family; structural to tauri 2.x wry/tao on Linux; no upgrade path" },
+    { id = "RUSTSEC-2024-0412", reason = "GTK3 bindings family; structural to tauri 2.x wry/tao on Linux; no upgrade path" },
+    { id = "RUSTSEC-2024-0413", reason = "GTK3 bindings family; structural to tauri 2.x wry/tao on Linux; no upgrade path" },
+    { id = "RUSTSEC-2024-0414", reason = "GTK3 bindings family; structural to tauri 2.x wry/tao on Linux; no upgrade path" },
+    { id = "RUSTSEC-2024-0415", reason = "GTK3 bindings family; structural to tauri 2.x wry/tao on Linux; no upgrade path" },
+    { id = "RUSTSEC-2024-0416", reason = "GTK3 bindings family; structural to tauri 2.x wry/tao on Linux; no upgrade path" },
+    { id = "RUSTSEC-2024-0417", reason = "GTK3 bindings family; structural to tauri 2.x wry/tao on Linux; no upgrade path" },
+    { id = "RUSTSEC-2024-0418", reason = "GTK3 bindings family; structural to tauri 2.x wry/tao on Linux; no upgrade path" },
+    { id = "RUSTSEC-2024-0419", reason = "GTK3 bindings family; structural to tauri 2.x wry/tao on Linux; no upgrade path" },
+    { id = "RUSTSEC-2024-0420", reason = "GTK3 bindings family; structural to tauri 2.x wry/tao on Linux; no upgrade path" },
+    # proc-macro-error — unmaintained; pulled transitively by the Tauri
+    # macro stack; compile-time only (proc-macro), not in the shipped app.
+    { id = "RUSTSEC-2024-0370", reason = "unmaintained proc-macro dep of the tauri macro stack; compile-time only" },
+    # rust-unic family — unmaintained; pulled by urlpattern <- tauri-utils.
+    { id = "RUSTSEC-2025-0075", reason = "rust-unic family via urlpattern <- tauri-utils; no safe upgrade available" },
+    { id = "RUSTSEC-2025-0080", reason = "rust-unic family via urlpattern <- tauri-utils; no safe upgrade available" },
+    { id = "RUSTSEC-2025-0081", reason = "rust-unic family via urlpattern <- tauri-utils; no safe upgrade available" },
+    { id = "RUSTSEC-2025-0098", reason = "rust-unic family via urlpattern <- tauri-utils; no safe upgrade available" },
+    { id = "RUSTSEC-2025-0100", reason = "rust-unic family via urlpattern <- tauri-utils; no safe upgrade available" },
+]
