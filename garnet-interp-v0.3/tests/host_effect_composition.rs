@@ -13,7 +13,10 @@
 use garnet_interp::{Interpreter, Value};
 
 fn run(src: &str) -> Value {
-    let mut interp = Interpreter::new();
+    // Trusted internal harness driving host effects through the embedded `call`
+    // path (no program-entry frame): use the permissive constructor, the
+    // documented opt-out from strict-by-default (Interpreter::new()).
+    let mut interp = Interpreter::new_permissive();
     interp.load_source(src).expect("load source");
     interp.call("main", vec![]).expect("call main")
 }

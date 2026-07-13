@@ -7,6 +7,31 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated-honesty record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
+## Unreleased — S114 acceptance, code hardening: embedder strict-by-default (2026-07-12)
+
+### `garnet-interp` — `Interpreter::new()` is now strict (deny-by-default)
+
+- **Changed (deliberate contract reversal, S114 acceptance cond. #5):** a
+  default `Interpreter::new()` now REFUSES a host-authority primitive reached
+  with no active `@caps` frame during its `load`/`eval`/`call` operations, so a
+  third-party embedder that loads and runs untrusted Garnet source gets
+  deny-by-default without having to opt in. This reverses the previous
+  "library/embedder callers keep the permissive direct-call default, so the
+  change is binary-scoped" posture recorded under S114-FIX-2 below.
+- **Added** `Interpreter::new_permissive()` — the explicit opt-out that restores
+  the pre-S114 fail-open direct-call behavior for trusted internal use (Rust
+  unit tests, benches, internal loads).
+- **Mechanism:** a thread-local per-instance strict scope (`eval::StrictScope`),
+  separate from and subordinate to the process-global A5 one-way latch
+  (`set_strict_no_frame`). The global latch still dominates: a permissive
+  instance cannot escape a process that has latched strict. The static
+  `STRICT_NO_FRAME` default is unchanged (`false`), so the A5 latch invariant and
+  its test are preserved. First-party `garnet` CLI behavior is unchanged (it
+  latches the global at startup and uses the framed entry APIs).
+- **Scope:** framed load/run paths (`load_source_with_entry_caps`, `call_entry`,
+  the VM's per-run entry frame) are unaffected. Documented in the capability
+  enforcement scope table (`C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md`).
+
 ## Unreleased — W-PLAY Task 1: Garnet runs in WebAssembly (2026-07-11)
 
 ### `garnet-wasm` (new crate) + `garnet-interp` additive output capture

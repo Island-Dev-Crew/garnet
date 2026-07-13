@@ -46,3 +46,12 @@ Append-only session log, newest entry LAST.
 - P3-T4 (checker-only coverage): new tests/checker_only_caps.rs pins that time::now_ms (declared+undeclared) and std::uuid::new_v4 run without a runtime trap under garnet run. Empirical note: garnet run does not invoke the checker, so checker-only caps aren't runtime-gated — documented (P2 scope table), unchanged (S90 preserved).
 - garnet-cli/AGENTS.md updated with the fail-closed contract. Gates: full garnet-cli suite 0 failed, clippy clean, caps-enforcement + red-team + agent-contracts all pass.
 - Next: P3-T1 embedder strict-by-default on branch mission/p3b-embedder-strict (largest slice); then re-run all P3 gates at phase close; then P4.
+- P3a merged as #476 (ec39bb1), full CI green incl. agentic dogfood matrix. (One rustfmt retry: multi-line fn signature — fixed and re-pushed.)
+
+## 2026-07-13T04:38Z — session 1 (Phase 3 complete: embedder strict-by-default)
+
+- P3-T1 (P3b): garnet-interp Interpreter::new() is now strict (deny-by-default); Interpreter::new_permissive() is the explicit opt-out. Mechanism: eval::StrictScope (thread-local per-instance strict depth) + deny_no_frame() = strict_no_frame() || instance_strict(). The A5 process-global one-way latch is UNTOUCHED (STRICT_NO_FRAME static stays false) and still dominates — a permissive instance cannot escape a latched process. load_module/eval_expr_src/call/call_entry hold the scope when strict.
+- Migrations (trusted internal harnesses -> new_permissive): host_effect_composition.rs, stdlib_s22/s23_dispatch.rs, strict_no_frame_latch.rs baseline (now also proves the latch dominates a permissive instance), and the garnet-vm bench. New strict_by_default.rs (5 tests). lib.rs doctest is pure -> unchanged. CHANGELOG records the deliberate contract reversal.
+- Empirical blast radius: exactly the 4 predicted test files failed under strict (proc entry-gate at entry_frames==0 via unframed .call); s24 did not (its main doesn't hit the no-frame path). garnet-cli unchanged (latches the global, uses framed APIs) and garnet-vm unchanged (framed run paths).
+- Phase-close gates (branch): full workspace 0 failed, clippy clean, fmt clean, cargo doc -D warnings ok, caps-enforcement/capability-scope/red-team/bounded-enforcement/agent-contracts all pass. P3 phase DONE pending P3b merge.
+- Next: P4 rolling S114 (trust-kernel file set + policy + status gate), then the Jon-only CI-wiring PR (parked), then mission complete.

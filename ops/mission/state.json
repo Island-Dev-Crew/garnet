@@ -10,7 +10,7 @@
     "northStar": "S114 accepted at its true scope (first-party CLI/Wasm trust-kernel baseline) with durable evidence, mechanically bounded claims, fail-closed CLI lanes, and a rolling review control. Never overclaim.",
     "status": "active",
     "started": "2026-07-12",
-    "updated": "2026-07-13T04:12:00Z",
+    "updated": "2026-07-13T04:38:00Z",
     "sessionCount": 1
   },
   "policies": {
@@ -167,63 +167,63 @@
       "id": "P3",
       "title": "Code Hardening",
       "goal": "The scope limits recorded in the acceptance become smaller: embedder execution is strict by default with explicit permissive opt-out, and the two CLI fail-soft authority lanes fail closed.",
-      "status": "in_progress",
+      "status": "done",
       "sessionsEstimate": "1-2",
       "gates": [
         {
           "id": "P3-G1",
           "title": "garnet-cli suite green",
           "command": "cargo test -p garnet-cli --no-fail-fast",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": ""
+          "status": "passed",
+          "evidence": "ops/mission/evidence/P3-2026-07-12.txt",
+          "lastRun": "2026-07-13T04:35:00Z",
+          "notes": "0 failed (P3a + P3b)."
         },
         {
           "id": "P3-G2",
           "title": "garnet-interp suite green",
           "command": "cargo test -p garnet-interp --no-fail-fast",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": ""
+          "status": "passed",
+          "evidence": "ops/mission/evidence/P3-2026-07-12.txt",
+          "lastRun": "2026-07-13T04:35:00Z",
+          "notes": "0 failed incl. new strict_by_default.rs; migrated host_effect/s22/s23/latch harnesses to new_permissive()."
         },
         {
           "id": "P3-G3",
           "title": "garnet-vm suite green",
           "command": "cargo test -p garnet-vm --no-fail-fast",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": ""
+          "status": "passed",
+          "evidence": "ops/mission/evidence/P3-2026-07-12.txt",
+          "lastRun": "2026-07-13T04:35:00Z",
+          "notes": "0 failed."
         },
         {
           "id": "P3-G4",
           "title": "Workspace clippy clean",
           "command": "cargo clippy --workspace --all-targets -- -D warnings",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": "RB-2: no unwrap/expect on reachable paths."
+          "status": "passed",
+          "evidence": "ops/mission/evidence/P3-2026-07-12.txt",
+          "lastRun": "2026-07-13T04:36:00Z",
+          "notes": "clean (RB-2 respected)."
         },
         {
           "id": "P3-G5",
           "title": "Full workspace suite green before phase close",
           "command": "cargo test --workspace --no-fail-fast",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": ""
+          "status": "passed",
+          "evidence": "ops/mission/evidence/P3-2026-07-12.txt",
+          "lastRun": "2026-07-13T04:37:00Z",
+          "notes": "0 failed; fmt clean; cargo doc -D warnings ok. Re-confirmed by CI on the P3a and P3b merges."
         }
       ],
       "tasks": [
         {
           "id": "P3-T1",
-          "title": "Embedder strict-by-default: per-instance strict flag (thread-scoped during execution) defaulting strict, Interpreter::new_permissive() as the explicit opt-out, PreparedVm::new loads framed (garnet-vm/src/vm.rs:251), migrate affected tests (strict_no_frame_latch.rs baseline, host_effect_composition.rs, stdlib_s22/s23/s24_dispatch.rs, lib.rs doctest), CHANGELOG records the deliberate contract change; A5 one-way global latch untouched and still dominant",
-          "status": "pending",
+          "title": "Embedder strict-by-default: per-instance strict flag (thread-scoped during execution) defaulting strict, Interpreter::new_permissive() as the explicit opt-out, migrate affected tests, CHANGELOG records the deliberate contract change; A5 one-way global latch untouched and still dominant",
+          "status": "done",
           "dependsOn": [],
           "pr": null,
-          "notes": "STRICT_NO_FRAME static default (eval.rs:705) stays false — strictness moves to the instance/API layer so the latch invariant + its test survive. Permissive instances never override a latched process. ~90% of the 104 Interpreter::new() sites are pure-eval and unaffected."
+          "notes": "Done (P3b). eval::StrictScope thread-local + deny_no_frame() = strict_no_frame() || instance_strict(); STRICT_NO_FRAME static stays false (A5 invariant + test preserved). Interpreter::new() strict, new_permissive() opt-out; load_module/eval_expr_src/call/call_entry wrap the scope. Migrated host_effect_composition/stdlib_s22/s23/strict_no_frame_latch + the VM bench to new_permissive (trusted harnesses). New strict_by_default.rs (5 tests) pins deny-by-default + opt-out + framed-still-works + pure-still-works + global-latch-dominates-permissive. lib.rs doctest is pure -> unchanged. CHANGELOG records the contract reversal. Full workspace green."
         },
         {
           "id": "P3-T2",
@@ -255,7 +255,7 @@
       "id": "P4",
       "title": "Rolling S114",
       "goal": "S114 becomes a recurring control: a machine-readable trust-kernel file set, a rolling-review policy, and a status gate — CI wiring parked for Jon.",
-      "status": "pending",
+      "status": "in_progress",
       "sessionsEstimate": "1",
       "gates": [
         {
@@ -332,6 +332,13 @@
       "direction": "down"
     },
     {
+      "label": "Embedder execution posture (garnet-interp default)",
+      "baseline": "permissive",
+      "current": "strict (opt-out: new_permissive)",
+      "target": "strict (opt-out: new_permissive)",
+      "direction": "up"
+    },
+    {
       "label": "Ledger regeneration machine-independent",
       "baseline": "no (promo probe)",
       "current": "yes (canonical snapshot)",
@@ -387,16 +394,35 @@
       "url": "https://github.com/Island-Dev-Crew/garnet/pull/473",
       "phase": "P0",
       "mergedAt": "2026-07-12"
+    },
+    {
+      "number": 474,
+      "title": "P1: land recovered S114 independent evidence durably",
+      "url": "https://github.com/Island-Dev-Crew/garnet/pull/474",
+      "phase": "P1",
+      "mergedAt": "2026-07-12"
+    },
+    {
+      "number": 475,
+      "title": "P2: capability enforcement scope table; bound runtime overclaims; claim fixture",
+      "url": "https://github.com/Island-Dev-Crew/garnet/pull/475",
+      "phase": "P2",
+      "mergedAt": "2026-07-12"
+    },
+    {
+      "number": 476,
+      "title": "P3a: CLI authority lanes fail closed (dep preload + test helper)",
+      "url": "https://github.com/Island-Dev-Crew/garnet/pull/476",
+      "phase": "P3",
+      "mergedAt": "2026-07-12"
     }
   ],
   "resume": {
-    "activePhase": "P3",
+    "activePhase": "P4",
     "nextActions": [
-      "P3a (dep-preload + test-helper fail-closed + checker-only coverage) is DONE and merging. Remaining P3 work is P3-T1 on a fresh branch mission/p3b-embedder-strict off main.",
-      "P3-T1 (embedder strict-by-default): the STRICT_NO_FRAME static default (garnet-interp-v0.3/src/eval.rs:705) stays false — move strictness to the construction API so the A5 one-way global latch invariant + strict_no_frame_latch.rs survive. Approach: add a per-instance strict flag defaulting STRICT for library callers, install it as a thread-scoped strict frame during load/eval/call, and Interpreter::new_permissive() (or load_*_permissive) as the explicit opt-out. PreparedVm::new (garnet-vm/src/vm.rs:251) must load framed. A permissive instance must NEVER override a process that has latched strict (latch dominates).",
-      "P3-T1 test migration: strict_no_frame_latch.rs baseline (asserts permissive default — rewrite, do not delete, it pins the latch no-reopen property), host_effect_composition.rs + stdlib_s22/s23/s24_dispatch.rs (use unframed .call — migrate to framed or new_permissive), lib.rs module doctest (demonstrates permissive lane). CHANGELOG records the deliberate embedder-default contract change (CHANGELOG.md:297-303 is the rationale being reversed). This is the LARGEST slice — consider splitting if it grows past ~400 lines.",
-      "At P3 phase close: re-run ALL P3 gates fresh on the merged tree (cargo test -p garnet-cli / -p garnet-interp / -p garnet-vm, clippy --workspace, cargo test --workspace).",
-      "Then P4 (rolling S114): trust-kernel file set + policy + status gate; P4-T2 opens the CI-wiring PR (new gates from P2 fixture + P4 gate) and PARKS it for Jon (integrity rule 1)."
+      "P4-T1 (rolling S114 policy): write a machine-readable trust-kernel file set + a rolling-review policy doc (W_TRUST) + scripts/garnet_trust_kernel_review_status.py. The file set = the trust spine: garnet-check-v0.3/src (checker, capability_surface, caps_graph, capset), garnet-interp-v0.3/src (eval, stdlib_bridge, lib), garnet-vm/src (vm), garnet-stdlib/src/registry.rs, garnet-wasm/src, garnet-cli authority flows (cmd/run.rs, cmd/test.rs, bin/garnet.rs), the reporters (scripts/garnet_launch_readiness_status.py, garnet_caps_enforcement_status.py, garnet_capability_scope_status.py), and docs/why.html + the scope table. The status script, given a base ref (git diff base...HEAD), reports whether any trust-kernel path changed and whether a scoped acceptance note / fresh review artifact accompanies it. Ships with a test.",
+      "P4-T2 (CI wiring — JON-ONLY, PARK IT): open ONE PR wiring the new --gate jobs into .github/workflows/ci.yml for BOTH the P2 capability-scope fixture (scripts/garnet_capability_scope_status.py --gate + its test) AND the P4 trust-kernel review gate. This touches .github/workflows/ = CLAUDE.md integrity rule 1 (human-merge-only). Do NOT self-merge; open it, add it to resume.blockers as 'PR #NNN awaiting Jon (CI wiring, integrity rule 1)', and leave it.",
+      "Then mission complete: set mission.status=complete, run the full gate suite once more as closing evidence, render, commit, and deliver the closing summary."
     ],
     "blockers": [],
     "conventions": [

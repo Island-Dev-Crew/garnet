@@ -1,0 +1,8 @@
+P3 phase-close (P3a+P3b) gates — 2026-07-13T04:37Z, branch mission/p3b-embedder-strict
+[P3-G1] cargo test -p garnet-cli --no-fail-fast: 0 failed
+[P3-G2] cargo test -p garnet-interp --no-fail-fast: 0 failed (incl. new strict_by_default.rs 5 tests; migrated host_effect/s22/s23/latch to new_permissive)
+[P3-G3] cargo test -p garnet-vm --no-fail-fast: 0 failed
+[P3-G4] cargo clippy --workspace --all-targets -D warnings: clean
+[P3-G5] cargo test --workspace --no-fail-fast: 0 failed
+cargo fmt --check: clean; cargo doc -D warnings: ok (doctest pure, unchanged)
+status gates: caps-enforcement/capability-scope/red-team/bounded-enforcement/agent-contracts all exit 0

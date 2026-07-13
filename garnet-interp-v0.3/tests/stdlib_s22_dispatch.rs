@@ -11,7 +11,9 @@ const NS_DNS: [u8; 16] = [
 ];
 
 fn run(src: &str) -> Value {
-    let mut interp = Interpreter::new();
+    // Trusted internal dispatch harness via the embedded `call` path (no entry
+    // frame): permissive constructor, the opt-out from strict-by-default.
+    let mut interp = Interpreter::new_permissive();
     interp.load_source(src).expect("load source");
     interp.call("main", vec![]).expect("call main")
 }
