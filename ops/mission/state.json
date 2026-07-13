@@ -10,7 +10,7 @@
     "northStar": "S114 accepted at its true scope (first-party CLI/Wasm trust-kernel baseline) with durable evidence, mechanically bounded claims, fail-closed CLI lanes, and a rolling review control. Never overclaim.",
     "status": "active",
     "started": "2026-07-12",
-    "updated": "2026-07-13T03:55:00Z",
+    "updated": "2026-07-13T04:12:00Z",
     "sessionCount": 1
   },
   "policies": {
@@ -227,27 +227,27 @@
         },
         {
           "id": "P3-T2",
-          "title": "Dependency preload fail-closed: load_source errors during preload (garnet-cli/src/cmd/run.rs:282-288) abort the run with exit 1 + episode record (read/walk/missing-vendor stay warn-and-continue); fix the 'parse error' mislabel for authority traps; update run.rs module header + preload doc comment + garnet-cli/AGENTS.md; strengthen s114_residual_lanes.rs:109-144 with an exit-code assertion",
-          "status": "pending",
+          "title": "Dependency preload fail-closed: authority traps during preload (garnet-cli/src/cmd/run.rs) abort the run with exit 1 + episode record (read/walk/missing-vendor stay warn-and-continue); authority-trap mislabel fixed; run.rs module header + garnet-cli/AGENTS.md updated; s114_residual_lanes.rs strengthened with an exit-code assertion",
+          "status": "done",
           "dependsOn": [],
           "pr": null,
-          "notes": "Reverses the documented S12 'noisy dep' contract deliberately (plan condition #5). --vm never preloads (run.rs:14) — record posture, don't change. s114_residual_lanes.rs is a sealed-review regression surface: additive assertions only."
+          "notes": "Done (P3a). preload_dependencies now returns Result<(),String>; is_authority_trap() classifies by the stable 'capability:' message prefix; only authority traps abort (benign parse/read/missing-vendor stay warn-continue, S12 contract preserved). --vm never preloads (posture recorded, unchanged). s114 exit-code assertion is additive."
         },
         {
           "id": "P3-T3",
-          "title": "Test-helper preload fail-closed: the Ok(Err) arm (garnet-cli/src/cmd/test.rs:150-155) fails the file's tests like the panic arm (156-166); new regression test (broken src/main.garnet helper => nonzero exit, counted failures); verify template scaffolds still pass cli_smoke.rs:252",
-          "status": "pending",
+          "title": "Test-helper preload fail-closed: the Ok(Err) arm (garnet-cli/src/cmd/test.rs) fails the file's tests like the panic arm; new regression test (broken src/main.garnet helper => nonzero exit, counted failures); verify template scaffolds still pass cli_smoke",
+          "status": "done",
           "dependsOn": [],
           "pr": null,
-          "notes": "repl.rs:36-52 has the same warn-and-continue preload — out of plan scope, recorded as follow-up in the acceptance artifact's tracked-debt list."
+          "notes": "Done (P3a). Ok(Err) arm now increments total_failed + continues, matching the panic arm. New garnet-cli/tests/test_helper_preload.rs: authority-trap + unparseable helpers fail the run, well-formed helper still passes. cli_smoke templates still green. repl.rs warn-continue remains tracked follow-up (in acceptance artifact tracked_debt)."
         },
         {
           "id": "P3-T4",
-          "title": "Checker-only decision record + CLI-level coverage: time::*/uuid v4/v7 stay checker-only (S90 parity test pins intent); add garnet-cli/tests/caps_enforcement.rs coverage asserting the checker-only class does NOT trap at runtime, cross-referencing the P2 scope table",
-          "status": "pending",
+          "title": "Checker-only decision record + CLI-level coverage: time::*/uuid v4/v7 stay checker-only; add garnet-cli/tests coverage asserting the checker-only class does NOT trap at runtime, cross-referencing the P2 scope table",
+          "status": "done",
           "dependsOn": [],
           "pr": null,
-          "notes": "Plan phase-3 bullet 1 resolved as 'stay documented checker-only' — runtime-gate parity for time/uuid would change S90 scope, out of mission scope."
+          "notes": "Done (P3a). new garnet-cli/tests/checker_only_caps.rs: time::now_ms (declared AND undeclared) and std::uuid::new_v4 run without a runtime capability trap under garnet run. Empirically confirmed garnet run doesn't invoke the checker, so checker-only caps aren't runtime-gated — documented, not changed (S90 scope preserved)."
         }
       ]
     },
@@ -327,7 +327,7 @@
     {
       "label": "Fail-soft CLI authority lanes",
       "baseline": "2",
-      "current": "2",
+      "current": "0",
       "target": "0",
       "direction": "down"
     },
@@ -392,10 +392,10 @@
   "resume": {
     "activePhase": "P3",
     "nextActions": [
-      "P3-T2 (dependency preload fail-closed): garnet-cli/src/cmd/run.rs preload_dependencies (~233-291) — the load_source error branch (~282-288, mislabels authority traps as 'parse error') must abort the run with exit 1 + episode record; keep read/walk/missing-vendor warn-and-continue. Update run.rs module header + preload doc comment + garnet-cli/AGENTS.md. Strengthen garnet-cli/tests/s114_residual_lanes.rs (~109-144) with an exit-code assertion (additive only — sealed review surface). --vm never preloads (record posture).",
-      "P3-T3 (test-helper fail-closed): garnet-cli/src/cmd/test.rs the Ok(Err) helper-preload arm (~150-155) must fail the file's tests like the panic arm (~156-166). New regression test: broken src/main.garnet helper => nonzero exit, counted failures. Verify template scaffolds still pass (cli_smoke.rs ~252 '3 passed; 0 failed').",
-      "P3-T1 (embedder strict-by-default): per-instance strict flag defaulting strict + Interpreter::new_permissive() opt-out; PreparedVm::new loads framed (garnet-vm/src/vm.rs:251); migrate strict_no_frame_latch.rs baseline + host_effect_composition.rs + stdlib_s22/s23/s24_dispatch.rs + lib.rs doctest; CHANGELOG records the contract change. Keep the A5 process-global one-way latch untouched and dominant. LARGEST slice — do LAST and consider splitting.",
-      "P3-T4: CLI-level test that time::*/uuid v4/v7 do NOT trap at runtime (checker-only), cross-referencing the P2 scope table.",
+      "P3a (dep-preload + test-helper fail-closed + checker-only coverage) is DONE and merging. Remaining P3 work is P3-T1 on a fresh branch mission/p3b-embedder-strict off main.",
+      "P3-T1 (embedder strict-by-default): the STRICT_NO_FRAME static default (garnet-interp-v0.3/src/eval.rs:705) stays false — move strictness to the construction API so the A5 one-way global latch invariant + strict_no_frame_latch.rs survive. Approach: add a per-instance strict flag defaulting STRICT for library callers, install it as a thread-scoped strict frame during load/eval/call, and Interpreter::new_permissive() (or load_*_permissive) as the explicit opt-out. PreparedVm::new (garnet-vm/src/vm.rs:251) must load framed. A permissive instance must NEVER override a process that has latched strict (latch dominates).",
+      "P3-T1 test migration: strict_no_frame_latch.rs baseline (asserts permissive default — rewrite, do not delete, it pins the latch no-reopen property), host_effect_composition.rs + stdlib_s22/s23/s24_dispatch.rs (use unframed .call — migrate to framed or new_permissive), lib.rs module doctest (demonstrates permissive lane). CHANGELOG records the deliberate embedder-default contract change (CHANGELOG.md:297-303 is the rationale being reversed). This is the LARGEST slice — consider splitting if it grows past ~400 lines.",
+      "At P3 phase close: re-run ALL P3 gates fresh on the merged tree (cargo test -p garnet-cli / -p garnet-interp / -p garnet-vm, clippy --workspace, cargo test --workspace).",
       "Then P4 (rolling S114): trust-kernel file set + policy + status gate; P4-T2 opens the CI-wiring PR (new gates from P2 fixture + P4 gate) and PARKS it for Jon (integrity rule 1)."
     ],
     "blockers": [],

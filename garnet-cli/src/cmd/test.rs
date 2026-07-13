@@ -148,10 +148,19 @@ pub fn run(args: &[String]) -> ExitCode {
                 }) {
                     Ok(Ok(())) => {}
                     Ok(Err(e)) => {
+                        // Fail-closed (S114 acceptance, cond. #5): a helper that
+                        // fails to load means the file's tests ran against a
+                        // broken/partial helper. Setup failure must not produce
+                        // a green run — fail the file's tests like the panic arm.
                         eprintln!(
                             "garnet test: failed to preload src/main.garnet for {}: {e}",
                             file.display()
                         );
+                        total_failed += test_names.len();
+                        for n in &test_names {
+                            failed_names.push(format!("{}::{}", file.display(), n));
+                        }
+                        continue;
                     }
                     Err(panic_msg) => {
                         eprintln!(
