@@ -82,6 +82,36 @@ Adopts the dogfood-readiness skill body shape.
 """
 
 
+class SensitivePathClassificationTests(unittest.TestCase):
+    """Path-normalization regressions: `lstrip("./")` treats '.' and '/' as a
+    character SET, so ".github/workflows/ci.yml" normalized to
+    "github/workflows/ci.yml" and workflow-only PRs silently skipped the
+    dogfood evidence requirement (found 2026-07-13)."""
+
+    def test_github_workflow_path_is_sensitive(self) -> None:
+        self.assertTrue(checker.is_sensitive_path(".github/workflows/ci.yml"))
+
+    def test_pull_request_template_is_sensitive(self) -> None:
+        # Same bug hid the SENSITIVE_FILES entry that starts with a dot.
+        self.assertTrue(checker.is_sensitive_path(".github/PULL_REQUEST_TEMPLATE.md"))
+
+    def test_leading_dot_slash_prefix_is_stripped(self) -> None:
+        self.assertTrue(checker.is_sensitive_path("./.github/workflows/ci.yml"))
+        self.assertTrue(checker.is_sensitive_path("./F_Project_Management/LAUNCH/LAUNCH_READINESS.md"))
+
+    def test_windows_separators_normalize(self) -> None:
+        self.assertTrue(checker.is_sensitive_path(".github\\workflows\\ci.yml"))
+
+    def test_lookalike_paths_stay_non_sensitive(self) -> None:
+        self.assertFalse(checker.is_sensitive_path("github/workflows/ci.yml"))
+        self.assertFalse(checker.is_sensitive_path("scripts/check_dogfood_pr_body.py"))
+
+    def test_workflow_only_change_requires_dogfood_body(self) -> None:
+        result = checker.validate_body("## Summary\n\nCI tweak.\n", [".github/workflows/ci.yml"])
+        self.assertTrue(result.sensitive)
+        self.assertIn("missing required heading: ## Dogfood Readiness", result.errors)
+
+
 class DogfoodPrBodyCheckerTests(unittest.TestCase):
     def test_ignores_non_sensitive_changes_without_body(self) -> None:
         result = checker.validate_body("", ["README.md"])
