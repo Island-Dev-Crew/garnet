@@ -38,6 +38,14 @@ class ClassificationTests(unittest.TestCase):
         for p in ("README.md", "docs/index.html", "ops/mission/state.json", "apps/garnet-studio/x"):
             self.assertFalse(mod.is_trust_kernel(p), p)
 
+    def test_norm_strips_dot_slash_as_prefix_not_char_set(self) -> None:
+        # Regression: lstrip("./") strips '.'/'/' as a character set, which
+        # would eat the leading dot off ".github/..."-style names (the bug that
+        # hid workflow files from the dogfood PR-body gate).
+        self.assertEqual(".github/workflows/ci.yml", mod._norm(".github/workflows/ci.yml"))
+        self.assertEqual("garnet-vm/src/vm.rs", mod._norm("./garnet-vm/src/vm.rs"))
+        self.assertTrue(mod.is_trust_kernel("./garnet-interp-v0.3/src/eval.rs"))
+
     def test_review_companions_are_recognized(self) -> None:
         for p in (
             "proofs/independent/s114/codex-verdict-20260625/MANIFEST.sha256",

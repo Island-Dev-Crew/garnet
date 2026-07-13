@@ -88,7 +88,14 @@ class TrustKernelReviewStatus:
 
 
 def _norm(path: str) -> str:
-    return path.replace("\\", "/").lstrip("./")
+    # Strip leading "./" as a prefix — NOT lstrip("./"), which strips '.' and
+    # '/' as a character set and eats the dot off ".github/..."-style names
+    # (harmless for this trigger set today, but the pattern was copied from the
+    # dogfood gate where it silently skipped workflow files).
+    p = path.replace("\\", "/")
+    while p.startswith("./"):
+        p = p[2:]
+    return p
 
 
 def is_trust_kernel(path: str) -> bool:

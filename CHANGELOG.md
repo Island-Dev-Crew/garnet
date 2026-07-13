@@ -7,6 +7,25 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated-honesty record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
+## Unreleased — gate fix: dogfood PR-body checker skipped `.github/` paths (2026-07-13)
+
+### `scripts/check_dogfood_pr_body.py` — path normalization closed a silent gate hole
+
+- **Fixed:** `is_sensitive_path` normalized paths with `lstrip("./")`, which
+  strips leading `.` and `/` as a character SET — `.github/workflows/ci.yml`
+  became `github/workflows/ci.yml`, so a PR touching only workflow files (and
+  the `.github/PULL_REQUEST_TEMPLATE.md` sensitive-file entry) was silently
+  treated as non-readiness-sensitive and the dogfood evidence body was not
+  required. Leading `./` is now stripped as a prefix; locked by six new
+  classification tests.
+- **Also fixed (no behavior change today):** the same copied `_norm` pattern in
+  `scripts/garnet_trust_kernel_review_status.py` — that trigger set has no
+  `.`-leading entries, so this is consistency hardening only; locked by a
+  regression test pinning `_norm(".github/workflows/ci.yml")`.
+- **Honest scope:** gate-script fix only; no shipped-binary behavior change.
+  This PR modifies the gate it merges under → integrity rule 1:
+  human-merge-only (parked for Jon, no autonomous-merge record).
+
 ## Unreleased — S114 acceptance, code hardening: embedder strict-by-default (2026-07-12)
 
 ### `garnet-interp` — `Interpreter::new()` is now strict (deny-by-default)

@@ -57,8 +57,17 @@ class ValidationResult(NamedTuple):
     errors: list[str]
 
 
+def _normalize(path: str) -> str:
+    # Strip leading "./" as a prefix — NOT lstrip("./"), which strips '.' and
+    # '/' as a character set and eats the dot off ".github/..."-style names.
+    p = path.replace("\\", "/")
+    while p.startswith("./"):
+        p = p[2:]
+    return p
+
+
 def is_sensitive_path(path: str) -> bool:
-    normalized = path.replace("\\", "/").lstrip("./")
+    normalized = _normalize(path)
     return normalized in SENSITIVE_FILES or normalized.startswith(SENSITIVE_PREFIXES)
 
 
