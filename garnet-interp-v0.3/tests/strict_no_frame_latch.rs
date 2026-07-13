@@ -12,10 +12,14 @@ const FS_TRAP: &str = "requires @caps(fs)";
 
 #[test]
 fn strict_no_frame_is_a_one_way_latch_and_cannot_be_reopened() {
-    let interp = Interpreter::new();
+    // A PERMISSIVE instance (the explicit opt-out from strict-by-default): with
+    // the process latch off, its frame-less host calls are allowed. This also
+    // proves the global latch dominates a permissive instance once set.
+    let interp = Interpreter::new_permissive();
 
-    // Baseline: strict OFF (process default) → a frame-less host call is permitted
-    // (it reaches the IO and fails only because the path is absent — NOT a caps trap).
+    // Baseline: global latch OFF → a frame-less host call on a permissive
+    // instance is permitted (it reaches the IO and fails only because the path
+    // is absent — NOT a caps trap).
     let permissive = interp.eval_expr_src("read_file(\"/garnet_a5_latch_absent\")");
     let permissive_msg = format!("{permissive:?}");
     assert!(permissive.is_err(), "absent file → IO error");
@@ -29,8 +33,10 @@ fn strict_no_frame_is_a_one_way_latch_and_cannot_be_reopened() {
     // Attempt to re-open the gate — must be a NO-OP.
     set_strict_no_frame(false);
 
-    // The gate stays closed: the SAME frame-less host call now traps on caps,
-    // proving `set_strict_no_frame(false)` did not re-open it.
+    // The gate stays closed: the SAME frame-less host call on the SAME
+    // permissive instance now traps on caps, proving both that
+    // `set_strict_no_frame(false)` did not re-open it AND that the global latch
+    // overrides a permissive instance.
     let denied = interp.eval_expr_src("read_file(\"/garnet_a5_latch_absent\")");
     let denied_msg = format!("{denied:?}");
     assert!(denied.is_err(), "strict must deny the host call");

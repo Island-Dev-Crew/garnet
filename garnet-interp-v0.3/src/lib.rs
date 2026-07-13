@@ -49,14 +49,42 @@ use std::rc::Rc;
 /// use.
 pub struct Interpreter {
     pub global: Rc<Env>,
+    /// When true (the default), host-authority primitives reached with no
+    /// `@caps` frame are refused for this instance's load/eval/call operations
+    /// (deny-by-default embedder posture). `new_permissive()` clears it.
+    strict: bool,
 }
 
 impl Interpreter {
     /// Create a fresh interpreter with the prelude pre-loaded.
+    ///
+    /// Strict-by-default (S114 acceptance, cond. #5): an embedder that loads and
+    /// runs untrusted Garnet source through this interpreter refuses undeclared
+    /// host authority even when the source is loaded/evaluated outside a program
+    /// entry frame. Use [`Self::new_permissive`] for the legacy fail-open
+    /// direct-call behavior (Rust unit tests, benches, trusted internal loads).
     pub fn new() -> Self {
+        Self::with_strict(true)
+    }
+
+    /// Create a fresh interpreter that ALLOWS host-authority primitives reached
+    /// with no `@caps` frame (the pre-S114 direct-call default). This is the
+    /// explicit opt-out from strict-by-default; a permissive instance still
+    /// cannot escape a process that has latched the global strict-no-frame gate
+    /// (`eval::set_strict_no_frame`) — that latch always dominates.
+    pub fn new_permissive() -> Self {
+        Self::with_strict(false)
+    }
+
+    fn with_strict(strict: bool) -> Self {
         let global = Rc::new(Env::new_root());
         prelude::install(&global);
-        Self { global }
+        Self { global, strict }
+    }
+
+    /// The strict scope for this instance's operations, or `None` when permissive.
+    fn strict_scope(&self) -> Option<eval::StrictScope> {
+        self.strict.then(eval::StrictScope::enter)
     }
 
     /// Load a Garnet source string under the default edition (v1.0). Parses then
@@ -109,6 +137,11 @@ impl Interpreter {
 
     /// Register a parsed module into the global environment.
     pub fn load_module(&mut self, module: Module) -> Result<(), RuntimeError> {
+        // Strict-by-default: top-level `let`/`const` initializers evaluate here
+        // at no active frame; a strict instance denies undeclared host authority
+        // in them. Harmless on the framed load path (an entry frame is already
+        // active, so the no-frame branch is never reached).
+        let _strict = self.strict_scope();
         // S114-FIX-2: validate every `@max_depth(N)` annotation's range BEFORE
         // registering anything — top-level fns, impl methods, and nested-module
         // fns alike — so `garnet run` refuses an out-of-range bound anywhere
@@ -233,6 +266,8 @@ impl Interpreter {
 
     /// Evaluate a single expression against the global scope.
     pub fn eval_expr_src(&self, src: &str) -> Result<Value, RuntimeError> {
+        // Strict-by-default: a bare expression evaluates with no active frame.
+        let _strict = self.strict_scope();
         // Wrap the expression in a fn so the parser's top-level grammar is happy.
         let wrapped = format!("def __repl_expr__() {{ {src} }}");
         let module = garnet_parser::parse_source(&wrapped)
@@ -259,6 +294,9 @@ impl Interpreter {
             .global
             .get(name)
             .ok_or_else(|| RuntimeError::Message(format!("unknown function '{name}'")))?;
+        // Strict-by-default: an embedded `call` pushes a managed frame only if
+        // the callee is a `def`; a bare `fn` reaches host authority frame-less.
+        let _strict = self.strict_scope();
         eval::call_value(&callee, args)
     }
 
@@ -290,6 +328,10 @@ impl Interpreter {
             .global
             .get(name)
             .ok_or_else(|| RuntimeError::Message(format!("unknown function '{name}'")))?;
+        // Harmless under strict: the entry frame installed below means host
+        // calls run with an active frame; the strict scope only matters if the
+        // entry has no `@caps` and reaches host authority before the frame.
+        let _strict = self.strict_scope();
         eval::call_value_with_entry_caps(&callee, args)
     }
 

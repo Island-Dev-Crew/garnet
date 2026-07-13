@@ -83,7 +83,10 @@ fn bench_parse_compile_execute(c: &mut Criterion) {
     for case in cases() {
         let artifact = compile_source(case.source).unwrap();
         let mut vm = PreparedVm::new(&artifact, RunOptions { emit_stdout: false }).unwrap();
-        let mut interp = Interpreter::new();
+        // Trusted timing harness loading example programs unframed: permissive
+        // constructor (the opt-out from strict-by-default) so example top-level
+        // host authority does not trap here.
+        let mut interp = Interpreter::new_permissive();
         interp.load_source(case.source).unwrap();
 
         group.bench_function(BenchmarkId::new("vm", case.label), |b| {

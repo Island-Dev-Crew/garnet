@@ -724,6 +724,49 @@ fn strict_no_frame() -> bool {
     STRICT_NO_FRAME.load(Ordering::Relaxed)
 }
 
+thread_local! {
+    /// Per-instance strict-mode nesting depth for the current thread. A default
+    /// `Interpreter` (strict-by-default) raises this for the duration of each
+    /// load/eval/call, so a host-authority primitive reached with NO `@caps`
+    /// frame is refused — the same deny-by-default semantics the process-global
+    /// latch gives the `garnet` binary, but scoped to one embedder instance and
+    /// reversible (it is NOT the A5 one-way latch).
+    static INSTANCE_STRICT: std::cell::Cell<u32> = const { std::cell::Cell::new(0) };
+}
+
+/// RAII scope marking the current thread as executing under a strict
+/// (deny-by-default) `Interpreter` instance. Held by the interpreter's public
+/// load/eval/call methods when the instance is strict. Nests safely.
+pub struct StrictScope {
+    _private: (),
+}
+
+impl StrictScope {
+    #[must_use]
+    pub fn enter() -> Self {
+        INSTANCE_STRICT.with(|c| c.set(c.get().saturating_add(1)));
+        StrictScope { _private: () }
+    }
+}
+
+impl Drop for StrictScope {
+    fn drop(&mut self) {
+        INSTANCE_STRICT.with(|c| c.set(c.get().saturating_sub(1)));
+    }
+}
+
+fn instance_strict() -> bool {
+    INSTANCE_STRICT.with(|c| c.get()) > 0
+}
+
+/// Deny a no-frame host-authority call when EITHER the process-global latch is
+/// set (the `garnet` binary) OR the current thread is executing a strict
+/// `Interpreter` instance (embedder default). Permissive instances with the
+/// global latch off are the only case that still allows a no-frame direct call.
+fn deny_no_frame() -> bool {
+    strict_no_frame() || instance_strict()
+}
+
 /// Enforce that a host-authority primitive's required capability was declared in
 /// the calling chain. S91 adds a program-entry frame for `garnet run --interp`
 /// so safe-mode entry points are covered too. Outside any program frame, the
@@ -733,7 +776,7 @@ pub(crate) fn require_capability(needed: &str, fn_name: &str) -> Result<(), Runt
     ACTIVE_CAPS.with(|c| {
         let c = c.borrow();
         if c.active_frames == 0 {
-            if strict_no_frame() {
+            if deny_no_frame() {
                 return Err(RuntimeError::msg(format!(
                     "capability: `{fn_name}` requires @caps({needed}), not declared in the calling chain"
                 )));
@@ -760,7 +803,7 @@ pub(crate) fn require_entry_capability(needed: &str, fn_name: &str) -> Result<()
     ACTIVE_CAPS.with(|c| {
         let c = c.borrow();
         if c.entry_frames == 0 {
-            if strict_no_frame() {
+            if deny_no_frame() {
                 return Err(RuntimeError::msg(format!(
                     "capability: `{fn_name}` requires program entry @caps({needed}), not declared by the entry point"
                 )));
