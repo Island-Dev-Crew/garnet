@@ -1,0 +1,10 @@
+MISSION CLOSE — Garnet S114 Closure & Hardening — 2026-07-13T05:05Z
+
+S114 governance row: accepted-scoped (first-party CLI/Wasm trust-kernel baseline)
+launch_ready: False | recommendation: HOLD  (accepting S114 made NO launch/runtime-safety claim)
+
+Closing status gates (all exit 0):
+  evidence_integrity (38/38), caps_enforcement, capability_scope, trust_kernel_review, bounded_enforcement, red_team
+
+Merged: #472 bootstrap, #473 P0, #474 P1, #475 P2, #476 P3a, #477 P3b, #478 P4-T1
+Parked for Jon: #479 P4-T2 (CI wiring, integrity rule 1)

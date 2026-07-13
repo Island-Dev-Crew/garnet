@@ -61,3 +61,12 @@ Append-only session log, newest entry LAST.
 
 - P4-T1: scripts/garnet_trust_kernel_review_status.py (schema garnet.trust_kernel_review/v1) makes S114 a recurring control. Machine-readable trust-kernel trigger set (checker / interp / vm / stdlib registry / wasm / CLI authority flows / capability reporters / /why + scope table). Given a diff (mirrors check_dogfood_pr_body.py's --base/--head/--changed-file), it requires a review companion — a scoped S114_ACCEPTANCE.json update, a proofs/independent/s114 or W_TRUST or VALIDATION_REPORTS artifact, or a named 'Trust-Kernel-Review:' commit trailer. --gate exits 1 on an uncompanioned trust-kernel change. Policy doc GARNET_TRUST_KERNEL_ROLLING_REVIEW.md + CURRENT_STATE.md row. 12 tests OK; gate behavior verified.
 - Next: P4-T2 opens the CI-wiring PR for the P2 + P4 gates and PARKS it for Jon (integrity rule 1); then mission complete.
+- P4-T1 merged as #478 (ea9e381), full CI green.
+
+## 2026-07-13T05:05Z — session 1 (MISSION COMPLETE)
+
+- P4-T2: opened PR #479 wiring the P2 capability-scope gate + the P4 trust-kernel review gate (and their tests) into .github/workflows/ci.yml, plus fetch-depth:0 for the rolling diff. PARKED for Jon — .github/workflows/ is human-merge-only (integrity rule 1). Its CI is green (the new agent-contracts gates already pass), so Jon has a clean, mergeable PR. NOT self-merged.
+- Mission status set to COMPLETE. All five phases done and merged: P0 (#473) scoped S114 acceptance + reporter reads it + machine-independent ledger; P1 (#474) recovered Codex + lane-2 evidence landed durably (integrity 36->38/38); P2 (#475) capability enforcement scope table + bounded two runtime overclaims + claim fixture; P3 (#476 CLI fail-closed lanes, #477 embedder strict-by-default); P4 (#478 rolling trust-kernel review control). Plus bootstrap #472.
+- Closing evidence (ops/mission/evidence/MISSION-CLOSE-2026-07-13.txt): S114 row accepted-scoped; launch_ready=False/HOLD preserved (no launch or runtime-safety claim); evidence_integrity/caps_enforcement/capability_scope/trust_kernel_review/bounded_enforcement/red_team gates all exit 0.
+- Honesty fences held throughout: S114 independence language unchanged (only Jon relabels); /why two bounded claims byte-identical; no tags pushed; the one gate-changing PR handed to Jon.
+- Single remaining follow-up (by design): Jon merges #479 to enable the two new gates in CI.
