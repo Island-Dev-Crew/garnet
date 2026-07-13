@@ -8,10 +8,10 @@
     "defaultBranch": "main",
     "planDoc": "C:/Users/IslandDevCrew/Desktop/Garnet-S114-Plan-of-Attack-v1-2026-07-12.html",
     "northStar": "S114 accepted at its true scope (first-party CLI/Wasm trust-kernel baseline) with durable evidence, mechanically bounded claims, fail-closed CLI lanes, and a rolling review control. Never overclaim.",
-    "status": "complete",
+    "status": "active",
     "started": "2026-07-12",
-    "updated": "2026-07-13T05:05:00Z",
-    "sessionCount": 1
+    "updated": "2026-07-13T08:05:00Z",
+    "sessionCount": 2
   },
   "policies": {
     "merge": "auto",
@@ -59,7 +59,9 @@
           "id": "P0-T2",
           "title": "Reporter: _s114_gate() reads the acceptance artifact -> 'accepted-scoped' state (absent/malformed artifact => external-pending unchanged); docstring state table; launch_ready membership accepts accepted-scoped for s114; promo canonical snapshot replaces the machine-dependent live probe in the ledger line; update test suite (current-tree assertion + new S114/promo tests); regenerate the ledger",
           "status": "done",
-          "dependsOn": ["P0-T1"],
+          "dependsOn": [
+            "P0-T1"
+          ],
           "pr": null,
           "notes": "Done. read_s114_acceptance() + read_promo_snapshot() fail-closed to external-pending / live-probe on missing/malformed input. launch_ready stays False (playground/wasm/shelf still open) — accepting S114 makes no launch claim. Ledger diff was exactly the S114 section; promo line held at public-site-embedded (95.0%) proving machine-independence. 37/37 reporter tests OK."
         }
@@ -95,7 +97,9 @@
           "id": "P1-T2",
           "title": "Land the recovered evidence durably: Codex verdict doc (W_TRUST/S114_CODEX_INDEPENDENT_VERDICT_2026_06_25.md) + its sealed proofs, the lane-2 review bundle (160-file manifest) + VALIDATION_REPORTS report, and a recovery-provenance note recording original commit SHAs (6153726, 61cfbae), reviewed SHA 2e2fe84, and branch lineage",
           "status": "done",
-          "dependsOn": ["P1-T1"],
+          "dependsOn": [
+            "P1-T1"
+          ],
           "pr": null,
           "notes": "Done. Codex proofs -> proofs/independent/s114/codex-verdict-20260625/ (relocated under proofs/ for gate sweep; manifest re-expressed bundle-relative, hashes identical, 784 files byte-identical via raw-blob extraction to avoid EOL smudge). Verdict MD -> W_TRUST byte-identical (34176867...). Lane-2 -> proofs/validation/s114-review/windows-20260628-lane2/ byte-identical (self-verifying) + report. proofs/independent/s114/RECOVERY_PROVENANCE.md records SHAs, lineage, the path re-expression, and 'reviewed commit' framing. Gate 38/38."
         }
@@ -149,7 +153,9 @@
           "id": "P2-T2",
           "title": "Bound the overbroad public copy: README.md (runtime trap claim wider than host-bridge scope), docs/index.html:1040 ('no ambient authority, ever') — keep the two /why 'enforced:' claims byte-identical (PR #471 preservation rule)",
           "status": "done",
-          "dependsOn": ["P2-T1"],
+          "dependsOn": [
+            "P2-T1"
+          ],
           "pr": null,
           "notes": "Done. README runtime claim scoped to the 12+3 gated host-authority prims under the CLI, time/uuid checker-only, with a link to the scope table. index.html 'no ambient authority, ever' -> 'undeclared OS authority fails the check'. SW cache bumped garnet-web-v1 -> v2 so returning visitors get the correction. why.html untouched (byte-identical). Blog 2026-05-20 left as minor tracked follow-up (no forbidden phrase; lower-value marketing surface)."
         },
@@ -157,7 +163,10 @@
           "id": "P2-T3",
           "title": "Claim fixture: scripts/garnet_capability_scope_status.py + test asserting (a) why.html carries exactly the two bounded 'enforced:' claims, (b) cited test anchors exist (garnet-cli/tests/test_entry_authority.rs, garnet-vm/tests/scope_shadowing_parity.rs), (c) forbidden universal-enforcement phrases absent from public surfaces, (d) scope-table doc names every enforcement class",
           "status": "done",
-          "dependsOn": ["P2-T1", "P2-T2"],
+          "dependsOn": [
+            "P2-T1",
+            "P2-T2"
+          ],
           "pr": null,
           "notes": "Done. Fixture + 6 tests (real tree passes; failure paths for forbidden phrase, extra enforced claim, missing scope doc, missing anchor). Runs locally now; CI wiring of the new --gate is a workflow-file change => parked for Jon under P4-T2."
         }
@@ -280,10 +289,80 @@
         {
           "id": "P4-T2",
           "title": "CI wiring PR for the new gates (P2 claim fixture + P4 rolling check): open, do NOT merge — Jon-only per CLAUDE.md integrity rule 1",
+          "status": "done",
+          "dependsOn": [
+            "P4-T1"
+          ],
+          "pr": {
+            "number": 479,
+            "url": "https://github.com/Island-Dev-Crew/garnet/pull/479",
+            "mergedAt": "2026-07-13"
+          },
+          "notes": "Jon merged #479 (6087565) 2026-07-13T06:17Z — capability-scope + trust-kernel gates now CI-wired (fetch-depth 0 for the rolling diff). Both gates verified green on main post-merge."
+        }
+      ]
+    },
+    {
+      "id": "P5",
+      "title": "Foundation Hygiene",
+      "goal": "Close the four hygiene gaps from the 2026-07-13 foundation-refresh research (Rust 1.97/Ruby 4.0 sweep): supply-chain scan coverage, FAQ MSRV truth, wasm >=1.96 verification, converter dialect honesty. No foundational changes — the adversarial sweep confirmed the formalized pathway stands.",
+      "status": "in_progress",
+      "sessionsEstimate": "1",
+      "gates": [
+        {
+          "id": "P5-G1",
+          "title": "Machine-truth drift guard green after FAQ edits",
+          "command": "cargo run -p xtask -- truth --check",
+          "status": "passed",
+          "evidence": "ops/mission/evidence/P5-2026-07-13.txt",
+          "lastRun": "2026-07-13T08:00:00Z",
+          "notes": "ok (6 fields, 4 stamped surfaces)."
+        },
+        {
+          "id": "P5-G2",
+          "title": "CI-wired S114 gates stay green (capability-scope + trust-kernel)",
+          "command": "python scripts/garnet_capability_scope_status.py --gate",
+          "status": "passed",
+          "evidence": "ops/mission/evidence/P5-2026-07-13.txt",
+          "lastRun": "2026-07-13T08:00:00Z",
+          "notes": "Both exit 0 on this branch (trust-kernel gate: python scripts/garnet_trust_kernel_review_status.py --gate)."
+        }
+      ],
+      "tasks": [
+        {
+          "id": "P5-T1",
+          "title": "Extend supply-chain scans to the workspace-excluded lockfiles: cargo-audit on apps/garnet-studio/src-tauri/Cargo.lock (435 pkgs, wry/tao webview stack) + garnet-parser-v0.3/fuzz/Cargo.lock; cargo-deny advisory-only pass + CycloneDX SBOM for the Studio app",
           "status": "blocked",
-          "dependsOn": ["P4-T1"],
-          "pr": { "number": 479, "url": "https://github.com/Island-Dev-Crew/garnet/pull/479", "mergedAt": null },
-          "notes": "Deliverable done: PR #479 opened and PARKED for Jon (edits .github/workflows/ci.yml = human-merge-only, integrity rule 1). Wires test_garnet_capability_scope_status + test_garnet_trust_kernel_review_status + both --gate checks + fetch-depth:0. NOT self-merged; merge is Jon's decision. Tracked in resume.blockers."
+          "dependsOn": [],
+          "pr": {
+            "number": 481,
+            "url": "https://github.com/Island-Dev-Crew/garnet/pull/481"
+          },
+          "notes": "PR #481 opened and PARKED for Jon (security.yml is a CI gate file => human-merge-only, integrity rule 1). The PR's own Security workflow run exercises the new steps — confirm the three cargo-audit steps + Studio deny-advisories pass are green before merge. Strongest research finding: deny.toml says 'release-grade supply chain gate' but only the root lock was scanned."
+        },
+        {
+          "id": "P5-T2",
+          "title": "FAQ MSRV reconciliation: 1.75+ (line 91) vs 1.95+ (line 97) contradiction unified on Rust 1.95+ with 'CI tracks current stable' framing; decision recorded = STAY FLOATING (no rust-toolchain.toml pin — determinism claims are toolchain-immune by design; floating stable gives free continuous revalidation)",
+          "status": "done",
+          "dependsOn": [],
+          "pr": null,
+          "notes": "Done in this PR. Actual current Rust: 1.97.0 stable (2026-07-09). The '0.144.1/0.145.0-alpha.4 rust' versions Jon saw are OpenAI Codex CLI release tags (rust-v0.x.y), not Rust."
+        },
+        {
+          "id": "P5-T3",
+          "title": "Verify garnet-wasm under rustc >=1.96 (the 1.96 wasm linker hardening postdates the WV-5 evidence at 1.95.0): build wasm32-unknown-unknown + host tests under a 1.97.0 secondary toolchain",
+          "status": "done",
+          "dependsOn": [],
+          "pr": null,
+          "notes": "Done. cargo +1.97.0 build -p garnet-wasm --target wasm32-unknown-unknown: clean (41s); host tests 6/6 pass. Non-event as predicted (wasm-bindgen-only surface, no raw extern C). Default toolchain untouched (1.95.0). Optional CI wasm32 job deferred — would be another gate-file change for Jon."
+        },
+        {
+          "id": "P5-T4",
+          "title": "Converter input-dialect honesty note in FAQ: each frontend targets a stylized subset; Ruby frontend ~3.3-era; Ruby 3.4 'it' + Ruby 4.0 leading-line operators not yet targeted (Ruby 3.5 was renumbered to 4.0, shipped 2025-12-25, current 4.0.5)",
+          "status": "done",
+          "dependsOn": [],
+          "pr": null,
+          "notes": "Done in this PR. Grounded in garnet-convert/Cargo.toml:7 'stylized subset... not a full transpiler'. ruby-prism Rust crate (v1.9.0) noted as the upgrade path if the converter should track Ruby 4.0. Benchmark 'Ruby 3.4 + YJIT' framing stays true as written (dated 'as of April 2026'); refresh at next benchmark re-run."
         }
       ]
     }
@@ -320,7 +399,7 @@
     {
       "label": "Capability enforcement scope table + claim fixture",
       "baseline": "none",
-      "current": "doc + fixture (local)",
+      "current": "doc + fixture (CI-wired, #479)",
       "target": "doc + fixture (CI-wired)",
       "direction": "up"
     },
@@ -348,8 +427,15 @@
     {
       "label": "Trust-kernel rolling-review trigger",
       "baseline": "prose only",
-      "current": "machine-readable + gate (local)",
+      "current": "machine-readable + gate (CI-wired, #479)",
       "target": "machine-readable + gate (CI-wired)",
+      "direction": "up"
+    },
+    {
+      "label": "Lockfiles under advisory scanning",
+      "baseline": "1 of 3 (root only)",
+      "current": "1 of 3 (PR #481 parked)",
+      "target": "3 of 3",
       "direction": "up"
     }
   ],
@@ -436,17 +522,25 @@
       "url": "https://github.com/Island-Dev-Crew/garnet/pull/479",
       "phase": "P4",
       "mergedAt": null
+    },
+    {
+      "number": 480,
+      "title": "ops(mission): S114 Closure & Hardening complete",
+      "url": "https://github.com/Island-Dev-Crew/garnet/pull/480",
+      "phase": "P4",
+      "mergedAt": "2026-07-13"
     }
   ],
   "resume": {
-    "activePhase": "P4",
+    "activePhase": "P5",
     "nextActions": [
-      "MISSION COMPLETE. All five phases (P0-P4) done and merged (#472, #473, #474, #475, #476, #477, #478). Every autonomously-completable task is landed on main and CI-verified.",
-      "ONE follow-up remains, by design, for Jon: merge PR #479 (P4-T2) to enable the S114 capability-scope + rolling trust-kernel review gates in CI. It edits .github/workflows/ci.yml, which is human-merge-only (CLAUDE.md integrity rule 1). Its CI is green (the new gates already pass on the agent-contracts job). Merging turns on enforcement.",
-      "Jon-only decisions untouched by this mission: relabelling S114 independence (verdict language unchanged), release tags, launch fire."
+      "P5-T1: watch PR #481 (parked, Jon-gated) — its own Security workflow run validates the new scan steps; if the Studio cargo-deny advisories pass or Studio SBOM step fails on runner specifics, fix on the branch before Jon merges",
+      "FROZEN: docs/why.html and all /why claim surfaces — Jon is bringing a reprocessed claims/attribution report (the cowork file that built /why flagged attribution issues that turned out NOT to be off; Jon reprocessed what was actually right vs wrong). Make NO /why changes until that report lands and is reconciled. The claim fixture (garnet_capability_scope_status.py) currently pins exactly 2 'enforced:' claims — if Jon's report changes the claim set, the fixture + scope doc + ledger regeneration must move in the same PR.",
+      "Deferred (post-launch, recorded): edition 2021->2024 migration (~18 crates, mechanical, mildly strengthens capability posture via unsafe env::set_var); benchmark 'Ruby 3.4 + YJIT' framing refresh at next re-run; optional CI wasm32 build job (gate-file change, bundle with a future Jon-gated CI PR)"
     ],
     "blockers": [
-      "PR #479 (P4-T2) awaiting Jon: CI-wiring for the P2 capability-scope gate + P4 trust-kernel review gate. Human-merge-only per integrity rule 1. Green CI; parked, not self-merged."
+      "PR #481 (P5-T1) awaiting Jon: supply-chain scan coverage for Studio + fuzz lockfiles. security.yml is a CI gate file => human-merge-only per integrity rule 1. Verify its Security workflow run is green, then Jon merges.",
+      "/why claims-attribution report from Jon pending — /why surfaces frozen until it arrives (see nextActions)."
     ],
     "conventions": [
       "One task-cluster = one branch (mission/<phaseId>-<slug>) = one PR; squash-merge with the 'Autonomous merge — agent: Claude Code (Fable 5); gates: ...' trailer after full CI green",

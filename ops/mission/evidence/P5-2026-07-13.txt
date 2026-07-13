@@ -1,0 +1,5 @@
+P5 Foundation Hygiene gates — 2026-07-13T08:00Z
+[P5-G1] cargo run -p xtask -- truth --check: ok (6 fields, 4 stamped surfaces) after FAQ MSRV + converter-dialect edits
+[P5-G2] capability-scope --gate: exit 0; trust-kernel-review --gate: exit 0 (both now CI-wired via #479, merged by Jon 6087565)
+[P5-T3] rustup 1.97.0 secondary toolchain; cargo +1.97.0 build -p garnet-wasm --target wasm32-unknown-unknown: clean (41.18s); cargo +1.97.0 test -p garnet-wasm: 6 passed / 0 failed. Rust 1.96 wasm linker hardening = non-event (wasm-bindgen-only surface). Default toolchain untouched (1.95.0).
+[P5-T1] PR #481 opened + parked for Jon (security.yml gate file, integrity rule 1)
