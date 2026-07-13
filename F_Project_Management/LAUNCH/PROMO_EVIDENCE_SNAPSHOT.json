@@ -1,0 +1,9 @@
+{
+  "schema": "garnet.promo_evidence_snapshot/v1",
+  "status": "public-site-embedded",
+  "completion_percent": 95.0,
+  "captured_at_commit": "d0d4f7c",
+  "captured_on": "evidence machine (Desktop dogfood tree)",
+  "source": "canonical committed promo-video evidence, preserved per the PR #466 machine-dependent-promo flag",
+  "note": "The launch-readiness reporter reads this committed snapshot for the promo ledger line so that regenerating F_Project_Management/LAUNCH/LAUNCH_READINESS.md is machine-independent (the live garnet_promo_video_status probe reads ~/Desktop/dogfood, which is only complete on the evidence machine). The live probe remains the source of truth on that machine and is still invoked by the reporter; this snapshot only pins the rendered ledger value. Update this snapshot when the promo evidence materially changes, from the evidence machine, so the committed value stays true."
+}

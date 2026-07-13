@@ -1,0 +1,6 @@
+P0-G2 evidence integrity — 2026-07-13T03:19Z
+cmd: python scripts/garnet_evidence_integrity_status.py --gate
+  "bundles_total": 36,
+  "bundles_ok": 36,
+  "bundles_failed": 0,
+  "ok": true

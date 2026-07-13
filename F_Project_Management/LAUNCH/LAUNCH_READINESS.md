@@ -36,14 +36,16 @@ Evidence:
 
 ### `s114_acceptance` — S114 independent re-verification acceptance
 
-State: **external-pending**
+State: **accepted-scoped**
 
 Evidence:
-- F_Project_Management/GARNET_S114_INDEPENDENT_VERIFICATION_DOSSIER.html
-- F_Project_Management/W_TRUST/S114_INDEPENDENT_REVERIFICATION_PACKAGE_2026-06-14.md
-
-Blockers:
-- Jon has not recorded an S114 acceptance decision; this reporter proves the static contract only and cannot grade acceptance
+- S114 accepted (scoped) by Jon (repo owner) on 2026-07-12: first-party CLI/Wasm trust-kernel baseline
+- recorded in F_Project_Management/LAUNCH/S114_ACCEPTANCE.json (read, not graded, by this reporter)
+- not an independence relabel: S114 verdict language is unchanged (independently-re-verified-with-fixes)
+- scope limit (tracked): Third-party embedders of garnet-interp / garnet-vm: permissive (unframed) execution is still possible unless strict/framed is chosen; being hardened in mission phase P3 (embedder strict-by-default). Not covered by this acceptance.
+- scope limit (tracked): Capability rows that are checker-only (time::*, uuid v4/v7) or declared-only (ffi, net_internal): enforced at check time / in generated sandbox policy, NOT uniformly runtime-gated. Documented in the P2 capability enforcement scope table.
+- scope limit (tracked): OS-level sandbox enforcement: seccomp/WASI/egress policy is generated (enforced:false) and applied only on Linux via an external reference harness; macOS/Windows OS sandboxing is named-deferred.
+- scope limit (tracked): memory::* natives: bridge-only, caps-invisible; outside the capability registry.
 
 ### `static_playground` — Static playground gallery (honest, recorded outputs)
 
