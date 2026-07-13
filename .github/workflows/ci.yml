@@ -28,11 +28,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          # Full history so the rolling trust-kernel review gate can diff the PR
+          # against origin/main (garnet_trust_kernel_review_status.py --gate).
+          fetch-depth: 0
       - uses: actions/setup-python@v6
         with:
           python-version: '3.x'
       - run: python3 scripts/test_check_dogfood_pr_body.py
       - run: python3 scripts/test_check_agent_contracts.py
+      # S114 acceptance (P2/P4): capability-claim scope fixture + rolling
+      # trust-kernel review gate.
+      - run: python3 scripts/test_garnet_capability_scope_status.py
+      - run: python3 scripts/test_garnet_trust_kernel_review_status.py
       - run: python3 scripts/test_github_actions_node24_readiness.py
       - run: python3 scripts/test_garnet_windows_linux_studio_status.py
       - run: python3 scripts/test_garnet_windows_linux_studio_shell.py
@@ -188,6 +196,17 @@ jobs:
       - run: python3 scripts/garnet_ultrapunch_dossier_status.py --gate
       - run: python3 scripts/garnet_domain_proof_artifacts_status.py --gate
       - run: python3 scripts/garnet_academic_evidence_status.py --gate
+      # S114 acceptance code-hardening (P2 cond. #3/#4): the public capability
+      # claim surface stays bounded — the scope doc names every class, /why keeps
+      # exactly its two `enforced:` claims, and no forbidden universal-enforcement
+      # phrasing appears on the public surfaces.
+      - run: python3 scripts/garnet_capability_scope_status.py --gate
+      # S114 acceptance rolling review (P4): a trust-kernel change on this PR must
+      # carry a review companion (scoped S114 acceptance update, an independent
+      # proofs/W_TRUST/VALIDATION_REPORTS artifact, or a `Trust-Kernel-Review:`
+      # trailer). Requires the full history to diff against origin/main — the
+      # checkout below sets fetch-depth: 0 for exactly this reason.
+      - run: python3 scripts/garnet_trust_kernel_review_status.py --gate
 
   # ───────────────────────────────────────────────────────────────────
   # Format check — fast, runs once on Linux. A failure here is the
