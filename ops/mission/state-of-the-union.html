@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Garnet S114 Closure &amp; Hardening — State of the Union</title>
+<style>
+:root{color-scheme:dark;--bg:#070f1c;--paper:#0d1b2f;--paper-2:#10243b;--ink:#eef6ff;--muted:#a9bdd3;--line:rgba(169,189,211,.18);--accent:#58d7b3;--blue:#77b7ff;--amber:#ffd166;--red:#ff8f8f;--good:#8ef2c0}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at top left,rgba(88,215,179,.15),transparent 30rem),radial-gradient(circle at top right,rgba(119,183,255,.13),transparent 32rem),var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,"Segoe UI",sans-serif;line-height:1.55}
+main{width:min(1180px,calc(100% - 32px));margin:0 auto;padding:40px 0 60px}
+h1,h2,h3{margin:0;line-height:1.12}
+h1{font-size:clamp(2rem,5vw,3.8rem);letter-spacing:-.04em;max-width:900px;margin-top:10px}
+h2{margin-bottom:14px;font-size:clamp(1.4rem,2.6vw,2rem)}
+h3{font-size:1.02rem;color:#fff}
+p{margin:0}
+a{color:var(--blue)}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85em;color:#dff7ef;overflow-wrap:anywhere}
+.eyebrow{color:var(--accent);font-size:.78rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+section{padding-top:34px}
+.hero{padding:20px 0 26px;border-bottom:1px solid var(--line)}
+.hero .tagline{max-width:760px;margin-top:14px;color:var(--muted);font-size:1.06rem}
+.chip{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;padding:3px 10px;margin:2px 6px 2px 0;background:rgba(255,255,255,.05);color:var(--muted);font-size:.78rem;font-weight:800}
+.chip.green{color:var(--good);border-color:rgba(142,242,192,.4)}
+.chip.amber{color:var(--amber);border-color:rgba(255,209,102,.4)}
+.chip.red{color:var(--red);border-color:rgba(255,143,143,.4)}
+.chip.blue{color:var(--blue);border-color:rgba(119,183,255,.4)}
+.panel,.phase{border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,rgba(16,36,59,.95),rgba(13,27,47,.95));box-shadow:0 18px 46px rgba(0,0,0,.25);padding:20px}
+.phase{margin-top:14px}
+.phase.active{border-color:rgba(88,215,179,.45)}
+.phase header{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:8px}
+.bar{height:10px;border-radius:999px;background:rgba(255,255,255,.07);margin-top:12px;overflow:hidden}
+.bar .fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--blue))}
+.bar.big{height:16px}
+ul.tasks,ul.bare{list-style:none;margin:12px 0 0;padding:0}
+ul.tasks li,ul.bare li{padding:8px 0;border-top:1px solid var(--line);color:var(--muted)}
+ul.tasks li:first-child,ul.bare li:first-child{border-top:0}
+ul.tasks .mark{margin-right:6px;color:var(--accent)}
+li.task-done{opacity:.75}
+li.task-blocked .mark{color:var(--red)}
+table{width:100%;border-collapse:collapse;margin-top:12px;font-size:.9rem}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:rgba(255,255,255,.05);color:#fff;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase}
+td{color:var(--muted)}
+td b{color:#fff}
+.table-wrap{overflow-x:auto;border-radius:12px}
+.timeline{display:grid;gap:10px}
+.tl-item{display:grid;grid-template-columns:72px 1fr;gap:14px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:rgba(255,255,255,.035)}
+.tl-item time{color:var(--accent);font-size:.8rem;font-weight:900}
+.tl-item p{color:var(--muted)}
+details.resume{margin-top:14px;border:1px dashed rgba(88,215,179,.4);border-radius:12px;padding:10px 14px}
+details.resume summary{cursor:pointer;color:var(--accent);font-weight:800}
+.prompt-box{position:relative;margin-top:10px}
+.prompt-box pre{margin:0;border:1px solid var(--line);border-radius:10px;background:#081120;color:#dff7ef;padding:14px;font-size:.82rem;white-space:pre-wrap;overflow-wrap:anywhere;max-height:420px;overflow:auto}
+button.copy{position:absolute;top:8px;right:8px;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.08);color:var(--ink);font-weight:700;padding:4px 12px;cursor:pointer}
+button.copy:hover{background:rgba(88,215,179,.2)}
+.footer{margin-top:40px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:.9rem}
+@media(max-width:900px){main{width:min(100% - 24px,760px)}.tl-item{grid-template-columns:56px 1fr}}
+</style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <p class="eyebrow">Mission Control &middot; State of the Union &middot; generated 2026-07-13 02:51Z</p>
+    <h1>Garnet S114 Closure &amp; Hardening</h1>
+    <p class="tagline">Accept the narrow truth, then harden the parts that made rejection tempting.</p>
+    <div style="margin-top:14px">
+      <span class="chip blue">mission: active</span>
+      <span class="chip green">active phase: P0</span>
+      <span class="chip blue">1/13 tasks</span>
+      <span class="chip amber">0/12 gates passed</span>
+      <span class="chip ">0 PRs merged</span>
+      <span class="chip ">sessions: 1</span>
+      <span class="chip ">updated: 2026-07-12T21:30:00Z</span>
+    </div>
+    <div class="bar big" role="img" aria-label="Overall progress 8%"><div class="fill" style="width:8%"></div></div>
+    <p class="small muted" style="margin-top:6px">Overall: 8% of tasks complete &middot; repo Island-Dev-Crew/garnet &middot; plan: C:/Users/IslandDevCrew/Desktop/Garnet-S114-Plan-of-Attack-v1-2026-07-12.html</p>
+  </header>
+
+  <section aria-labelledby="coldstart">
+    <h2 id="coldstart">Cold-Start Prompt (any new session, zero context)</h2>
+    <div class="panel">
+      <div class="prompt-box"><button class="copy" type="button">Copy</button><pre>You are cold-starting the &quot;Garnet S114 Closure &amp; Hardening&quot; mission with zero prior context.
+
+Local repo: C:/garnet  (Island-Dev-Crew/garnet, default branch main)
+Governing plan: C:/Users/IslandDevCrew/Desktop/Garnet-S114-Plan-of-Attack-v1-2026-07-12.html
+Mission status: active — active phase: P0
+
+Mission conventions:
+  - One task-cluster = one branch (mission/&lt;phaseId&gt;-&lt;slug&gt;) = one PR; squash-merge with the 'Autonomous merge — agent: Claude Code (Fable 5); gates: ...' trailer after full CI green
+  - PRs touching workflow files / dogfood gate / diff-caps / capability-manifest standard: open and park for Jon, never self-merge
+  - Never hand-edit F_Project_Management/LAUNCH/LAUNCH_READINESS.md (reporter-rendered, byte-pinned); never touch sealed proof bundles; never push tags
+  - Truth-Lock language: never 'enforced/independent/signed/sandboxed/production' beyond the tested boundary; /why keeps exactly the two bounded enforced claims
+  - On this machine: python (not python3); pin 'C:\Program Files\Git\usr\bin\bash.exe' in any harness argv (System32 wrapper drops exit codes); remote aux/* branches cannot be fetched on Windows
+  - Update state.json + journal + re-render report + commit after every merge (the heartbeat)
+
+Operating procedure:
+  Read ops/mission/state.json FIRST — it is the source of truth, not this prompt.
+  Verify reality matches state: git log --oneline -5, and re-run the active phase's gate commands.
+  Follow the loop: pick next unblocked task -&gt; branch mission/&lt;phase&gt;-&lt;slug&gt; -&gt; implement -&gt; run gates -&gt; PR -&gt; merge per policy 'auto' -&gt; update state.json -&gt; node ops/mission/render-sotu.mjs -&gt; commit state+journal+html.
+  Never hand-edit state-of-the-union.html. Never merge without fresh gate evidence in ops/mission/evidence/.
+  End of session: update resume.nextActions for a stranger, append journal entry, render, commit.</pre></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="metrics"><h2 id="metrics">Scoreboard: Baseline &rarr; Current &rarr; Target</h2>
+  <div class="table-wrap"><table><thead><tr><th>Metric</th><th>Baseline</th><th>Current</th><th>Target</th></tr></thead><tbody><tr><td><b>S114 governance state</b></td><td>external-pending</td><td><span class="chip amber">external-pending</span></td><td>accepted-scoped</td></tr><tr><td><b>S114 evidence bundles reachable from main</b></td><td>0</td><td><span class="chip amber">0</span></td><td>2</td></tr><tr><td><b>Evidence integrity gate</b></td><td>36/36 ok</td><td><span class="chip amber">36/36 ok</span></td><td>38/38 ok</td></tr><tr><td><b>Overbroad public enforcement claims (catalogued)</b></td><td>4</td><td><span class="chip amber">4</span></td><td>0</td></tr><tr><td><b>Fail-soft CLI authority lanes</b></td><td>2</td><td><span class="chip amber">2</span></td><td>0</td></tr><tr><td><b>Ledger regeneration machine-independent</b></td><td>no (promo probe)</td><td><span class="chip amber">no (promo probe)</span></td><td>yes (canonical snapshot)</td></tr><tr><td><b>Trust-kernel rolling-review trigger</b></td><td>prose only</td><td><span class="chip amber">prose only</span></td><td>machine-readable + gate</td></tr></tbody></table></div>
+  <p class="small muted" style="margin-top:6px">green = at/past target &middot; blue = moving toward target &middot; amber = unchanged &middot; red = moving away</p></section>
+  <section aria-labelledby="risks"><h2 id="risks">Risks &amp; Blockers</h2><div class="panel"><ul class="bare"><li><span class="chip red">high</span> <b>Ledger regeneration is machine-dependent until the promo snapshot lands</b> &mdash; <span class="muted">This machine probes composition-ready (50.0%) vs committed public-site-embedded (95.0%). P0-T2's snapshot design removes the dependence; until then never regenerate-and-commit the ledger without checking line 84.</span></li><li><span class="chip amber">medium</span> <b>No GitHub branch protection on main</b> &mdash; <span class="muted">protected:false — green-before-merge is agent discipline. Full CI (~27 checks, ~6 min) must be verified green before every autonomous squash-merge.</span></li><li><span class="chip amber">medium</span> <b>New proof bundles can fail the repo-wide CI integrity gate</b> &mdash; <span class="muted">Any malformed MANIFEST.sha256 or EOL slip under proofs/ fails ci.yml's evidence-integrity job for every later PR. Seal against committed bytes; run the gate locally before push (CRLF incident precedent).</span></li><li><span class="chip amber">medium</span> <b>P3-T1 breaks a documented embedder contract</b> &mdash; <span class="muted">CHANGELOG.md:297-303 advertises the permissive embedder default. The flip is deliberate plan work (condition #5) and must be recorded in CHANGELOG, not slipped in.</span></li><li><span class="chip blue">low</span> <b>CI-wiring PRs depend on Jon</b> &mdash; <span class="muted">New gates run locally + are opened as parked PRs; they are not CI-enforced until Jon merges the wiring (integrity rule 1).</span></li></ul></div></section>
+
+  <section aria-labelledby="phases">
+    <h2 id="phases">Phases</h2>
+    <article class="phase active">
+      <header>
+        <span class="chip amber">in progress</span>
+        <h3>P0 &middot; Acceptance Record</h3>
+        <span class="muted small">est. sessions: 1</span>
+      </header>
+      <p class="muted">Close the S114 governance row as accepted-scoped without expanding public claims; make ledger regeneration machine-independent.</p>
+      <div class="bar"><div class="fill" style="width:0%"></div></div>
+      <p class="small muted">0/2 tasks &middot; 0%</p>
+      <ul class="tasks"><li class="task-pending"><span class="mark">&#9675;</span> <b>P0-T1</b> Author the S114 acceptance artifact: machine-readable F_Project_Management/LAUNCH/S114_ACCEPTANCE.json + human record F_Project_Management/W_TRUST/S114_ACCEPTANCE_RECORD_2026-07-12.md with the five plan conditions, first-party CLI/Wasm scope, and provenance (decided by Jon; recorded via his 2026-07-12 written directive to execute the S114 Plan of Attack end to end; drafted by Claude Code)<br><span class="muted small">No acceptance-artifact precedent exists in the repo ('accepted-scoped' appears nowhere). Cite: dossier F_Project_Management/GARNET_S114_INDEPENDENT_VERIFICATION_DOSSIER.html, package W_TRUST/S114_INDEPENDENT_REVERIFICATION_PACKAGE_2026-06-14.md, PR trail #365/#399/#419/#420/#421/#424/#435-#438, reviewed SHA 2e2fe84, fix SHAs 4994867 + 47a7ba7, evidence bundles restored in P1.</span></li><li class="task-pending"><span class="mark">&#9675;</span> <b>P0-T2</b> Reporter: _s114_gate() (scripts/garnet_launch_readiness_status.py:269-283) reads the acceptance artifact -&gt; 'accepted-scoped' state (absent artifact =&gt; external-pending unchanged); add state to docstring table (lines 10-18); extend launch_ready membership check (lines 378-380) so s114_acceptance passes on accepted-scoped; promo canonical snapshot (F_Project_Management/LAUNCH/PROMO_EVIDENCE_SNAPSHOT.json) replaces the machine-dependent live probe in the ledger line with explicit provenance; update scripts/test_garnet_launch_readiness_status.py (line 44 external-pending assertion + pin + mocked-dependency tests); regenerate the ledger<br><span class="muted small">This machine probes promo at composition-ready (50.0%) vs committed canonical public-site-embedded (95.0%) — the snapshot design fixes the machine-dependence flagged in PR #466. Ships in one PR with P0-T1 (the ledger pin forces atomicity).</span></li></ul>
+      <div class="table-wrap"><table><thead><tr><th>Gate</th><th>Check</th><th>Command</th><th>Evidence</th><th>Last run</th></tr></thead><tbody><tr>
+      <td><span class="chip ">pending</span></td>
+      <td><b>Launch-readiness reporter test suite green (includes byte-for-byte ledger pin; slow — runs live sibling reporters, allow 10+ min)</b><br><span class="small">On this machine use python, not python3. Test asserts the live-tree S114 state — must be updated in the same PR that changes the state.</span></td>
+      <td><code>python scripts/test_garnet_launch_readiness_status.py</code></td>
+      <td>&mdash;</td>
+      <td>&mdash;</td></tr><tr>
+      <td><span class="chip ">pending</span></td>
+      <td><b>Evidence integrity gate stays N/N ok</b><br><span class="small">36/36 at baseline d0d4f7c.</span></td>
+      <td><code>python scripts/garnet_evidence_integrity_status.py --gate</code></td>
+      <td>&mdash;</td>
+      <td>&mdash;</td></tr></tbody></table></div>
+      <details class="resume"><summary>Resume prompt for P0 (copy into a fresh session)</summary>
+        <div class="prompt-box"><button class="copy" type="button">Copy</button><pre>You are resuming the &quot;Garnet S114 Closure &amp; Hardening&quot; mission at phase P0: Acceptance Record.
+
+Mission: Accept the narrow truth, then harden the parts that made rejection tempting.
+North star: S114 accepted at its true scope (first-party CLI/Wasm trust-kernel baseline) with durable evidence, mechanically bounded claims, fail-closed CLI lanes, and a rolling review control. Never overclaim.
+Repo: Island-Dev-Crew/garnet (local: C:/garnet), default branch: main.
+Governing plan: C:/Users/IslandDevCrew/Desktop/Garnet-S114-Plan-of-Attack-v1-2026-07-12.html
+
+Phase goal: Close the S114 governance row as accepted-scoped without expanding public claims; make ledger regeneration machine-independent.
+Remaining tasks:
+  - [pending] P0-T1: Author the S114 acceptance artifact: machine-readable F_Project_Management/LAUNCH/S114_ACCEPTANCE.json + human record F_Project_Management/W_TRUST/S114_ACCEPTANCE_RECORD_2026-07-12.md with the five plan conditions, first-party CLI/Wasm scope, and provenance (decided by Jon; recorded via his 2026-07-12 written directive to execute the S114 Plan of Attack end to end; drafted by Claude Code) (No acceptance-artifact precedent exists in the repo ('accepted-scoped' appears nowhere). Cite: dossier F_Project_Management/GARNET_S114_INDEPENDENT_VERIFICATION_DOSSIER.html, package W_TRUST/S114_INDEPENDENT_REVERIFICATION_PACKAGE_2026-06-14.md, PR trail #365/#399/#419/#420/#421/#424/#435-#438, reviewed SHA 2e2fe84, fix SHAs 4994867 + 47a7ba7, evidence bundles restored in P1.)
+  - [pending] P0-T2: Reporter: _s114_gate() (scripts/garnet_launch_readiness_status.py:269-283) reads the acceptance artifact -&gt; 'accepted-scoped' state (absent artifact =&gt; external-pending unchanged); add state to docstring table (lines 10-18); extend launch_ready membership check (lines 378-380) so s114_acceptance passes on accepted-scoped; promo canonical snapshot (F_Project_Management/LAUNCH/PROMO_EVIDENCE_SNAPSHOT.json) replaces the machine-dependent live probe in the ledger line with explicit provenance; update scripts/test_garnet_launch_readiness_status.py (line 44 external-pending assertion + pin + mocked-dependency tests); regenerate the ledger (This machine probes promo at composition-ready (50.0%) vs committed canonical public-site-embedded (95.0%) — the snapshot design fixes the machine-dependence flagged in PR #466. Ships in one PR with P0-T1 (the ledger pin forces atomicity).)
+Gates not yet passed:
+  - [pending] Launch-readiness reporter test suite green (includes byte-for-byte ledger pin; slow — runs live sibling reporters, allow 10+ min)  -&gt;  python scripts/test_garnet_launch_readiness_status.py
+  - [pending] Evidence integrity gate stays N/N ok  -&gt;  python scripts/garnet_evidence_integrity_status.py --gate
+Next actions (from last session):
+  - P0-T1: write F_Project_Management/LAUNCH/S114_ACCEPTANCE.json (schema garnet.s114_acceptance/v1) + F_Project_Management/W_TRUST/S114_ACCEPTANCE_RECORD_2026-07-12.md — five conditions from the plan, scope 'first-party CLI/Wasm trust-kernel baseline', provenance: decided by Jon, recorded via his 2026-07-12 execute-end-to-end directive, drafted by Claude Code (Fable 5)
+  - P0-T2: rework _s114_gate() at scripts/garnet_launch_readiness_status.py:269-283 to read the artifact (accepted-scoped when present+valid, external-pending otherwise); docstring state table lines 10-18; launch_ready check lines 378-380 accepts accepted-scoped for s114_acceptance; add PROMO_EVIDENCE_SNAPSHOT.json canonical promo source; update scripts/test_garnet_launch_readiness_status.py (line 44 + LedgerPinTests + MockedDependencyTests); regenerate F_Project_Management/LAUNCH/LAUNCH_READINESS.md via the reporter (never hand-edit)
+  - Ship P0-T1+T2 as one PR (ledger pin forces atomicity) with full dogfood body headings (F_Project_Management is a sensitive path); pre-validate with python scripts/check_dogfood_pr_body.py
+Mission conventions:
+  - One task-cluster = one branch (mission/&lt;phaseId&gt;-&lt;slug&gt;) = one PR; squash-merge with the 'Autonomous merge — agent: Claude Code (Fable 5); gates: ...' trailer after full CI green
+  - PRs touching workflow files / dogfood gate / diff-caps / capability-manifest standard: open and park for Jon, never self-merge
+  - Never hand-edit F_Project_Management/LAUNCH/LAUNCH_READINESS.md (reporter-rendered, byte-pinned); never touch sealed proof bundles; never push tags
+  - Truth-Lock language: never 'enforced/independent/signed/sandboxed/production' beyond the tested boundary; /why keeps exactly the two bounded enforced claims
+  - On this machine: python (not python3); pin 'C:\Program Files\Git\usr\bin\bash.exe' in any harness argv (System32 wrapper drops exit codes); remote aux/* branches cannot be fetched on Windows
+  - Update state.json + journal + re-render report + commit after every merge (the heartbeat)
+
+Operating procedure:
+  Read ops/mission/state.json FIRST — it is the source of truth, not this prompt.
+  Verify reality matches state: git log --oneline -5, and re-run the active phase's gate commands.
+  Follow the loop: pick next unblocked task -&gt; branch mission/&lt;phase&gt;-&lt;slug&gt; -&gt; implement -&gt; run gates -&gt; PR -&gt; merge per policy 'auto' -&gt; update state.json -&gt; node ops/mission/render-sotu.mjs -&gt; commit state+journal+html.
+  Never hand-edit state-of-the-union.html. Never merge without fresh gate evidence in ops/mission/evidence/.
+  End of session: update resume.nextActions for a stranger, append journal entry, render, commit.</pre></div>
+      </details>
+    </article><article class="phase">
+      <header>
+        <span class="chip ">pending</span>
+        <h3>P1 &middot; Evidence Durability</h3>
+        <span class="muted small">est. sessions: 1</span>
+      </header>
+      <p class="muted">The independent S114 evidence (Codex verdict + Windows lane-2 review bundle) lands in tracked history where gc cannot erase it and the integrity gate enforces it.</p>
+      <div class="bar"><div class="fill" style="width:50%"></div></div>
+      <p class="small muted">1/2 tasks &middot; 50%</p>
+      <ul class="tasks"><li class="task-done"><span class="mark">&#9679;</span> <b>P1-T1</b> Protective refs for the unreachable S114 evidence commits in C:/garnet (s114/recovered-lane2-review -&gt; 6153726, s114/recovered-codex-verdict -&gt; 61cfbae)<br><span class="muted small">Done at bootstrap 2026-07-12 (local refs only, no PR). Also reachable in the nested Desktop repo branch validation/2026-06-25-codex-s114-review and on the Navigata1 fork.</span></li><li class="task-pending"><span class="mark">&#9675;</span> <b>P1-T2</b> Land the recovered evidence durably: Codex verdict doc (W_TRUST/S114_CODEX_INDEPENDENT_VERDICT_2026_06_25.md) + its sealed proofs, the lane-2 review bundle (160-file manifest) + VALIDATION_REPORTS report, and a recovery-provenance note recording original commit SHAs (6153726, 61cfbae), reviewed SHA 2e2fe84, and branch lineage<br><span class="muted small">Placement decision needed at implementation: package doc prescribes proofs/independent/s114/, the lane-2 run used proofs/validation/s114-review/, launch lane uses proofs/windows/. Manifests must be swept by the integrity gate (rglob proofs/**/MANIFEST.sha256) — anything sealed under W_TRUST must move or gain a proofs/ home. Preserve sealed bytes exactly; verify each manifest locally before pushing. Bundle framing must say 'reviewed commit 2e2fe84' — it predates the #421 fixes.</span></li></ul>
+      <div class="table-wrap"><table><thead><tr><th>Gate</th><th>Check</th><th>Command</th><th>Evidence</th><th>Last run</th></tr></thead><tbody><tr>
+      <td><span class="chip ">pending</span></td>
+      <td><b>Evidence integrity gate passes with the restored bundles counted</b><br><span class="small">Target: bundles_total rises above 36 and bundles_failed stays 0. New/moved manifests must hash-verify against committed bytes (CRLF hazard: .gitattributes proofs/** -text covers proofs/ only).</span></td>
+      <td><code>python scripts/garnet_evidence_integrity_status.py --gate</code></td>
+      <td>&mdash;</td>
+      <td>&mdash;</td></tr></tbody></table></div>
+      <details class="resume"><summary>Resume prompt for P1 (copy into a fresh session)</summary>
+        <div class="prompt-box"><button class="copy" type="button">Copy</button><pre>You are resuming the &quot;Garnet S114 Closure &amp; Hardening&quot; mission at phase P1: Evidence Durability.
+
+Mission: Accept the narrow truth, then harden the parts that made rejection tempting.
+North star: S114 accepted at its true scope (first-party CLI/Wasm trust-kernel baseline) with durable evidence, mechanically bounded claims, fail-closed CLI lanes, and a rolling review control. Never overclaim.
+Repo: Island-Dev-Crew/garnet (local: C:/garnet), default branch: main.
+Governing plan: C:/Users/IslandDevCrew/Desktop/Garnet-S114-Plan-of-Attack-v1-2026-07-12.html
+
+Phase goal: The independent S114 evidence (Codex verdict + Windows lane-2 review bundle) lands in tracked history where gc cannot erase it and the integrity gate enforces it.
+Remaining tasks:
+  - [pending] P1-T2: Land the recovered evidence durably: Codex verdict doc (W_TRUST/S114_CODEX_INDEPENDENT_VERDICT_2026_06_25.md) + its sealed proofs, the lane-2 review bundle (160-file manifest) + VALIDATION_REPORTS report, and a recovery-provenance note recording original commit SHAs (6153726, 61cfbae), reviewed SHA 2e2fe84, and branch lineage (Placement decision needed at implementation: package doc prescribes proofs/independent/s114/, the lane-2 run used proofs/validation/s114-review/, launch lane uses proofs/windows/. Manifests must be swept by the integrity gate (rglob proofs/**/MANIFEST.sha256) — anything sealed under W_TRUST must move or gain a proofs/ home. Preserve sealed bytes exactly; verify each manifest locally before pushing. Bundle framing must say 'reviewed commit 2e2fe84' — it predates the #421 fixes.)
+Gates not yet passed:
+  - [pending] Evidence integrity gate passes with the restored bundles counted  -&gt;  python scripts/garnet_evidence_integrity_status.py --gate
+Mission conventions:
+  - One task-cluster = one branch (mission/&lt;phaseId&gt;-&lt;slug&gt;) = one PR; squash-merge with the 'Autonomous merge — agent: Claude Code (Fable 5); gates: ...' trailer after full CI green
+  - PRs touching workflow files / dogfood gate / diff-caps / capability-manifest standard: open and park for Jon, never self-merge
+  - Never hand-edit F_Project_Management/LAUNCH/LAUNCH_READINESS.md (reporter-rendered, byte-pinned); never touch sealed proof bundles; never push tags
+  - Truth-Lock language: never 'enforced/independent/signed/sandboxed/production' beyond the tested boundary; /why keeps exactly the two bounded enforced claims
+  - On this machine: python (not python3); pin 'C:\Program Files\Git\usr\bin\bash.exe' in any harness argv (System32 wrapper drops exit codes); remote aux/* branches cannot be fetched on Windows
+  - Update state.json + journal + re-render report + commit after every merge (the heartbeat)
+
+Operating procedure:
+  Read ops/mission/state.json FIRST — it is the source of truth, not this prompt.
+  Verify reality matches state: git log --oneline -5, and re-run the active phase's gate commands.
+  Follow the loop: pick next unblocked task -&gt; branch mission/&lt;phase&gt;-&lt;slug&gt; -&gt; implement -&gt; run gates -&gt; PR -&gt; merge per policy 'auto' -&gt; update state.json -&gt; node ops/mission/render-sotu.mjs -&gt; commit state+journal+html.
+  Never hand-edit state-of-the-union.html. Never merge without fresh gate evidence in ops/mission/evidence/.
+  End of session: update resume.nextActions for a stranger, append journal entry, render, commit.</pre></div>
+      </details>
+    </article><article class="phase">
+      <header>
+        <span class="chip ">pending</span>
+        <h3>P2 &middot; Language Hardening</h3>
+        <span class="muted small">est. sessions: 1</span>
+      </header>
+      <p class="muted">Every public enforcement claim is mechanically bounded: a capability enforcement scope table exists, overbroad copy is fixed, and a claim fixture guards regressions.</p>
+      <div class="bar"><div class="fill" style="width:0%"></div></div>
+      <p class="small muted">0/3 tasks &middot; 0%</p>
+      <ul class="tasks"><li class="task-pending"><span class="mark">&#9675;</span> <b>P2-T1</b> C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md: the declared / checker-rejected / runtime-gated / OS-sandboxed / out-of-scope-embedder table (12 Gate + 3 GateEntry prims; time + uuid v4/v7 checker-only per S90; ffi + net_internal declared-only; memory::* bridge-only caps-invisible; STRICT_NO_FRAME embedder scope; Linux-seccomp-reference-only OS row) + CURRENT_STATE.md index row<br><span class="muted small">Anchors: garnet-stdlib/src/registry.rs:148-151 (Guard doc), stdlib_bridge.rs:1504-1541 (parity test), eval.rs:691-725 (latch), GARNET_SANDBOX_POLICY.md (enforced:false). CURRENT_STATE.md edit =&gt; dogfood PR body required.</span></li><li class="task-pending"><span class="mark">&#9675;</span> <b>P2-T2</b> Bound the overbroad public copy: README.md:87-88 (runtime trap claim wider than host-bridge scope), docs/index.html:1040 ('no ambient authority, ever'), docs/why.html:231 + 250 (universal prose), blog post 2026-05-20 (v0.5-era claims) — keep the two /why 'enforced:' claims byte-identical (PR #471 preservation rule)<br><span class="muted small">docs/index.html is service-worker precached (garnet-web-v1) — returning visitors see stale copy until a cache bump; note or bump. docs/** changes trigger the Web PWA smoke check.</span></li><li class="task-pending"><span class="mark">&#9675;</span> <b>P2-T3</b> Claim fixture: scripts/garnet_capability_scope_status.py + test asserting (a) why.html carries exactly the two bounded 'enforced:' claims, (b) cited test anchors exist (garnet-cli/tests/test_entry_authority.rs, garnet-vm/tests/scope_shadowing_parity.rs), (c) forbidden universal-enforcement phrases absent from public surfaces, (d) scope-table doc rows match registry Guard counts<br><span class="muted small">CI wiring for the new gate is a workflow-file change =&gt; Jon-merge-only; wire-up PR parked under P4-T2.</span></li></ul>
+      <div class="table-wrap"><table><thead><tr><th>Gate</th><th>Check</th><th>Command</th><th>Evidence</th><th>Last run</th></tr></thead><tbody><tr>
+      <td><span class="chip ">pending</span></td>
+      <td><b>Machine-truth drift guard green</b><br><span class="small">README/docs edits must not break numeric truth stamps.</span></td>
+      <td><code>cargo run -p xtask -- truth --check</code></td>
+      <td>&mdash;</td>
+      <td>&mdash;</td></tr><tr>
+      <td><span class="chip ">pending</span></td>
+      <td><b>Caps enforcement status gate green</b></td>
+      <td><code>python scripts/garnet_caps_enforcement_status.py --gate</code></td>
+      <td>&mdash;</td>
+      <td>&mdash;</td></tr><tr>
+      <td><span class="chip ">pending</span></td>
+      <td><b>New claim-scope fixture green</b><br><span class="small">Created in P2-T3.</span></td>
+      <td><code>python scripts/test_garnet_capability_scope_status.py</code></td>
+      <td>&mdash;</td>
+      <td>&mdash;</td></tr></tbody></table></div>
+      <details class="resume"><summary>Resume prompt for P2 (copy into a fresh session)</summary>
+        <div class="prompt-box"><button class="copy" type="button">Copy</button><pre>You are resuming the &quot;Garnet S114 Closure &amp; Hardening&quot; mission at phase P2: Language Hardening.
+
+Mission: Accept the narrow truth, then harden the parts that made rejection tempting.
+North star: S114 accepted at its true scope (first-party CLI/Wasm trust-kernel baseline) with durable evidence, mechanically bounded claims, fail-closed CLI lanes, and a rolling review control. Never overclaim.
+Repo: Island-Dev-Crew/garnet (local: C:/garnet), default branch: main.
+Governing plan: C:/Users/IslandDevCrew/Desktop/Garnet-S114-Plan-of-Attack-v1-2026-07-12.html
+
+Phase goal: Every public enforcement claim is mechanically bounded: a capability enforcement scope table exists, overbroad copy is fixed, and a claim fixture guards regressions.
+Remaining tasks:
+  - [pending] P2-T1: C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md: the declared / checker-rejected / runtime-gated / OS-sandboxed / out-of-scope-embedder table (12 Gate + 3 GateEntry prims; time + uuid v4/v7 checker-only per S90; ffi + net_internal declared-only; memory::* bridge-only caps-invisible; STRICT_NO_FRAME embedder scope; Linux-seccomp-reference-only OS row) + CURRENT_STATE.md index row (Anchors: garnet-stdlib/src/registry.rs:148-151 (Guard doc), stdlib_bridge.rs:1504-1541 (parity test), eval.rs:691-725 (latch), GARNET_SANDBOX_POLICY.md (enforced:false). CURRENT_STATE.md edit =&gt; dogfood PR body required.)
+  - [pending] P2-T2: Bound the overbroad public copy: README.md:87-88 (runtime trap claim wider than host-bridge scope), docs/index.html:1040 ('no ambient authority, ever'), docs/why.html:231 + 250 (universal prose), blog post 2026-05-20 (v0.5-era claims) — keep the two /why 'enforced:' claims byte-identical (PR #471 preservation rule) (docs/index.html is service-worker precached (garnet-web-v1) — returning visitors see stale copy until a cache bump; note or bump. docs/** changes trigger the Web PWA smoke check.)
+  - [pending] P2-T3: Claim fixture: scripts/garnet_capability_scope_status.py + test asserting (a) why.html carries exactly the two bounded 'enforced:' claims, (b) cited test anchors exist (garnet-cli/tests/test_entry_authority.rs, garnet-vm/tests/scope_shadowing_parity.rs), (c) forbidden universal-enforcement phrases absent from public surfaces, (d) scope-table doc rows match registry Guard counts (CI wiring for the new gate is a workflow-file change =&gt; Jon-merge-only; wire-up PR parked under P4-T2.)
+Gates not yet passed:
+  - [pending] Machine-truth drift guard green  -&gt;  cargo run -p xtask -- truth --check
+  - [pending] Caps enforcement status gate green  -&gt;  python scripts/garnet_caps_enforcement_status.py --gate
+  - [pending] New claim-scope fixture green  -&gt;  python scripts/test_garnet_capability_scope_status.py
+Mission conventions:
+  - One task-cluster = one branch (mission/&lt;phaseId&gt;-&lt;slug&gt;) = one PR; squash-merge with the 'Autonomous merge — agent: Claude Code (Fable 5); gates: ...' trailer after full CI green
+  - PRs touching workflow files / dogfood gate / diff-caps / capability-manifest standard: open and park for Jon, never self-merge
+  - Never hand-edit F_Project_Management/LAUNCH/LAUNCH_READINESS.md (reporter-rendered, byte-pinned); never touch sealed proof bundles; never push tags
+  - Truth-Lock language: never 'enforced/independent/signed/sandboxed/production' beyond the tested boundary; /why keeps exactly the two bounded enforced claims
+  - On this machine: python (not python3); pin 'C:\Program Files\Git\usr\bin\bash.exe' in any harness argv (System32 wrapper drops exit codes); remote aux/* branches cannot be fetched on Windows
+  - Update state.json + journal + re-render report + commit after every merge (the heartbeat)
+
+Operating procedure:
+  Read ops/mission/state.json FIRST — it is the source of truth, not this prompt.
+  Verify reality matches state: git log --oneline -5, and re-run the active phase's gate commands.
+  Follow the loop: pick next unblocked task -&gt; branch mission/&lt;phase&gt;-&lt;slug&gt; -&gt; implement -&gt; run gates -&gt; PR -&gt; merge per policy 'auto' -&gt; update state.json -&gt; node ops/mission/render-sotu.mjs -&gt; commit state+journal+html.
+  Never hand-edit state-of-the-union.html. Never merge without fresh gate evidence in ops/mission/evidence/.
+  End of session: update resume.nextActions for a stranger, append journal entry, render, commit.</pre></div>
+      </details>
+    </article><article class="phase">
+      <header>
+        <span class="chip ">pending</span>
+        <h3>P3 &middot; Code Hardening</h3>
+        <span class="muted small">est. sessions: 1-2</span>
+      </header>
+      <p class="muted">The scope limits recorded in the acceptance become smaller: embedder execution is strict by default with explicit permissive opt-out, and the two CLI fail-soft authority lanes fail closed.</p>
+      <div class="bar"><div class="fill" style="width:0%"></div></div>
+      <p class="small muted">0/4 tasks &middot; 0%</p>
+      <ul class="tasks"><li class="task-pending"><span class="mark">&#9675;</span> <b>P3-T1</b> Embedder strict-by-default: per-instance strict flag (thread-scoped during execution) defaulting strict, Interpreter::new_permissive() as the explicit opt-out, PreparedVm::new loads framed (garnet-vm/src/vm.rs:251), migrate affected tests (strict_no_frame_latch.rs baseline, host_effect_composition.rs, stdlib_s22/s23/s24_dispatch.rs, lib.rs doctest), CHANGELOG records the deliberate contract change; A5 one-way global latch untouched and still dominant<br><span class="muted small">STRICT_NO_FRAME static default (eval.rs:705) stays false — strictness moves to the instance/API layer so the latch invariant + its test survive. Permissive instances never override a latched process. ~90% of the 104 Interpreter::new() sites are pure-eval and unaffected.</span></li><li class="task-pending"><span class="mark">&#9675;</span> <b>P3-T2</b> Dependency preload fail-closed: load_source errors during preload (garnet-cli/src/cmd/run.rs:282-288) abort the run with exit 1 + episode record (read/walk/missing-vendor stay warn-and-continue); fix the 'parse error' mislabel for authority traps; update run.rs module header + preload doc comment + garnet-cli/AGENTS.md; strengthen s114_residual_lanes.rs:109-144 with an exit-code assertion<br><span class="muted small">Reverses the documented S12 'noisy dep' contract deliberately (plan condition #5). --vm never preloads (run.rs:14) — record posture, don't change. s114_residual_lanes.rs is a sealed-review regression surface: additive assertions only.</span></li><li class="task-pending"><span class="mark">&#9675;</span> <b>P3-T3</b> Test-helper preload fail-closed: the Ok(Err) arm (garnet-cli/src/cmd/test.rs:150-155) fails the file's tests like the panic arm (156-166); new regression test (broken src/main.garnet helper =&gt; nonzero exit, counted failures); verify template scaffolds still pass cli_smoke.rs:252<br><span class="muted small">repl.rs:36-52 has the same warn-and-continue preload — out of plan scope, recorded as follow-up in the acceptance artifact's tracked-debt list.</span></li><li class="task-pending"><span class="mark">&#9675;</span> <b>P3-T4</b> Checker-only decision record + CLI-level coverage: time::*/uuid v4/v7 stay checker-only (S90 parity test pins intent); add garnet-cli/tests/caps_enforcement.rs coverage asserting the checker-only class does NOT trap at runtime, cross-referencing the P2 scope table<br><span class="muted small">Plan phase-3 bullet 1 resolved as 'stay documented checker-only' — runtime-gate parity for time/uuid would change S90 scope, out of mission scope.</span></li></ul>
+      <div class="table-wrap"><table><thead><tr><th>Gate</th><th>Check</th><th>Command</th><th>Evidence</th><th>Last run</th></tr></thead><tbody><tr>
+      <td><span class="chip ">pending</span></td>
+      <td><b>garnet-cli suite green</b></td>
+      <td><code>cargo test -p garnet-cli --no-fail-fast</code></td>
+      <td>&mdash;</td>
+      <td>&mdash;</td></tr><tr>
+      <td><span class="chip ">pending</span></td>
+      <td><b>garnet-interp suite green</b></td>
+      <td><code>cargo test -p garnet-interp --no-fail-fast</code></td>
+      <td>&mdash;</td>
+      <td>&mdash;</td></tr><tr>
+      <td><span class="chip ">pending</span></td>
+      <td><b>garnet-vm suite green</b></td>
+      <td><code>cargo test -p garnet-vm --no-fail-fast</code></td>
+      <td>&mdash;</td>
+      <td>&mdash;</td></tr><tr>
+      <td><span class="chip ">pending</span></td>
+      <td><b>Workspace clippy clean</b><br><span class="small">RB-2: no unwrap/expect on reachable paths.</span></td>
+      <td><code>cargo clippy --workspace --all-targets -- -D warnings</code></td>
+      <td>&mdash;</td>
+      <td>&mdash;</td></tr><tr>
+      <td><span class="chip ">pending</span></td>
+      <td><b>Full workspace suite green before phase close</b></td>
+      <td><code>cargo test --workspace --no-fail-fast</code></td>
+      <td>&mdash;</td>
+      <td>&mdash;</td></tr></tbody></table></div>
+      <details class="resume"><summary>Resume prompt for P3 (copy into a fresh session)</summary>
+        <div class="prompt-box"><button class="copy" type="button">Copy</button><pre>You are resuming the &quot;Garnet S114 Closure &amp; Hardening&quot; mission at phase P3: Code Hardening.
+
+Mission: Accept the narrow truth, then harden the parts that made rejection tempting.
+North star: S114 accepted at its true scope (first-party CLI/Wasm trust-kernel baseline) with durable evidence, mechanically bounded claims, fail-closed CLI lanes, and a rolling review control. Never overclaim.
+Repo: Island-Dev-Crew/garnet (local: C:/garnet), default branch: main.
+Governing plan: C:/Users/IslandDevCrew/Desktop/Garnet-S114-Plan-of-Attack-v1-2026-07-12.html
+
+Phase goal: The scope limits recorded in the acceptance become smaller: embedder execution is strict by default with explicit permissive opt-out, and the two CLI fail-soft authority lanes fail closed.
+Remaining tasks:
+  - [pending] P3-T1: Embedder strict-by-default: per-instance strict flag (thread-scoped during execution) defaulting strict, Interpreter::new_permissive() as the explicit opt-out, PreparedVm::new loads framed (garnet-vm/src/vm.rs:251), migrate affected tests (strict_no_frame_latch.rs baseline, host_effect_composition.rs, stdlib_s22/s23/s24_dispatch.rs, lib.rs doctest), CHANGELOG records the deliberate contract change; A5 one-way global latch untouched and still dominant (STRICT_NO_FRAME static default (eval.rs:705) stays false — strictness moves to the instance/API layer so the latch invariant + its test survive. Permissive instances never override a latched process. ~90% of the 104 Interpreter::new() sites are pure-eval and unaffected.)
+  - [pending] P3-T2: Dependency preload fail-closed: load_source errors during preload (garnet-cli/src/cmd/run.rs:282-288) abort the run with exit 1 + episode record (read/walk/missing-vendor stay warn-and-continue); fix the 'parse error' mislabel for authority traps; update run.rs module header + preload doc comment + garnet-cli/AGENTS.md; strengthen s114_residual_lanes.rs:109-144 with an exit-code assertion (Reverses the documented S12 'noisy dep' contract deliberately (plan condition #5). --vm never preloads (run.rs:14) — record posture, don't change. s114_residual_lanes.rs is a sealed-review regression surface: additive assertions only.)
+  - [pending] P3-T3: Test-helper preload fail-closed: the Ok(Err) arm (garnet-cli/src/cmd/test.rs:150-155) fails the file's tests like the panic arm (156-166); new regression test (broken src/main.garnet helper =&gt; nonzero exit, counted failures); verify template scaffolds still pass cli_smoke.rs:252 (repl.rs:36-52 has the same warn-and-continue preload — out of plan scope, recorded as follow-up in the acceptance artifact's tracked-debt list.)
+  - [pending] P3-T4: Checker-only decision record + CLI-level coverage: time::*/uuid v4/v7 stay checker-only (S90 parity test pins intent); add garnet-cli/tests/caps_enforcement.rs coverage asserting the checker-only class does NOT trap at runtime, cross-referencing the P2 scope table (Plan phase-3 bullet 1 resolved as 'stay documented checker-only' — runtime-gate parity for time/uuid would change S90 scope, out of mission scope.)
+Gates not yet passed:
+  - [pending] garnet-cli suite green  -&gt;  cargo test -p garnet-cli --no-fail-fast
+  - [pending] garnet-interp suite green  -&gt;  cargo test -p garnet-interp --no-fail-fast
+  - [pending] garnet-vm suite green  -&gt;  cargo test -p garnet-vm --no-fail-fast
+  - [pending] Workspace clippy clean  -&gt;  cargo clippy --workspace --all-targets -- -D warnings
+  - [pending] Full workspace suite green before phase close  -&gt;  cargo test --workspace --no-fail-fast
+Mission conventions:
+  - One task-cluster = one branch (mission/&lt;phaseId&gt;-&lt;slug&gt;) = one PR; squash-merge with the 'Autonomous merge — agent: Claude Code (Fable 5); gates: ...' trailer after full CI green
+  - PRs touching workflow files / dogfood gate / diff-caps / capability-manifest standard: open and park for Jon, never self-merge
+  - Never hand-edit F_Project_Management/LAUNCH/LAUNCH_READINESS.md (reporter-rendered, byte-pinned); never touch sealed proof bundles; never push tags
+  - Truth-Lock language: never 'enforced/independent/signed/sandboxed/production' beyond the tested boundary; /why keeps exactly the two bounded enforced claims
+  - On this machine: python (not python3); pin 'C:\Program Files\Git\usr\bin\bash.exe' in any harness argv (System32 wrapper drops exit codes); remote aux/* branches cannot be fetched on Windows
+  - Update state.json + journal + re-render report + commit after every merge (the heartbeat)
+
+Operating procedure:
+  Read ops/mission/state.json FIRST — it is the source of truth, not this prompt.
+  Verify reality matches state: git log --oneline -5, and re-run the active phase's gate commands.
+  Follow the loop: pick next unblocked task -&gt; branch mission/&lt;phase&gt;-&lt;slug&gt; -&gt; implement -&gt; run gates -&gt; PR -&gt; merge per policy 'auto' -&gt; update state.json -&gt; node ops/mission/render-sotu.mjs -&gt; commit state+journal+html.
+  Never hand-edit state-of-the-union.html. Never merge without fresh gate evidence in ops/mission/evidence/.
+  End of session: update resume.nextActions for a stranger, append journal entry, render, commit.</pre></div>
+      </details>
+    </article><article class="phase">
+      <header>
+        <span class="chip ">pending</span>
+        <h3>P4 &middot; Rolling S114</h3>
+        <span class="muted small">est. sessions: 1</span>
+      </header>
+      <p class="muted">S114 becomes a recurring control: a machine-readable trust-kernel file set, a rolling-review policy, and a status gate — CI wiring parked for Jon.</p>
+      <div class="bar"><div class="fill" style="width:0%"></div></div>
+      <p class="small muted">0/2 tasks &middot; 0%</p>
+      <ul class="tasks"><li class="task-pending"><span class="mark">&#9675;</span> <b>P4-T1</b> Machine-readable trust-kernel file set (checker, interp, vm, stdlib bridge/registry, wasm runner, CLI authority flows, reporters, /why claims) + rolling-review policy doc (W_TRUST) + scripts/garnet_trust_kernel_review_status.py (given a base ref, reports whether trust-kernel paths changed and whether a scoped acceptance note or fresh review accompanies them) + tests<br><span class="muted small">No machine-readable definition exists today (CLAUDE.md:94-102 prose only). The file-set definition is the deliverable Jon reviews via the parked CI PR.</span></li><li class="task-pending"><span class="mark">&#9675;</span> <b>P4-T2</b> CI wiring PR for the new gates (P2 claim fixture + P4 rolling check): open, do NOT merge — Jon-only per CLAUDE.md integrity rule 1<br><span class="muted small">Parked in resume.blockers on open.</span></li></ul>
+      <div class="table-wrap"><table><thead><tr><th>Gate</th><th>Check</th><th>Command</th><th>Evidence</th><th>Last run</th></tr></thead><tbody><tr>
+      <td><span class="chip ">pending</span></td>
+      <td><b>Trust-kernel review status gate green</b><br><span class="small">Created in P4-T1.</span></td>
+      <td><code>python scripts/garnet_trust_kernel_review_status.py --gate</code></td>
+      <td>&mdash;</td>
+      <td>&mdash;</td></tr></tbody></table></div>
+      <details class="resume"><summary>Resume prompt for P4 (copy into a fresh session)</summary>
+        <div class="prompt-box"><button class="copy" type="button">Copy</button><pre>You are resuming the &quot;Garnet S114 Closure &amp; Hardening&quot; mission at phase P4: Rolling S114.
+
+Mission: Accept the narrow truth, then harden the parts that made rejection tempting.
+North star: S114 accepted at its true scope (first-party CLI/Wasm trust-kernel baseline) with durable evidence, mechanically bounded claims, fail-closed CLI lanes, and a rolling review control. Never overclaim.
+Repo: Island-Dev-Crew/garnet (local: C:/garnet), default branch: main.
+Governing plan: C:/Users/IslandDevCrew/Desktop/Garnet-S114-Plan-of-Attack-v1-2026-07-12.html
+
+Phase goal: S114 becomes a recurring control: a machine-readable trust-kernel file set, a rolling-review policy, and a status gate — CI wiring parked for Jon.
+Remaining tasks:
+  - [pending] P4-T1: Machine-readable trust-kernel file set (checker, interp, vm, stdlib bridge/registry, wasm runner, CLI authority flows, reporters, /why claims) + rolling-review policy doc (W_TRUST) + scripts/garnet_trust_kernel_review_status.py (given a base ref, reports whether trust-kernel paths changed and whether a scoped acceptance note or fresh review accompanies them) + tests (No machine-readable definition exists today (CLAUDE.md:94-102 prose only). The file-set definition is the deliverable Jon reviews via the parked CI PR.)
+  - [pending] P4-T2: CI wiring PR for the new gates (P2 claim fixture + P4 rolling check): open, do NOT merge — Jon-only per CLAUDE.md integrity rule 1 (Parked in resume.blockers on open.)
+Gates not yet passed:
+  - [pending] Trust-kernel review status gate green  -&gt;  python scripts/garnet_trust_kernel_review_status.py --gate
+Mission conventions:
+  - One task-cluster = one branch (mission/&lt;phaseId&gt;-&lt;slug&gt;) = one PR; squash-merge with the 'Autonomous merge — agent: Claude Code (Fable 5); gates: ...' trailer after full CI green
+  - PRs touching workflow files / dogfood gate / diff-caps / capability-manifest standard: open and park for Jon, never self-merge
+  - Never hand-edit F_Project_Management/LAUNCH/LAUNCH_READINESS.md (reporter-rendered, byte-pinned); never touch sealed proof bundles; never push tags
+  - Truth-Lock language: never 'enforced/independent/signed/sandboxed/production' beyond the tested boundary; /why keeps exactly the two bounded enforced claims
+  - On this machine: python (not python3); pin 'C:\Program Files\Git\usr\bin\bash.exe' in any harness argv (System32 wrapper drops exit codes); remote aux/* branches cannot be fetched on Windows
+  - Update state.json + journal + re-render report + commit after every merge (the heartbeat)
+
+Operating procedure:
+  Read ops/mission/state.json FIRST — it is the source of truth, not this prompt.
+  Verify reality matches state: git log --oneline -5, and re-run the active phase's gate commands.
+  Follow the loop: pick next unblocked task -&gt; branch mission/&lt;phase&gt;-&lt;slug&gt; -&gt; implement -&gt; run gates -&gt; PR -&gt; merge per policy 'auto' -&gt; update state.json -&gt; node ops/mission/render-sotu.mjs -&gt; commit state+journal+html.
+  Never hand-edit state-of-the-union.html. Never merge without fresh gate evidence in ops/mission/evidence/.
+  End of session: update resume.nextActions for a stranger, append journal entry, render, commit.</pre></div>
+      </details>
+    </article>
+  </section>
+
+  
+  <section aria-labelledby="journal"><h2 id="journal">Journal (latest first)</h2><div class="timeline"><article class="tl-item"><time>&#9998;</time><p><b>2026-07-12T21:30Z — session 1 (kickoff)</b><br><br>- Mission bootstrapped from the S114 Plan of Attack (Desktop HTML, 2026-07-12) at HEAD d0d4f7c; orchestration Tier 1 (Workflow tool available, ultracode session).<br>- 9-agent recon workflow grounded every phase in file:line anchors; digest in session scratchpad; the load-bearing findings are recorded in state.json task notes.<br>- Two recovered-evidence discoveries: the S114 Windows lane-2 review bundle (commit 6153726, 160-file manifest) and the Codex verdict commit (61cfbae) exist as unreachable objects in C:/garnet and as reachable refs in the nested Desktop repo (branch validation/2026-06-25-codex-s114-review, also on the Navigata1 fork). Protective local refs created: s114/recovered-lane2-review, s114/recovered-codex-verdict (P1-T1 done).<br>- Confirmed the promo-line machine dependence: this machine renders composition-ready (50.0%) vs committed public-site-embedded (95.0%); only ledger line 84 differs. P0 includes the canonical-snapshot fix.<br>- gh auth switched Navigata1 -&gt; IslandDevCrew (admin verified). No branch protection on main (verified via API) — green-before-merge is discipline.<br>- Authorization basis for this mission recorded: Jon's written directive of 2026-07-12 (&quot;execute everything end to end in its completion&quot;) over the plan document; S114 acceptance provenance will cite it verbatim. CI-wiring merges remain Jon-only.</p></article><article class="tl-item"><time>&#9998;</time><p><b># Mission Journal — Garnet S114 Closure &amp; Hardening</b><br><br>Append-only session log, newest entry LAST.</p></article></div></section>
+
+  <p class="footer">GENERATED by ops/mission/render-sotu.mjs from state.json — do not hand-edit.
+  To update: edit state.json, run <code>node ops/mission/render-sotu.mjs</code>, commit both.</p>
+</main>
+<script>
+document.querySelectorAll("button.copy").forEach((b) => {
+  b.addEventListener("click", async () => {
+    const text = b.parentElement.querySelector("pre").innerText;
+    try { await navigator.clipboard.writeText(text); b.textContent = "Copied!"; }
+    catch { const r = document.createRange(); r.selectNodeContents(b.parentElement.querySelector("pre")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = "Select+Ctrl C"; }
+    setTimeout(() => (b.textContent = "Copy"), 1600);
+  });
+});
+</script>
+</body>
+</html>
