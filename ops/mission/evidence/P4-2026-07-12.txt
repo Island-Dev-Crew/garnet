@@ -1,0 +1,4 @@
+P4-T1 rolling S114 trust-kernel review — 2026-07-13T04:52Z
+test_garnet_trust_kernel_review_status.py: Ran 12 tests OK
+gate flags uncompanioned trust-kernel change (exit 1); passes with companion / trailer / non-trust-kernel (exit 0)
+self-check on this branch (base main): trust_kernel_touched=false (P4 adds a new gate + policy doc, no trust-spine edit)

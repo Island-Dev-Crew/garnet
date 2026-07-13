@@ -10,7 +10,7 @@
     "northStar": "S114 accepted at its true scope (first-party CLI/Wasm trust-kernel baseline) with durable evidence, mechanically bounded claims, fail-closed CLI lanes, and a rolling review control. Never overclaim.",
     "status": "active",
     "started": "2026-07-12",
-    "updated": "2026-07-13T04:38:00Z",
+    "updated": "2026-07-13T04:50:00Z",
     "sessionCount": 1
   },
   "policies": {
@@ -260,22 +260,22 @@
       "gates": [
         {
           "id": "P4-G1",
-          "title": "Trust-kernel review status gate green",
-          "command": "python scripts/garnet_trust_kernel_review_status.py --gate",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": "Created in P4-T1."
+          "title": "Trust-kernel review status gate green (self + tests)",
+          "command": "python scripts/test_garnet_trust_kernel_review_status.py",
+          "status": "passed",
+          "evidence": "ops/mission/evidence/P4-2026-07-12.txt",
+          "lastRun": "2026-07-13T04:49:00Z",
+          "notes": "12 tests OK. Gate flags an uncompanioned trust-kernel change (exit 1) and passes with a companion / trailer / non-trust-kernel change (exit 0). This P4 PR itself touches no trust-kernel path."
         }
       ],
       "tasks": [
         {
           "id": "P4-T1",
-          "title": "Machine-readable trust-kernel file set (checker, interp, vm, stdlib bridge/registry, wasm runner, CLI authority flows, reporters, /why claims) + rolling-review policy doc (W_TRUST) + scripts/garnet_trust_kernel_review_status.py (given a base ref, reports whether trust-kernel paths changed and whether a scoped acceptance note or fresh review accompanies them) + tests",
-          "status": "pending",
+          "title": "Machine-readable trust-kernel file set + rolling-review policy doc + scripts/garnet_trust_kernel_review_status.py + tests",
+          "status": "done",
           "dependsOn": [],
           "pr": null,
-          "notes": "No machine-readable definition exists today (CLAUDE.md:94-102 prose only). The file-set definition is the deliverable Jon reviews via the parked CI PR."
+          "notes": "Done. scripts/garnet_trust_kernel_review_status.py (schema garnet.trust_kernel_review/v1): the trust-kernel trigger set as constants, mirrors check_dogfood_pr_body.py's --base/--head/--changed-file interface, requires a review companion (S114_ACCEPTANCE update / proofs-independent-s114 / W_TRUST / VALIDATION_REPORTS artifact / 'Trust-Kernel-Review:' trailer). Policy doc C_Language_Specification/GARNET_TRUST_KERNEL_ROLLING_REVIEW.md + CURRENT_STATE.md index row. 12 tests."
         },
         {
           "id": "P4-T2",
@@ -348,8 +348,8 @@
     {
       "label": "Trust-kernel rolling-review trigger",
       "baseline": "prose only",
-      "current": "prose only",
-      "target": "machine-readable + gate",
+      "current": "machine-readable + gate (local)",
+      "target": "machine-readable + gate (CI-wired)",
       "direction": "up"
     }
   ],
@@ -420,9 +420,9 @@
   "resume": {
     "activePhase": "P4",
     "nextActions": [
-      "P4-T1 (rolling S114 policy): write a machine-readable trust-kernel file set + a rolling-review policy doc (W_TRUST) + scripts/garnet_trust_kernel_review_status.py. The file set = the trust spine: garnet-check-v0.3/src (checker, capability_surface, caps_graph, capset), garnet-interp-v0.3/src (eval, stdlib_bridge, lib), garnet-vm/src (vm), garnet-stdlib/src/registry.rs, garnet-wasm/src, garnet-cli authority flows (cmd/run.rs, cmd/test.rs, bin/garnet.rs), the reporters (scripts/garnet_launch_readiness_status.py, garnet_caps_enforcement_status.py, garnet_capability_scope_status.py), and docs/why.html + the scope table. The status script, given a base ref (git diff base...HEAD), reports whether any trust-kernel path changed and whether a scoped acceptance note / fresh review artifact accompanies it. Ships with a test.",
-      "P4-T2 (CI wiring — JON-ONLY, PARK IT): open ONE PR wiring the new --gate jobs into .github/workflows/ci.yml for BOTH the P2 capability-scope fixture (scripts/garnet_capability_scope_status.py --gate + its test) AND the P4 trust-kernel review gate. This touches .github/workflows/ = CLAUDE.md integrity rule 1 (human-merge-only). Do NOT self-merge; open it, add it to resume.blockers as 'PR #NNN awaiting Jon (CI wiring, integrity rule 1)', and leave it.",
-      "Then mission complete: set mission.status=complete, run the full gate suite once more as closing evidence, render, commit, and deliver the closing summary."
+      "P4-T1 is DONE and merging (mission/p4-rolling-s114). Next: P4-T2 CI-wiring PR — JON-ONLY, PARK IT.",
+      "P4-T2 (CI wiring — JON-ONLY): open ONE PR adding CI jobs to .github/workflows/ci.yml running `python scripts/garnet_capability_scope_status.py --gate` + its test (P2) AND `python scripts/garnet_trust_kernel_review_status.py --gate` + its test (P4). This touches .github/workflows/ = CLAUDE.md integrity rule 1 (human-merge-only). Do NOT self-merge; open it and record in resume.blockers as 'PR #NNN awaiting Jon'.",
+      "Then mission complete: set mission.status=complete, run the full closing gate suite, render, commit, deliver the closing summary."
     ],
     "blockers": [],
     "conventions": [
