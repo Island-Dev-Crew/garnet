@@ -141,6 +141,14 @@ fn vendored_dep_preload_rejects_top_level_fs_at_load() {
         !combined.contains(SECRET_MARKER),
         "SECRET LEAKED via vendored-dep preload: {combined}"
     );
+    // Fail-closed (S114 acceptance, cond. #5): the authority trap during preload
+    // must ABORT the run, not print-and-continue-to-main with a success exit.
+    assert!(
+        !out.status.success(),
+        "vendored-dep preload authority trap must fail closed (non-zero exit); \
+         status was {:?}, output: {combined}",
+        out.status.code()
+    );
 }
 
 /// An invalid `@max_depth(9999)` on a function `main` never calls must still be

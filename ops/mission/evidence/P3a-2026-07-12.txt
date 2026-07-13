@@ -1,0 +1,7 @@
+P3a garnet-cli fail-closed lanes — 2026-07-13T04:11Z
+cargo test -p garnet-cli --no-fail-fast: all files ok, 0 failed (incl. cli_smoke templates '3 passed; 0 failed')
+  s114_residual_lanes: vendored-dep preload now asserts non-zero exit (fail-closed)
+  test_helper_preload (new): authority-trap helper + unparseable helper fail the run; well-formed helper still passes
+  checker_only_caps (new): time::now_ms (declared+undeclared) and std::uuid::new_v4 run without a runtime trap
+clippy -p garnet-cli --all-targets -D warnings: clean
+caps-enforcement --gate: 0; red-team --gate: 0; agent-contracts: ok (24)

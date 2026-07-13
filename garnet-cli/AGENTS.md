@@ -29,6 +29,14 @@ Owns the `garnet` binary, subcommand routing, template embedding, deterministic 
   `@caps` frame before evaluating top-level `let`/`const` initializers. A
   load-time host call in an initializer is still authority-bearing runtime
   behavior and must not run outside the entry capability gate on either backend.
+- Dependency preload (`--interp`) and the `garnet test` `src/main.garnet`
+  helper preload are FAIL-CLOSED on authority (S114 acceptance, cond. #5): an
+  authority trap while loading a vendored dep aborts `garnet run` with a
+  non-zero exit (only benign parse/read/missing-vendor errors stay
+  warn-and-continue), and any helper-preload failure fails that test file's
+  tests rather than reporting a green "N passed; 0 failed". Setup failure must
+  never produce a success exit. The authority trap is identified by the stable
+  `capability:` message prefix from `garnet-interp`'s `require_capability`.
 - `garnet agent-loop` is a four-stage gate: `check` -> `diff-caps` -> `run` ->
   `seal`. A proposal that fails `garnet check` is rejected before runtime or
   sealing, and the seal-out path must remain absent on that rejection path.

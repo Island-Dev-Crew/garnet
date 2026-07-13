@@ -37,3 +37,12 @@ Append-only session log, newest entry LAST.
 - P2-T3: scripts/garnet_capability_scope_status.py (garnet.capability_scope/v1) + 6 tests — asserts the scope doc names every class, /why has exactly 2 'enforced:' claims, cited test anchors exist, and forbidden universal-enforcement phrasing is absent from README/index/why. Runs locally; CI wiring parked for Jon (P4-T2).
 - Gates: truth --check ok, caps-enforcement --gate ok, capability-scope --gate ok + 6 tests OK, web-pwa smoke blockers=0 (SW bump clean).
 - Next: P3 code hardening — do the two CLI fail-closed lanes first (smaller, independent), then the embedder strict-by-default flip (largest), then the checker-only CLI coverage test.
+- P2 merged as #475 (8f794f7), full CI green.
+
+## 2026-07-13T04:12Z — session 1 (Phase 3a: CLI fail-closed lanes)
+
+- P3-T2 (dep preload fail-closed): garnet-cli/src/cmd/run.rs preload_dependencies now returns Result<(),String>; is_authority_trap() classifies by the stable 'capability:' prefix; an authority trap during vendored-dep preload aborts the run (exit 1 + episode record), while benign parse/read/missing-vendor errors stay warn-and-continue (S12 'noisy dep' contract preserved). Fixed the authority-trap mislabel. s114_residual_lanes.rs strengthened with an additive non-zero-exit assertion.
+- P3-T3 (test-helper fail-closed): garnet-cli/src/cmd/test.rs Ok(Err) helper-preload arm now fails the file's tests like the panic arm. New tests/test_helper_preload.rs (authority-trap + unparseable helpers fail; well-formed still passes).
+- P3-T4 (checker-only coverage): new tests/checker_only_caps.rs pins that time::now_ms (declared+undeclared) and std::uuid::new_v4 run without a runtime trap under garnet run. Empirical note: garnet run does not invoke the checker, so checker-only caps aren't runtime-gated — documented (P2 scope table), unchanged (S90 preserved).
+- garnet-cli/AGENTS.md updated with the fail-closed contract. Gates: full garnet-cli suite 0 failed, clippy clean, caps-enforcement + red-team + agent-contracts all pass.
+- Next: P3-T1 embedder strict-by-default on branch mission/p3b-embedder-strict (largest slice); then re-run all P3 gates at phase close; then P4.

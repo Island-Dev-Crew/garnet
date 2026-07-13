@@ -17,7 +17,9 @@
 //! - Qualified-path resolution (`local_lib::hello()`) is NOT in S12;
 //!   only `use local_lib::*` plus an unqualified call is honored.
 //! - Vendor parse / read errors are surfaced on stderr but do not abort
-//!   the run; main may still resolve.
+//!   the run; main may still resolve. EXCEPTION (S114 acceptance, cond. #5):
+//!   an authority trap while loading a vendored dep fails closed — the run
+//!   aborts with a non-zero exit rather than continuing to main.
 //! - Lockfile BLAKE3 hashes are NOT verified at run time (separate
 //!   `garnet verify-deps` slice).
 //! - Two deps declaring the same top-level symbol shadow last-wins.
@@ -166,7 +168,19 @@ fn run_interpreter_inner(file_label: &str, src: &str, path: &Path, started: Inst
     };
     let mut interp = Interpreter::new();
     if let Some(project_root) = find_project_root_for(path) {
-        preload_dependencies(&mut interp, &project_root);
+        if let Err(trap) = preload_dependencies(&mut interp, &project_root) {
+            eprintln!("{trap}");
+            record(
+                "run",
+                file_label,
+                src,
+                "runtime_err",
+                Some("dep_preload_authority".to_string()),
+                started,
+                1,
+            );
+            return 1;
+        }
     }
     if let Err(e) = interp.load_source_with_edition_entry_caps(src, edition, "main") {
         eprintln!("load error: {e}");
@@ -230,17 +244,31 @@ fn find_project_root_for(file: &Path) -> Option<PathBuf> {
     }
 }
 
+/// True when a load error is a capability/authority trap (the deny-by-default
+/// backstop firing), as opposed to a benign parse/read error. The trap message
+/// is a stable contract: `require_capability` / `require_entry_capability`
+/// prefix it with `capability:` (see `garnet-interp` `eval.rs`), and the
+/// `garnet` binary latches strict-no-frame so a top-level host-authority call in
+/// a vendored dep traps here.
+fn is_authority_trap(e: &garnet_interp::RuntimeError) -> bool {
+    e.to_string().starts_with("capability:")
+}
+
 /// S12 pre-loader: read `[dependencies]` from `Garnet.toml`, walk each
 /// declared vendor directory, and load every `.garnet` source into the
-/// interpreter's global environment before the user source. Errors are
-/// surfaced on stderr but never abort the run; the user's `main` may
-/// still resolve, and a noisy dep should not stop a working program.
-fn preload_dependencies(interp: &mut Interpreter, project_root: &Path) {
+/// interpreter's global environment before the user source.
+///
+/// Fail-closed on authority (S114 acceptance, condition #5): if loading a
+/// vendored dep triggers a capability trap, the run aborts with the trap as a
+/// setup failure (`Err`). Benign parse / read / missing-vendor errors are still
+/// surfaced on stderr but do not abort — a noisy dep should not stop a working
+/// program, but a dep reaching for undeclared OS authority must.
+fn preload_dependencies(interp: &mut Interpreter, project_root: &Path) -> Result<(), String> {
     let deps = match crate::cmd::add::read_dependency_table(project_root) {
         Ok(d) => d,
         Err(e) => {
             eprintln!("garnet run: could not read Garnet.toml: {e}");
-            return;
+            return Ok(());
         }
     };
     for dep in deps {
@@ -280,6 +308,15 @@ fn preload_dependencies(interp: &mut Interpreter, project_root: &Path) {
             // future slice can do this in the AST.
             let safe_src = strip_top_level_main(&src);
             if let Err(e) = interp.load_source(&safe_src) {
+                if is_authority_trap(&e) {
+                    // Fail-closed: a vendored dep reached for undeclared OS
+                    // authority at load time. Do not continue to main.
+                    return Err(format!(
+                        "garnet run: dep {}: authority error in {}: {e}",
+                        dep.name,
+                        file.display()
+                    ));
+                }
                 eprintln!(
                     "garnet run: dep {}: parse error in {}: {e}",
                     dep.name,
@@ -288,6 +325,7 @@ fn preload_dependencies(interp: &mut Interpreter, project_root: &Path) {
             }
         }
     }
+    Ok(())
 }
 
 fn collect_garnet_files(dir: &Path, out: &mut Vec<PathBuf>) -> std::io::Result<()> {
