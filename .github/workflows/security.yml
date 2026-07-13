@@ -75,13 +75,11 @@ jobs:
         with:
           command: check
           arguments: --all-features
-      # Advisory-only pass over the workspace-excluded Tauri Studio graph
-      # (root deny.toml policy; licenses/bans/sources stay root-scoped —
-      # the Studio app is not part of the shipped garnet binary).
-      # cargo-deny discovers deny.toml next to the manifest, so copy the
-      # root policy there at run time (the CLI has no global --config flag).
-      - name: Stage root deny.toml beside the Studio manifest
-        run: cp deny.toml apps/garnet-studio/src-tauri/deny.toml
+      # Advisory-only pass over the workspace-excluded Tauri Studio graph.
+      # Policy: the COMMITTED apps/garnet-studio/src-tauri/deny.toml —
+      # vulnerabilities deny; the documented unmaintained-structural-to-Tauri
+      # ignore list lives there with per-advisory reasons. Licenses/bans/
+      # sources stay root-scoped (Studio is not the shipped garnet binary).
       - uses: EmbarkStudios/cargo-deny-action@v2
         with:
           command: check advisories
