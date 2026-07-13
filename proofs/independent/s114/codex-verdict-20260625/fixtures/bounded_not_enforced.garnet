@@ -1,0 +1,10 @@
+@caps()
+@bounded(100)
+def spin(n) {
+  if n <= 0 { 0 } else { spin(n - 1) }
+}
+
+@caps()
+def main() {
+  spin(1000)
+}

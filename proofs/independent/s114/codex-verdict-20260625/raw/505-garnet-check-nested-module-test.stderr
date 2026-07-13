@@ -1,0 +1,12 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running unittests src/lib.rs (target/debug/deps/garnet_check-085c30d60c6ad0e8)
+     Running tests/borrow.rs (target/debug/deps/borrow-48a6ef95438ba49f)
+     Running tests/bounded_loops.rs (target/debug/deps/bounded_loops-29e27b4885d70bc4)
+     Running tests/caps.rs (target/debug/deps/caps-602326a867cf9faa)
+     Running tests/caps_callable_identity.rs (target/debug/deps/caps_callable_identity-2d6a78a8b516a76d)
+     Running tests/coherence.rs (target/debug/deps/coherence-6341247963e2e183)
+     Running tests/extended.rs (target/debug/deps/extended-ded13f7391d6e428)
+     Running tests/linear_effects.rs (target/debug/deps/linear_effects-3d818f10f5918056)
+     Running tests/match_coverage.rs (target/debug/deps/match_coverage-a9fef1f8b05a169a)
+     Running tests/properties.rs (target/debug/deps/properties-b739b81cf016b125)
+     Running tests/suggest_corpus.rs (target/debug/deps/suggest_corpus-5097cae2bd0c2e72)

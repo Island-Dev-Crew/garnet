@@ -1,0 +1,11 @@
+module netbox {
+  @caps(net)
+  def ping() {
+    tcp_connect("example.com", 80)
+  }
+}
+
+@caps()
+def main() {
+  0
+}

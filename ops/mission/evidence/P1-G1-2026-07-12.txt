@@ -1,0 +1,8 @@
+P1-G1 evidence integrity (with restored S114 bundles) — 2026-07-13T03:39Z
+cmd: python scripts/garnet_evidence_integrity_status.py --gate
+  "bundles_total": 38,
+  "bundles_ok": 38,
+  "bundles_failed": 0,
+  "ok": true
+exit=0
+codex bundle: 784 files byte-identical to 61cfbae; lane-2: 160 files byte-identical to 6153726 (3 .garnet-cache files force-added past .gitignore:46)

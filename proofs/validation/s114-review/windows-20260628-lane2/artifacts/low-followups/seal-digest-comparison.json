@@ -1,0 +1,8 @@
+{
+    "baseline_subject_digest":  "42cad3eafe78444a0a43533e19e4a57963fe5acee0bf5196cf5184820c1fb81a",
+    "net_subject_digest":  "bccfee3df182e754b9f73e35ccf732bfa311d05da0a640d2ca3f7c98b63f6ae6",
+    "subject_digest_equal":  false,
+    "baseline_caps":  "",
+    "net_caps":  "net",
+    "predicate_caps_equal":  false
+}

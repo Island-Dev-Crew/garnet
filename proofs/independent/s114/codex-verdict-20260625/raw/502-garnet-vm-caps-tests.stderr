@@ -1,0 +1,5 @@
+error: unexpected argument 'user_function_shadowing_a_primitive_name_is_not_laundering' found
+
+Usage: cargo test [OPTIONS] [TESTNAME] [-- [ARGS]...]
+
+For more information, try '--help'.

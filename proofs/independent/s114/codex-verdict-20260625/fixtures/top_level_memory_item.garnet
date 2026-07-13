@@ -1,0 +1,6 @@
+memory working scratch : WorkingStore<Int>
+
+@caps()
+def main() {
+  0
+}

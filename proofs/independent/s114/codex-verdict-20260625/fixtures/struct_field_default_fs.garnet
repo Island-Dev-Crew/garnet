@@ -1,0 +1,8 @@
+struct Box {
+  contents: String = read_file("/etc/hostname")
+}
+
+@caps()
+def main() {
+  0
+}

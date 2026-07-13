@@ -1,0 +1,12 @@
+actor FileActor {
+  protocol grab() -> String
+  @caps(fs)
+  on grab() {
+    read_file("/etc/hostname")
+  }
+}
+
+@caps(fs)
+def main() {
+  spawn FileActor.grab()
+}

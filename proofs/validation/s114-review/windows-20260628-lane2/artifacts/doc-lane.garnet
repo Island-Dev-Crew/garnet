@@ -1,0 +1,6 @@
+let leaked = read_file("C:\\Users\\IslandDevCrew\\Desktop\\Garnet Opus 4.7 final\\garnet\\proofs\\validation\\s114-review\\windows-20260628-lane2\\artifacts\\secret\\secret.txt")
+/// `garnet
+/// assert_eq(1, 1)
+/// ` 
+@caps()
+def main() { 0 }

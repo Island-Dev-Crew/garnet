@@ -1,0 +1,1 @@
+./target/debug/garnet diff-caps --machine F_Project_Management/W_TRUST/S114_CODEX_INDEPENDENT_VERDICT_2026_06_25_proofs/fixtures/base_empty.garnet F_Project_Management/W_TRUST/S114_CODEX_INDEPENDENT_VERDICT_2026_06_25_proofs/fixtures/step8_module_let_init_hosts.garnet

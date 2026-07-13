@@ -1,0 +1,9 @@
+@caps(proc)
+def helper() {
+  let result = std::process::output("cmd", ["/C", "echo", "s114-proc"])
+  result.stdout
+}
+@caps()
+def main() {
+  helper()
+}

@@ -1,0 +1,4 @@
+@caps(fs)
+def main() {
+  0
+}

@@ -1,0 +1,8 @@
+agent-loop: proposal `F_Project_Management/W_TRUST/S114_CODEX_INDEPENDENT_VERDICT_2026_06_25_proofs/fixtures/nested_module_net.garnet` vs baseline `F_Project_Management/W_TRUST/S114_CODEX_INDEPENDENT_VERDICT_2026_06_25_proofs/fixtures/base_empty.garnet` (backend --vm)
+agent-loop: stage diff-caps -> REJECT (AUTHORITY EXPANDED, band 2/5)
+  | garnet diff-caps: F_Project_Management/W_TRUST/S114_CODEX_INDEPENDENT_VERDICT_2026_06_25_proofs/fixtures/base_empty.garnet -> F_Project_Management/W_TRUST/S114_CODEX_INDEPENDENT_VERDICT_2026_06_25_proofs/fixtures/nested_module_net.garnet
+  |   + caps GAINED:  net
+  |   + functions:    ping
+  | diff-caps: AUTHORITY EXPANDED — review required (capability band 2/5)
+agent-loop: REJECTED at stage diff-caps (a capability widening is refused; the proposal never runs and is never sealed)
+seal_file_present=no

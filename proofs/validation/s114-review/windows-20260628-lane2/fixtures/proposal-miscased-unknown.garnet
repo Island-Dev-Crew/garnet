@@ -1,0 +1,2 @@
+@caps(FS, mystery_cap)
+def main() -> int { 0 }

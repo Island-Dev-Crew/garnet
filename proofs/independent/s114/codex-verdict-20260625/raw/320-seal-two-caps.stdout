@@ -1,0 +1,42 @@
+{
+  "subject_digest": "56fb50868b152e57143e6a2f6d210f23b5da9f72f8bfdfc7a3f2d87e1a68d8e4",
+  "source_blake3": "6e422f185a9f57215c70f3d6d25d7990961461ca4f8d8d7efa9ae8713578f461",
+  "capability_manifest": {
+    "schema": "garnet-capability-manifest-v1",
+    "aggregate": [
+      "fs"
+    ],
+    "functions": [
+      {
+        "name": "main",
+        "caps": [
+          "fs"
+        ]
+      }
+    ],
+    "wildcard": false
+  }
+}
+{
+  "subject_digest": "56fb50868b152e57143e6a2f6d210f23b5da9f72f8bfdfc7a3f2d87e1a68d8e4",
+  "source_blake3": "91162336e2d63d5792394a034890cb70ef22809b1fc372b04237c12f7a84587a",
+  "capability_manifest": {
+    "schema": "garnet-capability-manifest-v1",
+    "aggregate": [
+      "fs",
+      "net",
+      "proc"
+    ],
+    "functions": [
+      {
+        "name": "main",
+        "caps": [
+          "fs",
+          "net",
+          "proc"
+        ]
+      }
+    ],
+    "wildcard": false
+  }
+}

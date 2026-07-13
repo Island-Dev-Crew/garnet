@@ -1,0 +1,5 @@
+error: unexpected argument 'nested_module_fn_caps_are_in_the_surface' found
+
+Usage: cargo test [OPTIONS] [TESTNAME] [-- [ARGS]...]
+
+For more information, try '--help'.

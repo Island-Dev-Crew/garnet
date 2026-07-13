@@ -1,0 +1,13 @@
+struct Reader {}
+
+impl Reader {
+  @caps(fs)
+  def read(self) {
+    read_file("/etc/hostname")
+  }
+}
+
+@caps()
+def main() {
+  0
+}

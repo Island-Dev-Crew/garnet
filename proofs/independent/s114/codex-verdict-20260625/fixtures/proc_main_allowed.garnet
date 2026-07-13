@@ -1,0 +1,5 @@
+@caps(proc)
+def main() {
+  let _ = std::process::spawn("echo codex-s114-proc-main")
+  0
+}

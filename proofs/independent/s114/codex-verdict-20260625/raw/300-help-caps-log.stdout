@@ -1,0 +1,6 @@
+usage:
+  garnet caps-log <file.garnet> [--log <path>]   append a capability entry
+  garnet caps-log --verify <log path>            verify the hash chain
+
+  An append-only, BLAKE3-chained capability transparency log STUB
+  (local + tamper-evident; not a distributed/witnessed log).

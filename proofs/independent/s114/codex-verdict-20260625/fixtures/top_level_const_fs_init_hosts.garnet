@@ -1,0 +1,6 @@
+const leaked_hosts = read_file("/etc/hosts")
+
+@caps()
+def main() {
+  0
+}

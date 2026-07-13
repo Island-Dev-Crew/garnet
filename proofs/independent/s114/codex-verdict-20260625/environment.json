@@ -1,0 +1,13 @@
+{
+  "host_os": "Darwin",
+  "host_arch": "arm64",
+  "git_head": "a7f946dc405612e43580e4d983e40a049dab04b8",
+  "origin_main": "f64e0b9f26f89373d3c274f7cdf69cbb74841109",
+  "worktree_path": "/private/tmp/garnet-s114-codex-20260625",
+  "branch": "codex/s114-independent-verdict-20260625",
+  "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+  "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)",
+  "garnet_binary": "/private/tmp/garnet-s114-codex-20260625/target/debug/garnet",
+  "created_at_utc": "2026-06-25T15:15:38Z",
+  "audit_pin": "a7f946dc405612e43580e4d983e40a049dab04b8"
+}

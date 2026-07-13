@@ -1,0 +1,1 @@
+cargo test -p garnet-vm planted_laundering_call_is_trapped user_function_shadowing_a_primitive_name_is_not_laundering

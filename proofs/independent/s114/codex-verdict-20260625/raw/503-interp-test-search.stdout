@@ -1,0 +1,21 @@
+garnet-interp-v0.3/tests/overflow_guards.rs:30:    let src = format!("@caps()\ndef main() {{\n{body}\n}}\n");
+garnet-interp-v0.3/tests/core_result_dispatch.rs:34:        @caps()
+garnet-interp-v0.3/tests/core_option_dispatch.rs:33:        @caps()
+garnet-interp-v0.3/tests/eval_paper_vi.rs:185:            @max_depth(5)
+garnet-interp-v0.3/tests/eval_paper_vi.rs:326:fn c6_max_depth_annotation_loads_with_function() {
+garnet-interp-v0.3/tests/eval_paper_vi.rs:328:        @max_depth(8)
+garnet-interp-v0.3/tests/stdlib_s24_dispatch.rs:1://! S24 runtime dispatch proof: `std::log` file sink (`@caps(fs)`).
+garnet-interp-v0.3/tests/stdlib_s24_dispatch.rs:50:        @caps(fs)
+garnet-interp-v0.3/tests/stdlib_s24_dispatch.rs:81:        @caps(fs)
+garnet-interp-v0.3/tests/core_iter_completion_dispatch.rs:35:        @caps()
+garnet-interp-v0.3/tests/stdlib_s22_dispatch.rs:50:        @caps()
+garnet-interp-v0.3/tests/stdlib_s22_dispatch.rs:88:        @caps(env)
+garnet-interp-v0.3/tests/stdlib_s22_dispatch.rs:113:        @caps(proc)
+garnet-interp-v0.3/tests/stdlib_s22_dispatch.rs:128:        @caps()
+garnet-interp-v0.3/tests/functional_core_composition.rs:37:        @caps()
+garnet-interp-v0.3/tests/host_effect_composition.rs:3://! A single `@caps(proc, fs)` program threads every surface completed across
+garnet-interp-v0.3/tests/host_effect_composition.rs:70:        @caps(proc, fs)
+garnet-interp-v0.3/tests/host_effect_composition.rs:116:        @caps(proc, fs)
+garnet-interp-v0.3/tests/stdlib_s23_dispatch.rs:51:        @caps(proc)
+garnet-interp-v0.3/tests/stdlib_s23_dispatch.rs:77:        @caps(proc)
+garnet-interp-v0.3/tests/stdlib_s23_dispatch.rs:98:        @caps(proc)

@@ -1,0 +1,4 @@
+@max_depth(9999)
+def dead(n) { if n <= 0 { 0 } else { dead(n - 1) } }
+@caps()
+def main() { 0 }

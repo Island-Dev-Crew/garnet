@@ -1,0 +1,4 @@
+caps coverage: function `main` does not declare `proc` but transitively calls `(via helper)` which requires it
+stability warning: function `helper` calls experimental primitive `std::process::spawn`; its API may change between minor releases
+
+2 functions checked, 1 boundary call sites, 2 diagnostics

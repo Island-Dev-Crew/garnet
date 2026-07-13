@@ -1,0 +1,10 @@
+@caps()
+@max_depth(3)
+def rec(n) {
+  if n <= 0 { 0 } else { rec(n - 1) }
+}
+
+@caps()
+def main() {
+  rec(10)
+}

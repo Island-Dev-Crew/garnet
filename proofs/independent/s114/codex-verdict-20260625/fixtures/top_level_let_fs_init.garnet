@@ -1,0 +1,6 @@
+let secret = read_file("/etc/hostname")
+
+@caps()
+def main() {
+  0
+}

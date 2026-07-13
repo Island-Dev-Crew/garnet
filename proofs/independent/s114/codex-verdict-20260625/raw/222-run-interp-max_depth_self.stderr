@@ -1,0 +1,1 @@
+runtime error: bounded: @max_depth(3) exceeded for `rec` (recursion depth 4)
