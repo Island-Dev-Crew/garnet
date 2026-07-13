@@ -28,3 +28,12 @@ Append-only session log, newest entry LAST.
   - proofs/independent/s114/RECOVERY_PROVENANCE.md documents SHAs, lineage, the manifest re-expression, and frames both as reviewer captures at their stated base (predating later main), NOT verification of current HEAD.
 - Gotcha recorded: `git checkout <sha> -- <path>` smudges EOL for paths OUTSIDE proofs/ (the -text rule is proofs/-scoped); use raw `git show <sha>:<path>` bytes when relocating sealed evidence. And `git add` silently skips .gitignore'd files — verify bundle completeness from the index, force-add as needed.
 - Next: P2 language hardening (capability enforcement scope table + bound overbroad copy + claim fixture).
+- P1 merged as #474 (0931d12), full CI green.
+
+## 2026-07-13T03:55Z — session 1 (Phase 2 complete)
+
+- P2-T1: C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md — opens with the ONE universal check-time CapCaps guarantee, then 7 bounded classes (declared/checker-only time+uuid, 12 runtime-gated, 3 entry-gated, declared-only ffi/net_internal, unbridged tcp_listen/udp_bind, OS-sandboxed Linux-seccomp-reference-only enforced:false, caps-invisible memory::*), each code-anchored; a "may/may not say" fence. CURRENT_STATE.md index row added (=> dogfood body).
+- P2-T2: bounded the two clear runtime overclaims — README (now scoped to the 12+3 gated host-authority prims under the CLI, time/uuid checker-only, links the scope table) and docs/index.html:1040 ('no ambient authority, ever' -> 'undeclared OS authority fails the check'). Bumped SW cache garnet-web-v1 -> v2 so returning PWA visitors get the correction. /why byte-identical (condition #3). Blog 2026-05-20 left as minor follow-up.
+- P2-T3: scripts/garnet_capability_scope_status.py (garnet.capability_scope/v1) + 6 tests — asserts the scope doc names every class, /why has exactly 2 'enforced:' claims, cited test anchors exist, and forbidden universal-enforcement phrasing is absent from README/index/why. Runs locally; CI wiring parked for Jon (P4-T2).
+- Gates: truth --check ok, caps-enforcement --gate ok, capability-scope --gate ok + 6 tests OK, web-pwa smoke blockers=0 (SW bump clean).
+- Next: P3 code hardening — do the two CLI fail-closed lanes first (smaller, independent), then the embedder strict-by-default flip (largest), then the checker-only CLI coverage test.
