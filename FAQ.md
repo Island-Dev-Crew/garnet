@@ -66,6 +66,8 @@ For prototype agents, research demos, and source-checkout dogfood, Garnet is use
 
 The converter ships a lineage JSON for each output mapping every emitted Garnet AST node back to its source span. Cargo-style migration: convert one file at a time, FFI-call the rest, repeat until done. See [v4_1_Converter_Architecture.md](C_Language_Specification/v4_1_Converter_Architecture.md) for the full pipeline.
 
+Input-dialect honesty: each frontend targets a **stylized subset** of its source language, not the full grammar (untranslatable constructs become explicit `MigrateTodo` placeholders). The Ruby frontend targets a ≈3.3-era subset; newer syntax — Ruby 3.4 `it` block parameters, Ruby 4.0 leading-line logical-operator continuation — is not yet targeted.
+
 ## What's `@sandbox` for?
 
 A `@sandbox` annotation is the converter's "I produced this from another language; please don't trust me yet" header. While `@sandbox` is in effect, the function cannot be called from production code (the checker rejects the call site). A human reviewer reads the converted code, satisfies themselves it's safe, then changes `@sandbox` to `@sandbox(unquarantine)` and adds the appropriate `@caps(...)`. This is the audit gate that prevents converter output from silently entering a trusted code path.
@@ -88,7 +90,7 @@ Yes — the dual MIT / Apache-2.0 license explicitly permits commercial use, mod
 
 ## Do I need the Rust toolchain to use Garnet?
 
-Not on platforms with a matching published release asset. The universal installer prefers the signed `garnet-0.8.1-*` release asset, verifies it against `SHA256SUMS` (GPG-signed — see [`docs/release-signing.md`](docs/release-signing.md)), and uses source fallback only when no matching package exists or when you force `GARNET_INSTALL_MODE=source`. Source fallback requires Rust 1.75+.
+Not on platforms with a matching published release asset. The universal installer prefers the signed `garnet-0.8.1-*` release asset, verifies it against `SHA256SUMS` (GPG-signed — see [`docs/release-signing.md`](docs/release-signing.md)), and uses source fallback only when no matching package exists or when you force `GARNET_INSTALL_MODE=source`. Source fallback requires Rust 1.95+ (the same floor as building from source below; Garnet CI tracks current stable).
 
 ## How do deterministic signed builds work?
 
