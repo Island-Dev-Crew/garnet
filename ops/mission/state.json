@@ -10,7 +10,7 @@
     "northStar": "S114 accepted at its true scope (first-party CLI/Wasm trust-kernel baseline) with durable evidence, mechanically bounded claims, fail-closed CLI lanes, and a rolling review control. Never overclaim.",
     "status": "active",
     "started": "2026-07-12",
-    "updated": "2026-07-13T08:05:00Z",
+    "updated": "2026-07-13T08:40:00Z",
     "sessionCount": 2
   },
   "policies": {
@@ -338,7 +338,7 @@
             "number": 481,
             "url": "https://github.com/Island-Dev-Crew/garnet/pull/481"
           },
-          "notes": "PR #481 opened and PARKED for Jon (security.yml is a CI gate file => human-merge-only, integrity rule 1). The PR's own Security workflow run exercises the new steps — confirm the three cargo-audit steps + Studio deny-advisories pass are green before merge. Strongest research finding: deny.toml says 'release-grade supply chain gate' but only the root lock was scanned."
+          "notes": "PR #481 opened + PARKED for Jon (security.yml gate file => human-merge-only, integrity rule 1). VALIDATION PAID OFF IMMEDIATELY: the first run found two live quick-xml 0.39.4 advisories in the previously-unscanned Studio lock (RUSTSEC-2026-0194 quadratic dup-attr check; RUSTSEC-2026-0195 NsReader namespace-allocation DoS) — patched in-PR via plist 1.9.0 -> 1.10.0 (quick-xml -> 0.41.0). Also fixed cargo-deny mechanics (no global --config; root deny.toml staged beside the Studio manifest at run time). GTK3 unmaintained warnings visible, non-blocking. Jon merges once the re-run is green."
         },
         {
           "id": "P5-T2",
@@ -434,7 +434,7 @@
     {
       "label": "Lockfiles under advisory scanning",
       "baseline": "1 of 3 (root only)",
-      "current": "1 of 3 (PR #481 parked)",
+      "current": "1 of 3 (PR #481 parked; 2 live CVEs already found+patched in-PR)",
       "target": "3 of 3",
       "direction": "up"
     }
