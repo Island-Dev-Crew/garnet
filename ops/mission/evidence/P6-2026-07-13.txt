@@ -1,0 +1,6 @@
+P6 /why upgrade gates — 2026-07-13T21:20Z
+[P6-G1] capability-scope --gate: ok (2/2 enforced claims, 0 forbidden hits) + 6 fixture tests OK
+[P6-G2] trust-kernel --gate: exit 0 with W_TRUST companion in diff; exit 1 with why.html alone (negative case proven)
+[P6-G3] web-pwa smoke --strict: blockers=0 warnings=0; xtask truth --check: ok
+[visual] page served locally: 4 cards render, src lines all 'verified' with 10/6/2 live links, byline+meta swapped to 'calibrated'
+[sources] every published fact fetched at source 2026-07-13 by 3-agent verification workflow; corrections vs cowork copy in W_TRUST/WHY_UPGRADE_REVIEW_2026-07-13.md
