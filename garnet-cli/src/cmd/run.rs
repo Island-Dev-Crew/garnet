@@ -263,10 +263,7 @@ fn is_authority_trap(e: &garnet_interp::RuntimeError) -> bool {
 /// setup failure (`Err`). Benign parse / read / missing-vendor errors are still
 /// surfaced on stderr but do not abort — a noisy dep should not stop a working
 /// program, but a dep reaching for undeclared OS authority must.
-fn preload_dependencies(
-    interp: &mut Interpreter,
-    project_root: &Path,
-) -> Result<(), String> {
+fn preload_dependencies(interp: &mut Interpreter, project_root: &Path) -> Result<(), String> {
     let deps = match crate::cmd::add::read_dependency_table(project_root) {
         Ok(d) => d,
         Err(e) => {
