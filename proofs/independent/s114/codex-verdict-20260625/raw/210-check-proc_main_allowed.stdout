@@ -1,0 +1,3 @@
+stability warning: function `main` calls experimental primitive `std::process::spawn`; its API may change between minor releases
+
+1 functions checked, 0 boundary call sites, 1 diagnostics

@@ -1,0 +1,9 @@
+enum Choice {
+  A
+  B(String)
+}
+
+@caps()
+def main() {
+  0
+}

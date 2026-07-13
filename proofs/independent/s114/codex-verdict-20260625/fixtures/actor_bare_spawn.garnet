@@ -1,0 +1,14 @@
+actor Counter {
+  let mut n = 0
+  protocol bump(delta: Int) -> Int
+  on bump(delta) {
+    n += delta
+    n
+  }
+}
+
+@caps()
+def main() {
+  let counter = Counter.spawn(1)
+  counter.ask(:bump, 5)
+}

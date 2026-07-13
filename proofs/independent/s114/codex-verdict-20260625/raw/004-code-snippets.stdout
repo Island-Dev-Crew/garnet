@@ -1,0 +1,114 @@
+## capability_surface.rs collect_cap_fns
+    28	/// functions, **impl-block methods**, and functions in nested modules — as
+    29	/// `(display_name, &FnDef)`. S114 closed a hole where impl-method `@caps` was
+    30	/// enforced at runtime (the interpreter installs the guard for any managed `FnDef`)
+    31	/// but invisible here, so a file-/net-reading impl method reported an empty surface
+    32	/// and slipped past `diff-caps`, the seal manifest, and the agent-loop gate.
+    33	fn collect_cap_fns<'a>(items: &'a [Item], out: &mut Vec<(String, &'a FnDef)>) {
+    34	    for item in items {
+    35	        match item {
+    36	            Item::Fn(f) => out.push((f.name.clone(), f)),
+    37	            Item::Impl(block) => {
+    38	                let owner = type_label(&block.target);
+    39	                for m in &block.methods {
+    40	                    out.push((format!("{owner}::{}", m.name), m));
+    41	                }
+    42	            }
+    43	            Item::Module(m) => collect_cap_fns(&m.items, out),
+    44	            _ => {}
+    45	        }
+    46	    }
+    47	}
+    48	
+## ast.rs Item enum
+    18	pub enum Item {
+    19	    Use(UseDecl),
+    20	    Module(ModuleDecl),
+    21	    Memory(MemoryDecl),
+    22	    Actor(ActorDef),
+    23	    Struct(StructDef),
+    24	    Enum(EnumDef),
+    25	    Trait(TraitDef),
+    26	    Protocol(ProtocolDef),
+    27	    Impl(ImplBlock),
+    28	    Fn(FnDef),
+    29	    Const(ConstDecl),
+    30	    Let(LetDecl),
+    31	}
+    32	
+## eval.rs load_module top-level let/const
+    82	    /// Register a parsed module into the global environment.
+    83	    pub fn load_module(&mut self, module: Module) -> Result<(), RuntimeError> {
+    84	        for item in module.items {
+    85	            self.register_item(item)?;
+    86	        }
+    87	        Ok(())
+    88	    }
+    89	
+    90	    fn register_item(&mut self, item: Item) -> Result<(), RuntimeError> {
+    91	        match item {
+    92	            Item::Fn(fn_def) => {
+    93	                let name = fn_def.name.clone();
+    94	                let closure = Value::Fn(Rc::new(value::FnValue {
+    95	                    def: fn_def,
+    96	                    captured: Rc::clone(&self.global),
+    97	                    is_block: false,
+    98	                }));
+    99	                self.global.define(&name, closure);
+   100	            }
+   101	            Item::Let(decl) => {
+   102	                let val = eval::eval_expr(&decl.value, &self.global)?;
+   103	                self.global.define(&decl.name, val);
+   104	            }
+   105	            Item::Const(decl) => {
+   106	                let val = eval::eval_expr(&decl.value, &self.global)?;
+   107	                self.global.define(&decl.name, val);
+   108	            }
+   109	            Item::Memory(decl) => {
+   110	                // Kind-aware allocator dispatch (Paper VI Contribution 4):
+## eval.rs require_capability active frame bypass
+   666	/// Enforce that a host-authority primitive's required capability was declared in
+   667	/// the calling chain. S91 adds a program-entry frame for `garnet run --interp`
+   668	/// so safe-mode entry points are covered too. Outside any program frame (e.g. a
+   669	/// direct host/test call) there is no `@caps` context to enforce, so the call is
+   670	/// allowed.
+   671	pub(crate) fn require_capability(needed: &str, fn_name: &str) -> Result<(), RuntimeError> {
+   672	    ACTIVE_CAPS.with(|c| {
+   673	        let c = c.borrow();
+   674	        if c.active_frames == 0 {
+   675	            return Ok(());
+   676	        }
+   677	        let has = |k: &str| c.counts.get(k).copied().unwrap_or(0) > 0;
+   678	        if has("*") || has(needed) {
+   679	            Ok(())
+   680	        } else {
+   681	            Err(RuntimeError::msg(format!(
+   682	                "capability: `{fn_name}` requires @caps({needed}), not declared in the calling chain"
+   683	            )))
+   684	        }
+   685	    })
+   686	}
+## eval.rs actor init
+  1132	}
+  1133	
+  1134	fn init_actor_env(actor: &ActorDef, env: &Rc<Env>) -> Result<Rc<Env>, RuntimeError> {
+  1135	    let actor_env = Env::new_child(env);
+  1136	    for item in &actor.items {
+  1137	        match item {
+  1138	            ActorItem::Let(decl) => {
+  1139	                let value = eval_expr(&decl.value, &actor_env)?;
+  1140	                actor_env.define(&decl.name, value);
+  1141	            }
+  1142	            ActorItem::Memory(decl) => {
+  1143	                actor_env.define(
+  1144	                    &decl.name,
+  1145	                    Value::MemoryStore {
+  1146	                        kind: decl.kind,
+  1147	                        name: decl.name.clone(),
+  1148	                        backend: MemoryBackend::for_kind(decl.kind),
+  1149	                    },
+  1150	                );
+  1151	            }
+  1152	            ActorItem::Protocol(_) | ActorItem::Handler(_) => {}
+  1153	        }
+  1154	    }

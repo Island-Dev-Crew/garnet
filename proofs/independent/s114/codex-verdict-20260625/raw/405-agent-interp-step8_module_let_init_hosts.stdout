@@ -1,0 +1,6 @@
+agent-loop: proposal `F_Project_Management/W_TRUST/S114_CODEX_INDEPENDENT_VERDICT_2026_06_25_proofs/fixtures/step8_module_let_init_hosts.garnet` vs baseline `F_Project_Management/W_TRUST/S114_CODEX_INDEPENDENT_VERDICT_2026_06_25_proofs/fixtures/base_empty.garnet` (backend --interp)
+agent-loop: stage diff-caps -> PASS (no authority expansion, band 5/5)
+agent-loop: stage run(--interp) -> PASS (=> 0)
+agent-loop: stage seal -> SEALED (F_Project_Management/W_TRUST/S114_CODEX_INDEPENDENT_VERDICT_2026_06_25_proofs/artifacts/step8_module_let_init_hosts-interp.seal.json) (unsigned unless cosign present)
+agent-loop: ACCEPTED on capability+depth evidence
+seal_file_present=yes

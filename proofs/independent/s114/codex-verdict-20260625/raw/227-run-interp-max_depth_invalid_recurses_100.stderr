@@ -1,0 +1,2 @@
+note: this source has 1 prior failure(s) recorded in .garnet-cache/episodes.log
+note: strategy 'skip_check_if_unchanged_since_last_ok' applies (Hamming distance 0/256, last triggered ts=1782400175)

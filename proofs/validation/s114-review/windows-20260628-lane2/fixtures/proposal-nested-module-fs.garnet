@@ -1,0 +1,6 @@
+module hidden {
+  @caps(fs)
+  def read() -> int { 0 }
+}
+@caps()
+def main() -> int { 0 }

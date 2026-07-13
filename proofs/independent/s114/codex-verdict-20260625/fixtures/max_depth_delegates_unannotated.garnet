@@ -1,0 +1,15 @@
+@caps()
+@max_depth(2)
+def entry(n) {
+  helper(n)
+}
+
+@caps()
+def helper(n) {
+  if n <= 0 { 0 } else { helper(n - 1) }
+}
+
+@caps()
+def main() {
+  entry(8)
+}

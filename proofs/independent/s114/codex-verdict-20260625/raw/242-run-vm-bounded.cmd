@@ -1,0 +1,1 @@
+./target/debug/garnet run --vm F_Project_Management/W_TRUST/S114_CODEX_INDEPENDENT_VERDICT_2026_06_25_proofs/fixtures/bounded_not_enforced.garnet

@@ -1,0 +1,23 @@
+{"_type":"https://in-toto.io/Statement/v1","subject":[{"name":"step8_module_let_init_hosts","digest":{"blake3":"a4006a9882576db982501fddda33328c070ddf3d7a46e5b0dfb31ddf2c8482e1"}}],"predicateType":"https://garnet-lang.org/attestation/seal/v1","predicate":{"source_blake3":"f0cdd700ff18e2ae01f80a2be31f043fc943bf0fb0adcdc0b88296c0908f6b87","build_manifest":{
+  "ast_hash": "a4006a9882576db982501fddda33328c070ddf3d7a46e5b0dfb31ddf2c8482e1"
+,
+  "deterministic_flags": ["lto=on", "codegen-units=1", "strip=symbols"]
+,
+  "interp_version": "0.8.1"
+,
+  "parser_version": "0.8.1"
+,
+  "prelude_hash": "67029a18ae8fbd17be7b292ff0e981387a75bf1409d046779c975b61d67991ce"
+,
+  "schema": "garnet-manifest-v1"
+,
+  "signature": ""
+,
+  "signer_pubkey": ""
+,
+  "source_hash": "f0cdd700ff18e2ae01f80a2be31f043fc943bf0fb0adcdc0b88296c0908f6b87"
+,
+  "target_triple": "unknown-target"
+
+}
+,"capability_manifest":{"schema":"garnet-capability-manifest-v1","aggregate":[],"functions":[{"name":"main","caps":[]}],"wildcard":false},"tooling":{"cosign":"not installed — predicate emitted UNSIGNED; install cosign to attest","sbom":"garnet-capability-manifest (native SBOM-equivalent; CycloneDX/SPDX via syft/cyclonedx when present)"},"authorship":"sim:scripted-agent","attestation":{"autonomous":"true","decision":"accepted-on-capability+depth-evidence","tool":"garnet-agent-loop"}}}

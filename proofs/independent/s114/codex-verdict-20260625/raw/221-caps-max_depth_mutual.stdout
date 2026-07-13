@@ -1,0 +1,1 @@
+{"schema":"garnet-capability-manifest-v1","aggregate":[],"functions":[{"name":"a","caps":[]},{"name":"b","caps":[]},{"name":"main","caps":[]}],"wildcard":false}

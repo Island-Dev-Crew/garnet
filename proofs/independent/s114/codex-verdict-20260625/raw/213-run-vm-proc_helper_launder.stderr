@@ -1,0 +1,2 @@
+note: this source has 2 prior failure(s) recorded in .garnet-cache/episodes.log
+vm error: runtime error: capability: `std::process::spawn` requires program entry @caps(proc), not declared by the entry point

@@ -1,0 +1,7 @@
+agent-loop: proposal `F_Project_Management/W_TRUST/S114_CODEX_INDEPENDENT_VERDICT_2026_06_25_proofs/fixtures/step8_actor_let_init_hosts.garnet` vs baseline `F_Project_Management/W_TRUST/S114_CODEX_INDEPENDENT_VERDICT_2026_06_25_proofs/fixtures/base_empty.garnet` (backend --interp)
+agent-loop: stage diff-caps -> PASS (no authority expansion, band 5/5)
+agent-loop: stage run(--interp) -> REJECT (the enforced kernel trapped)
+  | note: this source has 2 prior failure(s) recorded in .garnet-cache/episodes.log
+  | runtime error: capability: `fs::read_file` requires @caps(fs), not declared in the calling chain
+agent-loop: REJECTED at stage run (an enforced ceiling — @max_depth or @caps — trapped; the proposal is not sealed)
+seal_file_present=no

@@ -1,0 +1,13 @@
+@max_depth(9999)
+def rec(n) {
+  if n <= 0 {
+    0
+  } else {
+    rec(n - 1)
+  }
+}
+
+@caps()
+def main() {
+  rec(100)
+}

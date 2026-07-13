@@ -1,0 +1,1 @@
+{"schema":"garnet-capability-manifest-v1","aggregate":["gpu"],"functions":[{"name":"main","caps":["gpu"]}],"wildcard":false}

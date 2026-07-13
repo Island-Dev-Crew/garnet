@@ -1,0 +1,3 @@
+annotation error: @max_depth on 'rec' must be in 1..=64, got 9999
+
+2 functions checked, 2 boundary call sites, 1 diagnostics

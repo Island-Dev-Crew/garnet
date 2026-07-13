@@ -1,0 +1,8 @@
+protocol FileLike {
+  def read() -> String
+}
+
+@caps()
+def main() {
+  0
+}

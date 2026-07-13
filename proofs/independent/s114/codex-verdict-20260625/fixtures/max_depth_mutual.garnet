@@ -1,0 +1,15 @@
+@caps()
+@max_depth(3)
+def a(n) {
+  if n <= 0 { 0 } else { b(n - 1) }
+}
+
+@caps()
+def b(n) {
+  if n <= 0 { 0 } else { a(n - 1) }
+}
+
+@caps()
+def main() {
+  a(10)
+}

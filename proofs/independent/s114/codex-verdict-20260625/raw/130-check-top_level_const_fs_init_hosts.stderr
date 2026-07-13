@@ -1,0 +1,2 @@
+note: strategy 'warn_repeated_exception: read_file: io error: read_file(/etc/hostname): No such file or directory (os error 2)' applies (Hamming distance 0/256, last triggered ts=1782400037)
+note: strategy 'warn_repeated_runtime error: exception: read_file: io error: read_file(/etc/hostname): No such file or directory (os error 2)' applies (Hamming distance 0/256, last triggered ts=1782400037)

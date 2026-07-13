@@ -1,0 +1,10 @@
+@caps(proc)
+def helper() {
+  let _ = std::process::spawn("echo codex-s114-proc-helper")
+  0
+}
+
+@caps()
+def main() {
+  helper()
+}

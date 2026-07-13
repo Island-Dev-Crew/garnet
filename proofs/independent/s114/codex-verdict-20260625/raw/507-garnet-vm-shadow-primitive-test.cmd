@@ -1,0 +1,1 @@
+cargo test -p garnet-vm user_function_shadowing_a_primitive_name_is_not_laundering

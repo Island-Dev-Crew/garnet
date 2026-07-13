@@ -1,0 +1,1 @@
+{"schema":"garnet-capability-manifest-v1","aggregate":["fs"],"functions":[{"name":"main","caps":[]},{"name":"read_top","caps":["fs"]}],"wildcard":false}

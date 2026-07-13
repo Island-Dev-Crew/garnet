@@ -1,0 +1,2 @@
+note: this source has 1 prior failure(s) recorded in .garnet-cache/episodes.log
+vm error: runtime error: capability: `fs::read_file` requires @caps(fs), not declared in the calling chain

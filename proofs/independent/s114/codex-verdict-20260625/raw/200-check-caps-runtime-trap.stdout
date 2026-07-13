@@ -1,0 +1,3 @@
+caps coverage: function `main` does not declare `fs` but transitively calls `read_file` which requires it
+
+1 functions checked, 0 boundary call sites, 1 diagnostics

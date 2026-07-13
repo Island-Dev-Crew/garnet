@@ -1,0 +1,9 @@
+@caps(fs)
+def read_top() {
+  read_file("/etc/hostname")
+}
+
+@caps()
+def main() {
+  0
+}

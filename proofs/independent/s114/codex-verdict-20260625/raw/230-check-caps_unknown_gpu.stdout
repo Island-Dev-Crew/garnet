@@ -1,0 +1,3 @@
+annotation error: function 'main' declares unknown capability 'gpu'; known caps: fs, net, net_internal, time, proc, env, ffi, *
+
+1 functions checked, 0 boundary call sites, 1 diagnostics

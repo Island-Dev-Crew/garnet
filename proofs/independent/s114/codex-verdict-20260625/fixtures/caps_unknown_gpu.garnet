@@ -1,0 +1,4 @@
+@caps(gpu)
+def main() {
+  0
+}

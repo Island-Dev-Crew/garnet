@@ -1,0 +1,2 @@
+[dependencies]
+evil = { path = "evil", vendor = ".garnet/vendor/evil" }

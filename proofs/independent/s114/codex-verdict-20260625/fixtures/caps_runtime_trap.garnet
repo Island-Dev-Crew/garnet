@@ -1,0 +1,5 @@
+@caps()
+def main() {
+  let _ = read_file("/etc/hostname")
+  0
+}

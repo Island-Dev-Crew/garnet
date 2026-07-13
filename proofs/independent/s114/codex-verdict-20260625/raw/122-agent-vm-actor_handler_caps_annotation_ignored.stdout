@@ -1,0 +1,8 @@
+agent-loop: proposal `F_Project_Management/W_TRUST/S114_CODEX_INDEPENDENT_VERDICT_2026_06_25_proofs/fixtures/actor_handler_caps_annotation_ignored.garnet` vs baseline `F_Project_Management/W_TRUST/S114_CODEX_INDEPENDENT_VERDICT_2026_06_25_proofs/fixtures/base_empty.garnet` (backend --vm)
+agent-loop: stage diff-caps -> PASS (no authority expansion, band 5/5)
+agent-loop: stage run(--vm) -> REJECT (the enforced kernel trapped)
+  | note: this source has 3 prior failure(s) recorded in .garnet-cache/episodes.log
+  | note: strategy 'warn_repeated_capability: `fs::read_file` requires @caps(fs), not declared in the calling chain' applies (Hamming distance 0/256, last triggered ts=1782400037)
+  | vm error: runtime error: capability: `fs::read_file` requires @caps(fs), not declared in the calling chain
+agent-loop: REJECTED at stage run (an enforced ceiling — @max_depth or @caps — trapped; the proposal is not sealed)
+seal_file_present=no

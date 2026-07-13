@@ -1,0 +1,6 @@
+use local::nothing
+
+@caps()
+def main() {
+  0
+}

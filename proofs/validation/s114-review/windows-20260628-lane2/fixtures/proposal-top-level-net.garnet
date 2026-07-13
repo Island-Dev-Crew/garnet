@@ -1,0 +1,4 @@
+@caps(net)
+def helper() -> int { 0 }
+@caps()
+def main() -> int { 0 }

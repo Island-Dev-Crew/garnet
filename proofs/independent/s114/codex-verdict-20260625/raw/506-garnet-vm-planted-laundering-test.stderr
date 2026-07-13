@@ -1,0 +1,52 @@
+   Compiling zerocopy v0.8.48
+   Compiling serde_core v1.0.228
+   Compiling crossbeam-utils v0.8.21
+   Compiling num-traits v0.2.19
+   Compiling zerocopy-derive v0.8.48
+   Compiling serde v1.0.228
+   Compiling rayon-core v1.13.0
+   Compiling once_cell v1.21.4
+   Compiling clap_lex v1.1.0
+   Compiling ciborium-io v0.2.2
+   Compiling miette v7.6.0
+   Compiling anstyle v1.0.14
+   Compiling plotters-backend v0.3.7
+   Compiling itertools v0.10.5
+   Compiling cast v0.3.0
+   Compiling same-file v1.0.6
+   Compiling is-terminal v0.4.17
+   Compiling oorandom v11.1.5
+   Compiling anes v0.1.6
+   Compiling walkdir v2.5.0
+   Compiling clap_builder v4.6.0
+   Compiling tempfile v3.27.0
+   Compiling plotters-svg v0.3.7
+   Compiling rusty-fork v0.3.1
+   Compiling garnet-parser v0.3.0 (/private/tmp/garnet-s114-codex-20260625/garnet-parser-v0.3)
+   Compiling criterion-plot v0.5.0
+   Compiling plotters v0.3.7
+   Compiling crossbeam-epoch v0.9.18
+   Compiling crossbeam-deque v0.8.6
+   Compiling clap v4.6.1
+   Compiling rayon v1.12.0
+   Compiling serde_json v1.0.149
+   Compiling tinytemplate v1.2.1
+   Compiling ppv-lite86 v0.2.21
+   Compiling half v2.7.1
+   Compiling rand_chacha v0.3.1
+   Compiling rand_chacha v0.9.0
+   Compiling ciborium-ll v0.2.2
+   Compiling proptest v1.11.0
+   Compiling rand v0.8.6
+   Compiling ciborium v0.2.2
+   Compiling criterion v0.5.1
+   Compiling garnet-stdlib v0.4.0 (/private/tmp/garnet-s114-codex-20260625/garnet-stdlib)
+   Compiling garnet-interp v0.3.0 (/private/tmp/garnet-s114-codex-20260625/garnet-interp-v0.3)
+   Compiling garnet-check v0.3.0 (/private/tmp/garnet-s114-codex-20260625/garnet-check-v0.3)
+   Compiling garnet-vm v0.5.0 (/private/tmp/garnet-s114-codex-20260625/garnet-vm)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.07s
+     Running unittests src/lib.rs (target/debug/deps/garnet_vm-783f109d741cd074)
+     Running tests/caps_recheck_corpus.rs (target/debug/deps/caps_recheck_corpus-ff1002edfe9ff505)
+     Running tests/function_call.rs (target/debug/deps/function_call-1ab82bd8a350f25f)
+     Running tests/scope_shadowing_parity.rs (target/debug/deps/scope_shadowing_parity-0261b6efe3af0aeb)
+     Running tests/vm_scaffold.rs (target/debug/deps/vm_scaffold-4b376e4f44b92459)

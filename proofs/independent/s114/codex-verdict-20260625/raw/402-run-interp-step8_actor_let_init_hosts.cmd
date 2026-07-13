@@ -1,0 +1,1 @@
+./target/debug/garnet run --interp F_Project_Management/W_TRUST/S114_CODEX_INDEPENDENT_VERDICT_2026_06_25_proofs/fixtures/step8_actor_let_init_hosts.garnet

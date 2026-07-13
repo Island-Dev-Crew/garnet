@@ -1,0 +1,10 @@
+{
+  "schema": "garnet.red_team/v1",
+  "report_present": true,
+  "high_hole_fixed": true,
+  "regression_tests_present": true,
+  "low_holes_recorded": true,
+  "held_and_deferred_recorded": true,
+  "honesty_anchor_present": true,
+  "ok": true
+}

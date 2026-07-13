@@ -1,0 +1,3 @@
+@caps(proc)
+def helper() {
+  let result = std::process::output(\

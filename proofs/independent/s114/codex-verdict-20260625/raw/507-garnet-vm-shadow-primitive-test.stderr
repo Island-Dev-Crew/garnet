@@ -1,0 +1,6 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+     Running unittests src/lib.rs (target/debug/deps/garnet_vm-783f109d741cd074)
+     Running tests/caps_recheck_corpus.rs (target/debug/deps/caps_recheck_corpus-ff1002edfe9ff505)
+     Running tests/function_call.rs (target/debug/deps/function_call-1ab82bd8a350f25f)
+     Running tests/scope_shadowing_parity.rs (target/debug/deps/scope_shadowing_parity-0261b6efe3af0aeb)
+     Running tests/vm_scaffold.rs (target/debug/deps/vm_scaffold-4b376e4f44b92459)

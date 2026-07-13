@@ -1,0 +1,9 @@
+module hidden {
+  struct Reader {}
+  impl Reader {
+    @caps(fs)
+    def read(self) -> int { 0 }
+  }
+}
+@caps()
+def main() -> int { 0 }

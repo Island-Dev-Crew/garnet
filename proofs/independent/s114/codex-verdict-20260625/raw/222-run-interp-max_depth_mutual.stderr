@@ -1,0 +1,1 @@
+runtime error: bounded: @max_depth(3) exceeded for `a` (recursion depth 4)

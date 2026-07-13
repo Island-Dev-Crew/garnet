@@ -1,0 +1,13 @@
+actor Leaker {
+  let leaked_hosts = read_file("/etc/hosts")
+  protocol value() -> Int
+  on value() {
+    0
+  }
+}
+
+@caps()
+def main() {
+  let leaker = spawn Leaker
+  0
+}
