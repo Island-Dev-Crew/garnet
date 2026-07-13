@@ -55,3 +55,9 @@ Append-only session log, newest entry LAST.
 - Empirical blast radius: exactly the 4 predicted test files failed under strict (proc entry-gate at entry_frames==0 via unframed .call); s24 did not (its main doesn't hit the no-frame path). garnet-cli unchanged (latches the global, uses framed APIs) and garnet-vm unchanged (framed run paths).
 - Phase-close gates (branch): full workspace 0 failed, clippy clean, fmt clean, cargo doc -D warnings ok, caps-enforcement/capability-scope/red-team/bounded-enforcement/agent-contracts all pass. P3 phase DONE pending P3b merge.
 - Next: P4 rolling S114 (trust-kernel file set + policy + status gate), then the Jon-only CI-wiring PR (parked), then mission complete.
+- P3b merged as #477 (499717e), full CI green incl. agentic dogfood matrix.
+
+## 2026-07-13T04:50Z — session 1 (Phase 4a: rolling S114 policy + gate)
+
+- P4-T1: scripts/garnet_trust_kernel_review_status.py (schema garnet.trust_kernel_review/v1) makes S114 a recurring control. Machine-readable trust-kernel trigger set (checker / interp / vm / stdlib registry / wasm / CLI authority flows / capability reporters / /why + scope table). Given a diff (mirrors check_dogfood_pr_body.py's --base/--head/--changed-file), it requires a review companion — a scoped S114_ACCEPTANCE.json update, a proofs/independent/s114 or W_TRUST or VALIDATION_REPORTS artifact, or a named 'Trust-Kernel-Review:' commit trailer. --gate exits 1 on an uncompanioned trust-kernel change. Policy doc GARNET_TRUST_KERNEL_ROLLING_REVIEW.md + CURRENT_STATE.md row. 12 tests OK; gate behavior verified.
+- Next: P4-T2 opens the CI-wiring PR for the P2 + P4 gates and PARKS it for Jon (integrity rule 1); then mission complete.
