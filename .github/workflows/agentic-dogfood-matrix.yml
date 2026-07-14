@@ -10,20 +10,6 @@ name: Agentic dogfood matrix
 on:
   pull_request:
     branches: [main]
-    paths:
-      - ".github/workflows/agentic-dogfood-matrix.yml"
-      - "scripts/run_agentic_dogfood_matrix.py"
-      - "scripts/garnet_converter_advisory_bundle.py"
-      - "scripts/garnet_converter_llm_feasibility.py"
-      - "scripts/smoke_garnet_web_pwa_browser.mjs"
-      - "garnet-*/**"
-      - "garnet-cli/**"
-      - "garnet-convert/**"
-      - "apps/garnet-studio-macos/**"
-      - "apps/garnet-studio/**"
-      - "examples/**"
-      - "Cargo.toml"
-      - "Cargo.lock"
   workflow_dispatch: {}
 
 permissions:

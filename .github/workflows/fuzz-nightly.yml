@@ -15,12 +15,6 @@ name: Parser fuzz nightly
 on:
   pull_request:
     branches: [main]
-    paths:
-      - ".github/workflows/fuzz-nightly.yml"
-      - "garnet-parser-v0.3/fuzz/**"
-      - "scripts/garnet_proof_benchmark_status.py"
-      - "scripts/test_garnet_proof_benchmark_status.py"
-      - "F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md"
   schedule:
     # 07:00 UTC daily.
     - cron: "0 7 * * *"
