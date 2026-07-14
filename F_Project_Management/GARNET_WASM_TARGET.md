@@ -1,47 +1,59 @@
-# Garnet WASM target (S55)
+# Garnet WASM target (S55 / W-PLAY)
 
 Running Garnet in the browser via WebAssembly is a major adoption driver and the
-enabler for the playground (S56). This documents the path and its honest status.
+enabler for the live playground. This document separates the build lane that is
+already proven from the browser integration that is still open.
 
 ## Execution model
 
-Garnet has **no wasm backend** (it does not compile Garnet programs to wasm). The
-in-browser path is to compile the **interpreter** (`garnet-interp`) to
-`wasm32-unknown-unknown`, expose `Interpreter::load_source` / `eval`-style entry
-points through a thin JS shim, and run `*.garnet` source in the browser — the
-same tree-walking evaluator the CLI uses. The canonical program to run first is
+Garnet has **no Wasm backend**: Garnet programs are not compiled to Wasm. The
+browser path compiles the tree-walking **interpreter** to
+`wasm32-unknown-unknown`, exposes a thin `wasm-bindgen` API, and evaluates
+`*.garnet` source inside that module. The canonical first program remains
 [`examples/hello.garnet`](../examples/hello.garnet).
 
-## Status (honest — not built here)
+## Current status (2026-07-14)
 
-`scripts/garnet_wasm_readiness.py` reports this live. As of S55 the wasm build is
-**deferred**, with concrete blockers:
+The Wasm build is no longer hypothetical. W-PLAY's build/execution sublane is
+recorded by the clean-Windows WV-5 proof at
+[`proofs/windows/launch-verification/wv5-wasm-lane-20260712-0915/wv5-wasm-lane-proof.json`](../proofs/windows/launch-verification/wv5-wasm-lane-20260712-0915/wv5-wasm-lane-proof.json):
 
-| Blocker | What's needed |
-|---|---|
-| `wasm32` target not installed | `rustup target add wasm32-unknown-unknown` |
-| `wasm-pack` absent | install wasm-pack (bundle the interp + JS bindings) |
-| `wasmtime` absent | install wasmtime (for a non-browser wasm smoke) |
-| `garnet-interp` pulls `miette` `fancy` | feature-gate the `fancy` (terminal/backtrace) feature **off** for the wasm build — it is not browser-portable |
+- `garnet-wasm` exists and exposes real source-in/output-out execution through
+  `run_source` / `run_source_json`;
+- native Wasm-crate and interpreter output-capture tests passed;
+- `cargo build -p garnet-wasm --target wasm32-unknown-unknown` passed;
+- sequential `wasm-pack` web and Node package builds passed; and
+- Node loaded the generated module and executed Garnet source successfully.
 
-The reporter's `--gate` guards only the **owned** bits (the hello-world example +
-this doc); it does **not** fail on the absent toolchain — that is an honest
-deferral, not a regression.
+That proof also fixes the boundary: **Node execution is not browser-page
+execution.** The live adapter, the check/diff-caps surface, committed or
+reproducibly generated Pages assets, the under-30-second interaction, and the
+Playwright browser proof remain W-PLAY work.
 
-## The path (for an environment with the toolchain)
+## Reproduction tools are not product blockers
 
-1. `rustup target add wasm32-unknown-unknown`.
-2. Feature-gate `miette`'s `fancy` off for wasm (e.g. a `wasm` cargo feature that
-   selects a minimal diagnostic renderer).
-3. A small `garnet-wasm` crate: `wasm-bindgen` exports `run_source(src) -> String`
-   wrapping `garnet_interp::Interpreter`.
-4. `wasm-pack build` → an npm-consumable module the S56 playground imports.
-5. Smoke: load the module, `run_source(read("hello.garnet"))` → "Hello from
-   Garnet!".
+A machine reproducing WV-5 needs Rust's `wasm32-unknown-unknown` target,
+`wasm-pack`, and Node. Their absence on the machine running a status reporter is
+a local setup observation, not evidence that Garnet lacks a Wasm build.
+`wasmtime` is optional for an additional non-browser smoke; WV-5 used the actual
+`wasm-bindgen` Node package. The current dependency graph may still contain
+`miette`'s `fancy` feature, but the successful wasm32 and wasm-pack commands
+prove that it is not a build blocker on the recorded lane.
+
+## Remaining W-PLAY path
+
+1. Add the Wasm-facing check and capability-surface/diff APIs required by the
+   playground thesis.
+2. Build the web package reproducibly and bind it from
+   `docs/playground/live.js`.
+3. Prove real output plus a visible authority expansion in a clean browser.
+4. Record the under-30-second Playwright path and the built module hash.
+5. Confirm the live GitHub Pages URL and then flip the launch ledger row.
 
 ## Honest scope (do not soften)
 
-No wasm artifact is built and no browser run is claimed in this slice. Garnet has
-no wasm backend; the interpreter-to-wasm build is deferred until the blockers
-above are resolved. This slice ships the hello-world example, the readiness
-reporter, and this path doc.
+WV-5 proves an interpreter compiled to real Wasm and executed through Node. It
+does not prove a live browser page, an OS sandbox, a Garnet-to-Wasm compiler, or
+production readiness. The public "runs in your browser" claim remains blocked
+until the W-PLAY Playwright evidence is committed and the readiness reporters
+consume it.

@@ -50,7 +50,7 @@ DEFERRED_FOR_V0_8_0 = [
     "Runtime sandbox enforcement (S46 generates seccomp/WASI/egress policy; does not enforce).",
     "Release-artifact + supply-chain signing lanes (S51 lanes 2–3 — GPG/minisign/cosign external).",
     "OpenVSX / VS Code Marketplace publish (S54 — needs OVSX_TOKEN/VSCE_PAT credentials).",
-    "WASM build + browser playground execution (S55/S56 — wasm32/wasm-pack absent).",
+    "Live browser playground execution (S55/S56 — Wasm build + Node proof passed; W-PLAY browser adapter/package/Playwright proof remain).",
     "LLM advisory tier (compiler-as-agent rules tier ships; LLM tier pending-infra).",
     "Empirical Paper VI measurements / mechanized proofs (S48 inventory, not proof).",
 ]

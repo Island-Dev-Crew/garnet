@@ -54,8 +54,10 @@ grade it. Per the repo's standing rules, only Jon relabels independence — and
 5. **Track embedder strict mode, dependency-preload fail-soft, and
    test-helper fail-soft as hardening work.** These are engineering debt, not
    reasons to reject the whole S114 result.
-   *Closed by mission phase P3* — embedder strict-by-default, dependency-preload
-   fail-closed, and test-helper fail-closed, each with regression tests.
+   *Initially closed by mission phase P3* — high-level `Interpreter::new()`
+   methods became strict-by-default, and dependency-preload/test-helper/REPL
+   preload became fail-closed. The 2026-07-14 post-acceptance delta review
+   reopened the low-level Rust-host portion; see the current-status section.
 
 ## Review lineage (for audit)
 
@@ -67,9 +69,13 @@ grade it. Per the repo's standing rules, only Jon relabels independence — and
 | Residual fix | — | S114-FIX-2 deny-by-default mediation, PR #421 (merge `47a7ba7`) |
 | Reviewed commit | — | `2e2fe843e87be0c8fc9a4745a5bb138fba597d23` |
 | Fix commits | — | `4994867`, `47a7ba7` |
-| Relabel (pending acceptance) | Jon | PR #438 |
+| Verdict relabel | Jon | PR #438, merged 2026-06-29; scoped acceptance recorded separately on 2026-07-12 |
 
-## Scope limits carried forward (tracked, not blocking)
+## Decision-date scope limits (historical snapshot)
+
+The following bullets record what the acceptance artifact said on 2026-07-12.
+They are preserved in git at commit `155dec9`; the current status immediately
+below supersedes their future-tense wording.
 
 - **Third-party embedders** of `garnet-interp` / `garnet-vm` can still run
   permissive (unframed); hardened in P3, not covered by this acceptance.
@@ -79,6 +85,30 @@ grade it. Per the repo's standing rules, only Jon relabels independence — and
 - **OS-level sandbox** is generated policy (`enforced:false`), applied only on
   Linux via an external reference harness; macOS/Windows deferred.
 - **`memory::*` natives** are bridge-only and caps-invisible.
+
+## Post-acceptance current status (2026-07-14)
+
+- **Acceptance:** Jon's decision is recorded as `accepted-scoped`; the separate
+  verdict remains `independently-re-verified-with-fixes`. This is not an
+  independence relabel.
+- **Conditions 1–4:** closed. Durable evidence is reachable, the two bounded
+  `/why` claims remain fixed in count and meaning, and the normative scope table
+  separates checker/runtime/entry/OS enforcement.
+- **Condition 5:** **reopened in part by adversarial delta review.** The CLI,
+  dependency preload, test helper, and REPL preload fail closed, and
+  `Interpreter::new()` is strict during its high-level load/eval/call methods.
+  However, a Rust host can extract a native through the public `global`/`Value`
+  surface and invoke it via public low-level eval APIs outside the instance's
+  strict scope. That path is not reachable from Garnet source, the first-party
+  CLI, or the current Wasm wrapper, but it is inconsistent with an unqualified
+  embedder-wide strict-default statement and must be fixed or permanently
+  fenced before launch.
+- **Wasm:** WV-5 proves wasm32 build, wasm-pack web/Node packaging, real Node
+  execution, and a fail-closed authority result. Browser-page execution remains
+  unproven until the W-PLAY Playwright gate passes.
+- **Remaining scope limits:** checker-only/declared-only capability rows,
+  Linux-only external seccomp application, caps-invisible `memory::*`, and the
+  explicit trusted-host `new_permissive()` opt-out remain exactly bounded.
 
 See [`S114_ACCEPTANCE.json`](../LAUNCH/S114_ACCEPTANCE.json) for the
 machine-readable form the reporter consumes.

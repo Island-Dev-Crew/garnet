@@ -12,8 +12,9 @@ bypass open** on `eval`/`test`/`doctest`/`repl`/dependency-preload (a fail-open
 wired lanes, and **S114-FIX-2** closes the residual via deny-by-default mediation.
 Finding and fixing real holes is the honest outcome the academic bar
 (CMU/MIT/Rice/Berkeley) rewards; this is not a "nothing broke" claim. S114 is
-independently-re-verified-with-fixes **pending Jon's acceptance**, not
-self-attested-closed.
+**independently-re-verified-with-fixes**; Jon's separate scoped governance
+acceptance is recorded as `accepted-scoped` (2026-07-12). That decision is not
+an independence relabel or a self-attested closure.
 
 ## Method
 

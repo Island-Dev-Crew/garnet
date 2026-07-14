@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
-"""Regression tests for the WASM hello-world readiness reporter (S55)."""
+"""Regression tests for the evidence-backed Wasm / W-PLAY reporter."""
 from __future__ import annotations
 
 import importlib.util
+import json
+import os
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 SCRIPT = Path(__file__).with_name("garnet_wasm_readiness.py")
 SPEC = importlib.util.spec_from_file_location("garnet_wasm_readiness", SCRIPT)
@@ -18,26 +22,87 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class WasmReadinessTests(unittest.TestCase):
-    def test_hello_example_and_doc_present(self) -> None:
-        r = wasm.read_readiness()
-        self.assertTrue(r.hello_example_present, "examples/hello.garnet must exist")
-        self.assertTrue(r.target_doc_present, "GARNET_WASM_TARGET.md must exist")
-        self.assertTrue(r.owned_bits_ready)
+    def test_committed_wv5_build_and_node_proof_pass(self) -> None:
+        result = wasm.read_readiness()
+        self.assertEqual("garnet.wasm_readiness/v2", result.schema)
+        self.assertTrue(result.wasm_crate_present)
+        self.assertTrue(result.windows_proof_valid)
+        self.assertTrue(result.wasm_build_passed)
+        self.assertTrue(result.node_execution_passed)
+        self.assertTrue(result.owned_bits_ready)
 
-    def test_names_the_miette_fancy_blocker(self) -> None:
-        # The concrete portability blocker must be surfaced, not hidden.
-        r = wasm.read_readiness()
-        self.assertTrue(r.miette_fancy_blocker)
-        self.assertTrue(any("miette" in b for b in r.blockers))
+    def test_local_tools_are_observations_not_product_blockers(self) -> None:
+        with mock.patch.object(wasm, "_has_wasm32_target", return_value=False), mock.patch.object(
+            wasm.shutil, "which", return_value=None
+        ):
+            result = wasm.read_readiness()
+        self.assertTrue(result.owned_bits_ready)
+        self.assertFalse(result.wasm32_target_installed)
+        self.assertFalse(result.wasm_pack_present)
+        self.assertFalse(result.node_present)
+        joined = " ".join(result.blockers).lower()
+        self.assertNotIn("rustup", joined)
+        self.assertNotIn("wasm-pack absent", joined)
+        self.assertNotIn("miette", joined)
 
-    def test_gate_guards_owned_bits_only(self) -> None:
-        # The absent toolchain is an honest deferral, not a gate failure.
-        self.assertEqual(wasm.main(["--gate", "--format", "json"]), 0)
+    def test_missing_or_invalid_proof_fails_owned_gate(self) -> None:
+        with tempfile.NamedTemporaryFile(
+            "w", suffix=".json", delete=False, encoding="utf-8"
+        ) as handle:
+            json.dump({"schema": "wrong/v1", "verdict": "pass"}, handle)
+            temp_path = Path(handle.name)
+        try:
+            with mock.patch.object(wasm, "WV5_PROOF", temp_path):
+                result = wasm.read_readiness()
+            self.assertFalse(result.windows_proof_valid)
+            self.assertFalse(result.wasm_build_passed)
+            self.assertFalse(result.node_execution_passed)
+            self.assertFalse(result.owned_bits_ready)
+        finally:
+            os.unlink(temp_path)
 
-    def test_markdown_states_no_wasm_built(self) -> None:
-        md = wasm.render_markdown(wasm.read_readiness())
-        self.assertIn("no wasm is built", md)
-        self.assertIn("DEFERRED", md)
+    def test_node_semantic_markers_are_required(self) -> None:
+        with tempfile.NamedTemporaryFile(
+            "w", suffix=".txt", delete=False, encoding="utf-8"
+        ) as handle:
+            handle.write("NODE_SMOKE: PASS\n")
+            temp_path = Path(handle.name)
+        try:
+            with mock.patch.object(wasm, "WV5_NODE_LOG", temp_path):
+                result = wasm.read_readiness()
+            self.assertFalse(result.windows_proof_valid)
+            self.assertFalse(result.node_execution_passed)
+        finally:
+            os.unlink(temp_path)
+
+    def test_open_w_play_surfaces_are_named_as_blockers(self) -> None:
+        result = wasm.read_readiness()
+        joined = " ".join(result.blockers)
+        self.assertEqual(
+            not result.check_source_export_present,
+            "check_source" in joined,
+        )
+        self.assertEqual(
+            not result.caps_surface_export_present,
+            "capability-surface/diff" in joined,
+        )
+        self.assertEqual(
+            not result.browser_adapter_present,
+            "browser adapter" in joined,
+        )
+        self.assertEqual(
+            not result.browser_proof_present,
+            "Playwright" in joined,
+        )
+
+    def test_markdown_separates_node_proof_from_browser_claim(self) -> None:
+        markdown = wasm.render_markdown(wasm.read_readiness())
+        self.assertIn("real Node execution passed: True", markdown)
+        self.assertIn("does not prove live browser-page execution", markdown)
+        self.assertNotIn("no wasm is built", markdown.lower())
+
+    def test_gate_guards_committed_build_execution_evidence(self) -> None:
+        self.assertEqual(0, wasm.main(["--gate", "--format", "json"]))
 
     def test_hello_example_declares_no_caps(self) -> None:
         text = (ROOT / "examples" / "hello.garnet").read_text(encoding="utf-8")
