@@ -1,28 +1,19 @@
-# Garnet — macOS Studio (SwiftUI) CI.
+# Garnet Studio trust surfaces: native Swift plus Windows Tauri/browser CI.
 #
 # M0a (Track B enabling gate): before this, the native macOS Studio's
 # `swift build` / `swift test` and the shell contract ran in NO workflow — the
 # only macOS-touching Studio job (agentic-dogfood-matrix.yml) runs with
 # `--skip-app-workbench`, so "green CI -> merge" was hollow for Swift changes.
-# This job makes the macOS Studio build + unit tests + shell contract a real,
-# paths-scoped gate that subsequent Track-B slices (M0b..M8) merge under.
-name: macOS Studio
+# This workflow is intentionally unfiltered: both job contexts are required by
+# the default-branch ruleset on every PR, so a path filter would leave a required
+# check pending and would let platform-specific trust code become optional.
+name: Studio Trust
 
 on:
   push:
     branches: [main]
-    paths:
-      - 'apps/garnet-studio-macos/**'
-      - 'scripts/test_garnet_macos_studio_shell.py'
-      - 'scripts/package_garnet_studio_macos.sh'
-      - '.github/workflows/macos-studio.yml'
   pull_request:
     branches: [main]
-    paths:
-      - 'apps/garnet-studio-macos/**'
-      - 'scripts/test_garnet_macos_studio_shell.py'
-      - 'scripts/package_garnet_studio_macos.sh'
-      - '.github/workflows/macos-studio.yml'
   workflow_dispatch: {}
 
 permissions:
@@ -33,6 +24,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  windows-studio:
+    name: Windows Studio build + test
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/garnet-studio/package-lock.json
+      - name: Tauri backend format
+        run: cargo fmt --manifest-path apps/garnet-studio/src-tauri/Cargo.toml -- --check
+      - name: Tauri backend tests
+        run: cargo test --locked --manifest-path apps/garnet-studio/src-tauri/Cargo.toml
+      - name: Install Studio web dependencies
+        run: npm ci
+        working-directory: apps/garnet-studio
+      - name: Studio web production build
+        run: npm run build
+        working-directory: apps/garnet-studio
+      - name: Studio Playwright suite
+        run: npm run test:e2e
+        working-directory: apps/garnet-studio
+
   macos-studio:
     name: macOS Studio build + test
     runs-on: macos-latest
