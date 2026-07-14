@@ -1,6 +1,6 @@
 # Garnet Current State and Reviewer Guide
 
-Date: 2026-06-06
+Date: 2026-07-14
 Status: research-grade language/toolchain prototype
 
 This is the first file a fresh MIT reviewer, contributor, or agent should read
@@ -17,8 +17,9 @@ research corpus material, generated artifacts, and local scratch.
 > Codex) — two further HIGHs (load-time `@caps` bypass + invalid-`@max_depth`
 > seal), all fixed (`4994867`, #421/#424) with deny-by-default mediation closing
 > the residual fail-open lanes, Opus-final-reviewed and `/code-review ultra`-gated:
-> **independently-re-verified-with-fixes, pending Jon's acceptance** — not
-> self-attested-closed). The `v0.8.1`
+> **independently-re-verified-with-fixes**; Jon's separate scoped governance
+> acceptance is recorded as `accepted-scoped` (2026-07-12) — neither fact is
+> an independence relabel or a self-attested closure). The `v0.8.1`
 > Release ships **signed `garnet-0.8.1-*` CLI binaries** (`.deb`/`.rpm`/darwin
 > tarballs) + a CycloneDX SBOM + a GPG-signed `SHA256SUMS.asc` — the S91–S120
 > work is now in the published binary (verify per `docs/release-signing.md`).

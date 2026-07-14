@@ -57,13 +57,25 @@ follows:
 
 - **Managed (`def`) functions** push a caps frame per call; **program entry**
   additionally installs an entry frame.
-- With **no active frame**, a host primitive is allowed **unless** the
-  process-global `STRICT_NO_FRAME` latch is set (`eval.rs`). The `garnet` binary
-  sets that latch at startup, so **the CLI is deny-by-default on every lane**.
-- **Library / embedder callers** of `garnet-interp` / `garnet-vm` do **not** set
-  the latch, so they run **permissive** (unframed direct calls allowed) unless
-  they opt into the framed entry APIs. This is being hardened
-  (embedder strict-by-default) — see the S114 acceptance, condition #5.
+- With **no active frame**, a gated host primitive is refused whenever either
+  the interpreter instance is strict or the process-global `STRICT_NO_FRAME`
+  latch is set (`eval.rs`). `Interpreter::new()` is **strict by default** and
+  wraps its load/eval/call operations in that per-instance strict scope.
+- The `garnet` binary also sets the one-way process-global latch at startup, so
+  **the CLI is deny-by-default on every lane** even if internal code creates an
+  explicitly permissive interpreter.
+- **Library / embedder callers** using `Interpreter::new()` through its
+  high-level load/eval/call methods receive the same strict default.
+  `Interpreter::new_permissive()` is the explicit legacy opt-out for trusted
+  harnesses and deliberate integrations; it cannot override a process whose
+  global latch has already been set.
+- **Low-level Rust host APIs are not an embedder sandbox.** `Interpreter::global`,
+  `Value::NativeFn`, and `eval::call_value` are public. A host that extracts and
+  invokes a native outside an `Interpreter` method also executes outside that
+  instance's strict scope. The 2026-07-14 post-acceptance delta review reopened
+  condition #5 until no-frame denial covers this raw path by default. Therefore
+  the current claim is *strict-by-default on the high-level Interpreter API*,
+  not "every public Rust call path is deny-by-default."
 
 Pure computation and the checker-only class (`time::*`, `uuid` v4/v7) are never
 runtime-trapped. VM/interpreter parity for the gated surface (including the S92
@@ -74,12 +86,15 @@ scope-parity tests.
 
 - **May say (true):** undeclared OS authority fails `garnet check`; `@caps` and
   `@max_depth` trap identically on both backends for the gated surface, with
-  cross-OS trap parity recorded as evidence; the `garnet` CLI is deny-by-default.
+  cross-OS trap parity recorded as evidence; the `garnet` CLI and the default
+  high-level `Interpreter::new()` load/eval/call path are deny-by-default.
 - **May not say (overclaim):** "universal `@caps` runtime enforcement"; "no
-  ambient authority, ever" as a runtime-universal claim; that embedders are
-  safe-by-default; that `time`/`uuid`/`ffi`/`net_internal`/`memory::*` are
-  runtime-gated; that OS-sandbox enforcement holds beyond Linux-seccomp via the
-  reference harness.
+  ambient authority, ever" as a runtime-universal claim; that every third-party
+  embedder is forced to use the strict constructor, that the explicit
+  `new_permissive()` opt-out does not exist, or that raw public Env/Value/eval
+  calls inherit an instance scope they do not enter; that
+  `time`/`uuid`/`ffi`/`net_internal`/`memory::*` are runtime-gated; that
+  OS-sandbox enforcement holds beyond Linux-seccomp via the reference harness.
 
 The two currently-published bounded enforcement claims (test-runner entry
 authority; VM/interpreter scope parity) live in `docs/why.html` and are the only

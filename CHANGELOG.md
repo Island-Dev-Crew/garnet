@@ -7,6 +7,26 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated-honesty record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
+## Unreleased — S114/Wasm current-truth reconciliation (2026-07-14)
+
+- **Corrected current normative surfaces:** S114 is
+  `independently-re-verified-with-fixes`, and Jon separately recorded
+  `accepted-scoped` on 2026-07-12. Acceptance is not pending, is not an
+  independence relabel, and does not make Garnet launch-ready.
+- **Bounded the embedder statement:** `Interpreter::new()` is strict across its
+  high-level load/eval/call methods, while `new_permissive()` and direct public
+  Env/Value/eval host APIs remain explicit boundaries. The post-acceptance
+  delta review reopened condition #5 until raw no-frame calls fail closed by
+  default.
+- **Reconciled W-PLAY evidence:** committed WV-5 evidence proves the wasm32
+  build, wasm-pack web/Node packages, real Node execution, and a fail-closed
+  authority result. It does **not** prove browser-page execution; the adapter,
+  capability-diff surface, package provenance, and Playwright path remain open.
+- **Hardened truth automation:** the Wasm reporter consumes and hashes the WV-5
+  proof bundle rather than treating local tool presence as product state; the
+  capability-scope fixture now exact-checks acceptance, embedder, and
+  Wasm-versus-browser boundaries in addition to counting bounded claims.
+
 ## Unreleased — gate fix: dogfood PR-body checker skipped `.github/` paths (2026-07-13)
 
 ### `scripts/check_dogfood_pr_body.py` — path normalization closed a silent gate hole

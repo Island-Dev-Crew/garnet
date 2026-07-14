@@ -2,9 +2,11 @@
 """Playground MVP readiness + honesty gate (S56).
 
 The playground is a **static gallery** (real Garnet programs + their recorded
-`garnet run` output), not a live editor — live in-browser execution waits on the
-WASM build (S55). This reporter checks the gallery is well-formed AND that the
-page keeps its honest stance (it must not silently become a fake-editor claim).
+`garnet run` output), not a live editor. The Wasm build + Node execution lane is
+proven; live in-browser execution still waits on the W-PLAY adapter, package,
+and Playwright proof. This reporter checks the gallery is well-formed AND that
+the page keeps its honest stance (it must not silently become a fake-editor
+claim).
 
 ## Honest scope (do not soften)
 The playground does not execute code in the browser. This gate guards the static
@@ -98,7 +100,8 @@ def render_markdown(r: PlaygroundReadiness) -> str:
             f"**Playground gallery OK: {'yes' if r.ok else 'NO'}.**",
             "",
             "Honest scope: a static gallery (recorded outputs), not a live editor; "
-            "in-browser execution waits on the WASM build (S55).",
+            "the Wasm build + Node lane is proven, while browser execution waits "
+            "on the W-PLAY adapter/package/Playwright proof.",
             "",
         ]
     )

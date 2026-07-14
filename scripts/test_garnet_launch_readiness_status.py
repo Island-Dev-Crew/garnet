@@ -361,7 +361,8 @@ class S114AcceptanceGateTests(unittest.TestCase):
             any("not an independence relabel" in e for e in gate.evidence),
             gate.evidence,
         )
-        self.assertTrue(any("scope limit (tracked)" in e for e in gate.evidence))
+        self.assertTrue(any("current scope limit (tracked)" in e for e in gate.evidence))
+        self.assertTrue(any("condition-5-reopened" in e for e in gate.evidence))
 
     def test_external_pending_without_artifact(self) -> None:
         with mock.patch.object(status_mod, "read_s114_acceptance", return_value=None):

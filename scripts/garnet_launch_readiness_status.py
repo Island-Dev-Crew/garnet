@@ -371,8 +371,18 @@ def _s114_gate(deps: Dependencies) -> LaunchGate:
         "not an independence relabel: S114 verdict language is unchanged "
         "(independently-re-verified-with-fixes)",
     ]
+    closure = acceptance.get("post_acceptance_closure", {})
+    current_limits = (
+        closure.get("current_scope_limits", [])
+        if isinstance(closure, dict)
+        else []
+    )
+    if isinstance(closure, dict) and closure.get("state"):
+        evidence.append(f"post-acceptance closure: {closure['state']}")
     evidence.extend(
-        f"scope limit (tracked): {item}" for item in acceptance.get("out_of_scope", [])
+        f"current scope limit (tracked): {item}"
+        for item in current_limits
+        if isinstance(item, str) and item.strip()
     )
     return LaunchGate(
         id="s114_acceptance",
@@ -405,11 +415,16 @@ def _static_playground_gate(deps: Dependencies) -> LaunchGate:
 
 
 def _live_wasm_gate(deps: Dependencies) -> LaunchGate:
-    blockers = ["live in-browser execution not built (W-PLAY workstream)"]
-    blockers.extend(deps.wasm.blockers)
+    blockers = list(deps.wasm.blockers)
     evidence: list[str] = []
-    if deps.wasm.owned_bits_ready:
-        evidence.append("repo-owned WASM prerequisites ready")
+    if deps.wasm.wasm_build_passed:
+        evidence.append(
+            "WV-5 clean-Windows evidence: wasm32 + wasm-pack web/node builds passed"
+        )
+    if deps.wasm.node_execution_passed:
+        evidence.append(
+            "WV-5 real Node execution passed, including fail-closed authority smoke"
+        )
     return LaunchGate(
         id="live_wasm_playground",
         label="Live WASM playground (W-PLAY, launch centerpiece)",

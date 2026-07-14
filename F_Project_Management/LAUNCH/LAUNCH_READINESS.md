@@ -42,10 +42,13 @@ Evidence:
 - S114 accepted (scoped) by Jon (repo owner) on 2026-07-12: first-party CLI/Wasm trust-kernel baseline
 - recorded in F_Project_Management/LAUNCH/S114_ACCEPTANCE.json (read, not graded, by this reporter)
 - not an independence relabel: S114 verdict language is unchanged (independently-re-verified-with-fixes)
-- scope limit (tracked): Third-party embedders of garnet-interp / garnet-vm: permissive (unframed) execution is still possible unless strict/framed is chosen; being hardened in mission phase P3 (embedder strict-by-default). Not covered by this acceptance.
-- scope limit (tracked): Capability rows that are checker-only (time::*, uuid v4/v7) or declared-only (ffi, net_internal): enforced at check time / in generated sandbox policy, NOT uniformly runtime-gated. Documented in the P2 capability enforcement scope table.
-- scope limit (tracked): OS-level sandbox enforcement: seccomp/WASI/egress policy is generated (enforced:false) and applied only on Linux via an external reference harness; macOS/Windows OS sandboxing is named-deferred.
-- scope limit (tracked): memory::* natives: bridge-only, caps-invisible; outside the capability registry.
+- post-acceptance closure: condition-5-reopened-by-post-acceptance-delta-review
+- current scope limit (tracked): Interpreter::new_permissive() deliberately permits unframed direct calls for trusted integrations; strict-by-default is not a claim that the opt-out is impossible.
+- current scope limit (tracked): Direct use of the public low-level Env/Value/eval APIs is controlled by the Rust host and can execute outside an Interpreter method's per-instance strict scope; it is not covered as a sandbox boundary.
+- current scope limit (tracked): Capability rows that are checker-only (time::*, uuid v4/v7) or declared-only (ffi, net_internal) are not uniformly runtime-gated.
+- current scope limit (tracked): OS-level sandbox policy is generated with enforced:false and applied only on Linux via the external seccomp reference harness; macOS/Windows OS sandboxing remains named-deferred.
+- current scope limit (tracked): memory::* natives remain bridge-only and caps-invisible.
+- current scope limit (tracked): WV-5 proves the Wasm build and Node execution, not live browser-page execution.
 
 ### `static_playground` — Static playground gallery (honest, recorded outputs)
 
@@ -62,11 +65,15 @@ Blockers:
 State: **remaining**
 
 Evidence:
-- repo-owned WASM prerequisites ready
+- WV-5 clean-Windows evidence: wasm32 + wasm-pack web/node builds passed
+- WV-5 real Node execution passed, including fail-closed authority smoke
 
 Blockers:
-- live in-browser execution not built (W-PLAY workstream)
-- garnet-interp pulls miette `fancy` (terminal/backtrace) — feature-gate it off for wasm
+- W-PLAY check_source Wasm export is not implemented
+- W-PLAY capability-surface/diff Wasm export is not implemented
+- docs/playground/live.js browser adapter is not implemented
+- browser Wasm package is not present under docs/playground/pkg
+- W-PLAY Playwright browser proof is not recorded
 
 ### `minimum_sealed_shelf` — Minimum sealed shelf (Core Ring Tier 1 + MCP library)
 

@@ -25,8 +25,10 @@ fn main() -> ExitCode {
     // (complete mediation / fail-safe default) on every lane — `run`, `eval`,
     // `test`, `doctest`, `repl`, and dependency preload alike — closing the
     // fail-open lanes the load-time-frame fix (4994867) did not wire. Library
-    // and embedder callers (which never run this `main`) keep the permissive
-    // direct-call default.
+    // and embedder callers using `Interpreter::new()`'s high-level methods are
+    // also strict by default; `new_permissive()` is their explicit legacy
+    // opt-out, and this process-global latch still dominates that opt-out
+    // inside the CLI.
     garnet_interp::eval::set_strict_no_frame(true);
 
     let args: Vec<String> = std::env::args().skip(1).collect();
