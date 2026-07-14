@@ -42,6 +42,7 @@ jobs:
       - run: python3 scripts/test_garnet_capability_scope_status.py
       - run: python3 scripts/test_garnet_trust_kernel_review_status.py
       - run: python3 scripts/test_garnet_required_context_contract.py
+      - run: python3 scripts/test_garnet_workflow_file_policy.py
       - run: python3 scripts/test_github_actions_node24_readiness.py
       - run: python3 scripts/test_garnet_windows_linux_studio_status.py
       - run: python3 scripts/test_garnet_windows_linux_studio_shell.py
