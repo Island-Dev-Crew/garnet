@@ -1,0 +1,11 @@
+{"schema": "garnet.trust_kernel_delta_review/v2",
+ "review_id": "GOV-003-workflow-snapshot",
+ "reviewer": {"identity": "codex:b1-snapshot-final-review", "lane": "independent-in-thread-read-only"},
+ "authors": ["codex:workflow-boundary-repair", "codex:root-integration-lane"],
+ "verdict": "approved-with-conditions",
+ "reviewed_base": "098bb76f55d828a90dd98819e6d0121527810856",
+ "reviewed_paths": [".github/workflows/ci.yml", "scripts/garnet_workflow_file_policy.py", "scripts/test_garnet_workflow_file_policy.py"],
+ "reviewed_content_sha256": "a34e8d39494525fe639347178d354e98c3a44ec9dd03aa79b71f69089e058ce8",
+ "summary": "Approved after adversarial review closed Git environment and replace-object redirection plus non-commit treeish acceptance; the immutable byte boundary is ready as a dormant B1 primitive.",
+ "findings": [{"id": "GOV-003-F1", "severity": "high", "status": "resolved", "blocking": true, "summary": "Inherited Git environment variables and replace refs could redirect the index or object bytes."}, {"id": "GOV-003-F2", "severity": "high", "status": "resolved", "blocking": true, "summary": "Mutable refs and bare subtree IDs were accepted where an exact commit OID was required."}],
+ "limitations": ["Ubuntu CI must run the symlink regression without a skip; B2 must reject malformed syntax, invalid encodings, unacceptable semantics, and an empty inventory; activation must supply the authoritative resolved base commit; add a Git subprocess wall-clock timeout before use on arbitrary user repositories."]}
