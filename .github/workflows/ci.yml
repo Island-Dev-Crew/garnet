@@ -34,7 +34,8 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-python@v6
         with:
-          python-version: '3.x'
+          python-version: '3.14'
+      - run: "python3 -I -m pip install --disable-pip-version-check --force-reinstall --no-deps --only-binary=:all: --require-hashes -r scripts/garnet_workflow_yaml_requirements.txt"
       - run: python3 scripts/test_check_dogfood_pr_body.py
       - run: python3 scripts/test_check_agent_contracts.py
       # S114 acceptance (P2/P4): capability-claim scope fixture + rolling
@@ -43,6 +44,7 @@ jobs:
       - run: python3 scripts/test_garnet_trust_kernel_review_status.py
       - run: python3 scripts/test_garnet_required_context_contract.py
       - run: python3 scripts/test_garnet_workflow_file_policy.py
+      - run: python3 -I scripts/test_garnet_workflow_yaml_policy.py
       - run: python3 scripts/test_github_actions_node24_readiness.py
       - run: python3 scripts/test_garnet_windows_linux_studio_status.py
       - run: python3 scripts/test_garnet_windows_linux_studio_shell.py
