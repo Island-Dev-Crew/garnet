@@ -1,0 +1,11 @@
+{"schema": "garnet.trust_kernel_delta_review/v2",
+ "review_id": "GOV-004-workflow-yaml-policy",
+ "reviewer": {"identity": "codex:b2-final-semantic-review", "lane": "independent-in-thread-read-only"},
+ "authors": ["codex:workflow-yaml-policy-implementation", "codex:root-integration-lane"],
+ "verdict": "approved-with-conditions",
+ "reviewed_base": "e7d01f9dc04cb226a65b1d67a1781b8b25f14ebf",
+ "reviewed_paths": [".github/workflows/ci.yml", "scripts/garnet_workflow_yaml_policy.py", "scripts/garnet_workflow_yaml_requirements.txt", "scripts/test_garnet_workflow_yaml_policy.py"],
+ "reviewed_content_sha256": "ff827bfe35464e4b0b7ca23f8cd5b5357ba876201f5c522de985a0e5d0baee10",
+ "summary": "Approved after the combined scanner was narrowed to an immutable typed canonical-YAML AST boundary, the CI scalar was quoted, and dependency installation plus execution were isolated and content-pinned.",
+ "findings": [{"id": "GOV-004-F1", "severity": "high", "status": "resolved", "blocking": true, "summary": "An unquoted pip option colon made the candidate CI workflow invalid YAML."}, {"id": "GOV-004-F2", "severity": "high", "status": "resolved", "blocking": true, "summary": "The combined scanner discarded scalar types and accepted unvalidated GitHub schema fields; scope was split and this slice now preserves typed scalar style without making a schema or producer claim."}, {"id": "GOV-004-F3", "severity": "high", "status": "resolved", "blocking": true, "summary": "Non-isolated pip or module resolution could select repository shadow modules; install and execution now require -I and load the exact force-reinstalled hashed wheel origin."}],
+ "limitations": ["This slice proves canonical typed YAML AST construction from B1 immutable Git blobs only; GitHub schema validity, expression/event/job semantics, producer availability, conditional and duplicate-context policy, inventory equality, active-workflow identity, and ruleset activation remain later slices. Remote Ubuntu must reproduce the suite without the Windows symlink privilege skip."]}
