@@ -7,6 +7,7 @@ import os
 import re
 import stat
 import unicodedata
+from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -36,6 +37,23 @@ class ProducerInventory:
     optional_contexts: set[str] = field(default_factory=set)
     target_branch: str = ""
     problems: list[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class ProducerBinding:
+    producer: Producer
+    workflow: object
+    event: object
+    occurrence: object
+    dependency_contexts: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class ProducerEvaluation:
+    bindings: tuple[ProducerBinding, ...] = ()
+    prepared_optional: tuple[ProducerBinding, ...] = ()
+    inactive_optional: tuple[Producer, ...] = ()
+    problems: tuple[str, ...] = ()
 
 
 def _no_duplicates(pairs: list[tuple[str, object]]) -> dict[str, object]:
@@ -198,3 +216,146 @@ def load_inventory(path: Path) -> ProducerInventory:
     if optional - seen:
         problems.append("optional_contexts names contexts absent from producers")
     return ProducerInventory(producers, optional, branch, problems)
+
+
+def _matrix_binding(occurrence: object) -> tuple[str, str] | None:
+    binding = occurrence.binding
+    return None if binding is None else (binding[0], binding[1].value)
+
+
+def _producer_event(workflow: object, producer: Producer, problems: list[str]) -> object | None:
+    label = f"{producer.workflow}:{producer.job}"
+    events = [item for item in workflow.events if item.name in {"pull_request", "pull_request_target"}]
+    if len(events) != 1:
+        problems.append(f"{label} must have exactly one PR-class event")
+        return None
+    event = events[0]
+    if event.name != producer.event:
+        problems.append(f"{label} producer identity event mismatch")
+    filters = tuple((key, tuple(value.value for value in values)) for key, values in event.filters)
+    safe = not filters or filters == (("branches", (TARGET_BRANCH,)),)
+    if not safe:
+        problems.append(f"{label} PR event must be unfiltered or exact branches [{TARGET_BRANCH}]")
+    return event
+
+
+def _dependency_jobs(workflow: object, job: object, problems: list[str]) -> tuple[object, ...]:
+    by_id = {item.job_id: item for item in workflow.jobs}
+    ordered: list[object] = []
+    seen: set[str] = set()
+    visiting: set[str] = set()
+
+    def visit(job_id: str) -> None:
+        if job_id in seen:
+            return
+        if job_id in visiting or job_id not in by_id:
+            problems.append(f"{workflow.source.relative}:{job.job_id} has an invalid dependency {job_id!r}")
+            return
+        visiting.add(job_id)
+        dependency = by_id[job_id]
+        for raw in dependency.needs:
+            visit(raw.value)
+        visiting.remove(job_id)
+        seen.add(job_id)
+        ordered.append(dependency)
+
+    for raw in job.needs:
+        visit(raw.value)
+    return tuple(ordered)
+
+
+def evaluate_producer_availability(
+    inventory: ProducerInventory, projection: object
+) -> ProducerEvaluation:
+    """Bind declared producers to immutable projected occurrences, all-or-zero."""
+    problems = [*inventory.problems, *getattr(projection, "problems", ())]
+    if inventory.target_branch != TARGET_BRANCH:
+        problems.append(f"producer inventory target_branch must be {TARGET_BRANCH!r}")
+    if not inventory.producers:
+        problems.append("producer inventory is unexpectedly empty")
+    workflows = tuple(getattr(projection, "workflows", ()))
+    if not workflows and not problems:
+        problems.append("workflow projection is unexpectedly empty")
+    if problems:
+        return ProducerEvaluation(problems=tuple(problems))
+
+    occurrences: list[tuple[object, object]] = [
+        (workflow, occurrence)
+        for workflow in workflows
+        for occurrence in workflow.contexts
+    ]
+    by_context: dict[str, list[tuple[object, object]]] = {}
+    for item in occurrences:
+        by_context.setdefault(item[1].context, []).append(item)
+    for context, matches in by_context.items():
+        if len(matches) != 1:
+            problems.append(f"duplicate projected context {context!r}: {len(matches)} occurrences")
+
+    declared = {item.context: item for item in inventory.producers}
+    bindings: list[ProducerBinding] = []
+    prepared: list[ProducerBinding] = []
+    inactive: list[Producer] = []
+    matched: list[tuple[Producer, object, object]] = []
+    for producer in inventory.producers:
+        optional = producer.context in inventory.optional_contexts
+        matches = by_context.get(producer.context, [])
+        if not matches:
+            if optional:
+                inactive.append(producer)
+            else:
+                problems.append(f"producer {producer.context!r} must occur exactly once; found 0")
+            continue
+        if len(matches) != 1:
+            continue
+        workflow, occurrence = matches[0]
+        actual = (workflow.source.relative, occurrence.job.job_id, _matrix_binding(occurrence))
+        expected = (producer.workflow, producer.job, producer.matrix)
+        if actual != expected:
+            problems.append(f"producer {producer.context!r} identity mismatch: {actual!r} != {expected!r}")
+        event = _producer_event(workflow, producer, problems)
+        job = occurrence.job
+        if job.condition is not None:
+            problems.append(f"{producer.workflow}:{producer.job} has job-level if")
+        if job.continue_on_error is not None and job.continue_on_error.value != "false":
+            problems.append(f"{producer.workflow}:{producer.job} enables soft failure")
+        dependencies = _dependency_jobs(workflow, job, problems)
+        dependency_contexts = tuple(
+            item.context for dependency in dependencies
+            for item in workflow.contexts if item.job is dependency
+        )
+        for dependency in dependencies:
+            if dependency.condition is not None:
+                problems.append(f"{producer.workflow}:{producer.job} dependency {dependency.job_id!r} has job-level if")
+            if dependency.continue_on_error is not None and dependency.continue_on_error.value != "false":
+                problems.append(f"{producer.workflow}:{producer.job} dependency {dependency.job_id!r} enables soft failure")
+        for context in dependency_contexts:
+            dependency = declared.get(context)
+            if dependency is None:
+                problems.append(f"{producer.workflow}:{producer.job} dependency context {context!r} is undeclared")
+            elif not optional and context in inventory.optional_contexts:
+                problems.append(f"{producer.workflow}:{producer.job} has optional dependency {context!r}")
+        matched.append((producer, workflow, occurrence))
+        if event is not None:
+            binding = ProducerBinding(producer, workflow, event, occurrence, dependency_contexts)
+            (prepared if optional else bindings).append(binding)
+
+    checked_jobs: set[tuple[str, str]] = set()
+    for producer, workflow, occurrence in matched:
+        key = (workflow.source.relative, occurrence.job.job_id)
+        if key in checked_jobs:
+            continue
+        checked_jobs.add(key)
+        actual = Counter(
+            (item.context, _matrix_binding(item))
+            for item in workflow.contexts if item.job is occurrence.job
+        )
+        expected = Counter(
+            (item.context, item.matrix) for item in inventory.producers
+            if (item.workflow, item.job) == key and by_context.get(item.context)
+        )
+        if actual != expected:
+            problems.append(f"{key[0]}:{key[1]} job expansion does not match its declared occurrences")
+
+    if problems:
+        return ProducerEvaluation(problems=tuple(problems))
+    return ProducerEvaluation(tuple(bindings), tuple(prepared), tuple(inactive), ())
