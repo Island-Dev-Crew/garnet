@@ -43,6 +43,11 @@ TRUST_KERNEL_PREFIXES = (
     "garnet-vm/src/",               # VM: scope parity + entry-frame install
     "garnet-stdlib/src/",           # capability registry (single source of truth)
     "garnet-wasm/src/",             # wasm runner authority surface
+    ".github/actions/",             # reusable CI enforcement actions
+    ".github/rulesets/",            # checked-in branch-governance contract
+    ".github/workflows/",            # required-check producers and policy gates
+    "scripts/garnet_",              # governance/readiness policy implementations
+    "scripts/test_garnet_",         # policy regression suites
 )
 TRUST_KERNEL_FILES = (
     "garnet-cli/src/cmd/run.rs",            # run lane + dependency preload
@@ -120,7 +125,7 @@ def _changed_from_git(base: str | None, head: str) -> list[str]:
         base = mb.stdout.strip()
     if not base:
         return []
-    diff = _git("diff", "--name-only", f"{base}...{head}")
+    diff = _git("diff", "--no-renames", "--name-only", f"{base}...{head}")
     if diff.returncode != 0:
         return []
     return [ln for ln in diff.stdout.splitlines() if ln.strip()]

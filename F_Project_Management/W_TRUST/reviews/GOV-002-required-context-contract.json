@@ -5,14 +5,16 @@
   "authors": ["codex:governance-repair-redteam", "codex:root-integration-lane"],
   "verdict": "approved-with-conditions",
   "reviewed_base": "d6105511ebd7debe6d9082691cf1b03490e15d4d",
-  "reviewed_paths": [".github/workflows/ci.yml", "scripts/garnet_required_context_contract.py", "scripts/test_garnet_required_context_contract.py"],
-  "reviewed_content_sha256": "7cc57f1dd4ce250af56c44f0ced5405a73f7f37d62ff54e712039eee1f7a0227",
-  "summary": "Approved after adversarial probes drove exact-main, lowercase-path, canonical-identity, bounded-file, and filesystem-indirection hardening; the dormant contract and its focused CI line are ready to land.",
+  "reviewed_paths": [".github/workflows/ci.yml", "scripts/garnet_required_context_contract.py", "scripts/garnet_trust_kernel_review_status.py", "scripts/test_garnet_required_context_contract.py", "scripts/test_garnet_trust_kernel_review_status.py"],
+  "reviewed_content_sha256": "6d7f855a63ea904ed2c35be41b9951cae317d00364fbea02ee9e387c81759a8b",
+  "summary": "Approved after adversarial probes drove exact-main, lowercase-path, canonical-identity, bounded-file, filesystem-indirection, and rolling-review trigger hardening; the dormant contract and its focused CI line are ready to land.",
   "findings": [
     {"id": "GOV-002-F1", "severity": "high", "status": "resolved", "blocking": true, "summary": "Arbitrary target branches were replaced by an exact main-branch contract with regression coverage."},
     {"id": "GOV-002-F2", "severity": "high", "status": "resolved", "blocking": true, "summary": "Case-ambiguous workflow paths and noncanonical context or matrix identities now fail closed."},
     {"id": "GOV-002-F3", "severity": "high", "status": "resolved", "blocking": true, "summary": "The loader now rejects oversized, non-regular, unstable, symlinked, or reparse-point inventory paths."},
-    {"id": "GOV-002-F4", "severity": "medium", "status": "resolved", "blocking": true, "summary": "Surrogate, separator, nonbreaking-space, control, format, and non-NFC context identities now fail closed."}
+    {"id": "GOV-002-F4", "severity": "medium", "status": "resolved", "blocking": true, "summary": "Surrogate, separator, nonbreaking-space, control, format, and non-NFC context identities now fail closed."},
+    {"id": "GOV-002-F5", "severity": "high", "status": "resolved", "blocking": true, "summary": "The live v1 rolling-review gate now recognizes Garnet policy scripts and GitHub workflow, ruleset, and action paths as trust-kernel changes."},
+    {"id": "GOV-002-F6", "severity": "high", "status": "resolved", "blocking": true, "summary": "Git change enumeration disables rename detection so moving a trust path outside its prefix still exposes the protected deletion."}
   ],
   "limitations": [
     "The Ubuntu agent-contracts run must execute the symlink regression without a skip before merge; this Windows account lacks symlink privilege.",

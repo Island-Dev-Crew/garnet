@@ -7,6 +7,7 @@ import subprocess
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 SCRIPT = Path(__file__).with_name("garnet_trust_kernel_review_status.py")
 SPEC = importlib.util.spec_from_file_location("garnet_trust_kernel_review_status", SCRIPT)
@@ -28,6 +29,10 @@ class ClassificationTests(unittest.TestCase):
             "garnet-cli/src/cmd/run.rs",
             "garnet-cli/src/bin/garnet.rs",
             "scripts/garnet_capability_scope_status.py",
+            "scripts/garnet_required_context_contract.py",
+            "scripts/test_garnet_required_context_contract.py",
+            ".github/workflows/ci.yml",
+            ".github/rulesets/garnet-main.json",
             "docs/why.html",
             "C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md",
         ):
@@ -57,6 +62,12 @@ class ClassificationTests(unittest.TestCase):
 
 
 class GateLogicTests(unittest.TestCase):
+    def test_git_diff_decomposes_renames(self) -> None:
+        result = subprocess.CompletedProcess([], 0, ".github/rulesets/old.json\ndocs/new.json\n", "")
+        with mock.patch.object(mod, "_git", return_value=result) as git:
+            self.assertEqual(2, len(mod._changed_from_git("base", "head")))
+        git.assert_called_once_with("diff", "--no-renames", "--name-only", "base...head")
+
     def test_trust_kernel_without_companion_fails(self) -> None:
         s = mod.read_status(changed=["garnet-interp-v0.3/src/eval.rs"], trailer=False)
         self.assertTrue(s.trust_kernel_touched)
