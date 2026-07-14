@@ -1,0 +1,172 @@
+{
+  "name": "Garnet main - human-gated trust kernel",
+  "target": "branch",
+  "enforcement": "active",
+  "bypass_actors": [],
+  "conditions": {
+    "ref_name": {
+      "include": [
+        "~DEFAULT_BRANCH"
+      ],
+      "exclude": []
+    }
+  },
+  "rules": [
+    {
+      "type": "deletion"
+    },
+    {
+      "type": "non_fast_forward"
+    },
+    {
+      "type": "required_linear_history"
+    },
+    {
+      "type": "pull_request",
+      "parameters": {
+        "allowed_merge_methods": [
+          "squash",
+          "rebase"
+        ],
+        "dismiss_stale_reviews_on_push": true,
+        "require_code_owner_review": false,
+        "require_last_push_approval": false,
+        "required_approving_review_count": 0,
+        "required_review_thread_resolution": true
+      }
+    },
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "do_not_enforce_on_create": false,
+        "strict_required_status_checks_policy": true,
+        "required_status_checks": [
+          {
+            "context": "Analyze (rust)",
+            "integration_id": 15368
+          },
+          {
+            "context": "Build VSIX (macos-latest)",
+            "integration_id": 15368
+          },
+          {
+            "context": "Build VSIX (ubuntu-latest)",
+            "integration_id": 15368
+          },
+          {
+            "context": "Cross-OS determinism comparison",
+            "integration_id": 15368
+          },
+          {
+            "context": "CycloneDX SBOM",
+            "integration_id": 15368
+          },
+          {
+            "context": "Deterministic build on macos-latest",
+            "integration_id": 15368
+          },
+          {
+            "context": "Deterministic build on ubuntu-latest",
+            "integration_id": 15368
+          },
+          {
+            "context": "Generate single signing key for cross-OS build",
+            "integration_id": 15368
+          },
+          {
+            "context": "Garnet web PWA smoke",
+            "integration_id": 15368
+          },
+          {
+            "context": "PR dogfood evidence",
+            "integration_id": 15368
+          },
+          {
+            "context": "Windows Studio build + test",
+            "integration_id": 15368
+          },
+          {
+            "context": "agentic dogfood matrix",
+            "integration_id": 15368
+          },
+          {
+            "context": "agent documentation contracts",
+            "integration_id": 15368
+          },
+          {
+            "context": "build-packages",
+            "integration_id": 15368
+          },
+          {
+            "context": "canonical MVP examples",
+            "integration_id": 15368
+          },
+          {
+            "context": "cargo audit",
+            "integration_id": 15368
+          },
+          {
+            "context": "cargo fuzz run parse_input",
+            "integration_id": 15368
+          },
+          {
+            "context": "cargo doc",
+            "integration_id": 15368
+          },
+          {
+            "context": "cargo test (macos-latest)",
+            "integration_id": 15368
+          },
+          {
+            "context": "cargo test (ubuntu-latest)",
+            "integration_id": 15368
+          },
+          {
+            "context": "cargo test (windows-latest)",
+            "integration_id": 15368
+          },
+          {
+            "context": "cargo-deny check",
+            "integration_id": 15368
+          },
+          {
+            "context": "clippy (-D warnings)",
+            "integration_id": 15368
+          },
+          {
+            "context": "machine-truth drift guard",
+            "integration_id": 15368
+          },
+          {
+            "context": "macOS Studio build + test",
+            "integration_id": 15368
+          },
+          {
+            "context": "macos-cli-tarballs (aarch64-apple-darwin)",
+            "integration_id": 15368
+          },
+          {
+            "context": "macos-cli-tarballs (x86_64-apple-darwin)",
+            "integration_id": 15368
+          },
+          {
+            "context": "rustfmt",
+            "integration_id": 15368
+          },
+          {
+            "context": "shellcheck-installer",
+            "integration_id": 15368
+          },
+          {
+            "context": "smoke-deb",
+            "integration_id": 15368
+          },
+          {
+            "context": "smoke-rpm",
+            "integration_id": 15368
+          }
+        ]
+      }
+    }
+  ]
+}

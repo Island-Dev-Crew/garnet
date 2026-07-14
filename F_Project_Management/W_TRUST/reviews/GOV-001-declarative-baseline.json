@@ -1,0 +1,19 @@
+{
+  "schema": "garnet.trust_kernel_delta_review/v2",
+  "review_id": "GOV-001-declarative-baseline",
+  "reviewer": {"identity": "codex:governance-repair-redteam", "lane": "independent-in-thread-read-only"},
+  "authors": ["@IslandDevCrew", "codex:root-implementation-lane"],
+  "verdict": "approved-with-conditions",
+  "reviewed_base": "f92eade8b404a3dd51be6422ed313bb95f3bb750",
+  "reviewed_paths": [".github/CODEOWNERS", ".github/rulesets/README.md", ".github/rulesets/garnet-main.json", ".github/rulesets/repository-settings.json", "GOVERNANCE.md"],
+  "reviewed_content_sha256": "eeeec0bf05e5a80f04b6cb19a87d56d43b3002e43de57776d4bcb14b99ac23a6",
+  "summary": "Approved as a 31-context declarative mirror after truth-copy corrections; admin readback matched live ruleset 18936562 and exact repository/Actions settings.",
+  "findings": [],
+  "limitations": [
+    "No validator, protected workflow, or 32nd required context lands in this slice; governance bootstrap and Gate 1 remain open.",
+    "The authenticated readback is point-in-time and must rerun immediately before and after merge; CODEOWNERS is metadata only, reviewer configured/verified remain false, and no independent GitHub actor approval is proven.",
+    "Ordinary required checks bind context plus GitHub Actions App, not workflow/event/ID; collision protection is not live and protected-workflow readiness currently returns 404.",
+    "PR #488 proved all 31 producers once, but the protected exact producer-mapping validator is not live in this declarative slice; producer drift remains a residual risk.",
+    "The 381-line PR slice is manually below 400; mechanical enforcement lands separately, and Archipelago auto-merge/Gate-Merge Fusion is not adopted."
+  ]
+}
