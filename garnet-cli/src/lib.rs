@@ -19,6 +19,7 @@ pub mod edition_manifest;
 pub mod knowledge;
 pub mod machine_key;
 pub mod manifest;
+pub mod mcp_schema;
 pub mod new_cmd;
 pub mod panic_firewall;
 pub mod provenance;
