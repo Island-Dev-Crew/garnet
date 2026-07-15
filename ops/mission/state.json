@@ -1,17 +1,17 @@
 {
   "version": 1,
   "mission": {
-    "name": "Garnet S114 Closure & Hardening",
-    "tagline": "Accept the narrow truth, then harden the parts that made rejection tempting.",
+    "name": "Garnet Launch Convergence",
+    "tagline": "Close the authenticated governance boundary while W-PLAY and the Minimum Sealed Shelf become real products.",
     "repo": "Island-Dev-Crew/garnet",
     "repoPath": "C:/garnet",
     "defaultBranch": "main",
-    "planDoc": "C:/Users/IslandDevCrew/Desktop/Garnet-S114-Plan-of-Attack-v1-2026-07-12.html",
-    "northStar": "S114 accepted at its true scope (first-party CLI/Wasm trust-kernel baseline) with durable evidence, mechanically bounded claims, fail-closed CLI lanes, and a rolling review control. Never overclaim.",
-    "status": "complete",
+    "planDoc": "F_Project_Management/VALIDATION_REPORTS/Garnet-Launch-Preparation-State-of-the-Union-v1-2026-07-15.html",
+    "northStar": "An authenticated, complete, exact-head merge boundary plus a live in-browser Garnet proof and one reproducible sealed local Shelf demo. Claim only what the committed traps prove.",
+    "status": "active",
     "started": "2026-07-12",
-    "updated": "2026-07-13T18:10:00Z",
-    "sessionCount": 2
+    "updated": "2026-07-15T17:47:00Z",
+    "sessionCount": 3
   },
   "policies": {
     "merge": "auto",
@@ -420,6 +420,85 @@
           "notes": "3-agent source-verification workflow fetched every fact 2026-07-13. Corrections vs the cowork copy applied (373/169+2 not 403/172; 48h dropped; slsa.dev qualifier linked; joint CISA alert; 'days later' not 'successor'; insurance framing accurate per-carrier; Testudo 'marketed up to $10M'; Wolfe attribution; RCE wording; eBuilder .se URL). Companion: W_TRUST/WHY_UPGRADE_REVIEW_2026-07-13.md with the full correction table + source ledger."
         }
       ]
+    },
+    {
+      "id": "P7",
+      "title": "Parallel Launch Convergence",
+      "goal": "Close authenticated live governance while W-PLAY and one Minimum Sealed Shelf become real, evidence-backed product paths; then reconcile one launch candidate without widening claims.",
+      "status": "in-progress",
+      "sessionsEstimate": "8-14",
+      "gates": [
+        {
+          "id": "P7-G1",
+          "title": "GOV-009 proves authenticated, complete, exact-head live GitHub state and live no-bypass policy equality",
+          "command": "python -I scripts/test_garnet_github_governance_gate.py",
+          "status": "pending",
+          "evidence": null,
+          "lastRun": null,
+          "notes": "Context 32 activation, workflow wiring, action pins, and old-base execution remain separate human-reviewed steps."
+        },
+        {
+          "id": "P7-G2",
+          "title": "W-PLAY records clean-browser run/check/diff/denial proof before any browser-live claim",
+          "command": "node scripts/smoke_garnet_playground_browser.mjs --gate",
+          "status": "pending",
+          "evidence": null,
+          "lastRun": null,
+          "notes": "PR #498 supplies only the first Wasm check/diff adapter slice."
+        },
+        {
+          "id": "P7-G3",
+          "title": "Minimum Shelf records bounded stdio, one sealed baseline, and reject-without-seal proof",
+          "command": "python scripts/smoke_garnet_minimum_shelf.py --gate",
+          "status": "pending",
+          "evidence": null,
+          "lastRun": null,
+          "notes": "Arbitrary external MCP host enforcement and hosted-registry claims remain out of scope."
+        },
+        {
+          "id": "P7-G4",
+          "title": "One frozen candidate passes the launch ledger, integrity gates, security review, and product synchronization audit",
+          "command": "python scripts/garnet_launch_readiness_status.py --gate",
+          "status": "pending",
+          "evidence": null,
+          "lastRun": null,
+          "notes": "Expected to remain HOLD until the three active lanes and remaining language-depth reconciliation are complete."
+        }
+      ],
+      "tasks": [
+        {
+          "id": "P7-T1",
+          "title": "GOV-009 authenticated transport, exact attempt/head projection, live admin-policy equality, review record, and human-only activation handoff",
+          "status": "in-progress",
+          "dependsOn": [],
+          "pr": null,
+          "notes": "PRs #500 and #502 established authenticated object transport and strict physical Link parsing; #506 merged bounded 32-page/3,200-row collection. Candidate anchoring, run selection, live admin equality, verdict, and activation remain open."
+        },
+        {
+          "id": "P7-T2",
+          "title": "W-PLAY Wasm adapter, reproducible browser package, page integration, Playwright traps, deployment observation, and reporter promotion",
+          "status": "in-progress",
+          "dependsOn": [],
+          "pr": null,
+          "notes": "PR #498 merged check/diff Wasm exports and #505 merged the hermetic package probe. Verification hardening is locally approved; package materialization, page integration, Playwright, and browser evidence remain open."
+        },
+        {
+          "id": "P7-T3",
+          "title": "Minimum Shelf MCP core, bounded stdio, one repo-bundled Garnet tool, sealed baseline, rejection proof, and deterministic reporter",
+          "status": "in-progress",
+          "dependsOn": [],
+          "pr": null,
+          "notes": "PRs #501, #503, and #504 merged schema, lifecycle, and adversarial foundations. The strict JSON input boundary is locally approved; one bounded in-process Garnet tool must precede raw-byte stdio and sealing."
+        },
+        {
+          "id": "P7-T4",
+          "title": "Reconcile the Mac Air language-depth report, synchronize all user-facing surfaces/evidence, clean the public repo, and produce the Jon-owned launch decision packet",
+          "status": "pending",
+          "dependsOn": ["P7-T1", "P7-T2", "P7-T3"],
+          "pr": null,
+          "notes": "WV-6 follows product convergence; WV-7 and external launch messaging begin only after the live playground and Shelf are excellent and one candidate is frozen."
+        }
+      ]
     }
   ],
   "metrics": [
@@ -499,6 +578,34 @@
       "current": "0",
       "target": "0",
       "direction": "down"
+    },
+    {
+      "label": "GOV-009 authenticated live-governance closure slices",
+      "baseline": "0 of 4",
+      "current": "2 of 4 (transport + bounded page-number completeness; no live verdict)",
+      "target": "4 of 4",
+      "direction": "up"
+    },
+    {
+      "label": "Required contexts with candidate-independent old-base enforcement",
+      "baseline": "0 of 32",
+      "current": "0 of 32 (31 candidate-relative contexts active; context 32 preactivation)",
+      "target": "32 of 32 after human activation",
+      "direction": "up"
+    },
+    {
+      "label": "W-PLAY product boundary",
+      "baseline": "real Wasm + Node execution (WV-5)",
+      "current": "check/diff adapter + hermetic package probe active; materialized package/browser unproven",
+      "target": "clean-browser run/check/diff/denial proof + live route",
+      "direction": "up"
+    },
+    {
+      "label": "Minimum Sealed Shelf product boundary",
+      "baseline": "80 primitives + 5 local seeds + self-declared mcp-caps",
+      "current": "schema + lifecycle + adversarial core active; strict input parser approved locally; no tool/stdio/seal",
+      "target": "stdio + one sealed baseline + reject-without-seal + reporter",
+      "direction": "up"
     }
   ],
   "risks": [
@@ -508,9 +615,9 @@
       "note": "The promo ledger line now reads the committed PROMO_EVIDENCE_SNAPSHOT.json (public-site-embedded 95.0%); the live ~/Desktop/dogfood probe is still invoked but no longer determines the rendered value. Update the snapshot from the evidence machine when promo evidence materially changes."
     },
     {
-      "title": "No GitHub branch protection on main",
-      "severity": "medium",
-      "note": "protected:false — green-before-merge is agent discipline. Full CI (~27 checks, ~6 min) must be verified green before every autonomous squash-merge."
+      "title": "Candidate-relative governance remains preactivation",
+      "severity": "high",
+      "note": "The live ruleset now requires 31 contexts, but candidate CI still executes candidate validators and context 32 is intentionally inactive. GOV-009 must prove authenticated complete exact-head live state before trusted old-base activation."
     },
     {
       "title": "New proof bundles can fail the repo-wide CI integrity gate",
@@ -518,14 +625,24 @@
       "note": "Any malformed MANIFEST.sha256 or EOL slip under proofs/ fails ci.yml's evidence-integrity job for every later PR. Seal against committed bytes; run the gate locally before push (CRLF incident precedent)."
     },
     {
-      "title": "P3-T1 breaks a documented embedder contract",
-      "severity": "medium",
-      "note": "CHANGELOG.md:297-303 advertises the permissive embedder default. The flip is deliberate plan work (condition #5) and must be recorded in CHANGELOG, not slipped in."
+      "title": "Embedder strict-by-default contract reversal — RESOLVED in P3",
+      "severity": "low",
+      "note": "Interpreter::new() is strict with explicit new_permissive() opt-out and the change is recorded in CHANGELOG/current truth. Raw direct Env/Value/eval host APIs remain a named boundary, not a universal embedder claim."
     },
     {
       "title": "CI-wiring PRs depend on Jon",
       "severity": "low",
       "note": "New gates run locally + are opened as parked PRs; they are not CI-enforced until Jon merges the wiring (integrity rule 1)."
+    },
+    {
+      "title": "W-PLAY can false-green at the adapter boundary",
+      "severity": "high",
+      "note": "A wasm32 or Node pass does not prove the browser page, package provenance, or rendered denial flow. Public claim promotion waits for committed clean-browser Playwright evidence."
+    },
+    {
+      "title": "Minimum Shelf can overclaim MCP enforcement",
+      "severity": "high",
+      "note": "The existing .mcpcaps surface is self-declared and arbitrary external MCP hosts are not Garnet-enforced. The stronger claim is limited to the flagship Garnet tool executing under the real entry capability frame."
     }
   ],
   "prLog": [
@@ -626,23 +743,35 @@
       "url": "https://github.com/Island-Dev-Crew/garnet/pull/485",
       "phase": "P6",
       "mergedAt": "2026-07-13"
+    },
+    {
+      "number": 496,
+      "title": "Add offline required-context workflow/App identity graph",
+      "url": "https://github.com/Island-Dev-Crew/garnet/pull/496",
+      "phase": "P7-preactivation",
+      "mergedAt": "2026-07-15"
     }
   ],
   "resume": {
-    "activePhase": "P6",
+    "activePhase": "P7 + P8 + P9",
     "nextActions": [
-      "MISSION COMPLETE. Nothing is parked; all gates green on main. This block is the post-mission pointer set.",
-      "Launch lane (outside this mission): WV-4 (Studio Playwright pass, harness from #422), WV-7 (winget/scoop dry-run, devcontainer/Docker, installer happy-path), WV-6 (after Core Ring Tier 1 + MCP library ship). launch_ready remains honestly HOLD on playground/live-wasm/shelf gates.",
-      "Optional (Jon flagged in #483): retro-audit of past workflow-only PRs that skipped the dogfood body requirement under the lstrip bug.",
-      "Deferred (post-launch, recorded): edition 2021->2024 migration; benchmark 'Ruby 3.4 + YJIT' framing refresh at next re-run; optional CI wasm32 build job; blog 2026-05-20 re-anchor; /why persuasive prose lines 231/250 (not runtime overclaims)."
+      "P7: build the authenticated repository/open-PR/base/head/tree candidate anchor, then stable workflow/run snapshots, latest-attempt/freshness/outcome, and live ruleset/settings/no-bypass collectors as separate PRs.",
+      "P8 in parallel: merge the approved hermetic verification layer, then package materialization, live adapter/page, Playwright traps, and evidence-backed reporter promotion.",
+      "P9 in parallel: merge the approved strict JSON input boundary, then one bounded in-process Garnet tool, raw-byte stdio, sealed baseline, reject-without-seal proof, and deterministic Shelf reporter.",
+      "After P7/P8/P9: freeze one candidate for P10, reconcile the Mac Air language-depth report, synchronize Front Door/Studios/CLI/evidence, and decide WV-6/WV-7 plus launch readiness.",
+      "Optional debt that does not interrupt the three active lanes: retro-audit workflow-only PR bodies skipped before #483; edition 2024; benchmark framing refresh; blog re-anchor."
     ],
-    "blockers": [],
+    "blockers": [
+      "Future GOV-009 workflow/gate wiring and the human 31-to-32 activation ceremony are Jon-merge-only integrity changes.",
+      "Public runs-in-your-browser and Shelf-ready claims remain blocked until their own committed Playwright/seal/reporter evidence exists."
+    ],
     "conventions": [
-      "One task-cluster = one branch (mission/<phaseId>-<slug>) = one PR; squash-merge with the 'Autonomous merge — agent: Claude Code (Fable 5); gates: ...' trailer after full CI green",
+      "One task-cluster = one branch (mission/<phaseId>-<slug>) = one PR; preserve a recorded RED before implementation and fresh GREEN evidence before review/merge",
       "PRs touching workflow files / dogfood gate / diff-caps / capability-manifest standard: open and park for Jon, never self-merge",
       "Never hand-edit F_Project_Management/LAUNCH/LAUNCH_READINESS.md (reporter-rendered, byte-pinned); never touch sealed proof bundles; never push tags",
       "Truth-Lock language: never 'enforced/independent/signed/sandboxed/production' beyond the tested boundary; /why keeps exactly the two bounded enforced claims",
-      "On this machine: python (not python3); pin 'C:\\Program Files\\Git\\usr\\bin\\bash.exe' in any harness argv (System32 wrapper drops exit codes); remote aux/* branches cannot be fetched on Windows",
+      "On this Windows machine use python for local scripts; pin C:\\Program Files\\Git\\usr\\bin\\bash.exe where a harness needs Git Bash; do not infer Linux or macOS runtime proof from Windows portability",
+      "Require an explicit admin-authoritative credential for GOV-009 live policy reads; never inherit the active gh account and never persist or print the token",
       "Update state.json + journal + re-render report + commit after every merge (the heartbeat)"
     ]
   }
