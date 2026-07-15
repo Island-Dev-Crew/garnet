@@ -13,10 +13,10 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 - **Fail-closed boundary:** initialization is the first valid interaction, orphan responses close silently, exhausted sessions close after one bounded error, and unadvertised methods never reach a placeholder router.
 - **Honest boundary:** capabilities remain empty; this is not stdio, a tool host, Garnet execution, `.mcpcaps` enforcement, sealing, registry publication, or launch evidence. Duplicate-key and message/depth/node limits remain required before transport.
 
-## Unreleased — GOV-009 authenticated governance object transport (2026-07-15)
+## Unreleased — GOV-009 authenticated governance object and collection transport (2026-07-15)
 
-- **Added:** a standard-library-only authenticated GitHub REST object transport with exact-repository URL binding, canonical path/query checks, bounded strict JSON parsing, no-redirect handling, injected no-network tests, and secret-safe all-or-zero results.
-- **Honest boundary:** this first primitive fetches exact single-object endpoints only; complete pagination and an RFC Link parser are explicitly deferred to a separate PR. It does not issue a GOV-009 live-governance verdict, select review attempts or freshness, activate required context 32, or alter CI/workflows.
+- **Added:** a standard-library-only authenticated GitHub REST transport with exact-repository URL binding, strict JSON and physical RFC Link parsing, plus bounded complete page-number collection retrieval. Collection requests start at canonical page one, validate every relation, bind numeric repository rewrites through one named authenticated preflight, and return the whole chain or zero rows.
+- **Honest boundary:** this is page-number HTTP completeness only. Stable domain-row identity, atomic snapshots, cursor/since pagination, governance verdicts, reviewed-head or latest-attempt selection, freshness/outcome grading, admin authority, context 32 activation, and CI/workflow changes remain deferred.
 
 ## Unreleased — W-PLAY check/diff Wasm adapter (2026-07-15)
 
