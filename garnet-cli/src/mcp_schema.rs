@@ -26,6 +26,15 @@ pub fn valid_initialized_notification_params(value: Option<&Value>) -> bool {
         })
 }
 
+pub(crate) fn valid_request_params(value: Option<&Value>) -> bool {
+    value.is_none()
+        || value.is_some_and(|value| {
+            value.as_object().is_some_and(|params| {
+                allowed_keys(params, &["_meta"]) && valid_request_meta(params)
+            })
+        })
+}
+
 fn valid_client_info(value: &Value) -> bool {
     let Some(info) = value.as_object() else {
         return false;

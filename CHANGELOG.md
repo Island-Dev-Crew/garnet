@@ -7,6 +7,12 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated-honesty record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
+## Unreleased — Minimum Shelf MCP lifecycle core (2026-07-15)
+
+- **Added:** a pure released-MCP `2025-11-25` session core with initialize negotiation, mandatory ping, the initialized transition, exact bounded request IDs, and explicit respond/no-response/close actions.
+- **Fail-closed boundary:** initialization is the first valid interaction, orphan responses close silently, exhausted sessions close after one bounded error, and unadvertised methods never reach a placeholder router.
+- **Honest boundary:** capabilities remain empty; this is not stdio, a tool host, Garnet execution, `.mcpcaps` enforcement, sealing, registry publication, or launch evidence. Duplicate-key and message/depth/node limits remain required before transport.
+
 ## Unreleased — GOV-009 authenticated governance object transport (2026-07-15)
 
 - **Added:** a standard-library-only authenticated GitHub REST object transport with exact-repository URL binding, canonical path/query checks, bounded strict JSON parsing, no-redirect handling, injected no-network tests, and secret-safe all-or-zero results.
