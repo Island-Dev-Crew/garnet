@@ -72,6 +72,11 @@ Owns the `garnet` binary, subcommand routing, template embedding, deterministic 
   boundary. It validates known client capability and implementation metadata
   shapes while allowing only top-level vendor capability extensions. It is not
   a session, transport, tool router, or host.
+- `garnet_cli::mcp` is the pure lifecycle/session boundary. It enforces
+  initialize-first state, mandatory ping, initialized readiness, bounded exact
+  request IDs, and explicit respond/no-response/close actions. Empty advertised
+  capabilities and method-not-found responses are honesty fences: do not route
+  tools, stdio, interpreter execution, or authority through this module.
 - New agent-documentation tooling should start as opt-in or checking behavior before becoming a language requirement.
 
 ## Required Checks
