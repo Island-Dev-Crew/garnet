@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Garnet Launch Preparation State of the Union - July 15, 2026</title>
+  <style>
+    :root{color-scheme:dark;--bg:#070b13;--paper:#101827;--paper2:#152238;--ink:#f5f7fb;--muted:#aebbd0;--line:rgba(174,187,208,.19);--garnet:#ff617c;--mint:#66e3bd;--blue:#7eb7ff;--amber:#ffd166;--red:#ff8f8f;--violet:#c5a8ff}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 8% 0,rgba(255,97,124,.15),transparent 30rem),radial-gradient(circle at 92% 8%,rgba(126,183,255,.14),transparent 33rem),var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.55}
+    main{width:min(1200px,calc(100% - 32px));margin:auto;padding:38px 0 64px}a{color:var(--blue)}p{margin:0}h1,h2,h3{margin:0;line-height:1.12}h1{max-width:900px;margin-top:9px;font-size:clamp(2.35rem,5.8vw,4.8rem);letter-spacing:-.045em}h2{margin-bottom:15px;font-size:clamp(1.55rem,3vw,2.25rem)}h3{margin-bottom:7px;font-size:1.03rem}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#e0f7ef;font-size:.9em}
+    .eyebrow{color:var(--garnet);font-size:.76rem;font-weight:900;letter-spacing:.15em;text-transform:uppercase}.hero{display:grid;grid-template-columns:minmax(0,1fr) 365px;gap:26px;align-items:end;padding:25px 0 34px;border-bottom:1px solid var(--line)}.summary{max-width:790px;margin-top:18px;color:var(--muted);font-size:1.08rem}.chips{margin-top:16px}.chip{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:4px 10px;margin:2px 4px 2px 0;background:rgba(255,255,255,.05);color:var(--muted);font-size:.76rem;font-weight:850}.green{color:var(--mint);border-color:rgba(102,227,189,.38)}.amber{color:var(--amber);border-color:rgba(255,209,102,.38)}.red{color:var(--red);border-color:rgba(255,143,143,.38)}.blue{color:var(--blue);border-color:rgba(126,183,255,.38)}.violet{color:var(--violet);border-color:rgba(197,168,255,.38)}
+    .panel,.metric,.verdict,.finding,.phase,.task{border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,var(--paper2),var(--paper));box-shadow:0 18px 46px rgba(0,0,0,.22)}.verdict{padding:22px;border-color:rgba(255,97,124,.35)}.verdict strong{display:block;color:var(--garnet);font-size:1.72rem;line-height:1.08}.verdict span{display:block;margin-top:11px;color:var(--muted);font-size:.94rem}
+    section{padding-top:38px}.grid{display:grid;gap:15px}.two{grid-template-columns:repeat(2,minmax(0,1fr))}.three{grid-template-columns:repeat(3,minmax(0,1fr))}.four{grid-template-columns:repeat(4,minmax(0,1fr))}.panel,.metric,.task{padding:18px}.panel p,.task p,li,.muted{color:var(--muted)}.metric strong{display:block;margin-bottom:7px;color:#fff;font-size:1.85rem;line-height:1}.metric small{display:block;margin-top:8px;color:var(--blue)}.kicker{max-width:900px;margin-bottom:14px;color:var(--muted)}
+    .bar{height:8px;margin-top:12px;overflow:hidden;border-radius:99px;background:#08111f}.bar i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--garnet),var(--amber))}.timeline{display:grid;gap:10px}.tl{display:grid;grid-template-columns:145px 1fr;gap:14px;padding:13px 15px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.035)}.tl b{color:var(--mint)}.tl p{color:var(--muted)}
+    .table-wrap{overflow-x:auto;border-radius:12px}table{width:100%;border-collapse:collapse;font-size:.91rem}th,td{padding:10px 12px;border:1px solid var(--line);text-align:left;vertical-align:top}th{background:rgba(255,255,255,.055);color:#fff;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase}td{color:var(--muted)}td b,td strong{color:#fff}.finding{padding:16px 18px;margin-top:10px}.sev{margin-right:8px;font-size:.7rem;font-weight:950;letter-spacing:.08em;text-transform:uppercase}.sev.high{color:var(--red)}.sev.med{color:var(--amber)}.finding h3{display:inline;font-size:.99rem}.finding p{margin-top:6px;color:var(--muted);font-size:.92rem}.finding .proof{color:var(--blue)}
+    .phase{display:grid;grid-template-columns:82px 1fr;gap:18px;padding:20px;margin-top:13px}.num{display:grid;place-items:center;width:68px;height:68px;border-radius:17px;background:rgba(255,97,124,.12);color:var(--garnet);font-size:1.45rem;font-weight:950}.phase:nth-of-type(3n) .num{background:rgba(102,227,189,.12);color:var(--mint)}.phase:nth-of-type(3n+1) .num{background:rgba(126,183,255,.12);color:var(--blue)}.meta{margin:4px 0;color:var(--garnet);font-size:.82rem;font-weight:850}.phase ul{margin-bottom:0}.callout{border-left:4px solid var(--amber);padding:15px 17px;background:rgba(255,209,102,.07);color:var(--muted);border-radius:0 12px 12px 0}.footer{margin-top:42px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:.9rem}.mono{word-break:break-all}
+    @media(max-width:900px){main{width:min(100% - 24px,760px);padding-top:24px}.hero,.two,.three,.four{grid-template-columns:1fr}.phase{grid-template-columns:1fr}.tl{grid-template-columns:1fr}h1{font-size:2.55rem}}
+  </style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Garnet / flagship progress audit / exact-main evidence</p>
+      <h1>The foundation held. Now stop hardening in circles and finish the launch product.</h1>
+      <p class="summary">This report reconstructs the full #472-#496 run from Git history, current reporters, mission artifacts, live governance configuration, implementation surfaces, and three independent audits followed by adversarial refutation. The bounded S114 mission is complete. Garnet is not launch-complete: the live browser, Minimum Shelf, base-controlled governance, public truth cleanup, and final human gates remain.</p>
+      <div class="chips"><span class="chip green">25 merged PRs</span><span class="chip green">S114 mission 100%</span><span class="chip blue">93.1% committed-truth pulse</span><span class="chip amber">3/6 launch-critical gates</span><span class="chip red">Launch: HOLD</span></div>
+    </div>
+    <aside class="verdict"><strong>Strategically aligned; tactically delayed.</strong><span>The governance detour corrected a real false-green risk, so it was not wasted drift. But visible product gates barely moved. Close the named governance boundary, run W-PLAY and Shelf in parallel, then reconcile language depth and launch truth on one frozen candidate.</span></aside>
+  </header>
+
+  <section aria-labelledby="score">
+    <h2 id="score">One project, four honest denominators</h2>
+    <p class="kicker">There is no defensible single completion percentage. Each number answers a different question.</p>
+    <div class="grid four">
+      <article class="metric"><strong>100%</strong><span class="muted">S114 Closure &amp; Hardening: 7/7 phases, 19/19 tasks, 17/17 gates.</span><div class="bar"><i style="width:100%"></i></div><small>Confidence 99%</small></article>
+      <article class="metric"><strong>93.1%</strong><span class="muted">MIT/productization committed-truth pulse: 65.2 status-score equivalents across 70 counted lanes.</span><div class="bar"><i style="width:93.1%"></i></div><small>Confidence 98% in reporter; not release probability</small></article>
+      <article class="metric"><strong>50.0%</strong><span class="muted">Launch-critical: foundation, native Linux, and S114 satisfy 3 of 6 machine/manual product gates.</span><div class="bar"><i style="width:50%"></i></div><small>Confidence 99%</small></article>
+      <article class="metric"><strong>37.5%</strong><span class="muted">Whole launch ledger: 3 of 8 states closed; promo QA and Jon-only FIRE remain intentionally human.</span><div class="bar"><i style="width:37.5%"></i></div><small>Recommendation remains HOLD</small></article>
+    </div>
+    <div class="callout" style="margin-top:16px"><b>Interpretation:</b> 93.1% is a categorical repository-health pulse, not a forecast that launch is 93.1% complete. The tracked implementation plan is also 87/87, but its scope predates the remaining launch contract. The honest executive shorthand is: <b>100% of the bounded mission, 93.1% productization pulse, 50% of launch-critical gates.</b></div>
+  </section>
+
+  <section aria-labelledby="run">
+    <h2 id="run">The run, start to current</h2>
+    <p class="kicker">Exact range <code class="mono">d0d4f7cc988db4d793c5c7555a4043aef9b27180..32ec9624d571596decd9ea50c64ca9f06fa49131</code>: 25 merged PR commits in roughly 46h54m; 1,042 changed paths, 11,508 insertions, 240 deletions. Of those paths, 947 are proof artifacts—review volume, not equivalent control coverage.</p>
+    <div class="timeline">
+      <article class="tl"><b>#472-#480</b><p><strong>Decision became durable engineering.</strong> Scoped S114 acceptance, recovered independent bundles, exact claim boundaries, CLI fail-closed authority, strict high-level embedder default, rolling review, and CI wiring.</p></article>
+      <article class="tl"><b>#481-#487</b><p><strong>Hygiene and truth correction.</strong> Three-lockfile advisory coverage, two quick-xml advisory fixes, the <code>.github</code> PR-body tripwire repair, /why reconciliation and upgrade, mission closeout, and Wasm evidence correction.</p></article>
+      <article class="tl"><b>#488-#496</b><p><strong>Governance foundation.</strong> Unconditional required-check producers, exact 31-context baseline, immutable Git-object snapshot, typed YAML, schema projection, exact producer/ruleset equality, multiplicity/inventory binding, and workflow/App identity.</p></article>
+      <article class="tl"><b>Current tree</b><p><strong>Clean code; stale committed heartbeat.</strong> Main is at <code>32ec962</code>, while committed <code>ops/mission/state.json</code> still ends at #485. The separate dirty accumulator contains the #496 reconciliation and was treated as evidence, never silently committed.</p></article>
+    </div>
+  </section>
+
+  <section aria-labelledby="drift">
+    <h2 id="drift">Alignment and drift assessment</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Dimension</th><th>Evidence</th><th>Verdict</th><th>Control going forward</th></tr></thead>
+      <tbody>
+        <tr><td><b>Mission scope</b></td><td>Every declared S114 phase/task/gate closed.</td><td><span class="chip green">Aligned</span></td><td>Do not reopen WV-1/2/3 or relabel S114.</td></tr>
+        <tr><td><b>Security/governance</b></td><td>A producer defect proved the 31-name ruleset could look stronger than its producers; #488-#496 corrected structural layers.</td><td><span class="chip green">Useful detour</span></td><td>Finish only the frozen transport, semantics, action-pin, old-base, and activation sequence.</td></tr>
+        <tr><td><b>Launch product</b></td><td>Only S114 advanced in the launch ledger; MIT pulse stayed 93.1%; live browser and Shelf remain unbuilt.</td><td><span class="chip amber">Tactically delayed</span></td><td>Run W-PLAY and Shelf as the next two product lanes.</td></tr>
+        <tr><td><b>Truth surfaces</b></td><td>24 vs 80 primitives, inconsistent Rust floor, stale Linux wording and MIT origin summary.</td><td><span class="chip red">Drifted</span></td><td>Generate claims from reporters and supersede dated packets before MIT review.</td></tr>
+        <tr><td><b>Platform lanes</b></td><td>Native Linux foundation passes; Windows/Linux distribution is 83%; macOS Studio distribution is 75% with signing/notarization open.</td><td><span class="chip blue">Selective replay</span></td><td>One primary build OS now; second desktop replay at artifact freeze; targeted Linux regression.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section aria-labelledby="findings">
+    <h2 id="findings">What survived adversarial review</h2>
+    <p class="kicker">Three auditors independently covered progress, governance/security, and product/language depth. Fresh reviewers then attempted to refute every high-consequence finding. The corrected findings below survived.</p>
+    <article class="finding"><span class="sev high">High / 99%</span><h3>Launch is correctly HOLD.</h3><p>Only three of six launch-critical gates satisfy their required state. The live browser and Minimum Shelf are code/product gaps; static gallery, promo status, or a high productization pulse cannot substitute. <span class="proof">LAUNCH_READINESS.md; garnet_launch_readiness_status.py</span></p></article>
+    <article class="finding"><span class="sev high">High / 98%</span><h3>W-PLAY is ahead of its old schedule but not a live browser product.</h3><p>Real <code>run_source</code> Wasm and Node execution—including fail-closed authority—exist. Missing are browser <code>check_source</code>, capability/diff exports, adapter, committed package, and Playwright browser proof. It is not “starting from zero”; it is unfinished at the product boundary. <span class="proof">garnet-wasm/src/lib.rs; scripts/garnet_wasm_readiness.py</span></p></article>
+    <article class="finding"><span class="sev high">High / 99%</span><h3>The Minimum Shelf/MCP promise is not implemented end to end.</h3><p>Garnet has 80 primitives, five registry seeds, and <code>mcp-caps</code> manifests, but no MCP stdio initialize/list/call path, sealed flagship demo, negative seal proof, or shelf reporter. Current code explicitly says it is not an MCP host. <span class="proof">garnet-cli/src/cmd/mcp_caps.rs; launch convergence design</span></p></article>
+    <article class="finding"><span class="sev high">High / 97%</span><h3>GOV-001-008 are preactivation guardrails, not yet no-self-grading governance.</h3><p>Context 32 and its base-controlled workflow are absent; candidate CI runs candidate validators. Strong structure and Jon's merge gate reduce risk, but do not remove it. GOV-009 must authenticate complete, fresh, exact-head GitHub evidence before old-base activation. <span class="proof">ci.yml; required-context-producers.json; GOV-007/008 records</span></p></article>
+    <article class="finding"><span class="sev high">High / 95%</span><h3>Workflow identity does not yet prove meaningful job semantics or immutable dependencies.</h3><p>The real projector accepted quoted <code>run: "true"</code>, step <code>if: "false"</code>, and mutable action tags. The corpus contains 86 external <code>uses:</code> rows and zero full-SHA pins, including release publishing. Structural checks are substantial, but semantic fingerprints and action pins are launch controls. <span class="proof">garnet_workflow_schema_policy.py; linux-packages.yml</span></p></article>
+    <article class="finding"><span class="sev high">High / 99%</span><h3>The rolling S114 gate fails open on Git enumeration errors and proves presence, not review validity.</h3><p>A reproduced diff failure became an empty safe change set; arbitrary companion paths and a bare trailer string passed. Full-history checkout reduces ordinary failure, but the v2 record must bind exact touched paths, digests, and reviewer identity and make every discovery failure red. <span class="proof">garnet_trust_kernel_review_status.py</span></p></article>
+    <article class="finding"><span class="sev high">High / 97%</span><h3>Public and MIT-facing truth has real contradictions.</h3><p>The public stdlib page says 24 primitives while machine truth says 80; Rust is variously 1.75+ and 1.95+ with no enforced MSRV; Linux native evidence and public wording disagree; the root MIT summary is a dated April origin snapshot without a supersession banner. <span class="proof">docs/stdlib.html; docs/truth.json; FAQ.md; MIT-ORIGIN-SUMMARY.md</span></p></article>
+    <article class="finding"><span class="sev med">Medium / 97%</span><h3>S114 Condition 5 is honestly reopened, and two setup paths still fail soft beyond authority denial.</h3><p>Conditions 1-4 are closed. Low-level Rust-host eval remains outside the high-level strict scope; VM cross-IR recheck is not the default. Reproductions also showed a malformed vendored dependency can warn then run successfully, and unreadable helper/discovery inputs can collapse into a green test result. Narrow the claim or make setup discovery fail closed. <span class="proof">S114_ACCEPTANCE.json; run.rs; test.rs; caps_recheck.rs</span></p></article>
+    <article class="finding"><span class="sev med">Medium / 98%</span><h3>The ledger's full workspace measurement is reachable but 34 commits old.</h3><p><code>c0190a4</code> is a clean ancestor, which the reporter intentionally accepts, but final launch truth must be recomputed on the exact frozen candidate. Current hosted checks are not a substitute for that final whole-workspace measurement.</p></article>
+  </section>
+
+  <section aria-labelledby="security">
+    <h2 id="security">Security and governance profile</h2>
+    <p class="kicker">This is a retrospective exact-delta security audit, not the formal final deep scan. The deep scan belongs after the launch candidate freezes.</p>
+    <div class="grid two">
+      <article class="panel"><h3>Found and fixed in this run</h3><ul>
+        <li>Unreachable independent evidence became tracked, manifest-covered history; integrity moved 36/36 to 38/38.</li>
+        <li>Two broad runtime claims became an exact scope table and two bounded /why claims.</li>
+        <li>CLI no-frame authority and high-level embedding changed to deny/strict defaults, with an explicit trusted-host opt-out.</li>
+        <li>Supply-chain coverage expanded from 1/3 to 3/3 lockfiles and immediately exposed two patched quick-xml advisories.</li>
+        <li>Conditional required producers and the <code>.github</code> PR-body classification bug were repaired.</li>
+        <li>Mutable Git refs/replace objects, YAML type erasure, malformed schema, duplicate contexts, inventory drift, and workflow/App cross-wiring gained fail-closed structural controls.</li>
+      </ul></article>
+      <article class="panel"><h3>Must close or permanently fence</h3><ul>
+        <li>Authenticated GOV-009 transport, exact reviewed head, pagination/completeness, freshness, outcome, live settings, and no-bypass proof.</li>
+        <li>Base-controlled old-base execution and the separate human 31-to-32 activation.</li>
+        <li>Semantic producer fingerprints, step-condition policy, and 86 immutable external-action SHA pins.</li>
+        <li>Rolling-review v2 fail-closed discovery and content/digest/reviewer validation.</li>
+        <li>Low-level embedder contract, default VM recheck, and all dependency/helper discovery failures.</li>
+        <li>Fresh independent exact-candidate S114/governance delta, signed or externally anchored provenance, and final deep security scan.</li>
+      </ul></article>
+    </div>
+    <div class="callout" style="margin-top:16px"><b>Posture:</b> strong research-grade defensive governance with unusually careful structural validation and an honest human final gate. It is not yet launch-grade protection against a coordinated hostile candidate because policy provenance and job semantics remain candidate-influenced.</div>
+  </section>
+
+  <section aria-labelledby="thin">
+    <h2 id="thin">Language depth and the missing Mac Air reconciliation</h2>
+    <p class="kicker">The current MacBook Air report naming “three thin parts” was not present in the supplied files or local archive. Therefore this report does not pretend to know its conclusions. The local audit's strongest three language-depth hypotheses are below and must be reconciled against the actual Air report.</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Local hypothesis</th><th>Current bounded truth</th><th>Next measurable slice</th><th>Launch impact</th></tr></thead>
+      <tbody>
+        <tr><td><b>Safe-mode completeness</b></td><td>Valuable enforcement exists; full NLL, dynamic/nested place precision, type-directed method resolution, general CFG liveness, and complete theorem coverage are deferred.</td><td>Generated current boundary plus negative corpus; one precision vertical slice.</td><td>Research debt unless public wording expands.</td></tr>
+        <tr><td><b>Traits and generics</b></td><td>Structs/enums work; nominal traits are parsed but not interpreter-complete; coherence, dispatch, and monomorphization are partial.</td><td>One trait+impl+generic slice across parser, checker, interpreter, and diagnostics.</td><td>Not a current launch gate if scoped honestly.</td></tr>
+        <tr><td><b>Actors and Memory Core</b></td><td>Substantive Rust/runtime foundations; source actor execution is synchronous and Memory Core is not a production ARC/finalization backend.</td><td>One source-to-runtime actor proof and one allocator/finalization lifecycle.</td><td>Defer unless promised by launch demo.</td></tr>
+      </tbody>
+    </table></div>
+    <p class="callout" style="margin-top:16px"><b>Reconciliation rule:</b> when the Air report arrives, classify every difference as contradiction, additional evidence, stale snapshot, or different scope. Do not average its percentage with 93.1%. Promote only gaps with reproducible current-tree evidence into the integrated mission.</p>
+  </section>
+
+  <section aria-labelledby="plan">
+    <h2 id="plan">New Plan of Attack</h2>
+    <p class="kicker">Freeze scope once, then exploit parallelism where files and authority are genuinely independent. Governance protects the merge boundary; W-PLAY and Shelf create the launch value.</p>
+    <article class="phase"><div class="num">0</div><div><h3>Truth freeze and Air reconciliation</h3><p class="meta">One high-reasoning session / blocks language-depth scheduling</p><ul><li>Ingest the real Air report, reconcile its three gaps, define WV-6/WV-7 acceptance contracts, settle the Rust baseline, and archive this 25-PR heartbeat through a bounded human-merged PR.</li><li>Freeze one integrated backlog with authority source, exact base SHA, acceptance command, evidence destination, and Jon-only actions.</li></ul></div></article>
+    <article class="phase"><div class="num">1</div><div><h3>Close governance to an activated boundary</h3><p class="meta">3-6 bounded PRs / may run beside product work</p><ul><li>GOV-009 authenticated transport; rolling-review v2; semantic producer binding; external action SHA pins; trusted old-base workflow; human 31-to-32 ceremony.</li><li>Stop condition: the named sequence is green from the base and live-read back. No open-ended GOV numbering without a reproduced launch-relevant defect.</li></ul></div></article>
+    <article class="phase"><div class="num">2A</div><div><h3>W-PLAY browser completion</h3><p class="meta">Primary product lane / launch-critical</p><ul><li>Add check/diff exports, reproducible browser package, adapter, editor, success and denial flows, and under-30-second Playwright proof.</li><li>Preserve WV-4 as frontend proof and WV-5 as Wasm+Node proof; the reporter alone promotes browser status.</li></ul></div></article>
+    <article class="phase"><div class="num">2B</div><div><h3>Minimum Sealed Shelf and MCP</h3><p class="meta">Disjoint parallel product lane / launch-critical</p><ul><li>Freeze Core Ring Tier 1; implement MCP stdio initialize/list/call/errors; ship one excellent local sealed package plus reject-without-seal proof and reporter.</li><li>Do not expand into hosted registry infrastructure until the bounded local path is excellent.</li></ul></div></article>
+    <article class="phase"><div class="num">3</div><div><h3>Front door, Studio, and reconciled language slices</h3><p class="meta">After executable artifacts exist</p><ul><li>Synchronize /why, live site, playground, Studio proof cockpit, CLI, evidence, and screenshots to real behavior.</li><li>Execute only the Air/local language slices approved in Phase 0; keep deeper research debt bounded from launch.</li></ul></div></article>
+    <article class="phase"><div class="num">4</div><div><h3>MIT archive and frozen-candidate release review</h3><p class="meta">Final convergence / Jon-only FIRE</p><ul><li>Generate public truth, supersede stale packets, curate proof rather than deleting it, remeasure on exact HEAD, run fresh deep security and independent delta audits, replay frozen artifacts across desktop OSes, and resolve signing/notarization.</li><li>Complete promo human QA and platform-specific launch material only after technical HOLD gates close. Jon alone tags, publishes, or declares FIRE.</li></ul></div></article>
+  </section>
+
+  <section aria-labelledby="ladder">
+    <h2 id="ladder">Baseline to target ladder</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Dimension</th><th>Measured baseline</th><th>Acceptance target</th><th>Phase</th></tr></thead>
+      <tbody>
+        <tr><td><b>Mission archive</b></td><td>Committed heartbeat ends #485; code ends #496.</td><td>One clean, human-merged reconciled archive with exact SHA and all 25 PRs.</td><td>0</td></tr>
+        <tr><td><b>Governance provenance</b></td><td>31 candidate-relative contexts; supplied-data identity; no context 32.</td><td>Authenticated, semantic, base-controlled 32nd context with live no-bypass readback.</td><td>1</td></tr>
+        <tr><td><b>Action integrity</b></td><td>86 external uses, 0 full-SHA pins.</td><td>0 mutable external action references; reviewed digest-update path.</td><td>1</td></tr>
+        <tr><td><b>Live browser</b></td><td>Real Wasm+Node run; static browser gallery.</td><td>Run/check/diff and fail-closed denial in real browser; reporter pass.</td><td>2A</td></tr>
+        <tr><td><b>Shelf/MCP</b></td><td>80 primitives, five seeds, manifest inspection; no MCP host.</td><td>One sealed MCP initialize/list/call demo plus negative seal proof and reporter.</td><td>2B</td></tr>
+        <tr><td><b>Public truth</b></td><td>Known count, MSRV, Linux, and MIT-summary contradictions.</td><td>Zero confirmed current-surface contradictions; generated counters and supersession markers.</td><td>3-4</td></tr>
+        <tr><td><b>Candidate freshness</b></td><td>Full measurement <code>c0190a4</code>, 34 commits behind.</td><td>All launch truth recomputed on the exact clean release candidate.</td><td>4</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section aria-labelledby="models">
+    <h2 id="models">Use the reset as a portfolio, not one permanent maximum setting</h2>
+    <p class="kicker">Running Sol Ultra Fast for everything combines the most expensive parallel reasoning mode with higher-credit latency mode. Save that combination for the rare problem that actually benefits.</p>
+    <div class="grid three">
+      <article class="task"><span class="chip violet">Sol High / XHigh · Standard</span><h3>Architecture and security</h3><p>Air reconciliation, GOV-009 contract, threat model, semantic policy, final synthesis.</p></article>
+      <article class="task"><span class="chip red">Sol Ultra · Standard</span><h3>Parallel campaign moments</h3><p>Initial integrated audit and final launch review only, when independent lanes can truly run concurrently.</p></article>
+      <article class="task"><span class="chip green">Terra Medium / High · Standard</span><h3>Build throughput</h3><p>Implementation slices, tests, debugging, reporter work, bounded PRs, and mission heartbeats.</p></article>
+      <article class="task"><span class="chip blue">Luna Light / Medium · Standard</span><h3>Evidence throughput</h3><p>Log extraction, inventory normalization, repetitive docs, claim tables, and status regeneration.</p></article>
+      <article class="task"><span class="chip amber">Fast · selectively</span><h3>Latency-sensitive dialogue</h3><p>Use for short interactive loops. Builds and external tools dominate their own runtime, while Fast consumes more credits.</p></article>
+      <article class="task"><span class="chip violet">Max · one hard proof</span><h3>Unsplittable reasoning</h3><p>Reserve for one theorem-like or architecture problem. Prefer Ultra when the work can be separated.</p></article>
+    </div>
+    <p class="callout" style="margin-top:16px"><b>Recommended reset campaign:</b> treat the user-reported 20x tier and reset as campaign headroom, not a reason to leave every task at maximum burn. Run one Sol Ultra Standard reconciliation; Sol High/XHigh governance design with Terra implementers; parallel W-PLAY and Shelf worktrees with independent Sol reviewers; then one fresh Sol Ultra Standard launch audit. The public Codex documentation confirms Fast costs more credits but does not currently establish a numeric GPT-5.6 multiplier, so no multiplier is assumed. See <a href="https://learn.chatgpt.com/docs/models">models</a>, <a href="https://learn.chatgpt.com/docs/agent-configuration/speed">speed</a>, and <a href="https://learn.chatgpt.com/docs/pricing">pricing</a>.</p>
+    <p style="margin-top:16px"><a href="GARNET_NEXT_MISSION_PROMPT_PACK_2026-07-15.md"><b>Open the copy-ready seven-prompt mission pack →</b></a></p>
+  </section>
+
+  <section aria-labelledby="preserve">
+    <h2 id="preserve">What must not be lost in cleanup</h2>
+    <div class="grid two">
+      <article class="panel"><h3>Preserve</h3><ul><li>The accepted-scoped decision and five-condition snapshot; current post-acceptance correction log.</li><li>Recovered independent proof bytes, manifests, raw platform evidence, and historical verdict wording.</li><li>Fail-closed authority defaults, exact two-claim public fence, strict status separation, and Jon-only decisions.</li><li>The 31-context structural work and explicit limitation records—even while stronger controls supersede parts of it.</li></ul></article>
+      <article class="panel"><h3>Archive or supersede, never silently erase</h3><ul><li>Stale mission render, April MIT origin packet, historical percentages, obsolete platform statements, and manual counters.</li><li>Internal execution debris that does not help a reviewer reproduce current claims.</li><li>Duplicate narratives only after a current canonical document points to their dated historical role.</li><li>Do not equate “MIT-ready” with a tiny repo; clarity, provenance, reproducibility, and named limitations matter more.</li></ul></article>
+    </div>
+  </section>
+
+  <p class="footer"><b>Evidence boundary.</b> Built against clean tracked tree <code class="mono">32ec9624d571596decd9ea50c64ca9f06fa49131</code>, authenticated GitHub/ruleset observations, current launch/MIT/readiness reporters, the separate uncommitted mission accumulator, exact Git history, focused adversarial reproductions, and independent read-only audits. Focused governance tests reproduced 5/5 schema, 6/6 identity, 11/11 evaluator, and 14/14 rolling-review green while exposing gaps outside their asserted contracts. No fresh whole-repository test campaign or formal deep security scan was claimed. The user's account reset and current model availability were accepted as user-provided facts; account-specific credit economics were not independently observable. Supersedes no canonical source—this is the reconciled archival report for the #472-#496 lane.</p>
+</main>
+</body>
+</html>

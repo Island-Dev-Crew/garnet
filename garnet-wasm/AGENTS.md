@@ -2,10 +2,9 @@
 
 ## Scope
 
-Owns the browser-facing interpreter surface for the W-PLAY playground:
-`run_source` (Garnet source in → `garnet.wasm.run/1` JSON out) and its
-`wasm-bindgen` export. Consumes `garnet-interp` as-is; owns no language
-semantics.
+Owns the browser-facing W-PLAY adapters: `run_source`, `check_source`, and
+`diff_caps_source`, plus their versioned JSON and `wasm-bindgen` exports.
+Consumes the interpreter, parser, and checker as-is; owns no language semantics.
 
 ## Stable Contracts
 
@@ -23,6 +22,12 @@ semantics.
   `exit_class` (`ok` | `load_error` | `runtime_error`), `stdout`,
   `diagnostic`. Additive evolution only; bump the schema tag on any
   breaking change.
+- `garnet.wasm.check/1` preserves checker `ok`, diagnostic code, severity, and
+  verbatim message; `garnet.wasm.diff-caps/1` preserves both declared surfaces
+  and all six `CapsDiff` dimensions. Parse failure is side-specific and carries
+  no authority verdict.
+- The diff is declared-surface-only: it does not prove absence of undeclared
+  authority, and bound annotations are outside this surface.
 - Crash surface: `#![deny(clippy::unwrap_used, clippy::expect_used)]`
   (tests exempt via `cfg_attr`).
 - Do not claim "runs in your browser" anywhere until a Playwright trap

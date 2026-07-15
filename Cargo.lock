@@ -896,7 +896,9 @@ dependencies = [
 name = "garnet-wasm"
 version = "0.1.0"
 dependencies = [
+ "garnet-check",
  "garnet-interp",
+ "garnet-parser",
  "getrandom 0.2.17",
  "serde",
  "serde_json",
