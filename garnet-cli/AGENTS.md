@@ -84,6 +84,7 @@ Owns the `garnet` binary, subcommand routing, template embedding, deterministic 
 ```sh
 cargo test -p garnet-cli
 cargo test -p garnet-cli --test mcp_initialize_schema
+cargo test -p garnet-cli --test mcp_protocol_adversarial
 cargo run -p garnet-cli -- --help
 ```
 
