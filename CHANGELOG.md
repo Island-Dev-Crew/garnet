@@ -7,6 +7,14 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated-honesty record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
+## Unreleased — W-PLAY check/diff Wasm adapter (2026-07-15)
+
+- **Added** `garnet.wasm.check/1` and `garnet.wasm.diff-caps/1` native/JSON/
+  `wasm-bindgen` adapters over the existing parser and checker. Diagnostics,
+  fatality, capability surfaces, and all six diff dimensions stay authoritative.
+- **Honest boundary:** this declared-surface-only adapter does not add the live
+  page, reproducible package provenance, Playwright proof, or a browser-live claim.
+
 ## Unreleased — S114/Wasm current-truth reconciliation (2026-07-14)
 
 - **Corrected current normative surfaces:** S114 is
