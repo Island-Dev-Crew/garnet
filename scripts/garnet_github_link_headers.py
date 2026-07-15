@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
 """Strict bounded RFC 8288 Link and physical response-header parser."""
 from __future__ import annotations
-import re, urllib.parse
+import ipaddress, re
 from dataclasses import dataclass
 MAX_LINK_HEADER_CHARS = 32_768
 _TCHAR = frozenset("!#$%&'*+-.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
 _URI_CHAR = frozenset("!#$%&'()*+,-./0123456789:;=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]_abcdefghijklmnopqrstuvwxyz~")
 _HEX = frozenset("0123456789ABCDEFabcdef")
+_UNRESERVED = frozenset("-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~")
+_SUB_DELIMS = frozenset("!$&'()*+,;=")
 _PCHAR = frozenset("!$&'()*+,-.0123456789:;=@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~")
 _QUERY_FRAGMENT_CHAR = _PCHAR | frozenset("/?")
 _RESTRICTED_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9!#$&^_.+\-]{0,126}")
 _REG_REL = re.compile(r"[a-z][a-z0-9.\-]*")
-_SCHEME = re.compile(r"[A-Za-z][A-Za-z0-9+\-.]*")
+_SCHEME_PREFIX = re.compile(r"([A-Za-z][A-Za-z0-9+\-.]*):")
+_IPV_FUTURE = re.compile(r"[vV][0-9A-Fa-f]+\.[A-Za-z0-9._~!$&'()*+,;=:\-]+")
 class HeaderSyntaxError(ValueError): pass
 def _bad() -> None: raise HeaderSyntaxError("invalid response headers")
 @dataclass(frozen=True)
@@ -33,6 +36,10 @@ class HeaderBlock:
         values = self.get_all(name)
         if len(values) > 1: _bad()
         return values[0] if values else None
+@dataclass(frozen=True)
+class _URIReference:
+    scheme: str
+    fragment: str
 def _component(value: str, allowed: frozenset[str]) -> None:
     index = 0
     while index < len(value):
@@ -40,7 +47,29 @@ def _component(value: str, allowed: frozenset[str]) -> None:
             index += 3; continue
         if value[index] not in allowed: _bad()
         index += 1
-def _uri_reference(value: str, *, absolute: bool = False) -> urllib.parse.SplitResult:
+def _authority(value: str) -> None:
+    if value.count("@") > 1: _bad()
+    userinfo, separator, host_port = value.rpartition("@")
+    if separator: _component(userinfo, _UNRESERVED | _SUB_DELIMS | frozenset(":"))
+    else: host_port = value
+    if host_port.startswith("["):
+        close = host_port.find("]")
+        if close < 0: _bad()
+        literal, suffix = host_port[1:close], host_port[close + 1:]
+        if "[" in literal or "]" in suffix or (suffix and (suffix[0] != ":"
+                or suffix[1:] and not suffix[1:].isdigit())): _bad()
+        if _IPV_FUTURE.fullmatch(literal) is None:
+            try:
+                if "%" in literal: _bad()
+                ipaddress.IPv6Address(literal)
+            except ipaddress.AddressValueError: _bad()
+        return
+    if "[" in host_port or "]" in host_port: _bad()
+    host, separator, port = host_port.rpartition(":")
+    if not separator: host = host_port
+    elif ":" in host or port and not port.isdigit(): _bad()
+    _component(host, _UNRESERVED | _SUB_DELIMS)
+def _uri_reference(value: str, *, absolute: bool = False) -> _URIReference:
     if not value:
         _bad()
     index = 0
@@ -53,23 +82,23 @@ def _uri_reference(value: str, *, absolute: bool = False) -> urllib.parse.SplitR
         if char not in _URI_CHAR:
             _bad()
         index += 1
-    try:
-        parsed = urllib.parse.urlsplit(value)
-        if parsed.scheme and _SCHEME.fullmatch(parsed.scheme) is None: _bad()
-        if value.startswith("//") and not parsed.netloc: _bad()
-        if parsed.netloc:
-            if parsed.netloc.count("@") > 1: _bad()
-            if parsed.hostname is None: _bad()
-            _ = parsed.port
-    except (ValueError, UnicodeError):
-        _bad()
-    if absolute and not parsed.scheme:
-        _bad()
-    _component(parsed.path, _PCHAR | frozenset("/"))
-    _component(parsed.query, _QUERY_FRAGMENT_CHAR)
-    _component(parsed.fragment, _QUERY_FRAGMENT_CHAR)
     if value.count("#") > 1: _bad()
-    return parsed
+    hierarchy_query, _, fragment = value.partition("#")
+    hierarchy, _, query = hierarchy_query.partition("?")
+    scheme_match = _SCHEME_PREFIX.match(hierarchy)
+    scheme = scheme_match.group(1) if scheme_match else ""
+    remainder = hierarchy[len(scheme) + 1:] if scheme else hierarchy
+    authority = remainder.startswith("//")
+    if authority:
+        raw_authority, slash, tail = remainder[2:].partition("/")
+        _authority(raw_authority); path = f"/{tail}" if slash else ""
+    else: path = remainder
+    if absolute and not scheme: _bad()
+    _component(path, _PCHAR | frozenset("/"))
+    _component(query, _QUERY_FRAGMENT_CHAR); _component(fragment, _QUERY_FRAGMENT_CHAR)
+    if not scheme and not authority and path and not path.startswith("/"):
+        _component(path.split("/", 1)[0], _PCHAR - frozenset(":"))
+    return _URIReference(scheme, fragment)
 def _quoted(value: str, index: int) -> tuple[str, int]:
     index += 1; output: list[str] = []
     while index < len(value) and value[index] != '"':

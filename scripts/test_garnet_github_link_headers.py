@@ -130,6 +130,36 @@ class LinkHeaderTests(unittest.TestCase):
             with self.subTest(target=target):
                 self.assert_invalid((("Link", f'<{target}>; rel=prev'),))
 
+    def test_uri_reference_distinguishes_scheme_from_path_noscheme(self) -> None:
+        helper = self.helper()
+        for target in ("a:b", "./a:b"):
+            with self.subTest(target=target):
+                parsed = helper.parse_header_fields(
+                    (("Link", f'<{target}>; rel=prev'),)
+                ).links[0]
+                self.assertEqual(parsed.target, target)
+        self.assert_invalid((("Link", '<1:foo>; rel=prev'),))
+
+    def test_uri_reference_validates_bracketed_ip_literals(self) -> None:
+        helper = self.helper()
+        accepted = (
+            "https://[2001:db8::1]/x",
+            "https://[v1.foo]/x",
+        )
+        for target in accepted:
+            with self.subTest(target=target):
+                parsed = helper.parse_header_fields(
+                    (("Link", f'<{target}>; rel=prev'),)
+                ).links[0]
+                self.assertEqual(parsed.target, target)
+        rejected = (
+            "https://[v1.foo%25bar]/x",
+            "https://[v1.foo[bar]/x",
+        )
+        for target in rejected:
+            with self.subTest(target=target):
+                self.assert_invalid((("Link", f'<{target}>; rel=prev'),))
+
     def test_type_parameter_uses_rfc6838_restricted_names(self) -> None:
         helper = self.helper()
         accepted = (
