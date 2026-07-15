@@ -35,6 +35,9 @@ Consumes the interpreter, parser, and checker as-is; owns no language semantics.
   slice); the Node smoke proves wasm execution, not the browser page.
 - `wasm-opt` is disabled (`Cargo.toml` metadata) — unoptimized module,
   revisited in the page slice; recorded, not silent.
+- `scripts/build_playground_wasm.py --probe` is an offline, no-publication
+  package-core proof. It brackets source/tool identity and validates real ESM;
+  committed package publication remains a separate slice.
 
 ## Required Checks
 
@@ -42,4 +45,5 @@ Consumes the interpreter, parser, and checker as-is; owns no language semantics.
 cargo test -p garnet-wasm
 cargo build -p garnet-wasm --target wasm32-unknown-unknown
 wasm-pack build garnet-wasm --target web --out-dir pkg-web
+python scripts/build_playground_wasm.py --probe
 ```
