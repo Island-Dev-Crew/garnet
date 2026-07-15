@@ -63,8 +63,10 @@ fn ready(session: &mut McpSession) {
             .len(),
         3
     );
-    assert!(initialized["result"]["serverInfo"]["name"].is_string());
-    assert!(initialized["result"]["serverInfo"]["version"].is_string());
+    assert_eq!(
+        initialized["result"]["serverInfo"],
+        json!({"name":"garnet-minimum-shelf","version":env!("CARGO_PKG_VERSION")})
+    );
     assert_eq!(
         notify(session, "notifications/initialized", None),
         McpAction::NoResponse
@@ -118,6 +120,23 @@ fn every_response_shaped_peer_message_closes_without_a_response() {
 }
 
 #[test]
+fn invalid_notification_params_never_create_json_rpc_responses() {
+    let raw = json!({"jsonrpc":"2.0","method":"unknown","params":[]}).to_string();
+    assert_eq!(
+        McpSession::new().handle_message(&raw),
+        McpAction::Close(None)
+    );
+
+    let mut session = McpSession::new();
+    ready(&mut session);
+    assert_eq!(session.handle_message(&raw), McpAction::NoResponse);
+    assert_eq!(
+        rpc(&mut session, json!(1), "ping", None)["result"],
+        json!({})
+    );
+}
+
+#[test]
 fn ping_params_and_unadvertised_operations_follow_each_lifecycle_phase() {
     let mut session = McpSession::new();
     initialize(&mut session, json!("init"), json!(V));
@@ -132,7 +151,17 @@ fn ping_params_and_unadvertised_operations_follow_each_lifecycle_phase() {
             -32602
         );
     }
-    for (id, method) in [(4, "tools/call"), (5, "unknown")] {
+    for (id, bad) in [(4, json!({"_meta":[]})), (5, json!({"extra":1}))] {
+        assert_eq!(
+            notify(&mut session, "notifications/initialized", Some(bad)),
+            McpAction::NoResponse
+        );
+        assert_eq!(
+            error_code(&rpc(&mut session, json!(id), "tools/list", None)),
+            -32002
+        );
+    }
+    for (id, method) in [(6, "tools/call"), (7, "unknown")] {
         assert_eq!(
             error_code(&rpc(&mut session, json!(id), method, None)),
             -32002
@@ -143,10 +172,10 @@ fn ping_params_and_unadvertised_operations_follow_each_lifecycle_phase() {
         McpAction::NoResponse
     );
     assert_eq!(
-        rpc(&mut session, json!(6), "ping", None)["result"],
+        rpc(&mut session, json!(8), "ping", None)["result"],
         json!({})
     );
-    for (id, method) in [(7, "tools/call"), (8, "resources/list")] {
+    for (id, method) in [(9, "tools/call"), (10, "resources/list")] {
         assert_eq!(
             error_code(&rpc(&mut session, json!(id), method, None)),
             -32601
