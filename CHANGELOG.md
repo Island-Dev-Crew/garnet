@@ -7,6 +7,11 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated-honesty record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
+## Unreleased — GOV-009 authenticated governance object transport (2026-07-15)
+
+- **Added:** a standard-library-only authenticated GitHub REST object transport with exact-repository URL binding, canonical path/query checks, bounded strict JSON parsing, no-redirect handling, injected no-network tests, and secret-safe all-or-zero results.
+- **Honest boundary:** this first primitive fetches exact single-object endpoints only; complete pagination and an RFC Link parser are explicitly deferred to a separate PR. It does not issue a GOV-009 live-governance verdict, select review attempts or freshness, activate required context 32, or alter CI/workflows.
+
 ## Unreleased — W-PLAY check/diff Wasm adapter (2026-07-15)
 
 - **Added** `garnet.wasm.check/1` and `garnet.wasm.diff-caps/1` native/JSON/
