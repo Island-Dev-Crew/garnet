@@ -95,7 +95,7 @@ fn initialize_is_first_schema_validated_and_version_negotiated() {
     );
     let mut notification_first = McpSession::new();
     assert_eq!(
-        notify(&mut notification_first, "unknown", None),
+        notify(&mut notification_first, "unknown", Some(json!([]))),
         McpAction::Close(None)
     );
 
@@ -130,17 +130,17 @@ fn lifecycle_allows_ping_and_only_initialized_notification_opens_operations() {
     );
     assert_error(&mut session, json!(2), "tools/list", None, -32002);
     assert_eq!(
-        notify(
-            &mut session,
-            "notifications/initialized",
-            Some(json!({"extra":1}))
-        ),
+        notify(&mut session, "notifications/initialized", Some(json!([]))),
         McpAction::NoResponse
     );
     assert_error(&mut session, json!(3), "tools/list", None, -32002);
     let open_meta = json!({"_meta":{"progressToken":true,"vendor":[]}});
     assert_eq!(
         notify(&mut session, "notifications/initialized", Some(open_meta)),
+        McpAction::NoResponse
+    );
+    assert_eq!(
+        notify(&mut session, "vendor/event", Some(json!([]))),
         McpAction::NoResponse
     );
     assert_error(&mut session, json!(4), "tools/list", None, -32601);

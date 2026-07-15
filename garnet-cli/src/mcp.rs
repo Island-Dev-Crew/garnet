@@ -63,6 +63,12 @@ impl McpSession {
             .cloned()
             .unwrap_or(Value::Null);
         if !valid_envelope(message) {
+            if !message.contains_key("id")
+                && message.get("jsonrpc").and_then(Value::as_str) == Some("2.0")
+                && message.get("method").is_some_and(Value::is_string)
+            {
+                return self.handle_notification("", None);
+            }
             return McpAction::Respond(error(readable_id, -32600, "Invalid Request"));
         }
         let Some(method) = message.get("method").and_then(Value::as_str) else {
