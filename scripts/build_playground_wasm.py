@@ -21,6 +21,7 @@ INPUT_ROOTS = (
     "garnet-wasm", "garnet-check-v0.3", "garnet-interp-v0.3", "garnet-memory-v0.3",
     "garnet-parser-v0.3", "garnet-prim-macros", "garnet-stdlib",
 )
+SOURCE_WATCH_PATHS = (*INPUT_ROOTS, "Cargo.lock", "Cargo.toml", ".cargo", ".cargo/config.toml")
 VERSIONS = {
     "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
     "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)", "node": "v22.22.2",
@@ -133,6 +134,11 @@ def require_exact_files(directory: Path, expected: set[str]) -> None:
         secure_entry(directory / name, directory=False)
 
 
+def require_no_untracked(paths: str) -> None:
+    if paths:
+        raise BuildError(f"unexpected untracked build input: {paths.splitlines()[0]}")
+
+
 def source_inputs(root: Path) -> list[str]:
     exact, selected = {"Cargo.lock", "Cargo.toml", ".cargo/config.toml"}, []
     for path in _git(root, "ls-files").splitlines():
@@ -154,9 +160,28 @@ def source_digest(root: Path, inputs: list[str]) -> str:
 def _binary_identity(command: str, env: dict[str, str]) -> str:
     path_value = next((value for key, value in env.items() if key.upper() == "PATH"), None)
     found = shutil.which(command, path=path_value)
-    if not found or not Path(found).resolve().is_file():
+    if not found:
         raise BuildError(f"required tool is missing: {command}")
-    return sha256(Path(found).resolve().read_bytes())
+    binary = Path(found).resolve()
+    secure_entry(binary, directory=False)
+    return sha256(binary.read_bytes())
+
+
+def rustup_tool_identity(command: str, root: Path, env: dict[str, str]) -> dict[str, str]:
+    binary = Path(_run(["rustup", "which", command], root, env))
+    if not binary.is_absolute():
+        raise BuildError(f"rustup returned a relative {command} path")
+    secure_entry(binary, directory=False)
+    return {"binary_sha256": sha256(binary.read_bytes()),
+            "launcher_sha256": _binary_identity(command, env)}
+
+
+def contained_binary_identity(root: Path, binary: Path) -> str:
+    if not binary.resolve(strict=False).is_relative_to(root.resolve(strict=True)):
+        raise BuildError("tool binary escapes its declared root")
+    secure_chain(root, binary.parent)
+    secure_entry(binary, directory=False)
+    return sha256(binary.read_bytes())
 
 
 def toolchain(root: Path, env: dict[str, str]) -> tuple[dict, Path]:
@@ -166,33 +191,34 @@ def toolchain(root: Path, env: dict[str, str]) -> tuple[dict, Path]:
         actual = _run([command, "--version"], root, env)
         if actual != VERSIONS[name]:
             raise BuildError(f"{name} version mismatch: {actual!r}")
-        tools[name] = {"binary_sha256": _binary_identity(command, env),
-                       "command": command, "version": actual}
+        identity = (rustup_tool_identity(command, root, env) if name in {"rustc", "cargo"}
+                    else {"binary_sha256": _binary_identity(command, env)})
+        tools[name] = {**identity, "command": command, "version": actual}
     package_lock = decode_json((root / "apps/garnet-studio/package-lock.json").read_bytes())
     if package_lock.get("packages", {}).get("node_modules/esbuild", {}).get("version") != VERSIONS["esbuild"]:
         raise BuildError("locked esbuild version mismatch")
     esbuild = root / ESBUILD_REL
-    secure_entry(esbuild, directory=False)
-    if _run(["node", str(esbuild), "--version"], root, env) != VERSIONS["esbuild"]:
-        raise BuildError("installed esbuild version mismatch")
-    platform_bins = [path for path in (root / "apps/garnet-studio/node_modules/@esbuild").rglob("esbuild*")
-                     if path.is_file()]
+    esbuild_sha = contained_binary_identity(root, esbuild)
+    platform_root = secure_chain(root, root / "apps/garnet-studio/node_modules/@esbuild")
+    platform_bins = [path for path in platform_root.rglob("esbuild*")
+                     if path.name in {"esbuild", "esbuild.exe"}]
     if len(platform_bins) != 1:
         raise BuildError("esbuild platform-binary inventory is not exact")
-    tools["esbuild"] = {"binary_sha256": sha256(esbuild.read_bytes()),
-                        "command": ESBUILD_REL.as_posix(),
-                        "platform_binary_sha256": sha256(platform_bins[0].read_bytes()),
+    tools["esbuild"] = {"binary_sha256": esbuild_sha,
+                        "command": platform_bins[0].relative_to(root).as_posix(),
+                        "platform_binary_sha256": contained_binary_identity(platform_root, platform_bins[0]),
                         "version": VERSIONS["esbuild"]}
-    return tools, esbuild
+    if _run([str(platform_bins[0]), "--version"], root, env) != VERSIONS["esbuild"]:
+        raise BuildError("installed esbuild version mismatch")
+    return tools, platform_bins[0]
 
 
 def snapshot(root: Path) -> dict:
     status = _git(root, "status", "--porcelain", "--untracked-files=no")
     if status:
         raise BuildError("package build requires a clean tracked tree")
-    untracked = _git(root, "ls-files", "--others", "--exclude-standard", "--", PACKAGE_REL.as_posix())
-    if untracked:
-        raise BuildError(f"unexpected package-local untracked path: {untracked.splitlines()[0]}")
+    require_no_untracked(_git(root, "ls-files", "--others", "--", *SOURCE_WATCH_PATHS))
+    require_no_untracked(_git(root, "ls-files", "--others", "--", PACKAGE_REL.as_posix()))
     inputs = source_inputs(root)
     tools, _ = toolchain(root, build_env(root, root / "target/snapshot-only"))
     return {"build_parent_commit_observed": _git(root, "rev-parse", "HEAD"),
@@ -244,7 +270,7 @@ def build_package(root: Path, observed: dict) -> dict[str, bytes]:
         require_exact_files(raw_dir, {*ARTIFACTS, ".gitignore"})
         out_dir.mkdir()
         wrapper = out_dir / ARTIFACTS[0]
-        _run(["node", str(esbuild), str(raw_dir / ARTIFACTS[0]), "--minify", "--format=esm",
+        _run([str(esbuild), str(raw_dir / ARTIFACTS[0]), "--minify", "--format=esm",
               "--platform=browser", "--legal-comments=none", "--charset=utf8",
               f"--outfile={wrapper}", "--log-level=warning"], root, env)
         shutil.copyfile(raw_dir / ARTIFACTS[1], out_dir / ARTIFACTS[1])
