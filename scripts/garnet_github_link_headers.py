@@ -7,6 +7,9 @@ MAX_LINK_HEADER_CHARS = 32_768
 _TCHAR = frozenset("!#$%&'*+-.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
 _URI_CHAR = frozenset("!#$%&'()*+,-./0123456789:;=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]_abcdefghijklmnopqrstuvwxyz~")
 _HEX = frozenset("0123456789ABCDEFabcdef")
+_PCHAR = frozenset("!$&'()*+,-.0123456789:;=@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~")
+_QUERY_FRAGMENT_CHAR = _PCHAR | frozenset("/?")
+_RESTRICTED_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9!#$&^_.+\-]{0,126}")
 _REG_REL = re.compile(r"[a-z][a-z0-9.\-]*")
 _SCHEME = re.compile(r"[A-Za-z][A-Za-z0-9+\-.]*")
 class HeaderSyntaxError(ValueError): pass
@@ -23,9 +26,20 @@ class LinkValue:
 class HeaderBlock:
     fields: tuple[tuple[str, str], ...]
     links: tuple[LinkValue, ...]
-    def get(self, name: str) -> str | None:
+    def get_all(self, name: str) -> tuple[str, ...]:
         key = name.lower() if type(name) is str else ""
-        return next((value for candidate, value in self.fields if candidate == key), None)
+        return tuple(value for candidate, value in self.fields if candidate == key)
+    def get_singleton(self, name: str) -> str | None:
+        values = self.get_all(name)
+        if len(values) > 1: _bad()
+        return values[0] if values else None
+def _component(value: str, allowed: frozenset[str]) -> None:
+    index = 0
+    while index < len(value):
+        if value[index] == "%":
+            index += 3; continue
+        if value[index] not in allowed: _bad()
+        index += 1
 def _uri_reference(value: str, *, absolute: bool = False) -> urllib.parse.SplitResult:
     if not value:
         _bad()
@@ -44,12 +58,17 @@ def _uri_reference(value: str, *, absolute: bool = False) -> urllib.parse.SplitR
         if parsed.scheme and _SCHEME.fullmatch(parsed.scheme) is None: _bad()
         if value.startswith("//") and not parsed.netloc: _bad()
         if parsed.netloc:
+            if parsed.netloc.count("@") > 1: _bad()
             if parsed.hostname is None: _bad()
             _ = parsed.port
     except (ValueError, UnicodeError):
         _bad()
     if absolute and not parsed.scheme:
         _bad()
+    _component(parsed.path, _PCHAR | frozenset("/"))
+    _component(parsed.query, _QUERY_FRAGMENT_CHAR)
+    _component(parsed.fragment, _QUERY_FRAGMENT_CHAR)
+    if value.count("#") > 1: _bad()
     return parsed
 def _quoted(value: str, index: int) -> tuple[str, int]:
     index += 1; output: list[str] = []
@@ -121,7 +140,8 @@ def _parse_link_field(value: str) -> tuple[LinkValue, ...]:
             if name == "type":
                 if not quoted or parameter is None or parameter.count("/") != 1: _bad()
                 major, minor = parameter.split("/", 1)
-                if not major or not minor or any(char not in _TCHAR for char in major + minor): _bad()
+                if (_RESTRICTED_NAME.fullmatch(major) is None
+                        or _RESTRICTED_NAME.fullmatch(minor) is None): _bad()
             if name == "anchor":
                 if parameter is None: _bad()
                 _uri_reference(parameter)
@@ -136,20 +156,19 @@ def _parse_link_field(value: str) -> tuple[LinkValue, ...]:
 def parse_header_fields(fields: object) -> HeaderBlock:
     if type(fields) is not tuple:
         _bad()
-    singletons: list[tuple[str, str]] = []
-    names: set[str] = set(); physical_links: list[str] = []
+    physical: list[tuple[str, str]] = []
+    physical_links: list[str] = []
     for field in fields:
         if type(field) is not tuple or len(field) != 2: _bad()
         name, value = field
         if (type(name) is not str or type(value) is not str or not name
                 or any(char not in _TCHAR for char in name)
-                or any((ord(char) < 32 and char != "\t") or ord(char) == 127 for char in value)):
+                or any((ord(char) < 32 and char != "\t") or ord(char) == 127
+                       or ord(char) > 255 for char in value)):
             _bad()
         lower = name.lower()
-        if lower == "link":
-            physical_links.append(value); continue
-        if lower in names: _bad()
-        names.add(lower); singletons.append((lower, value))
+        physical.append((lower, value))
+        if lower == "link": physical_links.append(value)
     aggregate = sum(len(value) for value in physical_links) + max(0, 2 * (len(physical_links) - 1))
     if aggregate > MAX_LINK_HEADER_CHARS: _bad()
     links: list[LinkValue] = []; relations: set[str] = set()
@@ -157,4 +176,4 @@ def parse_header_fields(fields: object) -> HeaderBlock:
         for link in _parse_link_field(value):
             if any(relation in relations for relation in link.relations): _bad()
             relations.update(link.relations); links.append(link)
-    return HeaderBlock(tuple(singletons), tuple(links))
+    return HeaderBlock(tuple(physical), tuple(links))

@@ -26,7 +26,16 @@ class LinkHeaderTests(unittest.TestCase):
             ("Link", f'<{comma_uri}>; title="a,b;c\\\"d"; rel="next", <{LAST}>; rel=last'),
             ("lInK", '</repositories/7/actions/runs?page=1&per_page=100>; rel=first'),
         ))
-        self.assertEqual(block.get("CONTENT-TYPE"), "application/json")
+        self.assertEqual(block.get_singleton("CONTENT-TYPE"), "application/json")
+        self.assertEqual(block.get_all("link"), (
+            f'<{comma_uri}>; title="a,b;c\\\"d"; rel="next", <{LAST}>; rel=last',
+            '</repositories/7/actions/runs?page=1&per_page=100>; rel=first',
+        ))
+        self.assertEqual(block.fields, (
+            ("content-type", "application/json"),
+            ("link", f'<{comma_uri}>; title="a,b;c\\\"d"; rel="next", <{LAST}>; rel=last'),
+            ("link", '</repositories/7/actions/runs?page=1&per_page=100>; rel=first'),
+        ))
         self.assertEqual(tuple(item.target for item in block.links),
                          (comma_uri, LAST, "/repositories/7/actions/runs?page=1&per_page=100"))
         self.assertEqual(tuple(item.relations for item in block.links),
@@ -34,15 +43,40 @@ class LinkHeaderTests(unittest.TestCase):
         self.assertEqual(block.links[0].parameter("TITLE"), 'a,b;c"d')
     def test_header_names_values_containers_and_singletons_are_strict(self) -> None:
         helper = self.helper()
-        self.assertEqual(helper.parse_header_fields((("X_Test-1", "ok\tvalue"),)).get(
-            "x_test-1"), "ok\tvalue")
+        block = helper.parse_header_fields((("X_Test-1", "ok\tvalue"),))
+        self.assertEqual(block.get_singleton("x_test-1"), "ok\tvalue")
         bad = ([('Content-Type', 'application/json')],
                (("Content Type", "x"),), (("X@Test", "x"),), (("X-Ü", "x"),),
                (("X-Test", "bad\rvalue"),), (("X-Test", "bad\nvalue"),),
-               (("Content-Type", "a"), ("content-type", "b")),
                (("Content-Type", object()),), (("Content-Type",),), ("not-a-pair",))
         for fields in bad:
             with self.subTest(fields=repr(fields)): self.assert_invalid(fields)
+
+    def test_header_field_values_reject_characters_above_obs_text(self) -> None:
+        helper = self.helper()
+        self.assertEqual(helper.parse_header_fields((("X-Test", "obs-\u00ff"),)).fields,
+                         (("x-test", "obs-\u00ff"),))
+        self.assert_invalid((("X-Test", "bad-\u0100"),))
+
+    def test_repeated_headers_are_preserved_and_singleton_checked_on_consumption(self) -> None:
+        helper = self.helper()
+        block = helper.parse_header_fields((
+            ("Vary", "Origin"),
+            ("Content-Type", "application/json"),
+            ("vArY", "Access-Control-Request-Method"),
+            ("content-type", "application/problem+json"),
+        ))
+        self.assertEqual(block.get_all("VARY"),
+                         ("Origin", "Access-Control-Request-Method"))
+        self.assertEqual(block.fields, (
+            ("vary", "Origin"),
+            ("content-type", "application/json"),
+            ("vary", "Access-Control-Request-Method"),
+            ("content-type", "application/problem+json"),
+        ))
+        with self.assertRaises(helper.HeaderSyntaxError):
+            block.get_singleton("content-type")
+        self.assertIsNone(block.get_singleton("missing"))
     def test_physical_link_aggregate_bound_and_duplicate_relations_fail(self) -> None:
         helper = self.helper()
         one, two = f'<{NEXT}>; rel=next', f'<{LAST}>; rel=last'
@@ -85,4 +119,38 @@ class LinkHeaderTests(unittest.TestCase):
                 (("Link", f'<{target}>; rel=prev'),))
         mixed = f'<{NEXT}>; rel=next, <https://example.invalid/%GG>; rel=prev'
         self.assert_invalid((("Link", mixed),))
+
+    def test_uri_reference_applies_component_specific_rfc3986_grammar(self) -> None:
+        bad_targets = (
+            "https://example.invalid/raw[brackets]/path",
+            "https://example.invalid/path#first#second",
+            "https://user@@example.invalid/path",
+        )
+        for target in bad_targets:
+            with self.subTest(target=target):
+                self.assert_invalid((("Link", f'<{target}>; rel=prev'),))
+
+    def test_type_parameter_uses_rfc6838_restricted_names(self) -> None:
+        helper = self.helper()
+        accepted = (
+            "application/vnd.github+json",
+            f"{'a' * 127}/{'9' * 127}",
+        )
+        for media_type in accepted:
+            with self.subTest(media_type=media_type):
+                link = helper.parse_header_fields(
+                    (("Link", f'<{NEXT}>; rel=next; type="{media_type}"'),)
+                ).links[0]
+                self.assertEqual(link.parameter("type"), media_type)
+        rejected = (
+            "text/.plain",
+            "te*xt/plain",
+            "text/pl~ain",
+            f"{'a' * 128}/plain",
+            f"text/{'a' * 128}",
+        )
+        for media_type in rejected:
+            with self.subTest(media_type=media_type):
+                self.assert_invalid(
+                    (("Link", f'<{NEXT}>; rel=next; type="{media_type}"'),))
 if __name__ == "__main__": unittest.main()
