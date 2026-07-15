@@ -50,7 +50,7 @@ class ContextOccurrence:
     binding: tuple[str, object] | None = None
 @dataclass(frozen=True)
 class WorkflowProfile:
-    source: object; events: tuple[EventProfile, ...]; jobs: tuple[JobProfile, ...]
+    source: object; name: object; events: tuple[EventProfile, ...]; jobs: tuple[JobProfile, ...]
     contexts: tuple[ContextOccurrence, ...]
 @dataclass(frozen=True)
 class WorkflowProjection:
@@ -255,7 +255,7 @@ def project_snapshot(snapshot: object) -> WorkflowProjection:
             root = _mapping(document.root, "workflow root")
             _require({"name", "on", "jobs"} <= set(root) and not (set(root) - TOP_KEYS),
                      "workflow top-level keys are not accepted")
-            _text(root["name"], "workflow name")
+            name = _text(root["name"], "workflow name")
             if "permissions" in root:
                 _permissions(root["permissions"], "workflow permissions")
             if "env" in root:
@@ -283,7 +283,7 @@ def project_snapshot(snapshot: object) -> WorkflowProjection:
                 _require(bool(ready), "job needs graph contains a cycle")
                 pending = {job_id: deps - ready for job_id, deps in pending.items() if job_id not in ready}
             contexts = tuple(item for job in jobs for item in _contexts(document, job))
-            workflows.append(WorkflowProfile(document, events, jobs, contexts))
+            workflows.append(WorkflowProfile(document, name, events, jobs, contexts))
         except SchemaPolicyError as exc:
             problems.append(f"{document.relative}: {exc}")
     return WorkflowProjection((), tuple(problems)) if problems else WorkflowProjection(tuple(workflows), ())
