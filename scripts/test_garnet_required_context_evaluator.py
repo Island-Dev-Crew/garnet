@@ -77,9 +77,21 @@ class RequiredContextEvaluatorTests(unittest.TestCase):
         self.assertEqual((result.bindings, result.prepared_optional, result.inactive_optional), ((), (), ()))
         self.assertTrue(any(fragment in item for item in result.problems), result.problems)
 
-    def test_current_index_binds_exact_31_and_classifies_optional(self) -> None:
+    def checked_policy(self, declared: object, ledger: object, projected: object) -> object:
+        self.assertTrue(hasattr(contract, "evaluate_checked_in_producer_policy"))
+        return contract.evaluate_checked_in_producer_policy(declared, ledger, projected)
+
+    def current_policy_inputs(self) -> tuple[object, object, object]:
+        self.assertTrue(hasattr(contract, "load_required_check_ledger"))
         declared = contract.load_inventory(ROOT / contract.INVENTORY_PATH)
-        result = self.evaluate(schema.workflow_projection(ROOT), declared)
+        ledger = contract.load_required_check_ledger(
+            ROOT / ".github/rulesets/garnet-main.json"
+        )
+        return declared, ledger, schema.workflow_projection(ROOT)
+
+    def test_current_index_binds_exact_31_and_classifies_optional(self) -> None:
+        declared, ledger, projected = self.current_policy_inputs()
+        result = self.checked_policy(declared, ledger, projected)
         self.assertEqual(result.problems, ())
         self.assertEqual(len(result.bindings), 31)
         self.assertEqual([item.context for item in result.inactive_optional],
@@ -90,6 +102,59 @@ class RequiredContextEvaluatorTests(unittest.TestCase):
                          ("Generate single signing key for cross-OS build",
                           "Deterministic build on ubuntu-latest",
                           "Deterministic build on macos-latest"))
+
+    def test_preactivation_rejects_coordinated_activation_and_shrinkage(self) -> None:
+        declared, ledger, projected = self.current_policy_inputs()
+        declared.optional_contexts.clear()
+        activated = contract.RequiredCheckLedger(
+            (*ledger.contexts, "Base-controlled trust policy"), ()
+        )
+        self.assertProblem(
+            self.checked_policy(declared, activated, projected), "optional_contexts"
+        )
+
+        declared, ledger, projected = self.current_policy_inputs()
+        removed = declared.producers.pop(0).context
+        shrunk = contract.RequiredCheckLedger(
+            tuple(item for item in ledger.contexts if item != removed), ()
+        )
+        self.assertProblem(self.checked_policy(declared, shrunk, projected), "31 active")
+
+    def test_preactivation_pins_base_identity_and_ordered_ledger(self) -> None:
+        declared, ledger, projected = self.current_policy_inputs()
+        index = next(
+            i for i, item in enumerate(declared.producers)
+            if item.context == "Base-controlled trust policy"
+        )
+        declared.producers[index] = replace(declared.producers[index], job="other")
+        self.assertProblem(
+            self.checked_policy(declared, ledger, projected), "Base-controlled producer"
+        )
+
+        for contexts, fragment in (
+            (("Base-controlled trust policy", *ledger.contexts), "must be absent"),
+            (tuple(reversed(ledger.contexts)), "ordered contexts"),
+            (("Rogue", *ledger.contexts[1:]), "ordered contexts"),
+        ):
+            with self.subTest(fragment=fragment):
+                declared, _, projected = self.current_policy_inputs()
+                candidate = contract.RequiredCheckLedger(tuple(contexts), ())
+                self.assertProblem(
+                    self.checked_policy(declared, candidate, projected), fragment
+                )
+
+    def test_preactivation_pins_historic_context_identity(self) -> None:
+        declared, ledger, _ = self.current_policy_inputs()
+        declared.producers[0] = replace(
+            declared.producers[0], context="Replacement no-op"
+        )
+        candidate = contract.RequiredCheckLedger(
+            ("Replacement no-op", *ledger.contexts[1:]), ()
+        )
+        problems = contract.preactivation_ruleset_problems(declared, candidate)
+        self.assertTrue(
+            any("baseline context identity" in item for item in problems), problems
+        )
 
     def test_evaluation_preserves_order_and_never_reopens_paths(self) -> None:
         frozen = projection()

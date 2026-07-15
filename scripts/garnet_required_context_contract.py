@@ -2,6 +2,7 @@
 """Strict declarative schema for Garnet required-context producers."""
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -14,8 +15,15 @@ from pathlib import Path
 
 SCHEMA = "garnet.required-context-producers/v1"
 INVENTORY_PATH = ".github/rulesets/required-context-producers.json"
+RULESET_PATH = ".github/rulesets/garnet-main.json"
 TARGET_BRANCH = "main"
 MAX_INVENTORY_BYTES = 256 * 1024
+ACTIONS_INTEGRATION_ID = 15368
+PREACTIVATION_REQUIRED_COUNT = 31
+PREACTIVATION_PRODUCER_IDENTITY_SHA256 = (
+    "899944d4f0344e4b53cdd3cb37b1da26061f5eaab5d49d8482f8157b1ed51aaa"
+)
+BASE_CONTROLLED_CONTEXT = "Base-controlled trust policy"
 FILE_ATTRIBUTE_REPARSE_POINT = 0x400
 ID_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*$")
 WORKFLOW_RE = re.compile(r"^\.github/workflows/[a-z0-9_.-]+\.(?:yml|yaml)$")
@@ -31,12 +39,26 @@ class Producer:
     matrix: tuple[str, str] | None = None
 
 
+BASE_CONTROLLED_PRODUCER = Producer(
+    BASE_CONTROLLED_CONTEXT,
+    ".github/workflows/base-controlled-trust.yml",
+    "pull_request_target",
+    "policy",
+)
+
+
 @dataclass
 class ProducerInventory:
     producers: list[Producer] = field(default_factory=list)
     optional_contexts: set[str] = field(default_factory=set)
     target_branch: str = ""
     problems: list[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class RequiredCheckLedger:
+    contexts: tuple[str, ...] = ()
+    problems: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -71,33 +93,33 @@ def _is_reparse(metadata: os.stat_result) -> bool:
     )
 
 
-def _read_regular_utf8(path: Path) -> str:
+def _read_regular_utf8(path: Path, label: str = "producer inventory") -> str:
     """Read one bounded regular file without accepting path indirection."""
     absolute = path.absolute()
     for component in [*reversed(absolute.parents), absolute]:
         try:
             metadata = os.lstat(component)
         except OSError as exc:
-            raise ValueError(f"cannot inspect inventory path: {exc}") from exc
+            raise ValueError(f"cannot inspect {label} path: {exc}") from exc
         if _is_reparse(metadata):
-            raise ValueError(f"inventory path contains symlink/reparse point: {component}")
+            raise ValueError(f"{label} path contains symlink/reparse point: {component}")
     leaf = os.lstat(absolute)
     if not stat.S_ISREG(leaf.st_mode):
-        raise ValueError("producer inventory is not a regular file")
+        raise ValueError(f"{label} is not a regular file")
     flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
     try:
         descriptor = os.open(absolute, flags)
     except OSError as exc:
-        raise ValueError(f"cannot open producer inventory: {exc}") from exc
+        raise ValueError(f"cannot open {label}: {exc}") from exc
     try:
         opened = os.fstat(descriptor)
         if not stat.S_ISREG(opened.st_mode) or (leaf.st_dev, leaf.st_ino) != (
             opened.st_dev,
             opened.st_ino,
         ):
-            raise ValueError("producer inventory identity changed while opening")
+            raise ValueError(f"{label} identity changed while opening")
         if opened.st_size > MAX_INVENTORY_BYTES:
-            raise ValueError("producer inventory exceeds size limit")
+            raise ValueError(f"{label} exceeds size limit")
         payload = bytearray()
         while len(payload) <= MAX_INVENTORY_BYTES:
             chunk = os.read(descriptor, MAX_INVENTORY_BYTES + 1 - len(payload))
@@ -107,9 +129,9 @@ def _read_regular_utf8(path: Path) -> str:
         after = os.fstat(descriptor)
         stable = (opened.st_dev, opened.st_ino, opened.st_size, opened.st_mtime_ns)
         if stable != (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns):
-            raise ValueError("producer inventory changed while reading")
+            raise ValueError(f"{label} changed while reading")
         if len(payload) > MAX_INVENTORY_BYTES:
-            raise ValueError("producer inventory exceeds size limit")
+            raise ValueError(f"{label} exceeds size limit")
         return bytes(payload).decode("utf-8")
     finally:
         os.close(descriptor)
@@ -124,13 +146,73 @@ def _canonical_context(value: str) -> bool:
     )
 
 
+def load_required_check_ledger(path: Path) -> RequiredCheckLedger:
+    """Load the strict required-check subdocument from the checked-in ruleset."""
+    try:
+        raw = json.loads(
+            _read_regular_utf8(path, "ruleset mirror"),
+            object_pairs_hook=_no_duplicates,
+        )
+    except (OSError, UnicodeError, json.JSONDecodeError, RecursionError, ValueError) as exc:
+        return RequiredCheckLedger(problems=(f"cannot read required-check ruleset: {exc}",))
+    if not isinstance(raw, dict) or not isinstance(raw.get("rules"), list):
+        return RequiredCheckLedger(problems=("ruleset rules must be a list",))
+    rules = raw["rules"]
+    if not all(isinstance(item, dict) for item in rules):
+        return RequiredCheckLedger(problems=("ruleset entries must be objects",))
+    matches = [item for item in rules if item.get("type") == "required_status_checks"]
+    if len(matches) != 1:
+        return RequiredCheckLedger(
+            problems=("ruleset must contain exactly one required_status_checks rule",)
+        )
+    rule = matches[0]
+    problems: list[str] = []
+    if set(rule) != {"type", "parameters"}:
+        problems.append("required status-check rule keys are not exact")
+    parameters = rule.get("parameters")
+    expected_keys = {
+        "do_not_enforce_on_create",
+        "strict_required_status_checks_policy",
+        "required_status_checks",
+    }
+    if not isinstance(parameters, dict):
+        return RequiredCheckLedger(problems=(*problems, "required-check parameters are missing"))
+    if set(parameters) != expected_keys:
+        problems.append("required-check parameter keys are not exact")
+    if parameters.get("strict_required_status_checks_policy") is not True:
+        problems.append("required checks must run against the latest base")
+    if parameters.get("do_not_enforce_on_create") is not False:
+        problems.append("required checks must be enforced on creation")
+    rows = parameters.get("required_status_checks")
+    if not isinstance(rows, list) or not rows:
+        return RequiredCheckLedger(problems=(*problems, "required-check rows must be non-empty"))
+    contexts: list[str] = []
+    for index, row in enumerate(rows):
+        if not isinstance(row, dict) or set(row) != {"context", "integration_id"}:
+            problems.append(f"required-check row keys are not exact at index {index}")
+            continue
+        context = row.get("context")
+        integration = row.get("integration_id")
+        if not isinstance(context, str) or not context or not _canonical_context(context):
+            problems.append(f"required-check context is not canonical at index {index}")
+        else:
+            contexts.append(context)
+        if type(integration) is not int or integration != ACTIONS_INTEGRATION_ID:
+            problems.append(f"required-check integration is not GitHub Actions at index {index}")
+    if len(set(contexts)) != len(contexts):
+        problems.append("required-check ledger contains duplicate contexts")
+    if problems:
+        return RequiredCheckLedger(problems=tuple(problems))
+    return RequiredCheckLedger(tuple(contexts), ())
+
+
 def load_inventory(path: Path) -> ProducerInventory:
     """Load an exact, duplicate-key-free producer inventory."""
     try:
         raw = json.loads(
             _read_regular_utf8(path), object_pairs_hook=_no_duplicates
         )
-    except (OSError, UnicodeError, json.JSONDecodeError, ValueError) as exc:
+    except (OSError, UnicodeError, json.JSONDecodeError, RecursionError, ValueError) as exc:
         return ProducerInventory(problems=[f"cannot read producer inventory: {exc}"])
     if not isinstance(raw, dict) or set(raw) != {
         "schema",
@@ -216,6 +298,43 @@ def load_inventory(path: Path) -> ProducerInventory:
     if optional - seen:
         problems.append("optional_contexts names contexts absent from producers")
     return ProducerInventory(producers, optional, branch, problems)
+
+
+def preactivation_ruleset_problems(
+    inventory: ProducerInventory, ledger: RequiredCheckLedger
+) -> tuple[str, ...]:
+    """Detect drift from the pinned 31-check preactivation identity."""
+    problems = [*inventory.problems, *ledger.problems]
+    if problems:
+        return tuple(problems)
+    if inventory.optional_contexts != {BASE_CONTROLLED_CONTEXT}:
+        problems.append("pre-activation optional_contexts must contain only Base-controlled trust")
+    base = [item for item in inventory.producers if item.context == BASE_CONTROLLED_CONTEXT]
+    if base != [BASE_CONTROLLED_PRODUCER]:
+        problems.append("Base-controlled producer identity is not exact")
+    active = tuple(
+        item.context for item in inventory.producers
+        if item.context not in inventory.optional_contexts
+    )
+    identity = [
+        (item.context, item.workflow, item.event, item.job, item.matrix)
+        for item in inventory.producers
+        if item.context not in inventory.optional_contexts
+    ]
+    identity_sha256 = hashlib.sha256(
+        json.dumps(identity, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    if identity_sha256 != PREACTIVATION_PRODUCER_IDENTITY_SHA256:
+        problems.append("pre-activation baseline context identity is not exact")
+    if len(active) != PREACTIVATION_REQUIRED_COUNT:
+        problems.append("pre-activation inventory must contain 31 active contexts")
+    if len(ledger.contexts) != PREACTIVATION_REQUIRED_COUNT:
+        problems.append("pre-activation ruleset must contain 31 checks")
+    if BASE_CONTROLLED_CONTEXT in ledger.contexts:
+        problems.append("Base-controlled context must be absent before activation")
+    if ledger.contexts != active:
+        problems.append("ruleset ordered contexts do not match active inventory")
+    return tuple(problems)
 
 
 def _matrix_binding(occurrence: object) -> tuple[str, str] | None:
@@ -359,3 +478,23 @@ def evaluate_producer_availability(
     if problems:
         return ProducerEvaluation(problems=tuple(problems))
     return ProducerEvaluation(tuple(bindings), tuple(prepared), tuple(inactive), ())
+
+
+def evaluate_checked_in_producer_policy(
+    inventory: ProducerInventory,
+    ledger: RequiredCheckLedger,
+    projection: object,
+) -> ProducerEvaluation:
+    """Bind the immutable projection only after the checked-in 31-row policy agrees."""
+    problems = preactivation_ruleset_problems(inventory, ledger)
+    if problems:
+        return ProducerEvaluation(problems=problems)
+    result = evaluate_producer_availability(inventory, projection)
+    if result.problems:
+        return result
+    contexts = tuple(item.producer.context for item in result.bindings)
+    if contexts != ledger.contexts:
+        return ProducerEvaluation(
+            problems=("evaluated bindings do not match ruleset ordered contexts",)
+        )
+    return result

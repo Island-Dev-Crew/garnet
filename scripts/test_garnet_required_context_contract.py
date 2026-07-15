@@ -2,6 +2,7 @@
 """Schema tests for the declarative producer inventory."""
 from __future__ import annotations
 
+import copy
 import importlib.util
 import json
 import os
@@ -126,6 +127,13 @@ class ContractTests(unittest.TestCase):
         self.assertIn("cannot read", contract.load_inventory(self.path).problems[0])
         self.path.write_text('{"outer":{"key":1,"key":2}}', encoding="utf-8")
         self.assertIn("duplicate JSON key", contract.load_inventory(self.path).problems[0])
+        self.path.write_text(
+            '{"producers":' + "[" * 2000 + "0" + "]" * 2000 + "}",
+            encoding="utf-8",
+        )
+        deeply_nested = contract.load_inventory(self.path)
+        self.assertEqual(deeply_nested.producers, [])
+        self.assertTrue(deeply_nested.problems)
         self.path.unlink()
         self.assertIn("cannot inspect", contract.load_inventory(self.path).problems[0])
         self.path.write_bytes(b"x" * (contract.MAX_INVENTORY_BYTES + 1))
@@ -147,6 +155,102 @@ class ContractTests(unittest.TestCase):
     def test_optional_context_must_name_a_producer(self) -> None:
         self.value["optional_contexts"] = ["Unknown"]
         self.assertProblem("absent from producers")
+
+
+class RequiredCheckLedgerTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temp = tempfile.TemporaryDirectory()
+        self.path = Path(self.temp.name) / "ruleset.json"
+        self.value = {
+            "rules": [
+                {"type": "deletion"},
+                {
+                    "type": "required_status_checks",
+                    "parameters": {
+                        "do_not_enforce_on_create": False,
+                        "strict_required_status_checks_policy": True,
+                        "required_status_checks": [
+                            {"context": "Static", "integration_id": 15368},
+                            {"context": "Other", "integration_id": 15368},
+                        ],
+                    },
+                },
+            ]
+        }
+
+    def tearDown(self) -> None:
+        self.temp.cleanup()
+
+    def load(self, value: object | None = None):
+        self.assertTrue(hasattr(contract, "load_required_check_ledger"))
+        self.path.write_text(json.dumps(self.value if value is None else value), encoding="utf-8")
+        return contract.load_required_check_ledger(self.path)
+
+    def assertValueProblem(self, value: object, fragment: str) -> None:  # noqa: N802
+        ledger = self.load(value)
+        self.assertEqual(ledger.contexts, ())
+        self.assertTrue(any(fragment in item for item in ledger.problems), ledger.problems)
+
+    def test_exact_required_check_ledger_loads(self) -> None:
+        ledger = self.load()
+        self.assertEqual(ledger.problems, ())
+        self.assertEqual(ledger.contexts, ("Static", "Other"))
+
+    def test_required_check_rule_and_parameters_are_exact(self) -> None:
+        missing = copy.deepcopy(self.value)
+        missing["rules"].pop()
+        self.assertValueProblem(missing, "exactly one required_status_checks")
+        duplicate = copy.deepcopy(self.value)
+        duplicate["rules"].append(copy.deepcopy(duplicate["rules"][1]))
+        self.assertValueProblem(duplicate, "exactly one required_status_checks")
+        for key, value, fragment in (
+            ("strict_required_status_checks_policy", False, "latest base"),
+            ("do_not_enforce_on_create", True, "enforced on creation"),
+            ("unexpected", True, "parameter keys"),
+        ):
+            with self.subTest(key=key):
+                candidate = copy.deepcopy(self.value)
+                candidate["rules"][1]["parameters"][key] = value
+                self.assertValueProblem(candidate, fragment)
+
+    def test_rows_are_canonical_unique_and_actions_bound(self) -> None:
+        mutations = (
+            ("context", " Static", "canonical"),
+            ("context", "", "canonical"),
+            ("integration_id", True, "integration"),
+            ("integration_id", 1, "integration"),
+        )
+        for key, value, fragment in mutations:
+            with self.subTest(key=key, value=value):
+                candidate = copy.deepcopy(self.value)
+                candidate["rules"][1]["parameters"]["required_status_checks"][0][key] = value
+                self.assertValueProblem(candidate, fragment)
+        duplicate = copy.deepcopy(self.value)
+        duplicate["rules"][1]["parameters"]["required_status_checks"][1]["context"] = "Static"
+        self.assertValueProblem(duplicate, "duplicate")
+        shaped = copy.deepcopy(self.value)
+        shaped["rules"][1]["parameters"]["required_status_checks"][0]["unexpected"] = True
+        self.assertValueProblem(shaped, "row keys")
+
+    def test_ruleset_json_fails_closed(self) -> None:
+        self.assertTrue(hasattr(contract, "load_required_check_ledger"))
+        self.path.write_text('{"rules":[],"rules":[]}', encoding="utf-8")
+        ledger = contract.load_required_check_ledger(self.path)
+        self.assertEqual(ledger.contexts, ())
+        self.assertTrue(any("duplicate JSON key" in item for item in ledger.problems))
+        self.path.write_bytes(b"\xff")
+        ledger = contract.load_required_check_ledger(self.path)
+        self.assertEqual(ledger.contexts, ())
+        self.assertTrue(ledger.problems)
+
+    def test_deeply_nested_ruleset_fails_closed(self) -> None:
+        self.path.write_text(
+            '{"rules":' + "[" * 2000 + "0" + "]" * 2000 + "}",
+            encoding="utf-8",
+        )
+        ledger = contract.load_required_check_ledger(self.path)
+        self.assertEqual(ledger.contexts, ())
+        self.assertTrue(ledger.problems)
 
 
 if __name__ == "__main__":
