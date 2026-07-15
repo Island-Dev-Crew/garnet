@@ -68,12 +68,17 @@ Owns the `garnet` binary, subcommand routing, template embedding, deterministic 
   render guard); do not claim the firewall contains them. A new
   interpreter-invoking lane must route through the firewall or a
   structural guard (`tests/panic_firewall_lanes.rs` proves the lanes).
+- `garnet_cli::mcp_schema` is the released MCP `2025-11-25` initialize-schema
+  boundary. It validates known client capability and implementation metadata
+  shapes while allowing only top-level vendor capability extensions. It is not
+  a session, transport, tool router, or host.
 - New agent-documentation tooling should start as opt-in or checking behavior before becoming a language requirement.
 
 ## Required Checks
 
 ```sh
 cargo test -p garnet-cli
+cargo test -p garnet-cli --test mcp_initialize_schema
 cargo run -p garnet-cli -- --help
 ```
 

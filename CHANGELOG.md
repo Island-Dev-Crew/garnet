@@ -742,6 +742,13 @@ _Post-cut work (S121+) lands here. S121–S130 delivered: the Truth Sync Gate, d
 modernization, the v0.8.1 version bump + release guard + SBOM/signing wiring, the
 signed re-cut, and this post-re-cut truth-sync._
 
+### Minimum Shelf MCP initialize-schema boundary
+
+- **Added (schema only):** released MCP `2025-11-25` initialize parameter,
+  client capability, implementation/icon metadata, URI, and `_meta` shape
+  validation. Lifecycle state, request IDs, tools, stdio, execution, sealing,
+  reporting, and host enforcement remain deferred.
+
 ### MIT readiness test pins re-anchored to post-#364 re-sealed committed evidence
 
 - **Fixed (test truth, no reporter change):** six stale pins in
