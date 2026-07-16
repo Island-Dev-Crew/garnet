@@ -13,9 +13,11 @@ post-squash repair on `mission/l0-closeout-repair`.
 - Independent review ended at:
   `3124ba5ecfa88aa6f2c2c289313860670673cdec`,
   tree `d2d3c735cf25b84ef69e0e385c8cfeb35e1af673`.
-- Independent reviewer for this repair: **PENDING**. This branch is not ready
-  for Jon's merge until an independent reviewer records the reviewed repair
-  head and zero open Critical/Important findings here.
+- Independently reviewed repair head:
+  `2870ea9dab9a49ae08e899948b8334266221d1a7`.
+- Independent reviewers: Codex independent mechanism reviewer and Codex
+  independent provenance reviewer. Both cleared the exact repair head with
+  zero open Critical, Important, or Minor findings.
 - Merge authority: Jon only.
 
 The content match above proves that squash preserved Lane 0's final PR tree.
@@ -102,14 +104,19 @@ clearance.
 
 ## Independent review verdict
 
-**PENDING.** The independent reviewer must record:
+| Reviewer | Exact reviewed head | Scope | Verdict |
+|---|---|---|---|
+| Codex independent mechanism reviewer | `2870ea9dab9a49ae08e899948b8334266221d1a7` | Both trust-kernel paths; fail-closed marker semantics; replacement-ref and first-parent attacks; generic boundary reuse | APPROVED — 0 Critical, 0 Important |
+| Codex independent provenance reviewer | `2870ea9dab9a49ae08e899948b8334266221d1a7` | Both state markers; U-19 disclosure; journals/SOTU/ledger; procedural contract; bounded scope | APPROVED — 0 Critical, 0 Important, 0 Minor |
 
-- exact reviewed repair head;
-- reviewer identity or role;
-- reviewed trust-kernel paths;
-- fresh Linux, macOS, and Windows evidence files or a blocking gap;
-- open Critical findings;
-- open Important findings;
-- final verdict.
+The mechanism review first found one Important replacement-ref bypass at
+`13c9307046b8e2613a5384f530e642934ac178ea`. The repair recorded that RED,
+added both attack regressions plus an exact Lane 0 boundary pin, and both
+reviewers re-reviewed the final trust-kernel head above. The mechanism
+reviewer also confirmed that both replacement-ref regressions fail against a
+temporary mutant with the hardening removed.
 
-Jon must not merge while this section remains pending.
+Independent review of the changed trust-kernel paths is **APPROVED**.
+PR-level merge readiness remains **PENDING** only on the fresh repair-head
+Linux, macOS, and Windows evidence required above. Jon must not merge until
+that section is complete and successful.
