@@ -145,6 +145,24 @@ Cross-OS repair evidence is **COMPLETE** for the unchanged trust-kernel files.
 This final companion-only seal must still receive the ordinary required checks
 on its resulting PR head before the draft is marked ready for Jon.
 
+## Final required-check retry
+
+The first final-seal head
+`42689dd1061152c75e10bfecc3a107fb8bba1467` passed the trust gate, all three
+cargo-test jobs, both Studio jobs, determinism, agentic dogfood, and every
+other code-executing required check. Its sole required failure was
+[smoke-rpm](https://github.com/Island-Dev-Crew/garnet/actions/runs/29532789469/job/87737808508):
+GitHub could not reach `codeload.github.com:443` to download the pinned
+`actions/download-artifact` action after three retries. The job failed during
+setup before repository code ran.
+
+The active fork credential cannot rerun an upstream job, and no admin
+credential was inherited or used. This documentation-only provenance update
+therefore creates the normal final retry. It is the terminal companion state:
+do not add another self-referential evidence commit merely to restate GitHub's
+live result. The PR check state on the resulting head is the authority; Jon
+must merge only if every required check is green.
+
 ## Independent review verdict
 
 | Reviewer | Exact reviewed head | Scope | Verdict |
@@ -161,5 +179,5 @@ temporary mutant with the hardening removed.
 
 Independent review of the changed trust-kernel paths is **APPROVED**.
 Fresh Linux, macOS, and Windows evidence is **APPROVED** at the exact
-companion/evidence head recorded above. Jon must not merge until the ordinary
-required checks also pass on this final companion-only seal.
+companion/evidence head recorded above. Jon must not merge unless the live
+required-check state is fully green on the terminal companion head.
