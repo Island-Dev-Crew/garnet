@@ -1,7 +1,9 @@
 # Garnet Lane 0 frozen backlog
 
-**Frozen base:** `231aefa91985e5a0520c493c7f0fc3e54d74efc8`  
-**Launch:** HOLD  
+**Frozen base:** `231aefa91985e5a0520c493c7f0fc3e54d74efc8`
+
+**Launch:** HOLD
+
 **Machine authority:** `ops/lane0/frozen-backlog.json` and
 `python3 -I scripts/garnet_frozen_backlog_status.py --gate`
 
