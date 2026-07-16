@@ -58,6 +58,17 @@ class GarnetMsrvStatusTests(unittest.TestCase):
         self.assertTrue(payload["studio_exact_msrv_ci_check"])
         self.assertTrue(payload["ok"])
 
+    def test_real_gate_passes_with_stdlib_only(self) -> None:
+        proc = subprocess.run(
+            [sys.executable, "-I", "-S", str(SCRIPT), "--gate"],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertTrue(json.loads(proc.stdout)["ok"])
+
     def test_mutated_workspace_floor_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
@@ -112,6 +123,19 @@ class GarnetMsrvStatusTests(unittest.TestCase):
         self.assertFalse(status.exact_msrv_ci_check)
         self.assertFalse(status.ok)
 
+    def test_soft_failed_exact_msrv_step_does_not_satisfy_ci(self) -> None:
+        status = self._mutated_status(
+            ".github/workflows/ci.yml",
+            lambda text: text.replace(
+                f"        run: {msrv.ROOT_CI_COMMAND}",
+                f"        run: {msrv.ROOT_CI_COMMAND}\n"
+                "        continue-on-error: true",
+                1,
+            ),
+        )
+        self.assertFalse(status.exact_msrv_ci_check)
+        self.assertFalse(status.ok)
+
     def test_exact_command_in_wrong_job_does_not_satisfy_ci(self) -> None:
         def mutate(text: str) -> str:
             text = text.replace(
@@ -128,6 +152,30 @@ class GarnetMsrvStatusTests(unittest.TestCase):
 
         status = self._mutated_status(".github/workflows/ci.yml", mutate)
         self.assertFalse(status.exact_msrv_ci_check)
+        self.assertFalse(status.ok)
+
+    def test_ambiguous_yaml_anchor_fails_closed(self) -> None:
+        status = self._mutated_status(
+            ".github/workflows/ci.yml",
+            lambda text: text.replace(
+                "    runs-on: ${{ matrix.os }}",
+                "    runs-on: &runner ${{ matrix.os }}",
+                1,
+            ),
+        )
+        self.assertFalse(status.workflow_projection_valid)
+        self.assertFalse(status.ok)
+
+    def test_ambiguous_yaml_indentation_fails_closed(self) -> None:
+        status = self._mutated_status(
+            ".github/workflows/ci.yml",
+            lambda text: text.replace(
+                f"        run: {msrv.ROOT_CI_COMMAND}",
+                f"       run: {msrv.ROOT_CI_COMMAND}",
+                1,
+            ),
+        )
+        self.assertFalse(status.workflow_projection_valid)
         self.assertFalse(status.ok)
 
     def test_stable_toolchain_must_be_in_required_test_job(self) -> None:

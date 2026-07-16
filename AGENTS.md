@@ -49,10 +49,12 @@ change.
 
 Run `python3 -I scripts/test_garnet_msrv_status.py` and
 `python3 -I scripts/garnet_msrv_status.py --gate` after changing a Rust
-manifest, current MSRV wording, or the exact-floor workflow wiring. The gate
-uses the pinned typed workflow-YAML boundary from
-`scripts/garnet_workflow_yaml_requirements.txt`; comments, disabled steps, or
-commands in another job do not satisfy it.
+manifest, current MSRV wording, or the exact-floor workflow wiring. This gate
+is stdlib-only: its narrow workflow projector accepts only the canonical
+job/matrix/step shape needed by the MSRV contract and rejects ambiguous YAML
+features or indentation. Comments, disabled steps, or commands in another job
+do not satisfy it. The broader repository workflow-policy gates continue to
+use their separately pinned typed-YAML boundary.
 
 ## WV-6 / WV-7 Acceptance Gates
 
