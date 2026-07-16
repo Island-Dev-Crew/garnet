@@ -10,8 +10,8 @@
     "northStar": "An authenticated, complete, exact-head merge boundary plus a live in-browser Garnet proof and one reproducible sealed local Shelf demo. Claim only what the committed traps prove.",
     "status": "active",
     "started": "2026-07-12",
-    "updated": "2026-07-16T11:53:31Z",
-    "sessionCount": 4
+    "updated": "2026-07-16T12:45:00Z",
+    "sessionCount": 5
   },
   "policies": {
     "merge": "auto",
@@ -929,6 +929,59 @@
         "evidenceDestination": "proofs/windows/launch-verification/wv7-distribution/"
       }
     }
+  },
+  "readiness": {
+    "asOf": "2026-07-16T12:45:00Z",
+    "launchStatus": "HOLD",
+    "denominators": [
+      {
+        "id": "s114_mission",
+        "label": "S114 bounded mission",
+        "numerator": 19,
+        "denominator": 19,
+        "percent": 100.0,
+        "evidence": "ops/lane0/evidence/10-denominators.json"
+      },
+      {
+        "id": "truth_pulse",
+        "label": "Truth pulse",
+        "numerator": 931,
+        "denominator": 1000,
+        "percent": 93.1,
+        "evidence": "ops/lane0/evidence/09-mit-readiness.json"
+      },
+      {
+        "id": "launch_critical",
+        "label": "Launch-critical",
+        "numerator": 3,
+        "denominator": 6,
+        "percent": 50.0,
+        "evidence": "ops/lane0/evidence/08-launch-readiness.json"
+      },
+      {
+        "id": "launch_ledger",
+        "label": "Whole launch ledger",
+        "numerator": 3,
+        "denominator": 8,
+        "percent": 37.5,
+        "evidence": "ops/lane0/evidence/08-launch-readiness.json"
+      }
+    ]
+  },
+  "lane0Closeout": {
+    "state": "complete_local_pending_jon_review_merge",
+    "audit": "ops/lane0/AUDIT.md",
+    "evidenceManifest": "ops/lane0/evidence/MANIFEST.sha256",
+    "ledger": "ops/lane0/ledger.jsonl",
+    "band": 3,
+    "governanceVerdict": "advisory",
+    "waivers": [],
+    "nextActions": [
+      "Lane 1: prove fresh, exact-reviewed-head, outcome-verified GOV-009 state and close the live settings/no-bypass readback only after Jon provisions a dedicated admin-authoritative token.",
+      "Lane 2A: materialize the hermetic package, connect the live adapter/page, run Playwright traps, promote only from reporter evidence, and prove fail-closed denial.",
+      "Lane 2B: add one bounded in-process Garnet tool, raw-byte stdio, a sealed baseline, reject-without-seal proof, and a deterministic Shelf reporter.",
+      "Lane 2C: rerun and deterministically report three exact-candidate stress cases exceeding four minutes before restoring APPROVED; current state remains partial."
+    ]
   },
   "resume": {
     "activePhase": "P7",

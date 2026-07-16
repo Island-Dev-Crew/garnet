@@ -1,0 +1,7 @@
+$ node ops/mission/render-sotu.mjs
+expected_exit=0
+actual_exit=0
+--- stdout ---
+Rendered /private/tmp/garnet-l0-truth-freeze-231aefa/ops/mission/state-of-the-union.html
+  phases: 8, tasks: 19/23, gates passed: 17/21, compact PR log rows: 15, checkpoint PR merges: 35
+--- stderr ---

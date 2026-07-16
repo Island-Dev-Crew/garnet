@@ -1,0 +1,10 @@
+{
+  "schema": "garnet.quarterly_competitive_watch/v1",
+  "state": "planned",
+  "as_of": "2026-07-16",
+  "report_count": 0,
+  "next_due": "2026-09-30",
+  "contract_present": true,
+  "findings": [],
+  "ok": true
+}

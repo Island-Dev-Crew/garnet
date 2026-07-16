@@ -1,0 +1,19 @@
+{
+  "active_manifest_count": 18,
+  "active_manifest_set_exact": true,
+  "current_surfaces_aligned": true,
+  "exact_msrv_ci_check": true,
+  "excluded_manifests_declaring": 2,
+  "findings": [],
+  "msrv": "1.95",
+  "ok": true,
+  "procedural_contract_present": true,
+  "reporter_ci_wired": true,
+  "rust_toolchain_file_absent": true,
+  "schema": "garnet.msrv_status/v2",
+  "stable_tracking_preserved": true,
+  "studio_exact_msrv_ci_check": true,
+  "workflow_projection_valid": true,
+  "workspace_member_count": 16,
+  "workspace_members_inheriting": 16
+}

@@ -1,0 +1,45 @@
+{
+  "schema": "garnet.lane0.denominators/v1",
+  "asOf": "2026-07-16T12:45:00Z",
+  "launchStatus": "HOLD",
+  "denominators": [
+    {
+      "id": "s114_mission",
+      "label": "S114 bounded mission",
+      "numerator": 19,
+      "denominator": 19,
+      "percent": 100.0,
+      "evidence": "ops/lane0/evidence/10-denominators.json"
+    },
+    {
+      "id": "truth_pulse",
+      "label": "Truth pulse",
+      "numerator": 931,
+      "denominator": 1000,
+      "percent": 93.1,
+      "evidence": "ops/lane0/evidence/09-mit-readiness.json"
+    },
+    {
+      "id": "launch_critical",
+      "label": "Launch-critical",
+      "numerator": 3,
+      "denominator": 6,
+      "percent": 50.0,
+      "evidence": "ops/lane0/evidence/08-launch-readiness.json"
+    },
+    {
+      "id": "launch_ledger",
+      "label": "Whole launch ledger",
+      "numerator": 3,
+      "denominator": 8,
+      "percent": 37.5,
+      "evidence": "ops/lane0/evidence/08-launch-readiness.json"
+    }
+  ],
+  "sources": {
+    "s114": "ops/mission/state.json P0-P6 task states",
+    "truthPulse": "ops/lane0/evidence/09-mit-readiness.json committed-only",
+    "launch": "ops/lane0/evidence/08-launch-readiness.json"
+  },
+  "discipline": "exactly four; never averaged and no fifth denominator"
+}

@@ -1,0 +1,19 @@
+{
+  "schema": "garnet.lane0_truth_freeze/v1",
+  "archive_base_exclusive": "d0d4f7cc988db4d793c5c7555a4043aef9b27180",
+  "archive_head_inclusive": "1fe74892c588f912e103742afc9d11e845e8d4e6",
+  "archive_pr_count": 34,
+  "successor_archive_pr": 499,
+  "successor_archive_sha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+  "checkpoint_pr_count": 35,
+  "active_phase": "P7",
+  "action_tasks": [
+    "P7-T1",
+    "P7-T2",
+    "P7-T3",
+    "P7-T4"
+  ],
+  "adversarial_findings_resolved": false,
+  "findings": [],
+  "ok": true
+}
