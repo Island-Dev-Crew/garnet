@@ -66,6 +66,38 @@ with `state=pending` until their exact-candidate, hash-verified Windows evidence
 manifests exist; never turn absence into acceptance or perform a Jon-only
 action from the reporter.
 
+## Lane 0 Frozen Backlog
+
+`ops/lane0/frozen-backlog.json` is the machine authority for the Lane 0
+claim-state freeze. Only `implemented`, `partial`, `planned`, and `research`
+are valid states. Implemented clauses must name tracked current code and
+tracked executable evidence; partial entries must preserve both the implemented
+and open clauses. A future destination is always labeled `future-not-evidence`
+and cannot promote a claim.
+
+Run `python3 -I scripts/test_garnet_frozen_backlog_status.py` and
+`python3 -I scripts/garnet_frozen_backlog_status.py --gate` after changing the
+backlog, its human rendering, or any evidence path it cites. Lane 2C remains
+partial until a deterministic reporter verifies three exact-candidate stress
+cases exceeding four minutes; ignored fixtures and the historical 0.03-second
+run do not satisfy that contract.
+
+## Research Corpus and Competitive Watch
+
+`research/README.md` is the canonical A–F corpus map. Legacy paths stay live
+until a dedicated link-checked migration; do not move engineering crates or
+import absent external corpus files during documentation cleanup. The former
+June reassessment path is an explicit compatibility pointer to the canonical
+`research/2026-06/` copy.
+
+`research/QUARTERLY_COMPETITIVE_WATCH.md` owns the standing cadence and report
+contract. Run
+`python3 -I scripts/test_garnet_quarterly_competitive_watch_status.py` and
+`python3 -I scripts/garnet_quarterly_competitive_watch_status.py --gate` after
+changing it. The contract being active is not a completed watch report. Search
+misses are coverage statements, never evidence that a competitor or standard
+does not exist.
+
 ## Required Contract Index
 
 Every path below is part of the current contract surface and must remain present unless the owning scope is removed or renamed.

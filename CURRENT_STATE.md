@@ -198,6 +198,7 @@ done
 | `B_Four_Model_Consensus/` | consensus/adjudication docs | research context |
 | `C_Language_Specification/` | specs, matrices, roadmaps | normative + descriptive status |
 | `D_Executive_and_Presentation/` | decks and presentation artifacts | communication material |
+| `research/README.md` | canonical research-corpus root map | preserves the live A–F paths until a dedicated link-checked migration; indexes the canonical June reassessment, directives ledger, and quarterly-watch contract |
 | `F_Project_Management/` | handoffs and verification history | historical/current project management |
 | `archive/` | superseded historical material | audit trail only |
 | `.omx/`, `.garnet-cache/`, `target/`, `dist/` | local workflow/build output | scratch/generated, not source truth |

@@ -35,6 +35,15 @@ Pending is the correct current result. The reporter never performs signing,
 package-manager publication, FIRE, tagging, release publication, promo QA, or
 any other Jon-only action.
 
+## Lane 0 Frozen Backlog
+
+`LAUNCH/GARNET_L0_FROZEN_BACKLOG_2026-07-15.md` is the human view of
+`ops/lane0/frozen-backlog.json`; the JSON plus
+`python3 -I scripts/garnet_frozen_backlog_status.py --gate` is authoritative.
+Do not hand-promote a lane because a component test is green. Future evidence
+destinations are acceptance contracts, not evidence, and the launch remains
+HOLD until the launch reporter plus external/manual gates say otherwise.
+
 ## Update Rules
 
 When a phase completes, record the evidence here, then update the owning semantic/procedural docs if the phase changed stable behavior.
