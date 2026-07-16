@@ -150,3 +150,19 @@ agent-contracts job; the OS matrix is Rust workspace coverage. Evidence file
 `ops/lane2a/evidence/90-synchronized-required-checks.md` records the complete
 boundary. This exact-link commit remains evidence-only and must itself rerun
 green before PR #509 is changed from draft to ready for Jon.
+
+That evidence-only replay is now green on `77f4afa`, and PR #509 is ready for
+review without being merged:
+
+- [PR dogfood evidence](https://github.com/Island-Dev-Crew/garnet/actions/runs/29542997903/job/87768924838)
+- [agent documentation contracts](https://github.com/Island-Dev-Crew/garnet/actions/runs/29542997905/job/87768924629)
+- [rustfmt](https://github.com/Island-Dev-Crew/garnet/actions/runs/29542997905/job/87769052576)
+- [clippy](https://github.com/Island-Dev-Crew/garnet/actions/runs/29542997905/job/87769094119)
+- [Ubuntu cargo test](https://github.com/Island-Dev-Crew/garnet/actions/runs/29542997905/job/87769094165)
+- [Windows cargo test](https://github.com/Island-Dev-Crew/garnet/actions/runs/29542997905/job/87769094177)
+- [macOS cargo test](https://github.com/Island-Dev-Crew/garnet/actions/runs/29542997905/job/87769094173)
+
+All seven succeeded and all 34 observed checks were terminal without a failure.
+`ops/lane2a/evidence/100-final-ready-handoff.md` is the session-close record.
+This closeout commit is state/evidence only; PR #509 remains the authority for
+its current checks, and Jon alone may merge it.
