@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PAGE = ROOT / "docs" / "playground.html"
 LIVE = ROOT / "docs" / "playground" / "live.js"
 PACKAGE = ROOT / "docs" / "playground" / "pkg"
+SMOKE = ROOT / "scripts" / "smoke_garnet_playground_browser.mjs"
 PACKAGE_FILES = {"garnet_wasm.js", "garnet_wasm_bg.wasm", "provenance.json"}
 
 
@@ -74,6 +75,20 @@ class PlaygroundBrowserContractTests(unittest.TestCase):
             check=False,
         )
         self.assertEqual(0, proc.returncode, proc.stderr or proc.stdout)
+
+    def test_playwright_trap_is_fail_closed_and_time_bounded(self) -> None:
+        text = SMOKE.read_text(encoding="utf-8")
+        for marker in (
+            'from "../apps/garnet-studio/node_modules/playwright/index.mjs"',
+            'serviceWorkers: "block"',
+            "externalRequests.add",
+            "untrackedRequests.add",
+            "durationMs < 30_000",
+            'exit_class, "runtime_error"',
+            'stdout, "", "denial stdout"',
+            'verdict: passed ? "pass" : "fail"',
+        ):
+            self.assertIn(marker, text)
 
 
 if __name__ == "__main__":
