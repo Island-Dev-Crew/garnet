@@ -10,7 +10,7 @@
     "northStar": "A clean browser loads only committed package bytes and renders real run, check, and capability-diff results without a network fetch or Node-only execution path; A browser attempt to use denied process authority rejects with a non-success exit class and a visible diagnostic; Two clean builds from the same committed inputs produce byte-identical browser package files and provenance; The readiness reporter promotes browser status only after validating the committed package and browser proof; Capability diff renders a one-glance human verdict and a versioned structured machine verdict from the same adapter result",
     "status": "active",
     "started": "2026-07-16",
-    "updated": "2026-07-16T23:36:09Z",
+    "updated": "2026-07-16T23:46:16Z",
     "sessionCount": 1
   },
   "policies": {
@@ -166,14 +166,15 @@
       "url": "https://github.com/Island-Dev-Crew/garnet/pull/509",
       "state": "draft",
       "openedHead": "8dc96231368d1f0c39b9df177ee486bb948c78bc",
-      "notes": "Initial agent-contracts, rustfmt, and clippy jobs passed. The first dogfood PR-body job failed on missing required headings; the corrected body passes locally and awaits the synchronized rerun."
+      "checkedHead": "dfb753c1f7bc38ed713567cd59385ba6a7e25066",
+      "notes": "Corrected dogfood evidence, agent contracts, rustfmt, clippy, and Ubuntu/Windows/macOS cargo tests all passed on the synchronized head. Exact links are committed; the evidence-only link commit must rerun before ready-for-review transition."
     }
   ],
   "resume": {
     "activePhase": null,
     "nextActions": [
-      "Monitor the synchronized PR #509 dependency chain and fix the highest red job without weakening a gate.",
-      "Record exact Ubuntu, Windows, and macOS required-check links before preparing the PR for Jon's human merge."
+      "Push the exact-link evidence commit and require its fresh PR #509 dependency chain to finish green.",
+      "After the evidence-only head is green, mark PR #509 ready for Jon's human merge without merging it."
     ],
     "blockers": [],
     "conventions": [

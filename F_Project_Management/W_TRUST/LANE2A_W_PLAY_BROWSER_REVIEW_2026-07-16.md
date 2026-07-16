@@ -134,5 +134,19 @@ unchanged checker locally and this evidence-only commit triggers a fresh
 the exact initial links and correction.
 
 This local companion does not pre-claim remote Windows, macOS, or Ubuntu
-success. PR #509 remains draft/not-ready for Jon until the synchronized
-three-OS jobs pass and their exact run/job links are appended here.
+success from local evidence. Fresh synchronized remote evidence on head
+`dfb753c` is now green:
+
+- [PR dogfood evidence](https://github.com/Island-Dev-Crew/garnet/actions/runs/29542607090/job/87767760106)
+- [agent documentation contracts](https://github.com/Island-Dev-Crew/garnet/actions/runs/29542607095/job/87767760125)
+- [rustfmt](https://github.com/Island-Dev-Crew/garnet/actions/runs/29542607095/job/87767858886)
+- [clippy](https://github.com/Island-Dev-Crew/garnet/actions/runs/29542607095/job/87767894424)
+- [Ubuntu cargo test](https://github.com/Island-Dev-Crew/garnet/actions/runs/29542607095/job/87767894456)
+- [Windows cargo test](https://github.com/Island-Dev-Crew/garnet/actions/runs/29542607095/job/87767894431)
+- [macOS cargo test](https://github.com/Island-Dev-Crew/garnet/actions/runs/29542607095/job/87767894443)
+
+All seven linked jobs succeeded. The Python W-PLAY reporter ran in the Ubuntu
+agent-contracts job; the OS matrix is Rust workspace coverage. Evidence file
+`ops/lane2a/evidence/90-synchronized-required-checks.md` records the complete
+boundary. This exact-link commit remains evidence-only and must itself rerun
+green before PR #509 is changed from draft to ready for Jon.
