@@ -24,6 +24,18 @@ Garnet's own memory taxonomy applies to the repository:
 
 A stable workflow that changes agent behavior belongs in procedural memory, not only in a chat transcript or a maintainer's head.
 
+## Lane 0 Truth-Freeze Gate
+
+`python3 -I scripts/garnet_lane0_truth_freeze_status.py --gate` is the machine
+authority for the Lane 0 first-parent archive and U-18 resume contract. It
+derives the archived PR order and full squash-main SHAs from local Git history,
+then checks the materialized P7/P7-T1..P7-T4 references and rejects stale
+P8/P9/P10 resume pointers. Run
+`python3 -I scripts/test_garnet_lane0_truth_freeze_status.py` after changing the
+checkpoint, its locked P0 gates, or the mission SOTU renderer. This gate reads
+only the local checkout; it must not read a fork's main branch or ambient
+credentials.
+
 ## Required Contract Index
 
 Every path below is part of the current contract surface and must remain present unless the owning scope is removed or renamed.

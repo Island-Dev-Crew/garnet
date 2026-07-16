@@ -7,10 +7,10 @@
     "repoPath": ".",
     "defaultBranch": "main",
     "planDoc": "F_Project_Management/VALIDATION_REPORTS/Garnet-Launch-Preparation-State-of-the-Union-v1-2026-07-15.html",
-    "northStar": "The #497 through #506 first-parent checkpoint records every exact squash-main SHA in observed merge order; Mission resume pointers resolve only to the materialized P7 phase and its four tasks; One Rust MSRV is declared consistently and enforced inside existing CI contexts; Every frozen-backlog claim names current code and fresh evidence or remains honestly partial or planned",
+    "northStar": "Every first-parent PR commit in d0d4f7cc..1fe7489 has its exact squash-main SHA in observed merge order, followed by successor archive merge #499; Mission resume pointers resolve only to the materialized P7 phase and its four tasks; One Rust MSRV is declared consistently and enforced inside existing CI contexts; Every frozen-backlog claim names current code and fresh evidence or remains honestly partial or planned",
     "status": "active",
     "started": "2026-07-16",
-    "updated": "2026-07-16T04:34:51Z",
+    "updated": "2026-07-16T04:56:34Z",
     "sessionCount": 1
   },
   "policies": {
@@ -23,14 +23,14 @@
     {
       "id": "P0",
       "title": "Archive checkpoint and U-18 reconciliation",
-      "goal": "Archive the exact #497 through #506 first-parent sequence and normalize mission resumption onto materialized P7 and P7-T1 through P7-T4.",
+      "goal": "Archive every first-parent PR commit in d0d4f7cc..1fe7489 plus successor archive merge #499, and normalize mission resumption onto materialized P7 and P7-T1 through P7-T4.",
       "status": "pending",
       "sessionsEstimate": "1",
       "gates": [
         {
           "id": "P0-G1",
-          "title": "Mission state is valid JSON",
-          "command": "jq empty ops/mission/state.json",
+          "title": "Lane 0 archive and U-18 checker regression suite passes",
+          "command": "python3 -I scripts/test_garnet_lane0_truth_freeze_status.py",
           "status": "pending",
           "evidence": null,
           "lastRun": null,
@@ -38,17 +38,8 @@
         },
         {
           "id": "P0-G2",
-          "title": "Checkpoint merge order is the observed first-parent order",
-          "command": "jq -e '.mainlineCheckpoint.mergeOrder == [497,498,500,501,502,503,504,505,506,499]' ops/mission/state.json",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": ""
-        },
-        {
-          "id": "P0-G3",
-          "title": "The only active resume phase is materialized P7",
-          "command": "jq -e '.resume.activePhase == \"P7\"' ops/mission/state.json",
+          "title": "Git-derived archive mapping and U-18 referential-integrity gate passes",
+          "command": "python3 -I scripts/garnet_lane0_truth_freeze_status.py --gate",
           "status": "pending",
           "evidence": null,
           "lastRun": null,

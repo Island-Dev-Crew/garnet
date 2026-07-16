@@ -56,6 +56,19 @@ const risks = Array.isArray(state.risks) ? state.risks : [];
 const prLog = Array.isArray(state.prLog) ? state.prLog : [];
 const resume = state.resume ?? {};
 const policies = state.policies ?? {};
+const mainlineCheckpoint = state.mainlineCheckpoint ?? {};
+const archivedRange = mainlineCheckpoint.archivedFirstParentRange ?? {};
+const archivedPrOrder = Array.isArray(archivedRange.firstParentPullRequestMergeOrder)
+  ? archivedRange.firstParentPullRequestMergeOrder
+  : [];
+const archivedPrToSha = archivedRange.pullRequestToMainSha ?? {};
+const successorArchiveMerge = mainlineCheckpoint.successorArchiveMerge ?? {};
+const checkpointRows = [
+  ...archivedPrOrder.map((pr) => ({ pr, sha: archivedPrToSha[String(pr)], scope: "archived range" })),
+  ...(successorArchiveMerge.pullRequest != null
+    ? [{ pr: successorArchiveMerge.pullRequest, sha: successorArchiveMerge.mainSha, scope: "successor archive merge" }]
+    : []),
+];
 
 for (const p of phases) {
   if (!p.status) warn(`phase ${p.id ?? "?"} has no status — defaulting to "pending"`);
@@ -258,7 +271,28 @@ function prTimeline() {
       return `<article class="tl-item"><time>#${esc(p.number ?? "?")}</time><p><b>${esc(p.title ?? "")}</b> &mdash; ${esc(p.phase ?? "?")}${p.mergedAt ? `, merged ${esc(p.mergedAt)}` : ""} ${url ? `&middot; <a href="${url}">view</a>` : ""}</p></article>`;
     })
     .join("");
-  return `<section aria-labelledby="prs"><h2 id="prs">Merged Work (${prLog.length} PRs)</h2><div class="timeline">${rows}</div></section>`;
+  return `<section aria-labelledby="prs"><h2 id="prs">Mission PR Log (compact, ${prLog.length} rows)</h2>
+    <p class="muted small">Operational mission log only; it is intentionally compact and is not the complete first-parent archive.</p>
+    <div class="timeline">${rows}</div></section>`;
+}
+
+function mainlineCheckpointSection() {
+  if (!checkpointRows.length) return "";
+  const successorPr = successorArchiveMerge.pullRequest;
+  const rows = checkpointRows
+    .map((entry, index) => {
+      const prUrl = safeUrl(`https://github.com/${m.repo}/pull/${entry.pr}`);
+      const pr = prUrl ? `<a href="${prUrl}">#${esc(entry.pr)}</a>` : `#${esc(entry.pr)}`;
+      return `<tr><td>${index + 1}</td><td>${pr}</td><td><code>${esc(entry.sha ?? "missing")}</code></td><td>${esc(entry.scope)}</td></tr>`;
+    })
+    .join("");
+  const archiveCount = archivedPrOrder.length;
+  return `<section aria-labelledby="checkpoint"><h2 id="checkpoint">Mainline Checkpoint (${checkpointRows.length} first-parent PR merges${successorPr != null ? `; successor #${esc(successorPr)}` : ""})</h2>
+    <div class="panel">
+      <p class="muted">Complete local first-parent checkpoint: ${archiveCount} PR commits after <code>${esc(archivedRange.baseExclusiveMainSha ?? "?")}</code> through <code>${esc(archivedRange.headInclusiveMainSha ?? "?")}</code>, followed by the separately identified successor archive merge. Source: ${esc(mainlineCheckpoint.source ?? "state.json")}.</p>
+      <div class="table-wrap"><table><thead><tr><th>Order</th><th>PR</th><th>Full squash-main SHA</th><th>Checkpoint scope</th></tr></thead><tbody>${rows}</tbody></table></div>
+    </div>
+  </section>`;
 }
 
 function journalSection() {
@@ -349,7 +383,8 @@ button.copy:hover{background:rgba(88,215,179,.2)}
       ${chip(`active phase: ${resume.activePhase ?? "?"}`, "green")}
       ${chip(`${doneTasks}/${allTasks.length} tasks`, "blue")}
       ${chip(`${passedGates}/${allGates.length} gates passed`, gatesChipTone)}
-      ${chip(`${prLog.length} PRs merged`)}
+      ${chip(`${prLog.length} compact PR log rows`)}
+      ${checkpointRows.length ? chip(`${checkpointRows.length} checkpoint PR merges`, "blue") : ""}
       ${chip(`sessions: ${m.sessionCount ?? 1}`)}
       ${chip(`updated: ${m.updated ?? "?"}`)}
     </div>
@@ -372,6 +407,7 @@ button.copy:hover{background:rgba(88,215,179,.2)}
     ${phaseCards()}
   </section>
 
+  ${mainlineCheckpointSection()}
   ${prTimeline()}
   ${journalSection()}
 
@@ -394,4 +430,6 @@ document.querySelectorAll("button.copy").forEach((b) => {
 
 writeFileSync(outPath, html);
 console.log(`Rendered ${outPath}`);
-console.log(`  phases: ${phases.length}, tasks: ${doneTasks}/${allTasks.length}, gates passed: ${passedGates}/${allGates.length}, PRs: ${prLog.length}`);
+console.log(
+  `  phases: ${phases.length}, tasks: ${doneTasks}/${allTasks.length}, gates passed: ${passedGates}/${allGates.length}, compact PR log rows: ${prLog.length}, checkpoint PR merges: ${checkpointRows.length}`,
+);

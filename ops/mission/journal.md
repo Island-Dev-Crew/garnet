@@ -119,3 +119,10 @@ Append-only session log, newest entry LAST.
 - Resolved U-18 by renormalizing the only active mission onto materialized `P7`: `resume.activePhase` is exactly `P7`, the four next actions map to `P7-T1` through `P7-T4`, and stale P8/P9/P10 resume references are removed. Renderer-supported phase/task status tokens are now `in_progress`.
 - Validated `ops/lane0/idea.lock.json` and `ops/lane0/plan.lock.json` with pinned ARCHIPELAGO provenance `Navigata1/archipelago@b9f7cee2823f9791503db20f33b22c9e20af7abe`; kickoff created only the namespaced Lane 0 state/journal and left this mission state byte-identical during kickoff.
 - Launch remains HOLD. GOV-009 admin-authoritative reads and human 31-to-32 activation remain Jon-blocked; browser and Shelf claims remain blocked on committed Playwright, seal, and reporter evidence.
+
+## 2026-07-16T04:56Z — session 4 review correction (full archive and human surface)
+
+- Supersedes the initial session-4 checkpoint description: the frozen claim spans all 34 first-parent PR commits in `d0d4f7cc..1fe7489`, followed by successor archive merge #499 at `231aefa`. `mainlineCheckpoint` now records that full Git-derived order and every exact full squash-main SHA with unambiguous archived-range and successor fields.
+- Corrected the ARCHIPELAGO plan verdict to `warning` with `adversarialFindingsResolved: false`. The pinned kickoff regenerated the namespaced Lane 0 state without changing `ops/mission/state.json`; the original Lane 0 journal history and tool provenance remain preserved.
+- Added `scripts/garnet_lane0_truth_freeze_status.py` plus regression tests. The frozen P0 gates now compare the checkpoint to local first-parent Git history and enforce U-18 referential integrity, exact P7-T1 through P7-T4 actions, supported status tokens, and absence of P8/P9/P10 resume references.
+- The generated SOTU now labels `prLog` as a compact operational log and separately renders the complete 35-merge checkpoint through #499. Launch remains HOLD and all Jon-only boundaries remain unchanged.

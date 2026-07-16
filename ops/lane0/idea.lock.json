@@ -1,12 +1,12 @@
 {
   "schemaVersion": "1.0",
   "id": "idea-garnet-l0-truth-freeze",
-  "frozenAt": "2026-07-16T04:33:33Z",
+  "frozenAt": "2026-07-16T04:52:21Z",
   "frozenBy": "jon-isaac",
   "problem": {
     "statement": "Garnet's launch-convergence history, active mission pointers, Rust baseline, and remaining backlog must be frozen into one internally consistent, evidence-bounded source of truth before deeper launch work resumes.",
     "successCriteria": [
-      "The #497 through #506 first-parent checkpoint records every exact squash-main SHA in observed merge order",
+      "Every first-parent PR commit in d0d4f7cc..1fe7489 has its exact squash-main SHA in observed merge order, followed by successor archive merge #499",
       "Mission resume pointers resolve only to the materialized P7 phase and its four tasks",
       "One Rust MSRV is declared consistently and enforced inside existing CI contexts",
       "Every frozen-backlog claim names current code and fresh evidence or remains honestly partial or planned"
