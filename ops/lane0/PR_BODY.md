@@ -15,7 +15,8 @@ three-case, greater-than-four-minute evidence is absent.
 ### Current truth
 
 - [x] Exactly four denominators are recorded: S114 19/19 (100.0%), truth pulse
-  931/1000 (93.1%), launch-critical 3/6 (50.0%), launch ledger 3/8 (37.5%).
+  65.2/70 (93.1%, rounded), launch-critical 3/6 (50.0%), launch ledger 3/8
+  (37.5%).
 - [x] Launch recommendation is HOLD; browser, Shelf, WV, activation, FIRE,
   tag, publish, and public-launch claims remain blocked or Jon-only.
 - [x] U-18 is internally consistent at P7 with P7-T1 through P7-T4; no
@@ -23,7 +24,9 @@ three-case, greater-than-four-minute evidence is absent.
 
 ### Local verification
 
-- [x] `python3 -I scripts/garnet_lane0_closeout_status.py --gate`
+- [ ] `python3 -I -S scripts/garnet_lane0_closeout_status.py --gate` is
+  intentionally pending the independent fix re-review; before that review it
+  must fail only on the final-review semantic check.
 - [x] `cargo run -p xtask -- truth --check`
 - [x] `cargo +1.95.0 test --workspace --no-fail-fast`
 - [x] `cargo test --workspace --no-fail-fast`

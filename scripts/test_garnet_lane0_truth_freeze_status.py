@@ -272,6 +272,21 @@ class Lane0TruthFreezeStatusTests(unittest.TestCase):
         self.assertIn("Lane 0 truth-freeze gate failed", proc.stderr)
         self.assertIsNone(html, "Git-inconsistent checkpoint must not produce a SOTU")
 
+    def test_sotu_selects_platform_python_and_wires_it_to_truth_gate(self) -> None:
+        source = (ROOT / "ops/mission/render-sotu.mjs").read_text(encoding="utf-8")
+        self.assertIn(
+            'const pythonExecutable = process.platform === "win32" ? "python" : "python3";',
+            source,
+        )
+        self.assertRegex(
+            source,
+            r"const truthFreezeGate = spawnSync\(\s*pythonExecutable,\s*\[",
+        )
+        self.assertNotRegex(
+            source,
+            r'const truthFreezeGate = spawnSync\(\s*"python3"',
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,6 +1,6 @@
 # Lane 0 ARCHIPELAGO S6 audit
 
-Status: complete locally; prepared for Jon's review and merge.
+Status: complete locally; final integrated fix re-review is pending.
 
 Launch: **HOLD**.
 
@@ -52,7 +52,7 @@ degradation is recorded and no browser proof is claimed.
 Exactly four readiness denominators are admitted:
 
 1. S114 bounded mission: 19/19 = 100.0%.
-2. Truth pulse: 931/1000 = 93.1%.
+2. Truth pulse: 65.2/70 = 93.1% (rounded).
 3. Launch-critical: 3/6 = 50.0%.
 4. Whole launch ledger: 3/8 = 37.5%.
 

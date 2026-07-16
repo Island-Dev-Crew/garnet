@@ -945,9 +945,10 @@
       {
         "id": "truth_pulse",
         "label": "Truth pulse",
-        "numerator": 931,
-        "denominator": 1000,
+        "numerator": 65.2,
+        "denominator": 70,
         "percent": 93.1,
+        "rounded": true,
         "evidence": "ops/lane0/evidence/09-mit-readiness.json"
       },
       {
@@ -969,7 +970,8 @@
     ]
   },
   "lane0Closeout": {
-    "state": "complete_local_pending_jon_review_merge",
+    "state": "complete_local_pending_final_integrated_review",
+    "finalIntegratedReview": "pending",
     "audit": "ops/lane0/AUDIT.md",
     "evidenceManifest": "ops/lane0/evidence/MANIFEST.sha256",
     "ledger": "ops/lane0/ledger.jsonl",

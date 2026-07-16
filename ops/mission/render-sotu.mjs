@@ -133,8 +133,9 @@ if (checkpointErrors.length) {
 }
 
 const repoRoot = resolve(here, "..", "..");
+const pythonExecutable = process.platform === "win32" ? "python" : "python3";
 const truthFreezeGate = spawnSync(
-  "python3",
+  pythonExecutable,
   [
     "-I",
     join(repoRoot, "scripts/garnet_lane0_truth_freeze_status.py"),
@@ -468,7 +469,7 @@ button.copy:hover{background:rgba(88,215,179,.2)}
 <body>
 <main>
   <header class="hero">
-    <p class="eyebrow">Mission Control &middot; State of the Union &middot; generated ${esc(new Date().toISOString().slice(0, 16).replace("T", " "))}Z</p>
+    <p class="eyebrow">Mission Control &middot; State of the Union &middot; generated ${esc(new Date().toISOString().slice(0, 19).replace("T", " "))}Z</p>
     <h1>${esc(m.name ?? "Mission")}</h1>
     <p class="tagline">${esc(m.tagline ?? "")}</p>
     <div style="margin-top:14px">

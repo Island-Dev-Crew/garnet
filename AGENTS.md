@@ -90,10 +90,13 @@ run do not satisfy that contract.
 repository-local authority for the Lane 0 reconciliation archive. It requires
 exact, sorted SHA-256 coverage of `ops/lane0/evidence/`, verifies the
 ARCHIPELAGO ledger with the upstream JSON hash algorithm and zero-hash genesis,
-and rejects symlinks, path traversal, duplicate entries, extra files, missing
-files, stale hashes, a fifth readiness denominator, or any launch state other
-than HOLD. The gate reads no fork branch, ambient credential, or environment
-variable.
+derives all four denominators from the captured reporter payloads on every
+run, and requires the exact command inventory, gate bindings, chronology, and
+an independently approved final integrated review with zero open Critical or
+Important findings. It rejects symlinks, path traversal, duplicate entries,
+extra files, missing files, stale hashes, semantically contradictory reseals,
+a fifth readiness denominator, or any launch state other than HOLD. The gate
+reads no fork branch, ambient credential, or environment variable.
 
 Run `python3 -I scripts/test_garnet_lane0_closeout_status.py` after changing the
 Lane 0 audit, evidence manifest, ledger, closeout state, or four-denominator

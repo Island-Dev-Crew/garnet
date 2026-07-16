@@ -14,11 +14,12 @@ import hashlib
 import json
 import re
 import stat
+import subprocess
 import sys
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from pathlib import Path, PurePosixPath
-from typing import Iterable
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -63,9 +64,10 @@ EXPECTED_DENOMINATORS = (
     {
         "id": "truth_pulse",
         "label": "Truth pulse",
-        "numerator": 931,
-        "denominator": 1000,
+        "numerator": 65.2,
+        "denominator": 70,
         "percent": 93.1,
+        "rounded": True,
         "evidence": "ops/lane0/evidence/09-mit-readiness.json",
     },
     {
@@ -103,6 +105,233 @@ EXPECTED_GATE_EVIDENCE = {
     "P3-G1": "11-truth-check.txt",
     "P3-G2": "12-repository-evidence-integrity.json",
     "P3-G3": "23-sotu-render.txt",
+}
+
+EXPECTED_GATE_COMMANDS = {
+    "P0-G1": "python3 -I scripts/test_garnet_lane0_truth_freeze_status.py -v",
+    "P0-G2": "python3 -I scripts/garnet_lane0_truth_freeze_status.py --gate",
+    "P1-G1": "python3 -I -S scripts/test_garnet_msrv_status.py -v",
+    "P1-G2": "python3 -I -S scripts/garnet_msrv_status.py --gate",
+    "P2-G1": "python3 -I scripts/garnet_frozen_backlog_status.py --gate",
+    "P2-G2": "python3 scripts/check-agent-contracts.py",
+    "P3-G1": "cargo run -p xtask -- truth --check",
+    "P3-G2": "python3 scripts/garnet_evidence_integrity_status.py --format json --gate",
+    "P3-G3": "node ops/mission/render-sotu.mjs",
+}
+
+EXPECTED_LAUNCH_GATES = (
+    ("foundation_integrity", "pass"),
+    ("native_linux", "pass"),
+    ("s114_acceptance", "accepted-scoped"),
+    ("static_playground", "partial"),
+    ("live_wasm_playground", "remaining"),
+    ("minimum_sealed_shelf", "manual-deferred"),
+    ("promo_video", "pending-human"),
+    ("launch_fire", "jon-only"),
+)
+
+MIT_STATUS_SCORES = {
+    "verified": Decimal("1"),
+    "active-partial": Decimal("0.5"),
+    "rendered-artifact-ready": Decimal("0.65"),
+    "visual-qa-ready": Decimal("0.8"),
+    "website-export-ready": Decimal("0.9"),
+    "public-site-embedded": Decimal("0.95"),
+    "composition-ready": Decimal("0.5"),
+    "source-locked": Decimal("0.35"),
+    "planned-contract": Decimal("0.25"),
+    "source-present": Decimal("0.6"),
+    "local-registry-source-ready": Decimal("0.85"),
+    "feature-gated-source-ready": Decimal("0.85"),
+    "provider-gated-harness": Decimal("1"),
+    "provider-gated-5k-harness": Decimal("1"),
+    "blocked": Decimal("0"),
+    "planned": Decimal("0"),
+}
+
+ARCHIPELAGO_TOOL = "/private/tmp/archipelago-lane0-tooling-20260715"
+EXPECTED_COMMANDS = (
+    ("python3 --version", 0, "00-environment.json"),
+    ("rustc +1.95.0 --version", 0, "00-environment.json"),
+    ("cargo +1.95.0 --version", 0, "00-environment.json"),
+    ("node --version", 0, "00-environment.json"),
+    ("npm --version", 0, "00-environment.json"),
+    ("git --version", 0, "00-environment.json"),
+    (
+        f"git -C {ARCHIPELAGO_TOOL} rev-parse HEAD",
+        0,
+        "01-archipelago-contracts.txt",
+    ),
+    (
+        f"python3 {ARCHIPELAGO_TOOL}/scripts/validate_contracts.py ops/lane0/idea.lock.json",
+        0,
+        "01-archipelago-contracts.txt",
+    ),
+    (
+        f"python3 {ARCHIPELAGO_TOOL}/scripts/validate_contracts.py ops/lane0/plan.lock.json",
+        0,
+        "01-archipelago-contracts.txt",
+    ),
+    (
+        f"python3 {ARCHIPELAGO_TOOL}/scripts/validate_contracts.py ops/lane0/state.json",
+        0,
+        "01-archipelago-contracts.txt",
+    ),
+    (
+        "git log --oneline --first-parent d0d4f7cc..1fe7489",
+        0,
+        "02-first-parent-archive.txt",
+    ),
+    (
+        "git log --oneline --first-parent d0d4f7cc..1fe7489 | wc -l",
+        0,
+        "02-first-parent-archive.txt",
+    ),
+    (
+        "git log --oneline --first-parent 1fe7489..231aefa",
+        0,
+        "03-successor-pin-delta.txt",
+    ),
+    (
+        "git rev-list --count --first-parent 1fe7489..231aefa",
+        0,
+        "03-successor-pin-delta.txt",
+    ),
+    (
+        "git merge-base --is-ancestor 1fe74892c588f912e103742afc9d11e845e8d4e6 231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+        0,
+        "03-successor-pin-delta.txt",
+    ),
+    (
+        "python3 -I scripts/garnet_lane0_truth_freeze_status.py --gate",
+        0,
+        "04-truth-freeze.json",
+    ),
+    (
+        "python3 -I -S scripts/garnet_msrv_status.py --gate",
+        0,
+        "05-msrv.json",
+    ),
+    (
+        "python3 -I scripts/garnet_frozen_backlog_status.py --gate",
+        0,
+        "06-frozen-backlog.json",
+    ),
+    (
+        "python3 -I scripts/garnet_quarterly_competitive_watch_status.py --as-of 2026-07-16 --gate",
+        0,
+        "07-quarterly-watch.json",
+    ),
+    (
+        "python3 scripts/garnet_launch_readiness_status.py --format json --gate",
+        1,
+        "08-launch-readiness.json",
+    ),
+    (
+        "python3 scripts/garnet_mit_readiness_status.py --committed-only --format json",
+        0,
+        "09-mit-readiness.json",
+    ),
+    (
+        "python3 -I scripts/garnet_lane0_closeout_status.py --write-denominators",
+        0,
+        "10-denominators.json",
+    ),
+    ("cargo run -p xtask -- truth --check", 0, "11-truth-check.txt"),
+    (
+        "python3 scripts/garnet_evidence_integrity_status.py --format json --gate",
+        0,
+        "12-repository-evidence-integrity.json",
+    ),
+    (
+        "python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6 --gate",
+        1,
+        "13-wv6-pending.json",
+    ),
+    (
+        "python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-7 --gate",
+        1,
+        "14-wv7-pending.json",
+    ),
+    (
+        "python3 -I -S scripts/test_garnet_lane0_closeout_status.py -v",
+        0,
+        "20-python-tests.txt",
+    ),
+    (
+        "python3 -I scripts/test_garnet_lane0_truth_freeze_status.py -v",
+        0,
+        "20-python-tests.txt",
+    ),
+    (
+        "python3 -I -S scripts/test_garnet_msrv_status.py -v",
+        0,
+        "20-python-tests.txt",
+    ),
+    (
+        "python3 -I scripts/test_garnet_frozen_backlog_status.py -v",
+        0,
+        "20-python-tests.txt",
+    ),
+    (
+        "python3 -I scripts/test_garnet_quarterly_competitive_watch_status.py -v",
+        0,
+        "20-python-tests.txt",
+    ),
+    (
+        "python3 -I scripts/test_garnet_wv_acceptance_status.py -v",
+        0,
+        "20-python-tests.txt",
+    ),
+    (
+        "python3 scripts/test_garnet_launch_readiness_status.py",
+        0,
+        "20-python-tests.txt",
+    ),
+    ("python3 scripts/check-agent-contracts.py", 0, "20-python-tests.txt"),
+    ("python3 scripts/test_check_agent_contracts.py", 0, "20-python-tests.txt"),
+    (
+        "cargo +1.95.0 check --workspace --all-targets --all-features --locked",
+        0,
+        "21-rust-msrv-checks.txt",
+    ),
+    (
+        "cargo +1.95.0 test --workspace --no-fail-fast",
+        0,
+        "21-rust-msrv-checks.txt",
+    ),
+    (
+        "cargo +1.95.0 check --manifest-path apps/garnet-studio/src-tauri/Cargo.toml --all-targets --locked",
+        0,
+        "21-rust-msrv-checks.txt",
+    ),
+    ("cargo fmt --all -- --check", 0, "22-workspace-tests.txt"),
+    ("cargo test -p garnet-cli new_cmd", 0, "22-workspace-tests.txt"),
+    ("cargo test --workspace --no-fail-fast", 0, "22-workspace-tests.txt"),
+    ("node ops/mission/render-sotu.mjs", 0, "23-sotu-render.txt"),
+    (
+        "python3 scripts/check_dogfood_pr_body.py --base 231aefa91985e5a0520c493c7f0fc3e54d74efc8 --head <CANDIDATE_SHA> --body-file ops/lane0/PR_BODY.md",
+        0,
+        "24-pr-body-validation.txt",
+    ),
+)
+
+PR_BODY_COMMAND_RE = re.compile(
+    r"^python3 scripts/check_dogfood_pr_body\.py "
+    r"--base 231aefa91985e5a0520c493c7f0fc3e54d74efc8 "
+    r"--head ([0-9a-f]{40}) --body-file ops/lane0/PR_BODY\.md$"
+)
+
+TEXT_TRANSCRIPT_OUTPUTS = {
+    "01-archipelago-contracts.txt",
+    "02-first-parent-archive.txt",
+    "03-successor-pin-delta.txt",
+    "11-truth-check.txt",
+    "20-python-tests.txt",
+    "21-rust-msrv-checks.txt",
+    "22-workspace-tests.txt",
+    "23-sotu-render.txt",
+    "24-pr-body-validation.txt",
 }
 
 
@@ -246,7 +475,20 @@ def verify_manifest(
     return findings, entries
 
 
-def verify_commands(path: Path) -> list[str]:
+def _parse_utc(value: object) -> datetime | None:
+    if not isinstance(value, str) or UTC_RE.fullmatch(value) is None:
+        return None
+    try:
+        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(
+            tzinfo=timezone.utc
+        )
+    except ValueError:
+        return None
+
+
+def verify_commands(
+    path: Path,
+) -> tuple[list[str], list[dict], datetime | None, datetime | None]:
     findings: list[str] = []
     data = _read_json(path, findings, "COMMANDS.json")
     if data.get("schema") != "garnet.lane0.commands/v1":
@@ -254,7 +496,7 @@ def verify_commands(path: Path) -> list[str]:
     entries = data.get("entries")
     if not isinstance(entries, list) or not entries:
         findings.append("COMMANDS.json entries must be a nonempty array")
-        return findings
+        return findings, [], None, None
     exact_keys = {
         "command",
         "expectedExit",
@@ -263,6 +505,10 @@ def verify_commands(path: Path) -> list[str]:
         "endedAt",
         "output",
     }
+    actual_inventory: list[tuple[object, object, object]] = []
+    starts: list[datetime] = []
+    ends: list[datetime] = []
+    previous_end: datetime | None = None
     for index, entry in enumerate(entries, 1):
         if not isinstance(entry, dict) or set(entry) != exact_keys:
             findings.append(f"COMMANDS.json entry {index} has an invalid shape")
@@ -288,12 +534,86 @@ def verify_commands(path: Path) -> list[str]:
             findings.append(
                 f"COMMANDS.json entry {index} exit mismatch: expected {expected}, got {actual}"
             )
-        for key in ("startedAt", "endedAt"):
-            if not isinstance(entry.get(key), str) or UTC_RE.fullmatch(entry[key]) is None:
-                findings.append(f"COMMANDS.json entry {index} {key} is not UTC")
+        started = _parse_utc(entry.get("startedAt"))
+        ended = _parse_utc(entry.get("endedAt"))
+        if started is None:
+            findings.append(f"COMMANDS.json entry {index} startedAt is not UTC")
+        else:
+            starts.append(started)
+        if ended is None:
+            findings.append(f"COMMANDS.json entry {index} endedAt is not UTC")
+        else:
+            ends.append(ended)
+        if started is not None and ended is not None and ended < started:
+            findings.append(f"COMMANDS.json entry {index} ends before it starts")
+        if started is not None and previous_end is not None and started < previous_end:
+            findings.append(f"COMMANDS.json entry {index} overlaps prior command capture")
+        if ended is not None:
+            previous_end = ended
         output = entry.get("output")
         if output not in EXPECTED_EVIDENCE_FILES:
             findings.append(f"COMMANDS.json entry {index} output is not sealed evidence")
+        actual_inventory.append((command, expected, output))
+    inventory_matches = len(actual_inventory) == len(EXPECTED_COMMANDS)
+    for index, (actual_row, expected_row) in enumerate(
+        zip(actual_inventory, EXPECTED_COMMANDS, strict=False)
+    ):
+        if index == len(EXPECTED_COMMANDS) - 1:
+            command, expected_exit, output = actual_row
+            inventory_matches &= (
+                isinstance(command, str)
+                and PR_BODY_COMMAND_RE.fullmatch(command) is not None
+                and expected_exit == expected_row[1]
+                and output == expected_row[2]
+            )
+        else:
+            inventory_matches &= actual_row == expected_row
+    if not inventory_matches:
+        findings.append(
+            "COMMANDS.json must match the exact mandatory command inventory and bindings"
+        )
+    return (
+        findings,
+        [entry for entry in entries if isinstance(entry, dict)],
+        min(starts) if starts else None,
+        max(ends) if ends else None,
+    )
+
+
+def verify_text_transcripts(
+    evidence_dir: Path, commands: list[dict]
+) -> list[str]:
+    findings: list[str] = []
+    for output in sorted(TEXT_TRANSCRIPT_OUTPUTS):
+        expected_rows = [
+            (
+                entry.get("command"),
+                entry.get("expectedExit"),
+                entry.get("actualExit"),
+            )
+            for entry in commands
+            if entry.get("output") == output
+        ]
+        try:
+            text = (evidence_dir / output).read_text(encoding="utf-8")
+        except OSError as exc:
+            findings.append(f"{output} is unreadable: {exc}")
+            continue
+        commands_in_text = re.findall(r"(?m)^\$ (.+)$", text)
+        expected_exits = [
+            int(value)
+            for value in re.findall(r"(?m)^expected_exit=(-?\d+)$", text)
+        ]
+        actual_exits = [
+            int(value) for value in re.findall(r"(?m)^actual_exit=(-?\d+)$", text)
+        ]
+        observed_rows = list(
+            zip(commands_in_text, expected_exits, actual_exits, strict=False)
+        )
+        if observed_rows != expected_rows:
+            findings.append(
+                f"{output} transcript blocks do not match COMMANDS.json bindings"
+            )
     return findings
 
 
@@ -312,6 +632,7 @@ def _load_ledger(path: Path, findings: list[str]) -> list[dict]:
         return []
     entries: list[dict] = []
     previous = GENESIS_HASH
+    previous_time: datetime | None = None
     for index, line in enumerate(lines, 1):
         try:
             entry = json.loads(line)
@@ -323,6 +644,13 @@ def _load_ledger(path: Path, findings: list[str]) -> list[dict]:
             continue
         if entry.get("prevHash") != previous:
             findings.append(f"ledger chain break at entry {index}")
+        observed_time = _parse_utc(entry.get("at"))
+        if observed_time is None:
+            findings.append(f"ledger entry {index} has an invalid UTC timestamp")
+        elif previous_time is not None and observed_time < previous_time:
+            findings.append(f"ledger timestamp order regresses at entry {index}")
+        if observed_time is not None:
+            previous_time = observed_time
         recorded = entry.get("entryHash")
         body = {key: value for key, value in entry.items() if key != "entryHash"}
         calculated = _ledger_hash(body)
@@ -336,8 +664,13 @@ def _load_ledger(path: Path, findings: list[str]) -> list[dict]:
 
 def verify_ledger(
     path: Path,
-    manifest_entries: Iterable[tuple[str, str]],
+    manifest_entries: list[tuple[str, str]],
     expected_run_id: str,
+    state_gate_evidence: dict[str, str],
+    command_start: datetime | None,
+    command_end: datetime | None,
+    evidence_floor: datetime | None,
+    state_loopback_at: datetime | None,
 ) -> list[str]:
     findings: list[str] = []
     entries = _load_ledger(path, findings)
@@ -350,99 +683,191 @@ def verify_ledger(
             findings.append(f"ledger entry {index} has the wrong runId")
 
     events = [entry.get("event") for entry in entries]
-    for required in (
+    exact_events = [
         "session-start",
         "loopback",
+        *(["evidence-sealed"] * len(EXPECTED_EVIDENCE_FILES)),
+        *(["gate-evidence"] * len(EXPECTED_GATE_EVIDENCE)),
         "audit-band",
         "governance-verdict",
         "stage-advance",
         "session-close",
-    ):
-        if required not in events:
-            findings.append(f"ledger is missing required event: {required}")
+    ]
+    if events != exact_events:
+        findings.append("ledger event sequence is not the exact allowed closeout sequence")
 
     expected_evidence = dict(manifest_entries)
-    observed_evidence: dict[str, str] = {}
-    for entry in entries:
-        if entry.get("event") == "evidence-sealed":
-            rel = entry.get("path")
-            digest = entry.get("sha256")
-            if isinstance(rel, str) and isinstance(digest, str):
-                if rel in observed_evidence:
-                    findings.append(f"ledger duplicates evidence seal: {rel}")
-                observed_evidence[rel] = digest
+    evidence_events = [
+        entry for entry in entries if entry.get("event") == "evidence-sealed"
+    ]
+    observed_evidence = {
+        str(entry.get("path")): str(entry.get("sha256"))
+        for entry in evidence_events
+    }
     if observed_evidence != expected_evidence:
         findings.append("ledger evidence SHA events do not exactly match the manifest")
+    if [entry.get("path") for entry in evidence_events] != sorted(expected_evidence):
+        findings.append("ledger evidence seals must follow sorted manifest order")
 
-    observed_gates: dict[str, tuple[str, str]] = {}
-    for entry in entries:
-        if entry.get("event") != "gate-evidence":
-            continue
-        gate = entry.get("gate")
-        rel = entry.get("path")
-        digest = entry.get("sha256")
-        if not all(isinstance(value, str) for value in (gate, rel, digest)):
-            findings.append("ledger gate-evidence entry has an invalid shape")
-            continue
-        if gate in observed_gates:
-            findings.append(f"ledger duplicates gate evidence: {gate}")
-        observed_gates[gate] = (rel, digest)
+    gate_events = [entry for entry in entries if entry.get("event") == "gate-evidence"]
+    observed_gates = {
+        str(entry.get("gate")): (
+            str(entry.get("path")),
+            str(entry.get("sha256")),
+        )
+        for entry in gate_events
+    }
     expected_gates = {
-        gate: (rel, expected_evidence.get(rel, ""))
-        for gate, rel in EXPECTED_GATE_EVIDENCE.items()
+        gate: (rel, expected_evidence.get(rel, "")) for gate, rel in state_gate_evidence.items()
     }
     if observed_gates != expected_gates:
-        findings.append("ledger gate/evidence SHA events do not match the closed gates")
+        findings.append("ledger gate/evidence SHA events do not match mission state")
+    if [entry.get("gate") for entry in gate_events] != list(state_gate_evidence):
+        findings.append("ledger gate bindings must follow exact mission gate order")
 
-    loopbacks = [
-        entry
-        for entry in entries
-        if entry.get("event") == "loopback"
-        and entry.get("fromGate") == "G4"
-        and entry.get("toStage") == "S2"
+    expected_shapes = {
+        "session-start": {"at", "prevHash", "event", "runId", "entryHash"},
+        "loopback": {
+            "at",
+            "prevHash",
+            "event",
+            "runId",
+            "fromGate",
+            "toStage",
+            "reason",
+            "entryHash",
+        },
+        "evidence-sealed": {
+            "at",
+            "prevHash",
+            "event",
+            "runId",
+            "path",
+            "sha256",
+            "entryHash",
+        },
+        "gate-evidence": {
+            "at",
+            "prevHash",
+            "event",
+            "runId",
+            "gate",
+            "path",
+            "sha256",
+            "entryHash",
+        },
+        "audit-band": {"at", "prevHash", "event", "runId", "band", "entryHash"},
+        "governance-verdict": {
+            "at",
+            "prevHash",
+            "event",
+            "runId",
+            "verdict",
+            "waivers",
+            "entryHash",
+        },
+        "stage-advance": {
+            "at",
+            "prevHash",
+            "event",
+            "runId",
+            "from",
+            "to",
+            "entryHash",
+        },
+        "session-close": {
+            "at",
+            "prevHash",
+            "event",
+            "runId",
+            "nextActions",
+            "entryHash",
+        },
+    }
+    for index, entry in enumerate(entries, 1):
+        event = entry.get("event")
+        if event in expected_shapes and set(entry) != expected_shapes[event]:
+            findings.append(f"ledger entry {index} has an invalid {event} shape")
+
+    if len(entries) >= 2:
+        loopback = entries[1]
+        if (
+            loopback.get("event") != "loopback"
+            or loopback.get("fromGate") != "G4"
+            or loopback.get("toStage") != "S2"
+            or not str(loopback.get("reason", "")).strip()
+        ):
+            findings.append("ledger must record G4 -> S2 immediately after session start")
+        if _parse_utc(loopback.get("at")) != state_loopback_at:
+            findings.append("ledger loopback timestamp does not match mission state")
+    if len(entries) >= 4:
+        audit, verdict, stage, close = entries[-4:]
+        if audit.get("event") != "audit-band" or audit.get("band") != 3:
+            findings.append("ledger must record audit band 3")
+        if (
+            verdict.get("event") != "governance-verdict"
+            or verdict.get("verdict") != "advisory"
+            or verdict.get("waivers") != []
+        ):
+            findings.append("ledger must record S6 advisory with no waivers")
+        if (
+            stage.get("event") != "stage-advance"
+            or stage.get("from") != "S2"
+            or stage.get("to") != "S6"
+        ):
+            findings.append("ledger must record stage advance S2 -> S6")
+        if (
+            close.get("event") != "session-close"
+            or close.get("nextActions") != list(EXPECTED_NEXT_ACTIONS)
+        ):
+            findings.append("ledger must end with the exact session close actions")
+
+    parsed_times = [_parse_utc(entry.get("at")) for entry in entries]
+    if (
+        command_start is None
+        or not parsed_times
+        or parsed_times[0] is None
+        or parsed_times[0] != command_start
+    ):
+        findings.append("ledger session start must equal command capture start")
+    seal_times = [
+        parsed_times[index]
+        for index, entry in enumerate(entries)
+        if entry.get("event") in {"evidence-sealed", "gate-evidence", "audit-band",
+                                  "governance-verdict", "stage-advance", "session-close"}
     ]
-    if len(loopbacks) != 1:
-        findings.append("ledger must record exactly one G4 -> S2 loopback")
-    bands = [
-        entry
-        for entry in entries
-        if entry.get("event") == "audit-band" and entry.get("band") == 3
-    ]
-    if len(bands) != 1:
-        findings.append("ledger must record audit band 3")
-    verdicts = [
-        entry
-        for entry in entries
-        if entry.get("event") == "governance-verdict"
-        and entry.get("verdict") == "advisory"
-        and entry.get("waivers") == []
-    ]
-    if len(verdicts) != 1:
-        findings.append("ledger must record the advisory S6 verdict with no waivers")
-    stages = [
-        entry
-        for entry in entries
-        if entry.get("event") == "stage-advance" and entry.get("to") == "S6"
-    ]
-    if len(stages) != 1:
-        findings.append("ledger must record stage S6")
-    closes = [entry for entry in entries if entry.get("event") == "session-close"]
-    if len(closes) != 1 or closes[0].get("nextActions") != list(EXPECTED_NEXT_ACTIONS):
-        findings.append("ledger session close must preserve the exact four next actions")
+    if command_end is None or evidence_floor is None or any(
+        observed is None or observed <= evidence_floor for observed in seal_times
+    ):
+        findings.append(
+            "ledger sealing and closeout timestamps must be strictly after captured evidence"
+        )
     return findings
 
 
-def _verify_denominators(value: object, label: str) -> list[str]:
+def _verify_denominators(
+    value: object, label: str, derived: list[dict[str, object]]
+) -> list[str]:
     if not isinstance(value, list):
         return [f"{label} denominators must be an array"]
     if len(value) != 4:
         return [f"{label} must contain exactly four readiness denominators"]
-    if value != list(EXPECTED_DENOMINATORS):
-        return [f"{label} readiness denominators do not match the frozen values"]
+    if value != derived:
+        return [f"{label} readiness denominators do not match current reporter evidence"]
     return []
 
 
-def _verify_lane_state(state: dict) -> tuple[list[str], str, int | None, str, str]:
+def _verify_lane_state(
+    state: dict,
+) -> tuple[
+    list[str],
+    str,
+    int | None,
+    str,
+    str,
+    dict[str, str],
+    datetime | None,
+]:
     findings: list[str] = []
     mission = state.get("mission", {})
     if not isinstance(mission, dict) or mission.get("status") != "complete":
@@ -456,6 +881,8 @@ def _verify_lane_state(state: dict) -> tuple[list[str], str, int | None, str, st
     ]:
         findings.append("Lane 0 state must contain exactly P0 through P3")
         phases = []
+    state_gate_evidence: dict[str, str] = {}
+    state_gate_commands: dict[str, str] = {}
     for phase in phases:
         if phase.get("status") != "done":
             findings.append(f"Lane 0 phase {phase.get('id')} is not done")
@@ -474,6 +901,10 @@ def _verify_lane_state(state: dict) -> tuple[list[str], str, int | None, str, st
                 or Path(evidence).name not in EXPECTED_EVIDENCE_FILES
             ):
                 findings.append(f"Lane 0 gate {gate.get('id')} lacks sealed evidence")
+            elif isinstance(gate.get("id"), str):
+                state_gate_evidence[gate["id"]] = Path(evidence).name
+                if isinstance(gate.get("command"), str):
+                    state_gate_commands[gate["id"]] = gate["command"]
             if not isinstance(gate.get("lastRun"), str) or UTC_RE.fullmatch(gate["lastRun"]) is None:
                 findings.append(f"Lane 0 gate {gate.get('id')} lacks a UTC lastRun")
 
@@ -523,6 +954,11 @@ def _verify_lane_state(state: dict) -> tuple[list[str], str, int | None, str, st
     )
     if len(valid_loopbacks) != 1:
         findings.append("Lane 0 state must record exactly one G4 -> S2 loopback")
+        loopback_at = None
+    else:
+        loopback_at = _parse_utc(valid_loopbacks[0].get("at"))
+        if loopback_at is None:
+            findings.append("Lane 0 state loopback timestamp must be valid UTC")
 
     governance = archipelago.get("governance", {})
     if not isinstance(governance, dict):
@@ -544,7 +980,19 @@ def _verify_lane_state(state: dict) -> tuple[list[str], str, int | None, str, st
         band = None
     if waivers != []:
         findings.append("Lane 0 S6 waivers must be an explicit empty list")
-    return findings, run_id, band, verdict_name, stage
+    if state_gate_evidence != EXPECTED_GATE_EVIDENCE:
+        findings.append("Lane 0 state gate/evidence bindings are not exact")
+    if state_gate_commands != EXPECTED_GATE_COMMANDS:
+        findings.append("Lane 0 state gate commands are not exact")
+    return (
+        findings,
+        run_id,
+        band,
+        verdict_name,
+        stage,
+        state_gate_evidence,
+        loopback_at,
+    )
 
 
 def _verify_audit(path: Path) -> list[str]:
@@ -587,22 +1035,558 @@ def _scan_sensitive_evidence(evidence_dir: Path) -> list[str]:
     return findings
 
 
-def read_status(root: Path = ROOT) -> CloseoutStatus:
+def _require_fields(
+    data: dict, expected: dict[str, object], label: str, findings: list[str]
+) -> None:
+    for key, value in expected.items():
+        if data.get(key) != value:
+            findings.append(f"{label}.{key} must be {value!r}")
+
+
+def _verify_review(
+    path: Path, root: Path, *, verify_git: bool
+) -> tuple[list[str], bool, datetime | None]:
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        return [f"independent review evidence is unreadable: {exc}"], False, None
+    verdict = re.search(r"(?m)^Final integrated verdict: \*\*(.+)\*\*$", text)
+    role = re.search(r"(?m)^Reviewer role: (.+)$", text)
+    reviewed_range = re.search(
+        r"(?m)^Reviewed range: `([0-9a-f]{40})\.\.([0-9a-f]{40})`$", text
+    )
+    reviewed_at = re.search(r"(?m)^Reviewed at: `([^`]+)`$", text)
+    critical = re.search(r"(?m)^Open Critical findings: (\d+)$", text)
+    important = re.search(r"(?m)^Open Important findings: (\d+)$", text)
+    reviewed_time = (
+        _parse_utc(reviewed_at.group(1)) if reviewed_at is not None else None
+    )
+    provenance_complete = (
+        role is not None
+        and "independent" in role.group(1).lower()
+        and reviewed_range is not None
+        and reviewed_range.group(1)
+        == "231aefa91985e5a0520c493c7f0fc3e54d74efc8"
+        and reviewed_at is not None
+        and reviewed_time is not None
+        and critical is not None
+        and important is not None
+    )
+    if provenance_complete and reviewed_range is not None and verify_git:
+        reviewed_head = reviewed_range.group(2)
+        checks = (
+            ["git", "cat-file", "-e", f"{reviewed_head}^{{commit}}"],
+            [
+                "git",
+                "merge-base",
+                "--is-ancestor",
+                "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+                reviewed_head,
+            ],
+            ["git", "merge-base", "--is-ancestor", reviewed_head, "HEAD"],
+        )
+        provenance_complete = all(
+            subprocess.run(
+                command,
+                cwd=root,
+                capture_output=True,
+                text=True,
+            ).returncode
+            == 0
+            for command in checks
+        )
+    approved = (
+        provenance_complete
+        and verdict is not None
+        and verdict.group(1) == "APPROVED"
+        and critical.group(1) == "0"
+        and important.group(1) == "0"
+    )
+    if not approved:
+        return [
+            "final integrated review is not APPROVED with zero open Critical/Important findings and complete provenance"
+        ], False, reviewed_time
+    return [], True, reviewed_time
+
+
+def _verify_reporter_evidence(
+    evidence_dir: Path,
+    main_state: dict,
+    commands: list[dict],
+    root: Path,
+    findings: list[str],
+    *,
+    verify_git: bool,
+) -> list[dict[str, object]]:
+    environment = _read_json(
+        evidence_dir / "00-environment.json", findings, "00-environment.json"
+    )
+    _require_fields(
+        environment,
+        {
+            "schema": "garnet.lane0.environment/v1",
+            "credentialAndForkMainProbePerformed": False,
+        },
+        "00-environment.json",
+        findings,
+    )
+    dependencies = environment.get("dependencies", {})
+    if not isinstance(dependencies, dict):
+        dependencies = {}
+    jsonschema = dependencies.get("jsonschema", {})
+    playwright = dependencies.get("playwright", {})
+    if not isinstance(jsonschema, dict) or jsonschema.get("available") is not True:
+        findings.append("00-environment.json must record jsonschema as available")
+    if not isinstance(playwright, dict) or playwright.get("available") is not False:
+        findings.append("00-environment.json must record Playwright as unavailable")
+    versions = environment.get("versions", {})
+    if not isinstance(versions, dict):
+        versions = {}
+    if not str(versions.get("rustcExactMsrv", "")).startswith("rustc 1.95.0 "):
+        findings.append("00-environment.json must record exact rustc 1.95.0")
+    if not str(versions.get("cargoExactMsrv", "")).startswith("cargo 1.95.0 "):
+        findings.append("00-environment.json must record exact cargo 1.95.0")
+
+    try:
+        contracts_text = (evidence_dir / "01-archipelago-contracts.txt").read_text(
+            encoding="utf-8"
+        )
+    except OSError as exc:
+        findings.append(f"01-archipelago-contracts.txt is unreadable: {exc}")
+        contracts_text = ""
+    for required in (
+        "[PASS] idea.lock.json",
+        "[PASS] plan.lock.json",
+        "[PASS] state.json",
+        "b9f7cee2823f9791503db20f33b22c9e20af7abe",
+    ):
+        if required not in contracts_text:
+            findings.append(f"01-archipelago-contracts.txt is missing {required!r}")
+
+    try:
+        archive_text = (evidence_dir / "02-first-parent-archive.txt").read_text(
+            encoding="utf-8"
+        )
+    except OSError as exc:
+        findings.append(f"02-first-parent-archive.txt is unreadable: {exc}")
+        archive_text = ""
+    archive_rows = re.findall(r"(?m)^[0-9a-f]{7} .+\(#\d+", archive_text)
+    if len(archive_rows) != 34 or re.search(r"(?m)^\s*34\s*$", archive_text) is None:
+        findings.append("02-first-parent-archive.txt must prove exactly 34 commits")
+
+    try:
+        successor_text = (evidence_dir / "03-successor-pin-delta.txt").read_text(
+            encoding="utf-8"
+        )
+    except OSError as exc:
+        findings.append(f"03-successor-pin-delta.txt is unreadable: {exc}")
+        successor_text = ""
+    if (
+        "231aefa ops(mission): open parallel launch convergence (#499)" not in successor_text
+        or re.search(r"(?m)^1$", successor_text) is None
+    ):
+        findings.append("03-successor-pin-delta.txt must prove sole successor #499")
+
+    truth_freeze = _read_json(
+        evidence_dir / "04-truth-freeze.json", findings, "04-truth-freeze.json"
+    )
+    _require_fields(
+        truth_freeze,
+        {
+            "schema": "garnet.lane0_truth_freeze/v1",
+            "archive_pr_count": 34,
+            "checkpoint_pr_count": 35,
+            "successor_archive_pr": 499,
+            "successor_archive_sha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+            "active_phase": "P7",
+            "action_tasks": ["P7-T1", "P7-T2", "P7-T3", "P7-T4"],
+            "adversarial_findings_resolved": False,
+            "findings": [],
+            "ok": True,
+        },
+        "04-truth-freeze.json",
+        findings,
+    )
+
+    msrv = _read_json(evidence_dir / "05-msrv.json", findings, "05-msrv.json")
+    _require_fields(
+        msrv,
+        {
+            "schema": "garnet.msrv_status/v2",
+            "msrv": "1.95",
+            "workspace_member_count": 16,
+            "workspace_members_inheriting": 16,
+            "active_manifest_count": 18,
+            "active_manifest_set_exact": True,
+            "excluded_manifests_declaring": 2,
+            "current_surfaces_aligned": True,
+            "workflow_projection_valid": True,
+            "stable_tracking_preserved": True,
+            "exact_msrv_ci_check": True,
+            "studio_exact_msrv_ci_check": True,
+            "reporter_ci_wired": True,
+            "rust_toolchain_file_absent": True,
+            "procedural_contract_present": True,
+            "findings": [],
+            "ok": True,
+        },
+        "05-msrv.json",
+        findings,
+    )
+
+    backlog = _read_json(
+        evidence_dir / "06-frozen-backlog.json", findings, "06-frozen-backlog.json"
+    )
+    _require_fields(
+        backlog,
+        {
+            "schema": "garnet.lane0.frozen_backlog/v1",
+            "exact_base_main_sha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+            "entry_count": 8,
+            "implemented_clause_count": 9,
+            "states": {"implemented": 0, "partial": 4, "planned": 4, "research": 0},
+            "findings": [],
+            "ok": True,
+        },
+        "06-frozen-backlog.json",
+        findings,
+    )
+
+    watch = _read_json(
+        evidence_dir / "07-quarterly-watch.json", findings, "07-quarterly-watch.json"
+    )
+    _require_fields(
+        watch,
+        {
+            "schema": "garnet.quarterly_competitive_watch/v1",
+            "state": "planned",
+            "as_of": "2026-07-16",
+            "report_count": 0,
+            "next_due": "2026-09-30",
+            "contract_present": True,
+            "findings": [],
+            "ok": True,
+        },
+        "07-quarterly-watch.json",
+        findings,
+    )
+
+    launch = _read_json(
+        evidence_dir / "08-launch-readiness.json", findings, "08-launch-readiness.json"
+    )
+    _require_fields(
+        launch,
+        {
+            "schema": "garnet.launch_readiness/v1",
+            "recommendation": "HOLD",
+            "launch_ready": False,
+        },
+        "08-launch-readiness.json",
+        findings,
+    )
+    launch_gates = launch.get("gates")
+    observed_launch = (
+        [
+            (gate.get("id"), gate.get("state"))
+            for gate in launch_gates
+            if isinstance(gate, dict)
+        ]
+        if isinstance(launch_gates, list)
+        else []
+    )
+    if observed_launch != list(EXPECTED_LAUNCH_GATES):
+        findings.append("08-launch-readiness.json gate ids/states are not exact")
+    accepted_states = {"pass", "accepted-scoped"}
+    critical_ids = {identifier for identifier, _ in EXPECTED_LAUNCH_GATES[:6]}
+    launch_critical = sum(
+        1
+        for identifier, state in observed_launch
+        if identifier in critical_ids and state in accepted_states
+    )
+    launch_ledger = sum(
+        1 for _identifier, state in observed_launch if state in accepted_states
+    )
+    if launch_critical != 3 or launch_ledger != 3:
+        findings.append("08-launch-readiness.json must derive 3/6 and 3/8")
+
+    mit = _read_json(
+        evidence_dir / "09-mit-readiness.json", findings, "09-mit-readiness.json"
+    )
+    _require_fields(
+        mit,
+        {
+            "source": "committed-truth",
+            "overall_status": "active-partial",
+            "completion_percent": 93.1,
+        },
+        "09-mit-readiness.json",
+        findings,
+    )
+    lanes = mit.get("lanes")
+    score = Decimal("0")
+    lane_ids: list[str] = []
+    if not isinstance(lanes, list) or len(lanes) != 70:
+        findings.append("09-mit-readiness.json must contain exactly 70 committed lanes")
+        lanes = []
+    for index, lane in enumerate(lanes, 1):
+        if not isinstance(lane, dict):
+            findings.append(f"09-mit-readiness.json lane {index} is invalid")
+            continue
+        lane_id = lane.get("id")
+        status = lane.get("status")
+        if not isinstance(lane_id, str):
+            findings.append(f"09-mit-readiness.json lane {index} lacks an id")
+        else:
+            lane_ids.append(lane_id)
+        if lane.get("evidence_class") != "committed":
+            findings.append(f"09-mit-readiness.json lane {lane_id} is not committed")
+        if status not in MIT_STATUS_SCORES:
+            findings.append(f"09-mit-readiness.json lane {lane_id} has unknown status")
+        else:
+            score += MIT_STATUS_SCORES[status]
+    if len(set(lane_ids)) != len(lane_ids):
+        findings.append("09-mit-readiness.json lane ids must be unique")
+    rounded_mit = round(float(score / Decimal("70") * Decimal("100")), 1)
+    if score != Decimal("65.20") or rounded_mit != 93.1:
+        findings.append("09-mit-readiness.json must derive 65.2/70 = 93.1% rounded")
+
+    try:
+        truth_text = (evidence_dir / "11-truth-check.txt").read_text(encoding="utf-8")
+    except OSError as exc:
+        findings.append(f"11-truth-check.txt is unreadable: {exc}")
+        truth_text = ""
+    if "truth --check: ok (6 fields vs machine truth, 4 stamped surfaces)" not in truth_text:
+        findings.append("11-truth-check.txt does not prove the truth gate passed")
+
+    integrity = _read_json(
+        evidence_dir / "12-repository-evidence-integrity.json",
+        findings,
+        "12-repository-evidence-integrity.json",
+    )
+    _require_fields(
+        integrity,
+        {
+            "schema": "garnet.evidence_integrity/v1",
+            "bundles_total": 38,
+            "bundles_ok": 38,
+            "bundles_failed": 0,
+            "failed": [],
+            "ok": True,
+        },
+        "12-repository-evidence-integrity.json",
+        findings,
+    )
+
+    for name, identifier in (
+        ("13-wv6-pending.json", "WV-6"),
+        ("14-wv7-pending.json", "WV-7"),
+    ):
+        wv = _read_json(evidence_dir / name, findings, name)
+        _require_fields(
+            wv,
+            {
+                "schema": "garnet.wv_acceptance_status/v1",
+                "wv": identifier,
+                "contract_base_main_sha": (
+                    "231aefa91985e5a0520c493c7f0fc3e54d74efc8"
+                ),
+                "state": "pending",
+                "candidate_main_sha": None,
+                "passed_check_count": 0,
+                "required_check_count": 5,
+                "artifact_count": 0,
+                "ok": False,
+            },
+            name,
+            findings,
+        )
+        expected_destination = {
+            "WV-6": "proofs/windows/launch-verification/wv6-minimum-shelf/",
+            "WV-7": "proofs/windows/launch-verification/wv7-distribution/",
+        }[identifier]
+        if wv.get("evidence_destination") != expected_destination:
+            findings.append(f"{name}.evidence_destination is not exact")
+        if wv.get("findings") != ["exact-candidate evidence manifest is pending"]:
+            findings.append(f"{name}.findings must preserve the expected pending reason")
+
+    try:
+        render_text = (evidence_dir / "23-sotu-render.txt").read_text(encoding="utf-8")
+    except OSError as exc:
+        findings.append(f"23-sotu-render.txt is unreadable: {exc}")
+        render_text = ""
+    if "Rendered " not in render_text or "phases: 8, tasks: 19/23" not in render_text:
+        findings.append("23-sotu-render.txt does not prove the mission SOTU rendered")
+    try:
+        pr_text = (evidence_dir / "24-pr-body-validation.txt").read_text(
+            encoding="utf-8"
+        )
+    except OSError as exc:
+        findings.append(f"24-pr-body-validation.txt is unreadable: {exc}")
+        pr_text = ""
+    pr_command = next(
+        (
+            entry.get("command")
+            for entry in commands
+            if entry.get("output") == "24-pr-body-validation.txt"
+        ),
+        None,
+    )
+    candidate_match = (
+        PR_BODY_COMMAND_RE.fullmatch(pr_command)
+        if isinstance(pr_command, str)
+        else None
+    )
+    expected_path_count = 86
+    if candidate_match is None:
+        findings.append("PR-body command lacks an explicit candidate SHA")
+    elif verify_git:
+        candidate = candidate_match.group(1)
+        candidate_object = subprocess.run(
+            ["git", "cat-file", "-e", f"{candidate}^{{commit}}"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+        )
+        ancestry = subprocess.run(
+            [
+                "git",
+                "merge-base",
+                "--is-ancestor",
+                "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+                candidate,
+            ],
+            cwd=root,
+            capture_output=True,
+            text=True,
+        )
+        changed = subprocess.run(
+            [
+                "git",
+                "diff",
+                "--name-only",
+                f"231aefa91985e5a0520c493c7f0fc3e54d74efc8...{candidate}",
+            ],
+            cwd=root,
+            capture_output=True,
+            text=True,
+        )
+        if candidate_object.returncode != 0 or ancestry.returncode != 0 or changed.returncode != 0:
+            findings.append("PR-body candidate SHA is not a valid descendant of Lane 0 base")
+        else:
+            expected_path_count = len(
+                [line for line in changed.stdout.splitlines() if line.strip()]
+            )
+    if (
+        f"dogfood-pr-body: ok ({expected_path_count} changed files checked)"
+        not in pr_text
+    ):
+        findings.append(
+            "24-pr-body-validation.txt path count does not match its explicit candidate"
+        )
+
+    phases = main_state.get("phases")
+    historical_tasks: list[dict] = []
+    if isinstance(phases, list):
+        for phase in phases:
+            if (
+                isinstance(phase, dict)
+                and phase.get("id") in {f"P{index}" for index in range(7)}
+                and isinstance(phase.get("tasks"), list)
+            ):
+                historical_tasks.extend(
+                    task for task in phase["tasks"] if isinstance(task, dict)
+                )
+    s114_done = sum(1 for task in historical_tasks if task.get("status") == "done")
+    if len(historical_tasks) != 19 or s114_done != 19:
+        findings.append("ops/mission/state.json must derive S114 at 19/19")
+
+    return [
+        {
+            "id": "s114_mission",
+            "label": "S114 bounded mission",
+            "numerator": s114_done,
+            "denominator": len(historical_tasks),
+            "percent": 100.0,
+            "evidence": "ops/lane0/evidence/10-denominators.json",
+        },
+        {
+            "id": "truth_pulse",
+            "label": "Truth pulse",
+            "numerator": float(score),
+            "denominator": len(lanes),
+            "percent": rounded_mit,
+            "rounded": True,
+            "evidence": "ops/lane0/evidence/09-mit-readiness.json",
+        },
+        {
+            "id": "launch_critical",
+            "label": "Launch-critical",
+            "numerator": launch_critical,
+            "denominator": 6,
+            "percent": 50.0,
+            "evidence": "ops/lane0/evidence/08-launch-readiness.json",
+        },
+        {
+            "id": "launch_ledger",
+            "label": "Whole launch ledger",
+            "numerator": launch_ledger,
+            "denominator": len(observed_launch),
+            "percent": 37.5,
+            "evidence": "ops/lane0/evidence/08-launch-readiness.json",
+        },
+    ]
+
+
+def read_status(root: Path = ROOT, *, verify_git: bool = True) -> CloseoutStatus:
     findings: list[str] = []
     evidence_dir = root / "ops/lane0/evidence"
     manifest = evidence_dir / "MANIFEST.sha256"
     manifest_findings, manifest_entries = verify_manifest(evidence_dir, manifest)
     findings.extend(manifest_findings)
-    findings.extend(verify_commands(evidence_dir / "COMMANDS.json"))
+    command_findings, commands, command_start, command_end = verify_commands(
+        evidence_dir / "COMMANDS.json"
+    )
+    findings.extend(command_findings)
+    findings.extend(verify_text_transcripts(evidence_dir, commands))
     findings.extend(_scan_sensitive_evidence(evidence_dir))
+    review_findings, review_approved, review_time = _verify_review(
+        evidence_dir / "25-independent-review.md",
+        root,
+        verify_git=verify_git,
+    )
+    findings.extend(review_findings)
+    sotu_time = _sotu_timestamp(root / "ops/mission/state-of-the-union.html")
+    if sotu_time is None:
+        findings.append("generated mission SOTU lacks a second-precision UTC timestamp")
+    evidence_times = [
+        value for value in (command_end, review_time, sotu_time) if value is not None
+    ]
+    evidence_floor = max(evidence_times) if evidence_times else None
 
     lane_state = _read_json(
         root / "ops/lane0/state.json", findings, "ops/lane0/state.json"
     )
-    lane_findings, run_id, band, verdict, stage = _verify_lane_state(lane_state)
+    (
+        lane_findings,
+        run_id,
+        band,
+        verdict,
+        stage,
+        state_gate_evidence,
+        state_loopback_at,
+    ) = _verify_lane_state(lane_state)
     findings.extend(lane_findings)
     findings.extend(
-        verify_ledger(root / "ops/lane0/ledger.jsonl", manifest_entries, run_id)
+        verify_ledger(
+            root / "ops/lane0/ledger.jsonl",
+            manifest_entries,
+            run_id,
+            state_gate_evidence,
+            command_start,
+            command_end,
+            evidence_floor,
+            state_loopback_at,
+        )
     )
     findings.extend(_verify_audit(root / "ops/lane0/AUDIT.md"))
 
@@ -615,8 +1599,18 @@ def read_status(root: Path = ROOT) -> CloseoutStatus:
     launch_status = str(readiness.get("launchStatus", ""))
     if launch_status != "HOLD":
         findings.append("main mission launch status must remain HOLD")
+    derived_denominators = _verify_reporter_evidence(
+        evidence_dir,
+        main_state,
+        commands,
+        root,
+        findings,
+        verify_git=verify_git,
+    )
     denominators = readiness.get("denominators")
-    findings.extend(_verify_denominators(denominators, "main mission"))
+    findings.extend(
+        _verify_denominators(denominators, "main mission", derived_denominators)
+    )
 
     lane_closeout = main_state.get("lane0Closeout", {})
     if not isinstance(lane_closeout, dict):
@@ -636,8 +1630,18 @@ def read_status(root: Path = ROOT) -> CloseoutStatus:
     if denom_file.get("launchStatus") != "HOLD":
         findings.append("10-denominators.json launch status must remain HOLD")
     findings.extend(
-        _verify_denominators(denom_file.get("denominators"), "evidence")
+        _verify_denominators(
+            denom_file.get("denominators"), "evidence", derived_denominators
+        )
     )
+    expected_review_state = "approved" if review_approved else "pending"
+    lane_closeout_state = lane_state.get("closeout", {})
+    if not isinstance(lane_closeout_state, dict):
+        lane_closeout_state = {}
+    if lane_closeout_state.get("finalIntegratedReview") != expected_review_state:
+        findings.append("Lane 0 state final integrated review marker is inconsistent")
+    if lane_closeout.get("finalIntegratedReview") != expected_review_state:
+        findings.append("main mission final integrated review marker is inconsistent")
 
     return CloseoutStatus(
         schema="garnet.lane0.closeout/v1",
@@ -676,8 +1680,15 @@ def write_denominators(root: Path, at: str | None = None) -> None:
     )
 
     launch_gates = launch.get("gates")
-    if not isinstance(launch_gates, list) or len(launch_gates) != 8:
+    if not isinstance(launch_gates, list):
         raise ValueError("launch reporter must expose exactly eight ledger gates")
+    observed_launch = [
+        (gate.get("id"), gate.get("state"))
+        for gate in launch_gates
+        if isinstance(gate, dict)
+    ]
+    if observed_launch != list(EXPECTED_LAUNCH_GATES):
+        raise ValueError("launch reporter gate ids/states are not exact")
     critical_ids = {
         "foundation_integrity",
         "native_linux",
@@ -687,29 +1698,40 @@ def write_denominators(root: Path, at: str | None = None) -> None:
         "minimum_sealed_shelf",
     }
     accepted_states = {"pass", "accepted-scoped"}
-    critical = [
-        gate
-        for gate in launch_gates
-        if isinstance(gate, dict) and gate.get("id") in critical_ids
-    ]
     critical_passed = sum(
-        1 for gate in critical if gate.get("state") in accepted_states
+        1
+        for identifier, state in observed_launch
+        if identifier in critical_ids and state in accepted_states
     )
     ledger_passed = sum(
-        1
-        for gate in launch_gates
-        if isinstance(gate, dict) and gate.get("state") in accepted_states
+        1 for _identifier, state in observed_launch if state in accepted_states
     )
     if (
-        len(critical) != 6
-        or critical_passed != 3
+        critical_passed != 3
         or ledger_passed != 3
         or launch.get("recommendation") != "HOLD"
         or launch.get("launch_ready") is not False
     ):
         raise ValueError("launch reporter no longer derives HOLD at 3/6 and 3/8")
 
-    if mit.get("source") != "committed-truth" or mit.get("completion_percent") != 93.1:
+    lanes = mit.get("lanes")
+    if not isinstance(lanes, list) or len(lanes) != 70:
+        raise ValueError("committed MIT reporter must expose exactly 70 lanes")
+    score = Decimal("0")
+    for lane in lanes:
+        if not isinstance(lane, dict) or lane.get("evidence_class") != "committed":
+            raise ValueError("MIT denominator accepts committed lanes only")
+        status = lane.get("status")
+        if status not in MIT_STATUS_SCORES:
+            raise ValueError(f"unknown MIT lane status: {status!r}")
+        score += MIT_STATUS_SCORES[status]
+    rounded_mit = round(float(score / Decimal("70") * Decimal("100")), 1)
+    if (
+        mit.get("source") != "committed-truth"
+        or mit.get("completion_percent") != 93.1
+        or score != Decimal("65.20")
+        or rounded_mit != 93.1
+    ):
         raise ValueError("committed MIT reporter no longer derives 93.1%")
 
     phases = mission.get("phases")
@@ -730,14 +1752,49 @@ def write_denominators(root: Path, at: str | None = None) -> None:
     if len(historical_tasks) != 19 or done != 19:
         raise ValueError("S114 bounded mission no longer derives 19/19")
 
+    denominators = [
+        {
+            "id": "s114_mission",
+            "label": "S114 bounded mission",
+            "numerator": done,
+            "denominator": len(historical_tasks),
+            "percent": 100.0,
+            "evidence": "ops/lane0/evidence/10-denominators.json",
+        },
+        {
+            "id": "truth_pulse",
+            "label": "Truth pulse",
+            "numerator": float(score),
+            "denominator": len(lanes),
+            "percent": rounded_mit,
+            "rounded": True,
+            "evidence": "ops/lane0/evidence/09-mit-readiness.json",
+        },
+        {
+            "id": "launch_critical",
+            "label": "Launch-critical",
+            "numerator": critical_passed,
+            "denominator": 6,
+            "percent": 50.0,
+            "evidence": "ops/lane0/evidence/08-launch-readiness.json",
+        },
+        {
+            "id": "launch_ledger",
+            "label": "Whole launch ledger",
+            "numerator": ledger_passed,
+            "denominator": len(observed_launch),
+            "percent": 37.5,
+            "evidence": "ops/lane0/evidence/08-launch-readiness.json",
+        },
+    ]
     output = {
         "schema": "garnet.lane0.denominators/v1",
         "asOf": at or _utc_now(),
         "launchStatus": "HOLD",
-        "denominators": list(EXPECTED_DENOMINATORS),
+        "denominators": denominators,
         "sources": {
             "s114": "ops/mission/state.json P0-P6 task states",
-            "truthPulse": "ops/lane0/evidence/09-mit-readiness.json committed-only",
+            "truthPulse": "65.2/70 committed-lane score from ops/lane0/evidence/09-mit-readiness.json",
             "launch": "ops/lane0/evidence/08-launch-readiness.json",
         },
         "discipline": "exactly four; never averaged and no fifth denominator",
@@ -758,9 +1815,54 @@ def _append_ledger(
     return entry_hash
 
 
-def write_ledger(root: Path, run_id: str, at: str | None = None) -> None:
+def _format_utc(value: datetime) -> str:
+    return value.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _review_timestamp(path: Path) -> datetime | None:
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    match = re.search(r"(?m)^Reviewed at: `([^`]+)`$", text)
+    return _parse_utc(match.group(1)) if match is not None else None
+
+
+def _sotu_timestamp(path: Path) -> datetime | None:
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    match = re.search(
+        r"Mission Control &middot; State of the Union &middot; generated "
+        r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})Z",
+        text,
+    )
+    if match is None:
+        return None
+    return _parse_utc(match.group(1).replace(" ", "T") + "Z")
+
+
+def write_ledger(root: Path, run_id: str) -> None:
     """Create the namespaced ARCHIPELAGO ledger from the sealed evidence."""
-    timestamp = at or _utc_now()
+    command_findings, _commands, command_start, command_end = verify_commands(
+        root / "ops/lane0/evidence/COMMANDS.json"
+    )
+    if command_findings or command_start is None or command_end is None:
+        raise ValueError(
+            "cannot write ledger from invalid command capture: "
+            + "; ".join(command_findings)
+        )
+    review_at = _review_timestamp(
+        root / "ops/lane0/evidence/25-independent-review.md"
+    )
+    sotu_at = _sotu_timestamp(root / "ops/mission/state-of-the-union.html")
+    evidence_floor = max(
+        value for value in (command_end, review_at, sotu_at) if value is not None
+    )
+    start_at = _format_utc(command_start)
+    seal_time = evidence_floor + timedelta(seconds=1)
+    seal_at = _format_utc(seal_time)
     path = root / "ops/lane0/ledger.jsonl"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("", encoding="utf-8")
@@ -768,15 +1870,30 @@ def write_ledger(root: Path, run_id: str, at: str | None = None) -> None:
     previous = _append_ledger(
         path,
         previous,
-        timestamp,
+        start_at,
         {"event": "session-start", "runId": run_id},
+    )
+    previous = _append_ledger(
+        path,
+        previous,
+        start_at,
+        {
+            "event": "loopback",
+            "runId": run_id,
+            "fromGate": "G4",
+            "toStage": "S2",
+            "reason": (
+                "Lane 2C approval lacked current deterministic evidence for three "
+                "exact-candidate stress cases exceeding four minutes."
+            ),
+        },
     )
     manifest = root / "ops/lane0/evidence/MANIFEST.sha256"
     for rel, digest in read_manifest_entries(manifest):
         previous = _append_ledger(
             path,
             previous,
-            timestamp,
+            seal_at,
             {
                 "event": "evidence-sealed",
                 "runId": run_id,
@@ -789,7 +1906,7 @@ def write_ledger(root: Path, run_id: str, at: str | None = None) -> None:
         previous = _append_ledger(
             path,
             previous,
-            timestamp,
+            seal_at,
             {
                 "event": "gate-evidence",
                 "runId": run_id,
@@ -801,28 +1918,13 @@ def write_ledger(root: Path, run_id: str, at: str | None = None) -> None:
     previous = _append_ledger(
         path,
         previous,
-        timestamp,
-        {
-            "event": "loopback",
-            "runId": run_id,
-            "fromGate": "G4",
-            "toStage": "S2",
-            "reason": (
-                "Lane 2C approval lacked current deterministic evidence for three "
-                "exact-candidate stress cases exceeding four minutes."
-            ),
-        },
-    )
-    previous = _append_ledger(
-        path,
-        previous,
-        timestamp,
+        _format_utc(seal_time + timedelta(seconds=1)),
         {"event": "audit-band", "runId": run_id, "band": 3},
     )
     previous = _append_ledger(
         path,
         previous,
-        timestamp,
+        _format_utc(seal_time + timedelta(seconds=2)),
         {
             "event": "governance-verdict",
             "runId": run_id,
@@ -833,7 +1935,7 @@ def write_ledger(root: Path, run_id: str, at: str | None = None) -> None:
     previous = _append_ledger(
         path,
         previous,
-        timestamp,
+        _format_utc(seal_time + timedelta(seconds=3)),
         {
             "event": "stage-advance",
             "runId": run_id,
@@ -844,7 +1946,7 @@ def write_ledger(root: Path, run_id: str, at: str | None = None) -> None:
     _append_ledger(
         path,
         previous,
-        timestamp,
+        _format_utc(seal_time + timedelta(seconds=4)),
         {
             "event": "session-close",
             "runId": run_id,
@@ -890,7 +1992,11 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         evidence_dir = root / "ops/lane0/evidence"
         write_manifest(evidence_dir, evidence_dir / "MANIFEST.sha256")
-        write_ledger(root, args.run_id, args.at)
+        try:
+            write_ledger(root, args.run_id)
+        except ValueError as exc:
+            print(f"ledger sealing failed: {exc}", file=sys.stderr)
+            return 1
     status = read_status(root)
     if args.format == "json":
         print(json.dumps(asdict(status), indent=2))
