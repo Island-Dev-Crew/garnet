@@ -1,0 +1,130 @@
+{
+  "schemaVersion": "1.0",
+  "ideaLock": "idea-garnet-l2a-browser",
+  "frozenAt": "2026-07-16T22:06:02Z",
+  "verdict": {
+    "nbcli": "warning",
+    "adversarialFindingsResolved": false
+  },
+  "phases": [
+    {
+      "id": "P0",
+      "title": "Package materialization",
+      "goal": "Extend the hermetic no-publish probe into a fail-closed materializer and commit the exact browser package with canonical provenance.",
+      "sessionsEstimate": "1",
+      "lane": "infra",
+      "gates": [
+        {
+          "id": "P0-G1",
+          "title": "Package builder contract tests pass",
+          "command": "python3 -I scripts/test_build_playground_wasm.py"
+        },
+        {
+          "id": "P0-G2",
+          "title": "Two clean builds are byte-identical to the committed package",
+          "command": "python3 scripts/build_playground_wasm.py --verify-reproducible"
+        }
+      ],
+      "evidenceRequired": [
+        "static",
+        "resilience"
+      ]
+    },
+    {
+      "id": "P1",
+      "title": "Live adapter and page integration",
+      "goal": "Wire run_source, check_source, and diff_caps_source from committed Wasm bytes into a usable editor page with explicit result surfaces.",
+      "sessionsEstimate": "1",
+      "lane": "feature",
+      "gates": [
+        {
+          "id": "P1-G1",
+          "title": "Static live-page and adapter contracts pass",
+          "command": "python3 -I scripts/test_garnet_playground_browser_contract.py"
+        }
+      ],
+      "evidenceRequired": [
+        "static",
+        "runtime-journey",
+        "visual"
+      ]
+    },
+    {
+      "id": "P2",
+      "title": "Playwright success and denial traps",
+      "goal": "Prove in a clean browser under 30 seconds that run, check, and diff work and denied process authority fails closed with a visible diagnostic.",
+      "sessionsEstimate": "1",
+      "lane": "feature",
+      "gates": [
+        {
+          "id": "P2-G1",
+          "title": "Clean-browser success and fail-closed denial proof passes",
+          "command": "node scripts/smoke_garnet_playground_browser.mjs --proof F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json"
+        }
+      ],
+      "evidenceRequired": [
+        "runtime-journey",
+        "visual",
+        "resilience"
+      ]
+    },
+    {
+      "id": "P3",
+      "title": "Evidence-backed reporter promotion",
+      "goal": "Make scripts/garnet_wasm_readiness.py validate package provenance and browser proof before reporting browser readiness or passing its gate.",
+      "sessionsEstimate": "1",
+      "lane": "infra",
+      "gates": [
+        {
+          "id": "P3-G1",
+          "title": "Wasm readiness reporter regressions pass",
+          "command": "python3 -I scripts/test_garnet_wasm_readiness.py"
+        },
+        {
+          "id": "P3-G2",
+          "title": "Evidence-backed browser readiness gate passes",
+          "command": "python3 scripts/garnet_wasm_readiness.py --gate"
+        }
+      ],
+      "evidenceRequired": [
+        "static",
+        "runtime-journey",
+        "resilience"
+      ]
+    },
+    {
+      "id": "P4",
+      "title": "Human and machine capability verdict",
+      "goal": "Render a one-glance capability expansion verdict and expose the same decision as versioned structured JSON for agent reviewers.",
+      "sessionsEstimate": "1",
+      "lane": "feature",
+      "gates": [
+        {
+          "id": "P4-G1",
+          "title": "Browser proof validates matching human and machine verdicts",
+          "command": "python3 -I scripts/test_garnet_playground_browser_proof.py"
+        }
+      ],
+      "evidenceRequired": [
+        "static",
+        "runtime-journey"
+      ]
+    }
+  ],
+  "budget": {
+    "costCapUsd": 25,
+    "wallClockCapHours": 12,
+    "notes": "No FIRE, tag, publish, merge, 31-to-32 ceremony, base-merge gate, promo QA signoff, or admin-token use is authorized."
+  },
+  "hitl": {
+    "approvedBy": "jon-isaac",
+    "approvedAt": "2026-07-16T22:06:02Z",
+    "conditions": [
+      "Exactly one Lane 2A branch and one fork-to-upstream PR are prepared; every merge remains human-only.",
+      "Do not modify ops/mission/state.json; ops/lane2a is session provenance only.",
+      "Launch remains HOLD and Band 3 remains the ceiling while U-17 is open.",
+      "Any scripts/garnet_* change carries a W_TRUST companion and fresh cross-OS evidence before merge.",
+      "ARCHIPELAGO tooling is pinned to Navigata1/archipelago@b9f7cee2823f9791503db20f33b22c9e20af7abe."
+    ]
+  }
+}

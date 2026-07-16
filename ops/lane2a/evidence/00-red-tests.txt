@@ -1,0 +1,31 @@
+GARNET LANE 2A RED EVIDENCE
+Captured: 2026-07-16T22:12:00Z
+Base: 1a0e5d729164ab30ae40523db206b1c36ee80045
+Branch: mission/l2a-wplay-browser
+
+1. python3 -I scripts/test_build_playground_wasm.py
+   Exit: 1
+   RED: missing --materialize / --verify-reproducible modes, package_source,
+   require_identical_payloads, and publish_package.
+
+2. python3 -I scripts/test_garnet_playground_browser_contract.py
+   Exit: 1
+   RED: docs/playground/live.js and docs/playground/pkg do not exist; the
+   frozen static page has no editor controls; runtime inputs are not tracked.
+
+3. python3 -I scripts/test_garnet_wasm_readiness.py
+   Exit: 1
+   RED: reporter is schema v2 and has no strict browser package/proof validity
+   or browser_ready promotion surface.
+
+4. python3 -I scripts/test_garnet_playground_browser_proof.py
+   Exit: 1
+   RED: no read_browser_proof or browser_proof_valid contract exists and no
+   browser runtime proof has been recorded.
+
+5. RUSTUP_TOOLCHAIN=1.95.0 cargo test -p garnet-wasm
+   declared_proc_authority_still_fails_without_a_browser_host_native -- --exact
+   Exit: 0
+   CONTROL: @caps(proc) still returns runtime_error with empty stdout because
+   the browser interpreter exposes no proc native. The primitive required by
+   the denial journey is already fail-closed.

@@ -1,0 +1,190 @@
+{
+  "version": 1,
+  "mission": {
+    "name": "idea-garnet-l2a-browser",
+    "tagline": "Garnet has committed Wasm run, check, and capability-diff adapters plus a hermetic package probe, but it cannot honestly",
+    "repo": "Island-Dev-Crew/garnet",
+    "repoPath": ".",
+    "defaultBranch": "main",
+    "planDoc": "",
+    "northStar": "A clean browser loads only committed package bytes and renders real run, check, and capability-diff results without a network fetch or Node-only execution path; A browser attempt to use denied process authority rejects with a non-success exit class and a visible diagnostic; Two clean builds from the same committed inputs produce byte-identical browser package files and provenance; The readiness reporter promotes browser status only after validating the committed package and browser proof; Capability diff renders a one-glance human verdict and a versioned structured machine verdict from the same adapter result",
+    "status": "active",
+    "started": "2026-07-16",
+    "updated": "2026-07-16T22:07:47Z",
+    "sessionCount": 1
+  },
+  "policies": {
+    "merge": "review",
+    "branchPrefix": "mission/",
+    "maxPrLines": 400,
+    "notes": "review until dogfood band 5 is routine; then auto."
+  },
+  "phases": [
+    {
+      "id": "P0",
+      "title": "Package materialization",
+      "goal": "Extend the hermetic no-publish probe into a fail-closed materializer and commit the exact browser package with canonical provenance.",
+      "status": "pending",
+      "sessionsEstimate": "1",
+      "gates": [
+        {
+          "id": "P0-G1",
+          "title": "Package builder contract tests pass",
+          "command": "python3 -I scripts/test_build_playground_wasm.py",
+          "status": "pending",
+          "evidence": null,
+          "lastRun": null,
+          "notes": ""
+        },
+        {
+          "id": "P0-G2",
+          "title": "Two clean builds are byte-identical to the committed package",
+          "command": "python3 scripts/build_playground_wasm.py --verify-reproducible",
+          "status": "pending",
+          "evidence": null,
+          "lastRun": null,
+          "notes": ""
+        }
+      ],
+      "tasks": []
+    },
+    {
+      "id": "P1",
+      "title": "Live adapter and page integration",
+      "goal": "Wire run_source, check_source, and diff_caps_source from committed Wasm bytes into a usable editor page with explicit result surfaces.",
+      "status": "pending",
+      "sessionsEstimate": "1",
+      "gates": [
+        {
+          "id": "P1-G1",
+          "title": "Static live-page and adapter contracts pass",
+          "command": "python3 -I scripts/test_garnet_playground_browser_contract.py",
+          "status": "pending",
+          "evidence": null,
+          "lastRun": null,
+          "notes": ""
+        }
+      ],
+      "tasks": []
+    },
+    {
+      "id": "P2",
+      "title": "Playwright success and denial traps",
+      "goal": "Prove in a clean browser under 30 seconds that run, check, and diff work and denied process authority fails closed with a visible diagnostic.",
+      "status": "pending",
+      "sessionsEstimate": "1",
+      "gates": [
+        {
+          "id": "P2-G1",
+          "title": "Clean-browser success and fail-closed denial proof passes",
+          "command": "node scripts/smoke_garnet_playground_browser.mjs --proof F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json",
+          "status": "pending",
+          "evidence": null,
+          "lastRun": null,
+          "notes": ""
+        }
+      ],
+      "tasks": []
+    },
+    {
+      "id": "P3",
+      "title": "Evidence-backed reporter promotion",
+      "goal": "Make scripts/garnet_wasm_readiness.py validate package provenance and browser proof before reporting browser readiness or passing its gate.",
+      "status": "pending",
+      "sessionsEstimate": "1",
+      "gates": [
+        {
+          "id": "P3-G1",
+          "title": "Wasm readiness reporter regressions pass",
+          "command": "python3 -I scripts/test_garnet_wasm_readiness.py",
+          "status": "pending",
+          "evidence": null,
+          "lastRun": null,
+          "notes": ""
+        },
+        {
+          "id": "P3-G2",
+          "title": "Evidence-backed browser readiness gate passes",
+          "command": "python3 scripts/garnet_wasm_readiness.py --gate",
+          "status": "pending",
+          "evidence": null,
+          "lastRun": null,
+          "notes": ""
+        }
+      ],
+      "tasks": []
+    },
+    {
+      "id": "P4",
+      "title": "Human and machine capability verdict",
+      "goal": "Render a one-glance capability expansion verdict and expose the same decision as versioned structured JSON for agent reviewers.",
+      "status": "pending",
+      "sessionsEstimate": "1",
+      "gates": [
+        {
+          "id": "P4-G1",
+          "title": "Browser proof validates matching human and machine verdicts",
+          "command": "python3 -I scripts/test_garnet_playground_browser_proof.py",
+          "status": "pending",
+          "evidence": null,
+          "lastRun": null,
+          "notes": ""
+        }
+      ],
+      "tasks": []
+    }
+  ],
+  "metrics": [
+    {
+      "label": "Definition-of-done claims verified",
+      "baseline": "0",
+      "current": "0",
+      "target": "5",
+      "direction": "up"
+    }
+  ],
+  "risks": [
+    {
+      "title": "A polished editor could accidentally certify a Node path, a warning-only denial, or package bytes that were not committed and reproducible.",
+      "severity": "medium",
+      "note": "from idea.lock (confidence 8/10)"
+    }
+  ],
+  "prLog": [],
+  "resume": {
+    "activePhase": "P0",
+    "nextActions": [
+      "Record RED contract tests before materializing the browser package or wiring the live page."
+    ],
+    "blockers": [],
+    "conventions": [
+      "One task = one branch = one PR",
+      "Update state.json + render + commit after every merge",
+      "Gate commands are shell-agnostic (no &&)"
+    ]
+  },
+  "archipelago": {
+    "protocolVersion": "1.0",
+    "ideaLock": "ops/lane2a/idea.lock.json",
+    "planLock": "ops/lane2a/plan.lock.json",
+    "loop": {
+      "cycle": 1,
+      "stage": "S2",
+      "loopbacks": []
+    },
+    "governance": {
+      "ledgerRunId": "",
+      "budgetSpentUsd": 0.0,
+      "branchSweeps": []
+    },
+    "compound": {
+      "notes": [],
+      "memorySync": "pending",
+      "experiments": []
+    },
+    "fableShim": {
+      "rewriterVersion": "1.0.0",
+      "refusals": []
+    }
+  }
+}
