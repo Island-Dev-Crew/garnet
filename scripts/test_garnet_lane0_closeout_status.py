@@ -6,6 +6,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -19,7 +20,50 @@ status_mod = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = status_mod
 SPEC.loader.exec_module(status_mod)
 
-CANDIDATE = "d6a509e52e016a03b852d2afbc9c51baf1165201"
+CANDIDATE = "3124ba5ecfa88aa6f2c2c289313860670673cdec"
+FIXTURE_REVIEWED_HEAD_TREE = "d2d3c735cf25b84ef69e0e385c8cfeb35e1af673"
+FIXTURE_TREE = "98141597d17e13b02cfa228c03cdf0dc2119ad9f"
+FIXTURE_MERGED_COMMIT = "aa681bacd2e437bfde3cea0ffc1ca75bdb134aac"
+FIXTURE_POST_REVIEW_COMMITS = [
+    {
+        "commit": "aa14368bde83391506775d835ace8985bb7bc1ed",
+        "reviewed": False,
+        "purpose": (
+            "Final Lane 0 evidence recapture and closeout-state sealing after "
+            "the independent review."
+        ),
+    },
+    {
+        "commit": "5680fbed4684d57fc3773a1f75f86868c44b7a95",
+        "reviewed": False,
+        "purpose": (
+            "Lane 0 trust-kernel review companion added after the independent "
+            "review."
+        ),
+    },
+]
+
+
+def _review_marker(
+    *,
+    reviewed_head: str = CANDIDATE,
+    reviewed_tree: str = FIXTURE_TREE,
+    merged_commit: str = FIXTURE_MERGED_COMMIT,
+) -> dict[str, object]:
+    return {
+        "schema": "garnet.squash_durable_review_marker/v1",
+        "verdict": "approved",
+        "reviewed_head": reviewed_head,
+        "reviewed_head_tree": FIXTURE_REVIEWED_HEAD_TREE,
+        "reviewed_tree": reviewed_tree,
+        "merged_commit": merged_commit,
+        "review_scope": (
+            "Independent review ended at reviewed_head. reviewed_tree binds the "
+            "final squash content and does not extend or backdate independent "
+            "review coverage."
+        ),
+        "post_review_commits": json.loads(json.dumps(FIXTURE_POST_REVIEW_COMMITS)),
+    }
 
 
 def _write_json(path: Path, value: object) -> None:
@@ -297,7 +341,7 @@ class Lane0CloseoutStatusTests(unittest.TestCase):
             },
             "lane0Closeout": {
                 "audit": "ops/lane0/AUDIT.md",
-                "finalIntegratedReview": "approved",
+                "finalIntegratedReview": _review_marker(),
                 "nextActions": list(status_mod.EXPECTED_NEXT_ACTIONS),
             },
         }
@@ -339,7 +383,7 @@ class Lane0CloseoutStatusTests(unittest.TestCase):
                 "nextActions": list(status_mod.EXPECTED_NEXT_ACTIONS),
             },
             "closeout": {
-                "finalIntegratedReview": "approved",
+                "finalIntegratedReview": _review_marker(),
                 "governanceVerdict": "advisory",
                 "band": 3,
                 "waivers": [],
@@ -667,6 +711,80 @@ class Lane0CloseoutStatusTests(unittest.TestCase):
         )
         self.assertTrue(any("hash mismatch" in item for item in findings))
 
+    def test_review_marker_state_divergence_is_rejected(self) -> None:
+        path = self.root / "ops/mission/state.json"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["lane0Closeout"]["finalIntegratedReview"]["merged_commit"] = "3" * 40
+        _write_json(path, data)
+        status = self._status()
+        self.assertTrue(
+            any("review markers diverge" in item for item in status.findings),
+            status.findings,
+        )
+
+    def test_review_marker_must_match_evidence_reviewed_head(self) -> None:
+        for relative, keys in (
+            ("ops/lane0/state.json", ("closeout", "finalIntegratedReview")),
+            ("ops/mission/state.json", ("lane0Closeout", "finalIntegratedReview")),
+        ):
+            path = self.root / relative
+            data = json.loads(path.read_text(encoding="utf-8"))
+            data[keys[0]][keys[1]]["reviewed_head"] = "4" * 40
+            _write_json(path, data)
+        status = self._status()
+        self.assertTrue(
+            any("does not match independent review evidence" in item for item in status.findings),
+            status.findings,
+        )
+
+    def test_lane0_exact_content_boundary_cannot_be_rebound(self) -> None:
+        for field in ("reviewed_head_tree", "reviewed_tree", "merged_commit"):
+            with self.subTest(field=field):
+                self._write_valid_fixture()
+                for relative, keys in (
+                    ("ops/lane0/state.json", ("closeout", "finalIntegratedReview")),
+                    (
+                        "ops/mission/state.json",
+                        ("lane0Closeout", "finalIntegratedReview"),
+                    ),
+                ):
+                    path = self.root / relative
+                    data = json.loads(path.read_text(encoding="utf-8"))
+                    data[keys[0]][keys[1]][field] = "5" * 40
+                    _write_json(path, data)
+                status = self._status()
+                self.assertTrue(
+                    any("exact Lane 0 review boundary" in item for item in status.findings),
+                    status.findings,
+                )
+
+    def test_lane0_post_review_disclosures_cannot_be_erased_or_rewritten(self) -> None:
+        for mutation in ("erase", "reviewed", "purpose"):
+            with self.subTest(mutation=mutation):
+                self._write_valid_fixture()
+                for relative, keys in (
+                    ("ops/lane0/state.json", ("closeout", "finalIntegratedReview")),
+                    (
+                        "ops/mission/state.json",
+                        ("lane0Closeout", "finalIntegratedReview"),
+                    ),
+                ):
+                    path = self.root / relative
+                    data = json.loads(path.read_text(encoding="utf-8"))
+                    marker = data[keys[0]][keys[1]]
+                    if mutation == "erase":
+                        marker["post_review_commits"] = []
+                    elif mutation == "reviewed":
+                        marker["post_review_commits"][0]["reviewed"] = True
+                    else:
+                        marker["post_review_commits"][0]["purpose"] = "rewritten"
+                    _write_json(path, data)
+                status = self._status()
+                self.assertTrue(
+                    any("exact Lane 0 review boundary" in item for item in status.findings),
+                    status.findings,
+                )
+
     @unittest.skipIf(os.name == "nt", "symlink creation may require elevation")
     def test_manifest_rejects_symlink_and_traversal(self) -> None:
         victim = self.evidence / "00-environment.json"
@@ -683,6 +801,166 @@ class Lane0CloseoutStatusTests(unittest.TestCase):
             handle.write(f"{'0' * 64}  ../escape.txt\n")
         findings, _ = status_mod.verify_manifest(self.evidence, manifest)
         self.assertTrue(any("traversal" in item for item in findings))
+
+
+class SquashDurableReviewMarkerGitTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temp = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp.name)
+        self._git("init")
+        self._git("config", "user.email", "lane0@example.invalid")
+        self._git("config", "user.name", "Lane 0 Test")
+        (self.root / "payload.txt").write_text("base\n", encoding="utf-8")
+        self._git("add", "payload.txt")
+        self._git("commit", "-m", "base")
+        self.base = self._git("rev-parse", "HEAD")
+        self._git("branch", "-M", "main")
+        (self.root / "payload.txt").write_text("merged content\n", encoding="utf-8")
+        self._git("commit", "-am", "squash result")
+        self.merged_commit = self._git("rev-parse", "HEAD")
+        self.reviewed_tree = self._git("rev-parse", f"{self.merged_commit}^{{tree}}")
+        self._git("update-ref", "refs/remotes/origin/main", self.merged_commit)
+        self.marker = _review_marker(
+            reviewed_head="a" * 40,
+            reviewed_tree=self.reviewed_tree,
+            merged_commit=self.merged_commit,
+        )
+
+    def tearDown(self) -> None:
+        self.temp.cleanup()
+
+    def _git(self, *args: str, check: bool = True) -> str:
+        result = subprocess.run(
+            ["git", *args],
+            cwd=self.root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if check and result.returncode != 0:
+            self.fail(
+                f"git {' '.join(args)} failed: {result.stderr or result.stdout}"
+            )
+        return result.stdout.strip()
+
+    def _commit_tree(self, tree: str, parent: str) -> str:
+        result = subprocess.run(
+            ["git", "commit-tree", tree, "-p", parent],
+            cwd=self.root,
+            input="replacement\n",
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            self.fail(f"git commit-tree failed: {result.stderr or result.stdout}")
+        return result.stdout.strip()
+
+    def _findings(self, marker: object | None = None) -> list[str]:
+        return status_mod._verify_squash_durable_review_marker(
+            self.marker if marker is None else marker,
+            "a" * 40,
+            self.root,
+            verify_git=True,
+        )
+
+    def test_content_proof_does_not_require_reviewed_head_object(self) -> None:
+        self.assertEqual([], self._findings())
+
+    def test_missing_merged_commit_is_red(self) -> None:
+        marker = dict(self.marker)
+        marker.pop("merged_commit")
+        self.assertTrue(
+            any("merged_commit is missing" in item for item in self._findings(marker))
+        )
+
+    def test_nonexistent_merged_commit_is_red(self) -> None:
+        marker = dict(self.marker)
+        marker["merged_commit"] = "b" * 40
+        self.assertTrue(
+            any("merged_commit does not name a commit" in item for item in self._findings(marker))
+        )
+
+    def test_commit_absent_from_main_first_parent_is_red(self) -> None:
+        self._git("checkout", "-b", "topic", self.base)
+        (self.root / "topic.txt").write_text("topic\n", encoding="utf-8")
+        self._git("add", "topic.txt")
+        self._git("commit", "-m", "topic only")
+        topic = self._git("rev-parse", "HEAD")
+        marker = dict(self.marker)
+        marker["merged_commit"] = topic
+        marker["reviewed_tree"] = self._git("rev-parse", f"{topic}^{{tree}}")
+        self.assertTrue(
+            any("absent from upstream main first-parent history" in item for item in self._findings(marker))
+        )
+
+    def test_reviewed_tree_mismatch_is_red(self) -> None:
+        marker = dict(self.marker)
+        marker["reviewed_tree"] = "c" * 40
+        self.assertTrue(
+            any("reviewed_tree mismatch" in item for item in self._findings(marker))
+        )
+
+    def test_replace_ref_cannot_substitute_the_merged_tree(self) -> None:
+        self._git("checkout", "-b", "replacement-tree", self.base)
+        (self.root / "replacement.txt").write_text("replacement\n", encoding="utf-8")
+        self._git("add", "replacement.txt")
+        self._git("commit", "-m", "replacement tree")
+        replacement = self._git("rev-parse", "HEAD")
+        replacement_tree = self._git("rev-parse", f"{replacement}^{{tree}}")
+        self._git("replace", self.merged_commit, replacement)
+        marker = dict(self.marker)
+        marker["reviewed_tree"] = replacement_tree
+        self.assertTrue(
+            any("reviewed_tree mismatch" in item for item in self._findings(marker))
+        )
+
+    def test_replace_ref_cannot_alter_main_first_parent_membership(self) -> None:
+        self._git("checkout", "-b", "replacement-history", self.base)
+        (self.root / "topic.txt").write_text("topic\n", encoding="utf-8")
+        self._git("add", "topic.txt")
+        self._git("commit", "-m", "topic outside main")
+        topic = self._git("rev-parse", "HEAD")
+        replacement = self._commit_tree(self.reviewed_tree, topic)
+        self._git("replace", self.merged_commit, replacement)
+        marker = dict(self.marker)
+        marker["merged_commit"] = topic
+        marker["reviewed_tree"] = self._git("rev-parse", f"{topic}^{{tree}}")
+        self.assertTrue(
+            any(
+                "absent from upstream main first-parent history" in item
+                for item in self._findings(marker)
+            )
+        )
+
+    def test_second_parent_only_commit_is_red(self) -> None:
+        self._git("checkout", "-b", "side", self.base)
+        (self.root / "side.txt").write_text("side\n", encoding="utf-8")
+        self._git("add", "side.txt")
+        self._git("commit", "-m", "side")
+        side = self._git("rev-parse", "HEAD")
+        side_tree = self._git("rev-parse", f"{side}^{{tree}}")
+        self._git("checkout", "main")
+        self._git("merge", "--no-ff", "side", "-m", "merge side")
+        merge = self._git("rev-parse", "HEAD")
+        self._git("update-ref", "refs/remotes/origin/main", merge)
+        marker = dict(self.marker)
+        marker["merged_commit"] = side
+        marker["reviewed_tree"] = side_tree
+        self.assertTrue(
+            any(
+                "absent from upstream main first-parent history" in item
+                for item in self._findings(marker)
+            )
+        )
+
+    def test_missing_authoritative_main_ref_is_red(self) -> None:
+        self._git("update-ref", "-d", "refs/remotes/origin/main")
+        self._git("checkout", "--detach", self.merged_commit)
+        self._git("branch", "-D", "main")
+        self.assertTrue(
+            any("authoritative upstream main ref is unavailable" in item for item in self._findings())
+        )
 
 
 if __name__ == "__main__":

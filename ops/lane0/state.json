@@ -156,6 +156,11 @@
       "title": "A prose-only reconciliation could hide a stale phase pointer or promote an unevidenced launch claim.",
       "severity": "medium",
       "note": "from idea.lock (confidence 8/10)"
+    },
+    {
+      "title": "U-19 ancestry-based review markers are unsatisfiable after squash merge — RESOLVED",
+      "severity": "low",
+      "note": "Review provenance is now split honestly: independent review ended at reviewed_head, while the final landed content is proven by exact reviewed_tree equality at a merged_commit on upstream main's first-parent history."
     }
   ],
   "prLog": [],
@@ -171,12 +176,33 @@
     "conventions": [
       "One task = one branch = one PR",
       "Update state.json + render + commit after every merge",
-      "Gate commands are shell-agnostic (no &&)"
+      "Gate commands are shell-agnostic (no &&)",
+      "Review markers must survive squash merge by binding reviewed_head provenance separately from reviewed_tree plus merged_commit content proof; ancestry from a pre-squash head to main is never required"
     ]
   },
   "closeout": {
     "audit": "ops/lane0/AUDIT.md",
-    "finalIntegratedReview": "approved",
+    "finalIntegratedReview": {
+      "schema": "garnet.squash_durable_review_marker/v1",
+      "verdict": "approved",
+      "reviewed_head": "3124ba5ecfa88aa6f2c2c289313860670673cdec",
+      "reviewed_head_tree": "d2d3c735cf25b84ef69e0e385c8cfeb35e1af673",
+      "reviewed_tree": "98141597d17e13b02cfa228c03cdf0dc2119ad9f",
+      "merged_commit": "aa681bacd2e437bfde3cea0ffc1ca75bdb134aac",
+      "review_scope": "Independent review ended at reviewed_head. reviewed_tree binds the final squash content and does not extend or backdate independent review coverage.",
+      "post_review_commits": [
+        {
+          "commit": "aa14368bde83391506775d835ace8985bb7bc1ed",
+          "reviewed": false,
+          "purpose": "Final Lane 0 evidence recapture and closeout-state sealing after the independent review."
+        },
+        {
+          "commit": "5680fbed4684d57fc3773a1f75f86868c44b7a95",
+          "reviewed": false,
+          "purpose": "Lane 0 trust-kernel review companion added after the independent review."
+        }
+      ]
+    },
     "band": 3,
     "bandMaximum": 5,
     "bandCapReason": "No browser runtime journey caps at 4; the requested but unverified Lane 2C duration claim lowers the audit to 3.",
