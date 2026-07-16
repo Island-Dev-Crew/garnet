@@ -19,7 +19,7 @@
         {
           "kind": "repository",
           "path": "ops/mission/state.json",
-          "anchor": "phases[P7].tasks[P7-T1]"
+          "anchor": "P7-T1"
         },
         {
           "kind": "repository",
@@ -108,7 +108,7 @@
         {
           "kind": "repository",
           "path": "ops/mission/state.json",
-          "anchor": "phases[P7].tasks[P7-T2]"
+          "anchor": "P7-T2"
         }
       ],
       "acceptanceCommand": "node scripts/smoke_garnet_playground_browser.mjs --gate",
@@ -184,7 +184,7 @@
         {
           "kind": "repository",
           "path": "ops/mission/state.json",
-          "anchor": "phases[P7].tasks[P7-T3]"
+          "anchor": "P7-T3"
         }
       ],
       "acceptanceCommand": "python scripts/smoke_garnet_minimum_shelf.py --gate",
@@ -291,6 +291,7 @@
         {
           "id": "stress-fixtures",
           "claim": "Six ignored stress fixtures exist across memory and actor runtime.",
+          "mainSha": "6a92b35625a5363f12cfff1a815139cd95c88a4f",
           "codePaths": [
             "garnet-memory-v0.3/tests/stress.rs",
             "garnet-actor-runtime/tests/stress.rs"
@@ -331,7 +332,7 @@
         {
           "kind": "repository",
           "path": "F_Project_Management/LAUNCH/WV6_WV7_ACCEPTANCE_CONTRACTS.json",
-          "anchor": "contracts[WV-6]"
+          "anchor": "\"id\": \"WV-6\""
         }
       ],
       "acceptanceCommand": "python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6 --gate",
@@ -368,7 +369,7 @@
         {
           "kind": "repository",
           "path": "F_Project_Management/LAUNCH/WV6_WV7_ACCEPTANCE_CONTRACTS.json",
-          "anchor": "contracts[WV-7]"
+          "anchor": "\"id\": \"WV-7\""
         }
       ],
       "acceptanceCommand": "python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-7 --gate",
@@ -438,12 +439,12 @@
         {
           "kind": "repository",
           "path": "research/QUARTERLY_COMPETITIVE_WATCH.md",
-          "anchor": "standing cadence contract"
+          "anchor": "Cadence: quarterly"
         },
         {
           "kind": "repository",
           "path": "F_Project_Management/GARNET_S129_S200_ECC_DOGFOOD_COMMAND_CENTER.md",
-          "anchor": "Standing Slices"
+          "anchor": "Quarterly competitive watch"
         }
       ],
       "acceptanceCommand": "python3 -I scripts/garnet_quarterly_competitive_watch_status.py --gate",

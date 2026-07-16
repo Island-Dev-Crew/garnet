@@ -10,7 +10,7 @@
 Only `implemented`, `partial`, `planned`, and `research` are valid claim states.
 Future evidence destinations are contracts, not evidence.
 
-| Item | Frozen state | Implemented at the base | Still open |
+| Item | Frozen state | Current freeze context | Still open |
 |---|---|---|---|
 | Lane 1 item 1 / GOV-009 | **partial (3/7)** | Authenticated transport #500 (`52971a5`); strict pagination #502 (`8c07fec`); complete bounded collection #506 (`1fe7489`). | Fresh cohort; exact reviewed head; verified outcomes; live admin-authoritative settings/no-bypass readback. U-17 blocks the last until Jon provisions a dedicated token. |
 | Lane 2A / W-PLAY | **partial** | Wasm check/diff adapters #498 (`a021005`); hermetic no-publish package probe #505 (`65da989`). | Package materialization; live adapter/page; Playwright traps; reporter promotion; fail-closed denial proof. |

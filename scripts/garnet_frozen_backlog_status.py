@@ -26,6 +26,9 @@ EXPECTED_IDS = {
     "QWATCH",
 }
 ID_RE = re.compile(r"^[A-Z0-9]+(?:-[A-Z0-9]+)*$")
+CLAUSE_ID_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+GIT_AUTHORITY_RE = re.compile(r"^git:([0-9a-f]{40}):(.+)$")
 MAX_BYTES = 256 * 1024
 
 
@@ -79,15 +82,20 @@ def _relative_path(value: object, *, allow_trailing_slash: bool = False) -> str:
     return raw
 
 
-def _tracked(root: Path, relative: str) -> bool:
+def _git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", "-C", str(root), *args],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+
+def _tracked_regular_file(root: Path, relative: str) -> bool:
     path = root / relative
-    if path.is_file():
-        args = ["git", "-C", str(root), "ls-files", "--error-unmatch", "--", relative]
-    elif path.is_dir():
-        args = ["git", "-C", str(root), "ls-files", "--", f"{relative}/"]
-    else:
+    if path.is_symlink() or not path.is_file():
         return False
-    proc = subprocess.run(args, text=True, capture_output=True, check=False)
+    proc = _git(root, "ls-files", "--error-unmatch", "--", relative)
     return proc.returncode == 0 and bool(proc.stdout.strip())
 
 
@@ -98,16 +106,117 @@ def _check_existing_path(
     label: str,
     findings: list[str],
     verify_git: bool,
-) -> None:
+) -> str | None:
     try:
         relative = _relative_path(value)
     except ValueError as exc:
         findings.append(f"{label}: {exc}")
+        return None
+    path = root / relative
+    if path.is_symlink() or not path.is_file():
+        if path.exists() or path.is_symlink():
+            findings.append(f"{label}: {relative} is not a regular file")
+        else:
+            findings.append(f"{label}: {relative} does not exist")
+        return None
+    if verify_git and not _tracked_regular_file(root, relative):
+        findings.append(f"{label}: {relative} is not a tracked regular file")
+        return None
+    return relative
+
+
+def _git_regular_blob(root: Path, sha: str, relative: str) -> bool:
+    proc = _git(root, "ls-tree", sha, "--", relative)
+    if proc.returncode != 0 or not proc.stdout.strip():
+        return False
+    first = proc.stdout.splitlines()[0]
+    metadata, separator, observed = first.partition("\t")
+    fields = metadata.split()
+    return (
+        separator == "\t"
+        and observed == relative
+        and len(fields) == 3
+        and fields[0] in {"100644", "100755"}
+        and fields[1] == "blob"
+    )
+
+
+def _git_text(root: Path, sha: str, relative: str) -> str | None:
+    if not _git_regular_blob(root, sha, relative):
+        return None
+    proc = _git(root, "show", f"{sha}:{relative}")
+    if proc.returncode != 0:
+        return None
+    try:
+        proc.stdout.encode("utf-8").decode("utf-8")
+    except UnicodeError:
+        return None
+    return proc.stdout
+
+
+def _validate_authority(
+    authority: dict[str, object],
+    *,
+    root: Path,
+    label: str,
+    findings: list[str],
+    verify_git: bool,
+) -> None:
+    raw_path = authority.get("path")
+    anchor = authority.get("anchor")
+    if not isinstance(anchor, str) or not anchor.strip() or "\n" in anchor:
+        findings.append(f"{label}: anchor must be a non-empty single-line string")
         return
-    if not (root / relative).exists():
-        findings.append(f"{label}: {relative} does not exist")
-    elif verify_git and not _tracked(root, relative):
-        findings.append(f"{label}: {relative} is not tracked in Git")
+    text: str | None = None
+    if isinstance(raw_path, str) and raw_path.startswith("git:"):
+        match = GIT_AUTHORITY_RE.fullmatch(raw_path)
+        if match is None:
+            findings.append(f"{label}: git authority path is not canonical")
+            return
+        sha, raw_relative = match.groups()
+        try:
+            relative = _relative_path(raw_relative)
+        except ValueError as exc:
+            findings.append(f"{label}: {exc}")
+            return
+        if verify_git:
+            if _git(root, "cat-file", "-e", f"{sha}^{{commit}}").returncode != 0:
+                findings.append(f"{label}: authority commit is not a local commit")
+                return
+            if (
+                _git(root, "merge-base", "--is-ancestor", sha, EXPECTED_BASE_SHA).returncode
+                != 0
+            ):
+                findings.append(f"{label}: authority commit is not an ancestor of exact base")
+                return
+        text = _git_text(root, sha, relative)
+        if text is None:
+            findings.append(f"{label}: authority path is not a regular Git blob")
+            return
+    else:
+        relative = _check_existing_path(
+            raw_path,
+            root=root,
+            label=label,
+            findings=findings,
+            verify_git=verify_git,
+        )
+        if relative is None:
+            return
+        try:
+            text = (root / relative).read_text(encoding="utf-8")
+        except (OSError, UnicodeError) as exc:
+            findings.append(f"{label}: authority file is not readable UTF-8: {exc}")
+            return
+    if anchor not in text:
+        findings.append(f"{label}: anchor does not occur in the authority file")
+
+
+def _paths_overlap(first: str, second: str) -> bool:
+    a = PurePosixPath(first).parts
+    b = PurePosixPath(second).parts
+    shorter = min(len(a), len(b))
+    return a[:shorter] == b[:shorter]
 
 
 def _string_list(value: object, label: str, findings: list[str]) -> list[str]:
@@ -178,8 +287,8 @@ def validate_document(
                     continue
                 kind = authority.get("kind")
                 if kind == "repository":
-                    _check_existing_path(
-                        authority.get("path"),
+                    _validate_authority(
+                        authority,
                         root=root,
                         label=authority_label,
                         findings=findings,
@@ -192,18 +301,21 @@ def validate_document(
                 else:
                     findings.append(f"{authority_label} has unsupported kind {kind!r}")
 
+        current_evidence_paths: set[str] = set()
         evidence_files = entry.get("evidenceFiles")
         if not isinstance(evidence_files, list) or not evidence_files:
             findings.append(f"{identifier}: evidenceFiles must be non-empty")
         else:
             for evidence_index, evidence in enumerate(evidence_files):
-                _check_existing_path(
+                relative = _check_existing_path(
                     evidence,
                     root=root,
                     label=f"{identifier}.evidenceFiles[{evidence_index}]",
                     findings=findings,
                     verify_git=verify_git,
                 )
+                if relative is not None:
+                    current_evidence_paths.add(relative)
 
         implemented = entry.get("implementedClauses")
         opened = entry.get("openClauses")
@@ -222,46 +334,117 @@ def validate_document(
             findings.append(
                 f"{identifier}: {state} entries cannot carry implementedClauses"
             )
+        if state in {"planned", "research"} and not opened:
+            findings.append(f"{identifier}: {state} entries require openClauses")
 
-        clause_ids: set[str] = set()
+        implemented_ids: set[str] = set()
         for clause_index, clause in enumerate(implemented):
             clause_label = f"{identifier}.implementedClauses[{clause_index}]"
             if not isinstance(clause, dict):
                 findings.append(f"{clause_label} must be an object")
                 continue
             clause_id = clause.get("id")
-            if not isinstance(clause_id, str) or not clause_id:
-                findings.append(f"{clause_label}.id must be non-empty")
-            elif clause_id in clause_ids:
-                findings.append(f"{identifier}: duplicate clause id {clause_id}")
+            if (
+                not isinstance(clause_id, str)
+                or CLAUSE_ID_RE.fullmatch(clause_id) is None
+            ):
+                findings.append(f"{clause_label}.id is not canonical")
+            elif clause_id in implemented_ids:
+                findings.append(
+                    f"{identifier}: duplicate implemented clause id {clause_id}"
+                )
             else:
-                clause_ids.add(clause_id)
+                implemented_ids.add(clause_id)
             if not isinstance(clause.get("claim"), str) or not clause["claim"].strip():
                 findings.append(f"{clause_label}.claim must be non-empty")
+            main_sha = clause.get("mainSha")
+            main_sha_valid = (
+                isinstance(main_sha, str) and SHA_RE.fullmatch(main_sha) is not None
+            )
+            if not main_sha_valid:
+                findings.append(
+                    f"{clause_label}.mainSha must be one full lowercase 40-hex SHA"
+                )
+            elif verify_git:
+                if (
+                    _git(root, "cat-file", "-e", f"{main_sha}^{{commit}}").returncode
+                    != 0
+                ):
+                    findings.append(f"{clause_label}.mainSha is not a local commit")
+                    main_sha_valid = False
+                elif (
+                    _git(
+                        root,
+                        "merge-base",
+                        "--is-ancestor",
+                        main_sha,
+                        EXPECTED_BASE_SHA,
+                    ).returncode
+                    != 0
+                ):
+                    findings.append(
+                        f"{clause_label}.mainSha is not an ancestor of exact base"
+                    )
+                    main_sha_valid = False
+            clause_paths: dict[str, list[str]] = {"codePaths": [], "evidencePaths": []}
             for key in ("codePaths", "evidencePaths"):
                 values = clause.get(key)
                 if not isinstance(values, list) or not values:
                     findings.append(f"{clause_label}.{key} must be non-empty")
                     continue
                 for path_index, value in enumerate(values):
-                    _check_existing_path(
+                    relative = _check_existing_path(
                         value,
                         root=root,
                         label=f"{clause_label}.{key}[{path_index}]",
                         findings=findings,
                         verify_git=verify_git,
                     )
+                    if relative is not None:
+                        clause_paths[key].append(relative)
+                        if key == "evidencePaths":
+                            current_evidence_paths.add(relative)
+            if verify_git:
+                for relative in clause_paths["codePaths"] + clause_paths["evidencePaths"]:
+                    if not _git_regular_blob(root, EXPECTED_BASE_SHA, relative):
+                        findings.append(
+                            f"{clause_label}: {relative} does not exist as a regular "
+                            "file at exact base"
+                        )
+                if main_sha_valid and isinstance(main_sha, str):
+                    for relative in clause_paths["codePaths"]:
+                        if not _git_regular_blob(root, main_sha, relative):
+                            findings.append(
+                                f"{clause_label}: {relative} does not exist at mainSha"
+                            )
+        open_ids: set[str] = set()
         for clause_index, clause in enumerate(opened):
             clause_label = f"{identifier}.openClauses[{clause_index}]"
             if (
                 not isinstance(clause, dict)
-                or not isinstance(clause.get("id"), str)
-                or not isinstance(clause.get("claim"), str)
-                or not clause["claim"].strip()
             ):
-                findings.append(f"{clause_label} must name an id and claim")
+                findings.append(f"{clause_label} must be an object")
+                continue
+            clause_id = clause.get("id")
+            if (
+                not isinstance(clause_id, str)
+                or CLAUSE_ID_RE.fullmatch(clause_id) is None
+            ):
+                findings.append(f"{clause_label}.id is not canonical")
+            elif clause_id in open_ids:
+                findings.append(f"{identifier}: duplicate open clause id {clause_id}")
+            else:
+                open_ids.add(clause_id)
+                if clause_id in implemented_ids:
+                    findings.append(
+                        f"{identifier}: clause id {clause_id} is used by implemented "
+                        "and open clauses"
+                    )
+            if not isinstance(clause.get("claim"), str) or not clause["claim"].strip():
+                findings.append(f"{clause_label}.claim must be non-empty")
 
         future = entry.get("futureEvidence")
+        future_paths: set[str] = set()
         if not isinstance(future, list) or not future:
             findings.append(f"{identifier}: futureEvidence must be non-empty")
         else:
@@ -275,17 +458,30 @@ def validate_document(
                         f"{destination_label}.status must be future-not-evidence"
                     )
                 try:
-                    _relative_path(
+                    relative = _relative_path(
                         destination.get("path"),
                         allow_trailing_slash=True,
                     )
                 except ValueError as exc:
                     findings.append(f"{destination_label}: {exc}")
+                else:
+                    if relative in future_paths:
+                        findings.append(
+                            f"{identifier}: duplicate future evidence path {relative}"
+                        )
+                    future_paths.add(relative)
                 if (
                     not isinstance(destination.get("purpose"), str)
                     or not destination["purpose"].strip()
                 ):
                     findings.append(f"{destination_label}.purpose must be non-empty")
+        for current_path in sorted(current_evidence_paths):
+            for future_path in sorted(future_paths):
+                if _paths_overlap(current_path, future_path):
+                    findings.append(
+                        f"{identifier}: future evidence {future_path} overlaps current "
+                        f"evidence {current_path}"
+                    )
 
     if seen != EXPECTED_IDS:
         findings.append(

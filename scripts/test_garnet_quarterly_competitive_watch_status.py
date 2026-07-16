@@ -103,6 +103,9 @@ class GarnetQuarterlyCompetitiveWatchStatusTests(unittest.TestCase):
         self.assertEqual([int(number) for number, _state in rows], list(range(1, 17)))
         self.assertIn("Master Plan v3.2 chapter 5", directives)
         self.assertIn("absent", directives.lower())
+        self.assertIn("012021a", directives)
+        self.assertIn("garnet-vm/src/caps_recheck.rs", directives)
+        self.assertIn("seal-predicate integration remain open", directives)
         compatibility = (
             ROOT
             / "F_Project_Management"
