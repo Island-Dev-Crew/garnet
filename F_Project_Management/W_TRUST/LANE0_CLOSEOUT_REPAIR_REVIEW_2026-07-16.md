@@ -92,15 +92,43 @@ Observed after the post-squash markers and SOTU render: exit `0`, `ok: true`,
 
 ## Fresh cross-OS evidence
 
-Fresh repair-head evidence is intentionally **pending** until this branch is
-pushed and the successor PR's Linux, macOS, and Windows jobs finish. Do not
-substitute PR #507's earlier jobs or durable historical bundles for proof of
-this changed verifier.
+PR #508's first remote attempt ran against companion head
+`a04ed934f21b2dbe79199034b8a6d275908d661c`. The two trust-kernel files are
+byte-identical to the independently reviewed head `2870ea9`; the intervening
+commit only completed this companion.
 
-The reviewer must replace this section with exact successful job URLs and
-artifact filenames for the repair head, or record the missing platform as a
-blocking finding. Until then, this companion does not claim cross-OS
-clearance.
+Fresh successful jobs:
+
+- [Ubuntu cargo test](https://github.com/Island-Dev-Crew/garnet/actions/runs/29531484386/job/87732855667)
+- [macOS cargo test](https://github.com/Island-Dev-Crew/garnet/actions/runs/29531484386/job/87732855695)
+- [Windows cargo test](https://github.com/Island-Dev-Crew/garnet/actions/runs/29531484386/job/87732855651)
+- [Ubuntu agent documentation contracts and rolling trust gate](https://github.com/Island-Dev-Crew/garnet/actions/runs/29531484386/job/87732574264)
+- [Windows Studio build + test](https://github.com/Island-Dev-Crew/garnet/actions/runs/29531484580/job/87732574776)
+- [Ubuntu deterministic build](https://github.com/Island-Dev-Crew/garnet/actions/runs/29531484146/job/87733094446)
+- [macOS deterministic build](https://github.com/Island-Dev-Crew/garnet/actions/runs/29531484146/job/87733094426)
+- [Cross-OS determinism comparison](https://github.com/Island-Dev-Crew/garnet/actions/runs/29531484146/job/87733738626)
+- [Agentic dogfood matrix](https://github.com/Island-Dev-Crew/garnet/actions/runs/29531483803/job/87732572306)
+
+The determinism run produced these fresh evidence files:
+
+- artifact `determinism-hash-ubuntu-latest`,
+  `manifest-hash-ubuntu-latest.txt`;
+- artifact `determinism-hash-macos-latest`,
+  `manifest-hash-macos-latest.txt`.
+
+Both files have SHA-256
+`677446c3a3977330e71288645de5b9aa54abb8d685dfd371f433698c171b6752`
+and both contain the same manifest line:
+`a0044da67a230d8a05d790ee94b2c9f509740a89da4a4a2667d16345de009b03  examples/det_fixture_01.garnet.manifest.json`.
+
+The first [macOS Studio attempt](https://github.com/Island-Dev-Crew/garnet/actions/runs/29531484580/job/87732574797)
+was RED because the hosted `macos-26-arm64` runner returned filesystem
+`NSPOSIXErrorDomain Code=5` / `EIO` while tests wrote temporary files. The
+exact command passed locally on this Mac with 101/101 tests. No Studio file is
+changed in this PR. The active fork credential cannot rerun an upstream job
+and no admin credential was inherited or used; this companion-only update
+therefore retriggers the normal PR checks. PR-level cross-OS clearance remains
+pending until that fresh run completes without the infrastructure failure.
 
 ## Independent review verdict
 
