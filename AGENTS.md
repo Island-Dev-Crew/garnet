@@ -49,7 +49,22 @@ change.
 
 Run `python3 -I scripts/test_garnet_msrv_status.py` and
 `python3 -I scripts/garnet_msrv_status.py --gate` after changing a Rust
-manifest, current MSRV wording, or the exact-floor workflow wiring.
+manifest, current MSRV wording, or the exact-floor workflow wiring. The gate
+uses the pinned typed workflow-YAML boundary from
+`scripts/garnet_workflow_yaml_requirements.txt`; comments, disabled steps, or
+commands in another job do not satisfy it.
+
+## WV-6 / WV-7 Acceptance Gates
+
+`F_Project_Management/LAUNCH/WV6_WV7_ACCEPTANCE_CONTRACTS.json` preserves the
+established meanings: WV-6 is the native-Windows Core Ring Tier 1 + Minimum
+Shelf/MCP proof, and WV-7 is the winget/Scoop dry-run + devcontainer/Docker +
+installer happy-path distribution proof. Run
+`python3 -I scripts/test_garnet_wv_acceptance_status.py` after changing either
+contract or reporter. The two `--gate` commands are expected to exit nonzero
+with `state=pending` until their exact-candidate, hash-verified Windows evidence
+manifests exist; never turn absence into acceptance or perform a Jon-only
+action from the reporter.
 
 ## Required Contract Index
 

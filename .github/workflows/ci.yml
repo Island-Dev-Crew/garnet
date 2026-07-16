@@ -40,6 +40,7 @@ jobs:
       - run: python3 scripts/test_check_agent_contracts.py
       - run: python3 -I scripts/test_garnet_msrv_status.py
       - run: python3 -I scripts/garnet_msrv_status.py --gate
+      - run: python3 -I scripts/test_garnet_wv_acceptance_status.py
       # S114 acceptance (P2/P4): capability-claim scope fixture + rolling
       # trust-kernel review gate.
       - run: python3 scripts/test_garnet_capability_scope_status.py

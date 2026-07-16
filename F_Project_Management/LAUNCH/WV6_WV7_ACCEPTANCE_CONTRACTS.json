@@ -1,97 +1,128 @@
 {
-  "schema": "garnet.wv_acceptance_contracts/v1",
+  "schema": "garnet.wv_acceptance_contracts/v2",
+  "artifactRevision": 2,
   "claimState": "planned",
   "frozenAtBaseMainSha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
-  "scope": "Acceptance definitions only. This artifact records no WV-6 or WV-7 runtime, cross-OS, launch, or release proof.",
+  "supersession": {
+    "supersedesRevision": 1,
+    "reason": "Revision 1 incorrectly reused WV-6 for Mac Air language-depth reconciliation and WV-7 for frozen-candidate release review. The tracked authority at cad91aa:ops/mission/state.json#resume.nextActions[1] retains WV-6 for the post-Core-Ring/MCP Windows proof and WV-7 for distribution proof."
+  },
+  "scope": "Acceptance definitions only. Until the fail-closed reporter verifies one exact-candidate Windows evidence manifest, WV-6 and WV-7 remain pending and make no launch, distribution, signing, publication, or production claim.",
   "contracts": [
     {
       "id": "WV-6",
-      "title": "Mac Air language-depth reconciliation",
+      "title": "Core Ring Tier 1 + Minimum Shelf/MCP Windows proof",
       "claimState": "planned",
       "authoritySources": [
         {
-          "path": "ops/mission/state.json",
-          "anchor": "phases[P7].tasks[P7-T4]",
-          "authority": "WV-6 follows product convergence and belongs to the final reconciliation task."
+          "path": "git:cad91aa499e8166a75f3d32e09762aaf5ea8d5c0:ops/mission/state.json",
+          "anchor": "resume.nextActions[1]",
+          "authority": "WV-6 begins after Core Ring Tier 1 and the MCP library ship."
         },
         {
-          "path": "F_Project_Management/VALIDATION_REPORTS/Garnet-Launch-Preparation-State-of-the-Union-v1-2026-07-15.html",
-          "anchor": "Language depth and the missing Mac Air reconciliation",
-          "authority": "Differences must be classified as contradiction, additional evidence, stale snapshot, or different scope; percentages must not be averaged."
+          "path": "ops/mission/state.json",
+          "anchor": "phases[P7].tasks[P7-T3]",
+          "authority": "The current Minimum Shelf lane owns the bounded in-process tool, raw-byte stdio, sealed baseline, reject-without-seal proof, and deterministic reporter."
         }
       ],
       "exactBaseMainSha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
       "entryConditions": [
-        "P7-T1, P7-T2, and P7-T3 have converged on evidence-backed boundaries.",
-        "The source Mac Air language-depth report is present as a reviewable artifact.",
-        "Every proposed launch-scope change is tied to current code and reproducible current-tree evidence."
+        "Core Ring Tier 1 is frozen without widening into hosted registry infrastructure.",
+        "One bounded in-process Garnet MCP tool and raw-byte stdio lifecycle exist.",
+        "One sealed baseline and reject-without-seal trap exist before Windows recording."
       ],
-      "acceptanceCommand": "python3 -I scripts/garnet_wv6_language_depth_status.py --gate",
-      "acceptanceCommandState": "planned_not_implemented",
-      "evidenceDestinations": [
-        "F_Project_Management/VALIDATION_REPORTS/WV6_LANGUAGE_DEPTH_RECONCILIATION.json",
-        "proofs/cross-os/launch-verification/wv6-language-depth/"
-      ],
-      "acceptanceCriteria": [
-        "Every Air-report delta is classified as contradiction, additional evidence, stale snapshot, or different scope.",
-        "Any claim without current code plus reproducible evidence remains partial, planned, or research.",
-        "No Air percentage is averaged with the truth-pulse or launch denominators.",
-        "The accepted scope and every deferral are recorded on the exact reviewed candidate."
+      "acceptanceCommand": "python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6 --gate",
+      "evidenceDestination": "proofs/windows/launch-verification/wv6-minimum-shelf/",
+      "evidenceManifest": "WV_ACCEPTANCE.json",
+      "requiredChecks": [
+        {
+          "id": "core-ring-tier1",
+          "criterion": "The Windows evidence identifies the frozen Core Ring Tier 1 surface and proves no hosted-registry or arbitrary external-host claim."
+        },
+        {
+          "id": "mcp-raw-byte-stdio",
+          "criterion": "The Windows evidence records bounded raw-byte stdio initialize/list/call/error behavior for one in-process Garnet tool."
+        },
+        {
+          "id": "sealed-baseline",
+          "criterion": "The exact candidate accepts the named sealed baseline and records its deterministic identity."
+        },
+        {
+          "id": "reject-without-seal",
+          "criterion": "The same exact candidate rejects the unsealed or mismatched path fail-closed with a nonzero outcome."
+        },
+        {
+          "id": "deterministic-shelf-reporter",
+          "criterion": "A deterministic reporter binds all WV-6 outcomes and artifacts to one full candidate SHA."
+        }
       ],
       "scopeLimits": [
-        "WV-6 does not prove browser execution, Shelf sealing, governance activation, production readiness, or cross-OS completeness.",
-        "Reference semantics do not become production claims without performance and failure evidence."
+        "WV-6 is native Windows evidence for the bounded Garnet-owned Shelf path, not arbitrary MCP host enforcement.",
+        "WV-6 does not prove hosted registry, browser execution, production readiness, signing, release publication, or FIRE."
       ],
       "jonOnlyActions": [
-        "Approve any language-depth scope expansion that changes the frozen launch candidate.",
-        "Decide whether a disputed Air-report delta enters launch scope or remains research debt.",
-        "Approve the base-merge gate for any resulting candidate change."
+        "Approve any base-merge gate or integrity-policy change required by the Shelf candidate.",
+        "Decide whether WV-6 evidence is sufficient for launch-scope claim promotion.",
+        "Decide FIRE versus HOLD and perform any tag, release publication, or public launch action outside this acceptance gate."
       ]
     },
     {
       "id": "WV-7",
-      "title": "Frozen-candidate cross-OS and release handoff",
+      "title": "winget/scoop dry-run + devcontainer/Docker + installer happy-path distribution proof",
       "claimState": "planned",
       "authoritySources": [
         {
-          "path": "ops/mission/state.json",
-          "anchor": "phases[P7].tasks[P7-T4]",
-          "authority": "WV-7 and external launch messaging begin only after the live playground and Shelf are excellent and one candidate is frozen."
+          "path": "git:cad91aa499e8166a75f3d32e09762aaf5ea8d5c0:ops/mission/state.json",
+          "anchor": "resume.nextActions[1]",
+          "authority": "WV-7 owns winget/scoop dry-run, devcontainer/Docker, and installer happy-path proof."
         },
         {
-          "path": "F_Project_Management/VALIDATION_REPORTS/Garnet-Launch-Preparation-State-of-the-Union-v1-2026-07-15.html",
-          "anchor": "MIT archive and frozen-candidate release review",
-          "authority": "The exact frozen candidate must be remeasured and replayed before Jon's release decision."
+          "path": "F_Project_Management/GARNET_BUILD_PROOF.md",
+          "anchor": "Windows CLI distribution",
+          "authority": "Windows CLI distribution remains deferred until exact package-manager and installer evidence exists."
         }
       ],
       "exactBaseMainSha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
       "entryConditions": [
-        "WV-6 is accepted or explicitly waived-with-reason by Jon.",
-        "The live browser and Minimum Sealed Shelf reporters are evidence-backed and green.",
-        "One exact candidate SHA is frozen without uncommitted changes."
+        "One exact candidate and its Windows release artifacts are frozen.",
+        "Dry-run manifests reference that exact candidate's artifacts and hashes.",
+        "Container and installer exercises use clean, recorded environments."
       ],
-      "acceptanceCommand": "python3 -I scripts/garnet_wv7_frozen_candidate_status.py --gate",
-      "acceptanceCommandState": "planned_not_implemented",
-      "evidenceDestinations": [
-        "F_Project_Management/VALIDATION_REPORTS/WV7_FROZEN_CANDIDATE_REVIEW.json",
-        "proofs/cross-os/launch-verification/wv7-frozen-candidate/"
-      ],
-      "acceptanceCriteria": [
-        "Truth, launch-readiness, integrity, security, browser, Shelf, and platform replay evidence all name the same exact candidate SHA.",
-        "Windows, macOS, and Linux results remain separately labeled; WSL is never substituted for native Linux enforcement.",
-        "All four denominators and HOLD/FIRE posture are regenerated from reporter evidence.",
-        "No tag, publish, announcement, or release claim occurs inside the acceptance command."
+      "acceptanceCommand": "python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-7 --gate",
+      "evidenceDestination": "proofs/windows/launch-verification/wv7-distribution/",
+      "evidenceManifest": "WV_ACCEPTANCE.json",
+      "requiredChecks": [
+        {
+          "id": "winget-dry-run",
+          "criterion": "A local winget manifest validate/install dry-run is recorded against the exact candidate without claiming upstream publication."
+        },
+        {
+          "id": "scoop-dry-run",
+          "criterion": "A local Scoop bucket manifest install/uninstall dry-run is recorded against the exact candidate without claiming public bucket publication."
+        },
+        {
+          "id": "devcontainer",
+          "criterion": "The exact candidate builds and runs through the committed devcontainer happy path."
+        },
+        {
+          "id": "docker",
+          "criterion": "The exact candidate builds and runs through the committed Docker happy path with bounded output."
+        },
+        {
+          "id": "installer-happy-path",
+          "criterion": "A clean Windows install, CLI smoke, and uninstall transcript is recorded for the exact candidate."
+        }
       ],
       "scopeLimits": [
-        "WV-7 is evidence for Jon's decision, not an autonomous FIRE decision.",
-        "A green repository gate cannot substitute for signing, notarization, promo QA, or platform-specific evidence."
+        "Dry-run validation is not winget-pkgs acceptance, public Scoop publication, signed MSI, Authenticode, or SmartScreen reputation.",
+        "Container proof is distribution reproducibility evidence, not native Linux desktop or OS-sandbox enforcement.",
+        "WV-7 does not tag, publish, announce, or declare production readiness."
       ],
       "jonOnlyActions": [
-        "Approve the frozen candidate and base-merge gate.",
-        "Perform or authorize the human 31-to-32 governance activation ceremony.",
-        "Sign off promo QA.",
-        "Decide FIRE versus HOLD.",
-        "Create any tag, publish any release, or make any public launch announcement."
+        "Provision or authorize any signing credential needed beyond the dry-run boundary.",
+        "Submit or publish to upstream winget or public Scoop channels.",
+        "Approve the base-merge gate and promo QA signoff.",
+        "Decide FIRE versus HOLD and perform any tag, release publication, or launch announcement."
       ]
     }
   ]

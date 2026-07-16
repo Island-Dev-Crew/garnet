@@ -10,7 +10,7 @@
     "northStar": "An authenticated, complete, exact-head merge boundary plus a live in-browser Garnet proof and one reproducible sealed local Shelf demo. Claim only what the committed traps prove.",
     "status": "active",
     "started": "2026-07-12",
-    "updated": "2026-07-16T11:35:39Z",
+    "updated": "2026-07-16T11:53:31Z",
     "sessionCount": 4
   },
   "policies": {
@@ -508,7 +508,7 @@
           "status": "pending",
           "dependsOn": ["P7-T1", "P7-T2", "P7-T3"],
           "pr": null,
-          "notes": "WV-6 follows product convergence; WV-7 and external launch messaging begin only after the live playground and Shelf are excellent and one candidate is frozen."
+          "notes": "Established meanings preserved from cad91aa: WV-6 is the native-Windows Core Ring Tier 1 + Minimum Shelf/MCP proof after that product path ships; WV-7 is winget/Scoop dry-run + devcontainer/Docker + installer happy-path distribution proof. Mac Air reconciliation and frozen-candidate release review remain separate P7-T4 work, not WV identifier reassignments."
         }
       ]
     }
@@ -910,9 +910,25 @@
     "rustMsrv": {
       "state": "implemented",
       "value": "1.95",
-      "gate": "python3 -I scripts/garnet_msrv_status.py --gate"
+      "gate": "python3 -I scripts/garnet_msrv_status.py --gate",
+      "activeManifestCount": 18,
+      "workflowProjection": "pinned typed YAML; exact existing jobs and active steps"
     },
-    "wvAcceptanceContracts": "F_Project_Management/LAUNCH/WV6_WV7_ACCEPTANCE_CONTRACTS.json"
+    "wvAcceptanceContracts": "F_Project_Management/LAUNCH/WV6_WV7_ACCEPTANCE_CONTRACTS.json",
+    "wvAcceptanceStatus": {
+      "WV-6": {
+        "meaning": "Core Ring Tier 1 + Minimum Shelf/MCP native-Windows proof",
+        "state": "pending",
+        "gate": "python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6 --gate",
+        "evidenceDestination": "proofs/windows/launch-verification/wv6-minimum-shelf/"
+      },
+      "WV-7": {
+        "meaning": "winget/Scoop dry-run + devcontainer/Docker + installer happy-path distribution proof",
+        "state": "pending",
+        "gate": "python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-7 --gate",
+        "evidenceDestination": "proofs/windows/launch-verification/wv7-distribution/"
+      }
+    }
   },
   "resume": {
     "activePhase": "P7",
@@ -920,11 +936,12 @@
       "P7-T1: build the authenticated repository/open-PR/base/head/tree candidate anchor, then stable workflow/run snapshots, latest-attempt/freshness/outcome, and live ruleset/settings/no-bypass collectors as separate reviewed slices.",
       "P7-T2: continue from the merged check/diff adapter and hermetic package probe into package materialization, live adapter/page integration, Playwright traps, and evidence-backed reporter promotion.",
       "P7-T3: continue from the merged schema/lifecycle/adversarial core into one bounded in-process Garnet tool, raw-byte stdio, sealed baseline, reject-without-seal proof, and a deterministic Shelf reporter.",
-      "P7-T4: after P7-T1 through P7-T3 converge, freeze one candidate, reconcile the Mac Air language-depth report, synchronize Front Door/Studios/CLI/evidence, settle WV-6/WV-7, and prepare the Jon-owned launch decision packet."
+      "P7-T4: after P7-T1 through P7-T3 converge, freeze one candidate, reconcile the Mac Air language-depth report, synchronize Front Door/Studios/CLI/evidence, accept WV-6 as the Windows Minimum Shelf/Core Ring/MCP proof and WV-7 as the bounded distribution proof, and prepare the Jon-owned launch decision packet."
     ],
     "blockers": [
       "Future GOV-009 workflow/gate wiring and the human 31-to-32 activation ceremony are Jon-merge-only integrity changes.",
       "U-17: Jon must provision a dedicated admin-authoritative token before P7-T1 can close the live settings/no-bypass clause; GOV-009 must never inherit, persist, or print the ambient credential.",
+      "WV-6 and WV-7 acceptance reporters are intentionally PENDING until exact-candidate hash-verified Windows manifests exist at their frozen evidence destinations.",
       "Launch remains HOLD: public runs-in-your-browser and Shelf-ready claims stay blocked until their own committed Playwright/seal/reporter evidence exists."
     ],
     "conventions": [

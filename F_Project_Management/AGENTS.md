@@ -21,6 +21,20 @@ reporter-derived inputs and the evidence-base validator; S114 acceptance,
 the not-yet-reported minimum shelf, and launch fire remain external/manual
 gates that no reporter may grade.
 
+## WV Acceptance Contracts
+
+`LAUNCH/WV6_WV7_ACCEPTANCE_CONTRACTS.json` owns the frozen WV-6/WV-7
+acceptance definitions. WV-6 is the Windows proof after Core Ring Tier 1 and
+the Minimum Shelf/MCP path ship. WV-7 is the winget/Scoop dry-run,
+devcontainer/Docker, and installer happy-path distribution proof.
+
+`python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6 --gate` and the
+WV-7 equivalent fail closed until the named evidence destination contains a
+strict, hash-verified `WV_ACCEPTANCE.json` bound to one full candidate SHA.
+Pending is the correct current result. The reporter never performs signing,
+package-manager publication, FIRE, tagging, release publication, promo QA, or
+any other Jon-only action.
+
 ## Update Rules
 
 When a phase completes, record the evidence here, then update the owning semantic/procedural docs if the phase changed stable behavior.
