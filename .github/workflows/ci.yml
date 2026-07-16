@@ -38,6 +38,8 @@ jobs:
       - run: "python3 -I -m pip install --disable-pip-version-check --force-reinstall --no-deps --only-binary=:all: --require-hashes -r scripts/garnet_workflow_yaml_requirements.txt"
       - run: python3 scripts/test_check_dogfood_pr_body.py
       - run: python3 scripts/test_check_agent_contracts.py
+      - run: python3 -I scripts/test_garnet_msrv_status.py
+      - run: python3 -I scripts/garnet_msrv_status.py --gate
       # S114 acceptance (P2/P4): capability-claim scope fixture + rolling
       # trust-kernel review gate.
       - run: python3 scripts/test_garnet_capability_scope_status.py
@@ -269,6 +271,12 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
+      - name: Install exact Rust MSRV
+        if: runner.os == 'Linux'
+        run: rustup toolchain install 1.95.0 --profile minimal
+      - name: Check workspace under exact Rust MSRV
+        if: runner.os == 'Linux'
+        run: cargo +1.95.0 check --workspace --all-targets --all-features --locked
       - uses: actions/cache@v5
         with:
           path: |

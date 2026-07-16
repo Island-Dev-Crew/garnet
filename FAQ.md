@@ -96,7 +96,7 @@ Not on platforms with a matching published release asset. The universal installe
 
 Not after release assets are published. The intended user install is `curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh` (or a native `.deb` / `.rpm` / `.pkg` / `.msi` from [Releases](https://github.com/Island-Dev-Crew/garnet/releases)). Until the first `v0.4.2` GitHub Release is cut, use the source install from the README, which does require Rust.
 
-To **build** Garnet from source you need Rust 1.95+ (managed via `rustup`). On Windows, MSVC toolchain is required (MinGW triggers a known miette ABI issue — see Boot doc Known Issue 1).
+To **build** Garnet from source you need Rust 1.95+ (declared in Cargo metadata and managed via `rustup`); CI also tracks current stable. On Windows, MSVC toolchain is required (MinGW triggers a known miette ABI issue — see Boot doc Known Issue 1).
 
 ## How do I scaffold a new project?
 

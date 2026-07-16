@@ -2,6 +2,7 @@
 name = "garnet-cli"
 version.workspace = true
 edition = "2021"
+rust-version.workspace = true
 description = "Top-level garnet(1) CLI — parse / check / run / test / new / keygen / build --sign / verify / convert + the trust spine (caps / diff-caps / seal / sandbox / caps-log / agent-loop) (v0.8.1)."
 license = "MIT OR Apache-2.0"
 

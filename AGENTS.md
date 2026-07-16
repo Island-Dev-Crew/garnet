@@ -36,6 +36,21 @@ checkpoint, its locked P0 gates, or the mission SOTU renderer. This gate reads
 only the local checkout; it must not read a fork's main branch or ambient
 credentials.
 
+## Rust MSRV Contract
+
+Cargo `rust-version = "1.95"` is the single workspace MSRV. Every active
+workspace member inherits that value; the excluded Studio backend and parser
+fuzz workspace declare it directly. Ordinary CI continues to track moving
+stable, while the existing required CI and Studio contexts also compile under
+exact Rust 1.95.0. Do not add a `rust-toolchain.toml` pin or raise the floor
+without updating every active manifest, current public/contributor surface,
+the existing required workflow checks, and this contract in one Jon-reviewed
+change.
+
+Run `python3 -I scripts/test_garnet_msrv_status.py` and
+`python3 -I scripts/garnet_msrv_status.py --gate` after changing a Rust
+manifest, current MSRV wording, or the exact-floor workflow wiring.
+
 ## Required Contract Index
 
 Every path below is part of the current contract surface and must remain present unless the owning scope is removed or renamed.

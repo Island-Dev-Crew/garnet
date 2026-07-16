@@ -1,0 +1,98 @@
+{
+  "schema": "garnet.wv_acceptance_contracts/v1",
+  "claimState": "planned",
+  "frozenAtBaseMainSha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+  "scope": "Acceptance definitions only. This artifact records no WV-6 or WV-7 runtime, cross-OS, launch, or release proof.",
+  "contracts": [
+    {
+      "id": "WV-6",
+      "title": "Mac Air language-depth reconciliation",
+      "claimState": "planned",
+      "authoritySources": [
+        {
+          "path": "ops/mission/state.json",
+          "anchor": "phases[P7].tasks[P7-T4]",
+          "authority": "WV-6 follows product convergence and belongs to the final reconciliation task."
+        },
+        {
+          "path": "F_Project_Management/VALIDATION_REPORTS/Garnet-Launch-Preparation-State-of-the-Union-v1-2026-07-15.html",
+          "anchor": "Language depth and the missing Mac Air reconciliation",
+          "authority": "Differences must be classified as contradiction, additional evidence, stale snapshot, or different scope; percentages must not be averaged."
+        }
+      ],
+      "exactBaseMainSha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+      "entryConditions": [
+        "P7-T1, P7-T2, and P7-T3 have converged on evidence-backed boundaries.",
+        "The source Mac Air language-depth report is present as a reviewable artifact.",
+        "Every proposed launch-scope change is tied to current code and reproducible current-tree evidence."
+      ],
+      "acceptanceCommand": "python3 -I scripts/garnet_wv6_language_depth_status.py --gate",
+      "acceptanceCommandState": "planned_not_implemented",
+      "evidenceDestinations": [
+        "F_Project_Management/VALIDATION_REPORTS/WV6_LANGUAGE_DEPTH_RECONCILIATION.json",
+        "proofs/cross-os/launch-verification/wv6-language-depth/"
+      ],
+      "acceptanceCriteria": [
+        "Every Air-report delta is classified as contradiction, additional evidence, stale snapshot, or different scope.",
+        "Any claim without current code plus reproducible evidence remains partial, planned, or research.",
+        "No Air percentage is averaged with the truth-pulse or launch denominators.",
+        "The accepted scope and every deferral are recorded on the exact reviewed candidate."
+      ],
+      "scopeLimits": [
+        "WV-6 does not prove browser execution, Shelf sealing, governance activation, production readiness, or cross-OS completeness.",
+        "Reference semantics do not become production claims without performance and failure evidence."
+      ],
+      "jonOnlyActions": [
+        "Approve any language-depth scope expansion that changes the frozen launch candidate.",
+        "Decide whether a disputed Air-report delta enters launch scope or remains research debt.",
+        "Approve the base-merge gate for any resulting candidate change."
+      ]
+    },
+    {
+      "id": "WV-7",
+      "title": "Frozen-candidate cross-OS and release handoff",
+      "claimState": "planned",
+      "authoritySources": [
+        {
+          "path": "ops/mission/state.json",
+          "anchor": "phases[P7].tasks[P7-T4]",
+          "authority": "WV-7 and external launch messaging begin only after the live playground and Shelf are excellent and one candidate is frozen."
+        },
+        {
+          "path": "F_Project_Management/VALIDATION_REPORTS/Garnet-Launch-Preparation-State-of-the-Union-v1-2026-07-15.html",
+          "anchor": "MIT archive and frozen-candidate release review",
+          "authority": "The exact frozen candidate must be remeasured and replayed before Jon's release decision."
+        }
+      ],
+      "exactBaseMainSha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+      "entryConditions": [
+        "WV-6 is accepted or explicitly waived-with-reason by Jon.",
+        "The live browser and Minimum Sealed Shelf reporters are evidence-backed and green.",
+        "One exact candidate SHA is frozen without uncommitted changes."
+      ],
+      "acceptanceCommand": "python3 -I scripts/garnet_wv7_frozen_candidate_status.py --gate",
+      "acceptanceCommandState": "planned_not_implemented",
+      "evidenceDestinations": [
+        "F_Project_Management/VALIDATION_REPORTS/WV7_FROZEN_CANDIDATE_REVIEW.json",
+        "proofs/cross-os/launch-verification/wv7-frozen-candidate/"
+      ],
+      "acceptanceCriteria": [
+        "Truth, launch-readiness, integrity, security, browser, Shelf, and platform replay evidence all name the same exact candidate SHA.",
+        "Windows, macOS, and Linux results remain separately labeled; WSL is never substituted for native Linux enforcement.",
+        "All four denominators and HOLD/FIRE posture are regenerated from reporter evidence.",
+        "No tag, publish, announcement, or release claim occurs inside the acceptance command."
+      ],
+      "scopeLimits": [
+        "WV-7 is evidence for Jon's decision, not an autonomous FIRE decision.",
+        "A green repository gate cannot substitute for signing, notarization, promo QA, or platform-specific evidence."
+      ],
+      "jonOnlyActions": [
+        "Approve the frozen candidate and base-merge gate.",
+        "Perform or authorize the human 31-to-32 governance activation ceremony.",
+        "Sign off promo QA.",
+        "Decide FIRE versus HOLD.",
+        "Create any tag, publish any release, or make any public launch announcement."
+      ]
+    }
+  ]
+}

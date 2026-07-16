@@ -2,6 +2,7 @@
 name = "garnet-interp"
 version = "0.3.0"
 edition = "2021"
+rust-version.workspace = true
 description = "Managed-mode tree-walk interpreter for Garnet v0.3 (Rung 3)."
 license = "MIT OR Apache-2.0"
 

@@ -10,14 +10,26 @@
     "northStar": "An authenticated, complete, exact-head merge boundary plus a live in-browser Garnet proof and one reproducible sealed local Shelf demo. Claim only what the committed traps prove.",
     "status": "active",
     "started": "2026-07-12",
-    "updated": "2026-07-16T04:56:34Z",
+    "updated": "2026-07-16T11:35:39Z",
     "sessionCount": 4
   },
   "policies": {
     "merge": "auto",
     "branchPrefix": "mission/",
     "maxPrLines": 400,
-    "notes": "auto = squash-merge own PR when full CI green, with the recorded 'Autonomous merge — agent: Claude Code (Fable 5); gates: ...' trailer (CLAUDE.md integrity rule 3), per Jon's 2026-07-12 execute-end-to-end directive and the #466-#471 convention. EXCEPTIONS (Jon-merge-only per CLAUDE.md integrity rule 1): any PR touching .github/workflows/, dogfood-gate scripts, diff-caps thresholds, or the capability-manifest standard — open those, park in resume.blockers. Never push tags. PRs touching F_Project_Management/, C_Language_Specification/, garnet-interp-v0.3/, examples/, Cargo.lock, or CURRENT_STATE.md need the full dogfood PR-body heading set (pre-validate: python scripts/check_dogfood_pr_body.py)."
+    "jonMergeOnlyExceptions": [
+      ".github/workflows/**",
+      "dogfood-gate scripts",
+      "diff-caps thresholds",
+      "capability-manifest standard",
+      "scripts/garnet_github_*"
+    ],
+    "governanceFreeze": {
+      "status": "not_armed",
+      "armsAt": "Lane 1 terminus",
+      "note": "GOV-009 merges #500, #502, and #506 did not arm the freeze."
+    },
+    "notes": "auto = squash-merge own PR when full CI green, with the recorded 'Autonomous merge — agent: Claude Code (Fable 5); gates: ...' trailer (CLAUDE.md integrity rule 3), per Jon's 2026-07-12 execute-end-to-end directive and the #466-#471 convention. EXCEPTIONS (Jon-merge-only per CLAUDE.md integrity rule 1): any PR touching .github/workflows/, dogfood-gate scripts, diff-caps thresholds, the capability-manifest standard, or scripts/garnet_github_* — open those, park in resume.blockers. U-16 decision: extend the exception list to scripts/garnet_github_*; #500, #502, and #506 auto-merged correctly under the prior list, and governance freeze remains unarmed until the Lane 1 terminus. Never push tags. PRs touching F_Project_Management/, C_Language_Specification/, garnet-interp-v0.3/, examples/, Cargo.lock, or CURRENT_STATE.md need the full dogfood PR-body heading set (pre-validate: python scripts/check_dogfood_pr_body.py)."
   },
   "phases": [
     {
@@ -435,7 +447,7 @@
           "status": "pending",
           "evidence": null,
           "lastRun": null,
-          "notes": "Context 32 activation, workflow wiring, action pins, and old-base execution remain separate human-reviewed steps."
+          "notes": "Context 32 activation, workflow wiring, action pins, and old-base execution remain separate human-reviewed steps. U-17 blocks live no-bypass closure until Jon provisions a dedicated admin-authoritative token; GOV-009 must never inherit, persist, or print an ambient credential."
         },
         {
           "id": "P7-G2",
@@ -472,7 +484,7 @@
           "status": "in_progress",
           "dependsOn": [],
           "pr": null,
-          "notes": "PRs #500 and #502 established authenticated object transport and strict physical Link parsing; #506 merged bounded 32-page/3,200-row collection. Candidate anchoring, run selection, live admin equality, verdict, and activation remain open."
+          "notes": "PRs #500 and #502 established authenticated object transport and strict physical Link parsing; #506 merged bounded 32-page/3,200-row collection. Candidate anchoring, run selection, live admin equality, verdict, and activation remain open. U-17 is Jon-blocking: provision one dedicated admin-authoritative token for the live no-bypass readback; never inherit, persist, or print the active gh credential."
         },
         {
           "id": "P7-T2",
@@ -633,6 +645,11 @@
       "title": "CI-wiring PRs depend on Jon",
       "severity": "low",
       "note": "New gates run locally + are opened as parked PRs; they are not CI-enforced until Jon merges the wiring (integrity rule 1)."
+    },
+    {
+      "title": "U-17 dedicated admin-authoritative credential is not provisioned",
+      "severity": "high",
+      "note": "Lane 1 item 1 cannot close its live settings/no-bypass clause until Jon provisions a dedicated admin-authoritative token. GOV-009 must receive it explicitly and must never inherit, persist, or print an ambient credential."
     },
     {
       "title": "W-PLAY can false-green at the adapter boundary",
@@ -875,6 +892,28 @@
       "mergedAt": "2026-07-15"
     }
   ],
+  "lane0Reconciliation": {
+    "baseMainSha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+    "u16": {
+      "state": "decided",
+      "decision": "extend_jon_merge_only_exception",
+      "pathPattern": "scripts/garnet_github_*",
+      "priorPolicyAssessment": "PRs #500, #502, and #506 auto-merged correctly under the exception list then in force.",
+      "governanceFreeze": "not_armed_until_lane_1_terminus"
+    },
+    "u17": {
+      "state": "jon_blocking",
+      "dependency": "Jon provisions a dedicated admin-authoritative token for the GOV-009 live settings/no-bypass readback.",
+      "ambientCredentialPolicy": "never_inherit_persist_or_print",
+      "blocks": "P7-T1 live-settings/no-bypass clause"
+    },
+    "rustMsrv": {
+      "state": "implemented",
+      "value": "1.95",
+      "gate": "python3 -I scripts/garnet_msrv_status.py --gate"
+    },
+    "wvAcceptanceContracts": "F_Project_Management/LAUNCH/WV6_WV7_ACCEPTANCE_CONTRACTS.json"
+  },
   "resume": {
     "activePhase": "P7",
     "nextActions": [
@@ -885,11 +924,12 @@
     ],
     "blockers": [
       "Future GOV-009 workflow/gate wiring and the human 31-to-32 activation ceremony are Jon-merge-only integrity changes.",
+      "U-17: Jon must provision a dedicated admin-authoritative token before P7-T1 can close the live settings/no-bypass clause; GOV-009 must never inherit, persist, or print the ambient credential.",
       "Launch remains HOLD: public runs-in-your-browser and Shelf-ready claims stay blocked until their own committed Playwright/seal/reporter evidence exists."
     ],
     "conventions": [
       "One task-cluster = one branch (mission/<phaseId>-<slug>) = one PR; preserve a recorded RED before implementation and fresh GREEN evidence before review/merge",
-      "PRs touching workflow files / dogfood gate / diff-caps / capability-manifest standard: open and park for Jon, never self-merge",
+      "PRs touching workflow files / dogfood gate / diff-caps / capability-manifest standard / scripts/garnet_github_*: open and park for Jon, never self-merge",
       "Never hand-edit F_Project_Management/LAUNCH/LAUNCH_READINESS.md (reporter-rendered, byte-pinned); never touch sealed proof bundles; never push tags",
       "Truth-Lock language: never 'enforced/independent/signed/sandboxed/production' beyond the tested boundary; /why keeps exactly the two bounded enforced claims",
       "On this Windows machine use python for local scripts; pin C:\\Program Files\\Git\\usr\\bin\\bash.exe where a harness needs Git Bash; do not infer Linux or macOS runtime proof from Windows portability",

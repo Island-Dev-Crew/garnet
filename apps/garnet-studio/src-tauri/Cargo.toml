@@ -8,6 +8,7 @@ version = "0.8.1"
 description = "Garnet Studio cross-platform thin desktop shell for the Garnet CLI and advisory pipeline."
 authors = ["Island Development Crew"]
 edition = "2021"
+rust-version = "1.95"
 license = "MIT OR Apache-2.0"
 
 [lib]

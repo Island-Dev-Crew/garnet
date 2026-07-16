@@ -90,7 +90,7 @@ The foundational research lives in `research/`:
 
 ### Prerequisites
 
-- **Rust** 1.75+ (stable) — install via `rustup`
+- **Rust** 1.95+ (stable) — install via `rustup`; CI also tracks current stable
 - **Python 3.10+** for test fixtures and converter tests (optional)
 - **SQLite3** CLI for inspecting `.garnet-cache/` databases (optional)
 
