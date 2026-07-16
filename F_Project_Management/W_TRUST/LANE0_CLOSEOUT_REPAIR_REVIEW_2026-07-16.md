@@ -30,8 +30,8 @@ The local rolling gate reports exactly two trust-kernel paths in this repair:
 
 | Path | What changed | Why |
 |---|---|---|
-| `scripts/garnet_lane0_closeout_status.py` | Replaced the impossible reviewed-head-to-main ancestry test with a structured, squash-durable marker. The gate now requires a full lowercase `merged_commit`, requires that commit on authoritative upstream main's exact first-parent history, resolves its tree, and requires exact equality with `reviewed_tree`. The evidence `reviewed_head` remains independently checked but is not required to exist locally or be an ancestor after squash. | U-19 showed that the previous proof could never pass after this repository's documented squash merge. The replacement preserves fail-closed review proof rather than deleting or weakening it. |
-| `scripts/test_garnet_lane0_closeout_status.py` | Added structured-marker fixtures and real temporary-Git regressions for missing/nonexistent merged commits, commits absent from upstream-main first-parent, tree mismatch, missing authoritative main, divergent state markers, and evidence-head mismatch. It also proves a valid content marker does not require the pre-squash reviewed-head object. | Pin every required RED and prevent a future lineage-based regression or warn-then-green fallback. |
+| `scripts/garnet_lane0_closeout_status.py` | Replaced the impossible reviewed-head-to-main ancestry test with a structured, squash-durable marker. The gate now requires a full lowercase `merged_commit`, requires that commit on authoritative upstream main's exact first-parent history, resolves its tree, and requires exact equality with `reviewed_tree`. Every content-proof Git command ignores replacement refs. The reusable verifier accepts an exact lane boundary; Lane 0 pins its reviewed head/tree, landed commit/tree, review-scope statement, and both post-review disclosures. | U-19 showed that the previous proof could never pass after this repository's documented squash merge. The replacement preserves fail-closed review proof rather than deleting or weakening it, while preventing replacement refs or two jointly edited state files from rebinding the proof. |
+| `scripts/test_garnet_lane0_closeout_status.py` | Added structured-marker fixtures and real temporary-Git regressions for missing/nonexistent merged commits, commits absent from upstream-main first-parent, second-parent-only commits, tree mismatch, missing authoritative main, divergent state markers, evidence-head mismatch, `refs/replace` tree/history attacks, and erasure or rewriting of the exact Lane 0 boundary disclosures. It also proves a valid content marker does not require the pre-squash reviewed-head object. | Pin every required RED and prevent a future lineage-based, replacement-ref, mutable-marker, or warn-then-green regression. |
 
 No workflow, ruleset, Lane 1 artifact, existing sealed Lane 0 evidence file, or
 public claim is changed by this repair.
@@ -49,6 +49,14 @@ structured-marker fixture failed because production still required the string
 `approved`; the direct squash-durable tests errored because the new verifier
 did not exist; and the marker-divergence/evidence-head mutations reached only
 the old generic inconsistency findings.
+
+Independent-review follow-up RED on repair head
+`13c9307046b8e2613a5384f530e642934ac178ea`: the same command exited `1`
+with 31 tests run. Both replacement-ref attacks false-greened before
+hardening; mutations to the exact Lane 0 reviewed-head tree, landed commit,
+landed tree, post-review list, or disclosure purpose were not yet bound to an
+immutable lane boundary. The second-parent-only regression was already RED as
+required.
 
 Rolling trust-kernel companion RED:
 
@@ -68,7 +76,8 @@ Observed before this companion: exit `1`, `ok: false`,
 python3 -I -S scripts/test_garnet_lane0_closeout_status.py -v
 ```
 
-Observed after implementation: exit `0`, 26/26 tests passed.
+Observed after implementation and independent-review hardening: exit `0`,
+31/31 tests passed.
 
 ```text
 python3 -I -S scripts/garnet_lane0_closeout_status.py \

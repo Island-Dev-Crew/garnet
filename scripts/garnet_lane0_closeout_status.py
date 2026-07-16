@@ -96,6 +96,36 @@ EXPECTED_NEXT_ACTIONS = (
     "Lane 2C: rerun and deterministically report three exact-candidate stress cases exceeding four minutes before restoring APPROVED; current state remains partial.",
 )
 
+EXPECTED_LANE0_REVIEW_BOUNDARY = {
+    "reviewed_head": "3124ba5ecfa88aa6f2c2c289313860670673cdec",
+    "reviewed_head_tree": "d2d3c735cf25b84ef69e0e385c8cfeb35e1af673",
+    "reviewed_tree": "98141597d17e13b02cfa228c03cdf0dc2119ad9f",
+    "merged_commit": "aa681bacd2e437bfde3cea0ffc1ca75bdb134aac",
+    "review_scope": (
+        "Independent review ended at reviewed_head. reviewed_tree binds the "
+        "final squash content and does not extend or backdate independent "
+        "review coverage."
+    ),
+    "post_review_commits": [
+        {
+            "commit": "aa14368bde83391506775d835ace8985bb7bc1ed",
+            "reviewed": False,
+            "purpose": (
+                "Final Lane 0 evidence recapture and closeout-state sealing "
+                "after the independent review."
+            ),
+        },
+        {
+            "commit": "5680fbed4684d57fc3773a1f75f86868c44b7a95",
+            "reviewed": False,
+            "purpose": (
+                "Lane 0 trust-kernel review companion added after the "
+                "independent review."
+            ),
+        },
+    ],
+}
+
 EXPECTED_GATE_EVIDENCE = {
     "P0-G1": "20-python-tests.txt",
     "P0-G2": "04-truth-freeze.json",
@@ -1142,6 +1172,8 @@ def _verify_squash_durable_review_marker(
     root: Path,
     *,
     verify_git: bool,
+    expected_boundary: dict[str, object] | None = None,
+    boundary_label: str = "review",
 ) -> list[str]:
     """Verify review provenance without requiring pre-squash commit ancestry."""
     if not isinstance(marker, dict):
@@ -1214,6 +1246,13 @@ def _verify_squash_durable_review_marker(
                     f"review marker post_review_commits[{index}].purpose must be nonempty"
                 )
 
+    if expected_boundary is not None and any(
+        marker.get(key) != value for key, value in expected_boundary.items()
+    ):
+        findings.append(
+            f"review marker does not match the exact {boundary_label} review boundary"
+        )
+
     if findings or not verify_git:
         return findings
     assert isinstance(merged_commit, str)
@@ -1222,7 +1261,14 @@ def _verify_squash_durable_review_marker(
     main_ref = None
     for candidate in ("refs/remotes/origin/main", "refs/heads/main"):
         resolved = subprocess.run(
-            ["git", "show-ref", "--verify", "--quiet", candidate],
+            [
+                "git",
+                "--no-replace-objects",
+                "show-ref",
+                "--verify",
+                "--quiet",
+                candidate,
+            ],
             cwd=root,
             capture_output=True,
             text=True,
@@ -1234,7 +1280,13 @@ def _verify_squash_durable_review_marker(
         return ["authoritative upstream main ref is unavailable"]
 
     commit_check = subprocess.run(
-        ["git", "cat-file", "-e", f"{merged_commit}^{{commit}}"],
+        [
+            "git",
+            "--no-replace-objects",
+            "cat-file",
+            "-e",
+            f"{merged_commit}^{{commit}}",
+        ],
         cwd=root,
         capture_output=True,
         text=True,
@@ -1243,7 +1295,7 @@ def _verify_squash_durable_review_marker(
         return ["review marker merged_commit does not name a commit"]
 
     first_parent = subprocess.run(
-        ["git", "rev-list", "--first-parent", main_ref],
+        ["git", "--no-replace-objects", "rev-list", "--first-parent", main_ref],
         cwd=root,
         capture_output=True,
         text=True,
@@ -1254,7 +1306,12 @@ def _verify_squash_durable_review_marker(
         return ["review marker merged_commit is absent from upstream main first-parent history"]
 
     tree_result = subprocess.run(
-        ["git", "rev-parse", f"{merged_commit}^{{tree}}"],
+        [
+            "git",
+            "--no-replace-objects",
+            "rev-parse",
+            f"{merged_commit}^{{tree}}",
+        ],
         cwd=root,
         capture_output=True,
         text=True,
@@ -1801,6 +1858,8 @@ def read_status(root: Path = ROOT, *, verify_git: bool = True) -> CloseoutStatus
                 evidence_reviewed_head,
                 root,
                 verify_git=verify_git,
+                expected_boundary=EXPECTED_LANE0_REVIEW_BOUNDARY,
+                boundary_label="Lane 0",
             )
         )
         if main_review_marker != lane_review_marker:
@@ -1811,6 +1870,8 @@ def read_status(root: Path = ROOT, *, verify_git: bool = True) -> CloseoutStatus
                     evidence_reviewed_head,
                     root,
                     verify_git=verify_git,
+                    expected_boundary=EXPECTED_LANE0_REVIEW_BOUNDARY,
+                    boundary_label="Lane 0",
                 )
             )
     else:

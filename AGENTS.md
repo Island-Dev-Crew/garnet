@@ -100,10 +100,12 @@ history and its tree must equal `reviewed_tree`. A reviewed-tree mismatch, a
 missing merged commit, an unavailable authoritative main ref, or a merged
 commit absent from that first-parent history is RED. Never require the
 pre-squash reviewed head to be an ancestor of main, and never use the content
-digest to backdate independent review over later commits. It rejects symlinks,
-path traversal, duplicate entries, extra files, missing files, stale hashes,
-semantically contradictory reseals, a fifth readiness denominator, or any
-launch state other than HOLD. The gate reads no fork branch, ambient
+digest to backdate independent review over later commits. Content-proof Git
+reads ignore `refs/replace`, and each lane must pin its exact reviewed and
+landed boundary facts outside the two mutable state copies. It rejects
+symlinks, path traversal, duplicate entries, extra files, missing files, stale
+hashes, semantically contradictory reseals, a fifth readiness denominator, or
+any launch state other than HOLD. The gate reads no fork branch, ambient
 credential, or environment variable.
 
 Run `python3 -I scripts/test_garnet_lane0_closeout_status.py` after changing the

@@ -20,9 +20,28 @@ status_mod = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = status_mod
 SPEC.loader.exec_module(status_mod)
 
-CANDIDATE = "d6a509e52e016a03b852d2afbc9c51baf1165201"
-FIXTURE_TREE = "1" * 40
-FIXTURE_MERGED_COMMIT = "2" * 40
+CANDIDATE = "3124ba5ecfa88aa6f2c2c289313860670673cdec"
+FIXTURE_REVIEWED_HEAD_TREE = "d2d3c735cf25b84ef69e0e385c8cfeb35e1af673"
+FIXTURE_TREE = "98141597d17e13b02cfa228c03cdf0dc2119ad9f"
+FIXTURE_MERGED_COMMIT = "aa681bacd2e437bfde3cea0ffc1ca75bdb134aac"
+FIXTURE_POST_REVIEW_COMMITS = [
+    {
+        "commit": "aa14368bde83391506775d835ace8985bb7bc1ed",
+        "reviewed": False,
+        "purpose": (
+            "Final Lane 0 evidence recapture and closeout-state sealing after "
+            "the independent review."
+        ),
+    },
+    {
+        "commit": "5680fbed4684d57fc3773a1f75f86868c44b7a95",
+        "reviewed": False,
+        "purpose": (
+            "Lane 0 trust-kernel review companion added after the independent "
+            "review."
+        ),
+    },
+]
 
 
 def _review_marker(
@@ -35,7 +54,7 @@ def _review_marker(
         "schema": "garnet.squash_durable_review_marker/v1",
         "verdict": "approved",
         "reviewed_head": reviewed_head,
-        "reviewed_head_tree": "0" * 40,
+        "reviewed_head_tree": FIXTURE_REVIEWED_HEAD_TREE,
         "reviewed_tree": reviewed_tree,
         "merged_commit": merged_commit,
         "review_scope": (
@@ -43,7 +62,7 @@ def _review_marker(
             "final squash content and does not extend or backdate independent "
             "review coverage."
         ),
-        "post_review_commits": [],
+        "post_review_commits": json.loads(json.dumps(FIXTURE_POST_REVIEW_COMMITS)),
     }
 
 
@@ -718,6 +737,54 @@ class Lane0CloseoutStatusTests(unittest.TestCase):
             status.findings,
         )
 
+    def test_lane0_exact_content_boundary_cannot_be_rebound(self) -> None:
+        for field in ("reviewed_head_tree", "reviewed_tree", "merged_commit"):
+            with self.subTest(field=field):
+                self._write_valid_fixture()
+                for relative, keys in (
+                    ("ops/lane0/state.json", ("closeout", "finalIntegratedReview")),
+                    (
+                        "ops/mission/state.json",
+                        ("lane0Closeout", "finalIntegratedReview"),
+                    ),
+                ):
+                    path = self.root / relative
+                    data = json.loads(path.read_text(encoding="utf-8"))
+                    data[keys[0]][keys[1]][field] = "5" * 40
+                    _write_json(path, data)
+                status = self._status()
+                self.assertTrue(
+                    any("exact Lane 0 review boundary" in item for item in status.findings),
+                    status.findings,
+                )
+
+    def test_lane0_post_review_disclosures_cannot_be_erased_or_rewritten(self) -> None:
+        for mutation in ("erase", "reviewed", "purpose"):
+            with self.subTest(mutation=mutation):
+                self._write_valid_fixture()
+                for relative, keys in (
+                    ("ops/lane0/state.json", ("closeout", "finalIntegratedReview")),
+                    (
+                        "ops/mission/state.json",
+                        ("lane0Closeout", "finalIntegratedReview"),
+                    ),
+                ):
+                    path = self.root / relative
+                    data = json.loads(path.read_text(encoding="utf-8"))
+                    marker = data[keys[0]][keys[1]]
+                    if mutation == "erase":
+                        marker["post_review_commits"] = []
+                    elif mutation == "reviewed":
+                        marker["post_review_commits"][0]["reviewed"] = True
+                    else:
+                        marker["post_review_commits"][0]["purpose"] = "rewritten"
+                    _write_json(path, data)
+                status = self._status()
+                self.assertTrue(
+                    any("exact Lane 0 review boundary" in item for item in status.findings),
+                    status.findings,
+                )
+
     @unittest.skipIf(os.name == "nt", "symlink creation may require elevation")
     def test_manifest_rejects_symlink_and_traversal(self) -> None:
         victim = self.evidence / "00-environment.json"
@@ -776,6 +843,19 @@ class SquashDurableReviewMarkerGitTests(unittest.TestCase):
             )
         return result.stdout.strip()
 
+    def _commit_tree(self, tree: str, parent: str) -> str:
+        result = subprocess.run(
+            ["git", "commit-tree", tree, "-p", parent],
+            cwd=self.root,
+            input="replacement\n",
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            self.fail(f"git commit-tree failed: {result.stderr or result.stdout}")
+        return result.stdout.strip()
+
     def _findings(self, marker: object | None = None) -> list[str]:
         return status_mod._verify_squash_durable_review_marker(
             self.marker if marker is None else marker,
@@ -819,6 +899,59 @@ class SquashDurableReviewMarkerGitTests(unittest.TestCase):
         marker["reviewed_tree"] = "c" * 40
         self.assertTrue(
             any("reviewed_tree mismatch" in item for item in self._findings(marker))
+        )
+
+    def test_replace_ref_cannot_substitute_the_merged_tree(self) -> None:
+        self._git("checkout", "-b", "replacement-tree", self.base)
+        (self.root / "replacement.txt").write_text("replacement\n", encoding="utf-8")
+        self._git("add", "replacement.txt")
+        self._git("commit", "-m", "replacement tree")
+        replacement = self._git("rev-parse", "HEAD")
+        replacement_tree = self._git("rev-parse", f"{replacement}^{{tree}}")
+        self._git("replace", self.merged_commit, replacement)
+        marker = dict(self.marker)
+        marker["reviewed_tree"] = replacement_tree
+        self.assertTrue(
+            any("reviewed_tree mismatch" in item for item in self._findings(marker))
+        )
+
+    def test_replace_ref_cannot_alter_main_first_parent_membership(self) -> None:
+        self._git("checkout", "-b", "replacement-history", self.base)
+        (self.root / "topic.txt").write_text("topic\n", encoding="utf-8")
+        self._git("add", "topic.txt")
+        self._git("commit", "-m", "topic outside main")
+        topic = self._git("rev-parse", "HEAD")
+        replacement = self._commit_tree(self.reviewed_tree, topic)
+        self._git("replace", self.merged_commit, replacement)
+        marker = dict(self.marker)
+        marker["merged_commit"] = topic
+        marker["reviewed_tree"] = self._git("rev-parse", f"{topic}^{{tree}}")
+        self.assertTrue(
+            any(
+                "absent from upstream main first-parent history" in item
+                for item in self._findings(marker)
+            )
+        )
+
+    def test_second_parent_only_commit_is_red(self) -> None:
+        self._git("checkout", "-b", "side", self.base)
+        (self.root / "side.txt").write_text("side\n", encoding="utf-8")
+        self._git("add", "side.txt")
+        self._git("commit", "-m", "side")
+        side = self._git("rev-parse", "HEAD")
+        side_tree = self._git("rev-parse", f"{side}^{{tree}}")
+        self._git("checkout", "main")
+        self._git("merge", "--no-ff", "side", "-m", "merge side")
+        merge = self._git("rev-parse", "HEAD")
+        self._git("update-ref", "refs/remotes/origin/main", merge)
+        marker = dict(self.marker)
+        marker["merged_commit"] = side
+        marker["reviewed_tree"] = side_tree
+        self.assertTrue(
+            any(
+                "absent from upstream main first-parent history" in item
+                for item in self._findings(marker)
+            )
         )
 
     def test_missing_authoritative_main_ref_is_red(self) -> None:
