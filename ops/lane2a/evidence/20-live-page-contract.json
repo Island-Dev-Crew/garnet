@@ -1,0 +1,31 @@
+{
+  "schema": "garnet.lane2a.live-page-contract/1",
+  "captured_at": "2026-07-16T22:21:37Z",
+  "commands": [
+    {
+      "command": "python3 -I scripts/test_garnet_playground_browser_contract.py",
+      "exit_code": 0,
+      "tests_passed": 4
+    },
+    {
+      "command": "python3 -I scripts/test_garnet_playground_readiness.py",
+      "exit_code": 0,
+      "tests_passed": 4
+    },
+    {
+      "command": "python3 scripts/garnet_playground_readiness.py --gate",
+      "exit_code": 0,
+      "ok": true
+    }
+  ],
+  "runtime_inputs": [
+    "docs/playground.html",
+    "docs/playground/live.js",
+    "docs/playground/examples.json",
+    "docs/playground/pkg/garnet_wasm.js",
+    "docs/playground/pkg/garnet_wasm_bg.wasm",
+    "docs/playground/pkg/provenance.json",
+    "docs/icons/garnet-192.png"
+  ],
+  "claim_boundary": "Static contracts prove wiring and tracked inputs. Browser execution remains unpromoted until the Playwright proof and readiness reporter are green."
+}

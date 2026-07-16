@@ -10,7 +10,7 @@
     "northStar": "A clean browser loads only committed package bytes and renders real run, check, and capability-diff results without a network fetch or Node-only execution path; A browser attempt to use denied process authority rejects with a non-success exit class and a visible diagnostic; Two clean builds from the same committed inputs produce byte-identical browser package files and provenance; The readiness reporter promotes browser status only after validating the committed package and browser proof; Capability diff renders a one-glance human verdict and a versioned structured machine verdict from the same adapter result",
     "status": "active",
     "started": "2026-07-16",
-    "updated": "2026-07-16T22:07:47Z",
+    "updated": "2026-07-16T22:21:37Z",
     "sessionCount": 1
   },
   "policies": {
@@ -24,26 +24,26 @@
       "id": "P0",
       "title": "Package materialization",
       "goal": "Extend the hermetic no-publish probe into a fail-closed materializer and commit the exact browser package with canonical provenance.",
-      "status": "pending",
+      "status": "done",
       "sessionsEstimate": "1",
       "gates": [
         {
           "id": "P0-G1",
           "title": "Package builder contract tests pass",
           "command": "python3 -I scripts/test_build_playground_wasm.py",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": ""
+          "status": "passed",
+          "evidence": "ops/lane2a/evidence/10-package-reproducibility.json",
+          "lastRun": "2026-07-16T22:18:18Z",
+          "notes": "Ten builder contract tests passed."
         },
         {
           "id": "P0-G2",
           "title": "Two clean builds are byte-identical to the committed package",
           "command": "python3 scripts/build_playground_wasm.py --verify-reproducible",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": ""
+          "status": "passed",
+          "evidence": "ops/lane2a/evidence/10-package-reproducibility.json",
+          "lastRun": "2026-07-16T22:18:18Z",
+          "notes": "Two fresh offline builds matched each other and the committed package byte-for-byte."
         }
       ],
       "tasks": []
@@ -52,17 +52,17 @@
       "id": "P1",
       "title": "Live adapter and page integration",
       "goal": "Wire run_source, check_source, and diff_caps_source from committed Wasm bytes into a usable editor page with explicit result surfaces.",
-      "status": "pending",
+      "status": "done",
       "sessionsEstimate": "1",
       "gates": [
         {
           "id": "P1-G1",
           "title": "Static live-page and adapter contracts pass",
           "command": "python3 -I scripts/test_garnet_playground_browser_contract.py",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": ""
+          "status": "passed",
+          "evidence": "ops/lane2a/evidence/20-live-page-contract.json",
+          "lastRun": "2026-07-16T22:21:37Z",
+          "notes": "Four browser-surface contracts and the legacy static-preset readiness gate passed."
         }
       ],
       "tasks": []
@@ -138,7 +138,7 @@
     {
       "label": "Definition-of-done claims verified",
       "baseline": "0",
-      "current": "0",
+      "current": "1",
       "target": "5",
       "direction": "up"
     }
@@ -152,9 +152,9 @@
   ],
   "prLog": [],
   "resume": {
-    "activePhase": "P0",
+    "activePhase": "P2",
     "nextActions": [
-      "Record RED contract tests before materializing the browser package or wiring the live page."
+      "Commit the live page inputs, then prove run, check, capability diff, and declared-proc denial in a clean Playwright browser under 30 seconds."
     ],
     "blockers": [],
     "conventions": [
