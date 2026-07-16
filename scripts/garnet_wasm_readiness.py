@@ -40,6 +40,20 @@ BROWSER_PROOF = (
     ROOT / "F_Project_Management" / "LAUNCH" / "W_PLAY_BROWSER_PROOF.json"
 )
 PACKAGE_FILES = {"garnet_wasm.js", "garnet_wasm_bg.wasm", "provenance.json"}
+STUDIO_PACKAGE = ROOT / "apps" / "garnet-studio" / "package.json"
+STUDIO_LOCK = ROOT / "apps" / "garnet-studio" / "package-lock.json"
+BROWSER_RUNTIME_INPUTS = (
+    "apps/garnet-studio/package-lock.json",
+    "apps/garnet-studio/package.json",
+    "docs/icons/garnet-192.png",
+    "docs/playground.html",
+    "docs/playground/examples.json",
+    "docs/playground/live.js",
+    "docs/playground/pkg/garnet_wasm.js",
+    "docs/playground/pkg/garnet_wasm_bg.wasm",
+    "docs/playground/pkg/provenance.json",
+    "scripts/smoke_garnet_playground_browser.mjs",
+)
 DIFF_SCOPE = (
     "declared-surface-only; does not prove absence of undeclared authority; "
     "bound annotations are not part of this surface"
@@ -260,6 +274,65 @@ def _proof_package_matches(proof: dict, provenance: dict) -> bool:
         return False
 
 
+def current_browser_runtime_inputs() -> dict | None:
+    aggregate = hashlib.sha256()
+    files: dict[str, dict[str, int | str]] = {}
+    try:
+        for relative in BROWSER_RUNTIME_INPUTS:
+            path = _safe_repo_file(relative)
+            if path is None:
+                return None
+            raw = path.read_bytes()
+            digest = _sha256(raw)
+            files[relative] = {"bytes": len(raw), "sha256": digest}
+            aggregate.update(relative.encode("utf-8"))
+            aggregate.update(b"\0")
+            aggregate.update(bytes.fromhex(digest))
+            aggregate.update(b"\0")
+    except OSError:
+        return None
+    return {
+        "schema": "garnet.w-play.runtime-inputs/1",
+        "sha256": aggregate.hexdigest(),
+        "files": files,
+    }
+
+
+def expected_playwright_identity() -> dict | None:
+    try:
+        package_raw = STUDIO_PACKAGE.read_bytes()
+        lock_raw = STUDIO_LOCK.read_bytes()
+        package = json.loads(package_raw)
+        lock = json.loads(lock_raw)
+        declared = package["devDependencies"]["@playwright/test"]
+        locked = lock["packages"]["node_modules/@playwright/test"]
+        identity_fields = (declared, locked["version"], locked["integrity"])
+        if not all(isinstance(value, str) and value for value in identity_fields):
+            return None
+        return {
+            "package": "@playwright/test",
+            "declared": declared,
+            "version": locked["version"],
+            "integrity": locked["integrity"],
+            "package_json_sha256": _sha256(package_raw),
+            "package_lock_sha256": _sha256(lock_raw),
+            "install_command": "npm ci --ignore-scripts",
+        }
+    except (KeyError, OSError, TypeError, ValueError, json.JSONDecodeError):
+        return None
+
+
+def _proof_runtime_inputs_match(proof: dict) -> bool:
+    current = current_browser_runtime_inputs()
+    return current is not None and proof.get("runtime_inputs") == current
+
+
+def _proof_playwright_matches(proof: dict) -> bool:
+    expected = expected_playwright_identity()
+    observed = proof.get("toolchain", {}).get("playwright")
+    return expected is not None and observed == expected
+
+
 def _proof_screenshot_valid(proof: dict) -> bool:
     try:
         visual = proof["visual"]
@@ -317,7 +390,12 @@ def browser_proof_valid(proof: dict | None = None) -> bool:
             "docs/playground/pkg/garnet_wasm.js",
             "docs/playground/pkg/garnet_wasm_bg.wasm",
         }
-        tracked_paths = [*requested, screenshot_relative, proof_relative]
+        tracked_paths = [
+            *requested,
+            *BROWSER_RUNTIME_INPUTS,
+            screenshot_relative,
+            proof_relative,
+        ]
         tracked = subprocess.run(
             ["git", "ls-files", "--error-unmatch", "--", *tracked_paths],
             cwd=ROOT,
@@ -338,6 +416,8 @@ def browser_proof_valid(proof: dict | None = None) -> bool:
             and re.fullmatch(r"[0-9a-f]{40}", str(git.get("tested_commit", "")))
             and re.fullmatch(r"[0-9a-f]{40}", str(git.get("tested_tree", "")))
             and _proof_package_matches(proof, provenance)
+            and _proof_runtime_inputs_match(proof)
+            and _proof_playwright_matches(proof)
             and network.get("external_requests") == []
             and network.get("untracked_requests") == []
             and required_requests.issubset(requested)

@@ -14,6 +14,16 @@ LIVE = ROOT / "docs" / "playground" / "live.js"
 PACKAGE = ROOT / "docs" / "playground" / "pkg"
 SMOKE = ROOT / "scripts" / "smoke_garnet_playground_browser.mjs"
 PACKAGE_FILES = {"garnet_wasm.js", "garnet_wasm_bg.wasm", "provenance.json"}
+BROWSER_INPUTS = {
+    ROOT / "apps/garnet-studio/package-lock.json",
+    ROOT / "apps/garnet-studio/package.json",
+    ROOT / "docs/icons/garnet-192.png",
+    PAGE,
+    ROOT / "docs/playground/examples.json",
+    LIVE,
+    *(PACKAGE / name for name in PACKAGE_FILES),
+    SMOKE,
+}
 
 
 class PlaygroundBrowserContractTests(unittest.TestCase):
@@ -61,12 +71,9 @@ class PlaygroundBrowserContractTests(unittest.TestCase):
             )
 
     def test_every_browser_runtime_input_is_git_tracked(self) -> None:
-        paths = [
-            PAGE,
-            LIVE,
-            *(PACKAGE / name for name in sorted(PACKAGE_FILES)),
+        relative = [
+            path.relative_to(ROOT).as_posix() for path in sorted(BROWSER_INPUTS)
         ]
-        relative = [path.relative_to(ROOT).as_posix() for path in paths]
         proc = subprocess.run(
             ["git", "ls-files", "--error-unmatch", "--", *relative],
             cwd=ROOT,
@@ -79,7 +86,10 @@ class PlaygroundBrowserContractTests(unittest.TestCase):
     def test_playwright_trap_is_fail_closed_and_time_bounded(self) -> None:
         text = SMOKE.read_text(encoding="utf-8")
         for marker in (
-            'from "../apps/garnet-studio/node_modules/playwright/index.mjs"',
+            'createRequire',
+            'STUDIO_REQUIRE("@playwright/test")',
+            'npm ci --ignore-scripts',
+            'runtime_inputs: runtimeInputs',
             'serviceWorkers: "block"',
             "externalRequests.add",
             "untrackedRequests.add",
@@ -89,6 +99,19 @@ class PlaygroundBrowserContractTests(unittest.TestCase):
             'verdict: passed ? "pass" : "fail"',
         ):
             self.assertIn(marker, text)
+        self.assertNotIn("node_modules/playwright/index.mjs", text)
+
+    def test_playwright_is_direct_and_integrity_locked(self) -> None:
+        package = json.loads(
+            (ROOT / "apps/garnet-studio/package.json").read_text()
+        )
+        lock = json.loads(
+            (ROOT / "apps/garnet-studio/package-lock.json").read_text()
+        )
+        self.assertIn("@playwright/test", package["devDependencies"])
+        locked = lock["packages"]["node_modules/@playwright/test"]
+        self.assertTrue(locked["version"])
+        self.assertTrue(locked["integrity"].startswith("sha512-"))
 
 
 if __name__ == "__main__":

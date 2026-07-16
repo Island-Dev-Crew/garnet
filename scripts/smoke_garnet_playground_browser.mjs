@@ -1,26 +1,39 @@
 #!/usr/bin/env node
 import { createHash } from "node:crypto";
-import { createReadStream, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  createReadStream,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  realpathSync,
+  writeFileSync,
+} from "node:fs";
 import { access, stat } from "node:fs/promises";
 import { createServer } from "node:http";
+import { createRequire } from "node:module";
 import { arch, platform } from "node:os";
 import { dirname, extname, relative, resolve, sep } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { spawnSync } from "node:child_process";
-import { chromium } from "../apps/garnet-studio/node_modules/playwright/index.mjs";
 
 const ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const DOCS = resolve(ROOT, "docs");
+const STUDIO_PACKAGE = resolve(ROOT, "apps/garnet-studio/package.json");
+const STUDIO_LOCK = resolve(ROOT, "apps/garnet-studio/package-lock.json");
+const STUDIO_REQUIRE = createRequire(pathToFileURL(STUDIO_PACKAGE));
 const DEFAULT_PROOF = resolve(ROOT, "F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json");
 const DEFAULT_SCREENSHOT = resolve(ROOT, "ops/lane2a/evidence/30-playground-browser.png");
 const RUNTIME_INPUTS = [
+  "apps/garnet-studio/package-lock.json",
+  "apps/garnet-studio/package.json",
+  "docs/icons/garnet-192.png",
   "docs/playground.html",
-  "docs/playground/live.js",
   "docs/playground/examples.json",
+  "docs/playground/live.js",
   "docs/playground/pkg/garnet_wasm.js",
   "docs/playground/pkg/garnet_wasm_bg.wasm",
   "docs/playground/pkg/provenance.json",
-  "docs/icons/garnet-192.png",
+  "scripts/smoke_garnet_playground_browser.mjs",
 ];
 const DIFF_SCOPE = "declared-surface-only; does not prove absence of undeclared authority; bound annotations are not part of this surface";
 
@@ -77,6 +90,77 @@ function assertEqual(actual, expected, label) {
   }
 }
 
+function browserRuntimeInputs() {
+  const aggregate = createHash("sha256");
+  const files = {};
+  for (const relativePath of RUNTIME_INPUTS) {
+    const raw = readFileSync(resolve(ROOT, relativePath));
+    const digest = sha256(raw);
+    files[relativePath] = { bytes: raw.length, sha256: digest };
+    aggregate.update(Buffer.from(relativePath, "utf-8"));
+    aggregate.update(Buffer.from([0]));
+    aggregate.update(Buffer.from(digest, "hex"));
+    aggregate.update(Buffer.from([0]));
+  }
+  return {
+    schema: "garnet.w-play.runtime-inputs/1",
+    sha256: aggregate.digest("hex"),
+    files,
+  };
+}
+
+function verifyDeclaredPlaywright() {
+  const packageRaw = readFileSync(STUDIO_PACKAGE);
+  const lockRaw = readFileSync(STUDIO_LOCK);
+  const packageManifest = JSON.parse(packageRaw);
+  const lock = JSON.parse(lockRaw);
+  const declared = packageManifest.devDependencies?.["@playwright/test"];
+  const locked = lock.packages?.["node_modules/@playwright/test"];
+  if (typeof declared !== "string" || !locked?.version || !locked?.integrity) {
+    throw new Error("@playwright/test must be a direct, integrity-locked Studio dependency");
+  }
+
+  let installedManifestPath;
+  let entryPath;
+  let playwright;
+  try {
+    installedManifestPath = STUDIO_REQUIRE.resolve("@playwright/test/package.json");
+    entryPath = STUDIO_REQUIRE.resolve("@playwright/test");
+    playwright = STUDIO_REQUIRE("@playwright/test");
+  } catch (error) {
+    throw new Error(
+      "locked Playwright install is missing; run `npm ci --ignore-scripts` in apps/garnet-studio",
+      { cause: error },
+    );
+  }
+
+  const nodeModulesRoot = realpathSync(resolve(ROOT, "apps/garnet-studio/node_modules"));
+  const expectedPrefix = nodeModulesRoot.endsWith(sep)
+    ? nodeModulesRoot
+    : `${nodeModulesRoot}${sep}`;
+  for (const candidate of [installedManifestPath, entryPath]) {
+    if (!realpathSync(candidate).startsWith(expectedPrefix)) {
+      throw new Error(`Playwright resolved outside the Studio npm ci tree: ${candidate}`);
+    }
+  }
+  const installed = JSON.parse(readFileSync(installedManifestPath, "utf-8"));
+  assertEqual(installed.version, locked.version, "installed Playwright version");
+  if (!playwright.chromium) throw new Error("@playwright/test does not export chromium");
+
+  return {
+    chromium: playwright.chromium,
+    identity: {
+      package: "@playwright/test",
+      declared,
+      version: locked.version,
+      integrity: locked.integrity,
+      package_json_sha256: sha256(packageRaw),
+      package_lock_sha256: sha256(lockRaw),
+      install_command: "npm ci --ignore-scripts",
+    },
+  };
+}
+
 function verifyCommittedRuntimeInputs() {
   runGit(["ls-files", "--error-unmatch", "--", ...RUNTIME_INPUTS]);
   const dirty = runGit(["status", "--porcelain", "--", ...RUNTIME_INPUTS]);
@@ -90,7 +174,7 @@ function verifyCommittedRuntimeInputs() {
     assertEqual(raw.length, provenance.artifacts[name].bytes, `${name} bytes`);
     assertEqual(sha256(raw), provenance.artifacts[name].sha256, `${name} sha256`);
   }
-  return provenance;
+  return { provenance, runtimeInputs: browserRuntimeInputs() };
 }
 
 function contentType(pathname) {
@@ -165,7 +249,8 @@ async function closeServer(server) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const started = performance.now();
-  const packageProvenance = verifyCommittedRuntimeInputs();
+  const { provenance: packageProvenance, runtimeInputs } = verifyCommittedRuntimeInputs();
+  const { chromium, identity: playwrightIdentity } = verifyDeclaredPlaywright();
   if (!existsSync(args.chrome)) throw new Error(`Chrome executable not found: ${args.chrome}`);
   const trackedServer = await startTrackedServer();
   const externalRequests = new Set();
@@ -316,6 +401,10 @@ async function main() {
         schema: packageProvenance.schema,
         source_tree_sha256: packageProvenance.source.source_tree_sha256,
         artifacts: packageProvenance.artifacts,
+      },
+      runtime_inputs: runtimeInputs,
+      toolchain: {
+        playwright: playwrightIdentity,
       },
       network: {
         external_requests: [...externalRequests].sort(),

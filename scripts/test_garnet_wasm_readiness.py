@@ -118,6 +118,33 @@ class WasmReadinessTests(unittest.TestCase):
         finally:
             os.unlink(temp_path)
 
+    def test_stale_browser_runtime_digest_cannot_promote(self) -> None:
+        proof = wasm.read_browser_proof()
+        self.assertIsNotNone(proof)
+        assert proof is not None
+        stale = json.loads(json.dumps(proof))
+        stale["runtime_inputs"]["sha256"] = "0" * 64
+        self.assertFalse(wasm.browser_proof_valid(stale))
+
+    def test_changed_browser_runtime_file_metadata_cannot_promote(self) -> None:
+        proof = wasm.read_browser_proof()
+        self.assertIsNotNone(proof)
+        assert proof is not None
+        stale = json.loads(json.dumps(proof))
+        metadata = stale["runtime_inputs"]["files"]["docs/playground/live.js"]
+        metadata["bytes"] += 1
+        self.assertFalse(wasm.browser_proof_valid(stale))
+
+    def test_browser_proof_binds_current_inputs_and_locked_playwright(self) -> None:
+        proof = wasm.read_browser_proof()
+        self.assertIsNotNone(proof)
+        assert proof is not None
+        self.assertEqual(wasm.current_browser_runtime_inputs(), proof["runtime_inputs"])
+        self.assertEqual(
+            wasm.expected_playwright_identity(),
+            proof["toolchain"]["playwright"],
+        )
+
     def test_markdown_separates_node_proof_from_browser_claim(self) -> None:
         markdown = wasm.render_markdown(wasm.read_readiness())
         self.assertIn("real Node execution passed: True", markdown)
