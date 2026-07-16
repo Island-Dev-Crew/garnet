@@ -15,6 +15,24 @@ SCRIPT = ROOT / "scripts" / "garnet_lane0_truth_freeze_status.py"
 
 
 class Lane0TruthFreezeStatusTests(unittest.TestCase):
+    def _run_renderer(
+        self, state: dict[str, object]
+    ) -> tuple[subprocess.CompletedProcess[str], str | None]:
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            shutil.copy2(ROOT / "ops/mission/render-sotu.mjs", tmp / "render-sotu.mjs")
+            (tmp / "state.json").write_text(json.dumps(state), encoding="utf-8")
+            proc = subprocess.run(
+                ["node", str(tmp / "render-sotu.mjs")],
+                cwd=tmp,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            output = tmp / "state-of-the-union.html"
+            html = output.read_text(encoding="utf-8") if output.exists() else None
+        return proc, html
+
     def _run_gate(
         self,
         *,
@@ -118,6 +136,43 @@ class Lane0TruthFreezeStatusTests(unittest.TestCase):
             payload,
         )
 
+    def test_gate_rejects_bogus_p7_phase_status(self) -> None:
+        state = json.loads((ROOT / "ops/mission/state.json").read_text())
+        p7 = next(phase for phase in state["phases"] if phase["id"] == "P7")
+        p7["status"] = "bogus"
+
+        proc, payload = self._run_gate(state=state)
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertTrue(
+            any("phase P7" in finding for finding in payload.get("findings", [])),
+            payload,
+        )
+
+    def test_gate_rejects_bogus_p7_task_status(self) -> None:
+        state = json.loads((ROOT / "ops/mission/state.json").read_text())
+        p7 = next(phase for phase in state["phases"] if phase["id"] == "P7")
+        task = next(task for task in p7["tasks"] if task["id"] == "P7-T1")
+        task["status"] = "bogus"
+
+        proc, payload = self._run_gate(state=state)
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertTrue(
+            any("task P7-T1" in finding for finding in payload.get("findings", [])),
+            payload,
+        )
+
+    def test_gate_rejects_bogus_gate_status(self) -> None:
+        state = json.loads((ROOT / "ops/mission/state.json").read_text())
+        p7 = next(phase for phase in state["phases"] if phase["id"] == "P7")
+        p7["gates"][0]["status"] = "bogus"
+
+        proc, payload = self._run_gate(state=state)
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertTrue(
+            any("gate P7-G1" in finding for finding in payload.get("findings", [])),
+            payload,
+        )
+
     def test_gate_rejects_resolved_adversarial_findings_claim(self) -> None:
         plan = json.loads((ROOT / "ops/lane0/plan.lock.json").read_text())
         plan["verdict"]["adversarialFindingsResolved"] = True
@@ -194,20 +249,10 @@ class Lane0TruthFreezeStatusTests(unittest.TestCase):
                 "checkpointFirstParentPullRequestMergeOrder": [472, 473, 499],
             },
         }
-        with tempfile.TemporaryDirectory() as td:
-            tmp = Path(td)
-            shutil.copy2(ROOT / "ops/mission/render-sotu.mjs", tmp / "render-sotu.mjs")
-            (tmp / "state.json").write_text(json.dumps(fixture), encoding="utf-8")
-            proc = subprocess.run(
-                ["node", str(tmp / "render-sotu.mjs")],
-                cwd=tmp,
-                text=True,
-                capture_output=True,
-                check=False,
-            )
-            html = (tmp / "state-of-the-union.html").read_text(encoding="utf-8")
-
+        proc, html = self._run_renderer(fixture)
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertIsNotNone(html)
+        assert html is not None
         self.assertIn("2 compact PR log rows", html)
         self.assertIn("3 checkpoint PR merges", html)
         self.assertIn("Mission PR Log (compact, 2 rows)", html)
@@ -216,6 +261,35 @@ class Lane0TruthFreezeStatusTests(unittest.TestCase):
         self.assertNotIn("2 PRs merged", html)
         self.assertIn("compact PR log rows: 2", proc.stdout)
         self.assertIn("checkpoint PR merges: 3", proc.stdout)
+
+    def test_sotu_fails_closed_on_inconsistent_checkpoint(self) -> None:
+        cases = (
+            "missing_mapping",
+            "duplicate_archive_order",
+            "archive_count_mismatch",
+            "checkpoint_order_mismatch",
+            "checkpoint_count_mismatch",
+        )
+        for case in cases:
+            with self.subTest(case=case):
+                state = json.loads((ROOT / "ops/mission/state.json").read_text())
+                checkpoint = state["mainlineCheckpoint"]
+                archived = checkpoint["archivedFirstParentRange"]
+                if case == "missing_mapping":
+                    archived["pullRequestToMainSha"].pop("472")
+                elif case == "duplicate_archive_order":
+                    archived["firstParentPullRequestMergeOrder"][1] = 472
+                elif case == "archive_count_mismatch":
+                    archived["firstParentPullRequestCommitCount"] = 33
+                elif case == "checkpoint_order_mismatch":
+                    checkpoint["checkpointFirstParentPullRequestMergeOrder"][0] = 473
+                elif case == "checkpoint_count_mismatch":
+                    checkpoint["checkpointPullRequestCommitCount"] = 34
+
+                proc, html = self._run_renderer(state)
+                self.assertNotEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+                self.assertIn("mainlineCheckpoint invalid", proc.stderr)
+                self.assertIsNone(html, "invalid checkpoint must not produce a positive SOTU")
 
 
 if __name__ == "__main__":

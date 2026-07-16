@@ -15,6 +15,9 @@ ARCHIVE_HEAD_INCLUSIVE = "1fe74892c588f912e103742afc9d11e845e8d4e6"
 SUCCESSOR_ARCHIVE_PR = 499
 SUCCESSOR_ARCHIVE_SHA = "231aefa91985e5a0520c493c7f0fc3e54d74efc8"
 EXPECTED_ACTION_TASKS = ["P7-T1", "P7-T2", "P7-T3", "P7-T4"]
+SUPPORTED_PHASE_STATUSES = frozenset({"pending", "in_progress", "blocked", "done"})
+SUPPORTED_TASK_STATUSES = SUPPORTED_PHASE_STATUSES
+SUPPORTED_GATE_STATUSES = frozenset({"pending", "passed", "failed", "waived"})
 EXPECTED_P0_COMMANDS = [
     "python3 -I scripts/test_garnet_lane0_truth_freeze_status.py",
     "python3 -I scripts/garnet_lane0_truth_freeze_status.py --gate",
@@ -186,12 +189,31 @@ def read_status(repo_root: Path, state_path: Path, plan_path: Path) -> dict[str,
     if re.search(r"\bP(?:8|9|10)(?:\b|-)", json.dumps(resume, sort_keys=True)):
         findings.append("resume contains a stale P8/P9/P10 reference")
     for phase in phases:
-        if isinstance(phase, dict) and phase.get("status") == "in-progress":
-            findings.append(f"phase {phase.get('id')} uses unsupported in-progress status")
-        if isinstance(phase, dict):
-            for task in phase.get("tasks", []):
-                if isinstance(task, dict) and task.get("status") == "in-progress":
-                    findings.append(f"task {task.get('id')} uses unsupported in-progress status")
+        if not isinstance(phase, dict):
+            continue
+        phase_id = phase.get("id")
+        if phase.get("status") not in SUPPORTED_PHASE_STATUSES:
+            findings.append(
+                f"phase {phase_id} has unsupported status {phase.get('status')!r}"
+            )
+        phase_tasks = phase.get("tasks", [])
+        if not isinstance(phase_tasks, list):
+            findings.append(f"phase {phase_id} tasks must be an array")
+            phase_tasks = []
+        for task in phase_tasks:
+            if isinstance(task, dict) and task.get("status") not in SUPPORTED_TASK_STATUSES:
+                findings.append(
+                    f"task {task.get('id')} has unsupported status {task.get('status')!r}"
+                )
+        phase_gates = phase.get("gates", [])
+        if not isinstance(phase_gates, list):
+            findings.append(f"phase {phase_id} gates must be an array")
+            phase_gates = []
+        for gate in phase_gates:
+            if isinstance(gate, dict) and gate.get("status") not in SUPPORTED_GATE_STATUSES:
+                findings.append(
+                    f"gate {gate.get('id')} has unsupported status {gate.get('status')!r}"
+                )
 
     verdict = plan.get("verdict", {})
     if not isinstance(verdict, dict):

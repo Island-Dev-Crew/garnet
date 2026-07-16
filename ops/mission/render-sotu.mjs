@@ -8,9 +8,9 @@
  * Usage:  node ops/mission/render-sotu.mjs
  * The HTML is GENERATED — never hand-edit it. Change state.json and re-render.
  *
- * The renderer degrades gracefully on missing fields (it does NOT validate the
- * schema — the model maintaining state.json is the validator) and warns on
- * stderr when it defaults something important.
+ * The renderer degrades gracefully on most missing fields and warns on stderr
+ * when it defaults something important. A nonempty mainline checkpoint is the
+ * exception: it must be internally consistent or rendering fails closed.
  */
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -63,6 +63,74 @@ const archivedPrOrder = Array.isArray(archivedRange.firstParentPullRequestMergeO
   : [];
 const archivedPrToSha = archivedRange.pullRequestToMainSha ?? {};
 const successorArchiveMerge = mainlineCheckpoint.successorArchiveMerge ?? {};
+
+function checkpointConsistencyErrors() {
+  if (!mainlineCheckpoint || typeof mainlineCheckpoint !== "object" || Array.isArray(mainlineCheckpoint)) {
+    return ["mainlineCheckpoint must be an object"];
+  }
+  if (!Object.keys(mainlineCheckpoint).length) return [];
+
+  const errors = [];
+  const shaPattern = /^[0-9a-f]{40}$/;
+  const mappingIsObject = archivedPrToSha && typeof archivedPrToSha === "object" && !Array.isArray(archivedPrToSha);
+  if (!Array.isArray(archivedRange.firstParentPullRequestMergeOrder) || !archivedPrOrder.length) {
+    errors.push("archived first-parent merge order must be a nonempty array");
+  }
+  if (!mappingIsObject) errors.push("archived PR-to-main SHA mapping must be an object");
+  if (archivedRange.firstParentPullRequestCommitCount !== archivedPrOrder.length) {
+    errors.push("archived declared count does not match merge-order length");
+  }
+  if (new Set(archivedPrOrder).size !== archivedPrOrder.length) {
+    errors.push("archived merge order contains duplicate PRs");
+  }
+
+  const orderKeys = new Set(archivedPrOrder.map(String));
+  if (mappingIsObject) {
+    for (const pr of archivedPrOrder) {
+      const sha = archivedPrToSha[String(pr)];
+      if (!shaPattern.test(String(sha ?? ""))) {
+        errors.push(`archived PR #${pr} has a missing or invalid full main SHA`);
+      }
+    }
+    for (const key of Object.keys(archivedPrToSha)) {
+      if (!orderKeys.has(key)) errors.push(`archived SHA mapping has extra PR #${key}`);
+    }
+  }
+
+  const successorPr = successorArchiveMerge.pullRequest;
+  if (!Number.isInteger(successorPr)) errors.push("successor archive PR must be an integer");
+  if (!shaPattern.test(String(successorArchiveMerge.mainSha ?? ""))) {
+    errors.push("successor archive merge has a missing or invalid full main SHA");
+  }
+  if (successorArchiveMerge.immediatelyFollowsArchivedRange !== true) {
+    errors.push("successor archive merge must immediately follow the archived range");
+  }
+
+  const fullOrder = mainlineCheckpoint.checkpointFirstParentPullRequestMergeOrder;
+  const expectedFullOrder = [...archivedPrOrder, successorPr];
+  if (!Array.isArray(fullOrder)) {
+    errors.push("full checkpoint merge order must be an array");
+  } else {
+    if (new Set(fullOrder).size !== fullOrder.length) {
+      errors.push("full checkpoint merge order contains duplicate PRs");
+    }
+    if (fullOrder.length !== expectedFullOrder.length || fullOrder.some((pr, i) => pr !== expectedFullOrder[i])) {
+      errors.push("full checkpoint merge order does not equal archived order plus successor");
+    }
+    if (mainlineCheckpoint.checkpointPullRequestCommitCount !== fullOrder.length) {
+      errors.push("full checkpoint declared count does not match merge-order length");
+    }
+  }
+  return errors;
+}
+
+const checkpointErrors = checkpointConsistencyErrors();
+if (checkpointErrors.length) {
+  console.error("[render-sotu] mainlineCheckpoint invalid:");
+  for (const error of checkpointErrors) console.error(`  - ${error}`);
+  process.exit(1);
+}
+
 const checkpointRows = [
   ...archivedPrOrder.map((pr) => ({ pr, sha: archivedPrToSha[String(pr)], scope: "archived range" })),
   ...(successorArchiveMerge.pullRequest != null
