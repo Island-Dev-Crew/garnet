@@ -1,6 +1,6 @@
 {
   "schema": "garnet.lane0.denominators/v1",
-  "asOf": "2026-07-16T12:45:00Z",
+  "asOf": "2026-07-16T13:14:54Z",
   "launchStatus": "HOLD",
   "denominators": [
     {
@@ -14,9 +14,10 @@
     {
       "id": "truth_pulse",
       "label": "Truth pulse",
-      "numerator": 931,
-      "denominator": 1000,
+      "numerator": 65.2,
+      "denominator": 70,
       "percent": 93.1,
+      "rounded": true,
       "evidence": "ops/lane0/evidence/09-mit-readiness.json"
     },
     {
@@ -38,7 +39,7 @@
   ],
   "sources": {
     "s114": "ops/mission/state.json P0-P6 task states",
-    "truthPulse": "ops/lane0/evidence/09-mit-readiness.json committed-only",
+    "truthPulse": "65.2/70 committed-lane score from ops/lane0/evidence/09-mit-readiness.json",
     "launch": "ops/lane0/evidence/08-launch-readiness.json"
   },
   "discipline": "exactly four; never averaged and no fifth denominator"

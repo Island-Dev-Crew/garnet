@@ -10,8 +10,8 @@
     "northStar": "Every first-parent PR commit in d0d4f7cc..1fe7489 has its exact squash-main SHA in observed merge order, followed by successor archive merge #499; Mission resume pointers resolve only to the materialized P7 phase and its four tasks; One Rust MSRV is declared consistently and enforced inside existing CI contexts; Every frozen-backlog claim names current code and fresh evidence or remains honestly partial or planned",
     "status": "complete",
     "started": "2026-07-16",
-    "updated": "2026-07-16T12:45:00Z",
-    "sessionCount": 2
+    "updated": "2026-07-16T13:16:18Z",
+    "sessionCount": 3
   },
   "policies": {
     "merge": "review",
@@ -33,7 +33,7 @@
           "command": "python3 -I scripts/test_garnet_lane0_truth_freeze_status.py -v",
           "status": "passed",
           "evidence": "ops/lane0/evidence/20-python-tests.txt",
-          "lastRun": "2026-07-16T12:45:00Z",
+          "lastRun": "2026-07-16T13:14:56Z",
           "notes": "Fresh closeout ladder; reporter regression suite passed."
         },
         {
@@ -42,7 +42,7 @@
           "command": "python3 -I scripts/garnet_lane0_truth_freeze_status.py --gate",
           "status": "passed",
           "evidence": "ops/lane0/evidence/04-truth-freeze.json",
-          "lastRun": "2026-07-16T12:45:00Z",
+          "lastRun": "2026-07-16T13:14:51Z",
           "notes": "Git-derived 34-commit archive plus sole successor #499; U-18 is exact P7/P7-T1..T4."
         }
       ],
@@ -61,7 +61,7 @@
           "command": "python3 -I -S scripts/test_garnet_msrv_status.py -v",
           "status": "passed",
           "evidence": "ops/lane0/evidence/20-python-tests.txt",
-          "lastRun": "2026-07-16T12:45:00Z",
+          "lastRun": "2026-07-16T13:14:57Z",
           "notes": "Plain python3 -I -S MSRV regression suite passed."
         },
         {
@@ -70,7 +70,7 @@
           "command": "python3 -I -S scripts/garnet_msrv_status.py --gate",
           "status": "passed",
           "evidence": "ops/lane0/evidence/05-msrv.json",
-          "lastRun": "2026-07-16T12:45:00Z",
+          "lastRun": "2026-07-16T13:14:52Z",
           "notes": "One Rust 1.95 floor across 18 active manifests and existing CI contexts."
         }
       ],
@@ -89,7 +89,7 @@
           "command": "python3 -I scripts/garnet_frozen_backlog_status.py --gate",
           "status": "passed",
           "evidence": "ops/lane0/evidence/06-frozen-backlog.json",
-          "lastRun": "2026-07-16T12:45:00Z",
+          "lastRun": "2026-07-16T13:14:53Z",
           "notes": "Machine backlog parsed and the stricter evidence/claim-state gate passed."
         },
         {
@@ -98,7 +98,7 @@
           "command": "python3 scripts/check-agent-contracts.py",
           "status": "passed",
           "evidence": "ops/lane0/evidence/20-python-tests.txt",
-          "lastRun": "2026-07-16T12:45:00Z",
+          "lastRun": "2026-07-16T13:15:29Z",
           "notes": "Root and subsystem documentation-contract checks passed."
         }
       ],
@@ -117,7 +117,7 @@
           "command": "cargo run -p xtask -- truth --check",
           "status": "passed",
           "evidence": "ops/lane0/evidence/11-truth-check.txt",
-          "lastRun": "2026-07-16T12:45:00Z",
+          "lastRun": "2026-07-16T13:14:55Z",
           "notes": "Machine truth check passed on the current Lane 0 tree."
         },
         {
@@ -126,7 +126,7 @@
           "command": "python3 scripts/garnet_evidence_integrity_status.py --format json --gate",
           "status": "passed",
           "evidence": "ops/lane0/evidence/12-repository-evidence-integrity.json",
-          "lastRun": "2026-07-16T12:45:00Z",
+          "lastRun": "2026-07-16T13:14:55Z",
           "notes": "All repository proof-bundle manifests verified; Lane 0 has a separate exact manifest."
         },
         {
@@ -135,7 +135,7 @@
           "command": "node ops/mission/render-sotu.mjs",
           "status": "passed",
           "evidence": "ops/lane0/evidence/23-sotu-render.txt",
-          "lastRun": "2026-07-16T12:45:00Z",
+          "lastRun": "2026-07-16T13:16:18Z",
           "notes": "Generated mission SOTU rendered from state; HTML was not hand-edited."
         }
       ],
@@ -205,12 +205,12 @@
           "fromGate": "G4",
           "toStage": "S2",
           "reason": "Lane 2C approval lacked current deterministic evidence for three exact-candidate stress cases exceeding four minutes.",
-          "at": "2026-07-16T12:45:00Z"
+          "at": "2026-07-16T13:14:50Z"
         }
       ]
     },
     "governance": {
-      "ledgerRunId": "lane0-20260716-124500z-70bfd68",
+      "ledgerRunId": "lane0-20260716-eb9f40a",
       "budgetSpentUsd": 0.0,
       "branchSweeps": []
     },

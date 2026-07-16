@@ -1,22 +1,25 @@
-$ python3 -I scripts/test_garnet_lane0_closeout_status.py -v
+$ python3 -I -S scripts/test_garnet_lane0_closeout_status.py -v
 expected_exit=0
 actual_exit=0
 --- stdout ---
 
 --- stderr ---
-test_command_ledger_rejects_unexpected_exit (__main__.Lane0CloseoutStatusTests.test_command_ledger_rejects_unexpected_exit) ... ok
-test_denominators_are_derived_from_reporters_and_historical_tasks (__main__.Lane0CloseoutStatusTests.test_denominators_are_derived_from_reporters_and_historical_tasks) ... ok
-test_ledger_rejects_tampered_event (__main__.Lane0CloseoutStatusTests.test_ledger_rejects_tampered_event) ... ok
-test_main_mission_rejects_fifth_denominator_or_launch_go (__main__.Lane0CloseoutStatusTests.test_main_mission_rejects_fifth_denominator_or_launch_go) ... ok
-test_manifest_rejects_extra_unsealed_file (__main__.Lane0CloseoutStatusTests.test_manifest_rejects_extra_unsealed_file) ... ok
-test_manifest_rejects_hash_mismatch (__main__.Lane0CloseoutStatusTests.test_manifest_rejects_hash_mismatch) ... ok
-test_manifest_rejects_symlink_even_when_hash_matches (__main__.Lane0CloseoutStatusTests.test_manifest_rejects_symlink_even_when_hash_matches) ... ok
-test_manifest_rejects_unsorted_duplicate_and_traversal_entries (__main__.Lane0CloseoutStatusTests.test_manifest_rejects_unsorted_duplicate_and_traversal_entries) ... ok
-test_state_rejects_non_s6_or_non_advisory_closeout (__main__.Lane0CloseoutStatusTests.test_state_rejects_non_s6_or_non_advisory_closeout) ... ok
+test_backdated_evidence_seal_is_rejected (__main__.Lane0CloseoutStatusTests.test_backdated_evidence_seal_is_rejected) ... ok
+test_invalid_ledger_timestamp_is_rejected (__main__.Lane0CloseoutStatusTests.test_invalid_ledger_timestamp_is_rejected) ... ok
+test_manifest_rejects_extra_file_and_hash_drift (__main__.Lane0CloseoutStatusTests.test_manifest_rejects_extra_file_and_hash_drift) ... ok
+test_manifest_rejects_symlink_and_traversal (__main__.Lane0CloseoutStatusTests.test_manifest_rejects_symlink_and_traversal) ... ok
+test_one_row_command_inventory_cannot_be_resealed (__main__.Lane0CloseoutStatusTests.test_one_row_command_inventory_cannot_be_resealed) ... ok
+test_pending_final_review_is_the_only_review_failure (__main__.Lane0CloseoutStatusTests.test_pending_final_review_is_the_only_review_failure) ... ok
+test_resealed_accepted_wv_is_rejected (__main__.Lane0CloseoutStatusTests.test_resealed_accepted_wv_is_rejected) ... ok
+test_resealed_launch_go_is_rejected (__main__.Lane0CloseoutStatusTests.test_resealed_launch_go_is_rejected) ... ok
+test_resealed_mit_12_3_is_rejected (__main__.Lane0CloseoutStatusTests.test_resealed_mit_12_3_is_rejected) ... ok
+test_state_to_ledger_gate_binding_mismatch_is_rejected (__main__.Lane0CloseoutStatusTests.test_state_to_ledger_gate_binding_mismatch_is_rejected) ... ok
+test_synthetic_truth_fraction_is_rejected (__main__.Lane0CloseoutStatusTests.test_synthetic_truth_fraction_is_rejected) ... ok
+test_trailing_contradictory_event_is_rejected (__main__.Lane0CloseoutStatusTests.test_trailing_contradictory_event_is_rejected) ... ok
 test_valid_closeout_fixture_passes (__main__.Lane0CloseoutStatusTests.test_valid_closeout_fixture_passes) ... ok
 
 ----------------------------------------------------------------------
-Ran 10 tests in 0.068s
+Ran 13 tests in 0.118s
 
 OK
 
@@ -39,9 +42,10 @@ test_real_repository_passes_gate (__main__.Lane0TruthFreezeStatusTests.test_real
 test_sotu_distinguishes_compact_log_from_full_checkpoint (__main__.Lane0TruthFreezeStatusTests.test_sotu_distinguishes_compact_log_from_full_checkpoint) ... ok
 test_sotu_fails_closed_on_git_inconsistent_checkpoint (__main__.Lane0TruthFreezeStatusTests.test_sotu_fails_closed_on_git_inconsistent_checkpoint) ... ok
 test_sotu_fails_closed_on_inconsistent_checkpoint (__main__.Lane0TruthFreezeStatusTests.test_sotu_fails_closed_on_inconsistent_checkpoint) ... ok
+test_sotu_selects_platform_python_and_wires_it_to_truth_gate (__main__.Lane0TruthFreezeStatusTests.test_sotu_selects_platform_python_and_wires_it_to_truth_gate) ... ok
 
 ----------------------------------------------------------------------
-Ran 13 tests in 1.016s
+Ran 14 tests in 0.829s
 
 OK
 
@@ -78,7 +82,7 @@ test_workflow_rustup_toolchain_override_fails_closed (__main__.GarnetMsrvStatusT
 test_working_directory_on_exact_msrv_step_fails_closed (__main__.GarnetMsrvStatusTests.test_working_directory_on_exact_msrv_step_fails_closed) ... ok
 
 ----------------------------------------------------------------------
-Ran 25 tests in 0.745s
+Ran 25 tests in 0.719s
 
 OK
 
@@ -106,7 +110,7 @@ test_tracked_directory_cannot_be_used_as_clause_evidence (__main__.GarnetFrozenB
 test_unknown_claim_state_is_rejected (__main__.GarnetFrozenBacklogStatusTests.test_unknown_claim_state_is_rejected) ... ok
 
 ----------------------------------------------------------------------
-Ran 16 tests in 8.907s
+Ran 16 tests in 7.213s
 
 OK
 
@@ -124,7 +128,7 @@ test_missing_first_report_fails_after_due_date (__main__.GarnetQuarterlyCompetit
 test_placeholder_does_not_count_as_completed_report (__main__.GarnetQuarterlyCompetitiveWatchStatusTests.test_placeholder_does_not_count_as_completed_report) ... ok
 
 ----------------------------------------------------------------------
-Ran 6 tests in 0.061s
+Ran 6 tests in 0.049s
 
 OK
 
@@ -142,7 +146,7 @@ test_missing_check_and_hash_mismatch_fail_closed (__main__.GarnetWvAcceptanceSta
 test_nonexistent_candidate_cannot_self_promote (__main__.GarnetWvAcceptanceStatusTests.test_nonexistent_candidate_cannot_self_promote) ... ok
 
 ----------------------------------------------------------------------
-Ran 6 tests in 0.122s
+Ran 6 tests in 0.100s
 
 OK
 
@@ -154,7 +158,7 @@ actual_exit=0
 --- stderr ---
 .....................................
 ----------------------------------------------------------------------
-Ran 37 tests in 29.661s
+Ran 37 tests in 24.430s
 
 OK
 
@@ -174,29 +178,6 @@ agent-contracts: ok (24 contracts)
 --- stderr ---
 ......
 ----------------------------------------------------------------------
-Ran 6 tests in 0.658s
-
-OK
-
-$ python3 -I -S scripts/test_garnet_lane0_closeout_status.py -v
-expected_exit=0
-actual_exit=0
---- stdout ---
-
---- stderr ---
-test_command_ledger_rejects_unexpected_exit (__main__.Lane0CloseoutStatusTests.test_command_ledger_rejects_unexpected_exit) ... ok
-test_denominators_are_derived_from_reporters_and_historical_tasks (__main__.Lane0CloseoutStatusTests.test_denominators_are_derived_from_reporters_and_historical_tasks) ... ok
-test_ledger_rejects_missing_gate_evidence_binding (__main__.Lane0CloseoutStatusTests.test_ledger_rejects_missing_gate_evidence_binding) ... ok
-test_ledger_rejects_tampered_event (__main__.Lane0CloseoutStatusTests.test_ledger_rejects_tampered_event) ... ok
-test_main_mission_rejects_fifth_denominator_or_launch_go (__main__.Lane0CloseoutStatusTests.test_main_mission_rejects_fifth_denominator_or_launch_go) ... ok
-test_manifest_rejects_extra_unsealed_file (__main__.Lane0CloseoutStatusTests.test_manifest_rejects_extra_unsealed_file) ... ok
-test_manifest_rejects_hash_mismatch (__main__.Lane0CloseoutStatusTests.test_manifest_rejects_hash_mismatch) ... ok
-test_manifest_rejects_symlink_even_when_hash_matches (__main__.Lane0CloseoutStatusTests.test_manifest_rejects_symlink_even_when_hash_matches) ... ok
-test_manifest_rejects_unsorted_duplicate_and_traversal_entries (__main__.Lane0CloseoutStatusTests.test_manifest_rejects_unsorted_duplicate_and_traversal_entries) ... ok
-test_state_rejects_non_s6_or_non_advisory_closeout (__main__.Lane0CloseoutStatusTests.test_state_rejects_non_s6_or_non_advisory_closeout) ... ok
-test_valid_closeout_fixture_passes (__main__.Lane0CloseoutStatusTests.test_valid_closeout_fixture_passes) ... ok
-
-----------------------------------------------------------------------
-Ran 11 tests in 0.063s
+Ran 6 tests in 0.766s
 
 OK

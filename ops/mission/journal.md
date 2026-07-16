@@ -150,3 +150,10 @@ Append-only session log, newest entry LAST.
 - The ARCHIPELAGO audit is band 3/5. A missing browser Playwright/runtime journey would cap runtime evidence at 4; the requested Lane 2C approval lacks current deterministic three-case, greater-than-four-minute proof, so it remains partial and lowers the audit to 3. Recorded the evidence failure as G4 -> S2 before proceeding to S6.
 - S6 governance verdict is advisory with no waivers. Local contracts, gates, evidence hashes, and ledger chain are enforced; Playwright, Lane 2C duration evidence, remote CI, final integrated review, admin-token provisioning, Jon-only merge, and activation remain pending.
 - Next: Lane 1 proves fresh/exact-head/outcome/live-policy clauses after Jon provisions a dedicated admin-authoritative token; Lane 2A closes package/page/Playwright/denial proof; Lane 2B closes bounded tool/raw-byte/seal/rejection/reporter proof; Lane 2C produces current deterministic duration evidence before approval.
+
+## 2026-07-16T13:14Z — session 6 (Lane 0 semantic closeout patch recaptured)
+
+- Rebased the evidence archive on explicit technical candidate `eb9f40a8b8c83fd9434d517318498dd268b1ded2`. The closeout gate now derives every reporter claim, enforces the exact 43-command inventory, and binds state, hashes, chronology, and the final independent verdict.
+- Corrected truth-pulse provenance to 65.2/70 = 93.1% (rounded); S114 remains 19/19, launch-critical 3/6, launch ledger 3/8, and launch remains HOLD.
+- Windows SOTU rendering now invokes `python` on win32 and `python3` elsewhere. The regenerated SOTU carries second-precision UTC so the ledger seal is provably later than the artifact.
+- Final integrated review remains PENDING. Namespaced P0-P3 stays complete at S6/band 3; main mission stays active at P7. Root must finalize review evidence and reseal before push/PR.

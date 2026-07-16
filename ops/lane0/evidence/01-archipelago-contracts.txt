@@ -1,3 +1,11 @@
+$ git -C /private/tmp/archipelago-lane0-tooling-20260715 rev-parse HEAD
+expected_exit=0
+actual_exit=0
+--- stdout ---
+b9f7cee2823f9791503db20f33b22c9e20af7abe
+--- stderr ---
+
+
 $ python3 /private/tmp/archipelago-lane0-tooling-20260715/scripts/validate_contracts.py ops/lane0/idea.lock.json
 expected_exit=0
 actual_exit=0
@@ -19,11 +27,4 @@ expected_exit=0
 actual_exit=0
 --- stdout ---
 [PASS] state.json
---- stderr ---
-
-$ git -C /private/tmp/archipelago-lane0-tooling-20260715 rev-parse HEAD
-expected_exit=0
-actual_exit=0
---- stdout ---
-b9f7cee2823f9791503db20f33b22c9e20af7abe
 --- stderr ---
