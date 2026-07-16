@@ -1,0 +1,15 @@
+{
+  "artifact_count": 0,
+  "candidate_main_sha": null,
+  "contract_base_main_sha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+  "evidence_destination": "proofs/windows/launch-verification/wv6-minimum-shelf/",
+  "findings": [
+    "exact-candidate evidence manifest is pending"
+  ],
+  "ok": false,
+  "passed_check_count": 0,
+  "required_check_count": 5,
+  "schema": "garnet.wv_acceptance_status/v1",
+  "state": "pending",
+  "wv": "WV-6"
+}

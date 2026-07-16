@@ -1,0 +1,47 @@
+$ git log --oneline --first-parent d0d4f7cc..1fe7489
+expected_exit=0
+actual_exit=0
+--- stdout ---
+1fe7489 feat(governance): collect complete bounded GitHub pages (#506)
+65da989 build(wasm): add hermetic playground package probe (#505)
+46031e7 test(mcp): harden Minimum Shelf lifecycle adversarially (#504)
+098b0bd feat(mcp): add fail-closed Minimum Shelf lifecycle core (#503)
+8c07fec feat(governance): enforce strict Link header boundary (#502)
+750e4b6 Validate MCP 2025-11-25 initialize schema (#501)
+52971a5 Add authenticated bounded GitHub object transport (#500)
+a021005 feat(wasm): add check and capability-diff adapters (#498)
+d80e4ec docs: add launch-preparation state of the union (#497)
+32ec962 governance: bind required checks to workflow identity (#496)-JI
+58a575a governance: bind preactivation ruleset inventory (#495)-JI
+225c041 governance: add exact required-context evaluator (#494)- JI
+d015918 governance: add fail-closed workflow schema projection (#493)-JI
+900199b add typed workflow YAML boundary (#492)- JI
+e7d01f9 governance: add immutable workflow snapshot boundary [Jon-gated] (#491) -JI
+098bb76 governance: add strict required-context contract [Jon-gated] (#490) - JI
+d610551 governance: record live 31-check baseline (#489)- JI
+f92eade ci(governance): make required contexts unconditional (#488) - JI
+aaf1bc5 docs(truth): reconcile S114 and Wasm evidence (#487)- JI
+cad91aa ops(mission): S114 Closure & Hardening — mission complete (#486)
+93b5c3d gate fix [Jon-gated]: dogfood PR-body checker skipped .github/ paths (#483- JI
+2be1c3a P5-T1 [Jon-gated]: extend supply-chain scans to Studio + fuzz lockfiles (#481) - JI
+f06d852 P6: /why upgrade — placeholder cards completed from verified primary sources (#485)
+b0ad42a P5-T5: /why reconciliation — audited upgrade never shipped; corpus-of-record corrections (#484)
+bdf79f3 P5: foundation hygiene — FAQ MSRV truth, converter dialect note, wasm 1.97 verification (#482)
+6087565 P4-T2 [Jon-gated]: wire S114 capability-scope + trust-kernel review gates into CI (#479)
+5d17174 ops(mission): S114 Closure & Hardening complete (#480)
+ea9e381 P4-T1: rolling S114 trust-kernel review control (machine-readable) (#478)
+499717e P3b: embedder strict-by-default with explicit permissive opt-out (#477)
+ec39bb1 P3a: CLI authority lanes fail closed (dep preload + test helper) (#476)
+8f794f7 P2: capability enforcement scope table; bound runtime overclaims; claim fixture (#475)
+0931d12 P1: land recovered S114 independent evidence durably (#474)
+155dec9 P0: record scoped S114 acceptance; reporter reads it; machine-independent ledger (#473)
+4168582 ops(mission): bootstrap S114 closure mission (#472)
+--- stderr ---
+
+
+$ git log --oneline --first-parent d0d4f7cc..1fe7489 | wc -l
+expected_exit=0
+actual_exit=0
+--- stdout ---
+      34
+--- stderr ---

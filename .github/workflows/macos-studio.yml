@@ -31,6 +31,10 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
+      - name: Install exact Rust MSRV
+        run: rustup toolchain install 1.95.0 --profile minimal
+      - name: Check Tauri backend under exact Rust MSRV
+        run: cargo +1.95.0 check --locked --manifest-path apps/garnet-studio/src-tauri/Cargo.toml --all-targets
       - uses: actions/setup-node@v6
         with:
           node-version: '22'

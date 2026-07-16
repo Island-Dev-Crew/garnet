@@ -112,3 +112,61 @@ Append-only session log, newest entry LAST.
 - Three fresh implementers started in parallel. GOV-009 unit tests use injected responses and no real token/network; W-PLAY preserves WV-4 as Studio proof and WV-5 as Wasm+Node proof; Shelf stays protocol-core-only before stdio/execution. Public browser/Shelf claims remain blocked on their later Playwright/seal/reporter traps.
 - Current checkpoint through merged #506: GOV-009 has authenticated object transport, strict Link parsing, and bounded complete page-number collection; W-PLAY has real check/diff Wasm exports plus a hermetic no-publish package probe; Shelf has strict schema, lifecycle, and adversarial foundations. The next reviewed slices are candidate anchoring, package materialization, and one bounded in-process Shelf tool; launch claims remain blocked.
 - Live authority caveat: the active `Navigata1` gh credential cannot prove admin-only settings (`null`/403 is RED). The separately installed `IslandDevCrew` credential can read admin fields and showed ruleset `18936562` with `bypass_actors: []`; GOV-009 will require an explicit admin-authoritative token and will never inherit, persist, or print the active gh credential.
+
+## 2026-07-16T04:35Z — session 4 (Lane 0 truth freeze; archive and U-18 reconciled)
+
+- Recorded `mainlineCheckpoint` from the local first-parent history at exact successor pin `231aefa91985e5a0520c493c7f0fc3e54d74efc8`: merge order `497,498,500,501,502,503,504,505,506,499`, with every PR mapped to its full squash-main SHA. No `Navigata1/garnet` main state or ambient credential was read.
+- Resolved U-18 by renormalizing the only active mission onto materialized `P7`: `resume.activePhase` is exactly `P7`, the four next actions map to `P7-T1` through `P7-T4`, and stale P8/P9/P10 resume references are removed. Renderer-supported phase/task status tokens are now `in_progress`.
+- Validated `ops/lane0/idea.lock.json` and `ops/lane0/plan.lock.json` with pinned ARCHIPELAGO provenance `Navigata1/archipelago@b9f7cee2823f9791503db20f33b22c9e20af7abe`; kickoff created only the namespaced Lane 0 state/journal and left this mission state byte-identical during kickoff.
+- Launch remains HOLD. GOV-009 admin-authoritative reads and human 31-to-32 activation remain Jon-blocked; browser and Shelf claims remain blocked on committed Playwright, seal, and reporter evidence.
+
+## 2026-07-16T04:56Z — session 4 review correction (full archive and human surface)
+
+- Supersedes the initial session-4 checkpoint description: the frozen claim spans all 34 first-parent PR commits in `d0d4f7cc..1fe7489`, followed by successor archive merge #499 at `231aefa`. `mainlineCheckpoint` now records that full Git-derived order and every exact full squash-main SHA with unambiguous archived-range and successor fields.
+- Corrected the ARCHIPELAGO plan verdict to `warning` with `adversarialFindingsResolved: false`. The pinned kickoff regenerated the namespaced Lane 0 state without changing `ops/mission/state.json`; the original Lane 0 journal history and tool provenance remain preserved.
+- Added `scripts/garnet_lane0_truth_freeze_status.py` plus regression tests. The frozen P0 gates now compare the checkpoint to local first-parent Git history and enforce U-18 referential integrity, exact P7-T1 through P7-T4 actions, supported status tokens, and absence of P8/P9/P10 resume references.
+- The generated SOTU now labels `prLog` as a compact operational log and separately renders the complete 35-merge checkpoint through #499. Launch remains HOLD and all Jon-only boundaries remain unchanged.
+
+## 2026-07-16T11:35Z — session 4 policy, MSRV, and WV acceptance reconciliation
+
+- Settled one enforced Rust floor: root Cargo metadata declares `rust-version = "1.95"`, all 16 active workspace members inherit it, and the excluded Studio backend plus parser fuzz workspace declare it directly. Current README, contributor, FAQ, getting-started, website, and parser surfaces now say Rust 1.95+ while ordinary CI continues to track moving stable.
+- Preserved the TDD sequence: `python3 -I scripts/test_garnet_msrv_status.py` first failed because the reporter did not exist; after implementation the reporter suite and `--gate` passed, `cargo +1.95.0 check --workspace --all-targets --all-features --locked` completed green, and the excluded Studio manifest also passed its exact-1.95 all-target check. The existing required CI and Windows Studio contexts now carry the exact-floor checks; this successor PR therefore remains parked for Jon.
+- Decided U-16 explicitly: extend the Jon-merge-only exception list to `scripts/garnet_github_*`. PRs #500, #502, and #506 auto-merged correctly under the prior exception list; this decision is prospective, and the governance freeze remains unarmed until the Lane 1 terminus.
+- Recorded U-17 as Jon-blocking: P7-T1 cannot close the live settings/no-bypass clause until Jon provisions a dedicated admin-authoritative token. No credential was probed, copied, inherited, persisted, or printed in this slice; GOV-009 must receive the future token explicitly.
+- Added machine-readable planned-only WV-6/WV-7 acceptance contracts at `F_Project_Management/LAUNCH/WV6_WV7_ACCEPTANCE_CONTRACTS.json`, each pinned to base `231aefa91985e5a0520c493c7f0fc3e54d74efc8` with authority sources, acceptance command, evidence destination, scope limits, and Jon-only actions. The commands are intentionally marked not yet implemented, so neither contract is presented as proof.
+- Launch remains HOLD. No browser, Shelf, governance-activation, cross-OS, FIRE, tag, publish, or production claim was promoted.
+
+## 2026-07-16T11:53Z — session 4 review correction (WV authority + structural MSRV)
+
+- Supersedes the WV assignments in the first acceptance-contract revision. The tracked authority at `cad91aa:ops/mission/state.json#resume.nextActions[1]` retains WV-6 for the native-Windows proof after Core Ring Tier 1 + the Minimum Shelf/MCP library ship, and WV-7 for winget/Scoop dry-run + devcontainer/Docker + installer happy-path distribution proof. Mac Air reconciliation and frozen-candidate release review remain separate P7-T4 work.
+- Replaced the two nonexistent revision-1 commands with one deterministic fail-closed reporter: `scripts/garnet_wv_acceptance_status.py`. Both current gates intentionally exit nonzero with `state=pending` until `proofs/windows/launch-verification/wv6-minimum-shelf/WV_ACCEPTANCE.json` or `wv7-distribution/WV_ACCEPTANCE.json` binds every required check and SHA-256 artifact to one full candidate SHA. The reporter performs no Jon-only action and never self-promotes missing evidence.
+- Hardened the Rust MSRV reporter from string presence to structure: it now enumerates all 18 active non-archive manifests, rejects an unlisted manifest, scans every declared current surface for conflicting Rust version claims, and uses the pinned typed workflow-YAML projection to require active steps in exactly `ci.yml:test`, `ci.yml:agent-contracts`, and `macos-studio.yml:windows-studio`. Reviewer mutations for comments, `${{ false }}`, wrong-job placement, misplaced stable tracking, Rust 1.94+, and an extra active manifest all fail closed.
+- Launch remains HOLD. WV-6 and WV-7 remain pending acceptance contracts, not proof; signing, package-manager publication, promo QA, FIRE, tag, publish, and launch announcement remain Jon-only.
+
+## 2026-07-16T12:45Z — session 5 (Lane 0 truth freeze closed locally)
+
+- Closed namespaced ARCHIPELAGO Lane 0 P0-P3 at S6 without closing the live Garnet P7 mission. Every Lane 0 gate now points to sealed evidence; the namespaced mission is 4/4 definition-of-done complete and remains prepared for Jon's review/merge, never self-merged.
+- Recomputed exactly four denominators on the current tree: S114 bounded mission 19/19 = 100.0%; committed truth pulse 65.2/70 = 93.1% (rounded); launch-critical 3/6 = 50.0%; whole launch ledger 3/8 = 37.5%. Launch remains HOLD; no fifth or blended percentage was introduced.
+- The ARCHIPELAGO audit is band 3/5. A missing browser Playwright/runtime journey would cap runtime evidence at 4; the requested Lane 2C approval lacks current deterministic three-case, greater-than-four-minute proof, so it remains partial and lowers the audit to 3. Recorded the evidence failure as G4 -> S2 before proceeding to S6.
+- S6 governance verdict is advisory with no waivers. Local contracts, gates, evidence hashes, and ledger chain are enforced; Playwright, Lane 2C duration evidence, remote CI, final integrated review, admin-token provisioning, Jon-only merge, and activation remain pending.
+- Next: Lane 1 proves fresh/exact-head/outcome/live-policy clauses after Jon provisions a dedicated admin-authoritative token; Lane 2A closes package/page/Playwright/denial proof; Lane 2B closes bounded tool/raw-byte/seal/rejection/reporter proof; Lane 2C produces current deterministic duration evidence before approval.
+
+## 2026-07-16T13:14Z — session 6 (Lane 0 semantic closeout patch recaptured)
+
+- Rebased the evidence archive on explicit technical candidate `eb9f40a8b8c83fd9434d517318498dd268b1ded2`. The closeout gate now derives every reporter claim, enforces the exact 43-command inventory, and binds state, hashes, chronology, and the final independent verdict.
+- Corrected truth-pulse provenance to 65.2/70 = 93.1% (rounded); S114 remains 19/19, launch-critical 3/6, launch ledger 3/8, and launch remains HOLD.
+- Windows SOTU rendering now invokes `python` on win32 and `python3` elsewhere. The regenerated SOTU carries second-precision UTC so the ledger seal is provably later than the artifact.
+- Final integrated review remains PENDING. Namespaced P0-P3 stays complete at S6/band 3; main mission stays active at P7. Root must finalize review evidence and reseal before push/PR.
+
+## 2026-07-16T13:25Z — session 7 (Lane 0 singular review parser recaptured)
+
+- Captured the exact 43-command ladder against parser candidate `1d8b72d11cf8f7d5528ca5c09f3e3349f5ab39b0`; the candidate still changes 86 paths from the Lane 0 base.
+- The final-review parser now requires exactly one final section and one of each provenance/verdict field; duplicate headings, duplicate fields, appended PENDING/NEEDS PATCH/CHANGES REQUIRED, and later nonzero counts fail closed.
+- Namespaced P0-P3 remains complete at S6/band 3, the main mission remains active at P7, all four reporter-derived denominators are unchanged, and launch remains HOLD.
+- Final independent fix re-review remains pending. Root must finalize the tracked verdict and reseal before push/PR.
+
+## 2026-07-16T13:35Z — session 8 (Lane 0 final integrated review approved)
+
+- The full successor branch through `0ba52279feeb634824cef997e22f098ec867d75c` received an integrated final review at `2026-07-16T13:31:19Z`, and the final parser delta through `3124ba5ecfa88aa6f2c2c289313860670673cdec` received an independent final parser review at `2026-07-16T13:35:05Z`; both reported zero open Critical and Important findings.
+- The singular final-review record now covers `231aefa91985e5a0520c493c7f0fc3e54d74efc8..3124ba5ecfa88aa6f2c2c289313860670673cdec` with an APPROVED verdict. Lane 0 evidence is being freshly recaptured and resealed against that exact candidate.
+- Launch remains HOLD, Lane 2C remains partial, governance remains advisory at band 3/5, and Jon retains merge, activation, FIRE, tag, publish, promo QA, and 31-to-32 authority.

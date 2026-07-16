@@ -2,6 +2,7 @@
 name = "garnet-check"
 version = "0.3.0"
 edition = "2021"
+rust-version.workspace = true
 description = "Safe-mode ownership & boundary validator for Garnet v0.3 (Rung 4 skeleton)."
 license = "MIT OR Apache-2.0"
 

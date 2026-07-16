@@ -1,0 +1,6 @@
+$ python3 scripts/check_dogfood_pr_body.py --base 231aefa91985e5a0520c493c7f0fc3e54d74efc8 --head 3124ba5ecfa88aa6f2c2c289313860670673cdec --body-file ops/lane0/PR_BODY.md
+expected_exit=0
+actual_exit=0
+--- stdout ---
+dogfood-pr-body: ok (86 changed files checked)
+--- stderr ---

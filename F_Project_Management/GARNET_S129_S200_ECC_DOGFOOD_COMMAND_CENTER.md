@@ -70,7 +70,8 @@ from the MacBook Pro consolidation lane on 2026-06-11:
 - The consolidated drift map and the per-artifact verdicts now live in
   `F_Project_Management/GARNET_S131_S134_SOURCE_TRUTH_CONSOLIDATION.md`; the
   research reassessment lives in
-  `F_Project_Management/RESEARCH/GARNET_REASSESSMENT_2026-06-11.md`.
+  `research/2026-06/GARNET_REASSESSMENT_2026-06-11.md` (the former
+  `F_Project_Management/RESEARCH/` path is a compatibility pointer).
 
 Fable-capture inputs used as strategic proposals:
 
@@ -236,16 +237,16 @@ landed on main in #380):
 
 - **Quarterly competitive watch** (reassessment Gap 7): one report-only slice
   per quarter tracking new entrants in agent-native languages, agent-sandbox
-  runtimes, and attestation tooling. Lands in
-  `F_Project_Management/RESEARCH/`; first due 2026-09; keeps the white-space
-  claim honest — the moat is integration + timing, and timing requires a
-  watch. Misses are recorded as search-coverage statements, never as proof of
-  absence.
+  runtimes, attestation tooling, and agent governance/standards. The durable
+  contract is `research/QUARTERLY_COMPETITIVE_WATCH.md`; reports land under
+  `research/competitive-watch/`. The first report is planned for 2026 Q3 and
+  due 2026-09-30; the contract does not claim it ran. Misses are recorded as
+  search-coverage statements, never as proof of absence.
 
 ### Synthesis Queue (reassessment infusion, 2026-06-11)
 
 Inputs pre-routed into the post-W-REBUILD synthesis session (sourced from
-`RESEARCH/GARNET_REASSESSMENT_2026-06-11.md` §5/§7; the synthesis itself
+`research/2026-06/GARNET_REASSESSMENT_2026-06-11.md` §5/§7; the synthesis itself
 happens with the W-REBUILD final report + the consolidated fleet truth + this
 command center on the table, per `W_REBUILD_SPEC.md` §5):
 

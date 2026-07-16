@@ -1,0 +1,28 @@
+{
+  "schema": "garnet.lane0.environment/v1",
+  "capturedAt": "2026-07-16T13:39:31Z",
+  "platform": {
+    "system": "Darwin",
+    "release": "25.5.0",
+    "machine": "arm64"
+  },
+  "versions": {
+    "python": "Python 3.14.5",
+    "rustcExactMsrv": "rustc 1.95.0 (59807616e 2026-04-14)",
+    "cargoExactMsrv": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)",
+    "node": "v22.22.3",
+    "npm": "10.9.8",
+    "git": "git version 2.50.1 (Apple Git-155)"
+  },
+  "dependencies": {
+    "jsonschema": {
+      "available": true,
+      "version": "4.26.0"
+    },
+    "playwright": {
+      "available": false,
+      "degradation": "Python Playwright unavailable; no browser runtime evidence claimed."
+    }
+  },
+  "credentialAndForkMainProbePerformed": false
+}

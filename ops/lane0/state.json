@@ -1,0 +1,229 @@
+{
+  "version": 1,
+  "mission": {
+    "name": "idea-garnet-l0-truth-freeze",
+    "tagline": "Garnet's launch-convergence history, active mission pointers, Rust baseline, and remaining backlog must be frozen into o",
+    "repo": "Island-Dev-Crew/garnet",
+    "repoPath": ".",
+    "defaultBranch": "main",
+    "planDoc": "F_Project_Management/VALIDATION_REPORTS/Garnet-Launch-Preparation-State-of-the-Union-v1-2026-07-15.html",
+    "northStar": "Every first-parent PR commit in d0d4f7cc..1fe7489 has its exact squash-main SHA in observed merge order, followed by successor archive merge #499; Mission resume pointers resolve only to the materialized P7 phase and its four tasks; One Rust MSRV is declared consistently and enforced inside existing CI contexts; Every frozen-backlog claim names current code and fresh evidence or remains honestly partial or planned",
+    "status": "complete",
+    "started": "2026-07-16",
+    "updated": "2026-07-16T13:41:39Z",
+    "sessionCount": 5
+  },
+  "policies": {
+    "merge": "review",
+    "branchPrefix": "mission/",
+    "maxPrLines": 400,
+    "notes": "review until dogfood band 5 is routine; then auto."
+  },
+  "phases": [
+    {
+      "id": "P0",
+      "title": "Archive checkpoint and U-18 reconciliation",
+      "goal": "Archive every first-parent PR commit in d0d4f7cc..1fe7489 plus successor archive merge #499, and normalize mission resumption onto materialized P7 and P7-T1 through P7-T4.",
+      "status": "done",
+      "sessionsEstimate": "1",
+      "gates": [
+        {
+          "id": "P0-G1",
+          "title": "Lane 0 archive and U-18 checker regression suite passes",
+          "command": "python3 -I scripts/test_garnet_lane0_truth_freeze_status.py -v",
+          "status": "passed",
+          "evidence": "ops/lane0/evidence/20-python-tests.txt",
+          "lastRun": "2026-07-16T13:39:37Z",
+          "notes": "Fresh closeout ladder; reporter regression suite passed."
+        },
+        {
+          "id": "P0-G2",
+          "title": "Git-derived archive mapping and U-18 referential-integrity gate passes",
+          "command": "python3 -I scripts/garnet_lane0_truth_freeze_status.py --gate",
+          "status": "passed",
+          "evidence": "ops/lane0/evidence/04-truth-freeze.json",
+          "lastRun": "2026-07-16T13:39:32Z",
+          "notes": "Git-derived 34-commit archive plus sole successor #499; U-18 is exact P7/P7-T1..T4."
+        }
+      ],
+      "tasks": []
+    },
+    {
+      "id": "P1",
+      "title": "Policy, Rust MSRV, and WV contracts",
+      "goal": "Set Rust 1.95 consistently, preserve floating stable, bind enforcement to existing required CI contexts, and freeze WV-6/WV-7 as future acceptance contracts.",
+      "status": "done",
+      "sessionsEstimate": "1-2",
+      "gates": [
+        {
+          "id": "P1-G1",
+          "title": "MSRV contract tests pass",
+          "command": "python3 -I -S scripts/test_garnet_msrv_status.py -v",
+          "status": "passed",
+          "evidence": "ops/lane0/evidence/20-python-tests.txt",
+          "lastRun": "2026-07-16T13:39:38Z",
+          "notes": "Plain python3 -I -S MSRV regression suite passed."
+        },
+        {
+          "id": "P1-G2",
+          "title": "MSRV reporter gate passes",
+          "command": "python3 -I -S scripts/garnet_msrv_status.py --gate",
+          "status": "passed",
+          "evidence": "ops/lane0/evidence/05-msrv.json",
+          "lastRun": "2026-07-16T13:39:32Z",
+          "notes": "One Rust 1.95 floor across 18 active manifests and existing CI contexts."
+        }
+      ],
+      "tasks": []
+    },
+    {
+      "id": "P2",
+      "title": "Canonical research and evidence-tied backlog",
+      "goal": "Canonicalize the repo-held research corpus and freeze one machine-readable backlog whose claim states and evidence paths are deterministic.",
+      "status": "done",
+      "sessionsEstimate": "1-2",
+      "gates": [
+        {
+          "id": "P2-G1",
+          "title": "Frozen backlog evidence and claim-state gate passes",
+          "command": "python3 -I scripts/garnet_frozen_backlog_status.py --gate",
+          "status": "passed",
+          "evidence": "ops/lane0/evidence/06-frozen-backlog.json",
+          "lastRun": "2026-07-16T13:39:34Z",
+          "notes": "Machine backlog parsed and the stricter evidence/claim-state gate passed."
+        },
+        {
+          "id": "P2-G2",
+          "title": "Agent documentation contracts remain intact",
+          "command": "python3 scripts/check-agent-contracts.py",
+          "status": "passed",
+          "evidence": "ops/lane0/evidence/20-python-tests.txt",
+          "lastRun": "2026-07-16T13:40:10Z",
+          "notes": "Root and subsystem documentation-contract checks passed."
+        }
+      ],
+      "tasks": []
+    },
+    {
+      "id": "P3",
+      "title": "Evidence and closeout",
+      "goal": "Capture and hash final evidence, reconcile exact readiness denominators, record governance and audit findings, and close Lane 0 without changing launch HOLD.",
+      "status": "done",
+      "sessionsEstimate": "1-2",
+      "gates": [
+        {
+          "id": "P3-G1",
+          "title": "Machine truth has no drift",
+          "command": "cargo run -p xtask -- truth --check",
+          "status": "passed",
+          "evidence": "ops/lane0/evidence/11-truth-check.txt",
+          "lastRun": "2026-07-16T13:39:36Z",
+          "notes": "Machine truth check passed on the current Lane 0 tree."
+        },
+        {
+          "id": "P3-G2",
+          "title": "Repository evidence integrity passes",
+          "command": "python3 scripts/garnet_evidence_integrity_status.py --format json --gate",
+          "status": "passed",
+          "evidence": "ops/lane0/evidence/12-repository-evidence-integrity.json",
+          "lastRun": "2026-07-16T13:39:36Z",
+          "notes": "All repository proof-bundle manifests verified; Lane 0 has a separate exact manifest."
+        },
+        {
+          "id": "P3-G3",
+          "title": "Mission state of the union renders",
+          "command": "node ops/mission/render-sotu.mjs",
+          "status": "passed",
+          "evidence": "ops/lane0/evidence/23-sotu-render.txt",
+          "lastRun": "2026-07-16T13:41:39Z",
+          "notes": "Generated mission SOTU rendered from state; HTML was not hand-edited."
+        }
+      ],
+      "tasks": []
+    }
+  ],
+  "metrics": [
+    {
+      "label": "Definition-of-done claims verified",
+      "baseline": "0",
+      "current": "4",
+      "target": "4",
+      "direction": "up"
+    }
+  ],
+  "risks": [
+    {
+      "title": "A prose-only reconciliation could hide a stale phase pointer or promote an unevidenced launch claim.",
+      "severity": "medium",
+      "note": "from idea.lock (confidence 8/10)"
+    }
+  ],
+  "prLog": [],
+  "resume": {
+    "activePhase": null,
+    "nextActions": [
+      "Lane 1: prove fresh, exact-reviewed-head, outcome-verified GOV-009 state and close the live settings/no-bypass readback only after Jon provisions a dedicated admin-authoritative token.",
+      "Lane 2A: materialize the hermetic package, connect the live adapter/page, run Playwright traps, promote only from reporter evidence, and prove fail-closed denial.",
+      "Lane 2B: add one bounded in-process Garnet tool, raw-byte stdio, a sealed baseline, reject-without-seal proof, and a deterministic Shelf reporter.",
+      "Lane 2C: rerun and deterministically report three exact-candidate stress cases exceeding four minutes before restoring APPROVED; current state remains partial."
+    ],
+    "blockers": [],
+    "conventions": [
+      "One task = one branch = one PR",
+      "Update state.json + render + commit after every merge",
+      "Gate commands are shell-agnostic (no &&)"
+    ]
+  },
+  "closeout": {
+    "audit": "ops/lane0/AUDIT.md",
+    "finalIntegratedReview": "approved",
+    "band": 3,
+    "bandMaximum": 5,
+    "bandCapReason": "No browser runtime journey caps at 4; the requested but unverified Lane 2C duration claim lowers the audit to 3.",
+    "governanceVerdict": "advisory",
+    "waivers": [],
+    "enforcedLocally": [
+      "contracts and deterministic gates",
+      "exact SHA-256 evidence manifest",
+      "ARCHIPELAGO ledger chain"
+    ],
+    "pending": [
+      "browser Playwright/runtime journey",
+      "Lane 2C three-case duration proof",
+      "remote CI and Jon-only merge/activation"
+    ]
+  },
+  "archipelago": {
+    "protocolVersion": "1.0",
+    "ideaLock": "ops/lane0/idea.lock.json",
+    "planLock": "ops/lane0/plan.lock.json",
+    "loop": {
+      "cycle": 1,
+      "stage": "S6",
+      "loopbacks": [
+        {
+          "fromGate": "G4",
+          "toStage": "S2",
+          "reason": "Lane 2C approval lacked current deterministic evidence for three exact-candidate stress cases exceeding four minutes.",
+          "at": "2026-07-16T13:39:31Z"
+        }
+      ]
+    },
+    "governance": {
+      "ledgerRunId": "lane0-20260716-3124ba5",
+      "budgetSpentUsd": 0.0,
+      "branchSweeps": []
+    },
+    "compound": {
+      "notes": [
+        "ops/lane0/AUDIT.md"
+      ],
+      "memorySync": "skipped",
+      "experiments": []
+    },
+    "fableShim": {
+      "rewriterVersion": "1.0.0",
+      "refusals": []
+    }
+  }
+}

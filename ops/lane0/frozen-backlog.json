@@ -1,0 +1,474 @@
+{
+  "schema": "garnet.lane0.frozen_backlog/v1",
+  "frozenAt": "2026-07-16",
+  "exactBaseMainSha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+  "launchStatus": "HOLD",
+  "allowedClaimStates": [
+    "implemented",
+    "partial",
+    "planned",
+    "research"
+  ],
+  "entries": [
+    {
+      "id": "LANE-1-ITEM-1",
+      "title": "GOV-009 authenticated exact-head governance boundary",
+      "claimState": "partial",
+      "exactBaseMainSha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+      "authoritySources": [
+        {
+          "kind": "repository",
+          "path": "ops/mission/state.json",
+          "anchor": "P7-T1"
+        },
+        {
+          "kind": "repository",
+          "path": "GOVERNANCE.md",
+          "anchor": "Live governance readback"
+        }
+      ],
+      "acceptanceCommand": "python -I scripts/test_garnet_github_governance_gate.py",
+      "evidenceFiles": [
+        "scripts/test_garnet_github_governance_transport.py",
+        "scripts/test_garnet_github_link_headers.py",
+        "ops/mission/state.json"
+      ],
+      "implementedClauses": [
+        {
+          "id": "authenticated",
+          "claim": "PR #500 added authenticated bounded GitHub object transport.",
+          "mainSha": "52971a52e69dbeba56ce4d85146ef12be18fde76",
+          "codePaths": [
+            "scripts/garnet_github_governance_transport.py"
+          ],
+          "evidencePaths": [
+            "scripts/test_garnet_github_governance_transport.py"
+          ]
+        },
+        {
+          "id": "strict-pagination",
+          "claim": "PR #502 added the strict physical Link-header pagination boundary.",
+          "mainSha": "8c07fec0f5c92f2f8a07e58cb9e8ce311805139d",
+          "codePaths": [
+            "scripts/garnet_github_link_headers.py"
+          ],
+          "evidencePaths": [
+            "scripts/test_garnet_github_link_headers.py"
+          ]
+        },
+        {
+          "id": "complete-collection",
+          "claim": "PR #506 added bounded complete page collection.",
+          "mainSha": "1fe74892c588f912e103742afc9d11e845e8d4e6",
+          "codePaths": [
+            "scripts/garnet_github_governance_transport.py"
+          ],
+          "evidencePaths": [
+            "scripts/test_garnet_github_governance_transport.py"
+          ]
+        }
+      ],
+      "openClauses": [
+        {
+          "id": "fresh",
+          "claim": "Record a fresh live cohort from the final reviewed candidate."
+        },
+        {
+          "id": "exact-reviewed-head",
+          "claim": "Bind every selected live object and run to the exact reviewed head."
+        },
+        {
+          "id": "outcome-verified",
+          "claim": "Verify the selected attempts and required outcomes, not presence alone."
+        },
+        {
+          "id": "live-no-bypass",
+          "claim": "Perform the admin-authoritative live settings and no-bypass readback; U-17 blocks this until Jon provisions a dedicated token."
+        }
+      ],
+      "futureEvidence": [
+        {
+          "path": "F_Project_Management/W_TRUST/reviews/GOV-009-final/",
+          "status": "future-not-evidence",
+          "purpose": "Exact-head live observation, outcome record, admin readback, and independent verdict."
+        }
+      ],
+      "jonOnlyActions": [
+        "Provision the dedicated admin-authoritative read-only token required by U-17.",
+        "Perform the 31-to-32 ceremony and any base-controlled activation.",
+        "Approve the base merge and final governance claim promotion."
+      ]
+    },
+    {
+      "id": "LANE-2A",
+      "title": "Live browser playground proof",
+      "claimState": "partial",
+      "exactBaseMainSha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+      "authoritySources": [
+        {
+          "kind": "repository",
+          "path": "ops/mission/state.json",
+          "anchor": "P7-T2"
+        }
+      ],
+      "acceptanceCommand": "node scripts/smoke_garnet_playground_browser.mjs --gate",
+      "evidenceFiles": [
+        "garnet-wasm/tests/check_and_diff.rs",
+        "scripts/test_build_playground_wasm.py",
+        "ops/mission/state.json"
+      ],
+      "implementedClauses": [
+        {
+          "id": "wasm-adapters",
+          "claim": "PR #498 added Wasm check and capability-diff adapters.",
+          "mainSha": "a021005a2ea4714b9dc7ca4600f32c7685842bce",
+          "codePaths": [
+            "garnet-wasm/src/lib.rs"
+          ],
+          "evidencePaths": [
+            "garnet-wasm/tests/check_and_diff.rs"
+          ]
+        },
+        {
+          "id": "hermetic-probe",
+          "claim": "PR #505 added a hermetic no-publish playground package probe.",
+          "mainSha": "65da989c1bc915e90a28865f3d1dd0045d6404fa",
+          "codePaths": [
+            "scripts/build_playground_wasm.py"
+          ],
+          "evidencePaths": [
+            "scripts/test_build_playground_wasm.py"
+          ]
+        }
+      ],
+      "openClauses": [
+        {
+          "id": "package-materialization",
+          "claim": "Materialize the reproducible browser package."
+        },
+        {
+          "id": "live-adapter-page",
+          "claim": "Wire the live adapter into the real page."
+        },
+        {
+          "id": "playwright-traps",
+          "claim": "Record clean-browser run, check, diff, and denial traps with Playwright."
+        },
+        {
+          "id": "reporter-promotion",
+          "claim": "Promote browser status only through the deterministic reporter."
+        },
+        {
+          "id": "fail-closed-denial",
+          "claim": "Prove the browser path denies authority expansion fail-closed."
+        }
+      ],
+      "futureEvidence": [
+        {
+          "path": "proofs/playground/lane2a-browser/",
+          "status": "future-not-evidence",
+          "purpose": "Manifested package, clean-browser transcripts, screenshots, traps, and reporter output."
+        }
+      ],
+      "jonOnlyActions": [
+        "Approve any public browser-live claim promotion.",
+        "Perform promo QA signoff or launch FIRE after the reporter turns green."
+      ]
+    },
+    {
+      "id": "LANE-2B",
+      "title": "Minimum Sealed Shelf",
+      "claimState": "partial",
+      "exactBaseMainSha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+      "authoritySources": [
+        {
+          "kind": "repository",
+          "path": "ops/mission/state.json",
+          "anchor": "P7-T3"
+        }
+      ],
+      "acceptanceCommand": "python scripts/smoke_garnet_minimum_shelf.py --gate",
+      "evidenceFiles": [
+        "garnet-cli/tests/mcp_initialize_schema.rs",
+        "garnet-cli/tests/mcp_protocol.rs",
+        "garnet-cli/tests/mcp_protocol_adversarial.rs",
+        "ops/mission/state.json"
+      ],
+      "implementedClauses": [
+        {
+          "id": "initialize-schema",
+          "claim": "PR #501 validates the MCP 2025-11-25 initialize schema.",
+          "mainSha": "750e4b6869f472e1d789129e932ca4a1a7aa476e",
+          "codePaths": [
+            "garnet-cli/src/mcp_schema.rs"
+          ],
+          "evidencePaths": [
+            "garnet-cli/tests/mcp_initialize_schema.rs"
+          ]
+        },
+        {
+          "id": "lifecycle-core",
+          "claim": "PR #503 added the fail-closed Minimum Shelf lifecycle core.",
+          "mainSha": "098b0bdb4dd5b38bf7086e518bf451b669b1b156",
+          "codePaths": [
+            "garnet-cli/src/mcp.rs",
+            "garnet-cli/src/mcp_schema.rs"
+          ],
+          "evidencePaths": [
+            "garnet-cli/tests/mcp_protocol.rs"
+          ]
+        },
+        {
+          "id": "adversarial-hardening",
+          "claim": "PR #504 hardened the lifecycle boundary adversarially.",
+          "mainSha": "46031e71734f693982f73cfe86ea2406bd24e215",
+          "codePaths": [
+            "garnet-cli/src/mcp.rs"
+          ],
+          "evidencePaths": [
+            "garnet-cli/tests/mcp_protocol_adversarial.rs"
+          ]
+        }
+      ],
+      "openClauses": [
+        {
+          "id": "bounded-tool",
+          "claim": "Add one bounded in-process Garnet tool."
+        },
+        {
+          "id": "raw-byte-stdio",
+          "claim": "Exercise the protocol over the raw-byte stdio boundary."
+        },
+        {
+          "id": "sealed-baseline",
+          "claim": "Record one exact sealed baseline."
+        },
+        {
+          "id": "reject-without-seal",
+          "claim": "Prove the same candidate rejects the unsealed or mismatched path."
+        },
+        {
+          "id": "deterministic-reporter",
+          "claim": "Bind all shelf outcomes to one deterministic reporter and exact candidate."
+        }
+      ],
+      "futureEvidence": [
+        {
+          "path": "proofs/minimum-shelf/lane2b/",
+          "status": "future-not-evidence",
+          "purpose": "Raw-byte transcripts, bounded tool fixture, seal artifacts, rejection proof, and reporter output."
+        }
+      ],
+      "jonOnlyActions": [
+        "Approve the frozen sealed baseline used for launch review.",
+        "Approve any public Minimum Shelf claim promotion or base merge."
+      ]
+    },
+    {
+      "id": "LANE-2C",
+      "title": "Long-duration stress evidence",
+      "claimState": "partial",
+      "exactBaseMainSha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+      "authoritySources": [
+        {
+          "kind": "jon-directive",
+          "reference": "Lane 0 requested approval on three reproducible stress cases exceeding four minutes."
+        },
+        {
+          "kind": "repository",
+          "path": "F_Project_Management/GARNET_v3_2_HANDOFF.md",
+          "anchor": "Phase 9"
+        }
+      ],
+      "acceptanceCommand": "python3 -I scripts/garnet_lane2c_stress_status.py --gate",
+      "evidenceFiles": [
+        "garnet-memory-v0.3/tests/stress.rs",
+        "garnet-actor-runtime/tests/stress.rs",
+        "F_Project_Management/GARNET_v3_2_VERIFICATION_LOG.md"
+      ],
+      "finding": "The repository contains six ignored stress fixtures, but no tracked three-case proof exceeding four minutes. The historical memory verification records four cases completing in 0.03s, so the requested APPROVED state is not admitted.",
+      "implementedClauses": [
+        {
+          "id": "stress-fixtures",
+          "claim": "Six ignored stress fixtures exist across memory and actor runtime.",
+          "mainSha": "6a92b35625a5363f12cfff1a815139cd95c88a4f",
+          "codePaths": [
+            "garnet-memory-v0.3/tests/stress.rs",
+            "garnet-actor-runtime/tests/stress.rs"
+          ],
+          "evidencePaths": [
+            "F_Project_Management/GARNET_v3_2_HANDOFF.md",
+            "F_Project_Management/GARNET_v3_2_VERIFICATION_LOG.md"
+          ]
+        }
+      ],
+      "openClauses": [
+        {
+          "id": "three-over-four-minute-cases",
+          "claim": "Record three reproducible stress cases exceeding four minutes, bound to exact commands, candidate SHA, timings, platform, and raw output."
+        },
+        {
+          "id": "deterministic-stress-reporter",
+          "claim": "Add a reporter that rejects short, missing, stale, or unbound timing evidence."
+        }
+      ],
+      "futureEvidence": [
+        {
+          "path": "proofs/performance/lane2c-stress/",
+          "status": "future-not-evidence",
+          "purpose": "Exact-candidate commands, raw output, platform metadata, monotonic timings, hashes, and deterministic reporter verdict."
+        }
+      ],
+      "jonOnlyActions": [
+        "Approve promotion from partial only after independent review of the long-duration evidence."
+      ]
+    },
+    {
+      "id": "WV-6",
+      "title": "Core Ring Tier 1 plus Minimum Shelf/MCP Windows proof",
+      "claimState": "planned",
+      "exactBaseMainSha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+      "authoritySources": [
+        {
+          "kind": "repository",
+          "path": "F_Project_Management/LAUNCH/WV6_WV7_ACCEPTANCE_CONTRACTS.json",
+          "anchor": "\"id\": \"WV-6\""
+        }
+      ],
+      "acceptanceCommand": "python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6 --gate",
+      "evidenceFiles": [
+        "F_Project_Management/LAUNCH/WV6_WV7_ACCEPTANCE_CONTRACTS.json",
+        "scripts/test_garnet_wv_acceptance_status.py"
+      ],
+      "implementedClauses": [],
+      "openClauses": [
+        {
+          "id": "wv6-contract",
+          "claim": "Satisfy the frozen WV-6 contract on one exact native-Windows candidate after Core Ring Tier 1 and the Minimum Shelf path ship."
+        }
+      ],
+      "futureEvidence": [
+        {
+          "path": "proofs/windows/launch-verification/wv6-minimum-shelf/",
+          "status": "future-not-evidence",
+          "purpose": "Hash-verified WV_ACCEPTANCE.json and native-Windows artifacts."
+        }
+      ],
+      "jonOnlyActions": [
+        "Approve any integrity-policy or base-merge change.",
+        "Decide whether the evidence is sufficient for launch-scope promotion.",
+        "Perform FIRE, tag, publication, or announcement."
+      ]
+    },
+    {
+      "id": "WV-7",
+      "title": "Windows distribution proof",
+      "claimState": "planned",
+      "exactBaseMainSha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+      "authoritySources": [
+        {
+          "kind": "repository",
+          "path": "F_Project_Management/LAUNCH/WV6_WV7_ACCEPTANCE_CONTRACTS.json",
+          "anchor": "\"id\": \"WV-7\""
+        }
+      ],
+      "acceptanceCommand": "python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-7 --gate",
+      "evidenceFiles": [
+        "F_Project_Management/LAUNCH/WV6_WV7_ACCEPTANCE_CONTRACTS.json",
+        "scripts/test_garnet_wv_acceptance_status.py"
+      ],
+      "implementedClauses": [],
+      "openClauses": [
+        {
+          "id": "wv7-contract",
+          "claim": "Satisfy the frozen winget/Scoop dry-run, devcontainer/Docker, and installer happy-path contract on one exact candidate."
+        }
+      ],
+      "futureEvidence": [
+        {
+          "path": "proofs/windows/launch-verification/wv7-distribution/",
+          "status": "future-not-evidence",
+          "purpose": "Hash-verified WV_ACCEPTANCE.json and clean-environment distribution artifacts."
+        }
+      ],
+      "jonOnlyActions": [
+        "Provision or authorize signing credentials beyond the dry-run boundary.",
+        "Publish to winget, Scoop, or any release channel.",
+        "Approve base merge, promo QA, FIRE, tag, or announcement."
+      ]
+    },
+    {
+      "id": "U-15",
+      "title": "Fleet-fork main public-truth reconciliation",
+      "claimState": "planned",
+      "exactBaseMainSha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+      "authoritySources": [
+        {
+          "kind": "jon-directive",
+          "reference": "Lane 0 records U-15 against Lane 3 and must not read Navigata1/garnet main."
+        }
+      ],
+      "acceptanceCommand": "python3 -I scripts/garnet_public_truth_status.py --gate",
+      "evidenceFiles": [
+        "ops/lane0/plan.lock.json"
+      ],
+      "implementedClauses": [],
+      "openClauses": [
+        {
+          "id": "reconcile-or-banner",
+          "claim": "In Lane 3, reconcile the curated fork snapshot with upstream truth or place an explicit public banner without treating fork main as integration authority."
+        }
+      ],
+      "futureEvidence": [
+        {
+          "path": "F_Project_Management/PUBLIC_TRUTH/NAVIGATA1_MAIN_RECONCILIATION.md",
+          "status": "future-not-evidence",
+          "purpose": "Lane 3 upstream/fork surface comparison, decision, and public banner or reconciliation proof."
+        }
+      ],
+      "jonOnlyActions": [
+        "Approve any public banner wording or fork-main reconciliation action."
+      ]
+    },
+    {
+      "id": "QWATCH",
+      "title": "Quarterly competitive watch",
+      "claimState": "planned",
+      "exactBaseMainSha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+      "authoritySources": [
+        {
+          "kind": "repository",
+          "path": "research/QUARTERLY_COMPETITIVE_WATCH.md",
+          "anchor": "Cadence: quarterly"
+        },
+        {
+          "kind": "repository",
+          "path": "F_Project_Management/GARNET_S129_S200_ECC_DOGFOOD_COMMAND_CENTER.md",
+          "anchor": "Quarterly competitive watch"
+        }
+      ],
+      "acceptanceCommand": "python3 -I scripts/garnet_quarterly_competitive_watch_status.py --gate",
+      "evidenceFiles": [
+        "research/QUARTERLY_COMPETITIVE_WATCH.md",
+        "scripts/test_garnet_quarterly_competitive_watch_status.py"
+      ],
+      "implementedClauses": [],
+      "openClauses": [
+        {
+          "id": "first-report",
+          "claim": "Run and record the first four-category watch for 2026 Q3 by 2026-09-30. The activated contract is not a completed report."
+        }
+      ],
+      "futureEvidence": [
+        {
+          "path": "research/competitive-watch/2026-Q3.md",
+          "status": "future-not-evidence",
+          "purpose": "Completed first-quarter query log, primary sources, observed results, and coverage limitations."
+        }
+      ],
+      "jonOnlyActions": [
+        "Approve any public competitive or white-space claim derived from the report."
+      ]
+    }
+  ]
+}

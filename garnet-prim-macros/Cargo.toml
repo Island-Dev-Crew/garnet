@@ -4,6 +4,7 @@ name = "garnet-prim-macros"
 # consumers is policy-required: cargo-deny bans wildcard internal path deps).
 version = "0.1.0"
 edition = "2021"
+rust-version.workspace = true
 license = "MIT OR Apache-2.0"
 description = "RB-3 registry-derived dispatch macros: #[garnet_primitive] adapters collected per-module into the interpreter's native table."
 

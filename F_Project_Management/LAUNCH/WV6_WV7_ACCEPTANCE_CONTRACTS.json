@@ -1,0 +1,129 @@
+{
+  "schema": "garnet.wv_acceptance_contracts/v2",
+  "artifactRevision": 2,
+  "claimState": "planned",
+  "frozenAtBaseMainSha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+  "supersession": {
+    "supersedesRevision": 1,
+    "reason": "Revision 1 incorrectly reused WV-6 for Mac Air language-depth reconciliation and WV-7 for frozen-candidate release review. The tracked authority at cad91aa:ops/mission/state.json#resume.nextActions[1] retains WV-6 for the post-Core-Ring/MCP Windows proof and WV-7 for distribution proof."
+  },
+  "scope": "Acceptance definitions only. Until the fail-closed reporter verifies one exact-candidate Windows evidence manifest, WV-6 and WV-7 remain pending and make no launch, distribution, signing, publication, or production claim.",
+  "contracts": [
+    {
+      "id": "WV-6",
+      "title": "Core Ring Tier 1 + Minimum Shelf/MCP Windows proof",
+      "claimState": "planned",
+      "authoritySources": [
+        {
+          "path": "git:cad91aa499e8166a75f3d32e09762aaf5ea8d5c0:ops/mission/state.json",
+          "anchor": "resume.nextActions[1]",
+          "authority": "WV-6 begins after Core Ring Tier 1 and the MCP library ship."
+        },
+        {
+          "path": "ops/mission/state.json",
+          "anchor": "phases[P7].tasks[P7-T3]",
+          "authority": "The current Minimum Shelf lane owns the bounded in-process tool, raw-byte stdio, sealed baseline, reject-without-seal proof, and deterministic reporter."
+        }
+      ],
+      "exactBaseMainSha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+      "entryConditions": [
+        "Core Ring Tier 1 is frozen without widening into hosted registry infrastructure.",
+        "One bounded in-process Garnet MCP tool and raw-byte stdio lifecycle exist.",
+        "One sealed baseline and reject-without-seal trap exist before Windows recording."
+      ],
+      "acceptanceCommand": "python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6 --gate",
+      "evidenceDestination": "proofs/windows/launch-verification/wv6-minimum-shelf/",
+      "evidenceManifest": "WV_ACCEPTANCE.json",
+      "requiredChecks": [
+        {
+          "id": "core-ring-tier1",
+          "criterion": "The Windows evidence identifies the frozen Core Ring Tier 1 surface and proves no hosted-registry or arbitrary external-host claim."
+        },
+        {
+          "id": "mcp-raw-byte-stdio",
+          "criterion": "The Windows evidence records bounded raw-byte stdio initialize/list/call/error behavior for one in-process Garnet tool."
+        },
+        {
+          "id": "sealed-baseline",
+          "criterion": "The exact candidate accepts the named sealed baseline and records its deterministic identity."
+        },
+        {
+          "id": "reject-without-seal",
+          "criterion": "The same exact candidate rejects the unsealed or mismatched path fail-closed with a nonzero outcome."
+        },
+        {
+          "id": "deterministic-shelf-reporter",
+          "criterion": "A deterministic reporter binds all WV-6 outcomes and artifacts to one full candidate SHA."
+        }
+      ],
+      "scopeLimits": [
+        "WV-6 is native Windows evidence for the bounded Garnet-owned Shelf path, not arbitrary MCP host enforcement.",
+        "WV-6 does not prove hosted registry, browser execution, production readiness, signing, release publication, or FIRE."
+      ],
+      "jonOnlyActions": [
+        "Approve any base-merge gate or integrity-policy change required by the Shelf candidate.",
+        "Decide whether WV-6 evidence is sufficient for launch-scope claim promotion.",
+        "Decide FIRE versus HOLD and perform any tag, release publication, or public launch action outside this acceptance gate."
+      ]
+    },
+    {
+      "id": "WV-7",
+      "title": "winget/scoop dry-run + devcontainer/Docker + installer happy-path distribution proof",
+      "claimState": "planned",
+      "authoritySources": [
+        {
+          "path": "git:cad91aa499e8166a75f3d32e09762aaf5ea8d5c0:ops/mission/state.json",
+          "anchor": "resume.nextActions[1]",
+          "authority": "WV-7 owns winget/scoop dry-run, devcontainer/Docker, and installer happy-path proof."
+        },
+        {
+          "path": "F_Project_Management/GARNET_BUILD_PROOF.md",
+          "anchor": "Windows CLI distribution",
+          "authority": "Windows CLI distribution remains deferred until exact package-manager and installer evidence exists."
+        }
+      ],
+      "exactBaseMainSha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+      "entryConditions": [
+        "One exact candidate and its Windows release artifacts are frozen.",
+        "Dry-run manifests reference that exact candidate's artifacts and hashes.",
+        "Container and installer exercises use clean, recorded environments."
+      ],
+      "acceptanceCommand": "python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-7 --gate",
+      "evidenceDestination": "proofs/windows/launch-verification/wv7-distribution/",
+      "evidenceManifest": "WV_ACCEPTANCE.json",
+      "requiredChecks": [
+        {
+          "id": "winget-dry-run",
+          "criterion": "A local winget manifest validate/install dry-run is recorded against the exact candidate without claiming upstream publication."
+        },
+        {
+          "id": "scoop-dry-run",
+          "criterion": "A local Scoop bucket manifest install/uninstall dry-run is recorded against the exact candidate without claiming public bucket publication."
+        },
+        {
+          "id": "devcontainer",
+          "criterion": "The exact candidate builds and runs through the committed devcontainer happy path."
+        },
+        {
+          "id": "docker",
+          "criterion": "The exact candidate builds and runs through the committed Docker happy path with bounded output."
+        },
+        {
+          "id": "installer-happy-path",
+          "criterion": "A clean Windows install, CLI smoke, and uninstall transcript is recorded for the exact candidate."
+        }
+      ],
+      "scopeLimits": [
+        "Dry-run validation is not winget-pkgs acceptance, public Scoop publication, signed MSI, Authenticode, or SmartScreen reputation.",
+        "Container proof is distribution reproducibility evidence, not native Linux desktop or OS-sandbox enforcement.",
+        "WV-7 does not tag, publish, announce, or declare production readiness."
+      ],
+      "jonOnlyActions": [
+        "Provision or authorize any signing credential needed beyond the dry-run boundary.",
+        "Submit or publish to upstream winget or public Scoop channels.",
+        "Approve the base-merge gate and promo QA signoff.",
+        "Decide FIRE versus HOLD and perform any tag, release publication, or launch announcement."
+      ]
+    }
+  ]
+}

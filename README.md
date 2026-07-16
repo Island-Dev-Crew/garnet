@@ -107,7 +107,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 Release-first, source-fallback. <!-- truth:latest_tag -->v0.8.1<!-- /truth --> ships signed
 `.deb` / `.rpm` / macOS tarballs with a GPG-signed `SHA256SUMS` — verify per
 [docs/release-signing.md](docs/release-signing.md). No matching package for your platform?
-The installer builds from source (a recent stable Rust toolchain — 1.75+ per
+The installer builds from source (Rust 1.95+; CI also tracks current stable — per
 [CONTRIBUTING.md](CONTRIBUTING.md)), or:
 
 ```sh

@@ -1216,7 +1216,7 @@
         var s=(plat+' '+(navigator.userAgent||'')).toLowerCase();
         var t='';
         if(s.indexOf('mac')>-1) t='Detected: macOS — the universal installer uses signed v0.8.1 release assets when available, otherwise source fallback. Apple Silicon and Intel CLI tarballs are published; signed .pkg remains credential-gated.';
-        else if(s.indexOf('win')>-1) t='Detected: Windows — no v0.8.1 Windows package is claimed yet; use the source install (needs Rust 1.75+).';
+        else if(s.indexOf('win')>-1) t='Detected: Windows — no v0.8.1 Windows package is claimed yet; use the source install (needs Rust 1.95+).';
         else if(s.indexOf('linux')>-1||s.indexOf('android')>-1) t='Detected: Linux — the universal installer uses checksum-verified v0.8.1 x86_64 packages when available; other targets fall back to source.';
         if(!t)return; // unknown platform → no banner, silent
         msg.textContent=t;
@@ -1227,7 +1227,7 @@
     </script>
 
     <div class="install-note" style="margin:8px 0 26px;padding:16px 18px;border:1px solid var(--rule);border-radius:10px;background:var(--bg-soft);font-size:14.5px;color:var(--ink-soft);">
-      <strong style="color:var(--ink);">Before you install.</strong> Prebuilt release packages need <em>no toolchain</em>. The <em>source</em> install needs <strong>Rust 1.75+</strong>. The latest tagged release is <strong>v0.8.1</strong>, a research-grade milestone; it ships signed <strong>garnet-0.8.1-*</strong> binaries shown below (re-cut 2026-06-07; SHA256SUMS GPG-signed, verify per docs/release-signing.md), and v0.4.2 remains an older release if you need to pin older behavior:
+      <strong style="color:var(--ink);">Before you install.</strong> Prebuilt release packages need <em>no toolchain</em>. The <em>source</em> install needs <strong>Rust 1.95+</strong>; CI also tracks current stable. The latest tagged release is <strong>v0.8.1</strong>, a research-grade milestone; it ships signed <strong>garnet-0.8.1-*</strong> binaries shown below (re-cut 2026-06-07; SHA256SUMS GPG-signed, verify per docs/release-signing.md), and v0.4.2 remains an older release if you need to pin older behavior:
       <table style="border-collapse:collapse;margin:12px 0 4px;font-size:13.5px;width:100%;">
         <tr style="color:var(--ink);"><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">Platform</th><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">v0.8.1 asset</th><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">Current path</th></tr>
         <tr><td style="padding:4px 10px;">macOS · Apple Silicon</td><td style="padding:4px 10px;"><code>garnet-0.8.1-aarch64-apple-darwin.tar.gz</code></td><td style="padding:4px 10px;">release tarball; signed .pkg not claimed</td></tr>

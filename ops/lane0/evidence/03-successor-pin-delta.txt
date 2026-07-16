@@ -1,0 +1,22 @@
+$ git log --oneline --first-parent 1fe7489..231aefa
+expected_exit=0
+actual_exit=0
+--- stdout ---
+231aefa ops(mission): open parallel launch convergence (#499)-JI
+--- stderr ---
+
+
+$ git rev-list --count --first-parent 1fe7489..231aefa
+expected_exit=0
+actual_exit=0
+--- stdout ---
+1
+--- stderr ---
+
+
+$ git merge-base --is-ancestor 1fe74892c588f912e103742afc9d11e845e8d4e6 231aefa91985e5a0520c493c7f0fc3e54d74efc8
+expected_exit=0
+actual_exit=0
+--- stdout ---
+
+--- stderr ---

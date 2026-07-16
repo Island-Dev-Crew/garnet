@@ -10,14 +10,26 @@
     "northStar": "An authenticated, complete, exact-head merge boundary plus a live in-browser Garnet proof and one reproducible sealed local Shelf demo. Claim only what the committed traps prove.",
     "status": "active",
     "started": "2026-07-12",
-    "updated": "2026-07-15T17:47:00Z",
-    "sessionCount": 3
+    "updated": "2026-07-16T13:39:31Z",
+    "sessionCount": 8
   },
   "policies": {
     "merge": "auto",
     "branchPrefix": "mission/",
     "maxPrLines": 400,
-    "notes": "auto = squash-merge own PR when full CI green, with the recorded 'Autonomous merge — agent: Claude Code (Fable 5); gates: ...' trailer (CLAUDE.md integrity rule 3), per Jon's 2026-07-12 execute-end-to-end directive and the #466-#471 convention. EXCEPTIONS (Jon-merge-only per CLAUDE.md integrity rule 1): any PR touching .github/workflows/, dogfood-gate scripts, diff-caps thresholds, or the capability-manifest standard — open those, park in resume.blockers. Never push tags. PRs touching F_Project_Management/, C_Language_Specification/, garnet-interp-v0.3/, examples/, Cargo.lock, or CURRENT_STATE.md need the full dogfood PR-body heading set (pre-validate: python scripts/check_dogfood_pr_body.py)."
+    "jonMergeOnlyExceptions": [
+      ".github/workflows/**",
+      "dogfood-gate scripts",
+      "diff-caps thresholds",
+      "capability-manifest standard",
+      "scripts/garnet_github_*"
+    ],
+    "governanceFreeze": {
+      "status": "not_armed",
+      "armsAt": "Lane 1 terminus",
+      "note": "GOV-009 merges #500, #502, and #506 did not arm the freeze."
+    },
+    "notes": "auto = squash-merge own PR when full CI green, with the recorded 'Autonomous merge \u2014 agent: Claude Code (Fable 5); gates: ...' trailer (CLAUDE.md integrity rule 3), per Jon's 2026-07-12 execute-end-to-end directive and the #466-#471 convention. EXCEPTIONS (Jon-merge-only per CLAUDE.md integrity rule 1): any PR touching .github/workflows/, dogfood-gate scripts, diff-caps thresholds, the capability-manifest standard, or scripts/garnet_github_* \u2014 open those, park in resume.blockers. U-16 decision: extend the exception list to scripts/garnet_github_*; #500, #502, and #506 auto-merged correctly under the prior list, and governance freeze remains unarmed until the Lane 1 terminus. Never push tags. PRs touching F_Project_Management/, C_Language_Specification/, garnet-interp-v0.3/, examples/, Cargo.lock, or CURRENT_STATE.md need the full dogfood PR-body heading set (pre-validate: python scripts/check_dogfood_pr_body.py)."
   },
   "phases": [
     {
@@ -29,12 +41,12 @@
       "gates": [
         {
           "id": "P0-G1",
-          "title": "Launch-readiness reporter test suite green (includes byte-for-byte ledger pin; slow — runs live sibling reporters, ~5 min)",
+          "title": "Launch-readiness reporter test suite green (includes byte-for-byte ledger pin; slow \u2014 runs live sibling reporters, ~5 min)",
           "command": "python scripts/test_garnet_launch_readiness_status.py",
           "status": "passed",
           "evidence": "ops/mission/evidence/P0-G1-2026-07-12.txt",
           "lastRun": "2026-07-13T03:15:00Z",
-          "notes": "37 tests OK. On Windows run with PYTHONUTF8=1 (env prefix): the pin test captures the child reporter's stdout and without UTF-8 mode the parent decodes em-dashes as cp1252 — a locale artifact, not a content mismatch. Not wired into CI. Use python, not python3, on this machine."
+          "notes": "37 tests OK. On Windows run with PYTHONUTF8=1 (env prefix): the pin test captures the child reporter's stdout and without UTF-8 mode the parent decodes em-dashes as cp1252 \u2014 a locale artifact, not a content mismatch. Not wired into CI. Use python, not python3, on this machine."
         },
         {
           "id": "P0-G2",
@@ -43,7 +55,7 @@
           "status": "passed",
           "evidence": "ops/mission/evidence/P0-G2-2026-07-12.txt",
           "lastRun": "2026-07-13T03:19:00Z",
-          "notes": "36/36 ok (unchanged; P0 adds no proof bundles — that is P1)."
+          "notes": "36/36 ok (unchanged; P0 adds no proof bundles \u2014 that is P1)."
         }
       ],
       "tasks": [
@@ -63,7 +75,7 @@
             "P0-T1"
           ],
           "pr": null,
-          "notes": "Done. read_s114_acceptance() + read_promo_snapshot() fail-closed to external-pending / live-probe on missing/malformed input. launch_ready stays False (playground/wasm/shelf still open) — accepting S114 makes no launch claim. Ledger diff was exactly the S114 section; promo line held at public-site-embedded (95.0%) proving machine-independence. 37/37 reporter tests OK."
+          "notes": "Done. read_s114_acceptance() + read_promo_snapshot() fail-closed to external-pending / live-probe on missing/malformed input. launch_ready stays False (playground/wasm/shelf still open) \u2014 accepting S114 makes no launch claim. Ledger diff was exactly the S114 section; promo line held at public-site-embedded (95.0%) proving machine-independence. 37/37 reporter tests OK."
         }
       ]
     },
@@ -119,7 +131,7 @@
           "status": "passed",
           "evidence": "ops/mission/evidence/P2-2026-07-12.txt",
           "lastRun": "2026-07-13T03:50:00Z",
-          "notes": "ok — README/docs edits did not break numeric truth stamps (6 fields, 4 stamped surfaces)."
+          "notes": "ok \u2014 README/docs edits did not break numeric truth stamps (6 fields, 4 stamped surfaces)."
         },
         {
           "id": "P2-G2",
@@ -151,7 +163,7 @@
         },
         {
           "id": "P2-T2",
-          "title": "Bound the overbroad public copy: README.md (runtime trap claim wider than host-bridge scope), docs/index.html:1040 ('no ambient authority, ever') — keep the two /why 'enforced:' claims byte-identical (PR #471 preservation rule)",
+          "title": "Bound the overbroad public copy: README.md (runtime trap claim wider than host-bridge scope), docs/index.html:1040 ('no ambient authority, ever') \u2014 keep the two /why 'enforced:' claims byte-identical (PR #471 preservation rule)",
           "status": "done",
           "dependsOn": [
             "P2-T1"
@@ -256,14 +268,14 @@
           "status": "done",
           "dependsOn": [],
           "pr": null,
-          "notes": "Done (P3a). new garnet-cli/tests/checker_only_caps.rs: time::now_ms (declared AND undeclared) and std::uuid::new_v4 run without a runtime capability trap under garnet run. Empirically confirmed garnet run doesn't invoke the checker, so checker-only caps aren't runtime-gated — documented, not changed (S90 scope preserved)."
+          "notes": "Done (P3a). new garnet-cli/tests/checker_only_caps.rs: time::now_ms (declared AND undeclared) and std::uuid::new_v4 run without a runtime capability trap under garnet run. Empirically confirmed garnet run doesn't invoke the checker, so checker-only caps aren't runtime-gated \u2014 documented, not changed (S90 scope preserved)."
         }
       ]
     },
     {
       "id": "P4",
       "title": "Rolling S114",
-      "goal": "S114 becomes a recurring control: a machine-readable trust-kernel file set, a rolling-review policy, and a status gate — CI wiring parked for Jon.",
+      "goal": "S114 becomes a recurring control: a machine-readable trust-kernel file set, a rolling-review policy, and a status gate \u2014 CI wiring parked for Jon.",
       "status": "done",
       "sessionsEstimate": "1",
       "gates": [
@@ -288,7 +300,7 @@
         },
         {
           "id": "P4-T2",
-          "title": "CI wiring PR for the new gates (P2 claim fixture + P4 rolling check): open, do NOT merge — Jon-only per CLAUDE.md integrity rule 1",
+          "title": "CI wiring PR for the new gates (P2 claim fixture + P4 rolling check): open, do NOT merge \u2014 Jon-only per CLAUDE.md integrity rule 1",
           "status": "done",
           "dependsOn": [
             "P4-T1"
@@ -298,14 +310,14 @@
             "url": "https://github.com/Island-Dev-Crew/garnet/pull/479",
             "mergedAt": "2026-07-13"
           },
-          "notes": "Jon merged #479 (6087565) 2026-07-13T06:17Z — capability-scope + trust-kernel gates now CI-wired (fetch-depth 0 for the rolling diff). Both gates verified green on main post-merge."
+          "notes": "Jon merged #479 (6087565) 2026-07-13T06:17Z \u2014 capability-scope + trust-kernel gates now CI-wired (fetch-depth 0 for the rolling diff). Both gates verified green on main post-merge."
         }
       ]
     },
     {
       "id": "P5",
       "title": "Foundation Hygiene",
-      "goal": "Close the four hygiene gaps from the 2026-07-13 foundation-refresh research (Rust 1.97/Ruby 4.0 sweep): supply-chain scan coverage, FAQ MSRV truth, wasm >=1.96 verification, converter dialect honesty. No foundational changes — the adversarial sweep confirmed the formalized pathway stands.",
+      "goal": "Close the four hygiene gaps from the 2026-07-13 foundation-refresh research (Rust 1.97/Ruby 4.0 sweep): supply-chain scan coverage, FAQ MSRV truth, wasm >=1.96 verification, converter dialect honesty. No foundational changes \u2014 the adversarial sweep confirmed the formalized pathway stands.",
       "status": "done",
       "sessionsEstimate": "1",
       "gates": [
@@ -339,11 +351,11 @@
             "url": "https://github.com/Island-Dev-Crew/garnet/pull/481",
             "mergedAt": "2026-07-13"
           },
-          "notes": "PR #481 opened + PARKED for Jon (security.yml gate file => human-merge-only, integrity rule 1). VALIDATION PAID OFF IMMEDIATELY: the first run found two live quick-xml 0.39.4 advisories in the previously-unscanned Studio lock (RUSTSEC-2026-0194 quadratic dup-attr check; RUSTSEC-2026-0195 NsReader namespace-allocation DoS) — patched in-PR via plist 1.9.0 -> 1.10.0 (quick-xml -> 0.41.0). Also fixed cargo-deny mechanics (no global --config; root deny.toml staged beside the Studio manifest at run time). GTK3 unmaintained warnings visible, non-blocking. MERGED by Jon 2026-07-13 (2be1c3a). All three lockfiles now advisory-scanned; the scan found+patched 2 live quick-xml CVEs before merge."
+          "notes": "PR #481 opened + PARKED for Jon (security.yml gate file => human-merge-only, integrity rule 1). VALIDATION PAID OFF IMMEDIATELY: the first run found two live quick-xml 0.39.4 advisories in the previously-unscanned Studio lock (RUSTSEC-2026-0194 quadratic dup-attr check; RUSTSEC-2026-0195 NsReader namespace-allocation DoS) \u2014 patched in-PR via plist 1.9.0 -> 1.10.0 (quick-xml -> 0.41.0). Also fixed cargo-deny mechanics (no global --config; root deny.toml staged beside the Studio manifest at run time). GTK3 unmaintained warnings visible, non-blocking. MERGED by Jon 2026-07-13 (2be1c3a). All three lockfiles now advisory-scanned; the scan found+patched 2 live quick-xml CVEs before merge."
         },
         {
           "id": "P5-T2",
-          "title": "FAQ MSRV reconciliation: 1.75+ (line 91) vs 1.95+ (line 97) contradiction unified on Rust 1.95+ with 'CI tracks current stable' framing; decision recorded = STAY FLOATING (no rust-toolchain.toml pin — determinism claims are toolchain-immune by design; floating stable gives free continuous revalidation)",
+          "title": "FAQ MSRV reconciliation: 1.75+ (line 91) vs 1.95+ (line 97) contradiction unified on Rust 1.95+ with 'CI tracks current stable' framing; decision recorded = STAY FLOATING (no rust-toolchain.toml pin \u2014 determinism claims are toolchain-immune by design; floating stable gives free continuous revalidation)",
           "status": "done",
           "dependsOn": [],
           "pr": null,
@@ -355,7 +367,7 @@
           "status": "done",
           "dependsOn": [],
           "pr": null,
-          "notes": "Done. cargo +1.97.0 build -p garnet-wasm --target wasm32-unknown-unknown: clean (41s); host tests 6/6 pass. Non-event as predicted (wasm-bindgen-only surface, no raw extern C). Default toolchain untouched (1.95.0). Optional CI wasm32 job deferred — would be another gate-file change for Jon."
+          "notes": "Done. cargo +1.97.0 build -p garnet-wasm --target wasm32-unknown-unknown: clean (41s); host tests 6/6 pass. Non-event as predicted (wasm-bindgen-only surface, no raw extern C). Default toolchain untouched (1.95.0). Optional CI wasm32 job deferred \u2014 would be another gate-file change for Jon."
         },
         {
           "id": "P5-T4",
@@ -371,14 +383,14 @@
           "status": "done",
           "dependsOn": [],
           "pr": null,
-          "notes": "Headline determination: the audited /why upgrade NEVER merged into this repo — cowork 'PR 479' is not repo #479; live page is the pre-upgrade #471-fenced state, so Flags 1-3 have no live target and the in-repo corpus was already clean (reassessment sources already attribute the FDA phrasing to McDermott/Ballard Spahr). Zero shelf-scope commits in the July 8-11 crisis window — nothing to re-ratify in-repo. Both Ronacher quotes re-verified directly against lucumr.pocoo.org (June 12 2025 permission-checks quote incl. 'amost' typo; Feb 9 2026 needs{time,rng} sketch; permission quote absent from the Feb post). Record: F_Project_Management/RESEARCH/WHY_PAGE_RECONCILIATION_2026-07-13.md."
+          "notes": "Headline determination: the audited /why upgrade NEVER merged into this repo \u2014 cowork 'PR 479' is not repo #479; live page is the pre-upgrade #471-fenced state, so Flags 1-3 have no live target and the in-repo corpus was already clean (reassessment sources already attribute the FDA phrasing to McDermott/Ballard Spahr). Zero shelf-scope commits in the July 8-11 crisis window \u2014 nothing to re-ratify in-repo. Both Ronacher quotes re-verified directly against lucumr.pocoo.org (June 12 2025 permission-checks quote incl. 'amost' typo; Feb 9 2026 needs{time,rng} sketch; permission quote absent from the Feb post). Record: F_Project_Management/RESEARCH/WHY_PAGE_RECONCILIATION_2026-07-13.md."
         }
       ]
     },
     {
       "id": "P6",
       "title": "Why Page Upgrade",
-      "goal": "Complete the /why page's two placeholder cards and the threat-card TODO from verified primary sources, per the reconciliation rules — without touching the two bounded enforced claims.",
+      "goal": "Complete the /why page's two placeholder cards and the threat-card TODO from verified primary sources, per the reconciliation rules \u2014 without touching the two bounded enforced claims.",
       "status": "done",
       "sessionsEstimate": "1",
       "gates": [
@@ -425,7 +437,7 @@
       "id": "P7",
       "title": "Parallel Launch Convergence",
       "goal": "Close authenticated live governance while W-PLAY and one Minimum Sealed Shelf become real, evidence-backed product paths; then reconcile one launch candidate without widening claims.",
-      "status": "in-progress",
+      "status": "in_progress",
       "sessionsEstimate": "8-14",
       "gates": [
         {
@@ -435,7 +447,7 @@
           "status": "pending",
           "evidence": null,
           "lastRun": null,
-          "notes": "Context 32 activation, workflow wiring, action pins, and old-base execution remain separate human-reviewed steps."
+          "notes": "Context 32 activation, workflow wiring, action pins, and old-base execution remain separate human-reviewed steps. U-17 blocks live no-bypass closure until Jon provisions a dedicated admin-authoritative token; GOV-009 must never inherit, persist, or print an ambient credential."
         },
         {
           "id": "P7-G2",
@@ -469,15 +481,15 @@
         {
           "id": "P7-T1",
           "title": "GOV-009 authenticated transport, exact attempt/head projection, live admin-policy equality, review record, and human-only activation handoff",
-          "status": "in-progress",
+          "status": "in_progress",
           "dependsOn": [],
           "pr": null,
-          "notes": "PRs #500 and #502 established authenticated object transport and strict physical Link parsing; #506 merged bounded 32-page/3,200-row collection. Candidate anchoring, run selection, live admin equality, verdict, and activation remain open."
+          "notes": "PRs #500 and #502 established authenticated object transport and strict physical Link parsing; #506 merged bounded 32-page/3,200-row collection. Candidate anchoring, run selection, live admin equality, verdict, and activation remain open. U-17 is Jon-blocking: provision one dedicated admin-authoritative token for the live no-bypass readback; never inherit, persist, or print the active gh credential."
         },
         {
           "id": "P7-T2",
           "title": "W-PLAY Wasm adapter, reproducible browser package, page integration, Playwright traps, deployment observation, and reporter promotion",
-          "status": "in-progress",
+          "status": "in_progress",
           "dependsOn": [],
           "pr": null,
           "notes": "PR #498 merged check/diff Wasm exports and #505 merged the hermetic package probe. Verification hardening is locally approved; package materialization, page integration, Playwright, and browser evidence remain open."
@@ -485,7 +497,7 @@
         {
           "id": "P7-T3",
           "title": "Minimum Shelf MCP core, bounded stdio, one repo-bundled Garnet tool, sealed baseline, rejection proof, and deterministic reporter",
-          "status": "in-progress",
+          "status": "in_progress",
           "dependsOn": [],
           "pr": null,
           "notes": "PRs #501, #503, and #504 merged schema, lifecycle, and adversarial foundations. The strict JSON input boundary is locally approved; one bounded in-process Garnet tool must precede raw-byte stdio and sealing."
@@ -494,9 +506,13 @@
           "id": "P7-T4",
           "title": "Reconcile the Mac Air language-depth report, synchronize all user-facing surfaces/evidence, clean the public repo, and produce the Jon-owned launch decision packet",
           "status": "pending",
-          "dependsOn": ["P7-T1", "P7-T2", "P7-T3"],
+          "dependsOn": [
+            "P7-T1",
+            "P7-T2",
+            "P7-T3"
+          ],
           "pr": null,
-          "notes": "WV-6 follows product convergence; WV-7 and external launch messaging begin only after the live playground and Shelf are excellent and one candidate is frozen."
+          "notes": "Established meanings preserved from cad91aa: WV-6 is the native-Windows Core Ring Tier 1 + Minimum Shelf/MCP proof after that product path ships; WV-7 is winget/Scoop dry-run + devcontainer/Docker + installer happy-path distribution proof. Mac Air reconciliation and frozen-candidate release review remain separate P7-T4 work, not WV identifier reassignments."
         }
       ]
     }
@@ -610,7 +626,7 @@
   ],
   "risks": [
     {
-      "title": "Ledger regeneration machine-dependence — RESOLVED in P0",
+      "title": "Ledger regeneration machine-dependence \u2014 RESOLVED in P0",
       "severity": "low",
       "note": "The promo ledger line now reads the committed PROMO_EVIDENCE_SNAPSHOT.json (public-site-embedded 95.0%); the live ~/Desktop/dogfood probe is still invoked but no longer determines the rendered value. Update the snapshot from the evidence machine when promo evidence materially changes."
     },
@@ -625,7 +641,7 @@
       "note": "Any malformed MANIFEST.sha256 or EOL slip under proofs/ fails ci.yml's evidence-integrity job for every later PR. Seal against committed bytes; run the gate locally before push (CRLF incident precedent)."
     },
     {
-      "title": "Embedder strict-by-default contract reversal — RESOLVED in P3",
+      "title": "Embedder strict-by-default contract reversal \u2014 RESOLVED in P3",
       "severity": "low",
       "note": "Interpreter::new() is strict with explicit new_permissive() opt-out and the change is recorded in CHANGELOG/current truth. Raw direct Env/Value/eval host APIs remain a named boundary, not a universal embedder claim."
     },
@@ -633,6 +649,11 @@
       "title": "CI-wiring PRs depend on Jon",
       "severity": "low",
       "note": "New gates run locally + are opened as parked PRs; they are not CI-enforced until Jon merges the wiring (integrity rule 1)."
+    },
+    {
+      "title": "U-17 dedicated admin-authoritative credential is not provisioned",
+      "severity": "high",
+      "note": "Lane 1 item 1 cannot close its live settings/no-bypass clause until Jon provisions a dedicated admin-authoritative token. GOV-009 must receive it explicitly and must never inherit, persist, or print an ambient credential."
     },
     {
       "title": "W-PLAY can false-green at the adapter boundary",
@@ -645,6 +666,129 @@
       "note": "The existing .mcpcaps surface is self-declared and arbitrary external MCP hosts are not Garnet-enforced. The stronger claim is limited to the flagship Garnet tool executing under the real entry capability frame."
     }
   ],
+  "mainlineCheckpoint": {
+    "source": "Local Git first-parent history at the exact successor pin; no Navigata1/garnet main state was read.",
+    "archivedFirstParentRange": {
+      "baseExclusiveMainSha": "d0d4f7cc988db4d793c5c7555a4043aef9b27180",
+      "headInclusiveMainSha": "1fe74892c588f912e103742afc9d11e845e8d4e6",
+      "firstParentPullRequestCommitCount": 34,
+      "firstParentPullRequestMergeOrder": [
+        472,
+        473,
+        474,
+        475,
+        476,
+        477,
+        478,
+        480,
+        479,
+        482,
+        484,
+        485,
+        481,
+        483,
+        486,
+        487,
+        488,
+        489,
+        490,
+        491,
+        492,
+        493,
+        494,
+        495,
+        496,
+        497,
+        498,
+        500,
+        501,
+        502,
+        503,
+        504,
+        505,
+        506
+      ],
+      "pullRequestToMainSha": {
+        "472": "4168582c46e60612af23f225e10483e98ddc897e",
+        "473": "155dec9c302099798b4057aabca3757d379cd25d",
+        "474": "0931d128912a1ae0f395617779c48c45eca5bd18",
+        "475": "8f794f781b30eca5bf627e5d5bf38d75999dfb99",
+        "476": "ec39bb1fcb6b8e2e42552f20c7dc6b8879d6178c",
+        "477": "499717ec40387fbf2f59eb7a854ce4835078989a",
+        "478": "ea9e3818665d120d26a8f090c395d830d2021b50",
+        "480": "5d1717418d700b199b1037ca238ce0f54557946a",
+        "479": "60875655c509747ba060f8f3b32fedf5f98c0ded",
+        "482": "bdf79f3cafc08a8381bcde6aca4f0384adb03ea0",
+        "484": "b0ad42a5f3cef884609834d24b4920b2f108f4cc",
+        "485": "f06d85268bc3dcd49e4ac194edb45084a596beca",
+        "481": "2be1c3ab6a6bf3a8d83410ae9b0305bdb45ed3cf",
+        "483": "93b5c3d46e9fcf0ad47c578c290e69278d6468b6",
+        "486": "cad91aa499e8166a75f3d32e09762aaf5ea8d5c0",
+        "487": "aaf1bc5a25b01881f3c479d651ec0e5b14dd5e7d",
+        "488": "f92eade8b404a3dd51be6422ed313bb95f3bb750",
+        "489": "d6105511ebd7debe6d9082691cf1b03490e15d4d",
+        "490": "098bb76f55d828a90dd98819e6d0121527810856",
+        "491": "e7d01f9dc04cb226a65b1d67a1781b8b25f14ebf",
+        "492": "900199bee690d2cdfba4b0d79fc3c3c8a04e4c58",
+        "493": "d015918bb6dd0a862205aca54a906fb7daa1e675",
+        "494": "225c0418db000a2af4ea215c64b3ae51e12a184a",
+        "495": "58a575a548fbfc0103322d970bdc46c2ca7b705b",
+        "496": "32ec9624d571596decd9ea50c64ca9f06fa49131",
+        "497": "d80e4eca85e85642fec41e0003958bde2b06cff4",
+        "498": "a021005a2ea4714b9dc7ca4600f32c7685842bce",
+        "500": "52971a52e69dbeba56ce4d85146ef12be18fde76",
+        "501": "750e4b6869f472e1d789129e932ca4a1a7aa476e",
+        "502": "8c07fec0f5c92f2f8a07e58cb9e8ce311805139d",
+        "503": "098b0bdb4dd5b38bf7086e518bf451b669b1b156",
+        "504": "46031e71734f693982f73cfe86ea2406bd24e215",
+        "505": "65da989c1bc915e90a28865f3d1dd0045d6404fa",
+        "506": "1fe74892c588f912e103742afc9d11e845e8d4e6"
+      }
+    },
+    "successorArchiveMerge": {
+      "pullRequest": 499,
+      "mainSha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+      "immediatelyFollowsArchivedRange": true
+    },
+    "checkpointPullRequestCommitCount": 35,
+    "checkpointFirstParentPullRequestMergeOrder": [
+      472,
+      473,
+      474,
+      475,
+      476,
+      477,
+      478,
+      480,
+      479,
+      482,
+      484,
+      485,
+      481,
+      483,
+      486,
+      487,
+      488,
+      489,
+      490,
+      491,
+      492,
+      493,
+      494,
+      495,
+      496,
+      497,
+      498,
+      500,
+      501,
+      502,
+      503,
+      504,
+      505,
+      506,
+      499
+    ]
+  },
   "prLog": [
     {
       "number": 472,
@@ -718,7 +862,7 @@
     },
     {
       "number": 482,
-      "title": "P5: foundation hygiene — FAQ MSRV truth, converter dialect note, wasm 1.97 verification",
+      "title": "P5: foundation hygiene \u2014 FAQ MSRV truth, converter dialect note, wasm 1.97 verification",
       "url": "https://github.com/Island-Dev-Crew/garnet/pull/482",
       "phase": "P5",
       "mergedAt": "2026-07-13"
@@ -732,14 +876,14 @@
     },
     {
       "number": 484,
-      "title": "P5-T5: /why reconciliation — audited upgrade never shipped; corpus-of-record corrections",
+      "title": "P5-T5: /why reconciliation \u2014 audited upgrade never shipped; corpus-of-record corrections",
       "url": "https://github.com/Island-Dev-Crew/garnet/pull/484",
       "phase": "P5",
       "mergedAt": "2026-07-13"
     },
     {
       "number": 485,
-      "title": "P6: /why upgrade — placeholder cards completed from verified primary sources",
+      "title": "P6: /why upgrade \u2014 placeholder cards completed from verified primary sources",
       "url": "https://github.com/Island-Dev-Crew/garnet/pull/485",
       "phase": "P6",
       "mergedAt": "2026-07-13"
@@ -752,22 +896,116 @@
       "mergedAt": "2026-07-15"
     }
   ],
-  "resume": {
-    "activePhase": "P7 + P8 + P9",
+  "lane0Reconciliation": {
+    "baseMainSha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+    "u16": {
+      "state": "decided",
+      "decision": "extend_jon_merge_only_exception",
+      "pathPattern": "scripts/garnet_github_*",
+      "priorPolicyAssessment": "PRs #500, #502, and #506 auto-merged correctly under the exception list then in force.",
+      "governanceFreeze": "not_armed_until_lane_1_terminus"
+    },
+    "u17": {
+      "state": "jon_blocking",
+      "dependency": "Jon provisions a dedicated admin-authoritative token for the GOV-009 live settings/no-bypass readback.",
+      "ambientCredentialPolicy": "never_inherit_persist_or_print",
+      "blocks": "P7-T1 live-settings/no-bypass clause"
+    },
+    "rustMsrv": {
+      "state": "implemented",
+      "value": "1.95",
+      "gate": "python3 -I scripts/garnet_msrv_status.py --gate",
+      "activeManifestCount": 18,
+      "workflowProjection": "pinned typed YAML; exact existing jobs and active steps"
+    },
+    "wvAcceptanceContracts": "F_Project_Management/LAUNCH/WV6_WV7_ACCEPTANCE_CONTRACTS.json",
+    "wvAcceptanceStatus": {
+      "WV-6": {
+        "meaning": "Core Ring Tier 1 + Minimum Shelf/MCP native-Windows proof",
+        "state": "pending",
+        "gate": "python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6 --gate",
+        "evidenceDestination": "proofs/windows/launch-verification/wv6-minimum-shelf/"
+      },
+      "WV-7": {
+        "meaning": "winget/Scoop dry-run + devcontainer/Docker + installer happy-path distribution proof",
+        "state": "pending",
+        "gate": "python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-7 --gate",
+        "evidenceDestination": "proofs/windows/launch-verification/wv7-distribution/"
+      }
+    }
+  },
+  "readiness": {
+    "asOf": "2026-07-16T13:39:31Z",
+    "launchStatus": "HOLD",
+    "denominators": [
+      {
+        "id": "s114_mission",
+        "label": "S114 bounded mission",
+        "numerator": 19,
+        "denominator": 19,
+        "percent": 100.0,
+        "evidence": "ops/lane0/evidence/10-denominators.json"
+      },
+      {
+        "id": "truth_pulse",
+        "label": "Truth pulse",
+        "numerator": 65.2,
+        "denominator": 70,
+        "percent": 93.1,
+        "rounded": true,
+        "evidence": "ops/lane0/evidence/09-mit-readiness.json"
+      },
+      {
+        "id": "launch_critical",
+        "label": "Launch-critical",
+        "numerator": 3,
+        "denominator": 6,
+        "percent": 50.0,
+        "evidence": "ops/lane0/evidence/08-launch-readiness.json"
+      },
+      {
+        "id": "launch_ledger",
+        "label": "Whole launch ledger",
+        "numerator": 3,
+        "denominator": 8,
+        "percent": 37.5,
+        "evidence": "ops/lane0/evidence/08-launch-readiness.json"
+      }
+    ]
+  },
+  "lane0Closeout": {
+    "state": "complete_local_final_review_approved_pending_jon_merge",
+    "finalIntegratedReview": "approved",
+    "audit": "ops/lane0/AUDIT.md",
+    "evidenceManifest": "ops/lane0/evidence/MANIFEST.sha256",
+    "ledger": "ops/lane0/ledger.jsonl",
+    "band": 3,
+    "governanceVerdict": "advisory",
+    "waivers": [],
     "nextActions": [
-      "P7: build the authenticated repository/open-PR/base/head/tree candidate anchor, then stable workflow/run snapshots, latest-attempt/freshness/outcome, and live ruleset/settings/no-bypass collectors as separate PRs.",
-      "P8 in parallel: merge the approved hermetic verification layer, then package materialization, live adapter/page, Playwright traps, and evidence-backed reporter promotion.",
-      "P9 in parallel: merge the approved strict JSON input boundary, then one bounded in-process Garnet tool, raw-byte stdio, sealed baseline, reject-without-seal proof, and deterministic Shelf reporter.",
-      "After P7/P8/P9: freeze one candidate for P10, reconcile the Mac Air language-depth report, synchronize Front Door/Studios/CLI/evidence, and decide WV-6/WV-7 plus launch readiness.",
-      "Optional debt that does not interrupt the three active lanes: retro-audit workflow-only PR bodies skipped before #483; edition 2024; benchmark framing refresh; blog re-anchor."
+      "Lane 1: prove fresh, exact-reviewed-head, outcome-verified GOV-009 state and close the live settings/no-bypass readback only after Jon provisions a dedicated admin-authoritative token.",
+      "Lane 2A: materialize the hermetic package, connect the live adapter/page, run Playwright traps, promote only from reporter evidence, and prove fail-closed denial.",
+      "Lane 2B: add one bounded in-process Garnet tool, raw-byte stdio, a sealed baseline, reject-without-seal proof, and a deterministic Shelf reporter.",
+      "Lane 2C: rerun and deterministically report three exact-candidate stress cases exceeding four minutes before restoring APPROVED; current state remains partial."
+    ]
+  },
+  "resume": {
+    "activePhase": "P7",
+    "nextActions": [
+      "P7-T1: build the authenticated repository/open-PR/base/head/tree candidate anchor, then stable workflow/run snapshots, latest-attempt/freshness/outcome, and live ruleset/settings/no-bypass collectors as separate reviewed slices.",
+      "P7-T2: continue from the merged check/diff adapter and hermetic package probe into package materialization, live adapter/page integration, Playwright traps, and evidence-backed reporter promotion.",
+      "P7-T3: continue from the merged schema/lifecycle/adversarial core into one bounded in-process Garnet tool, raw-byte stdio, sealed baseline, reject-without-seal proof, and a deterministic Shelf reporter.",
+      "P7-T4: after P7-T1 through P7-T3 converge, freeze one candidate, reconcile the Mac Air language-depth report, synchronize Front Door/Studios/CLI/evidence, accept WV-6 as the Windows Minimum Shelf/Core Ring/MCP proof and WV-7 as the bounded distribution proof, and prepare the Jon-owned launch decision packet."
     ],
     "blockers": [
       "Future GOV-009 workflow/gate wiring and the human 31-to-32 activation ceremony are Jon-merge-only integrity changes.",
-      "Public runs-in-your-browser and Shelf-ready claims remain blocked until their own committed Playwright/seal/reporter evidence exists."
+      "U-17: Jon must provision a dedicated admin-authoritative token before P7-T1 can close the live settings/no-bypass clause; GOV-009 must never inherit, persist, or print the ambient credential.",
+      "WV-6 and WV-7 acceptance reporters are intentionally PENDING until exact-candidate hash-verified Windows manifests exist at their frozen evidence destinations.",
+      "Launch remains HOLD: public runs-in-your-browser and Shelf-ready claims stay blocked until their own committed Playwright/seal/reporter evidence exists."
     ],
     "conventions": [
       "One task-cluster = one branch (mission/<phaseId>-<slug>) = one PR; preserve a recorded RED before implementation and fresh GREEN evidence before review/merge",
-      "PRs touching workflow files / dogfood gate / diff-caps / capability-manifest standard: open and park for Jon, never self-merge",
+      "PRs touching workflow files / dogfood gate / diff-caps / capability-manifest standard / scripts/garnet_github_*: open and park for Jon, never self-merge",
       "Never hand-edit F_Project_Management/LAUNCH/LAUNCH_READINESS.md (reporter-rendered, byte-pinned); never touch sealed proof bundles; never push tags",
       "Truth-Lock language: never 'enforced/independent/signed/sandboxed/production' beyond the tested boundary; /why keeps exactly the two bounded enforced claims",
       "On this Windows machine use python for local scripts; pin C:\\Program Files\\Git\\usr\\bin\\bash.exe where a harness needs Git Bash; do not infer Linux or macOS runtime proof from Windows portability",

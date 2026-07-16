@@ -8,12 +8,13 @@
  * Usage:  node ops/mission/render-sotu.mjs
  * The HTML is GENERATED — never hand-edit it. Change state.json and re-render.
  *
- * The renderer degrades gracefully on missing fields (it does NOT validate the
- * schema — the model maintaining state.json is the validator) and warns on
- * stderr when it defaults something important.
+ * The renderer degrades gracefully on most missing fields and warns on stderr
+ * when it defaults something important. A nonempty mainline checkpoint is the
+ * exception: it must be internally consistent or rendering fails closed.
  */
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { spawnSync } from "node:child_process";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -56,6 +57,112 @@ const risks = Array.isArray(state.risks) ? state.risks : [];
 const prLog = Array.isArray(state.prLog) ? state.prLog : [];
 const resume = state.resume ?? {};
 const policies = state.policies ?? {};
+const mainlineCheckpoint = state.mainlineCheckpoint ?? {};
+const archivedRange = mainlineCheckpoint.archivedFirstParentRange ?? {};
+const archivedPrOrder = Array.isArray(archivedRange.firstParentPullRequestMergeOrder)
+  ? archivedRange.firstParentPullRequestMergeOrder
+  : [];
+const archivedPrToSha = archivedRange.pullRequestToMainSha ?? {};
+const successorArchiveMerge = mainlineCheckpoint.successorArchiveMerge ?? {};
+
+function checkpointConsistencyErrors() {
+  if (!mainlineCheckpoint || typeof mainlineCheckpoint !== "object" || Array.isArray(mainlineCheckpoint)) {
+    return ["mainlineCheckpoint must be an object"];
+  }
+  if (!Object.keys(mainlineCheckpoint).length) return [];
+
+  const errors = [];
+  const shaPattern = /^[0-9a-f]{40}$/;
+  const mappingIsObject = archivedPrToSha && typeof archivedPrToSha === "object" && !Array.isArray(archivedPrToSha);
+  if (!Array.isArray(archivedRange.firstParentPullRequestMergeOrder) || !archivedPrOrder.length) {
+    errors.push("archived first-parent merge order must be a nonempty array");
+  }
+  if (!mappingIsObject) errors.push("archived PR-to-main SHA mapping must be an object");
+  if (archivedRange.firstParentPullRequestCommitCount !== archivedPrOrder.length) {
+    errors.push("archived declared count does not match merge-order length");
+  }
+  if (new Set(archivedPrOrder).size !== archivedPrOrder.length) {
+    errors.push("archived merge order contains duplicate PRs");
+  }
+
+  const orderKeys = new Set(archivedPrOrder.map(String));
+  if (mappingIsObject) {
+    for (const pr of archivedPrOrder) {
+      const sha = archivedPrToSha[String(pr)];
+      if (!shaPattern.test(String(sha ?? ""))) {
+        errors.push(`archived PR #${pr} has a missing or invalid full main SHA`);
+      }
+    }
+    for (const key of Object.keys(archivedPrToSha)) {
+      if (!orderKeys.has(key)) errors.push(`archived SHA mapping has extra PR #${key}`);
+    }
+  }
+
+  const successorPr = successorArchiveMerge.pullRequest;
+  if (!Number.isInteger(successorPr)) errors.push("successor archive PR must be an integer");
+  if (!shaPattern.test(String(successorArchiveMerge.mainSha ?? ""))) {
+    errors.push("successor archive merge has a missing or invalid full main SHA");
+  }
+  if (successorArchiveMerge.immediatelyFollowsArchivedRange !== true) {
+    errors.push("successor archive merge must immediately follow the archived range");
+  }
+
+  const fullOrder = mainlineCheckpoint.checkpointFirstParentPullRequestMergeOrder;
+  const expectedFullOrder = [...archivedPrOrder, successorPr];
+  if (!Array.isArray(fullOrder)) {
+    errors.push("full checkpoint merge order must be an array");
+  } else {
+    if (new Set(fullOrder).size !== fullOrder.length) {
+      errors.push("full checkpoint merge order contains duplicate PRs");
+    }
+    if (fullOrder.length !== expectedFullOrder.length || fullOrder.some((pr, i) => pr !== expectedFullOrder[i])) {
+      errors.push("full checkpoint merge order does not equal archived order plus successor");
+    }
+    if (mainlineCheckpoint.checkpointPullRequestCommitCount !== fullOrder.length) {
+      errors.push("full checkpoint declared count does not match merge-order length");
+    }
+  }
+  return errors;
+}
+
+const checkpointErrors = checkpointConsistencyErrors();
+if (checkpointErrors.length) {
+  console.error("[render-sotu] mainlineCheckpoint invalid:");
+  for (const error of checkpointErrors) console.error(`  - ${error}`);
+  process.exit(1);
+}
+
+const repoRoot = resolve(here, "..", "..");
+const pythonExecutable = process.platform === "win32" ? "python" : "python3";
+const truthFreezeGate = spawnSync(
+  pythonExecutable,
+  [
+    "-I",
+    join(repoRoot, "scripts/garnet_lane0_truth_freeze_status.py"),
+    "--repo-root",
+    repoRoot,
+    "--state",
+    statePath,
+    "--plan",
+    join(repoRoot, "ops/lane0/plan.lock.json"),
+    "--gate",
+  ],
+  { cwd: repoRoot, encoding: "utf8" },
+);
+if (truthFreezeGate.error || truthFreezeGate.status !== 0) {
+  console.error("[render-sotu] Lane 0 truth-freeze gate failed; refusing to emit HTML.");
+  if (truthFreezeGate.error) console.error(`  ${truthFreezeGate.error.message}`);
+  if (truthFreezeGate.stdout?.trim()) console.error(truthFreezeGate.stdout.trim());
+  if (truthFreezeGate.stderr?.trim()) console.error(truthFreezeGate.stderr.trim());
+  process.exit(1);
+}
+
+const checkpointRows = [
+  ...archivedPrOrder.map((pr) => ({ pr, sha: archivedPrToSha[String(pr)], scope: "archived range" })),
+  ...(successorArchiveMerge.pullRequest != null
+    ? [{ pr: successorArchiveMerge.pullRequest, sha: successorArchiveMerge.mainSha, scope: "successor archive merge" }]
+    : []),
+];
 
 for (const p of phases) {
   if (!p.status) warn(`phase ${p.id ?? "?"} has no status — defaulting to "pending"`);
@@ -258,7 +365,28 @@ function prTimeline() {
       return `<article class="tl-item"><time>#${esc(p.number ?? "?")}</time><p><b>${esc(p.title ?? "")}</b> &mdash; ${esc(p.phase ?? "?")}${p.mergedAt ? `, merged ${esc(p.mergedAt)}` : ""} ${url ? `&middot; <a href="${url}">view</a>` : ""}</p></article>`;
     })
     .join("");
-  return `<section aria-labelledby="prs"><h2 id="prs">Merged Work (${prLog.length} PRs)</h2><div class="timeline">${rows}</div></section>`;
+  return `<section aria-labelledby="prs"><h2 id="prs">Mission PR Log (compact, ${prLog.length} rows)</h2>
+    <p class="muted small">Operational mission log only; it is intentionally compact and is not the complete first-parent archive.</p>
+    <div class="timeline">${rows}</div></section>`;
+}
+
+function mainlineCheckpointSection() {
+  if (!checkpointRows.length) return "";
+  const successorPr = successorArchiveMerge.pullRequest;
+  const rows = checkpointRows
+    .map((entry, index) => {
+      const prUrl = safeUrl(`https://github.com/${m.repo}/pull/${entry.pr}`);
+      const pr = prUrl ? `<a href="${prUrl}">#${esc(entry.pr)}</a>` : `#${esc(entry.pr)}`;
+      return `<tr><td>${index + 1}</td><td>${pr}</td><td><code>${esc(entry.sha ?? "missing")}</code></td><td>${esc(entry.scope)}</td></tr>`;
+    })
+    .join("");
+  const archiveCount = archivedPrOrder.length;
+  return `<section aria-labelledby="checkpoint"><h2 id="checkpoint">Mainline Checkpoint (${checkpointRows.length} first-parent PR merges${successorPr != null ? `; successor #${esc(successorPr)}` : ""})</h2>
+    <div class="panel">
+      <p class="muted">Complete local first-parent checkpoint: ${archiveCount} PR commits after <code>${esc(archivedRange.baseExclusiveMainSha ?? "?")}</code> through <code>${esc(archivedRange.headInclusiveMainSha ?? "?")}</code>, followed by the separately identified successor archive merge. Source: ${esc(mainlineCheckpoint.source ?? "state.json")}.</p>
+      <div class="table-wrap"><table><thead><tr><th>Order</th><th>PR</th><th>Full squash-main SHA</th><th>Checkpoint scope</th></tr></thead><tbody>${rows}</tbody></table></div>
+    </div>
+  </section>`;
 }
 
 function journalSection() {
@@ -341,7 +469,7 @@ button.copy:hover{background:rgba(88,215,179,.2)}
 <body>
 <main>
   <header class="hero">
-    <p class="eyebrow">Mission Control &middot; State of the Union &middot; generated ${esc(new Date().toISOString().slice(0, 16).replace("T", " "))}Z</p>
+    <p class="eyebrow">Mission Control &middot; State of the Union &middot; generated ${esc(new Date().toISOString().slice(0, 19).replace("T", " "))}Z</p>
     <h1>${esc(m.name ?? "Mission")}</h1>
     <p class="tagline">${esc(m.tagline ?? "")}</p>
     <div style="margin-top:14px">
@@ -349,7 +477,8 @@ button.copy:hover{background:rgba(88,215,179,.2)}
       ${chip(`active phase: ${resume.activePhase ?? "?"}`, "green")}
       ${chip(`${doneTasks}/${allTasks.length} tasks`, "blue")}
       ${chip(`${passedGates}/${allGates.length} gates passed`, gatesChipTone)}
-      ${chip(`${prLog.length} PRs merged`)}
+      ${chip(`${prLog.length} compact PR log rows`)}
+      ${checkpointRows.length ? chip(`${checkpointRows.length} checkpoint PR merges`, "blue") : ""}
       ${chip(`sessions: ${m.sessionCount ?? 1}`)}
       ${chip(`updated: ${m.updated ?? "?"}`)}
     </div>
@@ -372,6 +501,7 @@ button.copy:hover{background:rgba(88,215,179,.2)}
     ${phaseCards()}
   </section>
 
+  ${mainlineCheckpointSection()}
   ${prTimeline()}
   ${journalSection()}
 
@@ -394,4 +524,6 @@ document.querySelectorAll("button.copy").forEach((b) => {
 
 writeFileSync(outPath, html);
 console.log(`Rendered ${outPath}`);
-console.log(`  phases: ${phases.length}, tasks: ${doneTasks}/${allTasks.length}, gates passed: ${passedGates}/${allGates.length}, PRs: ${prLog.length}`);
+console.log(
+  `  phases: ${phases.length}, tasks: ${doneTasks}/${allTasks.length}, gates passed: ${passedGates}/${allGates.length}, compact PR log rows: ${prLog.length}, checkpoint PR merges: ${checkpointRows.length}`,
+);

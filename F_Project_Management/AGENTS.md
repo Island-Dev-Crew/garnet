@@ -21,6 +21,29 @@ reporter-derived inputs and the evidence-base validator; S114 acceptance,
 the not-yet-reported minimum shelf, and launch fire remain external/manual
 gates that no reporter may grade.
 
+## WV Acceptance Contracts
+
+`LAUNCH/WV6_WV7_ACCEPTANCE_CONTRACTS.json` owns the frozen WV-6/WV-7
+acceptance definitions. WV-6 is the Windows proof after Core Ring Tier 1 and
+the Minimum Shelf/MCP path ship. WV-7 is the winget/Scoop dry-run,
+devcontainer/Docker, and installer happy-path distribution proof.
+
+`python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6 --gate` and the
+WV-7 equivalent fail closed until the named evidence destination contains a
+strict, hash-verified `WV_ACCEPTANCE.json` bound to one full candidate SHA.
+Pending is the correct current result. The reporter never performs signing,
+package-manager publication, FIRE, tagging, release publication, promo QA, or
+any other Jon-only action.
+
+## Lane 0 Frozen Backlog
+
+`LAUNCH/GARNET_L0_FROZEN_BACKLOG_2026-07-15.md` is the human view of
+`ops/lane0/frozen-backlog.json`; the JSON plus
+`python3 -I scripts/garnet_frozen_backlog_status.py --gate` is authoritative.
+Do not hand-promote a lane because a component test is green. Future evidence
+destinations are acceptance contracts, not evidence, and the launch remains
+HOLD until the launch reporter plus external/manual gates say otherwise.
+
 ## Update Rules
 
 When a phase completes, record the evidence here, then update the owning semantic/procedural docs if the phase changed stable behavior.

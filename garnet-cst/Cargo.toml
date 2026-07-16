@@ -2,6 +2,7 @@
 name = "garnet-cst"
 version = "0.1.0"
 edition = "2021"
+rust-version.workspace = true
 description = "Trivia-preserving Concrete Syntax Tree (CST) for Garnet, backed by rowan. Built cold for the v0.7 build-both-then-compare A/B (S15)."
 license = "MIT OR Apache-2.0"
 authors = ["Island Development Crew"]

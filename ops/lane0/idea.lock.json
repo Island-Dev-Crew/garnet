@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "1.0",
+  "id": "idea-garnet-l0-truth-freeze",
+  "frozenAt": "2026-07-16T04:52:21Z",
+  "frozenBy": "jon-isaac",
+  "problem": {
+    "statement": "Garnet's launch-convergence history, active mission pointers, Rust baseline, and remaining backlog must be frozen into one internally consistent, evidence-bounded source of truth before deeper launch work resumes.",
+    "successCriteria": [
+      "Every first-parent PR commit in d0d4f7cc..1fe7489 has its exact squash-main SHA in observed merge order, followed by successor archive merge #499",
+      "Mission resume pointers resolve only to the materialized P7 phase and its four tasks",
+      "One Rust MSRV is declared consistently and enforced inside existing CI contexts",
+      "Every frozen-backlog claim names current code and fresh evidence or remains honestly partial or planned"
+    ]
+  },
+  "domain": {
+    "id": 6,
+    "letter": "F",
+    "name": "Elite Software Craft"
+  },
+  "definitionOfDone": [
+    {
+      "claim": "PR #499 archives every mainline merge from d0d4f7cc through 1fe7489 with exact PR-to-main-SHA mappings",
+      "falsifiedBy": "git log --first-parent d0d4f7cc..1fe7489 --oneline | every PR number must resolve to its squashed main SHA in the archive; any unmapped PR falsifies"
+    },
+    {
+      "claim": "ops/mission/state.json is internally consistent",
+      "falsifiedBy": "every phase id referenced by resume.activePhase and resume.nextActions must exist in phases[]; a reference to a non-existent phase falsifies"
+    },
+    {
+      "claim": "one Rust MSRV is settled and enforced by CI",
+      "falsifiedBy": "grep the declared MSRV across workspace manifests and CI config; two distinct values (e.g. 1.75+ and 1.95+) falsifies"
+    },
+    {
+      "claim": "the frozen backlog contains no claim that cannot tie to current code plus fresh evidence",
+      "falsifiedBy": "for each backlog claim, name its evidence file; any claim without one must be marked partial or planned, or the freeze falsifies"
+    }
+  ],
+  "confidence": {
+    "score": 8,
+    "biggestRisk": "A prose-only reconciliation could hide a stale phase pointer or promote an unevidenced launch claim.",
+    "nextAction": "Reconcile the mission archive and generate the namespaced Lane 0 kickoff state while launch remains HOLD."
+  },
+  "psznDedupe": {
+    "checked": true,
+    "nearestNeighbor": null,
+    "similarity": null
+  },
+  "rejectedAlternatives": [
+    {
+      "idea": "Continue launch slices from the stale multi-phase resume pointer",
+      "reason": "P8, P9, and P10 were never materialized in phases[], so continuing from them would violate mission referential integrity."
+    }
+  ]
+}

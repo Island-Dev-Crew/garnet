@@ -69,8 +69,6 @@ Evidence:
 - WV-5 real Node execution passed, including fail-closed authority smoke
 
 Blockers:
-- W-PLAY check_source Wasm export is not implemented
-- W-PLAY capability-surface/diff Wasm export is not implemented
 - docs/playground/live.js browser adapter is not implemented
 - browser Wasm package is not present under docs/playground/pkg
 - W-PLAY Playwright browser proof is not recorded

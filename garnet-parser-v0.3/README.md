@@ -142,7 +142,7 @@ cargo clippy -- -D warnings    # lint, zero warnings enforced
 cargo doc --open               # generate API docs
 ```
 
-**Rust version:** stable, tested on 1.94.1. No nightly features used.
+**Rust version:** 1.95+; CI also tracks current stable. No nightly features used.
 
 ### What the test suite covers
 

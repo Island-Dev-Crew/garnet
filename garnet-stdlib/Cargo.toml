@@ -2,6 +2,7 @@
 name = "garnet-stdlib"
 version = "0.4.0"
 edition = "2021"
+rust-version.workspace = true
 authors = ["Island Development Crew"]
 license = "MIT OR Apache-2.0"
 description = "Garnet standard library — P0 primitives for OS, network, time, strings, crypto. Each subsystem is gated on its paired Security Layer 2 defense (CapCaps, NetDefaults, BoundedMail, ManifestSig)."
