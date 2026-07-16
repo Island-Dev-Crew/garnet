@@ -136,6 +136,144 @@ class GarnetMsrvStatusTests(unittest.TestCase):
         self.assertFalse(status.exact_msrv_ci_check)
         self.assertFalse(status.ok)
 
+    def test_explicit_shell_on_exact_msrv_step_fails_closed(self) -> None:
+        status = self._mutated_status(
+            ".github/workflows/ci.yml",
+            lambda text: text.replace(
+                f"        run: {msrv.ROOT_CI_COMMAND}",
+                f"        run: {msrv.ROOT_CI_COMMAND}\n"
+                "        shell: echo {0}",
+                1,
+            ),
+        )
+        self.assertFalse(status.exact_msrv_ci_check)
+        self.assertFalse(status.ok)
+
+    def test_working_directory_on_exact_msrv_step_fails_closed(self) -> None:
+        status = self._mutated_status(
+            ".github/workflows/ci.yml",
+            lambda text: text.replace(
+                f"        run: {msrv.ROOT_CI_COMMAND}",
+                f"        run: {msrv.ROOT_CI_COMMAND}\n"
+                "        working-directory: /tmp/not-the-repository",
+                1,
+            ),
+        )
+        self.assertFalse(status.exact_msrv_ci_check)
+        self.assertFalse(status.ok)
+
+    def test_workflow_run_defaults_on_protected_steps_fail_closed(self) -> None:
+        status = self._mutated_status(
+            ".github/workflows/ci.yml",
+            lambda text: text.replace(
+                "jobs:\n",
+                "defaults:\n"
+                "  run:\n"
+                "    shell: echo {0}\n"
+                "\n"
+                "jobs:\n",
+                1,
+            ),
+        )
+        self.assertFalse(status.exact_msrv_ci_check)
+        self.assertFalse(status.reporter_ci_wired)
+        self.assertFalse(status.ok)
+
+    def test_job_run_defaults_on_protected_steps_fail_closed(self) -> None:
+        def mutate(text: str) -> str:
+            marker = "  test:\n"
+            before, after = text.split(marker, 1)
+            after = after.replace(
+                "    strategy:\n",
+                "    defaults:\n"
+                "      run:\n"
+                "        shell: echo {0}\n"
+                "    strategy:\n",
+                1,
+            )
+            return before + marker + after
+
+        status = self._mutated_status(".github/workflows/ci.yml", mutate)
+        self.assertFalse(status.stable_tracking_preserved)
+        self.assertFalse(status.exact_msrv_ci_check)
+        self.assertFalse(status.ok)
+
+    def test_explicit_shell_on_reporter_gate_fails_closed(self) -> None:
+        status = self._mutated_status(
+            ".github/workflows/ci.yml",
+            lambda text: text.replace(
+                f"      - run: {msrv.REPORTER_GATE_COMMAND}",
+                f"      - run: {msrv.REPORTER_GATE_COMMAND}\n"
+                "        shell: echo {0}",
+                1,
+            ),
+        )
+        self.assertFalse(status.reporter_ci_wired)
+        self.assertFalse(status.ok)
+
+    def test_stable_action_toolchain_override_fails_closed(self) -> None:
+        def mutate(text: str) -> str:
+            marker = "  test:\n"
+            before, after = text.split(marker, 1)
+            after = after.replace(
+                f"      - uses: {msrv.STABLE_ACTION}\n",
+                f"      - uses: {msrv.STABLE_ACTION}\n"
+                "        with:\n"
+                "          toolchain: 1.95.0\n",
+                1,
+            )
+            return before + marker + after
+
+        status = self._mutated_status(".github/workflows/ci.yml", mutate)
+        self.assertFalse(status.stable_tracking_preserved)
+        self.assertFalse(status.ok)
+
+    def test_workflow_rustup_toolchain_override_fails_closed(self) -> None:
+        status = self._mutated_status(
+            ".github/workflows/ci.yml",
+            lambda text: text.replace(
+                "env:\n",
+                "env:\n  RUSTUP_TOOLCHAIN: 1.95.0\n",
+                1,
+            ),
+        )
+        self.assertFalse(status.stable_tracking_preserved)
+        self.assertFalse(status.exact_msrv_ci_check)
+        self.assertFalse(status.reporter_ci_wired)
+        self.assertFalse(status.ok)
+
+    def test_job_rustup_toolchain_override_fails_closed(self) -> None:
+        def mutate(text: str) -> str:
+            marker = "  test:\n"
+            before, after = text.split(marker, 1)
+            after = after.replace(
+                "    strategy:\n",
+                "    env:\n"
+                "      RUSTUP_TOOLCHAIN: 1.95.0\n"
+                "    strategy:\n",
+                1,
+            )
+            return before + marker + after
+
+        status = self._mutated_status(".github/workflows/ci.yml", mutate)
+        self.assertFalse(status.stable_tracking_preserved)
+        self.assertFalse(status.exact_msrv_ci_check)
+        self.assertFalse(status.ok)
+
+    def test_step_rustup_toolchain_override_fails_closed(self) -> None:
+        status = self._mutated_status(
+            ".github/workflows/ci.yml",
+            lambda text: text.replace(
+                f"        run: {msrv.ROOT_CI_COMMAND}",
+                f"        run: {msrv.ROOT_CI_COMMAND}\n"
+                "        env:\n"
+                "          RUSTUP_TOOLCHAIN: 1.95.0",
+                1,
+            ),
+        )
+        self.assertFalse(status.exact_msrv_ci_check)
+        self.assertFalse(status.ok)
+
     def test_exact_command_in_wrong_job_does_not_satisfy_ci(self) -> None:
         def mutate(text: str) -> str:
             text = text.replace(

@@ -67,6 +67,7 @@ MAX_WORKFLOW_LINE_LENGTH = 4_096
 @dataclass
 class WorkflowStepProjection:
     fields: dict[str, str]
+    mappings: dict[str, dict[str, str]] = field(default_factory=dict)
 
 
 @dataclass
@@ -75,6 +76,7 @@ class WorkflowJobProjection:
     fields: dict[str, str]
     matrix: dict[str, tuple[str, ...]]
     steps: list[WorkflowStepProjection]
+    mappings: dict[str, dict[str, str]] = field(default_factory=dict)
 
     @property
     def condition(self) -> str | None:
@@ -89,6 +91,7 @@ class WorkflowJobProjection:
 class WorkflowFileProjection:
     relative: str
     jobs: dict[str, WorkflowJobProjection]
+    mappings: dict[str, dict[str, str]] = field(default_factory=dict)
 
 
 @dataclass
@@ -325,6 +328,61 @@ def _validate_nested_entry(content: str, line_number: int) -> None:
     _unquote_scalar(value, line_number)
 
 
+def _record_mapping_value(
+    mappings: dict[str, dict[str, str]],
+    mapping: str,
+    content: str,
+    line_number: int,
+) -> None:
+    key, raw_value = _split_yaml_key(content, line_number)
+    values = mappings.setdefault(mapping, {})
+    if key in values:
+        raise ValueError(
+            f"line {line_number}: duplicate workflow mapping key {mapping}.{key}"
+        )
+    value = _unquote_scalar(raw_value, line_number)
+    if value == "":
+        raise ValueError(
+            f"line {line_number}: nested blocks below {mapping}.{key} are unsupported"
+        )
+    values[key] = value
+
+
+def _workflow_scope_mappings(
+    logical: list[tuple[int, int, str]], jobs_index: int
+) -> dict[str, dict[str, str]]:
+    mappings: dict[str, dict[str, str]] = {}
+    section: str | None = None
+    defaults_run = False
+
+    for line_number, indent, content in logical[:jobs_index]:
+        if indent == 0:
+            key, raw_value = _split_yaml_key(content, line_number)
+            value = _unquote_scalar(raw_value, line_number)
+            section = key if value == "" else None
+            defaults_run = False
+            continue
+        if indent == 2 and section == "env":
+            _record_mapping_value(mappings, "env", content, line_number)
+            continue
+        if indent == 2 and section == "defaults":
+            key, raw_value = _split_yaml_key(content, line_number)
+            value = _unquote_scalar(raw_value, line_number)
+            defaults_run = key == "run" and value == ""
+            if key == "run" and value:
+                raise ValueError(
+                    f"line {line_number}: workflow defaults.run must be a block"
+                )
+            continue
+        if indent == 4 and section == "defaults" and defaults_run:
+            _record_mapping_value(mappings, "defaults.run", content, line_number)
+            continue
+        if section in {"env", "defaults"}:
+            _validate_nested_entry(content, line_number)
+
+    return mappings
+
+
 def _parse_workflow(text: str, relative: str) -> WorkflowFileProjection:
     logical = _workflow_lines(text)
     jobs_markers = [
@@ -335,11 +393,14 @@ def _parse_workflow(text: str, relative: str) -> WorkflowFileProjection:
     if len(jobs_markers) != 1:
         raise ValueError(f"{relative}: workflow must contain exactly one jobs mapping")
 
+    workflow_mappings = _workflow_scope_mappings(logical, jobs_markers[0])
     jobs: dict[str, WorkflowJobProjection] = {}
     current: WorkflowJobProjection | None = None
     current_step: WorkflowStepProjection | None = None
     section: str | None = None
     matrix_open = False
+    defaults_run = False
+    step_mapping: str | None = None
     inside_jobs = False
 
     for line_number, indent, content in logical:
@@ -365,6 +426,8 @@ def _parse_workflow(text: str, relative: str) -> WorkflowFileProjection:
             current_step = None
             section = None
             matrix_open = False
+            defaults_run = False
+            step_mapping = None
             continue
         if current is None:
             raise ValueError(f"line {line_number}: job content has no owning job")
@@ -379,6 +442,8 @@ def _parse_workflow(text: str, relative: str) -> WorkflowFileProjection:
             section = key if value == "" else None
             current_step = None
             matrix_open = False
+            defaults_run = False
+            step_mapping = None
             if key in {"steps", "strategy"} and value:
                 raise ValueError(
                     f"line {line_number}: {current.job_id}.{key} must be a block"
@@ -395,6 +460,7 @@ def _parse_workflow(text: str, relative: str) -> WorkflowFileProjection:
                     {key: _unquote_scalar(raw_value, line_number)}
                 )
                 current.steps.append(current_step)
+                step_mapping = None
                 continue
             if section == "strategy":
                 key, raw_value = _split_yaml_key(content, line_number)
@@ -403,6 +469,21 @@ def _parse_workflow(text: str, relative: str) -> WorkflowFileProjection:
                 if key == "matrix" and value:
                     raise ValueError(
                         f"line {line_number}: strategy.matrix must be a block"
+                    )
+                continue
+            if section == "env":
+                _record_mapping_value(
+                    current.mappings, "env", content, line_number
+                )
+                continue
+            if section == "defaults":
+                key, raw_value = _split_yaml_key(content, line_number)
+                value = _unquote_scalar(raw_value, line_number)
+                defaults_run = key == "run" and value == ""
+                if key == "run" and value:
+                    raise ValueError(
+                        f"line {line_number}: {current.job_id}.defaults.run "
+                        "must be a block"
                     )
                 continue
             _validate_nested_entry(content, line_number)
@@ -418,7 +499,9 @@ def _parse_workflow(text: str, relative: str) -> WorkflowFileProjection:
                     raise ValueError(
                         f"line {line_number}: duplicate workflow step key {key}"
                     )
-                current_step.fields[key] = _unquote_scalar(raw_value, line_number)
+                value = _unquote_scalar(raw_value, line_number)
+                current_step.fields[key] = value
+                step_mapping = key if key in {"env", "with"} and value == "" else None
                 continue
             if section == "strategy" and matrix_open:
                 axis, raw_value = _split_yaml_key(content, line_number)
@@ -428,7 +511,22 @@ def _parse_workflow(text: str, relative: str) -> WorkflowFileProjection:
                     )
                 current.matrix[axis] = _flow_sequence(raw_value, line_number)
                 continue
+            if section == "defaults" and defaults_run:
+                _record_mapping_value(
+                    current.mappings, "defaults.run", content, line_number
+                )
+                continue
             _validate_nested_entry(content, line_number)
+            continue
+        if (
+            indent == 10
+            and section == "steps"
+            and current_step is not None
+            and step_mapping is not None
+        ):
+            _record_mapping_value(
+                current_step.mappings, step_mapping, content, line_number
+            )
             continue
         _validate_nested_entry(content, line_number)
 
@@ -439,7 +537,7 @@ def _parse_workflow(text: str, relative: str) -> WorkflowFileProjection:
             raise ValueError(
                 f"{relative}: job {job.job_id} must contain runs-on and steps"
             )
-    return WorkflowFileProjection(relative, jobs)
+    return WorkflowFileProjection(relative, jobs, workflow_mappings)
 
 
 def _workflow_projection(
@@ -468,23 +566,51 @@ def _job(
     return workflow.jobs.get(job_id) if workflow is not None else None
 
 
+def _has_mapping_key(
+    mappings: dict[str, dict[str, str]], mapping: str, key: str
+) -> bool:
+    return any(
+        candidate.upper() == key.upper()
+        for candidate in mappings.get(mapping, {})
+    )
+
+
+def _protected_scope_is_clean(
+    workflow: WorkflowFileProjection | None,
+    job: WorkflowJobProjection | None,
+) -> bool:
+    return (
+        workflow is not None
+        and job is not None
+        and job.condition is None
+        and "continue-on-error" not in job.fields
+        and not workflow.mappings.get("defaults.run")
+        and not job.mappings.get("defaults.run")
+        and not _has_mapping_key(
+            workflow.mappings, "env", "RUSTUP_TOOLCHAIN"
+        )
+        and not _has_mapping_key(job.mappings, "env", "RUSTUP_TOOLCHAIN")
+    )
+
+
 def _active_step(
+    workflow: WorkflowFileProjection | None,
     job: WorkflowJobProjection | None,
     *,
     key: str,
     value: str,
     condition: str | None,
 ) -> bool:
-    if (
-        job is None
-        or job.condition is not None
-        or job.fields.get("continue-on-error") not in {None, "false"}
-    ):
+    if not _protected_scope_is_clean(workflow, job):
         return False
+    assert job is not None
     for step in job.steps:
         if step.fields.get(key) != value:
             continue
-        if step.fields.get("continue-on-error") not in {None, "false"}:
+        allowed_fields = {"name", key}
+        if condition is not None:
+            allowed_fields.add("if")
+        if set(step.fields) - allowed_fields or step.mappings:
             continue
         actual_condition = step.fields.get("if")
         if condition is None and "if" not in step.fields:
@@ -494,11 +620,13 @@ def _active_step(
     return False
 
 
-def _job_is_linux_matrix(job: WorkflowJobProjection | None) -> bool:
+def _job_is_linux_matrix(
+    workflow: WorkflowFileProjection | None,
+    job: WorkflowJobProjection | None,
+) -> bool:
     return (
-        job is not None
-        and job.condition is None
-        and job.fields.get("continue-on-error") in {None, "false"}
+        _protected_scope_is_clean(workflow, job)
+        and job is not None
         and job.job_id == "test"
         and job.fields.get("name") == "cargo test (${{ matrix.os }})"
         and job.runs_on == "${{ matrix.os }}"
@@ -508,11 +636,13 @@ def _job_is_linux_matrix(job: WorkflowJobProjection | None) -> bool:
     )
 
 
-def _job_is_windows(job: WorkflowJobProjection | None) -> bool:
+def _job_is_windows(
+    workflow: WorkflowFileProjection | None,
+    job: WorkflowJobProjection | None,
+) -> bool:
     return (
-        job is not None
-        and job.condition is None
-        and job.fields.get("continue-on-error") in {None, "false"}
+        _protected_scope_is_clean(workflow, job)
+        and job is not None
         and job.job_id == "windows-studio"
         and job.fields.get("name") == "Windows Studio build + test"
         and job.runs_on == "windows-latest"
@@ -602,10 +732,22 @@ def read_status(root: Path = ROOT) -> MsrvStatus:
     studio_job = _job(studio_workflow, "windows-studio")
 
     stable_tracking = (
-        _job_is_linux_matrix(test_job)
-        and _active_step(test_job, key="uses", value=STABLE_ACTION, condition=None)
-        and _job_is_windows(studio_job)
-        and _active_step(studio_job, key="uses", value=STABLE_ACTION, condition=None)
+        _job_is_linux_matrix(ci_workflow, test_job)
+        and _active_step(
+            ci_workflow,
+            test_job,
+            key="uses",
+            value=STABLE_ACTION,
+            condition=None,
+        )
+        and _job_is_windows(studio_workflow, studio_job)
+        and _active_step(
+            studio_workflow,
+            studio_job,
+            key="uses",
+            value=STABLE_ACTION,
+            condition=None,
+        )
     )
     if not stable_tracking:
         findings.append(
@@ -614,14 +756,16 @@ def read_status(root: Path = ROOT) -> MsrvStatus:
         )
 
     exact_ci = (
-        _job_is_linux_matrix(test_job)
+        _job_is_linux_matrix(ci_workflow, test_job)
         and _active_step(
+            ci_workflow,
             test_job,
             key="run",
             value=INSTALL_COMMAND,
             condition=LINUX_STEP_CONDITION,
         )
         and _active_step(
+            ci_workflow,
             test_job,
             key="run",
             value=ROOT_CI_COMMAND,
@@ -634,12 +778,20 @@ def read_status(root: Path = ROOT) -> MsrvStatus:
         )
 
     studio_exact_ci = (
-        _job_is_windows(studio_job)
+        _job_is_windows(studio_workflow, studio_job)
         and _active_step(
-            studio_job, key="run", value=INSTALL_COMMAND, condition=None
+            studio_workflow,
+            studio_job,
+            key="run",
+            value=INSTALL_COMMAND,
+            condition=None,
         )
         and _active_step(
-            studio_job, key="run", value=STUDIO_CI_COMMAND, condition=None
+            studio_workflow,
+            studio_job,
+            key="run",
+            value=STUDIO_CI_COMMAND,
+            condition=None,
         )
     )
     if not studio_exact_ci:
@@ -652,10 +804,18 @@ def read_status(root: Path = ROOT) -> MsrvStatus:
         agent_job is not None
         and agent_job.condition is None
         and _active_step(
-            agent_job, key="run", value=REPORTER_TEST_COMMAND, condition=None
+            ci_workflow,
+            agent_job,
+            key="run",
+            value=REPORTER_TEST_COMMAND,
+            condition=None,
         )
         and _active_step(
-            agent_job, key="run", value=REPORTER_GATE_COMMAND, condition=None
+            ci_workflow,
+            agent_job,
+            key="run",
+            value=REPORTER_GATE_COMMAND,
+            condition=None,
         )
     )
     if not reporter_ci_wired:
