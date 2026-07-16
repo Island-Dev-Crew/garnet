@@ -92,43 +92,58 @@ Observed after the post-squash markers and SOTU render: exit `0`, `ok: true`,
 
 ## Fresh cross-OS evidence
 
-PR #508's first remote attempt ran against companion head
-`a04ed934f21b2dbe79199034b8a6d275908d661c`. The two trust-kernel files are
+PR #508's successful full remote run is bound to companion/evidence head
+`e96b9a4b7b55019eb4f7870a8782fb9b80179516`. The two trust-kernel files are
 byte-identical to the independently reviewed head `2870ea9`; the intervening
-commit only completed this companion.
+commits only completed this companion and recorded remote evidence.
 
 Fresh successful jobs:
 
-- [Ubuntu cargo test](https://github.com/Island-Dev-Crew/garnet/actions/runs/29531484386/job/87732855667)
-- [macOS cargo test](https://github.com/Island-Dev-Crew/garnet/actions/runs/29531484386/job/87732855695)
-- [Windows cargo test](https://github.com/Island-Dev-Crew/garnet/actions/runs/29531484386/job/87732855651)
-- [Ubuntu agent documentation contracts and rolling trust gate](https://github.com/Island-Dev-Crew/garnet/actions/runs/29531484386/job/87732574264)
-- [Windows Studio build + test](https://github.com/Island-Dev-Crew/garnet/actions/runs/29531484580/job/87732574776)
-- [Ubuntu deterministic build](https://github.com/Island-Dev-Crew/garnet/actions/runs/29531484146/job/87733094446)
-- [macOS deterministic build](https://github.com/Island-Dev-Crew/garnet/actions/runs/29531484146/job/87733094426)
-- [Cross-OS determinism comparison](https://github.com/Island-Dev-Crew/garnet/actions/runs/29531484146/job/87733738626)
-- [Agentic dogfood matrix](https://github.com/Island-Dev-Crew/garnet/actions/runs/29531483803/job/87732572306)
+- [Ubuntu cargo test](https://github.com/Island-Dev-Crew/garnet/actions/runs/29532148134/job/87735002035)
+- [macOS cargo test](https://github.com/Island-Dev-Crew/garnet/actions/runs/29532148134/job/87735002045)
+- [Windows cargo test](https://github.com/Island-Dev-Crew/garnet/actions/runs/29532148134/job/87735002038)
+- [Ubuntu agent documentation contracts and rolling trust gate](https://github.com/Island-Dev-Crew/garnet/actions/runs/29532148134/job/87734744024)
+- [macOS Studio build + test](https://github.com/Island-Dev-Crew/garnet/actions/runs/29532148137/job/87734744190)
+- [Windows Studio build + test](https://github.com/Island-Dev-Crew/garnet/actions/runs/29532148137/job/87734744231)
+- [Ubuntu deterministic build](https://github.com/Island-Dev-Crew/garnet/actions/runs/29532148265/job/87735272758)
+- [macOS deterministic build](https://github.com/Island-Dev-Crew/garnet/actions/runs/29532148265/job/87735272806)
+- [Cross-OS determinism comparison](https://github.com/Island-Dev-Crew/garnet/actions/runs/29532148265/job/87735808303)
+- [Agentic dogfood matrix](https://github.com/Island-Dev-Crew/garnet/actions/runs/29532148149/job/87734744460)
 
 The determinism run produced these fresh evidence files:
 
-- artifact `determinism-hash-ubuntu-latest`,
-  `manifest-hash-ubuntu-latest.txt`;
-- artifact `determinism-hash-macos-latest`,
-  `manifest-hash-macos-latest.txt`.
+- artifact `determinism-hash-ubuntu-latest` (ID `8389145923`, archive digest
+  `sha256:4bd19b6f1b4e5e955eb962bfd076c9809231f5b2aff7a876e293e6ec5283e103`),
+  containing `manifest-hash-ubuntu-latest.txt`;
+- artifact `determinism-hash-macos-latest` (ID `8389139936`, archive digest
+  `sha256:28ed0d249f2769ea4c0bfc834126cd463845dd37d050a3a30d31c717c05e2907`),
+  containing `manifest-hash-macos-latest.txt`.
 
-Both files have SHA-256
-`677446c3a3977330e71288645de5b9aa54abb8d685dfd371f433698c171b6752`
+Both inner files have SHA-256
+`376402892b09fd98329d42f04e809c74b22bafc270971e52a10f9636ee5f0d6a`
 and both contain the same manifest line:
-`a0044da67a230d8a05d790ee94b2c9f509740a89da4a4a2667d16345de009b03  examples/det_fixture_01.garnet.manifest.json`.
+`16a8f1ef305c7b98ccb2ac3e089e824b51f88b6fc6f6ae709de2ec55243f6df1  examples/det_fixture_01.garnet.manifest.json`.
 
-The first [macOS Studio attempt](https://github.com/Island-Dev-Crew/garnet/actions/runs/29531484580/job/87732574797)
+The three-OS cargo jobs are fresh repository regression evidence; the current
+workflow does not execute `test_garnet_lane0_closeout_status.py` on those
+runners. The focused squash-proof runtime evidence remains the local 31/31
+suite recorded above. This companion does not relabel the cargo matrix as
+cross-OS execution of the Python closeout verifier.
+
+An earlier [macOS Studio attempt](https://github.com/Island-Dev-Crew/garnet/actions/runs/29531484580/job/87732574797)
+on head `a04ed934f21b2dbe79199034b8a6d275908d661c`
 was RED because the hosted `macos-26-arm64` runner returned filesystem
 `NSPOSIXErrorDomain Code=5` / `EIO` while tests wrote temporary files. The
 exact command passed locally on this Mac with 101/101 tests. No Studio file is
-changed in this PR. The active fork credential cannot rerun an upstream job
-and no admin credential was inherited or used; this companion-only update
-therefore retriggers the normal PR checks. PR-level cross-OS clearance remains
-pending until that fresh run completes without the infrastructure failure.
+changed in this PR. The active fork credential could not rerun an upstream job
+and no admin credential was inherited or used, so a companion-only evidence
+commit retriggered the normal PR checks. The fresh macOS Studio job above then
+passed all 101 tests plus the shell and package-script contracts, confirming
+the earlier failure was infrastructure-only.
+
+Cross-OS repair evidence is **COMPLETE** for the unchanged trust-kernel files.
+This final companion-only seal must still receive the ordinary required checks
+on its resulting PR head before the draft is marked ready for Jon.
 
 ## Independent review verdict
 
@@ -145,6 +160,6 @@ reviewer also confirmed that both replacement-ref regressions fail against a
 temporary mutant with the hardening removed.
 
 Independent review of the changed trust-kernel paths is **APPROVED**.
-PR-level merge readiness remains **PENDING** only on the fresh repair-head
-Linux, macOS, and Windows evidence required above. Jon must not merge until
-that section is complete and successful.
+Fresh Linux, macOS, and Windows evidence is **APPROVED** at the exact
+companion/evidence head recorded above. Jon must not merge until the ordinary
+required checks also pass on this final companion-only seal.
