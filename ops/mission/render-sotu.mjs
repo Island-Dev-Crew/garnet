@@ -13,7 +13,8 @@
  * exception: it must be internally consistent or rendering fails closed.
  */
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { spawnSync } from "node:child_process";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -128,6 +129,30 @@ const checkpointErrors = checkpointConsistencyErrors();
 if (checkpointErrors.length) {
   console.error("[render-sotu] mainlineCheckpoint invalid:");
   for (const error of checkpointErrors) console.error(`  - ${error}`);
+  process.exit(1);
+}
+
+const repoRoot = resolve(here, "..", "..");
+const truthFreezeGate = spawnSync(
+  "python3",
+  [
+    "-I",
+    join(repoRoot, "scripts/garnet_lane0_truth_freeze_status.py"),
+    "--repo-root",
+    repoRoot,
+    "--state",
+    statePath,
+    "--plan",
+    join(repoRoot, "ops/lane0/plan.lock.json"),
+    "--gate",
+  ],
+  { cwd: repoRoot, encoding: "utf8" },
+);
+if (truthFreezeGate.error || truthFreezeGate.status !== 0) {
+  console.error("[render-sotu] Lane 0 truth-freeze gate failed; refusing to emit HTML.");
+  if (truthFreezeGate.error) console.error(`  ${truthFreezeGate.error.message}`);
+  if (truthFreezeGate.stdout?.trim()) console.error(truthFreezeGate.stdout.trim());
+  if (truthFreezeGate.stderr?.trim()) console.error(truthFreezeGate.stderr.trim());
   process.exit(1);
 }
 

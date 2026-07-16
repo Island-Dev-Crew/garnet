@@ -18,7 +18,7 @@ class Lane0TruthFreezeStatusTests(unittest.TestCase):
     def _run_renderer(
         self, state: dict[str, object]
     ) -> tuple[subprocess.CompletedProcess[str], str | None]:
-        with tempfile.TemporaryDirectory() as td:
+        with tempfile.TemporaryDirectory(dir=ROOT / "ops") as td:
             tmp = Path(td)
             shutil.copy2(ROOT / "ops/mission/render-sotu.mjs", tmp / "render-sotu.mjs")
             (tmp / "state.json").write_text(json.dumps(state), encoding="utf-8")
@@ -213,54 +213,23 @@ class Lane0TruthFreezeStatusTests(unittest.TestCase):
         self.assertIn("--repo-root", proc.stdout)
 
     def test_sotu_distinguishes_compact_log_from_full_checkpoint(self) -> None:
-        fixture = {
-            "version": 1,
-            "mission": {
-                "name": "Renderer fixture",
-                "repo": "Island-Dev-Crew/garnet",
-                "status": "active",
-            },
-            "phases": [],
-            "metrics": [],
-            "risks": [],
-            "prLog": [
-                {"number": 472, "title": "bootstrap", "phase": "P0"},
-                {"number": 473, "title": "acceptance", "phase": "P0"},
-            ],
-            "resume": {"activePhase": "P7", "nextActions": [], "blockers": []},
-            "mainlineCheckpoint": {
-                "source": "fixture",
-                "archivedFirstParentRange": {
-                    "baseExclusiveMainSha": "d0d4f7cc988db4d793c5c7555a4043aef9b27180",
-                    "headInclusiveMainSha": "1fe74892c588f912e103742afc9d11e845e8d4e6",
-                    "firstParentPullRequestCommitCount": 2,
-                    "firstParentPullRequestMergeOrder": [472, 473],
-                    "pullRequestToMainSha": {
-                        "472": "4168582c46e60612af23f225e10483e98ddc897e",
-                        "473": "155dec9c302099798b4057aabca3757d379cd25d",
-                    },
-                },
-                "successorArchiveMerge": {
-                    "pullRequest": 499,
-                    "mainSha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
-                    "immediatelyFollowsArchivedRange": True,
-                },
-                "checkpointPullRequestCommitCount": 3,
-                "checkpointFirstParentPullRequestMergeOrder": [472, 473, 499],
-            },
-        }
+        fixture = json.loads((ROOT / "ops/mission/state.json").read_text())
+        fixture["prLog"] = [
+            {"number": 472, "title": "bootstrap", "phase": "P0"},
+            {"number": 473, "title": "acceptance", "phase": "P0"},
+        ]
         proc, html = self._run_renderer(fixture)
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         self.assertIsNotNone(html)
         assert html is not None
         self.assertIn("2 compact PR log rows", html)
-        self.assertIn("3 checkpoint PR merges", html)
+        self.assertIn("35 checkpoint PR merges", html)
         self.assertIn("Mission PR Log (compact, 2 rows)", html)
-        self.assertIn("Mainline Checkpoint (3 first-parent PR merges; successor #499)", html)
+        self.assertIn("Mainline Checkpoint (35 first-parent PR merges; successor #499)", html)
         self.assertIn("231aefa91985e5a0520c493c7f0fc3e54d74efc8", html)
         self.assertNotIn("2 PRs merged", html)
         self.assertIn("compact PR log rows: 2", proc.stdout)
-        self.assertIn("checkpoint PR merges: 3", proc.stdout)
+        self.assertIn("checkpoint PR merges: 35", proc.stdout)
 
     def test_sotu_fails_closed_on_inconsistent_checkpoint(self) -> None:
         cases = (
@@ -290,6 +259,18 @@ class Lane0TruthFreezeStatusTests(unittest.TestCase):
                 self.assertNotEqual(proc.returncode, 0, proc.stdout + proc.stderr)
                 self.assertIn("mainlineCheckpoint invalid", proc.stderr)
                 self.assertIsNone(html, "invalid checkpoint must not produce a positive SOTU")
+
+    def test_sotu_fails_closed_on_git_inconsistent_checkpoint(self) -> None:
+        state = json.loads((ROOT / "ops/mission/state.json").read_text())
+        mapping = state["mainlineCheckpoint"]["archivedFirstParentRange"][
+            "pullRequestToMainSha"
+        ]
+        mapping["472"] = "f" * 40
+
+        proc, html = self._run_renderer(state)
+        self.assertNotEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertIn("Lane 0 truth-freeze gate failed", proc.stderr)
+        self.assertIsNone(html, "Git-inconsistent checkpoint must not produce a SOTU")
 
 
 if __name__ == "__main__":
