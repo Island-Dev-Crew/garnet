@@ -175,7 +175,7 @@
       <h1>The browser claim now rests on executable evidence.</h1>
       <p class="summary">A clean Chromium page loaded only committed Garnet package bytes, then ran source, checked source, diffed declared capability surfaces, and rejected declared process authority without partial output. Package reproducibility and reporter promotion are green locally. The branch is still a review candidate, not a launch event.</p>
       <div class="chips">
-        <span class="chip green">Browser proof 2.193 s</span>
+        <span class="chip green">Browser proof 2.637 s</span>
         <span class="chip green">Five claims verified</span>
         <span class="chip green">Zero external requests</span>
         <span class="chip amber">Remote OS matrix pending</span>
@@ -209,7 +209,7 @@
         <tbody>
           <tr><td><b>Browser package</b></td><td>Hermetic no-publish probe only</td><td><b>Exact three-file package; two clean builds byte-identical</b></td><td><code>build_playground_wasm.py --verify-reproducible</code></td></tr>
           <tr><td><b>Live page</b></td><td>Static recorded-output gallery</td><td><b>Real Run, Check, and Diff caps controls backed by Wasm exports</b></td><td><code>test_garnet_playground_browser_contract.py</code></td></tr>
-          <tr><td><b>Clean browser</b></td><td>No browser-runtime proof</td><td><b>Pass in 2,193 ms; six committed requests; no Node global</b></td><td><code>W_PLAY_BROWSER_PROOF.json</code></td></tr>
+          <tr><td><b>Clean browser</b></td><td>No browser-runtime proof</td><td><b>Pass in 2,637 ms; six committed requests; no Node global</b></td><td><code>W_PLAY_BROWSER_PROOF.json</code></td></tr>
           <tr><td><b>Denied authority</b></td><td>No rendered browser denial</td><td><b>Declared proc cap returns runtime_error, empty stdout, visible Denied</b></td><td><code>journeys.denial</code> in the proof</td></tr>
           <tr><td><b>Promotion</b></td><td>Reporter schema v2; browser blockers open</td><td><b>Schema v3 validates package and proof before browser_ready=true</b></td><td><code>garnet_wasm_readiness.py --gate</code></td></tr>
           <tr><td><b>Agent verdict</b></td><td>No page-level machine decision</td><td><b>Versioned expanded verdict matches the human Authority expanded label</b></td><td><code>garnet.playground.diff-caps-verdict/1</code></td></tr>
@@ -222,9 +222,10 @@
     <h2 id="findings">Findings and Boundaries</h2>
     <p class="kicker">Confirmed findings drive the lane verdict. Pending evidence remains plainly pending.</p>
     <article class="finding"><span class="sev confirmed">Confirmed</span><h3>The local browser gate is closed by runtime evidence, not prose.</h3><p>The reporter independently re-reads the committed package provenance, source digest, artifact hashes, tracked browser request set, screenshot hash, success journeys, denial semantics, and matching human/machine verdict. Removing or corrupting the package or proof makes its gate fail. <code>scripts/garnet_wasm_readiness.py</code></p></article>
+    <article class="finding"><span class="sev confirmed">Confirmed / repaired</span><h3>Independent review stopped stale proof replay before PR creation.</h3><p>The first sealed-tree review showed that ancestor commit labels looked valid without proving current browser inputs. The repair binds ten exact browser, harness, package, icon, and npm-manifest files to one digest and pins the direct integrity-locked Playwright dependency. Stale-digest and changed-file probes now fail closed. <code>ops/lane2a/evidence/60-independent-review-repair.md</code></p></article>
     <article class="finding"><span class="sev high">High / pending</span><h3>The PR is not ready for human merge until remote cross-OS checks are attached.</h3><p>Local macOS proof cannot stand in for required Ubuntu, Windows, and macOS CI. The ordinary matrix also does not prove the Python reporter ran on every OS; claims must match the exact jobs that execute. <code>.github/workflows/ci.yml</code></p></article>
     <article class="finding"><span class="sev medium">Medium / governed</span><h3>The launch ledger remains at its landed baseline until reconciliation.</h3><p>The W-PLAY reporter is green on this branch, but the canonical launch aggregator still reports the unmerged 3-of-6 baseline. That is preserved rather than replaced with a speculative percentage. <code>scripts/garnet_launch_readiness_status.py</code></p></article>
-    <article class="finding"><span class="sev low">Low / residual</span><h3>Dependency and test-harness observations do not expand this lane.</h3><p>Production-only npm audit reported zero vulnerabilities. Cargo audit reported zero vulnerabilities and one informational unsoundness warning for transitive <code>anyhow 1.0.102</code>. One concurrent workspace run collided on a legacy predictable temp filename; the exact test, eight parallel probes, and a fresh uncontended workspace run passed. No unrelated interpreter or dependency edit was smuggled into W-PLAY.</p></article>
+    <article class="finding"><span class="sev low">Low / residual</span><h3>Dependency and test-harness observations do not expand this lane.</h3><p>Production-only npm audit reported zero vulnerabilities; the full audit separately reports the existing development-only Vite high advisory for Windows dev-server path handling. W-PLAY does not start Vite, so this lane records rather than silently upgrades it. Cargo audit reported zero vulnerabilities and one informational unsoundness warning for transitive <code>anyhow 1.0.102</code>. One concurrent workspace run collided on a legacy predictable temp filename; the exact test, eight parallel probes, and a fresh uncontended workspace run passed.</p></article>
     <div class="grid two" style="margin-top:14px">
       <article class="panel"><h3>Strengths to preserve</h3><ul><li>Package identity is source/tree-digest based and survives squash merges.</li><li>The browser server refuses untracked paths and records every requested file.</li><li>Declared capability does not mint unavailable browser host authority.</li><li>Human and agent reviewers consume the same capability-diff decision.</li></ul></article>
       <article class="panel"><h3>Claims that remain fenced</h3><ul><li>No S114, WV-4, or WV-5 relabel.</li><li>No OS sandbox, production, v1.0, release, or FIRE claim.</li><li>No launch percentage promotion before landed reconciliation.</li><li>No merge, tag, publish, promo signoff, or 31-to-32 ceremony by this lane.</li></ul></article>
@@ -235,7 +236,7 @@
     <h2 id="chain">Evidence Chain</h2>
     <p class="kicker">The browser verdict survives only while every link remains valid.</p>
     <div class="evidence-rail">
-      <article class="evidence-step"><span class="step-num">01 / INPUT</span><h3>Committed sources</h3><p>Canonical digest covers Rust, locks, and procedural contracts.</p></article>
+      <article class="evidence-step"><span class="step-num">01 / INPUT</span><h3>Committed sources</h3><p>Exact digest covers browser bytes, harness, icon, package provenance, and locked Node manifests.</p></article>
       <article class="evidence-step"><span class="step-num">02 / BUILD</span><h3>Reproducible bytes</h3><p>Two offline clean builds match the exact committed JS, Wasm, and provenance.</p></article>
       <article class="evidence-step"><span class="step-num">03 / PAGE</span><h3>Tracked load</h3><p>Chromium requests six committed files and no external or untracked bytes.</p></article>
       <article class="evidence-step"><span class="step-num">04 / JOURNEY</span><h3>Success plus denial</h3><p>Run, check, diff, and declared-proc rejection all execute in the page.</p></article>
@@ -260,7 +261,7 @@
     </div>
   </section>
 
-  <footer>Evidence sources: <code>ops/lane2a/state.json</code>, lane evidence 00/10/20/30/40/50, <code>F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json</code>, the rolling W_TRUST companion, fresh local Rust and Python gates, and canonical launch/MIT reporters. Generated for Lane 2A only; it does not replace or mutate <code>ops/mission/state.json</code>.</footer>
+  <footer>Evidence sources: <code>ops/lane2a/state.json</code>, lane evidence 00/10/20/30/40/50/60/65, <code>F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json</code>, the rolling W_TRUST companion, fresh local Rust and Python gates, and canonical launch/MIT reporters. Generated for Lane 2A only; it does not replace or mutate <code>ops/mission/state.json</code>.</footer>
 </main>
 </body>
 </html>

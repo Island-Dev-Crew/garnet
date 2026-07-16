@@ -65,27 +65,42 @@ wiring did not need or authorize a new host capability.
 | Human and machine diff verdicts diverge | Exact shared-result parity validation fails |
 | Screenshot or responsive boundary drifts | Tracked screenshot hash or overflow validation fails |
 | Pre-squash branch ancestry disappears | Package identity remains source/tree-digest based; branch SHA is diagnostic only |
+| A green proof is replayed after browser or harness inputs change | Exact ten-file runtime-input digest validation fails |
+| Playwright resolves from ambient or unlocked state | Harness requires direct integrity-locked `@playwright/test` from the Studio `npm ci` tree |
 
 ## Fresh local evidence
 
 - `python3 -I scripts/test_build_playground_wasm.py`: 10/10 passed.
 - `python3 scripts/build_playground_wasm.py --verify-reproducible`: two clean
   builds matched each other and the committed package.
-- `python3 -I scripts/test_garnet_playground_browser_contract.py`: 5/5 passed.
-- Playwright browser proof: passed in 2,193 ms with six committed requests,
+- `python3 -I scripts/test_garnet_playground_browser_contract.py`: 6/6 passed.
+- Playwright browser proof: passed in 2,637 ms with six committed requests,
   zero external requests, zero untracked requests, no console/page errors,
   no desktop/mobile horizontal overflow, and the declared-proc denial green.
 - `python3 -I scripts/test_garnet_playground_browser_proof.py`: 3/3 passed.
-- `python3 -I scripts/test_garnet_wasm_readiness.py`: 10/10 passed, including
-  expected-red malformed browser proof behavior.
+- `python3 -I scripts/test_garnet_wasm_readiness.py`: 13/13 passed, including
+  expected-red malformed proof, stale runtime digest, and changed-file behavior.
 - `python3 scripts/garnet_wasm_readiness.py --gate`: schema v3,
   `browser_package_valid: true`, `browser_proof_valid: true`,
   `browser_ready: true`, blockers empty.
+- Browser proof runtime identity: ten exact files at
+  `e21134ae261f064ccb9db42a1d4150b2375fbb8c9146539be6439f3c56f75f70`,
+  including the smoke harness plus Studio `package.json` and lockfile; direct
+  `@playwright/test` 1.61.1 is bound to its lock integrity and documented
+  `npm ci --ignore-scripts` install.
 - `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets -- -D
   warnings`, and `cargo test --workspace --no-fail-fast`: passed under Rust
   1.95.0 on macOS arm64.
 - `cargo run -p xtask -- truth --check`: passed; Lane 0 closeout, frozen
   backlog, MSRV, trust-kernel companion, and agent-contract gates also passed.
+- `npm audit --json --omit=dev`: zero production vulnerabilities. The full
+  audit separately reports the existing direct development-only Vite advisory
+  for Windows dev-server path handling (`GHSA-fx2h-pf6j-xcff`). This proof does
+  not start Vite; the lane records but does not silently repair that dependency.
+
+The post-repair full gate record is
+`ops/lane2a/evidence/65-final-local-verification.json`; it preserves the earlier
+verification record instead of rewriting it.
 
 Raw browser evidence is
 `F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json` plus
@@ -96,8 +111,11 @@ is the verdict authority.
 
 A separate security reviewer identified the stronger declared-capability host
 denial case before page implementation; that correction is now test-pinned.
-Final integrated independent review will be recorded against the sealed branch
-tree before merge.
+Two final-tree review passes then independently caught the stale-proof replay
+gap; one also caught ambient Playwright path resolution. The old proof became
+RED under the repaired reporter, and commit `2f1d177` plus the regenerated
+proof correct both findings. A final rereview of the repaired sealed tree is
+still required before merge.
 
 Fresh cross-OS required-check evidence is pending the fork-to-upstream PR. This
 local companion is sufficient only for the structural rolling-review gate; it
