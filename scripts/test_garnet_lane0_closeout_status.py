@@ -267,6 +267,7 @@ class Lane0CloseoutStatusTests(unittest.TestCase):
         )
         (self.evidence / "25-independent-review.md").write_text(
             "# Independent review\n\n"
+            "## Final integrated review\n\n"
             "Final integrated verdict: **APPROVED**\n"
             "Reviewer role: independent integrated reviewer\n"
             "Reviewed range: "
@@ -514,6 +515,48 @@ class Lane0CloseoutStatusTests(unittest.TestCase):
         status = self._status()
         self.assertEqual(1, len(status.findings), status.findings)
         self.assertIn("final integrated review", status.findings[0])
+
+    def test_duplicate_final_review_heading_cannot_false_green(self) -> None:
+        path = self.evidence / "25-independent-review.md"
+        text = path.read_text(encoding="utf-8")
+        path.write_text(
+            text
+            + "\n## Final integrated review\n\n"
+            + "Final integrated verdict: **APPROVED**\n"
+            + "Reviewer role: independent second reviewer\n"
+            + "Reviewed range: "
+            + "`231aefa91985e5a0520c493c7f0fc3e54d74efc8.."
+            + f"{CANDIDATE}`\n"
+            + "Reviewed at: `2026-07-16T12:00:47Z`\n"
+            + "Open Critical findings: 0\n"
+            + "Open Important findings: 0\n",
+            encoding="utf-8",
+        )
+        self._reseal()
+        status = self._status()
+        self.assertTrue(
+            any("final integrated review" in item for item in status.findings)
+        )
+
+    def test_approved_review_with_appended_pending_state_cannot_false_green(self) -> None:
+        path = self.evidence / "25-independent-review.md"
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write("\nFix re-review: **PENDING**\n")
+        self._reseal()
+        status = self._status()
+        self.assertTrue(
+            any("final integrated review" in item for item in status.findings)
+        )
+
+    def test_later_nonzero_review_count_cannot_false_green(self) -> None:
+        path = self.evidence / "25-independent-review.md"
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write("\nOpen Important findings: 2\n")
+        self._reseal()
+        status = self._status()
+        self.assertTrue(
+            any("final integrated review" in item for item in status.findings)
+        )
 
     def test_state_to_ledger_gate_binding_mismatch_is_rejected(self) -> None:
         path = self.root / "ops/lane0/state.json"

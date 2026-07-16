@@ -1050,19 +1050,59 @@ def _verify_review(
         text = path.read_text(encoding="utf-8")
     except OSError as exc:
         return [f"independent review evidence is unreadable: {exc}"], False, None
-    verdict = re.search(r"(?m)^Final integrated verdict: \*\*(.+)\*\*$", text)
-    role = re.search(r"(?m)^Reviewer role: (.+)$", text)
-    reviewed_range = re.search(
-        r"(?m)^Reviewed range: `([0-9a-f]{40})\.\.([0-9a-f]{40})`$", text
+    headings = list(re.finditer(r"(?m)^## Final integrated review\s*$", text))
+    if len(headings) != 1:
+        return [
+            "final integrated review is not APPROVED with zero open Critical/Important findings and complete provenance"
+        ], False, None
+    section_start = headings[0].end()
+    next_heading = re.search(r"(?m)^## ", text[section_start:])
+    section_end = (
+        section_start + next_heading.start() if next_heading is not None else len(text)
     )
-    reviewed_at = re.search(r"(?m)^Reviewed at: `([^`]+)`$", text)
-    critical = re.search(r"(?m)^Open Critical findings: (\d+)$", text)
-    important = re.search(r"(?m)^Open Important findings: (\d+)$", text)
+    section = text[section_start:section_end]
+
+    field_patterns = {
+        "verdict": r"(?m)^Final integrated verdict: \*\*(.+)\*\*$",
+        "role": r"(?m)^Reviewer role: (.+)$",
+        "range": (
+            r"(?m)^Reviewed range: "
+            r"`([0-9a-f]{40})\.\.([0-9a-f]{40})`$"
+        ),
+        "at": r"(?m)^Reviewed at: `([^`]+)`$",
+        "critical": r"(?m)^Open Critical findings: (\d+)$",
+        "important": r"(?m)^Open Important findings: (\d+)$",
+    }
+    matches = {
+        name: list(re.finditer(pattern, section))
+        for name, pattern in field_patterns.items()
+    }
+    singular = all(len(values) == 1 for values in matches.values())
+    verdict = matches["verdict"][0] if singular else None
+    role = matches["role"][0] if singular else None
+    reviewed_range = matches["range"][0] if singular else None
+    reviewed_at = matches["at"][0] if singular else None
+    critical = matches["critical"][0] if singular else None
+    important = matches["important"][0] if singular else None
     reviewed_time = (
         _parse_utc(reviewed_at.group(1)) if reviewed_at is not None else None
     )
+    contradictory = (
+        re.search(
+            r"(?i)\b(?:PENDING|NEEDS PATCH|CHANGES REQUIRED)\b", section
+        )
+        is not None
+        or re.search(
+            r"(?im)^(?:Open )?(?:Critical|Important)(?: [A-Za-z]+)* "
+            r"findings:\s*[1-9]\d*$",
+            section,
+        )
+        is not None
+    )
     provenance_complete = (
-        role is not None
+        singular
+        and not contradictory
+        and role is not None
         and "independent" in role.group(1).lower()
         and reviewed_range is not None
         and reviewed_range.group(1)
