@@ -558,6 +558,33 @@ class Lane0CloseoutStatusTests(unittest.TestCase):
             any("final integrated review" in item for item in status.findings)
         )
 
+    def test_level_two_fix_review_pending_cannot_false_green(self) -> None:
+        path = self.evidence / "25-independent-review.md"
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(
+                "\n## Fix re-review\n\n"
+                "Fix re-review: **PENDING**\n"
+            )
+        self._reseal()
+        status = self._status()
+        self.assertTrue(
+            any("final integrated review" in item for item in status.findings)
+        )
+
+    def test_level_two_needs_patch_and_nonzero_count_cannot_false_green(self) -> None:
+        path = self.evidence / "25-independent-review.md"
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(
+                "\n## Later reviewer note\n\n"
+                "Verdict: **NEEDS PATCH**\n"
+                "Open Important findings: 1\n"
+            )
+        self._reseal()
+        status = self._status()
+        self.assertTrue(
+            any("final integrated review" in item for item in status.findings)
+        )
+
     def test_state_to_ledger_gate_binding_mismatch_is_rejected(self) -> None:
         path = self.root / "ops/lane0/state.json"
         data = json.loads(path.read_text(encoding="utf-8"))

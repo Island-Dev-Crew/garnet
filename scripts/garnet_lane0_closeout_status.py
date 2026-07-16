@@ -1074,10 +1074,14 @@ def _verify_review(
         "important": r"(?m)^Open Important findings: (\d+)$",
     }
     matches = {
-        name: list(re.finditer(pattern, section))
+        name: list(re.finditer(pattern, text))
         for name, pattern in field_patterns.items()
     }
-    singular = all(len(values) == 1 for values in matches.values())
+    singular = all(
+        len(values) == 1
+        and section_start <= values[0].start() < section_end
+        for values in matches.values()
+    )
     verdict = matches["verdict"][0] if singular else None
     role = matches["role"][0] if singular else None
     reviewed_range = matches["range"][0] if singular else None
@@ -1089,13 +1093,15 @@ def _verify_review(
     )
     contradictory = (
         re.search(
-            r"(?i)\b(?:PENDING|NEEDS PATCH|CHANGES REQUIRED)\b", section
+            r"(?i)\b(?:PENDING|NEEDS PATCH|CHANGES REQUIRED)\b", text
         )
         is not None
+        or re.search(r"(?m)^## Fix re-review\s*$", text) is not None
+        or re.search(r"(?im)^Fix re-review:", text) is not None
         or re.search(
             r"(?im)^(?:Open )?(?:Critical|Important)(?: [A-Za-z]+)* "
             r"findings:\s*[1-9]\d*$",
-            section,
+            text,
         )
         is not None
     )
