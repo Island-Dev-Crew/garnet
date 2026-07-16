@@ -656,6 +656,11 @@
       "note": "Lane 1 item 1 cannot close its live settings/no-bypass clause until Jon provisions a dedicated admin-authoritative token. GOV-009 must receive it explicitly and must never inherit, persist, or print an ambient credential."
     },
     {
+      "title": "U-19 ancestry-based review markers are unsatisfiable after squash merge — RESOLVED",
+      "severity": "low",
+      "note": "Lane 0 now proves independent review at reviewed_head separately from final landed content: merged_commit must be on upstream main's first-parent history and its tree must equal reviewed_tree. Lane 1 item 2 must use the same squash-durable content-digest contract for every review marker it binds."
+    },
+    {
       "title": "W-PLAY can false-green at the adapter boundary",
       "severity": "high",
       "note": "A wasm32 or Node pass does not prove the browser page, package provenance, or rendered denial flow. Public claim promotion waits for committed clean-browser Playwright evidence."
@@ -974,8 +979,28 @@
     ]
   },
   "lane0Closeout": {
-    "state": "complete_local_final_review_approved_pending_jon_merge",
-    "finalIntegratedReview": "approved",
+    "state": "complete_merged_squash_content_verified",
+    "finalIntegratedReview": {
+      "schema": "garnet.squash_durable_review_marker/v1",
+      "verdict": "approved",
+      "reviewed_head": "3124ba5ecfa88aa6f2c2c289313860670673cdec",
+      "reviewed_head_tree": "d2d3c735cf25b84ef69e0e385c8cfeb35e1af673",
+      "reviewed_tree": "98141597d17e13b02cfa228c03cdf0dc2119ad9f",
+      "merged_commit": "aa681bacd2e437bfde3cea0ffc1ca75bdb134aac",
+      "review_scope": "Independent review ended at reviewed_head. reviewed_tree binds the final squash content and does not extend or backdate independent review coverage.",
+      "post_review_commits": [
+        {
+          "commit": "aa14368bde83391506775d835ace8985bb7bc1ed",
+          "reviewed": false,
+          "purpose": "Final Lane 0 evidence recapture and closeout-state sealing after the independent review."
+        },
+        {
+          "commit": "5680fbed4684d57fc3773a1f75f86868c44b7a95",
+          "reviewed": false,
+          "purpose": "Lane 0 trust-kernel review companion added after the independent review."
+        }
+      ]
+    },
     "audit": "ops/lane0/AUDIT.md",
     "evidenceManifest": "ops/lane0/evidence/MANIFEST.sha256",
     "ledger": "ops/lane0/ledger.jsonl",
@@ -1010,6 +1035,7 @@
       "Truth-Lock language: never 'enforced/independent/signed/sandboxed/production' beyond the tested boundary; /why keeps exactly the two bounded enforced claims",
       "On this Windows machine use python for local scripts; pin C:\\Program Files\\Git\\usr\\bin\\bash.exe where a harness needs Git Bash; do not infer Linux or macOS runtime proof from Windows portability",
       "Require an explicit admin-authoritative credential for GOV-009 live policy reads; never inherit the active gh account and never persist or print the token",
+      "U-19 carry-forward for Lane 1 item 2: every review marker must bind content digests and a merged commit on upstream main first-parent; never require pre-squash reviewed-head ancestry",
       "Update state.json + journal + re-render report + commit after every merge (the heartbeat)"
     ]
   }

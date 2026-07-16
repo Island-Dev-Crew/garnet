@@ -170,3 +170,10 @@ Append-only session log, newest entry LAST.
 - The full successor branch through `0ba52279feeb634824cef997e22f098ec867d75c` received an integrated final review at `2026-07-16T13:31:19Z`, and the final parser delta through `3124ba5ecfa88aa6f2c2c289313860670673cdec` received an independent final parser review at `2026-07-16T13:35:05Z`; both reported zero open Critical and Important findings.
 - The singular final-review record now covers `231aefa91985e5a0520c493c7f0fc3e54d74efc8..3124ba5ecfa88aa6f2c2c289313860670673cdec` with an APPROVED verdict. Lane 0 evidence is being freshly recaptured and resealed against that exact candidate.
 - Launch remains HOLD, Lane 2C remains partial, governance remains advisory at band 3/5, and Jon retains merge, activation, FIRE, tag, publish, promo QA, and 31-to-32 authority.
+
+## 2026-07-16T20:03Z — session 9 (U-19 squash-durable Lane 0 closeout repair)
+
+- Verified the Lane 0 squash preserved content exactly: PR #507 head `5680fbed4684d57fc3773a1f75f86868c44b7a95` and landed main commit `aa681bacd2e437bfde3cea0ffc1ca75bdb134aac` both have tree `98141597d17e13b02cfa228c03cdf0dc2119ad9f`. Main content was not defective.
+- Logged U-19 as resolved: ancestry-based review markers cannot survive the repository's documented squash-merge convention. The closeout gate now keeps independent-review provenance at `3124ba5ecfa88aa6f2c2c289313860670673cdec` (tree `d2d3c735cf25b84ef69e0e385c8cfeb35e1af673`) separate from landed-content proof.
+- The structured marker states plainly that `aa14368bde83391506775d835ace8985bb7bc1ed` and `5680fbed4684d57fc3773a1f75f86868c44b7a95` landed after that independent review and are not retroactively covered. The fail-closed replacement requires the recorded merged commit on authoritative upstream main first-parent and exact merged-tree equality.
+- Lane 1 item 2 inherits the U-19 rule: every review marker it binds must be squash-durable through content digests and an upstream-main merged commit, never pre-squash lineage. No Lane 1 implementation was performed. Launch remains HOLD and Jon retains merge authority.

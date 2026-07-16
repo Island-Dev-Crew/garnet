@@ -25,6 +25,7 @@ from pathlib import Path, PurePosixPath
 ROOT = Path(__file__).resolve().parents[1]
 GENESIS_HASH = "0" * 64
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+GIT_OID_RE = re.compile(r"^[0-9a-f]{40}$")
 UTC_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
 
 EXPECTED_EVIDENCE_FILES = (
@@ -1044,17 +1045,17 @@ def _require_fields(
 
 
 def _verify_review(
-    path: Path, root: Path, *, verify_git: bool
-) -> tuple[list[str], bool, datetime | None]:
+    path: Path,
+) -> tuple[list[str], bool, datetime | None, str | None]:
     try:
         text = path.read_text(encoding="utf-8")
     except OSError as exc:
-        return [f"independent review evidence is unreadable: {exc}"], False, None
+        return [f"independent review evidence is unreadable: {exc}"], False, None, None
     headings = list(re.finditer(r"(?m)^## Final integrated review\s*$", text))
     if len(headings) != 1:
         return [
             "final integrated review is not APPROVED with zero open Critical/Important findings and complete provenance"
-        ], False, None
+        ], False, None, None
     section_start = headings[0].end()
     next_heading = re.search(r"(?m)^## ", text[section_start:])
     section_end = (
@@ -1091,6 +1092,9 @@ def _verify_review(
     reviewed_time = (
         _parse_utc(reviewed_at.group(1)) if reviewed_at is not None else None
     )
+    reviewed_head = (
+        reviewed_range.group(2) if reviewed_range is not None else None
+    )
     contradictory = (
         re.search(
             r"(?i)\b(?:PENDING|NEEDS PATCH|CHANGES REQUIRED)\b", text
@@ -1118,29 +1122,6 @@ def _verify_review(
         and critical is not None
         and important is not None
     )
-    if provenance_complete and reviewed_range is not None and verify_git:
-        reviewed_head = reviewed_range.group(2)
-        checks = (
-            ["git", "cat-file", "-e", f"{reviewed_head}^{{commit}}"],
-            [
-                "git",
-                "merge-base",
-                "--is-ancestor",
-                "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
-                reviewed_head,
-            ],
-            ["git", "merge-base", "--is-ancestor", reviewed_head, "HEAD"],
-        )
-        provenance_complete = all(
-            subprocess.run(
-                command,
-                cwd=root,
-                capture_output=True,
-                text=True,
-            ).returncode
-            == 0
-            for command in checks
-        )
     approved = (
         provenance_complete
         and verdict is not None
@@ -1151,8 +1132,138 @@ def _verify_review(
     if not approved:
         return [
             "final integrated review is not APPROVED with zero open Critical/Important findings and complete provenance"
-        ], False, reviewed_time
-    return [], True, reviewed_time
+        ], False, reviewed_time, reviewed_head
+    return [], True, reviewed_time, reviewed_head
+
+
+def _verify_squash_durable_review_marker(
+    marker: object,
+    evidence_reviewed_head: str | None,
+    root: Path,
+    *,
+    verify_git: bool,
+) -> list[str]:
+    """Verify review provenance without requiring pre-squash commit ancestry."""
+    if not isinstance(marker, dict):
+        return ["squash-durable review marker is missing"]
+
+    findings: list[str] = []
+    if marker.get("schema") != "garnet.squash_durable_review_marker/v1":
+        findings.append("review marker schema is invalid")
+    if marker.get("verdict") != "approved":
+        findings.append("review marker verdict must be approved")
+
+    reviewed_head = marker.get("reviewed_head")
+    if not isinstance(reviewed_head, str) or GIT_OID_RE.fullmatch(reviewed_head) is None:
+        findings.append("review marker reviewed_head must be a full lowercase Git SHA")
+    elif reviewed_head != evidence_reviewed_head:
+        findings.append(
+            "review marker reviewed_head does not match independent review evidence"
+        )
+
+    reviewed_head_tree = marker.get("reviewed_head_tree")
+    if (
+        not isinstance(reviewed_head_tree, str)
+        or GIT_OID_RE.fullmatch(reviewed_head_tree) is None
+    ):
+        findings.append(
+            "review marker reviewed_head_tree must be a full lowercase Git tree SHA"
+        )
+
+    reviewed_tree = marker.get("reviewed_tree")
+    if not isinstance(reviewed_tree, str) or GIT_OID_RE.fullmatch(reviewed_tree) is None:
+        findings.append("review marker reviewed_tree must be a full lowercase Git tree SHA")
+
+    merged_commit = marker.get("merged_commit")
+    if merged_commit is None:
+        findings.append("review marker merged_commit is missing")
+    elif not isinstance(merged_commit, str) or GIT_OID_RE.fullmatch(merged_commit) is None:
+        findings.append("review marker merged_commit must be a full lowercase Git SHA")
+
+    review_scope = marker.get("review_scope")
+    if (
+        not isinstance(review_scope, str)
+        or "reviewed_head" not in review_scope
+        or "does not extend or backdate" not in review_scope
+    ):
+        findings.append(
+            "review marker must state that content proof does not extend or backdate review coverage"
+        )
+
+    post_review = marker.get("post_review_commits")
+    if not isinstance(post_review, list):
+        findings.append("review marker post_review_commits must be a list")
+    else:
+        for index, entry in enumerate(post_review):
+            if not isinstance(entry, dict):
+                findings.append(
+                    f"review marker post_review_commits[{index}] must be an object"
+                )
+                continue
+            commit = entry.get("commit")
+            if not isinstance(commit, str) or GIT_OID_RE.fullmatch(commit) is None:
+                findings.append(
+                    f"review marker post_review_commits[{index}].commit must be a full lowercase Git SHA"
+                )
+            if entry.get("reviewed") is not False:
+                findings.append(
+                    f"review marker post_review_commits[{index}].reviewed must be false"
+                )
+            if not isinstance(entry.get("purpose"), str) or not entry["purpose"].strip():
+                findings.append(
+                    f"review marker post_review_commits[{index}].purpose must be nonempty"
+                )
+
+    if findings or not verify_git:
+        return findings
+    assert isinstance(merged_commit, str)
+    assert isinstance(reviewed_tree, str)
+
+    main_ref = None
+    for candidate in ("refs/remotes/origin/main", "refs/heads/main"):
+        resolved = subprocess.run(
+            ["git", "show-ref", "--verify", "--quiet", candidate],
+            cwd=root,
+            capture_output=True,
+            text=True,
+        )
+        if resolved.returncode == 0:
+            main_ref = candidate
+            break
+    if main_ref is None:
+        return ["authoritative upstream main ref is unavailable"]
+
+    commit_check = subprocess.run(
+        ["git", "cat-file", "-e", f"{merged_commit}^{{commit}}"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+    )
+    if commit_check.returncode != 0:
+        return ["review marker merged_commit does not name a commit"]
+
+    first_parent = subprocess.run(
+        ["git", "rev-list", "--first-parent", main_ref],
+        cwd=root,
+        capture_output=True,
+        text=True,
+    )
+    if first_parent.returncode != 0:
+        return ["upstream main first-parent history could not be enumerated"]
+    if merged_commit not in first_parent.stdout.splitlines():
+        return ["review marker merged_commit is absent from upstream main first-parent history"]
+
+    tree_result = subprocess.run(
+        ["git", "rev-parse", f"{merged_commit}^{{tree}}"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+    )
+    if tree_result.returncode != 0:
+        return ["review marker merged_commit tree could not be resolved"]
+    if tree_result.stdout.strip() != reviewed_tree:
+        return ["review marker reviewed_tree mismatch for merged_commit"]
+    return []
 
 
 def _verify_reporter_evidence(
@@ -1595,10 +1706,8 @@ def read_status(root: Path = ROOT, *, verify_git: bool = True) -> CloseoutStatus
     findings.extend(command_findings)
     findings.extend(verify_text_transcripts(evidence_dir, commands))
     findings.extend(_scan_sensitive_evidence(evidence_dir))
-    review_findings, review_approved, review_time = _verify_review(
-        evidence_dir / "25-independent-review.md",
-        root,
-        verify_git=verify_git,
+    review_findings, review_approved, review_time, evidence_reviewed_head = (
+        _verify_review(evidence_dir / "25-independent-review.md")
     )
     findings.extend(review_findings)
     sotu_time = _sotu_timestamp(root / "ops/mission/state-of-the-union.html")
@@ -1680,14 +1789,35 @@ def read_status(root: Path = ROOT, *, verify_git: bool = True) -> CloseoutStatus
             denom_file.get("denominators"), "evidence", derived_denominators
         )
     )
-    expected_review_state = "approved" if review_approved else "pending"
     lane_closeout_state = lane_state.get("closeout", {})
     if not isinstance(lane_closeout_state, dict):
         lane_closeout_state = {}
-    if lane_closeout_state.get("finalIntegratedReview") != expected_review_state:
-        findings.append("Lane 0 state final integrated review marker is inconsistent")
-    if lane_closeout.get("finalIntegratedReview") != expected_review_state:
-        findings.append("main mission final integrated review marker is inconsistent")
+    lane_review_marker = lane_closeout_state.get("finalIntegratedReview")
+    main_review_marker = lane_closeout.get("finalIntegratedReview")
+    if review_approved:
+        findings.extend(
+            _verify_squash_durable_review_marker(
+                lane_review_marker,
+                evidence_reviewed_head,
+                root,
+                verify_git=verify_git,
+            )
+        )
+        if main_review_marker != lane_review_marker:
+            findings.append("Lane 0 and main mission review markers diverge")
+            findings.extend(
+                _verify_squash_durable_review_marker(
+                    main_review_marker,
+                    evidence_reviewed_head,
+                    root,
+                    verify_git=verify_git,
+                )
+            )
+    else:
+        if lane_review_marker != "pending":
+            findings.append("Lane 0 state final integrated review marker is inconsistent")
+        if main_review_marker != "pending":
+            findings.append("main mission final integrated review marker is inconsistent")
 
     return CloseoutStatus(
         schema="garnet.lane0.closeout/v1",
