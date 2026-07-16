@@ -10,8 +10,8 @@
     "northStar": "An authenticated, complete, exact-head merge boundary plus a live in-browser Garnet proof and one reproducible sealed local Shelf demo. Claim only what the committed traps prove.",
     "status": "active",
     "started": "2026-07-12",
-    "updated": "2026-07-15T17:47:00Z",
-    "sessionCount": 3
+    "updated": "2026-07-16T04:35:00Z",
+    "sessionCount": 4
   },
   "policies": {
     "merge": "auto",
@@ -425,7 +425,7 @@
       "id": "P7",
       "title": "Parallel Launch Convergence",
       "goal": "Close authenticated live governance while W-PLAY and one Minimum Sealed Shelf become real, evidence-backed product paths; then reconcile one launch candidate without widening claims.",
-      "status": "in-progress",
+      "status": "in_progress",
       "sessionsEstimate": "8-14",
       "gates": [
         {
@@ -469,7 +469,7 @@
         {
           "id": "P7-T1",
           "title": "GOV-009 authenticated transport, exact attempt/head projection, live admin-policy equality, review record, and human-only activation handoff",
-          "status": "in-progress",
+          "status": "in_progress",
           "dependsOn": [],
           "pr": null,
           "notes": "PRs #500 and #502 established authenticated object transport and strict physical Link parsing; #506 merged bounded 32-page/3,200-row collection. Candidate anchoring, run selection, live admin equality, verdict, and activation remain open."
@@ -477,7 +477,7 @@
         {
           "id": "P7-T2",
           "title": "W-PLAY Wasm adapter, reproducible browser package, page integration, Playwright traps, deployment observation, and reporter promotion",
-          "status": "in-progress",
+          "status": "in_progress",
           "dependsOn": [],
           "pr": null,
           "notes": "PR #498 merged check/diff Wasm exports and #505 merged the hermetic package probe. Verification hardening is locally approved; package materialization, page integration, Playwright, and browser evidence remain open."
@@ -485,7 +485,7 @@
         {
           "id": "P7-T3",
           "title": "Minimum Shelf MCP core, bounded stdio, one repo-bundled Garnet tool, sealed baseline, rejection proof, and deterministic reporter",
-          "status": "in-progress",
+          "status": "in_progress",
           "dependsOn": [],
           "pr": null,
           "notes": "PRs #501, #503, and #504 merged schema, lifecycle, and adversarial foundations. The strict JSON input boundary is locally approved; one bounded in-process Garnet tool must precede raw-byte stdio and sealing."
@@ -645,6 +645,37 @@
       "note": "The existing .mcpcaps surface is self-declared and arbitrary external MCP hosts are not Garnet-enforced. The stronger claim is limited to the flagship Garnet tool executing under the real entry capability frame."
     }
   ],
+  "mainlineCheckpoint": {
+    "source": "Local first-parent history at the exact successor pin; no Navigata1/garnet main state was read.",
+    "baseExclusive": "d0d4f7cc988db4d793c5c7555a4043aef9b27180",
+    "archiveThrough": "1fe74892c588f912e103742afc9d11e845e8d4e6",
+    "headInclusive": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+    "archivalPullRequest": 499,
+    "mergeOrder": [
+      497,
+      498,
+      500,
+      501,
+      502,
+      503,
+      504,
+      505,
+      506,
+      499
+    ],
+    "prToMainSha": {
+      "497": "d80e4eca85e85642fec41e0003958bde2b06cff4",
+      "498": "a021005a2ea4714b9dc7ca4600f32c7685842bce",
+      "500": "52971a52e69dbeba56ce4d85146ef12be18fde76",
+      "501": "750e4b6869f472e1d789129e932ca4a1a7aa476e",
+      "502": "8c07fec0f5c92f2f8a07e58cb9e8ce311805139d",
+      "503": "098b0bdb4dd5b38bf7086e518bf451b669b1b156",
+      "504": "46031e71734f693982f73cfe86ea2406bd24e215",
+      "505": "65da989c1bc915e90a28865f3d1dd0045d6404fa",
+      "506": "1fe74892c588f912e103742afc9d11e845e8d4e6",
+      "499": "231aefa91985e5a0520c493c7f0fc3e54d74efc8"
+    }
+  },
   "prLog": [
     {
       "number": 472,
@@ -753,17 +784,16 @@
     }
   ],
   "resume": {
-    "activePhase": "P7 + P8 + P9",
+    "activePhase": "P7",
     "nextActions": [
-      "P7: build the authenticated repository/open-PR/base/head/tree candidate anchor, then stable workflow/run snapshots, latest-attempt/freshness/outcome, and live ruleset/settings/no-bypass collectors as separate PRs.",
-      "P8 in parallel: merge the approved hermetic verification layer, then package materialization, live adapter/page, Playwright traps, and evidence-backed reporter promotion.",
-      "P9 in parallel: merge the approved strict JSON input boundary, then one bounded in-process Garnet tool, raw-byte stdio, sealed baseline, reject-without-seal proof, and deterministic Shelf reporter.",
-      "After P7/P8/P9: freeze one candidate for P10, reconcile the Mac Air language-depth report, synchronize Front Door/Studios/CLI/evidence, and decide WV-6/WV-7 plus launch readiness.",
-      "Optional debt that does not interrupt the three active lanes: retro-audit workflow-only PR bodies skipped before #483; edition 2024; benchmark framing refresh; blog re-anchor."
+      "P7-T1: build the authenticated repository/open-PR/base/head/tree candidate anchor, then stable workflow/run snapshots, latest-attempt/freshness/outcome, and live ruleset/settings/no-bypass collectors as separate reviewed slices.",
+      "P7-T2: continue from the merged check/diff adapter and hermetic package probe into package materialization, live adapter/page integration, Playwright traps, and evidence-backed reporter promotion.",
+      "P7-T3: continue from the merged schema/lifecycle/adversarial core into one bounded in-process Garnet tool, raw-byte stdio, sealed baseline, reject-without-seal proof, and a deterministic Shelf reporter.",
+      "P7-T4: after P7-T1 through P7-T3 converge, freeze one candidate, reconcile the Mac Air language-depth report, synchronize Front Door/Studios/CLI/evidence, settle WV-6/WV-7, and prepare the Jon-owned launch decision packet."
     ],
     "blockers": [
       "Future GOV-009 workflow/gate wiring and the human 31-to-32 activation ceremony are Jon-merge-only integrity changes.",
-      "Public runs-in-your-browser and Shelf-ready claims remain blocked until their own committed Playwright/seal/reporter evidence exists."
+      "Launch remains HOLD: public runs-in-your-browser and Shelf-ready claims stay blocked until their own committed Playwright/seal/reporter evidence exists."
     ],
     "conventions": [
       "One task-cluster = one branch (mission/<phaseId>-<slug>) = one PR; preserve a recorded RED before implementation and fresh GREEN evidence before review/merge",
