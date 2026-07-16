@@ -179,6 +179,18 @@ class GarnetMsrvStatusTests(unittest.TestCase):
         self.assertFalse(status.reporter_ci_wired)
         self.assertFalse(status.ok)
 
+    def test_workflow_run_defaults_after_jobs_fail_closed(self) -> None:
+        status = self._mutated_status(
+            ".github/workflows/ci.yml",
+            lambda text: text.rstrip()
+            + "\n\ndefaults:\n"
+            "  run:\n"
+            "    shell: echo {0}\n",
+        )
+        self.assertFalse(status.exact_msrv_ci_check)
+        self.assertFalse(status.reporter_ci_wired)
+        self.assertFalse(status.ok)
+
     def test_job_run_defaults_on_protected_steps_fail_closed(self) -> None:
         def mutate(text: str) -> str:
             marker = "  test:\n"
@@ -237,6 +249,27 @@ class GarnetMsrvStatusTests(unittest.TestCase):
                 1,
             ),
         )
+        self.assertFalse(status.stable_tracking_preserved)
+        self.assertFalse(status.exact_msrv_ci_check)
+        self.assertFalse(status.reporter_ci_wired)
+        self.assertFalse(status.ok)
+
+    def test_workflow_rustup_toolchain_after_jobs_fails_closed(self) -> None:
+        def mutate(text: str) -> str:
+            existing = (
+                "env:\n"
+                "  CARGO_TERM_COLOR: always\n"
+                '  RUSTFLAGS: "-D warnings"\n\n'
+            )
+            moved = (
+                "\n\nenv:\n"
+                "  CARGO_TERM_COLOR: always\n"
+                '  RUSTFLAGS: "-D warnings"\n'
+                "  RUSTUP_TOOLCHAIN: 1.95.0\n"
+            )
+            return text.replace(existing, "", 1).rstrip() + moved
+
+        status = self._mutated_status(".github/workflows/ci.yml", mutate)
         self.assertFalse(status.stable_tracking_preserved)
         self.assertFalse(status.exact_msrv_ci_check)
         self.assertFalse(status.reporter_ci_wired)

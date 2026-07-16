@@ -349,13 +349,13 @@ def _record_mapping_value(
 
 
 def _workflow_scope_mappings(
-    logical: list[tuple[int, int, str]], jobs_index: int
+    logical: list[tuple[int, int, str]],
 ) -> dict[str, dict[str, str]]:
     mappings: dict[str, dict[str, str]] = {}
     section: str | None = None
     defaults_run = False
 
-    for line_number, indent, content in logical[:jobs_index]:
+    for line_number, indent, content in logical:
         if indent == 0:
             key, raw_value = _split_yaml_key(content, line_number)
             value = _unquote_scalar(raw_value, line_number)
@@ -393,7 +393,7 @@ def _parse_workflow(text: str, relative: str) -> WorkflowFileProjection:
     if len(jobs_markers) != 1:
         raise ValueError(f"{relative}: workflow must contain exactly one jobs mapping")
 
-    workflow_mappings = _workflow_scope_mappings(logical, jobs_markers[0])
+    workflow_mappings = _workflow_scope_mappings(logical)
     jobs: dict[str, WorkflowJobProjection] = {}
     current: WorkflowJobProjection | None = None
     current_step: WorkflowStepProjection | None = None
@@ -409,7 +409,9 @@ def _parse_workflow(text: str, relative: str) -> WorkflowFileProjection:
                 inside_jobs = True
                 continue
             if inside_jobs:
-                break
+                inside_jobs = False
+                current = None
+                current_step = None
             continue
         if not inside_jobs:
             continue
