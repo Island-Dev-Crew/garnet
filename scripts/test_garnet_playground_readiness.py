@@ -33,10 +33,10 @@ class PlaygroundReadinessTests(unittest.TestCase):
     def test_gate_passes_on_real_repo(self) -> None:
         self.assertEqual(pg.main(["--gate", "--format", "json"]), 0)
 
-    def test_markdown_states_static_not_live(self) -> None:
+    def test_markdown_keeps_preset_and_browser_authority_separate(self) -> None:
         md = pg.render_markdown(pg.read_readiness())
-        self.assertIn("static gallery", md)
-        self.assertIn("not a live editor", md)
+        self.assertIn("static presets", md)
+        self.assertIn("Browser status is owned", md)
 
 
 if __name__ == "__main__":

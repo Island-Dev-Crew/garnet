@@ -121,7 +121,8 @@ class WasmReadinessTests(unittest.TestCase):
     def test_markdown_separates_node_proof_from_browser_claim(self) -> None:
         markdown = wasm.render_markdown(wasm.read_readiness())
         self.assertIn("real Node execution passed: True", markdown)
-        self.assertIn("does not prove live browser-page execution", markdown)
+        self.assertIn("WV-5 alone proves", markdown)
+        self.assertIn("browser ready: **yes**", markdown)
         self.assertNotIn("no wasm is built", markdown.lower())
 
     def test_gate_guards_committed_build_execution_and_browser_evidence(self) -> None:

@@ -33,9 +33,16 @@ WV5_PROOF = WV5_DIR / "wv5-wasm-lane-proof.json"
 WV5_MANIFEST = WV5_DIR / "MANIFEST.sha256"
 WV5_NODE_LOG = WV5_DIR / "commands" / "node-smoke-stdout.txt"
 LIVE_ADAPTER = ROOT / "docs" / "playground" / "live.js"
-BROWSER_PACKAGE = ROOT / "docs" / "playground" / "pkg" / "garnet_wasm_bg.wasm"
+BROWSER_PACKAGE_DIR = ROOT / "docs" / "playground" / "pkg"
+BROWSER_PACKAGE = BROWSER_PACKAGE_DIR / "garnet_wasm_bg.wasm"
+BROWSER_PROVENANCE = BROWSER_PACKAGE_DIR / "provenance.json"
 BROWSER_PROOF = (
     ROOT / "F_Project_Management" / "LAUNCH" / "W_PLAY_BROWSER_PROOF.json"
+)
+PACKAGE_FILES = {"garnet_wasm.js", "garnet_wasm_bg.wasm", "provenance.json"}
+DIFF_SCOPE = (
+    "declared-surface-only; does not prove absence of undeclared authority; "
+    "bound annotations are not part of this surface"
 )
 
 REQUIRED_WV5_COMMANDS = {
@@ -63,7 +70,10 @@ class WasmReadiness:
     caps_surface_export_present: bool
     browser_adapter_present: bool
     browser_package_present: bool
+    browser_package_valid: bool
     browser_proof_present: bool
+    browser_proof_valid: bool
+    browser_ready: bool
     wasm32_target_installed: bool
     wasm_pack_present: bool
     node_present: bool
@@ -149,13 +159,237 @@ def _node_semantics_valid() -> bool:
     )
 
 
+def _sha256(raw: bytes) -> str:
+    return hashlib.sha256(raw).hexdigest()
+
+
+def _canonical_source(raw: bytes) -> bytes:
+    return raw.replace(b"\r\n", b"\n")
+
+
+def _safe_repo_file(relative: str) -> Path | None:
+    if not relative or "\\" in relative:
+        return None
+    candidate = (ROOT / relative).resolve()
+    try:
+        candidate.relative_to(ROOT.resolve())
+    except ValueError:
+        return None
+    if candidate.is_symlink() or not candidate.is_file():
+        return None
+    return candidate
+
+
+def _read_json_object(path: Path) -> dict | None:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return None
+    return value if isinstance(value, dict) else None
+
+
+def read_browser_package_provenance() -> dict | None:
+    return _read_json_object(BROWSER_PROVENANCE)
+
+
+def browser_package_valid(provenance: dict | None = None) -> bool:
+    if provenance is None:
+        provenance = read_browser_package_provenance()
+    if provenance is None or provenance.get("schema") != "garnet.playground.wasm-package/1":
+        return False
+    try:
+        if BROWSER_PACKAGE_DIR.is_symlink() or {
+            path.name for path in BROWSER_PACKAGE_DIR.iterdir()
+        } != PACKAGE_FILES:
+            return False
+        artifacts = provenance["artifacts"]
+        if set(artifacts) != {"garnet_wasm.js", "garnet_wasm_bg.wasm"}:
+            return False
+        for name, metadata in artifacts.items():
+            path = BROWSER_PACKAGE_DIR / name
+            if path.is_symlink() or not path.is_file():
+                return False
+            raw = path.read_bytes()
+            if metadata != {"bytes": len(raw), "sha256": _sha256(raw)}:
+                return False
+        source = provenance["source"]
+        if "build_parent_commit_observed" in source:
+            return False
+        inputs = source["inputs"]
+        if not isinstance(inputs, list) or inputs != sorted(set(inputs)):
+            return False
+        digest = hashlib.sha256()
+        for relative in inputs:
+            if not isinstance(relative, str):
+                return False
+            path = _safe_repo_file(relative)
+            if path is None:
+                return False
+            digest.update(relative.encode() + b"\0" + _canonical_source(path.read_bytes()) + b"\0")
+        if digest.hexdigest() != source["source_tree_sha256"]:
+            return False
+        cargo_lock = _safe_repo_file("Cargo.lock")
+        studio_lock = _safe_repo_file("apps/garnet-studio/package-lock.json")
+        if cargo_lock is None or studio_lock is None:
+            return False
+        if _sha256(_canonical_source(cargo_lock.read_bytes())) != source["cargo_lock_sha256"]:
+            return False
+        if _sha256(_canonical_source(studio_lock.read_bytes())) != source["studio_package_lock_sha256"]:
+            return False
+        tools = provenance["tools"]
+        for name in ("cargo", "esbuild", "node", "rustc", "wasm_pack"):
+            if not isinstance(tools.get(name), dict) or not tools[name].get("version"):
+                return False
+    except (KeyError, OSError, TypeError, ValueError):
+        return False
+    return True
+
+
+def read_browser_proof() -> dict | None:
+    return _read_json_object(BROWSER_PROOF)
+
+
+def _proof_package_matches(proof: dict, provenance: dict) -> bool:
+    try:
+        return proof["package"] == {
+            "schema": provenance["schema"],
+            "source_tree_sha256": provenance["source"]["source_tree_sha256"],
+            "artifacts": provenance["artifacts"],
+        }
+    except (KeyError, TypeError):
+        return False
+
+
+def _proof_screenshot_valid(proof: dict) -> bool:
+    try:
+        visual = proof["visual"]
+        relative = visual["screenshot"]
+        if not isinstance(relative, str):
+            return False
+        screenshot = _safe_repo_file(relative)
+        return bool(
+            screenshot
+            and _sha256(screenshot.read_bytes()) == visual["screenshot_sha256"]
+            and visual["desktop"]["horizontal_overflow"] is False
+            and visual["desktop"]["runtime_state"] == "ready"
+            and visual["mobile"]["horizontal_overflow"] is False
+        )
+    except (KeyError, OSError, TypeError):
+        return False
+
+
+def browser_proof_valid(proof: dict | None = None) -> bool:
+    if proof is None:
+        proof = read_browser_proof()
+    provenance = read_browser_package_provenance()
+    if proof is None or provenance is None or not browser_package_valid(provenance):
+        return False
+    try:
+        execution = proof["execution"]
+        git = proof["git"]
+        network = proof["network"]
+        journeys = proof["journeys"]
+        run = journeys["run"]
+        check = journeys["check"]
+        diff = journeys["diff"]
+        adapter = diff["adapter_result"]
+        machine = diff["machine_verdict"]
+        denial = journeys["denial"]
+        denial_run = denial["run"]
+        requested = network["requested_committed_files"]
+        if (
+            not isinstance(requested, list)
+            or not 1 <= len(requested) <= 32
+            or len(requested) != len(set(requested))
+            or not all(isinstance(item, str) and _safe_repo_file(item) for item in requested)
+        ):
+            return False
+        screenshot_relative = proof["visual"]["screenshot"]
+        if not isinstance(screenshot_relative, str):
+            return False
+        try:
+            proof_relative = BROWSER_PROOF.resolve().relative_to(ROOT.resolve()).as_posix()
+        except ValueError:
+            return False
+        required_requests = {
+            "docs/playground.html",
+            "docs/playground/live.js",
+            "docs/playground/pkg/garnet_wasm.js",
+            "docs/playground/pkg/garnet_wasm_bg.wasm",
+        }
+        tracked_paths = [*requested, screenshot_relative, proof_relative]
+        tracked = subprocess.run(
+            ["git", "ls-files", "--error-unmatch", "--", *tracked_paths],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        return bool(
+            proof.get("schema") == "garnet.w-play.browser-proof/1"
+            and proof.get("verdict") == "pass"
+            and isinstance(proof.get("duration_ms"), int)
+            and 0 < proof["duration_ms"] < 30_000
+            and execution.get("engine") == "playwright-browser-page"
+            and execution.get("node_global_present") is False
+            and execution.get("runtime_ready") is True
+            and execution.get("service_workers") == "blocked"
+            and git.get("runtime_inputs_clean") is True
+            and re.fullmatch(r"[0-9a-f]{40}", str(git.get("tested_commit", "")))
+            and re.fullmatch(r"[0-9a-f]{40}", str(git.get("tested_tree", "")))
+            and _proof_package_matches(proof, provenance)
+            and network.get("external_requests") == []
+            and network.get("untracked_requests") == []
+            and required_requests.issubset(requested)
+            and tracked.returncode == 0
+            and run == {
+                "schema": "garnet.wasm.run/1",
+                "exit_class": "ok",
+                "stdout": "Hello from Garnet!\n",
+                "diagnostic": None,
+            }
+            and check == {
+                "schema": "garnet.wasm.check/1",
+                "ok": True,
+                "diagnostics": [],
+            }
+            and adapter.get("schema") == "garnet.wasm.diff-caps/1"
+            and adapter.get("ok") is True
+            and adapter.get("authority_expanded") is True
+            and adapter.get("aggregate_added") == ["fs"]
+            and adapter.get("aggregate_removed") == []
+            and adapter.get("wildcard_introduced") is False
+            and adapter.get("scope") == DIFF_SCOPE
+            and diff.get("human_verdict") == "Authority expanded"
+            and machine == {
+                "schema": "garnet.playground.diff-caps-verdict/1",
+                "verdict": "expanded",
+                "authority_expanded": True,
+                "aggregate_added": ["fs"],
+                "aggregate_removed": [],
+                "wildcard_introduced": False,
+                "scope": DIFF_SCOPE,
+            }
+            and denial.get("ui_state") == "Denied"
+            and denial_run.get("schema") == "garnet.wasm.run/1"
+            and denial_run.get("exit_class") == "runtime_error"
+            and denial_run.get("stdout") == ""
+            and "proc" in str(denial_run.get("diagnostic", "")).lower()
+            and proof["diagnostics"].get("console_errors") == []
+            and proof["diagnostics"].get("page_errors") == []
+            and _proof_screenshot_valid(proof)
+        )
+    except (KeyError, TypeError, ValueError):
+        return False
+
+
 def read_readiness() -> WasmReadiness:
     wasm_source = WASM_CRATE.read_text(encoding="utf-8") if WASM_CRATE.is_file() else ""
     interp_cargo = ROOT / "garnet-interp-v0.3" / "Cargo.toml"
     cargo_text = interp_cargo.read_text(encoding="utf-8") if interp_cargo.is_file() else ""
     proof, commands = _read_wv5_proof()
 
-    proof_valid = bool(
+    wv5_proof_valid = bool(
         proof
         and proof.get("schema") == "garnet.windows_launch_verification_proof/v1"
         and proof.get("item") == "WV-5"
@@ -167,11 +401,11 @@ def read_readiness() -> WasmReadiness:
         and _manifest_valid()
         and _node_semantics_valid()
     )
-    wasm_build_passed = proof_valid and all(
+    wasm_build_passed = wv5_proof_valid and all(
         _command_passed(commands, name)
         for name in ("wasm32-build", "wasm-pack-web", "wasm-pack-nodejs")
     )
-    node_execution_passed = proof_valid and _command_passed(commands, "node-smoke")
+    node_execution_passed = wv5_proof_valid and _command_passed(commands, "node-smoke")
 
     check_source_present = "pub fn check_source" in wasm_source
     caps_surface_present = (
@@ -179,7 +413,10 @@ def read_readiness() -> WasmReadiness:
     )
     browser_adapter_present = LIVE_ADAPTER.is_file()
     browser_package_present = BROWSER_PACKAGE.is_file()
+    package_valid = browser_package_valid()
     browser_proof_present = BROWSER_PROOF.is_file()
+    browser_proof_is_valid = browser_proof_valid()
+    browser_ready = browser_adapter_present and package_valid and browser_proof_is_valid
 
     blockers: list[str] = []
     if not wasm_build_passed:
@@ -192,10 +429,12 @@ def read_readiness() -> WasmReadiness:
         blockers.append("W-PLAY capability-surface/diff Wasm export is not implemented")
     if not browser_adapter_present:
         blockers.append("docs/playground/live.js browser adapter is not implemented")
-    if not browser_package_present:
-        blockers.append("browser Wasm package is not present under docs/playground/pkg")
-    if not browser_proof_present:
-        blockers.append("W-PLAY Playwright browser proof is not recorded")
+    if not package_valid:
+        blockers.append(
+            "browser Wasm package is missing, invalid, or does not match current committed inputs"
+        )
+    if not browser_proof_is_valid:
+        blockers.append("W-PLAY Playwright browser proof is missing or invalid")
 
     owned_bits_ready = bool(
         HELLO.is_file()
@@ -205,12 +444,12 @@ def read_readiness() -> WasmReadiness:
         and node_execution_passed
     )
     return WasmReadiness(
-        schema="garnet.wasm_readiness/v2",
+        schema="garnet.wasm_readiness/v3",
         hello_example_present=HELLO.is_file(),
         target_doc_present=TARGET_DOC.is_file(),
         wasm_crate_present=WASM_CRATE.is_file(),
         windows_proof_present=WV5_PROOF.is_file(),
-        windows_proof_valid=proof_valid,
+        windows_proof_valid=wv5_proof_valid,
         windows_proof_commit=str(proof.get("git_head", "")) if proof else "",
         wasm_build_passed=wasm_build_passed,
         node_execution_passed=node_execution_passed,
@@ -218,7 +457,10 @@ def read_readiness() -> WasmReadiness:
         caps_surface_export_present=caps_surface_present,
         browser_adapter_present=browser_adapter_present,
         browser_package_present=browser_package_present,
+        browser_package_valid=package_valid,
         browser_proof_present=browser_proof_present,
+        browser_proof_valid=browser_proof_is_valid,
+        browser_ready=browser_ready,
         wasm32_target_installed=_has_wasm32_target(),
         wasm_pack_present=shutil.which("wasm-pack") is not None,
         node_present=shutil.which("node") is not None,
@@ -249,8 +491,11 @@ def render_markdown(r: WasmReadiness) -> str:
         f"- `check_source` export: {r.check_source_export_present}",
         f"- capability-surface/diff export: {r.caps_surface_export_present}",
         f"- browser adapter: {r.browser_adapter_present}",
-        f"- browser package: {r.browser_package_present}",
-        f"- Playwright proof: {r.browser_proof_present}",
+        f"- browser package present: {r.browser_package_present}",
+        f"- browser package valid: {r.browser_package_valid}",
+        f"- Playwright proof present: {r.browser_proof_present}",
+        f"- Playwright proof valid: {r.browser_proof_valid}",
+        f"- browser ready: **{'yes' if r.browser_ready else 'NO'}**",
     ]
     lines.extend(f"- BLOCKER: {item}" for item in r.blockers)
     lines += [
@@ -263,9 +508,9 @@ def render_markdown(r: WasmReadiness) -> str:
         f"- wasmtime present here (optional): {r.wasmtime_present}",
         f"- miette `fancy` detected: {r.miette_fancy_detected} (recorded WV-5 build proves it is not a blocker)",
         "",
-        "Honest scope: WV-5 proves a real interpreter-to-Wasm build and Node "
-        "execution. It does not prove live browser-page execution; that claim "
-        "waits for the W-PLAY Playwright artifact.",
+        "Honest scope: WV-5 alone proves a real interpreter-to-Wasm build and "
+        "Node execution. Browser readiness is promoted separately only when the "
+        "committed package and strict Playwright proof both validate.",
         "",
     ]
     return "\n".join(lines)
@@ -277,17 +522,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--gate",
         action="store_true",
-        help="exit non-zero unless committed Wasm build + Node execution evidence is valid",
+        help="exit non-zero unless committed Wasm, Node, package, and browser evidence is valid",
     )
     args = parser.parse_args(list(argv) if argv is not None else None)
 
     result = read_readiness()
     print(render_markdown(result) if args.format == "md" else json.dumps(asdict(result), indent=2))
-    if args.gate and not result.owned_bits_ready:
+    if args.gate and not (result.owned_bits_ready and result.browser_ready):
         print(
-            "wasm-readiness gate FAILED: committed build/execution evidence is incomplete "
+            "wasm-readiness gate FAILED: committed build/execution/browser evidence is incomplete "
             f"(crate={result.wasm_crate_present}, proof={result.windows_proof_valid}, "
-            f"build={result.wasm_build_passed}, node={result.node_execution_passed})",
+            f"build={result.wasm_build_passed}, node={result.node_execution_passed}, "
+            f"package={result.browser_package_valid}, browser={result.browser_proof_valid})",
             file=sys.stderr,
         )
         return 1

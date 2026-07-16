@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
-"""Playground MVP readiness + honesty gate (S56).
+"""Playground committed-preset readiness + honesty gate (S56).
 
-The playground is a **static gallery** (real Garnet programs + their recorded
-`garnet run` output), not a live editor. The Wasm build + Node execution lane is
-proven; live in-browser execution still waits on the W-PLAY adapter, package,
-and Playwright proof. This reporter checks the gallery is well-formed AND that
-the page keeps its honest stance (it must not silently become a fake-editor
-claim).
+This reporter owns the static preset manifest: real Garnet programs and their
+recorded `garnet run` output. It does not promote or grade browser execution.
+That status belongs only to `scripts/garnet_wasm_readiness.py`, which validates
+the committed package and Playwright proof. This gate keeps the fallback preset
+data well-formed and the page's calibrated-expectations markers present.
 
 ## Honest scope (do not soften)
-The playground does not execute code in the browser. This gate guards the static
-gallery's structure and that the page still says so; it does not claim live
-execution.
+Passing this gate means the committed static presets are valid. It is neither
+necessary nor sufficient evidence for browser-live status.
 """
 from __future__ import annotations
 
@@ -86,7 +84,7 @@ def read_readiness() -> PlaygroundReadiness:
 def render_markdown(r: PlaygroundReadiness) -> str:
     return "\n".join(
         [
-            "# Garnet playground (static preview) readiness",
+            "# Garnet playground committed-preset readiness",
             "",
             f"_Schema {r.schema}._",
             "",
@@ -97,11 +95,10 @@ def render_markdown(r: PlaygroundReadiness) -> str:
             f"- honesty markers present: {r.honesty_markers_present} "
             f"(missing: {r.missing_markers or 'none'})",
             "",
-            f"**Playground gallery OK: {'yes' if r.ok else 'NO'}.**",
+            f"**Playground preset fallback OK: {'yes' if r.ok else 'NO'}.**",
             "",
-            "Honest scope: a static gallery (recorded outputs), not a live editor; "
-            "the Wasm build + Node lane is proven, while browser execution waits "
-            "on the W-PLAY adapter/package/Playwright proof.",
+            "Honest scope: static presets are recorded-output fallback data. "
+            "Browser status is owned by the evidence-backed Wasm readiness reporter.",
             "",
         ]
     )
