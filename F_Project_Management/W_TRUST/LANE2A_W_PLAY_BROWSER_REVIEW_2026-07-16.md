@@ -125,8 +125,14 @@ probes, and residuals. The reviewers classified the unpinned Chrome executable
 hash and the older diagnostic proof commit label as LOW limitations, not claim
 failures; current browser inputs remain bound by the exact ten-file digest.
 
-Fresh cross-OS required-check evidence is pending the fork-to-upstream PR. This
-local companion is sufficient only for the structural rolling-review gate; it
-does not pre-claim remote Windows, macOS, or Ubuntu success. The PR must remain
-draft/not-ready for Jon until the ordinary three-OS jobs pass and their exact
-run/job links are appended here on a subsequent evidence-only commit.
+Draft [PR #509](https://github.com/Island-Dev-Crew/garnet/pull/509) is open from
+the fleet fork. Its initial CI chain passed agent contracts, rustfmt, and clippy
+before the three cargo-test OS jobs began. The separate PR-body dogfood gate
+failed on missing required evidence headings; the corrected body passes the
+unchanged checker locally and this evidence-only commit triggers a fresh
+`synchronize` evaluation. `ops/lane2a/evidence/80-pr-open-initial-ci.md` records
+the exact initial links and correction.
+
+This local companion does not pre-claim remote Windows, macOS, or Ubuntu
+success. PR #509 remains draft/not-ready for Jon until the synchronized
+three-OS jobs pass and their exact run/job links are appended here.
