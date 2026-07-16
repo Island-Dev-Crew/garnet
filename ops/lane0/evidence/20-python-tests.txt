@@ -4,8 +4,11 @@ actual_exit=0
 --- stdout ---
 
 --- stderr ---
+test_approved_review_with_appended_pending_state_cannot_false_green (__main__.Lane0CloseoutStatusTests.test_approved_review_with_appended_pending_state_cannot_false_green) ... ok
 test_backdated_evidence_seal_is_rejected (__main__.Lane0CloseoutStatusTests.test_backdated_evidence_seal_is_rejected) ... ok
+test_duplicate_final_review_heading_cannot_false_green (__main__.Lane0CloseoutStatusTests.test_duplicate_final_review_heading_cannot_false_green) ... ok
 test_invalid_ledger_timestamp_is_rejected (__main__.Lane0CloseoutStatusTests.test_invalid_ledger_timestamp_is_rejected) ... ok
+test_later_nonzero_review_count_cannot_false_green (__main__.Lane0CloseoutStatusTests.test_later_nonzero_review_count_cannot_false_green) ... ok
 test_manifest_rejects_extra_file_and_hash_drift (__main__.Lane0CloseoutStatusTests.test_manifest_rejects_extra_file_and_hash_drift) ... ok
 test_manifest_rejects_symlink_and_traversal (__main__.Lane0CloseoutStatusTests.test_manifest_rejects_symlink_and_traversal) ... ok
 test_one_row_command_inventory_cannot_be_resealed (__main__.Lane0CloseoutStatusTests.test_one_row_command_inventory_cannot_be_resealed) ... ok
@@ -19,7 +22,7 @@ test_trailing_contradictory_event_is_rejected (__main__.Lane0CloseoutStatusTests
 test_valid_closeout_fixture_passes (__main__.Lane0CloseoutStatusTests.test_valid_closeout_fixture_passes) ... ok
 
 ----------------------------------------------------------------------
-Ran 13 tests in 0.118s
+Ran 16 tests in 0.157s
 
 OK
 
@@ -45,7 +48,7 @@ test_sotu_fails_closed_on_inconsistent_checkpoint (__main__.Lane0TruthFreezeStat
 test_sotu_selects_platform_python_and_wires_it_to_truth_gate (__main__.Lane0TruthFreezeStatusTests.test_sotu_selects_platform_python_and_wires_it_to_truth_gate) ... ok
 
 ----------------------------------------------------------------------
-Ran 14 tests in 0.829s
+Ran 14 tests in 0.827s
 
 OK
 
@@ -82,7 +85,7 @@ test_workflow_rustup_toolchain_override_fails_closed (__main__.GarnetMsrvStatusT
 test_working_directory_on_exact_msrv_step_fails_closed (__main__.GarnetMsrvStatusTests.test_working_directory_on_exact_msrv_step_fails_closed) ... ok
 
 ----------------------------------------------------------------------
-Ran 25 tests in 0.719s
+Ran 25 tests in 0.739s
 
 OK
 
@@ -110,7 +113,7 @@ test_tracked_directory_cannot_be_used_as_clause_evidence (__main__.GarnetFrozenB
 test_unknown_claim_state_is_rejected (__main__.GarnetFrozenBacklogStatusTests.test_unknown_claim_state_is_rejected) ... ok
 
 ----------------------------------------------------------------------
-Ran 16 tests in 7.213s
+Ran 16 tests in 7.291s
 
 OK
 
@@ -128,7 +131,7 @@ test_missing_first_report_fails_after_due_date (__main__.GarnetQuarterlyCompetit
 test_placeholder_does_not_count_as_completed_report (__main__.GarnetQuarterlyCompetitiveWatchStatusTests.test_placeholder_does_not_count_as_completed_report) ... ok
 
 ----------------------------------------------------------------------
-Ran 6 tests in 0.049s
+Ran 6 tests in 0.047s
 
 OK
 
@@ -146,7 +149,7 @@ test_missing_check_and_hash_mismatch_fail_closed (__main__.GarnetWvAcceptanceSta
 test_nonexistent_candidate_cannot_self_promote (__main__.GarnetWvAcceptanceStatusTests.test_nonexistent_candidate_cannot_self_promote) ... ok
 
 ----------------------------------------------------------------------
-Ran 6 tests in 0.100s
+Ran 6 tests in 0.099s
 
 OK
 
@@ -158,7 +161,7 @@ actual_exit=0
 --- stderr ---
 .....................................
 ----------------------------------------------------------------------
-Ran 37 tests in 24.430s
+Ran 37 tests in 24.998s
 
 OK
 
@@ -178,6 +181,6 @@ agent-contracts: ok (24 contracts)
 --- stderr ---
 ......
 ----------------------------------------------------------------------
-Ran 6 tests in 0.766s
+Ran 6 tests in 0.821s
 
 OK

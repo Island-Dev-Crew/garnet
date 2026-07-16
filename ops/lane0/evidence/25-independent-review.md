@@ -15,20 +15,20 @@
 ## Final integrated review
 
 Final integrated verdict: **NEEDS PATCH**
-Reviewer role: independent Task 4 and integrated reviewer
-Reviewed range: `231aefa91985e5a0520c493c7f0fc3e54d74efc8..d6a509e52e016a03b852d2afbc9c51baf1165201`
-Reviewed at: `2026-07-16T12:59:27Z`
-Open Critical findings: 1
-Open Important findings: 5
+Reviewer role: independent integrated fix reviewer
+Reviewed range: `231aefa91985e5a0520c493c7f0fc3e54d74efc8..23936ca445e791635ecebabbd58c215143e5de3a`
+Reviewed at: `2026-07-16T13:24:00Z`
+Open Critical findings: 0
+Open Important findings: 1
 
-The review found semantic false-greens in the closeout verifier, impossible
-ledger chronology, stale candidate PR-body evidence, synthetic truth-pulse
-precision, a pending-review false-green, and a Windows `python3` renderer
-dependency. Technical corrections are committed at
-`eb9f40a8b8c83fd9434d517318498dd268b1ded2`; evidence is being recaptured
-against that explicit candidate.
+The integrated fix review confirmed the semantic reporter, chronology,
+candidate, denominator, and Windows renderer patches, but found one remaining
+Important boundary: duplicate or contradictory final-review fields could be
+appended after an approved record and still false-green. The singular-section
+parser and adversarial mutations are committed at
+`1d8b72d11cf8f7d5528ca5c09f3e3349f5ab39b0`.
 
 Fix re-review: **PENDING**. This record must not be changed to APPROVED until an
-independent reviewer verifies the fix range and reports zero open Critical and
-Important findings. The ordinary closeout gate is expected to fail on this
-review state alone after all technical and evidence fixes pass.
+independent reviewer verifies the parser fix and freshly recaptured evidence,
+then reports zero open Critical and Important findings. The ordinary closeout
+gate is expected to fail on this review state alone.

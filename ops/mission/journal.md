@@ -157,3 +157,10 @@ Append-only session log, newest entry LAST.
 - Corrected truth-pulse provenance to 65.2/70 = 93.1% (rounded); S114 remains 19/19, launch-critical 3/6, launch ledger 3/8, and launch remains HOLD.
 - Windows SOTU rendering now invokes `python` on win32 and `python3` elsewhere. The regenerated SOTU carries second-precision UTC so the ledger seal is provably later than the artifact.
 - Final integrated review remains PENDING. Namespaced P0-P3 stays complete at S6/band 3; main mission stays active at P7. Root must finalize review evidence and reseal before push/PR.
+
+## 2026-07-16T13:25Z — session 7 (Lane 0 singular review parser recaptured)
+
+- Captured the exact 43-command ladder against parser candidate `1d8b72d11cf8f7d5528ca5c09f3e3349f5ab39b0`; the candidate still changes 86 paths from the Lane 0 base.
+- The final-review parser now requires exactly one final section and one of each provenance/verdict field; duplicate headings, duplicate fields, appended PENDING/NEEDS PATCH/CHANGES REQUIRED, and later nonzero counts fail closed.
+- Namespaced P0-P3 remains complete at S6/band 3, the main mission remains active at P7, all four reporter-derived denominators are unchanged, and launch remains HOLD.
+- Final independent fix re-review remains pending. Root must finalize the tracked verdict and reseal before push/PR.

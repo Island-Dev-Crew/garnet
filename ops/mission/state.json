@@ -10,8 +10,8 @@
     "northStar": "An authenticated, complete, exact-head merge boundary plus a live in-browser Garnet proof and one reproducible sealed local Shelf demo. Claim only what the committed traps prove.",
     "status": "active",
     "started": "2026-07-12",
-    "updated": "2026-07-16T13:14:50Z",
-    "sessionCount": 6
+    "updated": "2026-07-16T13:25:48Z",
+    "sessionCount": 7
   },
   "policies": {
     "merge": "auto",
@@ -935,7 +935,7 @@
     }
   },
   "readiness": {
-    "asOf": "2026-07-16T13:14:50Z",
+    "asOf": "2026-07-16T13:25:48Z",
     "launchStatus": "HOLD",
     "denominators": [
       {

@@ -5,344 +5,344 @@
       "command": "python3 --version",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:50Z",
-      "endedAt": "2026-07-16T13:14:50Z",
+      "startedAt": "2026-07-16T13:25:48Z",
+      "endedAt": "2026-07-16T13:25:48Z",
       "output": "00-environment.json"
     },
     {
       "command": "rustc +1.95.0 --version",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:50Z",
-      "endedAt": "2026-07-16T13:14:50Z",
+      "startedAt": "2026-07-16T13:25:48Z",
+      "endedAt": "2026-07-16T13:25:48Z",
       "output": "00-environment.json"
     },
     {
       "command": "cargo +1.95.0 --version",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:50Z",
-      "endedAt": "2026-07-16T13:14:50Z",
+      "startedAt": "2026-07-16T13:25:48Z",
+      "endedAt": "2026-07-16T13:25:48Z",
       "output": "00-environment.json"
     },
     {
       "command": "node --version",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:50Z",
-      "endedAt": "2026-07-16T13:14:50Z",
+      "startedAt": "2026-07-16T13:25:48Z",
+      "endedAt": "2026-07-16T13:25:48Z",
       "output": "00-environment.json"
     },
     {
       "command": "npm --version",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:50Z",
-      "endedAt": "2026-07-16T13:14:50Z",
+      "startedAt": "2026-07-16T13:25:48Z",
+      "endedAt": "2026-07-16T13:25:48Z",
       "output": "00-environment.json"
     },
     {
       "command": "git --version",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:50Z",
-      "endedAt": "2026-07-16T13:14:50Z",
+      "startedAt": "2026-07-16T13:25:48Z",
+      "endedAt": "2026-07-16T13:25:48Z",
       "output": "00-environment.json"
     },
     {
       "command": "git -C /private/tmp/archipelago-lane0-tooling-20260715 rev-parse HEAD",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:51Z",
-      "endedAt": "2026-07-16T13:14:51Z",
+      "startedAt": "2026-07-16T13:25:49Z",
+      "endedAt": "2026-07-16T13:25:49Z",
       "output": "01-archipelago-contracts.txt"
     },
     {
       "command": "python3 /private/tmp/archipelago-lane0-tooling-20260715/scripts/validate_contracts.py ops/lane0/idea.lock.json",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:51Z",
-      "endedAt": "2026-07-16T13:14:51Z",
+      "startedAt": "2026-07-16T13:25:49Z",
+      "endedAt": "2026-07-16T13:25:49Z",
       "output": "01-archipelago-contracts.txt"
     },
     {
       "command": "python3 /private/tmp/archipelago-lane0-tooling-20260715/scripts/validate_contracts.py ops/lane0/plan.lock.json",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:51Z",
-      "endedAt": "2026-07-16T13:14:51Z",
+      "startedAt": "2026-07-16T13:25:49Z",
+      "endedAt": "2026-07-16T13:25:49Z",
       "output": "01-archipelago-contracts.txt"
     },
     {
       "command": "python3 /private/tmp/archipelago-lane0-tooling-20260715/scripts/validate_contracts.py ops/lane0/state.json",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:51Z",
-      "endedAt": "2026-07-16T13:14:51Z",
+      "startedAt": "2026-07-16T13:25:49Z",
+      "endedAt": "2026-07-16T13:25:49Z",
       "output": "01-archipelago-contracts.txt"
     },
     {
       "command": "git log --oneline --first-parent d0d4f7cc..1fe7489",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:51Z",
-      "endedAt": "2026-07-16T13:14:51Z",
+      "startedAt": "2026-07-16T13:25:49Z",
+      "endedAt": "2026-07-16T13:25:49Z",
       "output": "02-first-parent-archive.txt"
     },
     {
       "command": "git log --oneline --first-parent d0d4f7cc..1fe7489 | wc -l",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:51Z",
-      "endedAt": "2026-07-16T13:14:51Z",
+      "startedAt": "2026-07-16T13:25:49Z",
+      "endedAt": "2026-07-16T13:25:50Z",
       "output": "02-first-parent-archive.txt"
     },
     {
       "command": "git log --oneline --first-parent 1fe7489..231aefa",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:51Z",
-      "endedAt": "2026-07-16T13:14:51Z",
+      "startedAt": "2026-07-16T13:25:50Z",
+      "endedAt": "2026-07-16T13:25:50Z",
       "output": "03-successor-pin-delta.txt"
     },
     {
       "command": "git rev-list --count --first-parent 1fe7489..231aefa",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:51Z",
-      "endedAt": "2026-07-16T13:14:51Z",
+      "startedAt": "2026-07-16T13:25:50Z",
+      "endedAt": "2026-07-16T13:25:50Z",
       "output": "03-successor-pin-delta.txt"
     },
     {
       "command": "git merge-base --is-ancestor 1fe74892c588f912e103742afc9d11e845e8d4e6 231aefa91985e5a0520c493c7f0fc3e54d74efc8",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:51Z",
-      "endedAt": "2026-07-16T13:14:51Z",
+      "startedAt": "2026-07-16T13:25:50Z",
+      "endedAt": "2026-07-16T13:25:50Z",
       "output": "03-successor-pin-delta.txt"
     },
     {
       "command": "python3 -I scripts/garnet_lane0_truth_freeze_status.py --gate",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:51Z",
-      "endedAt": "2026-07-16T13:14:51Z",
+      "startedAt": "2026-07-16T13:25:50Z",
+      "endedAt": "2026-07-16T13:25:50Z",
       "output": "04-truth-freeze.json"
     },
     {
       "command": "python3 -I -S scripts/garnet_msrv_status.py --gate",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:51Z",
-      "endedAt": "2026-07-16T13:14:52Z",
+      "startedAt": "2026-07-16T13:25:50Z",
+      "endedAt": "2026-07-16T13:25:50Z",
       "output": "05-msrv.json"
     },
     {
       "command": "python3 -I scripts/garnet_frozen_backlog_status.py --gate",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:52Z",
-      "endedAt": "2026-07-16T13:14:53Z",
+      "startedAt": "2026-07-16T13:25:50Z",
+      "endedAt": "2026-07-16T13:25:51Z",
       "output": "06-frozen-backlog.json"
     },
     {
       "command": "python3 -I scripts/garnet_quarterly_competitive_watch_status.py --as-of 2026-07-16 --gate",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:53Z",
-      "endedAt": "2026-07-16T13:14:53Z",
+      "startedAt": "2026-07-16T13:25:51Z",
+      "endedAt": "2026-07-16T13:25:51Z",
       "output": "07-quarterly-watch.json"
     },
     {
       "command": "python3 scripts/garnet_launch_readiness_status.py --format json --gate",
       "expectedExit": 1,
       "actualExit": 1,
-      "startedAt": "2026-07-16T13:14:53Z",
-      "endedAt": "2026-07-16T13:14:54Z",
+      "startedAt": "2026-07-16T13:25:51Z",
+      "endedAt": "2026-07-16T13:25:52Z",
       "output": "08-launch-readiness.json"
     },
     {
       "command": "python3 scripts/garnet_mit_readiness_status.py --committed-only --format json",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:54Z",
-      "endedAt": "2026-07-16T13:14:54Z",
+      "startedAt": "2026-07-16T13:25:52Z",
+      "endedAt": "2026-07-16T13:25:53Z",
       "output": "09-mit-readiness.json"
     },
     {
       "command": "python3 -I scripts/garnet_lane0_closeout_status.py --write-denominators",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:54Z",
-      "endedAt": "2026-07-16T13:14:54Z",
+      "startedAt": "2026-07-16T13:25:53Z",
+      "endedAt": "2026-07-16T13:25:53Z",
       "output": "10-denominators.json"
     },
     {
       "command": "cargo run -p xtask -- truth --check",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:54Z",
-      "endedAt": "2026-07-16T13:14:55Z",
+      "startedAt": "2026-07-16T13:25:53Z",
+      "endedAt": "2026-07-16T13:25:54Z",
       "output": "11-truth-check.txt"
     },
     {
       "command": "python3 scripts/garnet_evidence_integrity_status.py --format json --gate",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:55Z",
-      "endedAt": "2026-07-16T13:14:55Z",
+      "startedAt": "2026-07-16T13:25:54Z",
+      "endedAt": "2026-07-16T13:25:54Z",
       "output": "12-repository-evidence-integrity.json"
     },
     {
       "command": "python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6 --gate",
       "expectedExit": 1,
       "actualExit": 1,
-      "startedAt": "2026-07-16T13:14:55Z",
-      "endedAt": "2026-07-16T13:14:55Z",
+      "startedAt": "2026-07-16T13:25:54Z",
+      "endedAt": "2026-07-16T13:25:54Z",
       "output": "13-wv6-pending.json"
     },
     {
       "command": "python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-7 --gate",
       "expectedExit": 1,
       "actualExit": 1,
-      "startedAt": "2026-07-16T13:14:55Z",
-      "endedAt": "2026-07-16T13:14:55Z",
+      "startedAt": "2026-07-16T13:25:54Z",
+      "endedAt": "2026-07-16T13:25:54Z",
       "output": "14-wv7-pending.json"
     },
     {
       "command": "python3 -I -S scripts/test_garnet_lane0_closeout_status.py -v",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:55Z",
-      "endedAt": "2026-07-16T13:14:55Z",
+      "startedAt": "2026-07-16T13:25:54Z",
+      "endedAt": "2026-07-16T13:25:54Z",
       "output": "20-python-tests.txt"
     },
     {
       "command": "python3 -I scripts/test_garnet_lane0_truth_freeze_status.py -v",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:55Z",
-      "endedAt": "2026-07-16T13:14:56Z",
+      "startedAt": "2026-07-16T13:25:54Z",
+      "endedAt": "2026-07-16T13:25:55Z",
       "output": "20-python-tests.txt"
     },
     {
       "command": "python3 -I -S scripts/test_garnet_msrv_status.py -v",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:56Z",
-      "endedAt": "2026-07-16T13:14:57Z",
+      "startedAt": "2026-07-16T13:25:55Z",
+      "endedAt": "2026-07-16T13:25:56Z",
       "output": "20-python-tests.txt"
     },
     {
       "command": "python3 -I scripts/test_garnet_frozen_backlog_status.py -v",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:14:57Z",
-      "endedAt": "2026-07-16T13:15:04Z",
+      "startedAt": "2026-07-16T13:25:56Z",
+      "endedAt": "2026-07-16T13:26:03Z",
       "output": "20-python-tests.txt"
     },
     {
       "command": "python3 -I scripts/test_garnet_quarterly_competitive_watch_status.py -v",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:15:04Z",
-      "endedAt": "2026-07-16T13:15:04Z",
+      "startedAt": "2026-07-16T13:26:03Z",
+      "endedAt": "2026-07-16T13:26:03Z",
       "output": "20-python-tests.txt"
     },
     {
       "command": "python3 -I scripts/test_garnet_wv_acceptance_status.py -v",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:15:04Z",
-      "endedAt": "2026-07-16T13:15:05Z",
+      "startedAt": "2026-07-16T13:26:03Z",
+      "endedAt": "2026-07-16T13:26:03Z",
       "output": "20-python-tests.txt"
     },
     {
       "command": "python3 scripts/test_garnet_launch_readiness_status.py",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:15:05Z",
-      "endedAt": "2026-07-16T13:15:29Z",
+      "startedAt": "2026-07-16T13:26:03Z",
+      "endedAt": "2026-07-16T13:26:29Z",
       "output": "20-python-tests.txt"
     },
     {
       "command": "python3 scripts/check-agent-contracts.py",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:15:29Z",
-      "endedAt": "2026-07-16T13:15:29Z",
+      "startedAt": "2026-07-16T13:26:29Z",
+      "endedAt": "2026-07-16T13:26:29Z",
       "output": "20-python-tests.txt"
     },
     {
       "command": "python3 scripts/test_check_agent_contracts.py",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:15:29Z",
-      "endedAt": "2026-07-16T13:15:30Z",
+      "startedAt": "2026-07-16T13:26:29Z",
+      "endedAt": "2026-07-16T13:26:30Z",
       "output": "20-python-tests.txt"
     },
     {
       "command": "cargo +1.95.0 check --workspace --all-targets --all-features --locked",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:15:30Z",
-      "endedAt": "2026-07-16T13:15:31Z",
+      "startedAt": "2026-07-16T13:26:30Z",
+      "endedAt": "2026-07-16T13:26:30Z",
       "output": "21-rust-msrv-checks.txt"
     },
     {
       "command": "cargo +1.95.0 test --workspace --no-fail-fast",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:15:31Z",
-      "endedAt": "2026-07-16T13:15:53Z",
+      "startedAt": "2026-07-16T13:26:30Z",
+      "endedAt": "2026-07-16T13:26:58Z",
       "output": "21-rust-msrv-checks.txt"
     },
     {
       "command": "cargo +1.95.0 check --manifest-path apps/garnet-studio/src-tauri/Cargo.toml --all-targets --locked",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:15:53Z",
-      "endedAt": "2026-07-16T13:15:53Z",
+      "startedAt": "2026-07-16T13:26:58Z",
+      "endedAt": "2026-07-16T13:26:59Z",
       "output": "21-rust-msrv-checks.txt"
     },
     {
       "command": "cargo fmt --all -- --check",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:15:53Z",
-      "endedAt": "2026-07-16T13:15:54Z",
+      "startedAt": "2026-07-16T13:26:59Z",
+      "endedAt": "2026-07-16T13:26:59Z",
       "output": "22-workspace-tests.txt"
     },
     {
       "command": "cargo test -p garnet-cli new_cmd",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:15:54Z",
-      "endedAt": "2026-07-16T13:15:54Z",
+      "startedAt": "2026-07-16T13:26:59Z",
+      "endedAt": "2026-07-16T13:27:00Z",
       "output": "22-workspace-tests.txt"
     },
     {
       "command": "cargo test --workspace --no-fail-fast",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:15:54Z",
-      "endedAt": "2026-07-16T13:16:17Z",
+      "startedAt": "2026-07-16T13:27:00Z",
+      "endedAt": "2026-07-16T13:27:29Z",
       "output": "22-workspace-tests.txt"
     },
     {
       "command": "node ops/mission/render-sotu.mjs",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:16:17Z",
-      "endedAt": "2026-07-16T13:16:18Z",
+      "startedAt": "2026-07-16T13:27:29Z",
+      "endedAt": "2026-07-16T13:27:29Z",
       "output": "23-sotu-render.txt"
     },
     {
-      "command": "python3 scripts/check_dogfood_pr_body.py --base 231aefa91985e5a0520c493c7f0fc3e54d74efc8 --head eb9f40a8b8c83fd9434d517318498dd268b1ded2 --body-file ops/lane0/PR_BODY.md",
+      "command": "python3 scripts/check_dogfood_pr_body.py --base 231aefa91985e5a0520c493c7f0fc3e54d74efc8 --head 1d8b72d11cf8f7d5528ca5c09f3e3349f5ab39b0 --body-file ops/lane0/PR_BODY.md",
       "expectedExit": 0,
       "actualExit": 0,
-      "startedAt": "2026-07-16T13:16:18Z",
-      "endedAt": "2026-07-16T13:16:18Z",
+      "startedAt": "2026-07-16T13:27:29Z",
+      "endedAt": "2026-07-16T13:27:29Z",
       "output": "24-pr-body-validation.txt"
     }
   ]

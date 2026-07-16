@@ -1,4 +1,4 @@
-$ python3 scripts/check_dogfood_pr_body.py --base 231aefa91985e5a0520c493c7f0fc3e54d74efc8 --head eb9f40a8b8c83fd9434d517318498dd268b1ded2 --body-file ops/lane0/PR_BODY.md
+$ python3 scripts/check_dogfood_pr_body.py --base 231aefa91985e5a0520c493c7f0fc3e54d74efc8 --head 1d8b72d11cf8f7d5528ca5c09f3e3349f5ab39b0 --body-file ops/lane0/PR_BODY.md
 expected_exit=0
 actual_exit=0
 --- stdout ---
