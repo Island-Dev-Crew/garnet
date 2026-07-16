@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Garnet W-PLAY Browser State of the Union - July 16, 2026</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0d11;
+      --paper: #14181e;
+      --paper-2: #1a2028;
+      --ink: #f5f7fa;
+      --muted: #aeb8c5;
+      --line: #303844;
+      --garnet: #e05872;
+      --good: #65d6b7;
+      --amber: #f0bd62;
+      --blue: #78aeea;
+      --red: #f07b7b;
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--bg); }
+    body {
+      margin: 0;
+      background-color: var(--bg);
+      background-image:
+        linear-gradient(var(--line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line) 1px, transparent 1px);
+      background-size: 64px 64px;
+      background-position: -1px -1px;
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: rgba(11, 13, 17, .88);
+      z-index: -1;
+    }
+    main { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 36px 0 56px; }
+    h1, h2, h3 { margin: 0; line-height: 1.15; letter-spacing: 0; }
+    h1 { max-width: 820px; margin-top: 10px; font-size: 3.6rem; }
+    h2 { margin-bottom: 14px; font-size: 1.85rem; }
+    h3 { margin-bottom: 7px; font-size: 1.02rem; }
+    p { margin: 0; }
+    strong, b { color: var(--ink); }
+    code {
+      color: #dce9f7;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .88em;
+      overflow-wrap: anywhere;
+    }
+    .eyebrow { color: var(--garnet); font-size: .78rem; font-weight: 800; text-transform: uppercase; }
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 24px;
+      align-items: end;
+      padding: 18px 0 30px;
+      border-bottom: 1px solid var(--line);
+    }
+    .summary { max-width: 790px; margin-top: 16px; color: var(--muted); font-size: 1.05rem; }
+    .chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 16px; }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 10px;
+      background: #171b21;
+      color: var(--muted);
+      font-size: .76rem;
+      font-weight: 800;
+    }
+    .chip.green { color: var(--good); border-color: #356c60; }
+    .chip.amber { color: var(--amber); border-color: #755f35; }
+    .chip.red { color: var(--red); border-color: #774044; }
+    .chip.blue { color: var(--blue); border-color: #3e5878; }
+    .verdict, .metric, .panel, .finding, .phase {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+    }
+    .verdict { padding: 20px; border-top: 3px solid var(--garnet); }
+    .verdict strong { display: block; color: var(--good); font-size: 1.45rem; line-height: 1.2; }
+    .verdict span { display: block; margin-top: 10px; color: var(--muted); font-size: .92rem; }
+    section { padding-top: 34px; }
+    .kicker { max-width: 860px; margin-bottom: 14px; color: var(--muted); }
+    .grid { display: grid; gap: 14px; min-width: 0; }
+    .grid > * { min-width: 0; }
+    .grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .metric { min-height: 140px; padding: 17px; border-top: 3px solid var(--blue); }
+    .metric strong { display: block; margin-bottom: 9px; font-size: 2rem; line-height: 1; }
+    .metric span { color: var(--muted); font-size: .9rem; }
+    .bar { height: 5px; margin-top: 16px; overflow: hidden; background: #252b34; }
+    .bar i { display: block; height: 100%; background: var(--blue); }
+    .metric.hold { border-top-color: var(--red); }
+    .metric.hold .bar i { background: var(--red); }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+    table { width: 100%; border-collapse: collapse; min-width: 760px; font-size: .9rem; }
+    th, td { padding: 11px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    tr:last-child td { border-bottom: 0; }
+    th { background: var(--paper-2); color: var(--ink); font-size: .76rem; text-transform: uppercase; }
+    td { color: var(--muted); }
+    .finding { padding: 16px 18px; margin-top: 10px; }
+    .finding .sev { margin-right: 8px; font-size: .72rem; font-weight: 900; text-transform: uppercase; }
+    .sev.confirmed { color: var(--good); }
+    .sev.high { color: var(--red); }
+    .sev.medium { color: var(--amber); }
+    .sev.low { color: var(--blue); }
+    .finding h3 { display: inline; }
+    .finding p { margin-top: 7px; color: var(--muted); font-size: .92rem; }
+    .panel { min-width: 0; padding: 18px; }
+    .panel p, .panel li { color: var(--muted); }
+    ul { margin: 9px 0 0; padding-left: 19px; }
+    li + li { margin-top: 6px; }
+    .evidence-rail { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; }
+    .evidence-step { position: relative; min-height: 148px; padding: 18px 16px; border: 1px solid var(--line); background: var(--paper); }
+    .evidence-step + .evidence-step { border-left: 0; }
+    .evidence-step:first-child { border-radius: 8px 0 0 8px; }
+    .evidence-step:last-child { border-radius: 0 8px 8px 0; }
+    .step-num { display: block; margin-bottom: 18px; color: var(--garnet); font-size: .72rem; font-weight: 900; }
+    .evidence-step p { color: var(--muted); font-size: .85rem; }
+    .phase { display: grid; grid-template-columns: 66px 1fr; gap: 16px; padding: 18px; margin-top: 10px; }
+    .phase-num { display: grid; place-items: center; width: 54px; height: 54px; border: 1px solid #4d5968; border-radius: 6px; color: var(--blue); font-weight: 900; }
+    .phase p, .phase li { color: var(--muted); }
+    .phase-meta { margin-top: 4px; color: var(--garnet) !important; font-size: .82rem; font-weight: 800; }
+    .command {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      margin-top: 8px;
+      padding: 9px 10px;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      background: #0e1116;
+      white-space: nowrap;
+    }
+    footer { margin-top: 36px; padding-top: 17px; border-top: 1px solid var(--line); color: var(--muted); font-size: .86rem; }
+    @media (max-width: 900px) {
+      main { width: min(100% - 24px, 760px); padding-top: 22px; }
+      h1 { font-size: 2.55rem; }
+      .hero, .grid.four, .grid.two { grid-template-columns: 1fr; }
+      .evidence-rail { grid-template-columns: 1fr; }
+      .evidence-step + .evidence-step { border-left: 1px solid var(--line); border-top: 0; }
+      .evidence-step:first-child { border-radius: 8px 8px 0 0; }
+      .evidence-step:last-child { border-radius: 0 0 8px 8px; }
+    }
+    @media (max-width: 480px) {
+      h1 { font-size: 2.05rem; }
+      .phase { grid-template-columns: 1fr; }
+      .metric { min-height: 0; }
+    }
+    @media print {
+      body { background: #fff; color: #111; }
+      body::before { display: none; }
+      .verdict, .metric, .panel, .finding, .phase, .evidence-step, .table-wrap { background: #fff; border-color: #bbb; }
+      p, li, td, .summary, .kicker, .panel p, .panel li, .finding p, .phase p, .phase li, footer { color: #333 !important; }
+      h1, h2, h3, strong, b, th { color: #111; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Garnet / P7-T2 / Lane 2A local closeout</p>
+      <h1>The browser claim now rests on executable evidence.</h1>
+      <p class="summary">A clean Chromium page loaded only committed Garnet package bytes, then ran source, checked source, diffed declared capability surfaces, and rejected declared process authority without partial output. Package reproducibility and reporter promotion are green locally. The branch is still a review candidate, not a launch event.</p>
+      <div class="chips">
+        <span class="chip green">Browser proof 2.193 s</span>
+        <span class="chip green">Five claims verified</span>
+        <span class="chip green">Zero external requests</span>
+        <span class="chip amber">Remote OS matrix pending</span>
+        <span class="chip red">Launch HOLD</span>
+        <span class="chip blue">Band 3 ceiling</span>
+      </div>
+    </div>
+    <aside class="verdict" aria-label="Lane verdict">
+      <strong>Local gate: green</strong>
+      <span>Open the fork-to-upstream PR as draft. Do not prepare it for Jon's merge until the required Ubuntu, Windows, and macOS jobs and a sealed-tree independent review are recorded.</span>
+    </aside>
+  </header>
+
+  <section aria-labelledby="denominators">
+    <h2 id="denominators">Exactly Four Denominators</h2>
+    <p class="kicker">These measures have different scopes. They are not averaged, blended, or silently advanced by an unmerged lane.</p>
+    <div class="grid four">
+      <article class="metric"><strong>100.0%</strong><span>S114 bounded mission, 19 of 19. Label and acceptance scope unchanged.</span><div class="bar"><i style="width:100%"></i></div></article>
+      <article class="metric"><strong>93.1%</strong><span>Committed truth pulse, 65.2 of 70 status-score equivalents.</span><div class="bar"><i style="width:93.1%"></i></div></article>
+      <article class="metric"><strong>50.0%</strong><span>Launch-critical baseline, 3 of 6 gates on the unmerged ledger.</span><div class="bar"><i style="width:50%"></i></div></article>
+      <article class="metric hold"><strong>37.5%</strong><span>Whole launch ledger, 3 of 8 states. Recommendation remains HOLD.</span><div class="bar"><i style="width:37.5%"></i></div></article>
+    </div>
+  </section>
+
+  <section aria-labelledby="change">
+    <h2 id="change">Baseline to Verified Target</h2>
+    <p class="kicker">Every current-state cell below is bound to a committed artifact or a runnable command.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Dimension</th><th>Base at 1a0e5d7</th><th>Lane result</th><th>Proof</th></tr></thead>
+        <tbody>
+          <tr><td><b>Browser package</b></td><td>Hermetic no-publish probe only</td><td><b>Exact three-file package; two clean builds byte-identical</b></td><td><code>build_playground_wasm.py --verify-reproducible</code></td></tr>
+          <tr><td><b>Live page</b></td><td>Static recorded-output gallery</td><td><b>Real Run, Check, and Diff caps controls backed by Wasm exports</b></td><td><code>test_garnet_playground_browser_contract.py</code></td></tr>
+          <tr><td><b>Clean browser</b></td><td>No browser-runtime proof</td><td><b>Pass in 2,193 ms; six committed requests; no Node global</b></td><td><code>W_PLAY_BROWSER_PROOF.json</code></td></tr>
+          <tr><td><b>Denied authority</b></td><td>No rendered browser denial</td><td><b>Declared proc cap returns runtime_error, empty stdout, visible Denied</b></td><td><code>journeys.denial</code> in the proof</td></tr>
+          <tr><td><b>Promotion</b></td><td>Reporter schema v2; browser blockers open</td><td><b>Schema v3 validates package and proof before browser_ready=true</b></td><td><code>garnet_wasm_readiness.py --gate</code></td></tr>
+          <tr><td><b>Agent verdict</b></td><td>No page-level machine decision</td><td><b>Versioned expanded verdict matches the human Authority expanded label</b></td><td><code>garnet.playground.diff-caps-verdict/1</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="findings">
+    <h2 id="findings">Findings and Boundaries</h2>
+    <p class="kicker">Confirmed findings drive the lane verdict. Pending evidence remains plainly pending.</p>
+    <article class="finding"><span class="sev confirmed">Confirmed</span><h3>The local browser gate is closed by runtime evidence, not prose.</h3><p>The reporter independently re-reads the committed package provenance, source digest, artifact hashes, tracked browser request set, screenshot hash, success journeys, denial semantics, and matching human/machine verdict. Removing or corrupting the package or proof makes its gate fail. <code>scripts/garnet_wasm_readiness.py</code></p></article>
+    <article class="finding"><span class="sev high">High / pending</span><h3>The PR is not ready for human merge until remote cross-OS checks are attached.</h3><p>Local macOS proof cannot stand in for required Ubuntu, Windows, and macOS CI. The ordinary matrix also does not prove the Python reporter ran on every OS; claims must match the exact jobs that execute. <code>.github/workflows/ci.yml</code></p></article>
+    <article class="finding"><span class="sev medium">Medium / governed</span><h3>The launch ledger remains at its landed baseline until reconciliation.</h3><p>The W-PLAY reporter is green on this branch, but the canonical launch aggregator still reports the unmerged 3-of-6 baseline. That is preserved rather than replaced with a speculative percentage. <code>scripts/garnet_launch_readiness_status.py</code></p></article>
+    <article class="finding"><span class="sev low">Low / residual</span><h3>Dependency and test-harness observations do not expand this lane.</h3><p>Production-only npm audit reported zero vulnerabilities. Cargo audit reported zero vulnerabilities and one informational unsoundness warning for transitive <code>anyhow 1.0.102</code>. One concurrent workspace run collided on a legacy predictable temp filename; the exact test, eight parallel probes, and a fresh uncontended workspace run passed. No unrelated interpreter or dependency edit was smuggled into W-PLAY.</p></article>
+    <div class="grid two" style="margin-top:14px">
+      <article class="panel"><h3>Strengths to preserve</h3><ul><li>Package identity is source/tree-digest based and survives squash merges.</li><li>The browser server refuses untracked paths and records every requested file.</li><li>Declared capability does not mint unavailable browser host authority.</li><li>Human and agent reviewers consume the same capability-diff decision.</li></ul></article>
+      <article class="panel"><h3>Claims that remain fenced</h3><ul><li>No S114, WV-4, or WV-5 relabel.</li><li>No OS sandbox, production, v1.0, release, or FIRE claim.</li><li>No launch percentage promotion before landed reconciliation.</li><li>No merge, tag, publish, promo signoff, or 31-to-32 ceremony by this lane.</li></ul></article>
+    </div>
+  </section>
+
+  <section aria-labelledby="chain">
+    <h2 id="chain">Evidence Chain</h2>
+    <p class="kicker">The browser verdict survives only while every link remains valid.</p>
+    <div class="evidence-rail">
+      <article class="evidence-step"><span class="step-num">01 / INPUT</span><h3>Committed sources</h3><p>Canonical digest covers Rust, locks, and procedural contracts.</p></article>
+      <article class="evidence-step"><span class="step-num">02 / BUILD</span><h3>Reproducible bytes</h3><p>Two offline clean builds match the exact committed JS, Wasm, and provenance.</p></article>
+      <article class="evidence-step"><span class="step-num">03 / PAGE</span><h3>Tracked load</h3><p>Chromium requests six committed files and no external or untracked bytes.</p></article>
+      <article class="evidence-step"><span class="step-num">04 / JOURNEY</span><h3>Success plus denial</h3><p>Run, check, diff, and declared-proc rejection all execute in the page.</p></article>
+      <article class="evidence-step"><span class="step-num">05 / VERDICT</span><h3>Reporter promotion</h3><p>Schema v3 validates every prior link before returning browser_ready.</p></article>
+    </div>
+  </section>
+
+  <section aria-labelledby="remaining">
+    <h2 id="remaining">Plan of Attack from Here</h2>
+    <p class="kicker">The implementation is locally complete. Remaining work is review, remote evidence, and human governance.</p>
+    <article class="phase"><div class="phase-num">1</div><div><h3>Seal and open one draft PR</h3><p class="phase-meta">Current lane / no merge authority</p><p>Commit the raw proof, screenshot, state, SOTU, and companion; push only <code>mission/l2a-wplay-browser</code> to the fleet fork; open fork to upstream as draft.</p></div></article>
+    <article class="phase"><div class="phase-num">2</div><div><h3>Collect exact remote required-check evidence</h3><p class="phase-meta">Ubuntu + Windows + macOS</p><p>Fix the highest dependency-chain failure first. Record run and job URLs without describing cargo-only jobs as cross-OS Python-reporter execution.</p></div></article>
+    <article class="phase"><div class="phase-num">3</div><div><h3>Review the final sealed tree independently</h3><p class="phase-meta">Evidence-only follow-up</p><p>Challenge package provenance, fail-closed denial, reporter corruption traps, and scope wording against the final branch tree. Append findings and exact reviewed tree to the W_TRUST companion.</p></div></article>
+    <article class="phase"><div class="phase-num">4</div><div><h3>Prepare for Jon's human merge</h3><p class="phase-meta">Jon-only gate</p><p>Convert the PR from draft only after required checks and review are green. Jon alone merges; launch remains HOLD, Band 3, while U-17 and the remaining launch lanes are open.</p></div></article>
+  </section>
+
+  <section aria-labelledby="commands">
+    <h2 id="commands">Reproduction Commands</h2>
+    <div class="grid two">
+      <article class="panel"><h3>Browser package and journey</h3><code class="command">python3 scripts/build_playground_wasm.py --verify-reproducible</code><code class="command">node scripts/smoke_garnet_playground_browser.mjs --proof F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json</code></article>
+      <article class="panel"><h3>Promotion and trust</h3><code class="command">python3 scripts/garnet_wasm_readiness.py --gate</code><code class="command">python3 scripts/garnet_trust_kernel_review_status.py --gate --format json</code></article>
+    </div>
+  </section>
+
+  <footer>Evidence sources: <code>ops/lane2a/state.json</code>, lane evidence 00/10/20/30/40/50, <code>F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json</code>, the rolling W_TRUST companion, fresh local Rust and Python gates, and canonical launch/MIT reporters. Generated for Lane 2A only; it does not replace or mutate <code>ops/mission/state.json</code>.</footer>
+</main>
+</body>
+</html>

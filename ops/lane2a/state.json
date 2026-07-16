@@ -2,7 +2,7 @@
   "version": 1,
   "mission": {
     "name": "idea-garnet-l2a-browser",
-    "tagline": "Garnet has committed Wasm run, check, and capability-diff adapters plus a hermetic package probe, but it cannot honestly",
+    "tagline": "Prove the committed Garnet browser runtime, denial boundary, package reproducibility, and human-plus-machine capability verdict without promoting launch claims by prose.",
     "repo": "Island-Dev-Crew/garnet",
     "repoPath": ".",
     "defaultBranch": "main",
@@ -10,7 +10,7 @@
     "northStar": "A clean browser loads only committed package bytes and renders real run, check, and capability-diff results without a network fetch or Node-only execution path; A browser attempt to use denied process authority rejects with a non-success exit class and a visible diagnostic; Two clean builds from the same committed inputs produce byte-identical browser package files and provenance; The readiness reporter promotes browser status only after validating the committed package and browser proof; Capability diff renders a one-glance human verdict and a versioned structured machine verdict from the same adapter result",
     "status": "active",
     "started": "2026-07-16",
-    "updated": "2026-07-16T22:21:37Z",
+    "updated": "2026-07-16T22:44:12Z",
     "sessionCount": 1
   },
   "policies": {
@@ -33,7 +33,7 @@
           "command": "python3 -I scripts/test_build_playground_wasm.py",
           "status": "passed",
           "evidence": "ops/lane2a/evidence/10-package-reproducibility.json",
-          "lastRun": "2026-07-16T22:18:18Z",
+          "lastRun": "2026-07-16T22:44:12Z",
           "notes": "Ten builder contract tests passed."
         },
         {
@@ -42,7 +42,7 @@
           "command": "python3 scripts/build_playground_wasm.py --verify-reproducible",
           "status": "passed",
           "evidence": "ops/lane2a/evidence/10-package-reproducibility.json",
-          "lastRun": "2026-07-16T22:18:18Z",
+          "lastRun": "2026-07-16T22:44:12Z",
           "notes": "Two fresh offline builds matched each other and the committed package byte-for-byte."
         }
       ],
@@ -62,7 +62,7 @@
           "status": "passed",
           "evidence": "ops/lane2a/evidence/20-live-page-contract.json",
           "lastRun": "2026-07-16T22:21:37Z",
-          "notes": "Four browser-surface contracts and the legacy static-preset readiness gate passed."
+          "notes": "Five browser-surface contracts and the legacy static-preset readiness gate passed."
         }
       ],
       "tasks": []
@@ -71,17 +71,17 @@
       "id": "P2",
       "title": "Playwright success and denial traps",
       "goal": "Prove in a clean browser under 30 seconds that run, check, and diff work and denied process authority fails closed with a visible diagnostic.",
-      "status": "pending",
+      "status": "done",
       "sessionsEstimate": "1",
       "gates": [
         {
           "id": "P2-G1",
           "title": "Clean-browser success and fail-closed denial proof passes",
           "command": "node scripts/smoke_garnet_playground_browser.mjs --proof F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": ""
+          "status": "passed",
+          "evidence": "F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json",
+          "lastRun": "2026-07-16T22:35:23Z",
+          "notes": "Clean Chromium completed run, check, capability diff, and declared-proc denial in 2,193 ms from six committed requests with no external or untracked fetch."
         }
       ],
       "tasks": []
@@ -90,26 +90,26 @@
       "id": "P3",
       "title": "Evidence-backed reporter promotion",
       "goal": "Make scripts/garnet_wasm_readiness.py validate package provenance and browser proof before reporting browser readiness or passing its gate.",
-      "status": "pending",
+      "status": "done",
       "sessionsEstimate": "1",
       "gates": [
         {
           "id": "P3-G1",
           "title": "Wasm readiness reporter regressions pass",
           "command": "python3 -I scripts/test_garnet_wasm_readiness.py",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": ""
+          "status": "passed",
+          "evidence": "ops/lane2a/evidence/40-browser-reporter-green.json",
+          "lastRun": "2026-07-16T22:44:12Z",
+          "notes": "Ten reporter regressions passed, including malformed-proof fail-closed behavior."
         },
         {
           "id": "P3-G2",
           "title": "Evidence-backed browser readiness gate passes",
           "command": "python3 scripts/garnet_wasm_readiness.py --gate",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": ""
+          "status": "passed",
+          "evidence": "ops/lane2a/evidence/40-browser-reporter-green.json",
+          "lastRun": "2026-07-16T22:44:12Z",
+          "notes": "Reporter schema v3 returned browser_package_valid, browser_proof_valid, and browser_ready true with no blockers."
         }
       ],
       "tasks": []
@@ -118,17 +118,17 @@
       "id": "P4",
       "title": "Human and machine capability verdict",
       "goal": "Render a one-glance capability expansion verdict and expose the same decision as versioned structured JSON for agent reviewers.",
-      "status": "pending",
+      "status": "done",
       "sessionsEstimate": "1",
       "gates": [
         {
           "id": "P4-G1",
           "title": "Browser proof validates matching human and machine verdicts",
           "command": "python3 -I scripts/test_garnet_playground_browser_proof.py",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": ""
+          "status": "passed",
+          "evidence": "F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json",
+          "lastRun": "2026-07-16T22:44:12Z",
+          "notes": "Three proof-contract tests pinned the shared human and machine expansion decision plus fail-closed denial semantics."
         }
       ],
       "tasks": []
@@ -138,7 +138,7 @@
     {
       "label": "Definition-of-done claims verified",
       "baseline": "0",
-      "current": "1",
+      "current": "5",
       "target": "5",
       "direction": "up"
     }
@@ -152,9 +152,11 @@
   ],
   "prLog": [],
   "resume": {
-    "activePhase": "P2",
+    "activePhase": null,
     "nextActions": [
-      "Commit the live page inputs, then prove run, check, capability diff, and declared-proc denial in a clean Playwright browser under 30 seconds."
+      "Commit the final local proof, reporter evidence, lane SOTU, and heartbeat.",
+      "Push mission/l2a-wplay-browser to Navigata1/garnet and open a draft fork-to-upstream PR.",
+      "Record exact Ubuntu, Windows, and macOS required-check links before preparing the PR for Jon's human merge."
     ],
     "blockers": [],
     "conventions": [
@@ -169,7 +171,7 @@
     "planLock": "ops/lane2a/plan.lock.json",
     "loop": {
       "cycle": 1,
-      "stage": "S2",
+      "stage": "S6",
       "loopbacks": []
     },
     "governance": {
@@ -179,7 +181,7 @@
     },
     "compound": {
       "notes": [],
-      "memorySync": "pending",
+      "memorySync": "not-authorized",
       "experiments": []
     },
     "fableShim": {

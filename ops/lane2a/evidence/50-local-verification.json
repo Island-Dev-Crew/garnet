@@ -1,0 +1,74 @@
+{
+  "schema": "garnet.lane2a.local-verification/1",
+  "captured_at": "2026-07-16T22:44:12Z",
+  "tested_commit": "743b5640ee23073dd52769945e41d5977c30db55",
+  "results": [
+    {
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0
+    },
+    {
+      "command": "cargo clippy --workspace --all-targets -- -D warnings",
+      "exit_code": 0
+    },
+    {
+      "command": "cargo test --workspace --no-fail-fast",
+      "exit_code": 0,
+      "notes": "Fresh uncontended rerun passed the complete workspace."
+    },
+    {
+      "command": "cargo run -p xtask -- truth --check",
+      "exit_code": 0,
+      "notes": "6 fields matched machine truth across 4 stamped surfaces."
+    },
+    {
+      "command": "python3 -I scripts/garnet_lane0_closeout_status.py --gate",
+      "exit_code": 0,
+      "notes": "22/22 evidence, 37 ledger entries, 4/4 denominators, launch HOLD, Band 3."
+    },
+    {
+      "command": "python3 -I scripts/garnet_frozen_backlog_status.py --gate",
+      "exit_code": 0
+    },
+    {
+      "command": "python3 -I scripts/garnet_msrv_status.py --gate",
+      "exit_code": 0,
+      "notes": "Exact MSRV 1.95."
+    },
+    {
+      "command": "python3 scripts/garnet_trust_kernel_review_status.py --gate --format json",
+      "exit_code": 0,
+      "notes": "Trust-kernel touched, companion present, problems empty."
+    },
+    {
+      "command": "python3 scripts/check-agent-contracts.py",
+      "exit_code": 0,
+      "notes": "24 contracts passed."
+    },
+    {
+      "command": "cargo audit --json",
+      "exit_code": 0,
+      "notes": "Zero vulnerabilities; one informational unsoundness warning for transitive anyhow 1.0.102 (RUSTSEC-2026-0190)."
+    },
+    {
+      "command": "npm audit --json --omit=dev",
+      "exit_code": 0,
+      "notes": "Zero production dependency vulnerabilities."
+    },
+    {
+      "command": "pinned ARCHIPELAGO validate_contracts.py ops/lane2a/{idea,plan}.lock.json",
+      "exit_code": 0,
+      "notes": "Both frozen contracts passed their JSON schemas."
+    },
+    {
+      "command": "Playwright file QA for ops/lane2a/state-of-the-union.html",
+      "exit_code": 0,
+      "notes": "No console errors, external requests, or page-level horizontal overflow at 1440x1000 and 375x812."
+    }
+  ],
+  "observations": [
+    "One earlier workspace run collided on garnet_bridge_rt_0.bin while another review lane was still active. The exact test passed in isolation, eight parallel probes passed, and a fresh uncontended full-workspace rerun passed. No unrelated interpreter edit was added to this lane.",
+    "The repository did not contain the prompt-named ARCHIPELAGO scripts. The locks were validated with the isolated pinned Navigata1/archipelago b9f7cee2823f9791503db20f33b22c9e20af7abe checkout and its isolated jsonschema environment.",
+    "Cross-OS required-check evidence remains remote-PR work and is not claimed by this local record."
+  ]
+}

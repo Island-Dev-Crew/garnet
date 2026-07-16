@@ -1,8 +1,10 @@
 {
   "schema": "garnet.lane2a.package-reproducibility/1",
-  "captured_at": "2026-07-16T22:18:18Z",
+  "captured_at": "2026-07-16T22:44:12Z",
   "command": "python3 scripts/build_playground_wasm.py --verify-reproducible",
-  "build_parent_commit_observed": "69ebdf0db578003188072dede0410a22bae4f3d6",
+  "build_parent_commit_observed": "743b5640ee23073dd52769945e41d5977c30db55",
+  "build_parent_tree_observed": "44ae2affd0a4812ca177d44be4a569ac5ff5f3cc",
+  "source_tree_sha256": "f074d25ca2d01ad9238a08429ccde4fb1bef00da53ddfb9847d8f9add80bac0f",
   "reproducible": true,
   "committed_package_match": true,
   "artifacts": {

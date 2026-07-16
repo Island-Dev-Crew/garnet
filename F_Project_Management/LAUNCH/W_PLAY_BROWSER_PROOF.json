@@ -1,0 +1,147 @@
+{
+  "schema": "garnet.w-play.browser-proof/1",
+  "captured_at": "2026-07-16T22:35:23.712Z",
+  "verdict": "pass",
+  "duration_ms": 2193,
+  "execution": {
+    "engine": "playwright-browser-page",
+    "browser": "150.0.7871.124",
+    "node_global_present": false,
+    "runtime_ready": true,
+    "service_workers": "blocked"
+  },
+  "git": {
+    "tested_commit": "743b5640ee23073dd52769945e41d5977c30db55",
+    "tested_tree": "44ae2affd0a4812ca177d44be4a569ac5ff5f3cc",
+    "runtime_inputs_clean": true
+  },
+  "host": {
+    "os": "darwin",
+    "arch": "arm64",
+    "node": "v22.22.2"
+  },
+  "package": {
+    "schema": "garnet.playground.wasm-package/1",
+    "source_tree_sha256": "f074d25ca2d01ad9238a08429ccde4fb1bef00da53ddfb9847d8f9add80bac0f",
+    "artifacts": {
+      "garnet_wasm.js": {
+        "bytes": 6581,
+        "sha256": "bf72509961525b4eb2e0702f41da61b4e8087ceee98787b7a046d83a85791a6d"
+      },
+      "garnet_wasm_bg.wasm": {
+        "bytes": 2215266,
+        "sha256": "1b54c5ddefa045279c8cae4a92b030d43b7631595639ba02ac075a1e34e55e15"
+      }
+    }
+  },
+  "network": {
+    "external_requests": [],
+    "requested_committed_files": [
+      "docs/icons/garnet-192.png",
+      "docs/playground.html",
+      "docs/playground/examples.json",
+      "docs/playground/live.js",
+      "docs/playground/pkg/garnet_wasm.js",
+      "docs/playground/pkg/garnet_wasm_bg.wasm"
+    ],
+    "untracked_requests": []
+  },
+  "journeys": {
+    "run": {
+      "schema": "garnet.wasm.run/1",
+      "exit_class": "ok",
+      "stdout": "Hello from Garnet!\n",
+      "diagnostic": null
+    },
+    "check": {
+      "schema": "garnet.wasm.check/1",
+      "ok": true,
+      "diagnostics": []
+    },
+    "diff": {
+      "adapter_result": {
+        "schema": "garnet.wasm.diff-caps/1",
+        "ok": true,
+        "authority_expanded": true,
+        "old_surface": {
+          "aggregate": [],
+          "per_function": [
+            {
+              "name": "main",
+              "caps": []
+            }
+          ],
+          "has_wildcard": false
+        },
+        "new_surface": {
+          "aggregate": [
+            "fs"
+          ],
+          "per_function": [
+            {
+              "name": "main",
+              "caps": [
+                "fs"
+              ]
+            }
+          ],
+          "has_wildcard": false
+        },
+        "aggregate_added": [
+          "fs"
+        ],
+        "aggregate_removed": [],
+        "functions_added": [],
+        "functions_removed": [],
+        "functions_caps_expanded": [
+          {
+            "name": "main",
+            "gained": [
+              "fs"
+            ]
+          }
+        ],
+        "wildcard_introduced": false,
+        "scope": "declared-surface-only; does not prove absence of undeclared authority; bound annotations are not part of this surface",
+        "parse_error": null
+      },
+      "machine_verdict": {
+        "schema": "garnet.playground.diff-caps-verdict/1",
+        "verdict": "expanded",
+        "authority_expanded": true,
+        "aggregate_added": [
+          "fs"
+        ],
+        "aggregate_removed": [],
+        "wildcard_introduced": false,
+        "scope": "declared-surface-only; does not prove absence of undeclared authority; bound annotations are not part of this surface"
+      },
+      "human_verdict": "Authority expanded"
+    },
+    "denial": {
+      "run": {
+        "schema": "garnet.wasm.run/1",
+        "exit_class": "runtime_error",
+        "stdout": "",
+        "diagnostic": "Message(\"unresolved path: proc::run\")"
+      },
+      "ui_state": "Denied"
+    }
+  },
+  "visual": {
+    "screenshot": "ops/lane2a/evidence/30-playground-browser.png",
+    "screenshot_sha256": "072cde9b0b022b922c8f519fa78612d482e554e323b451bdab3d250a92601341",
+    "desktop": {
+      "horizontal_overflow": false,
+      "runtime_state": "ready"
+    },
+    "mobile": {
+      "horizontal_overflow": false
+    }
+  },
+  "diagnostics": {
+    "console_errors": [],
+    "page_errors": []
+  },
+  "claim_boundary": "Real clean-browser execution from committed package bytes; no OS host authority; capability diff is declared-surface-only."
+}

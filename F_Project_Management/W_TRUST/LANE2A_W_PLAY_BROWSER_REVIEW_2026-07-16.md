@@ -27,6 +27,11 @@ The rolling gate is expected to enumerate these trust-kernel paths:
   machine-verdict, layout, and screenshot evidence.
 - `scripts/test_garnet_wasm_readiness.py` - reporter v3 and malformed-proof
   regressions.
+- `scripts/test_garnet_playground_browser_contract.py` - pins relative package
+  loading, browser controls, tracked assets, and the absence of fallback or
+  external runtime paths.
+- `scripts/test_garnet_playground_browser_proof.py` - pins the strict committed
+  proof, denial semantics, duration ceiling, and shared human/machine verdict.
 - `scripts/garnet_playground_readiness.py` - explicitly limited to static
   preset fallback validity; it cannot promote browser status.
 - `scripts/test_garnet_playground_readiness.py` - pins that ownership split.
@@ -67,7 +72,7 @@ wiring did not need or authorize a new host capability.
 - `python3 scripts/build_playground_wasm.py --verify-reproducible`: two clean
   builds matched each other and the committed package.
 - `python3 -I scripts/test_garnet_playground_browser_contract.py`: 5/5 passed.
-- Playwright browser proof: passed in 2,917 ms with six committed requests,
+- Playwright browser proof: passed in 2,193 ms with six committed requests,
   zero external requests, zero untracked requests, no console/page errors,
   no desktop/mobile horizontal overflow, and the declared-proc denial green.
 - `python3 -I scripts/test_garnet_playground_browser_proof.py`: 3/3 passed.
@@ -76,6 +81,11 @@ wiring did not need or authorize a new host capability.
 - `python3 scripts/garnet_wasm_readiness.py --gate`: schema v3,
   `browser_package_valid: true`, `browser_proof_valid: true`,
   `browser_ready: true`, blockers empty.
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets -- -D
+  warnings`, and `cargo test --workspace --no-fail-fast`: passed under Rust
+  1.95.0 on macOS arm64.
+- `cargo run -p xtask -- truth --check`: passed; Lane 0 closeout, frozen
+  backlog, MSRV, trust-kernel companion, and agent-contract gates also passed.
 
 Raw browser evidence is
 `F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json` plus
