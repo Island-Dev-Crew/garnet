@@ -10,7 +10,7 @@
     "northStar": "A clean browser loads only committed package bytes and renders real run, check, and capability-diff results without a network fetch or Node-only execution path; A browser attempt to use denied process authority rejects with a non-success exit class and a visible diagnostic; Two clean builds from the same committed inputs produce byte-identical browser package files and provenance; The readiness reporter promotes browser status only after validating the committed package and browser proof; Capability diff renders a one-glance human verdict and a versioned structured machine verdict from the same adapter result",
     "status": "active",
     "started": "2026-07-16",
-    "updated": "2026-07-16T23:10:52Z",
+    "updated": "2026-07-16T23:30:01Z",
     "sessionCount": 1
   },
   "policies": {
@@ -153,17 +153,23 @@
       "title": "The existing Studio development graph contains a high Vite advisory for Windows dev-server path handling.",
       "severity": "medium",
       "note": "Production npm audit is clean and W-PLAY does not start Vite; dependency remediation remains a separately scoped follow-up."
+    },
+    {
+      "title": "Browser proof records the Chrome version but does not pin the selected executable hash.",
+      "severity": "low",
+      "note": "Final independent review classified this as a replay-hermeticity limitation, not a failure of the committed-package or observed-browser claims."
     }
   ],
   "prLog": [],
   "resume": {
     "activePhase": null,
     "nextActions": [
-      "Commit the independent-review repairs, regenerated proof, and final local verification evidence, then run the repaired-tree rereview.",
-      "Push mission/l2a-wplay-browser to Navigata1/garnet and open a draft fork-to-upstream PR.",
+      "Open the prepared draft fork-to-upstream PR once authenticated GitHub access is available.",
       "Record exact Ubuntu, Windows, and macOS required-check links before preparing the PR for Jon's human merge."
     ],
-    "blockers": [],
+    "blockers": [
+      "Authenticated GitHub API requests return HTTP 503 and the in-app GitHub session is signed out, so the prepared draft PR and its remote checks cannot yet be created."
+    ],
     "conventions": [
       "One task = one branch = one PR",
       "Update state.json + render + commit after every merge",

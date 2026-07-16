@@ -114,8 +114,16 @@ denial case before page implementation; that correction is now test-pinned.
 Two final-tree review passes then independently caught the stale-proof replay
 gap; one also caught ambient Playwright path resolution. The old proof became
 RED under the repaired reporter, and commit `2f1d177` plus the regenerated
-proof correct both findings. A final rereview of the repaired sealed tree is
-still required before merge.
+proof correct both findings.
+
+The final repaired-tree rereview covered candidate `1115f63` / tree
+`5e6386107d51d36adc14f26025aa843515c50691`. The implementation review returned
+APPROVE with no high or medium findings, and the independent claim audit
+returned PASS on all five pre-registered claims with no high or medium blocker.
+`ops/lane2a/evidence/70-final-independent-rereview.md` records the exact scope,
+probes, and residuals. The reviewers classified the unpinned Chrome executable
+hash and the older diagnostic proof commit label as LOW limitations, not claim
+failures; current browser inputs remain bound by the exact ten-file digest.
 
 Fresh cross-OS required-check evidence is pending the fork-to-upstream PR. This
 local companion is sufficient only for the structural rolling-review gate; it
