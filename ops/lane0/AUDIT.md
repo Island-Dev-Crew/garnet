@@ -1,6 +1,7 @@
 # Lane 0 ARCHIPELAGO S6 audit
 
-Status: complete locally; final integrated fix re-review is pending.
+Status: complete locally; final integrated review is approved and the branch is
+prepared for Jon's merge.
 
 Launch: **HOLD**.
 
@@ -39,8 +40,8 @@ The verdict is `advisory`:
   integrity, Rust MSRV, frozen-backlog states, and WV fail-closed pending
   contracts.
 - Pending: a browser Playwright/runtime journey, current Lane 2C duration
-  proof, remote CI on this successor branch, Jon's independent final review,
-  Jon-only merge, admin-token provisioning, and any activation.
+  proof, remote CI on this successor branch, Jon-only merge, admin-token
+  provisioning, and any activation.
 - Waived: none.
 
 `jsonschema` is available and was used for the pinned ARCHIPELAGO contract

@@ -24,18 +24,16 @@ three-case, greater-than-four-minute evidence is absent.
 
 ### Local verification
 
-- [ ] `python3 -I -S scripts/garnet_lane0_closeout_status.py --gate` is
-  intentionally pending the independent fix re-review; before that review it
-  must fail only on the final-review semantic check.
+- [x] `python3 -I -S scripts/garnet_lane0_closeout_status.py --gate`
 - [x] `cargo run -p xtask -- truth --check`
 - [x] `cargo +1.95.0 test --workspace --no-fail-fast`
 - [x] `cargo test --workspace --no-fail-fast`
 
 ### Remote verification
 
-- [x] This PR is deliberately parked for Jon; remote CI and the final
-  independent review are required before merge and are not claimed complete
-  by the local evidence bundle.
+- [x] Independent integrated and final-parser reviews are complete with zero
+  open Critical or Important findings.
+- [ ] Remote CI must pass before Jon merges this deliberately parked PR.
 
 ### Evidence bundle
 

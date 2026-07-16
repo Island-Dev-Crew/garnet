@@ -1,4 +1,4 @@
-# Independent review status
+# Independent review record
 
 ## Prior task reviews
 
@@ -14,21 +14,17 @@
 
 ## Final integrated review
 
-Final integrated verdict: **NEEDS PATCH**
-Reviewer role: independent integrated fix reviewer
-Reviewed range: `231aefa91985e5a0520c493c7f0fc3e54d74efc8..23936ca445e791635ecebabbd58c215143e5de3a`
-Reviewed at: `2026-07-16T13:24:00Z`
+Final integrated verdict: **APPROVED**
+Reviewer role: composite independent integrated and final-delta review
+Reviewed range: `231aefa91985e5a0520c493c7f0fc3e54d74efc8..3124ba5ecfa88aa6f2c2c289313860670673cdec`
+Reviewed at: `2026-07-16T13:35:05Z`
 Open Critical findings: 0
-Open Important findings: 1
+Open Important findings: 0
 
-The integrated fix review confirmed the semantic reporter, chronology,
-candidate, denominator, and Windows renderer patches, but found one remaining
-Important boundary: duplicate or contradictory final-review fields could be
-appended after an approved record and still false-green. The singular-section
-parser and adversarial mutations are committed at
-`1d8b72d11cf8f7d5528ca5c09f3e3349f5ab39b0`.
-
-Fix re-review: **PENDING**. This record must not be changed to APPROVED until an
-independent reviewer verifies the parser fix and freshly recaptured evidence,
-then reports zero open Critical and Important findings. The ordinary closeout
-gate is expected to fail on this review state alone.
+The full-branch component was reviewed by an integrated final reviewer over
+`231aefa91985e5a0520c493c7f0fc3e54d74efc8..0ba52279feeb634824cef997e22f098ec867d75c`
+at `2026-07-16T13:31:19Z`, with zero Critical and zero Important findings.
+The final parser component was reviewed by an independent final parser
+reviewer over
+`0ba52279feeb634824cef997e22f098ec867d75c..3124ba5ecfa88aa6f2c2c289313860670673cdec`
+at `2026-07-16T13:35:05Z`, with zero Critical and zero Important findings.

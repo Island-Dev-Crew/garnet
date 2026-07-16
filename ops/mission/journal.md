@@ -164,3 +164,9 @@ Append-only session log, newest entry LAST.
 - The final-review parser now requires exactly one final section and one of each provenance/verdict field; duplicate headings, duplicate fields, appended PENDING/NEEDS PATCH/CHANGES REQUIRED, and later nonzero counts fail closed.
 - Namespaced P0-P3 remains complete at S6/band 3, the main mission remains active at P7, all four reporter-derived denominators are unchanged, and launch remains HOLD.
 - Final independent fix re-review remains pending. Root must finalize the tracked verdict and reseal before push/PR.
+
+## 2026-07-16T13:35Z — session 8 (Lane 0 final integrated review approved)
+
+- The full successor branch through `0ba52279feeb634824cef997e22f098ec867d75c` received an integrated final review at `2026-07-16T13:31:19Z`, and the final parser delta through `3124ba5ecfa88aa6f2c2c289313860670673cdec` received an independent final parser review at `2026-07-16T13:35:05Z`; both reported zero open Critical and Important findings.
+- The singular final-review record now covers `231aefa91985e5a0520c493c7f0fc3e54d74efc8..3124ba5ecfa88aa6f2c2c289313860670673cdec` with an APPROVED verdict. Lane 0 evidence is being freshly recaptured and resealed against that exact candidate.
+- Launch remains HOLD, Lane 2C remains partial, governance remains advisory at band 3/5, and Jon retains merge, activation, FIRE, tag, publish, promo QA, and 31-to-32 authority.

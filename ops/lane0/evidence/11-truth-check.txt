@@ -4,5 +4,5 @@ actual_exit=0
 --- stdout ---
 truth --check: ok (6 fields vs machine truth, 4 stamped surfaces)
 --- stderr ---
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.09s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.14s
      Running `target/debug/xtask truth --check`
