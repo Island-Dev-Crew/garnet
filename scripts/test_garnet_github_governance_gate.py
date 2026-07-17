@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import copy
+import contextlib
 import importlib.util
+import io
 import json
+import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -13,6 +17,7 @@ from dataclasses import asdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -88,6 +93,29 @@ class GovernanceGateTests(unittest.TestCase):
             )
         cls.policy = SimpleNamespace(bindings=tuple(bindings), problems=())
         assert len(cls.policy.bindings) == 31
+        base_row = next(
+            row
+            for row in inventory["producers"]
+            if row["context"] == "Base-controlled trust policy"
+        )
+        base_workflow = SimpleNamespace(
+            name=SimpleNamespace(value="Base-controlled trust")
+        )
+        base_binding = SimpleNamespace(
+            producer=SimpleNamespace(
+                context=base_row["context"],
+                workflow=base_row["workflow"],
+                event=base_row["event"],
+                job=base_row["job"],
+                matrix=None,
+                semantic_sha256=base_row["semantic_sha256"],
+            ),
+            workflow=base_workflow,
+            observed_semantic_sha256=base_row["semantic_sha256"],
+        )
+        cls.policy32 = SimpleNamespace(
+            bindings=(*cls.policy.bindings, base_binding), problems=()
+        )
         cls.checked_ruleset = json.loads(
             (ROOT / ".github/rulesets/garnet-main.json").read_text(encoding="utf-8")
         )
@@ -95,6 +123,18 @@ class GovernanceGateTests(unittest.TestCase):
             (ROOT / ".github/rulesets/repository-settings.json").read_text(
                 encoding="utf-8"
             )
+        )
+        cls.checked_ruleset32 = copy.deepcopy(cls.checked_ruleset)
+        required = next(
+            row
+            for row in cls.checked_ruleset32["rules"]
+            if row.get("type") == "required_status_checks"
+        )
+        required["parameters"]["required_status_checks"].append(
+            {
+                "context": "Base-controlled trust policy",
+                "integration_id": 15368,
+            }
         )
 
     @staticmethod
@@ -215,6 +255,48 @@ class GovernanceGateTests(unittest.TestCase):
             ruleset=self.obj(payload["ruleset"]),
             actions_permissions=self.obj(payload["actions"]),
         )
+
+    def payload32(self) -> dict[str, object]:
+        payload = self.payload()
+        workflow_id = 901
+        suite_id = 1901
+        payload["workflows"].append(
+            {
+                "id": workflow_id,
+                "name": "Base-controlled trust",
+                "path": ".github/workflows/base-controlled-trust.yml",
+                "state": "active",
+            }
+        )
+        payload["runs"].append(
+            {
+                "id": 19_001,
+                "workflow_id": workflow_id,
+                "check_suite_id": suite_id,
+                "run_attempt": 1,
+                "event": "pull_request_target",
+                "head_sha": REVIEWED_HEAD,
+                "status": "completed",
+                "conclusion": "success",
+                "created_at": self.ts(NOW - timedelta(minutes=5)),
+                "updated_at": self.ts(NOW - timedelta(minutes=1)),
+            }
+        )
+        payload["checks"].append(
+            {
+                "id": 29_001,
+                "name": "Base-controlled trust policy",
+                "check_suite_id": suite_id,
+                "head_sha": REVIEWED_HEAD,
+                "status": "completed",
+                "conclusion": "success",
+                "started_at": self.ts(NOW - timedelta(minutes=4)),
+                "completed_at": self.ts(NOW - timedelta(seconds=30)),
+                "app": {"id": 15368, "slug": "github-actions"},
+            }
+        )
+        payload["ruleset"] = {"id": 18_936_562, **copy.deepcopy(self.checked_ruleset32)}
+        return payload
 
     def evaluate(
         self,
@@ -690,6 +772,422 @@ class GovernanceGateTests(unittest.TestCase):
             self.evaluate(checked_settings=settings),
             "checked-in repository settings keys",
         )
+
+    def live_client(self, payload: dict[str, object]) -> tuple[object, list[object]]:
+        calls: list[object] = []
+        outer = self
+
+        class Client:
+            def get_repository(self) -> object:
+                calls.append(("repository",))
+                return outer.obj(payload["repository"])
+
+            def get_collection(
+                self,
+                path: str,
+                *,
+                root_key: str | None = None,
+                require_total_count: bool = False,
+            ) -> object:
+                calls.append(("collection", path, root_key, require_total_count))
+                mapping = {
+                    "actions/workflows": payload["workflows"],
+                    f"actions/runs?head_sha={REVIEWED_HEAD}": payload["runs"],
+                    f"commits/{REVIEWED_HEAD}/check-runs": payload["checks"],
+                }
+                return outer.collection(mapping[path])
+
+            def get_object(self, path: str) -> object:
+                calls.append(("object", path))
+                mapping = {
+                    "rulesets/18936562": payload["ruleset"],
+                    "actions/permissions/workflow": payload["actions"],
+                }
+                return outer.obj(mapping[path])
+
+        return Client(), calls
+
+    def test_live_runtime_collector_uses_explicit_scope_and_keeps_u17_blocked(self) -> None:
+        payload = self.payload()
+        client, calls = self.live_client(payload)
+        secret = "explicit-review-token"
+        seen: list[tuple[str, str]] = []
+
+        def factory(repository: str, token: str) -> object:
+            seen.append((repository, token))
+            return client
+
+        result = gate.collect_live_governance_status(
+            self.policy,
+            reviewed_head=REVIEWED_HEAD,
+            token=secret,
+            now=NOW,
+            include_admin=False,
+            transport_factory=factory,
+            root=ROOT,
+        )
+        self.assertTrue(result.ok, result.problems)
+        self.assertTrue(result.transport_complete)
+        self.assertTrue(result.exact_head)
+        self.assertTrue(result.fresh)
+        self.assertTrue(result.outcomes_verified)
+        self.assertFalse(result.policy_equal)
+        self.assertEqual(result.evidence_authority, "live-explicit-stdin")
+        self.assertEqual(result.live_settings_no_bypass, "blocked-u17")
+        self.assertEqual(seen, [("Island-Dev-Crew/garnet", secret)])
+        self.assertNotIn(secret, json.dumps(asdict(result), sort_keys=True))
+        self.assertNotIn(("object", "rulesets/18936562"), calls)
+        self.assertNotIn(("object", "actions/permissions/workflow"), calls)
+
+    def test_live_collector_projects_realistic_repository_before_credential_scan(self) -> None:
+        payload = self.payload()
+        payload["repository"].update(
+            {
+                "temp_clone_token": None,
+                "security_and_analysis": {
+                    "secret_scanning": {"status": "enabled"}
+                },
+                "owner": {"login": "Island-Dev-Crew"},
+            }
+        )
+        client, _ = self.live_client(payload)
+        result = gate.collect_live_governance_status(
+            self.policy,
+            reviewed_head=REVIEWED_HEAD,
+            token="explicit-review-token",
+            now=NOW,
+            include_admin=False,
+            transport_factory=lambda _repository, _token: client,
+            root=ROOT,
+        )
+        self.assertTrue(result.ok, result.problems)
+        rendered = json.dumps(asdict(result), sort_keys=True)
+        self.assertNotIn("temp_clone_token", rendered)
+        self.assertNotIn("secret_scanning", rendered)
+
+    def test_live_collector_projects_realistic_nested_api_rows_before_scan(self) -> None:
+        payload = self.payload()
+        for key in ("workflows", "runs", "checks"):
+            payload[key][0]["temp_clone_token"] = None
+            payload[key][0]["security_and_analysis"] = {
+                "secret_scanning": {"status": "enabled"}
+            }
+        payload["ruleset"]["temp_clone_token"] = None
+        payload["actions"]["secret_scanning"] = "irrelevant-api-expansion"
+        client, _ = self.live_client(payload)
+        result = gate.collect_live_governance_status(
+            self.policy,
+            reviewed_head=REVIEWED_HEAD,
+            token="explicit-admin-token",
+            now=NOW,
+            include_admin=True,
+            transport_factory=lambda _repository, _token: client,
+            root=ROOT,
+        )
+        self.assertTrue(result.ok, result.problems)
+        rendered = json.dumps(asdict(result), sort_keys=True)
+        self.assertNotIn("temp_clone_token", rendered)
+        self.assertNotIn("secret_scanning", rendered)
+
+    def test_live_admin_collector_can_close_no_bypass_without_changing_runtime_scope(self) -> None:
+        payload = self.payload()
+        client, calls = self.live_client(payload)
+        result = gate.collect_live_governance_status(
+            self.policy,
+            reviewed_head=REVIEWED_HEAD,
+            token="explicit-admin-token",
+            now=NOW,
+            include_admin=True,
+            transport_factory=lambda _repository, _token: client,
+            root=ROOT,
+        )
+        self.assertTrue(result.ok, result.problems)
+        self.assertTrue(result.policy_equal)
+        self.assertEqual(result.live_settings_no_bypass, "verified-empty")
+        self.assertIn(("object", "rulesets/18936562"), calls)
+        self.assertIn(("object", "actions/permissions/workflow"), calls)
+
+    def test_activated_32_policy_and_live_collector_are_exactly_supported(self) -> None:
+        payload = self.payload32()
+        result = gate._evaluate(
+            self.policy32,
+            self.evidence(payload),
+            reviewed_head=REVIEWED_HEAD,
+            now=NOW,
+            checked_ruleset=self.checked_ruleset32,
+            checked_repository_settings=self.checked_settings,
+        )
+        self.assertTrue(result.ok, result.problems)
+        self.assertEqual(len(result.bindings), 32)
+
+        with tempfile.TemporaryDirectory() as raw_temp:
+            root = Path(raw_temp).resolve()
+            rulesets = root / ".github/rulesets"
+            rulesets.mkdir(parents=True)
+            (rulesets / "garnet-main.json").write_text(
+                json.dumps(self.checked_ruleset32, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            shutil.copyfile(
+                ROOT / ".github/rulesets/repository-settings.json",
+                rulesets / "repository-settings.json",
+            )
+            client, _ = self.live_client(payload)
+            live = gate.collect_live_governance_status(
+                self.policy32,
+                reviewed_head=REVIEWED_HEAD,
+                token="explicit-admin-token",
+                now=NOW,
+                include_admin=True,
+                transport_factory=lambda _repository, _token: client,
+                root=root,
+            )
+        self.assertTrue(live.ok, live.problems)
+        self.assertEqual(len(live.bindings), 32)
+        self.assertEqual(live.live_settings_no_bypass, "verified-empty")
+
+    def test_checked_policy_loader_accepts_exact_activated_32_root(self) -> None:
+        inventory = json.loads(
+            (ROOT / ".github/rulesets/required-context-producers.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        inventory["optional_contexts"] = []
+        with tempfile.TemporaryDirectory() as raw_temp:
+            root = Path(raw_temp).resolve()
+            rulesets = root / ".github/rulesets"
+            rulesets.mkdir(parents=True)
+            (rulesets / "required-context-producers.json").write_text(
+                json.dumps(inventory), encoding="utf-8"
+            )
+            (rulesets / "garnet-main.json").write_text(
+                json.dumps(self.checked_ruleset32), encoding="utf-8"
+            )
+            availability = gate.required_context_contract.ProducerEvaluation(
+                bindings=tuple(self.policy32.bindings), problems=()
+            )
+            schema = SimpleNamespace(
+                workflow_projection=lambda _root: SimpleNamespace(problems=())
+            )
+            with mock.patch.object(gate, "_load_sibling", return_value=schema), mock.patch.object(
+                gate.required_context_contract,
+                "evaluate_producer_availability",
+                return_value=availability,
+            ):
+                policy = gate.load_checked_policy(root)
+        self.assertEqual(policy.problems, ())
+        self.assertEqual(len(policy.bindings), 32)
+        self.assertEqual(
+            policy.bindings[-1].producer.context,
+            "Base-controlled trust policy",
+        )
+
+    def test_live_collector_rejects_invalid_head_or_token_before_transport(self) -> None:
+        calls: list[tuple[str, str]] = []
+
+        def factory(repository: str, token: str) -> object:
+            calls.append((repository, token))
+            raise AssertionError("transport must not be constructed")
+
+        for reviewed_head, token in (
+            ("main", "explicit-token"),
+            (REVIEWED_HEAD, "bad\ntoken"),
+            (REVIEWED_HEAD, ""),
+        ):
+            with self.subTest(reviewed_head=reviewed_head, token=bool(token)):
+                result = gate.collect_live_governance_status(
+                    self.policy,
+                    reviewed_head=reviewed_head,
+                    token=token,
+                    now=NOW,
+                    include_admin=False,
+                    transport_factory=factory,
+                    root=ROOT,
+                )
+                self.assertFalse(result.ok)
+        self.assertEqual(calls, [])
+
+    def test_cli_requires_one_explicit_stdin_token_and_rejects_ambient_credentials(self) -> None:
+        payload = self.payload()
+        secret = "explicit-review-token"
+        client, _ = self.live_client(payload)
+        output = io.StringIO()
+        result = gate.main(
+            [
+                "--runtime-gate",
+                "--reviewed-head",
+                REVIEWED_HEAD,
+                "--github-token-stdin",
+            ],
+            root=ROOT,
+            stdin=io.StringIO(secret + "\n"),
+            stdout=output,
+            environ={},
+            now=NOW,
+            policy_loader=lambda _root: self.policy,
+            transport_factory=lambda _repository, _token: client,
+            local_head_loader=lambda _root, _environment: (REVIEWED_HEAD, ()),
+        )
+        self.assertEqual(result, 0)
+        self.assertNotIn(secret, output.getvalue())
+        self.assertTrue(json.loads(output.getvalue())["ok"])
+
+        for token_text in ("", "one\ntwo\n", "bad token\n"):
+            with self.subTest(token_text=token_text):
+                output = io.StringIO()
+                result = gate.main(
+                    [
+                        "--runtime-gate",
+                        "--reviewed-head",
+                        REVIEWED_HEAD,
+                        "--github-token-stdin",
+                    ],
+                    root=ROOT,
+                    stdin=io.StringIO(token_text),
+                    stdout=output,
+                    environ={},
+                    now=NOW,
+                    policy_loader=lambda _root: self.policy,
+                    transport_factory=lambda _repository, _token: client,
+                    local_head_loader=lambda _root, _environment: (REVIEWED_HEAD, ()),
+                )
+                self.assertEqual(result, 1)
+
+        output = io.StringIO()
+        result = gate.main(
+            [
+                "--runtime-gate",
+                "--reviewed-head",
+                REVIEWED_HEAD,
+                "--github-token-stdin",
+            ],
+            root=ROOT,
+            stdin=io.StringIO(secret + "\n"),
+            stdout=output,
+            environ={"GH_TOKEN": "ambient-secret"},
+            now=NOW,
+            policy_loader=lambda _root: self.policy,
+            transport_factory=lambda _repository, _token: client,
+            local_head_loader=lambda _root, _environment: (REVIEWED_HEAD, ()),
+        )
+        self.assertEqual(result, 1)
+        self.assertNotIn("ambient-secret", output.getvalue())
+        self.assertNotIn(secret, output.getvalue())
+
+    def test_cli_rejects_ambient_credentials_without_mutating_caller_environment(self) -> None:
+        environment = {"GH_TOKEN": "ambient-secret", "PATH": "/usr/bin"}
+        original = dict(environment)
+        output = io.StringIO()
+        result = gate.main(
+            [
+                "--runtime-gate",
+                "--reviewed-head",
+                REVIEWED_HEAD,
+                "--github-token-stdin",
+            ],
+            root=ROOT,
+            stdin=io.StringIO("explicit-review-token\n"),
+            stdout=output,
+            environ=environment,
+            now=NOW,
+            local_head_loader=lambda _root, _environment: (REVIEWED_HEAD, ()),
+        )
+        self.assertEqual(result, 1)
+        self.assertEqual(environment, original)
+        self.assertNotIn("ambient-secret", output.getvalue())
+
+    def test_cli_binds_reviewed_head_to_one_clean_local_commit_before_transport(self) -> None:
+        payload = self.payload()
+        client, _ = self.live_client(payload)
+        transport_calls: list[tuple[str, str]] = []
+
+        def factory(repository: str, token: str) -> object:
+            transport_calls.append((repository, token))
+            return client
+
+        cases = (
+            (("b" * 40, ()), "differs from clean local HEAD"),
+            ((REVIEWED_HEAD, ("working tree is not clean",)), "working tree"),
+        )
+        for local_result, fragment in cases:
+            with self.subTest(fragment=fragment):
+                output = io.StringIO()
+                result = gate.main(
+                    [
+                        "--runtime-gate",
+                        "--reviewed-head",
+                        REVIEWED_HEAD,
+                        "--github-token-stdin",
+                    ],
+                    root=ROOT,
+                    stdin=io.StringIO("explicit-review-token\n"),
+                    stdout=output,
+                    environ={},
+                    now=NOW,
+                    policy_loader=lambda _root: self.policy,
+                    transport_factory=factory,
+                    local_head_loader=lambda _root, _environment, value=local_result: value,
+                )
+                self.assertEqual(result, 1)
+                rendered = output.getvalue()
+                self.assertIn(fragment, rendered)
+                self.assertNotIn("explicit-review-token", rendered)
+        self.assertEqual(transport_calls, [])
+
+    def test_clean_head_loader_ignores_ambient_git_redirection(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_temp:
+            parent = Path(raw_temp)
+            roots = (parent / "real", parent / "alternate")
+            heads: list[str] = []
+            for index, root in enumerate(roots):
+                root.mkdir()
+                subprocess.run(
+                    ["git", "init", "-q", str(root)], check=True
+                )
+                subprocess.run(
+                    ["git", "-C", str(root), "config", "user.name", "Test"],
+                    check=True,
+                )
+                subprocess.run(
+                    [
+                        "git",
+                        "-C",
+                        str(root),
+                        "config",
+                        "user.email",
+                        "test@example.invalid",
+                    ],
+                    check=True,
+                )
+                (root / "tracked.txt").write_text(
+                    f"version {index}\n", encoding="utf-8"
+                )
+                subprocess.run(
+                    ["git", "-C", str(root), "add", "tracked.txt"], check=True
+                )
+                subprocess.run(
+                    ["git", "-C", str(root), "commit", "-qm", "initial"],
+                    check=True,
+                )
+                heads.append(
+                    subprocess.check_output(
+                        ["git", "-C", str(root), "rev-parse", "HEAD"], text=True
+                    ).strip()
+                )
+            (roots[0] / "tracked.txt").write_text("dirty\n", encoding="utf-8")
+            environment = {
+                "PATH": os.environ.get("PATH", ""),
+                "GIT_DIR": str(roots[1] / ".git"),
+                "GIT_WORK_TREE": str(roots[1]),
+                "GIT_INDEX_FILE": str(roots[1] / ".git/index"),
+                "GIT_CONFIG_COUNT": "1",
+                "GIT_CONFIG_KEY_0": "core.worktree",
+                "GIT_CONFIG_VALUE_0": str(roots[1]),
+            }
+            head, problems = gate.read_clean_local_head(roots[0], environment)
+        self.assertEqual(head, heads[0])
+        self.assertNotEqual(head, heads[1])
+        self.assertIn("working tree is not clean", problems)
 
 
 if __name__ == "__main__":

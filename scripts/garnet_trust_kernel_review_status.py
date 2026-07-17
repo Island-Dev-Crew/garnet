@@ -12,8 +12,9 @@ Version 2 replaces the old "a companion path exists" signal with two proofs:
 The module also exports ``verify_landed_review_marker`` for post-squash
 closeouts.  That verifier deliberately does not require the discarded branch
 head to be an ancestor of main.  It proves the landed commit is on upstream
-main's first-parent history and that its tree and trust-kernel content match the
-recorded digests while retaining the earlier reviewed-head provenance.
+main's first-parent history and that its exact first-parent landing edge, tree,
+and trust-kernel content match the recorded digests while retaining the earlier
+reviewed-head provenance.
 """
 from __future__ import annotations
 
@@ -64,13 +65,17 @@ TRUST_KERNEL_PREFIXES = (
 )
 TRUST_KERNEL_FILES = (
     ".github/CODEOWNERS",
+    "Cargo.lock",
+    "garnet-cli/Cargo.toml",
     "garnet-cli/src/bound_source.rs",
     "garnet-cli/src/cmd/add.rs",
+    "garnet-cli/src/cmd/mod.rs",
     "garnet-cli/src/cmd/run.rs",
     "garnet-cli/src/cmd/test.rs",
     "garnet-cli/src/cmd/eval.rs",
     "garnet-cli/src/cmd/doctest.rs",
     "garnet-cli/src/bin/garnet.rs",
+    "garnet-cli/src/lib.rs",
     "scripts/garnet_launch_readiness_status.py",
     "scripts/garnet_caps_enforcement_status.py",
     "scripts/garnet_capability_scope_status.py",
@@ -225,31 +230,62 @@ def is_review_companion(path: str) -> bool:
     return value in LEGACY_COMPANION_FILES or value.startswith(LEGACY_COMPANION_PREFIXES)
 
 
-def _git_bytes(root: Path, *args: str, timeout: int = GIT_TIMEOUT_SECONDS) -> GitResult:
-    credential_markers = (
-        "TOKEN",
-        "SECRET",
-        "CREDENTIAL",
-        "PASSWORD",
-        "COOKIE",
-        "AUTHORIZATION",
-        "PRIVATE_KEY",
+def _scrubbed_git_environment() -> dict[str, str]:
+    """Build the minimal process environment shared by every Git probe.
+
+    Git's repository, index, object, namespace, replace, and configuration
+    environment variables can redirect a command away from ``cwd`` or change
+    the object graph it observes.  An allowlist is safer than trying to name
+    every present and future control variable to remove.
+    """
+    passthrough = (
+        "COMSPEC",
+        "PATH",
+        "PATHEXT",
+        "SYSTEMROOT",
+        "SystemRoot",
+        "TEMP",
+        "TMP",
+        "TMPDIR",
+        "WINDIR",
     )
     env = {
         name: value
-        for name, value in os.environ.items()
-        if not any(marker in name.upper() for marker in credential_markers)
+        for name in passthrough
+        if (value := os.environ.get(name)) is not None
     }
-    env["GIT_NO_REPLACE_OBJECTS"] = "1"
-    env["GIT_TERMINAL_PROMPT"] = "0"
+    env.update(
+        {
+            "GIT_ATTR_NOSYSTEM": "1",
+            "GIT_CONFIG_COUNT": "0",
+            "GIT_CONFIG_GLOBAL": os.devnull,
+            "GIT_CONFIG_NOSYSTEM": "1",
+            "GIT_CONFIG_SYSTEM": os.devnull,
+            "GIT_GRAFT_FILE": os.devnull,
+            "GIT_NO_REPLACE_OBJECTS": "1",
+            "GIT_OPTIONAL_LOCKS": "0",
+            "GIT_TERMINAL_PROMPT": "0",
+            "LC_ALL": "C",
+        }
+    )
+    return env
+
+
+def _git_bytes(root: Path, *args: str, timeout: int = GIT_TIMEOUT_SECONDS) -> GitResult:
     try:
         result = subprocess.run(
-            ["git", "--no-replace-objects", *args],
+            [
+                "git",
+                "-c",
+                "advice.graftFileDeprecated=false",
+                "--no-replace-objects",
+                *args,
+            ],
             cwd=root,
             capture_output=True,
             check=False,
             timeout=timeout,
-            env=env,
+            env=_scrubbed_git_environment(),
         )
     except subprocess.TimeoutExpired as exc:
         return GitResult(
@@ -258,7 +294,10 @@ def _git_bytes(root: Path, *args: str, timeout: int = GIT_TIMEOUT_SECONDS) -> Gi
             exc.stderr if isinstance(exc.stderr, bytes) else b"",
             timed_out=True,
         )
-    return GitResult(result.returncode, result.stdout, result.stderr)
+    returncode = result.returncode
+    if b"graft" in result.stderr.lower():
+        returncode = 125
+    return GitResult(returncode, result.stdout, result.stderr)
 
 
 def _one_oid(payload: bytes) -> str | None:
@@ -1000,12 +1039,18 @@ def _common_record_findings(
         if author_emails != sorted(set(author_emails), key=str.casefold):
             findings.append("author_emails must be sorted and unique")
 
+    # ``author_ids`` is retained as the v2 schema key, but it binds every
+    # authenticated GitHub principal attached to a commit: both the ``author``
+    # and ``committer`` roles.  Treating it as author-only would let a reviewer
+    # who committed another contributor's patch appear independent.
     author_ids = record.get("author_ids")
     valid_author_ids: list[int] = []
     if not isinstance(author_ids, list) or not author_ids:
-        findings.append("author_ids must be a nonempty sorted list of GitHub identities")
+        findings.append(
+            "author_ids must be a nonempty sorted list of authenticated commit principal identities"
+        )
     elif not all(type(item) is int and item > 0 for item in author_ids):
-        findings.append("author_ids contains a malformed GitHub identity")
+        findings.append("author_ids contains a malformed authenticated commit principal identity")
     else:
         valid_author_ids = author_ids
         if author_ids != sorted(set(author_ids)):
@@ -1016,7 +1061,7 @@ def _common_record_findings(
     if type(reviewer_id) is not int or reviewer_id <= 0:
         findings.append("reviewer identity is malformed")
     elif reviewer_id in valid_author_ids:
-        findings.append("reviewer identity overlaps an author")
+        findings.append("reviewer identity overlaps an author or committer")
     if not isinstance(reviewer_login, str) or GITHUB_LOGIN_RE.fullmatch(reviewer_login) is None:
         findings.append("reviewer login is malformed")
 
@@ -1081,6 +1126,80 @@ def _review_record_append_only_findings(entries: list[ChangeEntry]) -> list[str]
                 "new structured review record must be a regular 100644 blob: " + entry.path
             )
     return findings
+
+
+def _review_record_history_findings(
+    root: Path,
+    base_commit: str,
+    head_commit: str,
+) -> list[str]:
+    """Reject review-record mutation or removal on every candidate commit edge."""
+    commits, graph_problems = _independent_commit_range(base_commit, head_commit, root)
+    if graph_problems:
+        return [
+            "structured review record history enumeration failed closed: " + problem
+            for problem in graph_problems
+        ]
+    commit_cache: dict[str, RawCommit] = {}
+    tree_cache: dict[str, dict[str, tuple[str, str]]] = {}
+    snapshot_cache: dict[str, dict[str, tuple[str, str]]] = {}
+    findings: set[str] = set()
+    introductions: dict[str, set[str]] = {}
+
+    def snapshot(commit: str) -> dict[str, tuple[str, str]] | None:
+        if commit in snapshot_cache:
+            return snapshot_cache[commit]
+        value, problems = _tree_snapshot_from_commit(
+            root,
+            commit,
+            commit_cache=commit_cache,
+            tree_cache=tree_cache,
+        )
+        if problems:
+            findings.update(
+                "structured review record history enumeration failed closed: " + problem
+                for problem in problems
+            )
+            return None
+        snapshot_cache[commit] = value
+        return value
+
+    for commit_oid, commit in sorted(commits.items()):
+        after = snapshot(commit_oid)
+        parent_snapshots: list[dict[str, tuple[str, str]]] = []
+        for parent_oid in commit.parents:
+            before = snapshot(parent_oid)
+            if before is None or after is None:
+                continue
+            parent_snapshots.append(before)
+            record_paths = sorted(
+                path for path in set(before) | set(after) if is_review_record(path)
+            )
+            for path in record_paths:
+                old = before.get(path)
+                new = after.get(path)
+                if old is None:
+                    if new is not None and new[0] != "100644":
+                        findings.add(
+                            "structured review record history is append-only: new record "
+                            "is not 100644 at " + commit_oid + ": " + path
+                        )
+                elif new != old:
+                    findings.add(
+                        "structured review record history is append-only: record changed "
+                        "or was removed at " + commit_oid + ": " + path
+                    )
+        if after is not None and len(parent_snapshots) == len(commit.parents):
+            for path in sorted(path for path in after if is_review_record(path)):
+                if all(path not in parent for parent in parent_snapshots):
+                    introductions.setdefault(path, set()).add(commit_oid)
+    for path, commits_with_introduction in sorted(introductions.items()):
+        if len(commits_with_introduction) > 1:
+            findings.add(
+                "structured review record history is append-only: record was introduced "
+                "more than once: " + path
+            )
+    return sorted(findings)
 
 
 def _post_review_trust_findings(
@@ -1329,9 +1448,15 @@ def _authenticated_review_findings(
             api_head = api_head_value
             if api_head != head_commit:
                 findings.append("authenticated pull request head does not match the exact candidate head")
-        if pr.get("number") != pull_request:
+        api_pull_request_number = pr.get("number")
+        if type(api_pull_request_number) is not int or api_pull_request_number <= 0:
+            findings.append("authenticated pull request number is malformed")
+        elif api_pull_request_number != pull_request:
             findings.append("authenticated pull request number does not match")
-        if pr.get("id") != record.get("pull_request_id"):
+        api_pull_request_id = pr.get("id")
+        if type(api_pull_request_id) is not int or api_pull_request_id <= 0:
+            findings.append("authenticated pull request id is malformed")
+        elif api_pull_request_id != record.get("pull_request_id"):
             findings.append("authenticated pull request id does not match the review record")
         expected_repositories = (
             (
@@ -1343,10 +1468,23 @@ def _authenticated_review_findings(
             ("base", base_repo, repository, record.get("repository_id")),
         )
         for label, repo_value, expected_name, expected_id in expected_repositories:
+            if not isinstance(repo_value, dict):
+                findings.append(f"authenticated {label} repository identity is malformed")
+                continue
+            api_repository_id = repo_value.get("id")
+            api_repository_name = repo_value.get("full_name")
+            malformed = False
+            if type(api_repository_id) is not int or api_repository_id <= 0:
+                findings.append(f"authenticated {label} repository id is malformed")
+                malformed = True
             if (
-                not isinstance(repo_value, dict)
-                or repo_value.get("full_name") != expected_name
-                or repo_value.get("id") != expected_id
+                not isinstance(api_repository_name, str)
+                or GITHUB_REPOSITORY_RE.fullmatch(api_repository_name) is None
+            ):
+                findings.append(f"authenticated {label} repository name is malformed")
+                malformed = True
+            if not malformed and (
+                api_repository_name != expected_name or api_repository_id != expected_id
             ):
                 findings.append(
                     f"authenticated {label} repository id/name does not match the review record"
@@ -1357,27 +1495,31 @@ def _authenticated_review_findings(
     )
     findings.extend(commit_problems)
     api_commit_ids: list[str] = []
-    api_author_ids: set[int] = set()
+    api_principal_ids: set[int] = set()
     for row in commits:
         if not isinstance(row, dict):
             findings.append("authenticated commit enumeration contains a malformed row")
             continue
         sha = row.get("sha")
-        author = row.get("author")
-        author_id = author.get("id") if isinstance(author, dict) else None
-        author_login = author.get("login") if isinstance(author, dict) else None
-        if (
-            not isinstance(sha, str)
-            or GIT_OID_RE.fullmatch(sha) is None
-            or type(author_id) is not int
-            or author_id <= 0
-            or not isinstance(author_login, str)
-            or GITHUB_LOGIN_RE.fullmatch(author_login) is None
-        ):
+        if not isinstance(sha, str) or GIT_OID_RE.fullmatch(sha) is None:
             findings.append("authenticated commit enumeration contains a malformed row")
             continue
         api_commit_ids.append(sha)
-        api_author_ids.add(author_id)
+        for role in ("author", "committer"):
+            principal = row.get(role)
+            principal_id = principal.get("id") if isinstance(principal, dict) else None
+            principal_login = principal.get("login") if isinstance(principal, dict) else None
+            if (
+                type(principal_id) is not int
+                or principal_id <= 0
+                or not isinstance(principal_login, str)
+                or GITHUB_LOGIN_RE.fullmatch(principal_login) is None
+            ):
+                findings.append(
+                    f"authenticated commit enumeration contains a malformed {role} identity"
+                )
+                continue
+            api_principal_ids.add(principal_id)
     if len(api_commit_ids) != len(set(api_commit_ids)):
         findings.append("authenticated commit enumeration contains a duplicate commit id")
     if api_head is not None and not commit_problems:
@@ -1398,10 +1540,12 @@ def _authenticated_review_findings(
                 "authenticated commit enumeration is partial or disagrees with the exact local range"
             )
     claimed_author_ids = record.get("author_ids")
-    if isinstance(claimed_author_ids, list) and sorted(api_author_ids) != claimed_author_ids:
-        findings.append("review record authors do not match authenticated GitHub author identities")
-    if type(record.get("reviewer_id")) is int and record.get("reviewer_id") in api_author_ids:
-        findings.append("reviewer identity overlaps an author")
+    if isinstance(claimed_author_ids, list) and sorted(api_principal_ids) != claimed_author_ids:
+        findings.append(
+            "review record authors do not match authenticated GitHub author/committer identity union"
+        )
+    if type(record.get("reviewer_id")) is int and record.get("reviewer_id") in api_principal_ids:
+        findings.append("reviewer identity overlaps an authenticated commit principal")
     return findings
 
 
@@ -1551,7 +1695,7 @@ def read_status(
     reviewer_login: str | None = None
     reviewed_head: str | None = None
     reviewed_tree: str | None = None
-    if touched and discovery.ok:
+    if (touched or record_paths) and discovery.ok:
         if not record_paths:
             if legacy_paths:
                 problems.append(
@@ -1605,6 +1749,11 @@ def read_status(
 
     if discovery.base_commit is not None and discovery.head_commit is not None:
         problems.extend(
+            _review_record_history_findings(
+                root, discovery.base_commit, discovery.head_commit
+            )
+        )
+        problems.extend(
             _landed_marker_append_only_findings(
                 root, discovery.base_commit, discovery.head_commit
             )
@@ -1650,7 +1799,9 @@ def verify_landed_review_marker(
     ``reviewed_head`` and ``reviewed_tree`` remain provenance fields.  They are
     format-checked but intentionally not resolved: squash merge may discard the
     premerge objects.  Landed truth comes only from ``main_ref`` first-parent,
-    the recorded merged tree, the exact base-to-merge paths, and their bytes.
+    the recorded merged tree, and the exact first-parent-to-merge edge paths
+    and bytes.  The reviewed base remains independently bound and earlier on
+    main, but unrelated main advances before the squash do not broaden scope.
     """
     if not isinstance(marker, dict):
         return ["landed review marker is missing"]
@@ -1724,21 +1875,40 @@ def verify_landed_review_marker(
     if findings:
         return findings
 
+    landed_object, landed_object_findings = _read_raw_commit(root, landed_commit)
+    findings.extend(landed_object_findings)
+    if landed_object is None:
+        return findings
+    if not landed_object.parents:
+        findings.append("merged_commit has no exact first-parent landing edge")
+        return findings
+    landing_parent = landed_object.parents[0]
+    landed_index = first_parent.index(landed_commit)
+    if (
+        landed_index + 1 >= len(first_parent)
+        or first_parent[landed_index + 1] != landing_parent
+    ):
+        findings.append("merged_commit first parent disagrees with upstream main history")
+        return findings
+
     actual_tree, tree_findings = _resolve_tree(landed_commit, "merged_commit", root)
     findings.extend(tree_findings)
     if actual_tree is not None and actual_tree != merged_tree:
         findings.append("merged_tree mismatch for merged_commit")
 
-    landed_entries, diff_findings = _diff_entries(root, f"{base_commit}..{landed_commit}")
+    landed_entries, diff_findings = _diff_entries(
+        root, f"{landing_parent}..{landed_commit}"
+    )
     findings.extend(diff_findings)
     if not diff_findings:
         independent_entries, independent_findings = _independent_tree_diff(
-            root, base_commit, landed_commit
+            root, landing_parent, landed_commit
         )
         findings.extend(independent_findings)
         if not independent_findings and sorted(landed_entries) != sorted(independent_entries):
             findings.append(
-                "landed diff is partial or disagrees with independent tree-object traversal"
+                "exact first-parent landing edge is partial or disagrees with "
+                "independent tree-object traversal"
             )
     landed_trust = sorted(
         (entry for entry in landed_entries if is_trust_kernel(entry.path)),
@@ -1750,9 +1920,18 @@ def verify_landed_review_marker(
         landed_record_entries = [
             entry for entry in landed_entries if entry.path == review_record_path
         ]
-        if len(landed_record_entries) != 1 or landed_record_entries[0].status not in {"A", "M"}:
+        zero = "0" * 40
+        if (
+            len(landed_record_entries) != 1
+            or landed_record_entries[0].status != "A"
+            or landed_record_entries[0].old_mode != "000000"
+            or landed_record_entries[0].old_oid != zero
+            or landed_record_entries[0].new_mode != "100644"
+            or landed_record_entries[0].new_oid == zero
+        ):
             findings.append(
-                "committed premerge review record is absent from the landed change set"
+                "committed premerge review record must be a new regular 100644 blob "
+                "on the exact first-parent landing edge"
             )
 
     claimed_digest = marker.get("content_digest")
@@ -1760,7 +1939,7 @@ def verify_landed_review_marker(
         actual_digest, digest_findings = compute_change_digest(landed_trust, root)
         findings.extend(digest_findings)
         if actual_digest is not None and actual_digest != claimed_digest:
-            findings.append("landed content digest mismatch")
+            findings.append("exact first-parent landing edge content digest mismatch")
 
     if isinstance(review_record_path, str) and is_review_record(review_record_path):
         record_payload, record_read_findings = _read_blob(

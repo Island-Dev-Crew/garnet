@@ -49,6 +49,16 @@ class ObjectTransportTests(unittest.TestCase):
         self.assertGreater(timeout, 0)
         for public_value in (request.full_url, repr(request), repr(result), repr(client)):
             self.assertNotIn(TOKEN, public_value)
+    def test_authenticated_repository_request_is_exact_and_secret_safe(self) -> None:
+        client, opener = self.client(response({"id": 7, "full_name": REPO}))
+        result = client.get_repository()
+        self.assertEqual(
+            (result.value, result.problems),
+            ({"id": 7, "full_name": REPO}, ()),
+        )
+        request, _ = opener.requests[0]
+        self.assertEqual(request.full_url, BASE)
+        self.assertNotIn(TOKEN, repr(result))
     def test_token_in_caller_path_or_query_is_rejected_before_open(self) -> None:
         for path in (f"actions/runs/{TOKEN}", f"actions/runs/7?ref={TOKEN}"):
             with self.subTest(path=path):

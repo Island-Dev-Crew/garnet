@@ -122,7 +122,11 @@ class ClassificationTests(unittest.TestCase):
             "garnet-wasm/src/lib.rs",
             "garnet-cli/src/cmd/run.rs",
             "garnet-cli/src/cmd/add.rs",
+            "garnet-cli/src/cmd/mod.rs",
             "garnet-cli/src/bound_source.rs",
+            "garnet-cli/src/lib.rs",
+            "garnet-cli/Cargo.toml",
+            "Cargo.lock",
             ".github/CODEOWNERS",
             "scripts/garnet_required_context_contract.py",
             "scripts/test_garnet_required_context_contract.py",
@@ -474,6 +478,96 @@ class PreMergeReviewRecordTests(GitRepoFixture):
         )
         self.assertTrue(status.ok, status.problems)
 
+    def test_authenticated_pull_request_number_requires_exact_integer_type(self) -> None:
+        self._commit_record()
+        transport = self._transport()
+        pull = dict(transport.get_object("pulls/77").value)
+        pull["number"] = 77.0
+        status = self._status(
+            self._transport(
+                objects={
+                    "pulls/77": types.SimpleNamespace(
+                        value=pull, problems=(), byte_count=1
+                    )
+                }
+            )
+        )
+        self.assertFalse(status.ok, status.problems)
+        self.assertTrue(
+            any("authenticated pull request number is malformed" in p for p in status.problems),
+            status.problems,
+        )
+
+    def test_authenticated_pull_request_id_rejects_boolean_integer_alias(self) -> None:
+        record = self._record()
+        record["pull_request_id"] = 1
+        self._commit_record(record)
+        transport = self._transport()
+        pull = dict(transport.get_object("pulls/77").value)
+        pull["id"] = True
+        status = self._status(
+            self._transport(
+                objects={
+                    "pulls/77": types.SimpleNamespace(
+                        value=pull, problems=(), byte_count=1
+                    )
+                }
+            )
+        )
+        self.assertFalse(status.ok, status.problems)
+        self.assertTrue(
+            any("authenticated pull request id is malformed" in p for p in status.problems),
+            status.problems,
+        )
+
+    def test_authenticated_head_repository_id_rejects_boolean_integer_alias(self) -> None:
+        record = self._record()
+        record["head_repository_id"] = 1
+        self._commit_record(record)
+        transport = self._transport()
+        pull = dict(transport.get_object("pulls/77").value)
+        pull["head"] = dict(pull["head"])
+        pull["head"]["repo"] = dict(pull["head"]["repo"])
+        pull["head"]["repo"]["id"] = True
+        status = self._status(
+            self._transport(
+                objects={
+                    "pulls/77": types.SimpleNamespace(
+                        value=pull, problems=(), byte_count=1
+                    )
+                }
+            )
+        )
+        self.assertFalse(status.ok, status.problems)
+        self.assertTrue(
+            any("authenticated head repository id is malformed" in p for p in status.problems),
+            status.problems,
+        )
+
+    def test_authenticated_base_repository_id_rejects_boolean_integer_alias(self) -> None:
+        record = self._record()
+        record["repository_id"] = 1
+        self._commit_record(record)
+        transport = self._transport()
+        pull = dict(transport.get_object("pulls/77").value)
+        pull["base"] = dict(pull["base"])
+        pull["base"]["repo"] = dict(pull["base"]["repo"])
+        pull["base"]["repo"]["id"] = True
+        status = self._status(
+            self._transport(
+                objects={
+                    "pulls/77": types.SimpleNamespace(
+                        value=pull, problems=(), byte_count=1
+                    )
+                }
+            )
+        )
+        self.assertFalse(status.ok, status.problems)
+        self.assertTrue(
+            any("authenticated base repository id is malformed" in p for p in status.problems),
+            status.problems,
+        )
+
     def test_missing_authenticated_transport_is_red(self) -> None:
         self._commit_record()
         status = mod.read_status(
@@ -637,6 +731,92 @@ class PreMergeReviewRecordTests(GitRepoFixture):
             self._transport(collections={"pulls/77/commits": subset})
         )
         self.assertTrue(any("commit enumeration is partial" in p for p in status.problems))
+
+    def test_reviewer_committer_overlap_is_red(self) -> None:
+        record = self._record()
+        record["reviewer_id"] = 303
+        record["reviewer_login"] = "commit-committer"
+        self._commit_record(record)
+        head = self._git("rev-parse", "HEAD")
+        commits = self._git("rev-list", "--reverse", f"{self.base}..{head}").splitlines()
+        rows = types.SimpleNamespace(
+            rows=tuple(
+                {
+                    "sha": commit,
+                    "author": {"id": 101, "login": "author"},
+                    "committer": {"id": 303, "login": "commit-committer"},
+                }
+                for commit in commits
+            ),
+            problems=(),
+            page_count=1,
+            byte_count=1,
+        )
+        review = {
+            "id": 9009,
+            "user": {"id": 303, "login": "commit-committer"},
+            "state": "APPROVED",
+            "commit_id": head,
+        }
+        reviews = types.SimpleNamespace(
+            rows=(review,), problems=(), page_count=1, byte_count=1
+        )
+        direct = types.SimpleNamespace(value=review, problems=(), byte_count=1)
+        status = self._status(
+            self._transport(
+                collections={
+                    "pulls/77/commits": rows,
+                    "pulls/77/reviews": reviews,
+                },
+                objects={"pulls/77/reviews/9009": direct},
+            )
+        )
+        self.assertFalse(status.ok, status.problems)
+        self.assertTrue(
+            any("reviewer identity overlaps an authenticated commit principal" in p for p in status.problems),
+            status.problems,
+        )
+
+    def test_malformed_authenticated_committer_identity_is_red(self) -> None:
+        self._commit_record()
+        transport = self._transport()
+        original = transport.get_collection("pulls/77/commits")
+        rows = tuple(dict(row, committer=None) for row in original.rows)
+        malformed = types.SimpleNamespace(
+            rows=rows,
+            problems=(),
+            page_count=1,
+            byte_count=1,
+        )
+        status = self._status(
+            self._transport(collections={"pulls/77/commits": malformed})
+        )
+        self.assertFalse(status.ok, status.problems)
+        self.assertTrue(
+            any("malformed committer identity" in p for p in status.problems),
+            status.problems,
+        )
+
+    def test_author_ids_bind_author_and_committer_identity_union(self) -> None:
+        record = self._record()
+        record["author_ids"] = [101, 303]
+        self._commit_record(record)
+        transport = self._transport()
+        original = transport.get_collection("pulls/77/commits")
+        rows = tuple(
+            dict(row, committer={"id": 303, "login": "commit-committer"})
+            for row in original.rows
+        )
+        authenticated = types.SimpleNamespace(
+            rows=rows,
+            problems=(),
+            page_count=1,
+            byte_count=1,
+        )
+        status = self._status(
+            self._transport(collections={"pulls/77/commits": authenticated})
+        )
+        self.assertTrue(status.ok, status.problems)
 
     def test_repository_and_pull_request_are_immutably_bound(self) -> None:
         record = self._record()
@@ -867,6 +1047,30 @@ class CommitGraphEnumerationTests(GitRepoFixture):
         self.assertTrue(any("commit-object traversal" in p and "partial" in p for p in problems))
 
 
+class GitGraphControlPlaneTests(GitRepoFixture):
+    def test_default_info_grafts_cannot_hide_a_trust_change(self) -> None:
+        trust_path = "scripts/garnet_hidden_by_graft.py"
+        self._git("checkout", "-b", "topic", self.base)
+        topic = self._commit_file(trust_path, b"hidden = True\n", "unreviewed trust change")
+
+        self._git("checkout", "main")
+        main = self._commit_file("main-advanced.txt", b"advanced\n", "advance main")
+        self._git("update-ref", "refs/remotes/origin/main", main)
+        self._git("checkout", "topic")
+
+        clean = mod.read_status(root=self.root)
+        self.assertFalse(clean.ok, clean.problems)
+        self.assertIn(trust_path, clean.touched_paths, clean.problems)
+
+        grafts = self.root / ".git" / "info" / "grafts"
+        grafts.parent.mkdir(parents=True, exist_ok=True)
+        grafts.write_text(f"{main} {topic}\n", encoding="ascii")
+
+        grafted = mod.read_status(root=self.root)
+        self.assertFalse(grafted.ok, grafted.problems)
+        self.assertIn(trust_path, grafted.touched_paths, grafted.problems)
+
+
 class WorktreeStatusTests(GitRepoFixture):
     def test_clean_porcelain_v2_status_passes(self) -> None:
         self.assertEqual([], mod.check_clean_worktree(self.root))
@@ -884,6 +1088,27 @@ class WorktreeStatusTests(GitRepoFixture):
     def test_untracked_change_is_red(self) -> None:
         (self.root / "untracked.txt").write_text("new\n", encoding="utf-8")
         self.assertTrue(any("not clean" in p for p in mod.check_clean_worktree(self.root)))
+
+    def test_ambient_git_repository_redirect_cannot_hide_dirty_worktree(self) -> None:
+        (self.root / "untracked.txt").write_text("dirty real checkout\n", encoding="utf-8")
+        with tempfile.TemporaryDirectory() as alternate_temp:
+            alternate = Path(alternate_temp).resolve()
+            result = subprocess.run(
+                ["git", "init"],
+                cwd=alternate,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(0, result.returncode, result.stderr)
+            redirected = {
+                "GIT_DIR": str(alternate / ".git"),
+                "GIT_INDEX_FILE": str(alternate / ".git" / "index"),
+                "GIT_WORK_TREE": str(alternate),
+            }
+            with mock.patch.dict(os.environ, redirected, clear=False):
+                findings = mod.check_clean_worktree(self.root)
+        self.assertTrue(any("not clean" in finding for finding in findings), findings)
 
     def test_malformed_or_non_nul_porcelain_is_red(self) -> None:
         _, problems = mod._parse_porcelain_v2_z(b"? unterminated")
@@ -923,10 +1148,57 @@ class GitCredentialIsolationTests(unittest.TestCase):
         ):
             result = mod._git_bytes(Path("/"), "status")
         self.assertEqual(0, result.returncode)
-        self.assertEqual("safe", captured.get("UNRELATED_VALUE"))
         for name in ambient:
-            if name != "UNRELATED_VALUE":
-                self.assertNotIn(name, captured)
+            self.assertNotIn(name, captured)
+
+    def test_git_subprocess_does_not_inherit_repository_control_plane(self) -> None:
+        captured: dict[str, str] = {}
+
+        def fake_run(*_: object, **kwargs: object) -> object:
+            captured.update(kwargs["env"])
+            return types.SimpleNamespace(returncode=0, stdout=b"", stderr=b"")
+
+        ambient = {
+            "GIT_ALTERNATE_OBJECT_DIRECTORIES": "/alternate/objects",
+            "GIT_COMMON_DIR": "/alternate/common",
+            "GIT_CONFIG_COUNT": "1",
+            "GIT_CONFIG_GLOBAL": "/alternate/global-config",
+            "GIT_CONFIG_KEY_0": "core.worktree",
+            "GIT_CONFIG_NOSYSTEM": "0",
+            "GIT_CONFIG_SYSTEM": "/alternate/system-config",
+            "GIT_CONFIG_VALUE_0": "/alternate/worktree",
+            "GIT_DIR": "/alternate/repository",
+            "GIT_GRAFT_FILE": "/alternate/grafts",
+            "GIT_INDEX_FILE": "/alternate/index",
+            "GIT_NAMESPACE": "alternate",
+            "GIT_OBJECT_DIRECTORY": "/alternate/objects",
+            "GIT_QUARANTINE_PATH": "/alternate/quarantine",
+            "GIT_REPLACE_REF_BASE": "refs/alternate/replace/",
+            "GIT_SHALLOW_FILE": "/alternate/shallow",
+            "GIT_WORK_TREE": "/alternate/worktree",
+        }
+        with mock.patch.dict(os.environ, ambient, clear=True), mock.patch.object(
+            mod.subprocess, "run", side_effect=fake_run
+        ):
+            result = mod._git_bytes(Path("/"), "status")
+        self.assertEqual(0, result.returncode)
+        for name, value in ambient.items():
+            self.assertNotEqual(value, captured.get(name), name)
+        self.assertEqual("1", captured.get("GIT_CONFIG_NOSYSTEM"))
+        self.assertEqual("0", captured.get("GIT_CONFIG_COUNT"))
+        self.assertEqual(os.devnull, captured.get("GIT_GRAFT_FILE"))
+        self.assertEqual("1", captured.get("GIT_NO_REPLACE_OBJECTS"))
+
+    def test_git_graft_warning_is_an_enumeration_failure(self) -> None:
+        completed = types.SimpleNamespace(
+            returncode=0,
+            stdout=b"a" * 40 + b"\n",
+            stderr=b"hint: support for .git/info/grafts is deprecated\n",
+        )
+        with mock.patch.object(mod.subprocess, "run", return_value=completed):
+            result = mod._git_bytes(Path("/"), "rev-parse", "HEAD")
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn(b"graft", result.stderr)
 
 
 class AppendOnlyReviewRecordTests(unittest.TestCase):
@@ -962,6 +1234,92 @@ class AppendOnlyReviewRecordTests(unittest.TestCase):
                     [self._entry("A", "000000", mode)]
                 )
                 self.assertTrue(any("regular 100644" in p for p in findings))
+
+
+class ReviewRecordHistoryTests(GitRepoFixture):
+    RECORD = "F_Project_Management/W_TRUST/HISTORICAL.review.json"
+    RECORD_BYTES = _canonical({"historical": True})
+
+    def setUp(self) -> None:
+        super().setUp()
+        self._commit_file(self.RECORD, self.RECORD_BYTES, "add historical review record")
+        self.base = self._git("rev-parse", "HEAD")
+        self._git("update-ref", "refs/remotes/origin/main", self.base)
+
+    def test_intermediate_review_record_modify_then_restore_is_red(self) -> None:
+        path = self.root / self.RECORD
+        path.write_bytes(_canonical({"historical": "mutated"}))
+        self._git("commit", "-am", "mutate historical review record")
+        path.write_bytes(self.RECORD_BYTES)
+        self._git("commit", "-am", "restore historical review record")
+        status = mod.read_status(base=self.base, head="HEAD", root=self.root)
+        self.assertFalse(status.ok, status.problems)
+        self.assertTrue(
+            any("structured review record history is append-only" in p for p in status.problems),
+            status.problems,
+        )
+
+    def test_intermediate_review_record_delete_then_restore_is_red(self) -> None:
+        path = self.root / self.RECORD
+        path.unlink()
+        self._git("add", "-u")
+        self._git("commit", "-m", "delete historical review record")
+        path.write_bytes(self.RECORD_BYTES)
+        self._git("add", self.RECORD)
+        self._git("commit", "-m", "restore historical review record")
+        status = mod.read_status(base=self.base, head="HEAD", root=self.root)
+        self.assertFalse(status.ok, status.problems)
+        self.assertTrue(
+            any("structured review record history is append-only" in p for p in status.problems),
+            status.problems,
+        )
+
+    def test_one_new_regular_review_record_has_clean_append_only_history(self) -> None:
+        self._commit_file(
+            "F_Project_Management/W_TRUST/NEW.review.json",
+            _canonical({"new": True}),
+            "add new review record",
+        )
+        self.assertEqual(
+            [],
+            mod._review_record_history_findings(
+                self.root, self.base, self._git("rev-parse", "HEAD")
+            ),
+        )
+
+    def test_parallel_duplicate_introduction_of_one_record_is_red(self) -> None:
+        record = "F_Project_Management/W_TRUST/PARALLEL.review.json"
+        payload = _canonical({"parallel": True})
+
+        self._git("checkout", "-b", "left", self.base)
+        self._commit_file(record, payload, "add parallel review record on left")
+
+        self._git("checkout", "-b", "right", self.base)
+        self._commit_file(record, payload, "add parallel review record on right")
+
+        self._git("checkout", "left")
+        self._git("merge", "--no-ff", "-m", "merge duplicate introductions", "right")
+
+        status = mod.read_status(base=self.base, head="HEAD", root=self.root)
+        self.assertFalse(status.ok, status.problems)
+        self.assertTrue(
+            any("introduced more than once" in problem for problem in status.problems),
+            status.problems,
+        )
+
+    def test_record_only_non_json_addition_is_red(self) -> None:
+        self._commit_file(
+            "F_Project_Management/W_TRUST/FORGED.review.json",
+            b"not a review record\n",
+            "add forged record without trust changes",
+        )
+
+        status = mod.read_status(base=self.base, head="HEAD", root=self.root)
+        self.assertFalse(status.ok, status.problems)
+        self.assertTrue(
+            any("not valid JSON" in problem for problem in status.problems),
+            status.problems,
+        )
 
 
 class PreMergeDeletionRecordTests(GitRepoFixture):
@@ -1122,6 +1480,7 @@ class LandedMarkerTests(GitRepoFixture):
         }
         self.record_bytes = _canonical(self.record)
         self._git("checkout", "main")
+        self._commit_file("main-advanced.txt", b"advanced\n", "unrelated main advance")
         trust = self.root / self.TRUST_PATH
         trust.parent.mkdir(parents=True, exist_ok=True)
         trust.write_bytes(self.TRUST_BYTES)
@@ -1192,6 +1551,18 @@ class LandedMarkerTests(GitRepoFixture):
 
     def test_valid_landed_marker_does_not_require_reviewed_head_ancestry(self) -> None:
         self.assertEqual([], self._findings())
+
+    def test_later_unrelated_main_commit_cannot_substitute_for_landing_boundary(self) -> None:
+        later = self._commit_file("later.txt", b"later\n", "later unrelated main commit")
+        self._git("update-ref", "refs/remotes/origin/main", later)
+        marker = self._marker()
+        marker["merged_commit"] = later
+        marker["merged_tree"] = self._git("rev-parse", f"{later}^{{tree}}")
+        findings = self._findings(marker)
+        self.assertTrue(
+            any("exact first-parent landing edge" in problem for problem in findings),
+            findings,
+        )
 
     def test_repository_registry_drives_production_landed_verification(self) -> None:
         self._commit_repository_marker(self._marker())
@@ -1281,6 +1652,48 @@ class LandedMarkerTests(GitRepoFixture):
         marker = self._marker()
         marker["review_record_path"] = "F_Project_Management/W_TRUST/MISSING.review.json"
         self.assertTrue(any("path is missing" in p for p in self._findings(marker)))
+
+    def test_landed_marker_rejects_modified_historical_review_record(self) -> None:
+        trust_path = "scripts/garnet_landed_modified_record.py"
+        trust_bytes = b"modified_record = True\n"
+        trust = self.root / trust_path
+        trust.parent.mkdir(parents=True, exist_ok=True)
+        trust.write_bytes(trust_bytes)
+        trust_oid = self._git("hash-object", trust_path)
+        digest = _change_digest(
+            [(trust_path, "A", "0" * 40, None, trust_oid, trust_bytes)]
+        )
+        forged_record = dict(self.record)
+        forged_record.update(
+            {
+                "base_commit": self.merged_commit,
+                "content_digest": digest,
+                "touched_paths": [trust_path],
+            }
+        )
+        forged_bytes = _canonical(forged_record)
+        (self.root / self.RECORD_PATH).write_bytes(forged_bytes)
+        self._git("add", trust_path, self.RECORD_PATH)
+        self._git("commit", "-m", "modify historical record on landing edge")
+        forged_merge = self._git("rev-parse", "HEAD")
+        self._git("update-ref", "refs/remotes/origin/main", forged_merge)
+
+        marker = dict(forged_record)
+        marker.update(
+            {
+                "merged_commit": forged_merge,
+                "merged_tree": self._git("rev-parse", "HEAD^{tree}"),
+                "review_record_path": self.RECORD_PATH,
+                "review_record_sha256": hashlib.sha256(forged_bytes).hexdigest(),
+                "schema": "garnet.trust_kernel_review_marker/v2",
+                "state": "landed",
+            }
+        )
+        findings = self._findings(marker)
+        self.assertTrue(
+            any("new regular 100644" in problem for problem in findings),
+            findings,
+        )
 
     def test_replace_ref_cannot_substitute_landed_tree(self) -> None:
         self._git("checkout", "-b", "replacement", self.base)

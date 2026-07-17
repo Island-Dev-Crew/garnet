@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
+import importlib.util
 import json
+import os
 import re
+import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -21,12 +25,27 @@ MAX_DOCUMENT_BYTES = 64 * 1024
 JON_ONLY_ACTIONS = (
     "provision GARNET_ADMIN_GITHUB_TOKEN",
     "merge the Lane 1 bootstrap pull request while Base-controlled trust policy is not required",
-    "confirm the base-controlled workflow is active on main and open a separate activation/terminus pull request from that base",
+    "confirm the base-controlled workflow is active on main and open a separate activation/terminus pull request from that base with the bootstrap squash-durable landed marker registered",
     "activate required context 31 to 32 on ruleset 18936562 while the activation/terminus pull request is open",
     "read back ruleset 18936562 and verify Base-controlled trust policy is required with bypass_actors empty",
     "rerun the authenticated governance and base-controlled gates on the exact activation/terminus head",
     "merge the activation/terminus pull request",
+    "merge the bounded post-squash Lane 1 closeout pull request that registers the terminus landed marker without adding a GOV number",
 )
+
+
+def _load_sibling(name: str) -> object:
+    path = Path(__file__).with_name(f"{name}.py")
+    spec = importlib.util.spec_from_file_location(f"_{name}_ceremony", path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+transport = _load_sibling("garnet_github_governance_transport")
+governance_gate = _load_sibling("garnet_github_governance_gate")
 ACCEPTANCE_COMMANDS = (
     {
         "command": "python3 -I scripts/test_garnet_base_controlled_trust_status.py",
@@ -41,8 +60,8 @@ ACCEPTANCE_COMMANDS = (
         "expected": "PASS preparation only",
     },
     {
-        "command": "python3 -I scripts/garnet_governance_activation_ceremony.py --activation-gate",
-        "expected": "RED blocked-u17 until Jon provisions GARNET_ADMIN_GITHUB_TOKEN and records live readback",
+        "command": "python3 -I scripts/garnet_governance_activation_ceremony.py --activation-gate --reviewed-head $REVIEWED_HEAD --github-token-stdin",
+        "expected": "RED blocked-u17 until Jon provisions GARNET_ADMIN_GITHUB_TOKEN; PASS only for authenticated exact 32-context no-bypass readback",
     },
 )
 TOP_KEYS = {
@@ -254,7 +273,132 @@ def read_ceremony_status(root: Path = ROOT) -> CeremonyStatus:
     )
 
 
-def main(argv: list[str] | None = None, *, root: Path = ROOT) -> int:
+def _activation_blocked(
+    prepared: CeremonyStatus, problems: list[str]
+) -> CeremonyStatus:
+    return CeremonyStatus(
+        prepared.schema,
+        prepared.preparation_ok,
+        False,
+        prepared.state,
+        prepared.ruleset_id,
+        prepared.workflow_sha256,
+        prepared.bypass_actors,
+        tuple(dict.fromkeys(problems)) or ("blocked-u17",),
+        prepared.problems,
+    )
+
+
+def evaluate_live_activation(
+    prepared: CeremonyStatus,
+    live_result: object,
+    *,
+    root: Path = ROOT,
+) -> CeremonyStatus:
+    """Verify the exact 32-context ruleset and empty bypass list from live API data."""
+    problems: list[str] = []
+    if not prepared.preparation_ok:
+        problems.append("ceremony preparation is not green")
+    if type(live_result) is not transport.ObjectResult:
+        problems.append("live ruleset transport result type is invalid")
+        return _activation_blocked(prepared, problems)
+    if type(live_result.problems) is not tuple or any(
+        type(item) is not transport.GitHubTransportProblem
+        for item in live_result.problems
+    ):
+        problems.append("live ruleset transport problems are malformed")
+    elif live_result.problems:
+        problems.append("live ruleset transport is incomplete")
+    if (
+        type(live_result.byte_count) is not int
+        or not 0 < live_result.byte_count <= transport.MAX_BODY_BYTES
+    ):
+        problems.append("live ruleset transport byte count is invalid")
+    live = live_result.value
+    if type(live) is not dict:
+        problems.append("live ruleset object is missing or malformed")
+    if problems:
+        return _activation_blocked(prepared, problems)
+    assert isinstance(live, dict)
+    if governance_gate._contains_credential_field(live):
+        problems.append("live ruleset contains a credential-like field")
+    if type(live.get("id")) is not int or live.get("id") != 18_936_562:
+        problems.append("live ruleset id is not exact")
+    if live.get("bypass_actors") != []:
+        problems.append("live ruleset bypass_actors must be empty")
+
+    checked, _, load_problems = governance_gate.load_checked_contracts(root)
+    if load_problems or type(checked) is not dict:
+        problems.append("checked ruleset authority cannot be loaded")
+    else:
+        expected = copy.deepcopy(checked)
+        required = [
+            rule
+            for rule in expected.get("rules", [])
+            if type(rule) is dict and rule.get("type") == "required_status_checks"
+        ]
+        if len(required) != 1:
+            problems.append("checked ruleset required-status rule is not unique")
+        else:
+            parameters = required[0].get("parameters")
+            contexts = (
+                parameters.get("required_status_checks")
+                if type(parameters) is dict
+                else None
+            )
+            appended = {
+                "context": "Base-controlled trust policy",
+                "integration_id": 15368,
+            }
+            if type(contexts) is not list:
+                problems.append("checked required contexts are malformed")
+            elif len(contexts) == 31 and appended not in contexts:
+                contexts.append(appended)
+            elif len(contexts) != 32 or contexts[-1] != appended:
+                problems.append("checked activation policy is not exact 31-to-32")
+        live_rules = live.get("rules")
+        live_required = [
+            rule
+            for rule in live_rules
+            if type(rule) is dict and rule.get("type") == "required_status_checks"
+        ] if type(live_rules) is list else []
+        live_contexts = None
+        if len(live_required) == 1 and type(live_required[0].get("parameters")) is dict:
+            live_contexts = live_required[0]["parameters"].get(
+                "required_status_checks"
+            )
+        if type(live_contexts) is not list or len(live_contexts) != 32:
+            problems.append("live ruleset must require exactly 32 contexts")
+        projection = {
+            key: live.get(key) for key in governance_gate.RULESET_KEYS
+        }
+        if not governance_gate._strict_equal(projection, expected):
+            problems.append("live 32-context ruleset differs from checked activation policy")
+    if problems:
+        return _activation_blocked(prepared, problems)
+    return CeremonyStatus(
+        prepared.schema,
+        True,
+        True,
+        "live-readback-verified",
+        18_936_562,
+        prepared.workflow_sha256,
+        (),
+        (),
+        prepared.problems,
+    )
+
+
+def main(
+    argv: list[str] | None = None,
+    *,
+    root: Path = ROOT,
+    stdin: object | None = None,
+    stdout: object | None = None,
+    environ: dict[str, str] | os._Environ[str] | None = None,
+    transport_factory: object = transport.GitHubGovernanceTransport,
+    local_head_loader: object = governance_gate.read_clean_local_head,
+) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--gate", action="store_true", help="preparation-only gate")
@@ -263,12 +407,107 @@ def main(argv: list[str] | None = None, *, root: Path = ROOT) -> int:
         action="store_true",
         help="live activation/readback gate; remains RED while U-17 is open",
     )
+    parser.add_argument(
+        "--github-token-stdin",
+        action="store_true",
+        help="read the dedicated admin-authoritative credential from bounded stdin",
+    )
+    parser.add_argument(
+        "--reviewed-head",
+        help="exact clean local activation/terminus commit to verify",
+    )
     args = parser.parse_args(argv)
     status = read_ceremony_status(root)
-    print(json.dumps(asdict(status), ensure_ascii=False, indent=2, sort_keys=True))
     if args.activation_gate:
-        return 1
-    return 0 if status.preparation_ok else 1
+        if (
+            not args.github_token_stdin
+            or type(args.reviewed_head) is not str
+            or governance_gate.SHA_RE.fullmatch(args.reviewed_head) is None
+        ):
+            status = _activation_blocked(
+                status,
+                [
+                    "blocked-u17: explicit admin stdin token and full reviewed head are required"
+                ],
+            )
+        else:
+            input_stream = sys.stdin if stdin is None else stdin
+            source_environment = os.environ if environ is None else environ
+            environment = dict(source_environment)
+            ambient = [
+                name
+                for name in governance_gate.AMBIENT_CREDENTIAL_NAMES
+                if source_environment.get(name)
+            ]
+            for name in governance_gate.AMBIENT_CREDENTIAL_NAMES:
+                environment.pop(name, None)
+            token, token_problems = governance_gate._read_explicit_token(input_stream)
+            if ambient or token_problems:
+                status = _activation_blocked(
+                    status,
+                    [
+                        *(
+                            ["ambient GitHub credential variables are forbidden"]
+                            if ambient
+                            else []
+                        ),
+                        *token_problems,
+                    ],
+                )
+            elif not callable(transport_factory) or not callable(local_head_loader):
+                status = _activation_blocked(
+                    status, ["live activation collector configuration is invalid"]
+                )
+            else:
+                try:
+                    local_head, local_problems = local_head_loader(
+                        root, environment
+                    )
+                except Exception:
+                    status = _activation_blocked(
+                        status, ["clean local HEAD loading failed closed"]
+                    )
+                else:
+                    head_problems = list(local_problems)
+                    if local_head != args.reviewed_head:
+                        head_problems.append(
+                            "reviewed head differs from clean local HEAD"
+                        )
+                    if head_problems:
+                        status = _activation_blocked(status, head_problems)
+                    else:
+                        try:
+                            client = transport_factory(
+                                "Island-Dev-Crew/garnet", token
+                            )
+                            live_result = client.get_object("rulesets/18936562")
+                        except Exception:
+                            status = _activation_blocked(
+                                status,
+                                ["live activation collection failed closed"],
+                            )
+                        else:
+                            status = evaluate_live_activation(
+                                status, live_result, root=root
+                            )
+    elif args.github_token_stdin or args.reviewed_head is not None:
+        status = CeremonyStatus(
+            status.schema,
+            False,
+            False,
+            status.state,
+            status.ruleset_id,
+            status.workflow_sha256,
+            status.bypass_actors,
+            status.activation_problems,
+            (*status.problems, "preparation gate does not accept a credential"),
+        )
+    output_stream = sys.stdout if stdout is None else stdout
+    output_stream.write(
+        json.dumps(asdict(status), ensure_ascii=False, indent=2, sort_keys=True)
+        + "\n"
+    )
+    return 0 if (status.activation_ok if args.activation_gate else status.preparation_ok) else 1
 
 
 if __name__ == "__main__":

@@ -57,6 +57,7 @@ jobs:
       - run: python3 scripts/test_garnet_capability_scope_status.py
       - run: python3 scripts/test_garnet_trust_kernel_review_status.py
       - run: python3 scripts/test_garnet_required_context_contract.py
+      - run: python3 -I scripts/test_garnet_cross_os_policy_manifest.py
       - run: python3 -I scripts/test_garnet_required_context_evaluator.py
       - run: python3 -I scripts/test_garnet_workflow_identity_policy.py
       - run: python3 scripts/test_garnet_workflow_file_policy.py
@@ -302,6 +303,12 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          # Bind the per-OS policy manifest to the reviewed fork head rather
+          # than GitHub's synthetic pull-request merge commit.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c
         with:
           toolchain: stable
@@ -311,11 +318,20 @@ jobs:
       - name: Install pinned workflow-policy parser
         run: "python -I -m pip install --disable-pip-version-check --force-reinstall --no-deps --only-binary=:all: --require-hashes -r scripts/garnet_workflow_yaml_requirements.txt"
       - name: Run governance policy suites identically on every OS
-        run: |
-          python scripts/test_garnet_required_context_contract.py
-          python scripts/test_garnet_workflow_file_policy.py
-          python -I scripts/test_garnet_workflow_yaml_policy.py
-          python -I scripts/test_garnet_workflow_schema_policy.py
+        run: >-
+          python -I scripts/garnet_cross_os_policy_manifest.py
+          --root .
+          --expected-head "${{ github.event.pull_request.head.sha || github.sha }}"
+          --os "${{ runner.os }}"
+          --output "${{ runner.temp }}/governance-policy-${{ runner.os }}.json"
+      - name: Upload exact-head governance policy evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: governance-policy-${{ runner.os }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/governance-policy-${{ runner.os }}.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Install exact Rust MSRV
         if: runner.os == 'Linux'
         run: rustup toolchain install 1.95.0 --profile minimal

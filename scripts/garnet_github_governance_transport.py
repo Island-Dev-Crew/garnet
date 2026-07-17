@@ -393,3 +393,14 @@ class GitHubGovernanceTransport:
             return ObjectResult(response.value, (), response.byte_count)
         except _Failure as failure:
             return ObjectResult(problems=(failure.problem,))
+    def get_repository(self) -> ObjectResult:
+        """Read the bound repository object without inventing an empty endpoint."""
+        try:
+            if not self._configuration_valid:
+                _fail("invalid-configuration")
+            response = self._read(f"{API_ORIGIN}/repos/{self._repo}")
+            if not isinstance(response.value, dict):
+                _fail("object-shape")
+            return ObjectResult(response.value, (), response.byte_count)
+        except _Failure as failure:
+            return ObjectResult(problems=(failure.problem,))

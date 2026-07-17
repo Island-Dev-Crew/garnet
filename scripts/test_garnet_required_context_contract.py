@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import importlib.util
 import json
 import os
@@ -184,6 +185,32 @@ class ContractTests(unittest.TestCase):
     def test_optional_context_must_name_a_producer(self) -> None:
         self.value["optional_contexts"] = ["Unknown"]
         self.assertProblem("absent from producers")
+
+    def test_activated_aggregate_constants_bind_all_32_ordered_producers(self) -> None:
+        root = PATH.resolve().parents[1]
+        inventory = contract.load_inventory(
+            root / ".github/rulesets/required-context-producers.json"
+        )
+        self.assertEqual(inventory.problems, [])
+        self.assertEqual(len(inventory.producers), 32)
+        identity = [
+            (item.context, item.workflow, item.event, item.job, item.matrix)
+            for item in inventory.producers
+        ]
+        semantics = [
+            (item.context, item.semantic_sha256) for item in inventory.producers
+        ]
+        digest = lambda value: hashlib.sha256(  # noqa: E731
+            json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode(
+                "utf-8"
+            )
+        ).hexdigest()
+        self.assertEqual(
+            digest(identity), contract.ACTIVATED_PRODUCER_IDENTITY_SHA256
+        )
+        self.assertEqual(
+            digest(semantics), contract.ACTIVATED_PRODUCER_SEMANTIC_SHA256
+        )
 
 
 class RequiredCheckLedgerTests(unittest.TestCase):

@@ -106,7 +106,7 @@
       "workflow": ".github/workflows/ci.yml",
       "event": "pull_request",
       "job": "agent-contracts",
-      "semantic_sha256": "5447af0a28cd373c3444fa5c13ae693588a1266052880e538fcc625d22b73137"
+      "semantic_sha256": "47f818bfda2580fd5783135be91b912fb7f3018e342501f101ca3a92dd5968a4"
     },
     {
       "context": "build-packages",
@@ -120,7 +120,7 @@
       "workflow": ".github/workflows/ci.yml",
       "event": "pull_request",
       "job": "canonical-examples",
-      "semantic_sha256": "f98a605eb9d09ab5c4adeef6118c44606c4c0f5419b5a45214354661fdbab69e"
+      "semantic_sha256": "c8863c48c0ccb3d23bcdd7c67a11352362ec1903216f88b27fe72d5bcfe580b8"
     },
     {
       "context": "cargo audit",
@@ -141,7 +141,7 @@
       "workflow": ".github/workflows/ci.yml",
       "event": "pull_request",
       "job": "docs",
-      "semantic_sha256": "d63cfa2c693bd7b62c9311b37e97cb8143a23c732cb481c4c4802a36a602d7c5"
+      "semantic_sha256": "c92ca22d6ce6e5de07a7d2955c312a684b73b1e8859614ed3eed2f3f36b38d50"
     },
     {
       "context": "cargo test (macos-latest)",
@@ -151,7 +151,7 @@
       "matrix": {
         "os": "macos-latest"
       },
-      "semantic_sha256": "091ab55a5e725c57af3e49df1c72fd0483338c047d0a6b1d0e2c51363bbf0817"
+      "semantic_sha256": "dfeabab1bff19c5177920fd77412405a377d238e1a105ef507faceb02322f7e3"
     },
     {
       "context": "cargo test (ubuntu-latest)",
@@ -161,7 +161,7 @@
       "matrix": {
         "os": "ubuntu-latest"
       },
-      "semantic_sha256": "bf1f13f91096a4a04d156a4ceb05f582a4dd66e57d092eed1300a1c171ec7102"
+      "semantic_sha256": "71c99e5c453eb51506059117f5ff07e0f188d18078e25c874b8d12515bd720e6"
     },
     {
       "context": "cargo test (windows-latest)",
@@ -171,7 +171,7 @@
       "matrix": {
         "os": "windows-latest"
       },
-      "semantic_sha256": "10896df0216fbaf1dd134244934c988793f519f403e22e3ac89b1dab132a6703"
+      "semantic_sha256": "14d9036a5c441609ee4f7ea912d8ea01a581910bf9889fad96aa721487c62959"
     },
     {
       "context": "cargo-deny check",
@@ -185,7 +185,7 @@
       "workflow": ".github/workflows/ci.yml",
       "event": "pull_request",
       "job": "clippy",
-      "semantic_sha256": "cb75d93b8c30a0f14c90711a327a8a44af67d965e0d8d0bb54d4ee911648bf32"
+      "semantic_sha256": "d359659af6c4914d1418a7b89a5366ecc03d7c8c92c70f61062b233ae48cb93f"
     },
     {
       "context": "machine-truth drift guard",
@@ -226,7 +226,7 @@
       "workflow": ".github/workflows/ci.yml",
       "event": "pull_request",
       "job": "fmt",
-      "semantic_sha256": "96afd331fb63d04ff5926f4d01a45df33d99298c7f05d8ac49b0ba4513ee8472"
+      "semantic_sha256": "b2359e33d30844e25874bda5b860a7b2b43d0f8820ee4ec5a96f258c4248623c"
     },
     {
       "context": "shellcheck-installer",

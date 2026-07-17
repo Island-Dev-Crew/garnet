@@ -5,6 +5,8 @@
 
 # Trust-kernel and governance surfaces are listed explicitly so ownership does
 # not become ambiguous as more directory-specific entries are added later.
+# The current solo-maintainer ruleset does not require code-owner approval;
+# these entries are procedural ownership plus the pre-registered future matrix.
 /.github/ @IslandDevCrew
 /GOVERNANCE.md @IslandDevCrew
 /SECURITY.md @IslandDevCrew
