@@ -1,0 +1,35 @@
+Fresh Ubuntu/WSL clean-clone acceptance
+Candidate: ab6b91eae4fbdd9c85f44131483de12051bb82f5
+Upstream origin/main: 8535e6d3f9023cabc57476991024354dd2741dc1
+Clone: /tmp/garnet-l0-repair2-linux-proof-ab6b91e
+
+Clone procedure:
+git clone --origin fork --branch mission/l0-evidence-durability --single-branch https://github.com/Navigata1/garnet.git /tmp/garnet-l0-repair2-linux-proof-ab6b91e
+git remote add -t main origin https://github.com/Island-Dev-Crew/garnet.git
+git fetch origin
+
+The fork clone fetched only the named repair branch. The upstream origin fetch
+refspec was only refs/heads/main. No fork main and no refs/pull/* were fetched.
+
+HEAD
+ab6b91eae4fbdd9c85f44131483de12051bb82f5
+ORIGIN_MAIN
+8535e6d3f9023cabc57476991024354dd2741dc1
+AUTOCRLF
+unset
+FETCH_REFSPECS
++refs/heads/mission/l0-evidence-durability:refs/remotes/fork/mission/l0-evidence-durability
++refs/heads/main:refs/remotes/origin/main
+ATTR
+ops/lane0/evidence/COMMANDS.json: text: unset
+ops/lane0/evidence/COMMANDS.json: eol: unspecified
+BYTE_PROOF
+files_checked=23
+mismatches=0
+CANDIDATE_OBJECT
+fatal: Not a valid object name 3124ba5ecfa88aa6f2c2c289313860670673cdec^{commit}
+candidate_exit=128
+CLOSEOUT_GATE
+Lane 0 closeout: PASS · evidence 22/22 · ledger 37 entries · denominators 4/4 · launch HOLD · band 3 · S6 advisory
+PULL_REFS
+(none)

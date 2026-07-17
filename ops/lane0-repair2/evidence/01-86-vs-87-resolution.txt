@@ -1,0 +1,25 @@
+Captured: 2026-07-17T03:47Z
+Base: 231aefa91985e5a0520c493c7f0fc3e54d74efc8
+Reviewed candidate: 3124ba5ecfa88aa6f2c2c289313860670673cdec
+Landed commit: aa681bacd2e437bfde3cea0ffc1ca75bdb134aac
+
+$ gh api repos/Island-Dev-Crew/garnet/compare/231aefa91985e5a0520c493c7f0fc3e54d74efc8...3124ba5ecfa88aa6f2c2c289313860670673cdec --jq '.files[].filename'
+candidate_api_count=86
+
+$ git diff --name-only 231aefa91985e5a0520c493c7f0fc3e54d74efc8..aa681bacd2e437bfde3cea0ffc1ca75bdb134aac
+merged_main_count=87
+
+Only in landed range:
+F_Project_Management/W_TRUST/LANE0_TRUST_KERNEL_REVIEW_2026-07-16.md
+
+Only in reviewed candidate range:
+(none)
+
+Conclusion: three-dot versus two-dot semantics are not the cause because the
+reviewed candidate descends from the base. The one-path delta is the disclosed
+trust-kernel companion added after independent review. The new gate derives
+the landed proof only from main-reachable base..merged_commit and subtracts
+that exact post-review-only path when checking the archived 86-path transcript.
+
+No refs/pull/* was fetched. The GitHub compare API was used only to explain the
+historical delta; it is not called by the repository-local gate.

@@ -1,0 +1,44 @@
+Fresh local verification after clean-clone acceptance
+
+$ python3 -I scripts/test_garnet_lane0_closeout_status.py
+Ran 36 tests in 12.923s
+OK (skipped=1)
+
+$ python3 scripts/test_garnet_trust_kernel_review_status.py
+Ran 14 tests in 0.406s
+OK
+
+$ python3 scripts/garnet_trust_kernel_review_status.py --gate --format json
+ok: true
+trust_kernel_touched: true
+review_companion_present: true
+problems: []
+
+$ python3 scripts/check-agent-contracts.py
+agent-contracts: ok (24 contracts)
+
+$ python3 scripts/test_check_agent_contracts.py
+Ran 6 tests in 0.651s
+OK
+
+$ cargo run -q -p xtask -- truth --check
+truth --check: ok (6 fields vs machine truth, 4 stamped surfaces)
+
+$ python3 -I scripts/garnet_frozen_backlog_status.py --gate
+ok: true
+entry_count: 8
+implemented_clause_count: 9
+states: partial 4, planned 4
+findings: []
+
+$ python3 -I scripts/garnet_msrv_status.py --gate
+ok: true
+msrv: 1.95
+active_manifest_count: 18
+findings: []
+
+$ cargo fmt --all -- --check
+exit 0
+
+$ git diff --check
+exit 0

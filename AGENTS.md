@@ -114,6 +114,15 @@ record. The S6 verdict remains `advisory` at band 3/5 until the pending browser
 runtime journey and current Lane 2C duration proof exist; an empty waiver list
 does not turn advisory evidence into enforced governance.
 
+Every `ops/**/evidence/**` path is byte-exact under `.gitattributes` (`-text`).
+Do not normalize or silently reseal evidence to repair a platform checkout;
+the worktree bytes must equal the committed blob bytes on Windows and Unix.
+The archived Lane 0 PR-body candidate remains review provenance only. Its
+changed-path check is reconstructed from the main-reachable
+`base..merged_commit` range plus the exact disclosed post-review companion;
+never require the discarded pre-squash candidate object or a `refs/pull/*`
+fetch to make the closeout gate pass.
+
 ## Research Corpus and Competitive Watch
 
 `research/README.md` is the canonical A–F corpus map. Legacy paths stay live
