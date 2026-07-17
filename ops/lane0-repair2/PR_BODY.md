@@ -60,6 +60,9 @@ squash-durable in #508.
   is the paired trust-kernel companion.
 - [x] `ops/lane0-repair2/state.json`, `ledger.jsonl`, and `journal.md` close the
   bounded ARCHIPELAGO repair at S6.
+- [x] `ops/lane0-repair2/state-of-the-union.html` is regenerated from the
+  namespaced state; the historical live-mission SOTU bytes remain untouched so
+  Lane 0 chronology is not silently resealed.
 
 ### Deferred / out of scope
 
