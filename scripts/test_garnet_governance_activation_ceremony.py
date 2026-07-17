@@ -17,6 +17,11 @@ ROOT = Path(__file__).resolve().parents[1]
 REVIEWED_HEAD = "a" * 40
 
 
+def write_lf(path: Path, text: str) -> None:
+    """Write canonical UTF-8 fixture bytes on every host OS."""
+    path.write_bytes(text.encode("utf-8"))
+
+
 def load(name: str) -> object:
     path = ROOT / "scripts" / f"{name}.py"
     spec = importlib.util.spec_from_file_location(f"_{name}_item7_test", path)
@@ -44,9 +49,9 @@ class CeremonyTests(unittest.TestCase):
     def write(self, root: Path, document: object) -> None:
         path = root / ceremony.CEREMONY_PATH
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(
+        write_lf(
+            path,
             json.dumps(document, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-            encoding="utf-8",
         )
 
     def assert_red(self, document: object, fragment: str) -> None:
@@ -171,7 +176,7 @@ class CeremonyTests(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         path = root / ceremony.CEREMONY_PATH
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text('{"schema":"a","schema":"b"}\n', encoding="utf-8")
+        write_lf(path, '{"schema":"a","schema":"b"}\n')
         result = ceremony.read_ceremony_status(root)
         self.assertFalse(result.preparation_ok)
         self.assertTrue(any("duplicate" in item for item in result.problems))

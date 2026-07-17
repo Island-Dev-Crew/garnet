@@ -29,6 +29,11 @@ def _canonical(data: object) -> bytes:
     return (json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode()
 
 
+def write_lf(path: Path, text: str, *, encoding: str = "utf-8") -> None:
+    """Write canonical fixture bytes without platform newline translation."""
+    path.write_bytes(text.encode(encoding))
+
+
 def _change_digest(
     changes: list[tuple[str, str, str, bytes | None, str, bytes | None]],
 ) -> str:
@@ -69,9 +74,10 @@ class GitRepoFixture(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name).resolve()
         self._git("init")
+        self._git("config", "core.autocrlf", "false")
         self._git("config", "user.email", "author@example.invalid")
         self._git("config", "user.name", "Author")
-        (self.root / "README.md").write_text("base\n", encoding="utf-8")
+        write_lf(self.root / "README.md", "base\n")
         registry = self.root / "F_Project_Management/W_TRUST/LANDED_REVIEW_MARKERS.json"
         registry.parent.mkdir(parents=True, exist_ok=True)
         registry.write_bytes(
@@ -970,14 +976,14 @@ class PreMergeReviewRecordTests(GitRepoFixture):
         self.assertTrue(any("unknown key" in p for p in self._status().problems))
 
     def test_trust_content_changed_after_reviewed_head_is_red(self) -> None:
-        (self.root / "scripts/garnet_alpha.py").write_text("alpha = 2\n", encoding="utf-8")
+        write_lf(self.root / "scripts/garnet_alpha.py", "alpha = 2\n")
         self._git("commit", "-am", "post-review trust mutation")
         self._commit_record(self._record())
         self.assertTrue(any("content digest mismatch" in p for p in self._status().problems))
 
     def test_edit_then_revert_after_reviewed_head_is_still_red(self) -> None:
         path = self.root / "scripts/garnet_alpha.py"
-        path.write_text("alpha = 2\n", encoding="utf-8")
+        write_lf(path, "alpha = 2\n")
         self._git("commit", "-am", "post-review edit")
         path.write_bytes(self.TRUST_BLOBS["scripts/garnet_alpha.py"])
         self._git("commit", "-am", "post-review revert")
@@ -991,7 +997,7 @@ class PreMergeReviewRecordTests(GitRepoFixture):
         self._commit_file("main.txt", b"main\n", "main non-trust")
         self._git("merge", "--no-ff", "--no-commit", "post-review-side")
         path = self.root / "scripts/garnet_alpha.py"
-        path.write_text("alpha = 2\n", encoding="utf-8")
+        write_lf(path, "alpha = 2\n")
         self._git("add", "scripts/garnet_alpha.py")
         self._git("commit", "-m", "merge with trust resolution")
         path.write_bytes(self.TRUST_BLOBS["scripts/garnet_alpha.py"])
@@ -1064,7 +1070,7 @@ class GitGraphControlPlaneTests(GitRepoFixture):
 
         grafts = self.root / ".git" / "info" / "grafts"
         grafts.parent.mkdir(parents=True, exist_ok=True)
-        grafts.write_text(f"{main} {topic}\n", encoding="ascii")
+        write_lf(grafts, f"{main} {topic}\n", encoding="ascii")
 
         grafted = mod.read_status(root=self.root)
         self.assertFalse(grafted.ok, grafted.problems)
@@ -1076,21 +1082,21 @@ class WorktreeStatusTests(GitRepoFixture):
         self.assertEqual([], mod.check_clean_worktree(self.root))
 
     def test_unstaged_change_is_red(self) -> None:
-        (self.root / "README.md").write_text("dirty\n", encoding="utf-8")
+        write_lf(self.root / "README.md", "dirty\n")
         self.assertTrue(any("not clean" in p for p in mod.check_clean_worktree(self.root)))
 
     def test_staged_change_is_red(self) -> None:
         self._commit_file("tracked.txt", b"base\n", "tracked")
-        (self.root / "tracked.txt").write_text("staged\n", encoding="utf-8")
+        write_lf(self.root / "tracked.txt", "staged\n")
         self._git("add", "tracked.txt")
         self.assertTrue(any("not clean" in p for p in mod.check_clean_worktree(self.root)))
 
     def test_untracked_change_is_red(self) -> None:
-        (self.root / "untracked.txt").write_text("new\n", encoding="utf-8")
+        write_lf(self.root / "untracked.txt", "new\n")
         self.assertTrue(any("not clean" in p for p in mod.check_clean_worktree(self.root)))
 
     def test_ambient_git_repository_redirect_cannot_hide_dirty_worktree(self) -> None:
-        (self.root / "untracked.txt").write_text("dirty real checkout\n", encoding="utf-8")
+        write_lf(self.root / "untracked.txt", "dirty real checkout\n")
         with tempfile.TemporaryDirectory() as alternate_temp:
             alternate = Path(alternate_temp).resolve()
             result = subprocess.run(
@@ -1429,7 +1435,7 @@ class DeletedReviewRecordTests(GitRepoFixture):
         (self.root / self.RECORD).unlink()
         trust = self.root / "scripts/garnet_new.py"
         trust.parent.mkdir(parents=True, exist_ok=True)
-        trust.write_text("new = True\n", encoding="utf-8")
+        write_lf(trust, "new = True\n")
         self._git("add", "-A")
         self._git("commit", "-m", "trust change deletes review record")
         status = mod.read_status(base=self.base, head="HEAD", root=self.root)

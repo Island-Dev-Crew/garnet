@@ -17,6 +17,11 @@ ROOT = Path(__file__).resolve().parents[1]
 PATH = Path(__file__).with_name("garnet_cross_os_policy_manifest.py")
 
 
+def write_lf(path: Path, text: str) -> None:
+    """Write canonical UTF-8 fixture bytes on every host OS."""
+    path.write_bytes(text.encode("utf-8"))
+
+
 def load_runner():
     if not PATH.is_file():
         raise AssertionError(f"cross-OS policy manifest runner is missing: {PATH}")
@@ -36,9 +41,10 @@ class CrossOsPolicyManifestTests(unittest.TestCase):
         self.root = Path(self.temp.name) / "repo"
         self.root.mkdir()
         self.git("init", "-q")
+        self.git("config", "core.autocrlf", "false")
         self.git("config", "user.email", "fixture@example.invalid")
         self.git("config", "user.name", "Fixture")
-        (self.root / "tracked.txt").write_text("tracked\n", encoding="utf-8")
+        write_lf(self.root / "tracked.txt", "tracked\n")
         self.git("add", "tracked.txt")
         self.git("commit", "-qm", "fixture")
         self.head = self.git("rev-parse", "HEAD")
@@ -157,7 +163,7 @@ class CrossOsPolicyManifestTests(unittest.TestCase):
                 suite_loader=self.loader(case),
             )
             first = json.loads(self.output.read_text(encoding="utf-8"))
-            (self.root / "tracked.txt").write_text("next head\n", encoding="utf-8")
+            write_lf(self.root / "tracked.txt", "next head\n")
             self.git("add", "tracked.txt")
             self.git("commit", "-qm", "next head")
             next_head = self.git("rev-parse", "HEAD")
@@ -237,7 +243,7 @@ class CrossOsPolicyManifestTests(unittest.TestCase):
         self.assertEqual((exit_code, calls, mismatch["suites"]), (1, 0, []))
         self.assertTrue(any("expected head" in item for item in mismatch["problems"]))
 
-        (self.root / "tracked.txt").write_text("dirty\n", encoding="utf-8")
+        write_lf(self.root / "tracked.txt", "dirty\n")
         exit_code = runner.run_manifest(
             root=self.root,
             expected_head=self.head,
@@ -261,7 +267,7 @@ class CrossOsPolicyManifestTests(unittest.TestCase):
             )
 
         self.git("update-index", "--assume-unchanged", "tracked.txt")
-        (self.root / "tracked.txt").write_text("hidden dirty bytes\n", encoding="utf-8")
+        write_lf(self.root / "tracked.txt", "hidden dirty bytes\n")
         exit_code = runner.run_manifest(
             root=self.root,
             expected_head=self.head,
@@ -279,7 +285,7 @@ class CrossOsPolicyManifestTests(unittest.TestCase):
 
         class MutatingCase(unittest.TestCase):
             def test_mutates_tracked_source(self) -> None:
-                tracked.write_text("mutated during suite\n", encoding="utf-8")
+                write_lf(tracked, "mutated during suite\n")
 
         exit_code = runner.run_manifest(
             root=self.root,

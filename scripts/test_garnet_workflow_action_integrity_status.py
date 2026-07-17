@@ -28,11 +28,17 @@ CACHE = "caa296126883cff596d87d8935842f9db880ef25"
 RUST_TOOLCHAIN = "2c7215f132e9ebf062739d9130488b56d53c060c"
 
 
+def write_lf(path: Path, text: str) -> None:
+    """Write canonical UTF-8 fixture bytes on every host OS."""
+    path.write_bytes(text.encode("utf-8"))
+
+
 class ActionIntegrityTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name).resolve()
         self.git("init", "-q")
+        self.git("config", "core.autocrlf", "false")
         self.git("config", "user.email", "test@example.invalid")
         self.git("config", "user.name", "Test")
         (self.root / ".github/workflows").mkdir(parents=True)
@@ -71,7 +77,8 @@ class ActionIntegrityTests(unittest.TestCase):
         return result.stdout
 
     def write_workflow(self, checkout: str, cache: str) -> None:
-        self.workflow.write_text(
+        write_lf(
+            self.workflow,
             """name: CI
 on:
   pull_request:
@@ -91,7 +98,6 @@ jobs:
       - run: cargo test
 """
             % (checkout, cache),
-            encoding="utf-8",
         )
         self.git("add", ".github/workflows/ci.yml")
 
@@ -104,7 +110,7 @@ jobs:
                 indent=2,
                 sort_keys=True,
             ) + "\n"
-        path.write_text(raw, encoding="utf-8")
+        write_lf(path, raw)
 
     def read(self):
         return status.read_status(self.root)
@@ -124,7 +130,7 @@ jobs:
             "      - uses: dtolnay/rust-toolchain@%s%s\n      - run: cargo test"
             % (RUST_TOOLCHAIN, with_block),
         )
-        self.workflow.write_text(text, encoding="utf-8")
+        write_lf(self.workflow, text)
         self.git("add", ".github/workflows/ci.yml")
         self.write_manifest()
 
@@ -150,11 +156,11 @@ jobs:
         self.assert_red("does not match the reviewed manifest")
 
     def test_unknown_pinned_action_is_red(self) -> None:
-        self.workflow.write_text(
+        write_lf(
+            self.workflow,
             self.workflow.read_text(encoding="utf-8").replace(
                 f"actions/cache@{CACHE}", f"example/unknown@{'1' * 40}"
             ),
-            encoding="utf-8",
         )
         self.git("add", ".github/workflows/ci.yml")
         self.assert_red("absent from the reviewed manifest")

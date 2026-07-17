@@ -304,6 +304,16 @@
       "title": "A structurally green policy could still fail open when its own GitHub enumeration or provenance inputs are incomplete.",
       "severity": "medium",
       "note": "from idea.lock (confidence 7/10)"
+    },
+    {
+      "title": "U-22 platform-native fixture newlines violate canonical-byte gates on Windows — RESOLVED",
+      "severity": "high",
+      "note": "Fixture writers now emit explicit UTF-8 LF bytes and every temporary fixture Git repository sets core.autocrlf=false. No production gate, canonicality rule, CRLF tolerance, or platform skip changed; focused native suites are green on macOS, Debian, and Windows."
+    },
+    {
+      "title": "U-23 W-PLAY proof and provenance closure lacks a byte-exact Windows checkout fence — OPEN",
+      "severity": "high",
+      "note": "A default-autocrlf Windows main clone changes nine W-PLAY text inputs while all attributes are unspecified. The four F1 readiness suites remain pre-existing RED; the exact attribute and object/worktree hashes are Lane 0 repair #3 input and are out of successor scope."
     }
   ],
   "prLog": [],
