@@ -10,7 +10,7 @@
     "northStar": "Rolling review binds exact touched paths, content digests, and reviewer identity and returns RED on every enumeration failure; GOV-009 proves fresh exact-reviewed-head and outcome-verified state while the live no-bypass clause remains explicitly blocked unless Jon provides a dedicated admin-authoritative token; Every external workflow action is pinned to a full immutable SHA and governance transport scripts enter the Jon-only exception boundary; The four policy suites agree across Linux, macOS, and Windows and fail closed on malformed or unreadable inputs; The human 31-to-32 ceremony package and S114 terminus note are prepared without activating, merging, publishing, tagging, or firing",
     "status": "active",
     "started": "2026-07-17",
-    "updated": "2026-07-17T05:56:57Z",
+    "updated": "2026-07-17T09:19:14Z",
     "sessionCount": 1
   },
   "policies": {
@@ -61,26 +61,26 @@
       "id": "P1",
       "title": "Item 2 \u2014 rolling-review v2 fail-closed Ultra pass",
       "goal": "Bind exact touched paths, content digests, reviewer identity, and squash-durable landed content while rejecting every enumeration failure.",
-      "status": "pending",
+      "status": "in_progress",
       "sessionsEstimate": "1-2",
       "gates": [
         {
           "id": "P1-G1",
           "title": "Rolling-review enumeration regressions pass",
           "command": "python3 -I scripts/test_garnet_trust_kernel_review_status.py",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": ""
+          "status": "passed",
+          "evidence": "ops/lane1/evidence/10-rolling-review-v2-design.md",
+          "lastRun": "2026-07-17T09:19:14Z",
+          "notes": "PASS at reviewed trust head b9f8bc9: 110/110 fail-closed regressions; independent exact-head review found no implementation findings."
         },
         {
           "id": "P1-G2",
           "title": "Trust-kernel companion gate passes",
           "command": "python3 scripts/garnet_trust_kernel_review_status.py --gate",
           "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": ""
+          "evidence": "F_Project_Management/W_TRUST/LANE1_GOVERNANCE_ACTIVATION_REVIEW_2026-07-17.md",
+          "lastRun": "2026-07-17T09:19:14Z",
+          "notes": "PENDING: canonical review record targets replacement PR #512; Navigata1 must approve the exact final PR head before the authenticated gate can pass."
         }
       ],
       "tasks": []
@@ -89,26 +89,26 @@
       "id": "P2",
       "title": "Item 1 \u2014 GOV-009 completion boundary",
       "goal": "Prove fresh, exact-reviewed-head, and outcome-verified GitHub state without inheriting credentials; leave live settings/no-bypass explicitly blocked unless Jon provisions the dedicated token.",
-      "status": "pending",
+      "status": "in_progress",
       "sessionsEstimate": "1-2",
       "gates": [
         {
           "id": "P2-G1",
           "title": "GOV-009 transport regressions pass",
           "command": "python3 -I scripts/test_garnet_github_governance_transport.py",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": ""
+          "status": "passed",
+          "evidence": "ops/lane1/evidence/20-item1-gov009-design.md",
+          "lastRun": "2026-07-17T09:19:14Z",
+          "notes": "PASS: 24/24 bounded transport regressions; live runtime execution remains pending the exact final PR head."
         },
         {
           "id": "P2-G2",
           "title": "GOV-009 freshness, exact-head, and outcome regressions pass",
           "command": "python3 -I scripts/test_garnet_github_governance_gate.py",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": ""
+          "status": "passed",
+          "evidence": "ops/lane1/evidence/20-item1-gov009-design.md",
+          "lastRun": "2026-07-17T09:19:14Z",
+          "notes": "PASS: 29/29 evaluator regressions. Fresh/exact/outcome live execution is pending; admin no-bypass remains blocked on U-17."
         }
       ],
       "tasks": []
@@ -117,26 +117,26 @@
       "id": "P3",
       "title": "Item 3 \u2014 semantic producer and condition policy",
       "goal": "Reject run true and if false as vacuous semantics and fingerprint the actual producer behavior rather than structure alone.",
-      "status": "pending",
+      "status": "done",
       "sessionsEstimate": "1",
       "gates": [
         {
           "id": "P3-G1",
           "title": "Required-context semantic producer regressions pass",
           "command": "python3 scripts/test_garnet_required_context_contract.py",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": ""
+          "status": "passed",
+          "evidence": "ops/lane1/evidence/30-item3-semantic-producer-design.md",
+          "lastRun": "2026-07-17T09:19:14Z",
+          "notes": "PASS: 16/16 in the pinned PyYAML 6.0.3 lane environment; active-31 and prepared-32 aggregates are frozen."
         },
         {
           "id": "P3-G2",
           "title": "Workflow schema policy suite passes",
           "command": "python3 -I scripts/test_garnet_workflow_schema_policy.py",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": ""
+          "status": "passed",
+          "evidence": "ops/lane1/evidence/30-item3-semantic-producer-design.md",
+          "lastRun": "2026-07-17T09:19:14Z",
+          "notes": "PASS: 6/6; vacuous true commands and false job/step conditions remain RED."
         }
       ],
       "tasks": []
@@ -145,26 +145,26 @@
       "id": "P4",
       "title": "Item 4 \u2014 immutable actions and U-16 boundary",
       "goal": "Reduce mutable external action references to zero with a reviewed digest-update path and add scripts/garnet_github_* to the Jon-only governance exception set.",
-      "status": "pending",
+      "status": "done",
       "sessionsEstimate": "1-2",
       "gates": [
         {
           "id": "P4-G1",
           "title": "Workflow file policy suite passes",
           "command": "python3 scripts/test_garnet_workflow_file_policy.py",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": ""
+          "status": "passed",
+          "evidence": "ops/lane1/evidence/40-item4-action-integrity.md",
+          "lastRun": "2026-07-17T09:19:14Z",
+          "notes": "PASS: workflow file suite 10/10."
         },
         {
           "id": "P4-G2",
           "title": "No mutable external action reference remains",
           "command": "python3 -I scripts/garnet_workflow_action_integrity_status.py --gate",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": ""
+          "status": "passed",
+          "evidence": "ops/lane1/evidence/40-item4-action-integrity.md",
+          "lastRun": "2026-07-17T09:19:14Z",
+          "notes": "PASS in pinned PyYAML environment: 90/90 credited action occurrences, 0 mutable; U-16 is procedural/future ownership, not claimed active CODEOWNER enforcement."
         }
       ],
       "tasks": []
@@ -173,44 +173,44 @@
       "id": "P5",
       "title": "Items 5 and 6 \u2014 cross-OS parity and fail-soft repair",
       "goal": "Repair macOS /var resolution and NFD handling, and make malformed vendored-dependency plus unreadable helper/discovery inputs fail closed on every platform.",
-      "status": "pending",
+      "status": "in_progress",
       "sessionsEstimate": "1-2",
       "gates": [
         {
           "id": "P5-G1",
           "title": "Required-context contract suite passes",
           "command": "python3 scripts/test_garnet_required_context_contract.py",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": ""
+          "status": "passed",
+          "evidence": "ops/lane1/evidence/50-item5-macos-parity.md",
+          "lastRun": "2026-07-17T09:19:14Z",
+          "notes": "PASS on macOS: 16/16; Linux and Windows exact-head manifests remain pending CI."
         },
         {
           "id": "P5-G2",
           "title": "Workflow file policy suite passes",
           "command": "python3 scripts/test_garnet_workflow_file_policy.py",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": ""
+          "status": "passed",
+          "evidence": "ops/lane1/evidence/50-item5-macos-parity.md",
+          "lastRun": "2026-07-17T09:19:14Z",
+          "notes": "PASS on macOS: 10/10 with host-independent NFC/NFD raw-index proof."
         },
         {
           "id": "P5-G3",
           "title": "Workflow YAML policy suite passes",
           "command": "python3 -I scripts/test_garnet_workflow_yaml_policy.py",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": ""
+          "status": "passed",
+          "evidence": "ops/lane1/evidence/50-item5-macos-parity.md",
+          "lastRun": "2026-07-17T09:19:14Z",
+          "notes": "PASS on macOS in pinned PyYAML environment: 4/4."
         },
         {
           "id": "P5-G4",
           "title": "Workflow schema policy suite passes",
           "command": "python3 -I scripts/test_garnet_workflow_schema_policy.py",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": ""
+          "status": "passed",
+          "evidence": "ops/lane1/evidence/50-item5-macos-parity.md",
+          "lastRun": "2026-07-17T09:19:14Z",
+          "notes": "PASS on macOS in pinned PyYAML environment: 6/6. Exact-head macOS aggregate is 36/36 with zero skips; Linux and Windows pending."
         }
       ],
       "tasks": []
@@ -219,26 +219,26 @@
       "id": "P6",
       "title": "Item 7 \u2014 base-controlled ceremony package",
       "goal": "Prepare old-base workflow and human 31-to-32 activation evidence without activating or changing live rulesets.",
-      "status": "pending",
+      "status": "in_progress",
       "sessionsEstimate": "1",
       "gates": [
         {
           "id": "P6-G1",
           "title": "Base-controlled 31-to-32 ceremony contract passes",
           "command": "python3 -I scripts/test_garnet_governance_activation_ceremony.py",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": ""
+          "status": "passed",
+          "evidence": "ops/lane1/evidence/70-item7-ceremony.md",
+          "lastRun": "2026-07-17T09:19:14Z",
+          "notes": "PASS: ceremony 10/10 and base-control 4/4; preparation GREEN, activation RED only on U-17."
         },
         {
           "id": "P6-G2",
           "title": "Trust-kernel companion gate passes",
           "command": "python3 scripts/garnet_trust_kernel_review_status.py --gate",
           "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": ""
+          "evidence": "F_Project_Management/W_TRUST/LANE1_GOVERNANCE_ACTIVATION_REVIEW_2026-07-17.md",
+          "lastRun": "2026-07-17T09:19:14Z",
+          "notes": "PENDING the same exact-final-head authenticated approval as P1-G2."
         }
       ],
       "tasks": []
@@ -294,7 +294,7 @@
     {
       "label": "Definition-of-done claims verified",
       "baseline": "0",
-      "current": "0",
+      "current": "2",
       "target": "6",
       "direction": "up"
     }
@@ -304,16 +304,45 @@
       "title": "A structurally green policy could still fail open when its own GitHub enumeration or provenance inputs are incomplete.",
       "severity": "medium",
       "note": "from idea.lock (confidence 7/10)"
+    },
+    {
+      "title": "U-17 admin-authoritative live no-bypass proof is not provisioned.",
+      "severity": "high",
+      "note": "The bootstrap implements a separate explicit-stdin admin gate but does not execute or fake it; band 3 remains the ceiling."
+    },
+    {
+      "title": "Cross-OS parity is proven only on macOS at the reviewed trust head.",
+      "severity": "high",
+      "note": "Linux and Windows exact-final-head zero-skip artifacts must match the pinned parity digest before Item 5 closes."
     }
   ],
-  "prLog": [],
+  "prLog": [
+    {
+      "number": 511,
+      "status": "closed-unmerged",
+      "url": "https://github.com/Island-Dev-Crew/garnet/pull/511",
+      "scope": "Superseded because Navigata1 was both PR author and required reviewer, making authenticated independence unsatisfiable."
+    },
+    {
+      "number": 512,
+      "status": "draft-open",
+      "url": "https://github.com/Island-Dev-Crew/garnet/pull/512",
+      "scope": "Replacement bootstrap authored by IslandDevCrew from the same Navigata1 fork branch; Jon-only squash merge."
+    }
+  ],
   "resume": {
     "activePhase": "P1",
     "nextActions": [
-      "Implement Item 2 first: bind exact touched paths, content digests, reviewer identity, and squash-durable landed content; every enumeration failure is RED."
+      "Push the canonical PR #512 review record, then Navigata1 independently approves the exact final PR head; rerun the explicit-token rolling-review gate until ok:true with no problems.",
+      "Let the final-head CI chain produce Ubuntu, Windows, and macOS policy manifests; require 36/36, zero skips/failures/errors, and the pinned parity digest on all three.",
+      "Run the non-admin GOV-009 runtime gate at the exact final head without inheriting an ambient credential; keep the admin clause blocked unless Jon provisions U-17.",
+      "Jon squash-merges the bootstrap only after its gates are green; then open the separate activation/terminus PR for the landed marker, 31-to-32 readback, and arc closure."
     ],
     "blockers": [
-      "U-17: the live settings/no-bypass readback remains blocked until Jon provisions a dedicated admin-authoritative token; no ambient or fork credential may substitute."
+      "Authenticated rolling-review approval from Navigata1 is not yet attached to the exact final PR #512 head.",
+      "Linux and Windows exact-head zero-skip parity artifacts do not yet exist.",
+      "U-17: the live settings/no-bypass readback remains blocked until Jon provisions a dedicated admin-authoritative token; no ambient or fork credential may substitute.",
+      "The bootstrap must be Jon-merged before the base-controlled activation/terminus PR can require context 32 without deadlock."
     ],
     "conventions": [
       "One task = one branch = one PR",
@@ -327,8 +356,15 @@
     "planLock": "ops/lane1/plan.lock.json",
     "loop": {
       "cycle": 1,
-      "stage": "S2",
-      "loopbacks": []
+      "stage": "S4",
+      "loopbacks": [
+        {
+          "fromGate": "G4",
+          "toStage": "S2",
+          "reason": "Two definition-of-done claims remain unverified: three-OS parity lacks Linux/Windows artifacts and the 32nd-context no-bypass claim lacks U-17 admin evidence; the bootstrap stays open at band 3 rather than promoting either claim.",
+          "at": "2026-07-17T09:19:14Z"
+        }
+      ]
     },
     "governance": {
       "ledgerRunId": "lane1-20260717-cede73c",
