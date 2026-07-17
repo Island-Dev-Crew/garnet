@@ -9,6 +9,7 @@
 #![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 
 pub mod audit_deps;
+pub(crate) mod bound_source;
 pub mod cache;
 pub mod cap_manifest;
 pub mod cmd;

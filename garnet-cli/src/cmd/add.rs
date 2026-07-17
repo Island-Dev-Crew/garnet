@@ -580,59 +580,92 @@ pub(crate) struct DependencyEntry {
     pub vendor_rel: PathBuf,
 }
 
-/// Parse `[dependencies]` lines in `Garnet.toml` at `project_root` and
-/// return each entry's `(name, vendor_rel)` pair. Returns an empty Vec when
-/// `Garnet.toml` is missing or the `[dependencies]` block is empty. Mirrors
-/// the line-based writer in `update_manifest`; not a full TOML parser.
+/// Parse the TOML 1.0 semantic `dependencies` table and return each entry's
+/// `(name, vendor_rel)` pair. A real TOML parser is required here: equivalent
+/// declarations may use quoted/spaced headers, dotted keys, a top-level inline
+/// table, or dependency subtables. Duplicate or malformed keys are rejected by
+/// the parser rather than being silently collapsed by a line scanner.
 pub(crate) fn read_dependency_table(project_root: &Path) -> std::io::Result<Vec<DependencyEntry>> {
     let manifest_path = project_root.join("Garnet.toml");
     if !manifest_path.exists() {
         return Ok(Vec::new());
     }
     let text = fs::read_to_string(&manifest_path)?;
+    let document = text.parse::<toml::Value>().map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            format!("invalid Garnet.toml: {error}"),
+        )
+    })?;
+    let Some(dependencies) = document.get("dependencies") else {
+        return Ok(Vec::new());
+    };
+    let table = dependencies.as_table().ok_or_else(|| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "Garnet.toml dependencies must be a table",
+        )
+    })?;
     let mut out: Vec<DependencyEntry> = Vec::new();
-    let mut in_deps = false;
-    for raw in text.lines() {
-        let trimmed = raw.trim();
-        if trimmed.is_empty() || trimmed.starts_with('#') {
-            continue;
+    for (name, declaration) in table {
+        if !is_valid_dep_name(name) {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("invalid dependency name: {name}"),
+            ));
         }
-        if trimmed == "[dependencies]" {
-            in_deps = true;
-            continue;
+        let declaration = declaration.as_table().ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("dependency {name} must be a table"),
+            )
+        })?;
+        let vendor = declaration
+            .get("vendor")
+            .and_then(toml::Value::as_str)
+            .ok_or_else(|| {
+                std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    format!("dependency {name} must declare a string vendor path"),
+                )
+            })?;
+        let path_shape = declaration.len() == 2
+            && declaration
+                .get("path")
+                .and_then(toml::Value::as_str)
+                .is_some_and(|value| !value.is_empty())
+            && declaration.contains_key("vendor");
+        let registry_shape = declaration.len() == 3
+            && declaration
+                .get("registry")
+                .and_then(toml::Value::as_str)
+                .is_some_and(|value| !value.is_empty())
+            && declaration
+                .get("version")
+                .and_then(toml::Value::as_str)
+                .is_some_and(|value| !value.is_empty())
+            && declaration.contains_key("vendor");
+        if !path_shape && !registry_shape {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!(
+                    "dependency {name} must use exactly path+vendor or registry+version+vendor string keys"
+                ),
+            ));
         }
-        if trimmed.starts_with('[') && trimmed.ends_with(']') {
-            in_deps = false;
-            continue;
+        let expected_vendor = format!(".garnet/vendor/{name}");
+        if vendor != expected_vendor || Path::new(vendor).is_absolute() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("vendor path for {name} must be exactly {expected_vendor}"),
+            ));
         }
-        if !in_deps {
-            continue;
-        }
-        if let Some((name, vendor)) = parse_dep_inline(trimmed) {
-            if is_valid_dep_name(&name) {
-                out.push(DependencyEntry {
-                    name,
-                    vendor_rel: PathBuf::from(vendor),
-                });
-            }
-        }
+        out.push(DependencyEntry {
+            name: name.clone(),
+            vendor_rel: PathBuf::from(vendor),
+        });
     }
     Ok(out)
-}
-
-/// Pull `<name>` and `vendor = "..."` out of one inline-table dependency
-/// line: `mylib = { path = "...", vendor = ".garnet/vendor/mylib" }`.
-/// Returns `None` if either field is missing or the shape doesn't match.
-fn parse_dep_inline(line: &str) -> Option<(String, String)> {
-    let eq_pos = line.find(" = ")?;
-    let name = line[..eq_pos].trim().to_string();
-    let rest = line[eq_pos + 3..].trim();
-    let inside = rest.strip_prefix('{')?.strip_suffix('}')?.trim();
-    let vendor_key = "vendor = \"";
-    let v_start = inside.find(vendor_key)?;
-    let after = &inside[v_start + vendor_key.len()..];
-    let v_end = after.find('"')?;
-    Some((name, after[..v_end].to_string()))
 }
 
 /// Write `Garnet.lock` recording every dep + every file hash. Idempotent:
