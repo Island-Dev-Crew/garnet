@@ -24,7 +24,8 @@ SPEC.loader.exec_module(contract)
 class ContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory()
-        self.path = Path(self.temp.name) / "inventory.json"
+        self.root = Path(self.temp.name).resolve()
+        self.path = self.root / "inventory.json"
         self.value = {
             "schema": contract.SCHEMA,
             "target_branch": "main",
@@ -35,6 +36,7 @@ class ContractTests(unittest.TestCase):
                     "workflow": ".github/workflows/checks.yml",
                     "event": "pull_request",
                     "job": "static",
+                    "semantic_sha256": "1" * 64,
                 },
                 {
                     "context": "Future",
@@ -42,6 +44,7 @@ class ContractTests(unittest.TestCase):
                     "event": "pull_request_target",
                     "job": "future",
                     "matrix": {"os": "ubuntu-latest"},
+                    "semantic_sha256": "2" * 64,
                 },
             ],
         }
@@ -89,6 +92,15 @@ class ContractTests(unittest.TestCase):
         self.assertProblem("exactly one binding")
         self.value["producers"][1]["matrix"] = ["linux"]
         self.assertProblem("exactly one binding")
+
+    def test_semantic_fingerprint_is_required_and_exact(self) -> None:
+        del self.value["producers"][0]["semantic_sha256"]
+        self.assertProblem("keys are not exact")
+        self.value["producers"][0]["semantic_sha256"] = "1" * 64
+        for value in ("", "1" * 63, "A" * 64, "g" * 64, True):
+            with self.subTest(value=value):
+                self.value["producers"][0]["semantic_sha256"] = value
+                self.assertProblem("semantic_sha256")
 
     def test_branch_schema_and_keys_are_exact(self) -> None:
         self.value["target_branch"] = "main\nattacker"
@@ -140,17 +152,34 @@ class ContractTests(unittest.TestCase):
         self.assertIn("size limit", contract.load_inventory(self.path).problems[0])
 
     def test_directory_and_symlink_inventory_fail(self) -> None:
-        directory = Path(self.temp.name) / "directory"
+        directory = self.root / "directory"
         directory.mkdir()
         self.assertIn("not a regular file", contract.load_inventory(directory).problems[0])
-        target = Path(self.temp.name) / "target.json"
+        target = self.root / "target.json"
         target.write_text(json.dumps(self.value), encoding="utf-8")
-        link = Path(self.temp.name) / "link.json"
+        link = self.root / "link.json"
         try:
             os.symlink(target, link)
         except OSError as exc:
             self.skipTest(f"symlink creation unavailable: {exc}")
-        self.assertIn("symlink/reparse", contract.load_inventory(link).problems[0])
+        problem = contract.load_inventory(link).problems[0]
+        self.assertIn("symlink/reparse", problem)
+        self.assertIn(str(link), problem)
+
+    @unittest.skipUnless(hasattr(os, "symlink"), "symlink API unavailable")
+    def test_ancestor_symlink_inventory_fails(self) -> None:
+        target_directory = self.root / "target-directory"
+        target_directory.mkdir()
+        nested = target_directory / "inventory.json"
+        nested.write_text(json.dumps(self.value), encoding="utf-8")
+        alias = self.root / "directory-alias"
+        try:
+            os.symlink(target_directory, alias)
+        except OSError as exc:
+            self.skipTest(f"directory symlink creation unavailable: {exc}")
+        problem = contract.load_inventory(alias / nested.name).problems[0]
+        self.assertIn("symlink/reparse", problem)
+        self.assertIn(str(alias), problem)
 
     def test_optional_context_must_name_a_producer(self) -> None:
         self.value["optional_contexts"] = ["Unknown"]
@@ -160,7 +189,7 @@ class ContractTests(unittest.TestCase):
 class RequiredCheckLedgerTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory()
-        self.path = Path(self.temp.name) / "ruleset.json"
+        self.path = Path(self.temp.name).resolve() / "ruleset.json"
         self.value = {
             "rules": [
                 {"type": "deletion"},

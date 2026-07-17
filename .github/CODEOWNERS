@@ -9,6 +9,6 @@
 /GOVERNANCE.md @IslandDevCrew
 /SECURITY.md @IslandDevCrew
 /ops/mission/ @IslandDevCrew
-/scripts/garnet_github_governance_status.py @IslandDevCrew
+/scripts/garnet_github_* @IslandDevCrew
 /scripts/garnet_proof_source_epoch.py @IslandDevCrew
 /F_Project_Management/GARNET_v0_5_READINESS_BASELINE.json @IslandDevCrew

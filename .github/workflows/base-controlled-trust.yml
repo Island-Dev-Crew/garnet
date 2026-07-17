@@ -1,0 +1,91 @@
+name: Base-controlled trust
+
+on:
+  pull_request_target:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  policy:
+    name: Base-controlled trust policy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out the exact trusted base
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          submodules: false
+
+      - name: Select Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.12"
+
+      - name: Install the base-owned pinned YAML parser
+        run: >-
+          python3 -I -m pip install --disable-pip-version-check --force-reinstall
+          --no-deps --only-binary=:all: --require-hashes
+          -r scripts/garnet_workflow_yaml_requirements.txt
+
+      - name: Fetch base and candidate into an inert bare repository
+        env:
+          BASE_REPOSITORY: ${{ github.event.pull_request.base.repo.full_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CANDIDATE_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          CANDIDATE_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          case "${BASE_REPOSITORY}" in
+            Island-Dev-Crew/garnet) ;;
+            *) exit 1 ;;
+          esac
+          case "${CANDIDATE_REPOSITORY}" in
+            [A-Za-z0-9_.-]*/[A-Za-z0-9_.-]*) ;;
+            *) exit 1 ;;
+          esac
+          case "${BASE_SHA}" in
+            ""|*[!0-9a-f]*) exit 1 ;;
+          esac
+          case "${CANDIDATE_SHA}" in
+            ""|*[!0-9a-f]*) exit 1 ;;
+          esac
+          test "${#BASE_SHA}" -eq 40
+          test "${#CANDIDATE_SHA}" -eq 40
+          candidate_git="${RUNNER_TEMP}/garnet-candidate.git"
+          rm -rf -- "${candidate_git}"
+          git init --bare "${candidate_git}"
+          git -C "${candidate_git}" remote add origin "https://github.com/${BASE_REPOSITORY}.git"
+          git -C "${candidate_git}" -c protocol.version=2 fetch --no-tags --no-recurse-submodules origin "${BASE_SHA}"
+          git -C "${candidate_git}" update-ref refs/remotes/origin/main "${BASE_SHA}"
+          git -C "${candidate_git}" remote add candidate "https://github.com/${CANDIDATE_REPOSITORY}.git"
+          git -C "${candidate_git}" -c protocol.version=2 fetch --no-tags --no-recurse-submodules candidate "${CANDIDATE_SHA}"
+          test "$(git -C "${candidate_git}" rev-parse --is-bare-repository)" = true
+          test "$(git -C "${candidate_git}" rev-parse FETCH_HEAD^{commit})" = "${CANDIDATE_SHA}"
+
+      - name: Evaluate candidate as inert Git objects with base-owned policy
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CANDIDATE_SHA: ${{ github.event.pull_request.head.sha }}
+          PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
+          REVIEW_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          set +x
+          review_token="${REVIEW_TOKEN:?event-scoped read-only review token is required}"
+          unset REVIEW_TOKEN GARNET_REVIEW_GITHUB_TOKEN GH_TOKEN GITHUB_TOKEN
+          printf '%s' "${review_token}" | python3 -I scripts/garnet_base_controlled_trust_status.py \
+            --candidate-git-dir "${RUNNER_TEMP}/garnet-candidate.git" \
+            --repository Island-Dev-Crew/garnet \
+            --pull-request "${PULL_REQUEST_NUMBER}" \
+            --base-sha "${BASE_SHA}" \
+            --candidate-sha "${CANDIDATE_SHA}" \
+            --review-token-stdin \
+            --gate
+          unset review_token

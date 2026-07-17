@@ -21,20 +21,22 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c
+        with:
+          toolchain: stable
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 24
           cache: npm
           cache-dependency-path: editors/vscode/package-lock.json
 
       - name: Cache cargo registry + target
-        uses: actions/cache@v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25
         with:
           path: |
             ~/.cargo/registry
@@ -47,7 +49,7 @@ jobs:
         run: ./scripts/package_garnet_vscode_extension.sh --output-dir target/vscode
 
       - name: Upload VSIX artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
           name: garnet-vscode-extension-${{ matrix.os }}
           path: |
@@ -67,7 +69,7 @@ jobs:
       contents: write
     steps:
       - name: Fetch VSIX artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           pattern: garnet-vscode-extension-*
           merge-multiple: true
@@ -80,7 +82,7 @@ jobs:
           ls -la release-vsix
 
       - name: Publish VSIX assets
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65
         with:
           files: release-vsix/*.vsix
           fail_on_unmatched_files: true

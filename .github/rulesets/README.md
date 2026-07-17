@@ -102,6 +102,44 @@ to `read` and `can_approve_pull_request_reviews` to `false`. The live drift gate
 counts only an admin-authenticated read as authoritative for the empty bypass
 ledger; anonymous/public output is diagnostic only.
 
+### External Action pin updates
+
+Every external workflow action is bound to a full 40-character commit in
+`external-action-pins.json`; mutable tag or branch references are forbidden,
+including release publishing. The manifest records the reviewed upstream ref
+and peeled commit, while CI remains network-free and verifies exact equality
+between all workflow occurrences and that manifest.
+
+An update is an explicit human-reviewed digest change: resolve the upstream
+tag/branch with authoritative Git refs, peel annotated tags to commits, update
+the manifest and every occurrence together, run the workflow file/YAML/schema,
+Node-runtime, MSRV, and action-integrity suites, attach a W_TRUST companion with
+fresh Linux/macOS/Windows evidence, and leave the PR for Jon. Do not schedule an
+automatic updater, trust a version comment, or weaken the gate when a ref cannot
+be resolved. The `stable` and `nightly` Rust channels remain runtime channel
+choices even though the action implementation that selects them is immutable.
+Because `dtolnay/rust-toolchain` normally derives the channel from its action
+ref, the full-SHA form is always paired with an explicit `with.toolchain`
+input; omitting that input is a policy error.
+
+### Required-context semantic fingerprints
+
+Producer identity is not satisfied by a workflow path, job id, and emitted
+name alone. Each row in `required-context-producers.json` carries a lowercase
+SHA-256 over the immutable projection of the workflow-level trigger and policy,
+the selected job plus its complete transitive dependency jobs, their ordered
+steps, and the selected matrix member. The pre-activation gate separately pins
+the ordered aggregate of all 31 active fingerprints, so a candidate cannot
+coordinate a workflow behavior change with a freshly invented digest.
+
+The schema gate also rejects the exact vacuous forms `run: "true"`,
+`if: "false"`, and `if: "${{ false }}"` before a producer can be projected.
+The semantic digest is style-independent but byte-stable over the resulting
+canonical AST; ordinary YAML formatting is not treated as behavior, while a
+command, action, condition, environment, permission, trigger, dependency, or
+matrix-member change is. Updating a producer's behavior therefore requires the
+same reviewed trust-kernel path as updating the workflow itself.
+
 ### Workflow update maintenance window
 
 The base-controlled workflow is byte-immutable while its context is required.

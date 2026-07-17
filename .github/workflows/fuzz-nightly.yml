@@ -40,11 +40,13 @@ jobs:
     env:
       MAX_TOTAL_TIME: ${{ github.event.inputs.max_total_time || '3600' }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
       - name: Install Rust nightly (cargo-fuzz requires nightly)
-        uses: dtolnay/rust-toolchain@nightly
+        uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c
+        with:
+          toolchain: nightly
       - name: Cargo cache
-        uses: actions/cache@v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25
         with:
           path: |
             ~/.cargo/registry
@@ -73,13 +75,13 @@ jobs:
           cargo +nightly fuzz run parse_input -- -max_total_time="${max_total_time}"
       - name: Upload crash inputs (if any)
         if: failure()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
           name: fuzz-crash-inputs
           path: garnet-parser-v0.3/fuzz/artifacts/
           retention-days: 30
       - name: Upload corpus snapshot for inspection
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
           name: fuzz-corpus-snapshot
           path: garnet-parser-v0.3/fuzz/corpus/

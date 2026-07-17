@@ -71,7 +71,7 @@ a tag autonomously.
   backends), with seccomp applied on **Linux only**.
 - **Four integrity rules:** (1) a PR may not modify the gate it merges under
   (CI / dogfood skill / diff-caps thresholds / capability-manifest standard
-  changes are **human-merge-only**); (2) a capability-surface widening must fail
+  / `scripts/garnet_github_*` changes are **human-merge-only**); (2) a capability-surface widening must fail
   the gate and block merge; (3) every autonomous merge records agent / model /
   gate-version; (4) the release **tag stays Jon's**.
 - Update docs / conformance / dogfood / CHANGELOG ledgers when readiness changes.

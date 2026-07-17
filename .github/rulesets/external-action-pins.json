@@ -1,0 +1,96 @@
+{
+  "entries": [
+    {
+      "action": "EmbarkStudios/cargo-deny-action",
+      "commit": "3c6349835b2b7b196a839186cb8b78e02f7b5f25",
+      "resolved_at": "2026-07-17T06:07:40Z",
+      "source_kind": "tag",
+      "source_ref": "v2"
+    },
+    {
+      "action": "actions/cache",
+      "commit": "caa296126883cff596d87d8935842f9db880ef25",
+      "resolved_at": "2026-07-17T06:07:40Z",
+      "source_kind": "tag",
+      "source_ref": "v5"
+    },
+    {
+      "action": "actions/checkout",
+      "commit": "df4cb1c069e1874edd31b4311f1884172cec0e10",
+      "resolved_at": "2026-07-17T06:07:40Z",
+      "source_kind": "tag",
+      "source_ref": "v6"
+    },
+    {
+      "action": "actions/download-artifact",
+      "commit": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+      "resolved_at": "2026-07-17T06:07:40Z",
+      "source_kind": "tag",
+      "source_ref": "v8"
+    },
+    {
+      "action": "actions/setup-node",
+      "commit": "49933ea5288caeca8642d1e84afbd3f7d6820020",
+      "resolved_at": "2026-07-17T06:07:40Z",
+      "source_kind": "tag",
+      "source_ref": "v4"
+    },
+    {
+      "action": "actions/setup-node",
+      "commit": "249970729cb0ef3589644e2896645e5dc5ba9c38",
+      "resolved_at": "2026-07-17T06:07:40Z",
+      "source_kind": "tag",
+      "source_ref": "v6"
+    },
+    {
+      "action": "actions/setup-python",
+      "commit": "ece7cb06caefa5fff74198d8649806c4678c61a1",
+      "resolved_at": "2026-07-17T06:07:40Z",
+      "source_kind": "tag",
+      "source_ref": "v6"
+    },
+    {
+      "action": "actions/upload-artifact",
+      "commit": "b7c566a772e6b6bfb58ed0dc250532a479d7789f",
+      "resolved_at": "2026-07-17T06:07:40Z",
+      "source_kind": "tag",
+      "source_ref": "v6"
+    },
+    {
+      "action": "dtolnay/rust-toolchain",
+      "commit": "2c7215f132e9ebf062739d9130488b56d53c060c",
+      "resolved_at": "2026-07-17T06:46:19Z",
+      "source_kind": "branch",
+      "source_ref": "master"
+    },
+    {
+      "action": "github/codeql-action/analyze",
+      "commit": "7188fc363630916deb702c7fdcf4e481b751f97a",
+      "resolved_at": "2026-07-17T06:07:40Z",
+      "source_kind": "tag",
+      "source_ref": "v4"
+    },
+    {
+      "action": "github/codeql-action/autobuild",
+      "commit": "7188fc363630916deb702c7fdcf4e481b751f97a",
+      "resolved_at": "2026-07-17T06:07:40Z",
+      "source_kind": "tag",
+      "source_ref": "v4"
+    },
+    {
+      "action": "github/codeql-action/init",
+      "commit": "7188fc363630916deb702c7fdcf4e481b751f97a",
+      "resolved_at": "2026-07-17T06:07:40Z",
+      "source_kind": "tag",
+      "source_ref": "v4"
+    },
+    {
+      "action": "softprops/action-gh-release",
+      "commit": "3bb12739c298aeb8a4eeaf626c5b8d85266b0e65",
+      "resolved_at": "2026-07-17T06:07:40Z",
+      "source_kind": "tag",
+      "source_ref": "v2"
+    }
+  ],
+  "schema": "garnet.github_action_pins/v1"
+}
