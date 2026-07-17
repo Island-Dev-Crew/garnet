@@ -24,12 +24,20 @@ ROOT = Path(__file__).resolve().parents[1]
 class WasmReadinessTests(unittest.TestCase):
     def test_committed_wv5_build_and_node_proof_pass(self) -> None:
         result = wasm.read_readiness()
-        self.assertEqual("garnet.wasm_readiness/v2", result.schema)
+        self.assertEqual("garnet.wasm_readiness/v3", result.schema)
         self.assertTrue(result.wasm_crate_present)
         self.assertTrue(result.windows_proof_valid)
         self.assertTrue(result.wasm_build_passed)
         self.assertTrue(result.node_execution_passed)
         self.assertTrue(result.owned_bits_ready)
+
+    def test_committed_browser_package_and_proof_promote_browser_readiness(self) -> None:
+        result = wasm.read_readiness()
+        self.assertTrue(result.browser_adapter_present)
+        self.assertTrue(result.browser_package_valid)
+        self.assertTrue(result.browser_proof_valid)
+        self.assertTrue(result.browser_ready)
+        self.assertEqual([], result.blockers)
 
     def test_local_tools_are_observations_not_product_blockers(self) -> None:
         with mock.patch.object(wasm, "_has_wasm32_target", return_value=False), mock.patch.object(
@@ -91,17 +99,60 @@ class WasmReadinessTests(unittest.TestCase):
             "browser adapter" in joined,
         )
         self.assertEqual(
-            not result.browser_proof_present,
+            not result.browser_proof_valid,
             "Playwright" in joined,
+        )
+
+    def test_invalid_browser_proof_cannot_promote_or_pass_the_gate(self) -> None:
+        with tempfile.NamedTemporaryFile(
+            "w", suffix=".json", delete=False, encoding="utf-8"
+        ) as handle:
+            json.dump({"schema": "garnet.w-play.browser-proof/1", "verdict": "pass"}, handle)
+            temp_path = Path(handle.name)
+        try:
+            with mock.patch.object(wasm, "BROWSER_PROOF", temp_path):
+                result = wasm.read_readiness()
+                self.assertFalse(result.browser_proof_valid)
+                self.assertFalse(result.browser_ready)
+                self.assertEqual(1, wasm.main(["--gate", "--format", "json"]))
+        finally:
+            os.unlink(temp_path)
+
+    def test_stale_browser_runtime_digest_cannot_promote(self) -> None:
+        proof = wasm.read_browser_proof()
+        self.assertIsNotNone(proof)
+        assert proof is not None
+        stale = json.loads(json.dumps(proof))
+        stale["runtime_inputs"]["sha256"] = "0" * 64
+        self.assertFalse(wasm.browser_proof_valid(stale))
+
+    def test_changed_browser_runtime_file_metadata_cannot_promote(self) -> None:
+        proof = wasm.read_browser_proof()
+        self.assertIsNotNone(proof)
+        assert proof is not None
+        stale = json.loads(json.dumps(proof))
+        metadata = stale["runtime_inputs"]["files"]["docs/playground/live.js"]
+        metadata["bytes"] += 1
+        self.assertFalse(wasm.browser_proof_valid(stale))
+
+    def test_browser_proof_binds_current_inputs_and_locked_playwright(self) -> None:
+        proof = wasm.read_browser_proof()
+        self.assertIsNotNone(proof)
+        assert proof is not None
+        self.assertEqual(wasm.current_browser_runtime_inputs(), proof["runtime_inputs"])
+        self.assertEqual(
+            wasm.expected_playwright_identity(),
+            proof["toolchain"]["playwright"],
         )
 
     def test_markdown_separates_node_proof_from_browser_claim(self) -> None:
         markdown = wasm.render_markdown(wasm.read_readiness())
         self.assertIn("real Node execution passed: True", markdown)
-        self.assertIn("does not prove live browser-page execution", markdown)
+        self.assertIn("WV-5 alone proves", markdown)
+        self.assertIn("browser ready: **yes**", markdown)
         self.assertNotIn("no wasm is built", markdown.lower())
 
-    def test_gate_guards_committed_build_execution_evidence(self) -> None:
+    def test_gate_guards_committed_build_execution_and_browser_evidence(self) -> None:
         self.assertEqual(0, wasm.main(["--gate", "--format", "json"]))
 
     def test_hello_example_declares_no_caps(self) -> None:

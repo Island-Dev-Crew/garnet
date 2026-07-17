@@ -1,0 +1,61 @@
+{
+  "schema": "garnet.lane2a.browser-reporter-green/1",
+  "captured_at": "2026-07-16T23:02:47Z",
+  "tested_commit": "2f1d17775b6db1d5807fc6c2a85eb853cca74449",
+  "tested_tree": "064012b552702f8667341ade06b84843445dfee6",
+  "playwright": {
+    "proof": "F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json",
+    "screenshot": "ops/lane2a/evidence/30-playground-browser.png",
+    "verdict": "pass",
+    "duration_ms": 2637,
+    "committed_requests": 6,
+    "external_requests": 0,
+    "untracked_requests": 0,
+    "node_global_present": false,
+    "desktop_horizontal_overflow": false,
+    "mobile_horizontal_overflow": false
+  },
+  "runtime_inputs": {
+    "schema": "garnet.w-play.runtime-inputs/1",
+    "file_count": 10,
+    "sha256": "e21134ae261f064ccb9db42a1d4150b2375fbb8c9146539be6439f3c56f75f70",
+    "playwright_package": "@playwright/test",
+    "playwright_version": "1.61.1",
+    "playwright_install": "npm ci --ignore-scripts"
+  },
+  "journeys": {
+    "run": "ok with exact Hello from Garnet output",
+    "check": "ok with no diagnostics",
+    "diff_human": "Authority expanded",
+    "diff_machine": "expanded with aggregate_added=[fs]",
+    "denial": "runtime_error with empty stdout, visible Denied state, and proc diagnostic"
+  },
+  "reporter": {
+    "schema": "garnet.wasm_readiness/v3",
+    "browser_package_valid": true,
+    "browser_proof_valid": true,
+    "browser_ready": true,
+    "blockers": []
+  },
+  "commands": [
+    {
+      "command": "node scripts/smoke_garnet_playground_browser.mjs --proof F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json",
+      "exit_code": 0
+    },
+    {
+      "command": "python3 -I scripts/test_garnet_playground_browser_proof.py",
+      "exit_code": 0,
+      "tests_passed": 3
+    },
+    {
+      "command": "python3 -I scripts/test_garnet_wasm_readiness.py",
+      "exit_code": 0,
+      "tests_passed": 13
+    },
+    {
+      "command": "python3 scripts/garnet_wasm_readiness.py --gate",
+      "exit_code": 0
+    }
+  ],
+  "claim_boundary": "This promotes the committed browser package and clean-browser journey only. It does not relabel S114, WV-4, or WV-5 and does not imply OS host authority, launch FIRE, production, or v1.0 readiness."
+}

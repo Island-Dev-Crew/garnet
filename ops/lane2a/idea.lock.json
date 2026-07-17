@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "1.0",
+  "id": "idea-garnet-l2a-browser",
+  "frozenAt": "2026-07-16T22:06:02Z",
+  "frozenBy": "codex-lane2a",
+  "problem": {
+    "statement": "Garnet has committed Wasm run, check, and capability-diff adapters plus a hermetic package probe, but it cannot honestly claim a browser-live playground until committed package bytes, real page integration, fail-closed denial, and reproducible browser evidence exist together.",
+    "successCriteria": [
+      "A clean browser loads only committed package bytes and renders real run, check, and capability-diff results without a network fetch or Node-only execution path",
+      "A browser attempt to use denied process authority rejects with a non-success exit class and a visible diagnostic",
+      "Two clean builds from the same committed inputs produce byte-identical browser package files and provenance",
+      "The readiness reporter promotes browser status only after validating the committed package and browser proof",
+      "Capability diff renders a one-glance human verdict and a versioned structured machine verdict from the same adapter result"
+    ]
+  },
+  "domain": {
+    "id": 6,
+    "letter": "F",
+    "name": "Elite Software Craft"
+  },
+  "definitionOfDone": [
+    {
+      "claim": "a real browser can run, check, and capability-diff Garnet source from the committed package",
+      "falsifiedBy": "a clean-browser Playwright run that loads only committed package bytes must produce run + check + diff output; any Node-only path, any network fetch, or any uncommitted artifact falsifies"
+    },
+    {
+      "claim": "a denied capability fails closed in the browser",
+      "falsifiedBy": "the denial flow must reject and surface the denial; a silent pass, a warning-only path, or a partial execution falsifies"
+    },
+    {
+      "claim": "the browser package is reproducible from committed inputs",
+      "falsifiedBy": "two clean builds must produce byte-identical package output; any divergence falsifies"
+    },
+    {
+      "claim": "browser readiness is evidence-backed rather than prose-promoted",
+      "falsifiedBy": "remove, corrupt, or mismatch the committed browser proof or package; scripts/garnet_wasm_readiness.py --gate must fail"
+    },
+    {
+      "claim": "diff-caps has one human verdict and one structured machine verdict",
+      "falsifiedBy": "the browser proof must assert the visible expansion verdict and parse the versioned machine JSON; disagreement or missing fields falsifies"
+    }
+  ],
+  "confidence": {
+    "score": 8,
+    "biggestRisk": "A polished editor could accidentally certify a Node path, a warning-only denial, or package bytes that were not committed and reproducible.",
+    "nextAction": "Record RED contract tests before materializing the browser package or wiring the live page."
+  },
+  "psznDedupe": {
+    "checked": true,
+    "nearestNeighbor": "idea-garnet-l0-truth-freeze",
+    "similarity": 0.35
+  },
+  "rejectedAlternatives": [
+    {
+      "idea": "Promote browser-live wording from the existing Node smoke and static gallery",
+      "reason": "Neither surface proves a real browser journey or a fail-closed denial path."
+    }
+  ]
+}

@@ -157,6 +157,19 @@ def source_digest(root: Path, inputs: list[str]) -> str:
     return digest.hexdigest()
 
 
+def package_source(observed: dict) -> dict:
+    """Return commit-independent source identity for the published package."""
+    return {
+        key: observed[key]
+        for key in (
+            "cargo_lock_sha256",
+            "inputs",
+            "source_tree_sha256",
+            "studio_package_lock_sha256",
+        )
+    }
+
+
 def _binary_identity(command: str, env: dict[str, str]) -> str:
     path_value = next((value for key, value in env.items() if key.upper() == "PATH"), None)
     found = shutil.which(command, path=path_value)
@@ -279,14 +292,71 @@ def build_package(root: Path, observed: dict) -> dict[str, bytes]:
         validate_wrapper_contract(root, artifacts[ARTIFACTS[0]], _esm_exports(root, wrapper, env))
         if len(artifacts[ARTIFACTS[1]]) >= 3 * 1024 * 1024:
             raise BuildError("Wasm exceeds the conservative 3 MiB ceiling")
-        source = {key: observed[key] for key in (
-            "build_parent_commit_observed", "cargo_lock_sha256", "inputs",
-            "source_tree_sha256", "studio_package_lock_sha256")}
+        source = package_source(observed)
         manifest = {"artifacts": {name: {"bytes": len(raw), "sha256": sha256(raw)}
                                   for name, raw in artifacts.items()},
                     "build": {"profile": "release", "target": "web", "wasm_opt": False},
                     "schema": "garnet.playground.wasm-package/1", "source": source, "tools": tools}
         return {**artifacts, "provenance.json": canonical_json(manifest)}
+
+
+def require_identical_payloads(first: dict[str, bytes], second: dict[str, bytes]) -> None:
+    if set(first) != set(PUBLISHED) or set(second) != set(PUBLISHED):
+        raise BuildError(
+            f"package inventory mismatch: expected {sorted(PUBLISHED)}, "
+            f"got {sorted(first)} and {sorted(second)}"
+        )
+    for name in PUBLISHED:
+        if first[name] != second[name]:
+            raise BuildError(f"reproducibility mismatch: {name}")
+
+
+def read_published_package(root: Path) -> dict[str, bytes]:
+    package = root / PACKAGE_REL
+    require_exact_files(package, set(PUBLISHED))
+    return {name: (package / name).read_bytes() for name in PUBLISHED}
+
+
+def publish_package(root: Path, payload: dict[str, bytes]) -> None:
+    """Replace the published package only after an exact payload is available."""
+    require_identical_payloads(payload, dict(payload))
+    parent = secure_chain(root, root / PACKAGE_REL.parent, create=True)
+    package = root / PACKAGE_REL
+    staging = Path(tempfile.mkdtemp(prefix=".pkg-staging-", dir=parent))
+    backup = parent / ".pkg-previous"
+    try:
+        secure_entry(staging, directory=True)
+        for name in PUBLISHED:
+            (staging / name).write_bytes(payload[name])
+            secure_entry(staging / name, directory=False)
+        require_exact_files(staging, set(PUBLISHED))
+        if os.path.lexists(backup):
+            raise BuildError("stale package backup blocks publication")
+        if os.path.lexists(package):
+            secure_entry(package, directory=True)
+            package.rename(backup)
+        staging.rename(package)
+        if os.path.lexists(backup):
+            shutil.rmtree(backup)
+    except Exception:
+        if not os.path.lexists(package) and os.path.lexists(backup):
+            backup.rename(package)
+        raise
+    finally:
+        if os.path.lexists(staging):
+            shutil.rmtree(staging)
+
+
+def build_reproducibly(root: Path) -> tuple[dict, dict[str, bytes]]:
+    observed = snapshot(root)
+    first = build_package(root, observed)
+    if snapshot(root) != observed:
+        raise BuildError("repository/tool snapshot changed after first build")
+    second = build_package(root, observed)
+    if snapshot(root) != observed:
+        raise BuildError("repository/tool snapshot changed after second build")
+    require_identical_payloads(first, second)
+    return observed, first
 
 
 def bracket(read, build, finish):
@@ -298,20 +368,32 @@ def bracket(read, build, finish):
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--probe", action="store_true", required=True,
-                        help="build and validate in temp; publish nothing")
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--probe", action="store_true",
+                      help="build twice and validate in temp; publish nothing")
+    mode.add_argument("--materialize", action="store_true",
+                      help="build twice, compare bytes, and publish the package")
+    mode.add_argument("--verify-reproducible", action="store_true",
+                      help="build twice and compare with the committed package")
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
-    parse_args(argv)
+    args = parse_args(argv)
     if Path.cwd().resolve() != ROOT.resolve():
         raise BuildError("run the builder from the repository root")
-    payload = bracket(lambda: snapshot(ROOT), lambda state: build_package(ROOT, state), lambda data, _: data)
+    observed, payload = build_reproducibly(ROOT)
+    if args.materialize:
+        publish_package(ROOT, payload)
+    elif args.verify_reproducible:
+        require_identical_payloads(payload, read_published_package(ROOT))
     manifest = decode_json(payload["provenance.json"])
     print(canonical_json({"artifacts": manifest["artifacts"], "build": manifest["build"],
-                          "build_parent_commit_observed": manifest["source"]["build_parent_commit_observed"],
-                          "schema": "garnet.playground.wasm-probe/1"}).decode(), end="")
+                          "build_parent_commit_observed": observed["build_parent_commit_observed"],
+                          "mode": "materialize" if args.materialize else
+                                  "verify-reproducible" if args.verify_reproducible else "probe",
+                          "reproducible": True,
+                          "schema": "garnet.playground.wasm-build/1"}).decode(), end="")
     return 0
 
 

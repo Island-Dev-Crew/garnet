@@ -30,15 +30,23 @@ Consumes the interpreter, parser, and checker as-is; owns no language semantics.
   authority, and bound annotations are outside this surface.
 - Crash surface: `#![deny(clippy::unwrap_used, clippy::expect_used)]`
   (tests exempt via `cfg_attr`).
-- Do not claim "runs in your browser" anywhere until a Playwright trap
-  proves a browser executed source and rendered real output (next W-PLAY
-  slice); the Node smoke proves wasm execution, not the browser page.
-- `wasm-opt` is disabled (`Cargo.toml` metadata) — unoptimized module,
-  revisited in the page slice; recorded, not silent.
+- Browser readiness is owned only by `scripts/garnet_wasm_readiness.py`. It
+  requires a valid committed package plus the strict Playwright trap's success
+  and declared-proc denial proof; Node evidence alone never promotes the browser.
+- `wasm-opt` remains disabled (`Cargo.toml` metadata). The package is release
+  built, minified at the ESM boundary, and held below a conservative 3 MiB
+  Wasm ceiling; optimization remains future work, not an implied claim.
+- The committed `docs/playground/pkg` package is generated only by
+  `scripts/build_playground_wasm.py`. Its exact three-file inventory is built
+  twice, byte-compared, and bound to canonical source/tree digests plus exact
+  tool identities. A branch commit SHA is diagnostic output, not package
+  identity, because squash merges do not preserve branch ancestry.
 ## Required Checks
 
 ```sh
 cargo test -p garnet-wasm
 cargo build -p garnet-wasm --target wasm32-unknown-unknown
 python scripts/build_playground_wasm.py --probe
+python scripts/build_playground_wasm.py --verify-reproducible
+python scripts/garnet_wasm_readiness.py --gate
 ```

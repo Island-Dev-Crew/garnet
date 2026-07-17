@@ -112,11 +112,11 @@ jobs:
       # S54: VS Code publish readiness — fails if the extension manifest loses a
       # marketplace-required field/file. The credentialed publish stays deferred.
       - run: python3 scripts/garnet_vscode_publish_readiness.py --gate
-      # S55: wasm hello-world readiness — guards the owned bits (hello example +
-      # target doc); the absent wasm toolchain is an honest deferral, not gated.
+      # S55 / W-PLAY: validates the committed WV-5 build/Node proof separately
+      # from the reproducible package and strict browser success/denial proof.
       - run: python3 scripts/garnet_wasm_readiness.py --gate
-      # S56: playground gallery — guards the static gallery's structure AND that
-      # the page keeps its honesty markers (no fake-editor claim).
+      # S56: guards the committed static preset fallback and honesty markers;
+      # browser promotion belongs only to the W-PLAY reporter above.
       - run: python3 scripts/garnet_playground_readiness.py --gate
       # S58: benchmark campaign — fails if a declared Criterion bench file or its
       # Cargo [[bench]] entry disappears. No measurements are run.

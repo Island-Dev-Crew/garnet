@@ -72,4 +72,66 @@ class HermeticPlaygroundBuilderTests(unittest.TestCase):
         with self.assertRaises(builder.BuildError): builder.require_no_untracked("garnet-wasm/src/injected.rs\n")
         checks = (ROOT / "garnet-wasm/AGENTS.md").read_text(encoding="utf-8").split("## Required Checks", 1)[1]
         self.assertNotIn("wasm-pack build", checks); self.assertIn("build_playground_wasm.py --probe", checks)
+
+    def test_materialize_and_reproducibility_modes_are_explicit_and_exclusive(self) -> None:
+        self.assertTrue(builder.parse_args(["--probe"]).probe)
+        self.assertTrue(builder.parse_args(["--materialize"]).materialize)
+        self.assertTrue(
+            builder.parse_args(["--verify-reproducible"]).verify_reproducible
+        )
+        for argv in (
+            [],
+            ["--probe", "--materialize"],
+            ["--probe", "--verify-reproducible"],
+            ["--materialize", "--verify-reproducible"],
+        ):
+            with self.subTest(argv=argv), mock.patch("sys.stderr"):
+                with self.assertRaises(SystemExit):
+                    builder.parse_args(argv)
+
+    def test_package_provenance_is_commit_independent(self) -> None:
+        observed = {
+            "build_parent_commit_observed": "a" * 40,
+            "cargo_lock_sha256": "b" * 64,
+            "inputs": ["Cargo.toml"],
+            "source_tree_sha256": "c" * 64,
+            "studio_package_lock_sha256": "d" * 64,
+        }
+        source = builder.package_source(observed)
+        self.assertNotIn("build_parent_commit_observed", source)
+        self.assertEqual(
+            {
+                "cargo_lock_sha256",
+                "inputs",
+                "source_tree_sha256",
+                "studio_package_lock_sha256",
+            },
+            set(source),
+        )
+
+    def test_reproducibility_comparison_names_the_first_divergence(self) -> None:
+        payload = {
+            "garnet_wasm.js": b"js",
+            "garnet_wasm_bg.wasm": b"wasm",
+            "provenance.json": b"{}\n",
+        }
+        builder.require_identical_payloads(payload, dict(payload))
+        changed = dict(payload)
+        changed["garnet_wasm_bg.wasm"] = b"different"
+        with self.assertRaisesRegex(builder.BuildError, "garnet_wasm_bg.wasm"):
+            builder.require_identical_payloads(payload, changed)
+
+    def test_materializer_writes_only_the_exact_package_inventory(self) -> None:
+        payload = {
+            "garnet_wasm.js": b"js",
+            "garnet_wasm_bg.wasm": b"wasm",
+            "provenance.json": b"{}\n",
+        }
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            builder.publish_package(root, payload)
+            package = root / builder.PACKAGE_REL
+            self.assertEqual(set(payload), {path.name for path in package.iterdir()})
+            for name, raw in payload.items():
+                self.assertEqual(raw, (package / name).read_bytes())
 if __name__ == "__main__": unittest.main()

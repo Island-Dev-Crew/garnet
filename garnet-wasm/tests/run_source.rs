@@ -81,6 +81,32 @@ def main() {
 }
 
 #[test]
+fn declared_proc_authority_still_fails_without_a_browser_host_native() {
+    // The source declares proc authority, but the browser interpreter exposes
+    // no proc native. Declaration alone must never mint host authority.
+    let src = r#"
+@caps(proc)
+def main() {
+  proc::run("echo hi")
+  0
+}
+"#;
+    let result = run_source(src);
+    assert_eq!(
+        ExitClass::RuntimeError,
+        result.exit_class,
+        "{:?}",
+        result.diagnostic
+    );
+    assert_eq!("", result.stdout);
+    let diagnostic = result.diagnostic.unwrap_or_default().to_lowercase();
+    assert!(
+        diagnostic.contains("proc"),
+        "diagnostic should name the unavailable proc authority: {diagnostic}"
+    );
+}
+
+#[test]
 fn consecutive_runs_do_not_leak_output() {
     let first = run_source(HELLO);
     let second = run_source(HELLO);

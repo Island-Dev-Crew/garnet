@@ -1,0 +1,128 @@
+{
+  "schema": "garnet.lane2a.local-verification/v2",
+  "captured_at": "2026-07-16T23:10:52Z",
+  "tested_commit": "2f1d17775b6db1d5807fc6c2a85eb853cca74449",
+  "tested_tree": "064012b552702f8667341ade06b84843445dfee6",
+  "results": [
+    {
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0,
+      "toolchain": "Rust 1.95.0"
+    },
+    {
+      "command": "cargo clippy --workspace --all-targets -- -D warnings",
+      "exit_code": 0,
+      "toolchain": "Rust 1.95.0"
+    },
+    {
+      "command": "cargo test --workspace --no-fail-fast --quiet",
+      "exit_code": 0,
+      "notes": "The complete uncontended workspace passed."
+    },
+    {
+      "command": "python3 scripts/build_playground_wasm.py --verify-reproducible",
+      "exit_code": 0,
+      "notes": "A clean detached worktree at the tested commit produced two offline builds that matched each other and the committed package byte-for-byte."
+    },
+    {
+      "command": "python3 -I scripts/test_build_playground_wasm.py",
+      "exit_code": 0,
+      "tests_passed": 10
+    },
+    {
+      "command": "python3 -I scripts/test_garnet_playground_browser_contract.py",
+      "exit_code": 0,
+      "tests_passed": 6
+    },
+    {
+      "command": "python3 -I scripts/test_garnet_playground_browser_proof.py",
+      "exit_code": 0,
+      "tests_passed": 3
+    },
+    {
+      "command": "python3 -I scripts/test_garnet_wasm_readiness.py",
+      "exit_code": 0,
+      "tests_passed": 13,
+      "notes": "Expected-RED malformed, stale-digest, and changed-input cases failed closed."
+    },
+    {
+      "command": "python3 scripts/garnet_wasm_readiness.py --gate",
+      "exit_code": 0,
+      "notes": "browser_package_valid, browser_proof_valid, and browser_ready were true; blockers were empty."
+    },
+    {
+      "command": "python3 scripts/garnet_playground_readiness.py",
+      "exit_code": 0,
+      "notes": "The static fallback surface remained well formed without claiming browser promotion authority."
+    },
+    {
+      "command": "cargo run -p xtask -- truth --check",
+      "exit_code": 0,
+      "notes": "Six fields matched machine truth across four stamped surfaces."
+    },
+    {
+      "command": "python3 -I scripts/garnet_lane0_closeout_status.py --gate",
+      "exit_code": 0,
+      "notes": "22/22 evidence, 37 ledger entries, 4/4 denominators, launch HOLD, Band 3."
+    },
+    {
+      "command": "python3 -I scripts/garnet_frozen_backlog_status.py --gate",
+      "exit_code": 0
+    },
+    {
+      "command": "python3 -I scripts/garnet_msrv_status.py --gate",
+      "exit_code": 0,
+      "notes": "Exact MSRV 1.95."
+    },
+    {
+      "command": "python3 -I scripts/test_garnet_trust_kernel_review_status.py",
+      "exit_code": 0,
+      "tests_passed": 14
+    },
+    {
+      "command": "python3 scripts/garnet_trust_kernel_review_status.py --gate --format json",
+      "exit_code": 0,
+      "notes": "Trust-kernel touched, companion present, problems empty."
+    },
+    {
+      "command": "python3 scripts/check-agent-contracts.py",
+      "exit_code": 0,
+      "notes": "24 contracts passed."
+    },
+    {
+      "command": "cargo audit --json",
+      "exit_code": 0,
+      "notes": "Zero vulnerabilities; one informational unsoundness warning for transitive anyhow 1.0.102 (RUSTSEC-2026-0190)."
+    },
+    {
+      "command": "npm audit --json --omit=dev",
+      "exit_code": 0,
+      "notes": "Zero production dependency vulnerabilities."
+    },
+    {
+      "command": "npm audit --json",
+      "exit_code": 1,
+      "notes": "One direct development-only Vite high advisory affects Windows dev-server path handling (GHSA-fx2h-pf6j-xcff); a second moderate Vite advisory is grouped into the same finding. W-PLAY browser proof does not start Vite."
+    },
+    {
+      "command": "pinned ARCHIPELAGO validate_contracts.py ops/lane2a/idea.lock.json",
+      "exit_code": 0,
+      "notes": "Validated at Navigata1/archipelago b9f7cee2823f9791503db20f33b22c9e20af7abe."
+    },
+    {
+      "command": "pinned ARCHIPELAGO validate_contracts.py ops/lane2a/plan.lock.json",
+      "exit_code": 0,
+      "notes": "Validated at Navigata1/archipelago b9f7cee2823f9791503db20f33b22c9e20af7abe."
+    },
+    {
+      "command": "Playwright file QA for ops/lane2a/state-of-the-union.html",
+      "exit_code": 0,
+      "notes": "No console errors, external requests, or horizontal overflow at 1440x1000 and 375x812."
+    }
+  ],
+  "observations": [
+    "The builder rejected the dirty primary worktree as designed; the reproducibility run was repeated in a clean detached worktree with Rust 1.95.0 and the lockfile-defined npm ci --ignore-scripts tree.",
+    "The direct npm ci tree includes the existing development-only Vite advisory, while the production-only audit is clean; no dependency was changed in this lane.",
+    "Cross-OS required-check evidence remains remote PR work and is not claimed by this local record."
+  ]
+}

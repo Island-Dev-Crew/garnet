@@ -1,0 +1,210 @@
+{
+  "version": 1,
+  "mission": {
+    "name": "idea-garnet-l2a-browser",
+    "tagline": "Prove the committed Garnet browser runtime, denial boundary, package reproducibility, and human-plus-machine capability verdict without promoting launch claims by prose.",
+    "repo": "Island-Dev-Crew/garnet",
+    "repoPath": ".",
+    "defaultBranch": "main",
+    "planDoc": "",
+    "northStar": "A clean browser loads only committed package bytes and renders real run, check, and capability-diff results without a network fetch or Node-only execution path; A browser attempt to use denied process authority rejects with a non-success exit class and a visible diagnostic; Two clean builds from the same committed inputs produce byte-identical browser package files and provenance; The readiness reporter promotes browser status only after validating the committed package and browser proof; Capability diff renders a one-glance human verdict and a versioned structured machine verdict from the same adapter result",
+    "status": "complete",
+    "started": "2026-07-16",
+    "updated": "2026-07-16T23:56:18Z",
+    "sessionCount": 1
+  },
+  "policies": {
+    "merge": "review",
+    "branchPrefix": "mission/",
+    "maxPrLines": 400,
+    "notes": "review until dogfood band 5 is routine; then auto."
+  },
+  "phases": [
+    {
+      "id": "P0",
+      "title": "Package materialization",
+      "goal": "Extend the hermetic no-publish probe into a fail-closed materializer and commit the exact browser package with canonical provenance.",
+      "status": "done",
+      "sessionsEstimate": "1",
+      "gates": [
+        {
+          "id": "P0-G1",
+          "title": "Package builder contract tests pass",
+          "command": "python3 -I scripts/test_build_playground_wasm.py",
+          "status": "passed",
+          "evidence": "ops/lane2a/evidence/10-package-reproducibility.json",
+          "lastRun": "2026-07-16T23:10:52Z",
+          "notes": "Ten builder contract tests passed."
+        },
+        {
+          "id": "P0-G2",
+          "title": "Two clean builds are byte-identical to the committed package",
+          "command": "python3 scripts/build_playground_wasm.py --verify-reproducible",
+          "status": "passed",
+          "evidence": "ops/lane2a/evidence/10-package-reproducibility.json",
+          "lastRun": "2026-07-16T23:10:52Z",
+          "notes": "Two fresh offline builds matched each other and the committed package byte-for-byte."
+        }
+      ],
+      "tasks": []
+    },
+    {
+      "id": "P1",
+      "title": "Live adapter and page integration",
+      "goal": "Wire run_source, check_source, and diff_caps_source from committed Wasm bytes into a usable editor page with explicit result surfaces.",
+      "status": "done",
+      "sessionsEstimate": "1",
+      "gates": [
+        {
+          "id": "P1-G1",
+          "title": "Static live-page and adapter contracts pass",
+          "command": "python3 -I scripts/test_garnet_playground_browser_contract.py",
+          "status": "passed",
+          "evidence": "ops/lane2a/evidence/20-live-page-contract.json",
+          "lastRun": "2026-07-16T23:10:52Z",
+          "notes": "Six browser-surface contracts and the legacy static-preset readiness gate passed."
+        }
+      ],
+      "tasks": []
+    },
+    {
+      "id": "P2",
+      "title": "Playwright success and denial traps",
+      "goal": "Prove in a clean browser under 30 seconds that run, check, and diff work and denied process authority fails closed with a visible diagnostic.",
+      "status": "done",
+      "sessionsEstimate": "1",
+      "gates": [
+        {
+          "id": "P2-G1",
+          "title": "Clean-browser success and fail-closed denial proof passes",
+          "command": "node scripts/smoke_garnet_playground_browser.mjs --proof F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json",
+          "status": "passed",
+          "evidence": "F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json",
+          "lastRun": "2026-07-16T23:02:11Z",
+          "notes": "Clean Chromium completed run, check, capability diff, and declared-proc denial in 2,637 ms from six committed requests with no external or untracked fetch; the proof binds ten exact runtime, harness, and locked-install inputs."
+        }
+      ],
+      "tasks": []
+    },
+    {
+      "id": "P3",
+      "title": "Evidence-backed reporter promotion",
+      "goal": "Make scripts/garnet_wasm_readiness.py validate package provenance and browser proof before reporting browser readiness or passing its gate.",
+      "status": "done",
+      "sessionsEstimate": "1",
+      "gates": [
+        {
+          "id": "P3-G1",
+          "title": "Wasm readiness reporter regressions pass",
+          "command": "python3 -I scripts/test_garnet_wasm_readiness.py",
+          "status": "passed",
+          "evidence": "ops/lane2a/evidence/40-browser-reporter-green.json",
+          "lastRun": "2026-07-16T23:10:52Z",
+          "notes": "Thirteen reporter regressions passed, including malformed-proof and stale-runtime-digest fail-closed behavior."
+        },
+        {
+          "id": "P3-G2",
+          "title": "Evidence-backed browser readiness gate passes",
+          "command": "python3 scripts/garnet_wasm_readiness.py --gate",
+          "status": "passed",
+          "evidence": "ops/lane2a/evidence/40-browser-reporter-green.json",
+          "lastRun": "2026-07-16T23:10:52Z",
+          "notes": "Reporter schema v3 returned browser_package_valid, browser_proof_valid, and browser_ready true with no blockers."
+        }
+      ],
+      "tasks": []
+    },
+    {
+      "id": "P4",
+      "title": "Human and machine capability verdict",
+      "goal": "Render a one-glance capability expansion verdict and expose the same decision as versioned structured JSON for agent reviewers.",
+      "status": "done",
+      "sessionsEstimate": "1",
+      "gates": [
+        {
+          "id": "P4-G1",
+          "title": "Browser proof validates matching human and machine verdicts",
+          "command": "python3 -I scripts/test_garnet_playground_browser_proof.py",
+          "status": "passed",
+          "evidence": "F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json",
+          "lastRun": "2026-07-16T23:10:52Z",
+          "notes": "Three proof-contract tests pinned the shared human and machine expansion decision plus fail-closed denial semantics."
+        }
+      ],
+      "tasks": []
+    }
+  ],
+  "metrics": [
+    {
+      "label": "Definition-of-done claims verified",
+      "baseline": "0",
+      "current": "5",
+      "target": "5",
+      "direction": "up"
+    }
+  ],
+  "risks": [
+    {
+      "title": "A polished editor could accidentally certify a Node path, a warning-only denial, or package bytes that were not committed and reproducible.",
+      "severity": "medium",
+      "note": "from idea.lock (confidence 8/10)"
+    },
+    {
+      "title": "The existing Studio development graph contains a high Vite advisory for Windows dev-server path handling.",
+      "severity": "medium",
+      "note": "Production npm audit is clean and W-PLAY does not start Vite; dependency remediation remains a separately scoped follow-up."
+    },
+    {
+      "title": "Browser proof records the Chrome version but does not pin the selected executable hash.",
+      "severity": "low",
+      "note": "Final independent review classified this as a replay-hermeticity limitation, not a failure of the committed-package or observed-browser claims."
+    }
+  ],
+  "prLog": [
+    {
+      "number": 509,
+      "url": "https://github.com/Island-Dev-Crew/garnet/pull/509",
+      "state": "ready-for-review",
+      "openedHead": "8dc96231368d1f0c39b9df177ee486bb948c78bc",
+      "checkedHead": "77f4afa47c29f10810c5f098f4acbd83cc7a9c1e",
+      "notes": "Corrected dogfood evidence, agent contracts, rustfmt, clippy, and Ubuntu/Windows/macOS cargo tests all passed on the final evidence head. All 34 observed checks were terminal without failure; PR is ready for Jon and remains unmerged."
+    }
+  ],
+  "resume": {
+    "activePhase": null,
+    "nextActions": [
+      "Jon reviews and human-merges PR #509; this lane performs no merge, tag, publish, FIRE, promo-signoff, or 31-to-32 action.",
+      "After Jon's merge, a separately authorized landed-content reconciliation may update canonical launch ledgers without changing S114 or the four-denominator discipline."
+    ],
+    "blockers": [],
+    "conventions": [
+      "One task = one branch = one PR",
+      "Update state.json + render + commit after every merge",
+      "Gate commands are shell-agnostic (no &&)"
+    ]
+  },
+  "archipelago": {
+    "protocolVersion": "1.0",
+    "ideaLock": "ops/lane2a/idea.lock.json",
+    "planLock": "ops/lane2a/plan.lock.json",
+    "loop": {
+      "cycle": 1,
+      "stage": "S6",
+      "loopbacks": []
+    },
+    "governance": {
+      "ledgerRunId": "",
+      "budgetSpentUsd": 0.0,
+      "branchSweeps": []
+    },
+    "compound": {
+      "notes": [],
+      "memorySync": "not-authorized",
+      "experiments": []
+    },
+    "fableShim": {
+      "rewriterVersion": "1.0.0",
+      "refusals": []
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "schema": "garnet.lane2a.package-reproducibility/1",
+  "captured_at": "2026-07-16T22:44:12Z",
+  "command": "python3 scripts/build_playground_wasm.py --verify-reproducible",
+  "build_parent_commit_observed": "743b5640ee23073dd52769945e41d5977c30db55",
+  "build_parent_tree_observed": "44ae2affd0a4812ca177d44be4a569ac5ff5f3cc",
+  "source_tree_sha256": "f074d25ca2d01ad9238a08429ccde4fb1bef00da53ddfb9847d8f9add80bac0f",
+  "reproducible": true,
+  "committed_package_match": true,
+  "artifacts": {
+    "garnet_wasm.js": {
+      "bytes": 6581,
+      "sha256": "bf72509961525b4eb2e0702f41da61b4e8087ceee98787b7a046d83a85791a6d"
+    },
+    "garnet_wasm_bg.wasm": {
+      "bytes": 2215266,
+      "sha256": "1b54c5ddefa045279c8cae4a92b030d43b7631595639ba02ac075a1e34e55e15"
+    }
+  },
+  "build": {
+    "profile": "release",
+    "target": "web",
+    "wasm_opt": false
+  },
+  "tooling_degradations": [
+    "The host Node version was 22.22.3; the checksum-verified pinned Node 22.22.2 archive was used from /tmp.",
+    "The host default Rust version was 1.94.1; a directory-local rustup override selected the required Rust 1.95.0 toolchain."
+  ]
+}
