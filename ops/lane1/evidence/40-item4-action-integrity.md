@@ -44,8 +44,8 @@ rejects a SHA-pinned occurrence that omits that input.
 ```text
 test_garnet_workflow_action_integrity_status.py: 13/13
 garnet_workflow_action_integrity_status.py --gate:
-  occurrence_count: 89
-  credited_occurrences: 89
+  occurrence_count: 90
+  credited_occurrences: 90
   mutable_count: 0
   manifest_entry_count: 13
   findings: []
@@ -55,15 +55,22 @@ garnet_msrv_status.py --gate: ok true, MSRV 1.95
 test_garnet_vscode_release_assets.py: 3/3
 ```
 
-The count increased from the 86-path RED baseline because Lane 1 added the
-cross-OS Python setup and the two pinned actions in the base-controlled
-workflow. Every final occurrence is included in the same gate run.
+The count increased from the 86-occurrence RED baseline because Lane 1 added
+the cross-OS Python setup, two pinned actions in the base-controlled workflow,
+and the always-run policy-manifest artifact upload. Every final occurrence is
+included in the same gate run.
 
-U-16 is implemented in the checked-in ownership/procedural policy: every
-`scripts/garnet_github_*` change is Jon-only and requires the same W_TRUST and
-cross-OS evidence path as other governance controls.
+U-16 is implemented as checked-in procedural ownership: every
+`scripts/garnet_github_*` change is assigned to Jon and requires the same
+W_TRUST and cross-OS evidence path as other governance controls. This does not
+claim a currently required CODEOWNER approval. The solo-maintainer ruleset
+keeps `require_code_owner_review: false` and zero approvals to avoid deadlock;
+disabled auto-merge and human final merge remain mechanical, while the
+Jon-identity exception is a covenant action until the registered second-
+reviewer profile is activated.
 
-An independent read-only reviewer approved the final Item 4 bytes, repeated
-the upstream ref resolution without authentication, and reproduced the
-89-of-89 credited, zero-mutable reporter result. The approval is scoped local
-review; Linux and Windows runtime evidence remains pending CI.
+The final exact-head independent reviewer reproduced the 90-of-90 credited,
+zero-mutable reporter result. An earlier Item 4 reviewer independently repeated
+the upstream ref resolution without authentication. These approvals are scoped
+to local code/content review; Linux and Windows runtime evidence remains
+pending CI.

@@ -23,7 +23,7 @@ collision. It does not depend on the host filesystem preserving both spellings.
 
 ```text
 $ /private/tmp/garnet-l1-policy-venv-20260717/bin/python -I scripts/test_garnet_required_context_contract.py
-Ran 15 tests in 0.019s
+Ran 16 tests
 OK
 
 $ python3 scripts/test_garnet_workflow_file_policy.py
@@ -43,6 +43,26 @@ No local test was skipped. Targeted read-only review also reproduced the old
 unresolved `/var` false red, proved the resolved `/private/var` fixture loads,
 proved a deliberate ancestor symlink remains RED, and proved the NFC/NFD
 collision remains RED.
+
+The integrated parity runner then executed the frozen exact trust-content head
+`b9f8bc91dd0660f0988e711fea31a535c0aae8f5` from a detached clean checkout and
+emitted `/private/tmp/garnet-governance-policy-macOS-b9f8bc9.json`:
+
+```text
+head_exact: true
+working_tree_clean: true
+parity_exact: true
+ok: true
+tests: 36/36 (16 + 10 + 4 + 6)
+skipped/failures/errors: 0/0/0
+parity_sha256: cf3631ea6afd3443d040500c5c453c07c7609c5994975bbff74e6d9f608c8cd6
+evidence_sha256: d88e841b163837b13c9a2b3ca39e3b0e65f15cd81fb92329cdac81e792a50483
+```
+
+The parity digest is deliberately head-independent and binds exact ordered test
+IDs/counts/outcomes across operating systems. The separate evidence digest
+binds that parity result to this exact head and macOS. Linux and Windows must
+emit the same parity digest with their own exact-head evidence digests.
 
 ## Independent review and remaining boundary
 

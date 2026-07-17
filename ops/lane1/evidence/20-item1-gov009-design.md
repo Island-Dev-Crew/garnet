@@ -1,11 +1,13 @@
-# Lane 1 Item 1 — GOV-009 local evaluator evidence
+# Lane 1 Item 1 — GOV-009 runnable live-gate evidence
 
 Date: 2026-07-17
 
-Scope: local, injected-data implementation of the fresh, exact-reviewed-head,
-outcome, and strict policy-equality mechanisms. No credential was discovered,
-read, inherited, persisted, printed, or passed to a process. No network or live
-GitHub request was made.
+Scope: local implementation and injected-data verification of a runnable,
+explicit-stdin collector for the fresh, exact-reviewed-head, outcome, and
+strict policy-equality mechanisms. No credential was discovered, inherited,
+persisted, or printed. The test run used only inert injected tokens and made no
+network or live GitHub request; authenticated execution remains pending the
+final remote PR head.
 
 ## Preserved RED
 
@@ -86,11 +88,37 @@ keys reproduced the false green. The public evaluator now owns a bounded,
 duplicate-rejecting regular-file loader and never accepts caller-parsed checked
 authority objects.
 
+The integrated freeze review then found that the evaluator had no production
+caller: running the script evaluated nothing, so provisioning U-17 alone could
+not close any live clause. Three tests were added first and failed because
+`collect_live_governance_status` and `main` did not exist. A transport test also
+failed because the repository-root object had no callable endpoint. The repair
+adds a bounded repository read, exact runtime/admin endpoint collection, and a
+CLI that accepts exactly one printable token from stdin while rejecting and
+scrubbing ambient GitHub credential variables. Runtime and admin authority are
+separate modes; missing admin evidence remains `blocked-u17`.
+
+Follow-on live-path review found three more integration failures, each trapped
+before repair. First, realistic GitHub repository objects include unrelated
+keys such as `temp_clone_token: null` and `security_and_analysis`, which made
+the raw object deterministically RED under the credential-field scan. The
+collector now projects only the exact repository identity/settings fields
+before evaluation and never renders unrelated API fields. Second, a
+caller-supplied old green SHA could be labeled exact while policy bytes came
+from a different or dirty checkout. The CLI now resolves replacement-disabled
+`HEAD^{commit}`, requires porcelain-v2 cleanliness including untracked files,
+and binds `--reviewed-head` to that exact commit before loading policy or
+opening transport. Third, the first live implementation only understood the
+31-context state and could never rerun after the ceremony. The evaluator and
+identity join now accept exactly two pinned states: preactivation 31 without
+the base-controlled context, or activated 32 with that context last. All other
+counts/orders/digests remain RED.
+
 ## Fresh Item 1 GREEN
 
 ```text
 $ python3 -I scripts/test_garnet_github_governance_transport.py
-Ran 23 tests in 0.008s
+Ran 24 tests in 0.008s
 OK
 
 $ python3 -I scripts/test_garnet_github_link_headers.py
@@ -98,11 +126,11 @@ Ran 12 tests in 0.055s
 OK
 
 $ python3 -I scripts/test_garnet_github_governance_gate.py
-Ran 18 tests in 0.121s
+Ran 29 tests
 OK
 
 $ /private/tmp/garnet-l1-policy-venv-20260717/bin/python -I scripts/test_garnet_required_context_contract.py
-Ran 15 tests in 0.014s
+Ran 16 tests
 OK
 
 $ python3 -m py_compile scripts/garnet_github_governance_gate.py scripts/test_garnet_github_governance_gate.py
@@ -119,7 +147,7 @@ and the integrated suites were rerun:
 
 ```text
 $ /private/tmp/garnet-l1-policy-venv-20260717/bin/python -I scripts/test_garnet_required_context_contract.py
-Ran 15 tests
+Ran 16 tests
 OK
 
 $ /private/tmp/garnet-l1-policy-venv-20260717/bin/python -I scripts/test_garnet_required_context_evaluator.py
@@ -131,21 +159,48 @@ Ran 6 tests
 OK
 
 $ /private/tmp/garnet-l1-policy-venv-20260717/bin/python -I scripts/test_garnet_github_governance_gate.py
-Ran 18 tests
+Ran 29 tests
 OK
 ```
 
 The earlier RED remains useful regression evidence; it no longer describes the
 final integrated tree. Live authenticated evidence and U-17 remain open.
 
-## Local mechanism
+## Runnable mechanism
 
-`scripts/garnet_github_governance_gate.py` is pure and has no credential or
-network CLI. It accepts only the existing transport's all-or-zero
-`ObjectResult` and `CollectionResult` values. It type-checks the exact result,
-`problems`, row-container, and row-element types and enforces the transport's
-body, page, collection-byte, and collection-row maxima. It returns no bindings
-on any problem.
+`scripts/garnet_github_governance_gate.py` keeps its pure evaluator and now
+also has two explicit-stdin live modes:
+
+```text
+python3 -I scripts/garnet_github_governance_gate.py --runtime-gate --reviewed-head <40-char-sha> --github-token-stdin
+python3 -I scripts/garnet_github_governance_gate.py --admin-gate --reviewed-head <40-char-sha> --github-token-stdin
+```
+
+The first collects the repository, complete workflow inventory, workflow runs
+for the exact head, and exact-head check runs. It can prove transport, fresh,
+exact-head, outcome, and Actions identity without admin scope while keeping
+`live_settings_no_bypass: blocked-u17`. The second additionally reads ruleset
+`18936562` and Actions workflow permissions, requires exact equality with the
+checked authorities and `bypass_actors: []`, and only then returns
+`live_settings_no_bypass: verified-empty`. The script reads exactly one
+bounded printable token from stdin, rejects all known ambient GitHub token
+variables, never accepts a token argument, and renders no credential-bearing
+field.
+
+Before either mode opens transport, the CLI requires a clean local worktree
+and exact equality between the requested reviewed SHA and local `HEAD`. The
+policy loader then detects the checked 31 or 32 state. Activated-state pins are:
+
+- producer identity: `505abd5474941cf5f0aa460d4474418ba93cb21b3e0faed809c1e31157e866de`;
+- producer semantics: `45dac805fe848063d2e598ce40c37358907d0a247edfe2fcd33a786cc322ff3e`;
+- full binding: `74b57334dc99a76528302364531dabe0145940a34feb88275f4d29fd4d20a2f3`;
+- checked 32-context ruleset: `41974ee5a1d82e1d30044ff05117dfadbbcd1cb03a23c2a7c4d22d3f26458ba7`.
+
+Both modes accept only the transport's all-or-zero `ObjectResult` and
+`CollectionResult` values. The evaluator type-checks exact result, `problems`,
+row-container, and row-element types and enforces the transport's body, page,
+collection-byte, and collection-row maxima. It returns no bindings on any
+problem.
 
 The public entry point loads both checked authority documents itself. Each path
 must remain beneath the repository root with no symlink/reparse component; the
@@ -165,12 +220,12 @@ The evaluator:
   projection and requires the exact checked-in preactivation contract digest
   `899944d4f0344e4b53cdd3cb37b1da26061f5eaab5d49d8482f8157b1ed51aaa`;
 - separately pins the ordered declared semantic projection to
-  `1b5eeb6bdc983c35073726494aee26bb5bc6d72384204297f367e411090b4ee1`,
+  `e0bd4246263329f3ebee56a7f2ae7d664e898c615893a2e4b051a54676012edf`,
   requires every observed semantic digest to equal its declaration, and pins
   the ordered full binding
   `(context, workflow, event, job, matrix, declared semantic, observed
   semantic, immutable workflow YAML name)` to
-  `2c54b511d0b1509bbc33be545c8cc45bcf1fc924789d08a62658c7df1322c9bb`;
+  `94260eb24cc922f8247d1167a8d09ad11b6e2f11e67c6c7b8baab1aaa7e50651`;
 - freezes freshness to an injected second-precision UTC clock and a constant
   two-hour window, rejecting stale, future, noncanonical, or inverted times;
 - requires selected workflow runs and required check runs to be
@@ -191,9 +246,10 @@ The evaluator:
   anchored ruleset, requires `bypass_actors: []`, and compares the selected
   repository and Actions settings with the anchored repository settings;
 - rejects credential-like fields before evaluating or rendering evidence; and
-- exposes only sanitized binding/status dataclasses. The status labels its
-  authority `injected-offline` and the live settings/no-bypass clause
-  `blocked-u17`.
+- exposes only sanitized binding/status dataclasses. Pure injected evaluation
+  defaults to authority `injected-offline`; both production CLI modes label
+  their authority `live-explicit-stdin`. Runtime mode keeps the live
+  settings/no-bypass clause `blocked-u17` rather than implying admin proof.
 
 ## Digest update contract
 
@@ -228,20 +284,25 @@ the same reviewed digest-update contract is repeated.
 | authenticated transport | Implemented and merged in #500; current run used no credential/live request |
 | strict pagination | Implemented and merged in #502 |
 | complete bounded collection | Implemented and merged in #506; the new evaluator rejects malformed problem/row containers and elements, empty results, invalid integer types, and page/byte/row counts outside transport bounds |
-| fresh cohort | Local mechanism implemented and adversarially tested with injected data; live evidence pending |
-| exact reviewed head | Local mechanism implemented and adversarially tested with injected data; live evidence pending |
-| terminal successful outcomes | Local mechanism implemented and adversarially tested with injected data; live evidence pending |
-| live settings and no-bypass readback | **BLOCKED — U-17** |
+| fresh cohort | Runnable explicit-stdin collector implemented and adversarially tested; authenticated final-head evidence pending |
+| exact reviewed head | Runnable explicit-stdin collector implemented and adversarially tested; authenticated final-head evidence pending |
+| terminal successful outcomes | Runnable explicit-stdin collector implemented and adversarially tested; authenticated final-head evidence pending |
+| live settings and no-bypass readback | Admin mode implemented but execution **BLOCKED — U-17** |
 
 The claim therefore remains **partial**. This evidence does not promote the
 three newly implemented mechanisms to authenticated live proof, and it does
 not close the seventh clause. Jon must provision the dedicated
-admin-authoritative token before a future explicit-token collector can produce
-the live ruleset/settings/no-bypass evidence. The evaluator never reads
+admin-authoritative token before the admin gate can produce the live
+ruleset/settings/no-bypass evidence. The evaluator never reads
 `GH_TOKEN`, `GITHUB_TOKEN`, `gh` configuration, or any ambient credential.
 
-An independent read-only reviewer approved the final local/offline mechanism
-after rerunning 18/18 evaluator tests, 23/23 transport tests, compilation, and
+An earlier independent read-only reviewer approved the predecessor
+local/offline mechanism after rerunning 18/18 evaluator tests, 23/23 transport
+tests, compilation, and
 direct symlink, reparse, invalid-UTF-8, oversize, identity-substitution,
 read-mutation, and ambient-credential probes. That approval explicitly does not
-close U-17 or promote local injected evidence to authenticated live proof.
+close U-17 or promote local injected evidence to authenticated live proof. The
+final runnable collector, endpoint projections, activated-state support, and
+caller-environment isolation are included in the lane's fresh integrated
+exact-head review; authenticated runtime execution remains pending the final
+remote PR head.
