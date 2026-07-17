@@ -132,10 +132,6 @@ pub fn run(args: &[String]) -> ExitCode {
                 }
             }
         }
-        if test_names.is_empty() {
-            continue;
-        }
-
         let mut interp = Interpreter::new();
         // Pre-load src/main.garnet as a helper context for test files under
         // tests/, so cross-file references (e.g. tests/test_main.garnet
@@ -162,9 +158,13 @@ pub fn run(args: &[String]) -> ExitCode {
                             "garnet test: failed to preload src/main.garnet for {}: {e}",
                             source.path.display()
                         );
-                        total_failed += test_names.len();
-                        for n in &test_names {
-                            failed_names.push(format!("{}::{}", source.path.display(), n));
+                        total_failed += test_names.len().max(1);
+                        if test_names.is_empty() {
+                            failed_names.push(format!("{}::<setup>", source.path.display()));
+                        } else {
+                            for n in &test_names {
+                                failed_names.push(format!("{}::{}", source.path.display(), n));
+                            }
                         }
                         continue;
                     }
@@ -173,9 +173,13 @@ pub fn run(args: &[String]) -> ExitCode {
                             "garnet test: src/main.garnet preload panicked for {}: {panic_msg}",
                             source.path.display()
                         );
-                        total_failed += test_names.len();
-                        for n in &test_names {
-                            failed_names.push(format!("{}::{}", source.path.display(), n));
+                        total_failed += test_names.len().max(1);
+                        if test_names.is_empty() {
+                            failed_names.push(format!("{}::<setup>", source.path.display()));
+                        } else {
+                            for n in &test_names {
+                                failed_names.push(format!("{}::{}", source.path.display(), n));
+                            }
                         }
                         continue;
                     }
@@ -201,10 +205,18 @@ pub fn run(args: &[String]) -> ExitCode {
         };
         if let Some(reason) = load_failure {
             eprintln!("garnet test: {reason}");
-            total_failed += test_names.len();
-            for n in &test_names {
-                failed_names.push(format!("{}::{}", source.path.display(), n));
+            total_failed += test_names.len().max(1);
+            if test_names.is_empty() {
+                failed_names.push(format!("{}::<setup>", source.path.display()));
+            } else {
+                for n in &test_names {
+                    failed_names.push(format!("{}::{}", source.path.display(), n));
+                }
             }
+            continue;
+        }
+
+        if test_names.is_empty() {
             continue;
         }
 

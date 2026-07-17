@@ -17,6 +17,16 @@ The final test-first repair preserved both rounds of counterexamples. Its new
 RED was 5 failures in the 32-case TOML/CLI suite plus an initially compile-RED
 identity-binding unit trap.
 
+A final exact-head review then found a third false green after all existing
+focused tests passed: `garnet test` discovered zero `test_*` functions in
+`src/main.garnet` and skipped the source before validating its load-time setup.
+A main helper containing a top-level undeclared filesystem read therefore
+printed `0 passed; 0 failed` and exited zero. The new regression was added
+first and failed exactly that way. The loopback keeps zero-test setup in scope:
+every discovered source is parsed and loaded before an empty test list may be
+treated as a valid zero-test control, and a setup failure contributes a
+synthetic `<setup>` failure rather than adding zero failures.
+
 ## Implemented boundary
 
 - `toml = 0.8.23` parses the complete manifest instead of a partial line
@@ -29,6 +39,9 @@ identity-binding unit trap.
   mismatches, traversal, absolute paths, non-directories, and symlink escapes.
 - Missing explicit project roots and multiple positional roots return errors;
   an existing empty project remains a valid zero-test project.
+- A readable source with zero test functions is still validated as setup.
+  Parse, load, panic, or authority failure is non-zero; only a successfully
+  loaded zero-test source remains green.
 
 Both new dependencies are exact-pinned and were checked under Rust 1.95.
 
@@ -43,6 +56,7 @@ cargo clippy -p garnet-cli --all-targets -- -D warnings: PASS
 cargo fmt --all -- --check: PASS
 check-agent-contracts.py: 24 contracts
 test_check_agent_contracts.py: 6/6
+test_helper_preload: 4/4, including zero-test setup trap
 ```
 
 The final independent reviewer re-ran the original and follow-up attacks,

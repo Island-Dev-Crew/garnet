@@ -44,7 +44,7 @@ including that record and this companion.
 | `.github/workflows/web-pwa-readiness.yml` | Pins checkout to its reviewed commit. |
 | `F_Project_Management/W_TRUST/LANDED_REVIEW_MARKERS.json` | Adds the canonical empty append-only registry that future squash-durable landed markers must enter. |
 | `garnet-cli/src/cmd/run.rs` | Fails closed on malformed vendored manifests and consumes source bytes from the identity-bound handle. |
-| `garnet-cli/src/cmd/test.rs` | Fails closed on unreadable discovery/helper inputs, missing explicit roots, and ambiguous multiple roots. |
+| `garnet-cli/src/cmd/test.rs` | Fails closed on unreadable discovery/helper inputs, missing or ambiguous roots, and zero-test sources whose setup does not load cleanly. |
 | `scripts/garnet_base_controlled_trust_status.py` | Implements the trusted-old-base, candidate-inert 31/32 transition evaluator. |
 | `scripts/garnet_github_governance_gate.py` | Adds the local GOV-009 freshness, exact-head, outcome, identity, and policy-equality evaluator with strict checked-authority loading. |
 | `scripts/garnet_github_governance_transport.py` | Tightens bounded authenticated transport behavior used by review and GOV-009 enumeration. |
