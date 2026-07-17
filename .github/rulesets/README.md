@@ -41,11 +41,11 @@ does **not** include `Base-controlled trust policy`. The separately prepared
 bootstrapped on `main`, it executes only policy code from the base checkout; the
 candidate checkout has no persisted credentials or submodules and is never
 executed. The base validator then checks candidate governance, v2 review-record
-scope/digest, and byte identity of the protected workflow. That workflow cannot
-be changed by an in-band upgrade record. The base validator, live governance
-readback, and rolling review reporter may then evolve only with an exact
-`garnet.base_controlled_policy_upgrade/v1` record; the old base policy validates
-both content hashes and resolved blockers.
+scope/digest, and byte identity of the protected workflow. The candidate cannot
+change that protected workflow in-band because the old-base validator requires
+byte identity. Other policy evolution remains subject to the exact-head v2
+rolling review. A separately typed policy-upgrade record is not implemented by
+this bootstrap and is therefore planned, not an enforced mechanism.
 
 GitHub binds an ordinary required Actions check to its job context and the
 GitHub Actions integration, **not** to a workflow file, matrix, or event. The

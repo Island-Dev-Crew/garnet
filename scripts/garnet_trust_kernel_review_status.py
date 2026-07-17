@@ -63,6 +63,9 @@ TRUST_KERNEL_PREFIXES = (
     "F_Project_Management/W_TRUST/landed/",
 )
 TRUST_KERNEL_FILES = (
+    ".github/CODEOWNERS",
+    "garnet-cli/src/bound_source.rs",
+    "garnet-cli/src/cmd/add.rs",
     "garnet-cli/src/cmd/run.rs",
     "garnet-cli/src/cmd/test.rs",
     "garnet-cli/src/cmd/eval.rs",

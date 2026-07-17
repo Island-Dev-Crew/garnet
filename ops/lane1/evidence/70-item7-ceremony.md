@@ -90,6 +90,10 @@ The base-controlled suite traps the permitted `31 -> 31`, `31 -> 32`, and `32 ->
 - The system Python lacks the required PyYAML 6.0.3 package metadata; YAML-dependent checks used the lane's pinned policy virtual environment. This is a recorded local tool degradation, not a skipped gate.
 - U-17 is still open. There is no admin-authoritative live no-bypass readback, no 31-to-32 activation, and no claim that Lane 1 is merge-ready.
 - The bootstrap PR must land before activation. Requiring `Base-controlled trust policy` on the PR that first introduces its `pull_request_target` producer would deadlock because GitHub loads that workflow from the default branch. The arc-closure terminus therefore belongs to the separate activation PR, not this bootstrap PR.
+- The old-base mechanism enforces byte identity for its protected workflow and
+  exact-head v2 rolling review for the candidate governance set. A separately
+  typed policy-upgrade record is not implemented in this bootstrap; it is
+  planned and is not part of the enforced Item 7 claim.
 
 An independent read-only reviewer approved the corrected two-PR ordering and
 the latest Item 7 bytes after rerunning the 4/4 base-controlled suite, 5/5

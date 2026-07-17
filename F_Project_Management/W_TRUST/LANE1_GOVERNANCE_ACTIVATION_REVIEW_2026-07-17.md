@@ -14,7 +14,7 @@ Merge authority: Jon only
 - Reviewed tree: `d4b29ac0b4148de302263b1546fb39f0dc4b17e2`
 - Trust-change digest: `sha256:6aef0513430479ae0a6a90d71f8dfc836c987fb682d6d2ea735f38ebf22ef8f9`
 - Complete endpoint change set: 75 paths
-- Trust-kernel subset: 41 paths
+- Trust-kernel subset: 44 paths
 
 The reviewed head is provenance for the trust bytes listed below. This
 companion does not extend or backdate review coverage beyond that head. The
@@ -22,10 +22,11 @@ later structured record and state-only commits may not alter any trust-kernel
 path. The final authenticated GitHub approval must bind the exact final PR head,
 including that record and this companion.
 
-## All 41 touched trust-kernel paths
+## All 44 touched trust-kernel paths
 
 | Path | What changed and why |
 |---|---|
+| `.github/CODEOWNERS` | Implements U-16 by making every `scripts/garnet_github_*` governance transport path Jon-owned; it is now itself classified as trust-kernel so that boundary cannot be silently relaxed. |
 | `.github/rulesets/README.md` | Documents immutable action-pin maintenance, semantic fingerprints, and the mandatory bootstrap-before-activation order. |
 | `.github/rulesets/external-action-pins.json` | Adds the reviewed full-SHA manifest and update provenance for every external action. |
 | `.github/rulesets/governance-activation-ceremony.json` | Adds a canonical Jon-only two-PR 31-to-32 ceremony; activation remains false and blocked on U-17. |
@@ -43,6 +44,8 @@ including that record and this companion.
 | `.github/workflows/vscode-extension.yml` | Pins actions and both reviewed Node setup versions. |
 | `.github/workflows/web-pwa-readiness.yml` | Pins checkout to its reviewed commit. |
 | `F_Project_Management/W_TRUST/LANDED_REVIEW_MARKERS.json` | Adds the canonical empty append-only registry that future squash-durable landed markers must enter. |
+| `garnet-cli/src/bound_source.rs` | Adds retained-handle identity binding used by vendored, helper, and discovered source reads; it is now itself classified as trust-kernel. |
+| `garnet-cli/src/cmd/add.rs` | Replaces partial dependency parsing with full TOML 1.0 validation consumed by the fail-closed run path; it is now itself classified as trust-kernel. |
 | `garnet-cli/src/cmd/run.rs` | Fails closed on malformed vendored manifests and consumes source bytes from the identity-bound handle. |
 | `garnet-cli/src/cmd/test.rs` | Fails closed on unreadable discovery/helper inputs, missing or ambiguous roots, and zero-test sources whose setup does not load cleanly. |
 | `scripts/garnet_base_controlled_trust_status.py` | Implements the trusted-old-base, candidate-inert 31/32 transition evaluator. |
@@ -87,7 +90,7 @@ including that record and this companion.
   reviewed head; this companion cannot become merge evidence until it records
   that verdict.
 - `/root/integrated_trust_diff_review` — pending integrated exact-head review of
-  all 41 paths; this companion cannot become merge evidence until it records
+  all 44 paths; this companion cannot become merge evidence until it records
   that verdict.
 
 These scoped agent reviews are substantive Covenant 3 evidence, but they do not

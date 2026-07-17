@@ -125,6 +125,20 @@ same-reviewer event by immutable reviewer ID even after a login rename, treats l
 removes the unprovable landed fields, isolates credentials before Python and
 Git, and requires canonical slash-delimited path bytes.
 
+The integrated freeze review found that two direct fail-closed dependencies,
+`garnet-cli/src/cmd/add.rs` and `garnet-cli/src/bound_source.rs`, were changed in
+this lane but absent from the trigger surface. A classification regression was
+added first and failed on `cmd/add.rs`; both exact files are now machine
+trust-kernel paths. Future parsing or retained-handle changes cannot bypass the
+v2 record merely because the public `run`/`test` call sites stay unchanged.
+
+The same integrated review found that `.github/CODEOWNERS` is the enforcement
+artifact for U-16 but was absent from the trigger surface. A regression was
+added first and failed with `AssertionError: False is not true :
+.github/CODEOWNERS`; the exact file is now machine-classified. Future removal
+of the `scripts/garnet_github_*` Jon-only ownership rule therefore requires the
+same structured rolling review as the governed scripts.
+
 ## Fresh focused GREEN
 
 ```text
