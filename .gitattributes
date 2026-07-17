@@ -13,3 +13,7 @@ proofs/**/MANIFEST.sha256 text eol=lf
 
 # Proof bundles are byte-exact evidence — never normalize line endings (cross-OS seal integrity).
 proofs/** -text
+
+# ARCHIPELAGO lane evidence is byte-exact wherever it lives. Keep this after
+# any text rules so the last matching pattern prevents checkout conversion.
+ops/**/evidence/** -text

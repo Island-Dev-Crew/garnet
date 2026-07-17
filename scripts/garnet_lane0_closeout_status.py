@@ -126,6 +126,12 @@ EXPECTED_LANE0_REVIEW_BOUNDARY = {
     ],
 }
 
+LANE0_BASE_COMMIT = "231aefa91985e5a0520c493c7f0fc3e54d74efc8"
+EXPECTED_LANDED_CHANGED_PATH_COUNT = 87
+EXPECTED_POST_REVIEW_ONLY_PATHS = (
+    "F_Project_Management/W_TRUST/LANE0_TRUST_KERNEL_REVIEW_2026-07-16.md",
+)
+
 EXPECTED_GATE_EVIDENCE = {
     "P0-G1": "20-python-tests.txt",
     "P0-G2": "04-truth-freeze.json",
@@ -1323,6 +1329,116 @@ def _verify_squash_durable_review_marker(
     return []
 
 
+def _verify_main_reachable_changed_path_proof(
+    root: Path,
+    *,
+    verify_git: bool,
+    base_commit: str = LANE0_BASE_COMMIT,
+    merged_commit: str = str(EXPECTED_LANE0_REVIEW_BOUNDARY["merged_commit"]),
+    expected_landed_path_count: int = EXPECTED_LANDED_CHANGED_PATH_COUNT,
+    post_review_only_paths: tuple[str, ...] = EXPECTED_POST_REVIEW_ONLY_PATHS,
+) -> tuple[list[str], int]:
+    """Derive the historical candidate count from main-reachable landed content.
+
+    The pre-squash reviewed head remains provenance only. The landed range has
+    one disclosed post-review companion, so its exact path set and count let the
+    archived 86-path PR-body transcript remain checkable without that discarded
+    commit object.
+    """
+    findings: list[str] = []
+    historical_candidate_count = expected_landed_path_count - len(
+        post_review_only_paths
+    )
+    if historical_candidate_count < 0:
+        findings.append("post-review-only path count exceeds landed path count")
+    if not verify_git:
+        return findings, historical_candidate_count
+
+    main_ref = "refs/remotes/origin/main"
+    resolved = subprocess.run(
+        [
+            "git",
+            "--no-replace-objects",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            main_ref,
+        ],
+        cwd=root,
+        capture_output=True,
+        text=True,
+    )
+    if resolved.returncode != 0:
+        return (
+            ["authoritative origin main ref is unavailable for changed-path proof"],
+            historical_candidate_count,
+        )
+
+    first_parent = subprocess.run(
+        ["git", "--no-replace-objects", "rev-list", "--first-parent", main_ref],
+        cwd=root,
+        capture_output=True,
+        text=True,
+    )
+    if first_parent.returncode != 0:
+        return (
+            [
+                "upstream main first-parent history could not be enumerated "
+                "for changed-path proof"
+            ],
+            historical_candidate_count,
+        )
+    first_parent_commits = first_parent.stdout.splitlines()
+    if base_commit not in first_parent_commits:
+        findings.append(
+            "changed-path base is absent from upstream main first-parent history"
+        )
+    if merged_commit not in first_parent_commits:
+        findings.append(
+            "changed-path merged commit is absent from upstream main first-parent history"
+        )
+    if (
+        base_commit in first_parent_commits
+        and merged_commit in first_parent_commits
+        and first_parent_commits.index(merged_commit)
+        >= first_parent_commits.index(base_commit)
+    ):
+        findings.append("changed-path merged commit does not follow its base on main")
+    if findings:
+        return findings, historical_candidate_count
+
+    changed = subprocess.run(
+        [
+            "git",
+            "--no-replace-objects",
+            "diff",
+            "--no-ext-diff",
+            "--name-only",
+            f"{base_commit}..{merged_commit}",
+        ],
+        cwd=root,
+        capture_output=True,
+        text=True,
+    )
+    if changed.returncode != 0:
+        return (
+            ["main-reachable changed-path range could not be enumerated"],
+            historical_candidate_count,
+        )
+    landed_paths = tuple(line for line in changed.stdout.splitlines() if line.strip())
+    if len(landed_paths) != expected_landed_path_count:
+        findings.append(
+            "main-reachable changed-path count is not the exact landed count "
+            f"({len(landed_paths)} != {expected_landed_path_count})"
+        )
+    for path in post_review_only_paths:
+        if path not in landed_paths:
+            findings.append(
+                f"post-review-only path is absent from landed range: {path}"
+            )
+    return findings, historical_candidate_count
+
+
 def _verify_reporter_evidence(
     evidence_dir: Path,
     main_state: dict,
@@ -1650,45 +1766,17 @@ def _verify_reporter_evidence(
         if isinstance(pr_command, str)
         else None
     )
-    expected_path_count = 86
+    changed_path_findings, expected_path_count = (
+        _verify_main_reachable_changed_path_proof(root, verify_git=verify_git)
+    )
+    findings.extend(changed_path_findings)
     if candidate_match is None:
         findings.append("PR-body command lacks an explicit candidate SHA")
-    elif verify_git:
+    else:
         candidate = candidate_match.group(1)
-        candidate_object = subprocess.run(
-            ["git", "cat-file", "-e", f"{candidate}^{{commit}}"],
-            cwd=root,
-            capture_output=True,
-            text=True,
-        )
-        ancestry = subprocess.run(
-            [
-                "git",
-                "merge-base",
-                "--is-ancestor",
-                "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
-                candidate,
-            ],
-            cwd=root,
-            capture_output=True,
-            text=True,
-        )
-        changed = subprocess.run(
-            [
-                "git",
-                "diff",
-                "--name-only",
-                f"231aefa91985e5a0520c493c7f0fc3e54d74efc8...{candidate}",
-            ],
-            cwd=root,
-            capture_output=True,
-            text=True,
-        )
-        if candidate_object.returncode != 0 or ancestry.returncode != 0 or changed.returncode != 0:
-            findings.append("PR-body candidate SHA is not a valid descendant of Lane 0 base")
-        else:
-            expected_path_count = len(
-                [line for line in changed.stdout.splitlines() if line.strip()]
+        if candidate != EXPECTED_LANE0_REVIEW_BOUNDARY["reviewed_head"]:
+            findings.append(
+                "PR-body candidate SHA does not match reviewed-head provenance"
             )
     if (
         f"dogfood-pr-body: ok ({expected_path_count} changed files checked)"

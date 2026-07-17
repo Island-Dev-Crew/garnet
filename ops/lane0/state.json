@@ -161,6 +161,16 @@
       "title": "U-19 ancestry-based review markers are unsatisfiable after squash merge — RESOLVED",
       "severity": "low",
       "note": "Review provenance is now split honestly: independent review ended at reviewed_head, while the final landed content is proven by exact reviewed_tree equality at a merged_commit on upstream main's first-parent history."
+    },
+    {
+      "title": "U-20 Windows checkout conversion invalidates every sealed evidence hash — RESOLVED",
+      "severity": "high",
+      "note": "ops/**/evidence/** is now byte-exact under .gitattributes (-text). Existing LF object-store bytes are unchanged; fresh Windows and Unix clones must prove object/worktree SHA-256 equality."
+    },
+    {
+      "title": "U-21 PR-body validation depends on discarded pre-squash history — RESOLVED",
+      "severity": "high",
+      "note": "The historical candidate remains provenance only. Changed paths are derived from main-reachable 231aefa..aa681ba; the exact post-review W_TRUST companion explains the legitimate 86-to-87 delta without fetching refs/pull/*."
     }
   ],
   "prLog": [],

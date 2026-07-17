@@ -1,0 +1,170 @@
+{
+  "version": 1,
+  "mission": {
+    "name": "idea-garnet-l0-evidence-durability",
+    "tagline": "Lane 0 evidence and changed-path verification must remain deterministic in fresh Windows and Unix clones without hidden ",
+    "repo": "Island-Dev-Crew/garnet",
+    "repoPath": ".",
+    "defaultBranch": "main",
+    "planDoc": "ops/lane0-repair2/plan.lock.json",
+    "northStar": "A fresh Windows clone with default core.autocrlf passes the Lane 0 closeout gate without fetching pull-request refs; A fresh macOS or Linux clone passes the same gate without fetching pull-request refs; Every Lane 0 evidence worktree byte hash equals its authoritative Git object hash on both platforms",
+    "status": "active",
+    "started": "2026-07-17",
+    "updated": "2026-07-17T03:52:39Z",
+    "sessionCount": 1
+  },
+  "policies": {
+    "merge": "review",
+    "branchPrefix": "mission/",
+    "maxPrLines": 400,
+    "notes": "review until dogfood band 5 is routine; then auto."
+  },
+  "phases": [
+    {
+      "id": "P0",
+      "title": "Checkout-fidelity repair",
+      "goal": "Protect every ops lane evidence directory from platform newline conversion while preserving committed object bytes.",
+      "status": "pending",
+      "sessionsEstimate": "1",
+      "gates": [
+        {
+          "id": "P0-G1",
+          "title": "Lane 0 closeout regression suite passes",
+          "command": "python3 -I scripts/test_garnet_lane0_closeout_status.py",
+          "status": "pending",
+          "evidence": null,
+          "lastRun": null,
+          "notes": ""
+        },
+        {
+          "id": "P0-G2",
+          "title": "Evidence attributes resolve byte-exact",
+          "command": "git check-attr text eol -- ops/lane0/evidence/COMMANDS.json",
+          "status": "pending",
+          "evidence": null,
+          "lastRun": null,
+          "notes": ""
+        }
+      ],
+      "tasks": []
+    },
+    {
+      "id": "P1",
+      "title": "Main-reachable changed-path proof",
+      "goal": "Preserve candidate provenance while deriving changed-path content proof only from the landed commit and base on upstream main.",
+      "status": "pending",
+      "sessionsEstimate": "1",
+      "gates": [
+        {
+          "id": "P1-G1",
+          "title": "Changed-path regression suite passes",
+          "command": "python3 -I scripts/test_garnet_lane0_closeout_status.py",
+          "status": "pending",
+          "evidence": null,
+          "lastRun": null,
+          "notes": ""
+        },
+        {
+          "id": "P1-G2",
+          "title": "Lane 0 closeout gate passes without pull refs",
+          "command": "python3 -I scripts/garnet_lane0_closeout_status.py --gate",
+          "status": "pending",
+          "evidence": null,
+          "lastRun": null,
+          "notes": ""
+        }
+      ],
+      "tasks": []
+    },
+    {
+      "id": "P2",
+      "title": "Clean-clone and trust closeout",
+      "goal": "Capture fresh Windows and Unix clone proofs, verify the trust-kernel companion, and prepare one human-merged repair PR.",
+      "status": "pending",
+      "sessionsEstimate": "1",
+      "gates": [
+        {
+          "id": "P2-G1",
+          "title": "Trust-kernel companion gate passes",
+          "command": "python3 scripts/garnet_trust_kernel_review_status.py --gate",
+          "status": "pending",
+          "evidence": null,
+          "lastRun": null,
+          "notes": ""
+        },
+        {
+          "id": "P2-G2",
+          "title": "Lane 0 closeout gate passes in this clean clone",
+          "command": "python3 -I scripts/garnet_lane0_closeout_status.py --gate",
+          "status": "pending",
+          "evidence": null,
+          "lastRun": null,
+          "notes": ""
+        },
+        {
+          "id": "P2-G3",
+          "title": "Repository diff has no whitespace errors",
+          "command": "git diff --check",
+          "status": "pending",
+          "evidence": null,
+          "lastRun": null,
+          "notes": ""
+        }
+      ],
+      "tasks": []
+    }
+  ],
+  "metrics": [
+    {
+      "label": "Definition-of-done claims verified",
+      "baseline": "0",
+      "current": "0",
+      "target": "3",
+      "direction": "up"
+    }
+  ],
+  "risks": [
+    {
+      "title": "A superficially green repair could still depend on an ambient Git object or silently weaken the sealed evidence proof.",
+      "severity": "medium",
+      "note": "from idea.lock (confidence 9/10)"
+    }
+  ],
+  "prLog": [],
+  "resume": {
+    "activePhase": "P0",
+    "nextActions": [
+      "Prove both baseline failures, add red regression tests, and repair only the two durability defects."
+    ],
+    "blockers": [],
+    "conventions": [
+      "One task = one branch = one PR",
+      "Update state.json + render + commit after every merge",
+      "Gate commands are shell-agnostic (no &&)"
+    ]
+  },
+  "archipelago": {
+    "protocolVersion": "1.0",
+    "ideaLock": "ops/lane0-repair2/idea.lock.json",
+    "planLock": "ops/lane0-repair2/plan.lock.json",
+    "loop": {
+      "cycle": 1,
+      "stage": "S2",
+      "loopbacks": []
+    },
+    "governance": {
+      "ledgerRunId": "",
+      "budgetSpentUsd": 0.0,
+      "branchSweeps": []
+    },
+    "compound": {
+      "notes": [],
+      "memorySync": "pending",
+      "experiments": []
+    },
+    "fableShim": {
+      "rewriterVersion": "1.0.0",
+      "refusals": []
+    }
+  }
+}

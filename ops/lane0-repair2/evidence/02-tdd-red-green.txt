@@ -1,0 +1,21 @@
+RED command:
+python3 -I scripts/test_garnet_lane0_closeout_status.py -v
+
+RED result: exit 1; 34 tests ran; 2 failures and 2 errors.
+- Both attribute probes resolved text: unspecified instead of text: unset.
+- Both main-reachable proof tests errored because
+  _verify_main_reachable_changed_path_proof did not exist.
+- All pre-existing tests remained green except the expected Windows symlink skip.
+
+GREEN command:
+python3 -I scripts/test_garnet_lane0_closeout_status.py -v
+
+Initial GREEN result: exit 0; 34 tests ran; OK (skipped=1).
+- Current and future ops lane evidence paths resolve text: unset.
+- The changed-path proof passes with no pre-squash candidate object.
+- An incorrect post-review-only path fails closed.
+- Existing replacement-ref, first-parent, marker, manifest, ledger, review,
+  denominator, WV-pending, and launch-HOLD adversarial tests remain green.
+
+Final hardened GREEN after adding missing-origin and wrong-count negatives:
+exit 0; 36 tests ran; OK (skipped=1).

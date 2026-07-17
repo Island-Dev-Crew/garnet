@@ -1,0 +1,13 @@
+Captured: 2026-07-17T04:04Z
+Scope: every unique blob reachable from local refs under ops/**/evidence/**.
+
+evidence_object_rows=46
+unique_utf8_text_evidence_blobs=45
+text_crlf_blobs=0
+binary_blobs_containing_crlf_byte_pair=1
+BINARY a7ed22b8846c97da53e57ccd76a5dff1e2e00fe8 1 ops/lane2a/evidence/30-playground-browser.png
+
+No reachable UTF-8 text evidence blob was committed with CRLF. The one binary
+PNG contains a CRLF byte pair as image data; it is not a text line ending and
+is preserved byte-exact. This repair changes checkout fidelity only and does
+not renormalize or rewrite existing object-store evidence.

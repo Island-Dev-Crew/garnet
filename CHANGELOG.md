@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased — Lane 0 evidence durability repair (2026-07-16)
+
+- **Fixed Windows checkout fidelity:** every `ops/**/evidence/**` path is now
+  byte-exact, preventing `core.autocrlf=true` from changing sealed LF evidence
+  into CRLF worktree bytes. Existing object-store content is unchanged.
+- **Fixed squash durability:** the Lane 0 PR-body path proof now uses only the
+  main-reachable `231aefa..aa681ba` range. The discarded pre-squash head remains
+  provenance, not a required local Git object; no pull-request ref is fetched.
+- **Preserved the 86/87 distinction:** the landed range has 87 paths because
+  `F_Project_Management/W_TRUST/LANE0_TRUST_KERNEL_REVIEW_2026-07-16.md` was
+  added after the 86-path reviewed candidate. The gate pins that exact disclosed
+  delta instead of weakening or deleting the historical PR-body proof.
+- **Honest scope:** bounded Lane 0 gate repair only. Launch remains HOLD at
+  band 3; no Lane 1, 2A, or 2B implementation and no Jon-only action occurred.
+
 All notable changes to Garnet are recorded here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).

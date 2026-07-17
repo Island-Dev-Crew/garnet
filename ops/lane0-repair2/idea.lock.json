@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1.0",
+  "id": "idea-garnet-l0-evidence-durability",
+  "frozenAt": "2026-07-17T03:51:50Z",
+  "frozenBy": "jon-isaac",
+  "problem": {
+    "statement": "Lane 0 evidence and changed-path verification must remain deterministic in fresh Windows and Unix clones without hidden pull-request refs.",
+    "successCriteria": [
+      "A fresh Windows clone with default core.autocrlf passes the Lane 0 closeout gate without fetching pull-request refs",
+      "A fresh macOS or Linux clone passes the same gate without fetching pull-request refs",
+      "Every Lane 0 evidence worktree byte hash equals its authoritative Git object hash on both platforms"
+    ]
+  },
+  "domain": {
+    "id": 6,
+    "letter": "F",
+    "name": "Elite Software Craft"
+  },
+  "definitionOfDone": [
+    {
+      "claim": "the Lane 0 closeout gate passes on a fresh clone with no refs/pull/* fetched, on both Windows default core.autocrlf and a Unix clone",
+      "falsifiedBy": "clone fresh on each platform, fetch no PR refs, run the gate; any FAIL falsifies; a pass that requires fetching a pull ref falsifies"
+    },
+    {
+      "claim": "evidence byte-hashes are identical between object store and worktree on every platform",
+      "falsifiedBy": "for each file in the evidence dir, git cat-file -p HEAD:<path> | sha256sum must equal the worktree sha256sum; any divergence falsifies"
+    },
+    {
+      "claim": "the changed-path proof is derived only from commits reachable from main",
+      "falsifiedBy": "any git object the gate requires that is unreachable from origin/main falsifies"
+    }
+  ],
+  "confidence": {
+    "score": 9,
+    "biggestRisk": "A superficially green repair could still depend on an ambient Git object or silently weaken the sealed evidence proof.",
+    "nextAction": "Prove both baseline failures, add red regression tests, and repair only the two durability defects."
+  },
+  "rejectedAlternatives": [
+    {
+      "idea": "Fetch refs/pull/507/head in every clone",
+      "reason": "That would preserve the hidden-object dependency and make gate truth depend on ambient repository history."
+    },
+    {
+      "idea": "Exclude evidence files from manifest verification",
+      "reason": "That would remove the proof instead of preserving byte-exact checkout fidelity."
+    }
+  ]
+}

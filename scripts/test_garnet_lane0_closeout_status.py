@@ -963,5 +963,117 @@ class SquashDurableReviewMarkerGitTests(unittest.TestCase):
         )
 
 
+class EvidenceCheckoutAttributesTests(unittest.TestCase):
+    def test_every_lane_evidence_directory_is_byte_exact(self) -> None:
+        root = SCRIPT.parents[1]
+        for relative in (
+            "ops/lane0/evidence/COMMANDS.json",
+            "ops/future-lane/evidence/probe.txt",
+        ):
+            with self.subTest(relative=relative):
+                result = subprocess.run(
+                    ["git", "check-attr", "text", "eol", "--", relative],
+                    cwd=root,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertIn(f"{relative}: text: unset", result.stdout)
+
+
+class MainReachableChangedPathProofTests(unittest.TestCase):
+    COMPANION = "F_Project_Management/W_TRUST/LANE0_TRUST_KERNEL_REVIEW.md"
+
+    def setUp(self) -> None:
+        self.temp = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp.name)
+        self._git("init")
+        self._git("config", "user.email", "lane0@example.invalid")
+        self._git("config", "user.name", "Lane 0 Test")
+        (self.root / "payload.txt").write_text("base\n", encoding="utf-8")
+        self._git("add", "payload.txt")
+        self._git("commit", "-m", "base")
+        self.base = self._git("rev-parse", "HEAD")
+        self._git("branch", "-M", "main")
+        (self.root / "payload.txt").write_text("landed\n", encoding="utf-8")
+        companion = self.root / self.COMPANION
+        companion.parent.mkdir(parents=True)
+        companion.write_text("post-review companion\n", encoding="utf-8")
+        self._git("add", "payload.txt", self.COMPANION)
+        self._git("commit", "-m", "squash result with companion")
+        self.merged_commit = self._git("rev-parse", "HEAD")
+        self._git("update-ref", "refs/remotes/origin/main", self.merged_commit)
+
+    def tearDown(self) -> None:
+        self.temp.cleanup()
+
+    def _git(self, *args: str) -> str:
+        result = subprocess.run(
+            ["git", *args],
+            cwd=self.root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            self.fail(f"git {' '.join(args)} failed: {result.stderr or result.stdout}")
+        return result.stdout.strip()
+
+    def _proof(
+        self,
+        *,
+        expected_landed_path_count: int = 2,
+        post_review_only_paths: tuple[str, ...] | None = None,
+    ) -> tuple[list[str], int]:
+        return status_mod._verify_main_reachable_changed_path_proof(
+            self.root,
+            verify_git=True,
+            base_commit=self.base,
+            merged_commit=self.merged_commit,
+            expected_landed_path_count=expected_landed_path_count,
+            post_review_only_paths=(
+                (self.COMPANION,)
+                if post_review_only_paths is None
+                else post_review_only_paths
+            ),
+        )
+
+    def test_proof_needs_no_pre_squash_candidate_object(self) -> None:
+        missing_candidate = subprocess.run(
+            ["git", "cat-file", "-e", f"{'f' * 40}^{{commit}}"],
+            cwd=self.root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertNotEqual(0, missing_candidate.returncode)
+        findings, historical_candidate_count = self._proof()
+        self.assertEqual([], findings)
+        self.assertEqual(1, historical_candidate_count)
+
+    def test_post_review_only_path_delta_is_exact(self) -> None:
+        findings, _ = self._proof(post_review_only_paths=("wrong/path.md",))
+        self.assertTrue(
+            any("post-review-only path" in item for item in findings),
+            findings,
+        )
+
+    def test_landed_path_count_mismatch_is_red(self) -> None:
+        findings, _ = self._proof(expected_landed_path_count=3)
+        self.assertTrue(
+            any("exact landed count" in item for item in findings),
+            findings,
+        )
+
+    def test_missing_origin_main_is_red(self) -> None:
+        self._git("update-ref", "-d", "refs/remotes/origin/main")
+        findings, _ = self._proof()
+        self.assertTrue(
+            any("origin main ref is unavailable" in item for item in findings),
+            findings,
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

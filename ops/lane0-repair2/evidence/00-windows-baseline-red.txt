@@ -1,0 +1,40 @@
+Captured: 2026-07-17T03:45Z
+Fresh clone: C:\garnet-l0-repair2
+HEAD: 8535e6d3f9023cabc57476991024354dd2741dc1
+origin/main: 8535e6d3f9023cabc57476991024354dd2741dc1
+origin fetch refspec: +refs/heads/main:refs/remotes/origin/main
+
+$ git config --get core.autocrlf
+true
+
+$ python3 -I scripts/garnet_lane0_closeout_status.py --gate
+Lane 0 closeout: FAIL � evidence 22/22 � ledger 37 entries � denominators 4/4 � launch HOLD � band 3 � S6 advisory
+  - manifest hash mismatch: 00-environment.json
+  - manifest hash mismatch: 01-archipelago-contracts.txt
+  - manifest hash mismatch: 02-first-parent-archive.txt
+  - manifest hash mismatch: 03-successor-pin-delta.txt
+  - manifest hash mismatch: 04-truth-freeze.json
+  - manifest hash mismatch: 05-msrv.json
+  - manifest hash mismatch: 06-frozen-backlog.json
+  - manifest hash mismatch: 07-quarterly-watch.json
+  - manifest hash mismatch: 08-launch-readiness.json
+  - manifest hash mismatch: 09-mit-readiness.json
+  - manifest hash mismatch: 10-denominators.json
+  - manifest hash mismatch: 11-truth-check.txt
+  - manifest hash mismatch: 12-repository-evidence-integrity.json
+  - manifest hash mismatch: 13-wv6-pending.json
+  - manifest hash mismatch: 14-wv7-pending.json
+  - manifest hash mismatch: 20-python-tests.txt
+  - manifest hash mismatch: 21-rust-msrv-checks.txt
+  - manifest hash mismatch: 22-workspace-tests.txt
+  - manifest hash mismatch: 23-sotu-render.txt
+  - manifest hash mismatch: 24-pr-body-validation.txt
+  - manifest hash mismatch: 25-independent-review.md
+  - manifest hash mismatch: COMMANDS.json
+  - PR-body candidate SHA is not a valid descendant of Lane 0 base
+
+COMMANDS.json object SHA-256: 2efdf41830b84c0bd719bacb7f4d28ef22caea85de27b316c41030726d069a12
+COMMANDS.json worktree SHA-256: 34a1c9f40e88b554e5ec9acfcd479d230e97dff3d44b08b0860815839f99ab57
+Object bytes: 11497 (349 LF, 0 CR)
+Worktree bytes: 11846 (349 LF, 349 CR)
+Delta: 349 bytes, exactly one inserted CR per LF.
