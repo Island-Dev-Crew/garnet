@@ -1,0 +1,7 @@
+13c87bfeb0ea6678b6593cce6fd1b768931152dc4671610a019cd0091a5f59f8  00-windows-baseline-red.txt
+73aef773be0f5bf54c4c4d99f46ffcd52c78fb9e29f6fe6a4c8934f03199a8c7  01-86-vs-87-resolution.txt
+04ca333c0d53224a4f67bba7978938dbc8707cf8997838fd714ac0bd423eef04  02-tdd-red-green.txt
+4e6dbc1782ecfadabf8ee9ae4421a2cdd2af7b85b2d85bf0030d4a19269ad4cf  03-reachable-object-line-endings.txt
+d5948b0c2ad933005750afa90816325c464f2b8fd01e397b7b6b40b09a08fac8  04-windows-clean-clone-green.txt
+984284a3cf5d10e51fb60e2419d3dc1d6ae122126e01b3f782bc07ac76acbe59  05-linux-clean-clone-green.txt
+9c3760b91aa0d436b649d7c93caa08a11ba9535a0c023d58d43ebab9113e4c72  06-local-gates-green.txt

@@ -84,8 +84,24 @@ After adding missing-origin and wrong-landed-count negatives, the final focused
 suite is 36 tests green, with the one Windows symlink test skipped as designed.
 
 The exact logs and discrepancy proof are under
-`ops/lane0-repair2/evidence/`. Clean-clone Windows and Linux transcripts are
-added there before this PR is marked ready.
+`ops/lane0-repair2/evidence/`.
+
+## Fresh clean-clone GREEN
+
+Both acceptance runs are bound to implementation commit
+`ab6b91eae4fbdd9c85f44131483de12051bb82f5`. Each clone fetched only the named
+fork repair branch and upstream `refs/heads/main`; neither fetched fork main or
+any `refs/pull/*` ref.
+
+- Windows default `core.autocrlf=true`: `text: unset`, 23 tracked Lane 0
+  evidence files checked, zero object/worktree hash mismatches, pre-squash
+  candidate object absent with exit 128, closeout gate PASS.
+- Ubuntu/WSL with `core.autocrlf` unset: the same 23/23 byte proof, candidate
+  absent with exit 128, closeout gate PASS.
+
+The captured transcripts are
+`ops/lane0-repair2/evidence/04-windows-clean-clone-green.txt` and
+`05-linux-clean-clone-green.txt`; `MANIFEST.sha256` seals the repair evidence.
 
 ## Review status and authority
 
