@@ -1,0 +1,123 @@
+{
+  "schema": "garnet.launch_readiness/v1",
+  "source": "/private/tmp/garnet-l1-governance-activation-20260717/scripts/garnet_launch_readiness_status.py",
+  "evidence_base": "c0190a4",
+  "evidence_base_status": "measured",
+  "release_grade": "research-grade v0.x prototype; release_ready=True (binary-strict)",
+  "recommendation": "HOLD",
+  "launch_ready": false,
+  "gates": [
+    {
+      "id": "foundation_integrity",
+      "label": "Foundation integrity (release + red-team + evidence + measured base)",
+      "state": "pass",
+      "evidence": [
+        "v0.8.1 release readiness reporter green (binary-strict)",
+        "red-team static contract green (report, HIGH fix, regressions)",
+        "evidence-integrity bundles ok (38/38)",
+        "workspace tests measured at reachable commit `c0190a4`",
+        "MIT productization lane active-partial (93.1%)"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "native_linux",
+      "label": "Native Linux lane (CLI install + Studio + seccomp)",
+      "state": "pass",
+      "evidence": [
+        "native Debian CLI clean-install proof verified",
+        "native Linux Studio build+install+launch proof verified",
+        "seccomp-apply proof deterministic and policy-driven"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "s114_acceptance",
+      "label": "S114 independent re-verification acceptance",
+      "state": "accepted-scoped",
+      "evidence": [
+        "S114 accepted (scoped) by Jon (repo owner) on 2026-07-12: first-party CLI/Wasm trust-kernel baseline",
+        "recorded in F_Project_Management/LAUNCH/S114_ACCEPTANCE.json (read, not graded, by this reporter)",
+        "not an independence relabel: S114 verdict language is unchanged (independently-re-verified-with-fixes)",
+        "post-acceptance closure: condition-5-reopened-by-post-acceptance-delta-review",
+        "current scope limit (tracked): Interpreter::new_permissive() deliberately permits unframed direct calls for trusted integrations; strict-by-default is not a claim that the opt-out is impossible.",
+        "current scope limit (tracked): Direct use of the public low-level Env/Value/eval APIs is controlled by the Rust host and can execute outside an Interpreter method's per-instance strict scope; it is not covered as a sandbox boundary.",
+        "current scope limit (tracked): Capability rows that are checker-only (time::*, uuid v4/v7) or declared-only (ffi, net_internal) are not uniformly runtime-gated.",
+        "current scope limit (tracked): OS-level sandbox policy is generated with enforced:false and applied only on Linux via the external seccomp reference harness; macOS/Windows OS sandboxing remains named-deferred.",
+        "current scope limit (tracked): memory::* natives remain bridge-only and caps-invisible.",
+        "current scope limit (tracked): WV-5 proves the Wasm build and Node execution, not live browser-page execution."
+      ],
+      "blockers": []
+    },
+    {
+      "id": "static_playground",
+      "label": "Static playground gallery (honest, recorded outputs)",
+      "state": "partial",
+      "evidence": [
+        "3 recorded examples, honesty markers present"
+      ],
+      "blockers": [
+        "static gallery only; live execution is the W-PLAY workstream"
+      ]
+    },
+    {
+      "id": "live_wasm_playground",
+      "label": "Live WASM playground (W-PLAY, launch centerpiece)",
+      "state": "remaining",
+      "evidence": [
+        "WV-5 clean-Windows evidence: wasm32 + wasm-pack web/node builds passed",
+        "WV-5 real Node execution passed, including fail-closed authority smoke"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "minimum_sealed_shelf",
+      "label": "Minimum sealed shelf (Core Ring Tier 1 + MCP library)",
+      "state": "manual-deferred",
+      "evidence": [
+        "stdlib registry: 80 primitives, 100.0% explicit stability"
+      ],
+      "blockers": [
+        "no reporter covers the shelf in Truth Lock; this is an explicit manual fence, never reporter-derived machine truth"
+      ]
+    },
+    {
+      "id": "promo_video",
+      "label": "Promo video (human-produced launch asset)",
+      "state": "pending-human",
+      "evidence": [
+        "promo reporter status: public-site-embedded (95.0%)"
+      ],
+      "blockers": [
+        "human render/QA decision outside this reporter"
+      ]
+    },
+    {
+      "id": "launch_fire",
+      "label": "Launch fire (marketing wave, tag, release)",
+      "state": "jon-only",
+      "evidence": [],
+      "blockers": [
+        "FIRE/HOLD is Jon's alone; never autonomous"
+      ]
+    }
+  ],
+  "deferred": [
+    "@bounded (Wasmtime fuel) \u2014 declared, not enforced",
+    "memory limits \u2014 declared, not enforced",
+    "time limits \u2014 declared, not enforced",
+    "@mailbox \u2014 declared, not enforced",
+    "macOS/Windows OS-sandbox application \u2014 seccomp applies on Linux only",
+    "Core Ring Tier 1 shelf \u2014 post-Truth-Lock workstream (Minimum Shelf)",
+    "MCP tool-server library \u2014 post-Truth-Lock workstream (Minimum Shelf)"
+  ],
+  "jon_only": [
+    "push a git tag",
+    "cut or release a version",
+    "record the S114 acceptance decision",
+    "change CI/release policy or any gate a PR merges under",
+    "RB-6 backend decision",
+    "RB-8 root-reorg cut",
+    "fire the launch/marketing wave"
+  ]
+}

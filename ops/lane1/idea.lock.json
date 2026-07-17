@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "1.0",
+  "id": "idea-garnet-l1-governance-activation",
+  "frozenAt": "2026-07-17T05:48:28Z",
+  "frozenBy": "jon-isaac",
+  "problem": {
+    "statement": "Garnet must close the finite S114 governance arc with fail-closed, squash-durable review evidence and a human-controlled activation boundary before the governance freeze can arm.",
+    "successCriteria": [
+      "Rolling review binds exact touched paths, content digests, and reviewer identity and returns RED on every enumeration failure",
+      "GOV-009 proves fresh exact-reviewed-head and outcome-verified state while the live no-bypass clause remains explicitly blocked unless Jon provides a dedicated admin-authoritative token",
+      "Every external workflow action is pinned to a full immutable SHA and governance transport scripts enter the Jon-only exception boundary",
+      "The four policy suites agree across Linux, macOS, and Windows and fail closed on malformed or unreadable inputs",
+      "The human 31-to-32 ceremony package and S114 terminus note are prepared without activating, merging, publishing, tagging, or firing"
+    ]
+  },
+  "domain": {
+    "id": 6,
+    "letter": "F",
+    "name": "Elite Software Craft"
+  },
+  "definitionOfDone": [
+    {
+      "claim": "the rolling review gate fails closed on every enumeration failure",
+      "falsifiedBy": "inject each failure mode — unreachable API, truncated page set, malformed reviewer identity, digest mismatch, empty path list, partial pagination — and assert RED for each; any warn-then-green falsifies"
+    },
+    {
+      "claim": "zero mutable external action references remain",
+      "falsifiedBy": "enumerate every uses: in .github/workflows; any reference not pinned to a full 40-char SHA falsifies"
+    },
+    {
+      "claim": "all four policy suites return identical results on Linux, macOS, and Windows",
+      "falsifiedBy": "run the four suites from the base on all three OSes; any divergence in outcome falsifies"
+    },
+    {
+      "claim": "the 32nd required context is authenticated, semantic, base-controlled, and cannot be bypassed",
+      "falsifiedBy": "live readback with an admin-authoritative token must show the context required and bypass_actors empty; a 403/null read, an inherited credential, or a non-empty bypass list falsifies"
+    },
+    {
+      "claim": "every review marker remains valid after Garnet squash-merges its reviewed branch",
+      "falsifiedBy": "a marker that requires the pre-squash reviewed head to be an ancestor of main, lacks a reviewed tree digest, or lacks a landed commit on upstream main first-parent history falsifies"
+    },
+    {
+      "claim": "the governance freeze arms only from the human-merged terminus artifact",
+      "falsifiedBy": "any agent merge, activation, FIRE, tag, publish, or claim that the freeze is active before the terminus lands falsifies"
+    }
+  ],
+  "confidence": {
+    "score": 7,
+    "biggestRisk": "A structurally green policy could still fail open when its own GitHub enumeration or provenance inputs are incomplete.",
+    "nextAction": "Record the base RED and implement rolling-review v2 failure semantics before any later Lane 1 item."
+  },
+  "psznDedupe": {
+    "checked": true,
+    "nearestNeighbor": "idea-garnet-l0-truth-freeze",
+    "similarity": 0.42
+  },
+  "rejectedAlternatives": [
+    {
+      "idea": "Treat a warning or unavailable enumeration as sufficient review evidence",
+      "reason": "That recreates U-04 by allowing the gate to approve the exact condition it failed to enumerate."
+    },
+    {
+      "idea": "Use an ambient or fork credential for the live no-bypass readback",
+      "reason": "U-17 requires an explicitly provisioned admin-authoritative token that is never inherited, persisted, or printed."
+    }
+  ]
+}

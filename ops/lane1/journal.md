@@ -1,0 +1,5 @@
+# Mission journal — idea-garnet-l1-governance-activation
+
+- 2026-07-17T05:54:00Z: kickoff. G0+G1 artifacts consumed; 8 phase(s); stage S2.
+- 2026-07-17T05:56:57Z: P0 closed from fresh upstream `cede73c03c5d535306ed179b5882e99e4d17b050`. The first-parent delta folds in #509 (Lane 2A browser proof) and #510 (clone-durable Lane 0 evidence). Lane 0 closeout, Rust 1.95, frozen backlog, and U-18 are green. Base macOS RED is preserved: 30 `/var` symlink assertion failures and one NFD filename-collision failure. System Python lacked PyYAML 6.0.3; the degradation is recorded and the pinned dependency passed 4/4 YAML plus 5/5 schema tests in a disposable venv. U-17 remains Jon-blocked; no credential or Jon-only action was used.
+- 2026-07-17T06:34:00Z: Contract review removed one vacuous future gate and made the remaining finite-sequence contracts explicit. P4 now requires an executable immutable-action reporter; P2 requires the named GOV-009 evaluator regressions; P6 and P7 require machine-checkable ceremony and Lane 1 closeout reporters. No unimplemented gate is marked passed.

@@ -1,0 +1,4 @@
+$ cargo run -q -p xtask -- truth --check
+exit 0
+--- stdout ---
+truth --check: ok (6 fields vs machine truth, 4 stamped surfaces)

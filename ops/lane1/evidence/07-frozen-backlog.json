@@ -1,0 +1,14 @@
+{
+  "schema": "garnet.lane0.frozen_backlog/v1",
+  "exact_base_main_sha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+  "entry_count": 8,
+  "implemented_clause_count": 9,
+  "states": {
+    "implemented": 0,
+    "partial": 4,
+    "planned": 4,
+    "research": 0
+  },
+  "findings": [],
+  "ok": true
+}
