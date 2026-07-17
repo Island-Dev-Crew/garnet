@@ -119,7 +119,7 @@ class CrossOsPolicyManifestTests(unittest.TestCase):
                 root=self.root,
                 expected_head=self.head,
                 output=self.output,
-                os_name="macOS",
+                os_name=runner._runtime_os(),
                 suite_loader=self.loader(case),
             )
         manifest = json.loads(self.output.read_text(encoding="utf-8"))
@@ -128,7 +128,7 @@ class CrossOsPolicyManifestTests(unittest.TestCase):
         self.assertEqual(manifest["head_sha"], self.head)
         self.assertTrue(manifest["head_exact"])
         self.assertTrue(manifest["working_tree_clean"])
-        self.assertEqual(manifest["os"], "macOS")
+        self.assertEqual(manifest["os"], runner._runtime_os())
         self.assertEqual(len(manifest["suites"]), 4)
         self.assertEqual(manifest["totals"]["tests_run"], 4)
         self.assertEqual(manifest["totals"]["skipped"], 0)
@@ -153,7 +153,7 @@ class CrossOsPolicyManifestTests(unittest.TestCase):
                 root=self.root,
                 expected_head=self.head,
                 output=self.output,
-                os_name="macOS",
+                os_name=runner._runtime_os(),
                 suite_loader=self.loader(case),
             )
             first = json.loads(self.output.read_text(encoding="utf-8"))
@@ -165,7 +165,7 @@ class CrossOsPolicyManifestTests(unittest.TestCase):
                 root=self.root,
                 expected_head=next_head,
                 output=self.output,
-                os_name="macOS",
+                os_name=runner._runtime_os(),
                 suite_loader=self.loader(case),
             )
             second = json.loads(self.output.read_text(encoding="utf-8"))
@@ -192,7 +192,7 @@ class CrossOsPolicyManifestTests(unittest.TestCase):
                 root=self.root,
                 expected_head=self.head,
                 output=self.output,
-                os_name="macOS",
+                os_name=runner._runtime_os(),
                 suite_loader=self.loader(DifferentPassingCase),
             )
         manifest = json.loads(self.output.read_text(encoding="utf-8"))
@@ -206,7 +206,7 @@ class CrossOsPolicyManifestTests(unittest.TestCase):
             root=self.root,
             expected_head=self.head,
             output=self.output,
-            os_name="macOS",
+            os_name=runner._runtime_os(),
             suite_loader=self.loader(self.skipped_case()),
         )
         manifest = json.loads(self.output.read_text(encoding="utf-8"))
@@ -230,7 +230,7 @@ class CrossOsPolicyManifestTests(unittest.TestCase):
             root=self.root,
             expected_head="0" * 40,
             output=self.output,
-            os_name="macOS",
+            os_name=runner._runtime_os(),
             suite_loader=load,
         )
         mismatch = json.loads(self.output.read_text(encoding="utf-8"))
@@ -242,7 +242,7 @@ class CrossOsPolicyManifestTests(unittest.TestCase):
             root=self.root,
             expected_head=self.head,
             output=self.output,
-            os_name="macOS",
+            os_name=runner._runtime_os(),
             suite_loader=load,
         )
         dirty = json.loads(self.output.read_text(encoding="utf-8"))
@@ -266,7 +266,7 @@ class CrossOsPolicyManifestTests(unittest.TestCase):
             root=self.root,
             expected_head=self.head,
             output=self.output,
-            os_name="macOS",
+            os_name=runner._runtime_os(),
             suite_loader=load,
         )
         manifest = json.loads(self.output.read_text(encoding="utf-8"))
@@ -285,7 +285,7 @@ class CrossOsPolicyManifestTests(unittest.TestCase):
             root=self.root,
             expected_head=self.head,
             output=self.output,
-            os_name="macOS",
+            os_name=runner._runtime_os(),
             suite_loader=self.loader(MutatingCase),
         )
         manifest = json.loads(self.output.read_text(encoding="utf-8"))
@@ -305,7 +305,7 @@ class CrossOsPolicyManifestTests(unittest.TestCase):
             root=self.root,
             expected_head=self.head,
             output=self.output,
-            os_name="macOS",
+            os_name=runner._runtime_os(),
             suite_loader=broken,
         )
         manifest = json.loads(self.output.read_text(encoding="utf-8"))
