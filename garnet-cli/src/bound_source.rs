@@ -51,7 +51,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::{read_bound_source, read_bound_source_with_hook};
+    use super::read_bound_source;
+    #[cfg(unix)]
+    use super::read_bound_source_with_hook;
 
     #[test]
     fn validated_bytes_are_returned_from_the_bound_handle() {
