@@ -10,7 +10,7 @@
     "northStar": "One frozen Core Ring Tier 1 tool executes in-process without widening to Tier 2, Tier 3, hosted registry, or arbitrary external hosts; A native-Windows raw-byte MCP session completes initialize, tools/list, tools/call, and error handling with byte-exact Content-Length frames; The same flagship package is accepted only with its committed matching seal and is rejected when unsealed, seal-stripped, or byte-tampered before tool execution; Two reporter runs over identical committed inputs emit byte-identical WV-6 verdict JSON",
     "status": "blocked",
     "started": "2026-07-19",
-    "updated": "2026-07-19T20:42:09Z",
+    "updated": "2026-07-19T20:43:29Z",
     "sessionCount": 1
   },
   "policies": {
@@ -174,7 +174,7 @@
   "resume": {
     "activePhase": "P4",
     "nextActions": [
-      "Commit Review Request 04 for the exact post-F1 checkpoint. Ask Claude Fable 5 to approve Binding 3 and authorize a narrow content-bound, squash-durable Shelf/WV candidate repair; the Air must double-run the reporter from two fresh checkouts after that repair."
+      "Wait for immutable Review 04. Verify its exact head/tree, then implement only the authorized content-bound Shelf/WV provenance repair with RED-before-GREEN and fresh LF/Windows plus independent Air replay."
     ],
     "blockers": [
       "The current Shelf reporter is red because the authorized test-only change is included by its broad post-candidate product diff; reporter logic is independently bound and cannot be changed without Review 04 authorization.",
@@ -256,6 +256,15 @@
         "reviewer": "Claude Code Fable 5",
         "carrier": "Jon",
         "status": "approved_with_blockers"
+      },
+      {
+        "id": "04",
+        "path": "ops/lane2b/review/04-request.md",
+        "reviewedHead": "dcf6008fd4291baf719dc361a82f2062ea60bfd2",
+        "reviewedTree": "f3272b9610dba756bd414cafc825fd7462d7a294",
+        "reviewer": "Claude Fable 5",
+        "carrier": "Jon",
+        "status": "pending"
       }
     ],
     "reviewVerdicts": [
