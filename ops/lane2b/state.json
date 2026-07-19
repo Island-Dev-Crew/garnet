@@ -10,7 +10,7 @@
     "northStar": "One frozen Core Ring Tier 1 tool executes in-process without widening to Tier 2, Tier 3, hosted registry, or arbitrary external hosts; A native-Windows raw-byte MCP session completes initialize, tools/list, tools/call, and error handling with byte-exact Content-Length frames; The same flagship package is accepted only with its committed matching seal and is rejected when unsealed, seal-stripped, or byte-tampered before tool execution; Two reporter runs over identical committed inputs emit byte-identical WV-6 verdict JSON",
     "status": "blocked",
     "started": "2026-07-19",
-    "updated": "2026-07-19T19:22:48Z",
+    "updated": "2026-07-19T19:24:16Z",
     "sessionCount": 1
   },
   "policies": {
@@ -247,6 +247,15 @@
         "reviewer": "Claude Fable 5",
         "carrier": "Jon",
         "status": "approved_with_blockers"
+      },
+      {
+        "id": "03",
+        "path": "ops/lane2b/review/03-request.md",
+        "reviewedHead": "d386b882904d32160acbbcf02235b95002daa48a",
+        "reviewedTree": "8f86737e0df646431a7429e37dbcee0a56af0667",
+        "reviewer": "Claude Code Fable 5",
+        "carrier": "Jon",
+        "status": "pending"
       }
     ],
     "reviewVerdicts": [
