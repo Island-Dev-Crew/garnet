@@ -81,7 +81,7 @@
       "id": "P3",
       "title": "Fail-closed negative proof",
       "goal": "Reject missing, stripped, mismatched, and byte-tampered package inputs before any Garnet tool code executes.",
-      "status": "pending",
+      "status": "in_progress",
       "sessionsEstimate": "1",
       "gates": [
         {
@@ -91,7 +91,7 @@
           "status": "pending",
           "evidence": null,
           "lastRun": null,
-          "notes": ""
+          "notes": "RED recorded before the sealed happy path in ops/lane2b/evidence/06-slice4-negative-red.txt; five fail-closed package traps compile against a deliberately missing loader."
         }
       ],
       "tasks": []
