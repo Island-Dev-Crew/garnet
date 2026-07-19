@@ -10,7 +10,7 @@
     "northStar": "One frozen Core Ring Tier 1 tool executes in-process without widening to Tier 2, Tier 3, hosted registry, or arbitrary external hosts; A native-Windows raw-byte MCP session completes initialize, tools/list, tools/call, and error handling with byte-exact Content-Length frames; The same flagship package is accepted only with its committed matching seal and is rejected when unsealed, seal-stripped, or byte-tampered before tool execution; Two reporter runs over identical committed inputs emit byte-identical WV-6 verdict JSON",
     "status": "active",
     "started": "2026-07-19",
-    "updated": "2026-07-19T18:30:48Z",
+    "updated": "2026-07-19T18:33:09Z",
     "sessionCount": 1
   },
   "policies": {
@@ -107,10 +107,10 @@
           "id": "P4-G1",
           "title": "Minimum Shelf reporter emits deterministic accepted JSON",
           "command": "python3 -I scripts/smoke_garnet_minimum_shelf.py --gate",
-          "status": "pending",
-          "evidence": null,
-          "lastRun": null,
-          "notes": "Reporter logic is authorized by 02-verdict.md; the F1 canonical-seal precondition is satisfied by evidence 10."
+          "status": "failed",
+          "evidence": "ops/lane2b/evidence/11-p4-reporter-red.txt",
+          "lastRun": "2026-07-19T18:33:09Z",
+          "notes": "RED before implementation: the exact locked reporter path is absent. Verdict 02 authorization and the F1 cure precondition are both recorded."
         },
         {
           "id": "P4-G2",
