@@ -1,0 +1,2 @@
+@caps()
+def main(value) { value * 2 }

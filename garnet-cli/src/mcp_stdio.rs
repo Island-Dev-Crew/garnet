@@ -7,6 +7,31 @@ use std::io::{self, Read, Write};
 const MAX_HEADER_BYTES: usize = 8 * 1024;
 const MAX_BODY_BYTES: usize = 1024 * 1024;
 
+#[cfg(windows)]
+pub(crate) fn set_binary_stdio() -> io::Result<()> {
+    const STDIN_FILENO: i32 = 0;
+    const STDOUT_FILENO: i32 = 1;
+    const O_BINARY: i32 = 0x8000;
+
+    unsafe extern "C" {
+        fn _setmode(file_descriptor: i32, mode: i32) -> i32;
+    }
+
+    for descriptor in [STDIN_FILENO, STDOUT_FILENO] {
+        // SAFETY: `_setmode` accepts a process-owned CRT descriptor and a
+        // documented mode constant. We pass only stdin/stdout and check -1.
+        if unsafe { _setmode(descriptor, O_BINARY) } == -1 {
+            return Err(io::Error::last_os_error());
+        }
+    }
+    Ok(())
+}
+
+#[cfg(not(windows))]
+pub(crate) fn set_binary_stdio() -> io::Result<()> {
+    Ok(())
+}
+
 pub(crate) fn encode_frame(body: &[u8]) -> Vec<u8> {
     let header = format!("Content-Length: {}\r\n\r\n", body.len());
     let mut frame = Vec::with_capacity(header.len() + body.len());

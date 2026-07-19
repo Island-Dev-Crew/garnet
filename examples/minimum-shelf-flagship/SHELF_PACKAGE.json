@@ -1,0 +1,12 @@
+{
+  "schema": "garnet.minimum-shelf-package/v1",
+  "name": "garnet-minimum-shelf-flagship",
+  "ring": "core",
+  "tier": 1,
+  "tool": "garnet.core.double",
+  "source": "tool.garnet",
+  "seal": "tool.seal.json",
+  "sourceBlake3": "38db718f35ec1dd034010a9c3d52b4236ce30523a117abefdf41196d5cc9cce9",
+  "sealBlake3": "9e54835294d37829da8deb294dd1bac353325d2b18342c37ab22413ea482fffa",
+  "sealKind": "in-toto-predicate-unsigned"
+}

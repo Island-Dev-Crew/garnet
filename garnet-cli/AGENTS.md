@@ -87,6 +87,13 @@ Owns the `garnet` binary, subcommand routing, template embedding, deterministic 
   Do not widen this module into a hosted registry, arbitrary source runner,
   network host, or Tier 2/3 surface; package sealing and raw-byte framing remain
   separate fail-closed boundaries.
+- `garnet mcp-serve --package <dir>` is the only production constructor for
+  the Minimum Shelf host. It accepts only the exact repo-bundled flagship:
+  package manifest, source, and unsigned in-toto predicate bytes are BLAKE3
+  pinned; source AST/build/capability bindings are re-derived; paths must be
+  regular non-symlink files. A locally edited or freshly resealed lookalike is
+  rejected before the host or interpreter tool is constructed. The unsigned
+  predicate is content provenance, not an external identity signature.
 - `garnet_cli::mcp_stdio` is the bounded byte framer for Minimum Shelf. It
   accepts exactly one canonical `Content-Length: N\r\n\r\n` header, caps header
   and body sizes, rejects text-mode LF framing, and emits framed JSON-RPC parse

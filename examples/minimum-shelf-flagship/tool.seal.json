@@ -1,0 +1,23 @@
+{"_type":"https://in-toto.io/Statement/v1","subject":[{"name":"tool","digest":{"blake3":"bdfaf8674e8c62a93fd9723256a011edfa6118ac77792313476e8a489179ce4f"}}],"predicateType":"https://garnet-lang.org/attestation/seal/v1","predicate":{"source_blake3":"38db718f35ec1dd034010a9c3d52b4236ce30523a117abefdf41196d5cc9cce9","build_manifest":{
+  "ast_hash": "bdfaf8674e8c62a93fd9723256a011edfa6118ac77792313476e8a489179ce4f"
+,
+  "deterministic_flags": ["lto=on", "codegen-units=1", "strip=symbols"]
+,
+  "interp_version": "0.8.1"
+,
+  "parser_version": "0.8.1"
+,
+  "prelude_hash": "652a0ea8197581b2172cd2455fa3c2c4c6c98cd417d2a6343a1bac4f00cd8a18"
+,
+  "schema": "garnet-manifest-v1"
+,
+  "signature": ""
+,
+  "signer_pubkey": ""
+,
+  "source_hash": "38db718f35ec1dd034010a9c3d52b4236ce30523a117abefdf41196d5cc9cce9"
+,
+  "target_triple": "unknown-target"
+
+}
+,"capability_manifest":{"schema":"garnet-capability-manifest-v1","aggregate":[],"functions":[{"name":"main","caps":[]}],"wildcard":false},"tooling":{"cosign":"not installed — predicate emitted UNSIGNED; install cosign to attest","sbom":"garnet-capability-manifest (native SBOM-equivalent; CycloneDX/SPDX via syft/cyclonedx when present)"}}}
