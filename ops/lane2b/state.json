@@ -1,0 +1,216 @@
+{
+  "version": 1,
+  "mission": {
+    "name": "idea-garnet-l2b-minimum-sealed-shelf",
+    "tagline": "Garnet has a strict MCP lifecycle core but no bounded tool host, raw-byte stdio transport, sealed local package boundary",
+    "repo": "Island-Dev-Crew/garnet",
+    "repoPath": "C:/garnet-lane2b-20260719",
+    "defaultBranch": "main",
+    "planDoc": "ops/lane2b/plan.lock.json",
+    "northStar": "One frozen Core Ring Tier 1 tool executes in-process without widening to Tier 2, Tier 3, hosted registry, or arbitrary external hosts; A native-Windows raw-byte MCP session completes initialize, tools/list, tools/call, and error handling with byte-exact Content-Length frames; The same flagship package is accepted only with its committed matching seal and is rejected when unsealed, seal-stripped, or byte-tampered before tool execution; Two reporter runs over identical committed inputs emit byte-identical WV-6 verdict JSON",
+    "status": "active",
+    "started": "2026-07-19",
+    "updated": "2026-07-19T08:46:00Z",
+    "sessionCount": 1
+  },
+  "policies": {
+    "merge": "review",
+    "branchPrefix": "mission/",
+    "maxPrLines": 400,
+    "notes": "review until dogfood band 5 is routine; then auto."
+  },
+  "phases": [
+    {
+      "id": "P0",
+      "title": "Core Ring Tier 1 freeze",
+      "goal": "Freeze exactly one repo-bundled Garnet tool and prove its interpreter invocation in-process before adding transport.",
+      "status": "in_progress",
+      "sessionsEstimate": "1",
+      "gates": [
+        {
+          "id": "P0-G1",
+          "title": "Tier 1 in-process contract tests pass",
+          "command": "cargo test -p garnet-cli minimum_shelf --no-fail-fast",
+          "status": "pending",
+          "evidence": null,
+          "lastRun": null,
+          "notes": ""
+        }
+      ],
+      "tasks": []
+    },
+    {
+      "id": "P1",
+      "title": "Raw-byte stdio MCP host",
+      "goal": "Serve initialize, tools/list, tools/call, and protocol errors through bounded Content-Length frames using byte I/O only.",
+      "status": "pending",
+      "sessionsEstimate": "1",
+      "gates": [
+        {
+          "id": "P1-G1",
+          "title": "Raw-byte stdio integration and adversarial tests pass",
+          "command": "cargo test -p garnet-cli --test mcp_stdio --no-fail-fast",
+          "status": "pending",
+          "evidence": null,
+          "lastRun": null,
+          "notes": ""
+        }
+      ],
+      "tasks": []
+    },
+    {
+      "id": "P2",
+      "title": "Sealed flagship baseline",
+      "goal": "Bind the frozen tool manifest, source, and Garnet seal into one excellent committed local package.",
+      "status": "pending",
+      "sessionsEstimate": "1",
+      "gates": [
+        {
+          "id": "P2-G1",
+          "title": "Sealed package loads and executes end-to-end",
+          "command": "cargo test -p garnet-cli --test minimum_shelf_package sealed --no-fail-fast",
+          "status": "pending",
+          "evidence": null,
+          "lastRun": null,
+          "notes": ""
+        }
+      ],
+      "tasks": []
+    },
+    {
+      "id": "P3",
+      "title": "Fail-closed negative proof",
+      "goal": "Reject missing, stripped, mismatched, and byte-tampered package inputs before any Garnet tool code executes.",
+      "status": "pending",
+      "sessionsEstimate": "1",
+      "gates": [
+        {
+          "id": "P3-G1",
+          "title": "Unsealed and tampered package traps pass",
+          "command": "cargo test -p garnet-cli --test minimum_shelf_package rejects --no-fail-fast",
+          "status": "pending",
+          "evidence": null,
+          "lastRun": null,
+          "notes": ""
+        }
+      ],
+      "tasks": []
+    },
+    {
+      "id": "P4",
+      "title": "Deterministic Shelf reporter and WV-6 proof",
+      "goal": "Derive a deterministic verdict from committed artifacts only and satisfy the existing native-Windows WV-6 acceptance reporter.",
+      "status": "pending",
+      "sessionsEstimate": "1",
+      "gates": [
+        {
+          "id": "P4-G1",
+          "title": "Minimum Shelf reporter emits deterministic accepted JSON",
+          "command": "python3 -I scripts/smoke_garnet_minimum_shelf.py --gate",
+          "status": "pending",
+          "evidence": null,
+          "lastRun": null,
+          "notes": ""
+        },
+        {
+          "id": "P4-G2",
+          "title": "WV-6 exact-candidate acceptance gate passes",
+          "command": "python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6 --gate",
+          "status": "pending",
+          "evidence": null,
+          "lastRun": null,
+          "notes": ""
+        },
+        {
+          "id": "P4-G3",
+          "title": "Full Python battery has no regression against main",
+          "command": "python3 -m unittest discover -s scripts -p 'test_*.py'",
+          "status": "pending",
+          "evidence": null,
+          "lastRun": null,
+          "notes": ""
+        }
+      ],
+      "tasks": []
+    }
+  ],
+  "metrics": [
+    {
+      "label": "Definition-of-done claims verified",
+      "baseline": "0",
+      "current": "0",
+      "target": "3",
+      "direction": "up"
+    }
+  ],
+  "risks": [
+    {
+      "title": "A host can appear MCP-capable while text-mode stdio corrupts framing or while seal validation occurs after Garnet code has already executed.",
+      "severity": "medium",
+      "note": "from idea.lock (confidence 8/10)"
+    },
+    {
+      "title": "Current main still reports W-PLAY package and browser proof invalid",
+      "severity": "high",
+      "note": "Fresh reporters at cede73c say browser_package_valid=false and browser_proof_valid=false despite merged PR #509. This is outside Lane 2B; no browser claim is inherited or promoted here."
+    }
+  ],
+  "prLog": [],
+  "resume": {
+    "activePhase": "P0",
+    "nextActions": [
+      "Record slice-specific REDs before implementing the Tier 1 tool, transport, seal path, rejection traps, and reporter."
+    ],
+    "blockers": [],
+    "conventions": [
+      "One task = one branch = one PR",
+      "Update state.json + render + commit after every merge",
+      "Gate commands are shell-agnostic (no &&)"
+    ]
+  },
+  "archipelago": {
+    "protocolVersion": "1.0",
+    "ideaLock": "ops/lane2b/idea.lock.json",
+    "planLock": "ops/lane2b/plan.lock.json",
+    "loop": {
+      "cycle": 1,
+      "stage": "S2",
+      "loopbacks": []
+    },
+    "governance": {
+      "ledgerRunId": "",
+      "budgetSpentUsd": 0.0,
+      "branchSweeps": []
+    },
+    "compound": {
+      "notes": [],
+      "memorySync": "pending",
+      "experiments": []
+    },
+    "fableShim": {
+      "rewriterVersion": "1.0.0",
+      "refusals": []
+    }
+  },
+  "lane2b": {
+    "implementer": "Codex GPT-5.6 Sol",
+    "reviewer": "Claude Fable 5",
+    "reviewCarrier": "Jon",
+    "baseMainSha": "cede73c03c5d535306ed179b5882e99e4d17b050",
+    "bootUtc": "2026-07-19T08:40:41Z",
+    "machine": "NUCBOX_M2PRO_S",
+    "platform": "Windows 11 x64",
+    "noPullRefsFetched": true,
+    "governanceFreeze": "not_armed",
+    "launchStatus": "HOLD",
+    "band": 3,
+    "denominators": {
+      "s114": "19/19 (100.0%)",
+      "truthPulse": "65.2/70 (93.1%, rounded)",
+      "launchCritical": "3/6 (50.0%)",
+      "launchLedger": "3/8 (37.5%)"
+    },
+    "reviewRequests": [],
+    "reviewVerdicts": []
+  }
+}

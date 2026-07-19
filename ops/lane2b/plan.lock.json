@@ -1,0 +1,114 @@
+{
+  "schemaVersion": "1.0",
+  "ideaLock": "idea-garnet-l2b-minimum-sealed-shelf",
+  "frozenAt": "2026-07-19T08:44:36Z",
+  "planDoc": "ops/lane2b/plan.lock.json",
+  "verdict": {
+    "nbcli": "warning",
+    "adversarialFindingsResolved": false
+  },
+  "phases": [
+    {
+      "id": "P0",
+      "title": "Core Ring Tier 1 freeze",
+      "goal": "Freeze exactly one repo-bundled Garnet tool and prove its interpreter invocation in-process before adding transport.",
+      "sessionsEstimate": "1",
+      "lane": "feature",
+      "gates": [
+        {
+          "id": "P0-G1",
+          "title": "Tier 1 in-process contract tests pass",
+          "command": "cargo test -p garnet-cli minimum_shelf --no-fail-fast"
+        }
+      ],
+      "evidenceRequired": ["static", "runtime-journey"]
+    },
+    {
+      "id": "P1",
+      "title": "Raw-byte stdio MCP host",
+      "goal": "Serve initialize, tools/list, tools/call, and protocol errors through bounded Content-Length frames using byte I/O only.",
+      "sessionsEstimate": "1",
+      "lane": "feature",
+      "gates": [
+        {
+          "id": "P1-G1",
+          "title": "Raw-byte stdio integration and adversarial tests pass",
+          "command": "cargo test -p garnet-cli --test mcp_stdio --no-fail-fast"
+        }
+      ],
+      "evidenceRequired": ["runtime-journey", "resilience"]
+    },
+    {
+      "id": "P2",
+      "title": "Sealed flagship baseline",
+      "goal": "Bind the frozen tool manifest, source, and Garnet seal into one excellent committed local package.",
+      "sessionsEstimate": "1",
+      "lane": "feature",
+      "gates": [
+        {
+          "id": "P2-G1",
+          "title": "Sealed package loads and executes end-to-end",
+          "command": "cargo test -p garnet-cli --test minimum_shelf_package sealed --no-fail-fast"
+        }
+      ],
+      "evidenceRequired": ["static", "runtime-journey"]
+    },
+    {
+      "id": "P3",
+      "title": "Fail-closed negative proof",
+      "goal": "Reject missing, stripped, mismatched, and byte-tampered package inputs before any Garnet tool code executes.",
+      "sessionsEstimate": "1",
+      "lane": "bugfix",
+      "gates": [
+        {
+          "id": "P3-G1",
+          "title": "Unsealed and tampered package traps pass",
+          "command": "cargo test -p garnet-cli --test minimum_shelf_package rejects --no-fail-fast"
+        }
+      ],
+      "evidenceRequired": ["resilience", "runtime-journey"]
+    },
+    {
+      "id": "P4",
+      "title": "Deterministic Shelf reporter and WV-6 proof",
+      "goal": "Derive a deterministic verdict from committed artifacts only and satisfy the existing native-Windows WV-6 acceptance reporter.",
+      "sessionsEstimate": "1",
+      "lane": "infra",
+      "gates": [
+        {
+          "id": "P4-G1",
+          "title": "Minimum Shelf reporter emits deterministic accepted JSON",
+          "command": "python3 -I scripts/smoke_garnet_minimum_shelf.py --gate"
+        },
+        {
+          "id": "P4-G2",
+          "title": "WV-6 exact-candidate acceptance gate passes",
+          "command": "python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6 --gate"
+        },
+        {
+          "id": "P4-G3",
+          "title": "Full Python battery has no regression against main",
+          "command": "python3 -m unittest discover -s scripts -p 'test_*.py'"
+        }
+      ],
+      "evidenceRequired": ["static", "runtime-journey", "resilience"]
+    }
+  ],
+  "budget": {
+    "costCapUsd": 40,
+    "wallClockCapHours": 18,
+    "notes": "Lane 2B only. No trust-kernel logic, workflow, ruleset, hosted registry, Studio, converter, provider-LLM, mobile, promo, release, tag, publish, or human merge action."
+  },
+  "hitl": {
+    "approvedBy": "jon-isaac",
+    "approvedAt": "2026-07-19T08:44:36Z",
+    "conditions": [
+      "Implementer identity is Codex GPT-5.6 Sol; reviewer identity is Claude Fable 5, relayed by Jon.",
+      "Review requests are committed under ops/lane2b/review after slice 2 and at lane close; verdicts are never invented or backfilled.",
+      "Every PR remains human-merged and launch remains HOLD with Band 3 as the ceiling while U-17 is open.",
+      "No refs/pull/* may be fetched at any point.",
+      "Any trust-kernel logic, workflow, or ruleset change is an escalation stop, not part of this lane.",
+      "ARCHIPELAGO tooling is pinned to Navigata1/archipelago@b9f7cee2823f9791503db20f33b22c9e20af7abe."
+    ]
+  }
+}
