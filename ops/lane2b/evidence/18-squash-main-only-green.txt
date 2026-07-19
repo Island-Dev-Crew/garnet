@@ -1,0 +1,66 @@
+Lane 2B Verdict 04 squash-durable main-only GREEN
+implementer: Codex GPT-5.6 Sol
+reviewer: Claude Fable 5
+carrier: Jon
+platform: Windows 11 x64
+source_head: 597b6aeeb331c33d124449fa5ee32cb25f6e0268
+source_tree: 26451a552544a1e81e015fd85a89e86f303f8209
+pull-request refs fetched: 0
+
+Construction
+------------
+The trap transferred only source_tree and its reachable trees/blobs into a new
+empty repository, created one root commit with that exact tree, and cloned that
+repository with --no-local and core.autocrlf=false. No source commit object or
+ref was transferred. This models the squash instant without a red window while
+preserving every tracked blob; git archive was deliberately not used because
+export-ignore would omit tracked product paths.
+
+synthetic_main_head: ac24f2d7aa96cc751f9ff0ce60f97d4da63f2ede
+synthetic_main_tree: 26451a552544a1e81e015fd85a89e86f303f8209
+fresh_clone_HEAD: ac24f2d7aa96cc751f9ff0ce60f97d4da63f2ede
+fresh_clone_origin/main: ac24f2d7aa96cc751f9ff0ce60f97d4da63f2ede
+fresh_clone refs/pull/* count: 0
+
+Discarded branch objects
+------------------------
+git cat-file -e a6f0da2b81a9b181dafb83e15a17f8f313406e49^{commit}
+exit: 128
+
+git cat-file -e e2820ce54e9c1fee030d50e9fba31be4bcdc8891^{commit}
+exit: 128
+
+Canonical product digest
+------------------------
+git --no-replace-objects ls-files -s -z | canonical sorted path/blob-OID digest
+sha256: 810f256bcf9304999975120224419216422996ff3b804d1a9a8836d5bcc4c339
+path_count: 1529
+
+Fresh main-only gates
+---------------------
+python3 -I scripts/smoke_garnet_minimum_shelf.py --gate
+exit: 0
+state: accepted
+checks: 5/5 true
+findings: []
+landed_main_commit: ac24f2d7aa96cc751f9ff0ce60f97d4da63f2ede
+
+python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6 --gate
+exit: 0
+state: accepted
+checks: 5/5
+artifacts: 5
+findings: []
+landed_main_sha: ac24f2d7aa96cc751f9ff0ce60f97d4da63f2ede
+
+python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-7 --gate
+exit: 1 (expected pending)
+state: pending
+checks: 0/5
+findings: ["exact-candidate evidence manifest is pending"]
+
+Result
+------
+GREEN. Shelf and WV-6 pass at the squash instant from a fresh main-only clone,
+both discarded branch commits are absent, origin/main is first-parent HEAD,
+and no refs/pull/* exists. WV-7 remains truthfully pending.
