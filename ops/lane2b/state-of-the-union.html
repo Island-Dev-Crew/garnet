@@ -63,17 +63,17 @@ button.copy:hover{background:rgba(88,215,179,.2)}
 <body>
 <main>
   <header class="hero">
-    <p class="eyebrow">Mission Control &middot; State of the Union &middot; generated 2026-07-19 09:49Z</p>
+    <p class="eyebrow">Mission Control &middot; State of the Union &middot; generated 2026-07-19 18:21Z</p>
     <h1>idea-garnet-l2b-minimum-sealed-shelf</h1>
     <p class="tagline">Garnet has a strict MCP lifecycle core but no bounded tool host, raw-byte stdio transport, sealed local package boundary</p>
     <div style="margin-top:14px">
-      <span class="chip blue">mission: blocked</span>
-      <span class="chip green">active phase: P4</span>
+      <span class="chip blue">mission: active</span>
+      <span class="chip green">active phase: P2</span>
       <span class="chip blue">0/0 tasks</span>
-      <span class="chip amber">4/7 gates passed</span>
+      <span class="chip amber">2/7 gates passed</span>
       <span class="chip ">0 PRs merged</span>
       <span class="chip ">sessions: 1</span>
-      <span class="chip ">updated: 2026-07-19T09:46:17Z</span>
+      <span class="chip ">updated: 2026-07-19T18:20:14Z</span>
     </div>
     <div class="bar big" role="img" aria-label="Overall progress 0%"><div class="fill" style="width:0%"></div></div>
     <p class="small muted" style="margin-top:6px">Overall: 0% of tasks complete &middot; repo Island-Dev-Crew/garnet &middot; plan: ops/lane2b/plan.lock.json</p>
@@ -86,7 +86,7 @@ button.copy:hover{background:rgba(88,215,179,.2)}
 
 Local repo: C:/garnet-lane2b-20260719  (Island-Dev-Crew/garnet, default branch main)
 Governing plan: ops/lane2b/plan.lock.json
-Mission status: blocked — active phase: P4
+Mission status: active — active phase: P2
 
 Mission conventions:
   - One task = one branch = one PR
@@ -105,7 +105,7 @@ Operating procedure:
   <section aria-labelledby="metrics"><h2 id="metrics">Scoreboard: Baseline &rarr; Current &rarr; Target</h2>
   <div class="table-wrap"><table><thead><tr><th>Metric</th><th>Baseline</th><th>Current</th><th>Target</th></tr></thead><tbody><tr><td><b>Definition-of-done claims verified</b></td><td>0</td><td><span class="chip blue">1</span></td><td>3</td></tr></tbody></table></div>
   <p class="small muted" style="margin-top:6px">green = at/past target &middot; blue = moving toward target &middot; amber = unchanged &middot; red = moving away</p></section>
-  <section aria-labelledby="risks"><h2 id="risks">Risks &amp; Blockers</h2><div class="panel"><ul class="bare"><li><span class="chip red">blocker</span> Claude Fable 5 verdicts for review requests 01 and 02 must be relayed by Jon.</li><li><span class="chip red">blocker</span> Trust-kernel companion authorization is required for garnet-cli/src/bin/garnet.rs; current gate is REVIEW REQUIRED.</li><li><span class="chip red">blocker</span> New deterministic Shelf reporter logic requires explicit reviewer/Jon authorization before implementation.</li><li><span class="chip amber">medium</span> <b>A host can appear MCP-capable while text-mode stdio corrupts framing or while seal validation occurs after Garnet code has already executed.</b> &mdash; <span class="muted">from idea.lock (confidence 8/10)</span></li><li><span class="chip red">high</span> <b>Current main still reports W-PLAY package and browser proof invalid</b> &mdash; <span class="muted">Fresh reporters at cede73c say browser_package_valid=false and browser_proof_valid=false despite merged PR #509. This is outside Lane 2B; no browser claim is inherited or promoted here.</span></li><li><span class="chip amber">medium</span> <b>The flagship in-toto predicate is an unsigned content attestation</b> &mdash; <span class="muted">The loader pins canonical manifest/source/seal digests and re-derives AST/build/capability bindings. This proves reviewed local content, not external signer identity; the artifact and CLI label it UNSIGNED.</span></li></ul></div></section>
+  <section aria-labelledby="risks"><h2 id="risks">Risks &amp; Blockers</h2><div class="panel"><ul class="bare"><li><span class="chip red">blocker</span> F1: committed flagship seal binds a CRLF-derived prelude hash and rejects the genuine package on canonical LF checkouts.</li><li><span class="chip amber">medium</span> <b>A host can appear MCP-capable while text-mode stdio corrupts framing or while seal validation occurs after Garnet code has already executed.</b> &mdash; <span class="muted">from idea.lock (confidence 8/10)</span></li><li><span class="chip red">high</span> <b>Current main still reports W-PLAY package and browser proof invalid</b> &mdash; <span class="muted">Fresh reporters at cede73c say browser_package_valid=false and browser_proof_valid=false despite merged PR #509. This is outside Lane 2B; no browser claim is inherited or promoted here.</span></li><li><span class="chip amber">medium</span> <b>The flagship in-toto predicate is an unsigned content attestation</b> &mdash; <span class="muted">The loader pins canonical manifest/source/seal digests and re-derives AST/build/capability bindings. This proves reviewed local content, not external signer identity; the artifact and CLI label it UNSIGNED.</span></li></ul></div></section>
 
   <section aria-labelledby="phases">
     <h2 id="phases">Phases</h2>
@@ -150,20 +150,20 @@ Operating procedure:
       </details>
     </article><article class="phase">
       <header>
-        <span class="chip green">done</span>
+        <span class="chip amber">in progress</span>
         <h3>P1 &middot; Raw-byte stdio MCP host</h3>
         <span class="muted small">est. sessions: 1</span>
       </header>
       <p class="muted">Serve initialize, tools/list, tools/call, and protocol errors through bounded Content-Length frames using byte I/O only.</p>
-      <div class="bar"><div class="fill" style="width:100%"></div></div>
-      <p class="small muted">0/0 tasks &middot; 100%</p>
+      <div class="bar"><div class="fill" style="width:0%"></div></div>
+      <p class="small muted">0/0 tasks &middot; 0%</p>
 
       <div class="table-wrap"><table><thead><tr><th>Gate</th><th>Check</th><th>Command</th><th>Evidence</th><th>Last run</th></tr></thead><tbody><tr>
-      <td><span class="chip green">passed</span></td>
-      <td><b>Raw-byte stdio integration and adversarial tests pass</b><br><span class="small">Native Windows process integration passed 2/2 after the sealed loader became the only production host constructor.</span></td>
+      <td><span class="chip red">failed</span></td>
+      <td><b>Raw-byte stdio integration and adversarial tests pass</b><br><span class="small">F1: one native stdio positive leg fails on a fresh LF checkout because the committed seal binds a CRLF-derived prelude hash. Framing core remains reviewer-approved.</span></td>
       <td><code>cargo test -p garnet-cli --test mcp_stdio --no-fail-fast</code></td>
-      <td>ops/lane2b/evidence/07-slices3-4-green.txt</td>
-      <td>2026-07-19T09:08:27Z</td></tr></tbody></table></div>
+      <td>ops/lane2b/evidence/09-f1-lf-checkout-red.txt</td>
+      <td>2026-07-19T18:20:14Z</td></tr></tbody></table></div>
       <details class="resume"><summary>Resume prompt for P1 (copy into a fresh session)</summary>
         <div class="prompt-box"><button class="copy" type="button">Copy</button><pre>You are resuming the &quot;idea-garnet-l2b-minimum-sealed-shelf&quot; mission at phase P1: Raw-byte stdio MCP host.
 
@@ -174,7 +174,8 @@ Governing plan: ops/lane2b/plan.lock.json
 
 Phase goal: Serve initialize, tools/list, tools/call, and protocol errors through bounded Content-Length frames using byte I/O only.
 All tasks in this phase are done.
-All gates passed — close the phase and advance.
+Gates not yet passed:
+  - [failed] Raw-byte stdio integration and adversarial tests pass  -&gt;  cargo test -p garnet-cli --test mcp_stdio --no-fail-fast
 Mission conventions:
   - One task = one branch = one PR
   - Update state.json + render + commit after every merge
@@ -187,22 +188,22 @@ Operating procedure:
   Never hand-edit state-of-the-union.html. Never merge without fresh gate evidence in ops/lane2b/evidence/.
   End of session: update resume.nextActions for a stranger, append journal entry, render, commit.</pre></div>
       </details>
-    </article><article class="phase">
+    </article><article class="phase active">
       <header>
-        <span class="chip green">done</span>
+        <span class="chip amber">in progress</span>
         <h3>P2 &middot; Sealed flagship baseline</h3>
         <span class="muted small">est. sessions: 1</span>
       </header>
       <p class="muted">Bind the frozen tool manifest, source, and Garnet seal into one excellent committed local package.</p>
-      <div class="bar"><div class="fill" style="width:100%"></div></div>
-      <p class="small muted">0/0 tasks &middot; 100%</p>
+      <div class="bar"><div class="fill" style="width:0%"></div></div>
+      <p class="small muted">0/0 tasks &middot; 0%</p>
 
       <div class="table-wrap"><table><thead><tr><th>Gate</th><th>Check</th><th>Command</th><th>Evidence</th><th>Last run</th></tr></thead><tbody><tr>
-      <td><span class="chip green">passed</span></td>
-      <td><b>Sealed package loads and executes end-to-end</b><br><span class="small">The exact local flagship and its unsigned in-toto content predicate load only after compiled digest and semantic bindings verify.</span></td>
+      <td><span class="chip red">failed</span></td>
+      <td><b>Sealed package loads and executes end-to-end</b><br><span class="small">F1: the genuine committed package is rejected on a fresh LF checkout. Portable seal acceptance is false until byte pinning and canonical reseal are proven cross-checkout.</span></td>
       <td><code>cargo test -p garnet-cli --test minimum_shelf_package sealed --no-fail-fast</code></td>
-      <td>ops/lane2b/evidence/07-slices3-4-green.txt</td>
-      <td>2026-07-19T09:08:27Z</td></tr></tbody></table></div>
+      <td>ops/lane2b/evidence/09-f1-lf-checkout-red.txt</td>
+      <td>2026-07-19T18:20:14Z</td></tr></tbody></table></div>
       <details class="resume"><summary>Resume prompt for P2 (copy into a fresh session)</summary>
         <div class="prompt-box"><button class="copy" type="button">Copy</button><pre>You are resuming the &quot;idea-garnet-l2b-minimum-sealed-shelf&quot; mission at phase P2: Sealed flagship baseline.
 
@@ -213,7 +214,12 @@ Governing plan: ops/lane2b/plan.lock.json
 
 Phase goal: Bind the frozen tool manifest, source, and Garnet seal into one excellent committed local package.
 All tasks in this phase are done.
-All gates passed — close the phase and advance.
+Gates not yet passed:
+  - [failed] Sealed package loads and executes end-to-end  -&gt;  cargo test -p garnet-cli --test minimum_shelf_package sealed --no-fail-fast
+Next actions (from last session):
+  - Cure F1 by byte-pinning every include_str seal input, resealing on canonical LF bytes, and proving both positive legs plus all six negative traps on LF and default-Windows clones; then execute the authorized P4 reporter and W_TRUST work.
+Known blockers:
+  - F1: committed flagship seal binds a CRLF-derived prelude hash and rejects the genuine package on canonical LF checkouts.
 Mission conventions:
   - One task = one branch = one PR
   - Update state.json + render + commit after every merge
@@ -265,9 +271,9 @@ Operating procedure:
   Never hand-edit state-of-the-union.html. Never merge without fresh gate evidence in ops/lane2b/evidence/.
   End of session: update resume.nextActions for a stranger, append journal entry, render, commit.</pre></div>
       </details>
-    </article><article class="phase active">
+    </article><article class="phase">
       <header>
-        <span class="chip red">blocked</span>
+        <span class="chip ">pending</span>
         <h3>P4 &middot; Deterministic Shelf reporter and WV-6 proof</h3>
         <span class="muted small">est. sessions: 1</span>
       </header>
@@ -277,7 +283,7 @@ Operating procedure:
 
       <div class="table-wrap"><table><thead><tr><th>Gate</th><th>Check</th><th>Command</th><th>Evidence</th><th>Last run</th></tr></thead><tbody><tr>
       <td><span class="chip ">pending</span></td>
-      <td><b>Minimum Shelf reporter emits deterministic accepted JSON</b><br><span class="small">Blocked before RED: new reporter logic requires explicit Claude/Jon authorization and declared trust-companion scope.</span></td>
+      <td><b>Minimum Shelf reporter emits deterministic accepted JSON</b><br><span class="small">Reporter logic is authorized by 02-verdict.md but remains behind the F1 canonical-seal cure precondition.</span></td>
       <td><code>python3 -I scripts/smoke_garnet_minimum_shelf.py --gate</code></td>
       <td>&mdash;</td>
       <td>&mdash;</td></tr><tr>
@@ -305,12 +311,6 @@ Gates not yet passed:
   - [pending] Minimum Shelf reporter emits deterministic accepted JSON  -&gt;  python3 -I scripts/smoke_garnet_minimum_shelf.py --gate
   - [pending] WV-6 exact-candidate acceptance gate passes  -&gt;  python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6 --gate
   - [failed] Full Python battery has no regression against main  -&gt;  python3 -m unittest discover -s scripts -p 'test_*.py'
-Next actions (from last session):
-  - Obtain Claude Fable 5 verdicts and Jon authorization for the protected CLI dispatch companion and new reporter logic; then resume from BLOCKED.md.
-Known blockers:
-  - Claude Fable 5 verdicts for review requests 01 and 02 must be relayed by Jon.
-  - Trust-kernel companion authorization is required for garnet-cli/src/bin/garnet.rs; current gate is REVIEW REQUIRED.
-  - New deterministic Shelf reporter logic requires explicit reviewer/Jon authorization before implementation.
 Mission conventions:
   - One task = one branch = one PR
   - Update state.json + render + commit after every merge
@@ -327,7 +327,7 @@ Operating procedure:
   </section>
 
 
-  <section aria-labelledby="journal"><h2 id="journal">Journal (latest first)</h2><div class="timeline"><article class="tl-item"><time>&#9998;</time><p><b># Mission journal — idea-garnet-l2b-minimum-sealed-shelf</b><br><br>- 2026-07-19T08:46:08Z: kickoff. G0+G1 artifacts consumed; 5 phase(s); stage S2.<br>- 2026-07-19T08:48:00Z: Slice 1 RED recorded at the compile boundary: the exact Tier 1 tool contract calls a missing in-process interpreter adapter. Implementer: Codex GPT-5.6 Sol. Assigned reviewer: Claude Fable 5 via Jon.<br>- 2026-07-19T08:50:00Z: Slice 1 GREEN. The one frozen `garnet.core.double` Tier 1 tool executed in-process through Garnet's strict interpreter and panic firewall; 2/2 tests passed. No transport, seal loader, registry, or breadth expansion exists yet.<br>- 2026-07-19T08:53:31Z: Slice 2 RED recorded before implementation. Byte-level traps require exact CRLF Content-Length frames for initialize/list/call/errors and reject LF-only framing; the host and transport entry points are absent. Implementer: Codex GPT-5.6 Sol. Assigned reviewer: Claude Fable 5 via Jon.<br>- 2026-07-19T08:57:42Z: Slice 2 framing core GREEN: 4/4 raw-byte and adversarial tests, 3/3 bounded router tests, and 14/14 existing MCP schema/lifecycle tests passed. The real process integration gate remains pending until a verified sealed package is the only constructor; no unsealed CLI bypass was added. Review request 01 is next.<br>- 2026-07-19T08:58:30Z: Review Request 01 committed for implementation head `0919f7a1b14d6f53a251f3528787b2278331e488` / tree `3266d5bd05312368777d57da6fe48e0342b5ad60`. Reviewer: Claude Fable 5; authenticated carrier: Jon. Verdict pending; continuing with the next independent slice.<br>- 2026-07-19T09:00:22Z: Slice 4 rejection proof designed and RED before the sealed happy path. Five integration traps call a missing `MinimumShelfPackage` loader and cover missing/stripped seal, source/seal byte tamper, and manifest rebind. Implementer: Codex GPT-5.6 Sol. Reviewer: Claude Fable 5.<br>- 2026-07-19T09:08:27Z: Slices 3 and 4 GREEN. The exact flagship loaded 1/1; 6/6 missing, stripped, manifest/source/seal tamper, and new-seal-plus-rebind traps rejected; native process stdio passed 2/2 and emitted zero protocol bytes for a rejected package. Two regenerated seals and the committed seal were byte-identical (SHA-256 `626ce7f3...310e2`). The predicate is explicitly UNSIGNED; the trust root is compiled content digests plus reviewed Git history.<br>- 2026-07-19T09:46:17Z: HEARTBEAT / ALERT. Full `garnet-cli` passed 459/459. The isolated Python battery is exact-parity red against a built `cede73c` base (950 tests; 16 failures, 4 errors, 3 skipped on both; zero lane delta). Fresh trust-kernel review is RED because `garnet-cli/src/bin/garnet.rs` is protected and no companion/verdict exists. P4 stopped before reporter logic; Review Request 02 and `BLOCKED.md` record the exact Claude/Jon ceremony and resume point. No pull refs fetched; launch HOLD; band 3.</p></article></div></section>
+  <section aria-labelledby="journal"><h2 id="journal">Journal (latest first)</h2><div class="timeline"><article class="tl-item"><time>&#9998;</time><p><b># Mission journal — idea-garnet-l2b-minimum-sealed-shelf</b><br><br>- 2026-07-19T08:46:08Z: kickoff. G0+G1 artifacts consumed; 5 phase(s); stage S2.<br>- 2026-07-19T08:48:00Z: Slice 1 RED recorded at the compile boundary: the exact Tier 1 tool contract calls a missing in-process interpreter adapter. Implementer: Codex GPT-5.6 Sol. Assigned reviewer: Claude Fable 5 via Jon.<br>- 2026-07-19T08:50:00Z: Slice 1 GREEN. The one frozen `garnet.core.double` Tier 1 tool executed in-process through Garnet's strict interpreter and panic firewall; 2/2 tests passed. No transport, seal loader, registry, or breadth expansion exists yet.<br>- 2026-07-19T08:53:31Z: Slice 2 RED recorded before implementation. Byte-level traps require exact CRLF Content-Length frames for initialize/list/call/errors and reject LF-only framing; the host and transport entry points are absent. Implementer: Codex GPT-5.6 Sol. Assigned reviewer: Claude Fable 5 via Jon.<br>- 2026-07-19T08:57:42Z: Slice 2 framing core GREEN: 4/4 raw-byte and adversarial tests, 3/3 bounded router tests, and 14/14 existing MCP schema/lifecycle tests passed. The real process integration gate remains pending until a verified sealed package is the only constructor; no unsealed CLI bypass was added. Review request 01 is next.<br>- 2026-07-19T08:58:30Z: Review Request 01 committed for implementation head `0919f7a1b14d6f53a251f3528787b2278331e488` / tree `3266d5bd05312368777d57da6fe48e0342b5ad60`. Reviewer: Claude Fable 5; authenticated carrier: Jon. Verdict pending; continuing with the next independent slice.<br>- 2026-07-19T09:00:22Z: Slice 4 rejection proof designed and RED before the sealed happy path. Five integration traps call a missing `MinimumShelfPackage` loader and cover missing/stripped seal, source/seal byte tamper, and manifest rebind. Implementer: Codex GPT-5.6 Sol. Reviewer: Claude Fable 5.<br>- 2026-07-19T09:08:27Z: Slices 3 and 4 GREEN. The exact flagship loaded 1/1; 6/6 missing, stripped, manifest/source/seal tamper, and new-seal-plus-rebind traps rejected; native process stdio passed 2/2 and emitted zero protocol bytes for a rejected package. Two regenerated seals and the committed seal were byte-identical (SHA-256 `626ce7f3...310e2`). The predicate is explicitly UNSIGNED; the trust root is compiled content digests plus reviewed Git history.<br>- 2026-07-19T09:46:17Z: HEARTBEAT / ALERT. Full `garnet-cli` passed 459/459. The isolated Python battery is exact-parity red against a built `cede73c` base (950 tests; 16 failures, 4 errors, 3 skipped on both; zero lane delta). Fresh trust-kernel review is RED because `garnet-cli/src/bin/garnet.rs` is protected and no companion/verdict exists. P4 stopped before reporter logic; Review Request 02 and `BLOCKED.md` record the exact Claude/Jon ceremony and resume point. No pull refs fetched; launch HOLD; band 3.<br>- 2026-07-19T18:20:14Z: Reviewer verdicts fetched at `f00a902`: Request 01 APPROVE; Request 02 APPROVE-WITH-BLOCKERS. F1 RED reproduced before cure in a fresh `core.autocrlf=false` clone: both sealed positive legs fail because the committed seal binds a CRLF-derived prelude hash. Evidence `09-f1-lf-checkout-red.txt`; no pull refs fetched. Implementer: Codex GPT-5.6 Sol. Reviewer: Claude Code Fable 5.</p></article></div></section>
 
   <p class="footer">GENERATED by ops/lane2b/render-sotu.mjs from state.json — do not hand-edit.
   To update: edit state.json, run <code>node ops/lane2b/render-sotu.mjs</code>, commit both.</p>

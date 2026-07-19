@@ -8,9 +8,9 @@
     "defaultBranch": "main",
     "planDoc": "ops/lane2b/plan.lock.json",
     "northStar": "One frozen Core Ring Tier 1 tool executes in-process without widening to Tier 2, Tier 3, hosted registry, or arbitrary external hosts; A native-Windows raw-byte MCP session completes initialize, tools/list, tools/call, and error handling with byte-exact Content-Length frames; The same flagship package is accepted only with its committed matching seal and is rejected when unsealed, seal-stripped, or byte-tampered before tool execution; Two reporter runs over identical committed inputs emit byte-identical WV-6 verdict JSON",
-    "status": "blocked",
+    "status": "active",
     "started": "2026-07-19",
-    "updated": "2026-07-19T09:46:17Z",
+    "updated": "2026-07-19T18:20:14Z",
     "sessionCount": 1
   },
   "policies": {
@@ -43,17 +43,17 @@
       "id": "P1",
       "title": "Raw-byte stdio MCP host",
       "goal": "Serve initialize, tools/list, tools/call, and protocol errors through bounded Content-Length frames using byte I/O only.",
-      "status": "done",
+      "status": "in_progress",
       "sessionsEstimate": "1",
       "gates": [
         {
           "id": "P1-G1",
           "title": "Raw-byte stdio integration and adversarial tests pass",
           "command": "cargo test -p garnet-cli --test mcp_stdio --no-fail-fast",
-          "status": "passed",
-          "evidence": "ops/lane2b/evidence/07-slices3-4-green.txt",
-          "lastRun": "2026-07-19T09:08:27Z",
-          "notes": "Native Windows process integration passed 2/2 after the sealed loader became the only production host constructor."
+          "status": "failed",
+          "evidence": "ops/lane2b/evidence/09-f1-lf-checkout-red.txt",
+          "lastRun": "2026-07-19T18:20:14Z",
+          "notes": "F1: one native stdio positive leg fails on a fresh LF checkout because the committed seal binds a CRLF-derived prelude hash. Framing core remains reviewer-approved."
         }
       ],
       "tasks": []
@@ -62,17 +62,17 @@
       "id": "P2",
       "title": "Sealed flagship baseline",
       "goal": "Bind the frozen tool manifest, source, and Garnet seal into one excellent committed local package.",
-      "status": "done",
+      "status": "in_progress",
       "sessionsEstimate": "1",
       "gates": [
         {
           "id": "P2-G1",
           "title": "Sealed package loads and executes end-to-end",
           "command": "cargo test -p garnet-cli --test minimum_shelf_package sealed --no-fail-fast",
-          "status": "passed",
-          "evidence": "ops/lane2b/evidence/07-slices3-4-green.txt",
-          "lastRun": "2026-07-19T09:08:27Z",
-          "notes": "The exact local flagship and its unsigned in-toto content predicate load only after compiled digest and semantic bindings verify."
+          "status": "failed",
+          "evidence": "ops/lane2b/evidence/09-f1-lf-checkout-red.txt",
+          "lastRun": "2026-07-19T18:20:14Z",
+          "notes": "F1: the genuine committed package is rejected on a fresh LF checkout. Portable seal acceptance is false until byte pinning and canonical reseal are proven cross-checkout."
         }
       ],
       "tasks": []
@@ -100,7 +100,7 @@
       "id": "P4",
       "title": "Deterministic Shelf reporter and WV-6 proof",
       "goal": "Derive a deterministic verdict from committed artifacts only and satisfy the existing native-Windows WV-6 acceptance reporter.",
-      "status": "blocked",
+      "status": "pending",
       "sessionsEstimate": "1",
       "gates": [
         {
@@ -110,7 +110,7 @@
           "status": "pending",
           "evidence": null,
           "lastRun": null,
-          "notes": "Blocked before RED: new reporter logic requires explicit Claude/Jon authorization and declared trust-companion scope."
+          "notes": "Reporter logic is authorized by 02-verdict.md but remains behind the F1 canonical-seal cure precondition."
         },
         {
           "id": "P4-G2",
@@ -162,14 +162,12 @@
   ],
   "prLog": [],
   "resume": {
-    "activePhase": "P4",
+    "activePhase": "P2",
     "nextActions": [
-      "Obtain Claude Fable 5 verdicts and Jon authorization for the protected CLI dispatch companion and new reporter logic; then resume from BLOCKED.md."
+      "Cure F1 by byte-pinning every include_str seal input, resealing on canonical LF bytes, and proving both positive legs plus all six negative traps on LF and default-Windows clones; then execute the authorized P4 reporter and W_TRUST work."
     ],
     "blockers": [
-      "Claude Fable 5 verdicts for review requests 01 and 02 must be relayed by Jon.",
-      "Trust-kernel companion authorization is required for garnet-cli/src/bin/garnet.rs; current gate is REVIEW REQUIRED.",
-      "New deterministic Shelf reporter logic requires explicit reviewer/Jon authorization before implementation."
+      "F1: committed flagship seal binds a CRLF-derived prelude hash and rejects the genuine package on canonical LF checkouts."
     ],
     "conventions": [
       "One task = one branch = one PR",
@@ -227,7 +225,7 @@
         "reviewedTree": "3266d5bd05312368777d57da6fe48e0342b5ad60",
         "reviewer": "Claude Fable 5",
         "carrier": "Jon",
-        "status": "pending"
+        "status": "approved"
       },
       {
         "id": "02",
@@ -236,9 +234,25 @@
         "reviewedTree": "6dab95d30bebb4cd115faf942aa71b488d9e1a81",
         "reviewer": "Claude Fable 5",
         "carrier": "Jon",
-        "status": "pending"
+        "status": "approved_with_blockers"
       }
     ],
-    "reviewVerdicts": []
+    "reviewVerdicts": [
+      {
+        "id": "01",
+        "path": "ops/lane2b/review/01-verdict.md",
+        "verdict": "APPROVE",
+        "reviewer": "Claude Code Fable 5",
+        "reviewedHead": "0919f7a1b14d6f53a251f3528787b2278331e488"
+      },
+      {
+        "id": "02",
+        "path": "ops/lane2b/review/02-verdict.md",
+        "verdict": "APPROVE-WITH-BLOCKERS",
+        "reviewer": "Claude Code Fable 5",
+        "reviewedHead": "c333db5f83114f6ad0525ba68e97602de95a8503",
+        "blocker": "F1 canonical checkout durability"
+      }
+    ]
   }
 }
