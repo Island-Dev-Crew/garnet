@@ -35,12 +35,36 @@ class GarnetWvAcceptanceStatusTests(unittest.TestCase):
         self.assertIn("winget", contracts["WV-7"]["title"].lower())
         self.assertIn("Docker", contracts["WV-7"]["title"])
 
-    def test_current_repository_is_pending_and_gates_red(self) -> None:
-        for identifier in ("WV-6", "WV-7"):
+    def test_current_repository_tracks_wv6_acceptance_and_wv7_pending(self) -> None:
+        expectations = {
+            "WV-6": {
+                "state": "accepted",
+                "ok": True,
+                "returncode": 0,
+                "passed": 5,
+                "required": 5,
+                "artifacts": 5,
+                "findings": [],
+            },
+            "WV-7": {
+                "state": "pending",
+                "ok": False,
+                "returncode": 1,
+                "passed": 0,
+                "required": 5,
+                "artifacts": 0,
+                "findings": ["exact-candidate evidence manifest is pending"],
+            },
+        }
+        for identifier, expected in expectations.items():
             with self.subTest(identifier=identifier):
                 status = wv.read_status(ROOT, identifier)
-                self.assertEqual(status.state, "pending")
-                self.assertFalse(status.ok)
+                self.assertEqual(status.state, expected["state"])
+                self.assertEqual(status.ok, expected["ok"])
+                self.assertEqual(status.passed_check_count, expected["passed"])
+                self.assertEqual(status.required_check_count, expected["required"])
+                self.assertEqual(status.artifact_count, expected["artifacts"])
+                self.assertEqual(status.findings, expected["findings"])
                 proc = subprocess.run(
                     [sys.executable, "-I", str(SCRIPT), "--wv", identifier, "--gate"],
                     cwd=ROOT,
@@ -48,10 +72,14 @@ class GarnetWvAcceptanceStatusTests(unittest.TestCase):
                     capture_output=True,
                     check=False,
                 )
-                self.assertNotEqual(proc.returncode, 0)
+                self.assertEqual(proc.returncode, expected["returncode"])
                 payload = json.loads(proc.stdout)
-                self.assertEqual(payload["state"], "pending")
-                self.assertFalse(payload["ok"])
+                self.assertEqual(payload["state"], expected["state"])
+                self.assertEqual(payload["ok"], expected["ok"])
+                self.assertEqual(payload["passed_check_count"], expected["passed"])
+                self.assertEqual(payload["required_check_count"], expected["required"])
+                self.assertEqual(payload["artifact_count"], expected["artifacts"])
+                self.assertEqual(payload["findings"], expected["findings"])
 
     def test_malformed_evidence_is_partial_not_accepted(self) -> None:
         with tempfile.TemporaryDirectory() as td:
