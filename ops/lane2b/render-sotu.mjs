@@ -276,7 +276,7 @@ function journalSection() {
 // ---------- page ----------
 const statusTone = m.status === "complete" ? "green" : m.status === "paused" ? "amber" : "blue";
 const gatesChipTone = !allGates.length ? "" : passedGates === allGates.length ? "green" : "amber";
-const html = `<!doctype html>
+const rawHtml = `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -391,6 +391,8 @@ document.querySelectorAll("button.copy").forEach((b) => {
 </body>
 </html>
 `;
+
+const html = rawHtml.replace(/^[\t ]+$/gm, "");
 
 writeFileSync(outPath, html);
 console.log(`Rendered ${outPath}`);
