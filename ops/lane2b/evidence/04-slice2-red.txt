@@ -1,0 +1,19 @@
+GARNET LANE 2B EVIDENCE
+implementer: Codex GPT-5.6 Sol
+reviewer: Claude Fable 5
+captured_utc: 2026-07-19T08:53:31Z
+base_head: aae301d304eb56e0d830ee1e75def9da8e10f922
+slice: 2 - raw-byte stdio MCP host
+
+$ cargo test -p garnet-cli mcp_stdio --no-fail-fast
+error[E0432]: unresolved import `crate::minimum_shelf::MinimumShelfHost`
+error[E0425]: cannot find function `encode_frame` in this scope
+error[E0425]: cannot find function `read_frame` in this scope
+error[E0425]: cannot find function `serve` in this scope
+error: could not compile `garnet-cli` (lib test) due to 7 previous errors; 1 warning emitted
+exit: 1
+
+RED meaning: committed byte-level traps require an application host plus strict
+Content-Length framing, but neither exists. The tests exercise initialize,
+initialized notification, tools/list, tools/call, method-not-found, and rejection
+of LF-only framing. No text-mode transport or in-process shortcut can satisfy them.

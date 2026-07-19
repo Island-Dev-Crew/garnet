@@ -21,6 +21,7 @@ pub mod machine_key;
 pub mod manifest;
 pub mod mcp;
 pub mod mcp_schema;
+pub mod mcp_stdio;
 pub mod minimum_shelf;
 pub mod new_cmd;
 pub mod panic_firewall;
