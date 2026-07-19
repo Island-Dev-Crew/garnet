@@ -1,0 +1,44 @@
+GARNET LANE 2B DETERMINISTIC REPORTER CROSS-CHECKOUT EVIDENCE
+implementer: Codex GPT-5.6 Sol
+reviewer: Claude Code Fable 5 (independent reviewer, MacBook Air)
+captured_utc: 2026-07-19T18:42:45Z
+exact_head: 89f1894cb7b0a15aba16dfb9b9ca12a625340621
+reporter_implementation_head: 178edfcead4763b8e3a57f074aa58a9e2f3c3cd1
+reporter_blob: 83a5354d680d69016a8a83443e2d28c829439a46
+reporter_blob_sha256: 1eb19526d315f92c14e2380c49b5df465bd33a5aab93faaaf9ea4eff4aac6af2
+
+COMMAND IN BOTH CHECKOUTS
+python3 -I scripts/smoke_garnet_minimum_shelf.py --gate
+
+FRESH LF CHECKOUT
+path: C:/garnet-lane2b-lf-f1-20260719
+core.autocrlf: false
+head: 89f1894cb7b0a15aba16dfb9b9ca12a625340621
+exit: 0
+stdout bytes: 1849
+stdout SHA-256: 91d855f7413a4c3702da4189fad5f5040fa57d861187b764060dc3c422770c8e
+stderr bytes: 0
+pull refs: 0
+
+FRESH DEFAULT-WINDOWS CHECKOUT
+path: C:/garnet-lane2b-win-f1-green-20260719
+core.autocrlf: true
+head: 89f1894cb7b0a15aba16dfb9b9ca12a625340621
+exit: 0
+stdout bytes: 1849
+stdout SHA-256: 91d855f7413a4c3702da4189fad5f5040fa57d861187b764060dc3c422770c8e
+stderr bytes: 0
+pull refs: 0
+
+BYTE IDENTITY
+stdout identical: true
+stderr identical: true
+status: accepted
+findings: []
+request frames: 5
+response frames: 4
+unsigned predicate: true
+
+GREEN: two isolated exact-head runs produced byte-identical verdict JSON from
+committed artifacts only. No network, wall clock, hostname, ambient dependency,
+pull ref, or Jon-only action contributes to the verdict body.

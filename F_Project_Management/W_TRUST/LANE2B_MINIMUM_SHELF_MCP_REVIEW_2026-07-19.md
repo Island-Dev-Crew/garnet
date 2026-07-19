@@ -61,10 +61,11 @@ fetches no Git refs; records no wall clock, hostname, ambient dependency, or
 Jon-only action; validates the raw CRLF Content-Length transcript; pins the one
 package and canonical prelude; and preserves the exact UNSIGNED limitation.
 
-The earlier read-only reporter blob at `1dce85d` emitted identical 1,849-byte
-verdicts in isolated LF and default-Windows checkouts. The final extended blob
-above supersedes that implementation binding and requires its own exact-head
-cross-checkout evidence before WV-6 emission.
+The final extended blob above ran from exact head `89f1894` in isolated LF and
+default-Windows checkouts. Both emitted the same 1,849-byte verdict, SHA-256
+`91d855f7413a4c3702da4189fad5f5040fa57d861187b764060dc3c422770c8e`,
+with exit 0 and zero stderr. Evidence is committed at
+`ops/lane2b/evidence/12-reporter-cross-checkout.txt`.
 
 This binding records the reviewer-authorized implementation boundary. It is
 not a self-issued final code approval: Request 03 must independently review the

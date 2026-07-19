@@ -10,7 +10,7 @@
     "northStar": "One frozen Core Ring Tier 1 tool executes in-process without widening to Tier 2, Tier 3, hosted registry, or arbitrary external hosts; A native-Windows raw-byte MCP session completes initialize, tools/list, tools/call, and error handling with byte-exact Content-Length frames; The same flagship package is accepted only with its committed matching seal and is rejected when unsealed, seal-stripped, or byte-tampered before tool execution; Two reporter runs over identical committed inputs emit byte-identical WV-6 verdict JSON",
     "status": "active",
     "started": "2026-07-19",
-    "updated": "2026-07-19T18:33:09Z",
+    "updated": "2026-07-19T18:42:45Z",
     "sessionCount": 1
   },
   "policies": {
@@ -107,10 +107,10 @@
           "id": "P4-G1",
           "title": "Minimum Shelf reporter emits deterministic accepted JSON",
           "command": "python3 -I scripts/smoke_garnet_minimum_shelf.py --gate",
-          "status": "failed",
-          "evidence": "ops/lane2b/evidence/11-p4-reporter-red.txt",
-          "lastRun": "2026-07-19T18:33:09Z",
-          "notes": "RED before implementation: the exact locked reporter path is absent. Verdict 02 authorization and the F1 cure precondition are both recorded."
+          "status": "passed",
+          "evidence": "ops/lane2b/evidence/12-reporter-cross-checkout.txt",
+          "lastRun": "2026-07-19T18:42:45Z",
+          "notes": "Exact final reporter blob emitted byte-identical accepted JSON in isolated LF and default-Windows checkouts; no pull refs or machine-derived verdict fields."
         },
         {
           "id": "P4-G2",
@@ -164,7 +164,7 @@
   "resume": {
     "activePhase": "P4",
     "nextActions": [
-      "Record the authorized deterministic Shelf reporter RED at scripts/smoke_garnet_minimum_shelf.py, implement it over committed artifacts only, add the exact rolling-review-v2 companions, and run WV-6 plus trust gates."
+      "Run the reporter-owned WV-6 evidence producer, verify the unchanged WV acceptance gate, record any pre-existing test-fixture conflict without changing trust logic, then prepare Review Request 03."
     ],
     "blockers": [],
     "conventions": [
