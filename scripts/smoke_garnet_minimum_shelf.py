@@ -18,7 +18,9 @@ PROOF_PATH = Path("proofs/minimum-shelf/lane2b/PROOF.json")
 INPUT_HEX_PATH = Path("proofs/minimum-shelf/lane2b/mcp-session.input.hex")
 OUTPUT_HEX_PATH = Path("proofs/minimum-shelf/lane2b/mcp-session.output.hex")
 WV6_ROOT = Path("proofs/windows/launch-verification/wv6-minimum-shelf")
-CROSS_CHECKOUT_EVIDENCE = Path("ops/lane2b/evidence/12-reporter-cross-checkout.txt")
+CROSS_CHECKOUT_EVIDENCE = Path(
+    "ops/lane2b/evidence/17-content-reporter-cross-checkout.txt"
+)
 REVIEWED_HEAD = "dcf6008fd4291baf719dc361a82f2062ea60bfd2"
 REVIEWED_TREE = "f3272b9610dba756bd414cafc825fd7462d7a294"
 REVIEWED_TREE_PRODUCT_SHA256 = (
