@@ -34,8 +34,11 @@
 
 1. Jon relays Claude Fable 5 verdicts as immutable files under
    `ops/lane2b/review/` for Requests 01 and 02.
-2. Resume the branch and verify the reviewed head/tree before changing code:
-   `git rev-parse HEAD` and `git rev-parse 'HEAD^{tree}'`.
+2. Resume the branch and verify the immutable reviewed implementation commit
+   before changing code: `git rev-parse c333db5f83114f6ad0525ba68e97602de95a8503`
+   and `git rev-parse 'c333db5f83114f6ad0525ba68e97602de95a8503^{tree}'`.
+   The expected tree is `6dab95d30bebb4cd115faf942aa71b488d9e1a81`;
+   later branch commits contain only the blocked-checkpoint artifacts.
 3. Apply only the authorized, path/digest-bound W_TRUST companion and reporter
    work; record the reporter RED first.
 4. Run `python3 scripts/garnet_trust_kernel_review_status.py --gate`; require
