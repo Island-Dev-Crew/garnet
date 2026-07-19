@@ -16,6 +16,8 @@ SCHEMA = "garnet.minimum_shelf_status/v1"
 PROOF_PATH = Path("proofs/minimum-shelf/lane2b/PROOF.json")
 INPUT_HEX_PATH = Path("proofs/minimum-shelf/lane2b/mcp-session.input.hex")
 OUTPUT_HEX_PATH = Path("proofs/minimum-shelf/lane2b/mcp-session.output.hex")
+WV6_ROOT = Path("proofs/windows/launch-verification/wv6-minimum-shelf")
+CROSS_CHECKOUT_EVIDENCE = Path("ops/lane2b/evidence/12-reporter-cross-checkout.txt")
 RUNTIME_COMMIT = "a6f0da2b81a9b181dafb83e15a17f8f313406e49"
 RUNTIME_TREE = "fb4efe6ddc0280a942b4d0ac60b9c6017a72ca10"
 MAX_JSON_BYTES = 64 * 1024
@@ -109,6 +111,13 @@ def _read_json(relative: str | Path) -> dict[str, object]:
 
 def _sha256(raw: bytes) -> str:
     return hashlib.sha256(raw).hexdigest()
+
+
+def _canonical_json(value: object) -> bytes:
+    return (
+        json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        + "\n"
+    ).encode("utf-8")
 
 
 def _git(*args: str) -> subprocess.CompletedProcess[str]:
@@ -421,9 +430,94 @@ def read_status(root: Path = ROOT) -> MinimumShelfStatus:
     return status
 
 
+def _emit_wv6(status: MinimumShelfStatus) -> None:
+    if not status.ok or status.current_commit is None:
+        raise ValueError("refusing to emit WV-6 evidence from a non-accepted status")
+    destination = ROOT / WV6_ROOT
+    if destination.exists() or destination.is_symlink():
+        raise ValueError(f"{WV6_ROOT.as_posix()} already exists; overwrite refused")
+
+    sources = {
+        "mcp-session.input.hex": INPUT_HEX_PATH,
+        "mcp-session.output.hex": OUTPUT_HEX_PATH,
+        "f1-canonical-reseal.txt": Path(
+            "ops/lane2b/evidence/10-f1-canonical-reseal-green.txt"
+        ),
+        "reporter-cross-checkout.txt": CROSS_CHECKOUT_EVIDENCE,
+    }
+    payloads = {
+        "minimum-shelf-status.json": _canonical_json(asdict(status)),
+    }
+    for output_name, source in sources.items():
+        payloads[output_name] = _read_bytes(source, MAX_HEX_BYTES)
+
+    destination.mkdir(parents=True)
+    for name, raw in sorted(payloads.items()):
+        (destination / name).write_bytes(raw)
+
+    artifact_rows = [
+        {"path": name, "sha256": _sha256(raw)}
+        for name, raw in sorted(payloads.items())
+    ]
+    common = ["minimum-shelf-status.json"]
+    checks = [
+        {
+            "id": "core-ring-tier1",
+            "status": "passed",
+            "command": EXPECTED_COMMANDS["core-ring-tier1"],
+            "evidence": common,
+        },
+        {
+            "id": "mcp-raw-byte-stdio",
+            "status": "passed",
+            "command": EXPECTED_COMMANDS["mcp-raw-byte-stdio"],
+            "evidence": [
+                "minimum-shelf-status.json",
+                "mcp-session.input.hex",
+                "mcp-session.output.hex",
+            ],
+        },
+        {
+            "id": "sealed-baseline",
+            "status": "passed",
+            "command": EXPECTED_COMMANDS["sealed-baseline"],
+            "evidence": ["minimum-shelf-status.json", "f1-canonical-reseal.txt"],
+        },
+        {
+            "id": "reject-without-seal",
+            "status": "passed",
+            "command": EXPECTED_COMMANDS["reject-without-seal"],
+            "evidence": ["minimum-shelf-status.json", "f1-canonical-reseal.txt"],
+        },
+        {
+            "id": "deterministic-shelf-reporter",
+            "status": "passed",
+            "command": "python3 -I scripts/smoke_garnet_minimum_shelf.py --gate",
+            "evidence": [
+                "minimum-shelf-status.json",
+                "reporter-cross-checkout.txt",
+            ],
+        },
+    ]
+    manifest = {
+        "schema": "garnet.wv_acceptance_evidence/v1",
+        "wv": "WV-6",
+        "contractBaseMainSha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+        "candidateMainSha": status.current_commit,
+        "state": "evidence_complete",
+        "platform": "windows",
+        "checks": checks,
+        "artifacts": artifact_rows,
+        "scopeLimitsAcknowledged": True,
+        "jonOnlyActionsPerformed": [],
+    }
+    (destination / "WV_ACCEPTANCE.json").write_bytes(_canonical_json(manifest))
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--gate", action="store_true")
+    parser.add_argument("--emit-wv6", action="store_true")
     args = parser.parse_args(argv)
     status = read_status()
     print(
@@ -434,6 +528,12 @@ def main(argv: list[str] | None = None) -> int:
             separators=(",", ":"),
         )
     )
+    if args.emit_wv6:
+        try:
+            _emit_wv6(status)
+        except (OSError, ValueError) as exc:
+            print(f"WV-6 evidence emission FAILED: {exc}", file=sys.stderr)
+            return 1
     if args.gate and not status.ok:
         print(
             "Minimum Shelf gate FAILED: " + "; ".join(status.findings),
