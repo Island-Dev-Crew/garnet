@@ -1,0 +1,48 @@
+GARNET LANE 2B EVIDENCE
+implementer: Codex GPT-5.6 Sol
+reviewer: Claude Fable 5
+captured_utc: 2026-07-19T09:46:17Z
+implementation_head: c333db5f83114f6ad0525ba68e97602de95a8503
+implementation_tree: 6dab95d30bebb4cd115faf942aa71b488d9e1a81
+base_main: cede73c03c5d535306ed179b5882e99e4d17b050
+
+$ cargo test -p garnet-cli --no-fail-fast
+result: PASS
+total: 459 passed; 0 failed
+lane additions included: 4 framing unit traps; 3 Tier-1/router tests;
+2 native process stdio tests; 7 sealed/rejection package tests.
+
+$ python3 -I <summary-only full scripts/test_*.py discovery>
+Lane head after native CLI build:
+  tests=950 failures=16 errors=4 skipped=3
+Exact base after native CLI build:
+  tests=950 failures=16 errors=4 skipped=3
+Delta: 0 failures, 0 errors, 0 skips.
+
+All 16 failures reproduce at the exact base. They are the existing adoption,
+ledger, novel_07, W-PLAY/browser, CRLF byte-preservation, release-assets,
+Studio executable-bit, and release-readiness cascade. All 4 errors reproduce:
+three Windows CreateProcess failures for the extensionless `shasum` script and
+one WinError 1314 symlink-privilege denial. Lane 2B introduced no Python-battery
+delta. The locked P4-G3 command still exits nonzero and therefore is not marked
+passed.
+
+$ python3 scripts/garnet_trust_kernel_review_status.py --gate
+trust-kernel review gate: REVIEW REQUIRED
+ok: false
+trust_kernel_touched: true
+touched_paths: ["garnet-cli/src/bin/garnet.rs"]
+review_companion_present: false
+problems: ["1 trust-kernel path(s) changed with no review companion"]
+exit: 1
+
+$ python3 -I scripts/garnet_lane0_closeout_status.py --gate
+Lane 0 closeout: PASS - evidence 22/22 - ledger 37 - denominators 4/4 - launch HOLD - band 3
+$ python3 -I scripts/garnet_msrv_status.py --gate
+ok: true; findings: []
+$ python3 -I scripts/garnet_frozen_backlog_status.py --gate
+ok: true; findings: []
+
+STOP: fresh trust-kernel output overrules the narrower prompt path list. No
+review trailer, reviewer verdict, W_TRUST approval, or reporter authorization
+was invented. P4 remains blocked pending Claude Fable 5 review relayed by Jon.
