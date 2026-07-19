@@ -1,0 +1,37 @@
+Lane 2B Verdict 04 content-provenance RED
+Captured: 2026-07-19T23:23:00Z
+Machine: NUCBOX_M2PRO_S, Windows 11 x64
+Implementer: Codex GPT-5.6 Sol
+Reviewer: Claude Fable 5 (chat seat, Jon-relay mode)
+Authenticated carrier / ceremony seat: Jon
+Base head before traps: 05ef13143cb4c8a6a87d81937edf626748163f8b
+Base tree: e948da06d4bc57ee555553a25c297b98f8a116bb
+Pull-request refs fetched: none
+
+Verdict 04 Decision 2(d) requires all three adversarial traps to be RED before
+the production cure. The traps were committed at
+scripts/test_garnet_minimum_shelf_provenance.py before either reporter was
+changed.
+
+Command:
+  python3 -I scripts/test_garnet_minimum_shelf_provenance.py -v
+
+Result:
+  3 tests run; 0 passed; 3 errors; exit 1.
+
+Trap 1 — any product blob change must be RED:
+  ERROR because smoke_garnet_minimum_shelf has no
+  _tracked_content_digest mechanism.
+
+Trap 2 — a fresh main-only repository without discarded a6f0da2/e2820ce
+objects must remain GREEN when reviewed content is present:
+  both branch objects were confirmed absent, then the test ERRORED because the
+  content-digest mechanism does not exist.
+
+Trap 3 — mismatched evidence/content digest must be RED:
+  ERROR because garnet_wv_acceptance_status has no
+  _verify_squash_durable_content mechanism.
+
+These are compile/interface-boundary REDs for the exact authorized design.
+No reporter logic, exclusion, candidate binding, manifest, or sanctioned proof
+artifact was changed before this capture.
