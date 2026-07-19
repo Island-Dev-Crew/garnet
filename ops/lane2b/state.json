@@ -210,7 +210,17 @@
       "launchCritical": "3/6 (50.0%)",
       "launchLedger": "3/8 (37.5%)"
     },
-    "reviewRequests": [],
+    "reviewRequests": [
+      {
+        "id": "01",
+        "path": "ops/lane2b/review/01-request.md",
+        "reviewedHead": "0919f7a1b14d6f53a251f3528787b2278331e488",
+        "reviewedTree": "3266d5bd05312368777d57da6fe48e0342b5ad60",
+        "reviewer": "Claude Fable 5",
+        "carrier": "Jon",
+        "status": "pending"
+      }
+    ],
     "reviewVerdicts": []
   }
 }
