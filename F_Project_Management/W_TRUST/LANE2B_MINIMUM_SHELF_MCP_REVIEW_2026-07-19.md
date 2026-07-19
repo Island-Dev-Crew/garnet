@@ -9,6 +9,7 @@ This is the path/digest-bound W_TRUST companion for
 - Integration base: `cede73c03c5d535306ed179b5882e99e4d17b050`
 - Review Verdict 01: APPROVE
 - Review Verdict 02: APPROVE-WITH-BLOCKERS
+- Review Verdict 03: APPROVE-WITH-BLOCKERS; F1 truth-surface pairing authorized
 - F1 precondition: cured and cross-checkout proven at
   `a6f0da2b81a9b181dafb83e15a17f8f313406e49`
 - Launch: HOLD; Band 3 ceiling while U-17 remains open
@@ -72,6 +73,29 @@ not a self-issued final code approval: Request 03 must independently review the
 exact reporter blob above. Any reporter-byte change before that verdict voids
 this binding and requires a new digest plus disclosure.
 
+## Binding 3 — WV-6 acceptance truth-surface pairing
+
+Verdict 03 independently verified the F1 cure and authorized updating exactly
+the stale protected repository-state test. The cure strengthens the state
+expectations: WV-6 must be accepted with all five checks and five artifacts,
+while WV-7 must remain pending with zero passed checks and a nonzero gate.
+
+| Field | Bound value |
+|---|---|
+| Path | `scripts/test_garnet_wv_acceptance_status.py` |
+| Implementation head | `115b1cdb315cf90ceb414c37e20effa186391e25` |
+| Implementation tree | `b24c5d9c54deab2692924df026ccef8eb56d513f` |
+| Git blob | `d10c665f1f4f09fbe97a990e30bb3dfbd007b570` |
+| Blob SHA-256 | `b3929a2af9b6bb0365641c5313e227e55989db444215c648176bc2b272a14421` |
+| Blob bytes | `7661` |
+| Authorization source | `ops/lane2b/review/03-verdict.md`, F1 |
+| Final content verdict | Pending Review Request 04; never implied here |
+
+No malformed-evidence, missing-check, hash-mismatch, candidate-existence, or
+fail-closed contract trap was removed or relaxed. The paired test asserts exact
+state, gate exit code, passed/required counts, artifact count, and findings for
+both WV-6 and WV-7. Any later byte change voids this binding.
+
 ## F1 cure and provenance
 
 The F1 RED is preserved at
@@ -90,9 +114,12 @@ The F1 RED is preserved at
 ## Review boundary and remaining ceremony
 
 Review Verdict 01 approves the framing core. Review Verdict 02 approves the
-sealed/MCP implementation subject to F1 and authorizes the two bindings above.
-F1 is now green. The deterministic reporter has not yet received its final
-content verdict; Review Request 03 owns that step.
+sealed/MCP implementation subject to F1 and authorizes the CLI and reporter
+bindings. Review Verdict 03 independently verifies the durable F1 cure and the
+first two bindings, then authorizes the exact protected truth-surface pairing
+bound above. The focused test and full-battery parity are green locally; Review
+Request 04 owns final review of Binding 3 and the still-required squash-durable
+WV-6 landed-main contract.
 
 No bare `Trust-Kernel-Review:` trailer is used. This companion, the immutable
 verdicts, exact Git objects, and final independent review are the evidence.

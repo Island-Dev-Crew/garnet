@@ -1,51 +1,47 @@
 # Lane 2B blocked checkpoint
 
 - Implementer: Codex GPT-5.6 Sol
-- Independent reviewer: Claude Code Fable 5, MacBook Air
+- Reviewer: Claude Fable 5 (chat seat, Jon-relay mode)
 - Authenticated carrier / ceremony seat: Jon
 - Branch: `mission/l2b-sealed-shelf-mcp`
-- Upstream base: `cede73c03c5d535306ed179b5882e99e4d17b050`
-- Launch: HOLD
-- Band: 3 while U-17 remains open
+- Launch: HOLD; lawful Band 3
 - Pull-request refs fetched: none
 
-## What is green
+## Verdict 03 outcome
 
-- Reviewer Verdict 01: APPROVE; raw-byte framing core carries unchanged.
-- Verdict 02 F1 cure: prelude and flagship seal inputs are LF-canonical; two
-  clean builds resealed byte-identically; fresh LF and default-Windows clones
-  pass sealed 1/1, native stdio 2/2, and all negative traps 6/6.
-- Deterministic Shelf reporter: accepted, 5/5, findings empty; byte-identical
-  output in isolated LF and default-Windows checkouts.
-- Unchanged WV-6 acceptance gate: accepted, 5/5 checks, 5 artifacts.
-- `garnet-cli`: 460/460; fmt and strict clippy pass.
-- Trust-kernel companion gate: `ok: true`, `problems: []`.
-- Lane 0, MSRV, and frozen-backlog boot floors: PASS.
+- Verdict committed verbatim at `ops/lane2b/review/03-verdict.md`.
+- Authorized truth-surface RED recorded before cure.
+- Protected test binding: commit `115b1cd`, tree `b24c5d9`, blob `d10c665f`.
+- Focused WV tests: 6/6.
+- Full Python differential: base and lane both 928/17F/8E/3S; zero delta.
+- WV-6: accepted 5/5 with 5 artifacts.
+- WV-7: truthfully pending 0/5.
 
-## Blocking conditions
+## Blocking condition discovered by the fresh gate
 
-1. The locked full Python battery differs from exact upstream main by one
-   failure: base 928/17F/8E/3S versus lane 928/18F/8E/3S. The sole new failure
-   is the protected regression that asserts both WV-6 and WV-7 are pending.
-   WV-6 is now reporter-accepted while WV-7 remains pending. Verdict 02 did not
-   authorize changing `scripts/test_garnet_wv_acceptance_status.py`; no test or
-   gate was weakened to manufacture parity.
-2. The frozen WV-6 manifest currently names branch candidate `e2820ce...`.
-   Squash merge will discard that branch commit from main. The reviewer must
-   prescribe a landed-first-parent rebinding ceremony or authorize a minimal
-   squash-durable reporter/test change that never fetches `refs/pull/*`.
-3. Final independent approval of the F1 cure, reporter content, proofs, and
-   W_TRUST bindings remains pending in Review Request 03.
+The deterministic Shelf reporter is red on the paired tree:
+
+```text
+Minimum Shelf gate FAILED: product bytes changed after the recorded runtime candidate
+```
+
+Its broad diff from branch candidate `a6f0da2` includes the authorized protected
+test. Excluding the test would be an unauthorized path exclusion; rebinding the
+candidate would change the independently bound reporter and would still depend
+on branch history that a squash merge discards. The frozen WV-6 manifest has the
+same durability issue with branch candidate `e2820ce`.
 
 ## Exact resume
 
-1. Fetch the fork branch tip only; never fetch `refs/pull/*`.
-2. Read `ops/lane2b/review/03-verdict.md` in full and verify its exact reviewed
-   head/tree before acting.
-3. If authorized, RED-record then make only the exact non-weakening protected
-   fixture and squash-durability changes named by the verdict.
-4. Re-run the full Python battery against exact built main and require zero lane
-   delta; re-run all Shelf, WV-6, trust, Rust, fmt, and clippy gates.
-5. Commit Review Request 04 for final approval. Jon alone opens/merges the PR.
+1. Read immutable `ops/lane2b/review/04-verdict.md` and verify its reviewed
+   head/tree and exact authorized paths before acting.
+2. If authorized, RED-record and implement only the prescribed content-bound,
+   squash-durable Shelf/WV provenance repair. Never fetch `refs/pull/*`.
+3. Run the reporter twice from fresh LF and Windows checkouts. Claude Fable 5
+   must independently repeat the two-checkout reporter run on the Air.
+4. Require Shelf accepted, WV-6 accepted, WV-7 pending, focused WV tests 6/6,
+   exact Python zero delta, trust gate clean, and Rust/fmt/clippy green.
+5. Only an explicit final APPROVE permits Jon to open the PR. Merge remains
+   human-only, and any post-merge rebinding ceremony must be named in advance.
 
-Evidence: `ops/lane2b/evidence/13-p4-wv6-and-battery-stop.txt`.
+Evidence: `ops/lane2b/evidence/15-verdict03-f1-green-and-reporter-stop.txt`.
