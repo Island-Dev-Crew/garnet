@@ -45,24 +45,26 @@ F1 was cured:
 | Field | Bound value |
 |---|---|
 | Path | `scripts/smoke_garnet_minimum_shelf.py` |
-| Implementation head | `1dce85d49cba4b3347f74d5ed459c839c35641a6` |
-| Implementation tree | `eac23f1bf068c614f9edf1c299223900d3b271d9` |
-| Git blob | `787ccbd4342ff196d7ba7870f2ebe53010cc025d` |
-| Blob SHA-256 | `be74800c2a99e7cf23f49a8f504508a1ac6b8b1a1aea5fb58ce3136951699163` |
-| Blob bytes | `17903` |
+| Implementation head | `178edfcead4763b8e3a57f074aa58a9e2f3c3cd1` |
+| Implementation tree | `a219e2f72ad483d2dd4eb9ebe98089da4282d9cb` |
+| Git blob | `83a5354d680d69016a8a83443e2d28c829439a46` |
+| Blob SHA-256 | `1eb19526d315f92c14e2380c49b5df465bd33a5aab93faaaf9ea4eff4aac6af2` |
+| Blob bytes | `21529` |
 | Authorization source | `ops/lane2b/review/02-verdict.md`, decision 3 |
 | Final content verdict | Pending Review Request 03; never implied here |
 
-The reporter is read-only and deterministic. It consumes only committed,
-bounded artifacts; performs no network access; fetches no Git refs; records no
-wall clock, hostname, ambient dependency, or Jon-only action; validates the
-raw CRLF Content-Length transcript; pins the one package and canonical prelude;
-and preserves the exact UNSIGNED predicate limitation.
+The reporter's ordinary gate is read-only and deterministic. Its bounded
+`--emit-wv6` producer refuses overwrite and writes only the frozen WV-6
+destination from an already-accepted status plus committed byte-fenced inputs.
+It consumes only committed, bounded artifacts; performs no network access;
+fetches no Git refs; records no wall clock, hostname, ambient dependency, or
+Jon-only action; validates the raw CRLF Content-Length transcript; pins the one
+package and canonical prelude; and preserves the exact UNSIGNED limitation.
 
-Two isolated exact-head checkouts — one `core.autocrlf=false`, one default
-Windows `core.autocrlf=true` — each emitted the same 1,849-byte stdout verdict,
-SHA-256 `f0714edd7f5f7ce8b3c33420c58fce0d78f0816f41acafc750d8ce60f2677f8e`,
-with exit 0 and zero stderr. Both held zero `refs/pull/*` refs.
+The earlier read-only reporter blob at `1dce85d` emitted identical 1,849-byte
+verdicts in isolated LF and default-Windows checkouts. The final extended blob
+above supersedes that implementation binding and requires its own exact-head
+cross-checkout evidence before WV-6 emission.
 
 This binding records the reviewer-authorized implementation boundary. It is
 not a self-issued final code approval: Request 03 must independently review the
