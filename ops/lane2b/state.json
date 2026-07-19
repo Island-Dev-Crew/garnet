@@ -10,7 +10,7 @@
     "northStar": "One frozen Core Ring Tier 1 tool executes in-process without widening to Tier 2, Tier 3, hosted registry, or arbitrary external hosts; A native-Windows raw-byte MCP session completes initialize, tools/list, tools/call, and error handling with byte-exact Content-Length frames; The same flagship package is accepted only with its committed matching seal and is rejected when unsealed, seal-stripped, or byte-tampered before tool execution; Two reporter runs over identical committed inputs emit byte-identical WV-6 verdict JSON",
     "status": "active",
     "started": "2026-07-19",
-    "updated": "2026-07-19T08:50:00Z",
+    "updated": "2026-07-19T08:57:42Z",
     "sessionCount": 1
   },
   "policies": {
@@ -53,7 +53,7 @@
           "status": "pending",
           "evidence": null,
           "lastRun": null,
-          "notes": ""
+          "notes": "Framing core GREEN: 4/4 byte/adversarial tests, 3/3 bounded router tests, and 14/14 existing MCP tests. Exact process integration remains pending until the seal loader is the only host constructor."
         }
       ],
       "tasks": []
@@ -62,7 +62,7 @@
       "id": "P2",
       "title": "Sealed flagship baseline",
       "goal": "Bind the frozen tool manifest, source, and Garnet seal into one excellent committed local package.",
-      "status": "pending",
+      "status": "in_progress",
       "sessionsEstimate": "1",
       "gates": [
         {
@@ -157,9 +157,9 @@
   ],
   "prLog": [],
   "resume": {
-    "activePhase": "P1",
+    "activePhase": "P2",
     "nextActions": [
-      "Record the raw-byte stdio RED, implement bounded Content-Length framing, and publish review request 01 after fresh GREEN."
+      "Publish review request 01 for the framing core, then record the fail-closed package rejection RED before completing the sealed flagship path."
     ],
     "blockers": [],
     "conventions": [
