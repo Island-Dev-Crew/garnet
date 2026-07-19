@@ -1,47 +1,51 @@
 # Lane 2B blocked checkpoint
 
 - Implementer: Codex GPT-5.6 Sol
-- Reviewer: Claude Fable 5
+- Independent reviewer: Claude Code Fable 5, MacBook Air
 - Authenticated carrier / ceremony seat: Jon
-- Implementation head: `c333db5f83114f6ad0525ba68e97602de95a8503`
-- Implementation tree: `6dab95d30bebb4cd115faf942aa71b488d9e1a81`
 - Branch: `mission/l2b-sealed-shelf-mcp`
-- Fork checkpoint: pushed through `c333db5`
+- Upstream base: `cede73c03c5d535306ed179b5882e99e4d17b050`
+- Launch: HOLD
+- Band: 3 while U-17 remains open
+- Pull-request refs fetched: none
+
+## What is green
+
+- Reviewer Verdict 01: APPROVE; raw-byte framing core carries unchanged.
+- Verdict 02 F1 cure: prelude and flagship seal inputs are LF-canonical; two
+  clean builds resealed byte-identically; fresh LF and default-Windows clones
+  pass sealed 1/1, native stdio 2/2, and all negative traps 6/6.
+- Deterministic Shelf reporter: accepted, 5/5, findings empty; byte-identical
+  output in isolated LF and default-Windows checkouts.
+- Unchanged WV-6 acceptance gate: accepted, 5/5 checks, 5 artifacts.
+- `garnet-cli`: 460/460; fmt and strict clippy pass.
+- Trust-kernel companion gate: `ok: true`, `problems: []`.
+- Lane 0, MSRV, and frozen-backlog boot floors: PASS.
 
 ## Blocking conditions
 
-1. Review Request 01 has no relayed `01-verdict.md` yet.
-2. The fresh trust-kernel gate classifies `garnet-cli/src/bin/garnet.rs` as
-   protected. It is red until Claude Fable 5 reviews the exact content and a
-   digest/path-bound W_TRUST companion is committed. A bare trailer is forbidden.
-3. The deterministic Shelf reporter is new reporter logic. The velocity
-   covenant requires an explicit reviewer/Jon authorization before its RED or
-   implementation is written. Its trust classification and companion must be
-   decided in that authorization, not avoided by choosing a convenient filename.
-
-## Evidence state
-
-- Lane 0, MSRV, and frozen-backlog floors: PASS.
-- Full `garnet-cli`: 459 passed, 0 failed.
-- Sealed flagship: 1/1; negative package traps: 6/6; native stdio: 2/2.
-- Strict clippy: PASS.
-- Full Python battery parity: exact lane and base both 950 tests, 16 failures,
-  4 errors, 3 skipped after a native CLI build; lane delta is zero.
-- WV-6 and deterministic reporter gates remain pending. No acceptance manifest
-  or status promotion has been manufactured.
+1. The locked full Python battery differs from exact upstream main by one
+   failure: base 928/17F/8E/3S versus lane 928/18F/8E/3S. The sole new failure
+   is the protected regression that asserts both WV-6 and WV-7 are pending.
+   WV-6 is now reporter-accepted while WV-7 remains pending. Verdict 02 did not
+   authorize changing `scripts/test_garnet_wv_acceptance_status.py`; no test or
+   gate was weakened to manufacture parity.
+2. The frozen WV-6 manifest currently names branch candidate `e2820ce...`.
+   Squash merge will discard that branch commit from main. The reviewer must
+   prescribe a landed-first-parent rebinding ceremony or authorize a minimal
+   squash-durable reporter/test change that never fetches `refs/pull/*`.
+3. Final independent approval of the F1 cure, reporter content, proofs, and
+   W_TRUST bindings remains pending in Review Request 03.
 
 ## Exact resume
 
-1. Jon relays Claude Fable 5 verdicts as immutable files under
-   `ops/lane2b/review/` for Requests 01 and 02.
-2. Resume the branch and verify the immutable reviewed implementation commit
-   before changing code: `git rev-parse c333db5f83114f6ad0525ba68e97602de95a8503`
-   and `git rev-parse 'c333db5f83114f6ad0525ba68e97602de95a8503^{tree}'`.
-   The expected tree is `6dab95d30bebb4cd115faf942aa71b488d9e1a81`;
-   later branch commits contain only the blocked-checkpoint artifacts.
-3. Apply only the authorized, path/digest-bound W_TRUST companion and reporter
-   work; record the reporter RED first.
-4. Run `python3 scripts/garnet_trust_kernel_review_status.py --gate`; require
-   `ok: true` and `problems: []` before any next push.
-5. Generate the committed raw-byte transcript and WV-6 artifacts, prove two
-   reporter runs byte-identical, then run the exact WV-6 gate and close review.
+1. Fetch the fork branch tip only; never fetch `refs/pull/*`.
+2. Read `ops/lane2b/review/03-verdict.md` in full and verify its exact reviewed
+   head/tree before acting.
+3. If authorized, RED-record then make only the exact non-weakening protected
+   fixture and squash-durability changes named by the verdict.
+4. Re-run the full Python battery against exact built main and require zero lane
+   delta; re-run all Shelf, WV-6, trust, Rust, fmt, and clippy gates.
+5. Commit Review Request 04 for final approval. Jon alone opens/merges the PR.
+
+Evidence: `ops/lane2b/evidence/13-p4-wv6-and-battery-stop.txt`.
