@@ -10,7 +10,7 @@
     "northStar": "One frozen Core Ring Tier 1 tool executes in-process without widening to Tier 2, Tier 3, hosted registry, or arbitrary external hosts; A native-Windows raw-byte MCP session completes initialize, tools/list, tools/call, and error handling with byte-exact Content-Length frames; The same flagship package is accepted only with its committed matching seal and is rejected when unsealed, seal-stripped, or byte-tampered before tool execution; Two reporter runs over identical committed inputs emit byte-identical WV-6 verdict JSON",
     "status": "active",
     "started": "2026-07-19",
-    "updated": "2026-07-19T18:20:14Z",
+    "updated": "2026-07-19T18:30:48Z",
     "sessionCount": 1
   },
   "policies": {
@@ -43,17 +43,17 @@
       "id": "P1",
       "title": "Raw-byte stdio MCP host",
       "goal": "Serve initialize, tools/list, tools/call, and protocol errors through bounded Content-Length frames using byte I/O only.",
-      "status": "in_progress",
+      "status": "done",
       "sessionsEstimate": "1",
       "gates": [
         {
           "id": "P1-G1",
           "title": "Raw-byte stdio integration and adversarial tests pass",
           "command": "cargo test -p garnet-cli --test mcp_stdio --no-fail-fast",
-          "status": "failed",
-          "evidence": "ops/lane2b/evidence/09-f1-lf-checkout-red.txt",
-          "lastRun": "2026-07-19T18:20:14Z",
-          "notes": "F1: one native stdio positive leg fails on a fresh LF checkout because the committed seal binds a CRLF-derived prelude hash. Framing core remains reviewer-approved."
+          "status": "passed",
+          "evidence": "ops/lane2b/evidence/10-f1-canonical-reseal-green.txt",
+          "lastRun": "2026-07-19T18:30:48Z",
+          "notes": "Exact-cure fresh LF and default-Windows checkouts both passed native stdio 2/2; framing core remains reviewer-approved."
         }
       ],
       "tasks": []
@@ -62,17 +62,17 @@
       "id": "P2",
       "title": "Sealed flagship baseline",
       "goal": "Bind the frozen tool manifest, source, and Garnet seal into one excellent committed local package.",
-      "status": "in_progress",
+      "status": "done",
       "sessionsEstimate": "1",
       "gates": [
         {
           "id": "P2-G1",
           "title": "Sealed package loads and executes end-to-end",
           "command": "cargo test -p garnet-cli --test minimum_shelf_package sealed --no-fail-fast",
-          "status": "failed",
-          "evidence": "ops/lane2b/evidence/09-f1-lf-checkout-red.txt",
-          "lastRun": "2026-07-19T18:20:14Z",
-          "notes": "F1: the genuine committed package is rejected on a fresh LF checkout. Portable seal acceptance is false until byte pinning and canonical reseal are proven cross-checkout."
+          "status": "passed",
+          "evidence": "ops/lane2b/evidence/10-f1-canonical-reseal-green.txt",
+          "lastRun": "2026-07-19T18:30:48Z",
+          "notes": "Canonical reseal is byte-identical across two clean builds; exact-cure fresh LF and default-Windows checkouts both passed the sealed positive leg."
         }
       ],
       "tasks": []
@@ -89,9 +89,9 @@
           "title": "Unsealed and tampered package traps pass",
           "command": "cargo test -p garnet-cli --test minimum_shelf_package rejects --no-fail-fast",
           "status": "passed",
-          "evidence": "ops/lane2b/evidence/07-slices3-4-green.txt",
-          "lastRun": "2026-07-19T09:08:27Z",
-          "notes": "Six negative traps reject missing/stripped seal, manifest/source/seal byte changes, and a fully regenerated replacement seal plus rebound manifest."
+          "evidence": "ops/lane2b/evidence/10-f1-canonical-reseal-green.txt",
+          "lastRun": "2026-07-19T18:30:48Z",
+          "notes": "All six traps remained green in exact-cure fresh LF and default-Windows checkouts."
         }
       ],
       "tasks": []
@@ -100,7 +100,7 @@
       "id": "P4",
       "title": "Deterministic Shelf reporter and WV-6 proof",
       "goal": "Derive a deterministic verdict from committed artifacts only and satisfy the existing native-Windows WV-6 acceptance reporter.",
-      "status": "pending",
+      "status": "in_progress",
       "sessionsEstimate": "1",
       "gates": [
         {
@@ -110,7 +110,7 @@
           "status": "pending",
           "evidence": null,
           "lastRun": null,
-          "notes": "Reporter logic is authorized by 02-verdict.md but remains behind the F1 canonical-seal cure precondition."
+          "notes": "Reporter logic is authorized by 02-verdict.md; the F1 canonical-seal precondition is satisfied by evidence 10."
         },
         {
           "id": "P4-G2",
@@ -138,7 +138,7 @@
     {
       "label": "Definition-of-done claims verified",
       "baseline": "0",
-      "current": "1",
+      "current": "2",
       "target": "3",
       "direction": "up"
     }
@@ -162,13 +162,11 @@
   ],
   "prLog": [],
   "resume": {
-    "activePhase": "P2",
+    "activePhase": "P4",
     "nextActions": [
-      "Cure F1 by byte-pinning every include_str seal input, resealing on canonical LF bytes, and proving both positive legs plus all six negative traps on LF and default-Windows clones; then execute the authorized P4 reporter and W_TRUST work."
+      "Record the authorized deterministic Shelf reporter RED at scripts/smoke_garnet_minimum_shelf.py, implement it over committed artifacts only, add the exact rolling-review-v2 companions, and run WV-6 plus trust gates."
     ],
-    "blockers": [
-      "F1: committed flagship seal binds a CRLF-derived prelude hash and rejects the genuine package on canonical LF checkouts."
-    ],
+    "blockers": [],
     "conventions": [
       "One task = one branch = one PR",
       "Update state.json + render + commit after every merge",
