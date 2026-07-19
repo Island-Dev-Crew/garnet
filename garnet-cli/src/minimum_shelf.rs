@@ -6,6 +6,40 @@
 
 pub const TIER1_TOOL_NAME: &str = "garnet.core.double";
 
+use garnet_interp::{Interpreter, Value as GarnetValue};
+use serde_json::{json, Value};
+
+fn invoke_tier1_source(source: &str, arguments: &Value) -> Result<Value, String> {
+    let object = arguments
+        .as_object()
+        .ok_or_else(|| "Tier 1 arguments must be an object".to_string())?;
+    if object.len() != 1 || !object.contains_key("value") {
+        return Err("Tier 1 arguments must contain exactly `value`".to_string());
+    }
+    let input = object["value"]
+        .as_i64()
+        .ok_or_else(|| "Tier 1 `value` must be a signed 64-bit integer".to_string())?;
+
+    let evaluated = crate::panic_firewall::firewalled(|| {
+        let mut interpreter = Interpreter::new();
+        interpreter
+            .load_source_with_entry_caps(source, "main")
+            .map_err(|error| format!("Tier 1 load failed: {error}"))?;
+        interpreter
+            .call_entry("main", vec![GarnetValue::Int(input)])
+            .map_err(|error| format!("Tier 1 execution failed: {error}"))
+    })
+    .map_err(|panic| format!("Tier 1 interpreter panic: {panic}"))??;
+
+    match evaluated {
+        GarnetValue::Int(value) => Ok(json!({"value": value})),
+        other => Err(format!(
+            "Tier 1 entry must return an integer, got {}",
+            other.type_name()
+        )),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

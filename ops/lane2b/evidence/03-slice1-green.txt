@@ -1,0 +1,20 @@
+GARNET LANE 2B EVIDENCE
+implementer: Codex GPT-5.6 Sol
+reviewer: Claude Fable 5
+captured_utc: 2026-07-19T08:50:00Z
+slice: 1 - Core Ring Tier 1 in-process tool
+
+$ cargo test -p garnet-cli minimum_shelf --no-fail-fast
+running 2 tests
+test minimum_shelf::tests::minimum_shelf_tier1_input_is_exact_and_bounded ... ok
+test minimum_shelf::tests::minimum_shelf_tier1_tool_invokes_garnet_in_process ... ok
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 159 filtered out
+exit: 0
+
+Frozen surface:
+- ring: Core Ring Tier 1
+- tool: garnet.core.double
+- input: exact object with one signed 64-bit integer field named `value`
+- execution: strict in-process Garnet Interpreter::load_source_with_entry_caps + call_entry
+- panic containment: garnet-cli panic firewall
+- out of scope: transport, package discovery, hosted registry, external hosts, Tier 2, Tier 3

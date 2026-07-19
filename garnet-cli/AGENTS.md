@@ -77,6 +77,12 @@ Owns the `garnet` binary, subcommand routing, template embedding, deterministic 
   request IDs, and explicit respond/no-response/close actions. Empty advertised
   capabilities and method-not-found responses are honesty fences: do not route
   tools, stdio, interpreter execution, or authority through this module.
+- `garnet_cli::minimum_shelf` freezes Core Ring Tier 1 to exactly one
+  Garnet-owned tool, `garnet.core.double`, with the exact input object
+  `{ "value": <i64> }`. The implementation invokes Garnet in-process through
+  the strict interpreter and panic firewall. Do not widen this module into a
+  hosted registry, arbitrary source runner, external MCP host, or Tier 2/3
+  surface; package sealing and raw-byte transport remain separate boundaries.
 - New agent-documentation tooling should start as opt-in or checking behavior before becoming a language requirement.
 
 ## Required Checks
