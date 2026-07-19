@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import re
 import subprocess
@@ -12,18 +13,37 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SCHEMA = "garnet.minimum_shelf_status/v1"
+SCHEMA = "garnet.minimum_shelf_status/v2"
 PROOF_PATH = Path("proofs/minimum-shelf/lane2b/PROOF.json")
 INPUT_HEX_PATH = Path("proofs/minimum-shelf/lane2b/mcp-session.input.hex")
 OUTPUT_HEX_PATH = Path("proofs/minimum-shelf/lane2b/mcp-session.output.hex")
 WV6_ROOT = Path("proofs/windows/launch-verification/wv6-minimum-shelf")
 CROSS_CHECKOUT_EVIDENCE = Path("ops/lane2b/evidence/12-reporter-cross-checkout.txt")
-RUNTIME_COMMIT = "a6f0da2b81a9b181dafb83e15a17f8f313406e49"
-RUNTIME_TREE = "fb4efe6ddc0280a942b4d0ac60b9c6017a72ca10"
+REVIEWED_HEAD = "dcf6008fd4291baf719dc361a82f2062ea60bfd2"
+REVIEWED_TREE = "f3272b9610dba756bd414cafc825fd7462d7a294"
+REVIEWED_TREE_PRODUCT_SHA256 = (
+    "1e6692175ea8fe2dd5b04fad4a492dc8ce48767dd07d88fd11a0847ce96749d5"
+)
+REVIEWED_TREE_PATH_COUNT = 1527
+# Replaced after all Verdict-04-authorized product paths are staged. This
+# reporter path is itself excluded, so the final constant is not self-referential.
+EXPECTED_PRODUCT_CONTENT_SHA256 = (
+    "810f256bcf9304999975120224419216422996ff3b804d1a9a8836d5bcc4c339"
+)
+EXPECTED_PRODUCT_PATH_COUNT = 1529
 MAX_JSON_BYTES = 64 * 1024
 MAX_HEX_BYTES = 4 * 1024 * 1024
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 HEX_RE = re.compile(r"^[0-9a-f]+$")
+
+_CONTENT_PATH = Path(__file__).with_name("garnet_content_provenance.py")
+_CONTENT_SPEC = importlib.util.spec_from_file_location(
+    "garnet_content_provenance", _CONTENT_PATH
+)
+assert _CONTENT_SPEC is not None and _CONTENT_SPEC.loader is not None
+content_provenance = importlib.util.module_from_spec(_CONTENT_SPEC)
+sys.modules[_CONTENT_SPEC.name] = content_provenance
+_CONTENT_SPEC.loader.exec_module(content_provenance)
 
 EXPECTED_FILE_SHA256 = {
     ".gitattributes": "cb75c76ea88a8a18b990a1ce323ed26c3c03849c40fe08c847886e865fc42bc8",
@@ -57,8 +77,12 @@ class MinimumShelfStatus:
     schema: str = SCHEMA
     state: str = "partial"
     platform: str = "windows"
-    runtime_candidate_commit: str = RUNTIME_COMMIT
-    runtime_candidate_tree: str = RUNTIME_TREE
+    reviewed_head: str = REVIEWED_HEAD
+    reviewed_tree: str = REVIEWED_TREE
+    reviewed_tree_product_sha256: str = REVIEWED_TREE_PRODUCT_SHA256
+    product_content_sha256: str | None = None
+    product_path_count: int = 0
+    landed_main_commit: str | None = None
     current_commit: str | None = None
     current_tree: str | None = None
     implementer: str = "Codex GPT-5.6 Sol"
@@ -111,6 +135,16 @@ def _read_json(relative: str | Path) -> dict[str, object]:
 
 def _sha256(raw: bytes) -> str:
     return hashlib.sha256(raw).hexdigest()
+
+
+def _tracked_content_digest(
+    root: Path, revision: str | None = None
+) -> tuple[str, int]:
+    return content_provenance.tracked_content_digest(root, revision)
+
+
+def _verify_product_content(root: Path, expected_digest: str) -> list[str]:
+    return content_provenance.verify_product_content(root, expected_digest)
 
 
 def _canonical_json(value: object) -> bytes:
@@ -248,8 +282,12 @@ def _responses_are_exact(messages: list[object]) -> bool:
 def _validate_proof(proof: dict[str, object], findings: list[str]) -> None:
     exact_keys = {
         "schema",
-        "runtimeCandidateCommit",
-        "runtimeCandidateTree",
+        "reviewedHead",
+        "reviewedTree",
+        "reviewedTreeProductSha256",
+        "reviewedTreePathCount",
+        "productContentSha256",
+        "productPathCount",
         "platform",
         "implementer",
         "reviewer",
@@ -263,9 +301,13 @@ def _validate_proof(proof: dict[str, object], findings: list[str]) -> None:
     if set(proof) != exact_keys:
         findings.append("proof keys are not exact")
     expected_scalars = {
-        "schema": "garnet.minimum-shelf-proof/v1",
-        "runtimeCandidateCommit": RUNTIME_COMMIT,
-        "runtimeCandidateTree": RUNTIME_TREE,
+        "schema": "garnet.minimum-shelf-proof/v2",
+        "reviewedHead": REVIEWED_HEAD,
+        "reviewedTree": REVIEWED_TREE,
+        "reviewedTreeProductSha256": REVIEWED_TREE_PRODUCT_SHA256,
+        "reviewedTreePathCount": REVIEWED_TREE_PATH_COUNT,
+        "productContentSha256": EXPECTED_PRODUCT_CONTENT_SHA256,
+        "productPathCount": EXPECTED_PRODUCT_PATH_COUNT,
         "platform": "windows",
         "implementer": "Codex GPT-5.6 Sol",
         "reviewer": "Claude Code Fable 5",
@@ -320,24 +362,27 @@ def read_status(root: Path = ROOT) -> MinimumShelfStatus:
 
     status.current_commit = _git_value(findings, "rev-parse", "HEAD")
     status.current_tree = _git_value(findings, "rev-parse", "HEAD^{tree}")
-    runtime_tree = _git_value(findings, "rev-parse", f"{RUNTIME_COMMIT}^{{tree}}")
-    if runtime_tree != RUNTIME_TREE:
-        findings.append("runtime candidate tree does not match its committed binding")
-    if _git("merge-base", "--is-ancestor", RUNTIME_COMMIT, "HEAD").returncode != 0:
-        findings.append("runtime candidate is not reachable from current HEAD")
-    product_diff = _git(
-        "diff",
-        "--quiet",
-        f"{RUNTIME_COMMIT}..HEAD",
-        "--",
-        ".",
-        ":(exclude)ops/lane2b/**",
-        ":(exclude)proofs/**",
-        ":(exclude)F_Project_Management/W_TRUST/**",
-        ":(exclude)scripts/smoke_garnet_minimum_shelf.py",
+    try:
+        status.product_content_sha256, status.product_path_count = (
+            _tracked_content_digest(ROOT)
+        )
+    except ValueError as exc:
+        findings.append(str(exc))
+    else:
+        if status.product_content_sha256 != EXPECTED_PRODUCT_CONTENT_SHA256:
+            findings.append("product content digest does not match reviewed bytes")
+        if status.product_path_count != EXPECTED_PRODUCT_PATH_COUNT:
+            findings.append("product path count does not match reviewed index")
+    provenance_findings, status.landed_main_commit = (
+        content_provenance.verify_squash_durable_content(
+            ROOT,
+            reviewed_head=REVIEWED_HEAD,
+            reviewed_tree=REVIEWED_TREE,
+            expected_content_digest=EXPECTED_PRODUCT_CONTENT_SHA256,
+            verify_git=True,
+        )
     )
-    if product_diff.returncode != 0:
-        findings.append("product bytes changed after the recorded runtime candidate")
+    findings.extend(provenance_findings)
 
     for relative, expected in EXPECTED_FILE_SHA256.items():
         try:
@@ -500,10 +545,12 @@ def _emit_wv6(status: MinimumShelfStatus) -> None:
         },
     ]
     manifest = {
-        "schema": "garnet.wv_acceptance_evidence/v1",
+        "schema": "garnet.wv_acceptance_evidence/v2",
         "wv": "WV-6",
         "contractBaseMainSha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
-        "candidateMainSha": status.current_commit,
+        "reviewedHeadSha": REVIEWED_HEAD,
+        "reviewedTreeSha": REVIEWED_TREE,
+        "productContentSha256": EXPECTED_PRODUCT_CONTENT_SHA256,
         "state": "evidence_complete",
         "platform": "windows",
         "checks": checks,
