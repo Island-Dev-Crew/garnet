@@ -1,0 +1,48 @@
+{
+  "schema": "garnet.minimum-shelf-proof/v1",
+  "runtimeCandidateCommit": "a6f0da2b81a9b181dafb83e15a17f8f313406e49",
+  "runtimeCandidateTree": "fb4efe6ddc0280a942b4d0ac60b9c6017a72ca10",
+  "platform": "windows",
+  "implementer": "Codex GPT-5.6 Sol",
+  "reviewer": "Claude Code Fable 5",
+  "authenticatedCarrier": "Jon",
+  "unsignedPredicate": true,
+  "checks": [
+    {
+      "id": "core-ring-tier1",
+      "status": "passed",
+      "command": "cargo test -p garnet-cli minimum_shelf --no-fail-fast"
+    },
+    {
+      "id": "mcp-raw-byte-stdio",
+      "status": "passed",
+      "command": "cargo test -p garnet-cli --test mcp_stdio --no-fail-fast"
+    },
+    {
+      "id": "sealed-baseline",
+      "status": "passed",
+      "command": "cargo test -p garnet-cli --test minimum_shelf_package sealed --no-fail-fast"
+    },
+    {
+      "id": "reject-without-seal",
+      "status": "passed",
+      "command": "cargo test -p garnet-cli --test minimum_shelf_package rejects --no-fail-fast"
+    }
+  ],
+  "transcript": {
+    "input": "proofs/minimum-shelf/lane2b/mcp-session.input.hex",
+    "inputSha256": "2328d55497368e0a351cfbd0e5421ab46c3826abf4f313c1a497e95a9fbfd769",
+    "output": "proofs/minimum-shelf/lane2b/mcp-session.output.hex",
+    "outputSha256": "dac0eea7138d0f58865eecefc8db0c64490605068b956f757f420d6b284ba15f",
+    "processExit": 0,
+    "stderrBytes": 0
+  },
+  "scopeLimits": [
+    "one Garnet-owned local package",
+    "Core Ring Tier 1 only",
+    "raw-byte stdio only",
+    "no hosted registry or network transport",
+    "reviewed local content, not signer identity"
+  ],
+  "jonOnlyActionsPerformed": []
+}
