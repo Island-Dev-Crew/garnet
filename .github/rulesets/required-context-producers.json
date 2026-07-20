@@ -151,7 +151,7 @@
       "matrix": {
         "os": "macos-latest"
       },
-      "semantic_sha256": "dfeabab1bff19c5177920fd77412405a377d238e1a105ef507faceb02322f7e3"
+      "semantic_sha256": "927e716aba11c9c524e369f1fbe734e58ecdc5bafc307c970627d59b390b1083"
     },
     {
       "context": "cargo test (ubuntu-latest)",
@@ -161,7 +161,7 @@
       "matrix": {
         "os": "ubuntu-latest"
       },
-      "semantic_sha256": "71c99e5c453eb51506059117f5ff07e0f188d18078e25c874b8d12515bd720e6"
+      "semantic_sha256": "1a9d7d4f3f5006162eeeb9132cca201ab97194795177f21a53dc2738e2571d08"
     },
     {
       "context": "cargo test (windows-latest)",
@@ -171,7 +171,7 @@
       "matrix": {
         "os": "windows-latest"
       },
-      "semantic_sha256": "14d9036a5c441609ee4f7ea912d8ea01a581910bf9889fad96aa721487c62959"
+      "semantic_sha256": "366f5c24be327d593843aaf8b110966c72b05f1992faae7948c524fe91cbab2a"
     },
     {
       "context": "cargo-deny check",
