@@ -10,7 +10,7 @@
     "northStar": "One frozen Core Ring Tier 1 tool executes in-process without widening to Tier 2, Tier 3, hosted registry, or arbitrary external hosts; A native-Windows raw-byte MCP session completes initialize, tools/list, tools/call, and error handling with byte-exact Content-Length frames; The same flagship package is accepted only with its committed matching seal and is rejected when unsealed, seal-stripped, or byte-tampered before tool execution; Two reporter runs over identical committed inputs emit byte-identical WV-6 verdict JSON",
     "status": "blocked",
     "started": "2026-07-19",
-    "updated": "2026-07-20T00:03:25Z",
+    "updated": "2026-07-20T00:06:07Z",
     "sessionCount": 1
   },
   "policies": {
@@ -174,7 +174,7 @@
   "resume": {
     "activePhase": "P4",
     "nextActions": [
-      "Commit Review Request 05 for the final checkpoint, push to the fleet fork, and have the Air independently double-run the exact reporter blob from fresh LF and default-Windows checkouts before issuing immutable Verdict 05."
+      "Have the Air check out exact reviewed head 927ad221, independently double-run the reporter from fresh LF and default-Windows checkouts, and commit immutable Verdict 05."
     ],
     "blockers": [
       "Final Air two-fresh-checkout reporter replay and immutable Verdict 05 remain pending.",
@@ -264,6 +264,15 @@
         "reviewer": "Claude Fable 5",
         "carrier": "Jon",
         "status": "approved_with_authorizations"
+      },
+      {
+        "id": "05",
+        "path": "ops/lane2b/review/05-request.md",
+        "reviewedHead": "927ad221d33668d458499a26f49d96ed4586563d",
+        "reviewedTree": "4d9374991bf265b78a0108e0bb62c317a43b8028",
+        "reviewer": "Claude Fable 5 (independent native reviewer, MacBook Air)",
+        "carrier": "Jon",
+        "status": "pending"
       }
     ],
     "reviewVerdicts": [
