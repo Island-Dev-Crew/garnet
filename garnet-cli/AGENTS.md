@@ -72,11 +72,33 @@ Owns the `garnet` binary, subcommand routing, template embedding, deterministic 
   boundary. It validates known client capability and implementation metadata
   shapes while allowing only top-level vendor capability extensions. It is not
   a session, transport, tool router, or host.
-- `garnet_cli::mcp` is the pure lifecycle/session boundary. It enforces
+- `garnet_cli::mcp` is the transport-free lifecycle/session boundary. It enforces
   initialize-first state, mandatory ping, initialized readiness, bounded exact
-  request IDs, and explicit respond/no-response/close actions. Empty advertised
-  capabilities and method-not-found responses are honesty fences: do not route
-  tools, stdio, interpreter execution, or authority through this module.
+  request IDs, and explicit respond/no-response/close actions. Its default
+  session keeps empty capabilities and method-not-found responses; the explicit
+  application callback lets a bounded host advertise and handle only its own
+  methods after readiness. Do not put transport, interpreter execution, or
+  authority logic in the lifecycle module.
+- `garnet_cli::minimum_shelf` freezes Core Ring Tier 1 to exactly one
+  Garnet-owned tool, `garnet.core.double`, with the exact input object
+  `{ "value": <i64> }`. The implementation invokes Garnet in-process through
+  the strict interpreter and panic firewall. Its MCP application host exposes
+  only `tools/list` and `tools/call` after the released lifecycle is ready.
+  Do not widen this module into a hosted registry, arbitrary source runner,
+  network host, or Tier 2/3 surface; package sealing and raw-byte framing remain
+  separate fail-closed boundaries.
+- `garnet mcp-serve --package <dir>` is the only production constructor for
+  the Minimum Shelf host. It accepts only the exact repo-bundled flagship:
+  package manifest, source, and unsigned in-toto predicate bytes are BLAKE3
+  pinned; source AST/build/capability bindings are re-derived; paths must be
+  regular non-symlink files. A locally edited or freshly resealed lookalike is
+  rejected before the host or interpreter tool is constructed. The unsigned
+  predicate is content provenance, not an external identity signature.
+- `garnet_cli::mcp_stdio` is the bounded byte framer for Minimum Shelf. It
+  accepts exactly one canonical `Content-Length: N\r\n\r\n` header, caps header
+  and body sizes, rejects text-mode LF framing, and emits framed JSON-RPC parse
+  errors. Never route it through line or text readers. The real process entry
+  must put Windows stdin/stdout in binary mode before serving.
 - New agent-documentation tooling should start as opt-in or checking behavior before becoming a language requirement.
 
 ## Required Checks

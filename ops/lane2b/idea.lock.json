@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "1.0",
+  "id": "idea-garnet-l2b-minimum-sealed-shelf",
+  "frozenAt": "2026-07-19T08:44:36Z",
+  "frozenBy": "Codex GPT-5.6 Sol",
+  "problem": {
+    "statement": "Garnet has a strict MCP lifecycle core but no bounded tool host, raw-byte stdio transport, sealed local package boundary, fail-closed rejection proof, or deterministic Minimum Shelf verdict.",
+    "successCriteria": [
+      "One frozen Core Ring Tier 1 tool executes in-process without widening to Tier 2, Tier 3, hosted registry, or arbitrary external hosts",
+      "A native-Windows raw-byte MCP session completes initialize, tools/list, tools/call, and error handling with byte-exact Content-Length frames",
+      "The same flagship package is accepted only with its committed matching seal and is rejected when unsealed, seal-stripped, or byte-tampered before tool execution",
+      "Two reporter runs over identical committed inputs emit byte-identical WV-6 verdict JSON"
+    ]
+  },
+  "domain": {
+    "id": 6,
+    "letter": "F",
+    "name": "Elite Software Craft"
+  },
+  "definitionOfDone": [
+    {
+      "claim": "a sealed flagship package initializes, lists, and is callable over raw-byte MCP stdio with correct error frames",
+      "falsifiedBy": "drive the host with a committed raw-byte client transcript; any malformed frame, CRLF corruption, protocol deviation, in-process shortcut replacing stdio, or unhandled error falsifies"
+    },
+    {
+      "claim": "an unsealed or tampered package is REJECTED before any tool executes",
+      "falsifiedBy": "present the same package unsealed, reseal-stripped, and byte-tampered; any execution, warning-only continuation, or partial load falsifies"
+    },
+    {
+      "claim": "the Shelf reporter's verdict is deterministic and derived only from committed artifacts on the current tree",
+      "falsifiedBy": "two fresh-clone runs must emit byte-identical verdict JSON; any dependence on network, pull refs, ambient credentials, target-directory state, timestamps, or machine-local state falsifies"
+    }
+  ],
+  "confidence": {
+    "score": 8,
+    "biggestRisk": "A host can appear MCP-capable while text-mode stdio corrupts framing or while seal validation occurs after Garnet code has already executed.",
+    "nextAction": "Record slice-specific REDs before implementing the Tier 1 tool, transport, seal path, rejection traps, and reporter."
+  },
+  "rejectedAlternatives": [
+    {
+      "idea": "Expose arbitrary repository programs or external MCP hosts",
+      "reason": "That exceeds the frozen Core Ring Tier 1 and cannot inherit Garnet's bounded authority claim."
+    },
+    {
+      "idea": "Warn on a missing or mismatched seal and continue",
+      "reason": "That repeats U-12 and falsifies the fail-closed package boundary."
+    },
+    {
+      "idea": "Use newline-delimited text framing on Windows",
+      "reason": "The lane specifically proves raw-byte Content-Length framing immune to CRLF translation."
+    }
+  ]
+}

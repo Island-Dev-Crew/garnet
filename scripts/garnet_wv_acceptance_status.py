@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import re
 import shutil
@@ -28,6 +29,30 @@ MAX_ARTIFACTS = 128
 MAX_ARTIFACT_BYTES = 16 * 1024 * 1024
 MAX_TOTAL_BYTES = 64 * 1024 * 1024
 
+_CONTENT_PATH = Path(__file__).with_name("garnet_content_provenance.py")
+_CONTENT_SPEC = importlib.util.spec_from_file_location(
+    "garnet_content_provenance", _CONTENT_PATH
+)
+assert _CONTENT_SPEC is not None and _CONTENT_SPEC.loader is not None
+content_provenance = importlib.util.module_from_spec(_CONTENT_SPEC)
+sys.modules[_CONTENT_SPEC.name] = content_provenance
+_CONTENT_SPEC.loader.exec_module(content_provenance)
+
+_SHELF_PATH = Path(__file__).with_name("smoke_garnet_minimum_shelf.py")
+_SHELF_SPEC = importlib.util.spec_from_file_location(
+    "lane2b_bound_shelf_reporter", _SHELF_PATH
+)
+assert _SHELF_SPEC is not None and _SHELF_SPEC.loader is not None
+bound_shelf_reporter = importlib.util.module_from_spec(_SHELF_SPEC)
+sys.modules[_SHELF_SPEC.name] = bound_shelf_reporter
+_SHELF_SPEC.loader.exec_module(bound_shelf_reporter)
+
+REVIEWED_HEAD = bound_shelf_reporter.REVIEWED_HEAD
+REVIEWED_TREE = bound_shelf_reporter.REVIEWED_TREE
+EXPECTED_PRODUCT_CONTENT_SHA256 = (
+    bound_shelf_reporter.EXPECTED_PRODUCT_CONTENT_SHA256
+)
+
 
 @dataclass
 class WvAcceptanceStatus:
@@ -35,7 +60,10 @@ class WvAcceptanceStatus:
     wv: str
     contract_base_main_sha: str | None
     evidence_destination: str | None
-    candidate_main_sha: str | None
+    reviewed_head_sha: str | None
+    reviewed_tree_sha: str | None
+    product_content_sha256: str | None
+    landed_main_sha: str | None
     required_check_count: int
     passed_check_count: int
     artifact_count: int
@@ -155,17 +183,21 @@ def _git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
-def _verify_candidate(root: Path, candidate: str, findings: list[str]) -> None:
-    if _git(root, "cat-file", "-e", f"{candidate}^{{commit}}").returncode != 0:
-        findings.append("candidateMainSha is not a local commit object")
-        return
-    if (
-        _git(root, "merge-base", "--is-ancestor", EXPECTED_BASE_SHA, candidate).returncode
-        != 0
-    ):
-        findings.append("candidateMainSha does not descend from the Lane 0 base")
-    if _git(root, "merge-base", "--is-ancestor", candidate, "HEAD").returncode != 0:
-        findings.append("candidateMainSha is not reachable from current HEAD")
+def _verify_squash_durable_content(
+    root: Path,
+    *,
+    reviewed_head: str,
+    reviewed_tree: str,
+    expected_content_digest: str,
+    verify_git: bool,
+) -> tuple[list[str], str | None]:
+    return content_provenance.verify_squash_durable_content(
+        root,
+        reviewed_head=reviewed_head,
+        reviewed_tree=reviewed_tree,
+        expected_content_digest=expected_content_digest,
+        verify_git=verify_git,
+    )
 
 
 def _validate_evidence(
@@ -174,19 +206,21 @@ def _validate_evidence(
     evidence_root: Path,
     *,
     verify_git: bool,
-) -> tuple[list[str], str | None, int, int]:
+) -> tuple[list[str], str | None, str | None, str | None, str | None, int, int]:
     findings: list[str] = []
     manifest_path = evidence_root / EVIDENCE_MANIFEST
     try:
         manifest = _read_json(manifest_path, limit=MAX_MANIFEST_BYTES)
     except ValueError as exc:
-        return [str(exc)], None, 0, 0
+        return [str(exc)], None, None, None, None, 0, 0
 
     exact_keys = {
         "schema",
         "wv",
         "contractBaseMainSha",
-        "candidateMainSha",
+        "reviewedHeadSha",
+        "reviewedTreeSha",
+        "productContentSha256",
         "state",
         "platform",
         "checks",
@@ -197,22 +231,40 @@ def _validate_evidence(
     if set(manifest) != exact_keys:
         findings.append("evidence manifest keys are not exact")
     identifier = contract["id"]
-    if manifest.get("schema") != "garnet.wv_acceptance_evidence/v1":
+    if manifest.get("schema") != "garnet.wv_acceptance_evidence/v2":
         findings.append("evidence manifest schema is invalid")
     if manifest.get("wv") != identifier:
         findings.append("evidence manifest WV id does not match the contract")
     if manifest.get("contractBaseMainSha") != EXPECTED_BASE_SHA:
         findings.append("evidence manifest base SHA does not match the contract")
-    candidate = manifest.get("candidateMainSha")
-    if not isinstance(candidate, str) or SHA_RE.fullmatch(candidate) is None:
-        findings.append("candidateMainSha must be one full lowercase commit SHA")
-        candidate_sha = None
+    reviewed_head = manifest.get("reviewedHeadSha")
+    if reviewed_head != REVIEWED_HEAD:
+        findings.append("reviewedHeadSha does not match the authorized review boundary")
+        reviewed_head_sha = None
     else:
-        candidate_sha = candidate
-        if candidate == EXPECTED_BASE_SHA:
-            findings.append("candidateMainSha must advance beyond the Lane 0 base")
-        if verify_git:
-            _verify_candidate(root, candidate, findings)
+        reviewed_head_sha = reviewed_head
+    reviewed_tree = manifest.get("reviewedTreeSha")
+    if reviewed_tree != REVIEWED_TREE:
+        findings.append("reviewedTreeSha does not match the authorized review boundary")
+        reviewed_tree_sha = None
+    else:
+        reviewed_tree_sha = reviewed_tree
+    product_digest = manifest.get("productContentSha256")
+    if product_digest != EXPECTED_PRODUCT_CONTENT_SHA256:
+        findings.append("productContentSha256 does not match the reviewed product digest")
+        product_content_sha256 = None
+    else:
+        product_content_sha256 = product_digest
+    provenance_findings, landed_main_sha = _verify_squash_durable_content(
+        root,
+        reviewed_head=reviewed_head if isinstance(reviewed_head, str) else "",
+        reviewed_tree=reviewed_tree if isinstance(reviewed_tree, str) else "",
+        expected_content_digest=(
+            product_digest if isinstance(product_digest, str) else ""
+        ),
+        verify_git=verify_git,
+    )
+    findings.extend(provenance_findings)
     if manifest.get("state") != "evidence_complete":
         findings.append("evidence manifest state must be evidence_complete")
     if manifest.get("platform") != "windows":
@@ -328,7 +380,15 @@ def _validate_evidence(
         for check_id in required
         if check_by_id.get(check_id, {}).get("status") == "passed"
     )
-    return findings, candidate_sha, passed, len(artifact_hashes)
+    return (
+        findings,
+        reviewed_head_sha,
+        reviewed_tree_sha,
+        product_content_sha256,
+        landed_main_sha,
+        passed,
+        len(artifact_hashes),
+    )
 
 
 def read_status(
@@ -344,11 +404,14 @@ def read_status(
         if not findings:
             findings.append(f"contract {identifier} is missing")
         return WvAcceptanceStatus(
-            schema="garnet.wv_acceptance_status/v1",
+            schema="garnet.wv_acceptance_status/v2",
             wv=identifier,
             contract_base_main_sha=None,
             evidence_destination=None,
-            candidate_main_sha=None,
+            reviewed_head_sha=None,
+            reviewed_tree_sha=None,
+            product_content_sha256=None,
+            landed_main_sha=None,
             required_check_count=0,
             passed_check_count=0,
             artifact_count=0,
@@ -363,28 +426,43 @@ def read_status(
     if evidence_root.is_symlink():
         findings.append("evidence destination must not be a symlink")
         state = "partial"
-        candidate = None
+        reviewed_head = None
+        reviewed_tree = None
+        product_digest = None
+        landed_main = None
         passed = 0
         artifact_count = 0
     elif not evidence_root.is_dir() or not (evidence_root / EVIDENCE_MANIFEST).exists():
         findings.append("exact-candidate evidence manifest is pending")
         state = "pending"
-        candidate = None
+        reviewed_head = None
+        reviewed_tree = None
+        product_digest = None
+        landed_main = None
         passed = 0
         artifact_count = 0
     else:
-        evidence_findings, candidate, passed, artifact_count = _validate_evidence(
-            root, contract, evidence_root, verify_git=verify_git
-        )
+        (
+            evidence_findings,
+            reviewed_head,
+            reviewed_tree,
+            product_digest,
+            landed_main,
+            passed,
+            artifact_count,
+        ) = _validate_evidence(root, contract, evidence_root, verify_git=verify_git)
         findings.extend(evidence_findings)
         state = "accepted" if not findings else "partial"
 
     return WvAcceptanceStatus(
-        schema="garnet.wv_acceptance_status/v1",
+        schema="garnet.wv_acceptance_status/v2",
         wv=identifier,
         contract_base_main_sha=str(contract["exactBaseMainSha"]),
         evidence_destination=destination,
-        candidate_main_sha=candidate,
+        reviewed_head_sha=reviewed_head,
+        reviewed_tree_sha=reviewed_tree,
+        product_content_sha256=product_digest,
+        landed_main_sha=landed_main,
         required_check_count=required_count,
         passed_check_count=passed,
         artifact_count=artifact_count,

@@ -11,6 +11,16 @@ proofs/**/MANIFEST.sha256 text eol=lf
 # The manifest source hash is also LF-normalized in code as defense-in-depth.
 *.garnet text eol=lf
 
+# The deterministic build manifest hashes this file through include_str!. Pin
+# its compiled bytes to canonical LF on every checkout; otherwise one seal can
+# become valid only for the checkout convention that produced its binary.
+garnet-interp-v0.3/src/prelude.rs text eol=lf
+
+# Keep the one Shelf package's human-readable attestation outputs canonical as
+# well. The loader remains tolerant of CRLF copies, but the reviewed tree is LF.
+examples/minimum-shelf-flagship/SHELF_PACKAGE.json text eol=lf
+examples/minimum-shelf-flagship/tool.seal.json text eol=lf
+
 # Proof bundles are byte-exact evidence — never normalize line endings (cross-OS seal integrity).
 proofs/** -text
 

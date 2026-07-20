@@ -1,0 +1,78 @@
+Lane 2B P4 WV-6 acceptance and battery stop
+Captured: 2026-07-19T19:22:48Z
+Machine: NUCBOX_M2PRO_S, Windows 11 x64
+Implementer: Codex GPT-5.6 Sol
+Independent reviewer: Claude Code Fable 5, MacBook Air
+Authenticated carrier / ceremony seat: Jon
+Branch head at capture: 03a06fd9db63e42d57cea927d6d7c5f7766de2b9
+Branch tree at capture: dbfc3cb5f06f219c79d45a95c2857c0b9b0a28c8
+Upstream base: cede73c03c5d535306ed179b5882e99e4d17b050
+refs/pull/* fetched: no
+
+FRESH FLOOR AND LANE GATES
+
+python3 -I scripts/garnet_lane0_closeout_status.py --gate
+  PASS; evidence 22/22; ledger 37; denominators 4/4; launch HOLD; band 3.
+
+python3 -I scripts/garnet_msrv_status.py --gate
+  PASS; ok=true; findings=[].
+
+python3 -I scripts/garnet_frozen_backlog_status.py --gate
+  PASS; ok=true; findings=[].
+
+python3 -I scripts/smoke_garnet_minimum_shelf.py --gate
+  PASS; state=accepted; checks 5/5; findings=[]; exit 0.
+  Current committed proof inputs include the canonical F1 reseal, exact raw-byte
+  request/response frames, and the bounded Core Ring Tier 1 scope.
+
+python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6 --gate
+  PASS; state=accepted; checks 5/5; artifacts 5; findings=[]; exit 0.
+  candidate_main_sha=e2820ce54e9c1fee030d50e9fba31be4bcdc8891
+  contract_base_main_sha=231aefa91985e5a0520c493c7f0fc3e54d74efc8
+
+python3 scripts/garnet_trust_kernel_review_status.py --gate
+  PASS; ok=true; problems=[]; companion present; exit 0.
+
+cargo fmt --check
+  PASS; exit 0.
+
+cargo test -p garnet-cli --no-fail-fast
+  PASS; 460 passed, 0 failed across unit and integration targets; exit 0.
+  Minimum Shelf positive 1/1, negative traps 6/6, native stdio 2/2.
+
+cargo clippy -p garnet-cli --all-targets -- -D warnings
+  PASS; exit 0.
+
+LOCKED PYTHON BATTERY DIFFERENTIAL
+
+Command under measurement:
+  python3 -m unittest discover -s scripts -p 'test_*.py'
+
+Exact upstream-base worktree at cede73c03c5d535306ed179b5882e99e4d17b050:
+  928 tests; 17 failures; 8 errors; 3 skipped; success=false.
+
+Lane at 03a06fd9db63e42d57cea927d6d7c5f7766de2b9:
+  928 tests; 18 failures; 8 errors; 3 skipped; success=false.
+
+Lane delta:
+  tests +0; failures +1; errors +0; skipped +0.
+
+The sole new failure is
+scripts.test_garnet_wv_acceptance_status.WvAcceptanceStatusTests.
+test_current_repository_is_pending_and_gates_red. The protected regression
+hard-codes both WV-6 and WV-7 as pending. Reporter-owned committed evidence now
+makes the unchanged WV-6 gate accepted while WV-7 remains pending. No assertion,
+gate, reporter, or canonicality check was weakened or edited to hide this delta.
+
+STOP / REVIEW BOUNDARY
+
+Verdict 02 authorized the new Shelf reporter path, not changes to the protected
+scripts/test_garnet_* surface. Updating the state fixture requires an explicit
+reviewer authorization bound to its exact path and digest. P4-G3 therefore stays
+FAILED and the lane stays BLOCKED.
+
+The accepted WV manifest also names a branch candidate commit. A squash merge
+will not preserve that object on main. Review Request 03 must prescribe a
+squash-durable post-merge candidate rebinding or explicitly authorize the
+minimal existing reporter/test change necessary to bind a landed first-parent
+main commit without refs/pull/*.

@@ -1,0 +1,89 @@
+Lane 2B Verdict 03 F1 GREEN and Shelf reporter stop
+Captured: 2026-07-19T20:42:09Z
+Machine: NUCBOX_M2PRO_S, Windows 11 x64
+Implementer: Codex GPT-5.6 Sol
+Reviewer: Claude Fable 5 (chat seat, Jon-relay mode)
+Authenticated carrier / ceremony seat: Jon
+Truth-surface implementation head: 115b1cdb315cf90ceb414c37e20effa186391e25
+Truth-surface implementation tree: b24c5d9c54deab2692924df026ccef8eb56d513f
+Upstream comparison base: cede73c03c5d535306ed179b5882e99e4d17b050
+Pull-request refs fetched: none
+
+VERDICT 03 F1 CURE
+
+RED-before-cure:
+  Evidence: ops/lane2b/evidence/14-verdict03-f1-red.txt
+  Focused result: 6 tests, 5 passed, 1 failed.
+  Sole failure: WV-6 expected pending but production state was accepted.
+
+Authorized pairing:
+  Path: scripts/test_garnet_wv_acceptance_status.py
+  Git blob: d10c665f1f4f09fbe97a990e30bb3dfbd007b570
+  Blob SHA-256: b3929a2af9b6bb0365641c5313e227e55989db444215c648176bc2b272a14421
+  Blob bytes: 7661
+  Commit: 115b1cdb315cf90ceb414c37e20effa186391e25
+  Commit message says the change is a truth-surface pairing without weakening.
+
+python3 -I scripts/test_garnet_wv_acceptance_status.py -v
+  PASS; 6/6; exit 0.
+  WV-6 asserts accepted, ok=true, exit=0, passed=5, required=5,
+  artifacts=5, findings=[].
+  WV-7 asserts pending, ok=false, exit=1, passed=0, required=5,
+  artifacts=0, findings=["exact-candidate evidence manifest is pending"].
+  Malformed evidence, missing checks, hash mismatch, and nonexistent-candidate
+  traps remain unchanged and green.
+
+LOCKED PYTHON BATTERY
+
+Command under measurement:
+  python3 -m unittest discover -s scripts -p 'test_*.py'
+
+Exact upstream base:
+  928 tests; 17 failures; 8 errors; 3 skipped; success=false.
+
+Lane after authorized pairing:
+  928 tests; 17 failures; 8 errors; 3 skipped; success=false.
+
+Differential:
+  tests +0; failures +0; errors +0; skipped +0.
+  Verdict 03 F1 is cured and the prior exact-parity claim is now true on the
+  paired tree. The inherited base-red suite is not represented as globally green.
+
+FRESH CURRENT-TREE GATES
+
+python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6 --gate
+  PASS; accepted; 5/5 checks; 5 artifacts; findings=[]; exit 0.
+
+python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-7 --gate
+  EXPECTED PENDING; 0/5 checks; 0 artifacts; exit 1.
+
+python3 scripts/garnet_trust_kernel_review_status.py --gate
+  PASS; ok=true; problems=[]; protected paths are the unchanged CLI dispatch
+  and the Verdict-03-authorized WV acceptance test.
+
+python3 -I scripts/garnet_lane0_closeout_status.py --gate
+  PASS; evidence 22/22; denominators 4/4; launch HOLD; band 3.
+
+cargo fmt --check
+  PASS; exit 0.
+
+NEW REPORTER RED — DO NOT CONCEAL
+
+python3 -I scripts/smoke_garnet_minimum_shelf.py --gate
+  FAIL; state=partial; exit 1.
+  Finding: "product bytes changed after the recorded runtime candidate".
+
+Exact cause: the reporter compares every path after runtime candidate a6f0da2,
+excluding only ops/lane2b/**, proofs/**, W_TRUST/**, and the reporter itself.
+The reviewer-authorized protected test is outside those exclusions, so the
+test-only truth pairing trips the broad product-diff predicate. WV-6 remains
+accepted because its frozen evidence is unchanged, but the Shelf lane gate is
+red on the current tree.
+
+No reporter exclusion, runtime-candidate rebind, or logic change was made.
+Verdict 03 authorizes only the test pairing; the reporter blob is independently
+bound and any byte change requires re-review. The same commit-object design is
+also not squash durable: branch runtime candidate a6f0da2 and WV candidate
+e2820ce will not be reachable in a fresh main-only clone after a squash merge.
+Review Request 04 must authorize one content-bound, landed-main-safe repair or
+prescribe a Jon-only post-merge ceremony before the lane can proceed to PR.

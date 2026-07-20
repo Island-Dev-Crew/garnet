@@ -772,6 +772,14 @@ mod tests {
     }
 
     #[test]
+    fn prelude_build_input_is_canonical_lf() {
+        assert!(
+            !garnet_interp::PRELUDE_SOURCE.as_bytes().contains(&b'\r'),
+            "prelude.rs is a byte-hashed include_str! input and must compile as canonical LF"
+        );
+    }
+
+    #[test]
     fn prelude_hash_is_non_trivial_length() {
         // BLAKE3 hex output is 64 chars. Guards against a regression where
         // prelude_hash silently becomes empty or truncated.

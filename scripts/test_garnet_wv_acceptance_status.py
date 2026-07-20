@@ -35,12 +35,50 @@ class GarnetWvAcceptanceStatusTests(unittest.TestCase):
         self.assertIn("winget", contracts["WV-7"]["title"].lower())
         self.assertIn("Docker", contracts["WV-7"]["title"])
 
-    def test_current_repository_is_pending_and_gates_red(self) -> None:
-        for identifier in ("WV-6", "WV-7"):
+    def test_current_repository_tracks_wv6_acceptance_and_wv7_pending(self) -> None:
+        expectations = {
+            "WV-6": {
+                "schema": "garnet.wv_acceptance_status/v2",
+                "state": "accepted",
+                "ok": True,
+                "returncode": 0,
+                "passed": 5,
+                "required": 5,
+                "artifacts": 5,
+                "findings": [],
+                "reviewed_head": wv.REVIEWED_HEAD,
+                "reviewed_tree": wv.REVIEWED_TREE,
+                "product_digest": wv.EXPECTED_PRODUCT_CONTENT_SHA256,
+            },
+            "WV-7": {
+                "schema": "garnet.wv_acceptance_status/v2",
+                "state": "pending",
+                "ok": False,
+                "returncode": 1,
+                "passed": 0,
+                "required": 5,
+                "artifacts": 0,
+                "findings": ["exact-candidate evidence manifest is pending"],
+                "reviewed_head": None,
+                "reviewed_tree": None,
+                "product_digest": None,
+            },
+        }
+        for identifier, expected in expectations.items():
             with self.subTest(identifier=identifier):
                 status = wv.read_status(ROOT, identifier)
-                self.assertEqual(status.state, "pending")
-                self.assertFalse(status.ok)
+                self.assertEqual(status.schema, expected["schema"])
+                self.assertEqual(status.state, expected["state"])
+                self.assertEqual(status.ok, expected["ok"])
+                self.assertEqual(status.passed_check_count, expected["passed"])
+                self.assertEqual(status.required_check_count, expected["required"])
+                self.assertEqual(status.artifact_count, expected["artifacts"])
+                self.assertEqual(status.findings, expected["findings"])
+                self.assertEqual(status.reviewed_head_sha, expected["reviewed_head"])
+                self.assertEqual(status.reviewed_tree_sha, expected["reviewed_tree"])
+                self.assertEqual(
+                    status.product_content_sha256, expected["product_digest"]
+                )
                 proc = subprocess.run(
                     [sys.executable, "-I", str(SCRIPT), "--wv", identifier, "--gate"],
                     cwd=ROOT,
@@ -48,10 +86,19 @@ class GarnetWvAcceptanceStatusTests(unittest.TestCase):
                     capture_output=True,
                     check=False,
                 )
-                self.assertNotEqual(proc.returncode, 0)
+                self.assertEqual(proc.returncode, expected["returncode"])
                 payload = json.loads(proc.stdout)
-                self.assertEqual(payload["state"], "pending")
-                self.assertFalse(payload["ok"])
+                self.assertEqual(payload["state"], expected["state"])
+                self.assertEqual(payload["ok"], expected["ok"])
+                self.assertEqual(payload["passed_check_count"], expected["passed"])
+                self.assertEqual(payload["required_check_count"], expected["required"])
+                self.assertEqual(payload["artifact_count"], expected["artifacts"])
+                self.assertEqual(payload["findings"], expected["findings"])
+                self.assertEqual(payload["reviewed_head_sha"], expected["reviewed_head"])
+                self.assertEqual(payload["reviewed_tree_sha"], expected["reviewed_tree"])
+                self.assertEqual(
+                    payload["product_content_sha256"], expected["product_digest"]
+                )
 
     def test_malformed_evidence_is_partial_not_accepted(self) -> None:
         with tempfile.TemporaryDirectory() as td:
@@ -90,10 +137,12 @@ class GarnetWvAcceptanceStatusTests(unittest.TestCase):
                     }
                 )
             manifest = {
-                "schema": "garnet.wv_acceptance_evidence/v1",
+                "schema": "garnet.wv_acceptance_evidence/v2",
                 "wv": "WV-6",
                 "contractBaseMainSha": wv.EXPECTED_BASE_SHA,
-                "candidateMainSha": "a" * 40,
+                "reviewedHeadSha": wv.REVIEWED_HEAD,
+                "reviewedTreeSha": wv.REVIEWED_TREE,
+                "productContentSha256": wv.EXPECTED_PRODUCT_CONTENT_SHA256,
                 "state": "evidence_complete",
                 "platform": "windows",
                 "checks": checks,
@@ -118,10 +167,12 @@ class GarnetWvAcceptanceStatusTests(unittest.TestCase):
             artifact = evidence / "only.txt"
             artifact.write_text("not enough", encoding="utf-8")
             manifest = {
-                "schema": "garnet.wv_acceptance_evidence/v1",
+                "schema": "garnet.wv_acceptance_evidence/v2",
                 "wv": "WV-7",
                 "contractBaseMainSha": wv.EXPECTED_BASE_SHA,
-                "candidateMainSha": "b" * 40,
+                "reviewedHeadSha": wv.REVIEWED_HEAD,
+                "reviewedTreeSha": wv.REVIEWED_TREE,
+                "productContentSha256": wv.EXPECTED_PRODUCT_CONTENT_SHA256,
                 "state": "evidence_complete",
                 "platform": "windows",
                 "checks": [],
@@ -138,13 +189,17 @@ class GarnetWvAcceptanceStatusTests(unittest.TestCase):
         self.assertTrue(any("required check" in item for item in status.findings))
         self.assertTrue(any("SHA-256" in item for item in status.findings))
 
-    def test_nonexistent_candidate_cannot_self_promote(self) -> None:
-        findings: list[str] = []
-        wv._verify_candidate(ROOT, "f" * 40, findings)
-        self.assertTrue(
-            any("not a local commit object" in item for item in findings),
-            findings,
+    def test_invalid_review_provenance_cannot_self_promote(self) -> None:
+        findings, _ = wv._verify_squash_durable_content(
+            ROOT,
+            reviewed_head="not-a-sha",
+            reviewed_tree="also-not-a-tree",
+            expected_content_digest="not-a-digest",
+            verify_git=False,
         )
+        self.assertTrue(any("reviewed head provenance" in item for item in findings))
+        self.assertTrue(any("reviewed tree provenance" in item for item in findings))
+        self.assertTrue(any("product content digest" in item for item in findings))
 
 
 if __name__ == "__main__":

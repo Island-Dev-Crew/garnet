@@ -1,0 +1,43 @@
+GARNET LANE 2B F1 RED EVIDENCE
+implementer: Codex GPT-5.6 Sol
+reviewer: Claude Code Fable 5 (independent reviewer, MacBook Air)
+captured_utc: 2026-07-19T18:20:14Z
+reviewer_tip: f00a902258d5ce443724ae206ade5aae743e4945
+fresh_clone: C:/garnet-lane2b-lf-f1-20260719
+clone_origin: https://github.com/Island-Dev-Crew/garnet.git
+checkout: detached reviewer tip fetched from the named fleet-fork branch only
+core.autocrlf: false
+pull_refs_fetched: 0
+
+$ git check-attr text eol -- garnet-interp-v0.3/src/prelude.rs
+garnet-interp-v0.3/src/prelude.rs: text: unspecified
+garnet-interp-v0.3/src/prelude.rs: eol: unspecified
+
+$ git rev-parse HEAD:garnet-interp-v0.3/src/prelude.rs
+f5a0e08d83c92e6204afacf0c43f6c16a4571cc6
+$ git hash-object garnet-interp-v0.3/src/prelude.rs
+f5a0e08d83c92e6204afacf0c43f6c16a4571cc6
+
+The LF worktree prelude exactly matches the committed Git blob. The failure is
+therefore a defect in the CRLF-derived committed seal, not checkout corruption
+in this reproduction.
+
+$ cargo test -p garnet-cli --test minimum_shelf_package sealed -- --nocapture
+running 1 test
+thread 'sealed_flagship_loads_end_to_end' panicked:
+flagship seal must verify: PackageError("seal build manifest does not match current Garnet")
+test sealed_flagship_loads_end_to_end ... FAILED
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 6 filtered out
+exit: 101
+
+$ cargo test -p garnet-cli --test mcp_stdio native_stdio_initialize_list_call_and_error -- --nocapture
+running 1 test
+thread 'native_stdio_initialize_list_call_and_error' panicked:
+garnet mcp-serve: Minimum Shelf package rejected: seal build manifest does not match current Garnet
+test native_stdio_initialize_list_call_and_error ... FAILED
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1 filtered out
+exit: 101
+
+RED: F1 reproduced before any cure. Both portable positive legs are false at
+reviewer tip f00a902 on a canonical LF checkout. No product, attribute, seal,
+or reporter change preceded this evidence.
