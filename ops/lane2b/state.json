@@ -10,7 +10,7 @@
     "northStar": "One frozen Core Ring Tier 1 tool executes in-process without widening to Tier 2, Tier 3, hosted registry, or arbitrary external hosts; A native-Windows raw-byte MCP session completes initialize, tools/list, tools/call, and error handling with byte-exact Content-Length frames; The same flagship package is accepted only with its committed matching seal and is rejected when unsealed, seal-stripped, or byte-tampered before tool execution; Two reporter runs over identical committed inputs emit byte-identical WV-6 verdict JSON",
     "status": "blocked",
     "started": "2026-07-19",
-    "updated": "2026-07-19T20:43:29Z",
+    "updated": "2026-07-20T00:03:25Z",
     "sessionCount": 1
   },
   "policies": {
@@ -107,28 +107,28 @@
           "id": "P4-G1",
           "title": "Minimum Shelf reporter emits deterministic accepted JSON",
           "command": "python3 -I scripts/smoke_garnet_minimum_shelf.py --gate",
-          "status": "failed",
-          "evidence": "ops/lane2b/evidence/15-verdict03-f1-green-and-reporter-stop.txt",
-          "lastRun": "2026-07-19T20:42:09Z",
-          "notes": "Verdict 03's authorized test-only truth pairing trips the reporter's broad post-runtime-candidate product diff. The reporter is fail-closed; no path exclusion or candidate rebind was made without review."
+          "status": "passed",
+          "evidence": "ops/lane2b/evidence/18-squash-main-only-green.txt",
+          "lastRun": "2026-07-19T23:38:00Z",
+          "notes": "Verdict 04's frozen content contract passes on-branch and in a fresh synthetic squash main-only clone with both discarded branch objects absent. Final Air two-checkout execution remains pending."
         },
         {
           "id": "P4-G2",
           "title": "WV-6 exact-candidate acceptance gate passes",
           "command": "python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6 --gate",
           "status": "passed",
-          "evidence": "ops/lane2b/evidence/13-p4-wv6-and-battery-stop.txt",
-          "lastRun": "2026-07-19T19:22:48Z",
-          "notes": "Reporter-owned frozen evidence passes the unchanged WV-6 gate: accepted, 5/5 checks, 5 artifacts, findings empty. Squash-durable candidate rebinding remains a merge-boundary review question."
+          "evidence": "ops/lane2b/evidence/18-squash-main-only-green.txt",
+          "lastRun": "2026-07-19T23:38:00Z",
+          "notes": "Reporter-owned v2 evidence passes WV-6 accepted 5/5 with 5 artifacts on branch and at a one-commit squash instant; landed_main_sha is derived from origin/main first-parent and no pull refs are required."
         },
         {
           "id": "P4-G3",
           "title": "Full Python battery has no regression against main",
           "command": "python3 -m unittest discover -s scripts -p 'test_*.py'",
           "status": "passed",
-          "evidence": "ops/lane2b/evidence/15-verdict03-f1-green-and-reporter-stop.txt",
-          "lastRun": "2026-07-19T20:42:09Z",
-          "notes": "Verdict 03's protected truth-surface pairing is green. Exact python3 counts are now base 928/17F/8E/3S and lane 928/17F/8E/3S: zero lane delta. The inherited nonzero baseline remains recorded honestly."
+          "evidence": "ops/lane2b/evidence/19-final-local-gates.txt",
+          "lastRun": "2026-07-20T00:03:25Z",
+          "notes": "Exact base is 928/17F/8E/3S and exact lane is 931/17F/8E/3S. The three added tests are the Verdict-04 provenance traps and all pass; failure/error/skip delta is zero."
         }
       ],
       "tasks": []
@@ -160,26 +160,25 @@
       "note": "The loader pins canonical manifest/source/seal digests and re-derives AST/build/capability bindings. This proves reviewed local content, not external signer identity; the artifact and CLI label it UNSIGNED."
     },
     {
-      "title": "WV acceptance truth surface is paired; final independent review remains",
+      "title": "WV acceptance truth surface and content provenance are paired; final independent review remains",
       "severity": "medium",
-      "note": "Verdict 03 authorized the exact protected test change. Focused tests are 6/6 and full Python battery delta is zero; Binding 3 awaits Review 04."
+      "note": "Verdict 04 accepted Binding 3 and authorized the exact content/squash repair. Focused tests are 9/9, trust is green, and the final native Air Verdict 05 remains mandatory."
     },
     {
-      "title": "Shelf and WV-6 candidate provenance must survive the eventual squash merge",
+      "title": "Final independent cross-checkout execution is still absent",
       "severity": "high",
-      "note": "The Shelf reporter binds branch runtime candidate a6f0da2 and the frozen WV manifest names e2820ce. The authorized test-only change also trips the reporter's broad product diff. Review 04 must authorize a content-bound landed-main contract or prescribe a post-merge ceremony."
+      "note": "The exact-tree squash trap is green with a6f0da2 and e2820ce absent, but Verdict 04 requires the Air to double-run the final reporter from fresh LF and default-Windows checkouts before PR ceremony."
     }
   ],
   "prLog": [],
   "resume": {
     "activePhase": "P4",
     "nextActions": [
-      "Wait for immutable Review 04. Verify its exact head/tree, then implement only the authorized content-bound Shelf/WV provenance repair with RED-before-GREEN and fresh LF/Windows plus independent Air replay."
+      "Commit Review Request 05 for the final checkpoint, push to the fleet fork, and have the Air independently double-run the exact reporter blob from fresh LF and default-Windows checkouts before issuing immutable Verdict 05."
     ],
     "blockers": [
-      "The current Shelf reporter is red because the authorized test-only change is included by its broad post-candidate product diff; reporter logic is independently bound and cannot be changed without Review 04 authorization.",
-      "Reviewer must prescribe a squash-durable Shelf and WV-6 provenance contract that does not require branch-only commits or refs/pull/*.",
-      "Final approval of protected test Binding 3 and an Air two-fresh-checkout reporter replay remain pending."
+      "Final Air two-fresh-checkout reporter replay and immutable Verdict 05 remain pending.",
+      "No PR may open until Verdict 05 APPROVE; every merge remains Jon-only."
     ],
     "conventions": [
       "One task = one branch = one PR",
@@ -264,7 +263,7 @@
         "reviewedTree": "f3272b9610dba756bd414cafc825fd7462d7a294",
         "reviewer": "Claude Fable 5",
         "carrier": "Jon",
-        "status": "pending"
+        "status": "approved_with_authorizations"
       }
     ],
     "reviewVerdicts": [
@@ -290,6 +289,14 @@
         "reviewer": "Claude Fable 5 (chat seat, Jon-relay mode)",
         "reviewedHead": "d386b882904d32160acbbcf02235b95002daa48a",
         "blocker": "stale WV-6 pending truth-surface test"
+      },
+      {
+        "id": "04",
+        "path": "ops/lane2b/review/04-verdict.md",
+        "verdict": "APPROVE-WITH-AUTHORIZATIONS",
+        "reviewer": "Claude Fable 5 (chat seat, Jon-relay mode)",
+        "reviewedHead": "dcf6008fd4291baf719dc361a82f2062ea60bfd2",
+        "authorization": "content-bound Shelf/WV provenance with frozen exclusions and no red main window"
       }
     ]
   }
