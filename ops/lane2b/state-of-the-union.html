@@ -63,20 +63,20 @@ button.copy:hover{background:rgba(88,215,179,.2)}
 <body>
 <main>
   <header class="hero">
-    <p class="eyebrow">Mission Control &middot; State of the Union &middot; generated 2026-07-20 00:06Z</p>
+    <p class="eyebrow">Mission Control &middot; State of the Union &middot; generated 2026-07-20 22:49Z</p>
     <h1>idea-garnet-l2b-minimum-sealed-shelf</h1>
-    <p class="tagline">Garnet has a strict MCP lifecycle core but no bounded tool host, raw-byte stdio transport, sealed local package boundary</p>
+    <p class="tagline">Garnet now ships one bounded, sealed Core Ring Tier 1 tool over raw-byte MCP stdio, with fail-closed package traps and deterministic WV-6 evidence</p>
     <div style="margin-top:14px">
-      <span class="chip blue">mission: blocked</span>
-      <span class="chip green">active phase: P4</span>
-      <span class="chip blue">0/0 tasks</span>
+      <span class="chip green">mission: complete</span>
+      <span class="chip green">active phase: complete</span>
+      <span class="chip green">100% complete</span>
       <span class="chip green">7/7 gates passed</span>
-      <span class="chip ">0 PRs merged</span>
-      <span class="chip ">sessions: 1</span>
-      <span class="chip ">updated: 2026-07-20T00:06:07Z</span>
+      <span class="chip ">1 PRs merged</span>
+      <span class="chip ">sessions: 2</span>
+      <span class="chip ">updated: 2026-07-20T22:45:03Z</span>
     </div>
-    <div class="bar big" role="img" aria-label="Overall progress 0%"><div class="fill" style="width:0%"></div></div>
-    <p class="small muted" style="margin-top:6px">Overall: 0% of tasks complete &middot; repo Island-Dev-Crew/garnet &middot; plan: ops/lane2b/plan.lock.json</p>
+    <div class="bar big" role="img" aria-label="Overall progress 100%"><div class="fill" style="width:100%"></div></div>
+    <p class="small muted" style="margin-top:6px">Overall: 100% of gates complete &middot; repo Island-Dev-Crew/garnet &middot; plan: ops/lane2b/plan.lock.json</p>
   </header>
 
   <section aria-labelledby="coldstart">
@@ -84,28 +84,32 @@ button.copy:hover{background:rgba(88,215,179,.2)}
     <div class="panel">
       <div class="prompt-box"><button class="copy" type="button">Copy</button><pre>You are cold-starting the &quot;idea-garnet-l2b-minimum-sealed-shelf&quot; mission with zero prior context.
 
-Local repo: C:/garnet-lane2b-20260719  (Island-Dev-Crew/garnet, default branch main)
+Local repo: .  (Island-Dev-Crew/garnet, default branch main)
 Governing plan: ops/lane2b/plan.lock.json
-Mission status: blocked — active phase: P4
+Mission status: complete — active phase: complete
 
 Mission conventions:
   - One task = one branch = one PR
   - Update state.json + render + commit after every merge
   - Gate commands are shell-agnostic (no &amp;&amp;)
 
+Next actions:
+  - After #515 lands, run the first truth reconciliation to register #514's landed marker and teach the canonical launch ledger to consume the accepted WV-6 Shelf evidence.
+  - Execute Lane 0 repair #3 for U-23 through U-27 without reopening Lane 2B.
+  - Keep FIRE, tag, publish, and launch-wave decisions Jon-only; launch remains HOLD and Band 3 while U-17 is open.
+
 Operating procedure:
-  Read ops/lane2b/state.json FIRST — it is the source of truth, not this prompt.
-  Verify reality matches state: git log --oneline -5, and re-run the active phase's gate commands.
-  Follow the loop: resume the existing Lane 2B branch -&gt; implement only authorized work -&gt; run gates -&gt; Jon opens/merges per policy 'review' -&gt; update state.json -&gt; node ops/lane2b/render-sotu.mjs -&gt; commit state+journal+html.
-  Never hand-edit state-of-the-union.html. Never merge without fresh gate evidence in ops/lane2b/evidence/.
-  End of session: update resume.nextActions for a stranger, append journal entry, render, commit.</pre></div>
+  Read ops/lane2b/state.json FIRST â€” it is the source of truth, not this prompt.
+  Verify the closed state from a fresh origin/main-only clone with the recorded Shelf, WV-6, and truth gates.
+  Do not reopen Lane 2B for its external follow-ons; route them through the owning post-#515 reconciliation or Lane 0 repair #3.
+  Never hand-edit state-of-the-union.html; regenerate it from state.json and preserve the append-only journal and heartbeat.</pre></div>
     </div>
   </section>
 
   <section aria-labelledby="metrics"><h2 id="metrics">Scoreboard: Baseline &rarr; Current &rarr; Target</h2>
-  <div class="table-wrap"><table><thead><tr><th>Metric</th><th>Baseline</th><th>Current</th><th>Target</th></tr></thead><tbody><tr><td><b>Definition-of-done claims verified</b></td><td>0</td><td><span class="chip blue">2</span></td><td>3</td></tr></tbody></table></div>
+  <div class="table-wrap"><table><thead><tr><th>Metric</th><th>Baseline</th><th>Current</th><th>Target</th></tr></thead><tbody><tr><td><b>Definition-of-done claims verified</b></td><td>0</td><td><span class="chip green">3</span></td><td>3</td></tr><tr><td><b>S114 acceptance</b></td><td>100.0%</td><td><span class="chip green">100.0%</span></td><td>100.0%</td></tr><tr><td><b>Truth pulse</b></td><td>93.1%</td><td><span class="chip amber">93.1%</span></td><td>100.0%</td></tr><tr><td><b>Launch-critical (evidence-effective; canonical reconciliation pending after #515)</b></td><td>50.0% (3/6)</td><td><span class="chip blue">66.7% (4/6)</span></td><td>100.0% (6/6)</td></tr><tr><td><b>Launch ledger (evidence-effective; canonical reconciliation pending after #515)</b></td><td>37.5% (3/8)</td><td><span class="chip blue">50.0% (4/8)</span></td><td>100.0% (8/8)</td></tr></tbody></table></div>
   <p class="small muted" style="margin-top:6px">green = at/past target &middot; blue = moving toward target &middot; amber = unchanged &middot; red = moving away</p></section>
-  <section aria-labelledby="risks"><h2 id="risks">Risks &amp; Blockers</h2><div class="panel"><ul class="bare"><li><span class="chip red">blocker</span> Final Air two-fresh-checkout reporter replay and immutable Verdict 05 remain pending.</li><li><span class="chip red">blocker</span> No PR may open until Verdict 05 APPROVE; every merge remains Jon-only.</li><li><span class="chip amber">medium</span> <b>A host can appear MCP-capable while text-mode stdio corrupts framing or while seal validation occurs after Garnet code has already executed.</b> &mdash; <span class="muted">from idea.lock (confidence 8/10)</span></li><li><span class="chip red">high</span> <b>Current main still reports W-PLAY package and browser proof invalid</b> &mdash; <span class="muted">Fresh reporters at cede73c say browser_package_valid=false and browser_proof_valid=false despite merged PR #509. This is outside Lane 2B; no browser claim is inherited or promoted here.</span></li><li><span class="chip amber">medium</span> <b>The flagship in-toto predicate is an unsigned content attestation</b> &mdash; <span class="muted">The loader pins canonical manifest/source/seal digests and re-derives AST/build/capability bindings. This proves reviewed local content, not external signer identity; the artifact and CLI label it UNSIGNED.</span></li><li><span class="chip amber">medium</span> <b>WV acceptance truth surface and content provenance are paired; final independent review remains</b> &mdash; <span class="muted">Verdict 04 accepted Binding 3 and authorized the exact content/squash repair. Focused tests are 9/9, trust is green, and the final native Air Verdict 05 remains mandatory.</span></li><li><span class="chip red">high</span> <b>Final independent cross-checkout execution is still absent</b> &mdash; <span class="muted">The exact-tree squash trap is green with a6f0da2 and e2820ce absent, but Verdict 04 requires the Air to double-run the final reporter from fresh LF and default-Windows checkouts before PR ceremony.</span></li></ul></div></section>
+  <section aria-labelledby="risks"><h2 id="risks">Risks &amp; Blockers</h2><div class="panel"><ul class="bare"><li><span class="chip blue">low</span> <b>Raw-byte framing and pre-execution seal ordering are now regression-guarded</b> &mdash; <span class="muted">The original idea-lock risk is resolved for the bounded local path by committed raw-byte protocol traps and six fail-closed package traps; broader hosts and transports remain out of scope.</span></li><li><span class="chip red">high</span> <b>Current main still reports W-PLAY package and browser proof invalid</b> &mdash; <span class="muted">The fresh launch reporter at landed main 41d6ced still says browser_package_valid=false and browser_proof_valid=false. This is outside Lane 2B; no browser claim is inherited or promoted here.</span></li><li><span class="chip amber">medium</span> <b>The flagship in-toto predicate is an unsigned content attestation</b> &mdash; <span class="muted">The loader pins canonical manifest/source/seal digests and re-derives AST/build/capability bindings. This proves reviewed local content, not external signer identity; the artifact and CLI label it UNSIGNED.</span></li><li><span class="chip blue">low</span> <b>WV acceptance truth surface and squash-durable content provenance are complete</b> &mdash; <span class="muted">Verdict 05 APPROVE and the fresh landed-main replay close the former review blocker. Shelf and WV-6 both identify #514 squash commit 41d6ced on origin/main without branch objects or pull refs.</span></li><li><span class="chip red">high</span> <b>U-23: W-PLAY proof and provenance byte fencing is incomplete</b> &mdash; <span class="muted">OPEN and assigned to Lane 0 repair #3. Extend byte-exact checkout protection to the affected W-PLAY proof/provenance artifacts and prove object/worktree equality cross-platform.</span></li><li><span class="chip red">high</span> <b>U-24: Windows-reserved names remain a ref-path portability hazard</b> &mdash; <span class="muted">OPEN and assigned to Lane 0 repair #3. Establish fail-closed ref-name policy for aux, con, nul, prn, com*, and lpt* path segments; upstream aux was renamed, while fleet-fork cleanup inputs remain.</span></li><li><span class="chip amber">medium</span> <b>U-25: Repository and console newline byte discipline is incomplete</b> &mdash; <span class="muted">OPEN and assigned to Lane 0 repair #3. Reconcile the committed-CRLF inventory with Verdict 05's non-blocking stdout terminator variance; canonical artifact writers are already binary and stable.</span></li><li><span class="chip red">high</span> <b>U-26: Required-context fingerprints have no single sanctioned regenerator</b> &mdash; <span class="muted">OPEN and assigned to Lane 0 repair #3. Three modules pin overlapping fingerprints; one sanctioned producer must update every binding atomically.</span></li><li><span class="chip amber">medium</span> <b>U-27: Dogfood validation consumes a stale pull-request event body snapshot</b> &mdash; <span class="muted">OPEN and assigned to Lane 0 repair #3. PR #514 required close/reopen after a body-only evidence correction; cure by handling pull_request.edited or fetching and binding the live body.</span></li></ul></div></section>
 
   <section aria-labelledby="phases">
     <h2 id="phases">Phases</h2>
@@ -128,9 +132,9 @@ Operating procedure:
       <details class="resume"><summary>Resume prompt for P0 (copy into a fresh session)</summary>
         <div class="prompt-box"><button class="copy" type="button">Copy</button><pre>You are resuming the &quot;idea-garnet-l2b-minimum-sealed-shelf&quot; mission at phase P0: Core Ring Tier 1 freeze.
 
-Mission: Garnet has a strict MCP lifecycle core but no bounded tool host, raw-byte stdio transport, sealed local package boundary
+Mission: Garnet now ships one bounded, sealed Core Ring Tier 1 tool over raw-byte MCP stdio, with fail-closed package traps and deterministic WV-6 evidence
 North star: One frozen Core Ring Tier 1 tool executes in-process without widening to Tier 2, Tier 3, hosted registry, or arbitrary external hosts; A native-Windows raw-byte MCP session completes initialize, tools/list, tools/call, and error handling with byte-exact Content-Length frames; The same flagship package is accepted only with its committed matching seal and is rejected when unsealed, seal-stripped, or byte-tampered before tool execution; Two reporter runs over identical committed inputs emit byte-identical WV-6 verdict JSON
-Repo: Island-Dev-Crew/garnet (local: C:/garnet-lane2b-20260719), default branch: main.
+Repo: Island-Dev-Crew/garnet (local: .), default branch: main.
 Governing plan: ops/lane2b/plan.lock.json
 
 Phase goal: Freeze exactly one repo-bundled Garnet tool and prove its interpreter invocation in-process before adding transport.
@@ -142,11 +146,10 @@ Mission conventions:
   - Gate commands are shell-agnostic (no &amp;&amp;)
 
 Operating procedure:
-  Read ops/lane2b/state.json FIRST — it is the source of truth, not this prompt.
-  Verify reality matches state: git log --oneline -5, and re-run the active phase's gate commands.
-  Follow the loop: resume the existing Lane 2B branch -&gt; implement only authorized work -&gt; run gates -&gt; Jon opens/merges per policy 'review' -&gt; update state.json -&gt; node ops/lane2b/render-sotu.mjs -&gt; commit state+journal+html.
-  Never hand-edit state-of-the-union.html. Never merge without fresh gate evidence in ops/lane2b/evidence/.
-  End of session: update resume.nextActions for a stranger, append journal entry, render, commit.</pre></div>
+  Read ops/lane2b/state.json FIRST â€” it is the source of truth, not this prompt.
+  Verify the closed state from a fresh origin/main-only clone with the recorded Shelf, WV-6, and truth gates.
+  Do not reopen Lane 2B for its external follow-ons; route them through the owning post-#515 reconciliation or Lane 0 repair #3.
+  Never hand-edit state-of-the-union.html; regenerate it from state.json and preserve the append-only journal and heartbeat.</pre></div>
       </details>
     </article><article class="phase">
       <header>
@@ -167,9 +170,9 @@ Operating procedure:
       <details class="resume"><summary>Resume prompt for P1 (copy into a fresh session)</summary>
         <div class="prompt-box"><button class="copy" type="button">Copy</button><pre>You are resuming the &quot;idea-garnet-l2b-minimum-sealed-shelf&quot; mission at phase P1: Raw-byte stdio MCP host.
 
-Mission: Garnet has a strict MCP lifecycle core but no bounded tool host, raw-byte stdio transport, sealed local package boundary
+Mission: Garnet now ships one bounded, sealed Core Ring Tier 1 tool over raw-byte MCP stdio, with fail-closed package traps and deterministic WV-6 evidence
 North star: One frozen Core Ring Tier 1 tool executes in-process without widening to Tier 2, Tier 3, hosted registry, or arbitrary external hosts; A native-Windows raw-byte MCP session completes initialize, tools/list, tools/call, and error handling with byte-exact Content-Length frames; The same flagship package is accepted only with its committed matching seal and is rejected when unsealed, seal-stripped, or byte-tampered before tool execution; Two reporter runs over identical committed inputs emit byte-identical WV-6 verdict JSON
-Repo: Island-Dev-Crew/garnet (local: C:/garnet-lane2b-20260719), default branch: main.
+Repo: Island-Dev-Crew/garnet (local: .), default branch: main.
 Governing plan: ops/lane2b/plan.lock.json
 
 Phase goal: Serve initialize, tools/list, tools/call, and protocol errors through bounded Content-Length frames using byte I/O only.
@@ -181,11 +184,10 @@ Mission conventions:
   - Gate commands are shell-agnostic (no &amp;&amp;)
 
 Operating procedure:
-  Read ops/lane2b/state.json FIRST — it is the source of truth, not this prompt.
-  Verify reality matches state: git log --oneline -5, and re-run the active phase's gate commands.
-  Follow the loop: resume the existing Lane 2B branch -&gt; implement only authorized work -&gt; run gates -&gt; Jon opens/merges per policy 'review' -&gt; update state.json -&gt; node ops/lane2b/render-sotu.mjs -&gt; commit state+journal+html.
-  Never hand-edit state-of-the-union.html. Never merge without fresh gate evidence in ops/lane2b/evidence/.
-  End of session: update resume.nextActions for a stranger, append journal entry, render, commit.</pre></div>
+  Read ops/lane2b/state.json FIRST â€” it is the source of truth, not this prompt.
+  Verify the closed state from a fresh origin/main-only clone with the recorded Shelf, WV-6, and truth gates.
+  Do not reopen Lane 2B for its external follow-ons; route them through the owning post-#515 reconciliation or Lane 0 repair #3.
+  Never hand-edit state-of-the-union.html; regenerate it from state.json and preserve the append-only journal and heartbeat.</pre></div>
       </details>
     </article><article class="phase">
       <header>
@@ -206,9 +208,9 @@ Operating procedure:
       <details class="resume"><summary>Resume prompt for P2 (copy into a fresh session)</summary>
         <div class="prompt-box"><button class="copy" type="button">Copy</button><pre>You are resuming the &quot;idea-garnet-l2b-minimum-sealed-shelf&quot; mission at phase P2: Sealed flagship baseline.
 
-Mission: Garnet has a strict MCP lifecycle core but no bounded tool host, raw-byte stdio transport, sealed local package boundary
+Mission: Garnet now ships one bounded, sealed Core Ring Tier 1 tool over raw-byte MCP stdio, with fail-closed package traps and deterministic WV-6 evidence
 North star: One frozen Core Ring Tier 1 tool executes in-process without widening to Tier 2, Tier 3, hosted registry, or arbitrary external hosts; A native-Windows raw-byte MCP session completes initialize, tools/list, tools/call, and error handling with byte-exact Content-Length frames; The same flagship package is accepted only with its committed matching seal and is rejected when unsealed, seal-stripped, or byte-tampered before tool execution; Two reporter runs over identical committed inputs emit byte-identical WV-6 verdict JSON
-Repo: Island-Dev-Crew/garnet (local: C:/garnet-lane2b-20260719), default branch: main.
+Repo: Island-Dev-Crew/garnet (local: .), default branch: main.
 Governing plan: ops/lane2b/plan.lock.json
 
 Phase goal: Bind the frozen tool manifest, source, and Garnet seal into one excellent committed local package.
@@ -220,11 +222,10 @@ Mission conventions:
   - Gate commands are shell-agnostic (no &amp;&amp;)
 
 Operating procedure:
-  Read ops/lane2b/state.json FIRST — it is the source of truth, not this prompt.
-  Verify reality matches state: git log --oneline -5, and re-run the active phase's gate commands.
-  Follow the loop: resume the existing Lane 2B branch -&gt; implement only authorized work -&gt; run gates -&gt; Jon opens/merges per policy 'review' -&gt; update state.json -&gt; node ops/lane2b/render-sotu.mjs -&gt; commit state+journal+html.
-  Never hand-edit state-of-the-union.html. Never merge without fresh gate evidence in ops/lane2b/evidence/.
-  End of session: update resume.nextActions for a stranger, append journal entry, render, commit.</pre></div>
+  Read ops/lane2b/state.json FIRST â€” it is the source of truth, not this prompt.
+  Verify the closed state from a fresh origin/main-only clone with the recorded Shelf, WV-6, and truth gates.
+  Do not reopen Lane 2B for its external follow-ons; route them through the owning post-#515 reconciliation or Lane 0 repair #3.
+  Never hand-edit state-of-the-union.html; regenerate it from state.json and preserve the append-only journal and heartbeat.</pre></div>
       </details>
     </article><article class="phase">
       <header>
@@ -245,9 +246,9 @@ Operating procedure:
       <details class="resume"><summary>Resume prompt for P3 (copy into a fresh session)</summary>
         <div class="prompt-box"><button class="copy" type="button">Copy</button><pre>You are resuming the &quot;idea-garnet-l2b-minimum-sealed-shelf&quot; mission at phase P3: Fail-closed negative proof.
 
-Mission: Garnet has a strict MCP lifecycle core but no bounded tool host, raw-byte stdio transport, sealed local package boundary
+Mission: Garnet now ships one bounded, sealed Core Ring Tier 1 tool over raw-byte MCP stdio, with fail-closed package traps and deterministic WV-6 evidence
 North star: One frozen Core Ring Tier 1 tool executes in-process without widening to Tier 2, Tier 3, hosted registry, or arbitrary external hosts; A native-Windows raw-byte MCP session completes initialize, tools/list, tools/call, and error handling with byte-exact Content-Length frames; The same flagship package is accepted only with its committed matching seal and is rejected when unsealed, seal-stripped, or byte-tampered before tool execution; Two reporter runs over identical committed inputs emit byte-identical WV-6 verdict JSON
-Repo: Island-Dev-Crew/garnet (local: C:/garnet-lane2b-20260719), default branch: main.
+Repo: Island-Dev-Crew/garnet (local: .), default branch: main.
 Governing plan: ops/lane2b/plan.lock.json
 
 Phase goal: Reject missing, stripped, mismatched, and byte-tampered package inputs before any Garnet tool code executes.
@@ -259,33 +260,32 @@ Mission conventions:
   - Gate commands are shell-agnostic (no &amp;&amp;)
 
 Operating procedure:
-  Read ops/lane2b/state.json FIRST — it is the source of truth, not this prompt.
-  Verify reality matches state: git log --oneline -5, and re-run the active phase's gate commands.
-  Follow the loop: resume the existing Lane 2B branch -&gt; implement only authorized work -&gt; run gates -&gt; Jon opens/merges per policy 'review' -&gt; update state.json -&gt; node ops/lane2b/render-sotu.mjs -&gt; commit state+journal+html.
-  Never hand-edit state-of-the-union.html. Never merge without fresh gate evidence in ops/lane2b/evidence/.
-  End of session: update resume.nextActions for a stranger, append journal entry, render, commit.</pre></div>
+  Read ops/lane2b/state.json FIRST â€” it is the source of truth, not this prompt.
+  Verify the closed state from a fresh origin/main-only clone with the recorded Shelf, WV-6, and truth gates.
+  Do not reopen Lane 2B for its external follow-ons; route them through the owning post-#515 reconciliation or Lane 0 repair #3.
+  Never hand-edit state-of-the-union.html; regenerate it from state.json and preserve the append-only journal and heartbeat.</pre></div>
       </details>
-    </article><article class="phase active">
+    </article><article class="phase">
       <header>
-        <span class="chip red">blocked</span>
+        <span class="chip green">done</span>
         <h3>P4 &middot; Deterministic Shelf reporter and WV-6 proof</h3>
         <span class="muted small">est. sessions: 1</span>
       </header>
       <p class="muted">Derive a deterministic verdict from committed artifacts only and satisfy the existing native-Windows WV-6 acceptance reporter.</p>
-      <div class="bar"><div class="fill" style="width:0%"></div></div>
-      <p class="small muted">0/0 tasks &middot; 0%</p>
+      <div class="bar"><div class="fill" style="width:100%"></div></div>
+      <p class="small muted">0/0 tasks &middot; 100%</p>
 
       <div class="table-wrap"><table><thead><tr><th>Gate</th><th>Check</th><th>Command</th><th>Evidence</th><th>Last run</th></tr></thead><tbody><tr>
       <td><span class="chip green">passed</span></td>
-      <td><b>Minimum Shelf reporter emits deterministic accepted JSON</b><br><span class="small">Verdict 04's frozen content contract passes on-branch and in a fresh synthetic squash main-only clone with both discarded branch objects absent. Final Air two-checkout execution remains pending.</span></td>
+      <td><b>Minimum Shelf reporter emits deterministic accepted JSON</b><br><span class="small">First live squash-durability proof on fresh landed main: accepted with all five checks true, no findings, landed_main_commit equal to the #514 squash commit, and zero pull refs.</span></td>
       <td><code>python3 -I scripts/smoke_garnet_minimum_shelf.py --gate</code></td>
-      <td>ops/lane2b/evidence/18-squash-main-only-green.txt</td>
-      <td>2026-07-19T23:38:00Z</td></tr><tr>
+      <td>ops/lane2b/evidence/21-postmerge-main-closeout.txt</td>
+      <td>2026-07-20T22:45:03Z</td></tr><tr>
       <td><span class="chip green">passed</span></td>
-      <td><b>WV-6 exact-candidate acceptance gate passes</b><br><span class="small">Reporter-owned v2 evidence passes WV-6 accepted 5/5 with 5 artifacts on branch and at a one-commit squash instant; landed_main_sha is derived from origin/main first-parent and no pull refs are required.</span></td>
+      <td><b>WV-6 exact-candidate acceptance gate passes</b><br><span class="small">Fresh main-only clone reports WV-6 accepted 5/5 with five artifacts and landed_main_sha 41d6ced858684ac67683d32315920bd50a52976e.</span></td>
       <td><code>python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6 --gate</code></td>
-      <td>ops/lane2b/evidence/18-squash-main-only-green.txt</td>
-      <td>2026-07-19T23:38:00Z</td></tr><tr>
+      <td>ops/lane2b/evidence/21-postmerge-main-closeout.txt</td>
+      <td>2026-07-20T22:45:03Z</td></tr><tr>
       <td><span class="chip green">passed</span></td>
       <td><b>Full Python battery has no regression against main</b><br><span class="small">Exact base is 928/17F/8E/3S and exact lane is 931/17F/8E/3S. The three added tests are the Verdict-04 provenance traps and all pass; failure/error/skip delta is zero.</span></td>
       <td><code>python3 -m unittest discover -s scripts -p 'test_*.py'</code></td>
@@ -294,36 +294,30 @@ Operating procedure:
       <details class="resume"><summary>Resume prompt for P4 (copy into a fresh session)</summary>
         <div class="prompt-box"><button class="copy" type="button">Copy</button><pre>You are resuming the &quot;idea-garnet-l2b-minimum-sealed-shelf&quot; mission at phase P4: Deterministic Shelf reporter and WV-6 proof.
 
-Mission: Garnet has a strict MCP lifecycle core but no bounded tool host, raw-byte stdio transport, sealed local package boundary
+Mission: Garnet now ships one bounded, sealed Core Ring Tier 1 tool over raw-byte MCP stdio, with fail-closed package traps and deterministic WV-6 evidence
 North star: One frozen Core Ring Tier 1 tool executes in-process without widening to Tier 2, Tier 3, hosted registry, or arbitrary external hosts; A native-Windows raw-byte MCP session completes initialize, tools/list, tools/call, and error handling with byte-exact Content-Length frames; The same flagship package is accepted only with its committed matching seal and is rejected when unsealed, seal-stripped, or byte-tampered before tool execution; Two reporter runs over identical committed inputs emit byte-identical WV-6 verdict JSON
-Repo: Island-Dev-Crew/garnet (local: C:/garnet-lane2b-20260719), default branch: main.
+Repo: Island-Dev-Crew/garnet (local: .), default branch: main.
 Governing plan: ops/lane2b/plan.lock.json
 
 Phase goal: Derive a deterministic verdict from committed artifacts only and satisfy the existing native-Windows WV-6 acceptance reporter.
 All tasks in this phase are done.
 All gates passed — close the phase and advance.
-Next actions (from last session):
-  - Have the Air check out exact reviewed head 927ad221, independently double-run the reporter from fresh LF and default-Windows checkouts, and commit immutable Verdict 05.
-Known blockers:
-  - Final Air two-fresh-checkout reporter replay and immutable Verdict 05 remain pending.
-  - No PR may open until Verdict 05 APPROVE; every merge remains Jon-only.
 Mission conventions:
   - One task = one branch = one PR
   - Update state.json + render + commit after every merge
   - Gate commands are shell-agnostic (no &amp;&amp;)
 
 Operating procedure:
-  Read ops/lane2b/state.json FIRST — it is the source of truth, not this prompt.
-  Verify reality matches state: git log --oneline -5, and re-run the active phase's gate commands.
-  Follow the loop: resume the existing Lane 2B branch -&gt; implement only authorized work -&gt; run gates -&gt; Jon opens/merges per policy 'review' -&gt; update state.json -&gt; node ops/lane2b/render-sotu.mjs -&gt; commit state+journal+html.
-  Never hand-edit state-of-the-union.html. Never merge without fresh gate evidence in ops/lane2b/evidence/.
-  End of session: update resume.nextActions for a stranger, append journal entry, render, commit.</pre></div>
+  Read ops/lane2b/state.json FIRST â€” it is the source of truth, not this prompt.
+  Verify the closed state from a fresh origin/main-only clone with the recorded Shelf, WV-6, and truth gates.
+  Do not reopen Lane 2B for its external follow-ons; route them through the owning post-#515 reconciliation or Lane 0 repair #3.
+  Never hand-edit state-of-the-union.html; regenerate it from state.json and preserve the append-only journal and heartbeat.</pre></div>
       </details>
     </article>
   </section>
 
-
-  <section aria-labelledby="journal"><h2 id="journal">Journal (latest first)</h2><div class="timeline"><article class="tl-item"><time>&#9998;</time><p><b># Mission journal — idea-garnet-l2b-minimum-sealed-shelf</b><br><br>- 2026-07-19T08:46:08Z: kickoff. G0+G1 artifacts consumed; 5 phase(s); stage S2.<br>- 2026-07-19T08:48:00Z: Slice 1 RED recorded at the compile boundary: the exact Tier 1 tool contract calls a missing in-process interpreter adapter. Implementer: Codex GPT-5.6 Sol. Assigned reviewer: Claude Fable 5 via Jon.<br>- 2026-07-19T08:50:00Z: Slice 1 GREEN. The one frozen `garnet.core.double` Tier 1 tool executed in-process through Garnet's strict interpreter and panic firewall; 2/2 tests passed. No transport, seal loader, registry, or breadth expansion exists yet.<br>- 2026-07-19T08:53:31Z: Slice 2 RED recorded before implementation. Byte-level traps require exact CRLF Content-Length frames for initialize/list/call/errors and reject LF-only framing; the host and transport entry points are absent. Implementer: Codex GPT-5.6 Sol. Assigned reviewer: Claude Fable 5 via Jon.<br>- 2026-07-19T08:57:42Z: Slice 2 framing core GREEN: 4/4 raw-byte and adversarial tests, 3/3 bounded router tests, and 14/14 existing MCP schema/lifecycle tests passed. The real process integration gate remains pending until a verified sealed package is the only constructor; no unsealed CLI bypass was added. Review request 01 is next.<br>- 2026-07-19T08:58:30Z: Review Request 01 committed for implementation head `0919f7a1b14d6f53a251f3528787b2278331e488` / tree `3266d5bd05312368777d57da6fe48e0342b5ad60`. Reviewer: Claude Fable 5; authenticated carrier: Jon. Verdict pending; continuing with the next independent slice.<br>- 2026-07-19T09:00:22Z: Slice 4 rejection proof designed and RED before the sealed happy path. Five integration traps call a missing `MinimumShelfPackage` loader and cover missing/stripped seal, source/seal byte tamper, and manifest rebind. Implementer: Codex GPT-5.6 Sol. Reviewer: Claude Fable 5.<br>- 2026-07-19T09:08:27Z: Slices 3 and 4 GREEN. The exact flagship loaded 1/1; 6/6 missing, stripped, manifest/source/seal tamper, and new-seal-plus-rebind traps rejected; native process stdio passed 2/2 and emitted zero protocol bytes for a rejected package. Two regenerated seals and the committed seal were byte-identical (SHA-256 `626ce7f3...310e2`). The predicate is explicitly UNSIGNED; the trust root is compiled content digests plus reviewed Git history.<br>- 2026-07-19T09:46:17Z: HEARTBEAT / ALERT. Full `garnet-cli` passed 459/459. The isolated Python battery is exact-parity red against a built `cede73c` base (950 tests; 16 failures, 4 errors, 3 skipped on both; zero lane delta). Fresh trust-kernel review is RED because `garnet-cli/src/bin/garnet.rs` is protected and no companion/verdict exists. P4 stopped before reporter logic; Review Request 02 and `BLOCKED.md` record the exact Claude/Jon ceremony and resume point. No pull refs fetched; launch HOLD; band 3.<br>- 2026-07-19T18:20:14Z: Reviewer verdicts fetched at `f00a902`: Request 01 APPROVE; Request 02 APPROVE-WITH-BLOCKERS. F1 RED reproduced before cure in a fresh `core.autocrlf=false` clone: both sealed positive legs fail because the committed seal binds a CRLF-derived prelude hash. Evidence `09-f1-lf-checkout-red.txt`; no pull refs fetched. Implementer: Codex GPT-5.6 Sol. Reviewer: Claude Code Fable 5.<br>- 2026-07-19T18:30:48Z: F1 GREEN at `a6f0da2`. SA-2 pins the prelude and flagship JSON outputs to LF; a unit trap forbids CR in the compiled byte-hashed prelude. Two clean builds emitted byte-identical reseals, and exact-cure fresh LF/default-Windows clones passed sealed 1/1, stdio 2/2, and negative 6/6 with zero pull refs. P4 reporter RED is now unblocked. Implementer: Codex GPT-5.6 Sol. Reviewer: Claude Code Fable 5.<br>- 2026-07-19T18:33:09Z: P4 reporter RED recorded before implementation. The locked `scripts/smoke_garnet_minimum_shelf.py --gate` path is absent (exit 2), and the unchanged WV-6 gate remains pending 0/5 (exit 1). Verdict 02 authorizes only the new reporter path; existing WV gate/test logic remains untouched pending final review. Implementer: Codex GPT-5.6 Sol. Reviewer: Claude Code Fable 5.<br>- 2026-07-19T18:42:45Z: P4 reporter GREEN. Final reporter blob `83a5354d...` is path/digest-bound in W_TRUST; exact head `89f1894` emitted identical 1,849-byte accepted JSON in isolated LF and default-Windows checkouts (SHA-256 `91d855f7...70c8e`), zero stderr, zero pull refs. The bounded producer may now generate the frozen WV-6 evidence destination. Implementer: Codex GPT-5.6 Sol. Reviewer: Claude Code Fable 5.<br>- 2026-07-19T19:22:48Z: P4 WV-6 gate GREEN: reporter-owned frozen evidence is accepted 5/5 with 5 artifacts and no findings. Full `garnet-cli` is 460/460; strict clippy, fmt, trust, and all three truth floors pass. ALERT: exact Python discovery is base 928/17F/8E/3S versus lane 928/18F/8E/3S; the sole +1 is the protected fixture that still asserts WV-6 is pending. No protected test or reporter logic was changed. Lane blocks for Review 03 authorization and squash-durable candidate rebinding. Implementer: Codex GPT-5.6 Sol. Reviewer: Claude Code Fable 5.<br>- 2026-07-19T19:24:16Z: Review Request 03 committed for exact checkpoint `d386b882904d32160acbbcf02235b95002daa48a` / tree `8f86737e0df646431a7429e37dbcee0a56af0667`. It requests final content review, exact protected-fixture authorization, and a squash-durable WV-6 landed-main contract. Lane remains blocked; no PR or merge ceremony initiated. Reviewer: Claude Code Fable 5; carrier: Jon.<br>- 2026-07-19T20:42:09Z: Verdict 03 committed verbatim and F1 truth-surface pairing cured RED→GREEN. Focused WV tests are 6/6; exact Python discovery returned to base parity at 928/17F/8E/3S. Fresh Shelf reporter then failed closed because its broad post-a6f0da2 product diff includes the authorized protected test change. No reporter logic or exclusion was changed. Review 04 must bind the test and authorize a squash-durable content contract; the Air must double-run the final reporter from two fresh checkouts. Implementer: Codex GPT-5.6 Sol. Reviewer: Claude Fable 5 (chat seat, Jon-relay mode).<br>- 2026-07-19T20:43:29Z: Review Request 04 committed for exact checkpoint `dcf6008fd4291baf719dc361a82f2062ea60bfd2` / tree `f3272b9610dba756bd414cafc825fd7462d7a294`. It binds the Verdict-03 test cure and requests explicit authorization for a content-bound, squash-durable Shelf/WV provenance repair plus independent Air replay. The Shelf gate remains red; no path exclusion, reporter edit, PR, or merge was attempted. Reviewer: Claude Fable 5; carrier: Jon.<br>- 2026-07-19T23:38:00Z: Verdict 04 committed verbatim and its exact content-bound repair implemented RED→GREEN. The frozen digest covers 1,529 product paths and excludes only `ops/lane2b/**`, `proofs/**`, `F_Project_Management/W_TRUST/**`, and the Shelf reporter itself. Three adversarial traps pass 3/3. An exact-tree one-commit squash, cloned main-only with no pull refs and neither discarded branch commit present, passes Shelf and WV-6; WV-7 remains pending. Implementer: Codex GPT-5.6 Sol. Reviewer: Claude Fable 5 (chat seat, Jon-relay mode).<br>- 2026-07-19T23:47:56Z: Final local gates before Review 05: `garnet-cli` 460/460, focused Python 9/9, fmt and strict clippy green, Lane 0/MSRV/frozen-backlog floors green, trust gate `ok:true` with `problems:[]`. Launch remains HOLD and Band 3; only the native Air two-checkout replay and immutable Verdict 05 block PR ceremony.<br>- 2026-07-20T00:06:07Z: Review Request 05 prepared for exact checkpoint `927ad221d33668d458499a26f49d96ed4586563d` / tree `4d9374991bf265b78a0108e0bb62c317a43b8028`. Implementer raw-byte replays from persisted LF and default-Windows fresh checkouts were four-way identical at 2,071 bytes (`77c3cb05...8c0fd`), but remain explicitly non-independent. The Air owns the final native replay and immutable Verdict 05. No PR, merge, tag, publish, or FIRE action occurred.</p></article></div></section>
+  <section aria-labelledby="prs"><h2 id="prs">Merged Work (1 PRs)</h2><div class="timeline"><article class="tl-item"><time>#514</time><p><b>Minimum sealed Shelf + MCP</b> &mdash; P0-P4, merged 2026-07-20T13:45:25Z &middot; <a href="https://github.com/Island-Dev-Crew/garnet/pull/514">view</a></p></article></div></section>
+  <section aria-labelledby="journal"><h2 id="journal">Journal (latest first)</h2><div class="timeline"><article class="tl-item"><time>&#9998;</time><p><b># Mission journal — idea-garnet-l2b-minimum-sealed-shelf</b><br><br>- 2026-07-19T08:46:08Z: kickoff. G0+G1 artifacts consumed; 5 phase(s); stage S2.<br>- 2026-07-19T08:48:00Z: Slice 1 RED recorded at the compile boundary: the exact Tier 1 tool contract calls a missing in-process interpreter adapter. Implementer: Codex GPT-5.6 Sol. Assigned reviewer: Claude Fable 5 via Jon.<br>- 2026-07-19T08:50:00Z: Slice 1 GREEN. The one frozen `garnet.core.double` Tier 1 tool executed in-process through Garnet's strict interpreter and panic firewall; 2/2 tests passed. No transport, seal loader, registry, or breadth expansion exists yet.<br>- 2026-07-19T08:53:31Z: Slice 2 RED recorded before implementation. Byte-level traps require exact CRLF Content-Length frames for initialize/list/call/errors and reject LF-only framing; the host and transport entry points are absent. Implementer: Codex GPT-5.6 Sol. Assigned reviewer: Claude Fable 5 via Jon.<br>- 2026-07-19T08:57:42Z: Slice 2 framing core GREEN: 4/4 raw-byte and adversarial tests, 3/3 bounded router tests, and 14/14 existing MCP schema/lifecycle tests passed. The real process integration gate remains pending until a verified sealed package is the only constructor; no unsealed CLI bypass was added. Review request 01 is next.<br>- 2026-07-19T08:58:30Z: Review Request 01 committed for implementation head `0919f7a1b14d6f53a251f3528787b2278331e488` / tree `3266d5bd05312368777d57da6fe48e0342b5ad60`. Reviewer: Claude Fable 5; authenticated carrier: Jon. Verdict pending; continuing with the next independent slice.<br>- 2026-07-19T09:00:22Z: Slice 4 rejection proof designed and RED before the sealed happy path. Five integration traps call a missing `MinimumShelfPackage` loader and cover missing/stripped seal, source/seal byte tamper, and manifest rebind. Implementer: Codex GPT-5.6 Sol. Reviewer: Claude Fable 5.<br>- 2026-07-19T09:08:27Z: Slices 3 and 4 GREEN. The exact flagship loaded 1/1; 6/6 missing, stripped, manifest/source/seal tamper, and new-seal-plus-rebind traps rejected; native process stdio passed 2/2 and emitted zero protocol bytes for a rejected package. Two regenerated seals and the committed seal were byte-identical (SHA-256 `626ce7f3...310e2`). The predicate is explicitly UNSIGNED; the trust root is compiled content digests plus reviewed Git history.<br>- 2026-07-19T09:46:17Z: HEARTBEAT / ALERT. Full `garnet-cli` passed 459/459. The isolated Python battery is exact-parity red against a built `cede73c` base (950 tests; 16 failures, 4 errors, 3 skipped on both; zero lane delta). Fresh trust-kernel review is RED because `garnet-cli/src/bin/garnet.rs` is protected and no companion/verdict exists. P4 stopped before reporter logic; Review Request 02 and `BLOCKED.md` record the exact Claude/Jon ceremony and resume point. No pull refs fetched; launch HOLD; band 3.<br>- 2026-07-19T18:20:14Z: Reviewer verdicts fetched at `f00a902`: Request 01 APPROVE; Request 02 APPROVE-WITH-BLOCKERS. F1 RED reproduced before cure in a fresh `core.autocrlf=false` clone: both sealed positive legs fail because the committed seal binds a CRLF-derived prelude hash. Evidence `09-f1-lf-checkout-red.txt`; no pull refs fetched. Implementer: Codex GPT-5.6 Sol. Reviewer: Claude Code Fable 5.<br>- 2026-07-19T18:30:48Z: F1 GREEN at `a6f0da2`. SA-2 pins the prelude and flagship JSON outputs to LF; a unit trap forbids CR in the compiled byte-hashed prelude. Two clean builds emitted byte-identical reseals, and exact-cure fresh LF/default-Windows clones passed sealed 1/1, stdio 2/2, and negative 6/6 with zero pull refs. P4 reporter RED is now unblocked. Implementer: Codex GPT-5.6 Sol. Reviewer: Claude Code Fable 5.<br>- 2026-07-19T18:33:09Z: P4 reporter RED recorded before implementation. The locked `scripts/smoke_garnet_minimum_shelf.py --gate` path is absent (exit 2), and the unchanged WV-6 gate remains pending 0/5 (exit 1). Verdict 02 authorizes only the new reporter path; existing WV gate/test logic remains untouched pending final review. Implementer: Codex GPT-5.6 Sol. Reviewer: Claude Code Fable 5.<br>- 2026-07-19T18:42:45Z: P4 reporter GREEN. Final reporter blob `83a5354d...` is path/digest-bound in W_TRUST; exact head `89f1894` emitted identical 1,849-byte accepted JSON in isolated LF and default-Windows checkouts (SHA-256 `91d855f7...70c8e`), zero stderr, zero pull refs. The bounded producer may now generate the frozen WV-6 evidence destination. Implementer: Codex GPT-5.6 Sol. Reviewer: Claude Code Fable 5.<br>- 2026-07-19T19:22:48Z: P4 WV-6 gate GREEN: reporter-owned frozen evidence is accepted 5/5 with 5 artifacts and no findings. Full `garnet-cli` is 460/460; strict clippy, fmt, trust, and all three truth floors pass. ALERT: exact Python discovery is base 928/17F/8E/3S versus lane 928/18F/8E/3S; the sole +1 is the protected fixture that still asserts WV-6 is pending. No protected test or reporter logic was changed. Lane blocks for Review 03 authorization and squash-durable candidate rebinding. Implementer: Codex GPT-5.6 Sol. Reviewer: Claude Code Fable 5.<br>- 2026-07-19T19:24:16Z: Review Request 03 committed for exact checkpoint `d386b882904d32160acbbcf02235b95002daa48a` / tree `8f86737e0df646431a7429e37dbcee0a56af0667`. It requests final content review, exact protected-fixture authorization, and a squash-durable WV-6 landed-main contract. Lane remains blocked; no PR or merge ceremony initiated. Reviewer: Claude Code Fable 5; carrier: Jon.<br>- 2026-07-19T20:42:09Z: Verdict 03 committed verbatim and F1 truth-surface pairing cured RED→GREEN. Focused WV tests are 6/6; exact Python discovery returned to base parity at 928/17F/8E/3S. Fresh Shelf reporter then failed closed because its broad post-a6f0da2 product diff includes the authorized protected test change. No reporter logic or exclusion was changed. Review 04 must bind the test and authorize a squash-durable content contract; the Air must double-run the final reporter from two fresh checkouts. Implementer: Codex GPT-5.6 Sol. Reviewer: Claude Fable 5 (chat seat, Jon-relay mode).<br>- 2026-07-19T20:43:29Z: Review Request 04 committed for exact checkpoint `dcf6008fd4291baf719dc361a82f2062ea60bfd2` / tree `f3272b9610dba756bd414cafc825fd7462d7a294`. It binds the Verdict-03 test cure and requests explicit authorization for a content-bound, squash-durable Shelf/WV provenance repair plus independent Air replay. The Shelf gate remains red; no path exclusion, reporter edit, PR, or merge was attempted. Reviewer: Claude Fable 5; carrier: Jon.<br>- 2026-07-19T23:38:00Z: Verdict 04 committed verbatim and its exact content-bound repair implemented RED→GREEN. The frozen digest covers 1,529 product paths and excludes only `ops/lane2b/**`, `proofs/**`, `F_Project_Management/W_TRUST/**`, and the Shelf reporter itself. Three adversarial traps pass 3/3. An exact-tree one-commit squash, cloned main-only with no pull refs and neither discarded branch commit present, passes Shelf and WV-6; WV-7 remains pending. Implementer: Codex GPT-5.6 Sol. Reviewer: Claude Fable 5 (chat seat, Jon-relay mode).<br>- 2026-07-19T23:47:56Z: Final local gates before Review 05: `garnet-cli` 460/460, focused Python 9/9, fmt and strict clippy green, Lane 0/MSRV/frozen-backlog floors green, trust gate `ok:true` with `problems:[]`. Launch remains HOLD and Band 3; only the native Air two-checkout replay and immutable Verdict 05 block PR ceremony.<br>- 2026-07-20T00:06:07Z: Review Request 05 prepared for exact checkpoint `927ad221d33668d458499a26f49d96ed4586563d` / tree `4d9374991bf265b78a0108e0bb62c317a43b8028`. Implementer raw-byte replays from persisted LF and default-Windows fresh checkouts were four-way identical at 2,071 bytes (`77c3cb05...8c0fd`), but remain explicitly non-independent. The Air owns the final native replay and immutable Verdict 05. No PR, merge, tag, publish, or FIRE action occurred.<br>- 2026-07-20T00:43:38Z: Independent native Air Verdict 05 APPROVE. Fresh LF and `core.autocrlf=true` checkouts emitted byte-identical Shelf payloads; native workspace Rust was 2,163/2,163, `garnet-cli` 460/460, MCP stdio 2/2, sealed 1/1, rejection traps 6/6, and the three provenance traps 3/3. The non-blocking cross-platform text-mode stdout terminator variance is preserved as U-25 input; the sanctioned WV-6 artifact remains binary and platform-stable.<br>- 2026-07-20T13:45:25Z: IslandDevCrew squash-merged PR #514 as `41d6ced858684ac67683d32315920bd50a52976e` / tree `e3c914b881ae59ca96d8950190729665e45808db` after the authenticated review and complete green check ledger, including dogfood evidence.<br>- 2026-07-20T22:45:03Z: Lane 2B COMPLETE. A fresh origin/main-only Windows clone (`core.autocrlf=true`, zero pull refs) reproduced the first live squash-durability proof: Shelf accepted with all five checks true and no findings; WV-6 accepted 5/5 with five artifacts; machine truth remained green. Evidence-effective readiness moves from 3/6 to 4/6 launch-critical and 3/8 to 4/8 launch-ledger, while the committed pre-Shelf launch reporter remains honestly stale until the first post-#515 truth reconciliation registers #514. U-23 through U-27 are current and assigned to Lane 0 repair #3. Launch remains HOLD; Band 3 while U-17 is open.</p></article></div></section>
 
   <p class="footer">GENERATED by ops/lane2b/render-sotu.mjs from state.json — do not hand-edit.
   To update: edit state.json, run <code>node ops/lane2b/render-sotu.mjs</code>, commit both.</p>

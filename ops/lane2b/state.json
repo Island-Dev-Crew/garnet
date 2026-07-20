@@ -2,16 +2,16 @@
   "version": 1,
   "mission": {
     "name": "idea-garnet-l2b-minimum-sealed-shelf",
-    "tagline": "Garnet has a strict MCP lifecycle core but no bounded tool host, raw-byte stdio transport, sealed local package boundary",
+    "tagline": "Garnet now ships one bounded, sealed Core Ring Tier 1 tool over raw-byte MCP stdio, with fail-closed package traps and deterministic WV-6 evidence",
     "repo": "Island-Dev-Crew/garnet",
-    "repoPath": "C:/garnet-lane2b-20260719",
+    "repoPath": ".",
     "defaultBranch": "main",
     "planDoc": "ops/lane2b/plan.lock.json",
     "northStar": "One frozen Core Ring Tier 1 tool executes in-process without widening to Tier 2, Tier 3, hosted registry, or arbitrary external hosts; A native-Windows raw-byte MCP session completes initialize, tools/list, tools/call, and error handling with byte-exact Content-Length frames; The same flagship package is accepted only with its committed matching seal and is rejected when unsealed, seal-stripped, or byte-tampered before tool execution; Two reporter runs over identical committed inputs emit byte-identical WV-6 verdict JSON",
-    "status": "blocked",
+    "status": "complete",
     "started": "2026-07-19",
-    "updated": "2026-07-20T00:06:07Z",
-    "sessionCount": 1
+    "updated": "2026-07-20T22:45:03Z",
+    "sessionCount": 2
   },
   "policies": {
     "merge": "review",
@@ -100,7 +100,7 @@
       "id": "P4",
       "title": "Deterministic Shelf reporter and WV-6 proof",
       "goal": "Derive a deterministic verdict from committed artifacts only and satisfy the existing native-Windows WV-6 acceptance reporter.",
-      "status": "blocked",
+      "status": "done",
       "sessionsEstimate": "1",
       "gates": [
         {
@@ -108,18 +108,18 @@
           "title": "Minimum Shelf reporter emits deterministic accepted JSON",
           "command": "python3 -I scripts/smoke_garnet_minimum_shelf.py --gate",
           "status": "passed",
-          "evidence": "ops/lane2b/evidence/18-squash-main-only-green.txt",
-          "lastRun": "2026-07-19T23:38:00Z",
-          "notes": "Verdict 04's frozen content contract passes on-branch and in a fresh synthetic squash main-only clone with both discarded branch objects absent. Final Air two-checkout execution remains pending."
+          "evidence": "ops/lane2b/evidence/21-postmerge-main-closeout.txt",
+          "lastRun": "2026-07-20T22:45:03Z",
+          "notes": "First live squash-durability proof on fresh landed main: accepted with all five checks true, no findings, landed_main_commit equal to the #514 squash commit, and zero pull refs."
         },
         {
           "id": "P4-G2",
           "title": "WV-6 exact-candidate acceptance gate passes",
           "command": "python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6 --gate",
           "status": "passed",
-          "evidence": "ops/lane2b/evidence/18-squash-main-only-green.txt",
-          "lastRun": "2026-07-19T23:38:00Z",
-          "notes": "Reporter-owned v2 evidence passes WV-6 accepted 5/5 with 5 artifacts on branch and at a one-commit squash instant; landed_main_sha is derived from origin/main first-parent and no pull refs are required."
+          "evidence": "ops/lane2b/evidence/21-postmerge-main-closeout.txt",
+          "lastRun": "2026-07-20T22:45:03Z",
+          "notes": "Fresh main-only clone reports WV-6 accepted 5/5 with five artifacts and landed_main_sha 41d6ced858684ac67683d32315920bd50a52976e."
         },
         {
           "id": "P4-G3",
@@ -138,21 +138,49 @@
     {
       "label": "Definition-of-done claims verified",
       "baseline": "0",
-      "current": "2",
+      "current": "3",
       "target": "3",
+      "direction": "up"
+    },
+    {
+      "label": "S114 acceptance",
+      "baseline": "100.0%",
+      "current": "100.0%",
+      "target": "100.0%",
+      "direction": "up"
+    },
+    {
+      "label": "Truth pulse",
+      "baseline": "93.1%",
+      "current": "93.1%",
+      "target": "100.0%",
+      "direction": "up"
+    },
+    {
+      "label": "Launch-critical (evidence-effective; canonical reconciliation pending after #515)",
+      "baseline": "50.0% (3/6)",
+      "current": "66.7% (4/6)",
+      "target": "100.0% (6/6)",
+      "direction": "up"
+    },
+    {
+      "label": "Launch ledger (evidence-effective; canonical reconciliation pending after #515)",
+      "baseline": "37.5% (3/8)",
+      "current": "50.0% (4/8)",
+      "target": "100.0% (8/8)",
       "direction": "up"
     }
   ],
   "risks": [
     {
-      "title": "A host can appear MCP-capable while text-mode stdio corrupts framing or while seal validation occurs after Garnet code has already executed.",
-      "severity": "medium",
-      "note": "from idea.lock (confidence 8/10)"
+      "title": "Raw-byte framing and pre-execution seal ordering are now regression-guarded",
+      "severity": "low",
+      "note": "The original idea-lock risk is resolved for the bounded local path by committed raw-byte protocol traps and six fail-closed package traps; broader hosts and transports remain out of scope."
     },
     {
       "title": "Current main still reports W-PLAY package and browser proof invalid",
       "severity": "high",
-      "note": "Fresh reporters at cede73c say browser_package_valid=false and browser_proof_valid=false despite merged PR #509. This is outside Lane 2B; no browser claim is inherited or promoted here."
+      "note": "The fresh launch reporter at landed main 41d6ced still says browser_package_valid=false and browser_proof_valid=false. This is outside Lane 2B; no browser claim is inherited or promoted here."
     },
     {
       "title": "The flagship in-toto predicate is an unsigned content attestation",
@@ -160,26 +188,56 @@
       "note": "The loader pins canonical manifest/source/seal digests and re-derives AST/build/capability bindings. This proves reviewed local content, not external signer identity; the artifact and CLI label it UNSIGNED."
     },
     {
-      "title": "WV acceptance truth surface and content provenance are paired; final independent review remains",
-      "severity": "medium",
-      "note": "Verdict 04 accepted Binding 3 and authorized the exact content/squash repair. Focused tests are 9/9, trust is green, and the final native Air Verdict 05 remains mandatory."
+      "title": "WV acceptance truth surface and squash-durable content provenance are complete",
+      "severity": "low",
+      "note": "Verdict 05 APPROVE and the fresh landed-main replay close the former review blocker. Shelf and WV-6 both identify #514 squash commit 41d6ced on origin/main without branch objects or pull refs."
     },
     {
-      "title": "Final independent cross-checkout execution is still absent",
+      "title": "U-23: W-PLAY proof and provenance byte fencing is incomplete",
       "severity": "high",
-      "note": "The exact-tree squash trap is green with a6f0da2 and e2820ce absent, but Verdict 04 requires the Air to double-run the final reporter from fresh LF and default-Windows checkouts before PR ceremony."
+      "note": "OPEN and assigned to Lane 0 repair #3. Extend byte-exact checkout protection to the affected W-PLAY proof/provenance artifacts and prove object/worktree equality cross-platform."
+    },
+    {
+      "title": "U-24: Windows-reserved names remain a ref-path portability hazard",
+      "severity": "high",
+      "note": "OPEN and assigned to Lane 0 repair #3. Establish fail-closed ref-name policy for aux, con, nul, prn, com*, and lpt* path segments; upstream aux was renamed, while fleet-fork cleanup inputs remain."
+    },
+    {
+      "title": "U-25: Repository and console newline byte discipline is incomplete",
+      "severity": "medium",
+      "note": "OPEN and assigned to Lane 0 repair #3. Reconcile the committed-CRLF inventory with Verdict 05's non-blocking stdout terminator variance; canonical artifact writers are already binary and stable."
+    },
+    {
+      "title": "U-26: Required-context fingerprints have no single sanctioned regenerator",
+      "severity": "high",
+      "note": "OPEN and assigned to Lane 0 repair #3. Three modules pin overlapping fingerprints; one sanctioned producer must update every binding atomically."
+    },
+    {
+      "title": "U-27: Dogfood validation consumes a stale pull-request event body snapshot",
+      "severity": "medium",
+      "note": "OPEN and assigned to Lane 0 repair #3. PR #514 required close/reopen after a body-only evidence correction; cure by handling pull_request.edited or fetching and binding the live body."
     }
   ],
-  "prLog": [],
+  "prLog": [
+    {
+      "number": 514,
+      "url": "https://github.com/Island-Dev-Crew/garnet/pull/514",
+      "title": "Minimum sealed Shelf + MCP",
+      "phase": "P0-P4",
+      "mergedAt": "2026-07-20T13:45:25Z",
+      "mergeCommit": "41d6ced858684ac67683d32315920bd50a52976e",
+      "tree": "e3c914b881ae59ca96d8950190729665e45808db",
+      "state": "merged"
+    }
+  ],
   "resume": {
-    "activePhase": "P4",
+    "activePhase": "complete",
     "nextActions": [
-      "Have the Air check out exact reviewed head 927ad221, independently double-run the reporter from fresh LF and default-Windows checkouts, and commit immutable Verdict 05."
+      "After #515 lands, run the first truth reconciliation to register #514's landed marker and teach the canonical launch ledger to consume the accepted WV-6 Shelf evidence.",
+      "Execute Lane 0 repair #3 for U-23 through U-27 without reopening Lane 2B.",
+      "Keep FIRE, tag, publish, and launch-wave decisions Jon-only; launch remains HOLD and Band 3 while U-17 is open."
     ],
-    "blockers": [
-      "Final Air two-fresh-checkout reporter replay and immutable Verdict 05 remain pending.",
-      "No PR may open until Verdict 05 APPROVE; every merge remains Jon-only."
-    ],
+    "blockers": [],
     "conventions": [
       "One task = one branch = one PR",
       "Update state.json + render + commit after every merge",
@@ -192,7 +250,7 @@
     "planLock": "ops/lane2b/plan.lock.json",
     "loop": {
       "cycle": 1,
-      "stage": "S3",
+      "stage": "S6",
       "loopbacks": []
     },
     "governance": {
@@ -202,7 +260,7 @@
     },
     "compound": {
       "notes": [],
-      "memorySync": "pending",
+      "memorySync": "not-authorized",
       "experiments": []
     },
     "fableShim": {
@@ -219,14 +277,14 @@
     "machine": "NUCBOX_M2PRO_S",
     "platform": "Windows 11 x64",
     "noPullRefsFetched": true,
-    "governanceFreeze": "not_armed",
+    "governanceFreeze": "pending_lane1_terminus_515",
     "launchStatus": "HOLD",
     "band": 3,
     "denominators": {
       "s114": "19/19 (100.0%)",
       "truthPulse": "65.2/70 (93.1%, rounded)",
-      "launchCritical": "3/6 (50.0%)",
-      "launchLedger": "3/8 (37.5%)"
+      "launchCritical": "4/6 (66.7%, evidence-effective; canonical reconciliation pending after #515)",
+      "launchLedger": "4/8 (50.0%, evidence-effective; canonical reconciliation pending after #515)"
     },
     "reviewRequests": [
       {
@@ -272,7 +330,7 @@
         "reviewedTree": "4d9374991bf265b78a0108e0bb62c317a43b8028",
         "reviewer": "Claude Fable 5 (independent native reviewer, MacBook Air)",
         "carrier": "Jon",
-        "status": "pending"
+        "status": "approved"
       }
     ],
     "reviewVerdicts": [
@@ -306,7 +364,26 @@
         "reviewer": "Claude Fable 5 (chat seat, Jon-relay mode)",
         "reviewedHead": "dcf6008fd4291baf719dc361a82f2062ea60bfd2",
         "authorization": "content-bound Shelf/WV provenance with frozen exclusions and no red main window"
+      },
+      {
+        "id": "05",
+        "path": "ops/lane2b/review/05-verdict.md",
+        "verdict": "APPROVE",
+        "reviewer": "Claude Code Fable 5 (independent, non-implementer, MacBook Air)",
+        "reviewedHead": "927ad221d33668d458499a26f49d96ed4586563d",
+        "reviewedTree": "4d9374991bf265b78a0108e0bb62c317a43b8028"
       }
-    ]
+    ],
+    "merge": {
+      "pullRequest": 514,
+      "mergedBy": "IslandDevCrew",
+      "mergedAt": "2026-07-20T13:45:25Z",
+      "landedCommit": "41d6ced858684ac67683d32315920bd50a52976e",
+      "landedTree": "e3c914b881ae59ca96d8950190729665e45808db",
+      "postMergeFreshClone": "passed",
+      "shelf": "accepted 5/5",
+      "wv6": "accepted 5/5",
+      "landedMarkerRegistration": "deferred to first post-#515 truth reconciliation"
+    }
   }
 }

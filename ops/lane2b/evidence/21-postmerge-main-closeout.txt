@@ -1,0 +1,162 @@
+Lane 2B post-merge landed-main closeout evidence
+=================================================
+
+captured_utc: 2026-07-20T22:45:03Z
+implementer: Codex GPT-5.6 Sol
+reviewer: Claude Code Fable 5 (independent, non-implementer, MacBook Air)
+merge_authority: IslandDevCrew
+machine: NUCBOX_M2PRO_S
+platform: Windows 11 x64
+
+Fresh-clone boundary
+--------------------
+
+clone command:
+  git clone --single-branch --branch main https://github.com/Island-Dev-Crew/garnet.git C:\garnet-postmerge-514-20260720
+
+origin:
+  https://github.com/Island-Dev-Crew/garnet.git
+
+core.autocrlf:
+  true
+
+HEAD / origin/main:
+  41d6ced858684ac67683d32315920bd50a52976e
+
+HEAD tree:
+  e3c914b881ae59ca96d8950190729665e45808db
+
+parent:
+  cede73c03c5d535306ed179b5882e99e4d17b050
+
+subject:
+  feat(lane2b): ship minimum sealed Shelf and MCP host (#514)- JI
+
+refs present:
+  refs/heads/main
+  refs/remotes/origin/main
+  release tags only
+
+refs/pull/* fetched:
+  none
+
+worktree before closeout records:
+  clean
+
+Shelf reporter — first live squash-durability proof
+--------------------------------------------------
+
+command:
+  python3 -I scripts/smoke_garnet_minimum_shelf.py --gate
+
+exit:
+  0
+
+schema/state/ok/findings:
+  garnet.minimum_shelf_status/v2 / accepted / true / []
+
+checks:
+  core-ring-tier1=true
+  deterministic-shelf-reporter=true
+  mcp-raw-byte-stdio=true
+  reject-without-seal=true
+  sealed-baseline=true
+
+landed identity:
+  current_commit=41d6ced858684ac67683d32315920bd50a52976e
+  current_tree=e3c914b881ae59ca96d8950190729665e45808db
+  landed_main_commit=41d6ced858684ac67683d32315920bd50a52976e
+
+content identity:
+  product_content_sha256=810f256bcf9304999975120224419216422996ff3b804d1a9a8836d5bcc4c339
+  product_path_count=1529
+  request_frame_count=5
+  response_frame_count=4
+  unsigned_predicate=true
+
+Result: the content/tree + first-parent-main construction survived the real
+#514 squash. The fresh main-only clone needs neither the discarded branch
+history nor refs/pull/*.
+
+WV-6 acceptance
+---------------
+
+command:
+  python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6 --gate
+
+exit:
+  0
+
+schema/state/ok/findings:
+  garnet.wv_acceptance_status/v2 / accepted / true / []
+
+counts:
+  required_check_count=5
+  passed_check_count=5
+  artifact_count=5
+
+landed_main_sha:
+  41d6ced858684ac67683d32315920bd50a52976e
+
+product_content_sha256:
+  810f256bcf9304999975120224419216422996ff3b804d1a9a8836d5bcc4c339
+
+Machine truth
+-------------
+
+command:
+  cargo run -p xtask -- truth --check
+
+exit:
+  0
+
+output:
+  truth --check: ok (6 fields vs machine truth, 4 stamped surfaces)
+
+Launch denominator movement
+---------------------------
+
+Evidence-effective after the accepted Shelf/WV-6 row:
+  S114: 19/19 (100.0%)
+  truth pulse: 65.2/70 (93.1%, rounded)
+  launch-critical: 4/6 (66.7%), previously 3/6 (50.0%)
+  launch ledger: 4/8 (50.0%), previously 3/8 (37.5%)
+  Launch: HOLD
+  Band: 3 while U-17 remains open
+
+The current committed `scripts/garnet_launch_readiness_status.py` remains the
+pre-Shelf Truth Lock design and therefore still emits
+`minimum_sealed_shelf=manual-deferred`. That canonical surface has not yet
+reconciled the +1 row. PR #515 is open and unmerged at this capture. The first
+post-#515 truth reconciliation must register #514's landed marker and update
+the canonical launch ledger/reporter to consume the accepted WV-6 Shelf
+evidence. No claim is made here that this deferred canonical reconciliation
+has already occurred.
+
+PR #514 remote ledger
+---------------------
+
+state:
+  MERGED
+
+merged_by:
+  IslandDevCrew
+
+merged_at:
+  2026-07-20T13:45:25Z
+
+merged_commit:
+  41d6ced858684ac67683d32315920bd50a52976e
+
+required checks:
+  32 successful, 2 correctly skipped release-only jobs, 0 failed
+
+dogfood:
+  PR dogfood evidence = pass
+
+Closeout verdict
+----------------
+
+Lane 2B is COMPLETE. U-07 is closed and WV-6 is accepted 5/5. FIRE, tag,
+publish, hosted-registry breadth, WV-7, and the post-#515 truth reconciliation
+remain outside this lane.
