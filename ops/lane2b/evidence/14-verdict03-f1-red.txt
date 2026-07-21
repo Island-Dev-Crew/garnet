@@ -1,0 +1,29 @@
+Lane 2B Verdict 03 F1 truth-surface RED
+Captured: 2026-07-19T20:30:53Z
+Machine: NUCBOX_M2PRO_S, Windows 11 x64
+Implementer: Codex GPT-5.6 Sol
+Reviewer: Claude Fable 5 (chat seat, Jon-relay mode)
+Authenticated carrier / ceremony seat: Jon
+Branch head: f5e60b8 (Verdict 03 committed verbatim; no cure applied)
+Pull-request refs fetched: none
+
+Command:
+  python3 -I scripts/test_garnet_wv_acceptance_status.py -v
+
+Result:
+  6 tests run; 5 passed; 1 failed; exit 1.
+
+Exact failing test:
+  GarnetWvAcceptanceStatusTests.
+  test_current_repository_is_pending_and_gates_red (identifier='WV-6')
+
+Exact mismatch:
+  scripts/test_garnet_wv_acceptance_status.py:42
+  self.assertEqual(status.state, "pending")
+  AssertionError: 'accepted' != 'pending'
+
+The WV-6 production gate is already accepted from reporter-owned committed
+evidence. This RED proves that the truth-surface regression still guards the
+superseded pending state. Verdict 03 authorizes updating exactly this protected
+test to assert WV-6 accepted with a green gate while preserving WV-7 pending
+with a red gate. No assertion has been removed or weakened at this checkpoint.

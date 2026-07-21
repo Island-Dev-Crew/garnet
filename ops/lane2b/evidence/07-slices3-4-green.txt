@@ -1,0 +1,54 @@
+GARNET LANE 2B EVIDENCE
+implementer: Codex GPT-5.6 Sol
+reviewer: Claude Fable 5
+captured_utc: 2026-07-19T09:08:27Z
+base_head: 2097cba7c16a2e3b6a7342c4b38d197ff87fcf0d
+slices: 3 sealed flagship baseline; 4 fail-closed negative proof
+
+$ cargo test -p garnet-cli --test minimum_shelf_package sealed --no-fail-fast
+running 1 test
+test sealed_flagship_loads_end_to_end ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out
+exit: 0
+
+$ cargo test -p garnet-cli --test minimum_shelf_package rejects --no-fail-fast
+running 6 tests
+test rejects_when_source_bytes_change ... ok
+test rejects_when_seal_is_empty ... ok
+test rejects_when_seal_is_missing ... ok
+test rejects_when_seal_bytes_change ... ok
+test rejects_when_manifest_bytes_change ... ok
+test rejects_when_tampered_source_has_new_seal_and_rebound_manifest ... ok
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out
+exit: 0
+
+$ cargo test -p garnet-cli --test mcp_stdio --no-fail-fast
+running 2 tests
+test native_stdio_initialize_list_call_and_error ... ok
+test native_stdio_rejects_tampered_package_before_protocol_output ... ok
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured
+exit: 0
+
+$ cargo run -p garnet-cli -- check examples/minimum-shelf-flagship/tool.garnet
+1 functions checked, 0 boundary call sites, 0 diagnostics
+exit: 0
+
+$ cargo clippy -p garnet-cli --all-targets -- -D warnings
+Finished dev profile; exit: 0
+
+Seal reproducibility:
+seal-a SHA-256: 626ce7f3a31f64b6ab6f09482138f9398ea013ddf4e0821433cf09bf968310e2
+seal-b SHA-256: 626ce7f3a31f64b6ab6f09482138f9398ea013ddf4e0821433cf09bf968310e2
+committed SHA-256: 626ce7f3a31f64b6ab6f09482138f9398ea013ddf4e0821433cf09bf968310e2
+a_equals_b: true
+a_equals_committed: true
+bytes: 1185; CR: 0; LF: 22
+
+GREEN meaning: `garnet mcp-serve` constructs a host only after the exact local
+manifest, source, and canonical-LF seal digests match compiled trust roots and
+the source AST, build manifest, empty capability surface, and in-toto predicate
+are re-derived. Native Windows binary stdio completed initialize/list/call/error.
+Invalid package startup returned nonzero with zero protocol bytes.
+
+Scope truth: the committed in-toto predicate is UNSIGNED. It proves deterministic
+content binding under reviewed Git history, not external signer identity.

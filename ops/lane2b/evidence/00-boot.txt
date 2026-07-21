@@ -1,0 +1,39 @@
+GARNET LANE 2B EVIDENCE
+implementer: Codex GPT-5.6 Sol
+reviewer: Claude Fable 5
+captured_utc: 2026-07-19T08:40:41Z
+machine: NUCBOX_M2PRO_S
+platform: Microsoft Windows NT 10.0.26200.0 x64
+
+fresh_clone: C:/garnet-lane2b-20260719
+branch_at_boot: main
+head: cede73c03c5d535306ed179b5882e99e4d17b050
+origin_main: cede73c03c5d535306ed179b5882e99e4d17b050
+origin: https://github.com/Island-Dev-Crew/garnet.git
+core.autocrlf: true
+refs/pull/*: none
+
+$ python3 -I scripts/garnet_lane0_closeout_status.py --gate
+Lane 0 closeout: PASS; evidence 22/22; ledger 37 entries; denominators 4/4; launch HOLD; band 3; S6 advisory
+exit: 0
+
+$ python3 -I scripts/garnet_msrv_status.py --gate
+ok: true
+msrv: 1.95
+active_manifest_count: 18
+workspace_member_count: 16
+findings: []
+exit: 0
+
+$ python3 -I scripts/garnet_frozen_backlog_status.py --gate
+ok: true
+entry_count: 8
+implemented_clause_count: 9
+states: implemented=0 partial=4 planned=4 research=0
+findings: []
+exit: 0
+
+$ git check-attr text eol -- ops/lane2b/evidence/00-boot.txt
+ops/lane2b/evidence/00-boot.txt: text: unset
+ops/lane2b/evidence/00-boot.txt: eol: unspecified
+exit: 0

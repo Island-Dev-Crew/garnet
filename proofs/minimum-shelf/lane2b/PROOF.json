@@ -1,0 +1,52 @@
+{
+  "schema": "garnet.minimum-shelf-proof/v2",
+  "reviewedHead": "dcf6008fd4291baf719dc361a82f2062ea60bfd2",
+  "reviewedTree": "f3272b9610dba756bd414cafc825fd7462d7a294",
+  "reviewedTreeProductSha256": "1e6692175ea8fe2dd5b04fad4a492dc8ce48767dd07d88fd11a0847ce96749d5",
+  "reviewedTreePathCount": 1527,
+  "productContentSha256": "810f256bcf9304999975120224419216422996ff3b804d1a9a8836d5bcc4c339",
+  "productPathCount": 1529,
+  "platform": "windows",
+  "implementer": "Codex GPT-5.6 Sol",
+  "reviewer": "Claude Code Fable 5",
+  "authenticatedCarrier": "Jon",
+  "unsignedPredicate": true,
+  "checks": [
+    {
+      "id": "core-ring-tier1",
+      "status": "passed",
+      "command": "cargo test -p garnet-cli minimum_shelf --no-fail-fast"
+    },
+    {
+      "id": "mcp-raw-byte-stdio",
+      "status": "passed",
+      "command": "cargo test -p garnet-cli --test mcp_stdio --no-fail-fast"
+    },
+    {
+      "id": "sealed-baseline",
+      "status": "passed",
+      "command": "cargo test -p garnet-cli --test minimum_shelf_package sealed --no-fail-fast"
+    },
+    {
+      "id": "reject-without-seal",
+      "status": "passed",
+      "command": "cargo test -p garnet-cli --test minimum_shelf_package rejects --no-fail-fast"
+    }
+  ],
+  "transcript": {
+    "input": "proofs/minimum-shelf/lane2b/mcp-session.input.hex",
+    "inputSha256": "2328d55497368e0a351cfbd0e5421ab46c3826abf4f313c1a497e95a9fbfd769",
+    "output": "proofs/minimum-shelf/lane2b/mcp-session.output.hex",
+    "outputSha256": "dac0eea7138d0f58865eecefc8db0c64490605068b956f757f420d6b284ba15f",
+    "processExit": 0,
+    "stderrBytes": 0
+  },
+  "scopeLimits": [
+    "one Garnet-owned local package",
+    "Core Ring Tier 1 only",
+    "raw-byte stdio only",
+    "no hosted registry or network transport",
+    "reviewed local content, not signer identity"
+  ],
+  "jonOnlyActionsPerformed": []
+}

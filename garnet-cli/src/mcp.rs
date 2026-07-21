@@ -1,4 +1,4 @@
-//! Pure released-MCP lifecycle core. Transport, tools, and execution are deferred.
+//! Released-MCP lifecycle core with an explicit, opt-in application boundary.
 use crate::mcp_schema;
 use serde_json::{json, Map, Value};
 use std::collections::HashSet;
@@ -23,9 +23,16 @@ pub enum McpAction {
     Close(Option<String>),
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum McpApplicationResponse {
+    Result(Value),
+    Error { code: i64, message: String },
+}
+
 pub struct McpSession {
     phase: Phase,
     seen_ids: HashSet<Value>,
+    capabilities: Value,
 }
 
 impl Default for McpSession {
@@ -36,13 +43,25 @@ impl Default for McpSession {
 
 impl McpSession {
     pub fn new() -> Self {
+        Self::with_capabilities(json!({}))
+    }
+
+    pub(crate) fn with_capabilities(capabilities: Value) -> Self {
         Self {
             phase: Phase::AwaitInitialize,
             seen_ids: HashSet::new(),
+            capabilities,
         }
     }
 
     pub fn handle_message(&mut self, input: &str) -> McpAction {
+        self.handle_message_with(input, &mut |_, _| None)
+    }
+
+    pub(crate) fn handle_message_with<F>(&mut self, input: &str, handler: &mut F) -> McpAction
+    where
+        F: FnMut(&str, Option<&Value>) -> Option<McpApplicationResponse>,
+    {
         if self.phase == Phase::Closed {
             return McpAction::Close(None);
         }
@@ -76,13 +95,22 @@ impl McpSession {
         };
         let params = message.get("params");
         match message.get("id") {
-            Some(id) if valid_id(id) => self.handle_request(id.clone(), method, params),
+            Some(id) if valid_id(id) => self.handle_request(id.clone(), method, params, handler),
             Some(_) => McpAction::Respond(error(Value::Null, -32600, "Invalid Request")),
             None => self.handle_notification(method, params),
         }
     }
 
-    fn handle_request(&mut self, id: Value, method: &str, params: Option<&Value>) -> McpAction {
+    fn handle_request<F>(
+        &mut self,
+        id: Value,
+        method: &str,
+        params: Option<&Value>,
+        handler: &mut F,
+    ) -> McpAction
+    where
+        F: FnMut(&str, Option<&Value>) -> Option<McpApplicationResponse>,
+    {
         if self.seen_ids.contains(&id) {
             return McpAction::Respond(error(id, -32600, "Request id already used"));
         }
@@ -113,7 +141,15 @@ impl McpSession {
                     McpAction::Respond(error(id, -32600, "Initialize already received"))
                 }
                 "ping" => ping(id, params),
-                _ => McpAction::Respond(error(id, -32601, "Method not found")),
+                _ => match handler(method, params) {
+                    Some(McpApplicationResponse::Result(value)) => {
+                        McpAction::Respond(result(id, value))
+                    }
+                    Some(McpApplicationResponse::Error { code, message }) => {
+                        McpAction::Respond(error(id, code, &message))
+                    }
+                    None => McpAction::Respond(error(id, -32601, "Method not found")),
+                },
             },
             Phase::Closed => McpAction::Close(None),
         }
@@ -147,7 +183,7 @@ impl McpSession {
             id,
             json!({
                 "protocolVersion": MCP_PROTOCOL_VERSION,
-                "capabilities": {},
+                "capabilities": self.capabilities.clone(),
                 "serverInfo": {
                     "name": "garnet-minimum-shelf",
                     "version": env!("CARGO_PKG_VERSION")

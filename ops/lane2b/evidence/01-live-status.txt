@@ -1,0 +1,67 @@
+GARNET LANE 2B EVIDENCE
+implementer: Codex GPT-5.6 Sol
+reviewer: Claude Fable 5
+captured_utc: 2026-07-19T08:46:00Z
+head: cede73c03c5d535306ed179b5882e99e4d17b050
+
+$ cargo run -p xtask -- truth --check
+truth --check: ok (6 fields vs machine truth, 4 stamped surfaces)
+exit: 0
+
+$ python3 scripts/garnet_readiness_status.py --format json
+total_slices: 87
+completed_slices: 87
+completion_percent: 100.0
+open_slices: []
+exit: 0
+
+$ python3 scripts/garnet_mit_readiness_status.py --format json --committed-only
+source: committed-truth
+overall_status: active-partial
+completion_percent: 93.1
+exit: 0
+
+$ python3 scripts/garnet_launch_readiness_status.py --format json
+recommendation: HOLD
+launch_ready: false
+foundation_integrity: pass
+native_linux: pass
+s114_acceptance: accepted-scoped
+static_playground: partial
+live_wasm_playground: remaining
+minimum_sealed_shelf: manual-deferred
+promo_video: pending-human
+launch_fire: jon-only
+exit: 0
+
+$ python3 scripts/garnet_wasm_readiness.py --format json
+schema: garnet.wasm_readiness/v3
+browser_adapter_present: true
+browser_package_present: true
+browser_package_valid: false
+browser_proof_present: true
+browser_proof_valid: false
+browser_ready: false
+blockers:
+- browser Wasm package is missing, invalid, or does not match current committed inputs
+- W-PLAY Playwright browser proof is missing or invalid
+exit: 0
+
+$ python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6
+schema: garnet.wv_acceptance_status/v1
+state: pending
+ok: false
+required_check_count: 5
+passed_check_count: 0
+artifact_count: 0
+finding: exact-candidate evidence manifest is pending
+exit: 0
+
+Four denominators:
+- S114 bounded mission: 19/19 = 100.0%
+- Truth pulse: 65.2/70 = 93.1% (rounded)
+- Launch-critical: 3/6 = 50.0%
+- Whole launch ledger: 3/8 = 37.5%
+
+Launch: HOLD
+Band ceiling: 3/5 while U-17 remains open

@@ -1,0 +1,39 @@
+GARNET LANE 2B EVIDENCE
+implementer: Codex GPT-5.6 Sol
+reviewer: Claude Fable 5
+captured_utc: 2026-07-19T08:57:42Z
+base_head: 7635d6971392a0bbfd66314abbdb07b1c07116a2
+slice: 2 - raw-byte stdio MCP host core
+
+$ cargo test -p garnet-cli --lib mcp_stdio -- --nocapture
+running 4 tests
+test mcp_stdio::tests::mcp_stdio_rejects_noncanonical_and_unbounded_headers ... ok
+test mcp_stdio::tests::mcp_stdio_rejects_lf_headers_and_emits_one_parse_error_frame ... ok
+test mcp_stdio::tests::mcp_stdio_short_or_non_utf8_bodies_emit_one_parse_error ... ok
+test mcp_stdio::tests::mcp_stdio_raw_bytes_initialize_list_call_and_error ... ok
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 162 filtered out
+exit: 0
+
+$ cargo test -p garnet-cli minimum_shelf --no-fail-fast
+running 3 tests
+test minimum_shelf::tests::minimum_shelf_tier1_input_is_exact_and_bounded ... ok
+test minimum_shelf::tests::minimum_shelf_router_rejects_wrong_tool_and_params ... ok
+test minimum_shelf::tests::minimum_shelf_tier1_tool_invokes_garnet_in_process ... ok
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 163 filtered out
+exit: 0
+
+$ cargo test -p garnet-cli --test mcp_protocol --test mcp_protocol_adversarial --test mcp_initialize_schema --no-fail-fast
+mcp_initialize_schema: 4 passed; 0 failed
+mcp_protocol: 4 passed; 0 failed
+mcp_protocol_adversarial: 6 passed; 0 failed
+exit: 0
+
+GREEN meaning: the transport-free lifecycle now has an opt-in bounded
+application callback; its default remains empty and method-not-found. The one
+Shelf host lists and calls only garnet.core.double. The byte framer accepts only
+canonical Content-Length plus CRLF, caps headers and bodies, and emits one
+framed parse error for malformed framing or bodies.
+
+Honesty boundary: this checkpoint does not expose a process command. The exact
+P1 integration gate stays pending until the sealed loader can construct the
+host, preventing a temporary unsealed production entry point.

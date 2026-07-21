@@ -1,0 +1,16 @@
+GARNET LANE 2B EVIDENCE
+implementer: Codex GPT-5.6 Sol
+reviewer: Claude Fable 5
+captured_utc: 2026-07-19T09:00:22Z
+base_head: 3c0fe596f649dca7037d541f1cb4da9dfa67133d
+slice: 4 - fail-closed seal rejection, designed before happy path
+
+$ cargo test -p garnet-cli --test minimum_shelf_package rejects --no-fail-fast
+error[E0432]: unresolved import `garnet_cli::minimum_shelf::MinimumShelfPackage`
+error: could not compile `garnet-cli` (test "minimum_shelf_package") due to 1 previous error
+exit: 1
+
+RED meaning: five committed integration traps require rejection of a missing
+seal, stripped seal, source-byte tamper, seal-byte tamper, and an attempted
+manifest rebind to changed source. The package loader does not exist, so there
+is no object or host that can be constructed before these checks pass.

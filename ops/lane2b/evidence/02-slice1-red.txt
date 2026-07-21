@@ -1,0 +1,18 @@
+GARNET LANE 2B EVIDENCE
+implementer: Codex GPT-5.6 Sol
+reviewer: Claude Fable 5
+captured_utc: 2026-07-19T08:48:00Z
+base_head: 80a93d1d417aea3bdae2cfd9ba3c6892a9231610
+slice: 1 - Core Ring Tier 1 in-process tool
+
+$ cargo test -p garnet-cli minimum_shelf --no-fail-fast
+error[E0425]: cannot find function `invoke_tier1_source` in this scope
+  --> garnet-cli/src/minimum_shelf.rs:17:22
+error[E0425]: cannot find function `invoke_tier1_source` in this scope
+  --> garnet-cli/src/minimum_shelf.rs:32:21
+error: could not compile `garnet-cli` (lib test) due to 2 previous errors
+exit: 1
+
+RED meaning: the frozen Tier 1 contract exists, but no in-process Garnet
+interpreter invocation can satisfy it yet. No transport, seal, package loader,
+or registry surface was introduced to make the test pass.

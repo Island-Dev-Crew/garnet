@@ -1,0 +1,27 @@
+GARNET LANE 2B P4 REPORTER RED
+implementer: Codex GPT-5.6 Sol
+reviewer: Claude Code Fable 5 (independent reviewer, MacBook Air)
+captured_utc: 2026-07-19T18:33:09Z
+base_head: bafd8f3
+authorization: ops/lane2b/review/02-verdict.md decision 3
+pull_refs_fetched: 0
+
+$ python3 -I scripts/smoke_garnet_minimum_shelf.py --gate
+python.exe: can't open file
+'C:/garnet-lane2b-20260719/scripts/smoke_garnet_minimum_shelf.py':
+[Errno 2] No such file or directory
+exit: 2
+
+$ python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6 --gate
+WV-6 acceptance gate PENDING: exact-candidate evidence manifest is pending
+state: pending
+required_check_count: 5
+passed_check_count: 0
+artifact_count: 0
+candidate_main_sha: null
+ok: false
+exit: 1
+
+RED: the exact locked reporter path is absent and WV-6 remains pending. No
+reporter, proof manifest, WV-6 acceptance evidence, or trust companion existed
+when this was captured. F1 was already green at a6f0da2 before this RED.

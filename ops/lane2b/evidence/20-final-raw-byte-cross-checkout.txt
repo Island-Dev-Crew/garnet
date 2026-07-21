@@ -1,0 +1,53 @@
+Lane 2B final implementer raw-byte cross-checkout proof
+implementer: Codex GPT-5.6 Sol
+reviewer: Claude Fable 5 (independent Air replay pending)
+carrier: Jon
+platform: Windows 11 x64
+reviewed_head: 927ad221d33668d458499a26f49d96ed4586563d
+reviewed_tree: 4d9374991bf265b78a0108e0bb62c317a43b8028
+pull-request refs fetched: 0
+
+Method
+------
+Each repository was a fresh --no-local, --no-checkout clone of the exact
+reviewed head. The local core.autocrlf value was persisted before `checkout -f`.
+Reporter stdout/stderr were redirected by Git Bash as raw bytes, not through
+PowerShell's text encoder. The reporter ran twice in each checkout.
+
+LF checkout
+-----------
+core.autocrlf: false
+HEAD: 927ad221d33668d458499a26f49d96ed4586563d
+tree: 4d9374991bf265b78a0108e0bb62c317a43b8028
+refs/pull/* count: 0
+evidence attr: text unset; eol unspecified
+prelude attr: text set; eol lf
+flagship package attr: text set; eol lf
+run 1: exit 0; stdout 2071 bytes; stderr 0 bytes
+run 1 stdout SHA-256: 77c3cb058efda5441985e3f9bb86cd172b454470f0a3ddbc4d84a9b321f8c0fd
+run 2: exit 0; stdout 2071 bytes; stderr 0 bytes
+run 2 stdout SHA-256: 77c3cb058efda5441985e3f9bb86cd172b454470f0a3ddbc4d84a9b321f8c0fd
+within-checkout byte equality: true
+
+Default-Windows checkout
+------------------------
+core.autocrlf: true
+HEAD: 927ad221d33668d458499a26f49d96ed4586563d
+tree: 4d9374991bf265b78a0108e0bb62c317a43b8028
+refs/pull/* count: 0
+evidence attr: text unset; eol unspecified
+prelude attr: text set; eol lf
+flagship package attr: text set; eol lf
+run 1: exit 0; stdout 2071 bytes; stderr 0 bytes
+run 1 stdout SHA-256: 77c3cb058efda5441985e3f9bb86cd172b454470f0a3ddbc4d84a9b321f8c0fd
+run 2: exit 0; stdout 2071 bytes; stderr 0 bytes
+run 2 stdout SHA-256: 77c3cb058efda5441985e3f9bb86cd172b454470f0a3ddbc4d84a9b321f8c0fd
+within-checkout byte equality: true
+
+cross-checkout byte equality: true
+
+Result
+------
+GREEN for implementer-owned evidence. This does not substitute for Verdict 04
+Decision 4: Claude Fable 5 on the Air must independently repeat the two fresh
+checkout runs and commit immutable Verdict 05 before PR ceremony.
