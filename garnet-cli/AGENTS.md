@@ -29,14 +29,33 @@ Owns the `garnet` binary, subcommand routing, template embedding, deterministic 
   `@caps` frame before evaluating top-level `let`/`const` initializers. A
   load-time host call in an initializer is still authority-bearing runtime
   behavior and must not run outside the entry capability gate on either backend.
-- Dependency preload (`--interp`) and the `garnet test` `src/main.garnet`
-  helper preload are FAIL-CLOSED on authority (S114 acceptance, cond. #5): an
-  authority trap while loading a vendored dep aborts `garnet run` with a
-  non-zero exit (only benign parse/read/missing-vendor errors stay
-  warn-and-continue), and any helper-preload failure fails that test file's
-  tests rather than reporting a green "N passed; 0 failed". Setup failure must
-  never produce a success exit. The authority trap is identified by the stable
-  `capability:` message prefix from `garnet-interp`'s `require_capability`.
+- Dependency preload (`garnet run --interp`) is FAIL-CLOSED for the complete
+  setup boundary (S114 acceptance, cond. #5; Lane 1 fail-soft repair): an
+  unreadable or malformed dependency table, missing/non-directory/unwalkable
+  declared vendor path, unreadable/non-regular vendored source, source
+  parse/load failure, or authority trap aborts before user `main` and returns
+  non-zero. None of these conditions may warn/skip and continue green. A bare
+  file with no project manifest and a project with an empty dependency table
+  remain valid controls. `Garnet.toml` is parsed as TOML 1.0, including quoted
+  or spaced headers, dotted keys, inline top-level tables, and dependency
+  subtables; each semantic dependency must contain exactly the path+vendor or
+  registry+version+vendor string keys. Malformed or duplicate keys are RED.
+  Each dependency named `<name>` is bound only to
+  `.garnet/vendor/<name>`. Mismatched, dot, parent/traversing, absolute,
+  symlinked, or otherwise escaping vendor paths are setup failures. Vendored
+  source bytes are read from an identity-checked retained file handle and are
+  never reopened after validation.
+- `garnet test` discovery and helper setup are likewise FAIL-CLOSED. An existing
+  project root must first resolve to a readable directory (an explicit missing
+  path is not an empty project). An existing `tests` path that is not a readable
+  directory, any per-entry enumeration or metadata failure, and any existing
+  `src/main.garnet` that is unreadable or non-regular returns non-zero; helper
+  parse/load failure fails the affected tests. Only an absent input under a
+  validated project root (or the explicit `--no-main` opt-out) is omission, and
+  setup failure must never become a green no-files or partial-context run.
+  At most one positional project root is accepted; a second is a usage error.
+  Discovered test and helper sources use the same identity-bound retained-handle
+  read as vendored sources, so a path swap cannot change later-loaded bytes.
 - `garnet agent-loop` is a four-stage gate: `check` -> `diff-caps` -> `run` ->
   `seal`. A proposal that fails `garnet check` is rejected before runtime or
   sealing, and the seal-out path must remain absent on that rejection path.

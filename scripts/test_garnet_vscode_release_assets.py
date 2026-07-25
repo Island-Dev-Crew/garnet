@@ -34,7 +34,10 @@ class GarnetVSCodeReleaseAssetsTests(unittest.TestCase):
         self.assertIn("./scripts/package_garnet_vscode_extension.sh --output-dir target/vscode", text)
         self.assertIn("target/vscode/*.vsix", text)
         self.assertIn("if: startsWith(github.ref, 'refs/tags/v')", text)
-        self.assertIn("softprops/action-gh-release@v2", text)
+        self.assertIn(
+            "softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65",
+            text,
+        )
         self.assertIn("find dist-vsix -name '*.vsix'", text)
         self.assertIn("release-vsix/*.vsix", text)
         self.assertIn("fail_on_unmatched_files: true", text)

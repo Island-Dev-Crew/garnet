@@ -30,6 +30,7 @@ class WorkflowFilePolicyTests(unittest.TestCase):
         self.git("init", "-q")
         self.git("config", "user.email", "test@example.invalid")
         self.git("config", "user.name", "Test")
+        self.git("config", "core.precomposeunicode", "false")
         (self.root / ".github/workflows").mkdir(parents=True)
 
     def tearDown(self) -> None:
@@ -160,6 +161,14 @@ class WorkflowFilePolicyTests(unittest.TestCase):
                 self.git("read-tree", "--empty")
                 self.cache(first, b"one")
                 self.cache(second, b"two")
+                indexed = self.git(
+                    "ls-files", "-z", "--", ".github/workflows"
+                ).split(b"\0")
+                expected = {
+                    f".github/workflows/{first}".encode(),
+                    f".github/workflows/{second}".encode(),
+                }
+                self.assertEqual(expected, set(filter(None, indexed)))
                 self.assert_closed("collide")
                 self.assertEqual(
                     unicodedata.normalize("NFC", first).casefold(),

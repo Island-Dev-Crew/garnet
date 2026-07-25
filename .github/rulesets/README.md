@@ -41,11 +41,11 @@ does **not** include `Base-controlled trust policy`. The separately prepared
 bootstrapped on `main`, it executes only policy code from the base checkout; the
 candidate checkout has no persisted credentials or submodules and is never
 executed. The base validator then checks candidate governance, v2 review-record
-scope/digest, and byte identity of the protected workflow. That workflow cannot
-be changed by an in-band upgrade record. The base validator, live governance
-readback, and rolling review reporter may then evolve only with an exact
-`garnet.base_controlled_policy_upgrade/v1` record; the old base policy validates
-both content hashes and resolved blockers.
+scope/digest, and byte identity of the protected workflow. The candidate cannot
+change that protected workflow in-band because the old-base validator requires
+byte identity. Other policy evolution remains subject to the exact-head v2
+rolling review. A separately typed policy-upgrade record is not implemented by
+this bootstrap and is therefore planned, not an enforced mechanism.
 
 GitHub binds an ordinary required Actions check to its job context and the
 GitHub Actions integration, **not** to a workflow file, matrix, or event. The
@@ -75,12 +75,17 @@ the default branch:
 
 1. merge the workflow, trusted scripts, and tests in a human-only bootstrap PR
    while `Base-controlled trust policy` is not a live required context;
-2. add the base-controlled context to the checked-in ledger in a separate
-   activation PR, verify that the already-landed workflow emits the exact job
-   name, is API-reported `active`, and owns the only candidate occurrence of
-   that context; then add it to the live required-check ledger while that PR is
-   open and rerun the authenticated governance drift gate before the human
-   merge.
+2. derive the bootstrap squash commit/tree from `origin/main`, add its
+   squash-durable landed marker and registry entry, and add the base-controlled
+   context to the checked-in ledger in a separate activation PR; verify that
+   the already-landed workflow emits the exact job name, is API-reported
+   `active`, and owns the only candidate occurrence of that context; then add
+   it to the live required-check ledger while that PR is open and rerun the
+   authenticated governance drift gate before the human merge;
+3. after the activation/terminus squash, use one bounded closeout PR to add and
+   register that terminus's exact landed marker. This closeout adds no GOV
+   number and is the pre-declared U-19 completion exception to the newly armed
+   governance freeze.
 
 The solo activation mechanically proves base-owned static validation, not
 independent actor approval. If a second reviewer is later authorized, use two
@@ -101,6 +106,54 @@ The repository-settings contract also pins default Actions workflow permission
 to `read` and `can_approve_pull_request_reviews` to `false`. The live drift gate
 counts only an admin-authenticated read as authoritative for the empty bypass
 ledger; anonymous/public output is diagnostic only.
+
+The `/scripts/garnet_github_* @IslandDevCrew` CODEOWNERS row implements U-16 as
+an explicit procedural owner and future code-owner matrix. It is not presently
+a required GitHub code-owner approval: the checked solo-maintainer ruleset
+intentionally has `require_code_owner_review: false` and zero required
+approvals. Today the mechanical protections are disabled auto-merge, human
+final merge, rolling-review v2, and the base-controlled policy gate; the Jon
+identity requirement remains a covenant action until the documented second-
+reviewer profile is activated. Do not report the CODEOWNERS row itself as an
+enforced approval.
+
+### External Action pin updates
+
+Every external workflow action is bound to a full 40-character commit in
+`external-action-pins.json`; mutable tag or branch references are forbidden,
+including release publishing. The manifest records the reviewed upstream ref
+and peeled commit, while CI remains network-free and verifies exact equality
+between all workflow occurrences and that manifest.
+
+An update is an explicit human-reviewed digest change: resolve the upstream
+tag/branch with authoritative Git refs, peel annotated tags to commits, update
+the manifest and every occurrence together, run the workflow file/YAML/schema,
+Node-runtime, MSRV, and action-integrity suites, attach a W_TRUST companion with
+fresh Linux/macOS/Windows evidence, and leave the PR for Jon. Do not schedule an
+automatic updater, trust a version comment, or weaken the gate when a ref cannot
+be resolved. The `stable` and `nightly` Rust channels remain runtime channel
+choices even though the action implementation that selects them is immutable.
+Because `dtolnay/rust-toolchain` normally derives the channel from its action
+ref, the full-SHA form is always paired with an explicit `with.toolchain`
+input; omitting that input is a policy error.
+
+### Required-context semantic fingerprints
+
+Producer identity is not satisfied by a workflow path, job id, and emitted
+name alone. Each row in `required-context-producers.json` carries a lowercase
+SHA-256 over the immutable projection of the workflow-level trigger and policy,
+the selected job plus its complete transitive dependency jobs, their ordered
+steps, and the selected matrix member. The pre-activation gate separately pins
+the ordered aggregate of all 31 active fingerprints, so a candidate cannot
+coordinate a workflow behavior change with a freshly invented digest.
+
+The schema gate also rejects the exact vacuous forms `run: "true"`,
+`if: "false"`, and `if: "${{ false }}"` before a producer can be projected.
+The semantic digest is style-independent but byte-stable over the resulting
+canonical AST; ordinary YAML formatting is not treated as behavior, while a
+command, action, condition, environment, permission, trigger, dependency, or
+matrix-member change is. Updating a producer's behavior therefore requires the
+same reviewed trust-kernel path as updating the workflow itself.
 
 ### Workflow update maintenance window
 

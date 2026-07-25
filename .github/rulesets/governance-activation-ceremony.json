@@ -1,0 +1,65 @@
+{
+  "acceptance_commands": [
+    {
+      "command": "python3 -I scripts/test_garnet_base_controlled_trust_status.py",
+      "expected": "PASS"
+    },
+    {
+      "command": "python3 -I scripts/test_garnet_governance_activation_ceremony.py",
+      "expected": "PASS"
+    },
+    {
+      "command": "python3 -I scripts/garnet_governance_activation_ceremony.py --gate",
+      "expected": "PASS preparation only"
+    },
+    {
+      "command": "python3 -I scripts/garnet_governance_activation_ceremony.py --activation-gate --reviewed-head $REVIEWED_HEAD --github-token-stdin",
+      "expected": "RED blocked-u17 until Jon provisions GARNET_ADMIN_GITHUB_TOKEN; PASS only for authenticated exact 32-context no-bypass readback"
+    }
+  ],
+  "activation": {
+    "activated_at": null,
+    "activated_by": null,
+    "live_readback_evidence": null,
+    "performed": false
+  },
+  "bypass_actors": [],
+  "evidence_destination": "ops/lane1/evidence/70-item7-ceremony.md",
+  "jon_only_actions": [
+    "provision GARNET_ADMIN_GITHUB_TOKEN",
+    "merge the Lane 1 bootstrap pull request while Base-controlled trust policy is not required",
+    "confirm the base-controlled workflow is active on main and open a separate activation/terminus pull request from that base with the bootstrap squash-durable landed marker registered",
+    "activate required context 31 to 32 on ruleset 18936562 while the activation/terminus pull request is open",
+    "read back ruleset 18936562 and verify Base-controlled trust policy is required with bypass_actors empty",
+    "rerun the authenticated governance and base-controlled gates on the exact activation/terminus head",
+    "merge the activation/terminus pull request",
+    "merge the bounded post-squash Lane 1 closeout pull request that registers the terminus landed marker without adding a GOV number"
+  ],
+  "repository": "Island-Dev-Crew/garnet",
+  "ruleset_id": 18936562,
+  "schema": "garnet.governance-activation-ceremony/v1",
+  "state": "prepared-not-activated",
+  "target_branch": "main",
+  "token_policy": {
+    "admin_readback_token": "GARNET_ADMIN_GITHUB_TOKEN",
+    "admin_token_source": "explicit-only",
+    "ambient_credentials": "forbidden",
+    "persist": "forbidden",
+    "print": "forbidden",
+    "review_enumeration_scope": "pull-requests:read",
+    "review_enumeration_token": "github.token (event-scoped)"
+  },
+  "transition": {
+    "appended_context": "Base-controlled trust policy",
+    "from_required_context_count": 31,
+    "integration_id": 15368,
+    "to_required_context_count": 32
+  },
+  "workflow": {
+    "context": "Base-controlled trust policy",
+    "job": "policy",
+    "name": "Base-controlled trust",
+    "path": ".github/workflows/base-controlled-trust.yml",
+    "sha256": "33bb45ac7400ed4572f5777c1ccd277ad73316244dca413e9c890fe2da8bf4c7"
+  }
+}

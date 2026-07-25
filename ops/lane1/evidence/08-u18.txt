@@ -1,0 +1,15 @@
+$ python3 - <<'PY'
+import json, re, sys
+d = json.load(open('ops/mission/state.json'))
+ids = {p['id'] for p in d['phases']}
+r = d.get('resume', {})
+refs = set()
+for s in [str(r.get('activePhase',''))] + [str(x) for x in r.get('nextActions', [])]:
+    refs |= set(re.findall(r'\bP\d+\b', s))
+missing = sorted(refs - ids)
+print('phases:', sorted(ids), '| referenced:', sorted(refs), '| MISSING:', missing or 'NONE')
+sys.exit(1 if missing else 0)
+PY
+exit 0
+--- stdout ---
+phases: ['P0', 'P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7'] | referenced: ['P7'] | MISSING: NONE

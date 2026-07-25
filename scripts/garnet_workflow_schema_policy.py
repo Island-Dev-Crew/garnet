@@ -96,6 +96,14 @@ def _command(node: object, label: str) -> object:
     scalar = _value(node, label)
     _require(scalar.style in {None, "'", '"', "|", ">"} and bool(scalar.value.strip()), f"{label} must be command text")
     _require(not (scalar.style is None and PLAIN_TYPED_RE.fullmatch(scalar.value)), f"{label} has a non-string plain scalar")
+    _require(scalar.value.strip() != "true", f"{label} is a vacuous true command")
+    return scalar
+
+
+def _condition(node: object, label: str) -> object:
+    scalar = _text(node, label)
+    compact = re.sub(r"\s+", "", scalar.value).lower()
+    _require(compact not in {"false", "${{false}}"}, f"{label} is an always-false condition")
     return scalar
 def _permissions(node: object, label: str) -> None:
     if isinstance(node, yaml_policy.WorkflowScalar):
@@ -182,7 +190,7 @@ def _step(node: object, label: str) -> object:
     _require(("run" in values) != ("uses" in values) and not ("run" in values and "with" in values) and not ("uses" in values and ({"shell", "working-directory"} & set(values))), f"{label} has an invalid run/uses field combination")
     for key in ("name", "if", "shell", "working-directory"):
         if key in values:
-            _text(values[key], f"{label}.{key}")
+            (_condition if key == "if" else _text)(values[key], f"{label}.{key}")
     if "run" in values:
         _command(values["run"], f"{label}.run")
     if "uses" in values:
@@ -216,7 +224,7 @@ def _job(job_id: str, node: object) -> JobProfile:
              f"job {job_id}.steps must be a non-empty sequence")
     steps = tuple(_step(step, f"job {job_id}.steps[{index}]") for index, step in enumerate(raw_steps.items))
     name = _text(values["name"], f"job {job_id}.name") if "name" in values else None
-    condition = _text(values["if"], f"job {job_id}.if") if "if" in values else None
+    condition = _condition(values["if"], f"job {job_id}.if") if "if" in values else None
     continued = _boolean(values["continue-on-error"], f"job {job_id}.continue-on-error") if "continue-on-error" in values else None
     _require(continued is None or continued.value == "false", f"job {job_id}.continue-on-error cannot enable soft failure")
     needs = _needs(values["needs"], f"job {job_id}.needs") if "needs" in values else ()

@@ -58,6 +58,34 @@ fn authority_trapping_helper_fails_the_run() {
     );
 }
 
+/// A helper remains setup input even when no `test_*` function was discovered.
+/// Skipping its load in that case converts an authority trap into a false-green
+/// zero-test result.
+#[test]
+fn authority_trapping_helper_with_zero_tests_fails_the_run() {
+    let dir = tempfile::TempDir::new().unwrap();
+    std::fs::create_dir_all(dir.path().join("src")).unwrap();
+    std::fs::write(
+        dir.path().join("src/main.garnet"),
+        "let leaked = read_file(\"/etc/hostname\")\n",
+    )
+    .unwrap();
+    let out = garnet().arg("test").arg(dir.path()).output().unwrap();
+    let combined = format!(
+        "{}{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(
+        !out.status.success(),
+        "a zero-test helper setup failure must not report green; output: {combined}"
+    );
+    assert!(
+        !combined.contains("test result: ok"),
+        "setup failure was mislabeled as a successful zero-test run: {combined}"
+    );
+}
+
 /// A helper that fails to PARSE must likewise fail the run rather than let the
 /// file's tests report a green pass against a helper that never loaded.
 #[test]

@@ -149,8 +149,17 @@ def evaluate_live_identity(policy: object,
     problems = [*getattr(policy, "problems", ()), *snapshot.problems]
     expected = tuple(getattr(policy, "bindings", ()))
     contexts = tuple(getattr(item.producer, "context", None) for item in expected)
-    if len(expected) != 31 or len(set(contexts)) != 31 or "Base-controlled trust policy" in contexts:
-        problems.append("live identity policy must contain the exact 31 active bindings")
+    count = len(expected)
+    valid_state = (
+        count in {31, 32}
+        and len(set(contexts)) == count
+        and (
+            (count == 31 and "Base-controlled trust policy" not in contexts)
+            or (count == 32 and contexts[-1:] == ("Base-controlled trust policy",))
+        )
+    )
+    if not valid_state:
+        problems.append("live identity policy must contain exact 31 or activated 32 bindings")
     if problems:
         return LiveIdentityEvaluation(problems=tuple(problems))
     by_path = {item.path: item for item in snapshot.workflows}

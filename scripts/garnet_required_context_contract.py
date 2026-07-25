@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 
-SCHEMA = "garnet.required-context-producers/v1"
+SCHEMA = "garnet.required-context-producers/v2"
 INVENTORY_PATH = ".github/rulesets/required-context-producers.json"
 RULESET_PATH = ".github/rulesets/garnet-main.json"
 TARGET_BRANCH = "main"
@@ -23,11 +23,24 @@ PREACTIVATION_REQUIRED_COUNT = 31
 PREACTIVATION_PRODUCER_IDENTITY_SHA256 = (
     "899944d4f0344e4b53cdd3cb37b1da26061f5eaab5d49d8482f8157b1ed51aaa"
 )
+PREACTIVATION_PRODUCER_SEMANTIC_SHA256 = (
+    "5b5c36f13fa28ea4841aa771319633031fb1a2af4c329ffe46fed20766d55bba"
+)
+ACTIVATED_PRODUCER_IDENTITY_SHA256 = (
+    "505abd5474941cf5f0aa460d4474418ba93cb21b3e0faed809c1e31157e866de"
+)
+ACTIVATED_PRODUCER_SEMANTIC_SHA256 = (
+    "ddf0076fec55e3f8dca5981cfcadc6202ad7a0470c8b8e8b2e3e0f889d431386"
+)
 BASE_CONTROLLED_CONTEXT = "Base-controlled trust policy"
+BASE_CONTROLLED_SEMANTIC_SHA256 = (
+    "618a3bf5b61a8083baf936c33e0deec0e20b0c07692b943ff42129d496acf355"
+)
 FILE_ATTRIBUTE_REPARSE_POINT = 0x400
 ID_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*$")
 WORKFLOW_RE = re.compile(r"^\.github/workflows/[a-z0-9_.-]+\.(?:yml|yaml)$")
 MATRIX_VALUE_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
+SEMANTIC_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
 
 @dataclass(frozen=True)
@@ -37,6 +50,7 @@ class Producer:
     event: str
     job: str
     matrix: tuple[str, str] | None = None
+    semantic_sha256: str = ""
 
 
 BASE_CONTROLLED_PRODUCER = Producer(
@@ -44,6 +58,8 @@ BASE_CONTROLLED_PRODUCER = Producer(
     ".github/workflows/base-controlled-trust.yml",
     "pull_request_target",
     "policy",
+    None,
+    BASE_CONTROLLED_SEMANTIC_SHA256,
 )
 
 
@@ -68,6 +84,7 @@ class ProducerBinding:
     event: object
     occurrence: object
     dependency_contexts: tuple[str, ...]
+    observed_semantic_sha256: str
 
 
 @dataclass(frozen=True)
@@ -249,7 +266,7 @@ def load_inventory(path: Path) -> ProducerInventory:
         )
     producers: list[Producer] = []
     seen: set[str] = set()
-    base_keys = {"context", "workflow", "event", "job"}
+    base_keys = {"context", "workflow", "event", "job", "semantic_sha256"}
     for index, row in enumerate(rows):
         if not isinstance(row, dict) or set(row) not in (base_keys, base_keys | {"matrix"}):
             problems.append(f"producers[{index}] keys are not exact")
@@ -276,6 +293,13 @@ def load_inventory(path: Path) -> ProducerInventory:
             )
         if not ID_RE.fullmatch(job):
             problems.append(f"producers[{index}] job id is not canonical")
+        semantic_sha256 = row.get("semantic_sha256")
+        if (
+            not isinstance(semantic_sha256, str)
+            or not SEMANTIC_SHA256_RE.fullmatch(semantic_sha256)
+        ):
+            problems.append(f"producers[{index}] semantic_sha256 is not exact lowercase hex")
+            semantic_sha256 = ""
         matrix: tuple[str, str] | None = None
         if "matrix" in row:
             value = row["matrix"]
@@ -294,7 +318,9 @@ def load_inventory(path: Path) -> ProducerInventory:
                     problems.append(f"producers[{index}] matrix binding is invalid")
                 else:
                     matrix = (axis, member)
-        producers.append(Producer(context, workflow, event, job, matrix))
+        producers.append(
+            Producer(context, workflow, event, job, matrix, semantic_sha256)
+        )
     if optional - seen:
         problems.append("optional_contexts names contexts absent from producers")
     return ProducerInventory(producers, optional, branch, problems)
@@ -326,6 +352,18 @@ def preactivation_ruleset_problems(
     ).hexdigest()
     if identity_sha256 != PREACTIVATION_PRODUCER_IDENTITY_SHA256:
         problems.append("pre-activation baseline context identity is not exact")
+    semantic_identity = [
+        (item.context, item.semantic_sha256)
+        for item in inventory.producers
+        if item.context not in inventory.optional_contexts
+    ]
+    semantic_sha256 = hashlib.sha256(
+        json.dumps(
+            semantic_identity, ensure_ascii=False, separators=(",", ":")
+        ).encode("utf-8")
+    ).hexdigest()
+    if semantic_sha256 != PREACTIVATION_PRODUCER_SEMANTIC_SHA256:
+        problems.append("pre-activation producer semantic fingerprints are not exact")
     if len(active) != PREACTIVATION_REQUIRED_COUNT:
         problems.append("pre-activation inventory must contain 31 active contexts")
     if len(ledger.contexts) != PREACTIVATION_REQUIRED_COUNT:
@@ -335,6 +373,66 @@ def preactivation_ruleset_problems(
     if ledger.contexts != active:
         problems.append("ruleset ordered contexts do not match active inventory")
     return tuple(problems)
+
+
+def _activation_state(
+    inventory: ProducerInventory,
+    ledger: RequiredCheckLedger,
+    label: str,
+) -> tuple[int | None, list[str]]:
+    problems = [
+        *(f"{label}: {item}" for item in inventory.problems),
+        *(f"{label}: {item}" for item in ledger.problems),
+    ]
+    if inventory.target_branch != TARGET_BRANCH:
+        problems.append(f"{label}: target branch is not {TARGET_BRANCH}")
+    contexts = tuple(item.context for item in inventory.producers)
+    if len(contexts) != PREACTIVATION_REQUIRED_COUNT + 1:
+        problems.append(f"{label}: producer inventory must contain exactly 32 contexts")
+    if not contexts or contexts[-1:] != (BASE_CONTROLLED_CONTEXT,):
+        problems.append(f"{label}: Base-controlled context must be the final producer")
+    if inventory.optional_contexts == {BASE_CONTROLLED_CONTEXT}:
+        state = PREACTIVATION_REQUIRED_COUNT
+        expected = contexts[:-1]
+    elif not inventory.optional_contexts:
+        state = PREACTIVATION_REQUIRED_COUNT + 1
+        expected = contexts
+    else:
+        state = None
+        expected = ()
+        problems.append(
+            f"{label}: optional contexts must be exactly the preactivation base context or empty"
+        )
+    if ledger.contexts != expected:
+        problems.append(f"{label}: ruleset ordered contexts do not match activation state")
+    return (None if problems else state), problems
+
+
+def activation_transition_problems(
+    base_inventory: ProducerInventory,
+    base_ledger: RequiredCheckLedger,
+    candidate_inventory: ProducerInventory,
+    candidate_ledger: RequiredCheckLedger,
+) -> tuple[str, ...]:
+    """Allow only 31→31, 31→32, or 32→32 from trusted old-base policy."""
+    base_state, problems = _activation_state(base_inventory, base_ledger, "base")
+    candidate_state, candidate_problems = _activation_state(
+        candidate_inventory, candidate_ledger, "candidate"
+    )
+    problems.extend(candidate_problems)
+    if base_state == PREACTIVATION_REQUIRED_COUNT:
+        problems.extend(preactivation_ruleset_problems(base_inventory, base_ledger))
+    if base_inventory.producers != candidate_inventory.producers:
+        problems.append("candidate producer inventory differs from trusted base inventory")
+    if base_state == PREACTIVATION_REQUIRED_COUNT + 1 and candidate_state == PREACTIVATION_REQUIRED_COUNT:
+        problems.append("32 to 31 governance downgrade is forbidden")
+    elif (base_state, candidate_state) not in {
+        (PREACTIVATION_REQUIRED_COUNT, PREACTIVATION_REQUIRED_COUNT),
+        (PREACTIVATION_REQUIRED_COUNT, PREACTIVATION_REQUIRED_COUNT + 1),
+        (PREACTIVATION_REQUIRED_COUNT + 1, PREACTIVATION_REQUIRED_COUNT + 1),
+    }:
+        problems.append("governance activation transition is not permitted")
+    return tuple(dict.fromkeys(problems))
 
 
 def _matrix_binding(occurrence: object) -> tuple[str, str] | None:
@@ -381,6 +479,62 @@ def _dependency_jobs(workflow: object, job: object, problems: list[str]) -> tupl
     for raw in job.needs:
         visit(raw.value)
     return tuple(ordered)
+
+
+def _canonical_yaml_value(node: object) -> object:
+    """Return style-independent canonical data from the immutable workflow AST."""
+    if hasattr(node, "value") and hasattr(node, "style"):
+        return {"scalar": node.value}
+    items = getattr(node, "items", None)
+    if not isinstance(items, tuple):
+        raise ValueError("workflow semantic node is not an immutable YAML value")
+    if all(
+        isinstance(item, tuple)
+        and len(item) == 2
+        and isinstance(item[0], str)
+        for item in items
+    ):
+        return {
+            "mapping": {
+                key: _canonical_yaml_value(value) for key, value in items
+            }
+        }
+    return {"sequence": [_canonical_yaml_value(item) for item in items]}
+
+
+def producer_semantic_sha256(workflow: object, occurrence: object) -> str:
+    """Fingerprint one producer's global policy, transitive jobs, and matrix member."""
+    root = getattr(getattr(workflow, "source", None), "root", None)
+    root_items = getattr(root, "items", ())
+    if not isinstance(root_items, tuple):
+        raise ValueError("workflow root is unavailable for semantic fingerprint")
+    global_policy = {
+        key: _canonical_yaml_value(value)
+        for key, value in root_items
+        if key != "jobs"
+    }
+    problems: list[str] = []
+    dependencies = _dependency_jobs(workflow, occurrence.job, problems)
+    if problems:
+        raise ValueError("; ".join(problems))
+    binding = _matrix_binding(occurrence)
+    body = {
+        "schema": "garnet.required-context-producer-semantics/v1",
+        "workflow": global_policy,
+        "jobs": [
+            {
+                "job_id": job.job_id,
+                "definition": _canonical_yaml_value(job.source),
+            }
+            for job in (*dependencies, occurrence.job)
+        ],
+        "matrix_binding": list(binding) if binding is not None else None,
+    }
+    return hashlib.sha256(
+        json.dumps(
+            body, ensure_ascii=False, separators=(",", ":"), sort_keys=True
+        ).encode("utf-8")
+    ).hexdigest()
 
 
 def evaluate_producer_availability(
@@ -438,6 +592,19 @@ def evaluate_producer_availability(
         if job.continue_on_error is not None and job.continue_on_error.value != "false":
             problems.append(f"{producer.workflow}:{producer.job} enables soft failure")
         dependencies = _dependency_jobs(workflow, job, problems)
+        try:
+            observed_semantic_sha256 = producer_semantic_sha256(
+                workflow, occurrence
+            )
+        except (AttributeError, TypeError, ValueError) as exc:
+            problems.append(
+                f"{producer.workflow}:{producer.job} semantic fingerprint failed: {exc}"
+            )
+            observed_semantic_sha256 = ""
+        if observed_semantic_sha256 != producer.semantic_sha256:
+            problems.append(
+                f"{producer.workflow}:{producer.job} semantic fingerprint mismatch"
+            )
         dependency_contexts = tuple(
             item.context for dependency in dependencies
             for item in workflow.contexts if item.job is dependency
@@ -455,7 +622,14 @@ def evaluate_producer_availability(
                 problems.append(f"{producer.workflow}:{producer.job} has optional dependency {context!r}")
         matched.append((producer, workflow, occurrence))
         if event is not None:
-            binding = ProducerBinding(producer, workflow, event, occurrence, dependency_contexts)
+            binding = ProducerBinding(
+                producer,
+                workflow,
+                event,
+                occurrence,
+                dependency_contexts,
+                observed_semantic_sha256,
+            )
             (prepared if optional else bindings).append(binding)
 
     checked_jobs: set[tuple[str, str]] = set()

@@ -359,6 +359,12 @@ class GitHubGovernanceTransport:
                 if total is not None and (total < prospective
                         or (following is not None) != (prospective < total)): _fail("pagination")
                 if not current and (pages > 1 or following is not None): _fail("pagination")
+                if (
+                    len(current) == COLLECTION_PAGE_SIZE
+                    and following is None
+                    and total is None
+                ):
+                    _fail("pagination")
                 if target_ids:
                     if len(target_ids) != 1: _fail("pagination")
                     target_id = next(iter(target_ids))
@@ -382,6 +388,17 @@ class GitHubGovernanceTransport:
             if self._token in url:
                 _fail("invalid-path")
             response = self._read(url)
+            if not isinstance(response.value, dict):
+                _fail("object-shape")
+            return ObjectResult(response.value, (), response.byte_count)
+        except _Failure as failure:
+            return ObjectResult(problems=(failure.problem,))
+    def get_repository(self) -> ObjectResult:
+        """Read the bound repository object without inventing an empty endpoint."""
+        try:
+            if not self._configuration_valid:
+                _fail("invalid-configuration")
+            response = self._read(f"{API_ORIGIN}/repos/{self._repo}")
             if not isinstance(response.value, dict):
                 _fail("object-shape")
             return ObjectResult(response.value, (), response.byte_count)

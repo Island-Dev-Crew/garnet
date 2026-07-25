@@ -32,10 +32,12 @@ jobs:
     name: Generate single signing key for cross-OS build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c
+        with:
+          toolchain: stable
       - name: Cargo cache
-        uses: actions/cache@v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25
         with:
           path: |
             ~/.cargo/registry
@@ -47,7 +49,7 @@ jobs:
       - name: Generate keypair
         run: ./target/release/garnet keygen det.key
       - name: Upload key artifact (CI-internal only — never used outside this workflow)
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
           name: s9-determinism-key
           path: det.key
@@ -63,10 +65,12 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c
+        with:
+          toolchain: stable
       - name: Cargo cache
-        uses: actions/cache@v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25
         with:
           path: |
             ~/.cargo/registry
@@ -76,7 +80,7 @@ jobs:
       - name: Build garnet
         run: cargo build -p garnet-cli --release --locked
       - name: Download signing key
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: s9-determinism-key
       - name: Deterministic + signed build
@@ -86,7 +90,7 @@ jobs:
         run: |
           shasum -a 256 examples/det_fixture_01.garnet.manifest.json | tee manifest-hash-${{ matrix.os }}.txt
       - name: Upload per-OS manifest hash
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
           name: determinism-hash-${{ matrix.os }}
           path: manifest-hash-${{ matrix.os }}.txt
@@ -97,7 +101,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           path: hashes
       - name: Diff hashes

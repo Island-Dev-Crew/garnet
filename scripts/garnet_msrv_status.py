@@ -52,7 +52,7 @@ STUDIO_CI_COMMAND = (
 INSTALL_COMMAND = "rustup toolchain install 1.95.0 --profile minimal"
 REPORTER_TEST_COMMAND = "python3 -I scripts/test_garnet_msrv_status.py"
 REPORTER_GATE_COMMAND = "python3 -I scripts/garnet_msrv_status.py --gate"
-STABLE_ACTION = "dtolnay/rust-toolchain@stable"
+STABLE_ACTION = "dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c"
 LINUX_STEP_CONDITION = "runner.os == 'Linux'"
 AGENT_ANCHOR = 'Cargo `rust-version = "1.95"` is the single workspace MSRV'
 YAML_KEY_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*$")
@@ -622,6 +622,25 @@ def _active_step(
     return False
 
 
+def _active_stable_toolchain_step(
+    workflow: WorkflowFileProjection | None,
+    job: WorkflowJobProjection | None,
+) -> bool:
+    if not _protected_scope_is_clean(workflow, job):
+        return False
+    assert job is not None
+    for step in job.steps:
+        if step.fields.get("uses") != STABLE_ACTION:
+            continue
+        if set(step.fields) - {"name", "uses", "with"}:
+            continue
+        if step.fields.get("with") != "":
+            continue
+        if step.mappings == {"with": {"toolchain": "stable"}}:
+            return True
+    return False
+
+
 def _job_is_linux_matrix(
     workflow: WorkflowFileProjection | None,
     job: WorkflowJobProjection | None,
@@ -735,21 +754,9 @@ def read_status(root: Path = ROOT) -> MsrvStatus:
 
     stable_tracking = (
         _job_is_linux_matrix(ci_workflow, test_job)
-        and _active_step(
-            ci_workflow,
-            test_job,
-            key="uses",
-            value=STABLE_ACTION,
-            condition=None,
-        )
+        and _active_stable_toolchain_step(ci_workflow, test_job)
         and _job_is_windows(studio_workflow, studio_job)
-        and _active_step(
-            studio_workflow,
-            studio_job,
-            key="uses",
-            value=STABLE_ACTION,
-            condition=None,
-        )
+        and _active_stable_toolchain_step(studio_workflow, studio_job)
     )
     if not stable_tracking:
         findings.append(

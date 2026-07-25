@@ -15,6 +15,15 @@ This folder owns Garnet's normative language and architecture specifications: gr
 
 Update this contract when a new normative spec area is added or an existing one changes ownership. If a project-management handoff captures a durable language rule, promote it into this folder instead of leaving it only in `F_Project_Management/`.
 
+`GARNET_TRUST_KERNEL_ROLLING_REVIEW.md` is a procedural governance contract as
+well as a normative policy. Its v2 gate must fail closed on incomplete Git
+enumeration and accept trust-kernel review only from a canonical, exact-path,
+content-bound W_TRUST record whose GitHub review and author identities are
+authenticated through the explicit bounded transport. Preserve the two honest
+states: premerge records bind `reviewed_head` without inventing a landed
+commit; registered postmerge markers prove squash-landed content from upstream
+main's first-parent history without requiring pre-squash ancestry.
+
 ## Agent Documentation Runtime Contracts
 
 `GARNET_Agent_Documentation_Runtime_Contracts.md` records the Space-Agent-inspired design note that repo-local markdown contracts are procedural memory. Treat it as a design bridge: tooling may implement it before the grammar does.
