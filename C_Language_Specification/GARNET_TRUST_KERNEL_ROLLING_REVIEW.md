@@ -132,6 +132,10 @@ an edit-then-revert and a merge-only trust resolution are RED even when endpoint
 content returns to the reviewed bytes. A premerge record must not claim a
 `merged_commit`.
 
+Branch-currency merge commits created by **Update branch** are forbidden on
+trust-kernel pull requests. Rolling review v2 rejects non-linear reviewed
+lineage; the lawful cure is always a linear successor based on current main.
+
 ## Change digest
 
 For each trust entry sorted by path, the SHA-256 stream is framed as:
