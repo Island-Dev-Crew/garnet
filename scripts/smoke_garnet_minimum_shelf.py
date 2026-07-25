@@ -30,9 +30,9 @@ REVIEWED_TREE_PATH_COUNT = 1527
 # Replaced after all Verdict-04-authorized product paths are staged. This
 # reporter path is itself excluded, so the final constant is not self-referential.
 EXPECTED_PRODUCT_CONTENT_SHA256 = (
-    "810f256bcf9304999975120224419216422996ff3b804d1a9a8836d5bcc4c339"
+    "2f8c9ad860bd9c6dbd1e005b0c82af0288dd3a736bb416a3978708c12e6fa1fd"
 )
-EXPECTED_PRODUCT_PATH_COUNT = 1529
+EXPECTED_PRODUCT_PATH_COUNT = 1571
 MAX_JSON_BYTES = 64 * 1024
 MAX_HEX_BYTES = 4 * 1024 * 1024
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -48,7 +48,7 @@ sys.modules[_CONTENT_SPEC.name] = content_provenance
 _CONTENT_SPEC.loader.exec_module(content_provenance)
 
 EXPECTED_FILE_SHA256 = {
-    ".gitattributes": "cb75c76ea88a8a18b990a1ce323ed26c3c03849c40fe08c847886e865fc42bc8",
+    ".gitattributes": "b8b22a96534aa11b02d5d72e5baf2a6cc5dc9481ea5ad85a5441728ffa8d2e5f",
     "examples/minimum-shelf-flagship/SHELF_PACKAGE.json": "dc12370de087c8beeb8885b4d51d4e37b8b02b8d7af90a3957bcb7c1e111b618",
     "examples/minimum-shelf-flagship/tool.garnet": "25ebd3dc02c8ab7d17e343c867e6becda9918c84a567f56f5b14ba4aba08a967",
     "examples/minimum-shelf-flagship/tool.seal.json": "526ac0f63f8ac487f6c38fd947defe1b80e1c3c14d80e3cfb38f5a66355b9cbd",
