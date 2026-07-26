@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Adversarial tests for exact required-context producer availability."""
 from __future__ import annotations
-import importlib.util, sys, unittest
+import copy, importlib.util, sys, unittest
 from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
@@ -58,12 +58,18 @@ def snapshot(*items: tuple[str, str]) -> object:
 def projection(workflow: str = WORKFLOW, *extra: tuple[str, str]) -> object:
     return schema.project_snapshot(snapshot(("checks", workflow), *extra))
 
-def inventory() -> object:
+def inventory(projected: object | None = None) -> object:
+    projected = projected or projection()
+    semantic = {
+        item.context: contract.producer_semantic_sha256(workflow, item)
+        for workflow in projected.workflows
+        for item in workflow.contexts
+    }
     rows = [
-        contract.Producer("Static check", ".github/workflows/checks.yml", "pull_request", "static"),
-        contract.Producer("Matrix (ubuntu-latest)", ".github/workflows/checks.yml", "pull_request", "matrix", ("os", "ubuntu-latest")),
-        contract.Producer("Matrix (macos-latest)", ".github/workflows/checks.yml", "pull_request", "matrix", ("os", "macos-latest")),
-        contract.Producer("Base-controlled trust policy", ".github/workflows/base-controlled-trust.yml", "pull_request_target", "policy"),
+        contract.Producer("Static check", ".github/workflows/checks.yml", "pull_request", "static", None, semantic["Static check"]),
+        contract.Producer("Matrix (ubuntu-latest)", ".github/workflows/checks.yml", "pull_request", "matrix", ("os", "ubuntu-latest"), semantic["Matrix (ubuntu-latest)"]),
+        contract.Producer("Matrix (macos-latest)", ".github/workflows/checks.yml", "pull_request", "matrix", ("os", "macos-latest"), semantic["Matrix (macos-latest)"]),
+        contract.Producer("Base-controlled trust policy", ".github/workflows/base-controlled-trust.yml", "pull_request_target", "policy", None, "0" * 64),
     ]
     return contract.ProducerInventory(rows, {"Base-controlled trust policy"}, "main", [])
 
@@ -94,8 +100,11 @@ class RequiredContextEvaluatorTests(unittest.TestCase):
         result = self.checked_policy(declared, ledger, projected)
         self.assertEqual(result.problems, ())
         self.assertEqual(len(result.bindings), 31)
-        self.assertEqual([item.context for item in result.inactive_optional],
-                         ["Base-controlled trust policy"])
+        self.assertEqual(
+            [item.producer.context for item in result.prepared_optional],
+            ["Base-controlled trust policy"],
+        )
+        self.assertEqual(result.inactive_optional, ())
         compare = next(item for item in result.bindings
                        if item.producer.context == "Cross-OS determinism comparison")
         self.assertEqual(compare.dependency_contexts,
@@ -119,6 +128,59 @@ class RequiredContextEvaluatorTests(unittest.TestCase):
             tuple(item for item in ledger.contexts if item != removed), ()
         )
         self.assertProblem(self.checked_policy(declared, shrunk, projected), "31 active")
+
+    def test_activation_transition_allows_only_monotonic_31_to_32(self) -> None:
+        base_inventory, base_ledger, _ = self.current_policy_inputs()
+        candidate_inventory = copy.deepcopy(base_inventory)
+        candidate_ledger = contract.RequiredCheckLedger(base_ledger.contexts, ())
+        self.assertEqual(
+            contract.activation_transition_problems(
+                base_inventory,
+                base_ledger,
+                candidate_inventory,
+                candidate_ledger,
+            ),
+            (),
+        )
+
+        candidate_inventory.optional_contexts.clear()
+        candidate_ledger = contract.RequiredCheckLedger(
+            (*base_ledger.contexts, contract.BASE_CONTROLLED_CONTEXT), ()
+        )
+        self.assertEqual(
+            contract.activation_transition_problems(
+                base_inventory,
+                base_ledger,
+                candidate_inventory,
+                candidate_ledger,
+            ),
+            (),
+        )
+        self.assertEqual(
+            contract.activation_transition_problems(
+                candidate_inventory,
+                candidate_ledger,
+                copy.deepcopy(candidate_inventory),
+                candidate_ledger,
+            ),
+            (),
+        )
+
+        downgrade = copy.deepcopy(base_inventory)
+        problems = contract.activation_transition_problems(
+            candidate_inventory,
+            candidate_ledger,
+            downgrade,
+            base_ledger,
+        )
+        self.assertTrue(any("32 to 31" in item for item in problems), problems)
+
+        drift = copy.deepcopy(candidate_inventory)
+        drift.producers[0] = replace(drift.producers[0], semantic_sha256="0" * 64)
+        problems = contract.activation_transition_problems(
+            base_inventory, base_ledger, drift, candidate_ledger
+        )
+        self.assertTrue(any("producer inventory" in item for item in problems), problems)
 
     def test_preactivation_pins_base_identity_and_ordered_ledger(self) -> None:
         declared, ledger, projected = self.current_policy_inputs()
@@ -156,6 +218,15 @@ class RequiredContextEvaluatorTests(unittest.TestCase):
             any("baseline context identity" in item for item in problems), problems
         )
 
+        declared, ledger, _ = self.current_policy_inputs()
+        declared.producers[0] = replace(
+            declared.producers[0], semantic_sha256="0" * 64
+        )
+        problems = contract.preactivation_ruleset_problems(declared, ledger)
+        self.assertTrue(
+            any("semantic fingerprints" in item for item in problems), problems
+        )
+
     def test_evaluation_preserves_order_and_never_reopens_paths(self) -> None:
         frozen = projection()
         with patch("builtins.open", side_effect=AssertionError("path reopened")), \
@@ -174,7 +245,7 @@ on:
 jobs:
   copy:
     name: Static check
-    if: "false"
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - run: echo rogue
@@ -196,7 +267,8 @@ jobs:
 
     def test_only_unfiltered_or_exact_main_pr_events_are_available(self) -> None:
         exact = WORKFLOW.replace("  pull_request:\n    branches: [main]", "  pull_request: {}")
-        self.assertEqual(self.evaluate(projection(exact)).problems, ())
+        projected = projection(exact)
+        self.assertEqual(self.evaluate(projected, inventory(projected)).problems, ())
         unsafe = (
             "    paths: ['src/**']", "    paths-ignore: [docs/**]",
             "    branches-ignore: [develop]", "    types: [closed]",
@@ -231,7 +303,26 @@ jobs:
     steps:
       - run: echo policy
 """
-        result = self.evaluate(projection(WORKFLOW, ("base-controlled-trust", future)))
+        projected = projection(WORKFLOW, ("base-controlled-trust", future))
+        declared = inventory()
+        occurrence = next(
+            item
+            for workflow in projected.workflows
+            for item in workflow.contexts
+            if item.context == "Base-controlled trust policy"
+        )
+        workflow = next(
+            item for item in projected.workflows if occurrence in item.contexts
+        )
+        index = next(
+            i for i, item in enumerate(declared.producers)
+            if item.context == "Base-controlled trust policy"
+        )
+        declared.producers[index] = replace(
+            declared.producers[index],
+            semantic_sha256=contract.producer_semantic_sha256(workflow, occurrence),
+        )
+        result = self.evaluate(projected, declared)
         self.assertEqual(result.problems, ())
         self.assertEqual(len(result.bindings), 3)
         self.assertEqual(result.prepared_optional[0].producer.context,
@@ -253,6 +344,18 @@ jobs:
         self.assertProblem(self.evaluate(declared=declared), "inventory red")
         broken = schema.WorkflowProjection(problems=("projection red",))
         self.assertProblem(self.evaluate(broken), "projection red")
+
+    def test_semantic_fingerprint_changes_with_meaningful_job_behavior(self) -> None:
+        original = projection().workflows[0]
+        changed_projection = projection(WORKFLOW.replace("echo static", "echo changed", 1))
+        changed = changed_projection.workflows[0]
+        self.assertNotEqual(
+            contract.producer_semantic_sha256(original, original.contexts[0]),
+            contract.producer_semantic_sha256(changed, changed.contexts[0]),
+        )
+        self.assertProblem(
+            self.evaluate(changed_projection), "semantic fingerprint mismatch"
+        )
 
 if __name__ == "__main__":
     unittest.main()

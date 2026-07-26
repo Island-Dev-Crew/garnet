@@ -16,10 +16,9 @@
 //!   S14 will harmonize this when the VM grows its own load_source.
 //! - Qualified-path resolution (`local_lib::hello()`) is NOT in S12;
 //!   only `use local_lib::*` plus an unqualified call is honored.
-//! - Vendor parse / read errors are surfaced on stderr but do not abort
-//!   the run; main may still resolve. EXCEPTION (S114 acceptance, cond. #5):
-//!   an authority trap while loading a vendored dep fails closed — the run
-//!   aborts with a non-zero exit rather than continuing to main.
+//! - Manifest, vendor traversal/read, vendor parse, and authority failures are
+//!   setup failures. They abort with a non-zero exit before user `main` runs
+//!   (S114 acceptance, cond. #5; Lane 1 fail-soft repair).
 //! - Lockfile BLAKE3 hashes are NOT verified at run time (separate
 //!   `garnet verify-deps` slice).
 //! - Two deps declaring the same top-level symbol shadow last-wins.
@@ -27,6 +26,7 @@
 //!   so it cannot shadow the user's entry point.
 
 use super::{cache_file_label, record, surface_prior};
+use crate::bound_source::{read_bound_source, BoundSource};
 use crate::read_file;
 use garnet_interp::Interpreter;
 use garnet_vm::{compile_source, run_source_with_options, CompileSummary, RunOptions};
@@ -167,15 +167,31 @@ fn run_interpreter_inner(file_label: &str, src: &str, path: &Path, started: Inst
         }
     };
     let mut interp = Interpreter::new();
-    if let Some(project_root) = find_project_root_for(path) {
-        if let Err(trap) = preload_dependencies(&mut interp, &project_root) {
-            eprintln!("{trap}");
+    let project_root = match find_project_root_for(path) {
+        Ok(root) => root,
+        Err(message) => {
+            eprintln!("{message}");
             record(
                 "run",
                 file_label,
                 src,
                 "runtime_err",
-                Some("dep_preload_authority".to_string()),
+                Some("dep_preload_setup".to_string()),
+                started,
+                1,
+            );
+            return 1;
+        }
+    };
+    if let Some(project_root) = project_root {
+        if let Err(message) = preload_dependencies(&mut interp, &project_root) {
+            eprintln!("{message}");
+            record(
+                "run",
+                file_label,
+                src,
+                "runtime_err",
+                Some("dep_preload_setup".to_string()),
                 started,
                 1,
             );
@@ -226,20 +242,36 @@ fn run_interpreter_inner(file_label: &str, src: &str, path: &Path, started: Inst
 /// Walk upward from `file`'s parent looking for `Garnet.toml`. Returns
 /// `None` for bare-file runs outside any project so `garnet run /tmp/...`
 /// keeps working.
-fn find_project_root_for(file: &Path) -> Option<PathBuf> {
-    let mut cur = file
+fn find_project_root_for(file: &Path) -> Result<Option<PathBuf>, String> {
+    let canonical = file
         .canonicalize()
-        .ok()
-        .as_deref()
-        .and_then(Path::parent)
+        .map_err(|e| format!("garnet run: could not resolve {}: {e}", file.display()))?;
+    let mut cur = canonical
+        .parent()
         .map(Path::to_path_buf)
-        .or_else(|| file.parent().map(Path::to_path_buf))?;
+        .ok_or_else(|| format!("garnet run: {} has no parent directory", file.display()))?;
     loop {
-        if cur.join("Garnet.toml").exists() {
-            return Some(cur);
+        let manifest = cur.join("Garnet.toml");
+        match std::fs::symlink_metadata(&manifest) {
+            Ok(metadata) => {
+                if !metadata.file_type().is_file() {
+                    return Err(format!(
+                        "garnet run: project manifest {} is not a regular file",
+                        manifest.display()
+                    ));
+                }
+                return Ok(Some(cur));
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) => {
+                return Err(format!(
+                    "garnet run: could not inspect project manifest {}: {e}",
+                    manifest.display()
+                ));
+            }
         }
         if !cur.pop() {
-            return None;
+            return Ok(None);
         }
     }
 }
@@ -258,86 +290,115 @@ fn is_authority_trap(e: &garnet_interp::RuntimeError) -> bool {
 /// declared vendor directory, and load every `.garnet` source into the
 /// interpreter's global environment before the user source.
 ///
-/// Fail-closed on authority (S114 acceptance, condition #5): if loading a
-/// vendored dep triggers a capability trap, the run aborts with the trap as a
-/// setup failure (`Err`). Benign parse / read / missing-vendor errors are still
-/// surfaced on stderr but do not abort — a noisy dep should not stop a working
-/// program, but a dep reaching for undeclared OS authority must.
+/// Fail-closed on every dependency setup failure (S114 acceptance, condition
+/// #5): malformed/unreadable manifests, missing or unwalkable vendor trees,
+/// unreadable source, parse/load errors, and capability traps all abort before
+/// user `main`. A green run therefore attests that every declared dependency
+/// was enumerated and loaded successfully.
 fn preload_dependencies(interp: &mut Interpreter, project_root: &Path) -> Result<(), String> {
-    let deps = match crate::cmd::add::read_dependency_table(project_root) {
-        Ok(d) => d,
-        Err(e) => {
-            eprintln!("garnet run: could not read Garnet.toml: {e}");
-            return Ok(());
-        }
-    };
+    let deps = crate::cmd::add::read_dependency_table(project_root)
+        .map_err(|e| format!("garnet run: could not read Garnet.toml: {e}"))?;
     for dep in deps {
-        let vendor_root = project_root.join(&dep.vendor_rel);
-        if !vendor_root.exists() {
-            eprintln!(
-                "garnet run: dep {}: vendor path {} not found; skipping",
-                dep.name,
-                vendor_root.display()
-            );
-            continue;
-        }
-        let mut files: Vec<PathBuf> = Vec::new();
-        if let Err(e) = collect_garnet_files(&vendor_root, &mut files) {
-            eprintln!(
+        let vendor_root = validate_vendor_root(project_root, &dep)?;
+        let mut sources: Vec<BoundSource> = Vec::new();
+        collect_garnet_sources(&vendor_root, &mut sources).map_err(|e| {
+            format!(
                 "garnet run: dep {}: could not walk vendor {}: {e}",
                 dep.name,
                 vendor_root.display()
-            );
-            continue;
-        }
-        files.sort();
-        for file in files {
-            let src = match std::fs::read_to_string(&file) {
-                Ok(s) => s,
-                Err(e) => {
-                    eprintln!(
-                        "garnet run: dep {}: could not read {}: {e}",
-                        dep.name,
-                        file.display()
-                    );
-                    continue;
-                }
-            };
+            )
+        })?;
+        sources.sort_by(|left, right| left.path.cmp(&right.path));
+        for source in sources {
             // Strip a top-level `def main` so a vendored library does not
             // shadow the user's entry point. Crude but predictable; a
             // future slice can do this in the AST.
-            let safe_src = strip_top_level_main(&src);
+            let safe_src = strip_top_level_main(&source.text);
             if let Err(e) = interp.load_source(&safe_src) {
-                if is_authority_trap(&e) {
-                    // Fail-closed: a vendored dep reached for undeclared OS
-                    // authority at load time. Do not continue to main.
-                    return Err(format!(
-                        "garnet run: dep {}: authority error in {}: {e}",
-                        dep.name,
-                        file.display()
-                    ));
-                }
-                eprintln!(
-                    "garnet run: dep {}: parse error in {}: {e}",
+                let kind = if is_authority_trap(&e) {
+                    "authority error"
+                } else {
+                    "load error"
+                };
+                return Err(format!(
+                    "garnet run: dep {}: {kind} in {}: {e}",
                     dep.name,
-                    file.display()
-                );
+                    source.path.display()
+                ));
             }
         }
     }
     Ok(())
 }
 
-fn collect_garnet_files(dir: &Path, out: &mut Vec<PathBuf>) -> std::io::Result<()> {
+/// Validate each canonical vendor-path component before traversal. Checking
+/// only the final path with `symlink_metadata` is insufficient because an
+/// ancestor such as `.garnet` can be a symlink/junction to an external tree;
+/// metadata for the final child then looks like an ordinary directory. The
+/// canonical containment check is a second fence for platform-specific reparse
+/// points that may still report as directories.
+fn validate_vendor_root(
+    project_root: &Path,
+    dep: &crate::cmd::add::DependencyEntry,
+) -> Result<PathBuf, String> {
+    let garnet_root = project_root.join(".garnet");
+    let vendor_parent = garnet_root.join("vendor");
+    let vendor_root = project_root.join(&dep.vendor_rel);
+    for path in [&garnet_root, &vendor_parent, &vendor_root] {
+        let metadata = std::fs::symlink_metadata(path).map_err(|e| {
+            format!(
+                "garnet run: dep {}: could not inspect vendor path component {}: {e}",
+                dep.name,
+                path.display()
+            )
+        })?;
+        if metadata.file_type().is_symlink() || !metadata.file_type().is_dir() {
+            return Err(format!(
+                "garnet run: dep {}: vendor path component {} is not a real directory",
+                dep.name,
+                path.display()
+            ));
+        }
+    }
+    let canonical_vendor = vendor_root.canonicalize().map_err(|e| {
+        format!(
+            "garnet run: dep {}: could not resolve vendor path {}: {e}",
+            dep.name,
+            vendor_root.display()
+        )
+    })?;
+    if !canonical_vendor.starts_with(project_root) {
+        return Err(format!(
+            "garnet run: dep {}: vendor path {} escapes project root {}",
+            dep.name,
+            canonical_vendor.display(),
+            project_root.display()
+        ));
+    }
+    Ok(vendor_root)
+}
+
+fn collect_garnet_sources(dir: &Path, out: &mut Vec<BoundSource>) -> std::io::Result<()> {
     for entry in std::fs::read_dir(dir)? {
         let entry = entry?;
         let path = entry.path();
         let file_type = entry.file_type()?;
+        let is_garnet = path.extension().and_then(|s| s.to_str()) == Some("garnet");
+        if is_garnet && !file_type.is_file() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("{} is not a regular Garnet source file", path.display()),
+            ));
+        }
         if file_type.is_dir() {
-            collect_garnet_files(&path, out)?;
-        } else if file_type.is_file() && path.extension().and_then(|s| s.to_str()) == Some("garnet")
-        {
-            out.push(path);
+            collect_garnet_sources(&path, out)?;
+        } else if file_type.is_file() && is_garnet {
+            out.push(read_bound_source(&path)?);
+        } else if !file_type.is_file() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("{} has unsupported file type", path.display()),
+            ));
         }
     }
     Ok(())

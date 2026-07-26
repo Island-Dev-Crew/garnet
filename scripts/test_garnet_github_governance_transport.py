@@ -49,6 +49,16 @@ class ObjectTransportTests(unittest.TestCase):
         self.assertGreater(timeout, 0)
         for public_value in (request.full_url, repr(request), repr(result), repr(client)):
             self.assertNotIn(TOKEN, public_value)
+    def test_authenticated_repository_request_is_exact_and_secret_safe(self) -> None:
+        client, opener = self.client(response({"id": 7, "full_name": REPO}))
+        result = client.get_repository()
+        self.assertEqual(
+            (result.value, result.problems),
+            ({"id": 7, "full_name": REPO}, ()),
+        )
+        request, _ = opener.requests[0]
+        self.assertEqual(request.full_url, BASE)
+        self.assertNotIn(TOKEN, repr(result))
     def test_token_in_caller_path_or_query_is_rejected_before_open(self) -> None:
         for path in (f"actions/runs/{TOKEN}", f"actions/runs/7?ref={TOKEN}"):
             with self.subTest(path=path):
@@ -200,6 +210,12 @@ class CollectionTransportTests(unittest.TestCase):
         self.assertTrue(all(problem.code in transport.ALLOWED_PROBLEM_CODES
                             for problem in result.problems))
         self.assertNotIn(TOKEN, repr(result))
+
+    def test_full_terminal_page_without_link_is_ambiguous_and_red(self) -> None:
+        client, _ = self.client(response([{"id": index} for index in range(100)]))
+        result = client.get_collection("pulls/77/reviews")
+        self.assert_closed(result)
+        self.assertEqual(tuple(problem.code for problem in result.problems), ("pagination",))
     def test_canonical_page_one_collects_complete_named_chain_and_keeps_duplicate_ids(self) -> None:
         page_two = self.link(2, query="per_page=100&page=2&branch=main")
         first = self.link(1)

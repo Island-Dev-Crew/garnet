@@ -56,7 +56,7 @@ class WorkflowYamlPolicyTests(unittest.TestCase):
         self.assertEqual(sys.flags.isolated, 1)
         self.assertEqual(policy.YAML_ORIGIN.name, "__init__.py")
         live = policy.workflow_documents(PATH.parents[1])
-        self.assertEqual((live.problems, len(live.documents)), ((), 11))
+        self.assertEqual((live.problems, len(live.documents)), ((), 12))
         result = policy.workflow_documents(self.root)
         self.assertEqual(result.problems, ())
         document = result.documents[0]

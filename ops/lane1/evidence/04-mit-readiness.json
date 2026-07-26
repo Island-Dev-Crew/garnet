@@ -1,0 +1,1087 @@
+{
+  "source": "/private/tmp/garnet-l1-governance-activation-20260717",
+  "overall_status": "active-partial",
+  "completion_percent": 93.1,
+  "current_truth": [
+    "tracked implementation plan is complete",
+    "goal remains active",
+    "100% tracked slices is not full MIT/productization completion",
+    "S1 LSP source is tracked separately from full editor dogfood completion"
+  ],
+  "lanes": [
+    {
+      "id": "tracked_implementation_plan",
+      "label": "Tracked implementation plan",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/garnet_readiness_status.py` reports 87/87 slices.",
+      "blocked_by": [],
+      "deferred": [],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "agentic_dogfood_matrix",
+      "label": "Agentic dogfood matrix",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/run_agentic_dogfood_matrix.py --copy-to-desktop --strict` covers the current advanced source-checkout domains with Desktop evidence.",
+      "blocked_by": [],
+      "deferred": [
+        "Use future slices to add domains when product surfaces expand."
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "converter_truth",
+      "label": "Converter adoption truth",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/garnet_converter_status.py` separates Rust/Ruby/Python/Go active lanes from planned language and LLM-assist lanes.",
+      "blocked_by": [],
+      "deferred": [
+        "New deterministic frontends require separate tested slices.",
+        "LLM assist requires a secure advisory implementation before activation."
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "macos_studio_dmg",
+      "label": "macOS Studio DMG",
+      "status": "active-partial",
+      "completion_percent": 75.0,
+      "evidence": "Garnet Studio DMG build, mounted-copy smoke, packaged PWA smoke, and agentic matrix evidence are active in Desktop dogfood bundles.",
+      "blocked_by": [
+        "No valid local Developer ID Application identity",
+        "No notarization profile"
+      ],
+      "deferred": [
+        "Clean-machine Gatekeeper install evidence"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "developer_id_notarization",
+      "label": "Developer ID notarization",
+      "status": "blocked",
+      "completion_percent": 0.0,
+      "evidence": "`scripts/preflight_garnet_studio_notarization.sh --copy-to-desktop` records the current blockers without claiming notarization; `scripts/garnet_studio_notarization_status.py` summarizes that bundle for agents and PR/site evidence.",
+      "blocked_by": [
+        "APPLE_DEV_ID_APP",
+        "APPLE_NOTARY_PROFILE",
+        "valid Developer ID Application certificate",
+        "stapled DMG ticket"
+      ],
+      "deferred": [
+        "Signed + notarized macOS distribution"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "windows_linux_distribution",
+      "label": "Windows/Linux distribution",
+      "status": "active-partial",
+      "completion_percent": 71.0,
+      "evidence": "`scripts/garnet_windows_linux_studio_status.py` now reports the Tauri v2 shell scaffold in `apps/garnet-studio`, minimal webview permissions, Windows local release build/smoke evidence, committed Windows/WSL Studio smoke evidence, committed WSL Linux `.deb` package-build/command-smoke evidence, committed WSL Linux `.deb` extract/command-smoke evidence, committed WSL Linux `.rpm` extract/command-smoke evidence, committed WSL Linux Xvfb runtime-start evidence, committed WSL Linux Xvfb virtual-display window-capture evidence, committed WSLg system package install/launch evidence, committed consolidated Linux/Tauri gate replay evidence, committed Studio domain-shell proof evidence, committed Release / Readiness shell proof evidence, v0.5 readiness reporter parity actions, a repo-owned Domain Proof Matrix for the canonical MVP plus agentic examples, a Windows clean-VM installer proof contract, native ARM64 Debian CLI/seccomp/Studio proof, and open signing, Windows ARM64, broader Linux distribution, and clean-machine package gates.",
+      "blocked_by": [
+        "clean Windows VM guest identity",
+        "unsigned NSIS installer artifact digest",
+        "installer run log from inside the guest",
+        "installed Studio --studio-smoke JSON",
+        "installed app launch screenshot",
+        "Run the unsigned NSIS installer in a clean Windows VM for installer/runtime launch evidence",
+        "Provide signing credentials only when ready to verify signed MSI claims"
+      ],
+      "deferred": [
+        "Windows clean-machine NSIS install and CLI smoke evidence",
+        "signed Linux distribution, x86_64 Linux breadth, broader distro/package coverage, and production Linux release evidence",
+        "Active converter end-to-end screenshots from the shell",
+        "Advisory bundle/review/handoff evidence walkthrough without source inclusion",
+        "Release / Readiness panel screenshot from the live Windows GUI shell",
+        "Unsigned-to-signed Windows MSI/AuthentiCode plan after VM smoke",
+        "Website/status copy sync after target smoke evidence"
+      ],
+      "evidence_class": "local"
+    },
+    {
+      "id": "windows_wsl_studio_smoke",
+      "label": "Windows/WSL Studio smoke proof (S117 increment)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_studio_windows_wsl.py --record` records manifest-backed Windows Tauri `--studio-smoke` evidence plus a WSL command-contract replay. Committed Windows Studio smoke bundle: `proofs/windows/studio/windows-studio-smoke-20260603-152023/garnet-studio-windows-wsl-smoke.json`. Committed WSL command-contract portability bundle: `proofs/linux/execution/studio/wsl-studio-command-contract-20260603-152109/garnet-studio-windows-wsl-smoke.json`. The WSL row is execution/portability evidence only, not Linux seccomp, OS-sandbox enforcement, Wasmtime fuel, Linux desktop GUI, or native Linux package proof.",
+      "blocked_by": [],
+      "deferred": [
+        "WSL is execution/portability only, not Linux seccomp or OS-sandbox enforcement",
+        "Linux desktop GUI launch and native Linux package proof remain open",
+        "Signed MSI, winget, Windows ARM64, production, and v1.0 remain unclaimed"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "linux_wsl_studio_deb_package",
+      "label": "Linux WSL Studio DEB package proof (S117 increment)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_studio_linux_wsl_deb.py --record` records a WSL-driven Tauri Linux `.deb` build, `dpkg-deb` inspection, and non-GUI `--studio-smoke` command evidence. WSL Linux Tauri .deb package build and non-GUI studio-smoke verified at `/private/tmp/garnet-l1-governance-activation-20260717/proofs/linux/execution/studio-package/linux-wsl-deb-package-20260603-161219/garnet-studio-linux-wsl-deb.json` (target/release/bundle/deb/Garnet Studio_0.1.0_amd64.deb, sha256 cfb91f972ce6f6531329751d52fc653a565e537c892869c523ee92036c62c727).",
+      "blocked_by": [],
+      "deferred": [
+        "not Linux desktop GUI launch proof",
+        "not Linux seccomp or OS-sandbox enforcement",
+        "not clean Linux install proof",
+        "not signed, production, or v1.0 readiness"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "linux_wsl_studio_deb_install",
+      "label": "Linux WSL Studio DEB install/extract proof (S117 increment)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_studio_linux_wsl_deb_install.py --record` records a WSL-driven Tauri Linux `.deb` build, `dpkg-deb --extract`, and extracted-binary non-GUI `--studio-smoke` command evidence. WSL Linux Tauri .deb extract and extracted-binary non-GUI studio-smoke verified at `/private/tmp/garnet-l1-governance-activation-20260717/proofs/linux/execution/studio-package-install/linux-wsl-deb-install-20260603-1200/garnet-studio-linux-wsl-deb-install.json` (target/release/bundle/deb/Garnet Studio_0.1.0_amd64.deb, package sha256 96fde7fdc3f9b4a8632d98d5e815ef54d4e86fb49cd6ad60e8661e84b3e1b33f, extracted binary target/linux-wsl-deb-install-stage-20260603-170305/usr/bin/garnet-studio).",
+      "blocked_by": [],
+      "deferred": [
+        "not Linux desktop GUI launch proof",
+        "not Linux seccomp or OS-sandbox enforcement",
+        "not clean Linux install proof",
+        "not privileged system package install proof",
+        "not signed, production, or v1.0 readiness"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "linux_wsl_studio_rpm_package",
+      "label": "Linux WSL Studio RPM package proof (S117 increment)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_studio_linux_wsl_rpm.py --record` records a WSL-driven Tauri Linux `.rpm` build, RPM metadata/content inspection, payload extraction, and extracted-binary non-GUI `--studio-smoke` command evidence. WSL Linux Tauri .rpm package extract and extracted-binary non-GUI studio-smoke verified at `/private/tmp/garnet-l1-governance-activation-20260717/proofs/linux/execution/studio-rpm-package/linux-wsl-rpm-package-20260603-181113/garnet-studio-linux-wsl-rpm.json` (target/release/bundle/rpm/Garnet Studio-0.1.0-1.x86_64.rpm, package sha256 2bcab818f9e038cf76a676dec28bd96c84ab68568e7bcf5440979198841d5ad6, extracted binary target/linux-wsl-rpm-stage-20260603-181113/usr/bin/garnet-studio).",
+      "blocked_by": [],
+      "deferred": [
+        "not Linux desktop GUI launch proof",
+        "not Linux seccomp or OS-sandbox enforcement",
+        "not clean Linux install proof",
+        "not privileged system package install proof",
+        "not signed, production, or v1.0 readiness"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "linux_wsl_studio_xvfb_runtime",
+      "label": "Linux WSL Studio Xvfb runtime-start proof (S117 increment)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_studio_linux_wsl_xvfb.py --record` records the extracted Linux Tauri Studio binary starting under WSL `xvfb-run` and staying alive until the harness timeout. WSL Xvfb runtime-start verified at `/private/tmp/garnet-l1-governance-activation-20260717/proofs/linux/execution/studio-xvfb-runtime/linux-wsl-xvfb-runtime-20260603-185759/garnet-studio-linux-wsl-xvfb-runtime.json` (source deb proof C:/Users/IslandDevCrew/.config/superpowers/worktrees/garnet/agent-win-codex-s106-windows-cross-os-proof-phase1/proofs/linux/execution/studio-package-install/linux-wsl-deb-install-20260603-1200/garnet-studio-linux-wsl-deb-install.json, extracted binary target/linux-wsl-deb-install-stage-20260603-170305/usr/bin/garnet-studio, timeout exit 124).",
+      "blocked_by": [],
+      "deferred": [
+        "not Linux desktop GUI launch proof",
+        "not Linux seccomp or OS-sandbox enforcement",
+        "not clean Linux install proof",
+        "not privileged system package install proof",
+        "not signed, production, or v1.0 readiness"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "linux_wsl_studio_xvfb_window_capture",
+      "label": "Linux WSL Studio Xvfb virtual-display window capture proof (S117 increment)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_studio_linux_wsl_xvfb_window.py --record` records the extracted Linux Tauri Studio binary under WSL `xvfb-run`, an X11 window tree containing Garnet Studio, and a virtual-display screenshot artifact. WSL Xvfb virtual-display window capture verified at `/private/tmp/garnet-l1-governance-activation-20260717/proofs/linux/execution/studio-xvfb-window-capture/linux-wsl-xvfb-window-capture-20260603-194237/garnet-studio-linux-wsl-xvfb-window-capture.json` (screenshot capture/screenshot.png, 340 bytes).",
+      "blocked_by": [],
+      "deferred": [
+        "not Linux desktop GUI launch proof",
+        "not Linux seccomp or OS-sandbox enforcement",
+        "not clean Linux install proof",
+        "not privileged system package install proof",
+        "not signed, production, or v1.0 readiness"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "linux_wsl_studio_wslg_system_install_launch",
+      "label": "Linux WSLg Studio system install/launch proof (S117 increment)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_studio_linux_wslg_install_launch.py --record` records a privileged WSL `.deb` system install, installed-binary `--studio-smoke`, and a WSLg/X11 window observation for the installed Linux Studio binary. WSLg system package install and installed-binary GUI launch verified at `/private/tmp/garnet-l1-governance-activation-20260717/proofs/linux/execution/studio-wslg-system-install/linux-wslg-system-install-20260603-205713/garnet-studio-linux-wslg-system-install-launch.json` (garnet-studio amd64, display :0, wayland wayland-0).",
+      "blocked_by": [],
+      "deferred": [
+        "not Linux desktop GUI proof outside WSLg",
+        "not Linux seccomp or OS-sandbox enforcement",
+        "not clean Linux install proof",
+        "not signed, production, or v1.0 readiness"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "windows_wsl_studio_domain_shell_proof",
+      "label": "Windows/WSL Studio domain-shell proof (S117 increment)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_studio_domain_shell.py --record` records the Studio binary's `--studio-domain-proof-smoke` path on Windows and WSL, exercising the Tauri command wrapper around the repo Domain Proof Matrix. Committed Windows Studio domain-shell proof: `proofs/windows/studio-domain-shell/win-20260603-220832/garnet-studio-domain-shell-proof.json`. Committed WSL Studio domain-shell portability proof: `proofs/linux/execution/studio-domain-shell/wsl-20260603-220935/garnet-studio-domain-shell-proof.json`. The WSL row is execution/portability evidence only, not Linux seccomp, OS-sandbox enforcement, clean/non-WSL Linux desktop GUI proof, production, or v1.0 readiness.",
+      "blocked_by": [],
+      "deferred": [
+        "WSL is execution/portability only, not Linux seccomp or OS-sandbox enforcement",
+        "not clean/non-WSL Linux desktop GUI proof",
+        "Signed MSI, winget, Windows ARM64, production, and v1.0 remain unclaimed"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "windows_wsl_studio_release_readiness_shell_proof",
+      "label": "Windows/WSL Studio Release / Readiness shell proof (S117 increment)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_studio_release_readiness_shell.py --record` records the Studio binary's `--studio-release-readiness-smoke` path on Windows and WSL, exercising the Tauri command wrappers behind the Release / Readiness status reporters. Committed Windows Studio Release / Readiness shell proof: `proofs/windows/studio-release-readiness-shell/win-20260603-230129/garnet-studio-release-readiness-shell-proof.json`. Committed WSL Studio Release / Readiness portability proof: `proofs/linux/execution/studio-release-readiness-shell/wsl-20260603-230237/garnet-studio-release-readiness-shell-proof.json`. The WSL row is execution/portability evidence only, not Linux seccomp, OS-sandbox enforcement, clean/non-WSL Linux desktop GUI proof, production, or v1.0 readiness.",
+      "blocked_by": [],
+      "deferred": [
+        "WSL is execution/portability only, not Linux seccomp or OS-sandbox enforcement",
+        "not clean/non-WSL Linux desktop GUI proof",
+        "Release / Readiness live GUI screenshot remains a separate visual proof if not captured in this bundle",
+        "Signed MSI, winget, Windows ARM64, production, and v1.0 remain unclaimed"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "linux_tauri_gate_replay",
+      "label": "Linux/Tauri gate replay proof (S117 consolidation)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_studio_linux_gate_replay.py --record` replays the current committed WSL/WSLg package, runtime, display, domain-shell, and release-shell gates from one manifest-backed bundle. Consolidated replay of all current Linux/Tauri gates verified at `/private/tmp/garnet-l1-governance-activation-20260717/proofs/linux/execution/studio-gate-replay/linux-gate-replay-20260603-235754/garnet-studio-linux-gate-replay.json` (8 gates).",
+      "blocked_by": [],
+      "deferred": [
+        "WSL/WSLg is execution/portability only, not Linux seccomp or OS-sandbox enforcement",
+        "not clean/non-WSL Linux desktop proof",
+        "Signed MSI, winget, Windows ARM64, production, and v1.0 remain unclaimed"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "linux_seccomp_apply",
+      "label": "Native Linux seccomp application",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "Recorded UTM Debian ARM64 proof applies the generated policy and traps a denied socket syscall.",
+      "blocked_by": [],
+      "deferred": [
+        "macOS/Windows OS-sandbox application remains unverified"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "native_debian_cli_install",
+      "label": "Native ARM64 Debian CLI install",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "Recorded native non-WSL Debian ARM64 proof installs the Garnet `.deb` as `/usr/bin/garnet`, runs clean CLI smoke, and verifies static plus runtime @caps traps from the installed binary.",
+      "blocked_by": [],
+      "deferred": [
+        "signed/universal Linux packaging remains unverified"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "native_linux_studio",
+      "label": "Native ARM64 Linux Studio",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "Recorded native non-WSL Debian ARM64 proof builds the Tauri Studio `.deb`, installs `garnet-studio`, passes `--studio-smoke`, and launches under Xvfb without claiming signing or production distribution.",
+      "blocked_by": [],
+      "deferred": [
+        "signed Linux distribution remains unverified",
+        "non-ARM64 Linux breadth remains unverified",
+        "broader distro/package coverage remains unverified",
+        "production distribution remains unverified"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "windows_linux_domain_proof_matrix",
+      "label": "Windows/Linux domain proof matrix",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_studio_domain_matrix.py --suite all` has a verified manifest-backed parse/check/run bundle for 20 current examples: 10 canonical MVP domains, signed hot-reload success, expected BLAKE3 mismatch rejection, five agent toolbelt programs, and three agentic design programs. Committed Windows bundle: `proofs/windows/domains/windows-domain-matrix-20260603-0855/garnet-studio-domain-matrix.json`. Committed WSL portability bundle: `proofs/linux/execution/domains/wsl-domain-matrix-20260603-0857/garnet-studio-domain-matrix.json`. The WSL row is execution/portability evidence only, not Linux seccomp or OS-sandbox enforcement.",
+      "blocked_by": [],
+      "deferred": [
+        "Studio screenshot evidence from Windows and WSL/Linux shells",
+        "Future native backend and package-format permutations"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "windows_wsl_ultrapunch_repro",
+      "label": "Windows/WSL ultrapunch reproduction (S110)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_ultrapunch_repro.py` records the S104 accept/reject loop as committed evidence: ACCEPT keeps the four trust artifacts and verifies the transparency-log chain; REJECT covers both diff-caps widening refusal and an over-depth enforced-kernel trap. Committed Windows ultrapunch bundle: `proofs/windows/ultrapunch/windows-ultrapunch-repro-20260603-0927/garnet-ultrapunch-repro.json`. Committed WSL portability-repro bundle: `proofs/linux/repro/wsl-ultrapunch-repro-20260603-0929/garnet-ultrapunch-repro.json`. The WSL row replays S104 accept/reject decisions as execution/portability evidence only, not Linux seccomp, OS-sandbox enforcement, or Wasmtime fuel proof.",
+      "blocked_by": [],
+      "deferred": [
+        "WSL is portability-repro only, not Linux seccomp or OS-sandbox enforcement",
+        "No Wasmtime fuel, production, or v1.0 claim",
+        "Cross-OS consolidation waits for S107-S109/S112 evidence"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "macos_domain_execution_proof",
+      "label": "Mac-Codex domain execution proof (S107)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_mac_domain_proofs.py` records the S105 domain proof set as committed macOS evidence: six domains, 15 commands, accept sealed with the four trust artifacts plus `decision.md`, and negative/report domains unsealed. Committed Mac S107 domain bundle: `proofs/mac/domains/mac-domain-proofs-20260604-064412/garnet-mac-domain-proofs.json`. It records all six S105 domains on macOS, with accept sealed and negative/report domains intentionally unsealed. This is the Mac row for S109 consolidation, not Windows/Linux completion.",
+      "blocked_by": [],
+      "deferred": [
+        "S109 cross-OS matrix waits for Windows/Mac/Linux row consolidation",
+        "No macOS OS-sandbox enforcement, Wasmtime fuel, production, or v1.0 claim",
+        "MCP tool-set domain is static report evidence, not MCP-host enforcement"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "macos_studio_ui_domain_proof",
+      "label": "Mac Studio UI domain proof (S110)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`apps/garnet-studio` exposes a Release / Readiness -> Mac Domain Proofs button that runs the S105 Mac proof recorder through the packaged Tauri UI. The committed bundle includes a window screenshot plus copied verified target evidence. Committed Mac Studio UI proof: `proofs/mac/studio-ui/mac-studio-ui-proof-20260604-070007/garnet-mac-studio-ui-proof.json`. Computer Use drove the packaged macOS Tauri app through Release / Readiness -> Mac Domain Proofs, captured a window screenshot, and copied a verified six-domain Mac proof bundle. The UI wrapper does not claim Windows/Linux ownership or production enforcement.",
+      "blocked_by": [],
+      "deferred": [
+        "The UI button wraps the six-domain recorder; it does not individually open each source file through a native file picker",
+        "No Windows/Linux ownership, OS sandbox enforcement, production, or v1.0 claim",
+        "MCP tool-set domain is static report evidence, not MCP-host enforcement"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "macos_cross_os_matrix_row",
+      "label": "Mac cross-OS trap matrix row (S109)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/smoke_garnet_mac_cross_os_matrix.py` records the Mac rows for the S109 trap matrix: max-depth, caps, and diff-caps-reject all pass against committed Windows/WSL baselines; OS-independent accept artifacts are byte-identical where required. Committed Mac S109 matrix row: `proofs/mac/matrix/mac-cross-os-matrix-20260604-201153/garnet-mac-cross-os-matrix.json`. It records the Mac rows for max-depth, caps, and diff-caps-reject, keeps OS-independent accept artifacts byte-identical against the Windows baseline, and remains a historical Mac-row bundle; full S109 completion is tracked by the separate cross-OS trap parity lane.",
+      "blocked_by": [],
+      "deferred": [
+        "This lane remains the Mac row; full S109 completion is tracked by `cross_os_trap_parity_matrix`",
+        "WSL is execution/portability only, not Linux seccomp or OS-sandbox enforcement",
+        "No macOS OS-sandbox enforcement, Wasmtime fuel, production, or v1.0 claim"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "cross_os_trap_parity_matrix",
+      "label": "Full cross-OS trap parity matrix (S109)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/garnet_cross_os_trap_parity_matrix.py --gate` checks the committed full S109 matrix across Windows, Mac, and Linux for max-depth, caps, and diff-caps-reject. Committed full S109 cross-OS trap parity matrix: `proofs/cross-os/matrix/cross-os-trap-parity-20260604-s109/garnet-cross-os-trap-parity-matrix.json`. It verifies committed Windows, Mac, and Linux rows for max-depth, caps, and diff-caps-reject; records a Linux UTM diff-caps rejection datapoint; keeps required OS-independent accept artifacts byte-identical; and excludes WSL portability from Linux enforcement.",
+      "blocked_by": [],
+      "deferred": [
+        "WSL remains execution/portability evidence and is excluded from Linux enforcement",
+        "Linux seccomp is Linux-only evidence, not Windows/macOS OS-sandbox enforcement",
+        "No Wasmtime fuel, production, release tag, S120, or v1.0 claim"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "web_pwa",
+      "label": "Web/PWA productization",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "Local service-worker, local PWA, browser offline, live Pages, and CI web/PWA smoke gates are active.",
+      "blocked_by": [],
+      "deferred": [
+        "Full browser IDE/workbench remains future product scope."
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "editor_lsp_adoption",
+      "label": "Editor/LSP adoption",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`garnet-lsp/` and `editors/vscode/` provide the verified S16 CST-precise LSP surface. `scripts/smoke_garnet_lsp_protocol.py` proves document/workspace symbols, CST-precise rename, rules-based quick-fix actions, and semantic tokens on top of the CST over stdio with 100% validation success. Desktop evidence records Cursor/VS Code diagnostics and release-backed VSIX execution on the `v0.5.0` tag.",
+      "blocked_by": [],
+      "deferred": [],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "editor_lsp_precision",
+      "label": "Editor/LSP precision (S16)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`garnet-lsp/` now consumes the canonical rowan `garnet-cst` token/span surface for rename and semantic tokens while preserving parser/check diagnostics. `scripts/smoke_garnet_lsp_precision.py` proves document symbols, workspace symbols, cross-file function rename, scoped parameter rename, three code actions, and the S16 semantic-token categories (`capability`, `attribute`, `parameter`) over stdio. `editors/vscode` exposes the three Garnet quick-fix commands and packages the version-synced `garnet-<version>-lsp-precision.vsix` local package.",
+      "blocked_by": [],
+      "deferred": [
+        "safe-mode precision",
+        "cross-package rename",
+        "per-project semantic-token themes",
+        "Marketplace/OpenVSX publication"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "mobile_distribution",
+      "label": "Mobile distribution",
+      "status": "planned",
+      "completion_percent": 0.0,
+      "evidence": "No iOS, Android, Expo, TestFlight, or app-store lane is implemented yet.",
+      "blocked_by": [
+        "product surface decision",
+        "mobile build/test pipeline"
+      ],
+      "deferred": [
+        "iOS",
+        "Android",
+        "Expo",
+        "TestFlight",
+        "Play Store"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "promo_video",
+      "label": "Promo video",
+      "status": "public-site-embedded",
+      "completion_percent": 95.0,
+      "evidence": "`scripts/garnet_promo_video_status.py` defines the 30-second promo contract, locks visual identity/source surfaces to repo evidence, adds a HyperFrames-compatible composition source, and records local rendered MP4/WebM evidence, automated visual QA evidence, a website export package, and public-site embedding while keeping human/aesthetic acceptance open.",
+      "blocked_by": [
+        "human/aesthetic acceptance review"
+      ],
+      "deferred": [
+        "human/aesthetic acceptance review"
+      ],
+      "evidence_class": "local"
+    },
+    {
+      "id": "llm_assist",
+      "label": "LLM assist",
+      "status": "active-partial",
+      "completion_percent": 40.0,
+      "evidence": "Garnet-aware assist contract, deterministic local context pack, planned-language assist-plan reporter, converter LLM feasibility gate, advisory-only provider option registry, Studio provider-options evidence action, provider-neutral advisory bundle, advisory review gate, and provider-neutral handoff packet are active, but no provider-backed assist lane or LLM conversion is active.",
+      "blocked_by": [
+        "secure advisory implementation",
+        "provider/runtime boundary",
+        "dogfood gate"
+      ],
+      "deferred": [
+        "safe-mode ownership candidates",
+        "memory declarations",
+        "CapCaps/capability boundaries",
+        "actor/orchestration mappings",
+        "migration risk inventory",
+        "lineage per emitted node",
+        "@sandbox default",
+        "migrate_todo evidence",
+        "garnet check",
+        "dogfood readiness bundle",
+        "human audit before unquarantine"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "official_packages_seed",
+      "label": "Official Layer-2 package seed (S18)",
+      "status": "local-registry-source-ready",
+      "completion_percent": 85.0,
+      "evidence": "`tools/garnet-lang-template/` provides the reusable Layer-2 package scaffold; `examples/garnet_lang_registry_seed/` contains local filesystem-registry v0.1.0 seeds for `http-client`, `llm`, `cli`, `test-property`, and `log`; `examples/mvp_18_all_official_packages/` plus `scripts/smoke_garnet_lang_packages_seed.py` vendors all five through the S13 registry stub and runs one primitive from each. This is local source proof, not external GitHub publication.",
+      "blocked_by": [],
+      "deferred": [
+        "`github.com/garnet-lang/` org creation or authority is a Jon/manual step",
+        "Five external `github.com/garnet-lang/*` repos still need publication and CI",
+        "Source-level `@stability(...)` on package functions waits on the parser annotation handoff",
+        "HTTP/LLM live transport remains out of the local-registry seed proof"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "compiler_agent_llm_tier",
+      "label": "Compiler-as-agent LLM tier (S19)",
+      "status": "feature-gated-source-ready",
+      "completion_percent": 85.0,
+      "evidence": "`garnet-suggest-llm/` provides the feature-gated S19 source tier: deterministic suggestions run first, provider-compatible Anthropic/OpenAI/Ollama clients use an explicit `LlmTransport` boundary, LLM findings are tagged `@stability(non-deterministic)`, and `.garnet-cache/llm-suggest-log.jsonl` records prompt hashes, model identity, raw response text, emitted suggestions, timestamp, and warnings. `scripts/check_determinism_no_llm.py` guards the determinism workflow from `--llm`; `benchmarks/paper_vi_exp3_compiler_as_agent/` ships the harness-only Paper VI Exp 3 scaffold with ten snapshots. This is not a shipped end-to-end CLI claim until the `garnet-cli` handoff wires `garnet check --suggest --llm`.",
+      "blocked_by": [],
+      "deferred": [
+        "`garnet-cli` integration for `garnet check --suggest --llm` is a read-only-crate handoff",
+        "Shared `garnet-lang/llm` package trait waits on S18 after S17 merges",
+        "Streaming, tool/function calling, vision, and provider-specific edge features are v0.8+",
+        "Running Paper VI Exp 3 to produce h3a/h3b/h3c results is v0.7.1"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "paper_vi_exp1_provider_gated_harness",
+      "label": "Paper VI Exp 1 LLM pass@1 harness (S94)",
+      "status": "provider-gated-harness",
+      "completion_percent": 100.0,
+      "evidence": "`benchmarks/paper_vi_exp1_llm_pass_at_1/` now contains the S94 provider-gated harness for the registered pass@1 task shape. `scripts/garnet_paper_vi_exp1_status.py --gate` proves 3 seed tasks, provider-free `pending-infra` rows, and fixture-only scoring (3/6 pass rows) without a network call. Real providers remain behind the explicit `--provider` / `--execute-provider` gate.",
+      "blocked_by": [],
+      "deferred": [
+        "Provider-backed pass@1 measurement requires credentials and reviewed execution",
+        "Full 500-task corpus remains pending infrastructure",
+        "Hidden-test scorer and statistical significance run remain future work",
+        "Fine-tuned model comparison remains unclaimed"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "paper_vi_exp3_5k_rerun_harness",
+      "label": "Paper VI Exp 3 5K-LOC rerun harness (S95)",
+      "status": "provider-gated-5k-harness",
+      "completion_percent": 100.0,
+      "evidence": "`benchmarks/paper_vi_exp3_compiler_as_agent/` now contains the S95 5K-LOC rerun harness. `scripts/garnet_paper_vi_exp3_5k_status.py --gate` generates 10 deterministic snapshots (minimum 5012 LOC, total 50120 LOC), writes 10 stateless and 10 history-aware provider-free rows, aggregates/analyzes them, and keeps h3a at `pending-provider-rerun` with no new 5K measurement claim.",
+      "blocked_by": [],
+      "deferred": [
+        "Provider-backed 5K runtime rows require credentials and reviewed execution",
+        "The recorded v4.0 h3a 6.5% partial stands until that rerun exists",
+        "h3b/h3c revalidation at 5K scale remains future measured-study work",
+        "Provider cost/budget approval remains out of scope for the committed gate"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "linear_effect_safe_mode_seed",
+      "label": "Linear/effect safe-mode seed (S96)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`garnet-check-v0.3/src/effects.rs` adds the S96 static linear/effect safe-mode seed. It reuses the CapCaps transitive surface and rejects non-entry safe helper functions that perform authority effects without any explicit ownership-qualified parameter boundary (`own`, `borrow`, `ref`, or `mut`). `scripts/garnet_linear_effect_status.py --gate` runs the focused checker proof.",
+      "blocked_by": [],
+      "deferred": [
+        "First static increment only: not whole-language linear typing",
+        "No VM/runtime capability enforcement is claimed",
+        "No OS sandbox enforcement is claimed",
+        "Method-call effect resolution remains limited by the current cap graph"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "provenance_seal_chain",
+      "label": "Provenance seal chain (S97)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`garnet seal --provenance-chain` validates the conventional `agent`, `model`, and `prompt_sha256` attestation keys, then emits a deterministic `provenance_chain` block bound to the current seal's source and subject digests. `scripts/garnet_provenance_seal_chain_status.py --gate` runs the focused proof.",
+      "blocked_by": [],
+      "deferred": [
+        "Self-declared provenance only: no independent model-run proof",
+        "No claim that the named agent actually produced the artifact",
+        "No proof that the declared tool list is complete",
+        "Supply-chain signing still depends on external cosign/Sigstore"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "capability_manifest_standard_seed",
+      "label": "Capability-manifest standard seed (S98)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`garnet caps --standard-profile` emits the S98 `capability-manifest/v1` draft/reference profile over the same declared capability surface used by S36-S38. `scripts/garnet_cap_manifest_standard_status.py --gate` checks the schema doc, RFC alignment, test vectors, and focused CLI proof.",
+      "blocked_by": [],
+      "deferred": [
+        "Draft/reference seed only: no OWASP/LF adoption is claimed",
+        "No multi-language ecosystem or conformance suite is claimed",
+        "Declared surface only: no proof of undeclared-authority absence",
+        "No VM/runtime capability enforcement is claimed"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "linux_cross_os_enforcement_proof",
+      "label": "Linux cross-OS enforcement proof (S108)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/garnet_linux_cross_os_enforcement_proof.py --gate` checks committed proof records for the S101 Stage V trap gate on Linux and the S46/S92 seccomp apply datapoint. S108 Linux enforcement proof verified at `proofs/linux/enforcement/utm-linux-enforcement-20260604-s108/garnet-linux-cross-os-enforcement-proof.json`. It records Stage-V max-depth/caps traps on Linux plus a deterministic Linux-only seccomp apply datapoint.",
+      "blocked_by": [],
+      "deferred": [
+        "not Windows/macOS OS-sandbox enforcement",
+        "not full S109 completion",
+        "No Wasmtime fuel, production, or v1.0 claim"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "windows_cross_os_enforcement_phase1",
+      "label": "Windows cross-OS enforcement proof (S106 Phase 1)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`scripts/garnet_windows_cross_os_enforcement_proof.py --gate` checks committed proof records for the S101 Stage V trap gate on Windows and a WSL execution/portability rerun. The Windows row records `@max_depth`, `@caps(env)`, `@caps(proc)`, `@caps(fs)`, `@caps(net)`, and the S92 program-entry `@caps(proc)` trap; the WSL row is labeled `execution/portability, not enforcement`.",
+      "blocked_by": [],
+      "deferred": [
+        "WSL is not Linux seccomp enforcement",
+        "WSL is not OS-sandbox enforcement",
+        "S103 ultrapunch accept/reject reproduction is Phase 2",
+        "S105 domain execution is Phase 2",
+        "Wasmtime fuel / @bounded runtime enforcement remains out of scope",
+        "memory/time/@mailbox runtime ceilings remain out of scope"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "broad_converter_frontends",
+      "label": "Broad converter frontends",
+      "status": "planned",
+      "completion_percent": 0.0,
+      "evidence": "Only Rust/Ruby/Python/Go deterministic frontends are active today.",
+      "blocked_by": [
+        "frontend implementation slices",
+        "corpus fixtures",
+        "lineage/sandbox/check gates"
+      ],
+      "deferred": [
+        "JavaScript",
+        "TypeScript",
+        "Swift",
+        "Java",
+        "C",
+        "C++",
+        "C#",
+        "Perl",
+        "Kotlin",
+        "Shell",
+        "SQL",
+        "Other"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "proof_empirics",
+      "label": "Proof and empirical validation",
+      "status": "active-partial",
+      "completion_percent": 45.0,
+      "evidence": "`scripts/garnet_proof_benchmark_status.py` inventories the current 4 Criterion benchmark harnesses, 1 fuzz harness, plus proof/study protocols, including the S2 VM parse/compile/execute harness, while reporting measurements, mechanized proof, and empirical study execution as unclaimed and long-running fuzz hours as pending.",
+      "blocked_by": [
+        "mechanized proof is not present",
+        "external user study data",
+        "fresh benchmark measurement run",
+        "nightly fuzz hours require GitHub Actions evidence after merge"
+      ],
+      "deferred": [
+        "formal RustBelt/Iris/Coq mechanization",
+        "benchmark measurement run",
+        "accumulated nightly fuzz hours",
+        "native backend proof",
+        "external participant study execution"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "determinism_ci_cross_machine",
+      "label": "Determinism CI cross-machine",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`.github/workflows/determinism.yml` builds `examples/det_fixture_01.garnet` with `garnet build --deterministic --sign <key>` on a matrix of ubuntu-latest and macos-latest runners; a single shared signing key is generated once and downloaded by each OS, so signatures are byte-identical when the source is. The compare job fails with `::error::` if the per-OS manifest SHA-256 diverges. Closes Paper VI Contribution 6 verification gap.",
+      "blocked_by": [],
+      "deferred": [
+        "Windows runner in the cross-OS matrix",
+        "Linux aarch64 in the cross-OS matrix",
+        "Multi-key rotation testing",
+        "Byte-for-byte binary determinism once a native backend exists"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "parser_fuzz_harness",
+      "label": "Parser fuzz harness (nightly)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`.github/workflows/fuzz-nightly.yml` runs `cargo +nightly fuzz run parse_input` for a 60-second PR smoke and \u2265 1 hour on a nightly schedule against the `garnet-parser-v0.3/fuzz/` cargo-fuzz sub-workspace. The `parse_input` target wraps every call in a strict `ParseBudget` (4096-byte source cap, 1024-token cap, 32-depth cap, 512-byte literal cap), so neither CPU nor memory can be unbounded. Seed corpus is populated from canonical `examples/*.garnet` files; crashes upload as artifacts for triage. Closes the S5 surface gap.",
+      "blocked_by": [],
+      "deferred": [
+        "Interpreter and checker fuzz targets",
+        "Differential fuzzing against the archived v0.2 parser",
+        "OSS-Fuzz upstream integration",
+        "Coverage-guided corpus minimization (currently raw seed only)"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "compiler_advisory_rules_based",
+      "label": "Compiler advisory mode (rules-based)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`garnet-check-v0.3/src/suggest.rs` ships a deterministic, rules-based suggestion engine with three patterns today (managed-fn-missing-caps, long-parameter-list, empty-function-body). `garnet-cli/src/cmd/check.rs` exposes `garnet check --suggest <file.garnet>`; output is prefixed with the literal `compiler suggested:` so downstream tooling can grep for advisories. `garnet-check-v0.3/tests/suggest_corpus.rs` proves at least three distinct rules fire across the committed corpus. Closes Paper VI Contribution 7 surface for the rules-based tier; the LLM tier remains pending-infra (separate provider boundary and budget).",
+      "blocked_by": [],
+      "deferred": [
+        "LLM-derived suggestions (pending Paper VI Exp 1 infrastructure)",
+        "Auto-apply / quick-fix wiring into LSP code-actions (meshes with S1)",
+        "Cross-module suggestions (current rules are intra-module only)",
+        "Configurable rule severity per project"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "signed_hot_reload_demo",
+      "label": "Signed hot-reload BLAKE3 demo",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`examples/mvp_11_signed_hotreload.garnet` and `examples/mvp_11_signed_hotreload_mismatch.garnet` are runnable managed-mode demonstrations of the BLAKE3 fingerprint check that drives the Rust-runtime `actor.reload_signed` path. Both call `crypto::blake3` on a payload and compare against an embedded expected hash; the success example prints `reloaded successfully` and exits 0, the mismatch example raises with the literal text `BLAKE3 fingerprint mismatch` and exits 1. Closes Paper VI Contribution 5 surface gap.",
+      "blocked_by": [],
+      "deferred": [
+        "Managed-mode `actor.reload_signed` syntax (the Rust runtime API is tested separately in `garnet-actor-runtime/tests/reload.rs`; exposing it to managed mode is a separate slice)",
+        "Real signed-bytes payload (the demo uses a text-shaped marker for readability; production payloads are arbitrary bytes)",
+        "Ed25519 signature verification of the payload (BLAKE3 fingerprint check is one of two layers; the cryptographic signature layer is validated only in the Rust runtime today)"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "actor_trust_report_bridge",
+      "label": "Actor OS-thread bridge (`trust-report`)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`garnet-cli/src/cmd/trust_report.rs` implements `garnet trust-report <file.garnet>` \u2014 a structural report that counts actor declarations and surfaces the per-function caps set, printing the literal line `actors: N / threads: N` per the S7 contract dogfood. `examples/agent_orchestrator_3thread.garnet` is the three-actor fixture; `garnet-cli/tests/trust_report.rs` asserts the dogfood block on every `cargo test --workspace`. The actor runtime in `garnet-actor-runtime/src/runtime.rs` already spawns one OS thread per actor (see runtime.rs header); S7 lands the CLI bridge that surfaces what the runtime does.",
+      "blocked_by": [],
+      "deferred": [
+        "Live-runtime instrumentation (current report is STRUCTURAL, counting actor declarations; it does not spawn the runtime or measure live thread counts)",
+        "Mailbox-size + Sendable-boundary audit beyond what `garnet check` already enforces",
+        "Transitive caps aggregation from `use` imports (resolves to stdlib today, not to vendored deps from S3)",
+        "Cross-actor message-graph visualization"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "garnet_add_manifest",
+      "label": "Garnet manifest + vendored deps (`garnet add`)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`garnet-cli/src/cmd/add.rs` implements `garnet add [--name <id>] <path>` to vendor a local Garnet directory into `.garnet/vendor/<name>/`, update `Garnet.toml`'s `[dependencies]` table, and write `Garnet.lock` with BLAKE3-per-file hashes. Lockfile output is deterministic (alpha-sorted deps, lex-sorted files, lowercase hex). Six inline unit tests cover the round-trip. Format documented in `C_Language_Specification/GARNET_MANIFEST_v0_1.md`.",
+      "blocked_by": [],
+      "deferred": [
+        "Remote sources (https://, git+ssh://, @scope/name registries)",
+        "Transitive dependency vendoring",
+        "SemVer matching (caret/tilde/equality beyond string compare)",
+        "Workspace mode (multi-crate projects)",
+        "`garnet verify-deps` lockfile-drift detector"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "pkg_resolver_v0_2",
+      "label": "Package-manager resolver (S12)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`garnet-cli/src/cmd/run.rs::preload_dependencies` reads `Garnet.toml`'s `[dependencies]` table via `garnet-cli/src/cmd/add.rs::read_dependency_table`, walks each declared vendor directory, and pre-loads every `.garnet` source into the interpreter's global environment before the user source is loaded. `Item::Use(_)` in the interpreter stays a no-op; the vendored symbols are already in scope by the time `use <dep>::*` is reached. `garnet-cli/tests/run_resolver.rs` covers the round trip end-to-end against a temp project with the same on-disk layout `garnet add` produces. Four inline unit tests in `cmd::run::tests` cover the `strip_top_level_main` guard that prevents a vendored dep's own `main` from shadowing the user's entry point. Closes the S3 deferred line on resolver.",
+      "blocked_by": [],
+      "deferred": [
+        "Qualified-path resolution (`local_lib::hello()` with the prefix in the call site)",
+        "Remote sources (https://, git+ssh://, @scope/name registries)",
+        "Transitive dependency vendoring",
+        "SemVer matching (caret/tilde/equality beyond string compare)",
+        "Workspace mode (multi-crate projects)",
+        "VM path pre-load (S14 will harmonize the `--vm` resolver)",
+        "Lockfile BLAKE3 verification at run time (`garnet verify-deps` slice)",
+        "Name-collision handling between deps (last-loaded wins today)",
+        "Module-scoped `use local_lib::Foo::bar` paths (only top-level items are pre-loaded today)"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "vm_function_call_lowering",
+      "label": "Bytecode VM v0.2 function-call lowering (S14)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`garnet-vm/src/vm.rs` executes native function calls on an explicit, heap-allocated call-frame stack (`Frame` + `run_frames`) instead of recursing in the host (Rust) language, so deep Garnet recursion no longer overflows the Rust stack. `garnet-vm/tests/function_call.rs` proves `countdown(200000)` and mutual recursion to depth 500 run to completion on the VM, plus VM/interpreter parity for mixed-arity and nested calls. The codec is version-bumped to `GARNVM02` with an explicit per-function arity field that the deserializer cross-checks. `garnet run --vm --dump-lowering` reports the native/fallback ratio (`lowered: N%`); `examples/mvp_function_call_demo.garnet` reports `lowered: 100%`. Documented in `C_Language_Specification/GARNET_BYTECODE_v0_2.md`.",
+      "blocked_by": [],
+      "deferred": [
+        "Tail-call optimization (each call still costs one heap frame)",
+        "Closures, captured environments, dynamic-receiver method dispatch (still fall back)",
+        "Pattern matching, try/rescue/ensure, struct/enum constructors (still fall back)",
+        "`and` / `or` short-circuit native lowering (Ruby-style operand-returning semantics need value-preserving conditional-jump + Dup opcodes)",
+        "VM-path vendored-dependency pre-load (the S12 resolver is `--interp` only)",
+        "Stable cross-version bytecode ABI (GARNVM02 is tightened, not frozen)",
+        "Production native-compiler proof"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "registry_stub_v0_1",
+      "label": "Registry stub v0.1 (S13)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`garnet-registry-stub/` is a filesystem-backed registry: an `index.json` (serde) maps `name -> version -> { path, BLAKE3-per-file }` over `<name>/<version>/` package directories. `garnet-registry-stub build|verify` generates and checks the index. `garnet add --registry <location> <name>@<version>` (in `garnet-cli/src/cmd/add.rs`) loads the index, resolves the version, verifies every file's BLAKE3 (refusing path-traversal outside the registry root), and vendors the package into `.garnet/vendor/<name>/`. Because the S12 resolver loads vendored deps at `garnet run` time, a registry-resolved `use <name>::*` resolves end-to-end (`examples/registry_stub_fixture/` + `garnet-cli/tests/registry_add.rs`, 3 integration tests + 6 stub-crate unit tests). Documented in `C_Language_Specification/GARNET_REGISTRY_v0_1.md`.",
+      "blocked_by": [],
+      "deferred": [
+        "HTTP(S) transport (filesystem / file:// only today)",
+        "Tarball packaging (packages are directories)",
+        "Authentication, accounts, publish/upload flow",
+        "Signature verification (the index `signature` field is reserved but unread; meshes with the notarization slice)",
+        "SemVer ranges (exact <name>@<version> only)",
+        "Multi-registry resolution (one registry per invocation)",
+        "Transitive dependency resolution from the registry"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "memory_eviction_benchmarks",
+      "label": "Memory eviction policy benchmarks",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`garnet-memory-v0.3/benches/eviction.rs` is a Criterion bench that exercises `MemoryPolicy::score` + `should_retain` per Mnemos kind (working/episodic/semantic/procedural) against a naive FIFO baseline; `scripts/garnet_memory_eviction_status.py` inventories per-kind coverage. Closes the S6 contract surface and half of Paper VI Contribution 3's production-allocator gap (this is policy-cost measurement, not production allocator).",
+      "blocked_by": [],
+      "deferred": [
+        "Fresh Criterion measurement run (`cargo bench -p garnet-memory --bench eviction`) \u2014 captured as Desktop evidence on a maintainer machine, not embedded in this lane",
+        "End-to-end store throughput benches under eviction (EpisodeStore, VectorIndex, etc.) \u2014 separate slice",
+        "Production allocator path \u2014 remains Tier 1 work in MEMORY_CORE_ROADMAP.md"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "formatter_idempotent_baseline",
+      "label": "Formatter idempotent baseline",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`garnet-cli/src/cmd/fmt.rs` normalizes trailing whitespace, CRLF/CR line endings, and final newline to a single LF, then re-parses to refuse any change that would break the source. `garnet-cli/tests/fmt_idempotency.rs` proves the canonical `examples/{mvp_,det_}*.garnet` corpus is byte-identical after two passes of `garnet fmt --stdout` and that three runs on the same input produce identical bytes. Satisfies the S4 contract goal (deterministic, idempotent source formatter).",
+      "blocked_by": [],
+      "deferred": [
+        "AST-driven semantic formatting (alignment, spacing rules, import sorting) \u2014 gates on a trivia-preserving CST in the parser",
+        "Comment-preserving round-trip (today the parser drops trivia)",
+        "Pretty-printer for malformed input recovery",
+        "Workspace-level `garnet fmt --workspace`"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "parser_cst_layer",
+      "label": "Trivia-preserving CST (S15)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "Trivia-preserving Concrete Syntax Tree (CST): the canonical rowan `garnet-cst` crate. `garnet-cst/tests/examples_roundtrip.rs` asserts 100% byte-identical reconstruction of all parser-crate and workspace examples; `garnet-cst/tests/token_view_parity.rs` proves the token view against the shared lexer (RB-4a retired the #221 legacy oracle in `cst.rs`/`cst_round_trip.rs`).",
+      "blocked_by": [],
+      "deferred": [
+        "incremental syntax parsing",
+        "error-recovery parsing"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "parser_cst_migration",
+      "label": "Rowan CST migration (S15, build-both-then-compare)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`garnet-cst/` is a rowan-backed, trivia-preserving CST built cold (direct recursive-descent over the token stream) for the v0.7 build-both-then-compare A/B. S15-Compare chose rowan as the canonical CST; #221's parser CST is retained temporarily as a legacy migration oracle. `parse_cst` round-trips byte-identically across the canonical examples corpus and a `proptest` over arbitrary UTF-8 (`tests/examples_roundtrip.rs`, `tests/roundtrip.rs`). `cst_to_ast` projects onto `garnet_parser::ast::Module` with span-normalized structural parity vs `parse_source` across the corpus (`tests/cst_to_ast_parity.rs`). The `parse_cst_vs_ast` Criterion bench measures the CST path at ~0.99x the AST path (well under the 1.5x gate). `garnet parse --mode cst` routes to this rowan parser, and `tokens.rs` preserves the #221 token/span ergonomics for LSP migration. Reproduce via the S15 dogfood block in `GARNET_v0_7_SLICE_DOGFOOD.md`.",
+      "blocked_by": [],
+      "deferred": [
+        "Error-recovery parsing is best-effort (round-trip always holds; structure may flatten on malformed input)",
+        "Incremental re-parsing",
+        "Rowan-backed LSP migration; #221's parser CST remains as a temporary legacy oracle until that migration is green",
+        "CST-first migration of interp/check/vm (v0.8; they stay on the AST path via `parse_source`, untouched by S15)"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "stdlib_layer_policy",
+      "label": "Stdlib layer policy + `@stability` (S17)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "`C_Language_Specification/GARNET_STDLIB_LAYER_POLICY.md` codifies the five-layer model + `@stability` semantics. `garnet-stdlib/src/registry.rs` tags every primitive with a Layer + Stability tier: 80 primitives (40 Layer-0 `core`, 40 Layer-1 `std`), 100.0% with an explicit tier. `garnet-check-v0.3/src/stability.rs` warns non-fatally at call sites into experimental/deprecated primitives (info for frozen); `@caps(env)` is a new known capability. `scripts/garnet_stdlib_layer_gate.py` enforces >= 50 primitives and >= 95% explicit `@stability` (gate: PASS). Reproduce via the S17 dogfood block in `F_Project_Management/GARNET_v0_7_SLICE_DOGFOOD.md`.",
+      "blocked_by": [],
+      "deferred": [
+        "Source-level `@stability(...)` on user-defined functions + `@uses(experimental)` opt-in + `@migration(...)` hints \u2014 pending the win-opus \u2192 mac-opus parser annotation handoff (primitive-stability enforcement ships now)",
+        "Error-level `@stability` enforcement (v0.7 is warning-level for backwards compat; error-level is v0.8)",
+        "Garnet-source execution of the new Layer-0/1 primitives via the interpreter (registry surface + Rust host impls + unit tests ship now; interpreter dispatch is v0.8, as garnet-interp is outside S17's ownership)",
+        "Layer-2 `@garnet-lang/*` packages (S18) and the `@caps(fs)` file-sink path of `std::log`"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "novel_composition_dogfood",
+      "label": "Novel-composition dogfood (S20)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "S20 fuses Paper-VI contributions into runnable novel programs: `novel_01` (capability-budget + memory-recall + agent pipeline \u2192 governance 16), `novel_02` (BLAKE3 signed provenance + pipeline + determinism \u2192 verified content-addressed lineage), `novel_03` (release-gate + capability-budget + provenance + memory quorum \u2192 APPROVED quorum 4). The same harness now also carries `novel_04` (S21 dispatched stdlib) and `novel_05` (S22 stdlib + Mnemos handles). `scripts/smoke_garnet_novel_compositions.py` (+ `test_garnet_novel_compositions.py`) proves all five `garnet check` / `garnet run` cases with deterministic asserted output; the composition story is in `C_Language_Specification/GARNET_NOVEL_COMPOSITIONS.md`. Complements the single-concern domain proof matrix (#232) without duplicating it.",
+      "blocked_by": [],
+      "deferred": [
+        "Compositions are modeled deterministically in managed mode; live runtime integration (actor mailboxes, Mnemos stores, Ed25519 signing) is tracked separately",
+        "These programs use the proven runnable subset + `crypto::blake3`; S21 (`interp_stdlib_dispatch`) makes the new Layer-0/1 prims runnable"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "interp_stdlib_dispatch",
+      "label": "Interpreter dispatch for S17 stdlib (S21)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "S21 closes the S17 deferred line \u2014 the Layer-0/1 stdlib primitives now EXECUTE from Garnet source. `garnet-interp-v0.3/src/eval.rs` resolves fully-qualified names first (backward-compatible), so prims bind under `core::math::sqrt` etc. without colliding with bare prelude builtins (`map`/`ok`). `stdlib_bridge.rs` dispatches core::math (6), core::cmp (4), core::iter map/filter/fold/take/drop/enumerate (6 \u2014 higher-order via call_value, first-class-function combinators from managed Garnet), and std::base64 (2). Verified live and via `examples/novel_04_dispatched_stdlib_pipeline.garnet` (deterministic run). `garnet-interp-v0.3/tests/mnemos_stdlib_combination.rs` composes the four Mnemos memory kinds with the stdlib (blake3 provenance + base64).",
+      "blocked_by": [],
+      "deferred": [
+        "S22 closes the remaining `std::json` / regex / uuid / env / process / log and `memory::` dispatch line in the separate `stdlib_memory_runtime_dispatch` lane",
+        "core::cmp / core::iter are Value-level bridges; the `garnet_stdlib` generics remain the tested Rust reference (dynamic Values can't be the stdlib's monomorphic `T`)"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "stdlib_memory_runtime_dispatch",
+      "label": "Stdlib + memory runtime dispatch completion (S22)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "S22 closes the S21-deferred runtime surface. `garnet-parser-v0.3` now accepts selected keywords as qualified path segments only, so official APIs such as `std::regex::match`, `std::process::spawn`, and `memory::working` are callable without making those words legal bare identifiers. `stdlib_bridge.rs` dispatches `std::json` (parse/get/set/stringify), `std::regex` (compile/match/find_all/replace), `std::uuid` (v4/v5/v7), `std::env` (get/set/vars), `std::process` (spawn/wait/exit_code with a managed Process handle), `std::log` (formatting), and `memory::working|episodic|semantic|procedural` constructors that return live Mnemos `MemoryStore` handles. `garnet-interp-v0.3/tests/stdlib_s22_dispatch.rs` proves JSON/regex/uuid/log/env/process/memory from Garnet source; `examples/novel_05_s22_stdlib_memory_pipeline.garnet` plus `scripts/smoke_garnet_novel_compositions.py` prove deterministic stdlib + Mnemos composition through the CLI.",
+      "blocked_by": [],
+      "deferred": [
+        "`std::env` and `std::process` are proven in Rust integration tests, not the deterministic novel example, because they mutate or launch host state",
+        "`std::process::spawn` still uses the v0.7 whitespace-delimited command-line contract from `garnet_stdlib`; richer argv handling is v0.8+",
+        "`std::log` remains formatting-only; file sinks that require `@caps(fs)` are v0.8+"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "process_runtime_completion",
+      "label": "std::process structured argv + output capture (S23)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "S23 closes the S22-deferred `std::process` argv line. `garnet-stdlib/src/process.rs` adds `spawn_args(program, [args])` (explicit argv \u2014 the program and each argument are passed to the OS literally, so an argument containing spaces is not re-split) and `output(program, [args])` (run-to-completion capturing stdout/stderr/exit-code as an `Output`), keeping `spawn`/`wait`/`exit_code` backward-compatible. `stdlib_bridge.rs` dispatches both under their qualified names; `output` returns a `{code, stdout, stderr}` map. `garnet-interp-v0.3/tests/stdlib_s23_dispatch.rs` proves stdout capture, exit-code reporting, and explicit-argv spawn from Garnet source; the stdlib unit tests prove (on POSIX) that a spaced argument survives as one argv element via the `printf \"%s\"` discriminator.",
+      "blocked_by": [],
+      "deferred": [
+        "Process stdout/stderr are host-dependent (line endings, locale); the deterministic proof asserts substring + exit-code, not byte-exact full output",
+        "Still synchronous managed-mode execution; no async/OS-thread or streaming-stdout claim",
+        "`std::log` file sinks requiring `@caps(fs)` remain the next deferred line (S24)"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "log_file_sink_runtime",
+      "label": "std::log file sink with @caps(fs) (S24)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "S24 closes the S22/S23-deferred `std::log` file-sink line. `garnet-stdlib/src/log.rs` adds `to_file(path, level, message)`, which formats the same `[LEVEL] message` line and appends it (create-if-missing) to a file, so it requires `@caps(fs)`; the formatting helpers are unchanged. `registry.rs` tags `std::log::to_file` Layer 1 / cap `fs` / experimental, and `stdlib_bridge.rs` dispatches it. `garnet-interp-v0.3/tests/stdlib_s24_dispatch.rs` writes two lines from a `@caps(fs)` Garnet `main` and reads them back via `read_file`, asserting ordered contents; the stdlib unit tests prove append-not-truncate and the IO error path.",
+      "blocked_by": [],
+      "deferred": [
+        "Line-append text sink only (create-if-missing); no log rotation, structured/JSON sinks, or async writers",
+        "Capability enforcement remains the checker's job; the registry tags `std::log::to_file` `@caps(fs)`"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "host_effect_composition",
+      "label": "Host-effect composition capstone (S25)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "S25 threads the S22-S24 runtime surfaces into one capability-checked pipeline. `garnet-interp-v0.3/tests/host_effect_composition.rs` runs a `@caps(proc, fs)` Garnet program that captures a host command's stdout (`std::process::output`, S23), appends a leveled line to a file (`std::log::to_file`, S24), keeps an episodic Mnemos trace of it (`memory::episodic`, S22), reads the sink back (`read_file`), and binds `crypto::blake3` provenance \u2014 asserting the composed token, recall count, file contents, exit code, and fingerprint. The deterministic, cross-platform `examples/novel_06_observability_provenance_pipeline.garnet` composes the side-effect-free subset (json + file-sink + episodic memory + blake3) and is in the novel-composition harness (now 6/6). Story: `C_Language_Specification/GARNET_NOVEL_COMPOSITIONS.md`.",
+      "blocked_by": [],
+      "deferred": [
+        "Process step in the deterministic novel example is omitted (host command + output are platform-variable); it is proven instead in the cfg-guarded integration test",
+        "Still synchronous managed-mode; no async actor/OS-thread runtime claim"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "core_result_dispatch",
+      "label": "core::result combinator dispatch (S26)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "S26 makes the registered `core::result` combinators runnable from Garnet source, continuing the S21/S22 registry-to-runtime arc. `stdlib_bridge.rs` dispatches `core::result::{ok,err,map,and_then,or_else,unwrap_or}` at the Value layer over `Result` Variants (Ok/Err) identical to the prelude builders; `map`/`and_then`/`or_else` are higher-order via `call_value`. Bound under their qualified names so `core::result::map` does not collide with the bare `map` (Map constructor) on the last-segment fallback. `garnet-interp-v0.3/tests/core_result_dispatch.rs` proves a railway-oriented pipeline from source (map over Ok, Err pass-through, and_then chain + short-circuit, or_else recovery, unwrap_or default \u2192 [10,7,6,8,0,5,99]); bridge unit tests cover each combinator plus the non-Result type error.",
+      "blocked_by": [],
+      "deferred": [
+        "`and_then`/`or_else` trust the callee to return a Result (dynamic typing); no static Result-shape check",
+        "Ergonomic method syntax (`result.map(..)`) is a later follow-on; S26 ships the qualified-function form"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "core_option_dispatch",
+      "label": "core::option combinator dispatch (S27)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "S27 makes the registered `core::option` combinators runnable from Garnet source (sibling of the S26 `core::result` work). `stdlib_bridge.rs` dispatches `core::option::{some,none,map,and_then,unwrap_or}` at the Value layer over `Option` Variants (Some/None) identical to the prelude builders; `map`/`and_then` are higher-order via `call_value`, bound qualified to avoid the bare-`map` collision. `garnet-interp-v0.3/tests/core_option_dispatch.rs` proves it from source (map over Some, None pass-through, and_then chain + short-circuit, unwrap_or default \u2192 [10,7,6,8,5,99]); bridge unit tests cover each combinator, the None constructor, and the non-Option type error.",
+      "blocked_by": [],
+      "deferred": [
+        "`and_then` trusts the callee to return an Option (dynamic typing); no static Option-shape check",
+        "Ergonomic method syntax (`option.map(..)`) is a later follow-on"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "core_iter_completion",
+      "label": "core::iter completion: zip/collect/chain (S28)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "S28 dispatches the last three registered `core::iter` combinators, so all 9 are now runnable. `stdlib_bridge.rs` adds `core::iter::zip` (pairs two arrays, stopping at the shorter), `core::iter::chain` (concatenates), and `core::iter::collect` (materializes a sequence \u2014 a `Range` is expanded to its integers, an Array passes through). `garnet-interp-v0.3/tests/core_iter_completion_dispatch.rs` proves them from source composed with the S21 higher-order `fold` (collect(1..4)+collect([10,20]) chained \u2192 fold-sum 36; zip stops at the shorter \u2192 [36,5,3,2,2]); bridge unit tests cover each plus the non-sequence type error.",
+      "blocked_by": [],
+      "deferred": [
+        "`collect` materializes a `Range` or passes an Array through \u2014 there is no other lazy sequence in managed mode to collect (eager map/filter already return arrays)"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "stability_error_enforcement",
+      "label": "@stability error-level enforcement, opt-in (S29)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "S29 ships the Layer Policy \u00a74 'error-level enforcement is v0.8' line as an opt-in. `garnet-check-v0.3` adds a FATAL `CheckError::StabilityError` variant (listed in `CheckReport::ok()`), and `stability.rs` promotes experimental/deprecated call sites from non-fatal advisories to that fatal error when `GARNET_STABILITY_ERRORS=1|true` is set (frozen stays informational; `stable` silent). Default is unchanged warning-level, so existing programs/CI stay green. Proven end-to-end through the CLI with no garnet-cli change (it already exits on `report.ok()`): `garnet check examples/novel_04_*.garnet` warns + exits 0, while `GARNET_STABILITY_ERRORS=1 garnet check \u2026` prints 'stability error:' and exits 1. Unit tests cover the policy (experimental/deprecated\u2192error, frozen\u2192info, default\u2192warning) and the `ok()` fatal classification.",
+      "blocked_by": [],
+      "deferred": [
+        "Error mode is process-global via env var; per-call-site or per-source `@uses(experimental)` opt-out still needs the parser annotation variants (win-opus \u2192 mac-opus handoff), unchanged from S17"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "functional_core_composition",
+      "label": "Functional-core composition capstone (S30)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "S30 caps the S26-S28 arc: with the full functional `core::` surface now interpreter-dispatched, result/option/iter compose into railway-oriented pipelines from Garnet source. `garnet-interp-v0.3/tests/functional_core_composition.rs` exercises BOTH tracks \u2014 `core::iter` collect/map/fold \u2192 20; `core::result` Ok-railway \u2192 40 and Err-railway recovered via `or_else` \u2192 0; `core::option` Some \u2192 80 and None default \u2192 7 ([20,40,0,80,7]). The deterministic, cross-platform `examples/novel_07_functional_core_pipeline.garnet` composes the happy path (iter \u2192 result \u2192 option \u2192 80) and joins the novel-composition harness (now 7/7). Story: `C_Language_Specification/GARNET_NOVEL_COMPOSITIONS.md`.",
+      "blocked_by": [],
+      "deferred": [
+        "Composition is pure managed-mode compute (no host effects); the host-effect composition is the separate S25 capstone"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "reporter_determinism",
+      "label": "Readiness reporter determinism",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "S31-PR2 split the readiness reporter into committed-truth lanes (scored from committed repo evidence; byte-identical on every machine) and local-evidence lanes (machine-specific live probes: Windows/Linux distribution build gates, the ~/Desktop domain-proof bundle, and promo render). The headline % and `--check-no-regression` now read committed-truth lanes only; local-evidence lanes are reported but never scored or gated.",
+      "blocked_by": [],
+      "deferred": [
+        "Per-lane committed-vs-live decomposition inside the wls/promo sub-reporters (S31-PR2 splits at the aggregation layer only)"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "edition_compatibility",
+      "label": "Edition / compatibility model (S32)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "S32 installs the two-layer compatibility mechanism. Layer 1 (editions, parse-time): a `garnet_parser::Edition` registry (`v1.0` default + a registered `v2.0` that exists only to prove the mechanism), read from `[project].edition` in Garnet.toml (legacy `[package]` / `garnet-0.3` accepted as a deprecated alias with a one-line warning; an unknown edition is a hard error). The single edition-gated surface difference is the reserved word `async` (a free identifier under v1.0, rejected at lex time under v2.0), confined to the lexer so the grammar and AST are untouched. The one-canonical-IR invariant is proven: source valid in both editions parses to a byte-identical AST and an identical capability manifest (`Manifest::build` ast_hash). Layer 2 (runtime settings, GODEBUG-style): `GARNET_DEBUG=k=v` flips a CLI default (`diagnostics=verbose`) without changing the manifest; unknown keys warn, never error. Wired into `garnet check` and `garnet run --interp`; proven end-to-end (a v1.0 program passes, the identical v2.0 program fails on the reserved word) and by 22 unit/integration tests across garnet-parser and garnet-cli.",
+      "blocked_by": [],
+      "deferred": [
+        "Mechanism + invariant only: no per-edition syntax-migration catalog (future)",
+        "`garnet run --vm` uses the default edition; the VM has a separate load path (harmonized in a later slice, per the S12/S14 split)",
+        "No manifest `[runtime]` table yet \u2014 the GODEBUG layer is the env var only; a `[runtime]` table would be a spec change deferred to a future Handoff"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "garnet_verify_gate",
+      "label": "One-command `garnet verify` acceptance gate (S33)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "S33 adds `garnet verify <path>` \u2014 a single acceptance gate (distinct from the 2-arg `garnet verify <file> <manifest.json>` manifest verify; routed by positional-arg count). It runs edition-aware parse + safe-mode check over a file or every .garnet under a directory, and emits a fused merge-confidence band: the internal local band (5 clean / 4 advisory / 1 fatal) fused by `min` with an optional external-reviewer band (`--external-band`, Greptile at PR time) and a pluggable capability signal. Exits 0 on a clean tree, non-zero on a planted regression. Proven by 6 unit tests (band clamp, internal-band mapping, min-fusion incl. a weak signal capping a confident one, pending-capability no-op) + 4 integration tests + end-to-end CLI smoke (clean->0/band5, planted->1, --external-band caps via min, directory walk, 2-arg manifest verify preserved).",
+      "blocked_by": [],
+      "deferred": [
+        "Capability-signal slot is a STUB until S37 diff-caps wires it in (it never lowers the fuse while pending)",
+        "The gate's internal band is the LOCAL acceptance signal; the full PR falsification ledger + Greptile fusion is the dogfood-readiness skill's job, which this gate feeds \u2014 `garnet verify` does not itself run cargo/CI",
+        "Test execution (`garnet test`) is not folded into the gate in S33; parse + safe-mode check is the acceptance signal"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "capability_diff_caps",
+      "label": "diff-caps \u2014 capability-surface diff gate (S37)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "S37 ships the headline novelty. `garnet-check::diff_caps` diffs two S35 `CapabilitySurface`s into a `CapsDiff` (aggregate added/removed, functions added/removed/expanded, wildcard introduced) and answers `authority_expanded()` (a NEW aggregate capability or an introduced `@caps(*)` \u2014 a function re-declaring a cap already in the aggregate is NOT new program authority). `garnet diff-caps <old> <new>` exits non-zero iff authority expanded; `garnet verify --caps-baseline <old>` wires the diff into the S33 fused band via `capability_band` (5 if no expansion, 2 if expanded), completing the previously-stubbed capability-signal slot (`min` governs). Proven by 6 `caps_diff` unit tests + 4 integration tests (binary: expansion->exit1, reduction->exit0, identical->no-changes, verify --caps-baseline caps the fused band at 2/5) + the shared `surface_for_path` consolidation across caps/diff-caps/verify.",
+      "blocked_by": [],
+      "deferred": [
+        "diff-caps reads the DECLARED capability surface; it does not prove the absence of undeclared authority (that is the sandbox-policy job, S46)",
+        "`garnet verify --caps-baseline` flags authority expansion via a low fused band (review signal); it does not hard-fail the gate on expansion \u2014 `garnet diff-caps` is the hard gate",
+        "\"Two revisions\" are two source paths the caller supplies; S37 does not itself drive git"
+      ],
+      "evidence_class": "committed"
+    },
+    {
+      "id": "seal_attestation",
+      "label": "seal \u2014 in-toto attestation predicate (S38)",
+      "status": "verified",
+      "completion_percent": 100.0,
+      "evidence": "S38 ships `garnet seal <file>` (wrap-don't-rebuild): it emits a deterministic in-toto Statement (v1) whose subject is the program's BLAKE3 AST digest and whose predicate embeds the deterministic build manifest (`manifest.rs`) and the S36 capability manifest (the native SBOM-equivalent extension). The predicate is fully produced and validated as JSON; `garnet seal` detects `cosign` and prints the `cosign attest` command to sign it. Proven by 3 `seal` unit tests + 2 integration tests (binary emits a valid in-toto Statement with both embedded manifests; the cosign-availability note is present).",
+      "blocked_by": [],
+      "deferred": [
+        "Garnet does NOT implement its own supply-chain signing (contract anchor): `cosign attest` signs the predicate. `cosign` is ABSENT in this environment, so the predicate is emitted UNSIGNED and the wrapper prints the sign command \u2014 it does not auto-sign",
+        "External SBOM tools (syft/cyclonedx) are absent; the capability manifest is the native SBOM-equivalent until they are wired",
+        "Per-file seal (per `garnet build`); per-package seal is a follow-up"
+      ],
+      "evidence_class": "committed"
+    }
+  ]
+}

@@ -41,10 +41,10 @@ def snapshot(*contents: str) -> object:
     ) for index, content in enumerate(contents))
     return policy.yaml_policy.WorkflowYamlSnapshot(documents, ())
 class WorkflowSchemaPolicyTests(unittest.TestCase):
-    def test_current_index_projects_33_ordered_contexts(self) -> None:
+    def test_current_index_projects_34_ordered_contexts(self) -> None:
         result = policy.workflow_projection(PATH.parents[1])
         contexts = [item.context for workflow in result.workflows for item in workflow.contexts]
-        self.assertEqual((result.problems, len(result.workflows), len(contexts)), ((), 11, 33))
+        self.assertEqual((result.problems, len(result.workflows), len(contexts)), ((), 12, 34))
         self.assertIn("cargo test (windows-latest)", contexts)
         self.assertIn("Publish VSIX release assets", contexts)
         with self.assertRaises(FrozenInstanceError):
@@ -97,5 +97,28 @@ class WorkflowSchemaPolicyTests(unittest.TestCase):
         duplicate = WORKFLOW.replace("  matrix:\n", "  duplicate:\n    name: Static check\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo duplicate\n  matrix:\n", 1)
         contexts = policy.project_snapshot(snapshot(duplicate)).workflows[0].contexts
         self.assertEqual([item.context for item in contexts].count("Static check"), 2)
+
+    def test_vacuous_run_and_false_conditions_fail_all_or_zero(self) -> None:
+        variants = (
+            WORKFLOW.replace("- run: echo static", '- run: "true"'),
+            WORKFLOW.replace("- run: echo static", "- run: 'true'"),
+            WORKFLOW.replace(
+                "- run: echo static",
+                '- if: "false"\n        run: echo static',
+            ),
+            WORKFLOW.replace(
+                "- run: echo static",
+                "- if: '${{ false }}'\n        run: echo static",
+            ),
+            WORKFLOW.replace(
+                "    name: Static check",
+                '    name: Static check\n    if: "false"',
+            ),
+        )
+        for variant in variants:
+            with self.subTest(variant=variant):
+                result = policy.project_snapshot(snapshot(variant))
+                self.assertTrue(result.problems)
+                self.assertEqual(result.workflows, ())
 if __name__ == "__main__":
     unittest.main()

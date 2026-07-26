@@ -30,6 +30,8 @@ rand_core = { version = "0.6", features = ["std"] }
 reedline = "0.48.0"
 serde_json = "1"
 fluent-uri = "0.4.1"
+same-file = "=1.0.6"
+toml = "=0.8.23"
 
 [dev-dependencies]
 tempfile = "3"

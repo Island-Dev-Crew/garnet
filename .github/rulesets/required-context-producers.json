@@ -1,39 +1,260 @@
 {
-  "schema": "garnet.required-context-producers/v1",
+  "schema": "garnet.required-context-producers/v2",
   "target_branch": "main",
-  "optional_contexts": ["Base-controlled trust policy"],
+  "optional_contexts": [
+    "Base-controlled trust policy"
+  ],
   "producers": [
-    {"context":"Analyze (rust)","workflow":".github/workflows/codeql.yml","event":"pull_request","job":"analyze"},
-    {"context":"Build VSIX (macos-latest)","workflow":".github/workflows/vscode-extension.yml","event":"pull_request","job":"build-vsix","matrix":{"os":"macos-latest"}},
-    {"context":"Build VSIX (ubuntu-latest)","workflow":".github/workflows/vscode-extension.yml","event":"pull_request","job":"build-vsix","matrix":{"os":"ubuntu-latest"}},
-    {"context":"Cross-OS determinism comparison","workflow":".github/workflows/determinism.yml","event":"pull_request","job":"compare"},
-    {"context":"CycloneDX SBOM","workflow":".github/workflows/security.yml","event":"pull_request","job":"sbom"},
-    {"context":"Deterministic build on macos-latest","workflow":".github/workflows/determinism.yml","event":"pull_request","job":"build","matrix":{"os":"macos-latest"}},
-    {"context":"Deterministic build on ubuntu-latest","workflow":".github/workflows/determinism.yml","event":"pull_request","job":"build","matrix":{"os":"ubuntu-latest"}},
-    {"context":"Generate single signing key for cross-OS build","workflow":".github/workflows/determinism.yml","event":"pull_request","job":"prepare-key"},
-    {"context":"Garnet web PWA smoke","workflow":".github/workflows/web-pwa-readiness.yml","event":"pull_request","job":"web-pwa-readiness"},
-    {"context":"PR dogfood evidence","workflow":".github/workflows/dogfood-readiness.yml","event":"pull_request","job":"pr-evidence"},
-    {"context":"Windows Studio build + test","workflow":".github/workflows/macos-studio.yml","event":"pull_request","job":"windows-studio"},
-    {"context":"agentic dogfood matrix","workflow":".github/workflows/agentic-dogfood-matrix.yml","event":"pull_request","job":"matrix"},
-    {"context":"agent documentation contracts","workflow":".github/workflows/ci.yml","event":"pull_request","job":"agent-contracts"},
-    {"context":"build-packages","workflow":".github/workflows/linux-packages.yml","event":"pull_request","job":"build-packages"},
-    {"context":"canonical MVP examples","workflow":".github/workflows/ci.yml","event":"pull_request","job":"canonical-examples"},
-    {"context":"cargo audit","workflow":".github/workflows/security.yml","event":"pull_request","job":"cargo-audit"},
-    {"context":"cargo fuzz run parse_input","workflow":".github/workflows/fuzz-nightly.yml","event":"pull_request","job":"fuzz"},
-    {"context":"cargo doc","workflow":".github/workflows/ci.yml","event":"pull_request","job":"docs"},
-    {"context":"cargo test (macos-latest)","workflow":".github/workflows/ci.yml","event":"pull_request","job":"test","matrix":{"os":"macos-latest"}},
-    {"context":"cargo test (ubuntu-latest)","workflow":".github/workflows/ci.yml","event":"pull_request","job":"test","matrix":{"os":"ubuntu-latest"}},
-    {"context":"cargo test (windows-latest)","workflow":".github/workflows/ci.yml","event":"pull_request","job":"test","matrix":{"os":"windows-latest"}},
-    {"context":"cargo-deny check","workflow":".github/workflows/security.yml","event":"pull_request","job":"cargo-deny"},
-    {"context":"clippy (-D warnings)","workflow":".github/workflows/ci.yml","event":"pull_request","job":"clippy"},
-    {"context":"machine-truth drift guard","workflow":".github/workflows/ci.yml","event":"pull_request","job":"truth-check"},
-    {"context":"macOS Studio build + test","workflow":".github/workflows/macos-studio.yml","event":"pull_request","job":"macos-studio"},
-    {"context":"macos-cli-tarballs (aarch64-apple-darwin)","workflow":".github/workflows/linux-packages.yml","event":"pull_request","job":"macos-cli-tarballs","matrix":{"target":"aarch64-apple-darwin"}},
-    {"context":"macos-cli-tarballs (x86_64-apple-darwin)","workflow":".github/workflows/linux-packages.yml","event":"pull_request","job":"macos-cli-tarballs","matrix":{"target":"x86_64-apple-darwin"}},
-    {"context":"rustfmt","workflow":".github/workflows/ci.yml","event":"pull_request","job":"fmt"},
-    {"context":"shellcheck-installer","workflow":".github/workflows/linux-packages.yml","event":"pull_request","job":"shellcheck-installer"},
-    {"context":"smoke-deb","workflow":".github/workflows/linux-packages.yml","event":"pull_request","job":"smoke-deb"},
-    {"context":"smoke-rpm","workflow":".github/workflows/linux-packages.yml","event":"pull_request","job":"smoke-rpm"},
-    {"context":"Base-controlled trust policy","workflow":".github/workflows/base-controlled-trust.yml","event":"pull_request_target","job":"policy"}
+    {
+      "context": "Analyze (rust)",
+      "workflow": ".github/workflows/codeql.yml",
+      "event": "pull_request",
+      "job": "analyze",
+      "semantic_sha256": "7b1f1d9737bcc1be2645b0f7a7344296e8ed1526426c9a49d099c55d102757bd"
+    },
+    {
+      "context": "Build VSIX (macos-latest)",
+      "workflow": ".github/workflows/vscode-extension.yml",
+      "event": "pull_request",
+      "job": "build-vsix",
+      "matrix": {
+        "os": "macos-latest"
+      },
+      "semantic_sha256": "d9c355e7e35c97a33da70ddf712caf7c2d17a9bb3980b5e6ca0c2de6585d6baf"
+    },
+    {
+      "context": "Build VSIX (ubuntu-latest)",
+      "workflow": ".github/workflows/vscode-extension.yml",
+      "event": "pull_request",
+      "job": "build-vsix",
+      "matrix": {
+        "os": "ubuntu-latest"
+      },
+      "semantic_sha256": "b8c8d49a61c35fa3ed701ad76eb960618495c74b70f6c8f0c120a7305e404e31"
+    },
+    {
+      "context": "Cross-OS determinism comparison",
+      "workflow": ".github/workflows/determinism.yml",
+      "event": "pull_request",
+      "job": "compare",
+      "semantic_sha256": "0388ed80b442713d85421967faadfae05dc130f0e29370fb0548f434cb6ce45c"
+    },
+    {
+      "context": "CycloneDX SBOM",
+      "workflow": ".github/workflows/security.yml",
+      "event": "pull_request",
+      "job": "sbom",
+      "semantic_sha256": "ebded2732ab90e8530ba170782a23ff086a73f0e67bc1eec3b3aa396dda3926a"
+    },
+    {
+      "context": "Deterministic build on macos-latest",
+      "workflow": ".github/workflows/determinism.yml",
+      "event": "pull_request",
+      "job": "build",
+      "matrix": {
+        "os": "macos-latest"
+      },
+      "semantic_sha256": "00496856dd1513790023085eb29ac0904959e68f27283f92f8f538f8533c9925"
+    },
+    {
+      "context": "Deterministic build on ubuntu-latest",
+      "workflow": ".github/workflows/determinism.yml",
+      "event": "pull_request",
+      "job": "build",
+      "matrix": {
+        "os": "ubuntu-latest"
+      },
+      "semantic_sha256": "032ff922dd13feb4b1738f5d9b6a33880acdcf668fe7ff1d361b9277efaff353"
+    },
+    {
+      "context": "Generate single signing key for cross-OS build",
+      "workflow": ".github/workflows/determinism.yml",
+      "event": "pull_request",
+      "job": "prepare-key",
+      "semantic_sha256": "f7790dd5d843d3b7d8868fc6166fefa4f4a1b6fde05fff8102cd011a9ca1c9a9"
+    },
+    {
+      "context": "Garnet web PWA smoke",
+      "workflow": ".github/workflows/web-pwa-readiness.yml",
+      "event": "pull_request",
+      "job": "web-pwa-readiness",
+      "semantic_sha256": "9ad5574e8415eb8febbe2cc8263ea1514e17dde97b723695dfe72c2cd8721c20"
+    },
+    {
+      "context": "PR dogfood evidence",
+      "workflow": ".github/workflows/dogfood-readiness.yml",
+      "event": "pull_request",
+      "job": "pr-evidence",
+      "semantic_sha256": "27b34ccdbc8094e5f43a7a7794282e6778873804aec0074540b8597f3e05e1ef"
+    },
+    {
+      "context": "Windows Studio build + test",
+      "workflow": ".github/workflows/macos-studio.yml",
+      "event": "pull_request",
+      "job": "windows-studio",
+      "semantic_sha256": "cfc7fcfc08357ced635b3b615b9994889daf76bbe828ea54fee7e55ae9500c5d"
+    },
+    {
+      "context": "agentic dogfood matrix",
+      "workflow": ".github/workflows/agentic-dogfood-matrix.yml",
+      "event": "pull_request",
+      "job": "matrix",
+      "semantic_sha256": "8f169987a84bbf4815181c4e2debb22fe2c318a50d719a9f589ad6a60bfd1923"
+    },
+    {
+      "context": "agent documentation contracts",
+      "workflow": ".github/workflows/ci.yml",
+      "event": "pull_request",
+      "job": "agent-contracts",
+      "semantic_sha256": "47f818bfda2580fd5783135be91b912fb7f3018e342501f101ca3a92dd5968a4"
+    },
+    {
+      "context": "build-packages",
+      "workflow": ".github/workflows/linux-packages.yml",
+      "event": "pull_request",
+      "job": "build-packages",
+      "semantic_sha256": "4921264c403881482aefccbdb2e2cd7fd757311ebe238e13714d06978d17b757"
+    },
+    {
+      "context": "canonical MVP examples",
+      "workflow": ".github/workflows/ci.yml",
+      "event": "pull_request",
+      "job": "canonical-examples",
+      "semantic_sha256": "c8863c48c0ccb3d23bcdd7c67a11352362ec1903216f88b27fe72d5bcfe580b8"
+    },
+    {
+      "context": "cargo audit",
+      "workflow": ".github/workflows/security.yml",
+      "event": "pull_request",
+      "job": "cargo-audit",
+      "semantic_sha256": "545bf2466fd0892a3aa4357974c253796e0c8004932917ffaef1c81488d824ad"
+    },
+    {
+      "context": "cargo fuzz run parse_input",
+      "workflow": ".github/workflows/fuzz-nightly.yml",
+      "event": "pull_request",
+      "job": "fuzz",
+      "semantic_sha256": "9542b13f91f74a205aaa70dbace12748743167d572bfa5a6f7ff7a9433b8e0bc"
+    },
+    {
+      "context": "cargo doc",
+      "workflow": ".github/workflows/ci.yml",
+      "event": "pull_request",
+      "job": "docs",
+      "semantic_sha256": "c92ca22d6ce6e5de07a7d2955c312a684b73b1e8859614ed3eed2f3f36b38d50"
+    },
+    {
+      "context": "cargo test (macos-latest)",
+      "workflow": ".github/workflows/ci.yml",
+      "event": "pull_request",
+      "job": "test",
+      "matrix": {
+        "os": "macos-latest"
+      },
+      "semantic_sha256": "927e716aba11c9c524e369f1fbe734e58ecdc5bafc307c970627d59b390b1083"
+    },
+    {
+      "context": "cargo test (ubuntu-latest)",
+      "workflow": ".github/workflows/ci.yml",
+      "event": "pull_request",
+      "job": "test",
+      "matrix": {
+        "os": "ubuntu-latest"
+      },
+      "semantic_sha256": "1a9d7d4f3f5006162eeeb9132cca201ab97194795177f21a53dc2738e2571d08"
+    },
+    {
+      "context": "cargo test (windows-latest)",
+      "workflow": ".github/workflows/ci.yml",
+      "event": "pull_request",
+      "job": "test",
+      "matrix": {
+        "os": "windows-latest"
+      },
+      "semantic_sha256": "366f5c24be327d593843aaf8b110966c72b05f1992faae7948c524fe91cbab2a"
+    },
+    {
+      "context": "cargo-deny check",
+      "workflow": ".github/workflows/security.yml",
+      "event": "pull_request",
+      "job": "cargo-deny",
+      "semantic_sha256": "208c12dea42613373c22f76d6ad72c7ac97a69cd443785f9bbe85d390eb193d3"
+    },
+    {
+      "context": "clippy (-D warnings)",
+      "workflow": ".github/workflows/ci.yml",
+      "event": "pull_request",
+      "job": "clippy",
+      "semantic_sha256": "d359659af6c4914d1418a7b89a5366ecc03d7c8c92c70f61062b233ae48cb93f"
+    },
+    {
+      "context": "machine-truth drift guard",
+      "workflow": ".github/workflows/ci.yml",
+      "event": "pull_request",
+      "job": "truth-check",
+      "semantic_sha256": "a53e742f2c88cef4cd634fab3adaf212c61599717395b6fe281a914148d345a5"
+    },
+    {
+      "context": "macOS Studio build + test",
+      "workflow": ".github/workflows/macos-studio.yml",
+      "event": "pull_request",
+      "job": "macos-studio",
+      "semantic_sha256": "e753b010380c1efb0e4d7c015aaf5b0b17fdb0753e3723e1d2fb1eae40724c57"
+    },
+    {
+      "context": "macos-cli-tarballs (aarch64-apple-darwin)",
+      "workflow": ".github/workflows/linux-packages.yml",
+      "event": "pull_request",
+      "job": "macos-cli-tarballs",
+      "matrix": {
+        "target": "aarch64-apple-darwin"
+      },
+      "semantic_sha256": "3ffa9da6506ce11fe60e027ca66317014a82f3a6e4468af2ed3926e48ee52eb7"
+    },
+    {
+      "context": "macos-cli-tarballs (x86_64-apple-darwin)",
+      "workflow": ".github/workflows/linux-packages.yml",
+      "event": "pull_request",
+      "job": "macos-cli-tarballs",
+      "matrix": {
+        "target": "x86_64-apple-darwin"
+      },
+      "semantic_sha256": "113c7146d502b5302a88fcff0f9d1bf7ab4b9ee22ffa69e1477bddc174f4ecf9"
+    },
+    {
+      "context": "rustfmt",
+      "workflow": ".github/workflows/ci.yml",
+      "event": "pull_request",
+      "job": "fmt",
+      "semantic_sha256": "b2359e33d30844e25874bda5b860a7b2b43d0f8820ee4ec5a96f258c4248623c"
+    },
+    {
+      "context": "shellcheck-installer",
+      "workflow": ".github/workflows/linux-packages.yml",
+      "event": "pull_request",
+      "job": "shellcheck-installer",
+      "semantic_sha256": "3dc842a0ded1df89d574ce2a130377f3d9566f186ed12336a3dc154e24dfcad8"
+    },
+    {
+      "context": "smoke-deb",
+      "workflow": ".github/workflows/linux-packages.yml",
+      "event": "pull_request",
+      "job": "smoke-deb",
+      "semantic_sha256": "f299a4dd2a9248562ccd5e1336594dc8973774da9d7322fa543488ac1876cba6"
+    },
+    {
+      "context": "smoke-rpm",
+      "workflow": ".github/workflows/linux-packages.yml",
+      "event": "pull_request",
+      "job": "smoke-rpm",
+      "semantic_sha256": "9dff3504c554b91b509c538cb7916e6bbfa4f5837b9bd30fc5b2813bb5e8f111"
+    },
+    {
+      "context": "Base-controlled trust policy",
+      "workflow": ".github/workflows/base-controlled-trust.yml",
+      "event": "pull_request_target",
+      "job": "policy",
+      "semantic_sha256": "618a3bf5b61a8083baf936c33e0deec0e20b0c07692b943ff42129d496acf355"
+    }
   ]
 }

@@ -228,9 +228,7 @@ class GarnetMsrvStatusTests(unittest.TestCase):
             marker = "  test:\n"
             before, after = text.split(marker, 1)
             after = after.replace(
-                f"      - uses: {msrv.STABLE_ACTION}\n",
-                f"      - uses: {msrv.STABLE_ACTION}\n"
-                "        with:\n"
+                "          toolchain: stable\n",
                 "          toolchain: 1.95.0\n",
                 1,
             )
@@ -357,8 +355,8 @@ class GarnetMsrvStatusTests(unittest.TestCase):
             )
             before, after = text.split(marker, 1)
             after = after.replace(
-                "dtolnay/rust-toolchain@stable",
-                "dtolnay/rust-toolchain@1.95.0",
+                msrv.STABLE_ACTION,
+                "dtolnay/rust-toolchain@" + "0" * 40,
                 1,
             )
             return before + marker + after
@@ -371,8 +369,8 @@ class GarnetMsrvStatusTests(unittest.TestCase):
         status = self._mutated_status(
             ".github/workflows/macos-studio.yml",
             lambda text: text.replace(
-                "dtolnay/rust-toolchain@stable",
-                "dtolnay/rust-toolchain@1.95.0",
+                msrv.STABLE_ACTION,
+                "dtolnay/rust-toolchain@" + "0" * 40,
                 1,
             ),
         )

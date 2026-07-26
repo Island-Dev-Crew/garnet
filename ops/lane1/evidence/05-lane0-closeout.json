@@ -1,0 +1,13 @@
+{
+  "schema": "garnet.lane0.closeout/v1",
+  "source": "/private/tmp/garnet-l1-governance-activation-20260717",
+  "evidence_files": 22,
+  "ledger_entries": 37,
+  "denominator_count": 4,
+  "launch_status": "HOLD",
+  "audit_band": 3,
+  "governance_verdict": "advisory",
+  "stage": "S6",
+  "findings": [],
+  "ok": true
+}

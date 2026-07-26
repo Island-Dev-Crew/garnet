@@ -26,4 +26,5 @@ proofs/** -text
 
 # ARCHIPELAGO lane evidence is byte-exact wherever it lives. Keep this after
 # any text rules so the last matching pattern prevents checkout conversion.
+ops/**/evidence -text
 ops/**/evidence/** -text

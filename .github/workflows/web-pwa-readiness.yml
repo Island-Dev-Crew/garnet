@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
 
       - name: Verify docs PWA surface
         run: scripts/smoke_garnet_web_pwa.sh --strict
@@ -22,7 +22,7 @@ jobs:
 
       - name: Upload PWA evidence
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
           name: garnet-web-pwa-${{ github.run_id }}
           path: target/web-pwa-readiness-*

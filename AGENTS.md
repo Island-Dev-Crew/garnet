@@ -56,6 +56,24 @@ features or indentation. Comments, disabled steps, or commands in another job
 do not satisfy it. The broader repository workflow-policy gates continue to
 use their separately pinned typed-YAML boundary.
 
+## Governance and Action Integrity
+
+Every external `uses:` entry in `.github/workflows/` is pinned to a reviewed
+full 40-character commit in
+`.github/rulesets/external-action-pins.json`. Run
+`python3 -I scripts/test_garnet_workflow_action_integrity_status.py` and
+`python3 -I scripts/garnet_workflow_action_integrity_status.py --gate` after
+changing a workflow or action pin. Pin updates are manual trust-kernel changes:
+resolve the exact upstream tag or branch, record the peeled commit and source
+ref in the manifest, update every use, preserve the immutable-action and Node
+runtime gates, attach a W_TRUST review companion with fresh cross-OS evidence,
+and leave the PR for Jon's merge. Comments and mutable tags are not authority.
+
+The Jon-only governance exception covers the entire `scripts/garnet_github_*`
+family, not a filename allowlist. Those transport, projection, and live-policy
+scripts govern the merge boundary itself and must never auto-merge, inherit an
+ambient credential, or print/persist a credential.
+
 ## WV-6 / WV-7 Acceptance Gates
 
 `F_Project_Management/LAUNCH/WV6_WV7_ACCEPTANCE_CONTRACTS.json` preserves the
