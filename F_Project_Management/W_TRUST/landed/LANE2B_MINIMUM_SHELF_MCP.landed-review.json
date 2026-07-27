@@ -1,0 +1,41 @@
+{
+  "author_emails": [
+    "email:navigata1@gmail.com",
+    "email:noreply@anthropic.com"
+  ],
+  "author_ids": [
+    81847,
+    242020839
+  ],
+  "base_commit": "cede73c03c5d535306ed179b5882e99e4d17b050",
+  "blocking_findings": [],
+  "content_digest": "sha256:6d08be44a7ecaaed8ab9a7b93e8caaee5279c70aa5848a9dabe80e510b085331",
+  "head_repository": "Navigata1/garnet",
+  "head_repository_id": 1220086908,
+  "merged_commit": "41d6ced858684ac67683d32315920bd50a52976e",
+  "merged_tree": "e3c914b881ae59ca96d8950190729665e45808db",
+  "pull_request_id": 4090276926,
+  "pull_request_number": 514,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_record_path": "F_Project_Management/W_TRUST/LANE2B_MINIMUM_SHELF_MCP.review.json",
+  "review_record_sha256": "fbfe0310950c13f42609b9da3c22292a525294316d07344964da47a0404ec86f",
+  "review_scope": "Lane 2B minimum sealed Shelf and raw-byte MCP host. Five independent attestations are preserved: Air Verdict 01 APPROVE at reviewed_head 0919f7a1b14d6f53a251f3528787b2278331e488 / tree 3266d5bd05312368777d57da6fe48e0342b5ad60; Air Verdict 02 APPROVE-WITH-BLOCKERS at reviewed_head c333db5f83114f6ad0525ba68e97602de95a8503 / tree 6dab95d30bebb4cd115faf942aa71b488d9e1a81, whose CRLF seal blocker was cured and reverified; chat-seat Verdict 03 APPROVE-WITH-BLOCKERS at reviewed_head d386b882904d32160acbbcf02235b95002daa48a / tree 8f86737e0df646431a7429e37dbcee0a56af0667, whose truth-pairing blocker was cured; chat-seat Verdict 04 APPROVE-WITH-AUTHORIZATIONS at reviewed_head dcf6008fd4291baf719dc361a82f2062ea60bfd2 / tree f3272b9610dba756bd414cafc825fd7462d7a294, authorizing the content-bound design; and final Air Verdict 05 APPROVE at reviewed_head 927ad221d33668d458499a26f49d96ed4586563d / tree 4d9374991bf265b78a0108e0bb62c317a43b8028. U-19 provenance boundary: the content digest proves exact trust-kernel path bytes shared by reviewed_head and the candidate; it does not extend or backdate reviewed_head coverage. Intervening commits b16c52fc8826f8cc9c304b42581db138a08465cd, 953d4308c0d19a92cbe2a108f249e5f753ab94e3, and 12d78a49380e6ef83c589a9a3be514b417fa55d7 are review-artifact-only under ops/lane2b/**: evidence/20-final-raw-byte-cross-checkout.txt, heartbeat.jsonl, journal.md, review/05-request.md, review/05-verdict.md, state-of-the-union.html, and state.json. This record-only commit adds the immutable structured review record and no other path.",
+  "review_state": "APPROVED",
+  "reviewed_head": "927ad221d33668d458499a26f49d96ed4586563d",
+  "reviewed_tree": "4d9374991bf265b78a0108e0bb62c317a43b8028",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_marker/v2",
+  "state": "landed",
+  "touched_paths": [
+    "garnet-cli/src/bin/garnet.rs",
+    "garnet-cli/src/cmd/mod.rs",
+    "garnet-cli/src/lib.rs",
+    "scripts/garnet_content_provenance.py",
+    "scripts/garnet_wv_acceptance_status.py",
+    "scripts/test_garnet_minimum_shelf_provenance.py",
+    "scripts/test_garnet_wv_acceptance_status.py"
+  ],
+  "verdict": "pass"
+}
