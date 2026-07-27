@@ -24,6 +24,7 @@ FROZEN_MUTABLE_PREFIXES = (
     b"ops/lane2b/",
     b"proofs/",
     b"F_Project_Management/W_TRUST/",
+    b"ops/lane1/",
 )
 REPORTER_PATH = b"scripts/smoke_garnet_minimum_shelf.py"
 GIT_OID_RE = re.compile(rb"^[0-9a-f]{40}$")
