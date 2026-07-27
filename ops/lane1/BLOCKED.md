@@ -7,6 +7,8 @@
 
 ## Blocked on (none the implementer's to clear)
 
+0. **U-35 RULING (structural, blocks the NUC regardless of the request-05 verdict)** — review artifacts under `ops/lane1/` are product-digest-included, so the WV pin bound at `f1ec569` cannot match the squashed TIP tree at merge; WV-6 would regress to partial on main. RED: `ops/lane1/evidence/91-u35-tip-vs-head-digest-red.md`. Ruling packet: `ops/lane1/review/06-request.md` (proposed FROZEN_MUTABLE_PREFIXES extension + four mandatory traps; fallback if denied = land with an explicitly recorded WV-6 regression). **DO NOT run the NUC until ruled.**
+
 1. **Next verdict** — Codex GPT-5.6 Sol review of the ceremony-authorized WV pin rebind `f1ec569` (request 05). Verdict 04 APPROVED content head `72ae024`; the rebind (4 constants + 4 PROOF.json mirrors, recomputed 5d3e7f72…/1581) makes slice 4 mechanically reachable. Verdict lands under the fleet-fork identity (never IDC-Trust-Review, U-30).
 2. **Slice 4 — native-Windows WV-6 refresh (NUC)** at the head the NEXT verdict approves (verdict 04's approval predates the rebind). WV-6 is `partial` with four expected old-manifest boundary findings until the NUC regenerates evidence.
 3. **Slice 5 — reporter/SOTU/denominator refresh** (post-Windows): publishes **66.7% / 50.0%** per the verdict-01 ruling; **blocked by U-31** (absolute path in `08.source`, re-reproduced in verdict 02 F5) which must be cured first via its own reviewed change.
