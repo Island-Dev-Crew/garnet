@@ -1,4 +1,7 @@
 {
-  "markers": [],
+  "markers": [
+    "F_Project_Management/W_TRUST/landed/LANE1_GOVERNANCE_ACTIVATION.landed-review.json",
+    "F_Project_Management/W_TRUST/landed/LANE2B_MINIMUM_SHELF_MCP.landed-review.json"
+  ],
   "schema": "garnet.trust_kernel_landed_review_registry/v1"
 }

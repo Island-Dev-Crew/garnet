@@ -22,6 +22,7 @@ def _load(name: str, filename: str):
 
 shelf = _load("smoke_garnet_minimum_shelf", "smoke_garnet_minimum_shelf.py")
 wv = _load("garnet_wv_acceptance_status", "garnet_wv_acceptance_status.py")
+cp = _load("garnet_content_provenance", "garnet_content_provenance.py")
 
 
 class SquashDurableContentProvenanceTests(unittest.TestCase):
@@ -110,6 +111,61 @@ class SquashDurableContentProvenanceTests(unittest.TestCase):
         )
         self.assertTrue(
             any("product content digest" in item for item in findings), findings
+        )
+
+    # ------------------------------------------------------------------ U-35
+    # The frozen construction must treat Lane 1's own review/operational
+    # artifacts as non-product (like ops/lane2b/), so a review round cannot move
+    # the product digest and invalidate the WV pin at merge.
+
+    def test_frozen_mutable_prefixes_are_exactly_the_authorized_set(self) -> None:
+        # Trap (d): the exclusion tuple is exactly the three historical prefixes
+        # plus the single authorized Lane 1 prefix — never a general predicate.
+        self.assertEqual(
+            cp.FROZEN_MUTABLE_PREFIXES,
+            (
+                b"ops/lane2b/",
+                b"proofs/",
+                b"F_Project_Management/W_TRUST/",
+                b"ops/lane1/",
+            ),
+        )
+        self.assertEqual(cp.REPORTER_PATH, b"scripts/smoke_garnet_minimum_shelf.py")
+        # Lane 1 is excluded; a sibling lane namespace is NOT (a general
+        # ops/<lane>/ predicate would wrongly exclude ops/lane3/ and fail here).
+        self.assertTrue(cp._is_mutable(b"ops/lane1/review/07-request.md"))
+        self.assertFalse(cp._is_mutable(b"ops/lane3/note.txt"))
+
+    def test_lane1_review_artifacts_do_not_move_the_digest(self) -> None:
+        # Trap (b): adding and modifying only ops/lane1/ artifacts leaves the
+        # digest and count byte-identical.
+        before, count_before = cp.tracked_content_digest(self.root)
+        self._write("ops/lane1/review/99-later-request.md", "later review artifact\n")
+        self._write("ops/lane1/journal.md", "heartbeat line\n")
+        self._write("ops/lane1/evidence/zz.txt", "evidence\n")
+        self._git("add", ".")
+        after, count_after = cp.tracked_content_digest(self.root)
+        self.assertEqual(before, after)
+        self.assertEqual(count_before, count_after)
+
+    def test_included_product_change_moves_while_lane1_does_not(self) -> None:
+        # Trap (a): the crux pair. A product blob change moves the digest AND
+        # trips the content verifier; an ops/lane1/-only change does neither.
+        baseline, _ = cp.tracked_content_digest(self.root)
+        self._write("ops/lane1/evidence/only-lane1.txt", "lane1 only\n")
+        self._git("add", ".")
+        lane1_digest, _ = cp.tracked_content_digest(self.root)
+        self.assertEqual(baseline, lane1_digest)
+        self.assertEqual([], shelf._verify_product_content(self.root, baseline))
+        self._write("product.txt", "tampered product\n")
+        self._git("add", ".")
+        product_digest, _ = cp.tracked_content_digest(self.root)
+        self.assertNotEqual(baseline, product_digest)
+        self.assertTrue(
+            any(
+                "product content digest" in item
+                for item in shelf._verify_product_content(self.root, baseline)
+            )
         )
 
 

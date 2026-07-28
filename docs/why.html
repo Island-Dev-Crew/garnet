@@ -141,6 +141,73 @@
   .sitefoot a:hover{color:var(--bone-dim)}
   .sitefoot .sf-links{display:flex;gap:16px;flex-wrap:wrap}
   .sitefoot .sf-brand{font-family:"Instrument Serif",serif;font-size:16px;color:var(--bone-dim)}
+
+  /* the five theses (accordion) */
+  #theses{margin-top:44px}
+  .th-eyebrow{font-family:"JetBrains Mono",monospace;text-transform:uppercase;letter-spacing:.2em;font-size:11px;font-weight:600;color:var(--ash);display:flex;align-items:center;gap:14px}
+  .th-eyebrow::after{content:"";flex:1;height:1px;background:var(--line)}
+  .th-deck{font-size:16px;color:var(--bone-dim);max-width:60ch;margin:14px 0 22px}
+  .th-deck strong{color:var(--bone);font-weight:600}
+  .thesis{border:1px solid var(--line);border-radius:13px;background:var(--panel);margin-bottom:12px;overflow:hidden;transition:border-color .25s ease,background .25s ease}
+  .thesis.open{border-color:var(--line-2);background:var(--panel-2)}
+  .thesis-toggle{width:100%;display:grid;grid-template-columns:auto 1fr auto;align-items:start;gap:18px;padding:20px 22px;background:none;border:0;cursor:pointer;color:inherit;text-align:left;font-family:inherit}
+  .thesis-toggle:focus-visible{outline:2px solid var(--gold-soft);outline-offset:-2px;border-radius:13px}
+  .numeral{font-family:"Instrument Serif",serif;font-style:italic;font-size:30px;line-height:1;color:var(--garnet);min-width:1.5em;text-align:center;padding-top:.05em}
+  .thesis-name{font-family:"Instrument Serif",serif;font-size:clamp(22px,3.4vw,27px);line-height:1.08;color:var(--bone)}
+  .thesis-name .dot,.numeral .dot{color:var(--garnet)}
+  .thesis-line{margin-top:8px;color:var(--bone-dim);font-size:15px;max-width:54ch}
+  .thesis-line .gold{color:var(--gold-soft);font-weight:600}
+  .thesis-line .ink{color:var(--bone);font-weight:600}
+  .thesis-line code,.thesis-body-content code,.layermap-note code{font-family:"JetBrains Mono",monospace;font-size:.82em;background:#1b1b24;border:1px solid var(--line);border-radius:6px;padding:1px 5px;color:var(--bone-dim);white-space:nowrap}
+  .expand-mark{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--ash);padding-top:.5em;letter-spacing:.06em;transition:color .2s ease}
+  .thesis-toggle:hover .expand-mark{color:var(--gold-soft)}
+  .thesis-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .42s cubic-bezier(.4,0,.2,1)}
+  .thesis.open .thesis-body{grid-template-rows:1fr}
+  .thesis-body-inner{overflow:hidden}
+  .thesis-body-content{padding:22px 22px 24px;border-top:1px solid var(--line)}
+  .thesis-body-content p{color:var(--bone-dim);font-size:15px;margin:0 0 14px;max-width:62ch}
+  .thesis-body-content p:last-of-type{margin-bottom:0}
+  .thesis-body-content .gold{color:var(--gold-soft);font-weight:600}
+  .thesis-body-content em{font-style:italic;color:var(--bone-dim)}
+  .xrefs{margin-top:18px}
+  .xrefs-label{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ash);display:block;margin-bottom:8px}
+  .xref{display:inline-block;font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.04em;color:var(--ash);border:1px solid var(--line);border-radius:999px;padding:4px 11px;margin:0 6px 6px 0;text-decoration:none;transition:color .2s ease,border-color .2s ease}
+  .xref:hover{color:var(--bone);border-color:var(--line-2);text-decoration:none}
+  .claim{display:inline-flex;align-items:center;gap:.6em;font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;margin-top:20px;padding:6px 12px;border-radius:9px;border:1px solid var(--line);color:var(--ash)}
+  .claim::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ash)}
+  .claim.construction{color:var(--gold-soft);border-color:rgba(217,165,33,.3)}
+  .claim.construction::before{background:var(--gold-soft)}
+  .claim.world{color:var(--steel);border-color:rgba(91,127,181,.3)}
+  .claim.world::before{background:var(--steel)}
+  .layermap{margin-top:34px}
+  .layermap-deck{color:var(--bone-dim);max-width:56ch;margin:12px 0 16px;font-size:15px}
+  .layer-rows{border:1px solid var(--line);border-radius:13px;overflow:hidden}
+  .layer-row{display:grid;grid-template-columns:minmax(168px,.9fr) 1.6fr;gap:18px;padding:18px 22px;border-bottom:1px solid var(--line);background:var(--panel)}
+  .layer-row:last-child{border-bottom:0}
+  .layer-q{font-family:"Instrument Serif",serif;font-size:20px;line-height:1.2;color:var(--bone)}
+  .layer-a{color:var(--bone-dim);font-size:14px}
+  .layer-a strong{color:var(--bone);font-weight:600}
+  .garnet-row{background:var(--panel-2);border-left:3px solid var(--garnet)}
+  .garnet-row .layer-a strong{color:var(--gold-soft)}
+  .layermap-note{margin-top:16px;color:var(--bone-dim);font-size:14px;max-width:64ch}
+  .layermap-note em{font-style:italic;color:var(--bone)}
+  .objection{border-style:dashed}
+  .objection .numeral{font-style:normal;font-size:24px;padding-top:.15em}
+  .theses-legend{margin-top:22px;display:flex;flex-wrap:wrap;gap:14px;font-family:"JetBrains Mono",monospace}
+  .theses-legend span{display:inline-flex;align-items:center;gap:.5em;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--ash)}
+  .theses-legend i{width:7px;height:7px;border-radius:50%;display:inline-block}
+  .theses-legend .a i{background:var(--gold-soft)}.theses-legend .a{color:var(--gold-soft)}
+  .theses-legend .p i{background:var(--ash)}.theses-legend .p{color:var(--ash)}
+  .theses-legend .b i{background:var(--steel)}.theses-legend .b{color:var(--steel)}
+  .theses-scope-note{margin-top:10px;font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--ash-dim);letter-spacing:.03em}
+  @media (max-width:560px){
+    .thesis-toggle{grid-template-columns:auto 1fr;gap:14px;padding:18px}
+    .expand-mark{grid-column:2;padding-top:6px}
+    .layer-row{grid-template-columns:1fr;gap:6px;padding:16px 18px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .thesis,.thesis-body,.expand-mark{transition:none}
+  }
 </style>
 </head>
 <body>
@@ -235,22 +302,199 @@
     </div>
   </section>
 
+  <!-- THE FIVE THESES -->
+  <section id="theses">
+    <span class="th-eyebrow">Doctrine · the argument in five claims</span>
+    <h2 style="margin-top:16px">The Five Theses</h2>
+    <p class="th-deck">Everything on this page argues in detail. This is the case in five claims — each carrying its <strong>own evidence class</strong>, because a page about evidence&#8209;gated authority should be evidence&#8209;gated itself.</p>
+
+    <!-- I. THE COMPILER -->
+    <article class="thesis" id="thesis-compiler">
+      <button class="thesis-toggle" aria-expanded="false" aria-controls="body-compiler">
+        <span class="numeral">I</span>
+        <span>
+          <span class="thesis-name">The Compiler</span>
+          <span class="thesis-line">Every AI review tool is a smarter <span class="ink">opinion</span>. Garnet is a <span class="gold">verdict</span> — authority lives in the type system, and whole classes of failure don't compile.</span>
+        </span>
+        <span class="expand-mark" aria-hidden="true">+ open</span>
+      </button>
+      <div class="thesis-body" id="body-compiler" role="region" aria-label="The Compiler, expanded">
+        <div class="thesis-body-inner"><div class="thesis-body-content">
+          <p>The review industry's best tools read finished code and estimate whether it's dangerous. The strongest of them catch roughly half of real runtime bugs — after the code exists, on every pull request, forever. That's a smarter reviewer. It is still a probability.</p>
+          <p>Garnet moves the question earlier and makes it binary. What code is <em>allowed</em> to do — which files, which network, which processes, which delegated authority — is written as a <span class="gold">capability type</span>. Where the trap is proven — the bounded, pinned Gate&#8209;1 surface in the boundary section below — code that invokes authority it never declared isn't flagged for a human to weigh: it fails, deterministically. The wider surface is declared (checker&#8209;only) today, being built to that same standard.</p>
+          <p>The industry's own principle says the AI that wrote the code shouldn't be the one reviewing it. Its answer is a second model. Garnet's answer is a checker. A compiler doesn't have opinions; it has verdicts — and a verdict is the only kind of review that doesn't get tired, doesn't get noisy, and doesn't get argued past.</p>
+          <div class="xrefs">
+            <span class="xrefs-label">Reads with</span>
+            <a class="xref" href="#point-1">№ 1 — Construction beats convention</a>
+            <a class="xref" href="#point-2">№ 2 — Acceptance the model can't fake</a>
+          </div>
+          <span class="claim construction">Claim class · partial — deterministic traps proven on the bounded surface below; wider surface declared (checker&#8209;only)</span>
+        </div></div>
+      </div>
+    </article>
+
+    <!-- II. THE SENIOR JUDGMENT -->
+    <article class="thesis" id="thesis-senior-judgment">
+      <button class="thesis-toggle" aria-expanded="false" aria-controls="body-senior">
+        <span class="numeral">II</span>
+        <span>
+          <span class="thesis-name">The Senior Judgment</span>
+          <span class="thesis-line">One senior defines the envelope <span class="gold">once</span>. The compiler is built to hold it for every junior, every agent, every commit after.</span>
+        </span>
+        <span class="expand-mark" aria-hidden="true">+ open</span>
+      </button>
+      <div class="thesis-body" id="body-senior" role="region" aria-label="The Senior Judgment, expanded">
+        <div class="thesis-body-inner"><div class="thesis-body-content">
+          <p>The AI&#8209;first crisis isn't that agents write bad code. It's that juniors and agents can't be trusted to ship unreviewed — so senior engineers became full&#8209;time reviewers, and their judgment became the scarcest resource in the org. Every review tool on the market re&#8209;spends that judgment on every change. Process must be re&#8209;applied every time.</p>
+          <p>A type applies <span class="gold">once</span>. Garnet doesn't replace senior judgment — it changes what it's spent on. One senior encodes the security envelope as capability types: what this service may touch, what this agent may delegate, what this module may never do. That is the design; what is proven today is narrower — the deterministic traps named in the boundary section below — with the full envelope vocabulary declared (checker&#8209;only) and built toward the same standard at zero marginal senior attention.</p>
+          <p>Review time then becomes taste time. Humans argue about the things worth arguing about — naming, architecture, product — because the floor is no longer up for debate.</p>
+          <div class="xrefs">
+            <span class="xrefs-label">Reads with</span>
+            <a class="xref" href="#point-10">№ 10 — It amortizes senior judgment</a>
+            <a class="xref" href="#point-5">№ 5 — Diff&#8209;caps keeps a human in control</a>
+          </div>
+          <span class="claim construction">Claim class · partial — the primitive is proven on the bounded surface below; the full envelope vocabulary is roadmap</span>
+        </div></div>
+      </div>
+    </article>
+
+    <!-- III. THE SWARM -->
+    <article class="thesis" id="thesis-swarm">
+      <button class="thesis-toggle" aria-expanded="false" aria-controls="body-swarm">
+        <span class="numeral">III</span>
+        <span>
+          <span class="thesis-name">The Swarm</span>
+          <span class="thesis-line">When A delegates to B to C, authority should only <span class="ink">shrink</span>. The capability lattice is designed to make delegation <span class="gold">attenuate by construction</span>.</span>
+        </span>
+        <span class="expand-mark" aria-hidden="true">+ open</span>
+      </button>
+      <div class="thesis-body" id="body-swarm" role="region" aria-label="The Swarm, expanded">
+        <div class="thesis-body-inner"><div class="thesis-body-content">
+          <p>Multi&#8209;agent topologies are the default now. Orchestrators spawn sub&#8209;agents that spawn sub&#8209;agents, and the newest frontier models improvise their own delegation patterns — sub&#8209;agents mutating parent state, cleanup routines inheriting kill&#8209;anything scope from the top of the tree. Charming when it's benign. Nothing granted it; nothing could have denied it.</p>
+          <p>Prompts can't enforce attenuation. Connectors don't attenuate. Skills don't compose permissions. Garnet's design puts a <span class="gold">capability lattice</span> in the type system: a delegated capability is constrained to a subset of the delegator's, so authority narrows at every edge of the tree — whatever the model, however novel its orchestration style. The machine&#8209;checked proof of that lattice is in progress, not complete; until it lands, this is a design commitment, not a shipped guarantee.</p>
+          <p>The swarm keeps its creativity. What the design takes from it is ambient authority — the difference between hoping your fleet behaves and building toward a fleet whose authority is bounded by an envelope the toolchain checks.</p>
+          <div class="xrefs">
+            <span class="xrefs-label">Reads with</span>
+            <a class="xref" href="#point-9">№ 9 — Attenuating delegation across swarms</a>
+          </div>
+          <span class="claim construction">Claim class · by construction — machine&#8209;checked proof pipeline in progress; not enforced today</span>
+        </div></div>
+      </div>
+    </article>
+
+    <!-- IV. THE EVIDENCE -->
+    <article class="thesis" id="thesis-evidence">
+      <button class="thesis-toggle" aria-expanded="false" aria-controls="body-evidence">
+        <span class="numeral">IV</span>
+        <span>
+          <span class="thesis-name">The Evidence</span>
+          <span class="thesis-line">Regulated buyers don't want vibes. <code>garnet build --evidence</code> — a <span class="ink">planned</span> flag, not in the CLI today — is designed to turn compliance into a compiler artifact.</span>
+        </span>
+        <span class="expand-mark" aria-hidden="true">+ open</span>
+      </button>
+      <div class="thesis-body" id="body-evidence" role="region" aria-label="The Evidence, expanded">
+        <div class="thesis-body-inner"><div class="thesis-body-content">
+          <p>Aerospace, defense, healthcare — the buyers who matter don't accept "an AI reviewed it and said it was fine." A comment thread is not an artifact. A chat log is not a control. When the auditor asks how you <em>know</em>, they mean something you can hand over.</p>
+          <p>The planned <code>garnet build --evidence</code> flag — no such build flag exists in the shipping CLI today — is designed to emit a <span class="gold">Verifiable Evidence Bundle</span> with the build: what this code is capable of, what it is incapable of, and the capability declarations those facts derive from. What is a consultant engagement today — weeks of humans reading documents — would become a compiler flag that runs on every build.</p>
+          <p>That is the roadmap, not the present: evidence stops being a deliverable you assemble for the audit and becomes exhaust the toolchain produces anyway. Until that flag ships, the runnable surface is <code>garnet caps</code>, <code>garnet diff-caps</code>, and <code>garnet seal</code>. No authority without evidence — and no evidence without a check that proves it.</p>
+          <div class="xrefs">
+            <span class="xrefs-label">Reads with</span>
+            <a class="xref" href="#point-8">№ 8 — Regulation is writing the spec</a>
+          </div>
+          <span class="claim">Claim class · planned — roadmap flag; today's runnable surface is caps / diff&#8209;caps / seal</span>
+        </div></div>
+      </div>
+    </article>
+
+    <!-- V. THE OPEN-WEIGHT REALITY -->
+    <article class="thesis" id="thesis-open-weight">
+      <button class="thesis-toggle" aria-expanded="false" aria-controls="body-openweight">
+        <span class="numeral">V</span>
+        <span>
+          <span class="thesis-name">The Open&#8209;Weight Reality</span>
+          <span class="thesis-line">Refusal&#8209;trained models stopped being a security boundary. Trust has to move into the <span class="gold">substrate</span>. Garnet is the substrate.</span>
+        </span>
+        <span class="expand-mark" aria-hidden="true">+ open</span>
+      </button>
+      <div class="thesis-body" id="body-openweight" role="region" aria-label="The Open-Weight Reality, expanded">
+        <div class="thesis-body-inner"><div class="thesis-body-content">
+          <p>For a few years, frontier labs kept a lid on dangerous capability by training their models to refuse. That era is closing. Frontier&#8209;class open&#8209;weight models now ship with little or no safety posture — they will run the offensive task, the swarm audit, the kernel exploit, for anyone, and their weights live on hardware nobody governs.</p>
+          <p>You can no longer locate trust in a model's disposition. A refusal is a property of one vendor's checkpoint; your security has to hold across <em>every</em> model your org and your adversaries will ever run. And the trust engineers are now extending to agents is <em>behavioral</em> — earned per checkpoint, per month, per "it cheats less than it used to." It doesn't transfer to the next model, the fine&#8209;tune, or the open&#8209;weight drop. Every unit of earned trust converts directly into expanded autonomy — less human review, longer unattended runs — which raises, not lowers, the cost of the day that trust is wrong. So trust moves down — out of the model, into the <span class="gold">substrate</span> the model's output must pass through.</p>
+          <p>Garnet is that substrate. Enforcement in the type system is model&#8209;agnostic by design: a compiler's verdict doesn't depend on which model wrote the code or how persuasively it argues. Today that verdict covers the bounded, pinned surface stated below — not a universal sandbox — and every widening must arrive with its own trap. The less you can trust the author of the code, the more that property is worth.</p>
+          <div class="xrefs">
+            <span class="xrefs-label">Reads with</span>
+            <a class="xref" href="#point-4">№ 4 — The connector explosion is the threat</a>
+            <a class="xref" href="#point-6">№ 6 — Incumbent fluency ships footguns</a>
+          </div>
+          <span class="claim world">Claim class · claim about the world — sourced, not self&#8209;asserted</span>
+        </div></div>
+      </div>
+    </article>
+
+    <!-- THE LAYER MAP -->
+    <section class="layermap" id="layer-map" aria-label="Where Garnet sits in the toolchain">
+      <span class="th-eyebrow">The layer map · not a competitor question</span>
+      <p class="layermap-deck" style="margin-top:14px">The agent&#8209;era toolchain is settling into three layers. They answer different questions, and they stack.</p>
+      <div class="layer-rows">
+        <div class="layer-row">
+          <span class="layer-q">How fast do we learn it works?</span>
+          <span class="layer-a"><strong>Speed.</strong> Fast CI runners, caching, flaky&#8209;test detection. Tighter feedback loops for agents that iterate faster than pipelines were built for.</span>
+        </div>
+        <div class="layer-row">
+          <span class="layer-q">Is it good?</span>
+          <span class="layer-a"><strong>Taste.</strong> AI review of finished code — readability, logic, likely bugs. Probabilistic opinions, re&#8209;spent on every change.</span>
+        </div>
+        <div class="layer-row garnet-row">
+          <span class="layer-q">What was it ever allowed to do?</span>
+          <span class="layer-a"><strong>Authority.</strong> Garnet. Capability declarations checked by <code>garnet check</code> — deterministic enforcement proven today on the bounded surface below, not yet wired into <code>garnet build</code> — delegation designed to attenuate, and an evidence flag on the roadmap. Structural, not sampled.</span>
+        </div>
+      </div>
+      <p class="layermap-note">Tests are empirical — they check behaviors someone thought to check. Capabilities are structural — they are built to bound behaviors nobody thought of. A swarm can pass every test in the suite while holding authority it never needed; no green checkmark speaks to that. Which is why <code>garnet check</code> runs <em>inside</em> your CI, whoever's runners it's on: the faster the pipeline, the more often the declared envelope is checked — and, once the evidence flag ships, the more often the evidence would regenerate.</p>
+    </section>
+
+    <!-- THE HONEST OBJECTION -->
+    <article class="thesis objection" id="honest-objection">
+      <button class="thesis-toggle" aria-expanded="false" aria-controls="body-objection">
+        <span class="numeral">◇</span>
+        <span>
+          <span class="thesis-name">The Honest Objection</span>
+          <span class="thesis-line">A page that grades its own claims should also state the best case <span class="ink">against</span> itself.</span>
+        </span>
+        <span class="expand-mark" aria-hidden="true">+ open</span>
+      </button>
+      <div class="thesis-body" id="body-objection" role="region" aria-label="The honest objection, expanded">
+        <div class="thesis-body-inner"><div class="thesis-body-content">
+          <p>The strongest argument against Garnet isn't a competing tool — it's comfort. Fast CI, good models, and AI review together produce a real feeling of safety, and many teams won't reach for structural guarantees until an incident forces the question. If probabilistic confidence stays good enough for your risk profile, you may never feel the need.</p>
+          <p>We think that feeling is sampling error — confidence in the runs you've seen, extended to the runs you haven't. For teams whose auditors, regulators, or customers accept "we felt confident" as an answer, adopting Garnet early is a judgment call. For teams where that answer is inadmissible, it isn't. Either way, we'd rather you hear the objection from us, priced honestly, than discover it in a postmortem.</p>
+          <span class="claim world">Claim class · self&#8209;assessment — argued, not proven</span>
+        </div></div>
+      </div>
+    </article>
+
+    <div class="theses-legend">
+      <span class="a"><i></i>Partial / by construction — proof in progress</span>
+      <span class="p"><i></i>Planned — roadmap</span>
+      <span class="b"><i></i>World&#8209;claim</span>
+    </div>
+    <p class="theses-scope-note">Nothing in this section claims enforcement beyond the two pinned Gate&#8209;1 claims in the boundary section below.</p>
+  </section>
+
   <!-- THE TEN -->
   <section>
     <div class="h2-eyebrow">Survives the skeptic</div>
     <h2>Ten reasons, July 2026</h2>
     <hr class="hr-gem">
     <div class="reasons">
-      <div class="reason"><div class="rn">1</div><div><p class="rh">Construction beats convention</p><p class="rb">A skill can be skipped, mis&#8209;prompted, or forgotten; a type cannot. When authority is a property of the artifact, the gap between "told to be careful" and "structurally unable to overstep" closes — and nothing outside the code can close it.</p></div></div>
-      <div class="reason"><div class="rn">2</div><div><p class="rh">Acceptance the model can't fake</p><p class="rb">An LLM&#8209;as&#8209;judge produces a <b>probabilistic</b> verdict from the same class of system that wrote the code. Garnet's acceptance is a deterministic trap — the compiler proves the claim or fails the build. Verification that doesn't depend on a model's judgment is rare, and getting rarer.</p></div></div>
-      <div class="reason"><div class="rn">3</div><div><p class="rh">The guarantee travels with the artifact</p><p class="rb">Your operating model, your CI, your reviewer's diligence live in the <em>environment</em> that produced the code. Ship it elsewhere and those evaporate. Garnet's seal moves <b>with</b> the binary — the seal attests what the core proves — which matters the moment agent code crosses boundaries. It now does, constantly.</p></div></div>
-      <div class="reason"><div class="rn">4</div><div><p class="rh">The connector explosion is the threat, not its refutation</p><p class="rb">MCP now runs in ~80% of observed cloud environments; 38% of scanned servers have <b>no authentication</b>; a CVSS&#8209;9.4 CVE proved unauthenticated RCE; supply&#8209;chain attacks ship malware under <b>valid signatures</b>. All authority&#8209;management failures. More agents × more connectors = a larger ungoverned&#8209;authority surface — the problem the tooling growth is making worse.</p></div></div>
-      <div class="reason"><div class="rn">5</div><div><p class="rh">Diff&#8209;caps keeps a human in control at agent volume</p><p class="rb">When one senior can't read everything ten agents ship, review has to move <em>into</em> the artifact: accept a huge PR by reading one thing — <b>did its authority envelope change?</b> No skill provides that; it's a property of the type system.</p></div></div>
-      <div class="reason"><div class="rn">6</div><div><p class="rh">Incumbent fluency ships incumbent footguns</p><p class="rb">An agent writes fluent Python <em>and</em> Python's ambient&#8209;authority footguns, because the language predates capability thinking and bolts safety on coarsely, after the fact. A language built for capability from the type system up makes the safe thing the <b>only expressible</b> thing.</p></div></div>
-      <div class="reason"><div class="rn">7</div><div><p class="rh">Garnet is the substrate under the tooling, not a rival to it</p><p class="rb">An MCP tool server <em>written in Garnet</em> declares its authority in its types, so the host verifies the envelope before granting it. "The only standard library where every function's authority is declared and verified" isn't competing with the connector economy — it's the trust layer that economy is missing.</p></div></div>
-      <div class="reason"><div class="rn">8</div><div><p class="rh">Regulation is writing Garnet's spec — with no reference implementation</p><p class="rb">The EU Cyber Resilience Act's reporting obligations land this September; FDA change&#8209;control plans, automotive OTA, and avionics all encode the same test — <em>a change is allowed iff it stays inside a pre&#8209;approved envelope</em>, done by humans reading documents today. <code>garnet build --evidence</code> turns a consultant engagement into a compiler flag.</p></div></div>
-      <div class="reason"><div class="rn">9</div><div><p class="rh">Attenuating delegation across agent swarms</p><p class="rb">When A delegates to B to C, authority should only <em>shrink</em>. Skills don't compose permissions; connectors don't attenuate; prompts can't enforce it. A capability lattice in the type system can make delegation <b>provably</b> narrow authority — load&#8209;bearing as multi&#8209;agent topologies become the default.</p></div></div>
-      <div class="reason"><div class="rn">10</div><div><p class="rh">It amortizes senior judgment instead of re&#8209;spending it</p><p class="rb">The crisis the AI&#8209;first model creates is that juniors and agents can't be trusted to ship unreviewed. Garnet doesn't replace senior judgment — one senior defines the envelope <b>once</b>, and the compiler enforces it on every junior and every agent thereafter. Process must be re&#8209;applied every time; a type applies itself.</p></div></div>
+      <div class="reason" id="point-1"><div class="rn">1</div><div><p class="rh">Construction beats convention</p><p class="rb">A skill can be skipped, mis&#8209;prompted, or forgotten; a type cannot. When authority is a property of the artifact, the gap between "told to be careful" and "structurally unable to overstep" closes — and nothing outside the code can close it.</p></div></div>
+      <div class="reason" id="point-2"><div class="rn">2</div><div><p class="rh">Acceptance the model can't fake</p><p class="rb">An LLM&#8209;as&#8209;judge produces a <b>probabilistic</b> verdict from the same class of system that wrote the code. Garnet's acceptance is a deterministic trap: where the trap is proven — the bounded, pinned Gate&#8209;1 surface below — <code>garnet check</code> proves the claim or fails, deterministically; that proof lives on the check path today, not yet the build path. Verification that doesn't depend on a model's judgment is rare, and getting rarer.</p></div></div>
+      <div class="reason" id="point-3"><div class="rn">3</div><div><p class="rh">The guarantee travels with the artifact</p><p class="rb">Your operating model, your CI, your reviewer's diligence live in the <em>environment</em> that produced the code. Ship it elsewhere and those evaporate. Garnet's seal moves <b>with</b> the binary — today it attests the declared capability surface without re&#8209;running the checker; verification lives at <code>garnet check</code>, and binding seal to a passing check is named, unshipped work — which matters the moment agent code crosses boundaries. It now does, constantly.</p></div></div>
+      <div class="reason" id="point-4"><div class="rn">4</div><div><p class="rh">The connector explosion is the threat, not its refutation</p><p class="rb">MCP now runs in ~80% of observed cloud environments; 38% of scanned servers have <b>no authentication</b>; a CVSS&#8209;9.4 CVE proved unauthenticated RCE; supply&#8209;chain attacks ship malware under <b>valid signatures</b>. All authority&#8209;management failures. More agents × more connectors = a larger ungoverned&#8209;authority surface — the problem the tooling growth is making worse.</p></div></div>
+      <div class="reason" id="point-5"><div class="rn">5</div><div><p class="rh">Diff&#8209;caps keeps a human in control at agent volume</p><p class="rb">When one senior can't read everything ten agents ship, review has to move <em>into</em> the artifact: accept a huge PR by reading one thing — <b>did its authority envelope change?</b> No skill provides that; it's a property of the type system.</p></div></div>
+      <div class="reason" id="point-6"><div class="rn">6</div><div><p class="rh">Incumbent fluency ships incumbent footguns</p><p class="rb">An agent writes fluent Python <em>and</em> Python's ambient&#8209;authority footguns, because the language predates capability thinking and bolts safety on coarsely, after the fact. A language built for capability from the type system up makes the safe thing the <b>only expressible</b> thing.</p></div></div>
+      <div class="reason" id="point-7"><div class="rn">7</div><div><p class="rh">Garnet is the substrate under the tooling, not a rival to it</p><p class="rb">An MCP tool server <em>written in Garnet</em> declares its authority in its types, so the host verifies the envelope before granting it. "The only standard library where every function's authority is declared and verified" isn't competing with the connector economy — it's the trust layer that economy is missing.</p></div></div>
+      <div class="reason" id="point-8"><div class="rn">8</div><div><p class="rh">Regulation is writing Garnet's spec — with no reference implementation</p><p class="rb">The EU Cyber Resilience Act's reporting obligations land this September; FDA change&#8209;control plans, automotive OTA, and avionics all encode the same test — <em>a change is allowed iff it stays inside a pre&#8209;approved envelope</em>, done by humans reading documents today. The planned <code>garnet build --evidence</code> flag is designed to turn a consultant engagement into a compiler flag.</p></div></div>
+      <div class="reason" id="point-9"><div class="rn">9</div><div><p class="rh">Attenuating delegation across agent swarms</p><p class="rb">When A delegates to B to C, authority should only <em>shrink</em>. Skills don't compose permissions; connectors don't attenuate; prompts can't enforce it. A capability lattice in the type system can make delegation <b>provably</b> narrow authority — load&#8209;bearing as multi&#8209;agent topologies become the default.</p></div></div>
+      <div class="reason" id="point-10"><div class="rn">10</div><div><p class="rh">It amortizes senior judgment instead of re&#8209;spending it</p><p class="rb">The crisis the AI&#8209;first model creates is that juniors and agents can't be trusted to ship unreviewed. Garnet doesn't replace senior judgment — one senior defines the envelope <b>once</b>, and the compiler is built to hold it for every junior and every agent thereafter (proven today on the bounded pinned Gate&#8209;1 surface below). Process must be re&#8209;applied every time; a type applies itself.</p></div></div>
     </div>
   </section>
 
@@ -297,7 +541,7 @@
     <div class="bound">
       <h3>Three honest boundaries</h3>
       <ol>
-        <li><b>This is a narrower, sharper need than a grand vision.</b> Garnet is the trust substrate and enforcement layer for agent&#8209;authored and agent&#8209;granted authority — the thing beneath MCP, the <code>--evidence</code> layer, the swarm&#8209;delegation primitive — not a general&#8209;purpose better&#8209;Python humans adopt for pleasure.</li>
+        <li><b>This is a narrower, sharper need than a grand vision.</b> Garnet is the trust substrate and enforcement layer for agent&#8209;authored and agent&#8209;granted authority — the thing beneath MCP, the planned <code>--evidence</code> layer, the swarm&#8209;delegation primitive — not a general&#8209;purpose better&#8209;Python humans adopt for pleasure.</li>
         <li><b>Need is not adoption.</b> These reasons argue Garnet <em>should</em> exist. Whether it reaches the people who need it is a separate, unsolved bet that rides on a playground you can touch in thirty seconds, a real library shelf, and a community that doesn't exist yet. The idea can be right and still not make it.</li>
         <li>
           <b>The foundation claim is now bounded by a closed Gate 1, not an open&#8209;ended promise.</b> Gate 1 is closed on the documented canonical-macOS + sealed-Windows boundary. One required Windows closure row was truth gate fail-closed + <code>verify examples</code> (<a href="https://github.com/Island-Dev-Crew/garnet/pull/409">canonical macOS #409</a>; <a href="https://github.com/Island-Dev-Crew/garnet/pull/468">sealed Windows #468</a>).
@@ -343,5 +587,32 @@
     </div>
   </div>
 </footer>
+<script>
+(function(){
+  var cards = document.querySelectorAll('.thesis');
+  cards.forEach(function(card){
+    var btn = card.querySelector('.thesis-toggle');
+    var mark = card.querySelector('.expand-mark');
+    if(!btn || !mark) return;
+    btn.addEventListener('click', function(){
+      var open = card.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      mark.textContent = open ? '− close' : '+ open';
+    });
+  });
+  // Deep-link support: /why#thesis-swarm opens that thesis
+  function openFromHash(){
+    var h = location.hash.replace('#','');
+    if(!h) return;
+    var t = document.getElementById(h);
+    if(t && t.classList.contains('thesis') && !t.classList.contains('open')){
+      var b = t.querySelector('.thesis-toggle');
+      if(b) b.click();
+    }
+  }
+  window.addEventListener('hashchange', openFromHash);
+  openFromHash();
+})();
+</script>
 </body>
 </html>

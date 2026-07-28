@@ -12,7 +12,7 @@ import json
 import subprocess
 import sys
 import unittest
-from dataclasses import replace
+from dataclasses import asdict, replace
 from pathlib import Path
 from unittest import mock
 
@@ -460,6 +460,96 @@ class PromoSnapshotTests(unittest.TestCase):
                     self.assertIsNone(status_mod.read_promo_snapshot(), payload)
             finally:
                 os.unlink(tmp)
+
+
+class U31CureTrapTests(unittest.TestCase):
+    """Cross-family Verdict 09 (Codex GPT-5.6 Sol) trap set for the bounded
+    U-31 cure: ``08.source`` moves from a host-absolute path to the
+    repository-relative POSIX producer path.
+
+    RED-before-implement note: the load-bearing RED is
+    ``test_trap1_source_is_exact_repo_relative_posix_path`` — it fails against
+    the un-cured absolute-path reporter and turns GREEN only with the cure.
+    The trap-2/3/4 methods are *standing regression guards* committed alongside
+    it; they hold in both states and fail any cure that would break real-state
+    sensitivity, add collateral render semantics, or weaken the digest
+    exclusion set.
+    """
+
+    AUTHORIZED_SOURCE = "scripts/garnet_launch_readiness_status.py"
+
+    def test_trap1_source_is_exact_repo_relative_posix_path(self) -> None:
+        # RED pre-cure (absolute host path); GREEN post-cure.
+        status = status_mod.read_status()
+        self.assertEqual(self.AUTHORIZED_SOURCE, status.source)
+        self.assertFalse(status.source.startswith("/"), status.source)
+        self.assertFalse(Path(status.source).is_absolute(), status.source)
+        self.assertNotIn("\\", status.source)
+        # The pre-existing suffix contract is preserved by the cure.
+        self.assertTrue(status.source.endswith("garnet_launch_readiness_status.py"))
+
+    def test_trap2_real_dependency_change_moves_artifact_source_constant(self) -> None:
+        # A genuine readiness change (through the existing Dependencies seam)
+        # must still move the serialized artifact; source never does the moving.
+        deps = status_mod.collect_dependencies()
+        baseline = status_mod.render_json(status_mod.build_status(deps))
+        mutated = status_mod.render_json(
+            status_mod.build_status(
+                replace(deps, wasm=replace(deps.wasm, blockers=["u31-trap2 probe"]))
+            )
+        )
+        self.assertNotEqual(baseline, mutated)
+        self.assertEqual(json.loads(baseline)["source"], json.loads(mutated)["source"])
+        # ``replace`` is non-mutating: the original state restores cleanly.
+        self.assertEqual(baseline, status_mod.render_json(status_mod.build_status(deps)))
+
+    def test_trap3_source_only_change_no_collateral_semantics(self) -> None:
+        # The key is retained, schema/order are stable, and mutating ONLY the
+        # source value moves the JSON by exactly one line while leaving human
+        # and markdown renders byte-identical — the cure has no other reach.
+        status = status_mod.read_status()
+        payload = asdict(status)
+        self.assertIn("source", payload)
+        self.assertEqual("garnet.launch_readiness/v1", payload["schema"])
+        self.assertEqual(["schema", "source"], list(payload.keys())[:2])
+        other = replace(status, source="u31-trap3-sentinel")
+        self.assertEqual(
+            status_mod.render_human(status), status_mod.render_human(other)
+        )
+        self.assertEqual(
+            status_mod.render_markdown(status), status_mod.render_markdown(other)
+        )
+        base_lines = status_mod.render_json(status).splitlines()
+        other_lines = status_mod.render_json(other).splitlines()
+        self.assertEqual(len(base_lines), len(other_lines))
+        changed = [i for i, (x, y) in enumerate(zip(base_lines, other_lines)) if x != y]
+        self.assertEqual(1, len(changed), changed)
+        self.assertIn('"source"', base_lines[changed[0]])
+
+    def test_trap4_frozen_exclusion_tuple_and_lane0_inclusion(self) -> None:
+        # Digest determinism without exclusion: the frozen tuple is exactly the
+        # four authorized prefixes plus the Shelf reporter self-path, and every
+        # tracked ops/lane0/ path stays digest-INCLUDED.
+        import garnet_content_provenance as cp
+
+        self.assertEqual(
+            (
+                b"ops/lane2b/",
+                b"proofs/",
+                b"F_Project_Management/W_TRUST/",
+                b"ops/lane1/",
+            ),
+            cp.FROZEN_MUTABLE_PREFIXES,
+        )
+        self.assertEqual(b"scripts/smoke_garnet_minimum_shelf.py", cp.REPORTER_PATH)
+        raw = subprocess.run(
+            ["git", "ls-files", "-z", "--", "ops/lane0/"],
+            capture_output=True,
+            cwd=REPO_ROOT,
+        ).stdout
+        lane0 = [p for p in raw.split(b"\0") if p]
+        self.assertTrue(lane0, "expected tracked ops/lane0/ paths")
+        self.assertEqual([], [p for p in lane0 if cp._is_mutable(p)])
 
 
 if __name__ == "__main__":
