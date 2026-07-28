@@ -1,6 +1,6 @@
 {
   "schema": "garnet.launch_readiness/v1",
-  "source": "/private/tmp/garnet-l0-truth-freeze-231aefa/scripts/garnet_launch_readiness_status.py",
+  "source": "scripts/garnet_launch_readiness_status.py",
   "evidence_base": "c0190a4",
   "evidence_base_status": "measured",
   "release_grade": "research-grade v0.x prototype; release_ready=True (binary-strict)",
@@ -68,11 +68,7 @@
         "WV-5 clean-Windows evidence: wasm32 + wasm-pack web/node builds passed",
         "WV-5 real Node execution passed, including fail-closed authority smoke"
       ],
-      "blockers": [
-        "docs/playground/live.js browser adapter is not implemented",
-        "browser Wasm package is not present under docs/playground/pkg",
-        "W-PLAY Playwright browser proof is not recorded"
-      ]
+      "blockers": []
     },
     {
       "id": "minimum_sealed_shelf",

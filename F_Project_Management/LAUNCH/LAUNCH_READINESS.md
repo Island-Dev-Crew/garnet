@@ -68,11 +68,6 @@ Evidence:
 - WV-5 clean-Windows evidence: wasm32 + wasm-pack web/node builds passed
 - WV-5 real Node execution passed, including fail-closed authority smoke
 
-Blockers:
-- docs/playground/live.js browser adapter is not implemented
-- browser Wasm package is not present under docs/playground/pkg
-- W-PLAY Playwright browser proof is not recorded
-
 ### `minimum_sealed_shelf` — Minimum sealed shelf (Core Ring Tier 1 + MCP library)
 
 State: **manual-deferred**

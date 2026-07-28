@@ -10,8 +10,8 @@
     "northStar": "An authenticated, complete, exact-head merge boundary plus a live in-browser Garnet proof and one reproducible sealed local Shelf demo. Claim only what the committed traps prove.",
     "status": "active",
     "started": "2026-07-12",
-    "updated": "2026-07-16T13:39:31Z",
-    "sessionCount": 8
+    "updated": "2026-07-28T13:55:40Z",
+    "sessionCount": 9
   },
   "policies": {
     "merge": "auto",
@@ -500,7 +500,7 @@
           "status": "in_progress",
           "dependsOn": [],
           "pr": null,
-          "notes": "PRs #501, #503, and #504 merged schema, lifecycle, and adversarial foundations. The strict JSON input boundary is locally approved; one bounded in-process Garnet tool must precede raw-byte stdio and sealing."
+          "notes": "PR #514 shipped the bounded Minimum Shelf/MCP product. Slice-4 WV-6 native-Windows evidence accepted 5/5 at f3876c5a78beb31d6cfe8cc5a115bf264af8008f; the current candidate is honestly partial because U-31 moved digest-included bytes, pending Slice 5's final rebind and a new NUC acceptance run."
         },
         {
           "id": "P7-T4",
@@ -619,8 +619,8 @@
     {
       "label": "Minimum Sealed Shelf product boundary",
       "baseline": "80 primitives + 5 local seeds + self-declared mcp-caps",
-      "current": "schema + lifecycle + adversarial core active; strict input parser approved locally; no tool/stdio/seal",
-      "target": "stdio + one sealed baseline + reject-without-seal + reporter",
+      "current": "product shipped; slice-4 WV-6 accepted 5/5 at e89cb299/1544; current candidate partial after U-31 product-byte movement",
+      "target": "final frozen pair rebound, then native-Windows WV-6 accepted 5/5",
       "direction": "up"
     }
   ],
@@ -656,7 +656,7 @@
       "note": "Lane 1 item 1 cannot close its live settings/no-bypass clause until Jon provisions a dedicated admin-authoritative token. GOV-009 must receive it explicitly and must never inherit, persist, or print an ambient credential."
     },
     {
-      "title": "U-19 ancestry-based review markers are unsatisfiable after squash merge — RESOLVED",
+      "title": "U-19 ancestry-based review markers are unsatisfiable after squash merge \u2014 RESOLVED",
       "severity": "low",
       "note": "Lane 0 now proves independent review at reviewed_head separately from final landed content: merged_commit must be on upstream main's first-parent history and its tree must equal reviewed_tree. Lane 1 item 2 must use the same squash-durable content-digest contract for every review marker it binds."
     },
@@ -669,6 +669,16 @@
       "title": "Minimum Shelf can overclaim MCP enforcement",
       "severity": "high",
       "note": "The existing .mcpcaps surface is self-declared and arbitrary external MCP hosts are not Garnet-enforced. The stronger claim is limited to the flagship Garnet tool executing under the real entry capability frame."
+    },
+    {
+      "title": "U-31 deterministic launch-source path \u2014 RESOLVED",
+      "severity": "low",
+      "note": "Verdict 10 approved the repo-relative POSIX producer path; native-Windows evidence 97 reproduced the exact spelling. Slice 5 may now regenerate the tracked reporter artifact."
+    },
+    {
+      "title": "U-29 per-candidate WV-6 rebind cost \u2014 ACTIVE FOR SLICE 5",
+      "severity": "medium",
+      "note": "The accepted slice-4 evidence remains historically valid, but U-31 moved digest-included bytes. Slice 5 freezes and rebinds once; native-Windows acceptance follows the verdict."
     }
   ],
   "mainlineCheckpoint": {
@@ -927,9 +937,13 @@
     "wvAcceptanceStatus": {
       "WV-6": {
         "meaning": "Core Ring Tier 1 + Minimum Shelf/MCP native-Windows proof",
-        "state": "pending",
+        "state": "accepted_at_slice4_current_candidate_partial",
         "gate": "python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6 --gate",
-        "evidenceDestination": "proofs/windows/launch-verification/wv6-minimum-shelf/"
+        "evidenceDestination": "proofs/windows/launch-verification/wv6-minimum-shelf/",
+        "slice4EvidenceCommit": "f3876c5a78beb31d6cfe8cc5a115bf264af8008f",
+        "acceptedProductContentSha256": "e89cb2996def7eec8e419dac235d55f985734e84be6f991c565da35d46feb64f",
+        "acceptedProductPathCount": 1544,
+        "currentCandidateState": "partial_pending_final_rebind_and_nuc"
       },
       "WV-7": {
         "meaning": "winget/Scoop dry-run + devcontainer/Docker + installer happy-path distribution proof",
@@ -940,7 +954,7 @@
     }
   },
   "readiness": {
-    "asOf": "2026-07-16T13:39:31Z",
+    "asOf": "2026-07-28T13:55:40Z",
     "launchStatus": "HOLD",
     "denominators": [
       {
@@ -1025,7 +1039,7 @@
     "blockers": [
       "Future GOV-009 workflow/gate wiring and the human 31-to-32 activation ceremony are Jon-merge-only integrity changes.",
       "U-17: Jon must provision a dedicated admin-authoritative token before P7-T1 can close the live settings/no-bypass clause; GOV-009 must never inherit, persist, or print the ambient credential.",
-      "WV-6 and WV-7 acceptance reporters are intentionally PENDING until exact-candidate hash-verified Windows manifests exist at their frozen evidence destinations.",
+      "WV-6 was accepted 5/5 in slice 4; the current candidate is partial after U-31 product-byte movement and awaits Slice 5's final rebind plus native-Windows NUC evidence. WV-7 remains pending.",
       "Launch remains HOLD: public runs-in-your-browser and Shelf-ready claims stay blocked until their own committed Playwright/seal/reporter evidence exists."
     ],
     "conventions": [
@@ -1036,7 +1050,76 @@
       "On this Windows machine use python for local scripts; pin C:\\Program Files\\Git\\usr\\bin\\bash.exe where a harness needs Git Bash; do not infer Linux or macOS runtime proof from Windows portability",
       "Require an explicit admin-authoritative credential for GOV-009 live policy reads; never inherit the active gh account and never persist or print the token",
       "U-19 carry-forward for Lane 1 item 2: every review marker must bind content digests and a merged commit on upstream main first-parent; never require pre-squash reviewed-head ancestry",
-      "Update state.json + journal + re-render report + commit after every merge (the heartbeat)"
+      "Update state.json + journal + re-render report + commit after every merge (the heartbeat)",
+      "Slice 5 implementer identity: Codex (OpenAI GPT-5-based agent) on Hugh's MacBook Pro; earlier Claude seats remain historical provenance, and cross-family separation is not claimed for this Codex implementer against the Codex GPT-5.6 Sol reviewer."
     ]
+  },
+  "lane1Phase0Reconciliation": {
+    "schema": "garnet.lane1.phase0_reconciliation/v1",
+    "asOf": "2026-07-28T13:55:40Z",
+    "wakeTip": "8cfa5fdfa026a3d8ae718027980f494e527c8b73",
+    "implementerIdentity": {
+      "model": "Codex (OpenAI GPT-5-based agent)",
+      "machine": "Hugh's MacBook Pro (Mac17,8; arm64; macOS 26.5)",
+      "harnessTransition": "Earlier Lane 1 artifacts name Claude Code Opus 5 or Claude Fable 5 seats. Slice 5 is executed by Codex; no Claude identity is claimed for this regeneration."
+    },
+    "reviewerOfRecord": "Codex GPT-5.6 Sol on a different machine; cross-family separation is not claimed for the current Codex implementer seat",
+    "ceremonySeat": "Claude chat via Jon",
+    "mergeAuthority": "Jon (IslandDevCrew) only",
+    "reviewCarrier": "IDC-Trust-Review only",
+    "slice4Wv6Acceptance": {
+      "state": "accepted_at_slice4",
+      "evidenceCommit": "f3876c5a78beb31d6cfe8cc5a115bf264af8008f",
+      "acceptedProductContentSha256": "e89cb2996def7eec8e419dac235d55f985734e84be6f991c565da35d46feb64f",
+      "acceptedProductPathCount": 1544,
+      "currentCandidateState": "partial",
+      "currentCandidateReason": "U-31 lawfully moved digest-included product bytes; Slice 5 performs the final rebind and a later native-Windows NUC run."
+    },
+    "u31": {
+      "state": "cured_and_approved",
+      "cureHead": "c3dc53ee4169ae879647fcb74e7bb524488653ed",
+      "approval": "ops/lane1/review/10-verdict.md",
+      "nativeWindowsEvidenceCommit": "8cfa5fdfa026a3d8ae718027980f494e527c8b73",
+      "emittedSource": "scripts/garnet_launch_readiness_status.py"
+    },
+    "launchStatus": "HOLD",
+    "denominators": [
+      {
+        "id": "s114_mission",
+        "label": "S114 bounded mission",
+        "numerator": 19,
+        "denominator": 19,
+        "percent": 100.0,
+        "evidence": "ops/lane0/evidence/10-denominators.json"
+      },
+      {
+        "id": "truth_pulse",
+        "label": "Truth pulse",
+        "numerator": 65.2,
+        "denominator": 70,
+        "percent": 93.1,
+        "rounded": true,
+        "evidence": "ops/lane0/evidence/09-mit-readiness.json"
+      },
+      {
+        "id": "launch_critical",
+        "label": "Launch-critical",
+        "numerator": 3,
+        "denominator": 6,
+        "percent": 50.0,
+        "evidence": "ops/lane0/evidence/08-launch-readiness.json"
+      },
+      {
+        "id": "launch_ledger",
+        "label": "Whole launch ledger",
+        "numerator": 3,
+        "denominator": 8,
+        "percent": 37.5,
+        "evidence": "ops/lane0/evidence/08-launch-readiness.json"
+      }
+    ],
+    "bandCeiling": 3,
+    "openBlocker": "U-17 remains open: Jon must provision the dedicated admin-authoritative no-bypass readback token.",
+    "untouchedFinding": "U-36 remains registered elsewhere; Slice 5 does not chase 4/6."
   }
 }
