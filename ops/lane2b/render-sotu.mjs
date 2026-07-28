@@ -65,7 +65,10 @@ const allTasks = phases.flatMap((p) => p.tasks ?? []);
 const doneTasks = allTasks.filter((t) => t.status === "done").length;
 const allGates = phases.flatMap((p) => p.gates ?? []);
 const passedGates = allGates.filter((g) => g.status === "passed").length;
-const pct = allTasks.length ? Math.round((doneTasks / allTasks.length) * 100) : 0;
+const progressDone = allTasks.length ? doneTasks : passedGates;
+const progressTotal = allTasks.length ? allTasks.length : allGates.length;
+const progressLabel = allTasks.length ? "tasks" : "gates";
+const pct = progressTotal ? Math.round((progressDone / progressTotal) * 100) : 0;
 
 const phaseTone = { pending: "", in_progress: "amber", blocked: "red", done: "green" };
 const gateTone = { pending: "", passed: "green", failed: "red", waived: "amber" };
@@ -83,6 +86,14 @@ function journalTail(n = 12) {
 
 // ---------- resume prompt generation ----------
 function coldStartChecklist() {
+  if (m.status === "complete") {
+    return [
+      `Read ops/lane2b/state.json FIRST â€” it is the source of truth, not this prompt.`,
+      `Verify the closed state from a fresh origin/main-only clone with the recorded Shelf, WV-6, and truth gates.`,
+      `Do not reopen Lane 2B for its external follow-ons; route them through the owning post-#515 reconciliation or Lane 0 repair #3.`,
+      `Never hand-edit state-of-the-union.html; regenerate it from state.json and preserve the append-only journal and heartbeat.`,
+    ];
+  }
   return [
     `Read ops/lane2b/state.json FIRST — it is the source of truth, not this prompt.`,
     `Verify reality matches state: git log --oneline -5, and re-run the active phase's gate commands.`,
@@ -143,6 +154,8 @@ const globalPrompt = joinPrompt([
   ``,
   conventionLines(),
   conventionLines() ? `` : null,
+  (resume.nextActions ?? []).length ? `Next actions:\n${resume.nextActions.map((a) => `  - ${a}`).join("\n")}` : null,
+  (resume.nextActions ?? []).length ? `` : null,
   `Operating procedure:`,
   ...coldStartChecklist().map((c) => `  ${c}`),
 ]);
@@ -347,14 +360,14 @@ button.copy:hover{background:rgba(88,215,179,.2)}
     <div style="margin-top:14px">
       ${chip(`mission: ${m.status ?? "?"}`, statusTone)}
       ${chip(`active phase: ${resume.activePhase ?? "?"}`, "green")}
-      ${chip(`${doneTasks}/${allTasks.length} tasks`, "blue")}
+      ${chip(`${pct}% complete`, pct === 100 ? "green" : "blue")}
       ${chip(`${passedGates}/${allGates.length} gates passed`, gatesChipTone)}
       ${chip(`${prLog.length} PRs merged`)}
       ${chip(`sessions: ${m.sessionCount ?? 1}`)}
       ${chip(`updated: ${m.updated ?? "?"}`)}
     </div>
     <div class="bar big" role="img" aria-label="Overall progress ${pct}%"><div class="fill" style="width:${pct}%"></div></div>
-    <p class="small muted" style="margin-top:6px">Overall: ${pct}% of tasks complete &middot; repo ${esc(m.repo ?? "?")} &middot; plan: ${esc(m.planDoc ?? "?")}</p>
+    <p class="small muted" style="margin-top:6px">Overall: ${pct}% of ${progressLabel} complete &middot; repo ${esc(m.repo ?? "?")} &middot; plan: ${esc(m.planDoc ?? "?")}</p>
   </header>
 
   <section aria-labelledby="coldstart">
@@ -396,4 +409,4 @@ const html = rawHtml.replace(/^[\t ]+$/gm, "");
 
 writeFileSync(outPath, html);
 console.log(`Rendered ${outPath}`);
-console.log(`  phases: ${phases.length}, tasks: ${doneTasks}/${allTasks.length}, gates passed: ${passedGates}/${allGates.length}, PRs: ${prLog.length}`);
+console.log(`  phases: ${phases.length}, progress: ${progressDone}/${progressTotal} ${progressLabel}, gates passed: ${passedGates}/${allGates.length}, PRs: ${prLog.length}`);
