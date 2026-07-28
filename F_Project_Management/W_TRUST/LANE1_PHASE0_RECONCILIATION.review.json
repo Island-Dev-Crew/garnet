@@ -1,0 +1,38 @@
+{
+  "author_emails": [
+    "email:codex@openai.com",
+    "email:navigata1@gmail.com"
+  ],
+  "author_ids": [
+    242020839,
+    267193182
+  ],
+  "base_commit": "68317ae258327aade47fc2c07b7b5b580ec7c6ea",
+  "blocking_findings": [],
+  "content_digest": "sha256:d7150dec66853fe7bcf8dc79367907f679af128eb74b41dc6ec59dd0508cf95a",
+  "head_repository": "Navigata1/garnet",
+  "head_repository_id": 1220086908,
+  "pull_request_id": 4152778839,
+  "pull_request_number": 518,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Lane 1 Phase 0 post-activation reconciliation. The full preserved verdict chain is: Codex GPT-5.6 Sol Verdict 01 APPROVE-WITH-BLOCKERS at reviewed_head d7430c285fa8620dcf1f0c1cd94e5cc44b98d180 / tree 2e8ce5dedfe88d67e8cc4bfa2527591ffcc5f3a8; Codex GPT-5.6 Sol Verdict 02 APPROVE-WITH-BLOCKERS at reviewed_head 4f5ebb83d5772598e37a658ed4dce78208ea86fa / tree 46b289097fa281036e8b00e5e10a3e9a6b87a175, disposing Requests 02 and 03; Codex GPT-5.6 Sol Verdict 04 APPROVE at reviewed_head 72ae0246fb448ce33d689b1b80eb783497a7f215 / tree 3c98ba05eb756377049325942842164f5d98910b; Codex GPT-5.6 Sol Verdict 05 AUTHORIZE-WITH-CONSTRAINTS for U-35 at reviewed_head f1ec5699703688037c3b6320c630ff160379cf48 / tree b35a775dd4a33e94d861e4e6636f11933138c11f; Claude Fable 5 Verdict 07 APPROVE at reviewed_head 7ad43855115103fdf2c08dddcb21cd6fd001334e / tree ad4335a036578e6e0e1d3577614091d88a261cef as same-family corroboration whose seat flip from the requested Codex reviewer was disclosed; Codex GPT-5.6 Sol Verdict 08 APPROVE at the same U-35 head/tree as the cross-family verdict of record; Codex GPT-5.6 Sol Verdict 09 AUTHORIZE OPTION A WITH CONSTRAINTS for U-31 at packet head 889bcd706da6fe303377301d466c1af61fd2cf7d / tree 9f0cc9bd55dd999d0972ff4e6fd94d9dac3a77b0 with no implementation head approved; Codex GPT-5.6 Sol Verdict 10 APPROVE at reviewed_head c3dc53ee4169ae879647fcb74e7bb524488653ed / tree 20ddbf9e4529b6481d9fa0a548c24366f5b41c18; and Claude Fable 5 Verdict 11 APPROVE of the Slice-5 freeze at frozen head 599f2a7da1c858951148dd7dd256d6c5b76f67a5 / tree f8acebc286c920e49f04fe707035757876ca3c68 and rebind head 48295e5281b270384f07fae9e414d110f275afab / tree 32804fa1c39ecf078fd9961cce8fe3c6e096e10f, independently reproducing product pair ea38d3547eafa7f56141454df50eaf8084dbc66ee9573ebdd67623df8be97bbe / 1544. Native-Windows evidence commit 1b042a0663ab7086967d2b79541261708aff0991 then completed WV-6 accepted 5/5 by changing only the two proofs/** evidence artifacts; it is this record's reviewed_head because it is the exact pre-record candidate tip and its trust-kernel path bytes are identical to the Verdict-11-approved boundary. Implementer provenance is disclosed without seat laundering: earlier Phase-0 work was executed by Claude Code Opus/Fable seats; Slice 5 and this merge tail were executed by Codex, an OpenAI GPT-5-based agent, on Hugh's MacBook Pro (Mac17,8, Apple arm64, macOS 26.5 / Darwin 25.5.0); the native-Windows evidence commit records its actual Codex-on-NUC seat. Verdict 11 restored cross-family review for the disclosed Codex Slice-5 implementer. F1 authorship ratification is explicit: the exact base..reviewed_head Git author set is email:codex@openai.com plus email:navigata1@gmail.com, and the authenticated GitHub author/committer principal union is Navigata1 ID 242020839 plus codex ID 267193182. IDC-Trust-Review, GitHub ID 306739987, is the approval-event carrier only and is absent from that union; IslandDevCrew remains merge authority only. U-19 provenance rule applies: this content proof does not extend or backdate reviewed_head coverage, does not rewrite earlier seat or verdict boundaries, and binds only the exact trust-kernel path bytes shared by reviewed_head and the current record-only candidate.",
+  "review_state": "APPROVED",
+  "reviewed_head": "1b042a0663ab7086967d2b79541261708aff0991",
+  "reviewed_tree": "d664faedee0e2bd416ffbbba86f29177a7e31b2d",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "F_Project_Management/W_TRUST/LANDED_REVIEW_MARKERS.json",
+    "F_Project_Management/W_TRUST/landed/LANE1_GOVERNANCE_ACTIVATION.landed-review.json",
+    "F_Project_Management/W_TRUST/landed/LANE2B_MINIMUM_SHELF_MCP.landed-review.json",
+    "docs/why.html",
+    "scripts/garnet_content_provenance.py",
+    "scripts/garnet_launch_readiness_status.py",
+    "scripts/test_garnet_launch_readiness_status.py",
+    "scripts/test_garnet_minimum_shelf_provenance.py"
+  ],
+  "verdict": "pass"
+}
