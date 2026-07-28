@@ -506,7 +506,7 @@ def build_status(deps: Dependencies) -> LaunchReadinessStatus:
     )
     return LaunchReadinessStatus(
         schema=SCHEMA,
-        source=str(Path(__file__).resolve()),
+        source=Path(__file__).resolve().relative_to(REPO_ROOT).as_posix(),
         evidence_base=deps.evidence_base,
         evidence_base_status=deps.evidence_base_status,
         release_grade=release_grade,
