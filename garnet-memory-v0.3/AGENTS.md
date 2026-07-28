@@ -15,6 +15,10 @@ Owns the reference implementation for Garnet's working, episodic, semantic, and 
   evidence that store writes, clear, policy eviction, replacement, and drop can
   drive the bounded cycle fixture. It is not a production ARC finalizer or
   persistence backend.
+- Keep isolated-root teardown linear: the cycle graph maintains exact incoming
+  managed-ARC edge counts so releasing a store-owned root with no incoming ARC
+  edge rejects it as a trial-deletion candidate in O(1). Rooted-reachability
+  scans remain required for nodes that actually have incoming ARC peers.
 - Treat `AGENTS.md` and workflow contracts as procedural-memory analogs when designing future tooling.
 - Never hide sink, persistence, or machine-key failures; memory failures must be observable.
 - Keep tests isolated from machine-local key races and cache state.
