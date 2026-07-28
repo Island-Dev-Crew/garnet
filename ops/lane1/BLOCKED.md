@@ -1,26 +1,31 @@
 # Lane 1 · Phase 0 — BLOCKED
 
-- As of: 2026-07-27 (post verdict-04 APPROVE + ceremony-authorized WV pin rebind)
+- As of: 2026-07-28 (post verdict-08 cross-family APPROVE of U-35 at `7ad4385`; slice 4 DONE — WV-6 accepted 5/5, native-Windows evidence rebound at `f3876c5`; U-31 cure packet pushed as request 09)
 - **Cured frozen candidate:** `72ae0246fb448ce33d689b1b80eb783497a7f215` (tree `3c98ba05…`, product digest `99c3f270…`, 1578 paths) — linear successor atop verdict 02 `14a5e45`, superseding `4f5ebb8` (← `48fc752` ← `d7430c2`)
 - Fork branch: `Navigata1/garnet` · `mission/l1-reconcile-post-activation`
 - Verdict 01 cured in `48fc752`; ceremony-ruled reasons #2/#10 cured in `4f5ebb8`; verdict 02 (`14a5e45`) F1 (--evidence layer fragment) + F2 (build/seal-vs-check, source-confirmed) cured in `72ae024` (request 04). **U-32 registered** (build/seal accept what check rejects — own lane, pre-Lane-4). Ceremony ruling on verdict 02's whole-page units: DEFERRED to Lane 3 as **U-33** (launch-blocking; ONE coherent claim-ledger pass; pre-launch + pre-CRA) — no more cure rounds in this lane; `72ae024` STANDS. Addendum: `ops/lane1/review/04-request-addendum-u33.md`.
 
+## Resolved since the last update
+
+- **U-35: CURED and APPROVED.** Verdict 08 (Codex GPT-5.6 Sol, cross-family verdict of record) APPROVED the cure at exact head `7ad4385`; verdict 07 (Claude Fable 5) stands as same-family corroboration. `ops/lane1/` is digest-excluded; the pair is `e89cb299…/1544` and review artifacts no longer move it.
+- **Slice 4: DONE.** WV-6 is `accepted` 5/5 at the approved head; the native-Windows evidence rebind landed at `f3876c5` (proofs/** only, digest-inert).
+
 ## Blocked on (none the implementer's to clear)
 
-0. **U-35 CURE — awaiting verdict.** Verdict 05 AUTHORIZED exactly `b"ops/lane1/"`; the cure landed at `7ad4385` (exclusion + 3 traps + rederived pair `e89cb299…/1544` + PROOF mirrors, one series; RED at `2f2377d`; request `07-request.md`). ops/lane1/ is now digest-excluded, so review artifacts no longer move the pin and the merge-time regression is cured (trap c). **NUC still on hold until a verdict names a head.**
+1. **U-31 RULING — request 09 pending.** Slice-5 precursor: `08.source` stamps a machine-absolute path into the digest-included `ops/lane0/evidence/08-launch-readiness.json`. RED recorded first (`ops/lane1/evidence/93-u31-machine-path-red.md`): seat divergence at the same commit (`equal_without_source: True`) and would-be certified-tree divergence `824e1e8f…` vs `b232031b…`. Packet `ops/lane1/review/09-request.md` proposes the cure (Option A: repo-relative POSIX producer path) with the emitted-not-consumed determination and four pre-agreed traps. **No cure lands before the ruling** (gate-logic-adjacent, freeze ACTIVE).
+2. **Slice 5 — reporter/SOTU/denominator refresh** (after the U-31 cure lands): the ruled landed values are **66.7% / 50.0%** (verdict-01 ruling). NOTE the request-09 §6 falsified-expectation report: today's producer regenerates to 3/6 = 50.0% and 3/8 = 37.5%; reaching 4/6 additionally requires the slice-5 shelf-gate reflection of the recorded WV-6 acceptance plus matching closeout expectation updates — slice-5-reviewed changes, not part of the U-31 cure.
+3. **Slices 6–7 — Jon-only:** PR, ONE record commit added once, IDC-Trust-Review approval at the record head, authenticated gate ok:true, squash-merge. Nothing pushed after the record.
 
-1. **Next verdict** — Codex GPT-5.6 Sol delta review of the U-35 cure `7ad4385` (request 07). Verdict 05 disposed request 05 (approved-as-reviewed-but-superseded; its 5d3e7f72/1581 pin is unusable). Only a verdict here may name a NUC head.
-2. **Slice 4 — native-Windows WV-6 refresh (NUC)** at the head the NEXT verdict approves (verdict 04's approval predates the rebind). WV-6 is `partial` with four expected old-manifest boundary findings until the NUC regenerates evidence.
-3. **Slice 5 — reporter/SOTU/denominator refresh** (post-Windows): publishes **66.7% / 50.0%** per the verdict-01 ruling; **blocked by U-31** (absolute path in `08.source`, re-reproduced in verdict 02 F5) which must be cured first via its own reviewed change.
-4. **Slices 6–7 — Jon-only:** PR, ONE record commit added once, IDC-Trust-Review approval at the record head, authenticated gate ok:true, squash-merge. Nothing pushed after the record.
-
-## Exact resume command (Windows seat, slice 4 — substitute the verdict-approved head; NO head is approved yet)
+## Exact resume command (any implementer seat, after the U-31 ruling)
 
 ```
 git config --global core.autocrlf false
 git clone https://github.com/Island-Dev-Crew/garnet.git garnet && cd garnet
 git remote add fork https://github.com/Navigata1/garnet.git && git fetch fork
-git checkout <verdict-approved-head>
-# recompute the product digest via scripts/garnet_content_provenance.py; STOP if it disagrees with the request/verdict value
-# then execute the sanctioned WV-6 acceptance procedure end-to-end (all 5 checks), platform=windows
+git checkout mission/l1-reconcile-post-activation   # RE-FETCH THE TIP AT WAKE — verdicts land while lanes sleep
+# read ops/lane1/review/ for the highest-numbered verdict; if it rules on request 09, implement ONLY the authorized cure surface with RED-turns-green
+# recompute the product pair via scripts/garnet_content_provenance.py; STOP unless it equals e89cb2996def7eec8e419dac235d55f985734e84be6f991c565da35d46feb64f / 1544 before the cure commit
 ```
+
+(The slice-4 Windows resume block is retired: WV-6 is accepted 5/5 and the
+rebind landed at `f3876c5`.)
