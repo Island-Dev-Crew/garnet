@@ -1,0 +1,77 @@
+U-25 SLICE 5 — EXACT-TREE RED
+Recorded: 2026-07-29T08:22:47Z
+Implementer: Codex, OpenAI GPT-5-based runtime; exact version unavailable
+Scope commit: efd4f6bae8b3afaba74594e57944b2548142aeae
+Scope tree: e9bce10421c1eac2a514291212b87d61a5289037
+
+Command:
+  git grep -Il $'\r' HEAD --
+
+Verbatim output:
+HEAD:.dogfood/windows-audit-goal.json
+HEAD:.dogfood/windows-core-audit.json
+HEAD:D_Executive_and_Presentation/garnet-website.html
+HEAD:ops/lane2b/state-of-the-union.html
+HEAD:proofs/validation/s114-review/windows-20260628-lane2/MANIFEST.sha256
+HEAD:proofs/validation/s114-review/windows-20260628-lane2/artifacts/fresh-clone/fresh-clone-metadata.json
+HEAD:proofs/validation/s114-review/windows-20260628-lane2/artifacts/low-followups/caps-tail-forged.log
+HEAD:proofs/validation/s114-review/windows-20260628-lane2/artifacts/low-followups/seal-digest-comparison.json
+HEAD:proofs/validation/s114-review/windows-20260628-lane2/commands.jsonl
+HEAD:proofs/validation/s114-review/windows-20260628-lane2/raw/140h-eval-read-file-cmd-startprocess.stderr
+
+Class findings:
+- six proofs/** paths: text unset; CLOSED WITH NO ACTION
+- .dogfood/windows-audit-goal.json: 721 CRLF; text unspecified; RED
+- .dogfood/windows-core-audit.json: 340 CRLF; text unspecified; RED
+- D_Executive_and_Presentation/garnet-website.html: 1308 CRLF; text unspecified; RED
+- ops/lane2b/state-of-the-union.html: 21 lone CR; text unspecified; RED
+
+Source probe for the generated HTML:
+- ops/lane2b/render-sotu.mjs: CRLF=0, lone CR=0
+- ops/lane2b/state.json: CRLF=0, lone CR=0
+- ops/lane2b/journal.md: CRLF=0, lone CR=0
+
+The prior “eleven files” premise is superseded. This evidence binds paths, not a
+repository-wide count.
+
+Test-first command:
+  python3 -I scripts/test_garnet_text_byte_policy_status.py
+
+Exit:
+  1
+
+Verbatim output:
+Traceback (most recent call last):
+  File "/Users/IDC2.5/Desktop/Garnet-l0-repair3.ni7vTX/Garnet/scripts/test_garnet_text_byte_policy_status.py", line 20, in <module>
+    spec.loader.exec_module(mod)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "<frozen importlib._bootstrap_external>", line 755, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 892, in get_code
+  File "<frozen importlib._bootstrap_external>", line 950, in get_data
+FileNotFoundError: [Errno 2] No such file or directory: '/Users/IDC2.5/Desktop/Garnet-l0-repair3.ni7vTX/Garnet/scripts/garnet_text_byte_policy_status.py'
+
+Implemented-checker RED command:
+  python3 -I scripts/garnet_text_byte_policy_status.py --ref HEAD --gate
+
+Exit:
+  1
+
+Verbatim output:
+{
+  "commit": "efd4f6bae8b3afaba74594e57944b2548142aeae",
+  "exclusions": [
+    "ops/**/evidence/**",
+    "proofs/**"
+  ],
+  "ok": false,
+  "problems": [],
+  "ref": "HEAD",
+  "schema": "garnet.text_byte_policy/v1",
+  "tree": "e9bce10421c1eac2a514291212b87d61a5289037",
+  "violations": [
+    ".dogfood/windows-audit-goal.json",
+    ".dogfood/windows-core-audit.json",
+    "D_Executive_and_Presentation/garnet-website.html",
+    "ops/lane2b/state-of-the-union.html"
+  ]
+}

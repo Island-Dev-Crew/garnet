@@ -1,0 +1,150 @@
+{
+  "classes": [
+    {
+      "consumer": "scripts/garnet_windows_audit_status.py parses both paths with json.loads(Path.read_text(...)); no byte hash is consumed.",
+      "disposition": "normalize_to_lf_and_pin",
+      "id": "parsed_json_ledgers",
+      "paths": [
+        {
+          "blob_oid": "a14c686367f6d177b1d9fe71a9fd9bbc391bc2c9",
+          "bytes": 31943,
+          "crlf": 721,
+          "lone_cr": 0,
+          "path": ".dogfood/windows-audit-goal.json",
+          "sha256": "3feacae56d565d720a9bab8e23e46a4c6468e018533400f4203e169b0af38eeb"
+        },
+        {
+          "blob_oid": "1898dc6d5cd23a6725de9b1a6eafc2d04bc03cd3",
+          "bytes": 14612,
+          "crlf": 340,
+          "lone_cr": 0,
+          "path": ".dogfood/windows-core-audit.json",
+          "sha256": "3910a29ed083fb086bf85ba68c693400d3f2f7ae46c5be368a676c3442a89b24"
+        }
+      ]
+    },
+    {
+      "consumer": "No executable or hash consumer exists; the only repository reference is the historical layout document F_Project_Management/GARNET_v4_2_GITHUB_REPO_LAYOUT.md.",
+      "disposition": "normalize_to_lf_and_pin",
+      "id": "presentation_html",
+      "paths": [
+        {
+          "blob_oid": "c414e8fbc4d9a9a538f8bea255900203cd495c19",
+          "bytes": 365673,
+          "crlf": 1308,
+          "lone_cr": 0,
+          "path": "D_Executive_and_Presentation/garnet-website.html",
+          "sha256": "dd7407b72d6f130c13c01c59d8f1a92af8e5e09392bfdf7929fa79de70c017e9"
+        }
+      ]
+    },
+    {
+      "consumer": "Generated only by ops/lane2b/render-sotu.mjs from state.json and journal.md.",
+      "disposition": "harden_generator_and_regenerate",
+      "id": "generated_lone_cr",
+      "paths": [
+        {
+          "blob_oid": "68a818b88f6b81058657ce5c7ff85c28d2ad0f66",
+          "bytes": 38746,
+          "crlf": 0,
+          "lone_cr": 21,
+          "path": "ops/lane2b/state-of-the-union.html",
+          "sha256": "20cbcf168f29ef49ed66bb238c677f6473508de85a5a0d798638c9f3276f173f"
+        }
+      ],
+      "source_probe": {
+        "ops/lane2b/journal.md": {
+          "crlf": 0,
+          "lone_cr": 0
+        },
+        "ops/lane2b/render-sotu.mjs": {
+          "crlf": 0,
+          "lone_cr": 0
+        },
+        "ops/lane2b/state.json": {
+          "crlf": 0,
+          "lone_cr": 0
+        }
+      }
+    },
+    {
+      "attribute": "text: unset",
+      "disposition": "closed_no_action",
+      "id": "sealed_windows_provenance",
+      "paths": [
+        {
+          "blob_oid": "dc0cfaffa500180a4987269c905dde9b9815de5b",
+          "bytes": 17220,
+          "crlf": 160,
+          "lone_cr": 0,
+          "path": "proofs/validation/s114-review/windows-20260628-lane2/MANIFEST.sha256",
+          "sha256": "8de596ef584481bf8b3641c2fa26537d8e2a54c7a5c05483e4999a734299b0ae"
+        },
+        {
+          "blob_oid": "456682448a9d99aac0374ecb5a17aefbeef806d0",
+          "bytes": 374,
+          "crlf": 6,
+          "lone_cr": 0,
+          "path": "proofs/validation/s114-review/windows-20260628-lane2/artifacts/fresh-clone/fresh-clone-metadata.json",
+          "sha256": "784f087b361e0ee150f7567e8efeea60106d2af97e571d9bfa3655869b4187e8"
+        },
+        {
+          "blob_oid": "bba8337a1b21591550a8c787919592a02ce9f3af",
+          "bytes": 386,
+          "crlf": 2,
+          "lone_cr": 0,
+          "path": "proofs/validation/s114-review/windows-20260628-lane2/artifacts/low-followups/caps-tail-forged.log",
+          "sha256": "0184c9f6404b281e1578aad110bd5a4a45911b9ef59c9cc675be06d57527cc82"
+        },
+        {
+          "blob_oid": "9e4880c4762278416c94c864de73074f5570d252",
+          "bytes": 328,
+          "crlf": 8,
+          "lone_cr": 0,
+          "path": "proofs/validation/s114-review/windows-20260628-lane2/artifacts/low-followups/seal-digest-comparison.json",
+          "sha256": "68a3b3a5b5f695dd8f7ca0329dbd31e4de3ad259397f25d259dcf9414cb7c7de"
+        },
+        {
+          "blob_oid": "dcd82fb7ccfb3b6560cc361cab9fb60c757f3d25",
+          "bytes": 54279,
+          "crlf": 65,
+          "lone_cr": 0,
+          "path": "proofs/validation/s114-review/windows-20260628-lane2/commands.jsonl",
+          "sha256": "e4a952ffcff0fec86d230cf1cef2a06fe2e600576995df004650464e94faa441"
+        },
+        {
+          "blob_oid": "64636b448fcba983f49eab271c4ecf7fed82299f",
+          "bytes": 128,
+          "crlf": 2,
+          "lone_cr": 0,
+          "path": "proofs/validation/s114-review/windows-20260628-lane2/raw/140h-eval-read-file-cmd-startprocess.stderr",
+          "sha256": "3472b31b7315c7b5532573b87a0cd88baa9ab05a8e218ae810ad05f2d5ee5308"
+        }
+      ],
+      "reason": ".gitattributes applies proofs/** -text. These CRLF bytes are sealed Windows provenance; normalization would break MANIFEST.sha256 and the evidence-integrity gate."
+    }
+  ],
+  "finding": "U-25",
+  "implementer": {
+    "harness": "Codex",
+    "model": "OpenAI GPT-5-based runtime; exact version unavailable",
+    "seat": "implementer"
+  },
+  "policy": {
+    "checker": "scripts/garnet_text_byte_policy_status.py",
+    "exclusions": [
+      "ops/**/evidence/**",
+      "proofs/**"
+    ],
+    "rule": "Enumerate every CR-bearing text blob outside the exclusions; never assert a repository-wide total."
+  },
+  "proposed_followup": {
+    "id": "U-45",
+    "rule": "Every touched finding names its path scope at a full commit and tree before cure; count-only scopes are not authority.",
+    "state": "proposed"
+  },
+  "recorded_at": "2026-07-29T08:22:47Z",
+  "schema": "garnet.lane0_repair3.u25_scope/v1",
+  "scope_commit": "efd4f6bae8b3afaba74594e57944b2548142aeae",
+  "scope_tree": "e9bce10421c1eac2a514291212b87d61a5289037"
+}
