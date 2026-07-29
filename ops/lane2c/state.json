@@ -1,0 +1,65 @@
+{
+  "schema": "garnet.lane2c.state/v1",
+  "lane": "LANE-2C",
+  "title": "Memory teardown integrity",
+  "status": "awaiting_independent_review",
+  "branch": "mission/l2c-memory-teardown",
+  "baseHead": "efd4f6bae8b3afaba74594e57944b2548142aeae",
+  "productHead": "5cd113617acd35307bb028463833a8da2bbd6ad2",
+  "productTree": "85faad1de5a2c47cb632bedea78dfb89d209001a",
+  "implementer": "OpenAI Codex, GPT-5-based model; exact version not exposed",
+  "reviewer": "not yet occupied; different model family on MacBook Air required",
+  "reviewCarrier": "IDC-Trust-Review only",
+  "mergeAuthority": "Jon (IslandDevCrew) only",
+  "gates": [
+    {
+      "id": "truth-floor",
+      "status": "passed",
+      "note": "Lane 0 closeout, MSRV, frozen backlog, capability scope, and evidence integrity passed on the final record tree."
+    },
+    {
+      "id": "harness-placement",
+      "status": "passed",
+      "note": "The harness ships as a memory-crate example; zero active manifests exist under ops/lane2c and no dependency was added."
+    },
+    {
+      "id": "root-lockfile",
+      "status": "passed",
+      "sha256": "01b8986b1cee0ef6a53ac439bd018b54fc1dca825a8f845a259ed8001e6715fa",
+      "changed": false
+    },
+    {
+      "id": "reproduction",
+      "status": "passed",
+      "command": "python3 -I ops/lane2c/verify_evidence.py --gate",
+      "evidence": "ops/lane2c/evidence/measurement.json"
+    },
+    {
+      "id": "stress",
+      "status": "passed",
+      "command": "cargo test --locked -p garnet-memory --test stress -- --ignored",
+      "result": "4/4"
+    },
+    {
+      "id": "memory-tests",
+      "status": "passed",
+      "command": "cargo test --locked -p garnet-memory"
+    },
+    {
+      "id": "independent-review",
+      "status": "pending",
+      "request": "ops/lane2c/review/01-request.md"
+    }
+  ],
+  "resume": {
+    "nextActions": [
+      "IDC-Trust-Review carries the packet to a different-family reviewer on the MacBook Air.",
+      "Reviewer writes ops/lane2c/review/01-verdict.md.",
+      "Only Jon may decide whether to open or merge the one product PR."
+    ],
+    "blockers": [
+      "Independent review is pending.",
+      "Jon-owned merge is pending."
+    ]
+  }
+}

@@ -1,0 +1,296 @@
+{
+  "schema": "garnet.lane2c.teardown-counts/v2",
+  "lane": "LANE 2C - MEMORY TEARDOWN INTEGRITY",
+  "status": "implementation_ready_for_independent_review",
+  "base_head": "efd4f6bae8b3afaba74594e57944b2548142aeae",
+  "product_head": "5cd113617acd35307bb028463833a8da2bbd6ad2",
+  "product_tree": "85faad1de5a2c47cb632bedea78dfb89d209001a",
+  "branch": "mission/l2c-memory-teardown",
+  "seats": {
+    "implementer": {
+      "identity": "OpenAI Codex, GPT-5-based model",
+      "version": "not exposed by the harness",
+      "machine": "NUCBOX_M2PRO_S"
+    },
+    "independent_reviewer": {
+      "identity": "not yet occupied",
+      "requirement": "different model family on the MacBook Air",
+      "status": "pending"
+    },
+    "review_carrier": "IDC-Trust-Review only",
+    "merge_authority": "Jon (IslandDevCrew) only"
+  },
+  "environment": {
+    "host": {
+      "name": "NUCBOX_M2PRO_S",
+      "manufacturer": "GMKtec",
+      "model": "NucBox_M2Pro_S",
+      "os": "Microsoft Windows 11 Pro 10.0.26200",
+      "architecture": "64-bit"
+    },
+    "measurement_guest": {
+      "distribution": "Ubuntu under WSL2",
+      "kernel": "Linux 6.6.87.2-microsoft-standard-WSL2",
+      "architecture": "x86_64",
+      "filesystem_device": "/dev/sdd",
+      "filesystem_type": "ext4",
+      "source_path": "/root/garnet-l2c-cold-20260728-019faa24",
+      "harness_source": "garnet-memory-v0.3/examples/lane2c_teardown_probe.rs",
+      "wslg_used": false
+    },
+    "toolchain": {
+      "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)",
+      "valgrind": "valgrind-3.22.0",
+      "counter": "Callgrind Ir (retired intermediate-representation instructions)"
+    },
+    "quiet_state": {
+      "other_agents_spawned": 0,
+      "measurement_parallelism": "one Callgrind process at a time",
+      "stopped": [
+        {
+          "surface": "Windows OneDrive",
+          "process_id": 9296,
+          "stopped_utc": "2026-07-29T08:34:00.5984747Z"
+        },
+        {
+          "surface": "Windows OneDrive.Sync.Service",
+          "process_id": 22364,
+          "stopped_utc": "2026-07-29T08:34:00.5984747Z"
+        },
+        {
+          "surface": "Ubuntu cron.service",
+          "stopped_utc": "2026-07-29T08:34:00.7146380Z"
+        }
+      ],
+      "verified_quiet_start_utc": "2026-07-29T08:34:09.8071444Z",
+      "verified_quiet_end_utc": "2026-07-29T08:35:39.5943570Z",
+      "boundary_checks": "OneDrive absent, cron inactive, no cargo, rustc, native build, Valgrind, rsync, or syncthing process; /dev/sdd ext4 confirmed",
+      "restored": [
+        {
+          "surface": "Ubuntu cron.service",
+          "verified_active_utc": "2026-07-29T08:35:50.7129927Z"
+        },
+        {
+          "surface": "Windows OneDrive",
+          "process_id": 1052,
+          "verified_active_utc": "2026-07-29T08:35:50.7129927Z"
+        },
+        {
+          "surface": "Windows OneDrive.Sync.Service",
+          "process_id": 13512,
+          "verified_active_utc": "2026-07-29T08:36:10.1339188Z"
+        }
+      ]
+    }
+  },
+  "chronology": {
+    "replacement_measurement_window_utc": {
+      "start": "2026-07-29T08:34:09.8071444Z",
+      "end": "2026-07-29T08:35:39.5943570Z",
+      "contents": "all nine base profiles, all nine product profiles, and the 4/4 ignored stress set"
+    },
+    "first_reproduction_rule": "The original untouched-tree reproduction preceded implementation. After the harness-placement amendment, every old profile was replaced by a fresh profile produced from the example that ships in the product tree."
+  },
+  "harness": {
+    "source_path": "garnet-memory-v0.3/examples/lane2c_teardown_probe.rs",
+    "source_sha256": "7baed24c356c262aa3d19388e6a9a72117bcb9aaeecd61879b05eccca0871040",
+    "base_binary_sha256": "4577447bdfba5163467c48fc59d6444688a094c52df7a9360ffbeaa9f3f00a72",
+    "product_binary_sha256": "0ca1e4e38471ba34ffe51274216a6de144910fb5d0c791a40be7a012bcdb9810",
+    "base_build": "CARGO_TARGET_DIR=/root/lane2c-shipped-base-target cargo build --locked -p garnet-memory --example lane2c_teardown_probe --release",
+    "product_build": "CARGO_TARGET_DIR=/root/lane2c-shipped-product-target cargo build --locked -p garnet-memory --example lane2c_teardown_probe --release",
+    "plain_replay": "cargo run --locked -p garnet-memory --example lane2c_teardown_probe --release -- working-clear 256",
+    "count_replay_script": "ops/lane2c/replay_callgrind.sh",
+    "active_manifests_under_ops": 0
+  },
+  "lockfile": {
+    "root_path": "Cargo.lock",
+    "before_sha256": "01b8986b1cee0ef6a53ac439bd018b54fc1dca825a8f845a259ed8001e6715fa",
+    "after_sha256": "01b8986b1cee0ef6a53ac439bd018b54fc1dca825a8f845a259ed8001e6715fa",
+    "changed": false,
+    "original_transient_probe_account": "The superseded external probe manifest contained an empty [workspace] stanza, so Cargo treated it as its own nested workspace and wrote its lockfile outside the repository root. The root lockfile was not modified."
+  },
+  "cases": [
+    "working-clear",
+    "episodic-drop",
+    "semantic-drop"
+  ],
+  "sizes": [
+    256,
+    512,
+    1024
+  ],
+  "curve_contract": {
+    "base_minimum_doubling_ratio": 3.5,
+    "product_maximum_doubling_ratio": 2.5,
+    "wall_clock_is_claim_evidence": false
+  },
+  "profiles": [
+    {
+      "phase": "before",
+      "case": "working-clear",
+      "size": 256,
+      "instructions": 43600112,
+      "path": "evidence/callgrind/before/working-clear-256.callgrind",
+      "sha256": "70c4e81d0a8dba91754cda5406cd82271b0a2b98fdd93de8750be80d8fd16223"
+    },
+    {
+      "phase": "before",
+      "case": "working-clear",
+      "size": 512,
+      "instructions": 189450246,
+      "path": "evidence/callgrind/before/working-clear-512.callgrind",
+      "sha256": "c074a9f65665d2ba5eadc8603468c30014024797f46e078b7695200ffe263ee4"
+    },
+    {
+      "phase": "before",
+      "case": "working-clear",
+      "size": 1024,
+      "instructions": 804658305,
+      "path": "evidence/callgrind/before/working-clear-1024.callgrind",
+      "sha256": "29c9dabd80abb5fc477b667c8f1a88abdab4bf23af1d0edb746789b3ed52d121"
+    },
+    {
+      "phase": "before",
+      "case": "episodic-drop",
+      "size": 256,
+      "instructions": 43329138,
+      "path": "evidence/callgrind/before/episodic-drop-256.callgrind",
+      "sha256": "2439b7c27ec504cb758ce3a6f25921a7acc1d1de69fe2c7b03572f6a77be4155"
+    },
+    {
+      "phase": "before",
+      "case": "episodic-drop",
+      "size": 512,
+      "instructions": 189766227,
+      "path": "evidence/callgrind/before/episodic-drop-512.callgrind",
+      "sha256": "8be70856f19c22599e39f87a68fc2d10c01184c883fbdd0598b8e331e2e880e5"
+    },
+    {
+      "phase": "before",
+      "case": "episodic-drop",
+      "size": 1024,
+      "instructions": 806325886,
+      "path": "evidence/callgrind/before/episodic-drop-1024.callgrind",
+      "sha256": "864647b35433fc53dc2a5e25596bfe7faa0d63667bd14b1b3d094176fcaed206"
+    },
+    {
+      "phase": "before",
+      "case": "semantic-drop",
+      "size": 256,
+      "instructions": 43650642,
+      "path": "evidence/callgrind/before/semantic-drop-256.callgrind",
+      "sha256": "fa923c738e6e78ad2028b82d48987edf1ef81ed45f8c4d90d9fbd6ec4ba1f10b"
+    },
+    {
+      "phase": "before",
+      "case": "semantic-drop",
+      "size": 512,
+      "instructions": 189873799,
+      "path": "evidence/callgrind/before/semantic-drop-512.callgrind",
+      "sha256": "3778dec80d4f4c6f214ee2d43c8130ef750a2532b5013ba29748be84ac445900"
+    },
+    {
+      "phase": "before",
+      "case": "semantic-drop",
+      "size": 1024,
+      "instructions": 805185166,
+      "path": "evidence/callgrind/before/semantic-drop-1024.callgrind",
+      "sha256": "9629c22132a88b18b00d7fe8b370f2f91644c0669ddfc0eda82a3adb4003150b"
+    },
+    {
+      "phase": "after",
+      "case": "working-clear",
+      "size": 256,
+      "instructions": 98738,
+      "path": "evidence/callgrind/after/working-clear-256.callgrind",
+      "sha256": "50ad58ea8e6cc8eefce50a368983a739d8f4bbb232d32c88c347d8f86ad7b416"
+    },
+    {
+      "phase": "after",
+      "case": "working-clear",
+      "size": 512,
+      "instructions": 226879,
+      "path": "evidence/callgrind/after/working-clear-512.callgrind",
+      "sha256": "a5862c1bd3c37ceab095dde8f3329d2a0e44c87358a4ab628bce4fa480114fbf"
+    },
+    {
+      "phase": "after",
+      "case": "working-clear",
+      "size": 1024,
+      "instructions": 460159,
+      "path": "evidence/callgrind/after/working-clear-1024.callgrind",
+      "sha256": "36dfa4c61f9910776d1e728b621ba4e6cd66fc6833194a627b62fc5e1f4df037"
+    },
+    {
+      "phase": "after",
+      "case": "episodic-drop",
+      "size": 256,
+      "instructions": 118270,
+      "path": "evidence/callgrind/after/episodic-drop-256.callgrind",
+      "sha256": "1d51effad3e49f0f3039f47d838b2d5bc7f63fef0cdf3beeb3fab4ce9fb5934e"
+    },
+    {
+      "phase": "after",
+      "case": "episodic-drop",
+      "size": 512,
+      "instructions": 233214,
+      "path": "evidence/callgrind/after/episodic-drop-512.callgrind",
+      "sha256": "7ecaa18ff58333c30dc2bc771c608bed15e202fd718d650135977bb2f8afc65a"
+    },
+    {
+      "phase": "after",
+      "case": "episodic-drop",
+      "size": 1024,
+      "instructions": 463283,
+      "path": "evidence/callgrind/after/episodic-drop-1024.callgrind",
+      "sha256": "378e3799d49701e158c666bca9050dc60d4b301a1522dcb31ab45086cbd22062"
+    },
+    {
+      "phase": "after",
+      "case": "semantic-drop",
+      "size": 256,
+      "instructions": 168904,
+      "path": "evidence/callgrind/after/semantic-drop-256.callgrind",
+      "sha256": "1a494c6b8a7a3f958183fec94df8b88dc19ce024730d6831a1eacb078d94192c"
+    },
+    {
+      "phase": "after",
+      "case": "semantic-drop",
+      "size": 512,
+      "instructions": 334815,
+      "path": "evidence/callgrind/after/semantic-drop-512.callgrind",
+      "sha256": "86a68337733877617da512a70f5bdee8ba13c27e4eb0f510532321872fc82a3f"
+    },
+    {
+      "phase": "after",
+      "case": "semantic-drop",
+      "size": 1024,
+      "instructions": 666079,
+      "path": "evidence/callgrind/after/semantic-drop-1024.callgrind",
+      "sha256": "0dd3111f59cd19d85716bad0e7bd1b98bdc8ac4bb5048cf4d1c0609c01329a10"
+    }
+  ],
+  "stress": {
+    "command": "cargo test --locked -p garnet-memory --test stress -- --ignored",
+    "result": "4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out",
+    "output": "evidence/stress.txt"
+  },
+  "finding": {
+    "cause": "Each isolated root release called should_buffer_candidate, which rebuilt whole-graph rooted reachability and reference counts even though a node with no incoming ARC edge cannot be a cycle candidate.",
+    "repair": "CycleGraph now maintains exact incoming managed-ARC edge counts. Isolated roots take an O(1) rejection path; nodes with actual incoming ARC peers retain the rooted-reachability and trial-deletion path.",
+    "scope": [
+      "garnet-memory-v0.3/src/cycle.rs",
+      "garnet-memory-v0.3/examples/lane2c_teardown_probe.rs",
+      "garnet-memory-v0.3/AGENTS.md"
+    ]
+  },
+  "claim_boundary": {
+    "wall_clock_claim": "none",
+    "production_arc_claim": "none",
+    "u08_state": "product repair and exact-count evidence complete; independent review and Jon-owned merge remain pending",
+    "u46_state": "lane doctrine records the harness-placement rule; global registry disposition remains outside this implementer lane",
+    "frozen_backlog_modified": false,
+    "acceptance_recorded": false
+  }
+}

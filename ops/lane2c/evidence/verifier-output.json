@@ -1,0 +1,79 @@
+{
+  "schema": "garnet.lane2c.teardown-evidence-verdict/v1",
+  "ok": true,
+  "counter": "Callgrind Ir",
+  "base_head": "efd4f6bae8b3afaba74594e57944b2548142aeae",
+  "product_head": "5cd113617acd35307bb028463833a8da2bbd6ad2",
+  "repository_bindings": {
+    "shipped_harness_sha256": "7baed24c356c262aa3d19388e6a9a72117bcb9aaeecd61879b05eccca0871040",
+    "root_lockfile_sha256": "01b8986b1cee0ef6a53ac439bd018b54fc1dca825a8f845a259ed8001e6715fa",
+    "active_ops_manifests": 0,
+    "stress": "4/4"
+  },
+  "curves": [
+    {
+      "case": "working-clear",
+      "before": [
+        43600112,
+        189450246,
+        804658305
+      ],
+      "after": [
+        98738,
+        226879,
+        460159
+      ],
+      "before_doubling_ratios": [
+        4.345,
+        4.247
+      ],
+      "after_doubling_ratios": [
+        2.298,
+        2.028
+      ]
+    },
+    {
+      "case": "episodic-drop",
+      "before": [
+        43329138,
+        189766227,
+        806325886
+      ],
+      "after": [
+        118270,
+        233214,
+        463283
+      ],
+      "before_doubling_ratios": [
+        4.38,
+        4.249
+      ],
+      "after_doubling_ratios": [
+        1.972,
+        1.987
+      ]
+    },
+    {
+      "case": "semantic-drop",
+      "before": [
+        43650642,
+        189873799,
+        805185166
+      ],
+      "after": [
+        168904,
+        334815,
+        666079
+      ],
+      "before_doubling_ratios": [
+        4.35,
+        4.241
+      ],
+      "after_doubling_ratios": [
+        1.982,
+        1.989
+      ]
+    }
+  ],
+  "findings": []
+}
