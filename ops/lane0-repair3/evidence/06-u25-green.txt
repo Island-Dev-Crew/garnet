@@ -1,0 +1,113 @@
+U-25 SLICE 5 — GREEN IMPLEMENTATION EVIDENCE
+Recorded: 2026-07-29T08:28:07Z
+Implementer: OpenAI Codex, GPT-5-based runtime; exact version unavailable
+Machine: Hughs-MacBook-Pro.local
+OS/arch: macOS 26.5 / arm64
+Base: efd4f6bae8b3afaba74594e57944b2548142aeae
+Head: be89de21684c84bb0aaae8382906864a48637d20
+Tree: 1faeed401996985d9b6d8412225ab706783c3355
+
+COMMAND
+python3 -I scripts/garnet_text_byte_policy_status.py --ref HEAD --gate
+
+VERBATIM OUTPUT
+{
+  "commit": "be89de21684c84bb0aaae8382906864a48637d20",
+  "exclusions": [
+    "ops/**/evidence/**",
+    "proofs/**"
+  ],
+  "ok": true,
+  "problems": [],
+  "ref": "HEAD",
+  "schema": "garnet.text_byte_policy/v1",
+  "tree": "1faeed401996985d9b6d8412225ab706783c3355",
+  "violations": []
+}
+
+COMMAND
+python3 -I scripts/test_garnet_text_byte_policy_status.py
+
+VERBATIM OUTPUT
+......
+----------------------------------------------------------------------
+Ran 6 tests in 0.406s
+
+OK
+
+COMMAND
+python3 -I scripts/test_garnet_lane2b_sotu_bytes.py
+
+VERBATIM OUTPUT
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.079s
+
+OK
+
+COMMAND
+python3 -I scripts/garnet_windows_audit_status.py --gate
+
+VERBATIM OUTPUT
+{
+  "schema": "garnet.windows_audit_status/v1",
+  "doc_present": true,
+  "core_ledger_present": true,
+  "goal_ledger_present": true,
+  "head_pinned": true,
+  "findings_without_owner": [],
+  "ok": true
+}
+
+COMMAND
+git check-attr text eol -- .dogfood/windows-audit-goal.json .dogfood/windows-core-audit.json D_Executive_and_Presentation/garnet-website.html ops/lane2b/state-of-the-union.html proofs/validation/s114-review/windows-20260628-lane2/MANIFEST.sha256
+
+VERBATIM OUTPUT
+.dogfood/windows-audit-goal.json: text: set
+.dogfood/windows-audit-goal.json: eol: lf
+.dogfood/windows-core-audit.json: text: set
+.dogfood/windows-core-audit.json: eol: lf
+D_Executive_and_Presentation/garnet-website.html: text: set
+D_Executive_and_Presentation/garnet-website.html: eol: lf
+ops/lane2b/state-of-the-union.html: text: set
+ops/lane2b/state-of-the-union.html: eol: lf
+proofs/validation/s114-review/windows-20260628-lane2/MANIFEST.sha256: text: unset
+proofs/validation/s114-review/windows-20260628-lane2/MANIFEST.sha256: eol: lf
+
+COMMAND
+python3 -I scripts/garnet_evidence_integrity_status.py --gate
+
+VERBATIM OUTPUT
+{
+  "schema": "garnet.evidence_integrity/v1",
+  "bundles_total": 38,
+  "bundles_ok": 38,
+  "bundles_failed": 0,
+  "failed": [],
+  "ok": true
+}
+
+ADDITIONAL GREEN
+- python3 scripts/check-agent-contracts.py: agent-contracts: ok (24 contracts)
+- python3 scripts/test_check_agent_contracts.py: Ran 6 tests; OK
+- git diff --quiet efd4f6b..HEAD -- proofs/: exit 0; sealed proof blobs unchanged
+- git diff --check: exit 0
+- Lane 0 closeout: PASS; evidence 22/22; ledger 37; denominators 4/4; launch HOLD; band 3; S6 advisory
+- MSRV gate: ok=true; Rust 1.95; 18 active manifests
+- frozen-backlog gate: ok=true; eight enumerated entries
+- capability-scope gate: ok=true; two bounded claims
+
+REVIEW BOUNDARY
+python3 -I scripts/garnet_trust_kernel_review_status.py --gate
+
+Expected exit: 1
+Discovery: complete
+Base/head: efd4f6bae8b3afaba74594e57944b2548142aeae..be89de21684c84bb0aaae8382906864a48637d20
+Trust paths:
+- scripts/garnet_text_byte_policy_status.py
+- scripts/test_garnet_lane2b_sotu_bytes.py
+- scripts/test_garnet_text_byte_policy_status.py
+Content digest: sha256:7e3ba611451e8f20bb7fa3f4edd39801698b96e29c9a7eac0a0bb653649b0866
+Problem: structured review record is missing
+
+This is the required independent-review boundary, not an implementation failure.

@@ -1,0 +1,4 @@
+# Lane 0 Repair 3 Journal
+
+- 2026-07-29T08:22:47Z — U-25 scope correction accepted. The earlier eleven-file count is superseded by ten exact paths at `efd4f6b` / tree `e9bce104`: six sealed Windows-provenance paths closed with no action, three parsed/presentation CRLF assets open, and one generated lone-CR HTML asset open. Proposed U-45 registered: touched findings bind paths at an exact commit/tree, never a carried count. Implementer: OpenAI Codex, GPT-5-based runtime; exact version unavailable.
+- 2026-07-29T08:28:07Z — U-25 implementation GREEN at `be89de2` / tree `1faeed4`. The enumerating checker reports no violating path; 6/6 checker tests and 4/4 generator tests pass; Windows audit semantics remain green; sealed proofs are byte-unchanged and evidence integrity remains 38/38. Rolling trust review is REVIEW REQUIRED because no independent structured record exists. No verdict was self-authored.
