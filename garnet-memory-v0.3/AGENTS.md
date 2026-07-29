@@ -38,6 +38,7 @@ Owns the reference implementation for Garnet's working, episodic, semantic, and 
 cargo test -p garnet-memory --test cycle
 cargo test -p garnet-memory
 cargo test -p garnet-cli cache
+cargo run -p garnet-memory --example lane2c_teardown_probe --release -- working-clear 256
 ```
 
 Run workspace tests if cache or machine-key behavior changes.
