@@ -1,14 +1,14 @@
 {
-  "schema": "garnet.lane2c.state/v1",
+  "schema": "garnet.lane2c.state/v2",
   "lane": "LANE-2C",
   "title": "Memory teardown integrity",
-  "status": "awaiting_independent_review",
+  "status": "awaiting_independent_rereview",
   "branch": "mission/l2c-memory-teardown",
   "baseHead": "efd4f6bae8b3afaba74594e57944b2548142aeae",
   "productHead": "5cd113617acd35307bb028463833a8da2bbd6ad2",
   "productTree": "85faad1de5a2c47cb632bedea78dfb89d209001a",
   "implementer": "OpenAI Codex, GPT-5-based model; exact version not exposed",
-  "reviewer": "not yet occupied; different model family on MacBook Air required",
+  "reviewer": "Claude Code on Claude Fable 5 (claude-fable-5, Anthropic), Pulses-MacBook-Air.local, Darwin 25.5.0 arm64 (Apple M5)",
   "reviewCarrier": "IDC-Trust-Review only",
   "mergeAuthority": "Jon (IslandDevCrew) only",
   "gates": [
@@ -35,6 +35,22 @@
       "evidence": "ops/lane2c/evidence/measurement.json"
     },
     {
+      "id": "verdict-01",
+      "status": "blocked",
+      "verdict": "ops/lane2c/review/01-verdict.md",
+      "blockers": [
+        "B1: no leak evidence for the cheaper teardown"
+      ],
+      "note": "The independent reviewer resolved the cycle-correctness challenge in the repair's favor and blocked on exactly B1."
+    },
+    {
+      "id": "memcheck-b1-cure",
+      "status": "passed",
+      "command": "valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --error-exitcode=99 BINARY CASE 1024",
+      "evidence": "ops/lane2c/evidence/memcheck/",
+      "result": "Six captures; zero definitely, indirectly, or possibly lost bytes; 544 still-reachable bytes in one block in every capture; every before-to-after byte and block delta is zero."
+    },
+    {
       "id": "stress",
       "status": "passed",
       "command": "cargo test --locked -p garnet-memory --test stress -- --ignored",
@@ -48,17 +64,18 @@
     {
       "id": "independent-review",
       "status": "pending",
-      "request": "ops/lane2c/review/01-request.md"
+      "request": "ops/lane2c/review/02-request.md",
+      "note": "Verdict 01 is preserved as BLOCKED until the independent reviewer evaluates the B1 cure."
     }
   ],
   "resume": {
     "nextActions": [
-      "IDC-Trust-Review carries the packet to a different-family reviewer on the MacBook Air.",
-      "Reviewer writes ops/lane2c/review/01-verdict.md.",
+      "IDC-Trust-Review carries Request 02 to Claude Code on Claude Fable 5 on the MacBook Air.",
+      "Reviewer writes ops/lane2c/review/02-verdict.md at the exact transported branch head.",
       "Only Jon may decide whether to open or merge the one product PR."
     ],
     "blockers": [
-      "Independent review is pending.",
+      "Independent re-review of the B1 cure is pending.",
       "Jon-owned merge is pending."
     ]
   }

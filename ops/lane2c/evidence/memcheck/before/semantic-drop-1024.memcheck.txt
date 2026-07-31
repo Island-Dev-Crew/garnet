@@ -1,0 +1,26 @@
+==391== Memcheck, a memory error detector
+==391== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==391== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==391== Command: /root/lane2c-shipped-base-target/release/examples/lane2c_teardown_probe semantic-drop 1024
+==391== 
+candidate=efd4f6bae8b3afaba74594e57944b2548142aeae case=semantic-drop size=1024 operation_counting=false pid=391
+==391== 
+==391== HEAP SUMMARY:
+==391==     in use at exit: 544 bytes in 1 blocks
+==391==   total heap usage: 290,669 allocs, 290,668 frees, 91,191,836 bytes allocated
+==391== 
+==391== 544 bytes in 1 blocks are still reachable in loss record 1 of 1
+==391==    at 0x4846828: malloc (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==391==    by 0x163A70: ??? (in /root/lane2c-shipped-base-target/release/examples/lane2c_teardown_probe)
+==391==    by 0x11FB13: ??? (in /root/lane2c-shipped-base-target/release/examples/lane2c_teardown_probe)
+==391==    by 0x48BD1C9: (below main) (libc_start_call_main.h:58)
+==391== 
+==391== LEAK SUMMARY:
+==391==    definitely lost: 0 bytes in 0 blocks
+==391==    indirectly lost: 0 bytes in 0 blocks
+==391==      possibly lost: 0 bytes in 0 blocks
+==391==    still reachable: 544 bytes in 1 blocks
+==391==         suppressed: 0 bytes in 0 blocks
+==391== 
+==391== For lists of detected and suppressed errors, rerun with: -s
+==391== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

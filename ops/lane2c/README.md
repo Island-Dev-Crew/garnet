@@ -1,15 +1,16 @@
 # Lane 2C - Memory Teardown Integrity
 
-Status: implementation and shipped-harness count evidence complete;
-independent review and Jon-owned merge pending.
+Status: Verdict 01 blocked on B1 only; the ops-only Memcheck cure is ready for
+independent re-review. Jon-owned merge remains pending.
 
 ## Evidence header
 
 - Implementer: OpenAI Codex, GPT-5-based model; exact submodel/version was not
   exposed by the harness.
 - Implementer machine: `NUCBOX_M2PRO_S`, GMKtec NucBox_M2Pro_S.
-- Independent reviewer: seat not yet occupied. The verdict must record the
-  actual different-family model/version and the MacBook Air identity.
+- Independent reviewer: Claude Code on Claude Fable 5 (`claude-fable-5`,
+  Anthropic), on `Pulses-MacBook-Air.local`, Darwin 25.5.0 arm64 (Apple M5).
+  This is a different model family and machine from the implementer.
 - Review carrier: IDC-Trust-Review only.
 - Merge authority: Jon (IslandDevCrew) only.
 - Boot head: `efd4f6bae8b3afaba74594e57944b2548142aeae`.
@@ -43,6 +44,29 @@ For each 2x input increase, Callgrind instruction counts rose by 4.24x to
 Wall-clock time is retained only as environmental context; it is not claim
 evidence.
 
+## Leak-disposition evidence
+
+Verdict 01 resolved the cycle-correctness challenge in the repair's favor and
+blocked on exactly B1: no leak evidence for the cheaper teardown. The original
+base and product probe binaries were reused after their SHA-256 values matched
+the hashes already bound in `measurement.json`. Six Valgrind Memcheck captures
+now cover the same three cases at size 1,024:
+
+| Phase | Case | Definitely lost | Indirectly lost | Possibly lost | Still reachable |
+|---|---|---:|---:|---:|---:|
+| Before | working-clear | 0 B / 0 blocks | 0 B / 0 blocks | 0 B / 0 blocks | 544 B / 1 block |
+| Before | episodic-drop | 0 B / 0 blocks | 0 B / 0 blocks | 0 B / 0 blocks | 544 B / 1 block |
+| Before | semantic-drop | 0 B / 0 blocks | 0 B / 0 blocks | 0 B / 0 blocks | 544 B / 1 block |
+| After | working-clear | 0 B / 0 blocks | 0 B / 0 blocks | 0 B / 0 blocks | 544 B / 1 block |
+| After | episodic-drop | 0 B / 0 blocks | 0 B / 0 blocks | 0 B / 0 blocks | 544 B / 1 block |
+| After | semantic-drop | 0 B / 0 blocks | 0 B / 0 blocks | 0 B / 0 blocks | 544 B / 1 block |
+
+Every before-to-after byte and block delta is zero. Memcheck leak accounting is
+deterministic, so no quiet-machine ritual was performed and no quiet window is
+claimed for these six captures. The raw output and evidence header are under
+`ops/lane2c/evidence/memcheck/`; the exact replay is
+`ops/lane2c/replay_memcheck.sh`.
+
 ## Cause and repair
 
 Every isolated root release called `should_buffer_candidate`, which rebuilt
@@ -73,7 +97,7 @@ The superseded transient manifest did contain an empty `[workspace]` stanza,
 so Cargo treated it as a separate nested workspace and wrote its lockfile
 outside the repository. Root `Cargo.lock` was unchanged:
 `01b8986b1cee0ef6a53ac439bd018b54fc1dca825a8f845a259ed8001e6715fa`
-before and after. `ops/lane2c/DOCTRINE.md` records proposed U-46 and the
+before and after. `ops/lane2c/PROPOSED-DOCTRINE.md` records proposed U-46 and the
 effective placement rule.
 
 ## Quiet measurement window
@@ -99,14 +123,16 @@ The replacement run used one Callgrind process at a time from
 python3 -I ops/lane2c/verify_evidence.py --gate
 ```
 
-The gate checks the exact profile set and hashes, counter and command bindings,
-all curves, the shipped harness hash, unchanged root lockfile, 4/4 stress
-output, and the absence of an active manifest under `ops/lane2c/`.
+The gate checks the exact Callgrind and Memcheck capture sets and hashes,
+counter and command bindings, all curves, the six leak summaries and deltas,
+the shipped harness hash, unchanged root lockfile, 4/4 stress output, and the
+absence of an active manifest under `ops/lane2c/`.
 
 ## Claim boundary
 
 This record does not claim production ARC, a portable wall-clock threshold,
 review approval, merge approval, launch acceptance, or global registration of
-U-46. The global frozen backlog remains untouched. U-08 product repair and
-operation-count evidence are ready for the named reviewer; only that review
-and Jon-owned merge path can advance the repository claim state.
+U-46. The global frozen backlog remains untouched. Verdict 01 is preserved as
+BLOCKED; this successor supplies its sole requested evidence cure for
+independent re-review. Only the named reviewer and Jon-owned merge path can
+advance the repository claim state.

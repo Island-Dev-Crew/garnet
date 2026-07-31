@@ -1,0 +1,26 @@
+==413== Memcheck, a memory error detector
+==413== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==413== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==413== Command: /root/lane2c-shipped-product-target/release/examples/lane2c_teardown_probe working-clear 1024
+==413== 
+candidate=5cd113617acd35307bb028463833a8da2bbd6ad2 case=working-clear size=1024 operation_counting=false pid=413
+==413== 
+==413== HEAP SUMMARY:
+==413==     in use at exit: 544 bytes in 1 blocks
+==413==   total heap usage: 1,066 allocs, 1,065 frees, 195,191 bytes allocated
+==413== 
+==413== 544 bytes in 1 blocks are still reachable in loss record 1 of 1
+==413==    at 0x4846828: malloc (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==413==    by 0x163D40: ??? (in /root/lane2c-shipped-product-target/release/examples/lane2c_teardown_probe)
+==413==    by 0x11FB43: ??? (in /root/lane2c-shipped-product-target/release/examples/lane2c_teardown_probe)
+==413==    by 0x48BD1C9: (below main) (libc_start_call_main.h:58)
+==413== 
+==413== LEAK SUMMARY:
+==413==    definitely lost: 0 bytes in 0 blocks
+==413==    indirectly lost: 0 bytes in 0 blocks
+==413==      possibly lost: 0 bytes in 0 blocks
+==413==    still reachable: 544 bytes in 1 blocks
+==413==         suppressed: 0 bytes in 0 blocks
+==413== 
+==413== For lists of detected and suppressed errors, rerun with: -s
+==413== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

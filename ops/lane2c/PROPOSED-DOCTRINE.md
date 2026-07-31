@@ -1,4 +1,4 @@
-# Lane 2C Doctrine
+# Lane 2C Proposed Doctrine
 
 ## U-46 - Measurement and replay scaffolding had no declared home
 

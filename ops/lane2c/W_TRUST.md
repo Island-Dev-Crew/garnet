@@ -10,14 +10,17 @@ acceptance record.
 - Implementer machine: `NUCBOX_M2PRO_S`, GMKtec NucBox_M2Pro_S, Windows 11 Pro
   `10.0.26200`; measurement guest Ubuntu WSL2, Linux
   `6.6.87.2-microsoft-standard-WSL2`, x86_64.
-- Independent reviewer: not yet occupied. The required seat is a different
-  model family on the MacBook Air. The reviewer must disclose the actual
-  model/version and machine in `ops/lane2c/review/01-verdict.md`.
+- Independent reviewer: Claude Code on Claude Fable 5
+  (`claude-fable-5`, Anthropic), on `Pulses-MacBook-Air.local`, Darwin 25.5.0
+  arm64 (Apple M5). This is a different model family and machine from the
+  implementer.
 - Review carrier: IDC-Trust-Review only.
 - Merge authority: Jon (IslandDevCrew) only.
 
-No implementer-authored file in this branch is a verdict. The implementer must
-not write `ops/lane2c/review/01-verdict.md`.
+Verdict 01 is independently authored and BLOCKED on exactly B1, missing leak
+evidence. Its correctness challenge resolved in the repair's favor. No
+implementer-authored file in this branch is a verdict; the implementer does
+not write either Verdict 01 or the requested Verdict 02.
 
 ## Immutable product boundary
 
@@ -53,6 +56,16 @@ They do not extend the product boundary or backdate review.
   `4577447bdfba5163467c48fc59d6444688a094c52df7a9360ffbeaa9f3f00a72`
 - Product probe binary SHA-256:
   `0ca1e4e38471ba34ffe51274216a6de144910fb5d0c791a40be7a012bcdb9810`
+- Memcheck cases and size: working clear, episodic drop, semantic drop at
+  1,024 roots, before and after.
+- Memcheck result: all six captures report 0 definitely lost, 0 indirectly
+  lost, 0 possibly lost, and 544 still-reachable bytes in one block. Every
+  before-to-after byte and block delta is zero.
+- Memcheck quiet-state boundary: quiet state is irrelevant to deterministic
+  leak accounting. No quiet ritual was performed and no quiet window is
+  claimed for the six captures.
+- Memcheck binary provenance: the original base and product artifacts were
+  reused after exact SHA-256 matches to the two values above.
 - Root lockfile SHA-256 before and after:
   `01b8986b1cee0ef6a53ac439bd018b54fc1dca825a8f845a259ed8001e6715fa`
 - Active manifests under `ops/lane2c/`: zero.
@@ -65,8 +78,8 @@ python3 -I ops/lane2c/verify_evidence.py --gate
 
 ## Authority boundary
 
-The implementer records only the repair, commands, raw profiles, doctrine,
-and test results. The independent reviewer decides whether the product and
-evidence support closure. Jon alone decides merge. No tag, release, launch
-promotion, acceptance decision, or global U-46 registration is authorized by
-this companion.
+The implementer records only the repair, commands, raw profiles, proposed
+doctrine, and test results. Request 02 asks the same independent reviewer to
+decide whether the B1 evidence cure clears the sole blocker. Jon alone decides
+merge. No tag, release, launch promotion, acceptance decision, or global U-46
+registration is authorized by this companion.

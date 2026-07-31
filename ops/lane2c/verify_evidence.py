@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify Lane 2C Callgrind evidence without using wall-clock thresholds."""
+"""Verify Lane 2C Callgrind and Memcheck evidence without wall-clock gates."""
 
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ REPO_ROOT = LANE_ROOT.parents[1]
 EVIDENCE_ROOT = LANE_ROOT / "evidence"
 MEASUREMENT_PATH = EVIDENCE_ROOT / "measurement.json"
 PROFILE_ROOT = EVIDENCE_ROOT / "callgrind"
+MEMCHECK_ROOT = EVIDENCE_ROOT / "memcheck"
 STRESS_PATH = EVIDENCE_ROOT / "stress.txt"
 MANIFEST_PATH = EVIDENCE_ROOT / "MANIFEST.sha256"
 
@@ -46,6 +47,53 @@ def parse_profile(path: Path) -> dict[str, object]:
         "command": header["cmd"],
         "events": header["events"],
         "instructions": int(header["summary"]),
+        "sha256": sha256(path),
+    }
+
+
+def parse_memcheck(path: Path) -> dict[str, object]:
+    text = path.read_text(encoding="utf-8")
+
+    def required(pattern: str, label: str) -> re.Match[str]:
+        match = re.search(pattern, text, flags=re.MULTILINE)
+        if match is None:
+            raise ValueError(f"{path}: missing Memcheck {label}")
+        return match
+
+    command = required(r"^==\d+== Command:\s+(.*?)\s*$", "command").group(1)
+    candidate = required(
+        r"^candidate=([0-9a-f]+) case=([a-z-]+) size=(\d+) "
+        r"operation_counting=false pid=\d+\s*$",
+        "candidate binding",
+    )
+    losses: dict[str, dict[str, int]] = {}
+    labels = {
+        "definitely_lost": "definitely lost",
+        "indirectly_lost": "indirectly lost",
+        "possibly_lost": "possibly lost",
+        "still_reachable": "still reachable",
+    }
+    for key, label in labels.items():
+        match = required(
+            rf"^\s*==\d+==\s+{label}:\s+([\d,]+) bytes in ([\d,]+) blocks\s*$",
+            label,
+        )
+        losses[key] = {
+            "bytes": int(match.group(1).replace(",", "")),
+            "blocks": int(match.group(2).replace(",", "")),
+        }
+    errors = required(
+        r"^==\d+== ERROR SUMMARY:\s+([\d,]+) errors from [\d,]+ contexts",
+        "error summary",
+    )
+    return {
+        "version": "Valgrind-3.22.0" in text,
+        "command": command,
+        "head": candidate.group(1),
+        "case": candidate.group(2),
+        "size": int(candidate.group(3)),
+        "losses": losses,
+        "errors": int(errors.group(1).replace(",", "")),
         "sha256": sha256(path),
     }
 
@@ -119,6 +167,33 @@ def verify() -> dict[str, object]:
         )
     if measurement["harness"]["active_manifests_under_ops"] != 0:
         findings.append("measurement does not record zero active ops manifests")
+
+    memcheck_record = measurement["memcheck"]
+    quiet_state = memcheck_record["quiet_state"]
+    if quiet_state["required"] or quiet_state["ritual_performed"]:
+        findings.append("Memcheck record incorrectly claims a quiet-state ritual")
+    if quiet_state["claim"] != "none":
+        findings.append("Memcheck record makes a quiet-state claim")
+    if memcheck_record["size"] != 1024:
+        findings.append("Memcheck record does not bind size 1024")
+    expected_binary_provenance = {
+        "base": (
+            measurement["base_head"],
+            measurement["harness"]["base_binary_sha256"],
+        ),
+        "product": (
+            measurement["product_head"],
+            measurement["harness"]["product_binary_sha256"],
+        ),
+    }
+    for phase, (expected_head, expected_sha256) in expected_binary_provenance.items():
+        provenance = memcheck_record["binary_provenance"][phase]
+        if provenance["head"] != expected_head:
+            findings.append(f"Memcheck {phase} binary head mismatch")
+        if provenance["sha256"] != expected_sha256:
+            findings.append(f"Memcheck {phase} binary SHA-256 mismatch")
+        if not provenance["status"].startswith("reused original artifact"):
+            findings.append(f"Memcheck {phase} binary is not recorded as reused")
 
     if not STRESS_PATH.is_file():
         findings.append("stress output missing")
@@ -196,19 +271,153 @@ def verify() -> dict[str, object]:
             }
         )
 
+    expected_memcheck_paths = {
+        Path(row["path"]) for row in memcheck_record["captures"]
+    }
+    expected_memcheck_pairs = {
+        (case, phase)
+        for case in measurement["cases"]
+        for phase in ("before", "after")
+    }
+    recorded_memcheck_pairs = {
+        (row["case"], row["phase"]) for row in memcheck_record["captures"]
+    }
+    if (
+        len(memcheck_record["captures"]) != 6
+        or recorded_memcheck_pairs != expected_memcheck_pairs
+    ):
+        findings.append("Memcheck record is not the exact three-case before/after set")
+    actual_memcheck_paths = {
+        path.relative_to(LANE_ROOT)
+        for path in MEMCHECK_ROOT.glob("*/*.memcheck.txt")
+    }
+    if actual_memcheck_paths != expected_memcheck_paths:
+        findings.append(
+            "Memcheck capture set mismatch: "
+            f"missing={sorted(map(str, expected_memcheck_paths - actual_memcheck_paths))}, "
+            f"extra={sorted(map(str, actual_memcheck_paths - expected_memcheck_paths))}"
+        )
+
+    memcheck_observed: dict[tuple[str, str], dict[str, dict[str, int]]] = {}
+    memcheck_captures: list[dict[str, object]] = []
+    for row in memcheck_record["captures"]:
+        relative = Path(row["path"])
+        path = LANE_ROOT / relative
+        if not path.is_file():
+            continue
+        capture = parse_memcheck(path)
+        phase = row["phase"]
+        case = row["case"]
+        expected_head = memcheck_record["binary_provenance"][
+            "base" if phase == "before" else "product"
+        ]["head"]
+        checks = {
+            "version": capture["version"],
+            "command": str(capture["command"]).endswith(f" {case} {memcheck_record['size']}"),
+            "head": capture["head"] == expected_head,
+            "case": capture["case"] == case,
+            "size": capture["size"] == memcheck_record["size"],
+            "losses": capture["losses"]
+            == {
+                key: row[key]
+                for key in (
+                    "definitely_lost",
+                    "indirectly_lost",
+                    "possibly_lost",
+                    "still_reachable",
+                )
+            },
+            "errors": capture["errors"] == row["errors"] == 0,
+            "exit_status": row["exit_status"] == 0,
+            "sha256": capture["sha256"] == row["sha256"],
+        }
+        for name, passed in checks.items():
+            if not passed:
+                findings.append(f"{relative}: Memcheck {name} mismatch")
+        memcheck_observed[(case, phase)] = capture["losses"]
+        memcheck_captures.append(
+            {
+                "phase": phase,
+                "case": case,
+                "definitely_lost": row["definitely_lost"],
+                "indirectly_lost": row["indirectly_lost"],
+                "possibly_lost": row["possibly_lost"],
+                "still_reachable": row["still_reachable"],
+                "errors": row["errors"],
+            }
+        )
+
+    memcheck_deltas: list[dict[str, object]] = []
+    if (
+        len(memcheck_record["deltas"]) != 3
+        or {row["case"] for row in memcheck_record["deltas"]}
+        != set(measurement["cases"])
+    ):
+        findings.append("Memcheck delta record is not the exact three-case set")
+    for recorded_delta in memcheck_record["deltas"]:
+        case = recorded_delta["case"]
+        before = memcheck_observed.get((case, "before"))
+        after = memcheck_observed.get((case, "after"))
+        if before is None or after is None:
+            findings.append(f"{case}: incomplete Memcheck before/after pair")
+            continue
+        computed: dict[str, dict[str, int]] = {}
+        for key in (
+            "definitely_lost",
+            "indirectly_lost",
+            "possibly_lost",
+            "still_reachable",
+        ):
+            computed[key] = {
+                "bytes": after[key]["bytes"] - before[key]["bytes"],
+                "blocks": after[key]["blocks"] - before[key]["blocks"],
+            }
+            if after[key]["bytes"] > before[key]["bytes"]:
+                findings.append(f"{case}: after Memcheck {key} bytes exceed before")
+            if after[key]["blocks"] > before[key]["blocks"]:
+                findings.append(f"{case}: after Memcheck {key} blocks exceed before")
+        for key in ("definitely_lost", "indirectly_lost", "possibly_lost"):
+            if before[key] != {"bytes": 0, "blocks": 0}:
+                findings.append(f"{case}: base Memcheck reports {key}")
+            if after[key] != {"bytes": 0, "blocks": 0}:
+                findings.append(f"{case}: product Memcheck reports {key}")
+        expected_delta = {
+            key: recorded_delta[key]
+            for key in (
+                "definitely_lost",
+                "indirectly_lost",
+                "possibly_lost",
+                "still_reachable",
+            )
+        }
+        if computed != expected_delta:
+            findings.append(f"{case}: recorded Memcheck delta mismatch")
+        memcheck_deltas.append({"case": case, **computed})
+
     return {
-        "schema": "garnet.lane2c.teardown-evidence-verdict/v1",
+        "schema": "garnet.lane2c.teardown-evidence-verdict/v2",
         "ok": not findings,
         "counter": "Callgrind Ir",
+        "disposition_counter": "Valgrind Memcheck leak categories",
         "base_head": measurement["base_head"],
         "product_head": measurement["product_head"],
         "repository_bindings": {
             "shipped_harness_sha256": measurement["harness"]["source_sha256"],
+            "base_binary_sha256": measurement["harness"]["base_binary_sha256"],
+            "product_binary_sha256": measurement["harness"][
+                "product_binary_sha256"
+            ],
             "root_lockfile_sha256": measurement["lockfile"]["after_sha256"],
             "active_ops_manifests": len(active_ops_manifests),
             "stress": "4/4",
         },
         "curves": curves,
+        "memcheck": {
+            "size": memcheck_record["size"],
+            "quiet_state_claim": quiet_state["claim"],
+            "captures": memcheck_captures,
+            "deltas": memcheck_deltas,
+        },
         "findings": findings,
     }
 

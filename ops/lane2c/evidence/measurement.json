@@ -1,7 +1,7 @@
 {
   "schema": "garnet.lane2c.teardown-counts/v2",
   "lane": "LANE 2C - MEMORY TEARDOWN INTEGRITY",
-  "status": "implementation_ready_for_independent_review",
+  "status": "verdict_01_b1_cure_ready_for_independent_rereview",
   "base_head": "efd4f6bae8b3afaba74594e57944b2548142aeae",
   "product_head": "5cd113617acd35307bb028463833a8da2bbd6ad2",
   "product_tree": "85faad1de5a2c47cb632bedea78dfb89d209001a",
@@ -13,9 +13,11 @@
       "machine": "NUCBOX_M2PRO_S"
     },
     "independent_reviewer": {
-      "identity": "not yet occupied",
-      "requirement": "different model family on the MacBook Air",
-      "status": "pending"
+      "identity": "Claude Code on Claude Fable 5 (claude-fable-5, Anthropic)",
+      "machine": "Pulses-MacBook-Air.local; Darwin 25.5.0; arm64 (Apple M5)",
+      "relationship": "different model family and machine from implementer",
+      "verdict_01": "BLOCKED on exactly B1; correctness challenge resolved in the repair's favor",
+      "status": "request_02_pending"
     },
     "review_carrier": "IDC-Trust-Review only",
     "merge_authority": "Jon (IslandDevCrew) only"
@@ -271,6 +273,137 @@
       "sha256": "0dd3111f59cd19d85716bad0e7bd1b98bdc8ac4bb5048cf4d1c0609c01329a10"
     }
   ],
+  "memcheck": {
+    "schema": "garnet.lane2c.memcheck-disposition/v1",
+    "blocker": "Verdict 01 B1",
+    "command": "valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --error-exitcode=99 BINARY CASE 1024",
+    "replay_script": "ops/lane2c/replay_memcheck.sh",
+    "size": 1024,
+    "quiet_state": {
+      "required": false,
+      "ritual_performed": false,
+      "claim": "none",
+      "reason": "Leak accounting is deterministic and does not depend on machine load."
+    },
+    "binary_provenance": {
+      "base": {
+        "head": "efd4f6bae8b3afaba74594e57944b2548142aeae",
+        "sha256": "4577447bdfba5163467c48fc59d6444688a094c52df7a9360ffbeaa9f3f00a72",
+        "artifact_path": "/root/lane2c-shipped-base-target/release/examples/lane2c_teardown_probe",
+        "status": "reused original artifact after exact SHA-256 match"
+      },
+      "product": {
+        "head": "5cd113617acd35307bb028463833a8da2bbd6ad2",
+        "sha256": "0ca1e4e38471ba34ffe51274216a6de144910fb5d0c791a40be7a012bcdb9810",
+        "artifact_path": "/root/lane2c-shipped-product-target/release/examples/lane2c_teardown_probe",
+        "status": "reused original artifact after exact SHA-256 match"
+      }
+    },
+    "captures": [
+      {
+        "phase": "before",
+        "case": "working-clear",
+        "captured_utc": "2026-07-31T06:21:55.9146875Z",
+        "path": "evidence/memcheck/before/working-clear-1024.memcheck.txt",
+        "sha256": "b826c9d35e4444096b11ce8f5fa408e740abf722d7467cb5f5a579ac6715936e",
+        "exit_status": 0,
+        "definitely_lost": {"bytes": 0, "blocks": 0},
+        "indirectly_lost": {"bytes": 0, "blocks": 0},
+        "possibly_lost": {"bytes": 0, "blocks": 0},
+        "still_reachable": {"bytes": 544, "blocks": 1},
+        "errors": 0
+      },
+      {
+        "phase": "before",
+        "case": "episodic-drop",
+        "captured_utc": "2026-07-31T06:21:58.3440312Z",
+        "path": "evidence/memcheck/before/episodic-drop-1024.memcheck.txt",
+        "sha256": "2759f6dfb949983f506802b18c89e915ab935aee4b671e009aa1f1f7b00a9ccd",
+        "exit_status": 0,
+        "definitely_lost": {"bytes": 0, "blocks": 0},
+        "indirectly_lost": {"bytes": 0, "blocks": 0},
+        "possibly_lost": {"bytes": 0, "blocks": 0},
+        "still_reachable": {"bytes": 544, "blocks": 1},
+        "errors": 0
+      },
+      {
+        "phase": "before",
+        "case": "semantic-drop",
+        "captured_utc": "2026-07-31T06:22:00.4023913Z",
+        "path": "evidence/memcheck/before/semantic-drop-1024.memcheck.txt",
+        "sha256": "326b3301e3e31f93215088224c2a17168007f5d8953a3d32e12e4c2bd3e08673",
+        "exit_status": 0,
+        "definitely_lost": {"bytes": 0, "blocks": 0},
+        "indirectly_lost": {"bytes": 0, "blocks": 0},
+        "possibly_lost": {"bytes": 0, "blocks": 0},
+        "still_reachable": {"bytes": 544, "blocks": 1},
+        "errors": 0
+      },
+      {
+        "phase": "after",
+        "case": "working-clear",
+        "captured_utc": "2026-07-31T06:22:04.5416470Z",
+        "path": "evidence/memcheck/after/working-clear-1024.memcheck.txt",
+        "sha256": "900c0f04c694cf237b376e09b86025740918610b96716733256a82ef3ebf2851",
+        "exit_status": 0,
+        "definitely_lost": {"bytes": 0, "blocks": 0},
+        "indirectly_lost": {"bytes": 0, "blocks": 0},
+        "possibly_lost": {"bytes": 0, "blocks": 0},
+        "still_reachable": {"bytes": 544, "blocks": 1},
+        "errors": 0
+      },
+      {
+        "phase": "after",
+        "case": "episodic-drop",
+        "captured_utc": "2026-07-31T06:22:05.2273137Z",
+        "path": "evidence/memcheck/after/episodic-drop-1024.memcheck.txt",
+        "sha256": "80d57e8d03d0c96e6c7c3cc271010cb939c5d60aa4bf48e4db52a9b3e6b6a09b",
+        "exit_status": 0,
+        "definitely_lost": {"bytes": 0, "blocks": 0},
+        "indirectly_lost": {"bytes": 0, "blocks": 0},
+        "possibly_lost": {"bytes": 0, "blocks": 0},
+        "still_reachable": {"bytes": 544, "blocks": 1},
+        "errors": 0
+      },
+      {
+        "phase": "after",
+        "case": "semantic-drop",
+        "captured_utc": "2026-07-31T06:22:05.8433136Z",
+        "path": "evidence/memcheck/after/semantic-drop-1024.memcheck.txt",
+        "sha256": "296c2e5ec7c4271b744451404ddfd802db4f0776298348cba63249892621a012",
+        "exit_status": 0,
+        "definitely_lost": {"bytes": 0, "blocks": 0},
+        "indirectly_lost": {"bytes": 0, "blocks": 0},
+        "possibly_lost": {"bytes": 0, "blocks": 0},
+        "still_reachable": {"bytes": 544, "blocks": 1},
+        "errors": 0
+      }
+    ],
+    "deltas": [
+      {
+        "case": "working-clear",
+        "definitely_lost": {"bytes": 0, "blocks": 0},
+        "indirectly_lost": {"bytes": 0, "blocks": 0},
+        "possibly_lost": {"bytes": 0, "blocks": 0},
+        "still_reachable": {"bytes": 0, "blocks": 0}
+      },
+      {
+        "case": "episodic-drop",
+        "definitely_lost": {"bytes": 0, "blocks": 0},
+        "indirectly_lost": {"bytes": 0, "blocks": 0},
+        "possibly_lost": {"bytes": 0, "blocks": 0},
+        "still_reachable": {"bytes": 0, "blocks": 0}
+      },
+      {
+        "case": "semantic-drop",
+        "definitely_lost": {"bytes": 0, "blocks": 0},
+        "indirectly_lost": {"bytes": 0, "blocks": 0},
+        "possibly_lost": {"bytes": 0, "blocks": 0},
+        "still_reachable": {"bytes": 0, "blocks": 0}
+      }
+    ],
+    "result": "Disposition parity: no after capture exceeds its before capture in any leak category."
+  },
   "stress": {
     "command": "cargo test --locked -p garnet-memory --test stress -- --ignored",
     "result": "4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out",
@@ -288,8 +421,8 @@
   "claim_boundary": {
     "wall_clock_claim": "none",
     "production_arc_claim": "none",
-    "u08_state": "product repair and exact-count evidence complete; independent review and Jon-owned merge remain pending",
-    "u46_state": "lane doctrine records the harness-placement rule; global registry disposition remains outside this implementer lane",
+    "u08_state": "Verdict 01 remains BLOCKED; its sole B1 leak-evidence cure is recorded for independent re-review; Jon-owned merge remains pending",
+    "u46_state": "lane-local proposed doctrine records the harness-placement rule; global registry disposition remains outside this implementer lane",
     "frozen_backlog_modified": false,
     "acceptance_recorded": false
   }
