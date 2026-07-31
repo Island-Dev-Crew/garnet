@@ -26,6 +26,9 @@
 - B1 disclosure and findings head:
   `a4ed09b724dd0a14d4219febf6a50ae1c5166540` / tree
   `47d83822bd4f950f08751d8d306c1e79645516f5`.
+- Prior Request 02 tip before the finding-ID collision amendment:
+  `2564b17c92ce05a19bd04fba94ddabfb10b0169f` / tree
+  `6dc91aa1fc919e84ffbb88e0abe7752cf5d5fb1e`.
 - Trust-path digest at the disclosure head:
   `sha256:47b2676bafcaf41d42404bf421194a582a7dbeaf9c83a667d87fd83a9ac87775`.
 - B1 evidence: `ops/lane0-repair3/evidence/07-b1-standing-red.txt`.
@@ -35,9 +38,12 @@
   `ops/lane0-repair3/evidence/10-python-battery-differential.txt`.
 
 This request file is itself an `ops/lane0-repair3/**` record and therefore
-digest-included under the current frozen predicate. The reviewer must fetch
-and bind the exact request tip as well as the implementation/disclosure heads
-above. No self-referential SHA is asserted inside this commit.
+digest-included under the current frozen predicate. One records-only
+finding-ID amendment commit succeeds `2564b17`; the reviewer must fetch and
+bind that exact branch tip as well as the implementation/disclosure heads
+above. A commit cannot contain its own SHA, so no self-referential SHA is
+asserted inside the amendment. U-17 remains OPEN and governance freeze remains
+not armed.
 
 ## B1 — standing-gate movement is now disclosed
 
@@ -149,7 +155,7 @@ Neither result is generalized or represented as wrong.
 - F2 is cured in the same checker/test edit at zero additional ceremony cost:
   a literal `ops/.../evidence` file now follows the existing evidence fence;
   non-evidence ops paths remain checked.
-- F3 is not fixed. Pre-existing renderer mojibake is proposed U-46, addressed
+- F3 is not fixed. Pre-existing renderer mojibake is proposed U-49, addressed
   to the Lane 3 ops/documentation sweep.
 - F4 is recorded without changing sealed bytes: three sealed paths retain
   inert `eol: lf` while `text` is unset; CR must be stripped from the CRLF
@@ -157,10 +163,16 @@ Neither result is generalized or represented as wrong.
 - F5 is recorded without rewriting historical evidence: `ref: HEAD` is
   cosmetic because commit/tree fields bind evidence 05/06.
 - Proposed U-47 routes the two standing origin/main battery failures to Lane 3
-  integration-baseline reconciliation; this lane does not cure them.
+  integration-baseline reconciliation; this lane does not cure them. They
+  were independently found by this implementer seat during the corrected
+  battery run, not by the chat seat.
 - Proposed U-48 routes resolved-toolchain binding and explicit `+1.95.0` cargo
   gate invocation to Lane 3 procedural/gate hardening; no workflow changes
   occur here.
+- Proposed U-50 records the chat-seat-found U-46 collision and routes a
+  cross-lane ID allocator to the Lane 3 governance surface. Lane 2C retains
+  U-46; U-49 and U-50 had no other assignments across the 15 current
+  non-main `mission/*` fork heads checked before this amendment.
 
 ## Fresh gates at the disclosure head
 
@@ -199,8 +211,9 @@ trust-kernel gate: REVIEW REQUIRED; structured review record missing
    neighboring non-evidence ops paths.
 5. Reproduce or audit the machine/toolchain-bound battery differential and
    confirm WV-6 is the sole head-only failure on the 1.95.0 implementer seat.
-6. Confirm U-46/U-47/U-48 remain proposed/deferred and F3–F5 received no
-   out-of-scope byte cure.
+6. Confirm Lane 2C retains U-46; U-47/U-48/U-49/U-50 remain
+   proposed/deferred; the U-47/U-50 attributions are correct; and F3–F5
+   received no out-of-scope byte cure.
 7. Audit the exact fetched request tip. The checker itself changed after
    Verdict 01, so an approval must expressly cover its new bytes and tests.
 
