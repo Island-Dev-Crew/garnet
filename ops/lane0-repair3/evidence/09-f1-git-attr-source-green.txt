@@ -1,0 +1,47 @@
+Lane 0 Repair 3 — F1 GIT_ATTR_SOURCE GREEN
+
+Recorded: 2026-07-31T12:33:30Z
+Implementer: OpenAI Codex, GPT-5-based agent; exact version unavailable
+Machine: Hughs-MacBook-Pro.local
+OS/arch: macOS 26.5 / Darwin 25.5.0, arm64
+Git: git version 2.50.1 (Apple Git-155)
+Head: 9d6baef54971b3058648d6f9d8ee4f35f49bb0e9
+Tree: 7df00be6868f35cc3e91ddca69e5feed1bd52451
+RED: ops/lane0-repair3/evidence/08-f1-worktree-attribute-red.txt
+
+The checker resolves the requested commit, then sets
+`GIT_ATTR_SOURCE=<resolved-commit>` only for the `git grep` enumeration. A
+dirty worktree `.gitattributes` can no longer hide a committed CR-bearing
+text blob.
+
+COMMAND
+python3 -I scripts/test_garnet_text_byte_policy_status.py
+
+VERBATIM OUTPUT
+.......
+----------------------------------------------------------------------
+Ran 7 tests in 0.517s
+
+OK
+
+COMMAND
+python3 -I scripts/garnet_text_byte_policy_status.py --gate --format text
+
+VERBATIM OUTPUT
+Text-byte policy at 9d6baef54971b3058648d6f9d8ee4f35f49bb0e9 / tree 7df00be6868f35cc3e91ddca69e5feed1bd52451:
+PASS: no CR-bearing text paths exist outside byte-exact evidence fences
+
+COMMAND
+python3 -I scripts/test_garnet_lane2b_sotu_bytes.py
+
+VERBATIM OUTPUT
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.069s
+
+OK
+
+F2 was cured in the same checker at no extra ceremony cost. The exclusion
+now includes a literal `ops/.../evidence` file as well as descendants of an
+evidence directory, matching the existing `.gitattributes` fence. The test
+also preserves a neighboring non-evidence ops path as a violation.
