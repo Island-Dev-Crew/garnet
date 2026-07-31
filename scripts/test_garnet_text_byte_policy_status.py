@@ -89,6 +89,25 @@ class TextBytePolicyStatusTests(unittest.TestCase):
         status = mod.read_status(root=root, ref="HEAD")
         self.assertTrue(status.ok, status)
 
+    def test_exact_commit_scan_ignores_dirty_worktree_attributes(self) -> None:
+        tmp, root = self._repo(
+            {
+                ".gitattributes": b"bad.txt diff\n",
+                "bad.txt": b"committed\r\ntext\n",
+            }
+        )
+        self.addCleanup(tmp.cleanup)
+        commit = self._git(root, "rev-parse", "HEAD")
+
+        # `git grep <commit>` still consults worktree attributes unless the
+        # attribute source is bound independently. This dirty override must
+        # not hide a CR-bearing text blob in the committed tree being scanned.
+        (root / ".gitattributes").write_bytes(b"bad.txt -diff\n")
+
+        status = mod.read_status(root=root, ref=commit)
+        self.assertFalse(status.ok)
+        self.assertEqual(["bad.txt"], status.violations)
+
     def test_missing_ref_fails_closed(self) -> None:
         tmp, root = self._repo({"clean.txt": b"clean\n"})
         self.addCleanup(tmp.cleanup)

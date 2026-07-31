@@ -1,0 +1,33 @@
+Lane 0 Repair 3 — F1 exact-commit attribute-source fixture RED
+
+Recorded: 2026-07-31T12:32:24Z
+Fixture base head: d99b1ca9a9f0a6da0d0c38d57471b565b18f0120
+Fixture base tree: 68bf27813669b2a470014d2838f841e01a48fa29
+Implementer: OpenAI Codex, GPT-5-based agent, exact model version unavailable
+Machine: Hughs-MacBook-Pro.local
+OS/arch: macOS 26.5 / Darwin 25.5.0, arm64
+
+The fixture commits `bad.txt` with CRLF bytes and a text attribute, resolves
+that exact commit, then dirties only the fixture worktree `.gitattributes` to
+mark `bad.txt -diff`. Before the F1 cure, `git grep -I <exact-commit>` consults
+the dirty worktree attributes and the checker returns a false green.
+
+Command:
+python3 -I scripts/test_garnet_text_byte_policy_status.py TextBytePolicyStatusTests.test_exact_commit_scan_ignores_dirty_worktree_attributes
+
+Verbatim output:
+F
+======================================================================
+FAIL: test_exact_commit_scan_ignores_dirty_worktree_attributes (__main__.TextBytePolicyStatusTests.test_exact_commit_scan_ignores_dirty_worktree_attributes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/IDC2.5/Desktop/Garnet-l0-repair3.ni7vTX/Garnet/scripts/test_garnet_text_byte_policy_status.py", line 108, in test_exact_commit_scan_ignores_dirty_worktree_attributes
+    self.assertFalse(status.ok)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+AssertionError: True is not false
+
+----------------------------------------------------------------------
+Ran 1 test in 0.105s
+
+FAILED (failures=1)
+EXIT=1
