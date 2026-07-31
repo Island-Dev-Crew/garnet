@@ -76,6 +76,7 @@ class TextBytePolicyStatusTests(unittest.TestCase):
             {
                 "proofs/sealed.txt": b"sealed\r\n",
                 "ops/lane/evidence/run.txt": b"evidence\r\n",
+                "ops/other/evidence": b"literal evidence path\r\n",
                 "ops/lane/state.html": b"state\r",
             }
         )

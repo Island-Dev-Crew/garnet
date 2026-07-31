@@ -8,6 +8,8 @@ while the policy question is whether any violating path exists.
 `proofs/**` and `ops/**/evidence/**` are excluded because those paths preserve
 captured bytes. Their own manifests and the evidence-integrity gate govern them.
 Git's binary classifier (`git grep -I`) separates text from binary blobs.
+Exact-commit scans bind Git's attribute lookup to that same commit through
+`GIT_ATTR_SOURCE`; dirty worktree attributes cannot change the classification.
 """
 from __future__ import annotations
 
@@ -40,9 +42,12 @@ class TextBytePolicyStatus:
 def _git(
     root: Path,
     *args: str,
+    attr_source: str | None = None,
 ) -> subprocess.CompletedProcess[bytes]:
     env = os.environ.copy()
     env["GIT_NO_REPLACE_OBJECTS"] = "1"
+    if attr_source is not None:
+        env["GIT_ATTR_SOURCE"] = attr_source
     try:
         return subprocess.run(
             ["git", *args],
@@ -91,11 +96,22 @@ def _excluded(path: str) -> bool:
     if path.startswith("proofs/"):
         return True
     parts = PurePosixPath(path).parts
-    return bool(parts and parts[0] == "ops" and "evidence" in parts[1:-1])
+    return bool(parts and parts[0] == "ops" and "evidence" in parts[1:])
 
 
 def _cr_text_paths(root: Path, commit: str) -> tuple[list[str], list[str]]:
-    result = _git(root, "grep", "-I", "-l", "-z", "-e", "\r", commit, "--")
+    result = _git(
+        root,
+        "grep",
+        "-I",
+        "-l",
+        "-z",
+        "-e",
+        "\r",
+        commit,
+        "--",
+        attr_source=commit,
+    )
     if result.returncode == 1:
         return [], []
     if result.returncode != 0:
