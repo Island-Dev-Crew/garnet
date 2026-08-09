@@ -1,0 +1,33 @@
+{
+  "author_emails": [
+    "email:codex@openai.com",
+    "email:noreply@anthropic.com"
+  ],
+  "author_ids": [
+    81847,
+    267193182
+  ],
+  "base_commit": "efd4f6bae8b3afaba74594e57944b2548142aeae",
+  "blocking_findings": [],
+  "content_digest": "sha256:47b2676bafcaf41d42404bf421194a582a7dbeaf9c83a667d87fd83a9ac87775",
+  "head_repository": "Navigata1/garnet",
+  "head_repository_id": 1220086908,
+  "pull_request_id": 4239708243,
+  "pull_request_number": 520,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Lane 0 Repair 3 Slice 5: the U-25/U-45 text-byte policy cure and its review chain. Independent cross-family reviewer: Claude Code on Claude Fable 5 (claude-fable-5, Anthropic) on Pulses-MacBook-Air.local (Darwin 25.5.0, arm64 Apple M5). Implementer: OpenAI Codex, GPT-5-based agent, on Hughs-MacBook-Pro.local (macOS 26.5 / Darwin 25.5.0, arm64). The full preserved verdict chain is: Verdict 01 at reviewed head 5e5a24c917fab7a31f061cfa99609f72de746baf / tree 44403069f2284dea6e298e4752e1a9e044f154d7 — the U-25 cure verified byte-for-byte (four-path RED at base reproduced; six sealed proofs blob-identical with 12/12 recomputed hashes; enumeration-only checker with no count contract; renderer fail-closed on CR input and output) and BLOCKED on one independently found records-only blocker (undisclosed standing-gate movement). Verdict 02 at reviewed head 608bae46bb4f554c7ffd455f01ef4cbf44faee3c / tree 7913546b516d6ef9144bdc62c02eddf9c209055f — the F1 GIT_ATTR_SOURCE cure verified empirically with RED at cbcf0a11b80b5cacec1c914686d11ee5aac87c06 and GREEN at 9d6baef54971b3058648d6f9d8ee4f35f49bb0e9, F2 exclusion aligned exactly to the gitattributes fence union, the B1 disclosure verified mechanically exact with all boundary product pairs recomputed by two agreeing methods, and BLOCKED on one records-only provenance clause (U-47 attribution). Verdict 03 APPROVE at reviewed head c02b1679d549474249784ca5c4b8618cfdb39217 / tree fe9ae5a6d5866f80b1b72a9530d35b33a9b9ee51 — the unique-successor amendment cured the U-47 marking (first recorded in Verdict 01, inherited and confirmed by the implementer seat) and registered proposed U-51 with same-family Codex-audit provenance, whose ambient-attribute channel this reviewer reproduced by execution before approving. The exact trust-kernel deltas of this branch are the three policy scripts enumerated in touched_paths, byte-bound by content_digest over the base..reviewed_head change entries. This record's reviewed_head is c9e4aa79f15a0834ca81db8e87318c0074790444 / tree c3673348651ea8de6b9c436b08f8bb38045e0cf4 because it is the exact pre-record candidate tip and its trust-kernel path bytes are identical to the Verdict-03-approved head c02b167: the two commits above c02b167 are this reviewer's own ops/lane0-repair3 verdict records and touch no trust-kernel path. Authorship follows the ceremony seat-identity ruling: the exact base..reviewed_head Git author set is email:codex@openai.com plus email:noreply@anthropic.com, and the authenticated GitHub author/committer principal union is claude ID 81847 plus codex ID 267193182. IDC-Trust-Review, GitHub ID 306739987, is the approval-event carrier only and is absent from that union; IslandDevCrew remains merge authority only. U-19 provenance rule applies: this record does not extend or backdate reviewed_head coverage, does not rewrite earlier verdict boundaries, and binds only the exact trust-kernel path bytes shared by reviewed_head and the current record-only candidate. The named successors (freeze/rebind, NUC WV-6 re-acceptance, and the U-51 slice) remain outside this record.",
+  "review_state": "APPROVED",
+  "reviewed_head": "c9e4aa79f15a0834ca81db8e87318c0074790444",
+  "reviewed_tree": "c3673348651ea8de6b9c436b08f8bb38045e0cf4",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "scripts/garnet_text_byte_policy_status.py",
+    "scripts/test_garnet_lane2b_sotu_bytes.py",
+    "scripts/test_garnet_text_byte_policy_status.py"
+  ],
+  "verdict": "pass"
+}
