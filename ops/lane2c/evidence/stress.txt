@@ -1,0 +1,20 @@
+Command:
+cargo test --locked -p garnet-memory --test stress -- --ignored
+
+Quiet-box window:
+2026-07-29T08:34:09.8071444Z through 2026-07-29T08:35:39.5943570Z
+
+Output:
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.62s
+     Running tests/stress.rs (target/debug/deps/stress-1702d8d09e069c14)
+
+running 4 tests
+test workflow_store_thousand_versions ... ok
+test working_store_50k_pushes_then_clear ... ok
+test vector_index_100k_top10 ... ok
+test episode_store_one_million_appends ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.72s
+
+Wall-clock values are retained only as command-output context. Lane 2C makes
+no portable performance claim from them.
