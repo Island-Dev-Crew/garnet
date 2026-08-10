@@ -1,0 +1,1793 @@
+..............................................F...........E.............................................................................E...............test_skips (test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.skipped_case.<locals>.SkippedCase.test_skips) ... skipped 'fixture skip must make policy evidence red'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK (skipped=1)
+test_skips (test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.skipped_case.<locals>.SkippedCase.test_skips) ... skipped 'fixture skip must make policy evidence red'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK (skipped=1)
+test_skips (test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.skipped_case.<locals>.SkippedCase.test_skips) ... skipped 'fixture skip must make policy evidence red'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK (skipped=1)
+test_skips (test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.skipped_case.<locals>.SkippedCase.test_skips) ... skipped 'fixture skip must make policy evidence red'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK (skipped=1)
+agent-contracts: ok (24 contracts)
+{
+  "schema": "garnet.academic_evidence/v1",
+  "doc_present": true,
+  "has_contribution": true,
+  "has_refuse_section": true,
+  "anchors_present": true,
+  "artifacts_cited": true,
+  "sourced_pointers_total": 24,
+  "sourced_pointers_missing": 0,
+  "ok": true
+}
+{
+  "schema": "garnet.agent_loop/v2",
+  "harness_present": true,
+  "three_stage_gate": true,
+  "rule2_widening_refused": true,
+  "rule3_provenance_recorded": true,
+  "honesty_anchor_present": true,
+  "four_artifact_dossier": true,
+  "dispatched": true,
+  "accept_reject_tests_present": true,
+  "ok": true
+}
+{
+  "schema": "garnet.benchmark_campaign/v1",
+  "benches": [
+    {
+      "crate": "garnet-parser-v0.3",
+      "name": "parse",
+      "measures": "tokenize + parse throughput on representative sources",
+      "file_present": true,
+      "declared_in_cargo": true,
+      "run_command": "cargo bench -p garnet-parser-v0.3 --bench parse",
+      "ok": true
+    },
+    {
+      "crate": "garnet-cst",
+      "name": "parse_cst_vs_ast",
+      "measures": "rowan CST build vs. AST parse cost",
+      "file_present": true,
+      "declared_in_cargo": true,
+      "run_command": "cargo bench -p garnet-cst --bench parse_cst_vs_ast",
+      "ok": true
+    },
+    {
+      "crate": "garnet-interp-v0.3",
+      "name": "eval",
+      "measures": "tree-walking interpreter evaluation throughput",
+      "file_present": true,
+      "declared_in_cargo": true,
+      "run_command": "cargo bench -p garnet-interp-v0.3 --bench eval",
+      "ok": true
+    },
+    {
+      "crate": "garnet-vm",
+      "name": "parse_compile_execute",
+      "measures": "end-to-end parse \u2192 compile \u2192 VM execute",
+      "file_present": true,
+      "declared_in_cargo": true,
+      "run_command": "cargo bench -p garnet-vm --bench parse_compile_execute",
+      "ok": true
+    },
+    {
+      "crate": "garnet-memory-v0.3",
+      "name": "vector",
+      "measures": "kind-aware vector store operations",
+      "file_present": true,
+      "declared_in_cargo": true,
+      "run_command": "cargo bench -p garnet-memory-v0.3 --bench vector",
+      "ok": true
+    },
+    {
+      "crate": "garnet-memory-v0.3",
+      "name": "eviction",
+      "measures": "memory eviction policy cost",
+      "file_present": true,
+      "declared_in_cargo": true,
+      "run_command": "cargo bench -p garnet-memory-v0.3 --bench eviction",
+      "ok": true
+    }
+  ],
+  "all_present": true,
+  "note": "Harnesses inventoried + verified present; no measurements are run or claimed here. Run the campaign with the per-bench commands; record results separately (numbers are environment-specific)."
+}
+{
+  "schema": "garnet.bounded_enforcement/v2",
+  "interp_reads_max_depth": true,
+  "interp_traps_on_exceed": true,
+  "vm_traps_on_exceed": true,
+  "enforcement_tests_present": true,
+  "ok": true
+}
+{
+  "schema": "garnet.bounded_loop_verifier/v1",
+  "checker_exports_report": true,
+  "rejects_uncheckable_safe_loops": true,
+  "accepts_literal_bounds": true,
+  "accepts_counter_and_exit_bounds": true,
+  "cli_tests_present": true,
+  "no_wasmtime_boundary_stated": true,
+  "ok": true
+}
+{
+  "schema": "garnet.build_proof/v1",
+  "workspace_test_command": "cargo test --workspace",
+  "oses": [
+    {
+      "os": "ubuntu-latest",
+      "label": "Linux",
+      "behaves": true,
+      "distributes": true,
+      "distribution_evidence": "linux-packages.yml (deb/rpm smoke)"
+    },
+    {
+      "os": "windows-latest",
+      "label": "Windows",
+      "behaves": true,
+      "distributes": false,
+      "distribution_evidence": "none (Windows CLI packaging not yet wired; Studio installer is separate)"
+    },
+    {
+      "os": "macos-latest",
+      "label": "macOS",
+      "behaves": true,
+      "distributes": true,
+      "distribution_evidence": "linux-packages.yml (macos-cli-tarballs)"
+    }
+  ],
+  "all_behaves": true,
+  "notes": [
+    "CI-attested: this reporter verifies the CI matrix; it does not run Windows/Linux builds locally (single-OS checkout).",
+    "'behaves' = compiles + `cargo test --workspace` passes on that OS in ci.yml.",
+    "The S46 sandbox policy is Linux-syscall-shaped (seccomp); it is generated on every OS but only meaningful for a Linux enforcement host.",
+    "Determinism is independently gated by determinism.yml (Cross-OS determinism)."
+  ]
+}
+{
+  "schema": "garnet.caps_enforcement/v2",
+  "interp_has_require_capability": true,
+  "program_entry_frame_present": true,
+  "vm_entry_caps_frame_present": true,
+  "bridges_gated": [
+    "env",
+    "proc",
+    "fs",
+    "net"
+  ],
+  "missing_gates": [],
+  "enforcement_tests_present": true,
+  "ok": true
+}
+{"declared_os": "Windows", "evidence_sha256": "9f515079e1b8106aa94accbe81a232027f24afa1d057ac4a9115f140739d1d47", "expected_head": "54f602dd49cc01ddaf24e36aece6adfea4729d2b", "expected_parity_sha256": "cf3631ea6afd3443d040500c5c453c07c7609c5994975bbff74e6d9f608c8cd6", "head_exact": true, "head_sha": "54f602dd49cc01ddaf24e36aece6adfea4729d2b", "ok": false, "os": "Windows", "parity_exact": false, "parity_sha256": "3f794095ec037744694c93acad03127c3adec66b1eaa35ea3264986634ad7115", "problems": ["required-context-contract did not pass every enumerated test", "workflow-file-policy did not pass every enumerated test", "workflow-yaml-policy did not pass every enumerated test", "workflow-schema-policy did not pass every enumerated test", "policy evidence contains 4 skipped test(s)", "observed suite/test-ID outcomes do not match pinned parity contract"], "schema": "garnet.governance-policy-os-evidence/v1", "suite_contract_sha256": "73826a6c684284eef3c98f97d5dc663aa1e90d00f861f7476ca030e7e537dfcb", "suites": [{"errors": [], "expected_failures": [], "failures": [], "id": "required-context-contract", "ok": false, "path": "scripts/test_garnet_required_context_contract.py", "skipped": [{"detail": "fixture skip must make policy evidence red", "test": "test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.skipped_case.<locals>.SkippedCase.test_skips"}], "test_ids": ["test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.skipped_case.<locals>.SkippedCase.test_skips"], "tests_run": 1, "transcript_sha256": "ed0fc435a4ac0db3d6a5e7c5db4a39f2787107e714ca595d0d0b82564953d69e", "unexpected_successes": []}, {"errors": [], "expected_failures": [], "failures": [], "id": "workflow-file-policy", "ok": false, "path": "scripts/test_garnet_workflow_file_policy.py", "skipped": [{"detail": "fixture skip must make policy evidence red", "test": "test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.skipped_case.<locals>.SkippedCase.test_skips"}], "test_ids": ["test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.skipped_case.<locals>.SkippedCase.test_skips"], "tests_run": 1, "transcript_sha256": "ed0fc435a4ac0db3d6a5e7c5db4a39f2787107e714ca595d0d0b82564953d69e", "unexpected_successes": []}, {"errors": [], "expected_failures": [], "failures": [], "id": "workflow-yaml-policy", "ok": false, "path": "scripts/test_garnet_workflow_yaml_policy.py", "skipped": [{"detail": "fixture skip must make policy evidence red", "test": "test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.skipped_case.<locals>.SkippedCase.test_skips"}], "test_ids": ["test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.skipped_case.<locals>.SkippedCase.test_skips"], "tests_run": 1, "transcript_sha256": "ed0fc435a4ac0db3d6a5e7c5db4a39f2787107e714ca595d0d0b82564953d69e", "unexpected_successes": []}, {"errors": [], "expected_failures": [], "failures": [], "id": "workflow-schema-policy", "ok": false, "path": "scripts/test_garnet_workflow_schema_policy.py", "skipped": [{"detail": "fixture skip must make policy evidence red", "test": "test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.skipped_case.<locals>.SkippedCase.test_skips"}], "test_ids": ["test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.skipped_case.<locals>.SkippedCase.test_skips"], "tests_run": 1, "transcript_sha256": "ed0fc435a4ac0db3d6a5e7c5db4a39f2787107e714ca595d0d0b82564953d69e", "unexpected_successes": []}], "totals": {"errors": 0, "expected_failures": 0, "failures": 0, "skipped": 4, "tests_run": 4, "unexpected_successes": 0}, "working_tree_clean": true}...test_passes (test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.passing_case.<locals>.PassingCase.test_passes) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+test_passes (test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.passing_case.<locals>.PassingCase.test_passes) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+test_passes (test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.passing_case.<locals>.PassingCase.test_passes) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+test_passes (test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.passing_case.<locals>.PassingCase.test_passes) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+..test_different_identity_passes (test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.test_different_passing_test_set_is_red_against_pinned_parity.<locals>.DifferentPassingCase.test_different_identity_passes) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+test_different_identity_passes (test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.test_different_passing_test_set_is_red_against_pinned_parity.<locals>.DifferentPassingCase.test_different_identity_passes) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+test_different_identity_passes (test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.test_different_passing_test_set_is_red_against_pinned_parity.<locals>.DifferentPassingCase.test_different_identity_passes) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+test_different_identity_passes (test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.test_different_passing_test_set_is_red_against_pinned_parity.<locals>.DifferentPassingCase.test_different_identity_passes) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+.
+{"declared_os": "Windows", "evidence_sha256": null, "expected_head": "ba4bd69aaec4115a8d9592a5f235717b7050da16", "expected_parity_sha256": "cf3631ea6afd3443d040500c5c453c07c7609c5994975bbff74e6d9f608c8cd6", "head_exact": true, "head_sha": "ba4bd69aaec4115a8d9592a5f235717b7050da16", "ok": false, "os": "Windows", "parity_exact": false, "parity_sha256": null, "problems": ["tracked index flags contain assume-unchanged or skip-worktree paths"], "schema": "garnet.governance-policy-os-evidence/v1", "suite_contract_sha256": "73826a6c684284eef3c98f97d5dc663aa1e90d00f861f7476ca030e7e537dfcb", "suites": [], "totals": {"errors": 0, "expected_failures": 0, "failures": 0, "skipped": 0, "tests_run": 0, "unexpected_successes": 0}, "working_tree_clean": false}
+{"declared_os": "Windows", "evidence_sha256": "daff1884a482f05235b4a9d59ddeff9a482f15420700670134b599273ebd1d24", "expected_head": "da0f50367598bd015c35931c646aa257b898a0d6", "expected_parity_sha256": "46d773516a202052297057b082038dbffdd173b464d563d1e4e404b31184d53c", "head_exact": true, "head_sha": "da0f50367598bd015c35931c646aa257b898a0d6", "ok": true, "os": "Windows", "parity_exact": true, "parity_sha256": "46d773516a202052297057b082038dbffdd173b464d563d1e4e404b31184d53c", "problems": [], "schema": "garnet.governance-policy-os-evidence/v1", "suite_contract_sha256": "73826a6c684284eef3c98f97d5dc663aa1e90d00f861f7476ca030e7e537dfcb", "suites": [{"errors": [], "expected_failures": [], "failures": [], "id": "required-context-contract", "ok": true, "path": "scripts/test_garnet_required_context_contract.py", "skipped": [], "test_ids": ["test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.passing_case.<locals>.PassingCase.test_passes"], "tests_run": 1, "transcript_sha256": "c043f96e1b3184f585d06beefa9f761096b92b0e381650265d5ea91b0e9793e5", "unexpected_successes": []}, {"errors": [], "expected_failures": [], "failures": [], "id": "workflow-file-policy", "ok": true, "path": "scripts/test_garnet_workflow_file_policy.py", "skipped": [], "test_ids": ["test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.passing_case.<locals>.PassingCase.test_passes"], "tests_run": 1, "transcript_sha256": "c043f96e1b3184f585d06beefa9f761096b92b0e381650265d5ea91b0e9793e5", "unexpected_successes": []}, {"errors": [], "expected_failures": [], "failures": [], "id": "workflow-yaml-policy", "ok": true, "path": "scripts/test_garnet_workflow_yaml_policy.py", "skipped": [], "test_ids": ["test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.passing_case.<locals>.PassingCase.test_passes"], "tests_run": 1, "transcript_sha256": "c043f96e1b3184f585d06beefa9f761096b92b0e381650265d5ea91b0e9793e5", "unexpected_successes": []}, {"errors": [], "expected_failures": [], "failures": [], "id": "workflow-schema-policy", "ok": true, "path": "scripts/test_garnet_workflow_schema_policy.py", "skipped": [], "test_ids": ["test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.passing_case.<locals>.PassingCase.test_passes"], "tests_run": 1, "transcript_sha256": "c043f96e1b3184f585d06beefa9f761096b92b0e381650265d5ea91b0e9793e5", "unexpected_successes": []}], "totals": {"errors": 0, "expected_failures": 0, "failures": 0, "skipped": 0, "tests_run": 4, "unexpected_successes": 0}, "working_tree_clean": true}
+{"declared_os": "macOS", "evidence_sha256": null, "expected_head": "da0f50367598bd015c35931c646aa257b898a0d6", "expected_parity_sha256": "cf3631ea6afd3443d040500c5c453c07c7609c5994975bbff74e6d9f608c8cd6", "head_exact": true, "head_sha": "da0f50367598bd015c35931c646aa257b898a0d6", "ok": false, "os": "Linux", "parity_exact": false, "parity_sha256": null, "problems": ["runtime OS 'Linux' does not equal declared OS 'macOS'"], "schema": "garnet.governance-policy-os-evidence/v1", "suite_contract_sha256": "73826a6c684284eef3c98f97d5dc663aa1e90d00f861f7476ca030e7e537dfcb", "suites": [], "totals": {"errors": 0, "expected_failures": 0, "failures": 0, "skipped": 0, "tests_run": 0, "unexpected_successes": 0}, "working_tree_clean": true}
+{"declared_os": "Windows", "evidence_sha256": "4dc861955abeeb2eee898761e9628799a4d7e8b7b2581f5af937cb0bb6d3b7db", "expected_head": "794fb6a13f4ab62505f6fed29a7a8a58fb3ea123", "expected_parity_sha256": "46d773516a202052297057b082038dbffdd173b464d563d1e4e404b31184d53c", "head_exact": true, "head_sha": "794fb6a13f4ab62505f6fed29a7a8a58fb3ea123", "ok": false, "os": "Windows", "parity_exact": false, "parity_sha256": "3a19fbd5d9dd0b46fac746ac1f3e3976a92d66467864fafced7c35a5c329b905", "problems": ["observed suite/test-ID outcomes do not match pinned parity contract"], "schema": "garnet.governance-policy-os-evidence/v1", "suite_contract_sha256": "73826a6c684284eef3c98f97d5dc663aa1e90d00f861f7476ca030e7e537dfcb", "suites": [{"errors": [], "expected_failures": [], "failures": [], "id": "required-context-contract", "ok": true, "path": "scripts/test_garnet_required_context_contract.py", "skipped": [], "test_ids": ["test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.test_different_passing_test_set_is_red_against_pinned_parity.<locals>.DifferentPassingCase.test_different_identity_passes"], "tests_run": 1, "transcript_sha256": "08f5c5c9e9b373166d3e52b0a5ee92111012c3886dc1d7f3cd96a77e9733d9c6", "unexpected_successes": []}, {"errors": [], "expected_failures": [], "failures": [], "id": "workflow-file-policy", "ok": true, "path": "scripts/test_garnet_workflow_file_policy.py", "skipped": [], "test_ids": ["test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.test_different_passing_test_set_is_red_against_pinned_parity.<locals>.DifferentPassingCase.test_different_identity_passes"], "tests_run": 1, "transcript_sha256": "08f5c5c9e9b373166d3e52b0a5ee92111012c3886dc1d7f3cd96a77e9733d9c6", "unexpected_successes": []}, {"errors": [], "expected_failures": [], "failures": [], "id": "workflow-yaml-policy", "ok": true, "path": "scripts/test_garnet_workflow_yaml_policy.py", "skipped": [], "test_ids": ["test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.test_different_passing_test_set_is_red_against_pinned_parity.<locals>.DifferentPassingCase.test_different_identity_passes"], "tests_run": 1, "transcript_sha256": "08f5c5c9e9b373166d3e52b0a5ee92111012c3886dc1d7f3cd96a77e9733d9c6", "unexpected_successes": []}, {"errors": [], "expected_failures": [], "failures": [], "id": "workflow-schema-policy", "ok": true, "path": "scripts/test_garnet_workflow_schema_policy.py", "skipped": [], "test_ids": ["test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.test_different_passing_test_set_is_red_against_pinned_parity.<locals>.DifferentPassingCase.test_different_identity_passes"], "tests_run": 1, "transcript_sha256": "08f5c5c9e9b373166d3e52b0a5ee92111012c3886dc1d7f3cd96a77e9733d9c6", "unexpected_successes": []}], "totals": {"errors": 0, "expected_failures": 0, "failures": 0, "skipped": 0, "tests_run": 4, "unexpected_successes": 0}, "working_tree_clean": true}
+{"declared_os": "Windows", "evidence_sha256": null, "expected_head": "0000000000000000000000000000000000000000", "expected_parity_sha256": "cf3631ea6afd3443d040500c5c453c07c7609c5994975bbff74e6d9f608c8cd6", "head_exact": false, "head_sha": "794fb6a13f4ab62505f6fed29a7a8a58fb3ea123", "ok": false, "os": "Windows", "parity_exact": false, "parity_sha256": null, "problems": ["repository HEAD 794fb6a13f4ab62505f6fed29a7a8a58fb3ea123 does not equal expected head 0000000000000000000000000000000000000000"], "schema": "garnet.governance-policy-os-evidence/v1", "suite_contract_sha256": "73826a6c684284eef3c98f97d5dc663aa1e90d00f861f7476ca030e7e537dfcb", "suites": [], "totals": {"errors": 0, "expected_failures": 0, "failures": 0, "skipped": 0, "tests_run": 0, "unexpected_successes": 0}, "working_tree_clean": true}
+{"declared_os": "Windows", "evidence_sha256": null, "expected_head": "794fb6a13f4ab62505f6fed29a7a8a58fb3ea123", "expected_parity_sha256": "cf3631ea6afd3443d040500c5c453c07c7609c5994975bbff74e6d9f608c8cd6", "head_exact": true, "head_sha": "794fb6a13f4ab62505f6fed29a7a8a58fb3ea123", "ok": false, "os": "Windows", "parity_exact": false, "parity_sha256": null, "problems": ["working tree is not clean at the exact-head evidence boundary"], "schema": "garnet.governance-policy-os-evidence/v1", "suite_contract_sha256": "73826a6c684284eef3c98f97d5dc663aa1e90d00f861f7476ca030e7e537dfcb", "suites": [], "totals": {"errors": 0, "expected_failures": 0, "failures": 0, "skipped": 0, "tests_run": 0, "unexpected_successes": 0}, "working_tree_clean": false}.test_passes (test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.passing_case.<locals>.PassingCase.test_passes) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+test_passes (test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.passing_case.<locals>.PassingCase.test_passes) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+test_passes (test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.passing_case.<locals>.PassingCase.test_passes) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+test_passes (test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.passing_case.<locals>.PassingCase.test_passes) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+test_passes (test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.passing_case.<locals>.PassingCase.test_passes) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+test_passes (test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.passing_case.<locals>.PassingCase.test_passes) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+test_passes (test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.passing_case.<locals>.PassingCase.test_passes) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+test_passes (test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.passing_case.<locals>.PassingCase.test_passes) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+.test_mutates_tracked_source (test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.test_policy_suite_mutation_invalidates_the_final_manifest.<locals>.MutatingCase.test_mutates_tracked_source) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK
+test_mutates_tracked_source (test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.test_policy_suite_mutation_invalidates_the_final_manifest.<locals>.MutatingCase.test_mutates_tracked_source) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+test_mutates_tracked_source (test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.test_policy_suite_mutation_invalidates_the_final_manifest.<locals>.MutatingCase.test_mutates_tracked_source) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+test_mutates_tracked_source (test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.test_policy_suite_mutation_invalidates_the_final_manifest.<locals>.MutatingCase.test_mutates_tracked_source) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+.
+{"declared_os": "Windows", "evidence_sha256": "af61dd28eb753b1f580d3ec929b993023a58cfae071876df1a3942b0986f5fac", "expected_head": "266b923d6b5dec20505c9bedd734ffa703a1c270", "expected_parity_sha256": "46d773516a202052297057b082038dbffdd173b464d563d1e4e404b31184d53c", "head_exact": true, "head_sha": "266b923d6b5dec20505c9bedd734ffa703a1c270", "ok": true, "os": "Windows", "parity_exact": true, "parity_sha256": "46d773516a202052297057b082038dbffdd173b464d563d1e4e404b31184d53c", "problems": [], "schema": "garnet.governance-policy-os-evidence/v1", "suite_contract_sha256": "73826a6c684284eef3c98f97d5dc663aa1e90d00f861f7476ca030e7e537dfcb", "suites": [{"errors": [], "expected_failures": [], "failures": [], "id": "required-context-contract", "ok": true, "path": "scripts/test_garnet_required_context_contract.py", "skipped": [], "test_ids": ["test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.passing_case.<locals>.PassingCase.test_passes"], "tests_run": 1, "transcript_sha256": "c043f96e1b3184f585d06beefa9f761096b92b0e381650265d5ea91b0e9793e5", "unexpected_successes": []}, {"errors": [], "expected_failures": [], "failures": [], "id": "workflow-file-policy", "ok": true, "path": "scripts/test_garnet_workflow_file_policy.py", "skipped": [], "test_ids": ["test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.passing_case.<locals>.PassingCase.test_passes"], "tests_run": 1, "transcript_sha256": "c043f96e1b3184f585d06beefa9f761096b92b0e381650265d5ea91b0e9793e5", "unexpected_successes": []}, {"errors": [], "expected_failures": [], "failures": [], "id": "workflow-yaml-policy", "ok": true, "path": "scripts/test_garnet_workflow_yaml_policy.py", "skipped": [], "test_ids": ["test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.passing_case.<locals>.PassingCase.test_passes"], "tests_run": 1, "transcript_sha256": "c043f96e1b3184f585d06beefa9f761096b92b0e381650265d5ea91b0e9793e5", "unexpected_successes": []}, {"errors": [], "expected_failures": [], "failures": [], "id": "workflow-schema-policy", "ok": true, "path": "scripts/test_garnet_workflow_schema_policy.py", "skipped": [], "test_ids": ["test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.passing_case.<locals>.PassingCase.test_passes"], "tests_run": 1, "transcript_sha256": "c043f96e1b3184f585d06beefa9f761096b92b0e381650265d5ea91b0e9793e5", "unexpected_successes": []}], "totals": {"errors": 0, "expected_failures": 0, "failures": 0, "skipped": 0, "tests_run": 4, "unexpected_successes": 0}, "working_tree_clean": true}
+{"declared_os": "Windows", "evidence_sha256": "2237a54900599d8cbba5708ad1e83abb77f26785d05b6f9192aa0967f4629cbd", "expected_head": "67609e59ca5802e3f99b9f2bd32657b4ee5ad5a7", "expected_parity_sha256": "46d773516a202052297057b082038dbffdd173b464d563d1e4e404b31184d53c", "head_exact": true, "head_sha": "67609e59ca5802e3f99b9f2bd32657b4ee5ad5a7", "ok": true, "os": "Windows", "parity_exact": true, "parity_sha256": "46d773516a202052297057b082038dbffdd173b464d563d1e4e404b31184d53c", "problems": [], "schema": "garnet.governance-policy-os-evidence/v1", "suite_contract_sha256": "73826a6c684284eef3c98f97d5dc663aa1e90d00f861f7476ca030e7e537dfcb", "suites": [{"errors": [], "expected_failures": [], "failures": [], "id": "required-context-contract", "ok": true, "path": "scripts/test_garnet_required_context_contract.py", "skipped": [], "test_ids": ["test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.passing_case.<locals>.PassingCase.test_passes"], "tests_run": 1, "transcript_sha256": "c043f96e1b3184f585d06beefa9f761096b92b0e381650265d5ea91b0e9793e5", "unexpected_successes": []}, {"errors": [], "expected_failures": [], "failures": [], "id": "workflow-file-policy", "ok": true, "path": "scripts/test_garnet_workflow_file_policy.py", "skipped": [], "test_ids": ["test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.passing_case.<locals>.PassingCase.test_passes"], "tests_run": 1, "transcript_sha256": "c043f96e1b3184f585d06beefa9f761096b92b0e381650265d5ea91b0e9793e5", "unexpected_successes": []}, {"errors": [], "expected_failures": [], "failures": [], "id": "workflow-yaml-policy", "ok": true, "path": "scripts/test_garnet_workflow_yaml_policy.py", "skipped": [], "test_ids": ["test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.passing_case.<locals>.PassingCase.test_passes"], "tests_run": 1, "transcript_sha256": "c043f96e1b3184f585d06beefa9f761096b92b0e381650265d5ea91b0e9793e5", "unexpected_successes": []}, {"errors": [], "expected_failures": [], "failures": [], "id": "workflow-schema-policy", "ok": true, "path": "scripts/test_garnet_workflow_schema_policy.py", "skipped": [], "test_ids": ["test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.passing_case.<locals>.PassingCase.test_passes"], "tests_run": 1, "transcript_sha256": "c043f96e1b3184f585d06beefa9f761096b92b0e381650265d5ea91b0e9793e5", "unexpected_successes": []}], "totals": {"errors": 0, "expected_failures": 0, "failures": 0, "skipped": 0, "tests_run": 4, "unexpected_successes": 0}, "working_tree_clean": true}
+{"declared_os": "Windows", "evidence_sha256": "1c8a0efd68b68bf14e0fbf338a75be43f10ecbc5c313c42f34c0eb59cbd3f3b4", "expected_head": "266b923d6b5dec20505c9bedd734ffa703a1c270", "expected_parity_sha256": "cf3631ea6afd3443d040500c5c453c07c7609c5994975bbff74e6d9f608c8cd6", "head_exact": true, "head_sha": "266b923d6b5dec20505c9bedd734ffa703a1c270", "ok": false, "os": "Windows", "parity_exact": false, "parity_sha256": "94b8d99bffbab57d5d51ffb14417b6d1a742c375253fd3e2035273b0ff937c8a", "problems": ["observed suite/test-ID outcomes do not match pinned parity contract", "repository changed while policy suites ran: working tree is not clean at the exact-head evidence boundary"], "schema": "garnet.governance-policy-os-evidence/v1", "suite_contract_sha256": "73826a6c684284eef3c98f97d5dc663aa1e90d00f861f7476ca030e7e537dfcb", "suites": [{"errors": [], "expected_failures": [], "failures": [], "id": "required-context-contract", "ok": true, "path": "scripts/test_garnet_required_context_contract.py", "skipped": [], "test_ids": ["test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.test_policy_suite_mutation_invalidates_the_final_manifest.<locals>.MutatingCase.test_mutates_tracked_source"], "tests_run": 1, "transcript_sha256": "a8b4bef824b3c0d404d2ff31b3484f4b6bc841762ed8e001236d643f2b027151", "unexpected_successes": []}, {"errors": [], "expected_failures": [], "failures": [], "id": "workflow-file-policy", "ok": true, "path": "scripts/test_garnet_workflow_file_policy.py", "skipped": [], "test_ids": ["test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.test_policy_suite_mutation_invalidates_the_final_manifest.<locals>.MutatingCase.test_mutates_tracked_source"], "tests_run": 1, "transcript_sha256": "250bb8e1ecd21d9ae138eda9f2129f8c1c70a79df8c5313d4c0054d48ef5a7a6", "unexpected_successes": []}, {"errors": [], "expected_failures": [], "failures": [], "id": "workflow-yaml-policy", "ok": true, "path": "scripts/test_garnet_workflow_yaml_policy.py", "skipped": [], "test_ids": ["test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.test_policy_suite_mutation_invalidates_the_final_manifest.<locals>.MutatingCase.test_mutates_tracked_source"], "tests_run": 1, "transcript_sha256": "250bb8e1ecd21d9ae138eda9f2129f8c1c70a79df8c5313d4c0054d48ef5a7a6", "unexpected_successes": []}, {"errors": [], "expected_failures": [], "failures": [], "id": "workflow-schema-policy", "ok": true, "path": "scripts/test_garnet_workflow_schema_policy.py", "skipped": [], "test_ids": ["test_garnet_cross_os_policy_manifest.CrossOsPolicyManifestTests.test_policy_suite_mutation_invalidates_the_final_manifest.<locals>.MutatingCase.test_mutates_tracked_source"], "tests_run": 1, "transcript_sha256": "250bb8e1ecd21d9ae138eda9f2129f8c1c70a79df8c5313d4c0054d48ef5a7a6", "unexpected_successes": []}], "totals": {"errors": 0, "expected_failures": 0, "failures": 0, "skipped": 0, "tests_run": 4, "unexpected_successes": 0}, "working_tree_clean": false}
+{"declared_os": "Windows", "evidence_sha256": "40b665122f65cde83be1daf383d1b0dd54142d97313552b297103d5d461d5f31", "expected_head": "60d4fbc697c8df52adf2bf166dc181a18040f2e0", "expected_parity_sha256": "cf3631ea6afd3443d040500c5c453c07c7609c5994975bbff74e6d9f608c8cd6", "head_exact": true, "head_sha": "60d4fbc697c8df52adf2bf166dc181a18040f2e0", "ok": false, "os": "Windows", "parity_exact": false, "parity_sha256": "8c2202bb102cb24cb6b1ff9ed75160ea54c2fc7a7d44145b92920a16069b9786", "problems": ["cannot load required-context-contract from scripts/test_garnet_required_context_contract.py: RuntimeError: cannot import test_garnet_required_context_contract.py", "cannot load workflow-file-policy from scripts/test_garnet_workflow_file_policy.py: RuntimeError: cannot import test_garnet_workflow_file_policy.py", "cannot load workflow-yaml-policy from scripts/test_garnet_workflow_yaml_policy.py: RuntimeError: cannot import test_garnet_workflow_yaml_policy.py", "cannot load workflow-schema-policy from scripts/test_garnet_workflow_schema_policy.py: RuntimeError: cannot import test_garnet_workflow_schema_policy.py", "observed suite/test-ID outcomes do not match pinned parity contract"], "schema": "garnet.governance-policy-os-evidence/v1", "suite_contract_sha256": "73826a6c684284eef3c98f97d5dc663aa1e90d00f861f7476ca030e7e537dfcb", "suites": [], "totals": {"errors": 0, "expected_failures": 0, "failures": 0, "skipped": 0, "tests_run": 0, "unexpected_successes": 0}, "working_tree_clean": true}...........................................E........................................................................................................................s.......................................................F.....................................................................................................................................................................F.............................................................E....
+{
+  "schema": "garnet.domain_proof_artifacts/v1",
+  "doc_present": true,
+  "proof_present": true,
+  "floor_passed": true,
+  "domain_count": 6,
+  "labels_in_doc": 6,
+  "sealed_domain_correct": true,
+  "refusals_unsealed_in_doc": true,
+  "mcp_enforced_false": true,
+  "fences_present": true,
+  "ok": true
+}
+{
+  "schema": "garnet.domain_selection/v1",
+  "doc_present": true,
+  "domain_count": 6,
+  "enough_domains": true,
+  "enforced_only": true,
+  "rejected_overclaims_present": true,
+  "mcp_overclaim_corrected": true,
+  "honesty_anchor_present": true,
+  "stage_x_proofs_present": true,
+  "ok": true
+}
+{
+  "schema": "garnet.evidence_integrity/v1",
+  "bundles_total": 38,
+  "bundles_ok": 38,
+  "bundles_failed": 0,
+  "failed": [],
+  "ok": true
+}
+{
+  "schema": "garnet.external_package_pilot/v1",
+  "pilot_test_present": true,
+  "missing_markers": [],
+  "registry_infra_present": true,
+  "slopguard_present": true,
+  "doc_present": true,
+  "ok": true,
+  "groundings": [
+    "registry resolve/verify/build in lib.rs: True",
+    "slopguard nearest() present: True"
+  ]
+}
+{
+  "schema": "garnet.formal_verification_feasibility/v1",
+  "study_present": true,
+  "missing_anchors": [],
+  "explosive_foundation_present": true,
+  "safe_subset_spec_present": true,
+  "ok": true,
+  "groundings": [
+    "explosive.rs undecidability stance present: True",
+    "safe-subset spec (S74) present: True"
+  ]
+}
+{
+  "schema": "garnet.fuzz_campaign/v1",
+  "target": "parse_input",
+  "crate": "garnet-parser-v0.3",
+  "exercises": "parse_source_with_budget (lexer + parser) under a strict ParseBudget",
+  "target_file_present": true,
+  "declared_in_cargo": true,
+  "workflow_wired": true,
+  "seed_count": 13,
+  "run_command": "cargo fuzz run parse_input (nightly, >= 1 hour \u2014 fuzz-nightly.yml)",
+  "note": "Harness inventoried + verified wired; the fuzzer is NOT run here and no bug-found (or bug-free) claim is made. Crashes surface in the nightly `cargo fuzz run` job. cargo-fuzz is absent in this environment.",
+  "ok": true
+}
+{
+  "schema": "garnet.garnet_ext_discovery/v1",
+  "collector_case_insensitive": true,
+  "no_case_sensitive_compare": true,
+  "cap_manifest_reuses_collector": true,
+  "ok": true
+}
+{
+  "schema": "garnet.governance_status/v1",
+  "governance_present": true,
+  "governance_honest": true,
+  "rfc_process_present": true,
+  "rfc0001_present": true,
+  "rfc0001_references_standard": true,
+  "rfc0001_marks_intent_not_accepted": true,
+  "ok": true,
+  "notes": []
+}
+{
+  "schema": "garnet.install_readme_check/v1",
+  "readme_command": "curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh",
+  "installer_command": "curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh",
+  "commands_match": true,
+  "url_in_readme": true,
+  "url_in_installer": true,
+  "consistent": true
+}
+{
+  "schema": "garnet.interp_stack/v1",
+  "spawns_large_stack_thread": true,
+  "routes_through_inner": true,
+  "deep_recursion_test_present": true,
+  "ok": true
+}
+{
+  "schema": "garnet.llm_suggest_readiness/v1",
+  "rules_tier_ids": [
+    "managed-fn-missing-caps",
+    "long-parameter-list",
+    "empty-function-body"
+  ],
+  "rules_tier_present": true,
+  "missing_rule_ids": [],
+  "llm_tier_status": "pending-infra \u2014 no LLM provider wired; the rules tier is the active baseline. (Paper VI Exp 1 budget.)",
+  "exp1_protocol": [
+    "Hold the rules tier fixed as the deterministic control.",
+    "Wire a provider-backed suggester behind the same Suggestion shape.",
+    "Measure suggestion precision/recall vs. a curated corpus (the idiomatic corpus S57 + the 12 domains S48) \u2014 no measurement is claimed here.",
+    "Report results honestly; downgrade the contribution if unsupported."
+  ],
+  "paper_vi_scorecard": "4 supported, 2 partial (downgraded honestly), 0 refuted, 1 pending-infra",
+  "rules_tier_ready": true
+}
+{
+  "schema": "garnet.paper_vi_exp3_status/v1",
+  "harness_present": true,
+  "snapshot_count": 10,
+  "lane_scripts_present": true,
+  "aggregate_present": true,
+  "provider_free_run_ok": true,
+  "provider_backed_status": "pending-infra \u2014 no LLM provider / API credits in this environment (same boundary as Exp 1). The recorded partial stands; no re-measurement here.",
+  "pre_registered": [
+    "h3a: mean_time(B[6..10]) / mean_time(B[1..5]) < 0.90 (>=10% speedup)",
+    "h3b: >= 1 strategy hit per compilation in compiles 6-10",
+    "h3c: all honored strategies re-derivable from HMAC-verified episodes"
+  ],
+  "recorded_outcome": {
+    "h3a": "partial \u2014 6.5% speedup (CI [3.1%, 9.8%]); below the 10% threshold",
+    "h3b": "pass \u2014 1.4 strategies/compile in cycles 6-10 (>= 1.0)",
+    "h3c": "pass \u2014 provenance.verify_strategy 100%"
+  },
+  "paper_vi_c3_revision": "On evolving 800-LOC codebases, the compiler-as-agent's measurable speedup is 6.5% (CI [3.1%, 9.8%]); the stronger 10% claim awaits a 5K-LOC re-run.",
+  "c3_revision_in_doc": true,
+  "ok": true
+}
+{
+  "schema": "garnet.playground_readiness/v1",
+  "page_present": true,
+  "manifest_present": true,
+  "example_count": 3,
+  "examples_well_formed": true,
+  "page_references_manifest": true,
+  "honesty_markers_present": true,
+  "missing_markers": [],
+  "ok": true
+}
+{
+  "schema": "garnet.positioning_status/v1",
+  "positioning_doc_present": true,
+  "landing_present": true,
+  "doc_missing_themes": [],
+  "landing_missing_themes": [],
+  "ok": true,
+  "notes": []
+}
+{
+  "schema": "garnet.proof_matrix/v1",
+  "paper_vi_scorecard": "4 supported, 2 partial (downgraded honestly), 0 refuted, 1 pending-infra",
+  "domains": [
+    {
+      "id": "mvp_01_os_simulator",
+      "label": "Cooperative scheduler simulation",
+      "file": "examples/mvp_01_os_simulator.garnet",
+      "present": true
+    },
+    {
+      "id": "mvp_02_relational_db",
+      "label": "In-memory relational query score",
+      "file": "examples/mvp_02_relational_db.garnet",
+      "present": true
+    },
+    {
+      "id": "mvp_03_compiler_bootstrap",
+      "label": "Mini expression evaluator",
+      "file": "examples/mvp_03_compiler_bootstrap.garnet",
+      "present": true
+    },
+    {
+      "id": "mvp_04_numerical_solver",
+      "label": "Iterative convergence solver",
+      "file": "examples/mvp_04_numerical_solver.garnet",
+      "present": true
+    },
+    {
+      "id": "mvp_05_web_app",
+      "label": "Route dispatch logic",
+      "file": "examples/mvp_05_web_app.garnet",
+      "present": true
+    },
+    {
+      "id": "mvp_06_multi_agent",
+      "label": "Deterministic researcher pipeline",
+      "file": "examples/mvp_06_multi_agent.garnet",
+      "present": true
+    },
+    {
+      "id": "mvp_07_game_server",
+      "label": "Game tick simulation",
+      "file": "examples/mvp_07_game_server.garnet",
+      "present": true
+    },
+    {
+      "id": "mvp_08_distributed_kv",
+      "label": "Vector-clock merge scoring",
+      "file": "examples/mvp_08_distributed_kv.garnet",
+      "present": true
+    },
+    {
+      "id": "mvp_09_graph_db",
+      "label": "Graph traversal score",
+      "file": "examples/mvp_09_graph_db.garnet",
+      "present": true
+    },
+    {
+      "id": "mvp_10_terminal_ui",
+      "label": "Terminal widget layout score",
+      "file": "examples/mvp_10_terminal_ui.garnet",
+      "present": true
+    },
+    {
+      "id": "mvp_11_signed_hotreload",
+      "label": "Signed hot-reload success path",
+      "file": "examples/mvp_11_signed_hotreload.garnet",
+      "present": true
+    },
+    {
+      "id": "mvp_11_signed_hotreload_mismatch",
+      "label": "Signed hot-reload mismatch rejection",
+      "file": "examples/mvp_11_signed_hotreload_mismatch.garnet",
+      "present": true
+    }
+  ],
+  "contributions": [
+    {
+      "title": "LLM-native syntax",
+      "novelty_section": "\u00a711.1",
+      "anchors": [
+        {
+          "path": "C_Language_Specification/GARNET_v1_0_Mini_Spec.md",
+          "present": true
+        },
+        {
+          "path": "examples",
+          "present": true
+        }
+      ],
+      "exercised": true
+    },
+    {
+      "title": "Type spectrum (safe \u2194 managed \u2194 dynamic)",
+      "novelty_section": "\u00a711.1",
+      "anchors": [
+        {
+          "path": "examples/safe_io_layer.garnet",
+          "present": true
+        },
+        {
+          "path": "garnet-check-v0.3/src/lib.rs",
+          "present": true
+        }
+      ],
+      "exercised": true
+    },
+    {
+      "title": "Compiler-as-agent",
+      "novelty_section": "\u00a74.5",
+      "anchors": [
+        {
+          "path": "garnet-check-v0.3/src/suggest.rs",
+          "present": true
+        },
+        {
+          "path": "C_Language_Specification/GARNET_ERROR_POLICY.md",
+          "present": true
+        }
+      ],
+      "exercised": true
+    },
+    {
+      "title": "Kind-aware allocation",
+      "novelty_section": "\u00a75.4",
+      "anchors": [
+        {
+          "path": "examples/multi_agent_builder.garnet",
+          "present": true
+        },
+        {
+          "path": "garnet-interp-v0.3/src/value.rs",
+          "present": true
+        }
+      ],
+      "exercised": true
+    },
+    {
+      "title": "Error bridging (value \u2194 exception)",
+      "novelty_section": "\u00a76.3",
+      "anchors": [
+        {
+          "path": "examples/safe_io_layer.garnet",
+          "present": true
+        },
+        {
+          "path": "C_Language_Specification/GARNET_ERROR_POLICY.md",
+          "present": true
+        }
+      ],
+      "exercised": true
+    },
+    {
+      "title": "Hot-reload across the mode boundary",
+      "novelty_section": "\u00a77.4",
+      "anchors": [
+        {
+          "path": "examples/mvp_11_signed_hotreload.garnet",
+          "present": true
+        },
+        {
+          "path": "examples/mvp_11_signed_hotreload_mismatch.garnet",
+          "present": true
+        }
+      ],
+      "exercised": true
+    },
+    {
+      "title": "Reproducible builds with embedded provenance",
+      "novelty_section": "\u00a78.4",
+      "anchors": [
+        {
+          "path": ".github/workflows/determinism.yml",
+          "present": true
+        },
+        {
+          "path": "garnet-cli/src/seal.rs",
+          "present": true
+        }
+      ],
+      "exercised": true
+    }
+  ],
+  "all_domains_present": true,
+  "every_contribution_exercised": true
+}.....................F..............s..s...............................................................................F.................................................................................................................................................
+{
+  "schema": "garnet.red_team/v1",
+  "report_present": true,
+  "high_hole_fixed": true,
+  "regression_tests_present": true,
+  "low_holes_recorded": true,
+  "held_and_deferred_recorded": true,
+  "honesty_anchor_present": true,
+  "ok": true
+}
+{
+  "schema": "garnet.release_tooling_status/v1",
+  "tools": [
+    {
+      "name": "cosign",
+      "purpose": "Sigstore verify-blob lane for external supply-chain attestation",
+      "executable": null,
+      "probe": [
+        "cosign",
+        "verify-blob",
+        "--help"
+      ],
+      "state": "absent",
+      "evidence": "cosign absent; tools absent \u2014 not verified here"
+    },
+    {
+      "name": "syft",
+      "purpose": "SBOM generation lane",
+      "executable": null,
+      "probe": [
+        "syft",
+        "--version"
+      ],
+      "state": "absent",
+      "evidence": "syft absent; tools absent \u2014 not verified here"
+    },
+    {
+      "name": "cyclonedx",
+      "purpose": "CycloneDX SBOM compatibility lane",
+      "executable": null,
+      "probe": [
+        "cyclonedx",
+        "--version"
+      ],
+      "state": "absent",
+      "evidence": "cyclonedx absent; tools absent \u2014 not verified here"
+    },
+    {
+      "name": "wasmtime",
+      "purpose": "WASI/fuel/epoch host lane for bounded-execution follow-up",
+      "executable": null,
+      "probe": [
+        "wasmtime",
+        "--help"
+      ],
+      "state": "absent",
+      "evidence": "wasmtime absent; tools absent \u2014 not verified here"
+    }
+  ],
+  "summary": "tools absent \u2014 not verified here",
+  "ok": true
+}
+{
+  "schema": "garnet.release_truth/v1",
+  "cut_doc_records_tag_cut": true,
+  "cut_doc_keeps_readiness_only_truth": true,
+  "changelog_records_cut": true,
+  "ledger_s80_merged_with_cut_record": true,
+  "ok": true
+}
+{
+  "schema": "garnet.safe_subset_status/v1",
+  "spec_present": true,
+  "missing_spec_anchors": [],
+  "fnmode_safe_in_ast": true,
+  "boundary_audit_in_checker": true,
+  "ok": true,
+  "groundings": [
+    "FnMode::Safe in garnet-parser-v0.3\\src\\ast.rs: True",
+    "ModeAuditLog boundary audit in garnet-check-v0.3\\src\\audit.rs: True"
+  ]
+}
+{
+  "schema": "garnet.seal_determinism/v1",
+  "gitattributes_pins_garnet_lf": true,
+  "manifest_normalizes_source_eol": true,
+  "contract_documented": true,
+  "ok": true
+}
+{
+  "schema": "garnet.seccomp_apply/v1",
+  "harness_present": true,
+  "applies_generated_policy": true,
+  "reproduce_script_present": true,
+  "proof_recorded": true,
+  "proof_deterministic": true,
+  "policy_driven": true,
+  "doc_present": true,
+  "honesty_anchor_present": true,
+  "ok": true
+}
+{
+  "schema": "garnet.self_hosted_parser_seed/v1",
+  "seed_present": true,
+  "missing_markers": [],
+  "binary_available": false,
+  "check_clean": false,
+  "run_matches": false,
+  "missing_run_lines": [
+    "def main arity 0 caps yes",
+    "def add arity 2 caps no",
+    "def greet arity 1 caps no",
+    "parsed defs: 3 managed: 1"
+  ],
+  "ok": true
+}
+{
+  "schema": "garnet.signed_release_lanes/v1",
+  "lanes": [
+    {
+      "id": "program-manifest",
+      "name": "Program-manifest signing (garnet build --sign)",
+      "status": "active",
+      "owned_by_garnet": true,
+      "evidence": "linux-packages.yml: --sign round-trip \u2192 'signature valid'",
+      "present": true
+    },
+    {
+      "id": "release-artifact",
+      "name": "Release-artifact signing (SHA256SUMS detached signature)",
+      "status": "deferred",
+      "owned_by_garnet": false,
+      "evidence": "linux-packages.yml: TODO(release-security) \u2014 computed, not signed (needs GPG/minisign key)",
+      "present": true
+    },
+    {
+      "id": "supply-chain-attestation",
+      "name": "Supply-chain attestation (garnet seal \u2192 cosign attest)",
+      "status": "partial",
+      "owned_by_garnet": false,
+      "evidence": "cmd/seal.rs: in-toto predicate emitted (now --out writable); cosign detected, not bundled",
+      "present": true
+    }
+  ],
+  "active_lane_ok": true
+}
+{
+  "schema": "garnet.stdlib_promotion_status/v1",
+  "core_total": 30,
+  "core_stable": 30,
+  "core_experimental": [],
+  "std_experimental_count": 26,
+  "promoted_families": [
+    "core::iter",
+    "core::result",
+    "core::option",
+    "core::cmp",
+    "core::math"
+  ],
+  "ok": true
+}
+{
+  "schema": "garnet.tree_sitter_check/v1",
+  "node_available": true,
+  "grammar_present": true,
+  "grammar_name": "garnet",
+  "declared_rules": [
+    "source_file",
+    "_item",
+    "annotation",
+    "_annotation_arg",
+    "function_definition",
+    "parameter_list",
+    "parameter",
+    "type",
+    "struct_definition",
+    "field_declaration",
+    "enum_definition",
+    "enum_variant",
+    "impl_block",
+    "actor_definition",
+    "_actor_item",
+    "protocol_declaration",
+    "on_handler",
+    "memory_declaration",
+    "block",
+    "_statement",
+    "let_declaration",
+    "const_declaration",
+    "use_declaration",
+    "return_statement",
+    "raise_statement",
+    "break_statement",
+    "continue_statement",
+    "while_loop",
+    "for_loop",
+    "_expression",
+    "call_expression",
+    "field_expression",
+    "binary_expression",
+    "pipe_expression",
+    "if_expression",
+    "match_expression",
+    "match_arm",
+    "_pattern",
+    "try_expression",
+    "rescue_clause",
+    "spawn_expression",
+    "identifier",
+    "integer",
+    "float",
+    "string",
+    "boolean",
+    "nil",
+    "self",
+    "doc_comment",
+    "line_comment"
+  ],
+  "missing_rules": [],
+  "ok": true
+}
+{
+  "schema": "garnet.ultrapunch_dossier/v1",
+  "dossier_present": true,
+  "has_number_one_claim": true,
+  "has_ranked_runners_up": true,
+  "has_honest_concessions": true,
+  "cites_red_team": true,
+  "fences_present": true,
+  "evidence_pointers_total": 7,
+  "evidence_pointers_missing": 0,
+  "ok": true
+}
+{
+  "schema": "garnet.ultrapunch/v1",
+  "record_present": true,
+  "four_artifacts_named": true,
+  "two_level_symmetry_explicit": true,
+  "honesty_anchor_present": true,
+  "refusal_documented": true,
+  "reproduce_script_present": true,
+  "demo_pinned": true,
+  "ok": true
+}
+{
+  "schema": "garnet.v0_8_0_cut_readiness/v1",
+  "missing_merged": [],
+  "ledger_complete": true,
+  "release_gate": {
+    "name": "release-readiness (S41\u2013S59)",
+    "passed": true,
+    "exit_code": 0
+  },
+  "runway_gates": [
+    {
+      "name": "llm-suggest (S69)",
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "name": "version-map (S70)",
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "name": "paper-vi-exp3 (S71)",
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "name": "self-hosted-parser (S72)",
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "name": "vm-interp-parity (S73)",
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "name": "safe-subset (S74)",
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "name": "formal-verification (S75)",
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "name": "stdlib-promotion (S76)",
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "name": "external-package (S77)",
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "name": "governance (S78)",
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "name": "positioning (S79)",
+      "passed": true,
+      "exit_code": 0
+    }
+  ],
+  "runway_pass": true,
+  "cut_ready": true,
+  "mode": "lenient",
+  "binary_strict": false,
+  "honesty_anchors": [
+    "research-grade prototype (v0.x.x) \u2014 not production-complete",
+    "Paper VI scorecard: 4 supported, 2 partial (downgraded honestly), 0 refuted, 1 pending-infra",
+    "the v0.8.0 cut is a release-truth decision for Jon \u2014 not made by this gate"
+  ]
+}
+{
+  "schema": "test",
+  "missing_merged": [],
+  "ledger_complete": true,
+  "release_gate": {
+    "name": "release",
+    "passed": true,
+    "exit_code": 0
+  },
+  "runway_gates": [],
+  "runway_pass": true,
+  "cut_ready": true,
+  "mode": "lenient",
+  "binary_strict": false,
+  "honesty_anchors": [
+    "research-grade prototype (v0.x.x) \u2014 not production-complete",
+    "Paper VI scorecard: 4 supported, 2 partial (downgraded honestly), 0 refuted, 1 pending-infra",
+    "the v0.8.0 cut is a release-truth decision for Jon \u2014 not made by this gate"
+  ]
+}..........
+{
+  "schema": "garnet.v0_8_0_release_readiness/v1",
+  "hardening_band": [
+    {
+      "id": "s41",
+      "status": "merged",
+      "ok": true
+    },
+    {
+      "id": "s42",
+      "status": "merged",
+      "ok": true
+    },
+    {
+      "id": "s43",
+      "status": "merged",
+      "ok": true
+    },
+    {
+      "id": "s44",
+      "status": "merged",
+      "ok": true
+    },
+    {
+      "id": "s45",
+      "status": "merged",
+      "ok": true
+    },
+    {
+      "id": "s46",
+      "status": "merged",
+      "ok": true
+    },
+    {
+      "id": "s47",
+      "status": "merged",
+      "ok": true
+    },
+    {
+      "id": "s48",
+      "status": "merged",
+      "ok": true
+    },
+    {
+      "id": "s49",
+      "status": "merged",
+      "ok": true
+    },
+    {
+      "id": "s50",
+      "status": "merged",
+      "ok": true
+    }
+  ],
+  "adoption_band": [
+    {
+      "id": "s51",
+      "status": "merged",
+      "ok": true
+    },
+    {
+      "id": "s52",
+      "status": "merged",
+      "ok": true
+    },
+    {
+      "id": "s53",
+      "status": "merged",
+      "ok": true
+    },
+    {
+      "id": "s54",
+      "status": "merged",
+      "ok": true
+    },
+    {
+      "id": "s55",
+      "status": "merged",
+      "ok": true
+    },
+    {
+      "id": "s56",
+      "status": "merged",
+      "ok": true
+    },
+    {
+      "id": "s57",
+      "status": "merged",
+      "ok": true
+    },
+    {
+      "id": "s58",
+      "status": "merged",
+      "ok": true
+    },
+    {
+      "id": "s59",
+      "status": "merged",
+      "ok": true
+    }
+  ],
+  "sub_gates": [
+    {
+      "name": "beta-gate (S50)",
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "name": "build-proof (S47)",
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "name": "proof-matrix (S48)",
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "name": "signed-release-lanes (S51)",
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "name": "install-readme (S52)",
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "name": "tree-sitter (S53)",
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "name": "vscode-publish (S54)",
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "name": "wasm-readiness (S55)",
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "name": "playground (S56)",
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "name": "benchmark-campaign (S58)",
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "name": "fuzz-campaign (S59)",
+      "passed": true,
+      "exit_code": 0
+    }
+  ],
+  "bands_complete": true,
+  "sub_gates_pass": true,
+  "release_ready": true,
+  "existing_tags": [],
+  "deferred_for_v0_8_0": [
+    "Runtime sandbox enforcement (S46 generates seccomp/WASI/egress policy; does not enforce).",
+    "Release-artifact + supply-chain signing lanes (S51 lanes 2\u20133 \u2014 GPG/minisign/cosign external).",
+    "OpenVSX / VS Code Marketplace publish (S54 \u2014 needs OVSX_TOKEN/VSCE_PAT credentials).",
+    "Live browser playground execution (S55/S56 \u2014 Wasm build + Node proof passed; W-PLAY browser adapter/package/Playwright proof remain).",
+    "LLM advisory tier (compiler-as-agent rules tier ships; LLM tier pending-infra).",
+    "Empirical Paper VI measurements / mechanized proofs (S48 inventory, not proof)."
+  ],
+  "honesty_anchors": [
+    "research-grade prototype (v0.x.x) \u2014 not production-complete",
+    "Paper VI scorecard: 4 supported, 2 partial (downgraded honestly), 0 refuted, 1 pending-infra",
+    "human/aesthetic acceptance remains open"
+  ],
+  "tag_note": "This gate does NOT cut a tag. v0.8.0, when present in existing_tags, was cut by Jon as a separate release-truth decision. 'READY TO TAG' is a recommendation backed by evidence, not the act of tagging."
+}
+{
+  "schema": "garnet.v0_8_1_release_readiness/v1",
+  "runway": [
+    {
+      "id": "s91",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s92",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s93",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s94",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s95",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s96",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s97",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s98",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s99",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s100",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s101",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s102",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s103",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s104",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s105",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s106",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s107",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s108",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s109",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s110",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s111",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s112",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s113",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s114",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s115",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s116",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s117",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s118",
+      "status": "merged",
+      "merged": true
+    },
+    {
+      "id": "s105b",
+      "status": "merged",
+      "merged": true
+    }
+  ],
+  "sub_gates": [
+    {
+      "name": "red-team (S114)",
+      "script": "garnet_red_team_status.py",
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "name": "ultrapunch-dossier (S115)",
+      "script": "garnet_ultrapunch_dossier_status.py",
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "name": "domain-proof-artifacts (S116)",
+      "script": "garnet_domain_proof_artifacts_status.py",
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "name": "academic-evidence (S118)",
+      "script": "garnet_academic_evidence_status.py",
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "name": "evidence-integrity (S113)",
+      "script": "garnet_evidence_integrity_status.py",
+      "passed": true,
+      "exit_code": 0
+    }
+  ],
+  "runway_complete": true,
+  "sub_gates_pass": true,
+  "cross_os_complete": true,
+  "integrity_ok": true,
+  "binary_strict": true,
+  "release_ready": true,
+  "low_confidence_slices": [
+    "s107"
+  ],
+  "deferred_for_v0_8_1": [
+    "OS-sandbox APPLICATION on macOS (sandbox-exec) and Windows (AppContainer) \u2014 Linux seccomp is the only kernel where the generated policy is applied.",
+    "@bounded (Wasmtime fuel), memory, time, and @mailbox runtime ceilings \u2014 declared-not-enforced (only @caps + @max_depth are enforced).",
+    "Live-LLM agent \u2014 the agent-loop proposer is simulated/scripted (provider_api_called=false).",
+    "External signing / SBOM (cosign/syft/CycloneDX) \u2014 absent; seals unsigned, transparency log is a local stub (not Rekor).",
+    "Adopted capability-manifest standard \u2014 RFC-0001 is intent + reference impl; no OWASP/LF body has adopted anything.",
+    "Two LOW red-team findings (caps-log tail; seal subject-digest) \u2014 open within their honest stub/mitigated scope."
+  ],
+  "honesty_anchors": [
+    "research-grade prototype (v0.x.x) \u2014 not production-complete",
+    "no production / 1.0 claim; the v0.8.1 cut (s120) is Jon's; the tag stays Jon's",
+    "cross-OS parity is at the language-runtime trap layer; OS-sandbox application is Linux-only"
+  ],
+  "tag_note": "This gate does NOT cut or push a tag. READY TO CUT is a recommendation; the v0.8.1 cut (s120) and the release tag are reserved to Jon."
+}.........................................wasm-readiness gate FAILED: committed build/execution/browser evidence is incomplete (crate=True, proof=True, build=True, node=True, package=True, browser=False)
+..................................................s........s.......................................................................................F...............................................................
+======================================================================
+ERROR: test_output_dir_writes_manifested_pack (test_garnet_assist_context_pack.GarnetAssistContextPackTests.test_output_dir_writes_manifested_pack)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\gvr806-a31f2\scripts\test_garnet_assist_context_pack.py", line 138, in test_output_dir_writes_manifested_pack
+    verify = subprocess.check_output(
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IslandDevCrew\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\subprocess.py", line 466, in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IslandDevCrew\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\subprocess.py", line 548, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IslandDevCrew\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "C:\Users\IslandDevCrew\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\subprocess.py", line 1538, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [WinError 2] The system cannot find the file specified
+
+======================================================================
+ERROR: test_output_dir_writes_manifested_plan (test_garnet_converter_assist_plan.GarnetConverterAssistPlanTests.test_output_dir_writes_manifested_plan)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\gvr806-a31f2\scripts\test_garnet_converter_assist_plan.py", line 448, in test_output_dir_writes_manifested_plan
+    verify = subprocess.check_output(
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IslandDevCrew\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\subprocess.py", line 466, in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IslandDevCrew\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\subprocess.py", line 548, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IslandDevCrew\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "C:\Users\IslandDevCrew\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\subprocess.py", line 1538, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [WinError 2] The system cannot find the file specified
+
+======================================================================
+ERROR: test_symlink_cannot_be_used_as_clause_evidence (test_garnet_frozen_backlog_status.GarnetFrozenBacklogStatusTests.test_symlink_cannot_be_used_as_clause_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\gvr806-a31f2\scripts\test_garnet_frozen_backlog_status.py", line 123, in test_symlink_cannot_be_used_as_clause_evidence
+    link.symlink_to(target.name)
+  File "C:\Users\IslandDevCrew\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\pathlib.py", line 1198, in symlink_to
+    os.symlink(target, self, target_is_directory)
+OSError: [WinError 1314] A required privilege is not held by the client: 'real.txt' -> 'C:\\Users\\ISLAND~1\\AppData\\Local\\Temp\\tmpx0riplzx\\evidence\\link.txt'
+
+======================================================================
+ERROR: test_output_dir_writes_manifested_evidence_bundle (test_garnet_proof_benchmark_status.GarnetProofBenchmarkStatusTests.test_output_dir_writes_manifested_evidence_bundle)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\gvr806-a31f2\scripts\test_garnet_proof_benchmark_status.py", line 104, in test_output_dir_writes_manifested_evidence_bundle
+    subprocess.check_call(["shasum", "-a", "256", "-c", "MANIFEST.sha256"], cwd=out)
+  File "C:\Users\IslandDevCrew\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\subprocess.py", line 408, in check_call
+    retcode = call(*popenargs, **kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IslandDevCrew\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\subprocess.py", line 389, in call
+    with Popen(*popenargs, **kwargs) as p:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IslandDevCrew\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "C:\Users\IslandDevCrew\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\subprocess.py", line 1538, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [WinError 2] The system cannot find the file specified
+
+======================================================================
+FAIL: test_repo_and_site_point_to_the_adoption_surface_reporter (test_garnet_adoption_surface_status.GarnetAdoptionSurfaceStatusTests.test_repo_and_site_point_to_the_adoption_surface_reporter)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\gvr806-a31f2\scripts\test_garnet_adoption_surface_status.py", line 146, in test_repo_and_site_point_to_the_adoption_surface_reporter
+    self.assertIn("scripts/garnet_adoption_surface_status.py", readme)
+AssertionError: 'scripts/garnet_adoption_surface_status.py' not found in '<p align="center">\n  <img src="garnet-cli/assets/garnet-logo.png" alt="Garnet" width="120">\n</p>\n\n<h1 align="center">Garnet</h1>\n\n<p align="center"><strong>Rust rigor. Ruby velocity. One coherent language —<br>\nbuilt for the code agents write and humans accept.</strong></p>\n\n<p align="center"><em>No authority without evidence. Acceptance is a decision made on evidence the author cannot fake.</em></p>\n\n<p align="center">\n  <a href="https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.8.1">Release <!-- truth:latest_tag -->v0.8.1<!-- /truth --> · signed binaries</a> ·\n  <a href="LICENSE">MIT OR Apache-2.0</a> ·\n  <a href="https://garnet-lang.org">garnet-lang.org</a> ·\n  <a href="https://garnet-lang.org/status.html">Honest status</a> ·\n  <a href="C_Language_Specification/GARNET_v1_0_Mini_Spec.md">Mini-Spec v1.0</a> ·\n  <a href="FAQ.md">FAQ</a>\n</p>\n\n---\n\n## Why Garnet\n\nEvery ambitious team makes the same bargain: **Rust for the hot path, Ruby for the\norchestration, and a painful FFI between them** — or one language and its weakness swallowed\nwhole. Garnet refuses the bargain. Managed mode (`def` + ARC + exceptions) feels like Ruby.\nSafe mode (`@safe fn` + ownership + `Result`) feels like Rust. The mode boundary auto-bridges\nerrors and ownership, and `garnet check` surfaces every boundary call site. One grammar, two\nregisters, no FFI between them.\n\nAnd in 2026 there\'s a second bargain nobody should accept. AI agents now write the code;\n**human review is the bottleneck**, and signatures alone can\'t tell you what a change is\n*allowed to do* — the supply chain has already produced validly-signed malware. Garnet doesn\'t\nask you to trust that the model understood. **It makes acceptance a decision on capability\nevidence your own toolchain recomputes — not the model\'s claims**: functions declare their\nauthority budget, the checker verifies declared budgets transitively, and `diff-caps` answers\n*"what new authority am I granting?"* in one screen.\n\nSafe by default. Fast when needed. Joyful always.\n\n## Sixty seconds of Garnet\n\n```garnet\n# Managed mode — Ruby feel, zero ceremony\n@caps(fs)\ndef load_config(path) {\n  try {\n    std::json::parse(fs::read_file(path))\n  } rescue e {   # any fs/parse failure \u2192 nil (the checker nudges: name the type)\n    nil\n  }\n}\n\n# Safe mode — Rust rigor where it earns its keep\n@safe\nfn checksum(borrow data: String) -> String {\n  crypto::blake3(data)   # BLAKE3, hex-encoded\n}\n\n# Agent-native: memory and actors are language, not libraries\nactor Researcher {\n  memory episodic events  : EpisodeStore<Event>\n  memory semantic  facts  : VectorIndex<Fact>\n  protocol recall(q: String) -> Array<Fact>\n}\n\n# And the checker holds the line — declared budget vs. actual use:\n@caps(net)\ndef sneaky() {\n  fs::read_file("/etc/passwd")\n}\n# $ garnet check\n# caps coverage: function `sneaky` does not declare `fs`\n# but transitively calls `fs::read_file` which requires it\n```\n\n## What no other language gives you\n\nThe pillars are individually precedented — Pony and Austral, Wasmtime and eBPF, Sigstore and\nSLSA each do a piece well. **Garnet\'s bet is the integration**, enforced at the language layer\nand aimed at agent-authored code:\n\n- **`diff-caps`** — the capability-surface diff as an acceptance gate. When a dependency or an\n  agent\'s PR changes what the code *can do*, you review the authority delta, not every line.\n- **`@caps(...)`** — functions declare their OS-authority budget; the CapCaps propagator checks\n  declared budgets transitively at check time, and the entry point must declare its budget. Under\n  the `garnet` CLI, the gated host-authority primitives (fs, net, proc, env, log-to-file — 12\n  runtime-gated + 3 entry-gated) additionally trap at run time unless the calling chain declares\n  the authority; `time`/`uuid` and pure computation are checker-only. See the\n  [capability enforcement scope table](C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md).\n- **An enforced kernel** — `@caps` and `@max_depth` trap identically on both execution backends,\n  with cross-OS trap parity recorded as evidence, not asserted.\n- **The seal** — `garnet build --deterministic --sign` emits a byte-identical manifest plus an\n  Ed25519 signature; releases ship a CycloneDX SBOM and GPG-signed checksums.\n- **Agent-native memory** — `memory working|episodic|semantic|procedural` as language keywords,\n  so the runtime knows which kind it\'s allocating.\n- **Typed actors** — bounded mailboxes, compiler-checked protocols, Ed25519-signed hot-reload\n  with BLAKE3 schema fingerprints.\n\n## Install\n\n```sh\ncurl --proto \'=https\' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh\n```\n\nRelease-first, source-fallback. <!-- truth:latest_tag -->v0.8.1<!-- /truth --> ships signed\n`.deb` / `.rpm` / macOS tarballs with a GPG-signed `SHA256SUMS` — verify per\n[docs/release-signing.md](docs/release-signing.md). No matching package for your platform?\nThe installer builds from source (Rust 1.95+; CI also tracks current stable — per\n[CONTRIBUTING.md](CONTRIBUTING.md)), or:\n\n```sh\ngit clone https://github.com/Island-Dev-Crew/garnet\ncd garnet/garnet-cli && cargo install --path . --locked\n```\n\n## Quickstart\n\n```sh\ngarnet new --template cli my_app    # also: web-api, agent-orchestrator\ncd my_app\ngarnet test                         # starter tests pass green\ngarnet run src/main.garnet\n\n# produce a reproducible, signed build:\ngarnet keygen my.key\ngarnet build --deterministic --sign my.key src/main.garnet\ngarnet verify src/main.garnet src/main.garnet.manifest.json --signature\n```\n\n## Honest status\n\nGarnet is a **research-grade prototype (<!-- truth:latest_tag -->v0.8.1<!-- /truth -->), not\nproduction-complete** — and this README will never tell you otherwise.\n\n| Verified today | Still open |\n|---|---|\n| Signed v0.8.1 release: `.deb`, `.rpm`, macOS tarballs, SBOM, GPG-signed sums | macOS `.pkg` notarization, Windows `.msi` (credential-gated) |\n| `@caps` + `@max_depth` enforced on interpreter **and** VM; cross-OS trap parity recorded | OS-sandbox enforcement beyond Linux seccomp |\n| Capability-bounded acceptance demo: agent code accepted *and refused* on evidence, sealed | Independent verification of the self-found red-team fix |\n| <!-- truth:primitive_count -->80<!-- /truth --> capability- and stability-tagged stdlib primitives | Production VM performance (unbenchmarked, unclaimed) |\n| LSP + VS Code extension (local VSIX), trivia-preserving CST, formatter baseline | Marketplace/OpenVSX publication; incremental parsing |\n| Rust / Ruby / Python / Go migration assistant with lineage + `@sandbox` audit gate | Browser playground; package registry beyond stub |\n\nThe full ledger lives in [CURRENT_STATE.md](CURRENT_STATE.md); the readiness detail lives on\n[the status page](https://garnet-lang.org/status.html). The honest scorecard for the research\nclaims: 4 supported, 2 partial, 0 refuted, 1 pending-infra\n([seven papers](A_Research_Papers/)).\n\n## Learn more\n\n[Getting started](https://garnet-lang.org/getting-started.html) ·\n[Mini-Spec v1.0](C_Language_Specification/GARNET_v1_0_Mini_Spec.md) ·\n[Conformance matrix](C_Language_Specification/GARNET_v0_4_2_Conformance_Matrix.md) ·\n[Capability model](FAQ.md#whats-the-capability-model) ·\n[Script walkthroughs](docs/internals/script-walkthroughs.md) ·\n[Research papers](A_Research_Papers/) ·\n[Blog](https://garnet-lang.org/blog/)\n\n## Community\n\nQuestions \u2192 [FAQ](FAQ.md), then [Discussions](https://github.com/Island-Dev-Crew/garnet/discussions) ·\nBugs \u2192 [Issues](https://github.com/Island-Dev-Crew/garnet/issues) ·\nSecurity \u2192 [SECURITY.md](SECURITY.md) (private advisories, please) ·\nContributing \u2192 [CONTRIBUTING.md](CONTRIBUTING.md) + [Code of Conduct](CODE_OF_CONDUCT.md)\n\n## License\n\nDual-licensed **MIT OR Apache-2.0** — your choice. Either is fine for commercial use.\n\n---\n\n<p align="center"><em>"Where there is no vision, the people perish." — Proverbs 29:18</em><br>\n<sub>A project by Island Development Crew · Huntsville, AL</sub></p>\n'
+
+======================================================================
+FAIL: test_tracked_ledger_matches_renderer_byte_for_byte (test_garnet_launch_readiness_status.LedgerPinTests.test_tracked_ledger_matches_renderer_byte_for_byte)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\gvr806-a31f2\scripts\test_garnet_launch_readiness_status.py", line 141, in test_tracked_ledger_matches_renderer_byte_for_byte
+    self.assertEqual(tracked, rendered)
+AssertionError: "# Ga[42 chars]tate — regenerate with:\n`python3 scripts/garn[4541 chars]ve\n" != "# Ga[42 chars]tate â€” regenerate with:\n`python3 scripts/ga[4573 chars]ve\n"
+Diff is 6706 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_all_novel_programs_check_and_run (test_garnet_novel_compositions.LiveMatrixTests.test_all_novel_programs_check_and_run)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\gvr806-a31f2\scripts\test_garnet_novel_compositions.py", line 90, in test_all_novel_programs_check_and_run
+    self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+AssertionError: 1 != 0 : [
+  {
+    "id": "novel_01_capability_budgeted_memory_agent",
+    "contributions": [
+      "capability-budget",
+      "memory-recall",
+      "agent-pipeline"
+    ],
+    "check_ok": true,
+    "run_ok": true
+  },
+  {
+    "id": "novel_02_signed_provenance_pipeline",
+    "contributions": [
+      "blake3-signed-provenance",
+      "agent-pipeline",
+      "determinism"
+    ],
+    "check_ok": true,
+    "run_ok": true
+  },
+  {
+    "id": "novel_03_release_gate_quorum",
+    "contributions": [
+      "release-gate",
+      "capability-budget",
+      "blake3-signed-provenance",
+      "memory-recall"
+    ],
+    "check_ok": true,
+    "run_ok": true
+  },
+  {
+    "id": "novel_04_dispatched_stdlib_pipeline",
+    "contributions": [
+      "core::iter-higher-order",
+      "core::math",
+      "core::cmp",
+      "std::base64",
+      "@stability-warnings"
+    ],
+    "check_ok": true,
+    "run_ok": true
+  },
+  {
+    "id": "novel_05_s22_stdlib_memory_pipeline",
+    "contributions": [
+      "std::json",
+      "std::regex",
+      "std::uuid-v5",
+      "std::log",
+      "memory::mnemos-handles"
+    ],
+    "check_ok": true,
+    "run_ok": true
+  },
+  {
+    "id": "novel_06_observability_provenance_pipeline",
+    "contributions": [
+      "std::log::to_file",
+      "memory::episodic",
+      "std::json",
+      "blake3-signed-provenance"
+    ],
+    "check_ok": true,
+    "run_ok": true
+  },
+  {
+    "id": "novel_07_functional_core_pipeline",
+    "contributions": [
+      "core::iter",
+      "core::result",
+      "core::option",
+      "railway-pipeline"
+    ],
+    "check_ok": false,
+    "run_ok": true
+  }
+]
+
+
+======================================================================
+FAIL: test_tag_release_publishes_unified_checksummed_assets (test_garnet_release_assets.GarnetReleaseAssetsTests.test_tag_release_publishes_unified_checksummed_assets)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\gvr806-a31f2\scripts\test_garnet_release_assets.py", line 40, in test_tag_release_publishes_unified_checksummed_assets
+    self.assertIn("sha256sum *.deb *.rpm *.tar.gz > SHA256SUMS", text)
+AssertionError: 'sha256sum *.deb *.rpm *.tar.gz > SHA256SUMS' not found in '# Garnet — Linux packaging + verification CI (v4.2 Phase 6D).\n#\n# Reproduces the Docker-based verification run manually on 2026-04-17\n# (see F_Project_Management/GARNET_v4_2_Phase_6D_Linux_VERIFIED.md)\n# as a CI job so every push automatically confirms .deb + .rpm still\n# install cleanly and still pass the 6-gate smoke.\n#\n# On tagged releases (`v*`) the job additionally:\n#   - Builds Linux .deb/.rpm packages and macOS CLI tarballs\n#   - Computes one SHA-256 manifest for every release installer artifact\n#   - Uploads packages, tarballs, and SHA256SUMS as release assets\n# These are the files `docs/install.sh` fetches after GitHub Pages serves it at\n# `https://garnet-lang.org/install.sh`.\n\nname: Linux packages\n\non:\n  push:\n    branches: [main]\n    tags: [\'v*\']\n  pull_request:\n    branches: [main]\n  workflow_dispatch: {}\n\nenv:\n  # Garnet is dual-licensed MIT OR Apache-2.0; both notices ship in LICENSE.\n  CARGO_TERM_COLOR: always\n  # The workspace root for the Rust side — cargo-deb / cargo-generate-rpm\n  # run from here.\n  WORKSPACE: ${{ github.workspace }}\n\njobs:\n  # \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n  # 1. Build .deb + .rpm in a single rust:1-bookworm container. Produces\n  #    the two package artifacts + the stripped release binary.\n  # \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n  build-packages:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout\n        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10\n\n      # On a release tag, the in-tree version MUST match the tag — otherwise the\n      # build ships a stale binary under a new tag (the v0.8.1/0.5.0 drift the\n      # S121–S130 truth-sync surfaced). Only fires on tag pushes; main/PR builds\n      # are unaffected.\n      - name: Guard — release tag must match Cargo version\n        if: startsWith(github.ref, \'refs/tags/v\')\n        run: |\n          cargo_version="$(awk -F\'"\' \'/^version =/ { print $2; exit }\' Cargo.toml)"\n          tag="${GITHUB_REF_NAME}"\n          echo "Cargo version: ${cargo_version} · release tag: ${tag}"\n          if [ "v${cargo_version}" != "${tag}" ]; then\n            echo "::error::release tag ${tag} does not match Cargo version v${cargo_version} — bump the workspace version before tagging."\n            exit 1\n          fi\n          echo "tag matches Cargo version — OK"\n\n      - name: Install Rust toolchain (stable)\n        uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c\n        with:\n          toolchain: stable\n\n      - name: Cache cargo registry + target\n        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25\n        with:\n          path: |\n            ~/.cargo/registry\n            ~/.cargo/git\n            target\n          key: ${{ runner.os }}-cargo-${{ hashFiles(\'**/Cargo.lock\') }}\n          restore-keys: ${{ runner.os }}-cargo-\n\n      - name: Install cargo-deb + cargo-generate-rpm\n        run: |\n          cargo install cargo-deb --locked\n          cargo install cargo-generate-rpm --locked\n\n      - name: Build release binary\n        run: cargo build --release -p garnet-cli\n\n      - name: Build .deb\n        run: |\n          rm -rf target/debian\n          cd garnet-cli\n          cargo deb --no-build\n          ls -la ../target/debian/\n\n      - name: Build .rpm\n        run: |\n          rm -rf target/generate-rpm\n          cargo generate-rpm -p garnet-cli\n          ls -la target/generate-rpm/\n\n      - name: Compute SHA-256\n        # TODO(release-security): SHA256SUMS is computed but not signed.\n        # To enable signed releases, add a GPG signing key + passphrase\n        # as repo secrets (`GPG_SIGNING_KEY`, `GPG_PASSPHRASE`), import\n        # them in this step, and follow with:\n        #   gpg --batch --yes --detach-sign --armor SHA256SUMS\n        # which produces SHA256SUMS.asc. Then add it to the upload\n        # artifact list and the release-asset publish step below.\n        # Tracked in the v0.4.2 release-security refactor.\n        run: |\n          mkdir -p dist\n          cp target/debian/*.deb               dist/\n          cp target/generate-rpm/*.rpm          dist/\n          cd dist\n          sha256sum *.deb *.rpm > SHA256SUMS\n          cat SHA256SUMS\n\n      - name: Upload artifacts\n        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f\n        with:\n          name: garnet-linux-packages\n          path: |\n            dist/*.deb\n            dist/*.rpm\n            dist/SHA256SUMS\n          retention-days: 30\n\n  # \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n  # 2. .deb smoke test in clean ubuntu:24.04 — 6 gates per Phase 6D.\n  # \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n  smoke-deb:\n    needs: build-packages\n    runs-on: ubuntu-latest\n    container: ubuntu:24.04\n    steps:\n      - name: Fetch artifacts\n        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c\n        with:\n          name: garnet-linux-packages\n          path: dist/\n\n      - name: Install .deb\n        run: |\n          apt-get update -qq\n          apt-get install -y -qq ./dist/*.deb\n\n      - name: Gate 1 — version banner\n        run: garnet --version | grep -q "Rust Rigor. Ruby Velocity."\n\n      - name: Gate 2 — help lists new/keygen/convert\n        run: |\n          garnet --help | grep -q "new"\n          garnet --help | grep -q "keygen"\n          garnet --help | grep -q "convert"\n\n      - name: Gate 3 — scaffold cli template\n        run: |\n          garnet new --template cli /tmp/app\n          test -f /tmp/app/Garnet.toml\n          test -f /tmp/app/src/main.garnet\n\n      - name: Gate 4 — parser runs\n        run: garnet parse /tmp/app/src/main.garnet | grep -q "parsed"\n\n      - name: Gate 5 — signed-manifest round-trip\n        run: |\n          garnet keygen /tmp/k\n          garnet build --deterministic --sign /tmp/k /tmp/app/src/main.garnet\n          garnet verify /tmp/app/src/main.garnet \\\n            /tmp/app/src/main.garnet.manifest.json --signature \\\n            | grep -q "signature valid"\n\n      - name: Gate 6 — CapCaps propagator flags coverage gap\n        run: |\n          cat > /tmp/bad.garnet <<\'EOF\'\n          @caps()\n          def main() { read_file("config.toml") }\n          EOF\n          garnet check /tmp/bad.garnet 2>&1 | grep -q "does not declare .fs."\n\n  # \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n  # 3. .rpm smoke test in clean fedora:40 — same 6 gates.\n  # \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n  smoke-rpm:\n    needs: build-packages\n    runs-on: ubuntu-latest\n    container: fedora:40\n    steps:\n      - name: Fetch artifacts\n        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c\n        with:\n          name: garnet-linux-packages\n          path: dist/\n\n      - name: Install .rpm\n        run: dnf install -y -q ./dist/*.rpm\n\n      - name: Six gates\n        run: |\n          garnet --version | grep -q "Rust Rigor. Ruby Velocity."\n          garnet --help | grep -q "convert"\n          garnet new --template agent-orchestrator /tmp/agents\n          grep -q "actor Researcher"  /tmp/agents/src/main.garnet\n          grep -q "actor Synthesizer" /tmp/agents/src/main.garnet\n          grep -q "actor Reviewer"    /tmp/agents/src/main.garnet\n          grep -q "Reviewer.spawn(2)"  /tmp/agents/src/main.garnet\n          garnet test /tmp/agents | grep -q "3 passed; 0 failed"\n          garnet run /tmp/agents/src/main.garnet | grep -q "accepted decision score"\n          garnet keygen /tmp/k\n          garnet build --deterministic --sign /tmp/k /tmp/agents/src/main.garnet\n          garnet verify /tmp/agents/src/main.garnet \\\n            /tmp/agents/src/main.garnet.manifest.json --signature \\\n            | grep -q "signature valid"\n          test -f /usr/share/man/man1/garnet.1\n\n  # \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n  # 4. macOS CLI tarballs for the universal installer fallback path.\n  #    The public installer detects macOS .pkg first, then falls back to\n  #    `garnet-<version>-<target>.tar.gz`; v0.5.0 does not claim a\n  #    signed/notarized .pkg, so these tarballs are the honest Mac release\n  #    assets required before the M5 clean-machine smoke can pass.\n  # \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n  macos-cli-tarballs:\n    runs-on: macos-latest\n    strategy:\n      fail-fast: false\n      matrix:\n        target: [aarch64-apple-darwin, x86_64-apple-darwin]\n    steps:\n      - name: Checkout\n        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10\n\n      # See build-packages: on a release tag, the in-tree version must match the\n      # tag so the macOS tarballs are not stale-versioned. Tag pushes only.\n      - name: Guard — release tag must match Cargo version\n        if: startsWith(github.ref, \'refs/tags/v\')\n        run: |\n          cargo_version="$(awk -F\'"\' \'/^version =/ { print $2; exit }\' Cargo.toml)"\n          tag="${GITHUB_REF_NAME}"\n          echo "Cargo version: ${cargo_version} · release tag: ${tag}"\n          if [ "v${cargo_version}" != "${tag}" ]; then\n            echo "::error::release tag ${tag} does not match Cargo version v${cargo_version} — bump the workspace version before tagging."\n            exit 1\n          fi\n          echo "tag matches Cargo version — OK"\n\n      - name: Install Rust toolchain (stable)\n        uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c\n        with:\n          toolchain: stable\n          targets: ${{ matrix.target }}\n\n      - name: Cache cargo registry + target\n        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25\n        with:\n          path: |\n            ~/.cargo/registry\n            ~/.cargo/git\n            target\n          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles(\'**/Cargo.lock\') }}\n          restore-keys: ${{ runner.os }}-${{ matrix.target }}-cargo-\n\n      - name: Build CLI tarball\n        shell: bash\n        run: |\n          set -euo pipefail\n          version="$(awk -F\'"\' \'/^version =/ { print $2; exit }\' Cargo.toml)"\n          target="${{ matrix.target }}"\n          cargo build --release --locked -p garnet-cli --target "${target}"\n\n          rm -rf package dist\n          mkdir -p package/bin dist\n          cp "target/${target}/release/garnet" package/bin/garnet\n          chmod 0755 package/bin/garnet\n          tar -C package -czf "dist/garnet-${version}-${target}.tar.gz" bin/garnet\n          tar -tzf "dist/garnet-${version}-${target}.tar.gz"\n\n      - name: Native CLI smoke\n        shell: bash\n        run: |\n          set -euo pipefail\n          version="$(awk -F\'"\' \'/^version =/ { print $2; exit }\' Cargo.toml)"\n          target="${{ matrix.target }}"\n          case "$(uname -m)" in\n            arm64|aarch64) host_target="aarch64-apple-darwin" ;;\n            x86_64) host_target="x86_64-apple-darwin" ;;\n            *) host_target="unknown" ;;\n          esac\n\n          if [ "${host_target}" = "${target}" ]; then\n            version_output="$("target/${target}/release/garnet" --version)"\n            grep -q "garnet ${version}" <<<"${version_output}"\n          else\n            echo "Built ${target}; native execution skipped on ${host_target}."\n          fi\n\n      - name: Upload macOS tarball artifact\n        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f\n        with:\n          name: garnet-macos-cli-${{ matrix.target }}\n          path: dist/*.tar.gz\n          retention-days: 30\n\n  # \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n  # 5. Verify the universal installer copies stay in sync and shellcheck clean.\n  # \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n  shellcheck-installer:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10\n      - name: Installer copies stay identical\n        run: cmp -s installer/sh.garnet-lang.org/install.sh docs/install.sh\n\n      - name: shellcheck\n        run: |\n          docker run --rm -v "$PWD:/work" \\\n            koalaman/shellcheck:stable \\\n            --shell=sh --severity=warning \\\n            /work/installer/sh.garnet-lang.org/install.sh \\\n            /work/docs/install.sh\n          docker run --rm -v "$PWD:/work" \\\n            koalaman/shellcheck:stable \\\n            --shell=bash --severity=warning \\\n            /work/scripts/package_garnet_studio_macos.sh \\\n            /work/scripts/smoke_garnet_studio_dmg.sh \\\n            /work/scripts/preflight_garnet_studio_notarization.sh\n\n  # \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n  # 6. On tagged release only: publish packages/tarballs + SHA256SUMS\n  #    as a GitHub Release. End-users fetch via garnet-lang.org/install.sh.\n  # \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n  release:\n    if: startsWith(github.ref, \'refs/tags/v\')\n    needs: [smoke-deb, smoke-rpm, macos-cli-tarballs, shellcheck-installer]\n    runs-on: ubuntu-latest\n    permissions:\n      contents: write\n    env:\n      # Signing activates only when the repo provides a GPG key; otherwise the\n      # release ships an UNSIGNED SHA256SUMS (the honest research-grade default).\n      HAS_GPG: ${{ secrets.GPG_SIGNING_KEY != \'\' }}\n    steps:\n      - name: Checkout (for SBOM generation)\n        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10\n\n      - name: Install Rust toolchain (stable)\n        uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c\n        with:\n          toolchain: stable\n\n      - name: Fetch Linux package artifacts\n        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c\n        with:\n          name: garnet-linux-packages\n          path: release-dist/\n\n      - name: Fetch macOS CLI tarball artifacts\n        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c\n        with:\n          pattern: garnet-macos-cli-*\n          merge-multiple: true\n          path: release-dist/\n\n      - name: Generate CycloneDX SBOM (attached to the release)\n        run: |\n          cargo install cargo-cyclonedx --locked --force\n          cargo cyclonedx --all --format json\n          mkdir -p sbom-tmp\n          find . -name \'*.cdx.json\' -not -path \'./release-dist/*\' -not -path \'./sbom-tmp/*\' \\\n            -exec cp {} sbom-tmp/ \\;\n          # .tgz extension so the *.tar.gz binary glob never picks up the SBOM.\n          tar -czf release-dist/garnet-sbom-cyclonedx.tgz -C sbom-tmp .\n          echo "SBOM files bundled:"; ls -1 sbom-tmp\n\n      - name: Compose unified SHA256SUMS\n        run: |\n          cd release-dist\n          rm -f SHA256SUMS\n          sha256sum *.deb *.rpm *.tar.gz *.tgz > SHA256SUMS\n          cat SHA256SUMS\n\n      - name: Sign SHA256SUMS (activates when GPG_SIGNING_KEY secret is set)\n        if: env.HAS_GPG == \'true\'\n        env:\n          GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}\n          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}\n        run: |\n          cd release-dist\n          echo "$GPG_SIGNING_KEY" | gpg --batch --import\n          if [ -n "$GPG_PASSPHRASE" ]; then\n            gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" \\\n              --detach-sign --armor SHA256SUMS\n          else\n            gpg --batch --yes --detach-sign --armor SHA256SUMS\n          fi\n          echo "signed \u2192 SHA256SUMS.asc"\n\n      # Fail-closed: a TAGGED release must ship a SIGNED SHA256SUMS. Previously a\n      # missing GPG_SIGNING_KEY silently published an UNSIGNED release; now an\n      # unsigned tagged release is BLOCKED unless it is a deliberate, recorded act\n      # (repo variable ALLOW_UNSIGNED_RELEASE=true), so shipping unsigned is a\n      # decision, never an accident. [Jon-gated: this is a release-POLICY change.]\n      - name: Require signed SHA256SUMS (fail-closed)\n        if: env.HAS_GPG != \'true\'\n        run: |\n          if [ "${{ vars.ALLOW_UNSIGNED_RELEASE }}" = "true" ]; then\n            echo "::warning::GPG_SIGNING_KEY absent and ALLOW_UNSIGNED_RELEASE=true — publishing a DELIBERATELY UNSIGNED research-grade release."\n          else\n            echo "::error::Tagged release requires a signed SHA256SUMS, but GPG_SIGNING_KEY is not set. Provide GPG_SIGNING_KEY (+ optional GPG_PASSPHRASE), or set repository variable ALLOW_UNSIGNED_RELEASE=true to deliberately ship unsigned."\n            exit 1\n          fi\n\n      - name: Publish release\n        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65\n        with:\n          files: |\n            release-dist/*.deb\n            release-dist/*.rpm\n            release-dist/*.tar.gz\n            release-dist/garnet-sbom-cyclonedx.tgz\n            release-dist/SHA256SUMS\n          fail_on_unmatched_files: true\n          generate_release_notes: true\n\n      - name: Attach SHA256SUMS signature (only when signed)\n        if: env.HAS_GPG == \'true\'\n        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65\n        with:\n          files: release-dist/SHA256SUMS.asc\n          fail_on_unmatched_files: true\n'
+
+======================================================================
+FAIL: test_run_script_stages_swiftpm_gui_app_bundle (test_garnet_studio_run_button.GarnetStudioRunButtonTests.test_run_script_stages_swiftpm_gui_app_bundle)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\gvr806-a31f2\scripts\test_garnet_studio_run_button.py", line 19, in test_run_script_stages_swiftpm_gui_app_bundle
+    self.assertTrue(mode & stat.S_IXUSR, "run script must be executable")
+AssertionError: 0 is not true : run script must be executable
+
+======================================================================
+FAIL: test_missing_studio_adoption_copy_is_a_strict_blocker (test_smoke_garnet_pages_pwa.PagesPwaSmokeTests.test_missing_studio_adoption_copy_is_a_strict_blocker)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\gvr806-a31f2\scripts\test_smoke_garnet_pages_pwa.py", line 106, in test_missing_studio_adoption_copy_is_a_strict_blocker
+    self.assertIn("Garnet Studio workbench", result.stderr)
+AssertionError: 'Garnet Studio workbench' not found in '/bin/bash: C:gvr806-a31f2scriptssmoke_garnet_pages_pwa.sh: No such file or directory\n'
+
+----------------------------------------------------------------------
+Ran 1141 tests in 889.659s
+
+FAILED (failures=6, errors=4, skipped=5)
+
+{
+  "schema": "garnet.v0_8_beta_gate/v1",
+  "band_slices": [
+    {
+      "id": "s41",
+      "title": "async-contract",
+      "status": "merged",
+      "merge_confidence": 5,
+      "ok": true
+    },
+    {
+      "id": "s42",
+      "title": "error-policy",
+      "status": "merged",
+      "merge_confidence": 5,
+      "ok": true
+    },
+    {
+      "id": "s43",
+      "title": "docs-as-tests",
+      "status": "merged",
+      "merge_confidence": 5,
+      "ok": true
+    },
+    {
+      "id": "s44",
+      "title": "lsp-precision",
+      "status": "merged",
+      "merge_confidence": 5,
+      "ok": true
+    },
+    {
+      "id": "s45",
+      "title": "slopsquatting-guard",
+      "status": "merged",
+      "merge_confidence": 5,
+      "ok": true
+    },
+    {
+      "id": "s46",
+      "title": "caps-sandbox",
+      "status": "merged",
+      "merge_confidence": 5,
+      "ok": true
+    },
+    {
+      "id": "s47",
+      "title": "cross-platform-proof",
+      "status": "merged",
+      "merge_confidence": 5,
+      "ok": true
+    },
+    {
+      "id": "s48",
+      "title": "proof-matrix",
+      "status": "merged",
+      "merge_confidence": 5,
+      "ok": true
+    },
+    {
+      "id": "s49",
+      "title": "wedge-demo",
+      "status": "merged",
+      "merge_confidence": 5,
+      "ok": true
+    }
+  ],
+  "sub_gates": [
+    {
+      "name": "build-proof (S47 cross-OS coverage)",
+      "passed": true,
+      "exit_code": 0
+    },
+    {
+      "name": "proof-matrix (S48 evidence anchors)",
+      "passed": true,
+      "exit_code": 0
+    }
+  ],
+  "band_complete": true,
+  "sub_gates_pass": true,
+  "beta_ready": true,
+  "deferred_for_beta": [
+    "Runtime sandbox enforcement (S46 generates seccomp/WASI/egress policy; it does not enforce \u2014 needs wasmtime / a Linux seccomp host).",
+    "Windows CLI distribution (S47): only the separate Studio installer exists.",
+    "LLM advisory tier (compiler-as-agent): rules tier ships; the LLM tier remains pending-infra.",
+    "Cross-package LSP precision (S44 deferred the cross-file half to the package resolver line).",
+    "Empirical Paper VI measurements / mechanized proofs (S48 is an evidence inventory, not proof)."
+  ],
+  "honesty_anchors": [
+    "research-grade prototype (v0.x.x) \u2014 not production-complete",
+    "tracked-slice ledger is complete, but that is not full MIT/productization completion",
+    "Paper VI scorecard: 4 supported, 2 partial (downgraded honestly), 0 refuted, 1 pending-infra",
+    "production allocator path tracked in MEMORY_CORE_ROADMAP.md",
+    "human/aesthetic acceptance remains open"
+  ],
+  "tag_note": "This gate does NOT cut a tag and does NOT claim production readiness. Cutting v0.8.0-beta (or any tag) is a release-truth decision for Jon."
+}
+{
+  "schema": "garnet.version_map_check/v1",
+  "version_map_present": true,
+  "missing_map_anchors": [],
+  "contract_points_at_map": true,
+  "forbidden_cells_in_contract": [],
+  "ok": true
+}
+{
+  "schema": "garnet.vm_interp_enforcement_parity/v1",
+  "max_depth_trap_parity": true,
+  "caps_trap_parity": true,
+  "enforced_ceilings": [
+    "@max_depth",
+    "@caps"
+  ],
+  "named_deferred": [
+    "@bounded (Wasmtime fuel)",
+    "memory",
+    "time",
+    "@mailbox",
+    "OS-level sandbox application"
+  ],
+  "ok": true
+}
+{
+  "schema": "garnet.vm_interp_parity/v1",
+  "corpus_size": 33,
+  "binary_available": false,
+  "parity_ok": 0,
+  "divergent": [],
+  "ok": true
+}
+{
+  "schema": "garnet.vscode_publish_readiness/v1",
+  "manifest_present": true,
+  "missing_required": [],
+  "missing_recommended": [],
+  "missing_files": [],
+  "publish_path": [
+    "build VSIX (vscode-extension.yml: build-vsix) \u2014 wired",
+    "GitHub release asset on tag (release-vsix) \u2014 wired",
+    "OpenVSX publish (`ovsx publish`) \u2014 DEFERRED (needs OVSX_TOKEN)",
+    "VS Code Marketplace publish (`vsce publish`) \u2014 DEFERRED (needs VSCE_PAT)"
+  ],
+  "marketplace_ready": true
+}
+{
+  "schema": "garnet.wasm_readiness/v3",
+  "hello_example_present": true,
+  "target_doc_present": true,
+  "wasm_crate_present": true,
+  "windows_proof_present": true,
+  "windows_proof_valid": true,
+  "windows_proof_commit": "098260e48f5625c409d53646889f27922e08c1e9",
+  "wasm_build_passed": true,
+  "node_execution_passed": true,
+  "check_source_export_present": true,
+  "caps_surface_export_present": true,
+  "browser_adapter_present": true,
+  "browser_package_present": true,
+  "browser_package_valid": true,
+  "browser_proof_present": true,
+  "browser_proof_valid": true,
+  "browser_ready": true,
+  "wasm32_target_installed": true,
+  "wasm_pack_present": true,
+  "node_present": true,
+  "wasmtime_present": true,
+  "miette_fancy_detected": true,
+  "blockers": [],
+  "owned_bits_ready": true
+}
+{
+  "schema": "garnet.wasm_readiness/v3",
+  "hello_example_present": true,
+  "target_doc_present": true,
+  "wasm_crate_present": true,
+  "windows_proof_present": true,
+  "windows_proof_valid": true,
+  "windows_proof_commit": "098260e48f5625c409d53646889f27922e08c1e9",
+  "wasm_build_passed": true,
+  "node_execution_passed": true,
+  "check_source_export_present": true,
+  "caps_surface_export_present": true,
+  "browser_adapter_present": true,
+  "browser_package_present": true,
+  "browser_package_valid": true,
+  "browser_proof_present": true,
+  "browser_proof_valid": false,
+  "browser_ready": false,
+  "wasm32_target_installed": true,
+  "wasm_pack_present": true,
+  "node_present": true,
+  "wasmtime_present": true,
+  "miette_fancy_detected": true,
+  "blockers": [
+    "W-PLAY Playwright browser proof is missing or invalid"
+  ],
+  "owned_bits_ready": true
+}
+{
+  "schema": "garnet.windows_audit_status/v1",
+  "doc_present": true,
+  "core_ledger_present": true,
+  "goal_ledger_present": true,
+  "head_pinned": true,
+  "findings_without_owner": [],
+  "ok": true
+}
