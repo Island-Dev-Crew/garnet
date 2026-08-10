@@ -1,5 +1,13 @@
 /.gitattributes text eol=lf
 *.sh text eol=lf
+
+# U-25: parsed/product text is canonical LF. Byte-exact evidence keeps the
+# later -text overrides and is deliberately outside this policy.
+.dogfood/windows-audit-goal.json text eol=lf
+.dogfood/windows-core-audit.json text eol=lf
+D_Executive_and_Presentation/garnet-website.html text eol=lf
+ops/**/state-of-the-union.html text eol=lf
+
 # Proof bundles carry MANIFEST.sha256 byte hashes; keep evidence text stable on
 # Windows checkouts so local proof gates hash the same content as CI.
 proofs/**/*.json text eol=lf

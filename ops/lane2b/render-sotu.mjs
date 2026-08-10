@@ -21,6 +21,24 @@ const statePath = join(here, "state.json");
 const journalPath = join(here, "journal.md");
 const outPath = join(here, "state-of-the-union.html");
 
+const fail = (message) => {
+  console.error(`[render-sotu] ${message}`);
+  process.exit(1);
+};
+
+function readLfText(path, label) {
+  let text;
+  try {
+    text = readFileSync(path, "utf8");
+  } catch (e) {
+    fail(`${label} could not be read: ${e.message}`);
+  }
+  if (text.includes("\r")) {
+    fail(`${label} contains carriage-return bytes; canonical LF input is required`);
+  }
+  return text;
+}
+
 if (!existsSync(statePath)) {
   console.error(`No state.json found at ${statePath}`);
   process.exit(1);
@@ -30,7 +48,7 @@ let state;
 try {
   // Strip a UTF-8 BOM if present — PowerShell 5.1's `-Encoding utf8` writes one,
   // and JSON.parse rejects it. Windows sessions hit this constantly.
-  state = JSON.parse(readFileSync(statePath, "utf8").replace(/^﻿/, ""));
+  state = JSON.parse(readLfText(statePath, "state.json").replace(/^﻿/, ""));
 } catch (e) {
   console.error(`state.json is not valid JSON: ${e.message}`);
   process.exit(1);
@@ -77,7 +95,7 @@ const sevTone = { high: "red", critical: "red", medium: "amber", low: "blue" };
 
 function journalTail(n = 12) {
   if (!existsSync(journalPath)) return [];
-  const entries = readFileSync(journalPath, "utf8")
+  const entries = readLfText(journalPath, "journal.md")
     .split(/^## /m)
     .filter((s) => s.trim())
     .map((s) => "## " + s.trim());
@@ -407,6 +425,9 @@ document.querySelectorAll("button.copy").forEach((b) => {
 
 const html = rawHtml.replace(/^[\t ]+$/gm, "");
 
+if (html.includes("\r")) {
+  fail("rendered HTML contains carriage-return bytes");
+}
 writeFileSync(outPath, html);
 console.log(`Rendered ${outPath}`);
 console.log(`  phases: ${phases.length}, progress: ${progressDone}/${progressTotal} ${progressLabel}, gates passed: ${passedGates}/${allGates.length}, PRs: ${prLog.length}`);
