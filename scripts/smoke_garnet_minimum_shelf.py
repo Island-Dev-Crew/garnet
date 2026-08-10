@@ -21,8 +21,8 @@ WV6_ROOT = Path("proofs/windows/launch-verification/wv6-minimum-shelf")
 CROSS_CHECKOUT_EVIDENCE = Path(
     "ops/lane2b/evidence/17-content-reporter-cross-checkout.txt"
 )
-REVIEWED_HEAD = "863bf3faa78826ba4d6564c8cc2956046db9e6e4"
-REVIEWED_TREE = "cc68923c3c21a9879a541f7c4a8c1ceba3f22a4c"
+REVIEWED_HEAD = "410ff1182cdcefcec9fe046d1346205d8522ec9d"
+REVIEWED_TREE = "57ce26ae1ab8d24609180486bc5fce6179f37957"
 REVIEWED_TREE_PRODUCT_SHA256 = (
     "1e6692175ea8fe2dd5b04fad4a492dc8ce48767dd07d88fd11a0847ce96749d5"
 )
@@ -30,9 +30,9 @@ REVIEWED_TREE_PATH_COUNT = 1527
 # Replaced after all Verdict-04-authorized product paths are staged. This
 # reporter path is itself excluded, so the final constant is not self-referential.
 EXPECTED_PRODUCT_CONTENT_SHA256 = (
-    "2cb25d0b47f55c9dd987bf69fc8a97dade5a4767ef0beda0abc8616808dddc0c"
+    "fd96e6d910180f5e33999fbd693ea211e336389a13535930d89b2a870ff54727"
 )
-EXPECTED_PRODUCT_PATH_COUNT = 1605
+EXPECTED_PRODUCT_PATH_COUNT = 1606
 MAX_JSON_BYTES = 64 * 1024
 MAX_HEX_BYTES = 4 * 1024 * 1024
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
