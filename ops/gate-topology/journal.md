@@ -1,0 +1,4 @@
+# Gate Topology Journal
+
+- 2026-08-11T17:47:18Z — Fresh clone from `Island-Dev-Crew/garnet` with `origin/main` and lane base both `efd4f6bae8b3afaba74594e57944b2548142aeae`; `core.autocrlf=false`; no pull refs fetched. Boot: Hugh’s MacBook Pro, Darwin 25.6.0 arm64, OpenAI Codex GPT-5-based agent (exact version unavailable). Mission state: P7 active, U-17 OPEN, WV-6 partial, launch HOLD. Five-gate truth floor PASS.
+- 2026-08-11T18:00:23Z — Corrected RED target verified: `162b96a` is one Claude Fable 5 record-only commit atop `8ae41b6`, with its delta confined to `ops/wv6-reaccept/**`. The unamended v2 trust gate reproduced both graph findings verbatim at `162b96a` and exited 1. U-35 record movement independently recomputed through the reviewer's final record: `fd96e6d9…/1606 → d7a08be5…/1607 → 49e5686c…/1608 → d0978d1c…/1609`. No script byte has changed; this is the RED-first boundary.
