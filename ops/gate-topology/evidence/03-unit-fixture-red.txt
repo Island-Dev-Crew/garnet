@@ -1,0 +1,39 @@
+GARNET GATE TOPOLOGY UNIT FIXTURE RED
+captured_utc: 2026-08-11T18:04:52Z
+machine: Hugh’s MacBook Pro
+os_arch: Darwin 25.6.0 arm64
+implementer: OpenAI Codex, GPT-5-based agent; exact version unavailable
+command: python3 -I scripts/test_garnet_trust_kernel_review_status.py PreMergeReviewRecordTests.test_merge_parent_outside_reviewed_lineage_is_accepted_at_equal_trust_snapshot PreMergeReviewRecordTests.test_merge_parent_outside_reviewed_lineage_with_mutated_trust_stays_red
+exit: 1
+
+VERBATIM OUTPUT BEGIN
+F.
+======================================================================
+FAIL: test_merge_parent_outside_reviewed_lineage_is_accepted_at_equal_trust_snapshot (__main__.PreMergeReviewRecordTests.test_merge_parent_outside_reviewed_lineage_is_accepted_at_equal_trust_snapshot)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/garnet-gate-topology.GcqivR/garnet/scripts/test_garnet_trust_kernel_review_status.py", line 1033, in test_merge_parent_outside_reviewed_lineage_is_accepted_at_equal_trust_snapshot
+    self.assertEqual([], findings)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: Lists differ: [] != ['post-review commit-object traversal foun[209 chars]f46']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'post-review commit-object traversal found no reviewed-lineage parent for 087468a440290be4426be552bb58bac3aa368f46'
+
+- []
++ ['post-review commit-object traversal found no reviewed-lineage parent for '
++  '087468a440290be4426be552bb58bac3aa368f46',
++  'post-review trust touch in merge commit '
++  'f691e2eadb0c49ac7c56a43e31ae3f7e9ef377a6 versus parent '
++  '087468a440290be4426be552bb58bac3aa368f46']
+
+----------------------------------------------------------------------
+Ran 2 tests in 1.033s
+
+FAILED (failures=1)
+VERBATIM OUTPUT END
+
+The first test is the equal-trust-snapshot case that the ruling admits. The
+second test mutates one trust-kernel byte on the outside lineage and already
+remains RED under the unamended implementation.
