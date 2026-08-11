@@ -95,6 +95,15 @@ with `state=pending` until their exact-candidate, hash-verified Windows evidence
 manifests exist; never turn absence into acceptance or perform a Jon-only
 action from the reporter.
 
+Post-acceptance U-35 drift does not redefine the product digest. The WV-6 and
+Minimum Shelf reporters retain the pair at the exact frozen head only when
+that head's tree and pair match the recorded boundary and every changed path
+through the candidate tip is in the separately enumerated record class. That
+class includes the established evidence/review surfaces and
+`ops/wv6-reaccept/**`; any other changed path is RED and is named. Keep this
+tolerance separate from `FROZEN_MUTABLE_PREFIXES`, which remains the exact
+four-prefix digest definition.
+
 ## Lane 0 Frozen Backlog
 
 `ops/lane0/frozen-backlog.json` is the machine authority for the Lane 0

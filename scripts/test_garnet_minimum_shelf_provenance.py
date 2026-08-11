@@ -136,6 +136,20 @@ class SquashDurableContentProvenanceTests(unittest.TestCase):
             ),
         )
         self.assertEqual(cp.REPORTER_PATH, b"scripts/smoke_garnet_minimum_shelf.py")
+        self.assertEqual(
+            cp.FROZEN_MUTABLE_PREFIXES + (b"ops/wv6-reaccept/",),
+            cp.POST_ACCEPTANCE_RECORD_PREFIXES,
+        )
+        self.assertEqual((cp.REPORTER_PATH,), cp.POST_ACCEPTANCE_RECORD_FILES)
+        self.assertTrue(
+            cp._is_post_acceptance_record(
+                b"F_Project_Management/W_TRUST/WV6.review.json"
+            )
+        )
+        self.assertTrue(
+            cp._is_post_acceptance_record(b"ops/wv6-reaccept/review/02-verdict.md")
+        )
+        self.assertFalse(cp._is_post_acceptance_record(b"ops/lane3/note.txt"))
         # Lane 1 is excluded; a sibling lane namespace is NOT (a general
         # ops/<lane>/ predicate would wrongly exclude ops/lane3/ and fail here).
         self.assertTrue(cp._is_mutable(b"ops/lane1/review/07-request.md"))
