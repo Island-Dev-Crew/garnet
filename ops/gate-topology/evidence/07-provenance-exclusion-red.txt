@@ -1,0 +1,100 @@
+WV-6 RE-ACCEPTANCE PROVENANCE EXCLUSION RED
+captured_utc: 2026-08-11T18:19:23Z
+machine: Hugh’s MacBook Pro
+os_arch: Darwin 25.6.0 arm64
+implementer: OpenAI Codex, GPT-5-based agent; exact version unavailable
+phase_0_precedent: 17629f88412583f60305f32c1db38517a6dae13d
+
+COMMAND 1
+python3 -I scripts/test_garnet_minimum_shelf_provenance.py SquashDurableContentProvenanceTests.test_frozen_mutable_prefixes_are_exactly_the_authorized_set SquashDurableContentProvenanceTests.test_wv6_reaccept_review_artifacts_do_not_move_the_digest
+exit: 1
+
+VERBATIM OUTPUT BEGIN
+FF
+======================================================================
+FAIL: test_frozen_mutable_prefixes_are_exactly_the_authorized_set (__main__.SquashDurableContentProvenanceTests.test_frozen_mutable_prefixes_are_exactly_the_authorized_set)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/garnet-gate-topology.GcqivR/garnet/scripts/test_garnet_minimum_shelf_provenance.py", line 124, in test_frozen_mutable_prefixes_are_exactly_the_authorized_set
+    self.assertEqual(
+    ~~~~~~~~~~~~~~~~^
+        cp.FROZEN_MUTABLE_PREFIXES,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+        ),
+        ^^
+    )
+    ^
+AssertionError: Tuples differ: (b'op[31 chars]ject_Management/W_TRUST/', b'ops/lane1/') != (b'op[31 chars]ject_Management/W_TRUST/', b'ops/lane1/', b'ops/wv6-reaccept/')
+
+Second tuple contains 1 additional elements.
+First extra element 4:
+b'ops/wv6-reaccept/'
+
+- (b'ops/lane2b/', b'proofs/', b'F_Project_Management/W_TRUST/', b'ops/lane1/')
++ (b'ops/lane2b/',
++  b'proofs/',
++  b'F_Project_Management/W_TRUST/',
++  b'ops/lane1/',
++  b'ops/wv6-reaccept/')
+
+======================================================================
+FAIL: test_wv6_reaccept_review_artifacts_do_not_move_the_digest (__main__.SquashDurableContentProvenanceTests.test_wv6_reaccept_review_artifacts_do_not_move_the_digest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/garnet-gate-topology.GcqivR/garnet/scripts/test_garnet_minimum_shelf_provenance.py", line 159, in test_wv6_reaccept_review_artifacts_do_not_move_the_digest
+    self.assertEqual(before, after)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: 'e6a1b489d6365b0ae5a8b35bc449fdb20be93e987e20646bdc4e7f6511b06232' != '9123d2892c0a51b2f4da3fe878afcae75dcdb25c36fc42bafe9e66c46b6f96f1'
+- e6a1b489d6365b0ae5a8b35bc449fdb20be93e987e20646bdc4e7f6511b06232
++ 9123d2892c0a51b2f4da3fe878afcae75dcdb25c36fc42bafe9e66c46b6f96f1
+
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.259s
+
+FAILED (failures=2)
+VERBATIM OUTPUT END
+
+COMMAND 2
+python3 -I scripts/test_garnet_launch_readiness_status.py U31CureTrapTests.test_trap4_frozen_exclusion_tuple_and_lane0_inclusion
+exit: 1
+
+VERBATIM OUTPUT BEGIN
+F
+======================================================================
+FAIL: test_trap4_frozen_exclusion_tuple_and_lane0_inclusion (__main__.U31CureTrapTests.test_trap4_frozen_exclusion_tuple_and_lane0_inclusion)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/garnet-gate-topology.GcqivR/garnet/scripts/test_garnet_launch_readiness_status.py", line 535, in test_trap4_frozen_exclusion_tuple_and_lane0_inclusion
+    self.assertEqual(
+    ~~~~~~~~~~~~~~~~^
+        (
+        ^
+    ...<6 lines>...
+        cp.FROZEN_MUTABLE_PREFIXES,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: Tuples differ: (b'op[31 chars]ject_Management/W_TRUST/', b'ops/lane1/', b'ops/wv6-reaccept/') != (b'op[31 chars]ject_Management/W_TRUST/', b'ops/lane1/')
+
+First tuple contains 1 additional elements.
+First extra element 4:
+b'ops/wv6-reaccept/'
+
++ (b'ops/lane2b/', b'proofs/', b'F_Project_Management/W_TRUST/', b'ops/lane1/')
+- (b'ops/lane2b/',
+-  b'proofs/',
+-  b'F_Project_Management/W_TRUST/',
+-  b'ops/lane1/',
+-  b'ops/wv6-reaccept/')
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (failures=1)
+VERBATIM OUTPUT END
+
+The failures prove the prefix is absent, WV-6 record paths move the digest,
+and the independent launch-readiness tuple mirror detects the missing literal
+prefix before the cure.

@@ -528,7 +528,7 @@ class U31CureTrapTests(unittest.TestCase):
 
     def test_trap4_frozen_exclusion_tuple_and_lane0_inclusion(self) -> None:
         # Digest determinism without exclusion: the frozen tuple is exactly the
-        # four authorized prefixes plus the Shelf reporter self-path, and every
+        # five authorized prefixes plus the Shelf reporter self-path, and every
         # tracked ops/lane0/ path stays digest-INCLUDED.
         import garnet_content_provenance as cp
 
@@ -538,6 +538,7 @@ class U31CureTrapTests(unittest.TestCase):
                 b"proofs/",
                 b"F_Project_Management/W_TRUST/",
                 b"ops/lane1/",
+                b"ops/wv6-reaccept/",
             ),
             cp.FROZEN_MUTABLE_PREFIXES,
         )

@@ -120,7 +120,7 @@ class SquashDurableContentProvenanceTests(unittest.TestCase):
 
     def test_frozen_mutable_prefixes_are_exactly_the_authorized_set(self) -> None:
         # Trap (d): the exclusion tuple is exactly the three historical prefixes
-        # plus the single authorized Lane 1 prefix — never a general predicate.
+        # plus the two authorized record namespaces — never a general predicate.
         self.assertEqual(
             cp.FROZEN_MUTABLE_PREFIXES,
             (
@@ -128,6 +128,7 @@ class SquashDurableContentProvenanceTests(unittest.TestCase):
                 b"proofs/",
                 b"F_Project_Management/W_TRUST/",
                 b"ops/lane1/",
+                b"ops/wv6-reaccept/",
             ),
         )
         self.assertEqual(cp.REPORTER_PATH, b"scripts/smoke_garnet_minimum_shelf.py")
@@ -143,6 +144,16 @@ class SquashDurableContentProvenanceTests(unittest.TestCase):
         self._write("ops/lane1/review/99-later-request.md", "later review artifact\n")
         self._write("ops/lane1/journal.md", "heartbeat line\n")
         self._write("ops/lane1/evidence/zz.txt", "evidence\n")
+        self._git("add", ".")
+        after, count_after = cp.tracked_content_digest(self.root)
+        self.assertEqual(before, after)
+        self.assertEqual(count_before, count_after)
+
+    def test_wv6_reaccept_review_artifacts_do_not_move_the_digest(self) -> None:
+        before, count_before = cp.tracked_content_digest(self.root)
+        self._write("ops/wv6-reaccept/review/03-verdict.md", "later verdict\n")
+        self._write("ops/wv6-reaccept/journal.md", "record heartbeat\n")
+        self._write("ops/wv6-reaccept/evidence/topology.txt", "topology evidence\n")
         self._git("add", ".")
         after, count_after = cp.tracked_content_digest(self.root)
         self.assertEqual(before, after)
