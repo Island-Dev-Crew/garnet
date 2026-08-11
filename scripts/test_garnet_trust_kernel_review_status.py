@@ -1010,15 +1010,15 @@ class PreMergeReviewRecordTests(GitRepoFixture):
     def _merge_parent_outside_reviewed_lineage(self, *, mutate_trust: bool) -> str:
         self._git("checkout", "-b", "parallel-candidate", self.base)
         self._commit_file("parallel.txt", b"parallel\n", "parallel candidate")
-        if mutate_trust:
-            self._commit_file(
-                "scripts/garnet_parallel.py",
-                b"parallel_trust = True\n",
-                "parallel trust mutation",
-            )
         self._git("checkout", "main")
         self._commit_file("reviewed-lineage.txt", b"reviewed lineage\n", "reviewed lineage")
-        self._git("merge", "--no-ff", "parallel-candidate", "-m", "integration merge")
+        if mutate_trust:
+            self._git("merge", "--no-ff", "--no-commit", "parallel-candidate")
+            write_lf(self.root / "scripts/garnet_alpha.py", "alpha = 2\n")
+            self._git("add", "scripts/garnet_alpha.py")
+            self._git("commit", "-m", "integration merge with one-byte trust mutation")
+        else:
+            self._git("merge", "--no-ff", "parallel-candidate", "-m", "integration merge")
         return self._git("rev-parse", "HEAD")
 
     def test_merge_parent_outside_reviewed_lineage_is_accepted_at_equal_trust_snapshot(

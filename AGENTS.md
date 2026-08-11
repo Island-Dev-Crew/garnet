@@ -74,6 +74,15 @@ family, not a filename allowlist. Those transport, projection, and live-policy
 scripts govern the merge boundary itself and must never auto-merge, inherit an
 ambient credential, or print/persist a credential.
 
+The rolling trust-kernel review gate preserves exact reviewed bytes across
+post-review merge topology. A merge parent outside the reviewed lineage is
+admissible only when both the merge's complete trust-kernel snapshot and its
+SHA-256 byte digest equal those at `reviewed_head`; an unequal snapshot or
+digest remains red. This topology rule does not extend review coverage over
+the outside parent and does not relax transient-touch checks on the reviewed
+lineage. Run `python3 -I scripts/test_garnet_trust_kernel_review_status.py`
+after changing the walk or its trust-snapshot identity.
+
 ## WV-6 / WV-7 Acceptance Gates
 
 `F_Project_Management/LAUNCH/WV6_WV7_ACCEPTANCE_CONTRACTS.json` preserves the

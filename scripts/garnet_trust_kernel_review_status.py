@@ -1207,7 +1207,13 @@ def _post_review_trust_findings(
     head_commit: str,
     root: Path,
 ) -> list[str]:
-    """Reject every trust touch after review, including transient edits and merges."""
+    """Reject every reviewed-lineage trust touch, including transient edits.
+
+    A merge may carry a parent whose history is outside the reviewed lineage
+    only when the merge's exact trust snapshot and its byte digest both equal
+    ``reviewed_head``. This admits the already-reviewed bytes at the topology
+    join without extending review coverage over the outside parent.
+    """
     commits, problems = _independent_commit_range(reviewed_head, head_commit, root)
     if problems:
         return problems
@@ -1217,6 +1223,7 @@ def _post_review_trust_findings(
     commit_cache: dict[str, RawCommit] = dict(commits)
     tree_cache: dict[str, dict[str, tuple[str, str]]] = {}
     snapshots: dict[str, dict[str, tuple[str, str]]] = {}
+    snapshot_digests: dict[str, str] = {}
 
     def trust_snapshot(oid: str) -> tuple[dict[str, tuple[str, str]], list[str]]:
         if oid not in snapshots:
@@ -1233,8 +1240,92 @@ def _post_review_trust_findings(
             }
         return snapshots[oid], []
 
+    def trust_snapshot_digest(oid: str) -> tuple[str | None, list[str]]:
+        if oid in snapshot_digests:
+            return snapshot_digests[oid], []
+        snapshot, snapshot_problems = trust_snapshot(oid)
+        if snapshot_problems:
+            return None, snapshot_problems
+        digest = hashlib.sha256()
+        digest.update(b"garnet.trust_kernel.snapshot/v1\0")
+        for path, (mode, blob_oid) in sorted(snapshot.items()):
+            blob, blob_problems = _read_blob_oid(
+                root,
+                blob_oid,
+                f"trust snapshot {oid}: {path}",
+            )
+            if blob_problems:
+                return None, blob_problems
+            assert blob is not None
+            digest.update(path.encode("utf-8"))
+            digest.update(b"\0")
+            digest.update(mode.encode("ascii"))
+            digest.update(b"\0")
+            digest.update(hashlib.sha256(blob).digest())
+            digest.update(b"\0")
+        value = "sha256:" + digest.hexdigest()
+        snapshot_digests[oid] = value
+        return value, []
+
+    reviewed_lineage = {reviewed_head}
+    unresolved = set(commits)
+    while True:
+        admitted = {
+            oid
+            for oid in unresolved
+            if any(parent in reviewed_lineage for parent in commits[oid].parents)
+        }
+        if not admitted:
+            break
+        reviewed_lineage.update(admitted)
+        unresolved.difference_update(admitted)
+
     findings: list[str] = []
+    reviewed_snapshot, reviewed_snapshot_problems = trust_snapshot(reviewed_head)
+    findings.extend(reviewed_snapshot_problems)
+    reviewed_digest, reviewed_digest_problems = trust_snapshot_digest(reviewed_head)
+    findings.extend(reviewed_digest_problems)
+
+    accepted_outside: set[str] = set()
+    accepted_merge_parents: dict[str, set[str]] = {}
+    if not reviewed_snapshot_problems and not reviewed_digest_problems:
+        for oid in sorted(commits):
+            commit = commits[oid]
+            if oid not in reviewed_lineage or len(commit.parents) < 2:
+                continue
+            outside_parents = {
+                parent
+                for parent in commit.parents
+                if parent in commits and parent not in reviewed_lineage
+            }
+            if not outside_parents:
+                continue
+            current, current_problems = trust_snapshot(oid)
+            findings.extend(current_problems)
+            current_digest, digest_problems = trust_snapshot_digest(oid)
+            findings.extend(digest_problems)
+            if (
+                not current_problems
+                and not digest_problems
+                and current == reviewed_snapshot
+                and current_digest == reviewed_digest
+            ):
+                accepted_merge_parents[oid] = outside_parents
+                pending = list(outside_parents)
+                while pending:
+                    outside_oid = pending.pop()
+                    if outside_oid in accepted_outside or outside_oid in reviewed_lineage:
+                        continue
+                    accepted_outside.add(outside_oid)
+                    pending.extend(
+                        parent
+                        for parent in commits[outside_oid].parents
+                        if parent in commits
+                    )
+
     for oid in sorted(commits):
+        if oid in accepted_outside:
+            continue
         commit = commits[oid]
         relevant = [parent for parent in commit.parents if parent in allowed_parents]
         if not relevant:
@@ -1247,6 +1338,8 @@ def _post_review_trust_findings(
             findings.extend(current_problems)
             continue
         for parent in relevant:
+            if parent in accepted_merge_parents.get(oid, set()):
+                continue
             before, before_problems = trust_snapshot(parent)
             if before_problems:
                 findings.extend(before_problems)
