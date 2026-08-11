@@ -104,6 +104,14 @@ class includes the established evidence/review surfaces and
 tolerance separate from `FROZEN_MUTABLE_PREFIXES`, which remains the exact
 four-prefix digest definition.
 
+Acceptance is the last content operation on a candidate. Any later merge that
+changes a non-record byte supersedes the existing acceptance with preservation;
+it never widens the record class or bends the verifier. Freeze the final merged
+tree, perform native acceptance, and rebind its pins in one terminal ceremony.
+Later reviewer records may ride above that boundary only through the proven
+U-35 record-class tolerance. This is U-57, demonstrated by
+`ops/gate-topology/evidence/11-third-merge-integration-red.txt`.
+
 ## Lane 0 Frozen Backlog
 
 `ops/lane0/frozen-backlog.json` is the machine authority for the Lane 0
