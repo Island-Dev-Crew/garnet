@@ -17,9 +17,37 @@ The final digest-included boundary is
 The reporter rebind is `31e35151d506305817c2c1b344a0a79c77a821ae`.
 The committed WV-6 acceptance bundle is
 `ec8ce8f249cc820f1da8f1e818da13e8d9f2d33f`; its verifier passes 5/5 and
-binds the frozen head, tree, and product digest above. This record and its raw
-transcripts are under `F_Project_Management/W_TRUST/**`, so this later U-35
-tip does not move the frozen product pair.
+binds the frozen head, tree, and product digest above. This record remains
+under `F_Project_Management/W_TRUST/**`; captured byte streams that violate the
+text-byte policy live under the fenced `proofs/**` evidence surface. Both are
+product-digest-excluded, so this later U-35 tip does not move the frozen pair.
+
+## Finding registry index
+
+| ID | state | discoverable title |
+|---|---|---|
+| U-52 | REGISTERED — ACTIVE PROCEDURAL CONSTRAINT | Worktree admissibility |
+| U-53 | PROPOSED — DEFERRED | Gate diagnostics swallow underlying messages |
+| U-54 | PROPOSED — DEFERRED | Platform-qualified full-battery expected-red sets |
+| U-55 | PROPOSED — DEFERRED | Evidence custody window |
+| U-56 | PROPOSED — DEFERRED | Repository-wide producer and pin census |
+
+## U-52 — worktree admissibility
+
+**REGISTERED — ACTIVE PROCEDURAL CONSTRAINT.** When a lane or review ceremony
+requires a fresh clone, a linked Git worktree is not an admissible substitute.
+The boot record must show the clone path, `core.autocrlf`, branch/ref source,
+and `git worktree list`; the ceremony stops if another checkout is being used
+as the claimed fresh-clone evidence seat. This registers the identifier already
+used by the WV-6 reviewer without changing the constraint it names.
+
+## U-53 — gate diagnostics swallow underlying messages
+
+**PROPOSED — DEFERRED.** Some composed gates capture a failing subcommand but
+surface only the wrapper result, swallowing the underlying diagnostic that
+identifies the actual mismatch. The governance cure is to propagate bounded
+stdout/stderr with the subcommand identity while preserving deterministic gate
+output. No gate implementation changes in this records-only correction.
 
 ## U-54 — platform-qualified full-battery expected-red sets
 
@@ -143,12 +171,12 @@ The six sanctioned producer outputs staged at the acceptance commit were:
 
 | path | role | encoding | SHA-256 |
 |---|---|---|---|
-| `WV6_REACCEPTANCE_NATIVE_WINDOWS_2026-08-09.txt` | initial native ceremony transcript; ends at the first full-battery start and is diagnostic only | UTF-8 BOM | `064dd5194fcf8afcd4ca0d7d09d781e08903343f3e10a78c7b443b78643aabc2` |
+| `proofs/windows/launch-verification/wv6-transcripts/WV6_REACCEPTANCE_NATIVE_WINDOWS_2026-08-09.txt` | initial native ceremony transcript; ends at the first full-battery start and is diagnostic only | UTF-8 BOM | `064dd5194fcf8afcd4ca0d7d09d781e08903343f3e10a78c7b443b78643aabc2` |
 | `WV6_REACCEPTANCE_FULL_PYTHON_BATTERY_2026-08-09.txt` | pre-acceptance candidate; 18-name set exposing eight candidate-only reds | UTF-16 LE | `7decf0d50e02190aa45382961262120292b0338222bd89242f73b845dc69aa09` |
-| `WV6_REACCEPTANCE_BASE_FULL_PYTHON_BATTERY_2026-08-09.txt` | same-platform base discriminator; binding ten-name base set | UTF-16 LE | `aacddc271ed737db4d8c44b0f7b91e6788b0ca47a62efd4b88c747cf685ed` |
+| `WV6_REACCEPTANCE_BASE_FULL_PYTHON_BATTERY_2026-08-09.txt` | same-platform base discriminator; binding ten-name base set | UTF-16 LE | `aacddc271ed737db4d8c44b0f7b91e6788b0ca47a62c72efd4b88c747cf685ed` |
 | `WV6_REACCEPTANCE_POST_ACCEPTANCE_FULL_PYTHON_BATTERY_2026-08-10.txt` | acceptance-commit ordering discriminator; still 18 names before browser artifact regeneration | UTF-16 LE | `b45d770e557399588b46717754e8502c5648cfcae4d35f456131267a764769aa` |
-| `WV6_REACCEPTANCE_FINAL_ACCEPTANCE_BATTERY_2026-08-10.txt` | final native WV-6 acceptance commands | UTF-8 | `1841e151c96ab25adbd1cc550375e747abd1b73789cf415b9387af0864a1b1d2` |
-| `WV6_REACCEPTANCE_FINAL_FULL_PYTHON_BATTERY_2026-08-10.txt` | final accepted candidate; exact ten-name platform baseline | UTF-8 | `e48a97d8d62c46355db7346e764387e19f8c14a5cb59164e339e76b0dcbc5405` |
+| `WV6_REACCEPTANCE_FINAL_ACCEPTANCE_BATTERY_2026-08-10.txt` | final native WV-6 acceptance commands | UTF-16 LE | `1841e151c96ab25adbd1cc550375e747abd1b73789cf415b9387af0864a1b1d2` |
+| `proofs/windows/launch-verification/wv6-transcripts/WV6_REACCEPTANCE_FINAL_FULL_PYTHON_BATTERY_2026-08-10.txt` | final accepted candidate; exact ten-name platform baseline | Windows-1252 | `e48a97d8d62c46355db7346e764387e19f8c14a5cb59164e339e76b0dcbc5405` |
 
 The final full battery ran as one uninterrupted Python process. Its monitoring
 wrapper timed out at ten minutes, but the original child process remained
