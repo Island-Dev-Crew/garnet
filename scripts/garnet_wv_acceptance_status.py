@@ -189,6 +189,7 @@ def _verify_squash_durable_content(
     reviewed_head: str,
     reviewed_tree: str,
     expected_content_digest: str,
+    expected_content_path_count: int | None = None,
     verify_git: bool,
 ) -> tuple[list[str], str | None]:
     return content_provenance.verify_squash_durable_content(
@@ -196,6 +197,7 @@ def _verify_squash_durable_content(
         reviewed_head=reviewed_head,
         reviewed_tree=reviewed_tree,
         expected_content_digest=expected_content_digest,
+        expected_content_path_count=expected_content_path_count,
         verify_git=verify_git,
     )
 
@@ -262,6 +264,7 @@ def _validate_evidence(
         expected_content_digest=(
             product_digest if isinstance(product_digest, str) else ""
         ),
+        expected_content_path_count=bound_shelf_reporter.EXPECTED_PRODUCT_PATH_COUNT,
         verify_git=verify_git,
     )
     findings.extend(provenance_findings)

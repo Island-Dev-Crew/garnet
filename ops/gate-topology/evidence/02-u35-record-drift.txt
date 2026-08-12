@@ -1,0 +1,18 @@
+U-35 RECORD-CLASS MOVEMENT AT THE CORRECTED RED TARGET
+captured_utc: 2026-08-11T18:00:23Z
+machine: Hugh’s MacBook Pro
+os_arch: Darwin 25.6.0 arm64
+implementer: OpenAI Codex, GPT-5-based agent; exact version unavailable
+method: scripts/garnet_content_provenance.py tracked_content_digest(root, revision)
+
+410ff1182cdcefcec9fe046d1346205d8522ec9d  fd96e6d910180f5e33999fbd693ea211e336389a13535930d89b2a870ff54727 / 1606
+23bc563fc6a237045912044843078b87688bafcf  d7a08be5e22b2033fb65aa1808a3eb9cd745022c909f9151b9d19ec918188c0a / 1607
+8ae41b6f9660ae0f098d2137f14a1a89397fcfe5  49e5686cc4a5cc8b7e56dde7238ed30f3a049971c111f946b891a1cfe5b5dc5a / 1608
+162b96adb0a91c5fdc8c189dc2fcdd22ce996cab  d0978d1c5c3a52e5e13bec79666be65675aa33529bcde4d9766ac1585d544e20 / 1609
+
+The 1606→1607→1608→1609 growth is expected U-35 record-class movement under
+the unamended exclusions. The final step is Claude Fable 5's Verdict 02
+record-only commit (`ops/wv6-reaccept/journal.md` and
+`ops/wv6-reaccept/review/02-verdict.md`). It is evidence for Slice 3's
+provenance exclusion; it is not a product-byte change and does not weaken the
+Slice 1 graph RED.

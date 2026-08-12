@@ -74,6 +74,15 @@ family, not a filename allowlist. Those transport, projection, and live-policy
 scripts govern the merge boundary itself and must never auto-merge, inherit an
 ambient credential, or print/persist a credential.
 
+The rolling trust-kernel review gate preserves exact reviewed bytes across
+post-review merge topology. A merge parent outside the reviewed lineage is
+admissible only when both the merge's complete trust-kernel snapshot and its
+SHA-256 byte digest equal those at `reviewed_head`; an unequal snapshot or
+digest remains red. This topology rule does not extend review coverage over
+the outside parent and does not relax transient-touch checks on the reviewed
+lineage. Run `python3 -I scripts/test_garnet_trust_kernel_review_status.py`
+after changing the walk or its trust-snapshot identity.
+
 ## WV-6 / WV-7 Acceptance Gates
 
 `F_Project_Management/LAUNCH/WV6_WV7_ACCEPTANCE_CONTRACTS.json` preserves the
@@ -85,6 +94,23 @@ contract or reporter. The two `--gate` commands are expected to exit nonzero
 with `state=pending` until their exact-candidate, hash-verified Windows evidence
 manifests exist; never turn absence into acceptance or perform a Jon-only
 action from the reporter.
+
+Post-acceptance U-35 drift does not redefine the product digest. The WV-6 and
+Minimum Shelf reporters retain the pair at the exact frozen head only when
+that head's tree and pair match the recorded boundary and every changed path
+through the candidate tip is in the separately enumerated record class. That
+class includes the established evidence/review surfaces and
+`ops/wv6-reaccept/**`; any other changed path is RED and is named. Keep this
+tolerance separate from `FROZEN_MUTABLE_PREFIXES`, which remains the exact
+four-prefix digest definition.
+
+Acceptance is the last content operation on a candidate. Any later merge that
+changes a non-record byte supersedes the existing acceptance with preservation;
+it never widens the record class or bends the verifier. Freeze the final merged
+tree, perform native acceptance, and rebind its pins in one terminal ceremony.
+Later reviewer records may ride above that boundary only through the proven
+U-35 record-class tolerance. This is U-57, demonstrated by
+`ops/gate-topology/evidence/11-third-merge-integration-red.txt`.
 
 ## Lane 0 Frozen Backlog
 

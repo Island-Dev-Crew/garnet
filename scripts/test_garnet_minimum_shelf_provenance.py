@@ -41,6 +41,10 @@ class SquashDurableContentProvenanceTests(unittest.TestCase):
         self._write(
             "scripts/smoke_garnet_minimum_shelf.py", "self excluded\n"
         )
+        self._write("ops/wv6-reaccept/journal.md", "frozen record\n")
+        self._write(
+            "ops/wv6-reaccept/review/01-request.md", "frozen request\n"
+        )
         self._git("add", ".")
         self._git("commit", "-m", "synthetic squash result")
         self._git("branch", "-M", "main")
@@ -119,8 +123,9 @@ class SquashDurableContentProvenanceTests(unittest.TestCase):
     # the product digest and invalidate the WV pin at merge.
 
     def test_frozen_mutable_prefixes_are_exactly_the_authorized_set(self) -> None:
-        # Trap (d): the exclusion tuple is exactly the three historical prefixes
-        # plus the single authorized Lane 1 prefix — never a general predicate.
+        # Trap (d): the digest definition remains exactly the three historical
+        # prefixes plus the Lane 1 namespace — never a general predicate and
+        # never the separately tolerated WV-6 post-acceptance record class.
         self.assertEqual(
             cp.FROZEN_MUTABLE_PREFIXES,
             (
@@ -131,6 +136,20 @@ class SquashDurableContentProvenanceTests(unittest.TestCase):
             ),
         )
         self.assertEqual(cp.REPORTER_PATH, b"scripts/smoke_garnet_minimum_shelf.py")
+        self.assertEqual(
+            cp.FROZEN_MUTABLE_PREFIXES + (b"ops/wv6-reaccept/",),
+            cp.POST_ACCEPTANCE_RECORD_PREFIXES,
+        )
+        self.assertEqual((cp.REPORTER_PATH,), cp.POST_ACCEPTANCE_RECORD_FILES)
+        self.assertTrue(
+            cp._is_post_acceptance_record(
+                b"F_Project_Management/W_TRUST/WV6.review.json"
+            )
+        )
+        self.assertTrue(
+            cp._is_post_acceptance_record(b"ops/wv6-reaccept/review/02-verdict.md")
+        )
+        self.assertFalse(cp._is_post_acceptance_record(b"ops/lane3/note.txt"))
         # Lane 1 is excluded; a sibling lane namespace is NOT (a general
         # ops/<lane>/ predicate would wrongly exclude ops/lane3/ and fail here).
         self.assertTrue(cp._is_mutable(b"ops/lane1/review/07-request.md"))
@@ -147,6 +166,67 @@ class SquashDurableContentProvenanceTests(unittest.TestCase):
         after, count_after = cp.tracked_content_digest(self.root)
         self.assertEqual(before, after)
         self.assertEqual(count_before, count_after)
+
+    def test_wv6_reaccept_records_remain_in_the_frozen_digest_definition(self) -> None:
+        before, count_before = cp.tracked_content_digest(self.root)
+        self._write("ops/wv6-reaccept/review/03-verdict.md", "later verdict\n")
+        self._write("ops/wv6-reaccept/journal.md", "record heartbeat\n")
+        self._write("ops/wv6-reaccept/evidence/topology.txt", "topology evidence\n")
+        self._git("add", ".")
+        after, count_after = cp.tracked_content_digest(self.root)
+        self.assertNotEqual(before, after)
+        self.assertEqual(count_before + 2, count_after)
+
+    def test_record_only_tip_drift_preserves_the_frozen_pair(self) -> None:
+        frozen_head = self._git("rev-parse", "HEAD")
+        frozen_tree = self._git("rev-parse", "HEAD^{tree}")
+        expected, expected_count = cp.tracked_content_digest(self.root, frozen_head)
+        self._write("ops/wv6-reaccept/journal.md", "post-acceptance heartbeat\n")
+        self._write("ops/wv6-reaccept/review/01-verdict.md", "verdict record\n")
+        self._write("proofs/wv6/capture.txt", "proof record\n")
+        self._write(
+            "F_Project_Management/W_TRUST/wv6.review.json", "review record\n"
+        )
+        self._write("scripts/smoke_garnet_minimum_shelf.py", "reporter rebind\n")
+        self._git("add", ".")
+        self._git("commit", "-m", "post-acceptance records")
+
+        findings, landed = wv._verify_squash_durable_content(
+            self.root,
+            reviewed_head=frozen_head,
+            reviewed_tree=frozen_tree,
+            expected_content_digest=expected,
+            verify_git=True,
+        )
+        self.assertEqual([], findings)
+        self.assertIsNone(landed)
+        self.assertEqual(
+            (expected, expected_count),
+            cp.tracked_content_digest(self.root, frozen_head),
+        )
+        self.assertNotEqual(
+            (expected, expected_count), cp.tracked_content_digest(self.root)
+        )
+
+    def test_one_non_record_byte_in_tip_drift_is_red(self) -> None:
+        frozen_head = self._git("rev-parse", "HEAD")
+        frozen_tree = self._git("rev-parse", "HEAD^{tree}")
+        expected, _ = cp.tracked_content_digest(self.root, frozen_head)
+        self._write("ops/wv6-reaccept/journal.md", "allowed record drift\n")
+        self._write("product.txt", "reviewed producU\n")
+        self._git("add", ".")
+        self._git("commit", "-m", "one product byte plus records")
+
+        findings, _ = wv._verify_squash_durable_content(
+            self.root,
+            reviewed_head=frozen_head,
+            reviewed_tree=frozen_tree,
+            expected_content_digest=expected,
+            verify_git=True,
+        )
+        self.assertIn(
+            "post-acceptance drift contains non-record path: product.txt", findings
+        )
 
     def test_included_product_change_moves_while_lane1_does_not(self) -> None:
         # Trap (a): the crux pair. A product blob change moves the digest AND

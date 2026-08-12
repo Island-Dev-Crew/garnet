@@ -1,0 +1,19 @@
+GARNET GATE TOPOLOGY UNIT FIXTURE GREEN
+captured_utc: 2026-08-11T18:12:38Z
+machine: Hugh’s MacBook Pro
+os_arch: Darwin 25.6.0 arm64
+implementer: OpenAI Codex, GPT-5-based agent; exact version unavailable
+command: python3 -I scripts/test_garnet_trust_kernel_review_status.py PreMergeReviewRecordTests.test_merge_parent_outside_reviewed_lineage_is_accepted_at_equal_trust_snapshot PreMergeReviewRecordTests.test_merge_parent_outside_reviewed_lineage_with_mutated_trust_stays_red
+exit: 0
+
+VERBATIM OUTPUT BEGIN
+..
+----------------------------------------------------------------------
+Ran 2 tests in 1.232s
+
+OK
+VERBATIM OUTPUT END
+
+The equal snapshot is GREEN. The second dot is the mutated-trust fixture:
+the existing `scripts/garnet_alpha.py` blob differs by exactly one byte
+(`1`→`2`) and the walk remains RED as asserted by the test.

@@ -366,7 +366,7 @@ def read_status(root: Path = ROOT) -> MinimumShelfStatus:
     status.current_tree = _git_value(findings, "rev-parse", "HEAD^{tree}")
     try:
         status.product_content_sha256, status.product_path_count = (
-            _tracked_content_digest(ROOT)
+            content_provenance.attested_content_pair(ROOT, REVIEWED_HEAD)
         )
     except ValueError as exc:
         findings.append(str(exc))
@@ -381,6 +381,7 @@ def read_status(root: Path = ROOT) -> MinimumShelfStatus:
             reviewed_head=REVIEWED_HEAD,
             reviewed_tree=REVIEWED_TREE,
             expected_content_digest=EXPECTED_PRODUCT_CONTENT_SHA256,
+            expected_content_path_count=EXPECTED_PRODUCT_PATH_COUNT,
             verify_git=True,
         )
     )

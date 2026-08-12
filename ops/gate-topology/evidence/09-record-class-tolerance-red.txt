@@ -1,0 +1,73 @@
+U-35 RECORD-CLASS TOLERANCE RED
+captured_utc: 2026-08-11T18:51:30Z
+machine: Hugh’s MacBook Pro
+os_arch: Darwin 25.6.0 arm64
+implementer: OpenAI Codex, GPT-5-based agent; exact version unavailable
+branch_parent: 2abdc68616ea4688eb136857ec3ab471ff49ed62
+
+Evidence 07 remains the original Slice 3 RED exhibit. Evidence 08 remains
+byte-preserved but its literal-prefix implementation proposal is superseded
+by the ruling in ../RULING-AMENDMENT.md. This capture is the RED-first exhibit
+for the substituted record-class tolerance.
+
+COMMAND 1
+python3 -I scripts/test_garnet_minimum_shelf_provenance.py SquashDurableContentProvenanceTests.test_frozen_mutable_prefixes_are_exactly_the_authorized_set SquashDurableContentProvenanceTests.test_wv6_reaccept_records_remain_in_the_frozen_digest_definition SquashDurableContentProvenanceTests.test_record_only_tip_drift_preserves_the_frozen_pair SquashDurableContentProvenanceTests.test_one_non_record_byte_in_tip_drift_is_red
+exit: 1
+
+VERBATIM OUTPUT BEGIN
+..FF
+======================================================================
+FAIL: test_record_only_tip_drift_preserves_the_frozen_pair (__main__.SquashDurableContentProvenanceTests.test_record_only_tip_drift_preserves_the_frozen_pair)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/garnet-gate-topology.GcqivR/garnet/scripts/test_garnet_minimum_shelf_provenance.py", line 187, in test_record_only_tip_drift_preserves_the_frozen_pair
+    self.assertEqual([], findings)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: Lists differ: [] != ['product content digest mismatch (9ccbb03[123 chars]87)']
+
+Second list contains 1 additional elements.
+First extra element 0:
+'product content digest mismatch (9ccbb03b75c8e7d85d1c00bb639eb053078446129d6efd34b2de0f0f3af56cac != a1493af832256eb2e8ef85bf5f489f278d5c66d1db1323dec4a283d808820e87)'
+
+- []
++ ['product content digest mismatch '
++  '(9ccbb03b75c8e7d85d1c00bb639eb053078446129d6efd34b2de0f0f3af56cac != '
++  'a1493af832256eb2e8ef85bf5f489f278d5c66d1db1323dec4a283d808820e87)']
+
+======================================================================
+FAIL: test_one_non_record_byte_in_tip_drift_is_red (__main__.SquashDurableContentProvenanceTests.test_one_non_record_byte_in_tip_drift_is_red)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/garnet-gate-topology.GcqivR/garnet/scripts/test_garnet_minimum_shelf_provenance.py", line 213, in test_one_non_record_byte_in_tip_drift_is_red
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "post-acceptance drift contains non-record path: product.txt", findings
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'post-acceptance drift contains non-record path: product.txt' not found in ['product content digest mismatch (a98b03974e4a37e9d0fc20b186be8c6c7027c2b2da64d6283e00b66c94254eaa != a1493af832256eb2e8ef85bf5f489f278d5c66d1db1323dec4a283d808820e87)']
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.719s
+
+FAILED (failures=2)
+VERBATIM OUTPUT END
+
+The first two tests pass: the four-prefix digest definition is unchanged and
+WV-6 records remain digest-included. The new positive fixture fails because
+the old implementation compares the drifted tip pair directly. The mutation
+fixture proves the old generic mismatch cannot identify the disallowed path.
+
+COMMAND 2
+python3 -I scripts/test_garnet_launch_readiness_status.py U31CureTrapTests.test_trap4_frozen_exclusion_tuple_and_lane0_inclusion
+exit: 0
+
+VERBATIM OUTPUT BEGIN
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.013s
+
+OK
+VERBATIM OUTPUT END
+
+This standing guard proves the withdrawn fifth digest prefix is absent.
