@@ -312,6 +312,52 @@ class DiscoveryTests(GitRepoFixture):
         self.assertTrue(any("tree-object" in p and "partial" in p for p in result.problems))
 
 
+class RecordSuccessionOrderingTests(unittest.TestCase):
+    def test_aligned_linear_succession_selects_tip_most_record(self) -> None:
+        records = {
+            "predecessor.review.json": ("intro-1", "reviewed-1"),
+            "successor.review.json": ("intro-2", "reviewed-2"),
+        }
+        strict_ancestors = {
+            ("intro-1", "intro-2"),
+            ("reviewed-1", "reviewed-2"),
+        }
+
+        selected, findings = mod._select_linear_record_path(records, strict_ancestors)
+
+        self.assertEqual("successor.review.json", selected)
+        self.assertEqual([], findings)
+
+    def test_forked_reviewed_heads_fail_closed(self) -> None:
+        records = {
+            "predecessor.review.json": ("intro-1", "reviewed-left"),
+            "successor.review.json": ("intro-2", "reviewed-right"),
+        }
+        strict_ancestors = {("intro-1", "intro-2")}
+
+        selected, findings = mod._select_linear_record_path(records, strict_ancestors)
+
+        self.assertIsNone(selected)
+        self.assertTrue(any("reviewed_heads must be strictly ordered" in p for p in findings))
+
+    def test_later_record_cannot_bind_an_older_reviewed_head(self) -> None:
+        records = {
+            "newer.review.json": ("intro-1", "reviewed-2"),
+            "stale-terminal.review.json": ("intro-2", "reviewed-1"),
+        }
+        strict_ancestors = {
+            ("intro-1", "intro-2"),
+            ("reviewed-1", "reviewed-2"),
+        }
+
+        selected, findings = mod._select_linear_record_path(records, strict_ancestors)
+
+        self.assertIsNone(selected)
+        self.assertTrue(
+            any("tip-most record must bind the newest reviewed_head" in p for p in findings)
+        )
+
+
 class PreMergeReviewRecordTests(GitRepoFixture):
     RECORD = "F_Project_Management/W_TRUST/LANE1_ITEM2.review.json"
     TRUST_BLOBS = {
@@ -321,6 +367,7 @@ class PreMergeReviewRecordTests(GitRepoFixture):
 
     def setUp(self) -> None:
         super().setUp()
+        self.TRUST_BLOBS = dict(self.TRUST_BLOBS)
         for relative, content in self.TRUST_BLOBS.items():
             path = self.root / relative
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -374,6 +421,25 @@ class PreMergeReviewRecordTests(GitRepoFixture):
     def _commit_record(self, record: dict[str, object] | None = None, raw: bytes | None = None) -> None:
         payload = raw if raw is not None else _canonical(record or self._record())
         self._commit_file(self.RECORD, payload, "review record")
+
+    def _commit_named_record(
+        self,
+        path: str,
+        record: dict[str, object],
+        message: str,
+    ) -> None:
+        self._commit_file(path, _canonical(record), message)
+
+    def _advance_reviewed_head(
+        self,
+        path: str,
+        content: bytes,
+        message: str = "later trust change",
+    ) -> None:
+        self.TRUST_BLOBS[path] = content
+        self._commit_file(path, content, message)
+        self.reviewed_head = self._git("rev-parse", "HEAD")
+        self.reviewed_tree = self._git("rev-parse", "HEAD^{tree}")
 
     def _transport(self, **overrides: object):
         head = self._git("rev-parse", "HEAD")
@@ -856,7 +922,146 @@ class PreMergeReviewRecordTests(GitRepoFixture):
         second.write_bytes(_canonical(self._record()))
         self._git("add", str(first.relative_to(self.root)), str(second.relative_to(self.root)))
         self._git("commit", "-m", "ambiguous review records")
-        self.assertTrue(any("exactly one" in p for p in self._status().problems))
+        self.assertTrue(
+            any("reviewed_heads must be strictly ordered" in p for p in self._status().problems)
+        )
+
+    def test_linear_record_succession_selects_tip_record_for_full_range(self) -> None:
+        predecessor = self._record()
+        self._commit_record(predecessor)
+        self._advance_reviewed_head("scripts/garnet_beta.py", b"beta = 2\n")
+        successor_path = "F_Project_Management/W_TRUST/LANE1_SUCCESSOR.review.json"
+        successor = self._record()
+        self._commit_named_record(successor_path, successor, "successor review record")
+
+        status = self._status()
+
+        self.assertTrue(status.ok, status.problems)
+        self.assertEqual(successor_path, status.review_record_path)
+        self.assertEqual(successor["reviewed_head"], status.reviewed_head)
+        self.assertEqual(sorted(self.TRUST_BLOBS), status.touched_paths)
+
+    def test_forked_record_reviewed_heads_are_red(self) -> None:
+        predecessor = self._record()
+        self._commit_record(predecessor)
+        predecessor_tip = self._git("rev-parse", "HEAD")
+
+        self._git("switch", "--detach", self.base)
+        self._commit_file("scripts/garnet_fork.py", b"fork = True\n", "fork trust change")
+        fork_head = self._git("rev-parse", "HEAD")
+        fork_tree = self._git("rev-parse", "HEAD^{tree}")
+        self._git("switch", "--detach", predecessor_tip)
+        self._git("merge", "--no-ff", fork_head, "-m", "merge forked trust history")
+
+        successor = dict(predecessor)
+        successor["reviewed_head"] = fork_head
+        successor["reviewed_tree"] = fork_tree
+        self._commit_named_record(
+            "F_Project_Management/W_TRUST/LANE1_FORKED.review.json",
+            successor,
+            "forked review record",
+        )
+
+        status = self._status()
+        self.assertFalse(status.ok)
+        self.assertTrue(
+            any("reviewed_heads must be strictly ordered" in p for p in status.problems),
+            status.problems,
+        )
+
+    def test_modified_predecessor_record_stays_red_under_succession(self) -> None:
+        predecessor = self._record()
+        self._commit_record(predecessor)
+        self._advance_reviewed_head("scripts/garnet_beta.py", b"beta = 2\n")
+        successor_path = "F_Project_Management/W_TRUST/LANE1_SUCCESSOR.review.json"
+        successor = self._record()
+        modified = dict(predecessor)
+        modified["review_scope"] = (
+            "Independent review ended at reviewed_head; content proof does not "
+            "extend or backdate review coverage. Modified later."
+        )
+        (self.root / self.RECORD).write_bytes(_canonical(modified))
+        successor_file = self.root / successor_path
+        successor_file.write_bytes(_canonical(successor))
+        self._git("add", self.RECORD, successor_path)
+        self._git("commit", "-m", "modify predecessor and add successor")
+
+        status = self._status()
+        self.assertFalse(status.ok)
+        self.assertTrue(
+            any("record changed or was removed" in p for p in status.problems),
+            status.problems,
+        )
+
+    def test_malformed_predecessor_record_stays_red_under_succession(self) -> None:
+        predecessor = self._record()
+        predecessor["schema"] = "garnet.invalid/v1"
+        self._commit_record(predecessor)
+        self._advance_reviewed_head("scripts/garnet_beta.py", b"beta = 2\n")
+        self._commit_named_record(
+            "F_Project_Management/W_TRUST/LANE1_SUCCESSOR.review.json",
+            self._record(),
+            "successor review record",
+        )
+
+        status = self._status()
+        self.assertFalse(status.ok)
+        self.assertTrue(
+            any("predecessor schema" in p for p in status.problems), status.problems
+        )
+
+    def test_deleted_predecessor_record_stays_red_under_succession(self) -> None:
+        self._commit_record()
+        self._advance_reviewed_head("scripts/garnet_beta.py", b"beta = 2\n")
+        successor_path = "F_Project_Management/W_TRUST/LANE1_SUCCESSOR.review.json"
+        successor = self._record()
+        self._git("rm", self.RECORD)
+        successor_file = self.root / successor_path
+        successor_file.write_bytes(_canonical(successor))
+        self._git("add", successor_path)
+        self._git("commit", "-m", "delete predecessor and add successor")
+
+        status = self._status()
+        self.assertFalse(status.ok)
+        self.assertTrue(
+            any("record changed or was removed" in p for p in status.problems),
+            status.problems,
+        )
+
+    def test_tip_record_missing_full_range_touched_path_is_red(self) -> None:
+        self._commit_record()
+        self._advance_reviewed_head("scripts/garnet_beta.py", b"beta = 2\n")
+        successor = self._record()
+        successor["touched_paths"] = sorted(self.TRUST_BLOBS)[:-1]
+        self._commit_named_record(
+            "F_Project_Management/W_TRUST/LANE1_SUCCESSOR.review.json",
+            successor,
+            "incomplete successor review record",
+        )
+
+        status = self._status()
+        self.assertFalse(status.ok)
+        self.assertTrue(
+            any("missing touched path" in p for p in status.problems), status.problems
+        )
+
+    def test_tip_record_bound_to_non_tip_reviewed_head_is_red(self) -> None:
+        stale_terminal = self._record()
+        self._advance_reviewed_head("scripts/garnet_beta.py", b"beta = 2\n")
+        newest = self._record()
+        self._commit_record(newest)
+        self._commit_named_record(
+            "F_Project_Management/W_TRUST/LANE1_STALE_TERMINAL.review.json",
+            stale_terminal,
+            "stale terminal review record",
+        )
+
+        status = self._status()
+        self.assertFalse(status.ok)
+        self.assertTrue(
+            any("tip-most record must bind the newest reviewed_head" in p for p in status.problems),
+            status.problems,
+        )
 
     def test_missing_touched_path_is_red(self) -> None:
         record = self._record()

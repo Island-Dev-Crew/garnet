@@ -5,9 +5,10 @@ Version 2 replaces the old "a companion path exists" signal with two proofs:
 
 * Git must completely enumerate the candidate change set.  Discovery failures,
   malformed status streams, and deletions are findings, never empty-safe diffs.
-* A trust-kernel change must carry one canonical ``*.review.json`` record under
-  ``F_Project_Management/W_TRUST``.  The record binds the exact changed paths,
-  their bytes, the reviewed head/tree, and an independent reviewer identity.
+* A trust-kernel change must carry a canonical ``*.review.json`` record under
+  ``F_Project_Management/W_TRUST``.  Multiple records must form a linear,
+  append-only succession; only the tip-most record binds the exact changed
+  paths, their bytes, the reviewed head/tree, and an independent reviewer.
 
 The module also exports ``verify_landed_review_marker`` for post-squash
 closeouts.  That verifier deliberately does not require the discarded branch
@@ -1739,6 +1740,233 @@ def _verify_premerge_record(
     return findings
 
 
+def _select_linear_record_path(
+    records: dict[str, tuple[str, str]],
+    strict_ancestors: set[tuple[str, str]],
+) -> tuple[str | None, list[str]]:
+    """Select one tip-most record when introduction and review order agree."""
+    if not records:
+        return None, ["structured review record is missing"]
+    if len(records) == 1:
+        return next(iter(records)), []
+
+    findings: set[str] = set()
+    paths = sorted(records)
+    for index, left_path in enumerate(paths):
+        left_intro, left_reviewed = records[left_path]
+        for right_path in paths[index + 1 :]:
+            right_intro, right_reviewed = records[right_path]
+            intro_left_first = (left_intro, right_intro) in strict_ancestors
+            intro_right_first = (right_intro, left_intro) in strict_ancestors
+            reviewed_left_first = (left_reviewed, right_reviewed) in strict_ancestors
+            reviewed_right_first = (right_reviewed, left_reviewed) in strict_ancestors
+
+            if intro_left_first == intro_right_first:
+                findings.add(
+                    "record succession introductions must be strictly ordered by ancestry: "
+                    f"{left_path} <> {right_path}"
+                )
+            if reviewed_left_first == reviewed_right_first:
+                findings.add(
+                    "record succession reviewed_heads must be strictly ordered by ancestry: "
+                    f"{left_path} <> {right_path}"
+                )
+            elif intro_left_first != intro_right_first and (
+                intro_left_first != reviewed_left_first
+            ):
+                findings.add(
+                    "record succession tip-most record must bind the newest reviewed_head: "
+                    f"{left_path} <> {right_path}"
+                )
+
+    if findings:
+        return None, sorted(findings)
+
+    terminal_paths = [
+        path
+        for path, (introduction, _) in records.items()
+        if all(
+            other_path == path
+            or (other_introduction, introduction) in strict_ancestors
+            for other_path, (other_introduction, _) in records.items()
+        )
+    ]
+    if len(terminal_paths) != 1:
+        return None, ["record succession requires exactly one tip-most record"]
+    return terminal_paths[0], []
+
+
+def _review_record_introductions(
+    root: Path,
+    base_commit: str,
+    head_commit: str,
+    record_paths: list[str],
+) -> tuple[dict[str, str], list[str]]:
+    """Derive each record's unique introduction commit from commit objects."""
+    commits, graph_problems = _independent_commit_range(base_commit, head_commit, root)
+    if graph_problems:
+        return {}, [
+            "record succession introduction enumeration failed closed: " + problem
+            for problem in graph_problems
+        ]
+
+    commit_cache: dict[str, RawCommit] = dict(commits)
+    tree_cache: dict[str, dict[str, tuple[str, str]]] = {}
+    snapshot_cache: dict[str, dict[str, tuple[str, str]]] = {}
+    findings: set[str] = set()
+    introductions: dict[str, set[str]] = {path: set() for path in record_paths}
+
+    def snapshot(commit: str) -> dict[str, tuple[str, str]] | None:
+        if commit in snapshot_cache:
+            return snapshot_cache[commit]
+        value, problems = _tree_snapshot_from_commit(
+            root,
+            commit,
+            commit_cache=commit_cache,
+            tree_cache=tree_cache,
+        )
+        if problems:
+            findings.update(
+                "record succession introduction enumeration failed closed: " + problem
+                for problem in problems
+            )
+            return None
+        snapshot_cache[commit] = value
+        return value
+
+    for commit_oid, commit in sorted(commits.items()):
+        after = snapshot(commit_oid)
+        parent_snapshots = [snapshot(parent_oid) for parent_oid in commit.parents]
+        if after is None or any(parent is None for parent in parent_snapshots):
+            continue
+        for path in record_paths:
+            if path in after and all(
+                parent is not None and path not in parent
+                for parent in parent_snapshots
+            ):
+                introductions[path].add(commit_oid)
+
+    resolved: dict[str, str] = {}
+    for path, commit_oids in sorted(introductions.items()):
+        if len(commit_oids) != 1:
+            findings.add(
+                "record succession requires exactly one introduction commit: " + path
+            )
+        else:
+            resolved[path] = next(iter(commit_oids))
+    return resolved, sorted(findings)
+
+
+def _strict_ancestor_pairs(
+    root: Path,
+    commits: set[str],
+) -> tuple[set[tuple[str, str]], list[str]]:
+    pairs: set[tuple[str, str]] = set()
+    findings: list[str] = []
+    for ancestor in sorted(commits):
+        for descendant in sorted(commits):
+            if ancestor == descendant:
+                continue
+            result = _git_bytes(
+                root, "merge-base", "--is-ancestor", ancestor, descendant
+            )
+            if result.timed_out:
+                findings.append(
+                    "record succession ancestry check timed out: "
+                    f"{ancestor} -> {descendant}"
+                )
+            elif result.returncode == 0:
+                pairs.add((ancestor, descendant))
+            elif result.returncode != 1:
+                findings.append(
+                    "record succession ancestry could not be verified: "
+                    f"{ancestor} -> {descendant}"
+                )
+    return pairs, findings
+
+
+def _load_tip_review_record(
+    record_paths: list[str],
+    *,
+    base_commit: str,
+    head_commit: str,
+    root: Path,
+) -> tuple[str | None, dict[str, Any] | None, list[str]]:
+    records: dict[str, dict[str, Any]] = {}
+    reviewed_heads: dict[str, str] = {}
+    findings: list[str] = []
+    for path in record_paths:
+        payload, payload_findings = _read_blob(root, head_commit, path)
+        findings.extend(f"{path}: {problem}" for problem in payload_findings)
+        if payload is None:
+            continue
+        record, record_findings = _load_canonical_record(payload)
+        findings.extend(f"{path}: {problem}" for problem in record_findings)
+        if record is None:
+            continue
+        records[path] = record
+        reviewed_head = record.get("reviewed_head")
+        if not isinstance(reviewed_head, str) or GIT_OID_RE.fullmatch(reviewed_head) is None:
+            findings.append(f"{path}: reviewed_head must be a full Git object id")
+            continue
+        resolved, resolve_findings = _resolve_commit(reviewed_head, "reviewed_head", root)
+        findings.extend(f"{path}: {problem}" for problem in resolve_findings)
+        if resolved is not None:
+            reviewed_heads[path] = resolved
+
+    if findings or len(reviewed_heads) != len(record_paths):
+        return None, None, findings
+
+    introductions, introduction_findings = _review_record_introductions(
+        root, base_commit, head_commit, record_paths
+    )
+    findings.extend(introduction_findings)
+    if findings or len(introductions) != len(record_paths):
+        return None, None, findings
+
+    all_commits = set(introductions.values()) | set(reviewed_heads.values())
+    strict_ancestors, ancestry_findings = _strict_ancestor_pairs(root, all_commits)
+    findings.extend(ancestry_findings)
+    if findings:
+        return None, None, findings
+
+    ordering = {
+        path: (introductions[path], reviewed_heads[path]) for path in record_paths
+    }
+    selected_path, selection_findings = _select_linear_record_path(
+        ordering, strict_ancestors
+    )
+    findings.extend(selection_findings)
+    if selected_path is not None:
+        for path, predecessor in sorted(records.items()):
+            if path == selected_path:
+                continue
+            claimed_paths = predecessor.get("touched_paths")
+            shape_paths = (
+                sorted({_norm(item) for item in claimed_paths})
+                if isinstance(claimed_paths, list)
+                and all(isinstance(item, str) for item in claimed_paths)
+                else []
+            )
+            shape_findings = _common_record_findings(
+                predecessor,
+                schema=RECORD_SCHEMA,
+                state="premerge",
+                allowed_keys=PREMERGE_KEYS,
+                exact_paths=shape_paths,
+                expected_base=base_commit,
+            )
+            findings.extend(
+                f"{path}: predecessor {problem.removeprefix('review record ')}"
+                for problem in shape_findings
+            )
+    return (
+        selected_path,
+        records.get(selected_path) if selected_path is not None else None,
+        findings,
+    )
+
+
 def read_status(
     changed: list[str] | None = None,
     base: str | None = None,
@@ -1783,6 +2011,7 @@ def read_status(
         problems.extend(digest_findings)
 
     record: dict[str, Any] | None = None
+    selected_record_path: str | None = None
     reviewer: str | None = None
     reviewer_id: int | None = None
     reviewer_login: str | None = None
@@ -1797,14 +2026,14 @@ def read_status(
                 )
             else:
                 problems.append("structured review record is missing")
-        elif len(record_paths) != 1:
-            problems.append("exactly one structured review record is required")
         elif discovery.head_commit is not None and discovery.base_commit is not None:
-            payload, payload_findings = _read_blob(root, discovery.head_commit, record_paths[0])
-            problems.extend(payload_findings)
-            if payload is not None:
-                record, record_findings = _load_canonical_record(payload)
-                problems.extend(record_findings)
+            selected_record_path, record, selection_findings = _load_tip_review_record(
+                record_paths,
+                base_commit=discovery.base_commit,
+                head_commit=discovery.head_commit,
+                root=root,
+            )
+            problems.extend(selection_findings)
             if record is not None:
                 problems.extend(
                     _verify_premerge_record(
@@ -1866,7 +2095,7 @@ def read_status(
         trust_kernel_touched=bool(touched),
         touched_paths=touched,
         review_record_present=bool(record_paths),
-        review_record_path=record_paths[0] if len(record_paths) == 1 else None,
+        review_record_path=selected_record_path,
         reviewer=reviewer,
         reviewer_id=reviewer_id,
         reviewer_login=reviewer_login,
