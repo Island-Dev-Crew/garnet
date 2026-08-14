@@ -198,6 +198,19 @@ Do not let handoff files become the only source of current truth. If a handoff r
 
 Do not add hidden compatibility seams, generated artifacts, or ad hoc scratch directories as tracked content unless the owning contract says they are durable project state.
 
+## Rolling Trust Record Succession
+
+Structured `F_Project_Management/W_TRUST/*.review.json` records are append-only.
+When a candidate range contains more than one record, their introduction
+commits and `reviewed_head` values must form the same strict linear ancestry.
+Only the uniquely tip-most record binds the full-range `touched_paths`, content
+digest, and authenticated GitHub review transport. Earlier records remain
+preserved provenance: modification, deletion, forked succession, duplicate
+heads, or a later record that backdates `reviewed_head` is RED.
+
+Run `python3 -I scripts/test_garnet_trust_kernel_review_status.py` after changing
+record discovery, succession selection, content binding, or review transport.
+
 ## Phase ID Allocation
 
 Phase identifiers (e.g. `Phase 6BT`) are a single shared global counter. With
