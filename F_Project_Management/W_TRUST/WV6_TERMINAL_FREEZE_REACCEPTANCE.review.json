@@ -1,0 +1,43 @@
+{
+  "author_emails": [
+    "email:codex@openai.com",
+    "email:jon-isaac@islanddevcrew.com",
+    "email:navigata1@gmail.com",
+    "email:noreply@anthropic.com"
+  ],
+  "author_ids": [
+    81847,
+    242020839,
+    267193182,
+    275140286
+  ],
+  "base_commit": "efd4f6bae8b3afaba74594e57944b2548142aeae",
+  "blocking_findings": [],
+  "content_digest": "sha256:c4f5f861f51af4ab62c0984d87ca78ff6432b4a688624300ed4755bc29356579",
+  "head_repository": "Navigata1/garnet",
+  "head_repository_id": 1220086908,
+  "pull_request_id": 4274144340,
+  "pull_request_number": 521,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head 7dc5622a8cf29aca8d755af2ebbc3483faaa1e51 and does not extend or backdate reviewed_head coverage. Verdict chain: Verdict 02 APPROVE at 8ae41b6f9660ae0f098d2137f14a1a89397fcfe5; Verdict 03 APPROVE at c9e4aa79f15a0834ca81db8e87318c0074790444; gate-topology Verdict 01 APPROVE-WITH-FINDINGS, zero blockers, at cedda39cc851383f983711761a9363c8cfa40f83; terminal confirmation 1 CONFIRM-WITH-FINDINGS, zero blockers, at efac4cb17b48b830c5e30e5ab08ad4d55111d2d0 with accepted pair 1b45387599223adbe8766ae2e04ddc70e4ecc359712a4867ef1973dac9bd42e4 / 1629; record-succession Verdict 01 and Jon's ratification at dda543ee25f68eb798d2c5e02980b3f0023c6a1c; terminal confirmation 2 CONFIRM-WITH-FINDINGS, zero blockers, at 7dc5622a8cf29aca8d755af2ebbc3483faaa1e51 with accepted pair 8ea996129074e2e70c5ad2f9abd6082c85f7021e943dc017d3a9ba2859ed3ac7 / 1634, followed by Jon's CONFIRM ruling. The preserved predecessor F_Project_Management/W_TRUST/LANE0_REPAIR3_SLICE5.review.json remains untouched at ancestor reviewed_head c9e4aa79f15a0834ca81db8e87318c0074790444; this tip-most record binds the full trust-kernel path set.",
+  "review_state": "APPROVED",
+  "reviewed_head": "7dc5622a8cf29aca8d755af2ebbc3483faaa1e51",
+  "reviewed_tree": "1245808669a2170ffe32b8668d1a58677f693013",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "scripts/garnet_content_provenance.py",
+    "scripts/garnet_text_byte_policy_status.py",
+    "scripts/garnet_trust_kernel_review_status.py",
+    "scripts/garnet_workflow_yaml_requirements.txt",
+    "scripts/garnet_wv_acceptance_status.py",
+    "scripts/test_garnet_lane2b_sotu_bytes.py",
+    "scripts/test_garnet_minimum_shelf_provenance.py",
+    "scripts/test_garnet_text_byte_policy_status.py",
+    "scripts/test_garnet_trust_kernel_review_status.py"
+  ],
+  "verdict": "pass"
+}
