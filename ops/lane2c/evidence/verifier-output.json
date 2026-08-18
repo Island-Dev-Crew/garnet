@@ -1,0 +1,273 @@
+{
+  "schema": "garnet.lane2c.teardown-evidence-verdict/v2",
+  "ok": true,
+  "counter": "Callgrind Ir",
+  "disposition_counter": "Valgrind Memcheck leak categories",
+  "base_head": "efd4f6bae8b3afaba74594e57944b2548142aeae",
+  "product_head": "5cd113617acd35307bb028463833a8da2bbd6ad2",
+  "repository_bindings": {
+    "shipped_harness_sha256": "7baed24c356c262aa3d19388e6a9a72117bcb9aaeecd61879b05eccca0871040",
+    "base_binary_sha256": "4577447bdfba5163467c48fc59d6444688a094c52df7a9360ffbeaa9f3f00a72",
+    "product_binary_sha256": "0ca1e4e38471ba34ffe51274216a6de144910fb5d0c791a40be7a012bcdb9810",
+    "root_lockfile_sha256": "01b8986b1cee0ef6a53ac439bd018b54fc1dca825a8f845a259ed8001e6715fa",
+    "active_ops_manifests": 0,
+    "stress": "4/4"
+  },
+  "curves": [
+    {
+      "case": "working-clear",
+      "before": [
+        43600112,
+        189450246,
+        804658305
+      ],
+      "after": [
+        98738,
+        226879,
+        460159
+      ],
+      "before_doubling_ratios": [
+        4.345,
+        4.247
+      ],
+      "after_doubling_ratios": [
+        2.298,
+        2.028
+      ]
+    },
+    {
+      "case": "episodic-drop",
+      "before": [
+        43329138,
+        189766227,
+        806325886
+      ],
+      "after": [
+        118270,
+        233214,
+        463283
+      ],
+      "before_doubling_ratios": [
+        4.38,
+        4.249
+      ],
+      "after_doubling_ratios": [
+        1.972,
+        1.987
+      ]
+    },
+    {
+      "case": "semantic-drop",
+      "before": [
+        43650642,
+        189873799,
+        805185166
+      ],
+      "after": [
+        168904,
+        334815,
+        666079
+      ],
+      "before_doubling_ratios": [
+        4.35,
+        4.241
+      ],
+      "after_doubling_ratios": [
+        1.982,
+        1.989
+      ]
+    }
+  ],
+  "memcheck": {
+    "size": 1024,
+    "quiet_state_claim": "none",
+    "captures": [
+      {
+        "phase": "before",
+        "case": "working-clear",
+        "definitely_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "indirectly_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "possibly_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "still_reachable": {
+          "bytes": 544,
+          "blocks": 1
+        },
+        "errors": 0
+      },
+      {
+        "phase": "before",
+        "case": "episodic-drop",
+        "definitely_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "indirectly_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "possibly_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "still_reachable": {
+          "bytes": 544,
+          "blocks": 1
+        },
+        "errors": 0
+      },
+      {
+        "phase": "before",
+        "case": "semantic-drop",
+        "definitely_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "indirectly_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "possibly_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "still_reachable": {
+          "bytes": 544,
+          "blocks": 1
+        },
+        "errors": 0
+      },
+      {
+        "phase": "after",
+        "case": "working-clear",
+        "definitely_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "indirectly_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "possibly_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "still_reachable": {
+          "bytes": 544,
+          "blocks": 1
+        },
+        "errors": 0
+      },
+      {
+        "phase": "after",
+        "case": "episodic-drop",
+        "definitely_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "indirectly_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "possibly_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "still_reachable": {
+          "bytes": 544,
+          "blocks": 1
+        },
+        "errors": 0
+      },
+      {
+        "phase": "after",
+        "case": "semantic-drop",
+        "definitely_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "indirectly_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "possibly_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "still_reachable": {
+          "bytes": 544,
+          "blocks": 1
+        },
+        "errors": 0
+      }
+    ],
+    "deltas": [
+      {
+        "case": "working-clear",
+        "definitely_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "indirectly_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "possibly_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "still_reachable": {
+          "bytes": 0,
+          "blocks": 0
+        }
+      },
+      {
+        "case": "episodic-drop",
+        "definitely_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "indirectly_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "possibly_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "still_reachable": {
+          "bytes": 0,
+          "blocks": 0
+        }
+      },
+      {
+        "case": "semantic-drop",
+        "definitely_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "indirectly_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "possibly_lost": {
+          "bytes": 0,
+          "blocks": 0
+        },
+        "still_reachable": {
+          "bytes": 0,
+          "blocks": 0
+        }
+      }
+    ]
+  },
+  "findings": []
+}

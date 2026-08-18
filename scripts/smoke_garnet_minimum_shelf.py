@@ -21,8 +21,8 @@ WV6_ROOT = Path("proofs/windows/launch-verification/wv6-minimum-shelf")
 CROSS_CHECKOUT_EVIDENCE = Path(
     "ops/lane2b/evidence/17-content-reporter-cross-checkout.txt"
 )
-REVIEWED_HEAD = "599f2a7da1c858951148dd7dd256d6c5b76f67a5"
-REVIEWED_TREE = "f8acebc286c920e49f04fe707035757876ca3c68"
+REVIEWED_HEAD = "4a6d1aed9c81a624efa2335b28de12b4bdb82c8f"
+REVIEWED_TREE = "a4829ce899c7525260c222ed16c14137b228c647"
 REVIEWED_TREE_PRODUCT_SHA256 = (
     "1e6692175ea8fe2dd5b04fad4a492dc8ce48767dd07d88fd11a0847ce96749d5"
 )
@@ -30,9 +30,9 @@ REVIEWED_TREE_PATH_COUNT = 1527
 # Replaced after all Verdict-04-authorized product paths are staged. This
 # reporter path is itself excluded, so the final constant is not self-referential.
 EXPECTED_PRODUCT_CONTENT_SHA256 = (
-    "ea38d3547eafa7f56141454df50eaf8084dbc66ee9573ebdd67623df8be97bbe"
+    "8ea996129074e2e70c5ad2f9abd6082c85f7021e943dc017d3a9ba2859ed3ac7"
 )
-EXPECTED_PRODUCT_PATH_COUNT = 1544
+EXPECTED_PRODUCT_PATH_COUNT = 1634
 MAX_JSON_BYTES = 64 * 1024
 MAX_HEX_BYTES = 4 * 1024 * 1024
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -48,7 +48,7 @@ sys.modules[_CONTENT_SPEC.name] = content_provenance
 _CONTENT_SPEC.loader.exec_module(content_provenance)
 
 EXPECTED_FILE_SHA256 = {
-    ".gitattributes": "b8b22a96534aa11b02d5d72e5baf2a6cc5dc9481ea5ad85a5441728ffa8d2e5f",
+    ".gitattributes": "b2a14050a850391f8ed1c788f9a6a66155a423ebceb3bb4722478dcaec97dd1b",
     "examples/minimum-shelf-flagship/SHELF_PACKAGE.json": "dc12370de087c8beeb8885b4d51d4e37b8b02b8d7af90a3957bcb7c1e111b618",
     "examples/minimum-shelf-flagship/tool.garnet": "25ebd3dc02c8ab7d17e343c867e6becda9918c84a567f56f5b14ba4aba08a967",
     "examples/minimum-shelf-flagship/tool.seal.json": "526ac0f63f8ac487f6c38fd947defe1b80e1c3c14d80e3cfb38f5a66355b9cbd",
@@ -366,7 +366,7 @@ def read_status(root: Path = ROOT) -> MinimumShelfStatus:
     status.current_tree = _git_value(findings, "rev-parse", "HEAD^{tree}")
     try:
         status.product_content_sha256, status.product_path_count = (
-            _tracked_content_digest(ROOT)
+            content_provenance.attested_content_pair(ROOT, REVIEWED_HEAD)
         )
     except ValueError as exc:
         findings.append(str(exc))
@@ -381,6 +381,7 @@ def read_status(root: Path = ROOT) -> MinimumShelfStatus:
             reviewed_head=REVIEWED_HEAD,
             reviewed_tree=REVIEWED_TREE,
             expected_content_digest=EXPECTED_PRODUCT_CONTENT_SHA256,
+            expected_content_path_count=EXPECTED_PRODUCT_PATH_COUNT,
             verify_git=True,
         )
     )

@@ -1,0 +1,55 @@
+Lane 0 Repair 3 — isolated Python battery differential
+
+Recorded: 2026-07-31T12:45:12Z
+Interpreter: Python 3.14.5 isolated venv
+Dependencies: PyYAML 6.0.3; jsonschema 4.26.0
+Command: <venv>/bin/python -I -m unittest discover -s scripts -p 'test_*.py'
+Method: fresh detached local clones; symmetric no-build state; both ran in
+parallel with the same interpreter and pinned dependencies.
+
+IMPLEMENTER MACHINE TOOLCHAIN
+Machine: Hughs-MacBook-Pro.local; macOS 26.5; arm64
+rustc: rustc 1.95.0 (59807616e 2026-04-14)
+cargo: cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+
+BASE
+Commit: efd4f6bae8b3afaba74594e57944b2548142aeae
+Tree: e9bce10421c1eac2a514291212b87d61a5289037
+Result: Ran 1130 tests in 277.734s
+Final: FAILED (failures=2, skipped=3)
+
+Failures — both PRE-EXISTING RED ON ORIGIN/MAIN:
+1. test_repo_and_site_point_to_the_adoption_surface_reporter
+2. test_tag_release_publishes_unified_checksummed_assets
+
+HEAD
+Commit: 9d6baef54971b3058648d6f9d8ee4f35f49bb0e9
+Tree: 7df00be6868f35cc3e91ddca69e5feed1bd52451
+Result: Ran 1141 tests in 277.797s
+Final: FAILED (failures=3, skipped=3)
+
+Failures:
+1. test_repo_and_site_point_to_the_adoption_surface_reporter
+2. test_tag_release_publishes_unified_checksummed_assets
+3. test_current_repository_tracks_wv6_acceptance_and_wv7_pending (WV-6)
+
+SET DIFFERENTIAL
+Base-only/predecessor-only: empty.
+Shared: the two pre-existing origin/main failures above.
+Head-only/successor-only: exactly
+test_current_repository_tracks_wv6_acceptance_and_wv7_pending (WV-6), with
+`'partial' != 'accepted'`. The branch introduces one new failure and it is
+the expected-red B1 standing tripwire disclosed in evidence 07.
+
+REVIEWER MACHINE TOOLCHAIN DIVERGENCE
+Reviewer: Claude Code on Claude Fable 5 (Anthropic)
+Machine: Pulses-MacBook-Air.local; Darwin 25.5.0; arm64 (Apple M5)
+Recorded default: rustc 1.94.1; cargo 1.94.1
+Pinned comparison: cargo +1.95.0 is green for the three focused cargo tests.
+
+Verdict 01 therefore records 1,130 tests / 5 failures at base and 1,140 /
+6 at its head: the same two repository-state failures, three Air
+default-toolchain artifacts, and the head-only WV-6 failure. This machine's
+default is already the repository MSRV, so the three focused cargo tests are
+green without an override. Neither result is represented as wrong; battery
+claims are machine- and resolved-toolchain-bound.

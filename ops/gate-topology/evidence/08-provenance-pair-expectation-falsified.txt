@@ -1,0 +1,59 @@
+WV-6 PROVENANCE PAIR EXPECTATION FALSIFIED — STOP
+captured_utc: 2026-08-11T18:23:08Z
+machine: Hugh’s MacBook Pro
+os_arch: Darwin 25.6.0 arm64
+implementer: OpenAI Codex, GPT-5-based agent; exact version unavailable
+trial_parent: 1135538a340d4003b0cc69a2d774b774e8a835a1
+trial_change: add literal b"ops/wv6-reaccept/" to FROZEN_MUTABLE_PREFIXES
+expected: fd96e6d910180f5e33999fbd693ea211e336389a13535930d89b2a870ff54727 / 1606
+actual: f3a4031aa65ae985223517bb21ad18b4b86022a8217ab9bccdf4e1ad52608721 / 1604
+
+COMMAND 1
+python3 -I -c '<load current garnet_content_provenance.py; call tracked_content_digest for 410ff11, 23bc563, 8ae41b6, and 162b96adb0a91c5fdc8c189dc2fcdd22ce996cab>'
+exit: 0
+
+VERBATIM OUTPUT BEGIN
+410ff11 f3a4031aa65ae985223517bb21ad18b4b86022a8217ab9bccdf4e1ad52608721 1604
+23bc563 f3a4031aa65ae985223517bb21ad18b4b86022a8217ab9bccdf4e1ad52608721 1604
+8ae41b6 f3a4031aa65ae985223517bb21ad18b4b86022a8217ab9bccdf4e1ad52608721 1604
+162b96adb0a91c5fdc8c189dc2fcdd22ce996cab f3a4031aa65ae985223517bb21ad18b4b86022a8217ab9bccdf4e1ad52608721 1604
+VERBATIM OUTPUT END
+
+COMMAND 2
+git ls-tree -r --name-only 410ff11 -- ops/wv6-reaccept
+exit: 0
+
+VERBATIM OUTPUT BEGIN
+ops/wv6-reaccept/journal.md
+ops/wv6-reaccept/review/01-request.md
+VERBATIM OUTPUT END
+
+COMMAND 3
+git ls-tree -r --name-only 162b96adb0a91c5fdc8c189dc2fcdd22ce996cab -- ops/wv6-reaccept
+exit: 0
+
+VERBATIM OUTPUT BEGIN
+ops/wv6-reaccept/journal.md
+ops/wv6-reaccept/review/01-request.md
+ops/wv6-reaccept/review/01-verdict.md
+ops/wv6-reaccept/review/02-request.md
+ops/wv6-reaccept/review/02-verdict.md
+VERBATIM OUTPUT END
+
+COMMAND 4
+git diff --name-status 410ff11..162b96adb0a91c5fdc8c189dc2fcdd22ce996cab -- ops/wv6-reaccept
+exit: 0
+
+VERBATIM OUTPUT BEGIN
+M	ops/wv6-reaccept/journal.md
+A	ops/wv6-reaccept/review/01-verdict.md
+A	ops/wv6-reaccept/review/02-request.md
+A	ops/wv6-reaccept/review/02-verdict.md
+VERBATIM OUTPUT END
+
+The expected fd96e6d9…/1606 pair is the pre-exclusion pair at 410ff11, where
+the two pre-existing ops/wv6-reaccept paths are included. The ruled literal
+prefix necessarily removes those two baseline paths as well as the later
+record artifacts. That changes the stable collapsed pair to f3a4031a…/1604.
+The source trial was removed after this capture. No alternative predicate,
+digest rebind, or exclusion was committed.

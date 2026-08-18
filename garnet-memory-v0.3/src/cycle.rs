@@ -217,6 +217,7 @@ struct CycleNode {
     mode: CycleAllocationMode,
     label: String,
     roots: usize,
+    incoming_arc_edges: usize,
     edges: BTreeSet<CycleNodeId>,
     collected: bool,
 }
@@ -252,6 +253,7 @@ impl CycleGraph {
             mode,
             label: label.into(),
             roots: 0,
+            incoming_arc_edges: 0,
             edges: BTreeSet::new(),
             collected: false,
         });
@@ -296,7 +298,11 @@ impl CycleGraph {
 
     pub fn add_edge(&mut self, from: CycleNodeId, to: CycleNodeId) -> Result<(), CycleGraphError> {
         self.ensure_active(to)?;
-        self.node_mut(from)?.edges.insert(to);
+        let is_arc_edge = self.is_arc_tracked(from) && self.is_arc_tracked(to);
+        let inserted = self.node_mut(from)?.edges.insert(to);
+        if inserted && is_arc_edge {
+            self.nodes[to.index()].incoming_arc_edges += 1;
+        }
         Ok(())
     }
 
@@ -305,7 +311,7 @@ impl CycleGraph {
         from: CycleNodeId,
         to: CycleNodeId,
     ) -> Result<(), CycleGraphError> {
-        self.node_mut(from)?.edges.remove(&to);
+        self.remove_edge_recorded(from, to)?;
         Ok(())
     }
 
@@ -319,7 +325,7 @@ impl CycleGraph {
         buffer: &mut CycleRootBuffer,
     ) -> Result<Option<CycleCollectReport>, CycleGraphError> {
         self.ensure_arc_tracked(to)?;
-        let removed = self.node_mut(from)?.edges.remove(&to);
+        let removed = self.remove_edge_recorded(from, to)?;
 
         if removed && self.should_buffer_candidate(to, buffer.scan()) {
             buffer.insert(to);
@@ -401,6 +407,7 @@ impl CycleGraph {
                 node.edges.clear();
             }
         }
+        self.rebuild_incoming_arc_edges();
 
         CycleCollectReport {
             scan,
@@ -416,6 +423,41 @@ impl CycleGraph {
     fn node_mut(&mut self, id: CycleNodeId) -> Result<&mut CycleNode, CycleGraphError> {
         self.ensure_active(id)?;
         Ok(&mut self.nodes[id.index()])
+    }
+
+    fn remove_edge_recorded(
+        &mut self,
+        from: CycleNodeId,
+        to: CycleNodeId,
+    ) -> Result<bool, CycleGraphError> {
+        let is_arc_edge = self.is_arc_tracked(from) && self.is_arc_tracked(to);
+        let removed = self.node_mut(from)?.edges.remove(&to);
+        if removed && is_arc_edge {
+            let incoming = &mut self.nodes[to.index()].incoming_arc_edges;
+            *incoming = incoming
+                .checked_sub(1)
+                .expect("tracked ARC incoming-edge count is consistent");
+        }
+        Ok(removed)
+    }
+
+    fn rebuild_incoming_arc_edges(&mut self) {
+        let mut incoming = vec![0usize; self.nodes.len()];
+        for node in &self.nodes {
+            if node.collected || node.mode != CycleAllocationMode::ManagedArc {
+                continue;
+            }
+            for child in &node.edges {
+                if self.nodes.get(child.index()).is_some_and(|target| {
+                    !target.collected && target.mode == CycleAllocationMode::ManagedArc
+                }) {
+                    incoming[child.index()] += 1;
+                }
+            }
+        }
+        for (node, count) in self.nodes.iter_mut().zip(incoming) {
+            node.incoming_arc_edges = count;
+        }
     }
 
     fn ensure_active(&self, id: CycleNodeId) -> Result<(), CycleGraphError> {
@@ -520,9 +562,16 @@ impl CycleGraph {
             return false;
         }
 
+        // Store-owned roots normally have no ARC incoming edges. Reject those
+        // in O(1): a node with no root and no incoming ARC edge cannot be a
+        // trial-deletion cycle candidate. Only nodes that can actually be
+        // retained by an ARC peer need the rooted-reachability scan.
+        if self.nodes[id.index()].incoming_arc_edges == 0 {
+            return false;
+        }
+
         let live = self.live_from_roots();
-        let counts = self.reference_counts();
-        !live.contains(&id) && counts.get(&id).copied().unwrap_or(0) > 0
+        !live.contains(&id)
     }
 
     fn reference_counts(&self) -> BTreeMap<CycleNodeId, usize> {
@@ -681,4 +730,40 @@ struct TrialOutcome {
     retained: Vec<CycleNodeId>,
     collected: BTreeSet<CycleNodeId>,
     finalization_order: Vec<CycleNodeId>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn incoming_arc_edge_count_tracks_unique_add_and_remove() {
+        let mut graph = CycleGraph::new();
+        let parent = graph.add_node(MemoryKind::Working, "parent");
+        let child = graph.add_node(MemoryKind::Working, "child");
+
+        graph.add_edge(parent, child).unwrap();
+        graph.add_edge(parent, child).unwrap();
+        assert_eq!(graph.nodes[child.index()].incoming_arc_edges, 1);
+
+        graph.remove_edge(parent, child).unwrap();
+        assert_eq!(graph.nodes[child.index()].incoming_arc_edges, 0);
+
+        graph.remove_edge(parent, child).unwrap();
+        assert_eq!(graph.nodes[child.index()].incoming_arc_edges, 0);
+    }
+
+    #[test]
+    fn isolated_root_release_never_enters_candidate_buffer() {
+        let mut graph = CycleGraph::new();
+        let root = graph.add_node(MemoryKind::Working, "isolated");
+        let mut buffer = CycleRootBuffer::with_threshold(CycleScan::All, 1);
+        graph.add_root(root).unwrap();
+
+        let report = graph.release_root_to_buffer(root, &mut buffer).unwrap();
+
+        assert!(report.is_none());
+        assert!(buffer.is_empty());
+        assert_eq!(graph.nodes[root.index()].incoming_arc_edges, 0);
+    }
 }

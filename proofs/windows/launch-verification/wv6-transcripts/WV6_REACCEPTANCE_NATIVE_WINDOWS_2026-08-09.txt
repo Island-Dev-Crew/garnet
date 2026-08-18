@@ -1,0 +1,116 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260809202559
+Username: NUCBOX_M2PRO_S\IslandDevCrew
+RunAs User: NUCBOX_M2PRO_S\IslandDevCrew
+Configuration Name: 
+Machine: NUCBOX_M2PRO_S (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\windows\System32\WindowsPowerShell\v1.0\powershell.exe -Command try { [Console]::OutputEncoding=[System.Text.Encoding]::UTF8 } catch {}
+$ErrorActionPreference = 'Stop'
+$native = 'C:\gvr806-a31f2'
+$log = Join-Path $native 'F_Project_Management\W_TRUST\WV6_REACCEPTANCE_NATIVE_WINDOWS_2026-08-09.txt'
+if (Test-Path -LiteralPath $log) { throw "Evidence log already exists: $log" }
+Set-Location -LiteralPath $native
+Start-Transcript -LiteralPath $log -Force | Out-Null
+Write-Output 'WV-6 integration re-acceptance — native Windows execution'
+Write-Output ('recorded_utc=' + [DateTime]::UtcNow.ToString('o'))
+Write-Output ('machine=' + $env:COMPUTERNAME)
+Write-Output ('os=' + (Get-CimInstance Win32_OperatingSystem).Caption + ' ' + (Get-CimInstance Win32_OperatingSystem).Version)
+Write-Output ('arch=' + $env:PROCESSOR_ARCHITECTURE)
+Write-Output ('filesystem=' + (Get-Volume -DriveLetter C).FileSystem)
+Write-Output ('checkout=' + (Resolve-Path -LiteralPath $native).Path)
+Write-Output ('quiet_state=not required; no quiet state claimed; OneDrive and scheduled tasks were not stopped')
+Write-Output ('autocrlf=' + (git config --global core.autocrlf))
+Write-Output ('head=' + (git rev-parse HEAD))
+Write-Output ('tree=' + (git rev-parse 'HEAD^{tree}'))
+Write-Output ('origin_main=' + (git rev-parse refs/remotes/origin/main))
+rustc --version
+cargo --version
+python --version
+function Invoke-WvRequired {
+  param([string]$Label, [scriptblock]$Action)
+  Write-Output ('BEGIN ' + $Label + ' utc=' + [DateTime]::UtcNow.ToString('o'))
+  & $Action
+  $wvExit = $LASTEXITCODE
+  Write-Output ('END ' + $Label + ' exit=' + $wvExit + ' utc=' + [DateTime]::UtcNow.ToString('o'))
+  if ($wvExit -ne 0) {
+    Stop-Transcript | Out-Null
+    exit $wvExit
+  }
+}
+Invoke-WvRequired 'core-ring-tier1' { cargo test -p garnet-cli minimum_shelf --no-fail-fast }
+Invoke-WvRequired 'mcp-raw-byte-stdio' { cargo test -p garnet-cli --test mcp_stdio --no-fail-fast }
+Invoke-WvRequired 'sealed-baseline' { cargo test -p garnet-cli --test minimum_shelf_package sealed --no-fail-fast }
+Invoke-WvRequired 'reject-without-seal' { cargo test -p garnet-cli --test minimum_shelf_package rejects --no-fail-fast }
+Invoke-WvRequired 'deterministic-shelf-reporter' { python -I scripts/smoke_garnet_minimum_shelf.py --gate }
+Write-Output 'OLD WV-6 BUNDLE TRACKED PATHS'
+git ls-files -- proofs/windows/launch-verification/wv6-minimum-shelf
+Write-Output ('old_acceptance_sha256=' + (Get-FileHash -Algorithm SHA256 -LiteralPath 'proofs\windows\launch-verification\wv6-minimum-shelf\WV_ACCEPTANCE.json').Hash.ToLowerInvariant())
+Invoke-WvRequired 'remove-stale-producer-destination' { git rm -r -- proofs/windows/launch-verification/wv6-minimum-shelf }
+Invoke-WvRequired 'sanctioned-wv6-producer' { python -I scripts/smoke_garnet_minimum_shelf.py --emit-wv6 }
+Invoke-WvRequired 'wv6-acceptance-status' { python -I scripts/garnet_wv_acceptance_status.py --wv WV-6 --gate }
+Invoke-WvRequired 'evidence-integrity' { python -I scripts/garnet_evidence_integrity_status.py --gate }
+Write-Output ('BEGIN full-python-battery utc=' + [DateTime]::UtcNow.ToString('o'))
+python -I -m unittest discover -s scripts -p 'test_*.py'
+$batteryExit = $LASTEXITCODE
+Write-Output ('END full-python-battery exit=' + $batteryExit + ' utc=' + [DateTime]::UtcNow.ToString('o'))
+Write-Output 'FINAL GIT STATUS'
+git status --short
+Stop-Transcript | Out-Null
+exit $batteryExit
+Process ID: 17752
+PSVersion: 5.1.26100.8972
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.8972
+BuildVersion: 10.0.26100.8972
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+WV-6 integration re-acceptance — native Windows execution
+recorded_utc=2026-08-10T01:25:59.5811971Z
+machine=NUCBOX_M2PRO_S
+os=Microsoft Windows 11 Pro 10.0.26200
+arch=AMD64
+filesystem=NTFS
+checkout=C:\gvr806-a31f2
+quiet_state=not required; no quiet state claimed; OneDrive and scheduled tasks were not stopped
+autocrlf=false
+head=176004ae0b0f5f77f21730e1e97e3a166c8ce71c
+tree=4314251342a3c3593e0dc1209145e731c5990ac8
+origin_main=efd4f6bae8b3afaba74594e57944b2548142aeae
+
+
+
+BEGIN core-ring-tier1 utc=2026-08-10T01:26:00.8053283Z
+
+END core-ring-tier1 exit=0 utc=2026-08-10T01:26:59.8779866Z
+BEGIN mcp-raw-byte-stdio utc=2026-08-10T01:26:59.8809863Z
+
+END mcp-raw-byte-stdio exit=0 utc=2026-08-10T01:27:00.9316124Z
+BEGIN sealed-baseline utc=2026-08-10T01:27:00.9326169Z
+
+END sealed-baseline exit=0 utc=2026-08-10T01:27:01.2133094Z
+BEGIN reject-without-seal utc=2026-08-10T01:27:01.2133094Z
+
+END reject-without-seal exit=0 utc=2026-08-10T01:27:01.5165335Z
+BEGIN deterministic-shelf-reporter utc=2026-08-10T01:27:01.5174768Z
+
+END deterministic-shelf-reporter exit=0 utc=2026-08-10T01:27:02.3623174Z
+OLD WV-6 BUNDLE TRACKED PATHS
+
+old_acceptance_sha256=87e5c6ad6f0a702151a31bca22e636c465ad5ddbaf13ec70e9e6bfbdab3f487f
+BEGIN remove-stale-producer-destination utc=2026-08-10T01:27:02.4502640Z
+
+END remove-stale-producer-destination exit=0 utc=2026-08-10T01:27:02.5034620Z
+BEGIN sanctioned-wv6-producer utc=2026-08-10T01:27:02.5044630Z
+
+END sanctioned-wv6-producer exit=0 utc=2026-08-10T01:27:03.1829987Z
+BEGIN wv6-acceptance-status utc=2026-08-10T01:27:03.1839890Z
+
+END wv6-acceptance-status exit=0 utc=2026-08-10T01:27:03.4912082Z
+BEGIN evidence-integrity utc=2026-08-10T01:27:03.4912082Z
+
+END evidence-integrity exit=0 utc=2026-08-10T01:27:09.8178361Z
+BEGIN full-python-battery utc=2026-08-10T01:27:09.8178361Z

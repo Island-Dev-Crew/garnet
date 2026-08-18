@@ -1,0 +1,232 @@
+FINAL LOCAL VERIFICATION — PRE-REVIEW CANDIDATE
+captured_utc: 2026-08-11T19:12:16Z
+machine: Hugh’s MacBook Pro
+os_arch: Darwin 25.6.0 arm64
+implementer: OpenAI Codex, GPT-5-based agent; exact version unavailable
+candidate_head: c01383fab3061c71b91e10aa46c29d54f46b667e
+candidate_tree: 2ed278c5db57e8d78766fb212938a342e03984aa
+base: efd4f6bae8b3afaba74594e57944b2548142aeae
+
+TRUTH FLOOR — ALL FIVE EXIT 0
+
+COMMAND
+python3 -I scripts/garnet_lane0_closeout_status.py --gate
+VERBATIM OUTPUT BEGIN
+Lane 0 closeout: PASS · evidence 22/22 · ledger 37 entries · denominators 4/4 · launch HOLD · band 3 · S6 advisory
+VERBATIM OUTPUT END
+
+COMMAND
+python3 -I scripts/garnet_msrv_status.py --gate
+VERBATIM OUTPUT BEGIN
+{
+  "active_manifest_count": 18,
+  "active_manifest_set_exact": true,
+  "current_surfaces_aligned": true,
+  "exact_msrv_ci_check": true,
+  "excluded_manifests_declaring": 2,
+  "findings": [],
+  "msrv": "1.95",
+  "ok": true,
+  "procedural_contract_present": true,
+  "reporter_ci_wired": true,
+  "rust_toolchain_file_absent": true,
+  "schema": "garnet.msrv_status/v2",
+  "stable_tracking_preserved": true,
+  "studio_exact_msrv_ci_check": true,
+  "workflow_projection_valid": true,
+  "workspace_member_count": 16,
+  "workspace_members_inheriting": 16
+}
+VERBATIM OUTPUT END
+
+COMMAND
+python3 -I scripts/garnet_frozen_backlog_status.py --gate
+VERBATIM OUTPUT BEGIN
+{
+  "schema": "garnet.lane0.frozen_backlog/v1",
+  "exact_base_main_sha": "231aefa91985e5a0520c493c7f0fc3e54d74efc8",
+  "entry_count": 8,
+  "implemented_clause_count": 9,
+  "states": {
+    "implemented": 0,
+    "partial": 4,
+    "planned": 4,
+    "research": 0
+  },
+  "findings": [],
+  "ok": true
+}
+VERBATIM OUTPUT END
+
+COMMAND
+python3 -I scripts/garnet_capability_scope_status.py --gate
+VERBATIM OUTPUT BEGIN
+{
+  "schema": "garnet.capability_scope/v2",
+  "ok": true,
+  "scope_doc_present": true,
+  "scope_terms_missing": [],
+  "enforced_claim_count": 2,
+  "enforced_claim_expected": 2,
+  "enforced_claim_hashes": [
+    "8cea8eec892bb7b908c0320fef64c9a0af02167d094141f7258aec566b5f57f0",
+    "032b790318e1d10a80418f59e6f363e43671193a080c26a4803dd2beffb2a541"
+  ],
+  "enforced_claim_hashes_match": true,
+  "acceptance_state": "accepted-scoped",
+  "post_acceptance_closure_state": "condition-5-reopened-by-post-acceptance-delta-review",
+  "current_truth_missing": [],
+  "cited_anchors_missing": [],
+  "forbidden_hits": [],
+  "stale_truth_hits": [],
+  "problems": []
+}
+VERBATIM OUTPUT END
+
+COMMAND
+python3 -I scripts/garnet_evidence_integrity_status.py --gate
+VERBATIM OUTPUT BEGIN
+{
+  "schema": "garnet.evidence_integrity/v1",
+  "bundles_total": 38,
+  "bundles_ok": 38,
+  "bundles_failed": 0,
+  "failed": [],
+  "ok": true
+}
+VERBATIM OUTPUT END
+
+NEW DETERMINISTIC TRAPS
+
+COMMAND
+python3 -I scripts/test_garnet_trust_kernel_review_status.py -k 'merge_parent_outside_reviewed_lineage'
+VERBATIM OUTPUT BEGIN
+..
+----------------------------------------------------------------------
+Ran 2 tests in 1.262s
+
+OK
+VERBATIM OUTPUT END
+
+COMMAND
+python3 -I scripts/test_garnet_minimum_shelf_provenance.py -k 'record_only_tip_drift_preserves_the_frozen_pair'
+VERBATIM OUTPUT BEGIN
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.286s
+
+OK
+VERBATIM OUTPUT END
+
+COMMAND
+python3 -I scripts/test_garnet_minimum_shelf_provenance.py -k 'one_non_record_byte_in_tip_drift_is_red'
+VERBATIM OUTPUT BEGIN
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.256s
+
+OK
+VERBATIM OUTPUT END
+
+COMMAND
+python3 -I scripts/test_garnet_minimum_shelf_provenance.py -k 'wv6_reaccept_records_remain_in_the_frozen_digest_definition'
+VERBATIM OUTPUT BEGIN
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.144s
+
+OK
+VERBATIM OUTPUT END
+
+FULL RELEVANT SUITES
+
+COMMAND
+python3 -I scripts/test_garnet_trust_kernel_review_status.py
+SUMMARY OUTPUT BEGIN
+----------------------------------------------------------------------
+Ran 112 tests in 154.266s
+
+OK
+SUMMARY OUTPUT END
+
+COMMAND
+python3 -I scripts/test_garnet_minimum_shelf_provenance.py
+VERBATIM OUTPUT BEGIN
+.........
+----------------------------------------------------------------------
+Ran 9 tests in 1.611s
+
+OK
+VERBATIM OUTPUT END
+
+DOCUMENTATION AND TOOLCHAIN
+
+COMMAND
+python3 scripts/check-agent-contracts.py
+VERBATIM OUTPUT BEGIN
+agent-contracts: ok (24 contracts)
+VERBATIM OUTPUT END
+
+COMMAND
+python3 scripts/test_check_agent_contracts.py
+VERBATIM OUTPUT BEGIN
+......
+----------------------------------------------------------------------
+Ran 6 tests in 0.203s
+
+OK
+agent-contracts: ok (24 contracts)
+VERBATIM OUTPUT END
+
+COMMANDS
+rustc --version
+cargo --version
+rustc +1.95.0 --version
+cargo +1.95.0 --version
+VERBATIM OUTPUT BEGIN
+rustc 1.95.0 (59807616e 2026-04-14)
+cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+rustc 1.95.0 (59807616e 2026-04-14)
+cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+VERBATIM OUTPUT END
+
+COMMAND
+cargo +1.95.0 fmt --all -- --check
+exit: 0
+VERBATIM OUTPUT BEGIN
+VERBATIM OUTPUT END
+
+COMMAND
+cargo +1.95.0 test -p garnet-cli new_cmd
+RESULT
+13 passed; 0 failed; 0 ignored; 0 measured; 157 filtered out.
+All remaining garnet-cli test binaries ran zero selected tests and exited 0.
+
+EXPECTED PRE-REVIEW TRUST STATUS
+
+COMMAND
+python3 -I scripts/garnet_trust_kernel_review_status.py --format md --gate
+exit: 1
+VERBATIM OUTPUT BEGIN
+trust-kernel review gate: REVIEW REQUIRED
+# Garnet rolling trust-kernel review status
+
+_Schema garnet.trust_kernel_review/v2._
+
+- changed paths inspected: 24
+- discovery: **ok** (git)
+- trust-kernel touched: **True**
+- structured review record present: **False**
+- overall: **REVIEW REQUIRED**
+  - trust-kernel: scripts/garnet_content_provenance.py
+  - trust-kernel: scripts/garnet_trust_kernel_review_status.py
+  - trust-kernel: scripts/garnet_wv_acceptance_status.py
+  - trust-kernel: scripts/test_garnet_minimum_shelf_provenance.py
+  - trust-kernel: scripts/test_garnet_trust_kernel_review_status.py
+  - PROBLEM: structured review record is missing
+VERBATIM OUTPUT END
+
+This is the expected pre-review RED. A canonical v2 record cannot truthfully
+exist before Claude Fable 5's independent verdict and the real authenticated
+PR approval transport. The lane carries an implementer provenance companion
+and Request 01; neither claims approval.

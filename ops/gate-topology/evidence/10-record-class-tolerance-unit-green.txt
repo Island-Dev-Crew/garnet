@@ -1,0 +1,60 @@
+U-35 RECORD-CLASS TOLERANCE UNIT GREEN
+captured_utc: 2026-08-11T18:54:49Z
+machine: Hugh’s MacBook Pro
+os_arch: Darwin 25.6.0 arm64
+implementer: OpenAI Codex, GPT-5-based agent; exact version unavailable
+phase_0_precedent: 17629f88412583f60305f32c1db38517a6dae13d
+
+COMMAND 1
+python3 -I scripts/test_garnet_minimum_shelf_provenance.py SquashDurableContentProvenanceTests.test_frozen_mutable_prefixes_are_exactly_the_authorized_set SquashDurableContentProvenanceTests.test_wv6_reaccept_records_remain_in_the_frozen_digest_definition SquashDurableContentProvenanceTests.test_record_only_tip_drift_preserves_the_frozen_pair SquashDurableContentProvenanceTests.test_one_non_record_byte_in_tip_drift_is_red
+exit: 0
+
+VERBATIM OUTPUT BEGIN
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.807s
+
+OK
+VERBATIM OUTPUT END
+
+COMMAND 2
+python3 -I scripts/test_garnet_launch_readiness_status.py U31CureTrapTests.test_trap4_frozen_exclusion_tuple_and_lane0_inclusion
+exit: 0
+
+VERBATIM OUTPUT BEGIN
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.012s
+
+OK
+VERBATIM OUTPUT END
+
+COMMAND 3
+python3 -I scripts/test_garnet_minimum_shelf_provenance.py
+exit: 0
+
+VERBATIM OUTPUT BEGIN
+.........
+----------------------------------------------------------------------
+Ran 9 tests in 1.624s
+
+OK
+VERBATIM OUTPUT END
+
+COMMAND 4
+python3 -I -c '<load current garnet_content_provenance.py; verify_post_acceptance_record_drift at frozen 410ff11 and tip 162b96a; print frozen pair and findings>'
+exit: 0
+
+VERBATIM OUTPUT BEGIN
+frozen_head=410ff1182cdcefcec9fe046d1346205d8522ec9d
+candidate_tip=162b96adb0a91c5fdc8c189dc2fcdd22ce996cab
+frozen_digest=fd96e6d910180f5e33999fbd693ea211e336389a13535930d89b2a870ff54727
+frozen_path_count=1606
+findings=[]
+ok=True
+VERBATIM OUTPUT END
+
+The digest definition is unchanged. The exact target succeeds only because
+the frozen tree/pair matches and every path in 410ff11..162b96a is in the
+separate record class. The committed mutation fixture changes one non-record
+blob byte and remains hard red with its path named.

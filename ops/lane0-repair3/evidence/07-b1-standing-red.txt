@@ -1,0 +1,93 @@
+Lane 0 Repair 3 — B1 standing-gate movement disclosure
+
+Recorded: 2026-07-31T12:45:12Z
+Implementer: OpenAI Codex, GPT-5-based agent; exact version unavailable
+Machine: Hughs-MacBook-Pro.local
+OS/arch: macOS 26.5 / Darwin 25.5.0, arm64
+
+This is disclosure evidence only. No candidate constant, product pair,
+per-file hash pin, or WV acceptance state was rebound.
+
+REPOSITORY PRODUCT PAIRS
+
+origin/main / U-25 base:
+  efd4f6bae8b3afaba74594e57944b2548142aeae
+  ea38d3547eafa7f56141454df50eaf8084dbc66ee9573ebdd67623df8be97bbe / 1544
+
+reviewed U-25 request head:
+  5e5a24c917fab7a31f061cfa99609f72de746baf
+  cd9c080ff62483721abd20aad19f666f30adb7c35c1c16b2fa08540193ac4263 / 1553
+
+reviewer-record wake head:
+  d99b1ca9a9f0a6da0d0c38d57471b565b18f0120
+  e13d0775f2249c0ce44353fda699c8a3f519e15781be37557baea15ff99d503a / 1554
+
+F1 implementation head:
+  9d6baef54971b3058648d6f9d8ee4f35f49bb0e9
+  20830394be5d37a39c622fed252b30a213fe0c0420f2a026567b852c80a93707 / 1555
+
+The standing Shelf pin remains:
+  ea38d3547eafa7f56141454df50eaf8084dbc66ee9573ebdd67623df8be97bbe / 1544
+
+The current `.gitattributes` SHA-256 remains:
+  b2a14050a850391f8ed1c788f9a6a66155a423ebceb3bb4722478dcaec97dd1b
+
+The standing `.gitattributes` per-file pin remains:
+  b8b22a96534aa11b02d5d72e5baf2a6cc5dc9481ea5ad85a5441728ffa8d2e5f
+
+FOURTEEN DIGEST-INCLUDED PATHS AT THE REVIEWED U-25 HEAD
+
+The repository provenance predicate was applied to the exact range
+efd4f6b..5e5a24c. These 14 changed paths are digest-included:
+
+1. .dogfood/windows-audit-goal.json
+2. .dogfood/windows-core-audit.json
+3. .gitattributes
+4. AGENTS.md
+5. D_Executive_and_Presentation/garnet-website.html
+6. ops/lane0-repair3/FINDINGS.md
+7. ops/lane0-repair3/U25_SCOPE.json
+8. ops/lane0-repair3/evidence/05-u25-scope-red.txt
+9. ops/lane0-repair3/evidence/06-u25-green.txt
+10. ops/lane0-repair3/journal.md
+11. ops/lane0-repair3/review/01-u25-request.md
+12. scripts/garnet_text_byte_policy_status.py
+13. scripts/test_garnet_lane2b_sotu_bytes.py
+14. scripts/test_garnet_text_byte_policy_status.py
+
+`ops/lane0-repair3/**` is not one of the frozen mutable prefixes in
+`scripts/garnet_content_provenance.py`. Later review, F1, evidence, and request
+records therefore continue moving the live pair; each boundary is disclosed
+rather than collapsed into the original 14-path scope.
+
+COMMAND
+python3 -I scripts/smoke_garnet_minimum_shelf.py --gate
+
+OUTPUT AT 9d6baef
+Minimum Shelf gate FAILED: product content digest does not match reviewed bytes; product path count does not match reviewed index; product content digest mismatch (20830394be5d37a39c622fed252b30a213fe0c0420f2a026567b852c80a93707 != ea38d3547eafa7f56141454df50eaf8084dbc66ee9573ebdd67623df8be97bbe); .gitattributes SHA-256 does not match the reviewed artifact
+{"checks":{"core-ring-tier1":true,"deterministic-shelf-reporter":false,"mcp-raw-byte-stdio":true,"reject-without-seal":true,"sealed-baseline":true},"current_commit":"9d6baef54971b3058648d6f9d8ee4f35f49bb0e9","current_tree":"7df00be6868f35cc3e91ddca69e5feed1bd52451","findings":["product content digest does not match reviewed bytes","product path count does not match reviewed index","product content digest mismatch (20830394be5d37a39c622fed252b30a213fe0c0420f2a026567b852c80a93707 != ea38d3547eafa7f56141454df50eaf8084dbc66ee9573ebdd67623df8be97bbe)",".gitattributes SHA-256 does not match the reviewed artifact"],"ok":false,"product_content_sha256":"20830394be5d37a39c622fed252b30a213fe0c0420f2a026567b852c80a93707","product_path_count":1555,"state":"partial"}
+EXIT=1
+
+The JSON line above is a bounded projection of the reporter's verbatim JSON;
+the full reporter also emitted its unchanged artifact hashes, scope limits,
+reviewed provenance, platform, ring, tier, and request/response frame counts.
+
+COMMAND
+python3 -I scripts/test_garnet_wv_acceptance_status.py
+
+VERBATIM FAILURE
+FAIL: test_current_repository_tracks_wv6_acceptance_and_wv7_pending (__main__.GarnetWvAcceptanceStatusTests.test_current_repository_tracks_wv6_acceptance_and_wv7_pending) (identifier='WV-6')
+AssertionError: 'partial' != 'accepted'
+- partial
++ accepted
+Ran 6 tests in 0.082s
+FAILED (failures=1)
+EXIT=1
+
+SUCCESSOR — NOT PERFORMED HERE
+
+Lane 0 Repair 3 successor: “post-record freeze/rebind and NUC WV-6
+re-acceptance.” Its freeze/rebind review must update all four candidate
+constants and the `.gitattributes` per-file pin. A later NUC WV-6 run must
+re-accept that exact reviewed candidate under its own review. This B1 cure
+does not authorize or perform either step.
