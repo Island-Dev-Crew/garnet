@@ -34,5 +34,3 @@ across every advertised fork branch head and `origin/main`; counts or a stale
 - result: U-54, U-55, and U-56 are assigned. U-57 through U-61 had no
   assignment; the only U-60 references explicitly said it was unassigned.
   U-57 was therefore the next free ID.
-
-- fleet push-credential expiry is untracked — credential lifecycles (mint date, expiry, seat) belong in the fleet doctrine beside token-E's mint-at-point-of-use rule.
