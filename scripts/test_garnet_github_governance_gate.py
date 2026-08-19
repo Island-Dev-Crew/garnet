@@ -773,9 +773,18 @@ class GovernanceGateTests(unittest.TestCase):
             "checked-in repository settings keys",
         )
 
-    def live_client(self, payload: dict[str, object]) -> tuple[object, list[object]]:
+    def live_client(
+        self,
+        payload: dict[str, object],
+        *,
+        checks_are_rest: bool = False,
+    ) -> tuple[object, list[object]]:
         calls: list[object] = []
         outer = self
+        checks = copy.deepcopy(payload["checks"])
+        if not checks_are_rest:
+            for check in checks:
+                check["check_suite"] = {"id": check.pop("check_suite_id")}
 
         class Client:
             def get_repository(self) -> object:
@@ -793,7 +802,7 @@ class GovernanceGateTests(unittest.TestCase):
                 mapping = {
                     "actions/workflows": payload["workflows"],
                     f"actions/runs?head_sha={REVIEWED_HEAD}": payload["runs"],
-                    f"commits/{REVIEWED_HEAD}/check-runs": payload["checks"],
+                    f"commits/{REVIEWED_HEAD}/check-runs": checks,
                 }
                 return outer.collection(mapping[path])
 
@@ -888,6 +897,68 @@ class GovernanceGateTests(unittest.TestCase):
         rendered = json.dumps(asdict(result), sort_keys=True)
         self.assertNotIn("temp_clone_token", rendered)
         self.assertNotIn("secret_scanning", rendered)
+
+    def test_live_collector_projects_real_rest_check_suite_shape_with_codeql_noise(self) -> None:
+        payload = self.payload()
+        for check in payload["checks"]:
+            check["check_suite"] = {"id": check.pop("check_suite_id")}
+        payload["checks"].append(
+            {
+                "id": 29_999,
+                "name": "CodeQL",
+                "check_suite": {"id": 2_999},
+                "head_sha": REVIEWED_HEAD,
+                "status": "completed",
+                "conclusion": "success",
+                "started_at": self.ts(NOW - timedelta(minutes=4)),
+                "completed_at": self.ts(NOW - timedelta(seconds=30)),
+                "app": {"id": 57_789, "slug": "github-advanced-security"},
+            }
+        )
+        client, _ = self.live_client(payload, checks_are_rest=True)
+        result = gate.collect_live_governance_status(
+            self.policy,
+            reviewed_head=REVIEWED_HEAD,
+            token="explicit-review-token",
+            now=NOW,
+            include_admin=False,
+            transport_factory=lambda _repository, _token: client,
+            root=ROOT,
+        )
+        self.assertTrue(result.ok, result.problems)
+        self.assertEqual(result.problems, ())
+        self.assertEqual(len(result.bindings), 31)
+        self.assertEqual(
+            tuple(item.context for item in result.bindings),
+            tuple(item.producer.context for item in self.policy.bindings),
+        )
+        self.assertNotIn(29_999, {item.check_run_id for item in result.bindings})
+
+    def test_live_collector_rejects_malformed_nested_check_suite_all_or_zero(self) -> None:
+        for case in ("missing", "zero"):
+            with self.subTest(case=case):
+                payload = self.payload()
+                for check in payload["checks"]:
+                    check["check_suite"] = {"id": check.pop("check_suite_id")}
+                first = payload["checks"][0]
+                if case == "missing":
+                    first.pop("check_suite")
+                else:
+                    first["check_suite"] = {"id": 0}
+                first["check_suite_id"] = 1_001
+                client, _ = self.live_client(payload, checks_are_rest=True)
+                result = gate.collect_live_governance_status(
+                    self.policy,
+                    reviewed_head=REVIEWED_HEAD,
+                    token="explicit-review-token",
+                    now=NOW,
+                    include_admin=False,
+                    transport_factory=lambda _repository, _token: client,
+                    root=ROOT,
+                )
+                self.assertFalse(result.ok)
+                self.assertEqual(result.bindings, ())
+                self.assertIn("check_runs transport is incomplete", result.problems)
 
     def test_live_admin_collector_can_close_no_bypass_without_changing_runtime_scope(self) -> None:
         payload = self.payload()

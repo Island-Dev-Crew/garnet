@@ -1286,6 +1286,7 @@ def _project_collection_result(
     keys: tuple[str, ...],
     *,
     nested_app: bool = False,
+    nested_check_suite_id: bool = False,
 ) -> object:
     """Project complete collection rows without altering transport bounds/provenance."""
     if (
@@ -1298,6 +1299,18 @@ def _project_collection_result(
     rows: list[dict[str, object]] = []
     for row in result.rows:
         projection = {key: row.get(key) for key in keys}
+        if nested_check_suite_id:
+            check_suite = row.get("check_suite")
+            suite_id = (
+                check_suite.get("id") if type(check_suite) is dict else None
+            )
+            if not _positive(suite_id):
+                return transport.CollectionResult(
+                    problems=(transport.GitHubTransportProblem("collection-shape"),),
+                    page_count=result.page_count,
+                    byte_count=result.byte_count,
+                )
+            projection["check_suite_id"] = suite_id
         if nested_app:
             app = row.get("app")
             projection["app"] = (
@@ -1374,6 +1387,7 @@ def collect_live_governance_status(
                 ),
                 CHECK_RUN_PROJECTION_KEYS,
                 nested_app=True,
+                nested_check_suite_id=True,
             ),
             ruleset=(
                 _project_object_result(
