@@ -29,10 +29,15 @@
           "rebase"
         ],
         "dismiss_stale_reviews_on_push": true,
+        "dismissal_restriction": {
+          "enabled": false,
+          "allowed_actors": []
+        },
         "require_code_owner_review": false,
         "require_last_push_approval": false,
         "required_approving_review_count": 0,
-        "required_review_thread_resolution": true
+        "required_review_thread_resolution": true,
+        "required_reviewers": []
       }
     },
     {
