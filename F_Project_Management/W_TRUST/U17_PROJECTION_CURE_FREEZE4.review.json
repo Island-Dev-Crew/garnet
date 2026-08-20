@@ -1,0 +1,30 @@
+{
+  "author_emails": [
+    "email:navigata1@gmail.com"
+  ],
+  "author_ids": [
+    242020839
+  ],
+  "base_commit": "3ef1e874ff5f6fde14b940441801d5340b85ccea",
+  "blocking_findings": [],
+  "content_digest": "sha256:377c98860dee44c1a1ee2ac9f90dbc29bf84a67064f7462871ed1f8be1df851f",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 4318644523,
+  "pull_request_number": 524,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head 94f3649f844088f673843a23d93b67cba068d3ef and does not extend or backdate reviewed_head coverage. Air-seat terminal freeze 4 confirmation: CONFIRM-WITH-FINDINGS, zero blockers, at 94f3649f844088f673843a23d93b67cba068d3ef, void if the head moves before the record commit. The U-17 projection cure 218047425fd6871d6cb3ad526ef77e3f4df4c669 adds fail-closed nested check_suite.id projection only; selection and App enforcement are unchanged; gate suites 31/31, identity 6/6, transport 24/24, base-controlled 4/4, agent contracts 24 plus 6/6. The frozen pair 056a153920a9147b5f703e482c8d8b5098347ebd0a3f64d36a1d2c9247b13edc / 1640 was recomputed by the reporter's method and one independent method; the raw containing-tip pair is 4f449a56ce152993457a25864a58dc8a477d01e7bad8ff908d9bfee47fb42ace / 1643. Supersession chain ends 32f3975537470cb1788acfb3365725c4fea208a049e20fb90b1c314b719cba06 / 1637 then 056a1539... / 1640, state SUPERSEDED-WITH-PRESERVATION, preserved manifest SHA-256 84552a8219cb6ccdeb25ed299ebba1ec92d50adb4a3213a0235ed48c2cad8f3f, 13-path record-class drift, zero deletions in range. Both WV reporters exit 0, state accepted, findings empty, reviewed head 218047425fd6871d6cb3ad526ef77e3f4df4c669. Prior records including F_Project_Management/W_TRUST/WV6_TERMINAL_FREEZE_REACCEPTANCE.review.json remain untouched; this record binds the U-17 cure trust-kernel path set.",
+  "review_state": "APPROVED",
+  "reviewed_head": "94f3649f844088f673843a23d93b67cba068d3ef",
+  "reviewed_tree": "b699c890d024c0a501ef2bf3216d80a69b274c7e",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "scripts/garnet_github_governance_gate.py",
+    "scripts/test_garnet_github_governance_gate.py"
+  ],
+  "verdict": "pass"
+}
