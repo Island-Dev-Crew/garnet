@@ -1,0 +1,31 @@
+{
+  "author_emails": [
+    "email:navigata1@gmail.com"
+  ],
+  "author_ids": [
+    242020839
+  ],
+  "base_commit": "1d765cdb2e69bc097cd33db30f9919ad8e969208",
+  "blocking_findings": [],
+  "content_digest": "sha256:3a9827339ea8837e2ab504026ebb8cfd370128eb44e0648b51671fd1a61a6a45",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 4321809869,
+  "pull_request_number": 526,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head aa9918be9c67332d2275f152c92a9ef87428881f and does not extend or backdate reviewed_head coverage. Air-seat terminal freeze 5 redo confirmation: CONFIRM-WITH-FINDINGS, zero blockers, at aa9918be9c67332d2275f152c92a9ef87428881f, void if the head moves before the record commit. Two cures sit inside one freeze boundary per U-57. Cure A1 7b01726fd1ab9ca9194c9203b9d6d418d9d922b1 is a clean cherry-pick of 2ca3d81129d22ab827b7574ff992d7c262aaf9e2 (identical patch-id and identical tree): a container-aware structural diff of .github/rulesets/garnet-main.json shows exactly two additive nodes under rules[3] (type pull_request) parameters, dismissal_restriction {enabled false, allowed_actors []} and required_reviewers [], with zero removals and zero value changes elsewhere; this is additive GitHub API evolution and is non-weakening because dismissal restriction is disabled with no allowed actors and no required reviewers are introduced, so the governance posture is unchanged from the originally reviewed contract. The gate-script change is exactly two canonical ruleset-document digest re-pins, both independently recomputed to 83b69477d7886c51889e6f55a3b93af6c534f0e9194f2958d0f152ce01fe0b2f (31 contexts) and 8f8c1e6727e7234579adc698960118b4fe0de5fd1f40edd926f4fff58a448402 (32-context activation); _strict_equal is untouched and remains exact; the additive-shape positive fixture and the three-case negative fixture are both present. Suites: governance 33/33, identity 6/6, transport 24/24, base-controlled 4/4, activation 10/10, agent contracts 24 plus 6/6. Cure A2 eecd6a407b64b8b83bd195cf049d3ebd1953da05 retains global yanked=deny and adds exactly one exact-version cargo-deny PackageSpec exception for arrayref@0.3.9, the narrowest supported mechanism; Cargo.lock is byte-identical to main at SHA-256 01b8986b1cee0ef6a53ac439bd018b54fc1dca825a8f845a259ed8001e6715fa with the arrayref entry pinning checksum 76a2e8124351fda1ef8aaaa3bbd7ebbcb486bbcd4225aca0aa0d84bb2db8fecb, which protects the reviewed bytes independently of registry yank state. Independent re-observation binds and diverges from the ceremony window: crates.io and the sparse index now report all fifteen arrayref versions including 0.3.5 through 0.3.9 as un-yanked, and cargo-deny reports yanked-not-detected for the exception while advisories and the full check both exit 0; blake3 1.8.4 does require arrayref ^0.3.5 and 0.3.4 cannot satisfy it, so the recorded downgrade-infeasibility reasoning is sound on its stated premise, and no RustSec advisory names arrayref. The exception is therefore presently inert rather than load-bearing, and its removal condition names only a blake3 dependency move, not yank reversal. The frozen pair 573523661f3569d925a05f4c95549582d765212c6ef650871432d35c00c12675 / 1643 at eecd6a407b64b8b83bd195cf049d3ebd1953da05 was recomputed by the reporter's method and one independent method; the raw containing-tip pair is cae06885a9eb4063e9bd9489abe327b32fe0145adcaa6307631a68447e13d587 / 1646. Preservation: the freeze-4 predecessor 056a153920a9147b5f703e482c8d8b5098347ebd0a3f64d36a1d2c9247b13edc / 1640 at 218047425fd6871d6cb3ad526ef77e3f4df4c669 is preserved byte-for-byte as a six-file bundle with manifest SHA-256 e4f5ebdf9f3936765bf20070837f7953538d6a60024da03f755cc87e8c792579, the accepted chain ends 056a1539... / 1640 then 57352366... / 1643 recorded SUPERSEDED-WITH-PRESERVATION, drift from the frozen head to the tip is 13 paths all record-class with zero non-record paths, and there are zero deletions in range. PR 525's abandoned A1-only boundary pair 0513edb99391ad4dfe75dffe3618c8c001f877aa4d4f738709c4b506ec06b425 / 1643 is recorded never-merged and outside acceptance succession, and is omitted from the accepted chain. Both WV reporters exit 0, state accepted, findings empty, reviewed head eecd6a407b64b8b83bd195cf049d3ebd1953da05. Prior records including F_Project_Management/W_TRUST/U17_PROJECTION_CURE_FREEZE4.review.json remain untouched; this record binds the freeze-5 trust-kernel path set.",
+  "review_state": "APPROVED",
+  "reviewed_head": "aa9918be9c67332d2275f152c92a9ef87428881f",
+  "reviewed_tree": "602f0d759c4e3bd9c5051e592a6464549bc7092a",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    ".github/rulesets/garnet-main.json",
+    "scripts/garnet_github_governance_gate.py",
+    "scripts/test_garnet_github_governance_gate.py"
+  ],
+  "verdict": "pass"
+}
