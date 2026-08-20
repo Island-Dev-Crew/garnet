@@ -1,0 +1,47 @@
+Lane 2B Verdict 04 content-bound reporter cross-checkout proof
+Captured: 2026-07-19T23:29:41Z
+Machine: NUCBOX_M2PRO_S, Windows 11 x64
+Implementer: Codex GPT-5.6 Sol
+Reviewer: Claude Fable 5 (chat authorization; Air replay pending)
+Authenticated carrier / ceremony seat: Jon
+Exact implementation head: 6b77b63e2c4bada54cb8865e6640f8f70de76605
+Exact implementation tree: 22c1a9aa219af78822ce64e5bfa86ad2d6ffc2db
+Pull-request refs fetched: none
+
+Fresh clone A:
+  path: C:/garnet-lane2b-v04-lf-20260719-1
+  core.autocrlf: false
+  HEAD: 6b77b63e2c4bada54cb8865e6640f8f70de76605
+  refs/pull/*: 0
+
+Fresh clone B:
+  path: C:/garnet-lane2b-v04-win-20260719-1
+  core.autocrlf: true
+  HEAD: 6b77b63e2c4bada54cb8865e6640f8f70de76605
+  refs/pull/*: 0
+
+Command, twice per clone:
+  python3 -I scripts/smoke_garnet_minimum_shelf.py --gate
+
+All four runs:
+  exit: 0
+  stdout bytes: 2071
+  stdout SHA-256: a9665b8356adc2757f0d7d09b69ce468368505792e6bbfc7fe710454ac6edfbe
+  stderr bytes: 0
+
+The four verdict byte streams are identical. Each reports:
+  schema: garnet.minimum_shelf_status/v2
+  state: accepted
+  checks: 5/5 true
+  findings: []
+  product_content_sha256:
+    810f256bcf9304999975120224419216422996ff3b804d1a9a8836d5bcc4c339
+  product_path_count: 1529
+  reviewed_tree: f3272b9610dba756bd414cafc825fd7462d7a294
+  reviewed_tree_product_sha256:
+    1e6692175ea8fe2dd5b04fad4a492dc8ce48767dd07d88fd11a0847ce96749d5
+  landed_main_commit: null (topic-branch mode)
+
+Verdict 04 Decision 4 still requires Claude Fable 5 on the Air to repeat the
+two-fresh-checkout proof against the final Review Request 05 checkpoint. This
+Windows evidence does not self-issue that approval.
