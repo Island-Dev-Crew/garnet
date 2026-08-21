@@ -79,8 +79,11 @@ RustSec advisory, the incompatible sole non-yanked `0.3.4`, and the reviewed
 lockfile checksum.
 
 Follow-up lane: remove this exact exception when BLAKE3's dependency moves to
-a satisfiable non-yanked arrayref release. Do not broaden the exception and do
-not rewrite `Cargo.lock` merely to suppress registry-state evidence.
+a satisfiable non-yanked arrayref release or when the upstream registry reverses
+the yank. The reviewing seat observed that reversal upstream on `2026-08-20`,
+so the exception is presently inert and is retained only as a timestamped,
+narrow, non-widening allowance. Do not broaden the exception and do not rewrite
+`Cargo.lock` merely to suppress registry-state evidence.
 
 ## Native verification
 
