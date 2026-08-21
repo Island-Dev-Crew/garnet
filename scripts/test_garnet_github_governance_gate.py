@@ -990,6 +990,9 @@ class GovernanceGateTests(unittest.TestCase):
             parameters["dismissal_restriction"],
             {"enabled": False, "allowed_actors": []},
         )
+        self.assertIs(
+            parameters["require_extra_approval_for_unattributed_changes"], True
+        )
         self.assertEqual(parameters["required_reviewers"], [])
 
         client, _ = self.live_client(payload)
@@ -1007,9 +1010,7 @@ class GovernanceGateTests(unittest.TestCase):
         self.assertEqual(result.problems, ())
         self.assertEqual(len(result.bindings), 31)
 
-    def test_live_ruleset_additive_api_fields_fail_closed_when_nonempty_or_enabled(
-        self,
-    ) -> None:
+    def test_live_ruleset_additive_api_fields_fail_closed_when_weakened(self) -> None:
         mutations = {
             "dismissal-enabled": lambda parameters: parameters[
                 "dismissal_restriction"
@@ -1020,6 +1021,12 @@ class GovernanceGateTests(unittest.TestCase):
             "required-reviewer": lambda parameters: parameters[
                 "required_reviewers"
             ].append({"reviewer_id": 1, "reviewer_type": "Team"}),
+            "extra-approval-absent": lambda parameters: parameters.pop(
+                "require_extra_approval_for_unattributed_changes"
+            ),
+            "extra-approval-disabled": lambda parameters: parameters.__setitem__(
+                "require_extra_approval_for_unattributed_changes", False
+            ),
         }
         for case, mutate in mutations.items():
             with self.subTest(case=case):
