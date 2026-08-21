@@ -276,7 +276,7 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
       - uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c
         with:
-          toolchain: stable
+          toolchain: 1.98.0
           components: clippy
       - uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25
         with:

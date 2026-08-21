@@ -40,12 +40,14 @@ credentials.
 
 Cargo `rust-version = "1.95"` is the single workspace MSRV. Every active
 workspace member inherits that value; the excluded Studio backend and parser
-fuzz workspace declare it directly. Ordinary CI continues to track moving
-stable, while the existing required CI and Studio contexts also compile under
-exact Rust 1.95.0. Do not add a `rust-toolchain.toml` pin or raise the floor
-without updating every active manifest, current public/contributor surface,
-the existing required workflow checks, and this contract in one Jon-reviewed
-change.
+fuzz workspace declare it directly. Ordinary CI jobs other than Clippy
+continue to track moving stable, while the existing required CI and Studio
+contexts also compile under exact Rust 1.95.0. The `clippy` job is pinned to
+Rust 1.98.0 because it enforces `-D warnings`; changing that compiler is a
+reviewed workflow-policy change rather than an ambient toolchain event. Do not
+add a `rust-toolchain.toml` pin or raise the floor without updating every
+active manifest, current public/contributor surface, the existing required
+workflow checks, and this contract in one Jon-reviewed change.
 
 Run `python3 -I scripts/test_garnet_msrv_status.py` and
 `python3 -I scripts/garnet_msrv_status.py --gate` after changing a Rust
