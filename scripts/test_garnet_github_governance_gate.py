@@ -978,6 +978,67 @@ class GovernanceGateTests(unittest.TestCase):
         self.assertIn(("object", "rulesets/18936562"), calls)
         self.assertIn(("object", "actions/permissions/workflow"), calls)
 
+    def test_live_ruleset_additive_api_fields_preserve_exact_policy(self) -> None:
+        payload = self.payload()
+        pull_request = next(
+            row
+            for row in payload["ruleset"]["rules"]
+            if row.get("type") == "pull_request"
+        )
+        parameters = pull_request["parameters"]
+        self.assertEqual(
+            parameters["dismissal_restriction"],
+            {"enabled": False, "allowed_actors": []},
+        )
+        self.assertIs(
+            parameters["require_extra_approval_for_unattributed_changes"], True
+        )
+        self.assertEqual(parameters["required_reviewers"], [])
+
+        client, _ = self.live_client(payload)
+        result = gate.collect_live_governance_status(
+            self.policy,
+            reviewed_head=REVIEWED_HEAD,
+            token="explicit-admin-token",
+            now=NOW,
+            include_admin=True,
+            transport_factory=lambda _repository, _token: client,
+            root=ROOT,
+        )
+        self.assertTrue(result.ok, result.problems)
+        self.assertTrue(result.policy_equal)
+        self.assertEqual(result.problems, ())
+        self.assertEqual(len(result.bindings), 31)
+
+    def test_live_ruleset_additive_api_fields_fail_closed_when_weakened(self) -> None:
+        mutations = {
+            "dismissal-enabled": lambda parameters: parameters[
+                "dismissal_restriction"
+            ].__setitem__("enabled", True),
+            "dismissal-actor": lambda parameters: parameters[
+                "dismissal_restriction"
+            ]["allowed_actors"].append({"actor_id": 1, "actor_type": "Team"}),
+            "required-reviewer": lambda parameters: parameters[
+                "required_reviewers"
+            ].append({"reviewer_id": 1, "reviewer_type": "Team"}),
+            "extra-approval-absent": lambda parameters: parameters.pop(
+                "require_extra_approval_for_unattributed_changes"
+            ),
+            "extra-approval-disabled": lambda parameters: parameters.__setitem__(
+                "require_extra_approval_for_unattributed_changes", False
+            ),
+        }
+        for case, mutate in mutations.items():
+            with self.subTest(case=case):
+                payload = self.payload()
+                pull_request = next(
+                    row
+                    for row in payload["ruleset"]["rules"]
+                    if row.get("type") == "pull_request"
+                )
+                mutate(pull_request["parameters"])
+                self.assert_red(self.evaluate(payload), "live ruleset policy mismatch")
+
     def test_activated_32_policy_and_live_collector_are_exactly_supported(self) -> None:
         payload = self.payload32()
         result = gate._evaluate(

@@ -185,7 +185,7 @@
       "workflow": ".github/workflows/ci.yml",
       "event": "pull_request",
       "job": "clippy",
-      "semantic_sha256": "d359659af6c4914d1418a7b89a5366ecc03d7c8c92c70f61062b233ae48cb93f"
+      "semantic_sha256": "672340724e6120bcacc08e787b1e22c599133db98404a326c7c7b0092f4f21f0"
     },
     {
       "context": "machine-truth drift guard",

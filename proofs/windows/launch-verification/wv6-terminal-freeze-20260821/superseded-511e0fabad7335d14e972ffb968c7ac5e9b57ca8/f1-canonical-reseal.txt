@@ -1,0 +1,69 @@
+GARNET LANE 2B F1 CURE EVIDENCE
+implementer: Codex GPT-5.6 Sol
+reviewer: Claude Code Fable 5 (independent reviewer, MacBook Air)
+captured_utc: 2026-07-19T18:30:48Z
+cure_commit: a6f0da2b81a9b181dafb83e15a17f8f313406e49
+pull_refs_fetched: 0
+
+SA-2 ATTRIBUTE CURE
+before at reviewer tip f00a902:
+  garnet-interp-v0.3/src/prelude.rs: text: unspecified; eol: unspecified
+after at cure commit a6f0da2:
+  garnet-interp-v0.3/src/prelude.rs: text: set; eol: lf
+  examples/minimum-shelf-flagship/SHELF_PACKAGE.json: text: set; eol: lf
+  examples/minimum-shelf-flagship/tool.seal.json: text: set; eol: lf
+
+The manifest audit found exactly one include_str! input whose bytes feed the
+seal build manifest: garnet_interp::PRELUDE_SOURCE from
+garnet-interp-v0.3/src/prelude.rs. A committed unit trap now rejects any
+compiled PRELUDE_SOURCE containing CR bytes.
+
+SA-4 CLEAN REBUILD AND RESEAL
+clean build A:
+  cargo clean
+  cargo build -p garnet-cli
+  garnet seal examples/minimum-shelf-flagship/tool.garnet --out <seal-a>
+clean build B:
+  cargo clean
+  cargo build -p garnet-cli
+  garnet seal examples/minimum-shelf-flagship/tool.garnet --out <seal-b>
+
+seal-a equals seal-b: true
+seal-b equals committed tool.seal.json: true
+bytes: 1185; CR: 0; LF: 22
+SHA-256: 526ac0f63f8ac487f6c38fd947defe1b80e1c3c14d80e3cfb38f5a66355b9cbd
+BLAKE3: 6913c59afbb93e737c5e87d507d7f66b786a71668c0f85288bf636bbc3433696
+old prelude_hash: 652a0ea8197581b2172cd2455fa3c2c4c6c98cd417d2a6343a1bac4f00cd8a18
+canonical prelude_hash: df4f1648cf79ea77d0842fd1cb8725aba82be1b2631d5a906952640f9a25cc6d
+
+Only prelude_hash changed inside the predicate. The exact tooling honesty text
+remains: "not installed — predicate emitted UNSIGNED; install cosign to attest".
+Cargo.lock did not change.
+
+FRESH LF CHECKOUT GREEN
+path: C:/garnet-lane2b-lf-f1-20260719
+source: fresh integration-upstream clone, exact cure commit fetched from the
+  local implementer branch because the trust-companion series was not yet pushable
+core.autocrlf: false
+head: a6f0da2b81a9b181dafb83e15a17f8f313406e49
+prelude bytes: 10038; CR: 0; LF: 270
+fresh cargo clean: yes
+sealed positive: 1 passed; 0 failed
+native stdio: 2 passed; 0 failed
+negative traps: 6 passed; 0 failed
+pull refs: 0
+
+FRESH DEFAULT-WINDOWS CHECKOUT GREEN
+path: C:/garnet-lane2b-win-f1-green-20260719
+source: fresh --no-local clone of the exact local implementer branch
+core.autocrlf: true
+head: a6f0da2b81a9b181dafb83e15a17f8f313406e49
+prelude bytes: 10038; CR: 0; LF: 270
+sealed positive: 1 passed; 0 failed
+native stdio: 2 passed; 0 failed
+negative traps: 6 passed; 0 failed
+pull refs: 0
+
+GREEN: F1 is cured at a6f0da2. The same reviewed package and seal accept on
+canonical LF and default Windows checkouts; every prior rejection trap remains
+strict. This evidence promotes no WV-6 or reporter status.
