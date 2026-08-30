@@ -334,7 +334,7 @@ trust surface is explicit: GitHub's authenticity and completeness at capture,
 the bounded transport and credential, predecessor-base producer correctness,
 the independent review layer, Jon's merge, Git object integrity, and SHA-256.
 A later clone can reverify the committed bytes and main relationships but
-cannot prove retrospectively that GitHub's historical response was honest.
+cannot prove retrospectively that GitHub's historical response was faithful.
 Forge loss after a valid anchor is non-authoritative; omission, contradiction,
 or loss before anchoring is RED.
 
@@ -1282,7 +1282,7 @@ result is correct and must not be rewritten as accepted by this brief.
 
 1. Does R1 bind the complete native root, `H/R/B/Q/M`, exact source and landing
    trees, and current head without self-reference or backdating, while pricing
-   the quiescent-base restriction honestly?
+   the quiescent-base restriction plainly?
 2. Does the effectiveness schema capture complete authenticated review and
    pagination evidence at establishment, route every byte through predecessor
    trust law, terminate without `Q_E/M_E`, and leave only the stated residual
@@ -1321,7 +1321,7 @@ result is correct and must not be rewritten as accepted by this brief.
 12. Are all native manifests, artifact members, proof mirrors, reviews,
     preserved bundles, certificates, effectiveness receipts, and historical
     records byte-exact and append-only?
-13. Does the unique-tip/registry law prevent false acceptance while honestly
+13. Does the unique-tip/registry law prevent false acceptance while plainly
     exposing the denial-of-service lever, and is suffix/registry routing live
     under old-base law before any first entry?
 14. Does R5 preserve only what is proved across squash and record succession,
