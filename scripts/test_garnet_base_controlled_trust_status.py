@@ -165,6 +165,54 @@ class BaseControlledTrustTests(unittest.TestCase):
             "protected workflow bytes",
         )
 
+    def test_git_candidate_accepts_valid_workflows_across_adapter_loads(self) -> None:
+        code, raw_head = status._git(ROOT, "rev-parse", "--verify", "HEAD^{commit}")
+        self.assertEqual(code, 0)
+        head = raw_head.decode("ascii").strip()
+        rolling = SimpleNamespace(
+            schema=status.REVIEW_SCHEMA,
+            ok=True,
+            base_commit=head,
+            head_commit=head,
+            reviewed_head=head,
+            reviewed_tree="c" * 40,
+            content_digest="sha256:" + "d" * 64,
+            problems=[],
+        )
+        temporary_directory = status.tempfile.TemporaryDirectory
+
+        def rooted_temporary_directory(*args: object, **kwargs: object) -> object:
+            kwargs["dir"] = ROOT
+            return temporary_directory(*args, **kwargs)
+
+        with mock.patch.object(
+            status.tempfile,
+            "TemporaryDirectory",
+            side_effect=rooted_temporary_directory,
+        ), mock.patch.object(status, "_rolling_review_adapter", return_value=rolling):
+            result = status.evaluate_git_candidate(
+                root=ROOT,
+                candidate_repo=ROOT,
+                repository=status.REPOSITORY,
+                pull_request=507,
+                base_commit=head,
+                candidate_commit=head,
+                token="test-only",
+            )
+
+        self.assertTrue(result.ok, result.problems)
+        self.assertTrue(result.candidate_policy_ok, result.problems)
+
+    def test_duplicated_yaml_identities_both_reject_invalid_roots(self) -> None:
+        first = load("garnet_workflow_yaml_policy")
+        second = load("garnet_workflow_yaml_policy")
+        self.assertIsNot(first.WorkflowMapping, second.WorkflowMapping)
+        for policy in (first, second):
+            with self.subTest(module=policy.__name__), self.assertRaisesRegex(
+                policy.YamlPolicyError, "workflow root must be a mapping"
+            ):
+                policy._document(b"- invalid\n")
+
     def test_review_token_is_explicit_stdin_only_and_never_rendered(self) -> None:
         secret = b"review-token-value"
         with mock.patch.dict(
