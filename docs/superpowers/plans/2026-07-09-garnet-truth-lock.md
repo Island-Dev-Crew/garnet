@@ -445,7 +445,7 @@ git add scripts/garnet_launch_readiness_status.py \
 git commit -m "feat(readiness): add canonical launch ledger"
 ```
 
-Expected: all verification passes while the launch gate stays honestly red.
+Expected: all verification passes while the launch gate stays explicitly red.
 Build dogfood evidence, open a PR, wait for full CI, and merge.
 
 ---

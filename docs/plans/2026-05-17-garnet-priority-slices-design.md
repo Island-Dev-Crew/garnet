@@ -22,9 +22,9 @@ is under heavy concurrent agent load (~40 PRs/day, `docs/index.html` edited
 - Coordination convention lands **first** (de-risks all later slices).
 - Phone `+1 256-652-5534` goes in **SECURITY.md only**, not the public site.
   Email `jon-isaac@islanddevcrew.com` is the primary security contact.
-- Toolchain-management copy uses **honest "planned" framing** (no fake commands).
+- Toolchain-management copy uses **truth-matched "planned" framing** (no fake commands).
 - Every slice is its own dogfood PR: branch from fresh `origin/main` → change →
-  verify → Desktop dogfood bundle → PR → merge → next. Honest/deferred-boundary
+  verify → Desktop dogfood bundle → PR → merge → next. Explicit/deferred-boundary
   language throughout. Small, reviewable, project micro-slice discipline.
 
 ## Approach (chosen)
@@ -43,7 +43,7 @@ unaddressed during the run).
    phase letter. Verification: unit test for the script; doc rule present.
 2. **MIT readiness Windows/Linux lane.** `garnet_windows_linux_studio_status.py`
    landed in #163 but `garnet_mit_readiness_status.py` still has no Windows/
-   Linux distribution lane (headline stuck at 58.6%). Add the lane, honestly
+   Linux distribution lane (headline stuck at 58.6%). Add the lane, explicitly
    scored from the status script. Verification: `test_garnet_mit_readiness_status.py`.
 3. **Contact truth (P0-4).** SECURITY.md: replace placeholder with
    `jon-isaac@islanddevcrew.com` + the phone as a voice/SMS disclosure line.
@@ -52,7 +52,7 @@ unaddressed during the run).
    state Rust 1.75+ needed only for source; explicit supported-arch matrix
    (no Intel-mac/arm-linux/Windows binary in v0.4.2 → source); documented
    `shasum -c SHA256SUMS` verify step.
-5. **Toolchain section (P0-1, honest).** "Managed by reinstall today;
+5. **Toolchain section (P0-1, truth-matched).** "Managed by reinstall today;
    `garnet update`, stable/nightly channels, `garnet self uninstall` are
    PLANNED, not available."
 6. **Getting-started page (P0-3).** `docs/getting-started.html` walking

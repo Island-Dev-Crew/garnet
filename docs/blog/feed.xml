@@ -24,11 +24,11 @@
     <summary>Release notes for v0.5.0: six blocking slices, finer readiness accounting, and the research-grade boundary preserved.</summary>
   </entry>
   <entry>
-    <title>Garnet v0.4.2, and the case for honest accounting</title>
-    <id>https://garnet-lang.org/blog/2026-05-19-v0-4-2-and-honest-accounting.html</id>
-    <link href="https://garnet-lang.org/blog/2026-05-19-v0-4-2-and-honest-accounting.html"/>
+    <title>Garnet v0.4.2, and the case for evidence accounting</title>
+    <id>https://garnet-lang.org/blog/2026-05-19-v0-4-2-and-evidence-accounting.html</id>
+    <link href="https://garnet-lang.org/blog/2026-05-19-v0-4-2-and-evidence-accounting.html"/>
     <updated>2026-05-19T23:00:00Z</updated>
     <published>2026-05-19T23:00:00Z</published>
-    <summary>Why a readiness number can go down on purpose when the measurement becomes more honest.</summary>
+    <summary>Why a readiness number can go down on purpose when the measurement moves closer to current truth.</summary>
   </entry>
 </feed>

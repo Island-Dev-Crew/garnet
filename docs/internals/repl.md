@@ -44,7 +44,7 @@ caps.
 
 ## `:caps` — the authority surface (declared, not enforced)
 
-`:caps` prints two honest sections: the capabilities the **loaded functions
+`:caps` prints two evidence-scoped sections: the capabilities the **loaded functions
 declare** (`@caps(...)`), and the **available primitives grouped by the
 capability each requires**.
 

@@ -13,7 +13,7 @@ built for the code agents write and humans accept.</strong></p>
   <a href="https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.8.1">Release <!-- truth:latest_tag -->v0.8.1<!-- /truth --> · signed binaries</a> ·
   <a href="LICENSE">MIT OR Apache-2.0</a> ·
   <a href="https://garnet-lang.org">garnet-lang.org</a> ·
-  <a href="https://garnet-lang.org/status.html">Honest status</a> ·
+  <a href="https://garnet-lang.org/status.html">Verified today / Still open</a> ·
   <a href="C_Language_Specification/GARNET_v1_0_Mini_Spec.md">Mini-Spec v1.0</a> ·
   <a href="FAQ.md">FAQ</a>
 </p>
@@ -129,7 +129,7 @@ garnet build --deterministic --sign my.key src/main.garnet
 garnet verify src/main.garnet src/main.garnet.manifest.json --signature
 ```
 
-## Honest status
+## Verified today / Still open
 
 Garnet is a **research-grade prototype (<!-- truth:latest_tag -->v0.8.1<!-- /truth -->), not
 production-complete** — and this README will never tell you otherwise.
@@ -144,7 +144,7 @@ production-complete** — and this README will never tell you otherwise.
 | Rust / Ruby / Python / Go migration assistant with lineage + `@sandbox` audit gate | Browser playground; package registry beyond stub |
 
 The full ledger lives in [CURRENT_STATE.md](CURRENT_STATE.md); the readiness detail lives on
-[the status page](https://garnet-lang.org/status.html). The honest scorecard for the research
+[the status page](https://garnet-lang.org/status.html). The evidence scorecard for the research
 claims: 4 supported, 2 partial, 0 refuted, 1 pending-infra
 ([seven papers](A_Research_Papers/)).
 

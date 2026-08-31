@@ -72,7 +72,7 @@ but transitively calls `fs::read_file` which requires it</code></pre>
 
   <h2>Why this matters more now</h2>
 
-  <p>AI agents write more of the code every month, and the honest bottleneck has moved to
+  <p>AI agents write more of the code every month, and the real bottleneck has moved to
   review. A reviewer staring at a 4,000-line agent-authored diff cannot hold every line in
   their head — but they can hold one question: <em>did this change grow what the code is
   allowed to do?</em> Because every function carries its budget, Garnet's
@@ -91,7 +91,7 @@ but transitively calls `fs::read_file` which requires it</code></pre>
   <code>@caps</code> straight to WASI scopes and engine fuel. That synergy is one reason the
   backend decision leans integrate-don't-rebuild.</p>
 
-  <h2>The honest boundaries</h2>
+  <h2>Verified today / Still open</h2>
 
   <p>Garnet is a research-grade prototype, and this post claims exactly what the gates prove:
   <code>@caps</code> and <code>@max_depth</code> trap deterministically on both backends;

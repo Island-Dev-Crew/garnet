@@ -73,7 +73,7 @@ Add a repo path input and explicit buttons for preflight, Python install, CLI bu
 
 Write an HTML handoff with judge/auditor rows for product fit, security, command contract, evidence, Windows UX, test coverage, and Mac continuation.
 
-## Phase 1: Dead-Weight And Honesty Cleanup
+## Phase 1: Dead-Weight And Truth Cleanup
 
 **Purpose:** Apply the dossier's "clear the dead weight" recommendation without breaking command coverage.
 
@@ -94,7 +94,7 @@ Write an HTML handoff with judge/auditor rows for product fit, security, command
 
 ## Phase 3: Velocity Editor
 
-**Purpose:** Give Studio a daily-use authoring loop while staying honest about current diagnostic precision.
+**Purpose:** Give Studio a daily-use authoring loop while keeping claims matched to current diagnostic precision.
 
 - [ ] Add a buffer-backed editor path that runs `garnet check --format json` with debounce.
 - [ ] Render diagnostics from JSON. Use exact spans when present; otherwise anchor to line/function and say so.
@@ -103,7 +103,7 @@ Write an HTML handoff with judge/auditor rows for product fit, security, command
 
 ## Phase 4: Enforced/Declared Legend
 
-**Purpose:** Turn calibrated honesty into a UI invariant.
+**Purpose:** Turn calibrated claim discipline into a UI invariant.
 
 - [ ] Generate enforced/declared status from repo source or a CLI-reported map, not from hand-written HTML.
 - [ ] Badge `@caps` and `@max_depth` as enforced only where trap evidence exists.

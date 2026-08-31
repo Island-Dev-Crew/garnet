@@ -35,7 +35,7 @@
   <p>The <code>garnet convert</code> tool is a migration assistant, not a full transpiler: it reads four deterministic source lanes and emits sandboxed Garnet with lineage, metrics, and a human migration checklist.</p>
 
   <h2>Why the surface is split</h2>
-  <p>The broader converter surface is honest by design: active conversion for the languages with deterministic frontends, advisory planning for broader source, native boundaries where low-level fidelity matters, and future Garnet-to-Wasm/LLVM-style lowering when backend evidence exists.</p>
+  <p>The broader converter surface is explicit by design: active conversion for the languages with deterministic frontends, advisory planning for broader source, native boundaries where low-level fidelity matters, and future Garnet-to-Wasm/LLVM-style lowering when backend evidence exists.</p>
   <p>Active languages are low-friction migration lanes with stable frontends. Advisory languages get risk-first planning until deterministic support lands. Native-boundary languages are best represented as explicit modules or FFI with CapCaps and sandbox policy.</p>
 
   <h2>The direct-conversion fit rule</h2>

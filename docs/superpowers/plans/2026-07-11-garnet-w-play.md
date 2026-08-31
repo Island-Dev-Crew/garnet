@@ -24,7 +24,7 @@ an authority diff in under 30 seconds, in-browser, nothing to install.
 - Every claim ships with its trap: the playground page may not say "runs in
   your browser" until a Playwright test proves a browser executed Garnet
   source and rendered its real output.
-- The static-gallery honesty note stays until the moment live execution is
+- The static-gallery truth note stays until the moment live execution is
   proven, then the page states the new truth (recorded outputs replaced by
   live execution; the gallery examples become live starter programs).
 - No tag, release, CI-policy, or launch action; those stay Jon-only.
@@ -83,7 +83,7 @@ an authority diff in under 30 seconds, in-browser, nothing to install.
    `garnet diff-caps` (declared surface only; no bounds-delta claim).
 3. The 30-second path: page load → visible starter → one edit → visible
    authority diff. Playwright asserts the full path under a stopwatch budget.
-4. Honesty swap: remove the static-preview badge ONLY in the same PR that
+4. Truth swap: remove the static-preview badge ONLY in the same PR that
    proves live execution; page states what runs locally in-browser vs what
    remains CLI-only (`@caps` enforcement at runtime remains the CLI story;
    the playground demonstrates check-time surface diffs truthfully).

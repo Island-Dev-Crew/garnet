@@ -3,7 +3,7 @@
 How to verify the integrity — and, when signing is enabled, the authenticity — of a
 downloaded Garnet release.
 
-> **Honest status (2026-06-07).** Every release ships a `SHA256SUMS` manifest
+> **Verified today / Still open (2026-06-07).** Every release ships a `SHA256SUMS` manifest
 > (integrity). **The release signing key is now configured** (`GPG_SIGNING_KEY` is
 > set), and the public key is published at
 > [`docs/garnet-release-signing.pub.asc`](garnet-release-signing.pub.asc) with
@@ -72,4 +72,4 @@ against `SHA256SUMS`.
    ```
 3. Cut (or re-cut) a release tag. The `release` job in
    `.github/workflows/linux-packages.yml` signs `SHA256SUMS → SHA256SUMS.asc` when the
-   secret is present, and publishes an honest `::notice::` (unsigned) when it is not.
+   secret is present, and publishes an explicit `::notice::` (unsigned) when it is not.
