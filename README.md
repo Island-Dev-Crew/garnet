@@ -98,6 +98,8 @@ and aimed at agent-authored code:
 - **Typed actors** — bounded mailboxes, compiler-checked protocols, Ed25519-signed hot-reload
   with BLAKE3 schema fingerprints.
 
+[GitHub's language bar](https://api.github.com/repos/Island-Dev-Crew/garnet/languages) counted this repository as **38.7% Python** at the 2026-08-31 `f6d3285` main snapshot because the trust and verification harness is Python; the product compiler and runtime are Rust.
+
 ## Install
 
 ```sh
