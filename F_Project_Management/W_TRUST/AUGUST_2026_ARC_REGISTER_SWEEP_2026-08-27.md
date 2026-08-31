@@ -469,3 +469,11 @@ heat-check record §VII.2.
 This record lives under `F_Project_Management/W_TRUST/**`, which is both
 product-digest-excluded (`FROZEN_MUTABLE_PREFIXES`) and an enumerated
 record-class surface, so this tip moves no frozen pair and buys no ceremony.
+
+## Venue refresh
+
+- 2026-08-30: venue refreshed with this record-class commit after the WV-6
+  truth-expectation cure landed on main as #531 (`133fcfda…`). Cause: the
+  prior firing ran against the pre-cure base, whose stale test expectation
+  blocked every candidate's required contexts. A fresh event is the only
+  sanctioned refresh; no re-run was used.
