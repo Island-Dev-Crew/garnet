@@ -1,0 +1,30 @@
+{
+  "author_emails": [
+    "email:jon-isaac@islanddevcrew.com"
+  ],
+  "author_ids": [
+    275140286
+  ],
+  "base_commit": "586a64174cea05c1a5e238d04987cb80ba1a3f7b",
+  "blocking_findings": [],
+  "content_digest": "sha256:bd002239280f09819b6806344408315b5493cc42dec38ba680c037d9c4b23753",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 4403337114,
+  "pull_request_number": 533,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head e162dda4067bccdfa76ba05d379d1bd2f54a2313 and does not extend or backdate reviewed_head coverage. Claude Fable 5 cross-family seat verdict: CONFIRM-WITH-FINDINGS, zero blockers, at e162dda4067bccdfa76ba05d379d1bd2f54a2313; void if the head moves before the record commit. Fresh-clone recomputation verified main 586a64174cea05c1a5e238d04987cb80ba1a3f7b, two candidate commits (red test 3ee7d87f, cure e162dda4), and exactly the two touched paths scripts/garnet_base_controlled_trust_status.py and scripts/test_garnet_base_controlled_trust_status.py. The cure closes registered finding U-39 by identity-stable loading: _candidate_workflow_snapshot now receives the schema module's own yaml_policy object instead of loading a second module copy, so snapshot nodes and the schema validator share one class identity; every nominal policy predicate is byte-unchanged, and the evaluator still loads all policy from its own base directory, so the base-controlled principle (candidate evaluated as inert git objects by base-owned code) is preserved and no candidate influence is introduced. Fail-closed paths verified: snapshot problems surface when projection is absent; schema-load failure produces a problem line; object problems override. TDD evidence recomputed: at the red-test commit the suite fails with the twelve workflow-root identity cascade exactly as reported; at the cure tip 6/6. The negative test proves duplicated module identities BOTH still reject an invalid root, so the cure cannot mask a real policy failure. Companion suites recomputed at the tip: workflow yaml policy OK, workflow schema policy OK, content provenance OK, agent contracts 24, WV suite OK with WV-6 partial as current truth. The rolling gate's own output at the tip binds these touched paths and content digest with sole problem structured review record is missing. The first Base-controlled firing on PR 533 correctly stayed RED: the pull_request_target workflow checks out github.event.pull_request.base.sha and executes the base reporter, so the cure is invisible to its own gate by design (verified in .github/workflows/base-controlled-trust.yml); the observed green arrives on the first pull request after this cure lands, and the 31-to-32 activation should wait for that observed green. FINDINGS, none blocking: first, a yaml-policy load failure inside the snapshot path now reports under the generic base schema adapter failed line, a U-53-family message conflation, routed to the L4 swallowing cure. Second, the implementing prompt's expectation that Base-controlled would flip green at the candidate was a reviewer-seat mechanics error corrected by the implementer's stop-and-report; recorded for the corrections ledger as an asserted-without-reading-the-contract instance against the reviewing seat's prompt authorship. Standards and mechanism axes otherwise report no actionable findings.",
+  "review_state": "APPROVED",
+  "reviewed_head": "e162dda4067bccdfa76ba05d379d1bd2f54a2313",
+  "reviewed_tree": "b328e93a0daf09155116a82d1a71fec532c8ef32",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "scripts/garnet_base_controlled_trust_status.py",
+    "scripts/test_garnet_base_controlled_trust_status.py"
+  ],
+  "verdict": "pass"
+}
