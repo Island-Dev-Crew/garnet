@@ -100,3 +100,13 @@ POINTS, including DP7's requirement that the standing deny-policy row be
 removed or re-ruled before Class A may be ratified. Implementation,
 activation, approval, and merge are separate acts, none performed by the
 reviewing seat.
+
+## Venue refresh
+
+- 2026-08-30: venue refreshed with this record-class commit after the WV-6
+  truth-expectation cure landed on main as #531 (`133fcfda…`). Cause: the
+  prior firing ran against the pre-cure base, whose stale test expectation
+  blocked every candidate's required contexts. A fresh event is the only
+  sanctioned refresh; no re-run was used. The verdict above bound the brief
+  content at `a47af844…`; that content is untouched by this appended
+  operational note.
