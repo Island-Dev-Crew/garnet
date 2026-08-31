@@ -162,6 +162,7 @@ claims: 4 supported, 2 partial, 0 refuted, 1 pending-infra
 [Mini-Spec v1.0](C_Language_Specification/GARNET_v1_0_Mini_Spec.md) ·
 [Conformance matrix](C_Language_Specification/GARNET_v0_4_2_Conformance_Matrix.md) ·
 [Capability model](FAQ.md#whats-the-capability-model) ·
+[CRA Article 14 positioning](https://garnet-lang.org/cra-article-14.html) ·
 [Script walkthroughs](docs/internals/script-walkthroughs.md) ·
 [Research papers](A_Research_Papers/) ·
 [Blog](https://garnet-lang.org/blog/)

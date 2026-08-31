@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Garnet and the CRA Article 14 moment</title>
+<meta name="description" content="Evidence-first positioning for Garnet as the Cyber Resilience Act's Article 14 reporting obligations begin to apply. Positioning, not a compliance or launch claim.">
+<meta name="theme-color" content="#9C2B2E">
+<link rel="canonical" href="https://garnet-lang.org/cra-article-14.html">
+<style>
+  :root{--bg:#0A0A0F;--bg-soft:#121218;--garnet:#9C2B2E;--garnet-2:#B0303A;--gold:#E5C07B;--ink:#E8E8E8;--ink-soft:#C8C8D0;--ink-muted:#8990A8;--rule:#3A3A45;--green:#77C59A;--serif:'Georgia','Source Serif Pro',serif;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,system-ui,sans-serif;--mono:'SF Mono','Menlo','Consolas',monospace;--maxw:820px;}
+  *,*::before,*::after{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.7;-webkit-font-smoothing:antialiased}
+  a{color:var(--gold);text-decoration:none}a:hover{text-decoration:underline}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:64px 24px 96px}
+  .top{font-family:var(--mono);font-size:12px;letter-spacing:.07em;color:var(--ink-muted);margin-bottom:38px}
+  .top a{color:var(--ink-muted)}.top a:hover{color:var(--gold)}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.11em;text-transform:uppercase;color:var(--gold)}
+  h1{font-family:var(--serif);font-size:clamp(40px,7vw,66px);line-height:1.02;margin:10px 0 18px}
+  .dek{font-family:var(--serif);font-size:22px;line-height:1.45;color:var(--ink-soft);max-width:720px}
+  h2{font-family:var(--serif);font-size:27px;margin:52px 0 12px;color:var(--gold);border-bottom:1px solid var(--rule);padding-bottom:8px}
+  h3{font-size:17px;margin:0 0 6px;color:var(--ink)}
+  p,li{color:var(--ink-soft)}
+  code{background:#18181B;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:.9em;color:var(--ink)}
+  .notice{margin:30px 0;padding:18px 20px;border:1px solid var(--rule);border-left:4px solid var(--garnet-2);background:var(--bg-soft)}
+  .notice strong{color:var(--ink)}
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:20px}
+  .card{border:1px solid var(--rule);border-radius:10px;background:var(--bg-soft);padding:20px}
+  .card ul{margin:10px 0 0;padding-left:20px}.card li{margin:8px 0}
+  .verified h3{color:var(--green)}.open h3{color:var(--gold)}
+  .sequence{counter-reset:step;list-style:none;padding:0;margin:20px 0}
+  .sequence li{counter-increment:step;position:relative;padding:0 0 20px 52px}
+  .sequence li::before{content:counter(step);position:absolute;left:0;top:0;width:30px;height:30px;border:1px solid var(--gold);border-radius:50%;display:grid;place-items:center;color:var(--gold);font-family:var(--mono);font-size:12px}
+  .sources{font-size:14px}.sources li{margin:8px 0}
+  .cta{margin-top:42px;display:flex;gap:12px;flex-wrap:wrap}.cta a{border:1px solid var(--rule);border-radius:7px;padding:9px 14px;font-family:var(--mono);font-size:13px}.cta .primary{background:var(--garnet);border-color:var(--garnet);color:#fff}
+  .foot{border-top:1px solid var(--rule);margin-top:54px;padding-top:20px;color:var(--ink-muted);font-size:13px;text-align:center}
+  @media(max-width:680px){.grid{grid-template-columns:1fr}.wrap{padding-top:38px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="top"><a href="/index.html">← garnet-lang.org</a> &nbsp;·&nbsp; <a href="/why">Why Garnet</a> &nbsp;·&nbsp; <a href="/status.html">Status</a> &nbsp;·&nbsp; <a href="https://github.com/Island-Dev-Crew/garnet">GitHub ↗</a></div>
+
+  <header>
+    <div class="eyebrow">Positioning note · August 2026</div>
+    <h1>The Article 14 moment is an evidence problem.</h1>
+    <p class="dek">On September 11, 2026, the EU Cyber Resilience Act's Article 14 reporting obligations begin to apply. The clock changes first; the harder work is knowing what changed, what authority moved, and which evidence survives scrutiny.</p>
+  </header>
+
+  <div class="notice"><strong>Positioning, not launch.</strong> Garnet is a research-grade v0.x project. It is not a CRA compliance product, legal advice, a conformity assessment, or a promise tied to September 11. No delivery date is implied here.</div>
+
+  <section>
+    <h2>What Article 14 puts on the clock</h2>
+    <p>Article 14 covers actively exploited vulnerabilities and severe security incidents for products in scope. Its early-warning deadline is no later than 24 hours after awareness; the next notification is due no later than 72 hours after awareness. The final-report timetable differs between vulnerabilities and incidents. Full application of the Regulation follows on December 11, 2027.</p>
+    <p>That is a reporting duty, not a language feature. But it sharpens a question software teams already have: when code changes faster than a person can reread it, what can the organization prove about the authority that changed?</p>
+  </section>
+
+  <section>
+    <h2>Garnet's position</h2>
+    <p>Garnet treats authority as reviewable program data. <code>garnet check</code> verifies declared capability budgets across the registered surface, while <code>garnet diff-caps</code> reduces a large source change to its authority delta. The aim is not to declare a product compliant. It is to make the acceptance record smaller, sharper, and harder for the author to fake.</p>
+    <p>The proposed <code>garnet build --evidence</code> path is <strong>under construction</strong>. No such build flag exists in the shipping CLI. Today's runnable pieces are <code>garnet caps</code>, <code>garnet diff-caps</code>, and <code>garnet seal</code>; the seal records the declared surface, but it does not rerun the checker.</p>
+  </section>
+
+  <section>
+    <h2>Verified today / Still open</h2>
+    <div class="grid">
+      <article class="card verified">
+        <h3>Verified today</h3>
+        <ul>
+          <li><code>@caps</code> and <code>@max_depth</code> have deterministic traps on the interpreter and VM, with cross-OS trap parity recorded.</li>
+          <li>The <code>garnet</code> CLI runtime-gates the bounded host-authority set named in the capability scope table.</li>
+          <li>Linux seccomp application is proven through the external reference harness.</li>
+        </ul>
+      </article>
+      <article class="card open">
+        <h3>Still open</h3>
+        <ul>
+          <li><code>garnet build --evidence</code> remains under construction under W-SHIP.</li>
+          <li>The named checker-only, declared-only, unbridged, and caps-invisible fences are not runtime enforcement.</li>
+          <li>macOS and Windows OS-sandbox application, regulatory validation, and production readiness remain unproven.</li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <h2>The ceremony is part of the position</h2>
+    <p>Evidence only matters if its author cannot grade it into acceptance. Garnet's repository keeps implementation, independent review, the structured record, carrier approval, re-evaluation, and merge as separate acts. A head move voids the earlier verdict; a missing record stays red. That discipline is the differentiator: not a generated PDF, but a chain in which every claim has a trap and every acceptance has a named decision-maker.</p>
+    <ol class="sequence">
+      <li><strong>Declare.</strong> Name the authority the program is meant to hold.</li>
+      <li><strong>Trap.</strong> Test the bounded enforcement surface and preserve the red cases.</li>
+      <li><strong>Review.</strong> Bind independent judgment to exact bytes, head, and tree.</li>
+      <li><strong>Accept.</strong> Let the accountable carrier decide; do not let the producer self-promote.</li>
+    </ol>
+    <p>That position follows the existing register and ceremony rail ([U-32](https://github.com/Island-Dev-Crew/garnet/blob/main/ops/lane1/review/04-request.md), [U-33](https://github.com/Island-Dev-Crew/garnet/blob/main/ops/lane1/review/04-request-addendum-u33.md)). It does not upgrade either finding or claim that the open work has shipped.</p>
+  </section>
+
+  <section>
+    <h2>Primary sources and scope</h2>
+    <ul class="sources">
+      <li><a href="https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R2847">Regulation (EU) 2024/2847</a>, Articles 14 and 71(2).</li>
+      <li><a href="https://digital-strategy.ec.europa.eu/en/factpages/cyber-resilience-act-implementation">European Commission implementation timeline</a>.</li>
+      <li><a href="https://digital-strategy.ec.europa.eu/en/policies/cra-reporting">European Commission CRA reporting guidance</a>.</li>
+      <li><a href="https://github.com/Island-Dev-Crew/garnet/blob/main/C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md">Garnet capability enforcement scope</a>.</li>
+    </ul>
+  </section>
+
+  <div class="cta">
+    <a class="primary" href="https://github.com/Island-Dev-Crew/garnet">Inspect the repository →</a>
+    <a href="/why">Read the case for Garnet</a>
+  </div>
+
+  <div class="foot">© 2026 Island Development Crew · Garnet is dual-licensed MIT OR Apache-2.0 · No legal or compliance advice</div>
+</main>
+</body>
+</html>
