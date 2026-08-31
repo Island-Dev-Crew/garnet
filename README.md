@@ -39,6 +39,12 @@ authority budget, the checker verifies declared budgets transitively, and `diff-
 
 Safe by default. Fast when needed. Joyful always.
 
+## Origin
+
+Garnet started with a question: what should a language look like when a machine writes the code but a human still has to accept it? The spark was DHH's [“DHH's new way of writing code”](https://newsletter.pragmaticengineer.com/p/dhhs-new-way-of-writing-code) on The Pragmatic Engineer, published April 8, 2026; thought became machine across March–April 2026.
+
+The loop closed publicly on August 26, 2026, with Lex Fridman Podcast [#501 — “DHH: Future of Programming, AI, Agentic Engineering, Vibe Coding & Linux”](https://lexfridman.com/dhh-2/). Garnet is the experiment between those two conversations: make authority visible to the person accepting agent-written code, then make the traps match the claim ([U-72](F_Project_Management/W_TRUST/AUGUST_2026_ARC_REGISTER_SWEEP_2026-08-27.md#u-72--origin-record-correction-the-spark-was-dhh-on-the-pragmatic-engineer)).
+
 ## Sixty seconds of Garnet
 
 ```garnet
