@@ -1,0 +1,311 @@
+
+### README.md
+  <a href="https://garnet-lang.org/status.html">Verified today / Still open</a> ·
+## Origin
+Garnet began with a question: if a machine writes the code, what must the human accepting it be able to verify? DHH supplied the spark in [DHH’s new way of writing code](https://newsletter.pragmaticengineer.com/p/dhhs-new-way-of-writing-code) on The Pragmatic Engineer, published April 8, 2026. The idea moved from thought to machine around March-April 2026.
+The loop closed publicly on August 26, 2026, with Lex Fridman Podcast [#501 – DHH: Future of Programming, AI, Agentic Engineering, Vibe Coding & Linux](https://lexfridman.com/dhh-2/). Those two conversations bracket Garnet's origin: make authority visible to the person accepting agent-written code, then make the traps match the claim ([U-72](F_Project_Management/W_TRUST/AUGUST_2026_ARC_REGISTER_SWEEP_2026-08-27.md#u-72--origin-record-correction-the-spark-was-dhh-on-the-pragmatic-engineer)).
+[GitHub's language bar](https://api.github.com/repos/Island-Dev-Crew/garnet/languages) counted this repository as **38.7% Python** at the 2026-08-31 `f6d3285` main snapshot because the trust and verification harness is Python; the product compiler and runtime are Rust.
+## Verified today / Still open
+| Capability-bounded acceptance demo: agent code accepted *and refused* on evidence, sealed | **Under construction:** `garnet build --evidence` (W-SHIP; no shipping CLI flag); independent verification of the self-found red-team fix |
+[the status page](https://garnet-lang.org/status.html). The evidence scorecard for the research
+[CRA Article 14 positioning](https://garnet-lang.org/cra-article-14.html) ·
+
+### docs/blog/2026-05-19-v0-4-2-and-evidence-accounting.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Garnet v0.4.2, and the case for evidence accounting — Garnet Blog</title>
+<meta name="description" content="v0.4.2 is live: the tracked implementation ledger is 87/87, and the MIT readiness pulse went DOWN to 55.8% — on purpose. Why a decreasing number is a feature.">
+<meta name="theme-color" content="#9C2B2E">
+<link rel="canonical" href="https://garnet-lang.org/blog/2026-05-19-v0-4-2-and-evidence-accounting.html">
+<meta property="og:title" content="Garnet v0.4.2, and the case for evidence accounting">
+<meta property="og:description" content="The implementation ledger is 87/87; the MIT pulse went down to 55.8% on purpose. Why.">
+<meta property="og:type" content="article">
+<style>
+  :root{--bg:#0A0A0F;--bg-soft:#121218;--bg-code:#18181B;--garnet:#9C2B2E;--garnet-2:#B0303A;--gold:#E5C07B;--ink:#E8E8E8;--ink-soft:#C8C8D0;--ink-muted:#6272A4;--rule:#3A3A45;--code-fg:#F8F8F2;--serif:'Georgia','Source Serif Pro',serif;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,system-ui,sans-serif;--mono:'SF Mono','Menlo','Consolas',monospace;--maxw:760px;}
+  *,*::before,*::after{box-sizing:border-box;}html,body{margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.75;-webkit-font-smoothing:antialiased;}
+  a{color:var(--gold);text-decoration:none;}a:hover{color:var(--garnet-2);}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:60px 24px 96px;}
+  .top{font-family:var(--mono);font-size:12px;letter-spacing:.07em;color:var(--ink-muted);margin-bottom:34px;}
+  .top a{color:var(--ink-muted);}.top a:hover{color:var(--gold);}
+  .meta{font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--gold);margin-bottom:10px;}
+  h1{font-family:var(--serif);font-size:38px;line-height:1.18;margin:0 0 22px;}
+  h2{font-family:var(--serif);font-size:23px;margin:42px 0 8px;}
+  p{color:var(--ink-soft);}
+  strong{color:var(--ink);}
+  code{background:var(--bg-code);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:.88em;color:var(--code-fg);}
+  blockquote{margin:24px 0;padding:10px 0 10px 18px;border-left:2px solid var(--garnet);color:var(--ink);font-family:var(--serif);font-size:18px;}
+  .foot{border-top:1px solid var(--rule);margin-top:56px;padding-top:20px;color:var(--ink-muted);font-size:13px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><a href="/index.html">← garnet-lang.org</a> &nbsp;·&nbsp; <a href="/blog/">Blog</a> &nbsp;·&nbsp; <a href="https://github.com/Island-Dev-Crew/garnet" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div>
+  <article>
+  <div class="meta">2026-05-19 · Release &amp; engineering</div>
+  <h1>Garnet v0.4.2, and the case for evidence accounting</h1>
+  <p><strong>v0.4.2 is live.</strong> The release — checksum-verified macOS Apple-Silicon tarball, Linux <code>.deb</code>/<code>.rpm</code>, and <code>SHA256SUMS</code> — was published on 2026-05-15 and the universal installer pulls and verifies it end to end. You can install it in about a minute: see <a href="/getting-started.html">Getting Started</a>, or the <a href="https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.4.2" target="_blank" rel="noopener noreferrer">v0.4.2 release</a>.</p>
+  <p>That is the easy half of this post. Here is the more interesting half.</p>
+  <h2>Two numbers that point in opposite directions</h2>
+  <p>Garnet now tracks two different progress signals, and in this cycle they moved in opposite directions:</p>
+  <p>The <strong>tracked implementation ledger is 87/87 (100%)</strong>. Every slice in the v0.5 readiness plan — parser parity, managed runtime, the actor/Sendable bridge, safe-mode ownership hardening, trait/generic coherence, Memory Core, and the release/installer gates — has executable evidence and is checked off. That is real, and it is verifiable: <code>python3 scripts/garnet_readiness_status.py</code>.</p>
+  <p>The <strong>MIT readiness pulse went down — from 58.6% to 55.8%</strong>.</p>
+  <p>A headline number went down in a release announcement. That deserves an explanation because it is the central fact on this page.</p>
+  <h2>Why the number dropped</h2>
+  <p>The MIT pulse is meant to estimate distance to a genuinely production-grade, MIT-quality language and toolchain — not distance to "the current sprint is done." The Windows and Linux distribution lane (signed installers, native packaging beyond the current assets, platform smoke beyond the tarball path) was real, mostly open work that the aggregate simply <em>was not counting</em>. Adding it to the denominator lowered the percentage.</p>
+  <p>We could have left it uncounted and watched the number drift up. We didn't, because a metric you curate upward is not a metric — it is marketing with a progress bar. The evidence-matched move was to make the lane visible and let the aggregate fall to where the truth actually is.</p>
+  <blockquote>The implementation ledger answers "did we finish what we scoped?" The MIT pulse answers "how far is this from something you'd bet a company on?" Both are true at once. Conflating them is how research prototypes get oversold.</blockquote>
+  <h2>What "research-grade prototype" keeps meaning</h2>
+  <p>Garnet v0.4.2 is a <strong>research-grade prototype, not a production-complete language</strong>. Signed macOS <code>.pkg</code> and Windows MSI artifacts are not built yet. The compiler-as-agent memory work, native backend, mechanized proofs, and empirical validation are open research lanes, not shipped guarantees. The site says so in the comparison table's last row, on the install page, and now here. That framing will not soften as the numbers climb — it is part of the contract with anyone evaluating this.</p>
+  <h2>What actually shipped</h2>
+  <p>Beyond the release itself: the public site was rebuilt for current truth and first-run success — a prerequisite/checksum callout, a Rust-vs-Ruby-vs-Garnet positioning table, a real first-project terminal (the output is captured, not faked), a <a href="/getting-started.html">Getting Started</a> walkthrough, an explicit Community section (no Discord theater), and accessibility/SEO basics. Every change went through the same dogfood-readiness gate the language uses on itself.</p>
+  <p>If you want the pulse of the project between posts, the <a href="https://github.com/Island-Dev-Crew/garnet/commits/main" target="_blank" rel="noopener noreferrer">commit history</a> and <a href="https://github.com/Island-Dev-Crew/garnet/releases" target="_blank" rel="noopener noreferrer">releases</a> are the ground truth. This blog will carry the narrative ones — and it will keep reporting numbers that occasionally go down.</p>
+  </article>
+  <div class="foot">© 2026 Island Development Crew · Garnet is dual-licensed MIT OR Apache-2.0 · <a href="https://garnet-lang.org">garnet-lang.org</a> · <a href="/blog/">More posts</a></div>
+</div>
+</body>
+</html>
+
+### docs/blog/2026-05-19-v0-4-2-and-honest-accounting.html
+<title>Article moved — Garnet Blog</title>
+<link rel="canonical" href="https://garnet-lang.org/blog/2026-05-19-v0-4-2-and-evidence-accounting.html">
+<meta http-equiv="refresh" content="0; url=2026-05-19-v0-4-2-and-evidence-accounting.html">
+<p>This article moved to <a href="2026-05-19-v0-4-2-and-evidence-accounting.html">Garnet v0.4.2, and the case for evidence accounting</a>.</p>
+
+### docs/blog/drafts/what-caps-is-DRAFT.html
+  <p>AI agents write more of the code every month, and the real bottleneck has moved to
+  <h2>Verified today / Still open</h2>
+
+### docs/blog/feed.xml
+    <title>Garnet v0.4.2, and the case for evidence accounting</title>
+    <id>https://garnet-lang.org/blog/2026-05-19-v0-4-2-and-evidence-accounting.html</id>
+    <link href="https://garnet-lang.org/blog/2026-05-19-v0-4-2-and-evidence-accounting.html"/>
+    <summary>Why a readiness number can go down on purpose when the measurement moves closer to current truth.</summary>
+
+### docs/blog/index.html
+    <h2><a href="2026-05-19-v0-4-2-and-evidence-accounting.html">Garnet v0.4.2, and the case for evidence accounting</a></h2>
+
+### docs/blog/posts/2026-05-20-garnet-v0-5-substance-over-surface.html
+  <p><strong>S1</strong> added the Language Server Protocol MVP: parser/checker diagnostics, hover, and basic go-to-definition through <code>garnet-lsp/</code> plus the VSCode extension launcher in <code>editors/vscode/</code>. Verified today: source-present with protocol smoke evidence, local standalone VS Code diagnostic proof, and release-backed GitHub VSIX diagnostic proof on this Mac. Marketplace/OpenVSX publication, the full manual hover/go-to-definition screenshot trio, safe-mode hover, workspace symbols, rename, and CST-grade incremental precision remain deferred.</p>
+  <blockquote>Paper VI scorecard: "4 supported, 2 partial (downgraded to match proof), 0 refuted, 1 pending-infra"</blockquote>
+    <li>the M5 installer path explicitly fell back from the unavailable unsigned <code>.pkg</code> to the aarch64 macOS tarball and verified SHA-256;</li>
+
+### docs/blog/posts/2026-05-20-why-garnet-exists.html
+  <p>"Rust rigor, Ruby velocity" is the elevator pitch, and the record says it is also the marketing hook. The thing that makes Garnet worth building isn't the reconciliation; the reconciliation is the entry door. The thing that makes Garnet worth building is what's behind the door.</p>
+  <p>The claim discipline holds. The MIT/productization pulse from <code>scripts/garnet_mit_readiness_status.py</code> is <strong>71.3% across 19 lanes</strong> — up from 55.8%, and now measured at a finer grain that includes the gates v0.4.2 wasn't measuring. Apple Developer ID notarization, Marketplace/OpenVSX publication, Windows/Linux desktop runtime proof, the <code>garnet add</code> manifest spec (S3), and the actor OS-thread bridge (S7) all remain explicitly open and labeled. S4 and S6 have landed, but S6 is a measured policy-benchmark lane, not a production allocator claim. <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md">The slice contracts</a> say so in their own statuses.</p>
+
+### docs/conversion-policy.html
+  <p>The broader converter surface is explicit by design: active conversion for the languages with deterministic frontends, advisory planning for broader source, native boundaries where low-level fidelity matters, and future Garnet-to-Wasm/LLVM-style lowering when backend evidence exists.</p>
+
+### docs/cra-article-14.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Garnet and the CRA Article 14 moment</title>
+<meta name="description" content="Evidence-first positioning for Garnet as the Cyber Resilience Act's Article 14 reporting obligations begin to apply. Positioning, not a compliance or launch claim.">
+<meta name="theme-color" content="#9C2B2E">
+<link rel="canonical" href="https://garnet-lang.org/cra-article-14.html">
+<style>
+  :root{--bg:#0A0A0F;--bg-soft:#121218;--garnet:#9C2B2E;--garnet-2:#B0303A;--gold:#E5C07B;--ink:#E8E8E8;--ink-soft:#C8C8D0;--ink-muted:#8990A8;--rule:#3A3A45;--green:#77C59A;--serif:'Georgia','Source Serif Pro',serif;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,system-ui,sans-serif;--mono:'SF Mono','Menlo','Consolas',monospace;--maxw:820px;}
+  *,*::before,*::after{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.7;-webkit-font-smoothing:antialiased}
+  a{color:var(--gold);text-decoration:none}a:hover{text-decoration:underline}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:64px 24px 96px}
+  .top{font-family:var(--mono);font-size:12px;letter-spacing:.07em;color:var(--ink-muted);margin-bottom:38px}
+  .top a{color:var(--ink-muted)}.top a:hover{color:var(--gold)}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.11em;text-transform:uppercase;color:var(--gold)}
+  h1{font-family:var(--serif);font-size:clamp(40px,7vw,66px);line-height:1.02;margin:10px 0 18px}
+  .dek{font-family:var(--serif);font-size:22px;line-height:1.45;color:var(--ink-soft);max-width:720px}
+  h2{font-family:var(--serif);font-size:27px;margin:52px 0 12px;color:var(--gold);border-bottom:1px solid var(--rule);padding-bottom:8px}
+  h3{font-size:17px;margin:0 0 6px;color:var(--ink)}
+  p,li{color:var(--ink-soft)}
+  code{background:#18181B;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:.9em;color:var(--ink)}
+  .notice{margin:30px 0;padding:18px 20px;border:1px solid var(--rule);border-left:4px solid var(--garnet-2);background:var(--bg-soft)}
+  .notice strong{color:var(--ink)}
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:20px}
+  .card{border:1px solid var(--rule);border-radius:10px;background:var(--bg-soft);padding:20px}
+  .card ul{margin:10px 0 0;padding-left:20px}.card li{margin:8px 0}
+  .verified h3{color:var(--green)}.open h3{color:var(--gold)}
+  .sequence{counter-reset:step;list-style:none;padding:0;margin:20px 0}
+  .sequence li{counter-increment:step;position:relative;padding:0 0 20px 52px}
+  .sequence li::before{content:counter(step);position:absolute;left:0;top:0;width:30px;height:30px;border:1px solid var(--gold);border-radius:50%;display:grid;place-items:center;color:var(--gold);font-family:var(--mono);font-size:12px}
+  .sources{font-size:14px}.sources li{margin:8px 0}
+  .cta{margin-top:42px;display:flex;gap:12px;flex-wrap:wrap}.cta a{border:1px solid var(--rule);border-radius:7px;padding:9px 14px;font-family:var(--mono);font-size:13px}.cta .primary{background:var(--garnet);border-color:var(--garnet);color:#fff}
+  .foot{border-top:1px solid var(--rule);margin-top:54px;padding-top:20px;color:var(--ink-muted);font-size:13px;text-align:center}
+  @media(max-width:680px){.grid{grid-template-columns:1fr}.wrap{padding-top:38px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="top"><a href="/index.html">← garnet-lang.org</a> &nbsp;·&nbsp; <a href="/why">Why Garnet</a> &nbsp;·&nbsp; <a href="/status.html">Status</a> &nbsp;·&nbsp; <a href="https://github.com/Island-Dev-Crew/garnet">GitHub ↗</a></div>
+  <header>
+    <div class="eyebrow">Positioning note · August 2026</div>
+    <h1>Article 14 starts a clock. Evidence has to keep up.</h1>
+    <p class="dek">The EU Cyber Resilience Act's Article 14 reporting obligations begin to apply on September 11, 2026. The deadline is concrete. So is the question behind it: what changed, what authority moved, and what can the producer prove?</p>
+  </header>
+  <div class="notice"><strong>Positioning, not launch.</strong> Garnet is a research-grade v0.x project. It is not a CRA compliance product, legal advice, a conformity assessment, or a promise tied to September 11. No delivery date is implied here.</div>
+  <section>
+    <h2>What Article 14 puts on the clock</h2>
+    <p>Article 14 covers actively exploited vulnerabilities and severe security incidents for products in scope. Its early-warning deadline is no later than 24 hours after awareness; the next notification is due no later than 72 hours after awareness. The final-report timetable differs between vulnerabilities and incidents. Full application of the Regulation follows on December 11, 2027.</p>
+    <p>That is a reporting duty, not a language feature. It does sharpen a question software teams already face: when code changes faster than a person can reread it, what can the organization prove about the authority that changed?</p>
+  </section>
+  <section>
+    <h2>Garnet's position</h2>
+    <p>Garnet treats authority as reviewable program data. <code>garnet check</code> verifies declared capability budgets across the registered surface. <code>garnet diff-caps</code> reduces a large source change to its declared-capability delta. Neither command makes a product compliant; they make the acceptance record smaller and harder for the author to fake.</p>
+    <p>The proposed <code>garnet build --evidence</code> path is <strong>under construction</strong>. No such build flag exists in the shipping CLI. Today's runnable pieces are <code>garnet caps</code>, <code>garnet diff-caps</code>, and <code>garnet seal</code>; the seal records the declared surface, but it does not rerun the checker.</p>
+  </section>
+  <section>
+    <h2>Verified today / Still open</h2>
+    <div class="grid">
+      <article class="card verified">
+        <h3>Verified today</h3>
+        <ul>
+          <li><code>@caps</code> and <code>@max_depth</code> have deterministic traps on the interpreter and VM, with cross-OS trap parity recorded.</li>
+          <li>The <code>garnet</code> CLI runtime-gates the bounded host-authority set named in the capability scope table.</li>
+          <li>Linux seccomp application is proven through the external reference tests.</li>
+        </ul>
+      </article>
+      <article class="card open">
+        <h3>Still open</h3>
+        <ul>
+          <li><code>garnet build --evidence</code> remains under construction under W-SHIP.</li>
+          <li>The named checker-only, declared-only, unbridged, and caps-invisible fences are not runtime enforcement.</li>
+          <li>macOS and Windows OS-sandbox application, regulatory validation, and production readiness remain unproven.</li>
+        </ul>
+      </article>
+    </div>
+  </section>
+  <section>
+    <h2>Why the review ceremony matters</h2>
+    <p>Evidence only matters if its author cannot grade it into acceptance. Garnet's repository keeps implementation, independent review, the structured record, carrier approval, re-evaluation, and merge as separate acts. A content change voids the earlier verdict; sanctioned record-only succession does not extend what was reviewed; a missing record stays red. Those separations matter more than the format of an evidence bundle. A generated PDF does not prove acceptance. A useful chain ties each claim to a trap and each acceptance to its decision-maker.</p>
+    <ol class="sequence">
+      <li><strong>Declare.</strong> Name the authority the program is meant to hold.</li>
+      <li><strong>Trap.</strong> Test the bounded enforcement surface and preserve the red cases.</li>
+      <li><strong>Review.</strong> Bind independent judgment to exact bytes, head, and tree.</li>
+      <li><strong>Accept.</strong> Let the accountable carrier decide; do not let the producer self-promote.</li>
+    </ol>
+    <p>That position follows the existing register and ceremony rail ([U-32](https://github.com/Island-Dev-Crew/garnet/blob/main/ops/lane1/review/04-request.md), [U-33](https://github.com/Island-Dev-Crew/garnet/blob/main/ops/lane1/review/04-request-addendum-u33.md)). It does not upgrade either finding or claim that the open work has shipped.</p>
+  </section>
+  <section>
+    <h2>Primary sources and scope</h2>
+    <ul class="sources">
+      <li><a href="https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R2847">Regulation (EU) 2024/2847</a>, Articles 14 and 71(2).</li>
+      <li><a href="https://digital-strategy.ec.europa.eu/en/factpages/cyber-resilience-act-implementation">European Commission implementation timeline</a>.</li>
+      <li><a href="https://digital-strategy.ec.europa.eu/en/policies/cra-reporting">European Commission CRA reporting guidance</a>.</li>
+      <li><a href="https://github.com/Island-Dev-Crew/garnet/blob/main/C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md">Garnet capability enforcement scope</a>.</li>
+    </ul>
+  </section>
+  <div class="cta">
+    <a class="primary" href="https://github.com/Island-Dev-Crew/garnet">Inspect the repository →</a>
+    <a href="/why">Read the case for Garnet</a>
+  </div>
+  <div class="foot">© 2026 Island Development Crew · Garnet is dual-licensed MIT OR Apache-2.0 · No legal or compliance advice</div>
+</main>
+</body>
+</html>
+
+### docs/funding.html
+<meta name="description" content="How Garnet is funded today and how to support or commercially engage with it. Current truth for a pre-revenue, single-maintainer project.">
+  <p><strong>GitHub Sponsors</strong> — <em>planned, not yet set up</em>. It is listed here so the open state is explicit; there is no Sponsors page to link until it exists.</p>
+  <p>Still open: maintainer time. Garnet is research-grade and the binding constraint is engineering hours toward the open lanes (signed installers, native backend, proof and empirical work) — not infrastructure cost. No promises are attached to any contribution.</p>
+
+### docs/garnet-super-prompt-pack.html
+<header class="wrap"><div class="kicker">Safe prompt operations · July 2026</div><h1>Fable-Safe Super Prompt Pack</h1><p class="lead">A tested process for using Fable, Claude, Codex, and human reviewers on Garnet without turning prompt rewriting into a bypass layer or letting launch copy outrun proof.</p><div class="toc"><a href="#answer">Improve or downgrade?</a><a href="#preamble">Preamble</a><a href="#prompts">Prompts</a><a href="#archive">Archive synthesis</a></div></header>
+<section id="answer"><h2>Does this improve the skill?</h2><div class="grid"><div class="card"><strong>Improves it</strong><p>When used as a scoped defensive/product review process for Jon's owned Garnet repo, public docs, and local tests.</p></div><div class="card"><strong>Does not bypass</strong><p>It preserves the original safety core: no hidden intent, exploit payloads, credential theft, evasion, intrusive scanning, or invented access.</p></div><div class="card"><strong>Raises the bar</strong><p>Every prompt demands evidence, stop conditions, claim discipline, and explicit verification status.</p></div></div><div class="notice"><strong>Core rule:</strong> Garnet can be poked hard, but only inside authorized defensive boundaries. A failed gate reported with exact evidence is success. Fake green is failure.</div></section>
+
+### docs/getting-started.html
+  <p class="note">Garnet is a research-grade prototype (v0.x.x), not a production-complete language. This page is the verified happy path; the <a href="/index.html#install">install section</a> covers per-OS specifics and fallbacks.</p>
+
+### docs/governance.html
+<meta name="description" content="How decisions are made in Garnet today: a single maintainer under Island Development Crew, changes via PR + review, explicit about the absence of a formal RFC process.">
+  <h2>Verified today / Still open</h2>
+
+### docs/index.html
+      <span style="font-size:.95rem;color:var(--ink-soft)">The full case for a capability-typed language in the agent era &mdash; ten reasons, the nearest neighbor, and the verified limits and open work.</span>
+    <cite>— Positioning, evidence-matched: integration over pillar-by-pillar novelty</cite>
+    <h2>Rust, Ruby, Garnet — <span class="accent">side by side, claim by claim.</span></h2>
+    <p class="lead">Garnet is not claiming to replace either parent. This table is positioning, not a benchmark: where each language sits, and what Garnet's dual-mode design buys you. The last row stays tied to current evidence.</p>
+      Today, update by re-running the universal installer (it replaces the installed binary), or <code>git pull</code> then <code>cargo install --path .</code> for a source build. A first-class toolchain manager — <code>garnet update</code>, <code>stable</code>/<code>nightly</code> channels, and <code>garnet self uninstall</code> — is <strong>planned and not yet available</strong>. This section will change when it ships; it is listed here so the roadmap stays explicit, not so the commands look real.
+    <h2>The work, the proofs, the <span class="accent">evidence scorecard</span>.</h2>
+        <p>Seven novel contributions, pre-registered Phase 1C, executed Phase 4A. Evidence scorecard: 4 supported, 2 partial, 0 refuted, 1 pending-infra.</p>
+    <p class="lead">Garnet is early and the community surface states the current truth. <strong>GitHub Discussions are live</strong> as of v0.5.0 — that's where design conversations, show &amp; tell, and RFCs happen. A Discord/chat server is not — chat will only appear here when contributor volume sustains it.</p>
+
+### docs/internals/repl.md
+`:caps` prints two evidence-scoped sections: the capabilities the **loaded functions
+
+### docs/ladder.html
+<li>Findings are documented with exact file:line evidence and severity.</li>
+
+### docs/minispec.html
+Paper VI §C5 for the explicit distinction between v3.2's shipped behavior
+</html>
+
+### docs/plans/2026-05-17-garnet-priority-slices-design.md
+- Toolchain-management copy uses **truth-matched "planned" framing** (no fake commands).
+  verify → Desktop dogfood bundle → PR → merge → next. Explicit/deferred-boundary
+   Linux distribution lane (headline stuck at 58.6%). Add the lane, explicitly
+5. **Toolchain section (P0-1, truth-matched).** "Managed by reinstall today;
+
+### docs/plans/2026-05-17-garnet-priority-slices.md
+**Goal:** Land the gap-analysis P0/P1/P2 backlog plus a phase-collision convention and an MIT Windows/Linux lane as a sequence of small, truth-matched, individually-merged dogfood PRs.
+**Architecture:** Each slice = branch from fresh `origin/main` → minimal change → local verify → Desktop dogfood bundle with verified `MANIFEST.sha256` → PR via `Navigata1` fork → squash-merge → re-sync → next. Truth-matched/"planned" language everywhere; CI `dogfood-readiness` gate must stay green. Website file is `docs/index.html` (GitHub Pages → garnet-lang.org); it changes ~hourly so rebase immediately before each push.
+- Modify: `scripts/test_garnet_mit_readiness_status.py` (assert the new lane row exists and is scored against current evidence)
+**Steps:** failing test for a "Windows/Linux distribution" lane row → run FAIL → implement lane (status/percent derived from the windows-linux status script; mark blocked/deferred sub-items explicitly, do not inflate the headline) → run PASS → commit.
+### Task 5: Toolchain management section (P0-1, truth-matched)
+**PR title:** "Install: truth-matched toolchain-management (planned) section".
+8a Rust/Ruby/Garnet comparison table section (8–10 evidence-scoped axes).
+- MIT readiness shows a Windows/Linux lane (evidence-derived score).
+
+### docs/release-signing.md
+> **Verified today / Still open (2026-06-07).** Every release ships a `SHA256SUMS` manifest
+   secret is present, and publishes an explicit `::notice::` (unsigned) when it is not.
+
+### docs/sitemap.xml
+  <url><loc>https://garnet-lang.org/blog/2026-05-19-v0-4-2-and-evidence-accounting.html</loc></url>
+  <url><loc>https://garnet-lang.org/cra-article-14.html</loc></url>
+
+### docs/status.html
+    <p class="lead">S4 is now a merged, verified formatter baseline: deterministic whitespace, line-ending, and terminal-newline normalization enforced by integration tests. It is useful today, but it is not yet a full semantic pretty-printer.</p>
+
+### docs/stdlib.html
+<meta name="description" content="Current Garnet standard-library primitive registry with arity, capability requirements, and verified scope boundaries.">
+
+### docs/superpowers/plans/2026-05-15-garnet-studio-macos.md
+- [x] **Step 1: Update status docs against current truth**
+
+### docs/superpowers/plans/2026-06-28-studio-bootstrap-runner.md
+## Phase 1: Dead-Weight And Truth Cleanup
+**Purpose:** Give Studio a daily-use authoring loop while keeping claims matched to current diagnostic precision.
+**Purpose:** Turn calibrated claim discipline into a UI invariant.
+
+### docs/superpowers/plans/2026-07-09-garnet-truth-lock.md
+def test_native_linux_lanes_are_committed_and_evidence_matched(self) -> None:
+Expected: all verification passes while the launch gate stays explicitly red.
+
+### docs/superpowers/plans/2026-07-11-garnet-w-play.md
+- The static-gallery truth note stays until the moment live execution is
+4. Truth swap: remove the static-preview badge ONLY in the same PR that
+
+### docs/why.html
+          <span class="thesis-line">Regulated buyers don't want vibes. <code>garnet build --evidence</code> is <span class="ink">under construction</span>, not in the CLI today, and is designed to turn compliance into a compiler artifact.</span>
+          <p><code>garnet build --evidence</code> is under construction; the shipping CLI has no such build flag. The proposed command would emit a <span class="gold">Verifiable Evidence Bundle</span> with the build: what this code is capable of, what it is incapable of, and the capability declarations those facts derive from. Producing that record can take weeks of document review today. The design is to make it a compiler command that runs on every build.</p>
+          <p>That remains construction work. Today's runnable commands are <code>garnet caps</code>, <code>garnet diff-caps</code>, and <code>garnet seal</code>. No authority without evidence; no evidence without a check that proves it.</p>
+          <span class="claim construction">Claim class · under construction · W&#8209;SHIP deferral; no shipping build flag</span>
+          <span class="layer-a"><strong>Authority.</strong> Garnet. Capability declarations are checked by <code>garnet check</code>, with deterministic enforcement proven today on the bounded surface below. That proof is not yet wired into <code>garnet build</code>. Delegation is designed to attenuate, and the evidence flag remains under construction. Structural, not sampled.</span>
+      <p class="layermap-note">Tests are empirical: they check behaviors someone thought to check. Capabilities are structural: they are built to bound behaviors nobody thought of. A swarm can pass every test in the suite while holding authority it never needed; no green checkmark speaks to that. That is why <code>garnet check</code> runs <em>inside</em> your CI, whoever's runners it uses. A faster pipeline checks the declared envelope more often. Automated evidence regeneration remains under construction.</p>
+    <!-- THE STATED OBJECTION -->
+    <article class="thesis objection" id="stated-objection">
+          <span class="thesis-name">The Stated Objection</span>
+      <div class="thesis-body" id="body-objection" role="region" aria-label="The stated objection, expanded">
+          <p>We think that feeling is sampling error — confidence in the runs you've seen, extended to the runs you haven't. For teams whose auditors, regulators, or customers accept "we felt confident" as an answer, adopting Garnet early is a judgment call. For teams where that answer is inadmissible, it isn't. Either way, we'd rather you hear the objection from us, priced against the evidence, than discover it in a postmortem.</p>
+      <div class="reason" id="point-7"><div class="rn">7</div><div><p class="rh">Garnet is the substrate under the tooling, not a rival to it</p><p class="rb">Garnet code carries a declared capability surface that reviewers can inspect and diff. That is narrower than MCP&#8209;host enforcement: today the deterministic traps proven across both backends are <code>@caps</code> and <code>@max_depth</code>; Linux seccomp is the only proven OS&#8209;sandbox application, and the remaining named fences are declared, not enforced.</p></div></div>
+      <div class="reason" id="point-8"><div class="rn">8</div><div><p class="rh">Regulation raises the evidence question</p><p class="rb">The EU Cyber Resilience Act's Article 14 reporting obligations begin to apply on September 11, 2026. That reporting clock makes a practical question harder to avoid: when software changes quickly, what can its producer prove about the change? The under-construction <code>garnet build --evidence</code> flag is meant to make that record part of a build; it is not in the CLI today.</p></div></div>
+      <div class="cv reg"><h3>Regulation, on a verified clock</h3><p>On <b>September 11, 2026</b>, the EU Cyber Resilience Act's Article 14 reporting obligations begin to apply. For actively exploited vulnerabilities and severe security incidents, the early warning is due within 24 hours of awareness and the next notification within 72 hours; final reports follow separate rules. Most of the Regulation applies from December 11, 2027. <a href="/cra-article-14.html">Read the bounded CRA positioning.</a></p><span class="src">verified · European Commission, digital-strategy.ec.europa.eu (CRA, Reg. EU 2024/2847)</span></div>
+      <h3>Verified today / Still open</h3>
+        <li><b>This is a narrower, sharper need than a grand vision.</b> Garnet is the trust substrate and enforcement layer for agent&#8209;authored and agent&#8209;granted authority — the thing beneath MCP, the under-construction <code>--evidence</code> layer, the swarm&#8209;delegation primitive — not a general&#8209;purpose better&#8209;Python humans adopt for pleasure.</li>
+          <p>The complete five-probe record, commands, counts, verified scope, and open fences live in the <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/F_Project_Management/GARNET_CROSS_OS_REPRODUCIBILITY.md">cross-OS reproducibility ledger</a>.</p>

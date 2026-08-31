@@ -159,7 +159,7 @@ non-WSL Linux assistance request.
 - [ ] **Step 4: Write failing MIT reporter tests**
 
 ```python
-def test_native_linux_lanes_are_committed_and_honest(self) -> None:
+def test_native_linux_lanes_are_committed_and_evidence_matched(self) -> None:
     status = status_mod.read_status()
     lanes = {lane.id: lane for lane in status.lanes}
 

@@ -43,8 +43,8 @@
 
   <header>
     <div class="eyebrow">Positioning note · August 2026</div>
-    <h1>The Article 14 moment is an evidence problem.</h1>
-    <p class="dek">On September 11, 2026, the EU Cyber Resilience Act's Article 14 reporting obligations begin to apply. The clock changes first; the harder work is knowing what changed, what authority moved, and which evidence survives scrutiny.</p>
+    <h1>Article 14 starts a clock. Evidence has to keep up.</h1>
+    <p class="dek">The EU Cyber Resilience Act's Article 14 reporting obligations begin to apply on September 11, 2026. The deadline is concrete. So is the question behind it: what changed, what authority moved, and what can the producer prove?</p>
   </header>
 
   <div class="notice"><strong>Positioning, not launch.</strong> Garnet is a research-grade v0.x project. It is not a CRA compliance product, legal advice, a conformity assessment, or a promise tied to September 11. No delivery date is implied here.</div>
@@ -52,12 +52,12 @@
   <section>
     <h2>What Article 14 puts on the clock</h2>
     <p>Article 14 covers actively exploited vulnerabilities and severe security incidents for products in scope. Its early-warning deadline is no later than 24 hours after awareness; the next notification is due no later than 72 hours after awareness. The final-report timetable differs between vulnerabilities and incidents. Full application of the Regulation follows on December 11, 2027.</p>
-    <p>That is a reporting duty, not a language feature. But it sharpens a question software teams already have: when code changes faster than a person can reread it, what can the organization prove about the authority that changed?</p>
+    <p>That is a reporting duty, not a language feature. It does sharpen a question software teams already face: when code changes faster than a person can reread it, what can the organization prove about the authority that changed?</p>
   </section>
 
   <section>
     <h2>Garnet's position</h2>
-    <p>Garnet treats authority as reviewable program data. <code>garnet check</code> verifies declared capability budgets across the registered surface, while <code>garnet diff-caps</code> reduces a large source change to its authority delta. The aim is not to declare a product compliant. It is to make the acceptance record smaller, sharper, and harder for the author to fake.</p>
+    <p>Garnet treats authority as reviewable program data. <code>garnet check</code> verifies declared capability budgets across the registered surface. <code>garnet diff-caps</code> reduces a large source change to its declared-capability delta. Neither command makes a product compliant; they make the acceptance record smaller and harder for the author to fake.</p>
     <p>The proposed <code>garnet build --evidence</code> path is <strong>under construction</strong>. No such build flag exists in the shipping CLI. Today's runnable pieces are <code>garnet caps</code>, <code>garnet diff-caps</code>, and <code>garnet seal</code>; the seal records the declared surface, but it does not rerun the checker.</p>
   </section>
 
@@ -69,7 +69,7 @@
         <ul>
           <li><code>@caps</code> and <code>@max_depth</code> have deterministic traps on the interpreter and VM, with cross-OS trap parity recorded.</li>
           <li>The <code>garnet</code> CLI runtime-gates the bounded host-authority set named in the capability scope table.</li>
-          <li>Linux seccomp application is proven through the external reference harness.</li>
+          <li>Linux seccomp application is proven through the external reference tests.</li>
         </ul>
       </article>
       <article class="card open">
@@ -84,8 +84,8 @@
   </section>
 
   <section>
-    <h2>The ceremony is part of the position</h2>
-    <p>Evidence only matters if its author cannot grade it into acceptance. Garnet's repository keeps implementation, independent review, the structured record, carrier approval, re-evaluation, and merge as separate acts. A head move voids the earlier verdict; a missing record stays red. That discipline is the differentiator: not a generated PDF, but a chain in which every claim has a trap and every acceptance has a named decision-maker.</p>
+    <h2>Why the review ceremony matters</h2>
+    <p>Evidence only matters if its author cannot grade it into acceptance. Garnet's repository keeps implementation, independent review, the structured record, carrier approval, re-evaluation, and merge as separate acts. A content change voids the earlier verdict; sanctioned record-only succession does not extend what was reviewed; a missing record stays red. Those separations matter more than the format of an evidence bundle. A generated PDF does not prove acceptance. A useful chain ties each claim to a trap and each acceptance to its decision-maker.</p>
     <ol class="sequence">
       <li><strong>Declare.</strong> Name the authority the program is meant to hold.</li>
       <li><strong>Trap.</strong> Test the bounded enforcement surface and preserve the red cases.</li>

@@ -4,7 +4,7 @@
 
 **Goal:** Land the gap-analysis P0/P1/P2 backlog plus a phase-collision convention and an MIT Windows/Linux lane as a sequence of small, truth-matched, individually-merged dogfood PRs.
 
-**Architecture:** Each slice = branch from fresh `origin/main` → minimal change → local verify → Desktop dogfood bundle with verified `MANIFEST.sha256` → PR via `Navigata1` fork → squash-merge → re-sync → next. Truth-matched/“planned” language everywhere; CI `dogfood-readiness` gate must stay green. Website file is `docs/index.html` (GitHub Pages → garnet-lang.org); it changes ~hourly so rebase immediately before each push.
+**Architecture:** Each slice = branch from fresh `origin/main` → minimal change → local verify → Desktop dogfood bundle with verified `MANIFEST.sha256` → PR via `Navigata1` fork → squash-merge → re-sync → next. Truth-matched/"planned" language everywhere; CI `dogfood-readiness` gate must stay green. Website file is `docs/index.html` (GitHub Pages → garnet-lang.org); it changes ~hourly so rebase immediately before each push.
 
 **Tech Stack:** Rust workspace (`garnet-*` crates), Python status scripts + `unittest`, static HTML/CSS/JS site, `gh` CLI, Cargo tests, `shasum` manifests.
 
@@ -51,7 +51,7 @@
 - Modify: `scripts/garnet_mit_readiness_status.py` (add a lane sourced from `scripts/garnet_windows_linux_studio_status.py`, landed in #163)
 - Modify: `scripts/test_garnet_mit_readiness_status.py` (assert the new lane row exists and is scored against current evidence)
 
-**Steps:** failing test for a “Windows/Linux distribution” lane row → run FAIL → implement lane (status/percent derived from the windows-linux status script; mark blocked/deferred sub-items explicitly, do not inflate the headline) → run PASS → commit.
+**Steps:** failing test for a "Windows/Linux distribution" lane row → run FAIL → implement lane (status/percent derived from the windows-linux status script; mark blocked/deferred sub-items explicitly, do not inflate the headline) → run PASS → commit.
 
 **Verify:** `python3 scripts/test_garnet_mit_readiness_status.py`; `python3 scripts/garnet_mit_readiness_status.py | head -25` shows the lane; headline only moves if the script truly justifies it.
 
@@ -85,7 +85,7 @@
 
 **Verify:** HTML parses; `grep -i "garnet update" docs/index.html` only appears inside the “planned” block; CLI truly lacks it (`target/debug/garnet --help`).
 
-**PR title:** “Install: truth-matched toolchain-management (planned) section”.
+**PR title:** "Install: truth-matched toolchain-management (planned) section".
 
 ---
 
