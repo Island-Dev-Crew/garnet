@@ -277,11 +277,9 @@ def _read_git_blob(repo: Path, commit: str, path: str) -> tuple[bytes | None, li
     return payload, []
 
 
-def _candidate_workflow_snapshot(repo: Path, commit: str) -> tuple[object | None, list[str]]:
-    try:
-        yaml_policy = _load_sibling("garnet_workflow_yaml_policy")
-    except Exception as exc:
-        return None, [f"base workflow YAML policy dependency unavailable: {exc}"]
+def _candidate_workflow_snapshot(
+    repo: Path, commit: str, *, yaml_policy: object
+) -> tuple[object | None, list[str]]:
     code, raw = _git(
         repo,
         "ls-tree",
@@ -426,11 +424,13 @@ def evaluate_git_candidate(
     candidate_inventory, candidate_ledger, candidate_workflow, object_problems = (
         _load_candidate_contracts(candidate_repo, candidate_commit)
     )
-    snapshot, snapshot_problems = _candidate_workflow_snapshot(
-        candidate_repo, candidate_commit
-    )
     try:
         schema = _load_sibling("garnet_workflow_schema_policy")
+        snapshot, snapshot_problems = _candidate_workflow_snapshot(
+            candidate_repo,
+            candidate_commit,
+            yaml_policy=schema.yaml_policy,
+        )
         projection = schema.project_snapshot(snapshot) if snapshot is not None else None
         candidate_policy = (
             contract.evaluate_producer_availability(candidate_inventory, projection)
