@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -37,15 +38,33 @@ class GarnetWvAcceptanceStatusTests(unittest.TestCase):
 
     def test_current_repository_tracks_wv6_acceptance_and_wv7_pending(self) -> None:
         expectations = {
+            # Current truth since the #528 squash (0607f7fe): the accepted
+            # head 8426ca76 is no longer an ancestor of main, so the reporter
+            # correctly reports PARTIAL (U-58 squash-successor gap; see the
+            # L1 re-acceptance redesign brief). The frozen side of each
+            # finding is pinned exactly via the reporter constants; the raw
+            # side is pattern-matched because every digest-domain candidate
+            # (this cure included) moves it. Restoring "accepted" requires a
+            # new native boundary or an adopted succession law, never an
+            # expectation edit alone.
             "WV-6": {
                 "schema": "garnet.wv_acceptance_status/v2",
-                "state": "accepted",
-                "ok": True,
-                "returncode": 0,
+                "state": "partial",
+                "ok": False,
+                "returncode": 1,
                 "passed": 5,
                 "required": 5,
                 "artifacts": 5,
-                "findings": [],
+                "findings_patterns": [
+                    r"product content digest mismatch \([0-9a-f]{64} != "
+                    + re.escape(wv.EXPECTED_PRODUCT_CONTENT_SHA256)
+                    + r"\)",
+                    r"product path count mismatch \(\d+ != "
+                    + re.escape(
+                        str(wv.bound_shelf_reporter.EXPECTED_PRODUCT_PATH_COUNT)
+                    )
+                    + r"\)",
+                ],
                 "reviewed_head": wv.REVIEWED_HEAD,
                 "reviewed_tree": wv.REVIEWED_TREE,
                 "product_digest": wv.EXPECTED_PRODUCT_CONTENT_SHA256,
@@ -73,7 +92,13 @@ class GarnetWvAcceptanceStatusTests(unittest.TestCase):
                 self.assertEqual(status.passed_check_count, expected["passed"])
                 self.assertEqual(status.required_check_count, expected["required"])
                 self.assertEqual(status.artifact_count, expected["artifacts"])
-                self.assertEqual(status.findings, expected["findings"])
+                if "findings_patterns" in expected:
+                    patterns = expected["findings_patterns"]
+                    self.assertEqual(len(status.findings), len(patterns))
+                    for finding, pattern in zip(status.findings, patterns):
+                        self.assertRegex(finding, rf"\A{pattern}\Z")
+                else:
+                    self.assertEqual(status.findings, expected["findings"])
                 self.assertEqual(status.reviewed_head_sha, expected["reviewed_head"])
                 self.assertEqual(status.reviewed_tree_sha, expected["reviewed_tree"])
                 self.assertEqual(
@@ -93,7 +118,13 @@ class GarnetWvAcceptanceStatusTests(unittest.TestCase):
                 self.assertEqual(payload["passed_check_count"], expected["passed"])
                 self.assertEqual(payload["required_check_count"], expected["required"])
                 self.assertEqual(payload["artifact_count"], expected["artifacts"])
-                self.assertEqual(payload["findings"], expected["findings"])
+                if "findings_patterns" in expected:
+                    patterns = expected["findings_patterns"]
+                    self.assertEqual(len(payload["findings"]), len(patterns))
+                    for finding, pattern in zip(payload["findings"], patterns):
+                        self.assertRegex(finding, rf"\A{pattern}\Z")
+                else:
+                    self.assertEqual(payload["findings"], expected["findings"])
                 self.assertEqual(payload["reviewed_head_sha"], expected["reviewed_head"])
                 self.assertEqual(payload["reviewed_tree_sha"], expected["reviewed_tree"])
                 self.assertEqual(
