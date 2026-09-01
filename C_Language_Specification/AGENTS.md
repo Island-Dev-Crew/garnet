@@ -19,10 +19,17 @@ Update this contract when a new normative spec area is added or an existing one 
 well as a normative policy. Its v2 gate must fail closed on incomplete Git
 enumeration and accept trust-kernel review only from a canonical, exact-path,
 content-bound W_TRUST record whose GitHub review and author identities are
-authenticated through the explicit bounded transport. Preserve the two honest
-states: premerge records bind `reviewed_head` without inventing a landed
-commit; registered postmerge markers prove squash-landed content from upstream
-main's first-parent history without requiring pre-squash ancestry.
+authenticated through the explicit bounded transport. Preserve the two
+evidence-bounded states: premerge records bind `reviewed_head` without
+inventing a landed commit; registered postmerge markers prove squash-landed
+content from upstream main's first-parent history without requiring pre-squash
+ancestry.
+
+`GARNET_WV_ACCEPTANCE_SUCCESSION_CONTRACT.md` owns the adopted but inactive WV
+succession, event, effectiveness, eligibility, registry, and conservation
+contract shapes. Its `OPEN-UNTIL-IMPLEMENTED` markers are activation blockers,
+not acceptance evidence or claim upgrades; later code must trap every named
+mechanical test before any instance can become effective.
 
 ## Agent Documentation Runtime Contracts
 

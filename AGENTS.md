@@ -262,6 +262,58 @@ heads, or a later record that backdates `reviewed_head` is RED.
 Run `python3 -I scripts/test_garnet_trust_kernel_review_status.py` after changing
 record discovery, succession selection, content binding, or review transport.
 
+## Rolling Review Venue, Readback, and Canonical Bytes
+
+U-66 remains the default venue law: one CI firing per exact readback head, and a
+close/reopen or rerun is not an idempotent refresh. U-59 is its only exception.
+It permits one same-run, same-head **Re-run all jobs** only after attempt 1 emits
+the canonical `approval_pending_only/[approval-absent]` eligibility receipt and
+the designated reviewer approves the exact unchanged record-containing head.
+The carrier is a distinct authenticated Actions-write identity and transports
+only the rerun; it gains no review authority. No partial, job-only, debug,
+dispatch, close/reopen, new-run, or third-attempt path is equivalent. Until the
+carrier exists and `r2_role_separation_v1` is executable and green, the
+exception is contract law but is ineligible for activation.
+
+Attempt 2 treats the replayed event payload as stale coordinates, never current
+authority. It uses fresh bounded transport for the PR, base, commits, reviews,
+selected review, attempt-1 artifact, workflow-run object, both attempt-specific
+jobs endpoints, governance, bypass, and required contexts. The all-jobs proof
+compares the fully expanded predecessor-owned job multiset and requires a new
+positive job ID for every row, including jobs that passed on attempt 1.
+
+The final premerge readback is dual. The reporter emits the authenticated
+PR/head/tree/base/record/latest-review and governance projection; Jon reads that
+emission immediately before the merge click. These are detection acts, never
+prevention or an atomic merge lock. Any delay or visible UI-state movement
+requires a fresh reporter emission and a fresh Jon readback. This procedure
+does not delegate Jon's merge authority to the reporter, reviewer, or carrier.
+
+U-74 is the rebase-propagation doctrine. CI evaluates the advertised PR head,
+not a synthetic merge ref. A cure that lands on main reaches an existing PR
+only after that branch rebases onto the new base and emits a fresh event; when a
+sibling merges under the strict up-to-date policy, the other siblings become
+`BEHIND`. A rerun cannot propagate new base bytes. The U-59 exception may
+re-observe one unchanged eligible head, but it cannot substitute for a U-74
+rebase.
+
+Canonical structured records use the byte contract implemented at
+`scripts/garnet_trust_kernel_review_status.py:921`:
+
+```python
+(json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode()
+```
+
+That means UTF-8, literal non-ASCII characters, lexicographically sorted object
+keys, two-space indentation, LF line endings, and exactly one trailing LF. The
+reporter compares the supplied bytes to this serialization; duplicate keys,
+unknown keys, aliases, alternate escaping, reordered keys, CRLF, missing final
+LF, or extra trailing bytes are RED.
+
+Run `python3 -I scripts/test_garnet_trust_kernel_review_status.py` and the agent
+contract checks after changing this venue, readback, propagation, or canonical-
+record procedure.
+
 ## Phase ID Allocation
 
 Phase identifiers (e.g. `Phase 6BT`) are a single shared global counter. With

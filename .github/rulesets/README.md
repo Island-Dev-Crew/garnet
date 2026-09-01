@@ -23,6 +23,14 @@ GitHub-Actions checks must pass on the latest base, auto-merge is disabled, no
 actor has bypass rights, and a human must perform the final squash or rebase
 merge.
 
+For the adopted U-59 path, "latest checks" may be satisfied through one
+same-run, same-head post-approval **Re-run all jobs** after the canonical
+attempt-1 eligibility receipt proves `approval_pending_only`; this becomes
+operative only after its later workflow and reporter acts activate every
+mechanical predicate. It is the sole exception to U-66. No other rerun,
+partial/job/debug replay, close/reopen, dispatch, or new run may satisfy latest
+checks.
+
 The required ledger includes the formerly path-scoped agentic-dogfood,
 macOS-Studio, web/PWA, and pull-request parser-fuzz workflows plus a Windows
 Studio trust job. They run on every PR so GitHub cannot leave a required context
