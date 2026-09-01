@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Garnet v0.4.2, and the case for evidence accounting — Garnet Blog</title>
+<meta name="description" content="v0.4.2 is live: the tracked implementation ledger is 87/87, and the MIT readiness pulse went DOWN to 55.8% — on purpose. Why a decreasing number is a feature.">
+<meta name="theme-color" content="#9C2B2E">
+<link rel="canonical" href="https://garnet-lang.org/blog/2026-05-19-v0-4-2-and-evidence-accounting.html">
+<meta property="og:title" content="Garnet v0.4.2, and the case for evidence accounting">
+<meta property="og:description" content="The implementation ledger is 87/87; the MIT pulse went down to 55.8% on purpose. Why.">
+<meta property="og:type" content="article">
+<style>
+  :root{--bg:#0A0A0F;--bg-soft:#121218;--bg-code:#18181B;--garnet:#9C2B2E;--garnet-2:#B0303A;--gold:#E5C07B;--ink:#E8E8E8;--ink-soft:#C8C8D0;--ink-muted:#6272A4;--rule:#3A3A45;--code-fg:#F8F8F2;--serif:'Georgia','Source Serif Pro',serif;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,system-ui,sans-serif;--mono:'SF Mono','Menlo','Consolas',monospace;--maxw:760px;}
+  *,*::before,*::after{box-sizing:border-box;}html,body{margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.75;-webkit-font-smoothing:antialiased;}
+  a{color:var(--gold);text-decoration:none;}a:hover{color:var(--garnet-2);}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:60px 24px 96px;}
+  .top{font-family:var(--mono);font-size:12px;letter-spacing:.07em;color:var(--ink-muted);margin-bottom:34px;}
+  .top a{color:var(--ink-muted);}.top a:hover{color:var(--gold);}
+  .meta{font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--gold);margin-bottom:10px;}
+  h1{font-family:var(--serif);font-size:38px;line-height:1.18;margin:0 0 22px;}
+  h2{font-family:var(--serif);font-size:23px;margin:42px 0 8px;}
+  p{color:var(--ink-soft);}
+  strong{color:var(--ink);}
+  code{background:var(--bg-code);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:.88em;color:var(--code-fg);}
+  blockquote{margin:24px 0;padding:10px 0 10px 18px;border-left:2px solid var(--garnet);color:var(--ink);font-family:var(--serif);font-size:18px;}
+  .foot{border-top:1px solid var(--rule);margin-top:56px;padding-top:20px;color:var(--ink-muted);font-size:13px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><a href="/index.html">← garnet-lang.org</a> &nbsp;·&nbsp; <a href="/blog/">Blog</a> &nbsp;·&nbsp; <a href="https://github.com/Island-Dev-Crew/garnet" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div>
+
+  <article>
+  <div class="meta">2026-05-19 · Release &amp; engineering</div>
+  <h1>Garnet v0.4.2, and the case for evidence accounting</h1>
+
+  <p><strong>v0.4.2 is live.</strong> The release — checksum-verified macOS Apple-Silicon tarball, Linux <code>.deb</code>/<code>.rpm</code>, and <code>SHA256SUMS</code> — was published on 2026-05-15 and the universal installer pulls and verifies it end to end. You can install it in about a minute: see <a href="/getting-started.html">Getting Started</a>, or the <a href="https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.4.2" target="_blank" rel="noopener noreferrer">v0.4.2 release</a>.</p>
+
+  <p>That is the easy half of this post. Here is the more interesting half.</p>
+
+  <h2>Two numbers that point in opposite directions</h2>
+
+  <p>Garnet now tracks two different progress signals, and in this cycle they moved in opposite directions:</p>
+
+  <p>The <strong>tracked implementation ledger is 87/87 (100%)</strong>. Every slice in the v0.5 readiness plan — parser parity, managed runtime, the actor/Sendable bridge, safe-mode ownership hardening, trait/generic coherence, Memory Core, and the release/installer gates — has executable evidence and is checked off. That is real, and it is verifiable: <code>python3 scripts/garnet_readiness_status.py</code>.</p>
+
+  <p>The <strong>MIT readiness pulse went down — from 58.6% to 55.8%</strong>.</p>
+
+  <p>A headline number went down in a release announcement. That deserves an explanation because it is the central fact on this page.</p>
+
+  <h2>Why the number dropped</h2>
+
+  <p>The MIT pulse is meant to estimate distance to a genuinely production-grade, MIT-quality language and toolchain — not distance to "the current sprint is done." The Windows and Linux distribution lane (signed installers, native packaging beyond the current assets, platform smoke beyond the tarball path) was real, mostly open work that the aggregate simply <em>was not counting</em>. Adding it to the denominator lowered the percentage.</p>
+
+  <p>We could have left it uncounted and watched the number drift up. We didn't, because a metric you curate upward is not a metric — it is marketing with a progress bar. The evidence-matched move was to make the lane visible and let the aggregate fall to where the truth actually is.</p>
+
+  <blockquote>The implementation ledger answers "did we finish what we scoped?" The MIT pulse answers "how far is this from something you'd bet a company on?" Both are true at once. Conflating them is how research prototypes get oversold.</blockquote>
+
+  <h2>What "research-grade prototype" keeps meaning</h2>
+
+  <p>Garnet v0.4.2 is a <strong>research-grade prototype, not a production-complete language</strong>. Signed macOS <code>.pkg</code> and Windows MSI artifacts are not built yet. The compiler-as-agent memory work, native backend, mechanized proofs, and empirical validation are open research lanes, not shipped guarantees. The site says so in the comparison table's last row, on the install page, and now here. That framing will not soften as the numbers climb — it is part of the contract with anyone evaluating this.</p>
+
+  <h2>What actually shipped</h2>
+
+  <p>Beyond the release itself: the public site was rebuilt for current truth and first-run success — a prerequisite/checksum callout, a Rust-vs-Ruby-vs-Garnet positioning table, a real first-project terminal (the output is captured, not faked), a <a href="/getting-started.html">Getting Started</a> walkthrough, an explicit Community section (no Discord theater), and accessibility/SEO basics. Every change went through the same dogfood-readiness gate the language uses on itself.</p>
+
+  <p>If you want the pulse of the project between posts, the <a href="https://github.com/Island-Dev-Crew/garnet/commits/main" target="_blank" rel="noopener noreferrer">commit history</a> and <a href="https://github.com/Island-Dev-Crew/garnet/releases" target="_blank" rel="noopener noreferrer">releases</a> are the ground truth. This blog will carry the narrative ones — and it will keep reporting numbers that occasionally go down.</p>
+  </article>
+
+  <div class="foot">© 2026 Island Development Crew · Garnet is dual-licensed MIT OR Apache-2.0 · <a href="https://garnet-lang.org">garnet-lang.org</a> · <a href="/blog/">More posts</a></div>
+</div>
+</body>
+</html>

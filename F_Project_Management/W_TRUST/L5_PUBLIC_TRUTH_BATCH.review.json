@@ -1,0 +1,29 @@
+{
+  "author_emails": [
+    "email:jon-isaac@islanddevcrew.com"
+  ],
+  "author_ids": [
+    275140286
+  ],
+  "base_commit": "f6d3285aa54a4961e38d82d22cfe98ab4c631b22",
+  "blocking_findings": [],
+  "content_digest": "sha256:57ab2c7fd3b1577992ce32e5d5da9f06bc6eb81ee832a93b5335a8fa904f4707",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 4406025820,
+  "pull_request_number": 534,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head c57cd81f5af6ac78ec4f2076fd3a3c9499e0d24f and does not extend or backdate reviewed_head coverage. Claude Fable 5 cross-family seat verdict: CONFIRM-WITH-FINDINGS, zero blockers, at c57cd81f5af6ac78ec4f2076fd3a3c9499e0d24f; void if the head moves before the record commit. This head is the identity re-authoring of the reviewed content lineage 54d7ab499b0210ea6a018302192583d7826a7df6: seven commits, final tree 518be8cce2f9238c663e63c2b212ff39ad76142a byte-identical between both lineages, content digest identical, sole change the commit author/committer identity from the unmapped Tier-1 seat email to the mapped principal, because the v2 record validator requires nonempty authenticated author_ids while both roles on the original lineage were unmapped — a registered-candidate design gap between the seat-identity scheme and the record schema. Fresh-clone recomputation at the reviewed content: base f6d3285aa54a4961e38d82d22cfe98ab4c631b22; 35 changed files; the gate's own discovery binds touched path docs/why.html and content digest sha256:57ab2c7fd3b1577992ce32e5d5da9f06bc6eb81ee832a93b5335a8fa904f4707. Item-by-item: the retired vocabulary family greps zero across README and docs; garnet build --evidence is re-classed under construction / W-SHIP everywhere including the Thesis IV pill; the 2026-08-02 U-33-adjacent overclaim (the only-standard-library sentence at why.html point 7) is removed and replaced with the bounded enforced set (caps and max_depth, seccomp Linux-only, remaining fences declared not enforced); the renamed stated-objection anchor leaves zero dangling references; the old blog URL is preserved as a redirect; the Python language-bar sentence cites GitHub's own statistics at a pinned snapshot; the origin section pins the Pragmatic Engineer episode of April 8, 2026 and Lex #501 of August 26, 2026 with the U-72 register deep link, and the U-72 producer grep goes green; the CRA Article 14 page states that neither command makes a product compliant, separates the September 11, 2026 reporting start from the December 11, 2027 general application, and cites U-32/U-33 without upgrading either; the AI-humanizer pass is recorded with before/after evidence under W_TRUST. Suites recomputed or verified across both seats: agent contracts 24, capability scope ok true with problems empty, WV suite OK with WV-6 partial as current truth and the raw pair moving as designed for a digest-domain candidate. FINDINGS, none blocking: first, the Base-controlled composite red on the original firing was the expected pre-record shape, not a falsification — its payload reads candidate_policy_ok true, which IS the first observed green of the U-39 adapter cure at the policy layer, while rolling_review_ok false correctly fails closed until this record and its approval land; the full composite green is expected at the post-approval evaluation and remains the L9 activation observation. Second, the seat-identity/record-schema incompatibility above is a register candidate routed to the fleet lane. Third, the humanizer record markdown under W_TRUST is scanned as a noncanonical legacy companion only while no record exists; this record clears that line by the gate's own branch logic. Fourth, the sleeping capability-scope guard coverage remains a separate code finding, deliberately not ridden here.",
+  "review_state": "APPROVED",
+  "reviewed_head": "c57cd81f5af6ac78ec4f2076fd3a3c9499e0d24f",
+  "reviewed_tree": "518be8cce2f9238c663e63c2b212ff39ad76142a",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "docs/why.html"
+  ],
+  "verdict": "pass"
+}

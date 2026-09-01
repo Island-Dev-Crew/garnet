@@ -159,7 +159,7 @@ non-WSL Linux assistance request.
 - [ ] **Step 4: Write failing MIT reporter tests**
 
 ```python
-def test_native_linux_lanes_are_committed_and_honest(self) -> None:
+def test_native_linux_lanes_are_committed_and_evidence_matched(self) -> None:
     status = status_mod.read_status()
     lanes = {lane.id: lane for lane in status.lanes}
 
@@ -445,7 +445,7 @@ git add scripts/garnet_launch_readiness_status.py \
 git commit -m "feat(readiness): add canonical launch ledger"
 ```
 
-Expected: all verification passes while the launch gate stays honestly red.
+Expected: all verification passes while the launch gate stays explicitly red.
 Build dogfood evidence, open a PR, wait for full CI, and merge.
 
 ---

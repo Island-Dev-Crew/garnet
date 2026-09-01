@@ -124,7 +124,7 @@ Expected: CLI version includes `garnet 0.4.2`, app self-test passes, app smoke r
 - Modify: `CURRENT_STATE.md`
 - Modify: `F_Project_Management/DOGFOOD/GARNET_v0_5_DOGFOOD_READINESS_PHASE_LOG.md`
 
-- [x] **Step 1: Update status docs honestly**
+- [x] **Step 1: Update status docs against current truth**
 
 Document that Garnet Studio is a local macOS workbench and local-packaged `.app`/`.dmg` path. Do not claim Developer ID signing, notarization, App Store distribution, iOS, Android, or web/PWA completion.
 

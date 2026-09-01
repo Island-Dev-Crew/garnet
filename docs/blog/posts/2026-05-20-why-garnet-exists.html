@@ -96,7 +96,7 @@
 
   <h2>That's the hook. The product is what's underneath.</h2>
 
-  <p>"Rust rigor, Ruby velocity" is the elevator pitch and I'm honest that it's also the marketing hook. The thing that makes Garnet worth building isn't the reconciliation; the reconciliation is the entry door. The thing that makes Garnet worth building is what's behind the door.</p>
+  <p>"Rust rigor, Ruby velocity" is the elevator pitch, and the record says it is also the marketing hook. The thing that makes Garnet worth building isn't the reconciliation; the reconciliation is the entry door. The thing that makes Garnet worth building is what's behind the door.</p>
 
   <p><strong>Capability propagation.</strong> Every Garnet function declares <code>@caps(...)</code> — the OS authority it is permitted to exercise. An empty <code>@caps()</code> is pure computation. <code>@caps(fs)</code> can touch the filesystem. <code>@caps(net, fs)</code> can do both. The <em>CapCaps</em> propagator (currently v3.4.1) enforces this transitively at compile time, so a function with <code>@caps()</code> cannot call a function with <code>@caps(net)</code> without explicitly widening its own declaration. Wasm Component Model is chasing the same idea at module granularity; Garnet does it at function granularity, and the ergonomics matter.</p>
 
@@ -110,7 +110,7 @@
 
   <p>Garnet v0.5.0 publishes today. The headline isn't a number going up; it's that the six blocking slices for v0.5 — LSP MVP, bytecode VM scaffold, parser fuzz harness, signed hot-reload demo, cross-machine determinism CI, and compiler-as-agent advisory mode — all merged with reproducible dogfood evidence. The companion release post, <a href="2026-05-20-garnet-v0-5-substance-over-surface.html">substance over surface</a>, walks each one.</p>
 
-  <p>The honesty discipline holds. The MIT/productization pulse from <code>scripts/garnet_mit_readiness_status.py</code> is <strong>71.3% across 19 lanes</strong> — up from 55.8%, and now measured at a finer grain that includes the gates v0.4.2 wasn't measuring. Apple Developer ID notarization, Marketplace/OpenVSX publication, Windows/Linux desktop runtime proof, the <code>garnet add</code> manifest spec (S3), and the actor OS-thread bridge (S7) all remain explicitly open and labeled. S4 and S6 have landed, but S6 is a measured policy-benchmark lane, not a production allocator claim. <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md">The slice contracts</a> say so in their own statuses.</p>
+  <p>The claim discipline holds. The MIT/productization pulse from <code>scripts/garnet_mit_readiness_status.py</code> is <strong>71.3% across 19 lanes</strong> — up from 55.8%, and now measured at a finer grain that includes the gates v0.4.2 wasn't measuring. Apple Developer ID notarization, Marketplace/OpenVSX publication, Windows/Linux desktop runtime proof, the <code>garnet add</code> manifest spec (S3), and the actor OS-thread bridge (S7) all remain explicitly open and labeled. S4 and S6 have landed, but S6 is a measured policy-benchmark lane, not a production allocator claim. <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md">The slice contracts</a> say so in their own statuses.</p>
 
   <blockquote>"Research-grade prototype (v0.x.x) — not production-complete." That line is on the homepage, on the README, in the conformance matrix, and on this page. It is not a hedge. It is part of the contract with anyone evaluating Garnet.</blockquote>
 

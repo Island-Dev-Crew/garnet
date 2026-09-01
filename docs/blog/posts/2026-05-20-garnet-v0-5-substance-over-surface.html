@@ -53,7 +53,7 @@
 
   <h2>What the six blocking slices added</h2>
 
-  <p><strong>S1</strong> added the Language Server Protocol MVP: parser/checker diagnostics, hover, and basic go-to-definition through <code>garnet-lsp/</code> plus the VSCode extension launcher in <code>editors/vscode/</code>. The honest status is source-present with protocol smoke evidence, local standalone VS Code diagnostic proof, and release-backed GitHub VSIX diagnostic proof on this Mac. Marketplace/OpenVSX publication, the full manual hover/go-to-definition screenshot trio, safe-mode hover, workspace symbols, rename, and CST-grade incremental precision remain deferred.</p>
+  <p><strong>S1</strong> added the Language Server Protocol MVP: parser/checker diagnostics, hover, and basic go-to-definition through <code>garnet-lsp/</code> plus the VSCode extension launcher in <code>editors/vscode/</code>. Verified today: source-present with protocol smoke evidence, local standalone VS Code diagnostic proof, and release-backed GitHub VSIX diagnostic proof on this Mac. Marketplace/OpenVSX publication, the full manual hover/go-to-definition screenshot trio, safe-mode hover, workspace symbols, rename, and CST-grade incremental precision remain deferred.</p>
 
   <p><strong>S2</strong> added the bytecode VM scaffold. <code>garnet-vm/</code> now has a deterministic serializer, loader, execution surface for the MVP fixture path, 15 native opcode families, function-level fallback to the tree-walk interpreter, and a bounded Criterion benchmark harness. This is a scaffold, not a stable bytecode ABI or a production VM.</p>
 
@@ -71,7 +71,7 @@
 
   <p>Paper VI's scorecard also stays explicit:</p>
 
-  <blockquote>Paper VI scorecard: "4 supported, 2 partial (downgraded honestly), 0 refuted, 1 pending-infra"</blockquote>
+  <blockquote>Paper VI scorecard: "4 supported, 2 partial (downgraded to match proof), 0 refuted, 1 pending-infra"</blockquote>
 
   <p>Two other anchors remain in force:</p>
   <ul>
@@ -89,7 +89,7 @@
     <li>the organization release <code>v0.5.0</code> exists and is not a draft or prerelease;</li>
     <li>tag workflows published Linux <code>.deb</code>/<code>.rpm</code>, macOS CLI tarballs, unified <code>SHA256SUMS</code>, and host-native VSIX assets;</li>
     <li><code>scripts/verify_org_release_smoke.sh</code> passed against the organization release without source fallback;</li>
-    <li>the M5 installer path honestly fell back from the unavailable unsigned <code>.pkg</code> to the aarch64 macOS tarball and verified SHA-256;</li>
+    <li>the M5 installer path explicitly fell back from the unavailable unsigned <code>.pkg</code> to the aarch64 macOS tarball and verified SHA-256;</li>
     <li>the installed release binary passed <code>garnet new --template cli</code>, <code>garnet test</code>, and <code>garnet run src/main.garnet</code>;</li>
     <li>the published darwin-arm64 VSIX installed into isolated standalone VS Code 1.121.0 and surfaced the injected <code>garnet-parser</code> diagnostic.</li>
   </ul>

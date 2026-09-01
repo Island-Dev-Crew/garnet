@@ -1,0 +1,46 @@
+{
+  "score": 26,
+  "patternScore": 27,
+  "uniformityScore": 25,
+  "totalMatches": 16,
+  "wordCount": 3575,
+  "findings": [
+    {
+      "id": 7,
+      "category": "language",
+      "weight": 5,
+      "matchCount": 2
+    },
+    {
+      "id": 14,
+      "category": "style",
+      "weight": 2,
+      "matchCount": 12
+    },
+    {
+      "id": 16,
+      "category": "style",
+      "weight": 1,
+      "matchCount": 1
+    },
+    {
+      "id": 18,
+      "category": "style",
+      "weight": 1,
+      "matchCount": 1
+    }
+  ],
+  "stats": {
+    "wordCount": 4970,
+    "sentenceCount": 85,
+    "paragraphCount": 29,
+    "avgSentenceLength": 58.471,
+    "sentenceLengthStdDev": 74.137,
+    "sentenceLengthVariation": 1.268,
+    "burstiness": 1.005,
+    "typeTokenRatio": 0.291,
+    "functionWordRatio": 0.192,
+    "trigramRepetition": 0.096,
+    "fleschKincaid": 27.081
+  }
+}

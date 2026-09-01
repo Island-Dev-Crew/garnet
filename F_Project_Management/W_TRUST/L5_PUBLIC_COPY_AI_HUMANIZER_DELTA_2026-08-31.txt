@@ -1,0 +1,4 @@
+before: 39 (3569 words)
+after:  26 (3575 words)
+delta:  13
+verdict: PASS (score dropped 13)

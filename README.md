@@ -13,7 +13,7 @@ built for the code agents write and humans accept.</strong></p>
   <a href="https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.8.1">Release <!-- truth:latest_tag -->v0.8.1<!-- /truth --> · signed binaries</a> ·
   <a href="LICENSE">MIT OR Apache-2.0</a> ·
   <a href="https://garnet-lang.org">garnet-lang.org</a> ·
-  <a href="https://garnet-lang.org/status.html">Honest status</a> ·
+  <a href="https://garnet-lang.org/status.html">Verified today / Still open</a> ·
   <a href="C_Language_Specification/GARNET_v1_0_Mini_Spec.md">Mini-Spec v1.0</a> ·
   <a href="FAQ.md">FAQ</a>
 </p>
@@ -38,6 +38,12 @@ authority budget, the checker verifies declared budgets transitively, and `diff-
 *"what new authority am I granting?"* in one screen.
 
 Safe by default. Fast when needed. Joyful always.
+
+## Origin
+
+Garnet began with a question: if a machine writes the code, what must the human accepting it be able to verify? DHH supplied the spark in [DHH’s new way of writing code](https://newsletter.pragmaticengineer.com/p/dhhs-new-way-of-writing-code) on The Pragmatic Engineer, published April 8, 2026. The idea moved from thought to machine around March-April 2026.
+
+The loop closed publicly on August 26, 2026, with Lex Fridman Podcast [#501 – DHH: Future of Programming, AI, Agentic Engineering, Vibe Coding & Linux](https://lexfridman.com/dhh-2/). Those two conversations bracket Garnet's origin: make authority visible to the person accepting agent-written code, then make the traps match the claim ([U-72](F_Project_Management/W_TRUST/AUGUST_2026_ARC_REGISTER_SWEEP_2026-08-27.md#u-72--origin-record-correction-the-spark-was-dhh-on-the-pragmatic-engineer)).
 
 ## Sixty seconds of Garnet
 
@@ -98,6 +104,8 @@ and aimed at agent-authored code:
 - **Typed actors** — bounded mailboxes, compiler-checked protocols, Ed25519-signed hot-reload
   with BLAKE3 schema fingerprints.
 
+[GitHub's language bar](https://api.github.com/repos/Island-Dev-Crew/garnet/languages) counted this repository as **38.7% Python** at the 2026-08-31 `f6d3285` main snapshot because the trust and verification harness is Python; the product compiler and runtime are Rust.
+
 ## Install
 
 ```sh
@@ -129,7 +137,7 @@ garnet build --deterministic --sign my.key src/main.garnet
 garnet verify src/main.garnet src/main.garnet.manifest.json --signature
 ```
 
-## Honest status
+## Verified today / Still open
 
 Garnet is a **research-grade prototype (<!-- truth:latest_tag -->v0.8.1<!-- /truth -->), not
 production-complete** — and this README will never tell you otherwise.
@@ -138,13 +146,13 @@ production-complete** — and this README will never tell you otherwise.
 |---|---|
 | Signed v0.8.1 release: `.deb`, `.rpm`, macOS tarballs, SBOM, GPG-signed sums | macOS `.pkg` notarization, Windows `.msi` (credential-gated) |
 | `@caps` + `@max_depth` enforced on interpreter **and** VM; cross-OS trap parity recorded | OS-sandbox enforcement beyond Linux seccomp |
-| Capability-bounded acceptance demo: agent code accepted *and refused* on evidence, sealed | Independent verification of the self-found red-team fix |
+| Capability-bounded acceptance demo: agent code accepted *and refused* on evidence, sealed | **Under construction:** `garnet build --evidence` (W-SHIP; no shipping CLI flag); independent verification of the self-found red-team fix |
 | <!-- truth:primitive_count -->80<!-- /truth --> capability- and stability-tagged stdlib primitives | Production VM performance (unbenchmarked, unclaimed) |
 | LSP + VS Code extension (local VSIX), trivia-preserving CST, formatter baseline | Marketplace/OpenVSX publication; incremental parsing |
 | Rust / Ruby / Python / Go migration assistant with lineage + `@sandbox` audit gate | Browser playground; package registry beyond stub |
 
 The full ledger lives in [CURRENT_STATE.md](CURRENT_STATE.md); the readiness detail lives on
-[the status page](https://garnet-lang.org/status.html). The honest scorecard for the research
+[the status page](https://garnet-lang.org/status.html). The evidence scorecard for the research
 claims: 4 supported, 2 partial, 0 refuted, 1 pending-infra
 ([seven papers](A_Research_Papers/)).
 
@@ -154,6 +162,7 @@ claims: 4 supported, 2 partial, 0 refuted, 1 pending-infra
 [Mini-Spec v1.0](C_Language_Specification/GARNET_v1_0_Mini_Spec.md) ·
 [Conformance matrix](C_Language_Specification/GARNET_v0_4_2_Conformance_Matrix.md) ·
 [Capability model](FAQ.md#whats-the-capability-model) ·
+[CRA Article 14 positioning](https://garnet-lang.org/cra-article-14.html) ·
 [Script walkthroughs](docs/internals/script-walkthroughs.md) ·
 [Research papers](A_Research_Papers/) ·
 [Blog](https://garnet-lang.org/blog/)
