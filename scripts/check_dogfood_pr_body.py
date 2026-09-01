@@ -36,8 +36,8 @@ REQUIRED_HEADINGS = (
     "### Deferred / out of scope",
 )
 # The evidence section may be titled either way: the legacy garnet heading or the
-# `dogfood-readiness` skill's heading. At least one must be present, and whichever
-# is present must carry a checked evidence item. (S31 gate reconciliation.)
+# `dogfood-readiness` skill's heading. At least one must be present, and the first
+# one in document order must carry a checked evidence item.
 EVIDENCE_HEADINGS = (
     "### Desktop dogfood bundle",
     "### Evidence bundle",
@@ -90,10 +90,12 @@ def missing_headings(body: str) -> list[str]:
 
 
 def present_evidence_heading(body: str) -> str | None:
+    present: list[tuple[int, str]] = []
     for heading in EVIDENCE_HEADINGS:
-        if heading_line_pos(body, heading) != -1:
-            return heading
-    return None
+        position = heading_line_pos(body, heading)
+        if position != -1:
+            present.append((position, heading))
+    return min(present)[1] if present else None
 
 
 def has_unqualified_production_arc_claim(body: str) -> bool:
