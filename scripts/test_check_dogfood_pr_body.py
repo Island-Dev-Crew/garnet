@@ -81,6 +81,24 @@ Adopts the dogfood-readiness skill body shape.
 - This PR does not claim production readiness.
 """
 
+VALID_BODY_EVIDENCE_THEN_DESKTOP = VALID_BODY_NEW_SKILL.replace(
+    "### Deferred / out of scope",
+    """### Desktop dogfood bundle
+
+- [ ] Legacy bundle intentionally left unchecked.
+
+### Deferred / out of scope""",
+)
+
+VALID_BODY_DESKTOP_THEN_EVIDENCE = VALID_BODY.replace(
+    "### Deferred / out of scope",
+    """### Evidence bundle
+
+- [ ] Alternate bundle intentionally left unchecked.
+
+### Deferred / out of scope""",
+)
+
 
 class SensitivePathClassificationTests(unittest.TestCase):
     """Path-normalization regressions: `lstrip("./")` treats '.' and '/' as a
@@ -127,6 +145,28 @@ class DogfoodPrBodyCheckerTests(unittest.TestCase):
 
     def test_accepts_new_skill_evidence_bundle_heading(self) -> None:
         result = checker.validate_body(VALID_BODY_NEW_SKILL, ["F_Project_Management/GARNET_v0_8_SLICE_DOGFOOD.md"])
+        self.assertEqual([], result.errors)
+
+    def test_validates_first_evidence_heading_when_evidence_precedes_desktop(self) -> None:
+        self.assertLess(
+            checker.heading_line_pos(VALID_BODY_EVIDENCE_THEN_DESKTOP, "### Evidence bundle"),
+            checker.heading_line_pos(VALID_BODY_EVIDENCE_THEN_DESKTOP, "### Desktop dogfood bundle"),
+        )
+        result = checker.validate_body(
+            VALID_BODY_EVIDENCE_THEN_DESKTOP,
+            ["F_Project_Management/GARNET_v0_8_SLICE_DOGFOOD.md"],
+        )
+        self.assertEqual([], result.errors)
+
+    def test_validates_first_evidence_heading_when_desktop_precedes_evidence(self) -> None:
+        self.assertLess(
+            checker.heading_line_pos(VALID_BODY_DESKTOP_THEN_EVIDENCE, "### Desktop dogfood bundle"),
+            checker.heading_line_pos(VALID_BODY_DESKTOP_THEN_EVIDENCE, "### Evidence bundle"),
+        )
+        result = checker.validate_body(
+            VALID_BODY_DESKTOP_THEN_EVIDENCE,
+            ["F_Project_Management/GARNET_v0_8_SLICE_DOGFOOD.md"],
+        )
         self.assertEqual([], result.errors)
 
     def test_requires_an_evidence_section_heading(self) -> None:
