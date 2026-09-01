@@ -1,0 +1,29 @@
+{
+  "author_emails": [
+    "email:jon-isaac@islanddevcrew.com"
+  ],
+  "author_ids": [
+    275140286
+  ],
+  "base_commit": "a8a66fcb4483ed38a2198ebe041a88ed65dd30e1",
+  "blocking_findings": [],
+  "content_digest": "sha256:8e98b4657746f12899ab4c0688ef1466d51cbf432b50b4e5e016dd6c5ca4b711",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 4413638773,
+  "pull_request_number": 537,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head a4628b67968f802f67b438a42503073ec668a85f and does not extend or backdate reviewed_head coverage. OpenAI Codex cross-family seat verdict: CONFIRM-WITH-FINDINGS, zero blockers, at a4628b67968f802f67b438a42503073ec668a85f; void if that head moves before this sanctioned record-only commit. Fresh-clone recomputation: base a8a66fcb4483ed38a2198ebe041a88ed65dd30e1; reviewed tree 04c3e1009578c4e7d7386372fe302c71113d74a5; exactly one implementation commit and one touched trust path, docs/why.html; gate-derived digest sha256:8e98b4657746f12899ab4c0688ef1466d51cbf432b50b4e5e016dd6c5ca4b711. The two replacement clauses are check-time-true for the registered capability surface: fs::read_file and net::tcp_connect require declared capabilities; net::tcp_listen and net::udp_bind are unbridged; the shipping CLI rejects the unshipped build --evidence flag. Standards axis: no blocking finding. Spec findings, disclosed and non-blocking because they are unchanged public copy outside the two-line carrier: KILL docs/why.html:237 because enforces good behavior and A type cannot exceed the registered-surface check-time guarantee; KILL docs/why.html:275 because rejected is not universally inexpressible; KILL docs/why.html:297-298 because the caps-invisible class falsifies the universal authority wording; KILL docs/why.html:509 because capability declaration is not intent or dataflow analysis and declared net authority can exfiltrate. README.md:10 and README.md:35-38 remain defensible as doctrine and capability-budget-scoped copy. Verification: retired vocabulary zero; WV suite 6; agent contracts 24 and contract tests 6; capability-scope suite 10 with gate ok; CapCaps tests 10; cargo fmt clean; garnet-cli new_cmd 13. This premerge record is reviewer evidence only; it is not a GitHub approval, carrier approval, re-evaluation, merge, or deployment.",
+  "review_state": "APPROVED",
+  "reviewed_head": "a4628b67968f802f67b438a42503073ec668a85f",
+  "reviewed_tree": "04c3e1009578c4e7d7386372fe302c71113d74a5",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "docs/why.html"
+  ],
+  "verdict": "pass"
+}
