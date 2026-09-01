@@ -104,6 +104,112 @@ older approval, and a later approval at any head other than the exact candidate
 is RED. The record's `review_state` is a required condition, not a claim that
 author-supplied bytes can prove.
 
+### Post-record approval observation; sole U-59 exception to U-66
+
+The ordinary venue law remains one CI firing per readback head. U-59 creates
+one exception: an attempt-1 result whose only finding is absent exact-head
+approval may receive one same-run, same-head **Re-run all jobs** after that
+approval exists. The receipt is the exact-key
+`garnet.trust_kernel_review_eligibility/v1` object defined in
+`GARNET_WV_ACCEPTANCE_SUCCESSION_CONTRACT.md`, carried as the sole member named
+`eligibility.json` in the uniquely named artifact
+`r2-approval-pending-<run_id>-attempt-1`. The only eligible tuple is
+`state=approval_pending_only` and `finding_codes=[approval-absent]`.
+
+The following adopted contract text is transcribed verbatim from
+`F_Project_Management/W_TRUST/REACCEPTANCE_REDESIGN_BRIEF_v2.md`:
+
+```text
+POST-RECORD APPROVAL OBSERVATION; SOLE U-59 EXCEPTION TO U-66.
+
+A candidate is eligible for one re-evaluation only when CI attempt 1 is the
+unique CI run for the pull_request event at the exact record-containing head
+and its unique, single-member, canonical Actions artifact states
+approval_pending_only/[approval-absent]: every content, provenance, succession,
+transport, pagination, PR-identity, base-currency, and record predicate
+evaluated before the approval boundary passes, and the sole finding is absence
+of the recorded reviewer's decisive approval. Contexts structurally skipped
+behind that deliberate RED are not success evidence.
+
+Attempt 1 MUST bind repository and PR immutable IDs, base ref and base SHA,
+candidate head and tree, record path and raw-byte digest, workflow ref and SHA,
+event, run ID, run number, attempt number, producer-inventory digest, artifact
+identity, exact receipt schema, and normalized finding codes. Attempt 2 MUST
+retrieve that receipt by complete authenticated artifact enumeration and exact
+raw-body digest under a job token whose sole permission delta is actions: read.
+
+After the designated reviewer submits APPROVED for that exact unchanged head,
+an Actions-write carrier MAY invoke exactly one Re-run all jobs on that same CI
+run. Carrier identity and rerun privilege confer no review authority. A
+close/reopen, push, dispatch, new run ID, re-run-failed-only, job-only rerun,
+debug rerun, or non-CI producer rerun is not this exception.
+
+Attempt 2 is valid only when run ID, run number, event, GITHUB_SHA, GITHUB_REF,
+workflow ref/SHA, candidate head/tree/record digest, PR identity, open and
+non-draft state, base-main identity/SHA, and producer census equal attempt 1;
+run_attempt is exactly 2; fresh bounded transport re-enumerates the PR, every
+commit, every review page, and the selected direct review object; the latest
+decisive review is exact-head APPROVED; and every required context succeeds.
+
+A fresh head-scoped run census MUST show only this CI workflow at attempt 2 and
+every other producer at attempt 1. The verifier MUST completely paginate both
+attempt-specific jobs endpoints:
+
+  /actions/runs/<run_id>/attempts/1/jobs
+  /actions/runs/<run_id>/attempts/2/jobs
+
+The attempt-2 job-name multiset MUST equal the fully expanded inventory derived
+from the predecessor's base-controlled workflow and matrices. Every expected
+job MUST occur exactly once, bind the same run and head, have a positive job ID
+absent from attempt 1, have nonempty start/completion timestamps, and conclude
+completed/success. In particular, every job that succeeded in attempt 1 MUST
+have a fresh attempt-2 identity; this distinguishes Re-run all jobs from Re-run
+failed jobs. A default/latest jobs endpoint, unexpanded matrix placeholder,
+skip, neutral, cancellation, duplicate, missing row, incomplete page, reused
+job identity, or direct-object disagreement is RED.
+
+r2_role_separation_v1 MUST authenticate immutable numeric identities. Let
+REVIEWER_ID be the selected decisive reviewer's user ID; COMMIT_PRINCIPALS be
+the union of every PR commit author.id and committer.id; and CARRIER_ID be
+triggering_actor.id on the attempt-2 workflow-run object, not actor.id from the
+initial event. REVIEWER_ID, CARRIER_ID, and every COMMIT_PRINCIPAL MUST be
+pairwise disjoint, positive, and login-consistent across directly read objects.
+Missing or malformed identity is RED.
+
+Immediately before merge, authenticated transport MUST repeat the
+PR/head/tree/base/record/latest-review readback and the complete live governance
+projection, including bypass []/never and exact required-context identity and
+posture. This proves only the instant read; it is not an atomic merge lock.
+
+Any other attempt-1 finding, mutable-field reliance on the replayed event,
+movement, incomplete transport, additional run or attempt, partial rerun,
+attempt-2 failure, identity overlap, or final-readback failure voids the
+exception. There is no attempt 3. The cure is a new linear record successor and
+a new approval venue.
+```
+
+DP10 composes additively with the block's singular `REVIEWER_ID` shorthand.
+When the selected review carries supplemental decisive reviews, the mechanical
+reviewer set is the designated primary reviewer plus every selected
+supplemental reviewer. Every member is positive and login-consistent, is
+pairwise disjoint from every other reviewer, `CARRIER_ID`, and every
+`COMMIT_PRINCIPAL`, and no supplemental reviewer can replace the designated
+primary.
+
+For attempt 2, the replayed event payload supplies stale venue coordinates and
+no current authority. The reporter re-reads live PR, base, commit, review,
+artifact, jobs, workflow-run, governance, bypass, and required-context state
+through bounded authenticated transport. `r2_role_separation_v1` remains
+`OPEN-UNTIL-IMPLEMENTED`; until its executable proof and the distinct carrier
+identity exist, this adopted law cannot activate.
+
+DP5 assigns the final premerge readback to both actors: the reporter emits the
+authenticated readback, and Jon reads it immediately before the merge click.
+Both acts detect divergence at their observation instant; neither prevents a
+later review, head, base, governance, bypass, or context change. A delay or
+visible UI-state change requires another reporter emission and another Jon
+readback.
+
 The gate does not trust either author list. It cross-checks `rev-list` plus its
 count against an independent raw commit-object graph traversal, reads each raw
 author email, and requires exact `author_emails`. Through the explicitly
@@ -150,6 +256,84 @@ Git object IDs bind repository identity; independently recomputed SHA-256 values
 bind exact blob bytes. Modes and status bind executable/type semantics. An
 addition uses an all-zero old identity; a deletion uses an all-zero new identity
 and retains the old blob SHA-256 as its reviewable tombstone.
+
+## WV acceptance succession and the two-pair model
+
+WV acceptance carries two distinct pairs. `native_accepted_pair` is immutable
+through record-only succession. `successor_observed_pair` is a non-authoritative
+accounting recomputation at the successor boundary and cannot be represented as
+native evidence. Only a closed, bounded R3 event certificate may establish a
+later accepted pair. The exact certificate and terminal-transcript schemas are
+defined in `GARNET_WV_ACCEPTANCE_SUCCESSION_CONTRACT.md`.
+
+The following adopted contract text is transcribed verbatim from
+`F_Project_Management/W_TRUST/REACCEPTANCE_REDESIGN_BRIEF_v2.md`:
+
+```text
+RECORD-ONLY ACCEPTANCE SUCCESSION.
+
+An accepted WV boundary MAY succeed across a squash without repeating native
+platform execution only through one effective garnet.wv_acceptance_succession/v1
+certificate in the append-only succession registry.
+
+The certificate MUST bind the native root, the final reviewed and approved PR
+record tip R, the authoritative content landing B, the complete producer-
+censused H..R graph, the exact R-tree/B-tree equality, the base-controlled
+record classifier and digest definition, the predecessor's exhaustive
+record_consumer_inventory, preservation hashes, and a linear predecessor
+certificate.
+
+The certificate suffix, registry, classifier, and producer definitions MUST
+be explicit base-controlled trust-kernel triggers. Their exact raw bytes MUST
+enter the rolling-review content digest and receive decisive exact-head
+approval. Record classification or digest exclusion alone is not review.
+
+Record-path membership is necessary but not sufficient. Every edge operation
+MUST be collected under predecessor law when it occurs. Producer qualification
+MAY be decided only once over the complete walk after the terminal record and
+its exact-head approval exist. A later record MUST NOT erase or reclassify an
+earlier touch. Any transient or endpoint non-record touch, operation absent
+from the predecessor consumer inventory, reporter movement outside
+r1_reporter_constant_projection_v1, unexplained producer output, historical-
+record mutation, or incomplete graph is content drift and is RED.
+
+The certificate MUST restate both native_accepted_pair and
+successor_observed_pair. Native_accepted_pair MUST equal the predecessor's
+accepted pair exactly. Successor_observed_pair MUST be independently
+recomputed at B by two independent implementations and MUST NOT be represented
+as native evidence. Every pair-input difference MUST be exhausted by qualified
+record operations under the unchanged digest law.
+
+The succession is effective only when establishment-time authenticated
+transport derives the exact decisively approved certificate PR tip Q and merge
+identity; the complete B..Q walk is qualified record-only; the certificate-
+containing landing M is on authoritative main first-parent history after B;
+tree(Q) equals tree(M); the landing edge is independently censused; and exactly
+one canonical garnet.wv_acceptance_effectiveness/v1 transcript and
+registry append durably bind those facts. The effectiveness receipt is terminal:
+it MUST NOT move a pair, claim its own Q/M bridge, or require another receipt.
+Ordinary verification MUST use the receipt and main objects, not live forge
+state. Current HEAD MUST descend through the unique linear effective tip.
+Ambiguity, absence, duplicate receipt, or registry fork is RED.
+```
+
+The verbatim native-pair equality sentence above is exact: R1 certificates form
+only the native-rooted succession prefix and cannot follow an R3 event. After
+an effective R3 event, `native_accepted_pair` remains the immutable root pair;
+later record-only observation preserves the event's current accepted pair while
+recomputing raw movement separately. The type-order and equality tests in
+`GARNET_WV_ACCEPTANCE_SUCCESSION_CONTRACT.md` prevent a post-event pair from
+being relabeled as native evidence.
+
+The effectiveness transcript is a terminal receipt. It has no effectiveness
+`Q_E` or `M_E`, cannot move either pair, and cannot be the subject of another
+receipt. Its later verifier uses the committed transcript, its registry entry,
+and authoritative-main Git objects; live forge loss after a valid anchor is
+non-authoritative, while omission, contradiction, or forge loss before capture
+is RED. The transcript records the brief's residual trust surface rather than
+claiming to eliminate it: capture-time GitHub authenticity and completeness,
+bounded credential transport, predecessor-base producer correctness,
+independent review, Jon's merge, Git object integrity, and SHA-256.
 
 ## Squash-durable landed marker
 
@@ -198,6 +382,24 @@ python3 -I scripts/test_garnet_trust_kernel_review_status.py -v
 # Diagnostics only; never a merge proof.
 python3 scripts/garnet_trust_kernel_review_status.py --changed-file README.md
 ```
+
+The sole U-59 sequence is mechanically ordered:
+
+1. Attempt 1 emits and uploads exactly one canonical `eligibility.json` receipt
+   even though the ordinary gate exits RED.
+2. The designated reviewer submits a decisive `APPROVED` review for the exact
+   unchanged record-containing head.
+3. A distinct Actions-write carrier invokes exactly one **Re-run all jobs** on
+   the same run; there is no close/reopen, new run, partial/job/debug rerun, or
+   attempt 3.
+4. Attempt 2 treats the event payload as stale coordinates, downloads and
+   verifies the attempt-1 receipt through `actions: read`, performs fresh live
+   transport, and proves through both attempt-specific jobs APIs that the fully
+   expanded job-name multiset reran with new job IDs and completed successfully.
+5. The reporter emits the final authenticated PR/head/tree/base/record/review
+   and governance readback. Jon reads that emission immediately before the
+   merge click. The readback detects only its observation instant; delay or a
+   visible state change restarts this readback step.
 
 The structured record binds what an identified reviewer attested. It does not
 cryptographically prove that a human or agent performed an adequate review;
