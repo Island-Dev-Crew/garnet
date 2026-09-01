@@ -31,6 +31,28 @@ The two-pair model is exact:
 - Only one exact closed R3 event certificate may establish each later accepted pair,
   and only after its terminal effectiveness transcript becomes effective.
 
+### Disclosed completions and interpretations
+
+Jon ratified the following six disclosed completions and interpretations on
+2026-09-01:
+
+- The brief did not allocate event or eligibility schema IDs; exact v1 IDs are
+  supplied here.
+- Eligibility stores deterministic `artifact_name`, not a pre-upload numeric
+  artifact ID, avoiding self-reference; attempt 2 authenticates the numeric ID
+  externally.
+- Later R1 succession interprets the brief's `H` slot as the preceding
+  transcript introduction `T`; only the first succession uses native `H`.
+- The one-time DP3 migration separates fact-only `B..S` history from producer-
+  qualified `S..Q` record history. This avoids falsely labeling acts 1–4 as
+  record-producer changes.
+- Fresh event re-observation remains inside the brief's exact 30-key
+  effectiveness schema by extending the existing `transport_receipts`
+  multiset; no 31st top-level key is added.
+- The brief's `valid_while` re-evaluation is narrowed by the terminal-live fold:
+  ordinary current-acceptance re-evaluation applies to the terminal live Class
+  A activation, not to superseded historical activations.
+
 ## Canonical JSON and exact-shape law
 
 Every repository JSON document defined here is a regular, non-executable
@@ -506,7 +528,7 @@ An implementation role admits only corresponding operation kinds:
 the six inventory/graph enumerator roles and `pair-enumerator` admit `enumerate`;
 `record-consumer` admits `load` or `parse`; `record-producer`,
 `succession-producer`, `event-class-producer`, and `effectiveness-producer`
-admit `produce`; `transport-projector` admits `observe` or `project`; and
+admit `produce`; `transport-projector` admits `observe` or `project`;
 `impact-resolver` admits `resolve`; and `verifier` admits `verify`. A multi-role implementation may contain the union
 for its declared roles and no other kind. Every declared role has at least one
 corresponding operation.
@@ -812,8 +834,8 @@ percent-encoded predecessor-inventoried `logical_id` and one operation ID
 separated by `/`.
 Its only substitutions are the literal variables `{owner}`, `{repo}`,
 `{pull_number}`, `{review_id}`, `{user_id}`, `{sha}`, `{page}`, `{per_page}`,
-`{run_id}`, `{attempt}`, `{artifact_id}`, `{crate}`, `{version}`, and
-`{toolchain}`, `{logical_id}`, and `{operation}`. Values are derived from
+`{run_id}`, `{attempt}`, `{artifact_id}`, `{crate}`, `{version}`, `{toolchain}`,
+`{logical_id}`, and `{operation}`. Values are derived from
 authenticated bound objects or the exact predecessor class row and percent-
 encoded once; `per_page=100`. The recorded
 endpoint equals the literal template substitution, including query-key order.
@@ -1199,8 +1221,8 @@ F_Project_Management/W_TRUST/U66_COMPANION_U59_EXCEPTION_2026-09-01.md
 F_Project_Management/W_TRUST/WV_ACCEPTANCE_EFFECTIVENESS.json
 F_Project_Management/W_TRUST/WV_ACCEPTANCE_EVENTS.json
 F_Project_Management/W_TRUST/WV_ACCEPTANCE_EVENT_CLASSES.json
-F_Project_Management/W_TRUST/WV_ACCEPTANCE_IMPLEMENTATIONS.json
 F_Project_Management/W_TRUST/WV_ACCEPTANCE_IMPACT_CRITERIA.json
+F_Project_Management/W_TRUST/WV_ACCEPTANCE_IMPLEMENTATIONS.json
 F_Project_Management/W_TRUST/WV_ACCEPTANCE_PRODUCER_GRAPH.json
 F_Project_Management/W_TRUST/WV_ACCEPTANCE_RECORD_CONSUMERS.json
 F_Project_Management/W_TRUST/WV_ACCEPTANCE_SUCCESSION.json
@@ -1706,7 +1728,7 @@ machine predicates:
 | `wv_event_toolchain_lint_v1` | 3 | exact compiler pin plus one predecessor-catalog rewrite and fixed-point closure, with catalog/suppression/stale-proof negatives |
 | `wv_acceptance_effectiveness_v1` | 3 | predecessor-base capture producer, terminal receipt registry, review/landing/pagination/non-recursion fixtures |
 | `trust_kernel_review_eligibility_v1` | 2 and 3 | attempt-1 artifact emission plus schema/artifact/live-transport negatives |
-| `r2_same_run_re_evaluation_v1` | 2 and 3 | sole eligible tuple, same-run/head attempt equality, all-jobs proof, fresh transport, authenticated reporter emission, and separately mandatory Jon procedural read |
+| `r2_same_run_re_evaluation_v1` | 2 and 3 | sole eligible tuple, same-run/head attempt equality, all-jobs proof, fresh transport, and authenticated reporter emission; Jon's procedural read is the separate mandatory non-mechanical residual |
 | `r1_review_scope_exact_v1` | 3 | exact non-extension structure and authenticated `H/R/B/Q/M` binding |
 | `r2_role_separation_v1` | 3 | immutable reviewer/carrier/commit-principal disjointness |
 | `r1_reporter_constant_projection_v1` | 3 | exactly four independently derived literal substitutions and byte identity elsewhere |
@@ -1865,9 +1887,12 @@ normalized projection. Class A repeats action-specific API/index agreement and
 repeats the exact pinned toolchain observation. A pending matching Class A
 expiry is evaluated as the proposed next fold state so the reversal can close
 the failed activation obligation, while the prior effective tip remains the
-acceptance authority until the expiry transcript becomes effective. The
-current reporter emission binds its own invocation time and current receipt
-digests. Equality of a stale carried timestamp or stored body never satisfies
+acceptance authority until the expiry transcript becomes effective. A pending,
+not-yet-effective Class A expiry NEVER suppresses the failed `valid_while` of
+the terminal activation in the ordinary current-acceptance reporter; proposed-
+fold evaluation exists only inside the expiry candidate's own verification
+context. The current reporter emission binds its own invocation time and
+current receipt digests. Equality of a stale carried timestamp or stored body never satisfies
 this re-observation law. Unavailable transport, an unexecuted transport
 operation, a response supplied outside the invocation, cache substitution, a
 producer-clock value outside the invocation interval, or a current live
@@ -2803,8 +2828,8 @@ wv_event_class_registry_v1
 wv_event_forge_serialization_v1
 wv_event_registry_yank_v1
 wv_event_toolchain_lint_v1
-wv_implementation_source_closure_v1
 wv_impact_criterion_registry_v1
+wv_implementation_source_closure_v1
 wv_producer_graph_inventory_v1
 wv_record_tail_pair_v1
 wv_schema_canonical_v1
