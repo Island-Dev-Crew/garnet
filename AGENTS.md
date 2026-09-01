@@ -85,6 +85,15 @@ the outside parent and does not relax transient-touch checks on the reviewed
 lineage. Run `python3 -I scripts/test_garnet_trust_kernel_review_status.py`
 after changing the walk or its trust-snapshot identity.
 
+## Dogfood PR-Body Evidence Contract
+
+`scripts/check_dogfood_pr_body.py` accepts the legacy Desktop dogfood bundle
+heading and the Evidence bundle heading. When both occur as real Markdown
+headings, the first one in document order is authoritative; configuration
+tuple order must not override document order. Keep regression fixtures for
+both heading orders. Run `python3 -I scripts/test_check_dogfood_pr_body.py`
+after changing the checker or this contract.
+
 ## WV-6 / WV-7 Acceptance Gates
 
 `F_Project_Management/LAUNCH/WV6_WV7_ACCEPTANCE_CONTRACTS.json` preserves the
