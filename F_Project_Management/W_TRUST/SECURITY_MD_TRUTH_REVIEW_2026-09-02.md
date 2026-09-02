@@ -819,3 +819,7 @@ VERDICT: REJECT — bound to 9120b7d43af9aa2ae476146d1ef3fb71c62a87c5
 
 
 ```
+
+## Lineage note (records-class, 2026-09-02)
+
+- Rebased onto main `6826ce8b80a3ddec287e7150dd16deff445d4635` (#542) under the strict up-to-date rule (U-74). Content commit `73094364bf9f16eac1308fffa5ad685a57eef301` → `6e1b21a631efa5837e4119338f5883b855cb3868`; `git diff 73094364bf9f16eac1308fffa5ad685a57eef301 6e1b21a631efa5837e4119338f5883b855cb3868 -- SECURITY.md` is empty (the reviewed content is byte-identical), so the CONFIRM verdict bound to the reviewed content stands; this note is the records-class head move that carries it.
