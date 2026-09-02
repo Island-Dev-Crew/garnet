@@ -1,0 +1,29 @@
+{
+  "author_emails": [
+    "email:jon-isaac@islanddevcrew.com"
+  ],
+  "author_ids": [
+    275140286
+  ],
+  "base_commit": "006eee51f62ac8461b3f85865c8181ae2bd11275",
+  "blocking_findings": [],
+  "content_digest": "sha256:c7844e08467102c9996859f7ed5eeba6d3156fcd694f5c0c8311afc5b1e00eb1",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 4414240991,
+  "pull_request_number": 539,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head 86468428b8261d8e57b1679ab51fe73f65f02bdb and does not extend or backdate reviewed_head coverage. OpenAI Codex cross-family seat verdict: CONFIRM, zero findings and zero blockers, at 86468428b8261d8e57b1679ab51fe73f65f02bdb; void if that head moves before this sanctioned fresh record-only commit. The superseded reviewed head eae6587bfc5c54aeb58719cd9ab146ec4d0a6870 and its discarded premerge record are outside this lineage and carry no acceptance forward: the PR #538 squash moved main to 006eee51f62ac8461b3f85865c8181ae2bd11275, and the mandatory U-74 rebase created a new content identity. Full fresh-clone recomputation: base 006eee51f62ac8461b3f85865c8181ae2bd11275; reviewed tree 99d7feeb6808fc59b6ef1310eba9567faf1ca2a9; exactly one implementation commit and one touched trust path, docs/why.html; exactly five deleted and five added physical lines, with no rename, mode, or other-path movement; gate-derived digest sha256:c7844e08467102c9996859f7ed5eeba6d3156fcd694f5c0c8311afc5b1e00eb1; the checked-in enforcement-scope link resolves; retired-vocabulary grep on the five added lines is zero. Delta-focused review: docs/why.html:237 now says A check that runs cannot be talked past, conditioning the claim on an invoked check and no longer implying that garnet run performs static CapCaps checking; docs/why.html:509 now says a first network-authority grant shows up in diff-caps as gained authority, accurately covering the aggregate-gained plus function-gained output without a line-count claim. Carried docs/why.html:275, docs/why.html:297, and docs/why.html:298 are byte-identical to reviewed head eae6587bfc5c54aeb58719cd9ab146ec4d0a6870: the combined selected-line stream is 1256 bytes with SHA-256 90b012e6254036e57db11ecde3f8e94d72501a9498ec9f7a93761ef366304103 on both heads. Standards and Spec axes report no findings. Verification: WV suite 6; agent contract inventory 24 and contract tests 6; capability-scope suite 10 with gate ok and problems empty; focused checker-only bypass and diff-caps golden tests each 1. GitHub API: PR 539 id 4414240991; repository and head-repository id 1218183013; candidate author and committer id 275140286; API head 86468428b8261d8e57b1679ab51fe73f65f02bdb and base 006eee51f62ac8461b3f85865c8181ae2bd11275. This premerge record is reviewer evidence only — it is not carrier approval, a GitHub approval, re-evaluation, merge, or deployment.",
+  "review_state": "APPROVED",
+  "reviewed_head": "86468428b8261d8e57b1679ab51fe73f65f02bdb",
+  "reviewed_tree": "99d7feeb6808fc59b6ef1310eba9567faf1ca2a9",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "docs/why.html"
+  ],
+  "verdict": "pass"
+}
