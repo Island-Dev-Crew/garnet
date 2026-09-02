@@ -60,6 +60,7 @@ font:500 11px var(--mono);letter-spacing:.04em;color:var(--dim)}
 .facet-rule{display:block;margin:26px auto 0;width:min(420px,70%)}
 .tagline{margin:26px auto 6px;max-width:640px;font-size:clamp(16px,2.4vw,19px);color:var(--dim)}
 .tagline b{color:var(--ink);font-weight:500}
+.tagline.pos{font-size:clamp(14px,2vw,16px);margin-top:10px}
 .gov{font:500 11.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-top:14px}
 .gov b{color:var(--gold-soft);font-weight:500}
 
@@ -102,6 +103,13 @@ text-decoration:none;transition:border-color .15s,background .15s}
 .accept p{margin:14px 0 0;text-align:center;color:var(--dim);font-size:15px}
 .accept p a{color:var(--gold-soft);text-decoration:none}
 
+/* ---- film ---- */
+.film{max-width:880px;margin:64px auto 0;padding:0 20px}
+.film h2{font-family:var(--display);font-weight:400;font-size:clamp(24px,3.4vw,32px);letter-spacing:-.01em;margin:0 0 14px;text-align:center}
+.promo-video{display:block;width:100%;height:auto;background:#000;border:1px solid var(--line);border-radius:12px}
+.film-cap{text-align:center;color:var(--dim);font-size:14px;margin:14px auto 0;max-width:720px}
+.film-cap a{color:var(--gold-soft);text-decoration:none}
+
 /* ---- footer ---- */
 footer{margin-top:84px;border-top:1px solid var(--line);padding:34px 0 60px}
 .foot-in{max-width:1040px;margin:0 auto;padding:0 20px;display:flex;flex-wrap:wrap;gap:18px 30px;align-items:center;justify-content:center}
@@ -143,6 +151,7 @@ footer{margin-top:84px;border-top:1px solid var(--line);padding:34px 0 60px}
       <path d="M188 3 L210 18 L232 3 L210 8 Z" fill="none" stroke="#D64550" stroke-width="1"/>
     </svg>
     <p class="tagline"><b>English is how you tell an agent what to do. Garnet lang is how anyone else can trust what it did.</b> A capability-bounded language whose checker rejects an undeclared call into its registered capability surface, whose diffs report widened authority, and whose builds and seals a stranger can recompute without trusting the author.</p>
+    <p class="tagline pos">The bet is <b>the integration, not the parts</b>. Each pillar is well-precedented — capabilities, deterministic builds, in-toto attestations, diff-caps review — and the new thing is one language that targets agent-authored code and ships the evidence with it.</p>
     <p class="gov">no authority without evidence · research-grade v<!-- truth:version -->0.8.1<!-- /truth --> · built by <b>Island Dev Crew</b></p>
   </header>
 
@@ -202,6 +211,16 @@ def main() {
       <li><span><b>The rule:</b> a content change voids the verdict; a missing record stays red.</span></li>
     </ol>
     <p>Trust-kernel changes carry all five. The register of what the gates caught is public: <a href="https://github.com/Island-Dev-Crew/garnet/tree/main/F_Project_Management/W_TRUST">findings U-04 through U-83</a>, historical gaps recorded.</p>
+  </section>
+
+  <section class="film" id="promo" aria-labelledby="promo-h">
+    <h2 id="promo-h">Thirty seconds of Garnet lang</h2>
+    <video class="promo-video" controls preload="metadata" poster="assets/garnet-promo-poster.png" width="1920" height="1080">
+      <source src="assets/garnet-promo.webm" type="video/webm">
+      <source src="assets/garnet-promo.mp4" type="video/mp4">
+      <p>Download the promo video: <a href="assets/garnet-promo.mp4">MP4</a>.</p>
+    </video>
+    <p class="film-cap">Public-site embedded. Objective accounting keeps this page confident and <a href="status.html">status.html</a> precise: the render, its visual QA, and the site sync carry manifest-backed evidence; human/aesthetic acceptance remains open, and this is not full MIT/productization completion.</p>
   </section>
 </main>
 
