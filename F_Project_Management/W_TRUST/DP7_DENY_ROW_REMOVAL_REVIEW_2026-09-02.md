@@ -48,3 +48,7 @@ VERDICT: CONFIRM-WITH-FINDINGS — bound to 4d8dfb5f584836f5b0f7a358c0da95820de1
 
 
 ```
+
+## Lineage note (records-class, 2026-09-02)
+
+- Rebased onto main `16454b55736ebf0e7778f0e1f308da9a896d8b97` (#546) under the strict up-to-date rule (U-74). Content commit `4d8dfb5f584836f5b0f7a358c0da95820de199c8` → `553ec8e17c4212961e7f87712252de05369e0fbb`; `git diff 4d8dfb5f584836f5b0f7a358c0da95820de199c8 553ec8e17c4212961e7f87712252de05369e0fbb -- deny.toml` is empty (the reviewed content is byte-identical), so the CONFIRM-WITH-FINDINGS verdict bound to the reviewed content stands; this note is the records-class head move that carries it. Merge remains Jon's (integrity rule 1).
