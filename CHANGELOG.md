@@ -1,5 +1,32 @@
 # Changelog
 
+## Unreleased — capability-gate walk no longer hides declared authority (2026-09-03)
+
+- **Fixed a BLOCKING authority-widening defect (crown scope C, B-1):** the
+  shared collector behind `garnet diff-caps` / `caps` / `verify` skipped any
+  directory *named* `vendor` or `node_modules` at any depth, so a `.garnet`
+  file placed there declaring `@caps(net, fs)` never reached the authority
+  gate — `diff-caps --machine` reported `no-authority-expansion`, band 5/5,
+  exit 0. The same file one directory up correctly reported
+  `authority-expanded`, band 2/5, exit 1.
+- **Cure:** `vendor` is now recognized only as the root-relative
+  `<root>/.garnet/vendor`, the one path a dependency may bind to
+  (`garnet-cli/AGENTS.md`); `node_modules` is no longer a skip at all. Build
+  output (`target`), VCS internals (`.git`), and the tool cache
+  (`.garnet-cache`) remain skipped at any depth.
+- **Omission is now disclosed, not silent:** `garnet.diff-caps.machine/1`
+  gains `skipped_path_count` and `skipped_paths` (rule names and counts only,
+  never paths) — purely additive, no existing key changes. The human mode
+  prints one `walk not total` line only when the count is non-zero, so
+  byte-stable output for a total walk is unchanged.
+- **Scope boundary:** this repairs which paths the walk READS and discloses
+  what it does not. It does not change the declared-surface semantics, the
+  `scope` caveat string, or the band mapping, and it still does not prove the
+  absence of undeclared authority. `garnet caps`, `garnet sandbox-policy`, and
+  `garnet verify` inherit the widened walk but do not yet surface the omission
+  tally — that disclosure is `diff-caps`-only. Absence of `skipped_path_count`
+  in a verdict means a pre-cure binary produced it, NOT that the walk was total.
+
 ## Unreleased — gate hardening: dogfood PR-body checker section boundary, exact headings, evidence tokens (2026-09-02)
 
 ### `scripts/check_dogfood_pr_body.py` — crown D-1, hardening H3-01, crown D-N4 cured

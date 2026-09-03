@@ -8,6 +8,7 @@
 
 use crate::verify_gate::{fuse, Band, CapabilitySignal, GateTally};
 use crate::{edition_manifest, read_file};
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
@@ -186,35 +187,124 @@ pub fn gate_tally(path: &Path) -> Result<GateTally, String> {
     Ok(tally)
 }
 
-/// Resolve the target list: a single `.garnet` file, or every `.garnet` file
-/// under a directory (skipping build/vendor dirs). Returned sorted for
-/// deterministic output. `pub(crate)` so `garnet caps` (S36) reuses the walk.
-pub(crate) fn collect_targets(path: &Path) -> std::io::Result<Vec<PathBuf>> {
-    if path.is_file() {
-        return Ok(vec![path.to_path_buf()]);
-    }
-    let mut out = Vec::new();
-    walk(path, &mut out)?;
-    out.sort();
-    Ok(out)
+/// Rule names for the directories the walk refuses to read. These strings are
+/// contract text: they appear verbatim in the `garnet.diff-caps.machine/1`
+/// disclosure, so a reviewer or agent can tell WHY a path went unread.
+pub const RULE_BUILD_OUTPUT: &str = "build-output";
+/// VCS internals (`.git`) — managed by git, not authored source.
+pub const RULE_VCS_METADATA: &str = "vcs-metadata";
+/// This tool's own cache (`.garnet-cache`) — machine-generated.
+pub const RULE_TOOL_CACHE: &str = "tool-cache";
+/// The one documented vendored-dependency path, `<root>/.garnet/vendor`.
+pub const RULE_VENDORED_DEPENDENCIES: &str = "vendored-dependencies";
+
+/// What a walk did NOT read, tallied by rule.
+///
+/// Crown C B-1: a skipped `.garnet` file is DECLARED authority the capability
+/// surface never contains, so a silent skip lets a widening merge pass the
+/// gate. This tally makes the omission visible. It carries counts and rule
+/// names only — never paths, absolute or otherwise.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ScanOmissions {
+    counts: BTreeMap<&'static str, usize>,
 }
 
-fn walk(dir: &Path, out: &mut Vec<PathBuf>) -> std::io::Result<()> {
+impl ScanOmissions {
+    fn record(&mut self, rule: &'static str) {
+        *self.counts.entry(rule).or_insert(0) += 1;
+    }
+
+    /// Directories omitted. `0` means the walk was total.
+    pub fn total(&self) -> usize {
+        self.counts.values().copied().sum()
+    }
+
+    /// `(rule, count)` pairs, sorted by rule name for deterministic output.
+    pub fn by_rule(&self) -> Vec<(&'static str, usize)> {
+        self.counts.iter().map(|(r, c)| (*r, *c)).collect()
+    }
+
+    /// Fold another walk's omissions in — `diff-caps` walks two trees and the
+    /// verdict covers both.
+    pub fn merge(&mut self, other: &ScanOmissions) {
+        for (rule, count) in &other.counts {
+            *self.counts.entry(rule).or_insert(0) += count;
+        }
+    }
+}
+
+/// Resolve the target list: a single `.garnet` file, or every `.garnet` file
+/// under a directory (skipping the tool-owned trees named by [`omission_rule`]).
+/// Returned sorted for deterministic output. `pub(crate)` so `garnet caps`
+/// (S36) reuses the walk.
+///
+/// Callers that GATE on the result should prefer
+/// [`collect_targets_with_omissions`] and disclose what went unread.
+pub(crate) fn collect_targets(path: &Path) -> std::io::Result<Vec<PathBuf>> {
+    Ok(collect_targets_with_omissions(path)?.0)
+}
+
+/// [`collect_targets`] plus the tally of directories the walk refused to read.
+pub fn collect_targets_with_omissions(
+    path: &Path,
+) -> std::io::Result<(Vec<PathBuf>, ScanOmissions)> {
+    let mut omissions = ScanOmissions::default();
+    if path.is_file() {
+        return Ok((vec![path.to_path_buf()], omissions));
+    }
+    let mut out = Vec::new();
+    walk(path, path, &mut out, &mut omissions)?;
+    out.sort();
+    Ok((out, omissions))
+}
+
+/// The rule under which `dir` is omitted from the walk, or `None` to walk it.
+///
+/// Crown C B-1: this used to match a bare directory NAME at any depth, so a
+/// `.garnet` file under any `vendor/` or `node_modules/` — names an author or
+/// an attacker picks freely — was invisible to the authority gate while
+/// `diff-caps` still reported `no-authority-expansion`, band 5/5, exit 0.
+///
+/// Now `vendor` is recognized only as the ROOT-RELATIVE `<root>/.garnet/vendor`
+/// — the one path a dependency may bind to (garnet-cli/AGENTS.md) and one that
+/// lives inside the tool-owned `.garnet` directory. `node_modules` has no
+/// meaning in Garnet's build model at all, so it is no longer a skip: it is
+/// ordinary source and is walked.
+///
+/// `target`, `.git`, and `.garnet-cache` remain skipped at any depth. Each
+/// names a tree a tool owns and generates — Cargo/Garnet build output, git
+/// internals, this tool's own cache — not authored source a reviewer diffs.
+/// Every remaining skip is disclosed by [`ScanOmissions`].
+fn omission_rule(root: &Path, dir: &Path) -> Option<&'static str> {
+    let name = dir.file_name()?.to_string_lossy().into_owned();
+    match name.as_str() {
+        "target" => Some(RULE_BUILD_OUTPUT),
+        ".git" => Some(RULE_VCS_METADATA),
+        ".garnet-cache" => Some(RULE_TOOL_CACHE),
+        "vendor" => {
+            let relative = dir.strip_prefix(root).ok()?;
+            (relative == Path::new(".garnet").join("vendor")).then_some(RULE_VENDORED_DEPENDENCIES)
+        }
+        _ => None,
+    }
+}
+
+fn walk(
+    root: &Path,
+    dir: &Path,
+    out: &mut Vec<PathBuf>,
+    omissions: &mut ScanOmissions,
+) -> std::io::Result<()> {
     for entry in std::fs::read_dir(dir)? {
         let entry = entry?;
         let path = entry.path();
         let file_type = entry.file_type()?;
         if file_type.is_dir() {
-            let name = entry.file_name();
-            let name = name.to_string_lossy();
-            // Skip build output, VCS, and vendored dependency trees.
-            if matches!(
-                name.as_ref(),
-                "target" | ".git" | "node_modules" | "vendor" | ".garnet-cache"
-            ) {
+            if let Some(rule) = omission_rule(root, &path) {
+                omissions.record(rule);
                 continue;
             }
-            walk(&path, out)?;
+            walk(root, &path, out, omissions)?;
         } else if path
             .extension()
             .is_some_and(|e| e.eq_ignore_ascii_case("garnet"))
@@ -270,5 +360,150 @@ mod tests {
         let f = tmp.path().join("LIB.GARNET");
         fs::write(&f, "def f() { 1 }\n").unwrap();
         assert_eq!(collect_targets(&f).unwrap(), vec![f]);
+    }
+
+    /// Write a `.garnet` file at `rel` under `root`, creating parents.
+    fn write_nested(root: &std::path::Path, rel: &str, body: &str) {
+        let p = root.join(rel);
+        fs::create_dir_all(p.parent().unwrap()).unwrap();
+        fs::write(&p, body).unwrap();
+    }
+
+    fn names(root: &std::path::Path) -> Vec<String> {
+        collect_targets(root)
+            .unwrap()
+            .iter()
+            .map(|p| p.file_name().unwrap().to_string_lossy().to_string())
+            .collect()
+    }
+
+    /// crown C B-1: a bare `vendor/` is NOT the documented vendored path
+    /// (`.garnet/vendor/<name>`), so the collector must walk it — otherwise
+    /// declared authority under it is invisible to `diff-caps`.
+    #[test]
+    fn collect_targets_walks_a_bare_vendor_directory() {
+        let tmp = TempDir::new().unwrap();
+        write_nested(tmp.path(), "tool.garnet", "@caps()\ndef main() { 1 }\n");
+        write_nested(
+            tmp.path(),
+            "vendor/evil.garnet",
+            "@caps(net, fs)\ndef reach() { 1 }\n",
+        );
+        let found = names(tmp.path());
+        assert!(
+            found.iter().any(|n| n == "evil.garnet"),
+            "bare vendor/ must be walked, got {found:?}"
+        );
+    }
+
+    /// `node_modules` is an equally arbitrary name with no Garnet meaning; a
+    /// `.garnet` file there was just as invisible to the authority gate.
+    #[test]
+    fn collect_targets_walks_node_modules() {
+        let tmp = TempDir::new().unwrap();
+        write_nested(tmp.path(), "tool.garnet", "@caps()\ndef main() { 1 }\n");
+        write_nested(
+            tmp.path(),
+            "node_modules/evil.garnet",
+            "@caps(net, fs)\ndef reach() { 1 }\n",
+        );
+        let found = names(tmp.path());
+        assert!(
+            found.iter().any(|n| n == "evil.garnet"),
+            "node_modules/ must be walked, got {found:?}"
+        );
+    }
+
+    /// The old skip matched the bare directory NAME at any depth.
+    #[test]
+    fn collect_targets_walks_a_nested_vendor_directory() {
+        let tmp = TempDir::new().unwrap();
+        write_nested(tmp.path(), "tool.garnet", "@caps()\ndef main() { 1 }\n");
+        write_nested(
+            tmp.path(),
+            "a/b/vendor/evil.garnet",
+            "@caps(net, fs)\ndef reach() { 1 }\n",
+        );
+        let found = names(tmp.path());
+        assert!(
+            found.iter().any(|n| n == "evil.garnet"),
+            "a/b/vendor/ must be walked, got {found:?}"
+        );
+    }
+
+    /// Legitimate skips survive: build output, VCS internals, tool cache.
+    #[test]
+    fn collect_targets_skips_build_output_vcs_and_cache() {
+        let tmp = TempDir::new().unwrap();
+        write_nested(tmp.path(), "tool.garnet", "@caps()\ndef main() { 1 }\n");
+        for dir in ["target", ".git", ".garnet-cache"] {
+            write_nested(
+                tmp.path(),
+                &format!("{dir}/build.garnet"),
+                "@caps(net)\ndef g() { 1 }\n",
+            );
+        }
+        assert_eq!(names(tmp.path()), vec!["tool.garnet".to_string()]);
+    }
+
+    /// The one documented vendored path stays skipped — and only at exactly
+    /// `<root>/.garnet/vendor`, never at an arbitrary depth.
+    #[test]
+    fn collect_targets_skips_only_the_root_relative_dot_garnet_vendor() {
+        let tmp = TempDir::new().unwrap();
+        write_nested(tmp.path(), "tool.garnet", "@caps()\ndef main() { 1 }\n");
+        write_nested(
+            tmp.path(),
+            ".garnet/vendor/dep/lib.garnet",
+            "@caps(net)\ndef d() { 1 }\n",
+        );
+        write_nested(
+            tmp.path(),
+            "sub/.garnet/vendor/dep/lib.garnet",
+            "@caps(net)\ndef d() { 1 }\n",
+        );
+        let found = names(tmp.path());
+        assert_eq!(
+            found.iter().filter(|n| n.as_str() == "lib.garnet").count(),
+            1,
+            "only <root>/.garnet/vendor is skipped, got {found:?}"
+        );
+    }
+
+    /// The tally names every omission so a consumer can see the walk was not
+    /// total, without leaking absolute paths.
+    #[test]
+    fn collect_targets_reports_the_omissions_it_made() {
+        let tmp = TempDir::new().unwrap();
+        write_nested(tmp.path(), "tool.garnet", "@caps()\ndef main() { 1 }\n");
+        for rel in [
+            "target/a.garnet",
+            ".git/b.garnet",
+            ".garnet-cache/c.garnet",
+            ".garnet/vendor/dep/d.garnet",
+        ] {
+            write_nested(tmp.path(), rel, "@caps(net)\ndef g() { 1 }\n");
+        }
+        let (_, omissions) = super::collect_targets_with_omissions(tmp.path()).unwrap();
+        assert_eq!(omissions.total(), 4);
+        assert_eq!(
+            omissions.by_rule(),
+            vec![
+                ("build-output", 1),
+                ("tool-cache", 1),
+                ("vcs-metadata", 1),
+                ("vendored-dependencies", 1),
+            ]
+        );
+    }
+
+    /// A total walk reports nothing skipped.
+    #[test]
+    fn a_total_walk_records_no_omissions() {
+        let tmp = TempDir::new().unwrap();
+        write_nested(tmp.path(), "a/b/tool.garnet", "@caps()\ndef main() { 1 }\n");
+        let (_, omissions) = super::collect_targets_with_omissions(tmp.path()).unwrap();
+        assert_eq!(omissions.total(), 0);
+        assert!(omissions.by_rule().is_empty());
     }
 }

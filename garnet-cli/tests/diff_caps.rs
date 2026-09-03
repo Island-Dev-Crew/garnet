@@ -241,3 +241,134 @@ fn unknown_diff_caps_flag_is_rejected() {
     let err = String::from_utf8(out.stderr).unwrap();
     assert!(err.contains("unknown diff-caps flag: --machin"), "{err}");
 }
+
+// ── crown C B-1: the walker must not hide DECLARED authority ────────────
+//
+// `collect_targets` (the shared collector behind `surface_for_path`) used to
+// skip any directory *named* `vendor` or `node_modules` at any depth. A
+// `.garnet` file placed there declared `@caps(net, fs)` and the authority gate
+// never read it: `diff-caps --machine` said `no-authority-expansion`, band
+// 5/5, exit 0. The verdict's `scope` string does not cover that case — it
+// disclaims *undeclared* authority, while this authority is declared and
+// simply unread.
+
+/// An old/new pair whose ONLY difference is a `.garnet` file added at
+/// `hidden_rel` in the new tree, declaring `@caps(net, fs)`.
+fn hidden_authority_pair(tag: &str, hidden_rel: &str) -> (PathBuf, PathBuf) {
+    let root = fresh(tag);
+    let old = root.join("old");
+    let new = root.join("new");
+    std::fs::create_dir_all(&old).unwrap();
+    std::fs::create_dir_all(&new).unwrap();
+    write(old.as_path(), "tool.garnet", "@caps()\ndef main() { 1 }\n");
+    write(new.as_path(), "tool.garnet", "@caps()\ndef main() { 1 }\n");
+    let hidden = new.join(hidden_rel);
+    std::fs::create_dir_all(hidden.parent().unwrap()).unwrap();
+    std::fs::write(&hidden, "@caps(net, fs)\ndef reach() { 1 }\n").unwrap();
+    (old, new)
+}
+
+fn machine_diff(old: &Path, new: &Path) -> (i32, String) {
+    let out = garnet()
+        .arg("diff-caps")
+        .arg("--machine")
+        .arg(old)
+        .arg(new)
+        .output()
+        .unwrap();
+    (
+        out.status.code().unwrap(),
+        String::from_utf8(out.stdout).unwrap(),
+    )
+}
+
+/// The reviewer's exact reproduction: a bare `vendor/` is NOT the documented
+/// vendored path, so authority declared under it must reach the gate.
+#[test]
+fn declared_authority_under_bare_vendor_is_not_hidden() {
+    let (old, new) = hidden_authority_pair("bare_vendor", "vendor/evil.garnet");
+    let (code, s) = machine_diff(&old, &new);
+    assert_eq!(code, 1, "authority declared under vendor/ must gate: {s}");
+    assert!(s.contains("\"verdict\":\"authority-expanded\""), "{s}");
+    assert!(s.contains("\"capability_band\":\"2/5\""), "{s}");
+    assert!(s.contains("\"aggregate_gained\":[\"fs\",\"net\"]"), "{s}");
+}
+
+/// `node_modules` is an equally arbitrary directory name — a `.garnet` file
+/// there was just as invisible to the gate.
+#[test]
+fn declared_authority_under_node_modules_is_not_hidden() {
+    let (old, new) = hidden_authority_pair("node_modules", "node_modules/evil.garnet");
+    let (code, s) = machine_diff(&old, &new);
+    assert_eq!(
+        code, 1,
+        "authority declared under node_modules/ must gate: {s}"
+    );
+    assert!(s.contains("\"verdict\":\"authority-expanded\""), "{s}");
+    assert!(s.contains("\"aggregate_gained\":[\"fs\",\"net\"]"), "{s}");
+}
+
+/// The old skip matched on the bare directory NAME at any depth, so nesting
+/// the same directory deeper hid authority just as well.
+#[test]
+fn declared_authority_under_nested_vendor_is_not_hidden() {
+    let (old, new) = hidden_authority_pair("nested_vendor", "a/b/vendor/evil.garnet");
+    let (code, s) = machine_diff(&old, &new);
+    assert_eq!(code, 1, "authority under a/b/vendor/ must gate: {s}");
+    assert!(s.contains("\"verdict\":\"authority-expanded\""), "{s}");
+    assert!(s.contains("\"aggregate_gained\":[\"fs\",\"net\"]"), "{s}");
+}
+
+/// The ONE documented vendored path (`.garnet/vendor/<name>`, garnet-cli
+/// AGENTS.md) stays skipped — but the omission is now DISCLOSED in the machine
+/// verdict, so a reviewer can see the walk was not total.
+#[test]
+fn documented_vendored_path_stays_skipped_and_the_omission_is_disclosed() {
+    let (old, new) = hidden_authority_pair("dot_garnet_vendor", ".garnet/vendor/dep/lib.garnet");
+    let (code, s) = machine_diff(&old, &new);
+    assert_eq!(code, 0, "the documented vendored path stays skipped: {s}");
+    assert!(s.contains("\"verdict\":\"no-authority-expansion\""), "{s}");
+    assert!(s.contains("\"skipped_path_count\":1"), "{s}");
+    assert!(
+        s.contains("{\"rule\":\"vendored-dependencies\",\"count\":1}"),
+        "{s}"
+    );
+}
+
+/// Legitimate skips survive — build output, VCS internals, and the tool cache
+/// are still not walked, and each is named in the disclosure.
+#[test]
+fn build_output_vcs_and_cache_stay_skipped_and_are_disclosed() {
+    let root = fresh("legit_skips");
+    let old = root.join("old");
+    let new = root.join("new");
+    std::fs::create_dir_all(&old).unwrap();
+    std::fs::create_dir_all(&new).unwrap();
+    write(old.as_path(), "tool.garnet", "@caps()\ndef main() { 1 }\n");
+    write(new.as_path(), "tool.garnet", "@caps()\ndef main() { 1 }\n");
+    for dir in ["target", ".git", ".garnet-cache"] {
+        let d = new.join(dir);
+        std::fs::create_dir_all(&d).unwrap();
+        std::fs::write(d.join("build.garnet"), "@caps(net, fs)\ndef g() { 1 }\n").unwrap();
+    }
+    let (code, s) = machine_diff(&old, &new);
+    assert_eq!(code, 0, "build/VCS/cache trees stay skipped: {s}");
+    assert!(s.contains("\"verdict\":\"no-authority-expansion\""), "{s}");
+    assert!(s.contains("\"skipped_path_count\":3"), "{s}");
+    assert!(s.contains("{\"rule\":\"build-output\",\"count\":1}"), "{s}");
+    assert!(s.contains("{\"rule\":\"tool-cache\",\"count\":1}"), "{s}");
+    assert!(s.contains("{\"rule\":\"vcs-metadata\",\"count\":1}"), "{s}");
+}
+
+/// A total walk says so: zero skipped paths, empty rule list. Absence of the
+/// field means a pre-cure binary, NOT a total walk.
+#[test]
+fn a_total_walk_reports_zero_skipped_paths() {
+    let dir = fresh("total_walk");
+    let a = write(dir.as_path(), "a.garnet", "@caps(fs)\ndef main() { 1 }\n");
+    let b = write(dir.as_path(), "b.garnet", "@caps(fs)\ndef main() { 1 }\n");
+    let (code, s) = machine_diff(&a, &b);
+    assert_eq!(code, 0, "{s}");
+    assert!(s.contains("\"skipped_path_count\":0"), "{s}");
+    assert!(s.contains("\"skipped_paths\":[]"), "{s}");
+}
