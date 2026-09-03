@@ -160,7 +160,7 @@ footer{margin-top:84px;border-top:1px solid var(--line);padding:34px 0 60px}
   <div class="strip-in">
     <span><a class="home" href="index.html">← garnet-lang.org</a></span>
     <span><span class="k">written at main</span> <a href="https://github.com/Island-Dev-Crew/garnet/commit/beeb5e7b23e892521da439da67d44a37f23b5584"><b>beeb5e7b</b></a></span>
-    <span><span class="k">garnet-evidence</span> <a href="https://github.com/Island-Dev-Crew/garnet-evidence/commit/f0a37f5586024d33d0d44d302f8624af6c4ebcb8"><b>f0a37f55</b></a> <span class="k">MIT</span></span>
+    <span><span class="k">garnet-evidence</span> <a href="https://github.com/Island-Dev-Crew/garnet-evidence/commit/29378a3678cdcb509e89bb75dfea8c453772ddca"><b>29378a36</b></a> <span class="k">MIT</span></span>
     <span><span class="k">omarchy quattro</span> <a href="https://github.com/basecamp/omarchy/blob/quattro/version"><b>4.0.0.alpha</b></a> <span class="k">version file</span></span>
     <span><span class="k">capture</span> <b class="ok">2026-09-02</b> <span class="k">fresh temp HOME · garnet 0.8.1 at fbd64bc5</span></span>
     <span class="stamp">one real seam · two locked doors</span>
@@ -202,10 +202,10 @@ ln -sfn "$OMARCHY_PATH/default/agents/skills/omarchy" ~/.claude/skills/omarchy
 ln -sfn "$OMARCHY_PATH/default/agents/skills/omarchy" ~/.codex/skills/omarchy
 ln -sfn "$OMARCHY_PATH/default/agents/skills/omarchy" ~/.pi/agent/skills/omarchy</pre>
           <p><a href="https://github.com/basecamp/omarchy/blob/quattro/migrations/1786539345.sh"><code>migrations/1786539345.sh</code></a> loops the same four directories for its crash-diagnosis skill:</p>
-<pre class="q">for skills_dir in ~/.agents/skills ~/.claude/skills ~/.codex/skills ~/.pi/agent/skills; do
-  mkdir -p "$skills_dir"
-  ln -sfn "$skills_source/diagnose-crash" "$skills_dir/diagnose-crash"
-done</pre>
+<pre class="q">  for skills_dir in ~/.agents/skills ~/.claude/skills ~/.codex/skills ~/.pi/agent/skills; do
+    mkdir -p "$skills_dir"
+    ln -sfn "$skills_source/diagnose-crash" "$skills_dir/diagnose-crash"
+  done</pre>
           <p>A later migration in the same tree, <a href="https://github.com/basecamp/omarchy/blob/quattro/migrations/1786719479.sh"><code>1786719479.sh</code></a>, adds a fifth directory, <code>~/.gemini/config/skills</code>, for the Antigravity agent. <code>install.sh</code> links the four; the fifth is not in it.</p>
           <p class="src">source: Omarchy Quattro source tree (version file 4.0.0.alpha; MIT, © David Heinemeier Hansson), read 2026-09-02 and byte-identical to the <a href="https://github.com/basecamp/omarchy/tree/quattro">quattro branch</a> at fetch time</p>
         </div>
@@ -213,7 +213,7 @@ done</pre>
           <p><b>garnet-evidence</b> is a standalone repository whose root is the skill folder. Its <a href="https://github.com/Island-Dev-Crew/garnet-evidence/blob/main/install.sh"><code>install.sh</code></a> does the same <code>mkdir -p</code> and <code>ln -sfn</code> into the same four directories, refuses to overwrite a real directory, and checks that <code>SKILL.md</code> is reachable through every link. Its <a href="https://github.com/Island-Dev-Crew/garnet-evidence/blob/main/tests/smoke.sh"><code>tests/smoke.sh</code></a> builds a throwaway repository that widens one file to <code>@caps(fs)</code>, runs the packet script with and without a <code>garnet</code> binary, and asserts that a fresh clone at another path recomputes the same <code>packet.sha256</code>.</p>
           <p>A packet holds <code>garnet check</code> at HEAD and at base, <code>garnet diff-caps --machine</code> against base, <code>garnet build --deterministic</code> and <code>garnet seal</code>, each with its exit code and a status of green, red, unverified or n/a. Red is evidence, not a failed packet: it names the capability a reviewer must accept on purpose or the author must narrow. A rung whose tool is absent is unverified, never green.</p>
           <p class="cond"><b>State</b>Both scripts ran for this page in a fresh temporary <code>HOME</code>, on macOS, not on an Omarchy install. The capture is below, unedited.</p>
-          <p class="src">source: install.sh, tests/smoke.sh and README.md at garnet-evidence f0a37f55</p>
+          <p class="src">source: install.sh, tests/smoke.sh and README.md at garnet-evidence 29378a36</p>
         </div>
       </article>
 
@@ -242,7 +242,7 @@ done</pre>
           <h3 id="row3-h">Capability-bounded triage</h3>
           <p>Today Omarchy Quattro watches for process crashes and hands them to the default agent with a skill. Verbatim, the first line of <code>migrations/1786539345.sh</code>:</p>
 <pre class="q">echo "Announce process crashes and offer an AI diagnosis"</pre>
-          <p>The skill, <code>default/agents/skills/diagnose-crash/SKILL.md</code>, is a Markdown file. Its front matter carries a name and a description, and nothing in the skill declares what the agent may read while it works.</p>
+          <p>The skill, <code>default/agents/skills/diagnose-crash/SKILL.md</code>, is a Markdown file. Its front matter carries only a name and a description: no capability or permission declaration. Its body does direct reads, in prose. Line 43 is the heading "Read the whole core, not just frame 0"; lines 88–89 say "Diagnosis reads; it does not fix, tidy, or reconfigure." Nothing declares or bounds what it may read; a paragraph asks, and no checker holds the agent to it.</p>
           <p>Today Garnet lang declares and checks authority for <code>.garnet</code> code: <code>@caps</code> on a function, <code>garnet check</code> rejecting an undeclared call into the registered capability surface, <code>garnet diff-caps</code> reporting widened authority. None of that reaches a Markdown skill, and no Garnet-bounded triage skill exists.</p>
           <p class="src">sources: migrations/1786539345.sh and default/agents/skills/diagnose-crash/SKILL.md in the Quattro tree · the front door's capture for check and diff-caps</p>
         </div>
@@ -263,20 +263,20 @@ done</pre>
     </div>
   </section>
 
-  <!-- PROOF — the one real seam, running. Captured unedited on 2026-09-02 from a fresh clone of garnet-evidence at f0a37f55 with HOME set to a fresh mktemp directory and GARNET_BIN pointed at garnet 0.8.1 built at main fbd64bc5, on macOS arm64; cosign not installed; only long lines are elided with … -->
+  <!-- PROOF — the one real seam, running. Captured unedited on 2026-09-02 from a fresh clone of garnet-evidence at 29378a36 with HOME set to a fresh mktemp directory and GARNET_BIN pointed at garnet 0.8.1 built at main fbd64bc5, on macOS arm64; cosign not installed; only long lines are elided with … -->
   <section class="wrap proof" aria-labelledby="proof-h">
     <p class="kicker">The capture</p>
     <h2 id="proof-h">The seam, running</h2>
     <div class="term">
-      <div class="term-bar" aria-hidden="true"><i class="dotr"></i><i class="dotr"></i><i class="dotr"></i><span>garnet-evidence f0a37f55 · install.sh + tests/smoke.sh · fresh temp HOME · garnet 0.8.1 at fbd64bc5</span><span class="real">real capture</span></div>
-      <pre><span class="c">$ git clone -q https://github.com/Island-Dev-Crew/garnet-evidence garnet-evidence &amp;&amp; cd garnet-evidence</span>
+      <div class="term-bar" aria-hidden="true"><i class="dotr"></i><i class="dotr"></i><i class="dotr"></i><span>garnet-evidence 29378a36 · install.sh + tests/smoke.sh · fresh temp HOME · garnet 0.8.1 at fbd64bc5</span><span class="real">real capture</span></div>
+      <pre><span class="c">$ git clone -q https://github.com/Island-Dev-Crew/garnet-evidence garnet-evidence-2 &amp;&amp; cd garnet-evidence-2</span>
 <span class="c">$ git rev-parse HEAD</span>
-f0a37f5586024d33d0d44d302f8624af6c4ebcb8
+29378a3678cdcb509e89bb75dfea8c453772ddca
 <span class="c">$ HOME=$(mktemp -d) bash install.sh</span>
-<span class="g">linked</span>   /var/folders/…/tmp.yq3StFMATM/.agents/skills/garnet-evidence -> /private/tmp/…/garnet-evidence
-<span class="g">linked</span>   /var/folders/…/tmp.yq3StFMATM/.claude/skills/garnet-evidence -> /private/tmp/…/garnet-evidence
-<span class="g">linked</span>   /var/folders/…/tmp.yq3StFMATM/.codex/skills/garnet-evidence -> /private/tmp/…/garnet-evidence
-<span class="g">linked</span>   /var/folders/…/tmp.yq3StFMATM/.pi/agent/skills/garnet-evidence -> /private/tmp/…/garnet-evidence
+<span class="g">linked</span>   /var/folders/…/tmp.qjMWQWN3qC/.agents/skills/garnet-evidence -> /private/tmp/…/garnet-evidence-2
+<span class="g">linked</span>   /var/folders/…/tmp.qjMWQWN3qC/.claude/skills/garnet-evidence -> /private/tmp/…/garnet-evidence-2
+<span class="g">linked</span>   /var/folders/…/tmp.qjMWQWN3qC/.codex/skills/garnet-evidence -> /private/tmp/…/garnet-evidence-2
+<span class="g">linked</span>   /var/folders/…/tmp.qjMWQWN3qC/.pi/agent/skills/garnet-evidence -> /private/tmp/…/garnet-evidence-2
 install: SKILL.md reachable through all 4 links
 
 <span class="c">$ GARNET_BIN=/private/tmp/…/target/release/garnet bash tests/smoke.sh</span>
@@ -291,7 +291,7 @@ smoke: A=pass packet.sha256=4788669c846145b188f5a4863d60bbabe3bebec813d86a940236
 
     <div class="term">
       <div class="term-bar" aria-hidden="true"><i class="dotr"></i><i class="dotr"></i><i class="dotr"></i><span>the Smoke B repository shape, run through scripts/garnet-evidence-packet.sh so the rungs can be read</span><span class="real">real capture</span></div>
-      <pre><span class="c">$ GARNET_BIN=/private/tmp/…/target/release/garnet GE_RUNGS="worktree garnet-version garnet-check garnet-diff-caps garnet-build garnet-seal whitespace" bash …/garnet-evidence/scripts/garnet-evidence-packet.sh smoke-b main</span>
+      <pre><span class="c">$ GARNET_BIN=/private/tmp/…/target/release/garnet GE_RUNGS="worktree garnet-version garnet-check garnet-diff-caps garnet-build garnet-seal whitespace" bash …/garnet-evidence-2/scripts/garnet-evidence-packet.sh smoke-b main</span>
 garnet-evidence: garnet rungs use GARNET_BIN=/private/tmp/…/target/release/garnet
 garnet-evidence: packet evidence/smoke-b  head=5eea11e8303b5171d49905d1c8b42bc48d15b20f  base=main (40541db5ec97b0eb28fc8ff048fc625cd3e5683b)
   <span class="g">green</span>  worktree (exit 0) -> out/worktree.txt
@@ -336,7 +336,7 @@ STATUS=ran
 <span class="c">$ cat evidence/smoke-b/packet.sha256</span>
 <span class="au">98c090ee44d2538c2dfe83c51da596f2ab04c45acda39631f66991d62cb2e0fe</span></pre>
     </div>
-    <p class="proof-cap"><b>Capture condition.</b> 2026-09-02 (23:12 CDT · 04:12 UTC on 2026-09-03) · fresh clone of garnet-evidence at f0a37f55 · <code>HOME</code> set to a fresh <code>mktemp -d</code> directory for install.sh · <code>GARNET_BIN</code> = garnet 0.8.1 built from main fbd64bc5 · macOS arm64, not an Omarchy install · cosign not installed · only long lines are elided with … · the packet.sha256 the smoke reports is the one the second run reproduces, because the smoke pins the throwaway commits' dates.</p>
+    <p class="proof-cap"><b>Capture condition.</b> 2026-09-02 (23:42 CDT · 04:42 UTC on 2026-09-03) · fresh clone of garnet-evidence at 29378a36 · <code>HOME</code> set to a fresh <code>mktemp -d</code> directory for install.sh · <code>GARNET_BIN</code> = garnet 0.8.1 built from main fbd64bc5 · macOS arm64, not an Omarchy install · cosign not installed · only long lines are elided with … · the packet.sha256 the smoke reports is the one the second run reproduces, because the smoke pins the throwaway commits' dates.</p>
   </section>
 
   <section class="wrap" aria-labelledby="exhibit-h">
@@ -355,7 +355,7 @@ STATUS=ran
     <p class="kicker">Doors</p>
     <h2 id="doors-h">What is open, and what says so</h2>
     <nav class="doors" aria-label="Doors on this page">
-      <a class="door" href="https://github.com/Island-Dev-Crew/garnet-evidence">garnet-evidence<small>install it · MIT · f0a37f55</small></a>
+      <a class="door" href="https://github.com/Island-Dev-Crew/garnet-evidence">garnet-evidence<small>install it · MIT · 29378a36</small></a>
       <span class="door locked" role="link" aria-disabled="true" tabindex="0"
         title="Locked. Opens when garnet seal accepts a plugin manifest — not before."><span class="lk" aria-hidden="true">◈</span>Sealed plugin manifests<small>opens: garnet seal accepts a plugin manifest</small></span>
       <span class="door locked" role="link" aria-disabled="true" tabindex="0"
