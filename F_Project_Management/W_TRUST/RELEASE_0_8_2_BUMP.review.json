@@ -1,0 +1,29 @@
+{
+  "author_emails": [
+    "email:jon-isaac@islanddevcrew.com"
+  ],
+  "author_ids": [
+    275140286
+  ],
+  "base_commit": "beeb5e7b23e892521da439da67d44a37f23b5584",
+  "blocking_findings": [],
+  "content_digest": "sha256:bf2bd6dd016b0cd7bb382bc5d00e41fa5b4fb37abc33c7919e091f5621ea1751",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 4429281534,
+  "pull_request_number": 550,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head 27f540faa384211e0a71d4df9cff241b3f663cd4 and does not extend or backdate reviewed_head coverage. OpenAI Codex cross-family seat verdict: CONFIRM, zero findings and zero blockers, at 27f540faa384211e0a71d4df9cff241b3f663cd4; void if the head moves before the record commit. Exact-base recomputation verified main beeb5e7b23e892521da439da67d44a37f23b5584, three candidate commits, and 18 changed files. The workspace, garnet-cli lock entry, VS Code package and lock, Studio package and lock, Tauri manifest and lock, and macOS Studio constant all carry 0.8.2. Machine truth passes with version 0.8.2 and latest_tag v0.8.1; the front-door release chip remains bound to latest_tag while the governance stamp carries 0.8.2. The v0.8.2 CHANGELOG lead says no tag exists and reserves the tag to Jon, matches the enforcement boundary, reports WV-6 partial against frozen 6f2d5f0b2dff0bd800955e0a55b81f6d6f784d71240fe3c906e58a6a3ca8eec6 / 1646 versus current 1652 paths, records per-finding refusal counts, preserves Launch ready False, contains zero newly added retired-vocabulary occurrences, and leaves the 0.8.1-onward consolidated history byte-identical to main. The W-PLAY package rebuild is reproducible, WASM readiness is green, provenance binds Cargo.lock and the source tree, and no ops/lane2b, proofs, W_TRUST, or ops/lane1 path changes. Verification: truth check ok; release truth ok true; v0.8.1 release_ready true; v0.8.0 release_ready true; v0.8.0 cut_ready true; WASM readiness 13/13 tests OK; cargo fmt clean; git diff --check clean. The diagnostic rolling-review gate reports trust_kernel_touched true, sole touched path Cargo.lock, content digest sha256:bf2bd6dd016b0cd7bb382bc5d00e41fa5b4fb37abc33c7919e091f5621ea1751, and sole problem structured review record is missing. Cargo.lock is a registered trust file and this remains human-merge-only. Standards and Spec axes both report no actionable findings.",
+  "review_state": "APPROVED",
+  "reviewed_head": "27f540faa384211e0a71d4df9cff241b3f663cd4",
+  "reviewed_tree": "4513ef983d187487f83ac7912c92e48440712641",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "Cargo.lock"
+  ],
+  "verdict": "pass"
+}
