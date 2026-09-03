@@ -4,7 +4,7 @@ All notable changes to Garnet are recorded here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This file is updated in the same PR as the work it tracks (per the v0.5 slice
-contract). Lines added here are part of the calibrated-honesty record — if a
+contract). Lines added here are part of the calibrated record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [0.8.2] — 2026-09-02 (workspace version bump; the `v0.8.2` tag is not cut)
@@ -23,8 +23,10 @@ the macOS/Windows OS-sandbox application remain declared-not-enforced.
 
 **WV-6 is `partial`.** `python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6`
 reports `"state": "partial"`, `"ok": false`, `"landed_main_sha": null`, with the
-findings "product content digest mismatch (22ef3931… != 6f2d5f0b…)" and "product
-path count mismatch (1652 != 1646)". The reason is U-58, the acceptance
+findings "product content digest mismatch (… != 6f2d5f0b…)" and "product
+path count mismatch (1652 != 1646)" — the accepted reference is `6f2d5f0b…/1646`; the
+current product digest is not pinned here because every commit that touches the
+product tree, this one included, moves it. The reason is U-58, the acceptance
 squash-successor gap: the acceptance pins `reviewedHeadSha` `8426ca76…` by exact
 equality, squash merges orphan that lineage, and the bounded successor-rebind
 procedure is Lane 1's open deliverable
