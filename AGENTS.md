@@ -85,6 +85,26 @@ the outside parent and does not relax transient-touch checks on the reviewed
 lineage. Run `python3 -I scripts/test_garnet_trust_kernel_review_status.py`
 after changing the walk or its trust-snapshot identity.
 
+The trigger surface prefers prefixes to file lists. `garnet-cli/src/` is
+covered whole, like its peer enforcement crates: enumerating that crate file by
+file left the capability walk, the manifest/Ed25519 verifier and the MCP host
+outside review (H3-02). The script entries that remain enumerated are the
+required-context producers that escape the `scripts/garnet_` naming prefix, and
+`TrustSurfaceCoverageTests` re-derives that set from
+`.github/rulesets/garnet-main.json` plus `required-context-producers.json`, so a
+new producer outside the surface fails the suite rather than merging unreviewed.
+Never narrow the surface to make a PR green.
+
+Widening the surface is only safe because the surface is versioned. A sealed
+landed marker binds the trust subset of its landing edge, so it is verified
+under the surface it was sealed under: a declared `trust_surface` key, else the
+`merged_commit` pin in `SEALED_MARKER_TRUST_SURFACES`, else the current
+(widest, therefore strictest) surface. Never widen `TRUST_KERNEL_PREFIXES` or
+`TRUST_KERNEL_FILES` in place without adding a new `TRUST_SURFACES` version;
+re-run `python3 -I scripts/test_garnet_trust_kernel_review_status.py` and the
+repository marker check, because a widening that reds the sealed markers reds
+every subsequent PR, not only yours.
+
 ## Dogfood PR-Body Evidence Contract
 
 `scripts/check_dogfood_pr_body.py` accepts the legacy Desktop dogfood bundle
@@ -107,6 +127,11 @@ with its expected status, and the evidence bundle also accepts a named artifact
 and where it lives. The merged bodies of #545 and #546 live under
 `scripts/fixtures/dogfood_pr_bodies/` as positive fixtures that must keep
 passing. The `git diff` the checker runs is bounded at 30 s and fails closed.
+
+The checker guards itself: `scripts/check_dogfood_pr_body.py` and its test are
+readiness-sensitive paths, so a change to the producer of the required
+`PR dogfood evidence` context must carry that evidence. Both are trust-kernel
+paths as well, so such a change also needs a structured review record.
 
 ## WV-6 / WV-7 Acceptance Gates
 

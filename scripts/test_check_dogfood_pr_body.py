@@ -134,7 +134,13 @@ class SensitivePathClassificationTests(unittest.TestCase):
 
     def test_lookalike_paths_stay_non_sensitive(self) -> None:
         self.assertFalse(checker.is_sensitive_path("github/workflows/ci.yml"))
-        self.assertFalse(checker.is_sensitive_path("scripts/check_dogfood_pr_body.py"))
+        self.assertFalse(checker.is_sensitive_path("scripts/render_garnet_promo_video.mjs"))
+
+    def test_the_body_checker_guards_itself(self) -> None:
+        # H3-02: this script produces the required "PR dogfood evidence" context, so a
+        # change to it must carry that evidence too — this asserted assertFalse before.
+        self.assertTrue(checker.is_sensitive_path("scripts/check_dogfood_pr_body.py"))
+        self.assertTrue(checker.is_sensitive_path("scripts/test_check_dogfood_pr_body.py"))
 
     def test_workflow_only_change_requires_dogfood_body(self) -> None:
         result = checker.validate_body("## Summary\n\nCI tweak.\n", [".github/workflows/ci.yml"])

@@ -32,6 +32,11 @@ SENSITIVE_FILES = {
     ".github/PULL_REQUEST_TEMPLATE.md",
     "Cargo.lock",
     "CURRENT_STATE.md",
+    # H3-02: this checker produces the required "PR dogfood evidence" context, so
+    # a change to it (or to the tests that prove it works) must carry that
+    # evidence itself.  It guards everything else; it may not skip its own gate.
+    "scripts/check_dogfood_pr_body.py",
+    "scripts/test_check_dogfood_pr_body.py",
 }
 REQUIRED_HEADINGS = (
     "## Dogfood Readiness",

@@ -8,6 +8,7 @@ import contextlib
 import io
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -2025,6 +2026,274 @@ class RepositoryWiringTests(unittest.TestCase):
         self.assertIn("name: rolling trust-kernel review (non-pull-request)", workflow)
         self.assertIn("if: github.event_name != 'pull_request'", workflow)
 
+
+class TrustSurfaceCoverageTests(GitRepoFixture):
+    """H3-02: the enumerated trust surface had holes in exactly the load-bearing
+    places.  Three independent reviews on 2026-09-03 landed on the same spot;
+    the one carrying an in-repo identifier is the Codex hardening pass, finding
+    H3-02 (blocking).  The other two are attested by the mission handoff only,
+    so they are not named here.
+
+    A hand-maintained enumeration drifts.  These tests therefore do two things:
+    they pin the specific paths the finding named, and they *derive* the
+    required-context producer set from the repository's own machine-readable
+    rulesets so the next omission fails CI instead of merging quietly.
+    """
+
+    # (b) computes or enforces capability authority, and (c) verifies a
+    # signature or a digest.  The five MCP/Shelf entries are not in the
+    # finding's own list: a replay of the last 60 merged PRs showed a six-file
+    # widening would already have missed them (they landed in #514).
+    CAPABILITY_AND_SIGNATURE_PATHS = (
+        "garnet-cli/src/cap_manifest.rs",
+        "garnet-cli/src/cmd/diff_caps.rs",
+        "garnet-cli/src/cmd/verify_gate.rs",
+        "garnet-cli/src/verify_gate.rs",
+        "garnet-cli/src/manifest.rs",
+        "garnet-cli/src/cmd/verify.rs",
+        "garnet-cli/src/seal.rs",
+        "garnet-cli/src/cmd/seal.rs",
+        "garnet-cli/src/sandbox.rs",
+        "garnet-cli/src/cmd/sandbox.rs",
+        "garnet-cli/src/cmd/caps.rs",
+        "garnet-cli/src/cmd/caps_log.rs",
+        "garnet-cli/src/cmd/mcp_caps.rs",
+        "garnet-cli/src/cmd/agent_loop.rs",
+        "garnet-cli/src/cmd/repl.rs",
+        "garnet-cli/src/cmd/trust_report.rs",
+        "garnet-cli/src/machine_key.rs",
+        "garnet-cli/src/cmd/keygen.rs",
+        "garnet-cli/src/minimum_shelf.rs",
+        "garnet-cli/src/mcp.rs",
+        "garnet-cli/src/mcp_schema.rs",
+        "garnet-cli/src/mcp_stdio.rs",
+        "garnet-cli/src/cmd/mcp_serve.rs",
+    )
+
+    # (a) produces a required CI context but escapes the `scripts/garnet_` and
+    # `scripts/test_garnet_` naming prefixes.  Derived, not guessed: see
+    # `test_every_required_context_producer_is_trust_kernel`.
+    REQUIRED_CONTEXT_PRODUCERS = (
+        "scripts/check-agent-contracts.py",
+        "scripts/check_determinism_no_llm.py",
+        "scripts/check_dogfood_pr_body.py",
+        "scripts/package_garnet_studio_macos.sh",
+        "scripts/package_garnet_vscode_extension.sh",
+        "scripts/preflight_garnet_studio_notarization.sh",
+        "scripts/run_agentic_dogfood_matrix.py",
+        "scripts/smoke_garnet_studio_dmg.sh",
+        "scripts/smoke_garnet_web_pwa.sh",
+        "scripts/test_check_agent_contracts.py",
+        "scripts/test_check_determinism_no_llm.py",
+        "scripts/test_check_dogfood_pr_body.py",
+        "scripts/test_github_actions_node24_readiness.py",
+        "scripts/test_smoke_garnet_pages_pwa.py",
+    )
+
+    # The surface as it stood at origin/main ee86d063, before this widening.
+    # Widening must never narrow: every one of these still classifies true.
+    PREVIOUSLY_COVERED_PATHS = (
+        "garnet-check-v0.3/src/caps_graph.rs",
+        "garnet-interp-v0.3/src/eval.rs",
+        "garnet-vm/src/vm.rs",
+        "garnet-stdlib/src/registry.rs",
+        "garnet-wasm/src/lib.rs",
+        ".github/actions/setup-rust/action.yml",
+        ".github/rulesets/garnet-main.json",
+        ".github/workflows/ci.yml",
+        "scripts/garnet_required_context_contract.py",
+        "scripts/test_garnet_required_context_contract.py",
+        "F_Project_Management/W_TRUST/landed/LANE1.landed-review.json",
+        ".github/CODEOWNERS",
+        "Cargo.lock",
+        "garnet-cli/Cargo.toml",
+        "garnet-cli/src/bound_source.rs",
+        "garnet-cli/src/cmd/add.rs",
+        "garnet-cli/src/cmd/mod.rs",
+        "garnet-cli/src/cmd/run.rs",
+        "garnet-cli/src/cmd/test.rs",
+        "garnet-cli/src/cmd/eval.rs",
+        "garnet-cli/src/cmd/doctest.rs",
+        "garnet-cli/src/bin/garnet.rs",
+        "garnet-cli/src/lib.rs",
+        "scripts/garnet_launch_readiness_status.py",
+        "scripts/garnet_caps_enforcement_status.py",
+        "scripts/garnet_capability_scope_status.py",
+        "scripts/garnet_bounded_enforcement_status.py",
+        "scripts/garnet_red_team_status.py",
+        "docs/why.html",
+        "C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md",
+        "F_Project_Management/W_TRUST/LANDED_REVIEW_MARKERS.json",
+    )
+
+    @staticmethod
+    def _required_context_producer_scripts() -> set[str]:
+        """Re-derive, from the repository's own rulesets, every tracked script a
+        required-context workflow invokes.  This is the anti-drift half: the
+        enumeration above is checked against a derivation, not trusted."""
+        ruleset = json.loads(
+            (mod.ROOT / ".github/rulesets/garnet-main.json").read_text(encoding="utf-8")
+        )
+        contexts = {
+            check["context"]
+            for rule in ruleset.get("rules", [])
+            if rule.get("type") == "required_status_checks"
+            for check in rule["parameters"]["required_status_checks"]
+        }
+        producers = json.loads(
+            (mod.ROOT / ".github/rulesets/required-context-producers.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        by_context = {entry["context"]: entry["workflow"] for entry in producers["producers"]}
+        workflows = {by_context[context] for context in contexts if context in by_context}
+        pattern = re.compile(r"scripts/[A-Za-z0-9_.\-/]+")
+        found: set[str] = set()
+        for workflow in sorted(workflows):
+            text = (mod.ROOT / workflow).read_text(encoding="utf-8")
+            for candidate in pattern.findall(text):
+                if (mod.ROOT / candidate).is_file():
+                    found.add(candidate)
+        return found
+
+    def test_capability_and_signature_paths_are_trust_kernel(self) -> None:
+        for path in self.CAPABILITY_AND_SIGNATURE_PATHS:
+            self.assertTrue(mod.is_trust_kernel(path), path)
+            self.assertTrue(mod.is_trust_kernel(path.replace("/", "\\")), path)
+
+    def test_required_context_producer_scripts_are_trust_kernel(self) -> None:
+        for path in self.REQUIRED_CONTEXT_PRODUCERS:
+            self.assertTrue(mod.is_trust_kernel(path), path)
+
+    def test_every_required_context_producer_is_trust_kernel(self) -> None:
+        derived = self._required_context_producer_scripts()
+        self.assertTrue(derived, "derivation found no required-context producer scripts")
+        uncovered = sorted(path for path in derived if not mod.is_trust_kernel(path))
+        self.assertEqual(
+            [],
+            uncovered,
+            "scripts that produce a required CI context but are outside the trust "
+            f"surface: {uncovered}",
+        )
+
+    def test_previously_covered_paths_stay_covered(self) -> None:
+        for path in self.PREVIOUSLY_COVERED_PATHS:
+            self.assertTrue(mod.is_trust_kernel(path), path)
+
+    def test_unrelated_paths_stay_outside_the_trust_surface(self) -> None:
+        for path in (
+            "README.md",
+            "apps/garnet-studio/src/main.rs",
+            "benchmarks/run.py",
+            "editors/vscode/package.json",
+            "garnet-cli/tests/conformance_phase_gates.rs",
+        ):
+            self.assertFalse(mod.is_trust_kernel(path), path)
+
+    def _one_byte_change_touches_trust_kernel(self, relative: str) -> mod.TrustKernelReviewStatus:
+        self._commit_file(relative, b"original\n", f"seed {relative}")
+        base = self._git("rev-parse", "HEAD")
+        self._commit_file(relative, b"originaL\n", f"one byte of {relative}")
+        return mod.read_status(base=base, head="HEAD", root=self.root)
+
+    def test_one_byte_change_to_dogfood_body_checker_is_trust_kernel(self) -> None:
+        # The script PRODUCES the required "PR dogfood evidence" context; a
+        # change to it changes what that context proves.
+        status = self._one_byte_change_touches_trust_kernel("scripts/check_dogfood_pr_body.py")
+        self.assertTrue(status.trust_kernel_touched)
+        self.assertEqual(["scripts/check_dogfood_pr_body.py"], status.touched_paths)
+
+    def test_one_byte_change_to_capability_walk_is_trust_kernel(self) -> None:
+        # The walk that decides whether authority widened.
+        status = self._one_byte_change_touches_trust_kernel("garnet-cli/src/cap_manifest.rs")
+        self.assertTrue(status.trust_kernel_touched)
+        self.assertEqual(["garnet-cli/src/cap_manifest.rs"], status.touched_paths)
+
+    def test_one_byte_change_to_manifest_verifier_is_trust_kernel(self) -> None:
+        status = self._one_byte_change_touches_trust_kernel("garnet-cli/src/manifest.rs")
+        self.assertTrue(status.trust_kernel_touched)
+        self.assertEqual(["garnet-cli/src/manifest.rs"], status.touched_paths)
+
+
+class TrustSurfaceVersionTests(unittest.TestCase):
+    """Widening the surface must not retroactively invalidate a sealed landed
+    marker.  A marker's ``touched_paths`` and ``content_digest`` are computed
+    over the trust subset of its landing edge, so a wider surface makes an
+    already-sealed marker report missing paths and a digest mismatch — and the
+    append-only rule forbids editing the marker to say otherwise.  The surface
+    is therefore versioned, and a marker is verified under the version it was
+    sealed under.  Found while gating the H3-02 widening (2026-09-03).
+    """
+
+    def test_surfaces_are_registered_and_current_is_the_live_constant(self) -> None:
+        self.assertIn("v1", mod.TRUST_SURFACES)
+        self.assertIn("v2", mod.TRUST_SURFACES)
+        self.assertEqual("v2", mod.CURRENT_TRUST_SURFACE)
+        self.assertEqual(
+            (tuple(mod.TRUST_KERNEL_PREFIXES), tuple(mod.TRUST_KERNEL_FILES)),
+            mod.TRUST_SURFACES[mod.CURRENT_TRUST_SURFACE],
+        )
+
+    def test_v1_is_the_pre_h3_02_surface(self) -> None:
+        prefixes, files = mod.TRUST_SURFACES["v1"]
+        self.assertNotIn("garnet-cli/src/", prefixes)
+        self.assertNotIn("garnet-cli/src/manifest.rs", files)
+        self.assertIn("garnet-cli/src/lib.rs", files)
+        self.assertNotIn("scripts/check_dogfood_pr_body.py", files)
+
+    def test_v1_predicate_classifies_the_old_way(self) -> None:
+        old = mod.trust_surface_predicate("v1")
+        self.assertTrue(old("garnet-cli/src/lib.rs"))
+        self.assertFalse(old("garnet-cli/src/manifest.rs"))
+        self.assertFalse(old("scripts/check_dogfood_pr_body.py"))
+
+    def test_current_predicate_classifies_the_new_way(self) -> None:
+        now = mod.trust_surface_predicate(mod.CURRENT_TRUST_SURFACE)
+        self.assertTrue(now("garnet-cli/src/manifest.rs"))
+        self.assertTrue(now("scripts/check_dogfood_pr_body.py"))
+
+    def test_sealed_markers_are_pinned_by_immutable_merged_commit(self) -> None:
+        # The two markers registered before the surface was versioned.  Pinned
+        # by `merged_commit` because marker bytes are append-only immutable.
+        self.assertEqual(
+            {
+                "68317ae258327aade47fc2c07b7b5b580ec7c6ea": "v1",
+                "41d6ced858684ac67683d32315920bd50a52976e": "v1",
+            },
+            dict(mod.SEALED_MARKER_TRUST_SURFACES),
+        )
+
+    def test_marker_surface_resolution_order(self) -> None:
+        # A declared surface wins.
+        name, findings = mod.resolve_marker_trust_surface(
+            {"trust_surface": "v1", "merged_commit": "0" * 40}
+        )
+        self.assertEqual(("v1", []), (name, findings))
+        # Otherwise a sealed pin applies.
+        name, findings = mod.resolve_marker_trust_surface(
+            {"merged_commit": "41d6ced858684ac67683d32315920bd50a52976e"}
+        )
+        self.assertEqual(("v1", []), (name, findings))
+        # Otherwise the current, widest surface — a wider surface is stricter,
+        # so an undeclared, unpinned marker fails closed rather than open.
+        name, findings = mod.resolve_marker_trust_surface({"merged_commit": "0" * 40})
+        self.assertEqual((mod.CURRENT_TRUST_SURFACE, []), (name, findings))
+
+    def test_unknown_declared_surface_is_a_finding(self) -> None:
+        name, findings = mod.resolve_marker_trust_surface(
+            {"trust_surface": "v99", "merged_commit": "0" * 40}
+        )
+        self.assertEqual(mod.CURRENT_TRUST_SURFACE, name)
+        self.assertTrue(any("unknown trust surface" in item for item in findings), findings)
+
+    def test_trust_surface_is_an_allowed_marker_key(self) -> None:
+        self.assertIn("trust_surface", mod.LANDED_KEYS)
+
+    def test_registered_markers_verify_under_the_widened_surface(self) -> None:
+        # The end-to-end proof: with `garnet-cli/src/` and the required-context
+        # producers in the surface, both sealed markers must still verify.
+        findings = mod.verify_repository_landed_markers(mod.ROOT)
+        self.assertEqual([], findings)
 
 if __name__ == "__main__":
     unittest.main()

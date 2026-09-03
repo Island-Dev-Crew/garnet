@@ -16,10 +16,44 @@ output on the current tree.
 
 The gate's `TRUST_KERNEL_PREFIXES` and `TRUST_KERNEL_FILES` constants are the
 machine authority. They cover the checker, interpreter, VM, stdlib registry,
-Wasm runner, CLI authority entry points, governance/readiness policy scripts
-and tests, GitHub workflows/actions/rulesets, and the named public enforcement
-claims. The constants are deliberately conservative: an extra review is safer
-than an unreviewed trust-spine change.
+Wasm runner, the whole `garnet-cli/src/` tree, governance/readiness policy
+scripts and tests, GitHub workflows/actions/rulesets, every script that
+produces a required CI context, and the named public enforcement claims. The
+constants are deliberately conservative: an extra review is safer than an
+unreviewed trust-spine change.
+
+Prefer a prefix over a file list. Until H3-02 (2026-09-03) `garnet-cli` was
+enumerated file by file, and three independent reviews found the same holes in
+that enumeration (only the Codex hardening pass carries an in-repo identifier): the capability walk (`cap_manifest.rs`, `cmd/diff_caps.rs`,
+`cmd/verify_gate.rs`), the manifest and Ed25519 signature verifier
+(`manifest.rs`, `cmd/verify.rs`), and the script that produces the required
+`PR dogfood evidence` context. The peer enforcement crates were already
+whole-`src/` prefixes; `garnet-cli` was the anomaly. The script entries that
+remain enumerated are checked against a derivation from
+`.github/rulesets/garnet-main.json` and `required-context-producers.json`, so a
+new required-context producer that escapes the `scripts/garnet_` naming prefix
+fails `TrustSurfaceCoverageTests` instead of merging unreviewed.
+
+## The surface is versioned
+
+A landed marker binds the `touched_paths` and `content_digest` of the trust
+subset of its landing edge. Classify that edge with a wider surface and the
+sealed marker reports missing paths and a digest mismatch — so before H3-02 the
+surface could not be widened at all without invalidating sealed history, and
+the append-only rule correctly forbids editing a marker to say otherwise. That
+was found by running the gate on the H3-02 widening, not by reading the code.
+
+`TRUST_SURFACES` therefore names each surface version, and
+`verify_landed_review_marker` classifies a marker's landing edge under the
+surface that marker was sealed under. Resolution order: a declared
+`trust_surface` key wins; otherwise a marker sealed before the key existed is
+pinned by its immutable `merged_commit` in `SEALED_MARKER_TRUST_SURFACES`;
+otherwise the current surface applies. The last case fails closed, because the
+current surface is the widest — an undeclared, unpinned marker must account for
+more paths, never fewer. Live candidates are always judged by the current
+surface; only sealed history is judged by its own. `SEALED_MARKER_TRUST_SURFACES`
+is a closed table of the two pre-versioning markers and does not grow: new
+markers declare `trust_surface`.
 
 ## Discovery is part of the proof
 

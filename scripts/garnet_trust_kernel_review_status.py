@@ -29,6 +29,7 @@ import subprocess
 import sys
 from dataclasses import asdict, dataclass, field
 from pathlib import Path, PurePosixPath
+from collections.abc import Callable
 from typing import Any
 
 SCHEMA = "garnet.trust_kernel_review/v2"
@@ -51,7 +52,71 @@ MAX_TREE_ENTRIES = 500_000
 # Any changed path under these prefixes, or matching these exact files, is a
 # trust-kernel change.  Keep this surface machine-readable and intentionally
 # conservative: a false positive demands review; a false negative bypasses it.
+#
+# Prefer a prefix to a file list.  A hand-maintained enumeration drifts, and it
+# drifts hardest where the code is load-bearing: `garnet-cli/src/` was carried
+# as nine file entries until H3-02 found the capability walk, the manifest
+# verifier and the Ed25519 signature check sitting outside them (2026-09-03).
+# The enforcement crates beside it — check, interp, vm, stdlib, wasm — were
+# already whole-`src/` prefixes; garnet-cli was the anomaly, not the exception.
 TRUST_KERNEL_PREFIXES = (
+    "garnet-check-v0.3/src/",
+    "garnet-cli/src/",
+    "garnet-interp-v0.3/src/",
+    "garnet-vm/src/",
+    "garnet-stdlib/src/",
+    "garnet-wasm/src/",
+    ".github/actions/",
+    ".github/rulesets/",
+    ".github/workflows/",
+    "scripts/garnet_",
+    "scripts/test_garnet_",
+    "F_Project_Management/W_TRUST/landed/",
+)
+# The `garnet-cli/src/...` entries that used to live here are subsumed by the
+# `garnet-cli/src/` prefix above.
+TRUST_KERNEL_FILES = (
+    ".github/CODEOWNERS",
+    "Cargo.lock",
+    "garnet-cli/Cargo.toml",
+    "scripts/garnet_launch_readiness_status.py",
+    "scripts/garnet_caps_enforcement_status.py",
+    "scripts/garnet_capability_scope_status.py",
+    "scripts/garnet_bounded_enforcement_status.py",
+    "scripts/garnet_red_team_status.py",
+    # Scripts that PRODUCE a required CI context but escape the `scripts/garnet_`
+    # and `scripts/test_garnet_` naming prefixes.  A change to one of these
+    # changes what a required check proves, so it is a trust-kernel change.
+    # Derived from `.github/rulesets/garnet-main.json` +
+    # `required-context-producers.json`; `test_garnet_trust_kernel_review_status
+    # .TrustSurfaceCoverageTests` re-derives the set and fails if it drifts.
+    "scripts/check-agent-contracts.py",
+    "scripts/check_determinism_no_llm.py",
+    "scripts/check_dogfood_pr_body.py",
+    "scripts/package_garnet_studio_macos.sh",
+    "scripts/package_garnet_vscode_extension.sh",
+    "scripts/preflight_garnet_studio_notarization.sh",
+    "scripts/run_agentic_dogfood_matrix.py",
+    "scripts/smoke_garnet_studio_dmg.sh",
+    "scripts/smoke_garnet_web_pwa.sh",
+    "scripts/test_check_agent_contracts.py",
+    "scripts/test_check_determinism_no_llm.py",
+    "scripts/test_check_dogfood_pr_body.py",
+    "scripts/test_github_actions_node24_readiness.py",
+    "scripts/test_smoke_garnet_pages_pwa.py",
+    "docs/why.html",
+    "C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md",
+    "F_Project_Management/W_TRUST/LANDED_REVIEW_MARKERS.json",
+)
+
+# The surface is versioned, because widening it must not retroactively
+# invalidate a sealed landed marker.  A marker binds the `touched_paths` and
+# `content_digest` of the trust subset of its landing edge; classify that edge
+# with a wider surface and the sealed marker reports missing paths and a digest
+# mismatch, and the append-only rule (rightly) forbids editing the marker to
+# say otherwise.  So a marker is verified under the surface it was sealed
+# under, never under whatever the surface happens to be today.
+TRUST_SURFACE_V1_PREFIXES = (
     "garnet-check-v0.3/src/",
     "garnet-interp-v0.3/src/",
     "garnet-vm/src/",
@@ -64,7 +129,7 @@ TRUST_KERNEL_PREFIXES = (
     "scripts/test_garnet_",
     "F_Project_Management/W_TRUST/landed/",
 )
-TRUST_KERNEL_FILES = (
+TRUST_SURFACE_V1_FILES = (
     ".github/CODEOWNERS",
     "Cargo.lock",
     "garnet-cli/Cargo.toml",
@@ -86,6 +151,21 @@ TRUST_KERNEL_FILES = (
     "C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md",
     "F_Project_Management/W_TRUST/LANDED_REVIEW_MARKERS.json",
 )
+TRUST_SURFACES: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
+    "v1": (TRUST_SURFACE_V1_PREFIXES, TRUST_SURFACE_V1_FILES),
+    "v2": (TRUST_KERNEL_PREFIXES, TRUST_KERNEL_FILES),
+}
+CURRENT_TRUST_SURFACE = "v2"
+# Markers sealed before the surface carried a version.  Their bytes are
+# immutable under the append-only rule, so the pin lives here, keyed by the
+# marker's own immutable `merged_commit`.  New markers declare `trust_surface`
+# instead; this table does not grow.
+SEALED_MARKER_TRUST_SURFACES: dict[str, str] = {
+    # PR #517 - Lane 1 governance activation boundary.
+    "68317ae258327aade47fc2c07b7b5b580ec7c6ea": "v1",
+    # PR #514 - Lane 2B minimum sealed Shelf and MCP host.
+    "41d6ced858684ac67683d32315920bd50a52976e": "v1",
+}
 
 REVIEW_RECORD_PREFIX = "F_Project_Management/W_TRUST/"
 REVIEW_RECORD_SUFFIX = ".review.json"
@@ -134,8 +214,13 @@ LANDED_KEYS = frozenset(
         "merged_tree",
         "review_record_path",
         "review_record_sha256",
+        "trust_surface",
     }
 )
+# `trust_surface` is allowed but not required: the two markers sealed before it
+# existed cannot grow the key without breaking the append-only rule, so they
+# are pinned by `merged_commit` in SEALED_MARKER_TRUST_SURFACES instead.
+OPTIONAL_LANDED_KEYS = frozenset({"trust_surface"})
 
 
 @dataclass(frozen=True)
@@ -218,6 +303,43 @@ def _norm(path: str) -> str:
 def is_trust_kernel(path: str) -> bool:
     value = _norm(path)
     return value in TRUST_KERNEL_FILES or value.startswith(TRUST_KERNEL_PREFIXES)
+
+
+def trust_surface_predicate(name: str) -> "Callable[[str], bool]":
+    """Classifier for one named surface version.  Live candidates are always
+    judged by the current surface; only sealed history is judged by its own."""
+    prefixes, files = TRUST_SURFACES[name]
+    file_set = frozenset(files)
+
+    def classify(path: str) -> bool:
+        value = _norm(path)
+        return value in file_set or value.startswith(prefixes)
+
+    return classify
+
+
+def resolve_marker_trust_surface(marker: dict) -> tuple[str, list[str]]:
+    """Name the surface a landed marker was sealed under.
+
+    A declared `trust_surface` wins; otherwise a marker sealed before the field
+    existed is pinned by its immutable `merged_commit`; otherwise the current
+    surface applies.  Defaulting to the current surface fails closed: it is the
+    widest, so an undeclared, unpinned marker must account for more paths, not
+    fewer.
+    """
+    findings: list[str] = []
+    declared = marker.get("trust_surface")
+    if declared is not None:
+        if isinstance(declared, str) and declared in TRUST_SURFACES:
+            return declared, findings
+        findings.append(f"unknown trust surface {declared!r} in landed marker")
+        return CURRENT_TRUST_SURFACE, findings
+    merged = marker.get("merged_commit")
+    if isinstance(merged, str):
+        pinned = SEALED_MARKER_TRUST_SURFACES.get(merged.lower())
+        if pinned is not None:
+            return pinned, findings
+    return CURRENT_TRUST_SURFACE, findings
 
 
 def is_review_record(path: str) -> bool:
@@ -996,10 +1118,11 @@ def _common_record_findings(
     allowed_keys: frozenset[str],
     exact_paths: list[str],
     expected_base: str | None,
+    optional_keys: frozenset[str] = frozenset(),
 ) -> list[str]:
     findings: list[str] = []
     unknown = sorted(set(record) - allowed_keys)
-    missing = sorted(allowed_keys - set(record))
+    missing = sorted(allowed_keys - optional_keys - set(record))
     if unknown:
         findings.append("review record contains unknown key(s): " + ", ".join(unknown))
     if missing:
@@ -2132,6 +2255,7 @@ def verify_landed_review_marker(
         schema=MARKER_SCHEMA,
         state="landed",
         allowed_keys=LANDED_KEYS,
+        optional_keys=OPTIONAL_LANDED_KEYS,
         exact_paths=(
             sorted({_norm(path) for path in marker.get("touched_paths", [])})
             if isinstance(marker.get("touched_paths"), list)
@@ -2232,8 +2356,11 @@ def verify_landed_review_marker(
                 "exact first-parent landing edge is partial or disagrees with "
                 "independent tree-object traversal"
             )
+    surface_name, surface_findings = resolve_marker_trust_surface(marker)
+    findings.extend(surface_findings)
+    in_sealed_surface = trust_surface_predicate(surface_name)
     landed_trust = sorted(
-        (entry for entry in landed_entries if is_trust_kernel(entry.path)),
+        (entry for entry in landed_entries if in_sealed_surface(entry.path)),
         key=lambda entry: entry.path,
     )
     exact_touched = [entry.path for entry in landed_trust]
