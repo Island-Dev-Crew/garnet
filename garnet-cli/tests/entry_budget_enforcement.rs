@@ -177,6 +177,22 @@ fn map_of_functions_is_bound_by_the_entry_budget() {
     );
 }
 
+/// L13 — `method_missing`. A call to an undefined method routes at runtime through
+/// `env.get_impl_method(name, "method_missing")` (`eval.rs`), so the callee is
+/// selected by a name that appears nowhere in the source. `garnet check` reports
+/// `0 diagnostics` on this program: the checker resolves `.anything()` against
+/// `D::anything`, which does not exist, and therefore records no edge at all.
+/// Contrast `@dynamic`, which is NOT in this list: an ordinary `@dynamic` method
+/// call resolves through `MethodByName` and the checker DOES catch it.
+#[test]
+fn method_missing_dispatch_is_bound_by_the_entry_budget() {
+    let program = "@caps(fs)\ndef leak() {\n  write_file(\"leak.txt\", \"u91\")\n  true\n}\n\n\
+                   struct S { n: Int }\n\n\
+                   impl S {\n  def method_missing(recv, name, args) {\n    leak()\n  }\n}\n\n\
+                   @caps()\ndef main() {\n  let s = S(1)\n  s.anything()\n}\n";
+    entry_budget_binds(program, "fs");
+}
+
 /// L11 — the same shape against host ENVIRONMENT authority rather than fs. Before
 /// the cure this returned the real `$HOME` to a program whose entry declared
 /// nothing.

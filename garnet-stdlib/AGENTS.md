@@ -17,9 +17,12 @@ Owns Garnet stdlib primitives and their capability metadata.
 - Every host-authority row carries `Guard::GateEntry`, not `Guard::Gate`
   (U-91). `Gate` alone lets a non-entry frame supply the capability, which
   launders the entry's budget through any call edge the checker cannot see.
-  The `Gate` variant remains defined and currently has zero members, so a row
-  that genuinely wants the weaker check turns
-  `entry_gates_are_the_whole_gated_surface` red rather than passing silently.
+  The `Gate` variant remains defined and currently has zero members. The test
+  that holds that to zero is `gate_count_matches_the_audited_runtime_backstop`,
+  which asserts the pair `(gate_count, gate_entry_count) == (0, 15)`; adding any
+  `Gate` row turns it red. `entry_gates_are_the_whole_gated_surface` does NOT
+  catch that case — it only compares the `GateEntry` names to the expected
+  fifteen, so a new `Gate` row leaves it green.
   Adding a row with `Gate` requires stating in the same change why the entry
   budget must not bound it.
 - Keep primitives small and predictable; richer behavior belongs in higher-level libraries or examples.
