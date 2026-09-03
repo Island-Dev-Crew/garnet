@@ -31,7 +31,7 @@
   (`load_source_with_entry_caps` + `call_entry`) instead of the embedded `call`
   path, the same correction PR-2 applied to `garnet test`; its programs are
   unchanged and still run under `garnet run` on both backends.
-- **Honest scope:** runtime enforcement only. `caps_graph` is UNCHANGED — the
+- **Scope, stated exactly:** runtime enforcement only. `caps_graph` is UNCHANGED — the
   checker is still blind to these edges, and `garnet check` still exits 0 on
   them; what changed is that the runtime no longer depends on the checker having
   seen the edge. The manifest layer was already correct and is untouched

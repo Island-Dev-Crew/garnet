@@ -14,6 +14,14 @@ Owns Garnet stdlib primitives and their capability metadata.
   layer-gate and promotion-gate scripts regex-parse. Doc strings are part
   of the row contract (RB-7 `?doc` will be their first consumer).
 - Do not add file, network, process, or time authority without updating CapCaps expectations and tests.
+- Every host-authority row carries `Guard::GateEntry`, not `Guard::Gate`
+  (U-91). `Gate` alone lets a non-entry frame supply the capability, which
+  launders the entry's budget through any call edge the checker cannot see.
+  The `Gate` variant remains defined and currently has zero members, so a row
+  that genuinely wants the weaker check turns
+  `entry_gates_are_the_whole_gated_surface` red rather than passing silently.
+  Adding a row with `Gate` requires stating in the same change why the entry
+  budget must not bound it.
 - Keep primitives small and predictable; richer behavior belongs in higher-level libraries or examples.
 - Crash surface (RB-2): the crate carries
   `#![deny(clippy::unwrap_used, clippy::expect_used)]` (tests exempt via
