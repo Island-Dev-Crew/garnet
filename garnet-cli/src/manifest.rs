@@ -4,7 +4,11 @@
 //! capturing every input that affects the compiled output: source-content
 //! hash, stable AST hash, parser/interp versions, target triple, the
 //! deterministic-flag set. `garnet verify <file> <manifest>` re-derives the
-//! manifest from the source and exits non-zero on any mismatch.
+//! manifest from the source and exits non-zero on any mismatch — every field
+//! the manifest carries is compared, and each mismatch is reported by name.
+//! Parsing is strict in the same spirit: an unrecognized or duplicated key is
+//! an error, and the parsed struct must re-serialize to the file byte-for-byte,
+//! so a manifest cannot carry content that the signature does not cover.
 //!
 //! All hashes are BLAKE3. The AST hash is computed over a stable, sorted
 //! pretty-print of the AST so that reordering token spans (which are
@@ -209,9 +213,84 @@ impl Manifest {
         out
     }
 
-    /// Parse a manifest JSON back into a struct. Lenient — looks for the
-    /// expected keys and fails if any are missing. We do NOT use `serde_json`
-    /// because the canonical form is small and we control both ends.
+    /// Compare a stored manifest against one freshly recomputed from the
+    /// source, returning one specific message per mismatching field.
+    ///
+    /// Every field the manifest carries is compared. `signer_pubkey` and
+    /// `signature` are deliberately excluded: they are not derived from the
+    /// source, so a recomputed manifest never carries them; their integrity
+    /// is `verify_signature`'s job, not this comparison's.
+    pub fn field_mismatches(&self, recomputed: &Manifest) -> Vec<String> {
+        let mut out = Vec::new();
+        push_scalar_mismatch(&mut out, "schema", &self.schema, &recomputed.schema);
+        push_scalar_mismatch(
+            &mut out,
+            "source_hash",
+            &self.source_hash,
+            &recomputed.source_hash,
+        );
+        push_scalar_mismatch(&mut out, "ast_hash", &self.ast_hash, &recomputed.ast_hash);
+        push_scalar_mismatch(
+            &mut out,
+            "parser_version",
+            &self.parser_version,
+            &recomputed.parser_version,
+        );
+        push_scalar_mismatch(
+            &mut out,
+            "interp_version",
+            &self.interp_version,
+            &recomputed.interp_version,
+        );
+        push_scalar_mismatch(
+            &mut out,
+            "prelude_hash",
+            &self.prelude_hash,
+            &recomputed.prelude_hash,
+        );
+        // `target_triple` is compared like every other field, which is
+        // correct — but record exactly what that comparison binds today.
+        // `target_triple()` reads `option_env!("TARGET")`, and this crate has
+        // no `build.rs` to set it, so every manifest Garnet emits today
+        // carries the literal `unknown-target`. The comparison is therefore
+        // real but vacuous: it catches a manifest edited to name a platform,
+        // and it will start binding a platform for free once `TARGET` is
+        // actually plumbed in. It does not pin a platform today.
+        push_scalar_mismatch(
+            &mut out,
+            "target_triple",
+            &self.target_triple,
+            &recomputed.target_triple,
+        );
+        if self.deterministic_flags != recomputed.deterministic_flags {
+            out.push(format!(
+                "deterministic_flags mismatch:\n  stored:     {}\n  recomputed: {}",
+                flags_repr(&self.deterministic_flags),
+                flags_repr(&recomputed.deterministic_flags)
+            ));
+        }
+        out
+    }
+
+    /// Parse a manifest JSON back into a struct. STRICT, deliberately:
+    ///
+    /// * an unrecognized key is an error naming the key — it is never
+    ///   silently dropped;
+    /// * a duplicated key is an error naming the key — never last-wins;
+    /// * a missing key is an error naming the key;
+    /// * and the parsed struct must re-serialize to the input byte-for-byte.
+    ///
+    /// The last rule is the load-bearing one. The Ed25519 signature covers
+    /// `canonical_signing_payload()`, which is built by re-serializing this
+    /// struct rather than by hashing the file. If the struct and the file
+    /// could disagree, a signed manifest could carry attacker-controlled
+    /// content that the signature does not cover, and `garnet verify` would
+    /// still print `+ signature valid` over it. Requiring the round-trip
+    /// makes "the struct we checked" and "the bytes on disk" the same object,
+    /// so anything the parser does not model cannot survive.
+    ///
+    /// We do NOT use `serde_json` because the canonical form is small and we
+    /// control both ends.
     pub fn from_canonical_json(json: &str) -> Result<Manifest, String> {
         let mut schema = None;
         let mut source_hash = None;
@@ -223,40 +302,53 @@ impl Manifest {
         let mut deterministic_flags = Vec::new();
         let mut signer_pubkey = String::new();
         let mut signature = String::new();
+        let mut seen: Vec<&str> = Vec::new();
         for line in json.lines() {
             let line = line.trim().trim_end_matches(',');
-            if let Some((key, value)) = line.split_once(':') {
-                let key = key.trim().trim_matches('"');
-                let value = value.trim();
-                match key {
-                    "schema" => schema = Some(unquote(value)),
-                    "source_hash" => source_hash = Some(unquote(value)),
-                    "ast_hash" => ast_hash = Some(unquote(value)),
-                    "parser_version" => parser_version = Some(unquote(value)),
-                    "interp_version" => interp_version = Some(unquote(value)),
-                    "prelude_hash" => prelude_hash = Some(unquote(value)),
-                    "target_triple" => target_triple = Some(unquote(value)),
-                    "signer_pubkey" => signer_pubkey = unquote(value),
-                    "signature" => signature = unquote(value),
-                    "deterministic_flags" => {
-                        let inner = value.trim_start_matches('[').trim_end_matches(']');
-                        deterministic_flags = inner
-                            .split(',')
-                            .filter_map(|p| {
-                                let p = p.trim();
-                                if p.is_empty() {
-                                    None
-                                } else {
-                                    Some(unquote(p))
-                                }
-                            })
-                            .collect();
-                    }
-                    _ => {}
+            // Structural-only lines carry no key/value pair.
+            if line.is_empty() || line == "{" || line == "}" {
+                continue;
+            }
+            let Some((raw_key, value)) = line.split_once(':') else {
+                return Err(format!("unparsable manifest line: {line}"));
+            };
+            let key = raw_key.trim().trim_matches('"');
+            let value = value.trim();
+            let Some(known) = KNOWN_KEYS.iter().find(|k| **k == key) else {
+                return Err(format!("unrecognized manifest key {key:?}"));
+            };
+            if seen.contains(known) {
+                return Err(format!("duplicate manifest key {key:?}"));
+            }
+            seen.push(known);
+            match key {
+                "schema" => schema = Some(unquote(value)),
+                "source_hash" => source_hash = Some(unquote(value)),
+                "ast_hash" => ast_hash = Some(unquote(value)),
+                "parser_version" => parser_version = Some(unquote(value)),
+                "interp_version" => interp_version = Some(unquote(value)),
+                "prelude_hash" => prelude_hash = Some(unquote(value)),
+                "target_triple" => target_triple = Some(unquote(value)),
+                "signer_pubkey" => signer_pubkey = unquote(value),
+                "signature" => signature = unquote(value),
+                "deterministic_flags" => {
+                    let inner = value.trim_start_matches('[').trim_end_matches(']');
+                    deterministic_flags = inner
+                        .split(',')
+                        .filter_map(|p| {
+                            let p = p.trim();
+                            if p.is_empty() {
+                                None
+                            } else {
+                                Some(unquote(p))
+                            }
+                        })
+                        .collect();
                 }
+                other => return Err(format!("unrecognized manifest key {other:?}")),
             }
         }
-        Ok(Manifest {
+        let manifest = Manifest {
             schema: schema.ok_or("missing schema")?,
             source_hash: source_hash.ok_or("missing source_hash")?,
             ast_hash: ast_hash.ok_or("missing ast_hash")?,
@@ -267,9 +359,60 @@ impl Manifest {
             deterministic_flags,
             signer_pubkey,
             signature,
-        })
+        };
+        manifest.ensure_canonical_round_trip(json)?;
+        Ok(manifest)
+    }
+
+    /// Require that re-serializing the parsed struct reproduces the input, so
+    /// the struct and the file bytes cannot diverge.
+    ///
+    /// Two canonical shapes are accepted, and both are outputs of this very
+    /// module — this is a total check, not a lenient one:
+    ///
+    /// * the current 10-field form, and
+    /// * the pre-ManifestSig 8-field form that omits the `signer_pubkey` /
+    ///   `signature` pair entirely. `examples/safe_io_layer.garnet.manifest.json`
+    ///   ships in that shape, so rejecting it would break a committed artifact.
+    ///   It can only ever parse as unsigned, so accepting it grants no signed
+    ///   authority.
+    ///
+    /// Line endings are normalized first. `.gitattributes` does not pin
+    /// `*.manifest.json` to LF, so a Windows `core.autocrlf` checkout can
+    /// legitimately hand us CRLF bytes; a real JSON reader treats the two
+    /// identically, and WIN-S38-001 is this repo's standing lesson about
+    /// letting EOL convention decide a trust outcome.
+    fn ensure_canonical_round_trip(&self, input: &str) -> Result<(), String> {
+        let normalized = normalize_source_eol(input);
+        let normalized = normalized.trim_end();
+        if normalized == self.to_canonical_json().trim_end() {
+            return Ok(());
+        }
+        if !self.is_signed() && normalized == self.to_canonical_json_unsigned().trim_end() {
+            return Ok(());
+        }
+        Err(
+            "manifest is not in canonical form — re-serializing the parsed fields does not \
+             reproduce the file, so its bytes carry content the signature does not cover"
+                .to_string(),
+        )
     }
 }
+
+/// Every key a Garnet manifest may carry. Anything else is rejected by name:
+/// an unmodelled key would sit in the file outside the signed payload.
+const KNOWN_KEYS: [&str; 10] = [
+    "schema",
+    "source_hash",
+    "ast_hash",
+    "parser_version",
+    "interp_version",
+    "prelude_hash",
+    "target_triple",
+    "deterministic_flags",
+    "signer_pubkey",
+    "signature",
+];
 
 // ── Ed25519 signing key persistence helpers ─────────────────────────────
 
@@ -352,6 +495,22 @@ fn hex_nibble(c: char) -> Result<u8, String> {
         'a'..='f' => Ok(c as u8 - b'a' + 10),
         'A'..='F' => Ok(c as u8 - b'A' + 10),
         _ => Err(format!("non-hex character '{c}'")),
+    }
+}
+
+/// Render a flag list for a diagnostic message.
+fn flags_repr(flags: &[String]) -> String {
+    format!("[{}]", flags.join(", "))
+}
+
+/// Push a field-specific mismatch message when two scalar fields differ.
+/// Every message names its field, so `garnet verify` never reports a bare
+/// "manifest mismatch" that leaves the operator guessing which input moved.
+fn push_scalar_mismatch(out: &mut Vec<String>, field: &str, stored: &str, recomputed: &str) {
+    if stored != recomputed {
+        out.push(format!(
+            "{field} mismatch:\n  stored:     {stored}\n  recomputed: {recomputed}"
+        ));
     }
 }
 
@@ -961,5 +1120,167 @@ mod tests {
         assert_ne!(mf_a.signature, mf_b.signature);
         assert!(mf_a.verify_signature().is_ok());
         assert!(mf_b.verify_signature().is_ok());
+    }
+
+    // ── Crown C B-2: `verify` must compare EVERY field it parses ──
+    //
+    // Before this cure `garnet verify` compared only source_hash, ast_hash and
+    // schema. prelude_hash, target_triple, parser_version, interp_version and
+    // deterministic_flags were parsed and then never looked at, so on an
+    // unsigned manifest (the default) each of them could be tampered with and
+    // still print `OK ... (unsigned)` with exit 0.
+
+    /// Assert exactly one mismatch was reported and that it names `field`.
+    /// The U-53 class is a standing finding in this repo: a bare "manifest
+    /// mismatch" that does not say which input moved is not an acceptable
+    /// diagnostic.
+    fn assert_only_mismatch_is(mismatches: &[String], field: &str) {
+        assert_eq!(
+            mismatches.len(),
+            1,
+            "expected exactly one mismatch, got {mismatches:?}"
+        );
+        assert!(
+            mismatches[0].starts_with(&format!("{field} mismatch")),
+            "message must name the field `{field}`, got {:?}",
+            mismatches[0]
+        );
+    }
+
+    fn built(src: &str) -> Manifest {
+        Manifest::build(src, &parse_source(src).unwrap())
+    }
+
+    #[test]
+    fn verify_rejects_tampered_prelude_hash() {
+        let recomputed = built("def main() { 1 }");
+        let mut stored = recomputed.clone();
+        stored.prelude_hash = hash_str("attacker-chosen prelude");
+        assert_only_mismatch_is(&stored.field_mismatches(&recomputed), "prelude_hash");
+    }
+
+    #[test]
+    fn verify_rejects_tampered_target_triple() {
+        let recomputed = built("def main() { 1 }");
+        let mut stored = recomputed.clone();
+        stored.target_triple = "x86_64-pc-windows-msvc".to_string();
+        assert_only_mismatch_is(&stored.field_mismatches(&recomputed), "target_triple");
+    }
+
+    #[test]
+    fn verify_rejects_tampered_parser_version() {
+        let recomputed = built("def main() { 1 }");
+        let mut stored = recomputed.clone();
+        stored.parser_version = "99.99.99".to_string();
+        assert_only_mismatch_is(&stored.field_mismatches(&recomputed), "parser_version");
+    }
+
+    #[test]
+    fn verify_rejects_tampered_interp_version() {
+        let recomputed = built("def main() { 1 }");
+        let mut stored = recomputed.clone();
+        stored.interp_version = "99.99.99".to_string();
+        assert_only_mismatch_is(&stored.field_mismatches(&recomputed), "interp_version");
+    }
+
+    #[test]
+    fn verify_rejects_tampered_deterministic_flags() {
+        let recomputed = built("def main() { 1 }");
+        let mut stored = recomputed.clone();
+        stored.deterministic_flags = vec!["lto=off".to_string()];
+        assert_only_mismatch_is(&stored.field_mismatches(&recomputed), "deterministic_flags");
+    }
+
+    #[test]
+    fn untouched_manifest_reports_no_field_mismatches() {
+        let recomputed = built("def main() { 1 + 2 }");
+        let stored = recomputed.clone();
+        assert!(
+            stored.field_mismatches(&recomputed).is_empty(),
+            "an untouched manifest must verify clean"
+        );
+    }
+
+    #[test]
+    fn crlf_source_still_verifies_against_an_lf_manifest() {
+        // WIN-S38-001 must survive the stricter comparison: a CRLF checkout
+        // seals identically to an LF one, so no field may report a mismatch.
+        let lf = "@caps()\ndef main() {\n  1\n}\n";
+        let crlf = lf.replace('\n', "\r\n");
+        let stored = built(lf);
+        let recomputed = built(&crlf);
+        assert!(
+            stored.field_mismatches(&recomputed).is_empty(),
+            "CRLF vs LF must not produce a mismatch: {:?}",
+            stored.field_mismatches(&recomputed)
+        );
+    }
+
+    // ── Crown C B-3: the parsed struct may not diverge from the file bytes ──
+    //
+    // The line-oriented parser used to drop unknown keys on the floor
+    // (`_ => {}`), and the signing payload is built by re-serializing the
+    // parsed struct rather than hashing the file. So a signed manifest with an
+    // injected `"note": "TRUSTED BY VENDOR"` still reported
+    // `OK ... + signature valid`: the signature did not cover the bytes, and a
+    // consumer using a real JSON parser saw an attacker-controlled field in a
+    // document the CLI had just blessed.
+
+    /// Splice an extra JSON line in directly after the opening brace.
+    fn inject_line(json: &str, line: &str) -> String {
+        json.replacen("{\n", &format!("{{\n  {line}\n"), 1)
+    }
+
+    #[test]
+    fn parser_rejects_injected_unknown_key_on_the_unsigned_path() {
+        let json = built("def main() { 1 }").to_canonical_json();
+        let tampered = inject_line(&json, r#""note": "TRUSTED BY VENDOR","#);
+        match Manifest::from_canonical_json(&tampered) {
+            Err(msg) => assert!(msg.contains("note"), "error must name the key, got {msg}"),
+            Ok(_) => panic!("an injected unknown key must be rejected, not silently dropped"),
+        }
+    }
+
+    #[test]
+    fn parser_rejects_injected_unknown_key_on_the_signed_path() {
+        let mut mf = built("def main() { 1 }");
+        let (signing_key, _) = generate_signing_key();
+        mf.sign(&signing_key);
+        assert!(mf.verify_signature().is_ok());
+        let tampered = inject_line(&mf.to_canonical_json(), r#""note": "TRUSTED BY VENDOR","#);
+        match Manifest::from_canonical_json(&tampered) {
+            Err(msg) => assert!(msg.contains("note"), "error must name the key, got {msg}"),
+            Ok(_) => panic!("a signed manifest must not absorb an injected key"),
+        }
+    }
+
+    #[test]
+    fn parser_rejects_a_duplicate_key() {
+        let json = built("def main() { 1 }").to_canonical_json();
+        let tampered = inject_line(&json, r#""source_hash": "00","#);
+        match Manifest::from_canonical_json(&tampered) {
+            Err(msg) => assert!(
+                msg.contains("source_hash"),
+                "error must name the duplicated key, got {msg}"
+            ),
+            Ok(_) => panic!("a duplicate key must be rejected, not last-wins"),
+        }
+    }
+
+    #[test]
+    fn parser_accepts_the_legacy_unsigned_manifest_shape() {
+        // Blast-radius guard. `examples/safe_io_layer.garnet.manifest.json`
+        // ships in the pre-ManifestSig 8-field shape, with no signer_pubkey
+        // and no signature key at all. A stricter parser must still take it.
+        let mf = built("def main() { 1 }");
+        let legacy = mf.canonical_signing_payload();
+        assert!(
+            !legacy.contains("signature"),
+            "the legacy shape carries no signature key"
+        );
+        let parsed = Manifest::from_canonical_json(&legacy)
+            .expect("the shipped legacy manifest shape must still parse");
+        assert!(!parsed.is_signed());
+        assert_eq!(parsed.source_hash, mf.source_hash);
     }
 }

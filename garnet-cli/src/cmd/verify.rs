@@ -39,25 +39,14 @@ pub fn run(file: PathBuf, manifest_path: PathBuf, require_signature: bool) -> Ex
     };
     let recomputed = Manifest::build(&src, &module);
 
-    if stored.source_hash != recomputed.source_hash {
-        eprintln!(
-            "FAIL source_hash mismatch:\n  stored:     {}\n  recomputed: {}",
-            stored.source_hash, recomputed.source_hash
-        );
-        return ExitCode::from(2);
-    }
-    if stored.ast_hash != recomputed.ast_hash {
-        eprintln!(
-            "FAIL ast_hash mismatch:\n  stored:     {}\n  recomputed: {}",
-            stored.ast_hash, recomputed.ast_hash
-        );
-        return ExitCode::from(2);
-    }
-    if stored.schema != recomputed.schema {
-        eprintln!(
-            "FAIL schema mismatch: stored={}, expected={}",
-            stored.schema, recomputed.schema
-        );
+    // Every field the manifest carries is compared, and each mismatch is
+    // reported on its own with the field named — an operator must never have
+    // to guess which input moved.
+    let mismatches = stored.field_mismatches(&recomputed);
+    if !mismatches.is_empty() {
+        for mismatch in &mismatches {
+            eprintln!("FAIL {mismatch}");
+        }
         return ExitCode::from(2);
     }
 
