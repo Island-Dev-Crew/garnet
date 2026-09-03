@@ -173,10 +173,21 @@ pub enum Binding {
 pub enum Guard {
     /// Checker-declared only; the bridge adapter performs no runtime gate.
     Declared,
-    /// The adapter calls `require_capability(<cap>, ...)` before work.
+    /// The adapter calls `require_capability(<cap>, ...)` before work, checking
+    /// the live call chain only.
+    ///
+    /// **No primitive carries this class today (U-91).** The call-chain check
+    /// alone is satisfied by ANY active frame, so a helper that declares the
+    /// capability satisfied it on behalf of an entry point that did not — the
+    /// authority-laundering defect. Every gated row is now `GateEntry`. The
+    /// variant is retained because the distinction it names is real and a future
+    /// primitive may legitimately want the weaker check; `entry_gates_are_the_
+    /// whole_gated_surface` is red the moment a row picks it up unreviewed.
     Gate,
     /// The adapter calls `require_capability` AND the S92
-    /// `require_entry_capability` entry-frame check.
+    /// `require_entry_capability` entry-frame check, so the PROGRAM ENTRY's
+    /// declared budget must cover the capability no matter which call edge
+    /// reached the primitive.
     GateEntry,
 }
 
@@ -433,7 +444,7 @@ fn build_prims() -> Vec<PrimMeta> {
             Layer::Std,
             Stability::Stable,
             Binding::Bare,
-            Guard::Gate,
+            Guard::GateEntry,
             "Read a UTF-8 file as String.",
         ),
         p(
@@ -444,7 +455,7 @@ fn build_prims() -> Vec<PrimMeta> {
             Layer::Std,
             Stability::Stable,
             Binding::Bare,
-            Guard::Gate,
+            Guard::GateEntry,
             "Write a String to a file, creating or truncating.",
         ),
         p(
@@ -455,7 +466,7 @@ fn build_prims() -> Vec<PrimMeta> {
             Layer::Std,
             Stability::Stable,
             Binding::Bare,
-            Guard::Gate,
+            Guard::GateEntry,
             "Read a file as Bytes.",
         ),
         p(
@@ -466,7 +477,7 @@ fn build_prims() -> Vec<PrimMeta> {
             Layer::Std,
             Stability::Stable,
             Binding::Bare,
-            Guard::Gate,
+            Guard::GateEntry,
             "Write Bytes to a file, creating or truncating.",
         ),
         p(
@@ -477,7 +488,7 @@ fn build_prims() -> Vec<PrimMeta> {
             Layer::Std,
             Stability::Stable,
             Binding::Bare,
-            Guard::Gate,
+            Guard::GateEntry,
             "List entries in a directory.",
         ),
         // ── net (Layer 1 std, cap: net) ──
@@ -489,7 +500,7 @@ fn build_prims() -> Vec<PrimMeta> {
             Layer::Std,
             Stability::Stable,
             Binding::Bare,
-            Guard::Gate,
+            Guard::GateEntry,
             "Open an outbound TCP connection (NetDefaults-gated).",
         ),
         p(
@@ -865,7 +876,7 @@ fn build_prims() -> Vec<PrimMeta> {
             Layer::Std,
             Stability::Experimental,
             Binding::Qualified,
-            Guard::Gate,
+            Guard::GateEntry,
             "Read a process environment variable; None if unset.",
         ),
         p(
@@ -876,7 +887,7 @@ fn build_prims() -> Vec<PrimMeta> {
             Layer::Std,
             Stability::Experimental,
             Binding::Qualified,
-            Guard::Gate,
+            Guard::GateEntry,
             "Set a process environment variable for this process.",
         ),
         p(
@@ -887,7 +898,7 @@ fn build_prims() -> Vec<PrimMeta> {
             Layer::Std,
             Stability::Experimental,
             Binding::Qualified,
-            Guard::Gate,
+            Guard::GateEntry,
             "Snapshot all environment variables as (key, value) pairs.",
         ),
         // ── std::process (cap: proc) ──
@@ -910,7 +921,7 @@ fn build_prims() -> Vec<PrimMeta> {
             Layer::Std,
             Stability::Experimental,
             Binding::Qualified,
-            Guard::Gate,
+            Guard::GateEntry,
             "Wait for a spawned child to exit; returns its exit status.",
         ),
         p(
@@ -921,7 +932,7 @@ fn build_prims() -> Vec<PrimMeta> {
             Layer::Std,
             Stability::Experimental,
             Binding::Qualified,
-            Guard::Gate,
+            Guard::GateEntry,
             "Extract the integer exit code from a finished child status.",
         ),
         p(
@@ -1148,7 +1159,7 @@ fn build_prims() -> Vec<PrimMeta> {
             Layer::Std,
             Stability::Experimental,
             Binding::Qualified,
-            Guard::Gate,
+            Guard::GateEntry,
             "Append a formatted `[level] message` log line to a file (creating it \
              if missing); requires the fs capability.",
         ),
@@ -1315,8 +1326,18 @@ mod tests {
         }
     }
 
+    /// U-91 — the program-entry gate covers the WHOLE gated surface, not just
+    /// the three subprocess-launch surfaces S92 originally covered.
+    ///
+    /// Before U-91 the other 12 rows checked only the live call chain, which any
+    /// active frame satisfies. A `@caps()` entry that reached a `@caps(fs)`
+    /// helper through a function value, a closure, an actor handler, a top-level
+    /// initializer, or a map of functions therefore wrote files with `garnet
+    /// check` reporting 0 diagnostics, because the checker builds callee edges
+    /// only from named calls. Pinning the exact list keeps a later row from
+    /// quietly re-opening the hole.
     #[test]
-    fn entry_gates_are_exactly_the_three_process_spawn_surfaces() {
+    fn entry_gates_are_the_whole_gated_surface() {
         let mut entry: Vec<String> = static_prims()
             .iter()
             .filter(|m| m.guard == Guard::GateEntry)
@@ -1326,16 +1347,30 @@ mod tests {
         assert_eq!(
             entry,
             vec![
+                "fs::list_dir",
+                "fs::read_bytes",
+                "fs::read_file",
+                "fs::write_bytes",
+                "fs::write_file",
+                "net::tcp_connect",
+                "std::env::get",
+                "std::env::set",
+                "std::env::vars",
+                "std::log::to_file",
+                "std::process::exit_code",
                 "std::process::output",
                 "std::process::spawn",
                 "std::process::spawn_args",
+                "std::process::wait",
             ]
         );
     }
 
     #[test]
     fn gate_count_matches_the_audited_runtime_backstop() {
-        // 12 Gate + 3 GateEntry — the S90/S92 runtime backstop surface.
+        // U-91: 0 call-chain-only Gate + 15 GateEntry. The 15-primitive
+        // host-authority surface is unchanged; what changed is that every row in
+        // it is now bound by the program entry's declared budget.
         let gate = static_prims()
             .iter()
             .filter(|m| m.guard == Guard::Gate)
@@ -1344,6 +1379,6 @@ mod tests {
             .iter()
             .filter(|m| m.guard == Guard::GateEntry)
             .count();
-        assert_eq!((gate, entry), (12, 3));
+        assert_eq!((gate, entry), (0, 15));
     }
 }

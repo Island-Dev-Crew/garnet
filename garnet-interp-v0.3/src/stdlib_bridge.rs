@@ -410,6 +410,7 @@ pub(crate) mod adapters {
     #[garnet_primitive("fs::read_file")]
     pub(crate) fn bridge_fs_read_file(args: Vec<Value>) -> Result<Value, RuntimeError> {
         crate::eval::require_capability("fs", "fs::read_file")?;
+        crate::eval::require_entry_capability("fs", "fs::read_file")?;
         let path = expect_str("read_file", &args, 0)?;
         garnet_stdlib::fs::read_file(path)
             .map(Value::str)
@@ -419,6 +420,7 @@ pub(crate) mod adapters {
     #[garnet_primitive("fs::write_file")]
     pub(crate) fn bridge_fs_write_file(args: Vec<Value>) -> Result<Value, RuntimeError> {
         crate::eval::require_capability("fs", "fs::write_file")?;
+        crate::eval::require_entry_capability("fs", "fs::write_file")?;
         let path = expect_str("write_file", &args, 0)?;
         let contents = expect_str("write_file", &args, 1)?;
         garnet_stdlib::fs::write_file(path, contents)
@@ -429,6 +431,7 @@ pub(crate) mod adapters {
     #[garnet_primitive("fs::read_bytes")]
     pub(crate) fn bridge_fs_read_bytes(args: Vec<Value>) -> Result<Value, RuntimeError> {
         crate::eval::require_capability("fs", "fs::read_bytes")?;
+        crate::eval::require_entry_capability("fs", "fs::read_bytes")?;
         let path = expect_str("read_bytes", &args, 0)?;
         garnet_stdlib::fs::read_bytes(path)
             .map(bytes_to_value)
@@ -438,6 +441,7 @@ pub(crate) mod adapters {
     #[garnet_primitive("fs::write_bytes")]
     pub(crate) fn bridge_fs_write_bytes(args: Vec<Value>) -> Result<Value, RuntimeError> {
         crate::eval::require_capability("fs", "fs::write_bytes")?;
+        crate::eval::require_entry_capability("fs", "fs::write_bytes")?;
         let path = expect_str("write_bytes", &args, 0)?;
         let data = expect_byte_array("write_bytes", &args, 1)?;
         garnet_stdlib::fs::write_bytes(path, &data)
@@ -448,6 +452,7 @@ pub(crate) mod adapters {
     #[garnet_primitive("fs::list_dir")]
     pub(crate) fn bridge_fs_list_dir(args: Vec<Value>) -> Result<Value, RuntimeError> {
         crate::eval::require_capability("fs", "fs::list_dir")?;
+        crate::eval::require_entry_capability("fs", "fs::list_dir")?;
         let path = expect_str("list_dir", &args, 0)?;
         garnet_stdlib::fs::list_dir(path)
             .map(|entries| Value::array(entries.into_iter().map(Value::str).collect()))
@@ -469,6 +474,7 @@ pub(crate) mod adapters {
     #[garnet_primitive("net::tcp_connect")]
     pub(crate) fn bridge_net_tcp_connect(args: Vec<Value>) -> Result<Value, RuntimeError> {
         crate::eval::require_capability("net", "net::tcp_connect")?;
+        crate::eval::require_entry_capability("net", "net::tcp_connect")?;
         let host = expect_str("tcp_connect", &args, 0)?;
         let port_i = expect_int("tcp_connect", &args, 1)?;
         if !(0..=65_535).contains(&port_i) {
@@ -1151,6 +1157,7 @@ pub(crate) mod adapters {
     #[garnet_primitive("std::env::get")]
     pub(crate) fn bridge_env_get(args: Vec<Value>) -> Result<Value, RuntimeError> {
         crate::eval::require_capability("env", "std::env::get")?;
+        crate::eval::require_entry_capability("env", "std::env::get")?;
         let key = expect_str("std::env::get", &args, 0)?;
         validate_env_key("std::env::get", key)?;
         match std::env::var_os(key) {
@@ -1165,6 +1172,7 @@ pub(crate) mod adapters {
     #[garnet_primitive("std::env::set")]
     pub(crate) fn bridge_env_set(args: Vec<Value>) -> Result<Value, RuntimeError> {
         crate::eval::require_capability("env", "std::env::set")?;
+        crate::eval::require_entry_capability("env", "std::env::set")?;
         let key = expect_str("std::env::set", &args, 0)?;
         let value = expect_str("std::env::set", &args, 1)?;
         validate_env_key("std::env::set", key)?;
@@ -1176,6 +1184,7 @@ pub(crate) mod adapters {
     #[garnet_primitive("std::env::vars")]
     pub(crate) fn bridge_env_vars(_args: Vec<Value>) -> Result<Value, RuntimeError> {
         crate::eval::require_capability("env", "std::env::vars")?;
+        crate::eval::require_entry_capability("env", "std::env::vars")?;
         let mut vars = Vec::new();
         for (key, value) in std::env::vars_os() {
             let key = key
@@ -1223,6 +1232,7 @@ pub(crate) mod adapters {
     #[garnet_primitive("std::process::wait")]
     pub(crate) fn bridge_process_wait(args: Vec<Value>) -> Result<Value, RuntimeError> {
         crate::eval::require_capability("proc", "std::process::wait")?;
+        crate::eval::require_entry_capability("proc", "std::process::wait")?;
         let process = match args.first() {
             Some(Value::Process(process)) => Rc::clone(process),
             Some(other) => {
@@ -1245,6 +1255,7 @@ pub(crate) mod adapters {
     #[garnet_primitive("std::process::exit_code")]
     pub(crate) fn bridge_process_exit_code(args: Vec<Value>) -> Result<Value, RuntimeError> {
         crate::eval::require_capability("proc", "std::process::exit_code")?;
+        crate::eval::require_entry_capability("proc", "std::process::exit_code")?;
         match args.first() {
             Some(Value::ProcessStatus(status)) => Ok(garnet_stdlib::process::exit_code(status)
                 .map(|code| Value::Int(code as i64))
@@ -1341,6 +1352,7 @@ pub(crate) mod adapters {
     #[garnet_primitive("std::log::to_file")]
     pub(crate) fn bridge_log_to_file(args: Vec<Value>) -> Result<Value, RuntimeError> {
         crate::eval::require_capability("fs", "std::log::to_file")?;
+        crate::eval::require_entry_capability("fs", "std::log::to_file")?;
         let path = expect_str("std::log::to_file", &args, 0)?.to_string();
         let level = expect_str("std::log::to_file", &args, 1)?.to_string();
         let message = expect_str("std::log::to_file", &args, 2)?;
