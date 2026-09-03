@@ -194,7 +194,7 @@ class DogfoodPrBodyCheckerTests(unittest.TestCase):
             "- gate now accepts `### Evidence bundle` or `### Desktop dogfood bundle`.\n\n"
             "## Dogfood Readiness\n\n"
             "### Current truth\n- recorded\n\n"
-            "### Local verification\n- [x] `cmd`\n\n"
+            "### Local verification\n- [x] `cargo fmt --all -- --check`\n\n"
             "### Remote verification\n- [x] checks\n\n"
             "### Deferred / out of scope\n- nothing\n"
         )
@@ -203,14 +203,15 @@ class DogfoodPrBodyCheckerTests(unittest.TestCase):
 
     def test_real_heading_wins_over_prose_mention(self) -> None:
         # Prose mention earlier + a real evidence heading later → gate validates the real one.
-        # The evidence item is a hard token so this test stays about headings, not
-        # about the evidence-token rules exercised in EvidenceTokenTests.
+        # The evidence item is a real command so this test stays about headings, not
+        # about the evidence-token rules exercised in EvidenceTokenTests. It read
+        # `cmd` until the review v2 cure, which rejects a structureless span.
         body = (
             "## Summary\n\n"
             "- gate now accepts `### Desktop dogfood bundle` (legacy).\n\n"
             "## Dogfood Readiness\n\n"
             "### Current truth\n- recorded\n\n"
-            "### Local verification\n- [x] `cmd`\n\n"
+            "### Local verification\n- [x] `cargo fmt --all -- --check`\n\n"
             "### Remote verification\n- [x] Draft PR checks are expected to run before merge.\n\n"
             "### Evidence bundle\n- [x] `/Users/idc2.0/Desktop/dogfood/example-readiness-bundle`\n\n"
             "### Deferred / out of scope\n- nothing\n"
@@ -492,6 +493,43 @@ class GitSubprocessBoundTests(unittest.TestCase):
         self.assertEqual(1, code)
         self.assertIn("::error::", out.getvalue())
         self.assertIn("timed out", out.getvalue())
+
+
+class BareStatusSpanTests(unittest.TestCase):
+    """A code span that is only a verdict word is a claim, not evidence."""
+
+    @staticmethod
+    def _body(item: str) -> str:
+        sections = [f"{h}\n- [x] {item}\n" for h in checker.REQUIRED_HEADINGS]
+        sections.append(f"{checker.EVIDENCE_HEADINGS[0]}\n- [x] {item}\n")
+        return "\n".join(sections)
+
+    def _errors(self, item: str) -> list[str]:
+        return checker.validate_body(self._body(item), [".github/workflows/ci.yml"]).errors
+
+    def test_bare_status_words_are_rejected(self):
+        for word in ("ok", "done", "PASSED", "green", "clean", "n/a", "verified"):
+            with self.subTest(word=word):
+                self.assertTrue(
+                    self._errors(f"`{word}`"),
+                    f"a bare `{word}` span must not satisfy an evidence section",
+                )
+
+    def test_real_evidence_still_passes(self):
+        for item in (
+            "`cargo test -p garnet-cli` \u2014 `16 passed; 0 failed`",
+            "`16 passed`",
+            "`scripts/check_dogfood_pr_body.py`",
+            "`--gate`",
+            "`a81672a5`",
+        ):
+            with self.subTest(item=item):
+                self.assertEqual(
+                    self._errors(item), [], f"{item} is recomputable evidence and must pass"
+                )
+
+    def test_status_word_inside_a_real_command_still_counts(self):
+        self.assertEqual(self._errors("`python3 -I scripts/x.py` printed `ok` for 3 files"), [])
 
 
 if __name__ == "__main__":

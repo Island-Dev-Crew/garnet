@@ -74,6 +74,19 @@ CHECKED_ITEM_RE = re.compile(r"^[ \t]*-[ \t]+\[x\][ \t]+(\S.*?)[ \t]*$")
 CODE_SPAN_RE = re.compile(r"`([^`\n]+)`")
 CODE_SPAN_MIN_CONTENT = 2
 CODE_SPAN_SUBSTANCE_RE = re.compile(r"[^\W_]")
+# A code span that is only a verdict word is a claim, not evidence: `ok` alone
+# satisfied every evidence section before this rule. Real evidence shows
+# structure — a command has whitespace, a count has a digit, a path or flag has a
+# separator. A bare status word has none of those, and is rejected even when it
+# is long enough to clear CODE_SPAN_MIN_CONTENT.
+CODE_SPAN_STATUS_ONLY = frozenset(
+    {
+        "clean", "complete", "completed", "done", "fine", "good", "green", "n/a",
+        "na", "no", "ok", "okay", "pass", "passed", "passes", "passing", "ran",
+        "success", "successful", "succeeded", "true", "verified", "yes",
+    }
+)
+CODE_SPAN_STRUCTURE_RE = re.compile(r"[\s\d/.:=_+-]")
 
 HARD_TOKEN_PATTERNS = tuple(
     re.compile(pattern)
@@ -296,15 +309,34 @@ def code_span_carries_content(content: str) -> bool:
     """True when a backtick span's content is substantive: non-empty after
     stripping, at least two characters, and carrying a letter or digit. A span
     that is blank, whitespace-only, or pure punctuation is not a recomputable
-    command, path, or value (review v1 cure)."""
+    command, path, or value (review v1 cure).
+
+    Substantive is weaker than evidentiary: ``ok`` is substantive but is not
+    evidence. See :func:`code_span_is_evidentiary`."""
     stripped = content.strip()
     if len(stripped) < CODE_SPAN_MIN_CONTENT:
         return False
     return bool(CODE_SPAN_SUBSTANCE_RE.search(stripped))
 
 
+def code_span_is_evidentiary(content: str) -> bool:
+    """True when a backtick span is evidence rather than a verdict.
+
+    A span that is only a status word is a claim: a bare ``ok`` satisfied every
+    evidence section before this rule (review v2 cure). Recomputable evidence
+    shows structure — a command carries whitespace, a count carries a digit, a
+    path or flag carries a separator. A bare verdict word carries none of those,
+    and is rejected even when it clears CODE_SPAN_MIN_CONTENT."""
+    if not code_span_carries_content(content):
+        return False
+    stripped = content.strip()
+    if stripped.casefold() in CODE_SPAN_STATUS_ONLY:
+        return False
+    return bool(CODE_SPAN_STRUCTURE_RE.search(stripped))
+
+
 def _code_span_present(text: str) -> bool:
-    return any(code_span_carries_content(m.group(1)) for m in CODE_SPAN_RE.finditer(text))
+    return any(code_span_is_evidentiary(m.group(1)) for m in CODE_SPAN_RE.finditer(text))
 
 
 def clauses(text: str) -> list[str]:
