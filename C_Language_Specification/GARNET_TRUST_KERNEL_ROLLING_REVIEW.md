@@ -45,15 +45,28 @@ was found by running the gate on the H3-02 widening, not by reading the code.
 
 `TRUST_SURFACES` therefore names each surface version, and
 `verify_landed_review_marker` classifies a marker's landing edge under the
-surface that marker was sealed under. Resolution order: a declared
-`trust_surface` key wins; otherwise a marker sealed before the key existed is
-pinned by its immutable `merged_commit` in `SEALED_MARKER_TRUST_SURFACES`;
-otherwise the current surface applies. The last case fails closed, because the
-current surface is the widest — an undeclared, unpinned marker must account for
-more paths, never fewer. Live candidates are always judged by the current
-surface; only sealed history is judged by its own. `SEALED_MARKER_TRUST_SURFACES`
-is a closed table of the two pre-versioning markers and does not grow: new
-markers declare `trust_surface`.
+surface that marker was sealed under. Resolution is **pin-first**, and the pin
+is bound to an identity, not just a commit: `SEALED_MARKER_TRUST_SURFACES` maps
+a marker's immutable `merged_commit` to a surface **and the one marker path that
+exception covers**. A marker at any other path reusing that commit is a replay
+and stays unpinned.
+
+Everything unpinned resolves to the current surface, which is the widest and
+therefore the strictest, so a rejected marker accounts for more paths, never
+fewer. An unpinned marker must declare the current surface; omitting the key is
+a finding, and selecting a historical surface is a finding. A declaration that
+disagrees with a pin is a finding and resolves to the current surface rather
+than continuing under the narrower pinned one.
+
+Two earlier orderings were laundering paths and are recorded here so they are
+not reintroduced. Declaration-first let a new marker declare the old surface and
+hide the newly covered paths on its own landing edge; the end-to-end verifier
+returned zero findings on that construction. Commit-only pinning let a second
+marker replay a pinned `merged_commit` and inherit the historical exception.
+
+Live candidates are always judged by the current surface; only sealed history is
+judged by its own. `SEALED_MARKER_TRUST_SURFACES` is a closed table of the two
+pre-versioning markers and does not grow.
 
 ## Discovery is part of the proof
 

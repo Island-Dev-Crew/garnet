@@ -2260,15 +2260,30 @@ class TrustSurfaceVersionTests(unittest.TestCase):
         self.assertTrue(now("scripts/check_dogfood_pr_body.py"))
 
     def test_sealed_markers_are_pinned_by_immutable_merged_commit(self) -> None:
-        # The two markers registered before the surface was versioned.  Pinned
-        # by `merged_commit` because marker bytes are append-only immutable.
+        # The two markers registered before the surface was versioned. Pinned by
+        # `merged_commit` because marker bytes are append-only immutable, and
+        # bound to the one marker path each exception covers: keying on the
+        # commit alone let a second marker replay a pinned commit and inherit
+        # the historical surface (review v2 finding).
+        landed = "F_Project_Management/W_TRUST/landed/"
         self.assertEqual(
             {
-                "68317ae258327aade47fc2c07b7b5b580ec7c6ea": "v1",
-                "41d6ced858684ac67683d32315920bd50a52976e": "v1",
+                "68317ae258327aade47fc2c07b7b5b580ec7c6ea": (
+                    "v1",
+                    f"{landed}LANE1_GOVERNANCE_ACTIVATION.landed-review.json",
+                ),
+                "41d6ced858684ac67683d32315920bd50a52976e": (
+                    "v1",
+                    f"{landed}LANE2B_MINIMUM_SHELF_MCP.landed-review.json",
+                ),
             },
             dict(mod.SEALED_MARKER_TRUST_SURFACES),
         )
+        # Every pinned path must be a marker that actually exists in the registry.
+        for _commit, (_surface, path) in mod.SEALED_MARKER_TRUST_SURFACES.items():
+            self.assertTrue(
+                (mod.ROOT / path).is_file(), f"pinned marker path is missing: {path}"
+            )
 
     def test_marker_surface_resolution_order(self) -> None:
         # The immutable pin decides, and it is the ONLY route to a historical
@@ -2278,7 +2293,8 @@ class TrustSurfaceVersionTests(unittest.TestCase):
         # covered paths on its own landing edge. The reviewer reproduced that
         # end to end with zero findings. The precedence below is the cure.
         name, findings = mod.resolve_marker_trust_surface(
-            {"merged_commit": "41d6ced858684ac67683d32315920bd50a52976e"}
+            {"merged_commit": "41d6ced858684ac67683d32315920bd50a52976e"},
+            "F_Project_Management/W_TRUST/landed/LANE2B_MINIMUM_SHELF_MCP.landed-review.json",
         )
         self.assertEqual(("v1", []), (name, findings))
         # An unpinned marker may not reach back to a historical surface.
@@ -2316,30 +2332,56 @@ class MarkerTrustSurfaceSelectionTests(unittest.TestCase):
     """The immutable pin is the only route to a historical surface (review v1 cure)."""
 
     def _pin(self):
-        return sorted(mod.SEALED_MARKER_TRUST_SURFACES.items())[0]
+        commit, (surface, path) = sorted(mod.SEALED_MARKER_TRUST_SURFACES.items())[0]
+        return commit, surface, path
 
     def test_pin_decides_for_a_sealed_marker(self):
-        commit, surface = self._pin()
+        commit, surface, path = self._pin()
         self.assertEqual(
-            mod.resolve_marker_trust_surface({"merged_commit": commit}), (surface, [])
+            mod.resolve_marker_trust_surface({"merged_commit": commit}, path),
+            (surface, []),
         )
 
     def test_declaration_agreeing_with_the_pin_is_accepted(self):
-        commit, surface = self._pin()
+        commit, surface, path = self._pin()
         self.assertEqual(
             mod.resolve_marker_trust_surface(
-                {"merged_commit": commit, "trust_surface": surface}
+                {"merged_commit": commit, "trust_surface": surface}, path
             ),
             (surface, []),
         )
 
-    def test_declaration_disagreeing_with_the_pin_is_a_finding(self):
-        commit, surface = self._pin()
+    def test_a_replay_of_a_pinned_commit_at_another_path_is_unpinned(self):
+        """Keying the pin on the commit alone was replayable: a second marker
+        reused a pinned merged_commit, declared the historical surface, and
+        cleared verification with zero findings (review v2 finding)."""
+        commit, surface, _ = self._pin()
+        resolved, findings = mod.resolve_marker_trust_surface(
+            {"merged_commit": commit, "trust_surface": surface},
+            "F_Project_Management/W_TRUST/landed/REPLAY.landed-review.json",
+        )
+        self.assertEqual(resolved, mod.CURRENT_TRUST_SURFACE)
+        self.assertTrue(
+            any("does not transfer" in item for item in findings), findings
+        )
+
+    def test_pinned_declaration_mismatch_falls_to_the_current_surface(self):
+        """A mismatch must not continue under the narrower pin (review v2)."""
+        commit, surface, path = self._pin()
         other = next(n for n in mod.TRUST_SURFACES if n != surface)
         resolved, findings = mod.resolve_marker_trust_surface(
-            {"merged_commit": commit, "trust_surface": other}
+            {"merged_commit": commit, "trust_surface": other}, path
         )
-        self.assertEqual(resolved, surface)
+        self.assertEqual(resolved, mod.CURRENT_TRUST_SURFACE)
+        self.assertTrue(any("pins" in item for item in findings), findings)
+
+    def test_declaration_disagreeing_with_the_pin_is_a_finding(self):
+        commit, surface, path = self._pin()
+        other = next(n for n in mod.TRUST_SURFACES if n != surface)
+        resolved, findings = mod.resolve_marker_trust_surface(
+            {"merged_commit": commit, "trust_surface": other}, path
+        )
+        self.assertEqual(resolved, mod.CURRENT_TRUST_SURFACE)
         self.assertEqual(len(findings), 1)
         self.assertIn("immutable merged_commit pins", findings[0])
 

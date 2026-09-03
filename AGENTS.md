@@ -97,9 +97,14 @@ Never narrow the surface to make a PR green.
 
 Widening the surface is only safe because the surface is versioned. A sealed
 landed marker binds the trust subset of its landing edge, so it is verified
-under the surface it was sealed under: a declared `trust_surface` key, else the
-`merged_commit` pin in `SEALED_MARKER_TRUST_SURFACES`, else the current
-(widest, therefore strictest) surface. Never widen `TRUST_KERNEL_PREFIXES` or
+under the surface it was sealed under, and selection is **pin-first**. The
+`SEALED_MARKER_TRUST_SURFACES` entry for the marker's own immutable
+`merged_commit` decides, and it applies only to the one marker path that entry
+names. Everything else resolves to the current (widest, therefore strictest)
+surface: an unpinned marker must declare that current surface, may not select a
+historical one, and a declaration that disagrees with a pin is a finding.
+Declaration-first was a laundering path: a new marker could declare the old
+surface and hide the newly covered paths on its own landing edge. Never widen `TRUST_KERNEL_PREFIXES` or
 `TRUST_KERNEL_FILES` in place without adding a new `TRUST_SURFACES` version;
 re-run `python3 -I scripts/test_garnet_trust_kernel_review_status.py` and the
 repository marker check, because a widening that reds the sealed markers reds
