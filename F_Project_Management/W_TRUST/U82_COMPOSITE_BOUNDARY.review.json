@@ -1,0 +1,30 @@
+{
+  "author_emails": [
+    "email:jon-isaac@islanddevcrew.com"
+  ],
+  "author_ids": [
+    275140286
+  ],
+  "base_commit": "beeb5e7b23e892521da439da67d44a37f23b5584",
+  "blocking_findings": [],
+  "content_digest": "sha256:1409947c76de276c2a57bb90f24d2095dc91b982ae7e437dbff92b369d4715d6",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 4429216910,
+  "pull_request_number": 549,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head b6f960a358f40399db2bccb803ab36b587c429e8 and does not extend or backdate reviewed_head coverage. OpenAI Codex cross-family seat verdict: CONFIRM, zero findings and zero blockers, at b6f960a358f40399db2bccb803ab36b587c429e8; void if the head moves before the record commit. Exact-range recomputation verified base beeb5e7b23e892521da439da67d44a37f23b5584, one candidate commit, and exactly two trust-kernel paths: scripts/garnet_base_controlled_trust_status.py and scripts/test_garnet_base_controlled_trust_status.py. The protected workflow has a zero-byte diff and SHA-256 33bb45ac7400ed4572f5777c1ccd277ad73316244dca413e9c890fe2da8bf4c7 matching the governance activation ceremony. The rolling status contract exposes discovery_ok, trust_kernel_touched, and touched_paths; the adapter dependency-failure stubs omit them and therefore remain fail-closed. Candidate tests passed 8/8; the clean non-trust regression failed against the base with the boundary problem; the anonymous PR 540 reproduction moved from stock ok false, rolling_review_ok false, candidate_policy_ok true, and the sole boundary problem to cured ok true, rolling_review_ok true, candidate_policy_ok true, and no problems. At the reviewed head, the diagnostic rolling gate reports trust_kernel_touched true, exactly the two touched paths, content digest sha256:1409947c76de276c2a57bb90f24d2095dc91b982ae7e437dbff92b369d4715d6, and sole problem structured review record is missing. Retired vocabulary is absent from added lines. Integrity rule 1 applies because scripts/garnet_* is trust-kernel and remains human-merge-only. The change weakens no predicate: it stops demanding an impossible review-record triple only when trust_kernel_touched is exactly false, while requiring discovery_ok, an exact boolean trust_kernel_touched, the untouched shape's empty touched_paths, and its all-None triple; touched candidates still require the fully valid record triple. Standards and Spec axes both report no actionable findings.",
+  "review_state": "APPROVED",
+  "reviewed_head": "b6f960a358f40399db2bccb803ab36b587c429e8",
+  "reviewed_tree": "c9a706511dd739ee91439636a4af6a046ed70180",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "scripts/garnet_base_controlled_trust_status.py",
+    "scripts/test_garnet_base_controlled_trust_status.py"
+  ],
+  "verdict": "pass"
+}
