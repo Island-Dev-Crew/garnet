@@ -2,7 +2,7 @@
   "name": "garnet",
   "displayName": "Garnet",
   "description": "Garnet language support powered by rowan-backed garnet-lsp precision features.",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "publisher": "island-dev-crew",
   "license": "MIT OR Apache-2.0",
   "repository": {
@@ -29,7 +29,7 @@
   "main": "./dist/extension.js",
   "scripts": {
     "compile": "tsc -p ./",
-    "package": "npm run compile && node scripts/bundle-server.mjs && vsce package --out garnet-0.8.1-lsp-precision.vsix"
+    "package": "npm run compile && node scripts/bundle-server.mjs && vsce package --out garnet-0.8.2-lsp-precision.vsix"
   },
   "contributes": {
     "languages": [

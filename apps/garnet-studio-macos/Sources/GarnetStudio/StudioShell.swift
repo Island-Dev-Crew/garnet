@@ -38,7 +38,7 @@ import Foundation
 /// A workspace version bump must bump this constant in the same PR.
 /// Never reintroduce a second hand-stamped version anywhere in the app.
 public enum StudioVersion {
-    public static let release = "0.8.1"
+    public static let release = "0.8.2"
 }
 
 // MARK: - Row 4 · Validated settings
