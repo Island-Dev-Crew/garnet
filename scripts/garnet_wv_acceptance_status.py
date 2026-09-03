@@ -6,8 +6,10 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import unicodedata
@@ -28,6 +30,10 @@ MAX_MANIFEST_BYTES = 128 * 1024
 MAX_ARTIFACTS = 128
 MAX_ARTIFACT_BYTES = 16 * 1024 * 1024
 MAX_TOTAL_BYTES = 64 * 1024 * 1024
+UTF8_BOM = b"\xef\xbb\xbf"
+# FILE_ATTRIBUTE_REPARSE_POINT: a junction or symlink on native Windows, where
+# O_NOFOLLOW does not exist and lstat alone does not always say S_ISLNK.
+WINDOWS_REPARSE_POINT = 0x400
 
 _CONTENT_PATH = Path(__file__).with_name("garnet_content_provenance.py")
 _CONTENT_SPEC = importlib.util.spec_from_file_location(
@@ -81,18 +87,100 @@ def _reject_duplicates(pairs: list[tuple[str, object]]) -> dict[str, object]:
     return result
 
 
-def _read_json(path: Path, *, limit: int) -> dict[str, object]:
-    if path.is_symlink() or not path.is_file():
-        raise ValueError(f"{path} is not a regular file")
-    size = path.stat().st_size
-    if size <= 0 or size > limit:
-        raise ValueError(f"{path} exceeds the bounded JSON size")
+def _regular_bytes(
+    path: Path, *, limit: int, minimum: int, label: str, bound: str
+) -> bytes:
+    """Read ``path`` once through a descriptor and return exactly the bytes
+    that were checked.
+
+    The metadata check, the open, the size bound, the read, and the post-read
+    identity check all bind to one descriptor; the path is never reopened, so
+    a file swapped between check and use is a finding, not a redirected read.
+    Every rejection is an explicit ``ValueError`` naming the file.
+    """
     try:
-        value = json.loads(
-            path.read_text(encoding="utf-8"),
-            object_pairs_hook=_reject_duplicates,
+        before = os.lstat(path)
+    except OSError as exc:
+        raise ValueError(f"{label} is not a regular file") from exc
+    if (
+        stat.S_ISLNK(before.st_mode)
+        or not stat.S_ISREG(before.st_mode)
+        or bool(getattr(before, "st_file_attributes", 0) & WINDOWS_REPARSE_POINT)
+    ):
+        raise ValueError(f"{label} is not a regular file")
+    if before.st_size < minimum or before.st_size > limit:
+        raise ValueError(f"{label} exceeds {bound}")
+    flags = (
+        os.O_RDONLY
+        | getattr(os, "O_BINARY", 0)
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+    )
+    try:
+        descriptor = os.open(path, flags)
+    except OSError as exc:
+        raise ValueError(f"{label} could not be opened: {exc.strerror}") from exc
+    try:
+        opened = os.fstat(descriptor)
+        if not stat.S_ISREG(opened.st_mode) or (opened.st_dev, opened.st_ino) != (
+            before.st_dev,
+            before.st_ino,
+        ):
+            raise ValueError(f"{label} identity changed between check and open")
+        if opened.st_size < minimum or opened.st_size > limit:
+            raise ValueError(f"{label} exceeds {bound}")
+        payload = bytearray()
+        while len(payload) <= limit:
+            try:
+                chunk = os.read(descriptor, limit + 1 - len(payload))
+            except OSError as exc:
+                raise ValueError(f"{label} could not be read: {exc.strerror}") from exc
+            if not chunk:
+                break
+            payload.extend(chunk)
+        after = os.fstat(descriptor)
+        identity = (opened.st_dev, opened.st_ino, opened.st_size, opened.st_mtime_ns)
+        if identity != (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns):
+            raise ValueError(f"{label} changed while being read")
+        if len(payload) != opened.st_size or len(payload) > limit:
+            raise ValueError(f"{label} changed while being read")
+        return bytes(payload)
+    finally:
+        os.close(descriptor)
+
+
+def _strict_lf_text(raw: bytes, *, label: str) -> str:
+    """Decode WV evidence JSON under the byte rule: strict UTF-8, no
+    byte-order mark, LF-only line endings.
+
+    A text-mode read would silently normalise CRLF and hide the bytes that a
+    hash or a reviewer sees; the rule rejects them by name instead. The
+    contract states no canonical-JSON form for the evidence manifest, so no
+    canonical requirement is asserted here.
+    """
+    if raw.startswith(UTF8_BOM):
+        raise ValueError(f"{label} must not begin with a UTF-8 byte-order mark")
+    carriage_return = raw.find(b"\r")
+    if carriage_return != -1:
+        raise ValueError(
+            f"{label} must use LF-only line endings "
+            f"(first CR byte at offset {carriage_return})"
         )
-    except (OSError, UnicodeError, json.JSONDecodeError, ValueError) as exc:
+    try:
+        return raw.decode("utf-8", errors="strict")
+    except UnicodeDecodeError as exc:
+        raise ValueError(f"{label} is not strict UTF-8: {exc}") from exc
+
+
+def _read_json(path: Path, *, limit: int) -> dict[str, object]:
+    label = str(path)
+    raw = _regular_bytes(
+        path, limit=limit, minimum=1, label=label, bound="the bounded JSON size"
+    )
+    text = _strict_lf_text(raw, label=label)
+    try:
+        value = json.loads(text, object_pairs_hook=_reject_duplicates)
+    except (RecursionError, ValueError) as exc:
         raise ValueError(f"{path} is invalid strict JSON: {exc}") from exc
     if not isinstance(value, dict):
         raise ValueError(f"{path} root must be an object")
@@ -345,17 +433,19 @@ def _validate_evidence(
             findings.append(f"artifact {relative} is duplicated")
             continue
         artifact_hashes[relative] = digest
-        path = evidence_root / relative
-        if path.is_symlink() or not path.is_file():
-            findings.append(f"artifact {relative} is not a regular file")
+        try:
+            raw = _regular_bytes(
+                evidence_root / relative,
+                limit=min(MAX_ARTIFACT_BYTES, MAX_TOTAL_BYTES - total),
+                minimum=0,
+                label=f"artifact {relative}",
+                bound="evidence size bounds",
+            )
+        except ValueError as exc:
+            findings.append(str(exc))
             continue
-        size = path.stat().st_size
-        total += size
-        if size > MAX_ARTIFACT_BYTES or total > MAX_TOTAL_BYTES:
-            findings.append(f"artifact {relative} exceeds evidence size bounds")
-            continue
-        actual = hashlib.sha256(path.read_bytes()).hexdigest()
-        if actual != digest:
+        total += len(raw)
+        if hashlib.sha256(raw).hexdigest() != digest:
             findings.append(f"artifact {relative} SHA-256 does not match")
 
     referenced: set[str] = set()

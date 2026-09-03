@@ -5,12 +5,14 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import os
 import re
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "garnet_wv_acceptance_status.py"
@@ -19,6 +21,91 @@ assert SPEC is not None and SPEC.loader is not None
 wv = importlib.util.module_from_spec(SPEC)
 sys.modules["garnet_wv_acceptance_status"] = wv
 SPEC.loader.exec_module(wv)
+
+
+def _complete_evidence(
+    root: Path, identifier: str = "WV-6"
+) -> tuple[Path, dict[str, object]]:
+    """Lay out complete, hash-verified evidence and return the manifest that
+    would accept it. The manifest itself is not written: each caller decides
+    which bytes reach the reporter."""
+    wv.copy_contract(ROOT, root)
+    contract = wv.load_contracts(root)[identifier]
+    evidence = root / contract["evidenceDestination"]
+    evidence.mkdir(parents=True)
+    artifacts: list[dict[str, str]] = []
+    checks: list[dict[str, object]] = []
+    for item in contract["requiredChecks"]:
+        relative = f"{item['id']}.txt"
+        payload = f"{item['id']} passed\n".encode()
+        (evidence / relative).write_bytes(payload)
+        artifacts.append(
+            {"path": relative, "sha256": hashlib.sha256(payload).hexdigest()}
+        )
+        checks.append(
+            {
+                "id": item["id"],
+                "status": "passed",
+                "command": f"verify {item['id']}",
+                "evidence": [relative],
+            }
+        )
+    manifest: dict[str, object] = {
+        "schema": "garnet.wv_acceptance_evidence/v2",
+        "wv": identifier,
+        "contractBaseMainSha": wv.EXPECTED_BASE_SHA,
+        "reviewedHeadSha": wv.REVIEWED_HEAD,
+        "reviewedTreeSha": wv.REVIEWED_TREE,
+        "productContentSha256": wv.EXPECTED_PRODUCT_CONTENT_SHA256,
+        "state": "evidence_complete",
+        "platform": "windows",
+        "checks": checks,
+        "artifacts": artifacts,
+        "scopeLimitsAcknowledged": True,
+        "jonOnlyActionsPerformed": [],
+    }
+    return evidence, manifest
+
+
+def _manifest_bytes(manifest: dict[str, object]) -> bytes:
+    return (json.dumps(manifest, indent=2) + "\n").encode("utf-8")
+
+
+def _swap_after_lstat(target_name: str, replacement: Path, destination: Path):
+    """An ``os.lstat`` stand-in reproducing the crown's deterministic
+    check/use swap: right after the first metadata check of a path named
+    ``target_name``, ``destination`` is atomically replaced by
+    ``replacement``. A reader that re-opens by path afterwards reads the
+    replacement; a reader bound to what it checked cannot."""
+    real_lstat = os.lstat
+    fired: list[str] = []
+
+    def lstat_then_swap(path, *args, **kwargs):
+        result = real_lstat(path, *args, **kwargs)
+        if not fired and os.path.basename(os.fsdecode(path)) == target_name:
+            os.replace(replacement, destination)
+            fired.append(os.fsdecode(path))
+        return result
+
+    return lstat_then_swap, fired
+
+
+def _swap_after_fstat(identity: tuple[int, int], replacement: Path, destination: Path):
+    """An ``os.fstat`` stand-in that replaces ``destination`` on the path the
+    moment a descriptor bound to ``identity`` (st_dev, st_ino) is inspected.
+    Only a reader that reads from that same descriptor still sees the bytes
+    it checked."""
+    real_fstat = os.fstat
+    fired: list[int] = []
+
+    def fstat_then_swap(fd):
+        result = real_fstat(fd)
+        if not fired and (result.st_dev, result.st_ino) == identity:
+            os.replace(replacement, destination)
+            fired.append(fd)
+        return result
+
+    return fstat_then_swap, fired
 
 
 class GarnetWvAcceptanceStatusTests(unittest.TestCase):
@@ -231,6 +318,166 @@ class GarnetWvAcceptanceStatusTests(unittest.TestCase):
         self.assertTrue(any("reviewed head provenance" in item for item in findings))
         self.assertTrue(any("reviewed tree provenance" in item for item in findings))
         self.assertTrue(any("product content digest" in item for item in findings))
+
+    # Crown ceremony, scope D, bound to beeb5e7b: the reporter accepted a CRLF
+    # manifest (wv_crlf_manifest: state=accepted) and re-opened evidence by
+    # path after checking it (wv_check_use_swap: accepted_source=outside).
+    # Each test names the exact problem string the cured reporter must emit;
+    # none may reach "accepted".
+
+    def test_crlf_manifest_is_rejected_by_name(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            evidence, manifest = _complete_evidence(root)
+            manifest_path = evidence / wv.EVIDENCE_MANIFEST
+            crlf = _manifest_bytes(manifest).replace(b"\n", b"\r\n")
+            offset = crlf.index(b"\r")
+            manifest_path.write_bytes(crlf)
+            status = wv.read_status(root, "WV-6", verify_git=False)
+        self.assertEqual(status.state, "partial")
+        self.assertFalse(status.ok)
+        self.assertEqual(
+            status.findings,
+            [
+                f"{manifest_path} must use LF-only line endings "
+                f"(first CR byte at offset {offset})"
+            ],
+        )
+
+    def test_bom_manifest_is_rejected_by_name(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            evidence, manifest = _complete_evidence(root)
+            manifest_path = evidence / wv.EVIDENCE_MANIFEST
+            manifest_path.write_bytes(b"\xef\xbb\xbf" + _manifest_bytes(manifest))
+            status = wv.read_status(root, "WV-6", verify_git=False)
+        self.assertEqual(status.state, "partial")
+        self.assertFalse(status.ok)
+        self.assertEqual(
+            status.findings,
+            [f"{manifest_path} must not begin with a UTF-8 byte-order mark"],
+        )
+
+    def test_non_utf8_manifest_is_rejected_by_name(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            evidence, manifest = _complete_evidence(root)
+            manifest_path = evidence / wv.EVIDENCE_MANIFEST
+            raw = _manifest_bytes(manifest).replace(b'"windows"', b'"windo\xffws"')
+            self.assertIn(b"\xff", raw)
+            manifest_path.write_bytes(raw)
+            status = wv.read_status(root, "WV-6", verify_git=False)
+        self.assertEqual(status.state, "partial")
+        self.assertFalse(status.ok)
+        self.assertEqual(len(status.findings), 1)
+        self.assertTrue(
+            status.findings[0].startswith(f"{manifest_path} is not strict UTF-8: "),
+            status.findings,
+        )
+
+    def test_manifest_swapped_after_its_check_is_never_accepted(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            evidence, manifest = _complete_evidence(root)
+            manifest_path = evidence / wv.EVIDENCE_MANIFEST
+            # Inside: the bytes the reporter checks; they fail the contract.
+            manifest_path.write_bytes(
+                _manifest_bytes(dict(manifest, state="evidence_incomplete"))
+            )
+            # Outside: the bytes a re-open by path would find; they would accept.
+            outside = root / "outside" / wv.EVIDENCE_MANIFEST
+            outside.parent.mkdir()
+            outside.write_bytes(_manifest_bytes(manifest))
+            hook, fired = _swap_after_lstat(wv.EVIDENCE_MANIFEST, outside, manifest_path)
+            with mock.patch.object(os, "lstat", hook):
+                status = wv.read_status(root, "WV-6", verify_git=False)
+        self.assertEqual(fired, [str(manifest_path)])
+        self.assertNotEqual(status.state, "accepted")
+        self.assertFalse(status.ok)
+        self.assertIn(
+            f"{manifest_path} identity changed between check and open",
+            status.findings,
+        )
+
+    @unittest.skipIf(os.name == "nt", "Windows cannot replace a file that is open")
+    def test_manifest_bytes_come_from_the_checked_descriptor(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            evidence, manifest = _complete_evidence(root)
+            manifest_path = evidence / wv.EVIDENCE_MANIFEST
+            manifest_path.write_bytes(
+                _manifest_bytes(dict(manifest, state="evidence_incomplete"))
+            )
+            outside = root / "outside" / wv.EVIDENCE_MANIFEST
+            outside.parent.mkdir()
+            outside.write_bytes(_manifest_bytes(manifest))
+            before = os.lstat(manifest_path)
+            hook, fired = _swap_after_fstat(
+                (before.st_dev, before.st_ino), outside, manifest_path
+            )
+            with mock.patch.object(os, "fstat", hook):
+                status = wv.read_status(root, "WV-6", verify_git=False)
+            # The path now carries the accepting bytes...
+            self.assertEqual(manifest_path.read_bytes(), _manifest_bytes(manifest))
+        # ...but the reporter judged the descriptor it checked.
+        self.assertEqual(len(fired), 1)
+        self.assertNotEqual(status.state, "accepted")
+        self.assertFalse(status.ok)
+        self.assertIn(
+            "evidence manifest state must be evidence_complete", status.findings
+        )
+        self.assertFalse(
+            any("changed" in item for item in status.findings), status.findings
+        )
+
+    def test_artifact_swapped_after_its_check_is_never_accepted(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            evidence, manifest = _complete_evidence(root)
+            (evidence / wv.EVIDENCE_MANIFEST).write_bytes(_manifest_bytes(manifest))
+            target = str(manifest["artifacts"][0]["path"])
+            inside = evidence / target
+            listed = inside.read_bytes()
+            inside.write_bytes(b"tampered\n")
+            outside = root / "outside" / target
+            outside.parent.mkdir()
+            outside.write_bytes(listed)
+            hook, fired = _swap_after_lstat(target, outside, inside)
+            with mock.patch.object(os, "lstat", hook):
+                status = wv.read_status(root, "WV-6", verify_git=False)
+        self.assertEqual(fired, [str(inside)])
+        self.assertNotEqual(status.state, "accepted")
+        self.assertFalse(status.ok)
+        self.assertIn(
+            f"artifact {target} identity changed between check and open",
+            status.findings,
+        )
+
+    @unittest.skipIf(os.name == "nt", "Windows cannot replace a file that is open")
+    def test_artifact_hash_covers_the_checked_descriptor_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            evidence, manifest = _complete_evidence(root)
+            (evidence / wv.EVIDENCE_MANIFEST).write_bytes(_manifest_bytes(manifest))
+            target = str(manifest["artifacts"][0]["path"])
+            inside = evidence / target
+            listed = inside.read_bytes()
+            inside.write_bytes(b"tampered\n")
+            outside = root / "outside" / target
+            outside.parent.mkdir()
+            outside.write_bytes(listed)
+            before = os.lstat(inside)
+            hook, fired = _swap_after_fstat((before.st_dev, before.st_ino), outside, inside)
+            with mock.patch.object(os, "fstat", hook):
+                status = wv.read_status(root, "WV-6", verify_git=False)
+            self.assertEqual(inside.read_bytes(), listed)
+        self.assertEqual(len(fired), 1)
+        self.assertNotEqual(status.state, "accepted")
+        self.assertFalse(status.ok)
+        self.assertIn(f"artifact {target} SHA-256 does not match", status.findings)
+        self.assertFalse(
+            any("changed" in item for item in status.findings), status.findings
+        )
 
 
 if __name__ == "__main__":
