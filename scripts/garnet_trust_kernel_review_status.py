@@ -20,6 +20,7 @@ reviewed-head provenance.
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import hashlib
 import importlib.util
 import json
@@ -186,6 +187,7 @@ class TrustKernelReviewStatus:
     touched_paths: list[str] = field(default_factory=list)
     review_record_present: bool = False
     review_record_path: str | None = None
+    review_record_sha256: str | None = None
     reviewer: str | None = None
     reviewer_id: int | None = None
     reviewer_login: str | None = None
@@ -2012,6 +2014,7 @@ def read_status(
 
     record: dict[str, Any] | None = None
     selected_record_path: str | None = None
+    selected_record_sha256: str | None = None
     reviewer: str | None = None
     reviewer_id: int | None = None
     reviewer_login: str | None = None
@@ -2034,6 +2037,13 @@ def read_status(
                 root=root,
             )
             problems.extend(selection_findings)
+            if record is not None and selected_record_path is not None:
+                raw_record, raw_record_findings = _read_blob(
+                    root, discovery.head_commit, selected_record_path
+                )
+                problems.extend(raw_record_findings)
+                if raw_record is not None:
+                    selected_record_sha256 = hashlib.sha256(raw_record).hexdigest()
             if record is not None:
                 problems.extend(
                     _verify_premerge_record(
@@ -2096,6 +2106,7 @@ def read_status(
         touched_paths=touched,
         review_record_present=bool(record_paths),
         review_record_path=selected_record_path,
+        review_record_sha256=selected_record_sha256,
         reviewer=reviewer,
         reviewer_id=reviewer_id,
         reviewer_login=reviewer_login,
@@ -2576,6 +2587,81 @@ def check_clean_worktree(root: Path = ROOT) -> list[str]:
     return []
 
 
+ELIGIBILITY_VERDICT_SCHEMA = "garnet.trust_kernel_review_eligibility_verdict/v1"
+ELIGIBLE_RECEIPT_STATE = "approval_pending_only"
+ELIGIBLE_RECEIPT_CODES = ["approval-absent"]
+MAX_VERDICT_BYTES = 64 * 1024
+ATTEMPT_EXHAUSTED_PROBLEM = (
+    "workflow run attempt 3 or later is outside the U-59 exception; "
+    "no third evaluation exists and the cure is a new record successor and venue"
+)
+ATTEMPT_VERDICT_PROBLEM = (
+    "attempt-2 eligibility verdict does not prove an approval_pending_only "
+    "attempt-1 receipt for this exact run and candidate head"
+)
+
+
+def _load_eligibility_verdict(path: Path) -> tuple[dict[str, Any] | None, list[str]]:
+    try:
+        payload = path.read_bytes()
+    except OSError:
+        return None, [f"{ATTEMPT_VERDICT_PROBLEM}: verdict file could not be read"]
+    if len(payload) > MAX_VERDICT_BYTES:
+        return None, [f"{ATTEMPT_VERDICT_PROBLEM}: verdict exceeds its size bound"]
+    value, load_problems = _load_canonical_record(payload)
+    if value is None:
+        return None, [f"{ATTEMPT_VERDICT_PROBLEM}: {'; '.join(load_problems)}"]
+    return value, []
+
+
+def apply_attempt_policy(
+    status: TrustKernelReviewStatus,
+    *,
+    run_id: int | None,
+    run_attempt: int | None,
+    verdict_path: Path | None,
+) -> TrustKernelReviewStatus:
+    """Bind the U-59 attempt law without mutating the input status.
+
+    * attempt 1 (or no attempt binding): no additional finding;
+    * attempt 2 on a record-bearing candidate: the attempt-2 eligibility
+      verdict must prove the approval_pending_only receipt for this run and head;
+      record-less candidates carry no receipt and gain no finding (A4);
+    * attempt 3 or later: fail closed for every candidate.
+    """
+    problems: list[str] = []
+    if (run_id is None) != (run_attempt is None):
+        problems.append("--run-id and --run-attempt must be supplied together")
+    elif run_attempt is not None and run_id is not None:
+        if type(run_id) is not int or run_id <= 0:
+            problems.append("--run-id must be a positive integer")
+        if type(run_attempt) is not int or run_attempt <= 0:
+            problems.append("--run-attempt must be a positive integer")
+        elif run_attempt >= 3:
+            problems.append(ATTEMPT_EXHAUSTED_PROBLEM)
+        elif run_attempt == 2 and status.review_record_path is not None:
+            if verdict_path is None:
+                problems.append(f"{ATTEMPT_VERDICT_PROBLEM}: --eligibility-verdict is required")
+            else:
+                verdict, verdict_problems = _load_eligibility_verdict(verdict_path)
+                problems.extend(verdict_problems)
+                if verdict is not None and not (
+                    verdict.get("schema") == ELIGIBILITY_VERDICT_SCHEMA
+                    and verdict.get("ok") is True
+                    and verdict.get("run_id") == run_id
+                    and verdict.get("run_attempt") == 2
+                    and verdict.get("candidate_head") == status.head_commit
+                    and verdict.get("receipt_state") == ELIGIBLE_RECEIPT_STATE
+                    and verdict.get("receipt_finding_codes") == ELIGIBLE_RECEIPT_CODES
+                    and verdict.get("problems") == []
+                ):
+                    problems.append(ATTEMPT_VERDICT_PROBLEM)
+    if not problems:
+        return status
+    combined = [*status.problems, *problems]
+    return dataclasses.replace(status, ok=False, problems=combined)
+
+
 def render_markdown(status: TrustKernelReviewStatus) -> str:
     lines = [
         "# Garnet rolling trust-kernel review status",
@@ -2664,6 +2750,28 @@ def main(argv: list[str] | None = None, *, root: Path = ROOT) -> int:
         help="read one bounded credential from stdin; environment credentials are never inherited",
     )
     parser.add_argument("--gate", action="store_true", help="exit nonzero on any finding")
+    parser.add_argument(
+        "--run-id",
+        type=int,
+        default=None,
+        help="immutable workflow-run id; binds the U-59 attempt law together with --run-attempt",
+    )
+    parser.add_argument(
+        "--run-attempt",
+        type=int,
+        default=None,
+        help="workflow run attempt; attempt 2 requires --eligibility-verdict for a record-bearing candidate, attempt 3+ fails closed",
+    )
+    parser.add_argument(
+        "--eligibility-verdict",
+        default=None,
+        help="canonical attempt-2 verdict written by garnet_trust_kernel_review_eligibility.py verify",
+    )
+    parser.add_argument(
+        "--status-out",
+        default=None,
+        help="also write exactly the printed JSON status to this path (consumed by the receipt emitter)",
+    )
     args = parser.parse_args(list(argv) if argv is not None else None)
 
     policy_problems: list[str] = []
@@ -2691,7 +2799,18 @@ def main(argv: list[str] | None = None, *, root: Path = ROOT) -> int:
         repository=args.github_repo,
         pull_request=args.github_pr,
     )
-    print(render_markdown(status) if args.format == "md" else json.dumps(asdict(status), indent=2))
+    status = apply_attempt_policy(
+        status,
+        run_id=args.run_id,
+        run_attempt=args.run_attempt,
+        verdict_path=Path(args.eligibility_verdict) if args.eligibility_verdict is not None else None,
+    )
+    rendered = render_markdown(status) if args.format == "md" else json.dumps(asdict(status), indent=2)
+    print(rendered)
+    if args.status_out is not None:
+        target = Path(args.status_out)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes((rendered + "\n").encode("utf-8"))
     if args.gate and not status.ok:
         print("trust-kernel review gate: REVIEW REQUIRED", file=sys.stderr)
         return 1

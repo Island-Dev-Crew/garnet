@@ -328,6 +328,41 @@ Run `python3 -I scripts/test_garnet_trust_kernel_review_status.py` and the agent
 contract checks after changing this venue, readback, propagation, or canonical-
 record procedure.
 
+The U-59 wiring (L1 act 2) lives in `.github/workflows/ci.yml` and two
+scripts. `scripts/garnet_trust_kernel_review_eligibility.py emit` runs at
+attempt 1 after the reporter, classifies the reporter's `--status-out` problem
+list through a fixed table (only the exact "authenticated decisive review from
+the recorded independent reviewer is absent" maps to `approval-absent`; every
+other finding maps to its own code and makes the receipt `ineligible`), and
+writes the canonical `garnet.trust_kernel_review_eligibility/v1` receipt that
+the pinned `actions/upload-artifact` step carries as the sole member
+`eligibility.json` of `r2-approval-pending-<run_id>-attempt-1`. A record-less
+candidate emits no receipt. `verify` runs at attempt 2 before the reporter:
+complete artifact enumeration, one-hop authenticated download through
+`scripts/garnet_actions_artifact_transport.py` (Authorization is stripped on
+the blob hop; `application/zip`/`application/octet-stream` only; 8 MiB cap),
+single-member ZIP parse without extraction, canonical receipt equality, live
+PR/base/head/tree/record/workflow/run/event/producer-inventory equality, and
+`run_attempt == 2`; the reporter consumes that verdict through
+`--eligibility-verdict` and fails closed on attempt 3 or later for every
+candidate. `expected_job_multiset` and `verify_jobs_and_census` are the act-4
+readback callables; act 2 tests them and does not wire them into CI. The
+`actions: read` workflow permission is the sole permission delta; no CI job
+may hold a write permission. `r2_role_separation_v1` stays
+OPEN-UNTIL-IMPLEMENTED until the distinct carrier identity exists, so U-59
+remains ineligible for activation after this wiring.
+
+Run `python3 -I scripts/test_garnet_trust_kernel_review_eligibility.py`,
+`python3 -I scripts/test_garnet_trust_kernel_review_status.py`, the workflow
+policy suites, and `python3 -I scripts/test_garnet_required_context_contract.py`
+after changing the receipt schema, the classifier table, the archive transport,
+the attempt law, or the CI receipt/verify wiring. Changing any `ci.yml` job
+moves every `ci.yml` producer fingerprint in
+`.github/rulesets/required-context-producers.json` and the aggregate constants
+in `scripts/garnet_required_context_contract.py` and
+`scripts/garnet_github_governance_gate.py`; regenerate them from
+`producer_semantic_sha256`, never by hand.
+
 ## Phase ID Allocation
 
 Phase identifiers (e.g. `Phase 6BT`) are a single shared global counter. With
