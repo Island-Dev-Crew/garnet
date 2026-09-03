@@ -321,25 +321,53 @@ def trust_surface_predicate(name: str) -> "Callable[[str], bool]":
 def resolve_marker_trust_surface(marker: dict) -> tuple[str, list[str]]:
     """Name the surface a landed marker was sealed under.
 
-    A declared `trust_surface` wins; otherwise a marker sealed before the field
-    existed is pinned by its immutable `merged_commit`; otherwise the current
-    surface applies.  Defaulting to the current surface fails closed: it is the
-    widest, so an undeclared, unpinned marker must account for more paths, not
-    fewer.
+    The immutable `merged_commit` pin is AUTHORITATIVE, and it is the only way a
+    marker reaches a historical surface.  A marker whose commit is not in
+    SEALED_MARKER_TRUST_SURFACES is by construction newer than every pin, so it
+    must be sealed under the current surface and may not select a narrower one.
+
+    Letting a declared value win outright was a laundering path (review v1
+    finding): a NEW marker could declare `v1`, take the narrow surface, and the
+    landing edge's newly covered paths became invisible.  The end-to-end verifier
+    returned zero findings on exactly that construction.  Selection now runs
+    pin-first, and every disagreement is a finding rather than a silent choice.
+    Every failure resolves to CURRENT_TRUST_SURFACE, which is the widest, so a
+    rejected marker must account for more paths, never fewer.
     """
     findings: list[str] = []
     declared = marker.get("trust_surface")
-    if declared is not None:
-        if isinstance(declared, str) and declared in TRUST_SURFACES:
-            return declared, findings
-        findings.append(f"unknown trust surface {declared!r} in landed marker")
-        return CURRENT_TRUST_SURFACE, findings
     merged = marker.get("merged_commit")
+    pinned = None
     if isinstance(merged, str):
         pinned = SEALED_MARKER_TRUST_SURFACES.get(merged.lower())
-        if pinned is not None:
-            return pinned, findings
-    return CURRENT_TRUST_SURFACE, findings
+
+    if pinned is not None:
+        # Sealed before the field existed. The pin decides; a declared value may
+        # only agree with it.
+        if declared is not None and declared != pinned:
+            findings.append(
+                f"landed marker declares trust surface {declared!r} but its immutable "
+                f"merged_commit pins {pinned!r}"
+            )
+        return pinned, findings
+
+    # Unpinned, therefore newer than every pin.
+    if declared is None:
+        findings.append(
+            "landed marker outside the sealed pin map must declare "
+            f"trust_surface {CURRENT_TRUST_SURFACE!r}"
+        )
+        return CURRENT_TRUST_SURFACE, findings
+    if not isinstance(declared, str) or declared not in TRUST_SURFACES:
+        findings.append(f"unknown trust surface {declared!r} in landed marker")
+        return CURRENT_TRUST_SURFACE, findings
+    if declared != CURRENT_TRUST_SURFACE:
+        findings.append(
+            f"landed marker outside the sealed pin map may not select historical "
+            f"trust surface {declared!r}; only {CURRENT_TRUST_SURFACE!r} is admissible"
+        )
+        return CURRENT_TRUST_SURFACE, findings
+    return declared, findings
 
 
 def is_review_record(path: str) -> bool:

@@ -1751,6 +1751,10 @@ class LandedMarkerTests(GitRepoFixture):
             "head_repository": "Navigata1/garnet",
             "head_repository_id": 6006,
             "merged_commit": self.merged_commit,
+            # A synthetic marker is by construction newer than every pin in
+            # SEALED_MARKER_TRUST_SURFACES, so it must say which surface it was
+            # sealed under. Omitting it is a finding after the review v1 cure.
+            "trust_surface": mod.CURRENT_TRUST_SURFACE,
             "merged_tree": self.merged_tree,
             "pull_request_id": 7007,
             "pull_request_number": 77,
@@ -2043,7 +2047,10 @@ class TrustSurfaceCoverageTests(GitRepoFixture):
     # (b) computes or enforces capability authority, and (c) verifies a
     # signature or a digest.  The five MCP/Shelf entries are not in the
     # finding's own list: a replay of the last 60 merged PRs showed a six-file
-    # widening would already have missed them (they landed in #514).
+    # widening would already have missed them.  They did NOT all land in one PR,
+    # as an earlier revision of this comment said: `mcp_schema.rs` first landed
+    # in #501, `mcp.rs` in #503, and `minimum_shelf.rs`, `mcp_stdio.rs` and
+    # `cmd/mcp_serve.rs` in #514 (verified with git log --diff-filter=A).
     CAPABILITY_AND_SIGNATURE_PATHS = (
         "garnet-cli/src/cap_manifest.rs",
         "garnet-cli/src/cmd/diff_caps.rs",
@@ -2264,20 +2271,30 @@ class TrustSurfaceVersionTests(unittest.TestCase):
         )
 
     def test_marker_surface_resolution_order(self) -> None:
-        # A declared surface wins.
-        name, findings = mod.resolve_marker_trust_surface(
-            {"trust_surface": "v1", "merged_commit": "0" * 40}
-        )
-        self.assertEqual(("v1", []), (name, findings))
-        # Otherwise a sealed pin applies.
+        # The immutable pin decides, and it is the ONLY route to a historical
+        # surface. This test asserted the opposite until the review v1 cure: it
+        # required that a declared surface win outright, which let an UNPINNED
+        # marker declare "v1", take the narrow surface, and hide the newly
+        # covered paths on its own landing edge. The reviewer reproduced that
+        # end to end with zero findings. The precedence below is the cure.
         name, findings = mod.resolve_marker_trust_surface(
             {"merged_commit": "41d6ced858684ac67683d32315920bd50a52976e"}
         )
         self.assertEqual(("v1", []), (name, findings))
-        # Otherwise the current, widest surface — a wider surface is stricter,
-        # so an undeclared, unpinned marker fails closed rather than open.
+        # An unpinned marker may not reach back to a historical surface.
+        name, findings = mod.resolve_marker_trust_surface(
+            {"trust_surface": "v1", "merged_commit": "0" * 40}
+        )
+        self.assertEqual(mod.CURRENT_TRUST_SURFACE, name)
+        self.assertTrue(
+            any("may not select historical trust surface" in item for item in findings),
+            findings,
+        )
+        # An unpinned marker must say which surface it was sealed under. It still
+        # resolves to the current, widest surface, so it accounts for more paths.
         name, findings = mod.resolve_marker_trust_surface({"merged_commit": "0" * 40})
-        self.assertEqual((mod.CURRENT_TRUST_SURFACE, []), (name, findings))
+        self.assertEqual(mod.CURRENT_TRUST_SURFACE, name)
+        self.assertTrue(any("must declare" in item for item in findings), findings)
 
     def test_unknown_declared_surface_is_a_finding(self) -> None:
         name, findings = mod.resolve_marker_trust_surface(
@@ -2294,6 +2311,73 @@ class TrustSurfaceVersionTests(unittest.TestCase):
         # producers in the surface, both sealed markers must still verify.
         findings = mod.verify_repository_landed_markers(mod.ROOT)
         self.assertEqual([], findings)
+
+class MarkerTrustSurfaceSelectionTests(unittest.TestCase):
+    """The immutable pin is the only route to a historical surface (review v1 cure)."""
+
+    def _pin(self):
+        return sorted(mod.SEALED_MARKER_TRUST_SURFACES.items())[0]
+
+    def test_pin_decides_for_a_sealed_marker(self):
+        commit, surface = self._pin()
+        self.assertEqual(
+            mod.resolve_marker_trust_surface({"merged_commit": commit}), (surface, [])
+        )
+
+    def test_declaration_agreeing_with_the_pin_is_accepted(self):
+        commit, surface = self._pin()
+        self.assertEqual(
+            mod.resolve_marker_trust_surface(
+                {"merged_commit": commit, "trust_surface": surface}
+            ),
+            (surface, []),
+        )
+
+    def test_declaration_disagreeing_with_the_pin_is_a_finding(self):
+        commit, surface = self._pin()
+        other = next(n for n in mod.TRUST_SURFACES if n != surface)
+        resolved, findings = mod.resolve_marker_trust_surface(
+            {"merged_commit": commit, "trust_surface": other}
+        )
+        self.assertEqual(resolved, surface)
+        self.assertEqual(len(findings), 1)
+        self.assertIn("immutable merged_commit pins", findings[0])
+
+    def test_unpinned_marker_may_not_select_a_historical_surface(self):
+        """The laundering path: a NEW marker declaring v1 took the narrow surface
+        and the landing edge's newly covered paths became invisible."""
+        historical = next(
+            n for n in mod.TRUST_SURFACES if n != mod.CURRENT_TRUST_SURFACE
+        )
+        resolved, findings = mod.resolve_marker_trust_surface(
+            {"merged_commit": "f" * 40, "trust_surface": historical}
+        )
+        self.assertEqual(resolved, mod.CURRENT_TRUST_SURFACE)
+        self.assertEqual(len(findings), 1)
+        self.assertIn("may not select historical trust surface", findings[0])
+
+    def test_unpinned_marker_without_a_declaration_is_a_finding(self):
+        resolved, findings = mod.resolve_marker_trust_surface({"merged_commit": "f" * 40})
+        self.assertEqual(resolved, mod.CURRENT_TRUST_SURFACE)
+        self.assertEqual(len(findings), 1)
+        self.assertIn("must declare", findings[0])
+
+    def test_unknown_surface_is_a_finding_and_resolves_to_current(self):
+        resolved, findings = mod.resolve_marker_trust_surface(
+            {"merged_commit": "f" * 40, "trust_surface": "v99"}
+        )
+        self.assertEqual(resolved, mod.CURRENT_TRUST_SURFACE)
+        self.assertEqual(len(findings), 1)
+        self.assertIn("unknown trust surface", findings[0])
+
+    def test_unpinned_marker_declaring_the_current_surface_is_accepted(self):
+        self.assertEqual(
+            mod.resolve_marker_trust_surface(
+                {"merged_commit": "f" * 40, "trust_surface": mod.CURRENT_TRUST_SURFACE}
+            ),
+            (mod.CURRENT_TRUST_SURFACE, []),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
