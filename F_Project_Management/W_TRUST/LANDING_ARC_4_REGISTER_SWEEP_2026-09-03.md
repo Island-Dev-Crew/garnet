@@ -110,10 +110,20 @@ are **cross-family (Codex)**. U-116 was raised on both sides independently.
   capability: 'fs::read_file' requires @caps(fs), not declared in the calling chain`, exit 1.
 - **Fail-closed, and it matters which way:** the VM's active frame set is a strict subset of the
   interpreter's, so the VM can only ever be *more* restrictive. There is no input for which `--vm`
-  grants authority `--interp` denies — **no authority widening** — and the divergent program is one
-  `garnet check` already rejects (exit 1, `caps coverage: function 'main' does not declare 'fs' but
-  transitively calls '(via helper)' which requires it`), reachable only through `garnet run`, which
-  does not run the checker.
+  grants authority `--interp` denies — **no authority widening**.
+- **AMENDED 2026-09-03, same day, before this entry was cited anywhere:** this entry originally
+  added that the divergent program "is one `garnet check` already rejects … reachable only through
+  `garnet run`, which does not run the checker." **That clause is falsified** and is withdrawn. The
+  cross-family review of PR #553 produced a counterexample the checker accepts, and the implementing
+  seat reproduced it independently: `@caps(fs) def alpha(n)` reading via bare `read_file` and
+  conditionally calling an unannotated `beta`, which calls `alpha`, with `@caps() def main()`
+  calling `beta(0)` — `garnet check` reports `3 functions checked, 4 boundary call sites, 0
+  diagnostics`, exit 0; `run --interp` returns the file, exit 0; `run --vm` traps, exit 1. The
+  divergence is bounded by **native lowering**, not by the call shape and not by the checker's
+  verdict: the same program written with the qualified `fs::read_file` lowers as `1 native / 1
+  fallback` and keeps parity on both backends, while the bare form lowers `2 native / 0 fallback`
+  and diverges. The correction to the public surfaces is PR #553; this record is amended so the
+  canonical register does not carry a claim its own arc disproved.
 - Why it is still a finding: the enforcement scope's "May say (true)" list asserts that "`@caps` and
   `@max_depth` trap identically on both backends for the gated surface"
   (`C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md:88`), `docs/why.html:551` carries
