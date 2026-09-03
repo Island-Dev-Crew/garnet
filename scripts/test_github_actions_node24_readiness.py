@@ -22,10 +22,12 @@ MINIMUM_NODE24_ACTION_MAJORS = {
     "github/codeql-action/init": 4,
     "github/codeql-action/autobuild": 4,
     "github/codeql-action/analyze": 4,
+    "softprops/action-gh-release": 3,
 }
 
 USES_RE = re.compile(
-    r"uses:\s*[\"']?((?:actions/[a-z-]+)|(?:github/codeql-action/[a-z-]+))@([0-9a-f]{40})"
+    r"uses:\s*[\"']?((?:actions/[a-z-]+)|(?:github/codeql-action/[a-z-]+)"
+    r"|(?:softprops/action-gh-release))@([0-9a-f]{40})"
 )
 
 
@@ -39,7 +41,7 @@ def node24_pin_majors(manifest: Path = PIN_MANIFEST) -> dict[tuple[str, str], in
         action, commit, source_ref = (
             row.get("action"), row.get("commit"), row.get("source_ref")
         )
-        match = re.fullmatch(r"v([0-9]+)", source_ref or "")
+        match = re.fullmatch(r"v([0-9]+)(?:\.[0-9]+){0,2}", source_ref or "")
         if isinstance(action, str) and isinstance(commit, str) and match:
             result[(action, commit)] = int(match.group(1))
     return result

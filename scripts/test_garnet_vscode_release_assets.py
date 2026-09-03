@@ -35,7 +35,7 @@ class GarnetVSCodeReleaseAssetsTests(unittest.TestCase):
         self.assertIn("target/vscode/*.vsix", text)
         self.assertIn("if: startsWith(github.ref, 'refs/tags/v')", text)
         self.assertIn(
-            "softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65",
+            "softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64",
             text,
         )
         self.assertIn("find dist-vsix -name '*.vsix'", text)

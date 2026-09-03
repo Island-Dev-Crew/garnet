@@ -1,0 +1,32 @@
+{
+  "author_emails": [
+    "email:jon-isaac@islanddevcrew.com"
+  ],
+  "author_ids": [
+    275140286
+  ],
+  "base_commit": "16454b55736ebf0e7778f0e1f308da9a896d8b97",
+  "blocking_findings": [],
+  "content_digest": "sha256:9202d4c2b2ac925fd7feaf569cfe899cd8b8ad0f5fab9486ed4aacb14e312f48",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 4424309045,
+  "pull_request_number": 543,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head d0b0b279677308cd58a16a062ea1acafb430ed09 and does not extend or backdate reviewed_head coverage. OpenAI Codex cross-family seat, read-only review on 2026-09-02, verdict: CONFIRM-WITH-FINDINGS, zero blocking findings, at d0b0b279677308cd58a16a062ea1acafb430ed09; void if the head moves before this sanctioned record-only write. Implementer seat: Claude. The exact base..reviewed_head Git author set is email:jon-isaac@islanddevcrew.com, and the authenticated GitHub author/committer principal union is IslandDevCrew ID 275140286. IDC-Trust-Review ID 306739987 is the approval-event carrier only; it is not the Codex review seat and no authenticated approval, rerun, or merge is claimed here. Fresh, full, unfiltered clone recomputation verified base 16454b55736ebf0e7778f0e1f308da9a896d8b97, one implementation commit, reviewed tree d02e1b06a0f82539a43cd85de7b12e4ab3547c70, and five changed files: .github/rulesets/external-action-pins.json, .github/workflows/linux-packages.yml, .github/workflows/vscode-extension.yml, scripts/test_garnet_vscode_release_assets.py, and scripts/test_github_actions_node24_readiness.py. Non-blocking finding: the prompt item-1 expectations of exactly three files, four uses lines, and one seven-line manifest entry removal are stale and internally inconsistent with both Git and the prompt's narrowed five-file scope. The actual diff has three action uses lines moved from softprops/action-gh-release 3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 to efb35369e0ad2afab669f228072c1b0d510eae64, the existing manifest entry retained with commit, resolved_at, and source_ref changed, plus the two stated test changes; this is a review-input correction, not candidate drift. Upstream tag refs verify 3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 at v2 and v2.6.2 and the annotated v3.0.3 peeled target efb35369e0ad2afab669f228072c1b0d510eae64. Upstream action metadata verifies old node20 and new node24 runtimes, and the new major still declares files, fail_on_unmatched_files, and generate_release_notes. Candidate verification: workflow action integrity status ok true with findings empty; workflow action integrity suite 13/13; Node 24 readiness suite 3/3; VSIX release assets suite 3/3; required-context evaluator suite 13/13; git diff --check clean. A detached base worktree running the candidate readiness test failed exactly on the three v2 softprops uses, while the candidate is green. The changed jobs are release and release-vsix, not registered required-context producers, so no producer fingerprint moves; setup-node remains at v4.4.0 for its separate ceremony. Added lines contain no retired vocabulary. Because CI gate surfaces change, Integrity Rule 1 makes this PR human-merge-only. The diagnostic rolling-review gate reports trust_kernel_touched true; touched paths .github/rulesets/external-action-pins.json, .github/workflows/linux-packages.yml, .github/workflows/vscode-extension.yml, and scripts/test_garnet_vscode_release_assets.py; content digest sha256:9202d4c2b2ac925fd7feaf569cfe899cd8b8ad0f5fab9486ed4aacb14e312f48; and sole pre-record problem structured review record is missing. Standards axis: no candidate finding. Spec axis: the sole non-blocking review-input inconsistency stated above. This premerge record is reviewer evidence only; it is not authenticated carrier approval, a GitHub approval, re-evaluation, merge, commit, push, or deployment.",
+  "review_state": "APPROVED",
+  "reviewed_head": "d0b0b279677308cd58a16a062ea1acafb430ed09",
+  "reviewed_tree": "d02e1b06a0f82539a43cd85de7b12e4ab3547c70",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    ".github/rulesets/external-action-pins.json",
+    ".github/workflows/linux-packages.yml",
+    ".github/workflows/vscode-extension.yml",
+    "scripts/test_garnet_vscode_release_assets.py"
+  ],
+  "verdict": "pass"
+}
