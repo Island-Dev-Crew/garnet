@@ -66,10 +66,18 @@ CHECKED_ITEM_RE = re.compile(r"^[ \t]*-[ \t]+\[x\][ \t]+(\S.*?)[ \t]*$")
 # A checked item counts as evidence only when it carries at least one token a
 # reviewer can recompute. The classes below are calibrated against the merged
 # bodies of #540–#546 (2026-09-02) and the fixtures in the test file.
+#
+# A code span is evidence only when it carries something a reviewer can
+# recompute (review v1 cure). `` ` ` `` (whitespace only), `` `-` `` and
+# `` `--` `` are not commands, paths, or values: content must be non-empty
+# after stripping, at least two characters, and carry a letter or digit.
+CODE_SPAN_RE = re.compile(r"`([^`\n]+)`")
+CODE_SPAN_MIN_CONTENT = 2
+CODE_SPAN_SUBSTANCE_RE = re.compile(r"[^\W_]")
+
 HARD_TOKEN_PATTERNS = tuple(
     re.compile(pattern)
     for pattern in (
-        r"`[^`\n]+`",  # a command, path, or value in backticks
         r"https://\S+",  # a URL
         r"(?<![\w/])(?=[0-9a-f]*\d)[0-9a-f]{7,40}(?![\w/])",  # a 7–40 hex SHA carrying a digit
         r"(?<!\w)#\d+\b",  # a #PR / #issue reference
@@ -105,15 +113,51 @@ ARTIFACT_NOUN_RE = re.compile(
     re.IGNORECASE,
 )
 ARTIFACT_LOCATOR_RE = re.compile(
-    r"\b(?:named above|above|in the PR|review record|folder|path|directory"
+    r"\b(?:named above|in the PR|review record|folder|path|directory"
     r"|on main|at main|merged with|committed|copied|preserved|quoted|cited"
     r"|attached|recorded|under)\b",
     re.IGNORECASE,
 )
+# Negation (review v1 cure). A claim that something did NOT happen is not
+# evidence that it did: "No CI run.", "No report was recorded.", "no CI run
+# was required." A negated clause contributes nothing, and an item whose every
+# clause is negated satisfies no alternative at all — hard tokens included.
+# Negation is judged per CLAUSE, not per item, because every merged body
+# (#540, #542-#546) states its remote line as a positive claim followed by a
+# disclaimer: "Fresh PR checks are required to settle before handoff; no CI
+# conclusion is claimed in advance." Clause one is the evidence; clause two is
+# the disclaimer, and a per-item guard would reject all seven real bodies.
+LEADING_NEGATION_RE = re.compile(r"^\s*(?:no|none|not|never|n/?a\b|nothing)\b", re.IGNORECASE)
+INTERNAL_NEGATION_RE = re.compile(
+    r"\b(?:no|not|never|none)\s+"
+    r"(?:ci|run|report|record|artifact|bundle|evidence|check|log|output)\b",
+    re.IGNORECASE,
+)
+# Clause boundaries: "; " and a sentence break before a capital, "(", or a code
+# span. Code spans are masked before splitting so a boundary is never found
+# inside one, which keeps multi-token commands and paths intact.
+CLAUSE_SPLIT_RE = re.compile(r";\s+|(?<=\.)\s+(?=[A-Z(\x00])")
+CODE_SPAN_PLACEHOLDER_RE = re.compile(r"\x00(\d+)\x00")
+# The two widened alternatives (a named check + its status, a named artifact +
+# its locator) are prose, not recomputable tokens, so they carry two extra
+# requirements: the clause must be wholly POSITIVE — a single negation word
+# anywhere in it disqualifies it, which stops "The CI run was not required."
+# — and it must clear a substance floor, which stops two-word stubs like
+# "CI. required.", "checks green", "Bundle recorded." The floor is calibrated
+# against the merged bodies: the shortest real qualifying clause is "CI matrix
+# expected green before merge." at six words. This is a vacuity floor, not a
+# semantic guarantee: it bounds how empty a prose claim may be, nothing more.
+NEGATION_WORD_RE = re.compile(
+    r"\b(?:no|not|never|none|nothing|n/?a|cannot)\b|n't\b", re.IGNORECASE
+)
+WIDENED_MIN_WORDS = 5
+WORD_RE = re.compile(r"[^\W_]")
+
 EVIDENCE_TOKEN_HINT = (
     "a command/path/value in backticks, a repo path, a 7-40 hex SHA, an https:// URL, "
     "a #PR reference, or a numeric result"
 )
+EVIDENCE_EXCLUSION_HINT = "; a blank code span and a negated claim never count"
 SECTION_KIND_HINTS = {
     "local": "",
     "remote": ", or the named CI/PR check with its expected status",
@@ -248,18 +292,81 @@ def _path_token_present(text: str, root: Path) -> bool:
     return False
 
 
+def code_span_carries_content(content: str) -> bool:
+    """True when a backtick span's content is substantive: non-empty after
+    stripping, at least two characters, and carrying a letter or digit. A span
+    that is blank, whitespace-only, or pure punctuation is not a recomputable
+    command, path, or value (review v1 cure)."""
+    stripped = content.strip()
+    if len(stripped) < CODE_SPAN_MIN_CONTENT:
+        return False
+    return bool(CODE_SPAN_SUBSTANCE_RE.search(stripped))
+
+
+def _code_span_present(text: str) -> bool:
+    return any(code_span_carries_content(m.group(1)) for m in CODE_SPAN_RE.finditer(text))
+
+
+def clauses(text: str) -> list[str]:
+    """Split an item into clauses on "; " and sentence breaks. Code spans are
+    masked first, so a command containing a period or semicolon is never cut."""
+    spans: list[str] = []
+
+    def stash(match: re.Match[str]) -> str:
+        spans.append(match.group(0))
+        return f"\x00{len(spans) - 1}\x00"
+
+    masked = CODE_SPAN_RE.sub(stash, text)
+    found: list[str] = []
+    for part in CLAUSE_SPLIT_RE.split(masked):
+        restored = CODE_SPAN_PLACEHOLDER_RE.sub(lambda m: spans[int(m.group(1))], part).strip()
+        if restored:
+            found.append(restored)
+    return found
+
+
+def clause_supports_widened_alternative(clause: str) -> bool:
+    """True when a clause is substantive enough to carry one of the two prose
+    alternatives: wholly positive, and at least WIDENED_MIN_WORDS words."""
+    if NEGATION_WORD_RE.search(clause):
+        return False
+    words = [token for token in clause.split() if WORD_RE.search(token)]
+    return len(words) >= WIDENED_MIN_WORDS
+
+
+def clause_is_negated(clause: str) -> bool:
+    """True when a clause denies rather than reports: it opens with a negation,
+    or negates one of the nouns the evidence alternatives are built on."""
+    return bool(LEADING_NEGATION_RE.search(clause) or INTERNAL_NEGATION_RE.search(clause))
+
+
 def item_carries_evidence(text: str, kind: str, root: Path = ROOT) -> bool:
     """True when a checked item's text carries an evidence token. `kind` is
     "local", "remote", or "evidence"; the remote and evidence sections accept
-    one additional, section-specific token class each (see the patterns above)."""
-    if any(pattern.search(text) for pattern in HARD_TOKEN_PATTERNS):
-        return True
-    if _path_token_present(text, root):
-        return True
-    if kind == "remote":
-        return bool(REMOTE_CHECK_NAME_RE.search(text) and REMOTE_CHECK_STATUS_RE.search(text))
-    if kind == "evidence":
-        return bool(ARTIFACT_NOUN_RE.search(text) and ARTIFACT_LOCATOR_RE.search(text))
+    one additional, section-specific token class each (see the patterns above).
+
+    Only non-negated clauses are read, and the two section-specific alternatives
+    must be satisfied POSITIVELY and within a SINGLE clause that carries no
+    negation word and clears the substance floor: the named check and its status
+    together, the named artifact and its locator together. An item with no
+    surviving clause carries no evidence at all (review v1 cure)."""
+    for clause in clauses(text):
+        if clause_is_negated(clause):
+            continue
+        if _code_span_present(clause):
+            return True
+        if any(pattern.search(clause) for pattern in HARD_TOKEN_PATTERNS):
+            return True
+        if _path_token_present(clause, root):
+            return True
+        if not clause_supports_widened_alternative(clause):
+            continue
+        if kind == "remote":
+            if REMOTE_CHECK_NAME_RE.search(clause) and REMOTE_CHECK_STATUS_RE.search(clause):
+                return True
+        if kind == "evidence":
+            if ARTIFACT_NOUN_RE.search(clause) and ARTIFACT_LOCATOR_RE.search(clause):
+                return True
     return False
 
 
@@ -295,7 +402,7 @@ def _evidence_problems(body: str, section_heading: str, label: str) -> list[str]
         kind = _section_kind(section_heading)
         return [
             f"{label} section has {status.checked} checked item(s) but none carries evidence: "
-            f"need {EVIDENCE_TOKEN_HINT}{SECTION_KIND_HINTS[kind]}"
+            f"need {EVIDENCE_TOKEN_HINT}{SECTION_KIND_HINTS[kind]}{EVIDENCE_EXCLUSION_HINT}"
         ]
     return []
 

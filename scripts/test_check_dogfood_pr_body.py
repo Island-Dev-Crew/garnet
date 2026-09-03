@@ -203,6 +203,8 @@ class DogfoodPrBodyCheckerTests(unittest.TestCase):
 
     def test_real_heading_wins_over_prose_mention(self) -> None:
         # Prose mention earlier + a real evidence heading later → gate validates the real one.
+        # The evidence item is a hard token so this test stays about headings, not
+        # about the evidence-token rules exercised in EvidenceTokenTests.
         body = (
             "## Summary\n\n"
             "- gate now accepts `### Desktop dogfood bundle` (legacy).\n\n"
@@ -210,7 +212,7 @@ class DogfoodPrBodyCheckerTests(unittest.TestCase):
             "### Current truth\n- recorded\n\n"
             "### Local verification\n- [x] `cmd`\n\n"
             "### Remote verification\n- [x] Draft PR checks are expected to run before merge.\n\n"
-            "### Evidence bundle\n- [x] bundle path\n\n"
+            "### Evidence bundle\n- [x] `/Users/idc2.0/Desktop/dogfood/example-readiness-bundle`\n\n"
             "### Deferred / out of scope\n- nothing\n"
         )
         result = checker.validate_body(body, ["F_Project_Management/GARNET_v0_8_SLICE_DOGFOOD.md"])
@@ -374,6 +376,80 @@ class EvidenceTokenTests(unittest.TestCase):
         self.assertTrue(checker.item_carries_evidence("Artifacts copied to a durable project folder.", "evidence"))
         self.assertFalse(checker.item_carries_evidence("bundle", "evidence"))
         self.assertFalse(checker.item_carries_evidence("The one-line diff and the cross-family record named above.", "local"))
+
+
+class WidenedAlternativeBypassTests(unittest.TestCase):
+    """Review v1 (Codex, cross-family, bound to 250c9748): H3-01 evidence
+    hardening remained bypassable. `widened-vacuous-pass.md` passed the gate at
+    the candidate head — `dogfood-pr-body: ok (1 changed files checked)` — with a
+    whitespace-only code span under Local, a generic negated `No CI run.` under
+    Remote, and a generic negated `No report was recorded.` under Evidence. None
+    of those is a recomputable token or the named check/artifact fact AGENTS.md
+    requires. The cure: a code span must carry content; the two widened
+    alternatives must be positive, unnegated, and substantive; and a negated
+    clause satisfies no alternative at all."""
+
+    SECTION_MESSAGE = "{label} section has 1 checked item(s) but none carries evidence"
+
+    def assert_only_problem(self, body: str, label: str) -> None:
+        result = checker.validate_body(body, SENSITIVE)
+        self.assertEqual(1, len(result.errors), result.errors)
+        self.assertTrue(
+            result.errors[0].startswith(self.SECTION_MESSAGE.format(label=label)),
+            result.errors[0],
+        )
+
+    def test_reviewer_bypass_body_is_now_rejected_in_all_three_sections(self) -> None:
+        result = checker.validate_body(read_fixture("widened-vacuous-pass.md"), [".github/workflows/ci.yml"])
+        self.assertTrue(result.sensitive)
+        for label in ("local verification", "remote verification", "evidence bundle"):
+            self.assertTrue(
+                any(e.startswith(self.SECTION_MESSAGE.format(label=label)) for e in result.errors),
+                (label, result.errors),
+            )
+
+    def test_whitespace_only_code_span_is_not_evidence(self) -> None:
+        body = VALID_BODY.replace(
+            "- [x] `cargo fmt --all -- --check`\n- [x] `cargo test -p garnet-cli --test conformance_phase_gates`",
+            "- [x] ` `",
+        )
+        self.assert_only_problem(body, "local verification")
+        self.assertFalse(checker.code_span_carries_content(" "))
+        self.assertFalse(checker.code_span_carries_content("-"))  # one punctuation char
+        self.assertFalse(checker.code_span_carries_content("--"))  # pure punctuation
+        self.assertTrue(checker.code_span_carries_content("ok"))
+        self.assertTrue(checker.code_span_carries_content("cargo fmt --all -- --check"))
+
+    def test_negated_remote_claim_is_not_evidence(self) -> None:
+        body = VALID_BODY.replace("- [x] Draft PR checks are expected to run before merge.", "- [x] No CI run.")
+        self.assert_only_problem(body, "remote verification")
+        self.assertFalse(checker.item_carries_evidence("No CI run.", "remote"))
+        self.assertFalse(checker.item_carries_evidence("No CI run was required.", "remote"))
+        self.assertFalse(checker.item_carries_evidence("The CI run was not required.", "remote"))
+        # A negated clause cannot be laundered by a hard token either.
+        self.assertFalse(checker.item_carries_evidence("No `cargo test` was run.", "remote"))
+        # The ritual every merged body uses is a positive claim plus a disclaimer
+        # and must keep counting — the negation is judged per clause, not per item.
+        self.assertTrue(
+            checker.item_carries_evidence(
+                "Fresh PR checks are required to settle before handoff; "
+                "no CI conclusion is claimed in advance.",
+                "remote",
+            )
+        )
+
+    def test_negated_evidence_claim_is_not_evidence(self) -> None:
+        body = VALID_BODY_NEW_SKILL.replace(
+            "- [x] Artifacts copied to a durable project folder.",
+            "- [x] No report was recorded.",
+        )
+        self.assert_only_problem(body, "evidence bundle")
+        self.assertFalse(checker.item_carries_evidence("No report was recorded.", "evidence"))
+        self.assertFalse(checker.item_carries_evidence("The bundle is above.", "evidence"))
+        self.assertFalse(checker.item_carries_evidence("Bundle recorded.", "evidence"))
+        self.assertTrue(
+            checker.item_carries_evidence("The one-line diff and the cross-family record named above.", "evidence")
+        )
 
 
 class RealPrBodyFixtureTests(unittest.TestCase):
