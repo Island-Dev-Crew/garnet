@@ -60,10 +60,32 @@ CITED_TEST_ANCHORS = [
     ROOT / "garnet-vm" / "tests" / "scope_shadowing_parity.rs",
 ]
 
+# Enumerated dash/hyphen variants folded before matching. Not exhaustive by
+# construction; see _normalized.
+DASH_CLASS = (
+    "[\u002d\u058a\u05be\u1400\u1806\u2010-\u2015\u2043\u2212"
+    "\u2e17\u2e1a\u2e3a\u2e3b\u2e40\u301c\u3030\u30a0"
+    "\ufe31\ufe32\ufe58\ufe63\uff0d\u00ad]"
+)
+
+
+def _forbidden_text(raw: str) -> str:
+    """Normalized text for slogan matching, with inline markup removed.
+
+    A slogan split by tags — `universal <b>runtime</b> enforcement` — reads as
+    one phrase but does not match across the markup, so tags are dropped before
+    normalising.
+    """
+    return _normalized(re.sub(r"<[^>]+>", " ", raw))
+
+
+# Separators accept whitespace OR a folded dash: `universal-runtime-enforcement`
+# is the same claim as `universal runtime enforcement` and evaded the earlier
+# `\s+`-only patterns.
 FORBIDDEN_PATTERNS = [
-    r"no\s+ambient\s+authority,?\s+ever",
-    r"universal\s+@?caps\s+runtime\s+enforcement",
-    r"universal\s+runtime\s+enforcement",
+    r"no[\s\-]+ambient[\s\-]+authority,?[\s\-]+ever",
+    r"universal[\s\-]+@?caps[\s\-]+runtime[\s\-]+enforcement",
+    r"universal[\s\-]+runtime[\s\-]+enforcement",
 ]
 
 STALE_TRUTH_PATTERNS = [
@@ -146,13 +168,15 @@ def _normalized(text: str) -> str:
 
     Decoding matters: a claim written with entities evades a plain scan. A stale
     count spelled `sixty&#8209;one` survived two greps of these very surfaces
-    before it was caught by review, and the same trick hides a forbidden slogan
-    from FORBIDDEN_PATTERNS. Normalising before both hashing and matching closes
-    that path.
+    before it was caught by review, and the same trick hides a forbidden slogan.
+
+    This narrows the evasion; it does not close it. DASH_CLASS is an enumerated
+    set, so a separator outside it still passes, and a slogan split by inline
+    markup is only caught because `_forbidden_text` strips tags first. Treat
+    both as bounded mitigations, not a guarantee.
     """
     decoded = html.unescape(text)
-    # every Unicode dash/hyphen variant folds to ASCII '-'
-    decoded = re.sub(r"[\u2010-\u2015\u2212\u00ad\u2043]", "-", decoded)
+    decoded = re.sub(DASH_CLASS, "-", decoded)
     return re.sub(r"\s+", " ", decoded).strip()
 
 
@@ -246,7 +270,7 @@ def read_status() -> CapabilityScopeStatus:
     forbidden_hits: list[str] = []
     for surface in PUBLIC_SURFACES:
         # Normalise before matching: an entity-encoded slogan evaded the raw scan.
-        text = _normalized(_read(surface))
+        text = _forbidden_text(_read(surface))
         for pattern in FORBIDDEN_PATTERNS:
             for match in re.finditer(pattern, text, flags=re.IGNORECASE):
                 forbidden_hits.append(f"{_rel(surface)}: '{match.group(0)}'")
