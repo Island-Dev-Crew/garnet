@@ -9,6 +9,21 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [0.8.2] — 2026-09-02 (workspace version bump; the `v0.8.2` tag is not cut)
 
+### Minimum Shelf flagship resealed for 0.8.2 (2026-09-04)
+
+- **The bump broke the committed flagship, and the fix is a reseal, not a relaxed
+  validator.** `Manifest::from_module` derives `parser_version` and `interp_version`
+  from `CARGO_PKG_VERSION`, and `minimum_shelf.rs` compares the complete build
+  manifest, so the 0.8.2 CLI refused the 0.8.1-sealed `tool.seal.json`
+  (`sealed_flagship_loads_end_to_end` and `native_stdio_initialize_list_call_and_error`
+  red). `garnet seal` is deterministic, so the reseal differs from the old seal in
+  exactly the two version fields. `SHELF_PACKAGE.json` is rebound to the new seal,
+  the three `TRUSTED_*_BLAKE3` constants and the smoke pins follow, and the reseal
+  is recorded in `ops/lane2b/evidence/11-f2-version-bump-reseal-green.txt` beside
+  the untouched F1 evidence. Found by the cross-family review of this PR.
+- **Coupling worth naming:** the shelf's trust root is pinned to the CLI version.
+  Every future version bump is also a reseal ceremony until that pin is decoupled.
+
 > **Cut truth:** this section moves the in-tree version to **0.8.2** ahead of any
 > tag, per Jon's ruling of 2026-09-02 (bump first, tag after). **No `v0.8.2` tag
 > exists at this commit**; tags on origin remain `v0.4.2`, `v0.5.0`, `v0.8.0`,
@@ -24,9 +39,9 @@ the macOS/Windows OS-sandbox application remain declared-not-enforced.
 **WV-6 is `partial`.** `python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6`
 reports `"state": "partial"`, `"ok": false`, `"landed_main_sha": null`, with the
 findings "product content digest mismatch (… != 6f2d5f0b…)" and "product
-path count mismatch (1652 != 1646)" — the accepted reference is `6f2d5f0b…/1646`; the
-current product digest is not pinned here because every commit that touches the
-product tree, this one included, moves it. The reason is U-58, the acceptance
+path count mismatch (… != 1646)" — the accepted reference is `6f2d5f0b…/1646`; the
+current product digest and path count are not pinned here because every commit that
+touches the product tree, this one included, moves them. The reason is U-58, the acceptance
 squash-successor gap: the acceptance pins `reviewedHeadSha` `8426ca76…` by exact
 equality, squash merges orphan that lineage, and the bounded successor-rebind
 procedure is Lane 1's open deliverable
@@ -52,8 +67,6 @@ else can trust what it did." — the front door's line; the name is **Garnet lan
 The sections below are the entries previously recorded as unreleased since
 `v0.8.1`, consolidated here in their existing order with their text unchanged
 (headings demoted one level; the "Unreleased —" prefix removed).
-
-### Lane 0 evidence durability repair (2026-07-16)
 
 ### Also in 0.8.2 — U-91 entry-budget capability enforcement (2026-09-03)
 
@@ -97,6 +110,8 @@ The sections below are the entries previously recorded as unreleased since
   MESSAGE divergence recorded as crown Finding B-1 is not closed here: both
   backends now refuse these programs, but which of the two gates fires first
   still depends on whether the helper lowered natively or fell back.
+
+### Also in 0.8.2 — Lane 0 evidence durability repair (2026-07-16)
 
 - **Fixed Windows checkout fidelity:** every `ops/**/evidence/**` path is now
   byte-exact, preventing `core.autocrlf=true` from changing sealed LF evidence
