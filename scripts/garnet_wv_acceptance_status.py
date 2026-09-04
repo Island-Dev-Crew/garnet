@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import importlib.util
+import errno
 import json
 import os
 import re
@@ -87,8 +88,83 @@ def _reject_duplicates(pairs: list[tuple[str, object]]) -> dict[str, object]:
     return result
 
 
+class EvidenceAbsent(ValueError):
+    """The evidence file does not exist, as distinct from failing a check.
+
+    Kept separate so the gate can report `pending` for absent evidence without
+    performing its own presence check first. An extra presence check ahead of
+    the bound read is itself a check-then-use: it consumes the swap window, and
+    the single-descriptor read that follows then sees a consistently swapped
+    file and accepts it (regression caught by
+    test_manifest_swapped_after_its_check_is_never_accepted).
+    """
+
+
+DIR_FD_SUPPORTED = (
+    os.open in os.supports_dir_fd
+    and os.lstat in os.supports_dir_fd
+    and hasattr(os, "O_DIRECTORY")
+)
+
+
+def open_evidence_root(path: Path) -> tuple[int | None, str]:
+    """Bind the evidence directory to one descriptor, or return None.
+
+    ``O_NOFOLLOW`` protects only the FINAL component, so checking the evidence
+    directory by pathname and then resolving that pathname again for the
+    manifest, every artifact, and the inventory left an ancestor swap open: a
+    deterministic swap after the directory check replaced the checked directory
+    with a symlink to an outside tree, and the reporter validated the outside
+    evidence and returned ``accepted`` (review v1 finding, reproduced). Every
+    later read is now relative to this descriptor, so the directory identity
+    cannot change underneath the traversal.
+
+    Returns ``(descriptor, reason)``. The reason distinguishes an absent
+    destination (which stays ``pending``, as before) from a destination that
+    exists but cannot be bound (which is a finding), so binding does not change
+    the reporter's state vocabulary. ``unsupported`` means the platform has no
+    ``dir_fd`` support; the caller then falls back to the pathname checks and
+    the ancestor-swap bound stands on that platform.
+    """
+    if not DIR_FD_SUPPORTED:
+        return None, "unsupported"
+    flags = (
+        os.O_RDONLY
+        | os.O_DIRECTORY
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+    )
+    try:
+        descriptor = os.open(path, flags)
+    except FileNotFoundError:
+        return None, "absent"
+    except OSError:
+        # Do not infer the cause from errno: O_NOFOLLOW|O_DIRECTORY on a
+        # symlinked directory reports ELOOP on Linux and ENOTDIR on macOS.
+        # Ask the filesystem what the destination actually is instead.
+        try:
+            entry = os.lstat(path)
+        except FileNotFoundError:
+            return None, "absent"
+        except OSError:
+            return None, "unbindable"
+        if stat.S_ISLNK(entry.st_mode):
+            return None, "symlink"
+        return None, "unbindable"
+    try:
+        opened = os.fstat(descriptor)
+    except OSError:
+        os.close(descriptor)
+        return None, "unbindable"
+    if not stat.S_ISDIR(opened.st_mode):
+        os.close(descriptor)
+        return None, "not-a-directory"
+    return descriptor, "ok"
+
+
 def _regular_bytes(
-    path: Path, *, limit: int, minimum: int, label: str, bound: str
+    path: Path, *, limit: int, minimum: int, label: str, bound: str,
+    dir_fd: int | None = None
 ) -> bytes:
     """Read ``path`` once through a descriptor and return exactly the bytes
     that were checked.
@@ -98,8 +174,11 @@ def _regular_bytes(
     a file swapped between check and use is a finding, not a redirected read.
     Every rejection is an explicit ``ValueError`` naming the file.
     """
+    target = str(path) if dir_fd is None else os.fspath(path)
     try:
-        before = os.lstat(path)
+        before = os.lstat(target, dir_fd=dir_fd) if dir_fd is not None else os.lstat(path)
+    except FileNotFoundError as exc:
+        raise EvidenceAbsent(f"{label} is not a regular file") from exc
     except OSError as exc:
         raise ValueError(f"{label} is not a regular file") from exc
     if (
@@ -117,7 +196,10 @@ def _regular_bytes(
         | getattr(os, "O_NOFOLLOW", 0)
     )
     try:
-        descriptor = os.open(path, flags)
+        descriptor = (
+            os.open(target, flags, dir_fd=dir_fd) if dir_fd is not None
+            else os.open(path, flags)
+        )
     except OSError as exc:
         raise ValueError(f"{label} could not be opened: {exc.strerror}") from exc
     try:
@@ -172,10 +254,63 @@ def _strict_lf_text(raw: bytes, *, label: str) -> str:
         raise ValueError(f"{label} is not strict UTF-8: {exc}") from exc
 
 
-def _read_json(path: Path, *, limit: int) -> dict[str, object]:
-    label = str(path)
+def _manifest_present(evidence_root: Path, root_fd: int | None) -> bool:
+    """Is the manifest a regular file, checked through the bound descriptor?"""
+    if root_fd is None:
+        return evidence_root.is_dir() and (evidence_root / EVIDENCE_MANIFEST).exists()
+    try:
+        entry = os.lstat(EVIDENCE_MANIFEST, dir_fd=root_fd)
+    except OSError:
+        return False
+    return stat.S_ISREG(entry.st_mode)
+
+
+def _inventory_from_descriptor(root_fd: int, prefix: str = "") -> set[str]:
+    """List regular files under a bound directory descriptor, never by pathname.
+
+    Each subdirectory is opened relative to its parent descriptor with
+    ``O_NOFOLLOW``, so no component of the traversal can be swapped for a
+    symlink between the check and the listing.
+    """
+    names: set[str] = set()
+    with os.scandir(root_fd) as entries:
+        for entry in entries:
+            relative = f"{prefix}{entry.name}"
+            try:
+                if entry.is_symlink():
+                    continue
+                if entry.is_file(follow_symlinks=False):
+                    if relative != EVIDENCE_MANIFEST:
+                        names.add(relative)
+                    continue
+                if not entry.is_dir(follow_symlinks=False):
+                    continue
+            except OSError:
+                continue
+            flags = (
+                os.O_RDONLY
+                | os.O_DIRECTORY
+                | getattr(os, "O_CLOEXEC", 0)
+                | getattr(os, "O_NOFOLLOW", 0)
+            )
+            try:
+                child = os.open(entry.name, flags, dir_fd=root_fd)
+            except OSError:
+                continue
+            try:
+                names |= _inventory_from_descriptor(child, f"{relative}/")
+            finally:
+                os.close(child)
+    return names
+
+
+def _read_json(
+    path: Path, *, limit: int, dir_fd: int | None = None, label: str | None = None
+) -> dict[str, object]:
+    label = label or str(path)
     raw = _regular_bytes(
-        path, limit=limit, minimum=1, label=label, bound="the bounded JSON size"
+        path, limit=limit, minimum=1, label=label, bound="the bounded JSON size",
+        dir_fd=dir_fd,
     )
     text = _strict_lf_text(raw, label=label)
     try:
@@ -296,11 +431,19 @@ def _validate_evidence(
     evidence_root: Path,
     *,
     verify_git: bool,
+    root_fd: int | None = None,
 ) -> tuple[list[str], str | None, str | None, str | None, str | None, int, int]:
     findings: list[str] = []
     manifest_path = evidence_root / EVIDENCE_MANIFEST
     try:
-        manifest = _read_json(manifest_path, limit=MAX_MANIFEST_BYTES)
+        manifest = _read_json(
+            Path(EVIDENCE_MANIFEST) if root_fd is not None else manifest_path,
+            limit=MAX_MANIFEST_BYTES,
+            dir_fd=root_fd,
+            label=str(manifest_path),
+        )
+    except EvidenceAbsent:
+        return ["exact-candidate evidence manifest is pending"], None, None, None, None, 0, 0
     except ValueError as exc:
         return [str(exc)], None, None, None, None, 0, 0
 
@@ -435,11 +578,12 @@ def _validate_evidence(
         artifact_hashes[relative] = digest
         try:
             raw = _regular_bytes(
-                evidence_root / relative,
+                Path(relative) if root_fd is not None else evidence_root / relative,
                 limit=min(MAX_ARTIFACT_BYTES, MAX_TOTAL_BYTES - total),
                 minimum=0,
                 label=f"artifact {relative}",
                 bound="evidence size bounds",
+                dir_fd=root_fd,
             )
         except ValueError as exc:
             findings.append(str(exc))
@@ -460,11 +604,14 @@ def _validate_evidence(
     for missing in sorted(referenced - set(artifact_hashes)):
         findings.append(f"check evidence {missing} is absent from artifacts")
 
-    actual_files = {
-        path.relative_to(evidence_root).as_posix()
-        for path in evidence_root.rglob("*")
-        if path.is_file() and path.name != EVIDENCE_MANIFEST
-    }
+    if root_fd is not None:
+        actual_files = _inventory_from_descriptor(root_fd)
+    else:
+        actual_files = {
+            path.relative_to(evidence_root).as_posix()
+            for path in evidence_root.rglob("*")
+            if path.is_file() and path.name != EVIDENCE_MANIFEST
+        }
     if actual_files != set(artifact_hashes):
         findings.append("evidence directory files do not exactly match the manifest")
 
@@ -516,36 +663,65 @@ def read_status(
     destination = str(contract["evidenceDestination"])
     evidence_root = root / destination
     required_count = len(contract["requiredChecks"])
-    if evidence_root.is_symlink():
-        findings.append("evidence destination must not be a symlink")
-        state = "partial"
-        reviewed_head = None
-        reviewed_tree = None
-        product_digest = None
-        landed_main = None
-        passed = 0
-        artifact_count = 0
-    elif not evidence_root.is_dir() or not (evidence_root / EVIDENCE_MANIFEST).exists():
-        findings.append("exact-candidate evidence manifest is pending")
-        state = "pending"
-        reviewed_head = None
-        reviewed_tree = None
-        product_digest = None
-        landed_main = None
-        passed = 0
-        artifact_count = 0
-    else:
-        (
-            evidence_findings,
-            reviewed_head,
-            reviewed_tree,
-            product_digest,
-            landed_main,
-            passed,
-            artifact_count,
-        ) = _validate_evidence(root, contract, evidence_root, verify_git=verify_git)
-        findings.extend(evidence_findings)
-        state = "accepted" if not findings else "partial"
+    # Bind the evidence directory to one descriptor BEFORE any check, then do
+    # every read relative to it. Checking the directory by pathname and
+    # resolving that pathname again for the manifest, the artifacts and the
+    # inventory left an ancestor swap open (review v1 finding, reproduced): a
+    # swap after the check redirected the whole traversal to an outside tree and
+    # the reporter returned `accepted`. O_NOFOLLOW here also subsumes the old
+    # is_symlink() test, and O_DIRECTORY subsumes is_dir().
+    root_fd, bind_reason = open_evidence_root(evidence_root)
+    try:
+        if bind_reason == "symlink" or (
+            bind_reason == "unsupported" and evidence_root.is_symlink()
+        ):
+            findings.append("evidence destination must not be a symlink")
+            state = "partial"
+            reviewed_head = None
+            reviewed_tree = None
+            product_digest = None
+            landed_main = None
+            passed = 0
+            artifact_count = 0
+        elif bind_reason == "unbindable":
+            # Exists, is not a symlink, and still will not bind as a directory.
+            findings.append("evidence destination could not be bound as a directory")
+            state = "partial"
+            reviewed_head = None
+            reviewed_tree = None
+            product_digest = None
+            landed_main = None
+            passed = 0
+            artifact_count = 0
+        elif root_fd is None and not _manifest_present(evidence_root, root_fd):
+            findings.append("exact-candidate evidence manifest is pending")
+            state = "pending"
+            reviewed_head = None
+            reviewed_tree = None
+            product_digest = None
+            landed_main = None
+            passed = 0
+            artifact_count = 0
+        else:
+            (
+                evidence_findings,
+                reviewed_head,
+                reviewed_tree,
+                product_digest,
+                landed_main,
+                passed,
+                artifact_count,
+            ) = _validate_evidence(
+                root, contract, evidence_root, verify_git=verify_git, root_fd=root_fd
+            )
+            findings.extend(evidence_findings)
+            if evidence_findings == ["exact-candidate evidence manifest is pending"]:
+                state = "pending"
+            else:
+                state = "accepted" if not findings else "partial"
+    finally:
+        if root_fd is not None:
+            os.close(root_fd)
 
     return WvAcceptanceStatus(
         schema="garnet.wv_acceptance_status/v2",

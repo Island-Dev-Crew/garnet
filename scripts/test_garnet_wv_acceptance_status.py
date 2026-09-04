@@ -391,7 +391,11 @@ class GarnetWvAcceptanceStatusTests(unittest.TestCase):
             hook, fired = _swap_after_lstat(wv.EVIDENCE_MANIFEST, outside, manifest_path)
             with mock.patch.object(os, "lstat", hook):
                 status = wv.read_status(root, "WV-6", verify_git=False)
-        self.assertEqual(fired, [str(manifest_path)])
+        # The reporter now reads relative to a descriptor bound to the evidence
+        # root, so the name reaching os.lstat is the relative one, not the
+        # absolute path. The swap is still detected; only the identifier the
+        # hook records changed shape (review v1 ancestor-swap cure).
+        self.assertEqual(fired, [wv.EVIDENCE_MANIFEST])
         self.assertNotEqual(status.state, "accepted")
         self.assertFalse(status.ok)
         self.assertIn(
@@ -445,7 +449,11 @@ class GarnetWvAcceptanceStatusTests(unittest.TestCase):
             hook, fired = _swap_after_lstat(target, outside, inside)
             with mock.patch.object(os, "lstat", hook):
                 status = wv.read_status(root, "WV-6", verify_git=False)
-        self.assertEqual(fired, [str(inside)])
+        # The reporter now reads relative to a descriptor bound to the evidence
+        # root, so the name reaching os.lstat is the relative one, not the
+        # absolute path. The swap is still detected; only the identifier the
+        # hook records changed shape (review v1 ancestor-swap cure).
+        self.assertEqual(fired, [target])
         self.assertNotEqual(status.state, "accepted")
         self.assertFalse(status.ok)
         self.assertIn(
@@ -478,6 +486,88 @@ class GarnetWvAcceptanceStatusTests(unittest.TestCase):
         self.assertFalse(
             any("changed" in item for item in status.findings), status.findings
         )
+
+
+
+@unittest.skipUnless(wv.DIR_FD_SUPPORTED, "platform has no dir_fd support")
+class EvidenceRootBindingTests(unittest.TestCase):
+    """The evidence ROOT is bound by descriptor, so an ancestor cannot be swapped.
+
+    O_NOFOLLOW protects only the final component. Checking the evidence
+    directory by pathname and then resolving that pathname again for the
+    manifest, every artifact and the inventory left an ancestor swap open: a
+    deterministic swap after the directory check redirected the whole traversal
+    to an outside tree and the reporter returned `accepted` (review v1 finding).
+    """
+
+    def test_absent_destination_is_reported_as_absent_not_unbindable(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            fd, reason = wv.open_evidence_root(Path(td) / "nope")
+            self.assertIsNone(fd)
+            self.assertEqual(reason, "absent")
+
+    def test_symlinked_destination_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "real").mkdir()
+            link = root / "link"
+            link.symlink_to(root / "real", target_is_directory=True)
+            fd, reason = wv.open_evidence_root(link)
+            self.assertIsNone(fd, "a symlinked evidence destination must not bind")
+            self.assertEqual(reason, "symlink")
+
+    def test_swapping_the_directory_after_binding_does_not_redirect_the_walk(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            inside = root / "evidence"
+            inside.mkdir()
+            (inside / "real.txt").write_bytes(b"the bytes that were checked\n")
+            outside = root / "outside"
+            outside.mkdir()
+            (outside / "planted.txt").write_bytes(b"the bytes an ancestor swap would supply\n")
+
+            fd, reason = wv.open_evidence_root(inside)
+            self.assertEqual(reason, "ok")
+            self.assertIsNotNone(fd)
+            try:
+                # The swap an attacker gets to perform: the checked pathname now
+                # resolves somewhere else entirely.
+                inside.rename(root / "moved")
+                Path(inside).symlink_to(outside, target_is_directory=True)
+                self.assertTrue(inside.is_symlink())
+
+                listed = wv._inventory_from_descriptor(fd)
+            finally:
+                os.close(fd)
+
+            self.assertEqual(
+                listed,
+                {"real.txt"},
+                "the walk must follow the bound descriptor, not the swapped pathname",
+            )
+            self.assertNotIn("planted.txt", listed)
+
+    def test_bound_reads_ignore_a_swapped_pathname(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            inside = root / "evidence"
+            inside.mkdir()
+            (inside / "f.txt").write_bytes(b"checked\n")
+            outside = root / "outside"
+            outside.mkdir()
+            (outside / "f.txt").write_bytes(b"planted\n")
+
+            fd, _reason = wv.open_evidence_root(inside)
+            try:
+                inside.rename(root / "moved")
+                Path(inside).symlink_to(outside, target_is_directory=True)
+                raw = wv._regular_bytes(
+                    Path("f.txt"), limit=4096, minimum=0,
+                    label="f.txt", bound="bounds", dir_fd=fd,
+                )
+            finally:
+                os.close(fd)
+            self.assertEqual(raw, b"checked\n")
 
 
 if __name__ == "__main__":
