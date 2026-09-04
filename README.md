@@ -34,8 +34,8 @@ And in 2026 there's a second bargain nobody should accept. AI agents now write t
 *allowed to do* — the supply chain has already produced validly-signed malware. Garnet doesn't
 ask you to trust that the model understood. **It makes acceptance a decision on capability
 evidence your own toolchain recomputes — not the model's claims**: functions declare their
-authority budget, the checker verifies declared budgets transitively across the call edges it
-can build, and `diff-caps` answers
+authority budget, the checker verifies declared budgets transitively across the named, acyclic call
+edges it can build from annotated functions, and `diff-caps` answers
 *"what new authority am I granting?"* in one screen.
 
 Safe by default. Fast when needed. Joyful always.
