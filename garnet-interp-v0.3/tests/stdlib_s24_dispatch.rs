@@ -8,9 +8,19 @@
 use garnet_interp::{Interpreter, Value};
 
 fn run(src: &str) -> Value {
+    // U-91: these programs declare `@caps(fs)` on `main` and reach a gated
+    // primitive, so they must run through the PROGRAM-ENTRY path — the same one
+    // `garnet run` and `garnet test` use — not the embedded `call` path, which
+    // installs a managed frame but no entry frame. Since every gated primitive
+    // is now bound by the entry point's declared budget, a strict instance
+    // refuses `std::log::to_file` reached with no entry frame at all. This is
+    // the framed harness `strict_by_default.rs` documents; the programs
+    // themselves are unchanged and `garnet run` executes them on both backends.
     let mut interp = Interpreter::new();
-    interp.load_source(src).expect("load source");
-    interp.call("main", vec![]).expect("call main")
+    interp
+        .load_source_with_entry_caps(src, "main")
+        .expect("load source");
+    interp.call_entry("main", vec![]).expect("call main")
 }
 
 fn expect_string(value: &Value) -> String {

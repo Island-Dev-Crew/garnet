@@ -12,6 +12,19 @@ Owns managed-mode tree-walk execution, expression evaluation, stdlib bridging, a
   initializers under the selected program entry's `@caps` frame, before
   `main` is called. Load-time host authority is not allowed to execute outside
   a capability frame.
+- The program entry's declared budget bounds every gated primitive reached
+  (U-91). `require_capability` unions the capabilities of all active frames,
+  so a callee's own `@caps` can satisfy it; that alone is not enough. Each of
+  the fifteen gated adapters therefore also calls `require_entry_capability`,
+  which reads the entry frame only. Without it, an entry declaring `@caps()`
+  reaches a `@caps(fs)` helper through a function value, a closure, an actor
+  handler, a top-level initializer, string interpolation or `method_missing` —
+  none of which the checker's call graph sees — and the effect runs. An
+  ordinary `@dynamic` method call is NOT in that list: it resolves through
+  `MethodByName`, and the checker does catch it. Do not remove the second call, and do not weaken it to the calling
+  chain: `garnet run` does not run the checker, so this is the only place the
+  entry budget is enforced. `garnet-cli/tests/entry_budget_enforcement.rs`
+  pins each shape named above, on both backends.
 - Prefer explicit errors over silent no-ops for unsupported language features.
 - Registry-derived dispatch (RB-3): `stdlib_bridge::install()` is ONE loop
   joining `garnet_stdlib::registry::all_prims()` (Binding/Guard/arity

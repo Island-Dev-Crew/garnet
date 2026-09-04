@@ -795,10 +795,26 @@ pub(crate) fn require_capability(needed: &str, fn_name: &str) -> Result<(), Runt
 }
 
 /// Enforce that a host-authority primitive's required capability was declared by
-/// the program entry point itself. S92 uses this for subprocess launch surfaces
-/// so `main @caps()` cannot launder process authority through a helper that
-/// declares `@caps(proc)`. Direct host/test calls outside a program entry frame
-/// remain allowed because there is no source-level entry declaration to inspect.
+/// the program entry point itself.
+///
+/// S92 introduced this for the three subprocess-launch surfaces so `main
+/// @caps()` could not launder process authority through a helper that declares
+/// `@caps(proc)`. **U-91 extends it to the whole gated surface**, because the
+/// call-chain check alone ([`require_capability`]) is a union over ALL active
+/// frames: a helper that declares the capability satisfies it on behalf of an
+/// entry point that did not. The static checker was supposed to be the bound
+/// there — and for a NAMED call chain it is, rejecting `@caps() main` →
+/// `@caps(fs) helper` with `caps coverage: ... transitively calls '(via
+/// helper)'`. But it builds callee edges only from named calls, so a `def`
+/// reached through a function value, a closure, an actor handler, a top-level
+/// initializer, or a map of functions produces no edge at all and the program
+/// passed both layers. Binding every gated primitive to the entry's declared
+/// budget makes the runtime independent of which edge the checker missed.
+///
+/// Direct host/test calls outside a program entry frame follow the same
+/// deny-by-default rule as [`require_capability`]: refused under the `garnet`
+/// binary's latch or a strict embedder instance, allowed only for a permissive
+/// embedder that has opted out.
 pub(crate) fn require_entry_capability(needed: &str, fn_name: &str) -> Result<(), RuntimeError> {
     ACTIVE_CAPS.with(|c| {
         let c = c.borrow();

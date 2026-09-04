@@ -1,5 +1,48 @@
 # Changelog
 
+## Unreleased — U-91 entry-budget capability enforcement (2026-09-03)
+
+- **Fixed authority laundering through call edges the checker cannot see:** all
+  15 gated host-authority primitives now require the PROGRAM ENTRY's declared
+  `@caps` budget to cover them, not merely some active frame. Before this,
+  `require_capability` accepted a union over every active frame, so a `@caps()`
+  entry that reached a `@caps(fs)` helper through a function value, a closure, a
+  higher-order argument, string interpolation, an actor handler, a top-level
+  initializer, or a map of functions WROTE THE FILE while `garnet check`
+  reported 0 diagnostics — because `caps_graph` builds callee edges only from
+  named calls. The `env`, `net`, and `std::log::to_file` surfaces laundered the
+  same way, and the `test` and `doctest` lanes inherited it.
+- **Mechanism:** the S92 program-entry gate (`require_entry_capability`) is
+  extended from the 3 subprocess-launch surfaces to all 15. `Guard::Gate` now
+  has zero members; the registry's `Guard` column moves with the adapters and
+  the member list is pinned by `entry_gates_are_the_whole_gated_surface`.
+- **This is convergence, not new strictness.** `garnet check` already rejects
+  the same shape when the chain is named (`caps coverage: function 'main' does
+  not declare 'fs' but transitively calls '(via helper)'`), the scope document
+  already stated "the program entry point must declare its own budget", and the
+  VM's natively-lowered frames already carried no per-callee caps guard, so the
+  VM refused what the interpreter allowed. The interpreter was the outlier.
+- **Blast radius, measured:** workspace tests 2201 → 2216 passed, 0 failed, with
+  no pre-existing test binary changing its counts; 44 example runs (22 examples
+  × both backends), 184 `garnet check` runs, 13 `garnet test` project roots and
+  every doctest file produced byte-identical results; the four enforcement-status
+  gates and the Minimum Shelf reporter are unchanged. One test HARNESS was
+  updated (`stdlib_s24_dispatch.rs`) to use the documented program-entry path
+  (`load_source_with_entry_caps` + `call_entry`) instead of the embedded `call`
+  path, the same correction PR-2 applied to `garnet test`; its programs are
+  unchanged and still run under `garnet run` on both backends.
+- **Scope, stated exactly:** runtime enforcement only. `caps_graph` is UNCHANGED — the
+  checker is still blind to these edges, and `garnet check` still exits 0 on
+  them; what changed is that the runtime no longer depends on the checker having
+  seen the edge. The manifest layer was already correct and is untouched
+  (`garnet caps` still aggregates `fs`, `diff-caps` still exits 1 with AUTHORITY
+  EXPANDED). `@caps(*)` remains a total escape hatch. A permissive embedder
+  (`Interpreter::new_permissive()`) with the process latch unset is unaffected,
+  as it already was for the 3 entry-gated surfaces. The residual VM/interpreter
+  MESSAGE divergence recorded as crown Finding B-1 is not closed here: both
+  backends now refuse these programs, but which of the two gates fires first
+  still depends on whether the helper lowered natively or fell back.
+
 ## Unreleased — Lane 0 evidence durability repair (2026-07-16)
 
 - **Fixed Windows checkout fidelity:** every `ops/**/evidence/**` path is now
