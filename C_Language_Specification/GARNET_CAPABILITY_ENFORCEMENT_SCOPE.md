@@ -39,9 +39,6 @@ surface.
 Everything below is about what happens **after** check time — at run time and at
 the OS boundary — where the guarantees are real but **bounded**, not universal.
 
-Everything below is about what happens **after** check time — at run time and at
-the OS boundary — where the guarantees are real but **bounded**, not universal.
-
 ## Capability kinds
 
 The checker vocabulary is a closed set of **8** kinds
@@ -77,12 +74,21 @@ capability and a program-entry frame whose declared budget covers it. Since the
 U-91 cure that is the whole gated surface: `Guard::Gate`, the class with only
 the call-chain check, is empty.
 
-**The other 65 registry rows carry no runtime gate at all.** For 63 of them an
-undeclared call simply runs: `garnet check` rejects the program, `garnet run`
-does not check, and the primitive executes and returns a real value. The
-remaining two, `net::tcp_listen` and `net::udp_bind`, are `Binding::Unbridged`
-— they have no interpreter binding, so they do not execute either; see the
-Unbridged row above. Neither group traps on capability grounds.
+**The other 65 registry rows carry no runtime gate at all**, and they are not one
+group. Counted from `registry.rs`:
+
+- **58 require no capability** (`RequiredCaps::none()`). They execute, but there
+  is no declaration for them to be missing, so "undeclared authority" does not
+  apply to them at all.
+- **5 are capability-bearing and checker-only**: `time::now_ms`,
+  `time::wall_clock_ms`, `time::sleep`, `std::uuid::new_v4`, `std::uuid::new_v7`.
+  These are the rows where an undeclared call really does run: `garnet check`
+  rejects the program, `garnet run` does not check, and the primitive executes
+  and returns a real value.
+- **2 are capability-bearing and unbridged**: `net::tcp_listen` and
+  `net::udp_bind` are `Binding::Unbridged`, so they do not execute either.
+
+None of the 65 traps on capability grounds.
 
 Garnet manages frames as follows:
 
