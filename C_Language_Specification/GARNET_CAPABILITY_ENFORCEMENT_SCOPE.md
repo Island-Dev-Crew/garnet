@@ -1,6 +1,6 @@
 # Garnet capability enforcement scope
 
-**Status: normative honesty fence.** This document draws the exact line between
+**Status: normative scope fence.** This document draws the exact line between
 what Garnet's capability system enforces, where, and how. It exists so that no
 public sentence claims "universal `@caps` runtime enforcement" — because the
 truth is more precise and more defensible than that.
@@ -9,16 +9,33 @@ Garnet has **one** capability source of truth: `garnet-stdlib/src/registry.rs`.
 Every primitive row carries `RequiredCaps` plus a `Guard` column that names the
 *runtime* backstop. The classes below are that column, made public.
 
-## The one universal guarantee (check time)
+## The check-time guarantee, and the edges it is built from
 
 The **CapCaps propagator** (`garnet-check-v0.3/src/caps_graph.rs`,
 `check_caps_coverage`) reads primitive capabilities from the same registry and
-propagates them transitively across the call graph. If any function reaches a
-capability-bearing primitive without the calling chain declaring that
-capability, **`garnet check` rejects the program**, and the program entry point
-must declare its own budget. This check-time property is the universal one: it
-holds for the whole registered capability surface, on every backend, before any
-code runs.
+propagates them transitively **across the call edges it can build**. If a
+function reaches a capability-bearing primitive along such a chain without the
+chain declaring that capability, **`garnet check` rejects the program**, and the
+program entry point must declare its own budget.
+
+The guarantee is real but it is **not universal**, and the bound is the call
+graph, not the capability surface (U-91). An edge is built for a call written by
+name to a declared `def`, to a method (`MethodByName` unions every
+implementation method of that name), or to a registry primitive, inside a
+function body the checker walks. **No edge is built** for a callee reached
+through a function value — an alias binding, a higher-order parameter, an actor
+handler, a map of functions — nor for a call inside a closure body or a string
+interpolation, a top-level `let`/`const` initializer, or `method_missing`
+dispatch. Where no edge is built the checker is silent. Separately, **a wholly
+unannotated recursive cycle passes even along a named chain.**
+
+**`garnet run` does not invoke the checker at all.** Checking is a step you run,
+not a precondition of running. A program `garnet check` rejects will execute,
+and what stops it then is the runtime fence below, which covers only part of the
+surface.
+
+Everything below is about what happens **after** check time — at run time and at
+the OS boundary — where the guarantees are real but **bounded**, not universal.
 
 Everything below is about what happens **after** check time — at run time and at
 the OS boundary — where the guarantees are real but **bounded**, not universal.
@@ -54,8 +71,18 @@ caps-trap — checker-only by design, S90 scope).
 
 Runtime capability trapping applies to the **15 entry-gated** host-authority
 primitives. Each one requires both a live call-chain frame declaring the
-capability and a program-entry frame whose declared budget covers it. Garnet
-manages frames as follows:
+capability and a program-entry frame whose declared budget covers it. Since the
+U-91 cure that is the whole gated surface: `Guard::Gate`, the class with only
+the call-chain check, is empty.
+
+**The other 65 registry rows carry no runtime gate at all.** For 63 of them an
+undeclared call simply runs: `garnet check` rejects the program, `garnet run`
+does not check, and the primitive executes and returns a real value. The
+remaining two, `net::tcp_listen` and `net::udp_bind`, are `Binding::Unbridged`
+— they have no interpreter binding, so they do not execute either; see the
+Unbridged row above. Neither group traps on capability grounds.
+
+Garnet manages frames as follows:
 
 - **Managed (`def`) functions** push a caps frame per call; **program entry**
   additionally installs an entry frame.
@@ -86,11 +113,21 @@ scope-parity tests.
 
 ## What the public copy may and may not say
 
-- **May say (true):** undeclared OS authority fails `garnet check`; `@caps` and
-  `@max_depth` trap identically on both backends for the gated surface, with
-  cross-OS trap parity recorded as evidence; the `garnet` CLI and the default
-  high-level `Interpreter::new()` load/eval/call path are deny-by-default.
-- **May not say (overclaim):** "universal `@caps` runtime enforcement"; "no
+- **May say (true):** undeclared OS authority fails `garnet check` **when the
+  primitive is reached through a named call chain the propagator can build**
+  (U-91); all 15 gated primitives additionally require the program entry's own
+  declared budget, whichever call edge reached them; `@caps` and `@max_depth`
+  trap identically on both backends for the gated surface, with cross-OS trap
+  parity recorded as evidence; the `garnet` CLI and the default high-level
+  `Interpreter::new()` load/eval/call path are deny-by-default.
+- **May not say (overclaim):** that `garnet check` rejects an undeclared use of a
+  capability-bearing primitive *however it is reached* — the propagator builds
+  named call edges only (U-91); that it rejects every undeclared use *along* a
+  named chain — a wholly unannotated recursive cycle passes; that running a
+  program is protected by the checker — `garnet run` does not invoke it; that
+  the runtime refuses any capability-bearing primitive nothing declares — that
+  is true of the 15 gated rows and false of the 65 `Declared` rows, which have
+  no runtime gate; "universal `@caps` runtime enforcement"; "no
   ambient authority, ever" as a runtime-universal claim; that every third-party
   embedder is forced to use the strict constructor, that the explicit
   `new_permissive()` opt-out does not exist, or that raw public Env/Value/eval
