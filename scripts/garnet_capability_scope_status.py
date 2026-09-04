@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import html
 import json
 import re
 import sys
@@ -77,7 +78,7 @@ STALE_TRUTH_PATTERNS = [
 ENFORCED_CLAIM_MARKER = "<b>enforced:</b>"
 EXPECTED_ENFORCED_CLAIMS = 2
 EXPECTED_ENFORCED_CLAIM_HASHES = [
-    "8cea8eec892bb7b908c0320fef64c9a0af02167d094141f7258aec566b5f57f0",
+    "8fdeb3988acbabb8e5171dc5940809af4321deee7a0a4522586275482a8d70ff",
     "032b790318e1d10a80418f59e6f363e43671193a080c26a4803dd2beffb2a541",
 ]
 
@@ -141,7 +142,18 @@ def _rel(path: Path) -> str:
 
 
 def _normalized(text: str) -> str:
-    return re.sub(r"\s+", " ", text).strip()
+    """Collapse whitespace, decode HTML entities, and fold dash variants.
+
+    Decoding matters: a claim written with entities evades a plain scan. A stale
+    count spelled `sixty&#8209;one` survived two greps of these very surfaces
+    before it was caught by review, and the same trick hides a forbidden slogan
+    from FORBIDDEN_PATTERNS. Normalising before both hashing and matching closes
+    that path.
+    """
+    decoded = html.unescape(text)
+    # every Unicode dash/hyphen variant folds to ASCII '-'
+    decoded = re.sub(r"[\u2010-\u2015\u2212\u00ad\u2043]", "-", decoded)
+    return re.sub(r"\s+", " ", decoded).strip()
 
 
 def _enforced_claim_hashes(why_text: str) -> list[str]:
@@ -233,7 +245,8 @@ def read_status() -> CapabilityScopeStatus:
 
     forbidden_hits: list[str] = []
     for surface in PUBLIC_SURFACES:
-        text = _read(surface)
+        # Normalise before matching: an entity-encoded slogan evaded the raw scan.
+        text = _normalized(_read(surface))
         for pattern in FORBIDDEN_PATTERNS:
             for match in re.finditer(pattern, text, flags=re.IGNORECASE):
                 forbidden_hits.append(f"{_rel(surface)}: '{match.group(0)}'")
