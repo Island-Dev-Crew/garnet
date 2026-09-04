@@ -66,8 +66,9 @@ def _fold_dashes(text: str) -> str:
     soft hyphen and minus sign to ASCII '-'.
 
     Category-based, not enumerated: an enumeration missed U+FE63 and U+058A in
-    review, and any list will miss the next one. Pd is the closed set Unicode
-    defines, so a dash outside it is by definition not a dash."""
+    review, and any list will miss the next one. Pd is the supported separator
+    set; a character outside it (U+2053 SWUNG DASH is category Po) is outside
+    the contract, not "not a dash"."""
     return "".join(
         "-" if (unicodedata.category(c) == "Pd" or c in "\u00ad\u2212") else c
         for c in text
@@ -86,7 +87,10 @@ def _forbidden_text(raw: str) -> str:
     semantic check; the normative fence's May-not-say list is the actual rule
     and human review is what enforces it."""
     stripped = re.sub(r"<!--.*?-->", " ", raw, flags=re.S)
-    stripped = re.sub(r"<[^>]+>", " ", stripped)
+    # A tag may carry a quoted '>' in an attribute (`<span title=">">`), so the
+    # naive `<[^>]+>` stops early and leaves `">` between tokens. Consume quoted
+    # attribute values as units.
+    stripped = re.sub(r"""<(?:[^>"']|"[^"]*"|'[^']*')*>""", " ", stripped)
     return _normalized(stripped)
 
 
