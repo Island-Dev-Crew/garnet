@@ -99,8 +99,9 @@ and aimed at agent-authored code:
   gated host-authority primitives (fs, net, proc, env, log-to-file) additionally trap at run time
   unless the **program entry's** own declared budget covers the capability, whichever call edge
   reached them. The other 65 registry rows carry no runtime gate, and they are not one group:
-  58 require no capability at all, 5 are capability-bearing and checker-only (`time::*`,
-  `std::uuid::*`) and really do execute undeclared, and `net::tcp_listen` / `net::udp_bind`
+  58 require no capability at all, 5 are capability-bearing and checker-only (`time::now_ms`,
+  `time::wall_clock_ms`, `time::sleep`, `std::uuid::new_v4`, `std::uuid::new_v7`; `new_v5`
+  requires nothing) and really do execute undeclared, and `net::tcp_listen` / `net::udp_bind`
   are unbridged and do not execute either. See the
   [capability enforcement scope table](C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md).
 - **An enforced kernel** — `@caps` and `@max_depth` trap identically on both execution backends,
