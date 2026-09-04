@@ -3,9 +3,9 @@
 ,
   "deterministic_flags": ["lto=on", "codegen-units=1", "strip=symbols"]
 ,
-  "interp_version": "0.8.1"
+  "interp_version": "0.8.2"
 ,
-  "parser_version": "0.8.1"
+  "parser_version": "0.8.2"
 ,
   "prelude_hash": "df4f1648cf79ea77d0842fd1cb8725aba82be1b2631d5a906952640f9a25cc6d"
 ,
