@@ -26,7 +26,9 @@ function body the checker walks. **No edge is built** for a callee reached
 through a function value — an alias binding, a higher-order parameter, an actor
 handler, a map of functions — nor for a call inside a closure body or a string
 interpolation, a top-level `let`/`const` initializer, or `method_missing`
-dispatch. Where no edge is built the checker is silent. Separately, **a wholly
+dispatch. Where no edge is built the checker is silent. Two further boundaries sit inside the named-chain case. **The body of an
+unannotated function is not checked at all**: a lone `def` with no `@caps`
+annotation that calls `write_file` reports `0 diagnostics`. And **a wholly
 unannotated recursive cycle passes even along a named chain.**
 
 **`garnet run` does not invoke the checker at all.** Checking is a step you run,
@@ -114,8 +116,8 @@ scope-parity tests.
 ## What the public copy may and may not say
 
 - **May say (true):** undeclared OS authority fails `garnet check` **when the
-  primitive is reached through a named call chain the propagator can build**
-  (U-91); all 15 gated primitives additionally require the program entry's own
+  primitive is reached through a named call chain the propagator can build, from
+  a function that carries an annotation** (U-91); all 15 gated primitives additionally require the program entry's own
   declared budget, whichever call edge reached them; `@caps` and `@max_depth`
   trap identically on both backends for the gated surface, with cross-OS trap
   parity recorded as evidence; the `garnet` CLI and the default high-level
@@ -123,7 +125,11 @@ scope-parity tests.
 - **May not say (overclaim):** that `garnet check` rejects an undeclared use of a
   capability-bearing primitive *however it is reached* — the propagator builds
   named call edges only (U-91); that it rejects every undeclared use *along* a
-  named chain — a wholly unannotated recursive cycle passes; that running a
+  named chain — a wholly unannotated recursive cycle passes, and the body of an
+  unannotated function is not checked at all; that `garnet test` rejects a
+  `@caps()` test that invokes *any* undeclared authority — it rejects one that
+  reaches a gated primitive, and passes one that calls a checker-only row; that
+  running a
   program is protected by the checker — `garnet run` does not invoke it; that
   the runtime refuses any capability-bearing primitive nothing declares — that
   is true of the 15 gated rows and false of the 65 `Declared` rows, which have
