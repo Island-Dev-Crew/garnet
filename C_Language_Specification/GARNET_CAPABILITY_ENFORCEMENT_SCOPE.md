@@ -28,8 +28,15 @@ handler, a map of functions — nor for a call inside a closure body or a string
 interpolation, a top-level `let`/`const` initializer, or `method_missing`
 dispatch. Where no edge is built the checker is silent. Two further boundaries sit inside the named-chain case. **The body of an
 unannotated function is not checked at all**: a lone `def` with no `@caps`
-annotation that calls `write_file` reports `0 diagnostics`. And **a wholly
-unannotated recursive cycle passes even along a named chain.**
+annotation that calls `write_file` reports `0 diagnostics`. And **a primitive
+reached only through a cycle in the call graph is not reported, whether or not
+the functions in the cycle are annotated**: with `a` declaring `@caps(fs)` and
+calling `write_file`, `b` declaring `@caps()` and calling `a`, `a` calling `b`,
+and `main` declaring `@caps()` and calling `b`, `garnet check` reports
+`0 diagnostics`; remove the `a -> b` edge and the `fs` violation appears. The
+cycle causes the callers to be memoised with empty transitive sets
+(`caps_graph.rs`). This is a checker defect, registered for a separate cure;
+until it lands it is a stated boundary of the guarantee.
 
 **`garnet run` does not invoke the checker at all.** Checking is a step you run,
 not a precondition of running. A program `garnet check` rejects will execute,
@@ -84,7 +91,7 @@ group. Counted from `registry.rs`:
   `time::wall_clock_ms`, `time::sleep`, `std::uuid::new_v4`, `std::uuid::new_v7`.
   These are the rows where an undeclared call really does run: `garnet check`
   rejects the program only under the same condition as everything else — a
-  named call chain from an annotated function — `garnet run` does not check,
+  named, acyclic call chain from an annotated function — `garnet run` does not check,
   and the primitive executes and returns a real value.
 - **2 are capability-bearing and unbridged**: `net::tcp_listen` and
   `net::udp_bind` are `Binding::Unbridged`, so they do not execute either.
@@ -123,8 +130,8 @@ scope-parity tests.
 ## What the public copy may and may not say
 
 - **May say (true):** undeclared OS authority fails `garnet check` **when the
-  primitive is reached through a named call chain the propagator can build, from
-  a function that carries an annotation** (U-91); all 15 gated primitives additionally require the program entry's own
+  primitive is reached through a named, acyclic call chain the propagator can
+  build, from a function that carries an annotation** (U-91); all 15 gated primitives additionally require the program entry's own
   declared budget, whichever call edge reached them; `@caps` and `@max_depth`
   trap identically on both backends for the gated surface, with cross-OS trap
   parity recorded as evidence; the `garnet` CLI and the default high-level
@@ -132,8 +139,9 @@ scope-parity tests.
 - **May not say (overclaim):** that `garnet check` rejects an undeclared use of a
   capability-bearing primitive *however it is reached* — the propagator builds
   named call edges only (U-91); that it rejects every undeclared use *along* a
-  named chain — a wholly unannotated recursive cycle passes, and the body of an
-  unannotated function is not checked at all; that `garnet test` rejects a
+  named chain — a primitive reached only through a call-graph cycle is not
+  reported, annotated or not, and the body of an unannotated function is not
+  checked at all; that `garnet test` rejects a
   `@caps()` test that invokes *any* undeclared authority — it rejects one that
   reaches a gated primitive, and passes one that calls a checker-only row; that
   running a

@@ -94,8 +94,9 @@ and aimed at agent-authored code:
   declared budgets transitively at check time **across named call chains**, and the entry point
   must declare its budget. Reached instead through a function value, a closure, an actor handler,
   a top-level initializer, a string interpolation or `method_missing`, a call contributes no edge
-  and the checker stays silent; a wholly unannotated recursive cycle passes even along a named
-  chain (finding U-91). `garnet run` does not invoke the checker. Under the `garnet` CLI the 15
+  and the checker stays silent; a primitive reached only through a cycle in the call graph is not
+  reported even along a named chain, annotated or not (finding U-91; the cycle case is a checker
+  defect with its own cure pending). `garnet run` does not invoke the checker. Under the `garnet` CLI the 15
   gated host-authority primitives (fs, net, proc, env, log-to-file) additionally trap at run time
   unless the **program entry's** own declared budget covers the capability, whichever call edge
   reached them. The other 65 registry rows carry no runtime gate, and they are not one group:
