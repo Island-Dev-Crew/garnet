@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import html
+from html.parser import HTMLParser
 import unicodedata
 import json
 import re
@@ -75,23 +76,62 @@ def _fold_dashes(text: str) -> str:
     )
 
 
+class _VisibleText(HTMLParser):
+    """Collect the text a reader would see, with every tag and comment removed.
+
+    A regex cannot do this: a valid `<span title="<!--">` starts no comment,
+    and a valid `<a title=">">` ends no tag, yet both defeat a pattern. The
+    stdlib tokenizer tracks quoting and comment state, so markup between
+    tokens is removed exactly and nothing inside a token is touched."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.parts: list[str] = []
+
+    def handle_data(self, data: str) -> None:
+        self.parts.append(data)
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self.parts.append(" ")
+
+    def handle_endtag(self, tag: str) -> None:
+        self.parts.append(" ")
+
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self.parts.append(" ")
+
+    # Comments, declarations and processing instructions are also markup
+    # between tokens: they separate words, so they become a space, never
+    # nothing. Emitting nothing joined `universal<!-- -->runtime` into one
+    # token and let it evade.
+    def handle_comment(self, data: str) -> None:
+        self.parts.append(" ")
+
+    def handle_decl(self, decl: str) -> None:
+        self.parts.append(" ")
+
+    def handle_pi(self, data: str) -> None:
+        self.parts.append(" ")
+
+
 def _forbidden_text(raw: str) -> str:
-    """Text for slogan matching. Contract, stated exactly:
+    """Text for slogan matching, with markup removed by a real HTML tokenizer.
+
+    Contract, stated exactly:
 
     CAUGHT: whitespace or any Pd/soft-hyphen/minus separator between tokens;
-    HTML entities; case; tags and comments that fall BETWEEN tokens.
+    HTML entities; case; any well-formed tag or comment that falls BETWEEN
+    tokens, including tags whose attributes contain '>' or '<!--'.
 
     NOT CAUGHT: markup or zero-width characters inserted INSIDE a token
     (`uni<span>versal`, `u\u200bniversal`), letter-substitution, or any
     paraphrase. This is a bounded slogan filter over three phrases, not a
     semantic check; the normative fence's May-not-say list is the actual rule
     and human review is what enforces it."""
-    stripped = re.sub(r"<!--.*?-->", " ", raw, flags=re.S)
-    # A tag may carry a quoted '>' in an attribute (`<span title=">">`), so the
-    # naive `<[^>]+>` stops early and leaves `">` between tokens. Consume quoted
-    # attribute values as units.
-    stripped = re.sub(r"""<(?:[^>"']|"[^"]*"|'[^']*')*>""", " ", stripped)
-    return _normalized(stripped)
+    parser = _VisibleText()
+    parser.feed(raw)
+    parser.close()
+    return _normalized("".join(parser.parts))
 
 
 FORBIDDEN_PATTERNS = [
