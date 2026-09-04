@@ -83,8 +83,9 @@ group. Counted from `registry.rs`:
 - **5 are capability-bearing and checker-only**: `time::now_ms`,
   `time::wall_clock_ms`, `time::sleep`, `std::uuid::new_v4`, `std::uuid::new_v7`.
   These are the rows where an undeclared call really does run: `garnet check`
-  rejects the program, `garnet run` does not check, and the primitive executes
-  and returns a real value.
+  rejects the program only under the same condition as everything else — a
+  named call chain from an annotated function — `garnet run` does not check,
+  and the primitive executes and returns a real value.
 - **2 are capability-bearing and unbridged**: `net::tcp_listen` and
   `net::udp_bind` are `Binding::Unbridged`, so they do not execute either.
 
