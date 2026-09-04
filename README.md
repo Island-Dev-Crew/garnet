@@ -98,8 +98,10 @@ and aimed at agent-authored code:
   chain (finding U-91). `garnet run` does not invoke the checker. Under the `garnet` CLI the 15
   gated host-authority primitives (fs, net, proc, env, log-to-file) additionally trap at run time
   unless the **program entry's** own declared budget covers the capability, whichever call edge
-  reached them. The other 65 registry rows carry no runtime gate: 63 execute undeclared, and
-  `net::tcp_listen` / `net::udp_bind` are unbridged and do not execute at all. See the
+  reached them. The other 65 registry rows carry no runtime gate, and they are not one group:
+  58 require no capability at all, 5 are capability-bearing and checker-only (`time::*`,
+  `std::uuid::*`) and really do execute undeclared, and `net::tcp_listen` / `net::udp_bind`
+  are unbridged and do not execute either. See the
   [capability enforcement scope table](C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md).
 - **An enforced kernel** — `@caps` and `@max_depth` trap identically on both execution backends,
   with cross-OS trap parity recorded as evidence, not asserted.
