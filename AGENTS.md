@@ -97,18 +97,21 @@ Never narrow the surface to make a PR green.
 
 Widening the surface is only safe because the surface is versioned. A sealed
 landed marker binds the trust subset of its landing edge, so it is verified
-under the surface it was sealed under, and selection is **pin-first**. The
-`SEALED_MARKER_TRUST_SURFACES` entry for the marker's own immutable
-`merged_commit` decides, and it applies only to the one marker path that entry
-names. Everything else resolves to the current (widest, therefore strictest)
-surface: an unpinned marker must declare that current surface, may not select a
-historical one, and a declaration that disagrees with a pin is a finding.
-Declaration-first was a laundering path: a new marker could declare the old
-surface and hide the newly covered paths on its own landing edge. Never widen `TRUST_KERNEL_PREFIXES` or
-`TRUST_KERNEL_FILES` in place without adding a new `TRUST_SURFACES` version;
-re-run `python3 -I scripts/test_garnet_trust_kernel_review_status.py` and the
-repository marker check, because a widening that reds the sealed markers reds
-every subsequent PR, not only yours.
+under the surface it was sealed under, and that surface is **derived from the
+landing commit**: the gate reads its own copy at the marker's `merged_commit`
+(already placed on main's first-parent history by the verifier) and takes
+`CURRENT_TRUST_SURFACE` from it; a copy without the constant is the v1 era. No
+declaration decides and no pin table has to grow: a declared `trust_surface`
+may only agree with the derivation, an explicit non-version value (including
+`null`) is a finding, an unregistered historical version is a finding, and a
+`merged_commit` registered twice is a finding. Every failure resolves to the
+current (widest, therefore strictest) surface. Declaration-first was a
+laundering path, and a closed pin map preserved only the two pre-versioning
+markers — the next widening turned a valid v2 marker red. Never widen
+`TRUST_KERNEL_PREFIXES` or `TRUST_KERNEL_FILES` in place: add a new
+`TRUST_SURFACES` version, bump `CURRENT_TRUST_SURFACE` in the same change, and
+re-run `python3 -I scripts/test_garnet_trust_kernel_review_status.py`, whose
+widening regression lands a v2 marker and verifies it green under v3.
 
 ## Dogfood PR-Body Evidence Contract
 

@@ -160,28 +160,28 @@ TRUST_SURFACES: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
     "v2": (TRUST_KERNEL_PREFIXES, TRUST_KERNEL_FILES),
 }
 CURRENT_TRUST_SURFACE = "v2"
-# Markers sealed before the surface carried a version.  Their bytes are
-# immutable under the append-only rule, so the pin lives here.
+# A sealed marker is verified under the surface the gate ITSELF defined at the
+# marker's landing commit.  That surface is derived, never declared and never
+# pinned: the gate reads its own copy at `merged_commit` — a commit the
+# verifier has already placed on main's first-parent history, which is
+# append-only under the ruleset — and takes the one constant above from it.  A
+# copy without the constant predates versioning, which is the v1 era.
 #
-# The key is the marker's own immutable `merged_commit`, and the value binds the
-# surface to the marker's REGISTRY PATH.  Keying on the commit alone was
-# replayable (review v2 finding): a second, newly registered marker could reuse
-# a pinned `merged_commit`, declare the historical surface, and clear
-# verification with zero findings.  A pin now applies only to the one marker
-# path it names, so a replay at any other path is unpinned and must use the
-# current surface.  New markers declare `trust_surface`; this table does not grow.
-SEALED_MARKER_TRUST_SURFACES: dict[str, tuple[str, str]] = {
-    # PR #517 - Lane 1 governance activation boundary.
-    "68317ae258327aade47fc2c07b7b5b580ec7c6ea": (
-        "v1",
-        "F_Project_Management/W_TRUST/landed/LANE1_GOVERNANCE_ACTIVATION.landed-review.json",
-    ),
-    # PR #514 - Lane 2B minimum sealed Shelf and MCP host.
-    "41d6ced858684ac67683d32315920bd50a52976e": (
-        "v1",
-        "F_Project_Management/W_TRUST/landed/LANE2B_MINIMUM_SHELF_MCP.landed-review.json",
-    ),
-}
+# Two earlier designs are recorded so they are not reintroduced.  Declaration-
+# first let a NEW marker declare the old, narrower surface and hide the newly
+# covered paths on its own landing edge (review v1 finding).  A closed pin map
+# keyed by `merged_commit` preserved exactly the two pre-versioning markers and
+# nothing after them: the first v2-to-v3 widening turned a valid v2 marker red
+# (review v3 finding, R559-4), which is the repository-wide condition this
+# versioning exists to prevent.  Derivation preserves every seal era, forever,
+# with no table to grow.
+GATE_SCRIPT_PATH = "scripts/garnet_trust_kernel_review_status.py"
+PRE_VERSIONING_TRUST_SURFACE = "v1"
+# One regular expression over the blob; nothing is executed.  Anchored at the
+# line start, a bare double-quoted "vN", optional trailing comment.
+_CURRENT_SURFACE_CONSTANT = re.compile(
+    rb'^CURRENT_TRUST_SURFACE\s*=\s*"(v[0-9]+)"[ \t]*(?:#[^\n]*)?$', re.M
+)
 
 REVIEW_RECORD_PREFIX = "F_Project_Management/W_TRUST/"
 REVIEW_RECORD_SUFFIX = ".review.json"
@@ -233,9 +233,10 @@ LANDED_KEYS = frozenset(
         "trust_surface",
     }
 )
-# `trust_surface` is allowed but not required: the two markers sealed before it
-# existed cannot grow the key without breaking the append-only rule, so they
-# are pinned by `merged_commit` in SEALED_MARKER_TRUST_SURFACES instead.
+# `trust_surface` is allowed but not required: the surface is derived from the
+# landing commit, and a declared value may only agree with the derivation.  The
+# two markers sealed before the key existed cannot grow it without breaking the
+# append-only rule, and need not.
 OPTIONAL_LANDED_KEYS = frozenset({"trust_surface"})
 
 
@@ -334,71 +335,64 @@ def trust_surface_predicate(name: str) -> "Callable[[str], bool]":
     return classify
 
 
+def trust_surface_at_commit(root: Path, commit: str) -> tuple[str | None, list[str]]:
+    """The surface this gate defined at ``commit``, read from that commit's own
+    copy of this script.
+
+    ``commit`` must already be a verified first-parent landing commit; the
+    caller establishes that.  The blob is parsed with one regular expression
+    and never executed.  A copy without the constant predates versioning and
+    names the v1 era; a copy naming a version this gate no longer registers is
+    a finding, because ``TRUST_SURFACES`` is append-only; an absent copy cannot
+    be derived from and fails closed.
+    """
+    payload, problems = _read_blob(root, commit, GATE_SCRIPT_PATH)
+    if payload is None:
+        return None, [
+            *problems,
+            f"the gate script is absent at merged_commit {commit}, so the sealed "
+            "trust surface cannot be derived",
+        ]
+    match = _CURRENT_SURFACE_CONSTANT.search(payload)
+    if match is None:
+        return PRE_VERSIONING_TRUST_SURFACE, []
+    name = match.group(1).decode("ascii")
+    if name not in TRUST_SURFACES:
+        return None, [
+            f"merged_commit {commit} was sealed under trust surface {name!r}, which "
+            "this gate does not register; TRUST_SURFACES is append-only"
+        ]
+    return name, []
+
+
 def resolve_marker_trust_surface(
-    marker: dict, marker_path: str | None = None
+    marker: dict, root: Path, landed_commit: str
 ) -> tuple[str, list[str]]:
     """Name the surface a landed marker was sealed under.
 
-    The immutable `merged_commit` pin is AUTHORITATIVE, and it is the only way a
-    marker reaches a historical surface.  A marker whose commit is not in
-    SEALED_MARKER_TRUST_SURFACES is by construction newer than every pin, so it
-    must be sealed under the current surface and may not select a narrower one.
-
-    Letting a declared value win outright was a laundering path (review v1
-    finding): a NEW marker could declare `v1`, take the narrow surface, and the
-    landing edge's newly covered paths became invisible.  The end-to-end verifier
-    returned zero findings on exactly that construction.  Selection now runs
-    pin-first, and every disagreement is a finding rather than a silent choice.
-    Every failure resolves to CURRENT_TRUST_SURFACE, which is the widest, so a
-    rejected marker must account for more paths, never fewer.
+    The DERIVATION decides (see ``trust_surface_at_commit``).  A declared
+    ``trust_surface`` is optional and may only agree with it: an explicit
+    value that is not a registered version string — including JSON ``null``,
+    which ``dict.get`` used to conflate with an absent key (review v3,
+    R559-5) — is a finding, and a disagreement is a finding.  Every failure
+    resolves to ``CURRENT_TRUST_SURFACE``, the widest and therefore strictest
+    surface, so a rejected marker must account for more paths, never fewer.
     """
     findings: list[str] = []
-    declared = marker.get("trust_surface")
-    merged = marker.get("merged_commit")
-    pinned: str | None = None
-    if isinstance(merged, str):
-        entry = SEALED_MARKER_TRUST_SURFACES.get(merged.lower())
-        if entry is not None:
-            surface, pinned_path = entry
-            # The pin is bound to one marker path. A different marker reusing
-            # this merged_commit is a replay and stays unpinned.
-            if marker_path is not None and marker_path == pinned_path:
-                pinned = surface
-            elif marker_path is not None:
-                findings.append(
-                    f"landed marker at {marker_path!r} reuses the merged_commit pinned to "
-                    f"{pinned_path!r}; the historical surface exception does not transfer"
-                )
-
-    if pinned is not None:
-        # Sealed before the field existed. The pin decides; a declared value may
-        # only agree with it. A mismatch resolves to the CURRENT, widest surface
-        # rather than continuing under the narrower pin (review v2 finding).
-        if declared is not None and declared != pinned:
+    derived, derive_findings = trust_surface_at_commit(root, landed_commit)
+    findings.extend(derive_findings)
+    if "trust_surface" in marker:
+        declared = marker["trust_surface"]
+        if not isinstance(declared, str) or declared not in TRUST_SURFACES:
+            findings.append(f"unknown trust surface {declared!r} in landed marker")
+        elif derived is not None and declared != derived:
             findings.append(
-                f"landed marker declares trust surface {declared!r} but its immutable "
-                f"merged_commit pins {pinned!r}"
+                f"landed marker declares trust surface {declared!r} but its "
+                f"merged_commit was sealed under {derived!r}"
             )
-            return CURRENT_TRUST_SURFACE, findings
-        return pinned, findings
-
-    # Unpinned, therefore newer than every pin.
-    if declared is None:
-        findings.append(
-            "landed marker outside the sealed pin map must declare "
-            f"trust_surface {CURRENT_TRUST_SURFACE!r}"
-        )
+    if findings or derived is None:
         return CURRENT_TRUST_SURFACE, findings
-    if not isinstance(declared, str) or declared not in TRUST_SURFACES:
-        findings.append(f"unknown trust surface {declared!r} in landed marker")
-        return CURRENT_TRUST_SURFACE, findings
-    if declared != CURRENT_TRUST_SURFACE:
-        findings.append(
-            f"landed marker outside the sealed pin map may not select historical "
-            f"trust surface {declared!r}; only {CURRENT_TRUST_SURFACE!r} is admissible"
-        )
-        return CURRENT_TRUST_SURFACE, findings
-    return declared, findings
+    return derived, findings
 
 
 def is_review_record(path: str) -> bool:
@@ -2416,7 +2410,9 @@ def verify_landed_review_marker(
                 "exact first-parent landing edge is partial or disagrees with "
                 "independent tree-object traversal"
             )
-    surface_name, surface_findings = resolve_marker_trust_surface(marker, marker_path)
+    surface_name, surface_findings = resolve_marker_trust_surface(
+        marker, root, landed_commit
+    )
     findings.extend(surface_findings)
     in_sealed_surface = trust_surface_predicate(surface_name)
     landed_trust = sorted(
@@ -2662,6 +2658,11 @@ def verify_repository_landed_markers(
     if findings:
         return findings
     assert valid_markers is not None
+    # A landing edge is sealed by exactly one marker.  A second marker naming
+    # the same `merged_commit` at another path is a replay (review v2 finding);
+    # the surface is derived from the commit, so the replay gains nothing, but
+    # it is named anyway.
+    registered_by: dict[str, list[str]] = {}
     for marker_path in valid_markers:
         marker_payload, marker_read_problems = _read_blob(root, commit, marker_path)
         findings.extend(f"{marker_path}: {problem}" for problem in marker_read_problems)
@@ -2670,6 +2671,9 @@ def verify_repository_landed_markers(
         marker, marker_parse_problems = _load_canonical_record(marker_payload)
         findings.extend(f"{marker_path}: {problem}" for problem in marker_parse_problems)
         if marker is not None:
+            merged = marker.get("merged_commit")
+            if isinstance(merged, str):
+                registered_by.setdefault(merged.lower(), []).append(marker_path)
             findings.extend(
                 f"{marker_path}: {problem}"
                 for problem in verify_landed_review_marker(
@@ -2678,6 +2682,12 @@ def verify_repository_landed_markers(
                     main_ref=main_ref,
                     marker_path=marker_path,
                 )
+            )
+    for merged, paths in sorted(registered_by.items()):
+        if len(paths) > 1:
+            findings.append(
+                f"merged_commit {merged} is registered by more than one landed marker: "
+                + ", ".join(sorted(paths))
             )
     return findings
 

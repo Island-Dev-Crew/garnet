@@ -45,28 +45,40 @@ was found by running the gate on the H3-02 widening, not by reading the code.
 
 `TRUST_SURFACES` therefore names each surface version, and
 `verify_landed_review_marker` classifies a marker's landing edge under the
-surface that marker was sealed under. Resolution is **pin-first**, and the pin
-is bound to an identity, not just a commit: `SEALED_MARKER_TRUST_SURFACES` maps
-a marker's immutable `merged_commit` to a surface **and the one marker path that
-exception covers**. A marker at any other path reusing that commit is a replay
-and stays unpinned.
+surface that marker was sealed under. That surface is **derived, never declared
+and never pinned**: the gate reads its own copy of
+`scripts/garnet_trust_kernel_review_status.py` at the marker's `merged_commit`
+— a commit the verifier has already placed on main's first-parent history,
+which is append-only under the ruleset — and takes `CURRENT_TRUST_SURFACE` from
+it with one regular expression (`trust_surface_at_commit`; nothing is
+executed). A copy without the constant predates versioning and names the v1
+era. A copy naming a version this gate no longer registers is a finding,
+because `TRUST_SURFACES` is append-only. An absent copy cannot be derived from
+and fails closed.
 
-Everything unpinned resolves to the current surface, which is the widest and
-therefore the strictest, so a rejected marker accounts for more paths, never
-fewer. An unpinned marker must declare the current surface; omitting the key is
-a finding, and selecting a historical surface is a finding. A declaration that
-disagrees with a pin is a finding and resolves to the current surface rather
-than continuing under the narrower pinned one.
+A marker may carry `trust_surface`; it is optional and may only agree with the
+derivation. An explicit value that is not a registered version string —
+including JSON `null`, which an absent-key check once conflated with omission
+— is a finding, and a disagreement is a finding. Every failure resolves to the
+current surface, which is the widest and therefore the strictest, so a
+rejected marker accounts for more paths, never fewer. A `merged_commit`
+registered by more than one marker is a finding: one landing edge, one seal.
 
-Two earlier orderings were laundering paths and are recorded here so they are
-not reintroduced. Declaration-first let a new marker declare the old surface and
-hide the newly covered paths on its own landing edge; the end-to-end verifier
-returned zero findings on that construction. Commit-only pinning let a second
-marker replay a pinned `merged_commit` and inherit the historical exception.
+Three earlier designs are recorded here so they are not reintroduced.
+Declaration-first let a new marker declare the old surface and hide the newly
+covered paths on its own landing edge; the end-to-end verifier returned zero
+findings on that construction. Commit-only pinning let a second marker replay a
+pinned `merged_commit` and inherit the historical exception. A closed pin map
+bound to marker paths preserved exactly the two pre-versioning markers and
+nothing sealed after them: the first v2-to-v3 widening turned a valid v2
+marker red with zero repository changes — the repository-wide condition this
+versioning exists to prevent — and the documented instruction to add a version
+on the next widening would have recreated it every time. Derivation preserves
+every seal era with no table to grow; the regression that proves it lands a v2
+marker, widens the live surface to v3, and verifies the registry green.
 
 Live candidates are always judged by the current surface; only sealed history is
-judged by its own. `SEALED_MARKER_TRUST_SURFACES` is a closed table of the two
-pre-versioning markers and does not grow.
+judged by its own.
 
 ## Discovery is part of the proof
 

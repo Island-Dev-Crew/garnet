@@ -79,6 +79,12 @@ class GitRepoFixture(unittest.TestCase):
         self._git("config", "user.email", "author@example.invalid")
         self._git("config", "user.name", "Author")
         write_lf(self.root / "README.md", "base\n")
+        # The gate derives a landed marker's sealed surface from THIS script's
+        # own copy at the landing commit, so a fixture repository carries a
+        # stub of it at the base: one constant, the current surface.
+        stub = self.root / mod.GATE_SCRIPT_PATH
+        stub.parent.mkdir(parents=True, exist_ok=True)
+        write_lf(stub, f'CURRENT_TRUST_SURFACE = "{mod.CURRENT_TRUST_SURFACE}"\n')
         registry = self.root / "F_Project_Management/W_TRUST/LANDED_REVIEW_MARKERS.json"
         registry.parent.mkdir(parents=True, exist_ok=True)
         registry.write_bytes(
@@ -89,7 +95,7 @@ class GitRepoFixture(unittest.TestCase):
                 }
             )
         )
-        self._git("add", "README.md", str(registry.relative_to(self.root)))
+        self._git("add", "README.md", mod.GATE_SCRIPT_PATH, str(registry.relative_to(self.root)))
         self._git("commit", "-m", "base")
         self.base = self._git("rev-parse", "HEAD")
         self._git("branch", "-M", "main")
@@ -1751,9 +1757,8 @@ class LandedMarkerTests(GitRepoFixture):
             "head_repository": "Navigata1/garnet",
             "head_repository_id": 6006,
             "merged_commit": self.merged_commit,
-            # A synthetic marker is by construction newer than every pin in
-            # SEALED_MARKER_TRUST_SURFACES, so it must say which surface it was
-            # sealed under. Omitting it is a finding after the review v1 cure.
+            # Optional: the surface is DERIVED from the landing commit's copy of
+            # the gate script; a declared value may only agree with it.
             "trust_surface": mod.CURRENT_TRUST_SURFACE,
             "merged_tree": self.merged_tree,
             "pull_request_id": 7007,
@@ -2259,65 +2264,33 @@ class TrustSurfaceVersionTests(unittest.TestCase):
         self.assertTrue(now("garnet-cli/src/manifest.rs"))
         self.assertTrue(now("scripts/check_dogfood_pr_body.py"))
 
-    def test_sealed_markers_are_pinned_by_immutable_merged_commit(self) -> None:
-        # The two markers registered before the surface was versioned. Pinned by
-        # `merged_commit` because marker bytes are append-only immutable, and
-        # bound to the one marker path each exception covers: keying on the
-        # commit alone let a second marker replay a pinned commit and inherit
-        # the historical surface (review v2 finding).
-        landed = "F_Project_Management/W_TRUST/landed/"
+    def test_sealed_markers_derive_v1_from_their_landing_commits(self) -> None:
+        # The two markers sealed before the surface carried a version. Nothing
+        # pins them: the gate reads its own copy at each landing commit, finds
+        # no CURRENT_TRUST_SURFACE constant there, and that IS the v1 era.
+        for merged in (
+            "68317ae258327aade47fc2c07b7b5b580ec7c6ea",  # PR #517
+            "41d6ced858684ac67683d32315920bd50a52976e",  # PR #514
+        ):
+            self.assertEqual(("v1", []), mod.trust_surface_at_commit(mod.ROOT, merged))
+
+    def test_the_current_commit_derives_the_current_surface(self) -> None:
+        head = subprocess.run(
+            ["git", "-C", str(mod.ROOT), "rev-parse", "HEAD"],
+            capture_output=True, text=True, check=True,
+        ).stdout.strip()
         self.assertEqual(
-            {
-                "68317ae258327aade47fc2c07b7b5b580ec7c6ea": (
-                    "v1",
-                    f"{landed}LANE1_GOVERNANCE_ACTIVATION.landed-review.json",
-                ),
-                "41d6ced858684ac67683d32315920bd50a52976e": (
-                    "v1",
-                    f"{landed}LANE2B_MINIMUM_SHELF_MCP.landed-review.json",
-                ),
-            },
-            dict(mod.SEALED_MARKER_TRUST_SURFACES),
+            (mod.CURRENT_TRUST_SURFACE, []), mod.trust_surface_at_commit(mod.ROOT, head)
         )
-        # Every pinned path must be a marker that actually exists in the registry.
-        for _commit, (_surface, path) in mod.SEALED_MARKER_TRUST_SURFACES.items():
-            self.assertTrue(
-                (mod.ROOT / path).is_file(), f"pinned marker path is missing: {path}"
-            )
 
-    def test_marker_surface_resolution_order(self) -> None:
-        # The immutable pin decides, and it is the ONLY route to a historical
-        # surface. This test asserted the opposite until the review v1 cure: it
-        # required that a declared surface win outright, which let an UNPINNED
-        # marker declare "v1", take the narrow surface, and hide the newly
-        # covered paths on its own landing edge. The reviewer reproduced that
-        # end to end with zero findings. The precedence below is the cure.
-        name, findings = mod.resolve_marker_trust_surface(
-            {"merged_commit": "41d6ced858684ac67683d32315920bd50a52976e"},
-            "F_Project_Management/W_TRUST/landed/LANE2B_MINIMUM_SHELF_MCP.landed-review.json",
-        )
-        self.assertEqual(("v1", []), (name, findings))
-        # An unpinned marker may not reach back to a historical surface.
-        name, findings = mod.resolve_marker_trust_surface(
-            {"trust_surface": "v1", "merged_commit": "0" * 40}
-        )
-        self.assertEqual(mod.CURRENT_TRUST_SURFACE, name)
-        self.assertTrue(
-            any("may not select historical trust surface" in item for item in findings),
-            findings,
-        )
-        # An unpinned marker must say which surface it was sealed under. It still
-        # resolves to the current, widest surface, so it accounts for more paths.
-        name, findings = mod.resolve_marker_trust_surface({"merged_commit": "0" * 40})
-        self.assertEqual(mod.CURRENT_TRUST_SURFACE, name)
-        self.assertTrue(any("must declare" in item for item in findings), findings)
-
-    def test_unknown_declared_surface_is_a_finding(self) -> None:
-        name, findings = mod.resolve_marker_trust_surface(
-            {"trust_surface": "v99", "merged_commit": "0" * 40}
-        )
-        self.assertEqual(mod.CURRENT_TRUST_SURFACE, name)
-        self.assertTrue(any("unknown trust surface" in item for item in findings), findings)
+    def test_the_surface_constant_is_parsed_from_source_not_executed(self) -> None:
+        # The derivation is one regular expression over the blob; a copy that
+        # defines the constant twice, or as anything but a "vN" string, is not
+        # a surface.
+        self.assertIsNotNone(mod._CURRENT_SURFACE_CONSTANT.search(b'x = 1\nCURRENT_TRUST_SURFACE = "v2"\n'))
+        self.assertIsNone(mod._CURRENT_SURFACE_CONSTANT.search(b'CURRENT_TRUST_SURFACE = v2\n'))
+        self.assertIsNone(mod._CURRENT_SURFACE_CONSTANT.search(b'  CURRENT_TRUST_SURFACE = "v2"\n'))
+        self.assertIsNone(mod._CURRENT_SURFACE_CONSTANT.search(b'CURRENT_TRUST_SURFACE = "two"\n'))
 
     def test_trust_surface_is_an_allowed_marker_key(self) -> None:
         self.assertIn("trust_surface", mod.LANDED_KEYS)
@@ -2328,98 +2301,131 @@ class TrustSurfaceVersionTests(unittest.TestCase):
         findings = mod.verify_repository_landed_markers(mod.ROOT)
         self.assertEqual([], findings)
 
-class MarkerTrustSurfaceSelectionTests(unittest.TestCase):
-    """The immutable pin is the only route to a historical surface (review v1 cure)."""
+class MarkerTrustSurfaceDerivationTests(GitRepoFixture):
+    """The sealed surface is DERIVED from the landing commit's own copy of the
+    gate script (review v3 cure). No declaration decides, and no closed pin
+    map has to grow: main's first-parent history is the trusted evidence."""
 
-    def _pin(self):
-        commit, (surface, path) = sorted(mod.SEALED_MARKER_TRUST_SURFACES.items())[0]
-        return commit, surface, path
+    def _stub(self, body: bytes | None) -> str:
+        """Land a copy of the gate script with ``body`` (or none) and return
+        that commit. The fixture base already carries the current-surface
+        stub, so an identical body is simply the base."""
+        path = self.root / mod.GATE_SCRIPT_PATH
+        if body is None:
+            self._git("rm", "-q", mod.GATE_SCRIPT_PATH)
+            self._git("commit", "-m", "no gate script")
+        elif path.read_bytes() != body:
+            self._commit_file(mod.GATE_SCRIPT_PATH, body, "gate stub")
+        return self._git("rev-parse", "HEAD")
 
-    def test_pin_decides_for_a_sealed_marker(self):
-        commit, surface, path = self._pin()
+    def test_v2_landing_derives_v2_and_a_declaration_may_only_agree(self) -> None:
+        commit = self._stub(b'CURRENT_TRUST_SURFACE = "v2"\n')
+        self.assertEqual(("v2", []), mod.resolve_marker_trust_surface({}, self.root, commit))
         self.assertEqual(
-            mod.resolve_marker_trust_surface({"merged_commit": commit}, path),
-            (surface, []),
+            ("v2", []),
+            mod.resolve_marker_trust_surface({"trust_surface": "v2"}, self.root, commit),
         )
-
-    def test_declaration_agreeing_with_the_pin_is_accepted(self):
-        commit, surface, path = self._pin()
+        # Laundering probe from review v1: a NEW marker declaring the old,
+        # narrower surface. The declaration cannot win; the derivation does.
+        name, findings = mod.resolve_marker_trust_surface(
+            {"trust_surface": "v1"}, self.root, commit
+        )
+        self.assertEqual(mod.CURRENT_TRUST_SURFACE, name)
         self.assertEqual(
-            mod.resolve_marker_trust_surface(
-                {"merged_commit": commit, "trust_surface": surface}, path
-            ),
-            (surface, []),
+            ["landed marker declares trust surface 'v1' but its merged_commit was "
+             "sealed under 'v2'"],
+            findings,
         )
 
-    def test_a_replay_of_a_pinned_commit_at_another_path_is_unpinned(self):
-        """Keying the pin on the commit alone was replayable: a second marker
-        reused a pinned merged_commit, declared the historical surface, and
-        cleared verification with zero findings (review v2 finding)."""
-        commit, surface, _ = self._pin()
-        resolved, findings = mod.resolve_marker_trust_surface(
-            {"merged_commit": commit, "trust_surface": surface},
-            "F_Project_Management/W_TRUST/landed/REPLAY.landed-review.json",
+    def test_explicit_null_or_non_string_version_is_a_finding(self) -> None:
+        # Review v3 (R559-5): `marker.get(...)` conflated an absent key with an
+        # explicit JSON null, and null cleared the verifier.
+        commit = self._stub(b'CURRENT_TRUST_SURFACE = "v2"\n')
+        for value in (None, 7, ["v2"], "v99"):
+            with self.subTest(value=value):
+                name, findings = mod.resolve_marker_trust_surface(
+                    {"trust_surface": value}, self.root, commit
+                )
+                self.assertEqual(mod.CURRENT_TRUST_SURFACE, name)
+                self.assertEqual([f"unknown trust surface {value!r} in landed marker"], findings)
+
+    def test_a_copy_without_the_constant_is_the_v1_era(self) -> None:
+        commit = self._stub(b"# the gate before it versioned its surface\n")
+        self.assertEqual(("v1", []), mod.resolve_marker_trust_surface({}, self.root, commit))
+
+    def test_an_unregistered_historical_version_is_a_finding(self) -> None:
+        commit = self._stub(b'CURRENT_TRUST_SURFACE = "v9"\n')
+        name, findings = mod.resolve_marker_trust_surface({}, self.root, commit)
+        self.assertEqual(mod.CURRENT_TRUST_SURFACE, name)
+        self.assertEqual(
+            [f"merged_commit {commit} was sealed under trust surface 'v9', which this "
+             "gate does not register; TRUST_SURFACES is append-only"],
+            findings,
         )
-        self.assertEqual(resolved, mod.CURRENT_TRUST_SURFACE)
+
+    def test_a_landing_without_the_gate_script_cannot_derive_and_fails_closed(self) -> None:
+        commit = self._stub(None)
+        name, findings = mod.resolve_marker_trust_surface({}, self.root, commit)
+        self.assertEqual(mod.CURRENT_TRUST_SURFACE, name)
         self.assertTrue(
-            any("does not transfer" in item for item in findings), findings
+            any("cannot be derived" in item for item in findings), findings
         )
 
-    def test_pinned_declaration_mismatch_falls_to_the_current_surface(self):
-        """A mismatch must not continue under the narrower pin (review v2)."""
-        commit, surface, path = self._pin()
-        other = next(n for n in mod.TRUST_SURFACES if n != surface)
-        resolved, findings = mod.resolve_marker_trust_surface(
-            {"merged_commit": commit, "trust_surface": other}, path
-        )
-        self.assertEqual(resolved, mod.CURRENT_TRUST_SURFACE)
-        self.assertTrue(any("pins" in item for item in findings), findings)
 
-    def test_declaration_disagreeing_with_the_pin_is_a_finding(self):
-        commit, surface, path = self._pin()
-        other = next(n for n in mod.TRUST_SURFACES if n != surface)
-        resolved, findings = mod.resolve_marker_trust_surface(
-            {"merged_commit": commit, "trust_surface": other}, path
-        )
-        self.assertEqual(resolved, mod.CURRENT_TRUST_SURFACE)
-        self.assertEqual(len(findings), 1)
-        self.assertIn("immutable merged_commit pins", findings[0])
+class TrustSurfaceWideningTests(LandedMarkerTests):
+    """End to end: a marker sealed under v2 stays green when the live surface
+    widens to v3, and nothing in the repository or the marker changes
+    (review v3, R559-4 — the pin map could not do this)."""
 
-    def test_unpinned_marker_may_not_select_a_historical_surface(self):
-        """The laundering path: a NEW marker declaring v1 took the narrow surface
-        and the landing edge's newly covered paths became invisible."""
-        historical = next(
-            n for n in mod.TRUST_SURFACES if n != mod.CURRENT_TRUST_SURFACE
-        )
-        resolved, findings = mod.resolve_marker_trust_surface(
-            {"merged_commit": "f" * 40, "trust_surface": historical}
-        )
-        self.assertEqual(resolved, mod.CURRENT_TRUST_SURFACE)
-        self.assertEqual(len(findings), 1)
-        self.assertIn("may not select historical trust surface", findings[0])
+    def _register(self, marker: dict[str, object]) -> None:
+        self._commit_repository_marker(marker)  # adds, commits, moves origin/main
+        self._git("update-ref", "refs/remotes/origin/main", self._git("rev-parse", "HEAD"))
 
-    def test_unpinned_marker_without_a_declaration_is_a_finding(self):
-        resolved, findings = mod.resolve_marker_trust_surface({"merged_commit": "f" * 40})
-        self.assertEqual(resolved, mod.CURRENT_TRUST_SURFACE)
-        self.assertEqual(len(findings), 1)
-        self.assertIn("must declare", findings[0])
+    def test_widening_the_live_surface_keeps_a_sealed_v2_marker_green(self) -> None:
+        marker = self._marker()
+        del marker["trust_surface"]  # nothing declared; derivation alone
+        self._register(marker)
+        self.assertEqual([], mod.verify_repository_landed_markers(self.root))
+        wider_prefixes = tuple(mod.TRUST_KERNEL_PREFIXES) + ("future-trust/",)
+        with mock.patch.dict(
+            mod.TRUST_SURFACES, {"v3": (wider_prefixes, tuple(mod.TRUST_KERNEL_FILES))}
+        ), mock.patch.object(mod, "CURRENT_TRUST_SURFACE", "v3"):
+            self.assertEqual([], mod.verify_repository_landed_markers(self.root))
 
-    def test_unknown_surface_is_a_finding_and_resolves_to_current(self):
-        resolved, findings = mod.resolve_marker_trust_surface(
-            {"merged_commit": "f" * 40, "trust_surface": "v99"}
+    def test_a_declared_version_that_agrees_survives_the_widening_too(self) -> None:
+        self._register(self._marker())  # declares v2, the derived value
+        with mock.patch.dict(
+            mod.TRUST_SURFACES,
+            {"v3": (tuple(mod.TRUST_KERNEL_PREFIXES) + ("future-trust/",), tuple(mod.TRUST_KERNEL_FILES))},
+        ), mock.patch.object(mod, "CURRENT_TRUST_SURFACE", "v3"):
+            self.assertEqual([], mod.verify_repository_landed_markers(self.root))
+
+    def test_a_merged_commit_registered_twice_is_a_finding(self) -> None:
+        # Replay: a second marker for the same landing edge at another path.
+        marker = self._marker()
+        self._commit_repository_marker(marker)
+        second = "F_Project_Management/W_TRUST/landed/REPLAY.landed-review.json"
+        (self.root / second).write_bytes(_canonical(marker))
+        registry = self.root / "F_Project_Management/W_TRUST/LANDED_REVIEW_MARKERS.json"
+        registry.write_bytes(
+            _canonical(
+                {
+                    "markers": [
+                        "F_Project_Management/W_TRUST/landed/LANDED.landed-review.json",
+                        second,
+                    ],
+                    "schema": "garnet.trust_kernel_landed_review_registry/v1",
+                }
+            )
         )
-        self.assertEqual(resolved, mod.CURRENT_TRUST_SURFACE)
-        self.assertEqual(len(findings), 1)
-        self.assertIn("unknown trust surface", findings[0])
-
-    def test_unpinned_marker_declaring_the_current_surface_is_accepted(self):
-        self.assertEqual(
-            mod.resolve_marker_trust_surface(
-                {"merged_commit": "f" * 40, "trust_surface": mod.CURRENT_TRUST_SURFACE}
-            ),
-            (mod.CURRENT_TRUST_SURFACE, []),
+        self._git("add", second, str(registry.relative_to(self.root)))
+        self._git("commit", "-m", "replay")
+        self._git("update-ref", "refs/remotes/origin/main", self._git("rev-parse", "HEAD"))
+        findings = mod.verify_repository_landed_markers(self.root)
+        self.assertTrue(
+            any("registered by more than one landed marker" in item for item in findings),
+            findings,
         )
-
 
 if __name__ == "__main__":
     unittest.main()
